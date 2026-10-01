@@ -1,0 +1,28 @@
+name: ci
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r typecheck
+      - run: pnpm -r test
+      - run: pnpm --filter @amoji/web build
+      - name: asset manifest check
+        run: |
+          for f in apps/web/public/models/*.vrm; do
+            [ -e "$f" ] || continue
+            grep -q "$(basename "$f")" apps/web/public/models/ASSET_MANIFEST.md || { echo "unmanifested asset: $f"; exit 1; }
+          done
+      - name: vrm structural check
+        run: node scripts/check-vrm.mjs apps/web/public/models/juno.vrm
+      - name: banned asset check
+        run: |
+          ! ls apps/web/public/models 2>/dev/null | grep -qi "marin"

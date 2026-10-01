@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.next/
+out/
+*.log
+.DS_Store
+# secrets — never track
+.env
+.env.local
+**/.env.local
+*-key.txt
+
+# test coverage reports
+coverage/
+
+# sample avatar stays local-only (copyright) — see ASSET_MANIFEST.md
+apps/web/public/models/*.vrm
