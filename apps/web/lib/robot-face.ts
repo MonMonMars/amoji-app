@@ -121,7 +121,7 @@ export function ledFrame(p: FaceParams, t: number, size = LED_SIZE): Uint8Array 
   };
   const bobY = Math.round(Math.sin(t * 2.2) * p.bounce);
   const cy = Math.floor(size / 2) + bobY;
-  const eyeRows = Math.max(1, Math.round(3 * p.eyeH * (1 - 0)));
+  const eyeRows = Math.max(1, Math.round(3 * p.eyeH));
   const eyeY = cy - 3;
   for (let y = 0; y < eyeRows; y++) {
     for (let x = 3; x <= 5; x++) set(x, eyeY + y, p.r, p.g, p.b);
@@ -142,7 +142,7 @@ export function ledFrame(p: FaceParams, t: number, size = LED_SIZE): Uint8Array 
 // ── plug-and-use face engine ────────────────────────────────────────────────
 
 export interface FaceDriver {
-  /** receives every LED frame (only called when no canvas is attached) */
+  /** receives every LED frame — bridge it to your LED hardware (WS2812, Unitree face service, serial, ROS) */
   showFrame?(frame: Uint8Array, size: number): void;
   /** hook your robot TTS here (optional) */
   speak?(text: string): void;
@@ -175,7 +175,7 @@ export class AmojiFace {
     this.t0 = performance.now();
     const loop = (now: number) => {
       const t = (now - this.t0) / 1000;
-      if (now > this.holdUntil) this.target = { ...NEUTRAL, ...(this.holdUntil ? {} : {}) };
+      if (now > this.holdUntil) this.target = { ...NEUTRAL };
       const k = 0.12;
       for (const key of ['eyeW', 'eyeH', 'pupil', 'smile', 'open', 'bounce'] as const) {
         this.cur[key] += (this.target[key] - this.cur[key]) * k;
