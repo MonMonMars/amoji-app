@@ -1,10 +1,11 @@
 'use client';
-// Emotional voice — ChatGPT-style prosody on the browser's speechSynthesis engine.
-// Zero-setup: works on iPhone Safari / desktop browsers with no server and no API key.
-// Voice picks are per character (female voices for female characters, male for male),
-// language-aware with Cantonese first; pitch/rate/volume follow the emotion engine.
+// Emotional voice — ChatGPT-style prosody. Primary path: FREE neural voices via
+// the Edge read-aloud endpoint (edge-tts.ts) — Cantonese 曉曼/雲龍 etc., with
+// SSML pitch/rate/volume per emotion. Fallback path: the browser's own
+// speechSynthesis with matched platform voices. Zero cost, zero API key.
 
 import type { Lang } from './prefs';
+import { speakEdge, stopEdge } from './edge-tts';
 
 export interface VoiceChoice {
   /** BCP-47 tag to match against speechSynthesis voices */
@@ -69,9 +70,54 @@ const VOICE_MATRIX: Record<string, Record<Lang, VoiceChoice[]>> = {
       { lang: 'en-GB', names: ['Daniel', 'Male'], basePitch: 0.95, baseRate: 1.04 },
     ],
   },
+  mochi: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.18, baseRate: 0.96 },
+      { lang: 'zh-TW', names: ['Mei-Jia', 'Female'], basePitch: 1.16, baseRate: 0.96 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaoyi', 'Female'], basePitch: 1.16, baseRate: 0.95 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 1.14, baseRate: 0.95 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Zira', 'Ava', 'Female'], basePitch: 1.16, baseRate: 0.96 },
+    ],
+  },
+  kai: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ju', 'Male'], basePitch: 0.9, baseRate: 0.97 },
+      { lang: 'zh-TW', names: ['Male'], basePitch: 0.9, baseRate: 0.97 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Yunjian', 'Yunxi', 'Male'], basePitch: 0.9, baseRate: 0.97 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Keita', 'Male'], basePitch: 0.92, baseRate: 0.97 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Guy', 'Daniel', 'Male'], basePitch: 0.92, baseRate: 0.97 },
+    ],
+  },
+  luna: {
+    yue: [
+      { lang: 'zh-HK', names: ['HiuMaan', 'Sin-ji', 'Female'], basePitch: 1.02, baseRate: 0.86 },
+      { lang: 'zh-TW', names: ['Mei-Jia', 'Female'], basePitch: 1.02, baseRate: 0.86 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaoyi', 'Female'], basePitch: 1.0, baseRate: 0.86 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 1.0, baseRate: 0.86 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Ava', 'Female'], basePitch: 1.03, baseRate: 0.86 },
+    ],
+  },
 };
 
-/** Emotion → prosody. Multiplied onto the character's base pitch/rate/volume. */
+/** Emotion → prosody for the browser-TTS fallback path (multipliers). */
 const EMOTION_PROSODY: Record<string, { pitch: number; rate: number; vol: number }> = {
   joy: { pitch: 1.18, rate: 1.1, vol: 1.0 },
   excitement: { pitch: 1.22, rate: 1.16, vol: 1.08 },
@@ -93,6 +139,31 @@ const EMOTION_PROSODY: Record<string, { pitch: number; rate: number; vol: number
   confusion: { pitch: 1.05, rate: 0.92, vol: 0.9 },
   neutral: { pitch: 1.0, rate: 1.0, vol: 1.0 },
 };
+
+/** Emotion → SSML prosody for the neural path (deltas: rate/pitch fraction, volume dB). */
+const NEURAL_PROSODY: Record<string, { rate: number; pitch: number; vol: number }> = {
+  joy: { rate: 0.08, pitch: 0.08, vol: 0.1 },
+  excitement: { rate: 0.16, pitch: 0.12, vol: 0.2 },
+  love: { rate: -0.06, pitch: 0.03, vol: -0.05 },
+  contentment: { rate: -0.06, pitch: 0.0, vol: -0.1 },
+  relief: { rate: -0.04, pitch: 0.0, vol: -0.1 },
+  sadness: { rate: -0.15, pitch: -0.06, vol: -0.2 },
+  shame: { rate: -0.1, pitch: -0.04, vol: -0.2 },
+  guilt: { rate: -0.08, pitch: -0.03, vol: -0.18 },
+  boredom: { rate: -0.08, pitch: -0.02, vol: -0.15 },
+  anger: { rate: 0.08, pitch: -0.04, vol: 0.2 },
+  contempt: { rate: -0.03, pitch: -0.03, vol: 0.0 },
+  disgust: { rate: 0.0, pitch: -0.04, vol: 0.05 },
+  fear: { rate: 0.12, pitch: 0.1, vol: -0.05 },
+  surprise: { rate: 0.1, pitch: 0.18, vol: 0.15 },
+  embarrassment: { rate: -0.04, pitch: 0.04, vol: -0.1 },
+  pride: { rate: 0.0, pitch: 0.06, vol: 0.05 },
+  jealousy: { rate: -0.02, pitch: -0.02, vol: -0.05 },
+  confusion: { rate: -0.05, pitch: 0.05, vol: -0.08 },
+  neutral: { rate: 0, pitch: 0, vol: 0 },
+};
+
+const FEMALE_CHARS = new Set(['juno', 'nova', 'mochi', 'luna']);
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
@@ -144,6 +215,7 @@ function clauses(text: string): string[] {
 }
 
 const MUTE_KEY = 'amoji.voice.v1';
+const NEURAL_KEY = 'amoji.neural.v1';
 
 export function voiceEnabled(): boolean {
   try { return localStorage.getItem(MUTE_KEY) !== 'off'; } catch { return true; }
@@ -153,7 +225,17 @@ export function setVoiceEnabled(on: boolean): void {
   if (!on) stopSpeaking();
 }
 
+/** Neural (edge-tts) voices on/off — default on, auto-falls back per-utterance. */
+export function neuralEnabled(): boolean {
+  try { return localStorage.getItem(NEURAL_KEY) !== 'off'; } catch { return true; }
+}
+export function setNeuralEnabled(on: boolean): void {
+  try { localStorage.setItem(NEURAL_KEY, on ? 'on' : 'off'); } catch { /* ignore */ }
+  if (!on) stopEdge();
+}
+
 export function stopSpeaking(): void {
+  stopEdge();
   if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
 }
 
@@ -164,12 +246,36 @@ export function speak(
   lang: Lang,
   emotionHints?: Record<string, number>,
 ): void {
-  if (typeof speechSynthesis === 'undefined') return;
   if (!voiceEnabled()) return;
+  const emotion = dominantEmotion(emotionHints);
+
+  // 1) Neural path (free server-grade voices, SSML prosody per emotion)
+  if (neuralEnabled() && typeof WebSocket !== 'undefined') {
+    const np = NEURAL_PROSODY[emotion] ?? NEURAL_PROSODY['neutral']!;
+    speakEdge(text, {
+      lang,
+      gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
+      rateDelta: clamp(np.rate, -0.4, 0.5),
+      pitchDelta: clamp(np.pitch, -0.3, 0.4),
+      volumeDelta: clamp(np.vol, -0.5, 0.5),
+    }).catch(() => {
+      // endpoint unreachable — one-shot fallback to the browser voice
+      stopEdge();
+      synthSpeak(text, characterId, lang, emotion);
+    });
+    return;
+  }
+
+  // 2) Browser-TTS fallback
+  synthSpeak(text, characterId, lang, emotion);
+}
+
+function synthSpeak(text: string, characterId: string, lang: Lang, emotion: string): void {
+  if (typeof speechSynthesis === 'undefined') return;
   speechSynthesis.cancel(); // one speaker at a time
 
   const { voice, pitch: basePitch, rate: baseRate } = pickVoice(characterId, lang);
-  const em = EMOTION_PROSODY[dominantEmotion(emotionHints)] ?? EMOTION_PROSODY['neutral']!;
+  const em = EMOTION_PROSODY[emotion] ?? EMOTION_PROSODY['neutral']!;
   const pitch = clamp(basePitch * em.pitch, 0.4, 2);
   const rate = clamp(baseRate * em.rate, 0.6, 1.6);
   const vol = clamp(em.vol, 0.4, 1);
