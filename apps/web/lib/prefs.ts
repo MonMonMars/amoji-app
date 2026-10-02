@@ -269,7 +269,7 @@ export function characterById(id: string): CharacterDef {
   return CHARACTERS.find((c) => c.id === id) ?? CHARACTERS[0]!;
 }
 export function backgroundById(id: string): BackgroundDef {
-  return BACKGROUNDS.find((b) => b.id === b.id && b.id === id) ?? BACKGROUNDS[0]!;
+  return BACKGROUNDS.find((b) => b.id === id) ?? BACKGROUNDS[0]!;
 }
 
 export function usePrefs(): [Prefs, (patch: Partial<Prefs>) => void] {

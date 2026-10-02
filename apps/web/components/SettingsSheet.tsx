@@ -308,7 +308,7 @@ export default function SettingsSheet({
               </button>
             </div>
             <div className={`${row} !justify-start gap-3`}>
-              <span className="label">👤 {t(lang, 'yourName')}</span>
+              <span className={label}>👤 {t(lang, 'yourName')}</span>
               <input
                 value={name}
                 onChange={(e) => {
