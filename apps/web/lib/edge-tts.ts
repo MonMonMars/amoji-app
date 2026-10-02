@@ -3,12 +3,12 @@
 // Free neural TTS, straight from the browser — the Microsoft Edge read-aloud
 // endpoint (the same engine behind the edge-tts project). No API key, no server,
 // no cost: real emotional voices with per-character casting — Cantonese
-// 曉曼 HiuMaan / 雲龍 WanLung, 中文 Xiaoxiao / Xiaoyi / Xiaohan / Xiaomo / Yunxi /
-// Yunyang, 日本語 Nanami / Keita, English Jenny / Aria / Ana / Michelle / Guy /
-// Christopher — driven by SSML prosody with a ChatGPT-style per-clause
-// pitch/rate contour (sing-song), sentence pauses, and per-character
-// expressiveness. If the socket is unreachable (some networks block it),
-// voice.ts falls back to the browser's speechSynthesis automatically.
+// 曉曼 HiuMaan / 雲龍 WanLung, 中文 Xiaoxiao / Xiaoyi / Xiaohan / Xiaomo / Xiaorui /
+// Yunxi / Yunyang / Yunjian, 日本語 Nanami / Keita, English Jenny / Aria / Ana /
+// Michelle / Sara / Guy / Christopher / Eric — driven by SSML prosody with a
+// ChatGPT-style per-clause pitch/rate contour (sing-song), sentence pauses, and
+// per-character expressiveness. If the socket is unreachable (some networks
+// block it), voice.ts falls back to the browser's speechSynthesis automatically.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface EdgeVoiceOpts {
@@ -40,8 +40,9 @@ const VOICES: Record<string, { female: string; male: string; ssmlLang: string }>
 
 /**
  * Per-character voice cast. Young female characters get bright young voices
- * (Xiaoyi / Ana), calm ones lower (Xiaohan / Aria), male characters real male
- * voices (Yunyang / Yunxi / WanLung / Keita / Guy / Christopher).
+ * (Xiaoyi / Ana), calm ones lower (Xiaohan / Aria), sporty ones crisp
+ * (Xiaorui / Sara), male characters real male voices
+ * (Yunyang / Yunxi / Yunjian / WanLung / Keita / Guy / Christopher / Eric).
  */
 const CAST: Record<string, Record<string, string>> = {
   juno:  { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaoxiaoNeural', ja: 'ja-JP-NanamiNeural', en: 'en-US-JennyNeural' },
@@ -50,6 +51,8 @@ const CAST: Record<string, Record<string, string>> = {
   blaze: { yue: 'zh-HK-WanLungNeural',   zh: 'zh-CN-YunyangNeural',  ja: 'ja-JP-KeitaNeural',  en: 'en-US-GuyNeural' },
   kai:   { yue: 'zh-HK-WanLungNeural',   zh: 'zh-CN-YunxiNeural',    ja: 'ja-JP-KeitaNeural',  en: 'en-US-ChristopherNeural' },
   luna:  { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaomoNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-MichelleNeural' },
+  rin:   { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaoruiNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-SaraNeural' },
+  ren:   { yue: 'zh-HK-WanLungNeural',   zh: 'zh-CN-YunjianNeural',  ja: 'ja-JP-KeitaNeural',  en: 'en-US-EricNeural' },
 };
 
 function voiceFor(opts: EdgeVoiceOpts): { name: string; ssmlLang: string } {
