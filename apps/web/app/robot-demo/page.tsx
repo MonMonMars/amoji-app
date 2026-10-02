@@ -17,7 +17,9 @@ face.start();
 // that's it. she feels what she says:
 face.say('你好！見到你真好！');   // → smiling face + speech
 face.say('今日有啲攰……');        // → drooping eyes, slow bob
-face.setEmotion('surprise', 1);  // direct control from your stack`;
+face.setEmotion('surprise', 1);  // direct control from your stack
+face.setLook(0.5, 0);            // gaze tracking (sensor → eyes)
+face.setVoiceLevel(0.8);         // real lipsync from your TTS amplitude`;
 
 export default function RobotDemoPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -64,6 +66,13 @@ export default function RobotDemoPage() {
       <h1 className="text-2xl font-bold">🤖 Amoji Robot Face</h1>
       <p className="-mt-3 text-sm text-white/50">B2B demo — the emotion engine your robot can plug into</p>
 
+      <a
+        href="./face"
+        className="rounded-full border border-[#7c6cff]/50 bg-[#7c6cff]/15 px-5 py-2 text-sm font-semibold text-[#b3a8ff] transition hover:bg-[#7c6cff]/30"
+      >
+        ⛶ Fullscreen robot display — open <code className="mx-1">/face</code>
+      </a>
+
       <canvas ref={canvasRef} width={360} height={300} className="w-full max-w-sm rounded-3xl border border-white/10 bg-black" />
 
       <div className="flex items-center gap-3">
@@ -101,7 +110,7 @@ export default function RobotDemoPage() {
 
       <p className="text-center text-xs text-white/40">
         Same engine as the companion app — monitor display, LED matrix, or robotic face.<br />
-        Emotion + lipsync + body expression from one API.
+        Emotion + lipsync + gaze from one API.
       </p>
     </main>
   );
