@@ -6,7 +6,7 @@ import { notifySpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
 import { clientChat } from '../lib/client-chat';
 import { speak, stopSpeaking, voiceEnabled, setVoiceEnabled } from '../lib/voice';
-import { buildMemoryBlock, clearMemory, loadMemory, memorySummaryCount, rememberExchange } from '../lib/memory';
+import { buildDailyGreeting, buildMemoryBlock, clearMemory, loadMemory, memorySummaryCount, recordVisit, rememberExchange } from '../lib/memory';
 import { listenOnce, listenSupported } from '../lib/listen';
 import { t, type Lang } from '../lib/prefs';
 
@@ -66,12 +66,15 @@ export default function ChatPanel({
     setHistory((h) => [...h, { role: 'assistant', content: text }]);
   };
 
-  // startup greeting once, shortly after mount
+  // startup: first a welcome line; if it's a NEW day, the second line is her
+  // daily check-in (time-of-day hello + streak + follow-up on yesterday's mood)
   useEffect(() => {
     if (greetedRef.current) return;
     greetedRef.current = true;
+    const visit = recordVisit();
+    const daily = visit.isNewDay ? buildDailyGreeting(lang, visit) : undefined;
     const t1 = setTimeout(() => sayLocal(pickLine('startup', lang, 0)), 1200);
-    const t2 = setTimeout(() => sayLocal(pickLine('startup', lang, 1)), 5200);
+    const t2 = setTimeout(() => sayLocal(daily ?? pickLine('startup', lang, 1)), 5200);
     return () => { clearTimeout(t1); clearTimeout(t2); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

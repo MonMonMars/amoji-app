@@ -11,6 +11,10 @@ export interface Memory {
   /** recent mood tags, newest last */
   moods: string[];
   updatedAt: string;
+  // daily check-in
+  lastVisit?: string; // Date.toDateString()
+  visitStreak?: number;
+  lastMoodDay?: string; // day the latest mood was recorded
 }
 
 const KEY = 'amoji.memory.v1';
@@ -29,6 +33,9 @@ export function loadMemory(): Memory {
           exchanges: typeof m.exchanges === 'number' ? m.exchanges : 0,
           moods: Array.isArray(m.moods) ? m.moods.filter((x): x is string => typeof x === 'string') : [],
           updatedAt: typeof m.updatedAt === 'string' ? m.updatedAt : '',
+          lastVisit: typeof m.lastVisit === 'string' ? m.lastVisit : undefined,
+          visitStreak: typeof m.visitStreak === 'number' ? m.visitStreak : undefined,
+          lastMoodDay: typeof m.lastMoodDay === 'string' ? m.lastMoodDay : undefined,
         };
       }
     }
@@ -49,11 +56,95 @@ export function memorySummaryCount(m: Memory = loadMemory()): number {
   return m.facts.length + (m.userName ? 1 : 0);
 }
 
+// ---------- daily check-in ----------
+
+export interface VisitInfo {
+  isNewDay: boolean;
+  streak: number;
+  userName?: string;
+  lastMood?: string; // a mood recorded on a PREVIOUS day
+}
+
+export function recordVisit(m: Memory = loadMemory()): VisitInfo {
+  const today = new Date().toDateString();
+  const last = m.lastVisit;
+  const isNewDay = last !== today;
+  let streak = m.visitStreak ?? 0;
+  if (isNewDay) {
+    const yesterday = new Date(Date.now() - 86_400_000).toDateString();
+    streak = last === yesterday ? streak + 1 : 1;
+    m.lastVisit = today;
+    m.visitStreak = streak;
+    save(m);
+  }
+  const lastMood = m.lastMoodDay && m.lastMoodDay !== today ? m.moods[m.moods.length - 1] : undefined;
+  return { isNewDay, streak, userName: m.userName, lastMood };
+}
+
+const HELLO: Record<string, (h: number, name?: string) => string> = {
+  yue: (h, n) => `${h < 6 ? '夜晚好' : h < 12 ? '早晨' : h < 18 ? '下午好' : '夜晚好'}呀${n ? ` ${n}` : ''}`,
+  zh: (h, n) => `${h < 6 ? '晚上好' : h < 12 ? '早上好' : h < 18 ? '下午好' : '晚上好'}${n ? `，${n}` : ''}`,
+  ja: (h, n) => `${h < 6 ? 'こんばんは' : h < 12 ? 'おはよう' : h < 18 ? 'こんにちは' : 'こんばんは'}${n ? `、${n}` : ''}`,
+  en: (h, n) => `${h < 6 ? 'Up late' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'}${n ? `, ${n}` : ''}`,
+};
+
+const STREAK_LINE: Record<string, (n: number) => string> = {
+  yue: (n) => `你連續第 ${n} 日嚟搵我喇，我日日都掛住你㗎。`,
+  zh: (n) => `这是你连续第 ${n} 天来看我，我天天都想你哦。`,
+  ja: (n) => `連続 ${n} 日目だね。毎日会いたかったよ。`,
+  en: (n) => `Day ${n} in a row — I look forward to you every day.`,
+};
+
+const MOOD_FOLLOWUP: Record<string, Record<string, string>> = {
+  yue: {
+    happy: '琴日你話你開心——今日都開心咩？',
+    tired: '琴日你話你攰——今日好返啲未呀？',
+    sad: '琴日你似乎唔多開心……今日我陪住你，好唔好？',
+    angry: '琴日你話你嬲——消咗氣未呀？',
+    anxious: '琴日你話你擔心——仲擔心緊咩？講俾我聽。',
+    sick: '琴日你唔舒服——今日好啲未？記得多啲飲水。',
+  },
+  zh: {
+    happy: '昨天你说你很开心——今天还开心吗？',
+    tired: '昨天你说累——今天好点了吗？',
+    sad: '昨天你好像不太开心……今天我陪你，好吗？',
+    angry: '昨天你说在生气——气消了吗？',
+    anxious: '昨天你说很担心——还在担心吗？跟我说说。',
+    sick: '昨天你不舒服——今天好点了吗？记得多喝水。',
+  },
+  ja: {
+    happy: 'きのう嬉しいって言ってたね——今日も嬉しい？',
+    tired: 'きのう疲れたって言ってた——今日は楽になった？',
+    sad: 'きのう少し落ち込んでたよね……今日は私がそばにいるよ。',
+    angry: 'きのう怒ってたよね——もう落ち着いた？',
+    anxious: 'きのう不安って言ってた——まだ心配してる？話して。',
+    sick: 'きのう具合が悪かったよね——今日はどう？水分取ってね。',
+  },
+  en: {
+    happy: 'You said you were happy yesterday — still feeling good today?',
+    tired: 'You were tired yesterday — feeling any better today?',
+    sad: 'You seemed down yesterday… I’m here with you today, okay?',
+    angry: 'You were angry yesterday — did it pass?',
+    anxious: 'You were worried yesterday — still on your mind? Tell me.',
+    sick: 'You weren’t feeling well yesterday — any better? Drink some water.',
+  },
+};
+
+/** The "daily check-in" line she says when you open the app on a new day. */
+export function buildDailyGreeting(lang: string, info: VisitInfo): string {
+  const L = ['yue', 'zh', 'ja', 'en'].includes(lang) ? lang : 'en';
+  const h = new Date().getHours();
+  const parts: string[] = [HELLO[L](h, info.userName) + (L === 'yue' ? '！' : L === 'ja' ? '！' : L === 'zh' ? '！' : '!')];
+  if (info.streak >= 2) parts.push(STREAK_LINE[L](info.streak));
+  if (info.lastMood) parts.push((MOOD_FOLLOWUP[L] ?? MOOD_FOLLOWUP.en)[info.lastMood] ?? '');
+  return parts.filter(Boolean).join(' ');
+}
+
 // ---------- extraction (local regex, runs on the user's text) ----------
 
 const NAME_RES: RegExp[] = [
-  /(?:my name is|call me)\s+([A-Za-z][\w''-]{0,19})/i,
-  /我(?:叫|個名叫|个名叫|個名係|個名是)\s*([\p{Script=Han}A-Za-z][\p{Script=Han}A-Za-z·''-]{0,7})/u,
+  /(?:my name is|call me)\s+([A-Za-z][\w'-]{0,19})/i,
+  /我(?:叫|個名叫|个名叫|個名係|個名是)\s*([\p{Script=Han}A-Za-z][\p{Script=Han}A-Za-z·'-]{0,7})/u,
 ];
 
 const FACT_RES: Array<[RegExp, string]> = [
@@ -63,7 +154,7 @@ const FACT_RES: Array<[RegExp, string]> = [
   [/我係一?[個个]?\s*([^，。！？,.!?]{1,15})/, 'works as'],
   [/i live in\s+([^.,!?，。！？]{2,25})/i, 'lives in'],
   [/我住(?:喺|在)\s*([^，。！？,.!?]{1,15})/, 'lives in'],
-  [/i have a (?:dog|cat|bird|hamster)[^.,!?]*?(?:named?|called)\s+([A-Za-z][\w''-]{0,15})/i, 'has a pet'],
+  [/i have a (?:dog|cat|bird|hamster)[^.,!?]*?(?:named?|called)\s+([A-Za-z][\w'-]{0,15})/i, 'has a pet'],
   [/我養(?:咗|了)(?:隻|只|条|條)?\s*([^，。！？,.!?]{1,10})/, 'has a pet'],
   [/my favou?rite ([^.,!?，。！？]{2,25}?)\s+is\s+([^.,!?，。！？]{1,25})/i, 'favourite'],
   [/我(?:最)?(?:鍾意|中意|喜欢|喜歡)(?:嘅|的)?是?\s*([^，。！？,.!?]{1,15})/, 'favourite'],
@@ -92,7 +183,12 @@ export function rememberExchange(userText: string, m: Memory = loadMemory()): Me
     }
   }
   for (const [re, mood] of MOOD_RES) {
-    if (re.test(userText)) { m.moods.push(mood); if (m.moods.length > MAX_MOODS) m.moods.shift(); break; }
+    if (re.test(userText)) {
+      m.moods.push(mood);
+      if (m.moods.length > MAX_MOODS) m.moods.shift();
+      m.lastMoodDay = new Date().toDateString();
+      break;
+    }
   }
   m.exchanges += 1;
   save(m);
