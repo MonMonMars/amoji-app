@@ -70,7 +70,13 @@ export const LANGS: { id: Lang; native: string }[] = [
 export type StrKey =
   | 'tagline' | 'meetCta' | 'chooseCharacter' | 'chooseBackground' | 'chooseLanguage'
   | 'startChat' | 'back' | 'settings' | 'sayHi' | 'typing' | 'tapHint'
-  | 'bgVoid' | 'bgAurora' | 'bgEmber' | 'bgSakura' | 'bgAbyss' | 'bgRain' | 'bgSunset' | 'bgMeadow';
+  | 'bgVoid' | 'bgAurora' | 'bgEmber' | 'bgSakura' | 'bgAbyss' | 'bgRain' | 'bgSunset' | 'bgMeadow'
+  // v0.9.3 flow: splash → login → select → chat
+  | 'loginPrompt' | 'loginCta' | 'loginSkip'
+  | 'selectTitle' | 'confirmCta' | 'comingSoon' | 'openSelect'
+  | 'statusIdle' | 'statusThinking' | 'statusSpeaking' | 'statusListening'
+  | 'moodJoy' | 'moodAngry' | 'moodSad' | 'moodSurprised' | 'moodRelaxed' | 'moodNeutral'
+  | 'voiceReplies' | 'neuralVoice' | 'memoryTitle' | 'forgetBtn' | 'tutorBtn' | 'micTitle';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   tagline: {
@@ -102,6 +108,29 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   bgRain: { en: 'Rainy Night', yue: '雨夜', zh: '雨夜', ja: '雨の夜' },
   bgSunset: { en: 'Sunset', yue: '夕陽', zh: '夕阳', ja: '夕日' },
   bgMeadow: { en: 'Meadow', yue: '草原', zh: '草原', ja: '草原' },
+  loginPrompt: { en: 'What should I call you?', yue: '點稱呼你呀？', zh: '该怎么称呼你？', ja: 'なんて呼べばいい？' },
+  loginCta: { en: 'Continue →', yue: '開始 →', zh: '开始 →', ja: '始める →' },
+  loginSkip: { en: 'skip', yue: '略過', zh: '跳过', ja: 'スキップ' },
+  selectTitle: { en: 'Build your companion', yue: '打造你嘅小伙伴', zh: '打造你的伙伴', ja: '相棒をつくる' },
+  confirmCta: { en: 'Meet {name} →', yue: '同 {name} 開始 →', zh: '和 {name} 开始 →', ja: '{name}と始める →' },
+  comingSoon: { en: 'Coming soon', yue: '即將推出', zh: '即将推出', ja: 'Coming soon' },
+  openSelect: { en: 'Tap to change character / scene / language', yue: '撳呢度轉角色 / 場景 / 語言', zh: '点击更换角色 / 场景 / 语言', ja: 'タップで相棒・場所・言語を変更' },
+  statusIdle: { en: 'idle', yue: '待命', zh: '待命', ja: '待機中' },
+  statusThinking: { en: 'thinking…', yue: '諗緊…', zh: '正在想…', ja: '考え中…' },
+  statusSpeaking: { en: 'speaking…', yue: '講緊…', zh: '正在说…', ja: '話してる…' },
+  statusListening: { en: 'listening…', yue: '聽緊…', zh: '正在听…', ja: '聞いてる…' },
+  moodJoy: { en: 'happy', yue: '開心', zh: '开心', ja: '嬉しい' },
+  moodAngry: { en: 'annoyed', yue: '嬲嬲哋', zh: '有点小情绪', ja: '拗ねてる' },
+  moodSad: { en: 'down', yue: '唔開心', zh: '有点低落', ja: '落ち込み' },
+  moodSurprised: { en: 'surprised', yue: '好驚訝', zh: '惊讶', ja: 'びっくり' },
+  moodRelaxed: { en: 'relaxed', yue: '好放鬆', zh: '很放松', ja: 'リラックス' },
+  moodNeutral: { en: 'calm', yue: '平靜', zh: '平静', ja: '穏やか' },
+  voiceReplies: { en: 'Voice replies', yue: '語音回覆', zh: '语音回复', ja: '音声返答' },
+  neuralVoice: { en: 'Neural voice (online)', yue: '神經語音（在線）', zh: '神经语音（在线）', ja: 'ニューラル音声（オンライン）' },
+  memoryTitle: { en: 'Memory', yue: '記憶', zh: '记忆', ja: '記憶' },
+  forgetBtn: { en: 'Forget everything', yue: '全部忘記', zh: '全部忘记', ja: 'すべて忘れる' },
+  tutorBtn: { en: 'How to use', yue: '使用教學', zh: '使用教学', ja: '使い方' },
+  micTitle: { en: 'Tap the orb to talk', yue: '撳個波講嘢', zh: '点彩球说话', ja: 'オーブをタップして話す' },
 };
 
 export function t(lang: Lang, key: StrKey, vars?: Record<string, string>): string {
