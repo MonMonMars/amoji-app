@@ -16,7 +16,7 @@
 |---|---|
 | **Companions** | 6 characters × 8 scenes × 4 languages; each with its own personality in the LLM prompt |
 | **Emotion** | 18 idle poses, VRMA clips, viseme lip-sync, facial + body expression — she feels what she says |
-| **Voice** | ChatGPT-style emotional prosody (joy→bright, sad→soft, surprise→pitch jump) in all 4 languages; 🔊 toggle; tap-to-talk mic 🎙️ (zh-HK Cantonese recognition) |
+| **Voice** | **Free neural voices** (Edge TTS): Cantonese 曉曼 HiuMaan / 雲龍 WanLung, 中文 Xiaoxiao / Yunjian, 日本語 Nanami / Keita, English Aria / Guy — with SSML emotion prosody (joy→bright+faster, sad→soft+slower, surprise→pitch jump) in all 4 languages; automatic fallback to browser TTS; 🔊 toggle; tap-to-talk mic 🎙️ (zh-HK Cantonese recognition) |
 | **Memory** 🧠 | Device-private long-term memory — name, likes, job, pets, mood history; injected into her prompt; 🧠 button to forget |
 | **Check-ins** ⏰ | Time-aware greeting, visit streak, follow-ups on yesterday's mood |
 | **Brain** | Free keyless LLM by default (Pollinations), offline banter fallback, optional bring-your-own-key upgrade (Gemini / Groq / OpenRouter / Kimi) |
@@ -48,6 +48,7 @@ face.setEmotion('surprise', 1);  // or drive directly from your autonomy stack
 ```
 apps/web                     Next.js 14 companion app (GitHub Pages static build)
   lib/emotion-core …         → packages/emotion-core: portable parametric emotion core
+  lib/edge-tts.ts            free neural TTS client (Edge read-aloud, SSML prosody)
   lib/robot-face.ts          robot-face engine (web build of the SDK)
   app/api/chat/route.ts      LLM router (free default, key upgrades)
 packages/emotion-core        emotion analysis + parametric expression mapping
