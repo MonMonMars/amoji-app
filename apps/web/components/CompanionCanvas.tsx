@@ -76,10 +76,15 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4' }
     let mixer: THREE.AnimationMixer | null = null;
     let mixerActive = false;
     const poseSeed = Date.now() % 100000;
+    const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+    // Local/closed builds ship juno.vrm (Kizuna AI); open builds fall back to
+    // seed-san.vrm (VRM Public License 1.0, VirtualCast) — see ASSET_MANIFEST.md.
+    const MODEL_CANDIDATES = ['juno.vrm', 'seed-san.vrm'];
 
     const loader = new GLTFLoader();
     loader.register((parser) => new VRMLoaderPlugin(parser));
-    loader.load('/models/juno.vrm', (gltf) => {
+
+    const onModelLoaded = (gltf: unknown) => {
       vrm = (gltf as unknown as { userData: { vrm: VRM } }).userData.vrm;
       scene.remove(placeholder);
       scene.add(vrm.scene);
@@ -88,7 +93,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4' }
       // idle VRMA animation: body motion from the clip, expressions stay ours
       const animLoader = new GLTFLoader();
       animLoader.register((parser) => new VRMAnimationLoaderPlugin(parser));
-      animLoader.load('/models/idle.vrma', (animGltf) => {
+      animLoader.load(`${ASSET_BASE}/models/idle.vrma`, (animGltf) => {
         try {
           const anims = (animGltf as unknown as { userData: { vrmAnimations: VRMAnimation[] } }).userData.vrmAnimations;
           if (!anims?.length || !vrm) return;
@@ -107,9 +112,16 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4' }
       }, undefined, () => {
         // no idle clip — procedural idle still carries the body
       });
-    }, undefined, () => {
-      onNoticeRef.current?.({ reason: 'asset' });
-    });
+    };
+
+    const loadModel = (index: number) => {
+      if (index >= MODEL_CANDIDATES.length) {
+        onNoticeRef.current?.({ reason: 'asset' });
+        return;
+      }
+      loader.load(`${ASSET_BASE}/models/${MODEL_CANDIDATES[index]}`, onModelLoaded, undefined, () => loadModel(index + 1));
+    };
+    loadModel(0);
 
     // ---- pointer interaction: drag = orbit, pinch/wheel = zoom, tap = poke ----
     const raycaster = new THREE.Raycaster();

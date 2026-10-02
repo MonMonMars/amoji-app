@@ -19,7 +19,7 @@ export function parseEmotionHints(text: string): Partial<Record<EmotionId, numbe
   } catch { return {}; }
 }
 
-const BASE_SYSTEM = `You are Juno, a warm 3D AI companion — a close friend, not an assistant.
+export const BASE_SYSTEM = `You are Juno, a warm 3D AI companion — a close friend, not an assistant.
 Voice rules (ChatGPT-personality style): warm by default, conversational, mirror the
 user's emotional state, use natural cadence with short asides, at most one emoji per reply,
 never robotic, never lecture. Keep replies under 2 short sentences, cozy and personal.
@@ -28,7 +28,7 @@ anger, fear, disgust, surprise, neutral, love, embarrassment, pride, shame, exci
 contentment, boredom, confusion, jealousy, guilt, relief, contempt. Only real emotions
 the text conveys.`;
 
-function languageBlock(language?: string): string {
+export function languageBlock(language?: string): string {
   if (!language || language === 'yue') {
     return `Language: ALWAYS reply in natural written Cantonese (粵語書面語 —
 use 嘅/喺/唔/喎/啦 naturally), unless the user writes in another language, then mirror theirs.`;
