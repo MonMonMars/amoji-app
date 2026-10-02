@@ -1,4 +1,5 @@
 import type { EmotionFrame } from '@amoji/emotion-core';
+import type { IdlePoseOffsets } from './idle-poses';
 
 export interface VrmTargets {
   blendShape: { joy: number; angry: number; sorrow: number; fun: number; surprise: number; relaxed: number };
@@ -21,9 +22,13 @@ export const ARM_DOWN_BASE = 1.08;
 /** gentle elbow bend while at rest, radians */
 export const ELBOW_BASE = 0.16;
 
-export function mapFrameToVrm(frame: EmotionFrame, intensity = 1): VrmTargets {
+/** how strongly an idle pose drags head yaw toward its target */
+const POSE_HEAD_YAW_MIX = 0.35;
+
+export function mapFrameToVrm(frame: EmotionFrame, intensity = 1, pose?: IdlePoseOffsets): VrmTargets {
   const k = clamp01(intensity);
   const f = frame.face;
+  const p = pose;
   // weighted mix into the six VRM preset blend shapes
   const joyW = clamp01(f.mouthSmile * 0.7 + f.cheekRaise * 0.3);
   const funW = clamp01(f.cheekRaise * 0.5 + f.mouthSmile * 0.5 + f.jawDrop * 0.2);
@@ -32,7 +37,7 @@ export function mapFrameToVrm(frame: EmotionFrame, intensity = 1): VrmTargets {
   const surpriseW = clamp01(f.eyeWide * 0.7 + f.browOuterUp * 0.3 + f.jawDrop * 0.3);
   const relaxedW = clamp01(f.lidClosure * 0.4 + f.mouthPucker * 0.3 + (1 - f.mouthOpen) * 0.2);
 
-  // ---- body: T-pose fix + idle life (breath, sway, lean) ----
+  // ---- body: T-pose fix + idle life (breath, sway, lean) + idle pose ----
   const tt = frame.t / 1000;
   const arousalN = (frame.arousal + 1) / 2;            // [-1,1] → [0,1]
   const energyN = (frame.body.gestureEnergy + 1) / 2;  // [-1,1] → [0,1]
@@ -48,14 +53,22 @@ export function mapFrameToVrm(frame: EmotionFrame, intensity = 1): VrmTargets {
   const swayR = Math.sin(tt * 0.7 + Math.PI) * 0.05 * energy * k;
   const shoulderLift = frame.body.shoulderUp * 0.3 * k;
 
-  const upperL = clamp(ARM_DOWN_BASE - shoulderLift + swayL + breathPhase * 0.02 * k, 0.15, 1.45);
-  const upperR = clamp(ARM_DOWN_BASE - shoulderLift + swayR + breathPhase * 0.02 * k, 0.15, 1.45);
-  const lower = clamp(ELBOW_BASE + 0.1 * energy + breathPhase * 0.015 * k, 0.05, 0.6);
+  const poseUpper = (p?.upperDelta ?? 0) * k;
+  const upperL = clamp(ARM_DOWN_BASE - shoulderLift + swayL + breathPhase * 0.02 * k + poseUpper, 0.15, 1.45);
+  const upperR = clamp(ARM_DOWN_BASE - shoulderLift + swayR + breathPhase * 0.02 * k + poseUpper, 0.15, 1.45);
+  const lower = clamp(ELBOW_BASE + 0.1 * energy + breathPhase * 0.015 * k + (p?.elbowDelta ?? 0) * k, 0.05, 0.6);
 
   const lean = clamp(frame.body.leanForward, -1, 1);
-  const leanSide = clamp(frame.body.leanSide, -1, 1);
-  const spinePitch = clamp(lean * 0.12 * k + breathPhase * 0.012 * breathDepth * k, -0.2, 0.2);
+  const leanSide = clamp(frame.body.leanSide + (p?.leanSideDelta ?? 0), -1, 1);
+  const spinePitch = clamp(
+    lean * 0.12 * k + breathPhase * 0.012 * breathDepth * k + (p?.spineDelta ?? 0) * k,
+    -0.2, 0.2,
+  );
   const chestPitch = clamp(breathPhase * 0.02 * breathDepth * k + leanSide * 0.04 * k, -0.12, 0.12);
+
+  // head: engine values, with the idle pose dragging yaw toward its target
+  const mappedYaw = clamp(frame.body.headYaw + frame.gaze.x * 0.3, -0.6, 0.6) * k;
+  const headYaw = p ? clamp(mappedYaw * (1 - POSE_HEAD_YAW_MIX) + p.headYaw * POSE_HEAD_YAW_MIX, -0.6, 0.6) : mappedYaw;
 
   return {
     blendShape: {
@@ -64,8 +77,8 @@ export function mapFrameToVrm(frame: EmotionFrame, intensity = 1): VrmTargets {
     },
     bones: {
       headPitch: clamp(frame.body.headPitch + frame.gaze.y * 0.15, -0.35, 0.35) * k,
-      headYaw: clamp(frame.body.headYaw + frame.gaze.x * 0.3, -0.6, 0.6) * k,
-      headRoll: clamp(frame.body.headRoll, -0.35, 0.35) * k,
+      headYaw,
+      headRoll: clamp(frame.body.headRoll + (p?.headRollDelta ?? 0), -0.35, 0.35) * k,
       leftUpperArm: upperL, rightUpperArm: upperR,
       leftLowerArm: lower, rightLowerArm: lower,
       spinePitch, chestPitch,

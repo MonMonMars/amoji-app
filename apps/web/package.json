@@ -14,6 +14,7 @@
     "@amoji/emotion-core": "workspace:*",
     "@amoji/vrm-renderer": "workspace:*",
     "@pixiv/three-vrm": "^3.0.0",
+    "@pixiv/three-vrm-animation": "^3.5.5",
     "next": "16.3.7",
     "react": "19.2.8",
     "react-dom": "19.2.8",
