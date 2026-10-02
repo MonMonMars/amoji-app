@@ -7,6 +7,7 @@ import { pickLine } from '../lib/chatter';
 import { clientChat } from '../lib/client-chat';
 import { speak, stopSpeaking, voiceEnabled, setVoiceEnabled } from '../lib/voice';
 import { buildMemoryBlock, clearMemory, loadMemory, memorySummaryCount, rememberExchange } from '../lib/memory';
+import { listenOnce, listenSupported } from '../lib/listen';
 import { t, type Lang } from '../lib/prefs';
 
 interface Msg { role: 'user' | 'assistant'; content: string }
@@ -37,12 +38,15 @@ export default function ChatPanel({
   const [busy, setBusy] = useState(false);
   const [voiceOn, setVoiceOn] = useState(true);
   const [memCount, setMemCount] = useState(0);
+  const [listening, setListening] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const busyRef = useRef(false);
   const lastActivityRef = useRef(Date.now());
   const idleCounterRef = useRef(0);
   const tutorCounterRef = useRef(0);
   const greetedRef = useRef(false);
+  const listeningRef = useRef(false);
+  const recStopRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     setHistory(loadHistory());
@@ -94,8 +98,8 @@ export default function ChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]);
 
-  const send = async () => {
-    const text = input.trim();
+  const send = async (override?: string) => {
+    const text = (override ?? input).trim();
     if (!text || busy) return;
     setInput('');
     setBusy(true);
@@ -160,6 +164,33 @@ export default function ChatPanel({
     setVoiceEnabled(next);
   };
 
+  // tap 🎙️ to talk (uses the browser's free built-in recognizer, zh-HK for Cantonese)
+  const mic = async () => {
+    if (listeningRef.current) {
+      recStopRef.current?.();
+      return;
+    }
+    if (!listenSupported()) {
+      window.alert(lang === 'yue'
+        ? '你嘅瀏覽器暫時唔支援語音輸入，試下用 Chrome 或者 Safari 最新版。'
+        : 'Speech input is not supported in this browser — try the latest Chrome or Safari.');
+      return;
+    }
+    listeningRef.current = true;
+    setListening(true);
+    stopSpeaking();
+    try {
+      const text = await listenOnce(lang, { onStart: (rec) => { recStopRef.current = rec.stop; } });
+      if (text) await send(text);
+    } catch { /* no speech or error — stay quiet */ }
+    finally {
+      listeningRef.current = false;
+      recStopRef.current = null;
+      setListening(false);
+      lastActivityRef.current = Date.now();
+    }
+  };
+
   return (
     <div className="pointer-events-auto mx-auto flex w-full max-w-2xl flex-col gap-2 px-3 pb-3" style={{ height: '19rem' }}>
       <div
@@ -182,6 +213,7 @@ export default function ChatPanel({
           </div>
         ))}
         {busy && <p className="text-white/40">{t(lang, 'typing', { name: characterName })}</p>}
+        {listening && <p className="text-white/60">🎙️ …</p>}
       </div>
       <div className="flex items-center gap-2">
         <button
@@ -210,6 +242,16 @@ export default function ChatPanel({
           placeholder={t(lang, 'sayHi', { name: characterName })}
           className="h-10 flex-1 rounded-full border border-white/10 bg-black/30 px-4 text-white placeholder-white/30 outline-none backdrop-blur-md focus:border-white/40"
         />
+        <button
+          onClick={() => void mic()}
+          title={listening ? 'listening… tap to stop' : 'talk to her 🎙️'}
+          className={`h-10 w-10 shrink-0 rounded-full border backdrop-blur-md transition ${
+            listening ? 'animate-pulse border-white/40 text-white' : 'border-white/10 text-white/70 hover:bg-black/50'
+          }`}
+          style={listening ? { backgroundColor: `${accent}99` } : { backgroundColor: 'rgba(0,0,0,0.3)' }}
+        >
+          🎙️
+        </button>
         <button
           onClick={toggleVoice}
           title={voiceOn ? 'voice on' : 'voice off'}
