@@ -2,17 +2,23 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Free neural TTS, straight from the browser — the Microsoft Edge read-aloud
 // endpoint (the same engine behind the edge-tts project). No API key, no server,
-// no cost: real emotional voices — Cantonese 曉曼 HiuMaan / 雲龍 WanLung,
-// 中文 Xiaoxiao / Yunjian, 日本語 Nanami / Keita, English Aria / Guy — with
-// SSML prosody (pitch/rate/volume) driven by the emotion engine.
-// If the socket is unreachable (some networks block it), voice.ts falls back
-// to the browser's speechSynthesis automatically.
+// no cost: real emotional voices with per-character casting — Cantonese
+// 曉曼 HiuMaan / 雲龍 WanLung, 中文 Xiaoxiao / Xiaoyi / Xiaohan / Xiaomo / Yunxi /
+// Yunyang, 日本語 Nanami / Keita, English Jenny / Aria / Ana / Michelle / Guy /
+// Christopher — driven by SSML prosody with a ChatGPT-style per-clause
+// pitch/rate contour (sing-song), sentence pauses, and per-character
+// expressiveness. If the socket is unreachable (some networks block it),
+// voice.ts falls back to the browser's speechSynthesis automatically.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface EdgeVoiceOpts {
   /** 'yue' | 'zh' | 'ja' | 'en' */
   lang: string;
   gender: 'female' | 'male';
+  /** character id — picks her/his specific voice from the cast */
+  character?: string;
+  /** how animated the contour is: 0.6 calm … 1.6 very bubbly (default 1) */
+  expressiveness?: number;
   /** SSML prosody deltas — rate/pitch as fractions (-0.5..0.5), volume in dB (-1..1 → ±8dB) */
   rateDelta?: number;
   pitchDelta?: number;
@@ -24,12 +30,34 @@ export interface EdgeVoiceOpts {
 const TRUSTED_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
 const WS_BASE = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
 
+/** gender fallback when a character isn't in the cast */
 const VOICES: Record<string, { female: string; male: string; ssmlLang: string }> = {
   yue: { female: 'zh-HK-HiuMaanNeural', male: 'zh-HK-WanLungNeural', ssmlLang: 'zh-HK' },
   zh:  { female: 'zh-CN-XiaoxiaoNeural', male: 'zh-CN-YunjianNeural', ssmlLang: 'zh-CN' },
   ja:  { female: 'ja-JP-NanamiNeural', male: 'ja-JP-KeitaNeural', ssmlLang: 'ja-JP' },
   en:  { female: 'en-US-AriaNeural', male: 'en-US-GuyNeural', ssmlLang: 'en-US' },
 };
+
+/**
+ * Per-character voice cast. Young female characters get bright young voices
+ * (Xiaoyi / Ana), calm ones lower (Xiaohan / Aria), male characters real male
+ * voices (Yunyang / Yunxi / WanLung / Keita / Guy / Christopher).
+ */
+const CAST: Record<string, Record<string, string>> = {
+  juno:  { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaoxiaoNeural', ja: 'ja-JP-NanamiNeural', en: 'en-US-JennyNeural' },
+  nova:  { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaohanNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-AriaNeural' },
+  mochi: { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaoyiNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-AnaNeural' },
+  blaze: { yue: 'zh-HK-WanLungNeural',   zh: 'zh-CN-YunyangNeural',  ja: 'ja-JP-KeitaNeural',  en: 'en-US-GuyNeural' },
+  kai:   { yue: 'zh-HK-WanLungNeural',   zh: 'zh-CN-YunxiNeural',    ja: 'ja-JP-KeitaNeural',  en: 'en-US-ChristopherNeural' },
+  luna:  { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaomoNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-MichelleNeural' },
+};
+
+function voiceFor(opts: EdgeVoiceOpts): { name: string; ssmlLang: string } {
+  const v = VOICES[opts.lang] ?? VOICES.en!;
+  const casted = opts.character ? CAST[opts.character]?.[opts.lang] : undefined;
+  const name = casted ?? (opts.gender === 'male' ? v.male : v.female);
+  return { name, ssmlLang: v.ssmlLang };
+}
 
 function guid(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -51,6 +79,16 @@ function escapeXml(s: string): string {
 
 const pct = (n: number) => `${n >= 0 ? '+' : ''}${Math.round(n * 100)}%`;
 const db = (n: number) => `${n >= 0 ? '+' : ''}${(n * 8).toFixed(1)}dB`;
+const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
+
+// Split into breath-sized clauses so the pitch contour can rise and fall inside
+// a sentence — the sing-song quality that makes ChatGPT's voice feel alive.
+function clauses(text: string): string[] {
+  return text
+    .split(/(?<=[。！？!?；;，,、—…\.])\s*|(?<=[。！？!?…\.])\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
 // ---- current playback (so stopSpeaking can cut it) ----
 let currentAudio: HTMLAudioElement | null = null;
@@ -71,19 +109,41 @@ export function edgeTtsPossible(): boolean {
 /**
  * Speak `text` with a neural voice. Resolves when playback finishes,
  * rejects quickly if the endpoint is unreachable (caller falls back).
+ *
+ * The SSML carries one <prosody> per clause with a ChatGPT-style contour:
+ * the line drifts up mid-sentence, questions lift at the tail, statements
+ * settle down, and a short <break> lands after each sentence end.
  */
 export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
   stopEdge();
   return new Promise<void>((resolve, reject) => {
-    const v = VOICES[opts.lang] ?? VOICES.en!;
-    const voiceName = opts.gender === 'male' ? v.male : v.female;
+    const voice = voiceFor(opts);
     const requestId = guid();
+
+    const expr = clamp(opts.expressiveness ?? 1, 0.5, 1.8);
+    const baseRate = opts.rateDelta ?? 0;
+    const basePitch = opts.pitchDelta ?? 0;
+    const baseVol = opts.volumeDelta ?? 0;
+    const rising = /[？?]\s*$/.test(text);
+    const parts = clauses(text);
+
+    const body = parts
+      .map((part, i) => {
+        const contour = parts.length > 1
+          ? 1 + 0.07 * expr * Math.sin((i / (parts.length - 1)) * Math.PI * (rising ? 1 : 0.7))
+          : 1;
+        const isTail = i === parts.length - 1;
+        const tailLift = isTail && rising ? 1.15 : isTail && !rising ? 0.92 : 1;
+        const rate = clamp(baseRate * contour * (isTail ? 0.96 : 1), -0.5, 0.5);
+        const pitch = clamp(basePitch * contour * tailLift, -0.5, 0.5);
+        const breakAfter = /[。！？!?….]$/.test(part) && !isTail ? `<break time='220ms'/>` : '';
+        return `<prosody pitch='${pct(pitch)}' rate='${pct(rate)}' volume='${db(baseVol)}'>${escapeXml(part)}</prosody>${breakAfter}`;
+      })
+      .join('');
+
     const ssml =
-      `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='${v.ssmlLang}'>` +
-      `<voice name='${voiceName}'>` +
-      `<prosody pitch='${pct(opts.pitchDelta ?? 0)}' rate='${pct(opts.rateDelta ?? 0)}' volume='${db(opts.volumeDelta ?? 0)}'>` +
-      escapeXml(text) +
-      `</prosody></voice></speak>`;
+      `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='${voice.ssmlLang}'>` +
+      `<voice name='${voice.name}'>${body}</voice></speak>`;
 
     let ws: WebSocket;
     try {
@@ -118,8 +178,8 @@ export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
         const str = ev.data;
         if (str.includes('Path:audio.metadata')) {
           try {
-            const body = str.slice(str.indexOf('\r\n\r\n') + 4);
-            const meta = JSON.parse(body) as {
+            const body2 = str.slice(str.indexOf('\r\n\r\n') + 4);
+            const meta = JSON.parse(body2) as {
               Metadata?: Array<{ Type: string; Data?: { text?: { Text?: string } } }>;
             };
             for (const m of meta.Metadata ?? []) {
