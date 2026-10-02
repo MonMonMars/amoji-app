@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Amoji — Juno",
-  description: "An emotional companion that feels with you.",
+  title: "Amoji",
+  description: "An emotional AI companion who laughs, sulks, and stays with you. 識笑、識嬲、識陪住你。",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

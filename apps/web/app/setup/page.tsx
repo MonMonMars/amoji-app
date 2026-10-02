@@ -1,10 +1,10 @@
 'use client';
-import SetupFlow from '../../components/SetupFlow';
+// /setup used to be the multi-step setup — it moved to the one-page /select.
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Setup() {
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-950 py-10">
-      <SetupFlow />
-    </main>
-  );
+  const router = useRouter();
+  useEffect(() => { router.replace('/select'); }, [router]);
+  return null;
 }
