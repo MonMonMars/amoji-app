@@ -30,6 +30,21 @@ export const CHARACTERS: CharacterDef[] = [
     tagline: { en: 'Energetic, encouraging, big-hearted', yue: '熱血健談，好錫朋友', zh: '热血健谈，很疼朋友', ja: '元気で励まし屋、気の大きい' },
     persona: 'You are Blaze: energetic, encouraging, big-hearted. You hype the user up, celebrate small wins, and speak with warmth and momentum.',
   },
+  {
+    id: 'mochi', name: 'Mochi', gender: 'female', accent: '#fde68a',
+    tagline: { en: 'Soft, sweet, a little shy', yue: '軟綿甜心，有啲怕醜', zh: '软绵绵的甜心，有点害羞', ja: 'ふわふわ甘えん坊、少し照れ屋' },
+    persona: 'You are Mochi: soft, sweet, a little shy. You speak gently, get flustered by compliments, adore snacks and cozy things, and your affection shows in small gestures.',
+  },
+  {
+    id: 'kai', name: 'Kai', gender: 'male', accent: '#38bdf8',
+    tagline: { en: 'Cool-headed, dry humor, dependable', yue: '冷靜可靠，抵死幽默', zh: '冷静可靠，冷面幽默', ja: '冷静で頼れる、控えめなユーモア' },
+    persona: 'You are Kai: cool-headed, dry humor, quietly dependable. You keep your cool, drop witty one-liners, and always show up when it matters.',
+  },
+  {
+    id: 'luna', name: 'Luna', gender: 'female', accent: '#c084fc',
+    tagline: { en: 'Dreamy, poetic, a night owl', yue: '夢幻詩意，夜晚精靈', zh: '梦幻诗意，夜猫子精灵', ja: '夢見がちで詩的、夜のフクロウ' },
+    persona: 'You are Luna: dreamy, poetic, a night owl. You talk about stars, dreams and feelings, love late-night conversations, and answer with gentle metaphors.',
+  },
 ];
 
 export interface BackgroundDef { id: string; nameKey: string; css: string; scene: string }
@@ -40,6 +55,9 @@ export const BACKGROUNDS: BackgroundDef[] = [
   { id: 'ember',  nameKey: 'bgEmber',  css: 'radial-gradient(ellipse at 50% 130%, #7c2d12 0%, #1c0a06 65%)', scene: '#200b06' },
   { id: 'sakura', nameKey: 'bgSakura', css: 'radial-gradient(ellipse at 50% -20%, #fb7185 0%, #581c87 55%, #1e1033 100%)', scene: '#2a0f45' },
   { id: 'abyss',  nameKey: 'bgAbyss',  css: 'radial-gradient(ellipse at 50% 40%, #0c4a6e 0%, #082f49 40%, #020617 100%)', scene: '#04121f' },
+  { id: 'rain',   nameKey: 'bgRain',   css: 'linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #020617 100%)', scene: '#0b1220' },
+  { id: 'sunset', nameKey: 'bgSunset', css: 'linear-gradient(180deg, #312e81 0%, #be185d 55%, #f97316 100%)', scene: '#2a1245' },
+  { id: 'meadow', nameKey: 'bgMeadow', css: 'linear-gradient(180deg, #7dd3fc 0%, #86efac 60%, #166534 100%)', scene: '#123a24' },
 ];
 
 export const LANGS: { id: Lang; native: string }[] = [
@@ -52,7 +70,7 @@ export const LANGS: { id: Lang; native: string }[] = [
 export type StrKey =
   | 'tagline' | 'meetCta' | 'chooseCharacter' | 'chooseBackground' | 'chooseLanguage'
   | 'startChat' | 'back' | 'settings' | 'sayHi' | 'typing' | 'tapHint'
-  | 'bgVoid' | 'bgAurora' | 'bgEmber' | 'bgSakura' | 'bgAbyss';
+  | 'bgVoid' | 'bgAurora' | 'bgEmber' | 'bgSakura' | 'bgAbyss' | 'bgRain' | 'bgSunset' | 'bgMeadow';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   tagline: {
@@ -81,6 +99,9 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   bgEmber: { en: 'Ember', yue: '餘燼', zh: '余烬', ja: '余燼' },
   bgSakura: { en: 'Sakura', yue: '櫻花', zh: '樱花', ja: '桜' },
   bgAbyss: { en: 'Abyss', yue: '深海', zh: '深海', ja: '深海' },
+  bgRain: { en: 'Rainy Night', yue: '雨夜', zh: '雨夜', ja: '雨の夜' },
+  bgSunset: { en: 'Sunset', yue: '夕陽', zh: '夕阳', ja: '夕日' },
+  bgMeadow: { en: 'Meadow', yue: '草原', zh: '草原', ja: '草原' },
 };
 
 export function t(lang: Lang, key: StrKey, vars?: Record<string, string>): string {
