@@ -101,7 +101,7 @@ export default function Select() {
                   }`}
                 >
                   <span className="block h-16 w-full" style={{ background: b.css }} />
-                  <span className="block bg-black/50 px-2 py-1.5 text-left text-[11px] text-white/75">{t(lang, b.nameKey)}</span>
+                  <span className="block bg-black/50 px-2 py-1.5 text-left text-[11px] text-white/75">{t(lang, b.nameKey as never)}</span>
                 </button>
               );
             })}
