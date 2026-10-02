@@ -7,7 +7,7 @@ import { notifySpeaking, isSpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
 import { clientChat } from '../lib/client-chat';
 import { speak, stopSpeaking } from '../lib/voice';
-import { buildDailyGreeting, buildMemoryBlock, loadMemory, memorySummaryCount, recordVisit, rememberExchange } from '../lib/memory';
+import { buildDailyGreeting, buildMemoryBlock, memorySummaryCount, recordVisit, rememberExchange } from '../lib/memory';
 import { listenOnce, listenSupported } from '../lib/listen';
 import { t, type Lang } from '../lib/prefs';
 import type { ChatStatus } from '../lib/status';
