@@ -158,7 +158,8 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4' }
     };
 
     const midpoint = () => {
-      const [a, b] = [...pointers.values()] as [{ x: number; y: number }, { x: number; y: number }];
+      const pts = [...pointers.values()];
+      const a = pts[0]!, b = pts[1]!;
       return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
     };
 
@@ -166,7 +167,8 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4' }
       host.setPointerCapture(e.pointerId);
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, t: performance.now(), moved: 0 });
       if (pointers.size === 2) {
-        const [a, b] = [...pointers.values()] as [{ x: number; y: number }, { x: number; y: number }];
+        const pts = [...pointers.values()];
+        const a = pts[0]!, b = pts[1]!;
         pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
         lastMid = midpoint();
       }
@@ -181,7 +183,8 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4' }
       p.moved += Math.abs(dx) + Math.abs(dy);
       if (pointers.size === 2) {
         // pinch zoom + two-finger pan
-        const [a, b] = [...pointers.values()] as [{ x: number; y: number }, { x: number; y: number }];
+        const pts = [...pointers.values()];
+        const a = pts[0]!, b = pts[1]!;
         const d = Math.hypot(a.x - b.x, a.y - b.y);
         if (pinchDist > 0) orbit.dist *= pinchDist / d;
         pinchDist = d;
