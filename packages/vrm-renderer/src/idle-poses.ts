@@ -18,12 +18,29 @@ export interface IdlePoseDef extends IdlePoseOffsets {
   id: string;
 }
 
+/**
+ * The idle pose catalog. Each pose is a small, sustained body attitude the
+ * companion drifts between while nothing else is happening — standing,
+ * fidgeting, stretching, daydreaming. Values stay subtle: these are offsets on
+ * top of the engine's breathing/sway, not full keyframe animation.
+ */
 export const IDLE_POSES: IdlePoseDef[] = [
+  // --- baseline -----------------------------------------------------------
   { id: 'stand', upperDelta: 0, elbowDelta: 0, spineDelta: 0, headYaw: 0, headRollDelta: 0, leanSideDelta: 0 },
   { id: 'headTilt', upperDelta: 0.02, elbowDelta: 0.04, spineDelta: 0.01, headYaw: 0.15, headRollDelta: 0.18, leanSideDelta: 0 },
   { id: 'crossedArms', upperDelta: -0.12, elbowDelta: 0.22, spineDelta: -0.02, headYaw: 0, headRollDelta: 0, leanSideDelta: 0 },
   { id: 'lookAround', upperDelta: 0, elbowDelta: 0.02, spineDelta: 0, headYaw: -0.35, headRollDelta: 0, leanSideDelta: 0 },
   { id: 'weightShift', upperDelta: 0.04, elbowDelta: 0.02, spineDelta: 0, headYaw: 0, headRollDelta: -0.06, leanSideDelta: 0.5 },
+  // --- expanded library (r2026-10-02.9) ------------------------------------
+  { id: 'stretchUp', upperDelta: -0.06, elbowDelta: -0.05, spineDelta: -0.06, headYaw: 0, headRollDelta: 0.05, leanSideDelta: 0 },
+  { id: 'handsBehind', upperDelta: 0.08, elbowDelta: -0.08, spineDelta: 0.015, headYaw: 0.1, headRollDelta: 0, leanSideDelta: 0 },
+  { id: 'swaySoft', upperDelta: 0.02, elbowDelta: 0.03, spineDelta: 0, headYaw: 0, headRollDelta: 0.08, leanSideDelta: 0.3 },
+  { id: 'fidget', upperDelta: 0.01, elbowDelta: 0.12, spineDelta: 0, headYaw: -0.12, headRollDelta: 0, leanSideDelta: 0 },
+  { id: 'lookUp', upperDelta: -0.02, elbowDelta: 0, spineDelta: -0.03, headYaw: 0, headRollDelta: -0.04, leanSideDelta: 0 },
+  { id: 'leanIn', upperDelta: -0.03, elbowDelta: 0.06, spineDelta: 0.05, headYaw: 0.05, headRollDelta: 0, leanSideDelta: 0 },
+  { id: 'shoulderShrug', upperDelta: -0.1, elbowDelta: 0.05, spineDelta: 0, headYaw: 0, headRollDelta: 0, leanSideDelta: 0.15 },
+  { id: 'toeShift', upperDelta: 0.03, elbowDelta: 0.01, spineDelta: 0.01, headYaw: 0.2, headRollDelta: -0.03, leanSideDelta: 0.55 },
+  { id: 'daydream', upperDelta: 0.01, elbowDelta: 0.05, spineDelta: -0.015, headYaw: -0.2, headRollDelta: 0.12, leanSideDelta: -0.2 },
 ];
 
 /** how long each pose is held (ms) before switching */
