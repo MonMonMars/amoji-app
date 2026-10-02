@@ -14,13 +14,22 @@ export interface CompanionCanvasProps {
   onNotice?: (n: { reason: 'webgl' | 'asset' }) => void;
   onPoke?: () => void;
   accent?: string;
+  /** character id — gives her/him a deterministic, personal idle-motion sequence */
+  seedKey?: string;
 }
 
 const HOME = { theta: 0, phi: 1.12, dist: 1.9 };
 const HOME_TARGET = new THREE.Vector3(0, 1.05, 0);
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
-export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4' }: CompanionCanvasProps) {
+/** stable per-character hash → motion seed: same character, same body language */
+function seedFromKey(key: string): number {
+  let h = 7;
+  for (let i = 0; i < key.length; i++) h = (Math.imul(h, 31) + key.charCodeAt(i)) % 100000;
+  return h;
+}
+
+export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', seedKey }: CompanionCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const onNoticeRef = useRef(onNotice);
   onNoticeRef.current = onNotice;
@@ -87,7 +96,9 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4' }
     let vrm: VRM | null = null;
     let mixer: THREE.AnimationMixer | null = null;
     let mixerActive = false;
-    const poseSeed = Date.now() % 100000;
+    // per-character motion personality: Rin always fidgets the same way,
+    // Ren drifts through his own calm sequence — deterministic per character.
+    const poseSeed = seedKey ? seedFromKey(seedKey) : Date.now() % 100000;
     const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
     // Local/closed builds ship juno.vrm (Kizuna AI); open builds fall back to
     // seed-san.vrm (VRM Public License 1.0, VirtualCast) — see ASSET_MANIFEST.md.
@@ -344,7 +355,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4' }
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [accent]);
+  }, [accent, seedKey]);
 
   return <div ref={hostRef} className="absolute inset-0 touch-none" aria-label="companion" />;
 }

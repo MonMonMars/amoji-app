@@ -44,6 +44,7 @@ export default function Chat() {
     <main className="relative h-dvh w-screen overflow-hidden text-white" style={{ background: background.css }}>
       <CompanionCanvas
         accent={character.accent}
+        seedKey={character.id}
         onNotice={setNotice}
         onPoke={() => setPokeCount((c) => c + 1)}
       />
