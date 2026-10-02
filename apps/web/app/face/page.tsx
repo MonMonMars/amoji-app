@@ -26,7 +26,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { useEffect, useRef, useState } from 'react';
 import { AmojiFace } from '../../lib/robot-face';
-import { clientChat, type ChatMessage } from '../../lib/client-chat';
+import { clientChat } from '../../lib/client-chat';
+import type { ChatMessage } from '../../lib/llm';
 import { notifySpeaking, isSpeaking, sampleSpeech } from '../../lib/speech';
 import { speak, stopSpeaking } from '../../lib/voice';
 import { listenOnce, listenSupported } from '../../lib/listen';
