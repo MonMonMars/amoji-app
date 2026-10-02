@@ -3,15 +3,19 @@ import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints } from '../lib/companion';
 import { loadHistory, saveHistory } from '../lib/companion-store';
 import { notifySpeaking } from '../lib/speech';
-import { pickLine, type ChatterLang } from '../lib/chatter';
+import { pickLine } from '../lib/chatter';
 import { clientChat } from '../lib/client-chat';
+import { speak, stopSpeaking, voiceEnabled, setVoiceEnabled } from '../lib/voice';
+import { t, type Lang } from '../lib/prefs';
 
 interface Msg { role: 'user' | 'assistant'; content: string }
 
 export interface ChatPanelProps {
   characterName?: string;
-  lang?: ChatterLang;
+  characterId?: string;
+  lang?: Lang;
   accent?: string;
+  persona?: string;
   /** increments when the user pokes the character — triggers a poke reply */
   pokeCount?: number;
   onOpenSettings?: () => void;
@@ -21,13 +25,16 @@ const IDLE_AFTER_MS = 40_000;
 
 export default function ChatPanel({
   characterName = 'Juno',
+  characterId = 'juno',
   lang = 'yue',
   accent = '#f9a8d4',
+  persona,
   pokeCount = 0,
 }: ChatPanelProps) {
   const [history, setHistory] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const busyRef = useRef(false);
   const lastActivityRef = useRef(Date.now());
@@ -37,6 +44,7 @@ export default function ChatPanel({
 
   useEffect(() => {
     setHistory(loadHistory());
+    setVoiceOn(voiceEnabled());
   }, []);
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -46,6 +54,7 @@ export default function ChatPanel({
   const sayLocal = (text: string, hints?: Record<string, number>) => {
     feedUtterance(text);
     notifySpeaking(text);
+    speak(text, characterId, lang, hints);
     if (hints) applyLlmHints(hints);
     setHistory((h) => [...h, { role: 'assistant', content: text }]);
   };
@@ -70,7 +79,7 @@ export default function ChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pokeCount]);
 
-  // idle chatter: if the user is quiet too long, Juno speaks up
+  // idle chatter: if the user is quiet too long, she speaks up
   useEffect(() => {
     const timer = setInterval(() => {
       if (busyRef.current) return;
@@ -91,12 +100,13 @@ export default function ChatPanel({
     lastActivityRef.current = Date.now();
     setHistory((h) => [...h, { role: 'user', content: text }]);
     feedUtterance(text);
+    stopSpeaking();
     let answered = false;
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, history }),
+        body: JSON.stringify({ message: text, history, persona }),
       });
       if (!res.ok) throw new Error(String(res.status));
       const data = await res.json() as { reply?: string; emotionHints?: Record<string, number> };
@@ -104,15 +114,17 @@ export default function ChatPanel({
       const reply = data.reply || '…';
       feedUtterance(reply);
       notifySpeaking(reply);
+      speak(reply, characterId, lang, data.emotionHints);
       setHistory((h) => [...h, { role: 'assistant', content: reply }]);
       answered = true;
     } catch {
       // no server (e.g. static GitHub Pages build) — free keyless LLM from the browser
       try {
-        const r = await clientChat([...history, { role: 'user', content: text }], lang);
+        const r = await clientChat([...history, { role: 'user', content: text }], { language: lang, persona });
         applyLlmHints(r.emotionHints);
         feedUtterance(r.reply);
         notifySpeaking(r.reply);
+        speak(r.reply, characterId, lang, r.emotionHints);
         setHistory((h) => [...h, { role: 'assistant', content: r.reply }]);
         answered = true;
       } catch { /* fall through to the hiccup line */ }
@@ -129,27 +141,66 @@ export default function ChatPanel({
     sayLocal(pickLine('tutor', lang, tutorCounterRef.current++));
   };
 
+  const toggleVoice = () => {
+    const next = !voiceOn;
+    setVoiceOn(next);
+    setVoiceEnabled(next);
+  };
+
   return (
-    <div className="pointer-events-auto mx-auto flex h-72 w-full max-w-2xl flex-col gap-2 p-4">
-      <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto rounded-lg bg-black/40 p-3 text-sm">
-        {history.length === 0 && <p className="text-neutral-400">Say hi to {characterName} 👋</p>}
+    <div className="pointer-events-auto mx-auto flex w-full max-w-2xl flex-col gap-2 px-3 pb-3" style={{ height: '19rem' }}>
+      <div
+        ref={scrollRef}
+        className="flex-1 space-y-2.5 overflow-y-auto rounded-3xl border border-white/10 bg-black/30 p-4 text-sm backdrop-blur-md"
+      >
+        {history.length === 0 && <p className="text-white/40">{t(lang, 'sayHi', { name: characterName })}</p>}
         {history.map((m, i) => (
-          <p key={i} className={m.role === 'user' ? 'text-right text-pink-300' : 'text-neutral-100'}>{m.content}</p>
+          <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
+            <p
+              className={
+                m.role === 'user'
+                  ? 'max-w-[80%] rounded-2xl rounded-br-sm px-3.5 py-2 text-white'
+                  : 'max-w-[85%] rounded-2xl rounded-bl-sm bg-white/10 px-3.5 py-2 text-white/95'
+              }
+              style={m.role === 'user' ? { backgroundColor: accent } : undefined}
+            >
+              {m.content}
+            </p>
+          </div>
         ))}
-        {busy && <p className="text-neutral-400">{characterName} is typing…</p>}
+        {busy && <p className="text-white/40">{t(lang, 'typing', { name: characterName })}</p>}
       </div>
-      <div className="flex gap-2">
-        <button onClick={tutor} title="What can I do?"
-          className="rounded-lg bg-neutral-800 px-3 py-2 text-white">?</button>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={tutor}
+          title="?"
+          className="h-10 w-10 shrink-0 rounded-full border border-white/10 bg-black/30 text-white/70 backdrop-blur-md hover:bg-black/50"
+        >
+          ?
+        </button>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && void send()}
-          placeholder="Type something…"
-          className="flex-1 rounded-lg bg-neutral-800 px-3 py-2 text-white outline-none"
+          placeholder={t(lang, 'sayHi', { name: characterName })}
+          className="h-10 flex-1 rounded-full border border-white/10 bg-black/30 px-4 text-white placeholder-white/30 outline-none backdrop-blur-md focus:border-white/40"
         />
-        <button onClick={() => void send()} disabled={busy}
-          className="rounded-lg px-4 py-2 text-white disabled:opacity-50" style={{ backgroundColor: accent }}>Send</button>
+        <button
+          onClick={toggleVoice}
+          title={voiceOn ? 'voice on' : 'voice off'}
+          className={`h-10 w-10 shrink-0 rounded-full border border-white/10 backdrop-blur-md ${voiceOn ? 'text-white' : 'text-white/35'} hover:bg-black/50`}
+          style={voiceOn ? { backgroundColor: `${accent}55` } : { backgroundColor: 'rgba(0,0,0,0.3)' }}
+        >
+          {voiceOn ? '🔊' : '🔇'}
+        </button>
+        <button
+          onClick={() => void send()}
+          disabled={busy}
+          className="h-10 shrink-0 rounded-full px-5 text-sm font-semibold text-white disabled:opacity-50"
+          style={{ backgroundColor: accent }}
+        >
+          ➤
+        </button>
       </div>
     </div>
   );

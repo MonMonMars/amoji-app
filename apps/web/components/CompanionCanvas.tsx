@@ -42,7 +42,8 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4' }
     host.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#171717');
+    // transparent canvas — the page's themed gradient shows through (alpha:true)
+    scene.background = null;
     scene.add(new THREE.HemisphereLight('#ffffff', '#334155', 1.2));
     const dir = new THREE.DirectionalLight('#ffffff', 1.5);
     dir.position.set(1, 2, 2);

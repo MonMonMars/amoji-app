@@ -5,14 +5,17 @@ import { BASE_SYSTEM, languageBlock, parseEmotionHints, type ChatMessage } from 
 
 export interface ClientChatResult { reply: string; emotionHints: Record<string, number> }
 
-export async function clientChat(messages: ChatMessage[], language?: string): Promise<ClientChatResult> {
+export async function clientChat(
+  messages: ChatMessage[],
+  opts?: { language?: string; persona?: string },
+): Promise<ClientChatResult> {
   const res = await fetch('https://text.pollinations.ai/openai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'openai',
       messages: [
-        { role: 'system', content: `${BASE_SYSTEM}\n${languageBlock(language)}` },
+        { role: 'system', content: `${BASE_SYSTEM}\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}` },
         ...messages,
       ],
     }),

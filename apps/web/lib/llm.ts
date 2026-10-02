@@ -2,7 +2,7 @@ import { analyzeText } from '@amoji/emotion-core';
 import type { EmotionId } from '@amoji/emotion-core';
 
 export interface ChatMessage { role: 'user' | 'assistant' | 'system'; content: string }
-export interface ChatOptions { language?: string }
+export interface ChatOptions { language?: string; persona?: string }
 export interface LlmResult { reply: string; emotionHints: Partial<Record<EmotionId, number>> }
 export interface LlmPort { chat(messages: ChatMessage[], opts?: ChatOptions): Promise<LlmResult> }
 
@@ -56,7 +56,7 @@ export class OpenAiLlm implements LlmPort {
       body: JSON.stringify({
         model: this.model,
         messages: [
-          { role: 'system', content: `${BASE_SYSTEM}\n${languageBlock(opts?.language)}` },
+          { role: 'system', content: `${BASE_SYSTEM}\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}` },
           ...messages,
         ],
         temperature: 0.85,
@@ -80,7 +80,7 @@ export class PollinationsLlm implements LlmPort {
       body: JSON.stringify({
         model: 'openai',
         messages: [
-          { role: 'system', content: `${BASE_SYSTEM}\n${languageBlock(opts?.language)}` },
+          { role: 'system', content: `${BASE_SYSTEM}\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}` },
           ...messages,
         ],
       }),
