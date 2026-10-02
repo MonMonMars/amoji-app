@@ -60,6 +60,12 @@ export default function ChatPanel({
   useEffect(() => {
     setHistory(loadHistory());
   }, []);
+  // settings sheet can wipe the conversation from one central place
+  useEffect(() => {
+    const clear = () => setHistory([]);
+    window.addEventListener('amoji:clear-history', clear);
+    return () => window.removeEventListener('amoji:clear-history', clear);
+  }, []);
   useEffect(() => {
     if (nearBottomRef.current) {
       scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });

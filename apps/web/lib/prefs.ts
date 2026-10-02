@@ -76,7 +76,10 @@ export type StrKey =
   | 'selectTitle' | 'confirmCta' | 'comingSoon' | 'openSelect'
   | 'statusIdle' | 'statusThinking' | 'statusSpeaking' | 'statusListening'
   | 'moodJoy' | 'moodAngry' | 'moodSad' | 'moodSurprised' | 'moodRelaxed' | 'moodNeutral'
-  | 'voiceReplies' | 'neuralVoice' | 'memoryTitle' | 'forgetBtn' | 'tutorBtn' | 'micTitle';
+  | 'voiceReplies' | 'neuralVoice' | 'memoryTitle' | 'forgetBtn' | 'tutorBtn' | 'micTitle'
+  // consolidated settings menu (r2026-10-02.7)
+  | 'settingsCompanion' | 'settingsScene' | 'settingsVoice' | 'settingsData' | 'settingsHelp'
+  | 'yourName' | 'clearHistory' | 'clearHistoryConfirm' | 'forgetConfirm';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   tagline: {
@@ -131,6 +134,15 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   forgetBtn: { en: 'Forget everything', yue: '全部忘記', zh: '全部忘记', ja: 'すべて忘れる' },
   tutorBtn: { en: 'How to use', yue: '使用教學', zh: '使用教学', ja: '使い方' },
   micTitle: { en: 'Tap the orb to talk', yue: '撳個波講嘢', zh: '点彩球说话', ja: 'オーブをタップして話す' },
+  settingsCompanion: { en: 'Companion', yue: '小伙伴', zh: '伙伴', ja: '相棒' },
+  settingsScene: { en: 'Scene', yue: '場景', zh: '场景', ja: '場所' },
+  settingsVoice: { en: 'Voice', yue: '聲音', zh: '声音', ja: '音声' },
+  settingsData: { en: 'Memory & data', yue: '記憶同資料', zh: '记忆与数据', ja: '記憶とデータ' },
+  settingsHelp: { en: 'Help', yue: '幫助', zh: '帮助', ja: 'ヘルプ' },
+  yourName: { en: 'Your name', yue: '你嘅名字', zh: '你的名字', ja: 'あなたの名前' },
+  clearHistory: { en: 'Clear chat history', yue: '清空傾偈紀錄', zh: '清空聊天记录', ja: '会話履歴を消去' },
+  clearHistoryConfirm: { en: 'Clear the whole conversation history?', yue: '真係要清空晒成個傾偈紀錄？', zh: '确定要清空全部聊天记录吗？', ja: '会話履歴をすべて消去しますか？' },
+  forgetConfirm: { en: 'Forget everything she remembers about you?', yue: '要佢忘記晒所有關於你嘅記憶？', zh: '要TA忘记所有关于你的记忆吗？', ja: 'あなたのことをすべて忘れさせますか？' },
 };
 
 export function t(lang: Lang, key: StrKey, vars?: Record<string, string>): string {
