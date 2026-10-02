@@ -7,17 +7,15 @@ export interface ClientChatResult { reply: string; emotionHints: Record<string, 
 
 export async function clientChat(
   messages: ChatMessage[],
-  opts?: { language?: string; persona?: string },
+  opts?: { language?: string; persona?: string; memory?: string },
 ): Promise<ClientChatResult> {
+  const system = `${BASE_SYSTEM}\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}`;
   const res = await fetch('https://text.pollinations.ai/openai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'openai',
-      messages: [
-        { role: 'system', content: `${BASE_SYSTEM}\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}` },
-        ...messages,
-      ],
+      messages: [{ role: 'system', content: system }, ...messages],
     }),
   });
   if (!res.ok) throw new Error(`pollinations ${res.status}`);

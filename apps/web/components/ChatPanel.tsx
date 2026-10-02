@@ -6,6 +6,7 @@ import { notifySpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
 import { clientChat } from '../lib/client-chat';
 import { speak, stopSpeaking, voiceEnabled, setVoiceEnabled } from '../lib/voice';
+import { buildMemoryBlock, clearMemory, loadMemory, memorySummaryCount, rememberExchange } from '../lib/memory';
 import { t, type Lang } from '../lib/prefs';
 
 interface Msg { role: 'user' | 'assistant'; content: string }
@@ -35,6 +36,7 @@ export default function ChatPanel({
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [voiceOn, setVoiceOn] = useState(true);
+  const [memCount, setMemCount] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const busyRef = useRef(false);
   const lastActivityRef = useRef(Date.now());
@@ -45,6 +47,7 @@ export default function ChatPanel({
   useEffect(() => {
     setHistory(loadHistory());
     setVoiceOn(voiceEnabled());
+    setMemCount(memorySummaryCount(loadMemory()));
   }, []);
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -101,12 +104,15 @@ export default function ChatPanel({
     setHistory((h) => [...h, { role: 'user', content: text }]);
     feedUtterance(text);
     stopSpeaking();
+    // learn from the user's words, then inject what she remembers into her prompt
+    setMemCount(memorySummaryCount(rememberExchange(text)));
+    const memory = buildMemoryBlock(lang);
     let answered = false;
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, history, persona }),
+        body: JSON.stringify({ message: text, history, persona, memory }),
       });
       if (!res.ok) throw new Error(String(res.status));
       const data = await res.json() as { reply?: string; emotionHints?: Record<string, number> };
@@ -120,7 +126,7 @@ export default function ChatPanel({
     } catch {
       // no server (e.g. static GitHub Pages build) — free keyless LLM from the browser
       try {
-        const r = await clientChat([...history, { role: 'user', content: text }], { language: lang, persona });
+        const r = await clientChat([...history, { role: 'user', content: text }], { language: lang, persona, memory });
         applyLlmHints(r.emotionHints);
         feedUtterance(r.reply);
         notifySpeaking(r.reply);
@@ -139,6 +145,13 @@ export default function ChatPanel({
   const tutor = () => {
     lastActivityRef.current = Date.now();
     sayLocal(pickLine('tutor', lang, tutorCounterRef.current++));
+  };
+
+  const forget = () => {
+    if (window.confirm('Forget everything she remembers about you?\n要佢忘記晒所有關於你嘅記憶？')) {
+      clearMemory();
+      setMemCount(0);
+    }
   };
 
   const toggleVoice = () => {
@@ -177,6 +190,18 @@ export default function ChatPanel({
           className="h-10 w-10 shrink-0 rounded-full border border-white/10 bg-black/30 text-white/70 backdrop-blur-md hover:bg-black/50"
         >
           ?
+        </button>
+        <button
+          onClick={forget}
+          title={memCount > 0 ? `She remembers ${memCount} things about you — tap to forget` : 'Memory is empty'}
+          className="relative h-10 w-10 shrink-0 rounded-full border border-white/10 bg-black/30 backdrop-blur-md hover:bg-black/50"
+        >
+          <span className={memCount > 0 ? '' : 'opacity-35'}>🧠</span>
+          {memCount > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-white/85 px-1 text-[10px] font-bold text-black">
+              {memCount}
+            </span>
+          )}
         </button>
         <input
           value={input}

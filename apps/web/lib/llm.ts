@@ -2,7 +2,7 @@ import { analyzeText } from '@amoji/emotion-core';
 import type { EmotionId } from '@amoji/emotion-core';
 
 export interface ChatMessage { role: 'user' | 'assistant' | 'system'; content: string }
-export interface ChatOptions { language?: string; persona?: string }
+export interface ChatOptions { language?: string; persona?: string; memory?: string }
 export interface LlmResult { reply: string; emotionHints: Partial<Record<EmotionId, number>> }
 export interface LlmPort { chat(messages: ChatMessage[], opts?: ChatOptions): Promise<LlmResult> }
 
@@ -37,6 +37,10 @@ use 嘅/喺/唔/喎/啦 naturally), unless the user writes in another language, 
   return `Language: reply in ${names[language] ?? language}, regardless of the user's language.`;
 }
 
+function systemContent(opts?: ChatOptions): string {
+  return `${BASE_SYSTEM}\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}`;
+}
+
 /** One OpenAI-compatible HTTP path; every hosted provider below reuses it. */
 export class OpenAiLlm implements LlmPort {
   constructor(
@@ -55,10 +59,7 @@ export class OpenAiLlm implements LlmPort {
       },
       body: JSON.stringify({
         model: this.model,
-        messages: [
-          { role: 'system', content: `${BASE_SYSTEM}\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}` },
-          ...messages,
-        ],
+        messages: [{ role: 'system', content: systemContent(opts) }, ...messages],
         temperature: 0.85,
       }),
     });
@@ -79,10 +80,7 @@ export class PollinationsLlm implements LlmPort {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'openai',
-        messages: [
-          { role: 'system', content: `${BASE_SYSTEM}\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}` },
-          ...messages,
-        ],
+        messages: [{ role: 'system', content: systemContent(opts) }, ...messages],
       }),
     });
     if (!res.ok) throw new Error(`pollinations ${res.status}`);
