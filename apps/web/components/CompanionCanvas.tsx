@@ -7,7 +7,7 @@ import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
 import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-vrm-animation';
 import type { VRMAnimation } from '@pixiv/three-vrm-animation';
 import { mapFrameToVrm, sampleIdlePose } from '@amoji/vrm-renderer';
-import { getEngine } from '../lib/companion';
+import { tickEngine } from '../lib/companion';
 import { sampleSpeech } from '../lib/speech';
 
 export interface CompanionCanvasProps {
@@ -16,7 +16,8 @@ export interface CompanionCanvasProps {
   accent?: string;
 }
 
-const TARGET = new THREE.Vector3(0, 1.05, 0);
+const HOME = { theta: 0, phi: 1.12, dist: 1.9 };
+const HOME_TARGET = new THREE.Vector3(0, 1.05, 0);
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
 export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4' }: CompanionCanvasProps) {
@@ -51,19 +52,29 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4' }
 
     const camera = new THREE.PerspectiveCamera(35, host.clientWidth / host.clientHeight, 0.1, 20);
 
-    // spherical orbit state
-    const orbit = { theta: 0, phi: 1.12, dist: 1.9 };
+    // spherical orbit state + pannable look-target
+    const target = HOME_TARGET.clone();
+    const orbit = { theta: HOME.theta, phi: HOME.phi, dist: HOME.dist };
     const applyCamera = () => {
-      orbit.phi = clamp(orbit.phi, 0.55, 1.5);
-      orbit.dist = clamp(orbit.dist, 0.9, 4);
+      orbit.phi = clamp(orbit.phi, 0.3, 1.72);
+      orbit.dist = clamp(orbit.dist, 0.7, 5);
+      target.x = clamp(target.x, -0.9, 0.9);
+      target.y = clamp(target.y, 0.4, 1.7);
       camera.position.set(
-        TARGET.x + orbit.dist * Math.sin(orbit.phi) * Math.sin(orbit.theta),
-        TARGET.y + orbit.dist * Math.cos(orbit.phi),
-        TARGET.z + orbit.dist * Math.sin(orbit.phi) * Math.cos(orbit.theta),
+        target.x + orbit.dist * Math.sin(orbit.phi) * Math.sin(orbit.theta),
+        target.y + orbit.dist * Math.cos(orbit.phi),
+        target.z + orbit.dist * Math.sin(orbit.phi) * Math.cos(orbit.theta),
       );
-      camera.lookAt(TARGET);
+      camera.lookAt(target);
     };
     applyCamera();
+
+    // smooth camera-reset animation state
+    let resetAnim: {
+      t0: number; dur: number;
+      from: { theta: number; phi: number; dist: number };
+      fromTarget: THREE.Vector3;
+    } | null = null;
 
     // placeholder while the model is missing or loading
     const placeholder = new THREE.Mesh(
@@ -124,11 +135,16 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4' }
     };
     loadModel(0);
 
-    // ---- pointer interaction: drag = orbit, pinch/wheel = zoom, tap = poke ----
+    // ---- pointer gestures ────────────────────────────────────────────────────
+    // one finger drag   = rotate around her
+    // two finger drag   = move (pan) the camera · pinch = zoom
+    // double tap empty  = reset camera · tap / double tap her = poke
     const raycaster = new THREE.Raycaster();
     let pokeAt = -Infinity;
+    let lastEmptyTap = -Infinity;
     const pointers = new Map<number, { x: number; y: number; sx: number; sy: number; t: number; moved: number }>();
     let pinchDist = 0;
+    let lastMid: { x: number; y: number } | null = null;
 
     const hitVrm = (cx: number, cy: number): boolean => {
       if (!vrm) return false;
@@ -141,12 +157,18 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4' }
       return raycaster.intersectObject(vrm.scene, true).length > 0;
     };
 
+    const midpoint = () => {
+      const [a, b] = [...pointers.values()] as [{ x: number; y: number }, { x: number; y: number }];
+      return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    };
+
     const onPointerDown = (e: PointerEvent) => {
       host.setPointerCapture(e.pointerId);
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, t: performance.now(), moved: 0 });
       if (pointers.size === 2) {
-        const [a, b] = [...pointers.values()];
+        const [a, b] = [...pointers.values()] as [{ x: number; y: number }, { x: number; y: number }];
         pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
+        lastMid = midpoint();
       }
     };
     const onPointerMove = (e: PointerEvent) => {
@@ -158,28 +180,54 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4' }
       p.y = e.clientY;
       p.moved += Math.abs(dx) + Math.abs(dy);
       if (pointers.size === 2) {
-        const [a, b] = [...pointers.values()];
+        // pinch zoom + two-finger pan
+        const [a, b] = [...pointers.values()] as [{ x: number; y: number }, { x: number; y: number }];
         const d = Math.hypot(a.x - b.x, a.y - b.y);
         if (pinchDist > 0) orbit.dist *= pinchDist / d;
         pinchDist = d;
+        const m = midpoint();
+        if (lastMid) {
+          const scale = 0.0016 * (orbit.dist / 1.9);
+          target.x -= (m.x - lastMid.x) * scale;
+          target.y += (m.y - lastMid.y) * scale * 0.75;
+        }
+        lastMid = m;
+        resetAnim = null;
         applyCamera();
       } else if (p.moved > 6) {
         orbit.theta -= dx * 0.006;
         orbit.phi -= dy * 0.005;
+        resetAnim = null;
         applyCamera();
       }
     };
     const onPointerUp = (e: PointerEvent) => {
       const p = pointers.get(e.pointerId);
       pointers.delete(e.pointerId);
+      if (pointers.size < 2) {
+        pinchDist = 0;
+        lastMid = null;
+      }
       if (!p) return;
       const quick = performance.now() - p.t < 350;
-      const still = Math.hypot(e.clientX - p.sx, e.clientY - p.sy) <= 6;
-      if (quick && still && hitVrm(e.clientX, e.clientY)) {
-        pokeAt = performance.now();
-        onPokeRef.current?.();
+      const still = Math.hypot(e.clientX - p.sx, e.clientY - p.sy) <= 8;
+      if (quick && still) {
+        if (hitVrm(e.clientX, e.clientY)) {
+          pokeAt = performance.now();
+          onPokeRef.current?.();
+        } else {
+          const nowTs = performance.now();
+          if (nowTs - lastEmptyTap < 350) {
+            resetAnim = {
+              t0: nowTs,
+              dur: 380,
+              from: { ...orbit },
+              fromTarget: target.clone(),
+            };
+          }
+          lastEmptyTap = nowTs;
+        }
       }
-      pinchDist = 0;
     };
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
@@ -192,14 +240,25 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4' }
     host.addEventListener('pointercancel', onPointerUp);
     host.addEventListener('wheel', onWheel, { passive: false });
 
-    const engine = getEngine();
     let raf = 0;
     let last = performance.now();
     const loop = (now: number) => {
       raf = requestAnimationFrame(loop);
       const dt = Math.min(100, now - last);
       last = now;
-      const frame = engine.tick(dt);
+
+      if (resetAnim) {
+        const p = clamp((now - resetAnim.t0) / resetAnim.dur, 0, 1);
+        const ease = 1 - Math.pow(1 - p, 3);
+        orbit.theta = resetAnim.from.theta + (HOME.theta - resetAnim.from.theta) * ease;
+        orbit.phi = resetAnim.from.phi + (HOME.phi - resetAnim.from.phi) * ease;
+        orbit.dist = resetAnim.from.dist + (HOME.dist - resetAnim.from.dist) * ease;
+        target.lerpVectors(resetAnim.fromTarget, HOME_TARGET, ease);
+        if (p >= 1) resetAnim = null;
+      }
+      applyCamera();
+
+      const frame = tickEngine(dt);
       const pose = mixerActive ? undefined : sampleIdlePose(frame.t, poseSeed);
       const targets = mapFrameToVrm(frame, 1, pose);
       if (vrm) {
@@ -284,5 +343,5 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4' }
     };
   }, [accent]);
 
-  return <div ref={hostRef} className="absolute inset-0 touch-none" aria-label="Juno" />;
+  return <div ref={hostRef} className="absolute inset-0 touch-none" aria-label="companion" />;
 }

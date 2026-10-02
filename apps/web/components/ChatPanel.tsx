@@ -1,14 +1,17 @@
 'use client';
+// Chat room panel — boxless fading history, hero mic with the emotion orb.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints } from '../lib/companion';
 import { loadHistory, saveHistory } from '../lib/companion-store';
-import { notifySpeaking } from '../lib/speech';
+import { notifySpeaking, isSpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
 import { clientChat } from '../lib/client-chat';
-import { speak, stopSpeaking, voiceEnabled, setVoiceEnabled } from '../lib/voice';
-import { buildDailyGreeting, buildMemoryBlock, clearMemory, loadMemory, memorySummaryCount, recordVisit, rememberExchange } from '../lib/memory';
+import { speak, stopSpeaking } from '../lib/voice';
+import { buildDailyGreeting, buildMemoryBlock, loadMemory, memorySummaryCount, recordVisit, rememberExchange } from '../lib/memory';
 import { listenOnce, listenSupported } from '../lib/listen';
 import { t, type Lang } from '../lib/prefs';
+import type { ChatStatus } from '../lib/status';
+import EmotionOrb from './EmotionOrb';
 
 interface Msg { role: 'user' | 'assistant'; content: string }
 
@@ -20,7 +23,8 @@ export interface ChatPanelProps {
   persona?: string;
   /** increments when the user pokes the character — triggers a poke reply */
   pokeCount?: number;
-  onOpenSettings?: () => void;
+  onStatus?: (s: ChatStatus) => void;
+  onMemCount?: (n: number) => void;
 }
 
 const IDLE_AFTER_MS = 40_000;
@@ -32,31 +36,48 @@ export default function ChatPanel({
   accent = '#f9a8d4',
   persona,
   pokeCount = 0,
+  onStatus,
+  onMemCount,
 }: ChatPanelProps) {
   const [history, setHistory] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
-  const [voiceOn, setVoiceOn] = useState(true);
-  const [memCount, setMemCount] = useState(0);
   const [listening, setListening] = useState(false);
+  const [speakingNow, setSpeakingNow] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const nearBottomRef = useRef(true);
   const busyRef = useRef(false);
   const lastActivityRef = useRef(Date.now());
   const idleCounterRef = useRef(0);
-  const tutorCounterRef = useRef(0);
   const greetedRef = useRef(false);
   const listeningRef = useRef(false);
   const recStopRef = useRef<(() => void) | null>(null);
+  const onStatusRef = useRef(onStatus);
+  onStatusRef.current = onStatus;
+  const onMemCountRef = useRef(onMemCount);
+  onMemCountRef.current = onMemCount;
 
   useEffect(() => {
     setHistory(loadHistory());
-    setVoiceOn(voiceEnabled());
-    setMemCount(memorySummaryCount(loadMemory()));
   }, []);
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+    if (nearBottomRef.current) {
+      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+    }
     saveHistory(history);
   }, [history]);
+
+  // live status for the top-left plate + speaking flag for the mic orb
+  useEffect(() => {
+    const id = setInterval(() => {
+      const speaking = isSpeaking();
+      setSpeakingNow(speaking);
+      onStatusRef.current?.(
+        listeningRef.current ? 'listening' : busyRef.current ? 'thinking' : speaking ? 'speaking' : 'idle',
+      );
+    }, 250);
+    return () => clearInterval(id);
+  }, []);
 
   const sayLocal = (text: string, hints?: Record<string, number>) => {
     feedUtterance(text);
@@ -108,11 +129,12 @@ export default function ChatPanel({
     setBusy(true);
     busyRef.current = true;
     lastActivityRef.current = Date.now();
+    nearBottomRef.current = true;
     setHistory((h) => [...h, { role: 'user', content: text }]);
     feedUtterance(text);
     stopSpeaking();
     // learn from the user's words, then inject what she remembers into her prompt
-    setMemCount(memorySummaryCount(rememberExchange(text)));
+    onMemCountRef.current?.(memorySummaryCount(rememberExchange(text)));
     const memory = buildMemoryBlock(lang);
     let answered = false;
     try {
@@ -149,25 +171,7 @@ export default function ChatPanel({
     }
   };
 
-  const tutor = () => {
-    lastActivityRef.current = Date.now();
-    sayLocal(pickLine('tutor', lang, tutorCounterRef.current++));
-  };
-
-  const forget = () => {
-    if (window.confirm('Forget everything she remembers about you?\n要佢忘記晒所有關於你嘅記憶？')) {
-      clearMemory();
-      setMemCount(0);
-    }
-  };
-
-  const toggleVoice = () => {
-    const next = !voiceOn;
-    setVoiceOn(next);
-    setVoiceEnabled(next);
-  };
-
-  // tap 🎙️ to talk (uses the browser's free built-in recognizer, zh-HK for Cantonese)
+  // tap the orb to talk — the mic is the hero (ChatGPT-style); tap again to stop
   const mic = async () => {
     if (listeningRef.current) {
       recStopRef.current?.();
@@ -195,46 +199,50 @@ export default function ChatPanel({
   };
 
   return (
-    <div className="pointer-events-auto mx-auto flex w-full max-w-2xl flex-col gap-2 px-3 pb-3" style={{ height: '19rem' }}>
+    <div className="pointer-events-auto mx-auto flex w-full max-w-2xl flex-col items-center gap-1.5 px-4 pb-4">
+      {/* boxless history — newer lines opaque, older ones melt away; scrollable */}
       <div
         ref={scrollRef}
-        className="flex-1 space-y-2.5 overflow-y-auto rounded-3xl border border-white/10 bg-black/30 p-4 text-sm backdrop-blur-md"
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          nearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+        }}
+        className="w-full space-y-2.5 overflow-y-auto px-2 pb-1 pt-6 text-[15px] leading-relaxed [mask-image:linear-gradient(to_bottom,transparent,black_16%))]"
+        style={{ maxHeight: '34vh' }}
       >
-        {history.length === 0 && <p className="text-white/40">{t(lang, 'sayHi', { name: characterName })}</p>}
-        {history.map((m, i) => (
-          <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
-            <p
-              className={
-                m.role === 'user'
-                  ? 'max-w-[80%] rounded-2xl rounded-br-sm px-3.5 py-2 text-white'
-                  : 'max-w-[85%] rounded-2xl rounded-bl-sm bg-white/10 px-3.5 py-2 text-white/95'
-              }
-              style={m.role === 'user' ? { backgroundColor: accent } : undefined}
-            >
-              {m.content}
-            </p>
-          </div>
-        ))}
+        {history.length === 0 && <p className="text-center text-white/40">{t(lang, 'sayHi', { name: characterName })}</p>}
+        {history.map((m, i) => {
+          const age = history.length - 1 - i;
+          const opacity = Math.max(0.15, 1 - age * 0.14);
+          const isUser = m.role === 'user';
+          return (
+            <div key={i} className={isUser ? 'text-right' : 'text-left'} style={{ opacity }}>
+              {!isUser && i === history.length - 1 && (
+                <p className="mb-0.5 pl-1 text-[10px] font-medium uppercase tracking-widest" style={{ color: `${accent}b0` }}>
+                  {characterName}
+                </p>
+              )}
+              <p className={isUser ? '' : 'text-white/95'} style={isUser ? { color: accent } : undefined}>
+                {m.content}
+              </p>
+            </div>
+          );
+        })}
         {busy && <p className="text-white/40">{t(lang, 'typing', { name: characterName })}</p>}
-        {listening && <p className="text-white/60">🎙️ …</p>}
       </div>
-      <div className="flex items-center gap-2">
+
+      {/* input row — mic orb is the hero */}
+      <div className="flex w-full items-center gap-2.5">
         <button
-          onClick={tutor}
-          title="?"
-          className="h-10 w-10 shrink-0 rounded-full border border-white/10 bg-black/30 text-white/70 backdrop-blur-md hover:bg-black/50"
+          onClick={() => void mic()}
+          title={t(lang, 'micTitle')}
+          className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/40 backdrop-blur-md transition hover:bg-black/60"
+          style={listening ? { borderColor: `${accent}aa`, boxShadow: `0 0 24px -4px ${accent}` } : undefined}
         >
-          ?
-        </button>
-        <button
-          onClick={forget}
-          title={memCount > 0 ? `She remembers ${memCount} things about you — tap to forget` : 'Memory is empty'}
-          className="relative h-10 w-10 shrink-0 rounded-full border border-white/10 bg-black/30 backdrop-blur-md hover:bg-black/50"
-        >
-          <span className={memCount > 0 ? '' : 'opacity-35'}>🧠</span>
-          {memCount > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-white/85 px-1 text-[10px] font-bold text-black">
-              {memCount}
+          <EmotionOrb size={46} accent={accent} listening={listening} />
+          {!listening && !speakingNow && (
+            <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-white/90" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.9)' }}>
+              🎙️
             </span>
           )}
         </button>
@@ -243,31 +251,14 @@ export default function ChatPanel({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && void send()}
           placeholder={t(lang, 'sayHi', { name: characterName })}
-          className="h-10 flex-1 rounded-full border border-white/10 bg-black/30 px-4 text-white placeholder-white/30 outline-none backdrop-blur-md focus:border-white/40"
+          className="h-11 flex-1 rounded-full border border-white/10 bg-black/30 px-4 text-[15px] text-white placeholder-white/30 outline-none backdrop-blur-md focus:border-white/40"
         />
-        <button
-          onClick={() => void mic()}
-          title={listening ? 'listening… tap to stop' : 'talk to her 🎙️'}
-          className={`h-10 w-10 shrink-0 rounded-full border backdrop-blur-md transition ${
-            listening ? 'animate-pulse border-white/40 text-white' : 'border-white/10 text-white/70 hover:bg-black/50'
-          }`}
-          style={listening ? { backgroundColor: `${accent}99` } : { backgroundColor: 'rgba(0,0,0,0.3)' }}
-        >
-          🎙️
-        </button>
-        <button
-          onClick={toggleVoice}
-          title={voiceOn ? 'voice on' : 'voice off'}
-          className={`h-10 w-10 shrink-0 rounded-full border border-white/10 backdrop-blur-md ${voiceOn ? 'text-white' : 'text-white/35'} hover:bg-black/50`}
-          style={voiceOn ? { backgroundColor: `${accent}55` } : { backgroundColor: 'rgba(0,0,0,0.3)' }}
-        >
-          {voiceOn ? '🔊' : '🔇'}
-        </button>
         <button
           onClick={() => void send()}
           disabled={busy}
-          className="h-10 shrink-0 rounded-full px-5 text-sm font-semibold text-white disabled:opacity-50"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-black transition disabled:opacity-40"
           style={{ backgroundColor: accent }}
+          aria-label="send"
         >
           ➤
         </button>
