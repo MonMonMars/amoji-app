@@ -46,7 +46,7 @@ export default function Select() {
         </div>
         <div className="flex w-28 shrink-0 flex-col justify-between rounded-2xl border border-white/10 bg-white/5 p-2">
           <span className="block h-12 w-full rounded-xl" style={{ background: background.css }} />
-          <p className="pt-1.5 text-center text-[11px] text-white/60">{t(lang, background.nameKey)}</p>
+          <p className="pt-1.5 text-center text-[11px] text-white/60">{t(lang, background.nameKey as never)}</p>
         </div>
         <div className="flex w-20 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 p-2 text-center text-sm font-semibold">
           {langNative}
