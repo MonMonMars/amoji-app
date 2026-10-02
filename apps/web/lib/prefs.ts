@@ -59,6 +59,7 @@ export const CHARACTERS: CharacterDef[] = [
 
 export interface BackgroundDef { id: string; nameKey: string; css: string; scene: string }
 
+// Gradients-only roster (always available) + hand-painted CSS scenes below.
 export const BACKGROUNDS: BackgroundDef[] = [
   { id: 'void',   nameKey: 'bgVoid',   css: 'radial-gradient(ellipse at 50% 120%, #1e1b4b 0%, #0a0a0f 60%)', scene: '#0a0a0f' },
   { id: 'aurora', nameKey: 'bgAurora', css: 'linear-gradient(180deg, #022c22 0%, #065f46 45%, #0f172a 100%)', scene: '#052e24' },
@@ -68,6 +69,62 @@ export const BACKGROUNDS: BackgroundDef[] = [
   { id: 'rain',   nameKey: 'bgRain',   css: 'linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #020617 100%)', scene: '#0b1220' },
   { id: 'sunset', nameKey: 'bgSunset', css: 'linear-gradient(180deg, #312e81 0%, #be185d 55%, #f97316 100%)', scene: '#2a1245' },
   { id: 'meadow', nameKey: 'bgMeadow', css: 'linear-gradient(180deg, #7dd3fc 0%, #86efac 60%, #166534 100%)', scene: '#123a24' },
+  // --- hand-painted anime scenes (r2026-10-02.10), pure CSS art ------------
+  {
+    // Shinkai-style sunset: low sun, three layers of glowing clouds
+    id: 'cloudsea', nameKey: 'bgCloudsea',
+    css: [
+      'radial-gradient(ellipse 420px 120px at 20% 66%, rgba(255,255,255,.55), transparent 70%)',
+      'radial-gradient(ellipse 560px 150px at 72% 73%, rgba(255,214,231,.5), transparent 70%)',
+      'radial-gradient(ellipse 680px 170px at 45% 85%, rgba(255,255,255,.6), transparent 70%)',
+      'radial-gradient(circle at 50% 44%, rgba(255,242,205,.95) 0%, rgba(255,190,120,.35) 12%, transparent 32%)',
+      'linear-gradient(180deg, #1d2b64 0%, #5b2a86 22%, #b83b8c 42%, #f2708a 58%, #ffb26b 74%, #ffe3a3 100%)',
+    ].join(', '),
+    scene: '#3b1d5c',
+  },
+  {
+    // neon city night: cyan / magenta / rose glows rising from below
+    id: 'neon', nameKey: 'bgNeon',
+    css: [
+      'radial-gradient(circle at 18% 82%, rgba(34,211,238,.55), transparent 34%)',
+      'radial-gradient(circle at 82% 78%, rgba(232,121,249,.5), transparent 36%)',
+      'radial-gradient(circle at 50% 96%, rgba(251,113,133,.42), transparent 42%)',
+      'radial-gradient(ellipse at 50% 118%, rgba(56,189,248,.35), transparent 60%)',
+      'linear-gradient(180deg, #05010f 0%, #12082b 45%, #2a1157 75%, #0b0620 100%)',
+    ].join(', '),
+    scene: '#0b0620',
+  },
+  {
+    // snow-moon night: bright moon, drifting snow sparkle, cold blue horizon
+    id: 'snowmoon', nameKey: 'bgSnowmoon',
+    css: [
+      'radial-gradient(circle at 72% 20%, rgba(255,255,255,.95) 0%, rgba(226,240,255,.5) 7%, transparent 19%)',
+      'radial-gradient(ellipse at 50% 90%, rgba(190,215,255,.32), transparent 55%)',
+      'radial-gradient(circle at 14% 28%, rgba(255,255,255,.75) 0 1px, transparent 2.5px)',
+      'radial-gradient(circle at 34% 14%, rgba(255,255,255,.6) 0 1px, transparent 2.5px)',
+      'radial-gradient(circle at 54% 34%, rgba(255,255,255,.75) 0 1px, transparent 2.5px)',
+      'radial-gradient(circle at 88% 44%, rgba(255,255,255,.6) 0 1px, transparent 2.5px)',
+      'radial-gradient(circle at 24% 52%, rgba(255,255,255,.55) 0 1px, transparent 2.5px)',
+      'linear-gradient(180deg, #0a1633 0%, #14264d 55%, #274a7a 100%)',
+    ].join(', '),
+    scene: '#101f3d',
+  },
+  {
+    // milky way: diagonal star band, warm + cool stars, indigo deep space
+    id: 'galaxy', nameKey: 'bgGalaxy',
+    css: [
+      'radial-gradient(ellipse 150% 55% at 50% 26%, rgba(255,255,255,.13), transparent 62%)',
+      'radial-gradient(circle at 20% 22%, #ffd9a0 0 1.5px, transparent 3px)',
+      'radial-gradient(circle at 38% 36%, #bfe0ff 0 1.5px, transparent 3px)',
+      'radial-gradient(circle at 60% 18%, #ffffff 0 1.5px, transparent 3px)',
+      'radial-gradient(circle at 76% 40%, #ffd9a0 0 1.5px, transparent 3px)',
+      'radial-gradient(circle at 30% 60%, #bfe0ff 0 1px, transparent 2.5px)',
+      'radial-gradient(circle at 66% 62%, #ffffff 0 1px, transparent 2.5px)',
+      'radial-gradient(circle at 50% 112%, rgba(99,102,241,.4), transparent 55%)',
+      'linear-gradient(180deg, #020210 0%, #0b0b2a 55%, #161244 100%)',
+    ].join(', '),
+    scene: '#0b0b26',
+  },
 ];
 
 export const LANGS: { id: Lang; native: string }[] = [
@@ -81,6 +138,7 @@ export type StrKey =
   | 'tagline' | 'meetCta' | 'chooseCharacter' | 'chooseBackground' | 'chooseLanguage'
   | 'startChat' | 'back' | 'settings' | 'sayHi' | 'typing' | 'tapHint'
   | 'bgVoid' | 'bgAurora' | 'bgEmber' | 'bgSakura' | 'bgAbyss' | 'bgRain' | 'bgSunset' | 'bgMeadow'
+  | 'bgCloudsea' | 'bgNeon' | 'bgSnowmoon' | 'bgGalaxy'
   // v0.9.3 flow: splash → login → select → chat
   | 'loginPrompt' | 'loginCta' | 'loginSkip'
   | 'selectTitle' | 'confirmCta' | 'comingSoon' | 'openSelect'
@@ -121,6 +179,10 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   bgRain: { en: 'Rainy Night', yue: '雨夜', zh: '雨夜', ja: '雨の夜' },
   bgSunset: { en: 'Sunset', yue: '夕陽', zh: '夕阳', ja: '夕日' },
   bgMeadow: { en: 'Meadow', yue: '草原', zh: '草原', ja: '草原' },
+  bgCloudsea: { en: 'Cloud-Sea Sunset', yue: '夕燒雲海', zh: '夕烧云海', ja: '夕焼け雲海' },
+  bgNeon: { en: 'Neon City', yue: '霓虹都市', zh: '霓虹都市', ja: 'ネオン都市' },
+  bgSnowmoon: { en: 'Snow Moon', yue: '雪月', zh: '雪月夜', ja: '雪の月夜' },
+  bgGalaxy: { en: 'Milky Way', yue: '銀河', zh: '银河', ja: '天の川' },
   loginPrompt: { en: 'What should I call you?', yue: '點稱呼你呀？', zh: '该怎么称呼你？', ja: 'なんて呼べばいい？' },
   loginCta: { en: 'Continue →', yue: '開始 →', zh: '开始 →', ja: '始める →' },
   loginSkip: { en: 'skip', yue: '略過', zh: '跳过', ja: 'スキップ' },
