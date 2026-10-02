@@ -1,9 +1,10 @@
 'use client';
 // Settings menu — ONE location for every setting (r2026-10-02.7).
-// Sections: Companion (character + scene), Language, Voice, Memory & data,
-// Help (tutorial). Reachable from the chat room gear (top right).
-import { useRef, useState } from 'react';
-import { CHARACTERS, BACKGROUNDS, t, type Prefs } from '../lib/prefs';
+// Sections: Companion (character + scene), Language, Voice, Memory & data
+// (v2 browser: view / teach / copy / forget), Help (tutorial).
+// Reachable from the chat room gear (top right).
+import { useEffect, useRef, useState } from 'react';
+import { CHARACTERS, BACKGROUNDS, t, type Prefs, type StrKey } from '../lib/prefs';
 import { LangChips } from './selectors';
 import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled } from '../lib/voice';
 import { pickLine } from '../lib/chatter';
@@ -12,6 +13,10 @@ import { notifySpeaking } from '../lib/speech';
 import { loadProfile, saveProfile } from '../lib/profile';
 import { saveHistory } from '../lib/companion-store';
 import { APP_REVISION } from '../lib/revision';
+import {
+  addEntry, deleteEntry, exportMemory, loadMemory,
+  type Memory, type MemoryType,
+} from '../lib/memory';
 
 function Toggle({ on, onClick, accent }: { on: boolean; onClick: () => void; accent: string }) {
   return (
@@ -38,6 +43,21 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+const TYPE_KEY: Record<MemoryType, StrKey> = {
+  preference: 'memoryTypePreference',
+  event: 'memoryTypeEvent',
+  plan: 'memoryTypePlan',
+};
+
+const TYPE_STYLE: Record<MemoryType, string> = {
+  preference: 'bg-pink-400/15 text-pink-200',
+  event: 'bg-sky-400/15 text-sky-200',
+  plan: 'bg-amber-400/15 text-amber-200',
+};
+
+/** "Wed Oct 01 2026" → "Oct 01" */
+const shortDay = (day: string): string => (day ? day.slice(4, 10) : '');
+
 export default function SettingsSheet({
   open,
   prefs,
@@ -56,7 +76,14 @@ export default function SettingsSheet({
   const [voiceOn, setVoiceOnState] = useState(voiceEnabled());
   const [neuralOn, setNeuralOnState] = useState(neuralEnabled());
   const [name, setName] = useState(() => loadProfile().name);
+  const [mem, setMem] = useState<Memory>(loadMemory);
+  const [copied, setCopied] = useState(false);
+  const [newText, setNewText] = useState('');
+  const [newType, setNewType] = useState<MemoryType>('preference');
   const tutorNRef = useRef(0);
+  useEffect(() => {
+    if (open) { setMem(loadMemory()); setCopied(false); }
+  }, [open]);
   if (!open) return null;
   const lang = prefs.lang;
   const accent = '#f9a8d4';
@@ -76,6 +103,33 @@ export default function SettingsSheet({
     if (!window.confirm(t(lang, 'clearHistoryConfirm'))) return;
     saveHistory([]);
     window.dispatchEvent(new Event('amoji:clear-history'));
+  };
+
+  const forgetAll = () => {
+    if (!window.confirm(t(lang, 'forgetConfirm'))) return;
+    onForget();
+    setMem(loadMemory());
+  };
+
+  const copyAll = async () => {
+    try {
+      await navigator.clipboard.writeText(exportMemory());
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch { /* clipboard unavailable — stay silent */ }
+  };
+
+  const removeEntry = (id: string) => {
+    if (!window.confirm(t(lang, 'forgetOneConfirm'))) return;
+    deleteEntry(id);
+    setMem(loadMemory());
+  };
+
+  const addNew = () => {
+    if (!newText.trim()) return;
+    addEntry(newType, newText);
+    setNewText('');
+    setMem(loadMemory());
   };
 
   return (
@@ -163,19 +217,87 @@ export default function SettingsSheet({
           </Section>
 
           <Section title={t(lang, 'settingsData')}>
+            {/* header row: count + copy-all + forget-all */}
             <div className={row}>
               <span className={label}>🧠 {t(lang, 'memoryTitle')}
                 <span className="ml-2 text-xs text-white/40">{memCount > 0 ? `${memCount}` : '—'}</span>
               </span>
-              <button
-                onClick={() => {
-                  if (window.confirm(t(lang, 'forgetConfirm'))) onForget();
-                }}
-                className="rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 transition hover:bg-white/20"
-              >
-                {t(lang, 'forgetBtn')}
-              </button>
+              <div className="flex shrink-0 gap-2">
+                <button
+                  onClick={() => void copyAll()}
+                  className="rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 transition hover:bg-white/20"
+                >
+                  {copied ? t(lang, 'memoryCopied') : t(lang, 'memoryExport')}
+                </button>
+                <button
+                  onClick={forgetAll}
+                  className="rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 transition hover:bg-white/20"
+                >
+                  {t(lang, 'forgetBtn')}
+                </button>
+              </div>
             </div>
+
+            {/* memory browser — everything she remembers, editable */}
+            <p className="text-xs text-white/50">{t(lang, 'memoryBrowser')}</p>
+            <div className="max-h-44 space-y-1.5 overflow-y-auto pr-1">
+              {mem.entries.length === 0 && (
+                <p className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/35">{t(lang, 'memoryEmpty')}</p>
+              )}
+              {[...mem.entries].reverse().map((e) => (
+                <div key={e.id} className="flex items-start gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                  <span className={`mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-[10px] ${TYPE_STYLE[e.type]}`}>
+                    {t(lang, TYPE_KEY[e.type])}
+                  </span>
+                  <span className="min-w-0 flex-1 text-xs leading-relaxed text-white/80">{e.text}</span>
+                  {e.dueDay && (
+                    <span className="shrink-0 rounded bg-amber-400/10 px-1.5 py-0.5 text-[10px] text-amber-200/80">{shortDay(e.dueDay)}</span>
+                  )}
+                  {!e.dueDay && e.day && <span className="shrink-0 pt-0.5 text-[10px] text-white/30">{shortDay(e.day)}</span>}
+                  <button
+                    onClick={() => removeEntry(e.id)}
+                    className="shrink-0 rounded-full px-1.5 text-xs text-white/30 transition hover:bg-white/10 hover:text-white/70"
+                    aria-label="forget"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* teach her something new */}
+            <div className="space-y-2 rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="flex gap-1.5">
+                {(['preference', 'event', 'plan'] as MemoryType[]).map((tp) => (
+                  <button
+                    key={tp}
+                    onClick={() => setNewType(tp)}
+                    className={`rounded-full px-2.5 py-1 text-[10px] transition ${
+                      newType === tp ? `${TYPE_STYLE[tp]} ring-1 ring-white/30` : 'bg-white/5 text-white/40 hover:text-white/70'
+                    }`}
+                  >
+                    {t(lang, TYPE_KEY[tp])}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  value={newText}
+                  onChange={(e) => setNewText(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addNew()}
+                  placeholder={t(lang, 'memoryAddPlaceholder')}
+                  className="h-9 min-w-0 flex-1 rounded-full border border-white/10 bg-black/30 px-3 text-xs text-white placeholder-white/30 outline-none focus:border-white/40"
+                />
+                <button
+                  onClick={addNew}
+                  disabled={!newText.trim()}
+                  className="h-9 shrink-0 rounded-full bg-white/10 px-3.5 text-xs text-white/80 transition hover:bg-white/20 disabled:opacity-40"
+                >
+                  {t(lang, 'memoryAdd')}
+                </button>
+              </div>
+            </div>
+
             <div className={row}>
               <span className={label}>💬 {t(lang, 'clearHistory')}</span>
               <button
@@ -186,7 +308,7 @@ export default function SettingsSheet({
               </button>
             </div>
             <div className={`${row} !justify-start gap-3`}>
-              <span className={label}>👤 {t(lang, 'yourName')}</span>
+              <span className="label">👤 {t(lang, 'yourName')}</span>
               <input
                 value={name}
                 onChange={(e) => {

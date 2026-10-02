@@ -147,7 +147,10 @@ export type StrKey =
   | 'voiceReplies' | 'neuralVoice' | 'memoryTitle' | 'forgetBtn' | 'tutorBtn' | 'micTitle'
   // consolidated settings menu (r2026-10-02.7)
   | 'settingsCompanion' | 'settingsScene' | 'settingsVoice' | 'settingsData' | 'settingsHelp'
-  | 'yourName' | 'clearHistory' | 'clearHistoryConfirm' | 'forgetConfirm';
+  | 'yourName' | 'clearHistory' | 'clearHistoryConfirm' | 'forgetConfirm'
+  // memory v2 browser (r2026-10-02.11)
+  | 'memoryBrowser' | 'memoryEmpty' | 'memoryAddPlaceholder' | 'memoryAdd' | 'memoryExport'
+  | 'memoryCopied' | 'memoryTypePreference' | 'memoryTypeEvent' | 'memoryTypePlan' | 'forgetOneConfirm';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   tagline: {
@@ -215,6 +218,21 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   clearHistory: { en: 'Clear chat history', yue: '清空傾偈紀錄', zh: '清空聊天记录', ja: '会話履歴を消去' },
   clearHistoryConfirm: { en: 'Clear the whole conversation history?', yue: '真係要清空晒成個傾偈紀錄？', zh: '确定要清空全部聊天记录吗？', ja: '会話履歴をすべて消去しますか？' },
   forgetConfirm: { en: 'Forget everything she remembers about you?', yue: '要佢忘記晒所有關於你嘅記憶？', zh: '要TA忘记所有关于你的记忆吗？', ja: 'あなたのことをすべて忘れさせますか？' },
+  memoryBrowser: { en: 'What she remembers', yue: '佢記住咗嘅嘢', zh: '她记住的事', ja: '覚えていること' },
+  memoryEmpty: {
+    en: 'Nothing yet — she learns as you two chat.',
+    yue: '仲未有——傾偈傾得多，佢就會記住。',
+    zh: '还没有——聊得越多，她记得越多。',
+    ja: 'まだない——話すほど覚えるよ。',
+  },
+  memoryAddPlaceholder: { en: 'Teach her something to remember…', yue: '話樣嘢俾佢記住…', zh: '告诉她要记住的事…', ja: '覚えてほしいことを教えて…' },
+  memoryAdd: { en: 'Add', yue: '加入', zh: '添加', ja: '追加' },
+  memoryExport: { en: 'Copy all', yue: '複製全部', zh: '复制全部', ja: 'すべてコピー' },
+  memoryCopied: { en: 'Copied ✓', yue: '複製咗 ✓', zh: '已复制 ✓', ja: 'コピー ✓' },
+  memoryTypePreference: { en: 'likes', yue: '鍾意', zh: '喜欢', ja: '好き' },
+  memoryTypeEvent: { en: 'moment', yue: '往事', zh: '经历', ja: '思い出' },
+  memoryTypePlan: { en: 'plan', yue: '計劃', zh: '计划', ja: '予定' },
+  forgetOneConfirm: { en: 'Forget just this memory?', yue: '淨係唔記得呢樣嘢？', zh: '只忘记这一条吗？', ja: 'これだけ忘れる？' },
 };
 
 export function t(lang: Lang, key: StrKey, vars?: Record<string, string>): string {
@@ -251,7 +269,7 @@ export function characterById(id: string): CharacterDef {
   return CHARACTERS.find((c) => c.id === id) ?? CHARACTERS[0]!;
 }
 export function backgroundById(id: string): BackgroundDef {
-  return BACKGROUNDS.find((b) => b.id === id) ?? BACKGROUNDS[0]!;
+  return BACKGROUNDS.find((b) => b.id === b.id && b.id === id) ?? BACKGROUNDS[0]!;
 }
 
 export function usePrefs(): [Prefs, (patch: Partial<Prefs>) => void] {
