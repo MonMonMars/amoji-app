@@ -176,3 +176,29 @@ describe('felt-mood detection for instant reactions', () => {
     expect(moodToHints(detectMood('feeling really sad lately'))).toEqual({ sadness: 0.85 });
   });
 });
+
+// ---------- r2026-10-03.19: Japanese felt-mood phrases ----------
+
+describe('Japanese felt-mood detection', () => {
+  it('detects ja happy moods without tripping a negative first', () => {
+    expect(detectMood('今日はとても嬉しい！')).toBe('happy');
+    expect(detectMood('今日はとても楽しい')).toBe('happy');
+    expect(detectMood('しあわせだなあ')).toBe('happy');
+  });
+
+  it('detects ja negative moods (matched before happy)', () => {
+    expect(detectMood('最近とても疲れた')).toBe('tired');
+    expect(detectMood('少し寂しいな')).toBe('sad');
+    expect(detectMood('ちょっと怒ってる')).toBe('angry');
+    expect(detectMood('なんだか不安だ')).toBe('anxious');
+    expect(detectMood('具合が悪いみたい')).toBe('sick');
+  });
+
+  it('a ja felt mood feeds the diary and maps to expression hints', () => {
+    const m = fresh();
+    rememberExchange('今日はとても嬉しい！', m);
+    expect(m.moods[m.moods.length - 1]).toBe('happy');
+    expect(m.diary![0]!.mood).toBe('happy');
+    expect(moodToHints(detectMood('ちょっと寂しい'))).toEqual({ sadness: 0.85 });
+  });
+});

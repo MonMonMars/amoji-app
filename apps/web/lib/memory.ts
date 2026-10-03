@@ -20,6 +20,10 @@
 // a floor under whatever her reply later adds. (.18b: negative moods are
 // matched BEFORE happy — 「唔開心/不開心」 contain 「開心」, so order is the
 // fix, not lookbehind, because tsconfig targets ES2017.)
+//
+// v3.3 (r2026-10-03.19): Japanese felt-mood phrases — 嬉しい/疲れた/寂しい/
+// 怒ってる/不安/具合が悪い… so she reacts instantly in ja too, not just
+// yue/zh/en.
 
 export type MemoryType = 'preference' | 'event' | 'plan';
 
@@ -427,14 +431,16 @@ const PLAN_RES: Array<[RegExp, number]> = [
 
 // NEGATIVE moods are matched BEFORE happy: 「唔開心 / 不開心」 literally
 // contain 「開心」, so a naive first-match order reads "not happy" as happy.
+// Same discipline for ja: none of the negative ja phrases may contain a
+// happy ja phrase as a substring (they don't — checked by hand).
 // (No lookbehind — tsconfig targets ES2017.)
 const MOOD_RES: Array<[RegExp, string]> = [
-  [/好攰|好累|攰|累|tired|exhausted|sleepy|眼瞓/i, 'tired'],
-  [/唔開心|不開心|不开心|難過|难过|sad|upset|depressed|lonely|寂寞|孤單/i, 'sad'],
-  [/嬲|生氣|生气|angry|mad|frustrated|annoyed|煩/i, 'angry'],
-  [/擔心|担心|worried|anxious|nervous|緊張|紧张|怕/i, 'anxious'],
-  [/唔舒服|不舒服|sick|ill|unwell|頭痛|头痛|肚痛/i, 'sick'],
-  [/開心|开心|高兴|高興|happy|excited|great|awesome|wonderful/i, 'happy'],
+  [/好攰|好累|攰|累|tired|exhausted|sleepy|眼瞓|疲れた|疲れ|つかれた|眠い|眠たい/i, 'tired'],
+  [/唔開心|不開心|不开心|難過|难过|sad|upset|depressed|lonely|寂寞|孤單|悲しい|かなしい|寂しい|さびしい|落ち込/i, 'sad'],
+  [/嬲|生氣|生气|angry|mad|frustrated|annoyed|煩|怒|おこ|腹立|イライラ/i, 'angry'],
+  [/擔心|担心|worried|anxious|nervous|緊張|紧张|怕|不安|心配|しんぱい|きんちょう/i, 'anxious'],
+  [/唔舒服|不舒服|sick|ill|unwell|頭痛|头痛|肚痛|具合が悪い|具合悪い|病気|風邪|頭が痛い/i, 'sick'],
+  [/開心|开心|高兴|高興|happy|excited|great|awesome|wonderful|嬉しい|うれしい|楽しい|たのしい|幸せ|しあわせ/i, 'happy'],
 ];
 
 /**
