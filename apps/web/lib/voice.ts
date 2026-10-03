@@ -38,6 +38,7 @@ export interface VoiceChoice {
 // gets her/his own matrix — no more falling back to Juno's female voices.
 // r2026-10-03.36: the registry six (robbie/mika/anchor/lydia/ruby/snowy) get
 // gender-correct matrices of their own, tuned to each personality.
+// r2026-10-04.42: Alan — gender-correct male matrix, easygoing warmth.
 export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> = {
   juno: {
     yue: [
@@ -364,6 +365,21 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
       { lang: 'en-US', names: ['Ava', 'Female'], basePitch: 1.1, baseRate: 0.88 },
     ],
   },
+  // easygoing best mate — warm, level, quick to laugh (r2026-10-04.42)
+  alan: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ju', 'Male'], basePitch: 0.97, baseRate: 0.98 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Yunxi', 'Male'], basePitch: 0.97, baseRate: 0.98 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Keita', 'Male'], basePitch: 0.98, baseRate: 0.98 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Guy', 'Daniel', 'Male'], basePitch: 0.98, baseRate: 0.98 },
+    ],
+  },
 };
 
 /** Emotion → prosody for the browser-TTS fallback path (multipliers). */
@@ -434,6 +450,7 @@ const EXPRESSIVENESS: Record<string, number> = {
   robbie: 1.2,
   ruby: 1.18,
   snowy: 1.15,
+  alan: 1.15,
   hitomi: 1.15,
   aerith: 1.12,
   lydia: 1.05,

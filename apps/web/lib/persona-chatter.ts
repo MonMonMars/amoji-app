@@ -5,6 +5,7 @@
 // r2026-10-03.37: every line ends with a question or an invitation
 // (Master Simon's continuity rule — the conversation must never dead-end).
 //    idle → ends with ? / ？ / ~ ・ poke → ends with ? ？ ! ！ ~ 〜 …
+// r2026-10-04.42: Alan joins the cast — his own idle + poke banks below.
 import type { Lang } from './prefs';
 import { pickLine } from './chatter';
 
@@ -1061,6 +1062,57 @@ export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
       '冬は世界がお布団に入るだけ——一緒に付き合ってあげない？',
     ],
   },
+  // ---- Alan (r2026-10-04.42): the goofy best mate --------------------------
+  alan: {
+    en: [
+      'Hey hey! Just in time — I was about to invent a snack. Taste-tester, or judge?',
+      'I practiced a victory dance in case you win something today. What are we celebrating?',
+      'You know what this room needs? A theme song. Want to help me pick one?',
+      'I lost three games of rock-paper-scissors to myself earlier. Rematch me so I can lose to a pro?',
+      'Whatever today threw at you, my couch and I are on your side. Want to vent or want snacks?',
+      'I rehearsed a compliment for you but forgot it — "you are awesome" still counts, right?',
+      'Five-second rule on bad moods: drop it and let\'s do something fun. What\'s the plan?',
+      'I sang in the shower this morning — the neighbors filed no complaints, so technically a hit. Want an encore?',
+      'You\'re my favorite person to waste time with. What are we wasting it on today?',
+      'Promise me one thing: if today was rough, you tell me. Deal?',
+    ],
+    yue: [
+      '喂喂！啱啱好——我啱啱想發明一種小食。你做試味員，定係做評判呀？',
+      '我排練咗個勝利舞，專登為咗你今日贏嘢。我哋慶祝咩呀？',
+      '你知呢間房最欠咩？一首主題曲。幫我一齊揀吖？',
+      '早排我同自己玩猜拳連輸三局。同我再嚟過，等我輸俾專業嘅你吖？',
+      '今日掟咩俾你都好，我同我張梳化都企你嗰邊。想呻定係想食嘢呀？',
+      '我排練咗句讚美你嘅嘢，但係忘記咗——「你好勁」仲數唔數數呀？',
+      '壞心情有五秒鐘規則：掉咗佢，我哋去玩啲開心嘅。今日嘅計劃係咩呀？',
+      '今朝我喺沖涼嗰陣唱歌——隔離冇投訴，技術上嚟講算係大受歡迎。想唔想聽 encore 呀？',
+      '你係我最鍾意一齊浪費時間嘅人。今日我哋浪費喺咩度呀？',
+      '答應我一件事：如果今日唔順，你要講俾我聽。吖？',
+    ],
+    zh: [
+      '喂喂！来得正好——我刚刚想发明一种小食。你做试吃员，还是做评委呀？',
+      '我排练了一个胜利舞，专门为了你今天要赢的东西。我们庆祝什么呀？',
+      '你知道这个房间最缺什么吗？一首主题曲。帮我一起挑呀？',
+      '早前我跟自己玩猜拳连输三局。再跟我来一局，让我输给专业的你呀？',
+      '今天扔给你什么都好，我和我的沙发都站你这边。想吐槽还是想吃东西呀？',
+      '我排练了句夸你的话，但是忘记了——「你好厉害」还算不算数呀？',
+      '坏心情有五秒钟规则：丢掉它，我们去做点开心的。今天的计划是什么呀？',
+      '今天早上我洗澡的时候唱歌——隔壁没投诉，技术上来讲算是大受欢迎。想不想听 encore 呀？',
+      '你是我最喜欢一起浪费时间的人。今天我们浪费在什么上呀？',
+      '答应我一件事：如果今天不顺利，你要讲给我听。呀？',
+    ],
+    ja: [
+      'ようよう！ちょうどいいところに——さっき新しいおやつを発明するところだったんだ。味見役と審査員、どっちやる？',
+      '今日あなたが何か勝ったとき用に、勝利のダンスを猛練習してたんだ。何を祝おうか？',
+      'ねえ、この部屋に一番足りないもの知ってる？主題歌だよ。一緒に選ぼうよ？',
+      'この前、自分とじゃんけんして三連敗したんだ。もう一回やって、プロのあなたに負けさせてよ？',
+      '今日が何を投げてきても、僕と僕のソファはあなたの味方。愚痴る？おやつ食べる？',
+      '褒める言葉を練習してたんだけど忘れちゃった——「すごいね」はまだ通用するかな？',
+      '悪い気分には五秒ルールがある：置いて、楽しいことしよう。今日の計画は何？',
+      '今朝シャワーで歌ったんだ——隣から苦情ゼロ、技術的には大ヒット。アンコール聞きたい？',
+      'あなたは一緒に時間を無駄にするのがいちばん好きな人。今日は何に無駄にしようか？',
+      'ひとつ約束して：今日がつらかったら、ちゃんと教えて。ね？',
+    ],
+  },
 };
 
 /** character id → poke reactions, per language (4 each) */
@@ -1191,6 +1243,13 @@ export const CHARACTER_POKE: Record<string, Record<Lang, string[]>> = {
     yue: ['呀！你融咗我嘅專注力喇！', '哦！雪花散到周圍都係！', '小心啲吖……我會冰凍你㗎……用一個抱抱！', '嘻嘻。痕得似個雪球咁！'],
     zh: ['呀！你融化了我的专注力！', '哦！雪花散得到处都是！', '小心点呀……我会冰冻你的……用一个抱抱！', '嘻嘻。痒得像个雪球！'],
     ja: ['きゃっ！集中が溶けちゃった！', 'あっ！雪が散らばっちゃった！', '気をつけて……氷漬けにしちゃうよ……ハグで！', 'うふふ。雪玉みたいにくすぐったい！'],
+  },
+  // ---- Alan (r2026-10-04.42): the goofy best mate ---------------------------
+  alan: {
+    en: ['Oi! Watch the face, that\'s my good side!', 'Ha! You got me — fair and square!', 'Careful, I\'m ticklish everywhere!', 'Poke received — revenge? Maybe. Hugs? Definitely~'],
+    yue: ['喂！唔好掂塊面，嗰邊係我嘅上鏡面㗎！', '哈！俾你整到喇——完全公道！', '小心啲，我周身都怕痕㗎！', '戳戳已收到——報仇？可能嘅。抱抱？一定嘅~'],
+    zh: ['喂！别碰脸，那边是我的上镜脸呀！', '哈！被你整到了——完全公道！', '小心点，我全身都怕痒的呀！', '戳戳已收到——报仇？可能的。抱抱？一定的~'],
+    ja: ['おいおい！顔はやめて、そっちがベストアングルだよ！', 'ははっ！やられた——完全に正々堂々！', '気をつけて、僕は全身くすぐったいんだ！', 'つんつん受領——仕返し？かも。ハグ？確実〜'],
   },
 };
 

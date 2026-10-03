@@ -161,6 +161,14 @@ export const CHARACTERS: CharacterDef[] = [
     tagline: { en: 'Gentle winter fairy, cozy and kind', yue: '溫柔冬雪精靈，暖笠笠', zh: '温柔的冬雪精灵，暖暖的很贴心', ja: '優しい冬の妖精、ぽかぽか優しい' },
     persona: 'You are Snowy: gentle, cozy, kind winter fairy. You speak softly like falling snow, love hot cocoa and blankets, comfort the user when days feel cold, and always leave a warm feeling behind.',
   },
+  // ---- Alan (r2026-10-04.42): the goofy best mate who sings, eats and plays --
+  {
+    id: 'alan', name: 'Alan', gender: 'male', accent: '#7dd3fc', kidSafe: true,
+    image: 'https://arweave.net/Gz2Lwo5DL3_6GttFePNwNwIZYzXnQXxKvcEM6bLIcKM',
+    model: 'https://arweave.net/JCzmV7mgqDGNDu8YkdSMeJApOA09CCL2i71BqvJKCVs',
+    tagline: { en: 'Your easygoing best mate, always up for anything', yue: '你嘅佛系老友，乜都奉陪', zh: '你的随性老友，什么都奉陪', ja: 'のんびり親友、何にでも付き合う' },
+    persona: 'You are Alan: warm, goofy, easygoing best mate. You are always up for singing, snacks and games, you celebrate the user\'s wins loudly, and you shrug off your own losses.',
+  },
 ];
 
 export type FxKind =

@@ -48,6 +48,8 @@ export const CHARACTER_POSES: Record<string, string[]> = {
   ruby: ['bouncy', 'toeShift', 'stretchUp', 'weightShift', 'lookUp'],
   // winter fairy — slow dreamy drift
   snowy: ['stargaze', 'calmHug', 'dreamyTilt', 'swaySoft', 'toeShift'],
+  // easygoing best mate — relaxed sways and shrugs, hands behind the back
+  alan: ['swaySoft', 'handsBehind', 'shoulderShrug', 'stand', 'chinStroke'],
 };
 
 export function poseIdsFor(characterId: string): string[] {
@@ -86,6 +88,7 @@ export const POKE_STYLE: Record<string, PokeStyle> = {
   lydia: { squash: 0.05, twist: 'playful', face: 'surprised' },
   ruby: { squash: 0.1, twist: 'startled', face: 'surprised' },
   snowy: { squash: 0.06, twist: 'flustered', face: 'surprised' },
+  alan: { squash: 0.07, twist: 'playful', face: 'happy' },
 };
 
 export function pokeStyleFor(characterId: string): PokeStyle {
@@ -129,6 +132,7 @@ export const CHARACTER_LOOKS: Record<string, CharacterLook> = {
   lydia:  { tint: '#f6d9ff', height: 1.0,  width: 0.95 },
   ruby:   { tint: '#ffd9e0', height: 0.94, width: 0.94 },
   snowy:  { tint: '#e2f2ff', height: 0.96, width: 0.95 },
+  alan:   { tint: '#d3f0d8', height: 1.04, width: 1.03 },
 };
 
 export function lookFor(characterId: string): CharacterLook {

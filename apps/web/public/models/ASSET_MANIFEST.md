@@ -52,6 +52,15 @@ URLs through since this revision.
 | Ruby | Rabbit (059, R1) | https://arweave.net/RymRtrmhHx_f9ZDvtvIQb1noTHvILdjoTg5G7L2DR-8 | https://arweave.net/wBqJHzcXuHV0NpFcbtcBB4O2kHqdVN0Zv2QO0jHNkdI |
 | Snowy | Snowy (097, R1) | https://arweave.net/Mqs8hdg-1hpeGq8Jl_LCmhTGdydglPm2V2OGc8jJ5DY | https://arweave.net/pg0GBa3xRqupz_fZmfzEu5vka1IU5gnWW1NB_ZCXsls |
 
+## Remote cast expansion (r2026-10-04.42) — 22-character cast
+
+Alan joins the roster — same CC0 1.0 registry source and fallback chain as the
+registry six above. The cast is now 22 characters.
+
+| Character | Avatar | Model URL | Portrait URL |
+|---|---|---|---|
+| Alan | Chill (012, R1) | https://arweave.net/JCzmV7mgqDGNDu8YkdSMeJApOA09CCL2i71BqvJKCVs | https://arweave.net/Gz2Lwo5DL3_6GttFePNwNwIZYzXnQXxKvcEM6bLIcKM |
+
 ## Superseded candidates (not shipped)
 
 | File | Why rejected |

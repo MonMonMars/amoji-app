@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 // Cast & scene data integrity — r2026-10-03.35 expanded the cast to 21
-// characters, six of which carry remote registry thumbnails/models.
+// characters, six of which carry remote registry thumbnails/models;
+// r2026-10-04.42 adds Alan (22 total).
 import { BACKGROUNDS, CHARACTERS, characterById, backgroundById, DEFAULT_PREFS, type Lang } from '../lib/prefs';
 
 describe('cast roster', () => {
-  it('has 21 characters with portraits, taglines in every language, and personas', () => {
-    expect(CHARACTERS.length).toBe(21);
+  it('has 22 characters with portraits, taglines in every language, and personas', () => {
+    expect(CHARACTERS.length).toBe(22);
     for (const c of CHARACTERS) {
       // local portraits live under /portraits; the registry six carry remote thumbs
       const img = c.image ?? '';
