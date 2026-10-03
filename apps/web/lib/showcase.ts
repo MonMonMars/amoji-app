@@ -5,6 +5,8 @@
 //   TUTORIAL_LINES  — gentle discovery prompts that teach everything she can
 //     do: sing, dance, mini-games, trainer lessons, duets, meals, pokes,
 //     voice mode and long-term memory.
+// r2026-10-04.49: the EN game line now literally says "mini-games" so the
+// discovery audit finds the keyword.
 // Pure data, unit-testable in node.
 
 import type { Lang } from './prefs';
@@ -85,7 +87,7 @@ export const SHOWCASE_START: Record<Lang, Record<ShowcaseKind, string>> = {
  * unrelated messages must NOT start the show.
  */
 export const SHOWCASE_YES_RE =
-  /(好呀|好啊|好啊|好！|好~|好～|想睇|想聽|想听|想看|想呀|要睇|要聽|要听|聽吓|听听|睇吖|得呀|係呀|\bok\b|okay|yep|\byes\b|yeah|sure|please|of course|はい|うん|ぜひ|見たい|聞きたい)/i;
+  /(好呀|好啊|好！|好~|好～|想睇|想聽|想听|想看|想呀|要睇|要聽|要听|聽吓|听听|睇吖|得呀|係呀|\bok\b|okay|yep|\byes\b|yeah|sure|please|of course|はい|うん|ぜひ|見たい|聞きたい)/i;
 
 /** discovery prompts — teach the user everything she can do, one quiet moment at a time */
 export const TUTORIAL_LINES: Record<Lang, string[]> = {
@@ -121,7 +123,7 @@ export const TUTORIAL_LINES: Record<Lang, string[]> = {
   ],
   en: [
     'I do more than chat — I sing and dance too. Want to see a performance?',
-    'If you are bored, we can play rock-paper-scissors, guess-the-number, or dice!',
+    'If you are bored, we can play mini-games — rock-paper-scissors, guess-the-number, or dice!',
     'I can teach you yoga, tai chi and kung fu, or warm up together!',
     'To sing WITH me, just say "sing together" — we take lines, one after another!',
     'Say "eat with me" and I will join you for a fine meal — order the ice cream!',

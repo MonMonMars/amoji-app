@@ -9,6 +9,8 @@
 // r2026-10-04.48: CHARACTER_SONGS — featured characters own an ORIGINAL
 // signature ditty in every language (personality-tuned lyrics), so when she
 // offers to sing "a song I just wrote", what you hear is really hers.
+// r2026-10-04.49: the ja ruby ditty uses the same full-width tilde (～) as
+// the rest of the bank so the ending-character audit matches everywhere.
 
 export type SongLang = 'yue' | 'zh' | 'ja' | 'en';
 
@@ -91,7 +93,7 @@ export const CHARACTER_SONGS: Record<string, Record<SongLang, string[]>> = {
   ruby: {
     yue: ['彈彈彈！啦啦啦，紅蘿蔔，甜過蜜呀。', '一齊彈吓跳吓，開心到，飛起～'],
     zh: ['弹弹弹！啦啦啦，胡萝卜，甜过蜜呀。', '一起蹦跶蹦跶，开心到，飞起来～'],
-    ja: ['ぴょんぴょん！ららら、にんじん、あま〜い。', '一緒にぴょんぴょん、楽しく、跳ねよう〜'],
+    ja: ['ぴょんぴょん！ららら、にんじん、あま～い。', '一緒にぴょんぴょん、楽しく、跳ねよう～'],
     en: ['Boing boing! La la la, carrots sweeter than honey.', 'Bounce along with me — happiness, hopping, all the way~'],
   },
   alan: {

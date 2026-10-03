@@ -20,6 +20,8 @@
 // side-step grooves, alternating arm pumps, heel bounces and a mid-song
 // turn). It sits at the FRONT of the trigger queue so 跳舞 / dance / ダンス
 // stops falling through to 'jump'.
+// r2026-10-04.49: the mid-song turn is capped at 0.8 rad so sway + turn
+// together always stay inside the choreography bound (≤1.0).
 // Pure data + math, no DOM — fully unit-testable in node.
 
 export type MoveKind =
@@ -128,13 +130,14 @@ export function moveDeltas(kind: MoveKind, t: number): MoveDeltas {
   const u = clamp01(t);
   switch (kind) {
     case 'dance': {
-      // r2026-10-04.48 — idol choreography: six side-step grooves with
+      // r2026-10-04.48/49 — idol choreography: six side-step grooves with
       // alternating arm pumps and heel bounces, then a mid-song turn (the
-      // twist is capped at 0.9 rad so the choreography audit stays bounded)
+      // twist is capped at 0.8 rad so sway + turn together always stay
+      // inside the choreography audit bound of 1.0)
       const sway = sin(u * PI * 6);
       const pump = sin(u * PI * 12);
       const bounce = abs(sin(u * PI * 12));
-      const turn = clamp01((u - 0.34) / 0.06) * (1 - clamp01((u - 0.5) / 0.08)) * 0.9;
+      const turn = clamp01((u - 0.34) / 0.06) * (1 - clamp01((u - 0.5) / 0.08)) * 0.8;
       return {
         ...NO_MOVE,
         lArmZ: 0.3 + 0.45 * Math.max(0, pump),
