@@ -3,9 +3,13 @@
 // the Edge read-aloud endpoint (edge-tts.ts) — Cantonese 曉曼/雲龍 etc., with
 // SSML pitch/rate/volume per emotion. Fallback path: the browser's own
 // speechSynthesis with matched platform voices. Zero cost, zero API key.
+// r2026-10-03.07: strong emotions now audibly react (giggle/sigh/gasp via
+// lib/fillers), prosody swings are bigger, and speakThinkingFiller() gives the
+// "hmm…" moment while the reply is still generating.
 
 import type { Lang } from './prefs';
 import { speakEdge, stopEdge } from './edge-tts';
+import { dominant, pickInterjection, pickThinkingFiller } from './fillers';
 
 export interface VoiceChoice {
   /** BCP-47 tag to match against speechSynthesis voices */
@@ -257,47 +261,47 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
 
 /** Emotion → prosody for the browser-TTS fallback path (multipliers). */
 const EMOTION_PROSODY: Record<string, { pitch: number; rate: number; vol: number }> = {
-  joy: { pitch: 1.18, rate: 1.1, vol: 1.0 },
-  excitement: { pitch: 1.22, rate: 1.16, vol: 1.08 },
-  love: { pitch: 1.08, rate: 0.9, vol: 0.95 },
-  contentment: { pitch: 1.05, rate: 0.92, vol: 0.92 },
-  relief: { pitch: 1.02, rate: 0.95, vol: 0.9 },
-  sadness: { pitch: 0.82, rate: 0.85, vol: 0.82 },
-  shame: { pitch: 0.86, rate: 0.85, vol: 0.8 },
-  guilt: { pitch: 0.88, rate: 0.9, vol: 0.82 },
-  boredom: { pitch: 0.94, rate: 0.9, vol: 0.85 },
-  anger: { pitch: 0.9, rate: 1.08, vol: 1.12 },
-  contempt: { pitch: 0.9, rate: 0.95, vol: 0.95 },
-  disgust: { pitch: 0.88, rate: 1.0, vol: 1.0 },
-  fear: { pitch: 1.14, rate: 1.12, vol: 0.92 },
-  surprise: { pitch: 1.28, rate: 1.12, vol: 1.06 },
-  embarrassment: { pitch: 1.08, rate: 0.95, vol: 0.9 },
-  pride: { pitch: 1.1, rate: 0.98, vol: 1.02 },
-  jealousy: { pitch: 0.95, rate: 0.95, vol: 0.92 },
-  confusion: { pitch: 1.05, rate: 0.92, vol: 0.9 },
+  joy: { pitch: 1.2, rate: 1.12, vol: 1.0 },
+  excitement: { pitch: 1.26, rate: 1.18, vol: 1.1 },
+  love: { pitch: 1.1, rate: 0.88, vol: 0.95 },
+  contentment: { pitch: 1.06, rate: 0.9, vol: 0.92 },
+  relief: { pitch: 1.03, rate: 0.94, vol: 0.9 },
+  sadness: { pitch: 0.78, rate: 0.82, vol: 0.8 },
+  shame: { pitch: 0.82, rate: 0.84, vol: 0.78 },
+  guilt: { pitch: 0.84, rate: 0.88, vol: 0.8 },
+  boredom: { pitch: 0.92, rate: 0.88, vol: 0.82 },
+  anger: { pitch: 0.88, rate: 1.1, vol: 1.15 },
+  contempt: { pitch: 0.88, rate: 0.94, vol: 0.95 },
+  disgust: { pitch: 0.86, rate: 1.0, vol: 1.0 },
+  fear: { pitch: 1.18, rate: 1.14, vol: 0.92 },
+  surprise: { pitch: 1.34, rate: 1.14, vol: 1.08 },
+  embarrassment: { pitch: 1.1, rate: 0.94, vol: 0.9 },
+  pride: { pitch: 1.12, rate: 0.98, vol: 1.04 },
+  jealousy: { pitch: 0.92, rate: 0.94, vol: 0.9 },
+  confusion: { pitch: 1.08, rate: 0.9, vol: 0.9 },
   neutral: { pitch: 1.0, rate: 1.0, vol: 1.0 },
 };
 
 /** Emotion → SSML prosody for the neural path (deltas: rate/pitch fraction, volume dB). */
 const NEURAL_PROSODY: Record<string, { rate: number; pitch: number; vol: number }> = {
-  joy: { rate: 0.08, pitch: 0.08, vol: 0.1 },
-  excitement: { rate: 0.16, pitch: 0.12, vol: 0.2 },
-  love: { rate: -0.06, pitch: 0.03, vol: -0.05 },
-  contentment: { rate: -0.06, pitch: 0.0, vol: -0.1 },
-  relief: { rate: -0.04, pitch: 0.0, vol: -0.1 },
-  sadness: { rate: -0.15, pitch: -0.06, vol: -0.2 },
-  shame: { rate: -0.1, pitch: -0.04, vol: -0.2 },
-  guilt: { rate: -0.08, pitch: -0.03, vol: -0.18 },
-  boredom: { rate: -0.08, pitch: -0.02, vol: -0.15 },
-  anger: { rate: 0.08, pitch: -0.04, vol: 0.2 },
-  contempt: { rate: -0.03, pitch: -0.03, vol: 0.0 },
-  disgust: { rate: 0.0, pitch: -0.04, vol: 0.05 },
-  fear: { rate: 0.12, pitch: 0.1, vol: -0.05 },
-  surprise: { rate: 0.1, pitch: 0.18, vol: 0.15 },
-  embarrassment: { rate: -0.04, pitch: 0.04, vol: -0.1 },
-  pride: { rate: 0.0, pitch: 0.06, vol: 0.05 },
-  jealousy: { rate: -0.02, pitch: -0.02, vol: -0.05 },
-  confusion: { rate: -0.05, pitch: 0.05, vol: -0.08 },
+  joy: { rate: 0.1, pitch: 0.1, vol: 0.12 },
+  excitement: { rate: 0.2, pitch: 0.15, vol: 0.24 },
+  love: { rate: -0.07, pitch: 0.04, vol: -0.05 },
+  contentment: { rate: -0.07, pitch: 0.0, vol: -0.1 },
+  relief: { rate: -0.05, pitch: 0.0, vol: -0.1 },
+  sadness: { rate: -0.18, pitch: -0.08, vol: -0.24 },
+  shame: { rate: -0.12, pitch: -0.05, vol: -0.24 },
+  guilt: { rate: -0.1, pitch: -0.04, vol: -0.22 },
+  boredom: { rate: -0.1, pitch: -0.03, vol: -0.18 },
+  anger: { rate: 0.1, pitch: -0.05, vol: 0.24 },
+  contempt: { rate: -0.04, pitch: -0.04, vol: 0.0 },
+  disgust: { rate: 0.0, pitch: -0.05, vol: 0.06 },
+  fear: { rate: 0.14, pitch: 0.12, vol: -0.06 },
+  surprise: { rate: 0.12, pitch: 0.22, vol: 0.18 },
+  embarrassment: { rate: -0.05, pitch: 0.05, vol: -0.1 },
+  pride: { rate: 0.0, pitch: 0.07, vol: 0.06 },
+  jealousy: { rate: -0.03, pitch: -0.03, vol: -0.06 },
+  confusion: { rate: -0.06, pitch: 0.06, vol: -0.1 },
   neutral: { rate: 0, pitch: 0, vol: 0 },
 };
 
@@ -358,16 +362,6 @@ function pickVoice(characterId: string, lang: Lang): { voice: SpeechSynthesisVoi
   return { voice: null, pitch: 1, rate: 1 };
 }
 
-function dominantEmotion(hints?: Record<string, number>): string {
-  if (!hints) return 'neutral';
-  let best = 'neutral';
-  let bestV = 0.35; // below this, stay neutral — avoids constant warbling
-  for (const [k, v] of Object.entries(hints)) {
-    if (typeof v === 'number' && v > bestV) { best = k; bestV = v; }
-  }
-  return best;
-}
-
 // Split into breath-sized clauses so the pitch contour can rise and fall inside a
 // sentence — the sing-song quality that makes ChatGPT's voice feel alive.
 function clauses(text: string): string[] {
@@ -402,6 +396,17 @@ export function stopSpeaking(): void {
   if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
 }
 
+/**
+ * Short "hmm…" moment while the reply is still generating — ChatGPT does this
+ * and it makes the character feel like she's actually thinking, not loading.
+ * Caller gates on voiceEnabled(); reply speech cuts this off automatically.
+ */
+export function speakThinkingFiller(characterId: string, lang: Lang): void {
+  if (!voiceEnabled()) return;
+  const filler = pickThinkingFiller(lang);
+  speak(filler, characterId, lang, { confusion: 0.45, neutral: 0.3 });
+}
+
 /** Speak a reply with ChatGPT-style emotional prosody. Caller gates on voiceEnabled(). */
 export function speak(
   text: string,
@@ -410,9 +415,11 @@ export function speak(
   emotionHints?: Record<string, number>,
 ): void {
   if (!voiceEnabled()) return;
-  const emotion = dominantEmotion(emotionHints);
+  const { emotion, value } = dominant(emotionHints);
   const expr = EXPRESSIVENESS[characterId] ?? 1;
   const exprScale = 0.8 + 0.2 * expr; // expressive characters feel emotions harder
+  // strong feelings get an audible tic (giggle/sigh/gasp) before the words
+  const tic = pickInterjection(emotion, value, lang);
 
   // 1) Neural path (free server-grade voices, SSML prosody per emotion)
   if (neuralEnabled() && typeof WebSocket !== 'undefined') {
@@ -422,22 +429,30 @@ export function speak(
       gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
       character: characterId,
       expressiveness: expr,
+      lead: tic,
       rateDelta: clamp(np.rate * exprScale, -0.4, 0.5),
       pitchDelta: clamp(np.pitch * exprScale, -0.3, 0.4),
       volumeDelta: clamp(np.vol * exprScale, -0.5, 0.5),
     }).catch(() => {
       // endpoint unreachable — one-shot fallback to the browser voice
       stopEdge();
-      synthSpeak(text, characterId, lang, emotion, expr);
+      synthSpeak(text, characterId, lang, emotion, expr, tic);
     });
     return;
   }
 
   // 2) Browser-TTS fallback
-  synthSpeak(text, characterId, lang, emotion, expr);
+  synthSpeak(text, characterId, lang, emotion, expr, tic);
 }
 
-function synthSpeak(text: string, characterId: string, lang: Lang, emotion: string, expr: number): void {
+function synthSpeak(
+  text: string,
+  characterId: string,
+  lang: Lang,
+  emotion: string,
+  expr: number,
+  tic?: { text: string; pitch: number; rate: number },
+): void {
   if (typeof speechSynthesis === 'undefined') return;
   speechSynthesis.cancel(); // one speaker at a time
 
@@ -448,6 +463,15 @@ function synthSpeak(text: string, characterId: string, lang: Lang, emotion: stri
   const vol = clamp(em.vol, 0.4, 1);
 
   const parts = clauses(text);
+  const utterances: SpeechSynthesisUtterance[] = [];
+  if (tic) {
+    const t = new SpeechSynthesisUtterance(tic.text);
+    if (voice) t.voice = voice;
+    t.pitch = clamp(pitch * (1 + tic.pitch), 0.4, 2);
+    t.rate = clamp(rate * (1 + tic.rate), 0.6, 1.6);
+    t.volume = vol;
+    utterances.push(t);
+  }
   // Warm contour: statements drift down then settle; questions rise at the tail.
   const rising = /[？?]\s*$/.test(text);
   parts.forEach((part, i) => {
@@ -462,6 +486,7 @@ function synthSpeak(text: string, characterId: string, lang: Lang, emotion: stri
     u.pitch = clamp(pitch * contour * tailLift, 0.4, 2);
     u.rate = isTail ? clamp(rate * 0.96, 0.6, 1.6) : rate;
     u.volume = vol;
-    speechSynthesis.speak(u);
+    utterances.push(u);
   });
+  for (const u of utterances) speechSynthesis.speak(u);
 }
