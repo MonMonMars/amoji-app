@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 // registry is retired: those models shipped no emotional presets and odd
 // rest poses).
 import { BACKGROUNDS, CHARACTERS, characterById, backgroundById, DEFAULT_PREFS, type Lang } from '../lib/prefs';
+import { CAST_NO, castNo } from '../lib/castNo';
 
 describe('cast roster', () => {
   it('has 22 characters with portraits, taglines in every language, and personas', () => {
@@ -25,6 +26,14 @@ describe('cast roster', () => {
     }
     // all 22 local models are distinct — each character is her/his own person
     expect(new Set(CHARACTERS.map((c) => c.model)).size).toBe(CHARACTERS.length);
+  });
+
+  it('every character has a stable number — unique, 1..22 (r.51)', () => {
+    const numbers = CHARACTERS.map((c) => castNo(c.id));
+    for (const n of numbers) expect(n).toBeGreaterThanOrEqual(1);
+    expect(new Set(numbers).size).toBe(CHARACTERS.length);
+    // the map and the roster cover exactly the same ids
+    expect(Object.keys(CAST_NO).sort()).toEqual(CHARACTERS.map((c) => c.id).sort());
   });
 
   it('includes the extended cast from the rigmodels wishlist', () => {
