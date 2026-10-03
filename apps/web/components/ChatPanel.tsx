@@ -17,6 +17,9 @@
 // first "hmm…", every thinking-out-loud phase, and idle chatter all wear the
 // user's last felt mood (sad → softer 嗯……我喺度諗, happy → livelier,
 // angry → de-escalating); the face/orb already wore it — now the waiting does.
+// r2026-10-03.25: her LAUGH wears it too — a joke after "I'm so tired" gets
+// a soft slow chuckle and a gentle joy, not a full burst; an angry mood gets
+// a wry chuckle that defuses, a sad one a warm "thanks, I needed that".
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh } from '../lib/companion';
 import { loadHistory, saveHistory } from '../lib/companion-store';
@@ -25,7 +28,7 @@ import { pickLine } from '../lib/chatter';
 import { pickIdleLine, pickPokeLine } from '../lib/persona-chatter';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
 import { pickOuch } from '../lib/ouch';
-import { pickLaugh, LAUGH_RE } from '../lib/laugh';
+import { pickLaugh, laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { pickThinkPhrase } from '../lib/think-phrases';
 import { clientChat } from '../lib/client-chat';
 import { speak, stopSpeaking, speakThinkingFiller } from '../lib/voice';
@@ -127,19 +130,23 @@ export default function ChatPanel({
   };
 
   // speak a just-arrived reply; if the exchange was funny, giggle first and
-  // let the 3D body laugh along (squash-bounce overlay in CompanionCanvas)
-  const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1) => {
+  // let the 3D body laugh along (squash-bounce overlay in CompanionCanvas).
+  // r.25: the laugh itself wears the felt mood — a tired/sad user gets a
+  // soft, slow, sympathetic chuckle and a gentler joy lift; an angry one a
+  // wry defusing chuckle; neutral keeps the full personality burst.
+  const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string) => {
     const funny = LAUGH_RE.test(userText) || LAUGH_RE.test(reply);
     if (!funny) {
       notifySpeaking(reply);
       speak(reply, characterId, lang, hints, undefined, intensity);
       return;
     }
+    const style = laughStyleFor(mood);
     triggerLaugh();
-    applyLlmHints({ joy: 0.9 });
-    const giggle = pickLaugh(characterId, lang, laughCountRef.current++);
+    applyLlmHints({ joy: style.joy });
+    const giggle = pickLaugh(characterId, lang, laughCountRef.current++, mood);
     notifySpeaking(`${giggle} ${reply}`);
-    speak(reply, characterId, lang, { ...(hints ?? {}), joy: 0.9 }, { text: giggle, pitch: 0.28, rate: 0.22 }, intensity);
+    speak(reply, characterId, lang, { ...(hints ?? {}), joy: style.joy }, { text: giggle, pitch: style.pitch, rate: style.rate }, intensity);
   };
 
   // startup: first a welcome line; if it's a NEW day, the second line is her
@@ -240,7 +247,7 @@ export default function ChatPanel({
       if (replyHints) applyLlmHints(replyHints);
       const reply = data.reply || '…';
       feedUtterance(reply);
-      speakReply(text, reply, replyHints, felt?.intensity);
+      speakReply(text, reply, replyHints, felt?.intensity, felt?.mood);
       setHistory((h) => [...h, { role: 'assistant', content: reply }]);
       answered = true;
     } catch {
@@ -271,7 +278,7 @@ export default function ChatPanel({
         const replyHints = feltHints ? { ...feltHints, ...r.emotionHints } : r.emotionHints;
         if (replyHints) applyLlmHints(replyHints);
         feedUtterance(r.reply);
-        speakReply(text, r.reply, replyHints, felt?.intensity);
+        speakReply(text, r.reply, replyHints, felt?.intensity, felt?.mood);
         setHistory((h) => [...h.slice(0, -1), { role: 'assistant', content: r.reply }]);
         answered = true;
       } catch {
