@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-// Cast & scene data integrity — r2026-10-03.35 expanded the cast to 21
-// characters, six of which carry remote registry thumbnails/models;
-// r2026-10-04.42 adds Alan (22 total).
+// Cast & scene data integrity — r2026-10-04.50 pins the whole 22-character
+// cast to LOCAL anime VRMs under /models/cast (the remote Polygonal Mind
+// registry is retired: those models shipped no emotional presets and odd
+// rest poses).
 import { BACKGROUNDS, CHARACTERS, characterById, backgroundById, DEFAULT_PREFS, type Lang } from '../lib/prefs';
 
 describe('cast roster', () => {
@@ -16,6 +17,14 @@ describe('cast roster', () => {
       expect(c.persona.length).toBeGreaterThan(20);
       expect(['female', 'male']).toContain(c.gender);
     }
+  });
+
+  it('every character maps to a local cast VRM — no remote models (r.50)', () => {
+    for (const c of CHARACTERS) {
+      expect(c.model).toMatch(/^cast\/[a-z0-9-]+\.vrm$/);
+    }
+    // all 22 local models are distinct — each character is her/his own person
+    expect(new Set(CHARACTERS.map((c) => c.model)).size).toBe(CHARACTERS.length);
   });
 
   it('includes the extended cast from the rigmodels wishlist', () => {

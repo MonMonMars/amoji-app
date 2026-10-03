@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin } from '@pixiv/three-vrm';
-import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
+import type { VRM } from '@pixiv/three-vrm';
 import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-vrm-animation';
 import type { VRMAnimation } from '@pixiv/three-vrm-animation';
 import { mapFrameToVrm, posesByIds, sampleIdlePoseFrom } from '@amoji/vrm-renderer';
@@ -12,6 +12,8 @@ import { moveDeltas, moveEnvelope } from '../lib/moves';
 import { characterById } from '../lib/prefs';
 import { pokeStyleFor, poseIdsFor, lookFor } from '../lib/persona';
 import { sampleSpeech } from '../lib/speech';
+import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
+import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
 
 export interface CompanionCanvasProps {
   onNotice?: (n: { reason: 'webgl' | 'asset' }) => void;
@@ -26,9 +28,6 @@ const HOME_TARGET = new THREE.Vector3(0, 1.05, 0);
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
 // Vertical orbit range, in radians measured from straight-up (polar angle).
-// PHI_MAX a touch past horizontal lets the camera swing LOW and look UP at
-// her (low-angle shot) without ever going under the floor — modest widening,
-// per request. Tune these two numbers to change how far up/down you can orbit.
 const PHI_MIN = 0.25;
 const PHI_MAX = 1.98;
 
@@ -112,7 +111,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     placeholder.position.set(0, 0.9, 0);
     scene.add(placeholder);
 
-    let vrm: VRM | null = null;
+    let avatar: Avatar | null = null;
     let mixer: THREE.AnimationMixer | null = null;
     let mixerActive = false;
     // per-character motion personality: Rin always fidgets the same way,
@@ -129,48 +128,28 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     const BASE_SX = look.width;
     const BASE_SY = look.height;
     const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
-    // Per-character model first (CharacterDef.model — a local /models file or
-    // an absolute https VRM URL), then the shipped defaults. Local/closed
-    // builds ship juno.vrm (Kizuna AI); open builds fall back to seed-san.vrm
-    // (VRM Public License 1.0, VirtualCast) — see ASSET_MANIFEST.md.
-    // r2026-10-03.32: a remote model that fails (0.x VRM, dead link, no CORS)
-    // simply walks the chain, so a bad URL degrades to the fallback instead
-    // of breaking the scene.
+    // r2026-10-04.50: every character maps to a local anime VRM under
+    // /models/cast (see ASSET_MANIFEST.md). Load strategy per candidate:
+    //   1. three-vrm plugin parse → VRM 1.0 avatar (VRMA idle clip eligible)
+    //   2. plain GLTF parse → generic avatar (VRM 0.x legacy rig; bones and
+    //      morphs are driven through the humanBones table with automatic
+    //      facing + arm calibration, so a legacy model never shows its back
+    //      or a raised-arms rest pose)
+    //   3. any failure walks the chain to the next candidate.
     const ownModel = seedKey ? characterById(seedKey).model : undefined;
     const MODEL_CANDIDATES = [ownModel, 'juno.vrm', 'seed-san.vrm'].filter(
       (m): m is string => !!m,
     );
 
-    const loader = new GLTFLoader();
-    loader.register((parser) => new VRMLoaderPlugin(parser));
-
-    const onModelLoaded = (gltf: unknown) => {
-      vrm = (gltf as unknown as { userData: { vrm: VRM } }).userData.vrm;
-      scene.remove(placeholder);
-      scene.add(vrm.scene);
-      vrm.scene.position.set(0, 0, 0);
-
-      // r2026-10-03.28: tint every material toward the character look. The tint
-      // is near-white, so it shifts the whole palette (outfit, hair, light on
-      // skin) without destroying natural skin tones.
-      const tint = new THREE.Color(look.tint);
-      vrm.scene.traverse((node) => {
-        const mesh = node as THREE.Mesh;
-        if (!mesh.isMesh) return;
-        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        for (const m of mats) {
-          const mat = m as THREE.MeshStandardMaterial;
-          if (mat.color) mat.color.multiply(tint);
-        }
-      });
-
+    const attachIdleClip = (vrm: VRM) => {
       // idle VRMA animation: body motion from the clip, expressions stay ours
       const animLoader = new GLTFLoader();
       animLoader.register((parser) => new VRMAnimationLoaderPlugin(parser));
       animLoader.load(`${ASSET_BASE}/models/idle.vrma`, (animGltf) => {
         try {
           const anims = (animGltf as unknown as { userData: { vrmAnimations: VRMAnimation[] } }).userData.vrmAnimations;
-          if (!anims?.length || !vrm) return;
+          if (!anims?.length || !avatar || avatar.kind !== 'v1') return;
+          const v1 = avatar as Avatar & { vrm?: VRM };
           const clip = createVRMAnimationClip(anims[0]!, vrm);
           // strip expression tracks so speech/visemes keep full control of the face
           clip.tracks = clip.tracks.filter((t) => !t.name.includes('expression'));
@@ -180,12 +159,46 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           action.setLoop(THREE.LoopRepeat, Infinity);
           action.play();
           mixerActive = true;
+          avatar.clipDrivesBody = true;
+          void v1;
         } catch {
           onNoticeRef.current?.({ reason: 'asset' });
         }
       }, undefined, () => {
         // no idle clip — procedural idle still carries the body
       });
+    };
+
+    const mountAvatar = (a: Avatar) => {
+      avatar = a;
+      scene.remove(placeholder);
+      scene.add(a.root);
+      a.root.position.set(0, 0, 0);
+
+      // r2026-10-03.28: tint every material toward the character look. The tint
+      // is near-white, so it shifts the whole palette (outfit, hair, light on
+      // skin) without destroying natural skin tones.
+      const tint = new THREE.Color(look.tint);
+      a.root.traverse((node) => {
+        const mesh = node as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const m of mats) {
+          const mat = m as THREE.MeshStandardMaterial;
+          if (mat.color) mat.color.multiply(tint);
+        }
+      });
+    };
+
+    const loadPlain = (index: number, url: string) => {
+      const plain = new GLTFLoader();
+      plain.load(url, (gltf) => {
+        try {
+          mountAvatar(createGenericAvatar(gltf));
+        } catch {
+          loadModel(index + 1);
+        }
+      }, undefined, () => loadModel(index + 1));
     };
 
     const loadModel = (index: number) => {
@@ -195,11 +208,21 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       }
       const cand = MODEL_CANDIDATES[index]!;
       const url = /^https?:\/\//.test(cand) ? cand : `${ASSET_BASE}/models/${cand}`;
-      loader.load(url, onModelLoaded, undefined, () => loadModel(index + 1));
+      const vrmLoader = new GLTFLoader();
+      vrmLoader.register((parser) => new VRMLoaderPlugin(parser));
+      vrmLoader.load(url, (gltf) => {
+        const v = (gltf as unknown as { userData: { vrm?: VRM } }).userData.vrm;
+        if (!v) {
+          loadPlain(index, url);
+          return;
+        }
+        mountAvatar(createV1Avatar(v));
+        attachIdleClip(v);
+      }, undefined, () => loadPlain(index, url));
     };
     loadModel(0);
 
-    // ---- pointer gestures ────────────────────────────────────────────────────
+    // ---- pointer gestures ────────────────────────────────────────────────
     // one finger drag   = rotate around her
     // two finger drag   = move (pan) the camera · pinch = zoom
     // double tap empty  = reset camera · tap / double tap her = poke
@@ -211,14 +234,14 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     let lastMid: { x: number; y: number } | null = null;
 
     const hitVrm = (cx: number, cy: number): boolean => {
-      if (!vrm) return false;
+      if (!avatar) return false;
       const rect = host.getBoundingClientRect();
       const ndc = new THREE.Vector2(
         ((cx - rect.left) / rect.width) * 2 - 1,
         -((cy - rect.top) / rect.height) * 2 + 1,
       );
       raycaster.setFromCamera(ndc, camera);
-      return raycaster.intersectObject(vrm.scene, true).length > 0;
+      return raycaster.intersectObject(avatar.root, true).length > 0;
     };
 
     const midpoint = () => {
@@ -331,14 +354,8 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       // r2026-10-03.39: a dialogue-triggered movement performance (sing / jump
       // / kungfu / taichi / piano / jog), stamped on the same clock as `now`.
       const mv = activeMove(now);
-      if (vrm) {
-        const em = vrm.expressionManager;
-        if (em) {
-          // r2026-10-03.32: remote cast models may ship without every preset —
-          // a missing shape must never crash the render loop.
-          const setEm = (name: string, v: number) => {
-            try { em.setValue(name, v); } catch { /* preset absent on this model */ }
-          };
+      if (avatar) {
+        {
           // poke reaction: whole-body flinch — shoved back away from the
           // camera, knees dip, squash-bounce, then a spring wobble home (~900ms).
           // laugh reaction: rhythmic belly-bounce giggle, head thrown back (~1.6s).
@@ -385,13 +402,13 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
               sz += md.stretch * env;
               rotX += md.spineX * 0.7 * env; // let the lean read through the root too
             }
-            vrm.scene.position.set(px, py, pz);
-            vrm.scene.scale.set(sx * BASE_SX, sy * BASE_SY, sz * BASE_SX);
-            vrm.scene.rotation.set(rotX, rotY, 0);
+            avatar.root.position.set(px, py, pz);
+            avatar.root.scale.set(sx * BASE_SX, sy * BASE_SY, sz * BASE_SX);
+            avatar.root.rotation.set(rotX, rotY, 0);
           } else {
-            vrm.scene.position.set(0, 0, 0);
-            vrm.scene.scale.set(BASE_SX, BASE_SY, BASE_SX);
-            vrm.scene.rotation.set(0, 0, 0);
+            avatar.root.position.set(0, 0, 0);
+            avatar.root.scale.set(BASE_SX, BASE_SY, BASE_SX);
+            avatar.root.rotation.set(0, 0, 0);
           }
 
           // speech visemes: duck the emotion shapes while the mouth talks
@@ -400,6 +417,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           const v = (x: number) => clamp(x * duck + (sp ? 0 : 0), 0, 1);
           const pokeBoost = 0.9 * boost;
           const laughBoost = 0.85 * laugh; // full smile while the giggles play
+          const setEm = (name: string, val: number) => avatar!.setExpression(name, val);
           setEm('happy', clamp(v(Math.max(targets.blendShape.joy, targets.blendShape.fun)) + (poke.face === 'happy' ? pokeBoost : 0) + laughBoost, 0, 1));
           setEm('angry', v(targets.blendShape.angry) + (poke.face === 'angry' ? pokeBoost : 0));
           setEm('sad', v(targets.blendShape.sorrow));
@@ -420,53 +438,41 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
             setEm('ee', 0); setEm('oh', 0);
           }
         }
-        const setRot = (name: VRMHumanBoneName, axis: 'x' | 'y' | 'z', val: number) => {
-          const node = vrm?.humanoid?.getNormalizedBoneNode(name);
-          if (node) node.rotation[axis] = val;
-        };
+
         const b = targets.bones;
-        if (mixerActive) {
-          // clip drives the body — keep only a whisper of procedural head life
+        const poseTargets: AvatarPose = {
+          headX: b.headPitch, headY: b.headYaw, headZ: b.headRoll,
+          spineX: b.spinePitch, chestX: b.chestPitch,
+          leftUpperArm: b.leftUpperArm, rightUpperArm: b.rightUpperArm,
+          leftLowerArm: b.leftLowerArm, rightLowerArm: b.rightLowerArm,
+          spineY: 0, chestZ: 0, lArmX: 0, rArmX: 0, lElbowZ: 0, rElbowZ: 0,
+        };
+        if (avatar.kind === 'v1' && mixerActive) {
           mixer?.update(dt / 1000);
-          setRot('head', 'x', b.headPitch * 0.5);
-          setRot('head', 'y', b.headYaw * 0.5);
-          setRot('head', 'z', b.headRoll * 0.5);
-        } else {
-          setRot('head', 'x', b.headPitch);
-          setRot('head', 'y', b.headYaw);
-          setRot('head', 'z', b.headRoll);
-          setRot('leftUpperArm', 'z', -b.leftUpperArm);
-          setRot('rightUpperArm', 'z', b.rightUpperArm);
-          setRot('leftLowerArm', 'z', -b.leftLowerArm);
-          setRot('rightLowerArm', 'z', b.rightLowerArm);
-          setRot('spine', 'x', b.spinePitch);
-          setRot('chest', 'x', b.chestPitch);
         }
-        // r2026-10-03.39 — movement performance: choreographed deltas layered
-        // additively over whatever the base pose/clip just wrote, faded by the
-        // envelope so the body always settles back to neutral when it ends.
+        // r2026-10-03.39 / r.50 — movement performance: choreographed deltas
+        // folded into the pose (each avatar kind maps them onto its own axes),
+        // faded by the envelope so the body settles back to neutral at the end.
         if (mv) {
           const env = moveEnvelope(mv.t);
           if (env > 0.001) {
             const d = moveDeltas(mv.kind, mv.t);
-            const addRot = (name: VRMHumanBoneName, axis: 'x' | 'y' | 'z', val: number) => {
-              const node = vrm?.humanoid?.getNormalizedBoneNode(name);
-              if (node) node.rotation[axis] += val * env;
-            };
-            addRot('leftUpperArm', 'z', d.lArmZ);
-            addRot('rightUpperArm', 'z', d.rArmZ);
-            addRot('leftUpperArm', 'x', d.lArmX);
-            addRot('rightUpperArm', 'x', d.rArmX);
-            addRot('leftLowerArm', 'z', d.lElbowZ);
-            addRot('rightLowerArm', 'z', d.rElbowZ);
-            addRot('spine', 'y', d.spineY);
-            addRot('chest', 'z', d.chestZ);
-            addRot('head', 'x', d.headX);
-            addRot('head', 'y', d.headY);
-            addRot('head', 'z', d.headZ);
+            poseTargets.headX += d.headX * env;
+            poseTargets.headY += d.headY * env;
+            poseTargets.headZ += d.headZ * env;
+            poseTargets.spineY += d.spineY * env;
+            poseTargets.chestZ += d.chestZ * env;
+            poseTargets.lArmX += d.lArmX * env;
+            poseTargets.rArmX += d.rArmX * env;
+            poseTargets.lElbowZ += d.lElbowZ * env;
+            poseTargets.rElbowZ += d.rElbowZ * env;
+            // arm raises are stored in "lowering" units (same as the mapper)
+            poseTargets.leftUpperArm -= d.lArmZ * env;
+            poseTargets.rightUpperArm -= d.rArmZ * env;
           }
         }
-        vrm.update(dt / 1000);
+        avatar.applyPose(poseTargets);
+        avatar.update(dt / 1000);
       } else {
         placeholder.rotation.y += 0.003;
       }
@@ -489,7 +495,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       host.removeEventListener('pointerup', onPointerUp);
       host.removeEventListener('pointercancel', onPointerUp);
       host.removeEventListener('wheel', onWheel);
-      vrm?.scene.removeFromParent();
+      avatar?.root.removeFromParent();
       renderer.dispose();
       renderer.domElement.remove();
     };
