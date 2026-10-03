@@ -39,8 +39,12 @@
 // "you've gone quiet" follow-ups from ~2 min, and a soft closer at ~5 min
 // said ONCE — then she waits instead of nagging. Any real user action
 // (message, poke, spoken word, even tapping the mic off) resets the curve.
+// r2026-10-03.39: activity dialogue sets her body off — "sing for me",
+// "跳一下", "kung fu!", "太極", "play the piano", "跑步" each trigger a
+// choreographed movement-library performance while her reply plays.
 import { useEffect, useRef, useState } from 'react';
-import { feedUtterance, applyLlmHints, triggerLaugh } from '../lib/companion';
+import { feedUtterance, applyLlmHints, triggerLaugh, triggerMove } from '../lib/companion';
+import { detectMove } from '../lib/moves';
 import { loadHistory, saveHistory } from '../lib/companion-store';
 import { notifySpeaking, isSpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
@@ -171,7 +175,12 @@ export default function ChatPanel({
   // r.25: the laugh itself wears the felt mood — a tired/sad user gets a
   // soft, slow, sympathetic chuckle and a gentler joy lift; an angry one a
   // wry defusing chuckle; neutral keeps the full personality burst.
+  // r.39: activity dialogue also sets her body off — singing, jumping, kung
+  // fu, tai chi, piano, jogging each trigger a choreographed performance
+  // (movement library) while the reply plays, from YOUR words or her own.
   const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string) => {
+    const mv = detectMove(userText) ?? detectMove(reply);
+    if (mv) triggerMove(mv);
     const funny = LAUGH_RE.test(userText) || LAUGH_RE.test(reply);
     if (!funny) {
       notifySpeaking(reply);
