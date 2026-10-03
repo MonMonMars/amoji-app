@@ -11,6 +11,8 @@
 // r2026-10-03.21: felt-mood intensity now lifts her VOICE too — 超開心 rings
 // brighter and quicker, 勁攰 sinks slower and softer; plain moods (intensity
 // 1) leave every delta exactly where it was.
+// r2026-10-03.24: the thinking filler takes an optional mood — a sad user's
+// first "hmm…" is softer and slower than a happy one's (MOOD_FILLERS).
 
 import type { Lang } from './prefs';
 import { speakEdge, stopEdge } from './edge-tts';
@@ -408,10 +410,12 @@ export function stopSpeaking(): void {
  * Short "hmm…" moment while the reply is still generating — ChatGPT does this
  * and it makes the character feel like she's actually thinking, not loading.
  * The mouth moves with the filler; the reply speech cuts it off automatically.
+ * r2026-10-03.24: an optional felt mood tints the filler text itself (the
+ * face/orb already wear the mood via applyLlmHints in the caller).
  */
-export function speakThinkingFiller(characterId: string, lang: Lang): void {
+export function speakThinkingFiller(characterId: string, lang: Lang, mood?: string): void {
   if (!voiceEnabled()) return;
-  const filler = pickThinkingFiller(lang);
+  const filler = pickThinkingFiller(lang, mood);
   notifySpeaking(filler);
   speak(filler, characterId, lang, { confusion: 0.45, neutral: 0.3 });
 }
