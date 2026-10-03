@@ -8,9 +8,10 @@ const KINDS: MoveKind[] = [
   'violin', 'piano',
   'dine', 'eat',
   'jog',
+  'yoga', 'stretch',
 ];
 
-describe('dialogue-triggered movement library (r.39 + r.41)', () => {
+describe('dialogue-triggered movement library (r.39 + r.41 + r.45)', () => {
   it('every move has a sane duration and a trigger regex', () => {
     for (const k of KINDS) {
       expect(MOVE_DUR[k]).toBeGreaterThanOrEqual(2000);
@@ -54,6 +55,12 @@ describe('dialogue-triggered movement library (r.39 + r.41)', () => {
       ['go for a run together', 'jog'],
       ['一齊跑步！', 'jog'],
       ['ジョギング行こう！', 'jog'],
+      ['做瑜伽好唔好呀？', 'yoga'],
+      ["let's do yoga together", 'yoga'],
+      ['ヨガの時間！', 'yoga'],
+      ['拉筋熱身', 'stretch'],
+      ["let's warm up", 'stretch'],
+      ['ストレッチしましょ', 'stretch'],
     ];
     for (const [text, kind] of cases) {
       expect(detectMove(text), `${text} → ${kind}`).toBe(kind);

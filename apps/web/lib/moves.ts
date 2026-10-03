@@ -11,13 +11,19 @@
 // (no longer misrouted to piano), and mealtime dialogue sets her eating:
 // casual snacking (ice cream!) or an elegant fine-dining toast, depending
 // on what you said.
+// r2026-10-04.45: two trainer moves join the catalog for the exercise
+// lessons — 'yoga' is a slow sun-salutation flow (arms sweep overhead,
+// fold forward, half-lift, rise home) and 'stretch' is the warm-up set
+// (arm circles into side bends with slow head rolls). Both ride the same
+// additive overlay; 'r45 exercises.ts' drives them step by step.
 // Pure data + math, no DOM — fully unit-testable in node.
 
 export type MoveKind =
   | 'sing' | 'jump' | 'kungfu' | 'taichi'
   | 'violin' | 'piano'
   | 'dine' | 'eat'
-  | 'jog';
+  | 'jog'
+  | 'yoga' | 'stretch';
 
 /** performance length per move, ms */
 export const MOVE_DUR: Record<MoveKind, number> = {
@@ -30,6 +36,8 @@ export const MOVE_DUR: Record<MoveKind, number> = {
   dine: 9000,
   eat: 7000,
   jog: 4000,
+  yoga: 9000,
+  stretch: 6000,
 };
 
 /**
@@ -40,6 +48,9 @@ export const MOVE_DUR: Record<MoveKind, number> = {
  * performance now — 小提琴 / violin / バイオリン no longer lands on piano),
  * and dine is checked before eat so "一齊食大餐" gets the elegant toast,
  * not the casual munch.
+ * r2026-10-04.45: yoga and stretch sit at the back of the queue (lowest
+ * priority) — a lesson trigger in exercises.ts intercepts first, these
+ * catch stray mentions inside ordinary replies.
  */
 export const MOVE_TRIGGERS: Record<MoveKind, RegExp> = {
   sing: /(唱歌|唱首歌|唱k|一齊唱|一齐唱|唱吓|唱啊|唱啦|唱個|唱个|\bsing(?:ing)?\b|\bkaraoke\b|カラオケ|歌を歌|うたって)/i,
@@ -51,6 +62,8 @@ export const MOVE_TRIGGERS: Record<MoveKind, RegExp> = {
   dine: /(fine ?dining|燭光晚餐|烛光晚餐|共進晚餐|共进晚餐|一齊食大餐|一齐食大餐|食大餐|吃大餐|高級餐廳|高级餐厅|豪華晚餐|豪华晚餐|dinner date|燭光|烛光)/i,
   eat: /(食雪糕|吃雪糕|食雪條|食冰|雪糕|冰淇淋|冰激淋|食嘢|吃嘢|食飯|吃饭|一齊食|一齐食|開餐|开饭|請你食|请吃饭|\bice ?cream\b|食薯片)/i,
   jog: /(跑步|慢跑|跑兩步|跑下步|\brun(?:ning)?\b|\bjog(?:ging)?\b|ジョギング|ランニング|走って)/i,
+  yoga: /(瑜伽|瑜珈|\byoga\b|ヨガ)/i,
+  stretch: /(熱身|热身|暖身|拉筋|伸展|warm[- ]?up|ストレッチ)/i,
 };
 
 /** first matching move for a piece of dialogue, or undefined when none fits */
@@ -269,6 +282,50 @@ export function moveDeltas(kind: MoveKind, t: number): MoveDeltas {
         py: pump * 0.03,
         squash: -0.03 * pump,
         stretch: 0.02 * pump,
+      };
+    }
+    case 'yoga': {
+      // r2026-10-04.45 — the trainer's sun salutation (Wii Fit yoga): arms
+      // sweep overhead, fold forward with a soft knee, half-lift into a flat
+      // back, then rise home to mountain. Smoothstep phases keep the flow
+      // continuous; the envelope fades the whole thing in and out.
+      const ss = (x: number): number => {
+        const v = clamp01(x);
+        return v * v * (3 - 2 * v);
+      };
+      const armsUp = ss(u / 0.22) * (1 - ss((u - 0.42) / 0.18));
+      const fold = ss((u - 0.3) / 0.2) * (1 - ss((u - 0.6) / 0.25));
+      const lift = ss((u - 0.55) / 0.1) * (1 - ss((u - 0.75) / 0.2));
+      return {
+        ...NO_MOVE,
+        lArmZ: 0.75 * armsUp + 0.12 * lift,   // arms overhead, then sweep down
+        rArmZ: -0.75 * armsUp - 0.12 * lift,
+        lElbowZ: -0.12 * armsUp,
+        rElbowZ: 0.12 * armsUp,
+        spineX: 0.48 * fold - 0.08 * lift,    // forward fold, flat-back lift
+        headX: 0.14 * fold - 0.1 * lift,      // chin to shins, then gaze forward
+        py: -0.05 * fold,                     // sink a little into the fold
+      };
+    }
+    case 'stretch': {
+      // r2026-10-04.45 — the warm-up set: double arm circles flowing into
+      // alternating side bends, slow head rolls on top, a light bounce
+      // underneath so it reads bouncy, not sleepy. Two cycles in 6s.
+      const circle = sin(u * TAU * 2);
+      const bend = sin(u * TAU * 2 + PI / 2);
+      const roll = sin(u * TAU);
+      return {
+        ...NO_MOVE,
+        lArmZ: 0.45 + 0.22 * circle,          // both arms circling overhead
+        rArmZ: -0.45 + 0.22 * circle,
+        lElbowZ: -0.18,
+        rElbowZ: 0.18,
+        lArmX: 0.2 * bend,
+        rArmX: 0.2 * bend,
+        chestZ: 0.13 * bend,                  // side bends
+        headZ: 0.09 * roll,                   // slow head rolls
+        headY: 0.07 * sin(u * TAU + PI / 2),
+        py: 0.02 * abs(circle),               // light bounce
       };
     }
   }
