@@ -9,8 +9,8 @@
 // r2026-10-03.09: speak() accepts an explicit lead tic — poke ouch cries are
 // guaranteed to sound instantly instead of depending on emotion intensity.
 // r2026-10-03.21: felt-mood intensity now lifts her VOICE too — 超開心 rings
-// brighter and quicker, 勁攰 sinks slower and softer; plain moods (intensity
-// 1) leave every delta exactly where it was.
+// brighter and quicker, 勁攰 sinks slower and softer; plain moods (intensity 1)
+// leave every delta exactly where it was.
 // r2026-10-03.24: the thinking filler takes an optional mood — a sad user's
 // first "hmm…" is softer and slower than a happy one's (MOOD_FILLERS).
 
@@ -32,6 +32,8 @@ export interface VoiceChoice {
 // HiuMaan newer; Sin-ju = male). Windows/Android ship Microsoft/Google variants.
 // r2026-10-03.04: extended cast (tifa/aerith/cloud/kasumi/marin/ayane/hitomi)
 // gets her/his own matrix — no more falling back to Juno's female voices.
+// r2026-10-03.36: the registry six (robbie/mika/anchor/lydia/ruby/snowy) get
+// gender-correct matrices of their own, tuned to each personality.
 export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> = {
   juno: {
     yue: [
@@ -267,6 +269,97 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
       { lang: 'en-US', names: ['Michelle', 'Female'], basePitch: 1.08, baseRate: 0.95 },
     ],
   },
+  // ---- registry six (r2026-10-03.35/36): gender-correct, personality-tuned ----
+  // big-brother energy — warm, level, quick to laugh
+  robbie: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ju', 'Male'], basePitch: 1.0, baseRate: 1.0 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Yunxi', 'Kangkang', 'Male'], basePitch: 1.0, baseRate: 1.0 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Keita', 'Male'], basePitch: 1.0, baseRate: 1.0 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Guy', 'Daniel', 'Male'], basePitch: 1.0, baseRate: 1.0 },
+    ],
+  },
+  // laid-back musician — smooth, a touch low, unhurried
+  mika: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ju', 'Male'], basePitch: 0.94, baseRate: 0.9 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Yunxi', 'Male'], basePitch: 0.94, baseRate: 0.9 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Keita', 'Male'], basePitch: 0.94, baseRate: 0.9 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Daniel', 'Male'], basePitch: 0.94, baseRate: 0.9 },
+    ],
+  },
+  // old sea captain — the lowest, slowest voice in the cast
+  anchor: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ju', 'Male'], basePitch: 0.84, baseRate: 0.88 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Yunjian', 'Male'], basePitch: 0.84, baseRate: 0.88 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Keita', 'Male'], basePitch: 0.86, baseRate: 0.88 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Christopher', 'Male'], basePitch: 0.86, baseRate: 0.88 },
+    ],
+  },
+  // elegant socialite — smooth, poised, cultured
+  lydia: {
+    yue: [
+      { lang: 'zh-HK', names: ['HiuMaan', 'Female'], basePitch: 1.0, baseRate: 0.9 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaoxiao', 'Female'], basePitch: 1.0, baseRate: 0.9 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 0.99, baseRate: 0.9 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Michelle', 'Female'], basePitch: 1.0, baseRate: 0.9 },
+    ],
+  },
+  // bouncy bunny — the highest, fastest giggle in the cast
+  ruby: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.18, baseRate: 1.08 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaoyi', 'Female'], basePitch: 1.17, baseRate: 1.08 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 1.15, baseRate: 1.08 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Jenny', 'Female'], basePitch: 1.17, baseRate: 1.1 },
+    ],
+  },
+  // winter fairy — soft, breathy, gentle
+  snowy: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.1, baseRate: 0.88 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaoyi', 'Female'], basePitch: 1.09, baseRate: 0.88 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 1.08, baseRate: 0.88 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Ava', 'Female'], basePitch: 1.1, baseRate: 0.88 },
+    ],
+  },
 };
 
 /** Emotion → prosody for the browser-TTS fallback path (multipliers). */
@@ -318,6 +411,8 @@ const NEURAL_PROSODY: Record<string, { rate: number; pitch: number; vol: number 
 const FEMALE_CHARS = new Set([
   'juno', 'nova', 'mochi', 'luna', 'rin',
   'tifa', 'aerith', 'kasumi', 'marin', 'ayane', 'hitomi',
+  // registry six (r2026-10-03.35)
+  'lydia', 'ruby', 'snowy',
 ]);
 
 /**
@@ -332,14 +427,20 @@ const EXPRESSIVENESS: Record<string, number> = {
   juno: 1.25,
   tifa: 1.22,
   luna: 1.2,
+  robbie: 1.2,
+  ruby: 1.18,
+  snowy: 1.15,
   hitomi: 1.15,
   aerith: 1.12,
+  lydia: 1.05,
+  mika: 0.9,
   cloud: 0.95,
   kasumi: 0.95,
   kai: 0.95,
   ayane: 0.9,
   ren: 0.9,
   nova: 0.85,
+  anchor: 0.85,
 };
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
