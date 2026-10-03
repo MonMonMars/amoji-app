@@ -3,9 +3,14 @@ import {
   MOVE_DUR, MOVE_TRIGGERS, detectMove, moveDeltas, moveEnvelope, type MoveKind,
 } from '../lib/moves';
 
-const KINDS: MoveKind[] = ['sing', 'jump', 'kungfu', 'taichi', 'piano', 'jog'];
+const KINDS: MoveKind[] = [
+  'sing', 'jump', 'kungfu', 'taichi',
+  'violin', 'piano',
+  'dine', 'eat',
+  'jog',
+];
 
-describe('dialogue-triggered movement library (r.39)', () => {
+describe('dialogue-triggered movement library (r.39 + r.41)', () => {
   it('every move has a sane duration and a trigger regex', () => {
     for (const k of KINDS) {
       expect(MOVE_DUR[k]).toBeGreaterThanOrEqual(2000);
@@ -30,10 +35,22 @@ describe('dialogue-triggered movement library (r.39)', () => {
       ['カンフー見せて！', 'kungfu'],
       ['do some tai chi', 'taichi'],
       ['打太極好唔好？', 'taichi'],
+      ['拉小提琴俾我聽~', 'violin'],
+      ['play the violin for me', 'violin'],
+      ['バイオリンを弾いて！', 'violin'],
+      ['violin 同鋼琴邊個難啲？', 'violin'],
       ['play the piano for me', 'piano'],
       ['彈琴俾我聽~', 'piano'],
       ['鋼琴好難學', 'piano'],
       ['ピアノ弾いて！', 'piano'],
+      ['fine dining tonight', 'dine'],
+      ['燭光晚餐好浪漫～', 'dine'],
+      ['一齊食大餐！', 'dine'],
+      ['dinner date with me', 'dine'],
+      ['食雪糕呀！', 'eat'],
+      ['一齊食飯好唔好？', 'eat'],
+      ['請你食嘢～', 'eat'],
+      ['eat ice cream together', 'eat'],
       ['go for a run together', 'jog'],
       ['一齊跑步！', 'jog'],
       ['ジョギング行こう！', 'jog'],

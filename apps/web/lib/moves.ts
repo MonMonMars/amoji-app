@@ -7,9 +7,17 @@
 // procedural versions later by mapping the same kinds to clips.
 // r2026-10-03.40: the sing performance now lasts a full 9s — long enough to
 // carry an entire sung ditty, not just a pose.
+// r2026-10-04.41: the catalog grows — violin gets her own performance
+// (no longer misrouted to piano), and mealtime dialogue sets her eating:
+// casual snacking (ice cream!) or an elegant fine-dining toast, depending
+// on what you said.
 // Pure data + math, no DOM — fully unit-testable in node.
 
-export type MoveKind = 'sing' | 'jump' | 'kungfu' | 'taichi' | 'piano' | 'jog';
+export type MoveKind =
+  | 'sing' | 'jump' | 'kungfu' | 'taichi'
+  | 'violin' | 'piano'
+  | 'dine' | 'eat'
+  | 'jog';
 
 /** performance length per move, ms */
 export const MOVE_DUR: Record<MoveKind, number> = {
@@ -17,7 +25,10 @@ export const MOVE_DUR: Record<MoveKind, number> = {
   jump: 2600,
   kungfu: 3200,
   taichi: 8000,
+  violin: 6000,
   piano: 6000,
+  dine: 9000,
+  eat: 7000,
   jog: 4000,
 };
 
@@ -25,13 +36,20 @@ export const MOVE_DUR: Record<MoveKind, number> = {
  * Multilingual triggers — matched against BOTH the user's message and her
  * reply, so "show me some kung fu" and her own "好，睇我功夫！" both set her
  * off. Case-insensitive; priority order is the catalog order below.
+ * r2026-10-04.41: violin is checked BEFORE piano (she has her own
+ * performance now — 小提琴 / violin / バイオリン no longer lands on piano),
+ * and dine is checked before eat so "一齊食大餐" gets the elegant toast,
+ * not the casual munch.
  */
 export const MOVE_TRIGGERS: Record<MoveKind, RegExp> = {
   sing: /(唱歌|唱首歌|唱k|一齊唱|一齐唱|唱吓|唱啊|唱啦|唱個|唱个|\bsing(?:ing)?\b|\bkaraoke\b|カラオケ|歌を歌|うたって)/i,
   jump: /(跳一下|跳吓|跳跳|跳起|跳啊|跳啦|跳舞|跳個舞|跳支舞|\bjump(?:ing)?\b|ジャンプ)/i,
   kungfu: /(功夫|武打|武術|武术|拳擊|拳击|\bkung\s?fu\b|martial arts|\bkarate\b|\bboxing\b|空手道|カンフー)/i,
   taichi: /(太極|太极|tai\s?chi)/i,
-  piano: /(鋼琴|钢琴|彈琴|弹琴|彈鋼琴|弹钢琴|彈首|彈下|拉小提琴|\bpiano\b|\bviolin\b|\bguitar\b|ピアノ|バイオリン|ギター)/i,
+  violin: /(小提琴|拉小提琴|\bviolin\b|バイオリン|ヴァイオリン)/i,
+  piano: /(鋼琴|钢琴|彈琴|弹琴|彈鋼琴|弹钢琴|彈首|彈下|\bpiano\b|\bguitar\b|ピアノ|ギター)/i,
+  dine: /(fine ?dining|燭光晚餐|烛光晚餐|共進晚餐|共进晚餐|一齊食大餐|一齐食大餐|食大餐|吃大餐|高級餐廳|高级餐厅|豪華晚餐|豪华晚餐|dinner date|燭光|烛光)/i,
+  eat: /(食雪糕|吃雪糕|食雪條|食冰|雪糕|冰淇淋|冰激淋|食嘢|吃嘢|食飯|吃饭|一齊食|一齐食|開餐|开饭|請你食|请吃饭|\bice ?cream\b|食薯片)/i,
   jog: /(跑步|慢跑|跑兩步|跑下步|\brun(?:ning)?\b|\bjog(?:ging)?\b|ジョギング|ランニング|走って)/i,
 };
 
@@ -156,6 +174,27 @@ export function moveDeltas(kind: MoveKind, t: number): MoveDeltas {
         py: -0.02 * rise,     // rooted lower as the arms rise
       };
     }
+    case 'violin': {
+      // r2026-10-04.41 — violinist stance: chin tucked onto the imaginary
+      // violin at the left shoulder, left arm crooked under the neck, right
+      // arm drawing the bow in long smooth strokes (~5 strokes)
+      const bow = sin(u * PI * 10);
+      const stroke = abs(bow);
+      return {
+        ...NO_MOVE,
+        lArmZ: 0.75,                // violin arm raised across the body
+        lArmX: -0.25,
+        lElbowZ: -0.55,             // crooked, hand under the violin neck
+        rArmZ: -0.35 - 0.1 * bow,   // bow arm sweeps out and back
+        rArmX: -0.2,
+        rElbowZ: 0.3 + 0.12 * stroke,
+        headZ: 0.12,                // chin dropped onto the violin (left tilt)
+        headY: -0.15,
+        headX: 0.04,
+        chestZ: 0.05 * bow,         // body sways with the long strokes
+        py: -0.02,
+      };
+    }
     case 'piano': {
       // seated at the keys, fingers rippling across an imaginary keyboard
       const ripple = sin(u * PI * 14);
@@ -171,6 +210,48 @@ export function moveDeltas(kind: MoveKind, t: number): MoveDeltas {
         headY: 0.08 * sin(u * PI * 4),
         chestZ: 0.05 * sin(u * PI * 4),
         py: -0.05,            // at the bench
+      };
+    }
+    case 'dine': {
+      // r2026-10-04.41 — fine dining with you: slow and elegant. A graceful
+      // toast raise (first third), a savoring sip with an appreciative nod
+      // (middle), then settling the glass back down; napkin on the left
+      // hand the whole time.
+      const raise = clamp01(u / 0.3) * (1 - clamp01((u - 0.55) / 0.3));
+      const savor = sin(clamp01((u - 0.3) / 0.3) * PI);
+      return {
+        ...NO_MOVE,
+        rArmZ: -0.15 - 0.45 * raise,  // the glass rises gracefully
+        rArmX: -0.3 - 0.25 * raise,
+        rElbowZ: 0.35 + 0.3 * raise,
+        lArmZ: 0.25,                  // napkin resting at the lap edge
+        lArmX: -0.2,
+        lElbowZ: -0.35,
+        headX: -0.05 + 0.1 * savor,   // chin dips, appreciating the sip
+        headY: 0.1 * savor,
+        chestZ: 0.04 * savor,
+        py: -0.03,                    // seated
+        squash: -0.015 * savor,       // contented little settle
+      };
+    }
+    case 'eat': {
+      // r2026-10-04.41 — happy snacking (ice cream!): right hand brings the
+      // imaginary treat up for a bite, a munch-nod on arrival, left hand
+      // cupped underneath so nothing drips; little chew tilts between bites
+      const bite = Math.max(0, sin(u * PI * 8));    // ~4 bites
+      const munch = Math.max(0, sin(u * PI * 16));  // chewing between bites
+      return {
+        ...NO_MOVE,
+        rArmZ: -0.45,              // hand comes up in front of the face
+        rArmX: -0.55,
+        rElbowZ: 0.6 + 0.25 * bite,
+        lArmZ: 0.3,                // cupped underneath
+        lArmX: -0.3,
+        lElbowZ: -0.4,
+        headX: 0.06 + 0.08 * bite, // leans in to meet the bite
+        headZ: 0.03 * munch,       // tiny chew tilts
+        py: -0.01 * munch,
+        squash: -0.02 * munch,     // contented bounce
       };
     }
     case 'jog': {
