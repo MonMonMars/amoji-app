@@ -128,10 +128,13 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     const BASE_SX = look.width;
     const BASE_SY = look.height;
     const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
-    // Per-character drop-in model first (CharacterDef.model, e.g. tifa.vrm),
-    // then the shipped defaults. Local/closed builds ship juno.vrm (Kizuna AI);
-    // open builds fall back to seed-san.vrm (VRM Public License 1.0, VirtualCast)
-    // — see ASSET_MANIFEST.md.
+    // Per-character model first (CharacterDef.model — a local /models file or
+    // an absolute https VRM URL), then the shipped defaults. Local/closed
+    // builds ship juno.vrm (Kizuna AI); open builds fall back to seed-san.vrm
+    // (VRM Public License 1.0, VirtualCast) — see ASSET_MANIFEST.md.
+    // r2026-10-03.32: a remote model that fails (0.x VRM, dead link, no CORS)
+    // simply walks the chain, so a bad URL degrades to the fallback instead
+    // of breaking the scene.
     const ownModel = seedKey ? characterById(seedKey).model : undefined;
     const MODEL_CANDIDATES = [ownModel, 'juno.vrm', 'seed-san.vrm'].filter(
       (m): m is string => !!m,
@@ -189,7 +192,9 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
         onNoticeRef.current?.({ reason: 'asset' });
         return;
       }
-      loader.load(`${ASSET_BASE}/models/${MODEL_CANDIDATES[index]}`, onModelLoaded, undefined, () => loadModel(index + 1));
+      const cand = MODEL_CANDIDATES[index]!;
+      const url = /^https?:\/\//.test(cand) ? cand : `${ASSET_BASE}/models/${cand}`;
+      loader.load(url, onModelLoaded, undefined, () => loadModel(index + 1));
     };
     loadModel(0);
 
@@ -325,6 +330,11 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       if (vrm) {
         const em = vrm.expressionManager;
         if (em) {
+          // r2026-10-03.32: remote cast models may ship without every preset —
+          // a missing shape must never crash the render loop.
+          const setEm = (name: string, v: number) => {
+            try { em.setValue(name, v); } catch { /* preset absent on this model */ }
+          };
           // poke reaction: whole-body flinch — shoved back away from the
           // camera, knees dip, squash-bounce, then a spring wobble home (~900ms).
           // laugh reaction: rhythmic belly-bounce giggle, head thrown back (~1.6s).
@@ -374,24 +384,24 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           const v = (x: number) => clamp(x * duck + (sp ? 0 : 0), 0, 1);
           const pokeBoost = 0.9 * boost;
           const laughBoost = 0.85 * laugh; // full smile while the giggles play
-          em.setValue('happy', clamp(v(Math.max(targets.blendShape.joy, targets.blendShape.fun)) + (poke.face === 'happy' ? pokeBoost : 0) + laughBoost, 0, 1));
-          em.setValue('angry', v(targets.blendShape.angry) + (poke.face === 'angry' ? pokeBoost : 0));
-          em.setValue('sad', v(targets.blendShape.sorrow));
-          em.setValue('surprised', poke.face === 'surprised'
+          setEm('happy', clamp(v(Math.max(targets.blendShape.joy, targets.blendShape.fun)) + (poke.face === 'happy' ? pokeBoost : 0) + laughBoost, 0, 1));
+          setEm('angry', v(targets.blendShape.angry) + (poke.face === 'angry' ? pokeBoost : 0));
+          setEm('sad', v(targets.blendShape.sorrow));
+          setEm('surprised', poke.face === 'surprised'
             ? clamp(v(targets.blendShape.surprise) + pokeBoost, 0, 1)
             : v(targets.blendShape.surprise));
-          em.setValue('relaxed', v(targets.blendShape.relaxed) + (poke.face === 'relaxed' ? pokeBoost : 0));
+          setEm('relaxed', v(targets.blendShape.relaxed) + (poke.face === 'relaxed' ? pokeBoost : 0));
           if (sp) {
             const mouth = sp.mouth;
             const on = (want: string) => (sp.vowel === want ? 1 : 0.12);
-            em.setValue('aa', mouth * on('aa'));
-            em.setValue('ih', mouth * on('ih'));
-            em.setValue('ou', mouth * on('ou'));
-            em.setValue('ee', mouth * on('ee'));
-            em.setValue('oh', mouth * on('oh'));
+            setEm('aa', mouth * on('aa'));
+            setEm('ih', mouth * on('ih'));
+            setEm('ou', mouth * on('ou'));
+            setEm('ee', mouth * on('ee'));
+            setEm('oh', mouth * on('oh'));
           } else {
-            em.setValue('aa', 0); em.setValue('ih', 0); em.setValue('ou', 0);
-            em.setValue('ee', 0); em.setValue('oh', 0);
+            setEm('aa', 0); setEm('ih', 0); setEm('ou', 0);
+            setEm('ee', 0); setEm('oh', 0);
           }
         }
         const setRot = (name: VRMHumanBoneName, axis: 'x' | 'y' | 'z', val: number) => {
