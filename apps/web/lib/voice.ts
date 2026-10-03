@@ -18,7 +18,9 @@ export interface VoiceChoice {
 
 // Names vary by platform: Apple has the strongest zh-HK set (Sin-ji = Cantonese female,
 // HiuMaan newer; Sin-ju = male). Windows/Android ship Microsoft/Google variants.
-const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> = {
+// r2026-10-03.04: extended cast (tifa/aerith/cloud/kasumi/marin/ayane/hitomi)
+// gets her/his own matrix — no more falling back to Juno's female voices.
+export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> = {
   juno: {
     yue: [
       { lang: 'zh-HK', names: ['Sin-ji', 'HiuMaan', 'Female'], basePitch: 1.1, baseRate: 1.02 },
@@ -143,6 +145,112 @@ const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> = {
     ],
     en: [
       { lang: 'en-US', names: ['Eric', 'Daniel', 'Male'], basePitch: 0.98, baseRate: 0.9 },
+    ],
+  },
+  // ---- extended cast (r2026-10-03.04): gender-correct, personality-tuned ----
+  // athletic, warm-hearted — bright, steady, a little quicker
+  tifa: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ji', 'HiuMaan', 'Female'], basePitch: 1.06, baseRate: 1.0 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaorui', 'Xiaoxiao', 'Female'], basePitch: 1.06, baseRate: 1.0 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 1.05, baseRate: 1.0 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Sara', 'Samantha', 'Female'], basePitch: 1.07, baseRate: 1.02 },
+    ],
+  },
+  // gentle flower girl — soft, unhurried, warm
+  aerith: {
+    yue: [
+      { lang: 'zh-HK', names: ['HiuMaan', 'Sin-ji', 'Female'], basePitch: 1.06, baseRate: 0.92 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaoyi', 'Female'], basePitch: 1.06, baseRate: 0.92 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 1.05, baseRate: 0.92 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Michelle', 'Ava', 'Female'], basePitch: 1.06, baseRate: 0.92 },
+    ],
+  },
+  // cool mercenary — finally MALE: low, level, unhurried
+  cloud: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ju', 'Male'], basePitch: 0.88, baseRate: 0.95 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Yunxi', 'Yunjian', 'Male'], basePitch: 0.88, baseRate: 0.95 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Keita', 'Male'], basePitch: 0.9, baseRate: 0.95 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Christopher', 'Guy', 'Male'], basePitch: 0.9, baseRate: 0.95 },
+    ],
+  },
+  // graceful shinobi — composed, precise, quiet
+  kasumi: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.02, baseRate: 0.9 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaohan', 'Female'], basePitch: 1.0, baseRate: 0.9 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 1.0, baseRate: 0.9 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Aria', 'Female'], basePitch: 1.02, baseRate: 0.9 },
+    ],
+  },
+  // bubbly gyaru — highest pitch, fastest chatter
+  marin: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.16, baseRate: 1.06 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaoyi', 'Female'], basePitch: 1.15, baseRate: 1.06 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 1.13, baseRate: 1.06 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Jenny', 'Female'], basePitch: 1.15, baseRate: 1.08 },
+    ],
+  },
+  // cool kunoichi — level, a touch low, clipped
+  ayane: {
+    yue: [
+      { lang: 'zh-HK', names: ['HiuMaan', 'Female'], basePitch: 0.96, baseRate: 0.98 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaohan', 'Female'], basePitch: 0.96, baseRate: 0.98 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 0.95, baseRate: 0.98 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Aria', 'Female'], basePitch: 0.97, baseRate: 0.98 },
+    ],
+  },
+  // earnest and wholesome — warm, clear, dependable
+  hitomi: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.08, baseRate: 0.95 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaoxiao', 'Female'], basePitch: 1.07, baseRate: 0.95 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 1.06, baseRate: 0.95 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Michelle', 'Female'], basePitch: 1.08, baseRate: 0.95 },
     ],
   },
 };

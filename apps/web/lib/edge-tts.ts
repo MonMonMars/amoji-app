@@ -43,6 +43,7 @@ const VOICES: Record<string, { female: string; male: string; ssmlLang: string }>
  * (Xiaoyi / Ana), calm ones lower (Xiaohan / Aria), sporty ones crisp
  * (Xiaorui / Sara), male characters real male voices
  * (Yunyang / Yunxi / Yunjian / WanLung / Keita / Guy / Christopher / Eric).
+ * r2026-10-03.04: extended cast casted — Cloud finally gets a male voice.
  */
 const CAST: Record<string, Record<string, string>> = {
   juno:  { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaoxiaoNeural', ja: 'ja-JP-NanamiNeural', en: 'en-US-JennyNeural' },
@@ -53,6 +54,13 @@ const CAST: Record<string, Record<string, string>> = {
   luna:  { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaomoNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-MichelleNeural' },
   rin:   { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaoruiNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-SaraNeural' },
   ren:   { yue: 'zh-HK-WanLungNeural',   zh: 'zh-CN-YunjianNeural',  ja: 'ja-JP-KeitaNeural',  en: 'en-US-EricNeural' },
+  tifa:    { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoruiNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-SaraNeural' },
+  aerith:  { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoyiNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-MichelleNeural' },
+  cloud:   { yue: 'zh-HK-WanLungNeural', zh: 'zh-CN-YunxiNeural',    ja: 'ja-JP-KeitaNeural',  en: 'en-US-ChristopherNeural' },
+  kasumi:  { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaohanNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-AriaNeural' },
+  marin:   { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoyiNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-JennyNeural' },
+  ayane:   { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaohanNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-AriaNeural' },
+  hitomi:  { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoxiaoNeural', ja: 'ja-JP-NanamiNeural', en: 'en-US-MichelleNeural' },
 };
 
 function voiceFor(opts: EdgeVoiceOpts): { name: string; ssmlLang: string } {
