@@ -13,12 +13,17 @@
 // / とても嬉しい scale the reaction strength; plain moods stay gentle.
 // r2026-10-03.21: amplified feelings now lift her VOICE too — 超開心 rings
 // brighter and quicker, 勁攰 slower and softer; plain moods unchanged.
+// r2026-10-03.24: the felt mood now tints her VOICE while she waits — the
+// first "hmm…", every thinking-out-loud phase, and idle chatter all wear the
+// user's last felt mood (sad → softer 嗯……我喺度諗, happy → livelier,
+// angry → de-escalating); the face/orb already wore it — now the waiting does.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh } from '../lib/companion';
 import { loadHistory, saveHistory } from '../lib/companion-store';
 import { notifySpeaking, isSpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
 import { pickIdleLine, pickPokeLine } from '../lib/persona-chatter';
+import { pickMoodIdleLine } from '../lib/mood-chatter';
 import { pickOuch } from '../lib/ouch';
 import { pickLaugh, LAUGH_RE } from '../lib/laugh';
 import { pickThinkPhrase } from '../lib/think-phrases';
@@ -73,6 +78,7 @@ export default function ChatPanel({
   const micModeRef = useRef(false);
   const micStopRef = useRef<(() => void) | null>(null);
   const laughCountRef = useRef(0);
+  const lastFeltRef = useRef<string | undefined>(undefined);
   const onStatusRef = useRef(onStatus);
   onStatusRef.current = onStatus;
   const onMemCountRef = useRef(onMemCount);
@@ -171,7 +177,13 @@ export default function ChatPanel({
       if (busyRef.current) return;
       if (Date.now() - lastActivityRef.current < IDLE_AFTER_MS) return;
       lastActivityRef.current = Date.now();
-      sayLocal(pickIdleLine(characterId, lang, idleCounterRef.current++));
+      // r.24 — idle chatter wears the last felt mood: after "I'm so tired"
+      // her quiet moments turn soft ("borrow some of my energy") instead of
+      // the default chirp; falls back to the persona bank when neutral.
+      const idleMood = lastFeltRef.current;
+      const n = idleCounterRef.current++;
+      const line = (idleMood ? pickMoodIdleLine(idleMood, lang, n) : undefined) ?? pickIdleLine(characterId, lang, n);
+      sayLocal(line, idleMood ? moodToHints(idleMood) : undefined);
     }, 5000);
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -195,18 +207,20 @@ export default function ChatPanel({
     // tired / とても嬉しい) scale how strongly she wears it — plain moods stay
     // gentle.
     const felt = feltMood(text);
+    lastFeltRef.current = felt?.mood;
     const feltHints = moodToHints(felt?.mood, felt?.intensity);
     if (feltHints) applyLlmHints(feltHints);
-    // "hmm…" thinking moment while the reply generates (reply speech cuts it off)
-    speakThinkingFiller(characterId, lang);
+    // "hmm…" thinking moment while the reply generates — mood-tinted (r.24):
+    // a sad user's first hmm is softer than a happy one's (reply speech cuts it off)
+    speakThinkingFiller(characterId, lang, felt?.mood);
     // thinking-out-loud phases — while the LLM is slow she keeps musing in her
-    // own voice (um…… → let me think… → let me search the internet… please
-    // wait → uuuuummmm), each new phase replacing the previous one
+    // own voice, each new phase replacing the previous one; the sequence wears
+    // the felt mood too (r.24), and felt hints/intensity shape her prosody
     let thinkPhase = 0;
     const thinkTimer = setInterval(() => {
-      const phrase = pickThinkPhrase(characterId, lang, thinkPhase++);
+      const phrase = pickThinkPhrase(characterId, lang, thinkPhase++, felt?.mood);
       notifySpeaking(phrase);
-      speak(phrase, characterId, lang, { confusion: 0.4, neutral: 0.3 });
+      speak(phrase, characterId, lang, feltHints ?? { confusion: 0.4, neutral: 0.3 }, undefined, felt?.intensity);
     }, THINK_PHASE_MS);
     // learn from the user's words, then inject what she remembers into her prompt
     onMemCountRef.current?.(memorySummaryCount(rememberExchange(text)));
