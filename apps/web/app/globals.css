@@ -29,3 +29,17 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* slow living-camera drift for the painted anime backdrops */
+@keyframes kenburns {
+  0%   { transform: scale(1.06) translate(0.8%, 0.5%); }
+  50%  { transform: scale(1.12) translate(-0.9%, -0.7%); }
+  100% { transform: scale(1.06) translate(0.8%, 0.5%); }
+}
+.animate-kenburns {
+  animation: kenburns 38s ease-in-out infinite;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-kenburns { animation: none; }
+}

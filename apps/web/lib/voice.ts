@@ -193,7 +193,10 @@ const NEURAL_PROSODY: Record<string, { rate: number; pitch: number; vol: number 
   neutral: { rate: 0, pitch: 0, vol: 0 },
 };
 
-const FEMALE_CHARS = new Set(['juno', 'nova', 'mochi', 'luna', 'rin']);
+const FEMALE_CHARS = new Set([
+  'juno', 'nova', 'mochi', 'luna', 'rin',
+  'tifa', 'aerith', 'kasumi', 'marin', 'ayane', 'hitomi',
+]);
 
 /**
  * Per-character vocal expressiveness — how strongly the pitch contour and
@@ -201,12 +204,19 @@ const FEMALE_CHARS = new Set(['juno', 'nova', 'mochi', 'luna', 'rin']);
  */
 const EXPRESSIVENESS: Record<string, number> = {
   mochi: 1.4,
+  marin: 1.38,
   rin: 1.35,
   blaze: 1.3,
   juno: 1.25,
+  tifa: 1.22,
   luna: 1.2,
-  ren: 0.9,
+  hitomi: 1.15,
+  aerith: 1.12,
+  cloud: 0.95,
+  kasumi: 0.95,
   kai: 0.95,
+  ayane: 0.9,
+  ren: 0.9,
   nova: 0.85,
 };
 

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import ChatPanel from '../../components/ChatPanel';
 import DevPanel from '../../components/DevPanel';
 import FallbackNotice from '../../components/FallbackNotice';
+import SceneBackdrop from '../../components/SceneBackdrop';
 import SettingsSheet from '../../components/SettingsSheet';
 import StatusPlate from '../../components/StatusPlate';
 import { usePrefs, characterById, backgroundById } from '../../lib/prefs';
@@ -42,6 +43,7 @@ export default function Chat() {
 
   return (
     <main className="relative h-dvh w-screen overflow-hidden text-white" style={{ background: background.css }}>
+      <SceneBackdrop background={background} />
       <CompanionCanvas
         accent={character.accent}
         seedKey={character.id}
@@ -54,6 +56,7 @@ export default function Chat() {
         <StatusPlate
           name={character.name}
           accent={character.accent}
+          portrait={character.image}
           lang={prefs.lang}
           status={status}
           memCount={memCount}

@@ -1,8 +1,11 @@
 'use client';
-// One-page selector — preview strip on top, then characters, scenes,
-// languages, a reserved future row, and a centered confirm button.
+// One-page selector — combined live preview on top (character × scene ×
+// language), then characters, scenes, languages, a reserved future row,
+// and a centered confirm button.
 import { useRouter } from 'next/navigation';
 import HScrollRow from '../../components/HScrollRow';
+import SceneBackdrop from '../../components/SceneBackdrop';
+import { assetUrl } from '../../lib/asset';
 import { APP_REVISION } from '../../lib/revision';
 import {
   BACKGROUNDS, CHARACTERS, LANGS,
@@ -27,29 +30,43 @@ export default function Select() {
         <span className="text-xs text-white/30">{APP_REVISION}</span>
       </header>
 
-      {/* row 0 — live preview of the current picks */}
-      <div className="mx-5 mt-4 flex items-stretch gap-3">
-        <div className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
-          <span
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-bold text-black/70"
-            style={{ background: `radial-gradient(circle at 35% 30%, #ffffffcc, ${character.accent})` }}
-          >
-            {character.name[0]}
-          </span>
-          <div className="min-w-0">
-            <p className="truncate font-semibold">
-              {character.name}
-              <span className="ml-1.5 text-xs font-normal text-white/40">{character.gender === 'female' ? '♀' : '♂'}</span>
-            </p>
-            <p className="truncate text-xs text-white/50">{character.tagline[lang] ?? character.tagline.en}</p>
+      {/* row 0 — combined preview: how the picks look together */}
+      <div className="mx-5 mt-4">
+        <div className="relative h-36 overflow-hidden rounded-3xl border border-white/10">
+          <SceneBackdrop background={background} />
+          <div className="absolute inset-0 flex items-end p-3">
+            <div className="flex w-full items-end gap-3">
+              <span
+                className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 bg-black/40"
+                style={{ borderColor: character.accent, boxShadow: `0 8px 24px -8px ${character.accent}aa` }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={assetUrl(character.image ?? `/portraits/${character.id}.jpg`)}
+                  alt={character.name}
+                  draggable={false}
+                  className="h-full w-full object-cover object-top"
+                />
+              </span>
+              <div className="min-w-0 flex-1 pb-0.5">
+                <p className="text-lg font-bold drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
+                  {character.name}
+                  <span className="ml-1.5 text-xs font-normal text-white/70">{character.gender === 'female' ? '♀' : '♂'}</span>
+                </p>
+                <p className="truncate text-xs text-white/75 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                  {character.tagline[lang] ?? character.tagline.en}
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-1.5 pb-0.5">
+                <span className="rounded-full bg-black/45 px-3 py-1 text-[11px] font-medium backdrop-blur-md">
+                  {t(lang, background.nameKey as never)}
+                </span>
+                <span className="rounded-full bg-black/45 px-3 py-1 text-[11px] font-semibold backdrop-blur-md">
+                  {langNative}
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="flex w-28 shrink-0 flex-col justify-between rounded-2xl border border-white/10 bg-white/5 p-2">
-          <span className="block h-12 w-full rounded-xl" style={{ background: background.css }} />
-          <p className="pt-1.5 text-center text-[11px] text-white/60">{t(lang, background.nameKey as never)}</p>
-        </div>
-        <div className="flex w-20 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 p-2 text-center text-sm font-semibold">
-          {langNative}
         </div>
       </div>
 
@@ -66,19 +83,25 @@ export default function Select() {
                 <button
                   key={c.id}
                   onClick={() => setPrefs({ character: c.id })}
-                  className={`flex w-24 shrink-0 flex-col items-center gap-1.5 rounded-2xl border p-3 transition-all ${
+                  className={`flex w-24 shrink-0 flex-col items-center gap-1.5 rounded-2xl border p-2.5 transition-all ${
                     active ? 'border-transparent bg-white/10' : 'border-white/10 bg-white/5 hover:bg-white/10'
                   }`}
                   style={active ? { boxShadow: `0 0 0 2px ${c.accent}, 0 10px 30px -12px ${c.accent}` } : undefined}
                 >
                   <span
-                    className="flex h-14 w-14 items-center justify-center rounded-full text-xl font-bold text-black/70"
-                    style={{ background: `radial-gradient(circle at 35% 30%, #ffffffcc, ${c.accent})` }}
+                    className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-black/40"
+                    style={active ? { boxShadow: `0 0 0 2px ${c.accent}` } : undefined}
                   >
-                    {c.name[0]}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={assetUrl(c.image ?? `/portraits/${c.id}.jpg`)}
+                      alt={c.name}
+                      draggable={false}
+                      className="h-full w-full object-cover object-top"
+                    />
                   </span>
                   <span className="text-xs font-semibold">{c.name}</span>
-                  <span className="text-[10px] text-white/40">{c.gender === 'female' ? '♀' : '♂'}</span>
+                  <span className="text-[10px] leading-none text-white/40">{c.gender === 'female' ? '♀' : '♂'}</span>
                 </button>
               );
             })}
@@ -100,7 +123,17 @@ export default function Select() {
                     active ? 'border-white/80' : 'border-white/10 hover:border-white/40'
                   }`}
                 >
-                  <span className="block h-16 w-full" style={{ background: b.css }} />
+                  <span className="relative block h-20 w-full" style={{ background: b.css }}>
+                    {b.image && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={assetUrl(b.image)}
+                        alt=""
+                        draggable={false}
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    )}
+                  </span>
                   <span className="block bg-black/50 px-2 py-1.5 text-left text-[11px] text-white/75">{t(lang, b.nameKey as never)}</span>
                 </button>
               );

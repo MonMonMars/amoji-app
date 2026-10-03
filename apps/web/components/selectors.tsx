@@ -1,5 +1,6 @@
 'use client';
 // Selection grids shared by the setup flow and the in-chat settings sheet.
+import { assetUrl } from '../lib/asset';
 import { CHARACTERS, BACKGROUNDS, LANGS, t, type CharacterDef, type Lang, type Prefs } from '../lib/prefs';
 
 export function CharacterGrid({ lang, value, onChange }: { lang: Lang; value: string; onChange: (id: string) => void }) {
@@ -17,10 +18,16 @@ export function CharacterGrid({ lang, value, onChange }: { lang: Lang; value: st
             style={active ? { boxShadow: `0 0 0 2px ${c.accent}, 0 8px 30px -10px ${c.accent}66` } : undefined}
           >
             <span
-              className="flex h-16 w-16 items-center justify-center rounded-full text-2xl font-bold text-black/70"
+              className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full text-2xl font-bold text-black/70"
               style={{ background: `radial-gradient(circle at 35% 30%, #ffffffcc, ${c.accent})` }}
             >
-              {c.name[0]}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={assetUrl(c.image ?? `/portraits/${c.id}.jpg`)}
+                alt={c.name}
+                draggable={false}
+                className="h-full w-full object-cover object-top"
+              />
             </span>
             <span className="text-base font-semibold text-white">
               {c.name}
@@ -47,7 +54,12 @@ export function BackgroundGrid({ lang, value, onChange }: { lang: Lang; value: s
               active ? 'border-white/80' : 'border-white/10 hover:border-white/40'
             }`}
           >
-            <span className="block h-16 w-full" style={{ background: b.css }} />
+            <span className="relative block h-16 w-full" style={{ background: b.css }}>
+              {b.image && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={assetUrl(b.image)} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover" />
+              )}
+            </span>
             <span className="block bg-black/50 px-2 py-1.5 text-xs text-white/80">{t(lang, b.nameKey as never)}</span>
           </button>
         );

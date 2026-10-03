@@ -3,6 +3,7 @@
 // Tapping it returns to the character-selection page.
 import { useEffect, useState } from 'react';
 import { getLatestFrame, dominantMood, type MoodId } from '../lib/companion';
+import { assetUrl } from '../lib/asset';
 import { t, type Lang, type StrKey } from '../lib/prefs';
 import type { ChatStatus } from '../lib/status';
 
@@ -19,6 +20,7 @@ const STATUS_LABEL: Record<ChatStatus, StrKey> = {
 export default function StatusPlate({
   name,
   accent,
+  portrait,
   lang,
   status,
   memCount,
@@ -26,6 +28,7 @@ export default function StatusPlate({
 }: {
   name: string;
   accent: string;
+  portrait?: string;
   lang: Lang;
   status: ChatStatus;
   memCount: number;
@@ -44,10 +47,15 @@ export default function StatusPlate({
       className="flex items-center gap-2.5 rounded-full border border-white/10 bg-black/30 py-1.5 pl-1.5 pr-4 backdrop-blur-md transition hover:bg-black/50"
     >
       <span
-        className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-black/70"
-        style={{ background: `radial-gradient(circle at 35% 30%, #ffffffcc, ${accent})` }}
+        className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full text-sm font-bold text-black/70"
+        style={{ background: portrait ? '#0b0b12' : `radial-gradient(circle at 35% 30%, #ffffffcc, ${accent})` }}
       >
-        {name[0]}
+        {portrait ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={assetUrl(portrait)} alt={name} draggable={false} className="h-full w-full object-cover object-top" />
+        ) : (
+          name[0]
+        )}
       </span>
       <span className="text-left leading-tight">
         <span className="flex items-center gap-1.5 text-sm font-semibold text-white">

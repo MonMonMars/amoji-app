@@ -8,6 +8,7 @@ import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-v
 import type { VRMAnimation } from '@pixiv/three-vrm-animation';
 import { mapFrameToVrm, sampleIdlePose } from '@amoji/vrm-renderer';
 import { tickEngine } from '../lib/companion';
+import { characterById } from '../lib/prefs';
 import { sampleSpeech } from '../lib/speech';
 
 export interface CompanionCanvasProps {
@@ -100,9 +101,14 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     // Ren drifts through his own calm sequence — deterministic per character.
     const poseSeed = seedKey ? seedFromKey(seedKey) : Date.now() % 100000;
     const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
-    // Local/closed builds ship juno.vrm (Kizuna AI); open builds fall back to
-    // seed-san.vrm (VRM Public License 1.0, VirtualCast) — see ASSET_MANIFEST.md.
-    const MODEL_CANDIDATES = ['juno.vrm', 'seed-san.vrm'];
+    // Per-character drop-in model first (CharacterDef.model, e.g. tifa.vrm),
+    // then the shipped defaults. Local/closed builds ship juno.vrm (Kizuna AI);
+    // open builds fall back to seed-san.vrm (VRM Public License 1.0, VirtualCast)
+    // — see ASSET_MANIFEST.md.
+    const ownModel = seedKey ? characterById(seedKey).model : undefined;
+    const MODEL_CANDIDATES = [ownModel, 'juno.vrm', 'seed-san.vrm'].filter(
+      (m): m is string => !!m,
+    );
 
     const loader = new GLTFLoader();
     loader.register((parser) => new VRMLoaderPlugin(parser));

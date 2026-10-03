@@ -12,3 +12,10 @@ Every binary in this directory must have an entry. CI fails on unmanifested file
 | File | Why rejected |
 |---|---|
 | companion-juno.vrm ("Mister", arweave `elvlpN6jefoDXqqCWMxCBVZnl6Z2lLD7-wC8N5z1bVk`) | Only lip-sync/blink blend shapes — no emotional expression; VRM 0.x (unsupported by three-vrm v3). md5 `c3eaaa37f869df12e79a3ab923db900f`. |
+
+## Companion art (r2026-10-03.01) — outside this directory, not covered by the CI manifest check
+
+| Directory | License | Source | Notes |
+|---|---|---|---|
+| `apps/web/public/portraits/*.jpg` (15 files) | AI-generated original artwork (Amoji project) | Generated in-project via the image-generation gateway; character designs are original anime archetypes, not official game/anime IP | Selection-thumbnail + status-plate portraits for the 15-character cast. |
+| `apps/web/public/backgrounds/*.jpg` (12 files) | AI-generated original artwork (Amoji project) | Same as above; Shinkai-inspired original scenic paintings | Painted anime backdrops for all 12 scenes; gradient fallbacks remain in `prefs.ts`. |
