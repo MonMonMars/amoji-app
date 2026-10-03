@@ -8,7 +8,7 @@
 //                 character/scene/language until the user picks replacements;
 //                 confirm = "Change", then back to the chat room.
 // Kid Mode (r2026-10-03.03) filters the rows to the wholesome cast + sunny scenes.
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import HScrollRow from './HScrollRow';
 import SceneBackdrop from './SceneBackdrop';
@@ -48,14 +48,14 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   };
 
   return (
-    <main className="flex h-dvh flex-col overflow-hidden bg-neutral-950 text-white">
+    <main className="fx-page flex h-dvh flex-col overflow-hidden bg-neutral-950 text-white">
       <header className="flex items-center justify-between px-5 pt-5">
         <div className="flex items-center gap-2">
           {mode === 'change' && (
             <button
               onClick={() => router.push('/chat')}
               aria-label={t(lang, 'back')}
-              className="mr-1 flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 text-sm text-white/70 transition hover:bg-white/15"
+              className="ui-btn mr-1 flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 text-sm text-white/70 hover:bg-white/15"
             >
               ←
             </button>
@@ -68,8 +68,8 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
       </header>
 
       {/* row 0 — combined preview: existing picks (or the draft replacing them) */}
-      <div className="mx-5 mt-4">
-        <div className="relative h-36 overflow-hidden rounded-3xl border border-white/10">
+      <div className="fx-rise mx-5 mt-4" style={{ '--d': '20ms' } as CSSProperties}>
+        <div className="fx-sheen relative h-36 overflow-hidden rounded-3xl border border-white/10">
           <SceneBackdrop background={background} />
           <div className="absolute inset-0 flex items-end p-3">
             <div className="flex w-full items-end gap-3">
@@ -114,7 +114,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
 
       {/* rows 1-3 + reserved future row */}
       <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
-        <section>
+        <section className="fx-rise" style={{ '--d': '70ms' } as CSSProperties}>
           <h2 className="mb-0.5 pl-1 text-xs font-medium uppercase tracking-widest text-white/50">
             {t(lang, 'chooseCharacter')}
           </h2>
@@ -125,7 +125,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                 <button
                   key={c.id}
                   onClick={() => pick({ character: c.id })}
-                  className={`flex w-24 shrink-0 flex-col items-center gap-1.5 rounded-2xl border p-2.5 transition-all ${
+                  className={`ui-card flex w-24 shrink-0 flex-col items-center gap-1.5 rounded-2xl border p-2.5 ${
                     active ? 'border-transparent bg-white/10' : 'border-white/10 bg-white/5 hover:bg-white/10'
                   }`}
                   style={active ? { boxShadow: `0 0 0 2px ${c.accent}, 0 10px 30px -12px ${c.accent}` } : undefined}
@@ -150,7 +150,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
           </HScrollRow>
         </section>
 
-        <section>
+        <section className="fx-rise" style={{ '--d': '130ms' } as CSSProperties}>
           <h2 className="mb-0.5 pl-1 text-xs font-medium uppercase tracking-widest text-white/50">
             {t(lang, 'chooseBackground')}
           </h2>
@@ -161,7 +161,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                 <button
                   key={b.id}
                   onClick={() => pick({ background: b.id })}
-                  className={`w-36 shrink-0 overflow-hidden rounded-2xl border transition-all ${
+                  className={`ui-card w-36 shrink-0 overflow-hidden rounded-2xl border ${
                     active ? 'border-white/80' : 'border-white/10 hover:border-white/40'
                   }`}
                 >
@@ -183,7 +183,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
           </HScrollRow>
         </section>
 
-        <section>
+        <section className="fx-rise" style={{ '--d': '190ms' } as CSSProperties}>
           <h2 className="mb-0.5 pl-1 text-xs font-medium uppercase tracking-widest text-white/50">
             {t(lang, 'chooseLanguage')}
           </h2>
@@ -194,7 +194,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                 <button
                   key={l.id}
                   onClick={() => pick({ lang: l.id })}
-                  className={`shrink-0 rounded-full px-6 py-2.5 text-sm font-medium transition ${
+                  className={`ui-btn shrink-0 rounded-full px-6 py-2.5 text-sm font-medium hover:scale-105 ${
                     active ? 'bg-white text-black' : 'bg-white/10 text-white/75 hover:bg-white/20'
                   }`}
                 >
@@ -206,13 +206,13 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
         </section>
 
         {/* reserved row — future features land here */}
-        <section>
+        <section className="fx-rise" style={{ '--d': '250ms' } as CSSProperties}>
           <h2 className="mb-0.5 pl-1 text-xs font-medium uppercase tracking-widest text-white/25">✦</h2>
           <HScrollRow ariaLabel="future">
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
-                className="flex h-[104px] w-32 shrink-0 items-center justify-center rounded-2xl border border-dashed border-white/10 text-xs text-white/25"
+                className="ui-card flex h-[104px] w-32 shrink-0 items-center justify-center rounded-2xl border border-dashed border-white/10 text-xs text-white/25"
               >
                 {t(lang, 'comingSoon')}
               </div>
@@ -222,10 +222,10 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
       </div>
 
       {/* confirm — centered at the bottom */}
-      <div className="flex justify-center pb-6 pt-2">
+      <div className="fx-rise flex justify-center pb-6 pt-2" style={{ '--d': '310ms' } as CSSProperties}>
         <button
           onClick={confirm}
-          className="rounded-full bg-white px-10 py-3.5 text-base font-semibold text-black shadow-[0_10px_40px_-10px_rgba(255,255,255,0.4)] transition hover:bg-white/85"
+          className="ui-btn ui-btn-primary rounded-full bg-white px-10 py-3.5 text-base font-semibold text-black shadow-[0_10px_40px_-10px_rgba(255,255,255,0.4)]"
         >
           {mode === 'change' ? t(lang, 'changeCta') : t(lang, 'confirmCta', { name: character.name })}
         </button>

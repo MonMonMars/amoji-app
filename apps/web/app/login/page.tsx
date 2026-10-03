@@ -1,6 +1,6 @@
 'use client';
 // Login — just a name. Kept on-device; she can learn it into memory later.
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import { loadProfile, saveProfile } from '../../lib/profile';
 import { t, usePrefs } from '../../lib/prefs';
@@ -23,14 +23,18 @@ export default function Login() {
   const lang = prefs.lang;
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-neutral-950 px-6 text-white">
-      <div className="mb-2 flex items-center gap-2">
+    <main className="fx-page relative flex min-h-dvh flex-col items-center justify-center gap-6 overflow-hidden bg-neutral-950 px-6 text-white">
+      {/* ambient glows — same mood as the splash */}
+      <div className="pointer-events-none absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-pink-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 left-1/4 h-80 w-80 rounded-full bg-indigo-500/10 blur-3xl" />
+
+      <div className="fx-logo mb-2 flex items-center gap-2">
         <span className="h-3.5 w-3.5 rounded-full bg-pink-400 shadow-[0_0_30px_6px_rgba(244,114,182,0.4)]" />
         <h1 className="text-3xl font-bold tracking-tight">{APP_NAME}</h1>
       </div>
       <p className="text-sm tracking-[0.25em] text-white/35 uppercase">{APP_TAGLINE}</p>
 
-      <div className="mt-8 w-full max-w-sm">
+      <div className="fx-rise mt-8 w-full max-w-sm" style={{ '--d': '160ms' } as CSSProperties}>
         <label className="mb-2 block text-center text-sm text-white/60">{t(lang, 'loginPrompt')}</label>
         <input
           value={name}
@@ -43,12 +47,12 @@ export default function Login() {
         />
         <button
           onClick={go}
-          className="mt-4 h-12 w-full rounded-full bg-white text-base font-semibold text-black transition hover:bg-white/85"
+          className="ui-btn ui-btn-primary mt-4 h-12 w-full rounded-full bg-white text-base font-semibold text-black shadow-[0_10px_40px_-12px_rgba(255,255,255,0.45)]"
         >
           {t(lang, 'loginCta')}
         </button>
         <div className="mt-3 text-center">
-          <button onClick={() => router.push('/select')} className="text-xs text-white/35 underline-offset-4 hover:underline">
+          <button onClick={() => router.push('/select')} className="ui-btn rounded-full px-3 py-1 text-xs text-white/35 underline-offset-4 hover:underline">
             {t(lang, 'loginSkip')}
           </button>
         </div>

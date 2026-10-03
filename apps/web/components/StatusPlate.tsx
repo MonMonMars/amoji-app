@@ -47,7 +47,7 @@ export default function StatusPlate({
     <button
       onClick={onOpenSelect}
       title={t(lang, 'openSelect')}
-      className="flex items-center gap-2.5 rounded-full border border-white/10 bg-black/30 py-1.5 pl-1.5 pr-4 backdrop-blur-md transition hover:bg-black/50"
+      className="ui-btn flex items-center gap-2.5 rounded-full border border-white/10 bg-black/30 py-1.5 pl-1.5 pr-4 backdrop-blur-md hover:bg-black/50"
     >
       <span
         className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full text-sm font-bold text-black/70"

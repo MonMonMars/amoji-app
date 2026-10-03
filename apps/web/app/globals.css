@@ -40,6 +40,145 @@ body {
   animation: kenburns 38s ease-in-out infinite;
   will-change: transform;
 }
+
+/* ============================================================
+   Game-UI effects layer (r2026-10-03.31)
+   One shared vocabulary for press / hover / entrance feedback
+   so every button, card and page transition feels like a
+   polished game menu. All animations respect reduced-motion.
+   ============================================================ */
+
+/* ---- page entrances: each route animates itself in on mount ---- */
+@keyframes fx-page-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.fx-page {
+  animation: fx-page-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* ---- staggered reveal for rows/cards; delay via inline --d ---- */
+@keyframes fx-rise-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fx-rise {
+  animation: fx-rise-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: var(--d, 0ms);
+}
+
+/* ---- splash / login logo entrance ---- */
+@keyframes fx-logo-in {
+  0%   { opacity: 0; transform: scale(0.82); filter: blur(10px); }
+  60%  { filter: blur(0); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+.fx-logo {
+  animation: fx-logo-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* ---- backdrop fade (settings sheet scrim) ---- */
+@keyframes fx-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.fx-fade-in {
+  animation: fx-fade-in 0.25s ease-out backwards;
+}
+
+/* ---- settings sheet slide-in ---- */
+@keyframes fx-sheet-in {
+  from { transform: translateX(48px); opacity: 0.4; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+.fx-sheet-in {
+  animation: fx-sheet-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* ---- shared button feel: press pop + hover brighten + focus ring ---- */
+.ui-btn {
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.25s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    filter 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.ui-btn:hover { filter: brightness(1.1); }
+.ui-btn:active { transform: scale(0.93); filter: brightness(1.2); }
+.ui-btn:focus-visible {
+  outline: 2px solid rgba(249, 168, 212, 0.85);
+  outline-offset: 2px;
+}
+.ui-btn:disabled { transform: none; filter: none; }
+
+/* ---- primary CTA: lift + glow + repeating shimmer sweep ---- */
+.ui-btn-primary {
+  position: relative;
+  overflow: hidden;
+  will-change: transform;
+}
+.ui-btn-primary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 16px 44px -10px rgba(255, 255, 255, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+.ui-btn-primary:active {
+  transform: translateY(0) scale(0.94);
+}
+.ui-btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.7) 50%, transparent 58%);
+  transform: translateX(-130%);
+  animation: fx-shimmer 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes fx-shimmer {
+  0%, 52%   { transform: translateX(-130%); }
+  82%, 100% { transform: translateX(130%); }
+}
+
+/* ---- selection cards: hover lift + press ---- */
+.ui-card {
+  transition:
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    filter 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.ui-card:hover { transform: translateY(-4px) scale(1.03); filter: brightness(1.08); }
+.ui-card:active { transform: translateY(-1px) scale(0.96); }
+.ui-card:focus-visible {
+  outline: 2px solid rgba(249, 168, 212, 0.85);
+  outline-offset: 2px;
+}
+
+/* ---- preview panel slow sheen sweep ---- */
+.fx-sheen { position: relative; }
+.fx-sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 44%, rgba(255, 255, 255, 0.09) 50%, transparent 56%);
+  transform: translateX(-110%);
+  animation: fx-sheen-sweep 5.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes fx-sheen-sweep {
+  0%, 58%   { transform: translateX(-110%); }
+  88%, 100% { transform: translateX(110%); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-kenburns { animation: none; }
+  .fx-page, .fx-rise, .fx-logo, .fx-fade-in, .fx-sheet-in { animation: none; }
+  .ui-btn-primary::after, .fx-sheen::after { animation: none; display: none; }
+  .ui-btn, .ui-card { transition: none; }
 }

@@ -42,7 +42,7 @@ export default function Chat() {
   const background = backgroundById(prefs.background);
 
   return (
-    <main className="relative h-dvh w-screen overflow-hidden text-white" style={{ background: background.css }}>
+    <main className="fx-page relative h-dvh w-screen overflow-hidden text-white" style={{ background: background.css }}>
       <SceneBackdrop background={background} />
       <CompanionCanvas
         accent={character.accent}
@@ -66,7 +66,7 @@ export default function Chat() {
         <button
           onClick={() => setSheetOpen(true)}
           title={prefs.lang === 'yue' ? '設定' : 'Settings'}
-          className="rounded-full border border-white/10 bg-black/30 px-3 py-2 text-sm text-white/80 backdrop-blur-md transition hover:bg-black/50"
+          className="ui-btn rounded-full border border-white/10 bg-black/30 px-3 py-2 text-sm text-white/80 backdrop-blur-md hover:bg-black/50"
         >
           ⚙️
         </button>
