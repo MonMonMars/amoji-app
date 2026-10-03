@@ -9,7 +9,11 @@ const POSE_IDS = new Set(IDLE_POSES.map((p) => p.id));
 const LANG_IDS = LANGS.map((l) => l.id) as Lang[];
 const TWISTS = ['playful', 'startled', 'unimpressed', 'flustered', 'challenging'];
 const FACES = ['happy', 'surprised', 'angry', 'relaxed'];
-const FEMALE = new Set(['juno', 'nova', 'mochi', 'luna', 'rin', 'tifa', 'aerith', 'kasumi', 'marin', 'ayane', 'hitomi']);
+const FEMALE = new Set([
+  'juno', 'nova', 'mochi', 'luna', 'rin', 'tifa', 'aerith', 'kasumi', 'marin', 'ayane', 'hitomi',
+  // r2026-10-03.35 registry expansion
+  'lydia', 'ruby', 'snowy',
+]);
 
 describe('per-character persona coverage', () => {
   it('every character has ≥3 curated idle poses, all valid ids', () => {

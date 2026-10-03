@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest';
-// Cast & scene data integrity for the r2026-10-03.01 expansion.
+// Cast & scene data integrity — r2026-10-03.35 expanded the cast to 21
+// characters, six of which carry remote registry thumbnails/models.
 import { BACKGROUNDS, CHARACTERS, characterById, backgroundById, DEFAULT_PREFS, type Lang } from '../lib/prefs';
 
 describe('cast roster', () => {
-  it('has 15 characters with portraits, taglines in every language, and personas', () => {
-    expect(CHARACTERS.length).toBe(15);
+  it('has 21 characters with portraits, taglines in every language, and personas', () => {
+    expect(CHARACTERS.length).toBe(21);
     for (const c of CHARACTERS) {
-      expect(c.image).toBe(`/portraits/${c.id}.jpg`);
+      // local portraits live under /portraits; the registry six carry remote thumbs
+      const img = c.image ?? '';
+      if (img.startsWith('/')) expect(img).toBe(`/portraits/${c.id}.jpg`);
+      else expect(img).toMatch(/^https:\/\/arweave\.net\//);
       for (const l of ['en', 'yue', 'zh', 'ja'] as Lang[]) expect(c.tagline[l].length).toBeGreaterThan(0);
       expect(c.persona.length).toBeGreaterThan(20);
       expect(['female', 'male']).toContain(c.gender);
