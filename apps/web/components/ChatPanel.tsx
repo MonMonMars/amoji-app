@@ -6,6 +6,7 @@ import { loadHistory, saveHistory } from '../lib/companion-store';
 import { notifySpeaking, isSpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
 import { pickIdleLine, pickPokeLine } from '../lib/persona-chatter';
+import { pickOuch } from '../lib/ouch';
 import { clientChat } from '../lib/client-chat';
 import { speak, stopSpeaking, speakThinkingFiller } from '../lib/voice';
 import { buildDailyGreeting, buildMemoryBlock, memorySummaryCount, recordVisit, rememberExchange } from '../lib/memory';
@@ -86,10 +87,14 @@ export default function ChatPanel({
     return () => clearInterval(id);
   }, []);
 
-  const sayLocal = (text: string, hints?: Record<string, number>) => {
+  const sayLocal = (
+    text: string,
+    hints?: Record<string, number>,
+    lead?: { text: string; pitch: number; rate: number },
+  ) => {
     feedUtterance(text);
-    notifySpeaking(text);
-    speak(text, characterId, lang, hints);
+    notifySpeaking(lead ? `${lead.text} ${text}` : text);
+    speak(text, characterId, lang, hints, lead);
     if (hints) applyLlmHints(hints);
     setHistory((h) => [...h, { role: 'assistant', content: text }]);
   };
@@ -107,13 +112,14 @@ export default function ChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // poke replies — personality-specific reaction line + face flavor
+  // poke replies — instant ouch cry (as the vocal lead) + personality line
   const lastPokeRef = useRef(pokeCount);
   useEffect(() => {
     if (pokeCount === lastPokeRef.current) return;
     lastPokeRef.current = pokeCount;
     lastActivityRef.current = Date.now();
-    sayLocal(pickPokeLine(characterId, lang, pokeCount), { surprise: 0.8, joy: 0.4 });
+    const ouch = pickOuch(characterId, lang, pokeCount);
+    sayLocal(pickPokeLine(characterId, lang, pokeCount), { surprise: 0.8, joy: 0.4 }, { text: ouch, pitch: 0.3, rate: 0.15 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pokeCount]);
 

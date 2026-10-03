@@ -298,16 +298,24 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       if (vrm) {
         const em = vrm.expressionManager;
         if (em) {
-          // poke reaction: squash-bounce + personality twist, 600ms decay
+          // poke reaction: whole-body flinch — shoved back away from the
+          // camera, knees dip, squash-bounce, then a spring wobble home (~900ms)
           const pokeAge = now - pokeAt;
-          const boost = pokeAge < 600 ? 1 - pokeAge / 600 : 0;
+          const boost = pokeAge < 900 ? 1 - pokeAge / 900 : 0;
           if (boost > 0) {
-            const arc = Math.sin((1 - boost) * Math.PI);
-            vrm.scene.scale.y = 1 - poke.squash * arc;
-            vrm.scene.rotation.y = (TWIST_AMOUNT[poke.twist] ?? 0.05) * Math.sin((1 - boost) * Math.PI * 2);
+            const t = 1 - boost; // 0→1 through the reaction
+            const arc = Math.sin(t * Math.PI); // squash-bounce belly
+            const press = Math.min(t / 0.07, 1) * Math.exp(-Math.max(0, t - 0.07) * 4); // shove out, ease home
+            const wobble = 0.04 * Math.exp(-t * 4.5) * Math.sin(t * 26); // spring settle
+            vrm.scene.position.z = -(0.3 * press + wobble); // pushed back, away from the camera
+            vrm.scene.position.y = -0.06 * arc; // knees dip
+            vrm.scene.scale.set(1 + 0.07 * arc, 1 - poke.squash * 1.4 * arc, 1 + 0.05 * arc);
+            vrm.scene.rotation.x = -0.16 * arc; // lean back from the poke
+            vrm.scene.rotation.y = (TWIST_AMOUNT[poke.twist] ?? 0.05) * 1.6 * Math.sin(t * Math.PI * 2);
           } else {
-            vrm.scene.scale.y = 1;
-            vrm.scene.rotation.y = 0;
+            vrm.scene.position.set(0, 0, 0);
+            vrm.scene.scale.set(1, 1, 1);
+            vrm.scene.rotation.set(0, 0, 0);
           }
 
           // speech visemes: duck the emotion shapes while the mouth talks
