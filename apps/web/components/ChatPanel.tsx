@@ -46,6 +46,11 @@
 // melodic contour (one note per clause): she sings the lyric-like reply
 // itself, or a little ditty from the per-language song bank, while the r.39
 // sing performance plays on for the whole song.
+// r2026-10-04.42: together-modes — she plays mini-games (RPS / guess-the-
+// number / dice, LLM-free so they're instant and fair), sings a call-and-
+// response DUET with you (you take a line, she takes a line, last line
+// together), and shares a MEAL (your "eat with me" gets a toast as the vocal
+// lead of her reply). "Quit" ends a running game or duet gracefully.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh, triggerMove } from '../lib/companion';
 import { detectMove } from '../lib/moves';
@@ -59,7 +64,9 @@ import { pickLaugh, laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { pickThinkPhrase } from '../lib/think-phrases';
 import { clientChat } from '../lib/client-chat';
 import { speak, stopSpeaking, speakThinkingFiller, sing } from '../lib/voice';
-import { pickSong } from '../lib/songs';
+import { pickSong, pickDuet } from '../lib/songs';
+import { detectGame, startGame, playTurn, gameFarewellLine, type GameState } from '../lib/games';
+import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodbyeLine, pickMealToast } from '../lib/activities';
 import { buildDailyGreeting, buildMemoryBlock, feltMood, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange, rememberTurn } from '../lib/memory';
 import { listenContinuous, listenSupported } from '../lib/listen';
 import { t, type Lang } from '../lib/prefs';
@@ -116,6 +123,9 @@ export default function ChatPanel({
   const micModeRef = useRef(false);
   const micStopRef = useRef<(() => void) | null>(null);
   const laughCountRef = useRef(0);
+  // r.42 — together-mode state: a running mini-game, or a running duet
+  const gameRef = useRef<GameState | null>(null);
+  const duetRef = useRef<{ lines: string[]; idx: number } | null>(null);
   const lastFeltRef = useRef<string | undefined>(undefined);
   const onStatusRef = useRef(onStatus);
   onStatusRef.current = onStatus;
@@ -186,6 +196,8 @@ export default function ChatPanel({
   // r.40: a sing trigger goes further — she delivers the line AS A SONG on
   // the melodic contour (lyric-like replies ride as-is; longer ones become a
   // ditty from the song bank) and the history shows exactly what she sang.
+  // r.42: a shared meal gets a toast — "eat with me" raises a little cheer
+  // as the vocal lead of her reply (乾杯！/ Cheers!), like a dinner date.
   const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string): string => {
     const mv = detectMove(userText) ?? detectMove(reply);
     // r.40 — she really sings: a short lyric-like reply rides the melody as-is;
@@ -204,8 +216,17 @@ export default function ChatPanel({
     if (mv) triggerMove(mv);
     const funny = LAUGH_RE.test(userText) || LAUGH_RE.test(reply);
     if (!funny) {
+      // r.42 — dinner together: raise a toast as the vocal lead of her reply
+      const meal = !!userText && MEAL_TOGETHER_TRIGGER.test(userText);
       notifySpeaking(reply);
-      speak(reply, characterId, lang, hints, undefined, intensity);
+      speak(
+        reply,
+        characterId,
+        lang,
+        hints,
+        meal ? { text: pickMealToast(lang, laughCountRef.current), pitch: 0.12, rate: 0 } : undefined,
+        intensity,
+      );
       return reply;
     }
     const style = laughStyleFor(mood);
@@ -304,6 +325,61 @@ export default function ChatPanel({
     setHistory((h) => [...h, { role: 'user', content: text }]);
     feedUtterance(text);
     stopSpeaking();
+    // r.42 — together-modes intercept the turn BEFORE any LLM work: quitting
+    // a running game/duet, advancing a running game, taking the next duet
+    // line, starting a new game, or starting a duet. All of these answer
+    // instantly in her own voice — no thinking filler, no brain needed.
+    const done = () => {
+      setBusy(false);
+      busyRef.current = false;
+      lastActivityRef.current = Date.now();
+    };
+    if (QUIT_RE.test(text) && (gameRef.current || duetRef.current)) {
+      const line = gameRef.current ? gameFarewellLine(lang) : duetGoodbyeLine(lang);
+      gameRef.current = null;
+      duetRef.current = null;
+      sayLocal(line);
+      done();
+      return;
+    }
+    if (gameRef.current) {
+      const res = playTurn(gameRef.current, text, lang);
+      gameRef.current = res.ended ? null : res.state;
+      if (res.move) triggerMove(res.move);
+      sayLocal(res.line);
+      done();
+      return;
+    }
+    if (duetRef.current) {
+      const d = duetRef.current;
+      const line = d.lines[d.idx]!;
+      sing(line, characterId, lang);
+      notifySpeaking(line);
+      feedUtterance(line);
+      triggerMove('sing');
+      setHistory((h) => [...h, { role: 'assistant', content: line }]);
+      d.idx += 1;
+      if (d.idx >= d.lines.length) duetRef.current = null;
+      done();
+      return;
+    }
+    {
+      const g = detectGame(text);
+      if (g && g !== 'stop') {
+        const { line, state } = startGame(g, lang);
+        gameRef.current = state;
+        sayLocal(line);
+        done();
+        return;
+      }
+    }
+    if (DUET_TRIGGER.test(text)) {
+      duetRef.current = { lines: pickDuet(lang, laughCountRef.current), idx: 0 };
+      triggerMove('sing');
+      sayLocal(duetInviteLine(lang));
+      done();
+      return;
+    }
     // felt-mood reaction: she reacts to how YOU feel the instant you say it —
     // "I'm so tired" softens her face and the mic orb before her reply even
     // starts generating, and the felt mood stays as a floor under whatever
