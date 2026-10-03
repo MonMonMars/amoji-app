@@ -7,6 +7,7 @@ import { CHARACTERS } from '../lib/prefs';
 // Asset governance — mirrors the CI manifest/structural/banned checks inside
 // the test suite so cast/ binaries are governed from the moment they land,
 // independent of the CI workflow file (which is write-protected via MCP).
+// r2026-10-04.52: manifest and prefs agree on the full 29-character cast.
 const here = path.dirname(fileURLToPath(import.meta.url));
 const MODELS = path.resolve(here, '../public/models');
 const MANIFEST = fs.readFileSync(path.join(MODELS, 'ASSET_MANIFEST.md'), 'utf8');
@@ -34,7 +35,7 @@ describe('asset governance', () => {
     for (const f of VRMS) expect(MANIFEST).toContain(path.basename(f));
   });
 
-  it('manifest cast table and prefs agree on all 22 filenames', () => {
+  it('manifest cast table and prefs agree on all 29 filenames (r2026-10-04.52)', () => {
     for (const c of CHARACTERS) expect(MANIFEST).toContain(c.model);
   });
 

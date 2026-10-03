@@ -11,7 +11,10 @@ const LANG_IDS = LANGS.map((l) => l.id) as Lang[];
 const TWISTS = ['playful', 'startled', 'unimpressed', 'flustered', 'challenging'];
 const FACES = ['happy', 'surprised', 'angry', 'relaxed'];
 const FEMALE = new Set([
-  'juno', 'nova', 'mochi', 'luna', 'rin', 'tifa', 'aerith', 'kasumi', 'marin', 'ayane', 'hitomi',
+  'juno', 'nova', 'mochi', 'luna', 'rin',
+  // r2026-10-04.52 flagship expansion — everyone except Atlas, who is male
+  'kizuna', 'alicia', 'ember', 'mei', 'sky', 'yuki', 'hina', 'mio',
+  'kasumi', 'marin', 'ayane', 'hitomi',
   // r2026-10-03.35 registry expansion
   'lydia', 'ruby', 'snowy',
 ]);
