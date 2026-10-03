@@ -326,7 +326,7 @@ export default function ChatPanel({
   // ChatGPT-style hero mic — one button does everything:
   // tap → voice mode ON: the mic stays open and keeps listening; the moment
   // REAL talking is detected (the recognizer only fires on actual speech, so
-  // background noise is ignored) her voice is cut instantly. Typing stays
+   // background noise is ignored) her voice is cut instantly. Typing stays
   // live the whole time. tap again → voice mode OFF.
   const mic = () => {
     if (micModeRef.current) {
@@ -374,7 +374,7 @@ export default function ChatPanel({
   };
 
   return (
-    <div classNameName="pointer-events-auto mx-auto flex w-full max-w-2xl flex-col items-center gap-1.5 px-4 pb-4">
+    <div className="pointer-events-auto mx-auto flex w-full max-w-2xl flex-col items-center gap-1.5 px-4 pb-4">
       {/* boxless history — newer lines opaque, older ones melt away; scrollable */}
       <div
         ref={scrollRef}
