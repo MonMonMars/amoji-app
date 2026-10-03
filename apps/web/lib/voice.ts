@@ -6,6 +6,8 @@
 // r2026-10-03.07: strong emotions now audibly react (giggle/sigh/gasp via
 // lib/fillers), prosody swings are bigger, and speakThinkingFiller() gives the
 // "hmm…" moment (with mouth movement) while the reply is still generating.
+// r2026-10-03.09: speak() accepts an explicit lead tic — poke ouch cries are
+// guaranteed to sound instantly instead of depending on emotion intensity.
 
 import type { Lang } from './prefs';
 import { speakEdge, stopEdge } from './edge-tts';
@@ -105,6 +107,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
     ],
     en: [
       { lang: 'en-US', names: ['Guy', 'Daniel', 'Male'], basePitch: 0.92, baseRate: 0.97 },
+      { lang: 'en-GB', names: ['Daniel', 'Male'], basePitch: 0.92, baseRate: 0.97 },
     ],
   },
   luna: {
@@ -150,6 +153,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
     ],
     en: [
       { lang: 'en-US', names: ['Eric', 'Daniel', 'Male'], basePitch: 0.98, baseRate: 0.9 },
+      { lang: 'en-GB', names: ['Daniel', 'Male'], basePitch: 0.98, baseRate: 0.9 },
     ],
   },
   // ---- extended cast (r2026-10-03.04): gender-correct, personality-tuned ----
@@ -409,19 +413,30 @@ export function speakThinkingFiller(characterId: string, lang: Lang): void {
   speak(filler, characterId, lang, { confusion: 0.45, neutral: 0.3 });
 }
 
+/** A leading vocal tic (text + relative pitch/rate lift). */
+export interface VocalLead {
+  text: string;
+  /** pitch multiplier, roughly -0.3..0.5 (synth: ×(1+pitch); neural: SSML delta) */
+  pitch: number;
+  /** rate multiplier, roughly -0.3..0.5 */
+  rate: number;
+}
+
 /** Speak a reply with ChatGPT-style emotional prosody. Caller gates on voiceEnabled(). */
 export function speak(
   text: string,
   characterId: string,
   lang: Lang,
   emotionHints?: Record<string, number>,
+  leadOverride?: VocalLead,
 ): void {
   if (!voiceEnabled()) return;
   const { emotion, value } = dominant(emotionHints);
   const expr = EXPRESSIVENESS[characterId] ?? 1;
   const exprScale = 0.8 + 0.2 * expr; // expressive characters feel emotions harder
-  // strong feelings get an audible tic (giggle/sigh/gasp) before the words
-  const tic = pickInterjection(emotion, value, lang);
+  // strong feelings get an audible tic (giggle/sigh/gasp) before the words —
+  // unless the caller supplies its own lead (e.g. a guaranteed poke ouch)
+  const tic = leadOverride ?? pickInterjection(emotion, value, lang);
 
   // 1) Neural path (free server-grade voices, SSML prosody per emotion)
   if (neuralEnabled() && typeof WebSocket !== 'undefined') {
