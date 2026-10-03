@@ -1,6 +1,6 @@
 'use client';
 // Settings menu — ONE location for every setting (r2026-10-02.7; slimmed r2026-10-03.03).
-// Sections: Mode (kid mode), Language, Voice, Memory & data
+// Sections: Mode (kid mode), Language, Voice, Brain (LLM provider + keys), Memory & data
 // (v2 browser: view / teach / copy / forget), Help (tutorial).
 // Character & scene changing lives in the selection board (top-left name plate) —
 // the gear no longer duplicates it. Reachable from the chat room gear (top right).
@@ -17,6 +17,10 @@ import { notifySpeaking } from '../lib/speech';
 import { loadProfile, saveProfile } from '../lib/profile';
 import { saveHistory } from '../lib/companion-store';
 import { APP_REVISION } from '../lib/revision';
+import {
+  BRAIN_SPECS, brainKey, brainProvider, pickBrain, setBrainKey, setBrainProvider,
+  type BrainProvider,
+} from '../lib/brain';
 import {
   addEntry, deleteEntry, exportMemory, loadMemory,
   type Memory, type MemoryType,
@@ -84,9 +88,11 @@ export default function SettingsSheet({
   const [copied, setCopied] = useState(false);
   const [newText, setNewText] = useState('');
   const [newType, setNewType] = useState<MemoryType>('preference');
+  const [brain, setBrainState] = useState<BrainProvider>(brainProvider());
+  const [keyDrafts, setKeyDrafts] = useState<Record<string, string>>({});
   const tutorNRef = useRef(0);
   useEffect(() => {
-    if (open) { setMem(loadMemory()); setCopied(false); }
+    if (open) { setMem(loadMemory()); setCopied(false); setBrainState(brainProvider()); setKeyDrafts({}); }
   }, [open]);
   if (!open) return null;
   const lang = prefs.lang;
@@ -147,6 +153,13 @@ export default function SettingsSheet({
     setMem(loadMemory());
   };
 
+  // Brain (LLM) settings — provider chips + per-provider key field.
+  const setBrain = (id: BrainProvider) => { setBrainState(id); setBrainProvider(id); };
+  const shownSpec = brain === 'auto'
+    ? pickBrain().spec
+    : (BRAIN_SPECS.find((s) => s.id === brain) ?? BRAIN_SPECS[BRAIN_SPECS.length - 1]!);
+  const shownKey = keyDrafts[shownSpec.id] ?? brainKey(shownSpec.id);
+
   return (
     <div className="absolute inset-0 z-20 flex justify-end bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div
@@ -188,6 +201,53 @@ export default function SettingsSheet({
                 accent={accent}
                 onClick={() => { const next = !neuralOn; setNeuralOnState(next); setNeuralEnabled(next); }}
               />
+            </div>
+          </Section>
+
+          <Section title={t(lang, 'brainTitle')}>
+            <div className="space-y-2.5 rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="flex flex-wrap gap-1.5">
+                {(['auto', ...BRAIN_SPECS.map((s) => s.id)] as BrainProvider[]).map((id) => (
+                  <button
+                    key={id}
+                    onClick={() => setBrain(id)}
+                    className={`rounded-full px-3 py-1.5 text-xs transition ${
+                      brain === id
+                        ? 'bg-pink-400/80 font-medium text-neutral-950'
+                        : 'bg-white/5 text-white/50 hover:text-white/80'
+                    }`}
+                  >
+                    {id === 'auto' ? t(lang, 'brainAuto') : (BRAIN_SPECS.find((s) => s.id === id)?.label ?? id)}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] leading-relaxed text-white/45">
+                {brain === 'auto' ? t(lang, 'brainAutoHint') : shownSpec.blurb}
+              </p>
+              {!shownSpec.keyless && (
+                <div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="password"
+                      autoComplete="off"
+                      value={shownKey}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setKeyDrafts((d) => ({ ...d, [shownSpec.id]: v }));
+                        setBrainKey(shownSpec.id, v);
+                      }}
+                      placeholder={t(lang, 'brainKeyPlaceholder')}
+                      className="h-9 min-w-0 flex-1 rounded-full border border-white/10 bg-black/30 px-3 text-xs text-white placeholder-white/30 outline-none focus:border-white/40"
+                    />
+                    <span className={`shrink-0 text-[11px] ${brainKey(shownSpec.id) ? 'text-emerald-300/80' : 'text-white/35'}`}>
+                      {brainKey(shownSpec.id) ? '✓' : t(lang, 'brainNoKey')}
+                    </span>
+                  </div>
+                  {shownSpec.keyFrom && (
+                    <p className="mt-1.5 text-[10px] text-white/30">key → {shownSpec.keyFrom}</p>
+                  )}
+                </div>
+              )}
             </div>
           </Section>
 

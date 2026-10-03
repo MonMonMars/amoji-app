@@ -64,7 +64,7 @@ export const CHARACTERS: CharacterDef[] = [
   // ---- extended cast (r2026-10-03.01): game/anime-inspired original designs --
   {
     id: 'tifa', image: '/portraits/tifa.jpg', name: 'Tifa', gender: 'female', accent: '#ef4444',
-    tagline: { en: 'Athletic, warm-hearted, fiercely loyal', yue: '陽光健碩，好打不平', zh: '阳光运动系，重情重义', ja: 'スポーティで心温かい、仲間思い' },
+    tagline: { en: 'Athletic, warm-hearted, fiercely loyal', yue: '陽光健碩，好打不平', zh: '阳光运动系，重情重义', ja: 'スポーツティで心温かい、仲間思い' },
     persona: 'You are Tifa: athletic, warm-hearted, fiercely loyal. You cheer people up with food and straight talk, hate seeing friends hurt, mix playfulness with a strong sense of justice, and your warmth comes with quiet strength.',
   },
   {
@@ -172,7 +172,9 @@ export type StrKey =
   | 'memoryBrowser' | 'memoryEmpty' | 'memoryAddPlaceholder' | 'memoryAdd' | 'memoryExport'
   | 'memoryCopied' | 'memoryTypePreference' | 'memoryTypeEvent' | 'memoryTypePlan' | 'forgetOneConfirm'
   // kid mode (r2026-10-03.03)
-  | 'settingsMode' | 'kidMode' | 'kidModeHint';
+  | 'settingsMode' | 'kidMode' | 'kidModeHint'
+  // brain routing (r2026-10-03.05)
+  | 'brainTitle' | 'brainAuto' | 'brainAutoHint' | 'brainKeyPlaceholder' | 'brainNoKey';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   tagline: {
@@ -266,6 +268,21 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: '只保留健康向上的角色和明亮场景',
     ja: '健全なキャラと明るい場所だけ',
   },
+  brainTitle: { en: 'AI brain', yue: 'AI 大腦', zh: 'AI 大脑', ja: 'AIの頭脳' },
+  brainAuto: { en: 'Auto ✦', yue: '自動 ✦', zh: '自动 ✦', ja: '自動 ✦' },
+  brainAutoHint: {
+    en: 'Auto picks the smartest brain you add a key for — otherwise the free shared lane.',
+    yue: '「自動」會用你加咗 Key 嘅最強大腦——冇就用免費共享通道。',
+    zh: '「自动」会使用你已添加密钥的最强大脑——没有则使用免费共享通道。',
+    ja: '「自動」はキーを登録した最強の頭脳を使い、なければ無料の共有レーン。',
+  },
+  brainKeyPlaceholder: {
+    en: 'paste API key — saved only on this device',
+    yue: '貼上 API 密鑰——只喺呢部機保存',
+    zh: '粘贴 API 密钥——仅保存在本设备',
+    ja: 'APIキーを貼り付け——この端末のみ保存',
+  },
+  brainNoKey: { en: 'no key — free lane', yue: '冇 Key——免費通道', zh: '没有密钥——免费通道', ja: 'キーなし——無料レーン' },
 };
 
 export function t(lang: Lang, key: StrKey, vars?: Record<string, string>): string {
