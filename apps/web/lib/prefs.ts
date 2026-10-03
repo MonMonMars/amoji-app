@@ -171,6 +171,8 @@ export type StrKey =
   // memory v2 browser (r2026-10-02.11)
   | 'memoryBrowser' | 'memoryEmpty' | 'memoryAddPlaceholder' | 'memoryAdd' | 'memoryExport'
   | 'memoryCopied' | 'memoryTypePreference' | 'memoryTypeEvent' | 'memoryTypePlan' | 'forgetOneConfirm'
+  // emotion diary (r2026-10-03.14)
+  | 'diaryTitle' | 'diaryEmpty'
   // kid mode (r2026-10-03.03)
   | 'settingsMode' | 'kidMode' | 'kidModeHint'
   // brain routing (r2026-10-03.05)
@@ -260,6 +262,18 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   memoryTypeEvent: { en: 'moment', yue: '往事', zh: '经历', ja: '思い出' },
   memoryTypePlan: { en: 'plan', yue: '計劃', zh: '计划', ja: '予定' },
   forgetOneConfirm: { en: 'Forget just this memory?', yue: '淨係唔記得呢樣嘢？', zh: '只忘记这一条吗？', ja: 'これだけ忘れる？' },
+  diaryTitle: {
+    en: '📖 Her diary — how she remembers your recent days',
+    yue: '📖 佢嘅日記——佢點樣記住你哋最近嘅日子',
+    zh: '📖 她的日记——她如何记住你们最近的日子',
+    ja: '📖 彼女の日記——最近の日々をどう覚えているか',
+  },
+  diaryEmpty: {
+    en: 'No entries yet — she writes a line after every chat.',
+    yue: '仲未有——每次傾偈之後，佢會寫低一筆。',
+    zh: '还没有——每次聊天后，她都会记下一笔。',
+    ja: 'まだない——会話のたびに一行書き留めるよ。',
+  },
   settingsMode: { en: 'Mode', yue: '模式', zh: '模式', ja: 'モード' },
   kidMode: { en: 'Kid mode', yue: '兒童模式', zh: '儿童模式', ja: 'キッズモード' },
   kidModeHint: {
@@ -340,7 +354,7 @@ export function backgroundById(id: string): BackgroundDef {
 export function usePrefs(): [Prefs, (patch: Partial<Prefs>) => void] {
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   useEffect(() => { setPrefs(loadPrefs()); }, []);
-  const update = (patch: Partial<Prefs>) => {
+  const update = (patch: Partial<Prefs>) => void {
     setPrefs((p) => {
       const next = { ...p, ...patch };
       savePrefs(next);

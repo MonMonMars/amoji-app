@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
   addEntry, buildDailyGreeting, buildMemoryBlock, deleteEntry, editEntry,
-  rememberExchange, type Memory,
+  diarySummary, rememberExchange, type Memory,
 } from '../lib/memory';
 
 function fresh(): Memory {
   return { facts: [], exchanges: 0, moods: [], updatedAt: '', entries: [] };
+}
+
+function daysAgo(n: number): string {
+  return new Date(Date.now() - n * 86_400_000).toDateString();
 }
 
 describe('memory v2 typed entries', () => {
@@ -65,5 +69,59 @@ describe('memory v2 typed entries', () => {
   it('daily greeting asks about a plan that was due yesterday', () => {
     const line = buildDailyGreeting('en', { isNewDay: true, streak: 2, planMissed: 'see the dentist' });
     expect(line).toContain('see the dentist');
+  });
+});
+
+// ---------- v3 emotion diary (r2026-10-03.14) ----------
+
+describe('emotion diary', () => {
+  it('writes a mood-tagged diary line per exchange', () => {
+    const m = fresh();
+    rememberExchange('今天好開心呀，覺得 happy', m);
+    expect(m.diary?.length).toBe(1);
+    expect(m.diary![0]!.mood).toBe('happy');
+    expect(m.diary![0]!.text.length).toBeGreaterThan(0);
+    expect(m.diary![0]!.exchangeNo).toBe(1);
+  });
+
+  it('skips an exact duplicate line on the same day', () => {
+    const m = fresh();
+    rememberExchange('hello there', m);
+    rememberExchange('hello there', m);
+    expect(m.diary?.length).toBe(1);
+  });
+
+  it('caps the diary and drops the oldest lines', () => {
+    const m = fresh();
+    for (let i = 0; i < 35; i++) rememberExchange(`message number ${i}`, m);
+    expect(m.diary!.length).toBe(30);
+  });
+
+  it('summarises one line per day with moods', () => {
+    const m = fresh();
+    m.diary = [
+      { id: '1', day: daysAgo(2), text: 'went hiking with the dog', mood: 'happy', exchangeNo: 1 },
+      { id: '2', day: daysAgo(2), text: 'felt tired at night', mood: 'tired', exchangeNo: 2 },
+      { id: '3', day: daysAgo(0), text: 'big interview today', exchangeNo: 3 },
+    ];
+    const lines = diarySummary(m);
+    expect(lines.length).toBe(2);
+    expect(lines[0]).toContain('went hiking with the dog'); // last line of that day
+    expect(lines[0]).toContain('[happy/tired]');
+    expect(lines[1]).toContain('big interview');
+  });
+
+  it('injects recent diary days into the memory block', () => {
+    const m = fresh();
+    m.userName = 'Simon';
+    m.exchanges = 5;
+    rememberExchange('yesterday I adopted a cat', m);
+    const block = buildMemoryBlock('en', m)!;
+    expect(block).toContain('yesterday I adopted a cat');
+  });
+
+  it('daily greeting recalls this day last week from the diary', () => {
+    const line = buildDailyGreeting('yue', { isNewDay: true, streak: 3, diaryWeekAgo: '去咗行山' });
+    expect(line).toContain('去咗行山');
   });
 });

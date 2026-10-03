@@ -6,6 +6,10 @@
 // v2 (r2026-10-02.11): typed memory entries — preferences, moments, and
 // upcoming plans with approximate due days — a browser/editor in settings,
 // and a plan-aware daily check-in greeting.
+//
+// v3 (r2026-10-03.14): emotion diary — one mood-tagged line per exchange,
+// so she recalls how your recent days FELT, not just what was said. Recalled
+// across sessions ("this day last week…") and browsable in settings.
 
 export type MemoryType = 'preference' | 'event' | 'plan';
 
@@ -18,6 +22,18 @@ export interface MemoryEntry {
   day: string;
   /** plans only: approximate day the thing happens */
   dueDay?: string;
+}
+
+export interface DiaryEntry {
+  id: string;
+  /** day of the exchange (Date.toDateString()) */
+  day: string;
+  /** the user's words, trimmed to one short line */
+  text: string;
+  /** mood detected during this exchange, if any */
+  mood?: string;
+  /** which conversation exchange this line came from */
+  exchangeNo: number;
 }
 
 export interface Memory {
@@ -34,6 +50,8 @@ export interface Memory {
   lastMoodDay?: string; // day the latest mood was recorded
   /** v2 typed memories, newest last */
   entries: MemoryEntry[];
+  /** v3 emotion diary, newest last — one mood-tagged line per exchange */
+  diary?: DiaryEntry[];
 }
 
 const KEY = 'amoji.memory.v2';
@@ -41,6 +59,7 @@ const LEGACY_KEY = 'amoji.memory.v1';
 const MAX_FACTS = 40;
 const MAX_MOODS = 14;
 const MAX_ENTRIES = 60;
+const MAX_DIARY = 30;
 
 function todayStr(offsetDays = 0): string {
   return new Date(Date.now() + offsetDays * 86_400_000).toDateString();
@@ -69,6 +88,7 @@ function coerce(parsed: unknown): Memory | undefined {
     visitStreak: typeof m.visitStreak === 'number' ? m.visitStreak : undefined,
     lastMoodDay: typeof m.lastMoodDay === 'string' ? m.lastMoodDay : undefined,
     entries: [],
+    diary: [],
   };
   if (Array.isArray(m.entries)) {
     memory.entries = m.entries.filter(
@@ -79,6 +99,14 @@ function coerce(parsed: unknown): Memory | undefined {
   } else {
     // v1 → v2 migration: seed typed entries from the flat fact lines
     memory.entries = memory.facts.map((f) => ({ id: newId(), type: 'preference', text: f, day: '' }));
+  }
+  if (Array.isArray(m.diary)) {
+    // defensive: old stored JSON (pre-diary) simply has no array — tolerate junk
+    memory.diary = m.diary.filter(
+      (d): d is DiaryEntry =>
+        !!d && typeof d === 'object' && typeof d.id === 'string' && typeof d.day === 'string' &&
+        typeof d.text === 'string',
+    );
   }
   return memory;
 }
@@ -98,7 +126,7 @@ export function loadMemory(): Memory {
       if (m) { save(m); return m; }
     }
   } catch { /* ignore */ }
-  return { facts: [], exchanges: 0, moods: [], updatedAt: '', entries: [] };
+  return { facts: [], exchanges: 0, moods: [], updatedAt: '', entries: [], diary: [] };
 }
 
 function save(m: Memory): void {
@@ -148,6 +176,47 @@ export function editEntry(id: string, text: string, m: Memory = loadMemory()): v
   if (e && clean) { e.text = clean; save(m); }
 }
 
+// ---------- emotion diary (v3) ----------
+
+/**
+ * She keeps a private diary: one short mood-tagged line per exchange, so she
+ * can recall how your recent days FELT, not just what was said. Written inside
+ * rememberExchange; capped, drop-oldest, same-day exact duplicates skipped.
+ */
+function pushDiary(m: Memory, userText: string, mood?: string): void {
+  const clean = userText.trim().replace(/\s+/g, ' ').slice(0, 120);
+  if (!clean) return;
+  if (!m.diary) m.diary = [];
+  const last = m.diary[m.diary.length - 1];
+  if (last && last.day === todayStr() && last.text === clean) return;
+  m.diary.push({ id: newId(), day: todayStr(), text: clean, mood, exchangeNo: m.exchanges });
+  if (m.diary.length > MAX_DIARY) m.diary.shift();
+}
+
+/** Remove one diary line (settings → diary browser). */
+export function deleteDiaryEntry(id: string, m: Memory = loadMemory()): void {
+  if (!m.diary) return;
+  m.diary = m.diary.filter((d) => d.id !== id);
+  save(m);
+}
+
+/** One line per recent day — "Oct 01 [happy] — went hiking with the dog". */
+export function diarySummary(m: Memory = loadMemory(), maxDays = 7): string[] {
+  if (!m.diary || m.diary.length === 0) return [];
+  const byDay = new Map<string, DiaryEntry[]>();
+  for (const d of m.diary) {
+    const list = byDay.get(d.day);
+    if (list) list.push(d); else byDay.set(d.day, [d]);
+  }
+  return [...byDay.keys()].slice(-maxDays).map((day) => {
+    const entries = byDay.get(day)!;
+    const last = entries[entries.length - 1]!;
+    const moods = [...new Set(entries.map((e) => e.mood).filter((x): x is string => typeof x === 'string'))];
+    const moodPart = moods.length ? ` [${moods.join('/')}]` : '';
+    return `${day.slice(4, 10)}${moodPart} — ${last.text}`;
+  });
+}
+
 /** Everything she remembers, as readable JSON for the user's own export/copy. */
 export function exportMemory(m: Memory = loadMemory()): string {
   return JSON.stringify({
@@ -156,6 +225,7 @@ export function exportMemory(m: Memory = loadMemory()): string {
     visitStreak: m.visitStreak ?? 0,
     facts: m.facts,
     entries: m.entries,
+    diary: m.diary ?? [],
     moods: m.moods,
   }, null, 2);
 }
@@ -171,6 +241,8 @@ export interface VisitInfo {
   planToday?: string;
   /** a plan whose due day was YESTERDAY — she asks how it went */
   planMissed?: string;
+  /** a diary line from exactly a week ago — she asks how it turned out */
+  diaryWeekAgo?: string;
 }
 
 export function recordVisit(m: Memory = loadMemory()): VisitInfo {
@@ -187,7 +259,9 @@ export function recordVisit(m: Memory = loadMemory()): VisitInfo {
   const lastMood = m.lastMoodDay && m.lastMoodDay !== today ? m.moods[m.moods.length - 1] : undefined;
   const planToday = m.entries.find((e) => e.type === 'plan' && e.dueDay === today)?.text;
   const planMissed = m.entries.find((e) => e.type === 'plan' && e.dueDay === todayStr(-1))?.text;
-  return { isNewDay, streak, userName: m.userName, lastMood, planToday, planMissed };
+  const weekAgoLine = m.diary?.filter((d) => d.day === todayStr(-7)).pop();
+  const diaryWeekAgo = weekAgoLine ? weekAgoLine.text.slice(0, 60) : undefined;
+  return { isNewDay, streak, userName: m.userName, lastMood, planToday, planMissed, diaryWeekAgo };
 }
 
 const HELLO: Record<string, (h: number, name?: string) => string> = {
@@ -239,6 +313,13 @@ const MOOD_FOLLOWUP: Record<string, Record<string, string>> = {
   },
 };
 
+const DIARY_WEEK: Record<string, (p: string) => string> = {
+  yue: (p) => `上個禮拜今日你話「${p}」——嗰件事而家點呀？`,
+  zh: (p) => `上星期的今天你说过「${p}」——那件事现在怎么样了？`,
+  ja: (p) => `先週の今日「${p}」って言ってた——あれ、今どうなってる？`,
+  en: (p) => `A week ago today you said "${p}" — how did that turn out?`,
+};
+
 const PLAN_TODAY: Record<string, (p: string) => string> = {
   yue: (p) => `你之前話「${p}」——就係今日呀！加油，我幫你打氣！`,
   zh: (p) => `你说过「${p}」——就是今天呀！加油，我给你打气！`,
@@ -261,6 +342,7 @@ export function buildDailyGreeting(lang: string, info: VisitInfo): string {
   const parts: string[] = [HELLO[L](h, info.userName) + bang];
   if (info.streak >= 2) parts.push(STREAK_LINE[L](info.streak));
   if (info.lastMood) parts.push((MOOD_FOLLOWUP[L] ?? MOOD_FOLLOWUP.en)[info.lastMood] ?? '');
+  if (info.diaryWeekAgo) parts.push(DIARY_WEEK[L](info.diaryWeekAgo));
   if (info.planToday) parts.push(PLAN_TODAY[L](info.planToday));
   else if (info.planMissed) parts.push(PLAN_MISSED[L](info.planMissed));
   return parts.filter(Boolean).join(' ');
@@ -332,15 +414,18 @@ export function rememberExchange(userText: string, m: Memory = loadMemory()): Me
     const mm = userText.match(re);
     if (mm?.[1]) { pushEntry(m, 'plan', mm[1], offset); break; }
   }
-  for (const [re, mood] of MOOD_RES) {
+  let mood: string | undefined;
+  for (const [re, tag] of MOOD_RES) {
     if (re.test(userText)) {
-      m.moods.push(mood);
+      mood = tag;
+      m.moods.push(tag);
       if (m.moods.length > MAX_MOODS) m.moods.shift();
       m.lastMoodDay = todayStr();
       break;
     }
   }
   m.exchanges += 1;
+  pushDiary(m, userText, mood);
   save(m);
   return m;
 }
@@ -373,10 +458,11 @@ function factLine(fact: string, lang: string): string {
 
 /** Build the "you remember them" block injected into her system prompt. */
 export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory()): string | undefined {
-  if (!m.userName && m.facts.length === 0 && m.entries.length === 0 && m.exchanges < 3) return undefined;
+  if (!m.userName && m.facts.length === 0 && m.entries.length === 0 && (m.diary?.length ?? 0) === 0 && m.exchanges < 3) return undefined;
   const recent = m.facts.slice(-8);
   const plans = m.entries.filter((e) => e.type === 'plan').slice(-3).map((e) => e.text);
   const moments = m.entries.filter((e) => e.type === 'event').slice(-3).map((e) => e.text);
+  const diary = diarySummary(m, 3);
   const lastMood = m.moods[m.moods.length - 1];
   const L = ['yue', 'zh', 'ja', 'en'].includes(lang) ? lang : 'en';
 
@@ -386,6 +472,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory()): string
     bits.push(...recent.map((f) => factLine(f, L)));
     if (plans.length) bits.push(`佢提過嘅計劃：${plans.join('；')}`);
     if (moments.length) bits.push(`最近發生喺佢身上嘅事：${moments.join('；')}`);
+    if (diary.length) bits.push(`最近同佢一齊嘅日子：${diary.join('｜')}`);
     if (m.exchanges >= 3) bits.push(`你哋已經傾咗 ${m.exchanges} 次偈`);
     if (lastMood) bits.push(`佢最近一次嘅心情係${(MOOD_LABEL[L] ?? MOOD_LABEL.en)[lastMood] ?? lastMood}`);
     return `你記得呢個人（記憶私密噉存放喺佢部電話）：${bits.join('；')}。自然咁用佢個名，間中提吓佢講過嘅嘢同佢嘅計劃，唔好背書噉背出嚟。`;
@@ -396,6 +483,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory()): string
     bits.push(...recent.map((f) => factLine(f, L)));
     if (plans.length) bits.push(`TA 提过的计划：${plans.join('；')}`);
     if (moments.length) bits.push(`最近发生在 TA 身上的事：${moments.join('；')}`);
+    if (diary.length) bits.push(`最近和TA一起的日子：${diary.join('｜')}`);
     if (m.exchanges >= 3) bits.push(`你们已经聊了 ${m.exchanges} 次`);
     if (lastMood) bits.push(`TA 最近一次的心情是${(MOOD_LABEL[L] ?? MOOD_LABEL.en)[lastMood] ?? lastMood}`);
     return `你记得这个人（记忆私密地存在 TA 的手机上）：${bits.join('；')}。自然地叫 TA 的名字，偶尔提起 TA 说过的事和计划，不要像背书一样。`;
@@ -406,6 +494,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory()): string
     bits.push(...recent.map((f) => factLine(f, L)));
     if (plans.length) bits.push(`話してた予定：${plans.join('；')}`);
     if (moments.length) bits.push(`最近あったこと：${moments.join('；')}`);
+    if (diary.length) bits.push(`最近一緒に過ごした日：${diary.join('｜')}`);
     if (m.exchanges >= 3) bits.push(`これまで ${m.exchanges} 回話した`);
     if (lastMood) bits.push(`最近の気分は${(MOOD_LABEL[L] ?? MOOD_LABEL.en)[lastMood] ?? lastMood}`);
     return `この人のことを覚えている（記憶はこの端末にだけ保存）：${bits.join('；')}。自然に名前を呼び、時々覚えていることや予定を話題にして。`;
@@ -415,6 +504,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory()): string
   bits.push(...recent.map((f) => factLine(f, 'en')));
   if (plans.length) bits.push(`plans they mentioned: ${plans.join('; ')}`);
   if (moments.length) bits.push(`recent moments: ${moments.join('; ')}`);
+  if (diary.length) bits.push(`recent days together: ${diary.join(' | ')}`);
   if (m.exchanges >= 3) bits.push(`you two have talked ${m.exchanges} times`);
   if (lastMood) bits.push(`their most recent mood was ${(MOOD_LABEL.en)[lastMood] ?? lastMood}`);
   return `You remember this person (the memory lives privately on their device): ${bits.join('; ')}. Use their name naturally and occasionally reference what they told you and their plans — never recite it like a list.`;

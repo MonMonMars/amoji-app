@@ -1,7 +1,7 @@
 'use client';
 // Settings menu — ONE location for every setting (r2026-10-02.7; slimmed r2026-10-03.03).
 // Sections: Mode (kid mode), Language, Voice, Brain (LLM provider + keys), Memory & data
-// (v2 browser: view / teach / copy / forget), Help (tutorial).
+// (v2 browser: view / teach / copy / forget + v3 emotion diary), Help (tutorial).
 // Character & scene changing lives in the selection board (top-left name plate) —
 // the gear no longer duplicates it. Reachable from the chat room gear (top right).
 import { useEffect, useRef, useState } from 'react';
@@ -22,7 +22,7 @@ import {
   type BrainProvider,
 } from '../lib/brain';
 import {
-  addEntry, deleteEntry, exportMemory, loadMemory,
+  addEntry, deleteEntry, deleteDiaryEntry, exportMemory, loadMemory,
   type Memory, type MemoryType,
 } from '../lib/memory';
 
@@ -61,6 +61,16 @@ const TYPE_STYLE: Record<MemoryType, string> = {
   preference: 'bg-pink-400/15 text-pink-200',
   event: 'bg-sky-400/15 text-sky-200',
   plan: 'bg-amber-400/15 text-amber-200',
+};
+
+/** mood dot colours for the diary browser (v3) */
+const MOOD_DOT: Record<string, string> = {
+  happy: 'bg-amber-300',
+  tired: 'bg-slate-400',
+  sad: 'bg-sky-400',
+  angry: 'bg-red-400',
+  anxious: 'bg-violet-400',
+  sick: 'bg-emerald-300',
 };
 
 /** "Wed Oct 01 2026" → "Oct 01" */
@@ -143,6 +153,12 @@ export default function SettingsSheet({
   const removeEntry = (id: string) => {
     if (!window.confirm(t(lang, 'forgetOneConfirm'))) return;
     deleteEntry(id);
+    setMem(loadMemory());
+  };
+
+  const removeDiary = (id: string) => {
+    if (!window.confirm(t(lang, 'forgetOneConfirm'))) return;
+    deleteDiaryEntry(id);
     setMem(loadMemory());
   };
 
@@ -293,6 +309,28 @@ export default function SettingsSheet({
                     onClick={() => removeEntry(e.id)}
                     className="shrink-0 rounded-full px-1.5 text-xs text-white/30 transition hover:bg-white/10 hover:text-white/70"
                     aria-label="forget"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* emotion diary (v3) — read-only, mood-coloured, delete-only */}
+            <p className="text-xs text-white/50">{t(lang, 'diaryTitle')}</p>
+            <div className="max-h-36 space-y-1.5 overflow-y-auto pr-1">
+              {(!mem.diary || mem.diary.length === 0) && (
+                <p className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/35">{t(lang, 'diaryEmpty')}</p>
+              )}
+              {[...(mem.diary ?? [])].reverse().map((d) => (
+                <div key={d.id} className="flex items-start gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                  <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${MOOD_DOT[d.mood ?? ''] ?? 'bg-white/25'}`} />
+                  <span className="min-w-0 flex-1 text-xs leading-relaxed text-white/80">{d.text}</span>
+                  <span className="shrink-0 pt-0.5 text-[10px] text-white/30">{shortDay(d.day)}</span>
+                  <button
+                    onClick={() => removeDiary(d.id)}
+                    className="shrink-0 rounded-full px-1.5 text-xs text-white/30 transition hover:bg-white/10 hover:text-white/70"
+                    aria-label="forget diary line"
                   >
                     ✕
                   </button>
