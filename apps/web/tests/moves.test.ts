@@ -4,6 +4,7 @@ import {
 } from '../lib/moves';
 
 const KINDS: MoveKind[] = [
+  'dance',
   'sing', 'jump', 'kungfu', 'taichi',
   'violin', 'piano',
   'dine', 'eat',
@@ -11,7 +12,7 @@ const KINDS: MoveKind[] = [
   'yoga', 'stretch',
 ];
 
-describe('dialogue-triggered movement library (r.39 + r.41 + r.45)', () => {
+describe('dialogue-triggered movement library (r.39 + r.41 + r.45 + r.48)', () => {
   it('every move has a sane duration and a trigger regex', () => {
     for (const k of KINDS) {
       expect(MOVE_DUR[k]).toBeGreaterThanOrEqual(2000);
@@ -22,13 +23,16 @@ describe('dialogue-triggered movement library (r.39 + r.41 + r.45)', () => {
 
   it('detects each move from dialogue in every language', () => {
     const cases: Array<[string, MoveKind]> = [
+      ['dance with me', 'dance'],
+      ['跳舞呀！', 'dance'],
+      ['ダンスを踊って！', 'dance'],
       ['sing me a song~', 'sing'],
       ['唱首歌俾我好唔好？', 'sing'],
       ['一齊唱啦！', 'sing'],
       ['歌を歌って！', 'sing'],
       ['jump!', 'jump'],
       ['跳一下睇睇！', 'jump'],
-      ['跳舞呀！', 'jump'],
+      ['跳吓嚟睇！', 'jump'],
       ['ジャンプして！', 'jump'],
       ['show me some kung fu', 'kungfu'],
       ['識唔識功夫㗎？', 'kungfu'],

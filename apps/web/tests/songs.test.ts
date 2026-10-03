@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SONG_MELODY, SONGS, pickSong } from '../lib/songs';
+import { SONG_MELODY, SONGS, CHARACTER_SONGS, pickCharacterSong, pickSong } from '../lib/songs';
 
 describe('song bank (r2026-10-03.40)', () => {
   it('has at least 2 songs per language', () => {
@@ -52,5 +52,29 @@ describe('song bank (r2026-10-03.40)', () => {
       expect(note).toBeGreaterThanOrEqual(-0.1);
       expect(note).toBeLessThanOrEqual(0.5);
     }
+  });
+});
+
+describe('signature songs (r2026-10-04.48)', () => {
+  it('featured characters own an original ditty in every language', () => {
+    for (const songs of Object.values(CHARACTER_SONGS)) {
+      for (const lang of ['yue', 'zh', 'ja', 'en'] as const) {
+        const song = songs[lang];
+        expect(song.length).toBeGreaterThanOrEqual(2);
+        expect(song[song.length - 1]).toMatch(/[~～?？]$/);
+        const phrases = song
+          .join('，')
+          .split(/[,，、。]/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+        expect(phrases.length).toBeGreaterThanOrEqual(4);
+      }
+    }
+  });
+
+  it('her own song wins; unknown characters fall back to the shared bank', () => {
+    expect(pickCharacterSong('juno', 'yue', 0)).toBe(CHARACTER_SONGS.juno!.yue);
+    expect(pickCharacterSong('mystery-id', 'en', 1)).toBe(pickSong('en', 1));
+    expect(pickCharacterSong('mystery-id', 'yue', 3)).toBe(pickSong('yue', 3));
   });
 });

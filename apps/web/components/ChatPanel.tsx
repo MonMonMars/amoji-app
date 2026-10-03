@@ -62,6 +62,14 @@
 // seconds and are spoken aloud, so the load time reads as her reacting to
 // you, not a pause; the first stream token takes the bubble over and the real
 // reply commits in its place. Replaces the old thinking-out-loud interval.
+// r2026-10-04.48: performance theatre — (a) every few turns, a slow brain
+// becomes a SHOW: she dances to an original WebAudio theme composed for her
+// personality while the reply generates; (b) in quiet moments she offers a
+// private performance ("I just learned a new dance — want to see?") and
+// remembers the offer until you answer — YES starts the show instantly
+// (her signature song sung live, or a full dance number); (c) every few idle
+// lines she teaches you something she can do (games, lessons, duets, meals,
+// voice mode, memory). Music always fades out the moment her real reply lands.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh, triggerMove } from '../lib/companion';
 import { detectMove } from '../lib/moves';
@@ -75,7 +83,9 @@ import { pickLaugh, laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { WARMUP_FIRST_MS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from '../lib/warmup';
 import { clientChat } from '../lib/client-chat';
 import { speak, stopSpeaking, speakThinkingFiller, sing } from '../lib/voice';
-import { pickSong, pickDuet } from '../lib/songs';
+import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
+import { startMusic, stopMusic } from '../lib/music';
+import { characterSpecialty, pickShowcaseOffer, pickTutorialLine, SHOWCASE_START, SHOWCASE_YES_RE, type ShowcaseKind } from '../lib/showcase';
 import { detectGame, startGame, playTurn, gameFarewellLine, type GameState } from '../lib/games';
 import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodbyeLine, pickMealToast } from '../lib/activities';
 import { detectExercise, startExercise, advanceExercise, exerciseFarewellLine, type ExerciseState } from '../lib/exercises';
@@ -143,6 +153,10 @@ export default function ChatPanel({
   // r.45 — a running trainer lesson (yoga / tai chi / kung fu / warm-up);
   // every user message advances one step cue until the routine closes
   const exerciseRef = useRef<ExerciseState | null>(null);
+  // r.48 — performance theatre: she offers private shows unprompted and
+  // remembers the offer until you answer; a counter spaces the theatre out
+  const pendingOfferRef = useRef<ShowcaseKind | null>(null);
+  const perfCountRef = useRef(0);
   const lastFeltRef = useRef<string | undefined>(undefined);
   const onStatusRef = useRef(onStatus);
   onStatusRef.current = onStatus;
@@ -322,6 +336,19 @@ export default function ChatPanel({
         sayLocal(pickLine('reengage', lang, n), feltHints);
         return;
       }
+      // r.48 — every few quiet moments she either teaches you something she
+      // can do for you, or offers a private performance; the offer stays
+      // outstanding until you answer, and your "yes" starts the show
+      if (n % 4 === 1) {
+        sayLocal(pickTutorialLine(lang, n), feltHints);
+        return;
+      }
+      if (n % 4 === 3 && !pendingOfferRef.current) {
+        const kind = characterSpecialty(characterId);
+        pendingOfferRef.current = kind;
+        sayLocal(pickShowcaseOffer(kind, lang, n), feltHints);
+        return;
+      }
       const line = (idleMood ? pickMoodIdleLine(idleMood, lang, n) : undefined) ?? pickIdleLine(characterId, lang, n);
       sayLocal(line, feltHints);
     }, 5000);
@@ -427,6 +454,29 @@ export default function ChatPanel({
       done();
       return;
     }
+    // r.48 — she offered you a performance a moment ago and you said yes:
+    // the show starts RIGHT NOW, no brain needed — her signature song sung
+    // live on the melodic contour, or a full dance number, both over an
+    // original WebAudio theme composed for her personality
+    if (pendingOfferRef.current && SHOWCASE_YES_RE.test(text)) {
+      const kind = pendingOfferRef.current;
+      pendingOfferRef.current = null;
+      perfCountRef.current += 1;
+      applyLlmHints({ joy: 0.85 });
+      sayLocal(SHOWCASE_START[lang][kind]);
+      triggerMove(kind === 'song' ? 'sing' : 'dance');
+      startMusic(characterId);
+      if (kind === 'song') {
+        const song = pickCharacterSong(characterId, lang, perfCountRef.current).join(' ');
+        notifySpeaking(song);
+        sing(song, characterId, lang);
+        setHistory((h) => [...h, { role: 'assistant', content: song }]);
+      }
+      window.setTimeout(stopMusic, 9500);
+      done();
+      return;
+    }
+    pendingOfferRef.current = null; // any other answer lets the offer lapse
     // felt-mood reaction: she reacts to how YOU feel the instant you say it —
     // "I'm so tired" softens her face and the mic orb before her reply even
     // starts generating, and the felt mood stays as a floor under whatever
@@ -441,7 +491,7 @@ export default function ChatPanel({
     // a sad user's first hmm is softer than a happy one's (reply speech cuts it off)
     speakThinkingFiller(characterId, lang, felt?.mood);
     // r.47 — ONE transient placeholder bubble carries the whole wait. It
-    // starts as '…'; preloaded warm-up lines (praise, curiosity,
+    // starts as '…'; preloaded warm lines (praise, curiosity,
     // encouragement — her language, her felt mood) replace it every few
     // seconds and are spoken aloud, so the load time reads as her reacting
     // to you; the first stream token takes the bubble over, and the final
@@ -465,9 +515,17 @@ export default function ChatPanel({
       warmTimer = setTimeout(playWarm, WARMUP_GAP_MS);
     };
     warmTimer = setTimeout(playWarm, WARMUP_FIRST_MS);
+    // r.48 — every few turns the wait itself becomes a show: she breaks into
+    // a dance over her own original theme while her brain works, so a slow
+    // reply reads as a performance, never a loading bar
+    if ((perfCountRef.current += 1) % 3 === 1) {
+      triggerMove('dance');
+      startMusic(characterId);
+    }
     // one exit path for every outcome: the final reply (or the failure note)
     // takes the placeholder's place instead of stacking a second bubble
     const commitReply = (content: string) => {
+      stopMusic(); // r.48 — the show ends the moment her real reply lands
       const replace = transientRef.current;
       transientRef.current = false;
       setHistory((h) => {
@@ -546,6 +604,7 @@ export default function ChatPanel({
       }
     } finally {
       clearTimeout(warmTimer); // reply (or failure) is here — stop the warm-up
+      stopMusic(); // r.48 — belt-and-braces: no music outlives the turn
       if (!answered) commitReply('… (connection hiccup — I’m still here)');
       setBusy(false);
       busyRef.current = false;
@@ -565,6 +624,7 @@ export default function ChatPanel({
       micStopRef.current = null;
       listeningRef.current = false;
       setListening(false);
+      stopMusic(); // r.48 — leaving voice mode ends any performance bed
       lastActivityRef.current = Date.now();
       lastUserRef.current = Date.now();
       reengageStageRef.current = 0;
@@ -580,12 +640,14 @@ export default function ChatPanel({
     listeningRef.current = true;
     setListening(true);
     stopSpeaking(); // interrupt her mid-sentence, exactly like ChatGPT voice
+    stopMusic();    // r.48 — the user's voice takes the stage, not the track
     let bargeInArmed = true; // first real speech of a burst cuts her off
     micStopRef.current = listenContinuous(lang, {
       onSpeechStart: () => {
         if (!bargeInArmed) return;
         bargeInArmed = false;
         stopSpeaking(); // the user is really talking — cut her voice NOW
+        stopMusic();    // r.48 — and the performance bed too
       },
       onFinal: (said) => {
         bargeInArmed = true;

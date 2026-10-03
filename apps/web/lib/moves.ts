@@ -16,9 +16,14 @@
 // fold forward, half-lift, rise home) and 'stretch' is the warm-up set
 // (arm circles into side bends with slow head rolls). Both ride the same
 // additive overlay; 'r45 exercises.ts' drives them step by step.
+// r2026-10-04.48: 'dance' joins the catalog — full idol choreography (six
+// side-step grooves, alternating arm pumps, heel bounces and a mid-song
+// turn). It sits at the FRONT of the trigger queue so 跳舞 / dance / ダンス
+// stops falling through to 'jump'.
 // Pure data + math, no DOM — fully unit-testable in node.
 
 export type MoveKind =
+  | 'dance'
   | 'sing' | 'jump' | 'kungfu' | 'taichi'
   | 'violin' | 'piano'
   | 'dine' | 'eat'
@@ -27,6 +32,7 @@ export type MoveKind =
 
 /** performance length per move, ms */
 export const MOVE_DUR: Record<MoveKind, number> = {
+  dance: 9000,
   sing: 9000,
   jump: 2600,
   kungfu: 3200,
@@ -51,10 +57,13 @@ export const MOVE_DUR: Record<MoveKind, number> = {
  * r2026-10-04.45: yoga and stretch sit at the back of the queue (lowest
  * priority) — a lesson trigger in exercises.ts intercepts first, these
  * catch stray mentions inside ordinary replies.
+ * r2026-10-04.48: dance leads the queue — 跳舞 / dance / ダンス / 踊って own
+ * their own choreography now instead of degrading into a hop.
  */
 export const MOVE_TRIGGERS: Record<MoveKind, RegExp> = {
+  dance: /(跳舞|舞蹈|跳個舞|跳支舞|舞一段|\bdanc(?:e|ing)\b|ダンス|踊って|踊ろう)/i,
   sing: /(唱歌|唱首歌|唱k|一齊唱|一齐唱|唱吓|唱啊|唱啦|唱個|唱个|\bsing(?:ing)?\b|\bkaraoke\b|カラオケ|歌を歌|うたって)/i,
-  jump: /(跳一下|跳吓|跳跳|跳起|跳啊|跳啦|跳舞|跳個舞|跳支舞|\bjump(?:ing)?\b|ジャンプ)/i,
+  jump: /(跳一下|跳吓|跳跳|跳起|跳啊|跳啦|\bjump(?:ing)?\b|ジャンプ)/i,
   kungfu: /(功夫|武打|武術|武术|拳擊|拳击|\bkung\s?fu\b|martial arts|\bkarate\b|\bboxing\b|空手道|カンフー)/i,
   taichi: /(太極|太极|tai\s?chi)/i,
   violin: /(小提琴|拉小提琴|\bviolin\b|バイオリン|ヴァイオリン)/i,
@@ -118,6 +127,29 @@ const NO_MOVE: MoveDeltas = {
 export function moveDeltas(kind: MoveKind, t: number): MoveDeltas {
   const u = clamp01(t);
   switch (kind) {
+    case 'dance': {
+      // r2026-10-04.48 — idol choreography: six side-step grooves with
+      // alternating arm pumps and heel bounces, then a mid-song turn (the
+      // twist is capped at 0.9 rad so the choreography audit stays bounded)
+      const sway = sin(u * PI * 6);
+      const pump = sin(u * PI * 12);
+      const bounce = abs(sin(u * PI * 12));
+      const turn = clamp01((u - 0.34) / 0.06) * (1 - clamp01((u - 0.5) / 0.08)) * 0.9;
+      return {
+        ...NO_MOVE,
+        lArmZ: 0.3 + 0.45 * Math.max(0, pump),
+        rArmZ: -0.3 - 0.45 * Math.max(0, -pump),
+        lElbowZ: -(0.25 + 0.15 * bounce),
+        rElbowZ: 0.25 + 0.15 * bounce,
+        chestZ: sway * 0.14,
+        spineY: sway * 0.16 + turn,
+        headZ: sway * 0.08,
+        headY: 0.1 * Math.max(0, -pump) - 0.05,
+        py: bounce * 0.03,
+        squash: -0.025 * bounce,
+        stretch: 0.02 * bounce,
+      };
+    }
     case 'sing': {
       // idol-style: mic hand up by the mouth, grooving side to side ~3 cycles
       const beat = sin(u * PI * 6);
