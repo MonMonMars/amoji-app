@@ -1,12 +1,13 @@
 // One-shot import of the curated local anime cast into the app:
 //   companion-<name>.vrm  →  apps/web/public/models/cast/<slug>.vrm
+//   companion-char-<src>.png → apps/web/public/portraits/<dst>.png
 //
 // Usage (from the repo root):
 //   node scripts/import-cast.mjs [sourceDir]
 //
 // sourceDir defaults to the known local curation folder
 // (_incoming/agent3/prototypes/assets). The mapping mirrors
-// apps/web/lib/prefs.ts (r2026-10-04.50) — keep the two in sync.
+// apps/web/lib/prefs.ts (r2026-10-04.52, 29 characters) — keep the two in sync.
 //
 // Hard rule: a source file whose name contains "marin" is NEVER copied
 // (CI copyright ban — see ASSET_MANIFEST.md). The Marin character uses
@@ -16,7 +17,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DEST = path.join(root, 'apps/web/public/models/cast');
+const DEST_MODELS = path.join(root, 'apps/web/public/models/cast');
+const DEST_PORTRAITS = path.join(root, 'apps/web/public/portraits');
 
 const CANDIDATES = [
   process.argv[2],
@@ -24,13 +26,26 @@ const CANDIDATES = [
   'C:/Users/Simon Lai/Documents/Kimi/Workspaces/Amoji/_incoming/agent3/prototypes/assets',
 ].filter(Boolean);
 
-// slug → companion-<name>.vrm (mirrors prefs.ts)
+// character id → companion-<name>.vrm (mirrors prefs.ts)
 const CAST = {
-  juno: 'juno', nova: 'nova', zane: 'zane', hana: 'hana', kai: 'kai',
-  luna: 'luna', rin: 'rin', rex: 'rex', alicia: 'alicia', shino: 'shino',
-  atlas: 'atlas', 'avatarsample-a': 'avatarsample-a', fumiriya: 'fumiriya',
-  sumire: 'sumire', nana: 'nana', 'vroid-male': 'vroid-male', mikel: 'mikel',
-  cyrus: 'cyrus', lydia: 'lydia', mimi: 'mimi', yuki: 'yuki', kael: 'kael',
+  // flagship top-10 (r2026-10-04.52)
+  nova: 'nova', kizuna: 'kizuna', alicia: 'alicia', ember: 'ember', mei: 'mei',
+  atlas: 'atlas', sky: 'sky', yuki: 'yuki', hina: 'hina', mio: 'mio',
+  // classic cast — keyed by character id now, source file names unchanged
+  mochi: 'hana', juno: 'juno', blaze: 'zane', kai: 'kai', luna: 'luna',
+  rin: 'rin', ren: 'rex', cloud: 'elio', kasumi: 'avatarsample-a',
+  marin: 'fumiriya', ayane: 'sumire', hitomi: 'nana', robbie: 'vroid-male',
+  mika: 'mikel', anchor: 'cyrus', lydia: 'lydia', ruby: 'mimi',
+  snowy: 'olivia', alan: 'kael',
+};
+
+// character portrait id → companion-char-<src>.png (the .png cast — prefs
+// points these ids at /portraits/<dst>.png; classic .jpg art already ships)
+const PORTRAITS = {
+  nova: 'nova', kizuna: 'kizuna', alicia: 'alicia', ember: 'ember', mei: 'mei',
+  atlas: 'atlas', sky: 'sky', yuki: 'yuki', hina: 'hina', mio: 'mio',
+  cloud: 'elio', robbie: 'robert', mika: 'mikel', anchor: 'cyrus',
+  lydia: 'lydia', ruby: 'mimi', snowy: 'olivia', alan: 'kael',
 };
 
 /** GLB/VRM structural sniff — same rules as tests/assets.test.ts */
@@ -68,13 +83,14 @@ if (!src) {
   console.error(`source assets folder not found — looked in:\n  ${CANDIDATES.join('\n  ')}`);
   process.exit(1);
 }
-fs.mkdirSync(DEST, { recursive: true });
+fs.mkdirSync(DEST_MODELS, { recursive: true });
+fs.mkdirSync(DEST_PORTRAITS, { recursive: true });
 
 let ok = 0;
 let warned = 0;
 for (const [slug, name] of Object.entries(CAST)) {
   const from = path.join(src, `companion-${name}.vrm`);
-  const to = path.join(DEST, `${slug}.vrm`);
+  const to = path.join(DEST_MODELS, `${slug}.vrm`);
   if (/marin/i.test(path.basename(from))) {
     console.error(`SKIP  banned name: ${path.basename(from)}`);
     warned++;
@@ -95,5 +111,26 @@ for (const [slug, name] of Object.entries(CAST)) {
     console.log(`WARN  cast/${slug}.vrm — ${r.info}`);
   }
 }
-console.log(`\n${ok} imported clean, ${warned} with warnings/misses.`);
-console.log('Next: git add apps/web/public/models/cast && git commit -m "cast: import local models" && git push');
+console.log(`${ok} models imported clean, ${warned} with warnings/misses.`);
+
+let pOk = 0;
+let pWarned = 0;
+for (const [dst, srcName] of Object.entries(PORTRAITS)) {
+  const from = path.join(src, `companion-char-${srcName}.png`);
+  const to = path.join(DEST_PORTRAITS, `${dst}.png`);
+  if (/marin/i.test(path.basename(from))) {
+    console.error(`SKIP  banned name: ${path.basename(from)}`);
+    pWarned++;
+    continue;
+  }
+  if (!fs.existsSync(from)) {
+    console.error(`MISS  ${from}`);
+    pWarned++;
+    continue;
+  }
+  fs.copyFileSync(from, to);
+  pOk++;
+  console.log(`ok    portraits/${dst}.png`);
+}
+console.log(`${pOk} portraits imported, ${pWarned} missed.`);
+console.log('Next: git add apps/web/public/models/cast apps/web/public/portraits && git commit -m "cast: import local models + portraits" && git push');
