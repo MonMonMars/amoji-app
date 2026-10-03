@@ -245,9 +245,10 @@ export default function ChatPanel({
             });
           },
         });
-        // same floor logic on the streaming path
+        // same floor logic on the streaming path (.18b: guarded — replyHints
+        // can be undefined when the exchange carried no mood at all)
         const replyHints = feltHints ? { ...feltHints, ...r.emotionHints } : r.emotionHints;
-        applyLlmHints(replyHints);
+        if (replyHints) applyLlmHints(replyHints);
         feedUtterance(r.reply);
         speakReply(text, r.reply, replyHints);
         setHistory((h) => [...h.slice(0, -1), { role: 'assistant', content: r.reply }]);

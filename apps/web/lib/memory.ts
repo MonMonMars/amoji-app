@@ -17,7 +17,9 @@
 //
 // v3.2 (r2026-10-03.18): felt-mood reaction — how the user feels mid-chat is
 // detected instantly (detectMood) and worn by her face, mic orb and voice as
-// a floor under whatever her reply later adds.
+// a floor under whatever her reply later adds. (.18b: negative moods are
+// matched BEFORE happy — 「唔開心/不開心」 contain 「開心」, so order is the
+// fix, not lookbehind, because tsconfig targets ES2017.)
 
 export type MemoryType = 'preference' | 'event' | 'plan';
 
@@ -423,13 +425,16 @@ const PLAN_RES: Array<[RegExp, number]> = [
   [/((?:next month|下個月|来月)[^.,!?。！？]{0,60})/i, 30],
 ];
 
+// NEGATIVE moods are matched BEFORE happy: 「唔開心 / 不開心」 literally
+// contain 「開心」, so a naive first-match order reads "not happy" as happy.
+// (No lookbehind — tsconfig targets ES2017.)
 const MOOD_RES: Array<[RegExp, string]> = [
-  [/開心|高兴|高興|happy|excited|great|awesome|wonderful/i, 'happy'],
   [/好攰|好累|攰|累|tired|exhausted|sleepy|眼瞓/i, 'tired'],
   [/唔開心|不開心|不开心|難過|难过|sad|upset|depressed|lonely|寂寞|孤單/i, 'sad'],
   [/嬲|生氣|生气|angry|mad|frustrated|annoyed|煩/i, 'angry'],
   [/擔心|担心|worried|anxious|nervous|緊張|紧张|怕/i, 'anxious'],
   [/唔舒服|不舒服|sick|ill|unwell|頭痛|头痛|肚痛/i, 'sick'],
+  [/開心|开心|高兴|高興|happy|excited|great|awesome|wonderful/i, 'happy'],
 ];
 
 /**
