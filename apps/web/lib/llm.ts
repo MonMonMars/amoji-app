@@ -130,7 +130,7 @@ export function createLlm(): LlmPort {
   for (const p of PROVIDERS) {
     const key = process.env[p.env];
     if (key && (!forced || p.env.toLowerCase().startsWith(forced))) {
-      return new OpenAiLlm(p, key, p.model, p.extraHeaders);
+      return new OpenAiLlm(p.baseUrl, key, p.model, p.extraHeaders);
     }
   }
   // Zero-setup free fallback: keyless Pollinations. Swap any key into

@@ -1,8 +1,10 @@
 'use client';
 // The living voice orb — ChatGPT-style.
-// Swirling mood-colored plasma: breathes when idle, dances with her voice
-// while she speaks, and tints ChatGPT-blue with ripple rings while listening.
-// Sits inside the hero mic button.
+// r2026-10-03.13: pure soft blob. One blurry-edged sphere — the alpha melts
+// to zero at the rim, so there is NO ring, NO hard outline, no square edge.
+// The ball breathes with her voice volume (louder = bigger), and the color
+// follows her mood: yellow when happy, red when angry, ChatGPT-blue tint
+// with ripple rings while listening.
 import { useEffect, useRef } from 'react';
 import { getLatestFrame, dominantMood } from '../lib/companion';
 import { sampleSpeech } from '../lib/speech';
@@ -89,62 +91,53 @@ export default function EmotionOrb({
       const cx = w / 2;
       const cy = h / 2;
       ctx.clearRect(0, 0, w, h);
-      const R = (Math.min(w, h) / 2) * (0.62 + 0.38 * vol);
-      const col = `rgb(${cur.r | 0},${cur.g | 0},${cur.b | 0})`;
-      const dim = `rgb(${(cur.r * 0.45) | 0},${(cur.g * 0.45) | 0},${(cur.b * 0.45) | 0})`;
+      // the ball swells with her voice — high volume = bigger, quiet = smaller
+      const R = (Math.min(w, h) / 2) * (0.66 + 0.34 * vol);
+      const colA = (a: number) => `rgba(${cur.r | 0},${cur.g | 0},${cur.b | 0},${a})`;
 
-      // soft outer halo
-      const halo = ctx.createRadialGradient(cx, cy, R * 0.1, cx, cy, R * 2.1);
-      halo.addColorStop(0, col);
+      // fuzzy outer halo — light bleed, feathered to nothing
+      const halo = ctx.createRadialGradient(cx, cy, R * 0.2, cx, cy, R * 2.0);
+      halo.addColorStop(0, colA(0.3 + 0.4 * vol));
       halo.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.globalAlpha = 0.22 + 0.5 * vol;
       ctx.fillStyle = halo;
       ctx.beginPath();
-      ctx.arc(cx, cy, R * 2.1, 0, Math.PI * 2);
+      ctx.arc(cx, cy, R * 2.0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.globalAlpha = 1;
 
-      // swirling plasma blobs — the ChatGPT-orb "smoke", additive for glow
+      // the blob body — alpha melts to zero AT the rim, so the edge is soft
+      const body = ctx.createRadialGradient(cx, cy, R * 0.05, cx, cy, R);
+      body.addColorStop(0, colA(0.95));
+      body.addColorStop(0.55, colA(0.8));
+      body.addColorStop(1, colA(0));
+      ctx.fillStyle = body;
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.fill();
+
+      // slow inner swirl keeps the plasma alive — still soft-edged
       ctx.globalCompositeOperation = 'lighter';
       for (let i = 0; i < 3; i++) {
-        const ang = t * (0.7 + 0.4 * i) + i * 2.1;
-        const bx = cx + Math.cos(ang) * R * 0.3;
-        const by = cy + Math.sin(ang * 1.35 + i) * R * 0.28;
-        const br = R * (0.55 + 0.3 * vol) * (1 - i * 0.14);
+        const ang = t * (0.6 + 0.35 * i) + i * 2.1;
+        const bx = cx + Math.cos(ang) * R * 0.24;
+        const by = cy + Math.sin(ang * 1.3 + i) * R * 0.22;
+        const br = R * (0.5 + 0.22 * vol) * (1 - i * 0.13);
         const g = ctx.createRadialGradient(bx, by, br * 0.05, bx, by, br);
-        g.addColorStop(0, col);
+        g.addColorStop(0, colA(0.35));
         g.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.globalAlpha = 0.4;
         ctx.fillStyle = g;
         ctx.beginPath();
         ctx.arc(bx, by, br, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.globalCompositeOperation = 'source-over';
-      ctx.globalAlpha = 1;
 
-      // glowing core
-      ctx.shadowColor = col;
-      ctx.shadowBlur = (10 + 30 * vol) * dpr;
-      ctx.fillStyle = dim;
+      // soft specular sheen — a gradient dot, no hard edge
+      const sheen = ctx.createRadialGradient(cx - R * 0.24, cy - R * 0.3, 0, cx - R * 0.24, cy - R * 0.3, R * 0.3);
+      sheen.addColorStop(0, 'rgba(255,255,255,0.4)');
+      sheen.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = sheen;
       ctx.beginPath();
-      ctx.arc(cx, cy, R * 0.72, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-
-      // bright rim
-      ctx.strokeStyle = col;
-      ctx.lineWidth = 1.5 * dpr;
-      ctx.globalAlpha = 0.9;
-      ctx.beginPath();
-      ctx.arc(cx, cy, R * 0.72, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-
-      // specular highlight
-      ctx.fillStyle = 'rgba(255,255,255,0.5)';
-      ctx.beginPath();
-      ctx.arc(cx - R * 0.26, cy - R * 0.32, Math.max(1.5, R * 0.18), 0, Math.PI * 2);
+      ctx.arc(cx - R * 0.24, cy - R * 0.3, R * 0.3, 0, Math.PI * 2);
       ctx.fill();
 
       // listening ripple rings (ChatGPT voice pulse)
