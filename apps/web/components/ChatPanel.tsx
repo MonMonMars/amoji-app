@@ -31,8 +31,8 @@ export interface ChatPanelProps {
 const IDLE_AFTER_MS = 40_000;
 
 export default function ChatPanel({
-  characterName = 'Juno',
-  characterId = 'juno',
+  characterName = 'Jun',
+  characterId = 'jun',
   lang = 'yue',
   accent = '#f9a8d4',
   persona,
@@ -162,14 +162,39 @@ export default function ChatPanel({
     } catch {
       // no server (e.g. static GitHub Pages build) — free keyless LLM from the browser
       try {
-        const r = await clientChat([...history, { role: 'user', content: text }], { language: lang, persona, memory });
+        // stream the reply live into a placeholder bubble — first tokens show
+        // up immediately instead of after the whole generation finishes
+        setHistory((h) => [...h, { role: 'assistant', content: '…' }]);
+        const r = await clientChat([...history, { role: 'user', content: text }], {
+          language: lang,
+          persona,
+          memory,
+          onPartial: (partial) => {
+            // hide a half-typed [emotion:{...}] tag so it never flashes on screen
+            const clean = partial
+              .replace(/\[emotion:[^\]]*$/, '')
+              .replace(/\[emotion:\{[^}]*\}\]/, '');
+            setHistory((h) => {
+              const last = h.length - 1;
+              const tail = h[last];
+              if (!tail || tail.role !== 'assistant') return h;
+              return [...h.slice(0, last), { ...tail, content: clean || '…' }];
+            });
+          },
+        });
         applyLlmHints(r.emotionHints);
         feedUtterance(r.reply);
         notifySpeaking(r.reply);
         speak(r.reply, characterId, lang, r.emotionHints);
-        setHistory((h) => [...h, { role: 'assistant', content: r.reply }]);
+        setHistory((h) => [...h.slice(0, -1), { role: 'assistant', content: r.reply }]);
         answered = true;
-      } catch { /* fall through to the hiccup line */ }
+      } catch {
+        // drop the placeholder only if nothing ever streamed; partial text stays
+        setHistory((h) => {
+          const tail = h[h.length - 1];
+          return tail && tail.role === 'assistant' && tail.content === '…' ? h.slice(0, -1) : h;
+        });
+      }
     } finally {
       if (!answered) setHistory((h) => [...h, { role: 'assistant', content: '… (connection hiccup — I’m still here)' }]);
       setBusy(false);
@@ -186,7 +211,7 @@ export default function ChatPanel({
     }
     if (!listenSupported()) {
       window.alert(lang === 'yue'
-        ? '你嘅瀏覽器暫時唔支援語音輸入，試下用 Chrome 或者 Safari 最新版。'
+        ? '你嘅瀏覽器唔支援語音輸入，請用最新版 Chrome 或者 Safari 再試。'
         : 'Speech input is not supported in this browser — try the latest Chrome or Safari.');
       return;
     }
@@ -214,7 +239,7 @@ export default function ChatPanel({
           const el = e.currentTarget;
           nearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
         }}
-        className="w-full space-y-2.5 overflow-y-auto px-2 pb-1 pt-6 text-[15px] leading-relaxed [mask-image:linear-gradient(to_bottom,transparent,black_16%))]"
+        className="w-full space-y-2.5 overflow-y-auto px-2 pb-1 pt-6 text-[15px] leading-relaxed [mask-image:linear-gradient(to_bottom,transparent,black_16%)]"
         style={{ maxHeight: '34vh' }}
       >
         {history.length === 0 && <p className="text-center text-white/40">{t(lang, 'sayHi', { name: characterName })}</p>}
