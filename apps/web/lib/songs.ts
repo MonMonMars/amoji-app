@@ -5,6 +5,7 @@
 // phrase-broken so each clause lands on one note. The melody contour lives
 // in SONG_MELODY: the neural path adds these to the SSML pitch delta per
 // clause, the speechSynthesis fallback multiplies pitch by (1 + note).
+// r2026-10-04.42: DUETS added — call-and-response duets for "sing with me".
 
 export type SongLang = 'yue' | 'zh' | 'ja' | 'en';
 
@@ -62,5 +63,51 @@ export const SONGS: Record<SongLang, string[][]> = {
 /** deterministic pick — rotates through the bank by n (laugh counter etc.) */
 export function pickSong(lang: SongLang, n: number): string[] {
   const bank = SONGS[lang] ?? SONGS.en;
+  return bank[Math.abs(n) % bank.length]!;
+}
+
+/**
+ * Duet bank — call-and-response songs for "sing with me". Each entry is her
+ * lines in order; between them the user sings, and the LAST line is the
+ * together-finale both sing at once. Original, public-domain-safe lyrics.
+ */
+export const DUETS: Record<SongLang, string[][]> = {
+  yue: [
+    [
+      '啦～啦～啦～，今日天氣咁好，不如開心啲吖？',
+      '你唱一句啦，我幫你和音，得唔得呀？',
+      '啦啦啦～你嗰句好聽過我㗎，再嚟一次吖？',
+      '最後一句一齊唱——預備，唱～',
+    ],
+  ],
+  zh: [
+    [
+      '啦～啦～啦～，今天天气这么好，开心一点呀？',
+      '你唱一句吧，我帮你和声，好不好呀？',
+      '啦啦啦～你那句比我好听，再来一次呀？',
+      '最后一句一起唱——预备，唱～',
+    ],
+  ],
+  ja: [
+    [
+      'ら～ら～ら～、今日はいい天気、楽しくいこう？',
+      '君の番だよ、僕がハモるから——ひとつどうぞ？',
+      'ららら〜君の声、いい感じ！もういちど？',
+      '最後は一緒に——せーの、ら〜〜！',
+    ],
+  ],
+  en: [
+    [
+      "La la la~ the sun is out, so let's wear a smile?",
+      'Your line now — I\'ll harmonize behind you, ready?',
+      'La la la~ you sound even better than me, one more?',
+      'Last line together — and a one, and a two, sing~',
+    ],
+  ],
+};
+
+/** deterministic duet pick — rotates by n */
+export function pickDuet(lang: SongLang, n: number): string[] {
+  const bank = DUETS[lang] ?? DUETS.en;
   return bank[Math.abs(n) % bank.length]!;
 }
