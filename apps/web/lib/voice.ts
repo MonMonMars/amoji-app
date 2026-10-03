@@ -16,6 +16,8 @@
 // r2026-10-03.40: sing() — she can really sing: each clause becomes one note
 // of the SONG_MELODY contour (neural SSML pitch deltas / per-utterance pitch
 // multipliers on the fallback), legato and slightly slower, joy underneath.
+// r2026-10-04.52: flagship nine (kizuna/alicia/ember/mei/atlas/sky/yuki/hina/
+// mio) get gender-correct personality-tuned matrices; tifa/aerith retire.
 
 import type { Lang } from './prefs';
 import { speakEdge, stopEdge } from './edge-tts';
@@ -34,12 +36,152 @@ export interface VoiceChoice {
 
 // Names vary by platform: Apple has the strongest zh-HK set (Sin-ji = Cantonese female,
 // HiuMaan newer; Sin-ju = male). Windows/Android ship Microsoft/Google variants.
-// r2026-10-03.04: extended cast (tifa/aerith/cloud/kasumi/marin/ayane/hitomi)
+// r2026-10-03.04: extended cast (cloud/kasumi/marin/ayane/hitomi)
 // gets her/his own matrix — no more falling back to Juno's female voices.
 // r2026-10-03.36: the registry six (robbie/mika/anchor/lydia/ruby/snowy) get
 // gender-correct matrices of their own, tuned to each personality.
 // r2026-10-04.42: Alan — gender-correct male matrix, easygoing warmth.
+// r2026-10-04.52: the flagship nine — idols get bright young voices (Sin-ji /
+// Xiaoxiao / Jenny), Atlas a real male matrix, every id gender-correct.
 export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> = {
+  // ---- flagship nine (r2026-10-04.52) ---------------------------------------
+  // genki idol — brightest, quickest voice in the cast
+  kizuna: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ji', 'HiuGaai', 'Female'], basePitch: 1.14, baseRate: 1.08 },
+      { lang: 'zh-TW', names: ['Mei-Jia', 'Female'], basePitch: 1.14, baseRate: 1.06 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaoxiao', 'Female'], basePitch: 1.13, baseRate: 1.06 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 1.1, baseRate: 1.06 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Jenny', 'Samantha', 'Female'], basePitch: 1.14, baseRate: 1.08 },
+    ],
+  },
+  // classic idol — polished, sweet, composed
+  alicia: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.1, baseRate: 1.04 },
+      { lang: 'zh-TW', names: ['Mei-Jia', 'Female'], basePitch: 1.1, baseRate: 1.04 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaoyi', 'Female'], basePitch: 1.09, baseRate: 1.04 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 1.08, baseRate: 1.04 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Jenny', 'Female'], basePitch: 1.1, baseRate: 1.06 },
+    ],
+  },
+  // fiery streamer — hot-blooded, fast chatter
+  ember: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.12, baseRate: 1.06 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaorui', 'Female'], basePitch: 1.12, baseRate: 1.05 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 1.1, baseRate: 1.05 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Jenny', 'Female'], basePitch: 1.13, baseRate: 1.07 },
+    ],
+  },
+  // warm sweetheart — soft, gentle, close-mic
+  mei: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.06, baseRate: 0.96 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaoyi', 'Female'], basePitch: 1.05, baseRate: 0.95 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 1.04, baseRate: 0.95 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Zira', 'Ava', 'Female'], basePitch: 1.06, baseRate: 0.97 },
+    ],
+  },
+  // silent guardian (male) — low, level, unhurried
+  atlas: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ju', 'Male'], basePitch: 0.9, baseRate: 0.96 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Yunxi', 'Yunjian', 'Male'], basePitch: 0.9, baseRate: 0.96 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Keita', 'Male'], basePitch: 0.92, baseRate: 0.96 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Christopher', 'Guy', 'Male'], basePitch: 0.92, baseRate: 0.97 },
+    ],
+  },
+  // laid-back fashionista — cool, level, effortless
+  sky: {
+    yue: [
+      { lang: 'zh-HK', names: ['HiuMaan', 'Female'], basePitch: 1.0, baseRate: 0.98 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaohan', 'Female'], basePitch: 1.0, baseRate: 0.98 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 0.99, baseRate: 0.98 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Aria', 'Female'], basePitch: 1.01, baseRate: 0.99 },
+    ],
+  },
+  // sunny sportswoman — bright, crisp, energetic
+  yuki: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ji', 'HiuMaan', 'Female'], basePitch: 1.1, baseRate: 1.04 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaorui', 'Female'], basePitch: 1.1, baseRate: 1.04 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 1.08, baseRate: 1.04 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Sara', 'Female'], basePitch: 1.1, baseRate: 1.06 },
+    ],
+  },
+  // bookish poet — soft, slow, breathy
+  hina: {
+    yue: [
+      { lang: 'zh-HK', names: ['HiuMaan', 'Female'], basePitch: 1.0, baseRate: 0.88 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaomo', 'Female'], basePitch: 1.0, baseRate: 0.88 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 0.99, baseRate: 0.88 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Aria', 'Female'], basePitch: 1.01, baseRate: 0.89 },
+    ],
+  },
+  // project-lead go-getter — level, clear, efficient
+  mio: {
+    yue: [
+      { lang: 'zh-HK', names: ['HiuMaan', 'Female'], basePitch: 0.99, baseRate: 1.0 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaohan', 'Female'], basePitch: 0.99, baseRate: 1.0 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 0.98, baseRate: 1.0 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Aria', 'Female'], basePitch: 1.0, baseRate: 1.01 },
+    ],
+  },
   juno: {
     yue: [
       { lang: 'zh-HK', names: ['Sin-ji', 'HiuMaan', 'Female'], basePitch: 1.1, baseRate: 1.02 },
@@ -169,36 +311,6 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
     ],
   },
   // ---- extended cast (r2026-10-03.04): gender-correct, personality-tuned ----
-  // athletic, warm-hearted — bright, steady, a little quicker
-  tifa: {
-    yue: [
-      { lang: 'zh-HK', names: ['Sin-ji', 'HiuMaan', 'Female'], basePitch: 1.06, baseRate: 1.0 },
-    ],
-    zh: [
-      { lang: 'zh-CN', names: ['Xiaorui', 'Xiaoxiao', 'Female'], basePitch: 1.06, baseRate: 1.0 },
-    ],
-    ja: [
-      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 1.05, baseRate: 1.0 },
-    ],
-    en: [
-      { lang: 'en-US', names: ['Sara', 'Samantha', 'Female'], basePitch: 1.07, baseRate: 1.02 },
-    ],
-  },
-  // gentle flower girl — soft, unhurried, warm
-  aerith: {
-    yue: [
-      { lang: 'zh-HK', names: ['HiuMaan', 'Sin-ji', 'Female'], basePitch: 1.06, baseRate: 0.92 },
-    ],
-    zh: [
-      { lang: 'zh-CN', names: ['Xiaoyi', 'Female'], basePitch: 1.06, baseRate: 0.92 },
-    ],
-    ja: [
-      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 1.05, baseRate: 0.92 },
-    ],
-    en: [
-      { lang: 'en-US', names: ['Michelle', 'Ava', 'Female'], basePitch: 1.06, baseRate: 0.92 },
-    ],
-  },
   // cool mercenary — finally MALE: low, level, unhurried
   cloud: {
     yue: [
@@ -430,7 +542,9 @@ const NEURAL_PROSODY: Record<string, { rate: number; pitch: number; vol: number 
 
 const FEMALE_CHARS = new Set([
   'juno', 'nova', 'mochi', 'luna', 'rin',
-  'tifa', 'aerith', 'kasumi', 'marin', 'ayane', 'hitomi',
+  // flagship nine (r2026-10-04.52) — everyone except Atlas, who is male
+  'kizuna', 'alicia', 'ember', 'mei', 'sky', 'yuki', 'hina', 'mio',
+  'kasumi', 'marin', 'ayane', 'hitomi',
   // registry six (r2026-10-03.35)
   'lydia', 'ruby', 'snowy',
 ]);
@@ -443,21 +557,28 @@ const EXPRESSIVENESS: Record<string, number> = {
   mochi: 1.4,
   marin: 1.38,
   rin: 1.35,
+  ember: 1.34,
+  kizuna: 1.32,
   blaze: 1.3,
+  alicia: 1.28,
   juno: 1.25,
-  tifa: 1.22,
+  yuki: 1.15,
   luna: 1.2,
   robbie: 1.2,
   ruby: 1.18,
   snowy: 1.15,
   alan: 1.15,
   hitomi: 1.15,
-  aerith: 1.12,
   lydia: 1.05,
-  mika: 0.9,
+  mei: 1.05,
+  mio: 1.0,
+  atlas: 0.95,
+  sky: 0.95,
   cloud: 0.95,
   kasumi: 0.95,
   kai: 0.95,
+  hina: 0.9,
+  mika: 0.9,
   ayane: 0.9,
   ren: 0.9,
   nova: 0.85,
