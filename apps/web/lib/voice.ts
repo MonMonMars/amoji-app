@@ -5,11 +5,12 @@
 // speechSynthesis with matched platform voices. Zero cost, zero API key.
 // r2026-10-03.07: strong emotions now audibly react (giggle/sigh/gasp via
 // lib/fillers), prosody swings are bigger, and speakThinkingFiller() gives the
-// "hmm…" moment while the reply is still generating.
+// "hmm…" moment (with mouth movement) while the reply is still generating.
 
 import type { Lang } from './prefs';
 import { speakEdge, stopEdge } from './edge-tts';
 import { dominant, pickInterjection, pickThinkingFiller } from './fillers';
+import { notifySpeaking } from './speech';
 
 export interface VoiceChoice {
   /** BCP-47 tag to match against speechSynthesis voices */
@@ -399,11 +400,12 @@ export function stopSpeaking(): void {
 /**
  * Short "hmm…" moment while the reply is still generating — ChatGPT does this
  * and it makes the character feel like she's actually thinking, not loading.
- * Caller gates on voiceEnabled(); reply speech cuts this off automatically.
+ * The mouth moves with the filler; the reply speech cuts it off automatically.
  */
 export function speakThinkingFiller(characterId: string, lang: Lang): void {
   if (!voiceEnabled()) return;
   const filler = pickThinkingFiller(lang);
+  notifySpeaking(filler);
   speak(filler, characterId, lang, { confusion: 0.45, neutral: 0.3 });
 }
 

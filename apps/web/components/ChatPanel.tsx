@@ -7,7 +7,7 @@ import { notifySpeaking, isSpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
 import { pickIdleLine, pickPokeLine } from '../lib/persona-chatter';
 import { clientChat } from '../lib/client-chat';
-import { speak, stopSpeaking } from '../lib/voice';
+import { speak, stopSpeaking, speakThinkingFiller } from '../lib/voice';
 import { buildDailyGreeting, buildMemoryBlock, memorySummaryCount, recordVisit, rememberExchange } from '../lib/memory';
 import { listenOnce, listenSupported } from '../lib/listen';
 import { t, type Lang } from '../lib/prefs';
@@ -140,6 +140,8 @@ export default function ChatPanel({
     setHistory((h) => [...h, { role: 'user', content: text }]);
     feedUtterance(text);
     stopSpeaking();
+    // "hmm…" thinking moment while the reply generates (reply speech cuts it off)
+    speakThinkingFiller(characterId, lang);
     // learn from the user's words, then inject what she remembers into her prompt
     onMemCountRef.current?.(memorySummaryCount(rememberExchange(text)));
     const memory = buildMemoryBlock(lang);
@@ -231,7 +233,7 @@ export default function ChatPanel({
   };
 
   return (
-    <div className="pointer-events-auto mx-auto flex w-full max-w-2xl flex-col items-center gap-1.5 px-4 pb-4">
+    <div classNameName="pointer-events-auto mx-auto flex w-full max-w-2xl flex-col items-center gap-1.5 px-4 pb-4">
       {/* boxless history — newer lines opaque, older ones melt away; scrollable */}
       <div
         ref={scrollRef}
