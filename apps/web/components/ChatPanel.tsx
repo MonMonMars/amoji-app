@@ -20,6 +20,10 @@
 // r2026-10-03.25: her LAUGH wears it too — a joke after "I'm so tired" gets
 // a soft slow chuckle and a gentle joy, not a full burst; an angry mood gets
 // a wry chuckle that defuses, a sad one a warm "thanks, I needed that".
+// r2026-10-03.26: her POKE reaction wears it too — poking her while you're
+// sad gets a gentle, almost apologetic gasp and a low-surprise flinch (not
+// a full startle); a tired one a soft "oh…"; an angry one a wry "hey—";
+// no felt mood keeps the classic personality cry and the old voice numbers.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh } from '../lib/companion';
 import { loadHistory, saveHistory } from '../lib/companion-store';
@@ -27,7 +31,7 @@ import { notifySpeaking, isSpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
 import { pickIdleLine, pickPokeLine } from '../lib/persona-chatter';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
-import { pickOuch } from '../lib/ouch';
+import { pickOuch, ouchStyleFor } from '../lib/ouch';
 import { pickLaugh, laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { pickThinkPhrase } from '../lib/think-phrases';
 import { clientChat } from '../lib/client-chat';
@@ -167,14 +171,19 @@ export default function ChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // poke replies — instant ouch cry (as the vocal lead) + personality line
+  // poke replies — instant ouch cry (as the vocal lead) + personality line.
+  // r.26: the cry and the flinch wear the last felt mood — poking her while
+  // you're sad gets a gentle apologetic gasp and a soft low flinch instead of
+  // a full startle; no felt mood keeps the classic cry and voice numbers.
   const lastPokeRef = useRef(pokeCount);
   useEffect(() => {
     if (pokeCount === lastPokeRef.current) return;
     lastPokeRef.current = pokeCount;
     lastActivityRef.current = Date.now();
-    const ouch = pickOuch(characterId, lang, pokeCount);
-    sayLocal(pickPokeLine(characterId, lang, pokeCount), { surprise: 0.8, joy: 0.4 }, { text: ouch, pitch: 0.3, rate: 0.15 });
+    const ouchMood = lastFeltRef.current;
+    const style = ouchStyleFor(ouchMood);
+    const ouch = pickOuch(characterId, lang, pokeCount, ouchMood);
+    sayLocal(pickPokeLine(characterId, lang, pokeCount), { surprise: style.surprise, joy: style.joy }, { text: ouch, pitch: style.pitch, rate: style.rate });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pokeCount]);
 
