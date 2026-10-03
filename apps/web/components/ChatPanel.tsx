@@ -25,8 +25,8 @@
 // a full startle); a tired one a soft "oh…"; an angry one a wry "hey—";
 // no felt mood keeps the classic personality cry and the old voice numbers.
 // r2026-10-03.27: if her LLM brain runs out of credit mid-session, client-chat
-// parks it and fires 'amoji:brain-degraded' — we surface one small note in the
-// history so the switch to the free lane is explained, not mysterious.
+// parks it and fires 'amoji:brain-degraded' — we surface one small note in
+// the history so the switch to the free lane is explained, not mysterious.
 // r2026-10-03.29: the hero mic is now ONLY a circle — no hard border, no
 // square edge. Soft circular glow (inset rings follow the border-radius),
 // bigger 80px button, 72px orb drawn inside its own safe margin.
@@ -51,6 +51,11 @@
 // response DUET with you (you take a line, she takes a line, last line
 // together), and shares a MEAL (your "eat with me" gets a toast as the vocal
 // lead of her reply). "Quit" ends a running game or duet gracefully.
+// r2026-10-04.45: trainer lessons (Wii Fit-style, researched from the 2007
+// original) — "做瑜伽" / "打太極" / "教我功夫" / "熱身" start a step-by-step
+// follow-along routine: she demos each move from the movement library and
+// cues breathing/counts, one step per message, LLM-free even when the brain
+// is slow; "quit" bows out gracefully with a per-routine farewell.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh, triggerMove } from '../lib/companion';
 import { detectMove } from '../lib/moves';
@@ -67,6 +72,7 @@ import { speak, stopSpeaking, speakThinkingFiller, sing } from '../lib/voice';
 import { pickSong, pickDuet } from '../lib/songs';
 import { detectGame, startGame, playTurn, gameFarewellLine, type GameState } from '../lib/games';
 import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodbyeLine, pickMealToast } from '../lib/activities';
+import { detectExercise, startExercise, advanceExercise, exerciseFarewellLine, type ExerciseState } from '../lib/exercises';
 import { buildDailyGreeting, buildMemoryBlock, feltMood, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange, rememberTurn } from '../lib/memory';
 import { listenContinuous, listenSupported } from '../lib/listen';
 import { t, type Lang } from '../lib/prefs';
@@ -126,6 +132,9 @@ export default function ChatPanel({
   // r.42 — together-mode state: a running mini-game, or a running duet
   const gameRef = useRef<GameState | null>(null);
   const duetRef = useRef<{ lines: string[]; idx: number } | null>(null);
+  // r.45 — a running trainer lesson (yoga / tai chi / kung fu / warm-up);
+  // every user message advances one step cue until the routine closes
+  const exerciseRef = useRef<ExerciseState | null>(null);
   const lastFeltRef = useRef<string | undefined>(undefined);
   const onStatusRef = useRef(onStatus);
   onStatusRef.current = onStatus;
@@ -327,17 +336,23 @@ export default function ChatPanel({
     stopSpeaking();
     // r.42 — together-modes intercept the turn BEFORE any LLM work: quitting
     // a running game/duet, advancing a running game, taking the next duet
-    // line, starting a new game, or starting a duet. All of these answer
-    // instantly in her own voice — no thinking filler, no brain needed.
+    // line, starting a new game, or starting a duet. r.45 adds the trainer
+    // lessons to the same intercept lane. All of these answer instantly in
+    // her own voice — no thinking filler, no brain needed.
     const done = () => {
       setBusy(false);
       busyRef.current = false;
       lastActivityRef.current = Date.now();
     };
-    if (QUIT_RE.test(text) && (gameRef.current || duetRef.current)) {
-      const line = gameRef.current ? gameFarewellLine(lang) : duetGoodbyeLine(lang);
+    if (QUIT_RE.test(text) && (gameRef.current || duetRef.current || exerciseRef.current)) {
+      const line = gameRef.current
+        ? gameFarewellLine(lang)
+        : duetRef.current
+          ? duetGoodbyeLine(lang)
+          : exerciseFarewellLine(exerciseRef.current!.kind, lang);
       gameRef.current = null;
       duetRef.current = null;
+      exerciseRef.current = null;
       sayLocal(line);
       done();
       return;
@@ -362,6 +377,30 @@ export default function ChatPanel({
       if (d.idx >= d.lines.length) duetRef.current = null;
       done();
       return;
+    }
+    // r.45 — a running trainer lesson: the next step cue. Her body demos
+    // the matching move while she counts you through it, Wii Fit-style.
+    if (exerciseRef.current) {
+      const ex = advanceExercise(exerciseRef.current, lang);
+      exerciseRef.current = ex.state;
+      triggerMove(ex.move);
+      sayLocal(ex.line, ex.hints);
+      done();
+      return;
+    }
+    {
+      const x = detectExercise(text);
+      if (x) {
+        // r.45 — "follow the trainer": she leads a step-by-step routine,
+        // demos every cue with the matching movement-library performance,
+        // and the lesson runs LLM-free — instant even with a slow brain
+        const ex = startExercise(x, lang);
+        exerciseRef.current = ex.state;
+        triggerMove(ex.move);
+        sayLocal(ex.line, ex.hints);
+        done();
+        return;
+      }
     }
     {
       const g = detectGame(text);
@@ -480,7 +519,7 @@ export default function ChatPanel({
   // ChatGPT-style hero mic — one button does everything:
   // tap → voice mode ON: the mic stays open and keeps listening; the moment
   // REAL talking is detected (the recognizer only fires on actual speech, so
-   // background noise is ignored) her voice is cut instantly. Typing stays
+  // background noise is ignored) her voice is cut instantly. Typing stays
   // live the whole time. tap again → voice mode OFF.
   const mic = () => {
     if (micModeRef.current) {
