@@ -7,7 +7,8 @@ import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
 import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-vrm-animation';
 import type { VRMAnimation } from '@pixiv/three-vrm-animation';
 import { mapFrameToVrm, posesByIds, sampleIdlePoseFrom } from '@amoji/vrm-renderer';
-import { tickEngine, lastLaughAt } from '../lib/companion';
+import { tickEngine, lastLaughAt, activeMove } from '../lib/companion';
+import { moveDeltas, moveEnvelope } from '../lib/moves';
 import { characterById } from '../lib/prefs';
 import { pokeStyleFor, poseIdsFor, lookFor } from '../lib/persona';
 import { sampleSpeech } from '../lib/speech';
@@ -327,6 +328,9 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       const frame = tickEngine(dt);
       const pose = mixerActive ? undefined : sampleIdlePoseFrom(frame.t, poseSeed, poseSubset);
       const targets = mapFrameToVrm(frame, 1, pose);
+      // r2026-10-03.39: a dialogue-triggered movement performance (sing / jump
+      // / kungfu / taichi / piano / jog), stamped on the same clock as `now`.
+      const mv = activeMove(now);
       if (vrm) {
         const em = vrm.expressionManager;
         if (em) {
@@ -338,12 +342,13 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           // poke reaction: whole-body flinch — shoved back away from the
           // camera, knees dip, squash-bounce, then a spring wobble home (~900ms).
           // laugh reaction: rhythmic belly-bounce giggle, head thrown back (~1.6s).
+          // move performance (r.39): hops/bounces/leans ride the same channel.
           // Both are transform overlays so they can also play together.
           const pokeAge = now - pokeAt;
           const boost = pokeAge < 900 ? 1 - pokeAge / 900 : 0;
           const laughAge = now - lastLaughAt();
           const laugh = laughAge >= 0 && laughAge < 1600 ? 1 - laughAge / 1600 : 0;
-          if (boost > 0 || laugh > 0) {
+          if (boost > 0 || laugh > 0 || mv) {
             let px = 0, py = 0, pz = 0;
             let sx = 1, sy = 1, sz = 1;
             let rotX = 0, rotY = 0;
@@ -368,6 +373,17 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
               sy -= 0.08 * bounce;
               sz += 0.05 * bounce;
               rotX += -0.12 * Math.sin(lt * Math.PI); // lean back laughing
+            }
+            if (mv) {
+              // activity performance: the move's hops, dips and leans travel
+              // through the whole-body transform
+              const env = moveEnvelope(mv.t);
+              const md = moveDeltas(mv.kind, mv.t);
+              py += md.py * env;
+              sy += md.squash * env;
+              sx += md.stretch * env;
+              sz += md.stretch * env;
+              rotX += md.spineX * 0.7 * env; // let the lean read through the root too
             }
             vrm.scene.position.set(px, py, pz);
             vrm.scene.scale.set(sx * BASE_SX, sy * BASE_SY, sz * BASE_SX);
@@ -425,6 +441,30 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           setRot('rightLowerArm', 'z', b.rightLowerArm);
           setRot('spine', 'x', b.spinePitch);
           setRot('chest', 'x', b.chestPitch);
+        }
+        // r2026-10-03.39 — movement performance: choreographed deltas layered
+        // additively over whatever the base pose/clip just wrote, faded by the
+        // envelope so the body always settles back to neutral when it ends.
+        if (mv) {
+          const env = moveEnvelope(mv.t);
+          if (env > 0.001) {
+            const d = moveDeltas(mv.kind, mv.t);
+            const addRot = (name: VRMHumanBoneName, axis: 'x' | 'y' | 'z', val: number) => {
+              const node = vrm?.humanoid?.getNormalizedBoneNode(name);
+              if (node) node.rotation[axis] += val * env;
+            };
+            addRot('leftUpperArm', 'z', d.lArmZ);
+            addRot('rightUpperArm', 'z', d.rArmZ);
+            addRot('leftUpperArm', 'x', d.lArmX);
+            addRot('rightUpperArm', 'x', d.rArmX);
+            addRot('leftLowerArm', 'z', d.lElbowZ);
+            addRot('rightLowerArm', 'z', d.rElbowZ);
+            addRot('spine', 'y', d.spineY);
+            addRot('chest', 'z', d.chestZ);
+            addRot('head', 'x', d.headX);
+            addRot('head', 'y', d.headY);
+            addRot('head', 'z', d.headZ);
+          }
         }
         vrm.update(dt / 1000);
       } else {
