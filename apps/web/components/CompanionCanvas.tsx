@@ -9,7 +9,7 @@ import type { VRMAnimation } from '@pixiv/three-vrm-animation';
 import { mapFrameToVrm, posesByIds, sampleIdlePoseFrom } from '@amoji/vrm-renderer';
 import { tickEngine, lastLaughAt } from '../lib/companion';
 import { characterById } from '../lib/prefs';
-import { pokeStyleFor, poseIdsFor } from '../lib/persona';
+import { pokeStyleFor, poseIdsFor, lookFor } from '../lib/persona';
 import { sampleSpeech } from '../lib/speech';
 
 export interface CompanionCanvasProps {
@@ -121,6 +121,12 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     // subset of the pose library instead of the full shared catalog.
     const poseSubset = posesByIds(poseIdsFor(seedKey ?? 'juno'));
     const poke = pokeStyleFor(seedKey ?? 'juno');
+    // r2026-10-03.28: per-character look — the shared open-license VRM gets a
+    // gentle palette tint and an individual build (height/shoulders), so each
+    // character reads as her/his own person in the 3D scene.
+    const look = lookFor(seedKey ?? 'juno');
+    const BASE_SX = look.width;
+    const BASE_SY = look.height;
     const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
     // Per-character drop-in model first (CharacterDef.model, e.g. tifa.vrm),
     // then the shipped defaults. Local/closed builds ship juno.vrm (Kizuna AI);
@@ -139,6 +145,20 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       scene.remove(placeholder);
       scene.add(vrm.scene);
       vrm.scene.position.set(0, 0, 0);
+
+      // r2026-10-03.28: tint every material toward the character look. The tint
+      // is near-white, so it shifts the whole palette (outfit, hair, light on
+      // skin) without destroying natural skin tones.
+      const tint = new THREE.Color(look.tint);
+      vrm.scene.traverse((node) => {
+        const mesh = node as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const m of mats) {
+          const mat = m as THREE.MeshStandardMaterial;
+          if (mat.color) mat.color.multiply(tint);
+        }
+      });
 
       // idle VRMA animation: body motion from the clip, expressions stay ours
       const animLoader = new GLTFLoader();
@@ -340,11 +360,11 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
               rotX += -0.12 * Math.sin(lt * Math.PI); // lean back laughing
             }
             vrm.scene.position.set(px, py, pz);
-            vrm.scene.scale.set(sx, sy, sz);
+            vrm.scene.scale.set(sx * BASE_SX, sy * BASE_SY, sz * BASE_SX);
             vrm.scene.rotation.set(rotX, rotY, 0);
           } else {
             vrm.scene.position.set(0, 0, 0);
-            vrm.scene.scale.set(1, 1, 1);
+            vrm.scene.scale.set(BASE_SX, BASE_SY, BASE_SX);
             vrm.scene.rotation.set(0, 0, 0);
           }
 
