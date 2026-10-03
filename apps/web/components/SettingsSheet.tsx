@@ -32,7 +32,7 @@ function Toggle({ on, onClick, accent }: { on: boolean; onClick: () => void; acc
       onClick={onClick}
       role="switch"
       aria-checked={on}
-      className={`relative h-7 w-12 rounded-full transition-colors ${on ? '' : 'bg-white/15'}`}
+      className={`ui-btn relative h-7 w-12 rounded-full transition-colors ${on ? '' : 'bg-white/15'}`}
       style={on ? { backgroundColor: accent } : undefined}
     >
       <span
@@ -177,14 +177,14 @@ export default function SettingsSheet({
   const shownKey = keyDrafts[shownSpec.id] ?? brainKey(shownSpec.id);
 
   return (
-    <div className="absolute inset-0 z-20 flex justify-end bg-black/40 backdrop-blur-sm" onClick={onClose}>
+    <div className="fx-fade-in absolute inset-0 z-20 flex justify-end bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-neutral-950/90 p-5"
+        className="fx-sheet-in h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-neutral-950/90 p-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-white">{t(lang, 'settings')}</h2>
-          <button onClick={onClose} className="rounded-full bg-white/10 px-3 py-1 text-sm text-white/70 hover:bg-white/20">✕</button>
+          <button onClick={onClose} className="ui-btn rounded-full bg-white/10 px-3 py-1 text-sm text-white/70 hover:bg-white/20">✕</button>
         </div>
 
         <div className="space-y-6">
@@ -227,7 +227,7 @@ export default function SettingsSheet({
                   <button
                     key={id}
                     onClick={() => setBrain(id)}
-                    className={`rounded-full px-3 py-1.5 text-xs transition ${
+                    className={`ui-btn rounded-full px-3 py-1.5 text-xs ${
                       brain === id
                         ? 'bg-pink-400/80 font-medium text-neutral-950'
                         : 'bg-white/5 text-white/50 hover:text-white/80'
@@ -276,13 +276,13 @@ export default function SettingsSheet({
               <div className="flex shrink-0 gap-2">
                 <button
                   onClick={() => void copyAll()}
-                  className="rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 transition hover:bg-white/20"
+                  className="ui-btn rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 hover:bg-white/20"
                 >
                   {copied ? t(lang, 'memoryCopied') : t(lang, 'memoryExport')}
                 </button>
                 <button
                   onClick={forgetAll}
-                  className="rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 transition hover:bg-white/20"
+                  className="ui-btn rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 hover:bg-white/20"
                 >
                   {t(lang, 'forgetBtn')}
                 </button>
@@ -307,7 +307,7 @@ export default function SettingsSheet({
                   {!e.dueDay && e.day && <span className="shrink-0 pt-0.5 text-[10px] text-white/30">{shortDay(e.day)}</span>}
                   <button
                     onClick={() => removeEntry(e.id)}
-                    className="shrink-0 rounded-full px-1.5 text-xs text-white/30 transition hover:bg-white/10 hover:text-white/70"
+                    className="ui-btn shrink-0 rounded-full px-1.5 text-xs text-white/30 hover:bg-white/10 hover:text-white/70"
                     aria-label="forget"
                   >
                     ✕
@@ -329,7 +329,7 @@ export default function SettingsSheet({
                   <span className="shrink-0 pt-0.5 text-[10px] text-white/30">{shortDay(d.day)}</span>
                   <button
                     onClick={() => removeDiary(d.id)}
-                    className="shrink-0 rounded-full px-1.5 text-xs text-white/30 transition hover:bg-white/10 hover:text-white/70"
+                    className="ui-btn shrink-0 rounded-full px-1.5 text-xs text-white/30 hover:bg-white/10 hover:text-white/70"
                     aria-label="forget diary line"
                   >
                     ✕
@@ -345,7 +345,7 @@ export default function SettingsSheet({
                   <button
                     key={tp}
                     onClick={() => setNewType(tp)}
-                    className={`rounded-full px-2.5 py-1 text-[10px] transition ${
+                    className={`ui-btn rounded-full px-2.5 py-1 text-[10px] ${
                       newType === tp ? `${TYPE_STYLE[tp]} ring-1 ring-white/30` : 'bg-white/5 text-white/40 hover:text-white/70'
                     }`}
                   >
@@ -364,7 +364,7 @@ export default function SettingsSheet({
                 <button
                   onClick={addNew}
                   disabled={!newText.trim()}
-                  className="h-9 shrink-0 rounded-full bg-white/10 px-3.5 text-xs text-white/80 transition hover:bg-white/20 disabled:opacity-40"
+                  className="ui-btn h-9 shrink-0 rounded-full bg-white/10 px-3.5 text-xs text-white/80 hover:bg-white/20 disabled:opacity-40"
                 >
                   {t(lang, 'memoryAdd')}
                 </button>
@@ -375,7 +375,7 @@ export default function SettingsSheet({
               <span className={label}>💬 {t(lang, 'clearHistory')}</span>
               <button
                 onClick={clearHistory}
-                className="rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 transition hover:bg-white/20"
+                className="ui-btn rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 hover:bg-white/20"
               >
                 ✕
               </button>
@@ -395,7 +395,7 @@ export default function SettingsSheet({
           </Section>
 
           <Section title={t(lang, 'settingsHelp')}>
-            <button onClick={tutor} className={`${row} w-full text-left transition hover:bg-white/10`}>
+            <button onClick={tutor} className={`ui-btn ${row} w-full text-left hover:bg-white/10`}>
               <span className={label}>❓ {t(lang, 'tutorBtn')}</span>
               <span className="text-white/30">→</span>
             </button>
