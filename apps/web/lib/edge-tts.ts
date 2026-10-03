@@ -1,5 +1,4 @@
 'use client';
-// ─────────────────────────────────────────────────────────────────────────────
 // Free neural TTS, straight from the browser — the Microsoft Edge read-aloud
 // endpoint (the same engine behind the edge-tts project). No API key, no server,
 // no cost: real emotional voices with per-character casting — Cantonese
@@ -13,6 +12,8 @@
 // speechSynthesis automatically.
 // r2026-10-03.40: optional `melody` mode — every clause becomes one note of a
 // pitch contour, legato tempo, musical rests: she can actually sing.
+// r2026-10-04.52: flagship nine casted (kizuna/alicia/ember/mei/atlas/sky/
+// yuki/hina/mio); tifa/aerith retire.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface EdgeVoiceOpts {
@@ -57,8 +58,19 @@ const VOICES: Record<string, { female: string; male: string; ssmlLang: string }>
  * (Xiaorui / Sara), male characters real male voices
  * (Yunyang / Yunxi / Yunjian / WanLung / Keita / Guy / Christopher / Eric).
  * r2026-10-03.04: extended cast casted — Cloud finally gets a male voice.
+ * r2026-10-04.52: flagship nine casted — genki idols get bright young HK
+ * voices (HiuGaai), Atlas a real male voice, every id gender-correct.
  */
 const CAST: Record<string, Record<string, string>> = {
+  kizuna:  { yue: 'zh-HK-HiuGaaiNeural', zh: 'zh-CN-XiaoxiaoNeural', ja: 'ja-JP-NanamiNeural', en: 'en-US-JennyNeural' },
+  alicia:  { yue: 'zh-HK-HiuGaaiNeural', zh: 'zh-CN-XiaoyiNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-JennyNeural' },
+  ember:   { yue: 'zh-HK-HiuGaaiNeural', zh: 'zh-CN-XiaoruiNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-JennyNeural' },
+  mei:     { yue: 'zh-HK-HiuGaaiNeural', zh: 'zh-CN-XiaoyiNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-AnaNeural' },
+  atlas:   { yue: 'zh-HK-WanLungNeural', zh: 'zh-CN-YunxiNeural',    ja: 'ja-JP-KeitaNeural',  en: 'en-HK-SamNeural' },
+  sky:     { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaohanNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-AriaNeural' },
+  yuki:    { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoruiNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-HK-YanNeural' },
+  hina:    { yue: 'zh-HK-HiuGaaiNeural', zh: 'zh-CN-XiaomoNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-HK-YanNeural' },
+  mio:     { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaohanNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-HK-YanNeural' },
   juno:  { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaoxiaoNeural', ja: 'ja-JP-NanamiNeural', en: 'en-US-JennyNeural' },
   nova:  { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaohanNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-AriaNeural' },
   mochi: { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaoyiNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-AnaNeural' },
@@ -67,8 +79,6 @@ const CAST: Record<string, Record<string, string>> = {
   luna:  { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaomoNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-MichelleNeural' },
   rin:   { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaoruiNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-SaraNeural' },
   ren:   { yue: 'zh-HK-WanLungNeural',   zh: 'zh-CN-YunjianNeural',  ja: 'ja-JP-KeitaNeural',  en: 'en-US-EricNeural' },
-  tifa:    { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoruiNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-SaraNeural' },
-  aerith:  { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoyiNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-MichelleNeural' },
   cloud:   { yue: 'zh-HK-WanLungNeural', zh: 'zh-CN-YunxiNeural',    ja: 'ja-JP-KeitaNeural',  en: 'en-US-ChristopherNeural' },
   kasumi:  { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaohanNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-AriaNeural' },
   marin:   { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoyiNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-JennyNeural' },

@@ -2,10 +2,32 @@
 // Personality layer (r2026-10-03.04): each character gets a curated idle-pose
 // set (≥3 from the vrm-renderer library), a poke-reaction style, and her/his
 // own idle dialogue bank. Deterministic, offline, localStorage-free.
+// r2026-10-04.52: flagship nine from the agent3 gallery (kizuna/alicia/ember/
+// mei/atlas/sky/yuki/hina/mio) get poses, poke styles and looks; tifa/aerith
+// retire from the cast.
 import type { Lang } from './prefs';
 
 /** pose ids from @amoji/vrm-renderer IDLE_POSES, curated per personality */
 export const CHARACTER_POSES: Record<string, string[]> = {
+  // ---- flagship nine (r2026-10-04.52): agent3 gallery #2–#10 ----------------
+  // genki idol — bouncy, stage-ready, can't stop moving
+  kizuna: ['bouncy', 'stretchUp', 'readyStance', 'lookUp', 'leanIn'],
+  // classic idol — polished tilts and graceful leans
+  alicia: ['bouncy', 'headTilt', 'leanIn', 'handsOnHips', 'swaySoft'],
+  // fiery streamer — hands on hips, full of heat
+  ember: ['bouncy', 'handsOnHips', 'stretchUp', 'weightShift', 'leanIn'],
+  // warm sweetheart — soft sways and gentle tilts
+  mei: ['swaySoft', 'headTilt', 'calmHug', 'dreamyTilt', 'toeShift'],
+  // silent guardian (male) — steady, watchful, minimal motion
+  atlas: ['stand', 'handsBehind', 'guardCross', 'confidentLean', 'lookAround'],
+  // laid-back fashionista — unbothered weight shifts
+  sky: ['weightShift', 'handsOnHips', 'lookAround', 'confidentLean', 'swaySoft'],
+  // sunny sportswoman — always warming up
+  yuki: ['readyStance', 'bouncy', 'stretchSide', 'weightShift', 'lookUp'],
+  // bookish poet — chin in hand, half a daydream away
+  hina: ['swaySoft', 'chinStroke', 'handsBehind', 'daydream', 'headTilt'],
+  // project-lead go-getter — efficient, composed, ready
+  mio: ['stand', 'handsOnHips', 'chinStroke', 'lookAround', 'confidentLean'],
   // warm, playful, a little cheeky — sways, leans in, confident
   juno: ['swaySoft', 'leanIn', 'headTilt', 'handsOnHips', 'weightShift'],
   // calm, thoughtful, quietly witty — ponders, drifts, unhurried
@@ -22,10 +44,6 @@ export const CHARACTER_POSES: Record<string, string[]> = {
   rin: ['readyStance', 'stretchSide', 'bouncy', 'weightShift', 'stretchUp'],
   // gentle, bookish, quietly devoted — self-hug, chin in hand, soft sway
   ren: ['calmHug', 'chinStroke', 'swaySoft', 'handsBehind', 'daydream'],
-  // athletic, warm-hearted, fiercely loyal — fighter's idle set
-  tifa: ['readyStance', 'handsOnHips', 'stretchSide', 'weightShift', 'guardCross'],
-  // gentle flower girl, wise beyond years — dreamy tilts and soft sways
-  aerith: ['dreamyTilt', 'swaySoft', 'stargaze', 'headTilt', 'leanIn'],
   // cool mercenary with a soft center — guarded, scanning, arms crossed
   cloud: ['guardCross', 'lookAround', 'handsBehind', 'stand', 'weightShift'],
   // graceful shinobi, kind underneath — poised, still, watchful
@@ -67,6 +85,15 @@ export interface PokeStyle {
 }
 
 export const POKE_STYLE: Record<string, PokeStyle> = {
+  kizuna: { squash: 0.09, twist: 'playful', face: 'happy' },
+  alicia: { squash: 0.08, twist: 'playful', face: 'surprised' },
+  ember: { squash: 0.09, twist: 'challenging', face: 'happy' },
+  mei: { squash: 0.07, twist: 'flustered', face: 'surprised' },
+  atlas: { squash: 0.03, twist: 'unimpressed', face: 'relaxed' },
+  sky: { squash: 0.04, twist: 'unimpressed', face: 'surprised' },
+  yuki: { squash: 0.06, twist: 'playful', face: 'happy' },
+  hina: { squash: 0.04, twist: 'flustered', face: 'surprised' },
+  mio: { squash: 0.03, twist: 'challenging', face: 'relaxed' },
   juno: { squash: 0.07, twist: 'playful', face: 'happy' },
   nova: { squash: 0.04, twist: 'unimpressed', face: 'surprised' },
   blaze: { squash: 0.09, twist: 'challenging', face: 'happy' },
@@ -75,8 +102,6 @@ export const POKE_STYLE: Record<string, PokeStyle> = {
   luna: { squash: 0.05, twist: 'flustered', face: 'happy' },
   rin: { squash: 0.06, twist: 'challenging', face: 'happy' },
   ren: { squash: 0.04, twist: 'flustered', face: 'surprised' },
-  tifa: { squash: 0.06, twist: 'challenging', face: 'happy' },
-  aerith: { squash: 0.05, twist: 'playful', face: 'happy' },
   cloud: { squash: 0.02, twist: 'unimpressed', face: 'relaxed' },
   kasumi: { squash: 0.04, twist: 'startled', face: 'surprised' },
   marin: { squash: 0.08, twist: 'playful', face: 'happy' },
@@ -111,6 +136,15 @@ export interface CharacterLook {
 }
 
 export const CHARACTER_LOOKS: Record<string, CharacterLook> = {
+  kizuna: { tint: '#ffe0d2', height: 0.98, width: 0.96 },
+  alicia: { tint: '#ffd9e4', height: 0.98, width: 0.95 },
+  ember:  { tint: '#ffd9cf', height: 1.0,  width: 0.97 },
+  mei:    { tint: '#ffe4ec', height: 0.97, width: 0.95 },
+  atlas:  { tint: '#d8f5e8', height: 1.07, width: 1.06 },
+  sky:    { tint: '#e4d9f9', height: 1.0,  width: 0.96 },
+  yuki:   { tint: '#ffe0e6', height: 0.98, width: 0.95 },
+  hina:   { tint: '#ffe4ea', height: 1.0,  width: 0.95 },
+  mio:    { tint: '#ddefff', height: 1.01, width: 0.97 },
   juno:   { tint: '#ffd9ec', height: 1.0,  width: 0.97 },
   nova:   { tint: '#dfe3ff', height: 1.01, width: 0.96 },
   blaze:  { tint: '#ffe3c2', height: 1.07, width: 1.08 },
@@ -119,8 +153,6 @@ export const CHARACTER_LOOKS: Record<string, CharacterLook> = {
   luna:   { tint: '#ecd9ff', height: 1.0,  width: 0.95 },
   rin:    { tint: '#d2f5ef', height: 0.98, width: 0.94 },
   ren:    { tint: '#dde1ff', height: 1.03, width: 1.0 },
-  tifa:   { tint: '#ffd9d9', height: 1.02, width: 1.02 },
-  aerith: { tint: '#ffe0ee', height: 0.99, width: 0.96 },
   cloud:  { tint: '#d6e6ff', height: 1.08, width: 1.06 },
   kasumi: { tint: '#d9f1ff', height: 1.0,  width: 0.95 },
   marin:  { tint: '#ffd9e8', height: 0.98, width: 0.97 },
