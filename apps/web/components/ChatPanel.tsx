@@ -27,6 +27,9 @@
 // r2026-10-03.27: if her LLM brain runs out of credit mid-session, client-chat
 // parks it and fires 'amoji:brain-degraded' — we surface one small note in the
 // history so the switch to the free lane is explained, not mysterious.
+// r2026-10-03.29: the hero mic is now ONLY a circle — no hard border, no
+// square edge. Soft circular glow (inset rings follow the border-radius),
+// bigger 80px button, 72px orb drawn inside its own safe margin.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh } from '../lib/companion';
 import { loadHistory, saveHistory } from '../lib/companion-store';
@@ -371,7 +374,7 @@ export default function ChatPanel({
   };
 
   return (
-    <div className="pointer-events-auto mx-auto flex w-full max-w-2xl flex-col items-center gap-1.5 px-4 pb-4">
+    <div classNameName="pointer-events-auto mx-auto flex w-full max-w-2xl flex-col items-center gap-1.5 px-4 pb-4">
       {/* boxless history — newer lines opaque, older ones melt away; scrollable */}
       <div
         ref={scrollRef}
@@ -408,14 +411,23 @@ export default function ChatPanel({
         <button
           onClick={() => mic()}
           title={t(lang, 'micTitle')}
-          className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border bg-black/50 backdrop-blur-md transition hover:bg-black/70 active:scale-95"
+          className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-black/40 backdrop-blur-md transition active:scale-95"
           style={
             listening
               ? {
-                  borderColor: 'rgba(96,175,255,0.95)',
-                  boxShadow: '0 0 26px -2px rgba(88,166,255,0.8), 0 0 64px -12px rgba(88,166,255,0.55)',
+                  // voice mode ON — ChatGPT-blue glow, no border line
+                  boxShadow: '0 0 30px -2px rgba(88,166,255,0.85), 0 0 70px -14px rgba(88,166,255,0.5)',
                 }
-              : { borderColor: speakingNow ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.16)' }
+              : speakingNow
+                ? {
+                    // she is speaking — soft accent halo, no border line
+                    boxShadow: `0 0 26px -4px ${accent}99, inset 0 0 0 1px rgba(255,255,255,0.14)`,
+                  }
+                : {
+                    // idle — a faint circular ring only (inset shadows follow
+                    // the border-radius, so this is a circle, never a square)
+                    boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.14), 0 6px 24px -10px rgba(0,0,0,0.7)',
+                  }
           }
         >
           {speakingNow && !listening && (
@@ -425,11 +437,11 @@ export default function ChatPanel({
             />
           )}
           {/* idle = a clean white mic icon only; live = the soft emotion orb */}
-          {(listening || speakingNow) && <EmotionOrb size={52} accent={accent} listening={listening} />}
+          {(listening || speakingNow) && <EmotionOrb size={72} accent={accent} listening={listening} />}
           {!listening && !speakingNow && (
             <svg
               viewBox="0 0 24 24"
-              className="pointer-events-none h-6 w-6 text-white"
+              className="pointer-events-none h-7 w-7 text-white"
               fill="none"
               aria-hidden
             >
