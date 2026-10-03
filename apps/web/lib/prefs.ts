@@ -166,7 +166,7 @@ export type StrKey =
   | 'yourName' | 'clearHistory' | 'clearHistoryConfirm' | 'forgetConfirm'
   // memory v2 browser (r2026-10-02.11)
   | 'memoryBrowser' | 'memoryEmpty' | 'memoryAddPlaceholder' | 'memoryAdd' | 'memoryExport'
-  | 'memoryTypePreference' | 'memoryTypeEvent' | 'memoryTypePlan' | 'forgetOneConfirm';
+  | 'memoryCopied' | 'memoryTypePreference' | 'memoryTypeEvent' | 'memoryTypePlan' | 'forgetOneConfirm';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   tagline: {
