@@ -73,3 +73,40 @@ export const POKE_STYLE: Record<string, PokeStyle> = {
 export function pokeStyleFor(characterId: string): PokeStyle {
   return POKE_STYLE[characterId] ?? { squash: 0.07, twist: 'playful', face: 'surprised' };
 }
+
+/** per-character body look (r2026-10-03.28): material tint + build, applied
+ *  to the shared open-license VRM so each character reads as her/his own
+ *  person in the 3D scene until per-character drop-in models ship
+ *  (CharacterDef.model under /models). Tints are near-white on purpose —
+ *  multiplied into every material, they shift the whole palette without
+ *  wrecking skin tones. */
+export interface CharacterLook {
+  /** near-white hex multiplied into every material — gentle color identity */
+  tint: string;
+  /** vertical scale (height) */
+  height: number;
+  /** horizontal scale (shoulders / build) */
+  width: number;
+}
+
+export const CHARACTER_LOOKS: Record<string, CharacterLook> = {
+  juno:   { tint: '#ffd9ec', height: 1.0,  width: 0.97 },
+  nova:   { tint: '#dfe3ff', height: 1.01, width: 0.96 },
+  blaze:  { tint: '#ffe3c2', height: 1.07, width: 1.08 },
+  mochi:  { tint: '#fff3cf', height: 0.94, width: 0.95 },
+  kai:    { tint: '#d3ecff', height: 1.05, width: 1.04 },
+  luna:   { tint: '#ecd9ff', height: 1.0,  width: 0.95 },
+  rin:    { tint: '#d2f5ef', height: 0.98, width: 0.94 },
+  ren:    { tint: '#dde1ff', height: 1.03, width: 1.0 },
+  tifa:   { tint: '#ffd9d9', height: 1.02, width: 1.02 },
+  aerith: { tint: '#ffe0ee', height: 0.99, width: 0.96 },
+  cloud:  { tint: '#d6e6ff', height: 1.08, width: 1.06 },
+  kasumi: { tint: '#d9f1ff', height: 1.0,  width: 0.95 },
+  marin:  { tint: '#ffd9e8', height: 0.98, width: 0.97 },
+  ayane:  { tint: '#e6d4ff', height: 1.01, width: 0.96 },
+  hitomi: { tint: '#d9f5d9', height: 1.0,  width: 1.0 },
+};
+
+export function lookFor(characterId: string): CharacterLook {
+  return CHARACTER_LOOKS[characterId] ?? { tint: '#ffffff', height: 1, width: 1 };
+}
