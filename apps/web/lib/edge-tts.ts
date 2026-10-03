@@ -11,6 +11,8 @@
 // vocal tic (giggle/sigh/gasp), and per-character expressiveness. If the socket
 // is unreachable (some networks block it), voice.ts falls back to the browser's
 // speechSynthesis automatically.
+// r2026-10-03.40: optional `melody` mode — every clause becomes one note of a
+// pitch contour, legato tempo, musical rests: she can actually sing.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface EdgeVoiceOpts {
@@ -29,6 +31,13 @@ export interface EdgeVoiceOpts {
   lead?: { text: string; pitch: number; rate: number };
   /** word-boundary events (for precise lip-sync) */
   onWord?: (word: string) => void;
+  /**
+   * Singing mode (r2026-10-03.40) — when set, each clause of the text is
+   * delivered as one note: pitch = pitchDelta + melody[i % len], at a legato
+   * tempo, with musical rests between phrases. The speech contour, swells
+   * and comma pauses are skipped so the tune comes through.
+   */
+  melody?: number[];
 }
 
 const TRUSTED_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
@@ -131,6 +140,8 @@ export function edgeTtsPossible(): boolean {
  * exclamation swells (pitch/rate up), an ellipsis sinks and stretches, and
  * breath pauses land after commas as well as sentence ends. An optional
  * leading tic (giggle/sigh/gasp) gets its own expressive prosody + pause.
+ * With `melody` set, the contour is replaced by one note per clause and
+ * she sings (r2026-10-03.40).
  */
 export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
   stopEdge();
@@ -149,12 +160,27 @@ export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
       ? `<prosody pitch='${pct(clamp(opts.lead.pitch, -0.5, 0.5))}' rate='${pct(clamp(opts.lead.rate, -0.5, 0.5))}' volume='${db(0.1)}'>${escapeXml(opts.lead.text)}</prosody><break time='170ms'/>`
       : '';
 
+    const melody = opts.melody;
     const body = parts
       .map((part, i) => {
+        const isTail = i === parts.length - 1;
+        // r2026-10-03.40 — singing mode: each clause is one note of the
+        // melody; legato tempo, musical rests, no speech contour/swells
+        if (melody && melody.length > 0) {
+          const note = melody[i % melody.length]!;
+          const rate = clamp(baseRate * 0.92, -0.5, 0.5);
+          const pitch = clamp(basePitch + note, -0.5, 0.5);
+          // musical rests: a beat after phrase ends, a half-beat after commas
+          const breakAfter = !isTail
+            ? /[。！？!?…\.]$/.test(part) ? `<break time='420ms'/>`
+              : /[,，、；;]$/.test(part) ? `<break time='160ms'/>`
+              : ''
+            : '';
+          return `<prosody pitch='${pct(pitch)}' rate='${pct(rate)}' volume='${db(baseVol)}'>${escapeXml(part)}</prosody>${breakAfter}`;
+        }
         const contour = parts.length > 1
           ? 1 + 0.09 * expr * Math.sin((i / (parts.length - 1)) * Math.PI * (rising ? 1 : 0.7))
           : 1;
-        const isTail = i === parts.length - 1;
         const tailLift = isTail && rising ? 1.18 : isTail && !rising ? 0.9 : 1;
         // punctuation swells: ! pops, … sinks and stretches, — drags
         const bang = /[!！]\s*$/.test(part);

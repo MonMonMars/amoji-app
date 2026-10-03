@@ -5,13 +5,15 @@
 // giggle. The catalog mirrors the classic Mixamo / rigmodels movement
 // families, so a real clip library (.vrma per character) can replace these
 // procedural versions later by mapping the same kinds to clips.
+// r2026-10-03.40: the sing performance now lasts a full 9s — long enough to
+// carry an entire sung ditty, not just a pose.
 // Pure data + math, no DOM — fully unit-testable in node.
 
 export type MoveKind = 'sing' | 'jump' | 'kungfu' | 'taichi' | 'piano' | 'jog';
 
 /** performance length per move, ms */
 export const MOVE_DUR: Record<MoveKind, number> = {
-  sing: 6000,
+  sing: 9000,
   jump: 2600,
   kungfu: 3200,
   taichi: 8000,

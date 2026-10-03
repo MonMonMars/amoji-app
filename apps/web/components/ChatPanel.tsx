@@ -42,6 +42,10 @@
 // r2026-10-03.39: activity dialogue sets her body off — "sing for me",
 // "跳一下", "kung fu!", "太極", "play the piano", "跑步" each trigger a
 // choreographed movement-library performance while her reply plays.
+// r2026-10-03.40: she actually SINGS — a sing trigger now rides a real
+// melodic contour (one note per clause): she sings the lyric-like reply
+// itself, or a little ditty from the per-language song bank, while the r.39
+// sing performance plays on for the whole song.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh, triggerMove } from '../lib/companion';
 import { detectMove } from '../lib/moves';
@@ -54,7 +58,8 @@ import { pickOuch, ouchStyleFor } from '../lib/ouch';
 import { pickLaugh, laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { pickThinkPhrase } from '../lib/think-phrases';
 import { clientChat } from '../lib/client-chat';
-import { speak, stopSpeaking, speakThinkingFiller } from '../lib/voice';
+import { speak, stopSpeaking, speakThinkingFiller, sing } from '../lib/voice';
+import { pickSong } from '../lib/songs';
 import { buildDailyGreeting, buildMemoryBlock, feltMood, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange, rememberTurn } from '../lib/memory';
 import { listenContinuous, listenSupported } from '../lib/listen';
 import { t, type Lang } from '../lib/prefs';
@@ -72,7 +77,7 @@ export interface ChatPanelProps {
   /** increments when the user pokes the character — triggers a poke reply */
   pokeCount?: number;
   onStatus?: (s: ChatStatus) => void;
-  onMemCount?: (n: number) => void;
+  onMemCount?: (n: number) => number | void;
 }
 
 const IDLE_AFTER_MS = 40_000;
@@ -178,14 +183,30 @@ export default function ChatPanel({
   // r.39: activity dialogue also sets her body off — singing, jumping, kung
   // fu, tai chi, piano, jogging each trigger a choreographed performance
   // (movement library) while the reply plays, from YOUR words or her own.
-  const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string) => {
+  // r.40: a sing trigger goes further — she delivers the line AS A SONG on
+  // the melodic contour (lyric-like replies ride as-is; longer ones become a
+  // ditty from the song bank) and the history shows exactly what she sang.
+  const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string): string => {
     const mv = detectMove(userText) ?? detectMove(reply);
+    // r.40 — she really sings: a short lyric-like reply rides the melody as-is;
+    // a longer one becomes a little ditty from the per-language song bank.
+    if (mv === 'sing') {
+      triggerMove('sing');
+      applyLlmHints({ joy: 0.85 });
+      const compact = reply.replace(/\s/g, '');
+      const song = compact.length > 0 && compact.length <= 48
+        ? reply
+        : pickSong(lang, laughCountRef.current).join(' ');
+      notifySpeaking(song);
+      sing(song, characterId, lang);
+      return song;
+    }
     if (mv) triggerMove(mv);
     const funny = LAUGH_RE.test(userText) || LAUGH_RE.test(reply);
     if (!funny) {
       notifySpeaking(reply);
       speak(reply, characterId, lang, hints, undefined, intensity);
-      return;
+      return reply;
     }
     const style = laughStyleFor(mood);
     triggerLaugh();
@@ -193,6 +214,7 @@ export default function ChatPanel({
     const giggle = pickLaugh(characterId, lang, laughCountRef.current++, mood);
     notifySpeaking(`${giggle} ${reply}`);
     speak(reply, characterId, lang, { ...(hints ?? {}), joy: style.joy }, { text: giggle, pitch: style.pitch, rate: style.rate }, intensity);
+    return reply;
   };
 
   // startup: first a welcome line; if it's a NEW day, the second line is her
@@ -326,8 +348,8 @@ export default function ChatPanel({
       rememberTurn(text, reply);
       onMemCountRef.current?.(memorySummaryCount());
       feedUtterance(reply);
-      speakReply(text, reply, replyHints, felt?.intensity, felt?.mood);
-      setHistory((h) => [...h, { role: 'assistant', content: reply }]);
+      const spoken = speakReply(text, reply, replyHints, felt?.intensity, felt?.mood);
+      setHistory((h) => [...h, { role: 'assistant', content: spoken }]);
       answered = true;
     } catch {
       // no server (e.g. static GitHub Pages build) — free keyless LLM from the browser
@@ -360,8 +382,8 @@ export default function ChatPanel({
         rememberTurn(text, r.reply);
         onMemCountRef.current?.(memorySummaryCount());
         feedUtterance(r.reply);
-        speakReply(text, r.reply, replyHints, felt?.intensity, felt?.mood);
-        setHistory((h) => [...h.slice(0, -1), { role: 'assistant', content: r.reply }]);
+        const spoken = speakReply(text, r.reply, replyHints, felt?.intensity, felt?.mood);
+        setHistory((h) => [...h.slice(0, -1), { role: 'assistant', content: spoken }]);
         answered = true;
       } catch {
         // drop the placeholder only if nothing ever streamed; partial text stays

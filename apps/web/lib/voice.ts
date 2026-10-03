@@ -13,10 +13,14 @@
 // leave every delta exactly where it was.
 // r2026-10-03.24: the thinking filler takes an optional mood — a sad user's
 // first "hmm…" is softer and slower than a happy one's (MOOD_FILLERS).
+// r2026-10-03.40: sing() — she can really sing: each clause becomes one note
+// of the SONG_MELODY contour (neural SSML pitch deltas / per-utterance pitch
+// multipliers on the fallback), legato and slightly slower, joy underneath.
 
 import type { Lang } from './prefs';
 import { speakEdge, stopEdge } from './edge-tts';
 import { dominant, pickInterjection, pickThinkingFiller } from './fillers';
+import { SONG_MELODY } from './songs';
 import { notifySpeaking } from './speech';
 
 export interface VoiceChoice {
@@ -574,6 +578,35 @@ export function speak(
   synthSpeak(text, characterId, lang, emotion, expr, tic, amp);
 }
 
+/**
+ * Sing (r2026-10-03.40) — a melodic delivery of `text`: each clause becomes
+ * one note of the SONG_MELODY contour, legato and slightly slower, joy
+ * prosody underneath, her/his own voice. Neural path sends per-clause SSML
+ * pitch deltas; the browser fallback replays the same contour as per-utterance
+ * pitch multipliers. Callers gate on voiceEnabled().
+ */
+export function sing(text: string, characterId: string, lang: Lang): void {
+  if (!voiceEnabled()) return;
+  const expr = EXPRESSIVENESS[characterId] ?? 1;
+  if (neuralEnabled() && typeof WebSocket !== 'undefined') {
+    speakEdge(text, {
+      lang,
+      gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
+      character: characterId,
+      expressiveness: expr,
+      melody: SONG_MELODY,
+      rateDelta: -0.06,
+      pitchDelta: 0.02,
+    }).catch(() => {
+      // endpoint unreachable — same melody on the browser voice
+      stopEdge();
+      synthSpeak(text, characterId, lang, 'joy', expr, undefined, 1, SONG_MELODY);
+    });
+    return;
+  }
+  synthSpeak(text, characterId, lang, 'joy', expr, undefined, 1, SONG_MELODY);
+}
+
 function synthSpeak(
   text: string,
   characterId: string,
@@ -582,6 +615,7 @@ function synthSpeak(
   expr: number,
   tic?: { text: string; pitch: number; rate: number },
   amp = 1,
+  melody?: number[],
 ): void {
   if (typeof speechSynthesis === 'undefined') return;
   speechSynthesis.cancel(); // one speaker at a time
@@ -608,11 +642,20 @@ function synthSpeak(
     utterances.push(t);
   }
   // Warm contour: statements drift down then settle; questions rise at the tail.
+  // With a melody set, each clause instead rides one note of the tune (r.40).
   const rising = /[？?]\s*$/.test(text);
   parts.forEach((part, i) => {
     const u = new SpeechSynthesisUtterance(part);
     if (voice) u.voice = voice;
     u.lang = voice?.lang ?? (lang === 'yue' ? 'zh-HK' : lang === 'zh' ? 'zh-CN' : lang === 'ja' ? 'ja-JP' : 'en-US');
+    if (melody && melody.length > 0) {
+      const note = melody[i % melody.length]!;
+      u.pitch = clamp(pitch * (1 + note), 0.4, 2);
+      u.rate = clamp(rate * 0.94, 0.6, 1.6);
+      u.volume = vol;
+      utterances.push(u);
+      return;
+    }
     const contour = parts.length > 1
       ? 1 + 0.06 * expr * Math.sin((i / (parts.length - 1)) * Math.PI * (rising ? 1 : 0.7))
       : 1;
