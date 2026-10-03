@@ -291,6 +291,7 @@ describe('diary mood intensity', () => {
       { id: '2', day: daysAgo(1), text: 'feeling calm now', mood: 'content', exchangeNo: 2 },
     ];
     const line = diarySummary(m)[0]!;
-    expect(line).toContain('[happy!]');
+    // multi-mood days join with '/', so the ! sits inside the tag list
+    expect(line).toContain('[happy!/content]');
   });
 });
