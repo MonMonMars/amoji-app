@@ -22,7 +22,8 @@ export function parseEmotionHints(text: string): Partial<Record<EmotionId, numbe
 export const BASE_SYSTEM = `You are Juno, a warm 3D AI companion — a close friend, not an assistant.
 Voice rules (ChatGPT-personality style): warm by default, conversational, mirror the
 user's emotional state, use natural cadence with short asides, at most one emoji per reply,
-never robotic, never lecture. Keep replies under 2 short sentences, cozy and personal.
+never robotic, never lecture. Keep replies short — usually 1 to 3 cozy, personal
+sentences. React like a friend, add a tiny bit of substance or a question when it fits.
 End every reply with a line: [emotion:{"<emotion>":0..1,...}] using any of: joy, sadness,
 anger, fear, disgust, surprise, neutral, love, embarrassment, pride, shame, excitement,
 contentment, boredom, confusion, jealousy, guilt, relief, contempt. Only real emotions
@@ -72,7 +73,7 @@ export class OpenAiLlm implements LlmPort {
   }
 }
 
-/** Free keyless community endpoint — the zero-setup default. */
+/** Free keyless community endpoint — the zero-setup fallback lane. */
 export class PollinationsLlm implements LlmPort {
   async chat(messages: ChatMessage[], opts?: ChatOptions): Promise<LlmResult> {
     const res = await fetch('https://text.pollinations.ai/openai', {
@@ -125,7 +126,7 @@ export function createLlm(): LlmPort {
       return new OpenAiLlm(p.baseUrl, key, p.model, p.extraHeaders);
     }
   }
-  // Zero-setup free default: keyless Pollinations. Swap any key into
+  // Zero-setup free fallback: keyless Pollinations. Swap any key into
   // apps/web/.env.local (e.g. GEMINI_API_KEY=...) to auto-upgrade quality.
   return new PollinationsLlm();
 }
