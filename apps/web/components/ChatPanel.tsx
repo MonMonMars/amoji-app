@@ -30,6 +30,10 @@
 // r2026-10-03.29: the hero mic is now ONLY a circle — no hard border, no
 // square edge. Soft circular glow (inset rings follow the border-radius),
 // bigger 80px button, 72px orb drawn inside its own safe margin.
+// r2026-10-03.30: long-term memory v4 — every completed turn is stored as
+// the conversation thread (last user words + her reply), so the next session
+// opens with "last time we were talking about…" and her prompt always
+// carries the open topic.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh } from '../lib/companion';
 import { loadHistory, saveHistory } from '../lib/companion-store';
@@ -42,7 +46,7 @@ import { pickLaugh, laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { pickThinkPhrase } from '../lib/think-phrases';
 import { clientChat } from '../lib/client-chat';
 import { speak, stopSpeaking, speakThinkingFiller } from '../lib/voice';
-import { buildDailyGreeting, buildMemoryBlock, feltMood, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange } from '../lib/memory';
+import { buildDailyGreeting, buildMemoryBlock, feltMood, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange, rememberTurn } from '../lib/memory';
 import { listenContinuous, listenSupported } from '../lib/listen';
 import { t, type Lang } from '../lib/prefs';
 import type { ChatStatus } from '../lib/status';
@@ -272,6 +276,10 @@ export default function ChatPanel({
       const replyHints = feltHints ? { ...feltHints, ...(data.emotionHints ?? {}) } : data.emotionHints;
       if (replyHints) applyLlmHints(replyHints);
       const reply = data.reply || '…';
+      // r.30 — remember the completed turn (your words + her reply) so the
+      // next session can pick the conversation thread back up
+      rememberTurn(text, reply);
+      onMemCountRef.current?.(memorySummaryCount());
       feedUtterance(reply);
       speakReply(text, reply, replyHints, felt?.intensity, felt?.mood);
       setHistory((h) => [...h, { role: 'assistant', content: reply }]);
@@ -303,6 +311,9 @@ export default function ChatPanel({
         // can be undefined when the exchange carried no mood at all)
         const replyHints = feltHints ? { ...feltHints, ...r.emotionHints } : r.emotionHints;
         if (replyHints) applyLlmHints(replyHints);
+        // r.30 — the streaming path remembers the turn too (both paths learn)
+        rememberTurn(text, r.reply);
+        onMemCountRef.current?.(memorySummaryCount());
         feedUtterance(r.reply);
         speakReply(text, r.reply, replyHints, felt?.intensity, felt?.mood);
         setHistory((h) => [...h.slice(0, -1), { role: 'assistant', content: r.reply }]);
