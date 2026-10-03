@@ -8,6 +8,9 @@
 // "hmm…" moment (with mouth movement) while the reply is still generating.
 // r2026-10-03.09: speak() accepts an explicit lead tic — poke ouch cries are
 // guaranteed to sound instantly instead of depending on emotion intensity.
+// r2026-10-03.21: felt-mood intensity now lifts her VOICE too — 超開心 rings
+// brighter and quicker, 勁攰 sinks slower and softer; plain moods (intensity
+// 1) leave every delta exactly where it was.
 
 import type { Lang } from './prefs';
 import { speakEdge, stopEdge } from './edge-tts';
@@ -429,11 +432,15 @@ export function speak(
   lang: Lang,
   emotionHints?: Record<string, number>,
   leadOverride?: VocalLead,
+  intensity = 1,
 ): void {
   if (!voiceEnabled()) return;
   const { emotion, value } = dominant(emotionHints);
   const expr = EXPRESSIVENESS[characterId] ?? 1;
   const exprScale = 0.8 + 0.2 * expr; // expressive characters feel emotions harder
+  // amplified feelings push pitch/energy further (intensity 1.5 → +25% swing);
+  // plain moods (intensity 1) leave every delta exactly where it was
+  const amp = 1 + 0.5 * Math.max(0, intensity - 1);
   // strong feelings get an audible tic (giggle/sigh/gasp) before the words —
   // unless the caller supplies its own lead (e.g. a guaranteed poke ouch)
   const tic = leadOverride ?? pickInterjection(emotion, value, lang);
@@ -447,19 +454,19 @@ export function speak(
       character: characterId,
       expressiveness: expr,
       lead: tic,
-      rateDelta: clamp(np.rate * exprScale, -0.4, 0.5),
-      pitchDelta: clamp(np.pitch * exprScale, -0.3, 0.4),
-      volumeDelta: clamp(np.vol * exprScale, -0.5, 0.5),
+      rateDelta: clamp(np.rate * exprScale * amp, -0.4, 0.5),
+      pitchDelta: clamp(np.pitch * exprScale * amp, -0.3, 0.4),
+      volumeDelta: clamp(np.vol * exprScale * amp, -0.5, 0.5),
     }).catch(() => {
       // endpoint unreachable — one-shot fallback to the browser voice
       stopEdge();
-      synthSpeak(text, characterId, lang, emotion, expr, tic);
+      synthSpeak(text, characterId, lang, emotion, expr, tic, amp);
     });
     return;
   }
 
   // 2) Browser-TTS fallback
-  synthSpeak(text, characterId, lang, emotion, expr, tic);
+  synthSpeak(text, characterId, lang, emotion, expr, tic, amp);
 }
 
 function synthSpeak(
@@ -469,15 +476,21 @@ function synthSpeak(
   emotion: string,
   expr: number,
   tic?: { text: string; pitch: number; rate: number },
+  amp = 1,
 ): void {
   if (typeof speechSynthesis === 'undefined') return;
   speechSynthesis.cancel(); // one speaker at a time
 
   const { voice, pitch: basePitch, rate: baseRate } = pickVoice(characterId, lang);
   const em = EMOTION_PROSODY[emotion] ?? EMOTION_PROSODY['neutral']!;
-  const pitch = clamp(basePitch * em.pitch, 0.4, 2);
-  const rate = clamp(baseRate * em.rate, 0.6, 1.6);
-  const vol = clamp(em.vol, 0.4, 1);
+  // amplify the multipliers around 1 so intensity 1 is an exact no-op
+  // (joy 1.2 → 1.25 at intensity 1.5; sadness 0.78 → 0.725 sinks further)
+  const emPitch = 1 + (em.pitch - 1) * amp;
+  const emRate = 1 + (em.rate - 1) * amp;
+  const emVol = 1 + (em.vol - 1) * amp;
+  const pitch = clamp(basePitch * emPitch, 0.4, 2);
+  const rate = clamp(baseRate * emRate, 0.6, 1.6);
+  const vol = clamp(emVol, 0.4, 1);
 
   const parts = clauses(text);
   const utterances: SpeechSynthesisUtterance[] = [];

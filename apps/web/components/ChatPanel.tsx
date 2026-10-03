@@ -11,6 +11,8 @@
 // reply hints (typed path and voice path both funnel through send()).
 // r2026-10-03.20: amplified feelings land harder — 超開心 / 勁攰 / very tired
 // / とても嬉しい scale the reaction strength; plain moods stay gentle.
+// r2026-10-03.21: amplified feelings now lift her VOICE too — 超開心 rings
+// brighter and quicker, 勁攰 slower and softer; plain moods unchanged.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh } from '../lib/companion';
 import { loadHistory, saveHistory } from '../lib/companion-store';
@@ -120,18 +122,18 @@ export default function ChatPanel({
 
   // speak a just-arrived reply; if the exchange was funny, giggle first and
   // let the 3D body laugh along (squash-bounce overlay in CompanionCanvas)
-  const speakReply = (userText: string, reply: string, hints?: Record<string, number>) => {
+  const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1) => {
     const funny = LAUGH_RE.test(userText) || LAUGH_RE.test(reply);
     if (!funny) {
       notifySpeaking(reply);
-      speak(reply, characterId, lang, hints);
+      speak(reply, characterId, lang, hints, undefined, intensity);
       return;
     }
     triggerLaugh();
     applyLlmHints({ joy: 0.9 });
     const giggle = pickLaugh(characterId, lang, laughCountRef.current++);
     notifySpeaking(`${giggle} ${reply}`);
-    speak(reply, characterId, lang, { ...(hints ?? {}), joy: 0.9 }, { text: giggle, pitch: 0.28, rate: 0.22 });
+    speak(reply, characterId, lang, { ...(hints ?? {}), joy: 0.9 }, { text: giggle, pitch: 0.28, rate: 0.22 }, intensity);
   };
 
   // startup: first a welcome line; if it's a NEW day, the second line is her
@@ -224,7 +226,7 @@ export default function ChatPanel({
       if (replyHints) applyLlmHints(replyHints);
       const reply = data.reply || '…';
       feedUtterance(reply);
-      speakReply(text, reply, replyHints);
+      speakReply(text, reply, replyHints, felt?.intensity);
       setHistory((h) => [...h, { role: 'assistant', content: reply }]);
       answered = true;
     } catch {
@@ -255,7 +257,7 @@ export default function ChatPanel({
         const replyHints = feltHints ? { ...feltHints, ...r.emotionHints } : r.emotionHints;
         if (replyHints) applyLlmHints(replyHints);
         feedUtterance(r.reply);
-        speakReply(text, r.reply, replyHints);
+        speakReply(text, r.reply, replyHints, felt?.intensity);
         setHistory((h) => [...h.slice(0, -1), { role: 'assistant', content: r.reply }]);
         answered = true;
       } catch {
