@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   addEntry, buildDailyGreeting, buildMemoryBlock, deleteEntry, editEntry,
-  diarySummary, rememberExchange, type Memory,
+  diarySummary, greetingHints, moodToHints, recordVisit,
+  rememberExchange, type Memory,
 } from '../lib/memory';
 
 function fresh(): Memory {
@@ -123,5 +124,35 @@ describe('emotion diary', () => {
   it('daily greeting recalls this day last week from the diary', () => {
     const line = buildDailyGreeting('yue', { isNewDay: true, streak: 3, diaryWeekAgo: '去咗行山' });
     expect(line).toContain('去咗行山');
+  });
+});
+
+// ---------- r2026-10-03.17: recalled mood shapes her face, orb and voice ----------
+
+describe('recalled-mood expression hints', () => {
+  it('maps diary mood tags to emotion hints', () => {
+    expect(moodToHints('happy')).toEqual({ joy: 0.9 });
+    expect(moodToHints('sad')).toEqual({ sadness: 0.85 });
+    expect(moodToHints('angry')).toEqual({ anger: 0.85 });
+    expect(moodToHints('anxious')).toEqual({ fear: 0.7 });
+    expect(moodToHints('unknown-tag')).toBeUndefined();
+    expect(moodToHints(undefined)).toBeUndefined();
+  });
+
+  it('week-ago diary mood wins over yesterday mood for the greeting', () => {
+    const fromDiary = greetingHints({ isNewDay: true, streak: 2, lastMood: 'tired', diaryWeekAgo: '行山', diaryWeekAgoMood: 'happy' });
+    expect(fromDiary).toEqual({ joy: 0.9 });
+    const fromYesterday = greetingHints({ isNewDay: true, streak: 2, lastMood: 'sad' });
+    expect(fromYesterday).toEqual({ sadness: 0.85 });
+    expect(greetingHints({ isNewDay: true, streak: 1 })).toBeUndefined();
+  });
+
+  it('recordVisit carries the week-ago diary mood', () => {
+    const m = fresh();
+    m.lastVisit = daysAgo(1);
+    m.diary = [{ id: 'w', day: daysAgo(7), text: 'went hiking and felt so happy', mood: 'happy', exchangeNo: 1 }];
+    const info = recordVisit(m);
+    expect(info.diaryWeekAgo).toContain('went hiking');
+    expect(info.diaryWeekAgoMood).toBe('happy');
   });
 });

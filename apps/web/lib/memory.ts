@@ -10,6 +10,10 @@
 // v3 (r2026-10-03.14): emotion diary — one mood-tagged line per exchange,
 // so she recalls how your recent days FELT, not just what was said. Recalled
 // across sessions ("this day last week…") and browsable in settings.
+//
+// v3.1 (r2026-10-03.17): recalled mood → expression — when the daily check-in
+// quotes an emotional memory, her face, the mic orb AND her voice wear that
+// feeling while she says it (moodToHints / greetingHints).
 
 export type MemoryType = 'preference' | 'event' | 'plan';
 
@@ -200,7 +204,7 @@ export function deleteDiaryEntry(id: string, m: Memory = loadMemory()): void {
   save(m);
 }
 
-/** One line per recent day — "Oct 01 [happy] — went hiking with the dog". */
+/** One line per recent day — "Oct 01 [happy/tired] — went hiking with the dog". */
 export function diarySummary(m: Memory = loadMemory(), maxDays = 7): string[] {
   if (!m.diary || m.diary.length === 0) return [];
   const byDay = new Map<string, DiaryEntry[]>();
@@ -243,6 +247,8 @@ export interface VisitInfo {
   planMissed?: string;
   /** a diary line from exactly a week ago — she asks how it turned out */
   diaryWeekAgo?: string;
+  /** the mood tag of that week-ago diary line, if it had one */
+  diaryWeekAgoMood?: string;
 }
 
 export function recordVisit(m: Memory = loadMemory()): VisitInfo {
@@ -261,7 +267,8 @@ export function recordVisit(m: Memory = loadMemory()): VisitInfo {
   const planMissed = m.entries.find((e) => e.type === 'plan' && e.dueDay === todayStr(-1))?.text;
   const weekAgoLine = m.diary?.filter((d) => d.day === todayStr(-7)).pop();
   const diaryWeekAgo = weekAgoLine ? weekAgoLine.text.slice(0, 60) : undefined;
-  return { isNewDay, streak, userName: m.userName, lastMood, planToday, planMissed, diaryWeekAgo };
+  const diaryWeekAgoMood = weekAgoLine?.mood;
+  return { isNewDay, streak, userName: m.userName, lastMood, planToday, planMissed, diaryWeekAgo, diaryWeekAgoMood };
 }
 
 const HELLO: Record<string, (h: number, name?: string) => string> = {
@@ -346,6 +353,35 @@ export function buildDailyGreeting(lang: string, info: VisitInfo): string {
   if (info.planToday) parts.push(PLAN_TODAY[L](info.planToday));
   else if (info.planMissed) parts.push(PLAN_MISSED[L](info.planMissed));
   return parts.filter(Boolean).join(' ');
+}
+
+// ---------- recalled mood → expression hints (r2026-10-03.17) ----------
+
+/**
+ * Diary mood tags → emotion-engine hints, so her face, the mic orb AND her
+ * voice wear the feeling of whatever she just remembered instead of staying
+ * neutral. Keys are valid @amoji/emotion-core emotion ids.
+ */
+const MOOD_HINTS: Record<string, Record<string, number>> = {
+  happy: { joy: 0.9 },
+  tired: { contentment: 0.7, sadness: 0.2 },
+  sad: { sadness: 0.85 },
+  angry: { anger: 0.85 },
+  anxious: { fear: 0.7 },
+  sick: { sadness: 0.5, confusion: 0.2 },
+};
+
+export function moodToHints(mood?: string): Record<string, number> | undefined {
+  return mood ? MOOD_HINTS[mood] : undefined;
+}
+
+/**
+ * When the daily check-in recalls something emotional, she should WEAR that
+ * feeling while she says it. The week-ago diary line wins over the plain
+ * yesterday-mood follow-up — it's the moment she's actively quoting.
+ */
+export function greetingHints(info: VisitInfo): Record<string, number> | undefined {
+  return moodToHints(info.diaryWeekAgoMood) ?? moodToHints(info.lastMood);
 }
 
 // ---------- extraction (local regex, runs on the user's text) ----------

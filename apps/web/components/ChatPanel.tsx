@@ -3,6 +3,8 @@
 // r2026-10-03.13: ChatGPT-style voice mode (mic stays open, real-speech
 // barge-in, typing still live), a clean white mic icon when idle, and
 // giggle + whole-body laugh reactions whenever something's funny.
+// r2026-10-03.17: the daily check-in wears the mood of whatever she recalls —
+// a happy "a week ago today…" lands on a smiling face, a sad one softens it.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh } from '../lib/companion';
 import { loadHistory, saveHistory } from '../lib/companion-store';
@@ -14,7 +16,7 @@ import { pickLaugh, LAUGH_RE } from '../lib/laugh';
 import { pickThinkPhrase } from '../lib/think-phrases';
 import { clientChat } from '../lib/client-chat';
 import { speak, stopSpeaking, speakThinkingFiller } from '../lib/voice';
-import { buildDailyGreeting, buildMemoryBlock, memorySummaryCount, recordVisit, rememberExchange } from '../lib/memory';
+import { buildDailyGreeting, buildMemoryBlock, greetingHints, memorySummaryCount, recordVisit, rememberExchange } from '../lib/memory';
 import { listenContinuous, listenSupported } from '../lib/listen';
 import { t, type Lang } from '../lib/prefs';
 import type { ChatStatus } from '../lib/status';
@@ -127,14 +129,19 @@ export default function ChatPanel({
   };
 
   // startup: first a welcome line; if it's a NEW day, the second line is her
-  // daily check-in (time-of-day hello + streak + follow-up on yesterday's mood)
+  // daily check-in (time-of-day hello + streak + follow-up on yesterday's mood
+  // or the week-ago diary line). Whatever she recalls, she WEARS that feeling
+  // while saying it — face, mic orb and voice all take the recalled mood.
   useEffect(() => {
     if (greetedRef.current) return;
     greetedRef.current = true;
     const visit = recordVisit();
     const daily = visit.isNewDay ? buildDailyGreeting(lang, visit) : undefined;
     const t1 = setTimeout(() => sayLocal(pickLine('startup', lang, 0)), 1200);
-    const t2 = setTimeout(() => sayLocal(daily ?? pickLine('startup', lang, 1)), 5200);
+    const t2 = setTimeout(
+      () => sayLocal(daily ?? pickLine('startup', lang, 1), daily ? greetingHints(visit) : undefined),
+      5200,
+    );
     return () => { clearTimeout(t1); clearTimeout(t2); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -373,7 +380,7 @@ export default function ChatPanel({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && void send()}
           placeholder={t(lang, 'sayHi', { name: characterName })}
-          className="h-11 flex-1 rounded-full border border-white/10 bg-black/30 px-4 text-[15px] text-white placeholder-white/30 outline-none backdrop-blur-md focus:border-white/40"
+          className="h-11 flex-1 rounded-full border border-white/10 bg-black/30 px-4 text-[15px] text text-white placeholder-white/30 outline-none backdrop-blur-md focus:border-white/40"
         />
         <button
           onClick={() => void send()}
