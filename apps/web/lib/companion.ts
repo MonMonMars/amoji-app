@@ -33,6 +33,13 @@ export function getLatestFrame(): EmotionFrame | null {
   return latestFrame;
 }
 
+// ---- laughter overlay — set when something's funny; CompanionCanvas reads ----
+// this to drive a whole-body giggle (rhythmic squash-bounce, head thrown
+// back, full smile) for ~1.6s while the giggle lead + punchline play.
+let laughAtMs = -Infinity;
+export function triggerLaugh(now = Date.now()): void { laughAtMs = now; }
+export function lastLaughAt(): number { return laughAtMs; }
+
 // ---- coarse mood for the status plate + mic emotion orb ---------------------
 export type MoodId = 'joy' | 'angry' | 'sad' | 'surprised' | 'relaxed' | 'neutral';
 
