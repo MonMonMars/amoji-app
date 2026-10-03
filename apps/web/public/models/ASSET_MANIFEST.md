@@ -1,75 +1,62 @@
 # Amoji Asset Manifest
 
-Every binary in this directory must have an entry. CI fails on unmanifested files.
+Every binary in this directory (top level or under `cast/`) must have an entry. CI fails on unmanifested files.
+
+## Shipped binaries
 
 | File | License | Source | Notes |
 |---|---|---|---|
-| juno.vrm | Kizuna AI "Kamatte" official VRM sample (Kizuna AI Inc. developer distribution; review usage guidelines before public/App Store release) | Copied from prior repo's curated legal roster: `_incoming/agent3/prototypes/assets/companion-kizuna.vrm` (md5 `bfc42acdf7f29752359e1c6edbed25b8`, byte-identical to `kamatte-kamatte.vrm`) | Default companion avatar "Juno". VRM 1.0, full emotional preset set (happy/angry/sad/surprised/relaxed). Replaces the initially selected "Mister" community model, which had no emotional blend shapes and was VRM 0.x (unsupported by @pixiv/three-vrm v3). Ships in closed/local builds only — NOT committed to the public repo; public builds load seed-san.vrm instead. |
-| seed-san.vrm | VRM Public License 1.0 (https://vrm.dev/en/licenses/1.0/index) — "Seed-san" model by VirtualCast, Inc.; credit notation required | Official VRM 1.0 conformance sample: https://github.com/vrm-c/vrm-specification/tree/master/samples/Seed-san | Licensed fallback avatar for open-source and GitHub Pages builds. VRM 1.0 with full emotional + viseme preset set. Credit: Seed-san model by VirtualCast, Inc. |
+| seed-san.vrm | VRM Public License 1.0 (https://vrm.dev/en/licenses/1.0/index) — "Seed-san" model by VirtualCast, Inc.; credit notation required | Official VRM 1.0 conformance sample: https://github.com/vrm-c/vrm-specification/tree/master/samples/Seed-san | Licensed fallback avatar for open-source and GitHub Pages builds. VRM 1.0 with full emotional + viseme preset set. Credit: Seed-san model by VirtualCast, Inc. Also the universal fallback whenever a cast file is missing or fails to load. |
 
-## Remote per-character cast (r2026-10-03.32)
+## Local anime cast (r2026-10-04.50)
 
-The 15-character cast loads a distinct VRM per character at runtime over HTTPS —
-no binaries committed. Source: Polygonal Mind "100 Avatars" R1–R3, listed as
-CC0 1.0 Universal in the open-source-avatars registry
-(https://github.com/ToxSam/open-source-avatars). Credit: avatar designs by
-Polygonal Mind. Re-verify each entry against the upstream registry before any
-App Store / commercial release. All are remote URLs in `CharacterDef.model`;
-any load failure (dead link, VRM 0.x, missing CORS) walks the fallback chain to
-seed-san.vrm.
+The 22-character cast maps to local VRM files under `cast/` (see
+`apps/web/lib/prefs.ts`). These were collected from rigmodels.com community
+uploads in earlier curation passes. **LICENSE STATUS: UNVERIFIED** — treat as
+internal demo assets only; each entry must be re-validated or replaced with an
+original/commissioned model before any public App Store / commercial release.
 
-| Character | Avatar | Model URL |
+Until the binaries land in this repo, every character's loader walks the
+fallback chain to seed-san.vrm (see `apps/web/lib/vrm/avatar.ts` and the loader
+in `apps/web/components/CompanionCanvas.tsx`), so the app stays playable.
+
+| Cast file | Character | Gender |
 |---|---|---|
-| Juno | Olivia (056, R1) | https://arweave.net/MgsNlTetzAoVEC6E-lswj65vp7StkOZXXd5OjjqzYZI |
-| Nova | Rose (057, R1) | https://arweave.net/Ea1KXujzJatQgCFSMzGOzp_UtHqB1pyia--U3AtkMAY |
-| Blaze | Chad (079, R1) | https://arweave.net/s15TxeRcxamOZ0qDfjME1Bl2Ku7Vs4IQs8RthpxYjOQ |
-| Mochi | MushroomFairy (220, R3) | https://arweave.net/ULlu6wg-zCwLokTXxbXzFlJzugVW_yp2pssEKJbvwx8 |
-| Kai | Bruno (233, R3) | https://arweave.net/WR_xW_yGKwubTj-kdlyw5jNVx5m2ldMxwg_enz_Znbw |
-| Luna | LadyKoi (255, R3) | https://arweave.net/t3aTp6AhxfdLcq5I3HZx29wK8MFQGmDC9wPwXrHQoW0 |
-| Rin | Polydancer (021, R1) | https://arweave.net/jPOg-G0MPH55ZQmamFhT9f8cHn-hjeAQ0mRO5gWeKMQ |
-| Ren | Ro (017, R1) | https://arweave.net/6S5a74z2s5aZrTE71nJR1a1j9x5v46mPy3MKJZMylwg |
-| Tifa | Amazonas (061, R1) | https://arweave.net/fqZDwToo41u1a7VnHhZX1BTK5lktXpK_H6H20MVbPqQ |
-| Aerith | Agnes (243, R3) | https://arweave.net/c8mrbRq29sfQdovW1l_D2JYGOaCNF3JxTaUsmHTSNAg |
-| Cloud | Kiba (213, R3) | https://arweave.net/Nf6SIdJuYGYzUMJKNgKq44Zr-lCZS4No_FYtR6BFBYM |
-| Kasumi | Erika (053, R1) | https://arweave.net/GZkfa0SNnrBWluRL_pXpakg7T3K3d4l87__wR4mD3UM |
-| Marin | Jenny (281, R3) | https://arweave.net/kgTirc4OvUWbJhIKC2CB3_pYsYuB62KTj90IdE8s3sk |
-| Ayane | StitchWitch (215, R3) | https://arweave.net/O-cHPoD2LyfqSbkltB15-nwGK1aUT0M1JMLf1-gq46g |
-| Hitomi | Eugenia (226, R3) | https://arweave.net/saOexMViu7mqSeaXfQzNIPrKWQ0nqkSf-FpOQjZfBcU |
+| cast/juno.vrm | Juno | female |
+| cast/nova.vrm | Nova | female |
+| cast/zane.vrm | Blaze | male |
+| cast/hana.vrm | Mochi | female |
+| cast/kai.vrm | Kai | male |
+| cast/luna.vrm | Luna | female |
+| cast/rin.vrm | Rin | female |
+| cast/rex.vrm | Ren | male |
+| cast/alicia.vrm | Tifa | female |
+| cast/shino.vrm | Aerith | female |
+| cast/atlas.vrm | Cloud | male |
+| cast/avatarsample-a.vrm | Kasumi | female |
+| cast/fumiriya.vrm | Marin | female |
+| cast/sumire.vrm | Ayane | female |
+| cast/nana.vrm | Hitomi | female |
+| cast/vroid-male.vrm | Robbie | male |
+| cast/mikel.vrm | Mika | female |
+| cast/cyrus.vrm | Anchor | male |
+| cast/lydia.vrm | Lydia | female |
+| cast/mimi.vrm | Ruby | female |
+| cast/yuki.vrm | Snowy | female |
+| cast/kael.vrm | Alan | male |
 
-## Remote cast expansion (r2026-10-03.35) — 21-character cast
+## Retired / banned assets
 
-Six more R1 avatars, same CC0 1.0 registry source and fallback chain. For these
-six the portrait thumbnails are ALSO remote (the registry's official arweave
-thumbnails, served as `image` in `CharacterDef`) — `assetUrl` passes absolute
-URLs through since this revision.
-
-| Character | Avatar | Model URL | Portrait URL |
-|---|---|---|---|
-| Robbie | Robert (070, R1) | https://arweave.net/gwG7w4bY-A5c3R6A6GOz3xBCgbPvkFQmqPIDtvnNsYI | https://arweave.net/gaFPebQ9hSZDa_xNHkja8CH0Qde2y41L95VQTtroWNA |
-| Mika | Mikel (072, R1) | https://arweave.net/-eJyDjujQRvakRImdvulg-1dKQkPwMeQv-55IbKqLh4 | https://arweave.net/t_QkyGz6d1_mY312l7lt_-8VGL9QlkwmyPbvdmkpN8U |
-| Anchor | Anchor (014, R1) | https://arweave.net/GhML2d0T_lBZvRA_S28LWVg9wFCWJWqc0cFsVulQQlo | https://arweave.net/K6A-nGVw0vGNnP11CPJguTkcHRGzuKVCr6dY2K_fW5I |
-| Lydia | Lydia (054, R1) | https://arweave.net/x48D7v037irPQYG7e0vZLDV1E3x5-KookbP9-vaXvYE | https://arweave.net/DgPsMxXBXBxREc7Wq_w-L0Z2MFiM9E7T5s0yV0c4PJg |
-| Ruby | Rabbit (059, R1) | https://arweave.net/RymRtrmhHx_f9ZDvtvIQb1noTHvILdjoTg5G7L2DR-8 | https://arweave.net/wBqJHzcXuHV0NpFcbtcBB4O2kHqdVN0Zv2QO0jHNkdI |
-| Snowy | Snowy (097, R1) | https://arweave.net/Mqs8hdg-1hpeGq8Jl_LCmhTGdydglPm2V2OGc8jJ5DY | https://arweave.net/pg0GBa3xRqupz_fZmfzEu5vka1IU5gnWW1NB_ZCXsls |
-
-## Remote cast expansion (r2026-10-04.42) — 22-character cast
-
-Alan joins the roster — same CC0 1.0 registry source and fallback chain as the
-registry six above. The cast is now 22 characters.
-
-| Character | Avatar | Model URL | Portrait URL |
-|---|---|---|---|
-| Alan | Chill (012, R1) | https://arweave.net/JCzmV7mgqDGNDu8YkdSMeJApOA09CCL2i71BqvJKCVs | https://arweave.net/Gz2Lwo5DL3_6GttFePNwNwIZYzXnQXxKvcEM6bLIcKM |
-
-## Superseded candidates (not shipped)
-
-| File | Why rejected |
+| File | Why |
 |---|---|
-| companion-juno.vrm ("Mister", arweave `elvlpN6jefoDXqqCWMxCBVZnl6Z2lLD7-wC8N5z1bVk`) | Only lip-sync/blink blend shapes — no emotional expression; VRM 0.x (unsupported by three-vrm v3). md5 `c3eaaa37f869df12e79a3ab923db900f`. |
+| marin.vrm | Copyright-flagged by CI (`banned asset check`); must never be committed under any path. |
+| juno.vrm (Kizuna AI "Kamatte") | Kizuna AI Inc. developer sample — closed/local builds only, never committed; public builds use seed-san.vrm. |
+| Remote arweave cast (r2026-10-03.32–.42, Polygonal Mind "100 Avatars") | Superseded by the local cast above. Remote URLs caused facing/arm-pose defects, dead-link risk, and load latency. |
+| companion-juno.vrm ("Mister") | Only lip-sync/blend shapes, no emotional expression; VRM 0.x. md5 `c3eaaa37f869df12e79a3ab923db900f`. |
 
 ## Companion art (r2026-10-03.01) — outside this directory, not covered by the CI manifest check
 
 | Directory | License | Source | Notes |
 |---|---|---|---|
-| `apps/web/public/portraits/*.jpg` (15 files) | AI-generated original artwork (Amoji project) | Generated in-project via the image-generation gateway; character designs are original anime archetypes, not official game/anime IP | Selection-thumbnail + status-plate portraits for the 15-character cast. |
+| `apps/web/public/portraits/*.jpg` (15 files) | AI-generated original artwork (Amoji project) | Generated in-project via the image-generation gateway; character designs are original anime archetypes, not official game/anime IP | Selection-thumbnail + status-plate portraits for the cast. |
 | `apps/web/public/backgrounds/*.jpg` (12 files) | AI-generated original artwork (Amoji project) | Same as above; Shinkai-inspired original scenic paintings | Painted anime backdrops for all 12 scenes; gradient fallbacks remain in `prefs.ts`. |
