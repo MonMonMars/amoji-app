@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  addEntry, buildDailyGreeting, buildMemoryBlock, deleteEntry, editEntry,
+  addEntry, buildDailyGreeting, buildMemoryBlock, deleteEntry, detectMood, editEntry,
   diarySummary, greetingHints, moodToHints, recordVisit,
   rememberExchange, type Memory,
 } from '../lib/memory';
@@ -154,5 +154,25 @@ describe('recalled-mood expression hints', () => {
     const info = recordVisit(m);
     expect(info.diaryWeekAgo).toContain('went hiking');
     expect(info.diaryWeekAgoMood).toBe('happy');
+  });
+});
+
+// ---------- r2026-10-03.18: she reacts mid-conversation to how the user feels ----------
+
+describe('felt-mood detection for instant reactions', () => {
+  it('detects the mood of a message across English, Cantonese and Mandarin', () => {
+    expect(detectMood("I'm so happy today!")).toBe('happy');
+    expect(detectMood('琴日好攰，成日都眼瞓')).toBe('tired');
+    expect(detectMood('最近有點不開心')).toBe('sad');
+    expect(detectMood('今天很开心呀')).toBe('happy');
+    expect(detectMood("let's meet at 3pm tomorrow")).toBeUndefined();
+  });
+
+  it('a felt mood feeds the diary and maps to expression hints', () => {
+    const m = fresh();
+    rememberExchange('feeling really sad lately', m);
+    expect(m.moods[m.moods.length - 1]).toBe('sad');
+    expect(m.diary![0]!.mood).toBe('sad');
+    expect(moodToHints(detectMood('feeling really sad lately'))).toEqual({ sadness: 0.85 });
   });
 });

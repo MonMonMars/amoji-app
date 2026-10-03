@@ -5,6 +5,10 @@
 // giggle + whole-body laugh reactions whenever something's funny.
 // r2026-10-03.17: the daily check-in wears the mood of whatever she recalls —
 // a happy "a week ago today…" lands on a smiling face, a sad one softens it.
+// r2026-10-03.18: mid-conversation she reacts to how the USER feels the
+// instant they say it — "I'm so tired" softens her face and orb before her
+// reply is even generated; the felt mood stays as a floor under the LLM's
+// reply hints (typed path and voice path both funnel through send()).
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh } from '../lib/companion';
 import { loadHistory, saveHistory } from '../lib/companion-store';
@@ -16,7 +20,7 @@ import { pickLaugh, LAUGH_RE } from '../lib/laugh';
 import { pickThinkPhrase } from '../lib/think-phrases';
 import { clientChat } from '../lib/client-chat';
 import { speak, stopSpeaking, speakThinkingFiller } from '../lib/voice';
-import { buildDailyGreeting, buildMemoryBlock, greetingHints, memorySummaryCount, recordVisit, rememberExchange } from '../lib/memory';
+import { buildDailyGreeting, buildMemoryBlock, detectMood, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange } from '../lib/memory';
 import { listenContinuous, listenSupported } from '../lib/listen';
 import { t, type Lang } from '../lib/prefs';
 import type { ChatStatus } from '../lib/status';
@@ -180,6 +184,12 @@ export default function ChatPanel({
     setHistory((h) => [...h, { role: 'user', content: text }]);
     feedUtterance(text);
     stopSpeaking();
+    // felt-mood reaction: she reacts to how YOU feel the instant you say it —
+    // "I'm so tired" softens her face and the mic orb before her reply even
+    // starts generating, and the felt mood stays as a floor under whatever
+    // hints her reply later layers on top
+    const feltHints = moodToHints(detectMood(text));
+    if (feltHints) applyLlmHints(feltHints);
     // "hmm…" thinking moment while the reply generates (reply speech cuts it off)
     speakThinkingFiller(characterId, lang);
     // thinking-out-loud phases — while the LLM is slow she keeps musing in her
@@ -203,10 +213,13 @@ export default function ChatPanel({
       });
       if (!res.ok) throw new Error(String(res.status));
       const data = await res.json() as { reply?: string; emotionHints?: Record<string, number> };
-      if (data.emotionHints) applyLlmHints(data.emotionHints);
+      // the felt mood is a FLOOR: her reply's hints win on conflicts, but the
+      // feeling the user just expressed never fully drops out
+      const replyHints = feltHints ? { ...feltHints, ...(data.emotionHints ?? {}) } : data.emotionHints;
+      if (replyHints) applyLlmHints(replyHints);
       const reply = data.reply || '…';
       feedUtterance(reply);
-      speakReply(text, reply, data.emotionHints);
+      speakReply(text, reply, replyHints);
       setHistory((h) => [...h, { role: 'assistant', content: reply }]);
       answered = true;
     } catch {
@@ -232,9 +245,11 @@ export default function ChatPanel({
             });
           },
         });
-        applyLlmHints(r.emotionHints);
+        // same floor logic on the streaming path
+        const replyHints = feltHints ? { ...feltHints, ...r.emotionHints } : r.emotionHints;
+        applyLlmHints(replyHints);
         feedUtterance(r.reply);
-        speakReply(text, r.reply, r.emotionHints);
+        speakReply(text, r.reply, replyHints);
         setHistory((h) => [...h.slice(0, -1), { role: 'assistant', content: r.reply }]);
         answered = true;
       } catch {

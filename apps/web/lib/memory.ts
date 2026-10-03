@@ -14,6 +14,10 @@
 // v3.1 (r2026-10-03.17): recalled mood → expression — when the daily check-in
 // quotes an emotional memory, her face, the mic orb AND her voice wear that
 // feeling while she says it (moodToHints / greetingHints).
+//
+// v3.2 (r2026-10-03.18): felt-mood reaction — how the user feels mid-chat is
+// detected instantly (detectMood) and worn by her face, mic orb and voice as
+// a floor under whatever her reply later adds.
 
 export type MemoryType = 'preference' | 'event' | 'plan';
 
@@ -428,6 +432,18 @@ const MOOD_RES: Array<[RegExp, string]> = [
   [/唔舒服|不舒服|sick|ill|unwell|頭痛|头痛|肚痛/i, 'sick'],
 ];
 
+/**
+ * How does THIS message feel? Instant, local, regex-based — so she can react
+ * to the user's feeling mid-conversation, not just remember it afterwards.
+ * Returns the first matching mood tag, or undefined for neutral messages.
+ */
+export function detectMood(userText: string): string | undefined {
+  for (const [re, tag] of MOOD_RES) {
+    if (re.test(userText)) return tag;
+  }
+  return undefined;
+}
+
 export function rememberExchange(userText: string, m: Memory = loadMemory()): Memory {
   for (const re of NAME_RES) {
     const mm = userText.match(re);
@@ -450,15 +466,11 @@ export function rememberExchange(userText: string, m: Memory = loadMemory()): Me
     const mm = userText.match(re);
     if (mm?.[1]) { pushEntry(m, 'plan', mm[1], offset); break; }
   }
-  let mood: string | undefined;
-  for (const [re, tag] of MOOD_RES) {
-    if (re.test(userText)) {
-      mood = tag;
-      m.moods.push(tag);
-      if (m.moods.length > MAX_MOODS) m.moods.shift();
-      m.lastMoodDay = todayStr();
-      break;
-    }
+  const mood = detectMood(userText);
+  if (mood) {
+    m.moods.push(mood);
+    if (m.moods.length > MAX_MOODS) m.moods.shift();
+    m.lastMoodDay = todayStr();
   }
   m.exchanges += 1;
   pushDiary(m, userText, mood);
