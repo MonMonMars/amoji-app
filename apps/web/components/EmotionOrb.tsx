@@ -5,6 +5,9 @@
 // The ball breathes with her voice volume (louder = bigger), and the color
 // follows her mood: yellow when happy, red when angry, ChatGPT-blue tint
 // with ripple rings while listening.
+// r2026-10-03.29: nothing may EVER touch the canvas edge. Halo and ripple
+// rings now live inside a safe circular margin, so no matter how loud she
+// gets, nothing gets clipped into a square — only the soft circle shows.
 import { useEffect, useRef } from 'react';
 import { getLatestFrame, dominantMood } from '../lib/companion';
 import { sampleSpeech } from '../lib/speech';
@@ -29,7 +32,7 @@ function hexToRgb(hex: string): [number, number, number] {
 }
 
 export default function EmotionOrb({
-  size = 52,
+  size = 72,
   accent = '#f9a8d4',
   listening = false,
 }: {
@@ -90,9 +93,12 @@ export default function EmotionOrb({
       const h = canvas.height;
       const cx = w / 2;
       const cy = h / 2;
+      const M = Math.min(w, h);
       ctx.clearRect(0, 0, w, h);
-      // the ball swells with her voice — high volume = bigger, quiet = smaller
-      const R = (Math.min(w, h) / 2) * (0.66 + 0.34 * vol);
+      // the ball swells with her voice — high volume = bigger, quiet = smaller.
+      // r.29: max radius 0.36·M means even the full-volume halo (2.0R = 0.72·M)
+      // and the widest ripple ring stay far inside the canvas — no square clip.
+      const R = M * 0.36 * (0.66 + 0.34 * vol);
       const colA = (a: number) => `rgba(${cur.r | 0},${cur.g | 0},${cur.b | 0},${a})`;
 
       // fuzzy outer halo — light bleed, feathered to nothing
@@ -140,7 +146,8 @@ export default function EmotionOrb({
       ctx.arc(cx - R * 0.24, cy - R * 0.3, R * 0.3, 0, Math.PI * 2);
       ctx.fill();
 
-      // listening ripple rings (ChatGPT voice pulse)
+      // listening ripple rings (ChatGPT voice pulse) — widest ring is 2.0R,
+      // which stays inside the safe margin, so the rings are never squared off
       if (listenRef.current) {
         for (let i = 0; i < 2; i++) {
           const ph = (t * 0.85 + i * 0.5) % 1;
