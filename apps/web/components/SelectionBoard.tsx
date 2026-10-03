@@ -8,9 +8,12 @@
 //                 character/scene/language until the user picks replacements;
 //                 confirm = "Change", then back to the chat room.
 // Kid Mode (r2026-10-03.03) filters the rows to the wholesome cast + sunny scenes.
-// r2026-10-03.33: the top-row preview chip now streams the picked character
-// REAL 3D model (live portrait), with the painted art as poster/fallback.
-import { useState, type CSSProperties } from 'react';
+// r2026-10-03.33: the top-row preview chip streams the picked character REAL
+// 3D model (live portrait), with the painted art as poster/fallback.
+// r2026-10-03.34: every character card in the scroll row streams its own live
+// 3D bust too, lazy-mounted only while the card is on screen, so the whole
+// cast is browsed as real faces without drowning the GPU in WebGL contexts.
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import HScrollRow from './HScrollRow';
 import SceneBackdrop from './SceneBackdrop';
@@ -23,6 +26,63 @@ import {
   backgroundById, characterById, t, usePrefs,
   type Prefs,
 } from '../lib/prefs';
+
+// Live 3D bust for one character card in the scroll row. The expensive part
+// (WebGL context + VRM stream) only starts once the card scrolls near the
+// viewport; the painted art stays underneath as poster and as the fallback
+// when a model link fails. Once streamed, the bust stays mounted while the
+// page lives, so scrolling back never re-streams.
+function CharacterBust({ id, image, url }: { id: string; image?: string; url?: string }) {
+  const hostRef = useRef<HTMLSpanElement>(null);
+  const [onScreen, setOnScreen] = useState(false);
+  const [ready, setReady] = useState(false);
+  const look = lookFor(id);
+
+  useEffect(() => {
+    const el = hostRef.current;
+    if (!el || onScreen) return;
+    if (typeof IntersectionObserver === 'undefined') { setOnScreen(true); return; }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) { setOnScreen(true); io.disconnect(); }
+      },
+      { rootMargin: '120px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [onScreen]);
+
+  return (
+    <span ref={hostRef} className="absolute inset-0 block">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={assetUrl(image ?? `/portraits/${id}.jpg`)}
+        alt=""
+        draggable={false}
+        className={`absolute inset-0 h-full w-full object-cover object-top transition-opacity duration-500 ${
+          ready && url ? 'opacity-0' : 'opacity-100'
+        }`}
+      />
+      {url && onScreen && (
+        <div
+          key={id}
+          className={`absolute inset-0 transition-opacity duration-700 ${
+            ready ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <ModelPreview
+            url={url}
+            tint={look.tint}
+            height={look.height}
+            width={look.width}
+            orbit
+            onReady={() => setReady(true)}
+          />
+        </div>
+      )}
+    </span>
+  );
+}
 
 export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   const router = useRouter();
@@ -155,16 +215,10 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                   style={active ? { boxShadow: `0 0 0 2px ${c.accent}, 0 10px 30px -12px ${c.accent}` } : undefined}
                 >
                   <span
-                    className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-black/40"
+                    className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-black/40"
                     style={active ? { boxShadow: `0 0 0 2px ${c.accent}` } : undefined}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={assetUrl(c.image ?? `/portraits/${c.id}.jpg`)}
-                      alt={c.name}
-                      draggable={false}
-                      className="h-full w-full object-cover object-top"
-                    />
+                    <CharacterBust id={c.id} image={c.image} url={c.model} />
                   </span>
                   <span className="text-xs font-semibold">{c.name}</span>
                   <span className="text-[10px] leading-none text-white/40">{c.gender === 'female' ? '♀' : '♂'}</span>

@@ -1,9 +1,10 @@
 'use client';
-// Live 3D portrait for the selection board preview row (r2026-10-03.33).
-// Renders the picked character REAL VRM inside the top-row preview chip, so
-// the face chosen on the board is the face that shows up in the chat room.
-// The painted portrait stays as the poster underneath until the model
-// streams in; any load failure keeps the poster — nothing breaks.
+// Live 3D portrait for the selection board (r2026-10-03.33) and, since
+// r2026-10-03.34, for every character card in the scroll row too.
+// Renders a character REAL VRM inside a small canvas, so the face picked
+// on the board is the face that shows up in the chat room. The painted
+// portrait stays as the poster underneath until the model streams in;
+// any load failure keeps the poster — nothing breaks.
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -15,12 +16,14 @@ export default function ModelPreview({
   tint,
   height,
   width,
+  orbit,
   onReady,
 }: {
   url?: string;
   tint: string;
   height: number;
   width: number;
+  orbit?: boolean;
   onReady?: () => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -84,8 +87,10 @@ export default function ModelPreview({
       const loop = (now: number) => {
         raf = requestAnimationFrame(loop);
         const s = (now - t0) / 1000;
-        // gentle living sway so the preview feels alive, not a statue
-        vrm.scene.rotation.y = Math.sin(s * 0.7) * 0.09;
+        // living motion so the preview never feels like a statue: the big
+        // preview chip sways gently; card busts (orbit) sweep wider so the
+        // row reads as real faces turning toward the viewer
+        vrm.scene.rotation.y = orbit ? Math.sin(s * 0.5) * 0.6 : Math.sin(s * 0.7) * 0.09;
         vrm.scene.position.y = Math.sin(s * 1.4) * 0.006;
         vrm.update(1 / 60);
         renderer.render(scene, camera);
@@ -102,7 +107,7 @@ export default function ModelPreview({
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [url, tint, height, width]);
+  }, [url, tint, height, width, orbit]);
 
   return <div ref={hostRef} className="absolute inset-0" aria-hidden />;
 }
