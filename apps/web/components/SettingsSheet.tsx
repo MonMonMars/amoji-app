@@ -1,10 +1,14 @@
 'use client';
-// Settings menu — ONE location for every setting (r2026-10-02.7).
-// Sections: Companion (character + scene), Language, Voice, Memory & data
+// Settings menu — ONE location for every setting (r2026-10-02.7; slimmed r2026-10-03.03).
+// Sections: Mode (kid mode), Language, Voice, Memory & data
 // (v2 browser: view / teach / copy / forget), Help (tutorial).
-// Reachable from the chat room gear (top right).
+// Character & scene changing lives in the selection board (top-left name plate) —
+// the gear no longer duplicates it. Reachable from the chat room gear (top right).
 import { useEffect, useRef, useState } from 'react';
-import { CHARACTERS, BACKGROUNDS, t, type Prefs, type StrKey } from '../lib/prefs';
+import {
+  characterById, backgroundById, KID_CHARACTER, KID_BACKGROUND,
+  t, type Prefs, type StrKey,
+} from '../lib/prefs';
 import { LangChips } from './selectors';
 import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled } from '../lib/voice';
 import { pickLine } from '../lib/chatter';
@@ -111,6 +115,17 @@ export default function SettingsSheet({
     setMem(loadMemory());
   };
 
+  // Kid Mode: turning it on swaps to a wholesome character + sunny scene.
+  const toggleKid = () => {
+    const next = !prefs.kidMode;
+    const patch: Partial<Prefs> = { kidMode: next };
+    if (next) {
+      if (!characterById(prefs.character).kidSafe) patch.character = KID_CHARACTER;
+      if (!backgroundById(prefs.background).kidSafe) patch.background = KID_BACKGROUND;
+    }
+    onChange(patch);
+  };
+
   const copyAll = async () => {
     try {
       await navigator.clipboard.writeText(exportMemory());
@@ -144,52 +159,12 @@ export default function SettingsSheet({
         </div>
 
         <div className="space-y-6">
-          <Section title={t(lang, 'settingsCompanion')}>
-            {/* character picker — horizontal scroll */}
-            <div className="flex gap-2.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {CHARACTERS.map((c) => {
-                const active = c.id === prefs.character;
-                return (
-                  <button
-                    key={c.id}
-                    onClick={() => onChange({ character: c.id })}
-                    className={`flex w-24 shrink-0 flex-col items-center gap-1.5 rounded-2xl border p-3 transition-all ${
-                      active ? 'border-transparent bg-white/10' : 'border-white/10 bg-white/5 hover:bg-white/10'
-                    }`}
-                    style={active ? { boxShadow: `0 0 0 2px ${c.accent}` } : undefined}
-                  >
-                    <span
-                      className="flex h-11 w-11 items-center justify-center rounded-full text-base font-bold text-black/70"
-                      style={{ background: `radial-gradient(circle at 35% 30%, #ffffffcc, ${c.accent})` }}
-                    >
-                      {c.name[0]}
-                    </span>
-                    <span className="text-xs font-semibold text-white">
-                      {c.name}
-                      <span className="ml-1 text-[10px] font-normal text-white/50">{c.gender === 'female' ? '♀' : '♂'}</span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            {/* scene picker */}
-            <p className="pt-1 text-xs text-white/50">{t(lang, 'settingsScene')}</p>
-            <div className="grid grid-cols-4 gap-2">
-              {BACKGROUNDS.map((b) => {
-                const active = b.id === prefs.background;
-                return (
-                  <button
-                    key={b.id}
-                    onClick={() => onChange({ background: b.id })}
-                    className={`overflow-hidden rounded-xl border text-left transition-all ${
-                      active ? 'border-white/80' : 'border-white/10 hover:border-white/40'
-                    }`}
-                  >
-                    <span className="block h-9 w-full" style={{ background: b.css }} />
-                    <span className="block bg-black/50 px-1.5 py-1 text-[10px] text-white/80">{t(lang, b.nameKey as never)}</span>
-                  </button>
-                );
-              })}
+          <Section title={t(lang, 'settingsMode')}>
+            <div className={row}>
+              <span className={label}>🧸 {t(lang, 'kidMode')}
+                <span className="block text-[11px] text-white/40">{t(lang, 'kidModeHint')}</span>
+              </span>
+              <Toggle on={prefs.kidMode} accent={accent} onClick={toggleKid} />
             </div>
           </Section>
 

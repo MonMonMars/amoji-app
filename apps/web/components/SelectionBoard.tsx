@@ -7,6 +7,7 @@
 // mode 'change' : picks edit a DRAFT — the preview keeps showing the existing
 //                 character/scene/language until the user picks replacements;
 //                 confirm = "Change", then back to the chat room.
+// Kid Mode (r2026-10-03.03) filters the rows to the wholesome cast + sunny scenes.
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import HScrollRow from './HScrollRow';
@@ -31,6 +32,10 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   const lang = live.lang;
   const langNative = LANGS.find((l) => l.id === lang)?.native ?? lang;
   const dirty = draft !== null;
+
+  // Kid Mode filters the board to the wholesome cast + sunny scenes.
+  const cast = prefs.kidMode ? CHARACTERS.filter((c) => c.kidSafe) : CHARACTERS;
+  const scenes = prefs.kidMode ? BACKGROUNDS.filter((b) => b.kidSafe) : BACKGROUNDS;
 
   const pick = (patch: Partial<Prefs>) => {
     if (mode === 'start') setPrefs(patch);
@@ -57,6 +62,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
           )}
           <span className="h-3 w-3 rounded-full bg-pink-400" />
           <h1 className="text-lg font-bold tracking-tight">Amoji</h1>
+          {prefs.kidMode && <span className="text-base" title="Kid mode">🧸</span>}
         </div>
         <span className="text-xs text-white/30">{APP_REVISION}</span>
       </header>
@@ -113,7 +119,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
             {t(lang, 'chooseCharacter')}
           </h2>
           <HScrollRow ariaLabel="characters">
-            {CHARACTERS.map((c) => {
+            {cast.map((c) => {
               const active = c.id === live.character;
               return (
                 <button
@@ -149,7 +155,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
             {t(lang, 'chooseBackground')}
           </h2>
           <HScrollRow ariaLabel="scenes">
-            {BACKGROUNDS.map((b) => {
+            {scenes.map((b) => {
               const active = b.id === live.background;
               return (
                 <button
