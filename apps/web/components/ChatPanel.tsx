@@ -24,6 +24,9 @@
 // sad gets a gentle, almost apologetic gasp and a low-surprise flinch (not
 // a full startle); a tired one a soft "oh…"; an angry one a wry "hey—";
 // no felt mood keeps the classic personality cry and the old voice numbers.
+// r2026-10-03.27: if her LLM brain runs out of credit mid-session, client-chat
+// parks it and fires 'amoji:brain-degraded' — we surface one small note in the
+// history so the switch to the free lane is explained, not mysterious.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh } from '../lib/companion';
 import { loadHistory, saveHistory } from '../lib/companion-store';
@@ -99,6 +102,17 @@ export default function ChatPanel({
     const clear = () => setHistory([]);
     window.addEventListener('amoji:clear-history', clear);
     return () => window.removeEventListener('amoji:clear-history', clear);
+  }, []);
+  // r.27 — when her LLM brain is parked for running out of credit, client-chat
+  // fires this once; add the explanation line to the history (text-only)
+  useEffect(() => {
+    const note = (e: Event) => {
+      const text = (e as CustomEvent<string>).detail;
+      if (typeof text !== 'string' || !text) return;
+      setHistory((h) => [...h, { role: 'assistant', content: text }]);
+    };
+    window.addEventListener('amoji:brain-degraded', note);
+    return () => window.removeEventListener('amoji:brain-degraded', note);
   }, []);
   // never leave the mic running if the panel unmounts
   useEffect(() => () => { micStopRef.current?.(); }, []);
