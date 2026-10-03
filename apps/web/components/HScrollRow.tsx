@@ -1,12 +1,34 @@
 'use client';
-// Horizontal scroll strip with arrow buttons (arrows on wide screens where
-// touch-drag is unavailable). Used by the one-page selector.
+// Horizontal scroll strip with arrow icon buttons. On non-touch (mouse /
+fine-pointer) devices — where finger-drag is unavailable — a chevron button
+sits at each edge of every row: click to scroll a "page", smooth-animated.
+Arrows render always (dimmed when the row can't scroll that way) so desktop
+users can see the affordance; on touch devices they stay hidden (drag works).
+Used by the one-page selector, so /select and /change both get this.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+
+function Chevron({ dir }: { dir: 'left' | 'right' }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      {dir === 'left' ? <path d="M15 18l-6-6 6-6" /> : <path d="M9 18l6-6-6-6" />}
+    </svg>
+  );
+}
 
 export default function HScrollRow({ children, ariaLabel }: { children: ReactNode; ariaLabel?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
+  const [finePointer, setFinePointer] = useState(false);
 
   const update = () => {
     const el = ref.current;
@@ -16,12 +38,25 @@ export default function HScrollRow({ children, ariaLabel }: { children: ReactNod
   };
 
   useEffect(() => {
-    update();
+    // non-touch devices only: mouse / trackpad pointers
+    const mq = window.matchMedia('(pointer: fine)');
+    setFinePointer(mq.matches);
+    const onMq = (e: MediaQueryListEvent) => setFinePointer(e.matches);
+    mq.addEventListener('change', onMq);
+
     const el = ref.current;
-    if (!el) return;
+    if (!el) return () => mq.removeEventListener('change', onMq);
+
+    // track both the strip and its content (kid-mode filtering resizes rows)
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
     el.addEventListener('scroll', update);
     window.addEventListener('resize', update);
+    update();
+
     return () => {
+      mq.removeEventListener('change', onMq);
+      ro.disconnect();
       el.removeEventListener('scroll', update);
       window.removeEventListener('resize', update);
     };
@@ -30,12 +65,13 @@ export default function HScrollRow({ children, ariaLabel }: { children: ReactNod
 
   const nudge = (dir: number) => {
     const el = ref.current;
-    if (el) el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: 'smooth' });
+    if (el) el.scrollBy({ left: dir * el.clientWidth * 0.85, behavior: 'smooth' });
   };
 
-  const arrow =
-    'absolute top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full ' +
-    'border border-white/10 bg-black/60 text-lg text-white/80 backdrop-blur-md transition hover:bg-black/85 md:flex';
+  const arrow = (enabled: boolean) =>
+    'absolute top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full ' +
+    'border border-white/15 bg-black/60 text-white backdrop-blur-md transition ' +
+    (enabled ? 'cursor-pointer hover:scale-110 hover:bg-black/85 active:scale-95 ' : 'cursor-default opacity-25');
 
   return (
     <div className="relative">
@@ -46,11 +82,25 @@ export default function HScrollRow({ children, ariaLabel }: { children: ReactNod
       >
         {children}
       </div>
-      {canLeft && (
-        <button onClick={() => nudge(-1)} aria-label="scroll left" className={`${arrow} left-0`}>‹</button>
-      )}
-      {canRight && (
-        <button onClick={() => nudge(1)} aria-label="scroll right" className={`${arrow} right-0`}>›</button>
+      {finePointer && (
+        <>
+          <button
+            onClick={() => nudge(-1)}
+            aria-label="scroll left"
+            disabled={!canLeft}
+            className={`${arrow(canLeft)} left-0`}
+          >
+            <Chevron dir="left" />
+          </button>
+          <button
+            onClick={() => nudge(1)}
+            aria-label="scroll right"
+            disabled={!canRight}
+            className={`${arrow(canRight)} right-0`}
+          >
+            <Chevron dir="right" />
+          </button>
+        </>
       )}
     </div>
   );
