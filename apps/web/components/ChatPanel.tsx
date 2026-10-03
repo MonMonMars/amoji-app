@@ -5,6 +5,7 @@ import { feedUtterance, applyLlmHints } from '../lib/companion';
 import { loadHistory, saveHistory } from '../lib/companion-store';
 import { notifySpeaking, isSpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
+import { pickIdleLine, pickPokeLine } from '../lib/persona-chatter';
 import { clientChat } from '../lib/client-chat';
 import { speak, stopSpeaking } from '../lib/voice';
 import { buildDailyGreeting, buildMemoryBlock, memorySummaryCount, recordVisit, rememberExchange } from '../lib/memory';
@@ -106,23 +107,23 @@ export default function ChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // poke replies
+  // poke replies — personality-specific reaction line + face flavor
   const lastPokeRef = useRef(pokeCount);
   useEffect(() => {
     if (pokeCount === lastPokeRef.current) return;
     lastPokeRef.current = pokeCount;
     lastActivityRef.current = Date.now();
-    sayLocal(pickLine('poke', lang, pokeCount), { surprise: 0.8, joy: 0.4 });
+    sayLocal(pickPokeLine(characterId, lang, pokeCount), { surprise: 0.8, joy: 0.4 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pokeCount]);
 
-  // idle chatter: if the user is quiet too long, she speaks up
+  // idle chatter: if the user is quiet too long, she speaks up in her own voice
   useEffect(() => {
     const timer = setInterval(() => {
       if (busyRef.current) return;
       if (Date.now() - lastActivityRef.current < IDLE_AFTER_MS) return;
       lastActivityRef.current = Date.now();
-      sayLocal(pickLine('idleBored', lang, idleCounterRef.current++));
+      sayLocal(pickIdleLine(characterId, lang, idleCounterRef.current++));
     }, 5000);
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps

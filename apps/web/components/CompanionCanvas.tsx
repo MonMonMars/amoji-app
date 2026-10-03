@@ -6,9 +6,10 @@ import { VRMLoaderPlugin } from '@pixiv/three-vrm';
 import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
 import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-vrm-animation';
 import type { VRMAnimation } from '@pixiv/three-vrm-animation';
-import { mapFrameToVrm, sampleIdlePose } from '@amoji/vrm-renderer';
+import { mapFrameToVrm, posesByIds, sampleIdlePoseFrom } from '@amoji/vrm-renderer';
 import { tickEngine } from '../lib/companion';
 import { characterById } from '../lib/prefs';
+import { pokeStyleFor, poseIdsFor } from '../lib/persona';
 import { sampleSpeech } from '../lib/speech';
 
 export interface CompanionCanvasProps {
@@ -29,6 +30,15 @@ function seedFromKey(key: string): number {
   for (let i = 0; i < key.length; i++) h = (Math.imul(h, 31) + key.charCodeAt(i)) % 100000;
   return h;
 }
+
+/** how much each poke-twist flavor turns the body during the reaction */
+const TWIST_AMOUNT: Record<string, number> = {
+  playful: 0.1,
+  startled: 0.06,
+  unimpressed: 0.02,
+  flustered: 0.05,
+  challenging: 0.12,
+};
 
 export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', seedKey }: CompanionCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -100,6 +110,10 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     // per-character motion personality: Rin always fidgets the same way,
     // Ren drifts through his own calm sequence — deterministic per character.
     const poseSeed = seedKey ? seedFromKey(seedKey) : Date.now() % 100000;
+    // r2026-10-03.04: each character drifts through a personality-curated
+    // subset of the pose library instead of the full shared catalog.
+    const poseSubset = posesByIds(poseIdsFor(seedKey ?? 'juno'));
+    const poke = pokeStyleFor(seedKey ?? 'juno');
     const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
     // Per-character drop-in model first (CharacterDef.model, e.g. tifa.vrm),
     // then the shipped defaults. Local/closed builds ship juno.vrm (Kizuna AI);
@@ -279,26 +293,35 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       applyCamera();
 
       const frame = tickEngine(dt);
-      const pose = mixerActive ? undefined : sampleIdlePose(frame.t, poseSeed);
+      const pose = mixerActive ? undefined : sampleIdlePoseFrom(frame.t, poseSeed, poseSubset);
       const targets = mapFrameToVrm(frame, 1, pose);
       if (vrm) {
         const em = vrm.expressionManager;
         if (em) {
-          // poke squash-bounce: quick surprised bounce, 600ms decay
+          // poke reaction: squash-bounce + personality twist, 600ms decay
           const pokeAge = now - pokeAt;
           const boost = pokeAge < 600 ? 1 - pokeAge / 600 : 0;
-          if (boost > 0) vrm.scene.scale.y = 1 - 0.07 * Math.sin((1 - boost) * Math.PI);
-          else vrm.scene.scale.y = 1;
+          if (boost > 0) {
+            const arc = Math.sin((1 - boost) * Math.PI);
+            vrm.scene.scale.y = 1 - poke.squash * arc;
+            vrm.scene.rotation.y = (TWIST_AMOUNT[poke.twist] ?? 0.05) * Math.sin((1 - boost) * Math.PI * 2);
+          } else {
+            vrm.scene.scale.y = 1;
+            vrm.scene.rotation.y = 0;
+          }
 
           // speech visemes: duck the emotion shapes while the mouth talks
           const sp = sampleSpeech();
           const duck = sp ? 1 - 0.4 * sp.duck : 1;
           const v = (x: number) => clamp(x * duck + (sp ? 0 : 0), 0, 1);
-          em.setValue('happy', v(Math.max(targets.blendShape.joy, targets.blendShape.fun)));
-          em.setValue('angry', v(targets.blendShape.angry));
+          const pokeBoost = 0.9 * boost;
+          em.setValue('happy', v(Math.max(targets.blendShape.joy, targets.blendShape.fun)) + (poke.face === 'happy' ? pokeBoost : 0));
+          em.setValue('angry', v(targets.blendShape.angry) + (poke.face === 'angry' ? pokeBoost : 0));
           em.setValue('sad', v(targets.blendShape.sorrow));
-          em.setValue('surprised', clamp(v(targets.blendShape.surprise) + 0.9 * boost, 0, 1));
-          em.setValue('relaxed', v(targets.blendShape.relaxed));
+          em.setValue('surprised', poke.face === 'surprised'
+            ? clamp(v(targets.blendShape.surprise) + pokeBoost, 0, 1)
+            : v(targets.blendShape.surprise));
+          em.setValue('relaxed', v(targets.blendShape.relaxed) + (poke.face === 'relaxed' ? pokeBoost : 0));
           if (sp) {
             const mouth = sp.mouth;
             const on = (want: string) => (sp.vowel === want ? 1 : 0.12);
