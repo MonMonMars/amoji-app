@@ -6,9 +6,11 @@
 // 曉曼 HiuMaan / 雲龍 WanLung, 中文 Xiaoxiao / Xiaoyi / Xiaohan / Xiaomo / Xiaorui /
 // Yunxi / Yunyang / Yunjian, 日本語 Nanami / Keita, English Jenny / Aria / Ana /
 // Michelle / Sara / Guy / Christopher / Eric — driven by SSML prosody with a
-// ChatGPT-style per-clause pitch/rate contour (sing-song), sentence pauses, and
-// per-character expressiveness. If the socket is unreachable (some networks
-// block it), voice.ts falls back to the browser's speechSynthesis automatically.
+// ChatGPT-style per-clause pitch/rate contour (sing-song), punctuation-aware
+// swells (! lifts, … sinks), sentence pauses, an optional leading emotional
+// vocal tic (giggle/sigh/gasp), and per-character expressiveness. If the socket
+// is unreachable (some networks block it), voice.ts falls back to the browser's
+// speechSynthesis automatically.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface EdgeVoiceOpts {
@@ -23,6 +25,8 @@ export interface EdgeVoiceOpts {
   rateDelta?: number;
   pitchDelta?: number;
   volumeDelta?: number;
+  /** leading emotional vocal tic (giggle, sigh, gasp) with its own prosody */
+  lead?: { text: string; pitch: number; rate: number };
   /** word-boundary events (for precise lip-sync) */
   onWord?: (word: string) => void;
 }
@@ -123,7 +127,10 @@ export function edgeTtsPossible(): boolean {
  *
  * The SSML carries one <prosody> per clause with a ChatGPT-style contour:
  * the line drifts up mid-sentence, questions lift at the tail, statements
- * settle down, and a short <break> lands after each sentence end.
+ * settle down. On top of that, punctuation now shapes each clause — an
+ * exclamation swells (pitch/rate up), an ellipsis sinks and stretches, and
+ * breath pauses land after commas as well as sentence ends. An optional
+ * leading tic (giggle/sigh/gasp) gets its own expressive prosody + pause.
  */
 export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
   stopEdge();
@@ -138,23 +145,36 @@ export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
     const rising = /[？?]\s*$/.test(text);
     const parts = clauses(text);
 
+    const tic = opts.lead
+      ? `<prosody pitch='${pct(clamp(opts.lead.pitch, -0.5, 0.5))}' rate='${pct(clamp(opts.lead.rate, -0.5, 0.5))}' volume='${db(0.1)}'>${escapeXml(opts.lead.text)}</prosody><break time='170ms'/>`
+      : '';
+
     const body = parts
       .map((part, i) => {
         const contour = parts.length > 1
-          ? 1 + 0.07 * expr * Math.sin((i / (parts.length - 1)) * Math.PI * (rising ? 1 : 0.7))
+          ? 1 + 0.09 * expr * Math.sin((i / (parts.length - 1)) * Math.PI * (rising ? 1 : 0.7))
           : 1;
         const isTail = i === parts.length - 1;
-        const tailLift = isTail && rising ? 1.15 : isTail && !rising ? 0.92 : 1;
-        const rate = clamp(baseRate * contour * (isTail ? 0.96 : 1), -0.5, 0.5);
-        const pitch = clamp(basePitch * contour * tailLift, -0.5, 0.5);
-        const breakAfter = /[。！？!?….]$/.test(part) && !isTail ? `<break time='220ms'/>` : '';
+        const tailLift = isTail && rising ? 1.18 : isTail && !rising ? 0.9 : 1;
+        // punctuation swells: ! pops, … sinks and stretches, — drags
+        const bang = /[!！]\s*$/.test(part);
+        const trail = /[…\.{3}—–]/.test(part);
+        const swellP = bang ? 1.35 : trail ? 0.7 : 1;
+        const swellR = bang ? 1.15 : trail ? 0.82 : 1;
+        const rate = clamp(baseRate * contour * (isTail ? 0.96 : 1) * swellR, -0.5, 0.5);
+        const pitch = clamp(basePitch * contour * tailLift * swellP + (bang ? 0.06 * expr : 0), -0.5, 0.5);
+        // breath pauses: commas shorter than sentence ends; ellipses linger
+        const breakAfter = /[。！？!?…\.]$/.test(part) && !isTail
+          ? `<break time='${trail ? '320ms' : '230ms'}'/>`
+          : /[,，、；;—]$/.test(part) ? `<break time='110ms'/>`
+          : '';
         return `<prosody pitch='${pct(pitch)}' rate='${pct(rate)}' volume='${db(baseVol)}'>${escapeXml(part)}</prosody>${breakAfter}`;
       })
       .join('');
 
     const ssml =
       `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='${voice.ssmlLang}'>` +
-      `<voice name='${voice.name}'>${body}</voice></speak>`;
+      `<voice name='${voice.name}'>${tic}${body}</voice></speak>`;
 
     let ws: WebSocket;
     try {
