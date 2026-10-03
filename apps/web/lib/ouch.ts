@@ -75,7 +75,7 @@ export const MOOD_OUCHES: Record<string, CryBank> = {
     yue: ['吖…唔好意思…', '唉呀…我冇事…', '唔…吓…'],
     zh: ['啊…不好意思…', '哎呀…我没事…', '唔…吓…'],
     ja: ['あっ…ごめん…', 'あら…大丈夫…', 'ん…びっくり…'],
-    en: ['Oh… sorry…', 'Ah… I'm okay…', 'Eep…'],
+    en: ['Oh… sorry…', 'Ah… I\'m okay…', 'Eep…'],
   },
   angry: {
     yue: ['喂！', '哼……算喇。', '唉，你呀……'],
@@ -87,7 +87,7 @@ export const MOOD_OUCHES: Record<string, CryBank> = {
     yue: ['呀！冇事冇事！', '哎呀！嚇死我…', '吓……你喺度呀……'],
     zh: ['呀！没事没事！', '哎呀！吓死我了…', '吓……你在这儿呀……'],
     ja: ['きゃっ！大丈夫！', 'わっ！びっくりした…', 'ひゃっ……いたの……'],
-    en: ['Eep! I'm okay!', 'Ah! You scared me…', 'Eep… you're here…'],
+    en: ['Eep! I\'m okay!', 'Ah! You scared me…', 'Eep… you\'re here…'],
   },
   sick: {
     yue: ['唉…痛……', '唔…好痛……', '哎呀…我頭痛…'],
