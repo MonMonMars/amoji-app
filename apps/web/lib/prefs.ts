@@ -157,6 +157,7 @@ export type StrKey =
   // v0.9.3 flow: splash → login → select → chat
   | 'loginPrompt' | 'loginCta' | 'loginSkip'
   | 'selectTitle' | 'confirmCta' | 'comingSoon' | 'openSelect'
+  | 'changeCta' | 'previewCurrent' | 'previewNew'
   | 'statusIdle' | 'statusThinking' | 'statusSpeaking' | 'statusListening'
   | 'moodJoy' | 'moodAngry' | 'moodSad' | 'moodSurprised' | 'moodRelaxed' | 'moodNeutral'
   | 'voiceReplies' | 'neuralVoice' | 'memoryTitle' | 'forgetBtn' | 'tutorBtn' | 'micTitle'
@@ -165,7 +166,7 @@ export type StrKey =
   | 'yourName' | 'clearHistory' | 'clearHistoryConfirm' | 'forgetConfirm'
   // memory v2 browser (r2026-10-02.11)
   | 'memoryBrowser' | 'memoryEmpty' | 'memoryAddPlaceholder' | 'memoryAdd' | 'memoryExport'
-  | 'memoryCopied' | 'memoryTypePreference' | 'memoryTypeEvent' | 'memoryTypePlan' | 'forgetOneConfirm';
+  | 'memoryTypePreference' | 'memoryTypeEvent' | 'memoryTypePlan' | 'forgetOneConfirm';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   tagline: {
@@ -207,6 +208,9 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   selectTitle: { en: 'Build your companion', yue: '打造你嘅小伙伴', zh: '打造你的伙伴', ja: '相棒をつくる' },
   confirmCta: { en: 'Meet {name} →', yue: '同 {name} 開始 →', zh: '和 {name} 开始 →', ja: '{name}と始める →' },
   comingSoon: { en: 'Coming soon', yue: '即將推出', zh: '即将推出', ja: 'Coming soon' },
+  changeCta: { en: 'Change', yue: '更改', zh: '更改', ja: '変更' },
+  previewCurrent: { en: 'current companion', yue: '而家嘅小伙伴', zh: '当前的伙伴', ja: 'いまの相棒' },
+  previewNew: { en: 'new choice — tap Change to apply', yue: '新選擇——撳「更改」先會生效', zh: '新选择——点「更改」后生效', ja: '新しい選択——「変更」で適用' },
   openSelect: { en: 'Tap to change character / scene / language', yue: '撳呢度轉角色 / 場景 / 語言', zh: '点击更换角色 / 场景 / 语言', ja: 'タップで相棒・場所・言語を変更' },
   statusIdle: { en: 'idle', yue: '待命', zh: '待命', ja: '待機中' },
   statusThinking: { en: 'thinking…', yue: '諗緊…', zh: '正在想…', ja: '考え中…' },
