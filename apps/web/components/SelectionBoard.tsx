@@ -8,12 +8,16 @@
 //                 character/scene/language until the user picks replacements;
 //                 confirm = "Change", then back to the chat room.
 // Kid Mode (r2026-10-03.03) filters the rows to the wholesome cast + sunny scenes.
+// r2026-10-03.33: the top-row preview chip now streams the picked character
+// REAL 3D model (live portrait), with the painted art as poster/fallback.
 import { useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import HScrollRow from './HScrollRow';
 import SceneBackdrop from './SceneBackdrop';
+import ModelPreview from './ModelPreview';
 import { assetUrl } from '../lib/asset';
 import { APP_REVISION } from '../lib/revision';
+import { lookFor } from '../lib/persona';
 import {
   BACKGROUNDS, CHARACTERS, LANGS,
   backgroundById, characterById, t, usePrefs,
@@ -25,6 +29,8 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   const [prefs, setPrefs] = usePrefs();
   // draft is only used in 'change' mode; null = nothing picked yet
   const [draft, setDraft] = useState<Partial<Prefs> | null>(null);
+  // which character id currently has its live 3D preview streamed in
+  const [previewReadyFor, setPreviewReadyFor] = useState<string | null>(null);
   const live: Prefs = mode === 'change' ? { ...prefs, ...draft } : prefs;
 
   const character = characterById(live.character);
@@ -74,7 +80,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
           <div className="absolute inset-0 flex items-end p-3">
             <div className="flex w-full items-end gap-3">
               <span
-                className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 bg-black/40"
+                className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 bg-black/40"
                 style={{ borderColor: character.accent, boxShadow: `0 8px 24px -8px ${character.accent}aa` }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -82,8 +88,26 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                   src={assetUrl(character.image ?? `/portraits/${character.id}.jpg`)}
                   alt={character.name}
                   draggable={false}
-                  className="h-full w-full object-cover object-top"
+                  className="absolute inset-0 h-full w-full object-cover object-top"
                 />
+                {/* live 3D portrait fades in over the poster once streamed —
+                    keyed per character so switching picks resets the fade */}
+                {character.model && (
+                  <div
+                    key={character.id}
+                    className={`absolute inset-0 transition-opacity duration-700 ${
+                      previewReadyFor === character.id ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  >
+                    <ModelPreview
+                      url={character.model}
+                      tint={lookFor(character.id).tint}
+                      height={lookFor(character.id).height}
+                      width={lookFor(character.id).width}
+                      onReady={() => setPreviewReadyFor(character.id)}
+                    />
+                  </div>
+                )}
               </span>
               <div className="min-w-0 flex-1 pb-0.5">
                 <p className="text-lg font-bold drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
