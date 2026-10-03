@@ -4,7 +4,7 @@ Every binary in this directory must have an entry. CI fails on unmanifested file
 
 | File | License | Source | Notes |
 |---|---|---|---|
-| juno.vrm | Kizuna AI "Kamatte" official VRM sample (Kizuna AI Inc. developer distribution; review usage guidelines before public/App Store release) | Copied from prior repo's curated legal roster: `_incoming/agent3/prototypes/assets/companion-kizuna.vrm` (md5 `bfc42acdf7f29752359e1c6edbed25b8`, byte-identical to `kizuna-kamatte.vrm`) | Default companion avatar "Juno". VRM 1.0, full emotional preset set (happy/angry/sad/surprised/relaxed). Replaces the initially selected "Mister" community model, which had no emotional blend shapes and was VRM 0.x (unsupported by @pixiv/three-vrm v3). Ships in closed/local builds only — NOT committed to the public repo; public builds load seed-san.vrm instead. |
+| juno.vrm | Kizuna AI "Kamatte" official VRM sample (Kizuna AI Inc. developer distribution; review usage guidelines before public/App Store release) | Copied from prior repo's curated legal roster: `_incoming/agent3/prototypes/assets/companion-kizuna.vrm` (md5 `bfc42acdf7f29752359e1c6edbed25b8`, byte-identical to `kamatte-kamatte.vrm`) | Default companion avatar "Juno". VRM 1.0, full emotional preset set (happy/angry/sad/surprised/relaxed). Replaces the initially selected "Mister" community model, which had no emotional blend shapes and was VRM 0.x (unsupported by @pixiv/three-vrm v3). Ships in closed/local builds only — NOT committed to the public repo; public builds load seed-san.vrm instead. |
 | seed-san.vrm | VRM Public License 1.0 (https://vrm.dev/en/licenses/1.0/index) — "Seed-san" model by VirtualCast, Inc.; credit notation required | Official VRM 1.0 conformance sample: https://github.com/vrm-c/vrm-specification/tree/master/samples/Seed-san | Licensed fallback avatar for open-source and GitHub Pages builds. VRM 1.0 with full emotional + viseme preset set. Credit: Seed-san model by VirtualCast, Inc. |
 
 ## Remote per-character cast (r2026-10-03.32)
@@ -35,6 +35,22 @@ seed-san.vrm.
 | Marin | Jenny (281, R3) | https://arweave.net/kgTirc4OvUWbJhIKC2CB3_pYsYuB62KTj90IdE8s3sk |
 | Ayane | StitchWitch (215, R3) | https://arweave.net/O-cHPoD2LyfqSbkltB15-nwGK1aUT0M1JMLf1-gq46g |
 | Hitomi | Eugenia (226, R3) | https://arweave.net/saOexMViu7mqSeaXfQzNIPrKWQ0nqkSf-FpOQjZfBcU |
+
+## Remote cast expansion (r2026-10-03.35) — 21-character cast
+
+Six more R1 avatars, same CC0 1.0 registry source and fallback chain. For these
+six the portrait thumbnails are ALSO remote (the registry's official arweave
+thumbnails, served as `image` in `CharacterDef`) — `assetUrl` passes absolute
+URLs through since this revision.
+
+| Character | Avatar | Model URL | Portrait URL |
+|---|---|---|---|
+| Robbie | Robert (070, R1) | https://arweave.net/gwG7w4bY-A5c3R6A6GOz3xBCgbPvkFQmqPIDtvnNsYI | https://arweave.net/gaFPebQ9hSZDa_xNHkja8CH0Qde2y41L95VQTtroWNA |
+| Mika | Mikel (072, R1) | https://arweave.net/-eJyDjujQRvakRImdvulg-1dKQkPwMeQv-55IbKqLh4 | https://arweave.net/t_QkyGz6d1_mY312l7lt_-8VGL9QlkwmyPbvdmkpN8U |
+| Anchor | Anchor (014, R1) | https://arweave.net/GhML2d0T_lBZvRA_S28LWVg9wFCWJWqc0cFsVulQQlo | https://arweave.net/K6A-nGVw0vGNnP11CPJguTkcHRGzuKVCr6dY2K_fW5I |
+| Lydia | Lydia (054, R1) | https://arweave.net/x48D7v037irPQYG7e0vZLDV1E3x5-KookbP9-vaXvYE | https://arweave.net/DgPsMxXBXBxREc7Wq_w-L0Z2MFiM9E7T5s0yV0c4PJg |
+| Ruby | Rabbit (059, R1) | https://arweave.net/RymRtrmhHx_f9ZDvtvIQb1noTHvILdjoTg5G7L2DR-8 | https://arweave.net/wBqJHzcXuHV0NpFcbtcBB4O2kHqdVN0Zv2QO0jHNkdI |
+| Snowy | Snowy (097, R1) | https://arweave.net/Mqs8hdg-1hpeGq8Jl_LCmhTGdydglPm2V2OGc8jJ5DY | https://arweave.net/pg0GBa3xRqupz_fZmfzEu5vka1IU5gnWW1NB_ZCXsls |
 
 ## Superseded candidates (not shipped)
 

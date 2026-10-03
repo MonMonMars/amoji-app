@@ -36,6 +36,18 @@ export const CHARACTER_POSES: Record<string, string[]> = {
   ayane: ['guardCross', 'crossedArms', 'lookAround', 'handsOnHips', 'stand'],
   // earnest, wholesome, quietly strong — ready stance + warm hugs
   hitomi: ['readyStance', 'calmHug', 'handsOnHips', 'stretchUp', 'swaySoft'],
+  // big-brother energy — steady, warm, ready stance
+  robbie: ['readyStance', 'handsOnHips', 'shoulderShrug', 'swaySoft', 'stand'],
+  // laid-back musician — sways, chin in hand, dreamy
+  mika: ['swaySoft', 'chinStroke', 'daydream', 'handsBehind', 'headTilt'],
+  // old sea captain — anchored, scanning the horizon
+  anchor: ['stand', 'handsBehind', 'lookAround', 'guardCross', 'chinStroke'],
+  // elegant socialite — poised, graceful tilts
+  lydia: ['swaySoft', 'headTilt', 'handsOnHips', 'dreamyTilt', 'leanIn'],
+  // bouncy bunny — cannot stand still
+  ruby: ['bouncy', 'toeShift', 'stretchUp', 'weightShift', 'lookUp'],
+  // winter fairy — slow dreamy drift
+  snowy: ['stargaze', 'calmHug', 'dreamyTilt', 'swaySoft', 'toeShift'],
 };
 
 export function poseIdsFor(characterId: string): string[] {
@@ -68,6 +80,12 @@ export const POKE_STYLE: Record<string, PokeStyle> = {
   marin: { squash: 0.08, twist: 'playful', face: 'happy' },
   ayane: { squash: 0.03, twist: 'unimpressed', face: 'angry' },
   hitomi: { squash: 0.05, twist: 'startled', face: 'happy' },
+  robbie: { squash: 0.06, twist: 'playful', face: 'happy' },
+  mika: { squash: 0.04, twist: 'unimpressed', face: 'relaxed' },
+  anchor: { squash: 0.02, twist: 'unimpressed', face: 'relaxed' },
+  lydia: { squash: 0.05, twist: 'playful', face: 'surprised' },
+  ruby: { squash: 0.1, twist: 'startled', face: 'surprised' },
+  snowy: { squash: 0.06, twist: 'flustered', face: 'surprised' },
 };
 
 export function pokeStyleFor(characterId: string): PokeStyle {
@@ -105,6 +123,12 @@ export const CHARACTER_LOOKS: Record<string, CharacterLook> = {
   marin:  { tint: '#ffd9e8', height: 0.98, width: 0.97 },
   ayane:  { tint: '#e6d4ff', height: 1.01, width: 0.96 },
   hitomi: { tint: '#d9f5d9', height: 1.0,  width: 1.0 },
+  robbie: { tint: '#ffe9c2', height: 1.06, width: 1.06 },
+  mika:   { tint: '#d2f5e3', height: 1.02, width: 0.98 },
+  anchor: { tint: '#cfe8ff', height: 1.07, width: 1.05 },
+  lydia:  { tint: '#f6d9ff', height: 1.0,  width: 0.95 },
+  ruby:   { tint: '#ffd9e0', height: 0.94, width: 0.94 },
+  snowy:  { tint: '#e2f2ff', height: 0.96, width: 0.95 },
 };
 
 export function lookFor(characterId: string): CharacterLook {
