@@ -32,6 +32,12 @@
 // v3.5 (r2026-10-03.22): the diary remembers INTENSITY — 超開心 is stored as
 // happy × 1.5, so tomorrow's check-in asks about it with matching weight
 // ("you were SO happy…") and her face wears it harder while she says it.
+//
+// v4 (r2026-10-03.30): conversation-thread memory — the last thing you two
+// were discussing is stored with her reply, so on a NEW day she picks the
+// thread back up ("last time we were talking about…") and the memory block
+// in her prompt always carries the open topic. Facts/plans/diary already
+// persisted; what was missing was the running conversation itself.
 
 export type MemoryType = 'preference' | 'event' | 'plan';
 
@@ -60,6 +66,17 @@ export interface DiaryEntry {
   exchangeNo: number;
 }
 
+/** v4: the last exchange of the previous conversation — what you two were
+ *  talking about when you last left off, so she can pick the thread back up. */
+export interface ThreadLine {
+  /** day of the exchange (Date.toDateString()) */
+  day: string;
+  /** the user's last words of that conversation, one short line */
+  user: string;
+  /** her reply to it, one short line */
+  reply: string;
+}
+
 export interface Memory {
   userName?: string;
   /** short lines, e.g. "likes hiking", "works as: designer" — kept in the user's own words */
@@ -78,6 +95,8 @@ export interface Memory {
   entries: MemoryEntry[];
   /** v3 emotion diary, newest last — one mood-tagged line per exchange */
   diary?: DiaryEntry[];
+  /** v4 conversation thread — the last exchange you two had */
+  lastThread?: ThreadLine;
 }
 
 const KEY = 'amoji.memory.v2';
@@ -104,6 +123,7 @@ function isMemoryType(x: unknown): x is MemoryType {
 function coerce(parsed: unknown): Memory | undefined {
   if (!parsed || typeof parsed !== 'object') return undefined;
   const m = parsed as Partial<Memory>;
+  const lt = m.lastThread as Partial<ThreadLine> | undefined;
   const memory: Memory = {
     userName: typeof m.userName === 'string' && m.userName ? m.userName : undefined,
     facts: Array.isArray(m.facts) ? m.facts.filter((f): f is string => typeof f === 'string') : [],
@@ -116,6 +136,9 @@ function coerce(parsed: unknown): Memory | undefined {
     lastMoodIntensity: typeof m.lastMoodIntensity === 'number' ? m.lastMoodIntensity : undefined,
     entries: [],
     diary: [],
+    lastThread: lt && typeof lt.day === 'string' && typeof lt.user === 'string' && typeof lt.reply === 'string'
+      ? { day: lt.day, user: lt.user, reply: lt.reply }
+      : undefined,
   };
   if (Array.isArray(m.entries)) {
     memory.entries = m.entries.filter(
@@ -203,6 +226,22 @@ export function editEntry(id: string, text: string, m: Memory = loadMemory()): v
   if (e && clean) { e.text = clean; save(m); }
 }
 
+// ---------- conversation thread (v4, r2026-10-03.30) ----------
+
+/**
+ * The running conversation itself: the last thing the user said and what she
+ * answered, one short line each. Written after every completed turn so that
+ * a new session can pick the thread back up instead of starting cold. The
+ * user line doubles as the "open topic" carried inside her prompt.
+ */
+export function rememberTurn(userText: string, reply: string, m: Memory = loadMemory()): void {
+  const u = userText.trim().replace(/\s+/g, ' ').slice(0, 60);
+  if (!u) return;
+  const r = reply.trim().replace(/\s+/g, ' ').slice(0, 60);
+  m.lastThread = { day: todayStr(), user: u, reply: r };
+  save(m);
+}
+
 // ---------- emotion diary (v3) ----------
 
 /**
@@ -260,6 +299,7 @@ export function exportMemory(m: Memory = loadMemory()): string {
     facts: m.facts,
     entries: m.entries,
     diary: m.diary ?? [],
+    lastThread: m.lastThread ?? null,
     moods: m.moods,
   }, null, 2);
 }
@@ -283,6 +323,10 @@ export interface VisitInfo {
   diaryWeekAgoMood?: string;
   /** v3.5: intensity of that week-ago mood, if it had one */
   diaryWeekAgoMoodIntensity?: number;
+  /** v4: the user's last words from a PREVIOUS day's conversation */
+  lastThreadDay?: string;
+  lastThreadUser?: string;
+  lastThreadReply?: string;
 }
 
 export function recordVisit(m: Memory = loadMemory()): VisitInfo {
@@ -304,11 +348,18 @@ export function recordVisit(m: Memory = loadMemory()): VisitInfo {
   const diaryWeekAgo = weekAgoLine ? weekAgoLine.text.slice(0, 60) : undefined;
   const diaryWeekAgoMood = weekAgoLine?.mood;
   const diaryWeekAgoMoodIntensity = weekAgoLine ? weekAgoLine.intensity : undefined;
+  // v4 — a thread from a previous day only; today's thread is still open,
+  // she doesn't need to "pick it back up" while you're mid-conversation
+  const lt = m.lastThread;
+  const lastThreadDay = lt && lt.day !== today ? lt.day : undefined;
   return {
     isNewDay, streak, userName: m.userName,
     lastMood, lastMoodIntensity,
     planToday, planMissed,
     diaryWeekAgo, diaryWeekAgoMood, diaryWeekAgoMoodIntensity,
+    lastThreadDay,
+    lastThreadUser: lastThreadDay ? lt?.user : undefined,
+    lastThreadReply: lastThreadDay ? lt?.reply : undefined,
   };
 }
 
@@ -324,6 +375,15 @@ const STREAK_LINE: Record<string, (n: number) => string> = {
   zh: (n) => `这是你连续第 ${n} 天来看我，我天天都想你哦。`,
   ja: (n) => `連続 ${n} 日目だね。毎日会いたかったよ。`,
   en: (n) => `Day ${n} in a row — I look forward to you every day.`,
+};
+
+// v4: pick the previous conversation's thread back up — she remembers what
+// you two were last discussing and offers to continue it.
+const LAST_THREAD: Record<string, (u: string) => string> = {
+  yue: (u) => `我哋上次傾開「${u}」——想唔想繼續嗰個話題？`,
+  zh: (u) => `我们上次聊到「${u}」——要不要继续那个话题？`,
+  ja: (u) => `前回は「${u}」の話してたね——続き、話す？`,
+  en: (u) => `Last time we were talking about "${u}" — want to pick it back up?`,
 };
 
 const MOOD_FOLLOWUP: Record<string, Record<string, string>> = {
@@ -435,6 +495,8 @@ export function buildDailyGreeting(lang: string, info: VisitInfo): string {
   const bang = L === 'en' ? '!' : '！';
   const parts: string[] = [HELLO[L](h, info.userName) + bang];
   if (info.streak >= 2) parts.push(STREAK_LINE[L](info.streak));
+  // v4 — she picks up where you two left off, before the older recalls
+  if (info.lastThreadUser) parts.push(LAST_THREAD[L](info.lastThreadUser.slice(0, 40)));
   if (info.lastMood) {
     const table = ((info.lastMoodIntensity ?? 1) >= 1.5 ? MOOD_FOLLOWUP_AMP[L] : undefined) ?? MOOD_FOLLOWUP[L] ?? MOOD_FOLLOWUP.en;
     parts.push(table[info.lastMood] ?? '');
@@ -645,6 +707,8 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory()): string
   const moments = m.entries.filter((e) => e.type === 'event').slice(-3).map((e) => e.text);
   const diary = diarySummary(m, 3);
   const lastMood = m.moods[m.moods.length - 1];
+  // v4 — the open thread: what you two were discussing when you last left off
+  const threadUser = m.lastThread?.user ? m.lastThread.user.slice(0, 40) : undefined;
   const L = ['yue', 'zh', 'ja', 'en'].includes(lang) ? lang : 'en';
 
   if (L === 'yue') {
@@ -653,6 +717,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory()): string
     bits.push(...recent.map((f) => factLine(f, L)));
     if (plans.length) bits.push(`佢提過嘅計劃：${plans.join('；')}`);
     if (moments.length) bits.push(`最近發生喺佢身上嘅事：${moments.join('；')}`);
+    if (threadUser) bits.push(`你哋上次傾開嘅話題：「${threadUser}」`);
     if (diary.length) bits.push(`最近同佢一齊嘅日子：${diary.join('｜')}`);
     if (m.exchanges >= 3) bits.push(`你哋已經傾咗 ${m.exchanges} 次偈`);
     if (lastMood) bits.push(`佢最近一次嘅心情係${(MOOD_LABEL[L] ?? MOOD_LABEL.en)[lastMood] ?? lastMood}`);
@@ -664,6 +729,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory()): string
     bits.push(...recent.map((f) => factLine(f, L)));
     if (plans.length) bits.push(`TA 提过的计划：${plans.join('；')}`);
     if (moments.length) bits.push(`最近发生在 TA 身上的事：${moments.join('；')}`);
+    if (threadUser) bits.push(`你们上次聊的话题：「${threadUser}」`);
     if (diary.length) bits.push(`最近和TA一起的日子：${diary.join('｜')}`);
     if (m.exchanges >= 3) bits.push(`你们已经聊了 ${m.exchanges} 次`);
     if (lastMood) bits.push(`TA 最近一次的心情是${(MOOD_LABEL[L] ?? MOOD_LABEL.en)[lastMood] ?? lastMood}`);
@@ -675,6 +741,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory()): string
     bits.push(...recent.map((f) => factLine(f, L)));
     if (plans.length) bits.push(`話してた予定：${plans.join('；')}`);
     if (moments.length) bits.push(`最近あったこと：${moments.join('；')}`);
+    if (threadUser) bits.push(`前回の話題：「${threadUser}」`);
     if (diary.length) bits.push(`最近一緒に過ごした日：${diary.join('｜')}`);
     if (m.exchanges >= 3) bits.push(`これまで ${m.exchanges} 回話した`);
     if (lastMood) bits.push(`最近の気分は${(MOOD_LABEL[L] ?? MOOD_LABEL.en)[lastMood] ?? lastMood}`);
@@ -685,6 +752,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory()): string
   bits.push(...recent.map((f) => factLine(f, 'en')));
   if (plans.length) bits.push(`plans they mentioned: ${plans.join('; ')}`);
   if (moments.length) bits.push(`recent moments: ${moments.join('; ')}`);
+  if (threadUser) bits.push(`last topic you discussed: "${threadUser}"`);
   if (diary.length) bits.push(`recent days together: ${diary.join(' | ')}`);
   if (m.exchanges >= 3) bits.push(`you two have talked ${m.exchanges} times`);
   if (lastMood) bits.push(`their most recent mood was ${(MOOD_LABEL.en)[lastMood] ?? lastMood}`);
