@@ -15,6 +15,11 @@ const FEMALE = new Set([
   'lydia', 'ruby', 'snowy',
 ]);
 
+// r2026-10-03.37: every line must end with a conversation hook — a question
+// mark or a tilde invitation — so the chat always has somewhere to go.
+const IDLE_HOOK = /[?？~〜]$/;
+const POKE_HOOK = /[?？!！~〜…]$/;
+
 describe('per-character persona coverage', () => {
   it('every character has ≥3 curated idle poses, all valid ids', () => {
     for (const c of CHARACTERS) {
@@ -91,6 +96,19 @@ describe('per-character persona coverage', () => {
         const names = choices!.flatMap((ch) => ch.names).join(' ').toLowerCase();
         if (FEMALE.has(c.id)) expect(names, `${c.id}/${lang} female voice`).toContain('female');
         else expect(names, `${c.id}/${lang} male voice`).toContain('male');
+      }
+    }
+  });
+
+  it('every idle line ends with a question or invitation (conversation never dead-ends)', () => {
+    for (const c of CHARACTERS) {
+      for (const lang of LANG_IDS) {
+        for (const line of CHARACTER_IDLE[c.id]![lang]!) {
+          expect(IDLE_HOOK.test(line.trim()), `${c.id}/${lang}: ${line}`).toBe(true);
+        }
+        for (const line of CHARACTER_POKE[c.id]![lang]!) {
+          expect(POKE_HOOK.test(line.trim()), `${c.id}/${lang}: ${line}`).toBe(true);
+        }
       }
     }
   });
