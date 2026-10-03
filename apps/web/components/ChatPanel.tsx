@@ -205,7 +205,8 @@ export default function ChatPanel({
     }
   };
 
-  // tap the orb to talk — the mic is the hero (ChatGPT-style); tap again to stop
+  // ChatGPT-style hero mic — one button does everything:
+  // tap to talk (barge-in: cuts her voice off mid-sentence), tap again to send
   const mic = async () => {
     if (listeningRef.current) {
       recStopRef.current?.();
@@ -219,7 +220,7 @@ export default function ChatPanel({
     }
     listeningRef.current = true;
     setListening(true);
-    stopSpeaking();
+    stopSpeaking(); // interrupt her mid-sentence, exactly like ChatGPT voice
     try {
       const text = await listenOnce(lang, { onStart: (rec) => { recStopRef.current = rec.stop; } });
       if (text) await send(text);
@@ -265,19 +266,42 @@ export default function ChatPanel({
         {busy && <p className="text-white/40">{t(lang, 'typing', { name: characterName })}</p>}
       </div>
 
-      {/* input row — mic orb is the hero */}
+      {/* input row — ChatGPT-style hero mic with the living emotion orb */}
       <div className="flex w-full items-center gap-2.5">
         <button
           onClick={() => void mic()}
           title={t(lang, 'micTitle')}
-          className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/40 backdrop-blur-md transition hover:bg-black/60"
-          style={listening ? { borderColor: `${accent}aa`, boxShadow: `0 0 24px -4px ${accent}` } : undefined}
+          className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border bg-black/50 backdrop-blur-md transition hover:bg-black/70 active:scale-95"
+          style={
+            listening
+              ? {
+                  borderColor: 'rgba(96,175,255,0.95)',
+                  boxShadow: '0 0 26px -2px rgba(88,166,255,0.8), 0 0 64px -12px rgba(88,166,255,0.55)',
+                }
+              : { borderColor: speakingNow ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.16)' }
+          }
         >
-          <EmotionOrb size={46} accent={accent} listening={listening} />
+          {speakingNow && !listening && (
+            <span
+              className="pointer-events-none absolute inset-0 animate-[spin_3s_linear_infinite] rounded-full border-2 border-transparent"
+              style={{ borderTopColor: `${accent}d0`, borderRightColor: `${accent}60` }}
+            />
+          )}
+          <EmotionOrb size={52} accent={accent} listening={listening} />
           {!listening && !speakingNow && (
-            <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-white/90" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.9)' }}>
-              🎙️
-            </span>
+            <svg
+              viewBox="0 0 24 24"
+              className="pointer-events-none absolute h-6 w-6 text-white/90"
+              fill="none"
+              aria-hidden
+            >
+              <path
+                d="M12 15.2a3.7 3.7 0 0 0 3.7-3.7V6.6a3.7 3.7 0 1 0-7.4 0v4.9a3.7 3.7 0 0 0 3.7 3.7Z"
+                fill="currentColor"
+              />
+              <path d="M5.4 11.4a6.6 6.6 0 0 0 13.2 0" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+              <path d="M12 18v3.4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+            </svg>
           )}
         </button>
         <input
