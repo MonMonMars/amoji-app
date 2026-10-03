@@ -7,6 +7,8 @@
 // fortune (one draw per visit), which-hand (she hides a treat), and
 // high-low card. Same deal: LLM-free, instant, every line invites the
 // next turn.
+// r2026-10-04.44: hotfix — guess-the-number startGame branch fell through
+// to the hilo default (r43 CI red), and 'higher or lower' missed HILO_RE.
 
 export type GameKind = 'rps' | 'guess' | 'dice' | 'wordchain' | 'omikuji' | 'hands' | 'hilo';
 export type Lang = 'yue' | 'zh' | 'ja' | 'en';
@@ -98,7 +100,7 @@ const WORD_BANK: Record<Lang, Record<string, string[]>> = {
     し: ['しろくま', 'しま'], す: ['すいか'], た: ['たまご', 'たいやき'], と: ['とけい', 'とり'],
     な: ['なす', 'なみ'], の: ['のり'], は: ['はな', 'はと'], ひ: ['ひよこ', 'ひかり'],
     ま: ['まど', 'まくら'], み: ['みみ', 'みどり'], も: ['もり', 'もも'], や: ['やま'],
-    ら: ['らっこ', 'らくご'], り: ['りんご', 'るり'.slice(0, 0) || 'りす'], る: ['るり'], わ: ['わに'],
+    ら: ['らっこ', 'らくご'], り: ['りんご', 'りす'], る: ['るり'], わ: ['わに'],
     ご: ['ごま'], ね: ['ねこ', 'ねずみ'], ど: ['どうぶつ', 'どんぐり'], つ: ['つばめ', 'つき'],
     め: ['めがね'], に: ['にわとり'], ぬ: ['ぬの'],
   },
@@ -445,6 +447,13 @@ export function startGame(kind: GameKind, lang: Lang, rng: Rng = Math.random): {
     return {
       line: DICE_START[lang] ?? DICE_START.en,
       state: { kind, target: 0, lo: 0, hi: 0, userScore: 0, botScore: 0, rounds: 0, maxRounds: 3 },
+    };
+  }
+  if (kind === 'guess') {
+    const target = 1 + Math.floor(rng() * 20);
+    return {
+      line: GUESS_START[lang] ?? GUESS_START.en,
+      state: { kind, target, lo: 1, hi: 20, userScore: 0, botScore: 0, rounds: 0, maxRounds: 10 },
     };
   }
   if (kind === 'wordchain') {
