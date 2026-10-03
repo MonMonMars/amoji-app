@@ -28,6 +28,10 @@
 // v3.4 (r2026-10-03.20): felt-mood INTENSITY — amplifiers (超開心 / 勁攰 /
 // very tired / とても嬉しい) scale how strongly she wears the feeling;
 // plain moods stay gentle. moodToHints(mood, intensity) clamps at 1.
+//
+// v3.5 (r2026-10-03.22): the diary remembers INTENSITY — 超開心 is stored as
+// happy × 1.5, so tomorrow's check-in asks about it with matching weight
+// ("you were SO happy…") and her face wears it harder while she says it.
 
 export type MemoryType = 'preference' | 'event' | 'plan';
 
@@ -50,6 +54,8 @@ export interface DiaryEntry {
   text: string;
   /** mood detected during this exchange, if any */
   mood?: string;
+  /** v3.5: how strongly it was felt (1 plain, 1.5 amplified) */
+  intensity?: number;
   /** which conversation exchange this line came from */
   exchangeNo: number;
 }
@@ -66,6 +72,8 @@ export interface Memory {
   lastVisit?: string; // Date.toDateString()
   visitStreak?: number;
   lastMoodDay?: string; // day the latest mood was recorded
+  /** v3.5: intensity of the latest mood (1 plain, 1.5 amplified) */
+  lastMoodIntensity?: number;
   /** v2 typed memories, newest last */
   entries: MemoryEntry[];
   /** v3 emotion diary, newest last — one mood-tagged line per exchange */
@@ -105,6 +113,7 @@ function coerce(parsed: unknown): Memory | undefined {
     lastVisit: typeof m.lastVisit === 'string' ? m.lastVisit : undefined,
     visitStreak: typeof m.visitStreak === 'number' ? m.visitStreak : undefined,
     lastMoodDay: typeof m.lastMoodDay === 'string' ? m.lastMoodDay : undefined,
+    lastMoodIntensity: typeof m.lastMoodIntensity === 'number' ? m.lastMoodIntensity : undefined,
     entries: [],
     diary: [],
   };
@@ -200,14 +209,15 @@ export function editEntry(id: string, text: string, m: Memory = loadMemory()): v
  * She keeps a private diary: one short mood-tagged line per exchange, so she
  * can recall how your recent days FELT, not just what was said. Written inside
  * rememberExchange; capped, drop-oldest, same-day exact duplicates skipped.
+ * v3.5: mood lines also carry the felt INTENSITY (1 plain, 1.5 amplified).
  */
-function pushDiary(m: Memory, userText: string, mood?: string): void {
+function pushDiary(m: Memory, userText: string, mood?: string, intensity = 1): void {
   const clean = userText.trim().replace(/\s+/g, ' ').slice(0, 120);
   if (!clean) return;
   if (!m.diary) m.diary = [];
   const last = m.diary[m.diary.length - 1];
   if (last && last.day === todayStr() && last.text === clean) return;
-  m.diary.push({ id: newId(), day: todayStr(), text: clean, mood, exchangeNo: m.exchanges });
+  m.diary.push({ id: newId(), day: todayStr(), text: clean, mood, intensity: mood ? intensity : undefined, exchangeNo: m.exchanges });
   if (m.diary.length > MAX_DIARY) m.diary.shift();
 }
 
@@ -218,7 +228,8 @@ export function deleteDiaryEntry(id: string, m: Memory = loadMemory()): void {
   save(m);
 }
 
-/** One line per recent day — "Oct 01 [happy/tired] — went hiking with the dog". */
+/** One line per recent day — "Oct 01 [happy/tired] — went hiking with the dog".
+ *  v3.5: an amplified mood shows as happy! — the ! is the intensity marker. */
 export function diarySummary(m: Memory = loadMemory(), maxDays = 7): string[] {
   if (!m.diary || m.diary.length === 0) return [];
   const byDay = new Map<string, DiaryEntry[]>();
@@ -229,8 +240,13 @@ export function diarySummary(m: Memory = loadMemory(), maxDays = 7): string[] {
   return [...byDay.keys()].slice(-maxDays).map((day) => {
     const entries = byDay.get(day)!;
     const last = entries[entries.length - 1]!;
-    const moods = [...new Set(entries.map((e) => e.mood).filter((x): x is string => typeof x === 'string'))];
-    const moodPart = moods.length ? ` [${moods.join('/')}]` : '';
+    const moodTags = [...new Set(entries.map((e) => e.mood).filter((x): x is string => typeof x === 'string'))];
+    const moodPart = moodTags.length
+      ? ` [${moodTags.map((md) => {
+          const src = [...entries].reverse().find((e) => e.mood === md);
+          return src && (src.intensity ?? 1) >= 1.5 ? `${md}!` : md;
+        }).join('/')}]`
+      : '';
     return `${day.slice(4, 10)}${moodPart} — ${last.text}`;
   });
 }
@@ -255,6 +271,8 @@ export interface VisitInfo {
   streak: number;
   userName?: string;
   lastMood?: string; // a mood recorded on a PREVIOUS day
+  /** v3.5: how strongly that previous-day mood was felt (1 plain, 1.5 amplified) */
+  lastMoodIntensity?: number;
   /** a plan whose due day is TODAY (text of the entry) */
   planToday?: string;
   /** a plan whose due day was YESTERDAY — she asks how it went */
@@ -263,6 +281,8 @@ export interface VisitInfo {
   diaryWeekAgo?: string;
   /** the mood tag of that week-ago diary line, if it had one */
   diaryWeekAgoMood?: string;
+  /** v3.5: intensity of that week-ago mood, if it had one */
+  diaryWeekAgoMoodIntensity?: number;
 }
 
 export function recordVisit(m: Memory = loadMemory()): VisitInfo {
@@ -277,12 +297,19 @@ export function recordVisit(m: Memory = loadMemory()): VisitInfo {
     save(m);
   }
   const lastMood = m.lastMoodDay && m.lastMoodDay !== today ? m.moods[m.moods.length - 1] : undefined;
+  const lastMoodIntensity = lastMood ? m.lastMoodIntensity ?? 1 : undefined;
   const planToday = m.entries.find((e) => e.type === 'plan' && e.dueDay === today)?.text;
   const planMissed = m.entries.find((e) => e.type === 'plan' && e.dueDay === todayStr(-1))?.text;
   const weekAgoLine = m.diary?.filter((d) => d.day === todayStr(-7)).pop();
   const diaryWeekAgo = weekAgoLine ? weekAgoLine.text.slice(0, 60) : undefined;
   const diaryWeekAgoMood = weekAgoLine?.mood;
-  return { isNewDay, streak, userName: m.userName, lastMood, planToday, planMissed, diaryWeekAgo, diaryWeekAgoMood };
+  const diaryWeekAgoMoodIntensity = weekAgoLine ? weekAgoLine.intensity : undefined;
+  return {
+    isNewDay, streak, userName: m.userName,
+    lastMood, lastMoodIntensity,
+    planToday, planMissed,
+    diaryWeekAgo, diaryWeekAgoMood, diaryWeekAgoMoodIntensity,
+  };
 }
 
 const HELLO: Record<string, (h: number, name?: string) => string> = {
@@ -334,11 +361,57 @@ const MOOD_FOLLOWUP: Record<string, Record<string, string>> = {
   },
 };
 
+// v3.5: the amplified variants — used when yesterday's mood was felt HARD
+// (超開心 / 勁攰 / very tired / とても嬉しい). The question is warmer and
+// her face wears the feeling harder while she says it (greetingHints).
+const MOOD_FOLLOWUP_AMP: Record<string, Record<string, string>> = {
+  yue: {
+    happy: '琴日你開心到不得了——今日都仲咁開心咩？',
+    tired: '琴日你話你勁攰——今日真係好返啲未呀？',
+    sad: '琴日你話你唔開心到極……今日我喺度陪住你，好唔好？',
+    angry: '琴日你話你嬲到爆——而家消咗氣未呀？',
+    anxious: '琴日你擔心到瞓唔著——仲擔心緊咩？講俾我聽。',
+    sick: '琴日你唔舒服到咁——今日真係好啲未？記得多啲休息。',
+  },
+  zh: {
+    happy: '昨天你开心得不得了——今天也这么开心吗？',
+    tired: '昨天你说累坏了——今天真的好点了吗？',
+    sad: '昨天你说特别难过……今天我陪着你，好吗？',
+    angry: '昨天你说气坏了——现在消气了吗？',
+    anxious: '昨天你说担心得睡不着——还在担心吗？跟我说说。',
+    sick: '昨天你特别不舒服——今天真的好点了吗？记得多休息。',
+  },
+  ja: {
+    happy: 'きのう嬉しすぎるって言ってたね——今日もそんなに嬉しい？',
+    tired: 'きのう疲れきってたよね——今日は本当に楽になった？',
+    sad: 'きのうとても悲しんでたよね……今日は私がそばにいるよ。',
+    angry: 'きのう怒りMAXだったよね——もうおさまった？',
+    anxious: 'きのう不安で眠れないって言ってた——まだ心配してる？話して。',
+    sick: 'きのうすごく具合が悪かったよね——今日は本当に大丈夫？',
+  },
+  en: {
+    happy: 'You were SO happy yesterday — still glowing today?',
+    tired: 'You were exhausted yesterday — really feeling better today?',
+    sad: 'You were really down yesterday… I’m right here with you today.',
+    angry: 'You were furious yesterday — has it passed?',
+    anxious: 'You were worried sick yesterday — still on your mind? Tell me.',
+    sick: 'You felt really awful yesterday — honestly better today? Rest up, okay?',
+  },
+};
+
 const DIARY_WEEK: Record<string, (p: string) => string> = {
   yue: (p) => `上個禮拜今日你話「${p}」——嗰件事而家點呀？`,
   zh: (p) => `上星期的今天你说过「${p}」——那件事现在怎么样了？`,
   ja: (p) => `先週の今日「${p}」って言ってた——あれ、今どうなってる？`,
   en: (p) => `A week ago today you said "${p}" — how did that turn out?`,
+};
+
+// v3.5: amplified week-ago recall — she lets on that the moment stuck with her.
+const DIARY_WEEK_AMP: Record<string, (p: string) => string> = {
+  yue: (p) => `我仲記得上個禮拜今日你話「${p}」——嗰陣嘅反應我到而家都記得！嗰件事而家點呀？`,
+  zh: (p) => `我还记得上星期的今天你说过「${p}」——你当时的样子我现在还记得！那件事现在怎么样了？`,
+  ja: (p) => `先週の今日「${p}」って言ってたよね——あの時の様子、今も覚えてる！今どうなってる？`,
+  en: (p) => `I still remember a week ago today you said "${p}" — I can picture exactly how you looked! How did it turn out?`,
 };
 
 const PLAN_TODAY: Record<string, (p: string) => string> = {
@@ -362,8 +435,14 @@ export function buildDailyGreeting(lang: string, info: VisitInfo): string {
   const bang = L === 'en' ? '!' : '！';
   const parts: string[] = [HELLO[L](h, info.userName) + bang];
   if (info.streak >= 2) parts.push(STREAK_LINE[L](info.streak));
-  if (info.lastMood) parts.push((MOOD_FOLLOWUP[L] ?? MOOD_FOLLOWUP.en)[info.lastMood] ?? '');
-  if (info.diaryWeekAgo) parts.push(DIARY_WEEK[L](info.diaryWeekAgo));
+  if (info.lastMood) {
+    const table = ((info.lastMoodIntensity ?? 1) >= 1.5 ? MOOD_FOLLOWUP_AMP[L] : undefined) ?? MOOD_FOLLOWUP[L] ?? MOOD_FOLLOWUP.en;
+    parts.push(table[info.lastMood] ?? '');
+  }
+  if (info.diaryWeekAgo) {
+    const line = ((info.diaryWeekAgoMoodIntensity ?? 1) >= 1.5 ? DIARY_WEEK_AMP[L] : undefined) ?? DIARY_WEEK[L];
+    parts.push(line(info.diaryWeekAgo));
+  }
   if (info.planToday) parts.push(PLAN_TODAY[L](info.planToday));
   else if (info.planMissed) parts.push(PLAN_MISSED[L](info.planMissed));
   return parts.filter(Boolean).join(' ');
@@ -398,11 +477,12 @@ export function moodToHints(mood?: string, intensity = 1): Record<string, number
 
 /**
  * When the daily check-in recalls something emotional, she should WEAR that
- * feeling while she says it. The week-ago diary line wins over the plain
- * yesterday-mood follow-up — it's the moment she's actively quoting.
+ * feeling while she says it — and v3.5: as strongly as it was originally
+ * felt. The week-ago diary line wins over the plain yesterday-mood follow-up —
+ * it's the moment she's actively quoting.
  */
 export function greetingHints(info: VisitInfo): Record<string, number> | undefined {
-  return moodToHints(info.diaryWeekAgoMood) ?? moodToHints(info.lastMood);
+  return moodToHints(info.diaryWeekAgoMood, info.diaryWeekAgoMoodIntensity) ?? moodToHints(info.lastMood, info.lastMoodIntensity);
 }
 
 // ---------- extraction (local regex, runs on the user's text) ----------
@@ -517,13 +597,16 @@ export function rememberExchange(userText: string, m: Memory = loadMemory()): Me
     if (mm?.[1]) { pushEntry(m, 'plan', mm[1], offset); break; }
   }
   const mood = detectMood(userText);
+  const intensity = mood ? detectMoodIntensity(userText) : 1;
   if (mood) {
     m.moods.push(mood);
     if (m.moods.length > MAX_MOODS) m.moods.shift();
     m.lastMoodDay = todayStr();
+    // v3.5: remember HOW strongly it was felt, for tomorrow's check-in
+    m.lastMoodIntensity = intensity;
   }
   m.exchanges += 1;
-  pushDiary(m, userText, mood);
+  pushDiary(m, userText, mood, intensity);
   save(m);
   return m;
 }

@@ -231,3 +231,66 @@ describe('felt-mood intensity', () => {
     expect(moodToHints('happy')).toEqual({ joy: 0.9 }); // default intensity unchanged
   });
 });
+
+// ---------- r2026-10-03.22: the diary remembers how strongly it felt ----------
+
+describe('diary mood intensity', () => {
+  it('stores amplified and plain intensity on diary lines', () => {
+    const m = fresh();
+    rememberExchange('今日超開心！', m);
+    expect(m.diary![0]!.mood).toBe('happy');
+    expect(m.diary![0]!.intensity).toBe(1.5);
+    const m2 = fresh();
+    rememberExchange('今日開心', m2);
+    expect(m2.diary![0]!.mood).toBe('happy');
+    expect(m2.diary![0]!.intensity).toBe(1);
+    const m3 = fresh();
+    rememberExchange('see you at 3pm', m3);
+    expect(m3.diary![0]!.intensity).toBeUndefined(); // no mood → no intensity
+  });
+
+  it('recordVisit carries yesterday-mood and week-ago intensities', () => {
+    const m = fresh();
+    m.lastVisit = daysAgo(1);
+    m.moods = ['happy'];
+    m.lastMoodDay = daysAgo(1);
+    m.lastMoodIntensity = 1.5;
+    m.diary = [{ id: 'w', day: daysAgo(7), text: '超開心的一天', mood: 'happy', intensity: 1.5, exchangeNo: 1 }];
+    const info = recordVisit(m);
+    expect(info.lastMood).toBe('happy');
+    expect(info.lastMoodIntensity).toBe(1.5);
+    expect(info.diaryWeekAgoMoodIntensity).toBe(1.5);
+  });
+
+  it('greeting hints scale with the recalled intensity', () => {
+    const amp = greetingHints({ isNewDay: true, streak: 1, lastMood: 'happy', lastMoodIntensity: 1.5 });
+    expect(amp).toEqual({ joy: 1 }); // 0.9 × 1.5 → clamped
+    const plain = greetingHints({ isNewDay: true, streak: 1, lastMood: 'happy', lastMoodIntensity: 1 });
+    expect(plain).toEqual({ joy: 0.9 });
+  });
+
+  it('an amplified yesterday mood gets the stronger follow-up line', () => {
+    const amp = buildDailyGreeting('en', { isNewDay: true, streak: 1, lastMood: 'happy', lastMoodIntensity: 1.5 });
+    expect(amp).toContain('SO happy');
+    const plain = buildDailyGreeting('en', { isNewDay: true, streak: 1, lastMood: 'happy', lastMoodIntensity: 1 });
+    expect(plain).not.toContain('SO happy');
+    expect(plain).toContain('happy yesterday');
+  });
+
+  it('an amplified week-ago memory gets the warmer recall line', () => {
+    const amp = buildDailyGreeting('en', { isNewDay: true, streak: 1, diaryWeekAgo: 'won the match', diaryWeekAgoMood: 'happy', diaryWeekAgoMoodIntensity: 1.5 });
+    expect(amp).toContain('I still remember');
+    const plain = buildDailyGreeting('en', { isNewDay: true, streak: 1, diaryWeekAgo: 'won the match', diaryWeekAgoMood: 'happy', diaryWeekAgoMoodIntensity: 1 });
+    expect(plain).not.toContain('I still remember');
+  });
+
+  it('diary summary marks amplified moods with !', () => {
+    const m = fresh();
+    m.diary = [
+      { id: '1', day: daysAgo(1), text: 'won the lottery today', mood: 'happy', intensity: 1.5, exchangeNo: 1 },
+      { id: '2', day: daysAgo(1), text: 'feeling calm now', mood: 'content', exchangeNo: 2 },
+    ];
+    const line = diarySummary(m)[0]!;
+    expect(line).toContain('[happy!]');
+  });
+});
