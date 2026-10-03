@@ -354,7 +354,7 @@ export function backgroundById(id: string): BackgroundDef {
 export function usePrefs(): [Prefs, (patch: Partial<Prefs>) => void] {
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   useEffect(() => { setPrefs(loadPrefs()); }, []);
-  const update = (patch: Partial<Prefs>) => void {
+  const update = (patch: Partial<Prefs>): void => {
     setPrefs((p) => {
       const next = { ...p, ...patch };
       savePrefs(next);
