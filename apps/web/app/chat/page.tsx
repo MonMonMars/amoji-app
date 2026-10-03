@@ -60,7 +60,7 @@ export default function Chat() {
           lang={prefs.lang}
           status={status}
           memCount={memCount}
-          onOpenSelect={() => router.push('/select')}
+          onOpenSelect={() => router.push('/change')}
         />
         <button
           onClick={() => setSheetOpen(true)}
