@@ -34,6 +34,11 @@
 // the conversation thread (last user words + her reply), so the next session
 // opens with "last time we were talking about…" and her prompt always
 // carries the open topic.
+// r2026-10-03.38: staged re-engagement — when the USER (not just the room)
+// goes quiet, she leans in over time: her usual idle chatter from 40s, direct
+// "you've gone quiet" follow-ups from ~2 min, and a soft closer at ~5 min
+// said ONCE — then she waits instead of nagging. Any real user action
+// (message, poke, spoken word, even tapping the mic off) resets the curve.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh } from '../lib/companion';
 import { loadHistory, saveHistory } from '../lib/companion-store';
@@ -69,6 +74,10 @@ export interface ChatPanelProps {
 const IDLE_AFTER_MS = 40_000;
 /** gap between thinking-out-loud phases while the LLM is still generating */
 const THINK_PHASE_MS = 4_500;
+/** user silence beyond this switches idle chatter to direct re-engagement */
+const REENGAGE_AFTER_MS = 110_000;
+/** user silence beyond this gets the soft closer — once, then she waits */
+const CLOSER_AFTER_MS = 300_000;
 
 export default function ChatPanel({
   characterName = 'Jun',
@@ -89,7 +98,10 @@ export default function ChatPanel({
   const nearBottomRef = useRef(true);
   const busyRef = useRef(false);
   const lastActivityRef = useRef(Date.now());
-  const idleCounterRef = useRef(0);
+  const lastUserRef = useRef(Date.now());
+  const lastChatterAtRef = useRef(0);
+  const chatterCountRef = useRef(0);
+  const reengageStageRef = useRef(0);
   const greetedRef = useRef(false);
   const listeningRef = useRef(false);
   const micModeRef = useRef(false);
@@ -201,6 +213,8 @@ export default function ChatPanel({
     if (pokeCount === lastPokeRef.current) return;
     lastPokeRef.current = pokeCount;
     lastActivityRef.current = Date.now();
+    lastUserRef.current = Date.now();
+    reengageStageRef.current = 0;
     const ouchMood = lastFeltRef.current;
     const style = ouchStyleFor(ouchMood);
     const ouch = pickOuch(characterId, lang, pokeCount, ouchMood);
@@ -208,19 +222,39 @@ export default function ChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pokeCount]);
 
-  // idle chatter: if the user is quiet too long, she speaks up in her own voice
+  // idle chatter + staged re-engagement (r.38): she never lets a quiet room
+  // die. Measured from the USER's last real action (message, poke, spoken
+  // word, mic tap) — her own lines don't restart the clock. Stage 0 (<2 min
+  // of user silence) = her usual persona/mood idle lines; stage 1 (2 min+) =
+  // direct "you've gone quiet" follow-ups that lean in harder; stage 2
+  // (5 min+) = one soft closer ("I'll be right here") and then she simply
+  // waits instead of nagging. Her lines never pile onto her own voice.
   useEffect(() => {
     const timer = setInterval(() => {
-      if (busyRef.current) return;
-      if (Date.now() - lastActivityRef.current < IDLE_AFTER_MS) return;
-      lastActivityRef.current = Date.now();
+      if (busyRef.current || isSpeaking()) return;
+      if (reengageStageRef.current >= 2) return; // closer said — she's waiting
+      const silent = Date.now() - lastUserRef.current;
+      if (silent < IDLE_AFTER_MS) return;
+      if (Date.now() - lastChatterAtRef.current < IDLE_AFTER_MS) return;
+      lastChatterAtRef.current = Date.now();
       // r.24 — idle chatter wears the last felt mood: after "I'm so tired"
       // her quiet moments turn soft ("borrow some of my energy") instead of
       // the default chirp; falls back to the persona bank when neutral.
       const idleMood = lastFeltRef.current;
-      const n = idleCounterRef.current++;
+      const feltHints = idleMood ? moodToHints(idleMood) : undefined;
+      const n = chatterCountRef.current++;
+      if (silent >= CLOSER_AFTER_MS) {
+        reengageStageRef.current = 2;
+        sayLocal(pickLine('reengageSoft', lang, n), feltHints);
+        return;
+      }
+      if (silent >= REENGAGE_AFTER_MS) {
+        reengageStageRef.current = 1;
+        sayLocal(pickLine('reengage', lang, n), feltHints);
+        return;
+      }
       const line = (idleMood ? pickMoodIdleLine(idleMood, lang, n) : undefined) ?? pickIdleLine(characterId, lang, n);
-      sayLocal(line, idleMood ? moodToHints(idleMood) : undefined);
+      sayLocal(line, feltHints);
     }, 5000);
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -233,6 +267,8 @@ export default function ChatPanel({
     setBusy(true);
     busyRef.current = true;
     lastActivityRef.current = Date.now();
+    lastUserRef.current = Date.now();
+    reengageStageRef.current = 0;
     nearBottomRef.current = true;
     setHistory((h) => [...h, { role: 'user', content: text }]);
     feedUtterance(text);
@@ -347,6 +383,8 @@ export default function ChatPanel({
       listeningRef.current = false;
       setListening(false);
       lastActivityRef.current = Date.now();
+      lastUserRef.current = Date.now();
+      reengageStageRef.current = 0;
       return;
     }
     if (!listenSupported()) {
@@ -369,6 +407,8 @@ export default function ChatPanel({
       onFinal: (said) => {
         bargeInArmed = true;
         lastActivityRef.current = Date.now();
+        lastUserRef.current = Date.now();
+        reengageStageRef.current = 0;
         // never lose a spoken message: if she's still generating, queue it in
         // the input box; otherwise answer right away
         if (busyRef.current) setInput((v) => (v ? `${v} ${said}` : said));

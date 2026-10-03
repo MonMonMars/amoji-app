@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CHARACTERS, LANGS, type Lang } from '../lib/prefs';
 import { CHARACTER_POSES, POKE_STYLE, pokeStyleFor, poseIdsFor } from '../lib/persona';
 import { CHARACTER_IDLE, CHARACTER_POKE, pickIdleLine, pickPokeLine } from '../lib/persona-chatter';
+import { CHATTER } from '../lib/chatter';
 import { VOICE_MATRIX } from '../lib/voice';
 import { IDLE_POSES, posesByIds, sampleIdlePoseFrom } from '@amoji/vrm-renderer';
 
@@ -108,6 +109,21 @@ describe('per-character persona coverage', () => {
         }
         for (const line of CHARACTER_POKE[c.id]![lang]!) {
           expect(POKE_HOOK.test(line.trim()), `${c.id}/${lang}: ${line}`).toBe(true);
+        }
+      }
+    }
+  });
+
+  // r2026-10-03.38 — the staged re-engagement banks follow the same rule:
+  // every follow-up ends with a hook, and both banks exist in every language.
+  it('re-engagement banks exist in every language and every line ends with a hook', () => {
+    for (const kind of ['reengage', 'reengageSoft'] as const) {
+      for (const lang of LANG_IDS) {
+        const lines = CHATTER[kind][lang];
+        expect(lines, `${kind}/${lang}`).toBeTruthy();
+        expect(lines.length, `${kind}/${lang} size`).toBeGreaterThanOrEqual(2);
+        for (const line of lines) {
+          expect(IDLE_HOOK.test(line.trim()), `${kind}/${lang}: ${line}`).toBe(true);
         }
       }
     }
