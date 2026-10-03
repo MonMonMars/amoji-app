@@ -56,6 +56,12 @@
 // follow-along routine: she demos each move from the movement library and
 // cues breathing/counts, one step per message, LLM-free even when the brain
 // is slow; "quit" bows out gracefully with a per-routine farewell.
+// r2026-10-04.47: warm-up dialogue — while her reply generates, ONE transient
+// placeholder bubble carries the wait: preloaded warm lines (praise, curiosity,
+// encouragement, in her own language, mood-tinted) play in it every few
+// seconds and are spoken aloud, so the load time reads as her reacting to
+// you, not a pause; the first stream token takes the bubble over and the real
+// reply commits in its place. Replaces the old thinking-out-loud interval.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh, triggerMove } from '../lib/companion';
 import { detectMove } from '../lib/moves';
@@ -66,7 +72,7 @@ import { pickIdleLine, pickPokeLine } from '../lib/persona-chatter';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
 import { pickOuch, ouchStyleFor } from '../lib/ouch';
 import { pickLaugh, laughStyleFor, LAUGH_RE } from '../lib/laugh';
-import { pickThinkPhrase } from '../lib/think-phrases';
+import { WARMUP_FIRST_MS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from '../lib/warmup';
 import { clientChat } from '../lib/client-chat';
 import { speak, stopSpeaking, speakThinkingFiller, sing } from '../lib/voice';
 import { pickSong, pickDuet } from '../lib/songs';
@@ -94,8 +100,6 @@ export interface ChatPanelProps {
 }
 
 const IDLE_AFTER_MS = 40_000;
-/** gap between thinking-out-loud phases while the LLM is still generating */
-const THINK_PHASE_MS = 4_500;
 /** user silence beyond this switches idle chatter to direct re-engagement */
 const REENGAGE_AFTER_MS = 110_000;
 /** user silence beyond this gets the soft closer — once, then she waits */
@@ -129,6 +133,10 @@ export default function ChatPanel({
   const micModeRef = useRef(false);
   const micStopRef = useRef<(() => void) | null>(null);
   const laughCountRef = useRef(0);
+  // r.47 — the last assistant bubble is a TRANSIENT placeholder while she
+  // waits for her brain: warm-up lines and stream tokens paint it, and the
+  // final reply commits in its place (never appended on top of it)
+  const transientRef = useRef(false);
   // r.42 — together-mode state: a running mini-game, or a running duet
   const gameRef = useRef<GameState | null>(null);
   const duetRef = useRef<{ lines: string[]; idx: number } | null>(null);
@@ -432,15 +440,42 @@ export default function ChatPanel({
     // "hmm…" thinking moment while the reply generates — mood-tinted (r.24):
     // a sad user's first hmm is softer than a happy one's (reply speech cuts it off)
     speakThinkingFiller(characterId, lang, felt?.mood);
-    // thinking-out-loud phases — while the LLM is slow she keeps musing in her
-    // own voice, each new phase replacing the previous one; the sequence wears
-    // the felt mood too (r.24), and felt hints/intensity shape her prosody
-    let thinkPhase = 0;
-    const thinkTimer = setInterval(() => {
-      const phrase = pickThinkPhrase(characterId, lang, thinkPhase++, felt?.mood);
-      notifySpeaking(phrase);
-      speak(phrase, characterId, lang, feltHints ?? { confusion: 0.4, neutral: 0.3 }, undefined, felt?.intensity);
-    }, THINK_PHASE_MS);
+    // r.47 — ONE transient placeholder bubble carries the whole wait. It
+    // starts as '…'; preloaded warm-up lines (praise, curiosity,
+    // encouragement — her language, her felt mood) replace it every few
+    // seconds and are spoken aloud, so the load time reads as her reacting
+    // to you; the first stream token takes the bubble over, and the final
+    // reply commits in its place.
+    setHistory((h) => [...h, { role: 'assistant', content: '…' }]);
+    transientRef.current = true;
+    let warmCount = 0;
+    let warmTimer: ReturnType<typeof setTimeout>;
+    const playWarm = () => {
+      if (warmCount >= WARMUP_MAX_LINES || !transientRef.current) return;
+      const line = pickWarmupLine(characterId, lang, warmCount, text, felt?.mood);
+      warmCount += 1;
+      setHistory((h) => {
+        const last = h.length - 1;
+        const tail = h[last];
+        if (!tail || tail.role !== 'assistant') return h;
+        return [...h.slice(0, last), { ...tail, content: line }];
+      });
+      notifySpeaking(line);
+      speak(line, characterId, lang, feltHints ?? { joy: 0.5, neutral: 0.4 }, undefined, felt?.intensity);
+      warmTimer = setTimeout(playWarm, WARMUP_GAP_MS);
+    };
+    warmTimer = setTimeout(playWarm, WARMUP_FIRST_MS);
+    // one exit path for every outcome: the final reply (or the failure note)
+    // takes the placeholder's place instead of stacking a second bubble
+    const commitReply = (content: string) => {
+      const replace = transientRef.current;
+      transientRef.current = false;
+      setHistory((h) => {
+        const tail = h[h.length - 1];
+        if (replace && tail?.role === 'assistant') return [...h.slice(0, -1), { role: 'assistant', content }];
+        return [...h, { role: 'assistant', content }];
+      });
+    };
     // learn from the user's words, then inject what she remembers into her prompt
     onMemCountRef.current?.(memorySummaryCount(rememberExchange(text)));
     const memory = buildMemoryBlock(lang);
@@ -464,19 +499,21 @@ export default function ChatPanel({
       onMemCountRef.current?.(memorySummaryCount());
       feedUtterance(reply);
       const spoken = speakReply(text, reply, replyHints, felt?.intensity, felt?.mood);
-      setHistory((h) => [...h, { role: 'assistant', content: spoken }]);
+      commitReply(spoken);
       answered = true;
     } catch {
       // no server (e.g. static GitHub Pages build) — free keyless LLM from the browser
       try {
-        // stream the reply live into a placeholder bubble — first tokens show
-        // up immediately instead of after the whole generation finishes
-        setHistory((h) => [...h, { role: 'assistant', content: '…' }]);
+        // stream the reply live into the placeholder bubble — first tokens
+        // show up immediately instead of after the whole generation finishes
         const r = await clientChat([...history, { role: 'user', content: text }], {
           language: lang,
           persona,
           memory,
           onPartial: (partial) => {
+            // r.47 — the real stream is painting now: the warm-up loop stands down
+            clearTimeout(warmTimer);
+            warmCount = WARMUP_MAX_LINES;
             // hide a half-typed [emotion:{...}] tag so it never flashes on screen
             const clean = partial
               .replace(/\[emotion:[^\]]*$/, '')
@@ -498,7 +535,7 @@ export default function ChatPanel({
         onMemCountRef.current?.(memorySummaryCount());
         feedUtterance(r.reply);
         const spoken = speakReply(text, r.reply, replyHints, felt?.intensity, felt?.mood);
-        setHistory((h) => [...h.slice(0, -1), { role: 'assistant', content: spoken }]);
+        commitReply(spoken);
         answered = true;
       } catch {
         // drop the placeholder only if nothing ever streamed; partial text stays
@@ -508,8 +545,8 @@ export default function ChatPanel({
         });
       }
     } finally {
-      clearInterval(thinkTimer); // reply (or failure) is here — stop the musing
-      if (!answered) setHistory((h) => [...h, { role: 'assistant', content: '… (connection hiccup — I’m still here)' }]);
+      clearTimeout(warmTimer); // reply (or failure) is here — stop the warm-up
+      if (!answered) commitReply('… (connection hiccup — I’m still here)');
       setBusy(false);
       busyRef.current = false;
       lastActivityRef.current = Date.now();
