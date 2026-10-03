@@ -7,6 +7,7 @@ import { notifySpeaking, isSpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
 import { pickIdleLine, pickPokeLine } from '../lib/persona-chatter';
 import { pickOuch } from '../lib/ouch';
+import { pickThinkPhrase } from '../lib/think-phrases';
 import { clientChat } from '../lib/client-chat';
 import { speak, stopSpeaking, speakThinkingFiller } from '../lib/voice';
 import { buildDailyGreeting, buildMemoryBlock, memorySummaryCount, recordVisit, rememberExchange } from '../lib/memory';
@@ -30,6 +31,8 @@ export interface ChatPanelProps {
 }
 
 const IDLE_AFTER_MS = 40_000;
+/** gap between thinking-out-loud phases while the LLM is still generating */
+const THINK_PHASE_MS = 4_500;
 
 export default function ChatPanel({
   characterName = 'Jun',
@@ -148,6 +151,15 @@ export default function ChatPanel({
     stopSpeaking();
     // "hmm…" thinking moment while the reply generates (reply speech cuts it off)
     speakThinkingFiller(characterId, lang);
+    // thinking-out-loud phases — while the LLM is slow she keeps musing in her
+    // own voice (um…… → let me think… → let me search the internet… please
+    // wait → uuuuummmm), each new phase replacing the previous one
+    let thinkPhase = 0;
+    const thinkTimer = setInterval(() => {
+      const phrase = pickThinkPhrase(characterId, lang, thinkPhase++);
+      notifySpeaking(phrase);
+      speak(phrase, characterId, lang, { confusion: 0.4, neutral: 0.3 });
+    }, THINK_PHASE_MS);
     // learn from the user's words, then inject what she remembers into her prompt
     onMemCountRef.current?.(memorySummaryCount(rememberExchange(text)));
     const memory = buildMemoryBlock(lang);
@@ -204,6 +216,7 @@ export default function ChatPanel({
         });
       }
     } finally {
+      clearInterval(thinkTimer); // reply (or failure) is here — stop the musing
       if (!answered) setHistory((h) => [...h, { role: 'assistant', content: '… (connection hiccup — I’m still here)' }]);
       setBusy(false);
       busyRef.current = false;
