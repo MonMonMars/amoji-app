@@ -1,17 +1,21 @@
 'use client';
 // Chat room panel — boxless fading history, hero mic with the emotion orb.
+// r2026-10-03.13: ChatGPT-style voice mode (mic stays open, real-speech
+// barge-in, typing still live), a clean white mic icon when idle, and
+// giggle + whole-body laugh reactions whenever something's funny.
 import { useEffect, useRef, useState } from 'react';
-import { feedUtterance, applyLlmHints } from '../lib/companion';
+import { feedUtterance, applyLlmHints, triggerLaugh } from '../lib/companion';
 import { loadHistory, saveHistory } from '../lib/companion-store';
 import { notifySpeaking, isSpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
 import { pickIdleLine, pickPokeLine } from '../lib/persona-chatter';
 import { pickOuch } from '../lib/ouch';
+import { pickLaugh, LAUGH_RE } from '../lib/laugh';
 import { pickThinkPhrase } from '../lib/think-phrases';
 import { clientChat } from '../lib/client-chat';
 import { speak, stopSpeaking, speakThinkingFiller } from '../lib/voice';
 import { buildDailyGreeting, buildMemoryBlock, memorySummaryCount, recordVisit, rememberExchange } from '../lib/memory';
-import { listenOnce, listenSupported } from '../lib/listen';
+import { listenContinuous, listenSupported } from '../lib/listen';
 import { t, type Lang } from '../lib/prefs';
 import type { ChatStatus } from '../lib/status';
 import EmotionOrb from './EmotionOrb';
@@ -56,7 +60,9 @@ export default function ChatPanel({
   const idleCounterRef = useRef(0);
   const greetedRef = useRef(false);
   const listeningRef = useRef(false);
-  const recStopRef = useRef<(() => void) | null>(null);
+  const micModeRef = useRef(false);
+  const micStopRef = useRef<(() => void) | null>(null);
+  const laughCountRef = useRef(0);
   const onStatusRef = useRef(onStatus);
   onStatusRef.current = onStatus;
   const onMemCountRef = useRef(onMemCount);
@@ -71,6 +77,8 @@ export default function ChatPanel({
     window.addEventListener('amoji:clear-history', clear);
     return () => window.removeEventListener('amoji:clear-history', clear);
   }, []);
+  // never leave the mic running if the panel unmounts
+  useEffect(() => () => { micStopRef.current?.(); }, []);
   useEffect(() => {
     if (nearBottomRef.current) {
       scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -100,6 +108,22 @@ export default function ChatPanel({
     speak(text, characterId, lang, hints, lead);
     if (hints) applyLlmHints(hints);
     setHistory((h) => [...h, { role: 'assistant', content: text }]);
+  };
+
+  // speak a just-arrived reply; if the exchange was funny, giggle first and
+  // let the 3D body laugh along (squash-bounce overlay in CompanionCanvas)
+  const speakReply = (userText: string, reply: string, hints?: Record<string, number>) => {
+    const funny = LAUGH_RE.test(userText) || LAUGH_RE.test(reply);
+    if (!funny) {
+      notifySpeaking(reply);
+      speak(reply, characterId, lang, hints);
+      return;
+    }
+    triggerLaugh();
+    applyLlmHints({ joy: 0.9 });
+    const giggle = pickLaugh(characterId, lang, laughCountRef.current++);
+    notifySpeaking(`${giggle} ${reply}`);
+    speak(reply, characterId, lang, { ...(hints ?? {}), joy: 0.9 }, { text: giggle, pitch: 0.28, rate: 0.22 });
   };
 
   // startup: first a welcome line; if it's a NEW day, the second line is her
@@ -175,8 +199,7 @@ export default function ChatPanel({
       if (data.emotionHints) applyLlmHints(data.emotionHints);
       const reply = data.reply || '…';
       feedUtterance(reply);
-      notifySpeaking(reply);
-      speak(reply, characterId, lang, data.emotionHints);
+      speakReply(text, reply, data.emotionHints);
       setHistory((h) => [...h, { role: 'assistant', content: reply }]);
       answered = true;
     } catch {
@@ -204,8 +227,7 @@ export default function ChatPanel({
         });
         applyLlmHints(r.emotionHints);
         feedUtterance(r.reply);
-        notifySpeaking(r.reply);
-        speak(r.reply, characterId, lang, r.emotionHints);
+        speakReply(text, r.reply, r.emotionHints);
         setHistory((h) => [...h.slice(0, -1), { role: 'assistant', content: r.reply }]);
         answered = true;
       } catch {
@@ -225,10 +247,18 @@ export default function ChatPanel({
   };
 
   // ChatGPT-style hero mic — one button does everything:
-  // tap to talk (barge-in: cuts her voice off mid-sentence), tap again to send
-  const mic = async () => {
-    if (listeningRef.current) {
-      recStopRef.current?.();
+  // tap → voice mode ON: the mic stays open and keeps listening; the moment
+  // REAL talking is detected (the recognizer only fires on actual speech, so
+  // background noise is ignored) her voice is cut instantly. Typing stays
+  // live the whole time. tap again → voice mode OFF.
+  const mic = () => {
+    if (micModeRef.current) {
+      micModeRef.current = false;
+      micStopRef.current?.();
+      micStopRef.current = null;
+      listeningRef.current = false;
+      setListening(false);
+      lastActivityRef.current = Date.now();
       return;
     }
     if (!listenSupported()) {
@@ -237,19 +267,33 @@ export default function ChatPanel({
         : 'Speech input is not supported in this browser — try the latest Chrome or Safari.');
       return;
     }
+    micModeRef.current = true;
     listeningRef.current = true;
     setListening(true);
     stopSpeaking(); // interrupt her mid-sentence, exactly like ChatGPT voice
-    try {
-      const text = await listenOnce(lang, { onStart: (rec) => { recStopRef.current = rec.stop; } });
-      if (text) await send(text);
-    } catch { /* no speech or error — stay quiet */ }
-    finally {
-      listeningRef.current = false;
-      recStopRef.current = null;
-      setListening(false);
-      lastActivityRef.current = Date.now();
-    }
+    let bargeInArmed = true; // first real speech of a burst cuts her off
+    micStopRef.current = listenContinuous(lang, {
+      onSpeechStart: () => {
+        if (!bargeInArmed) return;
+        bargeInArmed = false;
+        stopSpeaking(); // the user is really talking — cut her voice NOW
+      },
+      onFinal: (said) => {
+        bargeInArmed = true;
+        lastActivityRef.current = Date.now();
+        // never lose a spoken message: if she's still generating, queue it in
+        // the input box; otherwise answer right away
+        if (busyRef.current) setInput((v) => (v ? `${v} ${said}` : said));
+        else void send(said);
+      },
+      onEnd: () => {
+        // mic error / permission denied — drop out of voice mode
+        micModeRef.current = false;
+        micStopRef.current = null;
+        listeningRef.current = false;
+        setListening(false);
+      },
+    });
   };
 
   return (
@@ -288,7 +332,7 @@ export default function ChatPanel({
       {/* input row — ChatGPT-style hero mic with the living emotion orb */}
       <div className="flex w-full items-center gap-2.5">
         <button
-          onClick={() => void mic()}
+          onClick={() => mic()}
           title={t(lang, 'micTitle')}
           className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border bg-black/50 backdrop-blur-md transition hover:bg-black/70 active:scale-95"
           style={
@@ -306,11 +350,12 @@ export default function ChatPanel({
               style={{ borderTopColor: `${accent}d0`, borderRightColor: `${accent}60` }}
             />
           )}
-          <EmotionOrb size={52} accent={accent} listening={listening} />
+          {/* idle = a clean white mic icon only; live = the soft emotion orb */}
+          {(listening || speakingNow) && <EmotionOrb size={52} accent={accent} listening={listening} />}
           {!listening && !speakingNow && (
             <svg
               viewBox="0 0 24 24"
-              className="pointer-events-none absolute h-6 w-6 text-white/90"
+              className="pointer-events-none h-6 w-6 text-white"
               fill="none"
               aria-hidden
             >

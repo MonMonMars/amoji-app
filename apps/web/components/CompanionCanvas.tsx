@@ -7,7 +7,7 @@ import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
 import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-vrm-animation';
 import type { VRMAnimation } from '@pixiv/three-vrm-animation';
 import { mapFrameToVrm, posesByIds, sampleIdlePoseFrom } from '@amoji/vrm-renderer';
-import { tickEngine } from '../lib/companion';
+import { tickEngine, lastLaughAt } from '../lib/companion';
 import { characterById } from '../lib/prefs';
 import { pokeStyleFor, poseIdsFor } from '../lib/persona';
 import { sampleSpeech } from '../lib/speech';
@@ -306,19 +306,42 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
         const em = vrm.expressionManager;
         if (em) {
           // poke reaction: whole-body flinch — shoved back away from the
-          // camera, knees dip, squash-bounce, then a spring wobble home (~900ms)
+          // camera, knees dip, squash-bounce, then a spring wobble home (~900ms).
+          // laugh reaction: rhythmic belly-bounce giggle, head thrown back (~1.6s).
+          // Both are transform overlays so they can also play together.
           const pokeAge = now - pokeAt;
           const boost = pokeAge < 900 ? 1 - pokeAge / 900 : 0;
-          if (boost > 0) {
-            const t = 1 - boost; // 0→1 through the reaction
-            const arc = Math.sin(t * Math.PI); // squash-bounce belly
-            const press = Math.min(t / 0.07, 1) * Math.exp(-Math.max(0, t - 0.07) * 4); // shove out, ease home
-            const wobble = 0.04 * Math.exp(-t * 4.5) * Math.sin(t * 26); // spring settle
-            vrm.scene.position.z = -(0.3 * press + wobble); // pushed back, away from the camera
-            vrm.scene.position.y = -0.06 * arc; // knees dip
-            vrm.scene.scale.set(1 + 0.07 * arc, 1 - poke.squash * 1.4 * arc, 1 + 0.05 * arc);
-            vrm.scene.rotation.x = -0.16 * arc; // lean back from the poke
-            vrm.scene.rotation.y = (TWIST_AMOUNT[poke.twist] ?? 0.05) * 1.6 * Math.sin(t * Math.PI * 2);
+          const laughAge = now - lastLaughAt();
+          const laugh = laughAge >= 0 && laughAge < 1600 ? 1 - laughAge / 1600 : 0;
+          if (boost > 0 || laugh > 0) {
+            let px = 0, py = 0, pz = 0;
+            let sx = 1, sy = 1, sz = 1;
+            let rotX = 0, rotY = 0;
+            if (boost > 0) {
+              const t = 1 - boost; // 0→1 through the reaction
+              const arc = Math.sin(t * Math.PI); // squash-bounce belly
+              const press = Math.min(t / 0.07, 1) * Math.exp(-Math.max(0, t - 0.07) * 4); // shove out, ease home
+              const wobble = 0.04 * Math.exp(-t * 4.5) * Math.sin(t * 26); // spring settle
+              pz -= 0.3 * press + wobble; // pushed back, away from the camera
+              py -= 0.06 * arc; // knees dip
+              sx += 0.07 * arc;
+              sy -= poke.squash * 1.4 * arc;
+              sz += 0.05 * arc;
+              rotX += -0.16 * arc; // lean back from the poke
+              rotY += (TWIST_AMOUNT[poke.twist] ?? 0.05) * 1.6 * Math.sin(t * Math.PI * 2);
+            }
+            if (laugh > 0) {
+              const lt = 1 - laugh; // 0→1 through the giggle
+              const bounce = Math.abs(Math.sin(lt * Math.PI * 4.5)) * Math.exp(-lt * 2.0);
+              py -= 0.035 * bounce;
+              sx += 0.05 * bounce;
+              sy -= 0.08 * bounce;
+              sz += 0.05 * bounce;
+              rotX += -0.12 * Math.sin(lt * Math.PI); // lean back laughing
+            }
+            vrm.scene.position.set(px, py, pz);
+            vrm.scene.scale.set(sx, sy, sz);
+            vrm.scene.rotation.set(rotX, rotY, 0);
           } else {
             vrm.scene.position.set(0, 0, 0);
             vrm.scene.scale.set(1, 1, 1);
@@ -330,7 +353,8 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           const duck = sp ? 1 - 0.4 * sp.duck : 1;
           const v = (x: number) => clamp(x * duck + (sp ? 0 : 0), 0, 1);
           const pokeBoost = 0.9 * boost;
-          em.setValue('happy', v(Math.max(targets.blendShape.joy, targets.blendShape.fun)) + (poke.face === 'happy' ? pokeBoost : 0));
+          const laughBoost = 0.85 * laugh; // full smile while the giggles play
+          em.setValue('happy', clamp(v(Math.max(targets.blendShape.joy, targets.blendShape.fun)) + (poke.face === 'happy' ? pokeBoost : 0) + laughBoost, 0, 1));
           em.setValue('angry', v(targets.blendShape.angry) + (poke.face === 'angry' ? pokeBoost : 0));
           em.setValue('sad', v(targets.blendShape.sorrow));
           em.setValue('surprised', poke.face === 'surprised'
