@@ -24,6 +24,7 @@ export default function StatusPlate({
   lang,
   status,
   memCount,
+  kid,
   onOpenSelect,
 }: {
   name: string;
@@ -32,6 +33,8 @@ export default function StatusPlate({
   lang: Lang;
   status: ChatStatus;
   memCount: number;
+  /** Kid Mode is on — show the 🧸 badge */
+  kid?: boolean;
   onOpenSelect: () => void;
 }) {
   const [mood, setMood] = useState<MoodId>('neutral');
@@ -60,6 +63,7 @@ export default function StatusPlate({
       <span className="text-left leading-tight">
         <span className="flex items-center gap-1.5 text-sm font-semibold text-white">
           {name}
+          {kid && <span title="Kid mode">🧸</span>}
           {memCount > 0 && (
             <span className="rounded-full bg-white/15 px-1.5 text-[10px] font-normal text-white/70">🧠{memCount}</span>
           )}

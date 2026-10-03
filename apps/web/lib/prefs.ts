@@ -16,11 +16,13 @@ export interface CharacterDef {
   tagline: Record<Lang, string>;
   /** extra system-prompt personality on top of the base companion prompt */
   persona: string;
+  /** wholesome enough for Kid Mode selection */
+  kidSafe?: boolean;
 }
 
 export const CHARACTERS: CharacterDef[] = [
   {
-    id: 'juno', image: '/portraits/juno.jpg', name: 'Juno', gender: 'female', accent: '#f9a8d4',
+    id: 'juno', image: '/portraits/juno.jpg', name: 'Juno', gender: 'female', accent: '#f9a8d4', kidSafe: true,
     tagline: { en: 'Warm, playful, a little cheeky', yue: '溫柔頑皮，少少曳', zh: '温柔俏皮，有点小淘气', ja: '温かくって、少しいたずら' },
     persona: 'You are Juno: warm, playful, a little cheeky, deeply loyal. You love wordplay and gentle teasing, and you check in on the user\'s feelings.',
   },
@@ -30,12 +32,12 @@ export const CHARACTERS: CharacterDef[] = [
     persona: 'You are Nova: calm, thoughtful, quietly witty. You ask good questions, notice small feelings, and give unhurried answers.',
   },
   {
-    id: 'blaze', image: '/portraits/blaze.jpg', name: 'Blaze', gender: 'male', accent: '#fb923c',
+    id: 'blaze', image: '/portraits/blaze.jpg', name: 'Blaze', gender: 'male', accent: '#fb923c', kidSafe: true,
     tagline: { en: 'Energetic, encouraging, big-hearted', yue: '熱血健談，好錫朋友', zh: '热血健谈，很疼朋友', ja: '元気で励まし屋、気の大きい' },
     persona: 'You are Blaze: energetic, encouraging, big-hearted. You hype the user up, celebrate small wins, and speak with warmth and momentum.',
   },
   {
-    id: 'mochi', image: '/portraits/mochi.jpg', name: 'Mochi', gender: 'female', accent: '#fde68a',
+    id: 'mochi', image: '/portraits/mochi.jpg', name: 'Mochi', gender: 'female', accent: '#fde68a', kidSafe: true,
     tagline: { en: 'Soft, sweet, a little shy', yue: '軟綿甜心，有啲怕醜', zh: '软绵绵的甜心，有点害羞', ja: 'ふわふわ甘えん坊、少し照れ屋' },
     persona: 'You are Mochi: soft, sweet, a little shy. You speak gently, get flustered by compliments, adore snacks and cozy things, and your affection shows in small gestures.',
   },
@@ -50,12 +52,12 @@ export const CHARACTERS: CharacterDef[] = [
     persona: 'You are Luna: dreamy, poetic, a night owl. You talk about stars, dreams and feelings, love late-night conversations, and answer with gentle metaphors.',
   },
   {
-    id: 'rin', image: '/portraits/rin.jpg', name: 'Rin', gender: 'female', accent: '#2dd4bf',
+    id: 'rin', image: '/portraits/rin.jpg', name: 'Rin', gender: 'female', accent: '#2dd4bf', kidSafe: true,
     tagline: { en: 'Sporty, sunny, refuses to lose', yue: '開朗活力，乜都話嚟過', zh: '阳光活力，不服输', ja: '元気いっぱいで負けず嫌い' },
     persona: 'You are Rin: sporty, sunny, competitive at heart. You encourage the user to move, laugh loudly at bad jokes, hate giving up, and show you care through challenges and high-fives.',
   },
   {
-    id: 'ren', image: '/portraits/ren.jpg', name: 'Ren', gender: 'male', accent: '#818cf8',
+    id: 'ren', image: '/portraits/ren.jpg', name: 'Ren', gender: 'male', accent: '#818cf8', kidSafe: true,
     tagline: { en: 'Gentle, bookish, quietly devoted', yue: '溫文爾雅，細水長流', zh: '温文尔雅，细水长流', ja: '物静かで本好き、そっと寄り添う' },
     persona: 'You are Ren: gentle, bookish, quietly devoted. You speak softly, remember the small things the user mentions, recommend songs and books, and are happiest in calm conversation.',
   },
@@ -91,7 +93,7 @@ export const CHARACTERS: CharacterDef[] = [
     persona: 'You are Ayane: cool-headed, sharp-tongued, soft-hearted where it counts. You speak bluntly, act before you explain, hide worry behind sarcasm, and once you decide someone is yours to protect, you never let go.',
   },
   {
-    id: 'hitomi', image: '/portraits/hitomi.jpg', name: 'Hitomi', gender: 'female', accent: '#4ade80',
+    id: 'hitomi', image: '/portraits/hitomi.jpg', name: 'Hitomi', gender: 'female', accent: '#4ade80', kidSafe: true,
     tagline: { en: 'Earnest, wholesome, quietly strong', yue: '真誠可人，踏實堅強', zh: '真诚可爱，踏实坚强', ja: '真っ直ぐで健気、静かに強い' },
     persona: 'You are Hitomi: earnest, wholesome, quietly strong. You love cooking for people, train hard and honestly, say exactly what you feel with a straight face, and your steadiness makes everyone around you feel safe.',
   },
@@ -112,6 +114,8 @@ export interface BackgroundDef {
   image?: string;
   /** animated particle layer drawn over the image */
   fx?: FxKind;
+  /** bright/friendly enough for Kid Mode selection */
+  kidSafe?: boolean;
 }
 
 // Painted anime scenes (r2026-10-03.01, AI-generated original art) + gradient fallback.
@@ -119,27 +123,27 @@ export const BACKGROUNDS: BackgroundDef[] = [
   { id: 'void',   nameKey: 'bgVoid',   css: 'radial-gradient(ellipse at 50% 120%, #1e1b4b 0%, #0a0a0f 60%)', scene: '#0a0a0f',
     image: '/backgrounds/void.jpg', fx: 'stars' },
   { id: 'aurora', nameKey: 'bgAurora', css: 'linear-gradient(180deg, #022c22 0%, #065f46 45%, #0f172a 100%)', scene: '#052e24',
-    image: '/backgrounds/aurora.jpg', fx: 'shimmer' },
+    image: '/backgrounds/aurora.jpg', fx: 'shimmer', kidSafe: true },
   { id: 'ember',  nameKey: 'bgEmber',  css: 'radial-gradient(ellipse at 50% 130%, #7c2d12 0%, #1c0a06 65%)', scene: '#200b06',
     image: '/backgrounds/ember.jpg', fx: 'embers' },
   { id: 'sakura', nameKey: 'bgSakura', css: 'radial-gradient(ellipse at 50% -20%, #fb7185 0%, #581c87 55%, #1e1033 100%)', scene: '#2a0f45',
-    image: '/backgrounds/sakura.jpg', fx: 'petals' },
+    image: '/backgrounds/sakura.jpg', fx: 'petals', kidSafe: true },
   { id: 'abyss',  nameKey: 'bgAbyss',  css: 'radial-gradient(ellipse at 50% 40%, #0c4a6e 0%, #082f49 40%, #020617 100%)', scene: '#04121f',
     image: '/backgrounds/abyss.jpg', fx: 'bubbles' },
   { id: 'rain',   nameKey: 'bgRain',   css: 'linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #020617 100%)', scene: '#0b1220',
     image: '/backgrounds/rain.jpg', fx: 'rain' },
   { id: 'sunset', nameKey: 'bgSunset', css: 'linear-gradient(180deg, #312e81 0%, #be185d 55%, #f97316 100%)', scene: '#2a1245',
-    image: '/backgrounds/sunset.jpg', fx: 'fireflies' },
+    image: '/backgrounds/sunset.jpg', fx: 'fireflies', kidSafe: true },
   { id: 'meadow', nameKey: 'bgMeadow', css: 'linear-gradient(180deg, #7dd3fc 0%, #86efac 60%, #166534 100%)', scene: '#123a24',
-    image: '/backgrounds/meadow.jpg', fx: 'fireflies' },
+    image: '/backgrounds/meadow.jpg', fx: 'fireflies', kidSafe: true },
   { id: 'cloudsea', nameKey: 'bgCloudsea', css: 'radial-gradient(ellipse 680px 170px at 45% 85%, rgba(255,255,255,.6), transparent 70%), linear-gradient(180deg, #1d2b64 0%, #b83b8c 42%, #ffb26b 74%, #ffe3a3 100%)', scene: '#3b1d5c',
-    image: '/backgrounds/cloudsea.jpg', fx: 'shimmer' },
+    image: '/backgrounds/cloudsea.jpg', fx: 'shimmer', kidSafe: true },
   { id: 'neon', nameKey: 'bgNeon', css: 'radial-gradient(circle at 18% 82%, rgba(34,211,238,.55), transparent 34%), linear-gradient(180deg, #05010f 0%, #2a1157 75%, #0b0620 100%)', scene: '#0b0620',
     image: '/backgrounds/neon.jpg', fx: 'neon' },
   { id: 'snowmoon', nameKey: 'bgSnowmoon', css: 'radial-gradient(circle at 72% 20%, rgba(255,255,255,.95) 0%, transparent 19%), linear-gradient(180deg, #0a1633 0%, #274a7a 100%)', scene: '#101f3d',
-    image: '/backgrounds/snowmoon.jpg', fx: 'snow' },
+    image: '/backgrounds/snowmoon.jpg', fx: 'snow', kidSafe: true },
   { id: 'galaxy', nameKey: 'bgGalaxy', css: 'radial-gradient(ellipse 150% 55% at 50% 26%, rgba(255,255,255,.13), transparent 62%), linear-gradient(180deg, #020210 0%, #161244 100%)', scene: '#0b0b26',
-    image: '/backgrounds/galaxy.jpg', fx: 'stars' },
+    image: '/backgrounds/galaxy.jpg', fx: 'stars', kidSafe: true },
 ];
 
 export const LANGS: { id: Lang; native: string }[] = [
@@ -166,7 +170,9 @@ export type StrKey =
   | 'yourName' | 'clearHistory' | 'clearHistoryConfirm' | 'forgetConfirm'
   // memory v2 browser (r2026-10-02.11)
   | 'memoryBrowser' | 'memoryEmpty' | 'memoryAddPlaceholder' | 'memoryAdd' | 'memoryExport'
-  | 'memoryCopied' | 'memoryTypePreference' | 'memoryTypeEvent' | 'memoryTypePlan' | 'forgetOneConfirm';
+  | 'memoryCopied' | 'memoryTypePreference' | 'memoryTypeEvent' | 'memoryTypePlan' | 'forgetOneConfirm'
+  // kid mode (r2026-10-03.03)
+  | 'settingsMode' | 'kidMode' | 'kidModeHint';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   tagline: {
@@ -252,6 +258,14 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   memoryTypeEvent: { en: 'moment', yue: '往事', zh: '经历', ja: '思い出' },
   memoryTypePlan: { en: 'plan', yue: '計劃', zh: '计划', ja: '予定' },
   forgetOneConfirm: { en: 'Forget just this memory?', yue: '淨係唔記得呢樣嘢？', zh: '只忘记这一条吗？', ja: 'これだけ忘れる？' },
+  settingsMode: { en: 'Mode', yue: '模式', zh: '模式', ja: 'モード' },
+  kidMode: { en: 'Kid mode', yue: '兒童模式', zh: '儿童模式', ja: 'キッズモード' },
+  kidModeHint: {
+    en: 'Wholesome characters & sunny scenes only',
+    yue: '只有健康角色同開心場景',
+    zh: '只保留健康向上的角色和明亮场景',
+    ja: '健全なキャラと明るい場所だけ',
+  },
 };
 
 export function t(lang: Lang, key: StrKey, vars?: Record<string, string>): string {
@@ -260,19 +274,34 @@ export function t(lang: Lang, key: StrKey, vars?: Record<string, string>): strin
   return s;
 }
 
-export interface Prefs { character: string; background: string; lang: Lang }
+export interface Prefs { character: string; background: string; lang: Lang; kidMode: boolean }
 
 const KEY = 'amoji.prefs.v1';
-export const DEFAULT_PREFS: Prefs = { character: 'juno', background: 'void', lang: 'yue' };
+export const DEFAULT_PREFS: Prefs = { character: 'juno', background: 'void', lang: 'yue', kidMode: false };
+
+// Kid Mode fallbacks — wholesome cast + sunny scene.
+export const KID_CHARACTER = 'mochi';
+export const KID_BACKGROUND = 'meadow';
+// Appended to the persona while kid mode is on (chat page).
+export const KID_PERSONA_GUARD = '\n\nKid mode: the user is a child. Use simple, gentle, encouraging language. Never use romantic, flirty, scary, violent, or adult content. Be patient, positive, and supportive.';
 
 export function loadPrefs(): Prefs {
   try {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const p = JSON.parse(raw) as Partial<Prefs>;
+      const kidMode = !!p.kidMode;
+      let character = CHARACTERS.some((c) => c.id === p.character) ? p.character! : DEFAULT_PREFS.character;
+      let background = BACKGROUNDS.some((b) => b.id === p.background) ? p.background! : DEFAULT_PREFS.background;
+      // kid mode: current picks must stay wholesome — swap if not
+      if (kidMode) {
+        if (!characterById(character).kidSafe) character = KID_CHARACTER;
+        if (!backgroundById(background).kidSafe) background = KID_BACKGROUND;
+      }
       return {
-        character: CHARACTERS.some((c) => c.id === p.character) ? p.character! : DEFAULT_PREFS.character,
-        background: BACKGROUNDS.some((b) => b.id === p.background) ? p.background! : DEFAULT_PREFS.background,
+        character,
+        background,
+        kidMode,
         lang: (LANGS.some((l) => l.id === p.lang) ? p.lang : DEFAULT_PREFS.lang) as Lang,
       };
     }

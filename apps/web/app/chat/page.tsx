@@ -10,7 +10,7 @@ import FallbackNotice from '../../components/FallbackNotice';
 import SceneBackdrop from '../../components/SceneBackdrop';
 import SettingsSheet from '../../components/SettingsSheet';
 import StatusPlate from '../../components/StatusPlate';
-import { usePrefs, characterById, backgroundById } from '../../lib/prefs';
+import { usePrefs, characterById, backgroundById, KID_PERSONA_GUARD } from '../../lib/prefs';
 import { clearMemory, loadMemory, memorySummaryCount } from '../../lib/memory';
 import type { ChatStatus } from '../../lib/status';
 
@@ -60,6 +60,7 @@ export default function Chat() {
           lang={prefs.lang}
           status={status}
           memCount={memCount}
+          kid={prefs.kidMode}
           onOpenSelect={() => router.push('/change')}
         />
         <button
@@ -88,7 +89,7 @@ export default function Chat() {
           characterId={character.id}
           lang={prefs.lang}
           accent={character.accent}
-          persona={character.persona}
+          persona={prefs.kidMode ? `${character.persona}\n\n${KID_PERSONA_GUARD}` : character.persona}
           pokeCount={pokeCount}
           onStatus={setStatus}
           onMemCount={setMemCount}

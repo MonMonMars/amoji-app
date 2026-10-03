@@ -40,3 +40,14 @@ describe('scene roster', () => {
     expect(backgroundById(DEFAULT_PREFS.background).id).toBe(DEFAULT_PREFS.background);
   });
 });
+
+describe('kid mode roster', () => {
+  it('at least 4 wholesome characters incl. mochi, and 4 sunny scenes incl. meadow', () => {
+    const safe = CHARACTERS.filter((c) => c.kidSafe);
+    expect(safe.length).toBeGreaterThanOrEqual(4);
+    expect(safe.map((c) => c.id)).toContain('mochi');
+    const sunny = BACKGROUNDS.filter((b) => b.kidSafe);
+    expect(sunny.length).toBeGreaterThanOrEqual(4);
+    expect(sunny.map((b) => b.id)).toContain('meadow');
+  });
+});
