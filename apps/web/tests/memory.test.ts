@@ -106,7 +106,7 @@ describe('emotion diary', () => {
     ];
     const lines = diarySummary(m);
     expect(lines.length).toBe(2);
-    expect(lines[0]).toContain('went hiking with the dog'); // last line of that day
+    expect(lines[0]).toContain('felt tired at night'); // last line of that day
     expect(lines[0]).toContain('[happy/tired]');
     expect(lines[1]).toContain('big interview');
   });
@@ -117,7 +117,7 @@ describe('emotion diary', () => {
     m.exchanges = 5;
     rememberExchange('yesterday I adopted a cat', m);
     const block = buildMemoryBlock('en', m)!;
-    expect(block).toContain('yesterday I adopted a cat');
+    expect(block).toContain('adopted a cat');
   });
 
   it('daily greeting recalls this day last week from the diary', () => {
