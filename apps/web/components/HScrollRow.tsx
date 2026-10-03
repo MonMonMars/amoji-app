@@ -1,10 +1,12 @@
 'use client';
-// Horizontal scroll strip with arrow icon buttons. On non-touch (mouse /
-fine-pointer) devices — where finger-drag is unavailable — a chevron button
-sits at each edge of every row: click to scroll a "page", smooth-animated.
-Arrows render always (dimmed when the row can't scroll that way) so desktop
-users can see the affordance; on touch devices they stay hidden (drag works).
-Used by the one-page selector, so /select and /change both get this.
+/*
+ * Horizontal scroll strip with arrow icon buttons. On non-touch (mouse /
+ * fine-pointer) devices — where finger-drag is unavailable — a chevron button
+ * sits at each edge of every row: click to scroll a "page", smooth-animated.
+ * Arrows render always (dimmed when the row can't scroll that way) so desktop
+ * users can see the affordance; on touch devices they stay hidden (drag works).
+ * Used by the one-page selector, so /select and /change both get this.
+ */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 function Chevron({ dir }: { dir: 'left' | 'right' }) {
