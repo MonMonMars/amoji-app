@@ -1,7 +1,9 @@
 // Local dialogue banks — deterministic, offline, no LLM call.
 // r2026-10-03.37: every line ends with a question or a recommendation so the
 // conversation always has somewhere to go (Master Simon's continuity rule).
-export type ChatterKind = 'startup' | 'idleBored' | 'idleCozy' | 'tutor' | 'poke';
+// r2026-10-03.38: reengage + reengageSoft banks — the staged "you've gone
+// quiet" follow-ups (direct check-in) and the soft closer (said once).
+export type ChatterKind = 'startup' | 'idleBored' | 'idleCozy' | 'tutor' | 'poke' | 'reengage' | 'reengageSoft';
 export type ChatterLang = 'en' | 'yue' | 'zh' | 'ja';
 
 export const CHATTER: Record<ChatterKind, Record<ChatterLang, string[]>> = {
@@ -121,6 +123,54 @@ export const CHATTER: Record<ChatterKind, Record<ChatterLang, string[]>> = {
       'ちょっと——くすぐったい！覚悟はいい？',
       'はいはい、目が覚めたよ！次は何しよっか？',
       'つんつん受け取った！ハグとお返し、どっちがいい？',
+    ],
+  },
+  // r2026-10-03.38 — stage 1 of re-engagement: the USER (not just the room)
+  // has been quiet for ~2 minutes, so she leans in directly.
+  reengage: {
+    en: [
+      "You've gone quiet on me — are you thinking, or did I say something wrong?",
+      "It's been a minute... want to pick up where we left off?",
+      'Hello~ still there? I was really enjoying our chat.',
+      "Penny for your thoughts — what's going on in that head of yours?",
+    ],
+    yue: [
+      '你靜咗喎——係咪諗緊嘢，定係我講錯咗咩？',
+      '好耐冇聲喎……我哋繼續之前個話題好唔好？',
+      '喂~仲喺度㗎嘛？我仲想同你傾落去喎。',
+      '講嚟聽下吖——你個腦而家轉緊咩呀？',
+    ],
+    zh: [
+      '你安静下来了——是在想事情，还是我说错什么了？',
+      '好一会儿没声音了……我们继续刚才的话题好不好？',
+      '喂~还在吗？我还想和你聊下去呢。',
+      '说来听听嘛——你的脑子里现在转着什么呢？',
+    ],
+    ja: [
+      '静かになっちゃった——考え事？それとも何か失言しちゃった？',
+      'しばらく無音だね……さっきの話、続きをしよっか？',
+      'ねぇ、まだいる？もっとおしゃべりしたいな。',
+      '教えてよ——今頭の中で何がぐるぐるしてるの？',
+    ],
+  },
+  // r2026-10-03.38 — stage 2: the soft closer, said ONCE after ~5 minutes of
+  // user silence, then she simply waits instead of repeating herself.
+  reengageSoft: {
+    en: [
+      "I'll be right here whenever you're back — tap me, okay?",
+      "Take all the time you need. I'm not going anywhere — promise you'll say hi when you're back?",
+    ],
+    yue: [
+      '我會喺度等你㗎——返嚟撳下我吖，好唔好？',
+      '慢慢嚟，我唔會走㗎。返嚟嗰陣記得同我打招呼吖？',
+    ],
+    zh: [
+      '我会一直在这里等你——回来戳我一下，好不好？',
+      '慢慢来，我不会走的。回来的时候记得和我打个招呼呀？',
+    ],
+    ja: [
+      'ここで待ってるから——戻ったらタップしてね？',
+      'ゆっくりでいいよ、どこにも行かないから。戻ってきたら声をかけて？',
     ],
   },
 };
