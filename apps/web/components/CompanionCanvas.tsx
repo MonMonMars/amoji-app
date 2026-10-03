@@ -24,6 +24,13 @@ const HOME = { theta: 0, phi: 1.12, dist: 1.9 };
 const HOME_TARGET = new THREE.Vector3(0, 1.05, 0);
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
+// Vertical orbit range, in radians measured from straight-up (polar angle).
+// PHI_MAX a touch past horizontal lets the camera swing LOW and look UP at
+// her (low-angle shot) without ever going under the floor — modest widening,
+// per request. Tune these two numbers to change how far up/down you can orbit.
+const PHI_MIN = 0.25;
+const PHI_MAX = 1.98;
+
 /** stable per-character hash → motion seed: same character, same body language */
 function seedFromKey(key: string): number {
   let h = 7;
@@ -76,7 +83,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     const target = HOME_TARGET.clone();
     const orbit = { theta: HOME.theta, phi: HOME.phi, dist: HOME.dist };
     const applyCamera = () => {
-      orbit.phi = clamp(orbit.phi, 0.3, 1.72);
+      orbit.phi = clamp(orbit.phi, PHI_MIN, PHI_MAX);
       orbit.dist = clamp(orbit.dist, 0.7, 5);
       target.x = clamp(target.x, -0.9, 0.9);
       target.y = clamp(target.y, 0.4, 1.7);
