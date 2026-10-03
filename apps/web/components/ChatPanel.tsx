@@ -380,7 +380,7 @@ export default function ChatPanel({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && void send()}
           placeholder={t(lang, 'sayHi', { name: characterName })}
-          className="h-11 flex-1 rounded-full border border-white/10 bg-black/30 px-4 text-[15px] text text-white placeholder-white/30 outline-none backdrop-blur-md focus:border-white/40"
+          className="h-11 flex-1 rounded-full border border-white/10 bg-black/30 px-4 text-[15px] text-white placeholder-white/30 outline-none backdrop-blur-md focus:border-white/40"
         />
         <button
           onClick={() => void send()}
