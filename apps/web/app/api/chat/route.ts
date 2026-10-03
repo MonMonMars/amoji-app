@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createLlm, OfflineLlm, type ChatMessage } from '../../../lib/llm';
+import { createLlm, OfflineLlm, PollinationsLlm, type ChatMessage } from '../../../lib/llm';
 
 export async function POST(req: Request) {
   let body: unknown;
@@ -9,16 +9,24 @@ export async function POST(req: Request) {
   const safeHistory: ChatMessage[] = Array.isArray(history)
     ? history.filter((m): m is ChatMessage => m && typeof m === 'object' && typeof (m as ChatMessage).content === 'string').slice(-20)
     : [];
+  const opts = {
+    language: typeof language === 'string' ? language : undefined,
+    persona: typeof persona === 'string' ? persona : undefined,
+    memory: typeof memory === 'string' ? memory : undefined,
+  };
   const llm = createLlm();
   try {
-    const result = await llm.chat([...safeHistory, { role: 'user', content: message }], {
-      language: typeof language === 'string' ? language : undefined,
-      persona: typeof persona === 'string' ? persona : undefined,
-      memory: typeof memory === 'string' ? memory : undefined,
-    });
+    const result = await llm.chat([...safeHistory, { role: 'user', content: message }], opts);
     return NextResponse.json(result);
   } catch {
-    const fallback = await new OfflineLlm().chat([{ role: 'user', content: message }]);
-    return NextResponse.json(fallback);
+    // r.27 — before going offline, try the keyless free lane: a configured
+    // provider whose account ran out of credit shouldn't dead-end the chat
+    try {
+      const free = await new PollinationsLlm().chat([...safeHistory, { role: 'user', content: message }], opts);
+      return NextResponse.json(free);
+    } catch {
+      const fallback = await new OfflineLlm().chat([{ role: 'user', content: message }]);
+      return NextResponse.json(fallback);
+    }
   }
 }

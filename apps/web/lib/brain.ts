@@ -3,6 +3,10 @@
 // Everything lives in localStorage on the user's own device — no key is ever
 // committed to the repo. `auto` walks BRAIN_SPECS top-down and picks the first
 // provider with a stored key; with no keys it falls back to keyless Pollinations.
+// r2026-10-03.27: a provider that just failed hard (e.g. the key's account ran
+// out of credit) is PARKED for the rest of the session — pickBrain skips it so
+// the chat doesn't burn a 30s timeout on a dead key on every single message.
+// Reloading the app clears the parking (the key might be topped up by then).
 
 export type BrainProvider = 'auto' | 'pollinations' | 'groq' | 'moonshot' | 'openrouter';
 
@@ -46,6 +50,22 @@ export const BRAIN_SPECS: BrainSpec[] = [
   },
 ];
 
+/** Providers parked for this session after a hard failure (out of credit etc). */
+const deadBrains = new Set<string>();
+
+export function markBrainDead(id: string): void {
+  deadBrains.add(id);
+}
+
+export function isBrainDead(id: string): boolean {
+  return deadBrains.has(id);
+}
+
+/** Clear the parking (reload does this too — kept for tests & future retry UI). */
+export function resetBrainDead(): void {
+  deadBrains.clear();
+}
+
 const LS_PROVIDER = 'amoji.brain.provider';
 const lsKey = (id: string) => `amoji.brain.key.${id}`;
 
@@ -77,21 +97,25 @@ export function setBrainKey(id: string, key: string): void {
 export interface PickedBrain { spec: BrainSpec; key: string }
 
 /** Resolve which brain answers right now. Explicit choice wins if usable;
- *  otherwise `auto` prefers the first keyed spec, else keyless Pollinations. */
+ *  otherwise `auto` prefers the first keyed spec, else keyless Pollinations.
+ *  r.27: parked (dead) specs are skipped in every branch, and the pool can
+ *  never empty out — the keyless lane is always the last resort. */
 export function pickBrain(): PickedBrain {
   const want = brainProvider();
+  const alive = BRAIN_SPECS.filter((s) => !isBrainDead(s.id));
+  const pool = alive.length ? alive : BRAIN_SPECS;
   if (want !== 'auto') {
-    const spec = BRAIN_SPECS.find((s) => s.id === want);
+    const spec = pool.find((s) => s.id === want);
     if (spec) {
       const key = brainKey(spec.id);
       if (spec.keyless || key) return { spec, key };
     }
-    // forced provider without a key → fall through to the free lane
+    // forced provider without a key (or parked) → fall through to the free lane
   }
-  for (const spec of BRAIN_SPECS) {
+  for (const spec of pool) {
     const key = brainKey(spec.id);
     if (key) return { spec, key };
   }
-  const fallback = BRAIN_SPECS.find((s) => s.id === 'pollinations') ?? BRAIN_SPECS[BRAIN_SPECS.length - 1]!;
+  const fallback = pool.find((s) => s.id === 'pollinations') ?? pool[pool.length - 1]!;
   return { spec: fallback, key: '' };
 }
