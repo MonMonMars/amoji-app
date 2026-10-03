@@ -107,7 +107,8 @@ describe('finishReply (streamed text)', () => {
 
   it('tolerates a tag split across stream chunks', async () => {
     const { finishReply } = await import('../lib/client-chat');
-    const chunks = ['嗯…', '[emotion:', '{"confusion":0.7,"neutral":0.2}', '}', ']'];
+    // chunks as they might arrive over SSE, joined into the full reply
+    const chunks = ['嗯…', '[emotion:', '{"confusion":0.7,"neutral":0.2}', ']'];
     const r = finishReply(chunks.join(''));
     expect(r.reply).toBe('嗯…');
     expect(r.emotionHints.confusion).toBe(0.7);
