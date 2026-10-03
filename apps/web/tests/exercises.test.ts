@@ -40,21 +40,21 @@ describe('detectExercise', () => {
 
 describe('a lesson runs step by step, then closes', () => {
   it('yoga in Cantonese: intro → four cues → closer, then the state is null', () => {
-    const t0 = startExercise('yoga', 'yue');
-    expect(t0.state).toEqual({ kind: 'yoga', step: 0 });
-    expect(t0.line).toContain('瑜伽');
-    let turn = t0;
-    const seen = [t0.line];
-    for (let i = 0; i < 4; i++) {
-      turn = advanceExercise(turn.state!, 'yue');
+    let turn = startExercise('yoga', 'yue');
+    expect(turn.state).toEqual({ kind: 'yoga', step: 0 });
+    expect(turn.line).toContain('瑜伽');
+    const seen = [turn.line];
+    while (turn.state) {
+      turn = advanceExercise(turn.state, 'yue');
       seen.push(turn.line);
     }
-    expect(seen).toHaveLength(5);
-    expect(turn.state).toBeNull();
+    // intro + four step cues + the closer
+    expect(seen).toHaveLength(ROUTINES.yoga.steps.length + 2);
     expect(turn.line).toContain('聽日');
     // idempotent: an over-run cursor still lands on the closer, never crashes
     const again = advanceExercise({ kind: 'yoga', step: 99 }, 'yue');
     expect(again.state).toBeNull();
+    expect(again.line).toContain('聽日');
   });
 
   it('kung fu in English walks the whole form', () => {
