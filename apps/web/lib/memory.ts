@@ -24,6 +24,10 @@
 // v3.3 (r2026-10-03.19): Japanese felt-mood phrases — 嬉しい/疲れた/寂しい/
 // 怒ってる/不安/具合が悪い… so she reacts instantly in ja too, not just
 // yue/zh/en.
+//
+// v3.4 (r2026-10-03.20): felt-mood INTENSITY — amplifiers (超開心 / 勁攰 /
+// very tired / とても嬉しい) scale how strongly she wears the feeling;
+// plain moods stay gentle. moodToHints(mood, intensity) clamps at 1.
 
 export type MemoryType = 'preference' | 'event' | 'plan';
 
@@ -381,8 +385,15 @@ const MOOD_HINTS: Record<string, Record<string, number>> = {
   sick: { sadness: 0.5, confusion: 0.2 },
 };
 
-export function moodToHints(mood?: string): Record<string, number> | undefined {
-  return mood ? MOOD_HINTS[mood] : undefined;
+export function moodToHints(mood?: string, intensity = 1): Record<string, number> | undefined {
+  const base = mood ? MOOD_HINTS[mood] : undefined;
+  if (!base) return undefined;
+  if (intensity <= 1) return base;
+  const scaled: Record<string, number> = {};
+  for (const k of Object.keys(base)) {
+    scaled[k] = Math.min(1, +(base[k] * intensity).toFixed(2));
+  }
+  return scaled;
 }
 
 /**
@@ -453,6 +464,34 @@ export function detectMood(userText: string): string | undefined {
     if (re.test(userText)) return tag;
   }
   return undefined;
+}
+
+// ---------- felt-mood intensity (v3.4, r2026-10-03.20) ----------
+
+/**
+ * Intensity amplifiers — HOW strongly the feeling is said, so her reaction
+ * strength matches the user's words: 「超開心」 lands harder than plain
+ * 「開心」. 「超」 counts only when it isn't part of 超過/超过 (lookahead is
+ * ES2017-safe — only lookbehind needs ES2018). 「好」 counts only right
+ * before a mood character (好嬲/好攰), never the polite 你好.
+ */
+const INTENSITY_RE = /超級|超级|非常|十分|鬼咁|好鬼|勁|很|好(?=[攰累開开嬲唔不難难寂寞孤])|超(?![過过])|とても|すごく|めっちゃ|\bso\s(?:so\s)?|\bvery\b|\breally\b|\bsuper\b/i;
+
+/** 1 = plain, 1.5 = amplified. Extend the ladder here if more steps are wanted. */
+export function detectMoodIntensity(userText: string): number {
+  return INTENSITY_RE.test(userText) ? 1.5 : 1;
+}
+
+export interface FeltMood {
+  mood: string;
+  intensity: number;
+}
+
+/** mood + intensity in one call — the shape ChatPanel's send() reacts to. */
+export function feltMood(userText: string): FeltMood | undefined {
+  const mood = detectMood(userText);
+  if (!mood) return undefined;
+  return { mood, intensity: detectMoodIntensity(userText) };
 }
 
 export function rememberExchange(userText: string, m: Memory = loadMemory()): Memory {

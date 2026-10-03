@@ -9,6 +9,8 @@
 // instant they say it — "I'm so tired" softens her face and orb before her
 // reply is even generated; the felt mood stays as a floor under the LLM's
 // reply hints (typed path and voice path both funnel through send()).
+// r2026-10-03.20: amplified feelings land harder — 超開心 / 勁攰 / very tired
+// / とても嬉しい scale the reaction strength; plain moods stay gentle.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh } from '../lib/companion';
 import { loadHistory, saveHistory } from '../lib/companion-store';
@@ -20,7 +22,7 @@ import { pickLaugh, LAUGH_RE } from '../lib/laugh';
 import { pickThinkPhrase } from '../lib/think-phrases';
 import { clientChat } from '../lib/client-chat';
 import { speak, stopSpeaking, speakThinkingFiller } from '../lib/voice';
-import { buildDailyGreeting, buildMemoryBlock, detectMood, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange } from '../lib/memory';
+import { buildDailyGreeting, buildMemoryBlock, feltMood, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange } from '../lib/memory';
 import { listenContinuous, listenSupported } from '../lib/listen';
 import { t, type Lang } from '../lib/prefs';
 import type { ChatStatus } from '../lib/status';
@@ -187,8 +189,11 @@ export default function ChatPanel({
     // felt-mood reaction: she reacts to how YOU feel the instant you say it —
     // "I'm so tired" softens her face and the mic orb before her reply even
     // starts generating, and the felt mood stays as a floor under whatever
-    // hints her reply later layers on top
-    const feltHints = moodToHints(detectMood(text));
+    // hints her reply later layers on top. Amplifiers (超開心 / 勁攰 / very
+    // tired / とても嬉しい) scale how strongly she wears it — plain moods stay
+    // gentle.
+    const felt = feltMood(text);
+    const feltHints = moodToHints(felt?.mood, felt?.intensity);
     if (feltHints) applyLlmHints(feltHints);
     // "hmm…" thinking moment while the reply generates (reply speech cuts it off)
     speakThinkingFiller(characterId, lang);

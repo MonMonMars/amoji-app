@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  addEntry, buildDailyGreeting, buildMemoryBlock, deleteEntry, detectMood, editEntry,
+  addEntry, buildDailyGreeting, buildMemoryBlock, deleteEntry, detectMood, detectMoodIntensity, editEntry, feltMood,
   diarySummary, greetingHints, moodToHints, recordVisit,
   rememberExchange, type Memory,
 } from '../lib/memory';
@@ -200,5 +200,34 @@ describe('Japanese felt-mood detection', () => {
     expect(m.moods[m.moods.length - 1]).toBe('happy');
     expect(m.diary![0]!.mood).toBe('happy');
     expect(moodToHints(detectMood('ちょっと寂しい'))).toEqual({ sadness: 0.85 });
+  });
+});
+
+// ---------- r2026-10-03.20: felt-mood intensity ----------
+
+describe('felt-mood intensity', () => {
+  it('amplifiers raise the intensity; plain moods stay gentle', () => {
+    expect(detectMoodIntensity('今日超開心！')).toBe(1.5);
+    expect(detectMoodIntensity('勁攰呀')).toBe(1.5);
+    expect(detectMoodIntensity('好嬲呀你')).toBe(1.5);
+    expect(detectMoodIntensity('very tired')).toBe(1.5);
+    expect(detectMoodIntensity('今日はとても嬉しい')).toBe(1.5);
+    expect(detectMoodIntensity('開心')).toBe(1);
+    expect(detectMoodIntensity('琴日有點攰')).toBe(1);
+    expect(detectMoodIntensity('你好，食咗飯未呀')).toBe(1); // 好 must not fire alone
+  });
+
+  it('超 only amplifies when not part of 超過/超过', () => {
+    expect(detectMoodIntensity('超過分呀')).toBe(1);
+    expect(detectMoodIntensity('超開心')).toBe(1.5);
+  });
+
+  it('feltMood bundles mood + intensity; scaling clamps at 1', () => {
+    expect(feltMood('超開心呀今日')).toEqual({ mood: 'happy', intensity: 1.5 });
+    expect(feltMood('琴日有點攰')).toEqual({ mood: 'tired', intensity: 1 });
+    expect(feltMood('hello there')).toBeUndefined();
+    expect(moodToHints('happy', 1.5)).toEqual({ joy: 1 }); // 0.9 × 1.5 → clamped
+    expect(moodToHints('tired', 1.5)).toEqual({ contentment: 1, sadness: 0.3 });
+    expect(moodToHints('happy')).toEqual({ joy: 0.9 }); // default intensity unchanged
   });
 });
