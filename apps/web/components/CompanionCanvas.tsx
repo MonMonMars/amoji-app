@@ -35,6 +35,19 @@ import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
 // floor clamp — while X/Z sway and genuine motion (hops, dips, bows) are
 // preserved. The camera target is static and clamped and nothing in the
 // speaking path touches it, so no camera change ships in r98.
+// r101 (Master Simon): no more black or lying first frames. Some VRMs ship
+// a rotated root (Z-up exports), and the old load path only ever yaws the
+// facing — nothing un-tilted the body, so those characters lay flat until
+// (unless) their first rebased clip frame corrected them; generic VRM 0.x
+// models never get clips at all. lib/vrm/avatar.ts now un-tilts hips→head
+// to +Y at calibration time (BEFORE the first rendered frame). And the
+// avatar no longer steps on stage the instant the glTF parses: she mounts
+// INVISIBLE and is revealed only after every texture has decoded AND the
+// first pose/clip frame has been applied AND two fully-lit frames have
+// been presented — on iPhone Safari a big MToon atlas decodes late, and
+// the old code showed the raw rest pose for those frames (the "completely
+// black at the beginning" report). The 25s load watchdog can force the
+// reveal so a stuck texture never leaves her invisible forever.
 
 export interface CompanionCanvasProps {
   onNotice?: (n: { reason: 'webgl' | 'asset' }) => void;
@@ -61,6 +74,29 @@ const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi 
 // already unclamped (full 360° yaw).
 const PHI_MIN = 0.12;
 const PHI_MAX = 2.35;
+
+// r101: texture slots that must hold a DECODED image before the avatar may
+// step on stage. On iPhone Safari the big MToon atlases decode late — the
+// old code rendered the model while they were still empty (the "completely
+// black at the beginning" report).
+const TEXTURE_SLOTS = ['map', 'normalMap', 'emissiveMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'alphaMap'] as const;
+const modelTexturesReady = (root: THREE.Object3D): boolean => {
+  let ready = true;
+  root.traverse((node) => {
+    if (!ready) return;
+    const mesh = node as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const m of mats) {
+      const mat = m as unknown as Record<string, THREE.Texture | null | undefined>;
+      for (const slot of TEXTURE_SLOTS) {
+        const tex = mat[slot];
+        if (tex && !tex.image) { ready = false; return; }
+      }
+    }
+  });
+  return ready;
+};
 
 /** stable per-character hash → motion seed: same character, same body language */
 function seedFromKey(key: string): number {
@@ -99,8 +135,11 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     // success/error — a stalled connection); without a guard the old ring
     // sat at 99% eternally. After 25s the indicator retires and the asset
     // notice takes over. Cleared the moment she mounts (or on unmount).
+    // r101: the watchdog ALSO forces the reveal gate — whatever happened,
+    // a stuck texture must never leave her invisible off stage.
     const loadWatchdog = setTimeout(() => {
       setLoadProgress(null);
+      forceReveal = true;
       onNoticeRef.current?.({ reason: 'asset' });
     }, 25000);
 
@@ -125,6 +164,9 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     //     picks up a color cast.
     //   indoor — soft interior: warm-ish key lamp overhead, cool window
     //     fill, gentle ambience. Deliberately desaturated so skin stays skin.
+    // These are scene-level lights: ANY avatar added to the scene (initial
+    // load or a character switch, which remounts this effect) is inside
+    // their range by construction — there is no per-model light to miss.
     if (lighting === 'indoor') {
       scene.add(new THREE.HemisphereLight('#ffffff', '#57534e', 0.7));
       const key = new THREE.DirectionalLight('#fff6ec', 1.2);
@@ -224,6 +266,14 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     let avatar: Avatar | null = null;
     let mixer: THREE.AnimationMixer | null = null;
     let mixerActive = false;
+    // r101 reveal gate — the avatar mounts INVISIBLE and steps on stage only
+    // when textures are decoded AND the first pose/clip frame is applied AND
+    // two fully-lit frames have been presented. forceReveal (the 25s load
+    // watchdog) overrides so nothing can keep her invisible forever.
+    let revealPending = false;
+    let revealPoseApplied = false;
+    let revealLitFrames = 0;
+    let forceReveal = false;
     // per-character motion personality: Rin always fidgets the same way,
     // Ren drifts through his own calm sequence — deterministic per character.
     const poseSeed = seedKey ? seedFromKey(seedKey) : Date.now() % 100000;
@@ -597,11 +647,23 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       avatar = a;
       scene.add(a.root);
       a.root.position.set(0, 0, 0);
-      // r84/r91 — she's on stage: the name-bar loading indicator bows out
+      // r101 (Master Simon): she mounts INVISIBLE and steps on stage only
+      // through the reveal gate in the render loop — textures decoded AND
+      // the first pose/clip frame applied AND two fully-lit frames
+      // presented. No black (late-decoding MToon atlas), no raw T-pose, no
+      // lying-flat first frame is ever shown.
+      a.root.visible = false;
+      revealPending = true;
+      revealPoseApplied = false;
+      revealLitFrames = 0;
+      // warm every shader program + upload whatever has decoded while she
+      // is still off stage, so her first visible frame is fully lit
+      renderer.compile(scene, camera);
+      // r84/r91 — progress reporting continues, but the spinner now retires
+      // at the REVEAL (she counts as loaded only when she is actually on
+      // stage, textured, posed and lit), not at glTF parse time
       modelPct = 100;
       reportProgress();
-      setLoadProgress(null);
-      clearTimeout(loadWatchdog);
 
       // r2026-10-03.28: tint every material toward the character look. The tint
       // is near-white, so it shifts the whole palette (outfit, hair, light on
@@ -950,6 +1012,27 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           avatar.applyPose(poseTargets);
         }
         avatar.update(dt / 1000);
+
+        // r101 reveal gate: by this point the skeleton holds its first
+        // pose/clip frame. A VRM 1.0 avatar must additionally wait for the
+        // clip engine (mixerActive) so a raw T-pose never shows; generic
+        // (VRM 0.x) avatars are pose-driven from frame one. Every texture
+        // must be decoded, and two fully-lit frames are counted before she
+        // steps on stage. The watchdog's forceReveal overrides everything so
+        // nothing can keep her invisible forever.
+        revealPoseApplied = true;
+        if (revealPending) {
+          const poseSettled = mixerActive || avatar.kind !== 'v1';
+          if ((poseSettled && modelTexturesReady(avatar.root)) || forceReveal) {
+            revealLitFrames += 1;
+            if (revealLitFrames >= 2) {
+              revealPending = false;
+              avatar.root.visible = true;
+              setLoadProgress(null);
+              clearTimeout(loadWatchdog);
+            }
+          }
+        }
       }
 
       // r2026-10-04.69: stage props ride the same move clock — pop in when

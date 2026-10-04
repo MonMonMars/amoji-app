@@ -10,11 +10,18 @@
 //           as world-axis rotations on top of an auto-calibrated rest pose.
 //
 // Calibration (the r.50 fix for "everyone faces backward with hands up"):
-//   1. facing — measure the shoulder line, yaw the whole model until she
+//   1. upright — measure the hips→head line in world space and, if it is
+//      not vertical (rotated-root / Z-up exports), un-tilt the INNER model
+//      node so she STANDS before her first rendered frame (r101). The old
+//      path only yawed the facing, so a lying model stayed flat until
+//      (unless) its first rebased clip frame corrected it — and generic
+//      VRM 0.x avatars never receive clips at all.
+//   2. facing — measure the shoulder line, yaw the whole model until she
 //      faces +Z (toward the camera). A no-op for well-authored models.
-//   2. arms — measure each upper/lower arm's current world direction and
+//   3. arms — measure each upper/lower arm's current world direction and
 //      rotate it to hang straight down. Works from T-pose, A-pose, or the
-//      broken hands-up rest pose some legacy rigs ship.
+//      broken hands-up rest pose some legacy rigs ship. Runs AFTER the
+//      upright fix so "down" means world-down, not lying-flat-down.
 //
 // r2026-10-04.76 — the calibration lives on the INNER model node, never on
 // Avatar.root. The canvas writes position/scale/rotation to Avatar.root every
@@ -163,6 +170,28 @@ const DOWN = new THREE.Vector3(0, -1, 0);
 // shared calibration helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * r101: un-tilt `node` so the hips→head line is vertical (+Y). Some VRMs
+ * ship a rotated root (Z-up exports) and lie flat; the old calibration only
+ * yawed the facing, so those models lay on the floor until (unless) their
+ * first rebased clip frame corrected them — and generic avatars never get
+ * clips. A no-op for upright models (dot(up, +Y) > 0.7), so the rest pose
+ * of a well-authored model is never touched. Runs BEFORE facing and arm
+ * calibration so every later measurement sees a standing body.
+ */
+function calibrateUpright(node: THREE.Object3D, hips: THREE.Object3D | null, head: THREE.Object3D | null): void {
+  if (!hips || !head) return;
+  node.updateMatrixWorld(true);
+  const a = hips.getWorldPosition(new THREE.Vector3());
+  const b = head.getWorldPosition(new THREE.Vector3());
+  const up = b.sub(a);
+  if (up.lengthSq() < 1e-10) return;
+  up.normalize();
+  if (up.dot(UP) > 0.7) return; // already upright — leave the rest pose alone
+  node.quaternion.premultiply(new THREE.Quaternion().setFromUnitVectors(up, UP));
+  node.updateMatrixWorld(true);
+}
+
 /** yaw `node` so the line leftShoulder→rightShoulder implies facing +Z */
 function calibrateFacing(node: THREE.Object3D, left: THREE.Object3D | null, right: THREE.Object3D | null): void {
   if (!left || !right) return;
@@ -229,6 +258,14 @@ class V1Avatar implements Avatar {
     const wrap = new THREE.Group();
     wrap.add(vrm.scene);
     this.root = wrap;
+    // r101: un-tilt a rotated-root (Z-up) export BEFORE the facing yaw — a
+    // model that lies flat used to stay flat until its first rebased clip
+    // frame (and only if clips ever loaded).
+    calibrateUpright(
+      vrm.scene,
+      vrm.humanoid?.getNormalizedBoneNode('hips') ?? null,
+      vrm.humanoid?.getNormalizedBoneNode('head') ?? null,
+    );
     calibrateFacing(
       vrm.scene,
       vrm.humanoid?.getNormalizedBoneNode('leftShoulder') ?? null,
@@ -414,6 +451,11 @@ class GenericAvatar implements Avatar {
 
   private calibrate(): void {
     this.root.updateMatrixWorld(true);
+    // r101: un-tilt a lying (rotated-root / Z-up export) model BEFORE any
+    // other calibration — measuring shoulders and arm directions against a
+    // flat body would align the arms along the floor, and no clip ever
+    // arrives to rescue a generic (VRM 0.x) rig.
+    calibrateUpright(this.inner, this.bones.get('hips') ?? null, this.bones.get('head'));
     // facing yaw goes on the INNER node — the canvas rewrites the wrapper's
     // rotation every frame, so calibrating the wrapper would be undone.
     calibrateFacing(this.inner, this.bones.get('leftShoulder') ?? null, this.bones.get('rightShoulder') ?? null);
