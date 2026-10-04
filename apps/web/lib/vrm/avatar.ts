@@ -455,7 +455,7 @@ class GenericAvatar implements Avatar {
     // other calibration — measuring shoulders and arm directions against a
     // flat body would align the arms along the floor, and no clip ever
     // arrives to rescue a generic (VRM 0.x) rig.
-    calibrateUpright(this.inner, this.bones.get('hips') ?? null, this.bones.get('head'));
+    calibrateUpright(this.inner, this.bones.get('hips') ?? null, this.bones.get('head') ?? null);
     // facing yaw goes on the INNER node — the canvas rewrites the wrapper's
     // rotation every frame, so calibrating the wrapper would be undone.
     calibrateFacing(this.inner, this.bones.get('leftShoulder') ?? null, this.bones.get('rightShoulder') ?? null);
@@ -512,7 +512,7 @@ class GenericAvatar implements Avatar {
     // r86: arm raises fold into the same Z channel (+semantic lowers, so a
     // raise subtracts on the left and adds on the right)
     this.applyBone('leftUpperArm', p.lArmX, 0, p.leftUpperArm - (p.lArmRaise ?? 0));
-    this.applyBone('rightUpperArm', p.rArmX, 0, -(p.rightUpperArm - (p.rArmRaise ?? 0)));
+    this.applyBone('rightUpperArm', p.rArmX, 0, -(p.rightUpperArm - (p.lArmRaise ?? 0)));
     this.applyBone('leftLowerArm', p.leftLowerArm - p.lElbowZ, 0, 0);
     this.applyBone('rightLowerArm', p.rightLowerArm + p.rElbowZ, 0, 0);
   }
