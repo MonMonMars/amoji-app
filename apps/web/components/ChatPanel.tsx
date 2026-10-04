@@ -75,6 +75,11 @@
 // fully opaque; a mask on the panel fades by on-screen HEIGHT only — the
 // bottom line is 100%, each line higher a step dimmer, the top melts away.
 // Scrolling an old message down into the bright zone makes it crisp again.
+// r2026-10-04.62: the mic frost is CIRCULAR on iOS Safari. WebKit's
+// backdrop-filter ignores border-radius and blurs the whole rectangular
+// border-box, which drew a square frost behind the round button. Adding
+// overflow-hidden (button + text input) clips the blur to the rounded
+// shape — a perfect circle, while the outer glow shadows stay untouched.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh, triggerMove } from '../lib/companion';
 import { detectMove } from '../lib/moves';
@@ -709,10 +714,15 @@ export default function ChatPanel({
 
       {/* input row — ChatGPT-style hero mic with the living emotion orb */}
       <div className="flex w-full items-center gap-2.5">
+        {/* r62: overflow-hidden — on iOS Safari WebKit's backdrop-filter
+            ignores border-radius and frosts the whole square border-box;
+            overflow:hidden clips that blur to the rounded shape, so the
+            frost is a perfect circle. The outer glow shadows live outside
+            the element and are unaffected. */}
         <button
           onClick={() => mic()}
           title={t(lang, 'micTitle')}
-          className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-black/40 backdrop-blur-md transition active:scale-95"
+          className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black/40 backdrop-blur-md transition active:scale-95"
           style={
             listening
               ? {
@@ -760,7 +770,7 @@ export default function ChatPanel({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && void send()}
           placeholder={t(lang, 'sayHi', { name: characterName })}
-          className="h-11 flex-1 rounded-full border border-white/10 bg-black/30 px-4 text-[15px] text-white placeholder-white/30 outline-none backdrop-blur-md focus:border-white/40"
+          className="h-11 flex-1 overflow-hidden rounded-full border border-white/10 bg-black/30 px-4 text-[15px] text-white placeholder-white/30 outline-none backdrop-blur-md focus:border-white/40"
         />
         <button
           onClick={() => void send()}
