@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import manifest from '../app/manifest';
+import manifest, { dynamic } from '../app/manifest';
 
 // r2026-10-04.71 — the app must be installable with the right identity and
 // scope, under both the GitHub Pages basePath (/amoji-app) and local dev (/).
+// r2026-10-04.72 — the manifest route must declare itself static or the
+// `output: 'export'` pages build fails (manifest.webmanifest route rejected).
 describe('pwa manifest', () => {
   const m = manifest();
+
+  it('declares itself static so output:export collects the route', () => {
+    expect(dynamic).toBe('force-static');
+  });
 
   it('installs standalone as Amoji', () => {
     expect(m.display).toBe('standalone');
