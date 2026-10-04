@@ -12,7 +12,9 @@ const sw = readFileSync(join(here, '../public/sw.js'), 'utf8');
 
 describe('offline service worker', () => {
   it('versions the cache with the app revision', () => {
-    expect(sw).toMatch(/amoji-r2026-10-04\.\d+/);
+    // date-agnostic (r96): the revision stamp rolls forward daily, so only
+    // the amoji-r<date>.<n> SHAPE is pinned here, never a specific day
+    expect(sw).toMatch(/amoji-r\d{4}-\d{2}-\d{2}\.\d+/);
   });
 
   it('precaches the app shell pages', () => {
