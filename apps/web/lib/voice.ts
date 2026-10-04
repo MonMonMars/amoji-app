@@ -11,12 +11,55 @@
 // of the SONG_MELODY contour, legato and slightly slower, joy underneath.
 // r2026-10-04.52: flagship nine (kizuna/alicia/ember/mei/atlas/sky/yuki/hina/
 // mio) get gender-correct personality-tuned matrices; tifa/aerith retire.
+// r2026-10-04.75: voice diagnostics — iOS gesture unlock, per-utterance error
+// reporting (`amoji:voice-blocked` on window) and a testVoice() self-test so a
+// silent-device report becomes a one-tap check in Settings.
 
 import type { Lang } from './prefs';
 import { speakEdge, stopEdge } from './edge-tts';
 import { dominant, pickInterjection, pickThinkingFiller } from './fillers';
 import { SONG_MELODY } from './songs';
 import { notifySpeaking } from './speech';
+
+// ---- r2026-10-04.75: iOS audio unlock ---------------------------------------
+// iOS mutes ALL web audio while the hardware silent switch is on (nothing code
+// can do — the settings hint says so), but it ALSO silently drops the very
+// first audio if no user gesture has happened yet. Resume speechSynthesis and
+// prime an AudioContext on the first tap/keypress anywhere so the greeting and
+// every later reply are allowed to sound.
+let audioUnlocked = false;
+function unlockAudio(): void {
+  if (audioUnlocked) return;
+  audioUnlocked = true;
+  try { if (typeof speechSynthesis !== 'undefined') speechSynthesis.resume(); } catch { /* ignore */ }
+  try {
+    const Ctor = window.AudioContext
+      ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (Ctor) {
+      const ctx = new Ctor();
+      // a single zero-length buffer is enough to take the context out of
+      // "suspended" on iOS without making any audible noise
+      const buf = ctx.createBuffer(1, 1, 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(0);
+      void ctx.resume?.();
+    }
+  } catch { /* ignore */ }
+}
+if (typeof window !== 'undefined') {
+  for (const ev of ['pointerdown', 'keydown', 'touchstart'] as const) {
+    window.addEventListener(ev, unlockAudio, { once: true, passive: true });
+  }
+}
+
+/** r2026-10-04.75: fired on `window` whenever an utterance fails to start. */
+function reportVoiceBlocked(source: 'synth' | 'edge'): void {
+  try {
+    window.dispatchEvent(new CustomEvent('amoji:voice-blocked', { detail: { source } }));
+  } catch { /* ignore */ }
+}
 
 export interface VoiceChoice {
   /** BCP-47 tag to match against speechSynthesis voices */
@@ -747,6 +790,39 @@ export function sing(text: string, characterId: string, lang: Lang): void {
   synthSpeak(text, characterId, lang, 'joy', expr, undefined, 1, SONG_MELODY);
 }
 
+/** one short happy line per language for the settings self-test (r2026-10-04.75) */
+const TEST_LINES: Record<Lang, string> = {
+  yue: '喂，聽唔聽到我呀？我而家好開心見到你！',
+  zh: '喂，你能听到我吗？我现在好开心见到你！',
+  ja: 'ねえ、聞こえる？会えて嬉しいな！',
+  en: "Hey, can you hear me? I'm so happy to see you!",
+};
+
+/**
+ * r2026-10-04.75 — one-tap voice self-test from the Settings sheet: forces
+ * the iOS gesture unlock and speaks a short line in the current language with
+ * the current character's voice. Works even while Voice replies is off (the
+ * setting itself is left untouched — only the storage flag is borrowed for
+ * the duration of the call, so stopSpeaking() can't cancel the test). If the
+ * browser refuses to produce sound, `amoji:voice-blocked` fires and the
+ * settings sheet shows the "check silent switch" hint.
+ */
+export function testVoice(characterId: string, lang: Lang): void {
+  unlockAudio();
+  const wasOn = voiceEnabled();
+  if (!wasOn) {
+    try { localStorage.setItem(MUTE_KEY, 'on'); } catch { /* ignore */ }
+  }
+  try {
+    speak(TEST_LINES[lang] ?? TEST_LINES.en, characterId, lang, { joy: 0.6 });
+  } finally {
+    if (!wasOn) {
+      // restore without stopSpeaking() — that would cancel the line we just queued
+      try { localStorage.setItem(MUTE_KEY, 'off'); } catch { /* ignore */ }
+    }
+  }
+}
+
 function synthSpeak(
   text: string,
   characterId: string,
@@ -806,5 +882,14 @@ function synthSpeak(
     u.volume = vol;
     utterances.push(u);
   });
-  for (const u of utterances) speechSynthesis.speak(u);
+  for (const u of utterances) {
+    // r2026-10-04.75: surface real failures (autoplay block, no voice, engine
+    // error) as `amoji:voice-blocked`; ignore the benign cancel() churn from
+    // stopSpeaking() cutting a line short.
+    u.onerror = (e) => {
+      const err = (e as SpeechSynthesisErrorEvent).error;
+      if (err !== 'interrupted' && err !== 'canceled') reportVoiceBlocked('synth');
+    };
+    speechSynthesis.speak(u);
+  }
 }
