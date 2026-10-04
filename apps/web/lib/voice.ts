@@ -14,12 +14,52 @@
 // r2026-10-04.75: voice diagnostics — iOS gesture unlock, per-utterance error
 // reporting (`amoji:voice-blocked` on window) and a testVoice() self-test so a
 // silent-device report becomes a one-tap check in Settings.
+// r2026-10-04.85: voice hardening — the gesture unlock now also primes a real
+// (silent) HTMLMediaElement, because iOS gates blob <audio> behind an actual
+// media play and an unlocked WebAudio context doesn't count; and synthSpeak
+// defers utterances a beat after cancel() on iOS, dodging the Safari
+// speechSynthesis deadlock that was silently swallowing every spoken line.
 
 import type { Lang } from './prefs';
 import { speakEdge, stopEdge } from './edge-tts';
 import { dominant, pickInterjection, pickThinkingFiller } from './fillers';
 import { SONG_MELODY } from './songs';
 import { notifySpeaking } from './speech';
+
+/**
+ * r2026-10-04.85 — 0.15s of generated silence, played once inside the first
+ * user gesture: iOS Safari unlocks programmatic <audio> playback only after a
+ * media element has actually played during a gesture (an unlocked WebAudio
+ * context doesn't count), so without this her neural voice can be fetched
+ * yet never sounded.
+ */
+function playSilentUnblock(): void {
+  const sr = 22050;
+  const frames = Math.floor(sr * 0.15);
+  const buf = new ArrayBuffer(44 + frames * 2);
+  const v = new DataView(buf);
+  const wstr = (o: number, s: string) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  wstr(0, 'RIFF');
+  v.setUint32(4, 36 + frames * 2, true);
+  wstr(8, 'WAVE');
+  wstr(12, 'fmt ');
+  v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); // PCM
+  v.setUint16(22, 1, true); // mono
+  v.setUint32(24, sr, true);
+  v.setUint32(28, sr * 2, true);
+  v.setUint16(32, 2, true);
+  v.setUint16(34, 16, true); // 16-bit
+  wstr(36, 'data');
+  v.setUint32(40, frames * 2, true);
+  const url = URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+  const a = new Audio(url);
+  a.volume = 0.06;
+  const cleanup = () => URL.revokeObjectURL(url);
+  a.onended = cleanup;
+  a.onerror = cleanup;
+  void a.play().catch(cleanup);
+}
 
 // ---- r2026-10-04.75: iOS audio unlock ---------------------------------------
 // iOS mutes ALL web audio while the hardware silent switch is on (nothing code
@@ -47,6 +87,10 @@ function unlockAudio(): void {
       void ctx.resume?.();
     }
   } catch { /* ignore */ }
+  // r85: WebAudio unlock alone does NOT un-gate HTMLMediaElement playback on
+  // iOS — the neural path speaks through `new Audio(blobUrl)`, so prime a
+  // real (silent) media element inside this gesture too.
+  try { playSilentUnblock(); } catch { /* ignore */ }
 }
 if (typeof window !== 'undefined') {
   for (const ev of ['pointerdown', 'keydown', 'touchstart'] as const) {
@@ -882,14 +926,24 @@ function synthSpeak(
     u.volume = vol;
     utterances.push(u);
   });
-  for (const u of utterances) {
-    // r2026-10-04.75: surface real failures (autoplay block, no voice, engine
-    // error) as `amoji:voice-blocked`; ignore the benign cancel() churn from
-    // stopSpeaking() cutting a line short.
-    u.onerror = (e) => {
-      const err = (e as SpeechSynthesisErrorEvent).error;
-      if (err !== 'interrupted' && err !== 'canceled') reportVoiceBlocked('synth');
-    };
-    speechSynthesis.speak(u);
+  const pump = () => {
+    for (const u of utterances) {
+      // r2026-10-04.75: surface real failures (autoplay block, no voice, engine
+      // error) as `amoji:voice-blocked`; ignore the benign cancel() churn from
+      // stopSpeaking() cutting a line short.
+      u.onerror = (e) => {
+        const err = (e as SpeechSynthesisErrorEvent).error;
+        if (err !== 'interrupted' && err !== 'canceled') reportVoiceBlocked('synth');
+      };
+      speechSynthesis.speak(u);
+    }
+  };
+  // r2026-10-04.85: iOS Safari deadlocks when speak() lands in the same tick
+  // as cancel() — the utterance is silently dropped (and later ones can wedge
+  // with it). Defer one beat on Apple touch devices; everywhere else pumps now.
+  if (/iP(hone|ad|od)/.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')) {
+    setTimeout(pump, 90);
+  } else {
+    pump();
   }
 }
