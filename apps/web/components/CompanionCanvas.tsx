@@ -162,6 +162,17 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     let perfAction: THREE.AnimationAction | null = null;
     let idleOrder: ClipName[] = [];
     let idleIdx = 0;
+    // r2026-10-04.59 (Master Simon): EVERY clip change is a blend, never a
+    // jump — pose A at 10° glides into pose B at 90° over `fade` seconds.
+    // The mixer crossfades bone quaternions, so intermediate frames are real
+    // in-between poses, not snaps.
+    const FADE = {
+      entry: 0.9,      // procedural pose → first library clip
+      idleRotate: 0.9, // idle clip → next idle clip
+      toPerf: 0.45,    // idle → one-shot performance
+      perfCut: 0.3,    // performance → interrupted by another performance
+      perfEnd: 0.7,    // finished performance → back to idle
+    };
 
     const nextIdle = (fade: number) => {
       if (!mixer || !idleOrder.length) return;
@@ -173,6 +184,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       action.clampWhenFinished = true;
       action.reset();
       if (idleAction && idleAction !== action) {
+        // blend from wherever the body currently is into this clip
         idleAction.crossFadeTo(action, fade, false);
         action.play();
       } else {
@@ -189,8 +201,15 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       action.setLoop(THREE.LoopOnce, 1);
       action.clampWhenFinished = true;
       action.reset();
-      if (perfAction && perfAction !== action) perfAction.stop();
-      if (idleAction && idleAction !== action) idleAction.crossFadeTo(action, 0.25, false);
+      if (perfAction && perfAction !== action) {
+        // r59: glide out of the previous performance — a hard stop() here
+        // was the visible "snap" from pose A to pose B
+        perfAction.crossFadeTo(action, FADE.perfCut, false);
+      } else if (idleAction && idleAction !== action) {
+        idleAction.crossFadeTo(action, FADE.toPerf, false);
+      } else {
+        action.fadeIn(FADE.toPerf);
+      }
       action.play();
       perfAction = action;
     };
@@ -201,10 +220,10 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
         if (e.action === perfAction) {
           // a one-shot performance ended → glide back into the idle playlist
           perfAction = null;
-          nextIdle(0.4);
+          nextIdle(FADE.perfEnd);
         } else if (e.action === idleAction) {
           // this idle clip ran its course → drift to the next one
-          nextIdle(0.35);
+          nextIdle(FADE.idleRotate);
         }
       });
       // per-character deterministic idle playlist from the calm clips
@@ -215,7 +234,9 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       idleIdx = 0;
       mixerActive = true;
       if (avatar) avatar.clipDrivesBody = true;
-      nextIdle(0);
+      // r59: blend IN from the current (procedural) pose over ~a second —
+      // the very first clip no longer pops in from nowhere
+      nextIdle(FADE.entry);
     };
 
     // Local mirror first (vendored by scripts/fetch-anims.mjs into
