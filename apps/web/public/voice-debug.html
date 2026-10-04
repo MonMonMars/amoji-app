@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Amoji Voice Debug — on-device TTS probes</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 16px; background: #0b0e14; color: #e8ecf4;
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .note {
+    background: #1a2233; border: 1px solid #33415e; border-radius: 10px;
+    padding: 10px 12px; margin: 10px 0 16px; font-size: 14px; color: #bcd0ff;
+  }
+  .test { margin: 0 0 18px; }
+  .test h2 { font-size: 16px; margin: 0 0 8px; color: #9fd0ff; }
+  button {
+    display: block; width: 100%; margin: 0 0 8px; padding: 16px;
+    font-size: 18px; font-weight: 600; color: #0b0e14;
+    background: #7ec8ff; border: 0; border-radius: 12px;
+    cursor: pointer; touch-action: manipulation;
+  }
+  button:active { background: #a8dcff; }
+  button.secondary { background: #3a4763; color: #e8ecf4; }
+  pre {
+    background: #10141d; border: 1px solid #26304a; border-radius: 10px;
+    padding: 10px; margin: 8px 0 0; font-size: 13px; line-height: 1.45;
+    white-space: pre-wrap; word-break: break-word; max-height: 320px; overflow-y: auto;
+  }
+  .ok { color: #7dffa8; } .bad { color: #ff8f8f; } .dim { color: #8b96ad; }
+</style>
+</head>
+<body>
+<h1>Amoji Voice Debug</h1>
+<div class="note">
+  On iOS, <b>every audio path is gesture-gated</b>: nothing below may produce
+  sound (or even start an AudioContext) unless the tap that runs it IS a user
+  gesture. So: press each button <b>by hand</b>, one at a time, and read the
+  log. Also check the hardware <b>silent switch</b> — ON mutes all web audio
+  and speechSynthesis on Safari, and no page can detect it.
+  Voice matrix target locales: zh-HK (Cantonese), zh-CN, ja-JP, en-US.
+</div>
+
+<div class="test">
+  <h2>1 · Browser speechSynthesis</h2>
+  <button id="b1">Tap — speak “Hello, this is test one.”</button>
+  <pre id="l1" class="dim">(not run yet)</pre>
+</div>
+
+<div class="test">
+  <h2>2 · Google TTS over &lt;audio&gt; (the r89 mid tier)</h2>
+  <button id="b2">Tap — play “Hello, this is test two.”</button>
+  <pre id="l2" class="dim">(not run yet)</pre>
+</div>
+
+<div class="test">
+  <h2>3 · speechSynthesis.getVoices()</h2>
+  <button id="b3" class="secondary">Tap — list voices (zh-HK / zh-CN / ja-JP)</button>
+  <pre id="l3" class="dim">(not run yet)</pre>
+</div>
+
+<div class="test">
+  <h2>4 · AudioContext state (WebAudio unlock)</h2>
+  <button id="b4" class="secondary">Tap — create + resume an AudioContext</button>
+  <pre id="l4" class="dim">(not run yet)</pre>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  function stamp() {
+    var d = new Date();
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()) + '.' + d.getMilliseconds();
+  }
+  function el(id) { return document.getElementById(id); }
+  function log(id, msg, cls) {
+    var pre = el(id);
+    if (pre.textContent === '(not run yet)') pre.textContent = '';
+    var line = document.createElement('div');
+    if (cls) line.className = cls;
+    line.textContent = '[' + stamp() + '] ' + msg;
+    pre.appendChild(line);
+    pre.scrollTop = pre.scrollHeight;
+  }
+
+  // ---- test 1: speechSynthesis -------------------------------------------
+  el('b1').addEventListener('click', function () {
+    var pre = '1';
+    if (typeof speechSynthesis === 'undefined') {
+      log(pre, 'speechSynthesis is UNDEFINED on this device', 'bad');
+      return;
+    }
+    try {
+      log(pre, 'speak() called (in a tap = gesture gate satisfied)', 'dim');
+      var u = new SpeechSynthesisUtterance('Hello, this is test one.');
+      u.onstart = function () { log(pre, 'onstart — the engine really started audio', 'ok'); };
+      u.onend = function () { log(pre, 'onend — utterance finished', 'ok'); };
+      u.onerror = function (e) {
+        log(pre, 'onerror: ' + (e && e.error ? e.error : 'unknown') + ' — tier would be marked dead', 'bad');
+      };
+      try { speechSynthesis.resume(); } catch (e0) {}
+      speechSynthesis.speak(u);
+      // iOS sometimes leaves the engine suspended: nudge it awake
+      var nudges = 0;
+      var iv = setInterval(function () {
+        nudges += 1;
+        try { speechSynthesis.resume(); } catch (e1) {}
+        if (nudges >= 10) clearInterval(iv);
+      }, 400);
+    } catch (err) {
+      log(pre, 'THREW synchronously: ' + err, 'bad');
+    }
+  });
+
+  // ---- test 2: Google TTS as chained <audio> ------------------------------
+  el('b2').addEventListener('click', function () {
+    var pre = '2';
+    var url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-US&q='
+      + encodeURIComponent('Hello, this is test two.');
+    log(pre, 'fetching ' + url, 'dim');
+    var a = new Audio(url);
+    a.onplay = function () { log(pre, 'onplay — media playback started (silent-switch immune)', 'ok'); };
+    a.onended = function () { log(pre, 'onended — chunk finished', 'ok'); };
+    a.onerror = function (e) {
+      log(pre, 'onerror — media element failed (network block / media gate): ' + (e && e.type ? e.type : '?'), 'bad');
+    };
+    var p = a.play();
+    if (p && p.then) {
+      p.then(function () { log(pre, 'play() promise RESOLVED — gesture gate open for media', 'ok'); })
+       .catch(function (err) { log(pre, 'play() promise REJECTED: ' + err, 'bad'); });
+    } else {
+      log(pre, 'play() returned no promise (old engine)', 'dim');
+    }
+  });
+
+  // ---- test 3: voice inventory -------------------------------------------
+  el('b3').addEventListener('click', function () {
+    var pre = '3';
+    if (typeof speechSynthesis === 'undefined') {
+      log(pre, 'speechSynthesis is UNDEFINED', 'bad');
+      return;
+    }
+    var reported = 0;
+    function report(tag) {
+      reported += 1;
+      var vs = speechSynthesis.getVoices() || [];
+      log(pre, '— report #' + reported + ' (' + tag + '): ' + vs.length + ' voices', vs.length ? 'ok' : 'bad');
+      var prefixes = ['zh-HK', 'zh-CN', 'ja-JP', 'en-US'];
+      for (var pi = 0; pi < prefixes.length; pi++) {
+        var hits = [];
+        for (var vi = 0; vi < vs.length; vi++) {
+          var lang = (vs[vi].lang || '').replace(/_/g, '-');
+          if (lang.indexOf(prefixes[pi]) === 0) hits.push(vs[vi].name);
+        }
+        log(pre, '  ' + prefixes[pi] + ': ' + hits.length + (hits.length ? ' — e.g. ' + hits.slice(0, 3).join(', ') : ' — NONE'), hits.length ? 'ok' : 'bad');
+      }
+    }
+    report('tap');
+    try {
+      speechSynthesis.onvoiceschanged = function () { report('onvoiceschanged'); };
+    } catch (e) {}
+  });
+
+  // ---- test 4: AudioContext state -----------------------------------------
+  el('b4').addEventListener('click', function () {
+    var pre = '4';
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) { log(pre, 'No AudioContext constructor at all', 'bad'); return; }
+    var ctx;
+    try { ctx = new AC(); } catch (err) { log(pre, 'THREW creating context: ' + err, 'bad'); return; }
+    log(pre, 'created; initial state = ' + ctx.state + ' (suspended before a gesture is normal)', 'dim');
+    // silent 1-sample buffer: the r99 unlockAudio trick
+    try {
+      var buf = ctx.createBuffer(1, 1, 22050);
+      var src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(0);
+    } catch (e) {}
+    var rp = ctx.resume();
+    if (rp && rp.then) {
+      rp.then(function () {
+        log(pre, 'resume() resolved → state = ' + ctx.state + (ctx.state === 'running' ? ' — WebAudio UNLOCKED' : ' — STILL SUSPENDED'), ctx.state === 'running' ? 'ok' : 'bad');
+        setTimeout(function () {
+          log(pre, '…after 1s: state = ' + ctx.state, ctx.state === 'running' ? 'ok' : 'bad');
+        }, 1000);
+      }).catch(function (err) { log(pre, 'resume() rejected: ' + err, 'bad'); });
+    } else {
+      log(pre, 'resume() returned no promise', 'dim');
+    }
+  });
+})();
+</script>
+</body>
+</html>

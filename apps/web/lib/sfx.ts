@@ -11,6 +11,8 @@
 //     little violin phrase, ice-cream munching, jogging footsteps, a glass
 //     clink for the fine-dining toast — plus giggle trills when she laughs
 //     and a soft boing when you poke her.
+// r2026-10-05.102: voice-hold — see the block below; foley never rings over
+//   a speak attempt anymore.
 // Pure-data tables are exported for tests; every AudioContext touch is lazy
 // so node selftests stay side-effect free. Master switch: localStorage
 // 'amoji.sfx' = 'off' silences everything (a Settings toggle can call
@@ -104,6 +106,25 @@ export function ambientPlaying(): boolean {
   return current !== null;
 }
 
+// ---- r102: voice-hold — foley never rings over a speak attempt -------------
+// Simon's report: a "bell" and "typing sounds" right when she tries to talk.
+// Root cause: every speak() coincides with a movement trigger, and the
+// movement foley from this module fired at full volume while all three TTS
+// tiers were silently failing — the taichi temple-bowl chime and the twinkle
+// ambient pings read as a "bell"; the crickets' 4300Hz ticks read as
+// "typing". voice.ts holds the foley for one speak window around each
+// attempt and releases it the instant any tier's audio actually starts.
+let voiceHoldUntil = 0;
+/** r102: suppress one-shots + ambient ticks for `ms` (default one speak window). */
+export function sfxVoiceHold(ms = 12_000): void {
+  voiceHoldUntil = Date.now() + ms;
+}
+/** r102: a tier's audio started — let the foley back in immediately. */
+export function sfxVoiceRelease(): void {
+  voiceHoldUntil = 0;
+}
+const voiceHeld = (): boolean => Date.now() < voiceHoldUntil;
+
 // ---- low-level one-shot helpers ---------------------------------------------
 
 interface ToneOpts {
@@ -157,6 +178,7 @@ function burst(c: AudioContext, dest: AudioNode, o: BurstOpts): void {
 /** a movement performance now comes with its own foley — call for every triggerMove */
 export function playMoveSfx(kind: MoveKind): void {
   if (MOVE_SFX_SKIP.includes(kind)) return; // the music engine carries these
+  if (voiceHeld()) return; // r102: never ring foley over a speak attempt
   const c = ctx();
   if (!c || !sfxEnabled()) return;
   const t = c.currentTime + 0.02;
@@ -246,6 +268,7 @@ export function playMoveSfx(kind: MoveKind): void {
 
 /** her giggle now trills — called from triggerLaugh so every funny moment rings */
 export function playLaughSfx(): void {
+  if (voiceHeld()) return; // r102: never ring foley over a speak attempt
   const c = ctx();
   if (!c || !sfxEnabled()) return;
   const t = c.currentTime + 0.02;
@@ -259,6 +282,7 @@ export function playLaughSfx(): void {
 
 /** a soft boing + padded thump when you poke her */
 export function playPokeSfx(): void {
+  if (voiceHeld()) return; // r102: never ring foley over a speak attempt
   const c = ctx();
   if (!c || !sfxEnabled()) return;
   const t = c.currentTime + 0.02;
@@ -295,13 +319,13 @@ export function ambientStart(sceneId: string): void {
   const dead = { v: false };
   /** schedule fn once after a random delay in [min,max] ms */
   const later = (minMs: number, maxMs: number, fn: () => void): void => {
-    const id = setTimeout(() => { if (!dead.v) fn(); }, minMs + Math.random() * (maxMs - minMs));
+    const id = setTimeout(() => { if (!dead.v && !voiceHeld()) fn(); }, minMs + Math.random() * (maxMs - minMs));
     timers.push(id);
   };
   /** schedule fn on a repeating random cadence in [min,max] ms */
   const every = (minMs: number, maxMs: number, fn: () => void): void => {
     const loop = (): void => {
-      const id = setTimeout(() => { if (dead.v) return; fn(); loop(); }, minMs + Math.random() * (maxMs - minMs));
+      const id = setTimeout(() => { if (dead.v) return; if (!voiceHeld()) fn(); loop(); }, minMs + Math.random() * (maxMs - minMs));
       timers.push(id);
     };
     loop();

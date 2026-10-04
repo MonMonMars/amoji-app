@@ -59,9 +59,21 @@
 // and speak() logs every attempt (length + chain) and pings the
 // `amoji:voice-status` bus on the attempt itself, so the status dot moves
 // the moment she TRIED to talk, not only when a tier finishes.
+// r2026-10-05.102: voice/SFX disentangle — speak() now holds the movement
+// foley (sfxVoiceHold, lib/sfx.ts) for one speak window, so a failed speak
+// attempt can no longer ring taichi chimes / twinkle pings / cricket ticks
+// over the silence (Simon's "bell + typing sounds" report); any tier's
+// audio-START releases the hold instantly. Also: speechSynthesis gets its
+// own gesture prime (primeSynthInGesture) — iOS gates the synth engine
+// separately from WebAudio and media elements, and a zero-volume utterance
+// spoken inside the first tap is what flips it to 'allowed' on devices where
+// the hardware silent switch is OFF yet every synth call was still dropped.
 import type { Lang } from './prefs';
 import { speakEdge, stopEdge } from './edge-tts';
 import { speakGtts, stopGtts } from './gtts';
+// r102: sfx.ts imports only a TYPE from moves (erased at compile), so there
+// is no runtime cycle here.
+import { sfxVoiceHold, sfxVoiceRelease } from './sfx';
 import { dominant, pickInterjection, pickThinkingFiller } from './fillers';
 import { SONG_MELODY } from './songs';
 import { notifySpeaking } from './speech';
@@ -95,6 +107,7 @@ let voiceStartedAt = 0;
 function markVoiceStarted(): void {
   voiceStartedAt = Date.now();
   markMediaPrimed(); // real audio starting also proves the iOS media gate open
+  sfxVoiceRelease(); // r102: a tier is audibly speaking — let the foley back in
 }
 /** r100: true only when some tier's audio actually STARTED at/after `since`. */
 export function voiceStartedSince(since: number): boolean {
@@ -172,9 +185,30 @@ function unlockAudio(): void {
     try { playSilentUnblock(); } catch { /* ignore */ }
   }
 }
+
+// ---- r102: speechSynthesis gesture prime ------------------------------------
+// iOS keeps the speechSynthesis ENGINE itself gated until a user gesture
+// performs a speak() — WebAudio unlock and media priming don't count for the
+// synth path. A zero-volume space utterance inside the first tap flips the
+// gate without an audible blip; synthPrimed latches so it only ever runs
+// once (before the first real line, not instead of it).
+let synthPrimed = false;
+export function primeSynthInGesture(): void {
+  if (synthPrimed || typeof speechSynthesis === 'undefined') return;
+  try {
+    speechSynthesis.resume();
+    const u = new SpeechSynthesisUtterance(' ');
+    u.volume = 0;
+    u.rate = 2;
+    speechSynthesis.speak(u);
+  } catch { /* ignore */ }
+}
+
 if (typeof window !== 'undefined') {
   for (const ev of ['pointerdown', 'keydown', 'touchstart'] as const) {
     window.addEventListener(ev, unlockAudio, { once: true, passive: true });
+    // r102: synth engine priming rides every gesture too — cheap and idempotent
+    window.addEventListener(ev, primeSynthInGesture, { passive: true });
   }
 }
 
@@ -904,6 +938,10 @@ export function speak(
   const chain = neuralEnabled() && typeof WebSocket !== 'undefined' ? 'edge→gtts→synth' : 'synth';
   try { console.log(`[amoji voice] speak attempt · ${text.length} chars · ${lang} · chain ${chain}`); } catch { /* ignore */ }
   reportVoiceStatus('attempt', true, `speak attempt · ${text.length} chars · ${chain}`);
+  // r102: hold the movement/ambient foley for one speak window — if every
+  // tier fails silently this is what stops the "bell + typing" sound effects
+  // from ringing over the failed attempt. Any tier's audio-START releases it.
+  sfxVoiceHold();
   const { emotion, value } = dominant(emotionHints);
   const expr = EXPRESSIVENESS[characterId] ?? 1;
   const exprScale = 0.8 + 0.2 * expr; // expressive characters feel emotions harder
@@ -1255,6 +1293,7 @@ function synthSpeak(
       // began — only it may mark the voice started (never a mere enqueue).
       u.onstart = () => {
         markVoiceStarted();
+        synthPrimed = true; // r102: the engine genuinely started audio — no more priming
         reportVoiceStatus('synth', true, 'browser voice started');
       };
       // r2026-10-04.75: surface real failures (autoplay block, no voice, engine
