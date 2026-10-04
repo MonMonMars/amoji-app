@@ -4,8 +4,11 @@
 //  · INTERJECTIONS    — audible reactions (giggles, gasps, sighs) prepended to
 //    a spoken reply when the dominant emotion is STRONG (≥ INTERJECTION_AT)
 // r2026-10-03.24: the first "hmm…" now wears the felt mood — a sad user's hmm
-//   is softer ("take your time… I'm with you…") than a happy one's. The mood
-//   bank wins when present; the neutral path is byte-identical to before.
+//   is softer than a happy one's. The mood bank wins when present.
+// r2026-10-04.90: every thinking filler is now strictly loading-flavored —
+//   um / let me think / let me search the internet / still searching. No more
+//   off-topic comforting lines (per Simon): these tics exist ONLY to buy
+//   thinking time, so they all sound like thinking/searching.
 // Pure data + tiny pickers so it stays unit-testable in node.
 
 export type LangCode = 'yue' | 'zh' | 'ja' | 'en';
@@ -14,53 +17,53 @@ export type LangCode = 'yue' | 'zh' | 'ja' | 'en';
 export const INTERJECTION_AT = 0.6;
 
 export const THINKING_FILLERS: Record<LangCode, string[]> = {
-  yue: ['嗯……', '諗緊喎……', '等等呀……'],
-  zh: ['嗯……', '我想想……', '等等哦……'],
-  ja: ['うーん……', '考えてる……', 'ちょっと待ってね……'],
-  en: ['hmm……', 'let me think……', 'one sec……'],
+  yue: ['嗯……', '等我諗諗……', '等我上網搵下……', '搵緊呀……', '諗緊諗緊……'],
+  zh: ['嗯……', '让我想想……', '我上网搜一下……', '搜索中……', '想一下想一下……'],
+  ja: ['うーん……', '考えてる……', '検索してるね……', '調べてる……', 'もう少し……'],
+  en: ['hmm……', 'let me think……', 'let me search the internet……', 'still searching……', 'umm, one moment……'],
 };
 
 /**
- * r2026-10-03.24 — mood-tinted first "hmm…". When she has just FELT the
- * user's mood, the filler that buys her thinking time matches the user's
- * weather instead of staying neutral.
+ * r2026-10-03.24 — mood-tinted first "hmm…". r2026-10-04.90 — mood now only
+ * changes the TONE (fast/slow/soft) of a thinking/searching line, never the
+ * topic: every entry below is still about thinking or searching.
  */
 export const MOOD_FILLERS: Record<string, Record<LangCode, string[]>> = {
   happy: {
-    yue: ['嗯！……', '開心嘅嘢，等我諗下……', '好呀好呀……等我講……'],
-    zh: ['嗯！……', '开心的事，让我想想……', '好呀好呀……让我讲……'],
-    ja: ['うん！……', '嬉しい話、考えさせて……', 'うんうん……言うね……'],
-    en: ['hmm, okay!……', 'happy things, let me think……', 'okay okay… let me say this right……'],
+    yue: ['嗯！等我諗下……', '好開心，等我搵下資料……', '等我上網查下先……'],
+    zh: ['嗯！让我想想……', '好开心，让我查一下……', '我上网搜搜看……'],
+    ja: ['うん！考えてる……', '嬉しい、検索するね……', '調べてるよ……'],
+    en: ['hmm, okay! let me think……', 'happy question — searching for it……', 'looking that up……'],
   },
   tired: {
-    yue: ['嗯……慢慢諗……', '等我唞住諗……', '攰就慢慢嚟……我等你……'],
-    zh: ['嗯……慢慢想……', '让我边休息边想……', '累了就慢慢来……我等你……'],
-    ja: ['うーん……ゆっくり考える……', '少し休みながら考えるね……', '疲れたらゆっくりでいいよ……'],
-    en: ['hmm… thinking slowly…', 'let me think… no rush at all…', 'if you\'re tired… we take it slow…'],
+    yue: ['嗯……慢慢諗……', '等我慢慢搵……', '搵緊，唔使急……'],
+    zh: ['嗯……慢慢想……', '让我慢慢搜……', '搜着呢，不急……'],
+    ja: ['うーん……ゆっくり考える……', 'ゆっくり検索するね……', '探してるよ、急がなくていい……'],
+    en: ['hmm… thinking slowly…', 'searching… no rush…', 'looking… take your time…'],
   },
   sad: {
-    yue: ['嗯……我喺度諗……', '慢慢嚟……我陪住你……', '嗯……唔緊要，等我……'],
-    zh: ['嗯……我在想着呢……', '慢慢来……我陪着你……', '嗯……没关系，等我……'],
-    ja: ['うーん……考えてるからね……', 'ゆっくりでいいよ……一緒に考える……', 'うん……大丈夫、待ってて……'],
-    en: ['hmm… I\'m here, thinking…', 'take your time… I\'m with you…', 'it\'s okay… let me…'],
+    yue: ['嗯……我諗緊……', '等我慢慢搵下……', '搵緊㗎……等我……'],
+    zh: ['嗯……我在想着呢……', '让我慢慢搜一下……', '搜着呢……等我……'],
+    ja: ['うーん……考えてるからね……', 'ゆっくり調べるね……', '探してるよ……待ってて……'],
+    en: ['hmm… thinking…', 'searching… hold on…', 'still looking…'],
   },
   angry: {
-    yue: ['嗯……我聽緊……', '等我諗下……慢慢講……', '我喺度㗎……等我……'],
-    zh: ['嗯……我在听……', '让我想想……慢慢说……', '我在呢……等我……'],
-    ja: ['うん……聞いてるよ……', '考えるから……ゆっくり話して……', 'ここにいるよ……待ってて……'],
-    en: ['hmm… I\'m listening…', 'let me think… go on, let it out…', 'I\'m here… hold on…'],
+    yue: ['嗯……我聽緊，等我諗……', '等我搵下先……', '諗緊，慢慢講……'],
+    zh: ['嗯……我在听，让我想想……', '让我搜一下先……', '想着呢，慢慢说……'],
+    ja: ['うん……聞いてる、考えてる……', '検索するね……', '考え中……ゆっくり話して……'],
+    en: ['hmm… listening, let me think…', 'searching… go on…', 'thinking it over…'],
   },
   anxious: {
-    yue: ['嗯……唔使急㗎……', '等我諗清楚先……唔緊張……', '慢慢嚟，我喺度……'],
-    zh: ['嗯……不用急的……', '让我想清楚……别紧张……', '慢慢来，我在……'],
-    ja: ['うん……急がなくていいからね……', 'ちゃんと考えるね……大丈夫……', 'ゆっくり、私がいるよ……'],
-    en: ['hmm… no rush at all…', 'let me think it through… breathe…', 'easy… I\'m right here…'],
+    yue: ['嗯……唔使急，等我搵……', '等我諗清楚先……', '搵緊㗎，好快……'],
+    zh: ['嗯……不用急，让我搜……', '让我想清楚先……', '搜着呢，很快……'],
+    ja: ['うん……急がなくていい、考えてる……', 'ちゃんと調べるね……', '探してるよ、もう少し……'],
+    en: ['hmm… no rush, thinking…', 'searching carefully…', 'almost got it…'],
   },
   sick: {
-    yue: ['嗯……你休息住……', '等我諗……你唔使郁……', '慢慢嚟……我幫你諗……'],
-    zh: ['嗯……你休息着……', '让我想想……你不用动……', '慢慢来……我帮你想……'],
-    ja: ['うん……あなたは休んでて……', '考えるから……動かなくていいよ……', 'ゆっくりね……私が考えておく……'],
-    en: ['hmm… you rest…', 'let me think… you don\'t need to move…', 'easy… I\'ll do the thinking…'],
+    yue: ['嗯……你休息，我搵緊……', '等我諗，你唔使郁……', '我幫你上網搵下……'],
+    zh: ['嗯……你休息，我来搜……', '让我想，你不用动……', '我帮你上网查下……'],
+    ja: ['うん……あなたは休んで、調べるね……', '考えるから…動かなくていいよ……', '検索しておくね……'],
+    en: ['hmm… you rest, I\'ll search…', 'let me think… you don\'t need to move…', 'looking it up for you…'],
   },
 };
 
