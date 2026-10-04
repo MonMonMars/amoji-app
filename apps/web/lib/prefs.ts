@@ -290,7 +290,8 @@ export type StrKey =
   | 'voiceReplies' | 'neuralVoice' | 'memoryTitle' | 'forgetBtn' | 'tutorBtn' | 'micTitle'
   // consolidated settings menu (r2026-10-02.7)
   | 'settingsCompanion' | 'settingsScene' | 'settingsVoice' | 'settingsData' | 'settingsHelp'
-  | 'yourName' | 'clearHistory' | 'clearHistoryConfirm' | 'forgetConfirm'
+  | 'yourName' | 'yourGender' | 'genderMale' | 'genderFemale' | 'genderSecret'
+  | 'clearHistory' | 'clearHistoryConfirm' | 'forgetConfirm'
   // memory v2 browser (r2026-10-02.11)
   | 'memoryBrowser' | 'memoryEmpty' | 'memoryAddPlaceholder' | 'memoryAdd' | 'memoryExport'
   | 'memoryCopied' | 'memoryTypePreference' | 'memoryTypeEvent' | 'memoryTypePlan' | 'forgetOneConfirm'
@@ -367,6 +368,10 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   settingsData: { en: 'Memory & data', yue: '記憶同資料', zh: '记忆与数据', ja: '記憶とデータ' },
   settingsHelp: { en: 'Help', yue: '幫助', zh: '帮助', ja: 'ヘルプ' },
   yourName: { en: 'Your name', yue: '你嘅名字', zh: '你的名字', ja: 'あなたの名前' },
+  yourGender: { en: 'You are', yue: '你係', zh: '你是', ja: 'あなたは' },
+  genderMale: { en: 'Male', yue: '男仔', zh: '男生', ja: '男性' },
+  genderFemale: { en: 'Female', yue: '女仔', zh: '女生', ja: '女性' },
+  genderSecret: { en: 'Rather not say', yue: '保密', zh: '保密', ja: '内緒' },
   clearHistory: { en: 'Clear chat history', yue: '清空傾偈紀錄', zh: '清空聊天记录', ja: '会話履歴を消去' },
   clearHistoryConfirm: { en: 'Clear the whole conversation history?', yue: '真係要清空晒成個傾偈紀錄？', zh: '确定要清空全部聊天记录吗？', ja: '会話履歴をすべて消去しますか？' },
   forgetConfirm: { en: 'Forget everything she remembers about you?', yue: '要佢忘記晒所有關於你嘅記憶？', zh: '要TA忘记所有关于你的记忆吗？', ja: 'あなたのことをすべて忘れさせますか？' },
