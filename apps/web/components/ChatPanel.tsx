@@ -21,7 +21,7 @@
 // a soft slow chuckle and a gentle joy, not a full burst; an angry mood gets
 // a wry chuckle that defuses, a sad one a warm "thanks, I needed that".
 // r2026-10-03.26: her POKE reaction wears it too — poking her while you're
-// sad gets a gentle, almost apologetic gasp and a low-surprise flinch (not
+// sad gets a gentle apologetic gasp and a low-surprise flinch (not
 // a full startle); a tired one a soft "oh…"; an angry one a wry "hey—";
 // no felt mood keeps the classic personality cry and the old voice numbers.
 // r2026-10-03.27: if her LLM brain runs out of credit mid-session, client-chat
@@ -87,6 +87,8 @@
 // warmth from the pairing — opposite-sex gets gentle affection, same-gender
 // gets best-mate banter, kid mode stays friendship-only, and "secret" (the
 // default) adds nothing at all, so users who never pick keep the old voice.
+// r2026-10-04.70b: typecheck fix — userGender state admits `undefined`
+// (loadProfile().gender is optional; never-set profiles stay 'secret'-free).
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh, triggerMove } from '../lib/companion';
 import { detectMove } from '../lib/moves';
@@ -191,10 +193,10 @@ export default function ChatPanel({
   const onMemCountRef = useRef(onMemCount);
   onMemCountRef.current = onMemCount;
 
-  // r70 — the user's own gender (Settings → "You are"; default 'secret').
-  // Secret means the prompt gets NO gender guidance, so users who never set
-  // it keep exactly the behaviour they had before.
-  const [userGender, setUserGender] = useState<Gender>(() => loadProfile().gender);
+  // r70 — the user's own gender (Settings → "You are"; never-set = undefined,
+  // which the adaptive block treats as 'secret': no warmth guidance at all,
+  // so users who never pick keep exactly the behaviour they had before).
+  const [userGender, setUserGender] = useState<Gender | undefined>(() => loadProfile().gender);
   useEffect(() => {
     const sync = () => setUserGender(loadProfile().gender);
     window.addEventListener('amoji:profile', sync);
