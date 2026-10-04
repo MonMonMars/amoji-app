@@ -5,12 +5,16 @@
 // The ball breathes with her voice volume (louder = bigger), and the color
 // follows her mood: yellow when happy, red when angry, ChatGPT-blue tint
 // with ripple rings while listening.
-// r2026-10-03.29: nothing may EVER touch the canvas edge. Halo and ripple
-// rings now live inside a safe circular margin, so no matter how loud she
-// gets, nothing gets clipped into a square — only the soft circle shows.
 // r2026-10-04.87: the orb now also breathes for the USER — while the VAD
 // hears you speaking, the ball swells bigger and burns white-hot in the
 // centre, so the mic shows who currently holds the floor at a glance.
+// r2026-10-04.88: ROOT CAUSE of the never-dying "square border" finally
+// found. r.29's "safe margin" compared the halo radius (up to 0.72·M)
+// against M — but a canvas clips at M/2 from its centre, so the halo and
+// the ripple rings were being sliced straight at the canvas boundary and
+// rendered as a glowing rounded SQUARE around the ball. All geometry is
+// now computed against SAFE = 0.47·M (< M/2), so every gradient reaches
+// alpha zero well inside the canvas and nothing can ever be squared off.
 import { useEffect, useRef } from 'react';
 import { getLatestFrame, dominantMood } from '../lib/companion';
 import { sampleSpeech } from '../lib/speech';
@@ -109,20 +113,26 @@ export default function EmotionOrb({
       const cx = w / 2;
       const cy = h / 2;
       const M = Math.min(w, h);
+      // r88 — the hard invariant: NOTHING may be drawn further than SAFE
+      // from the centre. The canvas clips at M/2 (not M — that was r.29's
+      // fatal slip), so SAFE = 0.47·M guarantees every gradient is fully
+      // transparent long before it can touch an edge. No more square halo.
+      const SAFE = M * 0.47;
       ctx.clearRect(0, 0, w, h);
       // the ball swells with her voice — high volume = bigger, quiet = smaller.
-      // r.29: max radius 0.36·M means even the full-volume halo (2.0R = 0.72·M)
-      // and the widest ripple ring stay far inside the canvas — no square clip.
-      const R = M * 0.36 * (0.66 + 0.34 * vol);
+      // Max body radius 0.30·M, so even the widest adornment (halo/ring at
+      // 1.5×R = 0.45·M) stays inside SAFE — blurry-edged circle, never a box.
+      const R = M * 0.3 * (0.62 + 0.38 * vol);
       const colA = (a: number) => `rgba(${cur.r | 0},${cur.g | 0},${cur.b | 0},${a})`;
 
-      // fuzzy outer halo — light bleed, feathered to nothing
-      const halo = ctx.createRadialGradient(cx, cy, R * 0.2, cx, cy, R * 2.0);
+      // fuzzy outer halo — light bleed, feathered to nothing well inside SAFE
+      const haloR = Math.min(R * 1.5, SAFE);
+      const halo = ctx.createRadialGradient(cx, cy, R * 0.2, cx, cy, haloR);
       halo.addColorStop(0, colA(0.3 + 0.4 * vol));
       halo.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = halo;
       ctx.beginPath();
-      ctx.arc(cx, cy, R * 2.0, 0, Math.PI * 2);
+      ctx.arc(cx, cy, haloR, 0, Math.PI * 2);
       ctx.fill();
 
       // the blob body — alpha melts to zero AT the rim, so the edge is soft
@@ -161,8 +171,8 @@ export default function EmotionOrb({
       ctx.arc(cx - R * 0.24, cy - R * 0.3, R * 0.3, 0, Math.PI * 2);
       ctx.fill();
 
-      // listening ripple rings (ChatGPT voice pulse) — widest ring is 2.0R,
-      // which stays inside the safe margin, so the rings are never squared off
+      // listening ripple rings (ChatGPT voice pulse) — capped at SAFE, so
+      // a ring at its fattest is still a clean circle, never squared off
       if (listenRef.current) {
         for (let i = 0; i < 2; i++) {
           const ph = (t * 0.85 + i * 0.5) % 1;
@@ -170,7 +180,7 @@ export default function EmotionOrb({
           ctx.strokeStyle = `rgb(${LISTEN_RGB[0]},${LISTEN_RGB[1]},${LISTEN_RGB[2]})`;
           ctx.lineWidth = 2 * dpr;
           ctx.beginPath();
-          ctx.arc(cx, cy, R * (1.1 + ph * 0.9), 0, Math.PI * 2);
+          ctx.arc(cx, cy, Math.min(R * (1.05 + ph * 0.45), SAFE), 0, Math.PI * 2);
           ctx.stroke();
         }
         ctx.globalAlpha = 1;
