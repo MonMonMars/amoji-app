@@ -121,6 +121,15 @@
 // waiting for the whole reply (voice starts seconds earlier on long replies);
 // if the finished reply is exactly that sentence, the final speak pass no
 // longer repeats it.
+// r2026-10-05.100: completion-gated speak guarantee — the r97 skip checked
+// "did we TRY to speak the streamed first sentence", not "did sound actually
+// START". On Simon's iPhone every tier could silently fail mid-stream and
+// the final pass still skipped the re-speak: a perfect voice chain still
+// produces total silence when nothing is allowed to call it. The skip now
+// requires voiceStartedSince() — a stamp written ONLY inside a tier's
+// audio-start callback — so a silently-failed streaming attempt falls
+// through to the guaranteed full-reply speak. A rare double-speak beats
+// permanent silence.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh, triggerMove } from '../lib/companion';
 import { detectMove } from '../lib/moves';
@@ -133,7 +142,7 @@ import { pickOuch, ouchStyleFor } from '../lib/ouch';
 import { pickLaugh, laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { WARMUP_FIRST_MS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from '../lib/warmup';
 import { clientChat } from '../lib/client-chat';
-import { speak, stopSpeaking, speakThinkingFiller, sing } from '../lib/voice';
+import { speak, stopSpeaking, speakThinkingFiller, sing, voiceStartedSince } from '../lib/voice';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
 import { startMusic, stopMusic, startPerformanceMusic, endPerformanceMusic } from '../lib/music';
 import { characterSpecialty, pickShowcaseOffer, pickTutorialLine, SHOWCASE_START, SHOWCASE_YES_RE, type ShowcaseKind } from '../lib/showcase';
@@ -339,13 +348,19 @@ export default function ChatPanel({
   // it now survives the commitReply/finally stopMusic() cleanup and plays
   // for the whole 9s show; a piano trigger starts the Karplus-Strong piano
   // arrangement for the 6s keys performance, hands at the keys.
-  const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string, alreadySpoken?: string): string => {
+  // r100: `alreadySpoken` carries the streamed first sentence PLUS the stamp
+  // from the moment we tried to speak it — the re-speak skip only applies
+  // when that attempt's audio provably STARTED (voiceStartedSince), never
+  // merely because we tried.
+  const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string, alreadySpoken?: { text: string; since: number }): string => {
     const mv = detectMove(userText) ?? detectMove(reply);
     // r97 — the first sentence already went out live over the stream; when
     // the finished reply is exactly that sentence, a second speak would
-    // replay it. Still fire the move trigger and the speaking notice, just
-    // not the voice.
-    if (alreadySpoken && reply.trim() === alreadySpoken.trim()) {
+    // replay it. r100 — BUT only when its audio actually STARTED: on the
+    // iPhone every tier can silently fail and "we tried" must never suppress
+    // the reply itself. Still fire the move trigger and the speaking notice
+    // either way; fall through to the full speak when sound never began.
+    if (alreadySpoken && reply.trim() === alreadySpoken.text.trim() && voiceStartedSince(alreadySpoken.since)) {
       if (mv) triggerMove(mv);
       notifySpeaking(reply);
       return reply;
@@ -443,8 +458,8 @@ export default function ChatPanel({
   // die. Measured from the USER's last real action (message, poke, spoken
   // word, mic tap) — her own lines don't restart the clock. Stage 0 (<2 min
   // of user silence) = her usual persona/mood idle lines; stage 1 (2 min+) =
-  // direct "you've gone quiet" follow-ups that lean in harder; stage 2
-  // (5 min+) = one soft closer ("I'll be right here") and then she simply
+  // direct "you've gone quiet" follow-ups that lean in harder; stage 2 (5
+  // min+) = one soft closer ("I'll be right here") and then she simply
   // waits instead of nagging. Her lines never pile onto her own voice.
   useEffect(() => {
     const timer = setInterval(() => {
@@ -693,8 +708,11 @@ export default function ChatPanel({
     const personaForBrain = fullPersona();
     let answered = false;
     // r97 — the first complete sentence of a streamed reply, spoken live the
-    // moment it closes (see onPartial below); '' until then
+    // moment it closes (see onPartial below); '' until then.
+    // r100 — sentenceStamp is captured at that live-speak attempt, so the
+    // final pass can tell "sound started" from "we tried and nothing came".
     let firstSentence = '';
+    let sentenceStamp = 0;
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
@@ -737,11 +755,13 @@ export default function ChatPanel({
             // sentence has streamed in, she starts saying it instead of
             // waiting for the whole reply (voice starts seconds earlier on
             // long replies). The final speakReply skips the re-speak when
-            // the reply turns out to be exactly this sentence.
+            // the reply turns out to be exactly this sentence — r100: and
+            // only when this attempt's audio actually STARTED.
             if (!firstSentence) {
               const m = /^[^。！？.!?\n]+[。！？.!?]/.exec(clean);
               if (m) {
                 firstSentence = m[0];
+                sentenceStamp = Date.now();
                 notifySpeaking(firstSentence);
                 speak(firstSentence, characterId, lang, feltHints ?? { joy: 0.4, neutral: 0.3 }, undefined, felt?.intensity);
               }
@@ -762,7 +782,14 @@ export default function ChatPanel({
         rememberTurn(text, r.reply);
         onMemCountRef.current?.(memorySummaryCount());
         feedUtterance(r.reply);
-        const spoken = speakReply(text, r.reply, replyHints, felt?.intensity, felt?.mood, firstSentence || undefined);
+        const spoken = speakReply(
+          text,
+          r.reply,
+          replyHints,
+          felt?.intensity,
+          felt?.mood,
+          firstSentence ? { text: firstSentence, since: sentenceStamp } : undefined,
+        );
         commitReply(spoken);
         answered = true;
       } catch {
@@ -789,11 +816,10 @@ export default function ChatPanel({
   // REAL talking is detected (the recognizer only fires on actual speech, so
   // background noise is ignored) her voice is cut instantly. Typing stays
   // live the whole time. tap again → voice mode OFF.
-  // r87: a Silero VAD now watches the raw audio frames alongside — it flags
+  // r87: a Silero VAD now watches the raw audio frames alongside — it hears
   // real speech BEFORE the first recognized word (so barge-in is earlier and
-  // noise can never fake it) and flushes the pending words into the chat the
-  // moment you actually stop talking. If the VAD can't load, everything
-  // falls back to the r86 behaviour exactly.
+  // noise can never fake it) and knows the true moment you stop talking. If
+  // the VAD can't load, everything falls back to the r86 behaviour exactly.
   const mic = () => {
     if (micModeRef.current) {
       micModeRef.current = false;
@@ -910,7 +936,7 @@ export default function ChatPanel({
   return (
     <div className="pointer-events-auto mx-auto flex w-full max-w-2xl flex-col items-center gap-1.5 px-4 pb-4">
       {/* boxless history — fully opaque messages; only the on-screen height
-          fades (bottom line 100%, each line up a step dimmer). Scrolling an
+          fades (bottom line 100%, each line a step dimmer). Scrolling an
           old line DOWN into the bright zone makes it crisp and readable. */}
       <div
         ref={scrollRef}
