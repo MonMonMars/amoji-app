@@ -10,6 +10,10 @@
 // vocal tic (giggle/sigh/gasp), and per-character expressiveness. If the socket
 // is unreachable (some networks block it), voice.ts falls back to the browser's
 // speechSynthesis automatically.
+// r2026-10-04.64: the sing-song contour itself got wider (0.09→0.12 per clause,
+// question tail lift 1.18→1.22, ! swell 1.35→1.45) so a felt emotion warbles
+// through the whole line, not just the average pitch — closer to ChatGPT's
+// animated delivery while staying inside what the free prosody lever can do.
 // r2026-10-03.40: optional `melody` mode — every clause becomes one note of a
 // pitch contour, legato tempo, musical rests: she can actually sing.
 // r2026-10-04.52: flagship nine casted (kizuna/alicia/ember/mei/atlas/sky/
@@ -188,17 +192,19 @@ export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
             : '';
           return `<prosody pitch='${pct(pitch)}' rate='${pct(rate)}' volume='${db(baseVol)}'>${escapeXml(part)}</prosody>${breakAfter}`;
         }
+        // r2026-10-04.64 — wider sing-song: the contour arc, the question
+        // tail lift and the !-swell all got bigger so feelings ride the line
         const contour = parts.length > 1
-          ? 1 + 0.09 * expr * Math.sin((i / (parts.length - 1)) * Math.PI * (rising ? 1 : 0.7))
+          ? 1 + 0.12 * expr * Math.sin((i / (parts.length - 1)) * Math.PI * (rising ? 1 : 0.7))
           : 1;
-        const tailLift = isTail && rising ? 1.18 : isTail && !rising ? 0.9 : 1;
+        const tailLift = isTail && rising ? 1.22 : isTail && !rising ? 0.9 : 1;
         // punctuation swells: ! pops, … sinks and stretches, — drags
         const bang = /[!！]\s*$/.test(part);
         const trail = /[…\.{3}—–]/.test(part);
-        const swellP = bang ? 1.35 : trail ? 0.7 : 1;
-        const swellR = bang ? 1.15 : trail ? 0.82 : 1;
+        const swellP = bang ? 1.45 : trail ? 0.7 : 1;
+        const swellR = bang ? 1.18 : trail ? 0.82 : 1;
         const rate = clamp(baseRate * contour * (isTail ? 0.96 : 1) * swellR, -0.5, 0.5);
-        const pitch = clamp(basePitch * contour * tailLift * swellP + (bang ? 0.06 * expr : 0), -0.5, 0.5);
+        const pitch = clamp(basePitch * contour * tailLift * swellP + (bang ? 0.08 * expr : 0), -0.5, 0.5);
         // breath pauses: commas shorter than sentence ends; ellipses linger
         const breakAfter = /[。！？!?…\.]$/.test(part) && !isTail
           ? `<break time='${trail ? '320ms' : '230ms'}'/>`
