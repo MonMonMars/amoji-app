@@ -6,7 +6,7 @@
 <title>Amoji Character Catalog — r2026-10-04.86</title>
 <style>
   :root { --bg:#0b0b12; --card:#15151f; --line:#262636; --txt:#e8e8f0; --dim:#9a9ab0; --acc:#f9a8d4; --ok:#34d399; }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body { margin:0; background:var(--bg); color:var(--txt); font-family:-apple-system,'Segoe UI',Roboto,sans-serif; }
   header { padding:22px 18px 10px; }
   h1 { margin:0; font-size:22px; letter-spacing:.3px; }
@@ -106,55 +106,56 @@ const PNG = ['nova','kizuna','alicia','ember','mei','atlas','sky','yuki','hina',
 
 const RIG = 'https://rigmodels.com/model.php?view=';
 const PRE = 'https://rigmodels.com/media/previews/';
+// slug = the exact view identifier from Master Simon's links — never rebuilt from the display name
 const HI = [
-  ['B1','Leifang','JY8EZ7CZV9BMH629YSC3H1MOW','f'],
-  ['B2','Sayuri','GK5KO5RAF42ZTCUT9GERRFG7O','f'],
-  ['B3','FF7 Tifa','IQLI85WKMC7HVT162RN172MDJ','f'],
-  ['B4','Tifa Young','NJM3SFXPFX1KMC7OWXJZN5PL3','f'],
-  ['B5','FF7 Aerith','J68V4WAS9RX0GT5NVRCY3WXB0','f'],
-  ['B6','FF7 Tifa','ENR055PPAO069R973AX5MHV1L','f'],
-  ['B7','Tifa Teen','HF4GAER28FV6SXOWH9NHX8UDH','f'],
-  ['B8','RenderSkill #1','','x','https://renderskill.com/product.php?hash=23fec88291ba870373866f83b5de26'],
-  ['B9','Marlene Wallace','0Q0EDDS215VKJ0U96Y9P7RYU3','f'],
-  ['B10','Tifa','7AB772Y503C344ZUV3DBT7TBB','f'],
-  ['B11','FFVII Nayo','GIWHJ2R3ND70B1SHAQNF6QDIH','f'],
-  ['B12','DOA Alma','ZBPKYJT3AU1F6ARTS4J558AHW','f'],
-  ['B13','FFVII Cloud','Y91I6VCOBVOMGH8999PKG1M8C','m'],
-  ['B14','Cloud Strife','YKWD7CLUWQGQ97YQ3NQSKP7CC','m'],
-  ['B15','DOA Naotora','D5G7VBEXTY84JYH2DUG7DNL93','f'],
-  ['B16','DOA Kasumi','9OKYLTF9KTFEIWMV5LPMX4V3K','f'],
-  ['B17','DOA Hitomi','5H777O3YSXZ7JCGDZMTUOFORY','f'],
-  ['B18','Ellie Young','RLPL46Q4MHNJOKB1HUR8NIB19','f'],
-  ['B19','Hitomi','H3VIIA4J05MMQR9XIMGD4JWR5','f'],
-  ['B20','DOA Ayane','H6CVJB9RN475B5GRSDK34J1A1','f'],
-  ['B21','Jill Valentine','DO7Q6XA7FFMCIENE9M18NND3U','f'],
-  ['B22','Reika','9YL3CCORX6LD0F4K8W9UZLB22','f'],
-  ['B23','Hentai Girl','17DJV06QHCHMGLFFGUJ9CNE8N','f','','18+'],
-  ['B24','FFVII Tifa','50O6F9GQ8RO264TSJ4TYNHKP0','f'],
-  ['B25','Phase 4','25S8KS1BSG8JXYFSI0U5ZX8FO','f'],
-  ['B26','Leifang','GH4NK1VO4V1MCAZGC8QIHRC51','f'],
-  ['B27','Koharu','TNM43O8CVQQSAHH46KCPA35XJ','f'],
-  ['B28','DOA Kokoro','GOQ0DONNP014OUUO5T7Y5P1N0','f'],
-  ['B29','RenderSkill #2','','x','https://renderskill.com/product.php?hash=cf22c0bcfcdacc51d1a6f1ab5b8938'],
-  ['B30','FFVII Tifa','CU0CM4FA6B1UGTT48IFGP7S26','f'],
-  ['B31','RenderSkill #3','','x','https://renderskill.com/product.php?hash=c28b63c6d8eb9c97fa64ba7b0e2a45'],
+  ['B1','Leifang','Leifang-3d-model__JY8EZ7CZV9BMH629YSC3H1MOW','f'],
+  ['B2','Sayuri','Sayuri-3d-model__GK5KO5RAF42ZTCUT9GERRFG7O','f'],
+  ['B3','FF7 Tifa','FF7_Tifa-3d-model__IQLI85WKMC7HVT162RN172MDJ','f'],
+  ['B4','Tifa Young','Tifa_Young-3d-model__NJM3SFXPFX1KMC7OWXJZN5PL3','f'],
+  ['B5','FF7 Aerith','FF7_Aerith-3d-model__J68V4WAS9RX0GT5NVRCY3WXB0','f'],
+  ['B6','FF7 Tifa','FF7_Tifa-3d-model__ENR055PPAO069R973AX5MHV1L','f'],
+  ['B7','Tifa Teen','Tifa_Teen-3d-model__HF4GAER28FV6SXOWH9NHX8UDH','f'],
+  ['B8','RenderSkill #1',null,'x','https://renderskill.com/product.php?hash=23fec88291ba870373866f83b5de26'],
+  ['B9','Marlene Wallace','Marlene_Wallace-3d-model__0Q0EDDS215VKJ0U96Y9P7RYU3','f'],
+  ['B10','Tifa','Tifa-3d-model__7AB772Y503C344ZUV3DBT7TBB','f'],
+  ['B11','FFVII Nayo','FFVII_Nayo-3d-model__GIWHJ2R3ND70B1SHAQNF6QDIH','f'],
+  ['B12','DOA Alma','DOA_Alma_Girl-3d-model__ZBPKYJT3AU1F6ARTS4J558AHW','f'],
+  ['B13','FFVII Cloud','FFVII_Cloud-3d-model__Y91I6VCOBVOMGH8999PKG1M8C','m'],
+  ['B14','Cloud Strife','Cloud_Strife-3d-model__YKWD7CLUWQGQ97YQ3NQSKP7CC','m'],
+  ['B15','DOA Naotora','DOA_Naotora_Girl-3d-model__D5G7VBEXTY84JYH2DUG7DNL93','f'],
+  ['B16','DOA Kasumi','DOA_Kasumi_Girl-3d-model__9OKYLTF9KTFEIWMV5LPMX4V3K','f'],
+  ['B17','DOA Hitomi','DOA_Hitomi_Girl-3d-model__5H777O3YSXZ7JCGDZMTUOFORY','f'],
+  ['B18','Ellie Young','Ellie_Young-3d-model__RLPL46Q4MHNJOKB1HUR8NIB19','f'],
+  ['B19','Hitomi','Hitomi-3d-model__H3VIIA4J05MMQR9XIMGD4JWR5','f'],
+  ['B20','DOA Ayane','DOA_Ayane_Girl-3d-model__H6CVJB9RN475B5GRSDK34J1A1','f'],
+  ['B21','Jill Valentine','Jill_Valentine-3d-model__DO7Q6XA7FFMCIENE9M18NND3U','f'],
+  ['B22','Reika','Reika-3d-model__9YL3CCORX6LD0F4K8W9UZLB22','f'],
+  ['B23','Hentai Girl','Hentai_Girl-3d-model__17DJV06QHCHMGLFFGUJ9CNE8N','f',null,'18+'],
+  ['B24','FFVII Tifa','FFVII_Tifa-3d-model__50O6F9GQ8RO264TSJ4TYNHKP0','f'],
+  ['B25','Phase 4','Phase_4-3d-model__25S8KS1BSG8JXYFSI0U5ZX8FO','f'],
+  ['B26','Leifang','Leifang-3d-model__GH4NK1VO4V1MCAZGC8QIHRC51','f'],
+  ['B27','Koharu','Koharu-3d-model__TNM43O8CVQQSAHH46KCPA35XJ','f'],
+  ['B28','DOA Kokoro','DOA_Kokoro-3d-model__GOQ0DONNP014OUUO5T7Y5P1N0','f'],
+  ['B29','RenderSkill #2',null,'x','https://renderskill.com/product.php?hash=cf22c0bcfcdacc51d1a6f1ab5b8938'],
+  ['B30','FFVII Tifa','FFVII_Tifa-3d-model__CU0CM4FA6B1UGTT48IFGP7S26','f'],
+  ['B31','RenderSkill #3',null,'x','https://renderskill.com/product.php?hash=c28b63c6d8eb9c97fa64ba7b0e2a45'],
 ];
 const VT = [
-  ['C1','Anime Cute Girl','166f8dca255748d89e00976eb85d7ec0','f'],
-  ['C2','Saber Summer','OD5PTO398PYHWR2FDPGIUO1FW','f'],
-  ['C3','Hentai VRM Girl','CD7RTGAH2YAWXP1173XP258S3','f','','18+'],
-  ['C4','Nijika_Ijichi','MD9KV9FMW0U6XI9R5RGVUHRCJ','f'],
-  ['C5','IROHA Girl','MCZYIHO63FGAVR5TP41V2HG6Q','f'],
-  ['C6','VRM Girl A','2FZOPO989WTPPB3QJQY60PNUX','f'],
-  ['C7','Rimuru Tempest','AWEEJMTY65ZXW7KN4XXF5CDRH','x'],
-  ['C8','Marin Kitagawa','PB4EN2F3EGH02JTIS7O6LZ1FC','f'],
-  ['C9','VRM Girl B','1DG5X30PXQHOCY290Z8U9ZPLK','f'],
-  ['C10','Sandybell Girl','AL33DV22OBRXPASAFKCZ0W41P','f'],
-  ['C11','Rimuru Tempest 2','69WV6315JYPDUL0J9WLER6CH7','x'],
-  ['C12','Rin Sekien','06J523BU55JDF2HXBT93X4X38','f'],
-  ['C13','VRM Girl C','H4054EZGP96J1HOA08T7Z836N','f'],
-  ['C14','AC Tifa','VC2YEPYAP4DVUQX83862CJQJW','f'],
-  ['C15','FF7 Cloud','CK96H6HD0DEA7268063EV1D7A','m'],
+  ['C1','Anime Cute Girl','ANIME_-_Cute_girl-3d-model__166f8dca255748d89e00976eb85d7ec0','f'],
+  ['C2','Saber Summer','Saber_Summer-3d-model__OD5PTO398PYHWR2FDPGIUO1FW','f'],
+  ['C3','Hentai VRM Girl','Hentai_VRM_Girl-3d-model__CD7RTGAH2YAWXP1173XP258S3','f','18+'],
+  ['C4','Nijika_Ijichi','Nijika_Ijichi-3d-model__MD9KV9FMW0U6XI9R5RGVUHRCJ','f'],
+  ['C5','IROHA Girl','IROHA_Girl-3d-model__MCZYIHO63FGAVR5TP41V2HG6Q','f'],
+  ['C6','VRM Girl A','VRM_Girl-3d-model__2FZOPO989WTPPB3QJQY60PNUX','f'],
+  ['C7','Rimuru Tempest','Rimuru_Tempest-3d-model__AWEEJMTY65ZXW7KN4XXF5CDRH','x'],
+  ['C8','Marin Kitagawa','Marin_Kitagawa-3d-model__PB4EN2F3EGH02JTIS7O6LZ1FC','f'],
+  ['C9','VRM Girl B','VRM_Girl-3d-model__1DG5X30PXQHOCY290Z8U9ZPLK','f'],
+  ['C10','Sandybell Girl','Sandybell_Girl-3d-model__AL33DV22OBRXPASAFKCZ0W41P','f'],
+  ['C11','Rimuru Tempest 2','Rimuru_Tempest-3d-model__69WV6315JYPDUL0J9WLER6CH7','x'],
+  ['C12','Rin Sekien','Rin_Sekien-3d-model__06J523BU55JDF2HXBT93X4X38','f'],
+  ['C13','VRM Girl C','VRM_Girl-3d-model__H4054EZGP96J1HOA08T7Z836N','f'],
+  ['C14','AC Tifa','AC_Tifa-3d-model__VC2YEPYAP4DVUQX83862CJQJW','f'],
+  ['C15','FF7 Cloud','Final_Fantasy_7_Cloud-3d-model__CK96H6HD0DEA7268063EV1D7A','m'],
 ];
 
 const store = JSON.parse(localStorage.getItem('amoji.catalog.picks') || '{}');
@@ -188,15 +189,14 @@ APP.forEach(([n, id, name, g, tag]) => {
   gA.appendChild(card('A' + n, 'A' + n, name, g, tag, img, null));
 });
 const gB = document.getElementById('gB');
-HI.forEach(([no, name, view, g, hrefOverride, extra]) => {
-  const href = hrefOverride || (view ? RIG + name.replace(/ /g, '_') + '-3d-model__' + view : null);
-  const img = view ? PRE + name.replace(/ /g, '_') + '-3d-model__' + view + '.jpg' : null;
-  gB.appendChild(card(no, no, name, g, view ? 'rigmodels.com' : 'renderskill.com', img, href, extra));
+HI.forEach(([no, name, slug, g, hrefOverride, extra]) => {
+  const href = hrefOverride || (slug ? RIG + slug : null);
+  const img = slug ? PRE + slug + '.jpg' : null;
+  gB.appendChild(card(no, no, name, g, slug ? 'rigmodels.com' : 'renderskill.com', img, href, extra));
 });
 const gC = document.getElementById('gC');
-VT.forEach(([no, name, view, g, , extra]) => {
-  const href = RIG + name.replace(/ /g, '_') + '-3d-model__' + view;
-  gC.appendChild(card(no, no, name, g, 'rigmodels.com · Vtuber', PRE + name.replace(/ /g, '_') + '-3d-model__' + view + '.jpg', href, extra));
+VT.forEach(([no, name, slug, g, extra]) => {
+  gC.appendChild(card(no, no, name, g, 'rigmodels.com · Vtuber', PRE + slug + '.jpg', RIG + slug, extra));
 });
 refresh();
 
