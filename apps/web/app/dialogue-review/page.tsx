@@ -1,10 +1,12 @@
 'use client';
-// Dialogue Review page — r2026-10-04.66
+// Dialogue Review page — r2026-10-04.67
 // Master Simon asked for a full list of the preset loading + idle dialogue
 // so he can mark each line as correct / incorrect, plus a batch of NEW
 // candidate lines to select from. This page is the picker: tap a line to
 // cycle ✅ keep → ❌ drop → ❓ undecided, then hit "Copy result" and paste
 // the summary back into the chat. No backend, no app state — pure review UI.
+// r67: added a write-your-own-line composer so Simon can type custom dialogue
+// directly instead of only picking from the preset lists.
 
 import { useMemo, useState } from 'react';
 
@@ -479,20 +481,21 @@ function buildItems(): Item[] {
   return items;
 }
 
-const ALL_ITEMS = buildItems();
+const BASE_ITEMS = buildItems();
 
 function initialVerdicts(): Record<string, Verdict> {
   const v: Record<string, Verdict> = {};
-  for (const it of ALL_ITEMS) v[it.id] = it.isNew ? 'undecided' : 'keep';
+  for (const it of BASE_ITEMS) v[it.id] = it.isNew ? 'undecided' : 'keep';
   return v;
 }
 
-type SectionKey = 'loading' | 'idle' | 'newloading' | 'newidle';
+type SectionKey = 'loading' | 'idle' | 'newloading' | 'newidle' | 'custom';
 const SECTIONS: { key: SectionKey; title: string; hint: string }[] = [
   { key: 'loading', title: 'Loading fillers (in the app now)', hint: 'What she says while the reply is still generating — think-phrases.ts, per personality + generic' },
   { key: 'idle', title: 'Idle dialogue (in the app now)', hint: 'Personality lines she says when idle — persona-chatter.ts, English lines, 10 per character' },
   { key: 'newloading', title: 'NEW loading filler candidates', hint: 'Not in the app yet — mark ✅ to approve, ❌ to reject' },
   { key: 'newidle', title: 'NEW idle dialogue candidates', hint: 'Not in the app yet — positive, always ends with a question' },
+  { key: 'custom', title: 'YOUR OWN LINES', hint: 'Type custom dialogue in the composer above — lines you add default to ✅ added; tap one to change your mind' },
 ];
 
 export default function DialogueReviewPage() {
@@ -500,6 +503,11 @@ export default function DialogueReviewPage() {
   const [charFilter, setCharFilter] = useState<string>('all');
   const [query, setQuery] = useState('');
   const [copied, setCopied] = useState(false);
+  const [customItems, setCustomItems] = useState<Item[]>([]);
+  const [customKind, setCustomKind] = useState<'loading' | 'idle'>('idle');
+  const [customText, setCustomText] = useState('');
+
+  const all = useMemo(() => [...BASE_ITEMS, ...customItems], [customItems]);
 
   const toggle = (id: string) =>
     setVerdicts((v) => ({ ...v, [id]: CYCLE[v[id] ?? 'keep'] }));
@@ -507,39 +515,51 @@ export default function DialogueReviewPage() {
   const setAll = (section: SectionKey, verdict: Verdict) =>
     setVerdicts((v) => {
       const next = { ...v };
-      for (const it of ALL_ITEMS) if (sectionOf(it) === section) next[it.id] = verdict;
+      for (const it of all) if (sectionOf(it) === section) next[it.id] = verdict;
       return next;
     });
 
+  const addCustom = () => {
+    const text = customText.trim();
+    if (!text) return;
+    const id = `custom-${Date.now()}-${customItems.length}`;
+    setCustomItems((list) => [...list, { id, text, tag: customKind }]);
+    setVerdicts((v) => ({ ...v, [id]: 'keep' }));
+    setCustomText('');
+  };
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return ALL_ITEMS.filter((it) => {
+    return all.filter((it) => {
       if (charFilter !== 'all' && it.tag !== charFilter) return false;
       if (q && !it.text.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [charFilter, query]);
+  }, [charFilter, query, all]);
 
   const stats = useMemo(() => {
     const s: Record<string, { keep: number; drop: number; undecided: number }> = {};
     for (const sec of SECTIONS) s[sec.key] = { keep: 0, drop: 0, undecided: 0 };
-    for (const it of ALL_ITEMS) {
+    for (const it of all) {
       const v = verdicts[it.id] ?? 'keep';
       s[sectionOf(it)][v] += 1;
     }
     return s;
-  }, [verdicts]);
+  }, [verdicts, all]);
 
   const copyResult = async () => {
-    const lines: string[] = ['AMOJI DIALOGUE REVIEW — r2026-10-04.66', ''];
+    const lines: string[] = ['AMOJI DIALOGUE REVIEW — r2026-10-04.67', ''];
     for (const sec of SECTIONS) {
-      const items = ALL_ITEMS.filter((it) => sectionOf(it) === sec.key);
+      const items = all.filter((it) => sectionOf(it) === sec.key);
       const s = stats[sec.key];
       lines.push(`=== ${sec.title.toUpperCase()} ===`);
       lines.push(`summary: ✅ keep ${s.keep} / ❌ drop ${s.drop} / ❓ undecided ${s.undecided}`);
       for (const it of items) {
         const v = verdicts[it.id] ?? 'keep';
-        if (sec.key === 'newloading' || sec.key === 'newidle') {
+        if (sec.key === 'custom') {
+          const mark = v === 'keep' ? '[ADD]' : v === 'drop' ? '[DROP]' : '[UNSURE]';
+          lines.push(`${mark} (${it.tag}) ${it.text}`);
+        } else if (sec.key === 'newloading' || sec.key === 'newidle') {
           if (v === 'keep') lines.push(`[ADD] ${it.text}`);
           else if (v === 'drop') lines.push(`[NO] ${it.text}`);
         } else {
@@ -572,7 +592,7 @@ export default function DialogueReviewPage() {
       <style>{DRV_CSS}</style>
       <header className="drv-head">
         <h1>Amoji Dialogue Review</h1>
-        <p className="drv-sub">r2026-10-04.66 · tap a line to cycle ✅ keep → ❌ drop → ❓ undecided · paste the result back to me in chat</p>
+        <p className="drv-sub">r2026-10-04.67 · tap a line to cycle ✅ keep → ❌ drop → ❓ undecided · paste the result back to me in chat</p>
         <button className="drv-copy" onClick={copyResult}>{copied ? '✓ Copied!' : '📋 Copy result'}</button>
       </header>
 
@@ -589,9 +609,28 @@ export default function DialogueReviewPage() {
         </select>
       </div>
 
+      <div className="drv-composer">
+        <select
+          className="drv-select drv-kind"
+          value={customKind}
+          onChange={(e) => setCustomKind(e.target.value as 'loading' | 'idle')}
+        >
+          <option value="idle">Idle dialogue</option>
+          <option value="loading">Loading filler</option>
+        </select>
+        <input
+          className="drv-search"
+          placeholder="Write your own line… (e.g. Hey love, missed you — what shall we do today?)"
+          value={customText}
+          onChange={(e) => setCustomText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') addCustom(); }}
+        />
+        <button className="drv-add" onClick={addCustom} disabled={!customText.trim()}>＋ Add</button>
+      </div>
+
       {SECTIONS.map((sec) => {
         const items = filtered.filter((it) => sectionOf(it) === sec.key);
-        if (!items.length) return null;
+        if (!items.length && sec.key !== 'custom') return null;
         const s = stats[sec.key];
         return (
           <section key={sec.key} className="drv-section">
@@ -600,10 +639,12 @@ export default function DialogueReviewPage() {
               <span className="drv-counts">✅ {s.keep} · ❌ {s.drop} · ❓ {s.undecided}</span>
             </h2>
             <p className="drv-hint">{sec.hint}</p>
-            <div className="drv-bulk">
-              <button onClick={() => setAll(sec.key, 'keep')}>all ✅</button>
-              <button onClick={() => setAll(sec.key, 'drop')}>all ❌</button>
-            </div>
+            {items.length > 0 && (
+              <div className="drv-bulk">
+                <button onClick={() => setAll(sec.key, 'keep')}>all ✅</button>
+                <button onClick={() => setAll(sec.key, 'drop')}>all ❌</button>
+              </div>
+            )}
             <ul className="drv-list">
               {items.map((it) => {
                 const v = verdicts[it.id] ?? 'keep';
@@ -616,7 +657,8 @@ export default function DialogueReviewPage() {
                     >
                       <span className="drv-mark">{MARK[v]}</span>
                       <span className="drv-text">{it.text}</span>
-                      {it.tag && sec.key !== 'idle' ? <span className="drv-tag">{it.tag}</span> : null}
+                      {sec.key === 'custom' && it.tag ? <span className="drv-tag drv-tag-custom">{it.tag}</span> : null}
+                      {it.tag && sec.key !== 'idle' && sec.key !== 'custom' ? <span className="drv-tag">{it.tag}</span> : null}
                       {it.tag && sec.key === 'idle' ? <span className="drv-tag">{CHARACTER_NAMES[it.tag]?.split(' ')[0] ?? it.tag}</span> : null}
                       {it.isNew ? <span className="drv-tag drv-tag-new">NEW</span> : null}
                     </button>
@@ -637,6 +679,7 @@ export default function DialogueReviewPage() {
 }
 
 function sectionOf(it: Item): SectionKey {
+  if (it.id.startsWith('custom-')) return 'custom';
   if (it.isNew) return it.id.startsWith('newload') ? 'newloading' : 'newidle';
   return it.id.startsWith('load') ? 'loading' : 'idle';
 }
@@ -650,6 +693,11 @@ const DRV_CSS = `
   .drv-controls{display:flex;gap:10px;margin:18px 0 8px;position:sticky;top:0;background:#0b0f17;padding:10px 0;z-index:5}
   .drv-search{flex:1;background:#131a28;border:1px solid #26314a;color:#e7ecf5;border-radius:12px;padding:10px 14px;font-size:15px;outline:none}
   .drv-select{background:#131a28;border:1px solid #26314a;color:#e7ecf5;border-radius:12px;padding:10px;font-size:14px;max-width:46%}
+  .drv-composer{display:flex;gap:8px;margin:4px 0 14px;align-items:stretch}
+  .drv-kind{max-width:130px;flex:none}
+  .drv-add{flex:none;background:linear-gradient(135deg,#10b981,#34d399);border:none;color:#04120c;font-weight:700;font-size:15px;padding:0 18px;border-radius:12px;cursor:pointer;box-shadow:0 4px 14px rgba(16,185,129,.3)}
+  .drv-add:active{transform:scale(.95)}
+  .drv-add:disabled{opacity:.35;cursor:default;box-shadow:none}
   .drv-section{margin-top:26px}
   .drv-section h2{font-size:17px;font-weight:700;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 4px}
   .drv-counts{font-size:12px;font-weight:500;color:#9aa6bd;background:#141b2b;border:1px solid #25304a;padding:3px 10px;border-radius:999px}
@@ -667,6 +715,7 @@ const DRV_CSS = `
   .drv-text{flex:1}
   .drv-tag{flex:none;font-size:10px;color:#9aa6bd;background:#1a2236;border:1px solid #2a3652;padding:2px 8px;border-radius:999px;align-self:center}
   .drv-tag-new{color:#fbbf24;border-color:#6b5312;background:#241d08}
+  .drv-tag-custom{color:#6ee7b7;border-color:#14532d;background:#07150f}
   .drv-foot{margin-top:36px;text-align:center;color:#76839c;font-size:13px}
   .drv-foot .drv-copy{margin-bottom:10px}
 `;
