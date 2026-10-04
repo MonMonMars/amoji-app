@@ -27,7 +27,12 @@ export interface CompanionCanvasProps {
   lighting?: 'indoor' | 'outdoor';
 }
 
-const HOME = { theta: 0, phi: 1.12, dist: 1.9 };
+// r2026-10-04.92 (Master Simon): start FURTHER AWAY and at a NORMAL STRAIGHT
+// angle — the old phi 1.12 put the camera ~26° above her looking down (an
+// "upper camera" close-up). Now the lens sits ~2.4° above eye level, 2.6m
+// back: upper body centered, like someone standing across from you. Target
+// stays at chest height (y 1.05). Double-tap empty space still returns here.
+const HOME = { theta: 0, phi: 1.53, dist: 2.6 };
 const HOME_TARGET = new THREE.Vector3(0, 1.05, 0);
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
