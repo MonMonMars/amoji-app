@@ -16,6 +16,11 @@
 // r2026-10-04.55: each character card carries a #1-#29 number badge (index in
 // the FULL cast) so Master Simon can reference characters by number; Kid Mode
 // filtering never renumbers anyone.
+// r2026-10-04.78 (Master Simon): the badge LIVES OUTSIDE the clipped portrait
+// circle now — it used to hang at the circle's top-left corner, where the
+// circle's overflow-hidden cut it to a sliver and the row's scroll arrows sat
+// on top of it. Now it's pinned to the card's top-right corner, bigger, with
+// a solid ring — nothing can clip or cover it.
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import HScrollRow from './HScrollRow';
@@ -216,23 +221,29 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                 <button
                   key={c.id}
                   onClick={() => pick({ character: c.id })}
-                  className={`ui-card flex w-24 shrink-0 flex-col items-center gap-1.5 rounded-2xl border p-2.5 ${
+                  className={`ui-card relative flex w-24 shrink-0 flex-col items-center gap-1.5 rounded-2xl border p-2.5 ${
                     active ? 'border-transparent bg-white/10' : 'border-white/10 bg-white/5 hover:bg-white/10'
                   }`}
                   style={active ? { boxShadow: `0 0 0 2px ${c.accent}, 0 10px 30px -12px ${c.accent}` } : undefined}
                 >
+                  {/* r78: number badge pinned to the CARD corner, outside the
+                      clipped portrait circle — it used to live at the circle's
+                      top-left, where overflow-hidden trimmed it and the row's
+                      scroll arrows covered it. z-20 keeps it above the 3D
+                      busts and the arrows; the ring makes it readable on any
+                      accent color. */}
+                  <span
+                    className="absolute -right-1.5 -top-1.5 z-20 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-neutral-950 px-1.5 text-[11px] font-extrabold text-neutral-950 shadow-[0_2px_10px_rgba(0,0,0,0.6)]"
+                    style={{ background: c.accent }}
+                    title={`#${num}`}
+                  >
+                    {num}
+                  </span>
                   <span
                     className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-black/40"
                     style={active ? { boxShadow: `0 0 0 2px ${c.accent}` } : undefined}
                   >
                     <CharacterBust id={c.id} image={c.image} url={c.model} />
-                    <span
-                      className="absolute -left-0.5 -top-0.5 z-10 flex h-5 min-w-5 items-center justify-center rounded-full border border-black/40 px-1 text-[10px] font-bold text-black/80"
-                      style={{ background: c.accent }}
-                      title={`#${num}`}
-                    >
-                      {num}
-                    </span>
                   </span>
                   <span className="text-xs font-semibold">{c.name}</span>
                   <span className="text-[10px] leading-none text-white/40">{c.gender === 'female' ? '♀' : '♂'}</span>
