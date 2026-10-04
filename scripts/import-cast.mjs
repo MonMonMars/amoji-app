@@ -26,7 +26,10 @@ const CANDIDATES = [
   'C:/Users/Simon Lai/Documents/Kimi/Workspaces/Amoji/_incoming/agent3/prototypes/assets',
 ].filter(Boolean);
 
-// character id → companion-<name>.vrm (mirrors prefs.ts)
+// character id → companion-<name>.vrm (mirrors prefs.ts).
+// Destination keeps the SOURCE name (zane.vrm, rex.vrm, elio.vrm, hana.vrm…)
+// because prefs.ts and ASSET_MANIFEST.md key those characters by source name —
+// the single source of truth is prefs.model, and the manifest must match it.
 const CAST = {
   // flagship top-10 (r2026-10-04.52)
   nova: 'nova', kizuna: 'kizuna', alicia: 'alicia', ember: 'ember', mei: 'mei',
@@ -86,11 +89,23 @@ if (!src) {
 fs.mkdirSync(DEST_MODELS, { recursive: true });
 fs.mkdirSync(DEST_PORTRAITS, { recursive: true });
 
+// Remove stale .vrm files left by earlier misnamed imports (destination set
+// below is keyed by SOURCE name — anything else on disk is orphaned).
+{
+  const keep = new Set(Object.values(CAST).map((n) => `${n}.vrm`));
+  for (const f of fs.readdirSync(DEST_MODELS)) {
+    if (f.endsWith('.vrm') && !keep.has(f)) {
+      fs.rmSync(path.join(DEST_MODELS, f));
+      console.log(`rm stale cast/${f}`);
+    }
+  }
+}
+
 let ok = 0;
 let warned = 0;
 for (const [slug, name] of Object.entries(CAST)) {
   const from = path.join(src, `companion-${name}.vrm`);
-  const to = path.join(DEST_MODELS, `${slug}.vrm`);
+  const to = path.join(DEST_MODELS, `${name}.vrm`);
   if (/marin/i.test(path.basename(from))) {
     console.error(`SKIP  banned name: ${path.basename(from)}`);
     warned++;
@@ -105,10 +120,10 @@ for (const [slug, name] of Object.entries(CAST)) {
   const r = structural(fs.readFileSync(to));
   if (r.ok) {
     ok++;
-    console.log(`ok    cast/${slug}.vrm — ${r.info}`);
+    console.log(`ok    cast/${name}.vrm — ${r.info}`);
   } else {
     warned++;
-    console.log(`WARN  cast/${slug}.vrm — ${r.info}`);
+    console.log(`WARN  cast/${name}.vrm — ${r.info}`);
   }
 }
 console.log(`${ok} models imported clean, ${warned} with warnings/misses.`);
