@@ -60,6 +60,21 @@ import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
 // root every frame. (3) Voice/SFX disentangle lives in lib/voice.ts +
 // lib/sfx.ts (the "bell rings / typing sounds" were movement foley firing
 // while every TTS tier stayed silent).
+// r103 (Master Simon): relaxed hands + shoulder ROM clamp. (1) The library
+// idles animate BODY bones only — standard_idle.vrma's humanoid map carries
+// no finger entries at all, and even weightShift.vrma maps just thumb/index
+// chains — so between keyframes her fingers sat in the model's rigid rest
+// splay. avatar.ts now calibrates a gentle curl per finger ONCE at load
+// (fold-test: rotate all phalanges ±0.35 rad about each local axis, keep
+// the axis+sign that shortens tip↔wrist — pose-independent) and the render
+// loop re-applies it every frame AFTER the mixer and applyPose as
+// base·delta (idempotent). Fingers a clip actually animates are tracked in
+// clipAnimatedBones — node names scanned from every loaded clip's track
+// names, dot- and bracket-binding forms both — and left entirely to the
+// clip. (2) A big swing could carry an upper arm past the body midline —
+// clampShoulderROM floors the arm's outward (body-relative) direction at
+// ~8.6° past plumb, gated to at/below horizontal so dance crosses and
+// overhead waves stay free.
 
 export interface CompanionCanvasProps {
   onNotice?: (n: { reason: 'webgl' | 'asset' }) => void;
@@ -403,6 +418,12 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     ];
     const TOTAL_CLIPS = IDLE_SOURCES.length + PERF_SOURCES.length;
     const clips = new Map<string, THREE.AnimationClip>();
+    // r103: node names of every bone ANY loaded clip animates — scanned from
+    // each clip's track names as it lands. The avatar hands those bones to
+    // the mixer untouched; relaxed hands apply only to fingers no clip keys.
+    // The SAME live Set is shared with the avatar (filled after mount —
+    // clips stream in asynchronously), so no re-handshake is ever needed.
+    const clipAnimatedBones = new Set<string>();
     let idleAction: THREE.AnimationAction | null = null;
     let perfAction: THREE.AnimationAction | null = null;
     let idleOrder: string[] = [];
@@ -642,6 +663,14 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           startClipEngine(vrm);
         }
         pending -= 1;
+        // r103 (one-time evidence): what does the library ACTUALLY animate?
+        // Logged when the last clip settles — the relaxed-hand guard keys on
+        // this (standard_idle.vrma maps zero finger bones; weightShift.vrma
+        // only thumb/index — so the calibrated curl almost always applies).
+        if (pending === 0 && avatar) {
+          const fingers = [...clipAnimatedBones].filter((n) => avatar!.fingerBones.has(n));
+          console.info(`[amoji] r103: ${clips.size} clips, ${clipAnimatedBones.size} animated bones, clip-driven fingers: ${fingers.length ? fingers.join(', ') : 'none'}`);
+        }
       };
       // try each candidate URL in order: verified-live library first, the
       // local mirror as fallback (r97 — the dead hosts were cut, see above)
@@ -677,6 +706,18 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
               // r98: performances normalize their root-Y onto our rest too
               rebaseClipHips(clip, IDLE_IDS.has(src.id));
               if (clip.tracks.length) clips.set(src.id, clip);
+              // r103: record which bones this clip drives, so the avatar can
+              // leave them to the mixer. Track names arrive as PropertyBinding
+              // paths — `Bone.quaternion`, `.Bone.quaternion`, or
+              // `.bones[Bone].quaternion` — all reduce to the bare node name.
+              for (const t of clip.tracks) {
+                if (!t.name.endsWith('.quaternion')) continue;
+                const path = t.name.slice(0, -'.quaternion'.length);
+                const bone = path.includes('[') && path.endsWith(']')
+                  ? path.slice(path.lastIndexOf('[') + 1, -1)
+                  : path.slice(path.lastIndexOf('.') + 1);
+                clipAnimatedBones.add(bone);
+              }
             }
           } catch { /* this clip is unusable on this rig — skip it */ }
           done();
@@ -734,7 +775,10 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       const plain = new GLTFLoader();
       plain.load(url, (gltf) => {
         try {
-          mountAvatar(createGenericAvatar(gltf));
+          // r103: hand the shared clip-animated-bone set to the avatar — the
+          // relaxed-hand guard reads it per frame (clips never load on this
+          // path, so the set stays empty and every finger gets the curl)
+          mountAvatar(createGenericAvatar(gltf, clipAnimatedBones));
         } catch {
           loadModel(index + 1);
         }
@@ -765,7 +809,9 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           loadPlain(index, url);
           return;
         }
-        mountAvatar(createV1Avatar(v));
+        // r103: the avatar keeps a LIVE reference to clipAnimatedBones — the
+        // clips stream in after the mount and fill the same set
+        mountAvatar(createV1Avatar(v, clipAnimatedBones));
         loadClips(v);
       }, (ev) => {
         // r84: byte-level progress for the loading indicator
@@ -1068,6 +1114,13 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
         } else {
           avatar.applyPose(poseTargets);
         }
+        // r103: relaxed fingers + shoulder ROM run AFTER the mixer and
+        // applyPose wrote the skeleton and BEFORE the spring bones react —
+        // both are idempotent absolute writes (base·delta / minimal-rotation
+        // fix), and both skip whatever a clip actively animates, so they
+        // compose cleanly with every driving mode (clip, procedural, recoil).
+        avatar.applyRelaxedHands();
+        avatar.clampShoulderROM();
         avatar.update(dt / 1000);
 
         // r101 reveal gate: by this point the skeleton holds its first
