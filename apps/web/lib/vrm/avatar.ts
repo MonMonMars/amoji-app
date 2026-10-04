@@ -22,6 +22,12 @@
 // erased by the very next frame's rotation.set(0,0,0) — the exact "some
 // characters face backward at startup" bug. Avatar.root is now a plain Group
 // wrapper the canvas can stomp freely; the calibrated model hangs inside it.
+//
+// r2026-10-04.83 — two additive pitch channels (spinePitchAdd / chestPitchAdd)
+// join the move-performance additives: they ride ON TOP of whatever drives
+// the body (library clip or procedural pose) with human-limited range, and
+// they are how the poke recoil leans a realistic human back without touching
+// the mesh scale.
 import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
@@ -36,10 +42,13 @@ export interface AvatarPose {
   leftUpperArm: number; rightUpperArm: number;
   /** elbow bend, radians (positive = bent) */
   leftLowerArm: number; rightLowerArm: number;
-  // move-performance additives (folded in by the canvas before applying)
+  // move-performance + poke-recoil additives (folded in by the canvas before
+  // applying); they ride on top of BOTH procedural poses and library clips
   spineY: number; chestZ: number;
   lArmX: number; rArmX: number;
   lElbowZ: number; rElbowZ: number;
+  /** r83: lean-back recoil on the torso — spine flexes deeper than chest */
+  spinePitchAdd: number; chestPitchAdd: number;
 }
 
 // r2026-10-04.60 — human joint limits. Our characters are HUMAN, so the
@@ -66,6 +75,9 @@ const HUMAN_LIMITS = {
   chestZ: [-0.4, 0.4],        // chest counter-twist
   lArmX: [-1.9, 1.9], rArmX: [-1.9, 1.9], // arm swing forward/back
   lElbowZ: [-0.6, 0.6], rElbowZ: [-0.6, 0.6], // extra elbow fold on top
+  // r83: torso recoil additives (the skeleton poke) — a human can lean
+  // back about this far before it stops reading as human
+  spinePitchAdd: [-0.6, 0.6], chestPitchAdd: [-0.5, 0.5],
 } as const;
 
 const clampField = (v: number, range: readonly [number, number]): number =>
@@ -89,6 +101,8 @@ function clampPoseHuman(p: AvatarPose): AvatarPose {
     rArmX: clampField(p.rArmX, HUMAN_LIMITS.rArmX),
     lElbowZ: clampField(p.lElbowZ, HUMAN_LIMITS.lElbowZ),
     rElbowZ: clampField(p.rElbowZ, HUMAN_LIMITS.rElbowZ),
+    spinePitchAdd: clampField(p.spinePitchAdd, HUMAN_LIMITS.spinePitchAdd),
+    chestPitchAdd: clampField(p.chestPitchAdd, HUMAN_LIMITS.chestPitchAdd),
   };
 }
 
@@ -235,13 +249,18 @@ class V1Avatar implements Avatar {
       setRot('spine', 'x', p.spineX);
       setRot('chest', 'x', p.chestX);
     }
-    // move-performance additives ride on top in both modes
+    // move-performance + poke-recoil additives ride on top in both modes
     if (p.spineY) addRot('spine', 'y', p.spineY);
     if (p.chestZ) addRot('chest', 'z', p.chestZ);
     if (p.lArmX) addRot('leftUpperArm', 'x', p.lArmX);
     if (p.rArmX) addRot('rightUpperArm', 'x', p.rArmX);
     if (p.lElbowZ) addRot('leftLowerArm', 'z', p.lElbowZ);
     if (p.rElbowZ) addRot('rightLowerArm', 'z', p.rElbowZ);
+    // r83: the poke recoil — pure additive torso lean-back, so it composes
+    // with library clips (the mixer wrote the bone this frame; addRot reads
+    // the synced euler and tips it further back within human limits)
+    if (p.spinePitchAdd) addRot('spine', 'x', p.spinePitchAdd);
+    if (p.chestPitchAdd) addRot('chest', 'x', p.chestPitchAdd);
   }
 
   update(dt: number): void {
@@ -293,7 +312,7 @@ class GenericAvatar implements Avatar {
   private resolveBones(gltf: GLTF, json: Record<string, unknown>): void {
     const ext = (json.extensions ?? {}) as Record<string, unknown>;
     const nodes = (json.nodes ?? []) as Array<{ name?: string } | undefined>;
-    const findByIndex = (i: unknown): THREE.Object3D | null => {
+    const findByIndex = (i: unknown): THREE.Object3D | null {
       if (typeof i !== 'number') return null;
       const name = nodes[i]?.name;
       if (!name) return null;
@@ -415,8 +434,10 @@ class GenericAvatar implements Avatar {
     //   upper arms  Z (left + lowers, right − lowers), X = swing
     //   elbows      X (positive bends the forearm forward)
     this.root.updateMatrixWorld(true);
-    this.applyBone('spine', p.spineX, p.spineY, 0);
-    this.applyBone('chest', p.chestX, 0, p.chestZ);
+    // r83: the poke-recoil pitch additives fold into the spine/chest pitch
+    // (two X-rotations about the same axis compose as their sum)
+    this.applyBone('spine', p.spineX + p.spinePitchAdd, p.spineY, 0);
+    this.applyBone('chest', p.chestX + p.chestPitchAdd, 0, p.chestZ);
     this.applyBone('head', p.headX, p.headY, p.headZ);
     this.applyBone('leftUpperArm', p.lArmX, 0, p.leftUpperArm);
     this.applyBone('rightUpperArm', p.rArmX, 0, -p.rightUpperArm);
