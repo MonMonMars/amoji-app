@@ -159,7 +159,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     let clipDone = 0;
     let lastReported = -1;
     const reportProgress = () => {
-      const pct = Math.min(99, Math.round(modelPct * 0.75 + (clipDone / CLIP_NAMES.length) * 25));
+      const pct = Math.min(99, Math.round(modelPct * 0.75 + (clipDone / TOTAL_CLIPS) * 25));
       if (pct !== lastReported) {
         lastReported = pct;
         setLoadProgress(pct);
@@ -232,7 +232,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     //      or a raised-arms rest pose)
     //   3. any failure walks the chain to the next candidate.
     // r2026-10-04.58: body motion comes from the ONLINE MOTION LIBRARY
-    // (11 open .vrma clips — real keyframed performances, streamed from the
+    // (open .vrma clips — real keyframed performances, streamed from the
     // library with a local /models/anims mirror taking over once vendored).
     // Master Simon's rule: the skeleton is NEVER rotated by hand while a
     // library clip drives the body. The old procedural pose/move math now
@@ -243,24 +243,78 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     );
 
     // -- clip library ---------------------------------------------------------
-    const CLIP_NAMES = ['Angry', 'Blush', 'Clapping', 'Goodbye', 'Jump', 'LookAround', 'Relax', 'Sad', 'Sleepy', 'Surprised', 'Thinking', 'StandardIdle', 'Bow', 'Hello'] as const;
-    type ClipName = (typeof CLIP_NAMES)[number];
+    // r2026-10-04.93 (Master Simon): idle is a REAL LIBRARY now — 16 open
+    // .vrma idle performances streamed from three CORS-open motion libraries
+    // (Mixamo-class mocap: weight shifts, stretches, head shakes, sighs,
+    // bashful fidgets…), replacing the 4 tiny auto-generated samples that
+    // made idle stiff. AND the zombie stand is gone: every idle plays as a
+    // LOOP with a random mid-clip start offset, and the rotation crossfades
+    // between two LIVE motions on a swap timer — she is ALWAYS inside some
+    // idle movement, never parked in a straight stand between clips.
+    // Local mirror first (vendored by scripts/fetch-anims.mjs into
+    // /models/anims); the raw hosts are CORS-open so the browser can stream
+    // them until the binaries land in the repo.
+    const ANIM_MIRROR = `${ASSET_BASE}/models/anims`;
+    const ANIM_LIBRARY = 'https://raw.githubusercontent.com/tk256ailab/vrm-viewer/main/VRMA';
+    // the VRM consortium's genuine standard_idle + a real formal bow
+    const ALT_HOST = 'https://raw.githubusercontent.com/hirokazuniimoto/virtual-avatar-sdk/main/assets/animations';
+    // a proper wave greeting
+    const ST_HOST = 'https://raw.githubusercontent.com/test157t/VRM-Assets-Pack-For-Silly-Tavern/main/animation_nitral-fork';
+    // r93: two more CORS-open libraries full of REAL keyframed mocap idles
+    // (file lists verified via the GitHub API; desktop-waifu sits on the
+    // `master` branch, 3dchat on `main`)
+    const DW_HOST = 'https://raw.githubusercontent.com/yv-was-taken/desktop-waifu/master/public/animations';
+    const CHAT_HOST = 'https://raw.githubusercontent.com/DavinciDreams/3dchat/main/public/animations/vrma';
+
+    interface ClipSource { id: string; urls: string[] }
+    // the idle pool — every entry a standing, loopable idle performance.
+    // The rotation picks 1–2 of a clip's own beats, then hands over.
+    const IDLE_SOURCES: ClipSource[] = [
+      { id: 'StandardIdle', urls: [`${ANIM_MIRROR}/StandardIdle.vrma`, `${ALT_HOST}/standard_idle.vrma`, `${ANIM_LIBRARY}/StandardIdle.vrma`] },
+      { id: 'NeutralIdle', urls: [`${ANIM_MIRROR}/NeutralIdle.vrma`, `${DW_HOST}/neutral_idle.vrma`] },
+      { id: 'DwarfIdle', urls: [`${ANIM_MIRROR}/DwarfIdle.vrma`, `${DW_HOST}/Dwarf%20Idle.vrma`] },
+      { id: 'LadyIdle', urls: [`${ANIM_MIRROR}/LadyIdle.vrma`, `${DW_HOST}/Female%20Standing%20Pose.vrma`] },
+      { id: 'ArmStretch', urls: [`${ANIM_MIRROR}/ArmStretch.vrma`, `${DW_HOST}/Arm%20Stretching.vrma`] },
+      { id: 'HeadShake', urls: [`${ANIM_MIRROR}/HeadShake.vrma`, `${DW_HOST}/Stroke%20Shaking%20Head.vrma`] },
+      { id: 'ThinkingPose', urls: [`${ANIM_MIRROR}/ThinkingPose.vrma`, `${DW_HOST}/thinking.vrma`] },
+      { id: 'WeightShift', urls: [`${ANIM_MIRROR}/WeightShift.vrma`, `${CHAT_HOST}/weightShift.vrma`] },
+      { id: 'HeadNod', urls: [`${ANIM_MIRROR}/HeadNod.vrma`, `${CHAT_HOST}/headNod.vrma`] },
+      { id: 'RelievedSigh', urls: [`${ANIM_MIRROR}/RelievedSigh.vrma`, `${CHAT_HOST}/relievedSigh.vrma`] },
+      { id: 'Cocky', urls: [`${ANIM_MIRROR}/Cocky.vrma`, `${CHAT_HOST}/beingCocky.vrma`] },
+      { id: 'Bashful', urls: [`${ANIM_MIRROR}/Bashful.vrma`, `${CHAT_HOST}/bashful.vrma`] },
+      { id: 'BoredIdle', urls: [`${ANIM_MIRROR}/BoredIdle.vrma`, `${CHAT_HOST}/boredmelancholyIdle_1.vrma`] },
+      { id: 'Acknowledge', urls: [`${ANIM_MIRROR}/Acknowledge.vrma`, `${CHAT_HOST}/acknowledging.vrma`] },
+      { id: 'Sleepy', urls: [`${ANIM_MIRROR}/Sleepy.vrma`, `${ANIM_LIBRARY}/Sleepy.vrma`] },
+      { id: 'Relax', urls: [`${ANIM_MIRROR}/Relax.vrma`, `${ANIM_LIBRARY}/Relax.vrma`] },
+      { id: 'LookAround', urls: [`${ANIM_MIRROR}/LookAround.vrma`, `${ANIM_LIBRARY}/LookAround.vrma`] },
+      { id: 'Thinking', urls: [`${ANIM_MIRROR}/Thinking.vrma`, `${ANIM_LIBRARY}/Thinking.vrma`] },
+    ];
+    // one-shot dialogue performances (library clips with a real ending)
+    const PERF_SOURCES: ClipSource[] = [
+      { id: 'Jump', urls: [`${ANIM_MIRROR}/Jump.vrma`, `${ANIM_LIBRARY}/Jump.vrma`] },
+      { id: 'Bow', urls: [`${ANIM_MIRROR}/Bow.vrma`, `${ALT_HOST}/quick_formal_bow.vrma`] },
+      { id: 'Hello', urls: [`${ANIM_MIRROR}/Hello.vrma`, `${ST_HOST}/hello.vrma`] },
+    ];
+    const TOTAL_CLIPS = IDLE_SOURCES.length + PERF_SOURCES.length;
+    const clips = new Map<string, THREE.AnimationClip>();
+    let idleAction: THREE.AnimationAction | null = null;
+    let perfAction: THREE.AnimationAction | null = null;
+    let idleOrder: string[] = [];
+    let idleIdx = 0;
+    // r93: when the current idle hands over to the next one (RAF clock, ms).
+    // The handover is a crossfade between two LIVE loops — never a freeze.
+    let idleHoldUntil = Infinity;
     // dialogue performances that have a matching library clip; other move
     // kinds take the procedural choreography channel below (r86) — composed
     // as semantic additives so they still never touch a clip-driven skeleton.
-    const MOVE_CLIP: Partial<Record<MoveKind, ClipName>> = { jump: 'Jump' };
-    const clips = new Map<ClipName, THREE.AnimationClip>();
-    let idleAction: THREE.AnimationAction | null = null;
-    let perfAction: THREE.AnimationAction | null = null;
-    let idleOrder: ClipName[] = [];
-    let idleIdx = 0;
+    const MOVE_CLIP: Partial<Record<MoveKind, string>> = { jump: 'Jump' };
     // r2026-10-04.59 (Master Simon): EVERY clip change is a blend, never a
     // jump — pose A at 10° glides into pose B at 90° over `fade` seconds.
     // The mixer crossfades bone quaternions, so intermediate frames are real
     // in-between poses, not snaps.
     const FADE = {
       entry: 0.9,      // procedural pose → first library clip
-      idleRotate: 0.9, // idle clip → next idle clip
+      idleRotate: 1.2, // r93: idle → next idle — a longer glide between two live loops
       toPerf: 0.45,    // idle → one-shot performance
       perfCut: 0.3,    // performance → interrupted by another performance
       perfEnd: 0.7,    // finished performance → back to idle
@@ -272,9 +326,16 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       idleIdx++;
       if (!clip) return;
       const action = mixer.clipAction(clip);
-      action.setLoop(THREE.LoopOnce, 1);
-      action.clampWhenFinished = true;
+      // r93: idles LOOP — the old LoopOnce + clampWhenFinished parked her on
+      // the clip's end frame (a straight stand) while the next clip faded
+      // in: the "zombie pose between idle movements". A looping body is
+      // never parked anywhere.
+      action.setLoop(THREE.LoopRepeat, Infinity);
       action.reset();
+      // start mid-clip at a random offset: the entry frame is never the
+      // clip's neutral first frame, and two consecutive idles blend
+      // motion-into-motion instead of neutral-into-neutral
+      action.time = Math.random() * clip.duration;
       if (idleAction && idleAction !== action) {
         // blend from wherever the body currently is into this clip
         idleAction.crossFadeTo(action, fade, false);
@@ -283,9 +344,12 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
         action.fadeIn(fade).play();
       }
       idleAction = action;
+      // hold this idle for 1–2 of its own beats, then hand over mid-motion
+      const holdMs = Math.min(14000, Math.max(5000, clip.duration * 1000 * (1 + Math.random())));
+      idleHoldUntil = performance.now() + holdMs;
     };
 
-    const playPerf = (name: ClipName) => {
+    const playPerf = (name: string) => {
       if (!mixer) return;
       const clip = clips.get(name);
       if (!clip) return;
@@ -313,17 +377,15 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           // a one-shot performance ended → glide back into the idle playlist
           perfAction = null;
           nextIdle(FADE.perfEnd);
-        } else if (e.action === idleAction) {
-          // this idle clip ran its course → drift to the next one
-          nextIdle(FADE.idleRotate);
         }
+        // r93: idles never "finish" — they loop until the swap timer hands
+        // over mid-motion, so there is no clamped end-frame freeze to
+        // recover from and no neutral stand between idle movements
       });
-      // per-character deterministic idle playlist. r2026-10-04.65: the
-      // genuine VRM-consortium standard_idle leads the calm rotation — the
-      // old library's Relax/LookAround/Thinking are tiny auto-generated
-      // samples with barely any real motion (arms read as "super straight").
-      const calm = (['StandardIdle', 'Relax', 'LookAround', 'Thinking'] as ClipName[]).filter((n) => clips.has(n));
-      idleOrder = calm.length ? calm : [...clips.keys()];
+      // per-character deterministic idle playlist — r93: the WHOLE idle pool
+      // (16 library idles), each character rotated into a personal order
+      idleOrder = IDLE_SOURCES.map((s) => s.id).filter((id) => clips.has(id));
+      if (!idleOrder.length) idleOrder = [...clips.keys()];
       const shift = poseSeed % idleOrder.length;
       idleOrder = idleOrder.slice(shift).concat(idleOrder.slice(0, shift));
       idleIdx = 0;
@@ -334,26 +396,6 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       nextIdle(FADE.entry);
     };
 
-    // Local mirror first (vendored by scripts/fetch-anims.mjs into
-    // /models/anims), streaming from the online motion libraries as fallback
-    // while the binaries are not in the repo yet. Local always wins once the
-    // files land; the raw hosts are CORS-open so the browser can stream them.
-    const ANIM_MIRROR = `${ASSET_BASE}/models/anims`;
-    const ANIM_LIBRARY = 'https://raw.githubusercontent.com/tk256ailab/vrm-viewer/main/VRMA';
-    // r2026-10-04.65: the tk256ailab library's 11 emotion clips are all
-    // exactly 118,448 bytes — auto-generated samples with minimal motion,
-    // which is why idle looked stiff. Two more CORS-open libraries contribute
-    // REAL keyframed performances:
-    //   - virtual-avatar-sdk: the VRM consortium's genuine standard_idle
-    //     (natural breathing idle) + quick_formal_bow (a real bow)
-    //   - VRM-Assets-Pack-For-Silly-Tavern: hello (a proper wave greeting)
-    const ALT_HOST = 'https://raw.githubusercontent.com/hirokazuniimoto/virtual-avatar-sdk/main/assets/animations';
-    const ST_HOST = 'https://raw.githubusercontent.com/test157t/VRM-Assets-Pack-For-Silly-Tavern/main/animation_nitral-fork';
-    const ALT_CLIPS: Partial<Record<ClipName, string>> = {
-      StandardIdle: `${ALT_HOST}/standard_idle.vrma`,
-      Bow: `${ALT_HOST}/quick_formal_bow.vrma`,
-      Hello: `${ST_HOST}/hello.vrma`,
-    };
     const loadClips = (vrm: VRM) => {
       const animLoader = new GLTFLoader();
       animLoader.register((parser) => new VRMAnimationLoaderPlugin(parser));
@@ -398,7 +440,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           }
         }
       };
-      let pending = CLIP_NAMES.length;
+      let pending = TOTAL_CLIPS;
       const done = () => {
         // r84: every resolved clip (success or exhausted retries) nudges the
         // loading indicator, so the percentage keeps moving even while the
@@ -407,14 +449,14 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
         reportProgress();
         if (--pending === 0 && clips.size > 0 && avatar) startClipEngine(vrm);
       };
-      // try each candidate URL in order: local mirror → dedicated alt host
-      // (for clips that don't exist on the primary library) → primary library
-      const loadOne = (name: ClipName, urls: string[], idx = 0) => {
-        if (idx >= urls.length) {
+      // try each candidate URL in order: local mirror → the online libraries
+      // (every source lists its own hosts; all are CORS-open raw GitHub)
+      const loadOne = (src: ClipSource, idx = 0) => {
+        if (idx >= src.urls.length) {
           done();
           return;
         }
-        animLoader.load(urls[idx]!, (animGltf) => {
+        animLoader.load(src.urls[idx]!, (animGltf) => {
           try {
             const anims = (animGltf as unknown as { userData: { vrmAnimations: VRMAnimation[] } }).userData.vrmAnimations;
             if (anims?.length && avatar) {
@@ -423,18 +465,13 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
               clip.tracks = clip.tracks.filter((t) => !t.name.includes('expression'));
               // r79: land the clip's neutral frame on our calibrated rest
               rebaseClipHips(clip);
-              if (clip.tracks.length) clips.set(name, clip);
+              if (clip.tracks.length) clips.set(src.id, clip);
             }
           } catch { /* this clip is unusable on this rig — skip it */ }
           done();
-        }, undefined, () => loadOne(name, urls, idx + 1));
+        }, undefined, () => loadOne(src, idx + 1));
       };
-      for (const name of CLIP_NAMES) {
-        const urls = [`${ANIM_MIRROR}/${name}.vrma`];
-        if (ALT_CLIPS[name]) urls.push(ALT_CLIPS[name]!);
-        urls.push(`${ANIM_LIBRARY}/${name}.vrma`);
-        loadOne(name, urls);
-      }
+      for (const src of [...IDLE_SOURCES, ...PERF_SOURCES]) loadOne(src);
     };
 
     const mountAvatar = (a: Avatar) => {
@@ -803,6 +840,12 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           if (clipName) playPerf(clipName);
         } else if (!mv) {
           mvHandled = null;
+        }
+        // r93: idle handover — when this idle's hold expires and no one-shot
+        // performance is on stage, glide into the next idle mid-motion. The
+        // body is always inside a live loop: no straight stand between moves.
+        if (mixerActive && !perfAction && now >= idleHoldUntil) {
+          nextIdle(FADE.idleRotate);
         }
         // r2026-10-04.58: while a library clip drives the body, the skeleton
         // belongs to the mixer — so applyPose there is limited to its designed
