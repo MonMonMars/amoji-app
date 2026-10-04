@@ -630,8 +630,8 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       // r2026-10-04.69: stage props ride the same move clock — pop in when
       // the performance starts, melt away after it ends, micro-animated all
       // the way through. Scale is smoothed so a retriggered move doesn't pop.
-      for (const pg of propGroups.values()) {
-        const on = mv ? propsForMove(mv.kind).some((d) => d.group === pg) : false;
+      for (const [propId, pg] of propGroups) {
+        const on = mv ? propsForMove(mv.kind).some((d) => d.id === propId) : false;
         const want = on && mv ? propPresence(mv.t) : 0;
         pg.scale += (want - pg.scale) * Math.min(1, dt / 110);
         if (pg.scale < 0.02) {
