@@ -30,6 +30,16 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* r2026-10-04.71: safe-area helpers — once Amoji runs fullscreen (installed
+   PWA with viewport-fit=cover), these keep tap targets clear of the iPhone
+   home indicator and Android gesture bar. */
+.safe-b {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.safe-t {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
 /* slow living-camera drift for the painted anime backdrops */
 @keyframes kenburns {
   0%   { transform: scale(1.06) translate(0.8%, 0.5%); }
