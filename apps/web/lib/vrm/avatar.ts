@@ -312,7 +312,7 @@ class GenericAvatar implements Avatar {
   private resolveBones(gltf: GLTF, json: Record<string, unknown>): void {
     const ext = (json.extensions ?? {}) as Record<string, unknown>;
     const nodes = (json.nodes ?? []) as Array<{ name?: string } | undefined>;
-    const findByIndex = (i: unknown): THREE.Object3D | null {
+    const findByIndex = (i: unknown): THREE.Object3D | null => {
       if (typeof i !== 'number') return null;
       const name = nodes[i]?.name;
       if (!name) return null;
