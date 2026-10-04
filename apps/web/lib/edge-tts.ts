@@ -18,6 +18,9 @@
 // pitch contour, legato tempo, musical rests: she can actually sing.
 // r2026-10-04.52: flagship nine casted (kizuna/alicia/ember/mei/atlas/sky/
 // yuki/hina/mio); tifa/aerith retire.
+// r2026-10-04.85: timeout 12s → 7s — when Microsoft ignores the socket (dead
+// token / blocked network) the browser-voice fallback now takes over in half
+// the time, so a dead endpoint reads as a voice switch, not a long silence.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface EdgeVoiceOpts {
@@ -233,7 +236,9 @@ export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
 
     const cleanup = () => { clearTimeout(timer); try { ws.close(); } catch { /* already closed */ } };
     const fail = (err: Error) => { if (!settled) { settled = true; cleanup(); stopEdge(); reject(err); } };
-    const timer = setTimeout(() => fail(new Error('edge-tts timeout')), 12_000);
+    // r2026-10-04.85: 12s → 7s — a socket Microsoft is ignoring (dead token,
+    // blocked network) must hand over to the browser voice in half the time
+    const timer = setTimeout(() => fail(new Error('edge-tts timeout')), 7_000);
 
     ws.onopen = () => {
       const now = () => new Date().toISOString();
