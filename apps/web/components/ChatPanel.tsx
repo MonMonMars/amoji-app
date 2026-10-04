@@ -862,7 +862,7 @@ export default function ChatPanel({
         <button
           onClick={() => mic()}
           title={t(lang, 'micTitle')}
-          className="relative flex h-20 w-80 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black/55 transition active:scale-95"
+          className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black/55 transition active:scale-95"
           style={
             listening
               ? {
