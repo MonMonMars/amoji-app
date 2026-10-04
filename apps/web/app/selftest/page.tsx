@@ -4,12 +4,9 @@
 import { execFile } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { promisify } from 'node:util';
 
 export const dynamic = 'force-static';
 export const runtime = 'nodejs';
-
-const run = promisify(execFile);
 
 interface AssertionResult {
   fullName: string;
@@ -30,13 +27,6 @@ interface VitestJson {
   testResults?: SuiteResult[];
 }
 
-interface SelfTestResult {
-  ok: boolean;
-  summary: string;
-  failures: string[];
-  rawTail: string;
-}
-
 function vitestEntry(): string | null {
   const candidates = [
     path.join(process.cwd(), 'node_modules', 'vitest', 'vitest.mjs'),
@@ -45,58 +35,75 @@ function vitestEntry(): string | null {
   return candidates.find((p) => fs.existsSync(p)) ?? null;
 }
 
-async function runSuite(): Promise<SelfTestResult> {
-  const entry = vitestEntry();
-  if (!entry) {
-    return { ok: false, summary: 'vitest entry not found on disk', failures: [], rawTail: process.cwd() };
-  }
+function runVitest(entry: string): Promise<{ code: number; stdout: string; stderr: string }> {
+  return new Promise((resolve) => {
+    execFile(
+      process.execPath,
+      [entry, 'run', '--reporter=json', '--silent'],
+      {
+        cwd: process.cwd(),
+        timeout: 180_000,
+        maxBuffer: 64 * 1024 * 1024,
+        env: { ...process.env, CI: 'true' },
+      },
+      (err, stdout, stderr) => {
+        resolve({ code: err ? 1 : 0, stdout: String(stdout), stderr: String(stderr) });
+      },
+    );
+  });
+}
+
+function extractJson(stdout: string): { json: VitestJson | null; error: string } {
+  const start = stdout.indexOf('{');
+  const end = stdout.lastIndexOf('}');
+  if (start < 0 || end <= start) return { json: null, error: 'no JSON object in vitest stdout' };
   try {
-    const { stdout, stderr } = await run(process.execPath, [entry, 'run', '--reporter=json', '--silent'], {
-      cwd: process.cwd(),
-      timeout: 180_000,
-      maxBuffer: 64 * 1024 * 1024,
-      env: { ...process.env, CI: 'true' },
-    });
-    const start = stdout.indexOf('{');
-    const end = stdout.lastIndexOf('}');
-    const json = JSON.parse(stdout.slice(start, end + 1)) as VitestJson;
-    const failures: string[] = [];
-    for (const s of json.testResults ?? []) {
-      if (s.status !== 'failed') continue;
-      if (s.assertionResults && s.assertionResults.length > 0) {
-        for (const a of s.assertionResults) {
-          if (a.status === 'failed') {
-            failures.push(`✗ ${s.name} › ${a.fullName}\n${(a.failureMessages ?? []).join('\n').slice(0, 2000)}`);
-          }
-        }
-      } else {
-        failures.push(`✗ ${s.name} (suite failed to run)\n${(s.message ?? '(no message)').slice(0, 2000)}`);
-      }
-    }
-    const ok = (json.numFailedTests ?? 0) === 0 && (json.numFailedTestSuites ?? 0) === 0;
-    return {
-      ok,
-      summary: `${json.numPassedTests ?? 0}/${json.numTotalTests ?? 0} tests passed · ${json.numFailedTests ?? 0} failed tests · ${json.numFailedTestSuites ?? 0} failed suites`,
-      failures,
-      rawTail: stderr.slice(-3000),
-    };
+    return { json: JSON.parse(stdout.slice(start, end + 1)) as VitestJson, error: '' };
   } catch (e) {
-    const err = e as { stdout?: string; stderr?: string; message?: string };
-    return {
-      ok: false,
-      summary: `vitest exited non-zero or crashed: ${err.message ?? 'unknown'}`,
-      failures: [],
-      rawTail: `${err.stdout ?? ''}\n${err.stderr ?? ''}`.slice(-8000),
-    };
+    return { json: null, error: String(e) };
   }
 }
 
+function failuresFrom(json: VitestJson): string[] {
+  const failures: string[] = [];
+  for (const s of json.testResults ?? []) {
+    if (s.status !== 'failed') continue;
+    if (s.assertionResults && s.assertionResults.length > 0) {
+      for (const a of s.assertionResults) {
+        if (a.status === 'failed') {
+          failures.push(`✗ ${s.name} › ${a.fullName}\n${(a.failureMessages ?? []).join('\n').slice(0, 2000)}`);
+        }
+      }
+    } else {
+      failures.push(`✗ ${s.name} (suite failed to run)\n${(s.message ?? '(no message)').slice(0, 2000)}`);
+    }
+  }
+  return failures;
+}
+
 export default async function SelfTestPage() {
-  let result: SelfTestResult;
-  try {
-    result = await runSuite();
-  } catch (e) {
-    result = { ok: false, summary: 'self-test harness crashed', failures: [], rawTail: String(e).slice(0, 4000) };
+  let summary: string;
+  let failures: string[] = [];
+  let extra = '';
+  const entry = vitestEntry();
+  if (!entry) {
+    summary = '❌ vitest entry not found on disk (cwd: ' + process.cwd() + ')';
+  } else {
+    try {
+      const { code, stdout, stderr } = await runVitest(entry);
+      const { json, error } = extractJson(stdout);
+      if (json) {
+        const ok = code === 0 && (json.numFailedTests ?? 0) === 0 && (json.numFailedTestSuites ?? 0) === 0;
+        summary = `${ok ? '✅ PASS' : '❌ FAIL'} — exit ${code} · ${json.numPassedTests ?? 0}/${json.numTotalTests ?? 0} tests passed · ${json.numFailedTests ?? 0} failed tests · ${json.numFailedTestSuites ?? 0} failed suites`;
+        failures = failuresFrom(json);
+        if (failures.length === 0 && !ok) extra = '——— stderr ———\n' + stderr.slice(-3000);
+      } else {
+        summary = `❌ could not parse vitest JSON (${error}) — exit ${code}`;
+        extra = '——— stdout tail ———\n' + stdout.slice(-4000) + '\n——— stderr tail ———\n' + stderr.slice(-4000);
+      }
+    } catch (e) {
+      summary = '❌ self-test harness crashed: ' + String(e).slice(0, 500);
+    }
   }
   return (
     <main
@@ -111,10 +118,10 @@ export default async function SelfTestPage() {
         wordBreak: 'break-word',
       }}
     >
-      <h1 style={{ fontSize: 18, marginBottom: 8 }}>Amoji self-test — {result.ok ? '✅ PASS' : '❌ FAIL'}</h1>
-      <p style={{ marginBottom: 16 }}>{result.summary}</p>
-      {result.failures.length > 0 && <section>{result.failures.join('\n\n—————\n\n')}</section>}
-      {result.rawTail ? <section>{`——— stderr / stdout tail ———\n${result.rawTail}`}</section> : null}
+      <h1 style={{ fontSize: 18, marginBottom: 8 }}>Amoji self-test</h1>
+      <p style={{ marginBottom: 16 }}>{summary}</p>
+      {failures.length > 0 && <section>{failures.join('\n\n—————\n\n')}</section>}
+      {extra ? <section>{extra}</section> : null}
     </main>
   );
 }
