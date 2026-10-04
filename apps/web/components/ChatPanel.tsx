@@ -70,6 +70,11 @@
 // (her signature song sung live, or a full dance number); (c) every few idle
 // lines she teaches you something she can do (games, lessons, duets, meals,
 // voice mode, memory). Music always fades out the moment her real reply lands.
+// r2026-10-04.61: the history fade is POSITION-based, not age-based (Master
+// Simon: scrolled-up old lines must stay readable). Every message renders
+// fully opaque; a mask on the panel fades by on-screen HEIGHT only — the
+// bottom line is 100%, each line higher a step dimmer, the top melts away.
+// Scrolling an old message down into the bright zone makes it crisp again.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh, triggerMove } from '../lib/companion';
 import { detectMove } from '../lib/moves';
@@ -671,23 +676,23 @@ export default function ChatPanel({
 
   return (
     <div className="pointer-events-auto mx-auto flex w-full max-w-2xl flex-col items-center gap-1.5 px-4 pb-4">
-      {/* boxless history — newer lines opaque, older ones melt away; scrollable */}
+      {/* boxless history — fully opaque messages; only the on-screen height
+          fades (bottom line 100%, each line up a step dimmer). Scrolling an
+          old line DOWN into the bright zone makes it crisp and readable. */}
       <div
         ref={scrollRef}
         onScroll={(e) => {
           const el = e.currentTarget;
           nearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
         }}
-        className="w-full space-y-2.5 overflow-y-auto px-2 pb-1 pt-6 text-[15px] leading-relaxed [mask-image:linear-gradient(to_bottom,transparent,black_16%)]"
+        className="w-full space-y-2.5 overflow-y-auto px-2 pb-1 pt-6 [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)] [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)]"
         style={{ maxHeight: '34vh' }}
       >
         {history.length === 0 && <p className="text-center text-white/40">{t(lang, 'sayHi', { name: characterName })}</p>}
         {history.map((m, i) => {
-          const age = history.length - 1 - i;
-          const opacity = Math.max(0.15, 1 - age * 0.14);
           const isUser = m.role === 'user';
           return (
-            <div key={i} className={isUser ? 'text-right' : 'text-left'} style={{ opacity }}>
+            <div key={i} className={isUser ? 'text-right' : 'text-left'}>
               {!isUser && i === history.length - 1 && (
                 <p className="mb-0.5 pl-1 text-[10px] font-medium uppercase tracking-widest" style={{ color: `${accent}b0` }}>
                   {characterName}
