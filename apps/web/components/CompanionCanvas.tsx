@@ -22,6 +22,8 @@ export interface CompanionCanvasProps {
   accent?: string;
   /** character id — gives her/him a deterministic, personal idle-motion sequence */
   seedKey?: string;
+  /** light rig: 'outdoor' = neutral daylight, 'indoor' = soft interior light */
+  lighting?: 'indoor' | 'outdoor';
 }
 
 const HOME = { theta: 0, phi: 1.12, dist: 1.9 };
@@ -30,7 +32,7 @@ const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi 
 
 // Vertical orbit range, in radians measured from straight-up (polar angle).
 // r2026-10-04.56: widened at Master Simon's request — 0.12 ≈ near-overhead
-// top view, 2.35 ≈ worm's-eye view up from below the floor line. Theta is
+// top view, 2.35 ≈ worm's-eye view up from the floor line. Theta is
 // already unclamped (full 360° yaw).
 const PHI_MIN = 0.12;
 const PHI_MAX = 2.35;
@@ -51,7 +53,7 @@ const TWIST_AMOUNT: Record<string, number> = {
   challenging: 0.12,
 };
 
-export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', seedKey }: CompanionCanvasProps) {
+export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', seedKey, lighting = 'outdoor' }: CompanionCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const onNoticeRef = useRef(onNotice);
   onNoticeRef.current = onNotice;
@@ -76,10 +78,30 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     const scene = new THREE.Scene();
     // transparent canvas — the page's themed gradient shows through (alpha:true)
     scene.background = null;
-    scene.add(new THREE.HemisphereLight('#ffffff', '#334155', 1.2));
-    const dir = new THREE.DirectionalLight('#ffffff', 1.5);
-    dir.position.set(1, 2, 2);
-    scene.add(dir);
+    // r2026-10-04.77 (Master Simon): NORMAL light, nothing orange. Two
+    // rigs picked by `lighting`:
+    //   outdoor — neutral daylight: cool-ish sky over warm ground bounce,
+    //     one clean sun key plus a soft fill so nothing on the character
+    //     picks up a color cast.
+    //   indoor — soft interior: warm-ish key lamp overhead, cool window
+    //     fill, gentle ambience. Deliberately desaturated so skin stays skin.
+    if (lighting === 'indoor') {
+      scene.add(new THREE.HemisphereLight('#ffffff', '#57534e', 0.7));
+      const key = new THREE.DirectionalLight('#fff6ec', 1.2);
+      key.position.set(0.6, 2.8, 1.2);
+      scene.add(key);
+      const fill = new THREE.DirectionalLight('#edf3ff', 0.35);
+      fill.position.set(-1.6, 1.4, 1.6);
+      scene.add(fill);
+    } else {
+      scene.add(new THREE.HemisphereLight('#f2f7ff', '#8f8a80', 0.85));
+      const sun = new THREE.DirectionalLight('#ffffff', 1.75);
+      sun.position.set(2.2, 3.8, 2.0);
+      scene.add(sun);
+      const bounce = new THREE.DirectionalLight('#e3eaf5', 0.3);
+      bounce.position.set(-1.8, 0.6, -1.4);
+      scene.add(bounce);
+    }
 
     const camera = new THREE.PerspectiveCamera(35, host.clientWidth / host.clientHeight, 0.1, 20);
 
@@ -687,7 +709,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [accent, seedKey]);
+  }, [accent, seedKey, lighting]);
 
   return <div ref={hostRef} className="absolute inset-0 touch-none" aria-label="companion" />;
 }
