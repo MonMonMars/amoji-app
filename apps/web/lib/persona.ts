@@ -9,6 +9,10 @@
 // peach tints multiplied into every material (skin included) and made the
 // whole cast look orange under the light rig. Near-white keeps a whisper of
 // per-character hue without any cast.
+// r2026-10-04.83 (Master Simon): the poke no longer squash-deforms realistic
+// humans — mesh deform reads as rubber on a human body. Humans recoil via
+// SKELETON rotation; deform is kept only for the chibi cast (mochi), where
+// cartoon physics is exactly the look.
 import type { Lang } from './prefs';
 
 /** pose ids from @amoji/vrm-renderer IDLE_POSES, curated per personality */
@@ -80,7 +84,8 @@ export function poseIdsFor(characterId: string): string[] {
 
 /** how a character reacts to being poked — body + face flavor */
 export interface PokeStyle {
-  /** squash depth of the bounce (scene scale delta) */
+  /** squash depth of the bounce (scene scale delta) — CHIBI (deform) mode only;
+   *  human characters recoil via skeleton rotation and ignore this number */
   squash: number;
   /** extra twist on the surprised face (0 = neutral poke face) */
   twist: 'playful' | 'startled' | 'unimpressed' | 'flustered' | 'challenging';
@@ -122,6 +127,19 @@ export const POKE_STYLE: Record<string, PokeStyle> = {
 
 export function pokeStyleFor(characterId: string): PokeStyle {
   return POKE_STYLE[characterId] ?? { squash: 0.07, twist: 'playful', face: 'surprised' };
+}
+
+/** r83 (Master Simon): realistic humans recoil with SKELETON rotation — mesh
+ *  squash-deform reads as rubber on a human body. Deform stays only for the
+ *  chibi cast, where cartoon physics is exactly the look that feels right.
+ *  Add ids here to grant a character the deform poke. */
+export const CHIBI_CHARACTERS: string[] = ['mochi'];
+
+export type PokeMode = 'skeleton' | 'deform';
+
+/** how this character's body takes a poke: skeleton recoil, or chibi deform */
+export function pokeModeFor(characterId: string): PokeMode {
+  return CHIBI_CHARACTERS.includes(characterId) ? 'deform' : 'skeleton';
 }
 
 /** per-character body look (r2026-10-03.28): material tint + build, applied
