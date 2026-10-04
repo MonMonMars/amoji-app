@@ -13,6 +13,10 @@
 // r2026-10-05.99: the Test voice button now runs testVoiceChain() and shows a
 // per-tier verdict (edge-tts / google-tts / browser ✓|✗), so a silent iPhone
 // NAMES its dead tier instead of leaving the answer in the console.
+// r2026-10-05.100: the Test voice handler now primes speechSynthesis with a
+// zero-volume utterance SYNCHRONOUSLY inside the click — iOS only unlocks
+// the engine within the gesture itself, and the first await below used to
+// leave that context before any synth tier could run.
 import { useEffect, useRef, useState } from 'react';
 import {
   characterById, backgroundById, KID_CHARACTER, KID_BACKGROUND,
@@ -206,7 +210,17 @@ export default function SettingsSheet({
   const shownKey = keyDrafts[shownSpec.id] ?? brainKey(shownSpec.id);
 
   // r99: run the per-tier chain probe and render its verdict under the button.
+  // r100: iOS only unlocks speechSynthesis INSIDE the gesture handler — the
+  // first await below leaves that context before any synth tier runs, so
+  // prime the engine synchronously with a zero-volume utterance first (the
+  // probe is the click's own first sound; volume 0 keeps it inaudible).
   const runVoiceTest = () => {
+    try {
+      const probe = new SpeechSynthesisUtterance('test');
+      probe.volume = 0;
+      probe.rate = 2;
+      window.speechSynthesis.speak(probe);
+    } catch { /* probe is best-effort */ }
     setVoiceBlocked(false);
     setVoiceTest(null);
     setVoiceTesting(true);
