@@ -49,7 +49,16 @@
 // plus testVoiceChain() make every tier's fate visible on the status plate
 // and in Settings, and every tier promise is built inside try/catch so a
 // synchronous throw degrades into normal fallthrough instead of escaping.
-
+// r2026-10-05.100: completion-gated speak guarantee — the r97 streaming skip
+// in ChatPanel asked "did we TRY to speak the first sentence?", so a
+// silently-failed attempt (every tier muted on the iPhone) still suppressed
+// the guaranteed full-reply speak: a voice chain can be perfect and still
+// produce total silence if nothing is allowed to call it. Now the ONLY proof
+// that a line was heard is a tier's audio-START callback (neural onPlaying /
+// synth onstart) landing after the attempt — voiceStartedSince() exposes it,
+// and speak() logs every attempt (length + chain) and pings the
+// `amoji:voice-status` bus on the attempt itself, so the status dot moves
+// the moment she TRIED to talk, not only when a tier finishes.
 import type { Lang } from './prefs';
 import { speakEdge, stopEdge } from './edge-tts';
 import { speakGtts, stopGtts } from './gtts';
@@ -72,6 +81,24 @@ let mediaPrimed = false;
 /** r99: any tier that achieves real media playback marks the iOS media gate open. */
 function markMediaPrimed(): void {
   mediaPrimed = true;
+}
+
+// ---- r2026-10-05.100: completion-gated speak guarantee ----------------------
+// The only proof that a line was actually HEARD is a tier's audio-START
+// callback (neural onPlaying / synth onstart) firing AFTER the speak
+// attempt. Everything else — a resolved promise, a queued utterance, a
+// "finished" report — can still end in silence (iOS media gate, hardware
+// silent switch, dead socket). So voiceStartedAt is written ONLY by those
+// start callbacks, and callers gate their "already spoken" skips on it: a
+// silently-failed attempt must never suppress the fallback speak.
+let voiceStartedAt = 0;
+function markVoiceStarted(): void {
+  voiceStartedAt = Date.now();
+  markMediaPrimed(); // real audio starting also proves the iOS media gate open
+}
+/** r100: true only when some tier's audio actually STARTED at/after `since`. */
+export function voiceStartedSince(since: number): boolean {
+  return voiceStartedAt >= since;
 }
 
 /**
@@ -161,8 +188,10 @@ function reportVoiceBlocked(source: 'synth' | 'edge'): void {
 // ---- r2026-10-05.99: per-tier status bus ------------------------------------
 // Every tier reports its fate here: console + a window CustomEvent the status
 // plate renders as a dot and the Settings test consumes. This is what turns
-// "she's silent, why?" into an answer.
-export type VoiceTier = 'edge' | 'gtts' | 'synth';
+// "she's silent, why?" into an answer. r100: 'attempt' events mark the
+// speak() choke point itself, so the dot responds on the attempt, not only
+// on tier completion.
+export type VoiceTier = 'edge' | 'gtts' | 'synth' | 'attempt';
 
 export interface VoiceTierResult {
   tier: VoiceTier;
@@ -174,6 +203,7 @@ export const VOICE_TIER_LABEL: Record<VoiceTier, string> = {
   edge: 'edge-tts',
   gtts: 'google-tts',
   synth: 'browser',
+  attempt: 'speak',
 };
 
 export function reportVoiceStatus(tier: VoiceTier, ok: boolean, detail: string): void {
@@ -867,6 +897,13 @@ export function speak(
   // before ever tapping fetched every voice tier and stayed silent (autoplay
   // policy). Speaking a reply IS a user-intended audio act: take the unlock.
   unlockAudio();
+  // r100: single choke-point trace — EVERY speak() call lands here with its
+  // length and planned chain, and pings the status bus on the attempt itself
+  // (tier 'attempt'), so a silent device answers "was speak() called?"
+  // independently of "did sound start?" (the start callbacks below).
+  const chain = neuralEnabled() && typeof WebSocket !== 'undefined' ? 'edge→gtts→synth' : 'synth';
+  try { console.log(`[amoji voice] speak attempt · ${text.length} chars · ${lang} · chain ${chain}`); } catch { /* ignore */ }
+  reportVoiceStatus('attempt', true, `speak attempt · ${text.length} chars · ${chain}`);
   const { emotion, value } = dominant(emotionHints);
   const expr = EXPRESSIVENESS[characterId] ?? 1;
   const exprScale = 0.8 + 0.2 * expr; // expressive characters feel emotions harder
@@ -898,9 +935,10 @@ export function speak(
         rateDelta: clamp(np.rate * exprScale * amp, -0.4, 0.5),
         pitchDelta: clamp(np.pitch * exprScale * amp, -0.3, 0.4),
         volumeDelta: clamp(np.vol * exprScale * amp, -0.5, 0.5),
-        // r99: the moment neural audio actually plays, the iOS media gate is
-        // provably open — latch it and show the green dot.
-        onPlaying: () => { markMediaPrimed(); reportVoiceStatus('edge', true, 'neural voice playing'); },
+        // r99/r100: the moment neural audio actually plays, the iOS media
+        // gate is provably open AND the line is provably sounding — latch
+        // both and show the green dot.
+        onPlaying: () => { markVoiceStarted(); reportVoiceStatus('edge', true, 'neural voice playing'); },
         // r2026-10-04.89 — three-tier chain. Edge socket blocked on some mobile
         // networks → Google TTS (<audio> media, immune to the iPhone silent
         // switch) → browser speechSynthesis. A 'canceled' rejection just means
@@ -921,7 +959,7 @@ export function speak(
           lang,
           rate: 1 + clamp(np.rate * exprScale * amp, -0.2, 0.25),
           lead: tic?.text,
-          onPlaying: () => { markMediaPrimed(); reportVoiceStatus('gtts', true, 'google-tts playing'); },
+          onPlaying: () => { markVoiceStarted(); reportVoiceStatus('gtts', true, 'google-tts playing'); },
         });
       } catch (err2) {
         tier2 = Promise.reject(err2 instanceof Error ? err2 : new Error(String(err2)));
@@ -974,6 +1012,8 @@ export function sing(text: string, characterId: string, lang: Lang): void {
         melody: SONG_MELODY,
         rateDelta: -0.06,
         pitchDelta: 0.02,
+        // r100: singing counts too — a started song marks the voice started
+        onPlaying: () => { markVoiceStarted(); reportVoiceStatus('edge', true, 'neural voice playing (singing)'); },
       });
     } catch (err) {
       tier1 = Promise.reject(err instanceof Error ? err : new Error(String(err)));
@@ -1211,6 +1251,12 @@ function synthSpeak(
     try { speechSynthesis.resume(); } catch { /* ignore */ }
     let live = 0;
     for (const u of utterances) {
+      // r100: onstart is the one honest signal that browser audio actually
+      // began — only it may mark the voice started (never a mere enqueue).
+      u.onstart = () => {
+        markVoiceStarted();
+        reportVoiceStatus('synth', true, 'browser voice started');
+      };
       // r2026-10-04.75: surface real failures (autoplay block, no voice, engine
       // error) as `amoji:voice-blocked`; ignore the benign cancel() churn from
       // stopSpeaking() cutting a line short.
