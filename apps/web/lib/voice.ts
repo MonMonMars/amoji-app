@@ -68,6 +68,9 @@
 // separately from WebAudio and media elements, and a zero-volume utterance
 // spoken inside the first tap is what flips it to 'allowed' on devices where
 // the hardware silent switch is OFF yet every synth call was still dropped.
+// r2026-10-05.104: the four remote community cast members (aera/dhahlia/
+// onyx/velara) get gender-correct matrices of their own — aera soft-dreamy,
+// dhahlia bright-floral, onyx low-male, velara calm-navigator.
 import type { Lang } from './prefs';
 import { speakEdge, stopEdge } from './edge-tts';
 import { speakGtts, stopGtts } from './gtts';
@@ -715,6 +718,67 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
       { lang: 'en-US', names: ['Guy', 'Daniel', 'Male'], basePitch: 0.98, baseRate: 0.98 },
     ],
   },
+  // ---- remote community cast (r2026-10-05.104) ----------------------------
+  // aera — soft-spoken dreamer, drifting delivery
+  aera: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.04, baseRate: 0.9 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaoyi', 'Female'], basePitch: 1.03, baseRate: 0.9 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 1.02, baseRate: 0.9 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Ava', 'Female'], basePitch: 1.04, baseRate: 0.9 },
+    ],
+  },
+  // dhahlia — bright floral sprite, quick and sunny
+  dhahlia: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.12, baseRate: 1.04 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaorui', 'Female'], basePitch: 1.12, baseRate: 1.05 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 1.1, baseRate: 1.05 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Jenny', 'Female'], basePitch: 1.13, baseRate: 1.06 },
+    ],
+  },
+  // onyx — quiet midnight guardian, the low male register
+  onyx: {
+    yue: [
+      { lang: 'zh-HK', names: ['Sin-ju', 'Male'], basePitch: 0.88, baseRate: 0.92 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Yunxi', 'Male'], basePitch: 0.88, baseRate: 0.92 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Keita', 'Male'], basePitch: 0.9, baseRate: 0.92 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Christopher', 'Male'], basePitch: 0.9, baseRate: 0.93 },
+    ],
+  },
+  // velara — serene star-mapper, level and unhurried
+  velara: {
+    yue: [
+      { lang: 'zh-HK', names: ['HiuMaan', 'Female'], basePitch: 1.0, baseRate: 0.9 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaohan', 'Female'], basePitch: 1.0, baseRate: 0.9 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Nanami', 'Female'], basePitch: 0.99, baseRate: 0.9 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Aria', 'Female'], basePitch: 1.01, baseRate: 0.9 },
+    ],
+  },
 };
 
 /** Emotion → prosody for the browser-TTS fallback path (multipliers). */
@@ -776,6 +840,8 @@ const FEMALE_CHARS = new Set([
   'kasumi', 'marin', 'ayane', 'hitomi',
   // registry six (r2026-10-03.35)
   'lydia', 'ruby', 'snowy',
+  // remote community cast (r2026-10-05.104) — onyx is male; the rest female
+  'aera', 'dhahlia', 'velara',
 ]);
 
 /**
@@ -812,6 +878,8 @@ const EXPRESSIVENESS: Record<string, number> = {
   ren: 0.9,
   nova: 0.85,
   anchor: 0.85,
+  // remote community cast (r2026-10-05.104)
+  aera: 1.1, dhahlia: 1.3, onyx: 0.9, velara: 0.95,
 };
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
@@ -997,337 +1065,4 @@ export function speak(
           lang,
           rate: 1 + clamp(np.rate * exprScale * amp, -0.2, 0.25),
           lead: tic?.text,
-          onPlaying: () => { markVoiceStarted(); reportVoiceStatus('gtts', true, 'google-tts playing'); },
-        });
-      } catch (err2) {
-        tier2 = Promise.reject(err2 instanceof Error ? err2 : new Error(String(err2)));
-      }
-      void tier2.then(() => {
-        reportVoiceStatus('gtts', true, 'google-tts finished');
-      }).catch((err2: unknown) => {
-        if ((err2 as Error | undefined)?.message === 'canceled') return;
-        reportVoiceStatus('gtts', false, (err2 as Error | undefined)?.message ?? 'google-tts failed');
-        stopGtts();
-        try {
-          synthSpeak(text, characterId, lang, emotion, expr, tic, amp);
-          reportVoiceStatus('synth', true, 'browser voice queued');
-        } catch (err3) {
-          reportVoiceStatus('synth', false, (err3 as Error | undefined)?.message ?? 'browser voice failed');
-        }
-      });
-    });
-    return;
-  }
-
-  // 2) Browser-TTS fallback
-  try {
-    synthSpeak(text, characterId, lang, emotion, expr, tic, amp);
-    reportVoiceStatus('synth', true, 'browser voice queued');
-  } catch (err) {
-    reportVoiceStatus('synth', false, (err as Error | undefined)?.message ?? 'browser voice failed');
-  }
-}
-
-/**
- * Sing (r2026-10-03.40) — a melodic delivery of `text`: each clause becomes
- * one note of the SONG_MELODY contour, legato and slightly slower, joy
- * prosody underneath, her/his own voice. Neural path sends per-clause SSML
- * pitch deltas; the browser fallback replays the same contour as per-utterance
- * pitch multipliers. Callers gate on voiceEnabled().
- */
-export function sing(text: string, characterId: string, lang: Lang): void {
-  if (!voiceEnabled()) return;
-  unlockAudio();
-  const expr = EXPRESSIVENESS[characterId] ?? 1;
-  if (neuralEnabled() && typeof WebSocket !== 'undefined') {
-    let tier1: Promise<void>;
-    try {
-      tier1 = speakEdge(text, {
-        lang,
-        gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
-        character: characterId,
-        expressiveness: expr,
-        melody: SONG_MELODY,
-        rateDelta: -0.06,
-        pitchDelta: 0.02,
-        // r100: singing counts too — a started song marks the voice started
-        onPlaying: () => { markVoiceStarted(); reportVoiceStatus('edge', true, 'neural voice playing (singing)'); },
-      });
-    } catch (err) {
-      tier1 = Promise.reject(err instanceof Error ? err : new Error(String(err)));
-    }
-    void tier1.catch((err: unknown) => {
-      if ((err as Error | undefined)?.message === 'canceled') return;
-      // endpoint unreachable — same melody on the browser voice
-      stopEdge();
-      try {
-        synthSpeak(text, characterId, lang, 'joy', expr, undefined, 1, SONG_MELODY);
-        reportVoiceStatus('synth', true, 'browser voice queued (singing)');
-      } catch (err2) {
-        reportVoiceStatus('synth', false, (err2 as Error | undefined)?.message ?? 'browser voice failed');
-      }
-    });
-    return;
-  }
-  try {
-    synthSpeak(text, characterId, lang, 'joy', expr, undefined, 1, SONG_MELODY);
-    reportVoiceStatus('synth', true, 'browser voice queued (singing)');
-  } catch (err) {
-    reportVoiceStatus('synth', false, (err as Error | undefined)?.message ?? 'browser voice failed');
-  }
-}
-
-/** one short happy line per language for the settings self-test (r2026-10-04.75) */
-const TEST_LINES: Record<Lang, string> = {
-  yue: '喂，聽唔聽到我呀？我而家好開心見到你！',
-  zh: '喂，你能听到我吗？我现在好开心见到你！',
-  ja: 'ねえ、聞こえる？会えて嬉しいな！',
-  en: "Hey, can you hear me? I'm so happy to see you!",
-};
-
-/**
- * r2026-10-04.75 — one-tap voice self-test from the Settings sheet: forces
- * the iOS gesture unlock and speaks a short line in the current language with
- * the current character's voice. Works even while Voice replies is off (the
- * setting itself is left untouched — only the storage flag is borrowed for
- * the duration of the call, so stopSpeaking() can't cancel the test). If the
- * browser refuses to produce sound, `amoji:voice-blocked` fires and the
- * settings sheet shows the "check silent switch" hint.
- */
-export function testVoice(characterId: string, lang: Lang): void {
-  unlockAudio();
-  const wasOn = voiceEnabled();
-  if (!wasOn) {
-    try { localStorage.setItem(MUTE_KEY, 'on'); } catch { /* ignore */ }
-  }
-  try {
-    speak(TEST_LINES[lang] ?? TEST_LINES.en, characterId, lang, { joy: 0.6 });
-  } finally {
-    if (!wasOn) {
-      // restore without stopSpeaking() — that would cancel the line we just queued
-      try { localStorage.setItem(MUTE_KEY, 'off'); } catch { /* ignore */ }
-    }
-  }
-}
-
-function withTimeout<T>(p: Promise<T>, ms: number, message: string): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error(message)), ms);
-    p.then(
-      (v) => { clearTimeout(t); resolve(v); },
-      (e: unknown) => { clearTimeout(t); reject(e instanceof Error ? e : new Error(String(e))); },
-    );
-  });
-}
-
-/**
- * r99: true only when the engine actually STARTED the utterance — onstart is
- * the one signal that sound is truly coming (onend alone can fire after a
- * muted, interrupted, or zero-volume 'start'). A 400ms resume() nudge covers
- * engines that queue the line in a suspended state.
- */
-function probeSynth(text: string, characterId: string, lang: Lang): Promise<boolean> {
-  return new Promise<boolean>((resolve) => {
-    if (typeof speechSynthesis === 'undefined') { resolve(false); return; }
-    const { voice, pitch, rate } = pickVoice(characterId, lang);
-    const u = new SpeechSynthesisUtterance(text);
-    if (voice) u.voice = voice;
-    u.pitch = clamp(pitch, 0.4, 2);
-    u.rate = clamp(rate, 0.6, 1.6);
-    let started = false;
-    let done = false;
-    const finish = (ok: boolean) => {
-      if (done) return;
-      done = true;
-      clearInterval(nudge);
-      clearTimeout(giveUp);
-      try { speechSynthesis.cancel(); } catch { /* ignore */ }
-      resolve(ok);
-    };
-    const nudge = setInterval(() => { try { speechSynthesis.resume(); } catch { /* ignore */ } }, 400);
-    const giveUp = setTimeout(() => finish(started), 6_000);
-    u.onstart = () => { started = true; };
-    u.onend = () => finish(true);
-    u.onerror = () => finish(false);
-    try { speechSynthesis.resume(); } catch { /* ignore */ }
-    speechSynthesis.speak(u);
-  });
-}
-
-/**
- * r2026-10-05.99 — the Settings self-test, per tier. Walks edge → gtts →
- * synth with a short line, reporting each tried tier through the status bus
- * AND returning the full result list (Settings renders ✓/✗ per tier, so a
- * silent phone names its dead tier instead of just staying silent).
- * Skips gtts when edge already spoke, and skips synth when anything spoke.
- */
-export async function testVoiceChain(characterId: string, lang: Lang): Promise<VoiceTierResult[]> {
-  unlockAudio();
-  const wasOn = voiceEnabled();
-  if (!wasOn) {
-    try { localStorage.setItem(MUTE_KEY, 'on'); } catch { /* ignore */ }
-  }
-  const results: VoiceTierResult[] = [];
-  const line = TEST_LINES[lang] ?? TEST_LINES.en;
-  const push = (tier: VoiceTier, ok: boolean, detail: string) => {
-    results.push({ tier, ok, detail });
-    reportVoiceStatus(tier, ok, detail);
-  };
-  try {
-    if (neuralEnabled() && typeof WebSocket !== 'undefined') {
-      // tier 1 — neural socket (7s cap)
-      try {
-        await withTimeout(speakEdge(line, {
-          lang,
-          gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
-          character: characterId,
-        }), 7_000, 'edge-tts timeout');
-        push('edge', true, 'neural voice played');
-      } catch (err) {
-        if ((err as Error | undefined)?.message !== 'canceled') {
-          stopEdge();
-          push('edge', false, (err as Error | undefined)?.message ?? 'edge-tts failed');
-        }
-      }
-      // tier 2 — google TTS (10s cap) — only if tier 1 didn't already speak
-      if (!results.some((r) => r.tier === 'edge' && r.ok)) {
-        try {
-          await withTimeout(speakGtts(line, { lang }), 10_000, 'google-tts timeout');
-          push('gtts', true, 'google-tts played');
-        } catch (err) {
-          if ((err as Error | undefined)?.message !== 'canceled') {
-            stopGtts();
-            push('gtts', false, (err as Error | undefined)?.message ?? 'google-tts failed');
-          }
-        }
-      }
-    }
-    // tier 3 — browser synth (only if nothing above spoke)
-    if (!results.some((r) => r.ok)) {
-      const ok = await probeSynth(line, characterId, lang);
-      push('synth', ok, ok ? 'utterance started' : 'never started');
-    }
-  } finally {
-    if (!wasOn) {
-      try { localStorage.setItem(MUTE_KEY, 'off'); } catch { /* ignore */ }
-    }
-  }
-  return results;
-}
-
-function synthSpeak(
-  text: string,
-  characterId: string,
-  lang: Lang,
-  emotion: string,
-  expr: number,
-  tic?: { text: string; pitch: number; rate: number },
-  amp = 1,
-  melody?: number[],
-): void {
-  if (typeof speechSynthesis === 'undefined') return;
-  speechSynthesis.cancel(); // one speaker at a time
-
-  const { voice, pitch: basePitch, rate: baseRate } = pickVoice(characterId, lang);
-  const em = EMOTION_PROSODY[emotion] ?? EMOTION_PROSODY['neutral']!;
-  // amplify the multipliers around 1 so intensity 1 is an exact no-op
-  // (joy 1.2 → 1.25 at intensity 1.5; sadness 0.78 → 0.725 sinks further)
-  const emPitch = 1 + (em.pitch - 1) * amp;
-  const emRate = 1 + (em.rate - 1) * amp;
-  const emVol = 1 + (em.vol - 1) * amp;
-  const pitch = clamp(basePitch * emPitch, 0.4, 2);
-  const rate = clamp(baseRate * emRate, 0.6, 1.6);
-  const vol = clamp(emVol, 0.4, 1);
-
-  const parts = clauses(text);
-  const utterances: SpeechSynthesisUtterance[] = [];
-  if (tic) {
-    const t = new SpeechSynthesisUtterance(tic.text);
-    if (voice) t.voice = voice;
-    t.pitch = clamp(pitch * (1 + tic.pitch), 0.4, 2);
-    t.rate = clamp(rate * (1 + tic.rate), 0.6, 1.6);
-    t.volume = vol;
-    utterances.push(t);
-  }
-  // Warm contour: statements drift down then settle; questions rise at the tail.
-  // With a melody set, each clause instead rides one note of the tune (r.40).
-  const rising = /[？?]\s*$/.test(text);
-  parts.forEach((part, i) => {
-    const u = new SpeechSynthesisUtterance(part);
-    if (voice) u.voice = voice;
-    u.lang = voice?.lang ?? (lang === 'yue' ? 'zh-HK' : lang === 'zh' ? 'zh-CN' : lang === 'ja' ? 'ja-JP' : 'en-US');
-    if (melody && melody.length > 0) {
-      const note = melody[i % melody.length]!;
-      u.pitch = clamp(pitch * (1 + note), 0.4, 2);
-      u.rate = clamp(rate * 0.94, 0.6, 1.6);
-      u.volume = vol;
-      utterances.push(u);
-      return;
-    }
-    const contour = parts.length > 1
-      ? 1 + 0.06 * expr * Math.sin((i / (parts.length - 1)) * Math.PI * (rising ? 1 : 0.7))
-      : 1;
-    const isTail = i === parts.length - 1;
-    const tailLift = isTail && rising ? 1.12 : isTail && !rising ? 0.94 : 1;
-    u.pitch = clamp(pitch * contour * tailLift, 0.4, 2);
-    u.rate = isTail ? clamp(rate * 0.96, 0.6, 1.6) : rate;
-    u.volume = vol;
-    utterances.push(u);
-  });
-  let pumpCount = 0;
-  // r99: WebKit pauses the engine mid-queue (background tab, iOS audio-session
-  // handoffs) — a gentle resume() every beat keeps the line draining until
-  // the last utterance actually ends.
-  let keepAlive: ReturnType<typeof setInterval> | null = null;
-  const stopKeepAlive = () => {
-    if (keepAlive) { clearInterval(keepAlive); keepAlive = null; }
-  };
-  const pump = () => {
-    pumpCount += 1;
-    // r97: Android (and desktop Chrome after a cancel) can leave the engine
-    // suspended — nudge it awake before every pump
-    try { speechSynthesis.resume(); } catch { /* ignore */ }
-    let live = 0;
-    for (const u of utterances) {
-      // r100: onstart is the one honest signal that browser audio actually
-      // began — only it may mark the voice started (never a mere enqueue).
-      u.onstart = () => {
-        markVoiceStarted();
-        synthPrimed = true; // r102: the engine genuinely started audio — no more priming
-        reportVoiceStatus('synth', true, 'browser voice started');
-      };
-      // r2026-10-04.75: surface real failures (autoplay block, no voice, engine
-      // error) as `amoji:voice-blocked`; ignore the benign cancel() churn from
-      // stopSpeaking() cutting a line short.
-      u.onerror = (e) => {
-        live -= 1;
-        if (live <= 0) stopKeepAlive();
-        const err = (e as SpeechSynthesisErrorEvent).error;
-        if (err !== 'interrupted' && err !== 'canceled') reportVoiceBlocked('synth');
-      };
-      u.onend = () => {
-        live -= 1;
-        if (live <= 0) stopKeepAlive();
-      };
-      live += 1;
-      speechSynthesis.speak(u);
-    }
-    if (live > 0 && keepAlive === null) {
-      keepAlive = setInterval(() => { try { speechSynthesis.resume(); } catch { /* ignore */ } }, 900);
-    }
-    // r97 watchdog: Chromium and WebKit both silently drop utterances pumped
-    // right after a cancel() — the same-tick cancel-drop was never iOS-only.
-    // If nothing is speaking or pending shortly after the pump, the drop
-    // happened: pump once more (exactly once, so a genuinely broken engine
-    // can never loop).
-    setTimeout(() => {
-      try {
-        if (pumpCount === 1 && !speechSynthesis.speaking && !speechSynthesis.pending) pump();
-      } catch { /* ignore */ }
-    }, 600);
-  };
-  // r97: defer the pump one beat on EVERY platform. r85's defer guarded only
-  // iOS, but pumping synchronously in the same tick as cancel() drops the
-  // utterance on Chrome and Android too — 120ms is enough separation everywhere.
-  setTimeout(pump, 120);
-}
+          onPlaying: () => { markVoiceStarted(); reportVoiceStatus('gtts', true, 'google-tts playing'); }
