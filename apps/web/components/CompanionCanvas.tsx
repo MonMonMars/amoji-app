@@ -17,6 +17,13 @@ import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
 import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
 
+// r97 (Master Simon): idle-clip restoration — the mixer now starts the
+// moment the FIRST clip lands (it used to wait for all 26 loads, so a single
+// hung URL meant no mixer at all and a permanent T-pose), every URL attempt
+// carries a 12s watchdog (a stalled stream can no longer block the chain),
+// and the dead tk256ailab host is removed — verified-live library hosts lead
+// every chain, with the local mirror as fallback.
+
 export interface CompanionCanvasProps {
   onNotice?: (n: { reason: 'webgl' | 'asset' }) => void;
   onPoke?: () => void;
@@ -251,11 +258,11 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     // LOOP with a random mid-clip start offset, and the rotation crossfades
     // between two LIVE motions on a swap timer — she is ALWAYS inside some
     // idle movement, never parked in a straight stand between clips.
-    // Local mirror first (vendored by scripts/fetch-anims.mjs into
-    // /models/anims); the raw hosts are CORS-open so the browser can stream
-    // them until the binaries land in the repo.
+    // r97: verified-live hosts lead every chain — the tk256ailab repo 404s
+    // on every VRMA path (it is not a motion library) and the mirror is not
+    // vendored in this build, so the old mirror-first order spent a dead hop
+    // before every clip. The local mirror follows as the fallback.
     const ANIM_MIRROR = `${ASSET_BASE}/models/anims`;
-    const ANIM_LIBRARY = 'https://raw.githubusercontent.com/tk256ailab/vrm-viewer/main/VRMA';
     // the VRM consortium's genuine standard_idle + a real formal bow
     const ALT_HOST = 'https://raw.githubusercontent.com/hirokazuniimoto/virtual-avatar-sdk/main/assets/animations';
     // a proper wave greeting
@@ -269,25 +276,27 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     interface ClipSource { id: string; urls: string[] }
     // the idle pool — every entry a standing, loopable idle performance.
     // The rotation picks 1–2 of a clip's own beats, then hands over.
+    // r97: each live entry is [verifiedUrl, mirrorUrl]; the four whose only
+    // other host was the dead tk256ailab repo are mirror-only now.
     const IDLE_SOURCES: ClipSource[] = [
-      { id: 'StandardIdle', urls: [`${ANIM_MIRROR}/StandardIdle.vrma`, `${ALT_HOST}/standard_idle.vrma`, `${ANIM_LIBRARY}/StandardIdle.vrma`] },
-      { id: 'NeutralIdle', urls: [`${ANIM_MIRROR}/NeutralIdle.vrma`, `${DW_HOST}/neutral_idle.vrma`] },
-      { id: 'DwarfIdle', urls: [`${ANIM_MIRROR}/DwarfIdle.vrma`, `${DW_HOST}/Dwarf%20Idle.vrma`] },
-      { id: 'LadyIdle', urls: [`${ANIM_MIRROR}/LadyIdle.vrma`, `${DW_HOST}/Female%20Standing%20Pose.vrma`] },
-      { id: 'ArmStretch', urls: [`${ANIM_MIRROR}/ArmStretch.vrma`, `${DW_HOST}/Arm%20Stretching.vrma`] },
-      { id: 'HeadShake', urls: [`${ANIM_MIRROR}/HeadShake.vrma`, `${DW_HOST}/Stroke%20Shaking%20Head.vrma`] },
-      { id: 'ThinkingPose', urls: [`${ANIM_MIRROR}/ThinkingPose.vrma`, `${DW_HOST}/thinking.vrma`] },
-      { id: 'WeightShift', urls: [`${ANIM_MIRROR}/WeightShift.vrma`, `${CHAT_HOST}/weightShift.vrma`] },
-      { id: 'HeadNod', urls: [`${ANIM_MIRROR}/HeadNod.vrma`, `${CHAT_HOST}/headNod.vrma`] },
-      { id: 'RelievedSigh', urls: [`${ANIM_MIRROR}/RelievedSigh.vrma`, `${CHAT_HOST}/relievedSigh.vrma`] },
-      { id: 'Cocky', urls: [`${ANIM_MIRROR}/Cocky.vrma`, `${CHAT_HOST}/beingCocky.vrma`] },
-      { id: 'Bashful', urls: [`${ANIM_MIRROR}/Bashful.vrma`, `${CHAT_HOST}/bashful.vrma`] },
-      { id: 'BoredIdle', urls: [`${ANIM_MIRROR}/BoredIdle.vrma`, `${CHAT_HOST}/boredmelancholyIdle_1.vrma`] },
-      { id: 'Acknowledge', urls: [`${ANIM_MIRROR}/Acknowledge.vrma`, `${CHAT_HOST}/acknowledging.vrma`] },
-      { id: 'Sleepy', urls: [`${ANIM_MIRROR}/Sleepy.vrma`, `${ANIM_LIBRARY}/Sleepy.vrma`] },
-      { id: 'Relax', urls: [`${ANIM_MIRROR}/Relax.vrma`, `${ANIM_LIBRARY}/Relax.vrma`] },
-      { id: 'LookAround', urls: [`${ANIM_MIRROR}/LookAround.vrma`, `${ANIM_LIBRARY}/LookAround.vrma`] },
-      { id: 'Thinking', urls: [`${ANIM_MIRROR}/Thinking.vrma`, `${ANIM_LIBRARY}/Thinking.vrma`] },
+      { id: 'StandardIdle', urls: [`${ALT_HOST}/standard_idle.vrma`, `${ANIM_MIRROR}/StandardIdle.vrma`] },
+      { id: 'NeutralIdle', urls: [`${DW_HOST}/neutral_idle.vrma`, `${ANIM_MIRROR}/NeutralIdle.vrma`] },
+      { id: 'DwarfIdle', urls: [`${DW_HOST}/Dwarf%20Idle.vrma`, `${ANIM_MIRROR}/DwarfIdle.vrma`] },
+      { id: 'LadyIdle', urls: [`${DW_HOST}/Female%20Standing%20Pose.vrma`, `${ANIM_MIRROR}/LadyIdle.vrma`] },
+      { id: 'ArmStretch', urls: [`${DW_HOST}/Arm%20Stretching.vrma`, `${ANIM_MIRROR}/ArmStretch.vrma`] },
+      { id: 'HeadShake', urls: [`${DW_HOST}/Stroke%20Shaking%20Head.vrma`, `${ANIM_MIRROR}/HeadShake.vrma`] },
+      { id: 'ThinkingPose', urls: [`${DW_HOST}/thinking.vrma`, `${ANIM_MIRROR}/ThinkingPose.vrma`] },
+      { id: 'WeightShift', urls: [`${CHAT_HOST}/weightShift.vrma`, `${ANIM_MIRROR}/WeightShift.vrma`] },
+      { id: 'HeadNod', urls: [`${CHAT_HOST}/headNod.vrma`, `${ANIM_MIRROR}/HeadNod.vrma`] },
+      { id: 'RelievedSigh', urls: [`${CHAT_HOST}/relievedSigh.vrma`, `${ANIM_MIRROR}/RelievedSigh.vrma`] },
+      { id: 'Cocky', urls: [`${CHAT_HOST}/beingCocky.vrma`, `${ANIM_MIRROR}/Cocky.vrma`] },
+      { id: 'Bashful', urls: [`${CHAT_HOST}/bashful.vrma`, `${ANIM_MIRROR}/Bashful.vrma`] },
+      { id: 'BoredIdle', urls: [`${CHAT_HOST}/boredmelancholyIdle_1.vrma`, `${ANIM_MIRROR}/BoredIdle.vrma`] },
+      { id: 'Acknowledge', urls: [`${CHAT_HOST}/acknowledging.vrma`, `${ANIM_MIRROR}/Acknowledge.vrma`] },
+      { id: 'Sleepy', urls: [`${ANIM_MIRROR}/Sleepy.vrma`] },
+      { id: 'Relax', urls: [`${ANIM_MIRROR}/Relax.vrma`] },
+      { id: 'LookAround', urls: [`${ANIM_MIRROR}/LookAround.vrma`] },
+      { id: 'Thinking', urls: [`${ANIM_MIRROR}/Thinking.vrma`] },
     ];
     // one-shot dialogue performances (library clips with a real ending)
     // r96 (Master Simon): the move triggers get REAL performances too —
@@ -297,14 +306,14 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     // no matching clip (eat / dine / taichi / jog / yoga / stretch) keep
     // the r95 rule: the skeleton stays in the library idle.
     const PERF_SOURCES: ClipSource[] = [
-      { id: 'Jump', urls: [`${ANIM_MIRROR}/Jump.vrma`, `${ANIM_LIBRARY}/Jump.vrma`] },
-      { id: 'Bow', urls: [`${ANIM_MIRROR}/Bow.vrma`, `${ALT_HOST}/quick_formal_bow.vrma`] },
-      { id: 'Hello', urls: [`${ANIM_MIRROR}/Hello.vrma`, `${ST_HOST}/hello.vrma`] },
-      { id: 'Dance', urls: [`${ANIM_MIRROR}/Dance.vrma`, `${CHAT_HOST}/hipHopDancing.vrma`] },
-      { id: 'Sing', urls: [`${ANIM_MIRROR}/Sing.vrma`, `${CHAT_HOST}/singing.vrma`] },
-      { id: 'Punch', urls: [`${ANIM_MIRROR}/Punch.vrma`, `${CHAT_HOST}/punch.vrma`] },
-      { id: 'Piano', urls: [`${ANIM_MIRROR}/Piano.vrma`, `${CHAT_HOST}/pianoPlaying.vrma`] },
-      { id: 'Violin', urls: [`${ANIM_MIRROR}/Violin.vrma`, `${CHAT_HOST}/playingTheViolin.vrma`] },
+      { id: 'Jump', urls: [`${ANIM_MIRROR}/Jump.vrma`] },
+      { id: 'Bow', urls: [`${ALT_HOST}/quick_formal_bow.vrma`, `${ANIM_MIRROR}/Bow.vrma`] },
+      { id: 'Hello', urls: [`${ST_HOST}/hello.vrma`, `${ANIM_MIRROR}/Hello.vrma`] },
+      { id: 'Dance', urls: [`${CHAT_HOST}/hipHopDancing.vrma`, `${ANIM_MIRROR}/Dance.vrma`] },
+      { id: 'Sing', urls: [`${CHAT_HOST}/singing.vrma`, `${ANIM_MIRROR}/Sing.vrma`] },
+      { id: 'Punch', urls: [`${CHAT_HOST}/punch.vrma`, `${ANIM_MIRROR}/Punch.vrma`] },
+      { id: 'Piano', urls: [`${CHAT_HOST}/pianoPlaying.vrma`, `${ANIM_MIRROR}/Piano.vrma`] },
+      { id: 'Violin', urls: [`${CHAT_HOST}/playingTheViolin.vrma`, `${ANIM_MIRROR}/Violin.vrma`] },
     ];
     const TOTAL_CLIPS = IDLE_SOURCES.length + PERF_SOURCES.length;
     const clips = new Map<string, THREE.AnimationClip>();
@@ -469,22 +478,44 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
         }
       };
       let pending = TOTAL_CLIPS;
+      // r97: the mixer starts when the FIRST clip lands, not when all 26
+      // resolve — one hung URL used to mean no mixer ever = the T-pose stand
+      let engineStarted = false;
       const done = () => {
         // r84: every resolved clip (success or exhausted retries) nudges the
         // loading indicator, so the percentage keeps moving even while the
         // model itself is already cached/fast
         clipDone += 1;
         reportProgress();
-        if (--pending === 0 && clips.size > 0 && avatar) startClipEngine(vrm);
+        if (!engineStarted && clips.size > 0 && avatar) {
+          engineStarted = true;
+          startClipEngine(vrm);
+        }
+        pending -= 1;
       };
-      // try each candidate URL in order: local mirror → the online libraries
-      // (every source lists its own hosts; all are CORS-open raw GitHub)
+      // try each candidate URL in order: verified-live library first, the
+      // local mirror as fallback (r97 — the dead hosts were cut, see above)
       const loadOne = (src: ClipSource, idx = 0) => {
         if (idx >= src.urls.length) {
           done();
           return;
         }
+        // r97: per-attempt watchdog — without it a stalled stream (bytes
+        // flowing, no load/error event) hung this chain forever and, with
+        // the old all-clips gate, kept her in the T-pose. 12s per attempt,
+        // then the chain falls through to the next URL. `settled` guards
+        // against double-firing when a late load/error lands after the
+        // watchdog already moved on.
+        let settled = false;
+        const attemptTimer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          loadOne(src, idx + 1);
+        }, 12_000);
         animLoader.load(src.urls[idx]!, (animGltf) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(attemptTimer);
           try {
             const anims = (animGltf as unknown as { userData: { vrmAnimations: VRMAnimation[] } }).userData.vrmAnimations;
             if (anims?.length && avatar) {
@@ -498,7 +529,12 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
             }
           } catch { /* this clip is unusable on this rig — skip it */ }
           done();
-        }, undefined, () => loadOne(src, idx + 1));
+        }, undefined, () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(attemptTimer);
+          loadOne(src, idx + 1);
+        });
       };
       for (const src of [...IDLE_SOURCES, ...PERF_SOURCES]) loadOne(src);
     };

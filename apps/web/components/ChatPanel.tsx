@@ -64,8 +64,8 @@
 // reply commits in its place. Replaces the old thinking-out-loud interval.
 // r2026-10-04.48: performance theatre — (a) every few turns, a slow brain
 // becomes a SHOW: she dances to an original WebAudio theme composed for her
-// personality while the reply generates; (b) in quiet moments she offers a
-// private performance ("I just learned a new dance — want to see?") and
+// personality while the reply generates; (b) in quiet moments she offers
+// a private performance ("I just learned a new dance — want to see?") and
 // remembers the offer until you answer — YES starts the show instantly
 // (her signature song sung live, or a full dance number); (c) every few idle
 // lines she teaches you something she can do (games, lessons, duets, meals,
@@ -116,6 +116,11 @@
 // fallback: if the VAD can't load, voice mode behaves exactly like r86.
 // r2026-10-04.87b: vadStopRef holds the VadHandle ({stop()}), not a bare
 // function — TS2322/TS2349 broke the CI+Pages build.
+// r2026-10-05.97: streamed replies speak the FIRST complete sentence live —
+// she starts talking the moment a sentence closes in the stream instead of
+// waiting for the whole reply (voice starts seconds earlier on long replies);
+// if the finished reply is exactly that sentence, the final speak pass no
+// longer repeats it.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh, triggerMove } from '../lib/companion';
 import { detectMove } from '../lib/moves';
@@ -334,8 +339,17 @@ export default function ChatPanel({
   // it now survives the commitReply/finally stopMusic() cleanup and plays
   // for the whole 9s show; a piano trigger starts the Karplus-Strong piano
   // arrangement for the 6s keys performance, hands at the keys.
-  const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string): string => {
+  const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string, alreadySpoken?: string): string => {
     const mv = detectMove(userText) ?? detectMove(reply);
+    // r97 — the first sentence already went out live over the stream; when
+    // the finished reply is exactly that sentence, a second speak would
+    // replay it. Still fire the move trigger and the speaking notice, just
+    // not the voice.
+    if (alreadySpoken && reply.trim() === alreadySpoken.trim()) {
+      if (mv) triggerMove(mv);
+      notifySpeaking(reply);
+      return reply;
+    }
     // r.40 — she really sings: a short lyric-like reply rides the melody as-is;
     // a longer one becomes a little ditty from the per-language song bank.
     if (mv === 'sing') {
@@ -678,6 +692,9 @@ export default function ChatPanel({
     // r70 — persona + adaptive block (scene + warmth calibration)
     const personaForBrain = fullPersona();
     let answered = false;
+    // r97 — the first complete sentence of a streamed reply, spoken live the
+    // moment it closes (see onPartial below); '' until then
+    let firstSentence = '';
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
@@ -716,6 +733,19 @@ export default function ChatPanel({
             const clean = partial
               .replace(/\[emotion:[^\]]*$/, '')
               .replace(/\[emotion:\{[^}]*\}\]/, '');
+            // r97 — the first closed sentence speaks LIVE: the moment a full
+            // sentence has streamed in, she starts saying it instead of
+            // waiting for the whole reply (voice starts seconds earlier on
+            // long replies). The final speakReply skips the re-speak when
+            // the reply turns out to be exactly this sentence.
+            if (!firstSentence) {
+              const m = /^[^。！？.!?\n]+[。！？.!?]/.exec(clean);
+              if (m) {
+                firstSentence = m[0];
+                notifySpeaking(firstSentence);
+                speak(firstSentence, characterId, lang, feltHints ?? { joy: 0.4, neutral: 0.3 }, undefined, felt?.intensity);
+              }
+            }
             setHistory((h) => {
               const last = h.length - 1;
               const tail = h[last];
@@ -732,7 +762,7 @@ export default function ChatPanel({
         rememberTurn(text, r.reply);
         onMemCountRef.current?.(memorySummaryCount());
         feedUtterance(r.reply);
-        const spoken = speakReply(text, r.reply, replyHints, felt?.intensity, felt?.mood);
+        const spoken = speakReply(text, r.reply, replyHints, felt?.intensity, felt?.mood, firstSentence || undefined);
         commitReply(spoken);
         answered = true;
       } catch {
@@ -797,7 +827,7 @@ export default function ChatPanel({
     endPerformanceMusic(); // r86 — any live show bows out for the user
     let bargeInArmed = true; // first real speech of a burst cuts her off
     const micHandle = listenContinuous(lang, {
-      // r87 — the VAD owns endpointing now; its onSpeechEnd flushes via handle
+      // r87 — the VAD owns endpointing now; its onPartial flushes via handle
       externalEndpoint: true,
       onSpeechStart: () => {
         if (!bargeInArmed) return;
