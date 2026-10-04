@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin } from '@pixiv/three-vrm';
@@ -8,6 +8,7 @@ import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-v
 import type { VRMAnimation } from '@pixiv/three-vrm-animation';
 import { mapFrameToVrm, posesByIds, sampleIdlePoseFrom } from '@amoji/vrm-renderer';
 import { tickEngine, lastLaughAt, activeMove } from '../lib/companion';
+import { setLoadProgress } from '../lib/load-progress';
 import { moveDeltas, moveEnvelope, type MoveKind } from '../lib/moves';
 import { PROPS, propsForMove, propPresence, type PropDef, type PropPart } from '../lib/props';
 import { characterById } from '../lib/prefs';
@@ -60,14 +61,24 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
   const onPokeRef = useRef(onPoke);
   onPokeRef.current = onPoke;
   // r84 (Master Simon): while she loads, the stage stays EMPTY — no giant
-  // placeholder figure. A circular loading ring with the real percentage
-  // sits at the lower-left, right where the hero mic lives. null = ready.
-  const [progress, setProgress] = useState<number | null>(0);
+  // placeholder figure. r91: the loading indicator moved OUT of this canvas
+  // and INTO the top-left name bar (StatusPlate) through the shared store in
+  // lib/load-progress — smaller, next to the status it reports, and backed
+  // by a watchdog so it can never spin at 99% forever. null = ready.
 
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
-    setProgress(0);
+    setLoadProgress(0);
+    // r91 (Master Simon): the indicator must never spin forever. A model
+    // request can stream to ~99% and then hang (progress events but no
+    // success/error — a stalled connection); without a guard the old ring
+    // sat at 99% eternally. After 25s the indicator retires and the asset
+    // notice takes over. Cleared the moment she mounts (or on unmount).
+    const loadWatchdog = setTimeout(() => {
+      setLoadProgress(null);
+      onNoticeRef.current?.({ reason: 'asset' });
+    }, 25000);
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -136,8 +147,9 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
 
     // r84 (Master Simon): NO placeholder mesh while loading — the old accent
     // capsule read as "a huge ball in the middle". The stage stays empty and
-    // the HTML ring below reports real progress: model bytes (75%) + motion
-    // clips delivered (25%). Recomputed on every loader progress event.
+    // the name-bar indicator reports real progress: model bytes (75%) +
+    // motion clips delivered (25%). Recomputed on every loader progress
+    // event. r91: published through lib/load-progress instead of local state.
     let modelPct = 0;
     let clipDone = 0;
     let lastReported = -1;
@@ -145,7 +157,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       const pct = Math.min(99, Math.round(modelPct * 0.75 + (clipDone / CLIP_NAMES.length) * 25));
       if (pct !== lastReported) {
         lastReported = pct;
-        setProgress(pct);
+        setLoadProgress(pct);
       }
     };
 
@@ -384,8 +396,8 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       let pending = CLIP_NAMES.length;
       const done = () => {
         // r84: every resolved clip (success or exhausted retries) nudges the
-        // loading ring, so the percentage keeps moving even while the model
-        // itself is already cached/fast
+        // loading indicator, so the percentage keeps moving even while the
+        // model itself is already cached/fast
         clipDone += 1;
         reportProgress();
         if (--pending === 0 && clips.size > 0 && avatar) startClipEngine(vrm);
@@ -424,10 +436,11 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       avatar = a;
       scene.add(a.root);
       a.root.position.set(0, 0, 0);
-      // r84 — she's on stage: the loading ring at the lower-left bows out
+      // r84/r91 — she's on stage: the name-bar loading indicator bows out
       modelPct = 100;
       reportProgress();
-      setProgress(null);
+      setLoadProgress(null);
+      clearTimeout(loadWatchdog);
 
       // r2026-10-03.28: tint every material toward the character look. The tint
       // is near-white, so it shifts the whole palette (outfit, hair, light on
@@ -453,7 +466,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           loadModel(index + 1);
         }
       }, (ev) => {
-        // r84: byte-level progress for the loading ring
+        // r84: byte-level progress for the loading indicator
         if (ev.lengthComputable && ev.total > 0) {
           modelPct = Math.min(99, Math.round((ev.loaded / ev.total) * 100));
           reportProgress();
@@ -463,7 +476,9 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
 
     const loadModel = (index: number) => {
       if (index >= MODEL_CANDIDATES.length) {
-        setProgress(null); // r84 — nothing left to try: stop waiting, show the notice
+        // r84 — nothing left to try: stop waiting, show the notice
+        setLoadProgress(null);
+        clearTimeout(loadWatchdog);
         onNoticeRef.current?.({ reason: 'asset' });
         return;
       }
@@ -480,7 +495,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
         mountAvatar(createV1Avatar(v));
         loadClips(v);
       }, (ev) => {
-        // r84: byte-level progress for the loading ring
+        // r84: byte-level progress for the loading indicator
         if (ev.lengthComputable && ev.total > 0) {
           modelPct = Math.min(99, Math.round((ev.loaded / ev.total) * 100));
           reportProgress();
@@ -838,6 +853,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
 
     return () => {
       cancelAnimationFrame(raf);
+      clearTimeout(loadWatchdog);
       window.removeEventListener('resize', onResize);
       host.removeEventListener('pointerdown', onPointerDown);
       host.removeEventListener('pointermove', onPointerMove);
@@ -861,34 +877,8 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     };
   }, [accent, seedKey, lighting]);
 
-  return (
-    <div ref={hostRef} className="absolute inset-0 touch-none" aria-label="companion">
-      {progress !== null && (
-        // r84 (Master Simon): the empty stage's only loading UI — a mic-sized
-        // circular ring at the lower-left (the mic's neighbourhood), spinning
-        // highlight arc + the real percentage. Nothing in the 3D scene itself.
-        <div className="pointer-events-none absolute bottom-36 left-4 z-10 flex flex-col items-center gap-2">
-          <style>{'@keyframes amoji-spin{to{transform:rotate(360deg)}}'}</style>
-          <div className="relative h-20 w-20">
-            <div className="absolute inset-0 rounded-full bg-black/45" />
-            <svg
-              viewBox="0 0 80 80"
-              className="absolute inset-0 h-full w-full"
-              style={{ animation: 'amoji-spin 1.3s linear infinite' }}
-              aria-hidden
-            >
-              <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="4" />
-              <circle cx="40" cy="40" r="34" fill="none" stroke={accent} strokeWidth="4" strokeLinecap="round" strokeDasharray="70 144" />
-            </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-[13px] font-semibold text-white/95">
-              {progress}%
-            </span>
-          </div>
-          <span className="rounded-full bg-black/40 px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-white/70">
-            Loading…
-          </span>
-        </div>
-      )}
-    </div>
-  );
+  // r91 (Master Simon): no overlay here at all — the empty stage IS the
+  // loading state, and the top-left name bar (StatusPlate) carries a mini
+  // spinner + the real percentage through lib/load-progress.
+  return <div ref={hostRef} className="absolute inset-0 touch-none" aria-label="companion" />;
 }
