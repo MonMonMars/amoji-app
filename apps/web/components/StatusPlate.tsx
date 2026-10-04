@@ -9,6 +9,10 @@
 // ✗ sticks when a tier reports failure. Fueled by `amoji:voice-status` from
 // lib/voice, so a silent iPhone now SHOWS which tier died instead of
 // leaving Master Simon guessing.
+// r2026-10-05.100: the dot also answers "was speak() even CALLED?" —
+// 'attempt' events from the speak() choke point get the 'speak' label and
+// the tooltip prefers the event's own detail, so a silent phone shows
+// "speak: speak attempt · 12 chars · chain synth" vs a tier name.
 import { useEffect, useState } from 'react';
 import { getLatestFrame, dominantMood, type MoodId } from '../lib/companion';
 import { getLoadProgress, onLoadProgress } from '../lib/load-progress';
@@ -61,14 +65,16 @@ export default function StatusPlate({
   // 5s), red ✗ sticky on failure. Labels are hardcoded here (rather than
   // imported from lib/voice) to keep this component free of voice-module
   // imports; the wire format is the `amoji:voice-status` CustomEvent.
+  // r100: 'attempt' events (the speak() choke point) get their own label and
+  // the tooltip prefers the event's own detail string when present.
   const [voiceDot, setVoiceDot] = useState<{ ok: boolean; title: string } | null>(null);
   useEffect(() => {
     let fade: ReturnType<typeof setTimeout> | null = null;
     const onStatus = (e: Event) => {
       const d = (e as CustomEvent).detail as { tier?: string; ok?: boolean; detail?: string } | undefined;
       if (!d?.tier) return;
-      const label = d.tier === 'edge' ? 'edge-tts' : d.tier === 'gtts' ? 'google-tts' : 'browser voice';
-      setVoiceDot({ ok: !!d.ok, title: `🎙 ${label}: ${d.ok ? 'playing' : (d.detail ?? 'failed')}` });
+      const label = d.tier === 'edge' ? 'edge-tts' : d.tier === 'gtts' ? 'google-tts' : d.tier === 'attempt' ? 'speak' : 'browser voice';
+      setVoiceDot({ ok: !!d.ok, title: `🎙 ${label}: ${d.detail ?? (d.ok ? 'playing' : 'failed')}` });
       if (fade) clearTimeout(fade);
       if (d.ok) fade = setTimeout(() => setVoiceDot(null), 5_000);
     };
