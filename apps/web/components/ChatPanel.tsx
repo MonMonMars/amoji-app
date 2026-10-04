@@ -93,6 +93,10 @@
 // stream into a live italic user bubble the moment they're recognized, and
 // the utterance auto-sends ~1.1s after you stop talking (endpointing lives
 // in lib/listen.ts), exactly like ChatGPT/Grok voice mode.
+// r2026-10-04.82: the world gains a voice — the ambient bed for the current
+// backdrop (rain + distant thunder, campfire crackle, wind + birdsong…) runs
+// for as long as the chat lives (lib/sfx.ts), and poking her now lands with
+// a soft boing alongside the ouch.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh, triggerMove } from '../lib/companion';
 import { detectMove } from '../lib/moves';
@@ -114,6 +118,7 @@ import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodb
 import { detectExercise, startExercise, advanceExercise, exerciseFarewellLine, type ExerciseState } from '../lib/exercises';
 import { buildDailyGreeting, buildMemoryBlock, feltMood, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange, rememberTurn } from '../lib/memory';
 import { listenContinuous, listenSupported } from '../lib/listen';
+import { ambientStart, ambientStop, playPokeSfx } from '../lib/sfx';
 import { t, backgroundById, type Lang, type StrKey } from '../lib/prefs';
 import { adaptiveBlock, pickSceneLine } from '../lib/adaptive';
 import { loadProfile, type Gender } from '../lib/profile';
@@ -210,6 +215,16 @@ export default function ChatPanel({
     window.addEventListener('amoji:profile', sync);
     return () => window.removeEventListener('amoji:profile', sync);
   }, []);
+
+  // r82 — the backdrop now has a VOICE: rain patter + distant thunder on the
+  // rainy-night scene, campfire crackle at the ember camp, wind and birdsong
+  // over the meadow, a warm drone under the stars. The bed rebuilds whenever
+  // the scene changes (e.g. switching backdrops from the Change page) and
+  // fades out when the chat panel unmounts.
+  useEffect(() => {
+    ambientStart(backgroundId);
+    return () => ambientStop();
+  }, [backgroundId]);
 
   useEffect(() => {
     setHistory(loadHistory());
@@ -347,6 +362,8 @@ export default function ChatPanel({
   // r.26: the cry and the flinch wear the last felt mood — poking her while
   // you're sad gets a gentle apologetic gasp and a soft low flinch instead of
   // a full startle; no felt mood keeps the classic cry and voice numbers.
+  // r82: the poke now LANDS audibly too — a soft boing + padded thump rides
+  // the ouch cry, exactly the unitree-style feedback Master Simon asked for.
   const lastPokeRef = useRef(pokeCount);
   useEffect(() => {
     if (pokeCount === lastPokeRef.current) return;
@@ -354,6 +371,7 @@ export default function ChatPanel({
     lastActivityRef.current = Date.now();
     lastUserRef.current = Date.now();
     reengageStageRef.current = 0;
+    playPokeSfx();
     const ouchMood = lastFeltRef.current;
     const style = ouchStyleFor(ouchMood);
     const ouch = pickOuch(characterId, lang, pokeCount, ouchMood);
