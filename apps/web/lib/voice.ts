@@ -19,9 +19,16 @@
 // media play and an unlocked WebAudio context doesn't count; and synthSpeak
 // defers utterances a beat after cancel() on iOS, dodging the Safari
 // speechSynthesis deadlock that was silently swallowing every spoken line.
+// r2026-10-04.89: she went COMPLETELY silent on Simon's iPhone — the Edge
+// socket is blocked on his network AND the hardware silent switch mutes
+// speechSynthesis, so both tiers were mute at once. New mid tier: Google TTS
+// served as chained <audio> chunks (media playback ignores the silent switch
+// and needs no WebSocket), giving Edge → Google TTS → browser voice, in that
+// order, and a near-guarantee that every reply is heard.
 
 import type { Lang } from './prefs';
 import { speakEdge, stopEdge } from './edge-tts';
+import { speakGtts, stopGtts } from './gtts';
 import { dominant, pickInterjection, pickThinkingFiller } from './fillers';
 import { SONG_MELODY } from './songs';
 import { notifySpeaking } from './speech';
@@ -732,6 +739,7 @@ export function setNeuralEnabled(on: boolean): void {
 
 export function stopSpeaking(): void {
   stopEdge();
+  stopGtts();
   if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
 }
 
@@ -793,10 +801,22 @@ export function speak(
       rateDelta: clamp(np.rate * exprScale * amp, -0.4, 0.5),
       pitchDelta: clamp(np.pitch * exprScale * amp, -0.3, 0.4),
       volumeDelta: clamp(np.vol * exprScale * amp, -0.5, 0.5),
-    }).catch(() => {
-      // endpoint unreachable — one-shot fallback to the browser voice
+      // r2026-10-04.89 — three-tier chain. Edge socket blocked on some mobile
+      // networks → Google TTS (<audio> media, immune to the iPhone silent
+      // switch) → browser speechSynthesis. A 'canceled' rejection just means
+      // a newer line took over — never fall through and speak the stale one.
+    }).catch((err: unknown) => {
+      if ((err as Error | undefined)?.message === 'canceled') return;
       stopEdge();
-      synthSpeak(text, characterId, lang, emotion, expr, tic, amp);
+      speakGtts(text, {
+        lang,
+        rate: 1 + clamp(np.rate * exprScale * amp, -0.2, 0.25),
+        lead: tic?.text,
+      }).catch((err2: unknown) => {
+        if ((err2 as Error | undefined)?.message === 'canceled') return;
+        stopGtts();
+        synthSpeak(text, characterId, lang, emotion, expr, tic, amp);
+      });
     });
     return;
   }
