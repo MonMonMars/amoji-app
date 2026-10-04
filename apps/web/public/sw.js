@@ -53,7 +53,8 @@ self.addEventListener('activate', function (event) {
             if (k.indexOf('amoji-') === 0 && k !== CACHE) return caches.delete(k);
           })
         );
-      }n      .then(function () {
+      })
+      .then(function () {
         return self.clients.claim();
       })
   );
