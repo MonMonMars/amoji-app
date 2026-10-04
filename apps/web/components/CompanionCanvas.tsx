@@ -9,7 +9,7 @@ import type { VRMAnimation } from '@pixiv/three-vrm-animation';
 import { mapFrameToVrm, posesByIds, sampleIdlePoseFrom } from '@amoji/vrm-renderer';
 import { tickEngine, lastLaughAt, activeMove } from '../lib/companion';
 import { setLoadProgress } from '../lib/load-progress';
-import { moveDeltas, moveEnvelope, type MoveKind } from '../lib/moves';
+import { type MoveKind } from '../lib/moves';
 import { PROPS, propsForMove, propPresence, type PropDef, type PropPart } from '../lib/props';
 import { characterById } from '../lib/prefs';
 import { pokeStyleFor, pokeModeFor, poseIdsFor, lookFor } from '../lib/persona';
@@ -58,6 +58,17 @@ const TWIST_AMOUNT: Record<string, number> = {
   flustered: 0.05,
   challenging: 0.12,
 };
+
+// r95 (Master Simon): the hand-composed choreography additives are RETIRED.
+// Their shape stays here only so the pose-target math below type-checks;
+// the value is always undefined (no additive ever applied).
+interface MoveAdd {
+  lArmZ: number; rArmZ: number; lArmX: number; rArmX: number;
+  lElbowZ: number; rElbowZ: number;
+  spineX: number; spineY: number; chestZ: number;
+  headX: number; headY: number; headZ: number;
+  py: number; squash: number; stretch: number;
+}
 
 export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', seedKey, lighting = 'outdoor' }: CompanionCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -692,27 +703,14 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       // r2026-10-03.39: a dialogue-triggered movement performance (sing / jump
       // / kungfu / taichi / piano / jog), stamped on the same clock as `now`.
       const mv = activeMove(now);
-      // r86 (Master Simon): sing / piano / dance and friends have NO library
-      // clip — the online motion libraries ship greetings, bows and idles
-      // only (verified against three CORS-open repos). Per the r58 design
-      // these kinds take the procedural choreography channel: moveDeltas ×
-      // moveEnvelope, folded into the pose targets as SEMANTIC additives
-      // (arm raises / elbow folds / torso channels) that compose on top of
-      // whatever drives the body — the skeleton is still never hand-rotated
-      // while a library clip owns it.
-      const md = (() => {
-        if (!mv || MOVE_CLIP[mv.kind]) return undefined;
-        const d = moveDeltas(mv.kind, mv.t);
-        const e = moveEnvelope(mv.t);
-        return {
-          lArmZ: d.lArmZ * e, rArmZ: d.rArmZ * e,
-          lArmX: d.lArmX * e, rArmX: d.rArmX * e,
-          lElbowZ: d.lElbowZ * e, rElbowZ: d.rElbowZ * e,
-          spineX: d.spineX * e, spineY: d.spineY * e, chestZ: d.chestZ * e,
-          headX: d.headX * e, headY: d.headY * e, headZ: d.headZ * e,
-          py: d.py * e, squash: d.squash * e, stretch: d.stretch * e,
-        };
-      })();
+      // r95 (Master Simon): NO hand-composed skeleton choreography. The old
+      // moveDeltas × moveEnvelope "semantic additives" made eating / dance /
+      // kungfu twist the spine past human limits (upper body spinning 360°).
+      // New rule: a move either has a REAL clip in the online movement
+      // library (Jump / Bow / Hello — fired via MOVE_CLIP below) or the body
+      // simply stays in its library idle. The skeleton is never rotated by
+      // formula. Stage props (piano, mic…) still ride the move clock.
+      const md: MoveAdd | undefined = undefined;
       if (avatar) {
         // r83: the poke reaction has TWO engines, picked per character:
         //   · human (skeleton): NO mesh squash — the SKELETON takes the hit.
