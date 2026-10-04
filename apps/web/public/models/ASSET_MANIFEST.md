@@ -67,6 +67,31 @@ Notes on specific slots:
   Mika←mikel, Anchor←cyrus, Ruby←mimi, Snowy←olivia, Alan←kael). The model
   files keep their original names on disk.
 
+## Motion library (r2026-10-04.58) — `anims/`
+
+Real VRMA animation clips (VRMC_vrm_animation) downloaded from the open
+`tk256ailab/vrm-viewer` sample library
+(`raw.githubusercontent.com/tk256ailab/vrm-viewer/main/VRMA/`), fetched by
+`scripts/fetch-anims.mjs`. The clips drive the avatar body through the
+three.js AnimationMixer; the old procedural per-frame skeleton rotation in
+`CompanionCanvas.tsx` is bypassed whenever a clip is playing. Expression
+tracks are stripped at load time (body animation only — facial expressions
+stay driven by the emotion engine).
+
+| File | Used for |
+|---|---|
+| anims/Relax.vrma | idle rotation (default idle) |
+| anims/LookAround.vrma | idle rotation |
+| anims/Thinking.vrma | idle rotation |
+| anims/Jump.vrma | performance clip (move trigger) |
+| anims/Angry.vrma | performance clip (mood: anger) |
+| anims/Sad.vrma | performance clip (mood: sad) |
+| anims/Surprised.vrma | performance clip (reaction) |
+| anims/Blush.vrma | performance clip (reaction) |
+| anims/Clapping.vrma | performance clip (celebration) |
+| anims/Goodbye.vrma | performance clip (farewell) |
+| anims/Sleepy.vrma | performance clip (sleepy idle) |
+
 ## Retired / banned assets
 
 | File | Why |
