@@ -15,6 +15,13 @@
 //   2. arms — measure each upper/lower arm's current world direction and
 //      rotate it to hang straight down. Works from T-pose, A-pose, or the
 //      broken hands-up rest pose some legacy rigs ship.
+//
+// r2026-10-04.76 — the calibration lives on the INNER model node, never on
+// Avatar.root. The canvas writes position/scale/rotation to Avatar.root every
+// frame (idle reset + poke/laugh overlays), so a root-level facing yaw was
+// erased by the very next frame's rotation.set(0,0,0) — the exact "some
+// characters face backward at startup" bug. Avatar.root is now a plain Group
+// wrapper the canvas can stomp freely; the calibrated model hangs inside it.
 import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
@@ -87,7 +94,7 @@ function clampPoseHuman(p: AvatarPose): AvatarPose {
 
 export interface Avatar {
   kind: AvatarKind;
-  /** scene-level node — poke/laugh/move overlays transform this */
+  /** scene-level wrapper — poke/laugh/move overlays transform THIS */
   root: THREE.Object3D;
   /** when true, an animation clip drives the body; applyPose whispers head only */
   clipDrivesBody: boolean;
@@ -120,10 +127,10 @@ const DOWN = new THREE.Vector3(0, -1, 0);
 // shared calibration helpers
 // ---------------------------------------------------------------------------
 
-/** yaw `root` so the line leftShoulder→rightShoulder implies facing +Z */
-function calibrateFacing(root: THREE.Object3D, left: THREE.Object3D | null, right: THREE.Object3D | null): void {
+/** yaw `node` so the line leftShoulder→rightShoulder implies facing +Z */
+function calibrateFacing(node: THREE.Object3D, left: THREE.Object3D | null, right: THREE.Object3D | null): void {
   if (!left || !right) return;
-  root.updateMatrixWorld(true);
+  node.updateMatrixWorld(true);
   const lp = left.getWorldPosition(new THREE.Vector3());
   const rp = right.getWorldPosition(new THREE.Vector3());
   const d = rp.sub(lp);
@@ -135,8 +142,8 @@ function calibrateFacing(root: THREE.Object3D, left: THREE.Object3D | null, righ
   const fz = -d.x;
   const yaw = -Math.atan2(fx, fz);
   if (Math.abs(yaw) < 1e-3) return;
-  root.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(UP, yaw));
-  root.updateMatrixWorld(true);
+  node.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(UP, yaw));
+  node.updateMatrixWorld(true);
 }
 
 /**
@@ -180,7 +187,12 @@ class V1Avatar implements Avatar {
 
   constructor(vrm: VRM) {
     this.vrm = vrm;
-    this.root = vrm.scene;
+    // r2026-10-04.76: wrap the model — the calibration yaw stays on the
+    // inner scene node; the canvas's per-frame root transforms (and the
+    // idle rotation.set(0,0,0) reset) only ever touch the wrapper.
+    const wrap = new THREE.Group();
+    wrap.add(vrm.scene);
+    this.root = wrap;
     calibrateFacing(
       vrm.scene,
       vrm.humanoid?.getNormalizedBoneNode('leftShoulder') ?? null,
@@ -250,6 +262,8 @@ class GenericAvatar implements Avatar {
   kind = 'generic' as const;
   root: THREE.Object3D;
   clipDrivesBody = false; // no VRMA support here — procedural pose always
+  /** the calibrated inner model node (facing yaw lives here, never on root) */
+  private inner: THREE.Object3D;
   private bones = new Map<BoneName, THREE.Object3D>();
   private expressions = new Map<string, ExpressionBind[]>();
   /** calibrated rest local quats for bones applyPose drives (and arms) */
@@ -263,7 +277,11 @@ class GenericAvatar implements Avatar {
   private sE = new THREE.Euler();
 
   constructor(gltf: GLTF) {
-    this.root = gltf.scene;
+    // r2026-10-04.76: same wrapper split as V1Avatar — canvas overlays own
+    // the wrapper, the facing calibration owns the inner scene node.
+    this.inner = gltf.scene;
+    this.root = new THREE.Group();
+    this.root.add(gltf.scene);
     const json = (gltf.parser as unknown as { json: Record<string, unknown> }).json;
     this.resolveBones(gltf, json);
     this.resolveExpressions(gltf, json);
@@ -349,7 +367,9 @@ class GenericAvatar implements Avatar {
 
   private calibrate(): void {
     this.root.updateMatrixWorld(true);
-    calibrateFacing(this.root, this.bones.get('leftShoulder') ?? null, this.bones.get('rightShoulder') ?? null);
+    // facing yaw goes on the INNER node — the canvas rewrites the wrapper's
+    // rotation every frame, so calibrating the wrapper would be undone.
+    calibrateFacing(this.inner, this.bones.get('leftShoulder') ?? null, this.bones.get('rightShoulder') ?? null);
 
     // remember every bone's rest local rotation first (head/spine baseline)
     for (const [, node] of this.bones) {
