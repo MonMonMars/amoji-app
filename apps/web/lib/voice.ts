@@ -25,6 +25,14 @@
 // served as chained <audio> chunks (media playback ignores the silent switch
 // and needs no WebSocket), giving Edge → Google TTS → browser voice, in that
 // order, and a near-guarantee that every reply is heard.
+// r2026-10-05.97: voice chain hardening — (a) speak() itself now runs the
+// gesture unlock (a reply can be the first sound after page load, before any
+// window listener ever fired, and autoplay policy used to mute exactly that);
+// (b) the synth pump defers 120ms on ALL platforms — the same-tick cancel-drop
+// was never iOS-only, Chrome/Android swallow it too — and a one-shot watchdog
+// re-pumps if the engine silently dropped the queue; (c) the pump also calls
+// speechSynthesis.resume() (Android leaves the engine suspended after a
+// cancel more often than not).
 
 import type { Lang } from './prefs';
 import { speakEdge, stopEdge } from './edge-tts';
@@ -776,6 +784,11 @@ export function speak(
   intensity = 1,
 ): void {
   if (!voiceEnabled()) return;
+  // r97: a reply can be the very first sound after page load — unlockAudio()
+  // used to run only on window gestures, so a session where the user typed
+  // before ever tapping fetched every voice tier and stayed silent (autoplay
+  // policy). Speaking a reply IS a user-intended audio act: take the unlock.
+  unlockAudio();
   const { emotion, value } = dominant(emotionHints);
   const expr = EXPRESSIVENESS[characterId] ?? 1;
   const exprScale = 0.8 + 0.2 * expr; // expressive characters feel emotions harder
@@ -946,7 +959,12 @@ function synthSpeak(
     u.volume = vol;
     utterances.push(u);
   });
+  let pumpCount = 0;
   const pump = () => {
+    pumpCount += 1;
+    // r97: Android (and desktop Chrome after a cancel) can leave the engine
+    // suspended — nudge it awake before every pump
+    try { speechSynthesis.resume(); } catch { /* ignore */ }
     for (const u of utterances) {
       // r2026-10-04.75: surface real failures (autoplay block, no voice, engine
       // error) as `amoji:voice-blocked`; ignore the benign cancel() churn from
@@ -957,13 +975,19 @@ function synthSpeak(
       };
       speechSynthesis.speak(u);
     }
+    // r97 watchdog: Chromium and WebKit both silently drop utterances pumped
+    // right after a cancel() — the same-tick cancel-drop was never iOS-only.
+    // If nothing is speaking or pending shortly after the pump, the drop
+    // happened: pump once more (exactly once, so a genuinely broken engine
+    // can never loop).
+    setTimeout(() => {
+      try {
+        if (pumpCount === 1 && !speechSynthesis.speaking && !speechSynthesis.pending) pump();
+      } catch { /* ignore */ }
+    }, 600);
   };
-  // r2026-10-04.85: iOS Safari deadlocks when speak() lands in the same tick
-  // as cancel() — the utterance is silently dropped (and later ones can wedge
-  // with it). Defer one beat on Apple touch devices; everywhere else pumps now.
-  if (/iP(hone|ad|od)/.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')) {
-    setTimeout(pump, 90);
-  } else {
-    pump();
-  }
+  // r97: defer the pump one beat on EVERY platform. r85's defer guarded only
+  // iOS, but pumping synchronously in the same tick as cancel() drops the
+  // utterance on Chrome and Android too — 120ms is enough separation everywhere.
+  setTimeout(pump, 120);
 }

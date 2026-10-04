@@ -34,6 +34,11 @@
 // so the sing/piano/dance choreography (no library clip exists for those)
 // composes over BOTH library clips and the procedural base without ever
 // hand-rotating a clip-driven skeleton.
+//
+// r2026-10-05.97 — clip-mode head life is ADDITIVE (addRot tips the
+// mixer-written quaternion a whisper further) instead of the old setRot()
+// overwrite, which stomped the synced euler every frame and FROZE the clip's
+// own head motion into a stiff stare while idling.
 import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
@@ -251,10 +256,12 @@ class V1Avatar implements Avatar {
       if (node) node.rotation[axis] += val;
     };
     if (this.clipDrivesBody) {
-      // clip drives the body — keep only a whisper of procedural head life
-      setRot('head', 'x', p.headX * 0.5);
-      setRot('head', 'y', p.headY * 0.5);
-      setRot('head', 'z', p.headZ * 0.5);
+      // r97: a whisper of procedural head life — ADDED to whatever the mixer
+      // wrote this frame. The old setRot() overwrote the synced euler every
+      // frame, freezing the clip's own head motion into a stiff stare.
+      addRot('head', 'x', p.headX * 0.3);
+      addRot('head', 'y', p.headY * 0.3);
+      addRot('head', 'z', p.headZ * 0.3);
     } else {
       setRot('head', 'x', p.headX);
       setRot('head', 'y', p.headY);
