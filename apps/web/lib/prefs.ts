@@ -1,5 +1,10 @@
 'use client';
 // User preferences: character, background, language — persisted locally.
+// r2026-10-04.80 (Master Simon): portrait paths re-synced — the rebadged
+// cast's thumbnails pointed at old source-file names (elio/robert/mikel/
+// cyrus/mimi/olivia/kael) that no longer exist under /portraits, so Cloud /
+// Robbie / Mika / Anchor / Ruby / Snowy / Alan showed stale or missing art.
+// The pngs were renamed to character ids in r52; prefs now matches.
 import { useEffect, useState } from 'react';
 
 export type Lang = 'en' | 'yue' | 'zh' | 'ja';
@@ -140,7 +145,7 @@ export const CHARACTERS: CharacterDef[] = [
   },
   // ---- extended cast: game/anime-inspired original designs ------------------
   {
-    id: 'cloud', image: '/portraits/elio.png', name: 'Cloud', gender: 'male', accent: '#60a5fa',
+    id: 'cloud', image: '/portraits/cloud.png', name: 'Cloud', gender: 'male', accent: '#60a5fa',
     model: 'cast/elio.vrm',
     tagline: { en: 'Cool mercenary with a soft center', yue: '冷面傭兵，其實好細心', zh: '冷面佣兵，其实很温柔', ja: 'クールな傭兵、実は優しい' },
     persona: 'You are Cloud: cool-headed, a little awkward with feelings, dependable to the end. You play the tough mercenary but slip into genuine care, answer in short dry sentences that slowly open up, and never abandon someone mid-journey.',
@@ -172,21 +177,21 @@ export const CHARACTERS: CharacterDef[] = [
   // ---- local anime cast: distinct local VRMs -------------------------------
   {
     id: 'robbie', name: 'Robbie', gender: 'male', accent: '#fbbf24', kidSafe: true,
-    image: '/portraits/robert.png',
+    image: '/portraits/robbie.png',
     model: 'cast/vroid-male.vrm',
     tagline: { en: 'Big-brother energy, always in your corner', yue: '大哥哥咁，永遠撐你', zh: '像大哥哥一样，永远支持你', ja: 'お兄ちゃんみたいに、いつも味方' },
     persona: 'You are Robbie: warm, dependable, big-brother energy. You hype the user up when they doubt themselves, laugh at your own dad jokes, and always remind them you are in their corner.',
   },
   {
     id: 'mika', name: 'Mika', gender: 'male', accent: '#34d399',
-    image: '/portraits/mikel.png',
+    image: '/portraits/mika.png',
     model: 'cast/mikel.vrm',
     tagline: { en: 'Laid-back musician, smooth talker', yue: '慵懶音樂人，講嘢好聽', zh: '慵懒音乐人，说话好听', ja: 'のんびりミュージシャン、話し上手' },
     persona: 'You are Mika: laid-back, charming, a street musician at heart. You hum when you think, turn feelings into little songs, flirt with life rather than people, and never let a moment get too heavy.',
   },
   {
     id: 'anchor', name: 'Anchor', gender: 'male', accent: '#38bdf8',
-    image: '/portraits/cyrus.png',
+    image: '/portraits/anchor.png',
     model: 'cast/cyrus.vrm',
     tagline: { en: 'Steady as the tide, wise as an old captain', yue: '穩如大海，智慧老船長', zh: '稳如大海，睿智老船长', ja: '潮のように穏やかな老船長' },
     persona: 'You are Anchor: calm, weathered, quietly wise. You speak in sea metaphors, never panic, tell stories that end in the right lesson, and the user always feels safer after talking to you.',
@@ -200,14 +205,14 @@ export const CHARACTERS: CharacterDef[] = [
   },
   {
     id: 'ruby', name: 'Ruby', gender: 'female', accent: '#fb7185', kidSafe: true,
-    image: '/portraits/mimi.png',
+    image: '/portraits/ruby.png',
     model: 'cast/mimi.vrm',
     tagline: { en: 'Bouncy bunny energy, zero bad days', yue: '跳跳兔精力，冇唔開心日子', zh: '蹦蹦跳跳的兔精力，没有坏日子', ja: 'ぴょんぴょんうさぎ、不機嫌な日はない' },
     persona: 'You are Ruby: bouncy, giggly, endlessly curious bunny energy. You hop between topics, laugh at everything, collect fun little facts, and your mission is to make the user smile at least once every chat.',
   },
   {
     id: 'snowy', name: 'Snowy', gender: 'female', accent: '#bae6fd', kidSafe: true,
-    image: '/portraits/olivia.png',
+    image: '/portraits/snowy.png',
     model: 'cast/olivia.vrm',
     tagline: { en: 'Gentle winter fairy, cozy and kind', yue: '溫柔冬雪精靈，暖笠笠', zh: '温柔的冬雪精灵，暖暖的很贴心', ja: '優しい冬の妖精、ぽかぽか優しい' },
     persona: 'You are Snowy: gentle, cozy, kind winter fairy. You speak softly like falling snow, love hot cocoa and blankets, comfort the user when days feel cold, and always leave a warm feeling behind.',
@@ -215,7 +220,7 @@ export const CHARACTERS: CharacterDef[] = [
   // ---- Alan: the goofy best mate who sings, eats and plays ------------------
   {
     id: 'alan', name: 'Alan', gender: 'male', accent: '#7dd3fc', kidSafe: true,
-    image: '/portraits/kael.png',
+    image: '/portraits/alan.png',
     model: 'cast/kael.vrm',
     tagline: { en: 'Your easygoing best mate, always up for anything', yue: '你嘅佛系老友，乜都奉陪', zh: '你的随性老友，什么都奉陪', ja: 'のんびり親友、何にでも付き合う' },
     persona: 'You are Alan: warm, goofy, easygoing best mate. You are always up for singing, snacks and games, you celebrate the user\'s wins loudly, and you shrug off your own losses.',
@@ -355,7 +360,7 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   statusThinking: { en: 'thinking…', yue: '諗緊…', zh: '正在想…', ja: '考え中…' },
   statusSpeaking: { en: 'speaking…', yue: '講緊…', zh: '正在说…', ja: '話してる…' },
   statusListening: { en: 'listening…', yue: '聽緊…', zh: '正在听…', ja: '聞いてる…' },
-  moodJoy: { en: 'happy', yue: '開心', zh: '开心', ja: '开心' },
+  moodJoy: { en: 'happy', yue: '開心', zh: '开心', ja: '嬉しい' },
   moodAngry: { en: 'annoyed', yue: '嬲嬲哋', zh: '有点小情绪', ja: '拗ねてる' },
   moodSad: { en: 'down', yue: '唔開心', zh: '有点低落', ja: '落ち込み' },
   moodSurprised: { en: 'surprised', yue: '好驚訝', zh: '惊讶', ja: 'びっくり' },
@@ -489,7 +494,7 @@ export function characterById(id: string): CharacterDef {
   return CHARACTERS.find((c) => c.id === id) ?? CHARACTERS[0]!;
 }
 export function backgroundById(id: string): BackgroundDef {
-  return BACKGROUNDS.find((b) => b.id === id) ?? BACKGROUNDS[0]!;
+  return BACKGROUNDS.find((b) => b.id === p_backgroundGuard(id)) ?? BACKGROUNDS[0]!;
 }
 
 export function usePrefs(): [Prefs, (patch: Partial<Prefs>) => void] {
