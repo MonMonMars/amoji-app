@@ -8,7 +8,7 @@ import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-v
 import type { VRMAnimation } from '@pixiv/three-vrm-animation';
 import { mapFrameToVrm, posesByIds, sampleIdlePoseFrom } from '@amoji/vrm-renderer';
 import { tickEngine, lastLaughAt, activeMove } from '../lib/companion';
-import { moveDeltas, moveEnvelope } from '../lib/moves';
+import type { MoveKind } from '../lib/moves';
 import { characterById } from '../lib/prefs';
 import { pokeStyleFor, poseIdsFor, lookFor } from '../lib/persona';
 import { sampleSpeech } from '../lib/speech';
@@ -139,37 +139,120 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     //      facing + arm calibration, so a legacy model never shows its back
     //      or a raised-arms rest pose)
     //   3. any failure walks the chain to the next candidate.
+    // r2026-10-04.58: body motion comes from the ONLINE MOTION LIBRARY
+    // (11 open .vrma clips — real keyframed performances, streamed from the
+    // library with a local /models/anims mirror taking over once vendored).
+    // Master Simon's rule: the skeleton is NEVER rotated by hand while a
+    // library clip drives the body. The old procedural pose/move math now
+    // only runs as a last-resort fallback when no clip could be built.
     const ownModel = seedKey ? characterById(seedKey).model : undefined;
     const MODEL_CANDIDATES = [ownModel, 'juno.vrm', 'seed-san.vrm'].filter(
       (m): m is string => !!m,
     );
 
-    const attachIdleClip = (vrm: VRM) => {
-      // idle VRMA animation: body motion from the clip, expressions stay ours
+    // -- clip library ---------------------------------------------------------
+    const CLIP_NAMES = ['Angry', 'Blush', 'Clapping', 'Goodbye', 'Jump', 'LookAround', 'Relax', 'Sad', 'Sleepy', 'Surprised', 'Thinking'] as const;
+    type ClipName = (typeof CLIP_NAMES)[number];
+    // dialogue performances that have a matching library clip; other move
+    // kinds simply don't touch the skeleton (no clip yet — and per Master
+    // Simon, no hand-made puppet motion either).
+    const MOVE_CLIP: Partial<Record<MoveKind, ClipName>> = { jump: 'Jump' };
+    const clips = new Map<ClipName, THREE.AnimationClip>();
+    let idleAction: THREE.AnimationAction | null = null;
+    let perfAction: THREE.AnimationAction | null = null;
+    let idleOrder: ClipName[] = [];
+    let idleIdx = 0;
+
+    const nextIdle = (fade: number) => {
+      if (!mixer || !idleOrder.length) return;
+      const clip = clips.get(idleOrder[idleIdx % idleOrder.length]!);
+      idleIdx++;
+      if (!clip) return;
+      const action = mixer.clipAction(clip);
+      action.setLoop(THREE.LoopOnce, 1);
+      action.clampWhenFinished = true;
+      action.reset();
+      if (idleAction && idleAction !== action) {
+        idleAction.crossFadeTo(action, fade, false);
+        action.play();
+      } else {
+        action.fadeIn(fade).play();
+      }
+      idleAction = action;
+    };
+
+    const playPerf = (name: ClipName) => {
+      if (!mixer) return;
+      const clip = clips.get(name);
+      if (!clip) return;
+      const action = mixer.clipAction(clip);
+      action.setLoop(THREE.LoopOnce, 1);
+      action.clampWhenFinished = true;
+      action.reset();
+      if (perfAction && perfAction !== action) perfAction.stop();
+      if (idleAction && idleAction !== action) idleAction.crossFadeTo(action, 0.25, false);
+      action.play();
+      perfAction = action;
+    };
+
+    const startClipEngine = (vrm: VRM) => {
+      mixer = new THREE.AnimationMixer(vrm.scene);
+      mixer.addEventListener('finished', (e) => {
+        if (e.action === perfAction) {
+          // a one-shot performance ended → glide back into the idle playlist
+          perfAction = null;
+          nextIdle(0.4);
+        } else if (e.action === idleAction) {
+          // this idle clip ran its course → drift to the next one
+          nextIdle(0.35);
+        }
+      });
+      // per-character deterministic idle playlist from the calm clips
+      const calm = (['Relax', 'LookAround', 'Thinking'] as ClipName[]).filter((n) => clips.has(n));
+      idleOrder = calm.length ? calm : [...clips.keys()];
+      const shift = poseSeed % idleOrder.length;
+      idleOrder = idleOrder.slice(shift).concat(idleOrder.slice(0, shift));
+      idleIdx = 0;
+      mixerActive = true;
+      if (avatar) avatar.clipDrivesBody = true;
+      nextIdle(0);
+    };
+
+    // Local mirror first (vendored by scripts/fetch-anims.mjs into
+    // /models/anims), streaming from the online motion library as fallback
+    // while the binaries are not in the repo yet. Local always wins once the
+    // files land; the raw host is CORS-open so the browser can stream it.
+    const ANIM_MIRROR = `${ASSET_BASE}/models/anims`;
+    const ANIM_LIBRARY = 'https://raw.githubusercontent.com/tk256ailab/vrm-viewer/main/VRMA';
+    const loadClips = (vrm: VRM) => {
       const animLoader = new GLTFLoader();
       animLoader.register((parser) => new VRMAnimationLoaderPlugin(parser));
-      animLoader.load(`${ASSET_BASE}/models/idle.vrma`, (animGltf) => {
-        try {
-          const anims = (animGltf as unknown as { userData: { vrmAnimations: VRMAnimation[] } }).userData.vrmAnimations;
-          if (!anims?.length || !avatar || avatar.kind !== 'v1') return;
-          const v1 = avatar as Avatar & { vrm?: VRM };
-          const clip = createVRMAnimationClip(anims[0]!, vrm);
-          // strip expression tracks so speech/visemes keep full control of the face
-          clip.tracks = clip.tracks.filter((t) => !t.name.includes('expression'));
-          if (!clip.tracks.length) return;
-          mixer = new THREE.AnimationMixer(vrm.scene);
-          const action = mixer.clipAction(clip);
-          action.setLoop(THREE.LoopRepeat, Infinity);
-          action.play();
-          mixerActive = true;
-          avatar.clipDrivesBody = true;
-          void v1;
-        } catch {
-          onNoticeRef.current?.({ reason: 'asset' });
-        }
-      }, undefined, () => {
-        // no idle clip — procedural idle still carries the body
-      });
+      let pending = CLIP_NAMES.length;
+      const done = () => {
+        if (--pending === 0 && clips.size > 0 && avatar) startClipEngine(vrm);
+      };
+      const loadOne = (name: ClipName, url: string) => {
+        animLoader.load(url, (animGltf) => {
+          try {
+            const anims = (animGltf as unknown as { userData: { vrmAnimations: VRMAnimation[] } }).userData.vrmAnimations;
+            if (anims?.length && avatar) {
+              const clip = createVRMAnimationClip(anims[0]!, vrm);
+              // expression tracks stay ours — speech/visemes own the face
+              clip.tracks = clip.tracks.filter((t) => !t.name.includes('expression'));
+              if (clip.tracks.length) clips.set(name, clip);
+            }
+          } catch { /* this clip is unusable on this rig — skip it */ }
+          done();
+        }, undefined, () => {
+          if (url.startsWith(ANIM_MIRROR)) {
+            // local mirror miss → stream from the online motion library
+            loadOne(name, `${ANIM_LIBRARY}/${name}.vrma`);
+          } else {
+            done();
+          }
+        });
+      };
+      for (const name of CLIP_NAMES) loadOne(name, `${ANIM_MIRROR}/${name}.vrma`);
     };
 
     const mountAvatar = (a: Avatar) => {
@@ -220,7 +303,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           return;
         }
         mountAvatar(createV1Avatar(v));
-        attachIdleClip(v);
+        loadClips(v);
       }, undefined, () => loadPlain(index, url));
     };
     loadModel(0);
@@ -232,6 +315,9 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     const raycaster = new THREE.Raycaster();
     let pokeAt = -Infinity;
     let lastEmptyTap = -Infinity;
+    // r2026-10-04.58: which library performance the move trigger already
+    // fired for (rising-edge firing — one clip start per triggerMove)
+    let mvHandled: MoveKind | null = null;
     const pointers = new Map<number, { x: number; y: number; sx: number; sy: number; t: number; moved: number }>();
     let pinchDist = 0;
     let lastMid: { x: number; y: number } | null = null;
@@ -362,13 +448,13 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           // poke reaction: whole-body flinch — shoved back away from the
           // camera, knees dip, squash-bounce, then a spring wobble home (~900ms).
           // laugh reaction: rhythmic belly-bounce giggle, head thrown back (~1.6s).
-          // move performance (r.39): hops/bounces/leans ride the same channel.
-          // Both are transform overlays so they can also play together.
+          // These are ROOT-transform overlays (the whole character object),
+          // not skeleton rotation — physics, not puppetry, so they stay.
           const pokeAge = now - pokeAt;
           const boost = pokeAge < 900 ? 1 - pokeAge / 900 : 0;
           const laughAge = now - lastLaughAt();
           const laugh = laughAge >= 0 && laughAge < 1600 ? 1 - laughAge / 1600 : 0;
-          if (boost > 0 || laugh > 0 || mv) {
+          if (boost > 0 || laugh > 0) {
             let px = 0, py = 0, pz = 0;
             let sx = 1, sy = 1, sz = 1;
             let rotX = 0, rotY = 0;
@@ -393,17 +479,6 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
               sy -= 0.08 * bounce;
               sz += 0.05 * bounce;
               rotX += -0.12 * Math.sin(lt * Math.PI); // lean back laughing
-            }
-            if (mv) {
-              // activity performance: the move's hops, dips and leans travel
-              // through the whole-body transform
-              const env = moveEnvelope(mv.t);
-              const md = moveDeltas(mv.kind, mv.t);
-              py += md.py * env;
-              sy += md.squash * env;
-              sx += md.stretch * env;
-              sz += md.stretch * env;
-              rotX += md.spineX * 0.7 * env; // let the lean read through the root too
             }
             avatar.root.position.set(px, py, pz);
             avatar.root.scale.set(sx * BASE_SX, sy * BASE_SY, sz * BASE_SX);
@@ -450,31 +525,24 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           leftLowerArm: b.leftLowerArm, rightLowerArm: b.rightLowerArm,
           spineY: 0, chestZ: 0, lArmX: 0, rArmX: 0, lElbowZ: 0, rElbowZ: 0,
         };
-        if (avatar.kind === 'v1' && mixerActive) {
+        // dialogue-triggered performance: fire the matching LIBRARY clip once
+        // on the rising edge. Kinds without a library clip leave the skeleton
+        // untouched (Master Simon: no hand-rotated puppet motion).
+        if (mv && mvHandled !== mv.kind) {
+          mvHandled = mv.kind;
+          const clipName = MOVE_CLIP[mv.kind];
+          if (clipName) playPerf(clipName);
+        } else if (!mv) {
+          mvHandled = null;
+        }
+        // r2026-10-04.58: while a library clip drives the body, the skeleton
+        // belongs to the mixer ALONE — procedural applyPose is skipped so the
+        // two never fight (that fight was the "strange over-rotation").
+        if (avatar.clipDrivesBody) {
           mixer?.update(dt / 1000);
+        } else {
+          avatar.applyPose(poseTargets);
         }
-        // r2026-10-03.39 / r.50 — movement performance: choreographed deltas
-        // folded into the pose (each avatar kind maps them onto its own axes),
-        // faded by the envelope so the body settles back to neutral at the end.
-        if (mv) {
-          const env = moveEnvelope(mv.t);
-          if (env > 0.001) {
-            const d = moveDeltas(mv.kind, mv.t);
-            poseTargets.headX += d.headX * env;
-            poseTargets.headY += d.headY * env;
-            poseTargets.headZ += d.headZ * env;
-            poseTargets.spineY += d.spineY * env;
-            poseTargets.chestZ += d.chestZ * env;
-            poseTargets.lArmX += d.lArmX * env;
-            poseTargets.rArmX += d.rArmX * env;
-            poseTargets.lElbowZ += d.lElbowZ * env;
-            poseTargets.rElbowZ += d.rElbowZ * env;
-            // arm raises are stored in "lowering" units (same as the mapper)
-            poseTargets.leftUpperArm -= d.lArmZ * env;
-            poseTargets.rightUpperArm -= d.rArmZ * env;
-          }
-        }
-        avatar.applyPose(poseTargets);
         avatar.update(dt / 1000);
       } else {
         placeholder.rotation.y += 0.003;
