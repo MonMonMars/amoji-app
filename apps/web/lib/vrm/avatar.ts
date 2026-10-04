@@ -28,6 +28,12 @@
 // the body (library clip or procedural pose) with human-limited range, and
 // they are how the poke recoil leans a realistic human back without touching
 // the mesh scale.
+//
+// r2026-10-04.86 — arm-raise additives (lArmRaise / rArmRaise) complete the
+// move-performance set: + lifts the arm from wherever the body currently is,
+// so the sing/piano/dance choreography (no library clip exists for those)
+// composes over BOTH library clips and the procedural base without ever
+// hand-rotating a clip-driven skeleton.
 import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
@@ -49,6 +55,12 @@ export interface AvatarPose {
   lElbowZ: number; rElbowZ: number;
   /** r83: lean-back recoil on the torso — spine flexes deeper than chest */
   spinePitchAdd: number; chestPitchAdd: number;
+  /**
+   * r86: move-performance arm raises — + lifts the arm from wherever the
+   * body currently is (semantic, not raw-axis: each avatar kind maps it to
+   * its own bone axes). Optional so existing pose literals keep compiling.
+   */
+  lArmRaise?: number; rArmRaise?: number;
 }
 
 // r2026-10-04.60 — human joint limits. Our characters are HUMAN, so the
@@ -78,6 +90,9 @@ const HUMAN_LIMITS = {
   // r83: torso recoil additives (the skeleton poke) — a human can lean
   // back about this far before it stops reading as human
   spinePitchAdd: [-0.6, 0.6], chestPitchAdd: [-0.5, 0.5],
+  // r86: arm raises from the current position — an idol mic-hand or a
+  // violin/piano arm lifts about this far and no further
+  lArmRaise: [-1.6, 1.6], rArmRaise: [-1.6, 1.6],
 } as const;
 
 const clampField = (v: number, range: readonly [number, number]): number =>
@@ -103,6 +118,8 @@ function clampPoseHuman(p: AvatarPose): AvatarPose {
     rElbowZ: clampField(p.rElbowZ, HUMAN_LIMITS.rElbowZ),
     spinePitchAdd: clampField(p.spinePitchAdd, HUMAN_LIMITS.spinePitchAdd),
     chestPitchAdd: clampField(p.chestPitchAdd, HUMAN_LIMITS.chestPitchAdd),
+    lArmRaise: clampField(p.lArmRaise ?? 0, HUMAN_LIMITS.lArmRaise),
+    rArmRaise: clampField(p.rArmRaise ?? 0, HUMAN_LIMITS.rArmRaise),
   };
 }
 
@@ -261,6 +278,10 @@ class V1Avatar implements Avatar {
     // the synced euler and tips it further back within human limits)
     if (p.spinePitchAdd) addRot('spine', 'x', p.spinePitchAdd);
     if (p.chestPitchAdd) addRot('chest', 'x', p.chestPitchAdd);
+    // r86: move-performance arm raises (+ = lift the arm from wherever it
+    // is right now). V1 raw axes: left z+ lifts, right z− lifts.
+    if (p.lArmRaise) addRot('leftUpperArm', 'z', p.lArmRaise);
+    if (p.rArmRaise) addRot('rightUpperArm', 'z', -p.rArmRaise);
   }
 
   update(dt: number): void {
@@ -439,8 +460,10 @@ class GenericAvatar implements Avatar {
     this.applyBone('spine', p.spineX + p.spinePitchAdd, p.spineY, 0);
     this.applyBone('chest', p.chestX + p.chestPitchAdd, 0, p.chestZ);
     this.applyBone('head', p.headX, p.headY, p.headZ);
-    this.applyBone('leftUpperArm', p.lArmX, 0, p.leftUpperArm);
-    this.applyBone('rightUpperArm', p.rArmX, 0, -p.rightUpperArm);
+    // r86: arm raises fold into the same Z channel (+semantic lowers, so a
+    // raise subtracts on the left and adds on the right)
+    this.applyBone('leftUpperArm', p.lArmX, 0, p.leftUpperArm - (p.lArmRaise ?? 0));
+    this.applyBone('rightUpperArm', p.rArmX, 0, -(p.rightUpperArm - (p.rArmRaise ?? 0)));
     this.applyBone('leftLowerArm', p.leftLowerArm - p.lElbowZ, 0, 0);
     this.applyBone('rightLowerArm', p.rightLowerArm + p.rElbowZ, 0, 0);
   }
