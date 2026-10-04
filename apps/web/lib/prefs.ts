@@ -420,7 +420,7 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: '只保留健康向上的角色和明亮场景',
     ja: '健全なキャラと明るい場所だけ',
   },
-  brainTitle: { en: 'AI brain', yue: 'AI 大腦', zh: 'AI 大脑', ja: 'AIの頭脳' },
+  brainTitle: { en: 'AI brain', yue: 'AI 大腦', zh: 'AI 大腦', zh: 'AI 大脑', ja: 'AIの頭脳' },
   brainAuto: { en: 'Auto ✦', yue: '自動 ✦', zh: '自动 ✦', ja: '自動 ✦' },
   brainAutoHint: {
     en: 'Auto picks the smartest brain you add a key for — otherwise the free shared lane.',
@@ -494,7 +494,7 @@ export function characterById(id: string): CharacterDef {
   return CHARACTERS.find((c) => c.id === id) ?? CHARACTERS[0]!;
 }
 export function backgroundById(id: string): BackgroundDef {
-  return BACKGROUNDS.find((b) => b.id === p_backgroundGuard(id)) ?? BACKGROUNDS[0]!;
+  return BACKGROUNDS.find((b) => b.id === id) ?? BACKGROUNDS[0]!;
 }
 
 export function usePrefs(): [Prefs, (patch: Partial<Prefs>) => void] {
