@@ -11,6 +11,10 @@
 // plus two one-shot hosts for the bow (virtual-avatar-sdk) and the wave
 // (VRM-Assets-Pack-For-Silly-Tavern). File lists verified via GitHub API.
 //
+// r2026-10-05.96: the move triggers get real one-shot performances too —
+// dance / sing / kungfu / piano / violin come from the 3dchat Mixamo-class
+// library (hipHopDancing, singing, punch, pianoPlaying, playingTheViolin).
+//
 // Each source below mirrors the url chain in CompanionCanvas.tsx
 // (IDLE_SOURCES / PERF_SOURCES) so the local /models/anims/<id>.vrma takes
 // over from the streamed originals once committed.
@@ -57,6 +61,12 @@ const SOURCES = [
   { id: 'Jump', urls: [`${TK}/Jump.vrma`] },
   { id: 'Bow', urls: [`${ALT}/quick_formal_bow.vrma`] },
   { id: 'Hello', urls: [`${ST}/hello.vrma`] },
+  // r96: real one-shot performances for the move triggers (3dchat library)
+  { id: 'Dance', urls: [`${CHAT}/hipHopDancing.vrma`] },
+  { id: 'Sing', urls: [`${CHAT}/singing.vrma`] },
+  { id: 'Punch', urls: [`${CHAT}/punch.vrma`] },
+  { id: 'Piano', urls: [`${CHAT}/pianoPlaying.vrma`] },
+  { id: 'Violin', urls: [`${CHAT}/playingTheViolin.vrma`] },
 ];
 
 fs.mkdirSync(DEST, { recursive: true });

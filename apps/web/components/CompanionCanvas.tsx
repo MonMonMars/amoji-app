@@ -290,10 +290,21 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       { id: 'Thinking', urls: [`${ANIM_MIRROR}/Thinking.vrma`, `${ANIM_LIBRARY}/Thinking.vrma`] },
     ];
     // one-shot dialogue performances (library clips with a real ending)
+    // r96 (Master Simon): the move triggers get REAL performances too —
+    // dance / sing / kungfu / piano / violin fire actual keyframed mocap
+    // from the 3dchat Mixamo-class library (file list verified via the
+    // GitHub API) instead of leaving the body in its idle. Move kinds with
+    // no matching clip (eat / dine / taichi / jog / yoga / stretch) keep
+    // the r95 rule: the skeleton stays in the library idle.
     const PERF_SOURCES: ClipSource[] = [
       { id: 'Jump', urls: [`${ANIM_MIRROR}/Jump.vrma`, `${ANIM_LIBRARY}/Jump.vrma`] },
       { id: 'Bow', urls: [`${ANIM_MIRROR}/Bow.vrma`, `${ALT_HOST}/quick_formal_bow.vrma`] },
       { id: 'Hello', urls: [`${ANIM_MIRROR}/Hello.vrma`, `${ST_HOST}/hello.vrma`] },
+      { id: 'Dance', urls: [`${ANIM_MIRROR}/Dance.vrma`, `${CHAT_HOST}/hipHopDancing.vrma`] },
+      { id: 'Sing', urls: [`${ANIM_MIRROR}/Sing.vrma`, `${CHAT_HOST}/singing.vrma`] },
+      { id: 'Punch', urls: [`${ANIM_MIRROR}/Punch.vrma`, `${CHAT_HOST}/punch.vrma`] },
+      { id: 'Piano', urls: [`${ANIM_MIRROR}/Piano.vrma`, `${CHAT_HOST}/pianoPlaying.vrma`] },
+      { id: 'Violin', urls: [`${ANIM_MIRROR}/Violin.vrma`, `${CHAT_HOST}/playingTheViolin.vrma`] },
     ];
     const TOTAL_CLIPS = IDLE_SOURCES.length + PERF_SOURCES.length;
     const clips = new Map<string, THREE.AnimationClip>();
@@ -304,10 +315,17 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     // r93: when the current idle hands over to the next one (RAF clock, ms).
     // The handover is a crossfade between two LIVE loops — never a freeze.
     let idleHoldUntil = Infinity;
-    // dialogue performances that have a matching library clip; other move
-    // kinds take the procedural choreography channel below (r86) — composed
-    // as semantic additives so they still never touch a clip-driven skeleton.
-    const MOVE_CLIP: Partial<Record<MoveKind, string>> = { jump: 'Jump' };
+    // dialogue performances that have a matching library clip; move kinds
+    // without one keep the library idle (r95/r96) — the skeleton is never
+    // rotated by formula.
+    const MOVE_CLIP: Partial<Record<MoveKind, string>> = {
+      jump: 'Jump',
+      dance: 'Dance',
+      sing: 'Sing',
+      kungfu: 'Punch',
+      piano: 'Piano',
+      violin: 'Violin',
+    };
     // r2026-10-04.59 (Master Simon): EVERY clip change is a blend, never a
     // jump — pose A at 10° glides into pose B at 90° over `fade` seconds.
     // The mixer crossfades bone quaternions, so intermediate frames are real
