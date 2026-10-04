@@ -25,6 +25,13 @@
 //  · INSTANT LOCAL LANE: if every brain is slow or down she still answers
 //    immediately — a warm line in her own language that ends with a
 //    question (continuity rule), wearing the emotion read from your words
+// r2026-10-04.68 — race models re-aligned with the live free lane:
+//  · text.pollinations.ai/models (checked 2026-10-04) now serves the
+//    anonymous tier as `openai-fast` (GPT-OSS-20B reasoning) with aliases
+//    openai / gpt-oss / gpt-oss-20b / ovh-reasoning — the old `mistral`
+//    racer was failing instantly, silently shrinking the race to ONE model
+//  · RACE_MODELS now lists every alias we know: dead aliases fail fast and
+//    cost nothing, live ones race in parallel — first token still wins
 import { analyzeText } from '@amoji/emotion-core';
 import { BASE_SYSTEM, languageBlock, parseEmotionHints, type ChatMessage } from './llm';
 import { BRAIN_SPECS, markBrainDead, pickBrain, type BrainSpec } from './brain';
@@ -45,8 +52,11 @@ export function trimHistoryForPrompt(messages: ChatMessage[]): ChatMessage[] {
   return messages.length > PROMPT_HISTORY_CAP ? messages.slice(-PROMPT_HISTORY_CAP) : messages;
 }
 
-/** the free lane races these models; first token wins, loser is aborted */
-export const RACE_MODELS = ['openai', 'mistral'];
+/** the free lane races these models; first token wins, loser is aborted.
+ *  Aliases of the same backend are fine — two in-flight requests on a busy
+ *  shared queue can land on different workers, and any alias that no longer
+ *  exists rejects immediately without slowing the race. */
+export const RACE_MODELS = ['openai', 'openai-fast', 'mistral', 'llama'];
 const RACER_BUDGET_MS = 14_000;
 const KEYED_BUDGET_MS = 20_000;
 
@@ -250,7 +260,7 @@ async function streamCompletion(
   return racer.finish();
 }
 
-/** Free lane: race two models, first token wins, loser is aborted. */
+/** Free lane: race the model list, first token wins, losers are aborted. */
 async function racedPollinations(
   spec: BrainSpec,
   key: string,
