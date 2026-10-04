@@ -28,8 +28,11 @@ const HOME_TARGET = new THREE.Vector3(0, 1.05, 0);
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
 // Vertical orbit range, in radians measured from straight-up (polar angle).
-const PHI_MIN = 0.25;
-const PHI_MAX = 1.98;
+// r2026-10-04.56: widened at Master Simon's request — 0.12 ≈ near-overhead
+// top view, 2.35 ≈ worm's-eye view up from below the floor line. Theta is
+// already unclamped (full 360° yaw).
+const PHI_MIN = 0.12;
+const PHI_MAX = 2.35;
 
 /** stable per-character hash → motion seed: same character, same body language */
 function seedFromKey(key: string): number {
