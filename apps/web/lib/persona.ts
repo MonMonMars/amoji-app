@@ -5,6 +5,10 @@
 // r2026-10-04.52: flagship nine from the agent3 gallery (kizuna/alicia/ember/
 // mei/atlas/sky/yuki/hina/mio) get poses, poke styles and looks; tifa/aerith
 // retire from the cast.
+// r2026-10-04.77 (Master Simon): tints pushed hard toward white — the warm
+// peach tints multiplied into every material (skin included) and made the
+// whole cast look orange under the light rig. Near-white keeps a whisper of
+// per-character hue without any cast.
 import type { Lang } from './prefs';
 
 /** pose ids from @amoji/vrm-renderer IDLE_POSES, curated per personality */
@@ -136,35 +140,35 @@ export interface CharacterLook {
 }
 
 export const CHARACTER_LOOKS: Record<string, CharacterLook> = {
-  kizuna: { tint: '#ffe0d2', height: 0.98, width: 0.96 },
-  alicia: { tint: '#ffd9e4', height: 0.98, width: 0.95 },
-  ember:  { tint: '#ffd9cf', height: 1.0,  width: 0.97 },
-  mei:    { tint: '#ffe4ec', height: 0.97, width: 0.95 },
-  atlas:  { tint: '#d8f5e8', height: 1.07, width: 1.06 },
-  sky:    { tint: '#e4d9f9', height: 1.0,  width: 0.96 },
-  yuki:   { tint: '#ffe0e6', height: 0.98, width: 0.95 },
-  hina:   { tint: '#ffe4ea', height: 1.0,  width: 0.95 },
-  mio:    { tint: '#ddefff', height: 1.01, width: 0.97 },
-  juno:   { tint: '#ffd9ec', height: 1.0,  width: 0.97 },
-  nova:   { tint: '#dfe3ff', height: 1.01, width: 0.96 },
-  blaze:  { tint: '#ffe3c2', height: 1.07, width: 1.08 },
-  mochi:  { tint: '#fff3cf', height: 0.94, width: 0.95 },
-  kai:    { tint: '#d3ecff', height: 1.05, width: 1.04 },
-  luna:   { tint: '#ecd9ff', height: 1.0,  width: 0.95 },
-  rin:    { tint: '#d2f5ef', height: 0.98, width: 0.94 },
-  ren:    { tint: '#dde1ff', height: 1.03, width: 1.0 },
-  cloud:  { tint: '#d6e6ff', height: 1.08, width: 1.06 },
-  kasumi: { tint: '#d9f1ff', height: 1.0,  width: 0.95 },
-  marin:  { tint: '#ffd9e8', height: 0.98, width: 0.97 },
-  ayane:  { tint: '#e6d4ff', height: 1.01, width: 0.96 },
-  hitomi: { tint: '#d9f5d9', height: 1.0,  width: 1.0 },
-  robbie: { tint: '#ffe9c2', height: 1.06, width: 1.06 },
-  mika:   { tint: '#d2f5e3', height: 1.02, width: 0.98 },
-  anchor: { tint: '#cfe8ff', height: 1.07, width: 1.05 },
-  lydia:  { tint: '#f6d9ff', height: 1.0,  width: 0.95 },
-  ruby:   { tint: '#ffd9e0', height: 0.94, width: 0.94 },
-  snowy:  { tint: '#e2f2ff', height: 0.96, width: 0.95 },
-  alan:   { tint: '#d3f0d8', height: 1.04, width: 1.03 },
+  kizuna: { tint: '#fff6f2', height: 0.98, width: 0.96 },
+  alicia: { tint: '#fff4f7', height: 0.98, width: 0.95 },
+  ember:  { tint: '#fff4f1', height: 1.0,  width: 0.97 },
+  mei:    { tint: '#fff7f9', height: 0.97, width: 0.95 },
+  atlas:  { tint: '#f3fcf8', height: 1.07, width: 1.06 },
+  sky:    { tint: '#f7f4fd', height: 1.0,  width: 0.96 },
+  yuki:   { tint: '#fff6f8', height: 0.98, width: 0.95 },
+  hina:   { tint: '#fff7f9', height: 1.0,  width: 0.95 },
+  mio:    { tint: '#f5faff', height: 1.01, width: 0.97 },
+  juno:   { tint: '#fff4f9', height: 1.0,  width: 0.97 },
+  nova:   { tint: '#f5f7ff', height: 1.01, width: 0.96 },
+  blaze:  { tint: '#fff7ed', height: 1.07, width: 1.08 },
+  mochi:  { tint: '#fffff1', height: 0.94, width: 0.95 },
+  kai:    { tint: '#f2f9ff', height: 1.05, width: 1.04 },
+  luna:   { tint: '#f9f4ff', height: 1.0,  width: 0.95 },
+  rin:    { tint: '#f2fcfa', height: 0.98, width: 0.94 },
+  ren:    { tint: '#f5f6ff', height: 1.03, width: 1.0 },
+  cloud:  { tint: '#f3f8ff', height: 1.08, width: 1.06 },
+  kasumi: { tint: '#f4fbff', height: 1.0,  width: 0.95 },
+  marin:  { tint: '#fff4f8', height: 0.98, width: 0.97 },
+  ayane:  { tint: '#f8f2ff', height: 1.01, width: 0.96 },
+  hitomi: { tint: '#f4fcf4', height: 1.0,  width: 1.0 },
+  robbie: { tint: '#fff8ed', height: 1.06, width: 1.06 },
+  mika:   { tint: '#f2fcf7', height: 1.02, width: 0.98 },
+  anchor: { tint: '#f1f8ff', height: 1.07, width: 1.05 },
+  lydia:  { tint: '#fcf4ff', height: 1.0,  width: 0.95 },
+  ruby:   { tint: '#fff4f6', height: 0.94, width: 0.94 },
+  snowy:  { tint: '#f6fbff', height: 0.96, width: 0.95 },
+  alan:   { tint: '#f2fbf3', height: 1.04, width: 1.03 },
 };
 
 export function lookFor(characterId: string): CharacterLook {
