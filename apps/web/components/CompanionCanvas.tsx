@@ -151,7 +151,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     );
 
     // -- clip library ---------------------------------------------------------
-    const CLIP_NAMES = ['Angry', 'Blush', 'Clapping', 'Goodbye', 'Jump', 'LookAround', 'Relax', 'Sad', 'Sleepy', 'Surprised', 'Thinking'] as const;
+    const CLIP_NAMES = ['Angry', 'Blush', 'Clapping', 'Goodbye', 'Jump', 'LookAround', 'Relax', 'Sad', 'Sleepy', 'Surprised', 'Thinking', 'StandardIdle', 'Bow', 'Hello'] as const;
     type ClipName = (typeof CLIP_NAMES)[number];
     // dialogue performances that have a matching library clip; other move
     // kinds simply don't touch the skeleton (no clip yet — and per Master
@@ -226,8 +226,11 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           nextIdle(FADE.idleRotate);
         }
       });
-      // per-character deterministic idle playlist from the calm clips
-      const calm = (['Relax', 'LookAround', 'Thinking'] as ClipName[]).filter((n) => clips.has(n));
+      // per-character deterministic idle playlist. r2026-10-04.65: the
+      // genuine VRM-consortium standard_idle leads the calm rotation — the
+      // old library's Relax/LookAround/Thinking are tiny auto-generated
+      // samples with barely any real motion (arms read as "super straight").
+      const calm = (['StandardIdle', 'Relax', 'LookAround', 'Thinking'] as ClipName[]).filter((n) => clips.has(n));
       idleOrder = calm.length ? calm : [...clips.keys()];
       const shift = poseSeed % idleOrder.length;
       idleOrder = idleOrder.slice(shift).concat(idleOrder.slice(0, shift));
@@ -240,11 +243,25 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     };
 
     // Local mirror first (vendored by scripts/fetch-anims.mjs into
-    // /models/anims), streaming from the online motion library as fallback
+    // /models/anims), streaming from the online motion libraries as fallback
     // while the binaries are not in the repo yet. Local always wins once the
-    // files land; the raw host is CORS-open so the browser can stream it.
+    // files land; the raw hosts are CORS-open so the browser can stream them.
     const ANIM_MIRROR = `${ASSET_BASE}/models/anims`;
     const ANIM_LIBRARY = 'https://raw.githubusercontent.com/tk256ailab/vrm-viewer/main/VRMA';
+    // r2026-10-04.65: the tk256ailab library's 11 emotion clips are all
+    // exactly 118,448 bytes — auto-generated samples with minimal motion,
+    // which is why idle looked stiff. Two more CORS-open libraries contribute
+    // REAL keyframed performances:
+    //   - virtual-avatar-sdk: the VRM consortium's genuine standard_idle
+    //     (natural breathing idle) + quick_formal_bow (a real bow)
+    //   - VRM-Assets-Pack-For-Silly-Tavern: hello (a proper wave greeting)
+    const ALT_HOST = 'https://raw.githubusercontent.com/hirokazuniimoto/virtual-avatar-sdk/main/assets/animations';
+    const ST_HOST = 'https://raw.githubusercontent.com/test157t/VRM-Assets-Pack-For-Silly-Tavern/main/animation_nitral-fork';
+    const ALT_CLIPS: Partial<Record<ClipName, string>> = {
+      StandardIdle: `${ALT_HOST}/standard_idle.vrma`,
+      Bow: `${ALT_HOST}/quick_formal_bow.vrma`,
+      Hello: `${ST_HOST}/hello.vrma`,
+    };
     const loadClips = (vrm: VRM) => {
       const animLoader = new GLTFLoader();
       animLoader.register((parser) => new VRMAnimationLoaderPlugin(parser));
@@ -252,8 +269,14 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       const done = () => {
         if (--pending === 0 && clips.size > 0 && avatar) startClipEngine(vrm);
       };
-      const loadOne = (name: ClipName, url: string) => {
-        animLoader.load(url, (animGltf) => {
+      // try each candidate URL in order: local mirror → dedicated alt host
+      // (for clips that don't exist on the primary library) → primary library
+      const loadOne = (name: ClipName, urls: string[], idx = 0) => {
+        if (idx >= urls.length) {
+          done();
+          return;
+        }
+        animLoader.load(urls[idx]!, (animGltf) => {
           try {
             const anims = (animGltf as unknown as { userData: { vrmAnimations: VRMAnimation[] } }).userData.vrmAnimations;
             if (anims?.length && avatar) {
@@ -264,16 +287,14 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
             }
           } catch { /* this clip is unusable on this rig — skip it */ }
           done();
-        }, undefined, () => {
-          if (url.startsWith(ANIM_MIRROR)) {
-            // local mirror miss → stream from the online motion library
-            loadOne(name, `${ANIM_LIBRARY}/${name}.vrma`);
-          } else {
-            done();
-          }
-        });
+        }, undefined, () => loadOne(name, urls, idx + 1));
       };
-      for (const name of CLIP_NAMES) loadOne(name, `${ANIM_MIRROR}/${name}.vrma`);
+      for (const name of CLIP_NAMES) {
+        const urls = [`${ANIM_MIRROR}/${name}.vrma`];
+        if (ALT_CLIPS[name]) urls.push(ALT_CLIPS[name]!);
+        urls.push(`${ANIM_LIBRARY}/${name}.vrma`);
+        loadOne(name, urls);
+      }
     };
 
     const mountAvatar = (a: Avatar) => {
