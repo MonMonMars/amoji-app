@@ -32,6 +32,12 @@
 //    racer was failing instantly, silently shrinking the race to ONE model
 //  · RACE_MODELS now lists every alias we know: dead aliases fail fast and
 //    cost nothing, live ones race in parallel — first token still wins
+// r2026-10-05.97 — first-token latency:
+//  · openai-fast now LEADS the race (it is the anonymous tier's primary
+//    model); the plain `openai` alias follows as backup
+//  · PROMPT_HISTORY_CAP 12 → 8 — every extra streamed turn costs
+//    time-to-first-token on the free shared queue; older topics still ride
+//    the separate memory block
 import { analyzeText } from '@amoji/emotion-core';
 import { BASE_SYSTEM, languageBlock, parseEmotionHints, type ChatMessage } from './llm';
 import { BRAIN_SPECS, markBrainDead, pickBrain, type BrainSpec } from './brain';
@@ -46,8 +52,10 @@ export interface ClientChatOptions {
   onPartial?: (text: string) => void;
 }
 
-/** only the most recent turns go into the prompt — old topics live in memory */
-export const PROMPT_HISTORY_CAP = 12;
+/** only the most recent turns go into the prompt — old topics live in memory.
+ *  r97: 12 → 8 — every extra streamed turn costs time-to-first-token on the
+ *  free shared queue; older topics still ride the separate memory block. */
+export const PROMPT_HISTORY_CAP = 8;
 export function trimHistoryForPrompt(messages: ChatMessage[]): ChatMessage[] {
   return messages.length > PROMPT_HISTORY_CAP ? messages.slice(-PROMPT_HISTORY_CAP) : messages;
 }
@@ -55,8 +63,9 @@ export function trimHistoryForPrompt(messages: ChatMessage[]): ChatMessage[] {
 /** the free lane races these models; first token wins, loser is aborted.
  *  Aliases of the same backend are fine — two in-flight requests on a busy
  *  shared queue can land on different workers, and any alias that no longer
- *  exists rejects immediately without slowing the race. */
-export const RACE_MODELS = ['openai', 'openai-fast', 'mistral', 'llama'];
+ *  exists rejects immediately without slowing the race.
+ *  r97: openai-fast (GPT-OSS-20B) leads; plain 'openai' is its alias backup. */
+export const RACE_MODELS = ['openai-fast', 'openai', 'mistral', 'llama'];
 const RACER_BUDGET_MS = 14_000;
 const KEYED_BUDGET_MS = 20_000;
 

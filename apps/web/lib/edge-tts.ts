@@ -225,7 +225,7 @@ export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
         const rate = clamp(baseRate * contour * (isTail ? 0.96 : 1) * swellR, -0.5, 0.5);
         const pitch = clamp(basePitch * contour * tailLift * swellP + (bang ? 0.08 * expr : 0), -0.5, 0.5);
         // breath pauses: commas shorter than sentence ends; ellipses linger
-        const breakAfter = /[。！？!?…\.]$/".test(part) && !isTail
+        const breakAfter = /[。！？!?…\.]$/.test(part) && !isTail
           ? `<break time='${trail ? '320ms' : '230ms'}'/>`
           : /[,，、；;—]$/.test(part) ? `<break time='110ms'/>`
           : '';
