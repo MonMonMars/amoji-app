@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Amoji Character Catalog — r2026-10-04.86</title>
+<style>
+  :root { --bg:#0b0b12; --card:#15151f; --line:#262636; --txt:#e8e8f0; --dim:#9a9ab0; --acc:#f9a8d4; --ok:#34d399; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin:0; background:var(--bg); color:var(--txt); font-family:-apple-system,'Segoe UI',Roboto,sans-serif; }
+  header { padding:22px 18px 10px; }
+  h1 { margin:0; font-size:22px; letter-spacing:.3px; }
+  .sub { color:var(--dim); font-size:13px; margin-top:6px; line-height:1.5; }
+  .bar { position:sticky; top:0; z-index:5; display:flex; gap:10px; align-items:center;
+         padding:10px 18px; background:rgba(11,11,18,.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+  .bar button { background:var(--acc); color:#1a0a12; border:0; border-radius:999px;
+                padding:9px 16px; font-weight:700; font-size:14px; }
+  .bar .ghost { background:transparent; color:var(--dim); border:1px solid var(--line); font-weight:500; }
+  #count { color:var(--dim); font-size:13px; margin-left:auto; }
+  h2 { padding:18px 18px 4px; font-size:15px; text-transform:uppercase; letter-spacing:1.2px; color:var(--dim); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(108px,1fr)); gap:10px; padding:10px 18px 6px; }
+  .card { position:relative; background:var(--card); border:2px solid var(--line); border-radius:14px;
+          overflow:hidden; cursor:pointer; transition:transform .12s ease, border-color .12s ease; }
+  .card:active { transform:scale(.95); }
+  .card.picked { border-color:var(--ok); box-shadow:0 0 0 3px rgba(52,211,153,.18); }
+  .thumb { position:relative; aspect-ratio:1/1.15; background:#1d1d2a; display:flex; align-items:center; justify-content:center; }
+  .thumb .tile { font-size:30px; font-weight:800; color:#3d3d55; text-align:center; padding:6px; line-height:1.15; }
+  .thumb img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .num { position:absolute; top:6px; left:6px; z-index:2; background:rgba(0,0,0,.72); color:#fff;
+         font-size:11px; font-weight:800; border-radius:999px; padding:3px 8px; }
+  .badge { position:absolute; top:6px; right:6px; z-index:2; font-size:10px; font-weight:800;
+           border-radius:999px; padding:3px 7px; }
+  .badge.f { background:#f9a8d4; color:#4a1030; } .badge.m { background:#7dd3fc; color:#0a2a3d; }
+  .badge.x { background:#fbbf24; color:#3a2a00; }
+  .meta { padding:7px 8px 9px; }
+  .nm { font-size:12.5px; font-weight:700; line-height:1.25; }
+  .tg { font-size:10.5px; color:var(--dim); margin-top:2px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .ext { display:block; text-align:right; font-size:10px; color:var(--acc); text-decoration:none; margin-top:4px; }
+  .check { position:absolute; bottom:8px; right:8px; z-index:2; width:22px; height:22px; border-radius:50%;
+           background:var(--ok); color:#04281c; font-weight:900; font-size:13px; display:none; align-items:center; justify-content:center; }
+  .card.picked .check { display:flex; }
+  .note { margin:14px 18px; padding:12px 14px; border:1px dashed var(--line); border-radius:12px; color:var(--dim); font-size:12.5px; line-height:1.55; }
+  #toast { position:fixed; left:50%; bottom:26px; transform:translateX(-50%); background:#000; color:#fff;
+           padding:10px 18px; border-radius:999px; font-size:13px; opacity:0; pointer-events:none; transition:opacity .25s; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎭 Amoji Character Catalog</h1>
+  <div class="sub">r2026-10-04.86 · Every character from every source, in one numbered list.<br>
+  Tap cards to mark the ones you want to keep → <b>Copy my picks</b> → paste the numbers back to me in chat.</div>
+</header>
+<div class="bar">
+  <button id="copy">Copy my picks</button>
+  <button id="clear" class="ghost">Clear</button>
+  <span id="count"></span>
+</div>
+
+<h2>A · In the app now (29)</h2>
+<div class="grid" id="gA"></div>
+
+<h2>B · Your high-poly shortlist (31)</h2>
+<div class="grid" id="gB"></div>
+
+<h2>C · Your low-poly Vtuber shortlist (15)</h2>
+<div class="grid" id="gC"></div>
+
+<div class="note">📦 <b>Still missing:</b> the three Google-Drive zips + the local handoff zip from the other agents can't be opened remotely — anything unique they found will be appended here (section D) when you're back at the PC.<br><br>
+⚠️ Learning/demo use only — most high-poly entries are ripped game assets (FF7 / DOA / RE). Swap for originals before any release.</div>
+
+<div id="toast"></div>
+
+<script>
+const APP = [
+  [1,'nova','Nova','f','Refined secretary-grade elegance'],
+  [2,'kizuna','Kizuna','f','Upbeat virtual idol, hype energy'],
+  [3,'alicia','Alicia','f','Classic idol, expressive and sweet'],
+  [4,'ember','Ember','f','Fiery livestream bestie, zero chill'],
+  [5,'mei','Mei','f','Warm VRoid sweetheart, caring not clingy'],
+  [6,'atlas','Atlas','m','Reliable protector, says less means more'],
+  [7,'sky','Sky','f','Stylish, laid-back, short and cool'],
+  [8,'yuki','Yuki','f','Sunny sporty sweetheart'],
+  [9,'hina','Hina','f','Elegant library romantic'],
+  [10,'mio','Mio','f','Confident go-getter project lead'],
+  [11,'mochi','Mochi','f','Soft, sweet, a little shy'],
+  [12,'juno','Juno','f','Warm, playful, a little cheeky'],
+  [13,'blaze','Blaze','m','Energetic, encouraging, big-hearted'],
+  [14,'kai','Kai','m','Cool-headed, dry humor, dependable'],
+  [15,'luna','Luna','f','Dreamy, poetic, a night owl'],
+  [16,'rin','Rin','f','Sporty, sunny, refuses to lose'],
+  [17,'ren','Ren','m','Gentle, bookish, quietly devoted'],
+  [18,'cloud','Cloud','m','Cool mercenary with a soft center'],
+  [19,'kasumi','Kasumi','f','Graceful shinobi, kind underneath'],
+  [20,'marin','Marin','f','Bubbly gyaru, loves what she loves'],
+  [21,'ayane','Ayane','f','Cool kunoichi, sharp tongue soft heart'],
+  [22,'hitomi','Hitomi','f','Earnest, wholesome, quietly strong'],
+  [23,'robbie','Robbie','m','Big-brother energy'],
+  [24,'mika','Mika','m','Laid-back musician, smooth talker'],
+  [25,'anchor','Anchor','m','Steady as the tide, old-captain wise'],
+  [26,'lydia','Lydia','f','Elegant, perceptive, effortlessly classy'],
+  [27,'ruby','Ruby','f','Bouncy bunny energy, zero bad days'],
+  [28,'snowy','Snowy','f','Gentle winter fairy, cozy and kind'],
+  [29,'alan','Alan','m','Goofy best mate — sings, eats, plays'],
+];
+const PNG = ['nova','kizuna','alicia','ember','mei','atlas','sky','yuki','hina','mio','cloud','robbie','mika','anchor','lydia','ruby','snowy','alan'];
+
+const RIG = 'https://rigmodels.com/model.php?view=';
+const PRE = 'https://rigmodels.com/media/previews/';
+const HI = [
+  ['B1','Leifang','JY8EZ7CZV9BMH629YSC3H1MOW','f'],
+  ['B2','Sayuri','GK5KO5RAF42ZTCUT9GERRFG7O','f'],
+  ['B3','FF7 Tifa','IQLI85WKMC7HVT162RN172MDJ','f'],
+  ['B4','Tifa Young','NJM3SFXPFX1KMC7OWXJZN5PL3','f'],
+  ['B5','FF7 Aerith','J68V4WAS9RX0GT5NVRCY3WXB0','f'],
+  ['B6','FF7 Tifa','ENR055PPAO069R973AX5MHV1L','f'],
+  ['B7','Tifa Teen','HF4GAER28FV6SXOWH9NHX8UDH','f'],
+  ['B8','RenderSkill #1','','x','https://renderskill.com/product.php?hash=23fec88291ba870373866f83b5de26'],
+  ['B9','Marlene Wallace','0Q0EDDS215VKJ0U96Y9P7RYU3','f'],
+  ['B10','Tifa','7AB772Y503C344ZUV3DBT7TBB','f'],
+  ['B11','FFVII Nayo','GIWHJ2R3ND70B1SHAQNF6QDIH','f'],
+  ['B12','DOA Alma','ZBPKYJT3AU1F6ARTS4J558AHW','f'],
+  ['B13','FFVII Cloud','Y91I6VCOBVOMGH8999PKG1M8C','m'],
+  ['B14','Cloud Strife','YKWD7CLUWQGQ97YQ3NQSKP7CC','m'],
+  ['B15','DOA Naotora','D5G7VBEXTY84JYH2DUG7DNL93','f'],
+  ['B16','DOA Kasumi','9OKYLTF9KTFEIWMV5LPMX4V3K','f'],
+  ['B17','DOA Hitomi','5H777O3YSXZ7JCGDZMTUOFORY','f'],
+  ['B18','Ellie Young','RLPL46Q4MHNJOKB1HUR8NIB19','f'],
+  ['B19','Hitomi','H3VIIA4J05MMQR9XIMGD4JWR5','f'],
+  ['B20','DOA Ayane','H6CVJB9RN475B5GRSDK34J1A1','f'],
+  ['B21','Jill Valentine','DO7Q6XA7FFMCIENE9M18NND3U','f'],
+  ['B22','Reika','9YL3CCORX6LD0F4K8W9UZLB22','f'],
+  ['B23','Hentai Girl','17DJV06QHCHMGLFFGUJ9CNE8N','f','','18+'],
+  ['B24','FFVII Tifa','50O6F9GQ8RO264TSJ4TYNHKP0','f'],
+  ['B25','Phase 4','25S8KS1BSG8JXYFSI0U5ZX8FO','f'],
+  ['B26','Leifang','GH4NK1VO4V1MCAZGC8QIHRC51','f'],
+  ['B27','Koharu','TNM43O8CVQQSAHH46KCPA35XJ','f'],
+  ['B28','DOA Kokoro','GOQ0DONNP014OUUO5T7Y5P1N0','f'],
+  ['B29','RenderSkill #2','','x','https://renderskill.com/product.php?hash=cf22c0bcfcdacc51d1a6f1ab5b8938'],
+  ['B30','FFVII Tifa','CU0CM4FA6B1UGTT48IFGP7S26','f'],
+  ['B31','RenderSkill #3','','x','https://renderskill.com/product.php?hash=c28b63c6d8eb9c97fa64ba7b0e2a45'],
+];
+const VT = [
+  ['C1','Anime Cute Girl','166f8dca255748d89e00976eb85d7ec0','f'],
+  ['C2','Saber Summer','OD5PTO398PYHWR2FDPGIUO1FW','f'],
+  ['C3','Hentai VRM Girl','CD7RTGAH2YAWXP1173XP258S3','f','','18+'],
+  ['C4','Nijika_Ijichi','MD9KV9FMW0U6XI9R5RGVUHRCJ','f'],
+  ['C5','IROHA Girl','MCZYIHO63FGAVR5TP41V2HG6Q','f'],
+  ['C6','VRM Girl A','2FZOPO989WTPPB3QJQY60PNUX','f'],
+  ['C7','Rimuru Tempest','AWEEJMTY65ZXW7KN4XXF5CDRH','x'],
+  ['C8','Marin Kitagawa','PB4EN2F3EGH02JTIS7O6LZ1FC','f'],
+  ['C9','VRM Girl B','1DG5X30PXQHOCY290Z8U9ZPLK','f'],
+  ['C10','Sandybell Girl','AL33DV22OBRXPASAFKCZ0W41P','f'],
+  ['C11','Rimuru Tempest 2','69WV6315JYPDUL0J9WLER6CH7','x'],
+  ['C12','Rin Sekien','06J523BU55JDF2HXBT93X4X38','f'],
+  ['C13','VRM Girl C','H4054EZGP96J1HOA08T7Z836N','f'],
+  ['C14','AC Tifa','VC2YEPYAP4DVUQX83862CJQJW','f'],
+  ['C15','FF7 Cloud','CK96H6HD0DEA7268063EV1D7A','m'],
+];
+
+const store = JSON.parse(localStorage.getItem('amoji.catalog.picks') || '{}');
+const save = () => localStorage.setItem('amoji.catalog.picks', JSON.stringify(store));
+const toast = (m) => { const t = document.getElementById('toast'); t.textContent = m; t.style.opacity = 1; setTimeout(() => t.style.opacity = 0, 1800); };
+const refresh = () => document.getElementById('count').textContent = Object.keys(store).filter(k => store[k]).length + ' picked';
+
+function card(key, num, name, gender, tag, imgSrc, href, extra) {
+  const d = document.createElement('div');
+  d.className = 'card' + (store[key] ? ' picked' : '');
+  const gLabel = gender === 'f' ? '♀' : gender === 'm' ? '♂' : '?';
+  d.innerHTML =
+    '<div class="thumb"><div class="tile">' + name.replace(/ /g, '<br>') + '</div>' +
+    (imgSrc ? '<img loading="lazy" referrerpolicy="no-referrer" src="' + imgSrc + '" onerror="this.remove()">' : '') + '</div>' +
+    '<span class="num">' + num + '</span>' +
+    '<span class="badge ' + gender + '">' + (extra || gLabel) + '</span>' +
+    '<div class="meta"><div class="nm">' + name + '</div><div class="tg">' + tag + '</div>' +
+    (href ? '<a class="ext" href="' + href + '" target="_blank" rel="noreferrer">open model page ↗</a>' : '') + '</div>' +
+    '<span class="check">✓</span>';
+  d.addEventListener('click', (e) => {
+    if (e.target.tagName === 'A') return;
+    store[key] = !store[key]; if (!store[key]) delete store[key];
+    d.classList.toggle('picked', !!store[key]); save(); refresh();
+  });
+  return d;
+}
+
+const gA = document.getElementById('gA');
+APP.forEach(([n, id, name, g, tag]) => {
+  const img = 'portraits/' + id + '.' + (PNG.includes(id) ? 'png' : 'jpg');
+  gA.appendChild(card('A' + n, 'A' + n, name, g, tag, img, null));
+});
+const gB = document.getElementById('gB');
+HI.forEach(([no, name, view, g, hrefOverride, extra]) => {
+  const href = hrefOverride || (view ? RIG + name.replace(/ /g, '_') + '-3d-model__' + view : null);
+  const img = view ? PRE + name.replace(/ /g, '_') + '-3d-model__' + view + '.jpg' : null;
+  gB.appendChild(card(no, no, name, g, view ? 'rigmodels.com' : 'renderskill.com', img, href, extra));
+});
+const gC = document.getElementById('gC');
+VT.forEach(([no, name, view, g, , extra]) => {
+  const href = RIG + name.replace(/ /g, '_') + '-3d-model__' + view;
+  gC.appendChild(card(no, no, name, g, 'rigmodels.com · Vtuber', PRE + name.replace(/ /g, '_') + '-3d-model__' + view + '.jpg', href, extra));
+});
+refresh();
+
+document.getElementById('copy').addEventListener('click', async () => {
+  const picks = Object.keys(store).sort();
+  const txt = picks.length ? 'My picks: ' + picks.join(' ') : '(nothing picked yet)';
+  try { await navigator.clipboard.writeText(txt); toast('Copied — paste it to me in chat ✓'); }
+  catch { toast(txt); }
+});
+document.getElementById('clear').addEventListener('click', () => {
+  Object.keys(store).forEach(k => delete store[k]); save();
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('picked')); refresh();
+});
+</script>
+</body>
+</html>
