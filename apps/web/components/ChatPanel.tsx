@@ -98,6 +98,15 @@
 // backdrop (rain + distant thunder, campfire crackle, wind + birdsong…) runs
 // for as long as the chat lives (lib/sfx.ts), and poking her now lands with
 // a soft boing alongside the ouch.
+// r2026-10-04.86: her performances now carry real music to the END — the
+// sung reply, the call-and-response duet and the piano move run on the
+// performance layer (startPerformanceMusic), whose preserve flag keeps the
+// chat pipeline's generic stopMusic() cleanup from cutting her song dead
+// the moment the reply commits (the long-standing gap: MOVE_SFX_SKIP said
+// "the music engine carries sing", but no engine was ever started). The
+// piano trigger starts the Karplus-Strong piano arrangement — the theme's
+// melody in her right hand over rolling broken chords in her left — while
+// her body plays the seated keys choreography and the piano prop stands in.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh, triggerMove } from '../lib/companion';
 import { detectMove } from '../lib/moves';
@@ -112,7 +121,7 @@ import { WARMUP_FIRST_MS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from
 import { clientChat } from '../lib/client-chat';
 import { speak, stopSpeaking, speakThinkingFiller, sing } from '../lib/voice';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
-import { startMusic, stopMusic } from '../lib/music';
+import { startMusic, stopMusic, startPerformanceMusic, endPerformanceMusic } from '../lib/music';
 import { characterSpecialty, pickShowcaseOffer, pickTutorialLine, SHOWCASE_START, SHOWCASE_YES_RE, type ShowcaseKind } from '../lib/showcase';
 import { detectGame, startGame, playTurn, gameFarewellLine, type GameState } from '../lib/games';
 import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodbyeLine, pickMealToast } from '../lib/activities';
@@ -301,6 +310,10 @@ export default function ChatPanel({
   // ditty from the song bank) and the history shows exactly what she sang.
   // r.42: a shared meal gets a toast — "eat with me" raises a little cheer
   // as the vocal lead of her reply (乾杯！/ Cheers!), like a dinner date.
+  // r86: a sing trigger starts her backing track on the PERFORMANCE layer —
+  // it now survives the commitReply/finally stopMusic() cleanup and plays
+  // for the whole 9s show; a piano trigger starts the Karplus-Strong piano
+  // arrangement for the 6s keys performance, hands at the keys.
   const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string): string => {
     const mv = detectMove(userText) ?? detectMove(reply);
     // r.40 — she really sings: a short lyric-like reply rides the melody as-is;
@@ -308,6 +321,7 @@ export default function ChatPanel({
     if (mv === 'sing') {
       triggerMove('sing');
       applyLlmHints({ joy: 0.85 });
+      startPerformanceMusic('band', characterId, 9300); // r86 — the band plays for the whole song
       const compact = reply.replace(/\s/g, '');
       const song = compact.length > 0 && compact.length <= 48
         ? reply
@@ -315,6 +329,17 @@ export default function ChatPanel({
       notifySpeaking(song);
       sing(song, characterId, lang);
       return song;
+    }
+    // r86 — the piano performance finally SOUNDS like a piano: the theme's
+    // melody in her right hand over rolling broken chords in her left, on a
+    // physical-model timbre, for the 6s her body plays the seated keys.
+    if (mv === 'piano') {
+      triggerMove('piano');
+      applyLlmHints({ joy: 0.6 });
+      startPerformanceMusic('piano', characterId, 6300);
+      notifySpeaking(reply);
+      speak(reply, characterId, lang, hints, undefined, intensity);
+      return reply;
     }
     if (mv) triggerMove(mv);
     const funny = LAUGH_RE.test(userText) || LAUGH_RE.test(reply);
@@ -449,6 +474,7 @@ export default function ChatPanel({
     setHistory((h) => [...h, { role: 'user', content: text }]);
     feedUtterance(text);
     stopSpeaking();
+    endPerformanceMusic(); // r86 — a new message interrupts any live show
     // r.42 — together-modes intercept the turn BEFORE any LLM work: quitting
     // a running game/duet, advancing a running game, taking the next duet
     // line, starting a new game, or starting a duet. r.45 adds the trainer
@@ -468,6 +494,7 @@ export default function ChatPanel({
       gameRef.current = null;
       duetRef.current = null;
       exerciseRef.current = null;
+      endPerformanceMusic(); // r86 — quitting the duet ends its music
       sayLocal(line);
       done();
       return;
@@ -481,6 +508,10 @@ export default function ChatPanel({
       return;
     }
     if (duetRef.current) {
+      // r86 — every duet line now sings over her backing track; the preserve
+      // flag keeps it alive across the whole call-and-response (each line
+      // re-arms the 40s window), and the last line or "quit" ends the show
+      startPerformanceMusic('band', characterId, 40_000);
       const d = duetRef.current;
       const line = d.lines[d.idx]!;
       sing(line, characterId, lang);
@@ -489,7 +520,10 @@ export default function ChatPanel({
       triggerMove('sing');
       setHistory((h) => [...h, { role: 'assistant', content: line }]);
       d.idx += 1;
-      if (d.idx >= d.lines.length) duetRef.current = null;
+      if (d.idx >= d.lines.length) {
+        duetRef.current = null;
+        endPerformanceMusic(); // the duet is over — the band bows out
+      }
       done();
       return;
     }
@@ -530,6 +564,7 @@ export default function ChatPanel({
     if (DUET_TRIGGER.test(text)) {
       duetRef.current = { lines: pickDuet(lang, laughCountRef.current), idx: 0 };
       triggerMove('sing');
+      startPerformanceMusic('band', characterId, 40_000); // r86 — the duet has a band from the first beat
       sayLocal(duetInviteLine(lang));
       done();
       return;
@@ -545,6 +580,7 @@ export default function ChatPanel({
       applyLlmHints({ joy: 0.85 });
       sayLocal(SHOWCASE_START[lang][kind]);
       triggerMove(kind === 'song' ? 'sing' : 'dance');
+      endPerformanceMusic(); // r86 — clear any leftover show before the new one
       startMusic(characterId);
       if (kind === 'song') {
         const song = pickCharacterSong(characterId, lang, perfCountRef.current).join(' ');
@@ -606,6 +642,8 @@ export default function ChatPanel({
     // takes the placeholder's place instead of stacking a second bubble
     const commitReply = (content: string) => {
       stopMusic(); // r.48 — the show ends the moment her real reply lands
+      // r86 — a live sing/duet/piano performance survives this stopMusic()
+      // (the performance layer preserves it); a plain dance bed still ends
       const replace = transientRef.current;
       transientRef.current = false;
       setHistory((h) => {
@@ -686,7 +724,9 @@ export default function ChatPanel({
       }
     } finally {
       clearTimeout(warmTimer); // reply (or failure) is here — stop the warm-up
-      stopMusic(); // r.48 — belt-and-braces: no music outlives the turn
+      stopMusic(); // r.48 — belt-and-braces: no PLAIN music outlives the turn
+      // r86 — a live sing/duet/piano performance survives this stopMusic();
+      // it ends on its own performance timer or the next user interrupt
       if (!answered) commitReply('… (connection hiccup — I’m still here)');
       setBusy(false);
       busyRef.current = false;
@@ -708,6 +748,7 @@ export default function ChatPanel({
       setListening(false);
       setLiveText(''); // r81 — a half-spoken line must not linger on screen
       stopMusic(); // r.48 — leaving voice mode ends any performance bed
+      endPerformanceMusic(); // r86 — and any preserved show too
       lastActivityRef.current = Date.now();
       lastUserRef.current = Date.now();
       reengageStageRef.current = 0;
@@ -724,6 +765,7 @@ export default function ChatPanel({
     setListening(true);
     stopSpeaking(); // interrupt her mid-sentence, exactly like ChatGPT voice
     stopMusic();    // r.48 — the user's voice takes the stage, not the track
+    endPerformanceMusic(); // r86 — any live show bows out for the user
     let bargeInArmed = true; // first real speech of a burst cuts her off
     micStopRef.current = listenContinuous(lang, {
       onSpeechStart: () => {
@@ -731,6 +773,7 @@ export default function ChatPanel({
         bargeInArmed = false;
         stopSpeaking(); // the user is really talking — cut her voice NOW
         stopMusic();    // r.48 — and the performance bed too
+        endPerformanceMusic(); // r86 — and the preserved show too
       },
       // r81 — the half-heard words paint a live italic bubble, ChatGPT-style.
       // Talking counts as user activity, and the view chases the newest
@@ -819,7 +862,7 @@ export default function ChatPanel({
         <button
           onClick={() => mic()}
           title={t(lang, 'micTitle')}
-          className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black/55 transition active:scale-95"
+          className="relative flex h-20 w-80 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black/55 transition active:scale-95"
           style={
             listening
               ? {
