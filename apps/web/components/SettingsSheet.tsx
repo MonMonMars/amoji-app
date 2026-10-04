@@ -10,13 +10,16 @@
 // optional) — a never-set profile just shows no chip highlighted.
 // r2026-10-04.75: Voice section gains a one-tap "Test voice" self-test plus a
 // blocked-sound hint, so a silent phone is diagnosable without a keyboard.
+// r2026-10-05.99: the Test voice button now runs testVoiceChain() and shows a
+// per-tier verdict (edge-tts / google-tts / browser ✓|✗), so a silent iPhone
+// NAMES its dead tier instead of leaving the answer in the console.
 import { useEffect, useRef, useState } from 'react';
 import {
   characterById, backgroundById, KID_CHARACTER, KID_BACKGROUND,
   t, type Prefs, type StrKey,
 } from '../lib/prefs';
 import { LangChips } from './selectors';
-import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoice } from '../lib/voice';
+import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, VOICE_TIER_LABEL } from '../lib/voice';
 import { pickLine } from '../lib/chatter';
 import { feedUtterance } from '../lib/companion';
 import { notifySpeaking } from '../lib/speech';
@@ -100,6 +103,9 @@ export default function SettingsSheet({
   const [voiceOn, setVoiceOnState] = useState(voiceEnabled());
   const [neuralOn, setNeuralOnState] = useState(neuralEnabled());
   const [voiceBlocked, setVoiceBlocked] = useState(false);
+  // r99: per-tier self-test result — 'edge-tts ✓ · google-tts ✗ · browser ✓'
+  const [voiceTest, setVoiceTest] = useState<string | null>(null);
+  const [voiceTesting, setVoiceTesting] = useState(false);
   const [name, setName] = useState(() => loadProfile().name);
   const [gender, setGender] = useState<Gender | undefined>(() => loadProfile().gender);
   const [mem, setMem] = useState<Memory>(loadMemory);
@@ -199,6 +205,17 @@ export default function SettingsSheet({
     : (BRAIN_SPECS.find((s) => s.id === brain) ?? BRAIN_SPECS[BRAIN_SPECS.length - 1]!);
   const shownKey = keyDrafts[shownSpec.id] ?? brainKey(shownSpec.id);
 
+  // r99: run the per-tier chain probe and render its verdict under the button.
+  const runVoiceTest = () => {
+    setVoiceBlocked(false);
+    setVoiceTest(null);
+    setVoiceTesting(true);
+    void testVoiceChain(prefs.character, lang).then((results) => {
+      setVoiceTesting(false);
+      setVoiceTest(results.map((r) => `${VOICE_TIER_LABEL[r.tier]} ${r.ok ? '✓' : '✗'}`).join(' · '));
+    }).catch(() => setVoiceTesting(false));
+  };
+
   return (
     <div className="fx-fade-in absolute inset-0 z-20 flex justify-end bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div
@@ -244,12 +261,18 @@ export default function SettingsSheet({
             <div className={row}>
               <span className={label}>🎙️ {t(lang, 'testVoice')}</span>
               <button
-                onClick={() => { setVoiceBlocked(false); testVoice(prefs.character, lang); }}
-                className="ui-btn shrink-0 rounded-full bg-pink-400/20 px-3.5 py-1.5 text-xs text-pink-100 hover:bg-pink-400/30"
+                onClick={runVoiceTest}
+                disabled={voiceTesting}
+                className="ui-btn shrink-0 rounded-full bg-pink-400/20 px-3.5 py-1.5 text-xs text-pink-100 hover:bg-pink-400/30 disabled:opacity-40"
               >
-                {t(lang, 'testVoiceBtn')}
+                {voiceTesting ? '…' : t(lang, 'testVoiceBtn')}
               </button>
             </div>
+            {voiceTest && (
+              <p className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[11px] text-white/70">
+                voice: {voiceTest}
+              </p>
+            )}
             {voiceBlocked && (
               <p className="rounded-xl border border-amber-300/30 bg-amber-400/10 px-4 py-2.5 text-[11px] leading-relaxed text-amber-100/90">
                 🔇 {t(lang, 'voiceBlockedHint')}

@@ -33,6 +33,22 @@
 // re-pumps if the engine silently dropped the queue; (c) the pump also calls
 // speechSynthesis.resume() (Android leaves the engine suspended after a
 // cancel more often than not).
+// r2026-10-05.99: ROOT CAUSE of the total iPhone silence — the clause
+// splitters in voice.ts / edge-tts.ts / gtts.ts all used regex lookbehind
+// `(?<=…)`, a hard SyntaxError on WebKit before Safari 16.4 (iOS 16.4): on
+// those devices the error killed the voice path before a single tier could
+// run, so r97's unlock/defer/watchdog never executed. All three now use a
+// manual char scanner. Secondary kills fixed at the same time: (a) the r97
+// unlock set `audioUnlocked` even when speak() called it OUTSIDE a gesture,
+// so the first real tap's one-shot handler returned early and the
+// silent-media prime never ran inside a gesture — replaced by two latches
+// (ctxPrimed / mediaPrimed) and the prime now retries until a media element
+// actually plays; (b) gtts chunks had no stall watchdog, so one wedged
+// Safari media request silenced the mid tier forever (tier 3 never ran —
+// fixed in gtts.ts); (c) a new per-tier status bus (`amoji:voice-status`)
+// plus testVoiceChain() make every tier's fate visible on the status plate
+// and in Settings, and every tier promise is built inside try/catch so a
+// synchronous throw degrades into normal fallthrough instead of escaping.
 
 import type { Lang } from './prefs';
 import { speakEdge, stopEdge } from './edge-tts';
@@ -40,6 +56,23 @@ import { speakGtts, stopGtts } from './gtts';
 import { dominant, pickInterjection, pickThinkingFiller } from './fillers';
 import { SONG_MELODY } from './songs';
 import { notifySpeaking } from './speech';
+
+// ---- r2026-10-05.99: media-gate latches -------------------------------------
+// ctxPrimed runs once (an AudioContext resume is global and idempotent).
+// mediaPrimed only sticks when a media element actually PLAYED — r97 set
+// audioUnlocked=true even when speak() called unlockAudio() outside any
+// gesture, so the first real tap's {once:true} handler returned early and
+// the silent-media prime never ran inside a gesture; every later blob
+// <audio> stayed gated. Now unlockAudio() retries the silent prime on every
+// call until one genuinely plays, and any voice tier that gets real media
+// playback marks the gate open too.
+let ctxPrimed = false;
+let mediaPrimed = false;
+
+/** r99: any tier that achieves real media playback marks the iOS media gate open. */
+function markMediaPrimed(): void {
+  mediaPrimed = true;
+}
 
 /**
  * r2026-10-04.85 — 0.15s of generated silence, played once inside the first
@@ -73,7 +106,9 @@ function playSilentUnblock(): void {
   const cleanup = () => URL.revokeObjectURL(url);
   a.onended = cleanup;
   a.onerror = cleanup;
-  void a.play().catch(cleanup);
+  // r99: the prime only counts once playback genuinely began — a rejected
+  // play() (no gesture yet) leaves the latch open for the next attempt.
+  void a.play().then(() => { mediaPrimed = true; }).catch(cleanup);
 }
 
 // ---- r2026-10-04.75: iOS audio unlock ---------------------------------------
@@ -82,30 +117,33 @@ function playSilentUnblock(): void {
 // first audio if no user gesture has happened yet. Resume speechSynthesis and
 // prime an AudioContext on the first tap/keypress anywhere so the greeting and
 // every later reply are allowed to sound.
-let audioUnlocked = false;
 function unlockAudio(): void {
-  if (audioUnlocked) return;
-  audioUnlocked = true;
-  try { if (typeof speechSynthesis !== 'undefined') speechSynthesis.resume(); } catch { /* ignore */ }
-  try {
-    const Ctor = window.AudioContext
-      ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (Ctor) {
-      const ctx = new Ctor();
-      // a single zero-length buffer is enough to take the context out of
-      // "suspended" on iOS without making any audible noise
-      const buf = ctx.createBuffer(1, 1, 22050);
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
-      src.connect(ctx.destination);
-      src.start(0);
-      void ctx.resume?.();
-    }
-  } catch { /* ignore */ }
+  if (!ctxPrimed) {
+    ctxPrimed = true;
+    try { if (typeof speechSynthesis !== 'undefined') speechSynthesis.resume(); } catch { /* ignore */ }
+    try {
+      const Ctor = window.AudioContext
+        ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (Ctor) {
+        const ctx = new Ctor();
+        // a single zero-length buffer is enough to take the context out of
+        // "suspended" on iOS without making any audible noise
+        const buf = ctx.createBuffer(1, 1, 22050);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start(0);
+        void ctx.resume?.();
+      }
+    } catch { /* ignore */ }
+  }
   // r85: WebAudio unlock alone does NOT un-gate HTMLMediaElement playback on
   // iOS — the neural path speaks through `new Audio(blobUrl)`, so prime a
-  // real (silent) media element inside this gesture too.
-  try { playSilentUnblock(); } catch { /* ignore */ }
+  // real (silent) media element inside this gesture too. r99: retry until a
+  // play() actually resolves (see the latches above).
+  if (!mediaPrimed) {
+    try { playSilentUnblock(); } catch { /* ignore */ }
+  }
 }
 if (typeof window !== 'undefined') {
   for (const ev of ['pointerdown', 'keydown', 'touchstart'] as const) {
@@ -117,6 +155,32 @@ if (typeof window !== 'undefined') {
 function reportVoiceBlocked(source: 'synth' | 'edge'): void {
   try {
     window.dispatchEvent(new CustomEvent('amoji:voice-blocked', { detail: { source } }));
+  } catch { /* ignore */ }
+}
+
+// ---- r2026-10-05.99: per-tier status bus ------------------------------------
+// Every tier reports its fate here: console + a window CustomEvent the status
+// plate renders as a dot and the Settings test consumes. This is what turns
+// "she's silent, why?" into an answer.
+export type VoiceTier = 'edge' | 'gtts' | 'synth';
+
+export interface VoiceTierResult {
+  tier: VoiceTier;
+  ok: boolean;
+  detail: string;
+}
+
+export const VOICE_TIER_LABEL: Record<VoiceTier, string> = {
+  edge: 'edge-tts',
+  gtts: 'google-tts',
+  synth: 'browser',
+};
+
+export function reportVoiceStatus(tier: VoiceTier, ok: boolean, detail: string): void {
+  try {
+    window.dispatchEvent(new CustomEvent('amoji:voice-status', {
+      detail: { tier, ok, detail } as VoiceTierResult,
+    }));
   } catch { /* ignore */ }
 }
 
@@ -718,11 +782,25 @@ function pickVoice(characterId: string, lang: Lang): { voice: SpeechSynthesisVoi
 
 // Split into breath-sized clauses so the pitch contour can rise and fall inside a
 // sentence — the sing-song quality that makes ChatGPT's voice feel alive.
+// r2026-10-05.99: NO regex lookbehind — `(?<=…)` is a hard SyntaxError on
+// WebKit before Safari 16.4 (iOS 16.4) and it killed the whole voice chain
+// on those devices. Manual scanner: cut right AFTER any clause-ending
+// punctuation, trimming whitespace (equivalent to the old split+trim).
+const CLAUSE_END = /[。！？!?；;，,、—…\.]/;
 function clauses(text: string): string[] {
-  return text
-    .split(/(?<=[。！？!?；;，,、—…\.])\s*|(?<=[。！？!?…\.])\s*/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const out: string[] = [];
+  let cur = '';
+  for (const ch of text) {
+    cur += ch;
+    if (CLAUSE_END.test(ch)) {
+      const s = cur.trim();
+      if (s) out.push(s);
+      cur = '';
+    }
+  }
+  const tail = cur.trim();
+  if (tail) out.push(tail);
+  return out;
 }
 
 const MUTE_KEY = 'amoji.voice.v1';
@@ -805,37 +883,73 @@ export function speak(
     // r2026-10-04.64: any felt emotion also widens the sing-song contour itself
     // (×1.12) — the delivery warbles with the feeling, not just the average pitch
     const exprBoost = emotion === 'neutral' ? 1 : 1.12;
-    speakEdge(text, {
-      lang,
-      gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
-      character: characterId,
-      expressiveness: expr * exprBoost,
-      lead: tic,
-      rateDelta: clamp(np.rate * exprScale * amp, -0.4, 0.5),
-      pitchDelta: clamp(np.pitch * exprScale * amp, -0.3, 0.4),
-      volumeDelta: clamp(np.vol * exprScale * amp, -0.5, 0.5),
-      // r2026-10-04.89 — three-tier chain. Edge socket blocked on some mobile
-      // networks → Google TTS (<audio> media, immune to the iPhone silent
-      // switch) → browser speechSynthesis. A 'canceled' rejection just means
-      // a newer line took over — never fall through and speak the stale one.
+    // r99: build each tier's promise inside its own try/catch — a SYNCHRONOUS
+    // throw (like the old lookbehind SyntaxError) must become a rejected
+    // promise so the fallthrough chain still runs, instead of escaping
+    // speak() and silencing every tier at once.
+    let tier1: Promise<void>;
+    try {
+      tier1 = speakEdge(text, {
+        lang,
+        gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
+        character: characterId,
+        expressiveness: expr * exprBoost,
+        lead: tic,
+        rateDelta: clamp(np.rate * exprScale * amp, -0.4, 0.5),
+        pitchDelta: clamp(np.pitch * exprScale * amp, -0.3, 0.4),
+        volumeDelta: clamp(np.vol * exprScale * amp, -0.5, 0.5),
+        // r99: the moment neural audio actually plays, the iOS media gate is
+        // provably open — latch it and show the green dot.
+        onPlaying: () => { markMediaPrimed(); reportVoiceStatus('edge', true, 'neural voice playing'); },
+        // r2026-10-04.89 — three-tier chain. Edge socket blocked on some mobile
+        // networks → Google TTS (<audio> media, immune to the iPhone silent
+        // switch) → browser speechSynthesis. A 'canceled' rejection just means
+        // a newer line took over — never fall through and speak the stale one.
+      });
+    } catch (err) {
+      tier1 = Promise.reject(err instanceof Error ? err : new Error(String(err)));
+    }
+    void tier1.then(() => {
+      reportVoiceStatus('edge', true, 'neural voice finished');
     }).catch((err: unknown) => {
       if ((err as Error | undefined)?.message === 'canceled') return;
+      reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'edge-tts failed');
       stopEdge();
-      speakGtts(text, {
-        lang,
-        rate: 1 + clamp(np.rate * exprScale * amp, -0.2, 0.25),
-        lead: tic?.text,
+      let tier2: Promise<void>;
+      try {
+        tier2 = speakGtts(text, {
+          lang,
+          rate: 1 + clamp(np.rate * exprScale * amp, -0.2, 0.25),
+          lead: tic?.text,
+          onPlaying: () => { markMediaPrimed(); reportVoiceStatus('gtts', true, 'google-tts playing'); },
+        });
+      } catch (err2) {
+        tier2 = Promise.reject(err2 instanceof Error ? err2 : new Error(String(err2)));
+      }
+      void tier2.then(() => {
+        reportVoiceStatus('gtts', true, 'google-tts finished');
       }).catch((err2: unknown) => {
         if ((err2 as Error | undefined)?.message === 'canceled') return;
+        reportVoiceStatus('gtts', false, (err2 as Error | undefined)?.message ?? 'google-tts failed');
         stopGtts();
-        synthSpeak(text, characterId, lang, emotion, expr, tic, amp);
+        try {
+          synthSpeak(text, characterId, lang, emotion, expr, tic, amp);
+          reportVoiceStatus('synth', true, 'browser voice queued');
+        } catch (err3) {
+          reportVoiceStatus('synth', false, (err3 as Error | undefined)?.message ?? 'browser voice failed');
+        }
       });
     });
     return;
   }
 
   // 2) Browser-TTS fallback
-  synthSpeak(text, characterId, lang, emotion, expr, tic, amp);
+  try {
+    synthSpeak(text, characterId, lang, emotion, expr, tic, amp);
+    reportVoiceStatus('synth', true, 'browser voice queued');
+  } catch (err) {
+    reportVoiceStatus('synth', false, (err as Error | undefined)?.message ?? 'browser voice failed');
+  }
 }
 
 /**
@@ -847,24 +961,42 @@ export function speak(
  */
 export function sing(text: string, characterId: string, lang: Lang): void {
   if (!voiceEnabled()) return;
+  unlockAudio();
   const expr = EXPRESSIVENESS[characterId] ?? 1;
   if (neuralEnabled() && typeof WebSocket !== 'undefined') {
-    speakEdge(text, {
-      lang,
-      gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
-      character: characterId,
-      expressiveness: expr,
-      melody: SONG_MELODY,
-      rateDelta: -0.06,
-      pitchDelta: 0.02,
-    }).catch(() => {
+    let tier1: Promise<void>;
+    try {
+      tier1 = speakEdge(text, {
+        lang,
+        gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
+        character: characterId,
+        expressiveness: expr,
+        melody: SONG_MELODY,
+        rateDelta: -0.06,
+        pitchDelta: 0.02,
+      });
+    } catch (err) {
+      tier1 = Promise.reject(err instanceof Error ? err : new Error(String(err)));
+    }
+    void tier1.catch((err: unknown) => {
+      if ((err as Error | undefined)?.message === 'canceled') return;
       // endpoint unreachable — same melody on the browser voice
       stopEdge();
-      synthSpeak(text, characterId, lang, 'joy', expr, undefined, 1, SONG_MELODY);
+      try {
+        synthSpeak(text, characterId, lang, 'joy', expr, undefined, 1, SONG_MELODY);
+        reportVoiceStatus('synth', true, 'browser voice queued (singing)');
+      } catch (err2) {
+        reportVoiceStatus('synth', false, (err2 as Error | undefined)?.message ?? 'browser voice failed');
+      }
     });
     return;
   }
-  synthSpeak(text, characterId, lang, 'joy', expr, undefined, 1, SONG_MELODY);
+  try {
+    synthSpeak(text, characterId, lang, 'joy', expr, undefined, 1, SONG_MELODY);
+    reportVoiceStatus('synth', true, 'browser voice queued (singing)');
+  } catch (err) {
+    reportVoiceStatus('synth', false, (err as Error | undefined)?.message ?? 'browser voice failed');
+  }
 }
 
 /** one short happy line per language for the settings self-test (r2026-10-04.75) */
@@ -898,6 +1030,111 @@ export function testVoice(characterId: string, lang: Lang): void {
       try { localStorage.setItem(MUTE_KEY, 'off'); } catch { /* ignore */ }
     }
   }
+}
+
+function withTimeout<T>(p: Promise<T>, ms: number, message: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(message)), ms);
+    p.then(
+      (v) => { clearTimeout(t); resolve(v); },
+      (e: unknown) => { clearTimeout(t); reject(e instanceof Error ? e : new Error(String(e))); },
+    );
+  });
+}
+
+/**
+ * r99: true only when the engine actually STARTED the utterance — onstart is
+ * the one signal that sound is truly coming (onend alone can fire after a
+ * muted, interrupted, or zero-volume 'start'). A 400ms resume() nudge covers
+ * engines that queue the line in a suspended state.
+ */
+function probeSynth(text: string, characterId: string, lang: Lang): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    if (typeof speechSynthesis === 'undefined') { resolve(false); return; }
+    const { voice, pitch, rate } = pickVoice(characterId, lang);
+    const u = new SpeechSynthesisUtterance(text);
+    if (voice) u.voice = voice;
+    u.pitch = clamp(pitch, 0.4, 2);
+    u.rate = clamp(rate, 0.6, 1.6);
+    let started = false;
+    let done = false;
+    const finish = (ok: boolean) => {
+      if (done) return;
+      done = true;
+      clearInterval(nudge);
+      clearTimeout(giveUp);
+      try { speechSynthesis.cancel(); } catch { /* ignore */ }
+      resolve(ok);
+    };
+    const nudge = setInterval(() => { try { speechSynthesis.resume(); } catch { /* ignore */ } }, 400);
+    const giveUp = setTimeout(() => finish(started), 6_000);
+    u.onstart = () => { started = true; };
+    u.onend = () => finish(true);
+    u.onerror = () => finish(false);
+    try { speechSynthesis.resume(); } catch { /* ignore */ }
+    speechSynthesis.speak(u);
+  });
+}
+
+/**
+ * r2026-10-05.99 — the Settings self-test, per tier. Walks edge → gtts →
+ * synth with a short line, reporting each tried tier through the status bus
+ * AND returning the full result list (Settings renders ✓/✗ per tier, so a
+ * silent phone names its dead tier instead of just staying silent).
+ * Skips gtts when edge already spoke, and skips synth when anything spoke.
+ */
+export async function testVoiceChain(characterId: string, lang: Lang): Promise<VoiceTierResult[]> {
+  unlockAudio();
+  const wasOn = voiceEnabled();
+  if (!wasOn) {
+    try { localStorage.setItem(MUTE_KEY, 'on'); } catch { /* ignore */ }
+  }
+  const results: VoiceTierResult[] = [];
+  const line = TEST_LINES[lang] ?? TEST_LINES.en;
+  const push = (tier: VoiceTier, ok: boolean, detail: string) => {
+    results.push({ tier, ok, detail });
+    reportVoiceStatus(tier, ok, detail);
+  };
+  try {
+    if (neuralEnabled() && typeof WebSocket !== 'undefined') {
+      // tier 1 — neural socket (7s cap)
+      try {
+        await withTimeout(speakEdge(line, {
+          lang,
+          gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
+          character: characterId,
+        }), 7_000, 'edge-tts timeout');
+        push('edge', true, 'neural voice played');
+      } catch (err) {
+        if ((err as Error | undefined)?.message !== 'canceled') {
+          stopEdge();
+          push('edge', false, (err as Error | undefined)?.message ?? 'edge-tts failed');
+        }
+      }
+      // tier 2 — google TTS (10s cap) — only if tier 1 didn't already speak
+      if (!results.some((r) => r.tier === 'edge' && r.ok)) {
+        try {
+          await withTimeout(speakGtts(line, { lang }), 10_000, 'google-tts timeout');
+          push('gtts', true, 'google-tts played');
+        } catch (err) {
+          if ((err as Error | undefined)?.message !== 'canceled') {
+            stopGtts();
+            push('gtts', false, (err as Error | undefined)?.message ?? 'google-tts failed');
+          }
+        }
+      }
+    }
+    // tier 3 — browser synth (only if nothing above spoke)
+    if (!results.some((r) => r.ok)) {
+      const ok = await probeSynth(line, characterId, lang);
+      push('synth', ok, ok ? 'utterance started' : 'never started');
+    }
+  } finally {
+    if (!wasOn) {
+      try { localStorage.setItem(MUTE_KEY, 'off'); } catch { /* ignore */ }
+    }
+  }
+  return results;
 }
 
 function synthSpeak(
@@ -960,20 +1197,38 @@ function synthSpeak(
     utterances.push(u);
   });
   let pumpCount = 0;
+  // r99: WebKit pauses the engine mid-queue (background tab, iOS audio-session
+  // handoffs) — a gentle resume() every beat keeps the line draining until
+  // the last utterance actually ends.
+  let keepAlive: ReturnType<typeof setInterval> | null = null;
+  const stopKeepAlive = () => {
+    if (keepAlive) { clearInterval(keepAlive); keepAlive = null; }
+  };
   const pump = () => {
     pumpCount += 1;
     // r97: Android (and desktop Chrome after a cancel) can leave the engine
     // suspended — nudge it awake before every pump
     try { speechSynthesis.resume(); } catch { /* ignore */ }
+    let live = 0;
     for (const u of utterances) {
       // r2026-10-04.75: surface real failures (autoplay block, no voice, engine
       // error) as `amoji:voice-blocked`; ignore the benign cancel() churn from
       // stopSpeaking() cutting a line short.
       u.onerror = (e) => {
+        live -= 1;
+        if (live <= 0) stopKeepAlive();
         const err = (e as SpeechSynthesisErrorEvent).error;
         if (err !== 'interrupted' && err !== 'canceled') reportVoiceBlocked('synth');
       };
+      u.onend = () => {
+        live -= 1;
+        if (live <= 0) stopKeepAlive();
+      };
+      live += 1;
       speechSynthesis.speak(u);
+    }
+    if (live > 0 && keepAlive === null) {
+      keepAlive = setInterval(() => { try { speechSynthesis.resume(); } catch { /* ignore */ } }, 900);
     }
     // r97 watchdog: Chromium and WebKit both silently drop utterances pumped
     // right after a cancel() — the same-tick cancel-drop was never iOS-only.
