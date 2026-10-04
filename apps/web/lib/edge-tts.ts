@@ -25,6 +25,9 @@
 // catches a dead socket even faster; and stopEdge() finally rejects the
 // pending promise, so a line that was cut can no longer resurface seconds
 // later when its timeout fires (the "old line suddenly speaks" bug).
+// r2026-10-05.97: timeout 4.5s → 3.5s — the tier-1 socket is still the single
+// biggest voice latency when it hangs; the Google-TTS mid tier (a real voice,
+// not a last resort) takes over even faster.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface EdgeVoiceOpts {
@@ -222,7 +225,7 @@ export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
         const rate = clamp(baseRate * contour * (isTail ? 0.96 : 1) * swellR, -0.5, 0.5);
         const pitch = clamp(basePitch * contour * tailLift * swellP + (bang ? 0.08 * expr : 0), -0.5, 0.5);
         // breath pauses: commas shorter than sentence ends; ellipses linger
-        const breakAfter = /[。！？!?…\.]$/.test(part) && !isTail
+        const breakAfter = /[。！？!?…\.]$/".test(part) && !isTail
           ? `<break time='${trail ? '320ms' : '230ms'}'/>`
           : /[,，、；;—]$/.test(part) ? `<break time='110ms'/>`
           : '';
@@ -249,9 +252,10 @@ export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
 
     const cleanup = () => { clearTimeout(timer); try { ws.close(); } catch { /* already closed */ } };
     const fail = (err: Error) => { if (!settled) { settled = true; cleanup(); stopEdge(); reject(err); } };
-    // r2026-10-04.89: 7s → 4.5s — the Google-TTS mid tier in voice.ts is a
-    // real voice (not a last resort), so a dead socket should hand over fast
-    const timer = setTimeout(() => fail(new Error('edge-tts timeout')), 4_500);
+    // r2026-10-05.97: 4.5s → 3.5s — the Google-TTS mid tier in voice.ts is a
+    // real voice (not a last resort), so a dead socket should hand over even
+    // faster; waiting on a hung socket wastes the most audible time of all
+    const timer = setTimeout(() => fail(new Error('edge-tts timeout')), 3_500);
     // r2026-10-04.89 — a cut (new line / stopSpeaking) rejects as 'canceled'
     // so the caller's fallback chain stays silent instead of speaking late
     pendingReject = fail;
