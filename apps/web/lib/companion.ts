@@ -3,6 +3,7 @@ import { EmotionEngine, analyzeText } from '@amoji/emotion-core';
 import type { EmotionConfig, EmotionFrame } from '@amoji/emotion-core';
 import { MOVE_DUR, type MoveKind } from './moves';
 import { loadConfig } from './companion-store';
+import { playLaughSfx, playMoveSfx } from './sfx';
 
 let engine: EmotionEngine | null = null;
 export function getEngine(): EmotionEngine {
@@ -43,18 +44,28 @@ const perfNow = (): number => (typeof performance !== 'undefined' ? performance.
 // ---- laughter overlay — set when something's funny; CompanionCanvas reads ----
 // this to drive a whole-body giggle (rhythmic squash-bounce, head thrown
 // back, full smile) for ~1.6s while the giggle lead + punchline play.
+// r82: the laugh now RINGS too — a descending trill rides every triggerLaugh,
+// so her body, her voice and the air around her all giggle together.
 let laughAtMs = -Infinity;
-export function triggerLaugh(now = perfNow()): void { laughAtMs = now; }
+export function triggerLaugh(now = perfNow()): void {
+  laughAtMs = now;
+  playLaughSfx();
+}
 export function lastLaughAt(): number { return laughAtMs; }
 
 // ---- movement performance overlay (r.39) — triggerMove() when the dialogue
 // turns to an activity; CompanionCanvas samples activeMove() to drive the
 // choreography (movement library: sing / jump / kungfu / taichi / piano / jog).
+// r82: every performance now comes with its own foley — jump boings, kung-fu
+// whoosh-thuds, piano plucks, a violin phrase, munching, footfalls — so her
+// body makes noise exactly like the movement library would (dance/sing stay
+// with the backing-track engine, which already owns those).
 let moveAtMs = -Infinity;
 let moveKind: MoveKind | null = null;
 export function triggerMove(kind: MoveKind, now = perfNow()): void {
   moveKind = kind;
   moveAtMs = now;
+  playMoveSfx(kind);
 }
 /** the running performance, normalized 0→1, or undefined when none is active */
 export function activeMove(now = perfNow()): { kind: MoveKind; t: number } | undefined {
@@ -80,7 +91,7 @@ export function dominantMood(f: EmotionFrame | null): MoodId {
   };
   let best: MoodId = 'neutral';
   let bestV = 0.35; // below this the face reads as calm/neutral
-  for (const [k, v] of Object.entries(scores) as Array<[Exclude<MoodId, 'neutral'>, number]>) {
+  for (const [k, v] of Object.entries(scores) as Array<[Exclude<MoodId, 'neutral'>, MoodId extends never ? never : number]>) {
     if (v > bestV) { best = k; bestV = v; }
   }
   return best;
