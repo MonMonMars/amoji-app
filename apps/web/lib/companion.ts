@@ -91,7 +91,7 @@ export function dominantMood(f: EmotionFrame | null): MoodId {
   };
   let best: MoodId = 'neutral';
   let bestV = 0.35; // below this the face reads as calm/neutral
-  for (const [k, v] of Object.entries(scores) as Array<[Exclude<MoodId, 'neutral'>, MoodId extends never ? never : number]>) {
+  for (const [k, v] of Object.entries(scores) as Array<[Exclude<MoodId, 'neutral'>, number]>) {
     if (v > bestV) { best = k; bestV = v; }
   }
   return best;
