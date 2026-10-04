@@ -107,6 +107,13 @@
 // piano trigger starts the Karplus-Strong piano arrangement — the theme's
 // melody in her right hand over rolling broken chords in her left — while
 // her body plays the seated keys choreography and the piano prop stands in.
+// r2026-10-04.87: a real Silero VAD now rides the mic (lib/vad.ts) — it hears
+// raw audio frames, so it knows REAL speech from background noise the instant
+// your voice starts (faster barge-in than waiting for the first recognized
+// word), and the moment you actually stop talking flushes the pending words
+// into the chat after a ~0.7s grace — no more blind silence guessing. The
+// orb swells white-hot while YOU hold the floor. CDN-loaded with a full
+// fallback: if the VAD can't load, voice mode behaves exactly like r86.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh, triggerMove } from '../lib/companion';
 import { detectMove } from '../lib/moves';
@@ -128,6 +135,7 @@ import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodb
 import { detectExercise, startExercise, advanceExercise, exerciseFarewellLine, type ExerciseState } from '../lib/exercises';
 import { buildDailyGreeting, buildMemoryBlock, feltMood, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange, rememberTurn } from '../lib/memory';
 import { listenContinuous, listenSupported } from '../lib/listen';
+import { startVad } from '../lib/vad';
 import { ambientStart, ambientStop, playPokeSfx } from '../lib/sfx';
 import { t, backgroundById, type Lang, type StrKey } from '../lib/prefs';
 import { adaptiveBlock, pickSceneLine } from '../lib/adaptive';
@@ -183,6 +191,9 @@ export default function ChatPanel({
   // an italic user bubble; cleared the moment the utterance finalizes and
   // the committed message takes its place in the history
   const [liveText, setLiveText] = useState('');
+  // r87 — the VAD currently hears YOU talking: the mic orb swells white-hot
+  // so the button shows who holds the floor (and barge-in fires earlier)
+  const [userSpeaking, setUserSpeaking] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const nearBottomRef = useRef(true);
   const busyRef = useRef(false);
@@ -194,7 +205,11 @@ export default function ChatPanel({
   const greetedRef = useRef(false);
   const listeningRef = useRef(false);
   const micModeRef = useRef(false);
-  const micStopRef = useRef<(() => void) | null>(null);
+  const micStopRef = useRef<{ stop(): void; flush(): void } | null>(null);
+  // r87 — Silero VAD alongside the mic: its own stop handle, the grace timer
+  // between "speech ended" and "flush the words", wired per mic session
+  const vadStopRef = useRef<(() => void) | null>(null);
+  const vadGraceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const laughCountRef = useRef(0);
   // r.47 — the last assistant bubble is a TRANSIENT placeholder while she
   // waits for her brain: warm-up lines and stream tokens paint it, and the
@@ -256,8 +271,8 @@ export default function ChatPanel({
     window.addEventListener('amoji:brain-degraded', note);
     return () => window.removeEventListener('amoji:brain-degraded', note);
   }, []);
-  // never leave the mic running if the panel unmounts
-  useEffect(() => () => { micStopRef.current?.(); }, []);
+  // never leave the mic (or the VAD) running if the panel unmounts
+  useEffect(() => () => { micStopRef.current?.stop(); vadStopRef.current?.(); }, []);
   useEffect(() => {
     if (nearBottomRef.current) {
       scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -739,11 +754,20 @@ export default function ChatPanel({
   // REAL talking is detected (the recognizer only fires on actual speech, so
   // background noise is ignored) her voice is cut instantly. Typing stays
   // live the whole time. tap again → voice mode OFF.
+  // r87: a Silero VAD now watches the raw audio frames alongside — it flags
+  // real speech BEFORE the first recognized word (so barge-in is earlier and
+  // noise can never fake it) and flushes the pending words into the chat the
+  // moment you actually stop talking. If the VAD can't load, everything
+  // falls back to the r86 behaviour exactly.
   const mic = () => {
     if (micModeRef.current) {
       micModeRef.current = false;
-      micStopRef.current?.();
+      micStopRef.current?.stop();
       micStopRef.current = null;
+      if (vadGraceRef.current) { clearTimeout(vadGraceRef.current); vadGraceRef.current = null; }
+      vadStopRef.current?.();
+      vadStopRef.current = null;
+      setUserSpeaking(false);
       listeningRef.current = false;
       setListening(false);
       setLiveText(''); // r81 — a half-spoken line must not linger on screen
@@ -767,7 +791,9 @@ export default function ChatPanel({
     stopMusic();    // r.48 — the user's voice takes the stage, not the track
     endPerformanceMusic(); // r86 — any live show bows out for the user
     let bargeInArmed = true; // first real speech of a burst cuts her off
-    micStopRef.current = listenContinuous(lang, {
+    const micHandle = listenContinuous(lang, {
+      // r87 — the VAD owns endpointing now; its onSpeechEnd flushes via handle
+      externalEndpoint: true,
       onSpeechStart: () => {
         if (!bargeInArmed) return;
         bargeInArmed = false;
@@ -803,10 +829,44 @@ export default function ChatPanel({
         // mic error / permission denied — drop out of voice mode
         micModeRef.current = false;
         micStopRef.current = null;
+        if (vadGraceRef.current) { clearTimeout(vadGraceRef.current); vadGraceRef.current = null; }
+        vadStopRef.current?.();
+        vadStopRef.current = null;
+        setUserSpeaking(false);
         listeningRef.current = false;
         setListening(false);
         setLiveText('');
       },
+    });
+    micStopRef.current = micHandle;
+    // r87 — Silero VAD rides alongside the recognizer: it sees raw audio, so
+    // it knows real speech the instant it starts (noise never crosses the
+    // threshold) and knows the true moment you stop talking. Either signal
+    // simply never arriving leaves voice mode exactly as it was in r86.
+    void startVad({
+      onSpeechStart: () => {
+        setUserSpeaking(true);
+        if (vadGraceRef.current) { clearTimeout(vadGraceRef.current); vadGraceRef.current = null; }
+        if (bargeInArmed) {
+          bargeInArmed = false;
+          stopSpeaking();
+          stopMusic();
+          endPerformanceMusic();
+        }
+        lastActivityRef.current = Date.now();
+        lastUserRef.current = Date.now();
+        reengageStageRef.current = 0;
+      },
+      onSpeechEnd: () => {
+        setUserSpeaking(false);
+        // ~0.7s grace: a genuinely finished sentence flushes its pending
+        // words into the chat; a mid-thought pause just keeps listening
+        if (vadGraceRef.current) clearTimeout(vadGraceRef.current);
+        vadGraceRef.current = setTimeout(() => micHandle.flush(), 700);
+      },
+    }).then((stopVad) => {
+      if (micModeRef.current) vadStopRef.current = stopVad;
+      else stopVad?.();
     });
   };
 
@@ -888,7 +948,7 @@ export default function ChatPanel({
             />
           )}
           {/* idle = a clean white mic icon only; live = the soft emotion orb */}
-          {(listening || speakingNow) && <EmotionOrb size={72} accent={accent} listening={listening} />}
+          {(listening || speakingNow) && <EmotionOrb size={72} accent={accent} listening={listening} userSpeaking={userSpeaking} />}
           {!listening && !speakingNow && (
             <svg
               viewBox="0 0 24 24"
