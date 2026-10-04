@@ -533,7 +533,7 @@ export default function DialogueReviewPage() {
   const copyResult = async () => {
     const lines: string[] = ['AMOJI DIALOGUE REVIEW — r2026-10-04.66', ''];
     for (const sec of SECTIONS) {
-      const items = ALL_ITEMS.filter((it) => sectionOf(it) === sec);
+      const items = ALL_ITEMS.filter((it) => sectionOf(it) === sec.key);
       const s = stats[sec.key];
       lines.push(`=== ${sec.title.toUpperCase()} ===`);
       lines.push(`summary: ✅ keep ${s.keep} / ❌ drop ${s.drop} / ❓ undecided ${s.undecided}`);
