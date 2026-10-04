@@ -420,7 +420,8 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       // on the ground". Many library idles carry breathing/bounce keys on
       // the hips Y that read as floating. Idle loops get their hips HEIGHT
       // pinned to our rest foot-planted height (X/Z sway — weight shifts —
-      // is preserved); one-shot performances (Jump etc.) keep full Y travel.
+      // is preserved); one-shot performances (Jump etc.) keep full Y travel
+      // rebased onto our rest so they start and land on the floor.
       const IDLE_IDS = new Set(IDLE_SOURCES.map((s) => s.id));
       const rebaseClipHips = (clip: THREE.AnimationClip, lockFeet: boolean) => {
         if (!hipsNode || !hipsRestQ || !hipsRestP) return;
@@ -437,13 +438,13 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
               v[i] = q.x; v[i + 1] = q.y; v[i + 2] = q.z; v[i + 3] = q.w;
             }
           } else if (track.name.endsWith('.position')) {
-            const p0x = v[0]!, p0z = v[2]!;
+            const p0x = v[0]!, p0y = v[1]!, p0z = v[2]!;
             for (let i = 0; i + 2 < v.length; i += 3) {
               v[i] = v[i]! - p0x + hipsRestP.x;
               // r94: idles never ride the hips Y — feet stay planted on the
               // floor through every idle loop (jump/dance still lift via
               // performances + the choreography root channel)
-              v[i + 1] = lockFeet ? hipsRestP.y : v[i + 1]!;
+              v[i + 1] = lockFeet ? hipsRestP.y : v[i + 1]! - p0y + hipsRestP.y;
               v[i + 2] = v[i + 2]! - p0z + hipsRestP.z;
             }
           }
