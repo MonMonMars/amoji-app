@@ -47,6 +47,7 @@ export default function Chat() {
       <CompanionCanvas
         accent={character.accent}
         seedKey={character.id}
+        lighting={background.setting === 'indoor' ? 'indoor' : 'outdoor'}
         onNotice={setNotice}
         onPoke={() => setPokeCount((c) => c + 1)}
       />
