@@ -11,7 +11,7 @@ import { tickEngine, lastLaughAt, activeMove } from '../lib/companion';
 import type { MoveKind } from '../lib/moves';
 import { PROPS, propsForMove, propPresence, type PropDef, type PropPart } from '../lib/props';
 import { characterById } from '../lib/prefs';
-import { pokeStyleFor, poseIdsFor, lookFor } from '../lib/persona';
+import { pokeStyleFor, pokeModeFor, poseIdsFor, lookFor } from '../lib/persona';
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
 import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
@@ -183,6 +183,10 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     // subset of the pose library instead of the full shared catalog.
     const poseSubset = posesByIds(poseIdsFor(seedKey ?? 'juno'));
     const poke = pokeStyleFor(seedKey ?? 'juno');
+    // r83 (Master Simon): humans take the poke as SKELETON recoil — mesh
+    // squash-deform reads as rubber on a realistic body. Only the chibi cast
+    // (mochi) keeps the deform squash, where cartoon physics is the look.
+    const pokeMode = pokeModeFor(seedKey ?? 'juno');
     // r2026-10-03.28: per-character look — the shared open-license VRM gets a
     // gentle palette tint and an individual build (height/shoulders), so each
     // character reads as her/his own person in the 3D scene.
@@ -588,86 +592,114 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       // / kungfu / taichi / piano / jog), stamped on the same clock as `now`.
       const mv = activeMove(now);
       if (avatar) {
-        {
-          // poke reaction: whole-body flinch — shoved back away from the
-          // camera, knees dip, squash-bounce, then a spring wobble home (~900ms).
-          // laugh reaction: rhythmic belly-bounce giggle, head thrown back (~1.6s).
-          // These are ROOT-transform overlays (the whole character object),
-          // not skeleton rotation — physics, not puppetry, so they stay.
-          const pokeAge = now - pokeAt;
-          const boost = pokeAge < 900 ? 1 - pokeAge / 900 : 0;
-          const laughAge = now - lastLaughAt();
-          const laugh = laughAge >= 0 && laughAge < 1600 ? 1 - laughAge / 1600 : 0;
-          if (boost > 0 || laugh > 0) {
-            let px = 0, py = 0, pz = 0;
-            let sx = 1, sy = 1, sz = 1;
-            let rotX = 0, rotY = 0;
-            if (boost > 0) {
-              const t = 1 - boost; // 0→1 through the reaction
-              const arc = Math.sin(t * Math.PI); // squash-bounce belly
-              const press = Math.min(t / 0.07, 1) * Math.exp(-Math.max(0, t - 0.07) * 4); // shove out, ease home
-              const wobble = 0.04 * Math.exp(-t * 4.5) * Math.sin(t * 26); // spring settle
-              pz -= 0.3 * press + wobble; // pushed back, away from the camera
-              py -= 0.06 * arc; // knees dip
+        // r83: the poke reaction has TWO engines, picked per character:
+        //   · human (skeleton): NO mesh squash — the SKELETON takes the hit.
+        //     The torso whips back (spine, then chest a beat later), the head
+        //     snaps with a tiny shiver, the arms flinch — all folded into the
+        //     pose targets below and routed through the human joint limits.
+        //     The root only carries the push-back translation (physics, not
+        //     deform): she is literally shoved away from your finger.
+        //   · chibi (deform): the classic squash-bounce — cartoon physics,
+        //     which is exactly what reads right on a tiny round character.
+        // laugh reaction: rhythmic belly-bounce giggle, head thrown back (~1.6s).
+        const pokeAge = now - pokeAt;
+        const boost = pokeAge < 900 ? 1 - pokeAge / 900 : 0;
+        const laughAge = now - lastLaughAt();
+        const laugh = laughAge >= 0 && laughAge < 1600 ? 1 - laughAge / 1600 : 0;
+        // skeleton-flinch offsets (skeleton poke mode only)
+        let skSpine = 0, skChest = 0, skHeadX = 0, skHeadZ = 0;
+        let skLArm = 0, skRArm = 0, skLElb = 0, skRElb = 0, skLUp = 0, skRUp = 0;
+        if (boost > 0 || laugh > 0) {
+          let px = 0, py = 0, pz = 0;
+          let sx = 1, sy = 1, sz = 1;
+          let rotX = 0, rotY = 0;
+          if (boost > 0) {
+            const t = 1 - boost; // 0→1 through the reaction
+            const arc = Math.sin(t * Math.PI); // squash-bounce belly
+            const press = Math.min(t / 0.07, 1) * Math.exp(-Math.max(0, t - 0.07) * 4); // shove out, ease home
+            const wobble = 0.04 * Math.exp(-t * 4.5) * Math.sin(t * 26); // spring settle
+            pz -= 0.3 * press + wobble; // pushed back, away from the camera
+            py -= 0.06 * arc; // knees dip
+            if (pokeMode === 'deform') {
+              // chibi only: cartoon squash, physics by rubber
               sx += 0.07 * arc;
               sy -= poke.squash * 1.4 * arc;
               sz += 0.05 * arc;
               rotX += -0.16 * arc; // lean back from the poke
               rotY += (TWIST_AMOUNT[poke.twist] ?? 0.05) * 1.6 * Math.sin(t * Math.PI * 2);
+            } else {
+              // human: the SKELETON takes the hit. Spine whips back on the
+              // press, chest follows a beat later (staggered like a real
+              // flinch), the head snaps back with a fading shiver, the
+              // shoulders lift and the elbows fold a breath.
+              const press2 = Math.min(Math.max(t - 0.05, 0) / 0.08, 1) * Math.exp(-Math.max(0, t - 0.13) * 3.6);
+              skSpine = -0.3 * press;
+              skChest = -0.34 * press2;
+              skHeadX = -0.3 * press + 0.05 * Math.sin(t * 22) * Math.exp(-t * 5);
+              skHeadZ = (TWIST_AMOUNT[poke.twist] ?? 0.05) * 2.2 * press;
+              skLArm = -0.55 * press;
+              skRArm = -0.45 * press;
+              skLElb = 0.5 * press;
+              skRElb = 0.45 * press;
+              skLUp = -0.25 * press; // upper arms lift a breath
+              skRUp = -0.25 * press;
             }
-            if (laugh > 0) {
-              const lt = 1 - laugh; // 0→1 through the giggle
-              const bounce = Math.abs(Math.sin(lt * Math.PI * 4.5)) * Math.exp(-lt * 2.0);
-              py -= 0.035 * bounce;
-              sx += 0.05 * bounce;
-              sy -= 0.08 * bounce;
-              sz += 0.05 * bounce;
-              rotX += -0.12 * Math.sin(lt * Math.PI); // lean back laughing
-            }
-            avatar.root.position.set(px, py, pz);
-            avatar.root.scale.set(sx * BASE_SX, sy * BASE_SY, sz * BASE_SX);
-            avatar.root.rotation.set(rotX, rotY, 0);
-          } else {
-            avatar.root.position.set(0, 0, 0);
-            avatar.root.scale.set(BASE_SX, BASE_SY, BASE_SX);
-            avatar.root.rotation.set(0, 0, 0);
           }
+          if (laugh > 0) {
+            const lt = 1 - laugh; // 0→1 through the giggle
+            const bounce = Math.abs(Math.sin(lt * Math.PI * 4.5)) * Math.exp(-lt * 2.0);
+            py -= 0.035 * bounce;
+            sx += 0.05 * bounce;
+            sy -= 0.08 * bounce;
+            sz += 0.05 * bounce;
+            rotX += -0.12 * Math.sin(lt * Math.PI); // lean back laughing
+          }
+          avatar.root.position.set(px, py, pz);
+          avatar.root.scale.set(sx * BASE_SX, sy * BASE_SY, sz * BASE_SX);
+          avatar.root.rotation.set(rotX, rotY, 0);
+        } else {
+          avatar.root.position.set(0, 0, 0);
+          avatar.root.scale.set(BASE_SX, BASE_SY, BASE_SX);
+          avatar.root.rotation.set(0, 0, 0);
+        }
 
-          // speech visemes: duck the emotion shapes while the mouth talks
-          const sp = sampleSpeech();
-          const duck = sp ? 1 - 0.4 * sp.duck : 1;
-          const v = (x: number) => clamp(x * duck + (sp ? 0 : 0), 0, 1);
-          const pokeBoost = 0.9 * boost;
-          const laughBoost = 0.85 * laugh; // full smile while the giggles play
-          const setEm = (name: string, val: number) => avatar!.setExpression(name, val);
-          setEm('happy', clamp(v(Math.max(targets.blendShape.joy, targets.blendShape.fun)) + (poke.face === 'happy' ? pokeBoost : 0) + laughBoost, 0, 1));
-          setEm('angry', v(targets.blendShape.angry) + (poke.face === 'angry' ? pokeBoost : 0));
-          setEm('sad', v(targets.blendShape.sorrow));
-          setEm('surprised', poke.face === 'surprised'
-            ? clamp(v(targets.blendShape.surprise) + pokeBoost, 0, 1)
-            : v(targets.blendShape.surprise));
-          setEm('relaxed', v(targets.blendShape.relaxed) + (poke.face === 'relaxed' ? pokeBoost : 0));
-          if (sp) {
-            const mouth = sp.mouth;
-            const on = (want: string) => (sp.vowel === want ? 1 : 0.12);
-            setEm('aa', mouth * on('aa'));
-            setEm('ih', mouth * on('ih'));
-            setEm('ou', mouth * on('ou'));
-            setEm('ee', mouth * on('ee'));
-            setEm('oh', mouth * on('oh'));
-          } else {
-            setEm('aa', 0); setEm('ih', 0); setEm('ou', 0);
-            setEm('ee', 0); setEm('oh', 0);
-          }
+        // speech visemes: duck the emotion shapes while the mouth talks
+        const sp = sampleSpeech();
+        const duck = sp ? 1 - 0.4 * sp.duck : 1;
+        const v = (x: number) => clamp(x * duck + (sp ? 0 : 0), 0, 1);
+        const pokeBoost = 0.9 * boost;
+        const laughBoost = 0.85 * laugh; // full smile while the giggles play
+        const setEm = (name: string, val: number) => avatar!.setExpression(name, val);
+        setEm('happy', clamp(v(Math.max(targets.blendShape.joy, targets.blendShape.fun)) + (poke.face === 'happy' ? pokeBoost : 0) + laughBoost, 0, 1));
+        setEm('angry', v(targets.blendShape.angry) + (poke.face === 'angry' ? pokeBoost : 0));
+        setEm('sad', v(targets.blendShape.sorrow));
+        setEm('surprised', poke.face === 'surprised'
+          ? clamp(v(targets.blendShape.surprise) + pokeBoost, 0, 1)
+          : v(targets.blendShape.surprise));
+        setEm('relaxed', v(targets.blendShape.relaxed) + (poke.face === 'relaxed' ? pokeBoost : 0));
+        if (sp) {
+          const mouth = sp.mouth;
+          const on = (want: string) => (sp.vowel === want ? 1 : 0.12);
+          setEm('aa', mouth * on('aa'));
+          setEm('ih', mouth * on('ih'));
+          setEm('ou', mouth * on('ou'));
+          setEm('ee', mouth * on('ee'));
+          setEm('oh', mouth * on('oh'));
+        } else {
+          setEm('aa', 0); setEm('ih', 0); setEm('ou', 0);
+          setEm('ee', 0); setEm('oh', 0);
         }
 
         const b = targets.bones;
         const poseTargets: AvatarPose = {
-          headX: b.headPitch, headY: b.headYaw, headZ: b.headRoll,
+          headX: b.headPitch + skHeadX, headY: b.headYaw, headZ: b.headRoll + skHeadZ,
           spineX: b.spinePitch, chestX: b.chestPitch,
-          leftUpperArm: b.leftUpperArm, rightUpperArm: b.rightUpperArm,
+          leftUpperArm: b.leftUpperArm + skLUp, rightUpperArm: b.rightUpperArm + skRUp,
           leftLowerArm: b.leftLowerArm, rightLowerArm: b.rightLowerArm,
-          spineY: 0, chestZ: 0, lArmX: 0, rArmX: 0, lElbowZ: 0, rElbowZ: 0,
+          spineY: 0, chestZ: 0,
+          lArmX: skLArm, rArmX: skRArm,
+          lElbowZ: skLElb, rElbowZ: skRElb,
+          spinePitchAdd: skSpine, chestPitchAdd: skChest,
         };
         // dialogue-triggered performance: fire the matching LIBRARY clip once
         // on the rising edge. Kinds without a library clip leave the skeleton
@@ -680,10 +712,14 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           mvHandled = null;
         }
         // r2026-10-04.58: while a library clip drives the body, the skeleton
-        // belongs to the mixer ALONE — procedural applyPose is skipped so the
-        // two never fight (that fight was the "strange over-rotation").
+        // belongs to the mixer — so applyPose there is limited to its designed
+        // whisper + additives. r83: it MUST still be called in clip mode,
+        // because the poke recoil and head life arrive through its additive
+        // channels (spine/chest pitch, arm flinch), which compose on top of
+        // whatever the mixer wrote this frame.
         if (avatar.clipDrivesBody) {
           mixer?.update(dt / 1000);
+          avatar.applyPose(poseTargets);
         } else {
           avatar.applyPose(poseTargets);
         }
