@@ -1,21 +1,14 @@
 'use client';
 // Emotional voice — ChatGPT-style prosody. Primary path: FREE neural voices via
-// the Edge read-aloud endpoint (edge-tts.ts) — Cantonese 曉曼/雲龍 etc., with
-// SSML pitch/rate/volume per emotion. Fallback path: the browser's own
-// speechSynthesis with matched platform voices. Zero cost, zero API key.
-// r2026-10-03.07: strong emotions now audibly react (giggle/sigh/gasp via
-// lib/fillers), prosody swings are bigger, and speakThinkingFiller() gives the
-// "hmm…" moment (with mouth movement) while the reply is still generating.
-// r2026-10-03.09: speak() accepts an explicit lead tic — poke ouch cries are
-// guaranteed to sound instantly instead of depending on emotion intensity.
-// r2026-10-03.21: felt-mood intensity now lifts her VOICE too — 超開心 rings
-// brighter and quicker, 勁攰 sinks slower and softer; plain moods (intensity 1)
-// leave every delta exactly where it was.
-// r2026-10-03.24: the thinking filler takes an optional mood — a sad user's
-// first "hmm…" is softer and slower than a happy one's (MOOD_FILLERS).
+// the edge-tts.ts endpoint — Cantonese 曉曼/雲龍 etc., with SSML pitch/rate/volume
+// per emotion. Fallback path: the browser's own speechSynthesis with matched
+// platform voices. Zero cost, zero API key.
+// r2026-10-04.64: emotional range widened — every NEURAL_PROSODY mood now swings
+// further (sadder sinks slower/softer, joy rings brighter/quicker, anger bites
+// harder) and any felt emotion also widens the per-clause contour ×1.12, so her
+// voice audibly reacts to what she's feeling instead of hovering near neutral.
 // r2026-10-03.40: sing() — she can really sing: each clause becomes one note
-// of the SONG_MELODY contour (neural SSML pitch deltas / per-utterance pitch
-// multipliers on the fallback), legato and slightly slower, joy underneath.
+// of the SONG_MELODY contour, legato and slightly slower, joy underneath.
 // r2026-10-04.52: flagship nine (kizuna/alicia/ember/mei/atlas/sky/yuki/hina/
 // mio) get gender-correct personality-tuned matrices; tifa/aerith retire.
 
@@ -517,26 +510,32 @@ const EMOTION_PROSODY: Record<string, { pitch: number; rate: number; vol: number
   neutral: { pitch: 1.0, rate: 1.0, vol: 1.0 },
 };
 
-/** Emotion → SSML prosody for the neural path (deltas: rate/pitch fraction, volume dB). */
+/**
+ * Emotion → SSML prosody for the neural path (deltas: rate/pitch fraction,
+ * volume dB). r2026-10-04.64: every mood swings further from neutral — the
+ * free Edge endpoint only supports prosody (no emotion tags), so range is
+ * the only lever we have; the widened deltas stay inside what still sounds
+ * human (edge voices distort fast past ±0.35 pitch).
+ */
 const NEURAL_PROSODY: Record<string, { rate: number; pitch: number; vol: number }> = {
-  joy: { rate: 0.1, pitch: 0.1, vol: 0.12 },
-  excitement: { rate: 0.2, pitch: 0.15, vol: 0.24 },
-  love: { rate: -0.07, pitch: 0.04, vol: -0.05 },
-  contentment: { rate: -0.07, pitch: 0.0, vol: -0.1 },
-  relief: { rate: -0.05, pitch: 0.0, vol: -0.1 },
-  sadness: { rate: -0.18, pitch: -0.08, vol: -0.24 },
-  shame: { rate: -0.12, pitch: -0.05, vol: -0.24 },
-  guilt: { rate: -0.1, pitch: -0.04, vol: -0.22 },
-  boredom: { rate: -0.1, pitch: -0.03, vol: -0.18 },
-  anger: { rate: 0.1, pitch: -0.05, vol: 0.24 },
-  contempt: { rate: -0.04, pitch: -0.04, vol: 0.0 },
-  disgust: { rate: 0.0, pitch: -0.05, vol: 0.06 },
-  fear: { rate: 0.14, pitch: 0.12, vol: -0.06 },
-  surprise: { rate: 0.12, pitch: 0.22, vol: 0.18 },
-  embarrassment: { rate: -0.05, pitch: 0.05, vol: -0.1 },
-  pride: { rate: 0.0, pitch: 0.07, vol: 0.06 },
-  jealousy: { rate: -0.03, pitch: -0.03, vol: -0.06 },
-  confusion: { rate: -0.06, pitch: 0.06, vol: -0.1 },
+  joy: { rate: 0.14, pitch: 0.16, vol: 0.16 },
+  excitement: { rate: 0.24, pitch: 0.2, vol: 0.3 },
+  love: { rate: -0.09, pitch: 0.07, vol: -0.08 },
+  contentment: { rate: -0.1, pitch: 0.02, vol: -0.14 },
+  relief: { rate: -0.08, pitch: 0.02, vol: -0.14 },
+  sadness: { rate: -0.24, pitch: -0.12, vol: -0.32 },
+  shame: { rate: -0.16, pitch: -0.08, vol: -0.3 },
+  guilt: { rate: -0.14, pitch: -0.06, vol: -0.28 },
+  boredom: { rate: -0.13, pitch: -0.05, vol: -0.24 },
+  anger: { rate: 0.12, pitch: -0.08, vol: 0.32 },
+  contempt: { rate: -0.06, pitch: -0.06, vol: 0.04 },
+  disgust: { rate: 0.02, pitch: -0.07, vol: 0.1 },
+  fear: { rate: 0.17, pitch: 0.16, vol: -0.1 },
+  surprise: { rate: 0.14, pitch: 0.3, vol: 0.24 },
+  embarrassment: { rate: -0.07, pitch: 0.08, vol: -0.14 },
+  pride: { rate: -0.02, pitch: 0.1, vol: 0.1 },
+  jealousy: { rate: -0.05, pitch: -0.05, vol: -0.1 },
+  confusion: { rate: -0.08, pitch: 0.08, vol: -0.13 },
   neutral: { rate: 0, pitch: 0, vol: 0 },
 };
 
@@ -695,11 +694,14 @@ export function speak(
   // 1) Neural path (free server-grade voices, SSML prosody per emotion)
   if (neuralEnabled() && typeof WebSocket !== 'undefined') {
     const np = NEURAL_PROSODY[emotion] ?? NEURAL_PROSODY['neutral']!;
+    // r2026-10-04.64: any felt emotion also widens the sing-song contour itself
+    // (×1.12) — the delivery warbles with the feeling, not just the average pitch
+    const exprBoost = emotion === 'neutral' ? 1 : 1.12;
     speakEdge(text, {
       lang,
       gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
       character: characterId,
-      expressiveness: expr,
+      expressiveness: expr * exprBoost,
       lead: tic,
       rateDelta: clamp(np.rate * exprScale * amp, -0.4, 0.5),
       pitchDelta: clamp(np.pitch * exprScale * amp, -0.3, 0.4),
