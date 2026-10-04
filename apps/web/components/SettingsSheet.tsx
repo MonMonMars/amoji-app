@@ -392,7 +392,7 @@ export default function SettingsSheet({
               </button>
             </div>
             <div className={`${row} !justify-start gap-3`}>
-              <span className="label">👤 {t(lang, 'yourName')}</span>
+              <span className={label}>👤 {t(lang, 'yourName')}</span>
               <input
                 value={name}
                 onChange={(e) => {
@@ -405,7 +405,7 @@ export default function SettingsSheet({
             </div>
             {/* r70 — gender drives the adaptive warmth; default 'secret' changes nothing */}
             <div className={`${row} !justify-start gap-3`}>
-              <span className="label">🚻 {t(lang, 'yourGender')}</span>
+              <span className={label}>🚻 {t(lang, 'yourGender')}</span>
               <div className="flex min-w-0 flex-1 gap-1.5">
                 {(['male', 'female', 'secret'] as Gender[]).map((g) => (
                   <button
