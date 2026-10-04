@@ -32,7 +32,7 @@ const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi 
 
 // Vertical orbit range, in radians measured from straight-up (polar angle).
 // r2026-10-04.56: widened at Master Simon's request — 0.12 ≈ near-overhead
-// top view, 2.35 ≈ worm's-eye view up from the floor line. Theta is
+// top view, 2.35 ≈ worm's-eye view up from below the floor line. Theta is
 // already unclamped (full 360° yaw).
 const PHI_MIN = 0.12;
 const PHI_MAX = 2.35;
@@ -324,6 +324,47 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     const loadClips = (vrm: VRM) => {
       const animLoader = new GLTFLoader();
       animLoader.register((parser) => new VRMAnimationLoaderPlugin(parser));
+      // r2026-10-04.79 (Master Simon): "she starts facing front, then later
+      // turns her back to me" — the library clips carry ABSOLUTE hips
+      // rotations authored on a rig whose rest faces 180° off ours. The
+      // mixer's first clip overwrites the (calibrated) rest hips pose with
+      // the source convention, and the whole body turns around inside the
+      // calibrated wrapper the moment a clip takes over. Previous agents who
+      // mixed load-time calibration with absolute library clips inherited
+      // the same bug. Fix: rebase every clip's hips tracks onto OUR rest —
+      //   rotation: key'(t) = restQ · key0⁻¹ · key(t)
+      //   position: key'(t) = key(t) − key0 + restP
+      // so each clip's neutral frame lands exactly on our rest pose while
+      // all of its real motion (bows, sways, turns, jumps) is preserved.
+      // This MUST be captured before any action plays — the bones are still
+      // pristine at this point (mountAvatar only tints + wraps).
+      const hipsNode = vrm.humanoid?.getNormalizedBoneNode('hips') ?? null;
+      const hipsRestQ = hipsNode ? hipsNode.quaternion.clone() : null;
+      const hipsRestP = hipsNode ? hipsNode.position.clone() : null;
+      const rebaseClipHips = (clip: THREE.AnimationClip) => {
+        if (!hipsNode || !hipsRestQ || !hipsRestP) return;
+        const tag = `.${hipsNode.name}.`;
+        for (const track of clip.tracks) {
+          if (!track.name.includes(tag)) continue;
+          const v = track.values;
+          if (track.name.endsWith('.quaternion')) {
+            const q0 = new THREE.Quaternion(v[0]!, v[1]!, v[2]!, v[3]!);
+            const fix = hipsRestQ.clone().multiply(q0.invert());
+            const q = new THREE.Quaternion();
+            for (let i = 0; i + 3 < v.length; i += 4) {
+              q.set(v[i]!, v[i + 1]!, v[i + 2]!, v[i + 3]!).premultiply(fix);
+              v[i] = q.x; v[i + 1] = q.y; v[i + 2] = q.z; v[i + 3] = q.w;
+            }
+          } else if (track.name.endsWith('.position')) {
+            const p0x = v[0]!, p0y = v[1]!, p0z = v[2]!;
+            for (let i = 0; i + 2 < v.length; i += 3) {
+              v[i] = v[i]! - p0x + hipsRestP.x;
+              v[i + 1] = v[i + 1]! - p0y + hipsRestP.y;
+              v[i + 2] = v[i + 2]! - p0z + hipsRestP.z;
+            }
+          }
+        }
+      };
       let pending = CLIP_NAMES.length;
       const done = () => {
         if (--pending === 0 && clips.size > 0 && avatar) startClipEngine(vrm);
@@ -342,6 +383,8 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
               const clip = createVRMAnimationClip(anims[0]!, vrm);
               // expression tracks stay ours — speech/visemes own the face
               clip.tracks = clip.tracks.filter((t) => !t.name.includes('expression'));
+              // r79: land the clip's neutral frame on our calibrated rest
+              rebaseClipHips(clip);
               if (clip.tracks.length) clips.set(name, clip);
             }
           } catch { /* this clip is unusable on this rig — skip it */ }
