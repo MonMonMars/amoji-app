@@ -80,6 +80,13 @@
 // border-box, which drew a square frost behind the round button. Adding
 // overflow-hidden (button + text input) clips the blur to the rounded
 // shape — a perfect circle, while the outer glow shadows stay untouched.
+// r2026-10-04.70: ADAPTIVE DIALOGUE — her words now fit the world: (a) idle
+// chatter first tries a line belonging to the current backdrop (new lib/
+// adaptive.ts), so sitting under the aurora sounds different from a rainy
+// night; (b) her system prompt gains a block naming the scene + calibrating
+// warmth from the pairing — opposite-sex gets gentle affection, same-gender
+// gets best-mate banter, kid mode stays friendship-only, and "secret" (the
+// default) adds nothing at all, so users who never pick keep the old voice.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh, triggerMove } from '../lib/companion';
 import { detectMove } from '../lib/moves';
@@ -101,7 +108,9 @@ import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodb
 import { detectExercise, startExercise, advanceExercise, exerciseFarewellLine, type ExerciseState } from '../lib/exercises';
 import { buildDailyGreeting, buildMemoryBlock, feltMood, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange, rememberTurn } from '../lib/memory';
 import { listenContinuous, listenSupported } from '../lib/listen';
-import { t, type Lang } from '../lib/prefs';
+import { t, backgroundById, type Lang, type StrKey } from '../lib/prefs';
+import { adaptiveBlock, pickSceneLine } from '../lib/adaptive';
+import { loadProfile, type Gender } from '../lib/profile';
 import type { ChatStatus } from '../lib/status';
 import EmotionOrb from './EmotionOrb';
 
@@ -113,6 +122,12 @@ export interface ChatPanelProps {
   lang?: Lang;
   accent?: string;
   persona?: string;
+  /** current backdrop id — idle lines + prompt name this scene (r70) */
+  backgroundId?: string;
+  /** the companion's own gender — drives warm-vs-mate tone (r70) */
+  characterGender?: 'female' | 'male';
+  /** kid mode keeps every exchange friendship-only (r70) */
+  kidMode?: boolean;
   /** increments when the user pokes the character — triggers a poke reply */
   pokeCount?: number;
   onStatus?: (s: ChatStatus) => void;
@@ -131,6 +146,9 @@ export default function ChatPanel({
   lang = 'yue',
   accent = '#f9a8d4',
   persona,
+  backgroundId = 'void',
+  characterGender = 'female',
+  kidMode = false,
   pokeCount = 0,
   onStatus,
   onMemCount,
@@ -173,6 +191,16 @@ export default function ChatPanel({
   const onMemCountRef = useRef(onMemCount);
   onMemCountRef.current = onMemCount;
 
+  // r70 — the user's own gender (Settings → "You are"; default 'secret').
+  // Secret means the prompt gets NO gender guidance, so users who never set
+  // it keep exactly the behaviour they had before.
+  const [userGender, setUserGender] = useState<Gender>(() => loadProfile().gender);
+  useEffect(() => {
+    const sync = () => setUserGender(loadProfile().gender);
+    window.addEventListener('amoji:profile', sync);
+    return () => window.removeEventListener('amoji:profile', sync);
+  }, []);
+
   useEffect(() => {
     setHistory(loadHistory());
   }, []);
@@ -213,6 +241,14 @@ export default function ChatPanel({
     }, 250);
     return () => clearInterval(id);
   }, []);
+
+  // r70 — the full persona her brain receives: her character persona plus the
+  // adaptive block (scene name + warmth calibration). Both lanes below pass
+  // this opaque string straight into the system prompt.
+  const fullPersona = (): string => {
+    const sceneName = t(lang, backgroundById(backgroundId).nameKey as StrKey);
+    return `${persona ?? ''}${adaptiveBlock({ sceneId: backgroundId, sceneName, characterGender, userGender, kidMode })}`;
+  };
 
   const sayLocal = (
     text: string,
@@ -359,12 +395,17 @@ export default function ChatPanel({
         sayLocal(pickShowcaseOffer(kind, lang, n), feltHints);
         return;
       }
-      const line = (idleMood ? pickMoodIdleLine(idleMood, lang, n) : undefined) ?? pickIdleLine(characterId, lang, n);
+      // r.70 — scene-aware idle chatter: her mood line wins, then a line
+      // belonging to the current backdrop (aurora ≠ rainy night), then the
+      // character's persona bank as the final fallback.
+      const line = (idleMood ? pickMoodIdleLine(idleMood, lang, n) : undefined)
+        ?? pickSceneLine(backgroundId, lang, n)
+        ?? pickIdleLine(characterId, lang, n);
       sayLocal(line, feltHints);
     }, 5000);
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lang]);
+  }, [lang, backgroundId]);
 
   const send = async (override?: string) => {
     const text = (override ?? input).trim();
@@ -547,12 +588,14 @@ export default function ChatPanel({
     // learn from the user's words, then inject what she remembers into her prompt
     onMemCountRef.current?.(memorySummaryCount(rememberExchange(text)));
     const memory = buildMemoryBlock(lang);
+    // r70 — persona + adaptive block (scene + warmth calibration)
+    const personaForBrain = fullPersona();
     let answered = false;
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, history, persona, memory }),
+        body: JSON.stringify({ message: text, history, persona: personaForBrain, memory }),
       });
       if (!res.ok) throw new Error(String(res.status));
       const data = await res.json() as { reply?: string; emotionHints?: Record<string, number> };
@@ -576,7 +619,7 @@ export default function ChatPanel({
         // show up immediately instead of after the whole generation finishes
         const r = await clientChat([...history, { role: 'user', content: text }], {
           language: lang,
-          persona,
+          persona: personaForBrain,
           memory,
           onPartial: (partial) => {
             // r.47 — the real stream is painting now: the warm-up loop stands down
