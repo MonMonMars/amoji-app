@@ -89,6 +89,10 @@
 // default) adds nothing at all, so users who never pick keep the old voice.
 // r2026-10-04.70b: typecheck fix — userGender state admits `undefined`
 // (loadProfile().gender is optional; never-set profiles stay 'secret'-free).
+// r2026-10-04.81: voice mode speaks onto the screen — the half-heard words
+// stream into a live italic user bubble the moment they're recognized, and
+// the utterance auto-sends ~1.1s after you stop talking (endpointing lives
+// in lib/listen.ts), exactly like ChatGPT/Grok voice mode.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh, triggerMove } from '../lib/companion';
 import { detectMove } from '../lib/moves';
@@ -160,6 +164,10 @@ export default function ChatPanel({
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
   const [speakingNow, setSpeakingNow] = useState(false);
+  // r81 — the half-heard words of the current voice burst, painted live in
+  // an italic user bubble; cleared the moment the utterance finalizes and
+  // the committed message takes its place in the history
+  const [liveText, setLiveText] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const nearBottomRef = useRef(true);
   const busyRef = useRef(false);
@@ -679,6 +687,7 @@ export default function ChatPanel({
       micStopRef.current = null;
       listeningRef.current = false;
       setListening(false);
+      setLiveText(''); // r81 — a half-spoken line must not linger on screen
       stopMusic(); // r.48 — leaving voice mode ends any performance bed
       lastActivityRef.current = Date.now();
       lastUserRef.current = Date.now();
@@ -704,8 +713,22 @@ export default function ChatPanel({
         stopSpeaking(); // the user is really talking — cut her voice NOW
         stopMusic();    // r.48 — and the performance bed too
       },
+      // r81 — the half-heard words paint a live italic bubble, ChatGPT-style.
+      // Talking counts as user activity, and the view chases the newest
+      // words only while you're already at the bottom (never yanks you
+      // out of a history scroll).
+      onInterim: (partial) => {
+        setLiveText(partial);
+        if (partial) {
+          lastActivityRef.current = Date.now();
+          lastUserRef.current = Date.now();
+          reengageStageRef.current = 0;
+          if (nearBottomRef.current) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+        }
+      },
       onFinal: (said) => {
         bargeInArmed = true;
+        setLiveText(''); // the committed message takes the bubble's place
         lastActivityRef.current = Date.now();
         lastUserRef.current = Date.now();
         reengageStageRef.current = 0;
@@ -720,6 +743,7 @@ export default function ChatPanel({
         micStopRef.current = null;
         listeningRef.current = false;
         setListening(false);
+        setLiveText('');
       },
     });
   };
@@ -754,6 +778,14 @@ export default function ChatPanel({
             </div>
           );
         })}
+        {/* r81 — the words you're speaking RIGHT NOW: italic + slightly dimmed
+            in your accent colour, replaced by the committed message the
+            instant the ~1s silence endpoint sends it, exactly like ChatGPT. */}
+        {liveText.trim() && (
+          <div className="text-right">
+            <p className="italic opacity-75" style={{ color: accent }}>{liveText}</p>
+          </div>
+        )}
         {busy && <p className="text-white/40">{t(lang, 'typing', { name: characterName })}</p>}
       </div>
 
@@ -814,7 +846,7 @@ export default function ChatPanel({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && void send()}
-          placeholder={t(lang, 'sayHi', { name: characterName })}
+          placeholder={t(lang, 'sayHi', { name: characterName } )}
           className="h-11 flex-1 overflow-hidden rounded-full border border-white/10 bg-black/30 px-4 text-[15px] text-white placeholder-white/30 outline-none backdrop-blur-md focus:border-white/40"
         />
         <button
