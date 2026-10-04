@@ -23,6 +23,18 @@ import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
 // carries a 12s watchdog (a stalled stream can no longer block the chain),
 // and the dead tk256ailab host is removed — verified-live library hosts lead
 // every chain, with the local mirror as fallback.
+// r98 (Master Simon): feet on the floor through TALK. Performance clips
+// (sing / dance / piano / violin / punch / jump / bow / hello — the ones a
+// speech trigger fires the moment she starts talking about them) used to
+// keep their baked root-Y verbatim: authored on rigs of a different scale
+// and pose (seated / bent-knee mocap), that hips-Y dragged her body far
+// below the r94-pinned idle the instant a talk move took over — she visibly
+// "fell" (equivalently: the camera seemed to rise), then popped back up
+// when the idle returned. Now EVERY clip's hips-Y is normalized onto our
+// rest height — median baseline + over-scale compression + a knee-deep
+// floor clamp — while X/Z sway and genuine motion (hops, dips, bows) are
+// preserved. The camera target is static and clamped and nothing in the
+// speaking path touches it, so no camera change ships in r98.
 
 export interface CompanionCanvasProps {
   onNotice?: (n: { reason: 'webgl' | 'asset' }) => void;
@@ -447,12 +459,27 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       // on the ground". Many library idles carry breathing/bounce keys on
       // the hips Y that read as floating. Idle loops get their hips HEIGHT
       // pinned to our rest foot-planted height (X/Z sway — weight shifts —
-      // is preserved); one-shot performances (Jump etc.) keep full Y travel
-      // rebased onto our rest so they start and land on the floor.
+      // is preserved).
+      // r98 (Master Simon): the SAME protection now covers the performance
+      // clips. Talking replies trigger MOVE_CLIP performances (sing / dance /
+      // piano / violin / punch / jump / bow / hello) the moment speech
+      // starts, and those clips carry baked root-Y authored on rigs of a
+      // different scale and pose (seated / bent-knee mocap). Handed to the
+      // mixer verbatim, that hips-Y sank her far below the r94-pinned idle —
+      // she visibly "fell" when talking began (equivalently: the camera
+      // seemed to rise), then popped back up when the idle returned. Now
+      // EVERY clip's hips-Y is normalized onto OUR rest height: the track's
+      // MEDIAN key becomes its standing baseline (robust against a first
+      // frame that already sits low), over-scale rig units are compressed
+      // to a human hip-travel span, and no key may sink below a knee-deep
+      // floor. X/Z sway and all genuine motion (hops, dips, bows) survive.
       const IDLE_IDS = new Set(IDLE_SOURCES.map((s) => s.id));
+      const HIP_TRAVEL_MAX = 0.8; // meters — no human hips-Y span exceeds this
+      const FLOOR_FRAC = 0.55;    // never sink below 55% of rest hips height
       const rebaseClipHips = (clip: THREE.AnimationClip, lockFeet: boolean) => {
         if (!hipsNode || !hipsRestQ || !hipsRestP) return;
         const tag = `.${hipsNode.name}.`;
+        const floorY = hipsRestP.y * FLOOR_FRAC;
         for (const track of clip.tracks) {
           if (!track.name.includes(tag)) continue;
           const v = track.values;
@@ -465,14 +492,40 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
               v[i] = q.x; v[i + 1] = q.y; v[i + 2] = q.z; v[i + 3] = q.w;
             }
           } else if (track.name.endsWith('.position')) {
-            const p0x = v[0]!, p0y = v[1]!, p0z = v[2]!;
-            for (let i = 0; i + 2 < v.length; i += 3) {
-              v[i] = v[i]! - p0x + hipsRestP.x;
+            const p0x = v[0]!, p0z = v[2]!;
+            if (lockFeet) {
               // r94: idles never ride the hips Y — feet stay planted on the
-              // floor through every idle loop (jump/dance still lift via
-              // performances + the choreography root channel)
-              v[i + 1] = lockFeet ? hipsRestP.y : v[i + 1]! - p0y + hipsRestP.y;
-              v[i + 2] = v[i + 2]! - p0z + hipsRestP.z;
+              // floor through every idle loop
+              for (let i = 0; i + 2 < v.length; i += 3) {
+                v[i] = v[i]! - p0x + hipsRestP.x;
+                v[i + 1] = hipsRestP.y;
+                v[i + 2] = v[i + 2]! - p0z + hipsRestP.z;
+              }
+            } else {
+              // r98: performances keep their REAL Y motion (hops, dips,
+              // bows) as deltas around our rest height, but the normalized
+              // baseline can never drag her below the floor
+              const n = Math.floor(v.length / 3);
+              if (!n) continue;
+              const ys: number[] = [];
+              let minY = Infinity, maxY = -Infinity;
+              for (let i = 0; i < n; i++) {
+                const y = v[i * 3 + 1]!;
+                ys.push(y);
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+              }
+              ys.sort((a, b) => a - b);
+              const anchorY = ys[Math.floor(ys.length / 2)]!;
+              const span = maxY - minY;
+              const spanScale = span > HIP_TRAVEL_MAX ? HIP_TRAVEL_MAX / span : 1;
+              for (let i = 0; i < n; i++) {
+                v[i * 3] = v[i * 3]! - p0x + hipsRestP.x;
+                let y = (v[i * 3 + 1]! - anchorY) * spanScale + hipsRestP.y;
+                if (y < floorY) y = floorY;
+                v[i * 3 + 1] = y;
+                v[i * 3 + 2] = v[i * 3 + 2]! - p0z + hipsRestP.z;
+              }
             }
           }
         }
@@ -523,7 +576,8 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
               // expression tracks stay ours — speech/visemes own the face
               clip.tracks = clip.tracks.filter((t) => !t.name.includes('expression'));
               // r79: land the clip's neutral frame on our calibrated rest;
-              // r94: idle loops pin the hips height (no floating)
+              // r94: idle loops pin the hips height (no floating);
+              // r98: performances normalize their root-Y onto our rest too
               rebaseClipHips(clip, IDLE_IDS.has(src.id));
               if (clip.tracks.length) clips.set(src.id, clip);
             }
