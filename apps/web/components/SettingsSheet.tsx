@@ -4,6 +4,8 @@
 // (v2 browser: view / teach / copy / forget + v3 emotion diary), Help (tutorial).
 // Character & scene changing lives in the selection board (top-left name plate) —
 // the gear no longer duplicates it. Reachable from the chat room gear (top right).
+// r2026-10-04.70: "You are" gender chips — secret (default) keeps the dialogue
+// exactly as before; male/female calibrate her warmth vs best-mate tone.
 import { useEffect, useRef, useState } from 'react';
 import {
   characterById, backgroundById, KID_CHARACTER, KID_BACKGROUND,
@@ -14,7 +16,7 @@ import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled }
 import { pickLine } from '../lib/chatter';
 import { feedUtterance } from '../lib/companion';
 import { notifySpeaking } from '../lib/speech';
-import { loadProfile, saveProfile } from '../lib/profile';
+import { loadProfile, saveProfile, type Gender } from '../lib/profile';
 import { saveHistory } from '../lib/companion-store';
 import { APP_REVISION } from '../lib/revision';
 import {
@@ -94,6 +96,7 @@ export default function SettingsSheet({
   const [voiceOn, setVoiceOnState] = useState(voiceEnabled());
   const [neuralOn, setNeuralOnState] = useState(neuralEnabled());
   const [name, setName] = useState(() => loadProfile().name);
+  const [gender, setGender] = useState<Gender>(() => loadProfile().gender);
   const [mem, setMem] = useState<Memory>(loadMemory);
   const [copied, setCopied] = useState(false);
   const [newText, setNewText] = useState('');
@@ -129,6 +132,14 @@ export default function SettingsSheet({
     if (!window.confirm(t(lang, 'forgetConfirm'))) return;
     onForget();
     setMem(loadMemory());
+  };
+
+  // r70 — gender pick: persist + tell the chat panel to re-read the profile.
+  // 'secret' (default) adds no guidance, so nothing changes for those users.
+  const setGenderPick = (g: Gender) => {
+    setGender(g);
+    saveProfile({ ...loadProfile(), gender: g });
+    window.dispatchEvent(new Event('amoji:profile'));
   };
 
   // Kid Mode: turning it on swaps to a wholesome character + sunny scene.
@@ -381,16 +392,35 @@ export default function SettingsSheet({
               </button>
             </div>
             <div className={`${row} !justify-start gap-3`}>
-              <span className={label}>👤 {t(lang, 'yourName')}</span>
+              <span className="label">👤 {t(lang, 'yourName')}</span>
               <input
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
-                  saveProfile({ name: e.target.value });
+                  saveProfile({ ...loadProfile(), name: e.target.value });
                 }}
                 className="h-8 min-w-0 flex-1 rounded-full border border-white/10 bg-black/30 px-3 text-sm text-white placeholder-white/30 outline-none focus:border-white/40"
                 placeholder="Simon"
               />
+            </div>
+            {/* r70 — gender drives the adaptive warmth; default 'secret' changes nothing */}
+            <div className={`${row} !justify-start gap-3`}>
+              <span className="label">🚻 {t(lang, 'yourGender')}</span>
+              <div className="flex min-w-0 flex-1 gap-1.5">
+                {(['male', 'female', 'secret'] as Gender[]).map((g) => (
+                  <button
+                    key={g}
+                    onClick={() => setGenderPick(g)}
+                    className={`ui-btn h-8 flex-1 rounded-full px-2 text-xs ${
+                      gender === g
+                        ? 'bg-pink-400/80 font-medium text-neutral-950'
+                        : 'bg-white/5 text-white/50 hover:text-white/80'
+                    }`}
+                  >
+                    {t(lang, g === 'male' ? 'genderMale' : g === 'female' ? 'genderFemale' : 'genderSecret')}
+                  </button>
+                ))}
+              </div>
             </div>
           </Section>
 
