@@ -12,7 +12,14 @@
 // (movement foley + ambient ticks hold during speak attempts; the
 // "bell/typing" sounds were taichi chimes / twinkle pings / cricket ticks
 // firing from lib/sfx.ts while every TTS tier stayed silent).
-export const APP_REVISION = 'r2026-10-05.102';
+// r2026-10-05.103: relaxed hands + shoulder ROM clamp — the library idles
+// animate body bones only (standard_idle.vrma maps zero finger bones;
+// weightShift.vrma only thumb/index chains), so a gently curled finger
+// baseline is calibrated once and re-applied every frame (fingers a clip
+// actually animates stay the mixer's), and the upper arm's outward swing
+// is floored at ~8.6° past plumb, gated at/below horizontal so dance
+// crosses and overhead waves stay free.
+export const APP_REVISION = 'r2026-10-05.103';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

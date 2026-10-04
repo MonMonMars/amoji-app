@@ -46,6 +46,21 @@
 // mixer-written quaternion a whisper further) instead of the old setRot()
 // overwrite, which stomped the synced euler every frame and FROZE the clip's
 // own head motion into a stiff stare while idling.
+//
+// r2026-10-05.103 — relaxed hands + shoulder ROM clamp. The library idles
+// animate BODY bones only (verified in the .vrma sources: standard_idle.vrma
+// maps zero finger bones; weightShift.vrma maps just thumb/index chains), so
+// her fingers sat in the model's rigid rest splay between keys.
+// calibrateRelaxedHands probes each finger once — the axis+sign that
+// shortens tip↔wrist distance wins, which is pose-independent (fold vs
+// unfold reads the same from T-pose or hanging arms) — and the canvas re-
+// applies base·delta every frame AFTER mixer + applyPose. Bones a loaded
+// clip animates (clipAnimatedBones — node names scanned from the clip track
+// names) are skipped, so the mixer never fights the curl. FINGER_BONES below
+// resolves the same camelCase humanoid names on VRM 0.x and 1.0 rigs.
+// clampUpperArmAdduction floors the upper arm's outward (body-relative,
+// shoulder-line) direction at ~8.6° past plumb, gated to at/below horizontal,
+// so no swing, poke recoil or clip frame can carry an arm across the midline.
 import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
@@ -141,8 +156,16 @@ export interface Avatar {
   root: THREE.Object3D;
   /** when true, an animation clip drives the body; applyPose whispers head only */
   clipDrivesBody: boolean;
+  /** r103: node names of bones any loaded clip animates — those stay the mixer's */
+  readonly clipAnimatedBones: ReadonlySet<string>;
+  /** r103: node names of every resolved finger bone (evidence for the guard) */
+  readonly fingerBones: ReadonlySet<string>;
   setExpression(name: string, value: number): void;
   applyPose(pose: AvatarPose): void;
+  /** r103: re-apply the calibrated relaxed-hand curl (idempotent base·delta) */
+  applyRelaxedHands(): void;
+  /** r103: floor the upper arm's outward swing so arms never cross the midline */
+  clampShoulderROM(): void;
   update(dt: number): void;
 }
 
@@ -241,6 +264,191 @@ function alignBoneDown(
 }
 
 // ---------------------------------------------------------------------------
+// r103: relaxed hands + shoulder ROM clamp (shared by both avatar kinds)
+// ---------------------------------------------------------------------------
+
+const SIDES = ['left', 'right'] as const;
+const FINGERS = ['Thumb', 'Index', 'Middle', 'Ring', 'Little'] as const;
+const PHALANGES = ['Proximal', 'Intermediate', 'Distal'] as const;
+// every finger humanoid bone, camelCase on BOTH VRM 0.x and 1.0 rigs
+const FINGER_BONE_NAMES: string[] = SIDES.flatMap((s) =>
+  FINGERS.flatMap((f) => PHALANGES.map((p) => `${s}${f}${p}`)));
+
+/** calibrated relaxed curl per finger, radians per phalange (proximal→distal) — 15–33° */
+const RELAXED_CURL: Record<(typeof FINGERS)[number], readonly [number, number, number]> = {
+  Thumb: [0.35, 0.30, 0.28],
+  Index: [0.32, 0.47, 0.50],
+  Middle: [0.28, 0.42, 0.45],
+  Ring: [0.33, 0.50, 0.52],
+  Little: [0.38, 0.55, 0.57],
+};
+const CURL_PROBE = 0.35;       // rad — calibration test rotation per axis
+const CURL_MIN_GAIN = 1e-4;    // below this the finger is left untouched
+const THUMB_OPPOSITION = 0.30; // rad — thumb proximal rolls toward the index
+
+interface RelaxedHandEntry {
+  node: THREE.Object3D;
+  base: THREE.Quaternion;
+  delta: THREE.Quaternion;
+}
+
+// r103 scratch (load-time calibration only — the per-frame path allocates nothing)
+const _rhE = new THREE.Euler();
+const _rhV = new THREE.Vector3();
+
+/**
+ * r103: measure a gentle relaxed-hand curl for every finger the rig has.
+ * The curl AXIS/DIR is not assumed (rigs disagree): for each finger, rotate
+ * ALL its phalanges by ±CURL_PROBE about each local axis in turn and keep
+ * the combo that DECREASES the phalanges' summed distance to the wrist —
+ * fold vs unfold is pose-independent, so the test reads true from a T-pose
+ * or hanging arms alike. A finger whose distance does not shrink on ANY
+ * axis is left untouched. The thumb proximal additionally gets opposition:
+ * the rotation that moves the thumb tip TOWARD the index proximal.
+ * Entry = { node, base: rest local quat, delta: curl quat } — per frame the
+ * avatar writes base·delta, which is idempotent. Bones a loaded clip
+ * animates (clipAnimatedBones — node names) are skipped so the mixer and
+ * the curl never fight over the same phalange.
+ */
+function calibrateRelaxedHands(
+  fingers: ReadonlyMap<string, THREE.Object3D>,
+  clipAnimatedBones: ReadonlySet<string>,
+): RelaxedHandEntry[] {
+  const out: RelaxedHandEntry[] = [];
+  for (const side of SIDES) {
+    // the wrist is any proximal phalange's parent — shared by the whole hand
+    const anyProximal = fingers.get(`${side}ThumbProximal`)
+      ?? fingers.get(`${side}IndexProximal`);
+    const wrist = anyProximal?.parent;
+    if (!wrist) continue;
+    const wristPos = wrist.getWorldPosition(new THREE.Vector3());
+    for (const finger of FINGERS) {
+      const chain: THREE.Object3D[] = [];
+      for (const ph of PHALANGES) {
+        const node = fingers.get(`${side}${finger}${ph}`);
+        if (node) chain.push(node);
+      }
+      if (!chain.length) continue;
+      const measure = () => {
+        let d = 0;
+        for (const node of chain) d += node.getWorldPosition(_rhV).distanceTo(wristPos);
+        return d;
+      };
+      const saved = chain.map((n) => n.quaternion.clone());
+      const before = measure();
+      let bestAxis: 'x' | 'y' | 'z' | null = null;
+      let bestSign = 1;
+      let bestGain = CURL_MIN_GAIN;
+      for (const axis of ['x', 'y', 'z'] as const) {
+        for (const sign of [1, -1] as const) {
+          for (const node of chain) {
+            _rhE.setFromQuaternion(node.quaternion);
+            _rhE[axis] += CURL_PROBE * sign;
+            node.quaternion.setFromEuler(_rhE);
+          }
+          wrist.updateWorldMatrix(true, true);
+          const gain = before - measure();
+          for (let i = 0; i < chain.length; i++) chain[i]!.quaternion.copy(saved[i]!);
+          wrist.updateWorldMatrix(true, true);
+          if (gain > bestGain) { bestGain = gain; bestAxis = axis; bestSign = sign; }
+        }
+      }
+      if (!bestAxis) continue; // no fold direction on this rig — leave it alone
+      // thumb proximal additionally opposes toward the index finger
+      let oppAxis: 'x' | 'y' | 'z' | null = null;
+      let oppSign = 1;
+      if (finger === 'Thumb') {
+        const distal = fingers.get(`${side}ThumbDistal`);
+        const indexProx = fingers.get(`${side}IndexProximal`);
+        if (distal && indexProx) {
+          const target = indexProx.getWorldPosition(new THREE.Vector3());
+          const dist0 = distal.getWorldPosition(_rhV).distanceTo(target);
+          let bestOpp = CURL_MIN_GAIN;
+          const savedQ = chain[0]!.quaternion.clone();
+          for (const axis of ['x', 'y', 'z'] as const) {
+            for (const sign of [1, -1] as const) {
+              _rhE.setFromQuaternion(savedQ);
+              _rhE[axis] += CURL_PROBE * sign;
+              chain[0]!.quaternion.setFromEuler(_rhE);
+              wrist.updateWorldMatrix(true, true);
+              const gain = dist0 - distal.getWorldPosition(_rhV).distanceTo(target);
+              if (gain > bestOpp) { bestOpp = gain; oppAxis = axis; oppSign = sign; }
+            }
+          }
+          chain[0]!.quaternion.copy(savedQ);
+          wrist.updateWorldMatrix(true, true);
+          if (bestOpp <= CURL_MIN_GAIN) oppAxis = null; // no opposition found
+        }
+      }
+      for (let i = 0; i < chain.length; i++) {
+        const node = chain[i]!;
+        if (clipAnimatedBones.has(node.name)) continue; // a clip owns this bone
+        const curl = RELAXED_CURL[finger][i] ?? 0;
+        const opp = i === 0 && oppAxis ? THUMB_OPPOSITION : 0;
+        if (!curl && !opp) continue;
+        _rhE.set(0, 0, 0);
+        if (curl) _rhE[bestAxis] += bestSign * curl;
+        if (opp) _rhE[oppAxis!] += oppSign * opp;
+        out.push({ node, base: saved[i]!.clone(), delta: new THREE.Quaternion().setFromEuler(_rhE) });
+      }
+    }
+  }
+  return out;
+}
+
+const SHOULDER_MIN_OUTWARD = -0.15; // cos-space floor — ≈ 8.6° past plumb
+const SHOULDER_GATE_Y = 0.05;       // the clamp only fires at/below horizontal
+
+// r103 scratch (per-frame — reused every call, zero allocation)
+const _shA = new THREE.Vector3();
+const _shB = new THREE.Vector3();
+const _shD = new THREE.Vector3();
+const _shLP = new THREE.Vector3();
+const _shRP = new THREE.Vector3();
+const _shOut = new THREE.Vector3();
+const _shFix = new THREE.Vector3();
+const _shQF = new THREE.Quaternion();
+const _shQP = new THREE.Quaternion();
+const _shQW = new THREE.Quaternion();
+
+/**
+ * r103: floor an upper arm's OUTWARD swing in world space, body-relative
+ * (outward = the shoulder line, left→right). If the arm direction's
+ * component along the shoulder line sinks past SHOULDER_MIN_OUTWARD the arm
+ * has crossed the body midline — rebuild the direction with the component
+ * floored and apply the minimal world-space rotation that takes the bone
+ * there (world→local exactly like alignBoneDown). Gated to arms at/below
+ * horizontal (direction.y < SHOULDER_GATE_Y) so overhead waves and dance
+ * arm-crosses above the shoulder keep full freedom.
+ */
+function clampUpperArmAdduction(
+  upperArm: THREE.Object3D,
+  lowerArm: THREE.Object3D,
+  shoulderL: THREE.Object3D,
+  shoulderR: THREE.Object3D,
+): void {
+  const a = upperArm.getWorldPosition(_shA);
+  const b = lowerArm.getWorldPosition(_shB);
+  const d = _shD.subVectors(b, a);
+  if (d.lengthSq() < 1e-10) return;
+  d.normalize();
+  if (d.y >= SHOULDER_GATE_Y) return; // above horizontal — full freedom
+  const lp = shoulderL.getWorldPosition(_shLP);
+  const rp = shoulderR.getWorldPosition(_shRP);
+  const outward = _shOut.subVectors(rp, lp);
+  if (outward.lengthSq() < 1e-10) return;
+  outward.normalize();
+  const outD = d.dot(outward);
+  if (outD >= SHOULDER_MIN_OUTWARD) return; // not crossed past the midline
+  const dFix = _shFix.copy(d).addScaledVector(outward, SHOULDER_MIN_OUTWARD - outD).normalize();
+  _shQF.setFromUnitVectors(d, dFix);
+  const parentW = upperArm.parent!.getWorldQuaternion(_shQP);
+  const world = upperArm.getWorldQuaternion(_shQW);
+  // W' = qFix ⊗ W  →  local = parentW⁻¹ ⊗ qFix ⊗ W
+  upperArm.quaternion.copy(parentW.invert()).multiply(_shQF).multiply(world);
+}
+
+// ---------------------------------------------------------------------------
 // VRM 1.0 avatar (normalized bones — the pre-r.50 code path, preserved)
 // ---------------------------------------------------------------------------
 
@@ -248,10 +456,15 @@ class V1Avatar implements Avatar {
   kind = 'v1' as const;
   root: THREE.Object3D;
   clipDrivesBody = false;
+  readonly clipAnimatedBones: ReadonlySet<string>;
+  readonly fingerBones: ReadonlySet<string>;
   private vrm: VRM;
+  private relaxedHands: RelaxedHandEntry[] = [];
+  private fingerMap = new Map<string, THREE.Object3D>();
 
-  constructor(vrm: VRM) {
+  constructor(vrm: VRM, clipAnimatedBones: ReadonlySet<string> = new Set()) {
     this.vrm = vrm;
+    this.clipAnimatedBones = clipAnimatedBones;
     // r2026-10-04.76: wrap the model — the calibration yaw stays on the
     // inner scene node; the canvas's per-frame root transforms (and the
     // idle rotation.set(0,0,0) reset) only ever touch the wrapper.
@@ -271,6 +484,21 @@ class V1Avatar implements Avatar {
       vrm.humanoid?.getNormalizedBoneNode('leftShoulder') ?? null,
       vrm.humanoid?.getNormalizedBoneNode('rightShoulder') ?? null,
     );
+    // r103: resolve the finger humanoid bones, then measure the relaxed-hand
+    // curl while the rig is still pristine (fold-test calibration — see the
+    // helper above). Clips load AFTER this, so the clipAnimatedBones guard
+    // is re-checked per frame in applyRelaxedHands.
+    for (const side of SIDES) {
+      for (const finger of FINGERS) {
+        for (const ph of PHALANGES) {
+          const name = `${side}${finger}${ph}` as VRMHumanBoneName;
+          const node = vrm.humanoid?.getNormalizedBoneNode(name);
+          if (node) this.fingerMap.set(name, node);
+        }
+      }
+    }
+    this.fingerBones = new Set([...this.fingerMap.values()].map((n) => n.name));
+    this.relaxedHands = calibrateRelaxedHands(this.fingerMap, this.clipAnimatedBones);
   }
 
   setExpression(name: string, value: number): void {
@@ -328,6 +556,30 @@ class V1Avatar implements Avatar {
     if (p.rArmRaise) addRot('rightUpperArm', 'z', -p.rArmRaise);
   }
 
+  // r103: re-apply the calibrated relaxed curl AFTER the mixer + applyPose
+  // wrote the skeleton this frame. Idempotent (base·delta, never accumulate),
+  // and any phalange a clip animates is skipped so the two never fight.
+  applyRelaxedHands(): void {
+    for (const e of this.relaxedHands) {
+      if (this.clipAnimatedBones.has(e.node.name)) continue; // the mixer owns it
+      e.node.quaternion.copy(e.base).multiply(e.delta);
+    }
+  }
+
+  // r103: floor each upper arm's outward swing (see clampUpperArmAdduction)
+  clampShoulderROM(): void {
+    const h = (n: VRMHumanBoneName) => this.vrm.humanoid?.getNormalizedBoneNode(n) ?? null;
+    const sl = h('leftShoulder');
+    const sr = h('rightShoulder');
+    if (!sl || !sr) return;
+    const l = h('leftUpperArm');
+    const le = h('leftLowerArm');
+    if (l && le) clampUpperArmAdduction(l, le, sl, sr);
+    const r = h('rightUpperArm');
+    const re = h('rightLowerArm');
+    if (r && re) clampUpperArmAdduction(r, re, sl, sr);
+  }
+
   update(dt: number): void {
     this.vrm.update(dt);
   }
@@ -346,12 +598,16 @@ class GenericAvatar implements Avatar {
   kind = 'generic' as const;
   root: THREE.Object3D;
   clipDrivesBody = false; // no VRMA support here — procedural pose always
+  readonly clipAnimatedBones: ReadonlySet<string>;
+  readonly fingerBones: ReadonlySet<string>;
   /** the calibrated inner model node (facing yaw lives here, never on root) */
   private inner: THREE.Object3D;
   private bones = new Map<BoneName, THREE.Object3D>();
+  private fingers = new Map<string, THREE.Object3D>();
   private expressions = new Map<string, ExpressionBind[]>();
   /** calibrated rest local quats for bones applyPose drives (and arms) */
   private baseLocal = new Map<string, THREE.Quaternion>();
+  private relaxedHands: RelaxedHandEntry[] = [];
   private blinkT = 2.2 + Math.random() * 2;
   private blinkPhase = -1;
 
@@ -360,16 +616,21 @@ class GenericAvatar implements Avatar {
   private sPw = new THREE.Quaternion();
   private sE = new THREE.Euler();
 
-  constructor(gltf: GLTF) {
+  constructor(gltf: GLTF, clipAnimatedBones: ReadonlySet<string> = new Set()) {
     // r2026-10-04.76: same wrapper split as V1Avatar — canvas overlays own
     // the wrapper, the facing calibration owns the inner scene node.
     this.inner = gltf.scene;
     this.root = new THREE.Group();
     this.root.add(gltf.scene);
+    this.clipAnimatedBones = clipAnimatedBones;
     const json = (gltf.parser as unknown as { json: Record<string, unknown> }).json;
     this.resolveBones(gltf, json);
     this.resolveExpressions(gltf, json);
     this.calibrate();
+    // r103: relaxed-hand calibration AFTER arm calibration — the fold-test
+    // measures world distances, so the arms must be in their final rest pose
+    this.fingerBones = new Set([...this.fingers.values()].map((n) => n.name));
+    this.relaxedHands = calibrateRelaxedHands(this.fingers, this.clipAnimatedBones);
   }
 
   // -- skeleton / face resolution ------------------------------------------
@@ -387,8 +648,13 @@ class GenericAvatar implements Avatar {
     };
     const put = (bone: string, nodeIdx: unknown) => {
       const obj = findByIndex(nodeIdx);
-      if (obj && (BONE_NAMES as readonly string[]).includes(bone)) {
+      if (!obj) return;
+      if ((BONE_NAMES as readonly string[]).includes(bone)) {
         this.bones.set(bone as BoneName, obj);
+      } else if ((FINGER_BONE_NAMES as readonly string[]).includes(bone)) {
+        // r103: finger humanoid bones — the relaxed-hand calibration resolves
+        // them by the same camelCase names on VRM 0.x and 1.0 rigs
+        this.fingers.set(bone, obj);
       }
     };
     // VRM 0.x: humanBones is an array of { bone, node }
@@ -535,6 +801,28 @@ class GenericAvatar implements Avatar {
     if (base) node.quaternion.multiply(base);
   }
 
+  // r103: same contract as V1Avatar — idempotent base·delta, clip-owned
+  // phalanges skipped (clipAnimatedBones holds node names from the track scan)
+  applyRelaxedHands(): void {
+    for (const e of this.relaxedHands) {
+      if (this.clipAnimatedBones.has(e.node.name)) continue; // the mixer owns it
+      e.node.quaternion.copy(e.base).multiply(e.delta);
+    }
+  }
+
+  // r103: floor each upper arm's outward swing (see clampUpperArmAdduction)
+  clampShoulderROM(): void {
+    const sl = this.bones.get('leftShoulder');
+    const sr = this.bones.get('rightShoulder');
+    if (!sl || !sr) return;
+    const l = this.bones.get('leftUpperArm');
+    const le = this.bones.get('leftLowerArm');
+    if (l && le) clampUpperArmAdduction(l, le, sl, sr);
+    const r = this.bones.get('rightUpperArm');
+    const re = this.bones.get('rightLowerArm');
+    if (r && re) clampUpperArmAdduction(r, re, sl, sr);
+  }
+
   update(dt: number): void {
     // gentle periodic blink so legacy models feel alive
     if (this.blinkPhase >= 0) {
@@ -557,11 +845,11 @@ class GenericAvatar implements Avatar {
 // factories
 // ---------------------------------------------------------------------------
 
-export function createV1Avatar(vrm: VRM): Avatar {
-  return new V1Avatar(vrm);
+export function createV1Avatar(vrm: VRM, clipAnimatedBones: ReadonlySet<string> = new Set()): Avatar {
+  return new V1Avatar(vrm, clipAnimatedBones);
 }
 
 /** build a calibrated avatar from a plain-GLTF load (VRM 0.x or humanoid glTF) */
-export function createGenericAvatar(gltf: GLTF): Avatar {
-  return new GenericAvatar(gltf);
+export function createGenericAvatar(gltf: GLTF, clipAnimatedBones: ReadonlySet<string> = new Set()): Avatar {
+  return new GenericAvatar(gltf, clipAnimatedBones);
 }
