@@ -6,6 +6,8 @@
 // the gear no longer duplicates it. Reachable from the chat room gear (top right).
 // r2026-10-04.70: "You are" gender chips — secret (default) keeps the dialogue
 // exactly as before; male/female calibrate her warmth vs best-mate tone.
+// r2026-10-04.70c: the gender state admits undefined (profile.gender is
+// optional) — a never-set profile just shows no chip highlighted.
 import { useEffect, useRef, useState } from 'react';
 import {
   characterById, backgroundById, KID_CHARACTER, KID_BACKGROUND,
@@ -96,7 +98,7 @@ export default function SettingsSheet({
   const [voiceOn, setVoiceOnState] = useState(voiceEnabled());
   const [neuralOn, setNeuralOnState] = useState(neuralEnabled());
   const [name, setName] = useState(() => loadProfile().name);
-  const [gender, setGender] = useState<Gender>(() => loadProfile().gender);
+  const [gender, setGender] = useState<Gender | undefined>(() => loadProfile().gender);
   const [mem, setMem] = useState<Memory>(loadMemory);
   const [copied, setCopied] = useState(false);
   const [newText, setNewText] = useState('');
