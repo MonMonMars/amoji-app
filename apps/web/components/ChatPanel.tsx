@@ -95,9 +95,9 @@
 // the utterance auto-sends ~1.1s after you stop talking (endpointing lives
 // in lib/listen.ts), exactly like ChatGPT/Grok voice mode.
 // r2026-10-04.82: the world gains a voice — the ambient bed for the current
-// backdrop (rain + distant thunder, campfire crackle, wind + birdsong…) runs
-// for as long as the chat lives (lib/sfx.ts), and poking her now lands with
-// a soft boing alongside the ouch.
+// backdrop (rain + distant thunder, campfire crackle, wind + birdsong…)
+// runs for as long as the chat lives (lib/sfx.ts), and poking her now lands
+// with a soft boing alongside the ouch.
 // r2026-10-04.86: her performances now carry real music to the END — the
 // sung reply, the call-and-response duet and the piano move run on the
 // performance layer (startPerformanceMusic), whose preserve flag keeps the
@@ -114,6 +114,8 @@
 // into the chat after a ~0.7s grace — no more blind silence guessing. The
 // orb swells white-hot while YOU hold the floor. CDN-loaded with a full
 // fallback: if the VAD can't load, voice mode behaves exactly like r86.
+// r2026-10-04.87b: vadStopRef holds the VadHandle ({stop()}), not a bare
+// function — TS2322/TS2349 broke the CI+Pages build.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh, triggerMove } from '../lib/companion';
 import { detectMove } from '../lib/moves';
@@ -207,8 +209,11 @@ export default function ChatPanel({
   const micModeRef = useRef(false);
   const micStopRef = useRef<{ stop(): void; flush(): void } | null>(null);
   // r87 — Silero VAD alongside the mic: its own stop handle, the grace timer
-  // between "speech ended" and "flush the words", wired per mic session
-  const vadStopRef = useRef<(() => void) | null>(null);
+  // between "speech ended" and "flush the words", wired per mic session.
+  // r87b: the ref holds the VadHandle ({stop()}), NOT a bare () => void —
+  // assigning the handle to a function-typed ref was TS2322 and calling it
+  // was TS2349.
+  const vadStopRef = useRef<{ stop(): void } | null>(null);
   const vadGraceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const laughCountRef = useRef(0);
   // r.47 — the last assistant bubble is a TRANSIENT placeholder while she
@@ -272,7 +277,7 @@ export default function ChatPanel({
     return () => window.removeEventListener('amoji:brain-degraded', note);
   }, []);
   // never leave the mic (or the VAD) running if the panel unmounts
-  useEffect(() => () => { micStopRef.current?.stop(); vadStopRef.current?.(); }, []);
+  useEffect(() => () => { micStopRef.current?.stop(); vadStopRef.current?.stop(); }, []);
   useEffect(() => {
     if (nearBottomRef.current) {
       scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -765,7 +770,7 @@ export default function ChatPanel({
       micStopRef.current?.stop();
       micStopRef.current = null;
       if (vadGraceRef.current) { clearTimeout(vadGraceRef.current); vadGraceRef.current = null; }
-      vadStopRef.current?.();
+      vadStopRef.current?.stop();
       vadStopRef.current = null;
       setUserSpeaking(false);
       listeningRef.current = false;
@@ -830,7 +835,7 @@ export default function ChatPanel({
         micModeRef.current = false;
         micStopRef.current = null;
         if (vadGraceRef.current) { clearTimeout(vadGraceRef.current); vadGraceRef.current = null; }
-        vadStopRef.current?.();
+        vadStopRef.current?.stop();
         vadStopRef.current = null;
         setUserSpeaking(false);
         listeningRef.current = false;
@@ -864,9 +869,11 @@ export default function ChatPanel({
         if (vadGraceRef.current) clearTimeout(vadGraceRef.current);
         vadGraceRef.current = setTimeout(() => micHandle.flush(), 700);
       },
-    }).then((stopVad) => {
-      if (micModeRef.current) vadStopRef.current = stopVad;
-      else stopVad?.();
+    }).then((vadHandle) => {
+      // r87b: .then() receives the VadHandle ({stop()}) or null — store it
+      // as-is and call .stop() everywhere; a bare function call was TS2349.
+      if (micModeRef.current) vadStopRef.current = vadHandle;
+      else vadHandle?.stop();
     });
   };
 
