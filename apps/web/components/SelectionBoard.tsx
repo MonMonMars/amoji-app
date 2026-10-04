@@ -13,6 +13,9 @@
 // r2026-10-03.34: every character card in the scroll row streams its own live
 // 3D bust too, lazy-mounted only while the card is on screen, so the whole
 // cast is browsed as real faces without drowning the GPU in WebGL contexts.
+// r2026-10-04.55: each character card carries a #1-#29 number badge (index in
+// the FULL cast) so Master Simon can reference characters by number; Kid Mode
+// filtering never renumbers anyone.
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import HScrollRow from './HScrollRow';
@@ -205,6 +208,10 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
           <HScrollRow ariaLabel="characters">
             {cast.map((c) => {
               const active = c.id === live.character;
+              // Stable cast number — index in the FULL cast + 1, so Kid Mode
+              // filtering never renumbers anyone (numbers are how the user
+              // orders model swaps: "give #7 the new Tifa model").
+              const num = CHARACTERS.findIndex((x) => x.id === c.id) + 1;
               return (
                 <button
                   key={c.id}
@@ -219,6 +226,13 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                     style={active ? { boxShadow: `0 0 0 2px ${c.accent}` } : undefined}
                   >
                     <CharacterBust id={c.id} image={c.image} url={c.model} />
+                    <span
+                      className="absolute -left-0.5 -top-0.5 z-10 flex h-5 min-w-5 items-center justify-center rounded-full border border-black/40 px-1 text-[10px] font-bold text-black/80"
+                      style={{ background: c.accent }}
+                      title={`#${num}`}
+                    >
+                      {num}
+                    </span>
                   </span>
                   <span className="text-xs font-semibold">{c.name}</span>
                   <span className="text-[10px] leading-none text-white/40">{c.gender === 'female' ? '♀' : '♂'}</span>
