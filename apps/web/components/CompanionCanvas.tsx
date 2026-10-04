@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin } from '@pixiv/three-vrm';
@@ -59,10 +59,15 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
   onNoticeRef.current = onNotice;
   const onPokeRef = useRef(onPoke);
   onPokeRef.current = onPoke;
+  // r84 (Master Simon): while she loads, the stage stays EMPTY — no giant
+  // placeholder figure. A circular loading ring with the real percentage
+  // sits at the lower-left, right where the hero mic lives. null = ready.
+  const [progress, setProgress] = useState<number | null>(0);
 
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
+    setProgress(0);
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -129,13 +134,20 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       fromTarget: THREE.Vector3;
     } | null = null;
 
-    // placeholder while the model is missing or loading
-    const placeholder = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.25, 0.8, 8, 16),
-      new THREE.MeshStandardMaterial({ color: accent }),
-    );
-    placeholder.position.set(0, 0.9, 0);
-    scene.add(placeholder);
+    // r84 (Master Simon): NO placeholder mesh while loading — the old accent
+    // capsule read as "a huge ball in the middle". The stage stays empty and
+    // the HTML ring below reports real progress: model bytes (75%) + motion
+    // clips delivered (25%). Recomputed on every loader progress event.
+    let modelPct = 0;
+    let clipDone = 0;
+    let lastReported = -1;
+    const reportProgress = () => {
+      const pct = Math.min(99, Math.round(modelPct * 0.75 + (clipDone / CLIP_NAMES.length) * 25));
+      if (pct !== lastReported) {
+        lastReported = pct;
+        setProgress(pct);
+      }
+    };
 
     // r2026-10-04.69: stage props — one THREE.Group per catalog entry. A
     // prop fades in while its move is on stage and melts away after, never
@@ -371,6 +383,11 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       };
       let pending = CLIP_NAMES.length;
       const done = () => {
+        // r84: every resolved clip (success or exhausted retries) nudges the
+        // loading ring, so the percentage keeps moving even while the model
+        // itself is already cached/fast
+        clipDone += 1;
+        reportProgress();
         if (--pending === 0 && clips.size > 0 && avatar) startClipEngine(vrm);
       };
       // try each candidate URL in order: local mirror → dedicated alt host
@@ -405,9 +422,12 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
 
     const mountAvatar = (a: Avatar) => {
       avatar = a;
-      scene.remove(placeholder);
       scene.add(a.root);
       a.root.position.set(0, 0, 0);
+      // r84 — she's on stage: the loading ring at the lower-left bows out
+      modelPct = 100;
+      reportProgress();
+      setProgress(null);
 
       // r2026-10-03.28: tint every material toward the character look. The tint
       // is near-white, so it shifts the whole palette (outfit, hair, light on
@@ -432,11 +452,18 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
         } catch {
           loadModel(index + 1);
         }
-      }, undefined, () => loadModel(index + 1));
+      }, (ev) => {
+        // r84: byte-level progress for the loading ring
+        if (ev.lengthComputable && ev.total > 0) {
+          modelPct = Math.min(99, Math.round((ev.loaded / ev.total) * 100));
+          reportProgress();
+        }
+      }, () => loadModel(index + 1));
     };
 
     const loadModel = (index: number) => {
       if (index >= MODEL_CANDIDATES.length) {
+        setProgress(null); // r84 — nothing left to try: stop waiting, show the notice
         onNoticeRef.current?.({ reason: 'asset' });
         return;
       }
@@ -452,7 +479,13 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
         }
         mountAvatar(createV1Avatar(v));
         loadClips(v);
-      }, undefined, () => loadPlain(index, url));
+      }, (ev) => {
+        // r84: byte-level progress for the loading ring
+        if (ev.lengthComputable && ev.total > 0) {
+          modelPct = Math.min(99, Math.round((ev.loaded / ev.total) * 100));
+          reportProgress();
+        }
+      }, () => loadPlain(index, url));
     };
     loadModel(0);
 
@@ -595,10 +628,11 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
         // r83: the poke reaction has TWO engines, picked per character:
         //   · human (skeleton): NO mesh squash — the SKELETON takes the hit.
         //     The torso whips back (spine, then chest a beat later), the head
-        //     snaps with a tiny shiver, the arms flinch — all folded into the
-        //     pose targets below and routed through the human joint limits.
-        //     The root only carries the push-back translation (physics, not
-        //     deform): she is literally shoved away from your finger.
+        //     snaps with a tiny shiver, the shoulders lift and the elbows
+        //     fold — all folded into the pose targets below and routed
+        //     through the human joint limits. The root only carries the
+        //     push-back translation (physics, not deform): she is literally
+        //     shoved away from your finger.
         //   · chibi (deform): the classic squash-bounce — cartoon physics,
         //     which is exactly what reads right on a tiny round character.
         // laugh reaction: rhythmic belly-bounce giggle, head thrown back (~1.6s).
@@ -724,8 +758,6 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           avatar.applyPose(poseTargets);
         }
         avatar.update(dt / 1000);
-      } else {
-        placeholder.rotation.y += 0.003;
       }
 
       // r2026-10-04.69: stage props ride the same move clock — pop in when
@@ -790,5 +822,34 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     };
   }, [accent, seedKey, lighting]);
 
-  return <div ref={hostRef} className="absolute inset-0 touch-none" aria-label="companion" />;
+  return (
+    <div ref={hostRef} className="absolute inset-0 touch-none" aria-label="companion">
+      {progress !== null && (
+        // r84 (Master Simon): the empty stage's only loading UI — a mic-sized
+        // circular ring at the lower-left (the mic's neighbourhood), spinning
+        // highlight arc + the real percentage. Nothing in the 3D scene itself.
+        <div className="pointer-events-none absolute bottom-36 left-4 z-10 flex flex-col items-center gap-2">
+          <style>{'@keyframes amoji-spin{to{transform:rotate(360deg)}}'}</style>
+          <div className="relative h-20 w-20">
+            <div className="absolute inset-0 rounded-full bg-black/45" />
+            <svg
+              viewBox="0 0 80 80"
+              className="absolute inset-0 h-full w-full"
+              style={{ animation: 'amoji-spin 1.3s linear infinite' }}
+              aria-hidden
+            >
+              <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="4" />
+              <circle cx="40" cy="40" r="34" fill="none" stroke={accent} strokeWidth="4" strokeLinecap="round" strokeDasharray="70 144" />
+            </svg>
+            <span className="absolute inset-0 flex items-center justify-center text-[13px] font-semibold text-white/95">
+              {progress}%
+            </span>
+          </div>
+          <span className="rounded-full bg-black/40 px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-white/70">
+            Loading…
+          </span>
+        </div>
+      )}
+    </div>
+  );
 }
