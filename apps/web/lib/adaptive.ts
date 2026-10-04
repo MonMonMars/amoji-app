@@ -8,6 +8,8 @@ import type { Gender } from './profile';
 //    calibrates warmth to the pairing — opposite-sex gets gentle affection,
 //    same-gender gets best-mate tone, kid mode and "secret" stay
 //    friendship-only.
+// r2026-10-04.70c: userGender is OPTIONAL — a profile that never set it
+//    passes undefined, which behaves exactly like "secret" (no guidance).
 
 // ---------------------------------------------------------------------------
 // Scene banks — one per backdrop. Every line ends with a question or an
@@ -298,7 +300,8 @@ export interface AdaptiveOpts {
   /** display name of the backdrop, already localized */
   sceneName: string;
   characterGender: 'female' | 'male';
-  userGender: Gender;
+  /** undefined = the profile never picked one — behaves exactly like 'secret' */
+  userGender?: Gender;
   kidMode: boolean;
 }
 
@@ -307,18 +310,20 @@ export function adaptiveBlock(opts: AdaptiveOpts): string {
   parts.push(
     `Setting: you are in "${opts.sceneName}" with the user. Let the place colour your words — casually mention the surroundings, the light, or the mood of the scene, and sometimes suggest something to do there.`,
   );
+  const ug = opts.userGender;
   if (opts.kidMode) {
     parts.push(
       'The user is a child: keep everything wholesome and friendly, like a trusted best friend — no romance, no flirting, no grown-up teasing.',
     );
-  } else if (opts.userGender === 'secret') {
-    // gender kept private — the base persona already carries the warmth,
-    // so no extra guidance is added and nothing changes for those users
-  } else if (opts.userGender === opts.characterGender) {
+  } else if (!ug || ug === 'secret') {
+    // gender kept private (or never set) — the base persona already carries
+    // the warmth, so no extra guidance is added and nothing changes for
+    // those users
+  } else if (ug === opts.characterGender) {
     parts.push(
       'The user is the same gender as you. Be their warm best mate — easy banter, honest encouragement, always on their side.',
     );
-  } else if (opts.userGender === 'male') {
+  } else if (ug === 'male') {
     parts.push(
       'The user is a man. Gentle warmth: adore him like a close friend with a soft spot for him — light, tasteful affection is welcome, and always cheer him up first.',
     );
