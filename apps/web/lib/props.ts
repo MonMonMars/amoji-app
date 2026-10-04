@@ -25,7 +25,8 @@ export interface PropPart {
   pos: [number, number, number];
   /**
    * box: [width, height, depth] · cylinder: [rTop, rBottom, height]
-   * sphere: [radius, -, -] · cone: [radius, height, -]
+   * sphere: [radius, -, -] · cone: [radius, height, radius]
+   * (unused slots carry a mirrored placeholder so geometry stays positive)
    */
   size: [number, number, number];
   color: string; // '#rrggbb'
@@ -90,7 +91,7 @@ export const PROPS: PropDef[] = [
     id: 'iceCream',
     forMoves: ['eat'],
     parts: [
-      { kind: 'cone', pos: [0.28, 1.02, 0.2], size: [0.05, 0.13, 0], color: HEX('#d97706'), rot: [Math.PI, 0, 0], anim: 'softBob', animPhase: 0 },
+      { kind: 'cone', pos: [0.28, 1.02, 0.2], size: [0.05, 0.13, 0.05], color: HEX('#d97706'), rot: [Math.PI, 0, 0], anim: 'softBob', animPhase: 0 },
       { kind: 'sphere', pos: [0.28, 1.115, 0.2], size: [0.055, 0, 0], color: HEX('#fda4af'), anim: 'softBob', animPhase: 0 },
       { kind: 'sphere', pos: [0.28, 1.17, 0.2], size: [0.042, 0, 0], color: HEX('#fef3c7'), anim: 'softBob', animPhase: 0 },
       { kind: 'sphere', pos: [0.28, 1.207, 0.2], size: [0.016, 0, 0], color: HEX('#dc2626'), anim: 'softBob', animPhase: 0 },
@@ -120,10 +121,12 @@ const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 /**
  * How visible a prop is at move progress t (0→1): pops in fast (attack
- * 0.06), melts away on the tail (release 0.18) so it never vanishes
- * mid-frame. Multiply into group scale — 0 hides the group entirely.
+ * 0.06), holds full through the performance, then melts away across
+ * 0.82→0.90 so the stage is CLEAR before she moves on to her next motion —
+ * the prop never pops out mid-transition. Multiply into group scale —
+ * 0 hides the group entirely.
  */
 export function propPresence(t: number): number {
   const u = clamp01(t);
-  return Math.min(clamp01(u / 0.06), clamp01((1 - u) / 0.18));
+  return Math.min(clamp01(u / 0.06), clamp01((0.9 - u) / 0.08));
 }
