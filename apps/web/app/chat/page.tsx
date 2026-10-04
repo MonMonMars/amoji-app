@@ -90,6 +90,9 @@ export default function Chat() {
           lang={prefs.lang}
           accent={character.accent}
           persona={prefs.kidMode ? `${character.persona}\n\n${KID_PERSONA_GUARD}` : character.persona}
+          backgroundId={background.id}
+          characterGender={character.gender}
+          kidMode={prefs.kidMode}
           pokeCount={pokeCount}
           onStatus={setStatus}
           onMemCount={setMemCount}
