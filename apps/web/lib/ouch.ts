@@ -7,6 +7,8 @@
 //   a tired one a low soft "oh…", an angry one a wry "hey—" that defuses
 //   instead of snapping back; no/unknown mood keeps the classic personality
 //   cry (and the exact old voice + hint numbers).
+// r2026-10-04.74: ARCHETYPE now covers the whole 29-character cast — before
+//   this, 16 companions silently shared the cheerful squeak.
 import type { Lang } from './prefs';
 
 type CryBank = Record<Lang, string[]>;
@@ -44,12 +46,27 @@ const OUCH: Record<string, CryBank> = {
   },
 };
 
-const ARCHETYPE: Record<string, keyof typeof OUCH> = {
-  juno: 'cheerful', nova: 'cheerful', rin: 'playful',
-  mochi: 'playful', marin: 'playful',
-  luna: 'gentle', aerith: 'gentle', kasumi: 'gentle', hitomi: 'gentle',
-  kai: 'cool', ren: 'cool', ayane: 'cool',
-  blaze: 'fiery', cloud: 'fiery', tifa: 'fiery',
+/**
+ * r2026-10-04.74 — one flavor per cast member, covering all 29 companions;
+ * kept in lockstep with laugh.ts ARCHETYPE (the cast test pins both maps
+ * against CHARACTERS). Flavor follows the persona: idols/besties yelp
+ * bright (cheerful), sweethearts gasp soft (gentle), composed protectors
+ * grunt dry (cool), livewires bark (fiery), mischief-makers squeak (playful).
+ */
+export const ARCHETYPE: Record<string, keyof typeof OUCH> = {
+  // playful — mischief-makers
+  rin: 'playful', mochi: 'playful', marin: 'playful',
+  // cheerful — upbeat idols, hype besties, sunny souls
+  juno: 'cheerful', nova: 'cheerful', kizuna: 'cheerful', alicia: 'cheerful',
+  yuki: 'cheerful', robbie: 'cheerful', ruby: 'cheerful', alan: 'cheerful',
+  // gentle — soft sweethearts, elegant romantics, cozy fairies
+  luna: 'gentle', kasumi: 'gentle', hitomi: 'gentle', mei: 'gentle',
+  hina: 'gentle', lydia: 'gentle', snowy: 'gentle',
+  // cool — composed protectors, laid-back musicians, dry humor
+  kai: 'cool', ren: 'cool', ayane: 'cool', atlas: 'cool',
+  sky: 'cool', mika: 'cool', anchor: 'cool',
+  // fiery — livewires, confident leads, bark-laughing tough types
+  blaze: 'fiery', cloud: 'fiery', ember: 'fiery', mio: 'fiery',
 };
 
 /**
