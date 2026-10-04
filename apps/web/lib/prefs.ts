@@ -300,7 +300,9 @@ export type StrKey =
   // kid mode (r2026-10-03.03)
   | 'settingsMode' | 'kidMode' | 'kidModeHint'
   // brain routing (r2026-10-03.05)
-  | 'brainTitle' | 'brainAuto' | 'brainAutoHint' | 'brainKeyPlaceholder' | 'brainNoKey';
+  | 'brainTitle' | 'brainAuto' | 'brainAutoHint' | 'brainKeyPlaceholder' | 'brainNoKey'
+  // voice self-test + diagnostics (r2026-10-04.75)
+  | 'testVoice' | 'testVoiceBtn' | 'voiceBlockedHint';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   tagline: {
@@ -425,6 +427,14 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     ja: 'APIキーを貼り付け——この端末のみ保存',
   },
   brainNoKey: { en: 'no key — free lane', yue: '冇 Key——免費通道', zh: '没有密钥——免费通道', ja: 'キーなし——無料レーン' },
+  testVoice: { en: 'Test voice', yue: '試吓把聲', zh: '试试声音', ja: '声テスト' },
+  testVoiceBtn: { en: '▶ Play', yue: '▶ 播一次', zh: '▶ 播放', ja: '▶ 再生' },
+  voiceBlockedHint: {
+    en: "No sound was heard — check the phone's silent switch and volume, then press Play again. If it's still silent, turn Voice replies off and on once.",
+    yue: '聽唔到聲——檢查電話嘅靜音掣同音量，再撳一次播放。仲係唔得嘅話，將「語音回覆」關掉再開一次。',
+    zh: '没有听到声音——请检查手机的静音开关和音量，然后再按一次播放。如果还是无声，把「语音回复」关掉再打开一次。',
+    ja: '声が聞こえません——本体のミュートスイッチと音量を確認してから、もう一度再生を押してください。それでもだめなら「音声返答」を一度オフにしてオンに戻してください。',
+  },
 };
 
 export function t(lang: Lang, key: StrKey, vars?: Record<string, string>): string {
