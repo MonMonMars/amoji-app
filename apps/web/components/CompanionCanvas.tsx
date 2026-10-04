@@ -8,7 +8,7 @@ import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-v
 import type { VRMAnimation } from '@pixiv/three-vrm-animation';
 import { mapFrameToVrm, posesByIds, sampleIdlePoseFrom } from '@amoji/vrm-renderer';
 import { tickEngine, lastLaughAt, activeMove } from '../lib/companion';
-import type { MoveKind } from '../lib/moves';
+import { moveDeltas, moveEnvelope, type MoveKind } from '../lib/moves';
 import { PROPS, propsForMove, propPresence, type PropDef, type PropPart } from '../lib/props';
 import { characterById } from '../lib/prefs';
 import { pokeStyleFor, pokeModeFor, poseIdsFor, lookFor } from '../lib/persona';
@@ -229,8 +229,8 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     const CLIP_NAMES = ['Angry', 'Blush', 'Clapping', 'Goodbye', 'Jump', 'LookAround', 'Relax', 'Sad', 'Sleepy', 'Surprised', 'Thinking', 'StandardIdle', 'Bow', 'Hello'] as const;
     type ClipName = (typeof CLIP_NAMES)[number];
     // dialogue performances that have a matching library clip; other move
-    // kinds simply don't touch the skeleton (no clip yet — and per Master
-    // Simon, no hand-made puppet motion either).
+    // kinds take the procedural choreography channel below (r86) — composed
+    // as semantic additives so they still never touch a clip-driven skeleton.
     const MOVE_CLIP: Partial<Record<MoveKind, ClipName>> = { jump: 'Jump' };
     const clips = new Map<ClipName, THREE.AnimationClip>();
     let idleAction: THREE.AnimationAction | null = null;
@@ -624,6 +624,27 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       // r2026-10-03.39: a dialogue-triggered movement performance (sing / jump
       // / kungfu / taichi / piano / jog), stamped on the same clock as `now`.
       const mv = activeMove(now);
+      // r86 (Master Simon): sing / piano / dance and friends have NO library
+      // clip — the online motion libraries ship greetings, bows and idles
+      // only (verified against three CORS-open repos). Per the r58 design
+      // these kinds take the procedural choreography channel: moveDeltas ×
+      // moveEnvelope, folded into the pose targets as SEMANTIC additives
+      // (arm raises / elbow folds / torso channels) that compose on top of
+      // whatever drives the body — the skeleton is still never hand-rotated
+      // while a library clip owns it.
+      const md = (() => {
+        if (!mv || MOVE_CLIP[mv.kind]) return undefined;
+        const d = moveDeltas(mv.kind, mv.t);
+        const e = moveEnvelope(mv.t);
+        return {
+          lArmZ: d.lArmZ * e, rArmZ: d.rArmZ * e,
+          lArmX: d.lArmX * e, rArmX: d.rArmX * e,
+          lElbowZ: d.lElbowZ * e, rElbowZ: d.rElbowZ * e,
+          spineX: d.spineX * e, spineY: d.spineY * e, chestZ: d.chestZ * e,
+          headX: d.headX * e, headY: d.headY * e, headZ: d.headZ * e,
+          py: d.py * e, squash: d.squash * e, stretch: d.stretch * e,
+        };
+      })();
       if (avatar) {
         // r83: the poke reaction has TWO engines, picked per character:
         //   · human (skeleton): NO mesh squash — the SKELETON takes the hit.
@@ -688,12 +709,23 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
             sz += 0.05 * bounce;
             rotX += -0.12 * Math.sin(lt * Math.PI); // lean back laughing
           }
+          // r86: the choreography's whole-body lift rides the root, and its
+          // squash/stretch stays chibi-only (cartoon physics on a realistic
+          // human reads as rubber — same rule as the poke)
+          py += md?.py ?? 0;
+          if (md && pokeMode === 'deform') {
+            sy += md.squash;
+            sx += md.stretch * 0.6;
+            sz += md.stretch * 0.6;
+          }
           avatar.root.position.set(px, py, pz);
           avatar.root.scale.set(sx * BASE_SX, sy * BASE_SY, sz * BASE_SX);
           avatar.root.rotation.set(rotX, rotY, 0);
         } else {
-          avatar.root.position.set(0, 0, 0);
-          avatar.root.scale.set(BASE_SX, BASE_SY, BASE_SX);
+          const mSy = md && pokeMode === 'deform' ? md.squash : 0;
+          const mSx = md && pokeMode === 'deform' ? md.stretch * 0.6 : 0;
+          avatar.root.position.set(0, md?.py ?? 0, 0);
+          avatar.root.scale.set((1 + mSx) * BASE_SX, (1 + mSy) * BASE_SY, (1 + mSx) * BASE_SX);
           avatar.root.rotation.set(0, 0, 0);
         }
 
@@ -726,18 +758,25 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
 
         const b = targets.bones;
         const poseTargets: AvatarPose = {
-          headX: b.headPitch + skHeadX, headY: b.headYaw, headZ: b.headRoll + skHeadZ,
+          headX: b.headPitch + skHeadX + (md?.headX ?? 0),
+          headY: b.headYaw + (md?.headY ?? 0),
+          headZ: b.headRoll + skHeadZ + (md?.headZ ?? 0),
           spineX: b.spinePitch, chestX: b.chestPitch,
           leftUpperArm: b.leftUpperArm + skLUp, rightUpperArm: b.rightUpperArm + skRUp,
           leftLowerArm: b.leftLowerArm, rightLowerArm: b.rightLowerArm,
-          spineY: 0, chestZ: 0,
-          lArmX: skLArm, rArmX: skRArm,
-          lElbowZ: skLElb, rElbowZ: skRElb,
-          spinePitchAdd: skSpine, chestPitchAdd: skChest,
+          spineY: md?.spineY ?? 0, chestZ: md?.chestZ ?? 0,
+          lArmX: skLArm + (md?.lArmX ?? 0), rArmX: skRArm + (md?.rArmX ?? 0),
+          lElbowZ: skLElb + (md?.lElbowZ ?? 0), rElbowZ: skRElb + (md?.rElbowZ ?? 0),
+          // r86: the choreography's forward-lean rides the additive torso
+          // channels so it composes with library clips too; the arm raises
+          // map to the semantic raise fields (moves.ts convention: left z+
+          // / right z− = arm up), so a raise is a raise on every rig.
+          spinePitchAdd: skSpine + (md?.spineX ?? 0), chestPitchAdd: skChest,
+          lArmRaise: md?.lArmZ ?? 0, rArmRaise: -(md?.rArmZ ?? 0),
         };
         // dialogue-triggered performance: fire the matching LIBRARY clip once
-        // on the rising edge. Kinds without a library clip leave the skeleton
-        // untouched (Master Simon: no hand-rotated puppet motion).
+        // on the rising edge. Clip-less kinds keep the skeleton for the
+        // additive choreography above (r86).
         if (mv && mvHandled !== mv.kind) {
           mvHandled = mv.kind;
           const clipName = MOVE_CLIP[mv.kind];
