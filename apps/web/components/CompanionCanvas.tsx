@@ -9,6 +9,7 @@ import type { VRMAnimation } from '@pixiv/three-vrm-animation';
 import { mapFrameToVrm, posesByIds, sampleIdlePoseFrom } from '@amoji/vrm-renderer';
 import { tickEngine, lastLaughAt, activeMove } from '../lib/companion';
 import type { MoveKind } from '../lib/moves';
+import { PROPS, propsForMove, propPresence, type PropDef, type PropPart } from '../lib/props';
 import { characterById } from '../lib/prefs';
 import { pokeStyleFor, poseIdsFor, lookFor } from '../lib/persona';
 import { sampleSpeech } from '../lib/speech';
@@ -113,6 +114,42 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     );
     placeholder.position.set(0, 0.9, 0);
     scene.add(placeholder);
+
+    // r2026-10-04.69: stage props — one THREE.Group per catalog entry. A
+    // prop fades in while its move is on stage and melts away after, never
+    // touching the skeleton (props are set dressing, not puppetry).
+    interface AnimPart {
+      obj: THREE.Object3D;
+      base: THREE.Vector3;
+      baseRotZ: number;
+      anim: NonNullable<PropPart['anim']>;
+      phase: number;
+    }
+    const propGroups = new Map<string, { group: THREE.Group; animParts: AnimPart[]; scale: number }>();
+    const buildProp = (def: PropDef) => {
+      const group = new THREE.Group();
+      const animParts: AnimPart[] = [];
+      for (const part of def.parts) {
+        let geo: THREE.BufferGeometry;
+        if (part.kind === 'box') geo = new THREE.BoxGeometry(part.size[0], part.size[1], part.size[2]);
+        else if (part.kind === 'cylinder') geo = new THREE.CylinderGeometry(part.size[0], part.size[1], part.size[2], 20);
+        else if (part.kind === 'sphere') geo = new THREE.SphereGeometry(part.size[0], 20, 14);
+        else geo = new THREE.ConeGeometry(part.size[0], part.size[1], 20);
+        const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: part.color, roughness: 0.55 }));
+        mesh.position.set(part.pos[0], part.pos[1], part.pos[2]);
+        if (part.rot) mesh.rotation.set(part.rot[0], part.rot[1], part.rot[2]);
+        group.add(mesh);
+        const anim = part.anim ?? 'none';
+        if (anim !== 'none') {
+          animParts.push({ obj: mesh, base: mesh.position.clone(), baseRotZ: mesh.rotation.z, anim, phase: part.animPhase ?? 0 });
+        }
+      }
+      group.visible = false;
+      group.scale.setScalar(0.001);
+      scene.add(group);
+      propGroups.set(def.id, { group, animParts, scale: 0 });
+    };
+    for (const def of PROPS) buildProp(def);
 
     let avatar: Avatar | null = null;
     let mixer: THREE.AnimationMixer | null = null;
@@ -589,6 +626,33 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       } else {
         placeholder.rotation.y += 0.003;
       }
+
+      // r2026-10-04.69: stage props ride the same move clock — pop in when
+      // the performance starts, melt away after it ends, micro-animated all
+      // the way through. Scale is smoothed so a retriggered move doesn't pop.
+      for (const pg of propGroups.values()) {
+        const on = mv ? propsForMove(mv.kind).some((d) => d.group === pg) : false;
+        const want = on && mv ? propPresence(mv.t) : 0;
+        pg.scale += (want - pg.scale) * Math.min(1, dt / 110);
+        if (pg.scale < 0.02) {
+          pg.group.visible = false;
+          continue;
+        }
+        pg.group.visible = true;
+        pg.group.scale.setScalar(Math.max(pg.scale, 0.001));
+        for (const ap of pg.animParts) {
+          if (ap.anim === 'pianoKeys') {
+            ap.obj.position.y = ap.base.y - 0.011 * Math.max(0, Math.sin(now * 0.014 + ap.phase));
+          } else if (ap.anim === 'softBob') {
+            ap.obj.position.y = ap.base.y + 0.008 * Math.sin(now * 0.0045 + ap.phase);
+          } else if (ap.anim === 'sway') {
+            ap.obj.rotation.z = ap.baseRotZ + 0.09 * Math.sin(now * 0.004 + ap.phase);
+          } else if (ap.anim === 'sparkle') {
+            ap.obj.scale.setScalar(1 + 0.08 * Math.max(0, Math.sin(now * 0.009 + ap.phase)));
+          }
+        }
+      }
+
       renderer.render(scene, camera);
     };
     raf = requestAnimationFrame(loop);
@@ -609,6 +673,17 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       host.removeEventListener('pointercancel', onPointerUp);
       host.removeEventListener('wheel', onWheel);
       avatar?.root.removeFromParent();
+      // r69: dispose the stage props with the scene
+      for (const pg of propGroups.values()) {
+        pg.group.traverse((node) => {
+          const mesh = node as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          mesh.geometry.dispose();
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          for (const m of mats) (m as THREE.Material).dispose();
+        });
+        pg.group.removeFromParent();
+      }
       renderer.dispose();
       renderer.domElement.remove();
     };
