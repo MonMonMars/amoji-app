@@ -92,7 +92,7 @@ export interface ContinuousListenOptions {
   onSpeechStart?: () => void;
   /**
    * r81 — the half-heard words, live. Fired on every result with whatever
-   * the recognizer currently holds as NOT-yET final (empty string once the
+   * the recognizer currently holds as not-yet-final (empty string once the
    * burst finalizes). The UI paints this as the user's in-progress bubble.
    */
   onInterim?: (text: string) => void;
