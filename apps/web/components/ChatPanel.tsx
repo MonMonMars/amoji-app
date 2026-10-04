@@ -75,11 +75,12 @@
 // fully opaque; a mask on the panel fades by on-screen HEIGHT only — the
 // bottom line is 100%, each line higher a step dimmer, the top melts away.
 // Scrolling an old message down into the bright zone makes it crisp again.
-// r2026-10-04.62: the mic frost is CIRCULAR on iOS Safari. WebKit's
-// backdrop-filter ignores border-radius and blurs the whole rectangular
-// border-box, which drew a square frost behind the round button. Adding
-// overflow-hidden (button + text input) clips the blur to the rounded
-// shape — a perfect circle, while the outer glow shadows stay untouched.
+// r2026-10-04.84: the mic frost went SQUARE on iOS — WebKit renders
+// backdrop-filter over the FULL rectangular border-box no matter the
+// border-radius (r62's overflow:hidden cured some iOS versions, not all).
+// The blur is gone from the button entirely: a slightly deeper solid
+// bg-black/55 keeps the same readability with zero backdrop-filter, so
+// there is physically no rectangle left to see.
 // r2026-10-04.70: ADAPTIVE DIALOGUE — her words now fit the world: (a) idle
 // chatter first tries a line belonging to the current backdrop (new lib/
 // adaptive.ts), so sitting under the aurora sounds different from a rainy
@@ -809,15 +810,16 @@ export default function ChatPanel({
 
       {/* input row — ChatGPT-style hero mic with the living emotion orb */}
       <div className="flex w-full items-center gap-2.5">
-        {/* r62: overflow-hidden — on iOS Safari WebKit's backdrop-filter
-            ignores border-radius and frosts the whole square border-box;
-            overflow:hidden clips that blur to the rounded shape, so the
-            frost is a perfect circle. The outer glow shadows live outside
-            the element and are unaffected. */}
+        {/* r84: NO backdrop-filter on this button. WebKit frosts the whole
+            RECTANGULAR border-box of a backdrop-filter element no matter the
+            border-radius (r62's overflow:hidden only cured some iOS builds),
+            which was the persistent "square behind the circle". Solid
+            bg-black/55 keeps the same readability with zero blur — nothing
+            rectangular is rendered at all. */}
         <button
           onClick={() => mic()}
           title={t(lang, 'micTitle')}
-          className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black/40 backdrop-blur-md transition active:scale-95"
+          className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black/55 transition active:scale-95"
           style={
             listening
               ? {
