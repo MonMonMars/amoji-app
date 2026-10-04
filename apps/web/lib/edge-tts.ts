@@ -28,6 +28,12 @@
 // r2026-10-05.97: timeout 4.5s → 3.5s — the tier-1 socket is still the single
 // biggest voice latency when it hangs; the Google-TTS mid tier (a real voice,
 // not a last resort) takes over even faster.
+// r2026-10-05.99: clauses() drops the regex lookbehind — `(?<=…)` is a hard
+// SyntaxError on WebKit before Safari 16.4 (iOS 16.4), and on those devices
+// it killed the whole voice module before any tier could run (the r97
+// unlock/defer/watchdog never executed). Manual char scanner now. Also new:
+// `onPlaying` fires the moment the returned audio actually plays, so the
+// caller knows the iOS media gate is open (and reports it on the status bus).
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface EdgeVoiceOpts {
@@ -46,6 +52,8 @@ export interface EdgeVoiceOpts {
   lead?: { text: string; pitch: number; rate: number };
   /** word-boundary events (for precise lip-sync) */
   onWord?: (word: string) => void;
+  /** r99: fired once the audio element actually starts playing (media gate open) */
+  onPlaying?: () => void;
   /**
    * Singing mode (r2026-10-03.40) — when set, each clause of the text is
    * delivered as one note: pitch = pitchDelta + melody[i % len], at a legato
@@ -131,11 +139,25 @@ const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi 
 
 // Split into breath-sized clauses so the pitch contour can rise and fall inside
 // a sentence — the sing-song quality that makes ChatGPT's voice feel alive.
+// r2026-10-05.99: NO regex lookbehind — `(?<=…)` is a hard SyntaxError on
+// WebKit before Safari 16.4 (iOS 16.4) and it killed the whole voice chain
+// on those devices. Manual scanner: cut right AFTER any clause-ending
+// punctuation, trimming whitespace (equivalent to the old split+trim).
+const CLAUSE_END = /[。！？!?；;，,、—…\.]/;
 function clauses(text: string): string[] {
-  return text
-    .split(/(?<=[。！？!?；;，,、—…\.])\s*|(?<=[。！？!?…\.])\s*/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const out: string[] = [];
+  let cur = '';
+  for (const ch of text) {
+    cur += ch;
+    if (CLAUSE_END.test(ch)) {
+      const s = cur.trim();
+      if (s) out.push(s);
+      cur = '';
+    }
+  }
+  const tail = cur.trim();
+  if (tail) out.push(tail);
+  return out;
 }
 
 // ---- current playback (so stopSpeaking can cut it) ----
@@ -311,6 +333,9 @@ export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
       currentAudio = audio;
+      // r99: the caller learns the instant media playback actually begins —
+      // that is the moment the iOS media gate is provably open.
+      audio.onplay = () => { try { opts.onPlaying?.(); } catch { /* ignore */ } };
       audio.onended = () => {
         if (currentAudio === audio) currentAudio = null;
         URL.revokeObjectURL(url);
