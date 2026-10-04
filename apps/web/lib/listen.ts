@@ -8,6 +8,11 @@
 // onSpeechStart fires the moment REAL talking is detected (the API never
 // emits results for background noise), so the caller can barge-in and cut
 // the companion's voice instantly.
+// r2026-10-04.81: ChatGPT/Grok-live-transcript parity — onInterim streams the
+// half-heard words to the UI the instant they land, and a ~1.1s silence
+// timer force-finalizes the utterance (stop() flushes pending results as
+// final), so the message sends the moment you stop talking, not when the
+// browser eventually decides to.
 
 const LANG_MAP: Record<string, string> = {
   yue: 'zh-HK',
@@ -15,6 +20,9 @@ const LANG_MAP: Record<string, string> = {
   ja: 'ja-JP',
   en: 'en-US',
 };
+
+/** silence this long with uncommitted words → commit them (ChatGPT-style) */
+const ENDPOINT_MS = 1100;
 
 interface SpeechAlternative { transcript: string }
 interface SpeechResult extends ArrayLike<SpeechAlternative> { isFinal?: boolean }
@@ -82,6 +90,12 @@ export interface ContinuousListenOptions {
    * off the instant the user starts talking, exactly like ChatGPT.
    */
   onSpeechStart?: () => void;
+  /**
+   * r81 — the half-heard words, live. Fired on every result with whatever
+   * the recognizer currently holds as NOT-yET final (empty string once the
+   * burst finalizes). The UI paints this as the user's in-progress bubble.
+   */
+  onInterim?: (text: string) => void;
   /** each finished utterance — typically fed straight into the chat send() */
   onFinal: (text: string) => void;
   /** mode ended permanently (unsupported / mic permission denied) */
@@ -93,6 +107,11 @@ export interface ContinuousListenOptions {
  * utterances. Browsers silently drop continuous sessions after a silence —
  * this restarts the recognizer automatically until you call the returned
  * stop() (or the mic errors out for good).
+ *
+ * r81 — endpointing: if ~1.1s pass with uncommitted words in the buffer, we
+ * call stop(), which makes the browser flush those words as a FINAL result —
+ * so the message sends right after you stop talking, like ChatGPT/Grok,
+ * regardless of how slowly the recognizer would have decided on its own.
  */
 export function listenContinuous(lang: string, opts: ContinuousListenOptions): () => void {
   const C = ctor();
@@ -109,6 +128,18 @@ export function listenContinuous(lang: string, opts: ContinuousListenOptions): (
     rec.interimResults = true;
     rec.maxAlternatives = 1;
     rec.continuous = true;
+    let endpointTimer: ReturnType<typeof setTimeout> | undefined;
+    const armEndpoint = () => {
+      if (endpointTimer) clearTimeout(endpointTimer);
+      endpointTimer = setTimeout(() => {
+        // quiet for ENDPOINT_MS with words still uncommitted — flush them:
+        // stop() forces the browser to deliver the pending result as final
+        try { rec?.stop(); } catch { /* already ended */ }
+      }, ENDPOINT_MS);
+    };
+    const disarmEndpoint = () => {
+      if (endpointTimer) { clearTimeout(endpointTimer); endpointTimer = undefined; }
+    };
     rec.onresult = (e) => {
       let interim = '';
       let finalText = '';
@@ -122,8 +153,12 @@ export function listenContinuous(lang: string, opts: ContinuousListenOptions): (
       // any recognized text means a real voice (noise never reaches here),
       // so barge-in exactly once per burst of talking
       if (heard && !bargeInFired) { bargeInFired = true; opts.onSpeechStart?.(); }
+      // r81 — stream the half-heard words to the UI (empty once finalized)
+      opts.onInterim?.(interim);
+      if (interim.trim()) armEndpoint();
+      else disarmEndpoint();
       const said = finalText.trim();
-      if (said) { bargeInFired = false; opts.onFinal(said); }
+      if (said) { bargeInFired = false; disarmEndpoint(); opts.onFinal(said); }
     };
     rec.onerror = (e) => {
       const err = e?.error ?? 'error';
@@ -134,6 +169,7 @@ export function listenContinuous(lang: string, opts: ContinuousListenOptions): (
       // 'no-speech' / 'aborted' / network hiccups fall through to onend → restart
     };
     rec.onend = () => {
+      disarmEndpoint();
       if (!active) return;
       restartTimer = setTimeout(start, 250);
     };
