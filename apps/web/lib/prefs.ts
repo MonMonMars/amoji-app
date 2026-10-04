@@ -5,6 +5,8 @@
 // cyrus/mimi/olivia/kael) that no longer exist under /portraits, so Cloud /
 // Robbie / Mika / Anchor / Ruby / Snowy / Alan showed stale or missing art.
 // The pngs were renamed to character ids in r52; prefs now matches.
+// r2026-10-05.102: `statusPreparing` string for the name plate's
+// indeterminate "preparing…" loading state (see StatusPlate / load-progress).
 import { useEffect, useState } from 'react';
 
 export type Lang = 'en' | 'yue' | 'zh' | 'ja';
@@ -239,7 +241,7 @@ export interface BackgroundDef {
   /** ambient 3D-scene tint */
   scene: string;
   /** light rig for the 3D scene — neutral daylight outdoors, soft neutral
-   *  room light indoors (r2026-10-04.77) */
+   * room light indoors (r2026-10-04.77) */
   setting: 'outdoor' | 'indoor';
   /** painted anime backdrop under /backgrounds */
   image?: string;
@@ -293,7 +295,7 @@ export type StrKey =
   | 'loginPrompt' | 'loginCta' | 'loginSkip'
   | 'selectTitle' | 'confirmCta' | 'comingSoon' | 'openSelect'
   | 'changeCta' | 'previewCurrent' | 'previewNew'
-  | 'statusIdle' | 'statusThinking' | 'statusSpeaking' | 'statusListening'
+  | 'statusIdle' | 'statusThinking' | 'statusSpeaking' | 'statusListening' | 'statusPreparing'
   | 'moodJoy' | 'moodAngry' | 'moodSad' | 'moodSurprised' | 'moodRelaxed' | 'moodNeutral'
   | 'voiceReplies' | 'neuralVoice' | 'memoryTitle' | 'forgetBtn' | 'tutorBtn' | 'micTitle'
   // consolidated settings menu (r2026-10-02.7)
@@ -360,6 +362,7 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   statusThinking: { en: 'thinking…', yue: '諗緊…', zh: '正在想…', ja: '考え中…' },
   statusSpeaking: { en: 'speaking…', yue: '講緊…', zh: '正在说…', ja: '話してる…' },
   statusListening: { en: 'listening…', yue: '聽緊…', zh: '正在听…', ja: '聞いてる…' },
+  statusPreparing: { en: 'preparing…', yue: '準備緊…', zh: '准备中…', ja: '準備中…' },
   moodJoy: { en: 'happy', yue: '開心', zh: '开心', ja: '嬉しい' },
   moodAngry: { en: 'annoyed', yue: '嬲嬲哋', zh: '有点小情绪', ja: '拗ねてる' },
   moodSad: { en: 'down', yue: '唔開心', zh: '有点低落', ja: '落ち込み' },
