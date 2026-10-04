@@ -7,6 +7,8 @@
 // r2026-10-03.25: the laugh also wears the felt mood — a tired or sad user
 //   gets a soft, slow, sympathetic chuckle (weaker joy lift, sunken pitch)
 //   instead of the full burst; an angry one gets a wry chuckle that defuses.
+// r2026-10-04.74: ARCHETYPE now covers the whole 29-character cast — before
+//   this, 16 companions silently shared the cheerful bank.
 import type { Lang } from './prefs';
 
 type LaughBank = Record<Lang, string[]>;
@@ -44,12 +46,28 @@ const GIGGLES: Record<string, LaughBank> = {
   },
 };
 
-const ARCHETYPE: Record<string, keyof typeof GIGGLES> = {
-  juno: 'cheerful', nova: 'cheerful', rin: 'playful',
-  mochi: 'playful', marin: 'playful',
-  luna: 'gentle', aerith: 'gentle', kasumi: 'gentle', hitomi: 'gentle',
-  kai: 'cool', ren: 'cool', ayane: 'cool',
-  blaze: 'fiery', cloud: 'fiery', tifa: 'fiery',
+/**
+ * r2026-10-04.74 — one flavor per cast member, covering all 29 companions;
+ * the cast test pins this map against CHARACTERS so nobody new silently
+ * falls back to the cheerful bank again. Flavor follows the persona:
+ * idols/best mates burst (cheerful), sweethearts cover a soft laugh
+ * (gentle), composed protectors exhale dry (cool), livewire go-getters
+ * bark (fiery), mischief-makers snort-giggle (playful).
+ */
+export const ARCHETYPE: Record<string, keyof typeof GIGGLES> = {
+  // playful — mischief-makers
+  rin: 'playful', mochi: 'playful', marin: 'playful',
+  // cheerful — upbeat idols, hype besties, sunny souls
+  juno: 'cheerful', nova: 'cheerful', kizuna: 'cheerful', alicia: 'cheerful',
+  yuki: 'cheerful', robbie: 'cheerful', ruby: 'cheerful', alan: 'cheerful',
+  // gentle — soft sweethearts, elegant romantics, cozy fairies
+  luna: 'gentle', kasumi: 'gentle', hitomi: 'gentle', mei: 'gentle',
+  hina: 'gentle', lydia: 'gentle', snowy: 'gentle',
+  // cool — composed protectors, laid-back musicians, dry humor
+  kai: 'cool', ren: 'cool', ayane: 'cool', atlas: 'cool',
+  sky: 'cool', mika: 'cool', anchor: 'cool',
+  // fiery — livewires, confident leads, bark-laughing tough types
+  blaze: 'fiery', cloud: 'fiery', ember: 'fiery', mio: 'fiery',
 };
 
 /**
