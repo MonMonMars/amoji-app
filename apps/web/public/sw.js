@@ -1,4 +1,4 @@
-/* Amoji offline shell — r2026-10-04.76
+/* Amoji offline shell — r2026-10-04.77
  * Hand-rolled service worker (zero dependencies, works with Next.js static
  * export where build-time PWA plugins struggle).
  *
@@ -12,7 +12,7 @@
  */
 'use strict';
 
-var CACHE = 'amoji-r2026-10-04.76';
+var CACHE = 'amoji-r2026-10-04.77';
 var SHELL = [
   './',
   './chat',
