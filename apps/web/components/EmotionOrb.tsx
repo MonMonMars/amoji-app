@@ -8,6 +8,9 @@
 // r2026-10-03.29: nothing may EVER touch the canvas edge. Halo and ripple
 // rings now live inside a safe circular margin, so no matter how loud she
 // gets, nothing gets clipped into a square — only the soft circle shows.
+// r2026-10-04.87: the orb now also breathes for the USER — while the VAD
+// hears you speaking, the ball swells bigger and burns white-hot in the
+// centre, so the mic shows who currently holds the floor at a glance.
 import { useEffect, useRef } from 'react';
 import { getLatestFrame, dominantMood } from '../lib/companion';
 import { sampleSpeech } from '../lib/speech';
@@ -35,14 +38,18 @@ export default function EmotionOrb({
   size = 72,
   accent = '#f9a8d4',
   listening = false,
+  userSpeaking = false,
 }: {
   size?: number;
   accent?: string;
   listening?: boolean;
+  userSpeaking?: boolean;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const listenRef = useRef(listening);
   listenRef.current = listening;
+  const userSpeakRef = useRef(userSpeaking);
+  userSpeakRef.current = userSpeaking;
 
   useEffect(() => {
     const canvas = ref.current;
@@ -69,8 +76,15 @@ export default function EmotionOrb({
       const frame = getLatestFrame();
       const mood = dominantMood(frame);
       const base = mood === 'neutral' ? accentRgb : MOOD_RGB[mood]!;
-      // while listening, blend toward the ChatGPT voice-blue
-      const target: [number, number, number] = listenRef.current
+      // r87 — while YOU speak, the ball burns white-hot; while listening
+      // (nobody talking yet) it blends toward the ChatGPT voice-blue
+      const target: [number, number, number] = userSpeakRef.current
+        ? [
+            base[0] * 0.35 + 255 * 0.65,
+            base[1] * 0.35 + 255 * 0.65,
+            base[2] * 0.35 + 255 * 0.65,
+          ]
+        : listenRef.current
         ? [
             base[0] * 0.55 + LISTEN_RGB[0] * 0.45,
             base[1] * 0.55 + LISTEN_RGB[1] * 0.45,
@@ -84,7 +98,8 @@ export default function EmotionOrb({
 
       const sp = sampleSpeech();
       let targetVol: number;
-      if (listenRef.current) targetVol = 0.55 + 0.18 * Math.abs(Math.sin(t * 5));
+      if (userSpeakRef.current) targetVol = 0.72 + 0.26 * Math.abs(Math.sin(t * 6));
+      else if (listenRef.current) targetVol = 0.55 + 0.18 * Math.abs(Math.sin(t * 5));
       else if (sp) targetVol = Math.min(1, 0.25 + sp.mouth * 1.15);
       else targetVol = 0.16 + 0.05 * Math.sin(t * 2.2) + (frame ? Math.max(0, frame.arousal) * 0.12 : 0);
       vol += (targetVol - vol) * (1 - Math.exp(-dt / 90));

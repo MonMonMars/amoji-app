@@ -13,6 +13,9 @@
 // timer force-finalizes the utterance (stop() flushes pending results as
 // final), so the message sends the moment you stop talking, not when the
 // browser eventually decides to.
+// r2026-10-04.87: a real VAD (lib/vad.ts, Silero) can take over endpointing —
+// pass externalEndpoint to disarm the internal silence timer, then flush
+// finished utterances yourself through the returned handle's flush().
 
 const LANG_MAP: Record<string, string> = {
   yue: 'zh-HK',
@@ -100,22 +103,38 @@ export interface ContinuousListenOptions {
   onFinal: (text: string) => void;
   /** mode ended permanently (unsupported / mic permission denied) */
   onEnd?: (reason?: string) => void;
+  /**
+   * r87 — a real VAD (lib/vad.ts) owns endpointing: the internal ~1.1s
+   * silence timer stands down, and the caller flushes finished utterances
+   * explicitly through the returned handle's flush().
+   */
+  externalEndpoint?: boolean;
+}
+
+/** r87 — what listenContinuous() hands back: stop() ends the session,
+ * flush() force-finalizes the pending words right now (VAD-driven send). */
+export interface ContinuousListenHandle {
+  stop(): void;
+  flush(): void;
 }
 
 /**
  * ChatGPT-style voice mode: the mic stays open and keeps listening across
  * utterances. Browsers silently drop continuous sessions after a silence —
- * this restarts the recognizer automatically until you call the returned
- * stop() (or the mic errors out for good).
+ * this restarts the recognizer automatically until you call stop() (or the
+ * mic errors out for good).
  *
  * r81 — endpointing: if ~1.1s pass with uncommitted words in the buffer, we
  * call stop(), which makes the browser flush those words as a FINAL result —
  * so the message sends right after you stop talking, like ChatGPT/Grok,
  * regardless of how slowly the recognizer would have decided on its own.
+ *
+ * r87 — with externalEndpoint, that timer is disarmed and the caller's VAD
+ * triggers flush() instead; the returned handle is { stop, flush }.
  */
-export function listenContinuous(lang: string, opts: ContinuousListenOptions): () => void {
+export function listenContinuous(lang: string, opts: ContinuousListenOptions): ContinuousListenHandle {
   const C = ctor();
-  if (!C) { opts.onEnd?.('unsupported'); return () => {}; }
+  if (!C) { opts.onEnd?.('unsupported'); return { stop: () => {}, flush: () => {} }; }
   let active = true;
   let rec: RecognitionLike | null = null;
   let bargeInFired = false;
@@ -130,6 +149,7 @@ export function listenContinuous(lang: string, opts: ContinuousListenOptions): (
     rec.continuous = true;
     let endpointTimer: ReturnType<typeof setTimeout> | undefined;
     const armEndpoint = () => {
+      if (opts.externalEndpoint) return; // r87 — the VAD owns endpointing
       if (endpointTimer) clearTimeout(endpointTimer);
       endpointTimer = setTimeout(() => {
         // quiet for ENDPOINT_MS with words still uncommitted — flush them:
@@ -177,9 +197,16 @@ export function listenContinuous(lang: string, opts: ContinuousListenOptions): (
   };
   start();
 
-  return () => {
-    active = false;
-    if (restartTimer) clearTimeout(restartTimer);
-    try { rec?.stop(); } catch { /* already stopped */ }
+  return {
+    stop: () => {
+      active = false;
+      if (restartTimer) clearTimeout(restartTimer);
+      try { rec?.stop(); } catch { /* already stopped */ }
+    },
+    // r87 — force the browser to deliver whatever words are pending as a
+    // FINAL result immediately; onend restarts the session fresh after it
+    flush: () => {
+      try { rec?.stop(); } catch { /* already ended */ }
+    },
   };
 }
