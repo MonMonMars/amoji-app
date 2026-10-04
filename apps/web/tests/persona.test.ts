@@ -10,12 +10,11 @@ const POSE_IDS = new Set(IDLE_POSES.map((p) => p.id));
 const LANG_IDS = LANGS.map((l) => l.id) as Lang[];
 const TWISTS = ['playful', 'startled', 'unimpressed', 'flustered', 'challenging'];
 const FACES = ['happy', 'surprised', 'angry', 'relaxed'];
+// The 20 female-voiced members of the 29-character cast (r2026-10-04.52) —
+// everyone except the nine males (atlas/blaze/kai/ren/cloud/robbie/mika/anchor/alan).
 const FEMALE = new Set([
-  'juno', 'nova', 'mochi', 'luna', 'rin',
-  // r2026-10-04.52 flagship expansion — everyone except Atlas, who is male
-  'kizuna', 'alicia', 'ember', 'mei', 'sky', 'yuki', 'hina', 'mio',
-  'kasumi', 'marin', 'ayane', 'hitomi',
-  // r2026-10-03.35 registry expansion
+  'nova', 'kizuna', 'alicia', 'ember', 'mei', 'sky', 'yuki', 'hina', 'mio',
+  'mochi', 'juno', 'luna', 'rin', 'kasumi', 'marin', 'ayane', 'hitomi',
   'lydia', 'ruby', 'snowy',
 ]);
 
