@@ -48,6 +48,18 @@ import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
 // the old code showed the raw rest pose for those frames (the "completely
 // black at the beginning" report). The 25s load watchdog can force the
 // reveal so a stuck texture never leaves her invisible forever.
+// r102 (Master Simon): three iPhone-Safari fixes. (1) The loading bar can
+// never freeze at 99% again: byte/clip progress still counts up honestly,
+// but once an avatar MOUNTS the remaining wait is the reveal gate (clip
+// engine + texture decode + two lit frames) — not byte-measurable — so the
+// plate shows an indeterminate "preparing…" until she steps on stage or the
+// 25s watchdog retires it. (2) She can never drop off the stage again:
+// rebaseClipHips now clamps hips X/Z travel too (r98 clamped Y only, so a
+// clip authored on a differently-scaled rig could still WALK the hips
+// meters away horizontally), and the render loop hard-clamps the avatar
+// root every frame. (3) Voice/SFX disentangle lives in lib/voice.ts +
+// lib/sfx.ts (the "bell rings / typing sounds" were movement foley firing
+// while every TTS tier stayed silent).
 
 export interface CompanionCanvasProps {
   onNotice?: (n: { reason: 'webgl' | 'asset' }) => void;
@@ -218,8 +230,20 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     // event. r91: published through lib/load-progress instead of local state.
     let modelPct = 0;
     let clipDone = 0;
-    let lastReported = -1;
+    let lastReported: number | 'prep' = -1;
+    // r102: once an avatar is MOUNTED the remaining wait is the reveal gate
+    // (clip engine + texture decode + two lit frames) — none of it is
+    // byte-measurable, so counting a percentage from there would be fiction.
+    // The bar goes honestly INDETERMINATE ('prep' → "preparing…" on the
+    // plate) until she steps on stage, instead of creeping to 99 and
+    // freezing there. A character switch remounts this effect, which resets
+    // everything (setLoadProgress(0) runs at effect start).
+    let mounted = false;
     const reportProgress = () => {
+      if (mounted) {
+        if (lastReported !== 'prep') { lastReported = 'prep'; setLoadProgress('prep'); }
+        return;
+      }
       const pct = Math.min(99, Math.round(modelPct * 0.75 + (clipDone / TOTAL_CLIPS) * 25));
       if (pct !== lastReported) {
         lastReported = pct;
@@ -526,6 +550,10 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       const IDLE_IDS = new Set(IDLE_SOURCES.map((s) => s.id));
       const HIP_TRAVEL_MAX = 0.8; // meters — no human hips-Y span exceeds this
       const FLOOR_FRAC = 0.55;    // never sink below 55% of rest hips height
+      // r102: same idea on the horizontal plane — a clip authored on a rig
+      // at another scale can walk the hips METERS away in X/Z (she slid
+      // right off the stage). Sway and steps survive; migration does not.
+      const HORIZ_TRAVEL_MAX = 1.0; // meters of total hips X/Z drift from rest
       const rebaseClipHips = (clip: THREE.AnimationClip, lockFeet: boolean) => {
         if (!hipsNode || !hipsRestQ || !hipsRestP) return;
         const tag = `.${hipsNode.name}.`;
@@ -547,9 +575,19 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
               // r94: idles never ride the hips Y — feet stay planted on the
               // floor through every idle loop
               for (let i = 0; i + 2 < v.length; i += 3) {
-                v[i] = v[i]! - p0x + hipsRestP.x;
+                // r102: X/Z sway survives but can never migrate — clamp the
+                // horizontal DELTA around our rest hips position
+                let dx = v[i]! - p0x;
+                let dz = v[i + 2]! - p0z;
+                const h = Math.hypot(dx, dz);
+                if (h > HORIZ_TRAVEL_MAX) {
+                  const s = HORIZ_TRAVEL_MAX / h;
+                  dx *= s;
+                  dz *= s;
+                }
+                v[i] = dx + hipsRestP.x;
                 v[i + 1] = hipsRestP.y;
-                v[i + 2] = v[i + 2]! - p0z + hipsRestP.z;
+                v[i + 2] = dz + hipsRestP.z;
               }
             } else {
               // r98: performances keep their REAL Y motion (hops, dips,
@@ -570,11 +608,20 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
               const span = maxY - minY;
               const spanScale = span > HIP_TRAVEL_MAX ? HIP_TRAVEL_MAX / span : 1;
               for (let i = 0; i < n; i++) {
-                v[i * 3] = v[i * 3]! - p0x + hipsRestP.x;
+                // r102: same horizontal clamp as the idle branch (above)
+                let dx = v[i * 3]! - p0x;
+                let dz = v[i * 3 + 2]! - p0z;
+                const h = Math.hypot(dx, dz);
+                if (h > HORIZ_TRAVEL_MAX) {
+                  const s = HORIZ_TRAVEL_MAX / h;
+                  dx *= s;
+                  dz *= s;
+                }
+                v[i * 3] = dx + hipsRestP.x;
                 let y = (v[i * 3 + 1]! - anchorY) * spanScale + hipsRestP.y;
                 if (y < floorY) y = floorY;
                 v[i * 3 + 1] = y;
-                v[i * 3 + 2] = v[i * 3 + 2]! - p0z + hipsRestP.z;
+                v[i * 3 + 2] = dz + hipsRestP.z;
               }
             }
           }
@@ -656,6 +703,9 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       revealPending = true;
       revealPoseApplied = false;
       revealLitFrames = 0;
+      // r102: from this moment the honest progress state is 'prep' — the
+      // reveal-gate wait is not byte-measurable (see reportProgress above)
+      mounted = true;
       // warm every shader program + upload whatever has decoded while she
       // is still off stage, so her first visible frame is fully lit
       renderer.compile(scene, camera);
@@ -941,6 +991,13 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           avatar.root.scale.set(BASE_SX, BASE_SY, BASE_SX);
           avatar.root.rotation.set(0, 0, 0);
         }
+        // r102: hard on-screen clamp — whatever a clip or reaction wrote
+        // into the root this frame, the avatar can never leave the visible
+        // stage. The camera target is already clamped (y 0.4–1.7 in
+        // applyCamera); this box is the matching root-side guarantee.
+        avatar.root.position.x = clamp(avatar.root.position.x, -0.6, 0.6);
+        avatar.root.position.y = clamp(avatar.root.position.y, -0.35, 0.5);
+        avatar.root.position.z = clamp(avatar.root.position.z, -0.8, 0.8);
 
         // speech visemes: duck the emotion shapes while the mouth talks
         const sp = sampleSpeech();
