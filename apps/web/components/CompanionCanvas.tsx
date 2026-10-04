@@ -59,17 +59,6 @@ const TWIST_AMOUNT: Record<string, number> = {
   challenging: 0.12,
 };
 
-// r95 (Master Simon): the hand-composed choreography additives are RETIRED.
-// Their shape stays here only so the pose-target math below type-checks;
-// the value is always undefined (no additive ever applied).
-interface MoveAdd {
-  lArmZ: number; rArmZ: number; lArmX: number; rArmX: number;
-  lElbowZ: number; rElbowZ: number;
-  spineX: number; spineY: number; chestZ: number;
-  headX: number; headY: number; headZ: number;
-  py: number; squash: number; stretch: number;
-}
-
 export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', seedKey, lighting = 'outdoor' }: CompanionCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const onNoticeRef = useRef(onNotice);
@@ -710,7 +699,6 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       // library (Jump / Bow / Hello — fired via MOVE_CLIP below) or the body
       // simply stays in its library idle. The skeleton is never rotated by
       // formula. Stage props (piano, mic…) still ride the move clock.
-      const md: MoveAdd | undefined = undefined;
       if (avatar) {
         // r83: the poke reaction has TWO engines, picked per character:
         //   · human (skeleton): NO mesh squash — the SKELETON takes the hit.
@@ -775,23 +763,12 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
             sz += 0.05 * bounce;
             rotX += -0.12 * Math.sin(lt * Math.PI); // lean back laughing
           }
-          // r86: the choreography's whole-body lift rides the root, and its
-          // squash/stretch stays chibi-only (cartoon physics on a realistic
-          // human reads as rubber — same rule as the poke)
-          py += md?.py ?? 0;
-          if (md && pokeMode === 'deform') {
-            sy += md.squash;
-            sx += md.stretch * 0.6;
-            sz += md.stretch * 0.6;
-          }
           avatar.root.position.set(px, py, pz);
           avatar.root.scale.set(sx * BASE_SX, sy * BASE_SY, sz * BASE_SX);
           avatar.root.rotation.set(rotX, rotY, 0);
         } else {
-          const mSy = md && pokeMode === 'deform' ? md.squash : 0;
-          const mSx = md && pokeMode === 'deform' ? md.stretch * 0.6 : 0;
-          avatar.root.position.set(0, md?.py ?? 0, 0);
-          avatar.root.scale.set((1 + mSx) * BASE_SX, (1 + mSy) * BASE_SY, (1 + mSx) * BASE_SX);
+          avatar.root.position.set(0, 0, 0);
+          avatar.root.scale.set(BASE_SX, BASE_SY, BASE_SX);
           avatar.root.rotation.set(0, 0, 0);
         }
 
@@ -824,21 +801,17 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
 
         const b = targets.bones;
         const poseTargets: AvatarPose = {
-          headX: b.headPitch + skHeadX + (md?.headX ?? 0),
-          headY: b.headYaw + (md?.headY ?? 0),
-          headZ: b.headRoll + skHeadZ + (md?.headZ ?? 0),
+          headX: b.headPitch + skHeadX,
+          headY: b.headYaw,
+          headZ: b.headRoll + skHeadZ,
           spineX: b.spinePitch, chestX: b.chestPitch,
           leftUpperArm: b.leftUpperArm + skLUp, rightUpperArm: b.rightUpperArm + skRUp,
           leftLowerArm: b.leftLowerArm, rightLowerArm: b.rightLowerArm,
-          spineY: md?.spineY ?? 0, chestZ: md?.chestZ ?? 0,
-          lArmX: skLArm + (md?.lArmX ?? 0), rArmX: skRArm + (md?.rArmX ?? 0),
-          lElbowZ: skLElb + (md?.lElbowZ ?? 0), rElbowZ: skRElb + (md?.rElbowZ ?? 0),
-          // r86: the choreography's forward-lean rides the additive torso
-          // channels so it composes with library clips too; the arm raises
-          // map to the semantic raise fields (moves.ts convention: left z+
-          // / right z− = arm up), so a raise is a raise on every rig.
-          spinePitchAdd: skSpine + (md?.spineX ?? 0), chestPitchAdd: skChest,
-          lArmRaise: md?.lArmZ ?? 0, rArmRaise: -(md?.rArmZ ?? 0),
+          spineY: 0, chestZ: 0,
+          lArmX: skLArm, rArmX: skRArm,
+          lElbowZ: skLElb, rElbowZ: skRElb,
+          spinePitchAdd: skSpine, chestPitchAdd: skChest,
+          lArmRaise: 0, rArmRaise: 0,
         };
         // dialogue-triggered performance: fire the matching LIBRARY clip once
         // on the rising edge. Clip-less kinds keep the skeleton for the
