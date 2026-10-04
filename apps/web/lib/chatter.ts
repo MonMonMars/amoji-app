@@ -3,6 +3,9 @@
 // conversation always has somewhere to go (Master Simon's continuity rule).
 // r2026-10-03.38: reengage + reengageSoft banks — the staged "you've gone
 // quiet" follow-ups (direct check-in) and the soft closer (said once).
+// r2026-10-04.63: startup + tutor lines pointed at the top-RIGHT gear for
+// character/scene/language changes — wrong button. Character switching is
+// the top-LEFT name plate; the gear is settings. Reworded all languages.
 export type ChatterKind = 'startup' | 'idleBored' | 'idleCozy' | 'tutor' | 'poke' | 'reengage' | 'reengageSoft';
 export type ChatterLang = 'en' | 'yue' | 'zh' | 'ja';
 
@@ -10,19 +13,19 @@ export const CHATTER: Record<ChatterKind, Record<ChatterLang, string[]>> = {
   startup: {
     en: [
       "Hey, I'm Juno — your Amoji companion. What should we do first: talk, play, or just hang out?",
-      'Type below to chat with me — what\'s on your mind? Tap the gear anytime to change my look, scene, or language, okay?',
+      'Type below to chat with me — what\'s on your mind? Tap my name plate at the top left anytime to change my look, scene, or language, okay?',
     ],
     yue: [
       '喂，我係 Juno，你嘅 Amoji 小伙伴。我哋首先做咩好：傾偈、玩嘢，定係靜靜哋坐？',
-      '喺下面打字同我講嘢吖——你諗緊咩呀？撳右上角個齒輪隨時換我造型、場景同語言㗎。',
+      '喺下面打字同我講嘢吖——你諗緊咩呀？撳左上角我個名牌，隨時換我造型、場景同語言㗎。',
     ],
     zh: [
       '嗨，我是 Juno，你的 Amoji 伙伴。我们先做什么好：聊天、玩点什么，还是静静待着？',
-      '在下方输入文字和我聊天吧——你在想什么呢？点右上角齿轮可以随时换我的造型、场景和语言哦。',
+      '在下方输入文字和我聊天吧——你在想什么呢？点左上角我的名牌，可以随时换我的造型、场景和语言哦。',
     ],
     ja: [
       'やあ、私はジュノ、あなたのアモジ相棒。最初は何しよっか——おしゃべり？遊び？それともまったり？',
-      '下に文字を入れて話しかけてね。何かあったの？歯車マークで見た目や背景、言語が変えられるよ。',
+      '下に文字を入れて話しかけてね。何かあったの？左上の私のネームプレートで見た目や背景、言語が変えられるよ。',
     ],
   },
   idleBored: {
@@ -75,28 +78,28 @@ export const CHATTER: Record<ChatterKind, Record<ChatterLang, string[]>> = {
   },
   tutor: {
     en: [
-      'Tip: tap the gear to change my look, scene, or language — want to try it?',
+      'Tip: tap my name plate (top left) to change my look, scene, or language — want to try it?',
       'Tip: drag to spin the camera, scroll or pinch to zoom — give it a go?',
       'Tip: tap me directly and see what happens. I dare you~',
-      'Tip: press the ` key for the developer panel — feeling curious?',
+      'Tip: the gear (top right) opens my settings — memory, kid mode and more. Fancy a look?',
     ],
     yue: [
-      '貼士：撳齒輪可以換造型、場景、語言——想唔想試下？',
+      '貼士：撳左上角我個名牌，可以換造型、場景、語言——想唔想試下？',
       '貼士：撳住拖轉鏡頭，滾輪或雙指縮放——試下吖？',
       '貼士：直接撳下我，睇下會點。够膽你就試~',
-      '貼士：撳 ` 掣開開發者面板——好唔好奇呀？',
+      '貼士：右上角個齒輪係設定——記憶、小朋友模式都有。想睇睇咩？',
     ],
     zh: [
-      '小贴士：点齿轮可以换造型、场景、语言——想不想试试？',
+      '小贴士：点左上角我的名牌，可以换造型、场景、语言——想不想试试？',
       '小贴士：按住拖动旋转镜头，滚轮或双指缩放——试试看呀？',
       '小贴士：直接戳我一下，看看会发生什么。敢不敢试~',
-      '小贴士：按 ` 键打开开发者面板——好不好奇呀？',
+      '小贴士：右上角齿轮是设置——记忆、儿童模式都在里面。想看看吗？',
     ],
     ja: [
-      'ヒント：歯車で相棒・背景・言語を変更——試してみる？',
+      'ヒント：左上のネームプレートで相棒・背景・言語を変更——試してみる？',
       'ヒント：ドラッグで回転、ホイールやピンチでズーム——やってみて？',
       'ヒント：私を直接タップしてみて。どうなるかな〜',
-      'ヒント：` キーで開発者パネル——覗いてみる？',
+      'ヒント：右上の歯車は設定——記憶やキッズモードがあるよ。覗いてみる？',
     ],
   },
   poke: {
