@@ -7,7 +7,7 @@
 // r2026-10-03.25: the laugh also wears the felt mood — a tired or sad user
 //   gets a soft, slow, sympathetic chuckle (weaker joy lift, sunken pitch)
 //   instead of the full burst; an angry one gets a wry chuckle that defuses.
-// r2026-10-04.74: ARCHETYPE now covers the whole 29-character cast — before
+// r2026-10-04.74: ARCHETYPE now covers the whole 33-character cast (r104) — before
 //   this, 16 companions silently shared the cheerful bank.
 import type { Lang } from './prefs';
 
@@ -47,7 +47,7 @@ const GIGGLES: Record<string, LaughBank> = {
 };
 
 /**
- * r2026-10-04.74 — one flavor per cast member, covering all 29 companions;
+ * r2026-10-04.74 — one flavor per cast member, covering all 33 companions;
  * the cast test pins this map against CHARACTERS so nobody new silently
  * falls back to the cheerful bank again. Flavor follows the persona:
  * idols/best mates burst (cheerful), sweethearts cover a soft laugh
@@ -68,6 +68,8 @@ export const ARCHETYPE: Record<string, keyof typeof GIGGLES> = {
   sky: 'cool', mika: 'cool', anchor: 'cool',
   // fiery — livewires, confident leads, bark-laughing tough types
   blaze: 'fiery', cloud: 'fiery', ember: 'fiery', mio: 'fiery',
+  // remote community cast (r.104)
+  aera: 'gentle', dhahlia: 'cheerful', onyx: 'cool', velara: 'gentle',
 };
 
 /**

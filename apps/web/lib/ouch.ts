@@ -7,7 +7,7 @@
 //   a tired one a low soft "oh…", an angry one a wry "hey—" that defuses
 //   instead of snapping back; no/unknown mood keeps the classic personality
 //   cry (and the exact old voice + hint numbers).
-// r2026-10-04.74: ARCHETYPE now covers the whole 29-character cast — before
+// r2026-10-04.74: ARCHETYPE now covers the whole 33-character cast (r104) — before
 //   this, 16 companions silently shared the cheerful squeak.
 import type { Lang } from './prefs';
 
@@ -47,7 +47,7 @@ const OUCH: Record<string, CryBank> = {
 };
 
 /**
- * r2026-10-04.74 — one flavor per cast member, covering all 29 companions;
+ * r2026-10-04.74 — one flavor per cast member, covering all 33 companions;
  * kept in lockstep with laugh.ts ARCHETYPE (the cast test pins both maps
  * against CHARACTERS). Flavor follows the persona: idols/besties yelp
  * bright (cheerful), sweethearts gasp soft (gentle), composed protectors
@@ -67,6 +67,8 @@ export const ARCHETYPE: Record<string, keyof typeof OUCH> = {
   sky: 'cool', mika: 'cool', anchor: 'cool',
   // fiery — livewires, confident leads, bark-laughing tough types
   blaze: 'fiery', cloud: 'fiery', ember: 'fiery', mio: 'fiery',
+  // remote community cast (r.104)
+  aera: 'gentle', dhahlia: 'cheerful', onyx: 'cool', velara: 'gentle',
 };
 
 /**

@@ -76,6 +76,8 @@ export const CHARACTER_POSES: Record<string, string[]> = {
   snowy: ['stargaze', 'calmHug', 'dreamyTilt', 'swaySoft', 'toeShift'],
   // easygoing best mate — relaxed sways and shrugs, hands behind the back
   alan: ['swaySoft', 'handsBehind', 'shoulderShrug', 'stand', 'chinStroke'],
+  // remote community cast (r2026-10-05.104)
+  aera: ['swaySoft', 'headTilt', 'daydream', 'dreamyTilt', 'lookUp'], dhahlia: ['bouncy', 'leanIn', 'stretchUp', 'lookUp', 'weightShift'], onyx: ['stand', 'handsBehind', 'guardCross', 'lookAround', 'confidentLean'], velara: ['handsBehind', 'chinStroke', 'stargaze', 'swaySoft', 'lookAround'],
 };
 
 export function poseIdsFor(characterId: string): string[] {
@@ -123,6 +125,8 @@ export const POKE_STYLE: Record<string, PokeStyle> = {
   ruby: { squash: 0.1, twist: 'startled', face: 'surprised' },
   snowy: { squash: 0.06, twist: 'flustered', face: 'surprised' },
   alan: { squash: 0.07, twist: 'playful', face: 'happy' },
+  // remote community cast (r2026-10-05.104)
+  aera: { squash: 0.04, twist: 'flustered', face: 'surprised' }, dhahlia: { squash: 0.07, twist: 'playful', face: 'happy' }, onyx: { squash: 0.02, twist: 'unimpressed', face: 'relaxed' }, velara: { squash: 0.03, twist: 'startled', face: 'surprised' },
 };
 
 export function pokeStyleFor(characterId: string): PokeStyle {
@@ -187,6 +191,8 @@ export const CHARACTER_LOOKS: Record<string, CharacterLook> = {
   ruby:   { tint: '#fff4f6', height: 0.94, width: 0.94 },
   snowy:  { tint: '#f6fbff', height: 0.96, width: 0.95 },
   alan:   { tint: '#f2fbf3', height: 1.04, width: 1.03 },
+  // remote community cast (r2026-10-05.104)
+  aera: { tint: '#f6f3ff', height: 1.0, width: 0.95 }, dhahlia: { tint: '#fff4f8', height: 0.98, width: 0.96 }, onyx: { tint: '#eef1f8', height: 1.07, width: 1.05 }, velara: { tint: '#f2fbf7', height: 1.01, width: 0.96 },
 };
 
 export function lookFor(characterId: string): CharacterLook {

@@ -33,6 +33,11 @@ export const CAST_NO = {
   ruby: 27,
   snowy: 28,
   alan: 29,
+  // remote community cast (r2026-10-05.104)
+  aera: 30,
+  dhahlia: 31,
+  onyx: 32,
+  velara: 33,
 } as const;
 
 export type CastId = keyof typeof CAST_NO;

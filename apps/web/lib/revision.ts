@@ -19,7 +19,16 @@
 // actually animates stay the mixer's), and the upper arm's outward swing
 // is floored at ~8.6° past plumb, gated at/below horizontal so dance
 // crosses and overhead waves stay free.
-export const APP_REVISION = 'r2026-10-05.103';
+// r2026-10-05.104: selection-card busts are now runtime-rendered one-frame
+// thumbnails (each model loads once, renders ONE frame offscreen, caches the
+// dataURL in memory + sessionStorage, lazy via IntersectionObserver, serial
+// queue, full GL disposal — no more 29 live WebGL streams); ModelPreview keeps
+// only the big preview chip with the base-path URL bug fixed (modelUrl in
+// asset.ts). Cast grows to 33 with four genuinely free direct-URL VRMs from
+// test157t/VRM-Assets-Pack-For-Silly-Tavern (Aera #30, Dhahlia #31, Onyx #32,
+// Velara #33), each with poses, poke style, look, voice matrix, laugh/ouch
+// archetype and full idle/poke banks.
+export const APP_REVISION = 'r2026-10-05.104';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
