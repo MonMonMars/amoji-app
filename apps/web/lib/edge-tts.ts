@@ -21,6 +21,10 @@
 // r2026-10-04.85: timeout 12s → 7s — when Microsoft ignores the socket (dead
 // token / blocked network) the browser-voice fallback now takes over in half
 // the time, so a dead endpoint reads as a voice switch, not a long silence.
+// r2026-10-04.89: timeout 7s → 4.5s — the Google-TTS mid tier in voice.ts now
+// catches a dead socket even faster; and stopEdge() finally rejects the
+// pending promise, so a line that was cut can no longer resurface seconds
+// later when its timeout fires (the "old line suddenly speaks" bug).
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface EdgeVoiceOpts {
@@ -133,6 +137,10 @@ function clauses(text: string): string[] {
 
 // ---- current playback (so stopSpeaking can cut it) ----
 let currentAudio: HTMLAudioElement | null = null;
+// r2026-10-04.89 — the promise currently awaiting playback, if any. Cutting
+// playback MUST also settle it: otherwise its 4.5s timeout fires .catch()
+// later and a stale, already-replaced line gets spoken out of nowhere.
+let pendingReject: ((err: Error) => void) | null = null;
 
 export function stopEdge(): void {
   if (currentAudio) {
@@ -140,6 +148,11 @@ export function stopEdge(): void {
     currentAudio.onended = null;
     currentAudio.onerror = null;
     currentAudio = null;
+  }
+  if (pendingReject) {
+    const rejectPending = pendingReject;
+    pendingReject = null;
+    rejectPending(new Error('canceled'));
   }
 }
 
@@ -236,9 +249,12 @@ export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
 
     const cleanup = () => { clearTimeout(timer); try { ws.close(); } catch { /* already closed */ } };
     const fail = (err: Error) => { if (!settled) { settled = true; cleanup(); stopEdge(); reject(err); } };
-    // r2026-10-04.85: 12s → 7s — a socket Microsoft is ignoring (dead token,
-    // blocked network) must hand over to the browser voice in half the time
-    const timer = setTimeout(() => fail(new Error('edge-tts timeout')), 7_000);
+    // r2026-10-04.89: 7s → 4.5s — the Google-TTS mid tier in voice.ts is a
+    // real voice (not a last resort), so a dead socket should hand over fast
+    const timer = setTimeout(() => fail(new Error('edge-tts timeout')), 4_500);
+    // r2026-10-04.89 — a cut (new line / stopSpeaking) rejects as 'canceled'
+    // so the caller's fallback chain stays silent instead of speaking late
+    pendingReject = fail;
 
     ws.onopen = () => {
       const now = () => new Date().toISOString();
@@ -286,6 +302,7 @@ export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
       if (settled) return;
       if (!gotAudio || chunks.length === 0) { fail(new Error('edge-tts no audio')); return; }
       settled = true;
+      pendingReject = null;
       const blob = new Blob(chunks as BlobPart[], { type: 'audio/mpeg' });
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
