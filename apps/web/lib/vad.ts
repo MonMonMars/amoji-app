@@ -18,6 +18,14 @@
 // stays untouched, and any failure — offline, CDN blocked, old browser,
 // mic denied — resolves null, so the caller falls back to the previous
 // behaviour instead of breaking voice mode.
+//
+// Tuning note (verified against the shipped bundle): this library derives
+// its frame counts from the *Ms options (redemptionFrames = redemptionMs /
+// ~96ms per frame), so the millisecond options below are the real knobs —
+// redemptionMs≈300 gives the ~300ms end-of-speech hangover the integration
+// guides recommend, and minSpeechMs≈250 ignores blips shorter than a
+// quarter-second. The *Frames options would be silently recomputed and
+// ignored.
 
 export interface VadHooks {
   /** real human speech detected — barge-in, wake the UI */
@@ -85,12 +93,14 @@ export async function startVad(hooks: VadHooks): Promise<VadHandle | null> {
       baseAssetPath: ASSET_BASE,
       onnxWASMBasePath: WASM_BASE,
       // per the integration guides: 0.5/0.35 balances sensitivity against
-      // false triggers; minSpeechFrames≈3 ignores blips; redemptionFrames≈10
-      // (~200ms hangover) keeps a breath mid-sentence from "ending" speech
+      // false triggers; minSpeechMs≈250 ignores quarter-second blips;
+      // redemptionMs≈300 (~3 frames) keeps a breath mid-sentence from
+      // "ending" speech while still confirming the end quickly (~0.7s total
+      // with the caller's grace timer)
       positiveSpeechThreshold: 0.5,
       negativeSpeechThreshold: 0.35,
-      minSpeechFrames: 3,
-      redemptionFrames: 10,
+      minSpeechMs: 250,
+      redemptionMs: 300,
       onSpeechStart: () => hooks.onSpeechStart(),
       onSpeechEnd: () => hooks.onSpeechEnd(),
     })) as { destroy(): void };
