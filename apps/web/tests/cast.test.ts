@@ -1,39 +1,47 @@
 import { describe, expect, it } from 'vitest';
-// Cast & scene data integrity — r2026-10-04.52 pins the whole 29-character
-// cast (flagship agent3 top-10 first, then the classic cast) to LOCAL anime
-// VRMs under /models/cast (the remote Polygonal Mind registry is retired:
-// those models shipped no emotional presets and odd rest poses).
+// Cast & scene data integrity — r2026-10-05.104 pins the whole 33-character
+// cast: the 29 local companions under /models/cast (the remote Polygonal
+// Mind registry stays retired: those models shipped no emotional presets and
+// odd rest poses) plus four genuinely free direct-URL remote VRMs from
+// test157t/VRM-Assets-Pack-For-Silly-Tavern.
 import { BACKGROUNDS, CHARACTERS, characterById, backgroundById, DEFAULT_PREFS, type Lang } from '../lib/prefs';
 import { CAST_NO, castNo } from '../lib/castNo';
 
 describe('cast roster', () => {
-  it('has 29 characters with portraits, taglines in every language, and personas', () => {
-    expect(CHARACTERS.length).toBe(29);
+  it('has 33 characters with taglines in every language and personas', () => {
+    expect(CHARACTERS.length).toBe(33);
     for (const c of CHARACTERS) {
       // local portraits under /portraits — the classic cast uses AI-painted
-      // .jpg art, the flagship/rebadged cast uses agent3-rendered .png
+      // .jpg art, the flagship/rebadged cast uses agent3-rendered .png; the
+      // remote community cast ships no portrait at all (the board renders a
+      // runtime thumbnail straight from the model instead)
       const img = c.image ?? '';
-      if (img.startsWith('/')) expect(img).toMatch(/^\/portraits\/[a-z0-9-]+\.(jpg|png)$/);
-      else expect(img).toMatch(/^https:\/\/arweave\.net\//);
+      if (img === '') {
+        // remote cast — no shipped portrait, thumbnail is runtime-rendered
+      } else if (img.startsWith('/')) {
+        expect(img).toMatch(/^\/portraits\/[a-z0-9-]+\.(jpg|png)$/);
+      } else {
+        expect(img).toMatch(/^https:\/\//);
+      }
       for (const l of ['en', 'yue', 'zh', 'ja'] as Lang[]) expect(c.tagline[l].length).toBeGreaterThan(0);
       expect(c.persona.length).toBeGreaterThan(20);
       expect(['female', 'male']).toContain(c.gender);
     }
   });
 
-  it('every character maps to a local cast VRM — no remote models (r.50)', () => {
+  it('every character maps to a fetchable model — local cast/ or approved remote (r.104)', () => {
     for (const c of CHARACTERS) {
-      expect(c.model).toMatch(/^cast\/[a-z0-9-]+\.vrm$/);
+      expect(c.model).toMatch(/^(cast\/[a-z0-9-]+\.vrm|https:\/\/raw\.githubusercontent\.com\/test157t\/VRM-Assets-Pack-For-Silly-Tavern\/main\/model\/[A-Za-z]+\.vrm)$/);
     }
-    // all 29 local models are distinct — each character is her/his own person
+    // all 33 models are distinct — each character is her/his own person
     expect(new Set(CHARACTERS.map((c) => c.model)).size).toBe(CHARACTERS.length);
   });
 
-  it('every character has a stable number — unique, 1..29 (r.52)', () => {
+  it('every character has a stable number — unique, 1..33 (r.52/r.104)', () => {
     const numbers = CHARACTERS.map((c) => castNo(c.id));
     for (const n of numbers) {
       expect(n).toBeGreaterThanOrEqual(1);
-      expect(n).toBeLessThanOrEqual(29);
+      expect(n).toBeLessThanOrEqual(33);
     }
     expect(new Set(numbers).size).toBe(CHARACTERS.length);
     // the map and the roster cover exactly the same ids
@@ -44,7 +52,7 @@ describe('cast roster', () => {
     for (const c of CHARACTERS.slice(0, 10)) {
       expect(characterById(c.id).id).toBe(c.id);
     }
-    for (const id of ['cloud', 'kasumi', 'marin', 'ayane', 'hitomi', 'alan']) {
+    for (const id of ['cloud', 'kasumi', 'marin', 'ayane', 'hitomi', 'alan', 'aera', 'dhahlia', 'onyx', 'velara']) {
       expect(characterById(id).id).toBe(id);
     }
   });

@@ -9,13 +9,15 @@ import { IDLE_POSES, posesByIds, sampleIdlePoseFrom } from '@amoji/vrm-renderer'
 const POSE_IDS = new Set(IDLE_POSES.map((p) => p.id));
 const LANG_IDS = LANGS.map((l) => l.id) as Lang[];
 const TWISTS = ['playful', 'startled', 'unimpressed', 'flustered', 'challenging'];
-const FACES = ['happy', 'surprised', 'angry', 'relaxed'];
-// The 20 female-voiced members of the 29-character cast (r2026-10-04.52) —
-// everyone except the nine males (atlas/blaze/kai/ren/cloud/robbie/mika/anchor/alan).
+const FACES = ['happy', 'surprised', 'angry', 'relaxed', 'calm'];
+// The 23 female-voiced members of the 33-character cast (r2026-10-05.104) —
+// everyone except the ten males (atlas/blaze/kai/ren/cloud/robbie/mika/anchor/alan/onyx).
 const FEMALE = new Set([
   'nova', 'kizuna', 'alicia', 'ember', 'mei', 'sky', 'yuki', 'hina', 'mio',
   'mochi', 'juno', 'luna', 'rin', 'kasumi', 'marin', 'ayane', 'hitomi',
   'lydia', 'ruby', 'snowy',
+  // remote community cast (r.104)
+  'aera', 'dhahlia', 'velara',
 ]);
 
 // r2026-10-03.37: every line must end with a conversation hook — a question

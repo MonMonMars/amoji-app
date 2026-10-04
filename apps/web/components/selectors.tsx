@@ -2,6 +2,7 @@
 // Selection grids shared by the setup flow and the in-chat settings sheet.
 import { assetUrl } from '../lib/asset';
 import { CHARACTERS, BACKGROUNDS, LANGS, t, type CharacterDef, type Lang, type Prefs } from '../lib/prefs';
+import ModelThumb from './ModelThumb';
 
 export function CharacterGrid({ lang, value, onChange }: { lang: Lang; value: string; onChange: (id: string) => void }) {
   return (
@@ -18,16 +19,12 @@ export function CharacterGrid({ lang, value, onChange }: { lang: Lang; value: st
             style={active ? { boxShadow: `0 0 0 2px ${c.accent}, 0 8px 30px -10px ${c.accent}66` } : undefined}
           >
             <span
-              className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full text-2xl font-bold text-black/70"
+              className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full text-2xl font-bold text-black/70"
               style={{ background: `radial-gradient(circle at 35% 30%, #ffffffcc, ${c.accent})` }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={assetUrl(c.image ?? `/portraits/${c.id}.jpg`)}
-                alt={c.name}
-                draggable={false}
-                className="h-full w-full object-cover object-top"
-              />
+              {/* r104: runtime-rendered cached thumbnail — painted art stays
+                  as poster, accent monogram until the render lands */}
+              <ModelThumb url={c.model} accent={c.accent} name={c.name} image={c.image} />
             </span>
             <span className="text-base font-semibold text-white">
               {c.name}

@@ -7,7 +7,9 @@ import { CHARACTERS } from '../lib/prefs';
 // Asset governance — mirrors the CI manifest/structural/banned checks inside
 // the test suite so cast/ binaries are governed from the moment they land,
 // independent of the CI workflow file (which is write-protected via MCP).
-// r2026-10-04.52: manifest and prefs agree on the full 29-character cast.
+// r2026-10-04.52: manifest and prefs agree on the local cast.
+// r2026-10-05.104: the four remote community VRMs stream straight from
+// raw.githubusercontent.com and live outside the manifest by design.
 const here = path.dirname(fileURLToPath(import.meta.url));
 const MODELS = path.resolve(here, '../public/models');
 const MANIFEST = fs.readFileSync(path.join(MODELS, 'ASSET_MANIFEST.md'), 'utf8');
@@ -35,8 +37,13 @@ describe('asset governance', () => {
     for (const f of VRMS) expect(MANIFEST).toContain(path.basename(f));
   });
 
-  it('manifest cast table and prefs agree on all 29 filenames (r2026-10-04.52)', () => {
-    for (const c of CHARACTERS) expect(MANIFEST).toContain(c.model);
+  it('manifest cast table and prefs agree on all local cast filenames (r2026-10-05.104)', () => {
+    // local cast/ models must be manifested; remote community VRMs are
+    // governed by the cast test's approved-URL allowlist instead
+    for (const c of CHARACTERS) {
+      if (c.model.startsWith('cast/')) expect(MANIFEST).toContain(c.model);
+      else expect(c.model).toMatch(/^https:\/\/raw\.githubusercontent\.com\/test157t\//);
+    }
   });
 
   it('cast binaries that are present are structurally valid', () => {

@@ -5,11 +5,18 @@
 // on the board is the face that shows up in the chat room. The painted
 // portrait stays as the poster underneath until the model streams in;
 // any load failure keeps the poster — nothing breaks.
+// r2026-10-05.104: the model URL is routed through modelUrl() so a local
+// cast path (cast/xxx.vrm) resolves under NEXT_PUBLIC_BASE_PATH on the
+// GitHub Pages deploy (the big preview used to 404 there); absolute https
+// model URLs (the remote community cast) pass through unchanged. Only the
+// top preview chip still streams live — the scroll row uses cached
+// thumbnails via ModelThumb.
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin } from '@pixiv/three-vrm';
 import type { VRM } from '@pixiv/three-vrm';
+import { modelUrl } from '../lib/asset';
 
 export default function ModelPreview({
   url,
@@ -55,7 +62,7 @@ export default function ModelPreview({
 
     const loader = new GLTFLoader();
     loader.register((parser) => new VRMLoaderPlugin(parser));
-    loader.load(url, (gltf) => {
+    loader.load(modelUrl(url) ?? url, (gltf) => {
       if (disposed) { renderer.dispose(); return; }
       const vrm = (gltf as unknown as { userData: { vrm: VRM } }).userData.vrm;
       // same identity treatment as the chat room: gentle palette tint + build

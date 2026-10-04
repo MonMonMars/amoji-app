@@ -21,11 +21,17 @@
 // circle's overflow-hidden cut it to a sliver and the row's scroll arrows sat
 // on top of it. Now it's pinned to the card's top-right corner, bigger, with
 // a solid ring — nothing can clip or cover it.
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+// r2026-10-05.104: SUPERSEDES r34 — the per-card live 3D busts are retired
+// (29 live WebGL streams on one page melted GPUs; CORS-blocked remote models
+// burned the rest). The scroll row now shows cheap runtime-rendered one-frame
+// thumbnails (ModelThumb, cached JPEG per model), and only the TOP preview
+// chip keeps the live ModelPreview. The r34 notes above stay as history.
+import { useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import HScrollRow from './HScrollRow';
 import SceneBackdrop from './SceneBackdrop';
 import ModelPreview from './ModelPreview';
+import ModelThumb from './ModelThumb';
 import { assetUrl } from '../lib/asset';
 import { APP_REVISION } from '../lib/revision';
 import { lookFor } from '../lib/persona';
@@ -34,63 +40,6 @@ import {
   backgroundById, characterById, t, usePrefs,
   type Prefs,
 } from '../lib/prefs';
-
-// Live 3D bust for one character card in the scroll row. The expensive part
-// (WebGL context + VRM stream) only starts once the card scrolls near the
-// viewport; the painted art stays underneath as poster and as the fallback
-// when a model link fails. Once streamed, the bust stays mounted while the
-// page lives, so scrolling back never re-streams.
-function CharacterBust({ id, image, url }: { id: string; image?: string; url?: string }) {
-  const hostRef = useRef<HTMLSpanElement>(null);
-  const [onScreen, setOnScreen] = useState(false);
-  const [ready, setReady] = useState(false);
-  const look = lookFor(id);
-
-  useEffect(() => {
-    const el = hostRef.current;
-    if (!el || onScreen) return;
-    if (typeof IntersectionObserver === 'undefined') { setOnScreen(true); return; }
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) { setOnScreen(true); io.disconnect(); }
-      },
-      { rootMargin: '120px' },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [onScreen]);
-
-  return (
-    <span ref={hostRef} className="absolute inset-0 block">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={assetUrl(image ?? `/portraits/${id}.jpg`)}
-        alt=""
-        draggable={false}
-        className={`absolute inset-0 h-full w-full object-cover object-top transition-opacity duration-500 ${
-          ready && url ? 'opacity-0' : 'opacity-100'
-        }`}
-      />
-      {url && onScreen && (
-        <div
-          key={id}
-          className={`absolute inset-0 transition-opacity duration-700 ${
-            ready ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
-          <ModelPreview
-            url={url}
-            tint={look.tint}
-            height={look.height}
-            width={look.width}
-            orbit
-            onReady={() => setReady(true)}
-          />
-        </div>
-      )}
-    </span>
-  );
-}
 
 export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   const router = useRouter();
@@ -229,9 +178,9 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                   {/* r78: number badge pinned to the CARD corner, outside the
                       clipped portrait circle — it used to live at the circle's
                       top-left, where overflow-hidden trimmed it and the row's
-                      scroll arrows covered it. z-20 keeps it above the 3D
-                      busts and the arrows; the ring makes it readable on any
-                      accent color. */}
+                      scroll arrows covered it. z-20 keeps it above the
+                      thumbnails and the arrows; the ring makes it readable on
+                      any accent color. */}
                   <span
                     className="absolute -right-1.5 -top-1.5 z-20 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-neutral-950 px-1.5 text-[11px] font-extrabold text-neutral-950 shadow-[0_2px_10px_rgba(0,0,0,0.6)]"
                     style={{ background: c.accent }}
@@ -243,7 +192,9 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                     className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-black/40"
                     style={active ? { boxShadow: `0 0 0 2px ${c.accent}` } : undefined}
                   >
-                    <CharacterBust id={c.id} image={c.image} url={c.model} />
+                    {/* r104: runtime-rendered cached thumbnail (falls back to
+                        painted art / accent monogram) instead of a live bust */}
+                    <ModelThumb url={c.model} accent={c.accent} name={c.name} image={c.image} />
                   </span>
                   <span className="text-xs font-semibold">{c.name}</span>
                   <span className="text-[10px] leading-none text-white/40">{c.gender === 'female' ? '♀' : '♂'}</span>
