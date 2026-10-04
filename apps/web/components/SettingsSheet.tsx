@@ -8,13 +8,15 @@
 // exactly as before; male/female calibrate her warmth vs best-mate tone.
 // r2026-10-04.70c: the gender state admits undefined (profile.gender is
 // optional) — a never-set profile just shows no chip highlighted.
+// r2026-10-04.75: Voice section gains a one-tap "Test voice" self-test plus a
+// blocked-sound hint, so a silent phone is diagnosable without a keyboard.
 import { useEffect, useRef, useState } from 'react';
 import {
   characterById, backgroundById, KID_CHARACTER, KID_BACKGROUND,
   t, type Prefs, type StrKey,
 } from '../lib/prefs';
 import { LangChips } from './selectors';
-import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled } from '../lib/voice';
+import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoice } from '../lib/voice';
 import { pickLine } from '../lib/chatter';
 import { feedUtterance } from '../lib/companion';
 import { notifySpeaking } from '../lib/speech';
@@ -97,6 +99,7 @@ export default function SettingsSheet({
 }) {
   const [voiceOn, setVoiceOnState] = useState(voiceEnabled());
   const [neuralOn, setNeuralOnState] = useState(neuralEnabled());
+  const [voiceBlocked, setVoiceBlocked] = useState(false);
   const [name, setName] = useState(() => loadProfile().name);
   const [gender, setGender] = useState<Gender | undefined>(() => loadProfile().gender);
   const [mem, setMem] = useState<Memory>(loadMemory);
@@ -106,6 +109,13 @@ export default function SettingsSheet({
   const [brain, setBrainState] = useState<BrainProvider>(brainProvider());
   const [keyDrafts, setKeyDrafts] = useState<Record<string, string>>({});
   const tutorNRef = useRef(0);
+  // r2026-10-04.75: listen for the voice layer reporting a refused utterance
+  // so the hint appears right where the toggles live.
+  useEffect(() => {
+    const onBlocked = () => setVoiceBlocked(true);
+    window.addEventListener('amoji:voice-blocked', onBlocked);
+    return () => window.removeEventListener('amoji:voice-blocked', onBlocked);
+  }, []);
   useEffect(() => {
     if (open) { setMem(loadMemory()); setCopied(false); setBrainState(brainProvider()); setKeyDrafts({}); }
   }, [open]);
@@ -231,6 +241,20 @@ export default function SettingsSheet({
                 onClick={() => { const next = !neuralOn; setNeuralOnState(next); setNeuralEnabled(next); }}
               />
             </div>
+            <div className={row}>
+              <span className={label}>🎙️ {t(lang, 'testVoice')}</span>
+              <button
+                onClick={() => { setVoiceBlocked(false); testVoice(prefs.character, lang); }}
+                className="ui-btn shrink-0 rounded-full bg-pink-400/20 px-3.5 py-1.5 text-xs text-pink-100 hover:bg-pink-400/30"
+              >
+                {t(lang, 'testVoiceBtn')}
+              </button>
+            </div>
+            {voiceBlocked && (
+              <p className="rounded-xl border border-amber-300/30 bg-amber-400/10 px-4 py-2.5 text-[11px] leading-relaxed text-amber-100/90">
+                🔇 {t(lang, 'voiceBlockedHint')}
+              </p>
+            )}
           </Section>
 
           <Section title={t(lang, 'brainTitle')}>
