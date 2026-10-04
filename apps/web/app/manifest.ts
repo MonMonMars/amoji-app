@@ -4,6 +4,13 @@ import type { MetadataRoute } from "next";
 // fullscreen like a native app (no browser chrome). All URLs are relative to
 // the manifest so one build works both on GitHub Pages (/amoji-app basePath)
 // and local dev (/).
+//
+// r2026-10-04.72 — with output: 'export', Next.js refuses to collect any
+// metadata route that hasn't declared itself static (the pages build failed
+// with: 'dynamic = "force-static"/revalidate not configured on route
+// "/manifest.webmanifest" with "output: export"').
+export const dynamic = "force-static";
+
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Amoji",
