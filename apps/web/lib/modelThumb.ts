@@ -151,7 +151,7 @@ export function requestModelThumb(url: string): Promise<string | null> {
       return null; // failures are not cached — a later scroll can retry
     } finally {
       if (root) scene.remove(root);
-      vrm?.dispose();
+      (vrm as unknown as { dispose?: () => void } | undefined)?.dispose?.();
       if (root) disposeObject(root);
     }
   };
