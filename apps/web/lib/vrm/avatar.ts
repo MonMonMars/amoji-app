@@ -35,6 +35,56 @@ export interface AvatarPose {
   lElbowZ: number; rElbowZ: number;
 }
 
+// r2026-10-04.60 — human joint limits. Our characters are HUMAN, so the
+// procedural pose path must respect anatomy: elbows flex one way only,
+// the neck turns so far and no further, shoulders stop where real
+// shoulders stop. Values are radians, applied to the semantic pose fields
+// (before any per-rig sign flip), so both avatar kinds share one table.
+//
+// OVERRIDE RULE (Master Simon): online motion library clips are NOT
+// limited — they animate the skeleton through the mixer and never pass
+// through applyPose, so a library performance (dance, kungfu, deep bow…)
+// may exceed these ranges at any time.
+const HUMAN_LIMITS = {
+  // head — pitch down/up, yaw, roll (a human neck: ~±35° pitch, ~±63° yaw)
+  headX: [-0.6, 0.5], headY: [-1.1, 1.1], headZ: [-0.55, 0.55],
+  // torso — spine flexes further than the chest
+  spineX: [-0.45, 0.4], chestX: [-0.35, 0.3],
+  // shoulders — from T-pose: negative lifts overhead (~170°), positive
+  // lowers toward the sides (~90°); elbows flex 0→~140°, tiny hyperextension
+  leftUpperArm: [-2.9, 1.6], rightUpperArm: [-2.9, 1.6],
+  leftLowerArm: [-0.1, 2.4], rightLowerArm: [-0.1, 2.4],
+  // move-performance additives
+  spineY: [-0.8, 0.8],        // torso twist
+  chestZ: [-0.4, 0.4],        // chest counter-twist
+  lArmX: [-1.9, 1.9], rArmX: [-1.9, 1.9], // arm swing forward/back
+  lElbowZ: [-0.6, 0.6], rElbowZ: [-0.6, 0.6], // extra elbow fold on top
+} as const;
+
+const clampField = (v: number, range: readonly [number, number]): number =>
+  v < range[0] ? range[0] : v > range[1] ? range[1] : v;
+
+/** clamp a pose to human anatomy — procedural puppetry can never dislocate her */
+function clampPoseHuman(p: AvatarPose): AvatarPose {
+  return {
+    headX: clampField(p.headX, HUMAN_LIMITS.headX),
+    headY: clampField(p.headY, HUMAN_LIMITS.headY),
+    headZ: clampField(p.headZ, HUMAN_LIMITS.headZ),
+    spineX: clampField(p.spineX, HUMAN_LIMITS.spineX),
+    chestX: clampField(p.chestX, HUMAN_LIMITS.chestX),
+    leftUpperArm: clampField(p.leftUpperArm, HUMAN_LIMITS.leftUpperArm),
+    rightUpperArm: clampField(p.rightUpperArm, HUMAN_LIMITS.rightUpperArm),
+    leftLowerArm: clampField(p.leftLowerArm, HUMAN_LIMITS.leftLowerArm),
+    rightLowerArm: clampField(p.rightLowerArm, HUMAN_LIMITS.rightLowerArm),
+    spineY: clampField(p.spineY, HUMAN_LIMITS.spineY),
+    chestZ: clampField(p.chestZ, HUMAN_LIMITS.chestZ),
+    lArmX: clampField(p.lArmX, HUMAN_LIMITS.lArmX),
+    rArmX: clampField(p.rArmX, HUMAN_LIMITS.rArmX),
+    lElbowZ: clampField(p.lElbowZ, HUMAN_LIMITS.lElbowZ),
+    rElbowZ: clampField(p.rElbowZ, HUMAN_LIMITS.rElbowZ),
+  };
+}
+
 export interface Avatar {
   kind: AvatarKind;
   /** scene-level node — poke/laugh/move overlays transform this */
@@ -144,7 +194,11 @@ class V1Avatar implements Avatar {
     try { em.setValue(name, value); } catch { /* preset absent on this model */ }
   }
 
-  applyPose(p: AvatarPose): void {
+  applyPose(raw: AvatarPose): void {
+    // r60: procedural puppetry is clamped to human anatomy first — a
+    // generated pose can lean/twist, but never dislocate. (Library clips
+    // bypass this path entirely; they own the skeleton via the mixer.)
+    const p = clampPoseHuman(raw);
     const setRot = (name: VRMHumanBoneName, axis: 'x' | 'y' | 'z', val: number) => {
       const node = this.vrm.humanoid?.getNormalizedBoneNode(name);
       if (node) node.rotation[axis] = val;
@@ -331,7 +385,10 @@ class GenericAvatar implements Avatar {
     for (const b of binds) b.mesh.morphTargetInfluences![b.index] = v;
   }
 
-  applyPose(p: AvatarPose): void {
+  applyPose(raw: AvatarPose): void {
+    // r60: clamp to human anatomy before touching any bone (library clips
+    // never come through here, so they keep full freedom).
+    const p = clampPoseHuman(raw);
     // world-axis deltas on top of the calibrated rest pose:
     //   head        X=pitch Y=yaw Z=roll
     //   spine       X=pitch Y=yaw · chest X=pitch Z=roll
