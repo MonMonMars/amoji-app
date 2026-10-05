@@ -42,7 +42,13 @@
 // searchingPockets / happyIdle — verified live to key every finger chain),
 // placed early in the rotation. CompanionCanvas IDLE_SOURCES / PERF_SOURCES /
 // MOVE_CLIP + scripts/fetch-anims.mjs mirror list.
-export const APP_REVISION = 'r2026-10-05.106';
+// r2026-10-05.107: no 360° head spins — the clip-mode additive head life
+// (r97) was a raw euler += that accumulated into full turns whenever the
+// playing clip(s) carried no head track; it now rebuilds from an explicit
+// base each frame (refreshed only when the mixer rewrote the bone) and the
+// added offset is ROM-clamped to a human neck (±45° pitch / ±80° yaw /
+// ±25° roll). Library clips keep full head freedom.
+export const APP_REVISION = 'r2026-10-05.107';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

@@ -61,6 +61,15 @@
 // clampUpperArmAdduction floors the upper arm's outward (body-relative,
 // shoulder-line) direction at ~8.6° past plumb, gated to at/below horizontal,
 // so no swing, poke recoil or clip frame can carry an arm across the midline.
+//
+// r2026-10-05.107 — no 360° head spins. The r97 clip-mode additive head
+// life was a raw euler `+=` on the bone: whenever the playing clip(s)
+// carried no head track, nothing rewrote the head between frames, so the
+// offset compounded into full turns. The additive layer is now rebuilt
+// every frame from an explicit base — refreshed when the mixer rewrote the
+// bone, reused when it did not — and the offset is hard-clamped to a human
+// neck (±45° pitch, ±80° yaw, ±25° roll). The clip pose itself keeps full
+// freedom; only the layer WE add is clamped.
 import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
@@ -83,8 +92,8 @@ export interface AvatarPose {
   /** r83: lean-back recoil on the torso — spine flexes deeper than chest */
   spinePitchAdd: number; chestPitchAdd: number;
   /**
-   * r86: move-performance arm raises — + lifts the arm from wherever the
-   * body currently is (semantic, not raw-axis: each avatar kind maps it to
+   * r86: move-performance arm raises — + lifts the arm from wherever it
+   * is right now (semantic, not raw-axis: each avatar kind maps it to
    * its own bone axes). Optional so existing pose literals keep compiling.
    */
   lArmRaise?: number; rArmRaise?: number;
@@ -124,6 +133,12 @@ const HUMAN_LIMITS = {
 
 const clampField = (v: number, range: readonly [number, number]): number =>
   v < range[0] ? range[0] : v > range[1] ? range[1] : v;
+
+// r107: the ADDITIVE head layer (clip-mode look-at + poke/laugh reactions
+// riding on the mixer's clip pose) is a HUMAN NECK, not a turntable. The
+// clip pose keeps full freedom — a library performance may turn the head
+// as far as its mocap says; only what WE add on top is range-limited.
+const HEAD_ADD_ROM = { x: 0.785, y: 1.396, z: 0.436 } as const; // ±45° pitch, ±80° yaw, ±25° roll
 
 /** clamp a pose to human anatomy — procedural puppetry can never dislocate her */
 function clampPoseHuman(p: AvatarPose): AvatarPose {
@@ -461,6 +476,10 @@ class V1Avatar implements Avatar {
   private vrm: VRM;
   private relaxedHands: RelaxedHandEntry[] = [];
   private fingerMap = new Map<string, THREE.Object3D>();
+  // r107: additive-head state — see applyClipHeadAdd
+  private headAddInit = false;
+  private readonly headAddBaseE = new THREE.Euler();
+  private readonly headAddWritten = new THREE.Quaternion();
 
   constructor(vrm: VRM, clipAnimatedBones: ReadonlySet<string> = new Set()) {
     this.vrm = vrm;
@@ -524,9 +543,11 @@ class V1Avatar implements Avatar {
       // r97: a whisper of procedural head life — ADDED to whatever the mixer
       // wrote this frame. The old setRot() overwrote the synced euler every
       // frame, freezing the clip's own head motion into a stiff stare.
-      addRot('head', 'x', p.headX * 0.3);
-      addRot('head', 'y', p.headY * 0.3);
-      addRot('head', 'z', p.headZ * 0.3);
+      // r107: the whisper is now a rebuilt-from-base, ROM-clamped offset
+      // (see applyClipHeadAdd) — the old euler += could neither wrap nor
+      // clamp, and it spiralled into 360° spins whenever no active clip
+      // track owned the head bone between frames.
+      this.applyClipHeadAdd(p);
     } else {
       setRot('head', 'x', p.headX);
       setRot('head', 'y', p.headY);
@@ -554,6 +575,43 @@ class V1Avatar implements Avatar {
     // is right now). V1 raw axes: left z+ lifts, right z− lifts.
     if (p.lArmRaise) addRot('leftUpperArm', 'z', p.lArmRaise);
     if (p.rArmRaise) addRot('rightUpperArm', 'z', -p.rArmRaise);
+  }
+
+  /**
+   * r107 (Master Simon): "the character's head rotates 360° — very
+   * strange." The r97 additive head life was `node.rotation[axis] += v` —
+   * a raw euler accumulate on the bone. When the active clip(s) carry no
+   * head track, the mixer never rewrites the head between frames, so the
+   * += compounded (up to ~0.18 rad/frame) and the head swept full circles.
+   * Fix: rebuild the additive layer every frame from an explicit base.
+   *   · base refresh — if the bone's quaternion differs from what WE wrote
+   *     last frame, the mixer (re)wrote it (it owns a head track): refresh
+   *     the base from the synced euler. If it matches exactly, nothing
+   *     touched the bone since (no head track): reuse the stored base, so
+   *     the SAME offset re-applies identically instead of accumulating.
+   *   · shortest path — the offset is an absolute, ROM-clamped target,
+   *     never a frame-over-frame delta, so no angle can travel the long
+   *     way around; the total stays within base ± the neck ROM below.
+   *   · ROM — pitch ±45° / yaw ±80° / roll ±25°: even a runaway pose value
+   *     can only tilt a human amount from the clip pose. The clip pose
+   *     itself is untouched — library performances keep full freedom.
+   */
+  private applyClipHeadAdd(p: AvatarPose): void {
+    const node = this.vrm.humanoid?.getNormalizedBoneNode('head');
+    if (!node) return;
+    if (!this.headAddInit || !node.quaternion.equals(this.headAddWritten)) {
+      this.headAddBaseE.copy(node.rotation); // synced euler = what the mixer wrote
+      this.headAddInit = true;
+    }
+    const ox = clampField(p.headX * 0.3, [-HEAD_ADD_ROM.x, HEAD_ADD_ROM.x] as const);
+    const oy = clampField(p.headY * 0.3, [-HEAD_ADD_ROM.y, HEAD_ADD_ROM.y] as const);
+    const oz = clampField(p.headZ * 0.3, [-HEAD_ADD_ROM.z, HEAD_ADD_ROM.z] as const);
+    node.rotation.set(
+      this.headAddBaseE.x + ox,
+      this.headAddBaseE.y + oy,
+      this.headAddBaseE.z + oz,
+    );
+    this.headAddWritten.copy(node.quaternion);
   }
 
   // r103: re-apply the calibrated relaxed curl AFTER the mixer + applyPose
