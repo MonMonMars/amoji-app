@@ -382,6 +382,12 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     const IDLE_SOURCES: ClipSource[] = [
       { id: 'StandardIdle', urls: [`${ALT_HOST}/standard_idle.vrma`, `${ANIM_MIRROR}/StandardIdle.vrma`] },
       { id: 'NeutralIdle', urls: [`${DW_HOST}/neutral_idle.vrma`, `${ANIM_MIRROR}/NeutralIdle.vrma`] },
+      // r106 (Master Simon): three finger-rich idles from the 3dchat library —
+      // verified live via the glTF JSON (every finger chain carries rotation
+      // channels), placed early so the rotation meets animated hands quickly.
+      { id: 'Plotting', urls: [`${CHAT_HOST}/plotting.vrma`, `${ANIM_MIRROR}/Plotting.vrma`] },
+      { id: 'SearchPockets', urls: [`${CHAT_HOST}/searchingPockets.vrma`, `${ANIM_MIRROR}/SearchPockets.vrma`] },
+      { id: 'HappyIdle', urls: [`${CHAT_HOST}/happyIdle.vrma`, `${ANIM_MIRROR}/HappyIdle.vrma`] },
       { id: 'DwarfIdle', urls: [`${DW_HOST}/Dwarf%20Idle.vrma`, `${ANIM_MIRROR}/DwarfIdle.vrma`] },
       { id: 'LadyIdle', urls: [`${DW_HOST}/Female%20Standing%20Pose.vrma`, `${ANIM_MIRROR}/LadyIdle.vrma`] },
       { id: 'ArmStretch', urls: [`${DW_HOST}/Arm%20Stretching.vrma`, `${ANIM_MIRROR}/ArmStretch.vrma`] },
@@ -403,9 +409,14 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     // r96 (Master Simon): the move triggers get REAL performances too —
     // dance / sing / kungfu / piano / violin fire actual keyframed mocap
     // from the 3dchat Mixamo-class library (file list verified via the
-    // GitHub API) instead of leaving the body in its idle. Move kinds with
-    // no matching clip (eat / dine / taichi / jog / yoga / stretch) keep
-    // the r95 rule: the skeleton stays in the library idle.
+    // GitHub API) instead of leaving the body in its idle.
+    // r106: eat / dine join them. No literal eating clip exists in any
+    // reachable free VRMA library (3dchat / desktop-waifu / MotionPack all
+    // fully listed), so eat takes smoking.vrma — repetitive pinched-finger
+    // hand-to-mouth, the closest real motion to steady bites — and dine
+    // takes blowAKiss.vrma, one graceful hand raise to lips (a toast/sip).
+    // Kinds still without a clip (taichi / jog / yoga / stretch) keep the
+    // r95 rule: the skeleton stays in the library idle.
     const PERF_SOURCES: ClipSource[] = [
       { id: 'Jump', urls: [`${ANIM_MIRROR}/Jump.vrma`] },
       { id: 'Bow', urls: [`${ALT_HOST}/quick_formal_bow.vrma`, `${ANIM_MIRROR}/Bow.vrma`] },
@@ -415,6 +426,9 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       { id: 'Punch', urls: [`${CHAT_HOST}/punch.vrma`, `${ANIM_MIRROR}/Punch.vrma`] },
       { id: 'Piano', urls: [`${CHAT_HOST}/pianoPlaying.vrma`, `${ANIM_MIRROR}/Piano.vrma`] },
       { id: 'Violin', urls: [`${CHAT_HOST}/playingTheViolin.vrma`, `${ANIM_MIRROR}/Violin.vrma`] },
+      // r106: eating performances — hand-to-mouth proxies, see note above
+      { id: 'Eat', urls: [`${CHAT_HOST}/smoking.vrma`, `${ANIM_MIRROR}/Eat.vrma`] },
+      { id: 'Dine', urls: [`${CHAT_HOST}/blowAKiss.vrma`, `${ANIM_MIRROR}/Dine.vrma`] },
     ];
     const TOTAL_CLIPS = IDLE_SOURCES.length + PERF_SOURCES.length;
     const clips = new Map<string, THREE.AnimationClip>();
@@ -441,6 +455,8 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       kungfu: 'Punch',
       piano: 'Piano',
       violin: 'Violin',
+      eat: 'Eat',
+      dine: 'Dine',
     };
     // r2026-10-04.59 (Master Simon): EVERY clip change is a blend, never a
     // jump — pose A at 10° glides into pose B at 90° over `fade` seconds.
