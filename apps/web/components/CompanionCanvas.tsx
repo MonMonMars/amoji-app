@@ -75,6 +75,10 @@ import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
 // clampShoulderROM floors the arm's outward (body-relative) direction at
 // ~8.6° past plumb, gated to at/below horizontal so dance crosses and
 // overhead waves stay free.
+// r108 (Master Simon): neutral daylight everywhere — the indoor rig's warm
+// cream key ('#fff6ec') read as an orange cast against the warm ember/neon
+// backdrops; ONE neutral rig lights every backdrop now, and ACES filmic
+// tone mapping at exposure 1.0 pins the color pipeline.
 
 export interface CompanionCanvasProps {
   onNotice?: (n: { reason: 'webgl' | 'asset' }) => void;
@@ -82,7 +86,7 @@ export interface CompanionCanvasProps {
   accent?: string;
   /** character id — gives her/him a deterministic, personal idle-motion sequence */
   seedKey?: string;
-  /** light rig: 'outdoor' = neutral daylight, 'indoor' = soft interior light */
+  /** @deprecated r108: ignored — one neutral daylight rig lights every backdrop */
   lighting?: 'indoor' | 'outdoor';
 }
 
@@ -141,12 +145,13 @@ const TWIST_AMOUNT: Record<string, number> = {
   challenging: 0.12,
 };
 
-export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', seedKey, lighting = 'outdoor' }: CompanionCanvasProps) {
+export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', seedKey }: CompanionCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const onNoticeRef = useRef(onNotice);
   onNoticeRef.current = onNotice;
   const onPokeRef = useRef(onPoke);
   onPokeRef.current = onPoke;
+
   // r84 (Master Simon): while she loads, the stage stays EMPTY — no giant
   // placeholder figure. r91: the loading indicator moved OUT of this canvas
   // and INTO the top-left name bar (StatusPlate) through the shared store in
@@ -179,38 +184,32 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     }
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(host.clientWidth, host.clientHeight);
+    // r108 (Master Simon): pin the color pipeline — ACES filmic at exposure
+    // 1.0 keeps highlights from clipping warm and leaves midtones neutral.
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
     host.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
     // transparent canvas — the page's themed gradient shows through (alpha:true)
     scene.background = null;
-    // r2026-10-04.77 (Master Simon): NORMAL light, nothing orange. Two
-    // rigs picked by `lighting`:
-    //   outdoor — neutral daylight: cool-ish sky over warm ground bounce,
-    //     one clean sun key plus a soft fill so nothing on the character
-    //     picks up a color cast.
-    //   indoor — soft interior: warm-ish key lamp overhead, cool window
-    //     fill, gentle ambience. Deliberately desaturated so skin stays skin.
+    // r2026-10-05.108 (Master Simon): ONE neutral daylight rig for every
+    // backdrop. The r77 indoor branch keyed her with a warm cream lamp
+    // ('#fff6ec') that, against the warm ember/neon backdrops (the only
+    // 'indoor' settings), read as a full orange cast — the "strange colors"
+    // report. The indoor/outdoor switch is gone: cool sky over a
+    // desaturated ground bounce, one clean white sun key, one cool fill —
+    // nothing on the character picks up a color cast.
     // These are scene-level lights: ANY avatar added to the scene (initial
     // load or a character switch, which remounts this effect) is inside
     // their range by construction — there is no per-model light to miss.
-    if (lighting === 'indoor') {
-      scene.add(new THREE.HemisphereLight('#ffffff', '#57534e', 0.7));
-      const key = new THREE.DirectionalLight('#fff6ec', 1.2);
-      key.position.set(0.6, 2.8, 1.2);
-      scene.add(key);
-      const fill = new THREE.DirectionalLight('#edf3ff', 0.35);
-      fill.position.set(-1.6, 1.4, 1.6);
-      scene.add(fill);
-    } else {
-      scene.add(new THREE.HemisphereLight('#f2f7ff', '#8f8a80', 0.85));
-      const sun = new THREE.DirectionalLight('#ffffff', 1.75);
-      sun.position.set(2.2, 3.8, 2.0);
-      scene.add(sun);
-      const bounce = new THREE.DirectionalLight('#e3eaf5', 0.3);
-      bounce.position.set(-1.8, 0.6, -1.4);
-      scene.add(bounce);
-    }
+    scene.add(new THREE.HemisphereLight('#f2f7ff', '#8f8a80', 0.85));
+    const sun = new THREE.DirectionalLight('#ffffff', 1.75);
+    sun.position.set(2.2, 3.8, 2.0);
+    scene.add(sun);
+    const bounce = new THREE.DirectionalLight('#e3eaf5', 0.3);
+    bounce.position.set(-1.8, 0.6, -1.4);
+    scene.add(bounce);
 
     const camera = new THREE.PerspectiveCamera(35, host.clientWidth / host.clientHeight, 0.1, 20);
 
@@ -1222,7 +1221,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [accent, seedKey, lighting]);
+  }, [accent, seedKey]);
 
   // r91 (Master Simon): no overlay here at all — the empty stage IS the
   // loading state, and the top-left name bar (StatusPlate) carries a mini

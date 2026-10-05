@@ -48,7 +48,13 @@
 // base each frame (refreshed only when the mixer rewrote the bone) and the
 // added offset is ROM-clamped to a human neck (±45° pitch / ±80° yaw /
 // ±25° roll). Library clips keep full head freedom.
-export const APP_REVISION = 'r2026-10-05.107';
+// r2026-10-05.108: neutral daylight lighting — the indoor rig's warm cream
+// key ('#fff6ec') read as an orange cast against the warm ember/neon
+// backdrops; ONE neutral rig (cool-sky hemisphere + white sun key + cool
+// fill) now lights every backdrop regardless of setting, and ACES filmic
+// tone mapping at exposure 1.0 pins the color pipeline. Lights are built
+// once in the single canvas effect — no rig is ever stacked or duplicated.
+export const APP_REVISION = 'r2026-10-05.108';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
