@@ -79,6 +79,19 @@ import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
 // cream key ('#fff6ec') read as an orange cast against the warm ember/neon
 // backdrops; ONE neutral rig lights every backdrop now, and ACES filmic
 // tone mapping at exposure 1.0 pins the color pipeline.
+// r109 (Master Simon): intermittent "character renders all black" — three
+// hardenings. (1) A texture whose request ERRORED (iPhone network hiccup)
+// never decodes, so the r101 texture gate could never pass and the 25s
+// watchdog revealed a model with broken texture slots (black). The gate now
+// sweeps EVERY texture-typed property (MToon shade/rim/matcap included),
+// and after 4s of undecoded textures a one-shot fallback neutralizes the
+// broken slots (null map + lifted base color + floored shade color).
+// (2) MToon shadeColor could sit near-black and render black at some
+// angles — it is floored at mount and in the fallback, and a whisper of
+// flat ambient light guarantees no material state can render pure black.
+// (3) A NaN sweep for the first 60 frames after mount resets any corrupt
+// quaternion/scale, and the reveal gate re-compiles shaders on its first
+// pass so nothing compiles against still-empty texture slots.
 
 export interface CompanionCanvasProps {
   onNotice?: (n: { reason: 'webgl' | 'asset' }) => void;
@@ -110,7 +123,8 @@ const PHI_MAX = 2.35;
 // step on stage. On iPhone Safari the big MToon atlases decode late — the
 // old code rendered the model while they were still empty (the "completely
 // black at the beginning" report).
-const TEXTURE_SLOTS = ['map', 'normalMap', 'emissiveMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'alphaMap'] as const;
+// r109: sweep EVERY texture-typed property (MToon shadeTexture / rimTexture /
+// matcapTexture included), not just the MeshStandardMaterial slots.
 const modelTexturesReady = (root: THREE.Object3D): boolean => {
   let ready = true;
   root.traverse((node) => {
@@ -119,14 +133,61 @@ const modelTexturesReady = (root: THREE.Object3D): boolean => {
     if (!mesh.isMesh) return;
     const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     for (const m of mats) {
-      const mat = m as unknown as Record<string, THREE.Texture | null | undefined>;
-      for (const slot of TEXTURE_SLOTS) {
-        const tex = mat[slot];
-        if (tex && !tex.image) { ready = false; return; }
+      for (const v of Object.values(m as unknown as Record<string, unknown>)) {
+        const tex = v as THREE.Texture | null;
+        if (tex && (tex as unknown as { isTexture?: boolean }).isTexture && !tex.image) {
+          ready = false;
+          return;
+        }
       }
     }
   });
   return ready;
+};
+
+// r109: a texture that ERRORED (network hiccup on iPhone) never decodes —
+// without a fallback the old gate either never passed (watchdog then
+// revealed a black model at 25s) or passed with a broken map that renders
+// black. This swaps every still-empty texture for null (the material then
+// shows its base color), lifts a black base color to a neutral skin/fabric
+// tone, and floors a near-black MToon shadeColor. Idempotent; the caller
+// guards with a one-shot flag.
+const FALLBACK_BASE = new THREE.Color('#c9b8a6');
+const neutralizeBrokenTextures = (root: THREE.Object3D): void => {
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const m of mats) {
+      const rec = m as unknown as Record<string, unknown>;
+      let touched = false;
+      for (const key of Object.keys(rec)) {
+        const v = rec[key] as THREE.Texture | null;
+        if (v && (v as unknown as { isTexture?: boolean }).isTexture && !v.image) {
+          rec[key] = null; // failed slot — fall back to the material's base color
+          touched = true;
+        }
+      }
+      const std = m as THREE.MeshStandardMaterial;
+      if (std.color && !std.map) {
+        // no map and a near-black base color can never be right — lift it
+        if (Math.max(std.color.r, std.color.g, std.color.b) < 0.08) {
+          std.color.copy(FALLBACK_BASE);
+          touched = true;
+        }
+      }
+      const shade = (m as unknown as { shadeColor?: THREE.Color }).shadeColor;
+      if (shade) {
+        const lum = Math.max(shade.r, shade.g, shade.b);
+        if (lum < 0.2) {
+          if (lum < 1e-4) shade.setRGB(0.45, 0.43, 0.42);
+          else shade.multiplyScalar(0.2 / lum); // keep the hue, floor the darkness
+          touched = true;
+        }
+      }
+      if (touched) m.needsUpdate = true;
+    }
+  });
 };
 
 /** stable per-character hash → motion seed: same character, same body language */
@@ -210,6 +271,10 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     const bounce = new THREE.DirectionalLight('#e3eaf5', 0.3);
     bounce.position.set(-1.8, 0.6, -1.4);
     scene.add(bounce);
+    // r109: lighting floor — a whisper of flat ambient so that NO material
+    // state (a black toon shade, a failed texture slot) can ever render
+    // pure black, whatever the toon ramp says.
+    scene.add(new THREE.AmbientLight('#ffffff', 0.14));
 
     const camera = new THREE.PerspectiveCamera(35, host.clientWidth / host.clientHeight, 0.1, 20);
 
@@ -312,6 +377,14 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     let revealPoseApplied = false;
     let revealLitFrames = 0;
     let forceReveal = false;
+    // r109: reveal-gate hardening state — mount timestamp (textures that
+    // never decode must not hold her hostage until the 25s watchdog),
+    // frames since mount (NaN sweep window), the one-shot flag for the
+    // texture-error fallback, and a once-only log guard for the sweep.
+    let mountTime = 0;
+    let mountFrame = 0;
+    let textureFallbackApplied = false;
+    let nanLogged = false;
     // per-character motion personality: Rin always fidgets the same way,
     // Ren drifts through his own calm sequence — deterministic per character.
     const poseSeed = seedKey ? seedFromKey(seedKey) : Date.now() % 100000;
@@ -573,8 +646,8 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       // r98 (Master Simon): the SAME protection now covers the performance
       // clips. Talking replies trigger MOVE_CLIP performances (sing / dance /
       // piano / violin / punch / jump / bow / hello) the moment speech
-      // starts, and those clips carry baked root-Y authored on rigs of a
-      // different scale and pose (seated / bent-knee mocap). Handed to the
+      // starts, and those clips carry baked root-Y authored on rigs of
+      // a different scale and pose (seated / bent-knee mocap). Handed to the
       // mixer verbatim, that hips-Y sank her far below the r94-pinned idle —
       // she visibly "fell" when talking began (equivalently: the camera
       // seemed to rise), then popped back up when the idle returned. Now
@@ -759,6 +832,11 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       revealPending = true;
       revealPoseApplied = false;
       revealLitFrames = 0;
+      // r109: reset the reveal-gate hardening state for this mount.
+      mountTime = performance.now();
+      mountFrame = 0;
+      textureFallbackApplied = false;
+      nanLogged = false;
       // r102: from this moment the honest progress state is 'prep' — the
       // reveal-gate wait is not byte-measurable (see reportProgress above)
       mounted = true;
@@ -782,6 +860,18 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
         for (const m of mats) {
           const mat = m as THREE.MeshStandardMaterial;
           if (mat.color) mat.color.multiply(tint);
+          // r109: MToon shadeColor floor — a near-black shade color plus
+          // toon lighting can render near-black at some angles (the "all
+          // black" reports). Lift it the same way neutralizeBrokenTextures
+          // does.
+          const shade = (m as unknown as { shadeColor?: THREE.Color }).shadeColor;
+          if (shade) {
+            const lum = Math.max(shade.r, shade.g, shade.b);
+            if (lum < 0.2) {
+              if (lum < 1e-4) shade.setRGB(0.45, 0.43, 0.42);
+              else shade.multiplyScalar(0.2 / lum); // keep the hue, floor the darkness
+            }
+          }
         }
       });
     };
@@ -1138,18 +1228,55 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
         avatar.clampShoulderROM();
         avatar.update(dt / 1000);
 
-        // r101 reveal gate: by this point the skeleton holds its first
-        // pose/clip frame. A VRM 1.0 avatar must additionally wait for the
-        // clip engine (mixerActive) so a raw T-pose never shows; generic
-        // (VRM 0.x) avatars are pose-driven from frame one. Every texture
-        // must be decoded, and two fully-lit frames are counted before she
-        // steps on stage. The watchdog's forceReveal overrides everything so
-        // nothing can keep her invisible forever.
+        // r109 NaN sweep: a corrupt clip key or a bad spring-bone write can
+        // poison a quaternion/scale and make the whole skinned mesh collapse
+        // or render black. For the first 60 frames after mount, sweep the
+        // hierarchy and reset any non-finite transform (warned once).
+        mountFrame += 1;
+        if (mountFrame <= 60) {
+          avatar.root.traverse((node) => {
+            const q = node.quaternion;
+            if (!Number.isFinite(q.x + q.y + q.z + q.w)) {
+              q.identity();
+              if (!nanLogged) { nanLogged = true; console.warn('[amoji] r109: non-finite quaternion reset'); }
+            }
+            const s = node.scale;
+            if (!Number.isFinite(s.x + s.y + s.z) || s.x === 0 || s.y === 0 || s.z === 0) {
+              s.set(1, 1, 1);
+              if (!nanLogged) { nanLogged = true; console.warn('[amoji] r109: non-finite/zero scale reset'); }
+            }
+          });
+        }
+
+        // r109 rework of the r101 reveal gate: by this point the skeleton
+        // holds its first pose/clip frame. A VRM 1.0 avatar must additionally
+        // wait for the clip engine (mixerActive) so a raw T-pose never shows;
+        // generic (VRM 0.x) avatars are pose-driven from frame one. Textures
+        // must be decoded — but a texture that ERRORED never decodes, so
+        // after 4s the one-shot fallback neutralizes the broken slots (null
+        // map + lifted base color + floored shade color) and the gate
+        // proceeds; the watchdog's forceReveal applies the same fallback and
+        // stays an absolute override. The gate's first passing frame
+        // re-compiles the shaders so nothing compiles against still-empty
+        // texture slots, and two fully-lit frames are counted before she
+        // steps on stage.
         revealPoseApplied = true;
         if (revealPending) {
           const poseSettled = mixerActive || avatar.kind !== 'v1';
-          if ((poseSettled && modelTexturesReady(avatar.root)) || forceReveal) {
+          let texturesOk = modelTexturesReady(avatar.root);
+          if (!texturesOk && !textureFallbackApplied && now - mountTime > 4000) {
+            neutralizeBrokenTextures(avatar.root);
+            textureFallbackApplied = true;
+            texturesOk = true;
+          }
+          if (forceReveal && !textureFallbackApplied) {
+            neutralizeBrokenTextures(avatar.root);
+            textureFallbackApplied = true;
+            texturesOk = true;
+          }
+          if (forceReveal || (poseSettled && texturesOk)) {
             revealLitFrames += 1;
+            if (revealLitFrames === 1) renderer.compile(scene, camera);
             if (revealLitFrames >= 2) {
               revealPending = false;
               avatar.root.visible = true;
