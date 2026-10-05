@@ -18,11 +18,13 @@
 // the engine within the gesture itself, and the first await below used to
 // leave that context before any synth tier could run.
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   characterById, backgroundById, KID_CHARACTER, KID_BACKGROUND,
   t, type Prefs, type StrKey,
 } from '../lib/prefs';
 import { LangChips } from './selectors';
+import ModelThumb from './ModelThumb';
 import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, VOICE_TIER_LABEL } from '../lib/voice';
 import { pickLine } from '../lib/chatter';
 import { feedUtterance } from '../lib/companion';
@@ -104,6 +106,7 @@ export default function SettingsSheet({
   memCount: number;
   onForget: () => void;
 }) {
+  const router = useRouter();
   const [voiceOn, setVoiceOnState] = useState(voiceEnabled());
   const [neuralOn, setNeuralOnState] = useState(neuralEnabled());
   const [voiceBlocked, setVoiceBlocked] = useState(false);
@@ -131,7 +134,11 @@ export default function SettingsSheet({
   }, [open]);
   if (!open) return null;
   const lang = prefs.lang;
-  const accent = '#f9a8d4';
+  // r112: the whole sheet is themed by the ACTIVE companion's accent — the
+  // settings page now reads as "her" page, not a generic pink panel.
+  const me = characterById(prefs.character);
+  const scene = backgroundById(prefs.background);
+  const accent = me.accent;
 
   const row = 'flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3';
   const label = 'text-sm text-white/85';
@@ -242,7 +249,41 @@ export default function SettingsSheet({
         </div>
 
         <div className="space-y-6">
-          <Section title={t(lang, 'settingsMode')}>
+          {/* r112: companion identity card — her baked portrait, name, scene,
+              one tap to the selection board. The sheet now opens with WHO
+              you are talking to, themed in her accent. */}
+          <button
+            onClick={() => { onClose(); router.push('/change'); }}
+            className="ui-btn group flex w-full items-center gap-3.5 rounded-2xl border p-3.5 text-left transition-all"
+            style={{
+              borderColor: `${accent}44`,
+              background: `linear-gradient(135deg, ${accent}14, transparent 60%)`,
+              boxShadow: `0 8px 30px -14px ${accent}88`,
+            }}
+          >
+            <span
+              className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full"
+              style={{ boxShadow: `0 0 0 2px ${accent}, 0 4px 14px -4px ${accent}` }}
+            >
+              <ModelThumb url={me.model} accent={me.accent} name={me.name} image={me.image} bakedId={me.id} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-1.5 text-base font-semibold text-white">
+                {me.name}
+                <span className="text-xs text-white/45">{me.gender === 'female' ? '♀' : '♂'}</span>
+                {prefs.kidMode && <span className="text-[10px]">🧸</span>}
+              </span>
+              <span className="block truncate text-xs text-white/50">{me.tagline[lang] ?? me.tagline.en}</span>
+              <span className="mt-0.5 block text-[11px]" style={{ color: `${accent}cc` }}>
+                🎨 {t(lang, 'settingsScene')}: {t(lang, scene.nameKey as never)}
+              </span>
+            </span>
+            <span className="shrink-0 rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 transition-colors group-hover:bg-white/20">
+              {t(lang, 'changeCta')} →
+            </span>
+          </button>
+
+          <Section title={`🧸 ${t(lang, 'settingsMode')}`}>
             <div className={row}>
               <span className={label}>🧸 {t(lang, 'kidMode')}
                 <span className="block text-[11px] text-white/40">{t(lang, 'kidModeHint')}</span>
@@ -251,11 +292,11 @@ export default function SettingsSheet({
             </div>
           </Section>
 
-          <Section title={t(lang, 'chooseLanguage')}>
+          <Section title={`🌐 ${t(lang, 'chooseLanguage')}`}>
             <LangChips value={prefs.lang} onChange={(l) => onChange({ lang: l })} />
           </Section>
 
-          <Section title={t(lang, 'settingsVoice')}>
+          <Section title={`🔊 ${t(lang, 'settingsVoice')}`}>
             <div className={row}>
               <span className={label}>🔊 {t(lang, 'voiceReplies')}</span>
               <Toggle
@@ -277,7 +318,8 @@ export default function SettingsSheet({
               <button
                 onClick={runVoiceTest}
                 disabled={voiceTesting}
-                className="ui-btn shrink-0 rounded-full bg-pink-400/20 px-3.5 py-1.5 text-xs text-pink-100 hover:bg-pink-400/30 disabled:opacity-40"
+                className="ui-btn shrink-0 rounded-full px-3.5 py-1.5 text-xs text-white/90 disabled:opacity-40"
+                style={{ backgroundColor: `${accent}2e` }}
               >
                 {voiceTesting ? '…' : t(lang, 'testVoiceBtn')}
               </button>
@@ -294,7 +336,7 @@ export default function SettingsSheet({
             )}
           </Section>
 
-          <Section title={t(lang, 'brainTitle')}>
+          <Section title={`🧠 ${t(lang, 'brainTitle')}`}>
             <div className="space-y-2.5 rounded-xl border border-white/10 bg-white/5 p-3">
               <div className="flex flex-wrap gap-1.5">
                 {(['auto', ...BRAIN_SPECS.map((s) => s.id)] as BrainProvider[]).map((id) => (
@@ -303,9 +345,10 @@ export default function SettingsSheet({
                     onClick={() => setBrain(id)}
                     className={`ui-btn rounded-full px-3 py-1.5 text-xs ${
                       brain === id
-                        ? 'bg-pink-400/80 font-medium text-neutral-950'
+                        ? 'font-medium text-neutral-950'
                         : 'bg-white/5 text-white/50 hover:text-white/80'
                     }`}
+                    style={brain === id ? { backgroundColor: accent } : undefined}
                   >
                     {id === 'auto' ? t(lang, 'brainAuto') : (BRAIN_SPECS.find((s) => s.id === id)?.label ?? id)}
                   </button>
@@ -341,7 +384,7 @@ export default function SettingsSheet({
             </div>
           </Section>
 
-          <Section title={t(lang, 'settingsData')}>
+          <Section title={`💾 ${t(lang, 'settingsData')}`}>
             {/* header row: count + copy-all + forget-all */}
             <div className={row}>
               <span className={label}>🧠 {t(lang, 'memoryTitle')}
@@ -476,9 +519,10 @@ export default function SettingsSheet({
                     onClick={() => setGenderPick(g)}
                     className={`ui-btn h-8 flex-1 rounded-full px-2 text-xs ${
                       gender === g
-                        ? 'bg-pink-400/80 font-medium text-neutral-950'
+                        ? 'font-medium text-neutral-950'
                         : 'bg-white/5 text-white/50 hover:text-white/80'
                     }`}
+                    style={gender === g ? { backgroundColor: accent } : undefined}
                   >
                     {t(lang, g === 'male' ? 'genderMale' : g === 'female' ? 'genderFemale' : 'genderSecret')}
                   </button>
@@ -487,7 +531,7 @@ export default function SettingsSheet({
             </div>
           </Section>
 
-          <Section title={t(lang, 'settingsHelp')}>
+          <Section title={`❓ ${t(lang, 'settingsHelp')}`}>
             <button onClick={tutor} className={`ui-btn ${row} w-full text-left hover:bg-white/10`}>
               <span className={label}>❓ {t(lang, 'tutorBtn')}</span>
               <span className="text-white/30">→</span>

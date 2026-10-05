@@ -132,7 +132,15 @@
 // when a clip fails to bind (alan/nova/ember), and head/hips-anchored framing
 // with hat/hair margin replaced the whole-body Box3 guess that cropped
 // robbie's head and zoomed through mochi's chibi face.
-export const APP_REVISION = 'r2026-10-05.116';
+// r2026-10-05.117: SETTINGS SHEET IDENTITY + THEMING (r112). The gear sheet
+// now opens with a companion identity card — her baked r116 portrait, name,
+// gender, tagline and current scene, one tap straight to the selection board
+// (closes the sheet, routes to /change) — so the page answers "who am I
+// talking to" before any toggle. The whole sheet is themed by the ACTIVE
+// companion's accent (toggles, active brain chip, active gender chip, test-
+// voice button, card ring + glow) instead of the old hardcoded pink, and
+// every section header carries an icon (mode/language/voice/brain/data/help).
+export const APP_REVISION = 'r2026-10-05.117';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
