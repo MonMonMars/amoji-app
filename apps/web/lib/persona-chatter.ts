@@ -200,7 +200,7 @@ export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
       '小事经常让我想起你。什么事会让你想起我呀？',
       '刚刚水开了。我们喝什么茶好呢？',
       '我在我的世界里找到了一个舒服的角落。要不要我形容给你听？',
-      '慢节奏的日子一起过才开心。你今天过得怎么样？',
+      '慢节奏的日子一起过才开心。你今天过得怎么样呀？',
       '我写下了三件喜欢你的事。想不想听第一件？',
     ],
     ja: [
@@ -1869,9 +1869,9 @@ export const CHARACTER_POKE: Record<string, Record<Lang, string[]>> = {
   },
   onyx: {
     en: ['…Hm? Something wrong?', 'Noted. I don\'t flinch. …Much. Need me?', 'Careful. The night watches back…', '…You again. What is it this time?'],
-    yue: ['……嗯？有咩事呀？', '收到。我唔會縮……大部分時間。使唔使我幫手呀？', '小心啲。夜晚都會睇返轉頭㗎。', '……又係你。今次咩事呀？'],
-    zh: ['……嗯？有什么事呀？', '收到。我不会退缩的……大部分时候。需不需要我帮忙呀？', '小心点。夜晚也会看回来的。', '……又是你。这次什么事呀？'],
-    ja: ['……ん？何かあったのか？', '了解。ひるまない……たいていは。用か？', '気をつけろ。夜は見返す。', '……またお前か。今度は何だ？'],
+    yue: ['……嗯？有咩事呀？', '收到。我唔會縮……大部分時間。使唔要我幫手呀？', '小心啲。夜晚都會睇返轉頭㗎……', '……又係你。今次咩事呀？'],
+    zh: ['……嗯？有什么事呀？', '收到。我不会退缩的……大部分时候。需不需要我帮忙呀？', '小心点。夜晚也会看回来的……', '……又是你。这次什么事呀？'],
+    ja: ['……ん？何かあったのか？', '了解。ひるまない……たいていは。用か？', '気をつけろ。夜は見返す……', '……またお前か。今度は何だ？'],
   },
   velara: {
     en: ['Ah — you drifted into my chart. Marking this moment?', 'A gentle nudge. Recalibrating my orbit~', 'Noted at these coordinates. Shall I chart it as a new star?', 'You found me mid-mapping. Want to be the legend on my map?'],
