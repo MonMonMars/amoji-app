@@ -20,8 +20,8 @@
 // is floored at ~8.6° past plumb, gated at/below horizontal so dance
 // crosses and overhead waves stay free.
 // r2026-10-05.104: selection-card busts are now runtime-rendered one-frame
-// thumbnails (each model loads once, renders ONE frame offscreen, caches the
-// dataURL in memory + sessionStorage, lazy via IntersectionObserver, serial
+// thumbnails (each model loads once, renders ONE frame offscreen, caches
+// the dataURL in memory + sessionStorage, lazy via IntersectionObserver, serial
 // queue, full GL disposal — no more 29 live WebGL streams); ModelPreview keeps
 // only the big preview chip with the base-path URL bug fixed (modelUrl in
 // asset.ts). Cast grows to 33 with four genuinely free direct-URL VRMs from
@@ -33,7 +33,16 @@
 // open centered on the currently selected tile on a fresh entry; a new pick
 // re-centers smoothly and becomes the next entry's anchor. Tile buttons now
 // carry data-row-item ids so HScrollRow can find the selected one.
-export const APP_REVISION = 'r2026-10-05.105';
+// r2026-10-05.106: the eat / dine move kinds get REAL one-shot clips — the
+// closest hand-to-mouth performances in the verified-live 3dchat library
+// (eat → smoking.vrma, repetitive pinched-finger hand-to-mouth ≈ steady
+// bites; dine → blowAKiss.vrma, one graceful hand raise to lips ≈ a toast /
+// sip — no literal eating clip exists in any reachable free VRMA source), and
+// the idle pool grows three finger-rich 3dchat idles (plotting /
+// searchingPockets / happyIdle — verified live to key every finger chain),
+// placed early in the rotation. CompanionCanvas IDLE_SOURCES / PERF_SOURCES /
+// MOVE_CLIP + scripts/fetch-anims.mjs mirror list.
+export const APP_REVISION = 'r2026-10-05.106';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

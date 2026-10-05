@@ -15,6 +15,12 @@
 // dance / sing / kungfu / piano / violin come from the 3dchat Mixamo-class
 // library (hipHopDancing, singing, punch, pianoPlaying, playingTheViolin).
 //
+// r2026-10-05.106: eat / dine get the closest hand-to-mouth clips in the
+// library (smoking, blowAKiss — no literal eating clip exists in any
+// reachable free VRMA source, all candidate libraries fully listed), and
+// three finger-rich 3dchat idles join the idle pool (plotting,
+// searchingPockets, happyIdle — verified live: every finger chain keyed).
+//
 // Each source below mirrors the url chain in CompanionCanvas.tsx
 // (IDLE_SOURCES / PERF_SOURCES) so the local /models/anims/<id>.vrma takes
 // over from the streamed originals once committed.
@@ -36,11 +42,15 @@ const CHAT = 'https://raw.githubusercontent.com/DavinciDreams/3dchat/main/public
 const ALT = 'https://raw.githubusercontent.com/hirokazuniimoto/virtual-avatar-sdk/main/assets/animations';
 const ST = 'https://raw.githubusercontent.com/test157t/VRM-Assets-Pack-For-Silly-Tavern/main/animation_nitral-fork';
 
-// mirror ids match CompanionCanvas's ClipSource ids exactly
+// mirror ids match Canvas's ClipSource ids exactly
 const SOURCES = [
-  // —— idle pool (18 loopable standing performances) ——
+  // —— idle pool (21 loopable standing performances) ——
   { id: 'StandardIdle', urls: [`${ALT}/standard_idle.vrma`, `${TK}/StandardIdle.vrma`] },
   { id: 'NeutralIdle', urls: [`${DW}/neutral_idle.vrma`] },
+  // r106: finger-rich idles — every finger chain keyed (verified live)
+  { id: 'Plotting', urls: [`${CHAT}/plotting.vrma`] },
+  { id: 'SearchPockets', urls: [`${CHAT}/searchingPockets.vrma`] },
+  { id: 'HappyIdle', urls: [`${CHAT}/happyIdle.vrma`] },
   { id: 'DwarfIdle', urls: [`${DW}/Dwarf%20Idle.vrma`] },
   { id: 'LadyIdle', urls: [`${DW}/Female%20Standing%20Pose.vrma`] },
   { id: 'ArmStretch', urls: [`${DW}/Arm%20Stretching.vrma`] },
@@ -67,6 +77,9 @@ const SOURCES = [
   { id: 'Punch', urls: [`${CHAT}/punch.vrma`] },
   { id: 'Piano', urls: [`${CHAT}/pianoPlaying.vrma`] },
   { id: 'Violin', urls: [`${CHAT}/playingTheViolin.vrma`] },
+  // r106: eating performances (hand-to-mouth proxies — no literal eating clip exists)
+  { id: 'Eat', urls: [`${CHAT}/smoking.vrma`] },
+  { id: 'Dine', urls: [`${CHAT}/blowAKiss.vrma`] },
 ];
 
 fs.mkdirSync(DEST, { recursive: true });
