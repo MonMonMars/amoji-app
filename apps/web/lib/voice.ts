@@ -98,6 +98,39 @@ function markMediaPrimed(): void {
   mediaPrimed = true;
 }
 
+// ---- r2026-10-05.111: gesture-gate auto-replay --------------------------------
+// Desktop Chrome (130+) gates speechSynthesis AND media playback on user
+// activation; the transient half of that activation expires ~5s after a click.
+// The PC diagnosis (voice-debug + the live status bus) showed the whole chain
+// dying with 'not-allowed' when a reply lands after the activation window —
+// every tier tried, every tier muted, the line lost forever. Fix: when a tier
+// reports a gesture-gate failure, stash the line and re-speak it on the NEXT
+// real pointerdown (a guaranteed-fresh gesture). One replay, 45s freshness,
+// newer lines take priority naturally (lastSpeak is overwritten per speak()).
+let lastSpeak: {
+  text: string; characterId: string; lang: Lang;
+  emotionHints?: Record<string, number>;
+  leadOverride?: VocalLead;
+  intensity: number; at: number;
+} | null = null;
+let replayArmed = false;
+
+function armGestureReplay(reason: string): void {
+  if (!lastSpeak) return;
+  replayArmed = true;
+  try { console.log(`[amoji voice] gesture-gated (${reason}) — will replay last line on next tap`); } catch { /* ignore */ }
+  reportVoiceStatus('attempt', false, `muted by browser autoplay gate (${reason}) — tap anywhere to replay`);
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('pointerdown', () => {
+    if (!replayArmed || !lastSpeak) return;
+    replayArmed = false;
+    if (Date.now() - lastSpeak.at > 45_000) return; // stale — let it go
+    speak(lastSpeak.text, lastSpeak.characterId, lastSpeak.lang, lastSpeak.emotionHints, lastSpeak.leadOverride, lastSpeak.intensity);
+  }, { passive: true });
+}
+
 // ---- r2026-10-05.100: completion-gated speak guarantee ----------------------
 // The only proof that a line was actually HEARD is a tier's audio-START
 // callback (neural onPlaying / synth onstart) firing AFTER the speak
@@ -1013,6 +1046,8 @@ export function speak(
   intensity = 1,
 ): void {
   if (!voiceEnabled()) return;
+  // r111: remember the line for gesture-gate replay
+  lastSpeak = { text, characterId, lang, emotionHints, leadOverride, intensity, at: Date.now() };
   // r97: a reply can be the very first sound after page load — unlockAudio()
   // used to run only on window gestures, so a session where the user typed
   // before ever tapping fetched every voice tier and stayed silent (autoplay
@@ -1094,6 +1129,7 @@ export function speak(
       }).catch((err2: unknown) => {
         if ((err2 as Error | undefined)?.message === 'canceled') return;
         reportVoiceStatus('gtts', false, (err2 as Error | undefined)?.message ?? 'google-tts failed');
+        if ((err2 as { name?: string } | undefined)?.name === 'NotAllowedError') armGestureReplay('gtts not-allowed');
         stopGtts();
         try {
           synthSpeak(text, characterId, lang, emotion, expr, tic, amp);
@@ -1391,6 +1427,7 @@ function synthSpeak(
         if (live <= 0) stopKeepAlive();
         const err = (e as SpeechSynthesisErrorEvent).error;
         if (err !== 'interrupted' && err !== 'canceled') reportVoiceBlocked('synth');
+        if (err === 'not-allowed') armGestureReplay('synth not-allowed');
       };
       u.onend = () => {
         live -= 1;

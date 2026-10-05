@@ -76,7 +76,18 @@
 // (Cheer / Clapping / Idea / Goodbye / Blush) on encouraging words, praise,
 // farewells and bright ideas, so her cheer-ups are body language, not just
 // smile blendshapes. Cast 33 → 34.
-export const APP_REVISION = 'r2026-10-05.110';
+// r2026-10-05.111: voice gesture-gate auto-replay. Live PC diagnosis (the
+// voice-debug page + the amoji:voice-status bus on the real app) proved the
+// chain itself is healthy — the edge socket is simply dead on this network
+// (instant WS ERROR, fast-fails to tier 2) and both audible tiers speak
+// through browser autoplay gates: desktop Chrome (130+) gates
+// speechSynthesis and media playback on user activation, and the transient
+// half expires ~5s after a click — exactly when a slow LLM reply lands, so
+// every tier returns 'not-allowed' and the line is lost unheard. Now any
+// gesture-gate failure (gtts NotAllowedError, synth 'not-allowed') stashes
+// the line and re-speaks it on the NEXT real pointerdown (45s freshness,
+// one replay, newer lines win by natural overwrite).
+export const APP_REVISION = 'r2026-10-05.111';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
