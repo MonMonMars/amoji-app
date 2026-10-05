@@ -53,6 +53,7 @@ in `apps/web/components/CompanionCanvas.tsx`), so the app stays playable.
 | cast/mimi.vrm | Ruby | female |
 | cast/olivia.vrm | Snowy | female |
 | cast/kael.vrm | Alan | male |
+| cast/kitagawa.vrm | Marin K. | female |
 
 Notes on specific slots:
 
@@ -66,8 +67,14 @@ Notes on specific slots:
   Marin←fumiriya, Ayane←sumire, Hitomi←nana, Robbie←vroid-male,
   Mika←mikel, Anchor←cyrus, Ruby←mimi, Snowy←olivia, Alan←kael). The model
   files keep their original names on disk.
+- `cast/kitagawa.vrm` (r110) — the Marin Kitagawa VRM recovered from the
+  agent handoff zips. Master Simon's ruling (2026-10-05): use recovered
+  high-quality models for LEARNING now; swap for licensed originals before
+  any public/commercial release. Stored under the kitagawa name so the
+  literal "marin" binary stays outside the repo per the ban below; the
+  character is "Marin K." (#34), distinct from Marin (#20, fumiriya.vrm).
 
-## Motion library (r2026-10-04.58) — `anims/`
+## Motion library (r2026-10-04.58, committed r110) — `anims/`
 
 Real VRMA animation clips (VRMC_vrm_animation) downloaded from the open
 `tk256ailab/vrm-viewer` sample library
@@ -78,6 +85,13 @@ three.js AnimationMixer; the old procedural per-frame skeleton rotation in
 tracks are stripped at load time (body animation only — facial expressions
 stay driven by the emotion engine).
 
+r110 (2026-10-05): the tk256ailab repo is gone from GitHub (dead host since
+~r97), so the mirror can no longer be refetched — all 42 clips in this
+directory (the 11 originals plus 31 recovered from the agent handoff zips,
+identical bytes) are now **force-committed** past the `*.vrma` gitignore so
+the local mirror works on GitHub Pages without any live upstream. The
+gitignore rule stays for any future auto-fetched clips.
+
 | File | Used for |
 |---|---|
 | anims/Relax.vrma | idle rotation (default idle) |
@@ -87,10 +101,26 @@ stay driven by the emotion engine).
 | anims/Angry.vrma | performance clip (mood: anger) |
 | anims/Sad.vrma | performance clip (mood: sad) |
 | anims/Surprised.vrma | performance clip (reaction) |
-| anims/Blush.vrma | performance clip (reaction) |
-| anims/Clapping.vrma | performance clip (celebration) |
-| anims/Goodbye.vrma | performance clip (farewell) |
+| anims/Blush.vrma | performance clip (praise → blush, r110) |
+| anims/Clapping.vrma | performance clip (celebration → clap move, r110) |
+| anims/Goodbye.vrma | performance clip (farewell → goodbye move, r110) |
 | anims/Sleepy.vrma | performance clip (sleepy idle) |
+| anims/IdleNeutral.vrma | idle rotation (finger-rich, r110) |
+| anims/IdleChinHand.vrma | idle rotation (finger-rich, r110) |
+| anims/IdleHug.vrma | idle rotation (finger-rich, r110) |
+| anims/IdleSassy.vrma | idle rotation (finger-rich, r110) |
+| anims/Impatient.vrma | idle rotation (finger-rich, r110) |
+| anims/Cheer.vrma | performance clip (cheer-up → cheer move, r110) |
+| anims/Idea.vrma | performance clip (insight → idea move, r110) |
+
+r110 (2026-10-05): 31 additional VRMA clips recovered from the agent handoff
+zips (kimi/workbuddy builds — tk256ailab-style library downloads, identical
+bytes in both zips). The five finger-rich idles and five emotion performances
+above are wired into CompanionCanvas (IDLE_SOURCES / PERF_SOURCES /
+MOVE_CLIP); the remaining dormant clips (Bounce, Bow, Cry, Curtsy, Disdain,
+Facepalm, HeartHands, HelloWave, Nod, Peace, PlayPunch, Resolve, Scared,
+Shrug, Shush, Spin, StompAngry, SurprisedNod, TaDa, ThanksBow, ThumbsUp,
+Worried, YesCheer) ship on disk ready for future triggers.
 
 ## Retired / banned assets
 

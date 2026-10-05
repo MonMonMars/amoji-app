@@ -460,6 +460,15 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       { id: 'Plotting', urls: [`${CHAT_HOST}/plotting.vrma`, `${ANIM_MIRROR}/Plotting.vrma`] },
       { id: 'SearchPockets', urls: [`${CHAT_HOST}/searchingPockets.vrma`, `${ANIM_MIRROR}/SearchPockets.vrma`] },
       { id: 'HappyIdle', urls: [`${CHAT_HOST}/happyIdle.vrma`, `${ANIM_MIRROR}/HappyIdle.vrma`] },
+      // r110 (Master Simon): five finger-rich idles recovered from the agent
+      // handoff zips (300–800KB each — every finger chain keyframed, vs the
+      // 115KB body-only clips). Placed early so the rotation meets animated
+      // hands quickly; mirror-only, served from our own repo.
+      { id: 'IdleNeutral', urls: [`${ANIM_MIRROR}/IdleNeutral.vrma`] },
+      { id: 'IdleChinHand', urls: [`${ANIM_MIRROR}/IdleChinHand.vrma`] },
+      { id: 'IdleHug', urls: [`${ANIM_MIRROR}/IdleHug.vrma`] },
+      { id: 'IdleSassy', urls: [`${ANIM_MIRROR}/IdleSassy.vrma`] },
+      { id: 'Impatient', urls: [`${ANIM_MIRROR}/Impatient.vrma`] },
       { id: 'DwarfIdle', urls: [`${DW_HOST}/Dwarf%20Idle.vrma`, `${ANIM_MIRROR}/DwarfIdle.vrma`] },
       { id: 'LadyIdle', urls: [`${DW_HOST}/Female%20Standing%20Pose.vrma`, `${ANIM_MIRROR}/LadyIdle.vrma`] },
       { id: 'ArmStretch', urls: [`${DW_HOST}/Arm%20Stretching.vrma`, `${ANIM_MIRROR}/ArmStretch.vrma`] },
@@ -501,6 +510,14 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       // r106: eating performances — hand-to-mouth proxies, see note above
       { id: 'Eat', urls: [`${CHAT_HOST}/smoking.vrma`, `${ANIM_MIRROR}/Eat.vrma`] },
       { id: 'Dine', urls: [`${CHAT_HOST}/blowAKiss.vrma`, `${ANIM_MIRROR}/Dine.vrma`] },
+      // r110 (Master Simon): emotion performances from the recovered handoff
+      // library — cheer-ups and reactions get REAL keyframed body language
+      // (her "you did it!" is a literal cheer, not just a smile blendshape).
+      { id: 'Cheer', urls: [`${ANIM_MIRROR}/Cheer.vrma`] },
+      { id: 'Clapping', urls: [`${ANIM_MIRROR}/Clapping.vrma`] },
+      { id: 'Idea', urls: [`${ANIM_MIRROR}/Idea.vrma`] },
+      { id: 'Goodbye', urls: [`${ANIM_MIRROR}/Goodbye.vrma`] },
+      { id: 'Blush', urls: [`${ANIM_MIRROR}/Blush.vrma`] },
     ];
     const TOTAL_CLIPS = IDLE_SOURCES.length + PERF_SOURCES.length;
     const clips = new Map<string, THREE.AnimationClip>();
@@ -529,6 +546,12 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       violin: 'Violin',
       eat: 'Eat',
       dine: 'Dine',
+      // r110: emotion performances (recovered handoff library)
+      cheer: 'Cheer',
+      clap: 'Clapping',
+      idea: 'Idea',
+      goodbye: 'Goodbye',
+      blush: 'Blush',
     };
     // r2026-10-04.59 (Master Simon): EVERY clip change is a blend, never a
     // jump — pose A at 10° glides into pose B at 90° over `fade` seconds.

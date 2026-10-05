@@ -30,7 +30,8 @@ export type MoveKind =
   | 'violin' | 'piano'
   | 'dine' | 'eat'
   | 'jog'
-  | 'yoga' | 'stretch';
+  | 'yoga' | 'stretch'
+  | 'cheer' | 'clap' | 'idea' | 'goodbye' | 'blush';
 
 /** performance length per move, ms */
 export const MOVE_DUR: Record<MoveKind, number> = {
@@ -46,6 +47,14 @@ export const MOVE_DUR: Record<MoveKind, number> = {
   jog: 4000,
   yoga: 9000,
   stretch: 6000,
+  // r110: emotion performances from the recovered handoff library — short
+  // one-shots so an encouraging reply reads as a body-language beat, not a
+  // stage show
+  cheer: 2600,
+  clap: 2600,
+  idea: 2200,
+  goodbye: 3000,
+  blush: 2600,
 };
 
 /**
@@ -75,6 +84,16 @@ export const MOVE_TRIGGERS: Record<MoveKind, RegExp> = {
   jog: /(跑步|慢跑|跑兩步|跑下步|\brun(?:ning)?\b|\bjog(?:ging)?\b|ジョギング|ランニング|走って)/i,
   yoga: /(瑜伽|瑜珈|\byoga\b|ヨガ)/i,
   stretch: /(熱身|热身|暖身|拉筋|伸展|warm[- ]?up|ストレッチ)/i,
+  // r110: emotion performances (recovered handoff library clips) — sit at
+  // the BACK of the priority queue so a real activity (sing / dance / eat…)
+  // always wins; these catch the emotional beats in ordinary replies.
+  // Master Simon: every character cheers the user up — encouraging words
+  // get a real cheer/clap body performance, not just a smile blendshape.
+  cheer: /(加油|好棒|太棒了|好厲害|好厉害|叻|勁|做得好好|做得好|好得戚|唔錯|不错|你好聰明|你好聪明|你好叻|\bcheer\b|\bbravo\b|\bgo (?:you|for it)\b|\byou (?:did it|got this|rock)\b|頑張って|がんばって|すごい)/i,
+  clap: /(拍手|鼓掌|恭喜|恭喜你|congrats|congratulations|\bclap(?:ping)?\b|おめでとう|パチパチ)/i,
+  idea: /(我有個諗法|我有个想法|諗到喇|想到喇|想到啦|靈感|灵感|\bgot it\b|\bidea\b|いい考え|ひらめいた|アイデア)/i,
+  goodbye: /(拜拜|唔見|再见|再見|遲啲見|得閒見|早啲瞓|晚安|瞓覺喇|睡觉喇|去咗先|走先喇|\bbye\b|\bgoodnight\b|good night|じゃあね|またね|おやすみ|バイバイ)/i,
+  blush: /(讚你|赞你|稱讚|称赞|讚美|赞美|你好靚|你好美|\bpraise you\b|\bblush\b|褒めて|褒め)/i,
 };
 
 /** first matching move for a piece of dialogue, or undefined when none fits */
@@ -363,5 +382,15 @@ export function moveDeltas(kind: MoveKind, t: number): MoveDeltas {
         py: 0.02 * abs(circle),               // light bounce
       };
     }
+    // r110: emotion performances (cheer / clap / idea / goodbye / blush) are
+    // LIBRARY CLIPS only (MOVE_CLIP in CompanionCanvas) — per the r95 rule
+    // the skeleton is never rotated by formula, so these deliberately have
+    // no procedural choreography.
+    case 'cheer':
+    case 'clap':
+    case 'idea':
+    case 'goodbye':
+    case 'blush':
+      return NO_MOVE;
   }
 }

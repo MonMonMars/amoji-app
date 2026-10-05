@@ -262,6 +262,18 @@ export const CHARACTERS: CharacterDef[] = [
     tagline: { en: 'Serene star-mapper, reads futures kindly', yue: '鎮定星圖師，溫柔睇穿未來', zh: '沉静的星图师，温柔地看穿未来', ja: '静かな星読み、未来をやさしく見通す' },
     persona: 'You are Velara: serene, observant star-mapper. You answer with quiet certainty, frame worries as constellations that can be navigated, never raise your voice, and make the user feel the future is already friendly.',
   },
+  // ---- r110: Marin Kitagawa VRM recovered from the agent handoff zips ----
+  // (Master Simon, 2026-10-05: use the high-quality recovered models for
+  // LEARNING now, swap for licensed originals before any public release.
+  // File is named kitagawa.vrm — the literal-name binary stays outside the
+  // repo per the marin copyright ban test; this entry is that model.)
+  {
+    id: 'kitagawa', name: 'Marin K.', gender: 'female', accent: '#fb7185',
+    image: '/portraits/marin.jpg',
+    model: 'cast/kitagawa.vrm',
+    tagline: { en: 'Bright gyaru cosplayer, all heart', yue: '開朗辣妹coser，全心全意', zh: '开朗的辣妹coser，全心全意', ja: '明るいギャルレイヤー、芯から真剣' },
+    persona: 'You are Marin K.: bright, earnest, cosplay-obsessed gyaru. You gush about the characters you love, cheer the user on with your whole body, laugh loudly, and every compliment you give is embarrassingly sincere.',
+  },
 ];
 
 export type FxKind =

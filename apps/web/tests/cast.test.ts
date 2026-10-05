@@ -8,8 +8,8 @@ import { BACKGROUNDS, CHARACTERS, characterById, backgroundById, DEFAULT_PREFS, 
 import { CAST_NO, castNo } from '../lib/castNo';
 
 describe('cast roster', () => {
-  it('has 33 characters with taglines in every language and personas', () => {
-    expect(CHARACTERS.length).toBe(33);
+  it('has 34 characters with taglines in every language and personas', () => {
+    expect(CHARACTERS.length).toBe(34);
     for (const c of CHARACTERS) {
       // local portraits under /portraits — the classic cast uses AI-painted
       // .jpg art, the flagship/rebadged cast uses agent3-rendered .png; the
@@ -37,11 +37,11 @@ describe('cast roster', () => {
     expect(new Set(CHARACTERS.map((c) => c.model)).size).toBe(CHARACTERS.length);
   });
 
-  it('every character has a stable number — unique, 1..33 (r.52/r.104)', () => {
+  it('every character has a stable number — unique, 1..34 (r.52/r.104/r.110)', () => {
     const numbers = CHARACTERS.map((c) => castNo(c.id));
     for (const n of numbers) {
       expect(n).toBeGreaterThanOrEqual(1);
-      expect(n).toBeLessThanOrEqual(33);
+      expect(n).toBeLessThanOrEqual(34);
     }
     expect(new Set(numbers).size).toBe(CHARACTERS.length);
     // the map and the roster cover exactly the same ids

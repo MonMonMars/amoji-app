@@ -69,6 +69,7 @@ export const ARCHETYPE: Record<string, keyof typeof OUCH> = {
   blaze: 'fiery', cloud: 'fiery', ember: 'fiery', mio: 'fiery',
   // remote community cast (r.104)
   aera: 'gentle', dhahlia: 'cheerful', onyx: 'cool', velara: 'gentle',
+  kitagawa: 'cheerful',
 };
 
 /**

@@ -63,7 +63,20 @@
 // of flat ambient guarantees no material state can render pure black; a
 // 60-frame NaN sweep resets any corrupt quaternion/scale; and the reveal
 // gate re-compiles shaders on its first passing frame.
-export const APP_REVISION = 'r2026-10-05.109';
+// r2026-10-05.110: agent-zip recovery — the four other agents' handoff zips
+// were extracted and inventoried (kimi/workbuddy share one project; cursor
+// is code-only; spark is a 2D dating app with no 3D assets). Recovered and
+// shipped: (1) the Marin Kitagawa VRM as new character "Marin K." #34
+// (cast/kitagawa.vrm — stored under the kitagawa name per the marin
+// copyright ban; learning-only per Master Simon, swapped before release),
+// (2) 31 VRMA clips incl. five finger-rich idles (IdleNeutral / IdleChinHand
+// / IdleHug / IdleSassy / Impatient — 300–800KB, every finger chain
+// keyframed) now early in the idle rotation, (3) five EMOTION PERFORMANCE
+// moves — cheer / clap / idea / goodbye / blush fire real keyframed clips
+// (Cheer / Clapping / Idea / Goodbye / Blush) on encouraging words, praise,
+// farewells and bright ideas, so her cheer-ups are body language, not just
+// smile blendshapes. Cast 33 → 34.
+export const APP_REVISION = 'r2026-10-05.110';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

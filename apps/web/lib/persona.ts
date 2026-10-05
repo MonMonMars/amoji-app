@@ -78,6 +78,8 @@ export const CHARACTER_POSES: Record<string, string[]> = {
   alan: ['swaySoft', 'handsBehind', 'shoulderShrug', 'stand', 'chinStroke'],
   // remote community cast (r2026-10-05.104)
   aera: ['swaySoft', 'headTilt', 'daydream', 'dreamyTilt', 'lookUp'], dhahlia: ['bouncy', 'leanIn', 'stretchUp', 'lookUp', 'weightShift'], onyx: ['stand', 'handsBehind', 'guardCross', 'lookAround', 'confidentLean'], velara: ['handsBehind', 'chinStroke', 'stargaze', 'swaySoft', 'lookAround'],
+  // bright gyaru cosplayer — bouncy, leans in, strikes a pose (r110)
+  kitagawa: ['bouncy', 'leanIn', 'weightShift', 'confidentLean', 'headTilt'],
 };
 
 export function poseIdsFor(characterId: string): string[] {
@@ -127,6 +129,7 @@ export const POKE_STYLE: Record<string, PokeStyle> = {
   alan: { squash: 0.07, twist: 'playful', face: 'happy' },
   // remote community cast (r2026-10-05.104)
   aera: { squash: 0.04, twist: 'flustered', face: 'surprised' }, dhahlia: { squash: 0.07, twist: 'playful', face: 'happy' }, onyx: { squash: 0.02, twist: 'unimpressed', face: 'relaxed' }, velara: { squash: 0.03, twist: 'startled', face: 'surprised' },
+  kitagawa: { squash: 0.08, twist: 'playful', face: 'happy' },
 };
 
 export function pokeStyleFor(characterId: string): PokeStyle {
@@ -193,6 +196,7 @@ export const CHARACTER_LOOKS: Record<string, CharacterLook> = {
   alan:   { tint: '#f2fbf3', height: 1.04, width: 1.03 },
   // remote community cast (r2026-10-05.104)
   aera: { tint: '#f6f3ff', height: 1.0, width: 0.95 }, dhahlia: { tint: '#fff4f8', height: 0.98, width: 0.96 }, onyx: { tint: '#eef1f8', height: 1.07, width: 1.05 }, velara: { tint: '#f2fbf7', height: 1.01, width: 0.96 },
+  kitagawa: { tint: '#fff0f5', height: 1.0, width: 0.94 },
 };
 
 export function lookFor(characterId: string): CharacterLook {

@@ -1673,6 +1673,57 @@ export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
       '地図の終わりは未知の始まり。最初に探る未知はどれにする？',
     ],
   },
+  // kitagawa — bright gyaru cosplayer, all heart (r110)
+  kitagawa: {
+    en: [
+      'I sketched a new cosplay design today — want to see which character it\'s for?',
+      'Your outfit today gives me main-character energy, you know that? What\'s the occasion?',
+      'I practiced a pose from my favorite series for an hour. Will you judge it kindly?',
+      'Every character I love taught me something. What character changed you?',
+      'I hummed a new song in the mirror this morning. Want to hear the chorus?',
+      'You\'ve got that look like you\'re holding in a story. Spill it — what happened?',
+      'I could talk about anime for nine hours straight. Which season should we start with?',
+      'You\'re way cooler than you give yourself credit for. When did you last hear that?',
+      'My costume list has one slot left and it\'s yours to pick. Which one?',
+      'I saved the cutest café for us. Shall we go plan our next adventure there?',
+    ],
+    yue: [
+      '我今日畫咗個新 cosplay 草圖——你估下係邊個角色呀？',
+      '你今日著得成個主角咁，你知唔知呀？今日有咩喜事呀？',
+      '我對住鏡練咗個鐘頭我最愛作品嘅 pose。你會唔會手軟啲評分呀？',
+      '我鍾意嘅每個角色都教識咗我嘢。有冇一個角色改變咗你呀？',
+      '今朝我喺鏡前面哼咗首新歌。想唔想聽副歌呀？',
+      '你個樣似係收埋咗個故事喎。快啲講——發生咗咩事呀？',
+      '我講動漫可以講足九個鐘。我哋由邊一季開始好呀？',
+      '你其實叻過你自己諗好多。你幾時聽過人咁同你講呀？',
+      '我嘅 cos 名單仲剩一個位，留咗俾你揀。你揀邊個呀？',
+      '我留咗間最靚嘅 café 俾我哋。去嗰度傾下一次冒險好唔好呀？',
+    ],
+    zh: [
+      '我今天画了个新 cosplay 草图——你猜是哪个角色呀？',
+      '你今天穿得像个主角一样，你知不知道呀？今天有什么喜事呀？',
+      '我对着镜子练了一个小时我最爱作品的 pose。你会不会手下留情点评呀？',
+      '我喜欢的每个角色都教会了我东西。有没有一个角色改变了你呀？',
+      '早上我在镜子前哼了首新歌。想不想听副歌呀？',
+      '你那个样子像是藏了个故事。快讲——发生了什么呀？',
+      '我讲动漫可以讲足九个小时。我们从哪一季开始好呀？',
+      '你其实比你自己想的厉害多了。你什么时候听过有人这么跟你讲呀？',
+      '我的 cos 名单还剩一个位置，留给你挑。你挑哪一个呀？',
+      '我留了家最漂亮的 café 给我们。去那里聊下一次冒险好不好呀？',
+    ],
+    ja: [
+      '今日、新しいコスの設計図を描いたの——どのキャラか当ててみる？',
+      '今日のあなた、まるで主役みたい。何かいいことあったの？',
+      '一番好きな作品のポーズを鏡の前で1時間練習したの。優しく採点してくれる？',
+      '好きなキャラはみんな私に何かを教えてくれた。あなたを変えたキャラはいる？',
+      '今朝、鏡の前で新しい歌をハミングしてたの。サビ、聞いてみる？',
+      'なんだか話を溜め込んでる顔してる。ねえ、何があったの？',
+      'アニメの話なら9時間でもできるよ。どのシーズンから始める？',
+      'あなたは自分が思ってるよりずっと素敵よ。そう言われたのはいつぶり？',
+      'コス予定リストにあとひと枠残ってるから、あなたに選ばせてあげる。どれにする？',
+      'いちばん可愛いカフェを取っておいたの。次の冒険をそこで計画しよっか？',
+    ],
+  },
 };
 
 /** character id → poke reactions, per language (4 each) */
@@ -1878,6 +1929,13 @@ export const CHARACTER_POKE: Record<string, Record<Lang, string[]>> = {
     yue: ['呀——你飄入咗我嘅星圖。要唔要我標低呢一刻呀？', '溫柔嘅一推。我喺度重新校準緊軌道~', '已喺呢個坐標記錄低喇。要唔要我將佢畫做一粒新星星呀？', '你喺我畫圖畫到一半嘅時候搵到我。想做我張地圖嘅圖例咩？'],
     zh: ['呀——你飘进了我的星图。要不要我标下这一刻呀？', '温柔的一推。我正在重新校准轨道~', '已在这个坐标记录下来了。要不要我把它画成一颗新的星星呀？', '你在我画图到一半的时候找到了我。想做我地图的图例呀？'],
     ja: ['あっ——あなたが私の星図に漂い込んだ。この瞬間、記録しておこうか？', 'やさしいひと突き。軌道を再校正してるところ〜', 'その座標、記録したの。新しい星として描こうか？', '地図を書いてる途中で見つけちゃったのね。私の地図の凡例になってくれる？'],
+  },
+  // kitagawa — bright gyaru cosplayer (r110)
+  kitagawa: {
+    en: ['Eek! You found my ticklish spot!', 'Hey! That\'s not part of the cosplay!', 'Oh! You made me drop my sketchbook!', 'Poke me again and I\'ll make you my co-star!'],
+    yue: ['呀！你搵到我嘅死穴啦！', '喂！呢下唔係 cosplay 一部分㗎！', '哎呀！你整到我跌咗本速寫簿！', '再撳我，我就拉你做我嘅共演者！'],
+    zh: ['呀！你找到我的死穴了！', '喂！这下不是 cosplay 的一部分呀！', '哎呀！你弄得我掉了速写本！', '再戳我，我就拉你做我的共演者！'],
+    ja: ['きゃっ！くすぐったいところを見つけた！', 'ちょっと！それはコスの一部じゃないよ！', 'あっ！スケッチブック落としちゃった！', 'もう一回つついたら、相役に指名しちゃうよ！'],
   },
 };
 

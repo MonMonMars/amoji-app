@@ -779,6 +779,21 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
       { lang: 'en-US', names: ['Aria', 'Female'], basePitch: 1.01, baseRate: 0.9 },
     ],
   },
+  // kitagawa — bright gyaru cosplayer, bubbly and quick (r110)
+  kitagawa: {
+    yue: [
+      { lang: 'zh-HK', names: ['HiuGaai', 'Female'], basePitch: 1.18, baseRate: 1.06 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Xiaoyi', 'Female'], basePitch: 1.16, baseRate: 1.05 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Momoka', 'Female'], basePitch: 1.15, baseRate: 1.05 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Ana', 'Female'], basePitch: 1.14, baseRate: 1.06 },
+    ],
+  },
 };
 
 /** Emotion → prosody for the browser-TTS fallback path (multipliers). */
@@ -842,6 +857,8 @@ const FEMALE_CHARS = new Set([
   'lydia', 'ruby', 'snowy',
   // remote community cast (r2026-10-05.104) — onyx is male; the rest female
   'aera', 'dhahlia', 'velara',
+  // kitagawa (r110) — female
+  'kitagawa',
 ]);
 
 /**
@@ -880,6 +897,8 @@ const EXPRESSIVENESS: Record<string, number> = {
   anchor: 0.85,
   // remote community cast (r2026-10-05.104)
   aera: 1.1, dhahlia: 1.3, onyx: 0.9, velara: 0.95,
+  // kitagawa — bubbly gyaru, warbles plenty (r110)
+  kitagawa: 1.36,
 };
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);

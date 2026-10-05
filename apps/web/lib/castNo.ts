@@ -38,6 +38,8 @@ export const CAST_NO = {
   dhahlia: 31,
   onyx: 32,
   velara: 33,
+  // Marin Kitagawa recovered from agent handoff zips (r110 — learning only)
+  kitagawa: 34,
 } as const;
 
 export type CastId = keyof typeof CAST_NO;
