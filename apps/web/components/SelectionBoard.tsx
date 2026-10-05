@@ -26,6 +26,11 @@
 // burned the rest). The scroll row now shows cheap runtime-rendered one-frame
 // thumbnails (ModelThumb, cached JPEG per model), and only the TOP preview
 // chip keeps the live ModelPreview. The r34 notes above stay as history.
+// r2026-10-05.105 (Master Simon): every scroll row gets scroll position
+// memory — each row reopens where the user left it (select ⇄ change
+// round-trips) or, on a fresh entry, centered on the currently selected tile;
+// picking a new tile re-centers and becomes the next entry's anchor. Tiles
+// carry data-row-item so HScrollRow can find the selected one.
 import { useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import HScrollRow from './HScrollRow';
@@ -159,7 +164,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
           <h2 className="mb-0.5 pl-1 text-xs font-medium uppercase tracking-widest text-white/50">
             {t(lang, 'chooseCharacter')}
           </h2>
-          <HScrollRow ariaLabel="characters">
+          <HScrollRow ariaLabel="characters" rowKey="characters" selectedId={live.character}>
             {cast.map((c) => {
               const active = c.id === live.character;
               // Stable cast number — index in the FULL cast + 1, so Kid Mode
@@ -169,6 +174,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
               return (
                 <button
                   key={c.id}
+                  data-row-item={c.id}
                   onClick={() => pick({ character: c.id })}
                   className={`ui-card relative flex w-24 shrink-0 flex-col items-center gap-1.5 rounded-2xl border p-2.5 ${
                     active ? 'border-transparent bg-white/10' : 'border-white/10 bg-white/5 hover:bg-white/10'
@@ -208,12 +214,13 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
           <h2 className="mb-0.5 pl-1 text-xs font-medium uppercase tracking-widest text-white/50">
             {t(lang, 'chooseBackground')}
           </h2>
-          <HScrollRow ariaLabel="scenes">
+          <HScrollRow ariaLabel="scenes" rowKey="backgrounds" selectedId={live.background}>
             {scenes.map((b) => {
               const active = b.id === live.background;
               return (
                 <button
                   key={b.id}
+                  data-row-item={b.id}
                   onClick={() => pick({ background: b.id })}
                   className={`ui-card w-36 shrink-0 overflow-hidden rounded-2xl border ${
                     active ? 'border-white/80' : 'border-white/10 hover:border-white/40'
@@ -241,12 +248,13 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
           <h2 className="mb-0.5 pl-1 text-xs font-medium uppercase tracking-widest text-white/50">
             {t(lang, 'chooseLanguage')}
           </h2>
-          <HScrollRow ariaLabel="languages">
+          <HScrollRow ariaLabel="languages" rowKey="languages" selectedId={live.lang}>
             {LANGS.map((l) => {
               const active = l.id === live.lang;
               return (
                 <button
                   key={l.id}
+                  data-row-item={l.id}
                   onClick={() => pick({ lang: l.id })}
                   className={`ui-btn shrink-0 rounded-full px-6 py-2.5 text-sm font-medium hover:scale-105 ${
                     active ? 'bg-white text-black' : 'bg-white/10 text-white/75 hover:bg-white/20'

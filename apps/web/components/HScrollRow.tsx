@@ -8,6 +8,12 @@
  * opaque-on-desktop, and shown on any hover-capable device (some Windows
  * touch-laptops report pointer:coarse, which used to hide them entirely).
  * They still stay hidden on pure-touch phones, where finger-drag is natural.
+ * r2026-10-05.105 (Master Simon request): scroll position memory. Each row
+ * remembers its offset in sessionStorage (keyed by `rowKey`), so the
+ * select ⇄ change round-trip reopens the rows exactly where the user left
+ * them. On a fresh entry (no memory) the row opens CENTERED on the currently
+ * selected tile; picking a new tile re-centers smoothly and invalidates the
+ * memory, so the next entry centers on the NEW pick.
  */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
@@ -28,17 +34,60 @@ function Chevron({ dir }: { dir: 'left' | 'right' }) {
   );
 }
 
-export default function HScrollRow({ children, ariaLabel }: { children: ReactNode; ariaLabel?: string }) {
+export default function HScrollRow({
+  children,
+  ariaLabel,
+  rowKey,
+  selectedId,
+}: {
+  children: ReactNode;
+  ariaLabel?: string;
+  /** sessionStorage namespace for this row's remembered scroll offset */
+  rowKey?: string;
+  /** data-row-item id of the currently selected tile — centered on entry */
+  selectedId?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
+  const didMount = useRef(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
   const [showArrows, setShowArrows] = useState(false);
+  const storageKey = rowKey ? `amoji.row.${rowKey}` : null;
+
+  // scroll so the selected tile sits centered in the row viewport; rect-based
+  // (scrollBy delta) so it is immune to offsetParent coordinate quirks.
+  // returns false when there is nothing to center on.
+  const centerSelected = (behavior: ScrollBehavior): boolean => {
+    const el = ref.current;
+    if (!el || !selectedId) return false;
+    const item = el.querySelector<HTMLElement>(`[data-row-item="${selectedId}"]`);
+    if (!item) return false;
+    const elRect = el.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
+    const delta = itemRect.left + itemRect.width / 2 - (elRect.left + elRect.width / 2);
+    if (Math.abs(delta) < 4) return true;
+    el.scrollBy({ left: delta, behavior });
+    return true;
+  };
+
+  // debounced sessionStorage write — every scroll (drag, arrows, recenter)
+  // becomes the position the row reopens at on the next page entry.
+  const remember = () => {
+    const el = ref.current;
+    if (!el || !storageKey) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      try { sessionStorage.setItem(storageKey!, String(el.scrollLeft)); } catch { /* ignore */ }
+    }, 150);
+  };
 
   const update = () => {
     const el = ref.current;
     if (!el) return;
     setCanLeft(el.scrollLeft > 8);
     setCanRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 8);
+    remember();
   };
 
   useEffect(() => {
@@ -71,6 +120,21 @@ export default function HScrollRow({ children, ariaLabel }: { children: ReactNod
     const mo = new MutationObserver(update);
     mo.observe(el, { childList: true });
 
+    // r105 entry position: reopen where the user left off (select ⇄ change
+    // round-trips keep the browsing position); on a truly fresh entry (no
+    // memory) open centered on the currently selected tile so the current
+    // pick is visible on first paint instead of the row's start.
+    let remembered: number | null = null;
+    if (storageKey) {
+      try {
+        const raw = sessionStorage.getItem(storageKey);
+        if (raw !== null) remembered = Number(raw) || 0;
+      } catch { /* ignore */ }
+    }
+    if (remembered !== null) el.scrollTo({ left: remembered, behavior: 'auto' });
+    else centerSelected('auto');
+    didMount.current = true;
+
     update();
 
     return () => {
@@ -80,9 +144,22 @@ export default function HScrollRow({ children, ariaLabel }: { children: ReactNod
       el.removeEventListener('scroll', update);
       window.removeEventListener('resize', update);
       mo.disconnect();
+      if (saveTimer.current) clearTimeout(saveTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    // r105: a fresh pick re-centers its row (smooth) and wipes the remembered
+    // offset — the scroll events from the recenter then store the centered
+    // position, so the NEXT entry opens centered on the NEW pick.
+    if (!didMount.current) return;
+    if (storageKey) {
+      try { sessionStorage.removeItem(storageKey); } catch { /* ignore */ }
+    }
+    centerSelected('smooth');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
 
   const nudge = (dir: number) => {
     const el = ref.current;

@@ -28,7 +28,12 @@
 // test157t/VRM-Assets-Pack-For-Silly-Tavern (Aera #30, Dhahlia #31, Onyx #32,
 // Velara #33), each with poses, poke style, look, voice matrix, laugh/ouch
 // archetype and full idle/poke banks.
-export const APP_REVISION = 'r2026-10-05.104';
+// r2026-10-05.105: selection rows remember their scroll offset in
+// sessionStorage (select ⇄ change reopens exactly where you left off) and
+// open centered on the currently selected tile on a fresh entry; a new pick
+// re-centers smoothly and becomes the next entry's anchor. Tile buttons now
+// carry data-row-item ids so HScrollRow can find the selected one.
+export const APP_REVISION = 'r2026-10-05.105';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
