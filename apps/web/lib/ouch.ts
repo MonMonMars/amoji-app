@@ -153,3 +153,53 @@ export function pickOuch(characterId: string, lang: Lang, n: number, mood?: stri
   const list = bank[lang] ?? bank.yue;
   return list[n % list.length]!;
 }
+
+// ---------------------------------------------------------------------------
+// r115 (Master Simon): WHERE the poke lands decides the cry. A tap on the
+// head, the chest, an arm, or the belly each gets its own ouch bank, in all
+// four UI languages. Positive/playful like the rest of the cast — nobody
+// snaps back; they yelp, laugh it off, or tease. Deterministic per poke
+// count, so a zone cycles through its lines instead of repeating one.
+// ---------------------------------------------------------------------------
+export type PokeZone = 'head' | 'body' | 'armL' | 'armR' | 'belly';
+
+const ZONE_OUCH: Record<PokeZone, CryBank> = {
+  head: {
+    yue: ['哎呀！你彈我頭！', '痛呀！我個頭呀！', '喂！頭先唔係波嚟㗎！', '呀！會變蠢㗎咋！', '哼，彈走我啲靈感㗎！'],
+    zh: ['哎呀！你弹我头！', '痛！我的头！', '喂！头不是球啦！', '呀！会变笨的！', '哼，弹走我的灵感了！'],
+    ja: ['あいたっ！頭を弾かないで！', '痛いよぉ！頭はボールじゃない！', 'もう！頭ぽんぽん反則！', 'えっ、頭にキノコはやめて！', 'あうっ！頭に残るって！'],
+    en: ['Ow! My head!', 'Hey! Heads are not bouncy balls!', 'Ouch! My brain needs that!', 'Ah! No head bonks!', 'Ow ow — my thinking cap!'],
+  },
+  body: {
+    yue: ['呀！偷襲！', '喂呀！身體係我㗎！', '哎呀！你戳中我弱點！', '哼！再嚟過呀！', '呀！好痕呀！'],
+    zh: ['呀！偷袭！', '喂！身体是我的！', '哎呀！戳中弱点了！', '哼！再来呀！', '呀！好痒！'],
+    ja: ['きゃっ！不意打ち！', 'もう！くすぐったい！', 'あいたっ！急所に当たった！', 'えっ！もう一回？', 'ひゃっ！くすぐったいよ！'],
+    en: ['Ah! Sneak attack!', 'Hey! That tickles!', 'Ow! Right in the weak spot!', 'Hmph! Try that again!', 'Eep! That tickles!'],
+  },
+  armL: {
+    yue: ['呀！我隻左手！', '喂！隻手唔係咁玩㗎！', '哎呀，左手先！', '哼！整痛我對手！', '呀！我隻手呀！'],
+    zh: ['呀！我的左手！', '喂！手不是这么玩的！', '哎呀，是左手！', '哼！弄疼我的手了！', '呀！我的手呀！'],
+    ja: ['いたっ！左手！', 'もう！左手は遊び道具じゃない！', 'あうっ、左手！', 'えー！左手に当たっちゃった！', 'ひゃっ、左手だって！'],
+    en: ['Ow! Lefty!', 'Hey! That arm is attached!', 'Ouch — left arm first!', 'Ah! Hands off my left arm!', 'Eep! My left arm!'],
+  },
+  armR: {
+    yue: ['呀！我隻右手！', '喂！隻手唔係咁玩㗎！', '哎呀，右手先！', '哼！整痛我對手！', '呀！我隻手呀！'],
+    zh: ['呀！我的右手！', '喂！手不是这么玩的！', '哎呀，是右手！', '哼！弄疼我的手了！', '呀！我的手呀！'],
+    ja: ['いたっ！右手！', 'もう！右手は遊び道具じゃない！', 'あうっ、右手！', 'えー！右手に当たっちゃった！', 'ひゃっ、右手だって！'],
+    en: ['Ow! Righty!', 'Hey! That arm is attached!', 'Ouch — right arm first!', 'Ah! Hands off my right arm!', 'Eep! My right arm!'],
+  },
+  belly: {
+    yue: ['哈哈！肚餓唔係咁搞㗎！', '哎呀！個肚呀！', '唔好撳我個肚呀！', '呀！我笑喇！', '喂！肚仔怕痕㗎！'],
+    zh: ['哈哈！肚子饿了不是这样戳的！', '哎呀！我的肚子！', '别按我肚子呀！', '呀！我要笑了！', '喂！肚子怕痒的！'],
+    ja: ['あははっ！お腹はくすぐったい！', 'いたっ！お腹！', 'お腹は触っちゃダメ！', 'きゃっ！笑っちゃう！', 'もう！お腹は弱いんだから！'],
+    en: ['Haha! That is not how you fix hunger!', 'Ow! My tummy!', 'No belly pokes!', 'Eep! I am gonna laugh!', 'Hey! My belly is ticklish!'],
+  },
+};
+
+/** r115: the zone's ouch cry, or null when the zone is unknown (caller falls back to pickOuch). */
+export function pickZoneOuch(zone: string, lang: Lang, n: number): string | null {
+  const bank = ZONE_OUCH[zone as PokeZone];
+  if (!bank) return null;
+  const list = bank[lang] ?? bank.yue;
+  return list.length ? list[n % list.length]! : null;
+}

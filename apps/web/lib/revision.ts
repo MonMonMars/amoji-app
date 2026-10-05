@@ -87,7 +87,37 @@
 // gesture-gate failure (gtts NotAllowedError, synth 'not-allowed') stashes
 // the line and re-speaks it on the NEXT real pointerdown (45s freshness,
 // one replay, newer lines win by natural overwrite).
-export const APP_REVISION = 'r2026-10-05.111';
+// r2026-10-05.113: "she still falls to a very low position when the first
+// talk starts" — ROOT CAUSE FOUND in the library source: three-vrm-animation
+// 3.5.5 names its humanoid tracks `J_Bip_C_Hips.position` (bare node name,
+// NO leading dot), but rebaseClipHips (r79/r94/r98) looked for a dot-wrapped
+// `.J_Bip_C_Hips.` tag — which matched NOTHING, so every hips rebase since
+// r79 was a silent no-op and foreign-rig performance clips kept their raw
+// baked hips-Y: she sank the moment a MOVE_CLIP performance (hello/sing/
+// dance/cheer) fired at the first reply, then popped back when the idle
+// returned. The matcher now reduces every binding path (bare / dot /
+// .bones[Name] forms) to its bare node name before comparing — the r103
+// bone-scan logic — so all three forms match and future clip sources are
+// covered too. Hips quaternion rebasing (facing fix) now actually applies
+// as well.
+// r2026-10-05.115: SKELETON POKE POINTS + HAND DRAG (Master Simon). A poke
+// no longer lands as one generic flinch: the raycast hit point is compared
+// against the humanoid probe bones (head/neck, chest/spine, shoulders+arm
+// chains, hips+upper legs) and the NEAREST one decides the zone — head pokes
+// snap the head back with a barely-moving torso, arm pokes flinch only that
+// arm with a lean-away twist, belly pokes double her forward with folded
+// elbows, body pokes keep the classic r83 full flinch. All zones still route
+// through the human joint limits. The zone also drives the voice: five new
+// ouch banks (head/body/armL/armR/belly × yue/zh/ja/en, 5 lines each,
+// playful and positive) are spoken as the lead cry, falling back to the
+// personality cry for chibi/deform pokes. AND: either hand is grabbable —
+// land a pointer within 64px of a projected hand bone and you hold that
+// hand; it follows your finger on a camera-facing plane (camera rotation is
+// suppressed while holding) through a two-bone reach (upper arm then
+// forearm, world-space delta re-expressed per bone, influence-eased), and
+// springs home over ~0.4s on release. New Avatar.getBoneNode() exposes raw
+// bones for both avatar kinds; upper legs join the resolved bone table.
+export const APP_REVISION = 'r2026-10-05.115';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

@@ -95,7 +95,8 @@ import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
 
 export interface CompanionCanvasProps {
   onNotice?: (n: { reason: 'webgl' | 'asset' }) => void;
-  onPoke?: () => void;
+  /** r115: carries WHERE the poke landed — 'head' | 'body' | 'armL' | 'armR' | 'belly' */
+  onPoke?: (zone: string) => void;
   accent?: string;
   /** character id — gives her/him a deterministic, personal idle-motion sequence */
   seedKey?: string;
@@ -688,10 +689,24 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       const HORIZ_TRAVEL_MAX = 1.0; // meters of total hips X/Z drift from rest
       const rebaseClipHips = (clip: THREE.AnimationClip, lockFeet: boolean) => {
         if (!hipsNode || !hipsRestQ || !hipsRestP) return;
-        const tag = `.${hipsNode.name}.`;
         const floorY = hipsRestP.y * FLOOR_FRAC;
         for (const track of clip.tracks) {
-          if (!track.name.includes(tag)) continue;
+          // r113: match the hips track by REDUCING the binding path to its
+          // bare node name — the library emits `J_Bip_C_Hips.position`
+          // (no leading dot), while the old dot-wrapped tag `.Name.` only
+          // matched the `.Name.position` form and silently skipped every
+          // clip, letting foreign-rig baked hips-Y drop her at first talk.
+          const suffix = track.name.endsWith('.quaternion')
+            ? '.quaternion'
+            : track.name.endsWith('.position')
+              ? '.position'
+              : null;
+          if (!suffix) continue;
+          const path = track.name.slice(0, -suffix.length);
+          const bone = path.includes('[') && path.endsWith(']')
+            ? path.slice(path.lastIndexOf('[') + 1, -1)
+            : path.slice(path.lastIndexOf('.') + 1);
+          if (bone !== hipsNode.name) continue;
           const v = track.values;
           if (track.name.endsWith('.quaternion')) {
             const q0 = new THREE.Quaternion(v[0]!, v[1]!, v[2]!, v[3]!);
@@ -955,25 +970,83 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     // one finger drag   = rotate around her
     // two finger drag   = move (pan) the camera · pinch = zoom
     // double tap empty  = reset camera · tap / double tap her = poke
+    // r115: the poke now knows WHERE it landed (nearest skeleton bone →
+    // head/body/armL/armR/belly reaction), and either HAND is grabbable —
+    // land a pointer within GRAB_PX of a projected hand bone and you can
+    // pull that arm around; it springs home on release.
     const raycaster = new THREE.Raycaster();
     let pokeAt = -Infinity;
     let lastEmptyTap = -Infinity;
+    // r115: which body zone the current poke reaction belongs to
+    let pokeZone: 'head' | 'body' | 'armL' | 'armR' | 'belly' = 'body';
     // r2026-10-04.58: which library performance the move trigger already
     // fired for (rising-edge firing — one clip start per triggerMove)
     let mvHandled: MoveKind | null = null;
     const pointers = new Map<number, { x: number; y: number; sx: number; sy: number; t: number; moved: number }>();
     let pinchDist = 0;
     let lastMid: { x: number; y: number } | null = null;
+    // r115 hand-drag state — released<0 means still held
+    let handDrag: {
+      side: 'left' | 'right'; pointerId: number;
+      target: THREE.Vector3; depth: number; infl: number; released: number;
+    } | null = null;
+    const GRAB_PX = 64;
+    // scratch (no per-frame allocation)
+    const sHit = new THREE.Vector3();
+    const sV1 = new THREE.Vector3(); const sV2 = new THREE.Vector3();
+    const sV3 = new THREE.Vector3(); const sV4 = new THREE.Vector3();
+    const sQ1 = new THREE.Quaternion(); const sQ2 = new THREE.Quaternion();
+    const sQ3 = new THREE.Quaternion();
 
-    const hitVrm = (cx: number, cy: number): boolean => {
-      if (!avatar) return false;
+    // r115: the nearest humanoid probe bone to the hit point decides the zone
+    const ZONE_PROBE_BONES: Record<string, string[]> = {
+      head: ['head', 'neck'],
+      body: ['chest', 'spine'],
+      armL: ['leftShoulder', 'leftUpperArm', 'leftLowerArm', 'leftHand'],
+      armR: ['rightShoulder', 'rightUpperArm', 'rightLowerArm', 'rightHand'],
+      belly: ['hips', 'leftUpperLeg', 'rightUpperLeg'],
+    };
+    const POKE_ZONES = Object.keys(ZONE_PROBE_BONES);
+    const zoneForHit = (hit: THREE.Vector3): typeof pokeZone => {
+      let best: typeof pokeZone = 'body';
+      let bestD = Infinity;
+      for (const z of POKE_ZONES) {
+        for (const bn of ZONE_PROBE_BONES[z]!) {
+          const node = avatar?.getBoneNode(bn);
+          if (!node) continue;
+          node.getWorldPosition(sV1);
+          const d = sV1.distanceToSquared(hit);
+          if (d < bestD) { bestD = d; best = z as typeof pokeZone; }
+        }
+      }
+      return best;
+    };
+
+    const rayHit = (cx: number, cy: number): THREE.Intersection | null => {
+      if (!avatar) return null;
       const rect = host.getBoundingClientRect();
       const ndc = new THREE.Vector2(
         ((cx - rect.left) / rect.width) * 2 - 1,
         -((cy - rect.top) / rect.height) * 2 + 1,
       );
       raycaster.setFromCamera(ndc, camera);
-      return raycaster.intersectObject(avatar.root, true).length > 0;
+      const hits = raycaster.intersectObject(avatar.root, true);
+      return hits[0] ?? null;
+    };
+
+    // r115: screen-space position + camera depth of a hand bone (for the grab test)
+    const handScreen = (side: 'left' | 'right') => {
+      const node = avatar?.getBoneNode(side === 'left' ? 'leftHand' : 'rightHand');
+      if (!node) return null;
+      const rect = host.getBoundingClientRect();
+      node.getWorldPosition(sV2);
+      const depth = sV2.distanceTo(camera.position);
+      sV2.project(camera);
+      return {
+        x: rect.left + ((sV2.x + 1) / 2) * rect.width,
+        y: rect.top + ((-sV2.y + 1) / 2) * rect.height,
+        depth,
+      };
     };
 
     const midpoint = () => {
@@ -990,6 +1063,21 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
         const a = pts[0]!, b = pts[1]!;
         pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
         lastMid = midpoint();
+      } else if (pointers.size === 1 && avatar && !handDrag) {
+        // r115: did the pointer land on a HAND? then it is a grab, not a poke
+        for (const side of ['left', 'right'] as const) {
+          const hs = handScreen(side);
+          if (hs && Math.hypot(e.clientX - hs.x, e.clientY - hs.y) < GRAB_PX) {
+            const node = avatar.getBoneNode(side === 'left' ? 'leftHand' : 'rightHand');
+            if (!node) break;
+            handDrag = {
+              side, pointerId: e.pointerId,
+              target: node.getWorldPosition(new THREE.Vector3()),
+              depth: hs.depth, infl: 0, released: -1,
+            };
+            break;
+          }
+        }
       }
     };
     const onPointerMove = (e: PointerEvent) => {
@@ -1000,6 +1088,18 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       p.x = e.clientX;
       p.y = e.clientY;
       p.moved += Math.abs(dx) + Math.abs(dy);
+      // r115: a held hand follows the pointer on the camera-facing plane at
+      // the grab depth — the camera does NOT rotate while a hand is held.
+      if (handDrag && e.pointerId === handDrag.pointerId && handDrag.released < 0) {
+        const rect = host.getBoundingClientRect();
+        sV3.set(
+          ((e.clientX - rect.left) / rect.width) * 2 - 1,
+          -((e.clientY - rect.top) / rect.height) * 2 + 1,
+          0.5,
+        ).unproject(camera).sub(camera.position).normalize();
+        handDrag.target.copy(camera.position).addScaledVector(sV3, handDrag.depth);
+        return;
+      }
       if (pointers.size === 2) {
         // pinch zoom + two-finger pan
         const pts = [...pointers.values()];
@@ -1030,13 +1130,20 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
         pinchDist = 0;
         lastMid = null;
       }
+      // r115: letting go of a held hand starts the spring-home glide
+      if (handDrag && e.pointerId === handDrag.pointerId && handDrag.released < 0) {
+        handDrag.released = performance.now();
+      }
       if (!p) return;
       const quick = performance.now() - p.t < 350;
       const still = Math.hypot(e.clientX - p.sx, e.clientY - p.sy) <= 8;
       if (quick && still) {
-        if (hitVrm(e.clientX, e.clientY)) {
+        const hit = rayHit(e.clientX, e.clientY);
+        if (hit) {
           pokeAt = performance.now();
-          onPokeRef.current?.();
+          // r115: WHERE did it land? nearest probe bone → zone reaction + voice
+          pokeZone = zoneForHit(hit.point);
+          onPokeRef.current?.(pokeZone);
         } else {
           const nowTs = performance.now();
           if (nowTs - lastEmptyTap < 350) {
@@ -1131,21 +1238,32 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
               rotX += -0.16 * arc; // lean back from the poke
               rotY += (TWIST_AMOUNT[poke.twist] ?? 0.05) * 1.6 * Math.sin(t * Math.PI * 2);
             } else {
-              // human: the SKELETON takes the hit. Spine whips back on the
-              // press, chest follows a beat later (staggered like a real
-              // flinch), the head snaps back with a fading shiver, the
-              // shoulders lift and the elbows fold a breath.
+              // r115: the SKELETON takes the hit — and WHERE it lands decides
+              // which part of the skeleton flinches. head = the head snaps
+              // back hard, torso barely moves; body = the classic full
+              // flinch (unchanged); armL/armR = only that arm recoils with a
+              // lean-away twist; belly = she doubles forward with folded
+              // elbows. Weights multiply the r83 recipe, so every zone still
+              // routes through the human joint limits below.
+              const ZW = {
+                head:  { head: 1.9, spine: 0.3, chest: 0.25, armL: 0.15, armR: 0.15, elb: 0.25, up: 0.1, twist: 0.3 },
+                body:  { head: 1.0, spine: 1.0, chest: 1.0, armL: 1.0, armR: 1.0, elb: 1.0, up: 1.0, twist: 1.0 },
+                armL:  { head: 0.5, spine: 0.4, chest: 0.3, armL: 1.6, armR: 0.1, elb: 1.4, up: 1.2, twist: 0.9 },
+                armR:  { head: 0.5, spine: 0.4, chest: 0.3, armL: 0.1, armR: 1.6, elb: 1.4, up: 1.2, twist: 0.9 },
+                belly: { head: 0.7, spine: 1.3, chest: 0.8, armL: 0.5, armR: 0.5, elb: 1.5, up: 0.2, twist: 0.2 },
+              }[pokeZone];
               const press2 = Math.min(Math.max(t - 0.05, 0) / 0.08, 1) * Math.exp(-Math.max(0, t - 0.13) * 3.6);
-              skSpine = -0.3 * press;
-              skChest = -0.34 * press2;
-              skHeadX = -0.3 * press + 0.05 * Math.sin(t * 22) * Math.exp(-t * 5);
-              skHeadZ = (TWIST_AMOUNT[poke.twist] ?? 0.05) * 2.2 * press;
-              skLArm = -0.55 * press;
-              skRArm = -0.45 * press;
-              skLElb = 0.5 * press;
-              skRElb = 0.45 * press;
-              skLUp = -0.25 * press; // upper arms lift a breath
-              skRUp = -0.25 * press;
+              const bellyFold = pokeZone === 'belly' ? 1 : -1; // belly folds FORWARD
+              skSpine = bellyFold * 0.3 * press * ZW.spine;
+              skChest = -0.34 * press2 * ZW.chest;
+              skHeadX = (-0.3 * press + 0.05 * Math.sin(t * 22) * Math.exp(-t * 5)) * ZW.head;
+              skHeadZ = (TWIST_AMOUNT[poke.twist] ?? 0.05) * 2.2 * press * ZW.twist;
+              skLArm = -0.55 * press * ZW.armL;
+              skRArm = -0.45 * press * ZW.armR;
+              skLElb = 0.5 * press * ZW.elb;
+              skRElb = 0.45 * press * ZW.elb;
+              skLUp = -0.25 * press * ZW.up; // upper arms lift a breath
+              skRUp = -0.25 * press * ZW.up;
             }
           }
           if (laugh > 0) {
@@ -1249,6 +1367,52 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
         // compose cleanly with every driving mode (clip, procedural, recoil).
         avatar.applyRelaxedHands();
         avatar.clampShoulderROM();
+
+        // r115: hand-drag override — after everything else wrote the
+        // skeleton, pull the grabbed arm's two bones toward the pointer.
+        // Influence eases in on grab and glides out over ~0.4s after release
+        // (the spring home), then the drag state clears entirely.
+        if (handDrag) {
+          if (handDrag.released < 0) {
+            handDrag.infl = Math.min(1, handDrag.infl + dt / 160);
+          } else {
+            handDrag.infl = Math.max(0, handDrag.infl - dt / 400);
+            if (handDrag.infl <= 0) handDrag = null;
+          }
+        }
+        if (handDrag && handDrag.infl > 0 && avatar) {
+          const side = handDrag.side;
+          const upN = avatar.getBoneNode(side === 'left' ? 'leftUpperArm' : 'rightUpperArm');
+          const loN = avatar.getBoneNode(side === 'left' ? 'leftLowerArm' : 'rightLowerArm');
+          const haN = avatar.getBoneNode(side === 'left' ? 'leftHand' : 'rightHand');
+          if (upN && loN && haN) {
+            // two-bone reach: swing the upper arm so the elbow heads for the
+            // target, then the forearm so the hand closes the gap. Each
+            // correction is a world-space delta re-expressed in the bone's
+            // local frame (pW⁻¹·Δ·pW) and slerped by the influence — partial
+            // while easing in, full while held, fading on the spring home.
+            const tgt = handDrag.target;
+            const k = handDrag.infl * 0.8;
+            const reach = (bone: THREE.Object3D, child: THREE.Object3D) => {
+              bone.getWorldPosition(sV3);
+              child.getWorldPosition(sV4);
+              sV1.copy(tgt).sub(sV3).normalize(); // want
+              sV2.copy(sV4).sub(sV3).normalize();  // have
+              sQ1.setFromUnitVectors(sV2, sV1);   // world delta
+              sQ2.identity().slerp(sQ1, k);        // scaled by influence
+              if (bone.parent) {
+                bone.parent.getWorldQuaternion(sQ3);   // pW
+                sQ1.copy(sQ3).invert()                  // pW⁻¹
+                  .multiply(sQ2)                          // ·Δ
+                  .multiply(sQ3);                         // ·pW
+                bone.quaternion.premultiply(sQ1);
+              }
+            };
+            reach(upN, loN);
+            reach(loN, haN);
+          }
+        }
+
         avatar.update(dt / 1000);
 
         // r109 NaN sweep: a corrupt clip key or a bad spring-bone write can

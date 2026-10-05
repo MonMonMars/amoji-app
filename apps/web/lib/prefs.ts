@@ -359,7 +359,9 @@ export type StrKey =
   // brain routing (r2026-10-03.05)
   | 'brainTitle' | 'brainAuto' | 'brainAutoHint' | 'brainKeyPlaceholder' | 'brainNoKey'
   // voice self-test + diagnostics (r2026-10-04.75)
-  | 'testVoice' | 'testVoiceBtn' | 'voiceBlockedHint';
+  | 'testVoice' | 'testVoiceBtn' | 'voiceBlockedHint'
+  // ChatGPT-style emotional TTS tier (r2026-10-05.112)
+  | 'openaiVoice' | 'openaiVoiceHint' | 'openaiKeyPlaceholder' | 'openaiEndpointPlaceholder' | 'openaiCostHint';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   tagline: {
@@ -492,6 +494,34 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: '聽唔到聲——檢查電話嘅靜音掣同音量，再撳一次播放。仲係唔得嘅話，將「語音回覆」關掉再開一次。',
     zh: '没有听到声音——请检查手机的静音开关和音量，然后再按一次播放。如果还是无声，把「语音回复」关掉再打开一次。',
     ja: '声が聞こえません——本体のミュートスイッチと音量を確認してから、もう一度再生を押してください。それでもだめなら「音声返答」を一度オフにしてオンに戻してください。',
+  },
+  // ChatGPT-style emotional TTS tier (r2026-10-05.112)
+  openaiVoice: {
+    en: 'ChatGPT voice (OpenAI)', yue: 'ChatGPT 聲（OpenAI）', zh: 'ChatGPT 声音（OpenAI）', ja: 'ChatGPT音声（OpenAI）',
+  },
+  openaiVoiceHint: {
+    en: 'Emotional, human-sounding voice — the same engine family as ChatGPT. Needs your OpenAI API key plus a proxy URL; without a proxy the browser blocks the call and the free voices are used instead.',
+    yue: '有感情、似真人嘅聲——同 ChatGPT 同一引擎家族。要用你嘅 OpenAI API key 加 proxy 網址；冇 proxy 嘅話瀏覽器會擋，會用返免費聲。',
+    zh: '有感情、像真人的声音——与 ChatGPT 同一引擎家族。需要你的 OpenAI API 密钥加代理网址；没有代理时浏览器会拦截，自动改用免费声音。',
+    ja: '感情的で人間らしい音声——ChatGPTと同じエンジン系。OpenAI APIキーとプロキシURLが必要。プロキシがないとブラウザがブロックし、無料音声に切り替わります。',
+  },
+  openaiKeyPlaceholder: {
+    en: 'sk-… OpenAI API key — saved only on this device',
+    yue: 'sk-… OpenAI API 密鑰——只喺呢部機保存',
+    zh: 'sk-… OpenAI API 密钥——仅保存在本设备',
+    ja: 'sk-… OpenAI APIキー——この端末のみ保存',
+  },
+  openaiEndpointPlaceholder: {
+    en: 'proxy URL (blank = api.openai.com, blocked by the browser)',
+    yue: 'proxy 網址（留空＝api.openai.com，瀏覽器會擋）',
+    zh: '代理网址（留空＝api.openai.com，会被浏览器拦截）',
+    ja: 'プロキシURL（空＝api.openai.com、ブラウザにブロックされます）',
+  },
+  openaiCostHint: {
+    en: 'Uses gpt-4o-mini-tts ≈ US$0.015/min — a month of daily chats ≈ US$1.',
+    yue: '用 gpt-4o-mini-tts ≈ US$0.015/分鐘——每日傾偈一個月 ≈ US$1。',
+    zh: '使用 gpt-4o-mini-tts ≈ US$0.015/分钟——每天聊天一个月 ≈ US$1。',
+    ja: 'gpt-4o-mini-tts使用 ≈ 0.015米ドル/分——毎日話すと1か月 ≈ 1米ドル。',
   },
 };
 

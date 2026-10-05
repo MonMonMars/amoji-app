@@ -181,16 +181,20 @@ export interface Avatar {
   applyRelaxedHands(): void;
   /** r103: floor the upper arm's outward swing so arms never cross the midline */
   clampShoulderROM(): void;
+  /** r115: raw bone lookup for poke-zone raycast + hand-drag IK (null when absent) */
+  getBoneNode(name: string): THREE.Object3D | null;
   update(dt: number): void;
 }
 
 // VRM 0.x / humanoid bone names we resolve (identical to VRMHumanBoneName)
+// r115: upper legs join the table — the belly-poke zone probes them.
 const BONE_NAMES = [
   'hips', 'spine', 'chest', 'neck', 'head',
   'leftShoulder', 'rightShoulder',
   'leftUpperArm', 'rightUpperArm',
   'leftLowerArm', 'rightLowerArm',
   'leftHand', 'rightHand',
+  'leftUpperLeg', 'rightUpperLeg',
 ] as const;
 type BoneName = (typeof BONE_NAMES)[number];
 
@@ -638,6 +642,15 @@ class V1Avatar implements Avatar {
     if (r && re) clampUpperArmAdduction(r, re, sl, sr);
   }
 
+  /** r115: the humanoid bone behind a semantic name (normalized node for VRM 1.0) */
+  getBoneNode(name: string): THREE.Object3D | null {
+    try {
+      return this.vrm.humanoid?.getNormalizedBoneNode(name as VRMHumanBoneName) ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   update(dt: number): void {
     this.vrm.update(dt);
   }
@@ -879,6 +892,11 @@ class GenericAvatar implements Avatar {
     const r = this.bones.get('rightUpperArm');
     const re = this.bones.get('rightLowerArm');
     if (r && re) clampUpperArmAdduction(r, re, sl, sr);
+  }
+
+  /** r115: resolved bone by semantic name — body map first, then fingers */
+  getBoneNode(name: string): THREE.Object3D | null {
+    return this.bones.get(name as BoneName) ?? this.fingers.get(name) ?? null;
   }
 
   update(dt: number): void {

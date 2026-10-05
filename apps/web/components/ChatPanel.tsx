@@ -138,7 +138,7 @@ import { notifySpeaking, isSpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
 import { pickIdleLine, pickPokeLine } from '../lib/persona-chatter';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
-import { pickOuch, ouchStyleFor } from '../lib/ouch';
+import { pickOuch, pickZoneOuch, ouchStyleFor } from '../lib/ouch';
 import { pickLaugh, laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { WARMUP_FIRST_MS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from '../lib/warmup';
 import { clientChat } from '../lib/client-chat';
@@ -175,6 +175,8 @@ export interface ChatPanelProps {
   kidMode?: boolean;
   /** increments when the user pokes the character — triggers a poke reply */
   pokeCount?: number;
+  /** r115: where the latest poke landed ('head'|'body'|'armL'|'armR'|'belly') */
+  pokeZone?: string;
   onStatus?: (s: ChatStatus) => void;
   onMemCount?: (n: number) => number | void;
 }
@@ -195,6 +197,7 @@ export default function ChatPanel({
   characterGender = 'female',
   kidMode = false,
   pokeCount = 0,
+  pokeZone = '',
   onStatus,
   onMemCount,
 }: ChatPanelProps) {
@@ -449,7 +452,9 @@ export default function ChatPanel({
     playPokeSfx();
     const ouchMood = lastFeltRef.current;
     const style = ouchStyleFor(ouchMood);
-    const ouch = pickOuch(characterId, lang, pokeCount, ouchMood);
+    // r115: a zoned poke (head/arm/belly…) cries for that body part first;
+    // an unknown zone keeps the classic personality cry.
+    const ouch = pickZoneOuch(pokeZone, lang, pokeCount) ?? pickOuch(characterId, lang, pokeCount, ouchMood);
     sayLocal(pickPokeLine(characterId, lang, pokeCount), { surprise: style.surprise, joy: style.joy }, { text: ouch, pitch: style.pitch, rate: style.rate });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pokeCount]);
