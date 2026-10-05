@@ -199,8 +199,9 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                     style={active ? { boxShadow: `0 0 0 2px ${c.accent}` } : undefined}
                   >
                     {/* r104: runtime-rendered cached thumbnail (falls back to
-                        painted art / accent monogram) instead of a live bust */}
-                    <ModelThumb url={c.model} accent={c.accent} name={c.name} image={c.image} />
+                        painted art / accent monogram) instead of a live bust.
+                        r114: pre-baked posed screenshot wins when present. */}
+                    <ModelThumb url={c.model} accent={c.accent} name={c.name} image={c.image} bakedId={c.id} />
                   </span>
                   <span className="text-xs font-semibold">{c.name}</span>
                   <span className="text-[10px] leading-none text-white/40">{c.gender === 'female' ? '♀' : '♂'}</span>

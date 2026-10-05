@@ -117,7 +117,22 @@
 // forearm, world-space delta re-expressed per bone, influence-eased), and
 // springs home over ~0.4s on release. New Avatar.getBoneNode() exposes raw
 // bones for both avatar kinds; upper legs join the resolved bone table.
-export const APP_REVISION = 'r2026-10-05.115';
+// r2026-10-05.116: BAKED MODEL THUMBNAILS (Master Simon: "update the images
+// of the character using the screenshot of the 3D models"). The selection
+// tiles no longer show raw-load-pose one-frame renders (T-pose, blank face):
+// a dev-only thumb-bake studio (app/thumb-bake, localhost-only) renders every
+// cast member through the real avatar pipeline — IdleNeutral mid-frame from
+// the motion library, relaxed calibrated fingers, a gentle smile, neutral
+// daylight — and a local save server writes 512px JPEGs to
+// public/cast-thumbs/<id>.jpg (34/34 baked, zero failures). ModelThumb
+// prefers the baked JPG and falls back to the runtime render → painted art →
+// monogram chain on 404, so tiles now show her ACTUAL posed smiling face.
+// The studio also self-heals two rig classes: T-pose detection (upper-arm
+// world direction) falls back to the calibrated procedural arms-down pose
+// when a clip fails to bind (alan/nova/ember), and head/hips-anchored framing
+// with hat/hair margin replaced the whole-body Box3 guess that cropped
+// robbie's head and zoomed through mochi's chibi face.
+export const APP_REVISION = 'r2026-10-05.116';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
