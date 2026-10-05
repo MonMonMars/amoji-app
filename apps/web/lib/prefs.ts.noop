@@ -1,4 +1,0 @@
-// r2026-10-05.102 (Master Simon): the name plate's "preparing…" label.
-// Added to the StrKey union + STRINGS table — StatusPlate (r102) renders it
-// while the reveal gate waits for textures/first frames, so the loading row
-// is an honest indeterminate state instead of a frozen percentage.
