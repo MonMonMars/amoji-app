@@ -41,8 +41,9 @@ describe('asset governance', () => {
     // local cast/ models must be manifested; remote community VRMs are
     // governed by the cast test's approved-URL allowlist instead
     for (const c of CHARACTERS) {
-      if (c.model.startsWith('cast/')) expect(MANIFEST).toContain(c.model);
-      else expect(c.model).toMatch(/^https:\/\/raw\.githubusercontent\.com\/test157t\//);
+      const m = c.model ?? '';
+      if (m.startsWith('cast/')) expect(MANIFEST).toContain(m);
+      else expect(m).toMatch(/^https:\/\/raw\.githubusercontent\.com\/test157t\//);
     }
   });
 
