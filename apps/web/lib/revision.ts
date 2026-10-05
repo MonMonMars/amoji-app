@@ -54,7 +54,16 @@
 // fill) now lights every backdrop regardless of setting, and ACES filmic
 // tone mapping at exposure 1.0 pins the color pipeline. Lights are built
 // once in the single canvas effect — no rig is ever stacked or duplicated.
-export const APP_REVISION = 'r2026-10-05.108';
+// r2026-10-05.109: intermittent "character renders all black" hardening —
+// the texture gate now sweeps every texture-typed property (MToon
+// shade/rim/matcap included), a texture that errored (iPhone network
+// hiccup) is neutralized after 4s (null map + lifted base color + floored
+// shade color) instead of holding the gate hostage until the 25s watchdog
+// revealed a black model; MToon shadeColor is floored at mount; a whisper
+// of flat ambient guarantees no material state can render pure black; a
+// 60-frame NaN sweep resets any corrupt quaternion/scale; and the reveal
+// gate re-compiles shaders on its first passing frame.
+export const APP_REVISION = 'r2026-10-05.109';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
