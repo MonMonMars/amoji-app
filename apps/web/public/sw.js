@@ -1,4 +1,4 @@
-/* Amoji offline shell — r2026-10-06.135
+/* Amoji offline shell — r2026-10-06.136
  * Hand-rolled service worker (zero dependencies, works with Next.js static
  * export where build-time PWA plugins struggle).
  *
@@ -9,10 +9,14 @@
  *
  * Cross-origin calls (Pollinations LLM / TTS) are left to the network:
  * the companion simply tells you she needs a connection when she's offline.
+ *
+ * r136: CACHE bumped (r117 → r136) — every client now drops the stale shell
+ * and re-fetches; a stale cached shell was referencing dead JS chunks, which
+ * is the classic "page renders but nothing is clickable / no voice" shape.
  */
 'use strict';
 
-var CACHE = 'amoji-r2026-10-05.117';
+var CACHE = 'amoji-r2026-10-06.136';
 var SHELL = [
   './',
   './chat',

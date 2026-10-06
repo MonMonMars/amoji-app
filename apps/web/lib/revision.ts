@@ -275,7 +275,23 @@
 // Cloudflare worker serves the neural-voice SSML route AND the OpenAI
 // /v1/audio/speech relay, so one `wrangler deploy` covers both voices and
 // the Settings hints point at one place.
-export const APP_REVISION = 'r2026-10-06.135';
+// r2026-10-06.136 (Master Simon: "still can't click the text box and the mic
+// button… still no voice at all") — FOUR fixes: (1) ROOT CAUSE of the dead
+// mic/textbox: the r120 lower-third scroll pad is `absolute inset-x-0
+// bottom-0 z-0` INSIDE the chat panel and renders AFTER the input row — at
+// the same stacking level, later DOM wins, so the pad was painting over and
+// hit-testing AHEAD of the hero mic and the text field: the input row now
+// carries z-10. (2) the model spinner moved OUT of the top-left status pill
+// into its own chip below it (a long "preparing…" used to widen/deform the
+// pill and cover the character thumbnail). (3) the selection board's row-0
+// preview is taller and crops her cutout to the WHOLE body, and the
+// character tiles zoom their baked portraits to the face. (4) the 🧠 Brain
+// section leaves Settings — Amoji picks the brain for the user (free keyless
+// lane, now racing a keyless Puter runner too); no keys, no provider chips.
+// Plus the service-worker cache stamp jumps r117 → r136 so stale shells that
+// referenced dead JS chunks are force-replaced (the "page renders but
+// nothing responds" shape).
+export const APP_REVISION = 'r2026-10-06.136';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
