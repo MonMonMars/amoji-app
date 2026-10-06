@@ -51,6 +51,14 @@
 //  · TAIL CAP: max_tokens 240 on every request — her replies are 1-3 cozy
 //    sentences by design (r97/r106), so capping the tail shaves the last
 //    seconds off reasoning-prone free models without ever biting real text
+// r2026-10-06.136 — keyless third racer (Master Simon: "free and fast and
+// can access all around the world"):
+//  · Puter.ai joins the free lane — puter.ai.chat needs NO API key, works
+//    worldwide, and streams tokens the same way; its script loads lazily on
+//    the first call and races Pollinations alongside the other models,
+//    first token wins
+//  · If Puter shows its "user pays" gate, the 14s race budget absorbs it —
+//    the racer just loses that round and Pollinations carries the reply
 import { analyzeText } from '@amoji/emotion-core';
 import { BASE_SYSTEM, languageBlock, parseEmotionHints, type ChatMessage } from './llm';
 import { BRAIN_SPECS, markBrainDead, pickBrain, type BrainSpec } from './brain';
@@ -195,6 +203,94 @@ interface Racer {
   abort: () => void;
 }
 
+// r2026-10-06.136 — keyless Puter racer. puter.ai.chat needs NO API key,
+// works worldwide, and streams tokens; the SDK script loads lazily on the
+// first call (8s ceiling) and the racer obeys the SAME contract as
+// launchRacer: `first` on the first token, `finish` with the full text,
+// budget timer + abort as the escape hatches. Iteration is manual (explicit
+// next() on Symbol.asyncIterator) so no tsconfig async-iteration flag is
+// required.
+type PuterPart = { text?: string };
+type PuterAI = { chat: (messages: unknown[], opts?: Record<string, unknown>) => Promise<AsyncIterable<PuterPart>> };
+type PuterSDK = { ai: PuterAI };
+
+let puterLoader: Promise<PuterSDK> | null = null;
+function loadPuter(): Promise<PuterSDK> {
+  if (puterLoader) return puterLoader;
+  puterLoader = new Promise<PuterSDK>((resolve, reject) => {
+    const w = window as unknown as { puter?: PuterSDK };
+    if (w.puter) { resolve(w.puter); return; }
+    if (typeof document === 'undefined') { puterLoader = null; reject(new Error('no dom')); return; }
+    const s = document.createElement('script');
+    s.src = 'https://js.puter.com/v2/';
+    const timer = setTimeout(() => { puterLoader = null; reject(new Error('puter sdk timeout')); }, 8_000);
+    s.onload = () => {
+      clearTimeout(timer);
+      const sdk = (window as unknown as { puter?: PuterSDK }).puter;
+      if (sdk) resolve(sdk); else { puterLoader = null; reject(new Error('puter sdk missing')); }
+    };
+    s.onerror = () => { clearTimeout(timer); puterLoader = null; reject(new Error('puter sdk failed')); };
+    document.head.appendChild(s);
+  });
+  return puterLoader;
+}
+
+function launchPuterRacer(
+  system: string,
+  messages: ChatMessage[],
+  gate: (emit: () => void) => void,
+  budgetMs: number,
+  onPartial?: (text: string) => void,
+): Racer {
+  const ctl = { aborted: false };
+  let fired = false;
+  let report: (e?: Error) => void = () => {};
+  const first = new Promise<void>((resolve, reject) => {
+    report = (e?: Error) => {
+      if (fired) return;
+      fired = true;
+      if (e) reject(e); else resolve();
+    };
+  });
+  void first.catch(() => {});
+  const timer = setTimeout(() => {
+    ctl.aborted = true;
+    report(new Error('puter too slow'));
+  }, budgetMs);
+  let text = '';
+  const done = (async () => {
+    try {
+      const sdk = await loadPuter();
+      if (ctl.aborted) throw new Error('puter aborted');
+      const res = await sdk.ai.chat(
+        [{ role: 'system', content: system }, ...messages],
+        { stream: true },
+      );
+      const iter = res[Symbol.asyncIterator]();
+      for (;;) {
+        if (ctl.aborted) throw new Error('puter aborted');
+        const step = await iter.next();
+        if (step.done) break;
+        const delta = step.value?.text ?? '';
+        if (delta) { text += delta; gate(() => onPartial?.(text)); report(); }
+      }
+      if (!text.trim()) throw new Error('puter empty');
+      return text;
+    } catch (e) {
+      report(e instanceof Error ? e : new Error('puter failed'));
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
+  })();
+  void done.catch(() => {});
+  return {
+    first,
+    finish: () => done,
+    abort: () => { ctl.aborted = true; report(new Error('puter aborted')); },
+  };
+}
+
 /**
  * One streaming attempt for one model. `gate` decides whether an emit may
  * reach the UI (the race uses it so a losing racer can't scribble into the
@@ -334,6 +430,12 @@ async function racedPollinations(
       if (leader === -1 || leader === i) emit();
     }, RACER_BUDGET_MS, onPartial),
   );
+  // r136 — Puter races alongside the Pollinations models under the same gate;
+  // first token across ALL racers wins, losers are aborted
+  const puterIdx = racers.length;
+  racers.push(launchPuterRacer(system, messages, (emit) => {
+    if (leader === -1 || leader === puterIdx) emit();
+  }, RACER_BUDGET_MS, onPartial));
   let winIdx: number;
   try {
     winIdx = await Promise.any(racers.map((r, i) => r.first.then(() => i)));
