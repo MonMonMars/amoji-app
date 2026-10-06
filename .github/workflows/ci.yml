@@ -14,6 +14,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r typecheck
       - run: pnpm -r test
+      - run: pnpm -r --filter './packages/*' build
       - run: pnpm --filter @amoji/web build
       - name: asset manifest check
         run: |

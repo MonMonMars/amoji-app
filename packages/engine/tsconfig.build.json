@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "declarationMap": false,
+    "sourceMap": false,
+    "paths": {
+      "@amoji/emotion-core": ["../emotion-core/dist/index.d.ts"],
+      "@amoji/robot-face": ["../robot-face/dist/index.d.ts"]
+    }
+  },
+  "include": ["src"]
+}
