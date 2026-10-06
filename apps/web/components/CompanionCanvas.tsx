@@ -979,6 +979,9 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     let lastEmptyTap = -Infinity;
     // r115: which body zone the current poke reaction belongs to
     let pokeZone: 'head' | 'body' | 'armL' | 'armR' | 'belly' = 'body';
+    // r2026-10-05.121: camera-relative fall direction of the current poke —
+    // a screen-left hit tips her toward screen-left at any camera angle.
+    const pokeFallDir = new THREE.Vector3(0, 0, -1);
     // r2026-10-04.58: which library performance the move trigger already
     // fired for (rising-edge firing — one clip start per triggerMove)
     let mvHandled: MoveKind | null = null;
@@ -1143,6 +1146,22 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           pokeAt = performance.now();
           // r115: WHERE did it land? nearest probe bone → zone reaction + voice
           pokeZone = zoneForHit(hit.point);
+          // r2026-10-05.121: WHICH SIDE? compare the hit against the hips
+          // along the camera's right axis — the fall follows the screen
+          // side you poked, whatever angle the camera is at.
+          const hipsN = avatar?.getBoneNode('hips');
+          if (hipsN) {
+            hipsN.getWorldPosition(sV2);
+            sV3.setFromMatrixColumn(camera.matrixWorld, 0); // camera-right
+            sV3.y = 0;
+            if (sV3.lengthSq() > 1e-6) {
+              sV3.normalize();
+              pokeFallDir.copy(hit.point).sub(sV2);
+              pokeFallDir.y = 0;
+              const side = pokeFallDir.dot(sV3) >= 0 ? 1 : -1;
+              pokeFallDir.copy(sV3).multiplyScalar(side);
+            }
+          }
           onPokeRef.current?.(pokeZone);
         } else {
           const nowTs = performance.now();
@@ -1229,6 +1248,10 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
             const press = Math.min(t / 0.07, 1) * Math.exp(-Math.max(0, t - 0.07) * 4); // shove out, ease home
             const wobble = 0.04 * Math.exp(-t * 4.5) * Math.sin(t * 26); // spring settle
             pz -= 0.3 * press + wobble; // pushed back, away from the camera
+            // r2026-10-05.121: shoved sideways too — toward the side you
+            // poked (camera-relative, computed at pointer-up)
+            px += pokeFallDir.x * 0.34 * press;
+            pz += pokeFallDir.z * 0.34 * press;
             py -= 0.06 * arc; // knees dip
             if (pokeMode === 'deform') {
               // chibi only: cartoon squash, physics by rubber
@@ -1278,6 +1301,18 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
           avatar.root.position.set(px, py, pz);
           avatar.root.scale.set(sx * BASE_SX, sy * BASE_SY, sz * BASE_SX);
           avatar.root.rotation.set(rotX, rotY, 0);
+          // r2026-10-05.121: tip-over toward the poked side (human models
+          // only — chibi keeps its rubber squash). The tilt axis is
+          // up × fallDir, so the body's crown swings exactly along the
+          // fall direction; the press envelope shoves her out and eases
+          // her back upright.
+          if (boost > 0 && pokeMode !== 'deform') {
+            const t2 = 1 - boost;
+            const leanPress = Math.min(t2 / 0.09, 1) * Math.exp(-Math.max(0, t2 - 0.09) * 3.2);
+            const lean = 0.9 * leanPress;
+            sQ3.setFromAxisAngle(sV4.set(pokeFallDir.z, 0, -pokeFallDir.x).normalize(), lean);
+            avatar.root.quaternion.multiply(sQ3);
+          }
         } else {
           avatar.root.position.set(0, 0, 0);
           avatar.root.scale.set(BASE_SX, BASE_SY, BASE_SX);

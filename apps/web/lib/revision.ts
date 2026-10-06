@@ -147,7 +147,17 @@
 // dhahlia, onyx — all kid-safe now (Kid Mode fallback mochi → dhahlia).
 // Persona/voice/laugh banks keep the deleted ids for the face-lab page;
 // orphaned saved picks fall back to the roster default.
-export const APP_REVISION = 'r2026-10-05.118';
+// r2026-10-05.120 (Master Simon) — two chat-room physics changes:
+// · touch zoning: the chat history is display-only (pointer-events-none);
+//   an invisible scroll pad over the LOWER THIRD of the screen is the only
+//   place that scrolls it (touch drag + momentum + wheel). The top 2/3 of
+//   the screen now belongs entirely to the character — rotate, poke and
+//   hand-drag work over her whole body.
+// · directional poke: at pointer-up the hit is compared against the hips
+//   along the camera's right axis, so poking her screen-left side shoves
+//   and tips her toward screen-left (mirror on the right) at any camera
+//   angle — root slide + quaternion tip-over, human models only.
+export const APP_REVISION = 'r2026-10-05.120';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

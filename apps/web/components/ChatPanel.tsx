@@ -214,6 +214,65 @@ export default function ChatPanel({
   // so the button shows who holds the floor (and barge-in fires earlier)
   const [userSpeaking, setUserSpeaking] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // r2026-10-05.120: the history is display-only — an invisible scroll pad
+  // covering the LOWER THIRD of the screen is the only place that scrolls
+  // it. The top 2/3 passes every touch straight through to the character
+  // (rotate / poke / hand-drag).
+  const scrollPadRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const pad = scrollPadRef.current;
+    const hist = scrollRef.current;
+    if (!pad || !hist) return;
+    let startY = 0;
+    let startScroll = 0;
+    let vel = 0;
+    let lastY = 0;
+    let lastT = 0;
+    let raf = 0;
+    const onTS = (e: TouchEvent) => {
+      cancelAnimationFrame(raf);
+      startY = e.touches[0]!.clientY;
+      lastY = startY;
+      lastT = performance.now();
+      vel = 0;
+      startScroll = hist.scrollTop;
+    };
+    const onTM = (e: TouchEvent) => {
+      e.preventDefault(); // React's synthetic handlers are passive — native isn't
+      const y = e.touches[0]!.clientY;
+      const now = performance.now();
+      const dt = Math.max(now - lastT, 1);
+      vel = 0.7 * vel + 0.3 * ((y - lastY) / dt) * 16; // smoothed px/frame
+      lastY = y;
+      lastT = now;
+      hist.scrollTop = startScroll - (y - startY);
+    };
+    const onTE = () => {
+      // light momentum glide, clamped so it never rubber-bands oddly
+      const glide = () => {
+        vel *= 0.93;
+        if (Math.abs(vel) < 0.4) return;
+        hist.scrollTop = Math.max(0, hist.scrollTop - vel);
+        raf = requestAnimationFrame(glide);
+      };
+      glide();
+    };
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      hist.scrollTop += e.deltaY;
+    };
+    pad.addEventListener('touchstart', onTS, { passive: true });
+    pad.addEventListener('touchmove', onTM, { passive: false });
+    pad.addEventListener('touchend', onTE);
+    pad.addEventListener('wheel', onWheel, { passive: false });
+    return () => {
+      cancelAnimationFrame(raf);
+      pad.removeEventListener('touchstart', onTS);
+      pad.removeEventListener('touchmove', onTM);
+      pad.removeEventListener('touchend', onTE);
+      pad.removeEventListener('wheel', onWheel);
+    };
+  }, []);
   const nearBottomRef = useRef(true);
   const busyRef = useRef(false);
   const lastActivityRef = useRef(Date.now());
@@ -939,7 +998,7 @@ export default function ChatPanel({
   };
 
   return (
-    <div className="pointer-events-auto mx-auto flex w-full max-w-2xl flex-col items-center gap-1.5 px-4 pb-4">
+    <div className="pointer-events-auto relative mx-auto flex w-full max-w-2xl flex-col items-center gap-1.5 px-4 pb-4">
       {/* boxless history — fully opaque messages; only the on-screen height
           fades (bottom line 100%, each line a step dimmer). Scrolling an
           old line DOWN into the bright zone makes it crisp and readable. */}
@@ -949,7 +1008,7 @@ export default function ChatPanel({
           const el = e.currentTarget;
           nearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
         }}
-        className="w-full space-y-2.5 overflow-y-auto px-2 pb-1 pt-6 [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)] [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)]"
+        className="pointer-events-none w-full select-none space-y-2.5 overflow-y-auto px-2 pb-1 pt-6 [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)] [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)]"
         style={{ maxHeight: '34vh' }}
       >
         {history.length === 0 && <p className="text-center text-white/40">{t(lang, 'sayHi', { name: characterName })}</p>}
@@ -1050,6 +1109,17 @@ export default function ChatPanel({
           ➤
         </button>
       </div>
+
+      {/* r2026-10-05.120 — the only scroll zone. Invisible strip over the
+          lower third of the screen; its JS (mounted above) drags the
+          display-only history. Everything above this strip belongs to the
+          character. */}
+      <div
+        ref={scrollPadRef}
+        aria-hidden
+        className="absolute inset-x-0 bottom-0 z-0"
+        style={{ height: '33dvh', touchAction: 'none' }}
+      />
     </div>
   );
 }
