@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  addEntry, buildDailyGreeting, buildMemoryBlock, deleteEntry, detectMood, detectMoodIntensity, editEntry, feltMood,
-  diarySummary, greetingHints, moodToHints, recordVisit,
-  rememberExchange, type Memory,
+  addEntry, buildDailyGreeting, buildMemoryBlock, deleteEntry, detectMood, detectMoodIntensity, editEntry, exportMemory, feltMood,
+  diarySummary, greetingHints, moodToHints, recordVisit, rememberExchange, rememberTurn, type Memory,
 } from '../lib/memory';
 
 function fresh(): Memory {
@@ -293,5 +292,116 @@ describe('diary mood intensity', () => {
     const line = diarySummary(m)[0]!;
     // multi-mood days join with '/', so the ! sits inside the tag list
     expect(line).toContain('[happy!/content]');
+  });
+});
+
+describe('memory v6 — annual dates + her promises (r2026-10-06.130)', () => {
+  it('extracts an English birthday with month name', () => {
+    const m = fresh();
+    rememberExchange('my birthday is July 5', m);
+    expect(m.importantDates).toHaveLength(1);
+    expect(m.importantDates![0]).toMatchObject({ label: 'birthday', month: 7, day: 5 });
+  });
+
+  it('extracts a Cantonese birthday', () => {
+    const m = fresh();
+    rememberExchange('我生日係12月25號', m);
+    expect(m.importantDates![0]).toMatchObject({ label: '生日', month: 12, day: 25 });
+  });
+
+  it('extracts a Japanese birthday', () => {
+    const m = fresh();
+    rememberExchange('私の誕生日は3月3日です', m);
+    expect(m.importantDates![0]).toMatchObject({ label: '誕生日', month: 3, day: 3 });
+  });
+
+  it('rejects impossible dates and dedupes repeats', () => {
+    const m = fresh();
+    rememberExchange('my birthday is July 5', m);
+    rememberExchange('my birthday is July 5', m);
+    expect(m.importantDates).toHaveLength(1);
+    const bad = fresh();
+    rememberExchange('my birthday is Smarch 45', bad);
+    expect(bad.importantDates ?? []).toHaveLength(0);
+  });
+
+  it('fires the celebration exactly once per year', () => {
+    const m = fresh();
+    const now = new Date();
+    m.importantDates = [{ id: 'd1', label: 'birthday', month: now.getMonth() + 1, day: now.getDate() }];
+    const first = recordVisit(m);
+    expect(first.anniversaryLabel).toBe('birthday');
+    const second = recordVisit(m);
+    expect(second.anniversaryLabel).toBeUndefined();
+    expect(m.importantDates![0]!.lastFiredYear).toBe(now.getFullYear());
+  });
+
+  it('does not fire when the date is not today', () => {
+    const m = fresh();
+    const now = new Date();
+    m.importantDates = [{ id: 'd1', label: 'birthday', month: (now.getMonth() + 1) % 12 + 1, day: now.getDate() }];
+    expect(recordVisit(m).anniversaryLabel).toBeUndefined();
+  });
+
+  it('anniversary line joins the daily greeting in all languages', () => {
+    for (const [lang, label, needle] of [
+      ['en', 'birthday', 'your birthday'], ['yue', '生日', '你生日'], ['zh', '生日', '你的生日'], ['ja', '誕生日', 'あなたの誕生日'],
+    ] as const) {
+      const line = buildDailyGreeting(lang, { isNewDay: true, streak: 5, anniversaryLabel: label });
+      expect(line).toContain(needle);
+    }
+  });
+
+  it('anniversary outranks the plain streak line', () => {
+    const line = buildDailyGreeting('en', { isNewDay: true, streak: 9, anniversaryLabel: 'birthday' });
+    expect(line).toContain('your birthday');
+    expect(line).not.toContain('Day 9 in a row');
+  });
+
+  it('remembers a promise she makes in English', () => {
+    const m = fresh();
+    rememberTurn('don’t let me forget the meeting', 'I\'ll remind you tomorrow, don\'t worry!', m);
+    expect(m.promises).toHaveLength(1);
+    expect(m.promises![0]!.text).toContain('remind you tomorrow');
+  });
+
+  it('remembers a promise she makes in Cantonese', () => {
+    const m = fresh();
+    rememberTurn('聽日記得提醒我開會', '我會提醒你㗎，放心！', m);
+    expect(m.promises).toHaveLength(1);
+  });
+
+  it('does not store ordinary replies as promises', () => {
+    const m = fresh();
+    rememberTurn('hello', 'nice to see you too!', m);
+    expect(m.promises ?? []).toHaveLength(0);
+  });
+
+  it('promise caps and dedupes', () => {
+    const m = fresh();
+    for (let i = 0; i < 12; i++) rememberTurn(`q${i}`, "I'll remember that for you!", m);
+    expect(m.promises!.length).toBeLessThanOrEqual(8);
+    const m2 = fresh();
+    rememberTurn('a', 'I promise I will be there.', m2);
+    rememberTurn('b', 'I promise I will be there.', m2);
+    expect(m2.promises).toHaveLength(1);
+  });
+
+  it('her promises ride into the memory block', () => {
+    const m = fresh();
+    m.userName = 'Simon';
+    m.promises = [{ id: 'p1', text: "I'll remind you about the interview", day: daysAgo(1) }];
+    const block = buildMemoryBlock('en', m)!;
+    expect(block).toContain('promises you made');
+    expect(block).toContain('interview');
+  });
+
+  it('exportMemory carries dates and promises', () => {
+    const m = fresh();
+    m.importantDates = [{ id: 'd1', label: 'birthday', month: 7, day: 5 }];
+    m.promises = [{ id: 'p1', text: "I'll remember", day: daysAgo(1) }];
+    const parsed = JSON.parse(exportMemory(m));
+    expect(parsed.importantDates).toHaveLength(1);
+    expect(parsed.promises).toHaveLength(1);
   });
 });

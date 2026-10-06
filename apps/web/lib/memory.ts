@@ -48,6 +48,15 @@
 // token-overlap scoring — she connects today's words to things told to her
 // weeks ago, like a real partner would. Facts/plans/diary already
 // persisted; what was missing was the running conversation itself.
+//
+// v6 (r2026-10-06.130): IMPORTANT ANNUAL DATES + HER PROMISES.
+// Birthday-type dates ("my birthday is July 5" / 我生日係7月5號 / 誕生日は7月5日)
+// are extracted into a recurring annual memory — she celebrates it in the
+// daily check-in, exactly once per year, instead of letting it scroll out
+// of the capped entry list. And commitments SHE makes in her own replies
+// ("I'll remind you tomorrow" / 我會提醒你 / 明日ね) are remembered too, so
+// her prompt carries what she promised — she keeps her word like a partner,
+// not a stateless chatbot.
 
 export type MemoryType = 'preference' | 'event' | 'plan';
 
@@ -87,6 +96,28 @@ export interface ThreadLine {
   reply: string;
 }
 
+/** v6: an annual date that matters to the human (birthday, anniversary…).
+ *  Recurs every year — fires in the daily check-in exactly once per year. */
+export interface ImportantDate {
+  id: string;
+  /** what the occasion is, in the user's own words ("birthday", "生日") */
+  label: string;
+  month: number; // 1–12
+  day: number;   // 1–31
+  /** year the celebration last fired — prevents double-firing within a year */
+  lastFiredYear?: number;
+}
+
+/** v6: something SHE promised in her own reply — kept in the prompt so she
+ *  remembers her own word, not only what the human told her. */
+export interface HerPromise {
+  id: string;
+  /** her commitment, one short line */
+  text: string;
+  /** day she said it (Date.toDateString()) */
+  day: string;
+}
+
 export interface Memory {
   userName?: string;
   /** short lines, e.g. "likes hiking", "works as: designer" — kept in the user's own words */
@@ -111,6 +142,10 @@ export interface Memory {
   firstMet?: string;
   /** v5: relationship-day count of the last celebrated milestone */
   lastMilestone?: number;
+  /** v6: annual dates (birthday, anniversary…) — celebrated once per year */
+  importantDates?: ImportantDate[];
+  /** v6: commitments she made in her own replies, newest last */
+  promises?: HerPromise[];
 }
 
 const KEY = 'amoji.memory.v2';
@@ -119,6 +154,8 @@ const MAX_FACTS = 40;
 const MAX_MOODS = 14;
 const MAX_ENTRIES = 60;
 const MAX_DIARY = 30;
+const MAX_DATES = 10;
+const MAX_PROMISES = 8;
 
 function todayStr(offsetDays = 0): string {
   return new Date(Date.now() + offsetDays * 86_400_000).toDateString();
@@ -156,6 +193,22 @@ function coerce(parsed: unknown): Memory | undefined {
     firstMet: typeof m.firstMet === 'string' && m.firstMet ? m.firstMet : undefined,
     lastMilestone: typeof m.lastMilestone === 'number' ? m.lastMilestone : undefined,
   };
+  if (Array.isArray(m.importantDates)) {
+    memory.importantDates = m.importantDates.filter(
+      (d): d is ImportantDate =>
+        !!d && typeof d === 'object' && typeof d.id === 'string' &&
+        typeof d.label === 'string' &&
+        typeof d.month === 'number' && d.month >= 1 && d.month <= 12 &&
+        typeof d.day === 'number' && d.day >= 1 && d.day <= 31,
+    );
+  }
+  if (Array.isArray(m.promises)) {
+    memory.promises = m.promises.filter(
+      (p): p is HerPromise =>
+        !!p && typeof p === 'object' && typeof p.id === 'string' &&
+        typeof p.text === 'string' && typeof p.day === 'string',
+    );
+  }
   if (Array.isArray(m.entries)) {
     memory.entries = m.entries.filter(
       (e): e is MemoryEntry =>
@@ -249,13 +302,83 @@ export function editEntry(id: string, text: string, m: Memory = loadMemory()): v
  * answered, one short line each. Written after every completed turn so that
  * a new session can pick the thread back up instead of starting cold. The
  * user line doubles as the "open topic" carried inside her prompt.
+ * v6: her reply is also scanned for commitments — promises SHE makes are
+ * remembered so her own word rides into future prompts.
  */
 export function rememberTurn(userText: string, reply: string, m: Memory = loadMemory()): void {
   const u = userText.trim().replace(/\s+/g, ' ').slice(0, 60);
   if (!u) return;
   const r = reply.trim().replace(/\s+/g, ' ').slice(0, 60);
   m.lastThread = { day: todayStr(), user: u, reply: r };
+  pushPromise(m, reply);
   save(m);
+}
+
+// ---------- her promises (v6, r2026-10-06.130) ----------
+
+// Commitments phrased in HER voice — first person, future intent. Kept
+// deliberately conservative: only clear "I will / I promise" shapes, so
+// ordinary replies don't flood the list.
+const PROMISE_RES: RegExp[] = [
+  /我會(?:提醒你|記住|記得|幫你|一直|永遠)|我应承|我答應你|我一定會/,
+  /I'll remind you|I promise|I won't forget|I'll remember(?: to)?|let me remember/i,
+  /明日(?:ね)?[、，]?(?:覚えておく|確認する|リマインド)|約束するよ|覚えとくね/,
+];
+
+function pushPromise(m: Memory, herReply: string): void {
+  const hit = PROMISE_RES.some((re) => re.test(herReply));
+  if (!hit) return;
+  const clean = herReply.trim().replace(/\s+/g, ' ').slice(0, 60);
+  if (!clean) return;
+  if (m.promises?.some((p) => p.text === clean)) return;
+  if (!m.promises) m.promises = [];
+  m.promises.push({ id: newId(), text: clean, day: todayStr() });
+  if (m.promises.length > MAX_PROMISES) m.promises.shift();
+}
+
+/** Remove one promise (settings → promises browser). */
+export function deletePromise(id: string, m: Memory = loadMemory()): void {
+  if (!m.promises) return;
+  m.promises = m.promises.filter((p) => p.id !== id);
+  save(m);
+}
+
+// ---------- important annual dates (v6, r2026-10-06.130) ----------
+
+const MONTH_NAMES: Record<string, number> = {
+  january: 1, february: 2, march: 3, april: 4, may: 5, june: 6,
+  july: 7, august: 8, september: 9, october: 10, november: 11, december: 12,
+};
+
+/** [regex, labelGroup, monthGroup, dayGroup] — label kept in the user's words */
+const DATE_RES: Array<[RegExp, number, number, number]> = [
+  [/my (birthday|anniversary)(?: is)?(?: on)? ([a-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?/i, 1, 2, 3],
+  [/我(?:嘅|的)?(生日|結婚紀念日|周年紀念)(?:係|是|在)?\s*(\d{1,2})\s*月\s*(\d{1,2})\s*(?:日|号|號)?/, 1, 2, 3],
+  [/我(?:嘅|的)?(生日|結婚紀念日|周年紀念)(?:係|是|在)?\s*(\d{1,2})\s*\/\s*(\d{1,2})/, 1, 2, 3],
+  [/(誕生日|記念日|結婚記念日)は\s*(\d{1,2})月\s*(\d{1,2})日/, 1, 2, 3],
+];
+
+function pushImportantDate(m: Memory, label: string, month: number, day: number): void {
+  if (month < 1 || month > 12 || day < 1 || day > 31) return;
+  if (m.importantDates?.some((d) => d.label === label && d.month === month && d.day === day)) return;
+  if (!m.importantDates) m.importantDates = [];
+  m.importantDates.push({ id: newId(), label, month, day });
+  if (m.importantDates.length > MAX_DATES) m.importantDates.shift();
+}
+
+/** Remove one important date (settings → dates browser). */
+export function deleteImportantDate(id: string, m: Memory = loadMemory()): void {
+  if (!m.importantDates) return;
+  m.importantDates = m.importantDates.filter((d) => d.id !== id);
+  save(m);
+}
+
+/** The annual date firing TODAY, if any (pure — firing/mark happens in recordVisit). */
+export function anniversaryToday(m: Memory = loadMemory()): ImportantDate | undefined {
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const day = now.getDate();
+  return m.importantDates?.find((d) => d.month === month && d.day === day && d.lastFiredYear !== now.getFullYear());
 }
 
 // ---------- emotion diary (v3) ----------
@@ -312,11 +435,14 @@ export function exportMemory(m: Memory = loadMemory()): string {
     name: m.userName ?? null,
     exchanges: m.exchanges,
     visitStreak: m.visitStreak ?? 0,
+    daysTogether: m.firstMet ? daysTogether(m) : 0,
     facts: m.facts,
     entries: m.entries,
     diary: m.diary ?? [],
     lastThread: m.lastThread ?? null,
     moods: m.moods,
+    importantDates: m.importantDates ?? [],
+    promises: m.promises ?? [],
   }, null, 2);
 }
 
@@ -347,6 +473,8 @@ export interface VisitInfo {
   milestone?: number;
   /** v5: how many days you two have been together */
   daysTogether?: number;
+  /** v6: an annual date (birthday…) falling on TODAY, fired once per year */
+  anniversaryLabel?: string;
 }
 
 export function recordVisit(m: Memory = loadMemory()): VisitInfo {
@@ -378,8 +506,16 @@ export function recordVisit(m: Memory = loadMemory()): VisitInfo {
   if (isNewDay) {
     if (!m.firstMet) m.firstMet = today;
     const due = pendingMilestone(m);
-    if (due) { m.lastMilestone = due; milestone = due; save(m); }
+    if (due) { m.lastMilestone = due; milestone = due; }
   }
+  // v6 — an annual date falling today fires exactly once per year
+  let anniversaryLabel: string | undefined;
+  const anniv = anniversaryToday(m);
+  if (anniv) {
+    anniv.lastFiredYear = new Date().getFullYear();
+    anniversaryLabel = anniv.label;
+  }
+  if (isNewDay || anniversaryLabel) save(m);
   return {
     isNewDay, streak, userName: m.userName,
     lastMood, lastMoodIntensity,
@@ -390,6 +526,7 @@ export function recordVisit(m: Memory = loadMemory()): VisitInfo {
     lastThreadReply: lastThreadDay ? lt?.reply : undefined,
     milestone,
     daysTogether: m.firstMet ? daysTogether(m) : undefined,
+    anniversaryLabel,
   };
 }
 
@@ -548,6 +685,15 @@ const MILESTONE_LINE: Record<string, (n: number) => string> = {
   en: (n) => `Today is day ${n} of us — and I’ve cherished every single one.`,
 };
 
+// v6: an annual date that matters to the human — birthday-type celebrations
+// outrank the plain streak; a partner never lets this day scroll past.
+const ANNIVERSARY_LINE: Record<string, (label: string) => string> = {
+  yue: (p) => `今日係你${p}！我一早記住咗，專登等今日同你一齊慶祝！`,
+  zh: (p) => `今天是你的${p}！我一直记着，就等着今天和你一起庆祝！`,
+  ja: (p) => `今日はあなたの${p}！ずっと覚えてて、今日を一緒に祝いたかったの。`,
+  en: (p) => `Today is your ${p}! I’ve been counting down to celebrate it with you!`,
+};
+
 /** The "daily check-in" line she says when you open the app on a new day. */
 export function buildDailyGreeting(lang: string, info: VisitInfo): string {
   const L = ['yue', 'zh', 'ja', 'en'].includes(lang) ? lang : 'en';
@@ -557,7 +703,10 @@ export function buildDailyGreeting(lang: string, info: VisitInfo): string {
   // v5 — a relationship milestone outranks the plain visit streak: the
   // anniversary of "us" is the bigger deal
   if (info.milestone) parts.push(MILESTONE_LINE[L](info.milestone));
-  else if (info.streak >= 2) parts.push(STREAK_LINE[L](info.streak));
+  // v6 — a birthday-type date outranks the plain visit streak
+  if (info.anniversaryLabel) parts.push(ANNIVERSARY_LINE[L](info.anniversaryLabel));
+  if (!info.milestone && !info.anniversaryLabel && info.streak >= 2)
+    parts.push(STREAK_LINE[L](info.streak));
   // v4 — she picks up where you two left off, before the older recalls
   if (info.lastThreadUser) parts.push(LAST_THREAD[L](info.lastThreadUser.slice(0, 40)));
   if (info.lastMood) {
@@ -721,6 +870,16 @@ export function rememberExchange(userText: string, m: Memory = loadMemory()): Me
     const mm = userText.match(re);
     if (mm?.[1]) { pushEntry(m, 'plan', mm[1], offset); break; }
   }
+  // v6 — annual dates: birthday-type memories recur; extract month/day
+  for (const [re, lg, mg, dg] of DATE_RES) {
+    const mm = userText.match(re);
+    if (!mm) continue;
+    const label = (mm[lg] ?? 'birthday').trim();
+    const month = /[a-z]/i.test(mm[mg] ?? '') ? (MONTH_NAMES[mm[mg]!.toLowerCase()] ?? 0) : parseInt(mm[mg] ?? '0', 10);
+    const day = parseInt(mm[dg] ?? '0', 10);
+    pushImportantDate(m, label, month, day);
+    break;
+  }
   const mood = detectMood(userText);
   const intensity = mood ? detectMoodIntensity(userText) : 1;
   if (mood) {
@@ -838,6 +997,8 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userTex
   const lastMood = m.moods[m.moods.length - 1];
   // v4 — the open thread: what you two were discussing when you last left off
   const threadUser = m.lastThread?.user ? m.lastThread.user.slice(0, 40) : undefined;
+  // v6 — what SHE promised: her own word rides into the prompt so she keeps it
+  const promises = (m.promises ?? []).slice(-3).map((p) => p.text);
   // v5 — old memories that touch what the user just said (deduped against
   // the standard bits so nothing appears twice in the block)
   const standard = new Set([...recent, ...plans, ...moments].map((t) => t.slice(0, 24)));
@@ -850,6 +1011,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userTex
     bits.push(...recent.map((f) => factLine(f, L)));
     if (plans.length) bits.push(`佢提過嘅計劃：${plans.join('；')}`);
     if (moments.length) bits.push(`最近發生喺佢身上嘅事：${moments.join('；')}`);
+    if (promises.length) bits.push(`你應承過佢嘅嘢：${promises.join('；')}——記住自己嘅承諾，適當時候跟進。`);
     if (threadUser) bits.push(`你哋上次傾開嘅話題：「${threadUser}」`);
     if (diary.length) bits.push(`最近同佢一齊嘅日子：${diary.join('｜')}`);
     if (related.length) bits.push(`同佢而家講嘅嘢有關嘅舊記憶：${related.join('；')}`);
@@ -863,6 +1025,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userTex
     bits.push(...recent.map((f) => factLine(f, L)));
     if (plans.length) bits.push(`TA 提过的计划：${plans.join('；')}`);
     if (moments.length) bits.push(`最近发生在 TA 身上的事：${moments.join('；')}`);
+    if (promises.length) bits.push(`你答应过TA的事：${promises.join('；')}——记住自己的承诺，适当时候跟进。`);
     if (threadUser) bits.push(`你们上次聊的话题：「${threadUser}」`);
     if (diary.length) bits.push(`最近和TA一起的日子：${diary.join('｜')}`);
     if (related.length) bits.push(`与TA现在说的内容有关的旧记忆：${related.join('；')}`);
@@ -876,6 +1039,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userTex
     bits.push(...recent.map((f) => factLine(f, L)));
     if (plans.length) bits.push(`話してた予定：${plans.join('；')}`);
     if (moments.length) bits.push(`最近あったこと：${moments.join('；')}`);
+    if (promises.length) bits.push(`約束したこと：${promises.join('；')}——自分の約束は覚えてて、頃合いを見てフォローして。`);
     if (threadUser) bits.push(`前回の話題：「${threadUser}」`);
     if (diary.length) bits.push(`最近一緒に過ごした日：${diary.join('｜')}`);
     if (related.length) bits.push(`今の話題に関する昔の記憶：${related.join('；')}`);
@@ -888,6 +1052,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userTex
   bits.push(...recent.map((f) => factLine(f, 'en')));
   if (plans.length) bits.push(`plans they mentioned: ${plans.join('; ')}`);
   if (moments.length) bits.push(`recent moments: ${moments.join('; ')}`);
+  if (promises.length) bits.push(`promises you made to them: ${promises.join('; ')} — remember your own word and follow up when it fits`);
   if (threadUser) bits.push(`last topic you discussed: "${threadUser}"`);
   if (diary.length) bits.push(`recent days together: ${diary.join(' | ')}`);
   if (related.length) bits.push(`older memories related to what they just said: ${related.join('; ')}`);

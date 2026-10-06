@@ -237,7 +237,15 @@
 // apps/web/lib/robot-face.ts is now a re-export shim, so the B2C app and the
 // B2B SDK literally cannot drift. No user-facing behavior change — same face,
 // same demos (/face, /robot-demo), same exports, now with one owner.
-export const APP_REVISION = 'r2026-10-06.128';
+// r2026-10-06.130: long-term memory v6 — IMPORTANT ANNUAL DATES + HER PROMISES.
+// Birthday-type dates (en month names, 生日/月/日, 誕生日) extract into a
+// recurring annual memory: she celebrates in the daily check-in exactly once
+// per year (outranks the streak line), instead of scrolling out of the capped
+// entry list. Commitments SHE makes ("I'll remind you" / 我會提醒你 /
+// 明日ね、覚えておく) are remembered from her own replies and ride into her
+// prompt as "promises you made" so she keeps her word. Settings shows both,
+// delete-only; the .aigf card already round-trips them (full Memory object).
+export const APP_REVISION = 'r2026-10-06.130';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

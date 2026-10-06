@@ -38,7 +38,7 @@ import {
   type BrainProvider,
 } from '../lib/brain';
 import {
-  addEntry, deleteEntry, deleteDiaryEntry, exportMemory, loadMemory,
+  addEntry, deleteEntry, deleteDiaryEntry, deleteImportantDate, deletePromise, exportMemory, loadMemory,
   type Memory, type MemoryType,
 } from '../lib/memory';
 
@@ -200,6 +200,19 @@ export default function SettingsSheet({
   const removeDiary = (id: string) => {
     if (!window.confirm(t(lang, 'forgetOneConfirm'))) return;
     deleteDiaryEntry(id);
+    setMem(loadMemory());
+  };
+
+  // memory v6 — annual dates + her promises, delete-only like the diary
+  const removeDate = (id: string) => {
+    if (!window.confirm(t(lang, 'forgetOneConfirm'))) return;
+    deleteImportantDate(id);
+    setMem(loadMemory());
+  };
+
+  const removePromise = (id: string) => {
+    if (!window.confirm(t(lang, 'forgetOneConfirm'))) return;
+    deletePromise(id);
     setMem(loadMemory());
   };
 
@@ -449,6 +462,48 @@ export default function SettingsSheet({
                     onClick={() => removeDiary(d.id)}
                     className="ui-btn shrink-0 rounded-full px-1.5 text-xs text-white/30 hover:bg-white/10 hover:text-white/70"
                     aria-label="forget diary line"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* memory v6 — annual dates she celebrates (birthday…) */}
+            <p className="text-xs text-white/50">{t(lang, 'datesTitle')}</p>
+            <div className="max-h-28 space-y-1.5 overflow-y-auto pr-1">
+              {(!mem.importantDates || mem.importantDates.length === 0) && (
+                <p className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/35">{t(lang, 'datesEmpty')}</p>
+              )}
+              {[...(mem.importantDates ?? [])].reverse().map((d) => (
+                <div key={d.id} className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                  <span className="min-w-0 flex-1 text-xs leading-relaxed text-white/80">{d.label}</span>
+                  <span className="shrink-0 rounded bg-pink-400/10 px-1.5 py-0.5 text-[10px] text-pink-200/80">{d.month}/{d.day}</span>
+                  <button
+                    onClick={() => removeDate(d.id)}
+                    className="ui-btn shrink-0 rounded-full px-1.5 text-xs text-white/30 hover:bg-white/10 hover:text-white/70"
+                    aria-label="forget date"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* memory v6 — things she promised, so the user can see (and release) her word */}
+            <p className="text-xs text-white/50">{t(lang, 'promisesTitle')}</p>
+            <div className="max-h-28 space-y-1.5 overflow-y-auto pr-1">
+              {(!mem.promises || mem.promises.length === 0) && (
+                <p className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/35">{t(lang, 'promisesEmpty')}</p>
+              )}
+              {[...(mem.promises ?? [])].reverse().map((p) => (
+                <div key={p.id} className="flex items-start gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                  <span className="min-w-0 flex-1 text-xs leading-relaxed text-white/80">{p.text}</span>
+                  <span className="shrink-0 pt-0.5 text-[10px] text-white/30">{shortDay(p.day)}</span>
+                  <button
+                    onClick={() => removePromise(p.id)}
+                    className="ui-btn shrink-0 rounded-full px-1.5 text-xs text-white/30 hover:bg-white/10 hover:text-white/70"
+                    aria-label="forget promise"
                   >
                     ✕
                   </button>

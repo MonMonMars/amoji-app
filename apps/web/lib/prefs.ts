@@ -202,6 +202,8 @@ export type StrKey =
   | 'memoryCopied' | 'memoryTypePreference' | 'memoryTypeEvent' | 'memoryTypePlan' | 'forgetOneConfirm'
   // emotion diary (r2026-10-03.14)
   | 'diaryTitle' | 'diaryEmpty'
+  // memory v6: annual dates + her promises (r2026-10-06.130)
+  | 'datesTitle' | 'datesEmpty' | 'promisesTitle' | 'promisesEmpty'
   // kid mode (r2026-10-03.03)
   | 'settingsMode' | 'kidMode' | 'kidModeHint'
   // brain routing (r2026-10-03.05)
@@ -322,6 +324,31 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: '仲未有——每次傾偈之後，佢會寫低一筆。',
     zh: '还没有——每次聊天后，她都会记下一笔。',
     ja: 'まだない——会話のたびに一行書き留めるよ。',
+  },
+  // memory v6 (r2026-10-06.130) — annual dates + her promises
+  datesTitle: {
+    en: '🎂 Dates she celebrates every year',
+    yue: '🎂 佢每年都慶祝嘅日子',
+    zh: '🎂 她每年都庆祝的日子',
+    ja: '🎂 毎年祝ってくれる日',
+  },
+  datesEmpty: {
+    en: 'None yet — tell her when your birthday is.',
+    yue: '仲未有——話俾佢知你生日幾時吖。',
+    zh: '还没有——告诉她你的生日是什么时候吧。',
+    ja: 'まだない——誕生日を教えてね。',
+  },
+  promisesTitle: {
+    en: '🤝 Things she promised you',
+    yue: '🤝 佢應承過你嘅嘢',
+    zh: '🤝 她答应过你的事',
+    ja: '🤝 あなたとの約束',
+  },
+  promisesEmpty: {
+    en: 'None yet — she remembers every promise she makes.',
+    yue: '仲未有——佢應承咗嘅嘢，佢會記住。',
+    zh: '还没有——她答应过的事都会记住。',
+    ja: 'まだない——約束したことはちゃんと覚えてるよ。',
   },
   settingsMode: { en: 'Mode', yue: '模式', zh: '模式', ja: 'モード' },
   kidMode: { en: 'Kid mode', yue: '兒童模式', zh: '儿童模式', ja: 'キッズモード' },
