@@ -192,7 +192,19 @@
 // entry crossfade (the idle stance has settled, the correction is small and
 // invisible mid-motion), and the thumb-bake studio calls it after applying
 // the idle mid-frame, then re-bakes every thumb + cutout (10/10, 0 fail).
-export const APP_REVISION = 'r2026-10-05.124';
+// r2026-10-05.119 (Master Simon: "no voice again" — final systematic
+// fallback for every silent-TTS browser) — UNIVERSAL NO-AUDIO WATCHDOG +
+// TAP-TO-REPLAY HINT. speak() now arms an 8-second watchdog after every
+// speech attempt; if no audio actually started by then (browser denied the
+// SpeechSynthesis engine, a slow TTS fetch stalls, a remote voice 403s),
+// the watchdog re-arms the gesture-replay path AND raises a floating chip
+// above the mic: "Her line went silent — tap anywhere to replay" (4 langs).
+// The chip is pointer-events-none so the tap falls through to the window
+// pointerdown that performs the replay; any new speak line, a voice that
+// eventually starts, or a replay tap dismisses the chip. Slow fetches are
+// protected by the voiceStartedSince guard — the tap can never duplicate a
+// line that is merely late.
+export const APP_REVISION = 'r2026-10-05.119';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

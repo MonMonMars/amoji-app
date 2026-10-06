@@ -213,6 +213,13 @@ export default function ChatPanel({
   // r87 — the VAD currently hears YOU talking: the mic orb swells white-hot
   // so the button shows who holds the floor (and barge-in fires earlier)
   const [userSpeaking, setUserSpeaking] = useState(false);
+  // r119 — the no-audio watchdog armed a replay: show the tap-to-replay chip
+  const [replayHint, setReplayHint] = useState(false);
+  useEffect(() => {
+    const onHint = (e: Event) => setReplayHint(!!((e as CustomEvent<{ armed?: boolean }>).detail?.armed));
+    window.addEventListener('amoji:voice-replay-hint', onHint);
+    return () => window.removeEventListener('amoji:voice-replay-hint', onHint);
+  }, []);
   const scrollRef = useRef<HTMLDivElement>(null);
   // r2026-10-05.120: the history is display-only — an invisible scroll pad
   // covering the LOWER THIRD of the screen is the only place that scrolls
@@ -1039,7 +1046,17 @@ export default function ChatPanel({
       </div>
 
       {/* input row — ChatGPT-style hero mic with the living emotion orb */}
-      <div className="flex w-full items-center gap-2.5">
+      <div className="relative flex w-full items-center gap-2.5">
+        {/* r119: the voice watchdog armed a replay — a silent line is waiting
+            for ANY tap to be re-spoken. Floating chip above the mic;
+            pointer-events-none so the tap falls straight through to the
+            window pointerdown that performs the replay. */}
+        {replayHint && (
+          <div className="pointer-events-none absolute -top-11 left-1 z-30 flex animate-bounce items-center gap-1.5 rounded-full border border-white/20 bg-black/80 px-3.5 py-1.5 text-xs font-medium text-white shadow-[0_8px_30px_-8px_rgba(0,0,0,0.9)] backdrop-blur-md">
+            <span aria-hidden>🔇</span>
+            <span>{t(lang, 'replayHint')}</span>
+          </div>
+        )}
         {/* r84: NO backdrop-filter on this button. WebKit frosts the whole
             RECTANGULAR border-box of a backdrop-filter element no matter the
             border-radius (r62's overflow:hidden only cured some iOS builds),

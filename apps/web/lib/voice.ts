@@ -126,11 +126,45 @@ function armGestureReplay(reason: string): void {
   reportVoiceStatus('attempt', false, `muted by browser autoplay gate (${reason}) — tap anywhere to replay`);
 }
 
+// ---- r119: universal no-audio watchdog + tap-to-replay hint ------------------
+// r111 caught tiers that REPORT a gesture-gate error, but silence can also
+// arrive with no error at all: play() resolves yet nothing sounds, a socket
+// hangs forever, an <audio> stalls mid-load. The only proof of sound is a
+// tier's audio-START callback, so 8s after any speak attempt whose line is
+// still the freshest, if no tier started audio we arm the gesture-gate replay
+// AND raise the visible 'amoji:voice-replay-hint' chip (StatusPlate alone is
+// too quiet — Master Simon repeatedly reported "no voice" while every
+// diagnostic said the chain was fine). The replay handler double-checks
+// voiceStartedSince before re-speaking, so a slow fetch that eventually
+// starts can never be duplicated by the tap.
+let watchdogTimer: ReturnType<typeof setTimeout> | null = null;
+
+function armNoAudioWatchdog(attemptAt: number): void {
+  if (watchdogTimer) clearTimeout(watchdogTimer);
+  watchdogTimer = setTimeout(() => {
+    watchdogTimer = null;
+    if (voiceStartedSince(attemptAt)) return;                 // she spoke — done
+    if (!lastSpeak || lastSpeak.at !== attemptAt) return;     // a newer line owns the floor
+    armGestureReplay('no-audio watchdog');
+    try {
+      window.dispatchEvent(new CustomEvent('amoji:voice-replay-hint', { detail: { armed: true } }));
+    } catch { /* ignore */ }
+  }, 8000);
+}
+
+export function dismissReplayHint(): void {
+  try {
+    window.dispatchEvent(new CustomEvent('amoji:voice-replay-hint', { detail: { armed: false } }));
+  } catch { /* ignore */ }
+}
+
 if (typeof window !== 'undefined') {
   window.addEventListener('pointerdown', () => {
     if (!replayArmed || !lastSpeak) return;
     replayArmed = false;
+    dismissReplayHint();
     if (Date.now() - lastSpeak.at > 45_000) return; // stale — let it go
+    if (voiceStartedSince(lastSpeak.at)) return;     // r119: already audible — no duplicate
     speak(lastSpeak.text, lastSpeak.characterId, lastSpeak.lang, lastSpeak.emotionHints, lastSpeak.leadOverride, lastSpeak.intensity);
   }, { passive: true });
 }
@@ -148,6 +182,7 @@ function markVoiceStarted(): void {
   voiceStartedAt = Date.now();
   markMediaPrimed(); // real audio starting also proves the iOS media gate open
   sfxVoiceRelease(); // r102: a tier is audibly speaking — let the foley back in
+  dismissReplayHint(); // r119: she IS audible — the tap-to-replay chip retires
 }
 /** r100: true only when some tier's audio actually STARTED at/after `since`. */
 export function voiceStartedSince(since: number): boolean {
@@ -1054,7 +1089,13 @@ export function speak(
 ): void {
   if (!voiceEnabled()) return;
   // r111: remember the line for gesture-gate replay
-  lastSpeak = { text, characterId, lang, emotionHints, leadOverride, intensity, at: Date.now() };
+  const attemptAt = Date.now();
+  lastSpeak = { text, characterId, lang, emotionHints, leadOverride, intensity, at: attemptAt };
+  // r119: a fresh attempt retires any previous replay hint, and the watchdog
+  // re-arms for THIS line — if no tier's audio starts within 8s the visible
+  // tap-to-replay chip appears (catches silent failures that throw no error)
+  dismissReplayHint();
+  armNoAudioWatchdog(attemptAt);
   // r97: a reply can be the very first sound after page load — unlockAudio()
   // used to run only on window gestures, so a session where the user typed
   // before ever tapping fetched every voice tier and stayed silent (autoplay
