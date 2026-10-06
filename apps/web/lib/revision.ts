@@ -140,7 +140,14 @@
 // companion's accent (toggles, active brain chip, active gender chip, test-
 // voice button, card ring + glow) instead of the old hardcoded pink, and
 // every section header carries an icon (mode/language/voice/brain/data/help).
-export const APP_REVISION = 'r2026-10-05.117';
+// r2026-10-05.118 (Master Simon, 22:35) — roster trim to 10. Deleted old
+// #5–18 (mei…cloud), #21–29 (ayane…alan) and #33 (velara); kitagawa (old
+// #34) promoted to #1 and the default character. Survivors renumbered
+// 1–10: kitagawa, nova, kizuna, alicia, ember, kasumi, marin, aera,
+// dhahlia, onyx — all kid-safe now (Kid Mode fallback mochi → dhahlia).
+// Persona/voice/laugh banks keep the deleted ids for the face-lab page;
+// orphaned saved picks fall back to the roster default.
+export const APP_REVISION = 'r2026-10-05.118';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

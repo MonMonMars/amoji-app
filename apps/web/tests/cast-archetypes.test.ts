@@ -11,10 +11,15 @@ const LANGS4 = ['yue', 'zh', 'ja', 'en'] as const;
 const FLAVORS = ['playful', 'cheerful', 'gentle', 'cool', 'fiery'];
 
 describe('full-cast cry archetypes (r2026-10-04.74)', () => {
-  it('both maps cover exactly the cast — nobody silently shares cheerful', () => {
+  it('both maps cover the whole cast — nobody silently shares cheerful', () => {
+    // r2026-10-05.118: the maps keep entries for the deleted cast (the
+    // face-lab page still demos them), so the check is roster ⊆ map, not
+    // map == roster.
     const castIds = CHARACTERS.map((c) => c.id).sort();
-    expect(Object.keys(LAUGH_ARCHETYPE).sort()).toEqual(castIds);
-    expect(Object.keys(OUCH_ARCHETYPE).sort()).toEqual(castIds);
+    for (const id of castIds) {
+      expect(LAUGH_ARCHETYPE[id], `laugh archetype for ${id}`).toBeTruthy();
+      expect(OUCH_ARCHETYPE[id], `ouch archetype for ${id}`).toBeTruthy();
+    }
   });
 
   it('all five flavors are represented in both maps (no flavor dead-ends)', () => {
@@ -32,8 +37,9 @@ describe('full-cast cry archetypes (r2026-10-04.74)', () => {
   });
 
   it('the five archetypes genuinely sound different (en, first pick)', () => {
-    // mochi playful, nova cheerful, luna gentle, kai cool, blaze fiery
-    const reps = ['mochi', 'nova', 'luna', 'kai', 'blaze'];
+    // r2026-10-05.118 survivors: marin playful, nova cheerful, kasumi gentle,
+    // onyx cool, ember fiery
+    const reps = ['marin', 'nova', 'kasumi', 'onyx', 'ember'];
     const laughs = reps.map((id) => pickLaugh(id, 'en', 0));
     const ouches = reps.map((id) => pickOuch(id, 'en', 0));
     expect(new Set(laughs).size).toBe(FLAVORS.length);

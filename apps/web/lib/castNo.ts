@@ -1,45 +1,20 @@
 'use client';
-// Stable cast numbers (r2026-10-04.52) — quick reference for reviews:
-// "check #13's hair" beats "check fumiriya's hair" on a phone.
+// Stable cast numbers — quick reference for reviews:
+// "check #3's hair" beats "check kizuna's hair" on a phone.
 // Keep in sync with CHARACTERS order in prefs.ts (display order).
-// Flagship top-10 (agent3 gallery order) first, then the classic cast.
+// r2026-10-05.118 roster trim: deleted old #5–18, #21–29, #33.
+// Survivors renumbered 1–10 with kitagawa (old #34) promoted to #1 / default.
 export const CAST_NO = {
-  nova: 1,
-  kizuna: 2,
-  alicia: 3,
-  ember: 4,
-  mei: 5,
-  atlas: 6,
-  sky: 7,
-  yuki: 8,
-  hina: 9,
-  mio: 10,
-  mochi: 11,
-  juno: 12,
-  blaze: 13,
-  kai: 14,
-  luna: 15,
-  rin: 16,
-  ren: 17,
-  cloud: 18,
-  kasumi: 19,
-  marin: 20,
-  ayane: 21,
-  hitomi: 22,
-  robbie: 23,
-  mika: 24,
-  anchor: 25,
-  lydia: 26,
-  ruby: 27,
-  snowy: 28,
-  alan: 29,
-  // remote community cast (r2026-10-05.104)
-  aera: 30,
-  dhahlia: 31,
-  onyx: 32,
-  velara: 33,
-  // Marin Kitagawa recovered from agent handoff zips (r110 — learning only)
-  kitagawa: 34,
+  kitagawa: 1,
+  nova: 2,
+  kizuna: 3,
+  alicia: 4,
+  ember: 5,
+  kasumi: 6,
+  marin: 7,
+  aera: 8,
+  dhahlia: 9,
+  onyx: 10,
 } as const;
 
 export type CastId = keyof typeof CAST_NO;

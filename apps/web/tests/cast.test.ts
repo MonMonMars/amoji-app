@@ -1,15 +1,14 @@
 import { describe, expect, it } from 'vitest';
-// Cast & scene data integrity — r2026-10-05.104 pins the whole 33-character
-// cast: the 29 local companions under /models/cast (the remote Polygonal
-// Mind registry stays retired: those models shipped no emotional presets and
-// odd rest poses) plus four genuinely free direct-URL remote VRMs from
-// test157t/VRM-Assets-Pack-For-Silly-Tavern.
+// Cast & scene data integrity — r2026-10-05.118 pins the trimmed 10-character
+// cast (Master Simon's 22:35 cut: old #5–18, #21–29 and #33 deleted;
+// kitagawa promoted to #1 + default). All survivors are local companions
+// under /models/cast.
 import { BACKGROUNDS, CHARACTERS, characterById, backgroundById, DEFAULT_PREFS, type Lang } from '../lib/prefs';
 import { CAST_NO, castNo } from '../lib/castNo';
 
 describe('cast roster', () => {
-  it('has 34 characters with taglines in every language and personas', () => {
-    expect(CHARACTERS.length).toBe(34);
+  it('has 10 characters with taglines in every language and personas', () => {
+    expect(CHARACTERS.length).toBe(10);
     for (const c of CHARACTERS) {
       // local portraits under /portraits — the classic cast uses AI-painted
       // .jpg art, the flagship/rebadged cast uses agent3-rendered .png; the
@@ -37,23 +36,21 @@ describe('cast roster', () => {
     expect(new Set(CHARACTERS.map((c) => c.model)).size).toBe(CHARACTERS.length);
   });
 
-  it('every character has a stable number — unique, 1..34 (r.52/r.104/r.110)', () => {
+  it('every character has a stable number — unique, 1..10 (r.118)', () => {
     const numbers = CHARACTERS.map((c) => castNo(c.id));
     for (const n of numbers) {
       expect(n).toBeGreaterThanOrEqual(1);
-      expect(n).toBeLessThanOrEqual(34);
+      expect(n).toBeLessThanOrEqual(10);
     }
     expect(new Set(numbers).size).toBe(CHARACTERS.length);
     // the map and the roster cover exactly the same ids
     expect(Object.keys(CAST_NO).sort()).toEqual(CHARACTERS.map((c) => c.id).sort());
   });
 
-  it('flagship top-10 resolve by id; the veteran extended cast is still onboard', () => {
-    for (const c of CHARACTERS.slice(0, 10)) {
+  it('the whole roster resolves by id — kitagawa first, then the veterans', () => {
+    expect(CHARACTERS[0]!.id).toBe('kitagawa');
+    for (const c of CHARACTERS) {
       expect(characterById(c.id).id).toBe(c.id);
-    }
-    for (const id of ['cloud', 'kasumi', 'marin', 'ayane', 'hitomi', 'alan', 'aera', 'dhahlia', 'onyx', 'velara']) {
-      expect(characterById(id).id).toBe(id);
     }
   });
 
@@ -80,10 +77,10 @@ describe('scene roster', () => {
 });
 
 describe('kid mode roster', () => {
-  it('at least 4 wholesome characters incl. mochi, and 4 sunny scenes incl. meadow', () => {
+  it('at least 4 wholesome characters incl. dhahlia, and 4 sunny scenes incl. meadow', () => {
     const safe = CHARACTERS.filter((c) => c.kidSafe);
     expect(safe.length).toBeGreaterThanOrEqual(4);
-    expect(safe.map((c) => c.id)).toContain('mochi');
+    expect(safe.map((c) => c.id)).toContain('dhahlia');
     const sunny = BACKGROUNDS.filter((b) => b.kidSafe);
     expect(sunny.length).toBeGreaterThanOrEqual(4);
     expect(sunny.map((b) => b.id)).toContain('meadow');

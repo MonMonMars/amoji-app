@@ -57,8 +57,12 @@ describe('per-character persona coverage', () => {
       expect(style.squash).toBeGreaterThan(0);
       expect(style.squash).toBeLessThanOrEqual(0.15);
     }
-    expect(Object.keys(POKE_STYLE).sort()).toEqual(CHARACTERS.map((c) => c.id).sort());
-    expect(Object.keys(CHARACTER_POSES).sort()).toEqual(CHARACTERS.map((c) => c.id).sort());
+    // r2026-10-05.118: persona banks keep entries for the deleted cast
+    // (face-lab + fallback lookups still use them) — so this is roster ⊆ map.
+    for (const c of CHARACTERS) {
+      expect(POKE_STYLE[c.id], `${c.id} poke style`).toBeTruthy();
+      expect(CHARACTER_POSES[c.id], `${c.id} poses`).toBeTruthy();
+    }
   });
 
   it('every character has exactly 10 idle lines per language', () => {
