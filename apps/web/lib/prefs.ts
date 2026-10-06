@@ -209,7 +209,9 @@ export type StrKey =
   // voice self-test + diagnostics (r2026-10-04.75)
   | 'testVoice' | 'testVoiceBtn' | 'voiceBlockedHint'
   // ChatGPT-style emotional TTS tier (r2026-10-05.112)
-  | 'openaiVoice' | 'openaiVoiceHint' | 'openaiKeyPlaceholder' | 'openaiEndpointPlaceholder' | 'openaiCostHint';
+  | 'openaiVoice' | 'openaiVoiceHint' | 'openaiKeyPlaceholder' | 'openaiEndpointPlaceholder' | 'openaiCostHint'
+  // companion card (.aigf) export/import (r2026-10-05.122)
+  | 'companionFile' | 'exportCompanion' | 'importCompanion' | 'companionFileBad';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   tagline: {
@@ -283,6 +285,11 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   genderFemale: { en: 'Female', yue: '女仔', zh: '女生', ja: '女性' },
   genderSecret: { en: 'Rather not say', yue: '保密', zh: '保密', ja: '内緒' },
   clearHistory: { en: 'Clear chat history', yue: '清空傾偈紀錄', zh: '清空聊天记录', ja: '会話履歴を消去' },
+  // r2026-10-05.122 — the Companion Card (.aigf)
+  companionFile: { en: 'Companion file', yue: '伴侶檔案', zh: '伴侣档案', ja: 'コンパニオンカード' },
+  exportCompanion: { en: 'Save her to file ⬇', yue: '儲存佢落檔案 ⬇', zh: '保存到文件 ⬇', ja: 'ファイルに保存 ⬇' },
+  importCompanion: { en: 'Load from file ⬆', yue: '由檔案載入 ⬆', zh: '从文件载入 ⬆', ja: 'ファイルから読む ⬆' },
+  companionFileBad: { en: 'That file is not a companion card ({reason})', yue: '呢個檔案唔係伴侶檔案（{reason}）', zh: '这个文件不是伴侣档案（{reason}）', ja: 'それはコンパニオンカードではありません（{reason}）' },
   clearHistoryConfirm: { en: 'Clear the whole conversation history?', yue: '真係要清空晒成個傾偈紀錄？', zh: '确定要清空全部聊天记录吗？', ja: '会話履歴をすべて消去しますか？' },
   forgetConfirm: { en: 'Forget everything she remembers about you?', yue: '要佢忘記晒所有關於你嘅記憶？', zh: '要TA忘记所有关于你的记忆吗？', ja: 'あなたのことをすべて忘れさせますか？' },
   memoryBrowser: { en: 'What she remembers', yue: '佢記住咗嘅嘢', zh: '她记住的事', ja: '覚えていること' },

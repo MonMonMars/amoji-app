@@ -157,7 +157,19 @@
 //   along the camera's right axis, so poking her screen-left side shoves
 //   and tips her toward screen-left (mirror on the right) at any camera
 //   angle — root slide + quaternion tip-over, human models only.
-export const APP_REVISION = 'r2026-10-05.120';
+// r2026-10-05.122 (Master Simon: "AI girlfriend data-base filing standard —
+// save the chat history and settings to a file… plug and go to another app or
+// robot or avatar") — the COMPANION CARD (.aigf): settings → Memory & data
+// gains an Export/Import pair. Export builds one JSON card (format
+// "amoji-companion", version 1) carrying her identity (id/name/gender/persona),
+// appearance (accent, background), voice engine config + language, your
+// profile, the full chat history, the memory-v2 store and kid-mode — and
+// downloads it as <characterId>.aigf.json. Import validates strictly (not
+// JSON / wrong format / unsupported version / missing history), restores every
+// store, falls back to the current character if the importing app doesn't
+// have her body (the soul survives the body swap), then reloads so all pages
+// re-hydrate. Malformed files alert with a readable reason in all 4 langs.
+export const APP_REVISION = 'r2026-10-05.122';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

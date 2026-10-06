@@ -32,6 +32,7 @@ import { notifySpeaking } from '../lib/speech';
 import { loadProfile, saveProfile, type Gender } from '../lib/profile';
 import { saveHistory } from '../lib/companion-store';
 import { APP_REVISION } from '../lib/revision';
+import { downloadCompanionFile, parseCompanionFile, applyCompanionFile } from '../lib/companion-file';
 import {
   BRAIN_SPECS, brainKey, brainProvider, pickBrain, setBrainKey, setBrainProvider,
   type BrainProvider,
@@ -496,6 +497,40 @@ export default function SettingsSheet({
               >
                 ✕
               </button>
+            </div>
+            {/* r2026-10-05.122 — the Companion Card: her whole soul in one
+                portable .aigf.json file. Export carries her to another
+                device/app/body; import brings her back with memory intact. */}
+            <div className={row}>
+              <span className={label}>💾 {t(lang, 'companionFile')}</span>
+              <div className="flex shrink-0 gap-1.5">
+                <button
+                  onClick={() => downloadCompanionFile(APP_REVISION)}
+                  className="ui-btn rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 hover:bg-white/20"
+                >
+                  {t(lang, 'exportCompanion')}
+                </button>
+                <label className="ui-btn cursor-pointer rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 hover:bg-white/20">
+                  {t(lang, 'importCompanion')}
+                  <input
+                    type="file"
+                    accept=".json,application/json"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = '';
+                      if (!file) return;
+                      void file.text().then((text) => {
+                        try {
+                          applyCompanionFile(parseCompanionFile(text));
+                        } catch (err) {
+                          window.alert(t(lang, 'companionFileBad', { reason: String(err) }));
+                        }
+                      });
+                    }}
+                  />
+                </label>
+              </div>
             </div>
             <div className={`${row} !justify-start gap-3`}>
               <span className={label}>👤 {t(lang, 'yourName')}</span>
