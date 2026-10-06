@@ -1,13 +1,11 @@
 {
   "name": "@amoji/robot-face",
-  "version": "0.1.0",
-  "description": "Amoji Robot Face — plug-and-use emotion display engine for humanoid robots (Unitree-style LED face or monitor display). Text/emotion in, animated face frames out.",
-  "license": "MIT",
+  "version": "0.2.0",
+  "private": true,
   "type": "module",
   "main": "./src/index.ts",
-  "exports": {
-    ".": "./src/index.ts"
-  },
-  "keywords": ["robot", "face", "emotion", "unitree", "led-matrix", "expression", "companion"],
-  "scripts": {}
+  "description": "Plug-and-use emotion face for humanoid robots — monitor canvas + LED-matrix (Unitree-style), gaze, lipsync, Http/Unitree drivers.",
+  "dependencies": {
+    "@amoji/emotion-core": "workspace:*"
+  }
 }

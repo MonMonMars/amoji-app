@@ -231,7 +231,13 @@
 // shared browserLane() closure both paths call; (3) max_tokens 240 on every
 // request caps the generation tail (her replies are 1-3 cozy sentences by
 // design) without ever biting real text.
-export const APP_REVISION = 'r2026-10-06.126';
+// r2026-10-06.128: single source of truth for the robot face — the v2 face
+// engine (gaze, lipsync, hint blending, blinks, Http/Unitree drivers) moved
+// out of the app and into @amoji/robot-face (packages/robot-face v0.2.0);
+// apps/web/lib/robot-face.ts is now a re-export shim, so the B2C app and the
+// B2B SDK literally cannot drift. No user-facing behavior change — same face,
+// same demos (/face, /robot-demo), same exports, now with one owner.
+export const APP_REVISION = 'r2026-10-06.128';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
