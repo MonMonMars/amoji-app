@@ -5,8 +5,14 @@
   "type": "module",
   "main": "./src/index.ts",
   "description": "Amoji Emotion Engine — plug-and-play face + body + voice emotion layer for robots. One API; the licensee's AI stays the brain.",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
     "@amoji/emotion-core": "workspace:*",
     "@amoji/robot-face": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
   }
 }
