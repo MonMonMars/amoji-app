@@ -25,9 +25,11 @@ import {
 } from '../lib/prefs';
 import { LangChips } from './selectors';
 import ModelThumb from './ModelThumb';
-import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, VOICE_TIER_LABEL } from '../lib/voice';
+import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, testOpenAiVoice, VOICE_TIER_LABEL } from '../lib/voice';
 // r2026-10-06.131: the Voice section's optional HTTP TTS proxy field
 import { getTtsProxy, setTtsProxy } from '../lib/edge-tts';
+// r2026-10-06.134: ChatGPT-voice (OpenAI tier 0) key + endpoint field
+import { openAiKey, setOpenAiKey, openAiEndpoint, setOpenAiEndpoint, openAiEnabled, setOpenAiEnabled } from '../lib/openai-tts';
 import { pickLine } from '../lib/chatter';
 import { feedUtterance } from '../lib/companion';
 import { notifySpeaking } from '../lib/speech';
@@ -133,6 +135,14 @@ export default function SettingsSheet({
   // through the edge tier (proxy included) and shows ✓/✗ right here.
   const [proxyTesting, setProxyTesting] = useState(false);
   const [proxyTestResult, setProxyTestResult] = useState<boolean | null>(null);
+  // r2026-10-06.134: ChatGPT-voice (OpenAI tier 0) drafts — same save-then-apply
+  // contract as the proxy field above.
+  const [oaKeyDraft, setOaKeyDraft] = useState<string>(() => openAiKey());
+  const [oaEpDraft, setOaEpDraft] = useState<string>(() => openAiEndpoint());
+  const [oaOn, setOaOn] = useState<boolean>(() => openAiEnabled());
+  const [oaSaved, setOaSaved] = useState(false);
+  const [oaTesting, setOaTesting] = useState(false);
+  const [oaTestResult, setOaTestResult] = useState<boolean | null>(null);
   const tutorNRef = useRef(0);
   // r2026-10-04.75: listen for the voice layer reporting a refused utterance
   // so the hint appears right where the toggles live.
@@ -142,7 +152,7 @@ export default function SettingsSheet({
     return () => window.removeEventListener('amoji:voice-blocked', onBlocked);
   }, []);
   useEffect(() => {
-    if (open) { setMem(loadMemory()); setCopied(false); setBrainState(brainProvider()); setKeyDrafts({}); setProxyDraft(getTtsProxy() ?? ''); setProxySaved(false); setProxyTestResult(null); setProxyTesting(false); }
+    if (open) { setMem(loadMemory()); setCopied(false); setBrainState(brainProvider()); setKeyDrafts({}); setProxyDraft(getTtsProxy() ?? ''); setProxySaved(false); setProxyTestResult(null); setProxyTesting(false); setOaKeyDraft(openAiKey()); setOaEpDraft(openAiEndpoint()); setOaOn(openAiEnabled()); setOaSaved(false); setOaTestResult(null); setOaTesting(false); }
   }, [open]);
   if (!open) return null;
   const lang = prefs.lang;
@@ -276,6 +286,21 @@ export default function SettingsSheet({
     }).catch(() => { setProxyTesting(false); setProxyTestResult(false); });
   };
 
+  // r134: ChatGPT-voice probe — same save-first contract: the spoken line
+  // exercises the exact key/endpoint in the fields. No key → ✗ with the
+  // "nothing to test" case folded into the same inline verdict.
+  const runOpenAiTest = () => {
+    setOpenAiKey(oaKeyDraft);
+    setOpenAiEndpoint(oaEpDraft);
+    setOaSaved(true);
+    setOaTestResult(null);
+    setOaTesting(true);
+    void testOpenAiVoice(prefs.character, lang).then((ok) => {
+      setOaTesting(false);
+      setOaTestResult(ok);
+    }).catch(() => { setOaTesting(false); setOaTestResult(false); });
+  };
+
   return (
     <div className="fx-fade-in absolute inset-0 z-20 flex justify-end bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div
@@ -351,6 +376,64 @@ export default function SettingsSheet({
                 accent={accent}
                 onClick={() => { const next = !neuralOn; setNeuralOnState(next); setNeuralEnabled(next); }}
               />
+            </div>
+            {/* r2026-10-06.134 — ChatGPT-voice tier (OpenAI): key + optional
+                endpoint proxy + one-tap probe. Strings predate the UI (r112);
+                this is their first consumer. */}
+            <div className="space-y-1.5">
+              <div className={row}>
+                <span className={label}>🤖 {t(lang, 'openaiVoice')}
+                  <span className="block text-[11px] text-white/40">{t(lang, 'openaiVoiceHint')}</span>
+                </span>
+                <Toggle
+                  on={oaOn}
+                  accent={accent}
+                  onClick={() => { const next = !oaOn; setOaOn(next); setOpenAiEnabled(next); }}
+                />
+              </div>
+              <input
+                type="password"
+                autoComplete="off"
+                value={oaKeyDraft}
+                onChange={(e) => { setOaKeyDraft(e.target.value); setOaSaved(false); }}
+                placeholder={t(lang, 'openaiKeyPlaceholder')}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs text-white/85 outline-none placeholder:text-white/30 focus:border-white/25"
+              />
+              <input
+                value={oaEpDraft}
+                onChange={(e) => { setOaEpDraft(e.target.value); setOaSaved(false); }}
+                placeholder={t(lang, 'openaiEndpointPlaceholder')}
+                inputMode="url"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs text-white/85 outline-none placeholder:text-white/30 focus:border-white/25"
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { setOpenAiKey(oaKeyDraft); setOpenAiEndpoint(oaEpDraft); setOaSaved(true); }}
+                  className="ui-btn rounded-full px-3 py-1.5 text-xs text-white/90"
+                  style={{ backgroundColor: `${accent}2e` }}
+                >
+                  {t(lang, 'ttsProxySave')}
+                </button>
+                <button
+                  onClick={runOpenAiTest}
+                  disabled={oaTesting}
+                  className="ui-btn rounded-full px-3 py-1.5 text-xs text-white/80 disabled:opacity-50"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}
+                >
+                  {oaTesting ? '…' : t(lang, 'testVoiceBtn')}
+                </button>
+                {oaTesting ? (
+                  <span className="text-[10px] text-white/45">…</span>
+                ) : oaTestResult !== null ? (
+                  <span className="text-[10px] text-white/45">{oaTestResult ? '✓' : '✗'}</span>
+                ) : oaSaved ? (
+                  <span className="text-[10px] text-white/45">✓</span>
+                ) : null}
+              </div>
+              <p className="text-[10px] leading-relaxed text-white/40">{t(lang, 'openaiCostHint')}</p>
             </div>
             {/* r2026-10-06.131 — optional HTTP proxy for wss-blocked networks */}
             <div className="space-y-1.5">

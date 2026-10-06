@@ -1490,6 +1490,34 @@ export async function testProxyVoice(characterId: string, lang: Lang): Promise<b
   }
 }
 
+/**
+ * r2026-10-06.134 — Settings ChatGPT-voice probe. Speaks one short line
+ * through the OpenAI tier exactly as a live reply would (key + endpoint as
+ * currently saved), reporting on the voice-status bus. Resolves null when
+ * no key is configured (nothing to test), false on failure, true when the
+ * line played start to finish.
+ */
+export async function testOpenAiVoice(characterId: string, lang: Lang): Promise<boolean | null> {
+  if (!openAiVoiceReady()) return null;
+  unlockAudio();
+  const line = TEST_LINES[lang] ?? TEST_LINES.en;
+  try {
+    await withTimeout(speakOpenAi(line, {
+      lang,
+      gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
+      character: characterId,
+    }), 12_000, 'openai-tts timeout');
+    reportVoiceStatus('openai', true, 'chatgpt voice played');
+    return true;
+  } catch (err) {
+    if ((err as Error | undefined)?.message !== 'canceled') {
+      stopOpenAi();
+      reportVoiceStatus('openai', false, (err as Error | undefined)?.message ?? 'openai-tts failed');
+    }
+    return false;
+  }
+}
+
 function synthSpeak(
   text: string,
   characterId: string,

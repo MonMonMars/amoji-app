@@ -263,7 +263,14 @@
 // neural-enabled gate and the lower fallbacks, so the verdict isolates the
 // proxy/URL instead of stopping at the first tier that speaks). ✓/✗ shows
 // inline under the field and on the voice-status bus.
-export const APP_REVISION = 'r2026-10-06.133';
+// r2026-10-06.134: the ChatGPT-voice (OpenAI tier 0) finally gets its
+// Settings UI — the r112 strings were never consumed until now. Settings →
+// Voice gains: on/off toggle, API-key field, optional endpoint-proxy URL
+// (blank = api.openai.com, which browsers CORS-block), cost hint, and a
+// ▶ Test button (voice.ts testOpenAiVoice) that saves the drafts and speaks
+// one line through gpt-4o-mini-tts — a bad key / blocked endpoint now names
+// itself in one tap instead of silently falling through to the free voices.
+export const APP_REVISION = 'r2026-10-06.134';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
