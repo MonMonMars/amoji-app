@@ -41,6 +41,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        {/*
+          r126 — speed tier: the browser warms DNS+TLS to the free LLM lane
+          at page load (preconnect) so the first chat turn skips the ~1s
+          handshake stall. Pollinations is warmed because it is the always-
+          present fallback lane even when a keyed brain is configured.
+        */}
+        <link rel="preconnect" href="https://text.pollinations.ai" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://text.pollinations.ai" />
         <AppleMeta />
         <ServiceWorkerRegistrar />
         {children}

@@ -38,6 +38,19 @@
 //  · PROMPT_HISTORY_CAP 12 → 8 — every extra streamed turn costs
 //    time-to-first-token on the free shared queue; older topics still ride
 //    the separate memory block
+// r2026-10-06.126 — speed tier (Master Simon: "the LLM seems loading very
+// slow… make conversations reply much faster"):
+//  · PRECONNECT + WARM LANE: the layout preconnects text.pollinations.ai and
+//    warmLane() pings its /models list once at chat-room mount, so DNS+TLS+
+//    a live connection are ready BEFORE the first message — the first turn
+//    no longer eats the ~1s handshake stall
+//  · NO DEAD PROBE: static hosts (GitHub Pages) have no /api/chat; the first
+//    send of a session still probes it, but the 404 is remembered in
+//    sessionStorage and every later message goes straight to the browser
+//    lane instead of wasting a round-trip per message
+//  · TAIL CAP: max_tokens 240 on every request — her replies are 1-3 cozy
+//    sentences by design (r97/r106), so capping the tail shaves the last
+//    seconds off reasoning-prone free models without ever biting real text
 import { analyzeText } from '@amoji/emotion-core';
 import { BASE_SYSTEM, languageBlock, parseEmotionHints, type ChatMessage } from './llm';
 import { BRAIN_SPECS, markBrainDead, pickBrain, type BrainSpec } from './brain';
@@ -68,6 +81,38 @@ export function trimHistoryForPrompt(messages: ChatMessage[]): ChatMessage[] {
 export const RACE_MODELS = ['openai-fast', 'openai', 'mistral', 'llama'];
 const RACER_BUDGET_MS = 14_000;
 const KEYED_BUDGET_MS = 20_000;
+
+// r126 — the free lane's origin; preconnected in the layout and warmed by
+// warmLane() so the first real turn starts on a hot connection.
+export const LANE_ORIGIN = 'https://text.pollinations.ai';
+
+let laneWarmed = false;
+/** Fire-and-forget lane warm-up: GET /models keeps DNS+TLS+connection hot
+ *  without touching the LLM queue. Best-effort; aborts quietly at 6s. */
+export function warmLane(): void {
+  if (laneWarmed || typeof fetch === 'undefined') return;
+  laneWarmed = true;
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 6_000);
+  fetch(`${LANE_ORIGIN}/models`, { signal: ctl.signal, cache: 'no-store' })
+    .catch(() => { /* warm-up is best-effort */ })
+    .finally(() => clearTimeout(timer));
+}
+
+// r126 — static hosts have no /api/chat. The FIRST send of a session still
+// probes it (a real server must be used when one exists); the failure is
+// remembered so every later message skips the dead round-trip.
+const NO_ROUTE_KEY = 'amoji.noApiRoute';
+/** in-memory mirror for environments with no sessionStorage (private-mode
+ *  quirks, tests) — the skip must hold for the session either way */
+const noRouteMemory = { set: false };
+export function shouldSkipServerProbe(): boolean {
+  try { return sessionStorage.getItem(NO_ROUTE_KEY) === '1'; } catch { return noRouteMemory.set; }
+}
+export function markNoApiRoute(): void {
+  noRouteMemory.set = true;
+  try { sessionStorage.setItem(NO_ROUTE_KEY, '1'); } catch { /* in-memory only */ }
+}
 
 interface StreamChunk {
   choices?: Array<{ delta?: { content?: string }; message?: { content?: string } }>;
@@ -200,6 +245,9 @@ function launchRacer(
           model,
           messages: [{ role: 'system', content: system }, ...messages],
           temperature: 0.85,
+          // r126 — tail cap: 1-3 cozy sentences by design; capping shaves the
+          // last seconds off reasoning-prone free models without biting text
+          max_tokens: 240,
           stream: true,
         }),
       });

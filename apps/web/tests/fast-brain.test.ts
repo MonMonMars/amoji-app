@@ -1,9 +1,10 @@
 // r2026-10-04.46: fast-brain — capped prompt history, the free-lane race
 // config, and the instant local lane that keeps the conversation alive at
 // zero latency when every brain is slow or down.
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi, afterEach } from 'vitest';
 import {
-  localFallbackReply, trimHistoryForPrompt, PROMPT_HISTORY_CAP, RACE_MODELS,
+  LANE_ORIGIN, localFallbackReply, markNoApiRoute, shouldSkipServerProbe,
+  trimHistoryForPrompt, PROMPT_HISTORY_CAP, RACE_MODELS, warmLane,
 } from '../lib/client-chat';
 import type { ChatMessage } from '../lib/llm';
 
@@ -52,5 +53,43 @@ describe('free-lane race config', () => {
   it('races at least two models so the fastest first token wins', () => {
     expect(RACE_MODELS.length).toBeGreaterThanOrEqual(2);
     expect(RACE_MODELS).toContain('openai');
+  });
+});
+
+// ---------- r2026-10-06.126: speed tier ----------
+
+describe('static-host probe skip', () => {
+  afterEach(() => {
+    try { sessionStorage.removeItem('amoji.noApiRoute'); } catch { /* ignore */ }
+  });
+
+  it('probes the server route until the first failure, then skips it', () => {
+    expect(shouldSkipServerProbe()).toBe(false); // fresh session probes
+    markNoApiRoute(); // the /api/chat fetch just 404'd — remember it
+    expect(shouldSkipServerProbe()).toBe(true);  // later messages skip the probe
+  });
+
+  it('session flag is what it is — no crash without storage', () => {
+    // jsdom always has sessionStorage here; assert the API contract instead
+    expect(typeof shouldSkipServerProbe()).toBe('boolean');
+    markNoApiRoute();
+    expect(shouldSkipServerProbe()).toBe(true);
+  });
+});
+
+describe('lane warm-up', () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  it('pings the pollinations models list exactly once and swallows errors', async () => {
+    const calls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn((url: string) => {
+      calls.push(String(url));
+      return Promise.reject(new Error('offline')); // warm-up must not care
+    }));
+    warmLane();
+    warmLane(); // second call is a no-op — one ping per session
+    await new Promise((r) => setTimeout(r, 0));
+    expect(calls.length).toBe(1);
+    expect(calls[0]).toBe(`${LANE_ORIGIN}/models`);
   });
 });

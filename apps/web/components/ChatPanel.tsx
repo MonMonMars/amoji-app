@@ -141,7 +141,7 @@ import { pickMoodIdleLine } from '../lib/mood-chatter';
 import { pickOuch, pickZoneOuch, ouchStyleFor } from '../lib/ouch';
 import { pickLaugh, laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { WARMUP_FIRST_MS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from '../lib/warmup';
-import { clientChat } from '../lib/client-chat';
+import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
 import { speak, stopSpeaking, speakThinkingFiller, sing, voiceStartedSince } from '../lib/voice';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
 import { startMusic, stopMusic, startPerformanceMusic, endPerformanceMusic } from '../lib/music';
@@ -220,6 +220,9 @@ export default function ChatPanel({
     window.addEventListener('amoji:voice-replay-hint', onHint);
     return () => window.removeEventListener('amoji:voice-replay-hint', onHint);
   }, []);
+  // r126 — warm the free lane while she's still saying hello: DNS+TLS and a
+  // live connection are ready before the first real message is typed/spoken
+  useEffect(() => { warmLane(); }, []);
   const scrollRef = useRef<HTMLDivElement>(null);
   // r2026-10-05.120: the history is display-only — an invisible scroll pad
   // covering the LOWER THIRD of the screen is the only place that scrolls
@@ -785,29 +788,11 @@ export default function ChatPanel({
     // final pass can tell "sound started" from "we tried and nothing came".
     let firstSentence = '';
     let sentenceStamp = 0;
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, history, persona: personaForBrain, memory }),
-      });
-      if (!res.ok) throw new Error(String(res.status));
-      const data = await res.json() as { reply?: string; emotionHints?: Record<string, number> };
-      // the felt mood is a FLOOR: her reply's hints win on conflicts, but the
-      // feeling the user just expressed never fully drops out
-      const replyHints = feltHints ? { ...feltHints, ...(data.emotionHints ?? {}) } : data.emotionHints;
-      if (replyHints) applyLlmHints(replyHints);
-      const reply = data.reply || '…';
-      // r.30 — remember the completed turn (your words + her reply) so the
-      // next session can pick the conversation thread back up
-      rememberTurn(text, reply);
-      onMemCountRef.current?.(memorySummaryCount());
-      feedUtterance(reply);
-      const spoken = speakReply(text, reply, replyHints, felt?.intensity, felt?.mood);
-      commitReply(spoken);
-      answered = true;
-    } catch {
-      // no server (e.g. static GitHub Pages build) — free keyless LLM from the browser
+    // r126 — browser-direct lane (static hosting / dead server): streams the
+    // free keyless LLM straight from the browser. One shared closure so the
+    // "server just failed" path and the "no server this session" path run
+    // exactly the same code.
+    const browserLane = async (): Promise<void> => {
       try {
         // stream the reply live into the placeholder bubble — first tokens
         // show up immediately instead of after the whole generation finishes
@@ -870,6 +855,42 @@ export default function ChatPanel({
           const tail = h[h.length - 1];
           return tail && tail.role === 'assistant' && tail.content === '…' ? h.slice(0, -1) : h;
         });
+      }
+    };
+
+    try {
+      if (shouldSkipServerProbe()) {
+        // r126 — this session already learned there's no /api/chat (static
+        // host): skip the dead round-trip, go straight to the browser lane
+        await browserLane();
+      } else {
+        try {
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: text, history, persona: personaForBrain, memory }),
+          });
+          if (!res.ok) throw new Error(String(res.status));
+          const data = await res.json() as { reply?: string; emotionHints?: Record<string, number> };
+          // the felt mood is a FLOOR: her reply's hints win on conflicts, but the
+          // feeling the user just expressed never fully drops out
+          const replyHints = feltHints ? { ...feltHints, ...(data.emotionHints ?? {}) } : data.emotionHints;
+          if (replyHints) applyLlmHints(replyHints);
+          const reply = data.reply || '…';
+          // r.30 — remember the completed turn (your words + her reply) so the
+          // next session can pick the conversation thread back up
+          rememberTurn(text, reply);
+          onMemCountRef.current?.(memorySummaryCount());
+          feedUtterance(reply);
+          const spoken = speakReply(text, reply, replyHints, felt?.intensity, felt?.mood);
+          commitReply(spoken);
+          answered = true;
+        } catch {
+          // no server (e.g. static GitHub Pages build) — remember it for the
+          // rest of the session, then free keyless LLM from the browser
+          markNoApiRoute();
+          await browserLane();
+        }
       }
     } finally {
       clearTimeout(warmTimer); // reply (or failure) is here — stop the warm-up

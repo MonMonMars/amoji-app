@@ -218,7 +218,20 @@
 // older memories about what the user JUST said — she connects today's words
 // to things told to her weeks ago. Deduped against the standard bits and
 // capped short so the free-lane prompt stays lean (r97 discipline).
-export const APP_REVISION = 'r2026-10-06.125';
+// r2026-10-06.126 (Master Simon: "the LLM seems loading very slow… make
+// conversations reply much faster" — the LLM speed tier, last of his 2/10
+// backlog decisions) — three first-token latency wins on top of the r46/r97
+// race architecture: (1) the layout PRECONNECTS text.pollinations.ai and
+// warmLane() pings its /models list once at chat-room mount, so DNS+TLS and
+// a live connection are hot BEFORE the first message — the first turn no
+// longer eats the ~1s handshake stall; (2) the static-host /api/chat probe
+// is remembered in sessionStorage (in-memory fallback) after its first 404,
+// so every later message goes straight to the browser lane instead of
+// wasting a dead round-trip — the browser lane itself was hoisted into one
+// shared browserLane() closure both paths call; (3) max_tokens 240 on every
+// request caps the generation tail (her replies are 1-3 cozy sentences by
+// design) without ever biting real text.
+export const APP_REVISION = 'r2026-10-06.126';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
