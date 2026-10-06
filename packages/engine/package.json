@@ -1,0 +1,12 @@
+{
+  "name": "@amoji/engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "description": "Amoji Emotion Engine — plug-and-play face + body + voice emotion layer for robots. One API; the licensee's AI stays the brain.",
+  "dependencies": {
+    "@amoji/emotion-core": "workspace:*",
+    "@amoji/robot-face": "workspace:*"
+  }
+}

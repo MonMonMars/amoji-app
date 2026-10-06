@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@amoji/emotion-core": ["../emotion-core/src/index.ts"],
+      "@amoji/robot-face": ["../robot-face/src/index.ts"]
+    }
+  },
+  "include": ["src", "tests"]
+}

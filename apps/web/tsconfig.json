@@ -19,7 +19,11 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@amoji/emotion-core": ["../../packages/emotion-core/src/index.ts"],
+      "@amoji/robot-face": ["../../packages/robot-face/src/index.ts"],
+      "@amoji/vrm-renderer": ["../../packages/vrm-renderer/src/index.ts"],
+      "@amoji/engine": ["../../packages/engine/src/index.ts"]
     }
   },
   "include": [
