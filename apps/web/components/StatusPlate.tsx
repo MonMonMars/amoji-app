@@ -20,6 +20,11 @@
 // covers her face: it is a smaller, fully opaque rounded pill (solid bg +
 // blur, compact avatar + type) tucked to the top-left corner, clear of the
 // character's head area on narrow phone screens.
+// r2026-10-06.136 (Master Simon: "put the loading icons outside the top left
+// block since it always enlarges the block and deform the block"): the
+// spinner LEFT the pill. A long "preparing…" used to widen the name plate
+// and cover the character thumbnail; the pill is now a fixed compact shape,
+// and the spinner + percentage render in their OWN chip directly below it.
 import { useEffect, useState } from 'react';
 import { getLatestFrame, dominantMood, type MoodId } from '../lib/companion';
 import { getLoadProgress, onLoadProgress, type LoadProgress } from '../lib/load-progress';
@@ -63,10 +68,10 @@ export default function StatusPlate({
     return () => clearInterval(id);
   }, []);
 
-  // r91: character-loading progress published by CompanionCanvas — a mini
-  // spinner in the status row, null the moment she's on stage. r102: the
+  // r91: character-loading progress published by CompanionCanvas. r102: the
   // value can also be 'prep' (the reveal gate is waiting for textures /
   // first frames) — rendered as an indeterminate "preparing…", never a %.
+  // r136: rendered in a separate chip BELOW the pill, never inside it.
   const [loadingPct, setLoadingPct] = useState<LoadProgress>(getLoadProgress());
   useEffect(() => onLoadProgress(setLoadingPct), []);
 
@@ -100,62 +105,64 @@ export default function StatusPlate({
     // into her face on narrow phones. Solid black/55 + blur keeps it readable
     // without visually "cutting" the character; the tighter padding/avatar
     // keep it tucked into the corner, clear of her head area.
-    <button
-      onClick={onOpenSelect}
-      title={t(lang, 'openSelect')}
-      className="ui-btn flex max-w-[46vw] items-center gap-2 rounded-full border border-white/10 bg-black/55 py-1 pl-1 pr-3 shadow-lg shadow-black/30 backdrop-blur-md transition hover:bg-black/70"
-    >
-      <span
-        className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-black/70"
-        style={{ background: portrait ? '#0b0b12' : `radial-gradient(circle at 35% 30%, #ffffffcc, ${accent})` }}
+    // r136: the loading row left the pill entirely — the pill keeps one fixed
+    // compact shape, and the spinner + percentage live in their own chip
+    // below it, so a long "preparing…" can never widen/deform the plate.
+    <div className="flex flex-col items-start gap-1.5">
+      <button
+        onClick={onOpenSelect}
+        title={t(lang, 'openSelect')}
+        className="ui-btn flex max-w-[46vw] items-center gap-2 rounded-full border border-white/10 bg-black/55 py-1 pl-1 pr-3 shadow-lg shadow-black/30 backdrop-blur-md transition hover:bg-black/70"
       >
-        {portrait ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={assetUrl(portrait)} alt={name} draggable={false} className="h-full w-full object-cover object-top" />
-        ) : (
-          name[0]
-        )}
-      </span>
-      <span className="min-w-0 text-left leading-tight">
-        <span className="flex items-center gap-1.5 text-[13px] font-semibold text-white">
-          <span className="max-w-[18vw] truncate">{name}</span>
-          {voiceDot && (voiceDot.ok ? (
-            <span title={voiceDot.title} className="inline-block h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
+        <span
+          className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-black/70"
+          style={{ background: portrait ? '#0b0b12' : `radial-gradient(circle at 35% 30%, #ffffffcc, ${accent})` }}
+        >
+          {portrait ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={assetUrl(portrait)} alt={name} draggable={false} className="h-full w-full object-cover object-top" />
           ) : (
-            <span title={voiceDot.title} className="shrink-0 text-[10px] leading-none text-red-400">✗</span>
-          ))}
-          {kid && <span title="Kid mode">🧸</span>}
-          {memCount > 0 && (
-            <span className="rounded-full bg-white/15 px-1.5 text-[10px] font-normal text-white/70">🧠{memCount}</span>
+            name[0]
           )}
         </span>
-        <span className="flex items-center gap-1 text-[10px] text-white/60">
-          {loadingPct === 'prep' && (
-            <>
-              <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.22)" strokeWidth="3.5" />
-                <circle cx="12" cy="12" r="10" stroke={accent} strokeWidth="3.5" strokeLinecap="round" strokeDasharray="14 49" />
-              </svg>
-              <span className="text-white/85">{t(lang, 'statusPreparing')}</span>
-              <span className="text-white/25">·</span>
-            </>
-          )}
-          {typeof loadingPct === 'number' && (
-            <>
-              <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.22)" strokeWidth="3.5" />
-                <circle cx="12" cy="12" r="10" stroke={accent} strokeWidth="3.5" strokeLinecap="round" strokeDasharray="14 49" />
-              </svg>
-              <span className="tabular-nums text-white/85">{loadingPct}%</span>
-              <span className="text-white/25">·</span>
-            </>
-          )}
-          <span>{MOOD_EMOJI[mood]}</span>
-          <span className="max-w-[16vw] truncate">{t(lang, MOOD_LABEL[mood])}</span>
-          <span className="text-white/25">·</span>
-          <span className={status === 'listening' ? 'text-white/90' : ''}>{t(lang, STATUS_LABEL[status])}</span>
+        <span className="min-w-0 text-left leading-tight">
+          <span className="flex items-center gap-1.5 text-[13px] font-semibold text-white">
+            <span className="max-w-[18vw] truncate">{name}</span>
+            {voiceDot && (voiceDot.ok ? (
+              <span title={voiceDot.title} className="inline-block h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
+            ) : (
+              <span title={voiceDot.title} className="shrink-0 text-[10px] leading-none text-red-400">✗</span>
+            ))}
+            {kid && <span title="Kid mode">🧸</span>}
+            {memCount > 0 && (
+              <span className="rounded-full bg-white/15 px-1.5 text-[10px] font-normal text-white/70">🧠{memCount}</span>
+            )}
+          </span>
+          <span className="flex items-center gap-1 text-[10px] text-white/60">
+            <span>{MOOD_EMOJI[mood]}</span>
+            <span className="max-w-[16vw] truncate">{t(lang, MOOD_LABEL[mood])}</span>
+            <span className="text-white/25">·</span>
+            <span className={status === 'listening' ? 'text-white/90' : ''}>{t(lang, STATUS_LABEL[status])}</span>
+          </span>
         </span>
-      </span>
-    </button>
+      </button>
+      {/* r136: the loading indicator's own home — a small chip below the pill.
+          'prep' shows the bounded indeterminate "preparing…" (r102: never a
+          frozen 99%), a number counts up honestly, and the 25s watchdog in
+          CompanionCanvas still retires the whole thing. */}
+      {(loadingPct === 'prep' || typeof loadingPct === 'number') && (
+        <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/55 px-2.5 py-1 shadow-lg shadow-black/30 backdrop-blur-md">
+          <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.22)" strokeWidth="3.5" />
+            <circle cx="12" cy="12" r="10" stroke={accent} strokeWidth="3.5" strokeLinecap="round" strokeDasharray="14 49" />
+          </svg>
+          {loadingPct === 'prep' ? (
+            <span className="text-[10px] text-white/85">{t(lang, 'statusPreparing')}</span>
+          ) : (
+            <span className="tabular-nums text-[10px] text-white/85">{loadingPct}%</span>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

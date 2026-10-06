@@ -37,6 +37,11 @@
 // over the picked scene — a realistic standing-in-the-scene preview with zero
 // live WebGL on this page. Falls back to the painted portrait chip when the
 // cutout is missing (old bakes), and the live ModelPreview stream is retired.
+// r2026-10-06.136 (Master Simon: "the first row now only shows the legs of
+// the character, please show the whole body"): the row-0 card is taller
+// (h-44) and the cutout is cropped to the WHOLE body inside the card (96% of
+// its height, anchored to the floor line) instead of overflowing it from the
+// waist up.
 import { useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import HScrollRow from './HScrollRow';
@@ -103,11 +108,12 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
 
       {/* row 0 — combined preview: existing picks (or the draft replacing them) */}
       <div className="fx-rise mx-5 mt-4" style={{ '--d': '20ms' } as CSSProperties}>
-        <div className="fx-sheen relative h-36 overflow-hidden rounded-3xl border border-white/10">
+        <div className="fx-sheen relative h-44 overflow-hidden rounded-3xl border border-white/10">
           <SceneBackdrop background={background} />
-          {/* r123: her baked cutout standing IN the picked scene. Taller than
-              the card, anchored to the floor line, soft drop shadow so she
-              reads as "in" the scene rather than "on" it. */}
+          {/* r123: her baked cutout standing IN the picked scene. r136: sized
+              to the WHOLE body inside the taller card (96% height, floor-
+              anchored) — the old h-[150%] overflow cropped her to legs-only
+              from the waist up. */}
           {cutoutOk ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -115,7 +121,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
               alt={character.name}
               draggable={false}
               onError={() => setCutoutOk(false)}
-              className="absolute bottom-0 right-3 h-[150%] w-auto object-contain object-bottom drop-shadow-[0_10px_18px_rgba(0,0,0,0.55)]"
+              className="absolute bottom-0 right-3 h-[96%] w-auto object-contain object-bottom drop-shadow-[0_10px_18px_rgba(0,0,0,0.55)]"
               style={{ filter: `drop-shadow(0 10px 18px rgba(0,0,0,0.55)) drop-shadow(0 0 24px ${character.accent}44)` }}
             />
           ) : null}

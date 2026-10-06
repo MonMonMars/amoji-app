@@ -5,6 +5,10 @@
 // when the card scrolls near the viewport. Painted art stays as the poster
 // when the character ships a portrait; otherwise an accent monogram stands in
 // until (and if) the render lands.
+// r2026-10-06.136 (Master Simon: character buttons should show the BIG FACE):
+// the pre-baked portrait is zoomed to the face (scale 1.6, origin just below
+// the top edge) — the bakes frame head-and-hips, so on a small round tile the
+// eyes used to sit tiny at the top of the circle.
 import { useEffect, useRef, useState } from 'react';
 import { requestModelThumb } from '../lib/modelThumb';
 import { assetUrl } from '../lib/asset';
@@ -70,7 +74,7 @@ export default function ModelThumb({
           alt=""
           draggable={false}
           onError={() => setBakedOk(false)}
-          className="absolute inset-0 h-full w-full object-cover object-top"
+          className="absolute inset-0 h-full w-full object-cover object-top [transform:scale(1.6)] [transform-origin:50%_12%]"
         />
       ) : poster ? (
         // eslint-disable-next-line @next/next/no-img-element
