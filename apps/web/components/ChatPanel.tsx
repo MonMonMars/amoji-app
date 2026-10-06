@@ -774,7 +774,8 @@ export default function ChatPanel({
     };
     // learn from the user's words, then inject what she remembers into her prompt
     onMemCountRef.current?.(memorySummaryCount(rememberExchange(text)));
-    const memory = buildMemoryBlock(lang);
+    // r125 — pass the user's words so OLD on-topic memories surface too
+    const memory = buildMemoryBlock(lang, undefined, text);
     // r70 — persona + adaptive block (scene + warmth calibration)
     const personaForBrain = fullPersona();
     let answered = false;

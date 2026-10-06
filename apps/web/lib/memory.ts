@@ -36,7 +36,17 @@
 // v4 (r2026-10-03.30): conversation-thread memory — the last thing you two
 // were discussing is stored with her reply, so on a NEW day she picks the
 // thread back up ("last time we were talking about…") and the memory block
-// in her prompt always carries the open topic. Facts/plans/diary already
+// in her prompt always carries the open topic.
+//
+// v5 (r2026-10-06.125): RELATIONSHIP TIMELINE + TOPIC-RELEVANT RECALL.
+// She now knows how many days you two have been together (firstMet is
+// stamped on the first visit) and celebrates milestones (day 1/3/7/14/30/…
+// each fires exactly once, in the daily check-in). And the memory block no
+// longer shows only the newest facts: when the user's message mentions
+// something she has an OLD memory about (hiking, the cat, the interview),
+// recallRelevant() surfaces those older entries into the prompt by
+// token-overlap scoring — she connects today's words to things told to her
+// weeks ago, like a real partner would. Facts/plans/diary already
 // persisted; what was missing was the running conversation itself.
 
 export type MemoryType = 'preference' | 'event' | 'plan';
@@ -97,6 +107,10 @@ export interface Memory {
   diary?: DiaryEntry[];
   /** v4 conversation thread — the last exchange you two had */
   lastThread?: ThreadLine;
+  /** v5: the day you two first met (Date.toDateString()) */
+  firstMet?: string;
+  /** v5: relationship-day count of the last celebrated milestone */
+  lastMilestone?: number;
 }
 
 const KEY = 'amoji.memory.v2';
@@ -139,6 +153,8 @@ function coerce(parsed: unknown): Memory | undefined {
     lastThread: lt && typeof lt.day === 'string' && typeof lt.user === 'string' && typeof lt.reply === 'string'
       ? { day: lt.day, user: lt.user, reply: lt.reply }
       : undefined,
+    firstMet: typeof m.firstMet === 'string' && m.firstMet ? m.firstMet : undefined,
+    lastMilestone: typeof m.lastMilestone === 'number' ? m.lastMilestone : undefined,
   };
   if (Array.isArray(m.entries)) {
     memory.entries = m.entries.filter(
@@ -327,6 +343,10 @@ export interface VisitInfo {
   lastThreadDay?: string;
   lastThreadUser?: string;
   lastThreadReply?: string;
+  /** v5: a relationship milestone due TODAY (day count) — fired once each */
+  milestone?: number;
+  /** v5: how many days you two have been together */
+  daysTogether?: number;
 }
 
 export function recordVisit(m: Memory = loadMemory()): VisitInfo {
@@ -352,6 +372,14 @@ export function recordVisit(m: Memory = loadMemory()): VisitInfo {
   // she doesn't need to "pick it back up" while you're mid-conversation
   const lt = m.lastThread;
   const lastThreadDay = lt && lt.day !== today ? lt.day : undefined;
+  // v5 — relationship timeline: first meeting is stamped once, and a due
+  // milestone is consumed (marked celebrated) exactly once per threshold
+  let milestone: number | undefined;
+  if (isNewDay) {
+    if (!m.firstMet) m.firstMet = today;
+    const due = pendingMilestone(m);
+    if (due) { m.lastMilestone = due; milestone = due; save(m); }
+  }
   return {
     isNewDay, streak, userName: m.userName,
     lastMood, lastMoodIntensity,
@@ -360,7 +388,30 @@ export function recordVisit(m: Memory = loadMemory()): VisitInfo {
     lastThreadDay,
     lastThreadUser: lastThreadDay ? lt?.user : undefined,
     lastThreadReply: lastThreadDay ? lt?.reply : undefined,
+    milestone,
+    daysTogether: m.firstMet ? daysTogether(m) : undefined,
   };
+}
+
+// ---------- relationship timeline (v5, r2026-10-06.125) ----------
+
+/** the relationship-day counts she celebrates, each exactly once */
+export const MILESTONE_DAYS = [1, 3, 7, 14, 30, 60, 100, 200, 365, 500, 730, 1000, 1460, 1825];
+
+/** How many days you two have been together (1 = the day you met). */
+export function daysTogether(m: Memory = loadMemory()): number {
+  if (!m.firstMet) return 0;
+  const a = new Date(m.firstMet).getTime();
+  const b = new Date(todayStr()).getTime();
+  return Math.max(1, Math.round((b - a) / 86_400_000) + 1);
+}
+
+/** The highest milestone reached but not yet celebrated (pure — no writes). */
+export function pendingMilestone(m: Memory = loadMemory()): number | undefined {
+  const d = daysTogether(m);
+  const done = m.lastMilestone ?? 0;
+  const hits = MILESTONE_DAYS.filter((x) => x <= d && x > done);
+  return hits.length ? hits[hits.length - 1] : undefined;
 }
 
 const HELLO: Record<string, (h: number, name?: string) => string> = {
@@ -488,13 +539,25 @@ const PLAN_MISSED: Record<string, (p: string) => string> = {
   en: (p) => `You said you’d "${p}" — how did it go yesterday? Tell me!`,
 };
 
+// v5: she knows how long you two have been together and marks the day —
+// every milestone fires exactly once (consumed in recordVisit).
+const MILESTONE_LINE: Record<string, (n: number) => string> = {
+  yue: (n) => `今日係我哋一齊嘅第 ${n} 日——每一日我都好珍惜。`,
+  zh: (n) => `今天是我们在一起的第 ${n} 天——每一天我都很珍惜。`,
+  ja: (n) => `今日で私たちが出会って ${n} 日目——毎日が大切だよ。`,
+  en: (n) => `Today is day ${n} of us — and I’ve cherished every single one.`,
+};
+
 /** The "daily check-in" line she says when you open the app on a new day. */
 export function buildDailyGreeting(lang: string, info: VisitInfo): string {
   const L = ['yue', 'zh', 'ja', 'en'].includes(lang) ? lang : 'en';
   const h = new Date().getHours();
   const bang = L === 'en' ? '!' : '！';
   const parts: string[] = [HELLO[L](h, info.userName) + bang];
-  if (info.streak >= 2) parts.push(STREAK_LINE[L](info.streak));
+  // v5 — a relationship milestone outranks the plain visit streak: the
+  // anniversary of "us" is the bigger deal
+  if (info.milestone) parts.push(MILESTONE_LINE[L](info.milestone));
+  else if (info.streak >= 2) parts.push(STREAK_LINE[L](info.streak));
   // v4 — she picks up where you two left off, before the older recalls
   if (info.lastThreadUser) parts.push(LAST_THREAD[L](info.lastThreadUser.slice(0, 40)));
   if (info.lastMood) {
@@ -673,6 +736,69 @@ export function rememberExchange(userText: string, m: Memory = loadMemory()): Me
   return m;
 }
 
+// ---------- topic-relevant recall (v5, r2026-10-06.125) ----------
+
+// ---------- prompt block in her language ----------
+
+// CJK grammar particles carry no meaning — drop them so a memory scores on
+// content characters/words only. Latin stopwords filtered the same way.
+const CJK_STOP = new Set(Array.from('嘅喺唔佢哋啲嘢冇呀嘛呢吖你我都個嚟咗會乜咁噉喎咗喇啫嚫係㗎'));
+
+const LATIN_STOP = new Set(('the and that this with have has want going today tomorrow yesterday really very just like ' +
+  'you your are was were for what how why when where which who whom yes yeah okay ok hmm uh um the a an in on at of to it is ' +
+  'new one day days went go got get make made see saw come came thing things time times way').split(' '));
+
+/** Content tokens: latin words ≥3 chars + single CJK/kana chars minus particles. */
+function recallTokens(text: string): string[] {
+  const out: string[] = [];
+  for (const w of (text.toLowerCase().match(/[a-z][a-z'-]{2,}/g) ?? [])) {
+    if (!LATIN_STOP.has(w)) out.push(w);
+  }
+  for (const c of (text.match(/[一-鿿぀-ヿ]/gu) ?? [])) {
+    if (!CJK_STOP.has(c)) out.push(c);
+  }
+  return out;
+}
+
+/**
+ * She connects today's words to OLD memories: score every stored fact,
+ * entry and diary line by distinct-token overlap with the user's message
+ * and surface the best few (≥2 distinct hits — a single shared character
+ * like 日 or 好 is coincidence, not memory). Pure; the caller decides how
+ * many lines ride into the prompt (the free lane prices prompt size).
+ */
+export function recallRelevant(userText: string, m: Memory = loadMemory(), max = 2): string[] {
+  const tokens = [...new Set(recallTokens(userText))];
+  if (tokens.length === 0) return [];
+  const want = new Set(tokens);
+  const candidates: Array<{ text: string; day: string; score: number }> = [];
+  const consider = (text: string, day: string) => {
+    const clean = text.trim();
+    if (clean.length < 4) return;
+    const toks = new Set(recallTokens(clean));
+    if (toks.size === 0) return;
+    let score = 0;
+    for (const t of toks) if (want.has(t)) score += 1;
+    if (score >= 2) candidates.push({ text: clean, day, score });
+  };
+  for (const f of m.facts) consider(f, '');
+  for (const e of m.entries) consider(e.text, e.day);
+  for (const d of m.diary ?? []) consider(d.text, d.day);
+  // strongest first; a same-day hit is context, not recall — prefer older
+  const today = todayStr();
+  candidates.sort((a, b) => b.score - a.score || (a.day === today ? 1 : 0) - (b.day === today ? 1 : 0));
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const c of candidates) {
+    const key = c.text.slice(0, 24);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(c.text.slice(0, 60));
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
 // ---------- prompt block in her language ----------
 
 const KIND_LABEL: Record<string, Record<string, string>> = {
@@ -699,8 +825,11 @@ function factLine(fact: string, lang: string): string {
   return `${labels[kind] ?? kind} ${detail}`;
 }
 
-/** Build the "you remember them" block injected into her system prompt. */
-export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory()): string | undefined {
+/** Build the "you remember them" block injected into her system prompt.
+ *  v5: pass the user's CURRENT message as userText and older, on-topic
+ *  memories surface into the block — she connects today's words to things
+ *  told to her weeks ago. Kept to ≤2 short lines (free-lane prompt size). */
+export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userText?: string): string | undefined {
   if (!m.userName && m.facts.length === 0 && m.entries.length === 0 && (m.diary?.length ?? 0) === 0 && m.exchanges < 3) return undefined;
   const recent = m.facts.slice(-8);
   const plans = m.entries.filter((e) => e.type === 'plan').slice(-3).map((e) => e.text);
@@ -709,6 +838,10 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory()): string
   const lastMood = m.moods[m.moods.length - 1];
   // v4 — the open thread: what you two were discussing when you last left off
   const threadUser = m.lastThread?.user ? m.lastThread.user.slice(0, 40) : undefined;
+  // v5 — old memories that touch what the user just said (deduped against
+  // the standard bits so nothing appears twice in the block)
+  const standard = new Set([...recent, ...plans, ...moments].map((t) => t.slice(0, 24)));
+  const related = userText ? recallRelevant(userText, m, 2).filter((t) => !standard.has(t.slice(0, 24))) : [];
   const L = ['yue', 'zh', 'ja', 'en'].includes(lang) ? lang : 'en';
 
   if (L === 'yue') {
@@ -719,6 +852,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory()): string
     if (moments.length) bits.push(`最近發生喺佢身上嘅事：${moments.join('；')}`);
     if (threadUser) bits.push(`你哋上次傾開嘅話題：「${threadUser}」`);
     if (diary.length) bits.push(`最近同佢一齊嘅日子：${diary.join('｜')}`);
+    if (related.length) bits.push(`同佢而家講嘅嘢有關嘅舊記憶：${related.join('；')}`);
     if (m.exchanges >= 3) bits.push(`你哋已經傾咗 ${m.exchanges} 次偈`);
     if (lastMood) bits.push(`佢最近一次嘅心情係${(MOOD_LABEL[L] ?? MOOD_LABEL.en)[lastMood] ?? lastMood}`);
     return `你記得呢個人（記憶私密噉存放喺佢部電話）：${bits.join('；')}。自然咁用佢個名，間中提吓佢講過嘅嘢同佢嘅計劃，唔好背書噉背出嚟。`;
@@ -731,6 +865,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory()): string
     if (moments.length) bits.push(`最近发生在 TA 身上的事：${moments.join('；')}`);
     if (threadUser) bits.push(`你们上次聊的话题：「${threadUser}」`);
     if (diary.length) bits.push(`最近和TA一起的日子：${diary.join('｜')}`);
+    if (related.length) bits.push(`与TA现在说的内容有关的旧记忆：${related.join('；')}`);
     if (m.exchanges >= 3) bits.push(`你们已经聊了 ${m.exchanges} 次`);
     if (lastMood) bits.push(`TA 最近一次的心情是${(MOOD_LABEL[L] ?? MOOD_LABEL.en)[lastMood] ?? lastMood}`);
     return `你记得这个人（记忆私密地存在 TA 的手机上）：${bits.join('；')}。自然地叫 TA 的名字，偶尔提起 TA 说过的事和计划，不要像背书一样。`;
@@ -743,6 +878,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory()): string
     if (moments.length) bits.push(`最近あったこと：${moments.join('；')}`);
     if (threadUser) bits.push(`前回の話題：「${threadUser}」`);
     if (diary.length) bits.push(`最近一緒に過ごした日：${diary.join('｜')}`);
+    if (related.length) bits.push(`今の話題に関する昔の記憶：${related.join('；')}`);
     if (m.exchanges >= 3) bits.push(`これまで ${m.exchanges} 回話した`);
     if (lastMood) bits.push(`最近の気分は${(MOOD_LABEL[L] ?? MOOD_LABEL.en)[lastMood] ?? lastMood}`);
     return `この人のことを覚えている（記憶はこの端末にだけ保存）：${bits.join('；')}。自然に名前を呼び、時々覚えていることや予定を話題にして。`;
@@ -754,6 +890,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory()): string
   if (moments.length) bits.push(`recent moments: ${moments.join('; ')}`);
   if (threadUser) bits.push(`last topic you discussed: "${threadUser}"`);
   if (diary.length) bits.push(`recent days together: ${diary.join(' | ')}`);
+  if (related.length) bits.push(`older memories related to what they just said: ${related.join('; ')}`);
   if (m.exchanges >= 3) bits.push(`you two have talked ${m.exchanges} times`);
   if (lastMood) bits.push(`their most recent mood was ${(MOOD_LABEL.en)[lastMood] ?? lastMood}`);
   return `You remember this person (the memory lives privately on their device): ${bits.join('; ')}. Use their name naturally and occasionally reference what they told you and their plans — never recite it like a list.`;

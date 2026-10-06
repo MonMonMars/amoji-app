@@ -204,7 +204,21 @@
 // eventually starts, or a replay tap dismisses the chip. Slow fetches are
 // protected by the voiceStartedSince guard — the tap can never duplicate a
 // line that is merely late.
-export const APP_REVISION = 'r2026-10-05.119';
+// r2026-10-06.125 (Master Simon: "long-term memory" — his chosen next feature
+// from the 2/10 decisions) — RELATIONSHIP TIMELINE + TOPIC-RELEVANT RECALL.
+// She now knows how long you two have been together: firstMet is stamped on
+// the first visit, and the daily check-in celebrates each relationship
+// milestone exactly once (day 1/3/7/14/30/60/100/200/365/500/730/1000/…,
+// consumed via lastMilestone, milestone line outranks the plain visit streak).
+// And the memory block no longer shows only the newest facts — ChatPanel
+// passes the user's current message into buildMemoryBlock, and
+// recallRelevant() token-overlap-scores every old fact/entry/diary line
+// (CJK particles + latin stopwords stripped; ≥2 distinct hits = a real
+// connection, one shared character is coincidence), surfacing the best ≤2
+// older memories about what the user JUST said — she connects today's words
+// to things told to her weeks ago. Deduped against the standard bits and
+// capped short so the free-lane prompt stays lean (r97 discipline).
+export const APP_REVISION = 'r2026-10-06.125';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
