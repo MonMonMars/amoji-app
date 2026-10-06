@@ -270,7 +270,12 @@
 // ▶ Test button (voice.ts testOpenAiVoice) that saves the drafts and speaks
 // one line through gpt-4o-mini-tts — a bad key / blocked endpoint now names
 // itself in one tap instead of silently falling through to the free voices.
-export const APP_REVISION = 'r2026-10-06.134';
+// r2026-10-06.135: ONE WORKER FOR BOTH BRIDGES — server/amoji-proxy/ replaces
+// server/edge-proxy/ and server/openai-proxy/ (deleted): a single free
+// Cloudflare worker serves the neural-voice SSML route AND the OpenAI
+// /v1/audio/speech relay, so one `wrangler deploy` covers both voices and
+// the Settings hints point at one place.
+export const APP_REVISION = 'r2026-10-06.135';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

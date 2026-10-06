@@ -43,7 +43,7 @@
 // styles — they keep the widened prosody contour (unchanged). Also: optional
 // HTTP TTS proxy (setTtsProxy) for networks that block the wss socket — POST
 // SSML, get mp3 back; a ready-to-deploy Cloudflare Worker ships in
-// server/edge-proxy/.
+// server/amoji-proxy/.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface EdgeVoiceOpts {
@@ -260,7 +260,7 @@ export function edgeTtsPossible(): boolean {
 // ---- r131: optional HTTP TTS proxy -------------------------------------------
 // Some networks block the wss socket (Master Simon's iPhone network did —
 // r89). A proxy carries the same SSML over plain HTTPS POST and returns the
-// mp3, so the neural voice survives those networks. Deploy server/edge-proxy/
+// mp3, so the neural voice survives those networks. Deploy server/amoji-proxy/
 // (a free Cloudflare Worker) and point this at it; unset → direct socket.
 const PROXY_KEY = 'amoji.ttsproxy.v1';
 let proxyOverride: string | null | undefined; // undefined = read storage
