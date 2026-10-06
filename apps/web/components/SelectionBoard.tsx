@@ -31,15 +31,19 @@
 // round-trips) or, on a fresh entry, centered on the currently selected tile;
 // picking a new tile re-centers and becomes the next entry's anchor. Tiles
 // carry data-row-item so HScrollRow can find the selected one.
+// r2026-10-05.123 (Master Simon: "no need to show the real 3D model — an
+// image is good enough; put it on the background selected"): the row-0
+// preview now composites the r123 baked ALPHA-PNG cutout of her posed body
+// over the picked scene — a realistic standing-in-the-scene preview with zero
+// live WebGL on this page. Falls back to the painted portrait chip when the
+// cutout is missing (old bakes), and the live ModelPreview stream is retired.
 import { useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import HScrollRow from './HScrollRow';
 import SceneBackdrop from './SceneBackdrop';
-import ModelPreview from './ModelPreview';
 import ModelThumb from './ModelThumb';
 import { assetUrl } from '../lib/asset';
 import { APP_REVISION } from '../lib/revision';
-import { lookFor } from '../lib/persona';
 import {
   BACKGROUNDS, CHARACTERS, LANGS,
   backgroundById, characterById, t, usePrefs,
@@ -51,8 +55,6 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   const [prefs, setPrefs] = usePrefs();
   // draft is only used in 'change' mode; null = nothing picked yet
   const [draft, setDraft] = useState<Partial<Prefs> | null>(null);
-  // which character id currently has its live 3D preview streamed in
-  const [previewReadyFor, setPreviewReadyFor] = useState<string | null>(null);
   const live: Prefs = mode === 'change' ? { ...prefs, ...draft } : prefs;
 
   const character = characterById(live.character);
@@ -60,6 +62,10 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   const lang = live.lang;
   const langNative = LANGS.find((l) => l.id === lang)?.native ?? lang;
   const dirty = draft !== null;
+
+  // r123: baked alpha cutout of her posed body; 404 → painted portrait chip.
+  const cutoutSrc = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/cast-cutout/${character.id}.png`;
+  const [cutoutOk, setCutoutOk] = useState(true);
 
   // Kid Mode filters the board to the wholesome cast + sunny scenes.
   const cast = prefs.kidMode ? CHARACTERS.filter((c) => c.kidSafe) : CHARACTERS;
@@ -99,39 +105,37 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
       <div className="fx-rise mx-5 mt-4" style={{ '--d': '20ms' } as CSSProperties}>
         <div className="fx-sheen relative h-36 overflow-hidden rounded-3xl border border-white/10">
           <SceneBackdrop background={background} />
+          {/* r123: her baked cutout standing IN the picked scene. Taller than
+              the card, anchored to the floor line, soft drop shadow so she
+              reads as "in" the scene rather than "on" it. */}
+          {cutoutOk ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={cutoutSrc}
+              alt={character.name}
+              draggable={false}
+              onError={() => setCutoutOk(false)}
+              className="absolute bottom-0 right-3 h-[150%] w-auto object-contain object-bottom drop-shadow-[0_10px_18px_rgba(0,0,0,0.55)]"
+              style={{ filter: `drop-shadow(0 10px 18px rgba(0,0,0,0.55)) drop-shadow(0 0 24px ${character.accent}44)` }}
+            />
+          ) : null}
           <div className="absolute inset-0 flex items-end p-3">
             <div className="flex w-full items-end gap-3">
-              <span
-                className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 bg-black/40"
-                style={{ borderColor: character.accent, boxShadow: `0 8px 24px -8px ${character.accent}aa` }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={assetUrl(character.image ?? `/portraits/${character.id}.jpg`)}
-                  alt={character.name}
-                  draggable={false}
-                  className="absolute inset-0 h-full w-full object-cover object-top"
-                />
-                {/* live 3D portrait fades in over the poster once streamed —
-                    keyed per character so switching picks resets the fade */}
-                {character.model && (
-                  <div
-                    key={character.id}
-                    className={`absolute inset-0 transition-opacity duration-700 ${
-                      previewReadyFor === character.id ? 'opacity-100' : 'opacity-0'
-                    }`}
-                  >
-                    <ModelPreview
-                      url={character.model}
-                      tint={lookFor(character.id).tint}
-                      height={lookFor(character.id).height}
-                      width={lookFor(character.id).width}
-                      onReady={() => setPreviewReadyFor(character.id)}
-                    />
-                  </div>
-                )}
-              </span>
-              <div className="min-w-0 flex-1 pb-0.5">
+              {!cutoutOk && (
+                <span
+                  className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 bg-black/40"
+                  style={{ borderColor: character.accent, boxShadow: `0 8px 24px -8px ${character.accent}aa` }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={assetUrl(character.image ?? `/portraits/${character.id}.jpg`)}
+                    alt={character.name}
+                    draggable={false}
+                    className="absolute inset-0 h-full w-full object-cover object-top"
+                  />
+                </span>
+              )}
+              <div className={`min-w-0 flex-1 pb-0.5 ${cutoutOk ? 'max-w-[55%]' : ''}`}>
                 <p className="text-lg font-bold drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
                   {character.name}
                   <span className="ml-1.5 text-xs font-normal text-white/70">{character.gender === 'female' ? '♀' : '♂'}</span>

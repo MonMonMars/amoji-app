@@ -7,6 +7,12 @@
 // public/cast-thumbs/<id>.jpg. Selection tiles then show her ACTUAL face —
 // posed, lit, smiling — instead of a raw T-pose render.
 // On the deployed site this page renders a "dev only" notice and does nothing.
+// r123 CUTOUT BAKE — alongside each 512px JPEG thumb the studio now renders a
+// FULL-BODY, ALPHA-TRANSPARENT PNG cutout of the same posed frame and posts it
+// to the save server (?kind=cutout → public/cast-cutout/<id>.png). The
+// selection board composites that cutout over whatever scene is picked, so the
+// row-0 preview shows her REAL posed body standing IN the scene — no live 3D
+// stream needed on the selection page at all.
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -22,7 +28,7 @@ import type { Avatar } from '../../lib/vrm/avatar';
 declare global {
   interface Window {
     __bakeProgress?: string;
-    __bakeDone?: { ok: string[]; fail: string[] };
+    __bakeDone?: { ok: string[]; fail: string[]; cutouts: string[] };
   }
 }
 
@@ -101,6 +107,37 @@ const settle = () =>
     requestAnimationFrame(() => { clearTimeout(t); requestAnimationFrame(() => r()); });
   });
 
+// r123: crop the transparent margins off a rendered cutout frame and return a
+// PNG dataURL of just the character (small pad so hair/foot shadows stay).
+function cropAlphaPng(src: HTMLCanvasElement, pad = 8): string {
+  const w = src.width; const h = src.height;
+  const c2 = document.createElement('canvas');
+  c2.width = w; c2.height = h;
+  const ctx = c2.getContext('2d');
+  if (!ctx) return src.toDataURL('image/png');
+  ctx.drawImage(src, 0, 0);
+  const img = ctx.getImageData(0, 0, w, h).data;
+  let minX = w; let minY = h; let maxX = -1; let maxY = -1;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (img[(y * w + x) * 4 + 3]! > 10) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < 0) return src.toDataURL('image/png'); // nothing drawn — keep as-is
+  minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
+  maxX = Math.min(w - 1, maxX + pad); maxY = Math.min(h - 1, maxY + pad);
+  const out = document.createElement('canvas');
+  out.width = maxX - minX + 1;
+  out.height = maxY - minY + 1;
+  out.getContext('2d')?.drawImage(c2, minX, minY, out.width, out.height, 0, 0, out.width, out.height);
+  return out.toDataURL('image/png');
+}
+
 export default function ThumbBakePage() {
   const [log, setLog] = useState<string[]>([]);
   const [done, setDone] = useState<{ ok: string[]; fail: string[] } | null>(null);
@@ -115,13 +152,14 @@ export default function ThumbBakePage() {
     const bakeAll = async () => {
       const ok: string[] = [];
       const fail: string[] = [];
+      const cutouts: string[] = [];
       const canvas = document.createElement('canvas');
       canvas.width = 512;
       canvas.height = 512;
       canvas.style.cssText = 'width:280px;height:280px;border:1px solid #444;border-radius:8px';
       hostRef.current?.appendChild(canvas);
 
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
       renderer.setSize(512, 512, false);
       const scene = new THREE.Scene();
       scene.background = BG;
@@ -263,6 +301,30 @@ export default function ThumbBakePage() {
           if (!res.ok) throw new Error(`save ${res.status}`);
           ok.push(c.id);
           prog('baked ✓');
+
+          // r123 CUTOUT PASS — same pose, full body, TRANSPARENT background,
+          // cropped to the character. The renderer was created with alpha, so
+          // clearing the scene background is all it takes.
+          try {
+            prog('cutout…');
+            scene.background = null;
+            const visH = Math.max(size.y * 1.06, size.x * 1.12, 0.3);
+            const midY = box.min.y + size.y * 0.5;
+            const d2 = Math.max(visH / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2)), 0.3);
+            camera.position.set(0, midY, d2);
+            camera.lookAt(0, midY, 0);
+            renderer.render(scene, camera);
+            const png = cropAlphaPng(renderer.domElement);
+            const res2 = await fetch(`${SAVE_URL}?id=${encodeURIComponent(c.id)}&kind=cutout`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ dataUrl: png }),
+            });
+            if (!res2.ok) throw new Error(`save cutout ${res2.status}`);
+            cutouts.push(c.id);
+          } finally {
+            scene.background = BG;
+          }
         } catch (e) {
           fail.push(c.id);
           prog(`FAILED ${e instanceof Error ? e.message : String(e)}`);
@@ -274,14 +336,14 @@ export default function ThumbBakePage() {
       }
 
       renderer.dispose();
-      window.__bakeDone = { ok, fail };
-      window.__bakeProgress = `DONE — ${ok.length} baked, ${fail.length} failed`;
+      window.__bakeDone = { ok, fail, cutouts };
+      window.__bakeProgress = `DONE — ${ok.length} thumbs, ${cutouts.length} cutouts, ${fail.length} failed`;
       setDone({ ok, fail });
-      setLog((l) => [...l, `— ${ok.length} baked, ${fail.length} failed —`]);
+      setLog((l) => [...l, `— ${ok.length} thumbs, ${cutouts.length} cutouts, ${fail.length} failed —`]);
     };
 
     void bakeAll().catch((e) => {
-      window.__bakeDone = { ok: [], fail: ['driver: ' + String(e)] };
+      window.__bakeDone = { ok: [], fail: ['driver: ' + String(e)], cutouts: [] };
     });
   }, [isLocal]);
 

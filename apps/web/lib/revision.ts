@@ -169,7 +169,20 @@
 // store, falls back to the current character if the importing app doesn't
 // have her body (the soul survives the body swap), then reloads so all pages
 // re-hydrate. Malformed files alert with a readable reason in all 4 langs.
-export const APP_REVISION = 'r2026-10-05.122';
+// r2026-10-05.123 (Master Simon: "no need to show the real 3D model — an
+// image is good enough; put it on the background selected") — the selection
+// board's row-0 preview now composites a baked ALPHA-PNG CUTOUT of her posed
+// full body over the picked scene (she stands IN the scene, accent-tinted
+// shadow), replacing the live ModelPreview stream — zero WebGL on this page.
+// The thumb-bake studio gained a cutout pass: same posed frame re-rendered
+// with a transparent background, full-body framing, auto-cropped to the
+// character, saved to public/cast-cutout/<id>.png (10/10 baked, 0 fail). The
+// save server accepts ?kind=cutout; the gateway driver now speaks `code` +
+// tabId (the old expression/session protocol silently returned errors), and
+// the dev server runs --webpack because Turbopack can't spawn its node pool
+// in this shell ("program not found"). Falls back to the painted portrait
+// chip when a cutout is missing.
+export const APP_REVISION = 'r2026-10-05.123';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

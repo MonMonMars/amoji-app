@@ -1,4 +1,4 @@
-/* Amoji offline shell — r2026-10-05.122
+/* Amoji offline shell — r2026-10-05.123
  * Hand-rolled service worker (zero dependencies, works with Next.js static
  * export where build-time PWA plugins struggle).
  *

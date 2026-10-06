@@ -1,9 +1,12 @@
 // r114 dev tool: drives the Kimi browser extension (local gateway) to open
 // the /thumb-bake page in the dev server and waits until every cast member's
-// JPEG is baked and saved. Usage: node tools/run-thumb-bake.mjs
+// JPEG + cutout PNG is baked and saved. Usage: node tools/run-thumb-bake.mjs
+// r123: the gateway speaks `code` (not `expression`); evaluate takes the
+// tabId from navigate (or no session = active tab) and returns
+// {data:{type,value}} — poll data.value.
 const GW = 'http://127.0.0.1:10086/command';
 const BAKE_URL = 'http://localhost:3000/thumb-bake';
-const DEADLINE = Date.now() + 15 * 60 * 1000;
+const DEADLINE = Date.now() + 20 * 60 * 1000;
 
 async function call(payload) {
   const r = await fetch(GW, {
@@ -14,31 +17,20 @@ async function call(payload) {
   return r.json();
 }
 
-let session;
-async function withSession(payload) {
-  let res = await call({ ...payload, session });
-  const msg = String(res?.error?.message ?? '');
-  if (res?.ok === false && /session/i.test(msg)) {
-    const tabs = await call({ action: 'list_tabs' });
-    const s = tabs?.ok ?? tabs;
-    session = s?.sessions?.[0] ?? s?.tabs?.[0]?.session ?? s?.[0];
-    res = await call({ ...payload, session });
-  }
-  return res;
-}
-
-const nav = await withSession({ action: 'navigate', url: BAKE_URL, newTab: true });
+const nav = await call({ action: 'navigate', url: BAKE_URL, newTab: true });
+const tabId = nav?.data?.tabId ?? null;
 console.log('navigate →', JSON.stringify(nav).slice(0, 300));
 
 let last = '';
 while (Date.now() < DEADLINE) {
   await new Promise((r) => setTimeout(r, 5000));
-  const st = await withSession({
+  const st = await call({
     action: 'evaluate',
-    expression:
+    ...(tabId ? { tabId } : {}),
+    code:
       'window.__bakeDone ? "BAKE_DONE " + JSON.stringify(window.__bakeDone) : String(window.__bakeProgress || "starting…")',
   });
-  const txt = JSON.stringify(st?.ok ?? st).slice(0, 600);
+  const txt = String(st?.data?.value ?? JSON.stringify(st)).slice(0, 600);
   if (txt !== last) { console.log(txt); last = txt; }
   if (txt.includes('BAKE_DONE')) { console.log('ALL DONE'); process.exit(0); }
 }
