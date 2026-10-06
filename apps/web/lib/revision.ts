@@ -241,11 +241,19 @@
 // Birthday-type dates (en month names, 生日/月/日, 誕生日) extract into a
 // recurring annual memory: she celebrates in the daily check-in exactly once
 // per year (outranks the streak line), instead of scrolling out of the capped
-// entry list. Commitments SHE makes ("I'll remind you" / 我會提醒你 /
+// entry list. Commitments SHE makes ("I'll remind you" / 我會提醒我 /
 // 明日ね、覚えておく) are remembered from her own replies and ride into her
 // prompt as "promises you made" so she keeps her word. Settings shows both,
 // delete-only; the .aigf card already round-trips them (full Memory object).
-export const APP_REVISION = 'r2026-10-06.130';
+// r2026-10-06.131: EMOTIONAL VOICE — the free edge-tts socket accepts
+// mstts:express-as styles (we only ever sent prosody). Every style-capable
+// cast voice now gets a curated style whitelist; the dominant emotion picks
+// the best supported style (cheerful/excited/sad/angry/tender/terrified/
+// worried/shy/calm/confused/hopeful/sorry) with styledegree riding
+// expressiveness (zh voices). Ja voices stay prosody-only (they ship no
+// styles). Also: optional HTTP TTS proxy (setTtsProxy) — a ready-to-deploy
+// free Cloudflare Worker in server/edge-proxy/ — for wss-blocked networks.
+export const APP_REVISION = 'r2026-10-06.131';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

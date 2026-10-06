@@ -77,6 +77,11 @@ import { speakGtts, stopGtts } from './gtts';
 // r2026-10-05.112: tier 0 — OpenAI gpt-4o-mini-tts (ChatGPT-style emotional
 // voice via natural-language instructions). Sits AHEAD of the free chain;
 // any failure (no key, CORS, network) falls through silently to edge-tts.
+// r2026-10-06.131: the free chain itself now acts, too — edge-tts sends an
+// mstts:express-as emotion style (cheerful/sad/angry/tender/terrified/shy…)
+// resolved from the dominant emotion per voice, so even without a key her
+// voice emotes instead of only pitching; plus an optional HTTP proxy
+// (setTtsProxy) carries the SSML over https for wss-blocked networks.
 import { speakOpenAi, stopOpenAi, openAiVoiceReady } from './openai-tts';
 // r102: sfx.ts imports only a TYPE from moves (erased at compile), so there
 // is no runtime cycle here.
@@ -1156,6 +1161,9 @@ export function speak(
           gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
           character: characterId,
           expressiveness: expr * exprBoost,
+          // r131 — the dominant emotion now drives an mstts:express-as style
+          // (cheerful/sad/angry/…) on top of the prosody contour
+          emotion,
           lead: tic,
           rateDelta: clamp(np.rate * exprScale * amp, -0.4, 0.5),
           pitchDelta: clamp(np.pitch * exprScale * amp, -0.3, 0.4),
