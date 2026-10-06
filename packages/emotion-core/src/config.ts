@@ -1,4 +1,4 @@
-import type { EmotionConfig } from './schema';
+import type { EmotionConfig } from './schema.js';
 
 export const DEFAULT_EMOTION_CONFIG: EmotionConfig = {
   blendTimeMs: 250,

@@ -1,5 +1,5 @@
-import type { EmotionId, FaceParams, BodyParams } from './schema';
-import { EMOTION_IDS } from './schema';
+import type { EmotionId, FaceParams, BodyParams } from './schema.js';
+import { EMOTION_IDS } from './schema.js';
 
 export interface CatalogEntry {
   face: FaceParams;

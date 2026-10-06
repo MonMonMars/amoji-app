@@ -15,11 +15,11 @@
 
 import { analyzeText, EmotionEngine } from '@amoji/emotion-core';
 import type { EmotionId } from '@amoji/emotion-core';
-import { characterById, pickWeighted, SEED_CHARACTERS } from './characters';
-import type { CharacterConfig } from './characters';
-import { gaitHintForEmotion, NullBodyDriver, NullVoiceDriver, prosodyForEmotion } from './drivers';
-import type { BodyDriver, FaceHandle, VoiceDriver } from './drivers';
-import { loadAigfCharacter } from './aigf';
+import { characterById, pickWeighted, SEED_CHARACTERS } from './characters.js';
+import type { CharacterConfig } from './characters.js';
+import { gaitHintForEmotion, NullBodyDriver, NullVoiceDriver, prosodyForEmotion } from './drivers.js';
+import type { BodyDriver, FaceHandle, VoiceDriver } from './drivers.js';
+import { loadAigfCharacter } from './aigf.js';
 
 export interface AmojiOptions {
   /** monitor canvas / LED-matrix face — anything with say/setEmotion */

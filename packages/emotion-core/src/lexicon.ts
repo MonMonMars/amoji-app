@@ -1,4 +1,4 @@
-import type { EmotionId } from './schema';
+import type { EmotionId } from './schema.js';
 
 // v1 lexicon: keyword → emotion weights. Expand per language over time.
 const LEXICON: Array<[RegExp, Partial<Record<EmotionId, number>>]> = [

@@ -1,9 +1,9 @@
-import { CATALOG } from './catalog';
-import { validateEmotionConfig } from './config';
-import { createRng } from './rng';
-import { createSaccadeClock } from './saccade';
-import { EMOTION_IDS, FACE_PARAM_NAMES, BODY_PARAM_NAMES } from './schema';
-import type { EmotionConfig, EmotionFrame, EmotionId, EmotionInput } from './schema';
+import { CATALOG } from './catalog.js';
+import { validateEmotionConfig } from './config.js';
+import { createRng } from './rng.js';
+import { createSaccadeClock } from './saccade.js';
+import { EMOTION_IDS, FACE_PARAM_NAMES, BODY_PARAM_NAMES } from './schema.js';
+import type { EmotionConfig, EmotionFrame, EmotionId, EmotionInput } from './schema.js';
 
 const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 const clamp11 = (v: number): number => (v < -1 ? -1 : v > 1 ? 1 : v);

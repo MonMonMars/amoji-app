@@ -9,6 +9,15 @@ const basePath = process.env.AMOJI_BASE_PATH || undefined;
 const nextConfig: NextConfig = {
   transpilePackages: ["@amoji/emotion-core", "@amoji/vrm-renderer"],
   basePath,
+  // SDK sources import siblings with .js extensions (required for published Node ESM);
+  // webpack must map those back to .ts when bundling from source.
+  webpack: (config) => {
+    config.resolve.extensionAlias = {
+      ...(config.resolve.extensionAlias ?? {}),
+      ".js": [".ts", ".tsx", ".js"],
+    };
+    return config;
+  },
   ...(isExport ? { output: "export" as const, images: { unoptimized: true } } : {}),
 };
 

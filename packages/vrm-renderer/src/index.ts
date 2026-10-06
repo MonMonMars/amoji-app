@@ -1,2 +1,2 @@
-export * from './frame-mapper';
-export * from './idle-poses';
+export * from './frame-mapper.js';
+export * from './idle-poses.js';

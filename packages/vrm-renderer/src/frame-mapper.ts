@@ -1,5 +1,5 @@
 import type { EmotionFrame } from '@amoji/emotion-core';
-import type { IdlePoseOffsets } from './idle-poses';
+import type { IdlePoseOffsets } from './idle-poses.js';
 
 export interface VrmTargets {
   blendShape: { joy: number; angry: number; sorrow: number; fun: number; surprise: number; relaxed: number };

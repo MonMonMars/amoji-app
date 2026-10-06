@@ -7,7 +7,7 @@
 // load a user's companion and let the same soul drive the new body.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { CharacterConfig } from './characters';
+import type { CharacterConfig } from './characters.js';
 
 export const AIGF_FORMAT = 'amoji-companion';
 export const AIGF_VERSION = 1;
