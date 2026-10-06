@@ -130,6 +130,12 @@
 // audio-start callback — so a silently-failed streaming attempt falls
 // through to the guaranteed full-reply speak. A rare double-speak beats
 // permanent silence.
+// r2026-10-06.136: ROOT CAUSE of the dead mic/textbox — the r120 lower-third
+// scroll pad is `absolute inset-x-0 bottom-0 z-0` INSIDE this panel and
+// renders AFTER the input row; at the same stacking level later DOM wins,
+// so the pad painted over and hit-tested AHEAD of the hero mic and the text
+// field ("can't click the text box and the mic button"). The input row now
+// carries z-10 so it takes its clicks back.
 import { useEffect, useRef, useState } from 'react';
 import { feedUtterance, applyLlmHints, triggerLaugh, triggerMove } from '../lib/companion';
 import { detectMove } from '../lib/moves';
@@ -412,8 +418,8 @@ export default function ChatPanel({
   // fu, tai chi, piano, jogging each trigger a choreographed performance
   // (movement library) while the reply plays, from YOUR words or her own.
   // r.40: a sing trigger goes further — she delivers the line AS A SONG on
-  // the melodic contour (lyric-like replies ride as-is; longer ones become a
-  // ditty from the song bank) and the history shows exactly what she sang.
+  // the melodic contour (lyric-like replies ride as-is; longer ones become
+  // a ditty from the song bank) and the history shows exactly what she sang.
   // r.42: a shared meal gets a toast — "eat with me" raises a little cheer
   // as the vocal lead of her reply (乾杯！/ Cheers!), like a dinner date.
   // r86: a sing trigger starts her backing track on the PERFORMANCE layer —
@@ -1067,8 +1073,12 @@ export default function ChatPanel({
         {busy && <p className="text-white/40">{t(lang, 'typing', { name: characterName })}</p>}
       </div>
 
-      {/* input row — ChatGPT-style hero mic with the living emotion orb */}
-      <div className="relative flex w-full items-center gap-2.5">
+      {/* input row — ChatGPT-style hero mic with the living emotion orb.
+          r136: z-10 — the lower-third scroll pad below is absolute + z-0 and
+          renders AFTER this row; at equal stacking level the later DOM node
+          wins, so the pad used to paint over and swallow every tap on the
+          mic and the text field. z-10 puts the row back on top. */}
+      <div className="relative z-10 flex w-full items-center gap-2.5">
         {/* r119: the voice watchdog armed a replay — a silent line is waiting
             for ANY tap to be re-spoken. Floating chip above the mic;
             pointer-events-none so the tap falls straight through to the
@@ -1152,7 +1162,8 @@ export default function ChatPanel({
       {/* r2026-10-05.120 — the only scroll zone. Invisible strip over the
           lower third of the screen; its JS (mounted above) drags the
           display-only history. Everything above this strip belongs to the
-          character. */}
+          character. r136: the input row above is z-10 so this pad can no
+          longer swallow taps meant for the mic or the text field. */}
       <div
         ref={scrollPadRef}
         aria-hidden
