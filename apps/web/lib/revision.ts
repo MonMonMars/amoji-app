@@ -257,7 +257,13 @@
 // a URL field with Save / Clear (4 languages). Blank = direct socket;
 // filled = every neural-voice request routes through the worker in
 // server/edge-proxy/README.md. Nothing else changes.
-export const APP_REVISION = 'r2026-10-06.132';
+// r2026-10-06.133: the proxy block grows a ▶ Test button — it saves the
+// draft, then speaks one short line through the edge tier exactly as a live
+// reply would (new voice.ts testProxyVoice: bypasses the OpenAI tier, the
+// neural-enabled gate and the lower fallbacks, so the verdict isolates the
+// proxy/URL instead of stopping at the first tier that speaks). ✓/✗ shows
+// inline under the field and on the voice-status bus.
+export const APP_REVISION = 'r2026-10-06.133';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

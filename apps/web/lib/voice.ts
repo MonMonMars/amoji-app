@@ -72,7 +72,7 @@
 // onyx/velara) get gender-correct matrices of their own — aera soft-dreamy,
 // dhahlia bright-floral, onyx low-male, velara calm-navigator.
 import type { Lang } from './prefs';
-import { speakEdge, stopEdge } from './edge-tts';
+import { speakEdge, stopEdge, getTtsProxy } from './edge-tts';
 import { speakGtts, stopGtts } from './gtts';
 // r2026-10-05.112: tier 0 — OpenAI gpt-4o-mini-tts (ChatGPT-style emotional
 // voice via natural-language instructions). Sits AHEAD of the free chain;
@@ -1458,6 +1458,36 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
     }
   }
   return results;
+}
+
+/**
+ * r2026-10-06.133 — Settings proxy probe. Speaks one short line through the
+ * edge tier EXACTLY as a live reply would (so a saved proxy URL is exercised
+ * end-to-end), bypassing the OpenAI tier, the neural-enabled gate and the
+ * lower fallbacks — the generic chain probe can never isolate the proxy
+ * because it stops at the first tier that speaks. Reports on the same
+ * voice-status bus so the status plate agrees. Resolves true only when the
+ * utterance completed without error.
+ */
+export async function testProxyVoice(characterId: string, lang: Lang): Promise<boolean> {
+  unlockAudio();
+  const line = TEST_LINES[lang] ?? TEST_LINES.en;
+  const viaProxy = !!getTtsProxy();
+  try {
+    await withTimeout(speakEdge(line, {
+      lang,
+      gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
+      character: characterId,
+    }), 12_000, 'edge-tts timeout');
+    reportVoiceStatus('edge', true, viaProxy ? 'voice played via proxy' : 'voice played (direct)');
+    return true;
+  } catch (err) {
+    if ((err as Error | undefined)?.message !== 'canceled') {
+      stopEdge();
+      reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'edge-tts failed');
+    }
+    return false;
+  }
 }
 
 function synthSpeak(

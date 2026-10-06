@@ -25,7 +25,7 @@ import {
 } from '../lib/prefs';
 import { LangChips } from './selectors';
 import ModelThumb from './ModelThumb';
-import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, VOICE_TIER_LABEL } from '../lib/voice';
+import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, VOICE_TIER_LABEL } from '../lib/voice';
 // r2026-10-06.131: the Voice section's optional HTTP TTS proxy field
 import { getTtsProxy, setTtsProxy } from '../lib/edge-tts';
 import { pickLine } from '../lib/chatter';
@@ -129,6 +129,10 @@ export default function SettingsSheet({
   // a live voice chain.
   const [proxyDraft, setProxyDraft] = useState<string>(() => getTtsProxy() ?? '');
   const [proxySaved, setProxySaved] = useState(false);
+  // r2026-10-06.133: the proxy probe — saves the draft, speaks one line
+  // through the edge tier (proxy included) and shows ✓/✗ right here.
+  const [proxyTesting, setProxyTesting] = useState(false);
+  const [proxyTestResult, setProxyTestResult] = useState<boolean | null>(null);
   const tutorNRef = useRef(0);
   // r2026-10-04.75: listen for the voice layer reporting a refused utterance
   // so the hint appears right where the toggles live.
@@ -138,7 +142,7 @@ export default function SettingsSheet({
     return () => window.removeEventListener('amoji:voice-blocked', onBlocked);
   }, []);
   useEffect(() => {
-    if (open) { setMem(loadMemory()); setCopied(false); setBrainState(brainProvider()); setKeyDrafts({}); setProxyDraft(getTtsProxy() ?? ''); setProxySaved(false); }
+    if (open) { setMem(loadMemory()); setCopied(false); setBrainState(brainProvider()); setKeyDrafts({}); setProxyDraft(getTtsProxy() ?? ''); setProxySaved(false); setProxyTestResult(null); setProxyTesting(false); }
   }, [open]);
   if (!open) return null;
   const lang = prefs.lang;
@@ -258,6 +262,20 @@ export default function SettingsSheet({
     }).catch(() => setVoiceTesting(false));
   };
 
+  // r133: proxy probe — SAVE first so the spoken line exercises the exact URL
+  // in the field (not the stale stored one), then one edge-tier line.
+  const runProxyTest = () => {
+    const v = proxyDraft.trim();
+    setTtsProxy(v ? v.replace(/\/+$/, '') : null);
+    setProxySaved(true);
+    setProxyTestResult(null);
+    setProxyTesting(true);
+    void testProxyVoice(prefs.character, lang).then((ok) => {
+      setProxyTesting(false);
+      setProxyTestResult(ok);
+    }).catch(() => { setProxyTesting(false); setProxyTestResult(false); });
+  };
+
   return (
     <div className="fx-fade-in absolute inset-0 z-20 flex justify-end bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div
@@ -357,6 +375,14 @@ export default function SettingsSheet({
                   >
                     {t(lang, 'ttsProxyClear')}
                   </button>
+                  <button
+                    onClick={runProxyTest}
+                    disabled={proxyTesting}
+                    className="ui-btn rounded-full px-3 py-1.5 text-xs text-white/80 disabled:opacity-50"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}
+                  >
+                    {proxyTesting ? '…' : t(lang, 'testVoiceBtn')}
+                  </button>
                 </div>
               </div>
               <input
@@ -369,9 +395,13 @@ export default function SettingsSheet({
                 spellCheck={false}
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs text-white/85 outline-none placeholder:text-white/30 focus:border-white/25"
               />
-              {proxySaved && (
+              {proxyTesting ? (
+                <p className="text-[10px] text-white/45">…</p>
+              ) : proxyTestResult !== null ? (
+                <p className="text-[10px] text-white/45">{proxyTestResult ? '✓' : '✗'}</p>
+              ) : proxySaved ? (
                 <p className="text-[10px] text-white/45">✓</p>
-              )}
+              ) : null}
               <p className="text-[10px] leading-relaxed text-white/40">{t(lang, 'ttsProxyHint')}</p>
             </div>
             <div className={row}>
