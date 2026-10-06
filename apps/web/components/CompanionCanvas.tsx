@@ -640,6 +640,15 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       // r59: blend IN from the current (procedural) pose over ~a second —
       // the very first clip no longer pops in from nowhere
       nextIdle(FADE.entry);
+      // r124: the constructor calibrated facing from the RAW rest pose, whose
+      // shoulder line carries a systematic ~10° yaw on several rigs. Once the
+      // entry crossfade has mostly settled her into the idle's natural
+      // stance, re-measure and yaw away the residual — invisible at this
+      // point because the correction is small and she is already in motion.
+      {
+        const av = avatar;
+        if (av) setTimeout(() => av.recalibrateFacing(), 900);
+      }
     };
 
     const loadClips = (vrm: VRM) => {

@@ -183,6 +183,15 @@ export interface Avatar {
   clampShoulderROM(): void;
   /** r115: raw bone lookup for poke-zone raycast + hand-drag IK (null when absent) */
   getBoneNode(name: string): THREE.Object3D | null;
+  /**
+   * r124: re-measure the shoulder line and yaw away any residual error. The
+   * constructor calibrates facing from the RAW rest pose, whose shoulder
+   * line can be systematically off (~10° on several rigs) — once the idle
+   * neutral frame settles the shoulders into their natural place, a second
+   * pass on the inner node removes the lean. Safe to call any time; a no-op
+   * when shoulders are already square.
+   */
+  recalibrateFacing(): void;
   update(dt: number): void;
 }
 
@@ -651,6 +660,15 @@ class V1Avatar implements Avatar {
     }
   }
 
+  /** r124: second facing pass on the inner scene after the idle frame settles */
+  recalibrateFacing(): void {
+    calibrateFacing(
+      this.vrm.scene,
+      this.vrm.humanoid?.getNormalizedBoneNode('leftShoulder') ?? null,
+      this.vrm.humanoid?.getNormalizedBoneNode('rightShoulder') ?? null,
+    );
+  }
+
   update(dt: number): void {
     this.vrm.update(dt);
   }
@@ -897,6 +915,15 @@ class GenericAvatar implements Avatar {
   /** r115: resolved bone by semantic name — body map first, then fingers */
   getBoneNode(name: string): THREE.Object3D | null {
     return this.bones.get(name as BoneName) ?? this.fingers.get(name) ?? null;
+  }
+
+  /** r124: second facing pass on the inner node after the idle frame settles */
+  recalibrateFacing(): void {
+    calibrateFacing(
+      this.inner,
+      this.bones.get('leftShoulder') ?? null,
+      this.bones.get('rightShoulder') ?? null,
+    );
   }
 
   update(dt: number): void {

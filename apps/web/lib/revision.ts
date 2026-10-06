@@ -182,7 +182,17 @@
 // the dev server runs --webpack because Turbopack can't spawn its node pool
 // in this shell ("program not found"). Falls back to the painted portrait
 // chip when a cutout is missing.
-export const APP_REVISION = 'r2026-10-05.123';
+// r2026-10-05.124 (Master Simon: "the character has been rotated to the
+// right by around 10 degrees… all characters not standing straight") —
+// RESIDUAL FACING FIX. Root cause: calibrateFacing ran ONCE at avatar
+// construction against the RAW rest pose (bind/T-pose), and several rigs
+// carry a shoulder line that is systematically ~10° off true forward in
+// that pose. New Avatar.recalibrateFacing() re-measures the shoulder line
+// and yaws the residual away; CompanionCanvas calls it once ~0.9s after the
+// entry crossfade (the idle stance has settled, the correction is small and
+// invisible mid-motion), and the thumb-bake studio calls it after applying
+// the idle mid-frame, then re-bakes every thumb + cutout (10/10, 0 fail).
+export const APP_REVISION = 'r2026-10-05.124';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

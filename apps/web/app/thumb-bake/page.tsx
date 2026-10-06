@@ -230,6 +230,10 @@ export default function ThumbBakePage() {
             mixer.clipAction(clip).play();
             mixer.setTime(1.15); // a natural mid-idle beat — not frame 0
             mixer.update(0);
+            // r124: re-measure facing now that the idle stance has settled
+            // (the constructor pass read the raw rest pose's ~10°-off
+            // shoulder line) — thumbs/cutouts show her standing square
+            avatar.recalibrateFacing();
           }
           // r114b: detect rigs the idle clip failed to bind on (track names
           // that don't resolve leave the model in its bind/T-pose). Arms
