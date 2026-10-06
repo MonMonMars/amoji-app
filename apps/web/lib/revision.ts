@@ -253,7 +253,11 @@
 // expressiveness (zh voices). Ja voices stay prosody-only (they ship no
 // styles). Also: optional HTTP TTS proxy (setTtsProxy) — a ready-to-deploy
 // free Cloudflare Worker in server/edge-proxy/ — for wss-blocked networks.
-export const APP_REVISION = 'r2026-10-06.131';
+// r2026-10-06.132: the TTS proxy is now user-settable in Settings → Voice —
+// a URL field with Save / Clear (4 languages). Blank = direct socket;
+// filled = every neural-voice request routes through the worker in
+// server/edge-proxy/README.md. Nothing else changes.
+export const APP_REVISION = 'r2026-10-06.132';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

@@ -212,6 +212,8 @@ export type StrKey =
   | 'testVoice' | 'testVoiceBtn' | 'voiceBlockedHint'
   // ChatGPT-style emotional TTS tier (r2026-10-05.112)
   | 'openaiVoice' | 'openaiVoiceHint' | 'openaiKeyPlaceholder' | 'openaiEndpointPlaceholder' | 'openaiCostHint'
+  // HTTP TTS proxy for wss-blocked networks (r2026-10-06.131)
+  | 'ttsProxy' | 'ttsProxyPlaceholder' | 'ttsProxyHint' | 'ttsProxySave' | 'ttsProxyClear'
   // companion card (.aigf) export/import (r2026-10-05.122)
   | 'companionFile' | 'exportCompanion' | 'importCompanion' | 'companionFileBad'
   // no-audio watchdog tap-to-replay chip (r2026-10-05.119)
@@ -408,6 +410,28 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: '用 gpt-4o-mini-tts ≈ US$0.015/分鐘——每日傾偈一個月 ≈ US$1。',
     zh: '使用 gpt-4o-mini-tts ≈ US$0.015/分钟——每天聊天一个月 ≈ US$1。',
     ja: 'gpt-4o-mini-tts使用 ≈ 0.015米ドル/分——毎日話すと1か月 ≈ 1米ドル。',
+  },
+  // HTTP TTS proxy for wss-blocked networks (r2026-10-06.131)
+  ttsProxy: {
+    en: 'Neural voice proxy (optional)', yue: '神經語音 proxy（可選）', zh: '神经语音代理（可选）', ja: 'ニューラル音声プロキシ（任意）',
+  },
+  ttsProxyPlaceholder: {
+    en: 'https://your-worker.workers.dev/ — blank = direct connection',
+    yue: 'https://your-worker.workers.dev/ — 留空＝直接連線',
+    zh: 'https://your-worker.workers.dev/ — 留空＝直接连接',
+    ja: 'https://your-worker.workers.dev/ — 空欄＝直接接続',
+  },
+  ttsProxyHint: {
+    en: 'Only if her voice stays silent on your network: a free Cloudflare Worker carries the voice over https when the phone network blocks the live socket. Code + deploy steps: server/edge-proxy in the GitHub repo.',
+    yue: '只喺把聲喺你個網絡一直靜音先需要用：免費 Cloudflare Worker 用 https 傳送把聲，等電話網絡擋唔到。代碼同部署步驟喺 GitHub repo 嘅 server/edge-proxy。',
+    zh: '仅当声音在你的网络上一直无声时才需要：免费 Cloudflare Worker 用 https 传输语音，手机网络就挡不住了。代码与部署步骤在 GitHub 仓库的 server/edge-proxy。',
+    ja: '音声が自分の回線で鳴らない場合のみ必要：無料のCloudflare Workerが音声をhttpsで運ぶので、モバイル回線のブロックを回避できます。コードと手順はGitHubリポジトリのserver/edge-proxyにあります。',
+  },
+  ttsProxySave: {
+    en: 'Save', yue: '儲存', zh: '保存', ja: '保存',
+  },
+  ttsProxyClear: {
+    en: 'Clear', yue: '清除', zh: '清除', ja: 'クリア',
   },
 };
 

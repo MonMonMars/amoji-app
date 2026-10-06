@@ -26,6 +26,8 @@ import {
 import { LangChips } from './selectors';
 import ModelThumb from './ModelThumb';
 import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, VOICE_TIER_LABEL } from '../lib/voice';
+// r2026-10-06.131: the Voice section's optional HTTP TTS proxy field
+import { getTtsProxy, setTtsProxy } from '../lib/edge-tts';
 import { pickLine } from '../lib/chatter';
 import { feedUtterance } from '../lib/companion';
 import { notifySpeaking } from '../lib/speech';
@@ -122,6 +124,11 @@ export default function SettingsSheet({
   const [newType, setNewType] = useState<MemoryType>('preference');
   const [brain, setBrainState] = useState<BrainProvider>(brainProvider());
   const [keyDrafts, setKeyDrafts] = useState<Record<string, string>>({});
+  // r2026-10-06.131: HTTP TTS proxy draft — blank means "direct socket". The
+  // value only takes effect on Save (or Clear), so typing never half-switches
+  // a live voice chain.
+  const [proxyDraft, setProxyDraft] = useState<string>(() => getTtsProxy() ?? '');
+  const [proxySaved, setProxySaved] = useState(false);
   const tutorNRef = useRef(0);
   // r2026-10-04.75: listen for the voice layer reporting a refused utterance
   // so the hint appears right where the toggles live.
@@ -131,7 +138,7 @@ export default function SettingsSheet({
     return () => window.removeEventListener('amoji:voice-blocked', onBlocked);
   }, []);
   useEffect(() => {
-    if (open) { setMem(loadMemory()); setCopied(false); setBrainState(brainProvider()); setKeyDrafts({}); }
+    if (open) { setMem(loadMemory()); setCopied(false); setBrainState(brainProvider()); setKeyDrafts({}); setProxyDraft(getTtsProxy() ?? ''); setProxySaved(false); }
   }, [open]);
   if (!open) return null;
   const lang = prefs.lang;
@@ -326,6 +333,46 @@ export default function SettingsSheet({
                 accent={accent}
                 onClick={() => { const next = !neuralOn; setNeuralOnState(next); setNeuralEnabled(next); }}
               />
+            </div>
+            {/* r2026-10-06.131 — optional HTTP proxy for wss-blocked networks */}
+            <div className="space-y-1.5">
+              <div className={row}>
+                <span className={label}>🛰️ {t(lang, 'ttsProxy')}</span>
+                <div className="flex shrink-0 gap-1.5">
+                  <button
+                    onClick={() => {
+                      const v = proxyDraft.trim();
+                      setTtsProxy(v ? v.replace(/\/+$/, '') : null);
+                      setProxySaved(true);
+                    }}
+                    className="ui-btn rounded-full px-3 py-1.5 text-xs text-white/90"
+                    style={{ backgroundColor: `${accent}2e` }}
+                  >
+                    {t(lang, 'ttsProxySave')}
+                  </button>
+                  <button
+                    onClick={() => { setProxyDraft(''); setTtsProxy(null); setProxySaved(true); }}
+                    className="ui-btn rounded-full px-3 py-1.5 text-xs text-white/60"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+                  >
+                    {t(lang, 'ttsProxyClear')}
+                  </button>
+                </div>
+              </div>
+              <input
+                value={proxyDraft}
+                onChange={(e) => { setProxyDraft(e.target.value); setProxySaved(false); }}
+                placeholder={t(lang, 'ttsProxyPlaceholder')}
+                inputMode="url"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs text-white/85 outline-none placeholder:text-white/30 focus:border-white/25"
+              />
+              {proxySaved && (
+                <p className="text-[10px] text-white/45">✓</p>
+              )}
+              <p className="text-[10px] leading-relaxed text-white/40">{t(lang, 'ttsProxyHint')}</p>
             </div>
             <div className={row}>
               <span className={label}>🎙️ {t(lang, 'testVoice')}</span>
