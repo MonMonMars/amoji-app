@@ -12,6 +12,7 @@ import { setLoadProgress } from '../lib/load-progress';
 import { type MoveKind } from '../lib/moves';
 import { PROPS, propsForMove, propPresence, type PropDef, type PropPart } from '../lib/props';
 import { characterById } from '../lib/prefs';
+import { modelUrl } from '../lib/asset';
 import { pokeStyleFor, pokeModeFor, poseIdsFor, lookFor } from '../lib/persona';
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
@@ -924,7 +925,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
         return;
       }
       const cand = MODEL_CANDIDATES[index]!;
-      const url = /^https?:\/\//.test(cand) ? cand : `${ASSET_BASE}/models/${cand}`;
+      const url = modelUrl(cand) ?? `${ASSET_BASE}/models/${cand}`;
       const vrmLoader = new GLTFLoader();
       vrmLoader.register((parser) => new VRMLoaderPlugin(parser));
       vrmLoader.load(url, (gltf) => {

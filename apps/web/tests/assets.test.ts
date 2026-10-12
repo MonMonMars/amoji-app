@@ -34,7 +34,7 @@ describe('asset governance', () => {
     expect(MANIFEST).toContain(WANT_CAST_RELEASE);
     expect(MANIFEST).toContain('seed-san.vrm');
     for (const c of CHARACTERS) {
-      expect(c.model).toMatch(/^https:\/\/github\.com\/MonMonMars\/amoji-app\/releases\/download\//);
+      expect(c.model).toMatch(/^want\/[a-z0-9-]+\.vrm$/);
       expect(MANIFEST).toContain(c.id);
     }
   });

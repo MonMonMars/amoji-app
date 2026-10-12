@@ -502,9 +502,10 @@ export default function ChatPanel({
     greetedRef.current = true;
     const visit = recordVisit();
     const daily = visit.isNewDay ? buildDailyGreeting(lang, visit) : undefined;
-    const t1 = setTimeout(() => sayLocal(pickLine('startup', lang, 0)), 1200);
+    const startupVars = { name: characterName };
+    const t1 = setTimeout(() => sayLocal(pickLine('startup', lang, 0, startupVars)), 1200);
     const t2 = setTimeout(
-      () => sayLocal(daily ?? pickLine('startup', lang, 1), daily ? greetingHints(visit) : undefined),
+      () => sayLocal(daily ?? pickLine('startup', lang, 1, startupVars), daily ? greetingHints(visit) : undefined),
       5200,
     );
     return () => { clearTimeout(t1); clearTimeout(t2); };

@@ -5,7 +5,7 @@
 // one device, import on any other (or any future app/robot/avatar that
 // speaks the format) and the companion comes back exactly as she was.
 import type { EmotionConfig } from '@amoji/emotion-core';
-import { loadPrefs, savePrefs, characterById, CHARACTERS, type Prefs, type Lang } from './prefs';
+import { loadPrefs, savePrefs, characterById, CHARACTERS, DEFAULT_PREFS, type Prefs, type Lang } from './prefs';
 import { loadHistory, saveHistory, loadConfig, type StoredMessage } from './companion-store';
 import { loadMemory, clearMemory, type Memory } from './memory';
 import { loadProfile, saveProfile, type Profile } from './profile';
@@ -92,7 +92,7 @@ export function applyCompanionFile(f: CompanionFile): void {
   // back to its default — the rest of the soul survives the body swap.
   const characterId = CHARACTERS.some((c) => c.id === f.identity.characterId)
     ? f.identity.characterId
-    : loadPrefs().character;
+    : DEFAULT_PREFS.character;
   const prefs: Prefs = {
     character: characterId,
     background: f.appearance?.backgroundId ?? loadPrefs().background,

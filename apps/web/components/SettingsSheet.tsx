@@ -28,6 +28,7 @@ import {
 import { LangChips } from './selectors';
 import ModelThumb from './ModelThumb';
 import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, testOpenAiVoice, VOICE_TIER_LABEL } from '../lib/voice';
+import { getPlaybackVolume, setPlaybackVolume } from '../lib/playback-volume';
 // r2026-10-06.131: the Voice section's optional HTTP TTS proxy field
 import { getTtsProxy, setTtsProxy } from '../lib/edge-tts';
 // r2026-10-06.134: ChatGPT-voice (OpenAI tier 0) key + endpoint field
@@ -112,6 +113,7 @@ export default function SettingsSheet({
   const router = useRouter();
   const [voiceOn, setVoiceOnState] = useState(voiceEnabled());
   const [neuralOn, setNeuralOnState] = useState(neuralEnabled());
+  const [vol, setVol] = useState(() => getPlaybackVolume());
   const [voiceBlocked, setVoiceBlocked] = useState(false);
   // r99: per-tier self-test result — 'edge-tts ✓ · google-tts ✗ · browser ✓'
   const [voiceTest, setVoiceTest] = useState<string | null>(null);
@@ -366,6 +368,24 @@ export default function SettingsSheet({
                 onClick={() => { const next = !neuralOn; setNeuralOnState(next); setNeuralEnabled(next); }}
               />
             </div>
+            <label className="block space-y-1.5">
+              <span className={label}>🔉 {t(lang, 'voiceVolume')}
+                <span className="ml-2 text-xs tabular-nums text-white/45">{Math.round(vol * 100)}%</span>
+              </span>
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={vol}
+                onChange={(e) => {
+                  const next = Number(e.target.value);
+                  setVol(next);
+                  setPlaybackVolume(next);
+                }}
+                className="w-full accent-pink-400"
+              />
+            </label>
             {/* r2026-10-06.134 — ChatGPT-voice tier (OpenAI): key + optional
                 endpoint proxy + one-tap probe. Strings predate the UI (r112);
                 this is their first consumer. */}

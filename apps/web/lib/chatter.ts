@@ -12,19 +12,19 @@ export type ChatterLang = 'en' | 'yue' | 'zh' | 'ja';
 export const CHATTER: Record<ChatterKind, Record<ChatterLang, string[]>> = {
   startup: {
     en: [
-      "Hey, I'm Juno — your Amoji companion. What should we do first: talk, play, or just hang out?",
+      "Hey, I'm {name} — your Amoji companion. What should we do first: talk, play, or just hang out?",
       'Type below to chat with me — what\'s on your mind? Tap my name plate at the top left anytime to change my look, scene, or language, okay?',
     ],
     yue: [
-      '喂，我係 Juno，你嘅 Amoji 小伙伴。我哋首先做咩好：傾偈、玩嘢，定係靜靜哋坐？',
+      '喂，我係 {name}，你嘅 Amoji 小伙伴。我哋首先做咩好：傾偈、玩嘢，定係靜靜哋坐？',
       '喺下面打字同我講嘢吖——你諗緊咩呀？撳左上角我個名牌，隨時換我造型、場景同語言㗎。',
     ],
     zh: [
-      '嗨，我是 Juno，你的 Amoji 伙伴。我们先做什么好：聊天、玩点什么，还是静静待着？',
+      '嗨，我是 {name}，你的 Amoji 伙伴。我们先做什么好：聊天、玩点什么，还是静静待着？',
       '在下方输入文字和我聊天吧——你在想什么呢？点左上角我的名牌，可以随时换我的造型、场景和语言哦。',
     ],
     ja: [
-      'やあ、私はジュノ、あなたのアモジ相棒。最初は何しよっか——おしゃべり？遊び？それともまったり？',
+      'やあ、私は{name}、あなたのアモジ相棒。最初は何しよっか——おしゃべり？遊び？それともまったり？',
       '下に文字を入れて話しかけてね。何かあったの？左上の私のネームプレートで見た目や背景、言語が変えられるよ。',
     ],
   },
@@ -181,7 +181,14 @@ export const CHATTER: Record<ChatterKind, Record<ChatterLang, string[]>> = {
 const FALLBACK: ChatterLang = 'en';
 
 /** Deterministic line picker: same n always returns the same line. */
-export function pickLine(kind: ChatterKind, lang: ChatterLang, n: number): string {
+export function pickLine(
+  kind: ChatterKind,
+  lang: ChatterLang,
+  n: number,
+  vars?: { name?: string },
+): string {
   const bank = CHATTER[kind][lang] ?? CHATTER[kind][FALLBACK];
-  return bank[((n % bank.length) + bank.length) % bank.length]!;
+  let line = bank[((n % bank.length) + bank.length) % bank.length]!;
+  if (vars?.name) line = line.replaceAll('{name}', vars.name);
+  return line;
 }
