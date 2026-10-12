@@ -25,6 +25,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: fetch want-list VRMs (same-origin; release assets block cross-origin WebGL)
+        run: node scripts/fetch-want-vrms.mjs
       - name: static export build
         run: pnpm --filter @amoji/web build
         env:

@@ -12,7 +12,7 @@ export const CHARACTERS_WANT = [
     accent: '#fb7185',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a01-shino.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a01-shino.vrm',
+    model: 'want/a01-shino.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Shino — gentle heart, steady cheer',
@@ -29,7 +29,7 @@ export const CHARACTERS_WANT = [
     accent: '#e8c4a0',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a02-shibu.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a02-shibu.vrm',
+    model: 'want/a02-shibu.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Shibu — gentle heart, steady cheer',
@@ -46,7 +46,7 @@ export const CHARACTERS_WANT = [
     accent: '#ff9e7a',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a03-fumiriya.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a03-fumiriya.vrm',
+    model: 'want/a03-fumiriya.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Fumiriya — warm friend, always listening',
@@ -63,7 +63,7 @@ export const CHARACTERS_WANT = [
     accent: '#ff8fab',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a04-avatarsample-a.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a04-avatarsample-a.vrm',
+    model: 'want/a04-avatarsample-a.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'AvatarSample A — sunny companion, kind voice',
@@ -80,7 +80,7 @@ export const CHARACTERS_WANT = [
     accent: '#ff6b4a',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a05-avatarsample-c.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a05-avatarsample-c.vrm',
+    model: 'want/a05-avatarsample-c.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'AvatarSample C — sunny companion, kind voice',
@@ -97,7 +97,7 @@ export const CHARACTERS_WANT = [
     accent: '#38bdf8',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a10-agahomei-normal.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a10-agahomei-normal.vrm',
+    model: 'want/a10-agahomei-normal.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'AgahoMei Normal — calm buddy, curious and caring',
@@ -114,7 +114,7 @@ export const CHARACTERS_WANT = [
     accent: '#f9a8d4',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a14-vivi.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a14-vivi.vrm',
+    model: 'want/a14-vivi.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Vivi — warm friend, always listening',
@@ -131,7 +131,7 @@ export const CHARACTERS_WANT = [
     accent: '#c7b9ff',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a16-vita.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a16-vita.vrm',
+    model: 'want/a16-vita.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Vita — warm friend, always listening',
@@ -148,7 +148,7 @@ export const CHARACTERS_WANT = [
     accent: '#ff9ecb',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a17-victoria-rubin.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a17-victoria-rubin.vrm',
+    model: 'want/a17-victoria-rubin.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Victoria Rubin — sunny companion, kind voice',
@@ -165,7 +165,7 @@ export const CHARACTERS_WANT = [
     accent: '#8b93b8',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a23-hairsample-female.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a23-hairsample-female.vrm',
+    model: 'want/a23-hairsample-female.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'HairSample Female — gentle heart, steady cheer',
@@ -182,7 +182,7 @@ export const CHARACTERS_WANT = [
     accent: '#a78bfa',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a24-hairsample-male.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a24-hairsample-male.vrm',
+    model: 'want/a24-hairsample-male.vrm',
     voiceHint: { yue: 'zh-HK-WanLungNeural', en: 'en-HK-SamNeural' },
     tagline: {
       en: 'HairSample Male — calm buddy, curious and caring',
@@ -199,7 +199,7 @@ export const CHARACTERS_WANT = [
     accent: '#34d399',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a61-saori-kamiya-llunne.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a61-saori-kamiya-llunne.vrm',
+    model: 'want/a61-saori-kamiya-llunne.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Saori Kamiya Llunne — calm buddy, curious and caring',
@@ -216,7 +216,7 @@ export const CHARACTERS_WANT = [
     accent: '#fbbf24',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a63-hinoame-satuki-mei-sirayuki.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a63-hinoame-satuki-mei-sirayuki.vrm',
+    model: 'want/a63-hinoame-satuki-mei-sirayuki.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Hinoame Satuki Mei Sirayuki — calm buddy, curious and caring',
@@ -233,7 +233,7 @@ export const CHARACTERS_WANT = [
     accent: '#60a5fa',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a64-lily-lily-animeit.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a64-lily-lily-animeit.vrm',
+    model: 'want/a64-lily-lily-animeit.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Lily Lily Animeit — gentle heart, steady cheer',
@@ -250,7 +250,7 @@ export const CHARACTERS_WANT = [
     accent: '#f472b6',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a70-vtuber-aihina-sample.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a70-vtuber-aihina-sample.vrm',
+    model: 'want/a70-vtuber-aihina-sample.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Vtuber Aihina Sample — warm friend, always listening',
@@ -267,7 +267,7 @@ export const CHARACTERS_WANT = [
     accent: '#fb7185',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a71-mary-sweety.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a71-mary-sweety.vrm',
+    model: 'want/a71-mary-sweety.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Mary Sweety — calm buddy, curious and caring',
@@ -284,7 +284,7 @@ export const CHARACTERS_WANT = [
     accent: '#e8c4a0',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a74-mizuka.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a74-mizuka.vrm',
+    model: 'want/a74-mizuka.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Mizuka — sunny companion, kind voice',
@@ -301,7 +301,7 @@ export const CHARACTERS_WANT = [
     accent: '#ff9e7a',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a75-sorano.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a75-sorano.vrm',
+    model: 'want/a75-sorano.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Sorano — sunny companion, kind voice',
@@ -318,7 +318,7 @@ export const CHARACTERS_WANT = [
     accent: '#ff8fab',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a77-sasha.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a77-sasha.vrm',
+    model: 'want/a77-sasha.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Sasha — gentle heart, steady cheer',
@@ -335,7 +335,7 @@ export const CHARACTERS_WANT = [
     accent: '#ff6b4a',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a79-amami-karasu.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a79-amami-karasu.vrm',
+    model: 'want/a79-amami-karasu.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Amami Karasu — warm friend, always listening',
@@ -352,7 +352,7 @@ export const CHARACTERS_WANT = [
     accent: '#38bdf8',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a81-cinna.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a81-cinna.vrm',
+    model: 'want/a81-cinna.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Cinna — gentle heart, steady cheer',
@@ -369,7 +369,7 @@ export const CHARACTERS_WANT = [
     accent: '#f9a8d4',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a82-renel-bonnie.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a82-renel-bonnie.vrm',
+    model: 'want/a82-renel-bonnie.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Renel Bonnie — warm friend, always listening',
@@ -386,7 +386,7 @@ export const CHARACTERS_WANT = [
     accent: '#c7b9ff',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a83-ao-witch.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a83-ao-witch.vrm',
+    model: 'want/a83-ao-witch.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Ao Witch — warm friend, always listening',
@@ -403,7 +403,7 @@ export const CHARACTERS_WANT = [
     accent: '#ff9ecb',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a85-kara.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a85-kara.vrm',
+    model: 'want/a85-kara.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Kara — warm friend, always listening',
@@ -420,7 +420,7 @@ export const CHARACTERS_WANT = [
     accent: '#8b93b8',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a89-rurina.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a89-rurina.vrm',
+    model: 'want/a89-rurina.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Rurina — sunny companion, kind voice',
@@ -437,7 +437,7 @@ export const CHARACTERS_WANT = [
     accent: '#a78bfa',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a93-edokko.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a93-edokko.vrm',
+    model: 'want/a93-edokko.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Edokko — sunny companion, kind voice',
@@ -454,7 +454,7 @@ export const CHARACTERS_WANT = [
     accent: '#34d399',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a94-rita.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a94-rita.vrm',
+    model: 'want/a94-rita.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Rita — warm friend, always listening',
@@ -471,7 +471,7 @@ export const CHARACTERS_WANT = [
     accent: '#fbbf24',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a95-mizu.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a95-mizu.vrm',
+    model: 'want/a95-mizu.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Mizu — warm friend, always listening',
@@ -488,7 +488,7 @@ export const CHARACTERS_WANT = [
     accent: '#60a5fa',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a96-pee-aruako.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a96-pee-aruako.vrm',
+    model: 'want/a96-pee-aruako.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Pee Aruako — sunny companion, kind voice',
@@ -505,7 +505,7 @@ export const CHARACTERS_WANT = [
     accent: '#f472b6',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a97-pee-saaya.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a97-pee-saaya.vrm',
+    model: 'want/a97-pee-saaya.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Pee Saaya — gentle heart, steady cheer',
@@ -522,7 +522,7 @@ export const CHARACTERS_WANT = [
     accent: '#fb7185',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a98-ethan.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a98-ethan.vrm',
+    model: 'want/a98-ethan.vrm',
     voiceHint: { yue: 'zh-HK-WanLungNeural', en: 'en-HK-SamNeural' },
     tagline: {
       en: 'ETHAN — gentle heart, steady cheer',
@@ -539,7 +539,7 @@ export const CHARACTERS_WANT = [
     accent: '#e8c4a0',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a99-miyora.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a99-miyora.vrm',
+    model: 'want/a99-miyora.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'MIYORA — sunny companion, kind voice',
@@ -556,7 +556,7 @@ export const CHARACTERS_WANT = [
     accent: '#ff9e7a',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a103-rockredgradientjk.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a103-rockredgradientjk.vrm',
+    model: 'want/a103-rockredgradientjk.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'RockRedGradientJK — gentle heart, steady cheer',
@@ -573,7 +573,7 @@ export const CHARACTERS_WANT = [
     accent: '#ff8fab',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a104-simplebrownsailorjk.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a104-simplebrownsailorjk.vrm',
+    model: 'want/a104-simplebrownsailorjk.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'SimpleBrownSailorJK — calm buddy, curious and caring',
@@ -590,7 +590,7 @@ export const CHARACTERS_WANT = [
     accent: '#ff6b4a',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a105-serizawa-aoi.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a105-serizawa-aoi.vrm',
+    model: 'want/a105-serizawa-aoi.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Serizawa Aoi — warm friend, always listening',
@@ -607,7 +607,7 @@ export const CHARACTERS_WANT = [
     accent: '#38bdf8',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a106-auroragradhairjk.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a106-auroragradhairjk.vrm',
+    model: 'want/a106-auroragradhairjk.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'AuroraGradHairJK — warm friend, always listening',
@@ -624,7 +624,7 @@ export const CHARACTERS_WANT = [
     accent: '#f9a8d4',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a107-dm-office-casual.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a107-dm-office-casual.vrm',
+    model: 'want/a107-dm-office-casual.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'DM Office Casual — warm friend, always listening',
@@ -641,7 +641,7 @@ export const CHARACTERS_WANT = [
     accent: '#c7b9ff',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a109-riona.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a109-riona.vrm',
+    model: 'want/a109-riona.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Riona — gentle heart, steady cheer',
@@ -658,7 +658,7 @@ export const CHARACTERS_WANT = [
     accent: '#ff9ecb',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a112-mahochan-jk.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a112-mahochan-jk.vrm',
+    model: 'want/a112-mahochan-jk.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Mahochan JK — calm buddy, curious and caring',
@@ -675,7 +675,7 @@ export const CHARACTERS_WANT = [
     accent: '#8b93b8',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a114-sailor-cardigan-girl.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a114-sailor-cardigan-girl.vrm',
+    model: 'want/a114-sailor-cardigan-girl.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Sailor Cardigan Girl — warm friend, always listening',
@@ -692,7 +692,7 @@ export const CHARACTERS_WANT = [
     accent: '#a78bfa',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a116-haru-uniform.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a116-haru-uniform.vrm',
+    model: 'want/a116-haru-uniform.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Haru Uniform — warm friend, always listening',
@@ -709,7 +709,7 @@ export const CHARACTERS_WANT = [
     accent: '#34d399',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a117-erigawa-risa.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a117-erigawa-risa.vrm',
+    model: 'want/a117-erigawa-risa.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Erigawa Risa — warm friend, always listening',
@@ -726,7 +726,7 @@ export const CHARACTERS_WANT = [
     accent: '#fbbf24',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a119-kanami-uniform.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a119-kanami-uniform.vrm',
+    model: 'want/a119-kanami-uniform.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Kanami Uniform — sunny companion, kind voice',
@@ -743,7 +743,7 @@ export const CHARACTERS_WANT = [
     accent: '#60a5fa',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a120-morikawa-yuki-summer-uniform.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a120-morikawa-yuki-summer-uniform.vrm',
+    model: 'want/a120-morikawa-yuki-summer-uniform.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Morikawa Yuki Summer Uniform — warm friend, always listening',
@@ -760,7 +760,7 @@ export const CHARACTERS_WANT = [
     accent: '#f472b6',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a121-nagano-mami-uniform.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a121-nagano-mami-uniform.vrm',
+    model: 'want/a121-nagano-mami-uniform.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Nagano Mami Uniform — calm buddy, curious and caring',
@@ -777,7 +777,7 @@ export const CHARACTERS_WANT = [
     accent: '#fb7185',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a122-shiratori-hikari-shifuku.png',
-    model: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a122-shiratori-hikari-shifuku.vrm',
+    model: 'want/a122-shiratori-hikari-shifuku.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Shiratori Hikari Shifuku — warm friend, always listening',

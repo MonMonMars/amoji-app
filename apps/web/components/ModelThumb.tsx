@@ -11,7 +11,7 @@
 // eyes used to sit tiny at the top of the circle.
 import { useEffect, useRef, useState } from 'react';
 import { requestModelThumb } from '../lib/modelThumb';
-import { assetUrl } from '../lib/asset';
+import { assetUrl, modelUrl } from '../lib/asset';
 
 export default function ModelThumb({
   url,
@@ -56,7 +56,7 @@ export default function ModelThumb({
     if (!started || !url || thumb || (bakedSrc && bakedOk)) return;
     let live = true;
     setLoading(true);
-    requestModelThumb(url).then((dataUrl) => {
+    requestModelThumb(modelUrl(url) ?? url).then((dataUrl) => {
       if (live && dataUrl) setThumb(dataUrl);
       if (live) setLoading(false);
     });

@@ -1,4 +1,5 @@
 'use client';
+import { getPlaybackVolume } from './playback-volume';
 // Emotional voice — ChatGPT-style prosody. Primary path: FREE neural voices via
 // the edge-tts.ts endpoint — Cantonese 曉曼/雲龍 etc., with SSML pitch/rate/volume
 // per emotion. Fallback path: the browser's own speechSynthesis with matched
@@ -1532,7 +1533,7 @@ function synthSpeak(
   const emVol = 1 + (em.vol - 1) * amp;
   const pitch = clamp(basePitch * emPitch, 0.4, 2);
   const rate = clamp(baseRate * emRate, 0.6, 1.6);
-  const vol = clamp(emVol, 0.4, 1);
+  const vol = clamp(emVol * getPlaybackVolume(), 0.05, 1);
 
   const parts = clauses(text);
   const utterances: SpeechSynthesisUtterance[] = [];

@@ -74,7 +74,7 @@ roster.characters.forEach((c, i) => {
   lines.push(`    accent: '${c.accent}',`);
   lines.push(`    kidSafe: ${c.kidSafe !== false},`);
   lines.push(`    image: '${c.imageUrl}',`);
-  lines.push(`    model: '${c.modelUrl}',`);
+  lines.push(`    model: 'want/${c.modelFile}',`);
   lines.push(`    voiceHint: { yue: '${c.voiceHint.yue}', en: '${c.voiceHint.en}' },`);
   lines.push('    tagline: {');
   lines.push(`      en: '${esc(tl)}',`);
