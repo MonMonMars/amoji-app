@@ -194,8 +194,8 @@ const REENGAGE_AFTER_MS = 110_000;
 const CLOSER_AFTER_MS = 300_000;
 
 export default function ChatPanel({
-  characterName = 'Jun',
-  characterId = 'jun',
+  characterName = 'Marin K.',
+  characterId = 'kitagawa',
   lang = 'yue',
   accent = '#f9a8d4',
   persona,

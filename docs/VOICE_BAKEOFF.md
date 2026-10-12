@@ -4,6 +4,8 @@ The live app includes a **Voice bake-off** panel in **Settings → Voice** (gear
 
 Production replies still use the existing chain in `apps/web/lib/voice.ts`: **edge-tts → gTTS → browser speechSynthesis** (plus optional paid OpenAI tier if you configure a key). The bake-off does not change that chain.
 
+**Voice gender** follows each companion’s `gender` in `prefs.ts` (`characterVoiceGender`) — female avatars get female neural / browser voices (e.g. zh-HK HiuMaan / HiuGaai), male avatars get male voices (WanLung / Yunjian).
+
 ## Engines
 
 | Engine | Cost | Cantonese | Notes |
