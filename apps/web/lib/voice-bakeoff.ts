@@ -7,6 +7,7 @@ import { speakGtts, stopGtts } from './gtts';
 import { speakBrowserOnly, stopSpeaking } from './voice';
 import { azureSpeechReady, speakAzure, stopAzureSpeech } from './azure-speech';
 import { listenOnce, listenSupported } from './listen';
+import { characterVoiceGender } from './voice-gender';
 
 export type BakeoffEngineId = 'browser' | 'edge' | 'gtts' | 'azure';
 
@@ -39,13 +40,6 @@ export const BAKEOFF_PHRASES: Record<Lang, string[]> = {
     'Let\'s compare these free voices side by side.',
   ],
 };
-
-const FEMALE_CHARS = new Set([
-  'juno', 'nova', 'mochi', 'luna', 'rin',
-  'kizuna', 'alicia', 'ember', 'mei', 'sky', 'yuki', 'hina', 'mio',
-  'kasumi', 'marin', 'ayane', 'hitomi', 'lydia', 'ruby', 'snowy',
-  'aera', 'dhahlia', 'velara', 'kitagawa',
-]);
 
 export function bakeoffEngines(): BakeoffEngine[] {
   const azureOk = azureSpeechReady();
@@ -119,7 +113,7 @@ export async function runBakeoffTts(
   lang: Lang,
 ): Promise<BakeoffRunResult> {
   stopAllBakeoff();
-  const gender = FEMALE_CHARS.has(characterId) ? 'female' as const : 'male' as const;
+  const gender = characterVoiceGender(characterId);
   const t0 = performance.now();
   let firstAudioMs: number | null = null;
   const onPlaying = () => {

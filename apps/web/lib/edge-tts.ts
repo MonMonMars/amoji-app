@@ -46,6 +46,8 @@
 // server/amoji-proxy/.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { characterById } from './prefs';
+
 export interface EdgeVoiceOpts {
   /** 'yue' | 'zh' | 'ja' | 'en' */
   lang: string;
@@ -118,12 +120,19 @@ const CAST: Record<string, Record<string, string>> = {
   marin:   { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoyiNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-JennyNeural' },
   ayane:   { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaohanNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-AriaNeural' },
   hitomi:  { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoxiaoNeural', ja: 'ja-JP-NanamiNeural', en: 'en-US-MichelleNeural' },
+  // r2026-10-05.118 active roster (default kitagawa was missing → male gender fallback)
+  kitagawa: { yue: 'zh-HK-HiuGaaiNeural', zh: 'zh-CN-XiaoyiNeural', ja: 'ja-JP-NanamiNeural', en: 'en-US-JennyNeural' },
+  aera:    { yue: 'zh-HK-HiuGaaiNeural', zh: 'zh-CN-XiaoyiNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-AriaNeural' },
+  dhahlia: { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoxiaoNeural', ja: 'ja-JP-NanamiNeural', en: 'en-US-JennyNeural' },
+  onyx:    { yue: 'zh-HK-WanLungNeural', zh: 'zh-CN-YunxiNeural',    ja: 'ja-JP-KeitaNeural',  en: 'en-HK-SamNeural' },
 };
 
 function voiceFor(opts: EdgeVoiceOpts): { name: string; ssmlLang: string } {
   const v = VOICES[opts.lang] ?? VOICES.en!;
   const casted = opts.character ? CAST[opts.character]?.[opts.lang] : undefined;
-  const name = casted ?? (opts.gender === 'male' ? v.male : v.female);
+  if (casted) return { name: casted, ssmlLang: v.ssmlLang };
+  const gender = opts.character ? characterById(opts.character).gender : opts.gender;
+  const name = gender === 'male' ? v.male : v.female;
   return { name, ssmlLang: v.ssmlLang };
 }
 
