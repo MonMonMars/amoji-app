@@ -22,6 +22,7 @@
 // token / blocked network) the browser-voice fallback now takes over in half
 // the time, so a dead endpoint reads as a voice switch, not a long silence.
 import { characterById, CHARACTERS } from './prefs';
+import { characterVoiceGender } from './voice-gender';
 
 // r2026-10-04.89: timeout 7s → 4.5s — the Google-TTS mid tier in voice.ts now
 // catches a dead socket even faster; and stopEdge() finally rejects the
@@ -124,6 +125,7 @@ const CAST: Record<string, Record<string, string>> = {
 
 function voiceFor(opts: EdgeVoiceOpts): { name: string; ssmlLang: string } {
   const v = VOICES[opts.lang] ?? VOICES.en!;
+  const gender = opts.character ? characterVoiceGender(opts.character) : opts.gender;
   if (opts.character) {
     const inWant = CHARACTERS.some((c) => c.id === opts.character);
     const casted = CAST[opts.character]?.[opts.lang];
@@ -134,9 +136,9 @@ function voiceFor(opts: EdgeVoiceOpts): { name: string; ssmlLang: string } {
       if (opts.lang === 'en' && ch.voiceHint?.en) return { name: ch.voiceHint.en, ssmlLang: v.ssmlLang };
     }
     if (casted) return { name: casted, ssmlLang: v.ssmlLang };
-    return { name: ch.gender === 'male' ? v.male : v.female, ssmlLang: v.ssmlLang };
+    return { name: gender === 'male' ? v.male : v.female, ssmlLang: v.ssmlLang };
   }
-  const name = opts.gender === 'male' ? v.male : v.female;
+  const name = gender === 'male' ? v.male : v.female;
   return { name, ssmlLang: v.ssmlLang };
 }
 

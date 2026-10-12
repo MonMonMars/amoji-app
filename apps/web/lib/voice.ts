@@ -72,6 +72,7 @@
 // onyx/velara) get gender-correct matrices of their own — aera soft-dreamy,
 // dhahlia bright-floral, onyx low-male, velara calm-navigator.
 import type { Lang } from './prefs';
+import { characterVoiceGender } from './voice-gender';
 import { speakEdge, stopEdge, getTtsProxy } from './edge-tts';
 import { speakGtts, stopGtts } from './gtts';
 // r2026-10-05.112: tier 0 — OpenAI gpt-4o-mini-tts (ChatGPT-style emotional
@@ -927,19 +928,6 @@ const NEURAL_PROSODY: Record<string, { rate: number; pitch: number; vol: number 
   neutral: { rate: 0, pitch: 0, vol: 0 },
 };
 
-const FEMALE_CHARS = new Set([
-  'juno', 'nova', 'mochi', 'luna', 'rin',
-  // flagship nine (r2026-10-04.52) — everyone except Atlas, who is male
-  'kizuna', 'alicia', 'ember', 'mei', 'sky', 'yuki', 'hina', 'mio',
-  'kasumi', 'marin', 'ayane', 'hitomi',
-  // registry six (r2026-10-03.35)
-  'lydia', 'ruby', 'snowy',
-  // remote community cast (r2026-10-05.104) — onyx is male; the rest female
-  'aera', 'dhahlia', 'velara',
-  // kitagawa (r110) — female
-  'kitagawa',
-]);
-
 /**
  * Per-character vocal expressiveness — how strongly the pitch contour and
  * emotion deltas swing. Bubbly characters warble more, calm ones stay level.
@@ -992,18 +980,22 @@ if (typeof speechSynthesis !== 'undefined') {
 
 function pickVoice(characterId: string, lang: Lang): { voice: SpeechSynthesisVoice | null; pitch: number; rate: number } {
   refresh();
-  const choices = VOICE_MATRIX[characterId]?.[lang] ?? VOICE_MATRIX['juno']![lang] ?? [];
+  const gender = characterVoiceGender(characterId);
+  const matrixFallback = gender === 'male' ? 'atlas' : 'juno';
+  const choices = VOICE_MATRIX[characterId]?.[lang] ?? VOICE_MATRIX[matrixFallback]?.[lang] ?? [];
   for (const c of choices) {
     const byLang = cached.filter((v) => v.lang.replace('_', '-').startsWith(c.lang));
     for (const name of c.names) {
       const hit = byLang.find((v) => v.name.toLowerCase().includes(name.toLowerCase()));
       if (hit) return { voice: hit, pitch: c.basePitch, rate: c.baseRate };
     }
-    // named voices absent — any voice of that locale still beats the default
-    if (byLang.length && c.names.some((n) => /female|male/i.test(n))) {
-      const wantFemale = /female/i.test(c.names.join(' '));
-      const gendered = byLang.find((v) => wantFemale ? /female|sin-ji|hiu|xia|nanami|mei|kate|samantha|ava|zira/i.test(v.name) : /male|sin-ju|yunxi|keita|guy|daniel/i.test(v.name));
+    // named voices absent — pick by companion gender, not the first locale voice
+    if (byLang.length) {
+      const wantFemale = gender === 'female';
+      const gendered = byLang.find((v) => wantFemale ? /female|sin-ji|hiu|xia|nanami|mei|kate|samantha|ava|zira/i.test(v.name) : /male|sin-ju|yunxi|keita|guy|daniel|wan/i.test(v.name));
       if (gendered) return { voice: gendered, pitch: c.basePitch, rate: c.baseRate };
+      const fallback = byLang.find((v) => wantFemale ? !/male|sin-ju|yunxi|keita|guy|daniel/i.test(v.name) : /male|sin-ju|yunxi|keita|guy|daniel/i.test(v.name));
+      if (fallback) return { voice: fallback, pitch: c.basePitch, rate: c.baseRate };
       return { voice: byLang[0]!, pitch: c.basePitch, rate: c.baseRate };
     }
   }
@@ -1158,7 +1150,7 @@ export function speak(
       try {
         tier1 = speakEdge(text, {
           lang,
-          gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
+          gender: characterVoiceGender(characterId),
           character: characterId,
           expressiveness: expr * exprBoost,
           // r131 — the dominant emotion now drives an mstts:express-as style
@@ -1219,7 +1211,7 @@ export function speak(
       try {
         tier0 = speakOpenAi(text, {
           lang,
-          gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
+          gender: characterVoiceGender(characterId),
           character: characterId,
           emotion,
           expressiveness: expr,
@@ -1271,7 +1263,7 @@ export function sing(text: string, characterId: string, lang: Lang): void {
     try {
       tier1 = speakEdge(text, {
         lang,
-        gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
+        gender: characterVoiceGender(characterId),
         character: characterId,
         expressiveness: expr,
         melody: SONG_MELODY,
@@ -1408,7 +1400,7 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
       try {
         await withTimeout(speakOpenAi(line, {
           lang,
-          gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
+          gender: characterVoiceGender(characterId),
           character: characterId,
         }), 10_000, 'openai-tts timeout');
         push('openai', true, 'chatgpt voice played');
@@ -1424,7 +1416,7 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
       try {
         await withTimeout(speakEdge(line, {
           lang,
-          gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
+          gender: characterVoiceGender(characterId),
           character: characterId,
         }), 7_000, 'edge-tts timeout');
         push('edge', true, 'neural voice played');
@@ -1476,7 +1468,7 @@ export async function testProxyVoice(characterId: string, lang: Lang): Promise<b
   try {
     await withTimeout(speakEdge(line, {
       lang,
-      gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
+      gender: characterVoiceGender(characterId),
       character: characterId,
     }), 12_000, 'edge-tts timeout');
     reportVoiceStatus('edge', true, viaProxy ? 'voice played via proxy' : 'voice played (direct)');
@@ -1504,7 +1496,7 @@ export async function testOpenAiVoice(characterId: string, lang: Lang): Promise<
   try {
     await withTimeout(speakOpenAi(line, {
       lang,
-      gender: FEMALE_CHARS.has(characterId) ? 'female' : 'male',
+      gender: characterVoiceGender(characterId),
       character: characterId,
     }), 12_000, 'openai-tts timeout');
     reportVoiceStatus('openai', true, 'chatgpt voice played');
