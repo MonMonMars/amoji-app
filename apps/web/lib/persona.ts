@@ -197,6 +197,9 @@ export const CHARACTER_LOOKS: Record<string, CharacterLook> = {
   // remote community cast (r2026-10-05.104)
   aera: { tint: '#f6f3ff', height: 1.0, width: 0.95 }, dhahlia: { tint: '#fff4f8', height: 0.98, width: 0.96 }, onyx: { tint: '#eef1f8', height: 1.07, width: 1.05 }, velara: { tint: '#f2fbf7', height: 1.01, width: 0.96 },
   kitagawa: { tint: '#fff0f5', height: 1.0, width: 0.94 },
+  // want-list males — slightly broader default build for look tests / scene read
+  'a24-hairsample-male': { tint: '#ffffff', height: 1.03, width: 1.06 },
+  'a98-ethan': { tint: '#ffffff', height: 1.04, width: 1.07 },
 };
 
 export function lookFor(characterId: string): CharacterLook {

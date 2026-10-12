@@ -10,6 +10,7 @@
 // r2026-10-04.74: ARCHETYPE now covers the whole 33-character cast (r104) — before
 //   this, 16 companions silently shared the cheerful bank.
 import type { Lang } from './prefs';
+import { WANT_CAST_IDS } from './characters-want';
 
 type LaughBank = Record<Lang, string[]>;
 
@@ -49,13 +50,20 @@ const GIGGLES: Record<string, LaughBank> = {
 /**
  * r2026-10-04.74 — one flavor per cast member, covering all 33 companions;
  * the cast test pins this map against CHARACTERS so nobody new silently
- * falls back to the cheerful bank again. Flavor follows the persona:
+ * falls back to the cheerful bank again. The free-library want cast is
+ * covered via WANT_CAST_IDS (generated roster). Flavor follows the persona:
  * idols/best mates burst (cheerful), sweethearts cover a soft laugh
  * (gentle), composed protectors exhale dry (cool), livewire go-getters
  * bark (fiery), mischief-makers snort-giggle (playful).
  */
+const WANT_FLAVORS = ['cheerful', 'playful', 'gentle', 'cool', 'fiery'] as const;
+const WANT_ARCH: Record<string, keyof typeof GIGGLES> = Object.fromEntries(
+  WANT_CAST_IDS.map((id, i) => [id, WANT_FLAVORS[i % WANT_FLAVORS.length]!]),
+) as Record<string, keyof typeof GIGGLES>;
+
 export const ARCHETYPE: Record<string, keyof typeof GIGGLES> = {
-  // playful — mischief-makers
+  ...WANT_ARCH,
+  // playful — mischief-makers (legacy face-lab)
   rin: 'playful', mochi: 'playful', marin: 'playful',
   // cheerful — upbeat idols, hype besties, sunny souls
   juno: 'cheerful', nova: 'cheerful', kizuna: 'cheerful', alicia: 'cheerful',

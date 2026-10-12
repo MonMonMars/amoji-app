@@ -233,6 +233,7 @@ export default function ThumbBakePage() {
             // r124: re-measure facing now that the idle stance has settled
             // (the constructor pass read the raw rest pose's ~10°-off
             // shoulder line) — thumbs/cutouts show her standing square
+            avatar.recalibrateUpright();
             avatar.recalibrateFacing();
           }
           // r114b: detect rigs the idle clip failed to bind on (track names
