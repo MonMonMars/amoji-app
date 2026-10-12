@@ -132,7 +132,7 @@ export type StrKey =
   // brain routing (r2026-10-03.05)
   | 'brainTitle' | 'brainAuto' | 'brainAutoHint' | 'brainKeyPlaceholder' | 'brainNoKey'
   // voice self-test + diagnostics (r2026-10-04.75)
-  | 'testVoice' | 'testVoiceBtn' | 'voiceBlockedHint'
+  | 'testVoice' | 'testVoiceBtn' | 'voiceBlockedHint' | 'voiceVolume'
   // ChatGPT-style emotional TTS tier (r2026-10-05.112)
   | 'openaiVoice' | 'openaiVoiceHint' | 'openaiKeyPlaceholder' | 'openaiEndpointPlaceholder' | 'openaiCostHint'
   // HTTP TTS proxy for wss-blocked networks (r2026-10-06.131)
@@ -299,6 +299,7 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   },
   brainNoKey: { en: 'no key — free lane', yue: '冇 Key——免費通道', zh: '没有密钥——免费通道', ja: 'キーなし——無料レーン' },
   testVoice: { en: 'Test voice', yue: '試吓把聲', zh: '试试声音', ja: '声テスト' },
+  voiceVolume: { en: 'Voice volume', yue: '語音音量', zh: '语音音量', ja: '音量' },
   testVoiceBtn: { en: '▶ Play', yue: '▶ 播一次', zh: '▶ 播放', ja: '▶ 再生' },
   voiceBlockedHint: {
     en: "No sound was heard — check the phone's silent switch and volume, then press Play again. If it's still silent, turn Voice replies off and on once.",
@@ -381,19 +382,25 @@ export function loadPrefs(): Prefs {
     if (raw) {
       const p = JSON.parse(raw) as Partial<Prefs>;
       const kidMode = !!p.kidMode;
-      let character = CHARACTERS.some((c) => c.id === p.character) ? p.character! : DEFAULT_PREFS.character;
+      const storedCharacter = typeof p.character === 'string' ? p.character : DEFAULT_PREFS.character;
+      let character = CHARACTERS.some((c) => c.id === storedCharacter) ? storedCharacter : DEFAULT_PREFS.character;
       let background = BACKGROUNDS.some((b) => b.id === p.background) ? p.background! : DEFAULT_PREFS.background;
       // kid mode: current picks must stay wholesome — swap if not
       if (kidMode) {
         if (!characterById(character).kidSafe) character = KID_CHARACTER;
         if (!backgroundById(background).kidSafe) background = KID_BACKGROUND;
       }
-      return {
+      const next: Prefs = {
         character,
         background,
         kidMode,
         lang: (LANGS.some((l) => l.id === p.lang) ? p.lang : DEFAULT_PREFS.lang) as Lang,
       };
+      // Persist migration when an old roster id (juno, kitagawa, …) no longer ships.
+      if (storedCharacter !== character || p.background !== next.background || p.lang !== next.lang || !!p.kidMode !== kidMode) {
+        savePrefs(next);
+      }
+      return next;
     }
   } catch { /* ignore */ }
   return DEFAULT_PREFS;
