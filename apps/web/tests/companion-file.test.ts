@@ -30,21 +30,21 @@ describe('companion card (.aigf) round-trip', () => {
   });
 
   it('captures prefs, history, memory and profile', () => {
-    savePrefs({ character: 'nova', background: 'sakura', lang: 'yue', kidMode: false });
+    savePrefs({ character: 'a01-shino', background: 'sakura', lang: 'yue', kidMode: false });
     saveHistory([{ role: 'user', content: 'hi nova' }, { role: 'assistant', content: 'hey you!' }]);
     addEntry('event', 'Simon likes cantonese pop', loadMemory());
     saveProfile({ name: 'Simon', gender: 'male' });
     const card = buildCompanionFile('r-test');
     expect(card.format).toBe(COMPANION_FORMAT);
     expect(card.version).toBe(COMPANION_VERSION);
-    expect(card.identity.characterId).toBe('nova');
+    expect(card.identity.characterId).toBe('a01-shino');
     expect(card.history).toHaveLength(2);
     expect(card.human.name).toBe('Simon');
     expect(card.memory.entries?.length ?? 0).toBeGreaterThan(0);
   });
 
   it('export → wipe → import restores everything', () => {
-    savePrefs({ character: 'ember', background: 'rain', lang: 'ja', kidMode: false });
+    savePrefs({ character: 'a10-agahomei-normal', background: 'rain', lang: 'ja', kidMode: false });
     saveHistory([{ role: 'user', content: 'sing for me' }]);
     addEntry('event', 'First meeting at the café', loadMemory());
     saveProfile({ name: 'Simon', gender: 'male' });
@@ -55,7 +55,7 @@ describe('companion card (.aigf) round-trip', () => {
     expect(loadHistory()).toHaveLength(0);
 
     applyCompanionFile(parseCompanionFile(json));
-    expect(loadPrefs().character).toBe('ember');
+    expect(loadPrefs().character).toBe('a10-agahomei-normal');
     expect(loadPrefs().background).toBe('rain');
     expect(loadPrefs().lang).toBe('ja');
     expect(loadPrefs().kidMode).toBe(false);
@@ -72,12 +72,12 @@ describe('companion card (.aigf) round-trip', () => {
   });
 
   it('an unknown character id falls back to the current pick, soul intact', () => {
-    savePrefs({ character: 'kizuna', background: 'void', lang: 'yue', kidMode: false });
+    savePrefs({ character: 'a01-shino', background: 'void', lang: 'yue', kidMode: false });
     const card = buildCompanionFile('r-test');
     card.identity.characterId = 'someone-from-another-app';
     card.history = [{ role: 'assistant', content: 'I remember you.' }];
     applyCompanionFile(card);
-    expect(loadPrefs().character).toBe('kizuna');
+    expect(loadPrefs().character).toBe('a01-shino');
     expect(loadHistory()[0]!.content).toBe('I remember you.');
   });
 });

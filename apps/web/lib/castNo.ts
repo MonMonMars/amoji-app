@@ -1,20 +1,53 @@
 'use client';
-// Stable cast numbers — quick reference for reviews:
-// "check #3's hair" beats "check kizuna's hair" on a phone.
-// Keep in sync with CHARACTERS order in prefs.ts (display order).
-// r2026-10-05.118 roster trim: deleted old #5–18, #21–29, #33.
-// Survivors renumbered 1–10 with kitagawa (old #34) promoted to #1 / default.
+// AUTO-GENERATED from want-roster.json — keep in sync with CHARACTERS order in prefs.ts
+// releaseTag: free-library-want-2026-10-12
 export const CAST_NO = {
-  kitagawa: 1,
-  nova: 2,
-  kizuna: 3,
-  alicia: 4,
-  ember: 5,
-  kasumi: 6,
-  marin: 7,
-  aera: 8,
-  dhahlia: 9,
-  onyx: 10,
+  'a01-shino': 1,
+  'a02-shibu': 2,
+  'a03-fumiriya': 3,
+  'a04-avatarsample-a': 4,
+  'a05-avatarsample-c': 5,
+  'a10-agahomei-normal': 6,
+  'a14-vivi': 7,
+  'a16-vita': 8,
+  'a17-victoria-rubin': 9,
+  'a23-hairsample-female': 10,
+  'a24-hairsample-male': 11,
+  'a61-saori-kamiya-llunne': 12,
+  'a63-hinoame-satuki-mei-sirayuki': 13,
+  'a64-lily-lily-animeit': 14,
+  'a70-vtuber-aihina-sample': 15,
+  'a71-mary-sweety': 16,
+  'a74-mizuka': 17,
+  'a75-sorano': 18,
+  'a77-sasha': 19,
+  'a79-amami-karasu': 20,
+  'a81-cinna': 21,
+  'a82-renel-bonnie': 22,
+  'a83-ao-witch': 23,
+  'a85-kara': 24,
+  'a89-rurina': 25,
+  'a93-edokko': 26,
+  'a94-rita': 27,
+  'a95-mizu': 28,
+  'a96-pee-aruako': 29,
+  'a97-pee-saaya': 30,
+  'a98-ethan': 31,
+  'a99-miyora': 32,
+  'a103-rockredgradientjk': 33,
+  'a104-simplebrownsailorjk': 34,
+  'a105-serizawa-aoi': 35,
+  'a106-auroragradhairjk': 36,
+  'a107-dm-office-casual': 37,
+  'a109-riona': 38,
+  'a112-mahochan-jk': 39,
+  'a114-sailor-cardigan-girl': 40,
+  'a116-haru-uniform': 41,
+  'a117-erigawa-risa': 42,
+  'a119-kanami-uniform': 43,
+  'a120-morikawa-yuki-summer-uniform': 44,
+  'a121-nagano-mami-uniform': 45,
+  'a122-shiratori-hikari-shifuku': 46,
 } as const;
 
 export type CastId = keyof typeof CAST_NO;

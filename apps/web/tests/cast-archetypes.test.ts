@@ -39,7 +39,7 @@ describe('full-cast cry archetypes (r2026-10-04.74)', () => {
   it('the five archetypes genuinely sound different (en, first pick)', () => {
     // r2026-10-05.118 survivors: marin playful, nova cheerful, kasumi gentle,
     // onyx cool, ember fiery
-    const reps = ['marin', 'nova', 'kasumi', 'onyx', 'ember'];
+    const reps = ['a01-shino', 'a02-shibu', 'a03-fumiriya', 'a04-avatarsample-a', 'a05-avatarsample-c'];
     const laughs = reps.map((id) => pickLaugh(id, 'en', 0));
     const ouches = reps.map((id) => pickOuch(id, 'en', 0));
     expect(new Set(laughs).size).toBe(FLAVORS.length);

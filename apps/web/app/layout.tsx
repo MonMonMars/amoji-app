@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   description: "An emotional AI companion who laughs, sulks, and stays with you. 識笑、識嬲、識陪住你。",
   icons: {
     icon: "/icon.svg",
-    apple: "/portraits/kizuna.png",
+    apple: "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a01-shino.png",
   },
 };
 
