@@ -1,61 +1,64 @@
 import { describe, expect, it } from 'vitest';
-// Cast & scene data integrity — r2026-10-05.118 pins the trimmed 10-character
-// cast (Master Simon's 22:35 cut: old #5–18, #21–29 and #33 deleted;
-// kitagawa promoted to #1 + default). All survivors are local companions
-// under /models/cast.
-import { BACKGROUNDS, CHARACTERS, characterById, backgroundById, DEFAULT_PREFS, type Lang } from '../lib/prefs';
+import {
+  BACKGROUNDS, CHARACTERS, characterById, backgroundById, DEFAULT_PREFS, KID_CHARACTER, WANT_CAST_RELEASE, type Lang,
+} from '../lib/prefs';
 import { CAST_NO, castNo } from '../lib/castNo';
 
+const RELEASE =
+  'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/';
+
 describe('cast roster', () => {
-  it('has 10 characters with taglines in every language and personas', () => {
-    expect(CHARACTERS.length).toBe(10);
+  it('has 46 free-library want-list characters with taglines in every language', () => {
+    expect(CHARACTERS.length).toBe(46);
+    expect(WANT_CAST_RELEASE).toBe('free-library-want-2026-10-12');
     for (const c of CHARACTERS) {
-      // local portraits under /portraits — the classic cast uses AI-painted
-      // .jpg art, the flagship/rebadged cast uses agent3-rendered .png; the
-      // remote community cast ships no portrait at all (the board renders a
-      // runtime thumbnail straight from the model instead)
       const img = c.image ?? '';
-      if (img === '') {
-        // remote cast — no shipped portrait, thumbnail is runtime-rendered
-      } else if (img.startsWith('/')) {
-        expect(img).toMatch(/^\/portraits\/[a-z0-9-]+\.(jpg|png)$/);
-      } else {
-        expect(img).toMatch(/^https:\/\//);
-      }
+      expect(img).toMatch(/^https:\/\/github\.com\/MonMonMars\/amoji-app\/releases\/download\//);
       for (const l of ['en', 'yue', 'zh', 'ja'] as Lang[]) expect(c.tagline[l].length).toBeGreaterThan(0);
       expect(c.persona.length).toBeGreaterThan(20);
       expect(['female', 'male']).toContain(c.gender);
+      expect(c.kidSafe).toBe(true);
     }
   });
 
-  it('every character maps to a fetchable model — local cast/ or approved remote (r.104)', () => {
+  it('every character maps to a GitHub release VRM (distinct models)', () => {
     for (const c of CHARACTERS) {
-      expect(c.model).toMatch(/^(cast\/[a-z0-9-]+\.vrm|https:\/\/raw\.githubusercontent\.com\/test157t\/VRM-Assets-Pack-For-Silly-Tavern\/main\/model\/[A-Za-z]+\.vrm)$/);
+      expect(c.model).toMatch(new RegExp(`^${RELEASE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[a-z0-9-]+\\.vrm$`));
     }
-    // all 33 models are distinct — each character is her/his own person
     expect(new Set(CHARACTERS.map((c) => c.model)).size).toBe(CHARACTERS.length);
   });
 
-  it('every character has a stable number — unique, 1..10 (r.118)', () => {
+  it('male voice hints differ from female (A24, A98)', () => {
+    const male = CHARACTERS.filter((c) => c.gender === 'male');
+    expect(male.map((c) => c.id).sort()).toEqual(['a24-hairsample-male', 'a98-ethan'].sort());
+    for (const c of male) {
+      expect(c.voiceHint?.en).toBe('en-HK-SamNeural');
+      expect(c.voiceHint?.yue).toBe('zh-HK-WanLungNeural');
+    }
+    for (const c of CHARACTERS.filter((x) => x.gender === 'female')) {
+      expect(c.voiceHint?.en).toBe('en-HK-YanNeural');
+      expect(c.voiceHint?.yue).toBe('zh-HK-HiuGaaiNeural');
+    }
+  });
+
+  it('every character has a stable number — unique, 1..46', () => {
     const numbers = CHARACTERS.map((c) => castNo(c.id));
     for (const n of numbers) {
       expect(n).toBeGreaterThanOrEqual(1);
-      expect(n).toBeLessThanOrEqual(10);
+      expect(n).toBeLessThanOrEqual(46);
     }
     expect(new Set(numbers).size).toBe(CHARACTERS.length);
-    // the map and the roster cover exactly the same ids
     expect(Object.keys(CAST_NO).sort()).toEqual(CHARACTERS.map((c) => c.id).sort());
   });
 
-  it('the whole roster resolves by id — kitagawa first, then the veterans', () => {
-    expect(CHARACTERS[0]!.id).toBe('kitagawa');
+  it('default is a01-shino; roster resolves by id', () => {
+    expect(DEFAULT_PREFS.character).toBe('a01-shino');
+    expect(CHARACTERS[0]!.id).toBe('a01-shino');
     for (const c of CHARACTERS) {
       expect(characterById(c.id).id).toBe(c.id);
     }
-  });
-
-  it('falls back to the first character for unknown ids', () => {
-    expect(characterById('nobody').id).toBe(CHARACTERS[0]!.id);
+    expect(characterById('kitagawa').id).toBe('a01-shino');
+    expect(characterById('nobody').id).toBe('a01-shino');
   });
 });
 
@@ -77,10 +80,11 @@ describe('scene roster', () => {
 });
 
 describe('kid mode roster', () => {
-  it('at least 4 wholesome characters incl. dhahlia, and 4 sunny scenes incl. meadow', () => {
+  it('kid fallback is a wholesome female from the want list', () => {
     const safe = CHARACTERS.filter((c) => c.kidSafe);
     expect(safe.length).toBeGreaterThanOrEqual(4);
-    expect(safe.map((c) => c.id)).toContain('dhahlia');
+    expect(KID_CHARACTER).toBe('a02-shibu');
+    expect(safe.map((c) => c.id)).toContain(KID_CHARACTER);
     const sunny = BACKGROUNDS.filter((b) => b.kidSafe);
     expect(sunny.length).toBeGreaterThanOrEqual(4);
     expect(sunny.map((b) => b.id)).toContain('meadow');

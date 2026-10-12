@@ -23,7 +23,12 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#171717",
     icons: [
       { src: "./icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
-      { src: "./portraits/kizuna.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      {
+        src: "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a01-shino.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
     ],
   };
 }

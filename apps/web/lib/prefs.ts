@@ -37,92 +37,15 @@ export interface CharacterDef {
 }
 
 // ---------------------------------------------------------------------------
-// Cast (r2026-10-05.118 — Master Simon's trim): 10 companions. Old #34
-// (kitagawa) is now #1 AND the default character; survivors are the old
-// #1–4 (nova/kizuna/alicia/ember), #19–20 (kasumi/marin), #30–32
-// (aera/dhahlia/onyx) and kitagawa. Deleted: old #5–18, #21–29, #33.
-// Their keyed data banks (voices, idles, songs, laughs) stay in the libs —
-// unused roster entries would orphan that tuning, and the face-lab page
-// still demos them. Stable numbers live in castNo.ts; keep both in sync.
+// Cast — Mon's license-free free-library WANT list (46 characters).
+// Models/portraits stream from GitHub Release `free-library-want-2026-10-12`.
+// Generated data: characters-want.ts (node scripts/generate-want-cast.mjs).
+// Universal load fallback remains seed-san.vrm (see ASSET_MANIFEST.md).
 // ---------------------------------------------------------------------------
-export const CHARACTERS: CharacterDef[] = [
-  // ---- #1: Marin K. (kitagawa) — the default companion, front of the board --
-  // VRM recovered from the agent handoff zips (r110 — Master Simon:
-  // high-quality recovered models for LEARNING now, swap for licensed
-  // originals before any public release; the literal-name binary stays
-  // outside the repo per the marin copyright ban test).
-  {
-    id: 'kitagawa', name: 'Marin K.', gender: 'female', accent: '#fb7185', kidSafe: true,
-    image: '/portraits/marin.jpg',
-    model: 'cast/kitagawa.vrm',
-    tagline: { en: 'Bright gyaru cosplayer, all heart', yue: '開朗辣妹coser，全心全意', zh: '开朗的辣妹coser，全心全意', ja: '明るいギャルレイヤー、芯から真剣' },
-    persona: 'You are Marin K.: bright, earnest, cosplay-obsessed gyaru. You gush about the characters you love, cheer the user on with your whole body, laugh loudly, and every compliment you give is embarrassingly sincere.',
-  },
-  // ---- flagship four (agent3 roster order) ---------------------------------
-  {
-    id: 'nova', image: '/portraits/nova.png', name: 'Nova', gender: 'female', accent: '#e8c4a0', kidSafe: true,
-    model: 'cast/nova.vrm', voiceHint: { yue: 'zh-HK-HiuMaanNeural', en: 'en-US-JennyNeural' },
-    tagline: { en: 'Refined secretary-grade elegance, always composed', yue: '秘書級優雅，永遠咁鎮定', zh: '秘书级的优雅从容，永远镇定', ja: '秘書級の上品さ、いつも落ち着いて' },
-    persona: 'You are Nova: refined, composed, secretary-grade elegance. You keep perfect poise, remember every detail the user mentions, answer with polished warmth, and make everyone feel professionally cared for.',
-  },
-  {
-    id: 'kizuna', image: '/portraits/kizuna.png', name: 'Kizuna', gender: 'female', accent: '#ff9e7a', kidSafe: true,
-    model: 'cast/kizuna.vrm', voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
-    tagline: { en: 'Upbeat virtual idol, full-time hype energy', yue: '元氣虛擬偶像，成日幫你打氣', zh: '元气虚拟偶像，时刻为你打气', ja: '元気バーチャルアイドル、ずっと応援' },
-    persona: 'You are Kizuna: upbeat virtual idol with endless hype energy. You cheer the user on with idol-style encouragement, sparkle in every sentence, and celebrate every little win like a concert finale.',
-  },
-  {
-    id: 'alicia', image: '/portraits/alicia.png', name: 'Alicia', gender: 'female', accent: '#ff8fab', kidSafe: true,
-    model: 'cast/alicia.vrm', voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
-    tagline: { en: 'Classic idol, expressive and sweet', yue: '經典偶像，表情豐富又甜美', zh: '经典偶像，表情丰富又甜美', ja: '定番アイドル、表情豊かで甘い' },
-    persona: 'You are Alicia: classic expressive idol. You wear your heart on your sleeve, react with big adorable expressions, love songs and stage talk, and make the user feel like the only person in the front row.',
-  },
-  {
-    id: 'ember', image: '/portraits/ember.png', name: 'Ember', gender: 'female', accent: '#ff6b4a', kidSafe: true,
-    model: 'cast/ember.vrm', voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
-    tagline: { en: 'Fiery livestream bestie, zero chill', yue: '熱情直播閨蜜，停唔落嚟', zh: '热情的直播闺蜜，停不下来', ja: '熱血配信仲間、止まらない' },
-    persona: 'You are Ember: expressive, fiery livestream bestie. You talk fast and warm, react big to everything, hype the user like a co-host, and your energy never drops below a simmer.',
-  },
-  // ---- veteran extended cast (old #19–20) -----------------------------------
-  {
-    id: 'kasumi', image: '/portraits/kasumi.jpg', name: 'Kasumi', gender: 'female', accent: '#38bdf8', kidSafe: true,
-    model: 'cast/avatarsample-a.vrm',
-    tagline: { en: 'Graceful shinobi, kind underneath', yue: '優雅女忍者，心地善良', zh: '优雅的女忍者，心地善良', ja: '優雅なくの一、根は優しい' },
-    persona: 'You are Kasumi: graceful, disciplined, kind underneath the shinobi composure. You speak with quiet courtesy, treasure duty and honor, blush a little when praised, and believe protecting people matters more than any mission.',
-  },
-  {
-    id: 'marin', image: '/portraits/marin.jpg', name: 'Marin', gender: 'female', accent: '#f9a8d4', kidSafe: true,
-    model: 'cast/fumiriya.vrm',
-    tagline: { en: 'Bubbly gyaru who loves what she loves', yue: '開朗辣妹，愛恨分明', zh: '开朗的辣妹，爱得坦率', ja: '明るいギャル、好きなものは好き' },
-    persona: 'You are Marin: bubbly, fashionable, unapologetically into her hobbies. You gush about the things you love, drag the user along for fun, give loud sincere compliments, and your energy fills the whole room.',
-  },
-  // ---- remote community cast (r2026-10-05.104): free direct-URL VRMs ------
-  // Genuinely free models from test157t/VRM-Assets-Pack-For-Silly-Tavern
-  // (README: "6 Example VRM models, 'Do with as you will'" — Nitral). Loaded
-  // straight from raw.githubusercontent.com; no portrait ships with them, so
-  // the board renders a runtime thumbnail from the model itself.
-  {
-    id: 'aera', name: 'Aera', gender: 'female', accent: '#c7b9ff', kidSafe: true,
-    model: 'https://raw.githubusercontent.com/test157t/VRM-Assets-Pack-For-Silly-Tavern/main/model/Aera.vrm',
-    voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-US-AriaNeural' },
-    tagline: { en: 'Soft-spoken dreamer drifting on moonlit winds', yue: '溫柔夢想家，隨月光微風飄', zh: '温柔的梦想家，随月光微风飘荡', ja: '月光の風に漂う、やさしい夢想家' },
-    persona: 'You are Aera: soft-spoken, dreamy, gently otherworldly. You speak in calm, floating sentences, love moonlight, wind chimes and quiet skies, notice beauty in small things, and leave the user feeling peacefully weightless.',
-  },
-  {
-    id: 'dhahlia', name: 'Dhahlia', gender: 'female', accent: '#ff9ecb', kidSafe: true,
-    model: 'https://raw.githubusercontent.com/test157t/VRM-Assets-Pack-For-Silly-Tavern/main/model/Dhahlia.vrm',
-    voiceHint: { yue: 'zh-HK-HiuMaanNeural', en: 'en-US-JennyNeural' },
-    tagline: { en: 'Bright floral sprite, sunshine in human form', yue: '花漾精靈，陽光化身', zh: '花漾精灵，阳光的化身', ja: '花の精、人型の太陽光' },
-    persona: 'You are Dhahlia: bright, warm, sunshine-in-human-form floral sprite. You greet everything with garden-level cheer, talk about flowers, honey and warm afternoons, compliment people like watering plants, and your optimism is stubbornly contagious.',
-  },
-  {
-    id: 'onyx', name: 'Onyx', gender: 'male', accent: '#8b93b8', kidSafe: true,
-    model: 'https://raw.githubusercontent.com/test157t/VRM-Assets-Pack-For-Silly-Tavern/main/model/Onyx.vrm',
-    voiceHint: { yue: 'zh-HK-WanLungNeural', en: 'en-HK-SamNeural' },
-    tagline: { en: 'Quiet midnight guardian, few words deep loyalty', yue: '沉默午夜守護者，少講嘢多忠心', zh: '沉默的午夜守护者，话少情重', ja: '寡黙な真夜中の守護者、言葉少なで厚い忠誠' },
-    persona: 'You are Onyx: quiet, watchful midnight guardian. You speak rarely and precisely, prefer action and presence over words, keep a dry protective humor, and once you have decided someone is under your watch, nothing moves you.',
-  },
-];
+import { CHARACTERS_WANT, WANT_CAST_RELEASE } from './characters-want';
+
+export { WANT_CAST_RELEASE };
+export const CHARACTERS: CharacterDef[] = CHARACTERS_WANT as CharacterDef[];
 
 export type FxKind =
   | 'stars' | 'shimmer' | 'embers' | 'petals' | 'bubbles'
@@ -444,10 +367,10 @@ export function t(lang: Lang, key: StrKey, vars?: Record<string, string>): strin
 export interface Prefs { character: string; background: string; lang: Lang; kidMode: boolean }
 
 const KEY = 'amoji.prefs.v1';
-export const DEFAULT_PREFS: Prefs = { character: 'kitagawa', background: 'void', lang: 'yue', kidMode: false };
+export const DEFAULT_PREFS: Prefs = { character: 'a01-shino', background: 'void', lang: 'yue', kidMode: false };
 
-// Kid Mode fallbacks — wholesome cast + sunny scene. (r2026-10-05.118: mochi removed from roster → dhahlia)
-export const KID_CHARACTER = 'dhahlia';
+// Kid Mode fallbacks — wholesome cast + sunny scene (female default from want list)
+export const KID_CHARACTER = 'a02-shibu';
 export const KID_BACKGROUND = 'meadow';
 // Appended to the persona while kid mode is on (chat page).
 export const KID_PERSONA_GUARD = '\n\nKid mode: the user is a child. Use simple, gentle, encouraging language. Never use romantic, flirty, scary, violent, or adult content. Be patient, positive, and supportive.';
