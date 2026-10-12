@@ -21,9 +21,9 @@ describe('cast roster', () => {
     }
   });
 
-  it('every character maps to a GitHub release VRM (distinct models)', () => {
+  it('every character maps to a distinct same-origin want-list VRM path', () => {
     for (const c of CHARACTERS) {
-      expect(c.model).toMatch(new RegExp(`^${RELEASE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[a-z0-9-]+\\.vrm$`));
+      expect(c.model).toMatch(/^want\/[a-z0-9-]+\.vrm$/);
     }
     expect(new Set(CHARACTERS.map((c) => c.model)).size).toBe(CHARACTERS.length);
   });

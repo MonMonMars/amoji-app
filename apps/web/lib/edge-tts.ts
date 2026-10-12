@@ -22,6 +22,7 @@
 // token / blocked network) the browser-voice fallback now takes over in half
 // the time, so a dead endpoint reads as a voice switch, not a long silence.
 import { characterById, CHARACTERS } from './prefs';
+import { applyPlaybackVolume } from './playback-volume';
 import { characterVoiceGender } from './voice-gender';
 
 // r2026-10-04.89: timeout 7s → 4.5s — the Google-TTS mid tier in voice.ts now
@@ -394,6 +395,7 @@ export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
 function playMp3Blob(blob: Blob, opts: EdgeVoiceOpts, resolve: () => void, reject: (err: Error) => void): void {
   const url = URL.createObjectURL(blob);
   const audio = new Audio(url);
+  applyPlaybackVolume(audio);
   currentAudio = audio;
   // r99: the caller learns the instant media playback actually begins —
   // that is the moment the iOS media gate is provably open.

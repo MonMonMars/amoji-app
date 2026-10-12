@@ -15,5 +15,6 @@ coverage/
 
 # sample avatar stays local-only (copyright) — see ASSET_MANIFEST.md
 apps/web/public/models/*.vrm
+apps/web/public/models/want/*.vrm
 tools/*.log
 tools/*.err
