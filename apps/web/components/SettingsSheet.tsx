@@ -27,6 +27,7 @@ import {
 } from '../lib/prefs';
 import { LangChips } from './selectors';
 import ModelThumb from './ModelThumb';
+import VoiceBakeoffPanel from './VoiceBakeoffPanel';
 import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, testOpenAiVoice, VOICE_TIER_LABEL } from '../lib/voice';
 // r2026-10-06.131: the Voice section's optional HTTP TTS proxy field
 import { getTtsProxy, setTtsProxy } from '../lib/edge-tts';
@@ -497,6 +498,7 @@ export default function SettingsSheet({
                 🔇 {t(lang, 'voiceBlockedHint')}
               </p>
             )}
+            <VoiceBakeoffPanel prefs={prefs} accent={accent} />
           </Section>
 
           <Section title={`💾 ${t(lang, 'settingsData')}`}>

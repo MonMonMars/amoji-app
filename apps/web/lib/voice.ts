@@ -1353,6 +1353,13 @@ function withTimeout<T>(p: Promise<T>, ms: number, message: string): Promise<T> 
  * muted, interrupted, or zero-volume 'start'). A 400ms resume() nudge covers
  * engines that queue the line in a suspended state.
  */
+/** Isolated browser-TTS playback (Settings voice bake-off). */
+export function speakBrowserOnly(text: string, characterId: string, lang: Lang): Promise<void> {
+  return probeSynth(text, characterId, lang).then((ok) => {
+    if (!ok) throw new Error('browser voice did not start');
+  });
+}
+
 function probeSynth(text: string, characterId: string, lang: Lang): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
     if (typeof speechSynthesis === 'undefined') { resolve(false); return; }
