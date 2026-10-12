@@ -400,7 +400,7 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     // r2026-10-03.28: per-character look — the shared open-license VRM gets a
     // gentle palette tint and an individual build (height/shoulders), so each
     // character reads as her/his own person in the 3D scene.
-    const look = lookFor(seedKey ?? 'juno');
+    const look = lookFor(seedKey ?? 'a01-shino');
     const BASE_SX = look.width;
     const BASE_SY = look.height;
     const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
@@ -419,73 +419,30 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     // library clip drives the body. The old procedural pose/move math now
     // only runs as a last-resort fallback when no clip could be built.
     const ownModel = seedKey ? characterById(seedKey).model : undefined;
-    const MODEL_CANDIDATES = [ownModel, 'juno.vrm', 'seed-san.vrm'].filter(
+    const MODEL_CANDIDATES = [ownModel, 'seed-san.vrm'].filter(
       (m): m is string => !!m,
     );
 
     // -- clip library ---------------------------------------------------------
-    // r2026-10-04.93 (Master Simon): idle is a REAL LIBRARY now — 16 open
-    // .vrma idle performances streamed from three CORS-open motion libraries
-    // (Mixamo-class mocap: weight shifts, stretches, head shakes, sighs,
-    // bashful fidgets…), replacing the 4 tiny auto-generated samples that
-    // made idle stiff. AND the zombie stand is gone: every idle plays as a
-    // LOOP with a random mid-clip start offset, and the rotation crossfades
-    // between two LIVE motions on a swap timer — she is ALWAYS inside some
-    // idle movement, never parked in a straight stand between clips.
-    // r97: verified-live hosts lead every chain — the tk256ailab repo 404s
-    // on every VRMA path (it is not a motion library) and the mirror is not
-    // vendored in this build, so the old mirror-first order spent a dead hop
-    // before every clip. The local mirror follows as the fallback.
+    // r2026-10-12 (Mon): short upright standing idle rotation — in-repo
+    // `/models/anims` only for the core set. No Impatient / IdleSassy / chin-
+    // hand / hug / dwarf / cocky / bored idles in the default pool (they read
+    // exaggerated or broken on VRoid companions). Optional remotes load last
+    // and only if reachable; rebaseClipHips pins feet + yaw-only hips on idles.
     const ANIM_MIRROR = `${ASSET_BASE}/models/anims`;
-    // the VRM consortium's genuine standard_idle + a real formal bow
-    const ALT_HOST = 'https://raw.githubusercontent.com/hirokazuniimoto/virtual-avatar-sdk/main/assets/animations';
-    // a proper wave greeting
-    const ST_HOST = 'https://raw.githubusercontent.com/test157t/VRM-Assets-Pack-For-Silly-Tavern/main/animation_nitral-fork';
-    // r93: two more CORS-open libraries full of REAL keyframed mocap idles
-    // (file lists verified via the GitHub API; desktop-waifu sits on the
-    // `master` branch, 3dchat on `main`)
-    const DW_HOST = 'https://raw.githubusercontent.com/yv-was-taken/desktop-waifu/master/public/animations';
     const CHAT_HOST = 'https://raw.githubusercontent.com/DavinciDreams/3dchat/main/public/animations/vrma';
+    const ALT_HOST = 'https://raw.githubusercontent.com/hirokazuniimoto/virtual-avatar-sdk/main/assets/animations';
+    const ST_HOST = 'https://raw.githubusercontent.com/test157t/VRM-Assets-Pack-For-Silly-Tavern/main/animation_nitral-fork';
 
     interface ClipSource { id: string; urls: string[] }
-    // the idle pool — every entry a standing, loopable idle performance.
-    // The rotation picks 1–2 of a clip's own beats, then hands over.
-    // r97: each live entry is [verifiedUrl, mirrorUrl]; the four whose only
-    // other host was the dead tk256ailab repo are mirror-only now.
     const IDLE_SOURCES: ClipSource[] = [
-      { id: 'StandardIdle', urls: [`${ALT_HOST}/standard_idle.vrma`, `${ANIM_MIRROR}/StandardIdle.vrma`] },
-      { id: 'NeutralIdle', urls: [`${DW_HOST}/neutral_idle.vrma`, `${ANIM_MIRROR}/NeutralIdle.vrma`] },
-      // r106 (Master Simon): three finger-rich idles from the 3dchat library —
-      // verified live via the glTF JSON (every finger chain carries rotation
-      // channels), placed early so the rotation meets animated hands quickly.
-      { id: 'Plotting', urls: [`${CHAT_HOST}/plotting.vrma`, `${ANIM_MIRROR}/Plotting.vrma`] },
-      { id: 'SearchPockets', urls: [`${CHAT_HOST}/searchingPockets.vrma`, `${ANIM_MIRROR}/SearchPockets.vrma`] },
-      { id: 'HappyIdle', urls: [`${CHAT_HOST}/happyIdle.vrma`, `${ANIM_MIRROR}/HappyIdle.vrma`] },
-      // r110 (Master Simon): five finger-rich idles recovered from the agent
-      // handoff zips (300–800KB each — every finger chain keyframed, vs the
-      // 115KB body-only clips). Placed early so the rotation meets animated
-      // hands quickly; mirror-only, served from our own repo.
       { id: 'IdleNeutral', urls: [`${ANIM_MIRROR}/IdleNeutral.vrma`] },
-      { id: 'IdleChinHand', urls: [`${ANIM_MIRROR}/IdleChinHand.vrma`] },
-      { id: 'IdleHug', urls: [`${ANIM_MIRROR}/IdleHug.vrma`] },
-      { id: 'IdleSassy', urls: [`${ANIM_MIRROR}/IdleSassy.vrma`] },
-      { id: 'Impatient', urls: [`${ANIM_MIRROR}/Impatient.vrma`] },
-      { id: 'DwarfIdle', urls: [`${DW_HOST}/Dwarf%20Idle.vrma`, `${ANIM_MIRROR}/DwarfIdle.vrma`] },
-      { id: 'LadyIdle', urls: [`${DW_HOST}/Female%20Standing%20Pose.vrma`, `${ANIM_MIRROR}/LadyIdle.vrma`] },
-      { id: 'ArmStretch', urls: [`${DW_HOST}/Arm%20Stretching.vrma`, `${ANIM_MIRROR}/ArmStretch.vrma`] },
-      { id: 'HeadShake', urls: [`${DW_HOST}/Stroke%20Shaking%20Head.vrma`, `${ANIM_MIRROR}/HeadShake.vrma`] },
-      { id: 'ThinkingPose', urls: [`${DW_HOST}/thinking.vrma`, `${ANIM_MIRROR}/ThinkingPose.vrma`] },
-      { id: 'WeightShift', urls: [`${CHAT_HOST}/weightShift.vrma`, `${ANIM_MIRROR}/WeightShift.vrma`] },
-      { id: 'HeadNod', urls: [`${CHAT_HOST}/headNod.vrma`, `${ANIM_MIRROR}/HeadNod.vrma`] },
-      { id: 'RelievedSigh', urls: [`${CHAT_HOST}/relievedSigh.vrma`, `${ANIM_MIRROR}/RelievedSigh.vrma`] },
-      { id: 'Cocky', urls: [`${CHAT_HOST}/beingCocky.vrma`, `${ANIM_MIRROR}/Cocky.vrma`] },
-      { id: 'Bashful', urls: [`${CHAT_HOST}/bashful.vrma`, `${ANIM_MIRROR}/Bashful.vrma`] },
-      { id: 'BoredIdle', urls: [`${CHAT_HOST}/boredmelancholyIdle_1.vrma`, `${ANIM_MIRROR}/BoredIdle.vrma`] },
-      { id: 'Acknowledge', urls: [`${CHAT_HOST}/acknowledging.vrma`, `${ANIM_MIRROR}/Acknowledge.vrma`] },
-      { id: 'Sleepy', urls: [`${ANIM_MIRROR}/Sleepy.vrma`] },
-      { id: 'Relax', urls: [`${ANIM_MIRROR}/Relax.vrma`] },
       { id: 'LookAround', urls: [`${ANIM_MIRROR}/LookAround.vrma`] },
+      { id: 'Relax', urls: [`${ANIM_MIRROR}/Relax.vrma`] },
       { id: 'Thinking', urls: [`${ANIM_MIRROR}/Thinking.vrma`] },
+      // optional tail — only enter rotation if fetch succeeds; feet planted + hips yaw-only
+      { id: 'WeightShift', urls: [`${CHAT_HOST}/weightShift.vrma`] },
+      { id: 'StandardIdle', urls: [`${ALT_HOST}/standard_idle.vrma`] },
     ];
     // one-shot dialogue performances (library clips with a real ending)
     // r96 (Master Simon): the move triggers get REAL performances too —
@@ -640,14 +597,16 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       // r59: blend IN from the current (procedural) pose over ~a second —
       // the very first clip no longer pops in from nowhere
       nextIdle(FADE.entry);
-      // r124: the constructor calibrated facing from the RAW rest pose, whose
-      // shoulder line carries a systematic ~10° yaw on several rigs. Once the
-      // entry crossfade has mostly settled her into the idle's natural
-      // stance, re-measure and yaw away the residual — invisible at this
-      // point because the correction is small and she is already in motion.
+      // r124 / r2026-10-12: after the entry crossfade settles, re-measure
+      // facing (yaw) and upright (hips→head pitch/roll) on the inner model.
       {
         const av = avatar;
-        if (av) setTimeout(() => av.recalibrateFacing(), 900);
+        if (av) {
+          setTimeout(() => {
+            av.recalibrateUpright();
+            av.recalibrateFacing();
+          }, 900);
+        }
       }
     };
 
@@ -721,8 +680,21 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
             const q0 = new THREE.Quaternion(v[0]!, v[1]!, v[2]!, v[3]!);
             const fix = hipsRestQ.clone().multiply(q0.invert());
             const q = new THREE.Quaternion();
+            const qYaw = new THREE.Quaternion();
+            const eDelta = new THREE.Euler(0, 0, 0, 'YXZ');
             for (let i = 0; i + 3 < v.length; i += 4) {
               q.set(v[i]!, v[i + 1]!, v[i + 2]!, v[i + 3]!).premultiply(fix);
+              if (lockFeet) {
+                // r2026-10-12: library idles often bake a constant hips pitch/roll
+                // on foreign rigs — after landing frame 0 on our rest, keep only
+                // yaw so the torso stays world-up (facing yaw is fine).
+                q.copy(hipsRestQ.clone().invert().multiply(q));
+                eDelta.setFromQuaternion(q, 'YXZ');
+                eDelta.x = 0;
+                eDelta.z = 0;
+                qYaw.setFromEuler(eDelta);
+                q.copy(hipsRestQ).multiply(qYaw);
+              }
               v[i] = q.x; v[i + 1] = q.y; v[i + 2] = q.z; v[i + 3] = q.w;
             }
           } else if (track.name.endsWith('.position')) {

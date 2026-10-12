@@ -1,0 +1,796 @@
+{
+  "releaseTag": "free-library-want-2026-10-12",
+  "source": "D:\\\\Blender\\\\projects\\\\mon-character\\\\free-library\\\\notes\\\\WANT-LIST-2026-10-12.txt",
+  "count": 46,
+  "defaultCharacterId": "a01-shino",
+  "creditNotes": [
+    "VRoid Sendagaya Shino/Shibu and Sakurada Fumiriya: CC0",
+    "AvatarSample_A/C: VRoid sample terms — commercial OK; do not sell raw VRM alone",
+    "Other Hub/BOOTH free commercial entries: follow each folder README.txt",
+    "Remove kitagawa / kizuna / unverified agent3 cast from public roster"
+  ],
+  "characters": [
+    {
+      "id": "a01-shino",
+      "libraryId": "A01",
+      "name": "Shino",
+      "gender": "female",
+      "accent": "#fb7185",
+      "kidSafe": true,
+      "modelFile": "a01-shino.vrm",
+      "imageFile": "a01-shino.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a01-shino.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a01-shino.png",
+      "sourceFolder": "Shino",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a02-shibu",
+      "libraryId": "A02",
+      "name": "Shibu",
+      "gender": "female",
+      "accent": "#e8c4a0",
+      "kidSafe": true,
+      "modelFile": "a02-shibu.vrm",
+      "imageFile": "a02-shibu.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a02-shibu.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a02-shibu.png",
+      "sourceFolder": "Shibu",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a03-fumiriya",
+      "libraryId": "A03",
+      "name": "Fumiriya",
+      "gender": "female",
+      "accent": "#ff9e7a",
+      "kidSafe": true,
+      "modelFile": "a03-fumiriya.vrm",
+      "imageFile": "a03-fumiriya.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a03-fumiriya.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a03-fumiriya.png",
+      "sourceFolder": "Fumiriya",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a04-avatarsample-a",
+      "libraryId": "A04",
+      "name": "AvatarSample A",
+      "gender": "female",
+      "accent": "#ff8fab",
+      "kidSafe": true,
+      "modelFile": "a04-avatarsample-a.vrm",
+      "imageFile": "a04-avatarsample-a.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a04-avatarsample-a.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a04-avatarsample-a.png",
+      "sourceFolder": "AvatarSample_A",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a05-avatarsample-c",
+      "libraryId": "A05",
+      "name": "AvatarSample C",
+      "gender": "female",
+      "accent": "#ff6b4a",
+      "kidSafe": true,
+      "modelFile": "a05-avatarsample-c.vrm",
+      "imageFile": "a05-avatarsample-c.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a05-avatarsample-c.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a05-avatarsample-c.png",
+      "sourceFolder": "AvatarSample_C",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a10-agahomei-normal",
+      "libraryId": "A10",
+      "name": "AgahoMei Normal",
+      "gender": "female",
+      "accent": "#38bdf8",
+      "kidSafe": true,
+      "modelFile": "a10-agahomei-normal.vrm",
+      "imageFile": "a10-agahomei-normal.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a10-agahomei-normal.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a10-agahomei-normal.png",
+      "sourceFolder": "AgahoMei_Normal",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a14-vivi",
+      "libraryId": "A14",
+      "name": "Vivi",
+      "gender": "female",
+      "accent": "#f9a8d4",
+      "kidSafe": true,
+      "modelFile": "a14-vivi.vrm",
+      "imageFile": "a14-vivi.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a14-vivi.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a14-vivi.png",
+      "sourceFolder": "Vivi",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a16-vita",
+      "libraryId": "A16",
+      "name": "Vita",
+      "gender": "female",
+      "accent": "#c7b9ff",
+      "kidSafe": true,
+      "modelFile": "a16-vita.vrm",
+      "imageFile": "a16-vita.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a16-vita.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a16-vita.png",
+      "sourceFolder": "Vita",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a17-victoria-rubin",
+      "libraryId": "A17",
+      "name": "Victoria Rubin",
+      "gender": "female",
+      "accent": "#ff9ecb",
+      "kidSafe": true,
+      "modelFile": "a17-victoria-rubin.vrm",
+      "imageFile": "a17-victoria-rubin.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a17-victoria-rubin.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a17-victoria-rubin.png",
+      "sourceFolder": "Victoria_Rubin",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a23-hairsample-female",
+      "libraryId": "A23",
+      "name": "HairSample Female",
+      "gender": "female",
+      "accent": "#8b93b8",
+      "kidSafe": true,
+      "modelFile": "a23-hairsample-female.vrm",
+      "imageFile": "a23-hairsample-female.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a23-hairsample-female.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a23-hairsample-female.png",
+      "sourceFolder": "HairSample_Female",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a24-hairsample-male",
+      "libraryId": "A24",
+      "name": "HairSample Male",
+      "gender": "male",
+      "accent": "#a78bfa",
+      "kidSafe": true,
+      "modelFile": "a24-hairsample-male.vrm",
+      "imageFile": "a24-hairsample-male.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a24-hairsample-male.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a24-hairsample-male.png",
+      "sourceFolder": "HairSample_Male",
+      "voiceHint": {
+        "yue": "zh-HK-WanLungNeural",
+        "en": "en-HK-SamNeural"
+      }
+    },
+    {
+      "id": "a61-saori-kamiya-llunne",
+      "libraryId": "A61",
+      "name": "Saori Kamiya Llunne",
+      "gender": "female",
+      "accent": "#34d399",
+      "kidSafe": true,
+      "modelFile": "a61-saori-kamiya-llunne.vrm",
+      "imageFile": "a61-saori-kamiya-llunne.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a61-saori-kamiya-llunne.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a61-saori-kamiya-llunne.png",
+      "sourceFolder": "Saori_Kamiya_Llunne",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a63-hinoame-satuki-mei-sirayuki",
+      "libraryId": "A63",
+      "name": "Hinoame Satuki Mei Sirayuki",
+      "gender": "female",
+      "accent": "#fbbf24",
+      "kidSafe": true,
+      "modelFile": "a63-hinoame-satuki-mei-sirayuki.vrm",
+      "imageFile": "a63-hinoame-satuki-mei-sirayuki.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a63-hinoame-satuki-mei-sirayuki.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a63-hinoame-satuki-mei-sirayuki.png",
+      "sourceFolder": "Hinoame_Satuki_Mei_Sirayuki",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a64-lily-lily-animeit",
+      "libraryId": "A64",
+      "name": "Lily Lily Animeit",
+      "gender": "female",
+      "accent": "#60a5fa",
+      "kidSafe": true,
+      "modelFile": "a64-lily-lily-animeit.vrm",
+      "imageFile": "a64-lily-lily-animeit.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a64-lily-lily-animeit.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a64-lily-lily-animeit.png",
+      "sourceFolder": "Lily_Lily_Animeit",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a70-vtuber-aihina-sample",
+      "libraryId": "A70",
+      "name": "Vtuber Aihina Sample",
+      "gender": "female",
+      "accent": "#f472b6",
+      "kidSafe": true,
+      "modelFile": "a70-vtuber-aihina-sample.vrm",
+      "imageFile": "a70-vtuber-aihina-sample.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a70-vtuber-aihina-sample.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a70-vtuber-aihina-sample.png",
+      "sourceFolder": "Vtuber_Aihina_Sample",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a71-mary-sweety",
+      "libraryId": "A71",
+      "name": "Mary Sweety",
+      "gender": "female",
+      "accent": "#fb7185",
+      "kidSafe": true,
+      "modelFile": "a71-mary-sweety.vrm",
+      "imageFile": "a71-mary-sweety.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a71-mary-sweety.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a71-mary-sweety.png",
+      "sourceFolder": "Mary_Sweety",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a74-mizuka",
+      "libraryId": "A74",
+      "name": "Mizuka",
+      "gender": "female",
+      "accent": "#e8c4a0",
+      "kidSafe": true,
+      "modelFile": "a74-mizuka.vrm",
+      "imageFile": "a74-mizuka.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a74-mizuka.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a74-mizuka.png",
+      "sourceFolder": "Mizuka",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a75-sorano",
+      "libraryId": "A75",
+      "name": "Sorano",
+      "gender": "female",
+      "accent": "#ff9e7a",
+      "kidSafe": true,
+      "modelFile": "a75-sorano.vrm",
+      "imageFile": "a75-sorano.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a75-sorano.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a75-sorano.png",
+      "sourceFolder": "Sorano",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a77-sasha",
+      "libraryId": "A77",
+      "name": "Sasha",
+      "gender": "female",
+      "accent": "#ff8fab",
+      "kidSafe": true,
+      "modelFile": "a77-sasha.vrm",
+      "imageFile": "a77-sasha.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a77-sasha.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a77-sasha.png",
+      "sourceFolder": "Sasha",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a79-amami-karasu",
+      "libraryId": "A79",
+      "name": "Amami Karasu",
+      "gender": "female",
+      "accent": "#ff6b4a",
+      "kidSafe": true,
+      "modelFile": "a79-amami-karasu.vrm",
+      "imageFile": "a79-amami-karasu.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a79-amami-karasu.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a79-amami-karasu.png",
+      "sourceFolder": "Amami_Karasu",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a81-cinna",
+      "libraryId": "A81",
+      "name": "Cinna",
+      "gender": "female",
+      "accent": "#38bdf8",
+      "kidSafe": true,
+      "modelFile": "a81-cinna.vrm",
+      "imageFile": "a81-cinna.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a81-cinna.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a81-cinna.png",
+      "sourceFolder": "Cinna",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a82-renel-bonnie",
+      "libraryId": "A82",
+      "name": "Renel Bonnie",
+      "gender": "female",
+      "accent": "#f9a8d4",
+      "kidSafe": true,
+      "modelFile": "a82-renel-bonnie.vrm",
+      "imageFile": "a82-renel-bonnie.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a82-renel-bonnie.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a82-renel-bonnie.png",
+      "sourceFolder": "Renel_Bonnie",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a83-ao-witch",
+      "libraryId": "A83",
+      "name": "Ao Witch",
+      "gender": "female",
+      "accent": "#c7b9ff",
+      "kidSafe": true,
+      "modelFile": "a83-ao-witch.vrm",
+      "imageFile": "a83-ao-witch.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a83-ao-witch.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a83-ao-witch.png",
+      "sourceFolder": "Ao_Witch",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a85-kara",
+      "libraryId": "A85",
+      "name": "Kara",
+      "gender": "female",
+      "accent": "#ff9ecb",
+      "kidSafe": true,
+      "modelFile": "a85-kara.vrm",
+      "imageFile": "a85-kara.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a85-kara.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a85-kara.png",
+      "sourceFolder": "Kara",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a89-rurina",
+      "libraryId": "A89",
+      "name": "Rurina",
+      "gender": "female",
+      "accent": "#8b93b8",
+      "kidSafe": true,
+      "modelFile": "a89-rurina.vrm",
+      "imageFile": "a89-rurina.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a89-rurina.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a89-rurina.png",
+      "sourceFolder": "Rurina",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a93-edokko",
+      "libraryId": "A93",
+      "name": "Edokko",
+      "gender": "female",
+      "accent": "#a78bfa",
+      "kidSafe": true,
+      "modelFile": "a93-edokko.vrm",
+      "imageFile": "a93-edokko.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a93-edokko.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a93-edokko.png",
+      "sourceFolder": "Edokko",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a94-rita",
+      "libraryId": "A94",
+      "name": "Rita",
+      "gender": "female",
+      "accent": "#34d399",
+      "kidSafe": true,
+      "modelFile": "a94-rita.vrm",
+      "imageFile": "a94-rita.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a94-rita.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a94-rita.png",
+      "sourceFolder": "Rita",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a95-mizu",
+      "libraryId": "A95",
+      "name": "Mizu",
+      "gender": "female",
+      "accent": "#fbbf24",
+      "kidSafe": true,
+      "modelFile": "a95-mizu.vrm",
+      "imageFile": "a95-mizu.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a95-mizu.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a95-mizu.png",
+      "sourceFolder": "Mizu",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a96-pee-aruako",
+      "libraryId": "A96",
+      "name": "Pee Aruako",
+      "gender": "female",
+      "accent": "#60a5fa",
+      "kidSafe": true,
+      "modelFile": "a96-pee-aruako.vrm",
+      "imageFile": "a96-pee-aruako.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a96-pee-aruako.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a96-pee-aruako.png",
+      "sourceFolder": "Pee_Aruako",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a97-pee-saaya",
+      "libraryId": "A97",
+      "name": "Pee Saaya",
+      "gender": "female",
+      "accent": "#f472b6",
+      "kidSafe": true,
+      "modelFile": "a97-pee-saaya.vrm",
+      "imageFile": "a97-pee-saaya.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a97-pee-saaya.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a97-pee-saaya.png",
+      "sourceFolder": "Pee_Saaya",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a98-ethan",
+      "libraryId": "A98",
+      "name": "ETHAN",
+      "gender": "male",
+      "accent": "#fb7185",
+      "kidSafe": true,
+      "modelFile": "a98-ethan.vrm",
+      "imageFile": "a98-ethan.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a98-ethan.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a98-ethan.png",
+      "sourceFolder": "ETHAN",
+      "voiceHint": {
+        "yue": "zh-HK-WanLungNeural",
+        "en": "en-HK-SamNeural"
+      }
+    },
+    {
+      "id": "a99-miyora",
+      "libraryId": "A99",
+      "name": "MIYORA",
+      "gender": "female",
+      "accent": "#e8c4a0",
+      "kidSafe": true,
+      "modelFile": "a99-miyora.vrm",
+      "imageFile": "a99-miyora.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a99-miyora.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a99-miyora.png",
+      "sourceFolder": "MIYORA",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a103-rockredgradientjk",
+      "libraryId": "A103",
+      "name": "RockRedGradientJK",
+      "gender": "female",
+      "accent": "#ff9e7a",
+      "kidSafe": true,
+      "modelFile": "a103-rockredgradientjk.vrm",
+      "imageFile": "a103-rockredgradientjk.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a103-rockredgradientjk.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a103-rockredgradientjk.png",
+      "sourceFolder": "RockRedGradientJK",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a104-simplebrownsailorjk",
+      "libraryId": "A104",
+      "name": "SimpleBrownSailorJK",
+      "gender": "female",
+      "accent": "#ff8fab",
+      "kidSafe": true,
+      "modelFile": "a104-simplebrownsailorjk.vrm",
+      "imageFile": "a104-simplebrownsailorjk.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a104-simplebrownsailorjk.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a104-simplebrownsailorjk.png",
+      "sourceFolder": "SimpleBrownSailorJK",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a105-serizawa-aoi",
+      "libraryId": "A105",
+      "name": "Serizawa Aoi",
+      "gender": "female",
+      "accent": "#ff6b4a",
+      "kidSafe": true,
+      "modelFile": "a105-serizawa-aoi.vrm",
+      "imageFile": "a105-serizawa-aoi.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a105-serizawa-aoi.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a105-serizawa-aoi.png",
+      "sourceFolder": "Serizawa_Aoi",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a106-auroragradhairjk",
+      "libraryId": "A106",
+      "name": "AuroraGradHairJK",
+      "gender": "female",
+      "accent": "#38bdf8",
+      "kidSafe": true,
+      "modelFile": "a106-auroragradhairjk.vrm",
+      "imageFile": "a106-auroragradhairjk.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a106-auroragradhairjk.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a106-auroragradhairjk.png",
+      "sourceFolder": "AuroraGradHairJK",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a107-dm-office-casual",
+      "libraryId": "A107",
+      "name": "DM Office Casual",
+      "gender": "female",
+      "accent": "#f9a8d4",
+      "kidSafe": true,
+      "modelFile": "a107-dm-office-casual.vrm",
+      "imageFile": "a107-dm-office-casual.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a107-dm-office-casual.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a107-dm-office-casual.png",
+      "sourceFolder": "DM_Office_Casual",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a109-riona",
+      "libraryId": "A109",
+      "name": "Riona",
+      "gender": "female",
+      "accent": "#c7b9ff",
+      "kidSafe": true,
+      "modelFile": "a109-riona.vrm",
+      "imageFile": "a109-riona.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a109-riona.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a109-riona.png",
+      "sourceFolder": "Riona",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a112-mahochan-jk",
+      "libraryId": "A112",
+      "name": "Mahochan JK",
+      "gender": "female",
+      "accent": "#ff9ecb",
+      "kidSafe": true,
+      "modelFile": "a112-mahochan-jk.vrm",
+      "imageFile": "a112-mahochan-jk.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a112-mahochan-jk.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a112-mahochan-jk.png",
+      "sourceFolder": "Mahochan_JK",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a114-sailor-cardigan-girl",
+      "libraryId": "A114",
+      "name": "Sailor Cardigan Girl",
+      "gender": "female",
+      "accent": "#8b93b8",
+      "kidSafe": true,
+      "modelFile": "a114-sailor-cardigan-girl.vrm",
+      "imageFile": "a114-sailor-cardigan-girl.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a114-sailor-cardigan-girl.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a114-sailor-cardigan-girl.png",
+      "sourceFolder": "Sailor_Cardigan_Girl",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a116-haru-uniform",
+      "libraryId": "A116",
+      "name": "Haru Uniform",
+      "gender": "female",
+      "accent": "#a78bfa",
+      "kidSafe": true,
+      "modelFile": "a116-haru-uniform.vrm",
+      "imageFile": "a116-haru-uniform.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a116-haru-uniform.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a116-haru-uniform.png",
+      "sourceFolder": "Haru_Uniform",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a117-erigawa-risa",
+      "libraryId": "A117",
+      "name": "Erigawa Risa",
+      "gender": "female",
+      "accent": "#34d399",
+      "kidSafe": true,
+      "modelFile": "a117-erigawa-risa.vrm",
+      "imageFile": "a117-erigawa-risa.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a117-erigawa-risa.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a117-erigawa-risa.png",
+      "sourceFolder": "Erigawa_Risa",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a119-kanami-uniform",
+      "libraryId": "A119",
+      "name": "Kanami Uniform",
+      "gender": "female",
+      "accent": "#fbbf24",
+      "kidSafe": true,
+      "modelFile": "a119-kanami-uniform.vrm",
+      "imageFile": "a119-kanami-uniform.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a119-kanami-uniform.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a119-kanami-uniform.png",
+      "sourceFolder": "Kanami_Uniform",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a120-morikawa-yuki-summer-uniform",
+      "libraryId": "A120",
+      "name": "Morikawa Yuki Summer Uniform",
+      "gender": "female",
+      "accent": "#60a5fa",
+      "kidSafe": true,
+      "modelFile": "a120-morikawa-yuki-summer-uniform.vrm",
+      "imageFile": "a120-morikawa-yuki-summer-uniform.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a120-morikawa-yuki-summer-uniform.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a120-morikawa-yuki-summer-uniform.png",
+      "sourceFolder": "Morikawa_Yuki_Summer_Uniform",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a121-nagano-mami-uniform",
+      "libraryId": "A121",
+      "name": "Nagano Mami Uniform",
+      "gender": "female",
+      "accent": "#f472b6",
+      "kidSafe": true,
+      "modelFile": "a121-nagano-mami-uniform.vrm",
+      "imageFile": "a121-nagano-mami-uniform.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a121-nagano-mami-uniform.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a121-nagano-mami-uniform.png",
+      "sourceFolder": "Nagano_Mami_Uniform",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    },
+    {
+      "id": "a122-shiratori-hikari-shifuku",
+      "libraryId": "A122",
+      "name": "Shiratori Hikari Shifuku",
+      "gender": "female",
+      "accent": "#fb7185",
+      "kidSafe": true,
+      "modelFile": "a122-shiratori-hikari-shifuku.vrm",
+      "imageFile": "a122-shiratori-hikari-shifuku.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a122-shiratori-hikari-shifuku.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a122-shiratori-hikari-shifuku.png",
+      "sourceFolder": "Shiratori_Hikari_Shifuku",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      }
+    }
+  ]
+}

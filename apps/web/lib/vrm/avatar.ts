@@ -192,6 +192,8 @@ export interface Avatar {
    * when shoulders are already square.
    */
   recalibrateFacing(): void;
+  /** r2026-10-12: second upright pass after idle neutral frame settles */
+  recalibrateUpright(): void;
   update(dt: number): void;
 }
 
@@ -226,10 +228,13 @@ const DOWN = new THREE.Vector3(0, -1, 0);
  * ship a rotated root (Z-up exports) and lie flat; the old calibration only
  * yawed the facing, so those models lay on the floor until (unless) their
  * first rebased clip frame corrected them — and generic avatars never get
- * clips. A no-op for upright models (dot(up, +Y) > 0.7), so the rest pose
- * of a well-authored model is never touched. Runs BEFORE facing and arm
+ * clips. Runs BEFORE facing and arm
  * calibration so every later measurement sees a standing body.
+ * r2026-10-12: threshold tightened — the old 0.7 dot (~45°) let ~10° leans
+ * through untouched; now anything past ~3° gets corrected.
  */
+const UPRIGHT_DOT_MIN = 0.998; // cos(~3.6°) — standing straight is baseline
+
 function calibrateUpright(node: THREE.Object3D, hips: THREE.Object3D | null, head: THREE.Object3D | null): void {
   if (!hips || !head) return;
   node.updateMatrixWorld(true);
@@ -238,12 +243,15 @@ function calibrateUpright(node: THREE.Object3D, hips: THREE.Object3D | null, hea
   const up = b.sub(a);
   if (up.lengthSq() < 1e-10) return;
   up.normalize();
-  if (up.dot(UP) > 0.7) return; // already upright — leave the rest pose alone
+  if (up.dot(UP) > UPRIGHT_DOT_MIN) return;
   node.quaternion.premultiply(new THREE.Quaternion().setFromUnitVectors(up, UP));
   node.updateMatrixWorld(true);
 }
 
-/** yaw `node` so the line leftShoulder→rightShoulder implies facing +Z */
+/**
+ * Yaw `node` so the line leftShoulder→rightShoulder implies facing +Z.
+ * Pitch/roll are never touched here — upright is calibrateUpright's job.
+ */
 function calibrateFacing(node: THREE.Object3D, left: THREE.Object3D | null, right: THREE.Object3D | null): void {
   if (!left || !right) return;
   node.updateMatrixWorld(true);
@@ -669,6 +677,14 @@ class V1Avatar implements Avatar {
     );
   }
 
+  recalibrateUpright(): void {
+    calibrateUpright(
+      this.vrm.scene,
+      this.vrm.humanoid?.getNormalizedBoneNode('hips') ?? null,
+      this.vrm.humanoid?.getNormalizedBoneNode('head') ?? null,
+    );
+  }
+
   update(dt: number): void {
     this.vrm.update(dt);
   }
@@ -923,6 +939,14 @@ class GenericAvatar implements Avatar {
       this.inner,
       this.bones.get('leftShoulder') ?? null,
       this.bones.get('rightShoulder') ?? null,
+    );
+  }
+
+  recalibrateUpright(): void {
+    calibrateUpright(
+      this.inner,
+      this.bones.get('hips') ?? null,
+      this.bones.get('head') ?? null,
     );
   }
 

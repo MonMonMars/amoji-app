@@ -10,6 +10,7 @@
 // r2026-10-04.74: ARCHETYPE now covers the whole 33-character cast (r104) — before
 //   this, 16 companions silently shared the cheerful squeak.
 import type { Lang } from './prefs';
+import { WANT_CAST_IDS } from './characters-want';
 
 type CryBank = Record<Lang, string[]>;
 
@@ -49,12 +50,18 @@ const OUCH: Record<string, CryBank> = {
 /**
  * r2026-10-04.74 — one flavor per cast member, covering all 33 companions;
  * kept in lockstep with laugh.ts ARCHETYPE (the cast test pins both maps
- * against CHARACTERS). Flavor follows the persona: idols/besties yelp
+ * against CHARACTERS; want-list ids come from WANT_CAST_IDS). Flavor follows the persona: idols/besties yelp
  * bright (cheerful), sweethearts gasp soft (gentle), composed protectors
  * grunt dry (cool), livewires bark (fiery), mischief-makers squeak (playful).
  */
+const WANT_FLAVORS = ['cheerful', 'playful', 'gentle', 'cool', 'fiery'] as const;
+const WANT_ARCH: Record<string, keyof typeof OUCH> = Object.fromEntries(
+  WANT_CAST_IDS.map((id, i) => [id, WANT_FLAVORS[i % WANT_FLAVORS.length]!]),
+) as Record<string, keyof typeof OUCH>;
+
 export const ARCHETYPE: Record<string, keyof typeof OUCH> = {
-  // playful — mischief-makers
+  ...WANT_ARCH,
+  // playful — mischief-makers (legacy face-lab)
   rin: 'playful', mochi: 'playful', marin: 'playful',
   // cheerful — upbeat idols, hype besties, sunny souls
   juno: 'cheerful', nova: 'cheerful', kizuna: 'cheerful', alicia: 'cheerful',
