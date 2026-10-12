@@ -228,8 +228,7 @@ const DOWN = new THREE.Vector3(0, -1, 0);
  * ship a rotated root (Z-up exports) and lie flat; the old calibration only
  * yawed the facing, so those models lay on the floor until (unless) their
  * first rebased clip frame corrected them — and generic avatars never get
- * clips. A no-op for upright models (dot(up, +Y) > 0.7), so the rest pose
- * of a well-authored model is never touched. Runs BEFORE facing and arm
+ * clips. Runs BEFORE facing and arm
  * calibration so every later measurement sees a standing body.
  * r2026-10-12: threshold tightened — the old 0.7 dot (~45°) let ~10° leans
  * through untouched; now anything past ~3° gets corrected.
@@ -249,7 +248,10 @@ function calibrateUpright(node: THREE.Object3D, hips: THREE.Object3D | null, hea
   node.updateMatrixWorld(true);
 }
 
-/** yaw `node` so the line leftShoulder→rightShoulder implies facing +Z */
+/**
+ * Yaw `node` so the line leftShoulder→rightShoulder implies facing +Z.
+ * Pitch/roll are never touched here — upright is calibrateUpright's job.
+ */
 function calibrateFacing(node: THREE.Object3D, left: THREE.Object3D | null, right: THREE.Object3D | null): void {
   if (!left || !right) return;
   node.updateMatrixWorld(true);

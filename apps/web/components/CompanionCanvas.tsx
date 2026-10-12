@@ -424,10 +424,11 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     );
 
     // -- clip library ---------------------------------------------------------
-    // r2026-10-12: curated standing idles — local mirror clips first (natural
-    // weight shift / look-around / relaxed stance). Remote Mixamo-class clips
-    // only as optional fallbacks for weightShift + headNod. Body-only: faces
-    // stay on the emotion engine.
+    // r2026-10-12 (Mon): short upright standing idle rotation — in-repo
+    // `/models/anims` only for the core set. No Impatient / IdleSassy / chin-
+    // hand / hug / dwarf / cocky / bored idles in the default pool (they read
+    // exaggerated or broken on VRoid companions). Optional remotes load last
+    // and only if reachable; rebaseClipHips pins feet + yaw-only hips on idles.
     const ANIM_MIRROR = `${ASSET_BASE}/models/anims`;
     const CHAT_HOST = 'https://raw.githubusercontent.com/DavinciDreams/3dchat/main/public/animations/vrma';
     const ALT_HOST = 'https://raw.githubusercontent.com/hirokazuniimoto/virtual-avatar-sdk/main/assets/animations';
@@ -439,13 +440,9 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       { id: 'LookAround', urls: [`${ANIM_MIRROR}/LookAround.vrma`] },
       { id: 'Relax', urls: [`${ANIM_MIRROR}/Relax.vrma`] },
       { id: 'Thinking', urls: [`${ANIM_MIRROR}/Thinking.vrma`] },
-      { id: 'Impatient', urls: [`${ANIM_MIRROR}/Impatient.vrma`] },
-      { id: 'IdleChinHand', urls: [`${ANIM_MIRROR}/IdleChinHand.vrma`] },
-      { id: 'IdleSassy', urls: [`${ANIM_MIRROR}/IdleSassy.vrma`] },
-      { id: 'Sleepy', urls: [`${ANIM_MIRROR}/Sleepy.vrma`] },
+      // optional tail — only enter rotation if fetch succeeds; feet planted + hips yaw-only
       { id: 'WeightShift', urls: [`${CHAT_HOST}/weightShift.vrma`] },
-      { id: 'HeadNod', urls: [`${CHAT_HOST}/headNod.vrma`] },
-      { id: 'RelievedSigh', urls: [`${CHAT_HOST}/relievedSigh.vrma`] },
+      { id: 'StandardIdle', urls: [`${ALT_HOST}/standard_idle.vrma`] },
     ];
     // one-shot dialogue performances (library clips with a real ending)
     // r96 (Master Simon): the move triggers get REAL performances too —
@@ -683,8 +680,21 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
             const q0 = new THREE.Quaternion(v[0]!, v[1]!, v[2]!, v[3]!);
             const fix = hipsRestQ.clone().multiply(q0.invert());
             const q = new THREE.Quaternion();
+            const qYaw = new THREE.Quaternion();
+            const eDelta = new THREE.Euler(0, 0, 0, 'YXZ');
             for (let i = 0; i + 3 < v.length; i += 4) {
               q.set(v[i]!, v[i + 1]!, v[i + 2]!, v[i + 3]!).premultiply(fix);
+              if (lockFeet) {
+                // r2026-10-12: library idles often bake a constant hips pitch/roll
+                // on foreign rigs — after landing frame 0 on our rest, keep only
+                // yaw so the torso stays world-up (facing yaw is fine).
+                q.copy(hipsRestQ.clone().invert().multiply(q));
+                eDelta.setFromQuaternion(q, 'YXZ');
+                eDelta.x = 0;
+                eDelta.z = 0;
+                qYaw.setFromEuler(eDelta);
+                q.copy(hipsRestQ).multiply(qYaw);
+              }
               v[i] = q.x; v[i + 1] = q.y; v[i + 2] = q.z; v[i + 3] = q.w;
             }
           } else if (track.name.endsWith('.position')) {
