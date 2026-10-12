@@ -1044,7 +1044,7 @@ export default function ChatPanel({
           nearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
         }}
         className="pointer-events-none w-full select-none space-y-2.5 overflow-y-auto px-2 pb-1 pt-6 [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)] [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)]"
-        style={{ maxHeight: '34vh' }}
+        style={{ maxHeight: '17vh' }}
       >
         {history.length === 0 && <p className="text-center text-white/40">{t(lang, 'sayHi', { name: characterName })}</p>}
         {history.map((m, i) => {
@@ -1168,7 +1168,7 @@ export default function ChatPanel({
         ref={scrollPadRef}
         aria-hidden
         className="absolute inset-x-0 bottom-0 z-0"
-        style={{ height: '33dvh', touchAction: 'none' }}
+        style={{ height: '16.5dvh', touchAction: 'none' }}
       />
     </div>
   );
