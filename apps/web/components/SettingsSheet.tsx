@@ -320,7 +320,7 @@ export default function SettingsSheet({
               className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full"
               style={{ boxShadow: `0 0 0 2px ${accent}, 0 4px 14px -4px ${accent}` }}
             >
-              <ModelThumb url={me.model} accent={me.accent} name={me.name} image={me.image} bakedId={me.id} />
+              <ModelThumb url={me.model} accent={me.accent} name={me.name} image={me.image} />
             </span>
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-1.5 text-base font-semibold text-white">
