@@ -145,6 +145,23 @@ Additional dormant clips ship on disk for future triggers (see repo `anims/` dir
 | cast/kitagawa.vrm, cast/kizuna.vrm, etc. | Retired unverified agent3 roster — not in want-list release. |
 | juno.vrm (Kizuna AI "Kamatte") | Never committed; public builds use seed-san.vrm. |
 
+## Modular head / body GLBs — drop-in, not committed here
+
+Female demo wardrobe (head = identity, body = outfit). The viewer loads these when the files exist and otherwise keeps the single-VRM path. **Do not re-split. Do not rescale the head.** Copy instructions: `modular/README.md`. Source folder on Mon's PC: `D:\Blender\projects\mon-character\free-library\modular\`.
+
+| Path | Role |
+|---|---|
+| modular/A02/A02_head.glb | Shibu head (identity) |
+| modular/A02/A02_body.glb | Shibu outfit |
+| modular/A10/A10_head.glb | AgahoMei Normal head (identity) |
+| modular/A10/A10_body.glb | AgahoMei outfit |
+| modular/A119/A119_head.glb | Kanami Uniform head (identity) |
+| modular/A119/A119_body.glb | Kanami outfit |
+| modular/A120/A120_head.glb | present in the library; not a demo identity |
+| modular/A120/A120_body.glb | Morikawa Yuki Summer Uniform outfit |
+| modular/A106/A106_head.glb | present in the library; not a demo identity |
+| modular/A106/A106_body.glb | AuroraGradHairJK outfit |
+
 ## Companion art — outside this directory
 
 Portraits for the want-list cast are the release PNGs (https URLs in `prefs.ts`). Legacy `/portraits/*` art remains for retired characters / face-lab only.

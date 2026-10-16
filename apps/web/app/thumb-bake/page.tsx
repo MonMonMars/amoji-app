@@ -143,7 +143,12 @@ export default function ThumbBakePage() {
   const [done, setDone] = useState<{ ok: string[]; fail: string[] } | null>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const ranRef = useRef(false);
-  const isLocal = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  // Same value on the server and the first client render. Reading window
+  // during render mismatches hydration and the studio never starts.
+  const [isLocal, setIsLocal] = useState(false);
+  useEffect(() => {
+    setIsLocal(['localhost', '127.0.0.1'].includes(window.location.hostname));
+  }, []);
 
   useEffect(() => {
     if (!isLocal || ranRef.current) return;
@@ -184,10 +189,14 @@ export default function ThumbBakePage() {
         idleAnim = (g as unknown as { userData: { vrmAnimations: VRMAnimation[] } }).userData.vrmAnimations?.[0] ?? null;
       } catch { /* no idle on the mirror — procedural fallback below */ }
 
-      for (const c of CHARACTERS) {
+      const wanted = new URLSearchParams(window.location.search).get('ids');
+      const queue = wanted
+        ? CHARACTERS.filter((c) => wanted.split(',').map((s) => s.trim()).includes(c.id))
+        : CHARACTERS;
+      for (const c of queue) {
         const label = `#${c.id} ${c.name}`;
         const prog = (s: string) => {
-          window.__bakeProgress = `${ok.length + fail.length + 1}/${CHARACTERS.length} ${label}: ${s}`;
+          window.__bakeProgress = `${ok.length + fail.length + 1}/${queue.length} ${label}: ${s}`;
           setLog((l) => [...l.slice(-60), `${label} — ${s}`]);
         };
         let root: THREE.Object3D | null = null;

@@ -176,11 +176,11 @@ export default function HScrollRow({
       : 'cursor-default opacity-30');
 
   return (
-    <div className="relative">
+    <div className="relative min-w-0 w-full">
       <div
         ref={ref}
         aria-label={ariaLabel}
-        className="flex gap-3 overflow-x-auto scroll-smooth px-1 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex w-full min-w-0 flex-nowrap gap-2 overflow-x-auto overscroll-x-contain scroll-smooth px-1 py-1.5 [scrollbar-width:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden"
       >
         {children}
       </div>
