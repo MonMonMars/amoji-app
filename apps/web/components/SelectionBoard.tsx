@@ -42,7 +42,7 @@
 // (h-44) and the cutout is cropped to the WHOLE body inside the card (96% of
 // its height, anchored to the floor line) instead of overflowing it from the
 // waist up.
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import HScrollRow from './HScrollRow';
 import SceneBackdrop from './SceneBackdrop';
@@ -67,9 +67,10 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   const lang = live.lang;
   const langNative = LANGS.find((l) => l.id === lang)?.native ?? lang;
   const dirty = draft !== null;
-  // Official front still (free-library release PNG). Same URL as the small
-  // row chips — never a cast-cutout or cast-thumbs bake (those face the back).
-  const frontSrc = assetUrl(character.image ?? `/portraits/${character.id}.jpg`);
+
+  // Front release PNG (character.image). A failed load becomes a monogram.
+  const [portraitOk, setPortraitOk] = useState(true);
+  useEffect(() => { setPortraitOk(true); }, [character.id]);
 
   // Kid Mode filters the board to the wholesome cast + sunny scenes.
   const cast = prefs.kidMode ? CHARACTERS.filter((c) => c.kidSafe) : CHARACTERS;
@@ -105,63 +106,57 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
         <span className="text-xs text-white/30">{APP_REVISION}</span>
       </header>
 
-      {/* row 0 — MAIN visual: selected character (front still) on the
-          selected scene. This card is the largest image on the page.
-          Rows below stay small chips. */}
-      <div className="fx-rise mx-5 mt-4" style={{ '--d': '20ms' } as CSSProperties}>
-        <div className="fx-sheen relative h-72 overflow-hidden rounded-3xl border border-white/10 sm:h-80">
+      {/* Top row: the SELECTED character and SELECTED background are the
+          main visual. Everything under this card is a smaller thumbnail. */}
+      <div
+        data-testid="selection-hero"
+        className="fx-rise mx-5 mt-3 min-h-0 flex-1"
+        style={{ '--d': '20ms' } as CSSProperties}
+      >
+        <div className="fx-sheen relative h-full min-h-[36vh] overflow-hidden rounded-3xl border border-white/10">
           <SceneBackdrop background={background} />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={frontSrc}
-            alt={character.name}
-            draggable={false}
-            className="absolute bottom-1 right-2 h-[92%] w-auto max-w-[62%] object-contain object-bottom drop-shadow-[0_12px_22px_rgba(0,0,0,0.55)]"
-            style={{ filter: `drop-shadow(0 12px 22px rgba(0,0,0,0.55)) drop-shadow(0 0 28px ${character.accent}55)` }}
-          />
-          <div className="absolute inset-0 flex items-end p-4">
-            <div className="flex max-w-[46%] flex-col items-start gap-2 pb-0.5">
-              <span
-                className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border-2 bg-black/40"
-                style={{ borderColor: character.accent, boxShadow: `0 8px 24px -8px ${character.accent}aa` }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={frontSrc}
-                  alt=""
-                  draggable={false}
-                  className="absolute inset-0 h-full w-full object-cover object-center"
-                />
-              </span>
-              <div className="min-w-0">
-                <p className="text-xl font-bold drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
-                  {character.name}
-                  <span className="ml-1.5 text-xs font-normal text-white/70">{character.gender === 'female' ? '♀' : '♂'}</span>
+          {portraitOk && character.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={assetUrl(character.image)}
+              alt={character.name}
+              draggable={false}
+              onError={() => setPortraitOk(false)}
+              className="absolute bottom-0 left-1/2 h-[88%] w-auto max-w-[78%] -translate-x-1/2 object-contain object-bottom"
+              style={{ filter: `drop-shadow(0 14px 24px rgba(0,0,0,0.55)) drop-shadow(0 0 28px ${character.accent}55)` }}
+            />
+          ) : (
+            <span
+              className="absolute left-1/2 top-[14%] flex h-40 w-40 -translate-x-1/2 items-center justify-center rounded-[2rem] text-6xl font-bold text-black/70"
+              style={{ background: `radial-gradient(circle at 35% 30%, #ffffffcc, ${character.accent})` }}
+            >
+              {character.name.trim().charAt(0).toUpperCase()}
+            </span>
+          )}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/70 to-transparent p-4">
+            <div className="min-w-0">
+              <p className="text-2xl font-bold drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
+                {character.name}
+                <span className="ml-1.5 text-sm font-normal text-white/70">{character.gender === 'female' ? '♀' : '♂'}</span>
+              </p>
+              <p className="truncate text-sm text-white/80 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                {character.tagline[lang] ?? character.tagline.en}
+              </p>
+              {mode === 'change' && (
+                <p className="mt-0.5 text-[10px] uppercase tracking-widest text-white/55">
+                  {dirty ? t(lang, 'previewNew') : t(lang, 'previewCurrent')}
                 </p>
-                <p className="truncate text-xs text-white/75 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                  {character.tagline[lang] ?? character.tagline.en}
-                </p>
-                {mode === 'change' && (
-                  <p className="mt-0.5 text-[10px] uppercase tracking-widest text-white/45">
-                    {dirty ? t(lang, 'previewNew') : t(lang, 'previewCurrent')}
-                  </p>
-                )}
-              </div>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="rounded-full bg-black/45 px-3 py-1 text-[11px] font-medium backdrop-blur-md">
-                  {t(lang, background.nameKey as never)}
-                </span>
-                <span className="rounded-full bg-black/45 px-3 py-1 text-[11px] font-semibold backdrop-blur-md">
-                  {langNative}
-                </span>
-              </div>
+              )}
             </div>
+            <span className="shrink-0 rounded-full bg-black/55 px-3 py-1.5 text-xs font-medium backdrop-blur-md">
+              {t(lang, background.nameKey as never)} · {langNative}
+            </span>
           </div>
         </div>
       </div>
 
       {/* rows 1-3 + reserved future row */}
-      <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+      <div data-testid="selection-thumbs" className="shrink-0 space-y-1 overflow-hidden px-4 pb-1">
         <section className="fx-rise" style={{ '--d': '70ms' } as CSSProperties}>
           <h2 className="mb-0.5 pl-1 text-xs font-medium uppercase tracking-widest text-white/50">
             {t(lang, 'chooseCharacter')}
@@ -178,7 +173,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                   key={c.id}
                   data-row-item={c.id}
                   onClick={() => pick({ character: c.id })}
-                  className={`ui-card relative flex w-24 shrink-0 flex-col items-center gap-1.5 rounded-2xl border p-2.5 ${
+                  className={`ui-card relative flex w-[4.75rem] shrink-0 snap-start flex-col items-center gap-1 rounded-xl border p-1.5 ${
                     active ? 'border-transparent bg-white/10' : 'border-white/10 bg-white/5 hover:bg-white/10'
                   }`}
                   style={active ? { boxShadow: `0 0 0 2px ${c.accent}, 0 10px 30px -12px ${c.accent}` } : undefined}
@@ -190,20 +185,23 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                       thumbnails and the arrows; the ring makes it readable on
                       any accent color. */}
                   <span
-                    className="absolute -right-1.5 -top-1.5 z-20 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-neutral-950 px-1.5 text-[11px] font-extrabold text-neutral-950 shadow-[0_2px_10px_rgba(0,0,0,0.6)]"
+                    className="absolute -right-1 -top-1 z-20 flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-neutral-950 px-1 text-[8px] font-extrabold text-neutral-950 shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
                     style={{ background: c.accent }}
                     title={`#${num}`}
                   >
                     {num}
                   </span>
                   <span
-                    className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-black/40"
+                    className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-black/40"
                     style={active ? { boxShadow: `0 0 0 2px ${c.accent}` } : undefined}
                   >
+                    {/* r104: runtime-rendered cached thumbnail (falls back to
+                        painted art / accent monogram) instead of a live bust.
+                        r114: pre-baked posed screenshot wins when present. */}
                     <ModelThumb url={c.model} accent={c.accent} name={c.name} image={c.image} />
                   </span>
-                  <span className="text-xs font-semibold">{c.name}</span>
-                  <span className="text-[10px] leading-none text-white/40">{c.gender === 'female' ? '♀' : '♂'}</span>
+                  <span className="max-w-full truncate text-[9px] font-semibold leading-tight">{c.name}</span>
+                  <span className="text-[8px] leading-none text-white/40">{c.gender === 'female' ? '♀' : '♂'}</span>
                 </button>
               );
             })}
@@ -222,11 +220,11 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                   key={b.id}
                   data-row-item={b.id}
                   onClick={() => pick({ background: b.id })}
-                  className={`ui-card w-36 shrink-0 overflow-hidden rounded-2xl border ${
+                  className={`ui-card w-24 shrink-0 snap-start overflow-hidden rounded-xl border ${
                     active ? 'border-white/80' : 'border-white/10 hover:border-white/40'
                   }`}
                 >
-                  <span className="relative block h-20 w-full" style={{ background: b.css }}>
+                  <span className="relative block h-12 w-full" style={{ background: b.css }}>
                     {b.image && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -237,7 +235,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                       />
                     )}
                   </span>
-                  <span className="block bg-black/50 px-2 py-1.5 text-left text-[11px] text-white/75">{t(lang, b.nameKey as never)}</span>
+                  <span className="block truncate bg-black/50 px-1 py-0.5 text-left text-[8px] leading-tight text-white/75">{t(lang, b.nameKey as never)}</span>
                 </button>
               );
             })}
@@ -256,7 +254,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                   key={l.id}
                   data-row-item={l.id}
                   onClick={() => pick({ lang: l.id })}
-                  className={`ui-btn shrink-0 rounded-full px-6 py-2.5 text-sm font-medium hover:scale-105 ${
+                  className={`ui-btn shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium hover:scale-105 ${
                     active ? 'bg-white text-black' : 'bg-white/10 text-white/75 hover:bg-white/20'
                   }`}
                 >
@@ -274,7 +272,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
-                className="ui-card flex h-[104px] w-32 shrink-0 items-center justify-center rounded-2xl border border-dashed border-white/10 text-xs text-white/25"
+                className="ui-card flex h-12 w-16 shrink-0 items-center justify-center rounded-xl border border-dashed border-white/10 text-[9px] text-white/25"
               >
                 {t(lang, 'comingSoon')}
               </div>
@@ -287,7 +285,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
       <div className="fx-rise flex justify-center pb-6 pt-2" style={{ '--d': '310ms' } as CSSProperties}>
         <button
           onClick={confirm}
-          className="ui-btn ui-btn-primary rounded-full bg-white px-10 py-3.5 text-base font-semibold text-black shadow-[0_10px_40px_-10px_rgba(255,255,255,0.4)]"
+          className="ui-btn ui-btn-primary rounded-full bg-white px-8 py-2.5 text-sm font-semibold text-black shadow-[0_10px_40px_-10px_rgba(255,255,255,0.4)]"
         >
           {mode === 'change' ? t(lang, 'changeCta') : t(lang, 'confirmCta', { name: character.name })}
         </button>

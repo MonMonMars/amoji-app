@@ -310,6 +310,34 @@ const PHALANGES = ['Proximal', 'Intermediate', 'Distal'] as const;
 const FINGER_BONE_NAMES: string[] = SIDES.flatMap((s) =>
   FINGERS.flatMap((f) => PHALANGES.map((p) => `${s}${f}${p}`)));
 
+// VRoid joint names on modular GLBs that Blender exported without a
+// VRMC_vrm humanoid block. Used only when the extension map has no head.
+const VROID_TO_HUMANOID: Record<string, string> = {
+  J_Bip_C_Hips: 'hips',
+  J_Bip_C_Spine: 'spine',
+  J_Bip_C_Chest: 'chest',
+  J_Bip_C_Neck: 'neck',
+  J_Bip_C_Head: 'head',
+  J_Bip_L_Shoulder: 'leftShoulder',
+  J_Bip_R_Shoulder: 'rightShoulder',
+  J_Bip_L_UpperArm: 'leftUpperArm',
+  J_Bip_R_UpperArm: 'rightUpperArm',
+  J_Bip_L_LowerArm: 'leftLowerArm',
+  J_Bip_R_LowerArm: 'rightLowerArm',
+  J_Bip_L_Hand: 'leftHand',
+  J_Bip_R_Hand: 'rightHand',
+  J_Bip_L_UpperLeg: 'leftUpperLeg',
+  J_Bip_R_UpperLeg: 'rightUpperLeg',
+};
+
+function vroidFingerHumanoid(boneName: string): string | null {
+  const m = /^J_Bip_([LR])_(Thumb|Index|Middle|Ring|Little)([123])$/.exec(boneName);
+  if (!m) return null;
+  const side = m[1] === 'L' ? 'left' : 'right';
+  const ph = m[3] === '1' ? 'Proximal' : m[3] === '2' ? 'Intermediate' : 'Distal';
+  return `${side}${m[2]}${ph}`;
+}
+
 /** calibrated relaxed curl per finger, radians per phalange (proximal→distal) — 15–33° */
 const RELAXED_CURL: Record<(typeof FINGERS)[number], readonly [number, number, number]> = {
   Thumb: [0.35, 0.30, 0.28],
@@ -772,7 +800,32 @@ class GenericAvatar implements Avatar {
     if (v1?.humanoid?.humanBones) {
       for (const [bone, ref] of Object.entries(v1.humanoid.humanBones)) put(bone, ref?.node);
     }
+    // Modular head/body GLBs keep the VRoid names and often drop the
+    // VRMC_vrm extension. Resolve those joints directly — no rescale.
+    if (!this.bones.has('head')) this.resolveVroidBones(gltf.scene);
     if (!this.bones.has('head')) throw new Error('no humanoid head bone — not a usable avatar');
+  }
+
+  private resolveVroidBones(root: THREE.Object3D): void {
+    const found = new Map<string, THREE.Object3D>();
+    root.traverse((o) => {
+      if (!o.name) return;
+      if (!VROID_TO_HUMANOID[o.name] && !vroidFingerHumanoid(o.name)) return;
+      const prev = found.get(o.name);
+      const boneLike = (o as THREE.Bone).isBone === true;
+      if (!prev || boneLike) found.set(o.name, o);
+    });
+    const putNamed = (human: string, node: THREE.Object3D) => {
+      if ((BONE_NAMES as readonly string[]).includes(human)) {
+        this.bones.set(human as BoneName, node);
+      } else if ((FINGER_BONE_NAMES as readonly string[]).includes(human)) {
+        this.fingers.set(human, node);
+      }
+    };
+    for (const [name, node] of found) {
+      const human = VROID_TO_HUMANOID[name] ?? vroidFingerHumanoid(name);
+      if (human) putNamed(human, node);
+    }
   }
 
   private resolveExpressions(gltf: GLTF, json: Record<string, unknown>): void {

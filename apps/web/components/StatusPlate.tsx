@@ -62,6 +62,9 @@ export default function StatusPlate({
   kid?: boolean;
   onOpenSelect: () => void;
 }) {
+  const [faceOk, setFaceOk] = useState(true);
+  useEffect(() => { setFaceOk(true); }, [portrait]);
+
   const [mood, setMood] = useState<MoodId>('neutral');
   useEffect(() => {
     const id = setInterval(() => setMood(dominantMood(getLatestFrame())), 250);
@@ -118,9 +121,15 @@ export default function StatusPlate({
           className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-black/70"
           style={{ background: portrait ? '#0b0b12' : `radial-gradient(circle at 35% 30%, #ffffffcc, ${accent})` }}
         >
-          {portrait ? (
+          {portrait && faceOk ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={assetUrl(portrait)} alt={name} draggable={false} className="h-full w-full object-cover object-top" />
+            <img
+              src={assetUrl(portrait)}
+              alt={name}
+              draggable={false}
+              onError={() => setFaceOk(false)}
+              className="h-full w-full object-cover object-top"
+            />
           ) : (
             name[0]
           )}
