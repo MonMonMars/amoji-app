@@ -22,8 +22,10 @@
 // token / blocked network) the browser-voice fallback now takes over in half
 // the time, so a dead endpoint reads as a voice switch, not a long silence.
 import { characterById, CHARACTERS } from './prefs';
+import { pinDefaultOutput } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 import { characterVoiceGender } from './voice-gender';
+import { edgeVoiceId, isFemaleNeuralVoice, isMaleNeuralVoice } from './voice-catalog';
 
 // r2026-10-04.89: timeout 7s → 4.5s — the Google-TTS mid tier in voice.ts now
 // catches a dead socket even faster; and stopEdge() finally rejects the
@@ -127,19 +129,24 @@ const CAST: Record<string, Record<string, string>> = {
 function voiceFor(opts: EdgeVoiceOpts): { name: string; ssmlLang: string } {
   const v = VOICES[opts.lang] ?? VOICES.en!;
   const gender = opts.character ? characterVoiceGender(opts.character) : opts.gender;
+  let name = edgeVoiceId(opts.lang, gender);
   if (opts.character) {
     const inWant = CHARACTERS.some((c) => c.id === opts.character);
     const casted = CAST[opts.character]?.[opts.lang];
-    if (!inWant && casted) return { name: casted, ssmlLang: v.ssmlLang };
-    const ch = characterById(opts.character);
-    if (inWant) {
-      if (opts.lang === 'yue' && ch.voiceHint?.yue) return { name: ch.voiceHint.yue, ssmlLang: v.ssmlLang };
-      if (opts.lang === 'en' && ch.voiceHint?.en) return { name: ch.voiceHint.en, ssmlLang: v.ssmlLang };
+    // Want-list ids follow the gender catalog (HiuMaan / WanLung, …).
+    // Legacy cast ids keep their matrix when it matches gender.
+    if (!inWant && casted) name = casted;
+    else if (inWant) {
+      const ch = characterById(opts.character);
+      const hinted = opts.lang === 'yue' ? ch.voiceHint?.yue : opts.lang === 'en' ? ch.voiceHint?.en : undefined;
+      if (hinted) {
+        const hintOk = gender === 'male' ? isMaleNeuralVoice(hinted) : isFemaleNeuralVoice(hinted);
+        if (hintOk && !(gender === 'female' && opts.lang === 'yue')) name = hinted;
+      }
     }
-    if (casted) return { name: casted, ssmlLang: v.ssmlLang };
-    return { name: gender === 'male' ? v.male : v.female, ssmlLang: v.ssmlLang };
   }
-  const name = gender === 'male' ? v.male : v.female;
+  if (gender === 'female' && isMaleNeuralVoice(name)) name = edgeVoiceId(opts.lang, 'female');
+  if (gender === 'male' && isFemaleNeuralVoice(name)) name = edgeVoiceId(opts.lang, 'male');
   return { name, ssmlLang: v.ssmlLang };
 }
 
@@ -395,6 +402,7 @@ export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
 function playMp3Blob(blob: Blob, opts: EdgeVoiceOpts, resolve: () => void, reject: (err: Error) => void): void {
   const url = URL.createObjectURL(blob);
   const audio = new Audio(url);
+  pinDefaultOutput(audio);
   applyPlaybackVolume(audio);
   currentAudio = audio;
   // r99: the caller learns the instant media playback actually begins —

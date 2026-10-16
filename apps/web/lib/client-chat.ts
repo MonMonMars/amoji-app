@@ -62,6 +62,7 @@
 import { analyzeText } from '@amoji/emotion-core';
 import { BASE_SYSTEM, languageBlock, parseEmotionHints, type ChatMessage } from './llm';
 import { BRAIN_SPECS, markBrainDead, pickBrain, type BrainSpec } from './brain';
+import { cleanForDisplay } from './speak-text';
 
 export interface ClientChatResult { reply: string; emotionHints: Record<string, number> }
 
@@ -86,7 +87,10 @@ export function trimHistoryForPrompt(messages: ChatMessage[]): ChatMessage[] {
  *  shared queue can land on different workers, and any alias that no longer
  *  exists rejects immediately without slowing the race.
  *  r97: openai-fast (GPT-OSS-20B) leads; plain 'openai' is its alias backup. */
-export const RACE_MODELS = ['openai-fast', 'openai', 'mistral', 'llama'];
+/** Anonymous Pollinations currently serves only GPT-OSS-20B (reasoning) and
+ *  its `openai` alias. Dead ids (mistral, llama) 404. Two live aliases race
+ *  so the faster worker wins. `reasoning_effort: low` keeps first token short. */
+export const RACE_MODELS = ['openai-fast', 'openai'];
 const RACER_BUDGET_MS = 14_000;
 const KEYED_BUDGET_MS = 20_000;
 
@@ -340,10 +344,13 @@ function launchRacer(
         body: JSON.stringify({
           model,
           messages: [{ role: 'system', content: system }, ...messages],
-          temperature: 0.85,
+          temperature: 0.7,
+          // The only keyless model is a reasoning model. Low effort skips the
+          // long hidden chain so the first spoken token arrives sooner.
+          reasoning_effort: 'low',
           // r126 — tail cap: 1-3 cozy sentences by design; capping shaves the
           // last seconds off reasoning-prone free models without biting text
-          max_tokens: 240,
+          max_tokens: 180,
           stream: true,
         }),
       });
@@ -453,7 +460,7 @@ async function racedPollinations(
 /** Strip the trailing emotion tag → final chat result. Exported for tests. */
 export function finishReply(content: string): ClientChatResult {
   const hints = parseEmotionHints(content) as Record<string, number>;
-  const reply = content.replace(/\[emotion:\{[^}]*\}\]/, '').trim();
+  const reply = cleanForDisplay(content.replace(/\[emotion:\{[^}]*\}\]/g, ''));
   return { reply: reply || '…', emotionHints: hints };
 }
 
@@ -461,7 +468,7 @@ export async function clientChat(
   messages: ChatMessage[],
   opts?: ClientChatOptions,
 ): Promise<ClientChatResult> {
-  const system = `${BASE_SYSTEM}\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}`;
+  const system = `${BASE_SYSTEM}\nReply in speakable sentences only. Do not show chain-of-thought, markdown, code, or emotion labels in the prose. The only machine tag is the final [emotion:{...}] line.\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}`;
   const recent = trimHistoryForPrompt(messages);
   const lastUser = recent[recent.length - 1]?.content ?? '';
   const first = pickBrain();

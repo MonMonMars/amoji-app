@@ -55,6 +55,11 @@ import {
   type Prefs,
 } from '../lib/prefs';
 
+/** Old cast ids that actually have a full-body still. Want-list ids reuse the release PNG. */
+const FULL_BODY_CUTOUTS = new Set([
+  'aera', 'alicia', 'dhahlia', 'ember', 'kasumi', 'kitagawa', 'kizuna', 'marin', 'nova', 'onyx',
+]);
+
 export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   const router = useRouter();
   const [prefs, setPrefs] = usePrefs();
@@ -70,7 +75,8 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
 
   // Front release PNG (character.image). A failed load becomes a monogram.
   const [portraitOk, setPortraitOk] = useState(true);
-  useEffect(() => { setPortraitOk(true); }, [character.id]);
+  const [bodyOk, setBodyOk] = useState(true);
+  useEffect(() => { setPortraitOk(true); setBodyOk(true); }, [character.id]);
 
   // Kid Mode filters the board to the wholesome cast + sunny scenes.
   const cast = prefs.kidMode ? CHARACTERS.filter((c) => c.kidSafe) : CHARACTERS;
@@ -86,87 +92,103 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
     router.push('/chat');
   };
 
-  return (
-    <main className="fx-page flex h-dvh flex-col overflow-hidden bg-neutral-950 text-white">
-      <header className="flex items-center justify-between px-5 pt-5">
-        <div className="flex items-center gap-2">
-          {mode === 'change' && (
-            <button
-              onClick={() => router.push('/chat')}
-              aria-label={t(lang, 'back')}
-              className="ui-btn mr-1 flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 text-sm text-white/70 hover:bg-white/15"
-            >
-              ←
-            </button>
-          )}
-          <span className="h-3 w-3 rounded-full bg-pink-400" />
-          <h1 className="text-lg font-bold tracking-tight">Amoji</h1>
-          {prefs.kidMode && <span className="text-base" title="Kid mode">🧸</span>}
-        </div>
-        <span className="text-xs text-white/30">{APP_REVISION}</span>
-      </header>
+  const cutout = FULL_BODY_CUTOUTS.has(character.id) ? `/cast-cutout/${character.id}.png` : null;
+  const bodySrc = bodyOk && cutout
+    ? assetUrl(cutout)
+    : (portraitOk && character.image ? assetUrl(character.image) : undefined);
 
-      {/* Top row: the SELECTED character and SELECTED background are the
-          main visual. Everything under this card is a smaller thumbnail. */}
-      <div
-        data-testid="selection-hero"
-        className="fx-rise mx-5 mt-3 min-h-0 flex-1"
-        style={{ '--d': '20ms' } as CSSProperties}
-      >
-        <div className="fx-sheen relative h-full min-h-[36vh] overflow-hidden rounded-3xl border border-white/10">
-          <SceneBackdrop background={background} />
-          {portraitOk && character.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={assetUrl(character.image)}
-              alt={character.name}
-              draggable={false}
-              onError={() => setPortraitOk(false)}
-              className="absolute bottom-0 left-1/2 h-[88%] w-auto max-w-[78%] -translate-x-1/2 object-contain object-bottom"
-              style={{ filter: `drop-shadow(0 14px 24px rgba(0,0,0,0.55)) drop-shadow(0 0 28px ${character.accent}55)` }}
-            />
-          ) : (
-            <span
-              className="absolute left-1/2 top-[14%] flex h-40 w-40 -translate-x-1/2 items-center justify-center rounded-[2rem] text-6xl font-bold text-black/70"
-              style={{ background: `radial-gradient(circle at 35% 30%, #ffffffcc, ${character.accent})` }}
-            >
-              {character.name.trim().charAt(0).toUpperCase()}
-            </span>
-          )}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/70 to-transparent p-4">
-            <div className="min-w-0">
-              <p className="text-2xl font-bold drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
-                {character.name}
-                <span className="ml-1.5 text-sm font-normal text-white/70">{character.gender === 'female' ? '♀' : '♂'}</span>
-              </p>
-              <p className="truncate text-sm text-white/80 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                {character.tagline[lang] ?? character.tagline.en}
-              </p>
-              {mode === 'change' && (
-                <p className="mt-0.5 text-[10px] uppercase tracking-widest text-white/55">
-                  {dirty ? t(lang, 'previewNew') : t(lang, 'previewCurrent')}
-                </p>
-              )}
-            </div>
-            <span className="shrink-0 rounded-full bg-black/55 px-3 py-1.5 text-xs font-medium backdrop-blur-md">
-              {t(lang, background.nameKey as never)} · {langNative}
-            </span>
+  return (
+    <main className="fx-page relative h-dvh overflow-hidden bg-neutral-950 text-white">
+      {/* Full-screen preview. Head crop and full-body still sit together.
+          Character, scene, language, and confirm overlap the lower preview. */}
+      <div data-testid="selection-hero" className="absolute inset-0">
+        <SceneBackdrop background={background} />
+        <div className="pointer-events-none absolute inset-0 flex items-end justify-center gap-3 px-3 pb-[6vh] sm:gap-8 sm:px-10">
+          <div
+            className="mb-[16vh] h-[min(50vh,460px)] w-[min(34vw,220px)] shrink-0 overflow-hidden rounded-[1.6rem] border border-white/20 bg-black/25 shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)]"
+            style={{ boxShadow: `0 22px 50px -24px rgba(0,0,0,0.85), 0 0 0 1px ${character.accent}33` }}
+          >
+            {portraitOk && character.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={assetUrl(character.image)}
+                alt=""
+                draggable={false}
+                onError={() => setPortraitOk(false)}
+                className="h-full w-full object-cover object-top"
+              />
+            ) : (
+              <span
+                className="flex h-full w-full items-center justify-center text-5xl font-bold text-black/70"
+                style={{ background: `radial-gradient(circle at 35% 30%, #ffffffcc, ${character.accent})` }}
+              >
+                {character.name.trim().charAt(0).toUpperCase()}
+              </span>
+            )}
+          </div>
+          <div className="relative h-[min(88vh,940px)] w-[min(52vw,440px)] min-w-0">
+            {bodySrc ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={bodySrc}
+                alt={character.name}
+                draggable={false}
+                onError={() => setBodyOk(false)}
+                className="h-full w-full object-contain object-bottom"
+                style={{ filter: `drop-shadow(0 18px 28px rgba(0,0,0,0.55)) drop-shadow(0 0 32px ${character.accent}44)` }}
+              />
+            ) : (
+              <span
+                className="absolute bottom-[18%] left-1/2 flex h-48 w-40 -translate-x-1/2 items-center justify-center rounded-[2rem] text-6xl font-bold text-black/70"
+                style={{ background: `radial-gradient(circle at 35% 30%, #ffffffcc, ${character.accent})` }}
+              >
+                {character.name.trim().charAt(0).toUpperCase()}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
-      {/* rows 1-3 + reserved future row */}
-      <div data-testid="selection-thumbs" className="shrink-0 space-y-1 overflow-hidden px-4 pb-1">
-        <section className="fx-rise" style={{ '--d': '70ms' } as CSSProperties}>
-          <h2 className="mb-0.5 pl-1 text-xs font-medium uppercase tracking-widest text-white/50">
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between px-5 pt-5">
+        <div className="flex items-center gap-2">
+          <span className="h-3 w-3 rounded-full bg-pink-400 shadow-[0_0_12px_rgba(244,114,182,0.8)]" />
+          <h1 className="text-lg font-bold tracking-tight drop-shadow-[0_1px_6px_rgba(0,0,0,0.65)]">Amoji</h1>
+          {prefs.kidMode && <span className="text-base" title="Kid mode">🧸</span>}
+        </div>
+        <span className="text-xs text-white/45">{APP_REVISION}</span>
+      </header>
+
+      <div
+        data-testid="selection-thumbs"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col gap-2.5 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-16"
+      >
+        <div className="flex items-end justify-between gap-3 px-1">
+          <div className="min-w-0">
+            <p className="truncate text-xl font-bold drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)] sm:text-2xl">
+              {character.name}
+              <span className="ml-1.5 text-sm font-normal text-white/75">{character.gender === 'female' ? '♀' : '♂'}</span>
+            </p>
+            <p className="truncate text-sm text-white/80 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+              {character.tagline[lang] ?? character.tagline.en}
+            </p>
+            {mode === 'change' && (
+              <p className="mt-0.5 text-[10px] uppercase tracking-widest text-white/60">
+                {dirty ? t(lang, 'previewNew') : t(lang, 'previewCurrent')}
+              </p>
+            )}
+          </div>
+          <span className="shrink-0 rounded-full bg-black/50 px-3 py-1.5 text-xs font-medium text-white/90 shadow-sm backdrop-blur-md">
+            {t(lang, background.nameKey as never)} · {langNative}
+          </span>
+        </div>
+
+        <section className="pointer-events-auto" style={{ '--d': '70ms' } as CSSProperties}>
+          <h2 className="mb-1 pl-1 text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
             {t(lang, 'chooseCharacter')}
           </h2>
           <HScrollRow ariaLabel="characters" rowKey="characters" selectedId={live.character}>
             {cast.map((c) => {
               const active = c.id === live.character;
-              // Stable cast number — index in the FULL cast + 1, so Kid Mode
-              // filtering never renumbers anyone (numbers are how the user
-              // orders model swaps: "give #7 the new Tifa model").
               const num = CHARACTERS.findIndex((x) => x.id === c.id) + 1;
               return (
                 <button
@@ -178,12 +200,6 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                   }`}
                   style={active ? { boxShadow: `0 0 0 2px ${c.accent}, 0 10px 30px -12px ${c.accent}` } : undefined}
                 >
-                  {/* r78: number badge pinned to the CARD corner, outside the
-                      clipped portrait circle — it used to live at the circle's
-                      top-left, where overflow-hidden trimmed it and the row's
-                      scroll arrows covered it. z-20 keeps it above the
-                      thumbnails and the arrows; the ring makes it readable on
-                      any accent color. */}
                   <span
                     className="absolute -right-1 -top-1 z-20 flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-neutral-950 px-1 text-[8px] font-extrabold text-neutral-950 shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
                     style={{ background: c.accent }}
@@ -195,9 +211,6 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                     className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-black/40"
                     style={active ? { boxShadow: `0 0 0 2px ${c.accent}` } : undefined}
                   >
-                    {/* r104: runtime-rendered cached thumbnail (falls back to
-                        painted art / accent monogram) instead of a live bust.
-                        r114: pre-baked posed screenshot wins when present. */}
                     <ModelThumb url={c.model} accent={c.accent} name={c.name} image={c.image} />
                   </span>
                   <span className="max-w-full truncate text-[9px] font-semibold leading-tight">{c.name}</span>
@@ -208,8 +221,8 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
           </HScrollRow>
         </section>
 
-        <section className="fx-rise" style={{ '--d': '130ms' } as CSSProperties}>
-          <h2 className="mb-0.5 pl-1 text-xs font-medium uppercase tracking-widest text-white/50">
+        <section className="pointer-events-auto">
+          <h2 className="mb-1 pl-1 text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
             {t(lang, 'chooseBackground')}
           </h2>
           <HScrollRow ariaLabel="scenes" rowKey="backgrounds" selectedId={live.background}>
@@ -242,8 +255,8 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
           </HScrollRow>
         </section>
 
-        <section className="fx-rise" style={{ '--d': '190ms' } as CSSProperties}>
-          <h2 className="mb-0.5 pl-1 text-xs font-medium uppercase tracking-widest text-white/50">
+        <section className="pointer-events-auto">
+          <h2 className="mb-1 pl-1 text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
             {t(lang, 'chooseLanguage')}
           </h2>
           <HScrollRow ariaLabel="languages" rowKey="languages" selectedId={live.lang}>
@@ -254,8 +267,8 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                   key={l.id}
                   data-row-item={l.id}
                   onClick={() => pick({ lang: l.id })}
-                  className={`ui-btn shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium hover:scale-105 ${
-                    active ? 'bg-white text-black' : 'bg-white/10 text-white/75 hover:bg-white/20'
+                  className={`ui-btn shrink-0 rounded-full px-3 py-1 text-[11px] font-medium hover:scale-105 ${
+                    active ? 'bg-white text-black shadow-sm' : 'bg-white/10 text-white/80 hover:bg-white/20'
                   }`}
                 >
                   {l.native}
@@ -265,30 +278,14 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
           </HScrollRow>
         </section>
 
-        {/* reserved row — future features land here */}
-        <section className="fx-rise" style={{ '--d': '250ms' } as CSSProperties}>
-          <h2 className="mb-0.5 pl-1 text-xs font-medium uppercase tracking-widest text-white/25">✦</h2>
-          <HScrollRow ariaLabel="future">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="ui-card flex h-12 w-16 shrink-0 items-center justify-center rounded-xl border border-dashed border-white/10 text-[9px] text-white/25"
-              >
-                {t(lang, 'comingSoon')}
-              </div>
-            ))}
-          </HScrollRow>
-        </section>
-      </div>
-
-      {/* confirm — centered at the bottom */}
-      <div className="fx-rise flex justify-center pb-6 pt-2" style={{ '--d': '310ms' } as CSSProperties}>
-        <button
-          onClick={confirm}
-          className="ui-btn ui-btn-primary rounded-full bg-white px-8 py-2.5 text-sm font-semibold text-black shadow-[0_10px_40px_-10px_rgba(255,255,255,0.4)]"
-        >
-          {mode === 'change' ? t(lang, 'changeCta') : t(lang, 'confirmCta', { name: character.name })}
-        </button>
+        <div className="pointer-events-auto flex justify-center pt-1">
+          <button
+            onClick={confirm}
+            className="ui-btn ui-btn-primary rounded-full bg-white px-8 py-2.5 text-sm font-semibold text-black shadow-[0_12px_36px_-12px_rgba(255,255,255,0.55)]"
+          >
+            {mode === 'change' ? t(lang, 'changeCta') : t(lang, 'confirmCta', { name: character.name })}
+          </button>
+        </div>
       </div>
     </main>
   );

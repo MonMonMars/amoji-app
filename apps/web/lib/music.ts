@@ -11,6 +11,8 @@
 // right hand) plus a PERFORMANCE layer so sing/duet/piano music survives
 // the chat pipeline's generic stopMusic() calls for the length of the show.
 
+import { createDefaultAudioContext } from './audio-output';
+
 export interface MusicTheme {
   /** personality group this theme belongs to */
   mood: string;
@@ -160,11 +162,10 @@ function haltBand(): void {
  */
 export function startMusic(characterId: string): void {
   if (typeof window === 'undefined') return;
-  const AC = window.AudioContext ?? (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!AC) return;
   haltBand();
   const theme = getTheme(characterId);
-  const ac = new AC();
+  const ac = createDefaultAudioContext();
+  if (!ac) return;
   ctx = ac;
   const gain = ac.createGain();
   gain.gain.value = theme.volume;
@@ -274,11 +275,10 @@ function haltPiano(): void {
  */
 export function startPiano(characterId: string): void {
   if (typeof window === 'undefined') return;
-  const AC = window.AudioContext ?? (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!AC) return;
   haltPiano();
   const theme = getTheme(characterId);
-  const ac = new AC();
+  const ac = createDefaultAudioContext();
+  if (!ac) return;
   pianoCtx = ac;
   const gain = ac.createGain();
   gain.gain.value = Math.min(0.4, theme.volume * 3.2);

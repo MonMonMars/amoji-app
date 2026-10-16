@@ -62,6 +62,14 @@ export function lastLaughAt(): number { return laughAtMs; }
 // with the backing-track engine, which already owns those).
 let moveAtMs = -Infinity;
 let moveKind: MoveKind | null = null;
+let thinkingPose = false;
+/** Subtle think idle while a reply is generating. No dance, no music. */
+export function setThinkingPose(on: boolean): void {
+  thinkingPose = on;
+}
+export function thinkingPoseActive(): boolean {
+  return thinkingPose;
+}
 export function triggerMove(kind: MoveKind, now = perfNow()): void {
   moveKind = kind;
   moveAtMs = now;

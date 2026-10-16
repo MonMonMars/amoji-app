@@ -11,13 +11,15 @@
 //   thinking time, so they all sound like thinking/searching.
 // Pure data + tiny pickers so it stays unit-testable in node.
 
+import { YUE_THINKING_LINES } from './thinking-lines';
+
 export type LangCode = 'yue' | 'zh' | 'ja' | 'en';
 
 /** below this intensity the emotion is felt in prosody only, not a vocal tic */
 export const INTERJECTION_AT = 0.6;
 
 export const THINKING_FILLERS: Record<LangCode, string[]> = {
-  yue: ['嗯……', '等我諗諗……', '等我上網搵下……', '搵緊呀……', '諗緊諗緊……'],
+  yue: [...YUE_THINKING_LINES],
   zh: ['嗯……', '让我想想……', '我上网搜一下……', '搜索中……', '想一下想一下……'],
   ja: ['うーん……', '考えてる……', '検索してるね……', '調べてる……', 'もう少し……'],
   en: ['hmm……', 'let me think……', 'let me search the internet……', 'still searching……', 'umm, one moment……'],
@@ -30,7 +32,7 @@ export const THINKING_FILLERS: Record<LangCode, string[]> = {
  */
 export const MOOD_FILLERS: Record<string, Record<LangCode, string[]>> = {
   happy: {
-    yue: ['嗯！等我諗下……', '好開心，等我搵下資料……', '等我上網查下先……'],
+    yue: ['嗯，等我諗下先', '好問題嚟嘅，諗下先', '嗯嗯嗯，差唔多諗到喇'],
     zh: ['嗯！让我想想……', '好开心，让我查一下……', '我上网搜搜看……'],
     ja: ['うん！考えてる……', '嬉しい、検索するね……', '調べてるよ……'],
     en: ['hmm, okay! let me think……', 'happy question — searching for it……', 'looking that up……'],

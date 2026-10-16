@@ -10,6 +10,14 @@ import {
 // coexistence, and the proxy URL round-trip.
 
 describe('edgeStyleFor — voice × emotion style resolution (r131)', () => {
+  it('want-list Cantonese follows gender, not a mismatched hint', () => {
+    const female = buildEdgeSsml('你好呀', { lang: 'yue', gender: 'female', character: 'a01-shino' });
+    expect(female).toContain("voice name='zh-HK-HiuMaanNeural'");
+    const male = buildEdgeSsml('你好呀', { lang: 'yue', gender: 'female', character: 'a98-ethan' });
+    expect(male).toContain("voice name='zh-HK-WanLungNeural'");
+    expect(male).not.toContain('HiuMaan');
+  });
+
   it('joy on a zh-CN female voice resolves to cheerful', () => {
     expect(edgeStyleFor('zh-CN-XiaoxiaoNeural', 'joy')).toBe('cheerful');
   });

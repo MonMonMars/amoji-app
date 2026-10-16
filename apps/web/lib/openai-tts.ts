@@ -1,4 +1,5 @@
 'use client';
+import { pinDefaultOutput } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 // ChatGPT-grade emotional TTS — OpenAI gpt-4o-mini-tts (tier 0, r2026-10-05.112).
 // This is the same engine family ChatGPT's Advanced Voice Mode speaks with: the
@@ -253,6 +254,7 @@ export function speakOpenAi(text: string, opts: OpenAiVoiceOpts): Promise<void> 
       pendingReject = null;
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
+      pinDefaultOutput(audio);
       applyPlaybackVolume(audio);
       currentAudio = audio;
       currentUrl = url;

@@ -137,7 +137,7 @@
 // field ("can't click the text box and the mic button"). The input row now
 // carries z-10 so it takes its clicks back.
 import { useEffect, useRef, useState } from 'react';
-import { feedUtterance, applyLlmHints, triggerLaugh, triggerMove } from '../lib/companion';
+import { feedUtterance, applyLlmHints, setThinkingPose, triggerLaugh, triggerMove } from '../lib/companion';
 import { detectMove } from '../lib/moves';
 import { loadHistory, saveHistory } from '../lib/companion-store';
 import { notifySpeaking, isSpeaking } from '../lib/speech';
@@ -230,65 +230,6 @@ export default function ChatPanel({
   // live connection are ready before the first real message is typed/spoken
   useEffect(() => { warmLane(); }, []);
   const scrollRef = useRef<HTMLDivElement>(null);
-  // r2026-10-05.120: the history is display-only — an invisible scroll pad
-  // covering the LOWER THIRD of the screen is the only place that scrolls
-  // it. The top 2/3 passes every touch straight through to the character
-  // (rotate / poke / hand-drag).
-  const scrollPadRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const pad = scrollPadRef.current;
-    const hist = scrollRef.current;
-    if (!pad || !hist) return;
-    let startY = 0;
-    let startScroll = 0;
-    let vel = 0;
-    let lastY = 0;
-    let lastT = 0;
-    let raf = 0;
-    const onTS = (e: TouchEvent) => {
-      cancelAnimationFrame(raf);
-      startY = e.touches[0]!.clientY;
-      lastY = startY;
-      lastT = performance.now();
-      vel = 0;
-      startScroll = hist.scrollTop;
-    };
-    const onTM = (e: TouchEvent) => {
-      e.preventDefault(); // React's synthetic handlers are passive — native isn't
-      const y = e.touches[0]!.clientY;
-      const now = performance.now();
-      const dt = Math.max(now - lastT, 1);
-      vel = 0.7 * vel + 0.3 * ((y - lastY) / dt) * 16; // smoothed px/frame
-      lastY = y;
-      lastT = now;
-      hist.scrollTop = startScroll - (y - startY);
-    };
-    const onTE = () => {
-      // light momentum glide, clamped so it never rubber-bands oddly
-      const glide = () => {
-        vel *= 0.93;
-        if (Math.abs(vel) < 0.4) return;
-        hist.scrollTop = Math.max(0, hist.scrollTop - vel);
-        raf = requestAnimationFrame(glide);
-      };
-      glide();
-    };
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      hist.scrollTop += e.deltaY;
-    };
-    pad.addEventListener('touchstart', onTS, { passive: true });
-    pad.addEventListener('touchmove', onTM, { passive: false });
-    pad.addEventListener('touchend', onTE);
-    pad.addEventListener('wheel', onWheel, { passive: false });
-    return () => {
-      cancelAnimationFrame(raf);
-      pad.removeEventListener('touchstart', onTS);
-      pad.removeEventListener('touchmove', onTM);
-      pad.removeEventListener('touchend', onTE);
-      pad.removeEventListener('wheel', onWheel);
-    };
-  }, []);
   const nearBottomRef = useRef(true);
   const busyRef = useRef(false);
   const lastActivityRef = useRef(Date.now());
@@ -735,6 +676,7 @@ export default function ChatPanel({
     if (feltHints) applyLlmHints(feltHints);
     // "hmm…" thinking moment while the reply generates — mood-tinted (r.24):
     // a sad user's first hmm is softer than a happy one's (reply speech cuts it off)
+    setThinkingPose(true);
     speakThinkingFiller(characterId, lang, felt?.mood);
     // r.47 — ONE transient placeholder bubble carries the whole wait. It
     // starts as '…'; preloaded warm lines (praise, curiosity,
@@ -761,13 +703,6 @@ export default function ChatPanel({
       warmTimer = setTimeout(playWarm, WARMUP_GAP_MS);
     };
     warmTimer = setTimeout(playWarm, WARMUP_FIRST_MS);
-    // r.48 — every few turns the wait itself becomes a show: she breaks into
-    // a dance over her own original theme while her brain works, so a slow
-    // reply reads as a performance, never a loading bar
-    if ((perfCountRef.current += 1) % 3 === 1) {
-      triggerMove('dance');
-      startMusic(characterId);
-    }
     // one exit path for every outcome: the final reply (or the failure note)
     // takes the placeholder's place instead of stacking a second bubble
     const commitReply = (content: string) => {
@@ -901,6 +836,7 @@ export default function ChatPanel({
       }
     } finally {
       clearTimeout(warmTimer); // reply (or failure) is here — stop the warm-up
+      setThinkingPose(false);
       stopMusic(); // r.48 — belt-and-braces: no PLAIN music outlives the turn
       // r86 — a live sing/duet/piano performance survives this stopMusic();
       // it ends on its own performance timer or the next user interrupt
@@ -1044,7 +980,7 @@ export default function ChatPanel({
           const el = e.currentTarget;
           nearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
         }}
-        className="pointer-events-none w-full select-none space-y-2.5 overflow-y-auto px-2 pb-1 pt-6 [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)] [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)]"
+        className="pointer-events-auto w-full touch-pan-y select-none space-y-2.5 overflow-y-auto overscroll-contain px-2 pb-1 pt-6 [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)] [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)]"
         style={{ maxHeight: '17vh' }}
       >
         {history.length === 0 && <p className="text-center text-white/40">{t(lang, 'sayHi', { name: characterName })}</p>}
@@ -1160,17 +1096,6 @@ export default function ChatPanel({
         </button>
       </div>
 
-      {/* r2026-10-05.120 — the only scroll zone. Invisible strip over the
-          lower third of the screen; its JS (mounted above) drags the
-          display-only history. Everything above this strip belongs to the
-          character. r136: the input row above is z-10 so this pad can no
-          longer swallow taps meant for the mic or the text field. */}
-      <div
-        ref={scrollPadRef}
-        aria-hidden
-        className="absolute inset-x-0 bottom-0 z-0"
-        style={{ height: '16.5dvh', touchAction: 'none' }}
-      />
     </div>
   );
 }
