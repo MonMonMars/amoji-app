@@ -74,6 +74,9 @@ import { getPlaybackVolume } from './playback-volume';
 // dhahlia bright-floral, onyx low-male, velara calm-navigator.
 import type { Lang } from './prefs';
 import { characterVoiceGender } from './voice-gender';
+import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
+import { cleanForSpeech } from './speak-text';
+import { synthNameConflicts, synthNameList } from './voice-catalog';
 import { speakEdge, stopEdge, getTtsProxy } from './edge-tts';
 import { speakGtts, stopGtts } from './gtts';
 // r2026-10-05.112: tier 0 — OpenAI gpt-4o-mini-tts (ChatGPT-style emotional
@@ -224,6 +227,7 @@ function playSilentUnblock(): void {
   v.setUint32(40, frames * 2, true);
   const url = URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
   const a = new Audio(url);
+  pinDefaultOutput(a);
   a.volume = 0.06;
   const cleanup = () => URL.revokeObjectURL(url);
   a.onended = cleanup;
@@ -244,10 +248,9 @@ function unlockAudio(): void {
     ctxPrimed = true;
     try { if (typeof speechSynthesis !== 'undefined') speechSynthesis.resume(); } catch { /* ignore */ }
     try {
-      const Ctor = window.AudioContext
-        ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (Ctor) {
-        const ctx = new Ctor();
+      if (typeof window !== 'undefined') {
+        const ctx = createDefaultAudioContext();
+        if (ctx) {
         // a single zero-length buffer is enough to take the context out of
         // "suspended" on iOS without making any audible noise
         const buf = ctx.createBuffer(1, 1, 22050);
@@ -256,6 +259,7 @@ function unlockAudio(): void {
         src.connect(ctx.destination);
         src.start(0);
         void ctx.resume?.();
+        }
       }
     } catch { /* ignore */ }
   }
@@ -879,12 +883,12 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
 
 /** Emotion → prosody for the browser-TTS fallback path (multipliers). */
 const EMOTION_PROSODY: Record<string, { pitch: number; rate: number; vol: number }> = {
-  joy: { pitch: 1.2, rate: 1.12, vol: 1.0 },
+  joy: { pitch: 1.2, rate: 1.15, vol: 1.0 },
   excitement: { pitch: 1.26, rate: 1.18, vol: 1.1 },
   love: { pitch: 1.1, rate: 0.88, vol: 0.95 },
   contentment: { pitch: 1.06, rate: 0.9, vol: 0.92 },
   relief: { pitch: 1.03, rate: 0.94, vol: 0.9 },
-  sadness: { pitch: 0.78, rate: 0.82, vol: 0.8 },
+  sadness: { pitch: 0.78, rate: 0.85, vol: 0.8 },
   shame: { pitch: 0.82, rate: 0.84, vol: 0.78 },
   guilt: { pitch: 0.84, rate: 0.88, vol: 0.8 },
   boredom: { pitch: 0.92, rate: 0.88, vol: 0.82 },
@@ -908,12 +912,12 @@ const EMOTION_PROSODY: Record<string, { pitch: number; rate: number; vol: number
  * human (edge voices distort fast past ±0.35 pitch).
  */
 const NEURAL_PROSODY: Record<string, { rate: number; pitch: number; vol: number }> = {
-  joy: { rate: 0.14, pitch: 0.16, vol: 0.16 },
+  joy: { rate: 0.15, pitch: 0.16, vol: 0.16 },
   excitement: { rate: 0.24, pitch: 0.2, vol: 0.3 },
   love: { rate: -0.09, pitch: 0.07, vol: -0.08 },
   contentment: { rate: -0.1, pitch: 0.02, vol: -0.14 },
   relief: { rate: -0.08, pitch: 0.02, vol: -0.14 },
-  sadness: { rate: -0.24, pitch: -0.12, vol: -0.32 },
+  sadness: { rate: -0.15, pitch: -0.12, vol: -0.32 },
   shame: { rate: -0.16, pitch: -0.08, vol: -0.3 },
   guilt: { rate: -0.14, pitch: -0.06, vol: -0.28 },
   boredom: { rate: -0.13, pitch: -0.05, vol: -0.24 },
@@ -979,28 +983,37 @@ if (typeof speechSynthesis !== 'undefined') {
   speechSynthesis.onvoiceschanged = refresh;
 }
 
+const SYNTH_LOCALE: Record<Lang, string> = {
+  yue: 'zh-HK',
+  zh: 'zh-CN',
+  ja: 'ja-JP',
+  en: 'en-US',
+};
+
 function pickVoice(characterId: string, lang: Lang): { voice: SpeechSynthesisVoice | null; pitch: number; rate: number } {
   refresh();
   const gender = characterVoiceGender(characterId);
+  const prefix = SYNTH_LOCALE[lang];
+  const byLang = cached.filter((v) => v.lang.replace('_', '-').toLowerCase().startsWith(prefix.toLowerCase()));
+  const pool = byLang.length ? byLang : cached;
+  const pitch = gender === 'male' ? 0.92 : 1.08;
+  const rate = gender === 'male' ? 0.98 : 1.02;
+  for (const name of synthNameList(lang, gender)) {
+    const hit = pool.find((v) => v.name.toLowerCase().includes(name.toLowerCase()) && !synthNameConflicts(gender, v.name));
+    if (hit) return { voice: hit, pitch, rate };
+  }
+  const safe = pool.find((v) => !synthNameConflicts(gender, v.name));
+  if (safe) return { voice: safe, pitch, rate };
   const matrixFallback = gender === 'male' ? 'atlas' : 'juno';
   const choices = VOICE_MATRIX[characterId]?.[lang] ?? VOICE_MATRIX[matrixFallback]?.[lang] ?? [];
   for (const c of choices) {
-    const byLang = cached.filter((v) => v.lang.replace('_', '-').startsWith(c.lang));
+    const scoped = cached.filter((v) => v.lang.replace('_', '-').startsWith(c.lang));
     for (const name of c.names) {
-      const hit = byLang.find((v) => v.name.toLowerCase().includes(name.toLowerCase()));
+      const hit = scoped.find((v) => v.name.toLowerCase().includes(name.toLowerCase()) && !synthNameConflicts(gender, v.name));
       if (hit) return { voice: hit, pitch: c.basePitch, rate: c.baseRate };
     }
-    // named voices absent — pick by companion gender, not the first locale voice
-    if (byLang.length) {
-      const wantFemale = gender === 'female';
-      const gendered = byLang.find((v) => wantFemale ? /female|sin-ji|hiu|xia|nanami|mei|kate|samantha|ava|zira/i.test(v.name) : /male|sin-ju|yunxi|keita|guy|daniel|wan/i.test(v.name));
-      if (gendered) return { voice: gendered, pitch: c.basePitch, rate: c.baseRate };
-      const fallback = byLang.find((v) => wantFemale ? !/male|sin-ju|yunxi|keita|guy|daniel/i.test(v.name) : /male|sin-ju|yunxi|keita|guy|daniel/i.test(v.name));
-      if (fallback) return { voice: fallback, pitch: c.basePitch, rate: c.baseRate };
-      return { voice: byLang[0]!, pitch: c.basePitch, rate: c.baseRate };
-    }
   }
-  return { voice: null, pitch: 1, rate: 1 };
+  return { voice: null, pitch, rate };
 }
 
 // Split into breath-sized clauses so the pitch contour can rise and fall inside a
@@ -1085,7 +1098,8 @@ export function speak(
   leadOverride?: VocalLead,
   intensity = 1,
 ): void {
-  if (!voiceEnabled()) return;
+  text = cleanForSpeech(text);
+  if (!text || !voiceEnabled()) return;
   // r111: remember the line for gesture-gate replay
   const attemptAt = Date.now();
   lastSpeak = { text, characterId, lang, emotionHints, leadOverride, intensity, at: attemptAt };
@@ -1104,9 +1118,12 @@ export function speak(
   // (tier 'attempt'), so a silent device answers "was speak() called?"
   // independently of "did sound start?" (the start callbacks below).
   const useOpenAi = openAiVoiceReady();
+  const desktop = typeof navigator !== 'undefined' && !/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   const chain = useOpenAi
-    ? 'openai→edge→gtts→synth'
-    : neuralEnabled() && typeof WebSocket !== 'undefined' ? 'edge→gtts→synth' : 'synth';
+    ? 'openai→edge→synth→gtts'
+    : neuralEnabled() && typeof WebSocket !== 'undefined'
+      ? (desktop ? 'edge→synth→gtts' : 'edge→gtts→synth')
+      : 'synth';
   try { console.log(`[amoji voice] speak attempt · ${text.length} chars · ${lang} · chain ${chain}`); } catch { /* ignore */ }
   reportVoiceStatus('attempt', true, `speak attempt · ${text.length} chars · ${chain}`);
   // r102: hold the movement/ambient foley for one speak window — if every
@@ -1173,12 +1190,18 @@ export function speak(
       } catch (err) {
         tier1 = Promise.reject(err instanceof Error ? err : new Error(String(err)));
       }
-      void tier1.then(() => {
-        reportVoiceStatus('edge', true, 'neural voice finished');
-      }).catch((err: unknown) => {
-        if ((err as Error | undefined)?.message === 'canceled') return;
-        reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'edge-tts failed');
-        stopEdge();
+      const runSynth = (): boolean => {
+        if (typeof speechSynthesis === 'undefined') return false;
+        try {
+          synthSpeak(text, characterId, lang, emotion, expr, tic, amp);
+          reportVoiceStatus('synth', true, 'browser voice queued');
+          return true;
+        } catch (err3) {
+          reportVoiceStatus('synth', false, (err3 as Error | undefined)?.message ?? 'browser voice failed');
+          return false;
+        }
+      };
+      const runGtts = (): void => {
         let tier2: Promise<void>;
         try {
           tier2 = speakGtts(text, {
@@ -1197,13 +1220,23 @@ export function speak(
           reportVoiceStatus('gtts', false, (err2 as Error | undefined)?.message ?? 'google-tts failed');
           if ((err2 as { name?: string } | undefined)?.name === 'NotAllowedError') armGestureReplay('gtts not-allowed');
           stopGtts();
-          try {
-            synthSpeak(text, characterId, lang, emotion, expr, tic, amp);
-            reportVoiceStatus('synth', true, 'browser voice queued');
-          } catch (err3) {
-            reportVoiceStatus('synth', false, (err3 as Error | undefined)?.message ?? 'browser voice failed');
-          }
+          if (!desktop) runSynth();
         });
+      };
+      void tier1.then(() => {
+        reportVoiceStatus('edge', true, 'neural voice finished');
+      }).catch((err: unknown) => {
+        if ((err as Error | undefined)?.message === 'canceled') return;
+        reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'edge-tts failed');
+        stopEdge();
+        // Desktop: gendered browser voice before ungendered Google TTS
+        // (Google zh-HK is a single voice and was reading female lines as male).
+        // Phones keep Google ahead of synth — the silent switch mutes synth.
+        if (desktop) {
+          if (!runSynth()) runGtts();
+        } else {
+          runGtts();
+        }
       });
     };
 
@@ -1256,7 +1289,8 @@ export function speak(
  * pitch multipliers. Callers gate on voiceEnabled().
  */
 export function sing(text: string, characterId: string, lang: Lang): void {
-  if (!voiceEnabled()) return;
+  text = cleanForSpeech(text);
+  if (!text || !voiceEnabled()) return;
   unlockAudio();
   const expr = EXPRESSIVENESS[characterId] ?? 1;
   if (neuralEnabled() && typeof WebSocket !== 'undefined') {

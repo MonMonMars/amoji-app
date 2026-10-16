@@ -1,4 +1,5 @@
 'use client';
+import { pinDefaultOutput } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 // r2026-10-04.89 — mid-tier insurance voice path.
 // Why it exists: Simon's iPhone hears NOTHING from either previous path.
@@ -116,6 +117,7 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
       const audio = new Audio(
         `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=${q}`,
       );
+      pinDefaultOutput(audio);
       applyPlaybackVolume(audio);
       audio.preload = 'auto';
       currentAudio = audio;

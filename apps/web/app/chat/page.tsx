@@ -60,25 +60,35 @@ export default function Chat() {
         onPoke={(zone) => { setPokeCount((c) => c + 1); setPokeZone(zone); }}
       />
 
-      {/* top bar: status plate (left) + settings gear (right) */}
-      <div className="absolute inset-x-0 top-0 z-10 flex items-start justify-between p-3">
-        <StatusPlate
-          name={character.name}
-          accent={character.accent}
-          portrait={character.image}
-          lang={prefs.lang}
-          status={status}
-          memCount={memCount}
-          kid={prefs.kidMode}
-          onOpenSelect={() => router.push('/change')}
-        />
-        <button
-          onClick={() => setSheetOpen(true)}
-          title={prefs.lang === 'yue' ? '設定' : 'Settings'}
-          className="ui-btn rounded-full border border-white/10 bg-black/30 px-3 py-2 text-sm text-white/80 backdrop-blur-md hover:bg-black/50"
-        >
-          ⚙️
-        </button>
+      {/* top bar: status plate (left) + wardrobe icon and settings (right) */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-3">
+        <div className="pointer-events-auto min-w-0">
+          <StatusPlate
+            name={character.name}
+            accent={character.accent}
+            portrait={character.image}
+            lang={prefs.lang}
+            status={status}
+            memCount={memCount}
+            kid={prefs.kidMode}
+            onOpenSelect={() => router.push('/change')}
+          />
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <WardrobeSwap
+            lang={prefs.lang}
+            characterId={character.id}
+            onCharacter={(id) => setPrefs({ character: id })}
+          />
+          <button
+            onClick={() => setSheetOpen(true)}
+            title={prefs.lang === 'yue' ? '設定' : 'Settings'}
+            aria-label={prefs.lang === 'yue' ? '設定' : 'Settings'}
+            className="ui-btn pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/30 text-base text-white/90 shadow-sm backdrop-blur-md hover:bg-black/50"
+          >
+            ⚙️
+          </button>
+        </div>
       </div>
 
       {notice && <FallbackNotice reason={notice.reason} />}
@@ -92,17 +102,11 @@ export default function Chat() {
         onForget={() => { clearMemory(); setMemCount(0); }}
       />
 
-      {/* r2026-10-04.71: lift the mic/input above the iPhone home indicator */}
+      {/* Empty margins pass through to the canvas. Only the chat controls take hits. */}
       <div
-        className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-start gap-2 px-3"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-10"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        <WardrobeSwap
-          lang={prefs.lang}
-          characterId={character.id}
-          onCharacter={(id) => setPrefs({ character: id })}
-        />
-        <div className="-mx-3 w-[calc(100%+1.5rem)]">
         <ChatPanel
           key={character.id}
           characterName={character.name}
@@ -118,7 +122,6 @@ export default function Chat() {
           onStatus={setStatus}
           onMemCount={setMemCount}
         />
-        </div>
       </div>
     </main>
   );

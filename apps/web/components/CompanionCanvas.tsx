@@ -7,7 +7,7 @@ import type { VRM } from '@pixiv/three-vrm';
 import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-vrm-animation';
 import type { VRMAnimation } from '@pixiv/three-vrm-animation';
 import { mapFrameToVrm, posesByIds, sampleIdlePoseFrom } from '@amoji/vrm-renderer';
-import { tickEngine, lastLaughAt, activeMove } from '../lib/companion';
+import { tickEngine, lastLaughAt, activeMove, thinkingPoseActive } from '../lib/companion';
 import { setLoadProgress } from '../lib/load-progress';
 import { type MoveKind } from '../lib/moves';
 import { PROPS, propsForMove, propPresence, type PropDef, type PropPart } from '../lib/props';
@@ -129,8 +129,11 @@ const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi 
 // r2026-10-04.56: widened at Master Simon's request — 0.12 ≈ near-overhead
 // top view, 2.35 ≈ worm's-eye view up from below the floor line. Theta is
 // already unclamped (full 360° yaw).
-const PHI_MIN = 0.12;
-const PHI_MAX = 2.35;
+// Pitch clamps: phi is the polar angle from straight up.
+// 1.08 ≈ 28° above eye level — not high enough to see the crown.
+// 2.55 lets the lens drop so more of the legs come into frame.
+const PHI_MIN = 1.08;
+const PHI_MAX = 2.55;
 
 // r101: texture slots that must hold a DECODED image before the avatar may
 // step on stage. On iPhone Safari the big MToon atlases decode late — the
@@ -304,7 +307,7 @@ export default function CompanionCanvas({
       orbit.phi = clamp(orbit.phi, PHI_MIN, PHI_MAX);
       orbit.dist = clamp(orbit.dist, 0.7, 5);
       target.x = clamp(target.x, -0.9, 0.9);
-      target.y = clamp(target.y, 0.4, 1.7);
+      target.y = clamp(target.y, 0.12, 1.28);
       camera.position.set(
         target.x + orbit.dist * Math.sin(orbit.phi) * Math.sin(orbit.theta),
         target.y + orbit.dist * Math.cos(orbit.phi),
@@ -506,6 +509,8 @@ export default function CompanionCanvas({
     let idleAction: THREE.AnimationAction | null = null;
     let perfAction: THREE.AnimationAction | null = null;
     let idleOrder: string[] = [];
+    let idleClipId = '';
+    let thinkMiss = false;
     let idleIdx = 0;
     // r93: when the current idle hands over to the next one (RAF clock, ms).
     // The handover is a crossfade between two LIVE loops — never a freeze.
@@ -534,18 +539,15 @@ export default function CompanionCanvas({
     // The mixer crossfades bone quaternions, so intermediate frames are real
     // in-between poses, not snaps.
     const FADE = {
-      entry: 0.9,      // procedural pose → first library clip
-      idleRotate: 1.2, // r93: idle → next idle — a longer glide between two live loops
-      toPerf: 0.45,    // idle → one-shot performance
-      perfCut: 0.3,    // performance → interrupted by another performance
-      perfEnd: 0.7,    // finished performance → back to idle
+      entry: 1.15,     // procedural pose → first library clip
+      idleRotate: 1.65, // longer glide so idle loops don't snap
+      toPerf: 0.6,     // idle → one-shot performance
+      perfCut: 0.35,   // performance → interrupted by another performance
+      perfEnd: 0.85,   // finished performance → back to idle
     };
 
-    const nextIdle = (fade: number) => {
-      if (!mixer || !idleOrder.length) return;
-      const clip = clips.get(idleOrder[idleIdx % idleOrder.length]!);
-      idleIdx++;
-      if (!clip) return;
+    const playClipAsIdle = (clip: THREE.AnimationClip, id: string, fade: number) => {
+      if (!mixer) return;
       const action = mixer.clipAction(clip);
       // r93: idles LOOP — the old LoopOnce + clampWhenFinished parked her on
       // the clip's end frame (a straight stand) while the next clip faded
@@ -565,9 +567,26 @@ export default function CompanionCanvas({
         action.fadeIn(fade).play();
       }
       idleAction = action;
+      idleClipId = id;
       // hold this idle for 1–2 of its own beats, then hand over mid-motion
       const holdMs = Math.min(14000, Math.max(5000, clip.duration * 1000 * (1 + Math.random())));
       idleHoldUntil = performance.now() + holdMs;
+    };
+
+    const nextIdle = (fade: number) => {
+      if (!mixer || !idleOrder.length) return;
+      const id = idleOrder[idleIdx % idleOrder.length]!;
+      idleIdx++;
+      const clip = clips.get(id);
+      if (!clip) return;
+      playClipAsIdle(clip, id, fade);
+    };
+
+    const playNamedIdle = (id: string, fade: number): boolean => {
+      const clip = clips.get(id);
+      if (!clip) return false;
+      playClipAsIdle(clip, id, fade);
+      return true;
     };
 
     const playPerf = (name: string) => {
@@ -1109,10 +1128,25 @@ export default function CompanionCanvas({
       return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
     };
 
+    // PC: hold on a blank area away from the bottom scroll strip, then drag
+    // vertically to pan. A quick drag is still orbit. Two-finger pan is unchanged.
+    let panArm: { id: number; sx: number; sy: number; t: number; on: boolean } | null = null;
+    const PAN_HOLD_MS = 320;
+    const distantBlank = (cx: number, cy: number) => {
+      const rect = host.getBoundingClientRect();
+      if (rect.width < 8 || rect.height < 8) return false;
+      const nx = (cx - rect.left) / rect.width;
+      const ny = (cy - rect.top) / rect.height;
+      const side = nx < 0.18 || (nx > 0.82 && ny > 0.2);
+      const upper = ny < 0.5 && nx < 0.78;
+      return side || upper;
+    };
+
     const onPointerDown = (e: PointerEvent) => {
       host.setPointerCapture(e.pointerId);
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, t: performance.now(), moved: 0 });
       if (pointers.size === 2) {
+        panArm = null;
         const pts = [...pointers.values()];
         const a = pts[0]!, b = pts[1]!;
         pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
@@ -1131,6 +1165,9 @@ export default function CompanionCanvas({
             };
             break;
           }
+        }
+        if (!handDrag && !rayHit(e.clientX, e.clientY) && distantBlank(e.clientX, e.clientY)) {
+          panArm = { id: e.pointerId, sx: e.clientX, sy: e.clientY, t: performance.now(), on: false };
         }
       }
     };
@@ -1154,7 +1191,22 @@ export default function CompanionCanvas({
         handDrag.target.copy(camera.position).addScaledVector(sV3, handDrag.depth);
         return;
       }
+      if (panArm && e.pointerId === panArm.id && pointers.size === 1 && !handDrag) {
+        const held = performance.now() - panArm.t;
+        const pull = Math.hypot(e.clientX - panArm.sx, e.clientY - panArm.sy);
+        if (!panArm.on && held >= PAN_HOLD_MS && Math.abs(e.clientY - panArm.sy) > 6) panArm.on = true;
+        if (panArm.on) {
+          e.preventDefault();
+          const scale = 0.0016 * (orbit.dist / 1.9) * 0.75;
+          target.y += dy * scale;
+          resetAnim = null;
+          applyCamera();
+          return;
+        }
+        if (pull > 10 && held < PAN_HOLD_MS) panArm = null;
+      }
       if (pointers.size === 2) {
+        panArm = null;
         // pinch zoom + two-finger pan
         const pts = [...pointers.values()];
         const a = pts[0]!, b = pts[1]!;
@@ -1179,6 +1231,7 @@ export default function CompanionCanvas({
     };
     const onPointerUp = (e: PointerEvent) => {
       const p = pointers.get(e.pointerId);
+      if (panArm && e.pointerId === panArm.id) panArm = null;
       pointers.delete(e.pointerId);
       if (pointers.size < 2) {
         pinchDist = 0;
@@ -1431,8 +1484,16 @@ export default function CompanionCanvas({
         // r93: idle handover — when this idle's hold expires and no one-shot
         // performance is on stage, glide into the next idle mid-motion. The
         // body is always inside a live loop: no straight stand between moves.
-        if (mixerActive && !perfAction && now >= idleHoldUntil) {
-          nextIdle(FADE.idleRotate);
+        if (mixerActive && !perfAction) {
+          if (thinkingPoseActive()) {
+            if (idleClipId !== 'Thinking' && !thinkMiss) {
+              if (!playNamedIdle('Thinking', FADE.idleRotate)) thinkMiss = true;
+              else idleHoldUntil = performance.now() + 20000;
+            }
+          } else {
+            thinkMiss = false;
+            if (now >= idleHoldUntil) nextIdle(FADE.idleRotate);
+          }
         }
         // r2026-10-04.58: while a library clip drives the body, the skeleton
         // belongs to the mixer — so applyPose there is limited to its designed

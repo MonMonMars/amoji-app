@@ -32,8 +32,8 @@ export const BRAIN_SPECS: BrainSpec[] = [
   },
   {
     id: 'groq', label: 'Groq', keyless: false,
-    baseUrl: 'https://api.groq.com/openai/v1', model: 'openai/gpt-oss-120b',
-    blurb: 'Free key — sub-second streaming replies.',
+    baseUrl: 'https://api.groq.com/openai/v1', model: 'llama-3.3-70b-versatile',
+    blurb: 'Free key — fast llama-3.3-70b, smarter than the reasoning oss lane.',
     keyFrom: 'console.groq.com',
   },
   {
