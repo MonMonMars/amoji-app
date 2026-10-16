@@ -11,7 +11,6 @@ import SceneBackdrop from '../../components/SceneBackdrop';
 import SettingsSheet from '../../components/SettingsSheet';
 import StatusPlate from '../../components/StatusPlate';
 import WardrobeSwap from '../../components/WardrobeSwap';
-import { castThumbUrl } from '../../lib/frontImage';
 import { activeWardrobe } from '../../lib/modular/catalog';
 import { useModularSelection } from '../../lib/modular/storage';
 import { usePrefs, characterById, backgroundById, KID_PERSONA_GUARD } from '../../lib/prefs';
@@ -66,7 +65,7 @@ export default function Chat() {
         <StatusPlate
           name={character.name}
           accent={character.accent}
-          portrait={castThumbUrl(character.id)}
+          portrait={character.image}
           lang={prefs.lang}
           status={status}
           memCount={memCount}

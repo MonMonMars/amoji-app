@@ -17,7 +17,7 @@ import {
 } from '../lib/modular/assemble';
 import { createGenericAvatar } from '../lib/vrm/avatar';
 import { loadModularSelection, saveModularSelection } from '../lib/modular/storage';
-import { castCutoutUrl, castThumbUrl, isBackViewPortrait, safePortrait } from '../lib/frontImage';
+import { safePortrait } from '../lib/frontImage';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const MODULAR = path.resolve(here, '../public/models/modular');
@@ -124,15 +124,17 @@ describe('modular wardrobe catalog', () => {
     expect(activeWardrobe('a98-ethan', { headId: 'A02', bodyId: 'A10' })).toBeNull();
   });
 
-  it('wardrobe previews use pipeline fronts and never release back portraits', () => {
+  it('shows the front release portrait and scrolls option rows sideways', () => {
     const ui = fs.readFileSync(path.resolve(here, '../components/WardrobeSwap.tsx'), 'utf8');
     const board = fs.readFileSync(path.resolve(here, '../components/SelectionBoard.tsx'), 'utf8');
-    expect(ui).not.toMatch(/releases\/download|free-library-want/);
-    expect(board).not.toMatch(/character\.image/);
-    expect(isBackViewPortrait('https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a02-shibu.png')).toBe(true);
-    expect(safePortrait('https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a02-shibu.png')).toBeUndefined();
-    expect(castThumbUrl('a02-shibu')).toBe('/cast-thumbs/a02-shibu.jpg');
-    expect(castCutoutUrl('a119-kanami-uniform')).toBe('/cast-cutout/a119-kanami-uniform.png');
+    const row = fs.readFileSync(path.resolve(here, '../components/HScrollRow.tsx'), 'utf8');
+    expect(board).toContain('character.image');
+    expect(ui).toContain('characterById');
+    expect(ui).not.toContain('flex-wrap');
+    expect(row).toContain('flex-nowrap');
+    expect(row).toContain('overflow-x-auto');
+    expect(safePortrait('https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a02-shibu.png'))
+      .toContain('a02-shibu.png');
     expect(ui).toContain('data-testid="wardrobe-hero"');
     expect(board).toContain('data-testid="selection-hero"');
   });
