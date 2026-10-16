@@ -2,7 +2,8 @@
 // Head = who she is (name, face, voice). Body = the outfit. The head is
 // never rescaled to fit the clothes.
 import { useEffect, useState } from 'react';
-import { castCutoutUrl, castThumbUrl } from '../lib/frontImage';
+import HScrollRow from './HScrollRow';
+import { assetUrl } from '../lib/asset';
 import {
   DEFAULT_DEMO_HEAD,
   DEMO_BODIES,
@@ -18,7 +19,7 @@ import {
   useModularSelection,
   useModularView,
 } from '../lib/modular/storage';
-import type { Lang } from '../lib/prefs';
+import { characterById, type Lang } from '../lib/prefs';
 
 const COPY: Record<Lang, {
   title: string;
@@ -72,36 +73,26 @@ const COPY: Record<Lang, {
   },
 };
 
-/** Front cartoon still. Cutout first for outfits, headshot for identity. Never a release back PNG. */
-function FrontStill({
-  characterId,
-  prefer,
-  fit,
-  mark,
-}: {
-  characterId: string;
-  prefer: 'thumb' | 'cutout';
-  fit: 'cover' | 'contain';
-  mark: string;
-}) {
-  const [stage, setStage] = useState<'cutout' | 'thumb' | 'mark'>(prefer === 'cutout' ? 'cutout' : 'thumb');
-  useEffect(() => { setStage(prefer === 'cutout' ? 'cutout' : 'thumb'); }, [characterId, prefer]);
-  if (stage === 'mark') {
+/** Front release PNG for this identity (character.image). */
+function FrontStill({ characterId, mark }: { characterId: string; mark: string }) {
+  const image = characterById(characterId).image;
+  const [ok, setOk] = useState(!!image);
+  useEffect(() => { setOk(!!image); }, [image]);
+  if (!image || !ok) {
     return (
       <span className="flex h-full w-full items-center justify-center bg-white/10 text-sm font-bold text-white/80">
         {mark.slice(0, 1)}
       </span>
     );
   }
-  const src = stage === 'cutout' ? castCutoutUrl(characterId) : castThumbUrl(characterId);
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={src}
+      src={assetUrl(image)}
       alt=""
       draggable={false}
-      onError={() => setStage(stage === 'cutout' ? 'thumb' : 'mark')}
-      className={`h-full w-full ${fit === 'contain' ? 'object-contain object-bottom' : 'object-cover object-top'}`}
+      onError={() => setOk(false)}
+      className="h-full w-full object-cover object-top"
     />
   );
 }
@@ -111,27 +102,26 @@ function Thumb({
   pressed,
   onPick,
   testId,
-  prefer,
 }: {
   asset: ModularAsset;
   pressed: boolean;
   onPick: (id: string) => void;
   testId: string;
-  prefer: 'thumb' | 'cutout';
 }) {
   return (
     <button
       type="button"
       data-testid={testId}
+      data-row-item={asset.id}
       aria-pressed={pressed}
       title={asset.name}
       onClick={() => onPick(asset.id)}
-      className={`w-11 shrink-0 overflow-hidden rounded-lg border text-left transition-colors ${
+      className={`w-14 shrink-0 snap-start overflow-hidden rounded-lg border text-left transition-colors ${
         pressed ? 'border-white/80 bg-white/15' : 'border-white/15 bg-white/5 hover:bg-white/10'
       }`}
     >
-      <span className="block h-11 w-full">
-        <FrontStill characterId={asset.characterId} prefer={prefer} fit={prefer === 'cutout' ? 'contain' : 'cover'} mark={asset.short} />
+      <span className="relative block h-14 w-full">
+        <FrontStill characterId={asset.characterId} mark={asset.short} />
       </span>
       <span className="block truncate px-0.5 py-0.5 text-center text-[8px] leading-tight text-white/70">{asset.short}</span>
     </button>
@@ -195,14 +185,14 @@ export default function WardrobeSwap({
           {head && body && (
           <div data-testid="wardrobe-hero" className="grid grid-cols-2 gap-2">
             <div className="relative h-32 overflow-hidden rounded-2xl border border-white/20 bg-black/30">
-              <FrontStill characterId={head.characterId} prefer="thumb" fit="cover" mark={head.short} />
+              <FrontStill characterId={head.characterId} mark={head.short} />
               <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-1.5 pt-4 text-xs font-semibold">
                 <span className="block text-[9px] font-normal uppercase tracking-wider text-white/60">{copy.head}</span>
                 {head.short}
               </span>
             </div>
             <div className="relative h-32 overflow-hidden rounded-2xl border border-white/20 bg-black/30">
-              <FrontStill characterId={body.characterId} prefer="cutout" fit="contain" mark={body.short} />
+              <FrontStill characterId={body.characterId} mark={body.short} />
               <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-1.5 pt-4 text-xs font-semibold">
                 <span className="block text-[9px] font-normal uppercase tracking-wider text-white/60">{copy.body}</span>
                 {body.short}
@@ -210,34 +200,28 @@ export default function WardrobeSwap({
             </div>
           </div>
           )}
-          <div>
-            <div className="flex flex-wrap gap-1">
-              {DEMO_HEADS.map((asset) => (
-                <Thumb
-                  key={asset.id}
-                  asset={asset}
-                  pressed={active?.headId === asset.id}
-                  onPick={pickHead}
-                  testId={`wardrobe-head-${asset.id}`}
-                  prefer="thumb"
-                />
-              ))}
-            </div>
-          </div>
-          <div>
-            <div className="flex flex-wrap gap-1">
-              {DEMO_BODIES.map((asset) => (
-                <Thumb
-                  key={asset.id}
-                  asset={asset}
-                  pressed={!!active && active.bodyId === asset.id}
-                  onPick={pickBody}
-                  testId={`wardrobe-body-${asset.id}`}
-                  prefer="cutout"
-                />
-              ))}
-            </div>
-          </div>
+          <HScrollRow ariaLabel="wardrobe heads" rowKey="wardrobe-heads" selectedId={active?.headId}>
+            {DEMO_HEADS.map((asset) => (
+              <Thumb
+                key={asset.id}
+                asset={asset}
+                pressed={active?.headId === asset.id}
+                onPick={pickHead}
+                testId={`wardrobe-head-${asset.id}`}
+              />
+            ))}
+          </HScrollRow>
+          <HScrollRow ariaLabel="wardrobe outfits" rowKey="wardrobe-bodies" selectedId={active?.bodyId}>
+            {DEMO_BODIES.map((asset) => (
+              <Thumb
+                key={asset.id}
+                asset={asset}
+                pressed={!!active && active.bodyId === asset.id}
+                onPick={pickBody}
+                testId={`wardrobe-body-${asset.id}`}
+              />
+            ))}
+          </HScrollRow>
           {status && (
             <p data-testid="wardrobe-status" className="text-[10px] leading-snug text-white/55" aria-live="polite">
               {status}
