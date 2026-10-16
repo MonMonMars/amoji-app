@@ -79,6 +79,8 @@ No key → free keyless Pollinations with built-in offline banter fallback. Secr
 
 Only assets with an entry in `apps/web/public/models/ASSET_MANIFEST.md` may ship; CI enforces this.
 
+Modular head/body swap (female demo wardrobe) loads `apps/web/public/models/modular/<ID>/<ID>_head.glb` and `_body.glb` when those files are present, and keeps the single-VRM path when they are not. Head is identity; body is the outfit; the head is not rescaled. Copy the existing GLBs from `D:\Blender\projects\mon-character\free-library\modular\` — see `apps/web/public/models/modular/README.md`. Do not re-split them.
+
 ---
 
 *Built with 🤖 for Master Simon · Amoji — connection between AI and human.*

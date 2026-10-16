@@ -10,6 +10,10 @@ import FallbackNotice from '../../components/FallbackNotice';
 import SceneBackdrop from '../../components/SceneBackdrop';
 import SettingsSheet from '../../components/SettingsSheet';
 import StatusPlate from '../../components/StatusPlate';
+import WardrobeSwap from '../../components/WardrobeSwap';
+import { castThumbUrl } from '../../lib/frontImage';
+import { activeWardrobe } from '../../lib/modular/catalog';
+import { useModularSelection } from '../../lib/modular/storage';
 import { usePrefs, characterById, backgroundById, KID_PERSONA_GUARD } from '../../lib/prefs';
 import { clearMemory, loadMemory, memorySummaryCount } from '../../lib/memory';
 import type { ChatStatus } from '../../lib/status';
@@ -41,6 +45,8 @@ export default function Chat() {
 
   const character = characterById(prefs.character);
   const background = backgroundById(prefs.background);
+  const storedWardrobe = useModularSelection();
+  const wardrobe = activeWardrobe(character.id, storedWardrobe);
 
   return (
     <main className="fx-page relative h-dvh w-screen overflow-hidden text-white" style={{ background: background.css }}>
@@ -48,6 +54,8 @@ export default function Chat() {
       <CompanionCanvas
         accent={character.accent}
         seedKey={character.id}
+        wardrobeHeadId={wardrobe?.headId}
+        wardrobeBodyId={wardrobe?.bodyId}
         lighting={background.setting === 'indoor' ? 'indoor' : 'outdoor'}
         onNotice={setNotice}
         onPoke={(zone) => { setPokeCount((c) => c + 1); setPokeZone(zone); }}
@@ -58,7 +66,7 @@ export default function Chat() {
         <StatusPlate
           name={character.name}
           accent={character.accent}
-          portrait={character.image}
+          portrait={castThumbUrl(character.id)}
           lang={prefs.lang}
           status={status}
           memCount={memCount}
@@ -87,10 +95,17 @@ export default function Chat() {
 
       {/* r2026-10-04.71: lift the mic/input above the iPhone home indicator */}
       <div
-        className="absolute inset-x-0 bottom-0 z-10"
+        className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-start gap-2 px-3"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
+        <WardrobeSwap
+          lang={prefs.lang}
+          characterId={character.id}
+          onCharacter={(id) => setPrefs({ character: id })}
+        />
+        <div className="-mx-3 w-[calc(100%+1.5rem)]">
         <ChatPanel
+          key={character.id}
           characterName={character.name}
           characterId={character.id}
           lang={prefs.lang}
@@ -104,6 +119,7 @@ export default function Chat() {
           onStatus={setStatus}
           onMemCount={setMemCount}
         />
+        </div>
       </div>
     </main>
   );

@@ -17,6 +17,10 @@ import { pokeStyleFor, pokeModeFor, poseIdsFor, lookFor } from '../lib/persona';
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
 import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
+import { modularGlbUrl } from '../lib/modular/catalog';
+import { assembleModular, replaceBodyMeshes, type ModularAssembly } from '../lib/modular/assemble';
+import { loadModularGltf } from '../lib/modular/load';
+import { publishModularView } from '../lib/modular/storage';
 
 // r97 (Master Simon): idle-clip restoration — the mixer now starts the
 // moment the FIRST clip lands (it used to wait for all 26 loads, so a single
@@ -101,6 +105,13 @@ export interface CompanionCanvasProps {
   accent?: string;
   /** character id — gives her/him a deterministic, personal idle-motion sequence */
   seedKey?: string;
+  /**
+   * Modular wardrobe. Head GLB is identity; body GLB is the outfit.
+   * When either file is missing, the single-VRM candidate chain runs.
+   * Head meshes are never rescaled.
+   */
+  wardrobeHeadId?: string;
+  wardrobeBodyId?: string;
   /** @deprecated r108: ignored — one neutral daylight rig lights every backdrop */
   lighting?: 'indoor' | 'outdoor';
 }
@@ -208,12 +219,18 @@ const TWIST_AMOUNT: Record<string, number> = {
   challenging: 0.12,
 };
 
-export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', seedKey }: CompanionCanvasProps) {
+export default function CompanionCanvas({
+  onNotice, onPoke, accent = '#f9a8d4', seedKey, wardrobeHeadId, wardrobeBodyId,
+}: CompanionCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const onNoticeRef = useRef(onNotice);
   onNoticeRef.current = onNotice;
   const onPokeRef = useRef(onPoke);
   onPokeRef.current = onPoke;
+  // Body swaps must not rebuild the WebGL scene — the head mesh stays.
+  const wardrobeBodyRef = useRef(wardrobeBodyId);
+  wardrobeBodyRef.current = wardrobeBodyId;
+  const swapBodyRef = useRef<(bodyId: string) => void>(() => {});
 
   // r84 (Master Simon): while she loads, the stage stays EMPTY — no giant
   // placeholder figure. r91: the loading indicator moved OUT of this canvas
@@ -916,6 +933,35 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       }, () => loadModel(index + 1));
     };
 
+    let cancelled = false;
+    let modularAsm: ModularAssembly | null = null;
+
+    const mountModular = async (headId: string, bodyId: string): Promise<boolean> => {
+      publishModularView('loading');
+      const bodyGltf = await loadModularGltf(modularGlbUrl(bodyId, 'body'), true);
+      const headGltf = await loadModularGltf(modularGlbUrl(headId, 'head'), false);
+      if (cancelled) return true;
+      const asm = assembleModular(bodyGltf, headGltf);
+      modularAsm = asm;
+      const latestBody = wardrobeBodyRef.current;
+      if (latestBody && latestBody !== bodyId) {
+        try {
+          const next = await loadModularGltf(modularGlbUrl(latestBody, 'body'), false);
+          if (!cancelled) replaceBodyMeshes(asm, next);
+        } catch { /* keep the outfit that did load */ }
+      }
+      if (cancelled) return true;
+      const v = (bodyGltf.userData as { vrm?: VRM }).vrm;
+      if (v) {
+        mountAvatar(createV1Avatar(v, clipAnimatedBones));
+        loadClips(v);
+      } else {
+        mountAvatar(createGenericAvatar(bodyGltf, clipAnimatedBones));
+      }
+      publishModularView('modular');
+      return true;
+    };
+
     const loadModel = (index: number) => {
       if (index >= MODEL_CANDIDATES.length) {
         // r84 — nothing left to try: stop waiting, show the notice
@@ -946,7 +992,30 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
         }
       }, () => loadPlain(index, url));
     };
-    loadModel(0);
+    swapBodyRef.current = (bodyId: string) => {
+      if (cancelled || !modularAsm || !wardrobeHeadId) return;
+      loadModularGltf(modularGlbUrl(bodyId, 'body'), false).then((gltf) => {
+        if (cancelled || !modularAsm) return;
+        replaceBodyMeshes(modularAsm, gltf);
+      }).catch(() => { /* outfit file missing — leave the current body */ });
+    };
+
+    const bootAvatar = () => {
+      const headId = wardrobeHeadId;
+      const bodyId = wardrobeBodyRef.current;
+      if (!headId || !bodyId) {
+        publishModularView('idle');
+        loadModel(0);
+        return;
+      }
+      mountModular(headId, bodyId).catch(() => {
+        if (cancelled) return;
+        modularAsm = null;
+        publishModularView('fallback');
+        loadModel(0);
+      });
+    };
+    bootAvatar();
 
     // ---- pointer gestures ────────────────────────────────────────────────
     // one finger drag   = rotate around her
@@ -1529,6 +1598,9 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
     window.addEventListener('resize', onResize);
 
     return () => {
+      cancelled = true;
+      swapBodyRef.current = () => {};
+      publishModularView('idle');
       cancelAnimationFrame(raf);
       clearTimeout(loadWatchdog);
       window.removeEventListener('resize', onResize);
@@ -1552,7 +1624,13 @@ export default function CompanionCanvas({ onNotice, onPoke, accent = '#f9a8d4', 
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [accent, seedKey]);
+  }, [accent, seedKey, wardrobeHeadId]);
+
+  // Outfit changes keep the mounted head. A head change rebuilds above.
+  useEffect(() => {
+    if (!wardrobeHeadId || !wardrobeBodyId) return;
+    swapBodyRef.current(wardrobeBodyId);
+  }, [wardrobeHeadId, wardrobeBodyId]);
 
   // r91 (Master Simon): no overlay here at all — the empty stage IS the
   // loading state, and the top-left name bar (StatusPlate) carries a mini
