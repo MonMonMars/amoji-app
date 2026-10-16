@@ -71,6 +71,7 @@ Skipped, not in the map: Coqui CPML, Fish Speech CC-BY-NC, F5-TTS CC-BY-NC.
 
 - Source of the 20 lines: `apps/web/lib/thinking-lines.ts`. Yue warmup and yue thinking fillers copy that list.
 - Layout files: `SelectionBoard.tsx`, `WardrobeSwap.tsx`, `app/chat/page.tsx`, `ChatPanel.tsx`.
+- PR: https://github.com/MonMonMars/amoji-app/pull/7
 - GitHub Pages: `.github/workflows/pages.yml` runs on every push to `main` (and `workflow_dispatch`). It static-exports `@amoji/web` with `AMOJI_BASE_PATH=/amoji-app` and deploys `apps/web/out` to the `github-pages` environment. Merging this PR is what updates https://monmonmars.github.io/amoji-app/. The PR branch itself does not deploy.
 - Piper / Melo / Kokoro / Bark stay in `voice-catalog.ts` as non-shipping stubs. A wider free-TTS search is a follow-up and is not blocking this PR.
 - Verify: selection shows head + body with overlapping rows and no back control; chat icon opens wardrobe full-screen and close restores orbit; history wheel-scrolls; hold on a side margin pans.
