@@ -19,6 +19,7 @@
 // setSfxEnabled).
 
 import type { MoveKind } from './moves';
+import { createDefaultAudioContext } from './audio-output';
 
 // ---------------------------------------------------------------------------
 // pure data — node-testable
@@ -64,10 +65,9 @@ let unlockBound = false;
 
 function ctx(): AudioContext | null {
   if (typeof window === 'undefined') return null;
-  const AC = window.AudioContext ?? (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!AC) return null;
   if (!ac) {
-    ac = new AC();
+    ac = createDefaultAudioContext();
+    if (!ac) return null;
     // autoplay policies start the context suspended — resume on the first
     // real gesture and on every later call, whichever comes first
     if (!unlockBound) {

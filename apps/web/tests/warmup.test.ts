@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { YUE_THINKING_LINES } from '../lib/thinking-lines';
 import { WARMUP_BANKS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from '../lib/warmup';
 
 describe('warm-up dialogue banks', () => {
@@ -7,10 +8,13 @@ describe('warm-up dialogue banks', () => {
       expect(WARMUP_BANKS[lang]!.length).toBeGreaterThanOrEqual(6);
     }
   });
-  it('every line ends with an open hook (… or a question)', () => {
-    for (const bank of Object.values(WARMUP_BANKS)) {
-      for (const line of bank) {
-        expect(/[…?？!！]$/.test(line)).toBe(true);
+  it('uses Pixel’s Cantonese thinking set and drops the praise lines', () => {
+    expect([...WARMUP_BANKS.yue!]).toEqual([...YUE_THINKING_LINES]);
+    expect(YUE_THINKING_LINES).toHaveLength(20);
+    expect(WARMUP_BANKS.yue!.join('\n')).not.toMatch(/啟發/);
+    for (const lang of ['zh', 'ja', 'en']) {
+      for (const line of WARMUP_BANKS[lang]!) {
+        expect(line.toLowerCase()).not.toContain('inspire');
       }
     }
   });
