@@ -22,10 +22,7 @@ export function CharacterGrid({ lang, value, onChange }: { lang: Lang; value: st
               className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full text-2xl font-bold text-black/70"
               style={{ background: `radial-gradient(circle at 35% 30%, #ffffffcc, ${c.accent})` }}
             >
-              {/* r104: runtime-rendered cached thumbnail — painted art stays
-                  as poster, accent monogram until the render lands.
-                  r114: pre-baked posed screenshot (thumb-bake studio) wins. */}
-              <ModelThumb url={c.model} accent={c.accent} name={c.name} image={c.image} bakedId={c.id} />
+              <ModelThumb url={c.model} accent={c.accent} name={c.name} image={c.image} />
             </span>
             <span className="text-base font-semibold text-white">
               {c.name}
