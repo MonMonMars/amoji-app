@@ -142,7 +142,7 @@ export default function WardrobeSwap({
   const stored = useModularSelection();
   const view = useModularView();
   const active = activeWardrobe(characterId, stored);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   const pickHead = (headId: string) => {
     const head = demoHeadById(headId);
@@ -164,42 +164,59 @@ export default function WardrobeSwap({
   const head = active ? demoHeadById(active.headId) : undefined;
   const body = active ? demoBodyById(active.bodyId) : undefined;
 
+  if (!open) {
+    return (
+      <button
+        type="button"
+        data-testid="wardrobe-swap"
+        aria-label={copy.expand}
+        aria-expanded={false}
+        title={copy.title}
+        onClick={() => setOpen(true)}
+        className="ui-btn pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/30 text-base text-white/90 shadow-sm backdrop-blur-md hover:bg-black/50"
+      >
+        <span aria-hidden>👗</span>
+      </button>
+    );
+  }
+
   return (
     <section
       data-testid="wardrobe-swap"
-      className="pointer-events-auto max-h-[46vh] w-[min(36rem,calc(100vw-1.5rem))] overflow-y-auto rounded-2xl border border-white/10 bg-black/45 p-2.5 text-white shadow-lg backdrop-blur-md"
+      className="pointer-events-auto fixed inset-0 z-50 flex flex-col bg-neutral-950/95 text-white backdrop-blur-md"
     >
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="text-xs font-semibold tracking-wide text-white/90">{copy.title}</h2>
+      <header className="flex items-center justify-between gap-3 px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <h2 className="text-base font-semibold tracking-tight">{copy.title}</h2>
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="rounded-full px-2 py-0.5 text-[10px] text-white/60 hover:bg-white/10"
-          aria-expanded={open}
+          onClick={() => setOpen(false)}
+          aria-label={copy.collapse}
+          className="ui-btn flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/10 text-sm hover:bg-white/20"
         >
-          {open ? copy.collapse : copy.expand}
+          ✕
         </button>
-      </div>
-      {open && (
-        <div className="mt-2 space-y-2">
-          {head && body && (
-          <div data-testid="wardrobe-hero" className="grid grid-cols-2 gap-2">
-            <div className="relative h-32 overflow-hidden rounded-2xl border border-white/20 bg-black/30">
+      </header>
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        {head && body && (
+          <div data-testid="wardrobe-hero" className="grid grid-cols-2 gap-3">
+            <div className="relative h-44 overflow-hidden rounded-2xl border border-white/15 bg-black/30 shadow-lg">
               <FrontStill characterId={head.characterId} mark={head.short} />
-              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-1.5 pt-4 text-xs font-semibold">
-                <span className="block text-[9px] font-normal uppercase tracking-wider text-white/60">{copy.head}</span>
+              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 pb-2 pt-6 text-sm font-semibold">
+                <span className="block text-[10px] font-normal uppercase tracking-wider text-white/60">{copy.head}</span>
                 {head.short}
               </span>
             </div>
-            <div className="relative h-32 overflow-hidden rounded-2xl border border-white/20 bg-black/30">
+            <div className="relative h-44 overflow-hidden rounded-2xl border border-white/15 bg-black/30 shadow-lg">
               <FrontStill characterId={body.characterId} mark={body.short} />
-              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-1.5 pt-4 text-xs font-semibold">
-                <span className="block text-[9px] font-normal uppercase tracking-wider text-white/60">{copy.body}</span>
+              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 pb-2 pt-6 text-sm font-semibold">
+                <span className="block text-[10px] font-normal uppercase tracking-wider text-white/60">{copy.body}</span>
                 {body.short}
               </span>
             </div>
           </div>
-          )}
+        )}
+        <div>
+          <p className="mb-1.5 pl-1 text-[11px] font-medium uppercase tracking-[0.18em] text-white/55">{copy.head}</p>
           <HScrollRow ariaLabel="wardrobe heads" rowKey="wardrobe-heads" selectedId={active?.headId}>
             {DEMO_HEADS.map((asset) => (
               <Thumb
@@ -211,6 +228,9 @@ export default function WardrobeSwap({
               />
             ))}
           </HScrollRow>
+        </div>
+        <div>
+          <p className="mb-1.5 pl-1 text-[11px] font-medium uppercase tracking-[0.18em] text-white/55">{copy.body}</p>
           <HScrollRow ariaLabel="wardrobe outfits" rowKey="wardrobe-bodies" selectedId={active?.bodyId}>
             {DEMO_BODIES.map((asset) => (
               <Thumb
@@ -222,13 +242,13 @@ export default function WardrobeSwap({
               />
             ))}
           </HScrollRow>
-          {status && (
-            <p data-testid="wardrobe-status" className="text-[10px] leading-snug text-white/55" aria-live="polite">
-              {status}
-            </p>
-          )}
         </div>
-      )}
+        {status && (
+          <p data-testid="wardrobe-status" className="rounded-xl bg-white/5 px-3 py-2 text-xs leading-snug text-white/70" aria-live="polite">
+            {status}
+          </p>
+        )}
+      </div>
     </section>
   );
 }

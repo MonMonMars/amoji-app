@@ -136,7 +136,14 @@ describe('modular wardrobe catalog', () => {
     expect(safePortrait('https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a02-shibu.png'))
       .toContain('a02-shibu.png');
     expect(ui).toContain('data-testid="wardrobe-hero"');
+    expect(ui).toContain('useState(false)');
+    expect(ui).toContain('fixed inset-0');
     expect(board).toContain('data-testid="selection-hero"');
+    expect(board).not.toContain('comingSoon');
+    expect(board).not.toContain("t(lang, 'back')");
+    const chat = fs.readFileSync(path.resolve(here, '../app/chat/page.tsx'), 'utf8');
+    expect(chat).toContain('h-10 w-10');
+    expect(chat).toContain('pointer-events-none absolute inset-x-0 bottom-0');
   });
 });
 
