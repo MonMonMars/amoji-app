@@ -67,10 +67,9 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   const lang = live.lang;
   const langNative = LANGS.find((l) => l.id === lang)?.native ?? lang;
   const dirty = draft !== null;
-
-  // r123: baked alpha cutout of her posed body; 404 → painted portrait chip.
-  const cutoutSrc = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/cast-cutout/${character.id}.png`;
-  const [cutoutOk, setCutoutOk] = useState(true);
+  // Official front still (free-library release PNG). Same URL as the small
+  // row chips — never a cast-cutout or cast-thumbs bake (those face the back).
+  const frontSrc = assetUrl(character.image ?? `/portraits/${character.id}.jpg`);
 
   // Kid Mode filters the board to the wholesome cast + sunny scenes.
   const cast = prefs.kidMode ? CHARACTERS.filter((c) => c.kidSafe) : CHARACTERS;
@@ -106,43 +105,36 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
         <span className="text-xs text-white/30">{APP_REVISION}</span>
       </header>
 
-      {/* row 0 — combined preview: existing picks (or the draft replacing them) */}
+      {/* row 0 — MAIN visual: selected character (front still) on the
+          selected scene. This card is the largest image on the page.
+          Rows below stay small chips. */}
       <div className="fx-rise mx-5 mt-4" style={{ '--d': '20ms' } as CSSProperties}>
-        <div className="fx-sheen relative h-44 overflow-hidden rounded-3xl border border-white/10">
+        <div className="fx-sheen relative h-72 overflow-hidden rounded-3xl border border-white/10 sm:h-80">
           <SceneBackdrop background={background} />
-          {/* r123: her baked cutout standing IN the picked scene. r136: sized
-              to the WHOLE body inside the taller card (96% height, floor-
-              anchored) — the old h-[150%] overflow cropped her to legs-only
-              from the waist up. */}
-          {cutoutOk ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={cutoutSrc}
-              alt={character.name}
-              draggable={false}
-              onError={() => setCutoutOk(false)}
-              className="absolute bottom-0 right-3 h-[96%] w-auto object-contain object-bottom drop-shadow-[0_10px_18px_rgba(0,0,0,0.55)]"
-              style={{ filter: `drop-shadow(0 10px 18px rgba(0,0,0,0.55)) drop-shadow(0 0 24px ${character.accent}44)` }}
-            />
-          ) : null}
-          <div className="absolute inset-0 flex items-end p-3">
-            <div className="flex w-full items-end gap-3">
-              {!cutoutOk && (
-                <span
-                  className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 bg-black/40"
-                  style={{ borderColor: character.accent, boxShadow: `0 8px 24px -8px ${character.accent}aa` }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={assetUrl(character.image ?? `/portraits/${character.id}.jpg`)}
-                    alt={character.name}
-                    draggable={false}
-                    className="absolute inset-0 h-full w-full object-cover object-top"
-                  />
-                </span>
-              )}
-              <div className={`min-w-0 flex-1 pb-0.5 ${cutoutOk ? 'max-w-[55%]' : ''}`}>
-                <p className="text-lg font-bold drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={frontSrc}
+            alt={character.name}
+            draggable={false}
+            className="absolute bottom-1 right-2 h-[92%] w-auto max-w-[62%] object-contain object-bottom drop-shadow-[0_12px_22px_rgba(0,0,0,0.55)]"
+            style={{ filter: `drop-shadow(0 12px 22px rgba(0,0,0,0.55)) drop-shadow(0 0 28px ${character.accent}55)` }}
+          />
+          <div className="absolute inset-0 flex items-end p-4">
+            <div className="flex max-w-[46%] flex-col items-start gap-2 pb-0.5">
+              <span
+                className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border-2 bg-black/40"
+                style={{ borderColor: character.accent, boxShadow: `0 8px 24px -8px ${character.accent}aa` }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={frontSrc}
+                  alt=""
+                  draggable={false}
+                  className="absolute inset-0 h-full w-full object-cover object-center"
+                />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xl font-bold drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
                   {character.name}
                   <span className="ml-1.5 text-xs font-normal text-white/70">{character.gender === 'female' ? '♀' : '♂'}</span>
                 </p>
@@ -155,7 +147,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                   </p>
                 )}
               </div>
-              <div className="flex shrink-0 flex-col items-end gap-1.5 pb-0.5">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <span className="rounded-full bg-black/45 px-3 py-1 text-[11px] font-medium backdrop-blur-md">
                   {t(lang, background.nameKey as never)}
                 </span>
@@ -208,10 +200,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                     className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-black/40"
                     style={active ? { boxShadow: `0 0 0 2px ${c.accent}` } : undefined}
                   >
-                    {/* r104: runtime-rendered cached thumbnail (falls back to
-                        painted art / accent monogram) instead of a live bust.
-                        r114: pre-baked posed screenshot wins when present. */}
-                    <ModelThumb url={c.model} accent={c.accent} name={c.name} image={c.image} bakedId={c.id} />
+                    <ModelThumb url={c.model} accent={c.accent} name={c.name} image={c.image} />
                   </span>
                   <span className="text-xs font-semibold">{c.name}</span>
                   <span className="text-[10px] leading-none text-white/40">{c.gender === 'female' ? '♀' : '♂'}</span>
