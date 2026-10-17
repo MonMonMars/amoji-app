@@ -276,30 +276,28 @@ export function playMoveSfx(kind: MoveKind): void {
   }
 }
 
-/** her giggle now trills — called from triggerLaugh so every funny moment rings */
+/** a quiet two-note chuckle — a high triangle trill read as a broken giggle */
 export function playLaughSfx(): void {
   if (voiceHeld()) return; // r102: never ring foley over a speak attempt
   const c = ctx();
   if (!c || !sfxEnabled()) return;
   const t = c.currentTime + 0.02;
   const out = c.destination;
-  // a descending trill of quick little notes, like a suppressed laugh
-  const notes = [880, 712, 780, 628, 686, 540];
+  const notes = [392, 330];
   notes.forEach((f, i) => {
-    tone(c, out, { freq: f, slideTo: f * 0.86, at: t + i * 0.095, dur: 0.1, vol: 0.065, wave: 'triangle' });
+    tone(c, out, { freq: f, slideTo: f * 0.94, at: t + i * 0.11, dur: 0.09, vol: 0.03, wave: 'sine' });
   });
 }
 
-/** a soft boing + padded thump when you poke her */
+/** a short low tap when you poke her — no rising squeak over the spoken laugh */
 export function playPokeSfx(): void {
   if (voiceHeld()) return; // r102: never ring foley over a speak attempt
   const c = ctx();
   if (!c || !sfxEnabled()) return;
   const t = c.currentTime + 0.02;
   const out = c.destination;
-  tone(c, out, { freq: 320, slideTo: 110, at: t, dur: 0.16, vol: 0.14, wave: 'triangle' });
-  burst(c, out, { at: t, dur: 0.05, vol: 0.07, f0: 900, q: 1.2 });
-  tone(c, out, { freq: 520, slideTo: 940, at: t + 0.05, dur: 0.14, vol: 0.05, wave: 'sine' });
+  tone(c, out, { freq: 150, slideTo: 70, at: t, dur: 0.06, vol: 0.045, wave: 'sine' });
+  burst(c, out, { at: t, dur: 0.03, vol: 0.025, f0: 240, q: 0.7 });
 }
 
 // ---- ambient scene beds ------------------------------------------------------

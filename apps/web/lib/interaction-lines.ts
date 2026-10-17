@@ -5,7 +5,7 @@
 
 import type { Lang } from './prefs';
 import type { PersonalityId } from './personality';
-import { profilePokeLine } from './personality';
+import { personalityFor } from './personality';
 import type { TalkZone } from './poke-hit';
 
 export type InteractZone = TalkZone | 'hand';
@@ -113,11 +113,89 @@ export function interactionLines(personality: PersonalityId, zone: string, lang:
   return Array.from({ length: 12 }, (_, i) => templates(lang, vibe, region, i));
 }
 
+/** One short question after a poke. The long banks stay for idle chatter. */
+function shortTalk(lang: Lang, vibe: string, region: string, i: number): string {
+  const n = (i % 12) + 1;
+  if (lang === 'yue') {
+    const bank = [
+      `${vibe}，${region}呀？`,
+      `${vibe}，再拮${region}？`,
+      `${vibe}，玩${region}？`,
+      `${vibe}，第${n}下？`,
+      `${vibe}，${region}中招？`,
+      `${vibe}，輕輕${region}？`,
+      `${vibe}，${region}想玩？`,
+      `${vibe}，咁拮${region}？`,
+      `${vibe}，${region}好唔好？`,
+      `${vibe}，換個${region}？`,
+      `${vibe}，${region}笑咗？`,
+      `${vibe}，仲玩${region}？`,
+    ];
+    return bank[i % bank.length]!;
+  }
+  if (lang === 'zh') {
+    const bank = [
+      `${vibe}，${region}呀？`,
+      `${vibe}，再戳${region}？`,
+      `${vibe}，玩${region}？`,
+      `${vibe}，第${n}下？`,
+      `${vibe}，${region}中招？`,
+      `${vibe}，轻轻${region}？`,
+      `${vibe}，${region}想玩？`,
+      `${vibe}，这么戳${region}？`,
+      `${vibe}，${region}好不好？`,
+      `${vibe}，换个${region}？`,
+      `${vibe}，${region}笑了？`,
+      `${vibe}，还玩${region}？`,
+    ];
+    return bank[i % bank.length]!;
+  }
+  if (lang === 'ja') {
+    const bank = [
+      `${vibe}、${region}？`,
+      `${vibe}、もう一回${region}？`,
+      `${vibe}、${region}遊ぶ？`,
+      `${vibe}、${n}回目？`,
+      `${vibe}、${region}ヒット？`,
+      `${vibe}、やさしく${region}？`,
+      `${vibe}、${region}したい？`,
+      `${vibe}、そこ${region}？`,
+      `${vibe}、${region}どう？`,
+      `${vibe}、別の${region}？`,
+      `${vibe}、${region}笑った？`,
+      `${vibe}、まだ${region}？`,
+    ];
+    return bank[i % bank.length]!;
+  }
+  const bank = [
+    `${vibe}, my ${region}?`,
+    `${vibe}, that ${region} again?`,
+    `${vibe}, playing with my ${region}?`,
+    `${vibe}, tap ${n}?`,
+    `${vibe}, ${region} hit?`,
+    `${vibe}, gentle on the ${region}?`,
+    `${vibe}, my ${region} wants to play?`,
+    `${vibe}, that ${region}?`,
+    `${vibe}, like that ${region}?`,
+    `${vibe}, other ${region}?`,
+    `${vibe}, the ${region} laughed?`,
+    `${vibe}, still my ${region}?`,
+  ];
+  return bank[i % bank.length]!;
+}
+
+export function shortInteractionLines(personality: PersonalityId, zone: string, lang: Lang): string[] {
+  const z = (ZONES as string[]).includes(zone) ? zone as InteractZone : 'torso';
+  const vibe = VIBE[personality][lang];
+  const region = REGION[z][lang];
+  return Array.from({ length: 12 }, (_, i) => shortTalk(lang, vibe, region, i));
+}
+
 const lastPick = new Map<string, number>();
 
 /** Randomized line for this personality and zone. Skips the line just played. */
 export function pickInteractionLine(personality: PersonalityId, zone: string, lang: Lang): string {
-  const list = interactionLines(personality, zone, lang);
+  const list = shortInteractionLines(personality, zone, lang);
   let i = Math.floor(Math.random() * list.length);
   const key = `${personality}:${zone}:${lang}`;
   if (list.length > 1 && i === lastPick.get(key)) i = (i + 1) % list.length;
@@ -126,27 +204,32 @@ export function pickInteractionLine(personality: PersonalityId, zone: string, la
 }
 
 export function pickCharacterInteraction(characterId: string, gender: 'female' | 'male' | undefined, zone: string, lang: Lang): string {
-  const pool = 8;
-  let i = Math.floor(Math.random() * pool);
+  const personality = personalityFor(characterId, gender);
+  const list = shortInteractionLines(personality, zone, lang);
   const key = `${characterId}:${zone}:${lang}`;
-  if (i === lastPick.get(key)) i = (i + 1) % pool;
+  let i = Math.floor(Math.random() * list.length);
+  if (list.length > 1 && i === lastPick.get(key)) i = (i + 1) % list.length;
   lastPick.set(key, i);
-  return profilePokeLine(characterId, lang, i, zone, gender);
+  return list[i]!;
 }
 
 const LAUGHS: Record<Lang, string[]> = {
-  yue: ['哈哈！', '嘻嘻！', '呵呵！'],
-  zh: ['哈哈！', '嘻嘻！', '呵呵！'],
-  ja: ['あはは！', 'ふふっ！', 'えへへ！'],
-  en: ['Haha!', 'Hehe!', 'Ha!'],
+  yue: ['哈哈', '嘻嘻', '呵呵'],
+  zh: ['哈哈', '嘻嘻', '呵呵'],
+  ja: ['あはは', 'ふふ', 'えへへ'],
+  en: ['Ha ha', 'Heh heh', 'Haha'],
 };
 
-/** Sometimes a short laugh before the line. Null when this poke stays words-only. */
+/**
+ * Sometimes a short chuckle before the poke line. No trailing bang and only
+ * a slight lift — an isolated "Haha!" at a high pitch/rate is what the
+ * engines yelp, and that rate was sticking onto the next sentence.
+ */
 export function maybeLaughLead(lang: Lang): { text: string; pitch: number; rate: number } | undefined {
   if (Math.random() > 0.45) return undefined;
   const list = LAUGHS[lang] ?? LAUGHS.en;
   const text = list[Math.floor(Math.random() * list.length)]!;
-  return { text, pitch: 0.18, rate: 0.08 };
+  return { text, pitch: 0.04, rate: 0 };
 }
 
 export function personalityIdleLine(personality: PersonalityId, lang: Lang, n: number): string {
