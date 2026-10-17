@@ -2,6 +2,7 @@
 import { pinDefaultOutput } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 import { stripVoicedSymbols } from './speak-text';
+import { followAudioElement } from './speech';
 // ChatGPT-grade emotional TTS — OpenAI gpt-4o-mini-tts (tier 0, r2026-10-05.112).
 // This is the same engine family ChatGPT's Advanced Voice Mode speaks with: the
 // emotion is not SSML numbers but a natural-language "instructions" prompt —
@@ -259,7 +260,10 @@ export function speakOpenAi(text: string, opts: OpenAiVoiceOpts): Promise<void> 
       applyPlaybackVolume(audio);
       currentAudio = audio;
       currentUrl = url;
-      audio.onplay = () => { try { opts.onPlaying?.(); } catch { /* ignore */ } };
+      audio.onplay = () => {
+        try { opts.onPlaying?.(); } catch { /* ignore */ }
+        followAudioElement(audio, true);
+      };
       audio.onended = () => {
         if (currentAudio === audio) { currentAudio = null; currentUrl = null; }
         URL.revokeObjectURL(url);

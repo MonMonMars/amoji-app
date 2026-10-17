@@ -144,7 +144,6 @@ import { notifySpeaking, isSpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
 import { pickIdleLine } from '../lib/persona-chatter';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
-import { ouchStyleFor } from '../lib/ouch';
 import { pickCharacterInteraction, maybeLaughLead } from '../lib/interaction-lines';
 import { cannedOpener, personalityPrompt, personalityTutorTip } from '../lib/personality';
 import { pickLaugh, laughStyleFor, LAUGH_RE } from '../lib/laugh';
@@ -523,12 +522,11 @@ export default function ChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // poke replies — instant ouch cry (as the vocal lead) + personality line.
-  // r.26: the cry and the flinch wear the last felt mood — poking her while
-  // you're sad gets a gentle apologetic gasp and a soft low flinch instead of
-  // a full startle; no felt mood keeps the classic cry and voice numbers.
-  // r82: the poke now LANDS audibly too — a soft boing + padded thump rides
-  // the ouch cry, exactly the unitree-style feedback Master Simon asked for.
+  // poke replies — the cheer line is spoken once, in her normal voice.
+  // A surprise-pitched "Haha!" lead (and the rising poke squeak) used to
+  // stack on that line and leave speechSynthesis at the wrong rate, so the
+  // next chat line sounded broken too. The face flinch still comes from the
+  // poke animation. Displayed text is the line itself.
   const lastPokeRef = useRef(pokeCount);
   useEffect(() => {
     if (pokeCount === lastPokeRef.current) return;
@@ -537,9 +535,8 @@ export default function ChatPanel({
     lastUserRef.current = Date.now();
     reengageStageRef.current = 0;
     playPokeSfx();
-    const style = ouchStyleFor('happy');
     const line = pickCharacterInteraction(characterId, characterGender, pokeZone || 'torso', lang);
-    sayLocal(line, { surprise: style.surprise, joy: 0.75 }, maybeLaughLead(lang));
+    sayLocal(line, { joy: 0.5 }, maybeLaughLead(lang));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pokeCount]);
 
@@ -551,7 +548,7 @@ export default function ChatPanel({
     lastUserRef.current = Date.now();
     reengageStageRef.current = 0;
     const line = pickCharacterInteraction(characterId, characterGender, 'hand', lang);
-    sayLocal(line, { joy: 0.8, love: 0.4 }, maybeLaughLead(lang));
+    sayLocal(line, { joy: 0.55 }, maybeLaughLead(lang));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handHoldCount]);
 

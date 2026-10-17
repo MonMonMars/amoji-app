@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { interactionLines, pickCharacterInteraction } from '../lib/interaction-lines';
+import { describe, expect, it, vi } from 'vitest';
+import { interactionLines, maybeLaughLead, pickCharacterInteraction } from '../lib/interaction-lines';
 import { FEMALE_PERSONALITIES, MALE_PERSONALITIES, profilePokeLine } from '../lib/personality';
 
 const ZONES = ['head', 'torso', 'chest', 'side', 'back', 'hand'] as const;
@@ -16,6 +16,27 @@ describe('interaction lines', () => {
         }
       }
     }
+  });
+
+  it('poke laugh lead is a soft chuckle, not a yelped bang', () => {
+    const spy = vi.spyOn(Math, 'random').mockReturnValue(0);
+    try {
+      const lead = maybeLaughLead('en');
+      expect(lead?.text).toBeTruthy();
+      expect(lead!.text).not.toMatch(/[!！~～…]/);
+      expect(lead!.pitch).toBeLessThanOrEqual(0.08);
+      expect(lead!.rate).toBeLessThanOrEqual(0.06);
+      expect(maybeLaughLead('yue')!.text).not.toMatch(/[!！]/);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('poke talk is a short question, not a paragraph', () => {
+    const line = pickCharacterInteraction('a01-shino', 'female', 'head', 'en');
+    expect(line.length).toBeLessThan(48);
+    expect(line.endsWith('?') || /[?？]/.test(line)).toBe(true);
+    expect(line.split(/[.!?]/).filter(Boolean).length).toBeLessThan(3);
   });
 
   it('male and female personalities do not share the same opening vibe in English', () => {

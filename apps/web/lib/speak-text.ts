@@ -41,14 +41,18 @@ export function cleanForDisplay(raw: string): string {
 // Glyphs engines read aloud as words ("at", "hash", "dollar", "percent"…).
 // Apostrophes and in-word hyphens stay so "don't" / "well-known" still speak.
 // ! and ? stay — they shape intonation and are not named.
-const VOICED_SYMBOLS = /[@#＠＃$＄%％^＾&＆*＊+=~～_|\\/<>{}[\]()（）「」『』《》〈〉“”„‟«»•·※§¶†‡°`´]+/g;
+const VOICED_SYMBOLS = /[@#＠＃$＄%％^＾&＆*＊+=~～〜_|\\/<>{}[\]()（）「」『』《》〈〉“”„‟«»•·※§¶†‡°`´]+/g;
 
 // Pause glyphs some engines name ("comma", "period", "colon"). Decimal
 // points between digits are protected so "3.14" stays a number.
-const PAUSE_MARKS = /[.,，。、．;；:：…—–―−]+/g;
+const PAUSE_MARKS = /[.,，。、．;；:：…⋯—–―−]+/g;
 
 function collapseSpaces(s: string): string {
   return s.replace(/[ \t]{2,}/g, ' ').replace(/[ \t]+\n/g, '\n').trim();
+}
+
+function clamp(v: number, lo: number, hi: number): number {
+  return v < lo ? lo : v > hi ? hi : v;
 }
 
 /** Drop symbols that TTS would pronounce. Pause marks are left in place. */
@@ -75,16 +79,78 @@ export function stripVoicedGlyphs(raw: string): string {
 
 /**
  * Spoken text before clause splitting. Hyphens and ASCII full stops become
- * pause marks (not the words "hyphen" / "period"). Symbols are already gone.
- * Pause glyphs themselves are stripped later, at the synthesizer.
+ * pause marks (not the words "hyphen" / "period" / "tilde"). Symbols are
+ * already gone. Pause glyphs themselves are stripped later, at the synthesizer.
  */
 export function cleanForSpeech(raw: string): string {
   let s = stripMarkup(stripStageDirections(raw));
-  s = s.replace(/\b(?:hyphen|dash|full stop|period|comma|semicolon|colon|exclamation|question mark)\b/gi, ' ');
+  s = s.replace(/\b(?:hyphen|dash|em dash|en dash|full stop|period|comma|semicolon|colon|tilde|ellipsis|exclamation(?: mark| point)?|question mark)\b/gi, ' ');
   s = s.replace(/\s*[—–―−]\s*/g, '，');
   s = s.replace(/\s+-\s+/g, '，');
   s = s.replace(/([\u3400-\u9fff])\s*\.\s*/g, '$1。');
   s = stripVoicedSymbols(s);
   s = s.replace(/\s+/g, ' ').trim();
+  s = s.replace(/\s+([,.;!?，。！？])/g, '$1');
   return s;
+}
+
+/** True when the engine would have a word to say, not a lone mark. */
+export function isSpeakableText(s: string): boolean {
+  return /[\p{L}\p{N}]/u.test(s);
+}
+
+/** BCP-47 tag for a companion language. Short laughs must use this too — an unset lang makes the engine guess, then stick. */
+export function speechLocale(lang: string): string {
+  if (lang === 'yue') return 'zh-HK';
+  if (lang === 'zh') return 'zh-CN';
+  if (lang === 'ja') return 'ja-JP';
+  return 'en-US';
+}
+
+/**
+ * Lead-tic deltas (giggle / gasp). Kept small: a short "haha" at +30% pitch
+ * is a squeak, and some engines keep that rate for the next utterance.
+ */
+export function clampLeadProsody(pitch: number, rate: number): { pitch: number; rate: number } {
+  return { pitch: clamp(pitch, -0.08, 0.08), rate: clamp(rate, -0.06, 0.06) };
+}
+
+/** Absolute browser pitch/rate. speechSynthesis past ~1.3 sounds sped up and can leak into the next line. */
+export function clampBrowserProsody(pitch: number, rate: number): { pitch: number; rate: number } {
+  return { pitch: clamp(pitch, 0.9, 1.18), rate: clamp(rate, 0.92, 1.12) };
+}
+
+/** Even tighter window for a chuckle, so the laugh sits next to the speaking voice. */
+export function clampLaughDelivery(pitch: number, rate: number): { pitch: number; rate: number } {
+  return { pitch: clamp(pitch, 0.96, 1.08), rate: clamp(rate, 0.96, 1.04) };
+}
+
+export interface SpokenLead {
+  text: string;
+  pitch: number;
+  rate: number;
+}
+
+/**
+ * A vocal tic safe to synthesize. Trailing bangs are dropped — on a one-word
+ * laugh they make the engine yelp instead of chuckle. Empty / symbol-only
+ * tics are dropped so nothing spells "exclamation mark".
+ */
+export function prepareSpokenLead(lead?: { text: string; pitch: number; rate: number } | null): SpokenLead | undefined {
+  if (!lead) return undefined;
+  const text = cleanForSpeech(lead.text).replace(/[!！]+$/g, '').trim();
+  if (!isSpeakableText(text)) return undefined;
+  const prosody = clampLeadProsody(lead.pitch, lead.rate);
+  return { text, pitch: prosody.pitch, rate: prosody.rate };
+}
+
+/** Fold a lead into a single spoken string (Google TTS has no separate prosody tag). */
+export function joinSpeechLead(lead: string, body: string, lang: string): string {
+  const a = cleanForSpeech(lead).replace(/[!！]+$/g, '').trim();
+  const b = cleanForSpeech(body);
+  if (!isSpeakableText(a)) return b;
+  if (!isSpeakableText(b)) return a;
+  const cjk = lang === 'yue' || lang === 'zh' || lang === 'ja';
+  if (/[，,。.!！?？、]$/.test(a)) return `${a}${cjk ? '' : ' '}${b}`.replace(/\s+/g, ' ').trim();
+  return `${a}${cjk ? '，' : ', '}${b}`.replace(/\s+/g, ' ').trim();
 }

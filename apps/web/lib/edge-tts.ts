@@ -26,7 +26,8 @@ import { applyPlaybackVolume } from './playback-volume';
 import { characterVoiceGender } from './voice-gender';
 import { edgeVoiceId, isFemaleNeuralVoice, isMaleNeuralVoice } from './voice-catalog';
 import { edgeCastVoice } from './edge-cast';
-import { stripVoicedGlyphs } from './speak-text';
+import { clampLeadProsody, cleanForSpeech, isSpeakableText, stripVoicedGlyphs } from './speak-text';
+import { followAudioElement } from './speech';
 
 // r2026-10-04.89: timeout 7s → 4.5s — the Google-TTS mid tier in voice.ts now
 // catches a dead socket even faster; and stopEdge() finally rejects the
@@ -399,15 +400,18 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
   const baseRate = (opts.rateDelta ?? 0) + voice.rate;
   const basePitch = (opts.pitchDelta ?? 0) + voice.pitch;
   const baseVol = opts.volumeDelta ?? 0;
-  const rising = /[？?]\s*$/.test(text);
-  const parts = clauses(text);
+  const spoken = cleanForSpeech(text);
+  const rising = /[？?]\s*$/.test(spoken);
+  const parts = clauses(spoken).filter(isSpeakableText);
+  const leadText = opts.lead ? cleanForSpeech(opts.lead.text).replace(/[!！]+$/g, '').trim() : '';
+  const leadProsody = opts.lead ? clampLeadProsody(opts.lead.pitch, opts.lead.rate) : null;
 
-  // Laugh / ouch lead keeps its own pitch and rate. The clauses below
-  // open a fresh prosody, so that bump cannot stick to the line after.
-  const lead = opts.lead;
-  const leadSpoken = lead ? stripVoicedGlyphs(lead.text) : '';
-  const tic = lead && leadSpoken
-    ? `<prosody pitch='${pct(clamp(lead.pitch, -0.5, 0.5))}' rate='${pct(clamp(lead.rate, -0.5, 0.5))}' volume='${db(0.1)}'>${escapeXml(leadSpoken)}</prosody><break time='170ms'/>`
+  // The chuckle sits OUTSIDE mstts:express-as. Excited/cheerful on a one-word
+  // "haha" is the broken poke laugh (strained style + a bang yelp). Pitch
+  // stays inside a speaking range so the next clause cannot inherit a squeak.
+  const leadSpoken = leadText && isSpeakableText(leadText) ? stripVoicedGlyphs(leadText) : '';
+  const tic = leadSpoken && leadProsody
+    ? `<prosody pitch='${pct(leadProsody.pitch)}' rate='${pct(leadProsody.rate)}' volume='${db(0)}'>${escapeXml(leadSpoken)}</prosody><break time='220ms'/>`
     : '';
 
   const melody = opts.melody;
@@ -428,19 +432,19 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
           : '';
         return prosodyClause(part, pitch, rate, baseVol, breakAfter);
       }
-      // r2026-10-04.64 — wider sing-song: the contour arc, the question
-      // tail lift and the !-swell all got bigger so feelings ride the line
+      // Sing-song stays inside what neural prosody can do without artifacts.
+      // Past about ±20% pitch the free voices distort — a poke "haha!" at the
+      // old +50% ceiling was the squeak.
       const contour = parts.length > 1
-        ? 1 + 0.12 * expr * Math.sin((i / (parts.length - 1)) * Math.PI * (rising ? 1 : 0.7))
+        ? 1 + 0.08 * expr * Math.sin((i / (parts.length - 1)) * Math.PI * (rising ? 1 : 0.7))
         : 1;
-      const tailLift = isTail && rising ? 1.22 : isTail && !rising ? 0.9 : 1;
-      // punctuation swells: ! pops, … sinks and stretches, — drags
+      const tailLift = isTail && rising ? 1.1 : isTail && !rising ? 0.94 : 1;
       const bang = /[!！]\s*$/.test(part);
       const trail = /[…\.{3}—–]/.test(part);
-      const swellP = bang ? 1.45 : trail ? 0.7 : 1;
-      const swellR = bang ? 1.18 : trail ? 0.82 : 1;
-      const rate = clamp(baseRate * contour * (isTail ? 0.96 : 1) * swellR, -0.5, 0.5);
-      const pitch = clamp(basePitch * contour * tailLift * swellP + (bang ? 0.08 * expr : 0), -0.5, 0.5);
+      const swellP = bang ? 1.12 : trail ? 0.88 : 1;
+      const swellR = bang ? 1.04 : trail ? 0.92 : 1;
+      const rate = clamp(baseRate * contour * (isTail ? 0.96 : 1) * swellR, -0.14, 0.14);
+      const pitch = clamp(basePitch * contour * tailLift * swellP + (bang ? 0.02 * expr : 0), -0.18, 0.18);
       // breath pauses: commas shorter than sentence ends; ellipses linger
       const breakAfter = /[。！？!?…\.]$/.test(part) && !isTail
         ? `<break time='${trail ? '320ms' : '230ms'}'/>`
@@ -450,13 +454,16 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
     })
     .join('');
 
-  const style = edgeStyleFor(voice.name, opts.emotion ?? 'neutral') ?? voice.restStyle ?? null;
-  const inner = `${tic}${body}`;
+  // Emotion style (or the character's resting style) wraps the sentence only.
+  // An empty body means the chuckle is the whole utterance — leave it unstyled.
+  const style = body
+    ? (edgeStyleFor(voice.name, opts.emotion ?? 'neutral') ?? voice.restStyle ?? null)
+    : null;
   const voiced = style
-    ? `<voice name='${voice.name}'><mstts:express-as style='${style}'${
+    ? `<voice name='${voice.name}'>${tic}<mstts:express-as style='${style}'${
         voice.name.startsWith('zh-') ? ` styledegree='${clamp(0.9 + 0.5 * expr, 1, 2).toFixed(2)}'` : ''
-      }>${inner}</mstts:express-as></voice>`
-    : `<voice name='${voice.name}'>${inner}</voice>`;
+      }>${body}</mstts:express-as></voice>`
+    : `<voice name='${voice.name}'>${tic}${body}</voice>`;
   return (
     `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis'${
       style ? " xmlns:mstts='http://www.w3.org/2001/mstts'" : ''
@@ -489,7 +496,11 @@ function playMp3Blob(blob: Blob, opts: EdgeVoiceOpts, resolve: () => void, rejec
   currentAudio = audio;
   // r99: the caller learns the instant media playback actually begins —
   // that is the moment the iOS media gate is provably open.
-  audio.onplay = () => { try { opts.onPlaying?.(); } catch { /* ignore */ } };
+  audio.onplay = () => {
+    try { opts.onPlaying?.(); } catch { /* ignore */ }
+    // One mp3 is the whole sentence. Track its duration through the last word.
+    followAudioElement(audio, true);
+  };
   audio.onended = () => {
     if (currentAudio === audio) currentAudio = null;
     URL.revokeObjectURL(url);

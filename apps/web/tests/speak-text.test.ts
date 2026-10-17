@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { cleanForDisplay, cleanForSpeech, stripVoicedGlyphs } from '../lib/speak-text';
+import {
+  clampBrowserProsody, clampLaughDelivery, clampLeadProsody, cleanForDisplay, cleanForSpeech,
+  joinSpeechLead, prepareSpokenLead, stripVoicedGlyphs,
+} from '../lib/speak-text';
 
 describe('speak text cleaner', () => {
   it('strips emotion labels and markup before speech', () => {
@@ -13,6 +16,7 @@ describe('speak text cleaner', () => {
     expect(cleanForSpeech('我想清楚 — 先講')).toContain('，');
     expect(cleanForSpeech('我想清楚 — 先講')).not.toMatch(/hyphen|dash|period|full stop/i);
     expect(cleanForSpeech('你好. 再講')).toBe('你好。再講');
+    expect(cleanForSpeech('say tilde then ellipsis please')).not.toMatch(/\b(tilde|ellipsis)\b/i);
   });
 
   it('leaves display punctuation in place when speech rewrites it', () => {
@@ -53,5 +57,32 @@ describe('speak text cleaner', () => {
     expect(cleanForSpeech('Haha!')).toBe('Haha!');
     expect(stripVoicedGlyphs('哈哈！')).toBe('哈哈！');
     expect(stripVoicedGlyphs('呵呵……')).toBe('呵呵');
+  });
+
+  it('turns tildes and dashes into pauses instead of spoken marks', () => {
+    expect(cleanForSpeech('哈哈～身中招啦')).toBe('哈哈 身中招啦');
+    expect(cleanForSpeech('哈哈～身中招啦')).not.toMatch(/tilde|ellipsis/i);
+    expect(cleanForSpeech('wait… still here')).toBe('wait… still here');
+    expect(cleanForSpeech('laughing — still playing?')).toBe('laughing，still playing?');
+    expect(cleanForSpeech('laughing — still playing?')).not.toContain('—');
+    expect(stripVoicedGlyphs(cleanForSpeech('laughing — still playing?'))).toBe('laughing still playing?');
+    expect(cleanForDisplay('哈哈～再嚟')).toContain('～');
+  });
+
+  it('keeps a poke laugh inside a normal speaking range', () => {
+    const lead = prepareSpokenLead({ text: 'Haha!', pitch: 0.32, rate: 0.18 });
+    expect(lead?.text).toBe('Haha');
+    expect(lead && Math.abs(lead.pitch)).toBeLessThanOrEqual(0.08);
+    expect(lead && Math.abs(lead.rate)).toBeLessThanOrEqual(0.06);
+    expect(joinSpeechLead('Haha!', 'you got my head', 'en')).toBe('Haha, you got my head');
+    expect(joinSpeechLead('哈哈', '你戳到我', 'yue')).toContain('，');
+    expect(joinSpeechLead('哈哈', '你戳到我', 'yue')).not.toMatch(/[!！]/);
+    const browser = clampBrowserProsody(1.08 * 1.34, 1.02 * 1.14);
+    expect(browser.pitch).toBeLessThanOrEqual(1.18);
+    expect(browser.rate).toBeLessThanOrEqual(1.12);
+    const laugh = clampLaughDelivery(browser.pitch * (1 + 0.18), browser.rate * (1 + 0.08));
+    expect(laugh.pitch).toBeLessThanOrEqual(1.08);
+    expect(laugh.rate).toBeLessThanOrEqual(1.04);
+    expect(clampLeadProsody(0.5, 0.4).pitch).toBe(0.08);
   });
 });
