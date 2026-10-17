@@ -99,15 +99,37 @@ export function voicesForLocale(locale: VoiceLocale): readonly VoiceOption[] {
   return VOICE_CATALOG.filter((v) => v.locale === locale);
 }
 
-/** Names that must never be chosen for the other gender. */
-const MALE_NEURAL = /WanLung|Yunxi|Yunjian|Yunyang|Keita|GuyNeural|Christopher|EricNeural|SamNeural|Otoya/i;
-const FEMALE_NEURAL = /HiuMaan|HiuGaai|Xiaoxiao|Xiaoyi|Xiaohan|Xiaomo|Xiaorui|Nanami|JennyNeural|AriaNeural|AnaNeural|Michelle|SaraNeural|YanNeural|Kyoko/i;
+/** Personal name of an Edge short name: en-GB-RyanNeural → ryan, zh-HK-HiuMaanNeural → hiumaan. */
+function voicePersonalName(id: string): string {
+  return id
+    .replace(/^zh-CN-(?:liaoning|shaanxi)-/i, '')
+    .replace(/^[a-z]{2}-[A-Za-z]{2}-/i, '')
+    .replace(/Neural$/i, '')
+    .replace(/Multilingual$/i, '')
+    .replace(/Expressive$/i, '')
+    .toLowerCase();
+}
+
+/** Exact personal names. Substring checks treated Ryan as Yan. */
+const MALE_NAMES = new Set([
+  'wanlung', 'yunxi', 'yunjian', 'yunyang', 'yunxia', 'yunjhe', 'keita',
+  'guy', 'christopher', 'eric', 'sam', 'otoya', 'ryan', 'andrew', 'brian',
+  'steffan', 'roger', 'william', 'connor', 'prabhat', 'liam', 'mitchell',
+  'wayne', 'luke', 'james', 'chilemba', 'abeo', 'elimu', 'thomas',
+]);
+const FEMALE_NAMES = new Set([
+  'hiumaan', 'hiugaai', 'xiaoxiao', 'xiaoyi', 'xiaohan', 'xiaomo', 'xiaorui',
+  'xiaobei', 'xiaoni', 'hsiaochen', 'hsiaoyu', 'nanami', 'jenny', 'aria',
+  'ana', 'michelle', 'sara', 'yan', 'kyoko', 'sonia', 'libby', 'natasha',
+  'neerja', 'emma', 'emily', 'ava', 'molly', 'clara', 'luna', 'leah',
+  'rosa', 'maisie', 'asilia', 'ezinne', 'imani',
+]);
 
 export function isMaleNeuralVoice(id: string): boolean {
-  return MALE_NEURAL.test(id);
+  return MALE_NAMES.has(voicePersonalName(id));
 }
 export function isFemaleNeuralVoice(id: string): boolean {
-  return FEMALE_NEURAL.test(id);
+  return FEMALE_NAMES.has(voicePersonalName(id));
 }
 
 export function edgeVoiceId(locale: string, gender: VoiceGender): string {

@@ -16,7 +16,7 @@
 |---|---|
 | **Companions** | 6 characters × 8 scenes × 4 languages; each with its own personality in the LLM prompt |
 | **Emotion** | 18 idle poses, VRMA clips, viseme lip-sync, facial + body expression — she feels what she says |
-| **Voice** | **Free neural voices** (Edge TTS), picked by language and the character's gender. Catalog defaults: Cantonese 曉曼 HiuMaan / 雲龍 WanLung (`zh-HK`), 中文 Xiaoxiao / Yunjian, 日本語 Nanami / Keita, English Jenny / Guy. A gender-matching cast hint (for example English Yan / Sam) replaces the default. If Edge is blocked, the browser `speechSynthesis` voice speaks (offline once that voice is installed). 🔊 toggle; tap-to-talk mic 🎙️ (zh-HK Cantonese recognition) |
+| **Voice** | **Free neural voices** (Edge TTS), one slot per companion per language — not one female voice and one male voice. English and 中文 spread across the live Edge list (Jenny, Sonia, Aria, Xiaoxiao, Xiaoyi, HsiaoChen, …). 廣東話 stays on `zh-HK` (HiuGaai / HiuMaan / WanLung) because that is the whole free Cantonese catalog; pitch and pace still differ per character. 日本語 is Nanami / Keita with the same per-character pitch and pace. If Edge is blocked, browser `speechSynthesis` keeps that pitch and pace. 🔊 toggle; tap-to-talk mic 🎙️ |
 | **Memory** 🧠 | Device-private long-term memory — name, likes, job, pets, mood history; injected into her prompt; 🧠 button to forget |
 | **Check-ins** ⏰ | Time-aware greeting, visit streak, follow-ups on yesterday's mood |
 | **Brain** | Free keyless LLM by default (Pollinations), offline banter fallback, optional bring-your-own-key upgrade (Gemini / Groq / OpenRouter / Kimi) |
@@ -85,11 +85,10 @@ Chat text keeps its punctuation. The spoken string may drop mark-names (`hyphen`
 
 ### Manual check
 
-1. **English, female** (Shino): switch the language to English, then Settings → Test voice. Expect the female hint `en-HK-YanNeural`, not a male voice. Turn neural voice off and test again: a browser English voice still speaks. With no cast hint, the catalog default is Jenny (`en-US-JennyNeural`).
-2. **English, male** (Ethan): Test voice. Expect `en-HK-SamNeural`. With no cast hint, the catalog default is Guy (`en-US-GuyNeural`). If Edge is blocked, a male browser voice speaks.
-3. **中文**: switch language, test. Xiaoxiao (female) or Yunjian (male). With the network off, a `zh-CN` browser voice still speaks when one is installed.
-4. **廣東話 / yue**: HiuMaan or WanLung (`zh-HK`). Offline, a `zh-HK` browser voice (HiuMaan, Sin-ji, WanLung) speaks when installed. No canto-tts-nano download.
-5. **日本語**: Nanami or Keita, then a `ja-JP` browser voice.
+1. **English**: Shino speaks as Jenny (`en-US-JennyNeural`). Switch to Shibu and test again: Sonia (`en-GB-SoniaNeural`), a different voice. Ethan is Ryan (`en-GB-RyanNeural`); the other male is Guy. Neural off: a browser English voice still speaks, higher or lower with the character.
+2. **中文**: Shino is Xiaoxiao, Shibu is Xiaoyi. The two males are Yunjian and Yunxi. Offline, a Chinese browser voice still speaks when one is installed.
+3. **廣東話**: Shino is HiuGaai, Shibu is HiuMaan, both `zh-HK`. The two males share WanLung at different pitches. Offline, a `zh-HK` browser voice speaks when installed. No canto-tts-nano download.
+4. **日本語**: Nanami or Keita. The free list has one female and one male voice, so companions differ by pitch and pace. Then a `ja-JP` browser voice if Edge is blocked.
 6. Send a line with punctuation (`你好。再講` or `Wait — really.`). The bubble still shows the marks. She does not say the words "period" or "hyphen".
 
 ## LLM keys (optional — the app works free out of the box)

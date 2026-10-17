@@ -21,11 +21,11 @@
 // r2026-10-04.85: timeout 12s → 7s — when Microsoft ignores the socket (dead
 // token / blocked network) the browser-voice fallback now takes over in half
 // the time, so a dead endpoint reads as a voice switch, not a long silence.
-import { characterById, CHARACTERS } from './prefs';
 import { pinDefaultOutput } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 import { characterVoiceGender } from './voice-gender';
 import { edgeVoiceId, isFemaleNeuralVoice, isMaleNeuralVoice } from './voice-catalog';
+import { edgeCastVoice } from './edge-cast';
 
 // r2026-10-04.89: timeout 7s → 4.5s — the Google-TTS mid tier in voice.ts now
 // catches a dead socket even faster; and stopEdge() finally rejects the
@@ -133,29 +133,60 @@ const CAST: Record<string, Record<string, string>> = {
   hitomi:  { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoxiaoNeural', ja: 'ja-JP-NanamiNeural', en: 'en-US-MichelleNeural' },
 };
 
-/** Locale + gender → Edge neural voice. Character id supplies gender for the cast. */
-export function resolveEdgeVoice(opts: EdgeVoiceOpts): { name: string; ssmlLang: string } {
+const REST_STYLES = ['friendly', 'cheerful', 'calm', 'serious', 'chat', 'sweet', 'hopeful'];
+
+function hashId(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (Math.imul(h, 33) + id.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+/** Resting delivery when the line is neutral. Emotion styles still win. */
+function restStyleFor(voiceName: string, characterId: string): string | undefined {
+  const supported = VOICE_STYLES[voiceName];
+  if (!supported?.length) return undefined;
+  const usable = REST_STYLES.filter((s) => supported.includes(s));
+  if (!usable.length) return undefined;
+  return usable[hashId(characterId) % usable.length];
+}
+
+export interface ResolvedEdgeVoice {
+  name: string;
+  ssmlLang: string;
+  pitch: number;
+  rate: number;
+  /** Neutral-line mstts style. Omitted when the voice has no style set. */
+  restStyle?: string;
+}
+
+/** Character + locale → one Edge voice. Gender is the floor, not the whole map. */
+export function resolveEdgeVoice(opts: EdgeVoiceOpts): ResolvedEdgeVoice {
   const v = VOICES[opts.lang] ?? VOICES.en!;
   const gender = opts.character ? characterVoiceGender(opts.character) : opts.gender;
-  let name = edgeVoiceId(opts.lang, gender);
-  if (opts.character) {
-    const inWant = CHARACTERS.some((c) => c.id === opts.character);
+  const personal = opts.character ? edgeCastVoice(opts.character, opts.lang) : null;
+  let name = personal?.id ?? edgeVoiceId(opts.lang, gender);
+  let ssmlLang = personal?.ssmlLang ?? v.ssmlLang;
+  let pitch = personal?.pitch ?? 0;
+  let rate = personal?.rate ?? 0;
+  if (!personal && opts.character) {
     const casted = CAST[opts.character]?.[opts.lang];
-    // Want-list ids follow the gender catalog (HiuMaan / WanLung, …).
-    // Legacy cast ids keep their matrix when it matches gender.
-    if (!inWant && casted) name = casted;
-    else if (inWant) {
-      const ch = characterById(opts.character);
-      const hinted = opts.lang === 'yue' ? ch.voiceHint?.yue : opts.lang === 'en' ? ch.voiceHint?.en : undefined;
-      if (hinted) {
-        const hintOk = gender === 'male' ? isMaleNeuralVoice(hinted) : isFemaleNeuralVoice(hinted);
-        if (hintOk && !(gender === 'female' && opts.lang === 'yue')) name = hinted;
-      }
-    }
+    // Legacy ids (not on the want-list) keep their old matrix when it matches gender.
+    if (casted) name = casted;
   }
-  if (gender === 'female' && isMaleNeuralVoice(name)) name = edgeVoiceId(opts.lang, 'female');
-  if (gender === 'male' && isFemaleNeuralVoice(name)) name = edgeVoiceId(opts.lang, 'male');
-  return { name, ssmlLang: v.ssmlLang };
+  if (gender === 'female' && isMaleNeuralVoice(name)) {
+    name = edgeVoiceId(opts.lang, 'female');
+    ssmlLang = v.ssmlLang;
+    pitch = 0;
+    rate = 0;
+  }
+  if (gender === 'male' && isFemaleNeuralVoice(name)) {
+    name = edgeVoiceId(opts.lang, 'male');
+    ssmlLang = v.ssmlLang;
+    pitch = 0;
+    rate = 0;
+  }
+  const restStyle = personal && opts.character ? restStyleFor(name, opts.character) : undefined;
+  return { name, ssmlLang, pitch, rate, restStyle };
 }
 
 // ---- r2026-10-06.131: mstts:express-as emotional styles ---------------------
@@ -353,8 +384,10 @@ export function getTtsProxy(): string | null {
 export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
   const voice = resolveEdgeVoice(opts);
   const expr = clamp(opts.expressiveness ?? 1, 0.5, 1.8);
-  const baseRate = opts.rateDelta ?? 0;
-  const basePitch = opts.pitchDelta ?? 0;
+  // Character pitch/pace sits under the emotion contour so two companions
+  // on a shared neural voice still do not sound identical.
+  const baseRate = (opts.rateDelta ?? 0) + voice.rate;
+  const basePitch = (opts.pitchDelta ?? 0) + voice.pitch;
   const baseVol = opts.volumeDelta ?? 0;
   const rising = /[？?]\s*$/.test(text);
   const parts = clauses(text);
@@ -403,7 +436,7 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
     })
     .join('');
 
-  const style = edgeStyleFor(voice.name, opts.emotion ?? 'neutral');
+  const style = edgeStyleFor(voice.name, opts.emotion ?? 'neutral') ?? voice.restStyle ?? null;
   const inner = `${tic}${body}`;
   const voiced = style
     ? `<voice name='${voice.name}'><mstts:express-as style='${style}'${
