@@ -47,18 +47,22 @@ face.setEmotion('surprise', 1);  // or drive directly from your autonomy stack
 ## Architecture
 
 ```
-apps/web                     Next.js 14 companion app (GitHub Pages static build)
+apps/web                     Next.js companion app (GitHub Pages static build)
   lib/emotion-core …         → packages/emotion-core: portable parametric emotion core
   lib/edge-tts.ts            free neural TTS client (Edge read-aloud, SSML prosody)
   lib/robot-face.ts          robot-face engine (web build of the SDK)
-  app/api/chat/route.ts      LLM router (free default, key upgrades, live facts)
+  app/api/chat/route.ts      LLM router for `pnpm dev` (free default, key upgrades, live facts)
   lib/live-tools.ts          weather, news, location, web search (browser + server)
+server/backend               `@amoji/server` — production session API (not used by GitHub Pages)
+server/amoji-proxy           optional Cloudflare worker for blocked Edge sockets / OpenAI speech
 packages/emotion-core        emotion analysis + parametric expression mapping
 packages/vrm-renderer        pure VRM frame mapper
 packages/robot-face          @amoji/robot-face — the B2B SDK
 ```
 
 All memory lives on the user's device (localStorage) — nothing is uploaded except the chat text sent to the LLM provider.
+
+GitHub Pages stays that way. A Node host can also run the production API (`pnpm --filter @amoji/server start`, default `http://127.0.0.1:8787`). It stores an anonymous session, companion/wardrobe state, and chat turns in SQLite (`AMOJI_DB`, default `data/amoji.sqlite`) and speaks with Edge read-aloud (`POST /api/tts`). Chat uses the same keyed-provider then Pollinations then offline order as `/api/chat`. Set `NEXT_PUBLIC_AMOJI_API` to that origin only on a non-Pages build. Leave it unset for the static demo.
 
 ## Commands
 

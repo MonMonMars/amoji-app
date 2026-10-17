@@ -1,6 +1,7 @@
 'use client';
 // Last head (identity) and body (outfit) on this device.
 import { useEffect, useState } from 'react';
+import { scheduleStatePush } from '../backend-client';
 import { demoBodyById, demoHeadById, type ModularSelection } from './catalog';
 
 const KEY = 'amoji.modular.v1';
@@ -35,11 +36,13 @@ export function saveModularSelection(sel: ModularSelection): void {
   if (!demoHeadById(sel.headId) || !demoBodyById(sel.bodyId)) return;
   try { localStorage.setItem(KEY, JSON.stringify(sel)); } catch { /* private mode */ }
   notifySel(sel);
+  scheduleStatePush();
 }
 
 export function clearModularSelection(): void {
   try { localStorage.removeItem(KEY); } catch { /* ignore */ }
   notifySel(null);
+  scheduleStatePush();
 }
 
 export function subscribeModular(fn: SelListener): () => void {
