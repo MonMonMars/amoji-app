@@ -1,29 +1,16 @@
 'use client';
-// Master TTS playback level (0..1) — applies to edge/gTTS/OpenAI <audio> and browser speechSynthesis.
+// Dialogue / TTS level (0.2–1) from the settings steps 20/40/60/80/100.
+// Stored on prefs as voiceVol. Mic state does not touch this.
 
-const KEY = 'amoji.voice.volume.v1';
-const DEFAULT = 0.85;
-
-function clamp01(v: number): number {
-  if (!Number.isFinite(v)) return DEFAULT;
-  return v < 0 ? 0 : v > 1 ? 1 : v;
-}
+import { volumeLinear } from './audio-levels';
 
 export function getPlaybackVolume(): number {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (raw == null) return DEFAULT;
-    const n = Number.parseFloat(raw);
-    return clamp01(n);
-  } catch {
-    return DEFAULT;
-  }
+  return volumeLinear('voiceVol');
 }
 
-export function setPlaybackVolume(v: number): void {
-  try {
-    localStorage.setItem(KEY, String(clamp01(v)));
-  } catch { /* ignore */ }
+/** @deprecated levels are saved on prefs.voiceVol. Kept so old callers compile. */
+export function setPlaybackVolume(_v: number): void {
+  /* prefs own the level */
 }
 
 /** Scale an HTMLMediaElement's volume by the user's master slider. */

@@ -63,6 +63,7 @@ import { analyzeText } from '@amoji/emotion-core';
 import { BASE_SYSTEM, languageBlock, parseEmotionHints, type ChatMessage } from './llm';
 import { BRAIN_SPECS, markBrainDead, pickBrain, type BrainSpec } from './brain';
 import { cleanForDisplay } from './speak-text';
+import { withQuestion } from './follow-up';
 
 export interface ClientChatResult { reply: string; emotionHints: Record<string, number> }
 
@@ -481,7 +482,8 @@ export async function clientChat(
     if (first.spec.id !== 'pollinations' && content.length < 160 && CREDIT_RE.test(content)) {
       throw new Error(`${first.spec.id} out of credit`);
     }
-    return finishReply(content);
+    const done = finishReply(content);
+    return { ...done, reply: withQuestion(done.reply, opts?.language) };
   } catch (err) {
     if (first.spec.id === 'pollinations') {
       // r.46 — the free lane itself is too slow/down: she answers instantly
@@ -502,7 +504,8 @@ export async function clientChat(
     try {
       const content = await racedPollinations(free, '', system, recent, opts?.onPartial);
       if (content.length < 160 && CREDIT_RE.test(content)) throw new Error('pollinations credit');
-      return finishReply(content);
+      const done = finishReply(content);
+    return { ...done, reply: withQuestion(done.reply, opts?.language) };
     } catch {
       // r.46 — even the free race lost: keep the conversation alive NOW
       noteSlowLane(opts?.language);
