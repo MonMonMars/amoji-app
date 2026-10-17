@@ -56,7 +56,7 @@ If the library folders are named `out\<ID>` instead, use that path as `$src`. Co
 4. Changing outfit unloads body meshes and binds the next `*_body.glb`. The head mesh stays.
 5. Neck seam is the exported cut (`neck_z`, about ±0.002). Skin-tone mismatch is expected in v1.
 
-Until those files are present, chat keeps the existing single-VRM load (GitHub release want-list model, then `seed-san.vrm`).
+Until those files are present, a cloth change reloads the outfit's full want-list VRM (then the head's VRM, then `seed-san.vrm`) so the visible body still changes. Name and voice stay with the head.
 
 A98 is a tall outlier and is not part of this wardrobe. Do not cross-swap A98 with this cluster.
 
