@@ -11,7 +11,7 @@ Locale → engine → voice lives in `apps/web/lib/voice-catalog.ts`. Non-Yue en
 - Camera: wider polar orbit (`PHI_MIN` 0.25, `PHI_MAX` π−0.25; was 1.08 / 2.55). Yaw stays 360°. PC hold-to-pan only on a distant blank miss, and only after the hold arms.
 - Scroll: history scrolls itself. The invisible lower-third pad is gone. Bottom chat wrapper does not catch empty clicks.
 - Wardrobe: idle is a 40×40 icon beside settings. Press opens a full-screen view. Close returns to the preview.
-- Selection: full-screen head crop + full-body still. Rows and confirm overlap the preview. No back button. No 「即將推出」 row. Thumbs stay head-only.
+- Selection: same live VRM and backdrop as chat. Bottom strip is release face portraits (numbered) plus scene thumbs lettered A… from daytime to nighttime. No back button. No 「即將推出」 row.
 - LLM: anonymous race is `openai-fast` and `openai` with `reasoning_effort: low`. Keyed Groq uses `llama-3.3-70b-versatile`.
 - Idle crossfades are longer so loops blend. Feet stay planted. Load T-pose is unchanged.
 
@@ -74,4 +74,4 @@ Skipped, not in the map: Coqui CPML, Fish Speech CC-BY-NC, F5-TTS CC-BY-NC.
 - PR: https://github.com/MonMonMars/amoji-app/pull/7
 - GitHub Pages: `.github/workflows/pages.yml` runs on every push to `main` (and `workflow_dispatch`). It static-exports `@amoji/web` with `AMOJI_BASE_PATH=/amoji-app` and deploys `apps/web/out` to the `github-pages` environment. Merging this PR is what updates https://monmonmars.github.io/amoji-app/. The PR branch itself does not deploy.
 - Piper / Melo / Kokoro / Bark stay in `voice-catalog.ts` as non-shipping stubs. VoxCPM2, Chatterbox, CosyVoice, and Qwen3-TTS are held for a later GPU host and are not called. Google Cloud, Azure, and Polly are not wired.
-- Verify: selection shows head + body with overlapping rows and no back control; chat icon opens wardrobe full-screen and close restores orbit; history wheel-scrolls; hold on a side margin pans.
+- Verify: selection shows the live chat VRM on the chat backdrop; face thumbs are release portraits; scene thumbs run A (day) through L (night); a thumb tap swaps the body; chat icon opens wardrobe full-screen and close restores orbit; history wheel-scrolls; hold on a side margin pans.

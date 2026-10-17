@@ -11,7 +11,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#fb7185',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a01-shino&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a01-shino.png',
     model: 'want/a01-shino.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -28,7 +28,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#e8c4a0',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a02-shibu&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a02-shibu.png',
     model: 'want/a02-shibu.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -45,7 +45,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#ff9e7a',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a03-fumiriya&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a03-fumiriya.png',
     model: 'want/a03-fumiriya.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -62,7 +62,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#ff8fab',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a04-avatarsample-a&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a04-avatarsample-a.png',
     model: 'want/a04-avatarsample-a.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -79,7 +79,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#ff6b4a',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a05-avatarsample-c&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a05-avatarsample-c.png',
     model: 'want/a05-avatarsample-c.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -96,7 +96,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#38bdf8',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a10-agahomei-normal&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a10-agahomei-normal.png',
     model: 'want/a10-agahomei-normal.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -113,7 +113,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#f9a8d4',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a14-vivi&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a14-vivi.png',
     model: 'want/a14-vivi.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -130,7 +130,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#c7b9ff',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a16-vita&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a16-vita.png',
     model: 'want/a16-vita.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -147,7 +147,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#ff9ecb',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a17-victoria-rubin&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a17-victoria-rubin.png',
     model: 'want/a17-victoria-rubin.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -164,7 +164,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#8b93b8',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a23-hairsample-female&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a23-hairsample-female.png',
     model: 'want/a23-hairsample-female.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -181,7 +181,7 @@ export const CHARACTERS_WANT = [
     gender: 'male',
     accent: '#a78bfa',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/adventurer/png?seed=a24-hairsample-male&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a24-hairsample-male.png',
     model: 'want/a24-hairsample-male.vrm',
     voiceHint: { yue: 'zh-HK-WanLungNeural', en: 'en-HK-SamNeural' },
     tagline: {
@@ -198,7 +198,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#34d399',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a61-saori-kamiya-llunne&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a61-saori-kamiya-llunne.png',
     model: 'want/a61-saori-kamiya-llunne.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -215,7 +215,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#fbbf24',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a63-hinoame-satuki-mei-sirayuki&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a63-hinoame-satuki-mei-sirayuki.png',
     model: 'want/a63-hinoame-satuki-mei-sirayuki.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -232,7 +232,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#60a5fa',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a64-lily-lily-animeit&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a64-lily-lily-animeit.png',
     model: 'want/a64-lily-lily-animeit.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -249,7 +249,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#f472b6',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a70-vtuber-aihina-sample&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a70-vtuber-aihina-sample.png',
     model: 'want/a70-vtuber-aihina-sample.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -266,7 +266,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#fb7185',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a71-mary-sweety&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a71-mary-sweety.png',
     model: 'want/a71-mary-sweety.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -283,7 +283,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#e8c4a0',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a74-mizuka&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a74-mizuka.png',
     model: 'want/a74-mizuka.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -300,7 +300,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#ff9e7a',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a75-sorano&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a75-sorano.png',
     model: 'want/a75-sorano.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -317,7 +317,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#ff8fab',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a77-sasha&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a77-sasha.png',
     model: 'want/a77-sasha.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -334,7 +334,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#ff6b4a',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a79-amami-karasu&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a79-amami-karasu.png',
     model: 'want/a79-amami-karasu.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -351,7 +351,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#38bdf8',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a81-cinna&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a81-cinna.png',
     model: 'want/a81-cinna.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -368,7 +368,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#f9a8d4',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a82-renel-bonnie&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a82-renel-bonnie.png',
     model: 'want/a82-renel-bonnie.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -385,7 +385,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#c7b9ff',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a83-ao-witch&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a83-ao-witch.png',
     model: 'want/a83-ao-witch.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -402,7 +402,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#ff9ecb',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a85-kara&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a85-kara.png',
     model: 'want/a85-kara.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -419,7 +419,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#8b93b8',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a89-rurina&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a89-rurina.png',
     model: 'want/a89-rurina.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -436,7 +436,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#a78bfa',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a93-edokko&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a93-edokko.png',
     model: 'want/a93-edokko.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -453,7 +453,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#34d399',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a94-rita&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a94-rita.png',
     model: 'want/a94-rita.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -470,7 +470,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#fbbf24',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a95-mizu&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a95-mizu.png',
     model: 'want/a95-mizu.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -487,7 +487,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#60a5fa',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a96-pee-aruako&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a96-pee-aruako.png',
     model: 'want/a96-pee-aruako.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -504,7 +504,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#f472b6',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a97-pee-saaya&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a97-pee-saaya.png',
     model: 'want/a97-pee-saaya.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -521,7 +521,7 @@ export const CHARACTERS_WANT = [
     gender: 'male',
     accent: '#fb7185',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/adventurer/png?seed=a98-ethan&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a98-ethan.png',
     model: 'want/a98-ethan.vrm',
     voiceHint: { yue: 'zh-HK-WanLungNeural', en: 'en-HK-SamNeural' },
     tagline: {
@@ -538,7 +538,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#e8c4a0',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a99-miyora&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a99-miyora.png',
     model: 'want/a99-miyora.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -555,7 +555,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#ff9e7a',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a103-rockredgradientjk&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a103-rockredgradientjk.png',
     model: 'want/a103-rockredgradientjk.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -572,7 +572,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#ff8fab',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a104-simplebrownsailorjk&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a104-simplebrownsailorjk.png',
     model: 'want/a104-simplebrownsailorjk.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -589,7 +589,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#ff6b4a',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a105-serizawa-aoi&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a105-serizawa-aoi.png',
     model: 'want/a105-serizawa-aoi.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -606,7 +606,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#38bdf8',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a106-auroragradhairjk&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a106-auroragradhairjk.png',
     model: 'want/a106-auroragradhairjk.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -623,7 +623,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#f9a8d4',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a107-dm-office-casual&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a107-dm-office-casual.png',
     model: 'want/a107-dm-office-casual.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -640,7 +640,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#c7b9ff',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a109-riona&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a109-riona.png',
     model: 'want/a109-riona.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -657,7 +657,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#ff9ecb',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a112-mahochan-jk&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a112-mahochan-jk.png',
     model: 'want/a112-mahochan-jk.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -674,7 +674,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#8b93b8',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a114-sailor-cardigan-girl&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a114-sailor-cardigan-girl.png',
     model: 'want/a114-sailor-cardigan-girl.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -691,7 +691,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#a78bfa',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a116-haru-uniform&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a116-haru-uniform.png',
     model: 'want/a116-haru-uniform.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -708,7 +708,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#34d399',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a117-erigawa-risa&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a117-erigawa-risa.png',
     model: 'want/a117-erigawa-risa.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -725,7 +725,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#fbbf24',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a119-kanami-uniform&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a119-kanami-uniform.png',
     model: 'want/a119-kanami-uniform.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -742,7 +742,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#60a5fa',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a120-morikawa-yuki-summer-uniform&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a120-morikawa-yuki-summer-uniform.png',
     model: 'want/a120-morikawa-yuki-summer-uniform.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -759,7 +759,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#f472b6',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a121-nagano-mami-uniform&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a121-nagano-mami-uniform.png',
     model: 'want/a121-nagano-mami-uniform.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
@@ -776,7 +776,7 @@ export const CHARACTERS_WANT = [
     gender: 'female',
     accent: '#fb7185',
     kidSafe: true,
-    image: 'https://api.dicebear.com/9.x/lorelei/png?seed=a122-shiratori-hikari-shifuku&backgroundColor=b6e3f4,c0aede,d1d4f9',
+    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a122-shiratori-hikari-shifuku.png',
     model: 'want/a122-shiratori-hikari-shifuku.vrm',
     voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
