@@ -303,7 +303,13 @@
 // The thinking hum stays off while that clip is the wait audio. Poke and
 // chat stay live — a new message or a mic barge-in ends the show, and a
 // spoken line ducks the bed.
-export const APP_REVISION = 'r2026-10-17.139';
+// r2026-10-17.140: poke laughs and the line after them stay a normal voice.
+// The cheer is no longer a high-pitched "Haha!" (excited style + bang + a
+// rising poke squeak) stacked on the sentence, and speechSynthesis no longer
+// keeps that rate or a flooded queue so the next chat line sounds broken.
+// The poke line itself is a short question. Lip sync follows the real audio
+// duration through the last word, then stops. Chat text is unchanged.
+export const APP_REVISION = 'r2026-10-17.140';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

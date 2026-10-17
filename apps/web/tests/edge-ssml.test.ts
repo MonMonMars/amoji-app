@@ -121,12 +121,14 @@ describe('buildEdgeSsml — the SSML the socket receives (r131)', () => {
       pitchDelta: 0.16,
       lead: { text: 'Haha!', pitch: 0.33, rate: 0.08 },
     });
-    expect(ssml.match(/pitch='\+33%'/g)?.length).toBe(1);
-    const laughPitch = ssml.indexOf("pitch='+33%'");
+    expect(ssml).toContain("pitch='+8%'");
+    expect(ssml).not.toContain("pitch='+33%'");
+    const laughPitch = ssml.indexOf("pitch='+8%'");
     const lineAt = ssml.indexOf('you got my head');
     expect(laughPitch).toBeGreaterThan(-1);
     expect(lineAt).toBeGreaterThan(laughPitch);
-    expect(ssml.slice(laughPitch, lineAt)).toContain('Haha!');
+    expect(ssml.slice(laughPitch, lineAt)).toContain('>Haha<');
+    expect(ssml.slice(laughPitch, lineAt)).not.toContain('Haha!');
     expect(ssml.slice(lineAt)).not.toContain("pitch='+33%'");
   });
 
@@ -136,16 +138,34 @@ describe('buildEdgeSsml — the SSML the socket receives (r131)', () => {
     expect(ssml.match(/<prosody/g)!.length).toBe(2); // one note per clause
   });
 
-  it('a leading tic lands before the styled body', () => {
+  it('a leading tic lands before the styled body, outside the style', () => {
     const ssml = buildEdgeSsml('真的嗎？', {
       ...base, character: 'juno', emotion: 'surprise',
       lead: { text: '哇！', pitch: 0.3, rate: 0.15 },
     });
-    const ticAt = ssml.indexOf('哇！');
+    const ticAt = ssml.indexOf('>哇<');
     const bodyAt = ssml.indexOf('真的嗎？');
+    const styleAt = ssml.indexOf('<mstts:express-as');
     expect(ticAt).toBeGreaterThan(-1);
     expect(ticAt).toBeLessThan(bodyAt);
-    expect(ssml).toContain("style='excited'"); // surprise → excited
+    expect(ticAt).toBeLessThan(styleAt);
+    expect(ssml).toContain("style='excited'"); // surprise → excited, on the line only
+    expect(ssml).toContain("pitch='+8%'");
+    expect(ssml).not.toContain("pitch='+30%'");
+    expect(ssml).not.toContain("pitch='+50%'");
+  });
+
+  it('an English poke cheer is not spelled as punctuation and stays under a squeak', () => {
+    const ssml = buildEdgeSsml('Haha, you got my head. I nearly sat down laughing — still playing?', {
+      lang: 'en', gender: 'female', character: 'juno', emotion: 'joy',
+      rateDelta: 0.15, pitchDelta: 0.3,
+      lead: { text: 'Haha!', pitch: 0.18, rate: 0.08 },
+    });
+    expect(ssml).not.toMatch(/[~～—，]/);
+    expect(ssml).not.toMatch(/tilde|ellipsis|exclamation/i);
+    const pitches = [...ssml.matchAll(/pitch='([+-]?\d+)%'/g)].map((m) => Math.abs(Number(m[1])));
+    expect(pitches.length).toBeGreaterThan(0);
+    for (const p of pitches) expect(p).toBeLessThanOrEqual(18);
   });
 
   it('expressiveness scales styledegree within 1.00–2.00', () => {
