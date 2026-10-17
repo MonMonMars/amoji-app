@@ -82,6 +82,7 @@ import { characterVoiceGender } from './voice-gender';
 import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
 import { cleanForSpeech } from './speak-text';
 import { synthNameConflicts, synthNameList } from './voice-catalog';
+import { edgeCastVoice } from './edge-cast';
 import { speakEdge, stopEdge, getTtsProxy } from './edge-tts';
 import { stopGtts } from './gtts';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
@@ -998,15 +999,29 @@ const SYNTH_LOCALE: Record<Lang, string> = {
   en: 'en-US',
 };
 
+function hashId(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (Math.imul(h, 33) + id.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+function rotateNames(names: string[], by: number): string[] {
+  if (names.length < 2) return names;
+  const n = by % names.length;
+  return names.slice(n).concat(names.slice(0, n));
+}
+
 function pickVoice(characterId: string, lang: Lang): { voice: SpeechSynthesisVoice | null; pitch: number; rate: number } {
   refresh();
   const gender = characterVoiceGender(characterId);
+  const color = edgeCastVoice(characterId, lang);
   const prefix = SYNTH_LOCALE[lang];
   const byLang = cached.filter((v) => v.lang.replace('_', '-').toLowerCase().startsWith(prefix.toLowerCase()));
   const pool = byLang.length ? byLang : cached;
-  const pitch = gender === 'male' ? 0.92 : 1.08;
-  const rate = gender === 'male' ? 0.98 : 1.02;
-  for (const name of synthNameList(lang, gender)) {
+  // Same pitch/pace as the Edge slot, so the browser fallback stays personal.
+  const pitch = (gender === 'male' ? 0.94 : 1.06) + (color?.pitch ?? 0);
+  const rate = (gender === 'male' ? 0.98 : 1.02) + (color?.rate ?? 0);
+  for (const name of rotateNames(synthNameList(lang, gender), hashId(characterId))) {
     const hit = pool.find((v) => v.name.toLowerCase().includes(name.toLowerCase()) && !synthNameConflicts(gender, v.name));
     if (hit) return { voice: hit, pitch, rate };
   }

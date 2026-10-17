@@ -5,7 +5,7 @@ Locale → engine → voice lives in `apps/web/lib/voice-catalog.ts`. Non-Yue en
 ## Done
 
 - PC audio: every `AudioContext` and `<audio>` path calls `setSinkId('')`, then `'default'`. No device id, no Howler, no Bluetooth hardcode.
-- Voice gender: female → HiuMaan (HiuGaai stays the female alternate), male → WanLung. Free chain is Edge (locale + gender) then gendered `speechSynthesis` on every device. Yue stays on Edge `zh-HK`. `canto-tts-nano` is not in the repo, so that hop is skipped. gTTS is not on this chain.
+- Voice: each want-list character has its own Edge slot per language (voice + pitch + pace), then gendered `speechSynthesis` with that same pitch and pace. Yue stays on Edge `zh-HK` (only two female voices and one male on the free list). `canto-tts-nano` is not in the repo, so that hop is skipped. gTTS is not on this chain.
 - TTS cleaner on `speak()`, `sing()`, and the chat display (`apps/web/lib/speak-text.ts`).
 - Wait state: Thinking clip, the 20 Cantonese lines below, no wait-time dance or music.
 - Camera: less overhead (`PHI_MIN` 1.08), more legs (`PHI_MAX` 2.55). PC hold-to-pan only on a distant blank miss, and only after the hold arms.

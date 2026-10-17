@@ -10,12 +10,14 @@ import {
 // coexistence, and the proxy URL round-trip.
 
 describe('edgeStyleFor — voice × emotion style resolution (r131)', () => {
-  it('want-list Cantonese follows gender, not a mismatched hint', () => {
+  it('want-list Cantonese uses a zh-HK voice and keeps male characters male', () => {
     const female = buildEdgeSsml('你好呀', { lang: 'yue', gender: 'female', character: 'a01-shino' });
-    expect(female).toContain("voice name='zh-HK-HiuMaanNeural'");
+    expect(female).toContain("voice name='zh-HK-HiuGaaiNeural'");
+    expect(female).toContain("xml:lang='zh-HK'");
     const male = buildEdgeSsml('你好呀', { lang: 'yue', gender: 'female', character: 'a98-ethan' });
     expect(male).toContain("voice name='zh-HK-WanLungNeural'");
     expect(male).not.toContain('HiuMaan');
+    expect(male).not.toContain('HiuGaai');
   });
 
   it('joy on a zh-CN female voice resolves to cheerful', () => {
@@ -127,23 +129,27 @@ describe('buildEdgeSsml — the SSML the socket receives (r131)', () => {
   });
 });
 
-describe('locale + gender Edge voices', () => {
-  it('maps each major language and the cast gender onto one neural voice', () => {
-    expect(resolveEdgeVoice({ lang: 'yue', gender: 'female', character: 'a01-shino' })).toMatchObject({
-      name: 'zh-HK-HiuMaanNeural', ssmlLang: 'zh-HK',
-    });
-    expect(resolveEdgeVoice({ lang: 'yue', gender: 'male', character: 'a98-ethan' }).name).toBe('zh-HK-WanLungNeural');
+describe('per-character Edge voices', () => {
+  it('gives neighboring companions different neural voices', () => {
+    const shino = resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a01-shino' });
+    const shibu = resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a02-shibu' });
+    expect(shino.name).toBe('en-US-JennyNeural');
+    expect(shibu.name).toBe('en-GB-SoniaNeural');
+    expect(shino.name).not.toBe(shibu.name);
     expect(resolveEdgeVoice({ lang: 'zh', gender: 'female', character: 'a01-shino' }).name).toBe('zh-CN-XiaoxiaoNeural');
-    expect(resolveEdgeVoice({ lang: 'zh', gender: 'male', character: 'a98-ethan' }).name).toBe('zh-CN-YunjianNeural');
-    expect(resolveEdgeVoice({ lang: 'ja', gender: 'female', character: 'a01-shino' }).name).toBe('ja-JP-NanamiNeural');
-    expect(resolveEdgeVoice({ lang: 'ja', gender: 'male', character: 'a98-ethan' }).name).toBe('ja-JP-KeitaNeural');
-    // English uses a gender-matching cast hint when the character has one.
-    expect(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a01-shino' }).name).toBe('en-HK-YanNeural');
-    expect(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a98-ethan' }).name).toBe('en-HK-SamNeural');
-    // No character → catalog default for that locale and gender.
+    expect(resolveEdgeVoice({ lang: 'zh', gender: 'female', character: 'a02-shibu' }).name).toBe('zh-CN-XiaoyiNeural');
+    expect(resolveEdgeVoice({ lang: 'yue', gender: 'female', character: 'a02-shibu' }).name).toBe('zh-HK-HiuMaanNeural');
+    expect(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a24-hairsample-male' }).name).toBe('en-US-GuyNeural');
+    expect(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a98-ethan' }).name).toBe('en-GB-RyanNeural');
     expect(resolveEdgeVoice({ lang: 'en', gender: 'female' }).name).toBe('en-US-JennyNeural');
-    expect(resolveEdgeVoice({ lang: 'en', gender: 'male' }).name).toBe('en-US-GuyNeural');
-    expect(resolveEdgeVoice({ lang: 'ja', gender: 'male' }).ssmlLang).toBe('ja-JP');
+  });
+
+  it('separates the two Cantonese males by pitch when only WanLung exists', () => {
+    const first = resolveEdgeVoice({ lang: 'yue', gender: 'male', character: 'a24-hairsample-male' });
+    const second = resolveEdgeVoice({ lang: 'yue', gender: 'male', character: 'a98-ethan' });
+    expect(first.name).toBe('zh-HK-WanLungNeural');
+    expect(second.name).toBe('zh-HK-WanLungNeural');
+    expect(first.pitch).not.toBe(second.pitch);
   });
 });
 
