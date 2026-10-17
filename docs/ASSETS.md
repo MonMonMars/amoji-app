@@ -66,10 +66,16 @@ also require a free account + ad-wait, so they can't be fetched by automation.
 
 ## Premade sing & dance audio
 
-Short CC0 and public-domain clips live in `apps/web/public/audio/library/`
-(MP3 transcodes of the ogg previews, so iPhone can play them). Songs ship
-as a **female and a male voice** (`sing-f-*`, `sing-m-*`); a sing request
-plays the voice that matches the companion. Dance requests play a dance
-track or instrumental bed from `clips-short`. Credits and sources are in
-`LIBRARY.md` next to the files. Playback goes through
-`startLibraryPerformance` in `apps/web/lib/music.ts`.
+Short CC0 clips live under `apps/web/public/audio/` (MP3 transcodes of the
+Free Music Maker `clips-short` ogg previews, so iPhone can play them):
+
+- `dance/` — upbeat dance presets
+- `song-bed/` — instrumental beds used for dance asks
+- `sing-female/` — female sung clips
+- `sing-male/` — male sung clips
+
+A sing request plays the folder that matches the companion. A dance request
+plays a dance track or bed. Credits, the CC0 note, and how to add a clip are
+in `apps/web/public/audio/LIBRARY.md`. Playback goes through
+`startLibraryPerformance` in `apps/web/lib/music.ts` (dialogue volume for
+songs, BGM volume for dance and beds).
