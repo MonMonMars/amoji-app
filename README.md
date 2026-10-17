@@ -89,7 +89,7 @@ Chat text keeps its punctuation. The spoken string may drop mark-names (`hyphen`
 2. **中文**: Shino is Xiaoxiao, Shibu is Xiaoyi. The two males are Yunjian and Yunxi. Offline, a Chinese browser voice still speaks when one is installed.
 3. **廣東話**: Shino is HiuGaai, Shibu is HiuMaan, both `zh-HK`. The two males share WanLung at different pitches. Offline, a `zh-HK` browser voice speaks when installed. No canto-tts-nano download.
 4. **日本語**: Nanami or Keita. The free list has one female and one male voice, so companions differ by pitch and pace. Then a `ja-JP` browser voice if Edge is blocked.
-6. Send a line with punctuation (`你好。再講` or `Wait — really.`). The bubble still shows the marks. She does not say the words "period" or "hyphen".
+5. Send a line with punctuation (`你好。再講` or `Wait — really.`). The bubble still shows the marks. She does not say the words "period" or "hyphen".
 
 ## LLM keys (optional — the app works free out of the box)
 
