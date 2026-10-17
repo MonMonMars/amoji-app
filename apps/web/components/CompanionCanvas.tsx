@@ -1398,6 +1398,22 @@ export default function CompanionCanvas({
         avatar.root.position.x = clamp(avatar.root.position.x, -0.6, 0.6);
         avatar.root.position.y = clamp(avatar.root.position.y, -0.35, 0.5);
         avatar.root.position.z = clamp(avatar.root.position.z, -0.8, 0.8);
+        // Dance with no library clip loaded yet: a small sway so the body
+        // still answers. The Dance VRMA, when it is playing, is the motion.
+        if (mv?.kind === 'dance' && boost === 0 && laugh === 0) {
+          const danceClip = clips.get('Dance');
+          const clipPlaying = !!(
+            perfAction && danceClip
+            && perfAction.getClip() === danceClip
+            && perfAction.isRunning()
+          );
+          if (!clipPlaying) {
+            const sway = Math.sin(now / 170);
+            avatar.root.rotation.y += sway * 0.1;
+            avatar.root.rotation.z += sway * 0.04;
+            avatar.root.position.y = clamp(avatar.root.position.y + Math.abs(Math.sin(now / 85)) * 0.016, -0.35, 0.5);
+          }
+        }
 
         // speech visemes: duck the emotion shapes while the mouth talks
         const sp = sampleSpeech();
@@ -1406,7 +1422,8 @@ export default function CompanionCanvas({
         const pokeBoost = 0.9 * boost;
         const laughBoost = 0.85 * laugh; // full smile while the giggles play
         const setEm = (name: string, val: number) => avatar!.setExpression(name, val);
-        setEm('happy', clamp(v(Math.max(targets.blendShape.joy, targets.blendShape.fun)) + (poke.face === 'happy' ? pokeBoost : 0) + laughBoost, 0, 1));
+        const performBoost = mv?.kind === 'sing' ? 0.55 : mv?.kind === 'dance' ? 0.4 : 0;
+        setEm('happy', clamp(v(Math.max(targets.blendShape.joy, targets.blendShape.fun)) + (poke.face === 'happy' ? pokeBoost : 0) + laughBoost + performBoost, 0, 1));
         setEm('angry', v(targets.blendShape.angry) + (poke.face === 'angry' ? pokeBoost : 0));
         setEm('sad', v(targets.blendShape.sorrow));
         setEm('surprised', poke.face === 'surprised'
