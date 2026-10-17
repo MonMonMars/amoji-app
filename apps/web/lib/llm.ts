@@ -1,9 +1,10 @@
 import { analyzeText } from '@amoji/emotion-core';
 import type { EmotionId } from '@amoji/emotion-core';
 import { withQuestion } from './follow-up';
+import { worldBlock } from './live-tools';
 
 export interface ChatMessage { role: 'user' | 'assistant' | 'system'; content: string }
-export interface ChatOptions { language?: string; persona?: string; memory?: string }
+export interface ChatOptions { language?: string; persona?: string; memory?: string; world?: string }
 export interface LlmResult { reply: string; emotionHints: Partial<Record<EmotionId, number>> }
 export interface LlmPort { chat(messages: ChatMessage[], opts?: ChatOptions): Promise<LlmResult> }
 
@@ -52,7 +53,7 @@ use 嘅/喺/唔/喎/啦 naturally), unless the user writes in another language, 
 }
 
 function systemContent(opts?: ChatOptions): string {
-  return `${BASE_SYSTEM}\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}`;
+  return `${BASE_SYSTEM}\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
 }
 
 /** One OpenAI-compatible HTTP path; every hosted provider below reuses it. */

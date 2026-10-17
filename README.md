@@ -20,6 +20,7 @@
 | **Memory** 🧠 | Device-private long-term memory — name, likes, job, pets, mood history; injected into her prompt; 🧠 button to forget |
 | **Check-ins** ⏰ | Time-aware greeting, visit streak, follow-ups on yesterday's mood |
 | **Brain** | Free keyless LLM by default (Pollinations), offline banter fallback, optional bring-your-own-key upgrade (Gemini / Groq / OpenRouter / Kimi) |
+| **Live world** | Weather, local news, coarse or browser location, and web lookup — folded into her reply. No key required |
 | **Interaction** | Poke her, drag to rotate, pinch to zoom |
 
 Try it: *"my name is Simon, I like hiking"* — she remembers next session.
@@ -50,7 +51,8 @@ apps/web                     Next.js 14 companion app (GitHub Pages static build
   lib/emotion-core …         → packages/emotion-core: portable parametric emotion core
   lib/edge-tts.ts            free neural TTS client (Edge read-aloud, SSML prosody)
   lib/robot-face.ts          robot-face engine (web build of the SDK)
-  app/api/chat/route.ts      LLM router (free default, key upgrades)
+  app/api/chat/route.ts      LLM router (free default, key upgrades, live facts)
+  lib/live-tools.ts          weather, news, location, web search (browser + server)
 packages/emotion-core        emotion analysis + parametric expression mapping
 packages/vrm-renderer        pure VRM frame mapper
 packages/robot-face          @amoji/robot-face — the B2B SDK
@@ -97,6 +99,39 @@ Drop any of these into `apps/web/.env.local` to auto-upgrade reply quality:
 `GEMINI_API_KEY` · `GROQ_API_KEY` · `OPENROUTER_API_KEY` · `GITHUB_TOKEN` (Models API) · `MOONSHOT_API_KEY`
 
 No key → free keyless Pollinations with built-in offline banter fallback. Secret files are gitignored — never commit them.
+
+## Live world (weather, news, location, search)
+
+On by default. Before she answers a question like “what’s the weather here?”, “news near me”, or “who is Marie Curie?”, the chat runs a short lookup and gives her the facts. She still replies in her own voice and language — the raw feed never shows up in the bubble.
+
+| Need | Source | Key |
+|---|---|---|
+| Weather | [Open-Meteo](https://open-meteo.com/) | none |
+| “Here” | Browser location prompt, then a coarse IP estimate ([geojs.io](https://www.geojs.io/)) if you deny it or it times out | none |
+| A named place (“weather in Osaka”) | Open-Meteo geocoding | none |
+| Light local news | Google News RSS, kept to funny / odd / warm stories that mention her area. Grim headlines are dropped. The Node server reads the feed directly; the browser (including GitHub Pages) reads it through [rss2json](https://rss2json.com/) | none. Optional `RSS2JSON_API_KEY` if you outgrow the free quota |
+| Web lookup | Wikipedia + DuckDuckGo instant answers. Recent questions fall back to headlines | none. Optional Brave Search key for a fuller web index |
+
+Copy `apps/web/.env.example` to `apps/web/.env.local` only if you want to change this:
+
+- `AMOJI_TOOLS=0` turns the lookup off on the Node server (`/api/chat`).
+- `NEXT_PUBLIC_AMOJI_TOOLS=0` turns it off in the browser. Static GitHub Pages builds (`AMOJI_EXPORT=1`) only see `NEXT_PUBLIC_` values, and only the ones present at build time.
+- `BRAVE_SEARCH_API_KEY` is server-only. It upgrades search for `pnpm dev` and any Node host. It is **not** inside the GitHub Pages bundle.
+- `NEXT_PUBLIC_BRAVE_SEARCH_API_KEY` would be copied into the static JavaScript. Set it only if you accept that.
+- `RSS2JSON_API_KEY` / `NEXT_PUBLIC_RSS2JSON_API_KEY` — same split, for the news bridge.
+
+The browser asks for location only when the message needs “here” (weather, local news, “where am I”). A precise fix is remembered for 30 minutes. If you deny it, she says the network estimate is rough and does not pretend it is GPS. Coordinates are used to call the weather service; the model only sees the place name and the short fact sheet.
+
+GitHub Pages has no `/api/chat`. The same lookup runs in the browser there, on the keyless sources above. A server-only Brave key does nothing on Pages.
+
+### Manual check
+
+1. `pnpm dev`, open the companion, ask “what’s the weather here?”, and allow location. The reply should mention a temperature and the area, in her language, with no JSON.
+2. Deny location and ask again. She should still answer from a coarse network place and say it is approximate.
+3. Ask “news near me”. A light or funny local story, spoken, not a crime bulletin and not a JSON dump. She should name your area.
+4. Ask “who is Marie Curie?”. A short live fact.
+5. Ask “how are you?”. No location prompt; normal chat.
+6. Optional: set `BRAVE_SEARCH_API_KEY` and ask something current that Wikipedia may not rank first.
 
 ## Asset policy
 
