@@ -150,6 +150,7 @@ import { personalityPrompt } from '../lib/personality';
 import { pickLaugh, laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { WARMUP_FIRST_MS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from '../lib/warmup';
 import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
+import { clientLiveContext } from '../lib/live-tools';
 import { speak, stopSpeaking, speakThinkingFiller, sing, voiceStartedSince } from '../lib/voice';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
 import { startMusic, stopMusic, startPerformanceMusic, endPerformanceMusic } from '../lib/music';
@@ -737,6 +738,17 @@ export default function ChatPanel({
     const memory = buildMemoryBlock(lang, undefined, text);
     // r70 — persona + adaptive block (scene + warmth calibration)
     const personaForBrain = fullPersona();
+    // Weather, local news, and web lookups run before either brain so the
+    // reply can use live facts. Ordinary chat plans no tools and returns
+    // immediately, without a location prompt.
+    let world = '';
+    let worldSpoken = '';
+    try {
+      const priorUser = [...history].reverse().find((m) => m.role === 'user')?.content;
+      const live = await clientLiveContext(text, lang, priorUser);
+      world = live.prompt;
+      worldSpoken = live.spoken;
+    } catch { /* live lookup is best-effort — she still answers */ }
     let answered = false;
     // r97 — the first complete sentence of a streamed reply, spoken live the
     // moment it closes (see onPartial below); '' until then.
@@ -756,6 +768,8 @@ export default function ChatPanel({
           language: lang,
           persona: personaForBrain,
           memory,
+          world,
+          worldSpoken,
           onPartial: (partial) => {
             // r.47 — the real stream is painting now: the warm-up loop stands down
             clearTimeout(warmTimer);
@@ -824,7 +838,7 @@ export default function ChatPanel({
           const res = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text, history, persona: personaForBrain, memory }),
+            body: JSON.stringify({ message: text, history, persona: personaForBrain, memory, language: lang, world, worldSpoken }),
           });
           if (!res.ok) throw new Error(String(res.status));
           const data = await res.json() as { reply?: string; emotionHints?: Record<string, number> };
