@@ -22,6 +22,7 @@ import { applyPlaybackVolume } from './playback-volume';
 // fires the moment the first chunk actually plays (media gate provably open).
 
 import type { Lang } from './prefs';
+import { stripVoicedGlyphs } from './speak-text';
 
 /** Amoji lang → Google TTS locale */
 const LANG_MAP: Record<Lang, string> = {
@@ -76,12 +77,15 @@ function splitChunks(text: string, maxLen = 120): string[] {
 let currentAudio: HTMLAudioElement | null = null;
 /** bumped by stopGtts() — any in-flight chain sees a stale gen and cancels */
 let generation = 0;
+let gapTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function stopGtts(): void {
   generation++;
+  if (gapTimer) { clearTimeout(gapTimer); gapTimer = null; }
   if (currentAudio) {
     currentAudio.onended = null;
     currentAudio.onerror = null;
+    try { currentAudio.playbackRate = 1; } catch { /* ignore */ }
     currentAudio.pause();
     currentAudio = null;
   }
@@ -91,7 +95,7 @@ export interface GttsOpts {
   lang: Lang;
   /** 1 = neutral; excitement pushes toward 1.3, sadness toward 0.75 */
   rate?: number;
-  /** leading vocal tic, folded into the spoken text */
+  /** leading vocal tic, spoken as its own chunk ahead of the line */
   lead?: string;
   /** r99: fired the moment the first chunk actually starts playing (media gate open) */
   onPlaying?: () => void;
@@ -102,20 +106,39 @@ export interface GttsOpts {
  * when the whole line has played; rejects with Error('canceled') if
  * stopGtts() cuts it, or with a playback error the caller can fall back on.
  */
+function pauseAfterClause(chunk: string): number {
+  if (/[。！？!?…\.]$/.test(chunk)) return 180;
+  if (/[,，、；;:：—–]$/.test(chunk)) return 90;
+  return 0;
+}
+
 export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
   stopGtts();
   const gen = generation;
   const lang = LANG_MAP[opts.lang] ?? 'en-US';
   const rate = clamp(opts.rate ?? 1, 0.75, 1.3);
-  const full = opts.lead ? `${opts.lead}，${text}` : text;
-  const chunks = splitChunks(full);
+  // Lead (poke laugh / ouch) is its own chunk. It is not glued on with a
+  // comma, and every chunk sets playbackRate itself so the laugh cannot
+  // leave the following line fast or pitched.
+  const pieces: { text: string; pauseAfter: number }[] = [];
+  if (opts.lead) {
+    const lead = stripVoicedGlyphs(opts.lead);
+    if (lead) pieces.push({ text: lead, pauseAfter: 140 });
+  }
+  for (const chunk of splitChunks(text)) {
+    const spoken = stripVoicedGlyphs(chunk);
+    if (!spoken) continue;
+    pieces.push({ text: spoken, pauseAfter: pauseAfterClause(chunk) });
+  }
   return new Promise<void>((resolve, reject) => {
+    if (pieces.length === 0) { resolve(); return; }
     let i = 0;
     let reportedPlaying = false;
     const playNext = () => {
       if (gen !== generation) { reject(new Error('canceled')); return; }
-      if (i >= chunks.length) { resolve(); return; }
-      const q = encodeURIComponent(chunks[i]!);
+      if (i >= pieces.length) { resolve(); return; }
+      const piece = pieces[i]!;
+      const q = encodeURIComponent(piece.text);
       i++;
       const audio = new Audio(
         `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=${q}`,
@@ -145,7 +168,12 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
       audio.onended = () => {
         settle(() => {
           if (currentAudio === audio) currentAudio = null;
-          playNext();
+          const more = i < pieces.length;
+          if (more && piece.pauseAfter > 0 && gen === generation) {
+            gapTimer = setTimeout(() => { gapTimer = null; playNext(); }, piece.pauseAfter);
+          } else {
+            playNext();
+          }
         });
       };
       audio.onerror = () => {

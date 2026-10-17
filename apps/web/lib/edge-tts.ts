@@ -26,6 +26,7 @@ import { applyPlaybackVolume } from './playback-volume';
 import { characterVoiceGender } from './voice-gender';
 import { edgeVoiceId, isFemaleNeuralVoice, isMaleNeuralVoice } from './voice-catalog';
 import { edgeCastVoice } from './edge-cast';
+import { stripVoicedGlyphs } from './speak-text';
 
 // r2026-10-04.89: timeout 7s → 4.5s — the Google-TTS mid tier in voice.ts now
 // catches a dead socket even faster; and stopEdge() finally rejects the
@@ -372,6 +373,15 @@ export function getTtsProxy(): string | null {
   );
 }
 
+/** Spoken clause: pause glyphs are omitted, the scheduled breath break stays. */
+function prosodyClause(part: string, pitch: number, rate: number, vol: number, breakAfter: string): string {
+  const spoken = stripVoicedGlyphs(part);
+  const body = spoken
+    ? `<prosody pitch='${pct(pitch)}' rate='${pct(rate)}' volume='${db(vol)}'>${escapeXml(spoken)}</prosody>`
+    : '';
+  return `${body}${breakAfter}`;
+}
+
 /**
  * r131 — pure SSML builder, extracted from speakEdge so tests can assert the
  * markup. Everything the endpoint receives lives here: one <prosody> per
@@ -392,8 +402,12 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
   const rising = /[？?]\s*$/.test(text);
   const parts = clauses(text);
 
-  const tic = opts.lead
-    ? `<prosody pitch='${pct(clamp(opts.lead.pitch, -0.5, 0.5))}' rate='${pct(clamp(opts.lead.rate, -0.5, 0.5))}' volume='${db(0.1)}'>${escapeXml(opts.lead.text)}</prosody><break time='170ms'/>`
+  // Laugh / ouch lead keeps its own pitch and rate. The clauses below
+  // open a fresh prosody, so that bump cannot stick to the line after.
+  const lead = opts.lead;
+  const leadSpoken = lead ? stripVoicedGlyphs(lead.text) : '';
+  const tic = lead && leadSpoken
+    ? `<prosody pitch='${pct(clamp(lead.pitch, -0.5, 0.5))}' rate='${pct(clamp(lead.rate, -0.5, 0.5))}' volume='${db(0.1)}'>${escapeXml(leadSpoken)}</prosody><break time='170ms'/>`
     : '';
 
   const melody = opts.melody;
@@ -412,7 +426,7 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
             : /[,，、；;]$/.test(part) ? `<break time='160ms'/>`
             : ''
           : '';
-        return `<prosody pitch='${pct(pitch)}' rate='${pct(rate)}' volume='${db(baseVol)}'>${escapeXml(part)}</prosody>${breakAfter}`;
+        return prosodyClause(part, pitch, rate, baseVol, breakAfter);
       }
       // r2026-10-04.64 — wider sing-song: the contour arc, the question
       // tail lift and the !-swell all got bigger so feelings ride the line
@@ -432,7 +446,7 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
         ? `<break time='${trail ? '320ms' : '230ms'}'/>`
         : /[,，、；;—]$/.test(part) ? `<break time='110ms'/>`
         : '';
-      return `<prosody pitch='${pct(pitch)}' rate='${pct(rate)}' volume='${db(baseVol)}'>${escapeXml(part)}</prosody>${breakAfter}`;
+      return prosodyClause(part, pitch, rate, baseVol, breakAfter);
     })
     .join('');
 
