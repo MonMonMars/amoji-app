@@ -80,7 +80,7 @@ import { getPlaybackVolume } from './playback-volume';
 import type { Lang } from './prefs';
 import { characterVoiceGender } from './voice-gender';
 import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
-import { cleanForSpeech } from './speak-text';
+import { cleanForSpeech, stripVoicedGlyphs } from './speak-text';
 import { synthNameConflicts, synthNameList } from './voice-catalog';
 import { edgeCastVoice } from './edge-cast';
 import { speakEdge, stopEdge, getTtsProxy } from './edge-tts';
@@ -287,13 +287,16 @@ function unlockAudio(): void {
 // gate without an audible blip; synthPrimed latches so it only ever runs
 // once (before the first real line, not instead of it).
 let synthPrimed = false;
+/** Bumped on every new line and on stop so a poke lead cannot outlive itself. */
+let synthGeneration = 0;
 export function primeSynthInGesture(): void {
   if (synthPrimed || typeof speechSynthesis === 'undefined') return;
   try {
     speechSynthesis.resume();
     const u = new SpeechSynthesisUtterance(' ');
     u.volume = 0;
-    u.rate = 2;
+    u.pitch = 1;
+    u.rate = 1;
     speechSynthesis.speak(u);
   } catch { /* ignore */ }
 }
@@ -1083,6 +1086,7 @@ export function setNeuralEnabled(on: boolean): void {
 }
 
 export function stopSpeaking(): void {
+  synthGeneration++;
   stopOpenAi();
   stopEdge();
   stopGtts();
@@ -1163,7 +1167,11 @@ export function speak(
   const amp = 1 + 0.5 * Math.max(0, intensity - 1);
   // strong feelings get an audible tic (giggle/sigh/gasp) before the words —
   // unless the caller supplies its own lead (e.g. a guaranteed poke ouch)
-  const tic = leadOverride ?? pickInterjection(emotion, value, lang);
+  const rawLead = leadOverride ?? pickInterjection(emotion, value, lang);
+  const leadText = rawLead ? cleanForSpeech(rawLead.text) : '';
+  // Poke laughs and other leads use the same cleaner as the line. An empty
+  // lead (punctuation only) is dropped so it cannot change the voice.
+  const tic = rawLead && leadText ? { ...rawLead, text: leadText } : undefined;
 
   // Free chain: Edge (locale + gender) → speechSynthesis. Yue adds
   // canto-tts-nano only when that runtime is bundled. OpenAI is opt-in and
@@ -1190,7 +1198,7 @@ export function speak(
         return;
       }
       if (hop === 'canto-nano') {
-        void speakCantoNano(text).then(() => {
+        void speakCantoNano(stripVoicedGlyphs(text)).then(() => {
           markVoiceStarted();
           reportVoiceStatus('canto-nano', true, 'canto-tts-nano finished');
         }).catch((err: unknown) => {
@@ -1363,7 +1371,7 @@ function probeSynth(text: string, characterId: string, lang: Lang): Promise<bool
   return new Promise<boolean>((resolve) => {
     if (typeof speechSynthesis === 'undefined') { resolve(false); return; }
     const { voice, pitch, rate } = pickVoice(characterId, lang);
-    const u = new SpeechSynthesisUtterance(text);
+    const u = new SpeechSynthesisUtterance(stripVoicedGlyphs(text) || text);
     if (voice) u.voice = voice;
     u.pitch = clamp(pitch, 0.4, 2);
     u.rate = clamp(rate, 0.6, 1.6);
@@ -1447,7 +1455,7 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
       }
       if (hop === 'canto-nano') {
         try {
-          await withTimeout(speakCantoNano(line), 10_000, 'canto-tts-nano timeout');
+          await withTimeout(speakCantoNano(stripVoicedGlyphs(line)), 10_000, 'canto-tts-nano timeout');
           push('canto-nano', true, 'canto-tts-nano played');
         } catch (err) {
           if ((err as Error | undefined)?.message !== 'canceled') {
@@ -1525,6 +1533,24 @@ export async function testOpenAiVoice(characterId: string, lang: Lang): Promise<
   }
 }
 
+function synthLangTag(voice: SpeechSynthesisVoice | null, lang: Lang): string {
+  return voice?.lang ?? (lang === 'yue' ? 'zh-HK' : lang === 'zh' ? 'zh-CN' : lang === 'ja' ? 'ja-JP' : 'en-US');
+}
+
+/** Silent utterance that puts pitch, rate, and voice back to the character default. */
+function restoreSynthEngine(gen: number, voice: SpeechSynthesisVoice | null, langTag: string): void {
+  if (gen !== synthGeneration || typeof speechSynthesis === 'undefined') return;
+  try {
+    const r = new SpeechSynthesisUtterance(' ');
+    r.volume = 0;
+    r.pitch = 1;
+    r.rate = 1;
+    if (voice) r.voice = voice;
+    r.lang = langTag;
+    speechSynthesis.speak(r);
+  } catch { /* ignore */ }
+}
+
 function synthSpeak(
   text: string,
   characterId: string,
@@ -1536,6 +1562,7 @@ function synthSpeak(
   melody?: number[],
 ): void {
   if (typeof speechSynthesis === 'undefined') return;
+  const gen = ++synthGeneration;
   speechSynthesis.cancel(); // one speaker at a time
 
   const { voice, pitch: basePitch, rate: baseRate } = pickVoice(characterId, lang);
@@ -1548,24 +1575,22 @@ function synthSpeak(
   const pitch = clamp(basePitch * emPitch, 0.4, 2);
   const rate = clamp(baseRate * emRate, 0.6, 1.6);
   const vol = clamp(emVol * getPlaybackVolume(), 0.05, 1);
+  const langTag = synthLangTag(voice, lang);
 
   const parts = clauses(text);
   const utterances: SpeechSynthesisUtterance[] = [];
-  if (tic) {
-    const t = new SpeechSynthesisUtterance(tic.text);
-    if (voice) t.voice = voice;
-    t.pitch = clamp(pitch * (1 + tic.pitch), 0.4, 2);
-    t.rate = clamp(rate * (1 + tic.rate), 0.6, 1.6);
-    t.volume = vol;
-    utterances.push(t);
-  }
   // Warm contour: statements drift down then settle; questions rise at the tail.
   // With a melody set, each clause instead rides one note of the tune (r.40).
+  // The laugh/ouch lead is NOT in this queue — browsers apply the first
+  // utterance's pitch and rate to the whole queue, which left the line after
+  // a poke stuck in the laugh voice.
   const rising = /[？?]\s*$/.test(text);
   parts.forEach((part, i) => {
-    const u = new SpeechSynthesisUtterance(part);
+    const spoken = stripVoicedGlyphs(part);
+    if (!spoken) return;
+    const u = new SpeechSynthesisUtterance(spoken);
     if (voice) u.voice = voice;
-    u.lang = voice?.lang ?? (lang === 'yue' ? 'zh-HK' : lang === 'zh' ? 'zh-CN' : lang === 'ja' ? 'ja-JP' : 'en-US');
+    u.lang = langTag;
     if (melody && melody.length > 0) {
       const note = melody[i % melody.length]!;
       u.pitch = clamp(pitch * (1 + note), 0.4, 2);
@@ -1584,7 +1609,10 @@ function synthSpeak(
     u.volume = vol;
     utterances.push(u);
   });
+  const leadSpoken = tic ? stripVoicedGlyphs(tic.text) : '';
   let pumpCount = 0;
+  let drained = false;
+  let lineStarted = false;
   // r99: WebKit pauses the engine mid-queue (background tab, iOS audio-session
   // handoffs) — a gentle resume() every beat keeps the line draining until
   // the last utterance actually ends.
@@ -1592,16 +1620,25 @@ function synthSpeak(
   const stopKeepAlive = () => {
     if (keepAlive) { clearInterval(keepAlive); keepAlive = null; }
   };
+  const finishLine = () => {
+    if (drained || gen !== synthGeneration) return;
+    drained = true;
+    stopKeepAlive();
+    restoreSynthEngine(gen, voice, langTag);
+  };
   const pump = () => {
+    if (gen !== synthGeneration) return;
     pumpCount += 1;
     // r97: Android (and desktop Chrome after a cancel) can leave the engine
     // suspended — nudge it awake before every pump
     try { speechSynthesis.resume(); } catch { /* ignore */ }
+    if (utterances.length === 0) { finishLine(); return; }
     let live = 0;
     for (const u of utterances) {
       // r100: onstart is the one honest signal that browser audio actually
       // began — only it may mark the voice started (never a mere enqueue).
       u.onstart = () => {
+        lineStarted = true;
         markVoiceStarted();
         synthPrimed = true; // r102: the engine genuinely started audio — no more priming
         reportVoiceStatus('synth', true, 'browser voice started');
@@ -1611,14 +1648,14 @@ function synthSpeak(
       // stopSpeaking() cutting a line short.
       u.onerror = (e) => {
         live -= 1;
-        if (live <= 0) stopKeepAlive();
         const err = (e as SpeechSynthesisErrorEvent).error;
         if (err !== 'interrupted' && err !== 'canceled') reportVoiceBlocked('synth');
         if (err === 'not-allowed') armGestureReplay('synth not-allowed');
+        if (live <= 0) finishLine();
       };
       u.onend = () => {
         live -= 1;
-        if (live <= 0) stopKeepAlive();
+        if (live <= 0) finishLine();
       };
       live += 1;
       speechSynthesis.speak(u);
@@ -1633,12 +1670,51 @@ function synthSpeak(
     // can never loop).
     setTimeout(() => {
       try {
-        if (pumpCount === 1 && !speechSynthesis.speaking && !speechSynthesis.pending) pump();
+        // A short poke line can finish inside this window. Only retry when
+        // the engine dropped the queue before any audio started.
+        if (!lineStarted && gen === synthGeneration && pumpCount === 1 && !speechSynthesis.speaking && !speechSynthesis.pending) pump();
+      } catch { /* ignore */ }
+    }, 600);
+  };
+  const pumpLeadThenLine = () => {
+    if (gen !== synthGeneration) return;
+    if (!leadSpoken || !tic) { pump(); return; }
+    const t = new SpeechSynthesisUtterance(leadSpoken);
+    if (voice) t.voice = voice;
+    t.lang = langTag;
+    t.pitch = clamp(pitch * (1 + tic.pitch), 0.4, 2);
+    t.rate = clamp(rate * (1 + tic.rate), 0.6, 1.6);
+    t.volume = vol;
+    let leadDone = false;
+    const afterLead = () => {
+      if (leadDone || gen !== synthGeneration) return;
+      leadDone = true;
+      pump();
+    };
+    t.onstart = () => {
+      markVoiceStarted();
+      synthPrimed = true;
+      reportVoiceStatus('synth', true, 'browser voice started');
+    };
+    t.onend = () => afterLead();
+    t.onerror = (e) => {
+      const err = (e as SpeechSynthesisErrorEvent).error;
+      if (err === 'interrupted' || err === 'canceled') return;
+      reportVoiceBlocked('synth');
+      if (err === 'not-allowed') armGestureReplay('synth not-allowed');
+      afterLead();
+    };
+    try { speechSynthesis.resume(); } catch { /* ignore */ }
+    speechSynthesis.speak(t);
+    setTimeout(() => {
+      if (leadDone || gen !== synthGeneration) return;
+      try {
+        if (!speechSynthesis.speaking && !speechSynthesis.pending) afterLead();
       } catch { /* ignore */ }
     }, 600);
   };
   // r97: defer the pump one beat on EVERY platform. r85's defer guarded only
   // iOS, but pumping synchronously in the same tick as cancel() drops the
   // utterance on Chrome and Android too — 120ms is enough separation everywhere.
-  setTimeout(pump, 120);
+  setTimeout(pumpLeadThenLine, 120);
 }

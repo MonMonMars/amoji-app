@@ -95,10 +95,39 @@ describe('buildEdgeSsml — the SSML the socket receives (r131)', () => {
     expect(ssml).toContain('<prosody'); // the contour still rides
   });
 
-  it('escapeXml still guards user text inside styled SSML', () => {
-    const ssml = buildEdgeSsml('A & B < C！', { ...base, character: 'juno', emotion: 'joy' });
-    expect(ssml).toContain('A &amp; B &lt; C');
+  it('drops voiced symbols instead of escaping them into the audio', () => {
+    const ssml = buildEdgeSsml("don't say A & B < C！", { ...base, character: 'juno', emotion: 'joy' });
+    expect(ssml).toContain('don&apos;t say A B C！');
+    expect(ssml).not.toContain('&amp;');
+    expect(ssml).not.toContain('&lt;');
     expect(ssml).not.toContain('A & B');
+  });
+
+  it('omits commas and periods from spoken text but keeps the breath break', () => {
+    const ssml = buildEdgeSsml('Haha, you got my head. Still playing?', {
+      lang: 'en', gender: 'female', character: 'sky', emotion: 'joy',
+    });
+    const spoken = ssml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    expect(spoken).toContain('Haha');
+    expect(spoken).toContain('you got my head');
+    expect(spoken).toContain('Still playing?');
+    expect(spoken).not.toMatch(/[,.]/);
+    expect(ssml).toContain('<break');
+  });
+
+  it('keeps a poke laugh pitch on the laugh, not the line after it', () => {
+    const ssml = buildEdgeSsml('Haha, you got my head. Still playing?', {
+      lang: 'en', gender: 'female', character: 'sky', emotion: 'joy',
+      pitchDelta: 0.16,
+      lead: { text: 'Haha!', pitch: 0.33, rate: 0.08 },
+    });
+    expect(ssml.match(/pitch='\+33%'/g)?.length).toBe(1);
+    const laughPitch = ssml.indexOf("pitch='+33%'");
+    const lineAt = ssml.indexOf('you got my head');
+    expect(laughPitch).toBeGreaterThan(-1);
+    expect(lineAt).toBeGreaterThan(laughPitch);
+    expect(ssml.slice(laughPitch, lineAt)).toContain('Haha!');
+    expect(ssml.slice(lineAt)).not.toContain("pitch='+33%'");
   });
 
   it('singing mode (melody) composes with a style', () => {
