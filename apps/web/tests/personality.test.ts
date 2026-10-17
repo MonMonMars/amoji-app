@@ -129,9 +129,18 @@ describe('per-character personality profiles', () => {
     const tipA = personalityTutorTip('a01-shino', 'female', 'en', 0);
     const tipB = personalityTutorTip('a02-shibu', 'female', 'en', 0);
     expect(tipA).not.toBe(tipB);
-    expect(tipA.toLowerCase()).toContain('name plate');
-    expect(tipA.trim()).toMatch(/[?？]$/);
-    expect(personalityTutorTip('a98-ethan', 'male', 'yue', 1)).toContain('齒輪');
+    const tour = Array.from({ length: 8 }, (_, i) => personalityTutorTip('a01-shino', 'female', 'en', i));
+    expect(new Set(tour).size).toBe(8);
+    expect(personalityTutorTip('a01-shino', 'female', 'en', 8)).toBe(tour[0]);
+    const blob = tour.join(' ').toLowerCase();
+    for (const kw of ['poke', 'hand', 'volume', 'name plate', 'sing', 'dance', 'mic']) {
+      expect(blob).toContain(kw);
+    }
+    for (const line of tour) expect(line.trim()).toMatch(/[?？]$/);
+    const yue = Array.from({ length: 8 }, (_, i) => personalityTutorTip('a98-ethan', 'male', 'yue', i)).join(' ');
+    for (const kw of ['隻手', '音量', '名牌', '唱歌', '跳舞', '咪']) {
+      expect(yue).toContain(kw);
+    }
     restore();
   });
 });
