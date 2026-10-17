@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildEdgeSsml, edgeStyleFor, getTtsProxy, setTtsProxy,
+  buildEdgeSsml, edgeStyleFor, getTtsProxy, resolveEdgeVoice, resolveTtsProxy, setTtsProxy,
 } from '../lib/edge-tts';
 
 // r2026-10-06.131 — the free readaloud socket accepts mstts:express-as
@@ -127,11 +127,39 @@ describe('buildEdgeSsml — the SSML the socket receives (r131)', () => {
   });
 });
 
+describe('locale + gender Edge voices', () => {
+  it('maps each major language and the cast gender onto one neural voice', () => {
+    expect(resolveEdgeVoice({ lang: 'yue', gender: 'female', character: 'a01-shino' })).toMatchObject({
+      name: 'zh-HK-HiuMaanNeural', ssmlLang: 'zh-HK',
+    });
+    expect(resolveEdgeVoice({ lang: 'yue', gender: 'male', character: 'a98-ethan' }).name).toBe('zh-HK-WanLungNeural');
+    expect(resolveEdgeVoice({ lang: 'zh', gender: 'female', character: 'a01-shino' }).name).toBe('zh-CN-XiaoxiaoNeural');
+    expect(resolveEdgeVoice({ lang: 'zh', gender: 'male', character: 'a98-ethan' }).name).toBe('zh-CN-YunjianNeural');
+    expect(resolveEdgeVoice({ lang: 'ja', gender: 'female', character: 'a01-shino' }).name).toBe('ja-JP-NanamiNeural');
+    expect(resolveEdgeVoice({ lang: 'ja', gender: 'male', character: 'a98-ethan' }).name).toBe('ja-JP-KeitaNeural');
+    // English uses a gender-matching cast hint when the character has one.
+    expect(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a01-shino' }).name).toBe('en-HK-YanNeural');
+    expect(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a98-ethan' }).name).toBe('en-HK-SamNeural');
+    // No character → catalog default for that locale and gender.
+    expect(resolveEdgeVoice({ lang: 'en', gender: 'female' }).name).toBe('en-US-JennyNeural');
+    expect(resolveEdgeVoice({ lang: 'en', gender: 'male' }).name).toBe('en-US-GuyNeural');
+    expect(resolveEdgeVoice({ lang: 'ja', gender: 'male' }).ssmlLang).toBe('ja-JP');
+  });
+});
+
 describe('TTS proxy URL (r131)', () => {
   it('set/get round-trips, and null clears', () => {
     setTtsProxy('https://amoji-tts.example.workers.dev/');
-    expect(getTtsProxy()).toBe('https://amoji-tts.example.workers.dev/');
+    expect(getTtsProxy()).toBe('https://amoji-tts.example.workers.dev');
     setTtsProxy(null);
     expect(getTtsProxy()).toBeNull();
+  });
+
+  it('uses the Pages env URL only when nothing is saved or cleared', () => {
+    expect(resolveTtsProxy(undefined, null, 'https://pages.example.workers.dev/')).toBe('https://pages.example.workers.dev');
+    expect(resolveTtsProxy(null, null, 'https://pages.example.workers.dev/')).toBeNull();
+    expect(resolveTtsProxy(undefined, '', 'https://pages.example.workers.dev/')).toBeNull();
+    expect(resolveTtsProxy('https://saved.example/', null, 'https://pages.example.workers.dev')).toBe('https://saved.example');
+    expect(resolveTtsProxy(undefined, null, '  ')).toBeNull();
   });
 });

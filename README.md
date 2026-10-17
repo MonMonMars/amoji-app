@@ -16,7 +16,7 @@
 |---|---|
 | **Companions** | 6 characters × 8 scenes × 4 languages; each with its own personality in the LLM prompt |
 | **Emotion** | 18 idle poses, VRMA clips, viseme lip-sync, facial + body expression — she feels what she says |
-| **Voice** | **Free neural voices** (Edge TTS): Cantonese 曉曼 HiuMaan / 雲龍 WanLung, 中文 Xiaoxiao / Yunjian, 日本語 Nanami / Keita, English Aria / Guy — with SSML emotion prosody (joy→bright+faster, sad→soft+slower, surprise→pitch jump) in all 4 languages; automatic fallback to browser TTS; 🔊 toggle; tap-to-talk mic 🎙️ (zh-HK Cantonese recognition) |
+| **Voice** | **Free neural voices** (Edge TTS), picked by language and the character's gender. Catalog defaults: Cantonese 曉曼 HiuMaan / 雲龍 WanLung (`zh-HK`), 中文 Xiaoxiao / Yunjian, 日本語 Nanami / Keita, English Jenny / Guy. A gender-matching cast hint (for example English Yan / Sam) replaces the default. If Edge is blocked, the browser `speechSynthesis` voice speaks (offline once that voice is installed). 🔊 toggle; tap-to-talk mic 🎙️ (zh-HK Cantonese recognition) |
 | **Memory** 🧠 | Device-private long-term memory — name, likes, job, pets, mood history; injected into her prompt; 🧠 button to forget |
 | **Check-ins** ⏰ | Time-aware greeting, visit streak, follow-ups on yesterday's mood |
 | **Brain** | Free keyless LLM by default (Pollinations), offline banter fallback, optional bring-your-own-key upgrade (Gemini / Groq / OpenRouter / Kimi) |
@@ -67,6 +67,30 @@ pnpm test              # run all package tests
 pnpm typecheck         # typecheck all packages
 pnpm build             # production build of the web app
 ```
+
+## Free voice (no key)
+
+Default chain for English, 中文, 日本語, and 廣東話: **Edge TTS → browser `speechSynthesis`**. Yue stays on Edge `zh-HK` voices, then Web Speech. `canto-tts-nano` is not in this repo, so that hop is skipped. Kokoro, MeloTTS, VoxCPM2, Chatterbox, CosyVoice, and Qwen3-TTS are not hosted here.
+
+Chat text keeps its punctuation. The spoken string may drop mark-names (`hyphen`, `period`) and rewrite dashes. The bubble does not change.
+
+**Local** (`pnpm dev`): leave `NEXT_PUBLIC_TTS_PROXY` empty. The browser opens the free Edge read-aloud socket. No API key. Edge playback is an audio element. On an iPhone, the hardware silent switch mutes Web Speech, so a working Edge socket or this HTTPS proxy is what stays audible when the switch is on.
+
+**GitHub Pages** is a static export and has no voice server. The same socket is the default, so the workflow does not need a secret. If a network blocks `wss://speech.platform.bing.com`, deploy the free Cloudflare worker in [`server/amoji-proxy`](server/amoji-proxy/README.md) (Edge route has no key) and set the public URL:
+
+1. Copy `apps/web/.env.example` to `apps/web/.env.local` and set `NEXT_PUBLIC_TTS_PROXY=https://<name>.workers.dev` for local builds, or
+2. In the GitHub repo, add an Actions **variable** (not a secret) named `AMOJI_TTS_PROXY` with that URL. The Pages workflow bakes it in. Clearing the proxy field in Settings turns the socket back on for that browser.
+
+`NEXT_PUBLIC_EDGE_TTS_TOKEN` is optional. The app and the worker already use the public read-aloud client token. Set it only if that published value changes. Do not commit OpenAI, Google, Azure, or Polly keys. Those paid clouds are optional later; OpenAI speech stays an opt-in key in Settings and is not the default voice.
+
+### Manual check
+
+1. **English, female** (Shino): switch the language to English, then Settings → Test voice. Expect the female hint `en-HK-YanNeural`, not a male voice. Turn neural voice off and test again: a browser English voice still speaks. With no cast hint, the catalog default is Jenny (`en-US-JennyNeural`).
+2. **English, male** (Ethan): Test voice. Expect `en-HK-SamNeural`. With no cast hint, the catalog default is Guy (`en-US-GuyNeural`). If Edge is blocked, a male browser voice speaks.
+3. **中文**: switch language, test. Xiaoxiao (female) or Yunjian (male). With the network off, a `zh-CN` browser voice still speaks when one is installed.
+4. **廣東話 / yue**: HiuMaan or WanLung (`zh-HK`). Offline, a `zh-HK` browser voice (HiuMaan, Sin-ji, WanLung) speaks when installed. No canto-tts-nano download.
+5. **日本語**: Nanami or Keita, then a `ja-JP` browser voice.
+6. Send a line with punctuation (`你好。再講` or `Wait — really.`). The bubble still shows the marks. She does not say the words "period" or "hyphen".
 
 ## LLM keys (optional — the app works free out of the box)
 
