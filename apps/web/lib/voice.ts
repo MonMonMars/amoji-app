@@ -103,6 +103,7 @@ import { sfxVoiceHold, sfxVoiceRelease } from './sfx';
 import { dominant, pickInterjection, pickThinkingFiller } from './fillers';
 import { SONG_MELODY } from './songs';
 import { notifySpeaking } from './speech';
+import { duckLibraryBed } from './music';
 
 // ---- r2026-10-05.99: media-gate latches -------------------------------------
 // ctxPrimed runs once (an AudioContext resume is global and idempotent).
@@ -1147,6 +1148,10 @@ export function speak(
   // before ever tapping fetched every voice tier and stayed silent (autoplay
   // policy). Speaking a reply IS a user-intended audio act: take the unlock.
   unlockAudio();
+  // A premade song/dance bed ducks while a real line plays (poke, dance
+  // reply) so the words stay intelligible. Singing itself does not come
+  // through speak(), so a song stays full until something else talks.
+  duckLibraryBed();
   // r100: single choke-point trace — EVERY speak() call lands here with its
   // length and planned chain, and pings the status bus on the attempt itself
   // (tier 'attempt'), so a silent device answers "was speak() called?"

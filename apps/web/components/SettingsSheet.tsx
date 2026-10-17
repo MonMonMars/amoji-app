@@ -29,7 +29,7 @@ import { LangChips } from './selectors';
 import ModelThumb from './ModelThumb';
 import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, testOpenAiVoice, VOICE_TIER_LABEL } from '../lib/voice';
 import { VOLUME_STEPS, type VolumeStep } from '../lib/audio-levels';
-import { applyBgmLevel } from '../lib/music';
+import { applyBgmLevel, applyDialogueLevel } from '../lib/music';
 import { applySfxLevel } from '../lib/sfx';
 // r2026-10-06.131: the Voice section's optional HTTP TTS proxy field
 import { getTtsProxy, setTtsProxy } from '../lib/edge-tts';
@@ -373,7 +373,7 @@ export default function SettingsSheet({
               label={`🔉 ${t(lang, 'voiceVolume')}`}
               value={prefs.voiceVol ?? 80}
               accent={accent}
-              onPick={(step) => onChange({ voiceVol: step })}
+              onPick={(step) => { onChange({ voiceVol: step }); applyDialogueLevel(step); }}
             />
             <VolumeSteps
               label={`🎵 ${t(lang, 'bgmVolume')}`}

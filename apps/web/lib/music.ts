@@ -11,8 +11,14 @@
 // right hand) plus a PERFORMANCE layer so sing/duet/piano music survives
 // the chat pipeline's generic stopMusic() calls for the length of the show.
 
-import { createDefaultAudioContext } from './audio-output';
-import { volumeLinear } from './audio-levels';
+import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
+import { volumeLinear, type VolumeKey } from './audio-levels';
+import { assetUrl } from './asset';
+import { clearSpeechLevel, feedSpeechLevel, type VisemeVowel } from './speech';
+import {
+  CLIP_BASE_GAIN, pickPerformanceClip,
+  type ClipQuery, type PerformanceClip,
+} from './performance-clips';
 
 export interface MusicTheme {
   /** personality group this theme belongs to */
@@ -256,6 +262,14 @@ export function applyBgmLevel(step?: number): void {
   const k = typeof step === 'number' ? step / 100 : volumeLinear('bgmVol');
   if (master) master.gain.value = baseBgm * k;
   if (pianoMaster) pianoMaster.gain.value = basePiano * k;
+  if (clipVolumeKey === 'bgmVol') writeClipGain(k);
+}
+
+/** Re-apply the dialogue step to a premade song that is already playing. */
+export function applyDialogueLevel(step?: number): void {
+  if (clipVolumeKey !== 'voiceVol') return;
+  const k = typeof step === 'number' ? step / 100 : volumeLinear('voiceVol');
+  writeClipGain(k);
 }
 
 function haltPiano(): void {
@@ -348,4 +362,228 @@ export function endPerformanceMusic(): void {
   }
   haltBand();
   haltPiano();
+  haltClip();
+}
+
+// ---- premade library (songs + dance beds) -----------------------------------
+// Same performance stage as the procedural band: stopMusic() will not cut a
+// show short, endPerformanceMusic() fades it, and the settings steps scale
+// the gain. Songs use dialogue volume and drive the viseme clock; dance beds
+// use BGM. Playback is async and never awaited by chat or poke.
+
+const SONG_VOWELS: VisemeVowel[] = ['aa', 'oh', 'ee', 'ou', 'ih'];
+
+let clipGain: GainNode | null = null;
+let clipCtx: AudioContext | null = null;
+let clipSrc: AudioBufferSourceNode | null = null;
+let clipAnalyser: AnalyserNode | null = null;
+let clipEl: HTMLAudioElement | null = null;
+let clipVolumeKey: VolumeKey = 'bgmVol';
+let clipBase = CLIP_BASE_GAIN.dance;
+let clipId: string | null = null;
+let clipCharacter = 'default';
+let loadToken = 0;
+let mouthTimer: ReturnType<typeof setInterval> | null = null;
+let duck = 1;
+let duckTimer: ReturnType<typeof setTimeout> | null = null;
+
+function writeClipGain(stepLinear: number): void {
+  const g = clipBase * stepLinear * duck;
+  if (clipGain) clipGain.gain.value = Math.max(0, g);
+  if (clipEl) clipEl.volume = Math.max(0, Math.min(1, g));
+}
+
+function applyActiveClipGain(): void {
+  writeClipGain(volumeLinear(clipVolumeKey));
+}
+
+function stopSongMouth(): void {
+  if (mouthTimer) {
+    clearInterval(mouthTimer);
+    mouthTimer = null;
+  }
+  clearSpeechLevel();
+}
+
+function startSongMouth(an: AnalyserNode): void {
+  stopSongMouth();
+  const data = new Float32Array(an.fftSize);
+  mouthTimer = setInterval(() => {
+    if (!clipAnalyser || typeof clipAnalyser.getFloatTimeDomainData !== 'function') return;
+    clipAnalyser.getFloatTimeDomainData(data);
+    let sum = 0;
+    for (let i = 0; i < data.length; i++) sum += data[i]! * data[i]!;
+    const rms = Math.sqrt(sum / data.length);
+    const mouth = Math.max(0, Math.min(1, (rms - 0.015) * 8));
+    const vowel = SONG_VOWELS[Math.floor(Date.now() / 160) % SONG_VOWELS.length]!;
+    feedSpeechLevel(mouth, vowel);
+  }, 70);
+}
+
+function armPerformance(ms: number): void {
+  if (perfTimer) clearTimeout(perfTimer);
+  perfPreserve = true;
+  perfTimer = setTimeout(() => endPerformanceMusic(), ms);
+}
+
+/** Drop the premade clip only. Does not touch the preserve flag or the band. */
+function haltClip(): void {
+  loadToken += 1;
+  stopSongMouth();
+  if (duckTimer) {
+    clearTimeout(duckTimer);
+    duckTimer = null;
+  }
+  duck = 1;
+  const src = clipSrc;
+  const el = clipEl;
+  const stale = clipCtx;
+  const gain = clipGain;
+  clipSrc = null;
+  clipEl = null;
+  clipGain = null;
+  clipAnalyser = null;
+  clipCtx = null;
+  clipId = null;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('amoji:library-clip', { detail: { state: 'stopped' } }));
+  }
+  if (src) {
+    try { src.stop(); } catch { /* already stopped */ }
+  }
+  if (el) {
+    el.pause();
+    el.src = '';
+  }
+  if (gain && stale) {
+    try {
+      gain.gain.setValueAtTime(gain.gain.value, stale.currentTime);
+      gain.gain.linearRampToValueAtTime(0, stale.currentTime + 0.2);
+    } catch { /* closed */ }
+  }
+  if (stale) {
+    setTimeout(() => { void stale.close().catch(() => undefined); }, 280);
+  }
+}
+
+function playClipElement(url: string, token: number, characterId: string): boolean {
+  if (typeof Audio === 'undefined') return false;
+  try {
+    const audio = new Audio(url);
+    pinDefaultOutput(audio);
+    audio.loop = true;
+    clipEl = audio;
+    applyActiveClipGain();
+    void audio.play().then(() => {
+      if (token !== loadToken) return;
+      window.dispatchEvent(new CustomEvent('amoji:library-clip', { detail: { state: 'playing', id: clipId } }));
+    }, () => {
+      if (token !== loadToken) return;
+      audio.pause();
+      if (clipEl === audio) clipEl = null;
+      startMusic(characterId);
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function playClip(clip: PerformanceClip, token: number, characterId: string): Promise<void> {
+  const url = assetUrl(clip.file);
+  const ac = createDefaultAudioContext();
+  if (!ac) {
+    if (token !== loadToken) return;
+    if (!playClipElement(url, token, characterId)) startMusic(characterId);
+    return;
+  }
+  try {
+    void ac.resume();
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(String(res.status));
+    const raw = await res.arrayBuffer();
+    if (token !== loadToken) {
+      void ac.close().catch(() => undefined);
+      return;
+    }
+    const buffer = await ac.decodeAudioData(raw.slice(0));
+    if (token !== loadToken) {
+      void ac.close().catch(() => undefined);
+      return;
+    }
+    clipCtx = ac;
+    const gain = ac.createGain();
+    clipGain = gain;
+    applyActiveClipGain();
+    gain.connect(ac.destination);
+    const src = ac.createBufferSource();
+    src.buffer = buffer;
+    src.loop = true;
+    if (clip.kind === 'song') {
+      const an = ac.createAnalyser();
+      an.fftSize = 256;
+      src.connect(an);
+      an.connect(gain);
+      clipAnalyser = an;
+      startSongMouth(an);
+    } else {
+      src.connect(gain);
+    }
+    src.start();
+    clipSrc = src;
+    window.dispatchEvent(new CustomEvent('amoji:library-clip', { detail: { state: 'playing', id: clip.id } }));
+  } catch {
+    if (token !== loadToken) {
+      void ac.close().catch(() => undefined);
+      return;
+    }
+    if (clipCtx === ac) clipCtx = null;
+    void ac.close().catch(() => undefined);
+    if (!playClipElement(url, token, characterId)) startMusic(characterId);
+  }
+}
+
+/**
+ * Play a premade song or dance bed from the library. Safe to call again with
+ * the same pick — the show keeps going and only the timer re-arms — so a
+ * reply that arrives mid-clip does not restart it. A new chat message ends
+ * it via endPerformanceMusic(). Where WebAudio can't decode the file, the
+ * same clip plays through an &lt;audio&gt; element; if that fails too, the
+ * procedural band covers the show.
+ */
+export function startLibraryPerformance(q: ClipQuery & { ms: number }): PerformanceClip {
+  const clip = pickPerformanceClip(q);
+  if (typeof window === 'undefined') return clip;
+  if (clipId === clip.id && perfPreserve) {
+    armPerformance(q.ms);
+    return clip;
+  }
+  endPerformanceMusic();
+  perfPreserve = true;
+  duck = 1;
+  clipId = clip.id;
+  clipVolumeKey = clip.volume;
+  clipBase = CLIP_BASE_GAIN[clip.kind];
+  clipCharacter = q.characterId ?? 'default';
+  armPerformance(q.ms);
+  const token = ++loadToken;
+  void playClip(clip, token, clipCharacter);
+  return clip;
+}
+
+/**
+ * Dip a live library bed so a spoken line (poke, dance reply, intro) stays
+ * intelligible. Songs are not spoken through speak(), so a sing performance
+ * stays full until something else actually talks. No-op when nothing is playing.
+ */
+export function duckLibraryBed(amount = 0.28, ms = 4200): void {
+  if (typeof window === 'undefined' || !clipId) return;
+  duck = Math.max(0, Math.min(1, amount));
+  applyActiveClipGain();
+  if (duckTimer) clearTimeout(duckTimer);
+  duckTimer = setTimeout(() => {
+    duck = 1;
+    duckTimer = null;
+    applyActiveClipGain();
+  }, ms);
 }
