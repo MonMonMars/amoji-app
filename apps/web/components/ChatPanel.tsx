@@ -151,6 +151,7 @@ import { WARMUP_FIRST_MS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from
 import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
 import { clientLiveContext } from '../lib/live-tools';
 import { speak, stopSpeaking, sing, voiceStartedSince } from '../lib/voice';
+import { productionChat } from '../lib/backend-client';
 import { startThinkingSound, stopThinkingSound } from '../lib/thinking-sound';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
 import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerformance } from '../lib/music';
@@ -898,8 +899,29 @@ export default function ChatPanel({
       }
     };
 
+    const commitServer = (data: { reply?: string; emotionHints?: Record<string, number> }) => {
+      // the felt mood is a FLOOR: her reply's hints win on conflicts, but the
+      // feeling the user just expressed never fully drops out
+      const replyHints = feltHints ? { ...feltHints, ...(data.emotionHints ?? {}) } : data.emotionHints;
+      if (replyHints) applyLlmHints(replyHints);
+      const reply = data.reply || '…';
+      // r.30 — remember the completed turn (your words + her reply) so the
+      // next session can pick the conversation thread back up
+      rememberTurn(text, reply);
+      onMemCountRef.current?.(memorySummaryCount());
+      feedUtterance(reply);
+      const spoken = speakReply(text, reply, replyHints, felt?.intensity, felt?.mood);
+      commitReply(spoken);
+      answered = true;
+    };
     try {
-      if (shouldSkipServerProbe()) {
+      const payload = { message: text, history, persona: personaForBrain, memory, language: lang, world, worldSpoken };
+      // Set only on a Node host. GitHub Pages leaves this empty, so the
+      // static demo still uses /api/chat (absent) and then the browser lane.
+      const produced = await productionChat(payload);
+      if (produced) {
+        commitServer(produced);
+      } else if (shouldSkipServerProbe()) {
         // r126 — this session already learned there's no /api/chat (static
         // host): skip the dead round-trip, go straight to the browser lane
         await browserLane();
@@ -908,23 +930,11 @@ export default function ChatPanel({
           const res = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text, history, persona: personaForBrain, memory, language: lang, world, worldSpoken }),
+            body: JSON.stringify(payload),
           });
           if (!res.ok) throw new Error(String(res.status));
           const data = await res.json() as { reply?: string; emotionHints?: Record<string, number> };
-          // the felt mood is a FLOOR: her reply's hints win on conflicts, but the
-          // feeling the user just expressed never fully drops out
-          const replyHints = feltHints ? { ...feltHints, ...(data.emotionHints ?? {}) } : data.emotionHints;
-          if (replyHints) applyLlmHints(replyHints);
-          const reply = data.reply || '…';
-          // r.30 — remember the completed turn (your words + her reply) so the
-          // next session can pick the conversation thread back up
-          rememberTurn(text, reply);
-          onMemCountRef.current?.(memorySummaryCount());
-          feedUtterance(reply);
-          const spoken = speakReply(text, reply, replyHints, felt?.intensity, felt?.mood);
-          commitReply(spoken);
-          answered = true;
+          commitServer(data);
         } catch {
           // no server (e.g. static GitHub Pages build) — remember it for the
           // rest of the session, then free keyless LLM from the browser
