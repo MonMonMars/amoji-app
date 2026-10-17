@@ -151,7 +151,8 @@ import { pickLaugh, laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { WARMUP_FIRST_MS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from '../lib/warmup';
 import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
 import { clientLiveContext } from '../lib/live-tools';
-import { speak, stopSpeaking, speakThinkingFiller, sing, voiceStartedSince } from '../lib/voice';
+import { speak, stopSpeaking, sing, voiceStartedSince } from '../lib/voice';
+import { startThinkingSound, stopThinkingSound } from '../lib/thinking-sound';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
 import { startMusic, stopMusic, startPerformanceMusic, endPerformanceMusic } from '../lib/music';
 import { characterSpecialty, pickShowcaseOffer, SHOWCASE_START, SHOWCASE_YES_RE, type ShowcaseKind } from '../lib/showcase';
@@ -693,7 +694,7 @@ export default function ChatPanel({
     // "hmm…" thinking moment while the reply generates — mood-tinted (r.24):
     // a sad user's first hmm is softer than a happy one's (reply speech cuts it off)
     setThinkingPose(true);
-    speakThinkingFiller(characterId, lang, felt?.mood);
+    startThinkingSound();
     // r.47 — ONE transient placeholder bubble carries the whole wait. It
     // starts as '…'; preloaded warm lines (praise, curiosity,
     // encouragement — her language, her felt mood) replace it every few
@@ -865,6 +866,7 @@ export default function ChatPanel({
       }
     } finally {
       clearTimeout(warmTimer); // reply (or failure) is here — stop the warm-up
+      stopThinkingSound();
       setThinkingPose(false);
       stopMusic(); // r.48 — belt-and-braces: no PLAIN music outlives the turn
       // r86 — a live sing/duet/piano performance survives this stopMusic();
