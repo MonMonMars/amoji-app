@@ -93,6 +93,7 @@ export default function StatusPlate({
       const label = d.tier === 'edge' ? 'edge-tts'
         : d.tier === 'synth' ? 'browser voice'
         : d.tier === 'canto-nano' ? 'canto-tts-nano'
+        : d.tier === 'cosyvoice' ? 'cosyvoice'
         : d.tier === 'openai' ? 'chatgpt-voice'
         : d.tier === 'gtts' ? 'google-tts'
         : d.tier === 'attempt' ? 'speak'

@@ -27,7 +27,7 @@ import {
 } from '../lib/prefs';
 import { LangChips } from './selectors';
 import ModelThumb from './ModelThumb';
-import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, testOpenAiVoice, VOICE_TIER_LABEL } from '../lib/voice';
+import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, testOpenAiVoice, testCosyVoice, VOICE_TIER_LABEL } from '../lib/voice';
 import { VOLUME_STEPS, type VolumeStep } from '../lib/audio-levels';
 import { applyBgmLevel } from '../lib/music';
 import { applySfxLevel } from '../lib/sfx';
@@ -35,6 +35,7 @@ import { applySfxLevel } from '../lib/sfx';
 import { getTtsProxy, setTtsProxy } from '../lib/edge-tts';
 // r2026-10-06.134: ChatGPT-voice (OpenAI tier 0) key + endpoint field
 import { openAiKey, setOpenAiKey, openAiEndpoint, setOpenAiEndpoint, openAiEnabled, setOpenAiEnabled } from '../lib/openai-tts';
+import { experimentalCosyvoiceEnabled, setExperimentalCosyvoiceEnabled, cosyvoiceEndpoint, setCosyvoiceEndpoint } from '../lib/cosyvoice-tts';
 import { pickLine } from '../lib/chatter';
 import { feedUtterance } from '../lib/companion';
 import { notifySpeaking } from '../lib/speech';
@@ -142,6 +143,11 @@ export default function SettingsSheet({
   const [oaSaved, setOaSaved] = useState(false);
   const [oaTesting, setOaTesting] = useState(false);
   const [oaTestResult, setOaTestResult] = useState<boolean | null>(null);
+  const [cvOn, setCvOn] = useState<boolean>(() => experimentalCosyvoiceEnabled());
+  const [cvDraft, setCvDraft] = useState<string>(() => cosyvoiceEndpoint());
+  const [cvSaved, setCvSaved] = useState(false);
+  const [cvTesting, setCvTesting] = useState(false);
+  const [cvTestResult, setCvTestResult] = useState<boolean | null>(null);
   const tutorNRef = useRef(0);
   // r2026-10-04.75: listen for the voice layer reporting a refused utterance
   // so the hint appears right where the toggles live.
@@ -151,7 +157,7 @@ export default function SettingsSheet({
     return () => window.removeEventListener('amoji:voice-blocked', onBlocked);
   }, []);
   useEffect(() => {
-    if (open) { setMem(loadMemory()); setCopied(false); setProxyDraft(getTtsProxy() ?? ''); setProxySaved(false); setProxyTestResult(null); setProxyTesting(false); setOaKeyDraft(openAiKey()); setOaEpDraft(openAiEndpoint()); setOaOn(openAiEnabled()); setOaSaved(false); setOaTestResult(null); setOaTesting(false); }
+    if (open) { setMem(loadMemory()); setCopied(false); setProxyDraft(getTtsProxy() ?? ''); setProxySaved(false); setProxyTestResult(null); setProxyTesting(false); setOaKeyDraft(openAiKey()); setOaEpDraft(openAiEndpoint()); setOaOn(openAiEnabled()); setOaSaved(false); setOaTestResult(null); setOaTesting(false); setCvOn(experimentalCosyvoiceEnabled()); setCvDraft(cosyvoiceEndpoint()); setCvSaved(false); setCvTestResult(null); setCvTesting(false); }
   }, [open]);
   if (!open) return null;
   const lang = prefs.lang;
@@ -281,6 +287,17 @@ export default function SettingsSheet({
   // r134: ChatGPT-voice probe — same save-first contract: the spoken line
   // exercises the exact key/endpoint in the fields. No key → ✗ with the
   // "nothing to test" case folded into the same inline verdict.
+  const runCosyTest = () => {
+    setCosyvoiceEndpoint(cvDraft.trim());
+    setCvSaved(true);
+    setCvTestResult(null);
+    setCvTesting(true);
+    void testCosyVoice(prefs.character, lang).then((ok) => {
+      setCvTesting(false);
+      setCvTestResult(ok);
+    }).catch(() => { setCvTesting(false); setCvTestResult(false); });
+  };
+
   const runOpenAiTest = () => {
     setOpenAiKey(oaKeyDraft);
     setOpenAiEndpoint(oaEpDraft);
@@ -518,6 +535,59 @@ export default function SettingsSheet({
                 🔇 {t(lang, 'voiceBlockedHint')}
               </p>
             )}
+            <div className="space-y-1.5">
+              <div className={row}>
+                <span className={label}>🧪 {t(lang, 'cosyvoiceExperimental')}
+                  <span className="block text-[11px] text-white/40">{t(lang, 'cosyvoiceHint')}</span>
+                </span>
+                <Toggle
+                  on={cvOn}
+                  accent={accent}
+                  onClick={() => { const next = !cvOn; setCvOn(next); setExperimentalCosyvoiceEnabled(next); }}
+                />
+              </div>
+              <input
+                value={cvDraft}
+                onChange={(e) => { setCvDraft(e.target.value); setCvSaved(false); }}
+                placeholder={t(lang, 'cosyvoicePlaceholder')}
+                inputMode="url"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs text-white/85 outline-none placeholder:text-white/30 focus:border-white/25"
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { setCosyvoiceEndpoint(cvDraft.trim()); setCvSaved(true); }}
+                  className="ui-btn rounded-full px-3 py-1.5 text-xs text-white/90"
+                  style={{ backgroundColor: `${accent}2e` }}
+                >
+                  {t(lang, 'ttsProxySave')}
+                </button>
+                <button
+                  onClick={() => { setCvDraft(''); setCosyvoiceEndpoint(''); setCvSaved(true); setCvTestResult(null); }}
+                  className="ui-btn rounded-full px-3 py-1.5 text-xs text-white/60"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+                >
+                  {t(lang, 'ttsProxyClear')}
+                </button>
+                <button
+                  onClick={runCosyTest}
+                  disabled={cvTesting}
+                  className="ui-btn rounded-full px-3 py-1.5 text-xs text-white/80 disabled:opacity-50"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}
+                >
+                  {cvTesting ? '…' : t(lang, 'testVoiceBtn')}
+                </button>
+                {cvTesting ? (
+                  <span className="text-[10px] text-white/45">…</span>
+                ) : cvTestResult !== null ? (
+                  <span className="text-[10px] text-white/45">{cvTestResult ? '✓' : '✗'}</span>
+                ) : cvSaved ? (
+                  <span className="text-[10px] text-white/45">✓</span>
+                ) : null}
+              </div>
+            </div>
           </Section>
 
           <Section title={`💾 ${t(lang, 'settingsData')}`}>

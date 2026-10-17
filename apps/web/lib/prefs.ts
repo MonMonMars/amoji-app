@@ -139,6 +139,8 @@ export type StrKey =
   | 'openaiVoice' | 'openaiVoiceHint' | 'openaiKeyPlaceholder' | 'openaiEndpointPlaceholder' | 'openaiCostHint'
   // HTTP TTS proxy for wss-blocked networks (r2026-10-06.131)
   | 'ttsProxy' | 'ttsProxyPlaceholder' | 'ttsProxyHint' | 'ttsProxySave' | 'ttsProxyClear'
+  // optional CosyVoice experiment (default off)
+  | 'cosyvoiceExperimental' | 'cosyvoiceHint' | 'cosyvoicePlaceholder'
   // companion card (.aigf) export/import (r2026-10-05.122)
   | 'companionFile' | 'exportCompanion' | 'importCompanion' | 'companionFileBad'
   // no-audio watchdog tap-to-replay chip (r2026-10-05.119)
@@ -360,6 +362,24 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   },
   ttsProxyClear: {
     en: 'Clear', yue: '清除', zh: '清除', ja: 'クリア',
+  },
+  cosyvoiceExperimental: {
+    en: 'CosyVoice experiment',
+    yue: 'CosyVoice 實驗',
+    zh: 'CosyVoice 实验',
+    ja: 'CosyVoice 実験',
+  },
+  cosyvoiceHint: {
+    en: 'Off by default — Edge and the browser voice stay the normal path. Paste a CosyVoice-300M-SFT server you run yourself (free, no key, no download here). Live replies try it only while this is on; any failure uses Edge. Details: docs/COSYVOICE_SPIKE.md.',
+    yue: '預設關閉——平時仍然用 Edge 同瀏覽器把聲。貼上你自己跑嘅 CosyVoice-300M-SFT 伺服器（免費、唔使 key、呢度唔會下載模型）。開咗先會喺對白試用；失敗就用返 Edge。詳情：docs/COSYVOICE_SPIKE.md。',
+    zh: '默认关闭——平时仍用 Edge 和浏览器语音。填入你自己运行的 CosyVoice-300M-SFT 服务（免费、无需密钥、这里不下载模型）。打开后才会在对话里试用；失败则用回 Edge。详情：docs/COSYVOICE_SPIKE.md。',
+    ja: '初期はオフ——普段は Edge とブラウザ音声のままです。自分で動かしている CosyVoice-300M-SFT サーバーの URL を貼ってください（無料、キー不要、ここではモデルをダウンロードしません）。オンのときだけ会話で試し、失敗したら Edge に戻ります。詳細：docs/COSYVOICE_SPIKE.md。',
+  },
+  cosyvoicePlaceholder: {
+    en: 'http://127.0.0.1:50000 — blank leaves Edge in charge',
+    yue: 'http://127.0.0.1:50000 — 留空就繼續用 Edge',
+    zh: 'http://127.0.0.1:50000 — 留空则继续用 Edge',
+    ja: 'http://127.0.0.1:50000 — 空欄なら Edge のまま',
   },
 };
 
