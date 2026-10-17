@@ -9,6 +9,7 @@
 // indeterminate "preparing…" loading state (see StatusPlate / load-progress).
 import { useEffect, useState } from 'react';
 import { DEFAULT_VOLUME, isVolumeStep, type VolumeStep } from './audio-levels';
+import { scheduleStatePush } from './backend-client';
 
 export type Lang = 'en' | 'yue' | 'zh' | 'ja';
 
@@ -434,6 +435,7 @@ export function loadPrefs(): Prefs {
 
 export function savePrefs(p: Prefs): void {
   try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* ignore */ }
+  scheduleStatePush();
 }
 
 export function characterById(id: string): CharacterDef {
