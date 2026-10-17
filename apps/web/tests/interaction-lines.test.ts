@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { interactionLines, pickCharacterInteraction } from '../lib/interaction-lines';
-import { FEMALE_PERSONALITIES, MALE_PERSONALITIES } from '../lib/personality';
+import { FEMALE_PERSONALITIES, MALE_PERSONALITIES, profilePokeLine } from '../lib/personality';
 
 const ZONES = ['head', 'torso', 'chest', 'side', 'back', 'hand'] as const;
 
@@ -23,5 +23,15 @@ describe('interaction lines', () => {
     const b = pickCharacterInteraction('a98-ethan', 'male', 'hand', 'en');
     expect(a.length).toBeGreaterThan(8);
     expect(b.length).toBeGreaterThan(8);
+    expect(a).not.toBe(b);
+  });
+
+  it('switching characters changes the spoken poke line', () => {
+    const a = profilePokeLine('a01-shino', 'en', 0, 'hand', 'female');
+    const b = profilePokeLine('a02-shibu', 'en', 0, 'hand', 'female');
+    const c = profilePokeLine('a98-ethan', 'en', 0, 'hand', 'male');
+    expect(a).not.toBe(b);
+    expect(b).not.toBe(c);
+    expect(a).not.toBe(c);
   });
 });

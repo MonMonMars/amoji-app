@@ -5,7 +5,7 @@
 
 import type { Lang } from './prefs';
 import type { PersonalityId } from './personality';
-import { personalityFor } from './personality';
+import { profilePokeLine } from './personality';
 import type { TalkZone } from './poke-hit';
 
 export type InteractZone = TalkZone | 'hand';
@@ -126,7 +126,12 @@ export function pickInteractionLine(personality: PersonalityId, zone: string, la
 }
 
 export function pickCharacterInteraction(characterId: string, gender: 'female' | 'male' | undefined, zone: string, lang: Lang): string {
-  return pickInteractionLine(personalityFor(characterId, gender), zone, lang);
+  const pool = 8;
+  let i = Math.floor(Math.random() * pool);
+  const key = `${characterId}:${zone}:${lang}`;
+  if (i === lastPick.get(key)) i = (i + 1) % pool;
+  lastPick.set(key, i);
+  return profilePokeLine(characterId, lang, i, zone, gender);
 }
 
 const LAUGHS: Record<Lang, string[]> = {
