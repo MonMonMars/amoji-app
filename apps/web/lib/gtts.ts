@@ -1,6 +1,9 @@
 'use client';
 import { pinDefaultOutput } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
+// Not on the free wire-now chain (Edge → speechSynthesis). Kept as an
+// optional unofficial Translate MP3 client. Paid Google Cloud TTS is a
+// different product and is not called from here.
 // r2026-10-04.89 — mid-tier insurance voice path.
 // Why it exists: Simon's iPhone hears NOTHING from either previous path.
 // (a) the Edge neural socket is frequently blocked on mobile networks, and

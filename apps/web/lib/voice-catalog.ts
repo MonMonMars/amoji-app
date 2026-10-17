@@ -1,12 +1,13 @@
-// Locale → engine → voice. Shipping path is Edge neural, then the browser
-// speechSynthesis list. Kokoro / Piper / Melo / Bark are kept so English,
-// Japanese, and Mandarin can pick them up later — weights are not in this
-// repo, so they are not called at runtime. NC licenses (Coqui CPML, Fish, F5)
-// are listed as skipped and never selected.
+// Locale → engine → voice for the four languages the app speaks (yue, zh, ja, en).
+// Shipping path is Edge neural selected by locale + gender, then speechSynthesis.
+// Kokoro / Piper / Melo / Bark stay in the map for later — weights are not in
+// this repo, so they are not called. canto-tts-nano is the same: a Yue note
+// only, skipped until a local build exists. NC licenses (Coqui CPML, Fish, F5)
+// and the held GPU models are never selected.
 
 export type VoiceLocale = 'yue' | 'zh' | 'ja' | 'en';
 export type VoiceGender = 'female' | 'male';
-export type VoiceEngine = 'edge' | 'speech' | 'kokoro' | 'piper' | 'melotts' | 'bark';
+export type VoiceEngine = 'edge' | 'speech' | 'kokoro' | 'piper' | 'melotts' | 'bark' | 'canto-nano';
 
 export interface VoiceOption {
   locale: VoiceLocale;
@@ -30,6 +31,8 @@ export const VOICE_CATALOG: readonly VoiceOption[] = [
   { locale: 'yue', engine: 'speech', gender: 'female', id: 'Sin-ji', shipping: true, license: 'browser', latency: 'low', notes: 'Apple Cantonese female.' },
   { locale: 'yue', engine: 'speech', gender: 'female', id: '粤語', shipping: true, license: 'browser', latency: 'low', notes: 'Google 粤語（香港）name match.' },
   { locale: 'yue', engine: 'speech', gender: 'male', id: 'WanLung', shipping: true, license: 'browser', latency: 'low', notes: 'Microsoft WanLung when installed.' },
+  { locale: 'yue', engine: 'canto-nano', gender: 'female', id: 'canto-tts-nano', shipping: false, license: 'not bundled', latency: 'mid', notes: 'Not in repo. Yue hop after Edge zh-HK and Web Speech when a local build is added.' },
+  { locale: 'yue', engine: 'canto-nano', gender: 'male', id: 'canto-tts-nano', shipping: false, license: 'not bundled', latency: 'mid', notes: 'Not in repo. Same skip as the female row.' },
 
   { locale: 'zh', engine: 'edge', gender: 'female', id: 'zh-CN-XiaoxiaoNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Default Mandarin female.' },
   { locale: 'zh', engine: 'edge', gender: 'male', id: 'zh-CN-YunjianNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Default Mandarin male.' },
@@ -77,20 +80,56 @@ export const SKIPPED_ENGINES: readonly { engine: string; license: string; notes:
   { engine: 'f5-tts', license: 'CC-BY-NC', notes: 'Non-commercial. Not shipped.' },
 ];
 
+/**
+ * Research hold. Do not host these in the free wire-now path. Kokoro and
+ * MeloTTS may appear above as non-shipping stubs; the others are not even
+ * selectable.
+ */
+export const HELD_GPU_ENGINES: readonly { engine: string; notes: string }[] = [
+  { engine: 'voxcpm2', notes: 'Hold for a later GPU host. Not called.' },
+  { engine: 'chatterbox', notes: 'Hold for a later GPU host. Not called.' },
+  { engine: 'cosyvoice', notes: 'Hold for a later GPU host. Not called.' },
+  { engine: 'qwen3-tts', notes: 'Hold for a later GPU host. Not called.' },
+  { engine: 'kokoro', notes: 'Catalog stub only. Weights are not bundled.' },
+  { engine: 'melotts', notes: 'Catalog stub only. Weights are not bundled.' },
+];
+
 /** Locale → every retained option (shipping and later), in catalog order. */
 export function voicesForLocale(locale: VoiceLocale): readonly VoiceOption[] {
   return VOICE_CATALOG.filter((v) => v.locale === locale);
 }
 
-/** Names that must never be chosen for the other gender. */
-const MALE_NEURAL = /WanLung|Yunxi|Yunjian|Yunyang|Keita|GuyNeural|Christopher|EricNeural|SamNeural|Otoya/i;
-const FEMALE_NEURAL = /HiuMaan|HiuGaai|Xiaoxiao|Xiaoyi|Xiaohan|Xiaomo|Xiaorui|Nanami|JennyNeural|AriaNeural|AnaNeural|Michelle|SaraNeural|YanNeural|Kyoko/i;
+/** Personal name of an Edge short name: en-GB-RyanNeural → ryan, zh-HK-HiuMaanNeural → hiumaan. */
+function voicePersonalName(id: string): string {
+  return id
+    .replace(/^zh-CN-(?:liaoning|shaanxi)-/i, '')
+    .replace(/^[a-z]{2}-[A-Za-z]{2}-/i, '')
+    .replace(/Neural$/i, '')
+    .replace(/Multilingual$/i, '')
+    .replace(/Expressive$/i, '')
+    .toLowerCase();
+}
+
+/** Exact personal names. Substring checks treated Ryan as Yan. */
+const MALE_NAMES = new Set([
+  'wanlung', 'yunxi', 'yunjian', 'yunyang', 'yunxia', 'yunjhe', 'keita',
+  'guy', 'christopher', 'eric', 'sam', 'otoya', 'ryan', 'andrew', 'brian',
+  'steffan', 'roger', 'william', 'connor', 'prabhat', 'liam', 'mitchell',
+  'wayne', 'luke', 'james', 'chilemba', 'abeo', 'elimu', 'thomas',
+]);
+const FEMALE_NAMES = new Set([
+  'hiumaan', 'hiugaai', 'xiaoxiao', 'xiaoyi', 'xiaohan', 'xiaomo', 'xiaorui',
+  'xiaobei', 'xiaoni', 'hsiaochen', 'hsiaoyu', 'nanami', 'jenny', 'aria',
+  'ana', 'michelle', 'sara', 'yan', 'kyoko', 'sonia', 'libby', 'natasha',
+  'neerja', 'emma', 'emily', 'ava', 'molly', 'clara', 'luna', 'leah',
+  'rosa', 'maisie', 'asilia', 'ezinne', 'imani',
+]);
 
 export function isMaleNeuralVoice(id: string): boolean {
-  return MALE_NEURAL.test(id);
+  return MALE_NAMES.has(voicePersonalName(id));
 }
 export function isFemaleNeuralVoice(id: string): boolean {
-  return FEMALE_NEURAL.test(id);
+  return FEMALE_NAMES.has(voicePersonalName(id));
 }
 
 export function edgeVoiceId(locale: string, gender: VoiceGender): string {

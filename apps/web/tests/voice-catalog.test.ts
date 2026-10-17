@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  HELD_GPU_ENGINES,
   SKIPPED_ENGINES,
   VOICE_CATALOG,
   edgeVoiceId,
@@ -28,6 +29,25 @@ describe('locale voice catalog', () => {
     expect(later.length).toBeGreaterThan(0);
     expect(later.every((v) => v.shipping === false)).toBe(true);
     expect(VOICE_CATALOG.filter((v) => v.engine === 'bark').every((v) => v.latency === 'high')).toBe(true);
+  });
+
+  it('keeps Yue Edge voices on zh-HK and does not ship canto-tts-nano', () => {
+    const yueEdge = VOICE_CATALOG.filter((v) => v.locale === 'yue' && v.engine === 'edge' && v.shipping);
+    expect(yueEdge.length).toBeGreaterThan(0);
+    expect(yueEdge.every((v) => v.id.startsWith('zh-HK-'))).toBe(true);
+    const nano = VOICE_CATALOG.filter((v) => v.engine === 'canto-nano');
+    expect(nano.length).toBeGreaterThan(0);
+    expect(nano.every((v) => v.shipping === false)).toBe(true);
+  });
+
+  it('does not ship held GPU engines', () => {
+    const shipping = new Set(VOICE_CATALOG.filter((v) => v.shipping).map((v) => v.engine));
+    for (const held of HELD_GPU_ENGINES) {
+      expect(shipping.has(held.engine as never)).toBe(false);
+    }
+    expect(HELD_GPU_ENGINES.map((h) => h.engine)).toEqual(
+      expect.arrayContaining(['voxcpm2', 'chatterbox', 'cosyvoice', 'qwen3-tts', 'kokoro', 'melotts']),
+    );
   });
 
   it('does not select NC-licensed engines', () => {

@@ -90,7 +90,13 @@ export default function StatusPlate({
     const onStatus = (e: Event) => {
       const d = (e as CustomEvent).detail as { tier?: string; ok?: boolean; detail?: string } | undefined;
       if (!d?.tier) return;
-      const label = d.tier === 'edge' ? 'edge-tts' : d.tier === 'gtts' ? 'google-tts' : d.tier === 'attempt' ? 'speak' : 'browser voice';
+      const label = d.tier === 'edge' ? 'edge-tts'
+        : d.tier === 'synth' ? 'browser voice'
+        : d.tier === 'canto-nano' ? 'canto-tts-nano'
+        : d.tier === 'openai' ? 'chatgpt-voice'
+        : d.tier === 'gtts' ? 'google-tts'
+        : d.tier === 'attempt' ? 'speak'
+        : d.tier;
       setVoiceDot({ ok: !!d.ok, title: `🎙 ${label}: ${d.detail ?? (d.ok ? 'playing' : 'failed')}` });
       if (fade) clearTimeout(fade);
       if (d.ok) fade = setTimeout(() => setVoiceDot(null), 5_000);

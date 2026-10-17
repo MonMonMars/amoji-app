@@ -14,4 +14,18 @@ describe('speak text cleaner', () => {
     expect(cleanForSpeech('我想清楚 — 先講')).not.toMatch(/hyphen|dash|period|full stop/i);
     expect(cleanForSpeech('你好. 再講')).toBe('你好。再講');
   });
+
+  it('leaves display punctuation in place when speech rewrites it', () => {
+    const raw = 'Wait — really. hyphen next.';
+    const shown = cleanForDisplay(raw);
+    const spoken = cleanForSpeech(raw);
+    expect(shown).toContain('—');
+    expect(shown).toContain('hyphen');
+    expect(shown).toContain('.');
+    expect(spoken).not.toContain('—');
+    expect(spoken).not.toMatch(/\bhyphen\b/i);
+    expect(spoken).not.toBe(shown);
+    expect(cleanForDisplay('你好. 再講')).toBe('你好. 再講');
+    expect(cleanForSpeech('你好. 再講')).toBe('你好。再講');
+  });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildEdgeSsml, edgeStyleFor, getTtsProxy, setTtsProxy,
+  buildEdgeSsml, edgeStyleFor, getTtsProxy, resolveEdgeVoice, resolveTtsProxy, setTtsProxy,
 } from '../lib/edge-tts';
 
 // r2026-10-06.131 — the free readaloud socket accepts mstts:express-as
@@ -10,12 +10,14 @@ import {
 // coexistence, and the proxy URL round-trip.
 
 describe('edgeStyleFor — voice × emotion style resolution (r131)', () => {
-  it('want-list Cantonese follows gender, not a mismatched hint', () => {
+  it('want-list Cantonese uses a zh-HK voice and keeps male characters male', () => {
     const female = buildEdgeSsml('你好呀', { lang: 'yue', gender: 'female', character: 'a01-shino' });
-    expect(female).toContain("voice name='zh-HK-HiuMaanNeural'");
+    expect(female).toContain("voice name='zh-HK-HiuGaaiNeural'");
+    expect(female).toContain("xml:lang='zh-HK'");
     const male = buildEdgeSsml('你好呀', { lang: 'yue', gender: 'female', character: 'a98-ethan' });
     expect(male).toContain("voice name='zh-HK-WanLungNeural'");
     expect(male).not.toContain('HiuMaan');
+    expect(male).not.toContain('HiuGaai');
   });
 
   it('joy on a zh-CN female voice resolves to cheerful', () => {
@@ -127,11 +129,43 @@ describe('buildEdgeSsml — the SSML the socket receives (r131)', () => {
   });
 });
 
+describe('per-character Edge voices', () => {
+  it('gives neighboring companions different neural voices', () => {
+    const shino = resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a01-shino' });
+    const shibu = resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a02-shibu' });
+    expect(shino.name).toBe('en-US-JennyNeural');
+    expect(shibu.name).toBe('en-GB-SoniaNeural');
+    expect(shino.name).not.toBe(shibu.name);
+    expect(resolveEdgeVoice({ lang: 'zh', gender: 'female', character: 'a01-shino' }).name).toBe('zh-CN-XiaoxiaoNeural');
+    expect(resolveEdgeVoice({ lang: 'zh', gender: 'female', character: 'a02-shibu' }).name).toBe('zh-CN-XiaoyiNeural');
+    expect(resolveEdgeVoice({ lang: 'yue', gender: 'female', character: 'a02-shibu' }).name).toBe('zh-HK-HiuMaanNeural');
+    expect(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a24-hairsample-male' }).name).toBe('en-US-GuyNeural');
+    expect(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a98-ethan' }).name).toBe('en-GB-RyanNeural');
+    expect(resolveEdgeVoice({ lang: 'en', gender: 'female' }).name).toBe('en-US-JennyNeural');
+  });
+
+  it('separates the two Cantonese males by pitch when only WanLung exists', () => {
+    const first = resolveEdgeVoice({ lang: 'yue', gender: 'male', character: 'a24-hairsample-male' });
+    const second = resolveEdgeVoice({ lang: 'yue', gender: 'male', character: 'a98-ethan' });
+    expect(first.name).toBe('zh-HK-WanLungNeural');
+    expect(second.name).toBe('zh-HK-WanLungNeural');
+    expect(first.pitch).not.toBe(second.pitch);
+  });
+});
+
 describe('TTS proxy URL (r131)', () => {
   it('set/get round-trips, and null clears', () => {
     setTtsProxy('https://amoji-tts.example.workers.dev/');
-    expect(getTtsProxy()).toBe('https://amoji-tts.example.workers.dev/');
+    expect(getTtsProxy()).toBe('https://amoji-tts.example.workers.dev');
     setTtsProxy(null);
     expect(getTtsProxy()).toBeNull();
+  });
+
+  it('uses the Pages env URL only when nothing is saved or cleared', () => {
+    expect(resolveTtsProxy(undefined, null, 'https://pages.example.workers.dev/')).toBe('https://pages.example.workers.dev');
+    expect(resolveTtsProxy(null, null, 'https://pages.example.workers.dev/')).toBeNull();
+    expect(resolveTtsProxy(undefined, '', 'https://pages.example.workers.dev/')).toBeNull();
+    expect(resolveTtsProxy('https://saved.example/', null, 'https://pages.example.workers.dev')).toBe('https://saved.example');
+    expect(resolveTtsProxy(undefined, null, '  ')).toBeNull();
   });
 });

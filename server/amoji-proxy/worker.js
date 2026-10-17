@@ -33,7 +33,9 @@
 // endpoint the in-browser socket uses. Route B bills to YOUR OpenAI key as
 // usual (gpt-4o-mini-tts ≈ US$0.015/min — a month of daily chats ≈ US$1).
 
-const TRUSTED_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
+// Public read-aloud client token (same value the edge-tts project publishes).
+// Not a secret. env.EDGE_TTS_TOKEN overrides it if the public value rotates.
+const PUBLIC_EDGE_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
 const WS_BASE = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
 const OPENAI_SPEECH = '/v1/audio/speech';
 const OPENAI_UPSTREAM = 'https://api.openai.com';
@@ -45,8 +47,11 @@ const CORS = {
 };
 
 export default {
-  /** @param {Request} request */
-  async fetch(request) {
+  /**
+   * @param {Request} request
+   * @param {{ EDGE_TTS_TOKEN?: string }} [env]
+   */
+  async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     if (request.method !== 'POST') {
       return new Response(
@@ -56,7 +61,7 @@ export default {
     }
     const url = new URL(request.url);
     if (url.pathname === OPENAI_SPEECH) return relayOpenAiSpeech(request);
-    return relayNeuralTts(request);
+    return relayNeuralTts(request, env);
   },
 };
 
@@ -87,13 +92,13 @@ async function relayOpenAiSpeech(request) {
 }
 
 // ---- Route A: Microsoft readaloud SSML → mp3 -------------------------------
-async function relayNeuralTts(request) {
+async function relayNeuralTts(request, env) {
   const ssml = await request.text();
   if (!ssml.includes('<speak')) {
     return new Response('invalid ssml — POST an SSML document, or /v1/audio/speech for the ChatGPT voice', { status: 400, headers: CORS });
   }
   try {
-    const mp3 = await synthesize(ssml);
+    const mp3 = await synthesize(ssml, env);
     return new Response(mp3, { headers: { ...CORS, 'Content-Type': 'audio/mpeg' } });
   } catch (err) {
     return new Response(String(err?.message ?? err), { status: 502, headers: CORS });
@@ -101,10 +106,11 @@ async function relayNeuralTts(request) {
 }
 
 /** Open the upstream readaloud socket from the worker, relay the mp3. */
-async function synthesize(ssml) {
+async function synthesize(ssml, env) {
+  const token = (env && typeof env.EDGE_TTS_TOKEN === 'string' && env.EDGE_TTS_TOKEN.trim()) || PUBLIC_EDGE_TOKEN;
   const requestId = crypto.randomUUID().replaceAll('-', '');
   const ws = new WebSocket(
-    `${WS_BASE}?TrustedClientToken=${TRUSTED_TOKEN}&ConnectionId=${crypto.randomUUID().replaceAll('-', '')}`,
+    `${WS_BASE}?TrustedClientToken=${token}&ConnectionId=${crypto.randomUUID().replaceAll('-', '')}`,
   );
   const chunks = [];
   const pending = []; // frame-decoding promises, drained before resolve
