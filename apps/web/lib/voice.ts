@@ -87,6 +87,7 @@ import { speakEdge, stopEdge, getTtsProxy } from './edge-tts';
 import { stopGtts } from './gtts';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
 import { formatVoiceChain, freeVoiceHops } from './tts-chain';
+import { stopThinkingSound } from './thinking-sound';
 // r2026-10-05.112: tier 0 — OpenAI gpt-4o-mini-tts (ChatGPT-style emotional
 // voice via natural-language instructions). Sits AHEAD of the free chain;
 // any failure (no key, CORS, network) falls through silently to edge-tts.
@@ -1087,6 +1088,7 @@ export function setNeuralEnabled(on: boolean): void {
 
 export function stopSpeaking(): void {
   synthGeneration++;
+  stopThinkingSound();
   stopOpenAi();
   stopEdge();
   stopGtts();
@@ -1125,6 +1127,8 @@ export function speak(
   leadOverride?: VocalLead,
   intensity = 1,
 ): void {
+  // Reply TTS takes the speaker. The wait hum must not play under it.
+  stopThinkingSound();
   // Spoken string only. cleanForSpeech may drop punctuation-mark names and
   // rewrite dashes. Chat bubbles stay on cleanForDisplay — do not write this
   // string back into history.
@@ -1276,6 +1280,7 @@ export function speak(
  * pitch multipliers. Callers gate on voiceEnabled().
  */
 export function sing(text: string, characterId: string, lang: Lang): void {
+  stopThinkingSound();
   text = cleanForSpeech(text);
   if (!text || !voiceEnabled()) return;
   unlockAudio();

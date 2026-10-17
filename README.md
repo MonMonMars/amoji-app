@@ -72,7 +72,7 @@ pnpm build             # production build of the web app
 
 ## Free voice (no key)
 
-Default chain for English, 中文, 日本語, and 廣東話: **Edge TTS → browser `speechSynthesis`**. Yue stays on Edge `zh-HK` voices, then Web Speech. `canto-tts-nano` is not in this repo, so that hop is skipped. Kokoro, MeloTTS, VoxCPM2, Chatterbox, CosyVoice, and Qwen3-TTS are not hosted here.
+Default chain for English, 中文, 日本語, and 廣東話: **Edge TTS → browser `speechSynthesis`**. Yue stays on Edge `zh-HK` voices, then Web Speech. While a reply is still generating, a short local hum (`apps/web/public/sfx/thinking.wav`) loops at a fraction of the voice and effects levels, and it stops when the reply starts speaking or the request fails. Voice mute or effects mute silences it. `canto-tts-nano` is not in this repo, so that hop is skipped. Kokoro, MeloTTS, VoxCPM2, Chatterbox, CosyVoice, and Qwen3-TTS are not hosted here.
 
 Chat text keeps its punctuation. The spoken string may drop mark-names (`hyphen`, `period`) and rewrite dashes. The bubble does not change.
 
