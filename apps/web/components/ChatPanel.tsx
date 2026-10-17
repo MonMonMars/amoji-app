@@ -154,7 +154,8 @@ import { clientLiveContext } from '../lib/live-tools';
 import { speak, stopSpeaking, sing, voiceStartedSince } from '../lib/voice';
 import { startThinkingSound, stopThinkingSound } from '../lib/thinking-sound';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
-import { startMusic, stopMusic, startPerformanceMusic, endPerformanceMusic } from '../lib/music';
+import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerformance } from '../lib/music';
+import { clipLabel, PERFORMANCE_CLIPS, type PerformanceClip } from '../lib/performance-clips';
 import { characterSpecialty, pickShowcaseOffer, SHOWCASE_START, SHOWCASE_YES_RE, type ShowcaseKind } from '../lib/showcase';
 import { detectGame, startGame, playTurn, gameFarewellLine, type GameState } from '../lib/games';
 import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodbyeLine, pickMealToast } from '../lib/activities';
@@ -228,6 +229,24 @@ export default function ChatPanel({
   const [userSpeaking, setUserSpeaking] = useState(false);
   // r119 — the no-audio watchdog armed a replay: show the tap-to-replay chip
   const [replayHint, setReplayHint] = useState(false);
+  // premade sing/dance clip currently on stage — the name is the visible pick
+  const [nowPlaying, setNowPlaying] = useState<string | null>(null);
+  const [clipState, setClipState] = useState<'starting' | 'playing' | null>(null);
+  const trackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    const onClip = (e: Event) => {
+      const detail = (e as CustomEvent<{ state?: string; id?: string }>).detail;
+      if (detail?.state === 'playing' && detail.id) {
+        const clip = PERFORMANCE_CLIPS.find((c) => c.id === detail.id);
+        if (clip) setNowPlaying(clipLabel(clip, lang));
+        setClipState('playing');
+      } else if (detail?.state === 'stopped') {
+        setClipState((s) => (s === 'playing' ? null : s));
+      }
+    };
+    window.addEventListener('amoji:library-clip', onClip);
+    return () => window.removeEventListener('amoji:library-clip', onClip);
+  }, [lang]);
   useEffect(() => {
     const onHint = (e: Event) => setReplayHint(!!((e as CustomEvent<{ armed?: boolean }>).detail?.armed));
     window.addEventListener('amoji:voice-replay-hint', onHint);
@@ -378,6 +397,34 @@ export default function ChatPanel({
   // from the moment we tried to speak it — the re-speak skip only applies
   // when that attempt's audio provably STARTED (voiceStartedSince), never
   // merely because we tried.
+  const showTrack = (clip: PerformanceClip | null, ms = 0) => {
+    if (trackTimerRef.current) clearTimeout(trackTimerRef.current);
+    trackTimerRef.current = null;
+    if (!clip) {
+      setNowPlaying(null);
+      setClipState(null);
+      return;
+    }
+    setNowPlaying(clipLabel(clip, lang));
+    setClipState((s) => (s === 'playing' ? 'playing' : 'starting'));
+    trackTimerRef.current = setTimeout(() => setNowPlaying(null), ms + 400);
+  };
+
+  /** Start a premade song (matched to her gender) or dance bed, and show the pick. */
+  const beginShow = (kind: 'song' | 'dance', ms: number, mood?: string, n = laughCountRef.current) => {
+    const clip = startLibraryPerformance({
+      kind,
+      characterId,
+      lang,
+      mood,
+      gender: characterGender,
+      n,
+      ms,
+    });
+    showTrack(clip, ms);
+    return clip;
+  };
+
   const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string, alreadySpoken?: { text: string; since: number }): string => {
     const mv = detectMove(userText) ?? detectMove(reply);
     // r97 — the first sentence already went out live over the stream; when
@@ -387,23 +434,39 @@ export default function ChatPanel({
     // the reply itself. Still fire the move trigger and the speaking notice
     // either way; fall through to the full speak when sound never began.
     if (alreadySpoken && reply.trim() === alreadySpoken.text.trim() && voiceStartedSince(alreadySpoken.since)) {
-      if (mv) triggerMove(mv);
-      notifySpeaking(reply);
-      return reply;
+      if (mv === 'sing') {
+        // fall through — the premade clip is the vocal, not the streamed sentence
+      } else {
+        if (mv === 'dance') {
+          triggerMove('dance');
+          beginShow('dance', 9300, mood);
+        }
+        else if (mv) triggerMove(mv);
+        notifySpeaking(reply);
+        return reply;
+      }
     }
-    // r.40 — she really sings: a short lyric-like reply rides the melody as-is;
-    // a longer one becomes a little ditty from the per-language song bank.
+    // Singing plays a premade clip in her gender's voice. The lyric still
+    // lands in the bubble; TTS does not sing over the clip.
     if (mv === 'sing') {
+      stopSpeaking();
       triggerMove('sing');
-      applyLlmHints({ joy: 0.85 });
-      startPerformanceMusic('band', characterId, 9300); // r86 — the band plays for the whole song
+      applyLlmHints({ joy: 0.88 });
+      beginShow('song', 9300, mood);
       const compact = reply.replace(/\s/g, '');
       const song = compact.length > 0 && compact.length <= 48
         ? reply
         : pickSong(lang, laughCountRef.current).join(' ');
       notifySpeaking(song);
-      sing(song, characterId, lang);
       return song;
+    }
+    if (mv === 'dance') {
+      triggerMove('dance');
+      applyLlmHints({ joy: 0.72 });
+      beginShow('dance', 9300, mood);
+      notifySpeaking(reply);
+      speak(reply, characterId, lang, hints, undefined, intensity);
+      return reply;
     }
     // r86 — the piano performance finally SOUNDS like a piano: the theme's
     // melody in her right hand over rolling broken chords in her left, on a
@@ -563,6 +626,7 @@ export default function ChatPanel({
     feedUtterance(text);
     stopSpeaking();
     endPerformanceMusic(); // r86 — a new message interrupts any live show
+    showTrack(null);
     // r.42 — together-modes intercept the turn BEFORE any LLM work: quitting
     // a running game/duet, advancing a running game, taking the next duet
     // line, starting a new game, or starting a duet. r.45 adds the trainer
@@ -583,6 +647,7 @@ export default function ChatPanel({
       duetRef.current = null;
       exerciseRef.current = null;
       endPerformanceMusic(); // r86 — quitting the duet ends its music
+      showTrack(null);
       sayLocal(line);
       done();
       return;
@@ -666,17 +731,14 @@ export default function ChatPanel({
       pendingOfferRef.current = null;
       perfCountRef.current += 1;
       applyLlmHints({ joy: 0.85 });
-      sayLocal(SHOWCASE_START[lang][kind]);
       triggerMove(kind === 'song' ? 'sing' : 'dance');
-      endPerformanceMusic(); // r86 — clear any leftover show before the new one
-      startMusic(characterId);
+      beginShow(kind === 'song' ? 'song' : 'dance', 12_000, undefined, perfCountRef.current);
+      sayLocal(SHOWCASE_START[lang][kind]);
       if (kind === 'song') {
         const song = pickCharacterSong(characterId, lang, perfCountRef.current).join(' ');
         notifySpeaking(song);
-        sing(song, characterId, lang);
         setHistory((h) => [...h, { role: 'assistant', content: song }]);
       }
-      window.setTimeout(stopMusic, 9500);
       done();
       return;
     }
@@ -691,10 +753,19 @@ export default function ChatPanel({
     lastFeltRef.current = felt?.mood;
     const feltHints = moodToHints(felt?.mood, felt?.intensity);
     if (feltHints) applyLlmHints(feltHints);
-    // "hmm…" thinking moment while the reply generates — mood-tinted (r.24):
-    // a sad user's first hmm is softer than a happy one's (reply speech cuts it off)
+    // Sing / dance start the premade clip NOW, before the reply arrives, so
+    // the track is audible and named while she thinks. A sing request skips
+    // the thinking filler — the clip is the vocal.
+    const requested = detectMove(text);
+    if (requested === 'sing' || requested === 'dance') {
+      triggerMove(requested);
+      applyLlmHints({ joy: requested === 'sing' ? 0.88 : 0.72 });
+      beginShow(requested === 'sing' ? 'song' : 'dance', 18_000, felt?.mood);
+    }
     setThinkingPose(true);
-    startThinkingSound();
+    // Ordinary turns get the quiet thinking hum. A sing or dance ask already
+    // has a premade clip as the wait audio, so the hum stays out of that mix.
+    if (requested !== 'sing' && requested !== 'dance') startThinkingSound();
     // r.47 — ONE transient placeholder bubble carries the whole wait. It
     // starts as '…'; preloaded warm lines (praise, curiosity,
     // encouragement — her language, her felt mood) replace it every few
@@ -786,7 +857,7 @@ export default function ChatPanel({
             // long replies). The final speakReply skips the re-speak when
             // the reply turns out to be exactly this sentence — r100: and
             // only when this attempt's audio actually STARTED.
-            if (!firstSentence) {
+            if (!firstSentence && requested !== 'sing') {
               const m = /^[^。！？.!?\n]+[。！？.!?]/.exec(clean);
               if (m) {
                 firstSentence = m[0];
@@ -923,6 +994,8 @@ export default function ChatPanel({
         if (!bargeInArmed) return;
         bargeInArmed = false;
         stopSpeaking(); // the user is really talking — cut her voice NOW
+        endPerformanceMusic();
+        showTrack(null);
       },
       // r81 — the half-heard words paint a live italic bubble, ChatGPT-style.
       // Talking counts as user activity, and the view chases the newest
@@ -1039,6 +1112,16 @@ export default function ChatPanel({
           renders AFTER this row; at equal stacking level the later DOM node
           wins, so the pad used to paint over and swallow every tap on the
           mic and the text field. z-10 puts the row back on top. */}
+      {nowPlaying && (
+        <div
+          data-now-playing={nowPlaying}
+          data-clip-state={clipState ?? 'starting'}
+          className="pointer-events-none z-20 flex items-center gap-1.5 self-start rounded-full border border-white/20 bg-black/80 px-3 py-1 text-xs font-medium text-white shadow-[0_8px_24px_-10px_rgba(0,0,0,0.9)]"
+        >
+          <span aria-hidden>♪</span>
+          <span>{nowPlaying.replace(/^♪\s*/, '')}</span>
+        </div>
+      )}
       <div className="relative z-10 flex w-full items-center gap-2.5">
         {/* r119: the voice watchdog armed a replay — a silent line is waiting
             for ANY tap to be re-spoken. Floating chip above the mic;

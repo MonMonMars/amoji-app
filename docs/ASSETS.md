@@ -63,3 +63,19 @@ also require a free account + ad-wait, so they can't be fetched by automation.
 4. When the VRM lands: file into `models/`, manifest row, and (closed builds)
    add the filename to `MODEL_CANDIDATES` in `CompanionCanvas.tsx`.
 5. Bump `APP_REVISION` in `apps/web/lib/revision.ts`.
+
+## Premade sing & dance audio
+
+Short CC0 clips live under `apps/web/public/audio/` (MP3 transcodes of the
+Free Music Maker `clips-short` ogg previews, so iPhone can play them):
+
+- `dance/` — upbeat dance presets
+- `song-bed/` — instrumental beds used for dance asks
+- `sing-female/` — female sung clips
+- `sing-male/` — male sung clips
+
+A sing request plays the folder that matches the companion. A dance request
+plays a dance track or bed. Credits, the CC0 note, and how to add a clip are
+in `apps/web/public/audio/LIBRARY.md`. Playback goes through
+`startLibraryPerformance` in `apps/web/lib/music.ts` (dialogue volume for
+songs, BGM volume for dance and beds).
