@@ -295,7 +295,15 @@
 // and the same live CompanionCanvas. A face-thumb tap swaps that VRM at
 // once (no flat portrait or cutout). Thumbs use the free-library release
 // face PNGs. Scene thumbs are lettered A… in daytime → nighttime order.
-export const APP_REVISION = 'r2026-10-17.137';
+// r2026-10-17.139: premade sing + dance library from the Free Music Maker
+// short pack (CC0 only). Asking her to sing plays sing-female or sing-male
+// for her gender and her mouth follows it; asking her to dance plays a
+// dance/ or song-bed/ preset, names it above the text box, and runs the
+// dance clip or a small sway. Dialogue and BGM steps still scale the gain.
+// The thinking hum stays off while that clip is the wait audio. Poke and
+// chat stay live — a new message or a mic barge-in ends the show, and a
+// spoken line ducks the bed.
+export const APP_REVISION = 'r2026-10-17.139';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

@@ -9,6 +9,21 @@ function hashText(text: string): number {
   for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
   return (h >>> 0) || 1;
 }
+// Live mouth from a premade song clip. While a level is fresh it wins over
+// the syllable clock so the lips follow the audio, not just the lyric length.
+let fed: { mouth: number; vowel: VisemeVowel; until: number } | null = null;
+
+/** Push one analyser frame. `holdMs` bridges the gap until the next frame. */
+export function feedSpeechLevel(mouth: number, vowel: VisemeVowel = 'aa', holdMs = 140, now = Date.now()): void {
+  const m = mouth < 0 ? 0 : mouth > 1 ? 1 : mouth;
+  fed = { mouth: m, vowel, until: now + holdMs };
+}
+
+/** Drop the live level. The syllable clock (if any) takes the mouth back. */
+export function clearSpeechLevel(): void {
+  fed = null;
+}
+
 export function notifySpeaking(text: string, now = Date.now()): void {
   const words = text.split(/\s+/).filter(Boolean).length || 1;
   const chars = text.length;
@@ -24,6 +39,9 @@ function syllableNoise(i: number): number {
   return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
 }
 export function sampleSpeech(now = Date.now()): SpeechSample | null {
+  if (fed && now < fed.until) {
+    return { mouth: fed.mouth, vowel: fed.vowel, duck: fed.mouth > 0.05 ? 0.9 : 0.15 };
+  }
   if (!isSpeaking(now)) return null;
   const total = speakingUntil - startedAt;
   const t = now - startedAt;
