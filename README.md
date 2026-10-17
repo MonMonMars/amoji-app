@@ -141,7 +141,7 @@ GitHub Pages has no `/api/chat`. The same lookup runs in the browser there, on t
 
 Only assets with an entry in `apps/web/public/models/ASSET_MANIFEST.md` may ship; CI enforces this.
 
-Modular head/body swap (female demo wardrobe) loads `apps/web/public/models/modular/<ID>/<ID>_head.glb` and `_body.glb` when those files are present, and keeps the single-VRM path when they are not. Head is identity; body is the outfit; the head is not rescaled. Copy the existing GLBs from `D:\Blender\projects\mon-character\free-library\modular\` — see `apps/web/public/models/modular/README.md`. Do not re-split them.
+Modular head/body swap (female demo wardrobe) loads `apps/web/public/models/modular/<ID>/<ID>_head.glb` and `_body.glb` when those files are present. When they are not, a cloth change reloads the outfit's full want-list VRM so the visible body still updates. Head is identity (name and voice); the head mesh is not rescaled. Copy the existing GLBs from `D:\Blender\projects\mon-character\free-library\modular\` — see `apps/web/public/models/modular/README.md`. Do not re-split them.
 
 ---
 

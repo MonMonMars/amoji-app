@@ -94,3 +94,19 @@ export function activeWardrobe(characterId: string, stored: ModularSelection | n
     : (demoBodyById(head.id) ? head.id : DEMO_BODIES[0]!.id);
   return { headId: head.id, bodyId };
 }
+
+/**
+ * Full-VRM chain when split GLBs are missing or a cloth hot-swap cannot
+ * bind. The outfit's own model is first so the visible body changes; the
+ * head character's model and seed-san follow.
+ */
+export function vrmCandidatesForOutfit(
+  bodyId: string | undefined,
+  headModel: string | undefined,
+  modelForCharacter: (characterId: string) => string | undefined,
+): string[] {
+  const bodyChar = bodyId ? demoBodyById(bodyId)?.characterId : undefined;
+  const outfit = bodyChar ? modelForCharacter(bodyChar) : undefined;
+  const list = [outfit, headModel, 'seed-san.vrm'].filter((m): m is string => !!m);
+  return [...new Set(list)];
+}
