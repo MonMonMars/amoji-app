@@ -30,7 +30,7 @@ describe('companion card (.aigf) round-trip', () => {
   });
 
   it('captures prefs, history, memory and profile', () => {
-    savePrefs({ character: 'a01-shino', background: 'sakura', lang: 'yue', kidMode: false });
+    savePrefs({ character: 'a01-shino', background: 'sakura', lang: 'yue', kidMode: false, sfxVol: 80, bgmVol: 80, voiceVol: 80 });
     saveHistory([{ role: 'user', content: 'hi nova' }, { role: 'assistant', content: 'hey you!' }]);
     addEntry('event', 'Simon likes cantonese pop', loadMemory());
     saveProfile({ name: 'Simon', gender: 'male' });
@@ -44,7 +44,7 @@ describe('companion card (.aigf) round-trip', () => {
   });
 
   it('export → wipe → import restores everything', () => {
-    savePrefs({ character: 'a10-agahomei-normal', background: 'rain', lang: 'ja', kidMode: false });
+    savePrefs({ character: 'a10-agahomei-normal', background: 'rain', lang: 'ja', kidMode: false, sfxVol: 80, bgmVol: 80, voiceVol: 80 });
     saveHistory([{ role: 'user', content: 'sing for me' }]);
     addEntry('event', 'First meeting at the café', loadMemory());
     saveProfile({ name: 'Simon', gender: 'male' });
@@ -72,7 +72,7 @@ describe('companion card (.aigf) round-trip', () => {
   });
 
   it('an unknown character id falls back to the current pick, soul intact', () => {
-    savePrefs({ character: 'a01-shino', background: 'void', lang: 'yue', kidMode: false });
+    savePrefs({ character: 'a01-shino', background: 'void', lang: 'yue', kidMode: false, sfxVol: 80, bgmVol: 80, voiceVol: 80 });
     const card = buildCompanionFile('r-test');
     card.identity.characterId = 'someone-from-another-app';
     card.history = [{ role: 'assistant', content: 'I remember you.' }];

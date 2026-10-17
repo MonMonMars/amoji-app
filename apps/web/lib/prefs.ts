@@ -8,6 +8,7 @@
 // r2026-10-05.102: `statusPreparing` string for the name plate's
 // indeterminate "preparing…" loading state (see StatusPlate / load-progress).
 import { useEffect, useState } from 'react';
+import { DEFAULT_VOLUME, isVolumeStep, type VolumeStep } from './audio-levels';
 
 export type Lang = 'en' | 'yue' | 'zh' | 'ja';
 
@@ -133,6 +134,7 @@ export type StrKey =
   | 'brainTitle' | 'brainAuto' | 'brainAutoHint' | 'brainKeyPlaceholder' | 'brainNoKey'
   // voice self-test + diagnostics (r2026-10-04.75)
   | 'testVoice' | 'testVoiceBtn' | 'voiceBlockedHint' | 'voiceVolume'
+  | 'sfxVolume' | 'bgmVolume'
   // ChatGPT-style emotional TTS tier (r2026-10-05.112)
   | 'openaiVoice' | 'openaiVoiceHint' | 'openaiKeyPlaceholder' | 'openaiEndpointPlaceholder' | 'openaiCostHint'
   // HTTP TTS proxy for wss-blocked networks (r2026-10-06.131)
@@ -299,7 +301,9 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   },
   brainNoKey: { en: 'no key — free lane', yue: '冇 Key——免費通道', zh: '没有密钥——免费通道', ja: 'キーなし——無料レーン' },
   testVoice: { en: 'Test voice', yue: '試吓把聲', zh: '试试声音', ja: '声テスト' },
-  voiceVolume: { en: 'Voice volume', yue: '語音音量', zh: '语音音量', ja: '音量' },
+  voiceVolume: { en: 'Dialogue volume', yue: '對白音量', zh: '对白音量', ja: 'セリフ音量' },
+  sfxVolume: { en: 'Sound effects', yue: '音效', zh: '音效', ja: '効果音' },
+  bgmVolume: { en: 'Background music', yue: '背景音樂', zh: '背景音乐', ja: 'BGM' },
   testVoiceBtn: { en: '▶ Play', yue: '▶ 播一次', zh: '▶ 播放', ja: '▶ 再生' },
   voiceBlockedHint: {
     en: "No sound was heard — check the phone's silent switch and volume, then press Play again. If it's still silent, turn Voice replies off and on once.",
@@ -365,10 +369,27 @@ export function t(lang: Lang, key: StrKey, vars?: Record<string, string>): strin
   return s;
 }
 
-export interface Prefs { character: string; background: string; lang: Lang; kidMode: boolean }
+export interface Prefs {
+  character: string;
+  background: string;
+  lang: Lang;
+  kidMode: boolean;
+  /** 20 | 40 | 60 | 80 | 100 */
+  sfxVol: VolumeStep;
+  bgmVol: VolumeStep;
+  voiceVol: VolumeStep;
+}
 
 const KEY = 'amoji.prefs.v1';
-export const DEFAULT_PREFS: Prefs = { character: 'a01-shino', background: 'void', lang: 'yue', kidMode: false };
+export const DEFAULT_PREFS: Prefs = {
+  character: 'a01-shino', background: 'void', lang: 'yue', kidMode: false,
+  sfxVol: DEFAULT_VOLUME, bgmVol: DEFAULT_VOLUME, voiceVol: DEFAULT_VOLUME,
+};
+
+function volOf(v: unknown): VolumeStep {
+  const n = Number(v);
+  return isVolumeStep(n) ? n : DEFAULT_VOLUME;
+}
 
 // Kid Mode fallbacks — wholesome cast + sunny scene (female default from want list)
 export const KID_CHARACTER = 'a02-shibu';
@@ -395,6 +416,9 @@ export function loadPrefs(): Prefs {
         background,
         kidMode,
         lang: (LANGS.some((l) => l.id === p.lang) ? p.lang : DEFAULT_PREFS.lang) as Lang,
+        sfxVol: volOf(p.sfxVol),
+        bgmVol: volOf(p.bgmVol),
+        voiceVol: volOf(p.voiceVol),
       };
       // Persist migration when an old roster id (juno, kitagawa, …) no longer ships.
       if (storedCharacter !== character || p.background !== next.background || p.lang !== next.lang || !!p.kidMode !== kidMode) {
