@@ -21,7 +21,7 @@ Locale → engine → voice lives in `apps/web/lib/voice-catalog.ts`. Non-Yue en
 
 ## Open / remains
 
-- Modular GLBs are not in the repo. Drop them from `D:\Blender\projects\mon-character\free-library\modular\` into `apps/web/public/models/modular/`. Until then the wardrobe shows the fallback status and the single VRM. Head scale stays 1. Do not re-split.
+- Modular GLBs are not in the repo. Drop them from `D:\Blender\projects\mon-character\free-library\modular\` into `apps/web/public/models/modular/`. Until then a cloth change reloads the outfit's full VRM. Head scale stays 1. Do not re-split.
 - CosyVoice2-Yue and GPT-SoVITS wait on Pixel’s male and female reference clips plus a GPU. Not blocking.
 - Kokoro, Piper, MeloTTS, and Bark are mapped below and are not called. Weights are not bundled. Bark stays optional because latency is high.
 - Coqui (CPML), Fish Speech, and F5-TTS are skipped. Non-commercial.
