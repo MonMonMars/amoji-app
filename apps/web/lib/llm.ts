@@ -1,5 +1,6 @@
 import { analyzeText } from '@amoji/emotion-core';
 import type { EmotionId } from '@amoji/emotion-core';
+import { withQuestion } from './follow-up';
 
 export interface ChatMessage { role: 'user' | 'assistant' | 'system'; content: string }
 export interface ChatOptions { language?: string; persona?: string; memory?: string }
@@ -80,8 +81,8 @@ export class OpenAiLlm implements LlmPort {
     const data = await res.json() as { choices: Array<{ message: { content: string } }> };
     const content = data.choices[0]?.message.content ?? '';
     const hints = parseEmotionHints(content);
-    const reply = content.replace(/\[emotion:\{[^}]*\}\]/, '').trim();
-    return { reply: reply || '…', emotionHints: hints };
+    const reply = withQuestion(content.replace(/\[emotion:\{[^}]*\}\]/, '').trim() || '…', opts?.language);
+    return { reply, emotionHints: hints };
   }
 }
 
@@ -101,8 +102,8 @@ export class PollinationsLlm implements LlmPort {
     const content = data.choices?.[0]?.message.content ?? '';
     if (!content) throw new Error('pollinations empty');
     const hints = parseEmotionHints(content);
-    const reply = content.replace(/\[emotion:\{[^}]*\}\]/, '').trim();
-    return { reply: reply || '…', emotionHints: hints };
+    const reply = withQuestion(content.replace(/\[emotion:\{[^}]*\}\]/, '').trim() || '…', opts?.language);
+    return { reply, emotionHints: hints };
   }
 }
 
@@ -113,7 +114,7 @@ export class OfflineLlm implements LlmPort {
     const lead = Object.keys(hints).length
       ? '我聽到喇，你嗰種感覺真係傳到過嚟。'
       : '我喺度陪住你。';
-    return { reply: `${lead} (offline mode)`, emotionHints: hints };
+    return { reply: withQuestion(`${lead} (offline mode)`, 'yue'), emotionHints: hints };
   }
 }
 

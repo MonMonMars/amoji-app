@@ -12,6 +12,8 @@
 // onyx/velara) get their own idle + poke banks below.
 import type { Lang } from './prefs';
 import { pickLine } from './chatter';
+import { personalityFor } from './personality';
+import { personalityIdleLine } from './interaction-lines';
 
 /** character id → idle lines, per language (exactly 10 each) */
 export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
@@ -1941,11 +1943,11 @@ export const CHARACTER_POKE: Record<string, Record<Lang, string[]>> = {
 
 const FALLBACK_LANG: Lang = 'en';
 
-/** Deterministic per-character idle line; falls back to the generic bank. */
+/** Idle line. Shipping cast follows the auto personality; legacy ids keep their bank. */
 export function pickIdleLine(characterId: string, lang: Lang, n: number): string {
   const bank = CHARACTER_IDLE[characterId]?.[lang] ?? CHARACTER_IDLE[characterId]?.[FALLBACK_LANG];
   if (bank?.length) return bank[((n % bank.length) + bank.length) % bank.length]!;
-  return pickLine('idleBored', lang, n);
+  return personalityIdleLine(personalityFor(characterId), lang, n) || pickLine('idleBored', lang, n);
 }
 
 /** Deterministic per-character poke reaction; falls back to the generic bank. */

@@ -14,6 +14,7 @@
 // SKELETON rotation; deform is kept only for the chibi cast (mochi), where
 // cartoon physics is exactly the look.
 import type { Lang } from './prefs';
+import { personalityMotion } from './personality';
 
 /** pose ids from @amoji/vrm-renderer IDLE_POSES, curated per personality */
 export const CHARACTER_POSES: Record<string, string[]> = {
@@ -83,7 +84,10 @@ export const CHARACTER_POSES: Record<string, string[]> = {
 };
 
 export function poseIdsFor(characterId: string): string[] {
-  return CHARACTER_POSES[characterId] ?? ['stand', 'headTilt', 'weightShift'];
+  // Auto personality (gender-aware, cached) owns the idle set.
+  // The old CHARACTER_POSES map stays as a legacy reference only.
+  const poses = personalityMotion(characterId).poses;
+  return poses.length >= 3 ? poses : ['stand', 'headTilt', 'weightShift'];
 }
 
 /** how a character reacts to being poked — body + face flavor */
@@ -133,7 +137,8 @@ export const POKE_STYLE: Record<string, PokeStyle> = {
 };
 
 export function pokeStyleFor(characterId: string): PokeStyle {
-  return POKE_STYLE[characterId] ?? { squash: 0.07, twist: 'playful', face: 'surprised' };
+  const m = personalityMotion(characterId);
+  return { squash: m.squash, twist: m.twist, face: m.face };
 }
 
 /** r83 (Master Simon): realistic humans recoil with SKELETON rotation — mesh

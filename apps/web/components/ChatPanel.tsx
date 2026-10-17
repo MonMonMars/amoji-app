@@ -142,9 +142,11 @@ import { detectMove } from '../lib/moves';
 import { loadHistory, saveHistory } from '../lib/companion-store';
 import { notifySpeaking, isSpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
-import { pickIdleLine, pickPokeLine } from '../lib/persona-chatter';
+import { pickIdleLine } from '../lib/persona-chatter';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
-import { pickOuch, pickZoneOuch, ouchStyleFor } from '../lib/ouch';
+import { ouchStyleFor } from '../lib/ouch';
+import { pickCharacterInteraction, maybeLaughLead } from '../lib/interaction-lines';
+import { personalityPrompt } from '../lib/personality';
 import { pickLaugh, laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { WARMUP_FIRST_MS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from '../lib/warmup';
 import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
@@ -181,8 +183,10 @@ export interface ChatPanelProps {
   kidMode?: boolean;
   /** increments when the user pokes the character — triggers a poke reply */
   pokeCount?: number;
-  /** r115: where the latest poke landed ('head'|'body'|'armL'|'armR'|'belly') */
+  /** where the latest poke landed ('head'|'torso'|'chest'|'side'|'back'|legacy) */
   pokeZone?: string;
+  /** increments when the user holds a hand */
+  handHoldCount?: number;
   onStatus?: (s: ChatStatus) => void;
   onMemCount?: (n: number) => number | void;
 }
@@ -204,6 +208,7 @@ export default function ChatPanel({
   kidMode = false,
   pokeCount = 0,
   pokeZone = '',
+  handHoldCount = 0,
   onStatus,
   onMemCount,
 }: ChatPanelProps) {
@@ -335,7 +340,7 @@ export default function ChatPanel({
   // this opaque string straight into the system prompt.
   const fullPersona = (): string => {
     const sceneName = t(lang, backgroundById(backgroundId).nameKey as StrKey);
-    return `${persona ?? ''}${adaptiveBlock({ sceneId: backgroundId, sceneName, characterGender, userGender, kidMode })}`;
+    return `${persona ?? ''}\n${personalityPrompt(characterId, characterGender)}${adaptiveBlock({ sceneId: backgroundId, sceneName, characterGender, userGender, kidMode })}`;
   };
 
   const sayLocal = (
@@ -467,14 +472,23 @@ export default function ChatPanel({
     lastUserRef.current = Date.now();
     reengageStageRef.current = 0;
     playPokeSfx();
-    const ouchMood = lastFeltRef.current;
-    const style = ouchStyleFor(ouchMood);
-    // r115: a zoned poke (head/arm/belly…) cries for that body part first;
-    // an unknown zone keeps the classic personality cry.
-    const ouch = pickZoneOuch(pokeZone, lang, pokeCount) ?? pickOuch(characterId, lang, pokeCount, ouchMood);
-    sayLocal(pickPokeLine(characterId, lang, pokeCount), { surprise: style.surprise, joy: style.joy }, { text: ouch, pitch: style.pitch, rate: style.rate });
+    const style = ouchStyleFor('happy');
+    const line = pickCharacterInteraction(characterId, characterGender, pokeZone || 'torso', lang);
+    sayLocal(line, { surprise: style.surprise, joy: 0.75 }, maybeLaughLead(lang));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pokeCount]);
+
+  const lastHandRef = useRef(handHoldCount);
+  useEffect(() => {
+    if (handHoldCount === lastHandRef.current) return;
+    lastHandRef.current = handHoldCount;
+    lastActivityRef.current = Date.now();
+    lastUserRef.current = Date.now();
+    reengageStageRef.current = 0;
+    const line = pickCharacterInteraction(characterId, characterGender, 'hand', lang);
+    sayLocal(line, { joy: 0.8, love: 0.4 }, maybeLaughLead(lang));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handHoldCount]);
 
   // idle chatter + staged re-engagement (r.38): she never lets a quiet room
   // die. Measured from the USER's last real action (message, poke, spoken
@@ -868,8 +882,7 @@ export default function ChatPanel({
       listeningRef.current = false;
       setListening(false);
       setLiveText(''); // r81 — a half-spoken line must not linger on screen
-      stopMusic(); // r.48 — leaving voice mode ends any performance bed
-      endPerformanceMusic(); // r86 — and any preserved show too
+      // Mic open/close does not change BGM, ambient, or SFX levels.
       lastActivityRef.current = Date.now();
       lastUserRef.current = Date.now();
       reengageStageRef.current = 0;
@@ -884,9 +897,7 @@ export default function ChatPanel({
     micModeRef.current = true;
     listeningRef.current = true;
     setListening(true);
-    stopSpeaking(); // interrupt her mid-sentence, exactly like ChatGPT voice
-    stopMusic();    // r.48 — the user's voice takes the stage, not the track
-    endPerformanceMusic(); // r86 — any live show bows out for the user
+    stopSpeaking(); // interrupt her spoken line; music and ambience stay put
     let bargeInArmed = true; // first real speech of a burst cuts her off
     const micHandle = listenContinuous(lang, {
       // r87 — the VAD owns endpointing now; its onPartial flushes via handle
@@ -895,8 +906,6 @@ export default function ChatPanel({
         if (!bargeInArmed) return;
         bargeInArmed = false;
         stopSpeaking(); // the user is really talking — cut her voice NOW
-        stopMusic();    // r.48 — and the performance bed too
-        endPerformanceMusic(); // r86 — and the preserved show too
       },
       // r81 — the half-heard words paint a live italic bubble, ChatGPT-style.
       // Talking counts as user activity, and the view chases the newest
@@ -947,8 +956,6 @@ export default function ChatPanel({
         if (bargeInArmed) {
           bargeInArmed = false;
           stopSpeaking();
-          stopMusic();
-          endPerformanceMusic();
         }
         lastActivityRef.current = Date.now();
         lastUserRef.current = Date.now();

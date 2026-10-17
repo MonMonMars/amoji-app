@@ -179,6 +179,8 @@ export interface Avatar {
   applyPose(pose: AvatarPose): void;
   /** r103: re-apply the calibrated relaxed-hand curl (idempotent base·delta) */
   applyRelaxedHands(): void;
+  /** Slow clip-driven fingers and keep them slightly bent. */
+  smoothFingers(dt: number): void;
   /** r103: floor the upper arm's outward swing so arms never cross the midline */
   clampShoulderROM(): void;
   /** r115: raw bone lookup for poke-zone raycast + hand-drag IK (null when absent) */
@@ -376,7 +378,7 @@ const _rhV = new THREE.Vector3();
  */
 function calibrateRelaxedHands(
   fingers: ReadonlyMap<string, THREE.Object3D>,
-  clipAnimatedBones: ReadonlySet<string>,
+  _clipAnimatedBones: ReadonlySet<string>,
 ): RelaxedHandEntry[] {
   const out: RelaxedHandEntry[] = [];
   for (const side of SIDES) {
@@ -446,7 +448,6 @@ function calibrateRelaxedHands(
       }
       for (let i = 0; i < chain.length; i++) {
         const node = chain[i]!;
-        if (clipAnimatedBones.has(node.name)) continue; // a clip owns this bone
         const curl = RELAXED_CURL[finger][i] ?? 0;
         const opp = i === 0 && oppAxis ? THUMB_OPPOSITION : 0;
         if (!curl && !opp) continue;
@@ -512,6 +513,34 @@ function clampUpperArmAdduction(
   upperArm.quaternion.copy(parentW.invert()).multiply(_shQF).multiply(world);
 }
 
+const _fgTgt = new THREE.Quaternion();
+const _fgBlend = new THREE.Quaternion();
+const FINGER_BEND = 0.34;
+const FINGER_TAU = 0.2;
+
+/** Clip fingers stay a little bent, and the bend eases in instead of snapping. */
+function smoothClipFingers(
+  entries: readonly RelaxedHandEntry[],
+  clipAnimatedBones: ReadonlySet<string>,
+  shown: Map<THREE.Object3D, THREE.Quaternion>,
+  dt: number,
+): void {
+  const a = 1 - Math.exp(-Math.max(0, dt) / FINGER_TAU);
+  for (const e of entries) {
+    if (!clipAnimatedBones.has(e.node.name)) continue;
+    _fgTgt.copy(e.base).multiply(e.delta);
+    _fgBlend.copy(e.node.quaternion).slerp(_fgTgt, FINGER_BEND);
+    let q = shown.get(e.node);
+    if (!q) {
+      q = _fgBlend.clone();
+      shown.set(e.node, q);
+    } else {
+      q.slerp(_fgBlend, a);
+    }
+    e.node.quaternion.copy(q);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // VRM 1.0 avatar (normalized bones — the pre-r.50 code path, preserved)
 // ---------------------------------------------------------------------------
@@ -524,6 +553,7 @@ class V1Avatar implements Avatar {
   readonly fingerBones: ReadonlySet<string>;
   private vrm: VRM;
   private relaxedHands: RelaxedHandEntry[] = [];
+  private fingerShown = new Map<THREE.Object3D, THREE.Quaternion>();
   private fingerMap = new Map<string, THREE.Object3D>();
   // r107: additive-head state — see applyClipHeadAdd
   private headAddInit = false;
@@ -673,6 +703,10 @@ class V1Avatar implements Avatar {
     }
   }
 
+  smoothFingers(dt: number): void {
+    smoothClipFingers(this.relaxedHands, this.clipAnimatedBones, this.fingerShown, dt);
+  }
+
   // r103: floor each upper arm's outward swing (see clampUpperArmAdduction)
   clampShoulderROM(): void {
     const h = (n: VRMHumanBoneName) => this.vrm.humanoid?.getNormalizedBoneNode(n) ?? null;
@@ -741,6 +775,7 @@ class GenericAvatar implements Avatar {
   /** calibrated rest local quats for bones applyPose drives (and arms) */
   private baseLocal = new Map<string, THREE.Quaternion>();
   private relaxedHands: RelaxedHandEntry[] = [];
+  private fingerShown = new Map<THREE.Object3D, THREE.Quaternion>();
   private blinkT = 2.2 + Math.random() * 2;
   private blinkPhase = -1;
 
@@ -966,6 +1001,10 @@ class GenericAvatar implements Avatar {
       if (this.clipAnimatedBones.has(e.node.name)) continue; // the mixer owns it
       e.node.quaternion.copy(e.base).multiply(e.delta);
     }
+  }
+
+  smoothFingers(dt: number): void {
+    smoothClipFingers(this.relaxedHands, this.clipAnimatedBones, this.fingerShown, dt);
   }
 
   // r103: floor each upper arm's outward swing (see clampUpperArmAdduction)

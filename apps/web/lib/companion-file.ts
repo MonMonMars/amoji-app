@@ -93,11 +93,15 @@ export function applyCompanionFile(f: CompanionFile): void {
   const characterId = CHARACTERS.some((c) => c.id === f.identity.characterId)
     ? f.identity.characterId
     : DEFAULT_PREFS.character;
+  const current = loadPrefs();
   const prefs: Prefs = {
     character: characterId,
-    background: f.appearance?.backgroundId ?? loadPrefs().background,
+    background: f.appearance?.backgroundId ?? current.background,
     lang: (f.voice?.lang && ['en', 'yue', 'zh', 'ja'].includes(f.voice.lang) ? f.voice.lang : 'yue') as Lang,
     kidMode: !!f.settings?.kidMode,
+    sfxVol: current.sfxVol,
+    bgmVol: current.bgmVol,
+    voiceVol: current.voiceVol,
   };
   savePrefs(prefs);
   if (f.human && typeof f.human.name === 'string') saveProfile(f.human);

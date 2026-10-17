@@ -20,6 +20,7 @@
 
 import type { MoveKind } from './moves';
 import { createDefaultAudioContext } from './audio-output';
+import { volumeLinear } from './audio-levels';
 
 // ---------------------------------------------------------------------------
 // pure data — node-testable
@@ -106,6 +107,13 @@ export function ambientPlaying(): boolean {
   return current !== null;
 }
 
+/** Re-apply the settings SFX step without restarting the bed. */
+export function applySfxLevel(step?: number): void {
+  const g = typeof step === 'number' ? step / 100 : volumeLinear('sfxVol');
+  if (!current || !ac) return;
+  try { current.handle.master.gain.value = g; } catch { /* closed */ }
+}
+
 // ---- r102: voice-hold — foley never rings over a speak attempt -------------
 // Simon's report: a "bell" and "typing sounds" right when she tries to talk.
 // Root cause: every speak() coincides with a movement trigger, and the
@@ -133,6 +141,7 @@ interface ToneOpts {
 }
 
 function tone(c: AudioContext, dest: AudioNode, o: ToneOpts): void {
+  const vol = o.vol * volumeLinear('sfxVol');
   const osc = c.createOscillator();
   const g = c.createGain();
   osc.type = o.wave ?? 'sine';
@@ -140,7 +149,7 @@ function tone(c: AudioContext, dest: AudioNode, o: ToneOpts): void {
   if (o.slideTo) osc.frequency.exponentialRampToValueAtTime(o.slideTo, o.at + o.dur);
   const atk = o.attack ?? 0.012;
   g.gain.setValueAtTime(0, o.at);
-  g.gain.linearRampToValueAtTime(o.vol, o.at + atk);
+  g.gain.linearRampToValueAtTime(vol, o.at + atk);
   g.gain.exponentialRampToValueAtTime(0.0001, o.at + o.dur);
   osc.connect(g);
   g.connect(dest);
@@ -154,6 +163,7 @@ interface BurstOpts {
 }
 
 function burst(c: AudioContext, dest: AudioNode, o: BurstOpts): void {
+  const vol = o.vol * volumeLinear('sfxVol');
   const s = c.createBufferSource();
   s.buffer = noise(c);
   s.loop = true;
@@ -164,7 +174,7 @@ function burst(c: AudioContext, dest: AudioNode, o: BurstOpts): void {
   f.Q.value = o.q ?? 1;
   const g = c.createGain();
   g.gain.setValueAtTime(0, o.at);
-  g.gain.linearRampToValueAtTime(o.vol, o.at + 0.012);
+  g.gain.linearRampToValueAtTime(vol, o.at + 0.012);
   g.gain.exponentialRampToValueAtTime(0.0001, o.at + o.dur);
   s.connect(f);
   f.connect(g);
@@ -313,7 +323,7 @@ export function ambientStart(sceneId: string): void {
   ambientStop();
   const master = c.createGain();
   master.gain.setValueAtTime(0, c.currentTime);
-  master.gain.linearRampToValueAtTime(1, c.currentTime + 2.5);
+  master.gain.linearRampToValueAtTime(volumeLinear('sfxVol'), c.currentTime + 2.5);
   master.connect(c.destination);
   const timers: ReturnType<typeof setTimeout>[] = [];
   const dead = { v: false };
