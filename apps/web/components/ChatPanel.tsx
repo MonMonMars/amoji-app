@@ -525,7 +525,8 @@ export default function ChatPanel({
       // can do for you, or offers a private performance; the offer stays
       // outstanding until you answer, and your "yes" starts the show
       if (n % 4 === 1) {
-        sayLocal(personalityTutorTip(characterId, characterGender, lang, n), feltHints);
+        // n steps on every idle line; floor(n/4) steps once per tip so the bank rotates.
+        sayLocal(personalityTutorTip(characterId, characterGender, lang, Math.floor(n / 4)), feltHints);
         return;
       }
       if (n % 4 === 3 && !pendingOfferRef.current) {
