@@ -1,0 +1,7 @@
+IdleBreathCalm.vrma
+Source: pixiv/ChatVRM public/idle_loop.vrma
+URL: https://github.com/pixiv/ChatVRM (also zoan37/ChatVRM, josephrocca/ChatVRM-js)
+License: MIT — Copyright (c) 2023 pixiv Inc.
+Commercial use, redistribution, modification permitted with MIT notice retention.
+Feet-planted looping idle (breathing / weight shift / gentle sway).
+Renamed for Amoji id namespace; original filename idle_loop.vrma.

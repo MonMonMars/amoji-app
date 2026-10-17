@@ -14,6 +14,7 @@ describe('clipFreesFeet', () => {
     expect(clipFreesFeet('Jog')).toBe(true);
     expect(clipFreesFeet('Run')).toBe(true);
     expect(clipFreesFeet('IdleNeutral')).toBe(false);
+    expect(clipFreesFeet('IdleBreathCalm')).toBe(false);
     expect(clipFreesFeet('Dance')).toBe(false);
     expect(clipFreesFeet(null)).toBe(false);
   });

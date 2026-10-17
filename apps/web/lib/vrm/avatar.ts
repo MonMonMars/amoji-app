@@ -74,6 +74,7 @@ import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
 import { FootPlanter } from './plant-feet';
+import { ChestBounce } from './chest-bounce';
 
 export type AvatarKind = 'v1' | 'generic';
 
@@ -191,6 +192,8 @@ export interface Avatar {
    * walk or jump clip is playing.
    */
   plantFeet(plant: boolean): void;
+  /** Soft secondary spring on bust bones. 0 restores them. Does not move the hips or feet. */
+  applyChestBounce(pitch: number): void;
   /**
    * r124: re-measure the shoulder line and yaw away any residual error. The
    * constructor calibrates facing from the RAW rest pose, whose shoulder
@@ -575,6 +578,7 @@ class V1Avatar implements Avatar {
   // r107: additive-head state — see applyClipHeadAdd
   private headAddInit = false;
   private planter = new FootPlanter();
+  private chestBounce = new ChestBounce();
   private readonly headAddBaseE = new THREE.Euler();
   private readonly headAddWritten = new THREE.Quaternion();
 
@@ -745,6 +749,11 @@ class V1Avatar implements Avatar {
     if (plant) this.planter.apply();
   }
 
+  applyChestBounce(pitch: number): void {
+    const joints = this.vrm.springBoneManager?.joints;
+    this.chestBounce.apply(this.vrm.scene, pitch, joints);
+  }
+
   /** r115: the humanoid bone behind a semantic name (normalized node for VRM 1.0) */
   getBoneNode(name: string): THREE.Object3D | null {
     try {
@@ -808,6 +817,7 @@ class GenericAvatar implements Avatar {
   private sPw = new THREE.Quaternion();
   private sE = new THREE.Euler();
   private planter = new FootPlanter();
+  private chestBounce = new ChestBounce();
 
   constructor(gltf: GLTF, clipAnimatedBones: ReadonlySet<string> = new Set()) {
     // r2026-10-04.76: same wrapper split as V1Avatar — canvas overlays own
@@ -1049,6 +1059,10 @@ class GenericAvatar implements Avatar {
 
   plantFeet(plant: boolean): void {
     if (plant) this.planter.apply();
+  }
+
+  applyChestBounce(pitch: number): void {
+    this.chestBounce.apply(this.inner, pitch);
   }
 
   /** r115: resolved bone by semantic name — body map first, then fingers */

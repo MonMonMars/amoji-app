@@ -47,8 +47,29 @@ describe('pokeBodyReaction', () => {
     const head = pokeBodyReaction({ t: 0.2, zone: 'head', fallX: 0, fallZ: -1, sideSign: 1, softChest: false, twist: 0.06 });
     const torso = pokeBodyReaction({ t: 0.2, zone: 'torso', fallX: 0, fallZ: -1, sideSign: 1, softChest: false, twist: 0.06 });
     expect(Math.abs(head.headX)).toBeGreaterThan(Math.abs(head.spinePitch));
-    expect(Math.abs(torso.spinePitch)).toBeGreaterThan(Math.abs(head.spinePitch));
+    expect(head.spinePitch).toBe(0);
+    expect(head.chestPitch).toBe(0);
+    expect(head.lArmX).toBe(0);
+    expect(head.rArmX).toBe(0);
+    expect(Math.abs(torso.spinePitch)).toBeGreaterThan(0);
     expect(Math.abs(torso.lArmX)).toBeGreaterThan(0);
+  });
+
+  it('leans with the poke direction and flips when the impulse flips', () => {
+    const back = pokeBodyReaction({ t: 0.2, zone: 'torso', fallX: 0, fallZ: -1, sideSign: 1, softChest: false, twist: 0 });
+    const forward = pokeBodyReaction({ t: 0.2, zone: 'torso', fallX: 0, fallZ: 1, sideSign: 1, softChest: false, twist: 0 });
+    expect(back.spinePitch).toBeLessThan(0);
+    expect(forward.spinePitch).toBeGreaterThan(0);
+    expect(back.headX).toBeLessThan(0);
+    expect(forward.headX).toBeGreaterThan(0);
+    const left = pokeBodyReaction({ t: 0.2, zone: 'side', fallX: -1, fallZ: 0, sideSign: -1, softChest: false, twist: 0 });
+    const right = pokeBodyReaction({ t: 0.2, zone: 'side', fallX: 1, fallZ: 0, sideSign: 1, softChest: false, twist: 0 });
+    expect(left.chestRoll).toBeGreaterThan(0);
+    expect(right.chestRoll).toBeLessThan(0);
+    const headLeft = pokeBodyReaction({ t: 0.2, zone: 'head', fallX: -1, fallZ: 0, sideSign: -1, softChest: false, twist: 0 });
+    expect(headLeft.spinePitch).toBe(0);
+    expect(headLeft.headZ).not.toBe(0);
+    expect(headLeft.lArmX).toBe(0);
   });
 
   it('leans the chest toward a side impulse without moving the root', () => {

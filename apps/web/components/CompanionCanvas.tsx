@@ -17,6 +17,7 @@ import { pokeStyleFor, poseIdsFor, lookFor } from '../lib/persona';
 import { orderIdleClips, personalityMotion } from '../lib/personality';
 import { classifyPoke, pokeBodyReaction } from '../lib/poke-hit';
 import { clipFreesFeet, collectPlantRest, pinPlantedClipTracks } from '../lib/vrm/plant-feet';
+import { chestPokeBounce } from '../lib/vrm/chest-bounce';
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
 import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
@@ -494,6 +495,7 @@ export default function CompanionCanvas({
 
     interface ClipSource { id: string; urls: string[] }
     const IDLE_SOURCES: ClipSource[] = [
+      { id: 'IdleBreathCalm', urls: [`${ANIM_MIRROR}/IdleBreathCalm.vrma`] },
       { id: 'IdleNeutral', urls: [`${ANIM_MIRROR}/IdleNeutral.vrma`] },
       { id: 'LookAround', urls: [`${ANIM_MIRROR}/LookAround.vrma`] },
       { id: 'Relax', urls: [`${ANIM_MIRROR}/Relax.vrma`] },
@@ -1538,6 +1540,10 @@ export default function CompanionCanvas({
         // share one ground height. Walk/jump clips are the exception.
         avatar.plantFeet(!clipFreesFeet(perfClipId));
         avatar.update(dt / 1000);
+        // Chest poke only: a short damped spring on the bust bones, after
+        // the skeleton update so it is not overwritten. Feet stay planted.
+        const bounceT = boost > 0 ? (1 - boost) * 0.9 : -1;
+        avatar.applyChestBounce(chestPokeBounce(pokeZone, bounceT));
 
         // r109 NaN sweep: a corrupt clip key or a bad spring-bone write can
         // poison a quaternion/scale and make the whole skinned mesh collapse
