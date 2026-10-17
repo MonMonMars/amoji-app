@@ -23,6 +23,7 @@ import { modularGlbUrl } from '../lib/modular/catalog';
 import { assembleModular, replaceBodyMeshes, type ModularAssembly } from '../lib/modular/assemble';
 import { loadModularGltf } from '../lib/modular/load';
 import { publishModularView } from '../lib/modular/storage';
+import { PHI_HOME, PHI_MAX, PHI_MIN } from '../lib/orbit-limits';
 
 // r97 (Master Simon): idle-clip restoration — the mixer now starts the
 // moment the FIRST clip lands (it used to wait for all 26 loads, so a single
@@ -125,19 +126,13 @@ export interface CompanionCanvasProps {
 // "upper camera" close-up). Now the lens sits ~2.4° above eye level, 2.6m
 // back: upper body centered, like someone standing across from you. Target
 // stays at chest height (y 1.05). Double-tap empty space still returns here.
-const HOME = { theta: 0, phi: 1.53, dist: 2.6 };
+const HOME = { theta: 0, phi: PHI_HOME, dist: 2.6 };
 const HOME_TARGET = new THREE.Vector3(0, 1.05, 0);
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
-// Vertical orbit range, in radians measured from straight-up (polar angle).
-// r2026-10-04.56: widened at Master Simon's request — 0.12 ≈ near-overhead
-// top view, 2.35 ≈ worm's-eye view up from below the floor line. Theta is
-// already unclamped (full 360° yaw).
-// Pitch clamps: phi is the polar angle from straight up.
-// 1.08 ≈ 28° above eye level — not high enough to see the crown.
-// 2.55 lets the lens drop so more of the legs come into frame.
-const PHI_MIN = 1.08;
-const PHI_MAX = 2.55;
+// Polar window lives in lib/orbit-limits.ts (PHI_MIN / PHI_MAX). Theta is
+// unclamped (full 360° yaw). Drag, pinch, and reset share the clamp in
+// applyCamera below — poke and hand-grab do not write phi.
 
 // r101: texture slots that must hold a DECODED image before the avatar may
 // step on stage. On iPhone Safari the big MToon atlases decode late — the
