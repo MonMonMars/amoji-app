@@ -8,7 +8,17 @@ import {
 import { clearSpeechLevel, feedSpeechLevel, sampleSpeech } from '../lib/speech';
 import { startLibraryPerformance } from '../lib/music';
 
-const DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../public/audio/library');
+const AUDIO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../public/audio');
+
+function walkMp3(dir: string): string[] {
+  const out: string[] = [];
+  for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, ent.name);
+    if (ent.isDirectory()) out.push(...walkMp3(p));
+    else if (ent.name.endsWith('.mp3')) out.push(p);
+  }
+  return out;
+}
 
 function looksLikeMp3(file: string): void {
   const buf = fs.readFileSync(file);
@@ -34,7 +44,7 @@ describe('premade sing and dance library', () => {
       expect(c.voice).toBeUndefined();
     }
     for (const c of PERFORMANCE_CLIPS) {
-      expect(['CC0-1.0', 'PD']).toContain(c.license);
+      expect(c.license).toBe('CC0-1.0');
       expect(c.file).toMatch(/\.mp3$/);
     }
   });
@@ -78,8 +88,8 @@ describe('premade sing and dance library', () => {
   });
 
   it('scales with the dialogue and BGM steps', () => {
-    const song = PERFORMANCE_CLIPS.find((c) => c.id === 'sing-f-hello-there')!;
-    const dance = PERFORMANCE_CLIPS.find((c) => c.id === 'dance-8bit-disco-loop')!;
+    const song = PERFORMANCE_CLIPS.find((c) => c.id === 'sing-f-hello')!;
+    const dance = PERFORMANCE_CLIPS.find((c) => c.id === 'dance-silent-dance-floor')!;
     expect(performanceGain(song, 80)).toBeCloseTo(0.92 * 0.8);
     expect(performanceGain(dance, 40)).toBeCloseTo(0.8 * 0.4);
     expect(performanceGain(song, 80, 0.28)).toBeCloseTo(0.92 * 0.8 * 0.28);
@@ -87,16 +97,17 @@ describe('premade sing and dance library', () => {
   });
 
   it('ships every catalogued mp3, documented as CC0', () => {
-    const mp3s = fs.readdirSync(DIR).filter((f) => f.endsWith('.mp3'));
-    const files = PERFORMANCE_CLIPS.map((c) => path.basename(c.file));
+    const mp3s = walkMp3(AUDIO).map((p) => path.relative(AUDIO, p).split(path.sep).join('/'));
+    const files = PERFORMANCE_CLIPS.map((c) => c.file.replace(/^\/audio\//, ''));
     expect(new Set(mp3s)).toEqual(new Set(files));
-    const doc = fs.readFileSync(path.join(DIR, 'LIBRARY.md'), 'utf8');
+    const doc = fs.readFileSync(path.join(AUDIO, 'LIBRARY.md'), 'utf8');
     expect(doc).toMatch(/CC0/);
+    expect(doc).toMatch(/No CC-BY/);
     expect(doc).toMatch(/female/i);
     expect(doc).toMatch(/male/i);
     for (const f of files) {
       expect(doc).toContain(f);
-      looksLikeMp3(path.join(DIR, f));
+      looksLikeMp3(path.join(AUDIO, f));
     }
   });
 
