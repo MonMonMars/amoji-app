@@ -146,14 +146,14 @@ import { pickIdleLine } from '../lib/persona-chatter';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
 import { ouchStyleFor } from '../lib/ouch';
 import { pickCharacterInteraction, maybeLaughLead } from '../lib/interaction-lines';
-import { personalityPrompt } from '../lib/personality';
+import { cannedOpener, personalityPrompt, personalityTutorTip } from '../lib/personality';
 import { pickLaugh, laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { WARMUP_FIRST_MS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from '../lib/warmup';
 import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
 import { speak, stopSpeaking, speakThinkingFiller, sing, voiceStartedSince } from '../lib/voice';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
 import { startMusic, stopMusic, startPerformanceMusic, endPerformanceMusic } from '../lib/music';
-import { characterSpecialty, pickShowcaseOffer, pickTutorialLine, SHOWCASE_START, SHOWCASE_YES_RE, type ShowcaseKind } from '../lib/showcase';
+import { characterSpecialty, pickShowcaseOffer, SHOWCASE_START, SHOWCASE_YES_RE, type ShowcaseKind } from '../lib/showcase';
 import { detectGame, startGame, playTurn, gameFarewellLine, type GameState } from '../lib/games';
 import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodbyeLine, pickMealToast } from '../lib/activities';
 import { detectExercise, startExercise, advanceExercise, exerciseFarewellLine, type ExerciseState } from '../lib/exercises';
@@ -449,7 +449,7 @@ export default function ChatPanel({
     const visit = recordVisit();
     const daily = visit.isNewDay ? buildDailyGreeting(lang, visit) : undefined;
     const startupVars = { name: characterName };
-    const t1 = setTimeout(() => sayLocal(pickLine('startup', lang, 0, startupVars)), 1200);
+    const t1 = setTimeout(() => sayLocal(cannedOpener(characterId, characterGender, lang, characterName)), 1200);
     const t2 = setTimeout(
       () => sayLocal(daily ?? pickLine('startup', lang, 1, startupVars), daily ? greetingHints(visit) : undefined),
       5200,
@@ -525,7 +525,7 @@ export default function ChatPanel({
       // can do for you, or offers a private performance; the offer stays
       // outstanding until you answer, and your "yes" starts the show
       if (n % 4 === 1) {
-        sayLocal(pickTutorialLine(lang, n), feltHints);
+        sayLocal(personalityTutorTip(characterId, characterGender, lang, n), feltHints);
         return;
       }
       if (n % 4 === 3 && !pendingOfferRef.current) {
