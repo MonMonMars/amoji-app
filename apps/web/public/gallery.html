@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Amoji Idle Motion Gallery — research drop</title>
+<style>
+  :root { --bg:#0b0b12; --card:#15151f; --line:#262636; --txt:#e8e8f0; --dim:#9a9ab0; --acc:#f9a8d4; --ok:#34d399; --warn:#fbbf24; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; background:var(--bg); color:var(--txt); font-family:-apple-system,'Segoe UI',Roboto,sans-serif; }
+  header { padding:22px 18px 10px; }
+  h1 { margin:0; font-size:22px; letter-spacing:.3px; }
+  .sub { color:var(--dim); font-size:13px; margin-top:6px; line-height:1.5; }
+  .bar { position:sticky; top:0; z-index:5; display:flex; gap:10px; align-items:center;
+         padding:10px 18px; background:rgba(11,11,18,.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+  .bar button { background:var(--acc); color:#1a0a12; border:0; border-radius:999px;
+                padding:9px 16px; font-weight:700; font-size:14px; }
+  .bar .ghost { background:transparent; color:var(--dim); border:1px solid var(--line); font-weight:500; }
+  #count { color:var(--dim); font-size:13px; margin-left:auto; }
+  h2 { padding:18px 18px 4px; font-size:15px; text-transform:uppercase; letter-spacing:1.2px; color:var(--dim); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; padding:10px 18px 6px; }
+  .card { position:relative; background:var(--card); border:2px solid var(--line); border-radius:14px;
+          overflow:hidden; cursor:pointer; transition:transform .12s ease, border-color .12s ease; }
+  .card:active { transform:scale(.95); }
+  .card.picked { border-color:var(--ok); box-shadow:0 0 0 3px rgba(52,211,153,.18); }
+  .thumb { position:relative; aspect-ratio:1/1.05; background:#1d1d2a; display:flex; align-items:center; justify-content:center; }
+  .thumb .tile { font-size:18px; font-weight:800; color:#6a6a88; text-align:center; padding:10px; line-height:1.2; }
+  .num { position:absolute; top:6px; left:6px; z-index:2; background:rgba(0,0,0,.72); color:#fff;
+         font-size:10px; font-weight:800; border-radius:999px; padding:3px 7px; max-width:70%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .badge { position:absolute; top:6px; right:6px; z-index:2; font-size:9px; font-weight:800;
+           border-radius:999px; padding:3px 7px; }
+  .badge.ready { background:#34d399; color:#04281c; }
+  .badge.app { background:#7dd3fc; color:#0a2a3d; }
+  .badge.fbx { background:#fbbf24; color:#3a2a00; }
+  .badge.mix { background:#c4b5fd; color:#2e1065; }
+  .meta { padding:7px 8px 9px; }
+  .nm { font-size:12.5px; font-weight:700; line-height:1.25; }
+  .tg { font-size:10.5px; color:var(--dim); margin-top:2px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .ext { display:block; text-align:right; font-size:10px; color:var(--acc); text-decoration:none; margin-top:4px; }
+  .check { position:absolute; bottom:8px; right:8px; z-index:2; width:22px; height:22px; border-radius:50%;
+           background:var(--ok); color:#04281c; font-weight:900; font-size:13px; display:none; align-items:center; justify-content:center; }
+  .card.picked .check { display:flex; }
+  .note { margin:14px 18px; padding:12px 14px; border:1px dashed var(--line); border-radius:12px; color:var(--dim); font-size:12.5px; line-height:1.55; }
+  #toast { position:fixed; left:50%; bottom:26px; transform:translateX(-50%); background:#000; color:#fff;
+           padding:10px 18px; border-radius:999px; font-size:13px; opacity:0; pointer-events:none; transition:opacity .25s; z-index:9; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🧍 Amoji Idle Motion Gallery</h1>
+  <div class="sub">Feet-planted standing idles. <b>IdleBreathCalm</b> is mapped now (shy, gentle, dreamy, quiet, steady).<br>
+  Tap cards to pick → <b>Copy my picks</b> → paste back in chat (format: <code>My idle picks: IdleNeutral …</code>).</div>
+</header>
+<div class="bar">
+  <button id="copy">Copy my picks</button>
+  <button id="clear" class="ghost">Clear</button>
+  <span id="count"></span>
+</div>
+
+<h2>A · Already in app (Idle*)</h2>
+<div class="grid" id="gA"></div>
+
+<h2>B · New ready .vrma (drop models/anims/)</h2>
+<div class="grid" id="gB"></div>
+
+<h2>C · Convert-needed (FBX / glTF · models/anims-fbx/)</h2>
+<div class="grid" id="gC"></div>
+
+<h2>D · Manual download (Mixamo / paid / restricted)</h2>
+<div class="grid" id="gD"></div>
+
+<div class="note">
+  <b>IdleBreathCalm.vrma</b> is in <code>models/anims/</code> and mapped in <code>lib/personality.ts</code>.<br>
+  Convert later (not wired): <b>IdleKaykitA</b>, <b>IdleKaykitB</b>, <b>IdleQuaterniusHuman</b> — FBX/glTF noted in <code>models/anims-fbx/README.txt</code>.<br>
+  Mixamo: ship embedded in app OK; do not redistribute raw FBX publicly.
+</div>
+<div id="toast"></div>
+
+<script>
+/** Card: [id, label, personality, licenseShort, format, src, feetPlanted, badge, section, sourceUrl, note] */
+const EXISTING = [
+  ['IdleNeutral','Idle Neutral','calm, neutral','app asset','vrma','models/anims/IdleNeutral.vrma',true,'app','Already in app',null,'Reference — already shipped'],
+  ['IdleSassy','Idle Sassy','cheerful, sassy, cool','app asset','vrma','models/anims/IdleSassy.vrma',true,'app','Already in app',null,'Reference — already shipped'],
+  ['IdleChinHand','Idle Chin Hand','cool, thoughtful, shy','app asset','vrma','models/anims/IdleChinHand.vrma',true,'app','Already in app',null,'Reference — already shipped'],
+  ['IdleHug','Idle Hug','cheerful, warm','app asset','vrma','models/anims/IdleHug.vrma',true,'app','Already in app',null,'Arms-in hug pose idle — already shipped'],
+];
+const READY = [
+  ['IdleBreathCalm','Idle Breath Calm','calm, shy, soft','MIT (pixiv ChatVRM)','vrma','models/anims/IdleBreathCalm.vrma',true,'ready','Mapped','https://github.com/pixiv/ChatVRM','Wired now: first idle for shy, gentle, dreamy, quiet, and steady. Feet stay planted.'],
+];
+const CONVERT = [
+  ['IdleKenneyStand','Idle Kenney Stand','calm, neutral, game','CC0-1.0 Kenney','fbx','models/anims-fbx/IdleKenneySurvivors.fbx',true,'fbx','Convert FBX','https://kenney.nl/assets/animated-characters-survivors','Identical idle also in Protagonists/Retro packs. Convert FBX→VRMA.'],
+  ['IdleQuaterniusLoop','Idle Quaternius Loop','calm, neutral','CC0 Quaternius','gltf','models/anims-fbx/quaternius-ual/AnimationLibrary_Godot_Standard.gltf',true,'fbx','Convert glTF','https://quaternius.itch.io/universal-animation-library','Clip name Idle_Loop inside multi-anim glTF. Extract → VRMA.'],
+  ['IdleTalkLoop','Idle Talk Loop','cheerful, talkative','CC0 Quaternius','gltf','models/anims-fbx/quaternius-ual/AnimationLibrary_Godot_Standard.gltf',true,'fbx','Convert glTF','https://quaternius.itch.io/universal-animation-library','Clip Idle_Talking_Loop — standing talk idle, feet planted.'],
+  ['IdleKaykitA','Idle KayKit A','calm, neutral, game','CC0 KayKit','glb','models/anims-fbx/kaykit/Rig_Medium_General.glb',true,'fbx','Convert glTF','https://kaylousberg.itch.io/kaykit-character-animations','Clip Idle_A in Rig_Medium_General (also Large). CC0. Extract → VRMA.'],
+  ['IdleKaykitB','Idle KayKit B','calm, cool, alternate','CC0 KayKit','glb','models/anims-fbx/kaykit/Rig_Medium_General.glb',true,'fbx','Convert glTF','https://kaylousberg.itch.io/kaykit-character-animations','Clip Idle_B — second standing idle variant for personality variety.'],
+  ['IdleQuaterniusHuman','Idle Quaternius Animated Human','calm, neutral','CC0 Quaternius','fbx','models/anims-fbx/quaternius-animated-human/AnimatedHuman.fbx',true,'fbx','Convert FBX','https://opengameart.org/content/animated-human-low-poly','Multi-clip FBX; extract Idle. Older Quaternius pack, CC0.'],
+];
+const MANUAL = [
+  ['IdleMixamoBreathing','Mixamo Breathing Idle','calm, soft','Adobe Mixamo (embed OK)','fbx-manual',null,true,'mix','Manual','https://www.mixamo.com/','Download FBX w/ Adobe ID. Ship embedded; do not redistribute raw FBX.'],
+  ['IdleMixamoHappy','Mixamo Happy Idle','cheerful, energetic','Adobe Mixamo (embed OK)','fbx-manual',null,true,'mix','Manual','https://www.mixamo.com/','Happy Idle clip. Convert via AnimationClipToVrmaSample / three-vrm Mixamo retarget.'],
+  ['IdleMixamoDefault','Mixamo Idle','calm, neutral','Adobe Mixamo (embed OK)','fbx-manual',null,true,'mix','Manual','https://www.mixamo.com/','Classic Idle — weight shift. Same embed-only redistribution rule.'],
+  ['IdleMixamoBored','Mixamo Bored Idle','shy, cool, low-energy','Adobe Mixamo (embed OK)','fbx-manual',null,true,'mix','Manual','https://www.mixamo.com/','Bored Idle — quieter personality fit.'],
+  ['IdleMixamoWeightShift','Mixamo Weight Shift Idle','calm, cool','Adobe Mixamo (embed OK)','fbx-manual',null,true,'mix','Manual','https://www.mixamo.com/','Weight Shift Idle — subtle stand.'],
+  ['IdleMixamoLooking','Mixamo Looking Around','curious, energetic','Adobe Mixamo (embed OK)','fbx-manual',null,true,'mix','Manual','https://www.mixamo.com/','Looking Around — still feet-planted-ish; verify loop before ship.'],
+  ['IdleRolockBreath','ROLOCK Pose+Breath library','calm (varies by pose)','Commercial OK · embed OK · no raw redistrib','vrma-paid',null,true,'mix','Paid BOOTH','https://booth.pm/ja/items/7615255','20 VRMA with breathing/float. Price revised 2026-09. Embed in app OK; no raw resale.'],
+  ['IdleVroidOfficialPack','VRoid Project VRMA 7-pack','n/a (actions/poses)','pixiv commercial+credit · no extractable redistrib','vrma','manual BOOTH',false,'mix','Secondary','https://booth.pm/ja/items/5512385','NOT true idles (greeting/spin/squat…). Documented only.'],
+  ['IdleOribePoses','織部呉服 .vrmaポーズ5種','n/a (static)','Commercial OK · NO redistribution','vrma',null,false,'mix','Restricted','https://booth.pm/ja/items/5876268','Static poses. No redistribution including after modification — do not ship files.'],
+];
+
+const store = JSON.parse(localStorage.getItem('amoji.idle.picks') || '{}');
+const save = () => localStorage.setItem('amoji.idle.picks', JSON.stringify(store));
+const toast = (m) => { const t = document.getElementById('toast'); t.textContent = m; t.style.opacity = 1; setTimeout(() => t.style.opacity = 0, 1800); };
+const refresh = () => document.getElementById('count').textContent = Object.keys(store).filter(k => store[k]).length + ' picked';
+
+function card(row) {
+  const [id, label, personality, license, format, src, feet, badge, , url, note] = row;
+  const d = document.createElement('div');
+  d.className = 'card' + (store[id] ? ' picked' : '');
+  d.dataset.id = id;
+  const badgeLabel = badge === 'ready' ? 'VRMA' : badge === 'app' ? 'APP' : badge === 'fbx' ? 'CONV' : 'GET';
+  const srcLine = src ? src : '(manual download)';
+  const feetTxt = feet ? 'feetPlanted ✓' : 'feetPlanted ✗';
+  d.innerHTML =
+    '<div class="thumb"><div class="tile">' + label.replace(/ /g,'<br>') + '</div></div>' +
+    '<span class="num" title="' + id + '">' + id + '</span>' +
+    '<span class="badge ' + badge + '">' + badgeLabel + '</span>' +
+    '<div class="meta"><div class="nm">' + label + '</div>' +
+    '<div class="tg">' + personality + '<br>' + license + ' · ' + format + '<br>' + feetTxt + '<br>' + srcLine +
+    (note ? '<br>' + note : '') + '</div>' +
+    (url ? '<a class="ext" href="' + url + '" target="_blank" rel="noreferrer">source ↗</a>' : '') +
+    '</div><span class="check">✓</span>';
+  d.addEventListener('click', (e) => {
+    if (e.target.tagName === 'A') return;
+    store[id] = !store[id]; if (!store[id]) delete store[id];
+    d.classList.toggle('picked', !!store[id]); save(); refresh();
+  });
+  return d;
+}
+
+function fill(gid, rows) {
+  const g = document.getElementById(gid);
+  rows.forEach(r => g.appendChild(card(r)));
+}
+fill('gA', EXISTING);
+fill('gB', READY);
+fill('gC', CONVERT);
+fill('gD', MANUAL);
+refresh();
+
+document.getElementById('copy').addEventListener('click', async () => {
+  const picks = Object.keys(store).filter(k => store[k]);
+  // stable-ish: existing order then others alpha
+  const order = [...EXISTING, ...READY, ...CONVERT, ...MANUAL].map(r => r[0]);
+  picks.sort((a,b) => order.indexOf(a) - order.indexOf(b));
+  const txt = picks.length ? ('My idle picks: ' + picks.join(' ')) : '(nothing picked yet)';
+  try { await navigator.clipboard.writeText(txt); toast('Copied — paste to Mon/Amoji in chat ✓'); }
+  catch { prompt('Copy this:', txt); toast('Select & copy the text'); }
+});
+document.getElementById('clear').addEventListener('click', () => {
+  Object.keys(store).forEach(k => delete store[k]); save();
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('picked')); refresh();
+});
+</script>
+</body>
+</html>

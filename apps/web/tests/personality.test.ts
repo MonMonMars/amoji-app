@@ -56,4 +56,22 @@ describe('auto personality', () => {
     expect(f.id).not.toBe(m.id);
     restore();
   });
+
+  it('leads calm personalities with IdleBreathCalm', () => {
+    const restore = swapLs();
+    const g = globalThis as { localStorage: Storage };
+    g.localStorage.setItem('amoji.personality.v1', JSON.stringify({
+      'p-shy': 'shy',
+      'p-gentle': 'gentle',
+      'p-dreamy': 'dreamy',
+      'p-quiet': 'quiet',
+      'p-sporty': 'sporty',
+    }));
+    expect(personalityMotion('p-shy', 'female').idleClips[0]).toBe('IdleBreathCalm');
+    expect(personalityMotion('p-gentle', 'female').idleClips[0]).toBe('IdleBreathCalm');
+    expect(personalityMotion('p-dreamy', 'female').idleClips[0]).toBe('IdleBreathCalm');
+    expect(personalityMotion('p-quiet', 'male').idleClips[0]).toBe('IdleBreathCalm');
+    expect(personalityMotion('p-sporty', 'male').idleClips.includes('IdleBreathCalm')).toBe(false);
+    restore();
+  });
 });

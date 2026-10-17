@@ -73,6 +73,8 @@
 import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
+import { FootPlanter } from './plant-feet';
+import { ChestBounce } from './chest-bounce';
 
 export type AvatarKind = 'v1' | 'generic';
 
@@ -186,6 +188,13 @@ export interface Avatar {
   /** r115: raw bone lookup for poke-zone raycast + hand-drag IK (null when absent) */
   getBoneNode(name: string): THREE.Object3D | null;
   /**
+   * Keep both feet on the shared ground contact. Pass false only while a
+   * walk or jump clip is playing.
+   */
+  plantFeet(plant: boolean): void;
+  /** Soft secondary spring on bust bones. 0 restores them. Does not move the hips or feet. */
+  applyChestBounce(pitch: number): void;
+  /**
    * r124: re-measure the shoulder line and yaw away any residual error. The
    * constructor calibrates facing from the RAW rest pose, whose shoulder
    * line can be systematically off (~10° on several rigs) — once the idle
@@ -208,6 +217,9 @@ const BONE_NAMES = [
   'leftLowerArm', 'rightLowerArm',
   'leftHand', 'rightHand',
   'leftUpperLeg', 'rightUpperLeg',
+  'leftLowerLeg', 'rightLowerLeg',
+  'leftFoot', 'rightFoot',
+  'leftToes', 'rightToes',
 ] as const;
 type BoneName = (typeof BONE_NAMES)[number];
 
@@ -330,6 +342,14 @@ const VROID_TO_HUMANOID: Record<string, string> = {
   J_Bip_R_Hand: 'rightHand',
   J_Bip_L_UpperLeg: 'leftUpperLeg',
   J_Bip_R_UpperLeg: 'rightUpperLeg',
+  J_Bip_L_LowerLeg: 'leftLowerLeg',
+  J_Bip_R_LowerLeg: 'rightLowerLeg',
+  J_Bip_L_Foot: 'leftFoot',
+  J_Bip_R_Foot: 'rightFoot',
+  J_Bip_L_ToeBase: 'leftToes',
+  J_Bip_R_ToeBase: 'rightToes',
+  J_Bip_L_Toes: 'leftToes',
+  J_Bip_R_Toes: 'rightToes',
 };
 
 function vroidFingerHumanoid(boneName: string): string | null {
@@ -557,6 +577,8 @@ class V1Avatar implements Avatar {
   private fingerMap = new Map<string, THREE.Object3D>();
   // r107: additive-head state — see applyClipHeadAdd
   private headAddInit = false;
+  private planter = new FootPlanter();
+  private chestBounce = new ChestBounce();
   private readonly headAddBaseE = new THREE.Euler();
   private readonly headAddWritten = new THREE.Quaternion();
 
@@ -597,6 +619,8 @@ class V1Avatar implements Avatar {
     }
     this.fingerBones = new Set([...this.fingerMap.values()].map((n) => n.name));
     this.relaxedHands = calibrateRelaxedHands(this.fingerMap, this.clipAnimatedBones);
+    this.root.updateMatrixWorld(true);
+    this.planter.capture(vrm.scene, (name) => this.getBoneNode(name));
   }
 
   setExpression(name: string, value: number): void {
@@ -721,6 +745,15 @@ class V1Avatar implements Avatar {
     if (r && re) clampUpperArmAdduction(r, re, sl, sr);
   }
 
+  plantFeet(plant: boolean): void {
+    if (plant) this.planter.apply();
+  }
+
+  applyChestBounce(pitch: number): void {
+    const joints = this.vrm.springBoneManager?.joints;
+    this.chestBounce.apply(this.vrm.scene, pitch, joints);
+  }
+
   /** r115: the humanoid bone behind a semantic name (normalized node for VRM 1.0) */
   getBoneNode(name: string): THREE.Object3D | null {
     try {
@@ -783,6 +816,8 @@ class GenericAvatar implements Avatar {
   private sRw = new THREE.Quaternion();
   private sPw = new THREE.Quaternion();
   private sE = new THREE.Euler();
+  private planter = new FootPlanter();
+  private chestBounce = new ChestBounce();
 
   constructor(gltf: GLTF, clipAnimatedBones: ReadonlySet<string> = new Set()) {
     // r2026-10-04.76: same wrapper split as V1Avatar — canvas overlays own
@@ -799,6 +834,8 @@ class GenericAvatar implements Avatar {
     // measures world distances, so the arms must be in their final rest pose
     this.fingerBones = new Set([...this.fingers.values()].map((n) => n.name));
     this.relaxedHands = calibrateRelaxedHands(this.fingers, this.clipAnimatedBones);
+    this.root.updateMatrixWorld(true);
+    this.planter.capture(this.inner, (name) => this.getBoneNode(name));
   }
 
   // -- skeleton / face resolution ------------------------------------------
@@ -1018,6 +1055,14 @@ class GenericAvatar implements Avatar {
     const r = this.bones.get('rightUpperArm');
     const re = this.bones.get('rightLowerArm');
     if (r && re) clampUpperArmAdduction(r, re, sl, sr);
+  }
+
+  plantFeet(plant: boolean): void {
+    if (plant) this.planter.apply();
+  }
+
+  applyChestBounce(pitch: number): void {
+    this.chestBounce.apply(this.inner, pitch);
   }
 
   /** r115: resolved bone by semantic name — body map first, then fingers */
