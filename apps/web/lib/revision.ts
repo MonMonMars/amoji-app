@@ -291,7 +291,11 @@
 // Plus the service-worker cache stamp jumps r117 → r136 so stale shells that
 // referenced dead JS chunks are force-replaced (the "page renders but
 // nothing responds" shape).
-export const APP_REVISION = 'r2026-10-06.136';
+// r2026-10-17.137: the selection stage is the chat room — same SceneBackdrop
+// and the same live CompanionCanvas. A face-thumb tap swaps that VRM at
+// once (no flat portrait or cutout). Thumbs use the free-library release
+// face PNGs. Scene thumbs are lettered A… in daytime → nighttime order.
+export const APP_REVISION = 'r2026-10-17.137';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

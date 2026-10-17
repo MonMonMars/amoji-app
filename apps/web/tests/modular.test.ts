@@ -128,7 +128,11 @@ describe('modular wardrobe catalog', () => {
     const ui = fs.readFileSync(path.resolve(here, '../components/WardrobeSwap.tsx'), 'utf8');
     const board = fs.readFileSync(path.resolve(here, '../components/SelectionBoard.tsx'), 'utf8');
     const row = fs.readFileSync(path.resolve(here, '../components/HScrollRow.tsx'), 'utf8');
-    expect(board).toContain('character.image');
+    expect(board).toContain('image={c.image}');
+    expect(board).toContain('CompanionCanvas');
+    expect(board).toContain('backgroundLetter');
+    expect(board).not.toContain('dicebear');
+    expect(board).not.toContain('cast-cutout');
     expect(ui).toContain('characterById');
     expect(ui).not.toContain('flex-wrap');
     expect(row).toContain('flex-nowrap');

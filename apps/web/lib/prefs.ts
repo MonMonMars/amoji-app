@@ -70,30 +70,32 @@ export interface BackgroundDef {
   kidSafe?: boolean;
 }
 
-// Painted anime scenes (r2026-10-03.01, AI-generated original art) + gradient fallback.
+// Painted anime scenes. Order is daytime → nighttime, left to right on the
+// selection strip (A meadow noon … L milky way). Letters stay stable when
+// Kid Mode hides a scene, the same way character numbers stay stable.
 export const BACKGROUNDS: BackgroundDef[] = [
-  { id: 'void',   nameKey: 'bgVoid',   css: 'radial-gradient(ellipse at 50% 120%, #1e1b4b 0%, #0a0a0f 60%)', scene: '#0a0a0f', setting: 'outdoor',
-    image: '/backgrounds/void.jpg', fx: 'stars' },
-  { id: 'aurora', nameKey: 'bgAurora', css: 'linear-gradient(180deg, #022c22 0%, #065f46 45%, #0f172a 100%)', scene: '#052e24', setting: 'outdoor',
-    image: '/backgrounds/aurora.jpg', fx: 'shimmer', kidSafe: true },
-  { id: 'ember',  nameKey: 'bgEmber',  css: 'radial-gradient(ellipse at 50% 130%, #7c2d12 0%, #1c0a06 65%)', scene: '#200b06', setting: 'indoor',
-    image: '/backgrounds/ember.jpg', fx: 'embers' },
-  { id: 'sakura', nameKey: 'bgSakura', css: 'radial-gradient(ellipse at 50% -20%, #fb7185 0%, #581c87 55%, #1e1033 100%)', scene: '#2a0f45', setting: 'outdoor',
-    image: '/backgrounds/sakura.jpg', fx: 'petals', kidSafe: true },
-  { id: 'abyss',  nameKey: 'bgAbyss',  css: 'radial-gradient(ellipse at 50% 40%, #0c4a6e 0%, #082f49 40%, #020617 100%)', scene: '#04121f', setting: 'outdoor',
-    image: '/backgrounds/abyss.jpg', fx: 'bubbles' },
-  { id: 'rain',   nameKey: 'bgRain',   css: 'linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #020617 100%)', scene: '#0b1220', setting: 'outdoor',
-    image: '/backgrounds/rain.jpg', fx: 'rain' },
-  { id: 'sunset', nameKey: 'bgSunset', css: 'linear-gradient(180deg, #312e81 0%, #be185d 55%, #f97316 100%)', scene: '#2a1245', setting: 'outdoor',
-    image: '/backgrounds/sunset.jpg', fx: 'fireflies', kidSafe: true },
   { id: 'meadow', nameKey: 'bgMeadow', css: 'linear-gradient(180deg, #7dd3fc 0%, #86efac 60%, #166534 100%)', scene: '#123a24', setting: 'outdoor',
     image: '/backgrounds/meadow.jpg', fx: 'fireflies', kidSafe: true },
+  { id: 'sakura', nameKey: 'bgSakura', css: 'radial-gradient(ellipse at 50% -20%, #fb7185 0%, #581c87 55%, #1e1033 100%)', scene: '#2a0f45', setting: 'outdoor',
+    image: '/backgrounds/sakura.jpg', fx: 'petals', kidSafe: true },
+  { id: 'sunset', nameKey: 'bgSunset', css: 'linear-gradient(180deg, #312e81 0%, #be185d 55%, #f97316 100%)', scene: '#2a1245', setting: 'outdoor',
+    image: '/backgrounds/sunset.jpg', fx: 'fireflies', kidSafe: true },
   { id: 'cloudsea', nameKey: 'bgCloudsea', css: 'radial-gradient(ellipse 680px 170px at 45% 85%, rgba(255,255,255,.6), transparent 70%), linear-gradient(180deg, #1d2b64 0%, #b83b8c 42%, #ffb26b 74%, #ffe3a3 100%)', scene: '#3b1d5c', setting: 'outdoor',
     image: '/backgrounds/cloudsea.jpg', fx: 'shimmer', kidSafe: true },
+  { id: 'rain',   nameKey: 'bgRain',   css: 'linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #020617 100%)', scene: '#0b1220', setting: 'outdoor',
+    image: '/backgrounds/rain.jpg', fx: 'rain' },
+  { id: 'ember',  nameKey: 'bgEmber',  css: 'radial-gradient(ellipse at 50% 130%, #7c2d12 0%, #1c0a06 65%)', scene: '#200b06', setting: 'indoor',
+    image: '/backgrounds/ember.jpg', fx: 'embers' },
   { id: 'neon', nameKey: 'bgNeon', css: 'radial-gradient(circle at 18% 82%, rgba(34,211,238,.55), transparent 34%), linear-gradient(180deg, #05010f 0%, #2a1157 75%, #0b0620 100%)', scene: '#0b0620', setting: 'indoor',
     image: '/backgrounds/neon.jpg', fx: 'neon' },
+  { id: 'aurora', nameKey: 'bgAurora', css: 'linear-gradient(180deg, #022c22 0%, #065f46 45%, #0f172a 100%)', scene: '#052e24', setting: 'outdoor',
+    image: '/backgrounds/aurora.jpg', fx: 'shimmer', kidSafe: true },
   { id: 'snowmoon', nameKey: 'bgSnowmoon', css: 'radial-gradient(circle at 72% 20%, rgba(255,255,255,.95) 0%, transparent 19%), linear-gradient(180deg, #0a1633 0%, #274a7a 100%)', scene: '#101f3d', setting: 'outdoor',
     image: '/backgrounds/snowmoon.jpg', fx: 'snow', kidSafe: true },
+  { id: 'abyss',  nameKey: 'bgAbyss',  css: 'radial-gradient(ellipse at 50% 40%, #0c4a6e 0%, #082f49 40%, #020617 100%)', scene: '#04121f', setting: 'outdoor',
+    image: '/backgrounds/abyss.jpg', fx: 'bubbles' },
+  { id: 'void',   nameKey: 'bgVoid',   css: 'radial-gradient(ellipse at 50% 120%, #1e1b4b 0%, #0a0a0f 60%)', scene: '#0a0a0f', setting: 'outdoor',
+    image: '/backgrounds/void.jpg', fx: 'stars' },
   { id: 'galaxy', nameKey: 'bgGalaxy', css: 'radial-gradient(ellipse 150% 55% at 50% 26%, rgba(255,255,255,.13), transparent 62%), linear-gradient(180deg, #020210 0%, #161244 100%)', scene: '#0b0b26', setting: 'outdoor',
     image: '/backgrounds/galaxy.jpg', fx: 'stars', kidSafe: true },
 ];
@@ -439,6 +441,13 @@ export function characterById(id: string): CharacterDef {
 }
 export function backgroundById(id: string): BackgroundDef {
   return BACKGROUNDS.find((b) => b.id === id) ?? BACKGROUNDS[0]!;
+}
+
+/** A, B, C… from the daytime → nighttime order. Empty when the id is unknown. */
+export function backgroundLetter(id: string): string {
+  const i = BACKGROUNDS.findIndex((b) => b.id === id);
+  if (i < 0 || i > 25) return '';
+  return String.fromCharCode(65 + i);
 }
 
 export function usePrefs(): [Prefs, (patch: Partial<Prefs>) => void] {
