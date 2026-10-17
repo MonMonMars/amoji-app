@@ -8,7 +8,7 @@ Locale → engine → voice lives in `apps/web/lib/voice-catalog.ts`. Non-Yue en
 - Voice gender: female → HiuMaan (HiuGaai stays the female alternate), male → WanLung. Desktop chain is Edge, then gendered `speechSynthesis`, then gTTS.
 - TTS cleaner on `speak()`, `sing()`, and the chat display (`apps/web/lib/speak-text.ts`).
 - Wait state: Thinking clip, the 20 Cantonese lines below, no wait-time dance or music.
-- Camera: less overhead (`PHI_MIN` 1.08), more legs (`PHI_MAX` 2.55). PC hold-to-pan only on a distant blank miss, and only after the hold arms.
+- Camera: wider polar orbit (`PHI_MIN` 0.25, `PHI_MAX` π−0.25; was 1.08 / 2.55). Yaw stays 360°. PC hold-to-pan only on a distant blank miss, and only after the hold arms.
 - Scroll: history scrolls itself. The invisible lower-third pad is gone. Bottom chat wrapper does not catch empty clicks.
 - Wardrobe: idle is a 40×40 icon beside settings. Press opens a full-screen view. Close returns to the preview.
 - Selection: full-screen head crop + full-body still. Rows and confirm overlap the preview. No back button. No 「即將推出」 row. Thumbs stay head-only.
