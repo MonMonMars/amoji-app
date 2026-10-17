@@ -13,7 +13,8 @@ describe('cast roster', () => {
     expect(WANT_CAST_RELEASE).toBe('free-library-want-2026-10-12');
     for (const c of CHARACTERS) {
       const img = c.image ?? '';
-      expect(img).toMatch(/^https:\/\/github\.com\/MonMonMars\/amoji-app\/releases\/download\//);
+      const style = c.gender === 'male' ? 'adventurer' : 'lorelei';
+      expect(img, c.id).toMatch(new RegExp(`^https://api\\.dicebear\\.com/9\\.x/${style}/png\\?seed=`));
       for (const l of ['en', 'yue', 'zh', 'ja'] as Lang[]) expect(c.tagline[l].length).toBeGreaterThan(0);
       expect(c.persona.length).toBeGreaterThan(20);
       expect(['female', 'male']).toContain(c.gender);
