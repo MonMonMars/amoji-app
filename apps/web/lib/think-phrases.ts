@@ -7,6 +7,8 @@
 //   user's wait gets softer phases ("I'm here, thinking…") instead of the
 //   default cheerful chirp.
 import type { Lang } from './prefs';
+import { personalityFor, profileCatchphrase } from './personality';
+import type { PersonalityId } from './personality';
 
 type PhraseBank = Record<Lang, string[]>;
 
@@ -102,12 +104,22 @@ const ARCHETYPE: Record<string, keyof typeof PHASES> = {
  * archetype bank (r.24); unknown/absent moods use the classic per-character
  * personality curve.
  */
+const VOICE_BANK: Record<PersonalityId, keyof typeof PHASES> = {
+  sunny: 'cheerful', shy: 'gentle', playful: 'playful', gentle: 'gentle',
+  dreamy: 'gentle', spark: 'fiery', steady: 'cool', cool: 'cool',
+  warm: 'cheerful', quiet: 'gentle', sporty: 'fiery', wry: 'playful',
+};
+
 export function pickThinkPhrase(characterId: string, lang: Lang, phase: number, mood?: string): string {
-  if (mood) {
+  if (mood && mood !== 'unknown') {
     const moodList = MOOD_THINK[mood]?.[lang] ?? MOOD_THINK[mood]?.yue;
     if (moodList && moodList.length) return moodList[phase % moodList.length]!;
   }
-  const bank = PHASES[ARCHETYPE[characterId] ?? 'cheerful'] ?? PHASES.cheerful!;
+  const legacy = ARCHETYPE[characterId];
+  const bank = PHASES[legacy ?? VOICE_BANK[personalityFor(characterId)] ?? 'cheerful'] ?? PHASES.cheerful!;
   const list = bank[lang] ?? bank.yue;
-  return list[phase % list.length]!;
+  const line = list[phase % list.length]!;
+  if (legacy) return line;
+  const catchphrase = profileCatchphrase(characterId, lang);
+  return catchphrase ? `${catchphrase} ${line}` : line;
 }

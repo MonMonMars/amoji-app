@@ -12,8 +12,7 @@
 // onyx/velara) get their own idle + poke banks below.
 import type { Lang } from './prefs';
 import { pickLine } from './chatter';
-import { personalityFor } from './personality';
-import { personalityIdleLine } from './interaction-lines';
+import { profileIdleLine, profilePokeLine } from './personality';
 
 /** character id → idle lines, per language (exactly 10 each) */
 export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
@@ -1943,16 +1942,16 @@ export const CHARACTER_POKE: Record<string, Record<Lang, string[]>> = {
 
 const FALLBACK_LANG: Lang = 'en';
 
-/** Idle line. Shipping cast follows the auto personality; legacy ids keep their bank. */
+/** Idle line. Legacy ids keep their bank; everyone else speaks from their cached voice profile. */
 export function pickIdleLine(characterId: string, lang: Lang, n: number): string {
   const bank = CHARACTER_IDLE[characterId]?.[lang] ?? CHARACTER_IDLE[characterId]?.[FALLBACK_LANG];
   if (bank?.length) return bank[((n % bank.length) + bank.length) % bank.length]!;
-  return personalityIdleLine(personalityFor(characterId), lang, n) || pickLine('idleBored', lang, n);
+  return profileIdleLine(characterId, lang, n) || pickLine('idleBored', lang, n);
 }
 
-/** Deterministic per-character poke reaction; falls back to the generic bank. */
+/** Deterministic per-character poke reaction; falls back to the voice profile. */
 export function pickPokeLine(characterId: string, lang: Lang, n: number): string {
   const bank = CHARACTER_POKE[characterId]?.[lang] ?? CHARACTER_POKE[characterId]?.[FALLBACK_LANG];
   if (bank?.length) return bank[((n % bank.length) + bank.length) % bank.length]!;
-  return pickLine('poke', lang, n);
+  return profilePokeLine(characterId, lang, n, 'torso') || pickLine('poke', lang, n);
 }
