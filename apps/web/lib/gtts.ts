@@ -23,6 +23,7 @@ import { applyPlaybackVolume } from './playback-volume';
 
 import type { Lang } from './prefs';
 import { stripVoicedGlyphs } from './speak-text';
+import { followAudioElement } from './speech';
 
 /** Amoji lang → Google TTS locale */
 const LANG_MAP: Record<Lang, string> = {
@@ -116,7 +117,7 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
   stopGtts();
   const gen = generation;
   const lang = LANG_MAP[opts.lang] ?? 'en-US';
-  const rate = clamp(opts.rate ?? 1, 0.75, 1.3);
+  const rate = clamp(opts.rate ?? 1, 0.88, 1.15);
   // Lead (poke laugh / ouch) is its own chunk. It is not glued on with a
   // comma, and every chunk sets playbackRate itself so the laugh cannot
   // leave the following line fast or pitched.
@@ -182,12 +183,16 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
           reject(new Error('gtts playback failed'));
         });
       };
-      audio.play().then(() => {
+      audio.onplay = () => {
+        const last = i >= pieces.length;
         if (!reportedPlaying) {
           reportedPlaying = true;
           try { opts.onPlaying?.(); } catch { /* ignore */ }
         }
-      }).catch((e: unknown) => {
+        // Later chunks keep the mouth open; only the last one may close it.
+        followAudioElement(audio, last);
+      };
+      audio.play().catch((e: unknown) => {
         settle(() => {
           if (currentAudio === audio) currentAudio = null;
           reject(e instanceof Error ? e : new Error(String(e)));

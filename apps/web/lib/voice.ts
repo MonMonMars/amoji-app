@@ -80,7 +80,7 @@ import { getPlaybackVolume } from './playback-volume';
 import type { Lang } from './prefs';
 import { characterVoiceGender } from './voice-gender';
 import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
-import { cleanForSpeech, stripVoicedGlyphs } from './speak-text';
+import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripVoicedGlyphs } from './speak-text';
 import { synthNameConflicts, synthNameList } from './voice-catalog';
 import { edgeCastVoice } from './edge-cast';
 import { speakEdge, stopEdge, getTtsProxy } from './edge-tts';
@@ -102,7 +102,7 @@ import { speakOpenAi, stopOpenAi, openAiVoiceReady } from './openai-tts';
 import { sfxVoiceHold, sfxVoiceRelease } from './sfx';
 import { dominant, pickInterjection, pickThinkingFiller } from './fillers';
 import { SONG_MELODY } from './songs';
-import { notifySpeaking } from './speech';
+import { endLipSync, finishLipSync, holdLipSync, noteSpeechStarted, notifySpeaking } from './speech';
 import { duckLibraryBed } from './music';
 
 // ---- r2026-10-05.99: media-gate latches -------------------------------------
@@ -293,14 +293,25 @@ let synthPrimed = false;
 let synthGeneration = 0;
 export function primeSynthInGesture(): void {
   if (synthPrimed || typeof speechSynthesis === 'undefined') return;
+  // Latch immediately. This used to re-queue a rate-2, volume-0 blip on every
+  // poke and keydown until a synth onstart, and Chrome kept that rate for the
+  // next real line — the "talking after a poke sounds weird" bug.
+  synthPrimed = true;
   try {
     speechSynthesis.resume();
     const u = new SpeechSynthesisUtterance(' ');
     u.volume = 0;
     u.pitch = 1;
     u.rate = 1;
+    u.lang = 'en-US';
+    u.onerror = (e) => {
+      const err = (e as SpeechSynthesisErrorEvent).error;
+      if (err !== 'interrupted' && err !== 'canceled') synthPrimed = false;
+    };
     speechSynthesis.speak(u);
-  } catch { /* ignore */ }
+  } catch {
+    synthPrimed = false;
+  }
 }
 
 if (typeof window !== 'undefined') {
@@ -1087,13 +1098,38 @@ export function setNeuralEnabled(on: boolean): void {
   if (!on) stopEdge();
 }
 
+let synthKeepAlive: ReturnType<typeof setInterval> | null = null;
+let lipHold: ReturnType<typeof setInterval> | null = null;
+
+function clearSynthKeepAlive(): void {
+  if (synthKeepAlive) { clearInterval(synthKeepAlive); synthKeepAlive = null; }
+}
+
+function clearLipHold(): void {
+  if (lipHold) { clearInterval(lipHold); lipHold = null; }
+}
+
+/**
+ * Drop the browser queue. cancel() alone leaves Chrome paused and often
+ * keeps the cancelled utterance's rate/pitch, so the next line squeaks.
+ * Bumping the generation retires any chained pump still in flight.
+ */
+function haltSynthQueue(): void {
+  synthGeneration += 1;
+  clearSynthKeepAlive();
+  clearLipHold();
+  if (typeof speechSynthesis === 'undefined') return;
+  try { speechSynthesis.cancel(); } catch { /* ignore */ }
+  try { speechSynthesis.resume(); } catch { /* ignore */ }
+}
+
 export function stopSpeaking(): void {
-  synthGeneration++;
   stopThinkingSound();
   stopOpenAi();
   stopEdge();
   stopGtts();
-  if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+  haltSynthQueue();
+  endLipSync();
 }
 
 /**
@@ -1135,6 +1171,9 @@ export function speak(
   // string back into history.
   text = cleanForSpeech(text);
   if (!text || !voiceEnabled()) return;
+  // One voice at a time. A poke that fell through to the browser (or the
+  // gesture prime) used to keep speaking under the next chat line.
+  stopSpeaking();
   // r111: remember the line for gesture-gate replay
   const attemptAt = Date.now();
   lastSpeak = { text, characterId, lang, emotionHints, leadOverride, intensity, at: attemptAt };
@@ -1176,11 +1215,11 @@ export function speak(
   const amp = 1 + 0.5 * Math.max(0, intensity - 1);
   // strong feelings get an audible tic (giggle/sigh/gasp) before the words —
   // unless the caller supplies its own lead (e.g. a guaranteed poke ouch)
-  const rawLead = leadOverride ?? pickInterjection(emotion, value, lang);
-  const leadText = rawLead ? cleanForSpeech(rawLead.text) : '';
-  // Poke laughs and other leads use the same cleaner as the line. An empty
-  // lead (punctuation only) is dropped so it cannot change the voice.
-  const tic = rawLead && leadText ? { ...rawLead, text: leadText } : undefined;
+  const tic = leadOverride
+    ? prepareSpokenLead(leadOverride)
+    : prepareSpokenLead(pickInterjection(emotion, value, lang));
+  const heard = tic ? `${tic.text} ${text}` : text;
+  const onHeard = () => { noteSpeechStarted(heard); };
 
   // Free chain: Edge (locale + gender) → speechSynthesis. Yue adds
   // canto-tts-nano only when that runtime is bundled. OpenAI is opt-in and
@@ -1231,7 +1270,7 @@ export function speak(
           rateDelta: clamp(np.rate * exprScale * amp, -0.4, 0.5),
           pitchDelta: clamp(np.pitch * exprScale * amp, -0.3, 0.4),
           volumeDelta: clamp(np.vol * exprScale * amp, -0.5, 0.5),
-          onPlaying: () => { markVoiceStarted(); reportVoiceStatus('edge', true, 'neural voice playing'); },
+          onPlaying: () => { onHeard(); markVoiceStarted(); reportVoiceStatus('edge', true, 'neural voice playing'); },
         });
       } catch (err) {
         tier1 = Promise.reject(err instanceof Error ? err : new Error(String(err)));
@@ -1257,7 +1296,7 @@ export function speak(
         character: characterId,
         emotion,
         expressiveness: expr,
-        onPlaying: () => { markVoiceStarted(); reportVoiceStatus('openai', true, 'chatgpt voice playing'); },
+        onPlaying: () => { onHeard(); markVoiceStarted(); reportVoiceStatus('openai', true, 'chatgpt voice playing'); },
       });
     } catch (err) {
       tier0 = Promise.reject(err instanceof Error ? err : new Error(String(err)));
@@ -1288,6 +1327,7 @@ export function sing(text: string, characterId: string, lang: Lang): void {
   stopThinkingSound();
   text = cleanForSpeech(text);
   if (!text || !voiceEnabled()) return;
+  stopSpeaking();
   unlockAudio();
   const expr = EXPRESSIVENESS[characterId] ?? 1;
   if (neuralEnabled() && typeof WebSocket !== 'undefined') {
@@ -1302,7 +1342,7 @@ export function sing(text: string, characterId: string, lang: Lang): void {
         rateDelta: -0.06,
         pitchDelta: 0.02,
         // r100: singing counts too — a started song marks the voice started
-        onPlaying: () => { markVoiceStarted(); reportVoiceStatus('edge', true, 'neural voice playing (singing)'); },
+        onPlaying: () => { noteSpeechStarted(text); markVoiceStarted(); reportVoiceStatus('edge', true, 'neural voice playing (singing)'); },
       });
     } catch (err) {
       tier1 = Promise.reject(err instanceof Error ? err : new Error(String(err)));
@@ -1381,10 +1421,11 @@ function probeSynth(text: string, characterId: string, lang: Lang): Promise<bool
   return new Promise<boolean>((resolve) => {
     if (typeof speechSynthesis === 'undefined') { resolve(false); return; }
     const { voice, pitch, rate } = pickVoice(characterId, lang);
+    const shaped = clampBrowserProsody(pitch, rate);
     const u = new SpeechSynthesisUtterance(stripVoicedGlyphs(text) || text);
-    if (voice) u.voice = voice;
-    u.pitch = clamp(pitch, 0.4, 2);
-    u.rate = clamp(rate, 0.6, 1.6);
+    bindSynthVoice(u, voice, speechLocale(lang));
+    u.pitch = shaped.pitch;
+    u.rate = shaped.rate;
     let started = false;
     let done = false;
     const finish = (ok: boolean) => {
@@ -1392,7 +1433,7 @@ function probeSynth(text: string, characterId: string, lang: Lang): Promise<bool
       done = true;
       clearInterval(nudge);
       clearTimeout(giveUp);
-      try { speechSynthesis.cancel(); } catch { /* ignore */ }
+      haltSynthQueue();
       resolve(ok);
     };
     const nudge = setInterval(() => { try { speechSynthesis.resume(); } catch { /* ignore */ } }, 400);
@@ -1543,20 +1584,22 @@ export async function testOpenAiVoice(characterId: string, lang: Lang): Promise<
   }
 }
 
-function synthLangTag(voice: SpeechSynthesisVoice | null, lang: Lang): string {
-  return voice?.lang ?? (lang === 'yue' ? 'zh-HK' : lang === 'zh' ? 'zh-CN' : lang === 'ja' ? 'ja-JP' : 'en-US');
+function bindSynthVoice(u: SpeechSynthesisUtterance, voice: SpeechSynthesisVoice | null, locale: string): void {
+  u.lang = locale;
+  if (!voice) return;
+  const voiceLang = voice.lang.replace(/_/g, '-').toLowerCase();
+  if (voiceLang.startsWith(locale.toLowerCase())) u.voice = voice;
 }
 
 /** Silent utterance that puts pitch, rate, and voice back to the character default. */
-function restoreSynthEngine(gen: number, voice: SpeechSynthesisVoice | null, langTag: string): void {
+function restoreSynthEngine(gen: number, voice: SpeechSynthesisVoice | null, locale: string): void {
   if (gen !== synthGeneration || typeof speechSynthesis === 'undefined') return;
   try {
     const r = new SpeechSynthesisUtterance(' ');
     r.volume = 0;
     r.pitch = 1;
     r.rate = 1;
-    if (voice) r.voice = voice;
-    r.lang = langTag;
+    bindSynthVoice(r, voice, locale);
     speechSynthesis.speak(r);
   } catch { /* ignore */ }
 }
@@ -1572,159 +1615,159 @@ function synthSpeak(
   melody?: number[],
 ): void {
   if (typeof speechSynthesis === 'undefined') return;
-  const gen = ++synthGeneration;
-  speechSynthesis.cancel(); // one speaker at a time
+  haltSynthQueue();
+  const gen = synthGeneration;
 
   const { voice, pitch: basePitch, rate: baseRate } = pickVoice(characterId, lang);
+  const locale = speechLocale(lang);
   const em = EMOTION_PROSODY[emotion] ?? EMOTION_PROSODY['neutral']!;
   // amplify the multipliers around 1 so intensity 1 is an exact no-op
-  // (joy 1.2 → 1.25 at intensity 1.5; sadness 0.78 → 0.725 sinks further)
   const emPitch = 1 + (em.pitch - 1) * amp;
   const emRate = 1 + (em.rate - 1) * amp;
   const emVol = 1 + (em.vol - 1) * amp;
-  const pitch = clamp(basePitch * emPitch, 0.4, 2);
-  const rate = clamp(baseRate * emRate, 0.6, 1.6);
+  const shaped = clampBrowserProsody(basePitch * emPitch, baseRate * emRate);
+  const pitch = shaped.pitch;
+  const rate = shaped.rate;
   const vol = clamp(emVol * getPlaybackVolume(), 0.05, 1);
-  const langTag = synthLangTag(voice, lang);
 
-  const parts = clauses(text);
+  const parts = clauses(text).filter(isSpeakableText);
   const utterances: SpeechSynthesisUtterance[] = [];
-  // Warm contour: statements drift down then settle; questions rise at the tail.
-  // With a melody set, each clause instead rides one note of the tune (r.40).
-  // The laugh/ouch lead is NOT in this queue — browsers apply the first
-  // utterance's pitch and rate to the whole queue, which left the line after
-  // a poke stuck in the laugh voice.
+  const leadSpoken = tic ? stripVoicedGlyphs(tic.text) : '';
+  if (leadSpoken && tic) {
+    const t = new SpeechSynthesisUtterance(leadSpoken);
+    bindSynthVoice(t, voice, locale);
+    const laugh = clampLaughDelivery(pitch * (1 + tic.pitch), rate * (1 + tic.rate));
+    t.pitch = laugh.pitch;
+    t.rate = laugh.rate;
+    t.volume = vol;
+    utterances.push(t);
+  }
+  // One utterance at a time. Queueing the laugh with the line made Chrome
+  // keep the laugh pitch for every clause, and for the chat line after.
   const rising = /[？?]\s*$/.test(text);
   parts.forEach((part, i) => {
     const spoken = stripVoicedGlyphs(part);
     if (!spoken) return;
     const u = new SpeechSynthesisUtterance(spoken);
-    if (voice) u.voice = voice;
-    u.lang = langTag;
+    bindSynthVoice(u, voice, locale);
     if (melody && melody.length > 0) {
       const note = melody[i % melody.length]!;
-      u.pitch = clamp(pitch * (1 + note), 0.4, 2);
-      u.rate = clamp(rate * 0.94, 0.6, 1.6);
+      const sung = clampBrowserProsody(pitch * (1 + note), rate * 0.94);
+      u.pitch = sung.pitch;
+      u.rate = sung.rate;
       u.volume = vol;
       utterances.push(u);
       return;
     }
     const contour = parts.length > 1
-      ? 1 + 0.06 * expr * Math.sin((i / (parts.length - 1)) * Math.PI * (rising ? 1 : 0.7))
+      ? 1 + 0.04 * expr * Math.sin((i / (parts.length - 1)) * Math.PI * (rising ? 1 : 0.7))
       : 1;
     const isTail = i === parts.length - 1;
-    const tailLift = isTail && rising ? 1.12 : isTail && !rising ? 0.94 : 1;
-    u.pitch = clamp(pitch * contour * tailLift, 0.4, 2);
-    u.rate = isTail ? clamp(rate * 0.96, 0.6, 1.6) : rate;
+    const tailLift = isTail && rising ? 1.06 : isTail && !rising ? 0.97 : 1;
+    const delivered = clampBrowserProsody(pitch * contour * tailLift, isTail ? rate * 0.98 : rate);
+    u.pitch = delivered.pitch;
+    u.rate = delivered.rate;
     u.volume = vol;
     utterances.push(u);
   });
-  const leadSpoken = tic ? stripVoicedGlyphs(tic.text) : '';
-  let pumpCount = 0;
-  let drained = false;
-  let lineStarted = false;
-  // r99: WebKit pauses the engine mid-queue (background tab, iOS audio-session
-  // handoffs) — a gentle resume() every beat keeps the line draining until
-  // the last utterance actually ends.
-  let keepAlive: ReturnType<typeof setInterval> | null = null;
-  const stopKeepAlive = () => {
-    if (keepAlive) { clearInterval(keepAlive); keepAlive = null; }
+  if (!utterances.length) return;
+
+  let index = 0;
+  let started = false;
+  let retries = 0;
+  let liveLip = 0;
+
+  const armKeepAlive = () => {
+    if (gen !== synthGeneration || synthKeepAlive) return;
+    // Resume only while the engine is actually paused. An unconditional
+    // resume() restarts the current utterance on Chrome and stacks clips.
+    synthKeepAlive = setInterval(() => {
+      if (gen !== synthGeneration) { clearSynthKeepAlive(); return; }
+      try { if (speechSynthesis.paused) speechSynthesis.resume(); } catch { /* ignore */ }
+    }, 900);
   };
-  const finishLine = () => {
-    if (drained || gen !== synthGeneration) return;
-    drained = true;
-    stopKeepAlive();
-    restoreSynthEngine(gen, voice, langTag);
+
+  const armLipHold = () => {
+    if (gen !== synthGeneration || lipHold) return;
+    lipHold = setInterval(() => {
+      if (gen !== synthGeneration || !liveLip) { clearLipHold(); return; }
+      holdLipSync(liveLip, 900);
+    }, 320);
   };
-  const pump = () => {
+
+  const closeMouth = () => {
+    clearLipHold();
+    if (liveLip) finishLipSync(liveLip);
+  };
+
+  const speakOne = () => {
     if (gen !== synthGeneration) return;
-    pumpCount += 1;
-    // r97: Android (and desktop Chrome after a cancel) can leave the engine
-    // suspended — nudge it awake before every pump
-    try { speechSynthesis.resume(); } catch { /* ignore */ }
-    if (utterances.length === 0) { finishLine(); return; }
-    let live = 0;
-    for (const u of utterances) {
-      // r100: onstart is the one honest signal that browser audio actually
-      // began — only it may mark the voice started (never a mere enqueue).
-      u.onstart = () => {
-        lineStarted = true;
-        markVoiceStarted();
-        synthPrimed = true; // r102: the engine genuinely started audio — no more priming
-        reportVoiceStatus('synth', true, 'browser voice started');
-      };
-      // r2026-10-04.75: surface real failures (autoplay block, no voice, engine
-      // error) as `amoji:voice-blocked`; ignore the benign cancel() churn from
-      // stopSpeaking() cutting a line short.
-      u.onerror = (e) => {
-        live -= 1;
-        const err = (e as SpeechSynthesisErrorEvent).error;
-        if (err !== 'interrupted' && err !== 'canceled') reportVoiceBlocked('synth');
-        if (err === 'not-allowed') armGestureReplay('synth not-allowed');
-        if (live <= 0) finishLine();
-      };
-      u.onend = () => {
-        live -= 1;
-        if (live <= 0) finishLine();
-      };
-      live += 1;
-      speechSynthesis.speak(u);
+    if (index >= utterances.length) {
+      clearSynthKeepAlive();
+      closeMouth();
+      restoreSynthEngine(gen, voice, locale);
+      return;
     }
-    if (live > 0 && keepAlive === null) {
-      keepAlive = setInterval(() => { try { speechSynthesis.resume(); } catch { /* ignore */ } }, 900);
-    }
-    // r97 watchdog: Chromium and WebKit both silently drop utterances pumped
-    // right after a cancel() — the same-tick cancel-drop was never iOS-only.
-    // If nothing is speaking or pending shortly after the pump, the drop
-    // happened: pump once more (exactly once, so a genuinely broken engine
-    // can never loop).
-    setTimeout(() => {
-      try {
-        // A short poke line can finish inside this window. Only retry when
-        // the engine dropped the queue before any audio started.
-        if (!lineStarted && gen === synthGeneration && pumpCount === 1 && !speechSynthesis.speaking && !speechSynthesis.pending) pump();
-      } catch { /* ignore */ }
-    }, 600);
-  };
-  const pumpLeadThenLine = () => {
-    if (gen !== synthGeneration) return;
-    if (!leadSpoken || !tic) { pump(); return; }
-    const t = new SpeechSynthesisUtterance(leadSpoken);
-    if (voice) t.voice = voice;
-    t.lang = langTag;
-    t.pitch = clamp(pitch * (1 + tic.pitch), 0.4, 2);
-    t.rate = clamp(rate * (1 + tic.rate), 0.6, 1.6);
-    t.volume = vol;
-    let leadDone = false;
-    const afterLead = () => {
-      if (leadDone || gen !== synthGeneration) return;
-      leadDone = true;
-      pump();
+    const u = utterances[index]!;
+    const last = index === utterances.length - 1;
+    let settled = false;
+    const finish = (advance: boolean) => {
+      if (settled || gen !== synthGeneration) return;
+      settled = true;
+      if (!advance) {
+        clearSynthKeepAlive();
+        closeMouth();
+        return;
+      }
+      index += 1;
+      if (!last) holdLipSync(liveLip, 700);
+      speakOne();
     };
-    t.onstart = () => {
+    u.onstart = () => {
+      if (gen !== synthGeneration) return;
+      if (!started) {
+        liveLip = noteSpeechStarted(tic ? `${tic.text} ${text}` : text);
+        armLipHold();
+      }
+      started = true;
       markVoiceStarted();
       synthPrimed = true;
       reportVoiceStatus('synth', true, 'browser voice started');
+      armKeepAlive();
     };
-    t.onend = () => afterLead();
-    t.onerror = (e) => {
+    u.onerror = (e) => {
+      if (gen !== synthGeneration) return;
       const err = (e as SpeechSynthesisErrorEvent).error;
-      if (err === 'interrupted' || err === 'canceled') return;
+      if (err === 'interrupted' || err === 'canceled') {
+        finish(false);
+        return;
+      }
       reportVoiceBlocked('synth');
       if (err === 'not-allowed') armGestureReplay('synth not-allowed');
-      afterLead();
+      finish(false);
     };
-    try { speechSynthesis.resume(); } catch { /* ignore */ }
-    speechSynthesis.speak(t);
+    u.onend = () => finish(true);
+    try { if (speechSynthesis.paused) speechSynthesis.resume(); } catch { /* ignore */ }
+    speechSynthesis.speak(u);
+  };
+
+  const pump = () => {
+    if (gen !== synthGeneration) return;
+    speakOne();
+    // Chromium and WebKit drop an utterance pumped in the same beat as
+    // cancel(). One retry, and only if this line is still the current one.
     setTimeout(() => {
-      if (leadDone || gen !== synthGeneration) return;
+      if (gen !== synthGeneration || started || retries >= 1) return;
       try {
-        if (!speechSynthesis.speaking && !speechSynthesis.pending) afterLead();
+        if (!speechSynthesis.speaking && !speechSynthesis.pending) {
+          retries += 1;
+          index = 0;
+          speakOne();
+        }
       } catch { /* ignore */ }
     }, 600);
   };
-  // r97: defer the pump one beat on EVERY platform. r85's defer guarded only
-  // iOS, but pumping synchronously in the same tick as cancel() drops the
-  // utterance on Chrome and Android too — 120ms is enough separation everywhere.
-  setTimeout(pumpLeadThenLine, 120);
+  // Defer one beat after cancel() on every platform — same-tick speak() is
+  // dropped, and it is also how a cancelled rate used to stick.
+  setTimeout(pump, 120);
 }
