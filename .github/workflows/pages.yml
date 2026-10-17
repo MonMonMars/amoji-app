@@ -33,6 +33,9 @@ jobs:
           AMOJI_EXPORT: "1"
           AMOJI_BASE_PATH: /amoji-app
           NEXT_PUBLIC_BASE_PATH: /amoji-app
+          # Optional public Edge relay (Actions variable, not a secret). Empty → direct socket.
+          NEXT_PUBLIC_TTS_PROXY: ${{ vars.AMOJI_TTS_PROXY }}
+          NEXT_PUBLIC_EDGE_TTS_TOKEN: ${{ vars.AMOJI_EDGE_TTS_TOKEN }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: apps/web/out

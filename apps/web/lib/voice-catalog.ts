@@ -1,12 +1,13 @@
-// Locale → engine → voice. Shipping path is Edge neural, then the browser
-// speechSynthesis list. Kokoro / Piper / Melo / Bark are kept so English,
-// Japanese, and Mandarin can pick them up later — weights are not in this
-// repo, so they are not called at runtime. NC licenses (Coqui CPML, Fish, F5)
-// are listed as skipped and never selected.
+// Locale → engine → voice for the four languages the app speaks (yue, zh, ja, en).
+// Shipping path is Edge neural selected by locale + gender, then speechSynthesis.
+// Kokoro / Piper / Melo / Bark stay in the map for later — weights are not in
+// this repo, so they are not called. canto-tts-nano is the same: a Yue note
+// only, skipped until a local build exists. NC licenses (Coqui CPML, Fish, F5)
+// and the held GPU models are never selected.
 
 export type VoiceLocale = 'yue' | 'zh' | 'ja' | 'en';
 export type VoiceGender = 'female' | 'male';
-export type VoiceEngine = 'edge' | 'speech' | 'kokoro' | 'piper' | 'melotts' | 'bark';
+export type VoiceEngine = 'edge' | 'speech' | 'kokoro' | 'piper' | 'melotts' | 'bark' | 'canto-nano';
 
 export interface VoiceOption {
   locale: VoiceLocale;
@@ -30,6 +31,8 @@ export const VOICE_CATALOG: readonly VoiceOption[] = [
   { locale: 'yue', engine: 'speech', gender: 'female', id: 'Sin-ji', shipping: true, license: 'browser', latency: 'low', notes: 'Apple Cantonese female.' },
   { locale: 'yue', engine: 'speech', gender: 'female', id: '粤語', shipping: true, license: 'browser', latency: 'low', notes: 'Google 粤語（香港）name match.' },
   { locale: 'yue', engine: 'speech', gender: 'male', id: 'WanLung', shipping: true, license: 'browser', latency: 'low', notes: 'Microsoft WanLung when installed.' },
+  { locale: 'yue', engine: 'canto-nano', gender: 'female', id: 'canto-tts-nano', shipping: false, license: 'not bundled', latency: 'mid', notes: 'Not in repo. Yue hop after Edge zh-HK and Web Speech when a local build is added.' },
+  { locale: 'yue', engine: 'canto-nano', gender: 'male', id: 'canto-tts-nano', shipping: false, license: 'not bundled', latency: 'mid', notes: 'Not in repo. Same skip as the female row.' },
 
   { locale: 'zh', engine: 'edge', gender: 'female', id: 'zh-CN-XiaoxiaoNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Default Mandarin female.' },
   { locale: 'zh', engine: 'edge', gender: 'male', id: 'zh-CN-YunjianNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Default Mandarin male.' },
@@ -75,6 +78,20 @@ export const SKIPPED_ENGINES: readonly { engine: string; license: string; notes:
   { engine: 'coqui', license: 'CPML', notes: 'Non-commercial. Not shipped.' },
   { engine: 'fish-speech', license: 'CC-BY-NC', notes: 'Non-commercial. Not shipped.' },
   { engine: 'f5-tts', license: 'CC-BY-NC', notes: 'Non-commercial. Not shipped.' },
+];
+
+/**
+ * Research hold. Do not host these in the free wire-now path. Kokoro and
+ * MeloTTS may appear above as non-shipping stubs; the others are not even
+ * selectable.
+ */
+export const HELD_GPU_ENGINES: readonly { engine: string; notes: string }[] = [
+  { engine: 'voxcpm2', notes: 'Hold for a later GPU host. Not called.' },
+  { engine: 'chatterbox', notes: 'Hold for a later GPU host. Not called.' },
+  { engine: 'cosyvoice', notes: 'Hold for a later GPU host. Not called.' },
+  { engine: 'qwen3-tts', notes: 'Hold for a later GPU host. Not called.' },
+  { engine: 'kokoro', notes: 'Catalog stub only. Weights are not bundled.' },
+  { engine: 'melotts', notes: 'Catalog stub only. Weights are not bundled.' },
 ];
 
 /** Locale → every retained option (shipping and later), in catalog order. */

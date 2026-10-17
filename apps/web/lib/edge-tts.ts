@@ -81,8 +81,15 @@ export interface EdgeVoiceOpts {
   melody?: number[];
 }
 
-const TRUSTED_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
+// Public read-aloud client token from the edge-tts project. Not an API key.
+// NEXT_PUBLIC_EDGE_TTS_TOKEN overrides it if Microsoft rotates the public value.
+const PUBLIC_EDGE_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
 const WS_BASE = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
+
+export function edgeClientToken(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_EDGE_TTS_TOKEN?.trim();
+  return fromEnv || PUBLIC_EDGE_TOKEN;
+}
 
 /** gender fallback when a character isn't in the cast */
 const VOICES: Record<string, { female: string; male: string; ssmlLang: string }> = {
@@ -126,7 +133,8 @@ const CAST: Record<string, Record<string, string>> = {
   hitomi:  { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoxiaoNeural', ja: 'ja-JP-NanamiNeural', en: 'en-US-MichelleNeural' },
 };
 
-function voiceFor(opts: EdgeVoiceOpts): { name: string; ssmlLang: string } {
+/** Locale + gender → Edge neural voice. Character id supplies gender for the cast. */
+export function resolveEdgeVoice(opts: EdgeVoiceOpts): { name: string; ssmlLang: string } {
   const v = VOICES[opts.lang] ?? VOICES.en!;
   const gender = opts.character ? characterVoiceGender(opts.character) : opts.gender;
   let name = edgeVoiceId(opts.lang, gender);
@@ -286,24 +294,51 @@ export function edgeTtsPossible(): boolean {
 // mp3, so the neural voice survives those networks. Deploy server/amoji-proxy/
 // (a free Cloudflare Worker) and point this at it; unset → direct socket.
 const PROXY_KEY = 'amoji.ttsproxy.v1';
-let proxyOverride: string | null | undefined; // undefined = read storage
+let proxyOverride: string | null | undefined; // undefined = read storage, then env
+
+/** Empty or whitespace → no proxy (direct Edge socket). Strips a trailing slash. */
+export function normalizeProxyUrl(url: string | null | undefined): string | null {
+  const v = (url ?? '').trim();
+  if (!v) return null;
+  return v.replace(/\/+$/, '');
+}
+
+/**
+ * Session override wins, including an explicit clear (null). Otherwise a
+ * saved localStorage URL. Otherwise NEXT_PUBLIC_TTS_PROXY from .env.local
+ * or the Pages build. A cleared value does not resurrect the env URL.
+ */
+export function resolveTtsProxy(
+  override: string | null | undefined,
+  stored: string | null,
+  env: string | undefined,
+): string | null {
+  if (override !== undefined) return normalizeProxyUrl(override);
+  if (stored !== null) return normalizeProxyUrl(stored);
+  return normalizeProxyUrl(env);
+}
 
 export function setTtsProxy(url: string | null): void {
-  proxyOverride = url;
+  proxyOverride = normalizeProxyUrl(url);
   try {
-    if (typeof localStorage !== 'undefined') localStorage.setItem(PROXY_KEY, url ?? '');
+    if (typeof localStorage !== 'undefined') localStorage.setItem(PROXY_KEY, proxyOverride ?? '');
   } catch { /* ignore */ }
 }
 
 export function getTtsProxy(): string | null {
-  if (proxyOverride !== undefined) return proxyOverride;
+  let stored: string | null = null;
+  let sawStorage = false;
   try {
     if (typeof localStorage !== 'undefined') {
-      const v = localStorage.getItem(PROXY_KEY);
-      return v ? v : null;
+      sawStorage = true;
+      stored = localStorage.getItem(PROXY_KEY);
     }
   } catch { /* ignore */ }
-  return null;
+  return resolveTtsProxy(
+    proxyOverride,
+    sawStorage ? stored : null,
+    process.env.NEXT_PUBLIC_TTS_PROXY,
+  );
 }
 
 /**
@@ -316,7 +351,7 @@ export function getTtsProxy(): string | null {
  * attribute; ja voices ship no styles at all and stay prosody-only).
  */
 export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
-  const voice = voiceFor(opts);
+  const voice = resolveEdgeVoice(opts);
   const expr = clamp(opts.expressiveness ?? 1, 0.5, 1.8);
   const baseRate = opts.rateDelta ?? 0;
   const basePitch = opts.pitchDelta ?? 0;
@@ -462,7 +497,7 @@ function speakEdgeViaSocket(ssml: string, opts: EdgeVoiceOpts): Promise<void> {
 
     let ws: WebSocket;
     try {
-      ws = new WebSocket(`${WS_BASE}?TrustedClientToken=${TRUSTED_TOKEN}&ConnectionId=${guid()}`);
+      ws = new WebSocket(`${WS_BASE}?TrustedClientToken=${edgeClientToken()}&ConnectionId=${guid()}`);
     } catch (err) {
       reject(err instanceof Error ? err : new Error(String(err)));
       return;
