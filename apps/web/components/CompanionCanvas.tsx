@@ -13,9 +13,10 @@ import { type MoveKind } from '../lib/moves';
 import { PROPS, propsForMove, propPresence, type PropDef, type PropPart } from '../lib/props';
 import { characterById } from '../lib/prefs';
 import { modelUrl } from '../lib/asset';
-import { pokeStyleFor, pokeModeFor, poseIdsFor, lookFor } from '../lib/persona';
+import { pokeStyleFor, poseIdsFor, lookFor } from '../lib/persona';
 import { orderIdleClips, personalityMotion } from '../lib/personality';
-import { classifyPoke } from '../lib/poke-hit';
+import { classifyPoke, pokeBodyReaction } from '../lib/poke-hit';
+import { clipFreesFeet, collectPlantRest, pinPlantedClipTracks } from '../lib/vrm/plant-feet';
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
 import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
@@ -454,10 +455,6 @@ export default function CompanionCanvas({
     // subset of the pose library instead of the full shared catalog.
     const poseSubset = posesByIds(poseIdsFor(seedKey ?? 'juno'));
     const poke = pokeStyleFor(seedKey ?? 'juno');
-    // r83 (Master Simon): humans take the poke as SKELETON recoil — mesh
-    // squash-deform reads as rubber on a realistic body. Only the chibi cast
-    // (mochi) keeps the deform squash, where cartoon physics is the look.
-    const pokeMode = pokeModeFor(seedKey ?? 'juno');
     // r2026-10-03.28: per-character look — the shared open-license VRM gets a
     // gentle palette tint and an individual build (height/shoulders), so each
     // character reads as her/his own person in the 3D scene.
@@ -548,6 +545,7 @@ export default function CompanionCanvas({
     const clipAnimatedBones = new Set<string>();
     let idleAction: THREE.AnimationAction | null = null;
     let perfAction: THREE.AnimationAction | null = null;
+    let perfClipId: string | null = null;
     let idleOrder: string[] = [];
     let idleClipId = '';
     let thinkMiss = false;
@@ -635,6 +633,7 @@ export default function CompanionCanvas({
       if (!mixer) return;
       const clip = clips.get(name);
       if (!clip) return;
+      perfClipId = name;
       beginBoneBlend(0.7);
       const action = mixer.clipAction(clip);
       action.timeScale = personalityMotion(seedKey ?? '', gender).timeScale;
@@ -660,6 +659,7 @@ export default function CompanionCanvas({
         if (e.action === perfAction) {
           // a one-shot performance ended → glide back into the idle playlist
           perfAction = null;
+          perfClipId = null;
           nextIdle(FADE.perfEnd);
         }
         // r93: idles never "finish" — they loop until the swap timer hands
@@ -713,6 +713,16 @@ export default function CompanionCanvas({
       const hipsNode = vrm.humanoid?.getNormalizedBoneNode('hips') ?? null;
       const hipsRestQ = hipsNode ? hipsNode.quaternion.clone() : null;
       const hipsRestP = hipsNode ? hipsNode.position.clone() : null;
+      // Hips + both legs, captured while the rig is still at rest. Non-walk
+      // / non-jump clips get these tracks pinned so idle knee-bends cannot
+      // hover the soles.
+      const plantRest = collectPlantRest((name) => {
+        try {
+          return vrm.humanoid?.getNormalizedBoneNode(name as 'hips') ?? null;
+        } catch {
+          return null;
+        }
+      });
       // r94 (Master Simon): "she keeps floating up and down — keep her feet
       // on the ground". Many library idles carry breathing/bounce keys on
       // the hips Y that read as floating. Idle loops get their hips HEIGHT
@@ -783,22 +793,12 @@ export default function CompanionCanvas({
           } else if (track.name.endsWith('.position')) {
             const p0x = v[0]!, p0z = v[2]!;
             if (lockFeet) {
-              // r94: idles never ride the hips Y — feet stay planted on the
-              // floor through every idle loop
+              // Idles keep the hips parked on the rest pose. X/Z sway used
+              // to drag both feet across the floor.
               for (let i = 0; i + 2 < v.length; i += 3) {
-                // r102: X/Z sway survives but can never migrate — clamp the
-                // horizontal DELTA around our rest hips position
-                let dx = v[i]! - p0x;
-                let dz = v[i + 2]! - p0z;
-                const h = Math.hypot(dx, dz);
-                if (h > HORIZ_TRAVEL_MAX) {
-                  const s = HORIZ_TRAVEL_MAX / h;
-                  dx *= s;
-                  dz *= s;
-                }
-                v[i] = dx + hipsRestP.x;
+                v[i] = hipsRestP.x;
                 v[i + 1] = hipsRestP.y;
-                v[i + 2] = dz + hipsRestP.z;
+                v[i + 2] = hipsRestP.z;
               }
             } else {
               // r98: performances keep their REAL Y motion (hops, dips,
@@ -895,6 +895,7 @@ export default function CompanionCanvas({
               // r94: idle loops pin the hips height (no floating);
               // r98: performances normalize their root-Y onto our rest too
               rebaseClipHips(clip, IDLE_IDS.has(src.id));
+              if (!clipFreesFeet(src.id)) pinPlantedClipTracks(clip, plantRest);
               if (clip.tracks.length) clips.set(src.id, clip);
               // r103: record which bones this clip drives, so the avatar can
               // leave them to the mixer. Track names arrive as PropertyBinding
@@ -1095,8 +1096,6 @@ export default function CompanionCanvas({
     let lastEmptyTap = -Infinity;
     // r115: which body zone the current poke reaction belongs to
     let pokeZone: 'head' | 'torso' | 'chest' | 'side' | 'back' = 'torso';
-    let pokePush = 0.34;
-    let pokeSway = 0;
     let pokeSideSign = 1;
     // Push direction comes from the hit vs the character's facing.
     const pokeFallDir = new THREE.Vector3(0, 0, -1);
@@ -1293,9 +1292,6 @@ export default function CompanionCanvas({
             pokeZone = cls.zone;
             pokeFallDir.set(cls.impulse.x, 0, cls.impulse.z);
             pokeSideSign = cls.sideSign;
-            const femaleChest = cls.zone === 'chest' && gender === 'female';
-            pokePush = femaleChest ? 0.12 : cls.zone === 'head' ? 0.16 : 0.34;
-            pokeSway = femaleChest ? (cls.sideSign || 1) : 0;
           }
           beginBoneBlend(0.65);
           onPokeRef.current?.(pokeZone);
@@ -1356,104 +1352,48 @@ export default function CompanionCanvas({
       // simply stays in its library idle. The skeleton is never rotated by
       // formula. Stage props (piano, mic…) still ride the move clock.
       if (avatar) {
-        // r83: the poke reaction has TWO engines, picked per character:
-        //   · human (skeleton): NO mesh squash — the SKELETON takes the hit.
-        //     The torso whips back (spine, then chest a beat later), the head
-        //     snaps with a tiny shiver, the shoulders lift and the elbows
-        //     fold — all folded into the pose targets below and routed
-        //     through the human joint limits. The root only carries the
-        //     push-back translation (physics, not deform): she is literally
-        //     shoved away from your finger.
-        //   · chibi (deform): the classic squash-bounce — cartoon physics,
-        //     which is exactly what reads right on a tiny round character.
-        // laugh reaction: rhythmic belly-bounce giggle, head thrown back (~1.6s).
+        // Poke and laugh stay on the upper body. The root never translates,
+        // scales, or tips — that used to slide and lift both feet.
         const pokeAge = now - pokeAt;
         const boost = pokeAge < 900 ? 1 - pokeAge / 900 : 0;
         const laughAge = now - lastLaughAt();
         const laugh = laughAge >= 0 && laughAge < 1600 ? 1 - laughAge / 1600 : 0;
-        // skeleton-flinch offsets (skeleton poke mode only)
         let skSpine = 0, skChest = 0, skHeadX = 0, skHeadZ = 0;
+        let skSpineY = 0, skChestZ = 0;
         let skLArm = 0, skRArm = 0, skLElb = 0, skRElb = 0, skLUp = 0, skRUp = 0;
-        if (boost > 0 || laugh > 0) {
-          let px = 0, py = 0, pz = 0;
-          let sx = 1, sy = 1, sz = 1;
-          let rotX = 0, rotY = 0;
-          if (boost > 0) {
-            const t = 1 - boost; // 0→1 through the reaction
-            const arc = Math.sin(t * Math.PI); // squash-bounce belly
-            const press = Math.min(t / 0.07, 1) * Math.exp(-Math.max(0, t - 0.07) * 4); // shove out, ease home
-            const wobble = 0.04 * Math.exp(-t * 4.5) * Math.sin(t * 26); // spring settle
-            pz += wobble;
-            px += pokeFallDir.x * pokePush * press;
-            pz += pokeFallDir.z * pokePush * press;
-            py -= 0.06 * arc; // knees dip
-            if (pokeMode === 'deform') {
-              // chibi only: cartoon squash, physics by rubber
-              sx += 0.07 * arc;
-              sy -= poke.squash * 1.4 * arc;
-              sz += 0.05 * arc;
-              rotX += -0.16 * arc; // lean back from the poke
-              rotY += (TWIST_AMOUNT[poke.twist] ?? 0.05) * 1.6 * Math.sin(t * Math.PI * 2);
-              rotY += pokeSway * 0.18 * arc;
-            } else {
-              // r115: the SKELETON takes the hit — and WHERE it lands decides
-              // which part of the skeleton flinches. head = the head snaps
-              // back hard, torso barely moves; body = the classic full
-              // flinch (unchanged); armL/armR = only that arm recoils with a
-              // lean-away twist; belly = she doubles forward with folded
-              // elbows. Weights multiply the r83 recipe, so every zone still
-              // routes through the human joint limits below.
-              const ZW = {
-                head:  { head: 1.9, spine: 0.28, chest: 0.16, armL: 0.12, armR: 0.12, elb: 0.2, up: 0.08, twist: 0.25 },
-                torso: { head: 0.7, spine: 1.15, chest: 1.05, armL: 0.85, armR: 0.85, elb: 0.9, up: 0.8, twist: 0.7 },
-                chest: { head: 0.4, spine: 0.5, chest: 0.62, armL: 0.35, armR: 0.35, elb: 0.3, up: 0.25, twist: 0.45 },
-                side:  { head: 0.55, spine: 0.7, chest: 0.5, armL: pokeSideSign < 0 ? 1.45 : 0.15, armR: pokeSideSign > 0 ? 1.45 : 0.15, elb: 1.1, up: 0.9, twist: 1.1 },
-                back:  { head: 0.45, spine: 0.95, chest: 0.7, armL: 0.4, armR: 0.4, elb: 0.55, up: 0.35, twist: 0.35 },
-              }[pokeZone];
-              const press2 = Math.min(Math.max(t - 0.05, 0) / 0.08, 1) * Math.exp(-Math.max(0, t - 0.13) * 3.6);
-              const bellyFold = -1;
-              skSpine = bellyFold * 0.3 * press * ZW.spine;
-              skChest = -0.34 * press2 * ZW.chest;
-              skHeadX = (-0.3 * press + 0.05 * Math.sin(t * 22) * Math.exp(-t * 5)) * ZW.head;
-              skHeadZ = (TWIST_AMOUNT[poke.twist] ?? 0.05) * 2.2 * press * ZW.twist;
-              skLArm = -0.55 * press * ZW.armL;
-              skRArm = -0.45 * press * ZW.armR;
-              skLElb = 0.5 * press * ZW.elb;
-              skRElb = 0.45 * press * ZW.elb;
-              skLUp = -0.25 * press * ZW.up; // upper arms lift a breath
-              skRUp = -0.25 * press * ZW.up;
-            }
-          }
-          if (laugh > 0) {
-            const lt = 1 - laugh; // 0→1 through the giggle
-            const bounce = Math.abs(Math.sin(lt * Math.PI * 4.5)) * Math.exp(-lt * 2.0);
-            py -= 0.035 * bounce;
-            sx += 0.05 * bounce;
-            sy -= 0.08 * bounce;
-            sz += 0.05 * bounce;
-            rotX += -0.12 * Math.sin(lt * Math.PI); // lean back laughing
-          }
-          avatar.root.position.set(px, py, pz);
-          avatar.root.scale.set(sx * BASE_SX, sy * BASE_SY, sz * BASE_SX);
-          avatar.root.rotation.set(rotX, rotY, 0);
-          // r2026-10-05.121: tip-over toward the poked side (human models
-          // only — chibi keeps its rubber squash). The tilt axis is
-          // up × fallDir, so the body's crown swings exactly along the
-          // fall direction; the press envelope shoves her out and eases
-          // her back upright.
-          if (boost > 0 && pokeMode !== 'deform') {
-            const t2 = 1 - boost;
-            const leanPress = Math.min(t2 / 0.09, 1) * Math.exp(-Math.max(0, t2 - 0.09) * 3.2);
-            const lean = (pokeZone === 'chest' && gender === 'female' ? 0.35 : 0.9) * leanPress;
-            if (pokeSway) avatar.root.rotation.y += pokeSway * 0.22 * leanPress;
-            sQ3.setFromAxisAngle(sV4.set(pokeFallDir.z, 0, -pokeFallDir.x).normalize(), lean);
-            avatar.root.quaternion.multiply(sQ3);
-          }
-        } else {
-          avatar.root.position.set(0, 0, 0);
-          avatar.root.scale.set(BASE_SX, BASE_SY, BASE_SX);
-          avatar.root.rotation.set(0, 0, 0);
+        if (boost > 0) {
+          const hit = pokeBodyReaction({
+            t: 1 - boost,
+            zone: pokeZone,
+            fallX: pokeFallDir.x,
+            fallZ: pokeFallDir.z,
+            sideSign: pokeSideSign,
+            softChest: pokeZone === 'chest' && gender === 'female',
+            twist: TWIST_AMOUNT[poke.twist] ?? 0.05,
+          });
+          skSpine = hit.spinePitch;
+          skChest = hit.chestPitch;
+          skSpineY = hit.spineYaw;
+          skChestZ = hit.chestRoll;
+          skHeadX = hit.headX;
+          skHeadZ = hit.headZ;
+          skLArm = hit.lArmX;
+          skRArm = hit.rArmX;
+          skLElb = hit.lElbowZ;
+          skRElb = hit.rElbowZ;
+          skLUp = hit.lArmUp;
+          skRUp = hit.rArmUp;
         }
+        if (laugh > 0) {
+          const lt = 1 - laugh;
+          const bounce = Math.abs(Math.sin(lt * Math.PI * 4.5)) * Math.exp(-lt * 2.0);
+          skSpine += -0.1 * Math.sin(lt * Math.PI);
+          skChest += -0.06 * bounce;
+          skHeadX += -0.12 * Math.sin(lt * Math.PI);
+        }
+        avatar.root.position.set(0, 0, 0);
+        avatar.root.scale.set(BASE_SX, BASE_SY, BASE_SX);
+        avatar.root.rotation.set(0, 0, 0);
         // r102: hard on-screen clamp — whatever a clip or reaction wrote
         // into the root this frame, the avatar can never leave the visible
         // stage. The camera target is already clamped (y 0.4–1.7 in
@@ -1497,7 +1437,7 @@ export default function CompanionCanvas({
           spineX: b.spinePitch, chestX: b.chestPitch,
           leftUpperArm: b.leftUpperArm + skLUp, rightUpperArm: b.rightUpperArm + skRUp,
           leftLowerArm: b.leftLowerArm, rightLowerArm: b.rightLowerArm,
-          spineY: 0, chestZ: 0,
+          spineY: skSpineY, chestZ: skChestZ,
           lArmX: skLArm, rArmX: skRArm,
           lElbowZ: skLElb, rElbowZ: skRElb,
           spinePitchAdd: skSpine, chestPitchAdd: skChest,
@@ -1594,6 +1534,9 @@ export default function CompanionCanvas({
         }
 
         applyBoneBlend(now);
+        // After the mixer, poke additives, and the pose blend: both soles
+        // share one ground height. Walk/jump clips are the exception.
+        avatar.plantFeet(!clipFreesFeet(perfClipId));
         avatar.update(dt / 1000);
 
         // r109 NaN sweep: a corrupt clip key or a bad spring-bone write can

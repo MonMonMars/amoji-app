@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyPoke } from '../lib/poke-hit';
+import { classifyPoke, pokeBodyReaction } from '../lib/poke-hit';
 
 const hips = { x: 0, y: 1, z: 0 };
 const head = { x: 0, y: 1.6, z: 0 };
@@ -20,5 +20,40 @@ describe('classifyPoke', () => {
     const front = classifyPoke({ x: 0, y: 1.05, z: -0.3 }, hips, head, chest, left, right);
     expect(front.zone).toBe('torso');
     expect(front.impulse.z).toBeGreaterThan(0);
+  });
+});
+
+describe('pokeBodyReaction', () => {
+  const zones = ['head', 'torso', 'chest', 'side', 'back'] as const;
+
+  it('never translates the root', () => {
+    for (const zone of zones) {
+      const hit = pokeBodyReaction({
+        t: 0.15,
+        zone,
+        fallX: 0.2,
+        fallZ: -0.98,
+        sideSign: 1,
+        softChest: zone === 'chest',
+        twist: 0.08,
+      });
+      expect(hit.rootX).toBe(0);
+      expect(hit.rootY).toBe(0);
+      expect(hit.rootZ).toBe(0);
+    }
+  });
+
+  it('keeps a head poke on the head and a torso poke on the spine', () => {
+    const head = pokeBodyReaction({ t: 0.2, zone: 'head', fallX: 0, fallZ: -1, sideSign: 1, softChest: false, twist: 0.06 });
+    const torso = pokeBodyReaction({ t: 0.2, zone: 'torso', fallX: 0, fallZ: -1, sideSign: 1, softChest: false, twist: 0.06 });
+    expect(Math.abs(head.headX)).toBeGreaterThan(Math.abs(head.spinePitch));
+    expect(Math.abs(torso.spinePitch)).toBeGreaterThan(Math.abs(head.spinePitch));
+    expect(Math.abs(torso.lArmX)).toBeGreaterThan(0);
+  });
+
+  it('leans the chest toward a side impulse without moving the root', () => {
+    const side = pokeBodyReaction({ t: 0.2, zone: 'side', fallX: 1, fallZ: 0, sideSign: 1, softChest: false, twist: 0.1 });
+    expect(side.chestRoll).not.toBe(0);
+    expect(Math.abs(side.rArmX)).toBeGreaterThan(Math.abs(side.lArmX));
   });
 });
