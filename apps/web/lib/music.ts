@@ -12,6 +12,7 @@
 // the chat pipeline's generic stopMusic() calls for the length of the show.
 
 import { createDefaultAudioContext } from './audio-output';
+import { volumeLinear } from './audio-levels';
 
 export interface MusicTheme {
   /** personality group this theme belongs to */
@@ -113,6 +114,7 @@ export function pianoStep(theme: MusicTheme, step: number): PianoNote {
 
 // ---- runtime (browser only; never touched in node tests) --------------------
 let ctx: AudioContext | null = null;
+let baseBgm = 0.12;
 let master: GainNode | null = null;
 let schedTimer: ReturnType<typeof setInterval> | null = null;
 let nextStep = 0;
@@ -168,7 +170,8 @@ export function startMusic(characterId: string): void {
   if (!ac) return;
   ctx = ac;
   const gain = ac.createGain();
-  gain.gain.value = theme.volume;
+  gain.gain.value = theme.volume * volumeLinear('bgmVol');
+  baseBgm = theme.volume;
   gain.connect(ac.destination);
   master = gain;
   const eighth = 60 / theme.bpm / 2;
@@ -246,6 +249,14 @@ function ksPlay(ac: AudioContext, dest: AudioNode, freq: number, when: number, v
 let pianoCtx: AudioContext | null = null;
 let pianoMaster: GainNode | null = null;
 let pianoTimer: ReturnType<typeof setInterval> | null = null;
+let basePiano = 0.3;
+
+/** Re-apply the settings BGM step to a track that is already playing. */
+export function applyBgmLevel(step?: number): void {
+  const k = typeof step === 'number' ? step / 100 : volumeLinear('bgmVol');
+  if (master) master.gain.value = baseBgm * k;
+  if (pianoMaster) pianoMaster.gain.value = basePiano * k;
+}
 
 function haltPiano(): void {
   if (pianoTimer) {
@@ -281,7 +292,8 @@ export function startPiano(characterId: string): void {
   if (!ac) return;
   pianoCtx = ac;
   const gain = ac.createGain();
-  gain.gain.value = Math.min(0.4, theme.volume * 3.2);
+  basePiano = Math.min(0.4, theme.volume * 3.2);
+  gain.gain.value = basePiano * volumeLinear('bgmVol');
   gain.connect(ac.destination);
   pianoMaster = gain;
   const eighth = 60 / theme.bpm / 2;

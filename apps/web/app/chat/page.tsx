@@ -27,6 +27,7 @@ export default function Chat() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [pokeCount, setPokeCount] = useState(0);
   const [pokeZone, setPokeZone] = useState('');
+  const [handHold, setHandHold] = useState(0);
   const [status, setStatus] = useState<ChatStatus>('idle');
   const [memCount, setMemCount] = useState(0);
 
@@ -58,6 +59,7 @@ export default function Chat() {
         lighting={background.setting === 'indoor' ? 'indoor' : 'outdoor'}
         onNotice={setNotice}
         onPoke={(zone) => { setPokeCount((c) => c + 1); setPokeZone(zone); }}
+        onHandHold={() => setHandHold((c) => c + 1)}
       />
 
       {/* top bar: status plate (left) + wardrobe icon and settings (right) */}
@@ -119,6 +121,7 @@ export default function Chat() {
           kidMode={prefs.kidMode}
           pokeCount={pokeCount}
           pokeZone={pokeZone}
+          handHoldCount={handHold}
           onStatus={setStatus}
           onMemCount={setMemCount}
         />
