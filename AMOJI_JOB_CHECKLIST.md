@@ -5,7 +5,7 @@ Locale → engine → voice lives in `apps/web/lib/voice-catalog.ts`. Non-Yue en
 ## Done
 
 - PC audio: every `AudioContext` and `<audio>` path calls `setSinkId('')`, then `'default'`. No device id, no Howler, no Bluetooth hardcode.
-- Voice gender: female → HiuMaan (HiuGaai stays the female alternate), male → WanLung. Desktop chain is Edge, then gendered `speechSynthesis`, then gTTS.
+- Voice: each want-list character has its own Edge slot per language (voice + pitch + pace), then gendered `speechSynthesis` with that same pitch and pace. Yue stays on Edge `zh-HK` (only two female voices and one male on the free list). `canto-tts-nano` is not in the repo, so that hop is skipped. gTTS is not on this chain.
 - TTS cleaner on `speak()`, `sing()`, and the chat display (`apps/web/lib/speak-text.ts`).
 - Wait state: Thinking clip, the 20 Cantonese lines below, no wait-time dance or music.
 - Camera: wider polar orbit (`PHI_MIN` 0.25, `PHI_MAX` π−0.25; was 1.08 / 2.55). Yaw stays 360°. PC hold-to-pan only on a distant blank miss, and only after the hold arms.
@@ -73,5 +73,5 @@ Skipped, not in the map: Coqui CPML, Fish Speech CC-BY-NC, F5-TTS CC-BY-NC.
 - Layout files: `SelectionBoard.tsx`, `WardrobeSwap.tsx`, `app/chat/page.tsx`, `ChatPanel.tsx`.
 - PR: https://github.com/MonMonMars/amoji-app/pull/7
 - GitHub Pages: `.github/workflows/pages.yml` runs on every push to `main` (and `workflow_dispatch`). It static-exports `@amoji/web` with `AMOJI_BASE_PATH=/amoji-app` and deploys `apps/web/out` to the `github-pages` environment. Merging this PR is what updates https://monmonmars.github.io/amoji-app/. The PR branch itself does not deploy.
-- Piper / Melo / Kokoro / Bark stay in `voice-catalog.ts` as non-shipping stubs. A wider free-TTS search is a follow-up and is not blocking this PR.
+- Piper / Melo / Kokoro / Bark stay in `voice-catalog.ts` as non-shipping stubs. VoxCPM2, Chatterbox, CosyVoice, and Qwen3-TTS are held for a later GPU host and are not called. Google Cloud, Azure, and Polly are not wired.
 - Verify: selection shows head + body with overlapping rows and no back control; chat icon opens wardrobe full-screen and close restores orbit; history wheel-scrolls; hold on a side margin pans.

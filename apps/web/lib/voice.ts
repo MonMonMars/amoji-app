@@ -4,6 +4,11 @@ import { getPlaybackVolume } from './playback-volume';
 // the edge-tts.ts endpoint — Cantonese 曉曼/雲龍 etc., with SSML pitch/rate/volume
 // per emotion. Fallback path: the browser's own speechSynthesis with matched
 // platform voices. Zero cost, zero API key.
+// Wire-now order: Edge (locale + gender) → speechSynthesis on every device.
+// Yue stays on Edge zh-HK, then Web Speech, then canto-tts-nano only when
+// that runtime is bundled (it is not, so the hop is skipped). gtts.ts is not
+// a hop. Google Cloud, Azure, and Polly are not called. OpenAI speech runs
+// only when the user has saved a key.
 // r2026-10-04.64: emotional range widened — every NEURAL_PROSODY mood now swings
 // further (sadder sinks slower/softer, joy rings brighter/quicker, anger bites
 // harder) and any felt emotion also widens the per-clause contour ×1.12, so her
@@ -77,8 +82,11 @@ import { characterVoiceGender } from './voice-gender';
 import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
 import { cleanForSpeech } from './speak-text';
 import { synthNameConflicts, synthNameList } from './voice-catalog';
+import { edgeCastVoice } from './edge-cast';
 import { speakEdge, stopEdge, getTtsProxy } from './edge-tts';
-import { speakGtts, stopGtts } from './gtts';
+import { stopGtts } from './gtts';
+import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
+import { formatVoiceChain, freeVoiceHops } from './tts-chain';
 // r2026-10-05.112: tier 0 — OpenAI gpt-4o-mini-tts (ChatGPT-style emotional
 // voice via natural-language instructions). Sits AHEAD of the free chain;
 // any failure (no key, CORS, network) falls through silently to edge-tts.
@@ -312,7 +320,7 @@ function reportVoiceBlocked(source: 'synth' | 'edge'): void {
 // speak() choke point itself, so the dot responds on the attempt, not only
 // on tier completion.
 // r2026-10-05.112: 'openai' leads the chain (paid emotional tier, optional).
-export type VoiceTier = 'openai' | 'edge' | 'gtts' | 'synth' | 'attempt';
+export type VoiceTier = 'openai' | 'edge' | 'gtts' | 'synth' | 'canto-nano' | 'attempt';
 
 export interface VoiceTierResult {
   tier: VoiceTier;
@@ -325,6 +333,7 @@ export const VOICE_TIER_LABEL: Record<VoiceTier, string> = {
   edge: 'edge-tts',
   gtts: 'google-tts',
   synth: 'browser',
+  'canto-nano': 'canto-tts-nano',
   attempt: 'speak',
 };
 
@@ -990,15 +999,29 @@ const SYNTH_LOCALE: Record<Lang, string> = {
   en: 'en-US',
 };
 
+function hashId(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (Math.imul(h, 33) + id.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+function rotateNames(names: string[], by: number): string[] {
+  if (names.length < 2) return names;
+  const n = by % names.length;
+  return names.slice(n).concat(names.slice(0, n));
+}
+
 function pickVoice(characterId: string, lang: Lang): { voice: SpeechSynthesisVoice | null; pitch: number; rate: number } {
   refresh();
   const gender = characterVoiceGender(characterId);
+  const color = edgeCastVoice(characterId, lang);
   const prefix = SYNTH_LOCALE[lang];
   const byLang = cached.filter((v) => v.lang.replace('_', '-').toLowerCase().startsWith(prefix.toLowerCase()));
   const pool = byLang.length ? byLang : cached;
-  const pitch = gender === 'male' ? 0.92 : 1.08;
-  const rate = gender === 'male' ? 0.98 : 1.02;
-  for (const name of synthNameList(lang, gender)) {
+  // Same pitch/pace as the Edge slot, so the browser fallback stays personal.
+  const pitch = (gender === 'male' ? 0.94 : 1.06) + (color?.pitch ?? 0);
+  const rate = (gender === 'male' ? 0.98 : 1.02) + (color?.rate ?? 0);
+  for (const name of rotateNames(synthNameList(lang, gender), hashId(characterId))) {
     const hit = pool.find((v) => v.name.toLowerCase().includes(name.toLowerCase()) && !synthNameConflicts(gender, v.name));
     if (hit) return { voice: hit, pitch, rate };
   }
@@ -1098,6 +1121,9 @@ export function speak(
   leadOverride?: VocalLead,
   intensity = 1,
 ): void {
+  // Spoken string only. cleanForSpeech may drop punctuation-mark names and
+  // rewrite dashes. Chat bubbles stay on cleanForDisplay — do not write this
+  // string back into history.
   text = cleanForSpeech(text);
   if (!text || !voiceEnabled()) return;
   // r111: remember the line for gesture-gate replay
@@ -1118,12 +1144,11 @@ export function speak(
   // (tier 'attempt'), so a silent device answers "was speak() called?"
   // independently of "did sound start?" (the start callbacks below).
   const useOpenAi = openAiVoiceReady();
-  const desktop = typeof navigator !== 'undefined' && !/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  const chain = useOpenAi
-    ? 'openai→edge→synth→gtts'
-    : neuralEnabled() && typeof WebSocket !== 'undefined'
-      ? (desktop ? 'edge→synth→gtts' : 'edge→gtts→synth')
-      : 'synth';
+  const edgeOn = neuralEnabled() && typeof WebSocket !== 'undefined';
+  const chain = formatVoiceChain(
+    freeVoiceHops(lang, { cantoNano: cantoNanoAvailable(), edge: edgeOn }),
+    useOpenAi ? 'openai' : null,
+  );
   try { console.log(`[amoji voice] speak attempt · ${text.length} chars · ${lang} · chain ${chain}`); } catch { /* ignore */ }
   reportVoiceStatus('attempt', true, `speak attempt · ${text.length} chars · ${chain}`);
   // r102: hold the movement/ambient foley for one speak window — if every
@@ -1140,30 +1165,43 @@ export function speak(
   // unless the caller supplies its own lead (e.g. a guaranteed poke ouch)
   const tic = leadOverride ?? pickInterjection(emotion, value, lang);
 
-  // 1) Voice chains. r112: the paid OpenAI emotional tier (ChatGPT-style
-  // natural-language direction — the "good voice") runs AHEAD of the free
-  // chain; any failure falls through to what always ran before.
-  if (useOpenAi || (neuralEnabled() && typeof WebSocket !== 'undefined')) {
-    // The pre-r112 chain, unchanged: edge-tts → google-tts → browser synth,
-    // or straight to browser synth when the neural toggle is off.
-    const runFreeChain = (): void => {
-      if (!(neuralEnabled() && typeof WebSocket !== 'undefined')) {
-        try {
-          synthSpeak(text, characterId, lang, emotion, expr, tic, amp);
-          reportVoiceStatus('synth', true, 'browser voice queued');
-        } catch (err) {
-          reportVoiceStatus('synth', false, (err as Error | undefined)?.message ?? 'browser voice failed');
-        }
+  // Free chain: Edge (locale + gender) → speechSynthesis. Yue adds
+  // canto-tts-nano only when that runtime is bundled. OpenAI is opt-in and
+  // not the default. A 'canceled' rejection means a newer line took over.
+  const runSynth = (): boolean => {
+    if (typeof speechSynthesis === 'undefined') return false;
+    try {
+      synthSpeak(text, characterId, lang, emotion, expr, tic, amp);
+      reportVoiceStatus('synth', true, 'browser voice queued');
+      return true;
+    } catch (err3) {
+      reportVoiceStatus('synth', false, (err3 as Error | undefined)?.message ?? 'browser voice failed');
+      return false;
+    }
+  };
+  const runFreeChain = (): void => {
+    const hops = freeVoiceHops(lang, { cantoNano: cantoNanoAvailable(), edge: edgeOn });
+    const runAt = (index: number): void => {
+      const hop = hops[index];
+      if (!hop) return;
+      const next = (): void => runAt(index + 1);
+      if (hop === 'synth') {
+        if (!runSynth()) next();
+        return;
+      }
+      if (hop === 'canto-nano') {
+        void speakCantoNano(text).then(() => {
+          markVoiceStarted();
+          reportVoiceStatus('canto-nano', true, 'canto-tts-nano finished');
+        }).catch((err: unknown) => {
+          if ((err as Error | undefined)?.message === 'canceled') return;
+          reportVoiceStatus('canto-nano', false, (err as Error | undefined)?.message ?? 'canto-tts-nano failed');
+          next();
+        });
         return;
       }
       const np = NEURAL_PROSODY[emotion] ?? NEURAL_PROSODY['neutral']!;
-      // r2026-10-04.64: any felt emotion also widens the sing-song contour itself
-      // (×1.12) — the delivery warbles with the feeling, not just the average pitch
       const exprBoost = emotion === 'neutral' ? 1 : 1.12;
-      // r99: build each tier's promise inside its own try/catch — a SYNCHRONOUS
-      // throw (like the old lookbehind SyntaxError) must become a rejected
-      // promise so the fallthrough chain still runs, instead of escaping
-      // speak() and silencing every tier at once.
       let tier1: Promise<void>;
       try {
         tier1 = speakEdge(text, {
@@ -1171,114 +1209,55 @@ export function speak(
           gender: characterVoiceGender(characterId),
           character: characterId,
           expressiveness: expr * exprBoost,
-          // r131 — the dominant emotion now drives an mstts:express-as style
-          // (cheerful/sad/angry/…) on top of the prosody contour
           emotion,
           lead: tic,
           rateDelta: clamp(np.rate * exprScale * amp, -0.4, 0.5),
           pitchDelta: clamp(np.pitch * exprScale * amp, -0.3, 0.4),
           volumeDelta: clamp(np.vol * exprScale * amp, -0.5, 0.5),
-          // r99/r100: the moment neural audio actually plays, the iOS media
-          // gate is provably open AND the line is provably sounding — latch
-          // both and show the green dot.
           onPlaying: () => { markVoiceStarted(); reportVoiceStatus('edge', true, 'neural voice playing'); },
-          // r2026-10-04.89 — three-tier chain. Edge socket blocked on some mobile
-          // networks → Google TTS (<audio> media, immune to the iPhone silent
-          // switch) → browser speechSynthesis. A 'canceled' rejection just means
-          // a newer line took over — never fall through and speak the stale one.
         });
       } catch (err) {
         tier1 = Promise.reject(err instanceof Error ? err : new Error(String(err)));
       }
-      const runSynth = (): boolean => {
-        if (typeof speechSynthesis === 'undefined') return false;
-        try {
-          synthSpeak(text, characterId, lang, emotion, expr, tic, amp);
-          reportVoiceStatus('synth', true, 'browser voice queued');
-          return true;
-        } catch (err3) {
-          reportVoiceStatus('synth', false, (err3 as Error | undefined)?.message ?? 'browser voice failed');
-          return false;
-        }
-      };
-      const runGtts = (): void => {
-        let tier2: Promise<void>;
-        try {
-          tier2 = speakGtts(text, {
-            lang,
-            rate: 1 + clamp(np.rate * exprScale * amp, -0.2, 0.25),
-            lead: tic?.text,
-            onPlaying: () => { markVoiceStarted(); reportVoiceStatus('gtts', true, 'google-tts playing'); },
-          });
-        } catch (err2) {
-          tier2 = Promise.reject(err2 instanceof Error ? err2 : new Error(String(err2)));
-        }
-        void tier2.then(() => {
-          reportVoiceStatus('gtts', true, 'google-tts finished');
-        }).catch((err2: unknown) => {
-          if ((err2 as Error | undefined)?.message === 'canceled') return;
-          reportVoiceStatus('gtts', false, (err2 as Error | undefined)?.message ?? 'google-tts failed');
-          if ((err2 as { name?: string } | undefined)?.name === 'NotAllowedError') armGestureReplay('gtts not-allowed');
-          stopGtts();
-          if (!desktop) runSynth();
-        });
-      };
       void tier1.then(() => {
         reportVoiceStatus('edge', true, 'neural voice finished');
       }).catch((err: unknown) => {
         if ((err as Error | undefined)?.message === 'canceled') return;
         reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'edge-tts failed');
         stopEdge();
-        // Desktop: gendered browser voice before ungendered Google TTS
-        // (Google zh-HK is a single voice and was reading female lines as male).
-        // Phones keep Google ahead of synth — the silent switch mutes synth.
-        if (desktop) {
-          if (!runSynth()) runGtts();
-        } else {
-          runGtts();
-        }
+        next();
       });
     };
+    runAt(0);
+  };
 
-    if (useOpenAi) {
-      let tier0: Promise<void>;
-      try {
-        tier0 = speakOpenAi(text, {
-          lang,
-          gender: characterVoiceGender(characterId),
-          character: characterId,
-          emotion,
-          expressiveness: expr,
-          onPlaying: () => { markVoiceStarted(); reportVoiceStatus('openai', true, 'chatgpt voice playing'); },
-        });
-      } catch (err) {
-        tier0 = Promise.reject(err instanceof Error ? err : new Error(String(err)));
-      }
-      void tier0.then(() => {
-        reportVoiceStatus('openai', true, 'chatgpt voice finished');
-      }).catch((err: unknown) => {
-        if ((err as Error | undefined)?.message === 'canceled') return;
-        reportVoiceStatus('openai', false, (err as Error | undefined)?.message ?? 'openai-tts failed');
-        if ((err as { name?: string } | undefined)?.name === 'NotAllowedError') armGestureReplay('openai not-allowed');
-        stopOpenAi();
-        // tier 0 unreachable (CORS/network/no credit) — the free chain below
-        // picks the line up exactly as it did before r112.
-        runFreeChain();
+  if (useOpenAi) {
+    let tier0: Promise<void>;
+    try {
+      tier0 = speakOpenAi(text, {
+        lang,
+        gender: characterVoiceGender(characterId),
+        character: characterId,
+        emotion,
+        expressiveness: expr,
+        onPlaying: () => { markVoiceStarted(); reportVoiceStatus('openai', true, 'chatgpt voice playing'); },
       });
-      return;
+    } catch (err) {
+      tier0 = Promise.reject(err instanceof Error ? err : new Error(String(err)));
     }
-
-    runFreeChain();
+    void tier0.then(() => {
+      reportVoiceStatus('openai', true, 'chatgpt voice finished');
+    }).catch((err: unknown) => {
+      if ((err as Error | undefined)?.message === 'canceled') return;
+      reportVoiceStatus('openai', false, (err as Error | undefined)?.message ?? 'openai-tts failed');
+      if ((err as { name?: string } | undefined)?.name === 'NotAllowedError') armGestureReplay('openai not-allowed');
+      stopOpenAi();
+      runFreeChain();
+    });
     return;
   }
 
-  // 2) Browser-TTS fallback
-  try {
-    synthSpeak(text, characterId, lang, emotion, expr, tic, amp);
-    reportVoiceStatus('synth', true, 'browser voice queued');
-  } catch (err) {
-    reportVoiceStatus('synth', false, (err as Error | undefined)?.message ?? 'browser voice failed');
-  }
+  runFreeChain();
 }
 
 /**
@@ -1409,11 +1388,9 @@ function probeSynth(text: string, characterId: string, lang: Lang): Promise<bool
 }
 
 /**
- * r2026-10-05.99 — the Settings self-test, per tier. Walks edge → gtts →
- * synth with a short line, reporting each tried tier through the status bus
- * AND returning the full result list (Settings renders ✓/✗ per tier, so a
- * silent phone names its dead tier instead of just staying silent).
- * Skips gtts when edge already spoke, and skips synth when anything spoke.
+ * Settings self-test. Walks the free chain (Edge → speechSynthesis, then
+ * canto-tts-nano for Yue when that runtime is bundled) and returns every
+ * tier it actually tried. Stops at the first tier that speaks.
  */
 export async function testVoiceChain(characterId: string, lang: Lang): Promise<VoiceTierResult[]> {
   unlockAudio();
@@ -1446,36 +1423,39 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
         }
       }
     }
-    if (neuralEnabled() && typeof WebSocket !== 'undefined' && !results.some((r) => r.ok)) {
-      // tier 1 — neural socket (7s cap)
-      try {
-        await withTimeout(speakEdge(line, {
-          lang,
-          gender: characterVoiceGender(characterId),
-          character: characterId,
-        }), 7_000, 'edge-tts timeout');
-        push('edge', true, 'neural voice played');
-      } catch (err) {
-        if ((err as Error | undefined)?.message !== 'canceled') {
-          stopEdge();
-          push('edge', false, (err as Error | undefined)?.message ?? 'edge-tts failed');
-        }
-      }
-      // tier 2 — google TTS (10s cap) — only if tier 1 didn't already speak
-      if (!results.some((r) => r.tier === 'edge' && r.ok)) {
+    const hops = freeVoiceHops(lang, {
+      cantoNano: cantoNanoAvailable(),
+      edge: neuralEnabled() && typeof WebSocket !== 'undefined',
+    });
+    for (const hop of hops) {
+      if (results.some((r) => r.ok)) break;
+      if (hop === 'edge') {
         try {
-          await withTimeout(speakGtts(line, { lang }), 10_000, 'google-tts timeout');
-          push('gtts', true, 'google-tts played');
+          await withTimeout(speakEdge(line, {
+            lang,
+            gender: characterVoiceGender(characterId),
+            character: characterId,
+          }), 7_000, 'edge-tts timeout');
+          push('edge', true, 'neural voice played');
         } catch (err) {
           if ((err as Error | undefined)?.message !== 'canceled') {
-            stopGtts();
-            push('gtts', false, (err as Error | undefined)?.message ?? 'google-tts failed');
+            stopEdge();
+            push('edge', false, (err as Error | undefined)?.message ?? 'edge-tts failed');
           }
         }
+        continue;
       }
-    }
-    // tier 3 — browser synth (only if nothing above spoke)
-    if (!results.some((r) => r.ok)) {
+      if (hop === 'canto-nano') {
+        try {
+          await withTimeout(speakCantoNano(line), 10_000, 'canto-tts-nano timeout');
+          push('canto-nano', true, 'canto-tts-nano played');
+        } catch (err) {
+          if ((err as Error | undefined)?.message !== 'canceled') {
+            push('canto-nano', false, (err as Error | undefined)?.message ?? 'canto-tts-nano failed');
+          }
+        }
+        continue;
+      }
       const ok = await probeSynth(line, characterId, lang);
       push('synth', ok, ok ? 'utterance started' : 'never started');
     }

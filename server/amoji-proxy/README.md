@@ -26,6 +26,16 @@ cd server/amoji-proxy
 wrangler deploy           # prints https://amoji.<you>.workers.dev/
 ```
 
+## Pages vs local
+
+| | Local `pnpm dev` | GitHub Pages |
+|---|---|---|
+| Default | Direct Edge WebSocket. Leave `NEXT_PUBLIC_TTS_PROXY` empty. No key. | Same socket. The workflow ships no voice secret. |
+| When `wss://speech.platform.bing.com` is blocked | Set `NEXT_PUBLIC_TTS_PROXY` in `apps/web/.env.local` to this worker, or paste the URL under Settings → Voice. | Add an Actions **variable** `AMOJI_TTS_PROXY` (not a secret) and redeploy. |
+| Paid clouds | Not required. OpenAI speech is an opt-in key in Settings. The worker forwards that header and does not store it. | Same. Do not put `sk-` keys in the workflow. |
+
+The Edge route uses the public read-aloud client token. Optional Worker var `EDGE_TTS_TOKEN` overrides it if Microsoft rotates that published value. It is not a credential you need to create an account for.
+
 ## Point the app at it
 
 **Settings → Voice → Neural voice proxy** — paste the URL as-is:
