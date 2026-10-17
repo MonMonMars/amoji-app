@@ -28,7 +28,9 @@ import {
 import { LangChips } from './selectors';
 import ModelThumb from './ModelThumb';
 import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, testOpenAiVoice, VOICE_TIER_LABEL } from '../lib/voice';
-import { getPlaybackVolume, setPlaybackVolume } from '../lib/playback-volume';
+import { VOLUME_STEPS, type VolumeStep } from '../lib/audio-levels';
+import { applyBgmLevel } from '../lib/music';
+import { applySfxLevel } from '../lib/sfx';
 // r2026-10-06.131: the Voice section's optional HTTP TTS proxy field
 import { getTtsProxy, setTtsProxy } from '../lib/edge-tts';
 // r2026-10-06.134: ChatGPT-voice (OpenAI tier 0) key + endpoint field
@@ -113,7 +115,6 @@ export default function SettingsSheet({
   const router = useRouter();
   const [voiceOn, setVoiceOnState] = useState(voiceEnabled());
   const [neuralOn, setNeuralOnState] = useState(neuralEnabled());
-  const [vol, setVol] = useState(() => getPlaybackVolume());
   const [voiceBlocked, setVoiceBlocked] = useState(false);
   // r99: per-tier self-test result — 'edge-tts ✓ · google-tts ✗ · browser ✓'
   const [voiceTest, setVoiceTest] = useState<string | null>(null);
@@ -368,24 +369,24 @@ export default function SettingsSheet({
                 onClick={() => { const next = !neuralOn; setNeuralOnState(next); setNeuralEnabled(next); }}
               />
             </div>
-            <label className="block space-y-1.5">
-              <span className={label}>🔉 {t(lang, 'voiceVolume')}
-                <span className="ml-2 text-xs tabular-nums text-white/45">{Math.round(vol * 100)}%</span>
-              </span>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.05}
-                value={vol}
-                onChange={(e) => {
-                  const next = Number(e.target.value);
-                  setVol(next);
-                  setPlaybackVolume(next);
-                }}
-                className="w-full accent-pink-400"
-              />
-            </label>
+            <VolumeSteps
+              label={`🔉 ${t(lang, 'voiceVolume')}`}
+              value={prefs.voiceVol ?? 80}
+              accent={accent}
+              onPick={(step) => onChange({ voiceVol: step })}
+            />
+            <VolumeSteps
+              label={`🎵 ${t(lang, 'bgmVolume')}`}
+              value={prefs.bgmVol ?? 80}
+              accent={accent}
+              onPick={(step) => { onChange({ bgmVol: step }); applyBgmLevel(step); }}
+            />
+            <VolumeSteps
+              label={`✨ ${t(lang, 'sfxVolume')}`}
+              value={prefs.sfxVol ?? 80}
+              accent={accent}
+              onPick={(step) => { onChange({ sfxVol: step }); applySfxLevel(step); }}
+            />
             {/* r2026-10-06.134 — ChatGPT-voice tier (OpenAI): key + optional
                 endpoint proxy + one-tap probe. Strings predate the UI (r112);
                 this is their first consumer. */}
@@ -752,6 +753,37 @@ export default function SettingsSheet({
           <p className="pt-2 text-center text-[11px] text-white/25">Amoji · {APP_REVISION}</p>
         </div>
       </div>
+    </div>
+  );
+}
+
+function VolumeSteps({
+  label, value, accent, onPick,
+}: {
+  label: string;
+  value: VolumeStep;
+  accent: string;
+  onPick: (step: VolumeStep) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2">
+      <span className="min-w-0 text-sm text-white/80">{label}</span>
+      <span className="flex shrink-0 gap-1">
+        {VOLUME_STEPS.map((step) => (
+          <button
+            key={step}
+            type="button"
+            aria-pressed={value === step}
+            onClick={() => onPick(step)}
+            className={`ui-btn h-8 min-w-9 rounded-full px-1.5 text-[11px] ${
+              value === step ? 'font-medium text-neutral-950' : 'bg-white/5 text-white/55 hover:text-white/80'
+            }`}
+            style={value === step ? { backgroundColor: accent } : undefined}
+          >
+            {step}
+          </button>
+        ))}
+      </span>
     </div>
   );
 }
