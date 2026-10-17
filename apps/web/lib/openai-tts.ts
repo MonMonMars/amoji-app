@@ -1,6 +1,7 @@
 'use client';
 import { pinDefaultOutput } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
+import { stripVoicedSymbols } from './speak-text';
 // ChatGPT-grade emotional TTS — OpenAI gpt-4o-mini-tts (tier 0, r2026-10-05.112).
 // This is the same engine family ChatGPT's Advanced Voice Mode speaks with: the
 // emotion is not SSML numbers but a natural-language "instructions" prompt —
@@ -201,7 +202,7 @@ export function stopOpenAi(): void {
 export function speakOpenAi(text: string, opts: OpenAiVoiceOpts): Promise<void> {
   stopOpenAi();
   return new Promise<void>((resolve, reject) => {
-    const clean = text.replace(/[*_`#>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, MAX_CHARS);
+    const clean = stripVoicedSymbols(text).replace(/\s+/g, ' ').trim().slice(0, MAX_CHARS);
     if (!clean) { reject(new Error('openai-tts empty')); return; }
 
     const controller = new AbortController();
