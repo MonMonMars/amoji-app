@@ -88,7 +88,7 @@ export const SKIPPED_ENGINES: readonly { engine: string; license: string; notes:
 export const HELD_GPU_ENGINES: readonly { engine: string; notes: string }[] = [
   { engine: 'voxcpm2', notes: 'Hold for a later GPU host. Not called.' },
   { engine: 'chatterbox', notes: 'Hold for a later GPU host. Not called.' },
-  { engine: 'cosyvoice', notes: 'Hold for a later GPU host. Not called.' },
+  { engine: 'cosyvoice', notes: 'Not in the default chain. Optional only when Settings turns the experiment on and a self-hosted CosyVoice-300M-SFT URL is saved. Weights are not bundled. See docs/COSYVOICE_SPIKE.md.' },
   { engine: 'qwen3-tts', notes: 'Hold for a later GPU host. Not called.' },
   { engine: 'kokoro', notes: 'Catalog stub only. Weights are not bundled.' },
   { engine: 'melotts', notes: 'Catalog stub only. Weights are not bundled.' },

@@ -8,7 +8,8 @@ import { getPlaybackVolume } from './playback-volume';
 // Yue stays on Edge zh-HK, then Web Speech, then canto-tts-nano only when
 // that runtime is bundled (it is not, so the hop is skipped). gtts.ts is not
 // a hop. Google Cloud, Azure, and Polly are not called. OpenAI speech runs
-// only when the user has saved a key.
+// only when the user has saved a key. CosyVoice is not in that order unless
+// the experiment flag and a self-hosted URL are both set (docs/COSYVOICE_SPIKE.md).
 // r2026-10-04.64: emotional range widened — every NEURAL_PROSODY mood now swings
 // further (sadder sinks slower/softer, joy rings brighter/quicker, anger bites
 // harder) and any felt emotion also widens the per-clause contour ×1.12, so her
@@ -86,6 +87,7 @@ import { edgeCastVoice } from './edge-cast';
 import { speakEdge, stopEdge, getTtsProxy } from './edge-tts';
 import { stopGtts } from './gtts';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
+import { cosyvoiceActive, cosyvoiceEndpoint, speakCosyVoice, stopCosyVoice } from './cosyvoice-tts';
 import { formatVoiceChain, freeVoiceHops } from './tts-chain';
 // r2026-10-05.112: tier 0 — OpenAI gpt-4o-mini-tts (ChatGPT-style emotional
 // voice via natural-language instructions). Sits AHEAD of the free chain;
@@ -323,7 +325,7 @@ function reportVoiceBlocked(source: 'synth' | 'edge'): void {
 // speak() choke point itself, so the dot responds on the attempt, not only
 // on tier completion.
 // r2026-10-05.112: 'openai' leads the chain (paid emotional tier, optional).
-export type VoiceTier = 'openai' | 'edge' | 'gtts' | 'synth' | 'canto-nano' | 'attempt';
+export type VoiceTier = 'openai' | 'edge' | 'gtts' | 'synth' | 'canto-nano' | 'cosyvoice' | 'attempt';
 
 export interface VoiceTierResult {
   tier: VoiceTier;
@@ -337,6 +339,7 @@ export const VOICE_TIER_LABEL: Record<VoiceTier, string> = {
   gtts: 'google-tts',
   synth: 'browser',
   'canto-nano': 'canto-tts-nano',
+  cosyvoice: 'cosyvoice',
   attempt: 'speak',
 };
 
@@ -1087,6 +1090,7 @@ export function setNeuralEnabled(on: boolean): void {
 
 export function stopSpeaking(): void {
   synthGeneration++;
+  stopCosyVoice();
   stopOpenAi();
   stopEdge();
   stopGtts();
@@ -1143,14 +1147,20 @@ export function speak(
   // before ever tapping fetched every voice tier and stayed silent (autoplay
   // policy). Speaking a reply IS a user-intended audio act: take the unlock.
   unlockAudio();
+  stopCosyVoice();
   // r100: single choke-point trace — EVERY speak() call lands here with its
   // length and planned chain, and pings the status bus on the attempt itself
   // (tier 'attempt'), so a silent device answers "was speak() called?"
   // independently of "did sound start?" (the start callbacks below).
   const useOpenAi = openAiVoiceReady();
   const edgeOn = neuralEnabled() && typeof WebSocket !== 'undefined';
+  const hopOpts = {
+    cantoNano: cantoNanoAvailable(),
+    edge: edgeOn,
+    cosyvoice: cosyvoiceActive(),
+  };
   const chain = formatVoiceChain(
-    freeVoiceHops(lang, { cantoNano: cantoNanoAvailable(), edge: edgeOn }),
+    freeVoiceHops(lang, hopOpts),
     useOpenAi ? 'openai' : null,
   );
   try { console.log(`[amoji voice] speak attempt · ${text.length} chars · ${lang} · chain ${chain}`); } catch { /* ignore */ }
@@ -1188,13 +1198,35 @@ export function speak(
     }
   };
   const runFreeChain = (): void => {
-    const hops = freeVoiceHops(lang, { cantoNano: cantoNanoAvailable(), edge: edgeOn });
+    const hops = freeVoiceHops(lang, hopOpts);
     const runAt = (index: number): void => {
       const hop = hops[index];
       if (!hop) return;
       const next = (): void => runAt(index + 1);
       if (hop === 'synth') {
         if (!runSynth()) next();
+        return;
+      }
+      if (hop === 'cosyvoice') {
+        let tierExp: Promise<void>;
+        try {
+          tierExp = speakCosyVoice(text, {
+            lang,
+            gender: characterVoiceGender(characterId),
+            onPlaying: () => { markVoiceStarted(); reportVoiceStatus('cosyvoice', true, 'cosyvoice playing'); },
+          });
+        } catch (err) {
+          tierExp = Promise.reject(err instanceof Error ? err : new Error(String(err)));
+        }
+        void tierExp.then(() => {
+          reportVoiceStatus('cosyvoice', true, 'cosyvoice finished');
+        }).catch((err: unknown) => {
+          if ((err as Error | undefined)?.message === 'canceled') return;
+          reportVoiceStatus('cosyvoice', false, (err as Error | undefined)?.message ?? 'cosyvoice failed');
+          if ((err as { name?: string } | undefined)?.name === 'NotAllowedError') armGestureReplay('cosyvoice not-allowed');
+          stopCosyVoice();
+          next();
+        });
         return;
       }
       if (hop === 'canto-nano') {
@@ -1279,6 +1311,8 @@ export function sing(text: string, characterId: string, lang: Lang): void {
   text = cleanForSpeech(text);
   if (!text || !voiceEnabled()) return;
   unlockAudio();
+  // Melody is Edge SSML. Cut an experimental clip so it cannot talk over the song.
+  stopCosyVoice();
   const expr = EXPRESSIVENESS[characterId] ?? 1;
   if (neuralEnabled() && typeof WebSocket !== 'undefined') {
     let tier1: Promise<void>;
@@ -1434,9 +1468,25 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
     const hops = freeVoiceHops(lang, {
       cantoNano: cantoNanoAvailable(),
       edge: neuralEnabled() && typeof WebSocket !== 'undefined',
+      cosyvoice: cosyvoiceActive(),
     });
     for (const hop of hops) {
       if (results.some((r) => r.ok)) break;
+      if (hop === 'cosyvoice') {
+        try {
+          await withTimeout(speakCosyVoice(line, {
+            lang,
+            gender: characterVoiceGender(characterId),
+          }), 8_000, 'cosyvoice timeout');
+          push('cosyvoice', true, 'cosyvoice played');
+        } catch (err) {
+          if ((err as Error | undefined)?.message !== 'canceled') {
+            stopCosyVoice();
+            push('cosyvoice', false, (err as Error | undefined)?.message ?? 'cosyvoice failed');
+          }
+        }
+        continue;
+      }
       if (hop === 'edge') {
         try {
           await withTimeout(speakEdge(line, {
@@ -1484,6 +1534,31 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
  * voice-status bus so the status plate agrees. Resolves true only when the
  * utterance completed without error.
  */
+/**
+ * Settings probe for the CosyVoice experiment. Speaks one line through that
+ * server only — it does not turn the live-chain flag on, and it does not
+ * fall through to Edge. Resolves false when no URL is saved or the call fails.
+ */
+export async function testCosyVoice(characterId: string, lang: Lang): Promise<boolean> {
+  if (!cosyvoiceEndpoint()) return false;
+  unlockAudio();
+  const line = TEST_LINES[lang] ?? TEST_LINES.en;
+  try {
+    await withTimeout(speakCosyVoice(line, {
+      lang,
+      gender: characterVoiceGender(characterId),
+    }), 8_000, 'cosyvoice timeout');
+    reportVoiceStatus('cosyvoice', true, 'cosyvoice played');
+    return true;
+  } catch (err) {
+    if ((err as Error | undefined)?.message !== 'canceled') {
+      stopCosyVoice();
+      reportVoiceStatus('cosyvoice', false, (err as Error | undefined)?.message ?? 'cosyvoice failed');
+    }
+    return false;
+  }
+}
+
 export async function testProxyVoice(characterId: string, lang: Lang): Promise<boolean> {
   unlockAudio();
   const line = TEST_LINES[lang] ?? TEST_LINES.en;
