@@ -13,6 +13,11 @@ out/
 # test coverage reports
 coverage/
 
+# production API sqlite (local only)
+*.sqlite
+*.sqlite-journal
+server/backend/data/
+
 # sample avatar stays local-only (copyright) — see ASSET_MANIFEST.md
 apps/web/public/models/*.vrm
 apps/web/public/models/want/*.vrm
