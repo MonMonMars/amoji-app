@@ -64,6 +64,7 @@ import { BASE_SYSTEM, languageBlock, parseEmotionHints, type ChatMessage } from 
 import { BRAIN_SPECS, markBrainDead, pickBrain, type BrainSpec } from './brain';
 import { cleanForDisplay } from './speak-text';
 import { withQuestion } from './follow-up';
+import { preferLiveReply, worldBlock } from './live-tools';
 
 export interface ClientChatResult { reply: string; emotionHints: Record<string, number> }
 
@@ -71,6 +72,10 @@ export interface ClientChatOptions {
   language?: string;
   persona?: string;
   memory?: string;
+  /** live weather / news / search facts for the system prompt */
+  world?: string;
+  /** spoken fallback already in `language`, used only if every brain fails */
+  worldSpoken?: string;
   /** fired with the accumulated text as stream chunks arrive */
   onPartial?: (text: string) => void;
 }
@@ -469,7 +474,12 @@ export async function clientChat(
   messages: ChatMessage[],
   opts?: ClientChatOptions,
 ): Promise<ClientChatResult> {
-  const system = `${BASE_SYSTEM}\nReply in speakable sentences only. Do not show chain-of-thought, markdown, code, or emotion labels in the prose. The only machine tag is the final [emotion:{...}] line.\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}`;
+  const system = `${BASE_SYSTEM}\nReply in speakable sentences only. Do not show chain-of-thought, markdown, code, or emotion labels in the prose. The only machine tag is the final [emotion:{...}] line.\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
+  const factsReply = (): ClientChatResult | null => {
+    const spoken = opts?.worldSpoken?.trim();
+    if (!spoken) return null;
+    return { reply: withQuestion(spoken, opts?.language), emotionHints: analyzeText(spoken) as Record<string, number> };
+  };
   const recent = trimHistoryForPrompt(messages);
   const lastUser = recent[recent.length - 1]?.content ?? '';
   const first = pickBrain();
@@ -483,11 +493,15 @@ export async function clientChat(
       throw new Error(`${first.spec.id} out of credit`);
     }
     const done = finishReply(content);
-    return { ...done, reply: withQuestion(done.reply, opts?.language) };
+    const reply = preferLiveReply(withQuestion(done.reply, opts?.language), opts?.world, opts?.worldSpoken, opts?.language);
+    return { ...done, reply };
   } catch (err) {
     if (first.spec.id === 'pollinations') {
       // r.46 — the free lane itself is too slow/down: she answers instantly
-      // from her local heart instead of dead-ending the chat with an error
+      // from her local heart instead of dead-ending the chat with an error.
+      // Live facts (weather, news, a lookup) still get spoken if we have them.
+      const facts = factsReply();
+      if (facts) return facts;
       noteSlowLane(opts?.language);
       return localFallbackReply(lastUser, opts?.language);
     }
@@ -505,9 +519,12 @@ export async function clientChat(
       const content = await racedPollinations(free, '', system, recent, opts?.onPartial);
       if (content.length < 160 && CREDIT_RE.test(content)) throw new Error('pollinations credit');
       const done = finishReply(content);
-    return { ...done, reply: withQuestion(done.reply, opts?.language) };
+      const reply = preferLiveReply(withQuestion(done.reply, opts?.language), opts?.world, opts?.worldSpoken, opts?.language);
+      return { ...done, reply };
     } catch {
       // r.46 — even the free race lost: keep the conversation alive NOW
+      const facts = factsReply();
+      if (facts) return facts;
       noteSlowLane(opts?.language);
       return localFallbackReply(lastUser, opts?.language);
     }

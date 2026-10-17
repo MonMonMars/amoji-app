@@ -27,6 +27,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AmojiFace } from '../../lib/robot-face';
 import { clientChat } from '../../lib/client-chat';
+import { clientLiveContext } from '../../lib/live-tools';
 import type { ChatMessage } from '../../lib/llm';
 import { notifySpeaking, isSpeaking, sampleSpeech } from '../../lib/speech';
 import { speak, stopSpeaking } from '../../lib/voice';
@@ -176,9 +177,14 @@ export default function FacePage() {
       historyRef.current.push({ role: 'user', content: text });
 
       emit('thinking');
+      const users = historyRef.current.filter((m) => m.role === 'user');
+      const prior = users.length > 1 ? users[users.length - 2]?.content : undefined;
+      const live = await clientLiveContext(text, optsRef.current.lang, prior);
       const { reply, emotionHints } = await clientChat(historyRef.current.slice(-10), {
         language: optsRef.current.lang,
         persona: 'You are the onboard companion of a robot with an emotive face. One or two short spoken sentences only.',
+        world: live.prompt,
+        worldSpoken: live.spoken,
       });
       historyRef.current.push({ role: 'assistant', content: reply });
       if (Object.keys(emotionHints).length) face.showHints(emotionHints);
