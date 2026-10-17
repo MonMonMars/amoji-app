@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  BACKGROUNDS, CHARACTERS, characterById, backgroundById, DEFAULT_PREFS, KID_CHARACTER, WANT_CAST_RELEASE, type Lang,
+  BACKGROUNDS, CHARACTERS, characterById, backgroundById, backgroundLetter, DEFAULT_PREFS, KID_CHARACTER, WANT_CAST_RELEASE, type Lang,
 } from '../lib/prefs';
 import { CAST_NO, castNo } from '../lib/castNo';
 
@@ -12,9 +12,7 @@ describe('cast roster', () => {
     expect(CHARACTERS.length).toBe(46);
     expect(WANT_CAST_RELEASE).toBe('free-library-want-2026-10-12');
     for (const c of CHARACTERS) {
-      const img = c.image ?? '';
-      const style = c.gender === 'male' ? 'adventurer' : 'lorelei';
-      expect(img, c.id).toMatch(new RegExp(`^https://api\\.dicebear\\.com/9\\.x/${style}/png\\?seed=`));
+      expect(c.image, c.id).toBe(`${RELEASE}${c.id}.png`);
       for (const l of ['en', 'yue', 'zh', 'ja'] as Lang[]) expect(c.tagline[l].length).toBeGreaterThan(0);
       expect(c.persona.length).toBeGreaterThan(20);
       expect(['female', 'male']).toContain(c.gender);
@@ -77,6 +75,19 @@ describe('scene roster', () => {
   it('scene ids stay unique and the default pref resolves', () => {
     expect(new Set(BACKGROUNDS.map((b) => b.id)).size).toBe(BACKGROUNDS.length);
     expect(backgroundById(DEFAULT_PREFS.background).id).toBe(DEFAULT_PREFS.background);
+  });
+
+  it('orders scenes daytime to nighttime and letters them A…', () => {
+    expect(BACKGROUNDS.map((b) => b.id)).toEqual([
+      'meadow', 'sakura', 'sunset', 'cloudsea',
+      'rain', 'ember', 'neon', 'aurora',
+      'snowmoon', 'abyss', 'void', 'galaxy',
+    ]);
+    expect(backgroundLetter('meadow')).toBe('A');
+    expect(backgroundLetter('sakura')).toBe('B');
+    expect(backgroundLetter('void')).toBe('K');
+    expect(backgroundLetter('galaxy')).toBe('L');
+    expect(backgroundLetter('missing')).toBe('');
   });
 });
 
