@@ -21,7 +21,7 @@ import { chestPokeBounce } from '../lib/vrm/chest-bounce';
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
 import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
-import { modularGlbUrl } from '../lib/modular/catalog';
+import { modularGlbUrl, vrmCandidatesForOutfit } from '../lib/modular/catalog';
 import { assembleModular, replaceBodyMeshes, type ModularAssembly } from '../lib/modular/assemble';
 import { loadModularGltf } from '../lib/modular/load';
 import { publishModularView } from '../lib/modular/storage';
@@ -976,28 +976,61 @@ export default function CompanionCanvas({
       });
     };
 
-    const loadPlain = (index: number, url: string) => {
+    const loadPlain = (index: number, url: string, token: number) => {
       const plain = new GLTFLoader();
       plain.load(url, (gltf) => {
+        if (cancelled || token !== loadToken) return;
         try {
           // r103: hand the shared clip-animated-bone set to the avatar — the
           // relaxed-hand guard reads it per frame (clips never load on this
           // path, so the set stays empty and every finger gets the curl)
           mountAvatar(createGenericAvatar(gltf, clipAnimatedBones));
         } catch {
-          loadModel(index + 1);
+          loadModel(index + 1, token);
         }
       }, (ev) => {
         // r84: byte-level progress for the loading indicator
+        if (cancelled || token !== loadToken) return;
         if (ev.lengthComputable && ev.total > 0) {
           modelPct = Math.min(99, Math.round((ev.loaded / ev.total) * 100));
           reportProgress();
         }
-      }, () => loadModel(index + 1));
+      }, () => {
+        if (cancelled || token !== loadToken) return;
+        loadModel(index + 1, token);
+      });
     };
 
     let cancelled = false;
     let modularAsm: ModularAssembly | null = null;
+    // False until the first modular attempt settles. Outfit clicks during
+    // that window are applied from wardrobeBodyRef at settle time.
+    let swapsLive = false;
+    let loadToken = 0;
+    let activeCandidates = MODEL_CANDIDATES;
+    let swapReq = 0;
+
+    const candidatesFor = (bodyId?: string) => (
+      bodyId
+        ? vrmCandidatesForOutfit(bodyId, ownModel, (id) => characterById(id).model)
+        : MODEL_CANDIDATES
+    );
+
+    const clearAvatar = () => {
+      avatar?.root.removeFromParent();
+      avatar = null;
+      mounted = false;
+    };
+
+    /** Drop the current mesh and load this candidate chain. A newer call wins. */
+    const beginLoad = (candidates: string[]) => {
+      loadToken += 1;
+      activeCandidates = candidates;
+      clearAvatar();
+      modelPct = 0;
+      setLoadProgress(0);
+      loadModel(0, loadToken);
+    };
 
     const mountModular = async (headId: string, bodyId: string): Promise<boolean> => {
       publishModularView('loading');
@@ -1006,11 +1039,14 @@ export default function CompanionCanvas({
       if (cancelled) return true;
       const asm = assembleModular(bodyGltf, headGltf);
       modularAsm = asm;
+      let shownBody = bodyId;
       const latestBody = wardrobeBodyRef.current;
       if (latestBody && latestBody !== bodyId) {
         try {
           const next = await loadModularGltf(modularGlbUrl(latestBody, 'body'), false);
-          if (!cancelled) replaceBodyMeshes(asm, next);
+          if (cancelled) return true;
+          replaceBodyMeshes(asm, next);
+          shownBody = latestBody;
         } catch { /* keep the outfit that did load */ }
       }
       if (cancelled) return true;
@@ -1022,45 +1058,68 @@ export default function CompanionCanvas({
         mountAvatar(createGenericAvatar(bodyGltf, clipAnimatedBones));
       }
       publishModularView('modular');
+      swapsLive = true;
+      const after = wardrobeBodyRef.current;
+      if (after && after !== shownBody) swapBodyRef.current(after);
       return true;
     };
 
-    const loadModel = (index: number) => {
-      if (index >= MODEL_CANDIDATES.length) {
+    const loadModel = (index: number, token: number) => {
+      if (cancelled || token !== loadToken) return;
+      if (index >= activeCandidates.length) {
         // r84 — nothing left to try: stop waiting, show the notice
         setLoadProgress(null);
         clearTimeout(loadWatchdog);
         onNoticeRef.current?.({ reason: 'asset' });
         return;
       }
-      const cand = MODEL_CANDIDATES[index]!;
+      const cand = activeCandidates[index]!;
       const url = modelUrl(cand) ?? `${ASSET_BASE}/models/${cand}`;
       const vrmLoader = new GLTFLoader();
       vrmLoader.register((parser) => new VRMLoaderPlugin(parser));
       vrmLoader.load(url, (gltf) => {
+        if (cancelled || token !== loadToken) return;
         const v = (gltf as unknown as { userData: { vrm?: VRM } }).userData.vrm;
         if (!v) {
-          loadPlain(index, url);
+          loadPlain(index, url, token);
           return;
         }
         // r103: the avatar keeps a LIVE reference to clipAnimatedBones — the
         // clips stream in after the mount and fill the same set
+        clearAvatar();
         mountAvatar(createV1Avatar(v, clipAnimatedBones));
         loadClips(v);
       }, (ev) => {
         // r84: byte-level progress for the loading indicator
+        if (cancelled || token !== loadToken) return;
         if (ev.lengthComputable && ev.total > 0) {
           modelPct = Math.min(99, Math.round((ev.loaded / ev.total) * 100));
           reportProgress();
         }
-      }, () => loadPlain(index, url));
+      }, () => {
+        if (cancelled || token !== loadToken) return;
+        loadPlain(index, url, token);
+      });
     };
     swapBodyRef.current = (bodyId: string) => {
-      if (cancelled || !modularAsm || !wardrobeHeadId) return;
-      loadModularGltf(modularGlbUrl(bodyId, 'body'), false).then((gltf) => {
-        if (cancelled || !modularAsm) return;
-        replaceBodyMeshes(modularAsm, gltf);
-      }).catch(() => { /* outfit file missing — leave the current body */ });
+      if (cancelled || !swapsLive || !wardrobeHeadId) return;
+      if (modularAsm) {
+        const req = ++swapReq;
+        loadModularGltf(modularGlbUrl(bodyId, 'body'), false).then((gltf) => {
+          if (cancelled || req !== swapReq || !modularAsm) return;
+          if (wardrobeBodyRef.current !== bodyId) return;
+          replaceBodyMeshes(modularAsm, gltf);
+        }).catch(() => {
+          // Split body missing — the outfit's full VRM is the visible mesh.
+          if (cancelled || req !== swapReq) return;
+          modularAsm = null;
+          publishModularView('fallback');
+          beginLoad(candidatesFor(wardrobeBodyRef.current ?? bodyId));
+        });
+        return;
+      }
+      publishModularView('fallback');
+      beginLoad(candidatesFor(bodyId));
     };
 
     const bootAvatar = () => {
@@ -1068,14 +1127,16 @@ export default function CompanionCanvas({
       const bodyId = wardrobeBodyRef.current;
       if (!headId || !bodyId) {
         publishModularView('idle');
-        loadModel(0);
+        swapsLive = true;
+        beginLoad(MODEL_CANDIDATES);
         return;
       }
       mountModular(headId, bodyId).catch(() => {
         if (cancelled) return;
         modularAsm = null;
+        swapsLive = true;
         publishModularView('fallback');
-        loadModel(0);
+        beginLoad(candidatesFor(wardrobeBodyRef.current ?? bodyId));
       });
     };
     bootAvatar();
@@ -1682,7 +1743,8 @@ export default function CompanionCanvas({
     };
   }, [accent, seedKey, wardrobeHeadId]);
 
-  // Outfit changes keep the mounted head. A head change rebuilds above.
+  // Outfit changes hot-swap body meshes when the modular GLBs mounted.
+  // Otherwise they reload that outfit's full VRM. A head change rebuilds above.
   useEffect(() => {
     if (!wardrobeHeadId || !wardrobeBodyId) return;
     swapBodyRef.current(wardrobeBodyId);

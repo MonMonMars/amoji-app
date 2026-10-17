@@ -8,6 +8,7 @@ import {
   DEMO_HEADS,
   activeWardrobe,
   modularGlbRel,
+  vrmCandidatesForOutfit,
 } from '../lib/modular/catalog';
 import {
   AMOJI_PART,
@@ -18,6 +19,7 @@ import {
 import { createGenericAvatar } from '../lib/vrm/avatar';
 import { loadModularSelection, saveModularSelection } from '../lib/modular/storage';
 import { safePortrait } from '../lib/frontImage';
+import { characterById } from '../lib/prefs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const MODULAR = path.resolve(here, '../public/models/modular');
@@ -122,6 +124,26 @@ describe('modular wardrobe catalog', () => {
       bodyId: 'A120',
     });
     expect(activeWardrobe('a98-ethan', { headId: 'A02', bodyId: 'A10' })).toBeNull();
+  });
+
+  it('puts the outfit VRM ahead of the head when split GLBs are unavailable', () => {
+    const modelFor = (id: string) => characterById(id).model;
+    expect(vrmCandidatesForOutfit('A120', 'want/a02-shibu.vrm', modelFor)).toEqual([
+      'want/a120-morikawa-yuki-summer-uniform.vrm',
+      'want/a02-shibu.vrm',
+      'seed-san.vrm',
+    ]);
+    expect(vrmCandidatesForOutfit('A02', 'want/a02-shibu.vrm', modelFor)).toEqual([
+      'want/a02-shibu.vrm',
+      'seed-san.vrm',
+    ]);
+    expect(vrmCandidatesForOutfit(undefined, 'want/a98-ethan.vrm', modelFor)).toEqual([
+      'want/a98-ethan.vrm',
+      'seed-san.vrm',
+    ]);
+    const canvas = fs.readFileSync(path.resolve(here, '../components/CompanionCanvas.tsx'), 'utf8');
+    expect(canvas).toContain('vrmCandidatesForOutfit');
+    expect(canvas).toContain('beginLoad(candidatesFor');
   });
 
   it('shows the front release portrait and scrolls option rows sideways', () => {
