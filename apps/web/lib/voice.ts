@@ -81,7 +81,9 @@ import type { Lang } from './prefs';
 import { characterVoiceGender } from './voice-gender';
 import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
 import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripVoicedGlyphs } from './speak-text';
-import { synthNameConflicts, synthNameList } from './voice-catalog';
+import { synthNameConflicts, synthNameList, voiceNameMatches } from './voice-catalog';
+import { LineQueue, speechRemainder } from './speech-queue';
+export { speechRemainder };
 import { edgeCastVoice } from './edge-cast';
 import { speakEdge, stopEdge, getTtsProxy } from './edge-tts';
 import { stopGtts } from './gtts';
@@ -904,6 +906,36 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
       { lang: 'en-US', names: ['Ana', 'Female'], basePitch: 1.14, baseRate: 1.06 },
     ],
   },
+  // Want-list males. Their own male names — never a female-only matrix.
+  'a24-hairsample-male': {
+    yue: [
+      { lang: 'zh-HK', names: ['WanLung', 'Sin-ju', 'Male'], basePitch: 0.92, baseRate: 0.98 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Yunjian', 'Yunxi', 'Kangkang', 'Male'], basePitch: 0.92, baseRate: 0.98 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Keita', 'Otoya', 'Male'], basePitch: 0.94, baseRate: 0.98 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Guy', 'David', 'Male'], basePitch: 0.94, baseRate: 0.98 },
+    ],
+  },
+  'a98-ethan': {
+    yue: [
+      { lang: 'zh-HK', names: ['WanLung', 'Sin-ju', 'Male'], basePitch: 0.98, baseRate: 1.0 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Yunxi', 'Yunjian', 'Kangkang', 'Male'], basePitch: 0.98, baseRate: 1.0 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Keita', 'Otoya', 'Male'], basePitch: 1.0, baseRate: 1.0 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Guy', 'David', 'Mark', 'Male'], basePitch: 1.0, baseRate: 1.0 },
+      { lang: 'en-GB', names: ['Ryan', 'Daniel', 'Male'], basePitch: 1.0, baseRate: 1.0 },
+    ],
+  },
 };
 
 /** Emotion → prosody for the browser-TTS fallback path (multipliers). */
@@ -1038,7 +1070,7 @@ function pickVoice(characterId: string, lang: Lang): { voice: SpeechSynthesisVoi
   const pitch = (gender === 'male' ? 0.94 : 1.06) + (color?.pitch ?? 0);
   const rate = (gender === 'male' ? 0.98 : 1.02) + (color?.rate ?? 0);
   for (const name of rotateNames(synthNameList(lang, gender), hashId(characterId))) {
-    const hit = pool.find((v) => v.name.toLowerCase().includes(name.toLowerCase()) && !synthNameConflicts(gender, v.name));
+    const hit = pool.find((v) => voiceNameMatches(v.name, name) && !synthNameConflicts(gender, v.name));
     if (hit) return { voice: hit, pitch, rate };
   }
   const safe = pool.find((v) => !synthNameConflicts(gender, v.name));
@@ -1048,7 +1080,7 @@ function pickVoice(characterId: string, lang: Lang): { voice: SpeechSynthesisVoi
   for (const c of choices) {
     const scoped = cached.filter((v) => v.lang.replace('_', '-').startsWith(c.lang));
     for (const name of c.names) {
-      const hit = scoped.find((v) => v.name.toLowerCase().includes(name.toLowerCase()) && !synthNameConflicts(gender, v.name));
+      const hit = scoped.find((v) => voiceNameMatches(v.name, name) && !synthNameConflicts(gender, v.name));
       if (hit) return { voice: hit, pitch: c.basePitch, rate: c.baseRate };
     }
   }
@@ -1123,7 +1155,74 @@ function haltSynthQueue(): void {
   try { speechSynthesis.resume(); } catch { /* ignore */ }
 }
 
+interface SpeechJob {
+  kind: 'speak' | 'sing';
+  text: string;
+  characterId: string;
+  lang: Lang;
+  emotionHints?: Record<string, number>;
+  leadOverride?: VocalLead;
+  intensity: number;
+}
+
+const lineQueue = new LineQueue<SpeechJob>();
+const idleWaiters: Array<() => void> = [];
+
+function flushIdleWaiters(): void {
+  if (lineQueue.pending()) return;
+  const waiters = idleWaiters.splice(0, idleWaiters.length);
+  for (const waiter of waiters) {
+    try { waiter(); } catch { /* ignore */ }
+  }
+}
+
+function cancelIdleWaiters(): void {
+  idleWaiters.length = 0;
+}
+
+/**
+ * Run `cb` when no companion line is playing or queued.
+ * A user interrupt drops the waiter so a song bed cannot start after they talk.
+ */
+export function whenSpeechIdle(cb: () => void): void {
+  if (!lineQueue.pending()) {
+    cb();
+    return;
+  }
+  idleWaiters.push(cb);
+}
+
+/** True while a companion line is playing or waiting behind it. */
+export function speechPending(): boolean {
+  return lineQueue.pending();
+}
+
+/** True when this exact sentence is the active line or still queued. */
+export function speechStillQueued(text: string): boolean {
+  const t = text.trim();
+  if (!t) return false;
+  return lineQueue.includes((job) => job.text.trim() === t);
+}
+
+function drainSpeech(): void {
+  const next = lineQueue.begin();
+  if (!next) {
+    flushIdleWaiters();
+    return;
+  }
+  const job = next.item;
+  const run = job.kind === 'sing'
+    ? performSing(job.text, job.characterId, job.lang)
+    : performSpeak(job.text, job.characterId, job.lang, job.emotionHints, job.leadOverride, job.intensity);
+  void run.finally(() => {
+    lineQueue.finished(next.epoch);
+    if (lineQueue.epochNow() === next.epoch) drainSpeech();
+  });
+}
+
 export function stopSpeaking(): void {
+  lineQueue.interrupt();
+  cancelIdleWaiters();
   stopThinkingSound();
   stopOpenAi();
   stopEdge();
@@ -1164,16 +1263,44 @@ export function speak(
   leadOverride?: VocalLead,
   intensity = 1,
 ): void {
+  // Companion lines wait their turn. stopSpeaking() is the only cut, and
+  // only the user's mic or a user turn calls it.
+  const cleaned = cleanForSpeech(text);
+  if (!cleaned || !voiceEnabled()) return;
+  lineQueue.enqueue({
+    kind: 'speak',
+    text: cleaned,
+    characterId,
+    lang,
+    emotionHints,
+    leadOverride,
+    intensity,
+  });
+  drainSpeech();
+}
+
+function performSpeak(
+  text: string,
+  characterId: string,
+  lang: Lang,
+  emotionHints?: Record<string, number>,
+  leadOverride?: VocalLead,
+  intensity = 1,
+): Promise<void> {
+  return new Promise((resolve) => {
+  let settled = false;
+  const settle = () => {
+    if (settled) return;
+    settled = true;
+    resolve();
+  };
   // Reply TTS takes the speaker. The wait hum must not play under it.
   stopThinkingSound();
   // Spoken string only. cleanForSpeech may drop punctuation-mark names and
   // rewrite dashes. Chat bubbles stay on cleanForDisplay — do not write this
   // string back into history.
   text = cleanForSpeech(text);
-  if (!text || !voiceEnabled()) return;
-  // One voice at a time. A poke that fell through to the browser (or the
-  // gesture prime) used to keep speaking under the next chat line.
-  stopSpeaking();
+  if (!text || !voiceEnabled()) { settle(); return; }
   // r111: remember the line for gesture-gate replay
   const attemptAt = Date.now();
   lastSpeak = { text, characterId, lang, emotionHints, leadOverride, intensity, at: attemptAt };
@@ -1224,10 +1351,10 @@ export function speak(
   // Free chain: Edge (locale + gender) → speechSynthesis. Yue adds
   // canto-tts-nano only when that runtime is bundled. OpenAI is opt-in and
   // not the default. A 'canceled' rejection means a newer line took over.
-  const runSynth = (): boolean => {
+  const runSynth = (onDone: () => void): boolean => {
     if (typeof speechSynthesis === 'undefined') return false;
     try {
-      synthSpeak(text, characterId, lang, emotion, expr, tic, amp);
+      synthSpeak(text, characterId, lang, emotion, expr, tic, amp, undefined, onDone);
       reportVoiceStatus('synth', true, 'browser voice queued');
       return true;
     } catch (err3) {
@@ -1239,18 +1366,19 @@ export function speak(
     const hops = freeVoiceHops(lang, { cantoNano: cantoNanoAvailable(), edge: edgeOn });
     const runAt = (index: number): void => {
       const hop = hops[index];
-      if (!hop) return;
+      if (!hop) { settle(); return; }
       const next = (): void => runAt(index + 1);
       if (hop === 'synth') {
-        if (!runSynth()) next();
+        if (!runSynth(settle)) next();
         return;
       }
       if (hop === 'canto-nano') {
         void speakCantoNano(stripVoicedGlyphs(text)).then(() => {
           markVoiceStarted();
           reportVoiceStatus('canto-nano', true, 'canto-tts-nano finished');
+          settle();
         }).catch((err: unknown) => {
-          if ((err as Error | undefined)?.message === 'canceled') return;
+          if ((err as Error | undefined)?.message === 'canceled') { settle(); return; }
           reportVoiceStatus('canto-nano', false, (err as Error | undefined)?.message ?? 'canto-tts-nano failed');
           next();
         });
@@ -1277,8 +1405,9 @@ export function speak(
       }
       void tier1.then(() => {
         reportVoiceStatus('edge', true, 'neural voice finished');
+        settle();
       }).catch((err: unknown) => {
-        if ((err as Error | undefined)?.message === 'canceled') return;
+        if ((err as Error | undefined)?.message === 'canceled') { settle(); return; }
         reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'edge-tts failed');
         stopEdge();
         next();
@@ -1303,8 +1432,9 @@ export function speak(
     }
     void tier0.then(() => {
       reportVoiceStatus('openai', true, 'chatgpt voice finished');
+      settle();
     }).catch((err: unknown) => {
-      if ((err as Error | undefined)?.message === 'canceled') return;
+      if ((err as Error | undefined)?.message === 'canceled') { settle(); return; }
       reportVoiceStatus('openai', false, (err as Error | undefined)?.message ?? 'openai-tts failed');
       if ((err as { name?: string } | undefined)?.name === 'NotAllowedError') armGestureReplay('openai not-allowed');
       stopOpenAi();
@@ -1314,6 +1444,7 @@ export function speak(
   }
 
   runFreeChain();
+  });
 }
 
 /**
@@ -1324,48 +1455,64 @@ export function speak(
  * pitch multipliers. Callers gate on voiceEnabled().
  */
 export function sing(text: string, characterId: string, lang: Lang): void {
-  stopThinkingSound();
-  text = cleanForSpeech(text);
-  if (!text || !voiceEnabled()) return;
-  stopSpeaking();
-  unlockAudio();
-  const expr = EXPRESSIVENESS[characterId] ?? 1;
-  if (neuralEnabled() && typeof WebSocket !== 'undefined') {
-    let tier1: Promise<void>;
-    try {
-      tier1 = speakEdge(text, {
-        lang,
-        gender: characterVoiceGender(characterId),
-        character: characterId,
-        expressiveness: expr,
-        melody: SONG_MELODY,
-        rateDelta: -0.06,
-        pitchDelta: 0.02,
-        // r100: singing counts too — a started song marks the voice started
-        onPlaying: () => { noteSpeechStarted(text); markVoiceStarted(); reportVoiceStatus('edge', true, 'neural voice playing (singing)'); },
-      });
-    } catch (err) {
-      tier1 = Promise.reject(err instanceof Error ? err : new Error(String(err)));
-    }
-    void tier1.catch((err: unknown) => {
-      if ((err as Error | undefined)?.message === 'canceled') return;
-      // endpoint unreachable — same melody on the browser voice
-      stopEdge();
+  const cleaned = cleanForSpeech(text);
+  if (!cleaned || !voiceEnabled()) return;
+  lineQueue.enqueue({ kind: 'sing', text: cleaned, characterId, lang, intensity: 1 });
+  drainSpeech();
+}
+
+function performSing(text: string, characterId: string, lang: Lang): Promise<void> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const settle = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+    stopThinkingSound();
+    text = cleanForSpeech(text);
+    if (!text || !voiceEnabled()) { settle(); return; }
+    unlockAudio();
+    const expr = EXPRESSIVENESS[characterId] ?? 1;
+    if (neuralEnabled() && typeof WebSocket !== 'undefined') {
+      let tier1: Promise<void>;
       try {
-        synthSpeak(text, characterId, lang, 'joy', expr, undefined, 1, SONG_MELODY);
-        reportVoiceStatus('synth', true, 'browser voice queued (singing)');
-      } catch (err2) {
-        reportVoiceStatus('synth', false, (err2 as Error | undefined)?.message ?? 'browser voice failed');
+        tier1 = speakEdge(text, {
+          lang,
+          gender: characterVoiceGender(characterId),
+          character: characterId,
+          expressiveness: expr,
+          melody: SONG_MELODY,
+          rateDelta: -0.06,
+          pitchDelta: 0.02,
+          // r100: singing counts too — a started song marks the voice started
+          onPlaying: () => { noteSpeechStarted(text); markVoiceStarted(); reportVoiceStatus('edge', true, 'neural voice playing (singing)'); },
+        });
+      } catch (err) {
+        tier1 = Promise.reject(err instanceof Error ? err : new Error(String(err)));
       }
-    });
-    return;
-  }
-  try {
-    synthSpeak(text, characterId, lang, 'joy', expr, undefined, 1, SONG_MELODY);
-    reportVoiceStatus('synth', true, 'browser voice queued (singing)');
-  } catch (err) {
-    reportVoiceStatus('synth', false, (err as Error | undefined)?.message ?? 'browser voice failed');
-  }
+      void tier1.then(() => settle()).catch((err: unknown) => {
+        if ((err as Error | undefined)?.message === 'canceled') { settle(); return; }
+        // endpoint unreachable — same melody on the browser voice
+        stopEdge();
+        try {
+          synthSpeak(text, characterId, lang, 'joy', expr, undefined, 1, SONG_MELODY, settle);
+          reportVoiceStatus('synth', true, 'browser voice queued (singing)');
+        } catch (err2) {
+          reportVoiceStatus('synth', false, (err2 as Error | undefined)?.message ?? 'browser voice failed');
+          settle();
+        }
+      });
+      return;
+    }
+    try {
+      synthSpeak(text, characterId, lang, 'joy', expr, undefined, 1, SONG_MELODY, settle);
+      reportVoiceStatus('synth', true, 'browser voice queued (singing)');
+    } catch (err) {
+      reportVoiceStatus('synth', false, (err as Error | undefined)?.message ?? 'browser voice failed');
+      settle();
+    }
+  });
 }
 
 /** one short happy line per language for the settings self-test (r2026-10-04.75) */
@@ -1387,6 +1534,9 @@ const TEST_LINES: Record<Lang, string> = {
  */
 export function testVoice(characterId: string, lang: Lang): void {
   unlockAudio();
+  // The settings button is a user action: it may cut the current line, then
+  // speak the test. Restoring the mute flag below must not call stopSpeaking.
+  stopSpeaking();
   const wasOn = voiceEnabled();
   if (!wasOn) {
     try { localStorage.setItem(MUTE_KEY, 'on'); } catch { /* ignore */ }
@@ -1613,8 +1763,17 @@ function synthSpeak(
   tic?: { text: string; pitch: number; rate: number },
   amp = 1,
   melody?: number[],
+  onDone?: () => void,
 ): void {
-  if (typeof speechSynthesis === 'undefined') return;
+  let lineDone = false;
+  let safety: ReturnType<typeof setTimeout> | undefined;
+  const finishLine = () => {
+    if (lineDone) return;
+    lineDone = true;
+    if (safety) clearTimeout(safety);
+    try { onDone?.(); } catch { /* ignore */ }
+  };
+  if (typeof speechSynthesis === 'undefined') { finishLine(); return; }
   haltSynthQueue();
   const gen = synthGeneration;
 
@@ -1670,12 +1829,29 @@ function synthSpeak(
     u.volume = vol;
     utterances.push(u);
   });
-  if (!utterances.length) return;
+  if (!utterances.length) { finishLine(); return; }
 
   let index = 0;
   let started = false;
   let retries = 0;
   let liveLip = 0;
+
+  // A dropped utterance never fires onend. Release the queue then.
+  // While the engine is still speaking, wait — a long line must not be cut.
+  const armSafety = () => {
+    if (safety) clearTimeout(safety);
+    safety = setTimeout(() => {
+      if (lineDone || gen !== synthGeneration) { finishLine(); return; }
+      try {
+        if (started && (speechSynthesis.speaking || speechSynthesis.pending)) {
+          armSafety();
+          return;
+        }
+      } catch { /* ignore */ }
+      finishLine();
+    }, 8_000);
+  };
+  armSafety();
 
   const armKeepAlive = () => {
     if (gen !== synthGeneration || synthKeepAlive) return;
@@ -1701,22 +1877,25 @@ function synthSpeak(
   };
 
   const speakOne = () => {
-    if (gen !== synthGeneration) return;
+    if (gen !== synthGeneration) { finishLine(); return; }
     if (index >= utterances.length) {
       clearSynthKeepAlive();
       closeMouth();
       restoreSynthEngine(gen, voice, locale);
+      finishLine();
       return;
     }
     const u = utterances[index]!;
     const last = index === utterances.length - 1;
     let settled = false;
     const finish = (advance: boolean) => {
-      if (settled || gen !== synthGeneration) return;
+      if (gen !== synthGeneration) { finishLine(); return; }
+      if (settled) return;
       settled = true;
       if (!advance) {
         clearSynthKeepAlive();
         closeMouth();
+        finishLine();
         return;
       }
       index += 1;
@@ -1734,6 +1913,7 @@ function synthSpeak(
       synthPrimed = true;
       reportVoiceStatus('synth', true, 'browser voice started');
       armKeepAlive();
+      armSafety();
     };
     u.onerror = (e) => {
       if (gen !== synthGeneration) return;
