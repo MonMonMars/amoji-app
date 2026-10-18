@@ -110,6 +110,11 @@ const ZONE: Record<string, Record<Lang, string>> = {
   side:  { en: 'my side', yue: '我側邊', zh: '我的旁边', ja: '横' },
   back:  { en: 'my back', yue: '我背脊', zh: '我的后背', ja: '背中' },
   hand:  { en: 'my hand', yue: '我隻手', zh: '我的手', ja: '手' },
+  armL:  { en: 'my left arm', yue: '我左手', zh: '我的左手', ja: '左腕' },
+  armR:  { en: 'my right arm', yue: '我右手', zh: '我的右手', ja: '右腕' },
+  belly: { en: 'my tummy', yue: '我個肚', zh: '我的肚子', ja: 'お腹' },
+  legL:  { en: 'my left leg', yue: '我左腳', zh: '我的左腿', ja: '左足' },
+  legR:  { en: 'my right leg', yue: '我右腳', zh: '我的右腿', ja: '右足' },
 };
 
 const CATCH: Record<VoiceId, Record<Lang, readonly string[]>> = {

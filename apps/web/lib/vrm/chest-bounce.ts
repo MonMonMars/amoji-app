@@ -1,26 +1,27 @@
-// Subtle secondary motion for a chest poke. A single damped spring on the
-// bust bones (not the ribcage, shoulders, or hips): compress, one small
-// return, then still. Peak is about 5°, which reads as a soft settle.
+// Secondary bounce for a chest or torso punch. A damped spring on the bust
+// bones (not the ribcage, shoulders, or hips): compress with the hit, one
+// rebound, then still. Peak is about 17°, enough to read on a poke.
 
 import * as THREE from 'three';
 
 /** How long the spring is allowed to move, seconds. */
-export const CHEST_BOUNCE_SEC = 0.8;
+export const CHEST_BOUNCE_SEC = 1.15;
 
-const PEAK = 0.09; // radians, ~5°
+const PEAK = 0.3; // radians, ~17°
 
 /** Pitch offset for a chest poke. Negative first (yield), then one rebound. */
 export function chestBouncePitch(tSec: number): number {
   if (!(tSec > 0) || tSec > CHEST_BOUNCE_SEC) return 0;
-  const damp = Math.exp(-tSec * 6.5);
-  const pitch = -PEAK * damp * Math.sin(tSec * 16);
+  const damp = Math.exp(-tSec * 3.6);
+  const pitch = -PEAK * damp * Math.sin(tSec * 11);
   return pitch === 0 ? 0 : pitch;
 }
 
-/** Non-chest pokes stay still. */
+/** Chest and torso punches bounce. Head, arms, and legs stay still. */
 export function chestPokeBounce(zone: string, tSec: number): number {
-  if (zone !== 'chest') return 0;
-  return chestBouncePitch(tSec);
+  const scale = zone === 'chest' ? 1 : zone === 'torso' ? 0.72 : 0;
+  if (!scale) return 0;
+  return chestBouncePitch(tSec) * scale;
 }
 
 /** Secondary bust bones only — not the chest/upper-chest ribcage. */
