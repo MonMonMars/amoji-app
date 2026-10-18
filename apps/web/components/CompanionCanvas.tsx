@@ -21,7 +21,7 @@ import { chestPokeBounce } from '../lib/vrm/chest-bounce';
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
 import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
-import { modularGlbUrl, vrmCandidatesForOutfit } from '../lib/modular/catalog';
+import { WARDROBE_ENABLED, modularGlbUrl, vrmCandidatesForOutfit } from '../lib/modular/catalog';
 import { assembleModular, replaceBodyMeshes, type ModularAssembly } from '../lib/modular/assemble';
 import { loadModularGltf } from '../lib/modular/load';
 import { publishModularView } from '../lib/modular/storage';
@@ -226,8 +226,12 @@ const TWIST_AMOUNT: Record<string, number> = {
 };
 
 export default function CompanionCanvas({
-  onNotice, onPoke, onHandHold, accent = '#f9a8d4', seedKey, wardrobeHeadId, wardrobeBodyId,
+  onNotice, onPoke, onHandHold, accent = '#f9a8d4', seedKey,
+  wardrobeHeadId: wardrobeHeadProp, wardrobeBodyId: wardrobeBodyProp,
 }: CompanionCanvasProps) {
+  // Cloth swap is gated off. A stored outfit must not replace the base VRM.
+  const wardrobeHeadId = WARDROBE_ENABLED ? wardrobeHeadProp : undefined;
+  const wardrobeBodyId = WARDROBE_ENABLED ? wardrobeBodyProp : undefined;
   const hostRef = useRef<HTMLDivElement>(null);
   const onNoticeRef = useRef(onNotice);
   onNoticeRef.current = onNotice;
