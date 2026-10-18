@@ -40,3 +40,35 @@ export function publishMiniGameEmotion(detail: MiniGameEmotionDetail): void {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent('amoji:minigame-emotion', { detail }));
 }
+
+const CHROME_EVENT = 'amoji:minigame-chrome';
+const OPEN_EVENT = 'amoji:minigame-open';
+
+/** Chat room hides the status plate, settings, wardrobe, and the game menu. */
+export function setMiniGameChromeHidden(hidden: boolean): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(CHROME_EVENT, { detail: hidden }));
+}
+
+export function subscribeMiniGameChrome(fn: (hidden: boolean) => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const on = (e: Event) => fn(Boolean((e as CustomEvent<boolean>).detail));
+  window.addEventListener(CHROME_EVENT, on);
+  return () => window.removeEventListener(CHROME_EVENT, on);
+}
+
+/** Top-right card menu asks the chat panel to open a title screen. */
+export function requestOpenMiniGame(kind: 'tag' | 'lane'): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(OPEN_EVENT, { detail: kind }));
+}
+
+export function subscribeMiniGameOpen(fn: (kind: 'tag' | 'lane') => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const on = (e: Event) => {
+    const kind = (e as CustomEvent<string>).detail;
+    if (kind === 'tag' || kind === 'lane') fn(kind);
+  };
+  window.addEventListener(OPEN_EVENT, on);
+  return () => window.removeEventListener(OPEN_EVENT, on);
+}
