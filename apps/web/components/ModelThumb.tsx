@@ -1,26 +1,36 @@
 'use client';
-// Small cast chips (selection row, settings, grids). Always the official
-// front-facing cartoon still — want-list `image` is the free-library release
-// PNG. Never /cast-thumbs (those bakes face the back) and never a runtime
-// VRM frame (the uncalibrated camera also faces the back).
+// Small cast chips (selection row, settings, grids). Prefer a local 2D
+// bighead still when one is passed; otherwise the free-library release PNG.
+// Never /cast-thumbs (those bakes face the back) and never a runtime VRM frame.
+import { useState } from 'react';
 import { assetUrl } from '../lib/asset';
 
 export default function ModelThumb({
   accent,
   name,
   image,
+  bighead,
   crop = 'center',
 }: {
   url?: string;
   accent: string;
   name: string;
+  /** Release still. Used when bighead is absent or fails to load. */
   image?: string;
+  /** Local /thumbs/bighead portrait. Optional. */
+  bighead?: string;
   /** Ignored. Old /cast-thumbs/<id>.jpg bakes are back views. */
   bakedId?: string;
   /** face: keep hair and eyes on a tall select card. center: square chips. */
   crop?: 'center' | 'face';
 }) {
-  const poster = image ? assetUrl(image) : null;
+  const primary = bighead ? assetUrl(bighead) : null;
+  const fallback = image ? assetUrl(image) : null;
+  const identity = `${primary ?? ''}|${fallback ?? ''}`;
+  const [load, setLoad] = useState({ identity, step: 0 });
+  const step = load.identity === identity ? load.step : 0;
+  const poster = step === 0 ? (primary ?? fallback) : step === 1 ? fallback : null;
+  const fail = () => setLoad({ identity, step: poster && poster === primary && fallback ? 1 : 2 });
 
   return (
     <span className="absolute inset-0 block">
@@ -30,6 +40,7 @@ export default function ModelThumb({
           src={poster}
           alt=""
           draggable={false}
+          onError={fail}
           className={`absolute inset-0 h-full w-full object-cover ${crop === 'face' ? 'object-[center_18%]' : 'object-center'}`}
         />
       ) : (

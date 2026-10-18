@@ -3,8 +3,9 @@
 // The stage is the chat room: the same SceneBackdrop and the same live
 // CompanionCanvas (VRM, camera, wardrobe). A thumb tap swaps that body
 // immediately — there is no flat portrait or cutout standing in for her.
-// The bottom strip is a centered card fan: 2D release portraits (never a
-// live VRM frame) and scene stills, lettered A, B, C… daytime → nighttime.
+// The bottom strip is a centered card fan: local 2D bighead portraits when
+// packed, otherwise the release still (never a live VRM frame), plus scene
+// stills lettered A, B, C… daytime → nighttime.
 // The stage behind them stays the live CompanionCanvas.
 import dynamic from 'next/dynamic';
 import { useEffect, useState, type CSSProperties } from 'react';
@@ -15,6 +16,7 @@ import SceneBackdrop from './SceneBackdrop';
 import ModelThumb from './ModelThumb';
 import FallbackNotice from './FallbackNotice';
 import { assetUrl } from '../lib/asset';
+import { bigheadPath } from '../lib/bighead';
 import { activeWardrobe } from '../lib/modular/catalog';
 import { useModularSelection } from '../lib/modular/storage';
 import { getLoadProgress, onLoadProgress, type LoadProgress } from '../lib/load-progress';
@@ -132,7 +134,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                   >
                     {num}
                   </span>
-                  <ModelThumb accent={c.accent} name={c.name} image={c.image} crop="face" />
+                  <ModelThumb accent={c.accent} name={c.name} image={c.image} bighead={bigheadPath(c.id)} crop="face" />
                   <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-1.5 pb-1.5 pt-6 text-center">
                     <span className="block truncate text-[11px] font-semibold leading-tight sm:text-xs">{c.name}</span>
                     <span className="text-[9px] leading-none text-white/70">{c.gender === 'female' ? '♀' : '♂'}</span>
