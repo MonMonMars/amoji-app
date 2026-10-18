@@ -1232,9 +1232,8 @@ export function stopSpeaking(): void {
 }
 
 /**
- * Short "hmm…" moment while the reply is still generating — ChatGPT does this
- * and it makes the character feel like she's actually thinking, not loading.
- * The mouth moves with the filler; the reply speech cuts it off automatically.
+ * Short "um……" while the reply is still generating. The mouth moves with the
+ * stub. The reply waits until this utterance finishes.
  * r2026-10-03.24: an optional felt mood tints the filler text itself (the
  * face/orb already wear the mood via applyLlmHints in the caller).
  */

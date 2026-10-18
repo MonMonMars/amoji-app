@@ -786,11 +786,9 @@ export default function ChatPanel({
     // has a premade clip as the wait audio, so the hum stays out of that mix.
     if (requested !== 'sing' && requested !== 'dance') startThinkingSound();
     // r.47 — ONE transient placeholder bubble carries the whole wait. It
-    // starts as '…'; preloaded warm lines (praise, curiosity,
-    // encouragement — her language, her felt mood) replace it every few
-    // seconds and are spoken aloud, so the load time reads as her reacting
-    // to you; the first stream token takes the bubble over, and the final
-    // reply commits in its place.
+    // starts as '…'; short um/ha stubs replace it every few seconds and are
+    // spoken aloud. Each stub finishes before the next. The first stream
+    // token takes the bubble over, and the final reply commits in its place.
     setHistory((h) => [...h, { role: 'assistant', content: '…' }]);
     transientRef.current = true;
     let warmCount = 0;
