@@ -1,7 +1,7 @@
-// Lines spoken while the brain is still working. Cantonese uses Pixel's
-// natural thinking set. Other languages are the same pause-to-think tone.
+// Lines spoken while the brain is still working. Short stubs only —
+// "um……", "ha……", and on a longer wait "um…… let me think."
 
-import { YUE_THINKING_LINES } from './thinking-lines';
+import { LOADING_STUBS } from './thinking-lines';
 
 /** delay before the first warm-up line lands (right after the "hmm…") */
 export const WARMUP_FIRST_MS = 1_300;
@@ -10,32 +10,11 @@ export const WARMUP_GAP_MS = 3_800;
 /** never ramble: after this many lines she simply smiles and waits */
 export const WARMUP_MAX_LINES = 3;
 
-export const WARMUP_BANKS: Record<string, string[]> = {
-  yue: [...YUE_THINKING_LINES],
-  zh: [
-    '嗯，让我想想先',
-    '嗯嗯嗯',
-    '等一下，我想清楚一点',
-    '我在想啦',
-    '好问题，让我想想',
-    '稍等，我整理一下',
-  ],
-  ja: [
-    'うん、ちょっと考えさせて',
-    'うーん',
-    '待って、ちゃんと考えてから',
-    '考えてるよ',
-    'いい質問だね、少し待って',
-    'えっと、整理してる',
-  ],
-  en: [
-    'Hmm, let me think first',
-    'Mm-hmm',
-    'One second, I want to get this right',
-    'I am thinking',
-    'Good question, give me a moment',
-    'Hang on, sorting it out',
-  ],
+export const WARMUP_BANKS: Record<string, readonly string[]> = {
+  yue: LOADING_STUBS.yue,
+  zh: LOADING_STUBS.zh,
+  ja: LOADING_STUBS.ja,
+  en: LOADING_STUBS.en,
 };
 
 /** felt-mood nudge: a sad/tired user gets the gentler, softer slots first */
@@ -51,10 +30,8 @@ const MOOD_OFFSET: Record<string, number> = {
 };
 
 /**
- * Pick the n-th warm-up line for this character/language. Deterministic:
- * the same inputs always give the same line (the caller advances `n`), and
- * the rotation spreads across the bank — seeded by the character id and the
- * length of what the user just said, nudged by the felt mood.
+ * Pick the n-th warm-up stub for this character/language. Deterministic:
+ * the same inputs always give the same line (the caller advances `n`).
  */
 export function pickWarmupLine(
   characterId: string,
