@@ -32,22 +32,25 @@ export interface PersonalityMotion {
   squash: number;
 }
 
-// IdleBreathCalm.vrma (pixiv ChatVRM, MIT) is the calm/shy/soft stand.
+// IdleBreathCalm.vrma (pixiv ChatVRM idle_loop, MIT) is the primary default
+// for every personality: forward head, arms at the sides, feet planted.
+// The clips after it are the personality variants (local StandardIdle,
+// LookAround, Relax, optional WeightShift).
 // Convert-ready, not wired yet: IdleKaykitA, IdleKaykitB, IdleQuaterniusHuman
 // (see public/gallery.html and public/models/anims-fbx/README.txt).
 const MOTION: Record<PersonalityId, PersonalityMotion> = {
-  sunny:   { timeScale: 1,    idleClips: ['WeightShift', 'LookAround', 'IdleNeutral', 'Relax'], poses: ['bouncy', 'stretchUp', 'lookUp', 'weightShift', 'leanIn'], twist: 'playful', face: 'happy', squash: 0.08 },
-  shy:     { timeScale: 0.76, idleClips: ['IdleBreathCalm', 'Relax', 'Thinking', 'IdleNeutral'], poses: ['calmHug', 'fidget', 'headTilt', 'toeShift', 'swaySoft'], twist: 'flustered', face: 'surprised', squash: 0.06 },
-  playful: { timeScale: 0.96, idleClips: ['LookAround', 'WeightShift', 'IdleNeutral', 'Relax'], poses: ['bouncy', 'leanIn', 'headTilt', 'shoulderShrug', 'toeShift'], twist: 'playful', face: 'happy', squash: 0.09 },
-  gentle:  { timeScale: 0.8,  idleClips: ['IdleBreathCalm', 'Relax', 'IdleNeutral', 'Thinking'], poses: ['swaySoft', 'calmHug', 'dreamyTilt', 'headTilt', 'handsBehind'], twist: 'flustered', face: 'happy', squash: 0.05 },
-  dreamy:  { timeScale: 0.78, idleClips: ['IdleBreathCalm', 'Thinking', 'Relax', 'IdleNeutral'], poses: ['stargaze', 'daydream', 'dreamyTilt', 'lookUp', 'swaySoft'], twist: 'startled', face: 'relaxed', squash: 0.05 },
-  spark:   { timeScale: 1,    idleClips: ['WeightShift', 'LookAround', 'IdleNeutral', 'Thinking'], poses: ['readyStance', 'bouncy', 'stretchSide', 'handsOnHips', 'lookUp'], twist: 'playful', face: 'happy', squash: 0.09 },
-  steady:  { timeScale: 0.88, idleClips: ['IdleBreathCalm', 'IdleNeutral', 'LookAround', 'Relax'], poses: ['stand', 'readyStance', 'handsOnHips', 'weightShift', 'lookAround'], twist: 'playful', face: 'happy', squash: 0.04 },
-  cool:    { timeScale: 0.86, idleClips: ['IdleNeutral', 'IdleBreathCalm', 'LookAround', 'Relax'], poses: ['guardCross', 'stand', 'lookAround', 'handsBehind', 'confidentLean'], twist: 'unimpressed', face: 'relaxed', squash: 0.04 },
-  warm:    { timeScale: 0.9,  idleClips: ['Relax', 'WeightShift', 'IdleNeutral', 'LookAround'], poses: ['swaySoft', 'handsOnHips', 'shoulderShrug', 'leanIn', 'headTilt'], twist: 'playful', face: 'happy', squash: 0.06 },
-  quiet:   { timeScale: 0.76, idleClips: ['IdleBreathCalm', 'Thinking', 'Relax', 'IdleNeutral'], poses: ['chinStroke', 'handsBehind', 'stand', 'daydream', 'lookAround'], twist: 'flustered', face: 'relaxed', squash: 0.04 },
-  sporty:  { timeScale: 1,    idleClips: ['WeightShift', 'LookAround', 'IdleNeutral', 'Relax'], poses: ['readyStance', 'stretchUp', 'stretchSide', 'bouncy', 'weightShift'], twist: 'challenging', face: 'happy', squash: 0.07 },
-  wry:     { timeScale: 0.9,  idleClips: ['LookAround', 'IdleNeutral', 'Relax', 'Thinking'], poses: ['confidentLean', 'handsOnHips', 'lookAround', 'shoulderShrug', 'stand'], twist: 'playful', face: 'surprised', squash: 0.05 },
+  sunny:   { timeScale: 1,    idleClips: ['IdleBreathCalm', 'WeightShift', 'LookAround', 'StandardIdle', 'Relax'], poses: ['bouncy', 'stretchUp', 'lookUp', 'weightShift', 'leanIn'], twist: 'playful', face: 'happy', squash: 0.08 },
+  shy:     { timeScale: 0.76, idleClips: ['IdleBreathCalm', 'Relax', 'StandardIdle', 'LookAround'], poses: ['calmHug', 'fidget', 'headTilt', 'toeShift', 'swaySoft'], twist: 'flustered', face: 'surprised', squash: 0.06 },
+  playful: { timeScale: 0.96, idleClips: ['IdleBreathCalm', 'LookAround', 'WeightShift', 'StandardIdle', 'Relax'], poses: ['bouncy', 'leanIn', 'headTilt', 'shoulderShrug', 'toeShift'], twist: 'playful', face: 'happy', squash: 0.09 },
+  gentle:  { timeScale: 0.8,  idleClips: ['IdleBreathCalm', 'Relax', 'StandardIdle', 'LookAround'], poses: ['swaySoft', 'calmHug', 'dreamyTilt', 'headTilt', 'handsBehind'], twist: 'flustered', face: 'happy', squash: 0.05 },
+  dreamy:  { timeScale: 0.78, idleClips: ['IdleBreathCalm', 'StandardIdle', 'Relax', 'LookAround'], poses: ['stargaze', 'daydream', 'dreamyTilt', 'lookUp', 'swaySoft'], twist: 'startled', face: 'relaxed', squash: 0.05 },
+  spark:   { timeScale: 1,    idleClips: ['IdleBreathCalm', 'WeightShift', 'LookAround', 'StandardIdle'], poses: ['readyStance', 'bouncy', 'stretchSide', 'handsOnHips', 'lookUp'], twist: 'playful', face: 'happy', squash: 0.09 },
+  steady:  { timeScale: 0.88, idleClips: ['IdleBreathCalm', 'StandardIdle', 'LookAround', 'Relax'], poses: ['stand', 'readyStance', 'handsOnHips', 'weightShift', 'lookAround'], twist: 'playful', face: 'happy', squash: 0.04 },
+  cool:    { timeScale: 0.86, idleClips: ['IdleBreathCalm', 'StandardIdle', 'LookAround', 'Relax'], poses: ['guardCross', 'stand', 'lookAround', 'handsBehind', 'confidentLean'], twist: 'unimpressed', face: 'relaxed', squash: 0.04 },
+  warm:    { timeScale: 0.9,  idleClips: ['IdleBreathCalm', 'Relax', 'WeightShift', 'LookAround', 'StandardIdle'], poses: ['swaySoft', 'handsOnHips', 'shoulderShrug', 'leanIn', 'headTilt'], twist: 'playful', face: 'happy', squash: 0.06 },
+  quiet:   { timeScale: 0.76, idleClips: ['IdleBreathCalm', 'StandardIdle', 'Relax', 'LookAround'], poses: ['chinStroke', 'handsBehind', 'stand', 'daydream', 'lookAround'], twist: 'flustered', face: 'relaxed', squash: 0.04 },
+  sporty:  { timeScale: 1,    idleClips: ['IdleBreathCalm', 'WeightShift', 'LookAround', 'StandardIdle', 'Relax'], poses: ['readyStance', 'stretchUp', 'stretchSide', 'bouncy', 'weightShift'], twist: 'challenging', face: 'happy', squash: 0.07 },
+  wry:     { timeScale: 0.9,  idleClips: ['IdleBreathCalm', 'LookAround', 'StandardIdle', 'Relax'], poses: ['confidentLean', 'handsOnHips', 'lookAround', 'shoulderShrug', 'stand'], twist: 'playful', face: 'surprised', squash: 0.05 },
 };
 
 function hashId(id: string): number {

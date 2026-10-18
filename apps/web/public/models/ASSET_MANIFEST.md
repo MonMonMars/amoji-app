@@ -115,16 +115,18 @@ Real VRMA animation clips (VRMC_vrm_animation), force-committed for GitHub Pages
 
 | File | Used for |
 |---|---|
-| anims/IdleNeutral.vrma | idle rotation (primary pool) |
-| anims/LookAround.vrma | idle rotation (primary pool) |
-| anims/Relax.vrma | idle rotation (primary pool) |
-| anims/Thinking.vrma | idle rotation (primary pool) |
+| anims/IdleBreathCalm.vrma | idle rotation (primary default) |
+| anims/StandardIdle.vrma | idle rotation (local neutral stand; vendored, not remote) |
+| anims/LookAround.vrma | idle rotation (curious variant) |
+| anims/Relax.vrma | idle rotation (soft variant) |
 | (remote) weightShift.vrma | optional idle if fetch succeeds |
-| (remote) standard_idle.vrma | optional idle if fetch succeeds |
-| anims/Impatient.vrma | dormant — not in default idle rotation |
-| anims/IdleChinHand.vrma | dormant — not in default idle rotation |
-| anims/IdleSassy.vrma | dormant — not in default idle rotation |
-| anims/Sleepy.vrma | dormant — not in default idle rotation |
+| anims/IdleNeutral.vrma | on disk, out of the default rotation (neck pitched down) |
+| anims/Thinking.vrma | on disk, out of the default rotation (head pitched down) |
+| anims/Impatient.vrma | on disk, out of the default rotation |
+| anims/IdleChinHand.vrma | on disk, out of the default rotation (arms into torso) |
+| anims/IdleSassy.vrma | on disk, out of the default rotation (arms into torso) |
+| anims/IdleHug.vrma | on disk, out of the default rotation (arms into torso) |
+| anims/Sleepy.vrma | on disk, out of the default rotation |
 | anims/Jump.vrma | performance clip (move trigger) |
 | anims/Angry.vrma | performance clip (mood: anger) |
 | anims/Sad.vrma | performance clip (mood: sad) |

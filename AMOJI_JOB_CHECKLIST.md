@@ -7,7 +7,7 @@ Locale → engine → voice lives in `apps/web/lib/voice-catalog.ts`. Non-Yue en
 - PC audio: every `AudioContext` and `<audio>` path calls `setSinkId('')`, then `'default'`. No device id, no Howler, no Bluetooth hardcode.
 - Voice: each want-list character has its own Edge slot per language (voice + pitch + pace), then gendered `speechSynthesis` with that same pitch and pace. Yue stays on Edge `zh-HK` (only two female voices and one male on the free list). `canto-tts-nano` is not in the repo, so that hop is skipped. gTTS is not on this chain.
 - TTS cleaner on `speak()`, `sing()`, and the chat display (`apps/web/lib/speak-text.ts`).
-- Wait state: Thinking clip, the 20 Cantonese lines below, no wait-time dance or music.
+- Wait state: IdleBreathCalm, the 20 Cantonese lines below, no wait-time dance or music.
 - Camera: wider polar orbit (`PHI_MIN` 0.25, `PHI_MAX` π−0.25; was 1.08 / 2.55). Yaw stays 360°. PC hold-to-pan only on a distant blank miss, and only after the hold arms.
 - Scroll: history scrolls itself. The invisible lower-third pad is gone. Bottom chat wrapper does not catch empty clicks.
 - Wardrobe: idle is a 40×40 icon beside settings. Press opens a full-screen view. Close returns to the preview.

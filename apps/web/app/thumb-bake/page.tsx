@@ -1,7 +1,7 @@
 'use client';
 // r114 THUMB BAKE STUDIO — dev tool, localhost only.
 // Renders every cast member ONE at a time through the real avatar pipeline
-// (upright + facing calibration, IdleNeutral mid-frame pose from the motion
+// (upright + facing calibration, IdleBreathCalm mid-frame pose from the motion
 // library, relaxed calibrated fingers, a gentle smile, neutral daylight) and
 // posts a 512px JPEG to the local save server (port 3999), which writes
 // public/cast-thumbs/<id>.jpg. Selection tiles then show her ACTUAL face —
@@ -33,7 +33,7 @@ declare global {
 }
 
 const SAVE_URL = 'http://localhost:3999/save';
-const IDLE_URL = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/models/anims/IdleNeutral.vrma`;
+const IDLE_URL = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/models/anims/IdleBreathCalm.vrma`;
 const BG = new THREE.Color('#262636');
 
 // Bake-only hips rebase (same math as CompanionCanvas r94/r113, trimmed):
