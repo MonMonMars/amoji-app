@@ -1,7 +1,7 @@
 'use client';
 // Selection grids shared by the setup flow and the in-chat settings sheet.
 import { assetUrl } from '../lib/asset';
-import { CHARACTERS, BACKGROUNDS, LANGS, t, type CharacterDef, type Lang, type Prefs } from '../lib/prefs';
+import { CHARACTERS, BACKGROUNDS, LANGS, t, type CharacterDef, type Lang, type LangDef, type Prefs } from '../lib/prefs';
 import ModelThumb from './ModelThumb';
 
 export function CharacterGrid({ lang, value, onChange }: { lang: Lang; value: string; onChange: (id: string) => void }) {
@@ -63,20 +63,77 @@ export function BackgroundGrid({ lang, value, onChange }: { lang: Lang; value: s
   );
 }
 
+/** Face of a language card. The parent supplies the portrait frame. */
+export function LangCardFace({ lang, active }: { lang: LangDef; active: boolean }) {
+  return (
+    <>
+      <span
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(circle at 50% 28%, #ffffffee, ${lang.accent} 46%, #1c1917 100%)`,
+        }}
+      />
+      <span
+        className="absolute right-1.5 top-1.5 z-20 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-neutral-950 px-1 text-[9px] font-extrabold text-neutral-950 shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
+        style={{ background: lang.accent }}
+      >
+        {lang.mark}
+      </span>
+      <span
+        className={`absolute inset-x-0 top-[18%] text-center font-black leading-none text-neutral-950 drop-shadow-[0_2px_0_rgba(255,255,255,0.45)] ${
+          lang.glyph.length > 1 ? 'text-4xl sm:text-5xl' : 'text-5xl sm:text-6xl'
+        }`}
+      >
+        {lang.glyph}
+      </span>
+      <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-1.5 pb-1.5 pt-6 text-center">
+        <span className="block truncate text-[11px] font-semibold leading-tight sm:text-xs">{lang.native}</span>
+      </span>
+      {active && (
+        <span
+          className="pointer-events-none absolute inset-0 rounded-2xl"
+          style={{ boxShadow: `inset 0 0 0 2px ${lang.accent}` }}
+        />
+      )}
+    </>
+  );
+}
+
+const langCardFrame = (active: boolean): { className: string; style: { boxShadow: string; filter: string } } => ({
+  className: `fx-press ui-card relative aspect-[6/8.4] w-full overflow-hidden rounded-2xl border text-left ${
+    active ? 'border-white/90' : 'border-white/15'
+  }`,
+  style: active
+    ? {
+        boxShadow: '0 18px 40px -18px rgba(0,0,0,0.85), 0 0 0 2px rgba(255,255,255,0.9), inset 0 1px 0 rgba(255,255,255,0.35)',
+        filter: 'brightness(1.08) saturate(1.05)',
+      }
+    : {
+        boxShadow: '0 10px 24px -16px rgba(0,0,0,0.8)',
+        filter: 'brightness(0.78) saturate(0.9)',
+      },
+});
+
+/** Settings and setup: the same portrait cards, in a centered row. */
 export function LangChips({ value, onChange }: { value: Lang; onChange: (l: Lang) => void }) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {LANGS.map((l) => (
-        <button
-          key={l.id}
-          onClick={() => onChange(l.id)}
-          className={`rounded-full px-4 py-2 text-sm transition-colors ${
-            value === l.id ? 'bg-white text-black' : 'bg-white/10 text-white/80 hover:bg-white/20'
-          }`}
-        >
-          {l.native}
-        </button>
-      ))}
+    <div className="mx-auto grid w-full max-w-lg grid-cols-4 items-center justify-center gap-2">
+      {LANGS.map((l) => {
+        const active = value === l.id;
+        const frame = langCardFrame(active);
+        return (
+          <button
+            key={l.id}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onChange(l.id)}
+            className={frame.className}
+            style={frame.style}
+          >
+            <LangCardFace lang={l} active={active} />
+          </button>
+        );
+      })}
     </div>
   );
 }

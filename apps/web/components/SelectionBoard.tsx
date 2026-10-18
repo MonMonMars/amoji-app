@@ -11,10 +11,10 @@ import dynamic from 'next/dynamic';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import ArcFan from './ArcFan';
-import HScrollRow from './HScrollRow';
 import SceneBackdrop from './SceneBackdrop';
 import ModelThumb from './ModelThumb';
 import FallbackNotice from './FallbackNotice';
+import { LangCardFace } from './selectors';
 import { assetUrl } from '../lib/asset';
 import { bigheadPath } from '../lib/bighead';
 import { activeWardrobe } from '../lib/modular/catalog';
@@ -92,9 +92,9 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
 
       <div
         data-testid="selection-thumbs"
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center bg-gradient-to-t from-black/75 via-black/40 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-12 sm:px-6"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex max-h-full min-h-0 justify-center bg-gradient-to-t from-black/75 via-black/40 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-12 sm:px-6"
       >
-        <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col items-center gap-2">
+        <div className="pointer-events-auto mx-auto flex max-h-full min-h-0 w-full min-w-0 max-w-7xl flex-col items-center gap-2 overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*]:shrink-0">
         <div className="w-full min-w-0 px-1 text-center">
           <p className="truncate text-lg font-bold drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)] sm:text-xl">
             {character.name}
@@ -199,23 +199,19 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
           <h2 className="mb-1 text-center text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
             {t(lang, 'chooseLanguage')}
           </h2>
-          <HScrollRow ariaLabel="languages" rowKey="languages" selectedId={live.lang}>
-            {LANGS.map((l) => {
-              const active = l.id === live.lang;
-              return (
-                <button
-                  key={l.id}
-                  data-row-item={l.id}
-                  onClick={() => pick({ lang: l.id })}
-                  className={`fx-press ui-btn relative min-h-11 shrink-0 rounded-full px-3 py-1 text-[11px] font-medium hover:scale-105 ${
-                    active ? 'bg-white text-black shadow-sm' : 'bg-white/10 text-white/80 hover:bg-white/20'
-                  }`}
-                >
-                  {l.native}
-                </button>
-              );
-            })}
-          </HScrollRow>
+          {/* Portrait scale matches the character fan, including when those head cards grow. */}
+          <ArcFan
+            ariaLabel="languages"
+            size="portrait"
+            items={LANGS}
+            selectedId={live.lang}
+            onSelect={(id) => {
+              if (id === 'en' || id === 'yue' || id === 'zh' || id === 'ja') pick({ lang: id });
+            }}
+            label={(l) => l.native}
+          >
+            {(l, active) => <LangCardFace lang={l} active={active} />}
+          </ArcFan>
         </section>
 
         <button
