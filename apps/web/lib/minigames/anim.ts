@@ -4,15 +4,17 @@
 import type { FaceExpr, GameAnim } from './types';
 
 /** Preferred clip ids, first hit wins. Later names are fallbacks. */
+const STANDING_IDLES = ['IdleBreathCalm', 'StandardIdle', 'Relax', 'LookAround'] as const;
+
 export const GAME_CLIP_CANDIDATES: Record<GameAnim, readonly string[]> = {
-  idle: ['IdleNeutral', 'IdleBreathCalm', 'Relax', 'Thinking'],
-  run: ['WeightShift', 'StandardIdle', 'IdleNeutral', 'Relax'],
-  dash: ['Jump', 'WeightShift', 'IdleNeutral'],
-  tease: ['LookAround', 'Blush', 'Idea', 'IdleNeutral'],
+  idle: STANDING_IDLES,
+  run: ['WeightShift', 'StandardIdle', 'IdleBreathCalm', 'Relax'],
+  dash: ['Jump', 'WeightShift', 'StandardIdle'],
+  tease: ['LookAround', 'Blush', 'Idea', 'IdleBreathCalm'],
   caught: ['Surprised', 'Cheer', 'Hello', 'Clapping'],
   crash: ['Scared', 'Sad', 'Bow', 'Goodbye'],
   win_pose: ['TaDa', 'Cheer', 'Clapping', 'YesCheer', 'Dance'],
-  pout: ['Disdain', 'Sad', 'Blush', 'Thinking', 'Relax'],
+  pout: ['Disdain', 'Sad', 'Blush', 'Relax'],
 };
 
 const LOOP: ReadonlySet<GameAnim> = new Set(['idle', 'run', 'dash', 'tease']);
@@ -24,7 +26,7 @@ export function resolveGameClip(
   for (const id of GAME_CLIP_CANDIDATES[anim]) {
     if (available.has(id)) return { id, loop: LOOP.has(anim) };
   }
-  for (const id of ['IdleNeutral', 'IdleBreathCalm', 'Relax', 'Thinking']) {
+  for (const id of STANDING_IDLES) {
     if (available.has(id)) return { id, loop: true };
   }
   return null;
