@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { arcPose } from '../components/ArcFan';
 import { BIGHEAD_IDS, bigheadPath } from '../lib/bighead';
-import { CHARACTERS, STRINGS } from '../lib/prefs';
+import { CHARACTERS, LANGS, STRINGS } from '../lib/prefs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const read = (rel: string) => fs.readFileSync(path.resolve(here, rel), 'utf8');
@@ -74,6 +74,29 @@ describe('selection layout', () => {
       expect(CHARACTERS.some((c) => c.id === id)).toBe(true);
     }
     expect(read('../components/ModelThumb.tsx')).toContain('onError');
+  });
+
+  it('fans language cards on the character portrait scale', () => {
+    expect(LANGS.map((l) => l.id)).toEqual(['yue', 'zh', 'ja', 'en']);
+    for (const lang of LANGS) {
+      expect(lang.glyph.length).toBeGreaterThan(0);
+      expect(lang.mark.length).toBeGreaterThan(0);
+      expect(lang.accent.startsWith('#')).toBe(true);
+    }
+    expect(board).not.toContain('HScrollRow');
+    expect(board).not.toContain('rounded-full px-3');
+    expect(board).toContain('ariaLabel="languages"');
+    expect(board).toContain('size="portrait"');
+    expect(board.split('size="portrait"').length - 1).toBe(2);
+    expect(board).toContain('<LangCardFace');
+    expect(board).toContain('pick({ lang: id })');
+    const selectors = read('../components/selectors.tsx');
+    expect(selectors).toContain('export function LangCardFace');
+    expect(selectors).toContain('ui-card');
+    expect(selectors).toContain('fx-press');
+    expect(selectors).toContain('rounded-2xl');
+    expect(selectors).toContain('aspect-[6/8.4]');
+    expect(selectors).not.toContain('rounded-full px-4');
   });
 
   it('gives selection controls a press flash and a short route transition', () => {
