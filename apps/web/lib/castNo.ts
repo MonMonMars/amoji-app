@@ -48,6 +48,11 @@ export const CAST_NO = {
   'a120-morikawa-yuki-summer-uniform': 44,
   'a121-nagano-mami-uniform': 45,
   'a122-shiratori-hikari-shifuku': 46,
+  'a459-chinesewarriormonk': 47,
+  'a460-freerealisticfemale': 48,
+  'a461-fashionruffle': 49,
+  'a463-sophia': 50,
+  'a468-eric': 51,
 } as const;
 
 export type CastId = keyof typeof CAST_NO;
