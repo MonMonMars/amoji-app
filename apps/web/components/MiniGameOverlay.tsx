@@ -25,6 +25,7 @@ import {
   type TagState,
 } from '../lib/minigames';
 import type { Lang } from '../lib/prefs';
+import { MiniGameMenuButton } from './MiniGamePicker';
 
 interface Hud {
   phase: 'countdown' | 'playing' | 'result';
@@ -53,9 +54,10 @@ export interface MiniGameOverlayProps {
   lang: Lang;
   onEmotion: (ev: MiniEmotionEvent) => void;
   onExit: (result: { line: string; hints: MiniEmotionEvent['hints'] }) => void;
+  onOpenMenu?: () => void;
 }
 
-export default function MiniGameOverlay({ kind, lang, onEmotion, onExit }: MiniGameOverlayProps) {
+export default function MiniGameOverlay({ kind, lang, onEmotion, onExit, onOpenMenu }: MiniGameOverlayProps) {
   const ui = uiCopy(lang);
   const [hud, setHud] = useState<Hud>({ phase: 'countdown', sec: null, count: 3, line: '' });
   const [bubble, setBubble] = useState<string | null>(null);
@@ -195,6 +197,7 @@ export default function MiniGameOverlay({ kind, lang, onEmotion, onExit }: MiniG
     if (kind !== 'lane') return;
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat) return;
+      if (document.querySelector('[data-testid="minigame-picker"]')) return;
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') laneCmd.current.swipe = -1;
       else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') laneCmd.current.swipe = 1;
     };
@@ -305,14 +308,19 @@ export default function MiniGameOverlay({ kind, lang, onEmotion, onExit }: MiniG
             <p className="text-2xl font-semibold tabular-nums" data-testid="minigame-timer">{hud.sec}</p>
           )}
         </div>
-        <button
-          type="button"
+        <div
+          className="pointer-events-auto flex items-center gap-2"
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => { e.stopPropagation(); back(); }}
-          className="pointer-events-auto rounded-full border border-white/15 bg-black/45 px-3 py-2 text-xs backdrop-blur-md"
         >
-          {ui.close}
-        </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); back(); }}
+            className="rounded-full border border-white/15 bg-black/45 px-3 py-2 text-xs backdrop-blur-md"
+          >
+            {ui.close}
+          </button>
+          {onOpenMenu && <MiniGameMenuButton lang={lang} onClick={() => onOpenMenu()} />}
+        </div>
       </div>
 
       {hud.phase === 'countdown' && (

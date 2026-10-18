@@ -196,6 +196,10 @@ export interface ChatPanelProps {
   onMemCount?: (n: number) => number | void;
   /** True while Tag or Lane Dodge owns the companion scene. */
   onMiniGame?: (active: boolean) => void;
+  /** Opens the overlapping game-card fan. */
+  onOpenMiniMenu?: () => void;
+  /** A card pick. `nonce` restarts even when the same game is chosen again. */
+  gameLaunch?: { nonce: number; kind: ActionGame } | null;
 }
 
 const IDLE_AFTER_MS = 40_000;
@@ -219,6 +223,8 @@ export default function ChatPanel({
   onStatus,
   onMemCount,
   onMiniGame,
+  onOpenMiniMenu,
+  gameLaunch = null,
 }: ChatPanelProps) {
   const [history, setHistory] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
@@ -237,6 +243,7 @@ export default function ChatPanel({
   // premade sing/dance clip currently on stage — the name is the visible pick
   const [nowPlaying, setNowPlaying] = useState<string | null>(null);
   const [actionGame, setActionGame] = useState<ActionGame | null>(null);
+  const [roundKey, setRoundKey] = useState(0);
   const actionGameRef = useRef(false);
   const onMiniGameRef = useRef(onMiniGame);
   useEffect(() => {
@@ -435,7 +442,17 @@ export default function ChatPanel({
     endPerformanceMusic();
     showTrack(null);
     setActionGame(kind);
+    setRoundKey((n) => n + 1);
   };
+
+  const launchSeen = useRef(0);
+  useEffect(() => {
+    if (!gameLaunch || gameLaunch.nonce === launchSeen.current) return;
+    launchSeen.current = gameLaunch.nonce;
+    beginActionGame(gameLaunch.kind);
+    // nonce is the trigger; beginActionGame is the launcher from this render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameLaunch]);
 
   /** Start a premade song (matched to her gender) or dance bed, and show the pick. */
   const beginShow = (kind: 'song' | 'dance', ms: number, mood?: string, n = laughCountRef.current) => {
@@ -1263,8 +1280,10 @@ export default function ChatPanel({
 
       {actionGame && (
         <MiniGameOverlay
+          key={roundKey}
           kind={actionGame}
           lang={lang}
+          onOpenMenu={onOpenMiniMenu}
           onEmotion={(ev) => applyLlmHints(ev.hints)}
           onExit={(result) => {
             actionGameRef.current = false;

@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { EMOTION_IDS } from '@amoji/emotion-core';
+import { arcPose } from '../components/ArcFan';
 import { TUTORIAL_LINES } from '../lib/showcase';
 import {
   CAM_LERP,
@@ -10,6 +11,8 @@ import {
   createLane,
   createTag,
   detectActionGame,
+  GAME_CARDS,
+  gameCardCopy,
   miniGameModelCandidates,
   resolveMiniGameCompanion,
   expressionFor,
@@ -322,6 +325,26 @@ describe('clips, lines, and chat entry', () => {
     expect(miniGameModelCandidates('cast/juno.vrm')).toEqual([]);
     expect(resolveMiniGameCompanion('a01-shino').gender).toBe('female');
     expect(resolveMiniGameCompanion('a98-ethan', 'a02-shibu').gender).toBe('female');
+  });
+
+  it('offers Tag and Lane Dodge on the character-select card fan', () => {
+    expect(GAME_CARDS.map((card) => card.id)).toEqual(['tag', 'lane']);
+    expect(gameCardCopy('tag', 'ja').title).toBe('捕まえて！');
+    expect(gameCardCopy('lane', 'en').title).toBe('逃げて！');
+    const center = arcPose(0, 76);
+    const side = arcPose(1, 76);
+    expect(center.z).toBeGreaterThan(side.z);
+    expect(center.scale).toBeGreaterThan(side.scale);
+    const root = path.resolve(here, '..');
+    const page = fs.readFileSync(path.join(root, 'app/chat/page.tsx'), 'utf8');
+    const picker = fs.readFileSync(path.join(root, 'components/MiniGamePicker.tsx'), 'utf8');
+    const fan = fs.readFileSync(path.join(root, 'components/ArcFan.tsx'), 'utf8');
+    expect(page).toContain('MiniGameMenuButton');
+    expect(picker).toContain('minigame-menu');
+    expect(page).toContain('MiniGamePicker');
+    expect(picker).toContain('ArcFan');
+    expect(picker).toContain('onConfirm');
+    expect(fan).toContain('onConfirm');
   });
 
   it('stays on the existing canvas, kinematic, and pauses while hidden', () => {

@@ -2,9 +2,10 @@
 // The chat room — full-screen 3D companion, status plate (top left),
 // settings gear (top right), boxless fading chat history + mic orb (bottom).
 import dynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ChatPanel from '../../components/ChatPanel';
+import MiniGamePicker, { MiniGameMenuButton } from '../../components/MiniGamePicker';
 import DevPanel from '../../components/DevPanel';
 import FallbackNotice from '../../components/FallbackNotice';
 import SceneBackdrop from '../../components/SceneBackdrop';
@@ -14,6 +15,7 @@ import WardrobeSwap from '../../components/WardrobeSwap';
 import { activeWardrobe } from '../../lib/modular/catalog';
 import { useModularSelection } from '../../lib/modular/storage';
 import { resolveMiniGameCompanion } from '../../lib/minigames/companion';
+import type { ActionGame } from '../../lib/minigames/types';
 import { usePrefs, characterById, backgroundById, KID_PERSONA_GUARD } from '../../lib/prefs';
 import { clearMemory, loadMemory, memorySummaryCount } from '../../lib/memory';
 import type { ChatStatus } from '../../lib/status';
@@ -33,6 +35,9 @@ export default function Chat() {
   const [memCount, setMemCount] = useState(0);
   const [leaving, setLeaving] = useState(false);
   const [miniGameOn, setMiniGameOn] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [gameLaunch, setGameLaunch] = useState<{ nonce: number; kind: ActionGame } | null>(null);
+  const launchNonce = useRef(0);
 
   const openSelect = () => {
     if (leaving) return;
@@ -64,6 +69,11 @@ export default function Chat() {
   const gameCompanion = resolveMiniGameCompanion(prefs.character, prefs.lastFemale);
   const canvasCharacter = miniGameOn ? gameCompanion : character;
   const canvasWardrobe = miniGameOn ? null : wardrobe;
+  const startFromMenu = (kind: ActionGame) => {
+    launchNonce.current += 1;
+    setGameLaunch({ nonce: launchNonce.current, kind });
+    setPickerOpen(false);
+  };
 
   return (
     <main
@@ -115,6 +125,9 @@ export default function Chat() {
           >
             ⚙️
           </button>
+          {!miniGameOn && (
+            <MiniGameMenuButton lang={prefs.lang} onClick={() => setPickerOpen(true)} />
+          )}
         </div>
       </div>
 
@@ -150,8 +163,17 @@ export default function Chat() {
           onStatus={setStatus}
           onMemCount={setMemCount}
           onMiniGame={setMiniGameOn}
+          onOpenMiniMenu={() => setPickerOpen(true)}
+          gameLaunch={gameLaunch}
         />
       </div>
+      {pickerOpen && (
+        <MiniGamePicker
+          lang={prefs.lang}
+          onClose={() => setPickerOpen(false)}
+          onPick={startFromMenu}
+        />
+      )}
     </main>
   );
 }

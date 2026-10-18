@@ -60,6 +60,9 @@ export interface MiniUiCopy {
   laneHint: string;
   tagTitle: string;
   laneTitle: string;
+  menu: string;
+  menuHint: string;
+  play: string;
 }
 
 const UI: Record<Lang, MiniUiCopy> = {
@@ -71,6 +74,9 @@ const UI: Record<Lang, MiniUiCopy> = {
     laneHint: '左右掃 · A/D 或方向鍵 · 撳左中右',
     tagTitle: '捕まえて！',
     laneTitle: '逃げて！',
+    menu: '小遊戲',
+    menuHint: '中間嗰張喺前面 · 撳卡就開始',
+    play: '開始',
   },
   zh: {
     again: '再来',
@@ -80,6 +86,9 @@ const UI: Record<Lang, MiniUiCopy> = {
     laneHint: '左右滑 · A/D 或方向键 · 点左中右',
     tagTitle: '捕まえて！',
     laneTitle: '逃げて！',
+    menu: '小游戏',
+    menuHint: '中间那张在前面 · 点卡片开始',
+    play: '开始',
   },
   ja: {
     again: 'もう一回',
@@ -89,6 +98,9 @@ const UI: Record<Lang, MiniUiCopy> = {
     laneHint: 'スワイプ · A/D か矢印 · 画面を三分割タップ',
     tagTitle: '捕まえて！',
     laneTitle: '逃げて！',
+    menu: 'ミニゲーム',
+    menuHint: '真ん中のカードが手前 · カードをタップ',
+    play: 'プレイ',
   },
   en: {
     again: 'Again',
@@ -98,6 +110,9 @@ const UI: Record<Lang, MiniUiCopy> = {
     laneHint: 'Swipe · A/D or arrows · click a third',
     tagTitle: '捕まえて！',
     laneTitle: '逃げて！',
+    menu: 'Mini-games',
+    menuHint: 'The center card is in front · tap a card to play',
+    play: 'Play',
   },
 };
 
