@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildEdgeSsml, edgeStyleFor, getTtsProxy, resolveEdgeVoice, resolveTtsProxy, setTtsProxy,
 } from '../lib/edge-tts';
+import { isFemaleNeuralVoice, isMaleNeuralVoice } from '../lib/voice-catalog';
 
 // r2026-10-06.131 — the free readaloud socket accepts mstts:express-as
 // emotional styles; these tests pin the SSML the app actually sends:
@@ -31,7 +32,7 @@ describe('edgeStyleFor — voice × emotion style resolution (r131)', () => {
   it('Cantonese voices get the HK style set — fear becomes worried', () => {
     expect(edgeStyleFor('zh-HK-HiuGaaiNeural', 'fear')).toBe('worried');
     expect(edgeStyleFor('zh-HK-HiuMaanNeural', 'sadness')).toBe('sad');
-    expect(edgeStyleFor('zh-HK-WanLungNeural', 'anger')).toBe('serious'); // HK set has no angry → falls to serious
+    expect(edgeStyleFor('zh-HK-WanLungNeural', 'anger')).toBeNull(); // WanLung has no express-as set
   });
 
   it('embarrassment on a shy-capable voice resolves to shy', () => {
@@ -191,6 +192,26 @@ describe('per-character Edge voices', () => {
     expect(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a24-hairsample-male' }).name).toBe('en-US-GuyNeural');
     expect(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a98-ethan' }).name).toBe('en-GB-RyanNeural');
     expect(resolveEdgeVoice({ lang: 'en', gender: 'female' }).name).toBe('en-US-JennyNeural');
+  });
+
+  it('speaks male companions with a male Edge voice and never styles WanLung', () => {
+    const langs = ['yue', 'zh', 'ja', 'en'] as const;
+    for (const lang of langs) {
+      for (const id of ['a24-hairsample-male', 'a98-ethan']) {
+        const voice = resolveEdgeVoice({ lang, gender: 'male', character: id });
+        expect(isMaleNeuralVoice(voice.name), `${id} ${lang} ${voice.name}`).toBe(true);
+        expect(isFemaleNeuralVoice(voice.name), `${id} ${lang}`).toBe(false);
+        const ssml = buildEdgeSsml('你好呀', { lang, gender: 'male', character: id, emotion: 'joy' });
+        expect(ssml).toContain(`voice name='${voice.name}'`);
+        if (voice.name === 'zh-HK-WanLungNeural' || voice.name === 'ja-JP-KeitaNeural') {
+          expect(ssml, `${id} ${lang}`).not.toContain('express-as');
+        } else if (ssml.includes('express-as')) {
+          const style = edgeStyleFor(voice.name, 'joy');
+          expect(style, `${voice.name} joy`).toBeTruthy();
+          expect(ssml).toContain(`style='${style}'`);
+        }
+      }
+    }
   });
 
   it('separates the two Cantonese males by pitch when only WanLung exists', () => {

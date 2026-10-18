@@ -132,6 +132,11 @@ describe('per-character personality profiles', () => {
         expect(line).not.toMatch(/\{/);
         expect(line).not.toMatch(UNSAFE);
       }
+      openers.forEach((line, i) => {
+        expect(line).toContain(CHARACTERS[i]!.name);
+        expect(line).toMatch(/[.。!！?？]/);
+        expect(line).not.toMatch(/sunshine!|plot twist|スパーク/);
+      });
       for (const line of idle) expect(line.trim()).toMatch(/[?？]$/);
     }
     const head = profilePokeLine('a01-shino', 'en', 0, 'head', 'female');

@@ -62,6 +62,20 @@ describe('per-character persona coverage', () => {
     }
   });
 
+  it('male matrices name a male voice, including the legacy male cast', () => {
+    const maleToken = /wanlung|yunxi|yunjian|keita|guy|david|mark|sin-ju|otoya|kangkang|christopher|eric|daniel|ryan|(^|[^a-z])male([^a-z]|$)/i;
+    const ids = ['a24-hairsample-male', 'a98-ethan', 'atlas', 'blaze', 'kai', 'ren', 'cloud', 'alan'];
+    for (const id of ids) {
+      const matrix = VOICE_MATRIX[id];
+      expect(matrix, id).toBeTruthy();
+      for (const lang of LANG_IDS) {
+        const names = (matrix![lang] ?? []).flatMap((c) => c.names).join(' ');
+        expect(names, `${id} ${lang}`).toMatch(maleToken);
+        expect(names.replace(/female/gi, ' '), `${id} ${lang}`).not.toMatch(/^\s*$/);
+      }
+    }
+  });
+
   it('voice matrix covers legacy cast; want-list uses gender fallbacks in voice.ts', () => {
     for (const c of CHARACTERS) {
       const matrix = VOICE_MATRIX[c.id];

@@ -1,17 +1,13 @@
 // Verbal tics that make the companion feel alive — the ChatGPT-voice layer.
 // Two tables:
-//  · THINKING_FILLERS — short "hmm…" moments spoken while the reply generates
+//  · THINKING_FILLERS — tiny loading stubs ("um……", "ha……") while a reply generates
 //  · INTERJECTIONS    — audible reactions (giggles, gasps, sighs) prepended to
 //    a spoken reply when the dominant emotion is STRONG (≥ INTERJECTION_AT)
-// r2026-10-03.24: the first "hmm…" now wears the felt mood — a sad user's hmm
-//   is softer than a happy one's. The mood bank wins when present.
-// r2026-10-04.90: every thinking filler is now strictly loading-flavored —
-//   um / let me think / let me search the internet / still searching. No more
-//   off-topic comforting lines (per Simon): these tics exist ONLY to buy
-//   thinking time, so they all sound like thinking/searching.
+// A felt mood only swaps which stub plays. Longer waits may say
+// "um…… let me think." or "um…… let me search the web." Nothing longer.
 // Pure data + tiny pickers so it stays unit-testable in node.
 
-import { YUE_THINKING_LINES } from './thinking-lines';
+import { LOADING_MOOD_STUBS, LOADING_STUBS } from './thinking-lines';
 
 export type LangCode = 'yue' | 'zh' | 'ja' | 'en';
 
@@ -19,55 +15,14 @@ export type LangCode = 'yue' | 'zh' | 'ja' | 'en';
 export const INTERJECTION_AT = 0.6;
 
 export const THINKING_FILLERS: Record<LangCode, string[]> = {
-  yue: [...YUE_THINKING_LINES],
-  zh: ['嗯……', '让我想想……', '我上网搜一下……', '搜索中……', '想一下想一下……'],
-  ja: ['うーん……', '考えてる……', '検索してるね……', '調べてる……', 'もう少し……'],
-  en: ['hmm……', 'let me think……', 'let me search the internet……', 'still searching……', 'umm, one moment……'],
+  yue: [...LOADING_STUBS.yue],
+  zh: [...LOADING_STUBS.zh],
+  ja: [...LOADING_STUBS.ja],
+  en: [...LOADING_STUBS.en],
 };
 
-/**
- * r2026-10-03.24 — mood-tinted first "hmm…". r2026-10-04.90 — mood now only
- * changes the TONE (fast/slow/soft) of a thinking/searching line, never the
- * topic: every entry below is still about thinking or searching.
- */
-export const MOOD_FILLERS: Record<string, Record<LangCode, string[]>> = {
-  happy: {
-    yue: ['嗯，等我諗下先', '好問題嚟嘅，諗下先', '嗯嗯嗯，差唔多諗到喇'],
-    zh: ['嗯！让我想想……', '好开心，让我查一下……', '我上网搜搜看……'],
-    ja: ['うん！考えてる……', '嬉しい、検索するね……', '調べてるよ……'],
-    en: ['hmm, okay! let me think……', 'happy question — searching for it……', 'looking that up……'],
-  },
-  tired: {
-    yue: ['嗯……慢慢諗……', '等我慢慢搵……', '搵緊，唔使急……'],
-    zh: ['嗯……慢慢想……', '让我慢慢搜……', '搜着呢，不急……'],
-    ja: ['うーん……ゆっくり考える……', 'ゆっくり検索するね……', '探してるよ、急がなくていい……'],
-    en: ['hmm… thinking slowly…', 'searching… no rush…', 'looking… take your time…'],
-  },
-  sad: {
-    yue: ['嗯……我諗緊……', '等我慢慢搵下……', '搵緊㗎……等我……'],
-    zh: ['嗯……我在想着呢……', '让我慢慢搜一下……', '搜着呢……等我……'],
-    ja: ['うーん……考えてるからね……', 'ゆっくり調べるね……', '探してるよ……待ってて……'],
-    en: ['hmm… thinking…', 'searching… hold on…', 'still looking…'],
-  },
-  angry: {
-    yue: ['嗯……我聽緊，等我諗……', '等我搵下先……', '諗緊，慢慢講……'],
-    zh: ['嗯……我在听，让我想想……', '让我搜一下先……', '想着呢，慢慢说……'],
-    ja: ['うん……聞いてる、考えてる……', '検索するね……', '考え中……ゆっくり話して……'],
-    en: ['hmm… listening, let me think…', 'searching… go on…', 'thinking it over…'],
-  },
-  anxious: {
-    yue: ['嗯……唔使急，等我搵……', '等我諗清楚先……', '搵緊㗎，好快……'],
-    zh: ['嗯……不用急，让我搜……', '让我想清楚先……', '搜着呢，很快……'],
-    ja: ['うん……急がなくていい、考えてる……', 'ちゃんと調べるね……', '探してるよ、もう少し……'],
-    en: ['hmm… no rush, thinking…', 'searching carefully…', 'almost got it…'],
-  },
-  sick: {
-    yue: ['嗯……你休息，我搵緊……', '等我諗，你唔使郁……', '我幫你上網搵下……'],
-    zh: ['嗯……你休息，我来搜……', '让我想，你不用动……', '我帮你上网查下……'],
-    ja: ['うん……あなたは休んで、調べるね……', '考えるから…動かなくていいよ……', '検索しておくね……'],
-    en: ['hmm… you rest, I\'ll search…', 'let me think… you don\'t need to move…', 'looking it up for you…'],
-  },
-};
+/** Mood-tinted loading stub. Same sounds as THINKING_FILLERS, different order. */
+export const MOOD_FILLERS: Record<string, Record<LangCode, readonly string[]>> = LOADING_MOOD_STUBS;
 
 /**
  * Audible emotion reactions, per language. pitch/rate are SSML-style deltas
