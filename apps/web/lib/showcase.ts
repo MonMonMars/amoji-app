@@ -93,7 +93,7 @@ export const SHOWCASE_YES_RE =
 export const TUTORIAL_LINES: Record<Lang, string[]> = {
   yue: [
     '我除咗傾偈，仲識唱歌跳舞㗎——你想睇我表演吖？',
-    '悶嘅話，我可以同你玩猜包剪揼、估數字同擲骰㗎！',
+    '想玩立體小遊戲？話「捕まえて」捉我，或者話「逃げて」玩三線躲避！',
     '我可以教你做瑜伽、打太極、功夫，仲可以同你一齊熱身㗎！',
     '想同我一齊唱歌？話「一齊唱歌」，我哋一人一句咁唱！',
     '話「一齊食飯」，我可以陪你食大餐——記住嗌雪糕！',
@@ -103,7 +103,7 @@ export const TUTORIAL_LINES: Record<Lang, string[]> = {
   ],
   zh: [
     '我除了聊天，还会唱歌跳舞哦——你想看我表演呀？',
-    '无聊的话，我可以跟你玩猜拳、猜数字和掷骰子哦！',
+    '想玩立体小游戏？说「捕まえて」来抓我，或者说「逃げて」玩三线躲避！',
     '我可以教你做瑜伽、打太极、功夫，还可以一起热身哦！',
     '想和我一起唱歌？说「一起唱歌」，我们一人一句地唱！',
     '说「一起吃饭」，我可以陪你吃大餐——记得点雪糕！',
@@ -113,7 +113,7 @@ export const TUTORIAL_LINES: Record<Lang, string[]> = {
   ],
   ja: [
     'おしゃべりだけじゃないよ、歌って踊れるの——見せてあげよっか？',
-    '退屈なら、じゃんけん・数あて・サイコロで遊べるよ！',
+    '立体ミニゲームもあるよ。「捕まえて」で鬼ごっこ、「逃げて」で3レーン回避！やってみる？',
     'ヨガ、太極拳、カンフーを教えられるし、一緒にストレッチもできるよ！',
     '一緒に歌いたい？「一緒に歌って」って言って——交互に歌おう！',
     '「一緒にごはん」って言ってくれたら、ごちそうに付き合うよ——アイスもね！',
@@ -123,7 +123,7 @@ export const TUTORIAL_LINES: Record<Lang, string[]> = {
   ],
   en: [
     'I do more than chat — I sing and dance too. Want to see a performance?',
-    'If you are bored, we can play mini-games — rock-paper-scissors, guess-the-number, or dice!',
+    'If you are bored, we can play mini-games — say 「捕まえて」 to play tag, or 「逃げて」 for lane dodge!',
     'I can teach you yoga, tai chi and kung fu, or warm up together!',
     'To sing WITH me, just say "sing together" — we take lines, one after another!',
     'Say "eat with me" and I will join you for a fine meal — order the ice cream!',
