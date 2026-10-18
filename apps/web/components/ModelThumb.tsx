@@ -9,6 +9,7 @@ export default function ModelThumb({
   accent,
   name,
   image,
+  crop = 'center',
 }: {
   url?: string;
   accent: string;
@@ -16,6 +17,8 @@ export default function ModelThumb({
   image?: string;
   /** Ignored. Old /cast-thumbs/<id>.jpg bakes are back views. */
   bakedId?: string;
+  /** face: keep hair and eyes on a tall select card. center: square chips. */
+  crop?: 'center' | 'face';
 }) {
   const poster = image ? assetUrl(image) : null;
 
@@ -27,7 +30,7 @@ export default function ModelThumb({
           src={poster}
           alt=""
           draggable={false}
-          className="absolute inset-0 h-full w-full object-cover object-center"
+          className={`absolute inset-0 h-full w-full object-cover ${crop === 'face' ? 'object-[center_18%]' : 'object-center'}`}
         />
       ) : (
         <span

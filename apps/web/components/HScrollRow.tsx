@@ -26,7 +26,7 @@ function Chevron({ dir }: { dir: 'left' | 'right' }) {
       strokeWidth="3"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-6 w-6"
+      className="relative z-10 h-6 w-6"
       aria-hidden="true"
     >
       {dir === 'left' ? <path d="M15 18l-6-6 6-6" /> : <path d="M9 18l6-6-6-6" />}
@@ -48,6 +48,7 @@ export default function HScrollRow({
   selectedId?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const didMount = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [canLeft, setCanLeft] = useState(false);
@@ -110,15 +111,18 @@ export default function HScrollRow({
     }
 
     // track both the strip and its content (kid-mode filtering resizes rows)
+    const track = trackRef.current;
     const ro = new ResizeObserver(update);
     ro.observe(el);
+    if (track) ro.observe(track);
     el.addEventListener('scroll', update);
     window.addEventListener('resize', update);
 
     // scrollability also changes when children mount/unmount (kid mode,
     // cast updates) without any resize — watch the child list too.
+    // Tiles live in an inner track, so observe that list directly.
     const mo = new MutationObserver(update);
-    mo.observe(el, { childList: true });
+    mo.observe(track ?? el, { childList: true });
 
     // r105 entry position: reopen where the user left off (select ⇄ change
     // round-trips keep the browsing position); on a truly fresh entry (no
@@ -169,20 +173,32 @@ export default function HScrollRow({
   // Prominent game-UI style disc: solid, glows on hover, clearly dimmed only
   // when that direction is exhausted.
   const arrow = (enabled: boolean) =>
-    'absolute top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full ' +
+    'fx-press-lite absolute top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full ' +
     'border-2 border-white/40 bg-black/75 text-white shadow-[0_4px_16px_rgba(0,0,0,0.6)] backdrop-blur-md transition-all ' +
     (enabled
       ? 'cursor-pointer hover:scale-115 hover:border-white hover:bg-black/90 active:scale-95 '
       : 'cursor-default opacity-30');
 
   return (
-    <div className="relative min-w-0 w-full">
+    <div className="relative mx-auto w-full min-w-0">
+      {/*
+        The scroller is the centered viewport. The inner track is at least
+        as wide as that viewport and centers its tiles; when the tiles are
+        wider than the viewport, the track grows to their width so overflow
+        still scrolls from the start (justify-center on the scroller itself
+        would clip the leading edge).
+      */}
       <div
         ref={ref}
         aria-label={ariaLabel}
-        className="flex w-full min-w-0 flex-nowrap gap-2 overflow-x-auto overscroll-x-contain scroll-smooth px-1 py-1.5 [scrollbar-width:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden"
+        className="w-full min-w-0 overflow-x-auto overscroll-x-contain scroll-smooth [scrollbar-width:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden"
       >
-        {children}
+        <div
+          ref={trackRef}
+          className="flex w-max min-w-full flex-nowrap items-center justify-center gap-2 px-1 py-1.5"
+        >
+          {children}
+        </div>
       </div>
       {showArrows && (
         <>

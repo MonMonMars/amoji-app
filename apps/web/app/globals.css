@@ -186,9 +186,119 @@ body {
   88%, 100% { transform: translateX(110%); }
 }
 
+/* ---- selection route: fade + slight scale, soft veil wipe ---- */
+@keyframes fx-select-in {
+  from { opacity: 0; transform: scale(0.985); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes fx-select-out {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(1.015); }
+}
+.fx-select-in {
+  animation: fx-select-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.fx-select-out {
+  animation: fx-select-out 0.32s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+}
+@keyframes fx-veil-in {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@keyframes fx-veil-out {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.fx-route-veil-in,
+.fx-route-veil-out {
+  background:
+    linear-gradient(100deg, rgba(255, 255, 255, 0.16), transparent 42%),
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.28) 72%);
+}
+/* Rest at invisible so a missed animation cannot leave a full-screen cover. */
+.fx-route-veil-in { opacity: 0; animation: fx-veil-in 0.48s ease both; }
+.fx-route-veil-out { opacity: 0; animation: fx-veil-out 0.32s ease both; }
+
+/* Embossed selection CTA — depth at rest, pressed-in on click. */
+.fx-start {
+  background-color: #f4f4f5;
+  background-image: linear-gradient(180deg, #ffffff 0%, #f5f5f4 46%, #d6d3d1 100%);
+  color: #1c1917;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  font-weight: 800;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    inset 0 -3px 5px rgba(68, 64, 60, 0.28),
+    0 1px 0 rgba(255, 255, 255, 0.45),
+    0 12px 28px -10px rgba(0, 0, 0, 0.72),
+    0 4px 10px rgba(0, 0, 0, 0.35);
+}
+.ui-btn-primary.fx-start:hover {
+  background-image: linear-gradient(180deg, #ffffff 0%, #fafaf9 40%, #e7e5e4 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -2px 4px rgba(68, 64, 60, 0.18),
+    0 16px 36px -12px rgba(255, 255, 255, 0.5),
+    0 14px 28px -10px rgba(0, 0, 0, 0.62);
+}
+.ui-btn-primary.fx-start:active {
+  background-image: linear-gradient(180deg, #d6d3d1 0%, #f5f5f4 58%, #ffffff 100%);
+  box-shadow:
+    inset 0 3px 7px rgba(68, 64, 60, 0.32),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.75),
+    0 3px 8px rgba(0, 0, 0, 0.32);
+}
+
+/* Card fan slides into the new focus. Reduced motion drops the slide. */
+.arc-card {
+  transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1), filter 0.35s ease, opacity 0.35s ease;
+}
+
+/* Press feedback for the selection board: sink, brighten, ripple flash. */
+.fx-select .fx-press {
+  position: relative;
+  isolation: isolate;
+}
+.fx-select .fx-press::before,
+.fx-select .fx-press-lite::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.72), transparent 68%);
+  opacity: 0;
+  transform: scale(0.2);
+}
+@keyframes fx-ripple {
+  0%   { opacity: 0.9; transform: scale(0.15); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.55); }
+  100% { opacity: 0; transform: scale(1); box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+}
+.fx-select .fx-press:active {
+  transform: translateY(1px) scale(0.92);
+  filter: brightness(1.22);
+}
+.fx-select .fx-press:active::before,
+.fx-select .fx-press-lite:active::before {
+  animation: fx-ripple 0.42s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-kenburns { animation: none; }
-  .fx-page, .fx-rise, .fx-logo, .fx-fade-in, .fx-sheet-in { animation: none; }
+  .fx-page, .fx-rise, .fx-logo, .fx-fade-in, .fx-sheet-in,
+  .fx-select-in, .fx-select-out, .fx-route-veil-in, .fx-route-veil-out { animation: none; }
+  .arc-card { transition: none; }
+  .fx-route-veil-in, .fx-route-veil-out { display: none; }
   .ui-btn-primary::after, .fx-sheen::after { animation: none; display: none; }
   .ui-btn, .ui-card { transition: none; }
+  .fx-select .fx-press::before,
+  .fx-select .fx-press-lite::before { animation: none; display: none; }
+  .fx-select .fx-press:active {
+    transform: scale(0.98);
+    filter: none;
+    opacity: 0.86;
+  }
 }
