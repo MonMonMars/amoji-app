@@ -185,7 +185,7 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   loginCta: { en: 'Continue →', yue: '開始 →', zh: '开始 →', ja: '始める →' },
   loginSkip: { en: 'skip', yue: '略過', zh: '跳过', ja: 'スキップ' },
   selectTitle: { en: 'Build your companion', yue: '打造你嘅小伙伴', zh: '打造你的伙伴', ja: '相棒をつくる' },
-  confirmCta: { en: 'Meet {name} →', yue: '同 {name} 開始 →', zh: '和 {name} 开始 →', ja: '{name}と始める →' },
+  confirmCta: { en: 'START', yue: 'START', zh: 'START', ja: 'START' },
   comingSoon: { en: 'Coming soon', yue: '即將推出', zh: '即将推出', ja: 'Coming soon' },
   changeCta: { en: 'Change', yue: '更改', zh: '更改', ja: '変更' },
   previewCurrent: { en: 'current companion', yue: '而家嘅小伙伴', zh: '当前的伙伴', ja: 'いまの相棒' },
