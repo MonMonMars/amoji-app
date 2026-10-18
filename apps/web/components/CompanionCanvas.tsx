@@ -15,7 +15,7 @@ import { characterById } from '../lib/prefs';
 import { modelUrl } from '../lib/asset';
 import { pokeStyleFor, poseIdsFor, lookFor } from '../lib/persona';
 import { orderIdleClips, personalityMotion } from '../lib/personality';
-import { classifyPoke, pokeBodyReaction } from '../lib/poke-hit';
+import { classifyPoke, pokeBodyReaction, type PokeDirection, type TalkZone } from '../lib/poke-hit';
 import { clipFreesFeet, collectPlantRest, pinPlantedClipTracks } from '../lib/vrm/plant-feet';
 import { chestPokeBounce } from '../lib/vrm/chest-bounce';
 import { sampleSpeech } from '../lib/speech';
@@ -108,7 +108,7 @@ import { disposeMiniGameStage, updateMiniGameStage } from './minigameStage';
 export interface CompanionCanvasProps {
   onNotice?: (n: { reason: 'webgl' | 'asset' }) => void;
   /** Where the poke landed: head, torso, chest, side, or back. */
-  onPoke?: (zone: string) => void;
+  onPoke?: (zone: string, direction?: string) => void;
   /** Fired once when a hand grab starts, so chat can speak a hold line. */
   onHandHold?: () => void;
   accent?: string;
@@ -215,6 +215,9 @@ function seedFromKey(key: string): number {
   for (let i = 0; i < key.length; i++) h = (Math.imul(h, 31) + key.charCodeAt(i)) % 100000;
   return h;
 }
+
+/** Punch window. Impact, one rebound, then settle — long enough to read. */
+const POKE_MS = 1200;
 
 /** how much each poke-twist flavor turns the body during the reaction */
 const TWIST_AMOUNT: Record<string, number> = {
@@ -1157,7 +1160,8 @@ export default function CompanionCanvas({
     let pokeAt = -Infinity;
     let lastEmptyTap = -Infinity;
     // r115: which body zone the current poke reaction belongs to
-    let pokeZone: 'head' | 'torso' | 'chest' | 'side' | 'back' = 'torso';
+    let pokeZone: TalkZone = 'torso';
+    let pokeDirection: PokeDirection = 'front';
     let pokeSideSign = 1;
     // Push direction comes from the hit vs the character's facing.
     const pokeFallDir = new THREE.Vector3(0, 0, -1);
@@ -1347,16 +1351,43 @@ export default function CompanionCanvas({
           const leftN = avatar?.getBoneNode('leftShoulder');
           const rightN = avatar?.getBoneNode('rightShoulder');
           if (hipsN && headN && chestN && leftN && rightN) {
+            const armL = avatar?.getBoneNode('leftLowerArm');
+            const armR = avatar?.getBoneNode('rightLowerArm');
+            const legL = avatar?.getBoneNode('leftLowerLeg');
+            const legR = avatar?.getBoneNode('rightLowerLeg');
+            const hipsW = worldOf(hipsN);
+            const chestW = worldOf(chestN);
+            let hasNormal = false;
+            if (hit.face) {
+              sV2.copy(hit.face.normal).transformDirection(hit.object.matrixWorld);
+              hasNormal = sV2.lengthSq() > 1e-8;
+            }
+            const ray = raycaster.ray.direction;
             const cls = classifyPoke(
               { x: hit.point.x, y: hit.point.y, z: hit.point.z },
-              worldOf(hipsN), worldOf(headN), worldOf(chestN), worldOf(leftN), worldOf(rightN),
+              hipsW, worldOf(headN), chestW, worldOf(leftN), worldOf(rightN),
+              {
+                normal: hasNormal ? { x: sV2.x, y: sV2.y, z: sV2.z } : undefined,
+                rayDir: { x: ray.x, y: ray.y, z: ray.z },
+                leftArm: armL ? worldOf(armL) : undefined,
+                rightArm: armR ? worldOf(armR) : undefined,
+                leftLeg: legL ? worldOf(legL) : undefined,
+                rightLeg: legR ? worldOf(legR) : undefined,
+                belly: {
+                  x: hipsW.x * 0.72 + chestW.x * 0.28,
+                  y: hipsW.y * 0.72 + chestW.y * 0.28,
+                  z: hipsW.z * 0.72 + chestW.z * 0.28,
+                },
+              },
             );
             pokeZone = cls.zone;
+            pokeDirection = cls.direction;
             pokeFallDir.set(cls.impulse.x, 0, cls.impulse.z);
             pokeSideSign = cls.sideSign;
           }
-          beginBoneBlend(0.65);
-          onPokeRef.current?.(pokeZone);
+          // No full-skeleton slerp here. That blend was easing toward a
+          // flipped euler and shrinking the punch to a twitch.
+          onPokeRef.current?.(pokeZone, pokeDirection);
         } else {
           const nowTs = performance.now();
           if (nowTs - lastEmptyTap < 350) {
@@ -1482,16 +1513,18 @@ export default function CompanionCanvas({
         // Poke and laugh stay on the upper body. The root never translates,
         // scales, or tips — that used to slide and lift both feet.
         const pokeAge = now - pokeAt;
-        const boost = pokeAge < 900 ? 1 - pokeAge / 900 : 0;
+        const boost = pokeAge < POKE_MS ? 1 - pokeAge / POKE_MS : 0;
         const laughAge = now - lastLaughAt();
         const laugh = laughAge >= 0 && laughAge < 1600 ? 1 - laughAge / 1600 : 0;
         let skSpine = 0, skChest = 0, skHeadX = 0, skHeadZ = 0;
         let skSpineY = 0, skChestZ = 0;
         let skLArm = 0, skRArm = 0, skLElb = 0, skRElb = 0, skLUp = 0, skRUp = 0;
+        let skHip = 0, skHipRoll = 0, skHipX = 0, skHipZ = 0;
         if (boost > 0) {
           const hit = pokeBodyReaction({
             t: 1 - boost,
             zone: pokeZone,
+            direction: pokeDirection,
             fallX: pokeFallDir.x,
             fallZ: pokeFallDir.z,
             sideSign: pokeSideSign,
@@ -1510,6 +1543,10 @@ export default function CompanionCanvas({
           skRElb = hit.rElbowZ;
           skLUp = hit.lArmUp;
           skRUp = hit.rArmUp;
+          skHip = hit.hipPitch;
+          skHipRoll = hit.hipRoll;
+          skHipX = hit.hipShiftX;
+          skHipZ = hit.hipShiftZ;
         }
         if (laugh > 0) {
           const lt = 1 - laugh;
@@ -1594,17 +1631,19 @@ export default function CompanionCanvas({
 
         const b = targets.bones;
         const poseTargets: AvatarPose = {
-          headX: b.headPitch + skHeadX,
+          headX: b.headPitch,
           headY: b.headYaw,
-          headZ: b.headRoll + skHeadZ,
+          headZ: b.headRoll,
+          headPitchAdd: skHeadX,
+          headRollAdd: skHeadZ,
           spineX: b.spinePitch, chestX: b.chestPitch,
-          leftUpperArm: b.leftUpperArm + skLUp, rightUpperArm: b.rightUpperArm + skRUp,
+          leftUpperArm: b.leftUpperArm, rightUpperArm: b.rightUpperArm,
           leftLowerArm: b.leftLowerArm, rightLowerArm: b.rightLowerArm,
           spineY: skSpineY, chestZ: skChestZ,
           lArmX: skLArm, rArmX: skRArm,
           lElbowZ: skLElb, rElbowZ: skRElb,
           spinePitchAdd: skSpine, chestPitchAdd: skChest,
-          lArmRaise: 0, rArmRaise: 0,
+          lArmRaise: -skLUp, rArmRaise: -skRUp,
         };
         // dialogue-triggered performance: fire the matching LIBRARY clip once
         // on the rising edge. Clip-less kinds keep the skeleton for the
@@ -1698,13 +1737,19 @@ export default function CompanionCanvas({
         }
 
         applyBoneBlend(now);
-        // After the mixer, poke additives, and the pose blend: both soles
-        // share one ground height. Walk/jump clips are the exception.
-        avatar.plantFeet(!clipFreesFeet(perfClipId));
+        // After the mixer and the punch additives: both soles share one
+        // ground contact. The hip lean bends the legs with the hit.
+        // Walk/jump clips are the exception.
+        const feetFree = clipFreesFeet(perfClipId);
+        avatar.plantFeet(feetFree ? false : true, feetFree ? undefined : {
+          pitch: skHip,
+          roll: skHipRoll,
+          shiftX: skHipX,
+          shiftZ: skHipZ,
+        });
         avatar.update(dt / 1000);
-        // Chest poke only: a short damped spring on the bust bones, after
-        // the skeleton update so it is not overwritten. Feet stay planted.
-        const bounceT = boost > 0 ? (1 - boost) * 0.9 : -1;
+        // Chest and torso punches: bust spring after the skeleton update.
+        const bounceT = boost > 0 ? (1 - boost) * (POKE_MS / 1000) : -1;
         avatar.applyChestBounce(chestPokeBounce(pokeZone, bounceT));
 
         // r109 NaN sweep: a corrupt clip key or a bad spring-bone write can

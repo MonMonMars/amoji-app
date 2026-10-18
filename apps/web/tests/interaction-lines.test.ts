@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { interactionLines, maybeLaughLead, pickCharacterInteraction } from '../lib/interaction-lines';
+import { interactionLines, maybeLaughLead, pickCharacterInteraction, pokePhase, pokeReactionLine } from '../lib/interaction-lines';
 import { FEMALE_PERSONALITIES, MALE_PERSONALITIES, profilePokeLine } from '../lib/personality';
 
 const ZONES = ['head', 'torso', 'chest', 'side', 'back', 'hand'] as const;
@@ -45,6 +45,23 @@ describe('interaction lines', () => {
     expect(a.length).toBeGreaterThan(8);
     expect(b.length).toBeGreaterThan(8);
     expect(a).not.toBe(b);
+  });
+
+  it('rotates poke lines by phase, zone, direction, and count', () => {
+    const zone = 'chest';
+    const lines = [1, 2, 3, 4, 5, 6].map((n) => pokeReactionLine('a01-shino', 'female', zone, 'front', 'en', n));
+    expect(new Set(lines).size).toBeGreaterThanOrEqual(4);
+    expect(pokePhase(1)).toBe('impact');
+    expect(pokePhase(2)).toBe('recover');
+    expect(pokePhase(3)).toBe('settle');
+    expect(lines[0]).not.toBe(pokeReactionLine('a01-shino', 'female', 'head', 'front', 'en', 1));
+    expect(lines[0]).not.toBe(pokeReactionLine('a01-shino', 'female', zone, 'left', 'en', 1));
+    expect(lines[1]?.toLowerCase()).toContain('front');
+    expect(pokeReactionLine('a01-shino', 'female', 'armL', 'right', 'en', 1).toLowerCase()).toContain('left arm');
+    const male = pokeReactionLine('a98-ethan', 'male', zone, 'back', 'en', 2);
+    const female = pokeReactionLine('a01-shino', 'female', zone, 'back', 'en', 2);
+    expect(male).not.toBe(female);
+    for (const line of lines) expect(/[?？]/.test(line)).toBe(true);
   });
 
   it('switching characters changes the spoken poke line', () => {
