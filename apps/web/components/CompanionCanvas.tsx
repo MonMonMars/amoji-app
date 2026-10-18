@@ -480,11 +480,11 @@ export default function CompanionCanvas({
     );
 
     // -- clip library ---------------------------------------------------------
-    // r2026-10-12 (Mon): short upright standing idle rotation — in-repo
-    // `/models/anims` only for the core set. No Impatient / IdleSassy / chin-
-    // hand / hug / dwarf / cocky / bored idles in the default pool (they read
-    // exaggerated or broken on VRoid companions). Optional remotes load last
-    // and only if reachable; rebaseClipHips pins feet + yaw-only hips on idles.
+    // Standing idle rotation. IdleBreathCalm is the primary default (forward
+    // head, arms outside the torso, feet planted). StandardIdle is the local
+    // neutral stand. LookAround is the curious variant. WeightShift stays an
+    // optional remote. Relax is the soft variant. rebaseClipHips pins feet
+    // and yaw-only hips on every idle in this list.
     const ANIM_MIRROR = `${ASSET_BASE}/models/anims`;
     const CHAT_HOST = 'https://raw.githubusercontent.com/DavinciDreams/3dchat/main/public/animations/vrma';
     const ALT_HOST = 'https://raw.githubusercontent.com/hirokazuniimoto/virtual-avatar-sdk/main/assets/animations';
@@ -493,13 +493,11 @@ export default function CompanionCanvas({
     interface ClipSource { id: string; urls: string[] }
     const IDLE_SOURCES: ClipSource[] = [
       { id: 'IdleBreathCalm', urls: [`${ANIM_MIRROR}/IdleBreathCalm.vrma`] },
-      { id: 'IdleNeutral', urls: [`${ANIM_MIRROR}/IdleNeutral.vrma`] },
+      { id: 'StandardIdle', urls: [`${ANIM_MIRROR}/StandardIdle.vrma`] },
       { id: 'LookAround', urls: [`${ANIM_MIRROR}/LookAround.vrma`] },
-      { id: 'Relax', urls: [`${ANIM_MIRROR}/Relax.vrma`] },
-      { id: 'Thinking', urls: [`${ANIM_MIRROR}/Thinking.vrma`] },
-      // optional tail — only enter rotation if fetch succeeds; feet planted + hips yaw-only
+      // optional — only enters the rotation if the fetch succeeds
       { id: 'WeightShift', urls: [`${CHAT_HOST}/weightShift.vrma`] },
-      { id: 'StandardIdle', urls: [`${ALT_HOST}/standard_idle.vrma`] },
+      { id: 'Relax', urls: [`${ANIM_MIRROR}/Relax.vrma`] },
     ];
     // one-shot dialogue performances (library clips with a real ending)
     // r96 (Master Simon): the move triggers get REAL performances too —
@@ -1621,8 +1619,9 @@ export default function CompanionCanvas({
         // body is always inside a live loop: no straight stand between moves.
         if (mixerActive && !perfAction && !gameView) {
           if (thinkingPoseActive()) {
-            if (idleClipId !== 'Thinking' && !thinkMiss) {
-              if (!playNamedIdle('Thinking', FADE.idleRotate)) thinkMiss = true;
+            // Hold the primary standing idle while a reply generates.
+            if (idleClipId !== 'IdleBreathCalm' && !thinkMiss) {
+              if (!playNamedIdle('IdleBreathCalm', FADE.idleRotate)) thinkMiss = true;
               else idleHoldUntil = performance.now() + 20000;
             }
           } else {
