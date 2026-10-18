@@ -3,7 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { arcPose } from '../components/ArcFan';
-import { STRINGS } from '../lib/prefs';
+import { BIGHEAD_IDS, bigheadPath } from '../lib/bighead';
+import { CHARACTERS, STRINGS } from '../lib/prefs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const read = (rel: string) => fs.readFileSync(path.resolve(here, rel), 'utf8');
@@ -41,6 +42,7 @@ describe('selection layout', () => {
   it('fans character and scene cards around a larger center portrait', () => {
     expect(board).toContain('ArcFan');
     expect(board).toContain('image={c.image}');
+    expect(board).toContain('bighead={bigheadPath(c.id)}');
     expect(board).toContain('crop="face"');
     expect(board).not.toContain('requestModelThumb');
     expect(board).not.toContain('url={c.model}');
@@ -55,6 +57,23 @@ describe('selection layout', () => {
     expect(left.x).toBeLessThan(0);
     expect(right.x).toBeGreaterThan(0);
     expect(Math.abs(left.y)).toBeGreaterThan(0);
+  });
+
+  it('uses packed bighead stills and falls back when an id has none', () => {
+    const dir = path.resolve(here, '../public/thumbs/bighead');
+    const files = fs.readdirSync(dir).filter((name) => name.endsWith('_bighead.png'));
+    expect(files).toHaveLength(BIGHEAD_IDS.length);
+    for (const id of BIGHEAD_IDS) {
+      expect(bigheadPath(id)).toBe(`/thumbs/bighead/${id}_bighead.png`);
+      expect(files).toContain(`${id}_bighead.png`);
+      expect(CHARACTERS.some((c) => c.id === id)).toBe(true);
+    }
+    const missing = ['a112-mahochan-jk', 'a122-shiratori-hikari-shifuku'];
+    for (const id of missing) {
+      expect(bigheadPath(id)).toBeUndefined();
+      expect(CHARACTERS.some((c) => c.id === id)).toBe(true);
+    }
+    expect(read('../components/ModelThumb.tsx')).toContain('onError');
   });
 
   it('gives selection controls a press flash and a short route transition', () => {
