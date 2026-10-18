@@ -26,6 +26,8 @@ import { assembleModular, replaceBodyMeshes, type ModularAssembly } from '../lib
 import { loadModularGltf } from '../lib/modular/load';
 import { publishModularView } from '../lib/modular/storage';
 import { PHI_HOME, PHI_MAX, PHI_MIN } from '../lib/orbit-limits';
+import { CAM_LERP, getMiniGameView, registerGroundPick, resolveGameClip, type GameAnim } from '../lib/minigames';
+import { disposeMiniGameStage, updateMiniGameStage } from './minigameStage';
 
 // r97 (Master Simon): idle-clip restoration — the mixer now starts the
 // moment the FIRST clip lands (it used to wait for all 26 loads, so a single
@@ -654,6 +656,8 @@ export default function CompanionCanvas({
       mixer = new THREE.AnimationMixer(vrm.scene);
       mixer.addEventListener('finished', (e) => {
         if (e.action === perfAction) {
+          // A mini-game pose holds its last frame. Idle stays paused until exit.
+          if (getMiniGameView()) return;
           // a one-shot performance ended → glide back into the idle playlist
           perfAction = null;
           perfClipId = null;
@@ -1378,14 +1382,79 @@ export default function CompanionCanvas({
     host.addEventListener('pointercancel', onPointerUp);
     host.addEventListener('wheel', onWheel, { passive: false });
 
+    const groundNdc = new THREE.Vector2();
+    const groundHit = new THREE.Vector3();
+    const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    registerGroundPick((nx, ny) => {
+      groundNdc.set(nx, ny);
+      raycaster.setFromCamera(groundNdc, camera);
+      const hit = raycaster.ray.intersectPlane(groundPlane, groundHit);
+      return hit ? { x: hit.x, z: hit.z } : null;
+    });
+    const gameCam = new THREE.Vector3();
+    let wasGame = false;
+    let gameClipKey = '';
+    let pausedHidden = false;
+    const playGameBody = (anim: GameAnim) => {
+      if (!mixer) return;
+      const pick = resolveGameClip(anim, new Set(clips.keys()));
+      if (!pick) return;
+      const key = `${pick.id}:${pick.loop ? 'L' : '1'}`;
+      perfClipId = pick.id;
+      if (gameClipKey === key) return;
+      const clip = clips.get(pick.id);
+      if (!clip) return;
+      gameClipKey = key;
+      beginBoneBlend(0.35);
+      const action = mixer.clipAction(clip);
+      action.timeScale = anim === 'run' || anim === 'dash' ? 1.15 : 1;
+      action.setLoop(pick.loop ? THREE.LoopRepeat : THREE.LoopOnce, pick.loop ? Infinity : 1);
+      action.clampWhenFinished = !pick.loop;
+      action.reset();
+      if (perfAction && perfAction !== action) {
+        perfAction.crossFadeTo(action, 0.28, false);
+      } else if (idleAction && idleAction !== action) {
+        idleAction.crossFadeTo(action, 0.28, false);
+      } else {
+        action.fadeIn(0.28);
+      }
+      action.play();
+      perfAction = action;
+    };
+
     let raf = 0;
     let last = performance.now();
     const loop = (now: number) => {
+      const gameView = getMiniGameView();
+      if (document.hidden && (gameView || pausedHidden)) {
+        pausedHidden = true;
+        raf = 0;
+        return;
+      }
+      pausedHidden = false;
       raf = requestAnimationFrame(loop);
       const dt = Math.min(100, now - last);
       last = now;
 
-      if (resetAnim) {
+      if (wasGame && !gameView) {
+        wasGame = false;
+        gameClipKey = '';
+        if (perfAction) {
+          perfAction.fadeOut(0.3);
+          perfAction = null;
+          perfClipId = null;
+        }
+        camera.far = 20;
+        camera.updateProjectionMatrix();
+        orbit.theta = HOME.theta;
+        orbit.phi = HOME.phi;
+        orbit.dist = HOME.dist;
+        target.copy(HOME_TARGET);
+        resetAnim = null;
+        nextIdle(FADE.perfEnd);
+      }
+
+      if (!gameView && resetAnim) {
         const p = clamp((now - resetAnim.t0) / resetAnim.dur, 0, 1);
         const ease = 1 - Math.pow(1 - p, 3);
         orbit.theta = resetAnim.from.theta + (HOME.theta - resetAnim.from.theta) * ease;
@@ -1394,7 +1463,7 @@ export default function CompanionCanvas({
         target.lerpVectors(resetAnim.fromTarget, HOME_TARGET, ease);
         if (p >= 1) resetAnim = null;
       }
-      applyCamera();
+      if (!gameView) applyCamera();
 
       const frame = tickEngine(dt);
       const pose = mixerActive ? undefined : sampleIdlePoseFrom(frame.t, poseSeed, poseSubset);
@@ -1475,6 +1544,11 @@ export default function CompanionCanvas({
             avatar.root.position.y = clamp(avatar.root.position.y + Math.abs(Math.sin(now / 85)) * 0.016, -0.35, 0.5);
           }
         }
+        if (gameView) {
+          avatar.root.position.set(gameView.vrmX, 0, gameView.vrmZ);
+          avatar.root.rotation.set(0, gameView.vrmYaw, 0);
+          avatar.root.scale.set(BASE_SX, BASE_SY, BASE_SX);
+        }
 
         // speech visemes: duck the emotion shapes while the mouth talks
         const sp = sampleSpeech();
@@ -1503,6 +1577,20 @@ export default function CompanionCanvas({
           setEm('aa', 0); setEm('ih', 0); setEm('ou', 0);
           setEm('ee', 0); setEm('oh', 0);
         }
+        if (gameView) {
+          const expr = gameView.expr;
+          setEm('happy', expr.happy ?? 0);
+          setEm('angry', expr.angry ?? 0);
+          setEm('sad', expr.sad ?? 0);
+          setEm('surprised', expr.surprised ?? 0);
+          setEm('relaxed', expr.relaxed ?? 0);
+          setEm('blink', expr.blink ?? 0);
+          setEm('blinkLeft', expr.blinkLeft ?? 0);
+          setEm('blinkRight', 0);
+        } else {
+          setEm('blinkLeft', 0);
+          setEm('blinkRight', 0);
+        }
 
         const b = targets.bones;
         const poseTargets: AvatarPose = {
@@ -1521,7 +1609,7 @@ export default function CompanionCanvas({
         // dialogue-triggered performance: fire the matching LIBRARY clip once
         // on the rising edge. Clip-less kinds keep the skeleton for the
         // additive choreography above (r86).
-        if (mv && mvHandled !== mv.kind) {
+        if (!gameView && mv && mvHandled !== mv.kind) {
           mvHandled = mv.kind;
           const clipName = MOVE_CLIP[mv.kind];
           if (clipName) playPerf(clipName);
@@ -1531,7 +1619,7 @@ export default function CompanionCanvas({
         // r93: idle handover — when this idle's hold expires and no one-shot
         // performance is on stage, glide into the next idle mid-motion. The
         // body is always inside a live loop: no straight stand between moves.
-        if (mixerActive && !perfAction) {
+        if (mixerActive && !perfAction && !gameView) {
           if (thinkingPoseActive()) {
             if (idleClipId !== 'Thinking' && !thinkMiss) {
               if (!playNamedIdle('Thinking', FADE.idleRotate)) thinkMiss = true;
@@ -1548,6 +1636,7 @@ export default function CompanionCanvas({
         // because the poke recoil and head life arrive through its additive
         // channels (spine/chest pitch, arm flinch), which compose on top of
         // whatever the mixer wrote this frame.
+        if (gameView) playGameBody(gameView.anim);
         if (avatar.clipDrivesBody) {
           mixer?.update(dt / 1000);
           avatar.applyPose(poseTargets);
@@ -1703,9 +1792,32 @@ export default function CompanionCanvas({
         }
       }
 
+      if (gameView) {
+        const snap = !wasGame || !gameView.camFollow;
+        gameCam.set(gameView.camX, gameView.camY, gameView.camZ);
+        if (snap) camera.position.copy(gameCam);
+        else camera.position.lerp(gameCam, CAM_LERP);
+        camera.lookAt(gameView.lookX, gameView.lookY, gameView.lookZ);
+        if (!wasGame) {
+          camera.far = 80;
+          camera.updateProjectionMatrix();
+        }
+        wasGame = true;
+      }
+      updateMiniGameStage(scene, gameView);
+
       renderer.render(scene, camera);
     };
     raf = requestAnimationFrame(loop);
+
+    const onGameVis = () => {
+      if (!document.hidden && pausedHidden && raf === 0) {
+        pausedHidden = false;
+        last = performance.now();
+        raf = requestAnimationFrame(loop);
+      }
+    };
+    document.addEventListener('visibilitychange', onGameVis);
 
     const onResize = () => {
       camera.aspect = host.clientWidth / host.clientHeight;
@@ -1720,6 +1832,9 @@ export default function CompanionCanvas({
       publishModularView('idle');
       cancelAnimationFrame(raf);
       clearTimeout(loadWatchdog);
+      document.removeEventListener('visibilitychange', onGameVis);
+      registerGroundPick(null);
+      disposeMiniGameStage(scene);
       window.removeEventListener('resize', onResize);
       host.removeEventListener('pointerdown', onPointerDown);
       host.removeEventListener('pointermove', onPointerMove);

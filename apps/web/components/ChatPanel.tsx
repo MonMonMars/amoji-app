@@ -158,6 +158,8 @@ import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerf
 import { clipLabel, PERFORMANCE_CLIPS, type PerformanceClip } from '../lib/performance-clips';
 import { characterSpecialty, pickShowcaseOffer, SHOWCASE_START, SHOWCASE_YES_RE, type ShowcaseKind } from '../lib/showcase';
 import { detectGame, startGame, playTurn, gameFarewellLine, type GameState } from '../lib/games';
+import { detectActionGame, type ActionGame } from '../lib/minigames';
+import MiniGameOverlay from './MiniGameOverlay';
 import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodbyeLine, pickMealToast } from '../lib/activities';
 import { detectExercise, startExercise, advanceExercise, exerciseFarewellLine, type ExerciseState } from '../lib/exercises';
 import { buildDailyGreeting, buildMemoryBlock, feltMood, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange, rememberTurn } from '../lib/memory';
@@ -231,6 +233,8 @@ export default function ChatPanel({
   const [replayHint, setReplayHint] = useState(false);
   // premade sing/dance clip currently on stage — the name is the visible pick
   const [nowPlaying, setNowPlaying] = useState<string | null>(null);
+  const [actionGame, setActionGame] = useState<ActionGame | null>(null);
+  const actionGameRef = useRef(false);
   const [clipState, setClipState] = useState<'starting' | 'playing' | null>(null);
   const trackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -410,6 +414,18 @@ export default function ChatPanel({
     trackTimerRef.current = setTimeout(() => setNowPlaying(null), ms + 400);
   };
 
+  const beginActionGame = (kind: ActionGame) => {
+    actionGameRef.current = true;
+    gameRef.current = null;
+    duetRef.current = null;
+    exerciseRef.current = null;
+    setThinkingPose(false);
+    stopSpeaking();
+    endPerformanceMusic();
+    showTrack(null);
+    setActionGame(kind);
+  };
+
   /** Start a premade song (matched to her gender) or dance bed, and show the pick. */
   const beginShow = (kind: 'song' | 'dance', ms: number, mood?: string, n = laughCountRef.current) => {
     const clip = startLibraryPerformance({
@@ -562,7 +578,7 @@ export default function ChatPanel({
   // waits instead of nagging. Her lines never pile onto her own voice.
   useEffect(() => {
     const timer = setInterval(() => {
-      if (busyRef.current || isSpeaking()) return;
+      if (busyRef.current || isSpeaking() || actionGameRef.current) return;
       if (reengageStageRef.current >= 2) return; // closer said — she's waiting
       const silent = Date.now() - lastUserRef.current;
       if (silent < IDLE_AFTER_MS) return;
@@ -635,6 +651,14 @@ export default function ChatPanel({
       busyRef.current = false;
       lastActivityRef.current = Date.now();
     };
+    {
+      const action = detectActionGame(text);
+      if (action) {
+        beginActionGame(action);
+        done();
+        return;
+      }
+    }
     if (QUIT_RE.test(text) && (gameRef.current || duetRef.current || exerciseRef.current)) {
       const line = gameRef.current
         ? gameFarewellLine(lang)
@@ -1129,6 +1153,22 @@ export default function ChatPanel({
           <span>{nowPlaying.replace(/^♪\s*/, '')}</span>
         </div>
       )}
+      <div className="pointer-events-auto z-10 flex w-full gap-2 px-1">
+        <button
+          type="button"
+          onClick={() => beginActionGame('tag')}
+          className="rounded-full border border-white/15 bg-black/40 px-3 py-1 text-xs text-white/90 backdrop-blur-md"
+        >
+          捕まえて！
+        </button>
+        <button
+          type="button"
+          onClick={() => beginActionGame('lane')}
+          className="rounded-full border border-white/15 bg-black/40 px-3 py-1 text-xs text-white/90 backdrop-blur-md"
+        >
+          逃げて！
+        </button>
+      </div>
       <div className="relative z-10 flex w-full items-center gap-2.5">
         {/* r119: the voice watchdog armed a replay — a silent line is waiting
             for ANY tap to be re-spoken. Floating chip above the mic;
@@ -1210,6 +1250,18 @@ export default function ChatPanel({
         </button>
       </div>
 
+      {actionGame && (
+        <MiniGameOverlay
+          kind={actionGame}
+          lang={lang}
+          onEmotion={(ev) => applyLlmHints(ev.hints)}
+          onExit={(result) => {
+            actionGameRef.current = false;
+            setActionGame(null);
+            sayLocal(result.line, result.hints);
+          }}
+        />
+      )}
     </div>
   );
 }
