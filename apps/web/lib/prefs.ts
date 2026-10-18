@@ -381,6 +381,11 @@ export interface Prefs {
   sfxVol: VolumeStep;
   bgmVol: VolumeStep;
   voiceVol: VolumeStep;
+  /**
+   * Last female companion still in the want-list library.
+   * Mini-games use her when the current pick is male or a retired id.
+   */
+  lastFemale?: string;
 }
 
 const KEY = 'amoji.prefs.v1';
@@ -400,6 +405,17 @@ export const KID_BACKGROUND = 'meadow';
 // Appended to the persona while kid mode is on (chat page).
 export const KID_PERSONA_GUARD = '\n\nKid mode: the user is a child. Use simple, gentle, encouraging language. Never use romantic, flirty, scary, violent, or adult content. Be patient, positive, and supportive.';
 
+/** Female want-list id. Retired roster ids and non-library models are dropped. */
+export function femaleLibraryId(id: string | undefined | null): string | undefined {
+  if (!id) return undefined;
+  const c = CHARACTERS.find((x) => x.id === id);
+  if (!c || c.gender !== 'female') return undefined;
+  const model = c.model ?? '';
+  if (model.includes('seed-san')) return undefined;
+  if (!model.startsWith('want/') && !/^https?:\/\//.test(model)) return undefined;
+  return c.id;
+}
+
 export function loadPrefs(): Prefs {
   try {
     const raw = localStorage.getItem(KEY);
@@ -414,6 +430,10 @@ export function loadPrefs(): Prefs {
         if (!characterById(character).kidSafe) character = KID_CHARACTER;
         if (!backgroundById(background).kidSafe) background = KID_BACKGROUND;
       }
+      const picked = CHARACTERS.find((c) => c.id === character);
+      let lastFemale = femaleLibraryId(typeof p.lastFemale === 'string' ? p.lastFemale : undefined);
+      if (picked?.gender === 'female') lastFemale = femaleLibraryId(picked.id) ?? lastFemale;
+      if (!lastFemale) lastFemale = femaleLibraryId(DEFAULT_PREFS.character);
       const next: Prefs = {
         character,
         background,
@@ -422,9 +442,16 @@ export function loadPrefs(): Prefs {
         sfxVol: volOf(p.sfxVol),
         bgmVol: volOf(p.bgmVol),
         voiceVol: volOf(p.voiceVol),
+        ...(lastFemale ? { lastFemale } : {}),
       };
       // Persist migration when an old roster id (juno, kitagawa, …) no longer ships.
-      if (storedCharacter !== character || p.background !== next.background || p.lang !== next.lang || !!p.kidMode !== kidMode) {
+      if (
+        storedCharacter !== character
+        || p.background !== next.background
+        || p.lang !== next.lang
+        || !!p.kidMode !== kidMode
+        || p.lastFemale !== next.lastFemale
+      ) {
         savePrefs(next);
       }
       return next;
@@ -434,7 +461,12 @@ export function loadPrefs(): Prefs {
 }
 
 export function savePrefs(p: Prefs): void {
-  try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* ignore */ }
+  const picked = CHARACTERS.find((c) => c.id === p.character);
+  let lastFemale = femaleLibraryId(p.lastFemale);
+  if (picked?.gender === 'female') lastFemale = femaleLibraryId(picked.id) ?? lastFemale;
+  if (!lastFemale) lastFemale = femaleLibraryId(DEFAULT_PREFS.character);
+  const next: Prefs = lastFemale ? { ...p, lastFemale } : p;
+  try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* ignore */ }
   scheduleStatePush();
 }
 
@@ -457,7 +489,8 @@ export function usePrefs(): [Prefs, (patch: Partial<Prefs>) => void] {
   useEffect(() => { setPrefs(loadPrefs()); }, []);
   const update = (patch: Partial<Prefs>): void => {
     setPrefs((p) => {
-      const next = { ...p, ...patch };
+      const next: Prefs = { ...p, ...patch };
+      if (patch.character && femaleLibraryId(patch.character)) next.lastFemale = patch.character;
       savePrefs(next);
       return next;
     });
