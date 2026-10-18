@@ -7,10 +7,12 @@ import { useRouter } from 'next/navigation';
 import ChatPanel from '../../components/ChatPanel';
 import DevPanel from '../../components/DevPanel';
 import FallbackNotice from '../../components/FallbackNotice';
+import MiniGameMenu from '../../components/MiniGameMenu';
 import SceneBackdrop from '../../components/SceneBackdrop';
 import SettingsSheet from '../../components/SettingsSheet';
 import StatusPlate from '../../components/StatusPlate';
 import WardrobeSwap from '../../components/WardrobeSwap';
+import { subscribeMiniGameChrome } from '../../lib/minigames';
 import { activeWardrobe } from '../../lib/modular/catalog';
 import { useModularSelection } from '../../lib/modular/storage';
 import { usePrefs, characterById, backgroundById, KID_PERSONA_GUARD } from '../../lib/prefs';
@@ -31,6 +33,9 @@ export default function Chat() {
   const [status, setStatus] = useState<ChatStatus>('idle');
   const [memCount, setMemCount] = useState(0);
   const [leaving, setLeaving] = useState(false);
+  const [gameChromeHidden, setGameChromeHidden] = useState(false);
+
+  useEffect(() => subscribeMiniGameChrome(setGameChromeHidden), []);
 
   const openSelect = () => {
     if (leaving) return;
@@ -81,47 +86,53 @@ export default function Chat() {
         onHandHold={() => setHandHold((c) => c + 1)}
       />
 
-      {/* top bar: status plate (left) + wardrobe icon and settings (right) */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-3">
-        <div className="pointer-events-auto min-w-0">
-          <StatusPlate
-            name={character.name}
-            accent={character.accent}
-            portrait={character.image}
-            lang={prefs.lang}
-            status={status}
-            memCount={memCount}
-            kid={prefs.kidMode}
-            onOpenSelect={openSelect}
-          />
+      {/* top bar: status plate (left) + mini-games, wardrobe, settings (right).
+          Hidden for the whole title → play session so the HUD does not overlap it. */}
+      {!gameChromeHidden && (
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-3">
+          <div className="pointer-events-auto min-w-0">
+            <StatusPlate
+              name={character.name}
+              accent={character.accent}
+              portrait={character.image}
+              lang={prefs.lang}
+              status={status}
+              memCount={memCount}
+              kid={prefs.kidMode}
+              onOpenSelect={openSelect}
+            />
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <MiniGameMenu lang={prefs.lang} />
+            <WardrobeSwap
+              lang={prefs.lang}
+              characterId={character.id}
+              onCharacter={(id) => setPrefs({ character: id })}
+            />
+            <button
+              onClick={() => setSheetOpen(true)}
+              title={prefs.lang === 'yue' ? '設定' : 'Settings'}
+              aria-label={prefs.lang === 'yue' ? '設定' : 'Settings'}
+              className="ui-btn pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/30 text-base text-white/90 shadow-sm backdrop-blur-md hover:bg-black/50"
+            >
+              ⚙️
+            </button>
+          </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <WardrobeSwap
-            lang={prefs.lang}
-            characterId={character.id}
-            onCharacter={(id) => setPrefs({ character: id })}
-          />
-          <button
-            onClick={() => setSheetOpen(true)}
-            title={prefs.lang === 'yue' ? '設定' : 'Settings'}
-            aria-label={prefs.lang === 'yue' ? '設定' : 'Settings'}
-            className="ui-btn pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/30 text-base text-white/90 shadow-sm backdrop-blur-md hover:bg-black/50"
-          >
-            ⚙️
-          </button>
-        </div>
-      </div>
+      )}
 
-      {notice && <FallbackNotice reason={notice.reason} />}
-      {dev && <DevPanel />}
-      <SettingsSheet
-        open={sheetOpen}
-        prefs={prefs}
-        onChange={setPrefs}
-        onClose={() => setSheetOpen(false)}
-        memCount={memCount}
-        onForget={() => { clearMemory(); setMemCount(0); }}
-      />
+      {notice && !gameChromeHidden && <FallbackNotice reason={notice.reason} />}
+      {dev && !gameChromeHidden && <DevPanel />}
+      {!gameChromeHidden && (
+        <SettingsSheet
+          open={sheetOpen}
+          prefs={prefs}
+          onChange={setPrefs}
+          onClose={() => setSheetOpen(false)}
+          memCount={memCount}
+          onForget={() => { clearMemory(); setMemCount(0); }}
+        />
+      )}
 
       {/* Empty margins pass through to the canvas. Only the chat controls take hits. */}
       <div
