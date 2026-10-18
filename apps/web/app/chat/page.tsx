@@ -30,6 +30,18 @@ export default function Chat() {
   const [handHold, setHandHold] = useState(0);
   const [status, setStatus] = useState<ChatStatus>('idle');
   const [memCount, setMemCount] = useState(0);
+  const [leaving, setLeaving] = useState(false);
+
+  const openSelect = () => {
+    if (leaving) return;
+    const go = () => router.push('/change');
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      go();
+      return;
+    }
+    setLeaving(true);
+    window.setTimeout(go, 340);
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -49,7 +61,14 @@ export default function Chat() {
   const wardrobe = activeWardrobe(character.id, storedWardrobe);
 
   return (
-    <main className="fx-page relative h-dvh w-screen overflow-hidden text-white" style={{ background: background.css }}>
+    <main
+      className={`${leaving ? 'fx-select-out' : 'fx-select-in'} relative h-dvh w-screen overflow-hidden text-white`}
+      style={{ background: background.css }}
+    >
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute inset-0 z-30 ${leaving ? 'fx-route-veil-out' : 'fx-route-veil-in'}`}
+      />
       <SceneBackdrop background={background} />
       <CompanionCanvas
         accent={character.accent}
@@ -73,7 +92,7 @@ export default function Chat() {
             status={status}
             memCount={memCount}
             kid={prefs.kidMode}
-            onOpenSelect={() => router.push('/change')}
+            onOpenSelect={openSelect}
           />
         </div>
         <div className="flex shrink-0 items-center gap-2">
