@@ -129,4 +129,28 @@ describe('premade sing and dance library', () => {
     expect(clip.file).toMatch(/\.mp3$/);
     expect(PERFORMANCE_CLIPS.some((c) => c.id === clip.id && c.kind === 'dance')).toBe(true);
   });
+
+  it('keeps pack v2 clips on the same picker contract', () => {
+    const allowed = new Set(['happy', 'angry', 'sad', 'tired', 'anxious']);
+    const ids = PERFORMANCE_CLIPS.map((c) => c.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(PERFORMANCE_CLIPS).toHaveLength(64);
+    for (const id of ['dance-boss-battle', 'bed-happy-vibes', 'sing-f-adele', 'sing-m-brindisi', 'sing-m-overtone-a', 'sing-m-mass-amen']) {
+      expect(ids).toContain(id);
+    }
+    for (const c of PERFORMANCE_CLIPS) {
+      expect(c.moods.length).toBeGreaterThan(0);
+      for (const mood of c.moods) expect(allowed.has(mood)).toBe(true);
+      expect(c.credit.length).toBeGreaterThan(0);
+      expect(c.source).toMatch(/^https?:\/\//);
+    }
+    const dance = PERFORMANCE_CLIPS.filter((c) => c.kind === 'dance');
+    const songs = PERFORMANCE_CLIPS.filter((c) => c.kind === 'song');
+    expect(dance.filter((c) => c.file.includes('/dance/')).length).toBeGreaterThanOrEqual(9);
+    expect(dance.filter((c) => c.file.includes('/song-bed/')).length).toBeGreaterThanOrEqual(34);
+    expect(songs.filter((c) => c.voice === 'female')).toHaveLength(9);
+    expect(songs.filter((c) => c.voice === 'male')).toHaveLength(12);
+    expect(pickPerformanceClip({ kind: 'dance', lang: 'en', n: 0 }).id).toBe('dance-silent-dance-floor');
+    expect(pickPerformanceClip({ kind: 'song', gender: 'male', mood: 'happy', n: 0 }).id).toBe('sing-m-happy-birthday');
+  });
 });
