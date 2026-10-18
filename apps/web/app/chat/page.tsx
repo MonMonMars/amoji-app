@@ -5,17 +5,18 @@ import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ChatPanel from '../../components/ChatPanel';
+import MiniGamePicker, { MiniGameMenuButton } from '../../components/MiniGamePicker';
 import DevPanel from '../../components/DevPanel';
 import FallbackNotice from '../../components/FallbackNotice';
-import MiniGameMenu from '../../components/MiniGameMenu';
 import SceneBackdrop from '../../components/SceneBackdrop';
 import SettingsSheet from '../../components/SettingsSheet';
 import StatusPlate from '../../components/StatusPlate';
 import WardrobeSwap from '../../components/WardrobeSwap';
-import { subscribeMiniGameChrome } from '../../lib/minigames';
+import { requestOpenMiniGame, subscribeMiniGameChrome } from '../../lib/minigames';
 import { activeWardrobe } from '../../lib/modular/catalog';
 import { useModularSelection } from '../../lib/modular/storage';
 import { resolveMiniGameCompanion } from '../../lib/minigames/companion';
+import type { ActionGame } from '../../lib/minigames/types';
 import { usePrefs, characterById, backgroundById, KID_PERSONA_GUARD } from '../../lib/prefs';
 import { clearMemory, loadMemory, memorySummaryCount } from '../../lib/memory';
 import type { ChatStatus } from '../../lib/status';
@@ -36,6 +37,7 @@ export default function Chat() {
   const [memCount, setMemCount] = useState(0);
   const [leaving, setLeaving] = useState(false);
   const [gameChromeHidden, setGameChromeHidden] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => subscribeMiniGameChrome(setGameChromeHidden), []);
 
@@ -69,6 +71,10 @@ export default function Chat() {
   const gameCompanion = resolveMiniGameCompanion(prefs.character, prefs.lastFemale);
   const canvasCharacter = gameChromeHidden ? gameCompanion : character;
   const canvasWardrobe = gameChromeHidden ? null : wardrobe;
+  const startFromMenu = (kind: ActionGame) => {
+    setPickerOpen(false);
+    requestOpenMiniGame(kind);
+  };
 
   return (
     <main
@@ -109,7 +115,6 @@ export default function Chat() {
             />
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <MiniGameMenu lang={prefs.lang} />
             <WardrobeSwap
               lang={prefs.lang}
               characterId={character.id}
@@ -123,6 +128,7 @@ export default function Chat() {
             >
               ⚙️
             </button>
+            <MiniGameMenuButton lang={prefs.lang} onClick={() => setPickerOpen(true)} />
           </div>
         </div>
       )}
@@ -163,6 +169,13 @@ export default function Chat() {
           onMemCount={setMemCount}
         />
       </div>
+      {pickerOpen && (
+        <MiniGamePicker
+          lang={prefs.lang}
+          onClose={() => setPickerOpen(false)}
+          onPick={startFromMenu}
+        />
+      )}
     </main>
   );
 }

@@ -196,8 +196,6 @@ export interface ChatPanelProps {
   handHoldCount?: number;
   onStatus?: (s: ChatStatus) => void;
   onMemCount?: (n: number) => number | void;
-  /** True while Tag or Lane Dodge owns the companion scene. */
-  onMiniGame?: (active: boolean) => void;
 }
 
 const IDLE_AFTER_MS = 40_000;
@@ -221,7 +219,6 @@ export default function ChatPanel({
   handHoldCount = 0,
   onStatus,
   onMemCount,
-  onMiniGame,
 }: ChatPanelProps) {
   const [history, setHistory] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
@@ -241,14 +238,6 @@ export default function ChatPanel({
   const [nowPlaying, setNowPlaying] = useState<string | null>(null);
   const [actionGame, setActionGame] = useState<ActionGame | null>(null);
   const actionGameRef = useRef(false);
-  const onMiniGameRef = useRef(onMiniGame);
-  useEffect(() => {
-    onMiniGameRef.current = onMiniGame;
-  }, [onMiniGame]);
-  useEffect(() => {
-    onMiniGameRef.current?.(actionGame != null);
-  }, [actionGame]);
-  useEffect(() => () => onMiniGameRef.current?.(false), []);
   const [clipState, setClipState] = useState<'starting' | 'playing' | null>(null);
   const trackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
