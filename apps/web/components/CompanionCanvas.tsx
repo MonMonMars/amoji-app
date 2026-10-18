@@ -26,7 +26,7 @@ import { assembleModular, replaceBodyMeshes, type ModularAssembly } from '../lib
 import { loadModularGltf } from '../lib/modular/load';
 import { publishModularView } from '../lib/modular/storage';
 import { PHI_HOME, PHI_MAX, PHI_MIN } from '../lib/orbit-limits';
-import { CAM_LERP, getMiniGameView, registerGroundPick, resolveGameClip, type GameAnim } from '../lib/minigames';
+import { CAM_LERP, getMiniGameView, miniGameModelCandidates, registerGroundPick, resolveGameClip, type GameAnim } from '../lib/minigames';
 import { disposeMiniGameStage, updateMiniGameStage } from './minigameStage';
 
 // r97 (Master Simon): idle-clip restoration — the mixer now starts the
@@ -121,6 +121,11 @@ export interface CompanionCanvasProps {
    */
   wardrobeHeadId?: string;
   wardrobeBodyId?: string;
+  /**
+   * Mini-game: load only this character's want-list VRM.
+   * No Seed-san demo and no modular stand-in.
+   */
+  libraryOnly?: boolean;
   /** @deprecated r108: ignored — one neutral daylight rig lights every backdrop */
   lighting?: 'indoor' | 'outdoor';
 }
@@ -227,6 +232,7 @@ const TWIST_AMOUNT: Record<string, number> = {
 
 export default function CompanionCanvas({
   onNotice, onPoke, onHandHold, accent = '#f9a8d4', seedKey, wardrobeHeadId, wardrobeBodyId,
+  libraryOnly = false,
 }: CompanionCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const onNoticeRef = useRef(onNotice);
@@ -238,7 +244,13 @@ export default function CompanionCanvas({
   // Body swaps must not rebuild the WebGL scene — the head mesh stays.
   const wardrobeBodyRef = useRef(wardrobeBodyId);
   wardrobeBodyRef.current = wardrobeBodyId;
+  const libraryOnlyRef = useRef(libraryOnly);
+  const showLibraryRef = useRef<() => void>(() => {});
   const swapBodyRef = useRef<(bodyId: string) => void>(() => {});
+
+  useEffect(() => {
+    libraryOnlyRef.current = libraryOnly;
+  }, [libraryOnly]);
 
   // r84 (Master Simon): while she loads, the stage stays EMPTY — no giant
   // placeholder figure. r91: the loading indicator moved OUT of this canvas
@@ -475,9 +487,9 @@ export default function CompanionCanvas({
     // library clip drives the body. The old procedural pose/move math now
     // only runs as a last-resort fallback when no clip could be built.
     const ownModel = seedKey ? characterById(seedKey).model : undefined;
-    const MODEL_CANDIDATES = [ownModel, 'seed-san.vrm'].filter(
-      (m): m is string => !!m,
-    );
+    const MODEL_CANDIDATES = libraryOnlyRef.current
+      ? miniGameModelCandidates(ownModel)
+      : [ownModel, 'seed-san.vrm'].filter((m): m is string => !!m);
 
     // -- clip library ---------------------------------------------------------
     // r2026-10-12 (Mon): short upright standing idle rotation — in-repo
@@ -989,6 +1001,8 @@ export default function CompanionCanvas({
           // relaxed-hand guard reads it per frame (clips never load on this
           // path, so the set stays empty and every finger gets the curl)
           mountAvatar(createGenericAvatar(gltf, clipAnimatedBones));
+          shownModel = activeCandidates[index] ?? '';
+          loadingModel = '';
         } catch {
           loadModel(index + 1, token);
         }
@@ -1013,6 +1027,8 @@ export default function CompanionCanvas({
     let loadToken = 0;
     let activeCandidates = MODEL_CANDIDATES;
     let swapReq = 0;
+    let shownModel = '';
+    let loadingModel = '';
 
     const candidatesFor = (bodyId?: string) => (
       bodyId
@@ -1030,6 +1046,8 @@ export default function CompanionCanvas({
     const beginLoad = (candidates: string[]) => {
       loadToken += 1;
       activeCandidates = candidates;
+      loadingModel = candidates[0] ?? '';
+      shownModel = '';
       clearAvatar();
       modelPct = 0;
       setLoadProgress(0);
@@ -1061,6 +1079,8 @@ export default function CompanionCanvas({
       } else {
         mountAvatar(createGenericAvatar(bodyGltf, clipAnimatedBones));
       }
+      shownModel = 'modular';
+      loadingModel = '';
       publishModularView('modular');
       swapsLive = true;
       const after = wardrobeBodyRef.current;
@@ -1072,6 +1092,7 @@ export default function CompanionCanvas({
       if (cancelled || token !== loadToken) return;
       if (index >= activeCandidates.length) {
         // r84 — nothing left to try: stop waiting, show the notice
+        loadingModel = '';
         setLoadProgress(null);
         clearTimeout(loadWatchdog);
         onNoticeRef.current?.({ reason: 'asset' });
@@ -1092,6 +1113,8 @@ export default function CompanionCanvas({
         // clips stream in after the mount and fill the same set
         clearAvatar();
         mountAvatar(createV1Avatar(v, clipAnimatedBones));
+        shownModel = cand;
+        loadingModel = '';
         loadClips(v);
       }, (ev) => {
         // r84: byte-level progress for the loading indicator
@@ -1127,6 +1150,12 @@ export default function CompanionCanvas({
     };
 
     const bootAvatar = () => {
+      if (libraryOnlyRef.current) {
+        publishModularView('idle');
+        swapsLive = true;
+        beginLoad(miniGameModelCandidates(ownModel));
+        return;
+      }
       const headId = wardrobeHeadId;
       const bodyId = wardrobeBodyRef.current;
       if (!headId || !bodyId) {
@@ -1143,6 +1172,24 @@ export default function CompanionCanvas({
         beginLoad(candidatesFor(wardrobeBodyRef.current ?? bodyId));
       });
     };
+    const libraryModel = miniGameModelCandidates(ownModel)[0];
+    showLibraryRef.current = () => {
+      if (cancelled || !libraryOnlyRef.current) return;
+      if (!libraryModel) {
+        loadingModel = '';
+        clearAvatar();
+        shownModel = '';
+        setLoadProgress(null);
+        onNoticeRef.current?.({ reason: 'asset' });
+        return;
+      }
+      if (shownModel === libraryModel || loadingModel === libraryModel) return;
+      modularAsm = null;
+      publishModularView('idle');
+      swapsLive = true;
+      beginLoad([libraryModel]);
+    };
+
     bootAvatar();
 
     // ---- pointer gestures ────────────────────────────────────────────────
@@ -1829,6 +1876,7 @@ export default function CompanionCanvas({
     return () => {
       cancelled = true;
       swapBodyRef.current = () => {};
+      showLibraryRef.current = () => {};
       publishModularView('idle');
       cancelAnimationFrame(raf);
       clearTimeout(loadWatchdog);
@@ -1861,9 +1909,16 @@ export default function CompanionCanvas({
   // Outfit changes hot-swap body meshes when the modular GLBs mounted.
   // Otherwise they reload that outfit's full VRM. A head change rebuilds above.
   useEffect(() => {
-    if (!wardrobeHeadId || !wardrobeBodyId) return;
+    if (libraryOnly || !wardrobeHeadId || !wardrobeBodyId) return;
     swapBodyRef.current(wardrobeBodyId);
-  }, [wardrobeHeadId, wardrobeBodyId]);
+  }, [libraryOnly, wardrobeHeadId, wardrobeBodyId]);
+
+  // A round that keeps the same companion still drops Seed-san / modular
+  // stand-ins onto her want-list VRM. A different seedKey rebuilds above.
+  useEffect(() => {
+    if (!libraryOnly) return;
+    showLibraryRef.current();
+  }, [libraryOnly, seedKey, wardrobeHeadId]);
 
   // r91 (Master Simon): no overlay here at all — the empty stage IS the
   // loading state, and the top-left name bar (StatusPlate) carries a mini

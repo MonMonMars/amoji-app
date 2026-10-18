@@ -13,6 +13,7 @@ import StatusPlate from '../../components/StatusPlate';
 import WardrobeSwap from '../../components/WardrobeSwap';
 import { activeWardrobe } from '../../lib/modular/catalog';
 import { useModularSelection } from '../../lib/modular/storage';
+import { resolveMiniGameCompanion } from '../../lib/minigames/companion';
 import { usePrefs, characterById, backgroundById, KID_PERSONA_GUARD } from '../../lib/prefs';
 import { clearMemory, loadMemory, memorySummaryCount } from '../../lib/memory';
 import type { ChatStatus } from '../../lib/status';
@@ -31,6 +32,7 @@ export default function Chat() {
   const [status, setStatus] = useState<ChatStatus>('idle');
   const [memCount, setMemCount] = useState(0);
   const [leaving, setLeaving] = useState(false);
+  const [miniGameOn, setMiniGameOn] = useState(false);
 
   const openSelect = () => {
     if (leaving) return;
@@ -59,6 +61,9 @@ export default function Chat() {
   const background = backgroundById(prefs.background);
   const storedWardrobe = useModularSelection();
   const wardrobe = activeWardrobe(character.id, storedWardrobe);
+  const gameCompanion = resolveMiniGameCompanion(prefs.character, prefs.lastFemale);
+  const canvasCharacter = miniGameOn ? gameCompanion : character;
+  const canvasWardrobe = miniGameOn ? null : wardrobe;
 
   return (
     <main
@@ -71,10 +76,11 @@ export default function Chat() {
       />
       <SceneBackdrop background={background} />
       <CompanionCanvas
-        accent={character.accent}
-        seedKey={character.id}
-        wardrobeHeadId={wardrobe?.headId}
-        wardrobeBodyId={wardrobe?.bodyId}
+        accent={canvasCharacter.accent}
+        seedKey={canvasCharacter.id}
+        libraryOnly={miniGameOn}
+        wardrobeHeadId={canvasWardrobe?.headId}
+        wardrobeBodyId={canvasWardrobe?.bodyId}
         lighting={background.setting === 'indoor' ? 'indoor' : 'outdoor'}
         onNotice={setNotice}
         onPoke={(zone) => { setPokeCount((c) => c + 1); setPokeZone(zone); }}
@@ -85,9 +91,9 @@ export default function Chat() {
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-3">
         <div className="pointer-events-auto min-w-0">
           <StatusPlate
-            name={character.name}
-            accent={character.accent}
-            portrait={character.image}
+            name={canvasCharacter.name}
+            accent={canvasCharacter.accent}
+            portrait={canvasCharacter.image}
             lang={prefs.lang}
             status={status}
             memCount={memCount}
@@ -143,6 +149,7 @@ export default function Chat() {
           handHoldCount={handHold}
           onStatus={setStatus}
           onMemCount={setMemCount}
+          onMiniGame={setMiniGameOn}
         />
       </div>
     </main>
