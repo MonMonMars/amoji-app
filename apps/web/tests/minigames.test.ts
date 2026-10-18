@@ -17,6 +17,8 @@ import {
   createTag,
   desktopTagAim,
   detectActionGame,
+  miniGameModelCandidates,
+  resolveMiniGameCompanion,
   expressionFor,
   laneCamera,
   laneSwipeThreshold,
@@ -317,12 +319,33 @@ describe('clips, lines, and chat entry', () => {
     expect(TUTORIAL_LINES.en.join(' ').toLowerCase()).toContain('game');
   });
 
+  it('plays the selected female library companion, never a retired demo mesh', () => {
+    expect(resolveMiniGameCompanion('a01-shino').id).toBe('a01-shino');
+    expect(resolveMiniGameCompanion('a04-avatarsample-a').id).toBe('a04-avatarsample-a');
+    expect(resolveMiniGameCompanion('a98-ethan', 'a02-shibu').id).toBe('a02-shibu');
+    expect(resolveMiniGameCompanion('a98-ethan').id).toBe('a01-shino');
+    expect(resolveMiniGameCompanion('a24-hairsample-male', 'juno').id).toBe('a01-shino');
+    expect(resolveMiniGameCompanion('juno').id).toBe('a01-shino');
+    expect(resolveMiniGameCompanion('avatarsample-a', 'a10-agahomei-normal').id).toBe('a10-agahomei-normal');
+    expect(miniGameModelCandidates(resolveMiniGameCompanion('a98-ethan', 'a02-shibu').model)).toEqual([
+      'want/a02-shibu.vrm',
+    ]);
+    expect(miniGameModelCandidates('seed-san.vrm')).toEqual([]);
+    expect(miniGameModelCandidates('cast/juno.vrm')).toEqual([]);
+    expect(resolveMiniGameCompanion('a01-shino').gender).toBe('female');
+    expect(resolveMiniGameCompanion('a98-ethan', 'a02-shibu').gender).toBe('female');
+  });
+
   it('stays on the existing canvas, kinematic, and pauses while hidden', () => {
     const root = path.resolve(here, '..');
     const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
     const overlay = fs.readFileSync(path.join(root, 'components/MiniGameOverlay.tsx'), 'utf8');
     const chat = fs.readFileSync(path.join(root, 'components/ChatPanel.tsx'), 'utf8');
     expect(canvas).toContain('getMiniGameView');
+    expect(canvas).toContain('libraryOnly');
+    expect(canvas).toContain('miniGameModelCandidates');
+    const page = fs.readFileSync(path.join(root, 'app/chat/page.tsx'), 'utf8');
+    expect(page).toContain('resolveMiniGameCompanion');
     expect(canvas).toContain('CAM_LERP');
     expect(canvas).toContain('visibilitychange');
     expect(overlay).toContain('visibilitychange');

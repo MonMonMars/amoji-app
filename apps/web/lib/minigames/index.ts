@@ -1,4 +1,5 @@
 export { CAM_LERP, LANE, TAG, clampLane, laneX } from './constants';
+export { miniGameModelCandidates, resolveMiniGameCompanion } from './companion';
 export { detectActionGame } from './detect';
 export { laneCamera, tagCamera } from './camera';
 export { expressionFor, resolveGameClip, GAME_CLIP_CANDIDATES } from './anim';
