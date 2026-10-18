@@ -151,7 +151,8 @@ describe('modular wardrobe catalog', () => {
     const board = fs.readFileSync(path.resolve(here, '../components/SelectionBoard.tsx'), 'utf8');
     const row = fs.readFileSync(path.resolve(here, '../components/HScrollRow.tsx'), 'utf8');
     expect(board).toContain('image={c.image}');
-    expect(board).toContain('CompanionCanvas');
+    expect(board).not.toContain('CompanionCanvas');
+    expect(board).not.toContain('ModelPreview');
     expect(board).toContain('backgroundLetter');
     expect(board).not.toContain('dicebear');
     expect(board).not.toContain('cast-cutout');
@@ -168,6 +169,7 @@ describe('modular wardrobe catalog', () => {
     expect(board).not.toContain('comingSoon');
     expect(board).not.toContain("t(lang, 'back')");
     const chat = fs.readFileSync(path.resolve(here, '../app/chat/page.tsx'), 'utf8');
+    expect(chat).toContain('CompanionCanvas');
     expect(chat).toContain('h-10 w-10');
     expect(chat).toContain('pointer-events-none absolute inset-x-0 bottom-0');
   });

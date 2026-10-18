@@ -2,7 +2,7 @@
 // Overlapping card fan for the selection board. The chosen card sits in the
 // middle, in front, a little larger and brighter. Neighbors overlap it,
 // scale down, and tilt — an arcade ring, not a left-packed strip.
-import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
 
 export type ArcPose = {
   x: number;
@@ -14,6 +14,29 @@ export type ArcPose = {
   /** Far cards stay mounted for the slide but do not take taps. */
   inert: boolean;
 };
+
+/**
+ * Bighead card box for the portrait fan. The select stage used to be a live
+ * full-body model; that space now belongs to these stills. Height tracks the
+ * measured fan (capped so a tall monitor does not grow a poster past the
+ * controls). Width stays the old portrait ratio. Step stays inside the card
+ * so neighbors overlap and the center face stays tappable.
+ */
+export function portraitCardBox(stageHeight: number): { width: number; height: number; step: number } {
+  const stage = stageHeight > 0 ? stageHeight : 320;
+  const height = Math.round(Math.min(stage * 0.86, 520));
+  const width = Math.round(height * 0.7);
+  const step = Math.max(56, Math.round(width * 0.58));
+  return { width, height, step };
+}
+
+/** Keep the 1.1 center scale inside the fan, just under the name. */
+export function portraitTop(stageHeight: number, cardHeight: number): number {
+  const stage = stageHeight > 0 ? stageHeight : 320;
+  const slack = Math.max(0, stage - cardHeight);
+  const scaleOverflow = Math.ceil(cardHeight * 0.05);
+  return Math.max(scaleOverflow, Math.round(slack * 0.22));
+}
 
 /** Pose of a card `offset` steps from the focused index. Negative is left. */
 export function arcPose(offset: number, step: number): ArcPose {
@@ -61,10 +84,26 @@ export default function ArcFan<T extends { id: string }>({
   const indexRef = useRef(0);
   const [compact, setCompact] = useState(false);
   const [fine, setFine] = useState(false);
+  const [stageH, setStageH] = useState(0);
 
   const index = Math.max(0, items.findIndex((item) => item.id === selectedId));
-  const step = compact ? (size === 'portrait' ? 52 : 58) : (size === 'portrait' ? 76 : 86);
+  const portrait = portraitCardBox(stageH);
+  const step = size === 'portrait' ? portrait.step : (compact ? 58 : 86);
   const reach = compact ? 3 : 5;
+
+  useLayoutEffect(() => {
+    if (size !== 'portrait') return;
+    const el = root.current;
+    if (!el) return;
+    const measure = () => {
+      const h = el.getBoundingClientRect().height;
+      if (h > 0) setStageH(h);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [size]);
 
   useEffect(() => {
     const narrow = window.matchMedia('(max-width: 640px)');
@@ -129,11 +168,11 @@ export default function ArcFan<T extends { id: string }>({
   };
 
   const cardClass = size === 'portrait'
-    ? 'h-[8.4rem] w-[6rem] sm:h-[11rem] sm:w-[7.7rem]'
-    : 'h-[6.1rem] w-[8.2rem] sm:h-[7.2rem] sm:w-[10.4rem]';
+    ? ''
+    : 'top-1 h-[6.1rem] w-[8.2rem] sm:h-[7.2rem] sm:w-[10.4rem]';
   const stageClass = size === 'portrait'
-    ? 'h-[11.2rem] sm:h-[14.5rem]'
-    : 'h-[8.6rem] sm:h-[10.4rem]';
+    ? 'absolute inset-0 z-20'
+    : 'relative z-10 h-[8.6rem] w-full sm:h-[10.4rem]';
 
   const arrow = (enabled: boolean) =>
     'fx-press-lite absolute top-1/2 z-[90] flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white/40 bg-black/75 text-white shadow-[0_4px_16px_rgba(0,0,0,0.6)] backdrop-blur-md ' +
@@ -143,7 +182,7 @@ export default function ArcFan<T extends { id: string }>({
     <div
       ref={root}
       aria-label={ariaLabel}
-      className={`relative mx-auto w-full touch-none ${stageClass} ${size === 'portrait' ? 'z-20' : 'z-10'}`}
+      className={`mx-auto touch-none ${stageClass}`}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -158,8 +197,11 @@ export default function ArcFan<T extends { id: string }>({
         return (
           <div
             key={item.id}
-            className={`arc-card absolute left-1/2 top-1 ${cardClass}`}
+            className={`arc-card absolute left-1/2 ${cardClass}`}
             style={{
+              width: size === 'portrait' ? portrait.width : undefined,
+              height: size === 'portrait' ? portrait.height : undefined,
+              top: size === 'portrait' ? portraitTop(stageH, portrait.height) : undefined,
               transform: `translateX(calc(-50% + ${pose.x}px)) translateY(${pose.y}px) rotate(${pose.rot}deg) scale(${pose.scale})`,
               zIndex: pose.z,
               opacity: pose.opacity,

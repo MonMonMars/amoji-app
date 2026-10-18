@@ -1,7 +1,7 @@
 'use client';
-// In-chat change page — same board as /select, but draft-based: the preview
-// keeps the existing character/scene/language until new ones are picked, and
-// the bottom button says "Change". Reached from the chat room's name plate.
+// In-chat change page — same 2D board as /select. Picks stay a draft until
+// Change writes prefs and opens /chat, which loads the chosen character.
+// Reached from the chat room's name plate.
 import SelectionBoard from '../../components/SelectionBoard';
 
 export default function Change() {
