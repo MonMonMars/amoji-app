@@ -2,7 +2,10 @@
 
 Every binary in this directory (top level or under `cast/`) must have an entry. CI fails on unmanifested files.
 
-Release tag for the live companion cast: **`free-library-want-2026-10-12`** (46 characters). VRM + PNG assets stream from [GitHub Releases](https://github.com/MonMonMars/amoji-app/releases/tag/free-library-want-2026-10-12); they are **not** committed to git.
+Live companion cast (51 characters) streams from GitHub Releases; binaries are **not** committed to git (`models/want/` stays `.gitkeep`). Pages downloads each roster `modelUrl` at build time.
+
+- **`free-library-want-2026-10-12`** — original 46 want-list characters ([release](https://github.com/MonMonMars/amoji-app/releases/tag/free-library-want-2026-10-12))
+- **`free-library-realistic-2026-10-18`** — five realistic keepers A459, A460, A461, A463, A468 ([release](https://github.com/MonMonMars/amoji-app/releases/tag/free-library-realistic-2026-10-18))
 
 ## Shipped binaries (in-repo)
 
@@ -71,6 +74,28 @@ Base URL for every row: `https://github.com/MonMonMars/amoji-app/releases/downlo
 - AvatarSample_A/C: VRoid sample terms — commercial OK; do not sell raw VRM alone
 - Other Hub/BOOTH free commercial entries: follow each folder README.txt
 - Removed from public picker: kitagawa, kizuna, and other unverified agent3 cast slots
+
+## Live cast — realistic keepers (5 characters)
+
+Appended to the same roster after the original 46. They are selectable in the companion picker. Gallery `SKIP_STATIC` does not apply to cast selection (unrigged A457/A458/A462/A464–A467 stay out).
+
+| Character id | Library | Gender | Remote VRM |
+|---|---|---|---|
+| a459-chinesewarriormonk | A459 | male | `…/a459-chinesewarriormonk.vrm` |
+| a460-freerealisticfemale | A460 | female | `…/a460-freerealisticfemale.vrm` |
+| a461-fashionruffle | A461 | female | `…/a461-fashionruffle.vrm` |
+| a463-sophia | A463 | female | `…/a463-sophia.vrm` |
+| a468-eric | A468 | male | `…/a468-eric.vrm` |
+
+Base URL for every row: `https://github.com/MonMonMars/amoji-app/releases/download/free-library-realistic-2026-10-18/` (matching PNG portraits at the same path with `.png`).
+
+**License / credits** — CC BY 4.0 Sketchfab, credit required:
+
+- A459 Chinese Warrior Monk: Sketchfab fayjayfay
+- A460 Free Realistic Female: Sketchfab nepalvr360
+- A461 Fashion Ruffle: Sketchfab
+- A463 Sophia: Sketchfab RenderPeople
+- A468 Eric: Sketchfab
 
 ## Retired local cast (`cast/*.vrm`) — demo-only
 
