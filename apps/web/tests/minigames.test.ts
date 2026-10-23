@@ -1,28 +1,38 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import MiniGameOverlay from '../components/MiniGameOverlay';
 import { EMOTION_IDS } from '@amoji/emotion-core';
 import { TUTORIAL_LINES } from '../lib/showcase';
 import {
   CAM_LERP,
   LANE,
   TAG,
+  classifyHostPlatform,
+  controlHint,
+  controlSchemeFor,
   createLane,
   createTag,
+  desktopTagAim,
   detectActionGame,
   expressionFor,
   laneCamera,
+  laneSwipeThreshold,
   lineFor,
   resolveGameClip,
   stepLane,
   stepTag,
   tagCamera,
+  tagKeysFromEvent,
   viewOfLane,
   viewOfTag,
   LANE_IDLE_CMD,
   TAG_IDLE_CMD,
   type LaneState,
   type MiniEmotionKind,
+  type PlatformProbe,
 } from '../lib/minigames';
 
 const LANGS = ['yue', 'zh', 'ja', 'en'] as const;
@@ -323,5 +333,189 @@ describe('clips, lines, and chat entry', () => {
       const src = fs.readFileSync(path.join(dir, file), 'utf8');
       expect(src.toLowerCase()).not.toMatch(/rapier|cannon/);
     }
+  });
+});
+
+function probe(partial: Partial<PlatformProbe> & Pick<PlatformProbe, 'userAgent'>): PlatformProbe {
+  return {
+    maxTouchPoints: 0,
+    pointerFine: false,
+    hoverHover: false,
+    capacitorPlatform: null,
+    ...partial,
+  };
+}
+
+describe('mini-game host controls', () => {
+  it('treats a fine hovering browser as desktop, even with a touchscreen', () => {
+    const desktop = probe({
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+      maxTouchPoints: 10,
+      pointerFine: true,
+      hoverHover: true,
+    });
+    expect(classifyHostPlatform(desktop)).toBe('desktop');
+    expect(controlSchemeFor('desktop')).toBe('keyboard');
+  });
+
+  it('classifies iPhone, iPadOS, and Capacitor iOS as touch', () => {
+    expect(classifyHostPlatform(probe({
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 Version/17.5 Mobile/15E148 Safari/604.1',
+      maxTouchPoints: 5,
+    }))).toBe('ios');
+    expect(classifyHostPlatform(probe({
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.5 Safari/605.1.15',
+      maxTouchPoints: 5,
+      pointerFine: true,
+      hoverHover: true,
+    }))).toBe('ios');
+    expect(classifyHostPlatform(probe({
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+      pointerFine: true,
+      hoverHover: true,
+      capacitorPlatform: 'ios',
+    }))).toBe('ios');
+    expect(controlSchemeFor('ios')).toBe('touch');
+  });
+
+  it('classifies Android Chrome, PWA, and Capacitor as touch', () => {
+    expect(classifyHostPlatform(probe({
+      userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36',
+      maxTouchPoints: 5,
+    }))).toBe('android');
+    expect(classifyHostPlatform(probe({
+      userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+      pointerFine: true,
+      hoverHover: true,
+      capacitorPlatform: 'android',
+    }))).toBe('android');
+    expect(classifyHostPlatform(probe({
+      userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel Tablet) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+      pointerFine: true,
+      hoverHover: true,
+      maxTouchPoints: 5,
+    }))).toBe('android');
+    expect(controlSchemeFor('android')).toBe('touch');
+  });
+
+  it('lets Capacitor web fall through to the browser pointer', () => {
+    expect(classifyHostPlatform(probe({
+      userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+      pointerFine: true,
+      hoverHover: true,
+      capacitorPlatform: 'web',
+    }))).toBe('desktop');
+  });
+
+  it('uses a shorter lane swipe on Android and the same touch copy as iOS', () => {
+    expect(laneSwipeThreshold('android')).toBeLessThan(laneSwipeThreshold('ios'));
+    expect(laneSwipeThreshold('desktop')).toBe(laneSwipeThreshold('ios'));
+    for (const lang of LANGS) {
+      expect(controlHint('lane', 'ios', lang)).toBe(controlHint('lane', 'android', lang));
+      expect(controlHint('tag', 'ios', lang)).toBe(controlHint('tag', 'android', lang));
+      expect(controlHint('lane', 'desktop', lang)).not.toBe(controlHint('lane', 'ios', lang));
+    }
+    expect(controlHint('lane', 'desktop', 'en')).toContain('A/D');
+    expect(controlHint('lane', 'desktop', 'en')).toMatch(/arrow/i);
+    expect(controlHint('lane', 'ios', 'en')).toBe('Swipe left/right');
+    expect(controlHint('tag', 'desktop', 'en')).toContain('WASD');
+    expect(controlHint('tag', 'ios', 'en')).not.toMatch(/A\/D|WASD/);
+  });
+
+  it('aims Tag with camera-relative WASD and ignores keys that are up', () => {
+    const none = desktopTagAim(
+      { w: false, a: false, s: false, d: false },
+      { x: 0, z: 0 },
+      { x: 0, z: 5 },
+      { x: 0, z: 0 },
+    );
+    expect(none.hold).toBe(false);
+    const w = desktopTagAim(
+      { w: true, a: false, s: false, d: false },
+      { x: 1, z: 2 },
+      { x: 1, z: 6 },
+      { x: 1, z: 2 },
+    );
+    expect(w.hold).toBe(true);
+    expect(w.aimZ).toBeLessThan(2);
+    expect(w.aimX).toBeCloseTo(1);
+    const d = desktopTagAim(
+      { w: false, a: false, s: false, d: true },
+      { x: 0, z: 0 },
+      { x: 0, z: 5 },
+      { x: 0, z: 0 },
+    );
+    expect(d.aimX).toBeLessThan(0);
+    const a = desktopTagAim(
+      { w: false, a: true, s: false, d: false },
+      { x: 0, z: 0 },
+      { x: 0, z: 5 },
+      { x: 0, z: 0 },
+    );
+    expect(a.aimX).toBeGreaterThan(0);
+    expect(tagKeysFromEvent('ArrowLeft', true, { w: false, a: false, s: false, d: false }).a).toBe(true);
+    expect(tagKeysFromEvent('D', false, { w: false, a: false, s: false, d: true }).d).toBe(false);
+  });
+
+  it('opens a title screen, then a corner HUD, and hides chat chrome', () => {
+    const root = path.resolve(here, '..');
+    const overlay = fs.readFileSync(path.join(root, 'components/MiniGameOverlay.tsx'), 'utf8');
+    const chat = fs.readFileSync(path.join(root, 'components/ChatPanel.tsx'), 'utf8');
+    const page = fs.readFileSync(path.join(root, 'app/chat/page.tsx'), 'utf8');
+    const platform = fs.readFileSync(path.join(root, 'lib/minigames/platform.ts'), 'utf8');
+    expect(fs.existsSync(path.join(root, 'public/minigames/howto-tag.jpg'))).toBe(true);
+    expect(fs.existsSync(path.join(root, 'public/minigames/howto-lane-dodge.jpg'))).toBe(true);
+    expect(overlay).toContain('data-phase="title"');
+    expect(overlay).toContain('minigame-start');
+    expect(overlay).toContain('minigame-howto');
+    expect(overlay).toContain('HOWTO_SRC');
+    expect(platform).toContain('/minigames/howto-tag.jpg');
+    expect(platform).toContain('/minigames/howto-lane-dodge.jpg');
+    expect(overlay).toContain('minigame-back');
+    expect(overlay).toContain('minigame-score');
+    expect(overlay).toContain('safe-area-inset-top');
+    expect(overlay).toContain('controlSchemeFor');
+    expect(overlay).toContain('laneSwipeThreshold');
+    expect(overlay).toContain("scheme !== 'keyboard'");
+    expect(overlay.indexOf('left-[max(1rem,env(safe-area-inset-left))]')).toBeGreaterThan(0);
+    expect(overlay.indexOf('right-[max(1rem,env(safe-area-inset-right))]')).toBeGreaterThan(0);
+    const gate = chat.indexOf('if (actionGame)');
+    const history = chat.indexOf("maxHeight: '17vh'");
+    expect(gate).toBeGreaterThan(0);
+    expect(gate).toBeLessThan(history);
+    expect(chat).toContain('setMiniGameChromeHidden');
+    expect(chat).toContain('subscribeMiniGameOpen');
+    expect(page).toContain('MiniGameMenu');
+    expect(page).toContain('subscribeMiniGameChrome');
+    expect(page).toContain('gameChromeHidden');
+  });
+
+  it('renders the title screen with START, the howto graphic, and a desktop control line', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(MiniGameOverlay, {
+        kind: 'lane',
+        lang: 'en',
+        onEmotion: () => {},
+        onExit: () => {},
+      }),
+    );
+    expect(html).toContain('data-phase="title"');
+    expect(html).toContain('data-scheme="keyboard"');
+    expect(html).toContain('>START<');
+    expect(html).toContain('howto-lane-dodge.jpg');
+    expect(html).toContain('PC: A/D or arrow keys');
+    expect(html).toContain('data-testid="minigame-back"');
+    expect(html).not.toContain('data-testid="minigame-score"');
+    const tag = renderToStaticMarkup(
+      React.createElement(MiniGameOverlay, {
+        kind: 'tag',
+        lang: 'en',
+        onEmotion: () => {},
+        onExit: () => {},
+      }),
+    );
+    expect(tag).toContain('howto-tag.jpg');
+    expect(tag).toContain('PC: WASD or arrows to chase');
+    expect(tag).toContain('捕まえて！');
   });
 });
