@@ -8,13 +8,17 @@ describe('warm-up dialogue banks', () => {
       expect(WARMUP_BANKS[lang]!.length).toBeGreaterThanOrEqual(6);
     }
   });
-  it('uses Pixel’s Cantonese thinking set and drops the praise lines', () => {
+  it('uses short Cantonese stubs and drops the long loading chatter', () => {
     expect([...WARMUP_BANKS.yue!]).toEqual([...YUE_THINKING_LINES]);
-    expect(YUE_THINKING_LINES).toHaveLength(20);
-    expect(WARMUP_BANKS.yue!.join('\n')).not.toMatch(/啟發/);
-    for (const lang of ['zh', 'ja', 'en']) {
+    expect(YUE_THINKING_LINES).toHaveLength(6);
+    expect(WARMUP_BANKS.en).toContain('um……');
+    expect(WARMUP_BANKS.en).toContain('ha……');
+    expect(WARMUP_BANKS.en).toContain('um…… let me think.');
+    expect(WARMUP_BANKS.en).toContain('um…… let me search the web.');
+    for (const lang of ['yue', 'zh', 'ja', 'en']) {
       for (const line of WARMUP_BANKS[lang]!) {
-        expect(line.toLowerCase()).not.toContain('inspire');
+        expect(line.length, line).toBeLessThanOrEqual(32);
+        expect(line.toLowerCase()).not.toMatch(/inspire|please wait|don't rush|好問題|好问题/);
       }
     }
   });

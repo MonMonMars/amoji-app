@@ -1,13 +1,19 @@
 {
   "releaseTag": "free-library-want-2026-10-12",
   "source": "D:\\\\Blender\\\\projects\\\\mon-character\\\\free-library\\\\notes\\\\WANT-LIST-2026-10-12.txt",
-  "count": 46,
+  "count": 51,
   "defaultCharacterId": "a01-shino",
   "creditNotes": [
     "VRoid Sendagaya Shino/Shibu and Sakurada Fumiriya: CC0",
     "AvatarSample_A/C: VRoid sample terms — commercial OK; do not sell raw VRM alone",
     "Other Hub/BOOTH free commercial entries: follow each folder README.txt",
-    "Remove kitagawa / kizuna / unverified agent3 cast from public roster"
+    "Remove kitagawa / kizuna / unverified agent3 cast from public roster",
+    "Realistic keepers A459/A460/A461/A463/A468 stream from free-library-realistic-2026-10-18 (CC BY 4.0 Sketchfab, credit required). Gallery SKIP_STATIC does not remove them from cast selection.",
+    "A459 Chinese Warrior Monk: CC BY 4.0 Sketchfab fayjayfay",
+    "A460 Free Realistic Female: CC BY 4.0 Sketchfab nepalvr360",
+    "A461 Fashion Ruffle: CC BY 4.0 Sketchfab",
+    "A463 Sophia: CC BY 4.0 Sketchfab RenderPeople",
+    "A468 Eric: CC BY 4.0 Sketchfab"
   ],
   "characters": [
     {
@@ -791,6 +797,96 @@
         "yue": "zh-HK-HiuGaaiNeural",
         "en": "en-HK-YanNeural"
       }
+    },
+    {
+      "id": "a459-chinesewarriormonk",
+      "libraryId": "A459",
+      "name": "Chinese Warrior Monk",
+      "gender": "male",
+      "accent": "#c4a574",
+      "kidSafe": true,
+      "modelFile": "a459-chinesewarriormonk.vrm",
+      "imageFile": "a459-chinesewarriormonk.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-realistic-2026-10-18/a459-chinesewarriormonk.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-realistic-2026-10-18/a459-chinesewarriormonk.png",
+      "sourceFolder": "ChineseWarriorMonk",
+      "voiceHint": {
+        "yue": "zh-HK-WanLungNeural",
+        "en": "en-HK-SamNeural"
+      },
+      "license": "CC BY 4.0 Sketchfab fayjayfay"
+    },
+    {
+      "id": "a460-freerealisticfemale",
+      "libraryId": "A460",
+      "name": "Free Realistic Female",
+      "gender": "female",
+      "accent": "#f4a261",
+      "kidSafe": true,
+      "modelFile": "a460-freerealisticfemale.vrm",
+      "imageFile": "a460-freerealisticfemale.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-realistic-2026-10-18/a460-freerealisticfemale.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-realistic-2026-10-18/a460-freerealisticfemale.png",
+      "sourceFolder": "FreeRealisticFemale",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      },
+      "license": "CC BY 4.0 Sketchfab nepalvr360"
+    },
+    {
+      "id": "a461-fashionruffle",
+      "libraryId": "A461",
+      "name": "Fashion Ruffle",
+      "gender": "female",
+      "accent": "#e76f9a",
+      "kidSafe": true,
+      "modelFile": "a461-fashionruffle.vrm",
+      "imageFile": "a461-fashionruffle.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-realistic-2026-10-18/a461-fashionruffle.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-realistic-2026-10-18/a461-fashionruffle.png",
+      "sourceFolder": "FashionRuffle",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      },
+      "license": "CC BY 4.0 Sketchfab"
+    },
+    {
+      "id": "a463-sophia",
+      "libraryId": "A463",
+      "name": "Sophia",
+      "gender": "female",
+      "accent": "#9b7ede",
+      "kidSafe": true,
+      "modelFile": "a463-sophia.vrm",
+      "imageFile": "a463-sophia.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-realistic-2026-10-18/a463-sophia.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-realistic-2026-10-18/a463-sophia.png",
+      "sourceFolder": "Sophia",
+      "voiceHint": {
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
+      },
+      "license": "CC BY 4.0 Sketchfab RenderPeople"
+    },
+    {
+      "id": "a468-eric",
+      "libraryId": "A468",
+      "name": "Eric",
+      "gender": "male",
+      "accent": "#4a90a4",
+      "kidSafe": true,
+      "modelFile": "a468-eric.vrm",
+      "imageFile": "a468-eric.png",
+      "modelUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-realistic-2026-10-18/a468-eric.vrm",
+      "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-realistic-2026-10-18/a468-eric.png",
+      "sourceFolder": "Eric",
+      "voiceHint": {
+        "yue": "zh-HK-WanLungNeural",
+        "en": "en-HK-SamNeural"
+      },
+      "license": "CC BY 4.0 Sketchfab"
     }
   ]
 }

@@ -1,6 +1,6 @@
 'use client';
-// Startup selection page — renders the shared SelectionBoard (mode 'start').
-// The in-chat variant lives at /change; both stay in sync by sharing the board.
+// Startup selection page — 2D bighead and scene cards (SelectionBoard).
+// START saves prefs and opens /chat, which loads the chosen character.
 import SelectionBoard from '../../components/SelectionBoard';
 
 export default function Select() {

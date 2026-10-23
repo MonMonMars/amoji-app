@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { INTERJECTION_AT, dominant, pickInterjection, pickThinkingFiller } from '../lib/fillers';
+import { INTERJECTION_AT, MOOD_FILLERS, THINKING_FILLERS, dominant, pickInterjection, pickThinkingFiller } from '../lib/fillers';
 
 describe('fillers', () => {
   it('rotates thinking fillers per call', () => {
@@ -7,6 +7,21 @@ describe('fillers', () => {
     const b = pickThinkingFiller('en');
     expect(a.length).toBeGreaterThan(0);
     expect(a).not.toBe(b);
+  });
+  it('keeps loading fillers to a sound or one tiny think/search line', () => {
+    const langs = ['yue', 'zh', 'ja', 'en'] as const;
+    expect(THINKING_FILLERS.en).toContain('um……');
+    expect(THINKING_FILLERS.en).toContain('um…… let me search the web.');
+    for (const lang of langs) {
+      for (const line of THINKING_FILLERS[lang]) {
+        expect(line.length, line).toBeLessThanOrEqual(32);
+      }
+    }
+    for (const bank of Object.values(MOOD_FILLERS)) {
+      for (const lang of langs) {
+        for (const line of bank[lang]) expect(line.length, line).toBeLessThanOrEqual(32);
+      }
+    }
   });
   it('falls back to English fillers for unknown languages', () => {
     expect(pickThinkingFiller('fr').length).toBeGreaterThan(0);

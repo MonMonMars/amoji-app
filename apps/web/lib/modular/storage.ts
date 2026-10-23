@@ -2,7 +2,7 @@
 // Last head (identity) and body (outfit) on this device.
 import { useEffect, useState } from 'react';
 import { scheduleStatePush } from '../backend-client';
-import { demoBodyById, demoHeadById, type ModularSelection } from './catalog';
+import { WARDROBE_ENABLED, demoBodyById, demoHeadById, type ModularSelection } from './catalog';
 
 const KEY = 'amoji.modular.v1';
 
@@ -20,6 +20,10 @@ function notifySel(sel: ModularSelection | null): void {
 }
 
 export function loadModularSelection(): ModularSelection | null {
+  if (!WARDROBE_ENABLED) {
+    try { localStorage.removeItem(KEY); } catch { /* ignore */ }
+    return null;
+  }
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
@@ -33,6 +37,7 @@ export function loadModularSelection(): ModularSelection | null {
 }
 
 export function saveModularSelection(sel: ModularSelection): void {
+  if (!WARDROBE_ENABLED) return;
   if (!demoHeadById(sel.headId) || !demoBodyById(sel.bodyId)) return;
   try { localStorage.setItem(KEY, JSON.stringify(sel)); } catch { /* private mode */ }
   notifySel(sel);
