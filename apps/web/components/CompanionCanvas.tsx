@@ -15,13 +15,13 @@ import { characterById } from '../lib/prefs';
 import { modelUrl } from '../lib/asset';
 import { pokeStyleFor, poseIdsFor, lookFor } from '../lib/persona';
 import { orderIdleClips, personalityMotion } from '../lib/personality';
-import { classifyPoke, pokeBodyReaction } from '../lib/poke-hit';
+import { classifyPoke, pokeBodyReaction, type PokeDirection, type TalkZone } from '../lib/poke-hit';
 import { clipFreesFeet, collectPlantRest, pinPlantedClipTracks } from '../lib/vrm/plant-feet';
 import { chestPokeBounce } from '../lib/vrm/chest-bounce';
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
 import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
-import { modularGlbUrl, vrmCandidatesForOutfit } from '../lib/modular/catalog';
+import { WARDROBE_ENABLED, modularGlbUrl, vrmCandidatesForOutfit } from '../lib/modular/catalog';
 import { assembleModular, replaceBodyMeshes, type ModularAssembly } from '../lib/modular/assemble';
 import { loadModularGltf } from '../lib/modular/load';
 import { publishModularView } from '../lib/modular/storage';
@@ -108,7 +108,7 @@ import { disposeMiniGameStage, updateMiniGameStage } from './minigameStage';
 export interface CompanionCanvasProps {
   onNotice?: (n: { reason: 'webgl' | 'asset' }) => void;
   /** Where the poke landed: head, torso, chest, side, or back. */
-  onPoke?: (zone: string) => void;
+  onPoke?: (zone: string, direction?: string) => void;
   /** Fired once when a hand grab starts, so chat can speak a hold line. */
   onHandHold?: () => void;
   accent?: string;
@@ -216,6 +216,9 @@ function seedFromKey(key: string): number {
   return h;
 }
 
+/** Punch window. Impact, one rebound, then settle — long enough to read. */
+const POKE_MS = 1200;
+
 /** how much each poke-twist flavor turns the body during the reaction */
 const TWIST_AMOUNT: Record<string, number> = {
   playful: 0.1,
@@ -226,8 +229,12 @@ const TWIST_AMOUNT: Record<string, number> = {
 };
 
 export default function CompanionCanvas({
-  onNotice, onPoke, onHandHold, accent = '#f9a8d4', seedKey, wardrobeHeadId, wardrobeBodyId,
+  onNotice, onPoke, onHandHold, accent = '#f9a8d4', seedKey,
+  wardrobeHeadId: wardrobeHeadProp, wardrobeBodyId: wardrobeBodyProp,
 }: CompanionCanvasProps) {
+  // Cloth swap is gated off. A stored outfit must not replace the base VRM.
+  const wardrobeHeadId = WARDROBE_ENABLED ? wardrobeHeadProp : undefined;
+  const wardrobeBodyId = WARDROBE_ENABLED ? wardrobeBodyProp : undefined;
   const hostRef = useRef<HTMLDivElement>(null);
   const onNoticeRef = useRef(onNotice);
   onNoticeRef.current = onNotice;
@@ -480,11 +487,11 @@ export default function CompanionCanvas({
     );
 
     // -- clip library ---------------------------------------------------------
-    // r2026-10-12 (Mon): short upright standing idle rotation — in-repo
-    // `/models/anims` only for the core set. No Impatient / IdleSassy / chin-
-    // hand / hug / dwarf / cocky / bored idles in the default pool (they read
-    // exaggerated or broken on VRoid companions). Optional remotes load last
-    // and only if reachable; rebaseClipHips pins feet + yaw-only hips on idles.
+    // Standing idle rotation. IdleBreathCalm is the primary default (forward
+    // head, arms outside the torso, feet planted). StandardIdle is the local
+    // neutral stand. LookAround is the curious variant. WeightShift stays an
+    // optional remote. Relax is the soft variant. rebaseClipHips pins feet
+    // and yaw-only hips on every idle in this list.
     const ANIM_MIRROR = `${ASSET_BASE}/models/anims`;
     const CHAT_HOST = 'https://raw.githubusercontent.com/DavinciDreams/3dchat/main/public/animations/vrma';
     const ALT_HOST = 'https://raw.githubusercontent.com/hirokazuniimoto/virtual-avatar-sdk/main/assets/animations';
@@ -493,13 +500,11 @@ export default function CompanionCanvas({
     interface ClipSource { id: string; urls: string[] }
     const IDLE_SOURCES: ClipSource[] = [
       { id: 'IdleBreathCalm', urls: [`${ANIM_MIRROR}/IdleBreathCalm.vrma`] },
-      { id: 'IdleNeutral', urls: [`${ANIM_MIRROR}/IdleNeutral.vrma`] },
+      { id: 'StandardIdle', urls: [`${ANIM_MIRROR}/StandardIdle.vrma`] },
       { id: 'LookAround', urls: [`${ANIM_MIRROR}/LookAround.vrma`] },
-      { id: 'Relax', urls: [`${ANIM_MIRROR}/Relax.vrma`] },
-      { id: 'Thinking', urls: [`${ANIM_MIRROR}/Thinking.vrma`] },
-      // optional tail — only enter rotation if fetch succeeds; feet planted + hips yaw-only
+      // optional — only enters the rotation if the fetch succeeds
       { id: 'WeightShift', urls: [`${CHAT_HOST}/weightShift.vrma`] },
-      { id: 'StandardIdle', urls: [`${ALT_HOST}/standard_idle.vrma`] },
+      { id: 'Relax', urls: [`${ANIM_MIRROR}/Relax.vrma`] },
     ];
     // one-shot dialogue performances (library clips with a real ending)
     // r96 (Master Simon): the move triggers get REAL performances too —
@@ -1157,7 +1162,8 @@ export default function CompanionCanvas({
     let pokeAt = -Infinity;
     let lastEmptyTap = -Infinity;
     // r115: which body zone the current poke reaction belongs to
-    let pokeZone: 'head' | 'torso' | 'chest' | 'side' | 'back' = 'torso';
+    let pokeZone: TalkZone = 'torso';
+    let pokeDirection: PokeDirection = 'front';
     let pokeSideSign = 1;
     // Push direction comes from the hit vs the character's facing.
     const pokeFallDir = new THREE.Vector3(0, 0, -1);
@@ -1347,16 +1353,43 @@ export default function CompanionCanvas({
           const leftN = avatar?.getBoneNode('leftShoulder');
           const rightN = avatar?.getBoneNode('rightShoulder');
           if (hipsN && headN && chestN && leftN && rightN) {
+            const armL = avatar?.getBoneNode('leftLowerArm');
+            const armR = avatar?.getBoneNode('rightLowerArm');
+            const legL = avatar?.getBoneNode('leftLowerLeg');
+            const legR = avatar?.getBoneNode('rightLowerLeg');
+            const hipsW = worldOf(hipsN);
+            const chestW = worldOf(chestN);
+            let hasNormal = false;
+            if (hit.face) {
+              sV2.copy(hit.face.normal).transformDirection(hit.object.matrixWorld);
+              hasNormal = sV2.lengthSq() > 1e-8;
+            }
+            const ray = raycaster.ray.direction;
             const cls = classifyPoke(
               { x: hit.point.x, y: hit.point.y, z: hit.point.z },
-              worldOf(hipsN), worldOf(headN), worldOf(chestN), worldOf(leftN), worldOf(rightN),
+              hipsW, worldOf(headN), chestW, worldOf(leftN), worldOf(rightN),
+              {
+                normal: hasNormal ? { x: sV2.x, y: sV2.y, z: sV2.z } : undefined,
+                rayDir: { x: ray.x, y: ray.y, z: ray.z },
+                leftArm: armL ? worldOf(armL) : undefined,
+                rightArm: armR ? worldOf(armR) : undefined,
+                leftLeg: legL ? worldOf(legL) : undefined,
+                rightLeg: legR ? worldOf(legR) : undefined,
+                belly: {
+                  x: hipsW.x * 0.72 + chestW.x * 0.28,
+                  y: hipsW.y * 0.72 + chestW.y * 0.28,
+                  z: hipsW.z * 0.72 + chestW.z * 0.28,
+                },
+              },
             );
             pokeZone = cls.zone;
+            pokeDirection = cls.direction;
             pokeFallDir.set(cls.impulse.x, 0, cls.impulse.z);
             pokeSideSign = cls.sideSign;
           }
-          beginBoneBlend(0.65);
-          onPokeRef.current?.(pokeZone);
+          // No full-skeleton slerp here. That blend was easing toward a
+          // flipped euler and shrinking the punch to a twitch.
+          onPokeRef.current?.(pokeZone, pokeDirection);
         } else {
           const nowTs = performance.now();
           if (nowTs - lastEmptyTap < 350) {
@@ -1482,16 +1515,18 @@ export default function CompanionCanvas({
         // Poke and laugh stay on the upper body. The root never translates,
         // scales, or tips — that used to slide and lift both feet.
         const pokeAge = now - pokeAt;
-        const boost = pokeAge < 900 ? 1 - pokeAge / 900 : 0;
+        const boost = pokeAge < POKE_MS ? 1 - pokeAge / POKE_MS : 0;
         const laughAge = now - lastLaughAt();
         const laugh = laughAge >= 0 && laughAge < 1600 ? 1 - laughAge / 1600 : 0;
         let skSpine = 0, skChest = 0, skHeadX = 0, skHeadZ = 0;
         let skSpineY = 0, skChestZ = 0;
         let skLArm = 0, skRArm = 0, skLElb = 0, skRElb = 0, skLUp = 0, skRUp = 0;
+        let skHip = 0, skHipRoll = 0, skHipX = 0, skHipZ = 0;
         if (boost > 0) {
           const hit = pokeBodyReaction({
             t: 1 - boost,
             zone: pokeZone,
+            direction: pokeDirection,
             fallX: pokeFallDir.x,
             fallZ: pokeFallDir.z,
             sideSign: pokeSideSign,
@@ -1510,6 +1545,10 @@ export default function CompanionCanvas({
           skRElb = hit.rElbowZ;
           skLUp = hit.lArmUp;
           skRUp = hit.rArmUp;
+          skHip = hit.hipPitch;
+          skHipRoll = hit.hipRoll;
+          skHipX = hit.hipShiftX;
+          skHipZ = hit.hipShiftZ;
         }
         if (laugh > 0) {
           const lt = 1 - laugh;
@@ -1594,17 +1633,19 @@ export default function CompanionCanvas({
 
         const b = targets.bones;
         const poseTargets: AvatarPose = {
-          headX: b.headPitch + skHeadX,
+          headX: b.headPitch,
           headY: b.headYaw,
-          headZ: b.headRoll + skHeadZ,
+          headZ: b.headRoll,
+          headPitchAdd: skHeadX,
+          headRollAdd: skHeadZ,
           spineX: b.spinePitch, chestX: b.chestPitch,
-          leftUpperArm: b.leftUpperArm + skLUp, rightUpperArm: b.rightUpperArm + skRUp,
+          leftUpperArm: b.leftUpperArm, rightUpperArm: b.rightUpperArm,
           leftLowerArm: b.leftLowerArm, rightLowerArm: b.rightLowerArm,
           spineY: skSpineY, chestZ: skChestZ,
           lArmX: skLArm, rArmX: skRArm,
           lElbowZ: skLElb, rElbowZ: skRElb,
           spinePitchAdd: skSpine, chestPitchAdd: skChest,
-          lArmRaise: 0, rArmRaise: 0,
+          lArmRaise: -skLUp, rArmRaise: -skRUp,
         };
         // dialogue-triggered performance: fire the matching LIBRARY clip once
         // on the rising edge. Clip-less kinds keep the skeleton for the
@@ -1621,8 +1662,9 @@ export default function CompanionCanvas({
         // body is always inside a live loop: no straight stand between moves.
         if (mixerActive && !perfAction && !gameView) {
           if (thinkingPoseActive()) {
-            if (idleClipId !== 'Thinking' && !thinkMiss) {
-              if (!playNamedIdle('Thinking', FADE.idleRotate)) thinkMiss = true;
+            // Hold the primary standing idle while a reply generates.
+            if (idleClipId !== 'IdleBreathCalm' && !thinkMiss) {
+              if (!playNamedIdle('IdleBreathCalm', FADE.idleRotate)) thinkMiss = true;
               else idleHoldUntil = performance.now() + 20000;
             }
           } else {
@@ -1698,13 +1740,19 @@ export default function CompanionCanvas({
         }
 
         applyBoneBlend(now);
-        // After the mixer, poke additives, and the pose blend: both soles
-        // share one ground height. Walk/jump clips are the exception.
-        avatar.plantFeet(!clipFreesFeet(perfClipId));
+        // After the mixer and the punch additives: both soles share one
+        // ground contact. The hip lean bends the legs with the hit.
+        // Walk/jump clips are the exception.
+        const feetFree = clipFreesFeet(perfClipId);
+        avatar.plantFeet(feetFree ? false : true, feetFree ? undefined : {
+          pitch: skHip,
+          roll: skHipRoll,
+          shiftX: skHipX,
+          shiftZ: skHipZ,
+        });
         avatar.update(dt / 1000);
-        // Chest poke only: a short damped spring on the bust bones, after
-        // the skeleton update so it is not overwritten. Feet stay planted.
-        const bounceT = boost > 0 ? (1 - boost) * 0.9 : -1;
+        // Chest and torso punches: bust spring after the skeleton update.
+        const bounceT = boost > 0 ? (1 - boost) * (POKE_MS / 1000) : -1;
         avatar.applyChestBounce(chestPokeBounce(pokeZone, bounceT));
 
         // r109 NaN sweep: a corrupt clip key or a bad spring-bone write can

@@ -144,13 +144,13 @@ import { notifySpeaking, isSpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
 import { pickIdleLine } from '../lib/persona-chatter';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
-import { pickCharacterInteraction, maybeLaughLead } from '../lib/interaction-lines';
+import { pickCharacterInteraction, maybeLaughLead, pokeReactionLine } from '../lib/interaction-lines';
 import { cannedOpener, personalityPrompt, personalityTutorTip } from '../lib/personality';
 import { pickLaugh, laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { WARMUP_FIRST_MS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from '../lib/warmup';
 import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
 import { clientLiveContext } from '../lib/live-tools';
-import { speak, stopSpeaking, sing, voiceStartedSince } from '../lib/voice';
+import { speak, stopSpeaking, sing, voiceStartedSince, speechPending, speechStillQueued, speechRemainder, whenSpeechIdle } from '../lib/voice';
 import { productionChat } from '../lib/backend-client';
 import { startThinkingSound, stopThinkingSound } from '../lib/thinking-sound';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
@@ -188,8 +188,10 @@ export interface ChatPanelProps {
   kidMode?: boolean;
   /** increments when the user pokes the character — triggers a poke reply */
   pokeCount?: number;
-  /** where the latest poke landed ('head'|'torso'|'chest'|'side'|'back'|legacy) */
+  /** where the latest poke landed */
   pokeZone?: string;
+  /** front | back | left | right — the side the punch came from */
+  pokeDirection?: string;
   /** increments when the user holds a hand */
   handHoldCount?: number;
   onStatus?: (s: ChatStatus) => void;
@@ -213,6 +215,7 @@ export default function ChatPanel({
   kidMode = false,
   pokeCount = 0,
   pokeZone = '',
+  pokeDirection = 'front',
   handHoldCount = 0,
   onStatus,
   onMemCount,
@@ -420,7 +423,6 @@ export default function ChatPanel({
     duetRef.current = null;
     exerciseRef.current = null;
     setThinkingPose(false);
-    stopSpeaking();
     endPerformanceMusic();
     showTrack(null);
     micModeRef.current = false;
@@ -453,32 +455,30 @@ export default function ChatPanel({
 
   const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string, alreadySpoken?: { text: string; since: number }): string => {
     const mv = detectMove(userText) ?? detectMove(reply);
-    // r97 — the first sentence already went out live over the stream; when
-    // the finished reply is exactly that sentence, a second speak would
-    // replay it. r100 — BUT only when its audio actually STARTED: on the
-    // iPhone every tier can silently fail and "we tried" must never suppress
-    // the reply itself. Still fire the move trigger and the speaking notice
-    // either way; fall through to the full speak when sound never began.
-    if (alreadySpoken && reply.trim() === alreadySpoken.text.trim() && voiceStartedSince(alreadySpoken.since)) {
-      if (mv === 'sing') {
-        // fall through — the premade clip is the vocal, not the streamed sentence
-      } else {
-        if (mv === 'dance') {
-          triggerMove('dance');
-          beginShow('dance', 9300, mood);
-        }
-        else if (mv) triggerMove(mv);
-        notifySpeaking(reply);
-        return reply;
-      }
+    // The first closed sentence already went out over the stream. If it is
+    // still queued or its audio started, say only the rest — never replay
+    // that sentence, and never cut it. If it never started and is gone from
+    // the queue, fall through and speak the whole reply.
+    const firstLive = !!alreadySpoken
+      && mv !== 'sing'
+      && (speechStillQueued(alreadySpoken.text) || voiceStartedSince(alreadySpoken.since));
+    if (firstLive && alreadySpoken) {
+      if (mv === 'dance') {
+        triggerMove('dance');
+        beginShow('dance', 9300, mood);
+      } else if (mv) triggerMove(mv);
+      notifySpeaking(reply);
+      const rest = speechRemainder(reply, alreadySpoken.text);
+      if (rest) speak(rest, characterId, lang, hints, undefined, intensity);
+      return reply;
     }
     // Singing plays a premade clip in her gender's voice. The lyric still
-    // lands in the bubble; TTS does not sing over the clip.
+    // lands in the bubble; TTS does not sing over the clip. The clip waits
+    // its turn — a live sentence is not cut to start the song.
     if (mv === 'sing') {
-      stopSpeaking();
       triggerMove('sing');
       applyLlmHints({ joy: 0.88 });
-      beginShow('song', 9300, mood);
+      whenSpeechIdle(() => beginShow('song', 9300, mood));
       const compact = reply.replace(/\s/g, '');
       const song = compact.length > 0 && compact.length <= 48
         ? reply
@@ -562,7 +562,7 @@ export default function ChatPanel({
     lastUserRef.current = Date.now();
     reengageStageRef.current = 0;
     playPokeSfx();
-    const line = pickCharacterInteraction(characterId, characterGender, pokeZone || 'torso', lang);
+    const line = pokeReactionLine(characterId, characterGender, pokeZone || 'torso', pokeDirection || 'front', lang, pokeCount);
     sayLocal(line, { joy: 0.5 }, maybeLaughLead(lang));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pokeCount]);
@@ -588,7 +588,7 @@ export default function ChatPanel({
   // waits instead of nagging. Her lines never pile onto her own voice.
   useEffect(() => {
     const timer = setInterval(() => {
-      if (busyRef.current || isSpeaking() || actionGameRef.current) return;
+      if (busyRef.current || isSpeaking() || speechPending() || actionGameRef.current) return;
       if (reengageStageRef.current >= 2) return; // closer said — she's waiting
       const silent = Date.now() - lastUserRef.current;
       if (silent < IDLE_AFTER_MS) return;
@@ -799,11 +799,9 @@ export default function ChatPanel({
     // has a premade clip as the wait audio, so the hum stays out of that mix.
     if (requested !== 'sing' && requested !== 'dance') startThinkingSound();
     // r.47 — ONE transient placeholder bubble carries the whole wait. It
-    // starts as '…'; preloaded warm lines (praise, curiosity,
-    // encouragement — her language, her felt mood) replace it every few
-    // seconds and are spoken aloud, so the load time reads as her reacting
-    // to you; the first stream token takes the bubble over, and the final
-    // reply commits in its place.
+    // starts as '…'; short um/ha stubs replace it every few seconds and are
+    // spoken aloud. Each stub finishes before the next. The first stream
+    // token takes the bubble over, and the final reply commits in its place.
     setHistory((h) => [...h, { role: 'assistant', content: '…' }]);
     transientRef.current = true;
     let warmCount = 0;

@@ -110,6 +110,11 @@ const ZONE: Record<string, Record<Lang, string>> = {
   side:  { en: 'my side', yue: '我側邊', zh: '我的旁边', ja: '横' },
   back:  { en: 'my back', yue: '我背脊', zh: '我的后背', ja: '背中' },
   hand:  { en: 'my hand', yue: '我隻手', zh: '我的手', ja: '手' },
+  armL:  { en: 'my left arm', yue: '我左手', zh: '我的左手', ja: '左腕' },
+  armR:  { en: 'my right arm', yue: '我右手', zh: '我的右手', ja: '右腕' },
+  belly: { en: 'my tummy', yue: '我個肚', zh: '我的肚子', ja: 'お腹' },
+  legL:  { en: 'my left leg', yue: '我左腳', zh: '我的左腿', ja: '左足' },
+  legR:  { en: 'my right leg', yue: '我右腳', zh: '我的右腿', ja: '右足' },
 };
 
 const CATCH: Record<VoiceId, Record<Lang, readonly string[]>> = {
@@ -1374,76 +1379,76 @@ const POKE: Record<VoiceId, Record<Lang, readonly string[]>> = {
 
 const OPENING: Record<VoiceId, Record<Lang, string>> = {
   sunny: {
-    en: '{catch} I am {name}! Talk, play, or hang out — what is first?',
-    yue: '{catch} 我係{name}！傾偈、玩下，定坐低——邊樣先？',
-    zh: '{catch} 我是{name}！聊天、玩一会儿，还是坐坐——哪个先？',
-    ja: '{catch} 私は{name}！おしゃべり、遊び、まったり——どれから？',
+    en: "Hi, I'm {name}! Little things make me happy, especially {noun} — what should we talk about?",
+    yue: '你好，我係{name}！我好容易因為小事開心，尤其係{noun}。我哋傾咩好呀？',
+    zh: '你好，我是{name}！我很容易因为小事开心，尤其是{noun}。我们聊什么好呀？',
+    ja: 'こんにちは、{name}です！小さなことが好きで、特に{noun}が好き。何を話そうか？',
   },
   shy: {
-    en: '{catch} I am {name}. Um… would a quiet chat be okay?',
-    yue: '{catch} 我係{name}。嗯……靜靜傾一陣得唔得呀？',
-    zh: '{catch} 我是{name}。嗯……安静地聊一会儿可以吗？',
-    ja: '{catch} 私は{name}。あの……静かに少し話してもいい？',
+    en: "Hello, I'm {name}. I'm a little shy, but I like {noun} — would you like to chat?",
+    yue: '你好，我係{name}。我有少少怕醜，不過我鍾意{noun}。想同我傾偈嗎？',
+    zh: '你好，我是{name}。我有一点害羞，不过我喜欢{noun}。想和我聊天吗？',
+    ja: 'こんにちは、{name}です。少し人見知りだけど、{noun}が好き。おしゃべりする？',
   },
   playful: {
-    en: '{catch} {name} here! Pick one: talk, play, or a silly game?',
-    yue: '{catch} {name}到！你揀：傾偈、玩，定傻瓜遊戲？',
-    zh: '{catch} {name}到了！你选：聊天、玩，还是傻瓜游戏？',
-    ja: '{catch} {name}だよ！選んで：話す、遊ぶ、おかしなゲーム？',
+    en: "Hey, I'm {name}. I like games and {noun} — want to talk or play?",
+    yue: '嘿，我係{name}。我鍾意玩，亦鍾意{noun}。想傾偈定想玩？',
+    zh: '嘿，我是{name}。我喜欢玩，也喜欢{noun}。想聊天还是想玩？',
+    ja: 'やあ、{name}だよ。遊ぶのも{noun}も好き。話す？それとも遊ぶ？',
   },
   gentle: {
-    en: '{catch} I am {name}. We can talk softly. What would feel nice?',
-    yue: '{catch} 我係{name}。我哋可以輕輕傾。做咩你會舒服？',
-    zh: '{catch} 我是{name}。我们可以轻轻聊。做什么你会舒服？',
-    ja: '{catch} 私は{name}。そっと話そう。何がやさしい？',
+    en: "Hello, I'm {name}. I like {noun}, and I'm here if you want to talk — how are you today?",
+    yue: '你好，我係{name}。我鍾意{noun}，想傾偈嘅話我喺度。你今日點呀？',
+    zh: '你好，我是{name}。我喜欢{noun}，想聊天的话我在这里。你今天怎么样？',
+    ja: 'こんにちは、{name}です。{noun}が好きで、話したかったらここにいるよ。今日の調子は？',
   },
   dreamy: {
-    en: '{catch} {name} drifting in. Shall we talk, or imagine a little?',
-    yue: '{catch} {name}飄入嚟。我哋傾偈，定想像少少？',
-    zh: '{catch} {name}飘进来了。我们聊天，还是想象一点点？',
-    ja: '{catch} {name}、ふわっと来た。話す？それとも少し想像？',
+    en: "Hi, I'm {name}. I like quiet daydreams and {noun} — shall we talk?",
+    yue: '你好，我係{name}。我鍾意靜靜咁發夢，亦鍾意{noun}。我哋傾偈好嗎？',
+    zh: '你好，我是{name}。我喜欢安静地做做梦，也喜欢{noun}。我们聊聊好吗？',
+    ja: 'こんにちは、{name}です。静かな空想と{noun}が好き。話そうか？',
   },
   spark: {
-    en: '{catch} {name} reporting in! Talk, play, or a tiny victory lap?',
-    yue: '{catch} {name}報到！傾偈、玩，定小小勝利圈？',
-    zh: '{catch} {name}报到！聊天、玩，还是小小胜利圈？',
-    ja: '{catch} {name}、到着！話す、遊ぶ、小さな勝利ラップ？',
+    en: "Hi, I'm {name}! I have energy to spare and I love {noun} — what do you want to do?",
+    yue: '你好，我係{name}！我精神好好，亦好鍾意{noun}。你想做咩呀？',
+    zh: '你好，我是{name}！我精神很好，也很喜欢{noun}。你想做什么呀？',
+    ja: 'こんにちは、{name}です！元気いっぱいだし、{noun}が大好き。何したい？',
   },
   steady: {
-    en: '{catch} {name} here. Talk, a small plan, or quiet company?',
-    yue: '{catch} {name}喺度。傾偈、一個小計劃，定靜靜陪住？',
-    zh: '{catch} {name}在。聊天、一个小计划，还是安静陪着？',
-    ja: '{catch} {name}だ。話す、小さな予定、静かな付き合い？',
+    en: "Hello, I'm {name}. I'm calm company and I like {noun} — what is on your mind?",
+    yue: '你好，我係{name}。我會靜靜陪你，亦鍾意{noun}。你諗緊咩呀？',
+    zh: '你好，我是{name}。我会安静陪着你，也喜欢{noun}。你在想什么呀？',
+    ja: 'こんにちは、{name}です。落ち着いて一緒にいるよ。{noun}も好き。今なに考えてる？',
   },
   cool: {
-    en: '{catch} {name}. Talk, or not. What do you actually want?',
-    yue: '{catch} {name}。傾，或者唔傾。你其實想要咩？',
-    zh: '{catch} {name}。聊，或者不聊。你其实想要什么？',
-    ja: '{catch} {name}。話すか、話さないか。本当は何が欲しい？',
+    en: "Hey, I'm {name}. I keep things simple and I like {noun} — want to talk?",
+    yue: '嘿，我係{name}。我講嘢簡單，亦鍾意{noun}。想傾偈嗎？',
+    zh: '嘿，我是{name}。我说话简单，也喜欢{noun}。想聊天吗？',
+    ja: 'やあ、{name}。話は短くするよ。{noun}は好き。話す？',
   },
   warm: {
-    en: '{catch} It is {name}. Pull up a chair — talk, play, or just sit?',
-    yue: '{catch} 我係{name}。坐低——傾偈、玩，定淨係坐？',
-    zh: '{catch} 我是{name}。坐下来——聊天、玩，还是就坐着？',
-    ja: '{catch} {name}だよ。座って——話す、遊ぶ、ただ座る？',
+    en: "Hi, I'm {name}. Pull up a chair — I like {noun} and an easy chat. How are you?",
+    yue: '你好，我係{name}。坐低啦，我鍾意{noun}，亦鍾意慢慢傾。你點呀？',
+    zh: '你好，我是{name}。坐下来吧，我喜欢{noun}，也喜欢慢慢聊。你怎么样？',
+    ja: 'こんにちは、{name}です。座って。{noun}とゆっくり話すのが好き。調子は？',
   },
   quiet: {
-    en: '{catch} {name}. We can talk. Or not yet. Which do you want?',
-    yue: '{catch} {name}。我哋可以傾。或者未使。你想邊樣？',
-    zh: '{catch} {name}。我们可以聊。或者先不聊。你想哪个？',
-    ja: '{catch} {name}。話せる。まだでもいい。どっち？',
+    en: "Hello, I'm {name}. I don't talk too much, but I like {noun} — want to chat?",
+    yue: '你好，我係{name}。我唔多講嘢，不過我鍾意{noun}。想傾偈嗎？',
+    zh: '你好，我是{name}。我话不多，不过我喜欢{noun}。想聊天吗？',
+    ja: 'こんにちは、{name}です。あまり喋らないけど、{noun}は好き。話す？',
   },
   sporty: {
-    en: '{catch} {name} on deck! Talk, play, or a warm-up — ready?',
-    yue: '{catch} {name}準備好！傾偈、玩，定熱身——得未？',
-    zh: '{catch} {name}准备好了！聊天、玩，还是热身——行了吗？',
-    ja: '{catch} {name}、準備完了！話す、遊ぶ、ウォームアップ——いい？',
+    en: "Hi, I'm {name}. I'm ready to hang out and I like {noun} — shall we talk?",
+    yue: '你好，我係{name}。我準備好一齊玩，亦鍾意{noun}。我哋傾偈好嗎？',
+    zh: '你好，我是{name}。我准备好一起玩，也喜欢{noun}。我们聊聊好吗？',
+    ja: 'こんにちは、{name}です。一緒に遊ぶ準備はできてる。{noun}も好き。話そうか？',
   },
   wry: {
-    en: '{catch} {name}, at your service. Talk, play, or raise an eyebrow?',
-    yue: '{catch} {name}，聽你差遣。傾偈、玩，定揚一揚眉？',
-    zh: '{catch} {name}，听你吩咐。聊天、玩，还是扬一扬眉？',
-    ja: '{catch} {name}、お待ちしてました。話す、遊ぶ、眉を上げる？',
+    en: "Hello, I'm {name}. I joke a little and I like {noun} — what should we talk about?",
+    yue: '你好，我係{name}。我偶爾講句笑話，亦鍾意{noun}。我哋傾咩好呀？',
+    zh: '你好，我是{name}。我偶尔说句笑话，也喜欢{noun}。我们聊什么好呀？',
+    ja: 'こんにちは、{name}です。軽い冗談は言うよ。{noun}も好き。何を話そうか？',
   },
 };
 
@@ -1510,8 +1515,11 @@ export function voicePokeLines(voice: VoiceId, motif: MotifId, frame: number, la
 }
 
 export function voiceOpening(voice: VoiceId, motif: MotifId, frame: number, lang: Lang, name: string): string {
-  const catchphrase = voiceCatchphrase(voice, motif, frame, lang);
-  return fill(OPENING[voice][lang], { catch: catchphrase, name });
+  // frame keeps each cached companion on their own opener slot. The line
+  // itself is a plain greeting: who they are, what they like, an invite.
+  void frame;
+  const noun = LEX[motif][lang].noun;
+  return fill(OPENING[voice][lang], { name, noun });
 }
 
 /** Short app-tip in this voice. The body is the how-to; the wrap is the personality. */

@@ -4,15 +4,27 @@ import {
 } from '../lib/prefs';
 import { CAST_NO, castNo } from '../lib/castNo';
 
-const RELEASE =
+const WANT_RELEASE =
   'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/';
+const REALISTIC_RELEASE =
+  'https://github.com/MonMonMars/amoji-app/releases/download/free-library-realistic-2026-10-18/';
+const REALISTIC_IDS = [
+  'a459-chinesewarriormonk',
+  'a460-freerealisticfemale',
+  'a461-fashionruffle',
+  'a463-sophia',
+  'a468-eric',
+];
 
 describe('cast roster', () => {
-  it('has 46 free-library want-list characters with taglines in every language', () => {
-    expect(CHARACTERS.length).toBe(46);
+  it('has 51 want-list characters with taglines in every language', () => {
+    expect(CHARACTERS.length).toBe(51);
     expect(WANT_CAST_RELEASE).toBe('free-library-want-2026-10-12');
+    expect(CHARACTERS.slice(0, 46).map((c) => c.id)).not.toEqual(expect.arrayContaining(REALISTIC_IDS));
+    expect(CHARACTERS.slice(-5).map((c) => c.id)).toEqual(REALISTIC_IDS);
     for (const c of CHARACTERS) {
-      expect(c.image, c.id).toBe(`${RELEASE}${c.id}.png`);
+      const release = REALISTIC_IDS.includes(c.id) ? REALISTIC_RELEASE : WANT_RELEASE;
+      expect(c.image, c.id).toBe(`${release}${c.id}.png`);
       for (const l of ['en', 'yue', 'zh', 'ja'] as Lang[]) expect(c.tagline[l].length).toBeGreaterThan(0);
       expect(c.persona.length).toBeGreaterThan(20);
       expect(['female', 'male']).toContain(c.gender);
@@ -27,9 +39,14 @@ describe('cast roster', () => {
     expect(new Set(CHARACTERS.map((c) => c.model)).size).toBe(CHARACTERS.length);
   });
 
-  it('male voice hints differ from female (A24, A98)', () => {
+  it('male voice hints differ from female (A24, A98, A459, A468)', () => {
     const male = CHARACTERS.filter((c) => c.gender === 'male');
-    expect(male.map((c) => c.id).sort()).toEqual(['a24-hairsample-male', 'a98-ethan'].sort());
+    expect(male.map((c) => c.id).sort()).toEqual([
+      'a24-hairsample-male',
+      'a459-chinesewarriormonk',
+      'a468-eric',
+      'a98-ethan',
+    ].sort());
     for (const c of male) {
       expect(c.voiceHint?.en).toBe('en-HK-SamNeural');
       expect(c.voiceHint?.yue).toBe('zh-HK-WanLungNeural');
@@ -40,12 +57,15 @@ describe('cast roster', () => {
     }
   });
 
-  it('every character has a stable number — unique, 1..46', () => {
+  it('every character has a stable number — unique, 1..51', () => {
     const numbers = CHARACTERS.map((c) => castNo(c.id));
     for (const n of numbers) {
       expect(n).toBeGreaterThanOrEqual(1);
-      expect(n).toBeLessThanOrEqual(46);
+      expect(n).toBeLessThanOrEqual(51);
     }
+    expect(castNo('a122-shiratori-hikari-shifuku')).toBe(46);
+    expect(castNo('a459-chinesewarriormonk')).toBe(47);
+    expect(castNo('a468-eric')).toBe(51);
     expect(new Set(numbers).size).toBe(CHARACTERS.length);
     expect(Object.keys(CAST_NO).sort()).toEqual(CHARACTERS.map((c) => c.id).sort());
   });

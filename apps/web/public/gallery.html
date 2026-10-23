@@ -48,8 +48,8 @@
 <body>
 <header>
   <h1>🧍 Amoji Idle Motion Gallery</h1>
-  <div class="sub">Feet-planted standing idles. <b>IdleBreathCalm</b> is mapped now (shy, gentle, dreamy, quiet, steady).<br>
-  Tap cards to pick → <b>Copy my picks</b> → paste back in chat (format: <code>My idle picks: IdleNeutral …</code>).</div>
+  <div class="sub">Feet-planted standing idles. <b>IdleBreathCalm</b> is the primary default. <b>StandardIdle</b>, <b>LookAround</b>, and <b>Relax</b> rotate with it. <b>WeightShift</b> is optional.<br>
+  Tap cards to pick → <b>Copy my picks</b> → paste back in chat (format: <code>My idle picks: IdleBreathCalm …</code>).</div>
 </header>
 <div class="bar">
   <button id="copy">Copy my picks</button>
@@ -70,7 +70,7 @@
 <div class="grid" id="gD"></div>
 
 <div class="note">
-  <b>IdleBreathCalm.vrma</b> is in <code>models/anims/</code> and mapped in <code>lib/personality.ts</code>.<br>
+  <b>IdleBreathCalm.vrma</b> is the primary default in <code>models/anims/</code> and leads every personality list in <code>lib/personality.ts</code>. <b>StandardIdle.vrma</b> is vendored locally beside it.<br>
   Convert later (not wired): <b>IdleKaykitA</b>, <b>IdleKaykitB</b>, <b>IdleQuaterniusHuman</b> — FBX/glTF noted in <code>models/anims-fbx/README.txt</code>.<br>
   Mixamo: ship embedded in app OK; do not redistribute raw FBX publicly.
 </div>
@@ -79,13 +79,14 @@
 <script>
 /** Card: [id, label, personality, licenseShort, format, src, feetPlanted, badge, section, sourceUrl, note] */
 const EXISTING = [
-  ['IdleNeutral','Idle Neutral','calm, neutral','app asset','vrma','models/anims/IdleNeutral.vrma',true,'app','Already in app',null,'Reference — already shipped'],
-  ['IdleSassy','Idle Sassy','cheerful, sassy, cool','app asset','vrma','models/anims/IdleSassy.vrma',true,'app','Already in app',null,'Reference — already shipped'],
-  ['IdleChinHand','Idle Chin Hand','cool, thoughtful, shy','app asset','vrma','models/anims/IdleChinHand.vrma',true,'app','Already in app',null,'Reference — already shipped'],
-  ['IdleHug','Idle Hug','cheerful, warm','app asset','vrma','models/anims/IdleHug.vrma',true,'app','Already in app',null,'Arms-in hug pose idle — already shipped'],
+  ['IdleNeutral','Idle Neutral','calm, neutral','app asset','vrma','models/anims/IdleNeutral.vrma',true,'app','On disk',null,'Out of the default rotation — neck stays pitched down.'],
+  ['IdleSassy','Idle Sassy','cheerful, sassy, cool','app asset','vrma','models/anims/IdleSassy.vrma',true,'app','On disk',null,'Out of the default rotation — arms drive into the torso.'],
+  ['IdleChinHand','Idle Chin Hand','cool, thoughtful, shy','app asset','vrma','models/anims/IdleChinHand.vrma',true,'app','On disk',null,'Out of the default rotation — arms drive into the torso.'],
+  ['IdleHug','Idle Hug','cheerful, warm','app asset','vrma','models/anims/IdleHug.vrma',true,'app','On disk',null,'Out of the default rotation — hug pose puts the arms in the torso.'],
 ];
 const READY = [
-  ['IdleBreathCalm','Idle Breath Calm','calm, shy, soft','MIT (pixiv ChatVRM)','vrma','models/anims/IdleBreathCalm.vrma',true,'ready','Mapped','https://github.com/pixiv/ChatVRM','Wired now: first idle for shy, gentle, dreamy, quiet, and steady. Feet stay planted.'],
+  ['IdleBreathCalm','Idle Breath Calm','calm, shy, soft','MIT (pixiv ChatVRM)','vrma','models/anims/IdleBreathCalm.vrma',true,'ready','Primary default','https://github.com/pixiv/ChatVRM','Primary default for every personality. Head forward, arms at the sides, feet planted.'],
+  ['StandardIdle','Standard Idle','calm, neutral','vendored VRMA','vrma','models/anims/StandardIdle.vrma',true,'ready','Local default','https://github.com/hirokazuniimoto/virtual-avatar-sdk','Local neutral stand. Loaded from models/anims, not the remote host.'],
 ];
 const CONVERT = [
   ['IdleKenneyStand','Idle Kenney Stand','calm, neutral, game','CC0-1.0 Kenney','fbx','models/anims-fbx/IdleKenneySurvivors.fbx',true,'fbx','Convert FBX','https://kenney.nl/assets/animated-characters-survivors','Identical idle also in Protagonists/Retro packs. Convert FBX→VRMA.'],

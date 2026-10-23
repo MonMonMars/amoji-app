@@ -4,6 +4,8 @@ import {
   SKIPPED_ENGINES,
   VOICE_CATALOG,
   edgeVoiceId,
+  synthNameConflicts,
+  voiceNameMatches,
   voicesForLocale,
 } from '../lib/voice-catalog';
 
@@ -48,6 +50,13 @@ describe('locale voice catalog', () => {
     expect(HELD_GPU_ENGINES.map((h) => h.engine)).toEqual(
       expect.arrayContaining(['voxcpm2', 'chatterbox', 'cosyvoice', 'qwen3-tts', 'kokoro', 'melotts']),
     );
+  });
+
+  it('does not treat Female as a Male voice name', () => {
+    expect(voiceNameMatches('Microsoft Zira Desktop - English Female', 'Male')).toBe(false);
+    expect(voiceNameMatches('Microsoft David Desktop - English Male', 'Male')).toBe(true);
+    expect(synthNameConflicts('male', 'Microsoft Zira Desktop - English Female')).toBe(true);
+    expect(synthNameConflicts('male', 'Microsoft David Desktop')).toBe(false);
   });
 
   it('does not select NC-licensed engines', () => {
