@@ -48,6 +48,13 @@ export const DEMO_BODIES: readonly ModularAsset[] = ['A119', 'A120', 'A106', 'A0
   (id) => DEMO_ASSETS.find((a) => a.id === id)!,
 );
 
+/**
+ * Cloth / wardrobe swap is off until the modular GLBs load the right body.
+ * The catalog stays so the feature can be turned back on. While this is
+ * false, every companion uses their own base VRM and stored outfits are ignored.
+ */
+export const WARDROBE_ENABLED = false;
+
 /** Default identity when an outfit is chosen before any head. */
 export const DEFAULT_DEMO_HEAD = 'A119';
 
@@ -83,16 +90,26 @@ export interface ModularSelection {
 }
 
 /**
- * Wardrobe pair for a companion. Demo heads try modular GLBs (own body, or
- * the last outfit). Anyone outside the female cluster stays on the single VRM.
+ * Wardrobe pair for a companion, ignoring the feature flag.
+ * Demo heads would try modular GLBs (own body, or the last outfit).
+ * Anyone outside the female cluster stays on the single VRM.
  */
-export function activeWardrobe(characterId: string, stored: ModularSelection | null): ModularSelection | null {
+export function wardrobePair(characterId: string, stored: ModularSelection | null): ModularSelection | null {
   const head = demoHeadByCharacterId(characterId);
   if (!head) return null;
   const bodyId = stored && demoBodyById(stored.bodyId)
     ? stored.bodyId
     : (demoBodyById(head.id) ? head.id : DEMO_BODIES[0]!.id);
   return { headId: head.id, bodyId };
+}
+
+/**
+ * Live wardrobe. Disabled until cloth swap is reliable — callers then load
+ * the character's own base VRM and never a stored head/body pair.
+ */
+export function activeWardrobe(characterId: string, stored: ModularSelection | null): ModularSelection | null {
+  if (!WARDROBE_ENABLED) return null;
+  return wardrobePair(characterId, stored);
 }
 
 /**

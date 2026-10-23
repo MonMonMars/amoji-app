@@ -8,6 +8,7 @@ import {
   DEFAULT_DEMO_HEAD,
   DEMO_BODIES,
   DEMO_HEADS,
+  WARDROBE_ENABLED,
   activeWardrobe,
   demoBodyById,
   demoHeadById,
@@ -128,7 +129,7 @@ function Thumb({
   );
 }
 
-export default function WardrobeSwap({
+function WardrobeSwapLive({
   lang,
   characterId,
   onCharacter,
@@ -251,4 +252,14 @@ export default function WardrobeSwap({
       </div>
     </section>
   );
+}
+
+/** Cloth swap is hidden while WARDROBE_ENABLED is false. The panel stays in the tree for later. */
+export default function WardrobeSwap(props: {
+  lang: Lang;
+  characterId: string;
+  onCharacter: (characterId: string) => void;
+}) {
+  if (!WARDROBE_ENABLED) return null;
+  return <WardrobeSwapLive {...props} />;
 }

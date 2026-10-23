@@ -60,21 +60,28 @@ describe('auto personality', () => {
     restore();
   });
 
-  it('leads calm personalities with IdleBreathCalm', () => {
+  it('leads every personality with IdleBreathCalm and keeps the dropped clips out', () => {
     const restore = swapLs();
     const g = globalThis as { localStorage: Storage };
-    g.localStorage.setItem('amoji.personality.v1', JSON.stringify({
-      'p-shy': 'shy',
-      'p-gentle': 'gentle',
-      'p-dreamy': 'dreamy',
-      'p-quiet': 'quiet',
-      'p-sporty': 'sporty',
-    }));
-    expect(personalityMotion('p-shy', 'female').idleClips[0]).toBe('IdleBreathCalm');
-    expect(personalityMotion('p-gentle', 'female').idleClips[0]).toBe('IdleBreathCalm');
-    expect(personalityMotion('p-dreamy', 'female').idleClips[0]).toBe('IdleBreathCalm');
-    expect(personalityMotion('p-quiet', 'male').idleClips[0]).toBe('IdleBreathCalm');
-    expect(personalityMotion('p-sporty', 'male').idleClips.includes('IdleBreathCalm')).toBe(false);
+    const female = ['sunny', 'shy', 'playful', 'gentle', 'dreamy', 'spark'] as const;
+    const male = ['steady', 'cool', 'warm', 'quiet', 'sporty', 'wry'] as const;
+    const stored: Record<string, string> = {};
+    for (const tag of [...female, ...male]) stored[`p-${tag}`] = tag;
+    g.localStorage.setItem('amoji.personality.v1', JSON.stringify(stored));
+    const dropped = ['IdleNeutral', 'Thinking', 'IdleChinHand', 'IdleHug', 'IdleSassy', 'Impatient'];
+    for (const tag of female) {
+      const clips = personalityMotion(`p-${tag}`, 'female').idleClips;
+      expect(clips[0]).toBe('IdleBreathCalm');
+      for (const id of dropped) expect(clips).not.toContain(id);
+    }
+    for (const tag of male) {
+      const clips = personalityMotion(`p-${tag}`, 'male').idleClips;
+      expect(clips[0]).toBe('IdleBreathCalm');
+      for (const id of dropped) expect(clips).not.toContain(id);
+    }
+    expect(personalityMotion('p-sporty', 'male').idleClips).toContain('WeightShift');
+    expect(personalityMotion('p-shy', 'female').idleClips).toContain('Relax');
+    expect(personalityMotion('p-cool', 'male').idleClips).toContain('StandardIdle');
     restore();
   });
 });
@@ -132,6 +139,11 @@ describe('per-character personality profiles', () => {
         expect(line).not.toMatch(/\{/);
         expect(line).not.toMatch(UNSAFE);
       }
+      openers.forEach((line, i) => {
+        expect(line).toContain(CHARACTERS[i]!.name);
+        expect(line).toMatch(/[.。!！?？]/);
+        expect(line).not.toMatch(/sunshine!|plot twist|スパーク/);
+      });
       for (const line of idle) expect(line.trim()).toMatch(/[?？]$/);
     }
     const head = profilePokeLine('a01-shino', 'en', 0, 'head', 'female');

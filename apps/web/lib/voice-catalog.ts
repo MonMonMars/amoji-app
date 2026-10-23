@@ -148,10 +148,30 @@ export function synthNameList(locale: string, gender: VoiceGender): string[] {
   return names;
 }
 
+const FEMALE_VOICE = /female|hiumaan|hiugaai|sin-ji|xiaoxiao|xiaoyi|huihui|yaoyao|nanami|kyoko|haruka|zira|samantha|aria|jenny|hazel|susan/i;
+const MALE_VOICE = /(^|[^a-z])male([^a-z]|$)|wanlung|yunxi|yunjian|yunyang|keita|otoya|kangkang|david|mark|george|guy|daniel|christopher|eric|james|ryan/i;
+
+/** "Female" contains the letters "male". Strip it before the male test. */
+function maleVoiceName(voiceName: string): boolean {
+  return MALE_VOICE.test(voiceName.toLowerCase().replace(/female/g, ' '));
+}
+
+/**
+ * Substring match that does not treat a Female voice as Male.
+ * `Male` is only the gender token, not the letters inside "female".
+ */
+export function voiceNameMatches(voiceName: string, needle: string): boolean {
+  const name = voiceName.toLowerCase();
+  const n = needle.toLowerCase();
+  if (n === 'male') return maleVoiceName(voiceName);
+  if (n === 'female') return name.includes('female');
+  return name.includes(n);
+}
+
 /** Browser voices whose names read as the opposite gender (Windows David has no "Male" in the name). */
 export function synthNameConflicts(gender: VoiceGender, voiceName: string): boolean {
-  const male = /male|wanlung|yunxi|yunjian|yunyang|keita|otoya|kangkang|david|mark|george|guy|daniel|christopher|eric|james|ryan/i;
-  const female = /female|hiumaan|hiugaai|sin-ji|xiaoxiao|xiaoyi|huihui|yaoyao|nanami|kyoko|haruka|zira|samantha|aria|jenny|hazel|susan/i;
-  if (gender === 'female') return male.test(voiceName) && !female.test(voiceName);
-  return female.test(voiceName) && !male.test(voiceName);
+  const female = FEMALE_VOICE.test(voiceName);
+  const male = maleVoiceName(voiceName);
+  if (gender === 'female') return male && !female;
+  return female && !male;
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { arcPose } from '../components/ArcFan';
+import { arcPose, portraitCardBox, portraitTop } from '../components/ArcFan';
 import { BIGHEAD_IDS, bigheadPath } from '../lib/bighead';
 import { CHARACTERS, STRINGS } from '../lib/prefs';
 
@@ -37,6 +37,43 @@ describe('selection layout', () => {
     const start = board.indexOf('fx-start');
     const characters = board.indexOf('chooseCharacter');
     expect(start).toBeGreaterThan(characters);
+  });
+
+  it('keeps select on 2D cards and leaves the model load to chat', () => {
+    expect(board).not.toContain('CompanionCanvas');
+    expect(board).not.toContain('ModelPreview');
+    expect(board).not.toContain('requestModelThumb');
+    expect(board).toContain('ModelThumb');
+    expect(board).toContain('SceneBackdrop');
+    expect(board).toContain("router.push('/chat')");
+    const save = board.indexOf('setPrefs({ ...prefs, ...draft })');
+    const push = board.indexOf("router.push('/chat')");
+    expect(save).toBeGreaterThan(-1);
+    expect(save).toBeLessThan(push);
+    expect(chat).toContain('CompanionCanvas');
+    expect(read('../app/select/page.tsx')).not.toContain('CompanionCanvas');
+    expect(read('../app/change/page.tsx')).not.toContain('CompanionCanvas');
+  });
+
+  it('grows the bighead fan into the stage the model used to fill', () => {
+    const fan = read('../components/ArcFan.tsx');
+    expect(fan).toContain('portraitCardBox');
+    expect(fan).not.toContain('h-[8.4rem]');
+    expect(fan).not.toContain('sm:h-[11rem]');
+    expect(board).toContain('flex-1');
+    const roomy = portraitCardBox(480);
+    const oldDesktop = { width: 123, height: 176 };
+    expect(roomy.height).toBeGreaterThan(oldDesktop.height * 1.6);
+    expect(roomy.width).toBeGreaterThan(oldDesktop.width * 1.6);
+    expect(roomy.step).toBeGreaterThan(roomy.width * 0.45);
+    expect(roomy.step).toBeLessThan(roomy.width);
+    const phone = portraitCardBox(280);
+    expect(phone.height).toBeGreaterThan(134);
+    expect(phone.height).toBeLessThan(280);
+    expect(portraitCardBox(900).height).toBeLessThanOrEqual(520);
+    const fitted = portraitCardBox(456);
+    expect(portraitTop(456, fitted.height)).toBeGreaterThanOrEqual(Math.ceil(fitted.height * 0.05));
+    expect(portraitTop(456, fitted.height) + fitted.height * 1.1).toBeLessThanOrEqual(456 + 1);
   });
 
   it('fans character and scene cards around a larger center portrait', () => {

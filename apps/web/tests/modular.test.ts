@@ -2,13 +2,18 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import WardrobeSwap from '../components/WardrobeSwap';
 import * as THREE from 'three';
 import {
   DEMO_BODIES,
   DEMO_HEADS,
+  WARDROBE_ENABLED,
   activeWardrobe,
   modularGlbRel,
   vrmCandidatesForOutfit,
+  wardrobePair,
 } from '../lib/modular/catalog';
 import {
   AMOJI_PART,
@@ -116,14 +121,19 @@ describe('modular wardrobe catalog', () => {
     expect(entries.filter((f) => f.endsWith('.glb'))).toEqual([]);
   });
 
-  it('follows the head for identity and keeps a stored outfit', () => {
+  it('keeps wardrobe pairs in the catalog but does not apply them while cloth swap is off', () => {
+    expect(WARDROBE_ENABLED).toBe(false);
     expect(activeWardrobe('a01-shino', null)).toBeNull();
-    expect(activeWardrobe('a02-shibu', null)).toEqual({ headId: 'A02', bodyId: 'A02' });
-    expect(activeWardrobe('a10-agahomei-normal', { headId: 'A02', bodyId: 'A120' })).toEqual({
+    expect(activeWardrobe('a02-shibu', null)).toBeNull();
+    expect(activeWardrobe('a10-agahomei-normal', { headId: 'A02', bodyId: 'A120' })).toBeNull();
+    expect(activeWardrobe('a98-ethan', { headId: 'A02', bodyId: 'A10' })).toBeNull();
+    expect(wardrobePair('a01-shino', null)).toBeNull();
+    expect(wardrobePair('a02-shibu', null)).toEqual({ headId: 'A02', bodyId: 'A02' });
+    expect(wardrobePair('a10-agahomei-normal', { headId: 'A02', bodyId: 'A120' })).toEqual({
       headId: 'A10',
       bodyId: 'A120',
     });
-    expect(activeWardrobe('a98-ethan', { headId: 'A02', bodyId: 'A10' })).toBeNull();
+    expect(wardrobePair('a98-ethan', { headId: 'A02', bodyId: 'A10' })).toBeNull();
   });
 
   it('puts the outfit VRM ahead of the head when split GLBs are unavailable', () => {
@@ -151,7 +161,8 @@ describe('modular wardrobe catalog', () => {
     const board = fs.readFileSync(path.resolve(here, '../components/SelectionBoard.tsx'), 'utf8');
     const row = fs.readFileSync(path.resolve(here, '../components/HScrollRow.tsx'), 'utf8');
     expect(board).toContain('image={c.image}');
-    expect(board).toContain('CompanionCanvas');
+    expect(board).not.toContain('CompanionCanvas');
+    expect(board).not.toContain('ModelPreview');
     expect(board).toContain('backgroundLetter');
     expect(board).not.toContain('dicebear');
     expect(board).not.toContain('cast-cutout');
@@ -161,6 +172,13 @@ describe('modular wardrobe catalog', () => {
     expect(row).toContain('overflow-x-auto');
     expect(safePortrait('https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a02-shibu.png'))
       .toContain('a02-shibu.png');
+    expect(ui).toContain('WARDROBE_ENABLED');
+    const hidden = renderToStaticMarkup(createElement(WardrobeSwap, {
+      lang: 'en',
+      characterId: 'a02-shibu',
+      onCharacter: () => {},
+    }));
+    expect(hidden).toBe('');
     expect(ui).toContain('data-testid="wardrobe-hero"');
     expect(ui).toContain('useState(false)');
     expect(ui).toContain('fixed inset-0');
@@ -168,6 +186,7 @@ describe('modular wardrobe catalog', () => {
     expect(board).not.toContain('comingSoon');
     expect(board).not.toContain("t(lang, 'back')");
     const chat = fs.readFileSync(path.resolve(here, '../app/chat/page.tsx'), 'utf8');
+    expect(chat).toContain('CompanionCanvas');
     expect(chat).toContain('h-10 w-10');
     expect(chat).toContain('pointer-events-none absolute inset-x-0 bottom-0');
   });
@@ -249,10 +268,11 @@ describe('modular localStorage', () => {
       key: () => null,
       length: 0,
     } as Storage;
-    saveModularSelection({ headId: 'A10', bodyId: 'A120' });
-    expect(loadModularSelection()).toEqual({ headId: 'A10', bodyId: 'A120' });
-    map.set('amoji.modular.v1', JSON.stringify({ headId: 'A98', bodyId: 'A05' }));
+    map.set('amoji.modular.v1', JSON.stringify({ headId: 'A10', bodyId: 'A120' }));
+    saveModularSelection({ headId: 'A02', bodyId: 'A02' });
+    expect(map.get('amoji.modular.v1')).toContain('A120');
     expect(loadModularSelection()).toBeNull();
+    expect(map.has('amoji.modular.v1')).toBe(false);
     g.localStorage = prev;
   });
 });
