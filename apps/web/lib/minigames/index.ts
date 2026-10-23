@@ -2,7 +2,18 @@ export { CAM_LERP, LANE, TAG, clampLane, laneX } from './constants';
 export { detectActionGame } from './detect';
 export { laneCamera, tagCamera } from './camera';
 export { expressionFor, resolveGameClip, GAME_CLIP_CANDIDATES } from './anim';
-export { lineFor, uiCopy } from './lines';
+export { controlHint, lineFor, uiCopy } from './lines';
+export {
+  HOWTO_SRC,
+  classifyHostPlatform,
+  controlSchemeFor,
+  desktopTagAim,
+  detectHostPlatform,
+  EMPTY_KEYS,
+  laneSwipeThreshold,
+  tagKeysFromEvent,
+} from './platform';
+export type { ControlScheme, HostPlatform, PlatformProbe, TagKeyState } from './platform';
 export { createLane, stepLane, LANE_IDLE_CMD } from './lane';
 export type { LaneCommand, LaneState } from './lane';
 export { createTag, stepTag, TAG_IDLE_CMD } from './tag';
@@ -13,7 +24,11 @@ export {
   pickGround,
   publishMiniGameEmotion,
   registerGroundPick,
+  requestOpenMiniGame,
+  setMiniGameChromeHidden,
   setMiniGameView,
+  subscribeMiniGameChrome,
+  subscribeMiniGameOpen,
 } from './session';
 export type { MiniGameEmotionDetail } from './session';
 export type {
