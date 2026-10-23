@@ -118,6 +118,15 @@ const _fwd = new THREE.Vector3();
 const _targetL = new THREE.Vector3();
 const _targetR = new THREE.Vector3();
 const _hipW = new THREE.Vector3();
+const _leanE = new THREE.Euler(0, 0, 0, 'XYZ');
+
+/** Hip lean for a punch. Soles stay on the captured contact. */
+export interface PlantLean {
+  pitch: number;
+  roll: number;
+  shiftX: number;
+  shiftZ: number;
+}
 
 function aimBoneAt(bone: THREE.Object3D, child: THREE.Object3D, targetWorld: THREE.Vector3): void {
   bone.updateMatrixWorld(true);
@@ -252,13 +261,32 @@ export class FootPlanter {
     };
   }
 
-  /** Lock hips and put both ankles on the shared ground. No-op when not captured. */
-  apply(): void {
+  /**
+   * Put both ankles on the shared ground contact. A punch lean may pitch
+   * and slide the hips; the soles stay on the captured point. No-op when
+   * not captured.
+   */
+  apply(lean?: PlantLean): void {
     if (!this.ready || !this.inner || !this.hips) return;
     const inner = this.inner;
     const hips = this.hips;
     hips.position.copy(this.hipsPos);
     hips.quaternion.copy(this.hipsQuat);
+    if (lean && (lean.shiftX || lean.shiftZ)) {
+      hips.updateMatrixWorld(true);
+      hips.getWorldPosition(_hipW);
+      _hipW.x += lean.shiftX;
+      _hipW.z += lean.shiftZ;
+      if (hips.parent) {
+        hips.parent.worldToLocal(_hipW);
+        hips.position.copy(_hipW);
+      }
+    }
+    if (lean && (lean.pitch || lean.roll)) {
+      _leanE.set(lean.pitch, 0, lean.roll);
+      _q.setFromEuler(_leanE);
+      hips.quaternion.multiply(_q);
+    }
     const legs = [this.left, this.right];
     for (const leg of legs) {
       if (!leg) continue;

@@ -144,7 +144,7 @@ import { notifySpeaking, isSpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
 import { pickIdleLine } from '../lib/persona-chatter';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
-import { pickCharacterInteraction, maybeLaughLead } from '../lib/interaction-lines';
+import { pickCharacterInteraction, maybeLaughLead, pokeReactionLine } from '../lib/interaction-lines';
 import { cannedOpener, personalityPrompt, personalityTutorTip } from '../lib/personality';
 import { pickLaugh, laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { WARMUP_FIRST_MS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from '../lib/warmup';
@@ -188,8 +188,10 @@ export interface ChatPanelProps {
   kidMode?: boolean;
   /** increments when the user pokes the character — triggers a poke reply */
   pokeCount?: number;
-  /** where the latest poke landed ('head'|'torso'|'chest'|'side'|'back'|legacy) */
+  /** where the latest poke landed */
   pokeZone?: string;
+  /** front | back | left | right — the side the punch came from */
+  pokeDirection?: string;
   /** increments when the user holds a hand */
   handHoldCount?: number;
   onStatus?: (s: ChatStatus) => void;
@@ -213,6 +215,7 @@ export default function ChatPanel({
   kidMode = false,
   pokeCount = 0,
   pokeZone = '',
+  pokeDirection = 'front',
   handHoldCount = 0,
   onStatus,
   onMemCount,
@@ -549,7 +552,7 @@ export default function ChatPanel({
     lastUserRef.current = Date.now();
     reengageStageRef.current = 0;
     playPokeSfx();
-    const line = pickCharacterInteraction(characterId, characterGender, pokeZone || 'torso', lang);
+    const line = pokeReactionLine(characterId, characterGender, pokeZone || 'torso', pokeDirection || 'front', lang, pokeCount);
     sayLocal(line, { joy: 0.5 }, maybeLaughLead(lang));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pokeCount]);

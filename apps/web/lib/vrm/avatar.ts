@@ -73,7 +73,7 @@
 import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
-import { FootPlanter } from './plant-feet';
+import { FootPlanter, type PlantLean } from './plant-feet';
 import { ChestBounce } from './chest-bounce';
 
 export type AvatarKind = 'v1' | 'generic';
@@ -93,6 +93,11 @@ export interface AvatarPose {
   lElbowZ: number; rElbowZ: number;
   /** r83: lean-back recoil on the torso — spine flexes deeper than chest */
   spinePitchAdd: number; chestPitchAdd: number;
+  /**
+   * Poke head tip, separate from the clip-mode look whisper so a punch
+   * is not scaled down to 30%. Optional for older pose literals.
+   */
+  headPitchAdd?: number; headRollAdd?: number;
   /**
    * r86: move-performance arm raises — + lifts the arm from wherever it
    * is right now (semantic, not raw-axis: each avatar kind maps it to
@@ -125,9 +130,10 @@ const HUMAN_LIMITS = {
   chestZ: [-0.4, 0.4],        // chest counter-twist
   lArmX: [-1.9, 1.9], rArmX: [-1.9, 1.9], // arm swing forward/back
   lElbowZ: [-0.6, 0.6], rElbowZ: [-0.6, 0.6], // extra elbow fold on top
-  // r83: torso recoil additives (the skeleton poke) — a human can lean
-  // back about this far before it stops reading as human
-  spinePitchAdd: [-0.6, 0.6], chestPitchAdd: [-0.5, 0.5],
+  // r83: torso recoil additives (the skeleton poke). Wide enough for a
+  // visible punch, still well under a half-turn so a bone cannot invert.
+  spinePitchAdd: [-0.85, 0.85], chestPitchAdd: [-0.65, 0.65],
+  headPitchAdd: [-0.9, 0.9], headRollAdd: [-0.55, 0.55],
   // r86: arm raises from the current position — an idol mic-hand or a
   // violin/piano arm lifts about this far and no further
   lArmRaise: [-1.6, 1.6], rArmRaise: [-1.6, 1.6],
@@ -162,6 +168,8 @@ function clampPoseHuman(p: AvatarPose): AvatarPose {
     rElbowZ: clampField(p.rElbowZ, HUMAN_LIMITS.rElbowZ),
     spinePitchAdd: clampField(p.spinePitchAdd, HUMAN_LIMITS.spinePitchAdd),
     chestPitchAdd: clampField(p.chestPitchAdd, HUMAN_LIMITS.chestPitchAdd),
+    headPitchAdd: clampField(p.headPitchAdd ?? 0, HUMAN_LIMITS.headPitchAdd),
+    headRollAdd: clampField(p.headRollAdd ?? 0, HUMAN_LIMITS.headRollAdd),
     lArmRaise: clampField(p.lArmRaise ?? 0, HUMAN_LIMITS.lArmRaise),
     rArmRaise: clampField(p.rArmRaise ?? 0, HUMAN_LIMITS.rArmRaise),
   };
@@ -189,9 +197,10 @@ export interface Avatar {
   getBoneNode(name: string): THREE.Object3D | null;
   /**
    * Keep both feet on the shared ground contact. Pass false only while a
-   * walk or jump clip is playing.
+   * walk or jump clip is playing. `lean` pitches the hips for a punch;
+   * the soles stay on the captured contact.
    */
-  plantFeet(plant: boolean): void;
+  plantFeet(plant: boolean, lean?: PlantLean): void;
   /** Soft secondary spring on bust bones. 0 restores them. Does not move the hips or feet. */
   applyChestBounce(pitch: number): void;
   /**
@@ -581,6 +590,9 @@ class V1Avatar implements Avatar {
   private chestBounce = new ChestBounce();
   private readonly headAddBaseE = new THREE.Euler();
   private readonly headAddWritten = new THREE.Quaternion();
+  private readonly addSlots = new Map<string, { base: THREE.Quaternion; written: THREE.Quaternion; init: boolean }>();
+  private readonly addEuler = new THREE.Euler(0, 0, 0, 'XYZ');
+  private readonly addDelta = new THREE.Quaternion();
 
   constructor(vrm: VRM, clipAnimatedBones: ReadonlySet<string> = new Set()) {
     this.vrm = vrm;
@@ -634,14 +646,12 @@ class V1Avatar implements Avatar {
     // generated pose can lean/twist, but never dislocate. (Library clips
     // bypass this path entirely; they own the skeleton via the mixer.)
     const p = clampPoseHuman(raw);
-    const setRot = (name: VRMHumanBoneName, axis: 'x' | 'y' | 'z', val: number) => {
+    const setEuler = (name: VRMHumanBoneName, x: number, y: number, z: number) => {
       const node = this.vrm.humanoid?.getNormalizedBoneNode(name);
-      if (node) node.rotation[axis] = val;
+      if (node) node.rotation.set(x, y, z);
     };
-    const addRot = (name: VRMHumanBoneName, axis: 'x' | 'y' | 'z', val: number) => {
-      const node = this.vrm.humanoid?.getNormalizedBoneNode(name);
-      if (node) node.rotation[axis] += val;
-    };
+    const headX = clampField(p.headX + (p.headPitchAdd ?? 0), HUMAN_LIMITS.headPitchAdd);
+    const headZ = clampField(p.headZ + (p.headRollAdd ?? 0), HUMAN_LIMITS.headRollAdd);
     if (this.clipDrivesBody) {
       // r97: a whisper of procedural head life — ADDED to whatever the mixer
       // wrote this frame. The old setRot() overwrote the synced euler every
@@ -652,32 +662,54 @@ class V1Avatar implements Avatar {
       // track owned the head bone between frames.
       this.applyClipHeadAdd(p);
     } else {
-      setRot('head', 'x', p.headX);
-      setRot('head', 'y', p.headY);
-      setRot('head', 'z', p.headZ);
-      setRot('leftUpperArm', 'z', -p.leftUpperArm);
-      setRot('rightUpperArm', 'z', p.rightUpperArm);
-      setRot('leftLowerArm', 'z', -p.leftLowerArm);
-      setRot('rightLowerArm', 'z', p.rightLowerArm);
-      setRot('spine', 'x', p.spineX);
-      setRot('chest', 'x', p.chestX);
+      setEuler('head', headX, p.headY, headZ);
+      setEuler('leftUpperArm', 0, 0, -p.leftUpperArm);
+      setEuler('rightUpperArm', 0, 0, p.rightUpperArm);
+      setEuler('leftLowerArm', 0, 0, -p.leftLowerArm);
+      setEuler('rightLowerArm', 0, 0, p.rightLowerArm);
+      setEuler('spine', p.spineX, 0, 0);
+      setEuler('chest', p.chestX, 0, 0);
     }
-    // move-performance + poke-recoil additives ride on top in both modes
-    if (p.spineY) addRot('spine', 'y', p.spineY);
-    if (p.chestZ) addRot('chest', 'z', p.chestZ);
-    if (p.lArmX) addRot('leftUpperArm', 'x', p.lArmX);
-    if (p.rArmX) addRot('rightUpperArm', 'x', p.rArmX);
-    if (p.lElbowZ) addRot('leftLowerArm', 'z', p.lElbowZ);
-    if (p.rElbowZ) addRot('rightLowerArm', 'z', p.rElbowZ);
-    // r83: the poke recoil — pure additive torso lean-back, so it composes
-    // with library clips (the mixer wrote the bone this frame; addRot reads
-    // the synced euler and tips it further back within human limits)
-    if (p.spinePitchAdd) addRot('spine', 'x', p.spinePitchAdd);
-    if (p.chestPitchAdd) addRot('chest', 'x', p.chestPitchAdd);
-    // r86: move-performance arm raises (+ = lift the arm from wherever it
-    // is right now). V1 raw axes: left z+ lifts, right z− lifts.
-    if (p.lArmRaise) addRot('leftUpperArm', 'z', p.lArmRaise);
-    if (p.rArmRaise) addRot('rightUpperArm', 'z', -p.rArmRaise);
+    // Poke and move additives are a local quaternion on a fresh base.
+    // euler += used to accumulate on any clip that did not key that bone,
+    // which flipped the whole body.
+    this.applyStableAdd('spine', p.spinePitchAdd, p.spineY, 0);
+    this.applyStableAdd('chest', p.chestPitchAdd, 0, p.chestZ);
+    this.applyStableAdd('leftUpperArm', p.lArmX, 0, p.lArmRaise ?? 0);
+    this.applyStableAdd('rightUpperArm', p.rArmX, 0, -(p.rArmRaise ?? 0));
+    this.applyStableAdd('leftLowerArm', 0, 0, p.lElbowZ);
+    this.applyStableAdd('rightLowerArm', 0, 0, p.rElbowZ);
+  }
+
+  /**
+   * Rebuild `base * localDelta` every frame. If the mixer (or setEuler)
+   * rewrote the bone, that pose becomes the new base. If nothing else
+   * touched it, the same delta is reapplied — it never accumulates.
+   */
+  private applyStableAdd(name: VRMHumanBoneName, x: number, y: number, z: number): void {
+    const node = this.vrm.humanoid?.getNormalizedBoneNode(name);
+    if (!node) return;
+    let slot = this.addSlots.get(name);
+    if (!slot) {
+      slot = { base: new THREE.Quaternion(), written: new THREE.Quaternion(), init: false };
+      this.addSlots.set(name, slot);
+    }
+    const mag = Math.abs(x) + Math.abs(y) + Math.abs(z);
+    if (mag < 1e-6) {
+      if (slot.init && node.quaternion.equals(slot.written)) {
+        node.quaternion.copy(slot.base);
+        slot.written.copy(node.quaternion);
+      }
+      return;
+    }
+    if (!slot.init || !node.quaternion.equals(slot.written)) {
+      slot.base.copy(node.quaternion);
+      slot.init = true;
+    }
+    this.addEuler.set(x, y, z);
+    this.addDelta.setFromEuler(this.addEuler);
+    node.quaternion.copy(slot.base).multiply(this.addDelta);
+    slot.written.copy(node.quaternion);
   }
 
   /**
@@ -706,9 +738,9 @@ class V1Avatar implements Avatar {
       this.headAddBaseE.copy(node.rotation); // synced euler = what the mixer wrote
       this.headAddInit = true;
     }
-    const ox = clampField(p.headX * 0.3, [-HEAD_ADD_ROM.x, HEAD_ADD_ROM.x] as const);
+    const ox = clampField(p.headX * 0.3 + (p.headPitchAdd ?? 0), HUMAN_LIMITS.headPitchAdd);
     const oy = clampField(p.headY * 0.3, [-HEAD_ADD_ROM.y, HEAD_ADD_ROM.y] as const);
-    const oz = clampField(p.headZ * 0.3, [-HEAD_ADD_ROM.z, HEAD_ADD_ROM.z] as const);
+    const oz = clampField(p.headZ * 0.3 + (p.headRollAdd ?? 0), HUMAN_LIMITS.headRollAdd);
     node.rotation.set(
       this.headAddBaseE.x + ox,
       this.headAddBaseE.y + oy,
@@ -745,8 +777,8 @@ class V1Avatar implements Avatar {
     if (r && re) clampUpperArmAdduction(r, re, sl, sr);
   }
 
-  plantFeet(plant: boolean): void {
-    if (plant) this.planter.apply();
+  plantFeet(plant: boolean, lean?: PlantLean): void {
+    if (plant) this.planter.apply(lean);
   }
 
   applyChestBounce(pitch: number): void {
@@ -1004,11 +1036,16 @@ class GenericAvatar implements Avatar {
     // (two X-rotations about the same axis compose as their sum)
     this.applyBone('spine', p.spineX + p.spinePitchAdd, p.spineY, 0);
     this.applyBone('chest', p.chestX + p.chestPitchAdd, 0, p.chestZ);
-    this.applyBone('head', p.headX, p.headY, p.headZ);
+    this.applyBone(
+      'head',
+      clampField(p.headX + (p.headPitchAdd ?? 0), HUMAN_LIMITS.headPitchAdd),
+      p.headY,
+      clampField(p.headZ + (p.headRollAdd ?? 0), HUMAN_LIMITS.headRollAdd),
+    );
     // r86: arm raises fold into the same Z channel (+semantic lowers, so a
     // raise subtracts on the left and adds on the right)
     this.applyBone('leftUpperArm', p.lArmX, 0, p.leftUpperArm - (p.lArmRaise ?? 0));
-    this.applyBone('rightUpperArm', p.rArmX, 0, -(p.rightUpperArm - (p.lArmRaise ?? 0)));
+    this.applyBone('rightUpperArm', p.rArmX, 0, -(p.rightUpperArm - (p.rArmRaise ?? 0)));
     this.applyBone('leftLowerArm', p.leftLowerArm - p.lElbowZ, 0, 0);
     this.applyBone('rightLowerArm', p.rightLowerArm + p.rElbowZ, 0, 0);
   }
@@ -1057,8 +1094,8 @@ class GenericAvatar implements Avatar {
     if (r && re) clampUpperArmAdduction(r, re, sl, sr);
   }
 
-  plantFeet(plant: boolean): void {
-    if (plant) this.planter.apply();
+  plantFeet(plant: boolean, lean?: PlantLean): void {
+    if (plant) this.planter.apply(lean);
   }
 
   applyChestBounce(pitch: number): void {
