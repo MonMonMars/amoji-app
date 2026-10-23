@@ -39,8 +39,9 @@ export interface CharacterDef {
 }
 
 // ---------------------------------------------------------------------------
-// Cast — Mon's license-free free-library WANT list (46 characters).
-// Models/portraits stream from GitHub Release `free-library-want-2026-10-12`.
+// Cast — free-library WANT list (46) plus five realistic keepers (51).
+// Original models stream from GitHub Release `free-library-want-2026-10-12`.
+// A459/A460/A461/A463/A468 stream from `free-library-realistic-2026-10-18`.
 // Generated data: characters-want.ts (node scripts/generate-want-cast.mjs).
 // Universal load fallback remains seed-san.vrm (see ASSET_MANIFEST.md).
 // ---------------------------------------------------------------------------
