@@ -12,20 +12,20 @@ export type ChatterLang = 'en' | 'yue' | 'zh' | 'ja';
 export const CHATTER: Record<ChatterKind, Record<ChatterLang, string[]>> = {
   startup: {
     en: [
-      "Hey, I'm {name} — your Amoji companion. What should we do first: talk, play, or just hang out?",
-      'Type below to chat with me — what\'s on your mind? Tap my name plate at the top left anytime to change my look, scene, or language, okay?',
+      "Hi, I'm {name}. I'm here if you want to talk.",
+      'Type below, or tap the mic, and tell me what you want to chat about.',
     ],
     yue: [
-      '喂，我係 {name}，你嘅 Amoji 小伙伴。我哋首先做咩好：傾偈、玩嘢，定係靜靜哋坐？',
-      '喺下面打字同我講嘢吖——你諗緊咩呀？撳左上角我個名牌，隨時換我造型、場景同語言㗎。',
+      '你好，我係{name}。想傾偈嘅話，我喺度。',
+      '喺下面打字，或者撳個咪，同我講你想傾咩呀？',
     ],
     zh: [
-      '嗨，我是 {name}，你的 Amoji 伙伴。我们先做什么好：聊天、玩点什么，还是静静待着？',
-      '在下方输入文字和我聊天吧——你在想什么呢？点左上角我的名牌，可以随时换我的造型、场景和语言哦。',
+      '你好，我是{name}。想聊天的话，我在这里。',
+      '在下面打字，或者点麦克风，告诉我你想聊什么呀？',
     ],
     ja: [
-      'やあ、私は{name}、あなたのアモジ相棒。最初は何しよっか——おしゃべり？遊び？それともまったり？',
-      '下に文字を入れて話しかけてね。何かあったの？左上の私のネームプレートで見た目や背景、言語が変えられるよ。',
+      'こんにちは、{name}です。話したかったら、ここにいるよ。',
+      '下に書くか、マイクを押して、何を話したい？',
     ],
   },
   idleBored: {

@@ -6,6 +6,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin } from '@pixiv/three-vrm';
 import { clipFreesFeet, pinPlantedClipTracks, sharedGroundY, FootPlanter } from '../lib/vrm/plant-feet';
 import { createV1Avatar } from '../lib/vrm/avatar';
+import { pokeBodyReaction } from '../lib/poke-hit';
 
 describe('clipFreesFeet', () => {
   it('lets walk and jump lift the feet and plants everything else', () => {
@@ -103,6 +104,33 @@ describe('FootPlanter', () => {
     expect(right.x).toBeCloseTo(rightRest.x, 2);
     expect(hips.position.x).toBeCloseTo(0, 5);
   });
+
+  it('leans the hips with a punch while both soles stay on the contact', () => {
+    const inner = new THREE.Group();
+    const hips = new THREE.Object3D();
+    hips.name = 'hips';
+    hips.position.set(0, 0.9, 0);
+    inner.add(hips);
+    const bones: Record<string, THREE.Object3D> = { hips, ...chain('left', hips, 0), ...chain('right', hips, 0) };
+    inner.updateMatrixWorld(true);
+    const planter = new FootPlanter();
+    planter.capture(inner, (name) => bones[name] ?? null);
+    const leftRest = bones.leftFoot!.getWorldPosition(new THREE.Vector3());
+    const rightRest = bones.rightFoot!.getWorldPosition(new THREE.Vector3());
+    const upperRest = bones.leftUpperLeg!.quaternion.clone();
+
+    planter.apply({ pitch: 0.4, roll: 0.15, shiftX: 0.04, shiftZ: -0.03 });
+    inner.updateMatrixWorld(true);
+    const left = bones.leftFoot!.getWorldPosition(new THREE.Vector3());
+    const right = bones.rightFoot!.getWorldPosition(new THREE.Vector3());
+    expect(left.y).toBeCloseTo(leftRest.y, 2);
+    expect(right.y).toBeCloseTo(rightRest.y, 2);
+    expect(left.x).toBeCloseTo(leftRest.x, 2);
+    expect(right.x).toBeCloseTo(rightRest.x, 2);
+    expect(left.z).toBeCloseTo(leftRest.z, 2);
+    expect(right.z).toBeCloseTo(rightRest.z, 2);
+    expect(bones.leftUpperLeg!.quaternion.angleTo(upperRest)).toBeGreaterThan(0.05);
+  });
 });
 
 describe('seed VRM planted feet', () => {
@@ -161,5 +189,64 @@ describe('seed VRM planted feet', () => {
     expect(plantedR.y).toBeCloseTo(ground, 2);
     expect(plantedL.x).toBeCloseTo(restL.x, 2);
     expect(plantedR.x).toBeCloseTo(restR.x, 2);
+  });
+
+  it('takes a torso punch without flipping or sliding the soles', async () => {
+    const url = fileURLToPath(new URL('../public/models/seed-san.vrm', import.meta.url));
+    const buf = readFileSync(url);
+    (globalThis as { self?: unknown }).self ??= globalThis;
+    const loader = new GLTFLoader();
+    loader.register((parser) => new VRMLoaderPlugin(parser));
+    const error = console.error;
+    const warn = console.warn;
+    console.error = () => {};
+    console.warn = () => {};
+    let gltf: Awaited<ReturnType<GLTFLoader['parseAsync']>>;
+    try {
+      gltf = await loader.parseAsync(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength), '');
+    } finally {
+      console.error = error;
+      console.warn = warn;
+    }
+    const vrm = gltf.userData.vrm;
+    const avatar = createV1Avatar(vrm);
+    avatar.update(0);
+    const world = (node: THREE.Object3D) => node.getWorldPosition(new THREE.Vector3());
+    const left = vrm.humanoid.getRawBoneNode('leftFoot');
+    const right = vrm.humanoid.getRawBoneNode('rightFoot');
+    const restL = world(left);
+    const restR = world(right);
+    const spine = avatar.getBoneNode('spine')!;
+    const restSpine = spine.quaternion.clone();
+    const hit = pokeBodyReaction({
+      t: 0.1, zone: 'torso', fallX: 0.15, fallZ: -1, sideSign: 1, softChest: false, twist: 0, direction: 'front',
+    });
+    avatar.applyPose({
+      headX: 0, headY: 0, headZ: 0,
+      headPitchAdd: hit.headX, headRollAdd: hit.headZ,
+      spineX: 0, chestX: 0,
+      leftUpperArm: 1.1, rightUpperArm: 1.1,
+      leftLowerArm: 0.3, rightLowerArm: 0.3,
+      spineY: hit.spineYaw, chestZ: hit.chestRoll,
+      lArmX: hit.lArmX, rArmX: hit.rArmX,
+      lElbowZ: hit.lElbowZ, rElbowZ: hit.rElbowZ,
+      spinePitchAdd: hit.spinePitch, chestPitchAdd: hit.chestPitch,
+      lArmRaise: -hit.lArmUp, rArmRaise: -hit.rArmUp,
+    });
+    avatar.plantFeet(true, {
+      pitch: hit.hipPitch, roll: hit.hipRoll, shiftX: hit.hipShiftX, shiftZ: hit.hipShiftZ,
+    });
+    avatar.update(0);
+    const spineAngle = spine.quaternion.angleTo(restSpine);
+    expect(spineAngle).toBeGreaterThan(0.35);
+    expect(spineAngle).toBeLessThan(1.5);
+    const plantedL = world(left);
+    const plantedR = world(right);
+    expect(plantedL.y).toBeCloseTo(restL.y, 2);
+    expect(plantedR.y).toBeCloseTo(restR.y, 2);
+    expect(plantedL.x).toBeCloseTo(restL.x, 2);
+    expect(plantedR.x).toBeCloseTo(restR.x, 2);
+    expect(plantedL.z).toBeCloseTo(restL.z, 2);
+    expect(plantedR.z).toBeCloseTo(restR.z, 2);
   });
 });

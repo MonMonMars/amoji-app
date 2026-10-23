@@ -267,11 +267,13 @@ describe('lane dodge', () => {
 
 describe('clips, lines, and chat entry', () => {
   it('maps anim states onto loaded clips and falls back', () => {
-    const have = new Set(['IdleNeutral', 'Jump', 'Cheer', 'Bow', 'Blush', 'LookAround']);
+    const have = new Set(['StandardIdle', 'Jump', 'Cheer', 'Bow', 'Blush', 'LookAround']);
     expect(resolveGameClip('dash', have)).toEqual({ id: 'Jump', loop: true });
-    expect(resolveGameClip('run', have)?.id).toBe('IdleNeutral');
+    expect(resolveGameClip('run', have)?.id).toBe('StandardIdle');
+    expect(resolveGameClip('idle', have)?.id).toBe('StandardIdle');
+    expect(resolveGameClip('idle', new Set(['IdleNeutral', 'IdleBreathCalm']))?.id).toBe('IdleBreathCalm');
     expect(resolveGameClip('caught', have)?.id).toBe('Cheer');
-    expect(resolveGameClip('pout', new Set(['Thinking']))?.id).toBe('Thinking');
+    expect(resolveGameClip('pout', new Set(['Relax']))?.id).toBe('Relax');
     expect(resolveGameClip('win_pose', new Set())).toBeNull();
     expect(expressionFor('tease').blinkLeft).toBeGreaterThan(0.5);
     expect(expressionFor('pout').sad).toBeGreaterThan(0.5);

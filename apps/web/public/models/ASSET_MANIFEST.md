@@ -2,7 +2,10 @@
 
 Every binary in this directory (top level or under `cast/`) must have an entry. CI fails on unmanifested files.
 
-Release tag for the live companion cast: **`free-library-want-2026-10-12`** (46 characters). VRM + PNG assets stream from [GitHub Releases](https://github.com/MonMonMars/amoji-app/releases/tag/free-library-want-2026-10-12); they are **not** committed to git.
+Live companion cast (51 characters) streams from GitHub Releases; binaries are **not** committed to git (`models/want/` stays `.gitkeep`). Pages downloads each roster `modelUrl` at build time.
+
+- **`free-library-want-2026-10-12`** — original 46 want-list characters ([release](https://github.com/MonMonMars/amoji-app/releases/tag/free-library-want-2026-10-12))
+- **`free-library-realistic-2026-10-18`** — five realistic keepers A459, A460, A461, A463, A468 ([release](https://github.com/MonMonMars/amoji-app/releases/tag/free-library-realistic-2026-10-18))
 
 ## Shipped binaries (in-repo)
 
@@ -72,6 +75,28 @@ Base URL for every row: `https://github.com/MonMonMars/amoji-app/releases/downlo
 - Other Hub/BOOTH free commercial entries: follow each folder README.txt
 - Removed from public picker: kitagawa, kizuna, and other unverified agent3 cast slots
 
+## Live cast — realistic keepers (5 characters)
+
+Appended to the same roster after the original 46. They are selectable in the companion picker. Gallery `SKIP_STATIC` does not apply to cast selection (unrigged A457/A458/A462/A464–A467 stay out).
+
+| Character id | Library | Gender | Remote VRM |
+|---|---|---|---|
+| a459-chinesewarriormonk | A459 | male | `…/a459-chinesewarriormonk.vrm` |
+| a460-freerealisticfemale | A460 | female | `…/a460-freerealisticfemale.vrm` |
+| a461-fashionruffle | A461 | female | `…/a461-fashionruffle.vrm` |
+| a463-sophia | A463 | female | `…/a463-sophia.vrm` |
+| a468-eric | A468 | male | `…/a468-eric.vrm` |
+
+Base URL for every row: `https://github.com/MonMonMars/amoji-app/releases/download/free-library-realistic-2026-10-18/` (matching PNG portraits at the same path with `.png`).
+
+**License / credits** — CC BY 4.0 Sketchfab, credit required:
+
+- A459 Chinese Warrior Monk: Sketchfab fayjayfay
+- A460 Free Realistic Female: Sketchfab nepalvr360
+- A461 Fashion Ruffle: Sketchfab
+- A463 Sophia: Sketchfab RenderPeople
+- A468 Eric: Sketchfab
+
 ## Retired local cast (`cast/*.vrm`) — demo-only
 
 The former in-repo `cast/` binaries are **retired** from the active picker (face-lab / local demos only). Each file on disk must stay listed here for CI.
@@ -115,16 +140,18 @@ Real VRMA animation clips (VRMC_vrm_animation), force-committed for GitHub Pages
 
 | File | Used for |
 |---|---|
-| anims/IdleNeutral.vrma | idle rotation (primary pool) |
-| anims/LookAround.vrma | idle rotation (primary pool) |
-| anims/Relax.vrma | idle rotation (primary pool) |
-| anims/Thinking.vrma | idle rotation (primary pool) |
+| anims/IdleBreathCalm.vrma | idle rotation (primary default) |
+| anims/StandardIdle.vrma | idle rotation (local neutral stand; vendored, not remote) |
+| anims/LookAround.vrma | idle rotation (curious variant) |
+| anims/Relax.vrma | idle rotation (soft variant) |
 | (remote) weightShift.vrma | optional idle if fetch succeeds |
-| (remote) standard_idle.vrma | optional idle if fetch succeeds |
-| anims/Impatient.vrma | dormant — not in default idle rotation |
-| anims/IdleChinHand.vrma | dormant — not in default idle rotation |
-| anims/IdleSassy.vrma | dormant — not in default idle rotation |
-| anims/Sleepy.vrma | dormant — not in default idle rotation |
+| anims/IdleNeutral.vrma | on disk, out of the default rotation (neck pitched down) |
+| anims/Thinking.vrma | on disk, out of the default rotation (head pitched down) |
+| anims/Impatient.vrma | on disk, out of the default rotation |
+| anims/IdleChinHand.vrma | on disk, out of the default rotation (arms into torso) |
+| anims/IdleSassy.vrma | on disk, out of the default rotation (arms into torso) |
+| anims/IdleHug.vrma | on disk, out of the default rotation (arms into torso) |
+| anims/Sleepy.vrma | on disk, out of the default rotation |
 | anims/Jump.vrma | performance clip (move trigger) |
 | anims/Angry.vrma | performance clip (mood: anger) |
 | anims/Sad.vrma | performance clip (mood: sad) |

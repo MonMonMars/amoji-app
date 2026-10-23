@@ -21,20 +21,25 @@ describe('chest bounce', () => {
     expect(isBustBoneName('hips')).toBe(false);
   });
 
-  it('is a small damped spring and stays off for other zones', () => {
+  it('is a damped spring on chest and torso, and stays off for other zones', () => {
     expect(chestPokeBounce('head', 0.12)).toBe(0);
-    expect(chestPokeBounce('torso', 0.12)).toBe(0);
     expect(chestPokeBounce('side', 0.12)).toBe(0);
+    expect(chestPokeBounce('armL', 0.12)).toBe(0);
+    expect(chestPokeBounce('legR', 0.12)).toBe(0);
     expect(chestBouncePitch(0)).toBe(0);
     expect(chestBouncePitch(CHEST_BOUNCE_SEC + 0.01)).toBe(0);
     const early = chestBouncePitch(0.08);
     expect(early).toBeLessThan(0);
-    expect(Math.abs(early)).toBeLessThan(0.1);
+    expect(Math.abs(early)).toBeGreaterThan(0.1);
+    expect(Math.abs(early)).toBeLessThan(0.35);
+    const torso = chestPokeBounce('torso', 0.08);
+    expect(torso).toBeLessThan(0);
+    expect(Math.abs(torso)).toBeLessThan(Math.abs(early));
     let rebound = false;
     for (let t = 0; t <= CHEST_BOUNCE_SEC; t += 0.02) {
       const p = chestBouncePitch(t);
-      expect(Math.abs(p)).toBeLessThanOrEqual(0.09);
-      if (p > 0.005) rebound = true;
+      expect(Math.abs(p)).toBeLessThanOrEqual(0.3);
+      if (p > 0.01) rebound = true;
     }
     expect(rebound).toBe(true);
   });
@@ -78,8 +83,8 @@ describe('kitagawa chest poke', () => {
     avatar.plantFeet(true);
     avatar.applyChestBounce(chestPokeBounce('chest', 0.08));
     const tipMoved = world(tip!);
-    expect(tipMoved.distanceTo(tipRest)).toBeGreaterThan(0.002);
-    expect(tipMoved.distanceTo(tipRest)).toBeLessThan(0.03);
+    expect(tipMoved.distanceTo(tipRest)).toBeGreaterThan(0.004);
+    expect(tipMoved.distanceTo(tipRest)).toBeLessThan(0.12);
     expect(world(left).y).toBeCloseTo(footL, 4);
     expect(world(right).y).toBeCloseTo(footR, 4);
     avatar.applyChestBounce(0);

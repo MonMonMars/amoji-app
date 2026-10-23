@@ -5,12 +5,12 @@
 
 import type { Lang } from './prefs';
 import type { PersonalityId } from './personality';
-import { personalityFor } from './personality';
-import type { TalkZone } from './poke-hit';
+import { personalityFor, profilePokeLine } from './personality';
+import type { PokeDirection, TalkZone } from './poke-hit';
 
 export type InteractZone = TalkZone | 'hand';
 
-const ZONES: InteractZone[] = ['head', 'torso', 'chest', 'side', 'back', 'hand'];
+const ZONES: InteractZone[] = ['head', 'torso', 'chest', 'side', 'back', 'hand', 'armL', 'armR', 'belly', 'legL', 'legR'];
 
 const REGION: Record<InteractZone, Record<Lang, string>> = {
   head:  { yue: '個頭', zh: '脑袋', ja: '頭', en: 'head' },
@@ -19,6 +19,11 @@ const REGION: Record<InteractZone, Record<Lang, string>> = {
   side:  { yue: '側邊', zh: '侧边', ja: '横', en: 'side' },
   back:  { yue: '背脊', zh: '后背', ja: '背中', en: 'back' },
   hand:  { yue: '隻手', zh: '手', ja: '手', en: 'hand' },
+  armL:  { yue: '左手', zh: '左手', ja: '左腕', en: 'left arm' },
+  armR:  { yue: '右手', zh: '右手', ja: '右腕', en: 'right arm' },
+  belly: { yue: '個肚', zh: '肚子', ja: 'お腹', en: 'tummy' },
+  legL:  { yue: '左腳', zh: '左腿', ja: '左足', en: 'left leg' },
+  legR:  { yue: '右腳', zh: '右腿', ja: '右足', en: 'right leg' },
 };
 
 const VIBE: Record<PersonalityId, Record<Lang, string>> = {
@@ -211,6 +216,152 @@ export function pickCharacterInteraction(characterId: string, gender: 'female' |
   if (list.length > 1 && i === lastPick.get(key)) i = (i + 1) % list.length;
   lastPick.set(key, i);
   return list[i]!;
+}
+
+const DIR_WORD: Record<PokeDirection, Record<Lang, string>> = {
+  front: { en: 'from the front', yue: '由前面', zh: '从前面', ja: '前から' },
+  back: { en: 'from behind', yue: '由後面', zh: '从后面', ja: '後ろから' },
+  left: { en: 'from the left', yue: '由左邊', zh: '从左边', ja: '左から' },
+  right: { en: 'from the right', yue: '由右邊', zh: '从右边', ja: '右から' },
+};
+
+export type PokePhase = 'impact' | 'recover' | 'settle';
+
+/** impact on the first poke, then recover, then settle, then around again. */
+export function pokePhase(count: number): PokePhase {
+  const phases = ['impact', 'recover', 'settle'] as const;
+  const n = Math.max(0, Math.abs(Math.trunc(count)) - 1);
+  return phases[n % 3]!;
+}
+
+function asDirection(direction: string): PokeDirection {
+  if (direction === 'back' || direction === 'left' || direction === 'right') return direction;
+  return 'front';
+}
+
+function phaseLine(phase: PokePhase, lang: Lang, vibe: string, region: string, dir: string, n: number): string {
+  const k = (Math.abs(n) % 8) + 1;
+  if (lang === 'yue') {
+    const bank = phase === 'impact'
+      ? [
+        `${vibe}，${region}${dir}？`,
+        `${vibe}，${dir}打中${region}？`,
+        `${vibe}，第${k}下${dir}？`,
+        `${vibe}，${region}中咗${dir}？`,
+        `${vibe}，${dir}好大力呀？`,
+        `${vibe}，${region}收到${dir}？`,
+        `${vibe}，呢下${dir}算唔算？`,
+        `${vibe}，${region}要還手${dir}？`,
+      ]
+      : [
+        `${vibe}，${region}定咗。再${dir}？`,
+        `${vibe}，緩過嚟喇。換邊${dir}？`,
+        `${vibe}，${region}冇事。輕啲${dir}？`,
+        `${vibe}，第${k}下完。仲玩？`,
+        `${vibe}，${dir}收工未？`,
+        `${vibe}，${region}企穩喇。再嚟？`,
+        `${vibe}，好好，${dir}到此為止？`,
+        `${vibe}，下一次${dir}溫柔啲？`,
+      ];
+    return bank[Math.abs(n) % bank.length]!;
+  }
+  if (lang === 'zh') {
+    const bank = phase === 'impact'
+      ? [
+        `${vibe}，${region}${dir}？`,
+        `${vibe}，${dir}打中${region}？`,
+        `${vibe}，第${k}下${dir}？`,
+        `${vibe}，${region}中了${dir}？`,
+        `${vibe}，${dir}好大呀？`,
+        `${vibe}，${region}收到${dir}？`,
+        `${vibe}，这一下${dir}算不算？`,
+        `${vibe}，${region}要还手${dir}？`,
+      ]
+      : [
+        `${vibe}，${region}稳了。再${dir}？`,
+        `${vibe}，缓过来了。换边${dir}？`,
+        `${vibe}，${region}没事。轻一点${dir}？`,
+        `${vibe}，第${k}下结束。还玩？`,
+        `${vibe}，${dir}收工了吗？`,
+        `${vibe}，${region}站稳了。再来？`,
+        `${vibe}，好，${dir}到这里？`,
+        `${vibe}，下次${dir}温柔一点？`,
+      ];
+    return bank[Math.abs(n) % bank.length]!;
+  }
+  if (lang === 'ja') {
+    const bank = phase === 'impact'
+      ? [
+        `${vibe}、${region}、${dir}？`,
+        `${vibe}、${dir}が${region}に当たった？`,
+        `${vibe}、${k}発目、${dir}？`,
+        `${vibe}、${region}ヒット、${dir}？`,
+        `${vibe}、${dir}は強かった？`,
+        `${vibe}、${region}、${dir}届いた？`,
+        `${vibe}、この${dir}、アリ？`,
+        `${vibe}、${region}から${dir}に返す？`,
+      ]
+      : [
+        `${vibe}、${region}は落ち着いた。また${dir}？`,
+        `${vibe}、戻った。別の${dir}？`,
+        `${vibe}、${region}は大丈夫。優しく${dir}？`,
+        `${vibe}、${k}発目おしまい。まだ？`,
+        `${vibe}、${dir}は終わり？`,
+        `${vibe}、${region}は立ってる。もう一回？`,
+        `${vibe}、よし、${dir}はここまで？`,
+        `${vibe}、次の${dir}はそっと？`,
+      ];
+    return bank[Math.abs(n) % bank.length]!;
+  }
+  const bank = phase === 'impact'
+    ? [
+      `${vibe}, ${region} ${dir}?`,
+      `${vibe}, a punch ${dir} on the ${region}?`,
+      `${vibe}, hit ${k} ${dir}?`,
+      `${vibe}, the ${region} caught that ${dir}?`,
+      `${vibe}, ${dir} came in hot. Still playing?`,
+      `${vibe}, ${region} got the ${dir} one. Fair?`,
+      `${vibe}, does ${dir} count?`,
+      `${vibe}, ${region} wants a turn ${dir}?`,
+    ]
+    : [
+      `${vibe}, ${region} settled. Another ${dir}?`,
+      `${vibe}, back on my feet. Switch the ${dir}?`,
+      `${vibe}, ${region} is fine. Softer ${dir}?`,
+      `${vibe}, hit ${k} is done. Still in?`,
+      `${vibe}, is ${dir} finished?`,
+      `${vibe}, ${region} is steady. Once more?`,
+      `${vibe}, okay, ${dir} ends there?`,
+      `${vibe}, next ${dir} a little gentler?`,
+    ];
+  return bank[Math.abs(n) % bank.length]!;
+}
+
+/**
+ * Spoken poke line. Phase follows the punch (impact, recover, settle) and
+ * the words change with personality, body part, direction, and poke count.
+ */
+export function pokeReactionLine(
+  characterId: string,
+  gender: 'female' | 'male' | undefined,
+  zone: string,
+  direction: string,
+  lang: Lang,
+  count: number,
+): string {
+  const personality = personalityFor(characterId, gender);
+  const z = (ZONES as string[]).includes(zone) ? zone as InteractZone : 'torso';
+  const d = asDirection(direction);
+  const phase = pokePhase(count);
+  const vibe = VIBE[personality][lang];
+  const region = REGION[z][lang];
+  const dir = DIR_WORD[d][lang];
+  const n = Math.max(0, Math.abs(Math.trunc(count)) - 1);
+  if (phase === 'recover') {
+    const voice = profilePokeLine(characterId, lang, n + (d === 'left' ? 1 : d === 'right' ? 2 : d === 'back' ? 3 : 0), z, gender);
+    return `${dir}. ${voice}`;
+  }
+  return phaseLine(phase, lang, vibe, region, dir, n);
 }
 
 const LAUGHS: Record<Lang, string[]> = {

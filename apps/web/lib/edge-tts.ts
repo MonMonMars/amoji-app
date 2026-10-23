@@ -204,12 +204,19 @@ const VOICE_STYLES: Record<string, string[]> = {
   'zh-CN-XiaohanNeural':  ['angry', 'cheerful', 'excited', 'friendly', 'hopeful', 'sad', 'serious'],
   'zh-CN-XiaomoNeural':   ['angry', 'cheerful', 'excited', 'friendly', 'hopeful', 'sad', 'serious'],
   'zh-CN-XiaoruiNeural':  ['angry', 'cheerful', 'excited', 'friendly', 'hopeful', 'sad', 'serious'],
-  'zh-CN-YunjianNeural':  ['angry', 'cheerful', 'excited', 'friendly', 'hopeful', 'sad', 'serious'],
-  'zh-CN-YunxiNeural':    ['angry', 'cheerful', 'excited', 'friendly', 'hopeful', 'sad', 'serious'],
-  'zh-CN-YunyangNeural':  ['angry', 'cheerful', 'excited', 'friendly', 'hopeful', 'sad', 'serious'],
+  // Male zh styles are the sets Microsoft documents (Apr 2026). A style that
+  // is not on the voice — friendly/hopeful/excited on Yunjian, anything
+  // emotional on Yunyang — makes the free read-aloud socket drop the line.
+  'zh-CN-YunjianNeural':  ['angry', 'cheerful', 'depressed', 'disgruntled', 'documentary-narration', 'narration-relaxed', 'sad', 'serious', 'sports-commentary', 'sports-commentary-excited'],
+  'zh-CN-YunxiNeural':    ['angry', 'assistant', 'chat', 'cheerful', 'depressed', 'disgruntled', 'embarrassed', 'fearful', 'narration-relaxed', 'newscast', 'sad', 'serious'],
+  'zh-CN-YunyangNeural':  ['customerservice', 'narration-professional', 'newscast-casual'],
+  'zh-CN-YunxiaNeural':   ['angry', 'calm', 'cheerful', 'fearful', 'sad'],
   'zh-HK-HiuGaaiNeural':  ['calm', 'cheerful', 'confused', 'friendly', 'serious', 'sad', 'worried'],
   'zh-HK-HiuMaanNeural':  ['calm', 'cheerful', 'confused', 'friendly', 'serious', 'sad', 'worried'],
-  'zh-HK-WanLungNeural':  ['calm', 'cheerful', 'confused', 'friendly', 'serious', 'sad', 'worried'],
+  // zh-HK-WanLungNeural and ja-JP-KeitaNeural have no express-as styles.
+  // Sending one fails the utterance, so they stay off this map.
+  'en-US-GuyNeural':      ['angry', 'cheerful', 'excited', 'friendly', 'hopeful', 'newscast', 'sad', 'shouting', 'terrified', 'unfriendly', 'whispering'],
+  'en-GB-RyanNeural':     ['chat', 'cheerful', 'sad', 'whispering'],
   'en-US-AriaNeural':     ['chat', 'cheerful', 'customerservice', 'excited', 'friendly', 'hopeful', 'sad'],
 };
 
