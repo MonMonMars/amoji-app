@@ -124,6 +124,12 @@ body {
 }
 .ui-btn:disabled { transform: none; filter: none; }
 
+/* Every press, including controls that are not .ui-btn. */
+button:not(:disabled):active,
+[role="button"]:not([aria-disabled="true"]):active {
+  filter: brightness(1.16);
+}
+
 /* ---- primary CTA: lift + glow + repeating shimmer sweep ---- */
 .ui-btn-primary {
   position: relative;

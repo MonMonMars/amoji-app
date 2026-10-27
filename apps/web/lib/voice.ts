@@ -81,7 +81,7 @@ import type { Lang } from './prefs';
 import { characterVoiceGender } from './voice-gender';
 import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
 import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripVoicedGlyphs } from './speak-text';
-import { synthNameConflicts, synthNameList, voiceNameMatches } from './voice-catalog';
+import { edgeSampleText, isMaleNeuralVoice, synthNameConflicts, synthNameList, voiceNameMatches } from './voice-catalog';
 import { LineQueue, speechRemainder } from './speech-queue';
 export { speechRemainder };
 import { edgeCastVoice } from './edge-cast';
@@ -1511,6 +1511,24 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
       reportVoiceStatus('synth', false, (err as Error | undefined)?.message ?? 'browser voice failed');
       settle();
     }
+  });
+}
+
+/**
+ * Bake-off sample. Speaks the locale's sheet line in the exact Edge short
+ * name, even when Voice replies is off and even when the voice gender does
+ * not match the companion. Does not fall through to speechSynthesis — that
+ * tier cannot name these neural voices.
+ */
+export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
+  unlockAudio();
+  stopSpeaking();
+  const gender = isMaleNeuralVoice(voiceId) ? 'male' : 'female';
+  return speakEdge(edgeSampleText(locale), {
+    lang: locale,
+    gender,
+    voiceId,
+    expressiveness: 1,
   });
 }
 

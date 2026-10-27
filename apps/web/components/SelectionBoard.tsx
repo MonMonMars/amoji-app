@@ -104,16 +104,16 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                 return (
                   <>
                     <span
-                      className="absolute right-2 top-2 z-20 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-neutral-950 px-1 text-[11px] font-extrabold text-neutral-950 shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
+                      className="absolute right-2.5 top-2.5 z-20 flex h-8 min-w-8 items-center justify-center rounded-full border-2 border-neutral-950 px-1.5 text-xs font-extrabold text-neutral-950 shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
                       style={{ background: c.accent }}
                       title={`#${num}`}
                     >
                       {num}
                     </span>
                     <ModelThumb accent={c.accent} name={c.name} image={c.image} bighead={bigheadPath(c.id)} crop="face" />
-                    <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-2 pb-2 pt-8 text-center">
-                      <span className="block truncate text-sm font-semibold leading-tight sm:text-base">{c.name}</span>
-                      <span className="text-[11px] leading-none text-white/70 sm:text-xs">{c.gender === 'female' ? '♀' : '♂'}</span>
+                    <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-3 pb-3 pt-12 text-center">
+                      <span className="block whitespace-normal break-words text-base font-semibold leading-tight sm:text-lg">{c.name}</span>
+                      <span className="text-xs leading-none text-white/75 sm:text-sm">{c.gender === 'female' ? '♀' : '♂'}</span>
                     </span>
                     {active && (
                       <span
