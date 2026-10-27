@@ -936,6 +936,63 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
       { lang: 'en-GB', names: ['Ryan', 'Daniel', 'Male'], basePitch: 1.0, baseRate: 1.0 },
     ],
   },
+  'a94-rita': {
+    yue: [
+      { lang: 'zh-HK', names: ['WanLung', 'Sin-ju', 'Male'], basePitch: 0.96, baseRate: 0.96 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Yunyang', 'Yunjian', 'Kangkang', 'Male'], basePitch: 0.96, baseRate: 0.96 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Keita', 'Otoya', 'Male'], basePitch: 0.96, baseRate: 0.97 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Eric', 'Guy', 'David', 'Male'], basePitch: 0.96, baseRate: 0.97 },
+    ],
+  },
+  'a107-dm-office-casual': {
+    yue: [
+      { lang: 'zh-HK', names: ['WanLung', 'Sin-ju', 'Male'], basePitch: 0.9, baseRate: 0.95 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Yunjian', 'Yunxi', 'Kangkang', 'Male'], basePitch: 0.9, baseRate: 0.95 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Keita', 'Otoya', 'Male'], basePitch: 0.92, baseRate: 0.96 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Guy', 'Christopher', 'David', 'Male'], basePitch: 0.9, baseRate: 0.95 },
+    ],
+  },
+  'a459-chinesewarriormonk': {
+    yue: [
+      { lang: 'zh-HK', names: ['WanLung', 'Sin-ju', 'Male'], basePitch: 0.88, baseRate: 0.94 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Yunjian', 'Yunxi', 'Kangkang', 'Male'], basePitch: 0.88, baseRate: 0.94 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Keita', 'Otoya', 'Male'], basePitch: 0.9, baseRate: 0.95 },
+    ],
+    en: [
+      { lang: 'en-GB', names: ['Ryan', 'Daniel', 'Male'], basePitch: 0.9, baseRate: 0.95 },
+      { lang: 'en-US', names: ['Christopher', 'Guy', 'David', 'Male'], basePitch: 0.9, baseRate: 0.95 },
+    ],
+  },
+  'a468-eric': {
+    yue: [
+      { lang: 'zh-HK', names: ['WanLung', 'Sin-ju', 'Male'], basePitch: 1.0, baseRate: 0.98 },
+    ],
+    zh: [
+      { lang: 'zh-CN', names: ['Yunxi', 'Yunjian', 'Kangkang', 'Male'], basePitch: 1.0, baseRate: 0.98 },
+    ],
+    ja: [
+      { lang: 'ja-JP', names: ['Keita', 'Otoya', 'Male'], basePitch: 1.0, baseRate: 0.99 },
+    ],
+    en: [
+      { lang: 'en-US', names: ['Christopher', 'Eric', 'Guy', 'Male'], basePitch: 0.98, baseRate: 0.99 },
+    ],
+  },
 };
 
 /** Emotion → prosody for the browser-TTS fallback path (multipliers). */
