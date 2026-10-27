@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AppleMeta from "../components/AppleMeta";
 import ServiceWorkerRegistrar from "../components/ServiceWorkerRegistrar";
+import UiClickSound from "../components/UiClickSound";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,6 +52,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <link rel="dns-prefetch" href="https://text.pollinations.ai" />
         <AppleMeta />
         <ServiceWorkerRegistrar />
+        <UiClickSound />
         {children}
       </body>
     </html>
