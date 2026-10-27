@@ -102,11 +102,21 @@ export const BACKGROUNDS: BackgroundDef[] = [
     image: '/backgrounds/galaxy.jpg', fx: 'stars', kidSafe: true },
 ];
 
-export const LANGS: { id: Lang; native: string }[] = [
-  { id: 'yue', native: '廣東話' },
-  { id: 'zh', native: '中文' },
-  { id: 'ja', native: '日本語' },
-  { id: 'en', native: 'English' },
+export interface LangDef {
+  id: Lang;
+  native: string;
+  /** Big script mark — the language card's face, like a character bighead. */
+  glyph: string;
+  /** Corner badge, the language equivalent of a character number. */
+  mark: string;
+  accent: string;
+}
+
+export const LANGS: LangDef[] = [
+  { id: 'yue', native: '廣東話', glyph: '粵', mark: '粵', accent: '#fbbf24' },
+  { id: 'zh', native: '中文', glyph: '中', mark: '中', accent: '#fb7185' },
+  { id: 'ja', native: '日本語', glyph: 'あ', mark: '日', accent: '#c4b5fd' },
+  { id: 'en', native: 'English', glyph: 'En', mark: 'EN', accent: '#38bdf8' },
 ];
 
 export type StrKey =
