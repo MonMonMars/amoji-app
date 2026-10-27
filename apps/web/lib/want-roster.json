@@ -462,7 +462,7 @@
       "id": "a94-rita",
       "libraryId": "A94",
       "name": "Rita",
-      "gender": "female",
+      "gender": "male",
       "accent": "#34d399",
       "kidSafe": true,
       "modelFile": "a94-rita.vrm",
@@ -471,8 +471,8 @@
       "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a94-rita.png",
       "sourceFolder": "Rita",
       "voiceHint": {
-        "yue": "zh-HK-HiuGaaiNeural",
-        "en": "en-HK-YanNeural"
+        "yue": "zh-HK-WanLungNeural",
+        "en": "en-HK-SamNeural"
       }
     },
     {
@@ -632,7 +632,7 @@
       "id": "a107-dm-office-casual",
       "libraryId": "A107",
       "name": "DM Office Casual",
-      "gender": "female",
+      "gender": "male",
       "accent": "#f9a8d4",
       "kidSafe": true,
       "modelFile": "a107-dm-office-casual.vrm",
@@ -641,8 +641,8 @@
       "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a107-dm-office-casual.png",
       "sourceFolder": "DM_Office_Casual",
       "voiceHint": {
-        "yue": "zh-HK-HiuGaaiNeural",
-        "en": "en-HK-YanNeural"
+        "yue": "zh-HK-WanLungNeural",
+        "en": "en-HK-SamNeural"
       }
     },
     {
