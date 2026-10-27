@@ -74,6 +74,7 @@ export default function ArcFan<T extends { id: string }>({
   selectedId: string;
   onSelect: (id: string) => void;
   ariaLabel: string;
+  /** portrait: character heads and language cards — one scale. scene: backgrounds. */
   size: 'portrait' | 'scene';
   label: (item: T) => string;
   children: (item: T, active: boolean) => ReactNode;
