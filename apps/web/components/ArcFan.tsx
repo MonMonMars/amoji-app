@@ -15,33 +15,36 @@ export type ArcPose = {
   inert: boolean;
 };
 
+/** Center pop for portrait cards. Kept under 1.1 so the larger box still fits. */
+export const PORTRAIT_CENTER_SCALE = 1.05;
+
 /**
  * Bighead card box for the portrait fan. The select stage used to be a live
- * full-body model; that space now belongs to these stills. Height tracks the
- * measured fan (capped so a tall monitor does not grow a poster past the
- * controls). Width stays the old portrait ratio. Step stays inside the card
- * so neighbors overlap and the center face stays tappable.
+ * full-body model; that space now belongs to these stills. Height fills most
+ * of the measured fan (capped so a tall monitor does not cover the controls).
+ * Width is wider than the old 0.7 portrait ratio so names and faces read
+ * larger. Step stays inside the card so neighbors overlap.
  */
 export function portraitCardBox(stageHeight: number): { width: number; height: number; step: number } {
-  const stage = stageHeight > 0 ? stageHeight : 320;
-  const height = Math.round(Math.min(stage * 0.86, 520));
-  const width = Math.round(height * 0.7);
-  const step = Math.max(56, Math.round(width * 0.58));
+  const stage = stageHeight > 0 ? stageHeight : 360;
+  const height = Math.round(Math.min(stage * 0.93, 640));
+  const width = Math.round(height * 0.8);
+  const step = Math.max(72, Math.round(width * 0.48));
   return { width, height, step };
 }
 
-/** Keep the 1.1 center scale inside the fan, just under the name. */
+/** Keep the center scale inside the fan, just under the name. */
 export function portraitTop(stageHeight: number, cardHeight: number): number {
-  const stage = stageHeight > 0 ? stageHeight : 320;
+  const stage = stageHeight > 0 ? stageHeight : 360;
   const slack = Math.max(0, stage - cardHeight);
-  const scaleOverflow = Math.ceil(cardHeight * 0.05);
-  return Math.max(scaleOverflow, Math.round(slack * 0.22));
+  const scaleOverflow = Math.ceil(cardHeight * ((PORTRAIT_CENTER_SCALE - 1) / 2));
+  return Math.max(scaleOverflow, Math.round(slack * 0.16));
 }
 
 /** Pose of a card `offset` steps from the focused index. Negative is left. */
-export function arcPose(offset: number, step: number): ArcPose {
+export function arcPose(offset: number, step: number, centerScale = 1.1): ArcPose {
   const distance = Math.abs(offset);
-  const scale = offset === 0 ? 1.1 : Math.max(0.62, 1 - distance * 0.09);
+  const scale = offset === 0 ? centerScale : Math.max(0.58, 1 - distance * 0.11);
   return {
     x: offset * step,
     y: distance * 5 + distance * distance * 0.45,
@@ -90,7 +93,7 @@ export default function ArcFan<T extends { id: string }>({
   const index = Math.max(0, items.findIndex((item) => item.id === selectedId));
   const portrait = portraitCardBox(stageH);
   const step = size === 'portrait' ? portrait.step : (compact ? 58 : 86);
-  const reach = compact ? 3 : 5;
+  const reach = compact ? 2 : 4;
 
   useLayoutEffect(() => {
     if (size !== 'portrait') return;
@@ -193,7 +196,7 @@ export default function ArcFan<T extends { id: string }>({
       {items.map((item, i) => {
         const offset = i - index;
         if (Math.abs(offset) > reach + 1) return null;
-        const pose = arcPose(offset, step);
+        const pose = arcPose(offset, step, size === 'portrait' ? PORTRAIT_CENTER_SCALE : 1.1);
         const active = item.id === selectedId;
         return (
           <div

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { arcPose, portraitCardBox, portraitTop } from '../components/ArcFan';
+import { PORTRAIT_CENTER_SCALE, arcPose, portraitCardBox, portraitTop } from '../components/ArcFan';
 import { BIGHEAD_IDS, bigheadPath } from '../lib/bighead';
 import { CHARACTERS, LANGS, STRINGS } from '../lib/prefs';
 
@@ -58,22 +58,32 @@ describe('selection layout', () => {
   it('grows the bighead fan into the stage the model used to fill', () => {
     const fan = read('../components/ArcFan.tsx');
     expect(fan).toContain('portraitCardBox');
+    expect(fan).toContain('PORTRAIT_CENTER_SCALE');
     expect(fan).not.toContain('h-[8.4rem]');
     expect(fan).not.toContain('sm:h-[11rem]');
     expect(board).toContain('flex-1');
+    expect(board).toContain('text-base font-semibold');
+    expect(board).toContain('sm:text-lg');
+    expect(board).toContain('break-words');
+    expect(board).not.toContain('truncate text-sm font-semibold');
     const roomy = portraitCardBox(480);
     const oldDesktop = { width: 123, height: 176 };
+    const previousFan = { width: 289, height: 413 };
     expect(roomy.height).toBeGreaterThan(oldDesktop.height * 1.6);
     expect(roomy.width).toBeGreaterThan(oldDesktop.width * 1.6);
+    expect(roomy.height).toBeGreaterThan(previousFan.height);
+    expect(roomy.width).toBeGreaterThan(previousFan.width);
     expect(roomy.step).toBeGreaterThan(roomy.width * 0.45);
     expect(roomy.step).toBeLessThan(roomy.width);
     const phone = portraitCardBox(280);
-    expect(phone.height).toBeGreaterThan(134);
+    expect(phone.height).toBeGreaterThan(241);
     expect(phone.height).toBeLessThan(280);
-    expect(portraitCardBox(900).height).toBeLessThanOrEqual(520);
+    expect(portraitCardBox(900).height).toBeGreaterThan(520);
+    expect(portraitCardBox(900).height).toBeLessThanOrEqual(640);
     const fitted = portraitCardBox(456);
-    expect(portraitTop(456, fitted.height)).toBeGreaterThanOrEqual(Math.ceil(fitted.height * 0.05));
-    expect(portraitTop(456, fitted.height) + fitted.height * 1.1).toBeLessThanOrEqual(456 + 1);
+    const overflow = (PORTRAIT_CENTER_SCALE - 1) / 2;
+    expect(portraitTop(456, fitted.height)).toBeGreaterThanOrEqual(Math.ceil(fitted.height * overflow));
+    expect(portraitTop(456, fitted.height) + fitted.height * (1 + overflow)).toBeLessThanOrEqual(456 + 1);
   });
 
   it('fans character and scene cards around a larger center portrait', () => {

@@ -289,6 +289,39 @@ export function playLaughSfx(): void {
   });
 }
 
+/** Gap that keeps two UI clicks from stacking into a chord. */
+export const UI_CLICK_GAP_MS = 70;
+
+/**
+ * Next time a click may start. Null when `now` is still inside the previous
+ * click, so a second press does not layer another tick.
+ */
+export function nextUiClickAt(now: number, busyUntil: number, gap = UI_CLICK_GAP_MS): number | null {
+  if (now < busyUntil) return null;
+  return now + gap;
+}
+
+let uiClickBusyUntil = 0;
+
+/**
+ * One short UI tick. Used for every button press. Foley voice-hold does not
+ * apply — a tap is the user's gesture, not movement noise over a speak.
+ * A press that lands while the tick is still playing is dropped.
+ */
+export function playUiClick(): void {
+  if (typeof window === 'undefined' || !sfxEnabled()) return;
+  const now = Date.now();
+  const until = nextUiClickAt(now, uiClickBusyUntil);
+  if (until === null) return;
+  const c = ctx();
+  if (!c) return;
+  uiClickBusyUntil = until;
+  const t = c.currentTime;
+  const out = c.destination;
+  tone(c, out, { freq: 920, slideTo: 540, at: t, dur: 0.042, vol: 0.055, wave: 'sine', attack: 0.003 });
+  burst(c, out, { at: t, dur: 0.016, vol: 0.018, type: 'highpass', f0: 2800, q: 0.7 });
+}
+
 /** a short low tap when you poke her — no rising squeak over the spoken laugh */
 export function playPokeSfx(): void {
   if (voiceHeld()) return; // r102: never ring foley over a speak attempt

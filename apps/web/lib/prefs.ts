@@ -130,7 +130,8 @@ export type StrKey =
   | 'changeCta' | 'previewCurrent' | 'previewNew'
   | 'statusIdle' | 'statusThinking' | 'statusSpeaking' | 'statusListening' | 'statusPreparing'
   | 'moodJoy' | 'moodAngry' | 'moodSad' | 'moodSurprised' | 'moodRelaxed' | 'moodNeutral'
-  | 'voiceReplies' | 'neuralVoice' | 'memoryTitle' | 'forgetBtn' | 'tutorBtn' | 'micTitle'
+  | 'voiceReplies' | 'neuralVoice' | 'voicePickerTitle' | 'voicePickerHint'
+  | 'memoryTitle' | 'forgetBtn' | 'tutorBtn' | 'micTitle'
   // consolidated settings menu (r2026-10-02.7)
   | 'settingsCompanion' | 'settingsScene' | 'settingsVoice' | 'settingsData' | 'settingsHelp'
   | 'yourName' | 'yourGender' | 'genderMale' | 'genderFemale' | 'genderSecret'
@@ -215,6 +216,13 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   moodNeutral: { en: 'calm', yue: '平靜', zh: '平静', ja: '穏やか' },
   voiceReplies: { en: 'Voice replies', yue: '語音回覆', zh: '语音回复', ja: '音声返答' },
   neuralVoice: { en: 'Neural voice (online)', yue: '神經語音（在線）', zh: '神经语音（在线）', ja: 'ニューラル音声（オンライン）' },
+  voicePickerTitle: { en: 'Edge voices', yue: 'Edge 聲音', zh: 'Edge 声音', ja: 'Edge の声' },
+  voicePickerHint: {
+    en: 'Tap a voice to hear it and save it for this companion’s gender. Every voice stays listed so you can compare.',
+    yue: '撳一個聲嚟試聽，並儲存俾呢個角色嘅性別。全部聲都列住，方便你比較。',
+    zh: '点一个声音试听，并保存给这个角色的性别。所有声音都会列出，方便比较。',
+    ja: '声をタップして試聴し、この相棒の性別に保存します。比べられるよう全部出します。',
+  },
   memoryTitle: { en: 'Memory', yue: '記憶', zh: '记忆', ja: '記憶' },
   forgetBtn: { en: 'Forget everything', yue: '全部忘記', zh: '全部忘记', ja: 'すべて忘れる' },
   tutorBtn: { en: 'How to use', yue: '使用教學', zh: '使用教学', ja: '使い方' },
