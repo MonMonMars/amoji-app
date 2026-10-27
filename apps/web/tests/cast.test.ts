@@ -39,12 +39,14 @@ describe('cast roster', () => {
     expect(new Set(CHARACTERS.map((c) => c.model)).size).toBe(CHARACTERS.length);
   });
 
-  it('male voice hints differ from female (A24, A98, A459, A468)', () => {
+  it('male voice hints differ from female (A24, A94, A98, A107, A459, A468)', () => {
     const male = CHARACTERS.filter((c) => c.gender === 'male');
     expect(male.map((c) => c.id).sort()).toEqual([
+      'a107-dm-office-casual',
       'a24-hairsample-male',
       'a459-chinesewarriormonk',
       'a468-eric',
+      'a94-rita',
       'a98-ethan',
     ].sort());
     for (const c of male) {
