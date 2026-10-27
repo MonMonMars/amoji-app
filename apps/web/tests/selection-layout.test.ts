@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { arcPose, portraitCardBox, portraitTop } from '../components/ArcFan';
+import { PORTRAIT_CENTER_SCALE, arcPose, portraitCardBox, portraitTop } from '../components/ArcFan';
 import { BIGHEAD_IDS, bigheadPath } from '../lib/bighead';
-import { CHARACTERS, STRINGS } from '../lib/prefs';
+import { CHARACTERS, LANGS, STRINGS } from '../lib/prefs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const read = (rel: string) => fs.readFileSync(path.resolve(here, rel), 'utf8');
@@ -58,22 +58,32 @@ describe('selection layout', () => {
   it('grows the bighead fan into the stage the model used to fill', () => {
     const fan = read('../components/ArcFan.tsx');
     expect(fan).toContain('portraitCardBox');
+    expect(fan).toContain('PORTRAIT_CENTER_SCALE');
     expect(fan).not.toContain('h-[8.4rem]');
     expect(fan).not.toContain('sm:h-[11rem]');
     expect(board).toContain('flex-1');
+    expect(board).toContain('text-base font-semibold');
+    expect(board).toContain('sm:text-lg');
+    expect(board).toContain('break-words');
+    expect(board).not.toContain('truncate text-sm font-semibold');
     const roomy = portraitCardBox(480);
     const oldDesktop = { width: 123, height: 176 };
+    const previousFan = { width: 289, height: 413 };
     expect(roomy.height).toBeGreaterThan(oldDesktop.height * 1.6);
     expect(roomy.width).toBeGreaterThan(oldDesktop.width * 1.6);
+    expect(roomy.height).toBeGreaterThan(previousFan.height);
+    expect(roomy.width).toBeGreaterThan(previousFan.width);
     expect(roomy.step).toBeGreaterThan(roomy.width * 0.45);
     expect(roomy.step).toBeLessThan(roomy.width);
     const phone = portraitCardBox(280);
-    expect(phone.height).toBeGreaterThan(134);
+    expect(phone.height).toBeGreaterThan(241);
     expect(phone.height).toBeLessThan(280);
-    expect(portraitCardBox(900).height).toBeLessThanOrEqual(520);
+    expect(portraitCardBox(900).height).toBeGreaterThan(520);
+    expect(portraitCardBox(900).height).toBeLessThanOrEqual(640);
     const fitted = portraitCardBox(456);
-    expect(portraitTop(456, fitted.height)).toBeGreaterThanOrEqual(Math.ceil(fitted.height * 0.05));
-    expect(portraitTop(456, fitted.height) + fitted.height * 1.1).toBeLessThanOrEqual(456 + 1);
+    const overflow = (PORTRAIT_CENTER_SCALE - 1) / 2;
+    expect(portraitTop(456, fitted.height)).toBeGreaterThanOrEqual(Math.ceil(fitted.height * overflow));
+    expect(portraitTop(456, fitted.height) + fitted.height * (1 + overflow)).toBeLessThanOrEqual(456 + 1);
   });
 
   it('fans character and scene cards around a larger center portrait', () => {
@@ -111,6 +121,30 @@ describe('selection layout', () => {
       expect(CHARACTERS.some((c) => c.id === id)).toBe(true);
     }
     expect(read('../components/ModelThumb.tsx')).toContain('onError');
+  });
+
+  it('fans language cards on the character portrait scale', () => {
+    expect(LANGS.map((l) => l.id)).toEqual(['yue', 'zh', 'ja', 'en']);
+    for (const lang of LANGS) {
+      expect(lang.glyph.length).toBeGreaterThan(0);
+      expect(lang.mark.length).toBeGreaterThan(0);
+      expect(lang.accent.startsWith('#')).toBe(true);
+    }
+    expect(board).not.toContain('HScrollRow');
+    expect(board).not.toContain('rounded-full px-3');
+    expect(board).toContain('ariaLabel="languages"');
+    expect(board).toContain('size="portrait"');
+    expect(board.split('size="portrait"').length - 1).toBe(2);
+    expect(board.match(/relative mx-auto[^"]*flex-1/g)).toHaveLength(2);
+    expect(board).toContain('<LangCardFace');
+    expect(board).toContain('pick({ lang: id })');
+    const selectors = read('../components/selectors.tsx');
+    expect(selectors).toContain('export function LangCardFace');
+    expect(selectors).toContain('ui-card');
+    expect(selectors).toContain('fx-press');
+    expect(selectors).toContain('rounded-2xl');
+    expect(selectors).toContain('aspect-[6/8.4]');
+    expect(selectors).not.toContain('rounded-full px-4');
   });
 
   it('gives selection controls a press flash and a short route transition', () => {

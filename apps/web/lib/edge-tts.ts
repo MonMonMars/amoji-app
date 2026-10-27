@@ -24,7 +24,8 @@
 import { pinDefaultOutput } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 import { characterVoiceGender } from './voice-gender';
-import { edgeVoiceId, isFemaleNeuralVoice, isMaleNeuralVoice } from './voice-catalog';
+import { edgeVoiceId, isFemaleNeuralVoice, isMaleNeuralVoice, isShippingEdgeVoice, ssmlLangForEdgeId } from './voice-catalog';
+import { voicePickFor } from './voice-picks';
 import { edgeCastVoice } from './edge-cast';
 import { clampLeadProsody, cleanForSpeech, isSpeakableText, stripVoicedGlyphs } from './speak-text';
 import { followAudioElement } from './speech';
@@ -70,6 +71,13 @@ export interface EdgeVoiceOpts {
   volumeDelta?: number;
   /** leading emotional vocal tic (giggle, sigh, gasp) with its own prosody */
   lead?: { text: string; pitch: number; rate: number };
+  /**
+   * Exact Edge short name from the bake-off picker. Skips the cast and the
+   * gender floor so a deliberate cross-gender tap is what plays.
+   */
+  voiceId?: string;
+  /** Highlight / probe path: ignore a saved pin and return the cast voice. */
+  ignoreVoicePick?: boolean;
   /** word-boundary events (for precise lip-sync) */
   onWord?: (word: string) => void;
   /** r99: fired once the audio element actually starts playing (media gate open) */
@@ -161,10 +169,22 @@ export interface ResolvedEdgeVoice {
   restStyle?: string;
 }
 
+function pinnedEdgeVoice(id: string): ResolvedEdgeVoice {
+  return { name: id, ssmlLang: ssmlLangForEdgeId(id), pitch: 0, rate: 0 };
+}
+
 /** Character + locale → one Edge voice. Gender is the floor, not the whole map. */
 export function resolveEdgeVoice(opts: EdgeVoiceOpts): ResolvedEdgeVoice {
   const v = VOICES[opts.lang] ?? VOICES.en!;
   const gender = opts.character ? characterVoiceGender(opts.character) : opts.gender;
+  // An explicit button (or a saved pin for THIS companion gender) wins over
+  // the cast. The gender floor below does not run, so a female companion
+  // keeps a male voice only when that pin was chosen on purpose.
+  if (opts.voiceId && isShippingEdgeVoice(opts.voiceId)) return pinnedEdgeVoice(opts.voiceId);
+  if (!opts.ignoreVoicePick) {
+    const picked = voicePickFor(opts.lang, gender);
+    if (picked && isShippingEdgeVoice(picked)) return pinnedEdgeVoice(picked);
+  }
   const personal = opts.character ? edgeCastVoice(opts.character, opts.lang) : null;
   let name = personal?.id ?? edgeVoiceId(opts.lang, gender);
   let ssmlLang = personal?.ssmlLang ?? v.ssmlLang;

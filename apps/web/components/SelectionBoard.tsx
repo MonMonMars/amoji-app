@@ -1,15 +1,16 @@
 'use client';
 // Shared selection board for /select and /change.
 // Character picks are overlapping 2D bighead cards (local stills when packed,
-// otherwise the release poster). Scene picks are 2D stills lettered A, B, C…
+// otherwise the release poster). Language uses that same portrait fan, so its
+// cards track the bighead size. Scene picks are 2D stills lettered A, B, C…
 // The painted backdrop fills the stage. START / Change writes prefs, then
 // /chat loads the chosen character. This page does not stream a model.
 import { useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import ArcFan from './ArcFan';
-import HScrollRow from './HScrollRow';
 import SceneBackdrop from './SceneBackdrop';
 import ModelThumb from './ModelThumb';
+import { LangCardFace } from './selectors';
 import { assetUrl } from '../lib/asset';
 import { bigheadPath } from '../lib/bighead';
 import {
@@ -104,16 +105,16 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                 return (
                   <>
                     <span
-                      className="absolute right-2 top-2 z-20 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-neutral-950 px-1 text-[11px] font-extrabold text-neutral-950 shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
+                      className="absolute right-2.5 top-2.5 z-20 flex h-8 min-w-8 items-center justify-center rounded-full border-2 border-neutral-950 px-1.5 text-xs font-extrabold text-neutral-950 shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
                       style={{ background: c.accent }}
                       title={`#${num}`}
                     >
                       {num}
                     </span>
                     <ModelThumb accent={c.accent} name={c.name} image={c.image} bighead={bigheadPath(c.id)} crop="face" />
-                    <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-2 pb-2 pt-8 text-center">
-                      <span className="block truncate text-sm font-semibold leading-tight sm:text-base">{c.name}</span>
-                      <span className="text-[11px] leading-none text-white/70 sm:text-xs">{c.gender === 'female' ? '♀' : '♂'}</span>
+                    <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-3 pb-3 pt-12 text-center">
+                      <span className="block whitespace-normal break-words text-base font-semibold leading-tight sm:text-lg">{c.name}</span>
+                      <span className="text-xs leading-none text-white/75 sm:text-sm">{c.gender === 'female' ? '♀' : '♂'}</span>
                     </span>
                     {active && (
                       <span
@@ -124,6 +125,25 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                   </>
                 );
               }}
+            </ArcFan>
+          </div>
+
+          <h2 className="mb-1 mt-2 shrink-0 text-center text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
+            {t(lang, 'chooseLanguage')}
+          </h2>
+          {/* Same flex-1 portrait stage as the character fan, so portraitCardBox matches. */}
+          <div className="relative mx-auto min-h-0 w-full flex-1">
+            <ArcFan
+              ariaLabel="languages"
+              size="portrait"
+              items={LANGS}
+              selectedId={live.lang}
+              onSelect={(id) => {
+                if (id === 'en' || id === 'yue' || id === 'zh' || id === 'ja') pick({ lang: id });
+              }}
+              label={(l) => l.native}
+            >
+              {(l, active) => <LangCardFace lang={l} active={active} />}
             </ArcFan>
           </div>
         </section>
@@ -172,29 +192,6 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                   );
                 }}
               </ArcFan>
-            </section>
-
-            <section className="pointer-events-auto w-full min-w-0">
-              <h2 className="mb-1 text-center text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
-                {t(lang, 'chooseLanguage')}
-              </h2>
-              <HScrollRow ariaLabel="languages" rowKey="languages" selectedId={live.lang}>
-                {LANGS.map((l) => {
-                  const active = l.id === live.lang;
-                  return (
-                    <button
-                      key={l.id}
-                      data-row-item={l.id}
-                      onClick={() => pick({ lang: l.id })}
-                      className={`fx-press ui-btn relative min-h-11 shrink-0 rounded-full px-3 py-1 text-[11px] font-medium hover:scale-105 ${
-                        active ? 'bg-white text-black shadow-sm' : 'bg-white/10 text-white/80 hover:bg-white/20'
-                      }`}
-                    >
-                      {l.native}
-                    </button>
-                  );
-                })}
-              </HScrollRow>
             </section>
 
             <button

@@ -45,7 +45,7 @@ Source of truth: `apps/web/lib/want-roster.json` → generated `apps/web/lib/cha
 | a85-kara | female | `…/a85-kara.vrm` |
 | a89-rurina | female | `…/a89-rurina.vrm` |
 | a93-edokko | female | `…/a93-edokko.vrm` |
-| a94-rita | female | `…/a94-rita.vrm` |
+| a94-rita | male | `…/a94-rita.vrm` |
 | a95-mizu | female | `…/a95-mizu.vrm` |
 | a96-pee-aruako | female | `…/a96-pee-aruako.vrm` |
 | a97-pee-saaya | female | `…/a97-pee-saaya.vrm` |
@@ -55,7 +55,7 @@ Source of truth: `apps/web/lib/want-roster.json` → generated `apps/web/lib/cha
 | a104-simplebrownsailorjk | female | `…/a104-simplebrownsailorjk.vrm` |
 | a105-serizawa-aoi | female | `…/a105-serizawa-aoi.vrm` |
 | a106-auroragradhairjk | female | `…/a106-auroragradhairjk.vrm` |
-| a107-dm-office-casual | female | `…/a107-dm-office-casual.vrm` |
+| a107-dm-office-casual | male | `…/a107-dm-office-casual.vrm` |
 | a109-riona | female | `…/a109-riona.vrm` |
 | a112-mahochan-jk | female | `…/a112-mahochan-jk.vrm` |
 | a114-sailor-cardigan-girl | female | `…/a114-sailor-cardigan-girl.vrm` |

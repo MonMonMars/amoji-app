@@ -26,6 +26,7 @@ import {
   t, type Prefs, type StrKey,
 } from '../lib/prefs';
 import { LangChips } from './selectors';
+import VoicePicker from './VoicePicker';
 import ModelThumb from './ModelThumb';
 import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, testOpenAiVoice, VOICE_TIER_LABEL } from '../lib/voice';
 import { VOLUME_STEPS, type VolumeStep } from '../lib/audio-levels';
@@ -353,6 +354,13 @@ export default function SettingsSheet({
           </Section>
 
           <Section title={`🔊 ${t(lang, 'settingsVoice')}`}>
+            <VoicePicker
+              lang={lang}
+              characterId={me.id}
+              companionGender={me.gender}
+              accent={accent}
+              onLang={(next) => onChange({ lang: next })}
+            />
             <div className={row}>
               <span className={label}>🔊 {t(lang, 'voiceReplies')}</span>
               <Toggle
