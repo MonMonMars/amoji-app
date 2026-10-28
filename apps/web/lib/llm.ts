@@ -2,6 +2,7 @@ import { analyzeText } from '@amoji/emotion-core';
 import type { EmotionId } from '@amoji/emotion-core';
 import { withQuestion } from './follow-up';
 import { worldBlock } from './live-tools';
+import { shapeCompanionReply } from './reply-shape';
 
 export interface ChatMessage { role: 'user' | 'assistant' | 'system'; content: string }
 export interface ChatOptions { language?: string; persona?: string; memory?: string; world?: string }
@@ -37,6 +38,10 @@ the user is clearly saying goodbye — never leave them without something to ans
 Positivity: sunny, encouraging company, always on the user's side. Cheer them up
 gently when they're down, celebrate little wins, actually laugh (haha! / 哈哈!)
 when something's funny. Never lecture, never judge.
+Coherence: answer what they just said, in the selected language only. Open with
+a clear sentence a friend would understand — no slogan, no fragment, no note
+to yourself. Finish each sentence before the next starts. Keep your personality,
+and stay on topic.
 Do not write stage directions, asterisks, markdown, or code. Spoken words only.
 End every reply with a line: [emotion:{"<emotion>":0..1,...}] using any of: joy, sadness,
 anger, fear, disgust, surprise, neutral, love, embarrassment, pride, shame, excitement,
@@ -82,7 +87,8 @@ export class OpenAiLlm implements LlmPort {
     const data = await res.json() as { choices: Array<{ message: { content: string } }> };
     const content = data.choices[0]?.message.content ?? '';
     const hints = parseEmotionHints(content);
-    const reply = withQuestion(content.replace(/\[emotion:\{[^}]*\}\]/, '').trim() || '…', opts?.language);
+    const spoken = shapeCompanionReply(content.replace(/\[emotion:\{[^}]*\}\]/g, ''));
+    const reply = withQuestion(spoken || '…', opts?.language);
     return { reply, emotionHints: hints };
   }
 }
@@ -103,7 +109,8 @@ export class PollinationsLlm implements LlmPort {
     const content = data.choices?.[0]?.message.content ?? '';
     if (!content) throw new Error('pollinations empty');
     const hints = parseEmotionHints(content);
-    const reply = withQuestion(content.replace(/\[emotion:\{[^}]*\}\]/, '').trim() || '…', opts?.language);
+    const spoken = shapeCompanionReply(content.replace(/\[emotion:\{[^}]*\}\]/g, ''));
+    const reply = withQuestion(spoken || '…', opts?.language);
     return { reply, emotionHints: hints };
   }
 }
