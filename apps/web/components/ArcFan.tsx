@@ -68,6 +68,7 @@ export default function ArcFan<T extends { id: string }>({
   items,
   selectedId,
   onSelect,
+  onConfirm,
   ariaLabel,
   size,
   label,
@@ -76,6 +77,8 @@ export default function ArcFan<T extends { id: string }>({
   items: T[];
   selectedId: string;
   onSelect: (id: string) => void;
+  /** Tap a card. Drag, wheel, and arrows keep using onSelect to move focus. */
+  onConfirm?: (id: string) => void;
   ariaLabel: string;
   /** portrait: character heads and language cards — one scale. scene: backgrounds. */
   size: 'portrait' | 'scene';
@@ -220,7 +223,8 @@ export default function ArcFan<T extends { id: string }>({
               aria-pressed={active}
               onClick={() => {
                 if (suppress.current) return;
-                onSelect(item.id);
+                if (onConfirm) onConfirm(item.id);
+                else onSelect(item.id);
               }}
               className={`fx-press ui-card relative h-full w-full overflow-hidden rounded-2xl border text-left ${
                 active ? 'border-white/90' : 'border-white/15'

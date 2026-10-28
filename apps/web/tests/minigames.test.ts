@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import MiniGameOverlay from '../components/MiniGameOverlay';
 import { EMOTION_IDS } from '@amoji/emotion-core';
+import { arcPose } from '../components/ArcFan';
 import { TUTORIAL_LINES } from '../lib/showcase';
 import {
   CAM_LERP,
@@ -17,6 +18,10 @@ import {
   createTag,
   desktopTagAim,
   detectActionGame,
+  GAME_CARDS,
+  gameCardCopy,
+  miniGameModelCandidates,
+  resolveMiniGameCompanion,
   expressionFor,
   laneCamera,
   laneSwipeThreshold,
@@ -317,12 +322,53 @@ describe('clips, lines, and chat entry', () => {
     expect(TUTORIAL_LINES.en.join(' ').toLowerCase()).toContain('game');
   });
 
+  it('plays the selected female library companion, never a retired demo mesh', () => {
+    expect(resolveMiniGameCompanion('a01-shino').id).toBe('a01-shino');
+    expect(resolveMiniGameCompanion('a04-avatarsample-a').id).toBe('a04-avatarsample-a');
+    expect(resolveMiniGameCompanion('a98-ethan', 'a02-shibu').id).toBe('a02-shibu');
+    expect(resolveMiniGameCompanion('a98-ethan').id).toBe('a01-shino');
+    expect(resolveMiniGameCompanion('a24-hairsample-male', 'juno').id).toBe('a01-shino');
+    expect(resolveMiniGameCompanion('juno').id).toBe('a01-shino');
+    expect(resolveMiniGameCompanion('avatarsample-a', 'a10-agahomei-normal').id).toBe('a10-agahomei-normal');
+    expect(miniGameModelCandidates(resolveMiniGameCompanion('a98-ethan', 'a02-shibu').model)).toEqual([
+      'want/a02-shibu.vrm',
+    ]);
+    expect(miniGameModelCandidates('seed-san.vrm')).toEqual([]);
+    expect(miniGameModelCandidates('cast/juno.vrm')).toEqual([]);
+    expect(resolveMiniGameCompanion('a01-shino').gender).toBe('female');
+    expect(resolveMiniGameCompanion('a98-ethan', 'a02-shibu').gender).toBe('female');
+  });
+
+  it('offers Tag and Lane Dodge on the character-select card fan', () => {
+    expect(GAME_CARDS.map((card) => card.id)).toEqual(['tag', 'lane']);
+    expect(gameCardCopy('tag', 'ja').title).toBe('捕まえて！');
+    expect(gameCardCopy('lane', 'en').title).toBe('逃げて！');
+    const center = arcPose(0, 76);
+    const side = arcPose(1, 76);
+    expect(center.z).toBeGreaterThan(side.z);
+    expect(center.scale).toBeGreaterThan(side.scale);
+    const root = path.resolve(here, '..');
+    const page = fs.readFileSync(path.join(root, 'app/chat/page.tsx'), 'utf8');
+    const picker = fs.readFileSync(path.join(root, 'components/MiniGamePicker.tsx'), 'utf8');
+    const fan = fs.readFileSync(path.join(root, 'components/ArcFan.tsx'), 'utf8');
+    expect(page).toContain('MiniGameMenuButton');
+    expect(picker).toContain('minigame-menu');
+    expect(page).toContain('MiniGamePicker');
+    expect(picker).toContain('ArcFan');
+    expect(picker).toContain('onConfirm');
+    expect(fan).toContain('onConfirm');
+  });
+
   it('stays on the existing canvas, kinematic, and pauses while hidden', () => {
     const root = path.resolve(here, '..');
     const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
     const overlay = fs.readFileSync(path.join(root, 'components/MiniGameOverlay.tsx'), 'utf8');
     const chat = fs.readFileSync(path.join(root, 'components/ChatPanel.tsx'), 'utf8');
     expect(canvas).toContain('getMiniGameView');
+    expect(canvas).toContain('libraryOnly');
+    expect(canvas).toContain('miniGameModelCandidates');
+    const page = fs.readFileSync(path.join(root, 'app/chat/page.tsx'), 'utf8');
+    expect(page).toContain('resolveMiniGameCompanion');
     expect(canvas).toContain('CAM_LERP');
     expect(canvas).toContain('visibilitychange');
     expect(overlay).toContain('visibilitychange');
@@ -485,7 +531,9 @@ describe('mini-game host controls', () => {
     expect(gate).toBeLessThan(history);
     expect(chat).toContain('setMiniGameChromeHidden');
     expect(chat).toContain('subscribeMiniGameOpen');
-    expect(page).toContain('MiniGameMenu');
+    expect(page).toContain('MiniGamePicker');
+    expect(page).toContain('requestOpenMiniGame');
+    expect(page).not.toContain('components/MiniGameMenu');
     expect(page).toContain('subscribeMiniGameChrome');
     expect(page).toContain('gameChromeHidden');
   });

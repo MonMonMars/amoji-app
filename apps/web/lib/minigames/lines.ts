@@ -65,6 +65,9 @@ export interface MiniUiCopy {
   start: string;
   score: string;
   menu: string;
+  menuHint: string;
+  /** Label on the focused game card. A tap opens the title screen. */
+  play: string;
 }
 
 const UI: Record<Lang, MiniUiCopy> = {
@@ -79,6 +82,8 @@ const UI: Record<Lang, MiniUiCopy> = {
     start: 'START',
     score: '分數',
     menu: '小遊戲',
+    menuHint: '中間嗰張喺前面 · 撳卡打開',
+    play: '打開',
   },
   zh: {
     again: '再来',
@@ -91,6 +96,8 @@ const UI: Record<Lang, MiniUiCopy> = {
     start: 'START',
     score: '分数',
     menu: '小游戏',
+    menuHint: '中间那张在前面 · 点卡片打开',
+    play: '打开',
   },
   ja: {
     again: 'もう一回',
@@ -103,6 +110,8 @@ const UI: Record<Lang, MiniUiCopy> = {
     start: 'START',
     score: 'スコア',
     menu: 'ミニゲーム',
+    menuHint: '真ん中のカードが手前 · タップで開く',
+    play: '開く',
   },
   en: {
     again: 'Again',
@@ -115,6 +124,8 @@ const UI: Record<Lang, MiniUiCopy> = {
     start: 'START',
     score: 'Score',
     menu: 'Mini-games',
+    menuHint: 'The center card is in front · tap a card to open',
+    play: 'Open',
   },
 };
 
