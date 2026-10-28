@@ -33,6 +33,18 @@ export function portraitCardBox(stageHeight: number): { width: number; height: n
   return { width, height, step };
 }
 
+/**
+ * Language portraits. Shortest of the three select rows: under the scene
+ * card (6.1rem / ~98px, 7.2rem from sm) and at most half a character card
+ * (portraitCardBox(320) is ~298px). Same 0.8 portrait ratio as the bigheads.
+ */
+export function compactCardBox(): { width: number; height: number; step: number } {
+  const height = 88;
+  const width = Math.round(height * 0.8);
+  const step = Math.max(24, Math.round(width * 0.55));
+  return { width, height, step };
+}
+
 /** Keep the center scale inside the fan, just under the name. */
 export function portraitTop(stageHeight: number, cardHeight: number): number {
   const stage = stageHeight > 0 ? stageHeight : 360;
@@ -80,8 +92,8 @@ export default function ArcFan<T extends { id: string }>({
   /** Tap a card. Drag, wheel, and arrows keep using onSelect to move focus. */
   onConfirm?: (id: string) => void;
   ariaLabel: string;
-  /** portrait: character heads and language cards — one scale. scene: backgrounds. */
-  size: 'portrait' | 'scene';
+  /** portrait: large character heads. compact: small language cards. scene: backgrounds. */
+  size: 'portrait' | 'compact' | 'scene';
   label: (item: T) => string;
   children: (item: T, active: boolean) => ReactNode;
 }) {
@@ -94,8 +106,9 @@ export default function ArcFan<T extends { id: string }>({
   const [stageH, setStageH] = useState(0);
 
   const index = Math.max(0, items.findIndex((item) => item.id === selectedId));
-  const portrait = portraitCardBox(stageH);
-  const step = size === 'portrait' ? portrait.step : (compact ? 58 : 86);
+  const portrait = size === 'compact' ? compactCardBox() : portraitCardBox(stageH);
+  const step = size === 'scene' ? (compact ? 58 : 86) : portrait.step;
+  const centerScale = size === 'compact' ? 1.04 : size === 'portrait' ? PORTRAIT_CENTER_SCALE : 1.1;
   const reach = compact ? 2 : 4;
 
   useLayoutEffect(() => {
@@ -174,12 +187,14 @@ export default function ArcFan<T extends { id: string }>({
     drag.current = null;
   };
 
-  const cardClass = size === 'portrait'
-    ? ''
-    : 'top-1 h-[6.1rem] w-[8.2rem] sm:h-[7.2rem] sm:w-[10.4rem]';
+  const cardClass = size === 'scene'
+    ? 'top-1 h-[6.1rem] w-[8.2rem] sm:h-[7.2rem] sm:w-[10.4rem]'
+    : '';
   const stageClass = size === 'portrait'
     ? 'absolute inset-0 z-20'
-    : 'relative z-10 h-[8.6rem] w-full sm:h-[10.4rem]';
+    : size === 'compact'
+      ? 'relative z-10 h-[6.6rem] w-full'
+      : 'relative z-10 h-[8.6rem] w-full sm:h-[10.4rem]';
 
   const arrow = (enabled: boolean) =>
     'fx-press-lite absolute top-1/2 z-[90] flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white/40 bg-black/75 text-white shadow-[0_4px_16px_rgba(0,0,0,0.6)] backdrop-blur-md ' +
@@ -199,16 +214,16 @@ export default function ArcFan<T extends { id: string }>({
       {items.map((item, i) => {
         const offset = i - index;
         if (Math.abs(offset) > reach + 1) return null;
-        const pose = arcPose(offset, step, size === 'portrait' ? PORTRAIT_CENTER_SCALE : 1.1);
+        const pose = arcPose(offset, step, centerScale);
         const active = item.id === selectedId;
         return (
           <div
             key={item.id}
             className={`arc-card absolute left-1/2 ${cardClass}`}
             style={{
-              width: size === 'portrait' ? portrait.width : undefined,
-              height: size === 'portrait' ? portrait.height : undefined,
-              top: size === 'portrait' ? portraitTop(stageH, portrait.height) : undefined,
+              width: size === 'scene' ? undefined : portrait.width,
+              height: size === 'scene' ? undefined : portrait.height,
+              top: size === 'portrait' ? portraitTop(stageH, portrait.height) : size === 'compact' ? 6 : undefined,
               transform: `translateX(calc(-50% + ${pose.x}px)) translateY(${pose.y}px) rotate(${pose.rot}deg) scale(${pose.scale})`,
               zIndex: pose.z,
               opacity: pose.opacity,

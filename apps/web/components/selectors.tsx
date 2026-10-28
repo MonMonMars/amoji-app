@@ -63,8 +63,8 @@ export function BackgroundGrid({ lang, value, onChange }: { lang: Lang; value: s
   );
 }
 
-/** Face of a language card. The parent supplies the portrait frame. */
-export function LangCardFace({ lang, active }: { lang: LangDef; active: boolean }) {
+/** Face of a language card. The parent supplies the portrait frame. `compact` shrinks the badge and name for the small select row; the glyph still tracks the card via container query. */
+export function LangCardFace({ lang, active, compact = false }: { lang: LangDef; active: boolean; compact?: boolean }) {
   return (
     <>
       <span
@@ -81,13 +81,17 @@ export function LangCardFace({ lang, active }: { lang: LangDef; active: boolean 
         </span>
       </span>
       <span
-        className="absolute right-2 top-2 z-20 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-neutral-950 px-1 text-[11px] font-extrabold text-neutral-950 shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
+        className={`absolute z-20 flex items-center justify-center rounded-full border-2 border-neutral-950 font-extrabold text-neutral-950 shadow-[0_2px_8px_rgba(0,0,0,0.6)] ${
+          compact ? 'right-1 top-1 h-4 min-w-4 px-0.5 text-[8px]' : 'right-2 top-2 h-6 min-w-6 px-1 text-[11px]'
+        }`}
         style={{ background: lang.accent }}
       >
         {lang.mark}
       </span>
-      <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-2 pb-2 pt-8 text-center">
-        <span className="block truncate text-sm font-semibold leading-tight sm:text-base">{lang.native}</span>
+      <span className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent text-center ${
+        compact ? 'px-1 pb-1 pt-4' : 'px-2 pb-2 pt-8'
+      }`}>
+        <span className={`block truncate font-semibold leading-tight ${compact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>{lang.native}</span>
       </span>
       {active && (
         <span
