@@ -170,11 +170,13 @@ describe('selection layout', () => {
     const row = read('../components/TtsVoiceRow.tsx');
     expect(row).toContain('selectTtsButtons');
     expect(row).toContain('saveVoicePick');
-    expect(row).toContain('playSelectGreeting');
+    expect(row).toContain('playVoiceGreeting');
     expect(row).toContain('text-[10px]');
     expect(row).toContain('rounded-full');
+    expect(row).toContain('moreEnginesLater');
+    expect(row).toContain('voiceShowAll');
     expect(row).not.toContain('ArcFan');
-    expect(board).toContain('playSelectGreeting');
+    expect(board).toContain('playVoiceGreeting');
     expect(board).not.toContain('stopSpeaking');
     expect(board).not.toContain('CompanionCanvas');
   });

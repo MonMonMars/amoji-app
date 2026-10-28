@@ -6,7 +6,7 @@ import { INTERJECTIONS } from '../lib/fillers';
 import { pickLaugh } from '../lib/laugh';
 import { CHARACTERS, type Lang } from '../lib/prefs';
 import { LOADING_STUBS } from '../lib/thinking-lines';
-import { EDGE_VOICE_BUTTONS } from '../lib/voice-catalog';
+import { EDGE_VOICE_BUTTONS, browserVoicesForLang } from '../lib/voice-catalog';
 import {
   EMOTION_CLIP_KINDS,
   FILLER_CLIP_TEXT,
@@ -21,7 +21,7 @@ import {
   nextGreetingKind,
   resetGreetingRotation,
 } from '../lib/voice-clips';
-import { FUTURE_TTS_ENGINES, selectTtsButtons, ttsButtonKey } from '../lib/tts-button-registry';
+import { TIER_A_COUNTS, selectTtsButtons, ttsButtonKey } from '../lib/tts-button-registry';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const LANGS: Lang[] = ['yue', 'zh', 'ja', 'en'];
@@ -96,18 +96,73 @@ describe('emotion clips', () => {
 });
 
 describe('TTS button registry', () => {
-  it('fills the select row with Edge voices and leaves room for later engines', () => {
+  const IDS = [
+    'zh-HK-WanLungNeural',
+    'zh-HK-HiuMaanNeural',
+    'zh-HK-HiuGaaiNeural',
+    'zh-CN-YunjianNeural',
+    'zh-CN-YunxiNeural',
+    'zh-CN-YunyangNeural',
+    'zh-CN-YunxiaNeural',
+    'zh-CN-XiaoxiaoNeural',
+    'zh-CN-XiaoyiNeural',
+    'ja-JP-KeitaNeural',
+    'ja-JP-NanamiNeural',
+    'en-US-GuyNeural',
+    'en-US-AndrewNeural',
+    'en-US-BrianNeural',
+    'en-US-ChristopherNeural',
+    'en-US-EricNeural',
+    'en-US-RogerNeural',
+    'en-US-SteffanNeural',
+    'en-US-AndrewMultilingualNeural',
+    'en-US-BrianMultilingualNeural',
+    'en-US-AriaNeural',
+    'en-US-JennyNeural',
+    'en-US-AvaNeural',
+    'en-US-EmmaNeural',
+    'en-US-MichelleNeural',
+    'en-US-AnaNeural',
+    'en-US-AvaMultilingualNeural',
+    'en-US-EmmaMultilingualNeural',
+  ];
+
+  it('lists the 28 Tier A Edge voices with the sheet labels', () => {
     const buttons = selectTtsButtons();
-    expect(buttons).toHaveLength(EDGE_VOICE_BUTTONS.length);
+    expect(buttons).toHaveLength(28);
+    expect(buttons.map((b) => b.id)).toEqual(IDS);
     expect(buttons.map((b) => b.id)).toEqual(EDGE_VOICE_BUTTONS.map((b) => b.id));
-    expect(buttons.map((b) => b.label)).toContain('cantonese female 1');
-    expect(buttons.map((b) => b.label)).toContain('japanese male 1');
+    expect(buttons.map((b) => b.label)).toEqual(EDGE_VOICE_BUTTONS.map((b) => b.label));
+    expect(buttons.map((b) => b.label)).toContain('Cantonese female 1');
+    expect(buttons.map((b) => b.label)).toContain('Japanese male 1');
+    expect(buttons.map((b) => b.label)).toContain('Mandarin male 4');
+    expect(buttons.map((b) => b.label)).toContain('English female 6');
     expect(buttons.every((b) => b.engine === 'edge' && b.shipping)).toBe(true);
-    expect(buttons.every((b) => b.label === b.label.toLowerCase())).toBe(true);
-    expect(new Set(buttons.map(ttsButtonKey)).size).toBe(buttons.length);
-    expect(FUTURE_TTS_ENGINES.map((e) => e.engine)).toEqual(
-      expect.arrayContaining(['kokoro', 'piper', 'melotts']),
-    );
-    expect(selectTtsButtons().some((b) => b.engine === 'kokoro')).toBe(false);
+    expect(new Set(buttons.map(ttsButtonKey)).size).toBe(28);
+    expect(selectTtsButtons('yue')).toHaveLength(TIER_A_COUNTS.yue);
+    expect(selectTtsButtons('zh')).toHaveLength(TIER_A_COUNTS.zh);
+    expect(selectTtsButtons('ja')).toHaveLength(TIER_A_COUNTS.ja);
+    expect(selectTtsButtons('en')).toHaveLength(TIER_A_COUNTS.en);
+    expect(selectTtsButtons('yue').map((b) => b.label)).toEqual([
+      'Cantonese male 1',
+      'Cantonese female 1',
+      'Cantonese female 2',
+    ]);
+    expect(buttons.some((b) => b.id.startsWith('kokoro') || b.engine !== 'edge')).toBe(false);
+  });
+
+  it('filters browser voices by language tag and ignores the voice name', () => {
+    const voices = [
+      { lang: 'zh-HK', name: 'Whatever' },
+      { lang: 'zh-CN', name: 'David' },
+      { lang: 'ja-JP', name: 'Guy' },
+      { lang: 'en-US', name: 'HiuMaan' },
+      { lang: 'en-GB', name: 'Libby' },
+      { lang: 'yue-HK', name: 'Local' },
+    ];
+    expect(browserVoicesForLang(voices, 'yue').map((v) => v.lang)).toEqual(['zh-HK', 'yue-HK']);
+    expect(browserVoicesForLang(voices, 'zh').map((v) => v.lang)).toEqual(['zh-CN']);
+    expect(browserVoicesForLang(voices, 'ja').map((v) => v.lang)).toEqual(['ja-JP']);
+    expect(browserVoicesForLang(voices, 'en').map((v) => v.lang)).toEqual(['en-US', 'en-GB']);
   });
 });
