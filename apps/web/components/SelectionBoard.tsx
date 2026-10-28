@@ -1,18 +1,20 @@
 'use client';
 // Shared selection board for /select and /change.
-// Character picks are overlapping 2D bighead cards (local stills when packed,
-// otherwise the release poster). Language uses that same portrait fan, so its
-// cards track the bighead size. Scene picks are 2D stills lettered A, B, C…
-// The painted backdrop fills the stage. START / Change writes prefs, then
-// /chat loads the chosen character. This page does not stream a model.
+// Character picks are the large 2D bighead fan (local stills when packed,
+// otherwise the release poster). Scene cards stay the scene size. Language
+// uses that same portrait card, shrunk so it is the smallest row. A last row
+// of small TTS buttons persists the Edge voice pin. START / Change writes
+// prefs, then /chat loads the chosen character. This page does not stream a model.
 import { useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import ArcFan from './ArcFan';
 import SceneBackdrop from './SceneBackdrop';
 import ModelThumb from './ModelThumb';
+import TtsVoiceRow from './TtsVoiceRow';
 import { LangCardFace } from './selectors';
 import { assetUrl } from '../lib/asset';
 import { bigheadPath } from '../lib/bighead';
+import { playSelectGreeting } from '../lib/voice';
 import {
   BACKGROUNDS, CHARACTERS, LANGS,
   backgroundById, backgroundLetter, characterById, t, usePrefs,
@@ -97,7 +99,11 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
               size="portrait"
               items={cast}
               selectedId={live.character}
-              onSelect={(id) => pick({ character: id })}
+              onSelect={(id) => {
+                pick({ character: id });
+                const chosen = cast.find((item) => item.id === id);
+                if (chosen) playSelectGreeting(chosen.id, lang, chosen.gender);
+              }}
               label={(c) => c.name}
             >
               {(c, active) => {
@@ -128,24 +134,6 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
             </ArcFan>
           </div>
 
-          <h2 className="mb-1 mt-2 shrink-0 text-center text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
-            {t(lang, 'chooseLanguage')}
-          </h2>
-          {/* Same flex-1 portrait stage as the character fan, so portraitCardBox matches. */}
-          <div className="relative mx-auto min-h-0 w-full flex-1">
-            <ArcFan
-              ariaLabel="languages"
-              size="portrait"
-              items={LANGS}
-              selectedId={live.lang}
-              onSelect={(id) => {
-                if (id === 'en' || id === 'yue' || id === 'zh' || id === 'ja') pick({ lang: id });
-              }}
-              label={(l) => l.native}
-            >
-              {(l, active) => <LangCardFace lang={l} active={active} />}
-            </ArcFan>
-          </div>
         </section>
 
         <div className="flex w-full shrink-0 flex-col items-center bg-gradient-to-t from-black/75 via-black/40 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6">
@@ -193,6 +181,32 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                 }}
               </ArcFan>
             </section>
+
+            <section className="pointer-events-auto w-full min-w-0">
+              <h2 className="mb-1 text-center text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
+                {t(lang, 'chooseLanguage')}
+              </h2>
+              <ArcFan
+                ariaLabel="languages"
+                size="compact"
+                items={LANGS}
+                selectedId={live.lang}
+                onSelect={(id) => {
+                  if (id === 'en' || id === 'yue' || id === 'zh' || id === 'ja') pick({ lang: id });
+                }}
+                label={(l) => l.native}
+              >
+                {(l, active) => <LangCardFace lang={l} active={active} compact />}
+              </ArcFan>
+            </section>
+
+            <TtsVoiceRow
+              lang={lang}
+              characterId={character.id}
+              companionGender={character.gender}
+              accent={character.accent}
+              onLang={(next) => pick({ lang: next })}
+            />
 
             <button
               onClick={confirm}

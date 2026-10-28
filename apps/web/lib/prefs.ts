@@ -120,7 +120,7 @@ export const LANGS: LangDef[] = [
 ];
 
 export type StrKey =
-  | 'tagline' | 'meetCta' | 'chooseCharacter' | 'chooseBackground' | 'chooseLanguage'
+  | 'tagline' | 'meetCta' | 'chooseCharacter' | 'chooseBackground' | 'chooseLanguage' | 'chooseVoice'
   | 'startChat' | 'back' | 'settings' | 'sayHi' | 'typing' | 'tapHint'
   | 'bgVoid' | 'bgAurora' | 'bgEmber' | 'bgSakura' | 'bgAbyss' | 'bgRain' | 'bgSunset' | 'bgMeadow'
   | 'bgCloudsea' | 'bgNeon' | 'bgSnowmoon' | 'bgGalaxy'
@@ -170,6 +170,7 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   chooseCharacter: { en: 'Choose your companion', yue: '揀你嘅小伙伴', zh: '选择你的伙伴', ja: '相棒を選ぶ' },
   chooseBackground: { en: 'Choose a scene', yue: '揀個場景', zh: '选择场景', ja: '場所を選ぶ' },
   chooseLanguage: { en: 'Choose a language', yue: '揀語言', zh: '选择语言', ja: '言語を選ぶ' },
+  chooseVoice: { en: 'Voice', yue: '聲線', zh: '声音', ja: '声' },
   startChat: { en: 'Start chatting', yue: '開始傾偈', zh: '开始聊天', ja: '話し始める' },
   back: { en: 'Back', yue: '返回', zh: '返回', ja: '戻る' },
   settings: { en: 'Settings', yue: '設定', zh: '设置', ja: '設定' },

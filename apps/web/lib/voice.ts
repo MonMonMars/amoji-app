@@ -83,6 +83,8 @@ import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
 import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripVoicedGlyphs } from './speak-text';
 import { edgeSampleText, isMaleNeuralVoice, synthNameConflicts, synthNameList, voiceNameMatches } from './voice-catalog';
 import { LineQueue, speechRemainder } from './speech-queue';
+import { clipFile, emotionClipKind, greetingText, nextGreetingKind } from './voice-clips';
+import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
 export { speechRemainder };
 import { edgeCastVoice } from './edge-cast';
 import { speakEdge, stopEdge, getTtsProxy } from './edge-tts';
@@ -1213,13 +1215,15 @@ function haltSynthQueue(): void {
 }
 
 interface SpeechJob {
-  kind: 'speak' | 'sing';
+  kind: 'speak' | 'sing' | 'clip';
   text: string;
   characterId: string;
   lang: Lang;
   emotionHints?: Record<string, number>;
   leadOverride?: VocalLead;
   intensity: number;
+  /** Premade file for kind 'clip'. Played to the end before the next line. */
+  clipFile?: string;
 }
 
 const lineQueue = new LineQueue<SpeechJob>();
@@ -1270,7 +1274,9 @@ function drainSpeech(): void {
   const job = next.item;
   const run = job.kind === 'sing'
     ? performSing(job.text, job.characterId, job.lang)
-    : performSpeak(job.text, job.characterId, job.lang, job.emotionHints, job.leadOverride, job.intensity);
+    : job.kind === 'clip'
+      ? performClip(job)
+      : performSpeak(job.text, job.characterId, job.lang, job.emotionHints, job.leadOverride, job.intensity);
   void run.finally(() => {
     lineQueue.finished(next.epoch);
     if (lineQueue.epochNow() === next.epoch) drainSpeech();
@@ -1281,6 +1287,7 @@ export function stopSpeaking(): void {
   lineQueue.interrupt();
   cancelIdleWaiters();
   stopThinkingSound();
+  stopVoiceClip();
   stopOpenAi();
   stopEdge();
   stopGtts();
@@ -1398,11 +1405,15 @@ function performSpeak(
   const amp = 1 + 0.5 * Math.max(0, intensity - 1);
   // strong feelings get an audible tic (giggle/sigh/gasp) before the words —
   // unless the caller supplies its own lead (e.g. a guaranteed poke ouch)
-  const tic = leadOverride
+  let tic = leadOverride
     ? prepareSpokenLead(leadOverride)
     : prepareSpokenLead(pickInterjection(emotion, value, lang));
-  const heard = tic ? `${tic.text} ${text}` : text;
-  const onHeard = () => { noteSpeechStarted(heard); };
+  const speechEpoch = lineQueue.epochNow();
+  const speechAlive = () => lineQueue.epochNow() === speechEpoch;
+  const onHeard = () => { noteSpeechStarted(tic ? `${tic.text} ${text}` : text); };
+
+  const beginTts = () => {
+  if (!speechAlive()) { settle(); return; }
 
   // Free chain: Edge (locale + gender) → speechSynthesis. Yue adds
   // canto-tts-nano only when that runtime is bundled. OpenAI is opt-in and
@@ -1500,7 +1511,64 @@ function performSpeak(
   }
 
   runFreeChain();
+  };
+
+  const leadKind = tic ? emotionClipKind(tic.text, 'lead') : null;
+  const lineKind = leadKind ? null : emotionClipKind(text, 'line');
+  const clipKind = leadKind ?? lineKind;
+  if (clipKind) {
+    const gender = characterVoiceGender(characterId);
+    const caption = leadKind && tic ? tic.text : text;
+    void playVoiceClip(clipFile(lang, gender, clipKind), caption, () => markVoiceStarted()).then(() => {
+      if (!speechAlive()) { settle(); return; }
+      if (lineKind) { settle(); return; }
+      tic = undefined;
+      beginTts();
+    }).catch((err: unknown) => {
+      if (!speechAlive() || (err as Error | undefined)?.message === 'canceled') { settle(); return; }
+      beginTts();
+    });
+  } else {
+    beginTts();
+  }
   });
+}
+
+function performClip(job: SpeechJob): Promise<void> {
+  return new Promise((resolve) => {
+    const epoch = lineQueue.epochNow();
+    stopThinkingSound();
+    unlockAudio();
+    const file = job.clipFile;
+    if (!file || !voiceEnabled()) { resolve(); return; }
+    void playVoiceClip(file, job.text, () => markVoiceStarted()).then(() => resolve()).catch((err: unknown) => {
+      if (lineQueue.epochNow() !== epoch || (err as Error | undefined)?.message === 'canceled') {
+        resolve();
+        return;
+      }
+      void performSpeak(job.text, job.characterId, job.lang).then(() => resolve());
+    });
+  });
+}
+
+/**
+ * Short greeting when a character or a TTS button is pressed.
+ * Queued behind whatever is already speaking. Only stopSpeaking() — the
+ * user's own turn — cuts it.
+ */
+export function playSelectGreeting(characterId: string, lang: Lang, gender: 'female' | 'male'): void {
+  if (!voiceEnabled()) return;
+  const kind = nextGreetingKind();
+  unlockAudio();
+  lineQueue.enqueue({
+    kind: 'clip',
+    text: greetingText(lang, kind),
+    characterId,
+    lang,
+    intensity: 1,
+    clipFile: clipFile(lang, gender, kind),
+  });
+  drainSpeech();
 }
 
 /**

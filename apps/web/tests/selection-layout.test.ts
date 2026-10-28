@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PORTRAIT_CENTER_SCALE, arcPose, portraitCardBox, portraitTop } from '../components/ArcFan';
+import { PORTRAIT_CENTER_SCALE, arcPose, compactCardBox, portraitCardBox, portraitTop } from '../components/ArcFan';
 import { BIGHEAD_IDS, bigheadPath } from '../lib/bighead';
 import { CHARACTERS, LANGS, STRINGS } from '../lib/prefs';
 
@@ -123,7 +123,7 @@ describe('selection layout', () => {
     expect(read('../components/ModelThumb.tsx')).toContain('onError');
   });
 
-  it('fans language cards on the character portrait scale', () => {
+  it('keeps language cards in the character style, smaller than scenes', () => {
     expect(LANGS.map((l) => l.id)).toEqual(['yue', 'zh', 'ja', 'en']);
     for (const lang of LANGS) {
       expect(lang.glyph.length).toBeGreaterThan(0);
@@ -133,11 +133,33 @@ describe('selection layout', () => {
     expect(board).not.toContain('HScrollRow');
     expect(board).not.toContain('rounded-full px-3');
     expect(board).toContain('ariaLabel="languages"');
-    expect(board).toContain('size="portrait"');
-    expect(board.split('size="portrait"').length - 1).toBe(2);
-    expect(board.match(/relative mx-auto[^"]*flex-1/g)).toHaveLength(2);
+    expect(board).toContain('size="compact"');
+    expect(board.split('size="portrait"').length - 1).toBe(1);
+    expect(board).toContain('size="scene"');
+    expect(board.match(/relative mx-auto[^"]*flex-1/g)).toHaveLength(1);
     expect(board).toContain('<LangCardFace');
+    expect(board).toContain('compact');
     expect(board).toContain('pick({ lang: id })');
+    const characters = board.indexOf('ariaLabel="characters"');
+    const scenes = board.indexOf('ariaLabel="scenes"');
+    const languages = board.indexOf('ariaLabel="languages"');
+    const voices = board.indexOf('<TtsVoiceRow');
+    const start = board.indexOf('fx-start');
+    expect(characters).toBeGreaterThan(-1);
+    expect(characters).toBeLessThan(scenes);
+    expect(scenes).toBeLessThan(languages);
+    expect(languages).toBeLessThan(voices);
+    expect(voices).toBeLessThan(start);
+    const fan = read('../components/ArcFan.tsx');
+    expect(fan).toContain('h-[6.1rem] w-[8.2rem]');
+    expect(fan).toContain('sm:h-[7.2rem] sm:w-[10.4rem]');
+    expect(fan).toContain('h-[8.6rem]');
+    const langCard = compactCardBox();
+    const halfCharacter = portraitCardBox(320).height / 2;
+    expect(langCard.height).toBeLessThanOrEqual(halfCharacter);
+    expect(langCard.height).toBeLessThan(6.1 * 16);
+    expect(langCard.width / langCard.height).toBeCloseTo(0.8, 1);
+    expect(portraitCardBox(480).height).toBeGreaterThan(langCard.height * 2);
     const selectors = read('../components/selectors.tsx');
     expect(selectors).toContain('export function LangCardFace');
     expect(selectors).toContain('ui-card');
@@ -145,6 +167,16 @@ describe('selection layout', () => {
     expect(selectors).toContain('rounded-2xl');
     expect(selectors).toContain('aspect-[6/8.4]');
     expect(selectors).not.toContain('rounded-full px-4');
+    const row = read('../components/TtsVoiceRow.tsx');
+    expect(row).toContain('selectTtsButtons');
+    expect(row).toContain('saveVoicePick');
+    expect(row).toContain('playSelectGreeting');
+    expect(row).toContain('text-[10px]');
+    expect(row).toContain('rounded-full');
+    expect(row).not.toContain('ArcFan');
+    expect(board).toContain('playSelectGreeting');
+    expect(board).not.toContain('stopSpeaking');
+    expect(board).not.toContain('CompanionCanvas');
   });
 
   it('gives selection controls a press flash and a short route transition', () => {
