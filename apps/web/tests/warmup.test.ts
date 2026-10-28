@@ -41,6 +41,13 @@ describe('pickWarmupLine', () => {
     expect(WARMUP_BANKS.fr).toBeUndefined();
     expect(WARMUP_BANKS.yue).toContain(pickWarmupLine('jun', 'fr', 0, 'salut'));
   });
+  it('starts with a short stub and saves search for a longer web wait', () => {
+    const first = pickWarmupLine('jun', 'en', 0, "what's the weather here?");
+    expect(['um……', 'ha……', 'um…', 'hmm……']).toContain(first);
+    expect(pickWarmupLine('jun', 'en', 2, "what's the weather here?")).toBe('um…… let me search the web.');
+    expect(pickWarmupLine('jun', 'en', 2, 'how are you?')).toBe('um…… let me think.');
+    expect(pickWarmupLine('jun', 'yue', 1, '天氣點呀')).toBe('嗯……等我上網搵下。');
+  });
   it('mood nudges the pick without breaking determinism', () => {
     const sad = pickWarmupLine('jun', 'zh', 2, '我唔開心', 'sad');
     expect(sad).toBe(pickWarmupLine('jun', 'zh', 2, '我唔開心', 'sad'));

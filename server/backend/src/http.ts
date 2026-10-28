@@ -24,6 +24,36 @@ export interface BackendOptions {
   synthesize?: (ssml: string) => Promise<Uint8Array>;
   /** `offline` never calls a model. Default follows AMOJI_LLM_PROVIDER. */
   llm?: 'offline' | 'live';
+  /**
+   * Fills weather / news when the client did not send usable live facts.
+   * The production process wires this to keyless Open-Meteo + Wikipedia.
+   * Tests omit it so chat stays offline.
+   */
+  gatherWorld?: (
+    message: string,
+    language: string | undefined,
+    priorUser: string | undefined,
+    clientIp: string | undefined,
+  ) => Promise<{ prompt: string; spoken: string }>;
+}
+
+function clientIpOf(req: Request): string | undefined {
+  const xf = req.headers.get('x-forwarded-for');
+  if (xf) {
+    const first = xf.split(',')[0]?.trim();
+    if (first) return first;
+  }
+  const real = req.headers.get('x-real-ip');
+  return real?.trim() || undefined;
+}
+
+function worldIsThin(world: string | undefined): boolean {
+  const text = world?.trim() ?? '';
+  if (!text) return true;
+  if (/Weather:\s*-?\d+°C/i.test(text)) return false;
+  if (/(?:Light|Recent) news[^:\n]*:\s*[“"]/i.test(text)) return false;
+  if (/\bWeb:\s+\S/.test(text) && !/nothing useful/i.test(text)) return false;
+  return true;
 }
 
 function json(body: unknown, status = 200): Response {
@@ -102,7 +132,20 @@ export function createBackend(opts: BackendOptions): Backend {
       if (url.pathname === '/api/chat' && req.method === 'POST') {
         const parsed = parseChatBody(await readJson(req));
         if ('error' in parsed) return json(parsed, 400);
-        const result = await runChat(opts.db, session.userId, parsed, now(), complete);
+        let chatReq = parsed;
+        if (opts.gatherWorld && worldIsThin(chatReq.world)) {
+          try {
+            const prior = [...chatReq.history].reverse().find((m) => m.role === 'user')?.content;
+            const live = await opts.gatherWorld(chatReq.message, chatReq.language, prior, clientIpOf(req));
+            if (live.prompt && !worldIsThin(live.prompt)) {
+              const spoken = (chatReq.worldSpoken ?? live.spoken).slice(0, 600);
+              chatReq = { ...chatReq, world: live.prompt.slice(0, 1200), ...(spoken ? { worldSpoken: spoken } : {}) };
+            } else if (!chatReq.worldSpoken && live.spoken) {
+              chatReq = { ...chatReq, worldSpoken: live.spoken.slice(0, 600) };
+            }
+          } catch { /* chat still answers */ }
+        }
+        const result = await runChat(opts.db, session.userId, chatReq, now(), complete);
         return json(result);
       }
       if (url.pathname === '/api/tts' && req.method === 'POST') {

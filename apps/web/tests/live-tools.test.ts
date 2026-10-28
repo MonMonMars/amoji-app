@@ -87,6 +87,17 @@ describe('planTools', () => {
     expect(planTools('大阪の天気').placeQuery).toBe('大阪');
   });
 
+  it('treats latest news as recent headlines, without a location prompt', () => {
+    const plan = planTools('what is the latest news?');
+    expect(plan.news).toBe(true);
+    expect(plan.recent).toBe(true);
+    expect(plan.needsDevice).toBe(false);
+    expect(plan.searchQuery).toBeUndefined();
+    expect(planTools('news near me').recent).toBe(false);
+    expect(planTools('新聞').recent).toBe(false);
+    expect(planTools('最近新聞').recent).toBe(true);
+  });
+
   it('plans local news, topical news, and a web lookup separately', () => {
     const local = planTools('news near me');
     expect(local.news).toBe(true);
@@ -226,6 +237,36 @@ describe('gatherLiveContext', () => {
     expect(live.prompt).not.toContain('robber');
     expect(live.spoken).toContain('Weird lights');
     expect(live.spoken).not.toContain('{');
+  });
+
+  it('reads Wikipedia in-the-news when Google and rss2json are blocked', async () => {
+    let located = false;
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('news.google.com')) throw new Error('cors');
+      if (url.includes('rss2json.com')) return new Response('<html>Just a moment', { status: 403 });
+      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
+        return jsonRes({
+          news: [
+            { story: '<!--x--><a href="./Cat">A cat</a> wins a funny contest in town.' },
+            { story: '<b>A shooting</b> kills several people downtown.' },
+          ],
+        });
+      }
+      return jsonRes({}, 404);
+    };
+    const live = await gatherLiveContext('what is the latest news?', {
+      lang: 'en',
+      fetch: fetchImpl,
+      cache: new Map(),
+      locate: async () => { located = true; return HK; },
+    });
+    expect(located).toBe(false);
+    expect(live.prompt).toContain('Recent news');
+    expect(live.prompt).toContain('funny contest');
+    expect(live.prompt.toLowerCase()).not.toContain('shooting');
+    expect(live.spoken).toContain('funny contest');
+    expect(live.spoken).not.toContain('<');
   });
 
   it('falls back to rss2json when Google News blocks the browser', async () => {
