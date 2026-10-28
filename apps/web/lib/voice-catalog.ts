@@ -250,6 +250,26 @@ export function edgeVoiceId(locale: string, gender: VoiceGender): string {
   return hit?.id ?? (gender === 'male' ? 'en-US-GuyNeural' : 'en-US-JennyNeural');
 }
 
+/** BCP-47 prefixes for a companion language. No OS voice names. */
+export function browserLangPrefixes(locale: string): readonly string[] {
+  if (locale === 'yue') return ['zh-hk', 'yue'];
+  if (locale === 'zh') return ['zh-cn', 'zh-hans', 'cmn'];
+  if (locale === 'ja') return ['ja'];
+  return ['en'];
+}
+
+/**
+ * Runtime speechSynthesis fallback. Keeps voices whose lang tag matches the
+ * companion language. Does not look at voice names.
+ */
+export function browserVoicesForLang<T extends { lang: string }>(voices: readonly T[], locale: string): T[] {
+  const prefixes = browserLangPrefixes(locale);
+  return voices.filter((voice) => {
+    const tag = voice.lang.replace(/_/g, '-').toLowerCase();
+    return prefixes.some((prefix) => tag === prefix || tag.startsWith(`${prefix}-`));
+  });
+}
+
 /** speechSynthesis name substrings, best first, for this locale and gender. */
 export function synthNameList(locale: string, gender: VoiceGender): string[] {
   const lang = (locale === 'yue' || locale === 'zh' || locale === 'ja' || locale === 'en' ? locale : 'en') as VoiceLocale;

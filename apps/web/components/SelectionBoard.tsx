@@ -14,7 +14,9 @@ import TtsVoiceRow from './TtsVoiceRow';
 import { LangCardFace } from './selectors';
 import { assetUrl } from '../lib/asset';
 import { bigheadPath } from '../lib/bighead';
-import { playSelectGreeting } from '../lib/voice';
+import { playVoiceGreeting } from '../lib/voice';
+import { voicePickFor } from '../lib/voice-picks';
+import { resolveEdgeVoice } from '../lib/edge-tts';
 import {
   BACKGROUNDS, CHARACTERS, LANGS,
   backgroundById, backgroundLetter, characterById, t, usePrefs,
@@ -102,7 +104,15 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
               onSelect={(id) => {
                 pick({ character: id });
                 const chosen = cast.find((item) => item.id === id);
-                if (chosen) playSelectGreeting(chosen.id, lang, chosen.gender);
+                if (!chosen) return;
+                const voiceId = voicePickFor(lang, chosen.gender)
+                  ?? resolveEdgeVoice({
+                    lang,
+                    gender: chosen.gender,
+                    character: chosen.id,
+                    ignoreVoicePick: true,
+                  }).name;
+                playVoiceGreeting(chosen.id, lang, voiceId);
               }}
               label={(c) => c.name}
             >
