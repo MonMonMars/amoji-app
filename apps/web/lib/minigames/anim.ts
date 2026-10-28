@@ -4,11 +4,11 @@
 import type { FaceExpr, GameAnim } from './types';
 
 /** Preferred clip ids, first hit wins. Later names are fallbacks. */
-const STANDING_IDLES = ['IdleBreathCalm', 'StandardIdle', 'Relax', 'LookAround'] as const;
+const STANDING_IDLES = ['IdleBreathCalm', 'StandardIdle'] as const;
 
 export const GAME_CLIP_CANDIDATES: Record<GameAnim, readonly string[]> = {
   idle: STANDING_IDLES,
-  run: ['WeightShift', 'StandardIdle', 'IdleBreathCalm', 'Relax'],
+  run: ['StandardIdle', 'IdleBreathCalm'],
   dash: ['Jump', 'WeightShift', 'StandardIdle'],
   tease: ['LookAround', 'Blush', 'Idea', 'IdleBreathCalm'],
   caught: ['Surprised', 'Cheer', 'Hello', 'Clapping'],
