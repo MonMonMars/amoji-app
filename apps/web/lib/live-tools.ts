@@ -585,7 +585,7 @@ export function parseRssItems(xml: string, limit = 12): Array<{ title: string; s
   return out;
 }
 
-const GRIM_RE = /\b(murder|killed|killing|shooting|robber|robbery|heist|assault|stabbing|suicide|rape)\b|\bdie[sd]\b|\bdead(?!\s+end)\b|自殺|死亡|兇殺|凶杀|殺害|抢劫|強盗/i;
+const GRIM_RE = /\b(murder|killed|killing|kills|shooting|robber|robbery|heist|assault|stabbing|suicide|rape)\b|\bdie[sd]\b|\bdead(?!\s+end)\b|自殺|死亡|兇殺|凶杀|殺害|抢劫|強盗/i;
 const DULL_RE = /obituary|closing|closes|temporarily close|layoff|lay off|data center|fed up|lawsuit|\bsues\b|condemn/i;
 const LIGHT_RE = /funny|weird|odd|quirky|adorable|heartwarming|good news|eccentric|cute|laugh|tip|contest|festival|parade|puppy|kitten|\bcats?\b|\bdogs?\b|celebrat|surprise|costume|pumpkin|museum|bakery|趣聞|奇趣|好笑|搞笑|溫馨|温馨|面白い|珍ニュース|ほっこり/i;
 

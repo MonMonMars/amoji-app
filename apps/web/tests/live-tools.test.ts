@@ -510,6 +510,7 @@ describe('local light news and reply guard', () => {
   it('drops grim headlines and stories from somewhere else', () => {
     const picked = pickLightHeadlines([
       { title: 'Accused robber hits the bank', source: 'Wire' },
+      { title: 'Train crash kills dozens in Hong Kong', source: 'Wire' },
       { title: 'Weird museum cat in Hong Kong draws a crowd', source: 'Daily' },
       { title: 'Funny parade in Osaka', source: 'Away' },
     ], { city: 'Hong Kong', region: '' });
