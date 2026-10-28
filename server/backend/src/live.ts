@@ -127,7 +127,7 @@ async function weatherLine(fetchImpl: typeof fetch, place: Place): Promise<strin
   return `${Math.round(temp)}°C`;
 }
 
-const GRIM_RE = /\b(murder|killed|killing|shooting|robbery|suicide)\b|自殺|死亡|凶杀|殺害/i;
+const GRIM_RE = /\b(murder|killed|killing|kills|shooting|robbery|suicide)\b|自殺|死亡|凶杀|殺害/i;
 
 function rssTitles(xml: string): string[] {
   const items = xml.match(/<item\b[\s\S]*?<\/item>/gi) ?? [];
