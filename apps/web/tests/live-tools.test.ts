@@ -60,7 +60,7 @@ describe('planTools', () => {
   it('leaves ordinary chat alone', () => {
     for (const text of ['hello', 'how are you?', 'what is your name?', '你叫咩名？', '那你呢']) {
       const plan = planTools(text);
-      expect(plan.weather || plan.news || plan.where || Boolean(plan.searchQuery), text).toBe(false);
+      expect(plan.weather || plan.news || plan.where || plan.places || Boolean(plan.searchQuery) || Boolean(plan.recipeQuery) || Boolean(plan.learnQuery), text).toBe(false);
     }
   });
 
@@ -101,6 +101,33 @@ describe('planTools', () => {
     const look = planTools('who is Marie Curie?');
     expect(look.searchQuery?.toLowerCase()).toContain('marie');
     expect(look.weather).toBe(false);
+  });
+
+  it('plans restaurants, recipes, and hobby lessons separately from small talk', () => {
+    const near = planTools('restaurants near me');
+    expect(near.places).toBe(true);
+    expect(near.needsDevice).toBe(true);
+    expect(near.placeQuery).toBeUndefined();
+    expect(near.searchQuery).toBeUndefined();
+
+    const city = planTools('best ramen in Osaka');
+    expect(city.places).toBe(true);
+    expect(city.placeQuery).toBe('Osaka');
+    expect(city.cuisine).toBe('ramen');
+    expect(city.needsDevice).toBe(false);
+
+    const cook = planTools('how do I make tomato soup?');
+    expect(cook.recipeQuery?.toLowerCase()).toContain('tomato');
+    expect(cook.places).toBe(false);
+    expect(cook.needsDevice).toBe(false);
+
+    const hobby = planTools('teach me basic guitar');
+    expect(hobby.learnQuery?.toLowerCase()).toContain('guitar');
+    expect(hobby.searchQuery?.toLowerCase()).toContain('guitar');
+    expect(hobby.recipeQuery).toBeUndefined();
+
+    expect(planTools('how do I make friends?').recipeQuery).toBeUndefined();
+    expect(planTools('I like pizza').places).toBe(false);
   });
 
   it('keeps the previous tools on a short follow-up', () => {
@@ -256,6 +283,70 @@ describe('gatherLiveContext', () => {
     expect(urls.some((u) => u.includes('wikipedia'))).toBe(false);
   });
 
+  it('recommends named restaurants from Photon and does not invent a list', async () => {
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('geocoding-api.open-meteo.com')) {
+        return jsonRes({ results: [{ name: 'Osaka', latitude: 34.69, longitude: 135.5, country: 'Japan', admin1: 'Osaka' }] });
+      }
+      if (url.includes('photon.komoot.io')) {
+        return jsonRes({
+          features: [
+            { properties: { name: 'Noodle House', osm_key: 'amenity', osm_value: 'restaurant', street: 'Dotonbori', city: 'Osaka' } },
+            { properties: { name: 'Ramen RPG', osm_key: 'amenity', osm_value: 'restaurant', city: 'Osaka' } },
+          ],
+        });
+      }
+      return jsonRes({}, 404);
+    };
+    const live = await gatherLiveContext('best ramen in Osaka', { lang: 'en', fetch: fetchImpl, cache: new Map() });
+    expect(live.prompt).toContain('Noodle House');
+    expect(live.prompt).toContain('Ramen RPG');
+    expect(live.spoken).toContain('Noodle House');
+    expect(live.spoken).not.toMatch(/^\s*[-*]/m);
+    expect(live.spoken).toMatch(/\?/);
+  });
+
+  it('teaches a recipe as numbered steps', async () => {
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('themealdb.com')) {
+        return jsonRes({
+          meals: [{
+            strMeal: 'Tomato Soup',
+            strInstructions: 'Simmer the tomatoes until soft.\nStir in a pinch of salt and taste.',
+            strIngredient1: 'tomatoes',
+            strMeasure1: '4',
+            strIngredient2: 'salt',
+            strMeasure2: '1 pinch',
+          }],
+        });
+      }
+      return jsonRes({}, 404);
+    };
+    const live = await gatherLiveContext('how do I make tomato soup?', { lang: 'en', fetch: fetchImpl, cache: new Map() });
+    expect(live.prompt).toContain('Recipe: Tomato Soup');
+    expect(live.prompt).toContain('1. Simmer the tomatoes');
+    expect(live.prompt).toContain('2. Stir in a pinch of salt');
+    expect(live.spoken).toContain('Tomato Soup');
+    expect(live.spoken).toContain('Simmer the tomatoes');
+  });
+
+  it('looks up a hobby lesson on Wikipedia', async () => {
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('wikipedia.org')) {
+        return jsonRes({ query: { pages: { '1': { index: 1, title: 'Guitar', extract: 'The guitar is a fretted string instrument.' } } } });
+      }
+      if (url.includes('duckduckgo.com')) return jsonRes({ AbstractText: '', RelatedTopics: [] });
+      return jsonRes({}, 404);
+    };
+    const live = await gatherLiveContext('teach me basic guitar', { lang: 'en', fetch: fetchImpl, cache: new Map() });
+    expect(live.prompt).toContain('Learn:');
+    expect(live.prompt).toContain('fretted string');
+    expect(live.spoken.toLowerCase()).toContain('guitar');
+  });
+
   it('says so when the weather service is down, instead of inventing a number', async () => {
     const fetchImpl: typeof fetch = async () => jsonRes({}, 503);
     const live = await gatherLiveContext('weather', {
@@ -332,7 +423,8 @@ describe('tool switch and prompt wiring', () => {
   it('worldBlock stays empty unless there are facts', () => {
     expect(worldBlock('')).toBe('');
     expect(worldBlock('Weather: 29°C, drizzling.')).toContain('29°C');
-    expect(worldBlock('Weather: 29°C.')).toContain('Do not recite');
+    expect(worldBlock('Weather: 29°C.')).toContain('Do not invent');
+    expect(worldBlock('Recipe: soup.')).toContain('cook-along');
   });
 
   it('sends live facts to the model as system text, not as the user line', async () => {

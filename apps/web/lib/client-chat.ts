@@ -65,6 +65,7 @@ import { BRAIN_SPECS, markBrainDead, pickBrain, type BrainSpec } from './brain';
 import { cleanForDisplay } from './speak-text';
 import { withQuestion } from './follow-up';
 import { preferLiveReply, worldBlock } from './live-tools';
+import { shapeCompanionReply } from './reply-shape';
 
 export interface ClientChatResult { reply: string; emotionHints: Record<string, number> }
 
@@ -317,6 +318,7 @@ function launchRacer(
   gate: (emit: () => void) => void,
   budgetMs: number,
   onPartial?: (text: string) => void,
+  maxTokens = 180,
 ): Racer {
   const ctl = new AbortController();
   let fired = false;
@@ -354,9 +356,8 @@ function launchRacer(
           // The only keyless model is a reasoning model. Low effort skips the
           // long hidden chain so the first spoken token arrives sooner.
           reasoning_effort: 'low',
-          // r126 — tail cap: 1-3 cozy sentences by design; capping shaves the
-          // last seconds off reasoning-prone free models without biting text
-          max_tokens: 180,
+          // Tail cap. Recipes need room for numbered steps; ordinary replies stay short.
+          max_tokens: maxTokens,
           stream: true,
         }),
       });
@@ -420,8 +421,9 @@ async function streamCompletion(
   system: string,
   messages: ChatMessage[],
   onPartial?: (text: string) => void,
+  maxTokens = 180,
 ): Promise<string> {
-  const racer = launchRacer(spec, spec.model, key, system, messages, (emit) => emit(), KEYED_BUDGET_MS, onPartial);
+  const racer = launchRacer(spec, spec.model, key, system, messages, (emit) => emit(), KEYED_BUDGET_MS, onPartial, maxTokens);
   await racer.first;
   return racer.finish();
 }
@@ -433,6 +435,7 @@ async function racedPollinations(
   system: string,
   messages: ChatMessage[],
   onPartial?: (text: string) => void,
+  maxTokens = 180,
 ): Promise<string> {
   // gate: before the decision everyone may paint (a loser delta gets
   // overwritten by the winner's own accumulation on the next token);
@@ -441,7 +444,7 @@ async function racedPollinations(
   const racers = RACE_MODELS.map((model, i) =>
     launchRacer(spec, model, key, system, messages, (emit) => {
       if (leader === -1 || leader === i) emit();
-    }, RACER_BUDGET_MS, onPartial),
+    }, RACER_BUDGET_MS, onPartial, maxTokens),
   );
   // r136 — Puter races alongside the Pollinations models under the same gate;
   // first token across ALL racers wins, losers are aborted
@@ -466,7 +469,8 @@ async function racedPollinations(
 /** Strip the trailing emotion tag → final chat result. Exported for tests. */
 export function finishReply(content: string): ClientChatResult {
   const hints = parseEmotionHints(content) as Record<string, number>;
-  const reply = cleanForDisplay(content.replace(/\[emotion:\{[^}]*\}\]/g, ''));
+  const cleaned = cleanForDisplay(content.replace(/\[emotion:\{[^}]*\}\]/g, ''));
+  const reply = shapeCompanionReply(cleaned);
   return { reply: reply || '…', emotionHints: hints };
 }
 
@@ -475,6 +479,10 @@ export async function clientChat(
   opts?: ClientChatOptions,
 ): Promise<ClientChatResult> {
   const system = `${BASE_SYSTEM}\nReply in speakable sentences only. Do not show chain-of-thought, markdown, code, or emotion labels in the prose. The only machine tag is the final [emotion:{...}] line.\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
+  const maxTokens = /\bRecipe:/.test(opts?.world ?? '') ? 520 : 180;
+  const onPartial = opts?.onPartial
+    ? (partial: string) => { opts.onPartial?.(shapeCompanionReply(partial, { streaming: true })); }
+    : undefined;
   const factsReply = (): ClientChatResult | null => {
     const spoken = opts?.worldSpoken?.trim();
     if (!spoken) return null;
@@ -485,8 +493,8 @@ export async function clientChat(
   const first = pickBrain();
   try {
     const content = first.spec.id === 'pollinations'
-      ? await racedPollinations(first.spec, first.key, system, recent, opts?.onPartial)
-      : await streamCompletion(first.spec, first.key, system, recent, opts?.onPartial);
+      ? await racedPollinations(first.spec, first.key, system, recent, onPartial, maxTokens)
+      : await streamCompletion(first.spec, first.key, system, recent, onPartial, maxTokens);
     // r.27 — some gateways answer HTTP 200 with the out-of-credit sentence AS
     // the content; that is a failed provider, not something she should speak
     if (first.spec.id !== 'pollinations' && content.length < 160 && CREDIT_RE.test(content)) {
@@ -516,7 +524,7 @@ export async function clientChat(
     }
     const free = BRAIN_SPECS.find((s) => s.id === 'pollinations') ?? first.spec;
     try {
-      const content = await racedPollinations(free, '', system, recent, opts?.onPartial);
+      const content = await racedPollinations(free, '', system, recent, onPartial, maxTokens);
       if (content.length < 160 && CREDIT_RE.test(content)) throw new Error('pollinations credit');
       const done = finishReply(content);
       const reply = preferLiveReply(withQuestion(done.reply, opts?.language), opts?.world, opts?.worldSpoken, opts?.language);
