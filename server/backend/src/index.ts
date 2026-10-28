@@ -15,11 +15,19 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { openDb } from './db.js';
 import { createBackend } from './http.js';
+import { gatherChatWorld } from './live.js';
 
 const port = Number(process.env.AMOJI_PORT ?? 8787);
 const dbPath = process.env.AMOJI_DB ?? 'data/amoji.sqlite';
 if (dbPath !== ':memory:') mkdirSync(dirname(dbPath), { recursive: true });
-const backend = createBackend({ db: openDb(dbPath) });
+const backend = createBackend({
+  db: openDb(dbPath),
+  gatherWorld: (message, language, priorUser, clientIp) => gatherChatWorld(message, {
+    ...(language ? { language } : {}),
+    ...(priorUser ? { priorUser } : {}),
+    ...(clientIp ? { clientIp } : {}),
+  }),
+});
 
 const server = createServer(async (req, res) => {
   try {

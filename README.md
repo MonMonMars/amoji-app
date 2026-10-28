@@ -113,7 +113,9 @@ On by default. Before she answers a question like “what’s the weather here?�
 | Weather | [Open-Meteo](https://open-meteo.com/) | none |
 | “Here” | Browser location prompt, then a coarse IP estimate ([geojs.io](https://www.geojs.io/)) if you deny it or it times out | none |
 | A named place (“weather in Osaka”) | Open-Meteo geocoding | none |
-| Light local news | Google News RSS, kept to funny / odd / warm stories that mention her area. Grim headlines are dropped. The Node server reads the feed directly; the browser (including GitHub Pages) reads it through [rss2json](https://rss2json.com/) | none. Optional `RSS2JSON_API_KEY` if you outgrow the free quota |
+| Light local news | Google News RSS, kept to funny / odd / warm stories that mention her area. Grim headlines are dropped. Node (`/api/chat` and `server/backend`) reads the feed directly. The browser cannot: Google sends no CORS header | none |
+| Latest / recent news, and the Pages fallback | [Wikipedia “In the news”](https://en.wikipedia.org/api/rest_v1/feed/featured/) (`/{lang}.wikipedia.org/api/rest_v1/feed/featured/YYYY/MM/DD`), plus Google’s top-stories RSS when the host can read it. Grim items are dropped | none |
+| Browser bridge for Google RSS | [rss2json](https://rss2json.com/) is still attempted. It currently answers many networks with a Cloudflare challenge, so the demo does not depend on it | none. Optional `RSS2JSON_API_KEY` does not bypass that challenge |
 | Web lookup | Wikipedia + DuckDuckGo instant answers. Recent questions fall back to headlines | none. Optional Brave Search key for a fuller web index |
 | Restaurants, cafes, parks, things to do | [Photon](https://photon.komoot.io/) (OpenStreetMap). Near you when location is allowed, otherwise the city you name, with a cuisine when you say one | none |
 | Recipes | [TheMealDB](https://www.themealdb.com/api.php) search. The `1` in the URL is their published test key, not a secret. If a dish is missing, a short Wikipedia intro is the fallback | none |
@@ -125,18 +127,26 @@ Copy `apps/web/.env.example` to `apps/web/.env.local` only if you want to change
 - `NEXT_PUBLIC_AMOJI_TOOLS=0` turns it off in the browser. Static GitHub Pages builds (`AMOJI_EXPORT=1`) only see `NEXT_PUBLIC_` values, and only the ones present at build time.
 - `BRAVE_SEARCH_API_KEY` is server-only. It upgrades search for `pnpm dev` and any Node host. It is **not** inside the GitHub Pages bundle.
 - `NEXT_PUBLIC_BRAVE_SEARCH_API_KEY` would be copied into the static JavaScript. Set it only if you accept that.
-- `RSS2JSON_API_KEY` / `NEXT_PUBLIC_RSS2JSON_API_KEY` — same split, for the news bridge.
+- `RSS2JSON_API_KEY` / `NEXT_PUBLIC_RSS2JSON_API_KEY` — same split. Optional, and not required for the demo. The public rss2json host often returns a Cloudflare challenge even with a key; Wikipedia in-the-news is what GitHub Pages actually uses.
 
-The browser asks for location only when the message needs “here” (weather, local news, “where am I”). A precise fix is remembered for 30 minutes. If you deny it, she says the network estimate is rough and does not pretend it is GPS. Coordinates are used to call the weather service; the model only sees the place name and the short fact sheet.
+Nothing in this table is a required secret. Weather and recent news work on the static demo with no key. Momoto / Mon only set a key to upgrade something optional:
 
-GitHub Pages has no `/api/chat`. The same lookup runs in the browser there, on the keyless sources above. A server-only Brave key does nothing on Pages.
+- A model key (`GEMINI_API_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `GITHUB_TOKEN`, or `MOONSHOT_API_KEY`) upgrades reply quality. With none, chat stays on keyless Pollinations.
+- `BRAVE_SEARCH_API_KEY` (server only) upgrades “who is …?” style lookups on Node. It is not in the GitHub Pages bundle. `NEXT_PUBLIC_BRAVE_SEARCH_API_KEY` would be, so set it only if that is acceptable.
+- `RSS2JSON_API_KEY` does not restore Google headlines in the browser while rss2json is behind Cloudflare.
+- `AMOJI_TOOLS=0` or `NEXT_PUBLIC_AMOJI_TOOLS=0` turns the lookup off. Leave both unset.
+- `NEXT_PUBLIC_AMOJI_API` points a non-Pages build at `server/backend`. Pages leaves it unset. That API fills weather and headlines itself when the client did not send them (`AMOJI_TOOLS=0` turns that off too).
+
+The browser asks for location only when the message needs “here” (weather, local news, “where am I”). “Latest news” does not ask. A precise fix is remembered for 30 minutes. If you deny it, she says the network estimate is rough and does not pretend it is GPS. Coordinates are used to call the weather service; the model only sees the place name and the short fact sheet.
+
+GitHub Pages has no `/api/chat`. The same lookup runs in the browser there: Open-Meteo for weather, Wikipedia in-the-news for headlines. A server-only Brave key does nothing on Pages.
 
 ### Manual check
 
 1. `pnpm dev`, open the companion, ask “what’s the weather here?”, and allow location. The reply should mention a temperature and the area, in her language, with no JSON.
 2. Deny location and ask again. She should still answer from a coarse network place and say it is approximate.
-3. Ask “news near me”. A light or funny local story, spoken, not a crime bulletin and not a JSON dump. She should name your area.
-4. Ask “who is Marie Curie?”. A short live fact.
+3. Ask “news near me”. A light or funny local story when the host can read Google News; otherwise a recent Wikipedia headline. Spoken, not a crime bulletin, not a JSON dump.
+4. Ask “what’s the latest news?”. A current headline, no location prompt. Ask “who is Marie Curie?”. A short live fact.
 5. Ask “how are you?”. No location prompt; normal chat.
 6. Ask “best ramen in Osaka” or “restaurants near me”. She names real places in a sentence, not a raw list.
 7. Ask “how do I make tomato soup?”. A short cook-along with numbered steps.
