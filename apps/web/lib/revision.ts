@@ -309,7 +309,13 @@
 // keeps that rate or a flooded queue so the next chat line sounds broken.
 // The poke line itself is a short question. Lip sync follows the real audio
 // duration through the last word, then stops. Chat text is unchanged.
-export const APP_REVISION = 'r2026-10-17.140';
+// r2026-10-28.141: pupils stay readable (iris drawn in front of the eye
+// white, eyelid morphs stop short of a full seal). Idle hang opens a
+// straight-down arm so shoulders are not slumped, finger curl no longer
+// splays ring/little into the palm, and idle talk is a short tutor tip
+// plus a calm personality line. Standing idle is IdleBreathCalm and
+// StandardIdle.
+export const APP_REVISION = 'r2026-10-28.141';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

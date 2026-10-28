@@ -20,6 +20,7 @@ import { clipFreesFeet, collectPlantRest, pinPlantedClipTracks } from '../lib/vr
 import { chestPokeBounce } from '../lib/vrm/chest-bounce';
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
+import { isEyeMaterial, stabilizeEyeMaterials } from '../lib/vrm/eyes';
 import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
 import { WARDROBE_ENABLED, modularGlbUrl, vrmCandidatesForOutfit } from '../lib/modular/catalog';
 import { assembleModular, replaceBodyMeshes, type ModularAssembly } from '../lib/modular/assemble';
@@ -191,6 +192,10 @@ const neutralizeBrokenTextures = (root: THREE.Object3D): void => {
           rec[key] = null; // failed slot — fall back to the material's base color
           touched = true;
         }
+      }
+      if (isEyeMaterial((m as THREE.Material).name || '', mesh.name || '')) {
+        if (touched) m.needsUpdate = true;
+        continue;
       }
       const std = m as THREE.MeshStandardMaterial;
       if (std.color && !std.map) {
@@ -511,12 +516,11 @@ export default function CompanionCanvas({
 
     interface ClipSource { id: string; urls: string[] }
     const IDLE_SOURCES: ClipSource[] = [
+      // Calm standing only. LookAround yaws the head ~45°, Relax pitches it
+      // down and swings the arms, and WeightShift is an optional remote with
+      // the same problem. Those stay on disk for one-shot reactions.
       { id: 'IdleBreathCalm', urls: [`${ANIM_MIRROR}/IdleBreathCalm.vrma`] },
       { id: 'StandardIdle', urls: [`${ANIM_MIRROR}/StandardIdle.vrma`] },
-      { id: 'LookAround', urls: [`${ANIM_MIRROR}/LookAround.vrma`] },
-      // optional — only enters the rotation if the fetch succeeds
-      { id: 'WeightShift', urls: [`${CHAT_HOST}/weightShift.vrma`] },
-      { id: 'Relax', urls: [`${ANIM_MIRROR}/Relax.vrma`] },
     ];
     // one-shot dialogue performances (library clips with a real ending)
     // r96 (Master Simon): the move triggers get REAL performances too —
@@ -980,11 +984,13 @@ export default function CompanionCanvas({
         const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
         for (const m of mats) {
           const mat = m as THREE.MeshStandardMaterial;
+          if (isEyeMaterial(mat.name || '', mesh.name || '')) continue;
           if (mat.color) mat.color.multiply(tint);
           // r109: MToon shadeColor floor — a near-black shade color plus
           // toon lighting can render near-black at some angles (the "all
           // black" reports). Lift it the same way neutralizeBrokenTextures
           // does.
+          if (isEyeMaterial((m as THREE.Material).name || '', mesh.name || '')) continue;
           const shade = (m as unknown as { shadeColor?: THREE.Color }).shadeColor;
           if (shade) {
             const lum = Math.max(shade.r, shade.g, shade.b);
@@ -995,6 +1001,7 @@ export default function CompanionCanvas({
           }
         }
       });
+      stabilizeEyeMaterials(a.root);
     };
 
     const loadPlain = (index: number, url: string, token: number) => {
@@ -1740,6 +1747,9 @@ export default function CompanionCanvas({
         avatar.applyRelaxedHands();
         avatar.smoothFingers(dt / 1000);
         avatar.clampShoulderROM();
+        // Straight-down idle hangs read as slumped shoulders. Skip during a
+        // punch, a performance, a mini-game, or a hand grab.
+        if (!perfAction && boost === 0 && !gameView && !handDrag) avatar.easeIdleHang();
 
         // r115: hand-drag override — after everything else wrote the
         // skeleton, pull the grabbed arm's two bones toward the pointer.
@@ -1840,11 +1850,13 @@ export default function CompanionCanvas({
           let texturesOk = modelTexturesReady(avatar.root);
           if (!texturesOk && !textureFallbackApplied && now - mountTime > 4000) {
             neutralizeBrokenTextures(avatar.root);
+            stabilizeEyeMaterials(avatar.root);
             textureFallbackApplied = true;
             texturesOk = true;
           }
           if (forceReveal && !textureFallbackApplied) {
             neutralizeBrokenTextures(avatar.root);
+            stabilizeEyeMaterials(avatar.root);
             textureFallbackApplied = true;
             texturesOk = true;
           }

@@ -73,8 +73,10 @@
 import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
+import { ARM_DOWN_BASE } from '@amoji/vrm-renderer';
 import { FootPlanter, type PlantLean } from './plant-feet';
 import { ChestBounce } from './chest-bounce';
+import { capEyeExpression } from './eyes';
 
 export type AvatarKind = 'v1' | 'generic';
 
@@ -193,6 +195,13 @@ export interface Avatar {
   smoothFingers(dt: number): void;
   /** r103: floor the upper arm's outward swing so arms never cross the midline */
   clampShoulderROM(): void;
+  /**
+   * Idle only. A straight-down hang collapses the shoulder on A-pose rigs.
+   * Open a hanging arm to a small natural abduct and lift a clavicle that
+   * has dropped below the captured rest. Raised arms (waves, punches) are
+   * left alone.
+   */
+  easeIdleHang(): void;
   /** r115: raw bone lookup for poke-zone raycast + hand-drag IK (null when absent) */
   getBoneNode(name: string): THREE.Object3D | null;
   /**
@@ -298,8 +307,9 @@ function calibrateFacing(node: THREE.Object3D, left: THREE.Object3D | null, righ
  * `fallbackAxis` is used when the bone points straight up (cross product
  * degenerate) — a 180° turn about that axis.
  */
-function alignBoneDown(
+function alignBoneToward(
   bone: THREE.Object3D, child: THREE.Object3D,
+  targetDir: THREE.Vector3,
   baseLocal: Map<string, THREE.Quaternion>, fallbackAxis: THREE.Vector3,
 ): void {
   bone.updateMatrixWorld(true);
@@ -309,10 +319,10 @@ function alignBoneDown(
   if (dir.lengthSq() < 1e-10) return;
   dir.normalize();
   const align = new THREE.Quaternion();
-  if (dir.dot(DOWN) < -0.99999) {
+  if (dir.dot(targetDir) < -0.99999) {
     align.setFromAxisAngle(fallbackAxis, Math.PI);
   } else {
-    align.setFromUnitVectors(dir, DOWN);
+    align.setFromUnitVectors(dir, targetDir);
   }
   const parentW = bone.parent!.getWorldQuaternion(new THREE.Quaternion());
   const world = bone.getWorldQuaternion(new THREE.Quaternion());
@@ -320,6 +330,19 @@ function alignBoneDown(
   const local = parentW.invert().multiply(align).multiply(world);
   bone.quaternion.copy(local);
   baseLocal.set(bone.name, local.clone());
+}
+
+function alignBoneDown(
+  bone: THREE.Object3D, child: THREE.Object3D,
+  baseLocal: Map<string, THREE.Quaternion>, fallbackAxis: THREE.Vector3,
+): void {
+  alignBoneToward(bone, child, DOWN, baseLocal, fallbackAxis);
+}
+
+/** Natural hang: a little out from the body and a little forward. Facing is +Z. */
+function naturalArmDir(side: 'left' | 'right', abduct: number, forward: number): THREE.Vector3 {
+  const out = side === 'left' ? -1 : 1;
+  return new THREE.Vector3(out * Math.sin(abduct), -Math.cos(abduct), Math.sin(forward)).normalize();
 }
 
 // ---------------------------------------------------------------------------
@@ -369,17 +392,17 @@ function vroidFingerHumanoid(boneName: string): string | null {
   return `${side}${m[2]}${ph}`;
 }
 
-/** calibrated relaxed curl per finger, radians per phalange (proximal→distal) — 15–33° */
+/** Gentle curl, proximal→distal. Enough to relax a straight bind pose, not a fist. */
 const RELAXED_CURL: Record<(typeof FINGERS)[number], readonly [number, number, number]> = {
-  Thumb: [0.35, 0.30, 0.28],
-  Index: [0.32, 0.47, 0.50],
-  Middle: [0.28, 0.42, 0.45],
-  Ring: [0.33, 0.50, 0.52],
-  Little: [0.38, 0.55, 0.57],
+  Thumb: [0.22, 0.16, 0.14],
+  Index: [0.20, 0.26, 0.20],
+  Middle: [0.18, 0.24, 0.18],
+  Ring: [0.20, 0.26, 0.20],
+  Little: [0.22, 0.28, 0.20],
 };
 const CURL_PROBE = 0.35;       // rad — calibration test rotation per axis
-const CURL_MIN_GAIN = 1e-4;    // below this the finger is left untouched
-const THUMB_OPPOSITION = 0.30; // rad — thumb proximal rolls toward the index
+const CURL_MIN_GAIN = 0.004;   // metres — ignore twist/noise that barely shortens the chain
+const THUMB_OPPOSITION = 0.16; // rad — thumb proximal rolls toward the index
 
 interface RelaxedHandEntry {
   node: THREE.Object3D;
@@ -388,35 +411,55 @@ interface RelaxedHandEntry {
 }
 
 // r103 scratch (load-time calibration only — the per-frame path allocates nothing)
-const _rhE = new THREE.Euler();
 const _rhV = new THREE.Vector3();
+const _rhQ = new THREE.Quaternion();
+const _rhTip = new THREE.Vector3();
+const _rhAcross = new THREE.Vector3();
+const LOCAL_AXIS: Record<'x' | 'y' | 'z', THREE.Vector3> = {
+  x: new THREE.Vector3(1, 0, 0),
+  y: new THREE.Vector3(0, 1, 0),
+  z: new THREE.Vector3(0, 0, 1),
+};
+
+/** Local axis the bone extends along (twist). Curl must not use this axis. */
+function boneLongAxis(node: THREE.Object3D): 'x' | 'y' | 'z' {
+  const p = node.children[0]?.position ?? node.position;
+  const ax = Math.abs(p.x);
+  const ay = Math.abs(p.y);
+  const az = Math.abs(p.z);
+  if (ax >= ay && ax >= az) return 'x';
+  if (ay >= az) return 'y';
+  return 'z';
+}
 
 /**
  * r103: measure a gentle relaxed-hand curl for every finger the rig has.
- * The curl AXIS/DIR is not assumed (rigs disagree): for each finger, rotate
- * ALL its phalanges by ±CURL_PROBE about each local axis in turn and keep
- * the combo that DECREASES the phalanges' summed distance to the wrist —
- * fold vs unfold is pose-independent, so the test reads true from a T-pose
- * or hanging arms alike. A finger whose distance does not shrink on ANY
- * axis is left untouched. The thumb proximal additionally gets opposition:
- * the rotation that moves the thumb tip TOWARD the index proximal.
+ * The curl axis is the fold that shortens the chain toward the wrist and is
+ * NOT the bone's long axis (twist) and NOT a sideways splay across the palm.
+ * A finger that does not fold cleanly is left in its bind pose. The thumb
+ * proximal also opposes toward the index when that motion is real.
  * Entry = { node, base: rest local quat, delta: curl quat } — per frame the
- * avatar writes base·delta, which is idempotent. Bones a loaded clip
- * animates (clipAnimatedBones — node names) are skipped so the mixer and
- * the curl never fight over the same phalange.
+ * avatar writes base·delta, which is idempotent.
  */
-function calibrateRelaxedHands(
+export function calibrateRelaxedHands(
   fingers: ReadonlyMap<string, THREE.Object3D>,
   _clipAnimatedBones: ReadonlySet<string>,
 ): RelaxedHandEntry[] {
   const out: RelaxedHandEntry[] = [];
   for (const side of SIDES) {
-    // the wrist is any proximal phalange's parent — shared by the whole hand
     const anyProximal = fingers.get(`${side}ThumbProximal`)
       ?? fingers.get(`${side}IndexProximal`);
     const wrist = anyProximal?.parent;
     if (!wrist) continue;
     const wristPos = wrist.getWorldPosition(new THREE.Vector3());
+    const indexP = fingers.get(`${side}IndexProximal`);
+    const littleP = fingers.get(`${side}LittleProximal`);
+    let across: THREE.Vector3 | null = null;
+    if (indexP && littleP) {
+      across = _rhAcross.copy(littleP.getWorldPosition(new THREE.Vector3())).sub(indexP.getWorldPosition(_rhTip));
+      if (across.lengthSq() < 1e-8) across = null;
+      else across.normalize();
+    }
     for (const finger of FINGERS) {
       const chain: THREE.Object3D[] = [];
       for (const ph of PHALANGES) {
@@ -429,27 +472,35 @@ function calibrateRelaxedHands(
         for (const node of chain) d += node.getWorldPosition(_rhV).distanceTo(wristPos);
         return d;
       };
+      const tipOf = () => chain[chain.length - 1]!.getWorldPosition(_rhTip);
       const saved = chain.map((n) => n.quaternion.clone());
       const before = measure();
+      const tip0 = tipOf().clone();
+      const twist = boneLongAxis(chain[0]!);
       let bestAxis: 'x' | 'y' | 'z' | null = null;
       let bestSign = 1;
-      let bestGain = CURL_MIN_GAIN;
+      let bestScore = CURL_MIN_GAIN;
       for (const axis of ['x', 'y', 'z'] as const) {
+        if (axis === twist) continue;
         for (const sign of [1, -1] as const) {
           for (const node of chain) {
-            _rhE.setFromQuaternion(node.quaternion);
-            _rhE[axis] += CURL_PROBE * sign;
-            node.quaternion.setFromEuler(_rhE);
+            node.quaternion.multiply(_rhQ.setFromAxisAngle(LOCAL_AXIS[axis], CURL_PROBE * sign));
           }
           wrist.updateWorldMatrix(true, true);
           const gain = before - measure();
+          const moved = tipOf().sub(tip0);
+          const splay = across ? Math.abs(moved.dot(across)) : 0;
+          const score = gain - splay * 0.65;
           for (let i = 0; i < chain.length; i++) chain[i]!.quaternion.copy(saved[i]!);
           wrist.updateWorldMatrix(true, true);
-          if (gain > bestGain) { bestGain = gain; bestAxis = axis; bestSign = sign; }
+          if (gain > CURL_MIN_GAIN && score > bestScore) {
+            bestScore = score;
+            bestAxis = axis;
+            bestSign = sign;
+          }
         }
       }
-      if (!bestAxis) continue; // no fold direction on this rig — leave it alone
-      // thumb proximal additionally opposes toward the index finger
+      if (!bestAxis) continue;
       let oppAxis: 'x' | 'y' | 'z' | null = null;
       let oppSign = 1;
       if (finger === 'Thumb') {
@@ -461,10 +512,9 @@ function calibrateRelaxedHands(
           let bestOpp = CURL_MIN_GAIN;
           const savedQ = chain[0]!.quaternion.clone();
           for (const axis of ['x', 'y', 'z'] as const) {
+            if (axis === twist || axis === bestAxis) continue;
             for (const sign of [1, -1] as const) {
-              _rhE.setFromQuaternion(savedQ);
-              _rhE[axis] += CURL_PROBE * sign;
-              chain[0]!.quaternion.setFromEuler(_rhE);
+              chain[0]!.quaternion.copy(savedQ).multiply(_rhQ.setFromAxisAngle(LOCAL_AXIS[axis], CURL_PROBE * sign));
               wrist.updateWorldMatrix(true, true);
               const gain = dist0 - distal.getWorldPosition(_rhV).distanceTo(target);
               if (gain > bestOpp) { bestOpp = gain; oppAxis = axis; oppSign = sign; }
@@ -472,7 +522,6 @@ function calibrateRelaxedHands(
           }
           chain[0]!.quaternion.copy(savedQ);
           wrist.updateWorldMatrix(true, true);
-          if (bestOpp <= CURL_MIN_GAIN) oppAxis = null; // no opposition found
         }
       }
       for (let i = 0; i < chain.length; i++) {
@@ -480,10 +529,10 @@ function calibrateRelaxedHands(
         const curl = RELAXED_CURL[finger][i] ?? 0;
         const opp = i === 0 && oppAxis ? THUMB_OPPOSITION : 0;
         if (!curl && !opp) continue;
-        _rhE.set(0, 0, 0);
-        if (curl) _rhE[bestAxis] += bestSign * curl;
-        if (opp) _rhE[oppAxis!] += oppSign * opp;
-        out.push({ node, base: saved[i]!.clone(), delta: new THREE.Quaternion().setFromEuler(_rhE) });
+        const delta = new THREE.Quaternion();
+        if (curl) delta.multiply(_rhQ.setFromAxisAngle(LOCAL_AXIS[bestAxis], bestSign * curl));
+        if (opp && oppAxis) delta.multiply(_rhQ.setFromAxisAngle(LOCAL_AXIS[oppAxis], oppSign * opp));
+        out.push({ node, base: saved[i]!.clone(), delta });
       }
     }
   }
@@ -542,9 +591,97 @@ function clampUpperArmAdduction(
   upperArm.quaternion.copy(parentW.invert()).multiply(_shQF).multiply(world);
 }
 
+/** Radians out from straight down for a calm idle arm. ~21°. */
+export const IDLE_ARM_ABDUCT = 0.36;
+
+/**
+ * Direction a hanging arm should take so the shoulder stays open.
+ * Returns null when the arm is raised or already open enough.
+ * `outward` is left-shoulder → right-shoulder.
+ */
+export function idleHangDirection(
+  current: THREE.Vector3,
+  outward: THREE.Vector3,
+  left: boolean,
+): THREE.Vector3 | null {
+  if (current.lengthSq() < 1e-10) return null;
+  const d = current.clone().normalize();
+  if (d.y > -0.75) return null;
+  const fromDown = Math.acos(Math.min(1, Math.max(0, -d.y)));
+  if (fromDown >= IDLE_ARM_ABDUCT - 0.02) return null;
+  const horiz = new THREE.Vector3(d.x, 0, d.z);
+  if (horiz.lengthSq() < 1e-6) {
+    horiz.copy(outward);
+    if (left) horiz.negate();
+  }
+  if (horiz.lengthSq() < 1e-10) return null;
+  horiz.normalize();
+  const s = Math.sin(IDLE_ARM_ABDUCT);
+  return new THREE.Vector3(horiz.x * s, -Math.cos(IDLE_ARM_ABDUCT), horiz.z * s);
+}
+
+interface ShoulderRest {
+  q: THREE.Quaternion;
+  drop: number;
+}
+
+function captureShoulderRest(get: (name: string) => THREE.Object3D | null): Map<string, ShoulderRest> {
+  const out = new Map<string, ShoulderRest>();
+  const chest = get('chest') ?? get('spine') ?? get('hips');
+  if (!chest) return out;
+  const cy = chest.getWorldPosition(new THREE.Vector3()).y;
+  for (const side of SIDES) {
+    const shoulder = get(`${side}Shoulder`);
+    const upper = get(`${side}UpperArm`);
+    if (!shoulder || !upper) continue;
+    out.set(side, {
+      q: shoulder.quaternion.clone(),
+      drop: upper.getWorldPosition(new THREE.Vector3()).y - cy,
+    });
+  }
+  return out;
+}
+
+function easeIdleHangOn(
+  get: (name: string) => THREE.Object3D | null,
+  rest: ReadonlyMap<string, ShoulderRest>,
+): void {
+  const sl = get('leftShoulder');
+  const sr = get('rightShoulder');
+  const chest = get('chest') ?? get('spine') ?? get('hips');
+  if (!sl || !sr || !chest) return;
+  const outward = _shOut.subVectors(sr.getWorldPosition(_shRP), sl.getWorldPosition(_shLP));
+  if (outward.lengthSq() < 1e-10) return;
+  outward.normalize();
+  const cy = chest.getWorldPosition(_shA).y;
+  for (const side of SIDES) {
+    const upper = get(`${side}UpperArm`);
+    const lower = get(`${side}LowerArm`);
+    const shoulder = get(`${side}Shoulder`);
+    if (!upper || !lower || !shoulder) continue;
+    const spec = rest.get(side);
+    if (spec) {
+      const drop = upper.getWorldPosition(_shA).y - cy;
+      if (drop < spec.drop - 0.012) shoulder.quaternion.slerp(spec.q, 0.55);
+    }
+    shoulder.updateMatrixWorld(true);
+    const a = upper.getWorldPosition(_shA);
+    const b = lower.getWorldPosition(_shB);
+    const d = _shD.subVectors(b, a);
+    const want = idleHangDirection(d, outward, side === 'left');
+    if (want && d.lengthSq() > 1e-10) {
+      d.normalize();
+      _shQF.setFromUnitVectors(d, want.clone().normalize());
+      const parentW = upper.parent!.getWorldQuaternion(_shQP);
+      const world = upper.getWorldQuaternion(_shQW);
+      upper.quaternion.copy(parentW.invert()).multiply(_shQF).multiply(world);
+    }
+  }
+}
+
 const _fgTgt = new THREE.Quaternion();
 const _fgBlend = new THREE.Quaternion();
-const FINGER_BEND = 0.34;
+const FINGER_BEND = 0.08;
 const FINGER_TAU = 0.2;
 
 /** Clip fingers stay a little bent, and the bend eases in instead of snapping. */
@@ -584,6 +721,7 @@ class V1Avatar implements Avatar {
   private relaxedHands: RelaxedHandEntry[] = [];
   private fingerShown = new Map<THREE.Object3D, THREE.Quaternion>();
   private fingerMap = new Map<string, THREE.Object3D>();
+  private shoulderRest = new Map<string, ShoulderRest>();
   // r107: additive-head state — see applyClipHeadAdd
   private headAddInit = false;
   private planter = new FootPlanter();
@@ -632,13 +770,16 @@ class V1Avatar implements Avatar {
     this.fingerBones = new Set([...this.fingerMap.values()].map((n) => n.name));
     this.relaxedHands = calibrateRelaxedHands(this.fingerMap, this.clipAnimatedBones);
     this.root.updateMatrixWorld(true);
+    this.shoulderRest = captureShoulderRest((name) => this.getBoneNode(name));
     this.planter.capture(vrm.scene, (name) => this.getBoneNode(name));
+    // A stray look-at target rolls the iris off the pupil. Gaze stays on the head.
+    if (vrm.lookAt) vrm.lookAt.autoUpdate = false;
   }
 
   setExpression(name: string, value: number): void {
     const em = this.vrm.expressionManager;
     if (!em) return;
-    try { em.setValue(name, value); } catch { /* preset absent on this model */ }
+    try { em.setValue(name, capEyeExpression(name, value)); } catch { /* preset absent on this model */ }
   }
 
   applyPose(raw: AvatarPose): void {
@@ -777,6 +918,10 @@ class V1Avatar implements Avatar {
     if (r && re) clampUpperArmAdduction(r, re, sl, sr);
   }
 
+  easeIdleHang(): void {
+    easeIdleHangOn((name) => this.getBoneNode(name), this.shoulderRest);
+  }
+
   plantFeet(plant: boolean, lean?: PlantLean): void {
     if (plant) this.planter.apply(lean);
   }
@@ -841,6 +986,7 @@ class GenericAvatar implements Avatar {
   private baseLocal = new Map<string, THREE.Quaternion>();
   private relaxedHands: RelaxedHandEntry[] = [];
   private fingerShown = new Map<THREE.Object3D, THREE.Quaternion>();
+  private shoulderRest = new Map<string, ShoulderRest>();
   private blinkT = 2.2 + Math.random() * 2;
   private blinkPhase = -1;
 
@@ -867,6 +1013,7 @@ class GenericAvatar implements Avatar {
     this.fingerBones = new Set([...this.fingers.values()].map((n) => n.name));
     this.relaxedHands = calibrateRelaxedHands(this.fingers, this.clipAnimatedBones);
     this.root.updateMatrixWorld(true);
+    this.shoulderRest = captureShoulderRest((name) => this.getBoneNode(name));
     this.planter.capture(this.inner, (name) => this.getBoneNode(name));
   }
 
@@ -993,20 +1140,21 @@ class GenericAvatar implements Avatar {
       this.baseLocal.set(node.name, node.quaternion.clone());
     }
 
-    // arms: hang them straight down, elbows straight — whatever the rig's
-    // rest pose was (T-pose, A-pose, or the broken hands-up export).
+    // arms: a natural hang, a little out and forward — straight down collapses
+    // the shoulder on rigs authored in A-pose, and the procedural pose used
+    // to add ARM_DOWN_BASE on top of that (arms through the torso).
     const armX = new THREE.Vector3(1, 0, 0);
-    const pairs: Array<[BoneName, BoneName, THREE.Vector3]> = [
-      ['leftUpperArm', 'leftLowerArm', armX],
-      ['rightUpperArm', 'rightLowerArm', armX],
-      ['leftLowerArm', 'leftHand', new THREE.Vector3(0, 0, 1)],
-      ['rightLowerArm', 'rightHand', new THREE.Vector3(0, 0, 1)],
+    const aims: Array<[BoneName, BoneName, THREE.Vector3, THREE.Vector3]> = [
+      ['leftUpperArm', 'leftLowerArm', naturalArmDir('left', 0.4, 0.12), armX],
+      ['rightUpperArm', 'rightLowerArm', naturalArmDir('right', 0.4, 0.12), armX],
+      ['leftLowerArm', 'leftHand', naturalArmDir('left', 0.28, 0.06), new THREE.Vector3(0, 0, 1)],
+      ['rightLowerArm', 'rightHand', naturalArmDir('right', 0.28, 0.06), new THREE.Vector3(0, 0, 1)],
     ];
     this.root.updateMatrixWorld(true);
-    for (const [boneName, childName, fb] of pairs) {
+    for (const [boneName, childName, dir, fb] of aims) {
       const bone = this.bones.get(boneName);
       const child = this.bones.get(childName);
-      if (bone && child) alignBoneDown(bone, child, this.baseLocal, fb);
+      if (bone && child) alignBoneToward(bone, child, dir, this.baseLocal, fb);
     }
     this.root.updateMatrixWorld(true);
   }
@@ -1014,7 +1162,8 @@ class GenericAvatar implements Avatar {
   // -- runtime API -----------------------------------------------------------
 
   setExpression(name: string, value: number): void {
-    const v = Math.max(0, Math.min(1, value));
+    const capped = capEyeExpression(name, value);
+    const v = Math.max(0, Math.min(1, capped));
     const bindName = (EXPRESSION_ALIAS[name.toLowerCase()] ?? name).toLowerCase();
     if (!bindName) return; // e.g. relaxed on a 0.x model — nothing to drive
     const binds = this.expressions.get(bindName);
@@ -1042,10 +1191,13 @@ class GenericAvatar implements Avatar {
       p.headY,
       clampField(p.headZ + (p.headRollAdd ?? 0), HUMAN_LIMITS.headRollAdd),
     );
-    // r86: arm raises fold into the same Z channel (+semantic lowers, so a
-    // raise subtracts on the left and adds on the right)
-    this.applyBone('leftUpperArm', p.lArmX, 0, p.leftUpperArm - (p.lArmRaise ?? 0));
-    this.applyBone('rightUpperArm', p.rArmX, 0, -(p.rightUpperArm - (p.rArmRaise ?? 0)));
+    // The calibrated rest already hangs the arm. mapFrameToVrm's upper-arm
+    // value includes ARM_DOWN_BASE measured from a T-pose, so only the extra
+    // (breath, pose, poke raise) is applied here.
+    const lExtra = p.leftUpperArm - ARM_DOWN_BASE;
+    const rExtra = p.rightUpperArm - ARM_DOWN_BASE;
+    this.applyBone('leftUpperArm', p.lArmX, 0, lExtra - (p.lArmRaise ?? 0));
+    this.applyBone('rightUpperArm', p.rArmX, 0, -(rExtra - (p.rArmRaise ?? 0)));
     this.applyBone('leftLowerArm', p.leftLowerArm - p.lElbowZ, 0, 0);
     this.applyBone('rightLowerArm', p.rightLowerArm + p.rElbowZ, 0, 0);
   }
@@ -1092,6 +1244,10 @@ class GenericAvatar implements Avatar {
     const r = this.bones.get('rightUpperArm');
     const re = this.bones.get('rightLowerArm');
     if (r && re) clampUpperArmAdduction(r, re, sl, sr);
+  }
+
+  easeIdleHang(): void {
+    easeIdleHangOn((name) => this.getBoneNode(name), this.shoulderRest);
   }
 
   plantFeet(plant: boolean, lean?: PlantLean): void {
