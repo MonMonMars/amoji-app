@@ -68,20 +68,20 @@ describe('auto personality', () => {
     const stored: Record<string, string> = {};
     for (const tag of [...female, ...male]) stored[`p-${tag}`] = tag;
     g.localStorage.setItem('amoji.personality.v1', JSON.stringify(stored));
-    const dropped = ['IdleNeutral', 'Thinking', 'IdleChinHand', 'IdleHug', 'IdleSassy', 'Impatient'];
+    const dropped = ['IdleNeutral', 'Thinking', 'IdleChinHand', 'IdleHug', 'IdleSassy', 'Impatient', 'Relax', 'LookAround', 'WeightShift'];
     for (const tag of female) {
       const clips = personalityMotion(`p-${tag}`, 'female').idleClips;
       expect(clips[0]).toBe('IdleBreathCalm');
+      expect(clips).toContain('StandardIdle');
       for (const id of dropped) expect(clips).not.toContain(id);
     }
     for (const tag of male) {
       const clips = personalityMotion(`p-${tag}`, 'male').idleClips;
       expect(clips[0]).toBe('IdleBreathCalm');
+      expect(clips).toContain('StandardIdle');
       for (const id of dropped) expect(clips).not.toContain(id);
     }
-    expect(personalityMotion('p-sporty', 'male').idleClips).toContain('WeightShift');
-    expect(personalityMotion('p-shy', 'female').idleClips).toContain('Relax');
-    expect(personalityMotion('p-cool', 'male').idleClips).toContain('StandardIdle');
+    expect(personalityMotion('p-cool', 'male').idleClips).toEqual(['IdleBreathCalm', 'StandardIdle']);
     restore();
   });
 });
@@ -154,11 +154,13 @@ describe('per-character personality profiles', () => {
     const a = pickIdleLine('a01-shino', 'en', 0);
     const b = pickIdleLine('a02-shibu', 'en', 0);
     expect(a).not.toBe(b);
+    expect(a).not.toMatch(/Cheer time|sunshine!|plot twist|Energy check/);
     expect(personalityPrompt('a01-shino', 'female')).not.toBe(personalityPrompt('a02-shibu', 'female'));
     expect(cannedOpener('a98-ethan', 'male', 'en', 'ETHAN')).toContain('ETHAN');
     const tipA = personalityTutorTip('a01-shino', 'female', 'en', 0);
     const tipB = personalityTutorTip('a02-shibu', 'female', 'en', 0);
     expect(tipA).not.toBe(tipB);
+    expect(tipA).not.toMatch(/Cheer time|sunshine!|plot twist|Energy check/);
     const tour = Array.from({ length: 8 }, (_, i) => personalityTutorTip('a01-shino', 'female', 'en', i));
     expect(new Set(tour).size).toBe(8);
     expect(personalityTutorTip('a01-shino', 'female', 'en', 8)).toBe(tour[0]);

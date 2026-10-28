@@ -156,7 +156,7 @@ import { startThinkingSound, stopThinkingSound } from '../lib/thinking-sound';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
 import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerformance } from '../lib/music';
 import { clipLabel, PERFORMANCE_CLIPS, type PerformanceClip } from '../lib/performance-clips';
-import { characterSpecialty, pickShowcaseOffer, SHOWCASE_START, SHOWCASE_YES_RE, type ShowcaseKind } from '../lib/showcase';
+import { SHOWCASE_START, SHOWCASE_YES_RE, type ShowcaseKind } from '../lib/showcase';
 import { detectGame, startGame, playTurn, gameFarewellLine, type GameState } from '../lib/games';
 import { detectActionGame, setMiniGameChromeHidden, subscribeMiniGameOpen, type ActionGame } from '../lib/minigames';
 import MiniGameOverlay from './MiniGameOverlay';
@@ -167,7 +167,7 @@ import { listenContinuous, listenSupported } from '../lib/listen';
 import { startVad } from '../lib/vad';
 import { ambientStart, ambientStop, playPokeSfx } from '../lib/sfx';
 import { t, backgroundById, type Lang, type StrKey } from '../lib/prefs';
-import { adaptiveBlock, pickSceneLine } from '../lib/adaptive';
+import { adaptiveBlock } from '../lib/adaptive';
 import { loadProfile, type Gender } from '../lib/profile';
 import type { ChatStatus } from '../lib/status';
 import EmotionOrb from './EmotionOrb';
@@ -610,25 +610,13 @@ export default function ChatPanel({
         sayLocal(pickLine('reengage', lang, n), feltHints);
         return;
       }
-      // r.48 — every few quiet moments she either teaches you something she
-      // can do for you, or offers a private performance; the offer stays
-      // outstanding until you answer, and your "yes" starts the show
-      if (n % 4 === 1) {
-        // n steps on every idle line; floor(n/4) steps once per tip so the bank rotates.
-        sayLocal(personalityTutorTip(characterId, characterGender, lang, Math.floor(n / 4)), feltHints);
+      // Idle talk is a short tutor tip, then one calm personality line.
+      // Showcase offers stay on an explicit yes, not this quiet clock.
+      if (n % 2 === 0) {
+        sayLocal(personalityTutorTip(characterId, characterGender, lang, Math.floor(n / 2)), feltHints);
         return;
       }
-      if (n % 4 === 3 && !pendingOfferRef.current) {
-        const kind = characterSpecialty(characterId);
-        pendingOfferRef.current = kind;
-        sayLocal(pickShowcaseOffer(kind, lang, n), feltHints);
-        return;
-      }
-      // r.70 — scene-aware idle chatter: her mood line wins, then a line
-      // belonging to the current backdrop (aurora ≠ rainy night), then the
-      // character's persona bank as the final fallback.
       const line = (idleMood ? pickMoodIdleLine(idleMood, lang, n) : undefined)
-        ?? pickSceneLine(backgroundId, lang, n)
         ?? pickIdleLine(characterId, lang, n);
       sayLocal(line, feltHints);
     }, 5000);

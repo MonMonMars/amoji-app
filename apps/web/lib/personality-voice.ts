@@ -1506,7 +1506,13 @@ function renderPool(
 }
 
 export function voiceIdleLines(voice: VoiceId, motif: MotifId, frame: number, lang: Lang): string[] {
-  return renderPool(voice, motif, frame, lang, IDLE[voice][lang], {});
+  // The body is the line. The old catchphrase wrap ("Cheer time! tea sunshine!")
+  // made idle talk sound like nonsense. Frame rotates which line leads so two
+  // companions who share a voice still differ.
+  const lex = LEX[motif][lang];
+  const lines = IDLE[voice][lang].map((body) => fill(body, { noun: lex.noun, verb: lex.verb, thing: lex.thing }));
+  const shift = Math.abs(frame) % lines.length;
+  return lines.slice(shift).concat(lines.slice(0, shift));
 }
 
 export function voicePokeLines(voice: VoiceId, motif: MotifId, frame: number, lang: Lang, zone: string): string[] {
@@ -1522,11 +1528,35 @@ export function voiceOpening(voice: VoiceId, motif: MotifId, frame: number, lang
   return fill(OPENING[voice][lang], { name, noun });
 }
 
-/** Short app-tip in this voice. The body is the how-to; the wrap is the personality. */
+/** Short, plain lead so a tutor tip stays a tip. Motif keeps cast members distinct. */
+const TUTOR_LEAD: Record<VoiceId, Record<Lang, string>> = {
+  sunny:   { en: 'I like {noun}.', yue: '我鍾意{noun}。', zh: '我喜欢{noun}。', ja: '{noun}が好き。' },
+  shy:     { en: 'Um, {noun}.', yue: '嗯，{noun}。', zh: '嗯，{noun}。', ja: 'えっと、{noun}。' },
+  playful: { en: 'Hehe, {noun}.', yue: '嘻嘻，{noun}。', zh: '嘻嘻，{noun}。', ja: 'ふふ、{noun}。' },
+  gentle:  { en: 'Softly, about {noun}.', yue: '輕輕講下{noun}。', zh: '轻轻说说{noun}。', ja: 'そっと、{noun}の話。' },
+  dreamy:  { en: 'Thinking of {noun}.', yue: '諗緊{noun}。', zh: '想着{noun}。', ja: '{noun}のことを考えてる。' },
+  spark:   { en: 'Energy up, {noun}.', yue: '精神啲，{noun}。', zh: '打起精神，{noun}。', ja: '元気出して、{noun}。' },
+  steady:  { en: 'Here is a {noun} tip.', yue: '一個{noun}小貼士。', zh: '一个{noun}小提示。', ja: '{noun}の小さなヒント。' },
+  cool:    { en: 'Short version, {noun}.', yue: '短版本，{noun}。', zh: '短版本，{noun}。', ja: '短く言うと、{noun}。' },
+  warm:    { en: 'Pull up a chair. {noun}.', yue: '坐低啦。{noun}。', zh: '坐下来。{noun}。', ja: '座って。{noun}。' },
+  quiet:   { en: 'Quietly, {noun}.', yue: '靜靜哋，{noun}。', zh: '静静地，{noun}。', ja: '静かに、{noun}。' },
+  sporty:  { en: 'Team tip, {noun}.', yue: '隊伍貼士，{noun}。', zh: '队伍提示，{noun}。', ja: 'チームのヒント、{noun}。' },
+  wry:     { en: 'Funny thing, {noun}.', yue: '有件趣事，{noun}。', zh: '有件小事，{noun}。', ja: 'ちょっとした話、{noun}。' },
+};
+
+const TUTOR_BRIDGE: Record<Lang, readonly string[]> = {
+  en: [' ', ' Also. ', ' Next. ', ' And. '],
+  yue: [' ', ' 另外。', ' 跟住。', ' 同埋。'],
+  zh: [' ', ' 另外。', ' 接着。', ' 还有。'],
+  ja: [' ', ' それと。', ' 次。', ' あと。'],
+};
+
+/** Short app-tip. The how-to stays intact; the lead is one calm clause. */
 export function voiceTutorLine(voice: VoiceId, motif: MotifId, frame: number, lang: Lang, body: string): string {
-  const catchphrase = voiceCatchphrase(voice, motif, frame, lang);
-  const wrap = WRAP[voice][lang][Math.abs(frame) % FRAME_COUNT]!;
-  return fill(wrap, { catch: catchphrase, body });
+  const noun = LEX[motif][lang].noun;
+  const lead = fill(TUTOR_LEAD[voice][lang], { noun });
+  const bridge = TUTOR_BRIDGE[lang][Math.abs(frame) % FRAME_COUNT] ?? ' ';
+  return `${lead}${bridge}${body}`;
 }
 
 function assertBanks(): void {
