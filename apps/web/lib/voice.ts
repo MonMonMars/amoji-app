@@ -83,7 +83,7 @@ import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
 import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripVoicedGlyphs } from './speak-text';
 import { browserVoicesForLang, edgeSampleText, isMaleNeuralVoice, synthNameConflicts, synthNameList, voiceNameMatches } from './voice-catalog';
 import { LineQueue, speechRemainder } from './speech-queue';
-import { clipFile, emotionClipKind, greetingText, nextGreetingKind } from './voice-clips';
+import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText, nextGreetingKind, type BurstClipKind, type ClipFolder, type VoiceClipGender } from './voice-clips';
 import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
 export { speechRemainder };
 import { edgeCastVoice } from './edge-cast';
@@ -1216,6 +1216,8 @@ interface SpeechJob {
   intensity: number;
   /** Premade file for kind 'clip'. Played to the end before the next line. */
   clipFile?: string;
+  /** Emotion burst or preview. A missing file must not fall through to live TTS. */
+  clipOnly?: boolean;
   /** Exact Edge short name for a greeting. Chat still reads the saved pin. */
   voiceId?: string;
 }
@@ -1515,13 +1517,22 @@ function performSpeak(
   if (clipKind) {
     const gender = characterVoiceGender(characterId);
     const caption = leadKind && tic ? tic.text : text;
+    const bodyIsBurst = () => burstSkipsTts(emotionClipKind(text, 'line'));
     void playVoiceClip(clipFile(lang, gender, clipKind), caption, () => markVoiceStarted()).then(() => {
       if (!speechAlive()) { settle(); return; }
-      if (lineKind) { settle(); return; }
+      if (lineKind || bodyIsBurst()) { settle(); return; }
+      // The lead already played from a file. The sentence after it may use TTS.
       tic = undefined;
       beginTts();
     }).catch((err: unknown) => {
       if (!speechAlive() || (err as Error | undefined)?.message === 'canceled') { settle(); return; }
+      if (leadKind) tic = undefined;
+      // A laugh / giggle / wow / um / oh / ha never goes to live TTS, even if the file fails.
+      if (burstSkipsTts(leadKind) || burstSkipsTts(lineKind) || bodyIsBurst()) {
+        if (leadKind && text.trim() && !bodyIsBurst()) beginTts();
+        else settle();
+        return;
+      }
       beginTts();
     });
   } else {
@@ -1538,7 +1549,7 @@ function performClip(job: SpeechJob): Promise<void> {
     const file = job.clipFile;
     if (!file || !voiceEnabled()) { resolve(); return; }
     void playVoiceClip(file, job.text, () => markVoiceStarted()).then(() => resolve()).catch((err: unknown) => {
-      if (lineQueue.epochNow() !== epoch || (err as Error | undefined)?.message === 'canceled') {
+      if (lineQueue.epochNow() !== epoch || (err as Error | undefined)?.message === 'canceled' || job.clipOnly) {
         resolve();
         return;
       }
@@ -1568,9 +1579,34 @@ export function playVoiceGreeting(characterId: string, lang: Lang, voiceId: stri
 }
 
 /**
- * Clip greeting when no Edge short name is available.
- * Queued behind whatever is already speaking.
+ * Tap-to-hear one file from the burst library. Never synthesizes it.
+ * `folder` may be `universal`. The speech job still carries the UI language.
  */
+export function previewLibraryClip(folder: ClipFolder, gender: VoiceClipGender, file: string, lang: Lang): void {
+  const path = clipLibraryFile(folder, gender, file);
+  if (!path) return;
+  stopSpeaking();
+  unlockAudio();
+  lineQueue.enqueue({
+    kind: 'clip',
+    text: file.replace(/\.mp3$/, ''),
+    characterId: 'preview',
+    lang,
+    intensity: 1,
+    clipFile: path,
+    clipOnly: true,
+  });
+  drainSpeech();
+}
+
+/**
+ * Tap-to-hear a canonical emotion burst on the select board.
+ * Plays the file only. It does not synthesize the burst with live TTS.
+ */
+export function previewEmotionClip(lang: Lang, gender: 'female' | 'male', kind: BurstClipKind): void {
+  previewLibraryClip(lang, gender, `${kind}.mp3`, lang);
+}
+
 export function playSelectGreeting(characterId: string, lang: Lang, gender: 'female' | 'male'): void {
   if (!voiceEnabled()) return;
   const kind = nextGreetingKind();
