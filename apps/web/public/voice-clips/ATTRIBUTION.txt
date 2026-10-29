@@ -8,8 +8,9 @@ apps/web/scripts/gen-voice-clips.py does not overwrite the bursts.
 Clips are trimmed, faded, and encoded to mono MP3. Ideal length is under 3s.
 Freesound takes were cut from the CC0 or CC BY high-quality preview of the
 same recording, because the original wav needs a logged-in download.
-Nox and VocalSound takes were cut from the original wavs.
-Mixkit and Pixabay were not used. 効果音ラボ, NonSpeech7k, Expresso, and
+Nox, VocalSound, and Mixkit takes were cut from the original wavs.
+Pixabay was not used. OpenGameArt group giggling was not used: it is a
+crowd, not a solo companion. 効果音ラボ, NonSpeech7k, Expresso, and
 NonverbalTTS were not used.
 
 Licenses
@@ -34,6 +35,11 @@ Licenses
   films, games, animations, podcasts, apps, or anything else. No attribution
   required." Not an SPDX deed. Speaker gender is not labeled; the sigh is
   used for ja/female/um.mp3.
+- Mixkit — Female astonished gasp (964), female shocked gasp (965),
+  female surprised gasp (968), male astonished gasp (966).
+  https://mixkit.co/free-sound-effects/gasp/
+  Mixkit Sound Effects Free License. Free inside this app as an end
+  product. Not a separate sound-effect pack. No attribution required.
 - Yue only — Microsoft Edge neural voices zh-HK-HiuMaanNeural (female) and
   zh-HK-WanLungNeural (male), cropped. source: edge-tts crop.
   No redistributable Cantonese laugh/um pack was found. Same voices as the
@@ -43,14 +49,14 @@ File map
 en/female/laugh.mp3     Reitanna laugh3 (241498) CC0
 en/female/giggle.mp3    Reitanna cute giggle (252218) CC0
 en/female/smile.mp3     Nox female V1 short laugh 02 CC0
-en/female/wow.mp3       Reitanna gasp OOOH (242607), cropped CC0
+en/female/wow.mp3       Mixkit female astonished gasp 964, end-product license
 en/female/oh.mp3        1LOVE female_reaction_oh_short_01 (650405) CC BY 4.0
 en/female/um.mp3        Nox female V1 closed-mouth reflection 02 CC0
 en/female/ha.mp3        Nox female V1 short laugh 01 CC0
 en/male/laugh.mp3       Nox male V1 short laugh 03 CC0
 en/male/giggle.mp3      Nox male V2 short laugh 02 CC0
 en/male/smile.mp3       Nox male V1 short laugh 04 CC0
-en/male/wow.mp3         Nox male V1 surprise 02 CC0
+en/male/wow.mp3         Mixkit male astonished gasp 966, end-product license
 en/male/oh.mp3          Drkvixn91 Sigh_3_Male (318088), cropped CC0
 en/male/um.mp3          1LOVE male_reaction_mmm_01 (650409) CC BY 4.0
 en/male/ha.mp3          Nox male V1 short laugh 01 CC0
@@ -71,8 +77,8 @@ zh/male/ha.mp3          VocalSound m3078 laughter, ZH male, CC BY-SA 4.0
 ja/female/laugh.mp3     Nox female V1 short laugh 03 CC0 (game-style, lang-agnostic)
 ja/female/giggle.mp3    Nox female V2 short laugh 01 CC0
 ja/female/smile.mp3     Nox female V2 short laugh 05 CC0
-ja/female/wow.mp3       Nox female V1 surprise vowel 08 CC0
-ja/female/oh.mp3        Nox female V2 gasp 01 CC0
+ja/female/wow.mp3       Mixkit female shocked gasp 965, end-product license
+ja/female/oh.mp3        Mixkit female surprised gasp 968, end-product license
 ja/female/um.mp3        Garmlie Japanese sigh (gender unlabeled)
 ja/female/ha.mp3        Nox female V1 short laugh 05 CC0
 ja/male/laugh.mp3       Nox male V2 longer laugh 02 CC0

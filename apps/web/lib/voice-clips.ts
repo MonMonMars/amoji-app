@@ -7,7 +7,7 @@
 // Spoken lines only: apps/web/scripts/gen-voice-clips.py
 // Sources and licenses: public/voice-clips/ATTRIBUTION.txt
 // en/ is Nox plus Reitanna and 1LOVE. zh/ laughs and sighs are VocalSound.
-// ja/ uses Nox game-style bursts (VocalSound has no Japanese speakers).
+// ja/ uses Nox game-style bursts plus Mixkit gasps (VocalSound has no Japanese speakers).
 // yue/ is an Edge crop (HiuMaan / WanLung). No free Cantonese pack exists.
 
 export const VOICE_CLIP_LANGS = ['yue', 'zh', 'ja', 'en'] as const;
