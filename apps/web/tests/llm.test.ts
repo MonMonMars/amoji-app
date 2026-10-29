@@ -97,6 +97,18 @@ describe('brain router', () => {
   });
 });
 
+describe('companion coherence', () => {
+  it('tells the model to finish sentences and not open with a slogan', async () => {
+    const { BASE_SYSTEM } = await import('../lib/llm');
+    const { personalityPrompt } = await import('../lib/personality');
+    expect(BASE_SYSTEM).toMatch(/Finish each sentence/);
+    const prompt = personalityPrompt('a01-shino', 'female');
+    expect(prompt).toMatch(/Finish each sentence/);
+    expect(prompt).not.toMatch(/Catchphrase:/);
+    expect(prompt).not.toMatch(/sunshine!/);
+  });
+});
+
 describe('finishReply (streamed text)', () => {
   it('parses the emotion tag out of an accumulated reply', async () => {
     const { finishReply } = await import('../lib/client-chat');

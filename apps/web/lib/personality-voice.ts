@@ -194,76 +194,76 @@ const CATCH: Record<VoiceId, Record<Lang, readonly string[]>> = {
 
 const WRAP: Record<VoiceId, Record<Lang, readonly string[]>> = {
   sunny: {
-    en: ['{catch} {body}', 'Okay okay — {catch} {body}', 'Big smile! {catch} {body}', 'Cheer time! {catch} {body}'],
-    yue: ['{catch} {body}', '得得得——{catch} {body}', '大笑容！{catch} {body}', '打氣時間！{catch} {body}'],
-    zh: ['{catch} {body}', '好好好——{catch} {body}', '大笑脸！{catch} {body}', '加油时间！{catch} {body}'],
-    ja: ['{catch} {body}', 'そうそう——{catch} {body}', '大きな笑顔！{catch} {body}', '応援タイム！{catch} {body}'],
+    en: ['{body}', 'Okay okay — {body}', 'Big smile! {body}', 'Cheer time! {body}'],
+    yue: ['{body}', '得得得——{body}', '大笑容！{body}', '打氣時間！{body}'],
+    zh: ['{body}', '好好好——{body}', '大笑脸！{body}', '加油时间！{body}'],
+    ja: ['{body}', 'そうそう——{body}', '大きな笑顔！{body}', '応援タイム！{body}'],
   },
   shy: {
-    en: ['{catch} {body}', 'Um… {catch} {body}', 'If it is okay… {catch} {body}', 'Little voice. {catch} {body}'],
-    yue: ['{catch} {body}', '嗯……{catch} {body}', '如果得嘅話……{catch} {body}', '細聲。{catch} {body}'],
-    zh: ['{catch} {body}', '嗯……{catch} {body}', '如果可以的话……{catch} {body}', '小声。{catch} {body}'],
-    ja: ['{catch} {body}', 'あの……{catch} {body}', 'よかったら……{catch} {body}', '小さな声。{catch} {body}'],
+    en: ['{body}', 'Um… {body}', 'If it is okay… {body}', 'Little voice. {body}'],
+    yue: ['{body}', '嗯……{body}', '如果得嘅話……{body}', '細聲。{body}'],
+    zh: ['{body}', '嗯……{body}', '如果可以的话……{body}', '小声。{body}'],
+    ja: ['{body}', 'あの……{body}', 'よかったら……{body}', '小さな声。{body}'],
   },
   playful: {
-    en: ['{catch} {body}', 'Psst — {catch} {body}', 'Plot incoming! {catch} {body}', 'Hehe wait. {catch} {body}'],
-    yue: ['{catch} {body}', '喂——{catch} {body}', '有計！{catch} {body}', '嘻嘻等陣。{catch} {body}'],
-    zh: ['{catch} {body}', '嘿——{catch} {body}', '有计！{catch} {body}', '嘻嘻等一下。{catch} {body}'],
-    ja: ['{catch} {body}', 'ねえ——{catch} {body}', '作戦！{catch} {body}', 'ふふ、待って。{catch} {body}'],
+    en: ['{body}', 'Psst — {body}', 'Plot incoming! {body}', 'Hehe wait. {body}'],
+    yue: ['{body}', '喂——{body}', '有計！{body}', '嘻嘻等陣。{body}'],
+    zh: ['{body}', '嘿——{body}', '有计！{body}', '嘻嘻等一下。{body}'],
+    ja: ['{body}', 'ねえ——{body}', '作戦！{body}', 'ふふ、待って。{body}'],
   },
   gentle: {
-    en: ['{catch} {body}', 'Softly now. {catch} {body}', 'No rush. {catch} {body}', 'Here, gently. {catch} {body}'],
-    yue: ['{catch} {body}', '慢慢嚟。{catch} {body}', '唔使急。{catch} {body}', '嚟，輕輕。{catch} {body}'],
-    zh: ['{catch} {body}', '慢慢来。{catch} {body}', '不用急。{catch} {body}', '来，轻轻。{catch} {body}'],
-    ja: ['{catch} {body}', 'ゆっくり。{catch} {body}', '急がなくていい。{catch} {body}', 'はい、そっと。{catch} {body}'],
+    en: ['{body}', 'Softly now. {body}', 'No rush. {body}', 'Here, gently. {body}'],
+    yue: ['{body}', '慢慢嚟。{body}', '唔使急。{body}', '嚟，輕輕。{body}'],
+    zh: ['{body}', '慢慢来。{body}', '不用急。{body}', '来，轻轻。{body}'],
+    ja: ['{body}', 'ゆっくり。{body}', '急がなくていい。{body}', 'はい、そっと。{body}'],
   },
   dreamy: {
-    en: ['{catch} {body}', 'Drift with me. {catch} {body}', 'Half a dream… {catch} {body}', 'The sky said. {catch} {body}'],
-    yue: ['{catch} {body}', '同我飄吓。{catch} {body}', '半個夢……{catch} {body}', '個天話。{catch} {body}'],
-    zh: ['{catch} {body}', '跟我飘一会儿。{catch} {body}', '半个梦……{catch} {body}', '天这么说。{catch} {body}'],
-    ja: ['{catch} {body}', '一緒にふわっと。{catch} {body}', '夢の途中……{catch} {body}', '空が言った。{catch} {body}'],
+    en: ['{body}', 'Drift with me. {body}', 'Half a dream… {body}', 'The sky said. {body}'],
+    yue: ['{body}', '同我飄吓。{body}', '半個夢……{body}', '個天話。{body}'],
+    zh: ['{body}', '跟我飘一会儿。{body}', '半个梦……{body}', '天这么说。{body}'],
+    ja: ['{body}', '一緒にふわっと。{body}', '夢の途中……{body}', '空が言った。{body}'],
   },
   spark: {
-    en: ['{catch} {body}', 'Three, two, one! {catch} {body}', 'Energy check! {catch} {body}', 'Let\'s go! {catch} {body}'],
-    yue: ['{catch} {body}', '三、二、一！{catch} {body}', '能量檢查！{catch} {body}', '出發！{catch} {body}'],
-    zh: ['{catch} {body}', '三、二、一！{catch} {body}', '能量检查！{catch} {body}', '出发！{catch} {body}'],
-    ja: ['{catch} {body}', 'さん、に、いち！{catch} {body}', '元気チェック！{catch} {body}', '行くよ！{catch} {body}'],
+    en: ['{body}', 'Three, two, one! {body}', 'Energy check! {body}', 'Let\'s go! {body}'],
+    yue: ['{body}', '三、二、一！{body}', '能量檢查！{body}', '出發！{body}'],
+    zh: ['{body}', '三、二、一！{body}', '能量检查！{body}', '出发！{body}'],
+    ja: ['{body}', 'さん、に、いち！{body}', '元気チェック！{body}', '行くよ！{body}'],
   },
   steady: {
-    en: ['{catch} {body}', 'Here is the plan. {catch} {body}', 'All steady. {catch} {body}', 'Step one. {catch} {body}'],
-    yue: ['{catch} {body}', '計劃係咁。{catch} {body}', '一切穩陣。{catch} {body}', '第一步。{catch} {body}'],
-    zh: ['{catch} {body}', '计划是这样。{catch} {body}', '一切稳稳的。{catch} {body}', '第一步。{catch} {body}'],
-    ja: ['{catch} {body}', '予定はこう。{catch} {body}', '落ち着いてる。{catch} {body}', '最初の一歩。{catch} {body}'],
+    en: ['{body}', 'Here is the plan. {body}', 'All steady. {body}', 'Step one. {body}'],
+    yue: ['{body}', '計劃係咁。{body}', '一切穩陣。{body}', '第一步。{body}'],
+    zh: ['{body}', '计划是这样。{body}', '一切稳稳的。{body}', '第一步。{body}'],
+    ja: ['{body}', '予定はこう。{body}', '落ち着いてる。{body}', '最初の一歩。{body}'],
   },
   cool: {
-    en: ['{catch} {body}', 'Anyway. {catch} {body}', 'Short version. {catch} {body}', 'Heh. {catch} {body}'],
-    yue: ['{catch} {body}', '算啦。{catch} {body}', '短版本。{catch} {body}', '呵。{catch} {body}'],
-    zh: ['{catch} {body}', '反正。{catch} {body}', '短版本。{catch} {body}', '呵。{catch} {body}'],
-    ja: ['{catch} {body}', 'まあ。{catch} {body}', '短く言うと。{catch} {body}', 'ふっ。{catch} {body}'],
+    en: ['{body}', 'Anyway. {body}', 'Short version. {body}', 'Heh. {body}'],
+    yue: ['{body}', '算啦。{body}', '短版本。{body}', '呵。{body}'],
+    zh: ['{body}', '反正。{body}', '短版本。{body}', '呵。{body}'],
+    ja: ['{body}', 'まあ。{body}', '短く言うと。{body}', 'ふっ。{body}'],
   },
   warm: {
-    en: ['{catch} {body}', 'Pull up a chair. {catch} {body}', 'Hey friend. {catch} {body}', 'Good to see you. {catch} {body}'],
-    yue: ['{catch} {body}', '坐低啦。{catch} {body}', '喂老友。{catch} {body}', '好開心見到你。{catch} {body}'],
-    zh: ['{catch} {body}', '坐下来。{catch} {body}', '嘿老友。{catch} {body}', '见到你真好。{catch} {body}'],
-    ja: ['{catch} {body}', '座って。{catch} {body}', 'やあ相棒。{catch} {body}', '来てくれてよかった。{catch} {body}'],
+    en: ['{body}', 'Pull up a chair. {body}', 'Hey friend. {body}', 'Good to see you. {body}'],
+    yue: ['{body}', '坐低啦。{body}', '喂老友。{body}', '好開心見到你。{body}'],
+    zh: ['{body}', '坐下来。{body}', '嘿老友。{body}', '见到你真好。{body}'],
+    ja: ['{body}', '座って。{body}', 'やあ相棒。{body}', '来てくれてよかった。{body}'],
   },
   quiet: {
-    en: ['{catch} {body}', 'Hm. {catch} {body}', 'Quietly. {catch} {body}', 'Just this. {catch} {body}'],
-    yue: ['{catch} {body}', '嗯。{catch} {body}', '靜靜哋。{catch} {body}', '就呢句。{catch} {body}'],
-    zh: ['{catch} {body}', '嗯。{catch} {body}', '静静地。{catch} {body}', '就这句。{catch} {body}'],
-    ja: ['{catch} {body}', 'ふむ。{catch} {body}', '静かに。{catch} {body}', 'これだけ。{catch} {body}'],
+    en: ['{body}', 'Hm. {body}', 'Quietly. {body}', 'Just this. {body}'],
+    yue: ['{body}', '嗯。{body}', '靜靜哋。{body}', '就呢句。{body}'],
+    zh: ['{body}', '嗯。{body}', '静静地。{body}', '就这句。{body}'],
+    ja: ['{body}', 'ふむ。{body}', '静かに。{body}', 'これだけ。{body}'],
   },
   sporty: {
-    en: ['{catch} {body}', 'On your mark. {catch} {body}', 'Team huddle! {catch} {body}', 'Water break over. {catch} {body}'],
-    yue: ['{catch} {body}', '各就各位。{catch} {body}', '隊伍埋堆！{catch} {body}', '飲完水。{catch} {body}'],
-    zh: ['{catch} {body}', '各就各位。{catch} {body}', '队伍集合！{catch} {body}', '喝完水了。{catch} {body}'],
-    ja: ['{catch} {body}', '位置について。{catch} {body}', 'チーム集合！{catch} {body}', '水分補給おわり。{catch} {body}'],
+    en: ['{body}', 'On your mark. {body}', 'Team huddle! {body}', 'Water break over. {body}'],
+    yue: ['{body}', '各就各位。{body}', '隊伍埋堆！{body}', '飲完水。{body}'],
+    zh: ['{body}', '各就各位。{body}', '队伍集合！{body}', '喝完水了。{body}'],
+    ja: ['{body}', '位置について。{body}', 'チーム集合！{body}', '水分補給おわり。{body}'],
   },
   wry: {
-    en: ['{catch} {body}', 'Well then. {catch} {body}', 'Funny thing. {catch} {body}', 'If you insist. {catch} {body}'],
-    yue: ['{catch} {body}', '咁喔。{catch} {body}', '有件好笑嘅事。{catch} {body}', '你堅持嘅話。{catch} {body}'],
-    zh: ['{catch} {body}', '那么。{catch} {body}', '有件有意思的事。{catch} {body}', '你坚持的话。{catch} {body}'],
-    ja: ['{catch} {body}', 'さて。{catch} {body}', 'おかしな話。{catch} {body}', 'そう言うなら。{catch} {body}'],
+    en: ['{body}', 'Well then. {body}', 'Funny thing. {body}', 'If you insist. {body}'],
+    yue: ['{body}', '咁喔。{body}', '有件好笑嘅事。{body}', '你堅持嘅話。{body}'],
+    zh: ['{body}', '那么。{body}', '有件有意思的事。{body}', '你坚持的话。{body}'],
+    ja: ['{body}', 'さて。{body}', 'おかしな話。{body}', 'そう言うなら。{body}'],
   },
 };
 
@@ -1490,6 +1490,18 @@ export function voiceTone(voice: VoiceId, motif: MotifId, frame: number, blurb: 
   return `${blurb}; ${motif} on the mind; ${cadence} cadence`;
 }
 
+/** A finished motif sentence, so the line opens clearly and stays unique per character. */
+const MOTIF_LEAD: Record<Lang, string> = {
+  en: 'I like {noun}.',
+  yue: '我鍾意{noun}。',
+  zh: '我喜欢{noun}。',
+  ja: '{noun}が好き。',
+};
+
+function withLead(lang: Lang, noun: string, line: string): string {
+  return `${fill(MOTIF_LEAD[lang], { noun })} ${line}`.replace(/\s+/g, ' ').trim();
+}
+
 function renderPool(
   voice: VoiceId,
   motif: MotifId,
@@ -1499,10 +1511,9 @@ function renderPool(
   extra: Record<string, string>,
 ): string[] {
   const lex = LEX[motif][lang];
-  const catchphrase = voiceCatchphrase(voice, motif, frame, lang);
   const wrap = WRAP[voice][lang][Math.abs(frame) % FRAME_COUNT]!;
   const bits = { noun: lex.noun, verb: lex.verb, thing: lex.thing, ...extra };
-  return bodies.map((body) => fill(wrap, { catch: catchphrase, body: fill(body, bits) }));
+  return bodies.map((body) => withLead(lang, lex.noun, fill(wrap, { body: fill(body, bits) })));
 }
 
 export function voiceIdleLines(voice: VoiceId, motif: MotifId, frame: number, lang: Lang): string[] {

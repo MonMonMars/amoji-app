@@ -129,6 +129,58 @@ describe('production backend', () => {
     expect(rows.map((r) => r.role)).toEqual(['user', 'assistant']);
   });
 
+  it('does not refetch when the client already sent weather facts', async () => {
+    const db = openDb(':memory:');
+    open.push(db);
+    let called = false;
+    const api = createBackend({
+      db,
+      llm: 'offline',
+      gatherWorld: async () => {
+        called = true;
+        return { prompt: 'Weather: 1°C.', spoken: 'no' };
+      },
+      synthesize: async () => new Uint8Array([0]),
+    });
+    const token = await session(api);
+    const res = await api.handle(authed(token, '/api/chat', 'POST', {
+      message: 'weather',
+      language: 'en',
+      world: 'Weather: 29°C, clear.',
+    }));
+    expect(res.status).toBe(200);
+    expect(called).toBe(false);
+  });
+
+  it('fills live weather on the server when the client sent none', async () => {
+    const db = openDb(':memory:');
+    open.push(db);
+    const api = createBackend({
+      db,
+      llm: 'live',
+      gatherWorld: async (message, language) => {
+        expect(message).toBe('weather');
+        expect(language).toBe('en');
+        return { prompt: 'Weather: 21°C, clear.', spoken: 'It is about 21° and clear.' };
+      },
+      complete: async (input) => {
+        const system = input.messages[0]?.content ?? '';
+        expect(system).toContain('21°C');
+        expect(system).toContain('Finish each sentence');
+        return { content: 'I don\'t have live weather. [emotion:{"neutral":0.2}]', provider: 'test' };
+      },
+      synthesize: async () => new Uint8Array([0]),
+    });
+    const token = await session(api);
+    const res = await api.handle(authed(token, '/api/chat', 'POST', { message: 'weather', language: 'en' }));
+    expect(res.status).toBe(200);
+    const body = await res.json() as { reply: string; provider: string };
+    expect(body.provider).toBe('test');
+    expect(body.reply).toContain('21°');
+    expect(body.reply).toMatch(/\?/);
+    expect(body.reply.toLowerCase()).not.toContain("don't have");
+  });
+
   it('speaks a live-fact line when the model throws', async () => {
     const db = openDb(':memory:');
     open.push(db);
