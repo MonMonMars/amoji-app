@@ -5,8 +5,10 @@
 // "let me think / let me search" lines stay spoken clips.
 // Files: public/voice-clips/{yue|zh|ja|en}/{female|male}/{kind}.mp3
 // Spoken lines only: apps/web/scripts/gen-voice-clips.py
-// Japanese game-style reactions (wah / uh / haa / eh / single laugh) live in
-// ja/female. Other languages use the closest recorded human burst.
+// Sources and licenses: public/voice-clips/ATTRIBUTION.txt
+// en/ is Nox plus Reitanna and 1LOVE. zh/ laughs and sighs are VocalSound.
+// ja/ uses Nox game-style bursts (VocalSound has no Japanese speakers).
+// yue/ is an Edge crop (HiuMaan / WanLung). No free Cantonese pack exists.
 
 export const VOICE_CLIP_LANGS = ['yue', 'zh', 'ja', 'en'] as const;
 export type VoiceClipLang = (typeof VOICE_CLIP_LANGS)[number];
