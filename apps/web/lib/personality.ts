@@ -357,8 +357,7 @@ export function personalityTutorTip(
 
 export function personalityPrompt(characterId: string, gender?: 'female' | 'male'): string {
   const profile = personalityProfile(characterId, gender);
-  const catchphrase = profile.catchphrases.en[0] ?? '';
-  return `Personality profile (${profile.gender}): ${profile.personality}. Tone: ${profile.tone}. Catchphrase: "${catchphrase}" — use it naturally, translated into the user's language. Favorite wholesome topic: ${profile.motif}. ${profile.promptHint} Let this change rhythm, jokes, and what you notice. Stay cheerful, wholesome, and kid-safe. No flirting or adult topics. Often end with a question so the chat continues.`;
+  return `Personality profile (${profile.gender}): ${profile.personality}. Tone: ${profile.tone}. Favorite wholesome topic: ${profile.motif}. ${profile.promptHint} Let this change rhythm, jokes, and what you notice — stay this person, in the reply language. Open with a clear sentence that answers them. Do not open with a slogan, a catchphrase fragment, or a note to yourself. Finish each sentence before you start the next. Stay on their topic. Cheerful, wholesome, and kid-safe. No flirting or adult topics. Often end with one question.`;
 }
 
 export function personalityLabel(characterId: string, gender?: 'female' | 'male'): PersonalityId {

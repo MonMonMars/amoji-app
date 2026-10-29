@@ -115,6 +115,9 @@ On by default. Before she answers a question like “what’s the weather here?�
 | A named place (“weather in Osaka”) | Open-Meteo geocoding | none |
 | Light local news | Google News RSS, kept to funny / odd / warm stories that mention her area. Grim headlines are dropped. The Node server reads the feed directly; the browser (including GitHub Pages) reads it through [rss2json](https://rss2json.com/) | none. Optional `RSS2JSON_API_KEY` if you outgrow the free quota |
 | Web lookup | Wikipedia + DuckDuckGo instant answers. Recent questions fall back to headlines | none. Optional Brave Search key for a fuller web index |
+| Restaurants, cafes, parks, things to do | [Photon](https://photon.komoot.io/) (OpenStreetMap). Near you when location is allowed, otherwise the city you name, with a cuisine when you say one | none |
+| Recipes | [TheMealDB](https://www.themealdb.com/api.php) search. The `1` in the URL is their published test key, not a secret. If a dish is missing, a short Wikipedia intro is the fallback | none |
+| Hobbies, facts, light tutoring | Same Wikipedia + DuckDuckGo lane, planned only for teach / how-to / hobby asks | none |
 
 Copy `apps/web/.env.example` to `apps/web/.env.local` only if you want to change this:
 
@@ -135,7 +138,10 @@ GitHub Pages has no `/api/chat`. The same lookup runs in the browser there, on t
 3. Ask “news near me”. A light or funny local story, spoken, not a crime bulletin and not a JSON dump. She should name your area.
 4. Ask “who is Marie Curie?”. A short live fact.
 5. Ask “how are you?”. No location prompt; normal chat.
-6. Optional: set `BRAVE_SEARCH_API_KEY` and ask something current that Wikipedia may not rank first.
+6. Ask “best ramen in Osaka” or “restaurants near me”. She names real places in a sentence, not a raw list.
+7. Ask “how do I make tomato soup?”. A short cook-along with numbered steps.
+8. Ask “teach me basic guitar”. A plain explanation from a live source, still in her voice.
+9. Optional: set `BRAVE_SEARCH_API_KEY` and ask something current that Wikipedia may not rank first.
 
 ## Asset policy
 
