@@ -138,6 +138,7 @@ describe('per-character personality profiles', () => {
       for (const line of [...idle, ...poke, ...openers]) {
         expect(line).not.toMatch(/\{/);
         expect(line).not.toMatch(UNSAFE);
+        expect(line).not.toMatch(/sunshine!|plot twist!/);
       }
       openers.forEach((line, i) => {
         expect(line).toContain(CHARACTERS[i]!.name);
