@@ -1,5 +1,5 @@
 'use client';
-// Last row on the select board: the 28 Tier A Edge voices as small buttons.
+// Edge voice row on the select board: the 28 Tier A Edge voices as small buttons.
 // Filtered to the current language (yue 3, zh 6, ja 2, en 17). "All" shows
 // every Tier A id. No numbered buttons for engines that do not have a speaker id.
 

@@ -1,17 +1,23 @@
-// Short greeting and emotion clips. Laugh / smile / giggle / wow / um / oh / ha
-// are vocal bursts (TTS spells those badly). Hello, nice-to-meet-you, hi-hi,
-// my-pleasure, and the longer "let me think / let me search" lines are
-// recorded once per language and gender.
+// Short greeting and emotion clips.
+// Laugh / smile / giggle / wow / um / oh / ha are recorded human bursts
+// (public/voice-clips/CREDITS.md). Live TTS must not synthesize those leads.
+// Hello, nice-to-meet-you, hi-hi, my-pleasure, and the longer
+// "let me think / let me search" lines stay spoken clips.
 // Files: public/voice-clips/{yue|zh|ja|en}/{female|male}/{kind}.mp3
-// Regenerate with apps/web/scripts/gen-voice-clips.py
+// Spoken lines only: apps/web/scripts/gen-voice-clips.py
+// Japanese game-style reactions (wah / uh / haa / eh / single laugh) live in
+// ja/female. Other languages use the closest recorded human burst.
 
 export const VOICE_CLIP_LANGS = ['yue', 'zh', 'ja', 'en'] as const;
 export type VoiceClipLang = (typeof VOICE_CLIP_LANGS)[number];
 export const VOICE_CLIP_GENDERS = ['female', 'male'] as const;
 export type VoiceClipGender = (typeof VOICE_CLIP_GENDERS)[number];
 
-/** Vocal bursts. These replace live TTS of the same sounds. */
-export const EMOTION_CLIP_KINDS = ['laugh', 'smile', 'giggle', 'wow', 'um', 'oh', 'ha', 'think', 'search'] as const;
+/** Recorded vocal bursts. These replace live TTS of the same sounds. */
+export const BURST_CLIP_KINDS = ['laugh', 'smile', 'giggle', 'wow', 'um', 'oh', 'ha'] as const;
+export type BurstClipKind = (typeof BURST_CLIP_KINDS)[number];
+/** Vocal bursts plus the longer loading lines. */
+export const EMOTION_CLIP_KINDS = [...BURST_CLIP_KINDS, 'think', 'search'] as const;
 /** Lines played when a character or a TTS button is pressed. Rotates. */
 export const GREETING_CLIP_KINDS = ['hello', 'nice', 'hihi', 'pleasure'] as const;
 export const VOICE_CLIP_KINDS = [...EMOTION_CLIP_KINDS, ...GREETING_CLIP_KINDS] as const;
@@ -52,6 +58,18 @@ export const FILLER_CLIP_TEXT: Record<VoiceClipLang, { think: string; search: st
   yue: { think: '嗯……等我諗下。', search: '嗯……等我上網搵下。' },
   zh: { think: '嗯……让我想想。', search: '嗯……让我上网查一下。' },
   ja: { think: 'うーん……考えさせて。', search: 'うーん……ネットで調べるね。' },
+};
+
+/** True for laugh / smile / giggle / wow / um / oh / ha. Think and search stay sentences. */
+export function burstSkipsTts(kind: EmotionClipKind | null): boolean {
+  return kind !== null && (BURST_CLIP_KINDS as readonly string[]).includes(kind);
+}
+
+export const BURST_CLIP_LABEL: Record<VoiceClipLang, Record<BurstClipKind, string>> = {
+  en: { laugh: 'Laugh', smile: 'Smile', giggle: 'Giggle', wow: 'Wow', um: 'Um', oh: 'Oh', ha: 'Ha' },
+  yue: { laugh: '大笑', smile: '微笑', giggle: '嘻嘻', wow: '哇', um: '嗯', oh: '哦', ha: '哈' },
+  zh: { laugh: '大笑', smile: '微笑', giggle: '嘻嘻', wow: '哇', um: '嗯', oh: '哦', ha: '哈' },
+  ja: { laugh: '笑', smile: 'ふふ', giggle: 'くすくす', wow: 'わあ', um: 'うん', oh: 'あっ', ha: 'はあ' },
 };
 
 export function clipLang(lang: string): VoiceClipLang {
