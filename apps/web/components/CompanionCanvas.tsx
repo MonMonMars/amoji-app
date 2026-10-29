@@ -1744,8 +1744,10 @@ export default function CompanionCanvas({
         // both are idempotent absolute writes (base·delta / minimal-rotation
         // fix), and both skip whatever a clip actively animates, so they
         // compose cleanly with every driving mode (clip, procedural, recoil).
-        avatar.applyRelaxedHands();
-        avatar.smoothFingers(dt / 1000);
+        const calmIdle = !perfAction && boost === 0 && !gameView && !handDrag
+          && (idleClipId === 'IdleBreathCalm' || idleClipId === 'StandardIdle');
+        avatar.applyRelaxedHands(calmIdle);
+        avatar.smoothFingers(dt / 1000, calmIdle);
         avatar.clampShoulderROM();
         // Straight-down idle hangs read as slumped shoulders. Skip during a
         // punch, a performance, a mini-game, or a hand grab.

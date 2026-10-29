@@ -7,7 +7,7 @@ import * as THREE from 'three';
 /** How long the spring is allowed to move, seconds. */
 export const CHEST_BOUNCE_SEC = 1.15;
 
-const PEAK = 0.3; // radians, ~17°
+const PEAK = 0.38; // radians, ~22° — readable on a breast poke
 
 /** Pitch offset for a chest poke. Negative first (yield), then one rebound. */
 export function chestBouncePitch(tSec: number): number {
@@ -26,7 +26,15 @@ export function chestPokeBounce(zone: string, tSec: number): number {
 
 /** Secondary bust bones only — not the chest/upper-chest ribcage. */
 export function isBustBoneName(name: string): boolean {
-  return /(?:^|_)bust\d*$/i.test(name) || /(?:^|_)breast\d*$/i.test(name);
+  if (/skirt|hair|tail|coat|ribbon/i.test(name)) return false;
+  return /bust|breast/i.test(name);
+}
+
+/** Left and right jiggle in opposite directions so a poke reads as a shake. */
+export function bustSideSign(name: string): number {
+  if (/(^|_)(l|left)(_|$)|_l_bust|leftbust|bust_l/i.test(name)) return 1;
+  if (/(^|_)(r|right)(_|$)|_r_bust|rightbust|bust_r/i.test(name)) return -1;
+  return 1;
 }
 
 /** Tip bones follow with a smaller share so the motion does not compound. */
@@ -47,7 +55,9 @@ interface BustEntry {
 }
 
 const _axis = new THREE.Vector3(1, 0, 0);
+const _yaw = new THREE.Vector3(0, 0, 1);
 const _delta = new THREE.Quaternion();
+const _yawQ = new THREE.Quaternion();
 
 export class ChestBounce {
   private bones: BustEntry[] | null = null;
@@ -64,13 +74,19 @@ export class ChestBounce {
     for (const entry of this.bones) {
       if (active) {
         _delta.setFromAxisAngle(_axis, pitch * entry.scale);
-        entry.bone.quaternion.copy(entry.rest).multiply(_delta);
+        _yawQ.setFromAxisAngle(_yaw, pitch * entry.scale * 0.35 * bustSideSign(entry.bone.name));
+        entry.bone.quaternion.copy(entry.rest).multiply(_delta).multiply(_yawQ);
       } else {
         entry.bone.quaternion.copy(entry.rest);
       }
       entry.bone.updateMatrix();
       entry.bone.updateWorldMatrix(false, true);
     }
+    // The skeleton matrices were baked in vrm.update() before this write.
+    root.traverse((node) => {
+      const mesh = node as THREE.SkinnedMesh;
+      if (mesh.isSkinnedMesh) mesh.skeleton.update();
+    });
     if (this.wasActive && !active) {
       for (const entry of this.bones) entry.joint?.reset();
     }

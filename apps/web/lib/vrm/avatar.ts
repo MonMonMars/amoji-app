@@ -190,9 +190,9 @@ export interface Avatar {
   setExpression(name: string, value: number): void;
   applyPose(pose: AvatarPose): void;
   /** r103: re-apply the calibrated relaxed-hand curl (idempotent base·delta) */
-  applyRelaxedHands(): void;
-  /** Slow clip-driven fingers and keep them slightly bent. */
-  smoothFingers(dt: number): void;
+  applyRelaxedHands(fullIdle?: boolean): void;
+  /** Slow clip-driven fingers and keep them slightly bent. Idle snaps to the curl. */
+  smoothFingers(dt: number, fullIdle?: boolean): void;
   /** r103: floor the upper arm's outward swing so arms never cross the midline */
   clampShoulderROM(): void;
   /**
@@ -591,8 +591,8 @@ function clampUpperArmAdduction(
   upperArm.quaternion.copy(parentW.invert()).multiply(_shQF).multiply(world);
 }
 
-/** Radians out from straight down for a calm idle arm. ~21°. */
-export const IDLE_ARM_ABDUCT = 0.36;
+/** Radians out from straight down for a calm idle arm. ~24°, clear of the ribs. */
+export const IDLE_ARM_ABDUCT = 0.42;
 
 /**
  * Direction a hanging arm should take so the shoulder stays open.
@@ -606,7 +606,8 @@ export function idleHangDirection(
 ): THREE.Vector3 | null {
   if (current.lengthSq() < 1e-10) return null;
   const d = current.clone().normalize();
-  if (d.y > -0.75) return null;
+  // Only skip when the arm is clearly raised. A near-vertical hang is the slump.
+  if (d.y > -0.55) return null;
   const fromDown = Math.acos(Math.min(1, Math.max(0, -d.y)));
   if (fromDown >= IDLE_ARM_ABDUCT - 0.02) return null;
   const horiz = new THREE.Vector3(d.x, 0, d.z);
@@ -662,7 +663,9 @@ function easeIdleHangOn(
     const spec = rest.get(side);
     if (spec) {
       const drop = upper.getWorldPosition(_shA).y - cy;
-      if (drop < spec.drop - 0.012) shoulder.quaternion.slerp(spec.q, 0.55);
+      // Copy the bind clavicle. A partial slerp left the idle clip and the
+      // correction blended into a collapsed shoulder.
+      if (drop < spec.drop - 0.004) shoulder.quaternion.copy(spec.q);
     }
     shoulder.updateMatrixWorld(true);
     const a = upper.getWorldPosition(_shA);
@@ -690,12 +693,14 @@ function smoothClipFingers(
   clipAnimatedBones: ReadonlySet<string>,
   shown: Map<THREE.Object3D, THREE.Quaternion>,
   dt: number,
+  fullIdle = false,
 ): void {
-  const a = 1 - Math.exp(-Math.max(0, dt) / FINGER_TAU);
+  const a = fullIdle ? 1 : 1 - Math.exp(-Math.max(0, dt) / FINGER_TAU);
+  const bend = fullIdle ? 1 : FINGER_BEND;
   for (const e of entries) {
-    if (!clipAnimatedBones.has(e.node.name)) continue;
+    if (!fullIdle && !clipAnimatedBones.has(e.node.name)) continue;
     _fgTgt.copy(e.base).multiply(e.delta);
-    _fgBlend.copy(e.node.quaternion).slerp(_fgTgt, FINGER_BEND);
+    _fgBlend.copy(e.node.quaternion).slerp(_fgTgt, bend);
     let q = shown.get(e.node);
     if (!q) {
       q = _fgBlend.clone();
@@ -893,15 +898,16 @@ class V1Avatar implements Avatar {
   // r103: re-apply the calibrated relaxed curl AFTER the mixer + applyPose
   // wrote the skeleton this frame. Idempotent (base·delta, never accumulate),
   // and any phalange a clip animates is skipped so the two never fight.
-  applyRelaxedHands(): void {
+  // Calm idle owns the fingers outright so a VRMA claw cannot stay blended in.
+  applyRelaxedHands(fullIdle = false): void {
     for (const e of this.relaxedHands) {
-      if (this.clipAnimatedBones.has(e.node.name)) continue; // the mixer owns it
+      if (!fullIdle && this.clipAnimatedBones.has(e.node.name)) continue;
       e.node.quaternion.copy(e.base).multiply(e.delta);
     }
   }
 
-  smoothFingers(dt: number): void {
-    smoothClipFingers(this.relaxedHands, this.clipAnimatedBones, this.fingerShown, dt);
+  smoothFingers(dt: number, fullIdle = false): void {
+    smoothClipFingers(this.relaxedHands, this.clipAnimatedBones, this.fingerShown, dt, fullIdle);
   }
 
   // r103: floor each upper arm's outward swing (see clampUpperArmAdduction)
@@ -1222,15 +1228,15 @@ class GenericAvatar implements Avatar {
 
   // r103: same contract as V1Avatar — idempotent base·delta, clip-owned
   // phalanges skipped (clipAnimatedBones holds node names from the track scan)
-  applyRelaxedHands(): void {
+  applyRelaxedHands(fullIdle = false): void {
     for (const e of this.relaxedHands) {
-      if (this.clipAnimatedBones.has(e.node.name)) continue; // the mixer owns it
+      if (!fullIdle && this.clipAnimatedBones.has(e.node.name)) continue;
       e.node.quaternion.copy(e.base).multiply(e.delta);
     }
   }
 
-  smoothFingers(dt: number): void {
-    smoothClipFingers(this.relaxedHands, this.clipAnimatedBones, this.fingerShown, dt);
+  smoothFingers(dt: number, fullIdle = false): void {
+    smoothClipFingers(this.relaxedHands, this.clipAnimatedBones, this.fingerShown, dt, fullIdle);
   }
 
   // r103: floor each upper arm's outward swing (see clampUpperArmAdduction)

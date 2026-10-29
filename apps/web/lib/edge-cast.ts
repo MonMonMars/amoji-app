@@ -152,8 +152,32 @@ function assign(ids: readonly string[], pool: readonly PoolVoice[]): Map<string,
 const FEMALE_IDS = CHARACTERS.filter((c) => c.gender === 'female').map((c) => c.id).sort();
 const MALE_IDS = CHARACTERS.filter((c) => c.gender === 'male').map((c) => c.id).sort();
 
+// WanLung is the only male Cantonese neural. Positive pitch lifts him into
+// a female range, so male slots stay at or below his natural pitch.
+const YUE_MALE_PITCH = [0, -0.06, -0.1, -0.14, -0.04, -0.12];
+const YUE_MALE_RATE = [0, -0.04, 0.04, -0.08, 0.06, 0];
+
+function assignTuned(
+  ids: readonly string[],
+  pool: readonly PoolVoice[],
+  pitches: readonly number[],
+  rates: readonly number[],
+): Map<string, EdgeCastVoice> {
+  const map = new Map<string, EdgeCastVoice>();
+  ids.forEach((id, i) => {
+    const picked = pool[i % pool.length]!;
+    map.set(id, {
+      id: picked.id,
+      ssmlLang: picked.ssmlLang,
+      pitch: pitches[i % pitches.length]!,
+      rate: rates[Math.floor(i / pitches.length) % rates.length]!,
+    });
+  });
+  return map;
+}
+
 const CAST: Record<VoiceLocale, Map<string, EdgeCastVoice>> = {
-  yue: merge(assign(FEMALE_IDS, POOLS.yue.female), assign(MALE_IDS, POOLS.yue.male)),
+  yue: merge(assign(FEMALE_IDS, POOLS.yue.female), assignTuned(MALE_IDS, POOLS.yue.male, YUE_MALE_PITCH, YUE_MALE_RATE)),
   zh: merge(assign(FEMALE_IDS, POOLS.zh.female), assign(MALE_IDS, POOLS.zh.male)),
   ja: merge(assign(FEMALE_IDS, POOLS.ja.female), assign(MALE_IDS, POOLS.ja.male)),
   en: merge(assign(FEMALE_IDS, POOLS.en.female), assign(MALE_IDS, POOLS.en.male)),

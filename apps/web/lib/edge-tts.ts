@@ -21,6 +21,7 @@
 // r2026-10-04.85: timeout 12s → 7s — when Microsoft ignores the socket (dead
 // token / blocked network) the browser-voice fallback now takes over in half
 // the time, so a dead endpoint reads as a voice switch, not a long silence.
+import { edgeAudioPayload, edgeReadAloudUrl } from '../../../server/amoji-proxy/edge-gec.js';
 import { pinDefaultOutput } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 import { characterVoiceGender } from './voice-gender';
@@ -94,7 +95,6 @@ export interface EdgeVoiceOpts {
 // Public read-aloud client token from the edge-tts project. Not an API key.
 // NEXT_PUBLIC_EDGE_TTS_TOKEN overrides it if Microsoft rotates the public value.
 const PUBLIC_EDGE_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
-const WS_BASE = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
 
 export function edgeClientToken(): string {
   const fromEnv = process.env.NEXT_PUBLIC_EDGE_TTS_TOKEN?.trim();
@@ -582,7 +582,9 @@ function speakEdgeViaSocket(ssml: string, opts: EdgeVoiceOpts): Promise<void> {
 
     let ws: WebSocket;
     try {
-      ws = new WebSocket(`${WS_BASE}?TrustedClientToken=${edgeClientToken()}&ConnectionId=${guid()}`);
+      // Sec-MS-GEC v2 is required. Without it the socket is 403 and every
+      // Cantonese pill falls through to one browser voice.
+      ws = new WebSocket(edgeReadAloudUrl(guid()));
     } catch (err) {
       reject(err instanceof Error ? err : new Error(String(err)));
       return;
@@ -631,14 +633,11 @@ function speakEdgeViaSocket(ssml: string, opts: EdgeVoiceOpts): Promise<void> {
         return;
       }
       // binary frame: ASCII headers first, terminated by \r\n\r\n, then mp3 bytes
-      const buf = new Uint8Array(ev.data as ArrayBuffer);
-      let headerEnd = -1;
-      const scan = Math.min(buf.length - 3, 160);
-      for (let i = 0; i < scan; i++) {
-        if (buf[i] === 13 && buf[i + 1] === 10 && buf[i + 2] === 13 && buf[i + 3] === 10) { headerEnd = i + 4; break; }
-      }
-      if (headerEnd >= 0 && buf.length > headerEnd) {
-        chunks.push(buf.slice(headerEnd).buffer);
+      const audio = edgeAudioPayload(new Uint8Array(ev.data as ArrayBuffer));
+      if (audio && audio.length) {
+        const copy = new Uint8Array(audio.byteLength);
+        copy.set(audio);
+        chunks.push(copy.buffer);
         gotAudio = true;
       }
     };
