@@ -8,6 +8,8 @@ import { CHARACTERS, type Lang } from '../lib/prefs';
 import { LOADING_STUBS } from '../lib/thinking-lines';
 import { EDGE_VOICE_BUTTONS, browserVoicesForLang } from '../lib/voice-catalog';
 import {
+  BURST_CLIP_KINDS,
+  BURST_CLIP_LABEL,
   EMOTION_CLIP_KINDS,
   FILLER_CLIP_TEXT,
   GREETING_CLIP_KINDS,
@@ -15,7 +17,10 @@ import {
   VOICE_CLIP_GENDERS,
   VOICE_CLIP_KINDS,
   VOICE_CLIP_LANGS,
+  CLIP_LIBRARY,
+  burstSkipsTts,
   clipFile,
+  clipLibraryFile,
   emotionClipKind,
   greetingText,
   nextGreetingKind,
@@ -36,7 +41,8 @@ describe('emotion clips', () => {
           const rel = clipFile(lang, gender, kind);
           const file = path.resolve(here, '../public', rel.slice(1));
           expect(fs.existsSync(file), rel).toBe(true);
-          expect(fs.statSync(file).size).toBeGreaterThan(400);
+          const min = (BURST_CLIP_KINDS as readonly string[]).includes(kind) ? 1500 : 400;
+          expect(fs.statSync(file).size, rel).toBeGreaterThan(min);
         }
       }
     }
@@ -92,6 +98,33 @@ describe('emotion clips', () => {
     expect(emotionClipKind('Let me tell you something funny about the park.', 'line')).toBeNull();
     expect(EMOTION_CLIP_KINDS).toContain('laugh');
     expect(EMOTION_CLIP_KINDS).toContain('smile');
+    expect(BURST_CLIP_KINDS).toEqual(['laugh', 'smile', 'giggle', 'wow', 'um', 'oh', 'ha']);
+    for (const kind of BURST_CLIP_KINDS) {
+      expect(burstSkipsTts(kind)).toBe(true);
+      expect(BURST_CLIP_LABEL.ja[kind].length).toBeGreaterThan(0);
+      expect(BURST_CLIP_LABEL.en[kind].length).toBeGreaterThan(0);
+    }
+    expect(burstSkipsTts('think')).toBe(false);
+    expect(burstSkipsTts('search')).toBe(false);
+    expect(burstSkipsTts(null)).toBe(false);
+    const voice = fs.readFileSync(path.resolve(here, '../lib/voice.ts'), 'utf8');
+    expect(voice).toContain('burstSkipsTts');
+    expect(voice).toContain('clipOnly: true');
+    expect(voice).toContain('previewEmotionClip');
+    for (const [folder, genders] of Object.entries(CLIP_LIBRARY)) {
+      for (const [gender, files] of Object.entries(genders)) {
+        for (const name of files) {
+          const rel = clipLibraryFile(folder as 'yue', gender as 'female', name);
+          const expected = `/voice-clips/${folder}/${gender}/${name}`;
+          expect(rel).toBe(expected);
+          const disk = path.resolve(here, '../public', expected.slice(1));
+          expect(fs.existsSync(disk), expected).toBe(true);
+          expect(fs.statSync(disk).size, expected).toBeGreaterThan(1500);
+        }
+      }
+    }
+    expect(clipLibraryFile('ja', 'female', '../hello.mp3')).toBeNull();
+    expect(fs.existsSync(path.resolve(here, '../public/voice-clips/ATTRIBUTION.md'))).toBe(true);
   });
 });
 

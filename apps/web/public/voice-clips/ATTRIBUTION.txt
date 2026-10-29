@@ -1,0 +1,1 @@
+See ATTRIBUTION.md in this folder. That file is the license map for the burst library.
