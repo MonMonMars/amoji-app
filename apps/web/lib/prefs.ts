@@ -121,7 +121,7 @@ export const LANGS: LangDef[] = [
 
 export type StrKey =
   | 'tagline' | 'meetCta' | 'chooseCharacter' | 'chooseBackground' | 'chooseLanguage' | 'chooseVoice'
-  | 'voiceShowAll' | 'voiceThisLanguage' | 'moreEnginesLater' | 'previewReactions'
+  | 'voiceShowAll' | 'voiceThisLanguage' | 'moreEnginesLater' | 'previewReactions' | 'previewUniversal'
   | 'startChat' | 'back' | 'settings' | 'sayHi' | 'typing' | 'tapHint'
   | 'bgVoid' | 'bgAurora' | 'bgEmber' | 'bgSakura' | 'bgAbyss' | 'bgRain' | 'bgSunset' | 'bgMeadow'
   | 'bgCloudsea' | 'bgNeon' | 'bgSnowmoon' | 'bgGalaxy'
@@ -176,6 +176,7 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   voiceThisLanguage: { en: 'This language', yue: '呢種語言', zh: '这个语言', ja: 'この言語' },
   moreEnginesLater: { en: 'More engines later', yue: '更多引擎稍後', zh: '更多引擎稍后', ja: 'ほかのエンジンはあとで' },
   previewReactions: { en: 'Reactions', yue: '反應聲', zh: '反应声', ja: 'リアクション' },
+  previewUniversal: { en: 'Universal', yue: '通用', zh: '通用', ja: '共通' },
   startChat: { en: 'Start chatting', yue: '開始傾偈', zh: '开始聊天', ja: '話し始める' },
   back: { en: 'Back', yue: '返回', zh: '返回', ja: '戻る' },
   settings: { en: 'Settings', yue: '設定', zh: '设置', ja: '設定' },

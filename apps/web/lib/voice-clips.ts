@@ -5,10 +5,9 @@
 // "let me think / let me search" lines stay spoken clips.
 // Files: public/voice-clips/{yue|zh|ja|en}/{female|male}/{kind}.mp3
 // Spoken lines only: apps/web/scripts/gen-voice-clips.py
-// Sources and licenses: public/voice-clips/ATTRIBUTION.txt
-// en/ is Nox plus Reitanna and 1LOVE. zh/ laughs and sighs are VocalSound.
-// ja/ uses Nox game-style bursts plus Mixkit gasps (VocalSound has no Japanese speakers).
-// yue/ is an Edge crop (HiuMaan / WanLung). No free Cantonese pack exists.
+// Sources and licenses: public/voice-clips/ATTRIBUTION.md
+// The mapped library also keeps extra takes (anime laughs, sighs) and a
+// universal/ folder. Chat leads still use the seven canonical names.
 
 export const VOICE_CLIP_LANGS = ['yue', 'zh', 'ja', 'en'] as const;
 export type VoiceClipLang = (typeof VOICE_CLIP_LANGS)[number];
@@ -65,6 +64,47 @@ export const FILLER_CLIP_TEXT: Record<VoiceClipLang, { think: string; search: st
 /** True for laugh / smile / giggle / wow / um / oh / ha. Think and search stay sentences. */
 export function burstSkipsTts(kind: EmotionClipKind | null): boolean {
   return kind !== null && (BURST_CLIP_KINDS as readonly string[]).includes(kind);
+}
+
+export const CLIP_FOLDERS = ['yue', 'zh', 'ja', 'en', 'universal'] as const;
+export type ClipFolder = (typeof CLIP_FOLDERS)[number];
+
+/** Preview list for the select board. Canonical seven first, then extra takes. */
+export const CLIP_LIBRARY = {
+  yue: {
+    female: ['laugh.mp3', 'smile.mp3', 'giggle.mp3', 'wow.mp3', 'um.mp3', 'oh.mp3', 'ha.mp3'],
+    male: ['laugh.mp3', 'smile.mp3', 'giggle.mp3', 'wow.mp3', 'um.mp3', 'oh.mp3', 'ha.mp3'],
+  },
+  zh: {
+    female: ['laugh.mp3', 'smile.mp3', 'giggle.mp3', 'wow.mp3', 'um.mp3', 'oh.mp3', 'ha.mp3', 'giggle_craig.mp3'],
+    male: ['laugh.mp3', 'smile.mp3', 'giggle.mp3', 'wow.mp3', 'um.mp3', 'oh.mp3', 'ha.mp3'],
+  },
+  ja: {
+    female: ['laugh.mp3', 'smile.mp3', 'giggle.mp3', 'wow.mp3', 'um.mp3', 'oh.mp3', 'ha.mp3', 'giggle_anime1.mp3', 'ha_anime.mp3', 'laugh_anime1.mp3', 'laugh_anime2.mp3', 'laugh_tts.mp3', 'oh_anime.mp3', 'oh_rpg.mp3', 'sigh.mp3', 'um_tts.mp3', 'wow_tts.mp3'],
+    male: ['laugh.mp3', 'smile.mp3', 'giggle.mp3', 'wow.mp3', 'um.mp3', 'oh.mp3', 'ha.mp3'],
+  },
+  en: {
+    female: ['laugh.mp3', 'smile.mp3', 'giggle.mp3', 'wow.mp3', 'um.mp3', 'oh.mp3', 'ha.mp3', 'laugh_oga.mp3', 'laugh_reitanna.mp3', 'wow_alt.mp3', 'wow_mixkit.mp3'],
+    male: ['laugh.mp3', 'smile.mp3', 'giggle.mp3', 'wow.mp3', 'um.mp3', 'oh.mp3', 'ha.mp3', 'ha_effort.mp3', 'oh_tts.mp3', 'sigh.mp3', 'um_tts.mp3', 'wow_tts.mp3', 'wow_woven.mp3'],
+  },
+  universal: {
+    female: ['laugh.mp3', 'smile.mp3', 'giggle.mp3', 'wow.mp3', 'um.mp3', 'oh.mp3', 'ha.mp3', 'giggle_en.mp3', 'giggle_group.mp3', 'ha_rpg.mp3', 'hehe.mp3', 'huh.mp3', 'laugh_anime.mp3', 'sigh.mp3', 'wow_mixkit.mp3', 'wow_reitanna.mp3', 'wow_woven.mp3'],
+    male: ['laugh.mp3', 'wow.mp3', 'oh.mp3', 'ha.mp3', 'sigh.mp3'],
+  },
+} as const;
+
+export function clipLibraryFile(folder: ClipFolder, gender: VoiceClipGender, file: string): string | null {
+  const list = CLIP_LIBRARY[folder][gender] as readonly string[];
+  if (!list.includes(file)) return null;
+  return `/voice-clips/${folder}/${gender}/${file}`;
+}
+
+export function clipButtonLabel(lang: string, file: string): string {
+  const stem = file.replace(/\.mp3$/, '');
+  if ((BURST_CLIP_KINDS as readonly string[]).includes(stem)) {
+    return BURST_CLIP_LABEL[clipLang(lang)][stem as BurstClipKind];
+  }
+  return stem.replace(/_/g, ' ');
 }
 
 export const BURST_CLIP_LABEL: Record<VoiceClipLang, Record<BurstClipKind, string>> = {
