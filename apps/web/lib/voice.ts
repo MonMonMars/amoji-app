@@ -83,7 +83,7 @@ import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
 import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripVoicedGlyphs } from './speak-text';
 import { browserVoicesForLang, edgeSampleText, isMaleNeuralVoice, synthNameConflicts, synthNameList, voiceNameMatches } from './voice-catalog';
 import { LineQueue, speechRemainder } from './speech-queue';
-import { burstSkipsTts, clipFile, emotionClipKind, greetingText, nextGreetingKind, type BurstClipKind } from './voice-clips';
+import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText, nextGreetingKind, type BurstClipKind, type ClipFolder, type VoiceClipGender } from './voice-clips';
 import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
 export { speechRemainder };
 import { edgeCastVoice } from './edge-cast';
@@ -1579,26 +1579,32 @@ export function playVoiceGreeting(characterId: string, lang: Lang, voiceId: stri
 }
 
 /**
- * Clip greeting when no Edge short name is available.
- * Queued behind whatever is already speaking.
+ * Tap-to-hear one file from the burst library. Never synthesizes it.
+ * `folder` may be `universal`. The speech job still carries the UI language.
  */
-/**
- * Tap-to-hear a recorded emotion burst on the select board.
- * Plays the file only. It does not synthesize the burst with live TTS.
- */
-export function previewEmotionClip(lang: Lang, gender: 'female' | 'male', kind: BurstClipKind): void {
+export function previewLibraryClip(folder: ClipFolder, gender: VoiceClipGender, file: string, lang: Lang): void {
+  const path = clipLibraryFile(folder, gender, file);
+  if (!path) return;
   stopSpeaking();
   unlockAudio();
   lineQueue.enqueue({
     kind: 'clip',
-    text: kind,
+    text: file.replace(/\.mp3$/, ''),
     characterId: 'preview',
     lang,
     intensity: 1,
-    clipFile: clipFile(lang, gender, kind),
+    clipFile: path,
     clipOnly: true,
   });
   drainSpeech();
+}
+
+/**
+ * Tap-to-hear a canonical emotion burst on the select board.
+ * Plays the file only. It does not synthesize the burst with live TTS.
+ */
+export function previewEmotionClip(lang: Lang, gender: 'female' | 'male', kind: BurstClipKind): void {
+  previewLibraryClip(lang, gender, `${kind}.mp3`, lang);
 }
 
 export function playSelectGreeting(characterId: string, lang: Lang, gender: 'female' | 'male'): void {

@@ -17,8 +17,10 @@ import {
   VOICE_CLIP_GENDERS,
   VOICE_CLIP_KINDS,
   VOICE_CLIP_LANGS,
+  CLIP_LIBRARY,
   burstSkipsTts,
   clipFile,
+  clipLibraryFile,
   emotionClipKind,
   greetingText,
   nextGreetingKind,
@@ -109,6 +111,20 @@ describe('emotion clips', () => {
     expect(voice).toContain('burstSkipsTts');
     expect(voice).toContain('clipOnly: true');
     expect(voice).toContain('previewEmotionClip');
+    for (const [folder, genders] of Object.entries(CLIP_LIBRARY)) {
+      for (const [gender, files] of Object.entries(genders)) {
+        for (const name of files) {
+          const rel = clipLibraryFile(folder as 'yue', gender as 'female', name);
+          const expected = `/voice-clips/${folder}/${gender}/${name}`;
+          expect(rel).toBe(expected);
+          const disk = path.resolve(here, '../public', expected.slice(1));
+          expect(fs.existsSync(disk), expected).toBe(true);
+          expect(fs.statSync(disk).size, expected).toBeGreaterThan(1500);
+        }
+      }
+    }
+    expect(clipLibraryFile('ja', 'female', '../hello.mp3')).toBeNull();
+    expect(fs.existsSync(path.resolve(here, '../public/voice-clips/ATTRIBUTION.md'))).toBe(true);
   });
 });
 
