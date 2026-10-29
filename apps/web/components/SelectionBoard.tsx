@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import ArcFan from './ArcFan';
 import SceneBackdrop from './SceneBackdrop';
 import ModelThumb from './ModelThumb';
+import EmotionClipRow from './EmotionClipRow';
 import TtsVoiceRow from './TtsVoiceRow';
 import { LangCardFace } from './selectors';
 import { assetUrl } from '../lib/asset';
@@ -217,6 +218,8 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
               accent={character.accent}
               onLang={(next) => pick({ lang: next })}
             />
+
+            <EmotionClipRow lang={lang} gender={character.gender} accent={character.accent} />
 
             <button
               onClick={confirm}

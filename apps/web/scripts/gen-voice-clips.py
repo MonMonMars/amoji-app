@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Build public/voice-clips/{lang}/{gender}/{kind}.mp3.
+"""Build spoken clips under public/voice-clips/{lang}/{gender}/{kind}.mp3.
 
-Laugh, smile, giggle, wow, um, oh, and ha are formant vocal bursts — not
-TTS spelling "haha". Greetings and the longer think/search lines are
-espeak-ng, one file per language and gender.
+Laugh, smile, giggle, wow, um, oh, and ha are recorded human files.
+This script does not overwrite them. See public/voice-clips/CREDITS.md.
+
+Greetings and the longer think/search lines are espeak-ng, one file per
+language and gender.
 
 Run from the repo root:
   python3 apps/web/scripts/gen-voice-clips.py
@@ -137,6 +139,7 @@ def concat(parts: list[np.ndarray]) -> np.ndarray:
     return (y / peak * 0.72).astype(np.float64)
 
 
+# Not called. Recorded bursts replaced this formant recipe. Do not wire it back.
 def burst(kind: str, lang: str, gender: str) -> np.ndarray:
     female = gender == "female"
     base = 228 if female else 118
@@ -213,16 +216,11 @@ def main() -> None:
         raise SystemExit("ffmpeg and espeak-ng are required")
     tmp = OUT / "_tmp"
     tmp.mkdir(parents=True, exist_ok=True)
-    bursts = ("laugh", "smile", "giggle", "wow", "um", "oh", "ha")
     spoken = ("hello", "nice", "hihi", "pleasure", "think", "search")
     for lang in LANGS:
         for gender in GENDERS:
             folder = OUT / lang / gender
             folder.mkdir(parents=True, exist_ok=True)
-            for kind in bursts:
-                wav = tmp / f"{lang}-{gender}-{kind}.wav"
-                write_wav(wav, burst(kind, lang, gender))
-                to_mp3(wav, folder / f"{kind}.mp3")
             voice = f"{ESPEAK[lang]}+{'f3' if gender == 'female' else 'm3'}"
             pitch = 58 if gender == "female" else 28
             lines = {**GREETINGS[lang], **FILLERS[lang]}
