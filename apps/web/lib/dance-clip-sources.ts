@@ -1,7 +1,7 @@
 // Interim + local sources for performance shortlist VRMAs (lib_C*).
 // Local ANIM_MIRROR paths win when lib_C*.vrma is under models/anims/.
 // Mixamo-class remotes from 3dchat still fill C03/C61/C62/C110 until local
-// FBX lands. Rokoko/Jazz locals ship as status: local; KayKit C09 still deferred.
+// FBX lands. Rokoko/Jazz/KayKit locals ship as status: local.
 
 export interface DanceClipSource {
   id: string;
@@ -40,7 +40,7 @@ export const DANCE_CLIP_SOURCES: readonly DanceClipSource[] = [
     remoteUrls: [`${CHAT}/hipHopDance.vrma`],
     localPreferred: true, status: 'interim-remote',
   },
-  // Rokoko / Jazz: local VRMA shipped; KayKit C09 still deferred (non-humanoid)
+  // Rokoko / Jazz / KayKit: local VRMA shipped
   { id: 'lib_C112', cId: 'C112', label: 'GentleSway', remoteUrls: [], localPreferred: true, status: 'local' },
   { id: 'lib_C113', cId: 'C113', label: 'DancingMedium', remoteUrls: [], localPreferred: true, status: 'local' },
   { id: 'lib_C114', cId: 'C114', label: 'DancingParty', remoteUrls: [], localPreferred: true, status: 'local' },
@@ -52,7 +52,7 @@ export const DANCE_CLIP_SOURCES: readonly DanceClipSource[] = [
   { id: 'lib_C117', cId: 'C117', label: 'DJ', remoteUrls: [], localPreferred: true, status: 'local' },
   { id: 'lib_C128', cId: 'C128', label: 'DJ02', remoteUrls: [], localPreferred: true, status: 'local' },
   { id: 'lib_C60', cId: 'C60', label: 'JazzDancing', remoteUrls: [], localPreferred: true, status: 'local' },
-  { id: 'lib_C09', cId: 'C09', label: 'KayKitDance', remoteUrls: [], localPreferred: true, status: 'deferred-cc0' },
+  { id: 'lib_C09', cId: 'C09', label: 'KayKitDance', remoteUrls: [], localPreferred: true, status: 'local' },
 ];
 
 export function dancePerfClipSources(animMirror: string): { id: string; urls: string[] }[] {
