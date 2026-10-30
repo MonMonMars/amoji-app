@@ -5,7 +5,8 @@
 // giggle. The catalog mirrors the classic Mixamo / rigmodels movement
 // families, so a real clip library (.vrma per character) can replace these
 // procedural versions later by mapping the same kinds to clips.
-// r2026-10-03.40: the sing performance now lasts a full 9s — long enough to
+// r2026-10-03.40 / t718: sing body+mic hold up to ~3.5min; ChatPanel holdMove
+// matches the chosen clip.durationMs so short ditties still end with the track.
 // carry an entire sung ditty, not just a pose.
 // r2026-10-04.41: the catalog grows — violin gets her own performance
 // (no longer misrouted to piano), and mealtime dialogue sets her eating:

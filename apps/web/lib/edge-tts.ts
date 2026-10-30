@@ -79,6 +79,8 @@ export interface EdgeVoiceOpts {
   voiceId?: string;
   /** Highlight / probe path: ignore a saved pin and return the cast voice. */
   ignoreVoicePick?: boolean;
+  /** Skip mstts:express-as. Plain retry after a styled fail. */
+  forcePlain?: boolean;
   /** word-boundary events (for precise lip-sync) */
   onWord?: (word: string) => void;
   /** r99: fired once the audio element actually starts playing (media gate open) */
@@ -121,25 +123,25 @@ const VOICES: Record<string, { female: string; male: string; ssmlLang: string }>
 const CAST: Record<string, Record<string, string>> = {
   kizuna:  { yue: 'zh-HK-HiuGaaiNeural', zh: 'zh-CN-XiaoxiaoNeural', ja: 'ja-JP-NanamiNeural', en: 'en-US-JennyNeural' },
   alicia:  { yue: 'zh-HK-HiuGaaiNeural', zh: 'zh-CN-XiaoyiNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-JennyNeural' },
-  ember:   { yue: 'zh-HK-HiuGaaiNeural', zh: 'zh-CN-XiaoruiNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-JennyNeural' },
+  ember:   { yue: 'zh-HK-HiuGaaiNeural', zh: 'zh-CN-XiaoyiNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-JennyNeural' },
   mei:     { yue: 'zh-HK-HiuGaaiNeural', zh: 'zh-CN-XiaoyiNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-AnaNeural' },
   atlas:   { yue: 'zh-HK-WanLungNeural', zh: 'zh-CN-YunxiNeural',    ja: 'ja-JP-KeitaNeural',  en: 'en-HK-SamNeural' },
-  sky:     { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaohanNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-AriaNeural' },
-  yuki:    { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoruiNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-HK-YanNeural' },
-  hina:    { yue: 'zh-HK-HiuGaaiNeural', zh: 'zh-CN-XiaomoNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-HK-YanNeural' },
-  mio:     { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaohanNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-HK-YanNeural' },
+  sky:     { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoxiaoNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-AriaNeural' },
+  yuki:    { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoyiNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-HK-YanNeural' },
+  hina:    { yue: 'zh-HK-HiuGaaiNeural', zh: 'zh-CN-XiaoyiNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-HK-YanNeural' },
+  mio:     { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoxiaoNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-HK-YanNeural' },
   juno:  { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaoxiaoNeural', ja: 'ja-JP-NanamiNeural', en: 'en-US-JennyNeural' },
-  nova:  { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaohanNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-AriaNeural' },
+  nova:  { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaoxiaoNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-AriaNeural' },
   mochi: { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaoyiNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-AnaNeural' },
   blaze: { yue: 'zh-HK-WanLungNeural',   zh: 'zh-CN-YunyangNeural',  ja: 'ja-JP-KeitaNeural',  en: 'en-US-GuyNeural' },
   kai:   { yue: 'zh-HK-WanLungNeural',   zh: 'zh-CN-YunxiNeural',    ja: 'ja-JP-KeitaNeural',  en: 'en-US-ChristopherNeural' },
-  luna:  { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaomoNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-MichelleNeural' },
-  rin:   { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaoruiNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-SaraNeural' },
+  luna:  { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaoyiNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-MichelleNeural' },
+  rin:   { yue: 'zh-HK-HiuMaanNeural',   zh: 'zh-CN-XiaoyiNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-SaraNeural' },
   ren:   { yue: 'zh-HK-WanLungNeural',   zh: 'zh-CN-YunjianNeural',  ja: 'ja-JP-KeitaNeural',  en: 'en-US-EricNeural' },
   cloud:   { yue: 'zh-HK-WanLungNeural', zh: 'zh-CN-YunxiNeural',    ja: 'ja-JP-KeitaNeural',  en: 'en-US-ChristopherNeural' },
-  kasumi:  { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaohanNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-AriaNeural' },
+  kasumi:  { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoxiaoNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-AriaNeural' },
   marin:   { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoyiNeural',   ja: 'ja-JP-NanamiNeural', en: 'en-US-JennyNeural' },
-  ayane:   { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaohanNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-AriaNeural' },
+  ayane:   { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoxiaoNeural',  ja: 'ja-JP-NanamiNeural', en: 'en-US-AriaNeural' },
   hitomi:  { yue: 'zh-HK-HiuMaanNeural', zh: 'zh-CN-XiaoxiaoNeural', ja: 'ja-JP-NanamiNeural', en: 'en-US-MichelleNeural' },
 };
 
@@ -220,10 +222,7 @@ export function resolveEdgeVoice(opts: EdgeVoiceOpts): ResolvedEdgeVoice {
 // ship no styles — those lines keep the widened prosody contour only.
 const VOICE_STYLES: Record<string, string[]> = {
   'zh-CN-XiaoxiaoNeural': ['assistant', 'chat', 'calm', 'angry', 'cheerful', 'excited', 'friendly', 'hopeful', 'sad', 'serious', 'sorry', 'tender', 'terrified'],
-  'zh-CN-XiaoyiNeural':   ['angry', 'cheerful', 'excited', 'friendly', 'hopeful', 'sad', 'serious', 'shy', 'sweet'],
-  'zh-CN-XiaohanNeural':  ['angry', 'cheerful', 'excited', 'friendly', 'hopeful', 'sad', 'serious'],
-  'zh-CN-XiaomoNeural':   ['angry', 'cheerful', 'excited', 'friendly', 'hopeful', 'sad', 'serious'],
-  'zh-CN-XiaoruiNeural':  ['angry', 'cheerful', 'excited', 'friendly', 'hopeful', 'sad', 'serious'],
+  'zh-CN-XiaoyiNeural': ['angry', 'cheerful', 'excited', 'friendly', 'hopeful', 'sad', 'serious', 'shy', 'sweet'],
   // Male zh styles are the sets Microsoft documents (Apr 2026). A style that
   // is not on the voice — friendly/hopeful/excited on Yunjian, anything
   // emotional on Yunyang — makes the free read-aloud socket drop the line.
@@ -483,7 +482,7 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
 
   // Emotion style (or the character's resting style) wraps the sentence only.
   // An empty body means the chuckle is the whole utterance — leave it unstyled.
-  const style = body
+  const style = (!opts.forcePlain && body)
     ? (edgeStyleFor(voice.name, opts.emotion ?? 'neutral') ?? voice.restStyle ?? null)
     : null;
   const voiced = style
@@ -508,8 +507,17 @@ export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
   stopEdge();
   const ssml = buildEdgeSsml(text, opts);
   const proxy = getTtsProxy();
-  if (proxy) return speakEdgeViaProxy(ssml, proxy, opts);
-  return speakEdgeViaSocket(ssml, opts);
+  const run = (markup: string) =>
+    proxy ? speakEdgeViaProxy(markup, proxy, opts) : speakEdgeViaSocket(markup, opts);
+  return run(ssml).catch((err: unknown) => {
+    const msg = (err as Error | undefined)?.message ?? '';
+    if (msg === 'canceled' || opts.forcePlain) return Promise.reject(err);
+    // Styled utterance failed → one plain retry so non-Yue / male voices still speak
+    // when express-as is rejected. Yue female often succeeds on the styled first try.
+    stopEdge();
+    const plain = buildEdgeSsml(text, { ...opts, forcePlain: true });
+    return run(plain);
+  });
 }
 
 // Shared tail: hand a finished mp3 blob to an <audio> element. The

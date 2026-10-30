@@ -8,7 +8,7 @@
 // the chat doesn't burn a 30s timeout on a dead key on every single message.
 // Reloading the app clears the parking (the key might be topped up by then).
 
-export type BrainProvider = 'auto' | 'pollinations' | 'groq' | 'moonshot' | 'openrouter';
+export type BrainProvider = 'auto' | 'pollinations' | 'deepseek' | 'groq' | 'moonshot' | 'openrouter';
 
 export interface BrainSpec {
   id: Exclude<BrainProvider, 'auto'>;
@@ -24,6 +24,12 @@ export interface BrainSpec {
 
 // Order matters: `auto` tries these top-down.
 export const BRAIN_SPECS: BrainSpec[] = [
+  {
+    id: 'deepseek', label: 'DeepSeek', keyless: false,
+    baseUrl: 'https://api.deepseek.com', model: 'deepseek-v4-pro',
+    blurb: 'Best free-tier quality — short natural companion replies (paste API key).',
+    keyFrom: 'platform.deepseek.com',
+  },
   {
     id: 'moonshot', label: 'Moonshot Kimi', keyless: false,
     baseUrl: 'https://api.moonshot.ai/v1', model: 'kimi-k2.5',
@@ -74,7 +80,7 @@ const store = (): Storage | null =>
 
 export function brainProvider(): BrainProvider {
   const v = store()?.getItem(LS_PROVIDER);
-  return v === 'pollinations' || v === 'groq' || v === 'moonshot' || v === 'openrouter'
+  return v === 'pollinations' || v === 'deepseek' || v === 'groq' || v === 'moonshot' || v === 'openrouter'
     ? v
     : 'auto';
 }

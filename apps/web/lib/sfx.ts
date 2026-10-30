@@ -281,6 +281,13 @@ export function playMoveSfx(kind: MoveKind): void {
 }
 
 /** a quiet two-note chuckle — a high triangle trill read as a broken giggle */
+
+/** Resume the shared SFX AudioContext after master unmute (t719). */
+export function resumeSfxContext(): void {
+  const c = ctx();
+  if (c && c.state === 'suspended') void c.resume().catch(() => undefined);
+}
+
 export function playLaughSfx(): void {
   if (voiceHeld()) return; // r102: never ring foley over a speak attempt
   const c = ctx();

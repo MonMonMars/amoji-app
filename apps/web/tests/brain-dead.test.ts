@@ -27,7 +27,7 @@ describe('session-dead brain parking (r2026-10-03.27)', () => {
   });
 
   it('never dead-ends: even with every spec parked the free lane answers', () => {
-    for (const id of ['moonshot', 'groq', 'openrouter', 'pollinations']) markBrainDead(id);
+    for (const id of ['moonshot', 'groq', 'openrouter', 'deepseek', 'pollinations']) markBrainDead(id);
     expect(pickBrain().spec.id).toBe('pollinations');
   });
 });

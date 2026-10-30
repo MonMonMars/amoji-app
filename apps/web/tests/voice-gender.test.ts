@@ -10,10 +10,9 @@ describe('characterVoiceGender', () => {
       'a24-hairsample-male',
       'a459-chinesewarriormonk',
       'a468-eric',
-      'a94-rita',
       'a98-ethan',
     ]);
-    expect(CHARACTERS.filter((c) => c.gender === 'female').length).toBe(45);
+    expect(CHARACTERS.filter((c) => c.gender === 'female').length).toBe(46);
     for (const c of CHARACTERS) {
       expect(characterVoiceGender(c.id)).toBe(c.gender);
     }

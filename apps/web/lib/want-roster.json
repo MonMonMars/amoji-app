@@ -462,7 +462,7 @@
       "id": "a94-rita",
       "libraryId": "A94",
       "name": "Rita",
-      "gender": "male",
+      "gender": "female",
       "accent": "#34d399",
       "kidSafe": true,
       "modelFile": "a94-rita.vrm",
@@ -471,8 +471,8 @@
       "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a94-rita.png",
       "sourceFolder": "Rita",
       "voiceHint": {
-        "yue": "zh-HK-WanLungNeural",
-        "en": "en-HK-SamNeural"
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
       }
     },
     {
