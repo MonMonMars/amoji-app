@@ -8,9 +8,9 @@ Defaults: **only #1 IdleBreathCalm + #2 StandardIdle** (`defaultEnabled`).
 | 1 | IdleBreathCalm | IdleBreathCalm | — | yes | default ON |
 | 2 | StandardIdle | StandardIdle | — | yes | default ON |
 | 3 | RokokoEverydayIdles | LookAround | C01 | yes | shared clip with #13 |
-| 4 | Idle_Loop | lib_C02 | C02 | no | gif-only |
+| 4 | Idle_Loop | lib_C02 | C02 | yes | Quaternius UAL Idle_Loop (#54) |
 | 5 | KayKitIdle | lib_C04 | C04 | yes | KayKit retarget (#53) |
-| 6 | UAL2FoldArms | lib_C11 | C11 | no | gif-only |
+| 6 | UAL2FoldArms | lib_C11 | C11 | yes | Quaternius UAL2 FoldArms (#54) |
 | 7 | Bored | lib_C25 | C25 | yes | Mixamo (#53) |
 | 8 | RokokoArguing | lib_C36 | C36 | yes | Rokoko (#53) |
 | 9 | RokokoChatting | lib_C37 | C37 | yes | Rokoko (#53) |
@@ -28,9 +28,9 @@ Defaults: **only #1 IdleBreathCalm + #2 StandardIdle** (`defaultEnabled`).
 | 21 | StandingClap | Clapping | C59 | yes | |
 | 22 | VictoryIdle | Cheer | C63 | yes | |
 | 23 | DefeatIdle | lib_C64 | C64 | yes | Mixamo (#53) |
-| 24 | UAL1Talking | lib_C65 | C65 | no | gif-only |
-| 25 | UAL2NinjaIdle | lib_C75 | C75 | no | gif-only |
-| 26 | KenneyProtagonistsIdle | lib_C84 | C84 | no | gif-only |
+| 24 | UAL1Talking | lib_C65 | C65 | yes | Quaternius Idle_Talking_Loop (#54) |
+| 25 | UAL2NinjaIdle | lib_C75 | C75 | yes | Quaternius NinjaJump_Idle (#54) |
+| 26 | KenneySurvivorsIdle | IdleKenneyStand | C84 | yes | Kenney Survivors FBX (#54) |
 | 27 | PSXOfficeIdle | lib_C85 | C85 | no | gif-only |
 | 28 | PSXOfficeTalk | lib_C87 | C87 | no | gif-only |
 | 29 | PSXSurvivorIdle | lib_C90 | C90 | no | gif-only |
@@ -41,8 +41,13 @@ Defaults: **only #1 IdleBreathCalm + #2 StandardIdle** (`defaultEnabled`).
 | 34 | IdleSassy | IdleSassy | — | yes | off (arms-into-torso) |
 | 35 | IdleChinHand | IdleChinHand | — | yes | off (arms-into-torso) |
 | 36 | IdleHug | IdleHug | — | yes | off (arms-into-torso) |
+| 37 | IdleKaykitB | IdleKaykitB | — | yes | KayKit Rig_Medium Idle_B retarget (#54) |
+| 38 | IdleKaykitA | IdleKaykitA | — | yes | KayKit Rig_Medium Idle_A retarget (#54) |
+| 39 | IdleQuaterniusHuman | IdleQuaterniusHuman | — | yes | Quaternius AnimatedHuman Idle (#54) |
+| 40 | IdleMixamoBreathing | IdleMixamoBreathing | — | yes | Mixamo BreathingIdle (#54) |
+| 41 | IdleMixamoHappy | IdleMixamoHappy | — | yes | Mixamo HappyIdle (#54) |
 
 ## Skipped / deferred
 
-- C02 / UAL / Kenney / PSX / Squad: gif-only, no FBX→VRMA.
+- PSX / Squad (#27–31): gif-only, no FBX→VRMA.
 - Float-feet gallery rows C10, C14–C24, C26–C35: not in IDLE_LIBRARY planted list.
