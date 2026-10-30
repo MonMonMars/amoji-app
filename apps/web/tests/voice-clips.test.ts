@@ -19,13 +19,16 @@ import {
   VOICE_CLIP_LANGS,
   CLIP_LIBRARY,
   burstSkipsTts,
+  clipButtonLabel,
   clipFile,
+  emotionKindForFile,
   clipLibraryFile,
   emotionClipKind,
   greetingText,
   nextGreetingKind,
   resetGreetingRotation,
 } from '../lib/voice-clips';
+import { emotionClipPath, resetEmotionClipPicks, saveEmotionClip } from '../lib/emotion-clip-picks';
 import { TIER_A_COUNTS, selectTtsButtons, ttsButtonKey } from '../lib/tts-button-registry';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -125,6 +128,34 @@ describe('emotion clips', () => {
     }
     expect(clipLibraryFile('ja', 'female', '../hello.mp3')).toBeNull();
     expect(fs.existsSync(path.resolve(here, '../public/voice-clips/ATTRIBUTION.md'))).toBe(true);
+  });
+
+  it('labels every clip in a row differently, and never as Universal', () => {
+    for (const [folder, genders] of Object.entries(CLIP_LIBRARY)) {
+      for (const files of Object.values(genders)) {
+        const labels = (files as readonly string[]).map((file) => clipButtonLabel('en', file));
+        expect(new Set(labels).size, folder).toBe(labels.length);
+        for (const label of labels) {
+          expect(label.toLowerCase()).not.toBe('universal');
+          expect(label.length).toBeGreaterThan(0);
+        }
+      }
+    }
+    expect(clipButtonLabel('en', 'laugh_anime.mp3')).toBe('Laugh · anime');
+    expect(clipButtonLabel('en', 'giggle_en.mp3')).toBe('Giggle · en');
+    expect(emotionKindForFile('hehe.mp3')).toBe('giggle');
+    expect(emotionKindForFile('sigh.mp3')).toBe('sigh');
+  });
+
+  it('keeps a select-board clip for that emotion in chat', () => {
+    resetEmotionClipPicks();
+    saveEmotionClip('a01-shino', 'universal', 'female', 'laugh_anime.mp3');
+    expect(emotionClipPath('a01-shino', 'yue', 'female', 'laugh')).toBe('/voice-clips/universal/female/laugh_anime.mp3');
+    expect(emotionClipPath('a01-shino', 'yue', 'female', 'wow')).toBe('/voice-clips/yue/female/wow.mp3');
+    expect(emotionClipPath('a02-shibu', 'yue', 'female', 'laugh')).toBe('/voice-clips/yue/female/laugh.mp3');
+    saveEmotionClip('a01-shino', 'yue', 'female', 'giggle.mp3');
+    expect(emotionClipPath('a01-shino', 'en', 'female', 'giggle')).toBe('/voice-clips/yue/female/giggle.mp3');
+    resetEmotionClipPicks();
   });
 });
 

@@ -4,6 +4,7 @@
 
 import { useState } from 'react';
 import { t, type Lang } from '../lib/prefs';
+import { saveEmotionClip } from '../lib/emotion-clip-picks';
 import { previewEmotionClip, previewLibraryClip } from '../lib/voice';
 import {
   BURST_CLIP_KINDS,
@@ -17,10 +18,12 @@ export default function EmotionClipRow({
   lang,
   gender,
   accent,
+  characterId,
 }: {
   lang: Lang;
   gender: 'female' | 'male';
   accent: string;
+  characterId: string;
 }) {
   const [universal, setUniversal] = useState(false);
   const [playing, setPlaying] = useState<string | null>(null);
@@ -29,6 +32,7 @@ export default function EmotionClipRow({
 
   const onTap = (file: string) => {
     setPlaying(file);
+    saveEmotionClip(characterId, folder, gender, file);
     const stem = file.replace(/\.mp3$/, '');
     if (!universal && (BURST_CLIP_KINDS as readonly string[]).includes(stem)) {
       previewEmotionClip(lang, gender, stem as BurstClipKind);

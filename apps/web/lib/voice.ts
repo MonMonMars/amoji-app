@@ -83,6 +83,7 @@ import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
 import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripVoicedGlyphs } from './speak-text';
 import { browserVoicesForLang, edgeSampleText, isMaleNeuralVoice, synthNameConflicts, synthNameList, voiceNameMatches } from './voice-catalog';
 import { LineQueue, speechRemainder } from './speech-queue';
+import { emotionClipPath } from './emotion-clip-picks';
 import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText, nextGreetingKind, type BurstClipKind, type ClipFolder, type VoiceClipGender } from './voice-clips';
 import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
 export { speechRemainder };
@@ -1111,9 +1112,9 @@ function rotateNames(names: string[], by: number): string[] {
   return names.slice(n).concat(names.slice(0, n));
 }
 
-function pickVoice(characterId: string, lang: Lang): { voice: SpeechSynthesisVoice | null; pitch: number; rate: number } {
+function pickVoice(characterId: string, lang: Lang, genderOverride?: 'female' | 'male'): { voice: SpeechSynthesisVoice | null; pitch: number; rate: number } {
   refresh();
-  const gender = characterVoiceGender(characterId);
+  const gender = genderOverride ?? characterVoiceGender(characterId);
   const color = edgeCastVoice(characterId, lang);
   const byLang = browserVoicesForLang(cached, lang);
   const pool = byLang.length ? byLang : cached;
@@ -1415,10 +1416,13 @@ function performSpeak(
   // Free chain: Edge (locale + gender) → speechSynthesis. Yue adds
   // canto-tts-nano only when that runtime is bundled. OpenAI is opt-in and
   // not the default. A 'canceled' rejection means a newer line took over.
+  const spokenGender: 'female' | 'male' = voiceId
+    ? (isMaleNeuralVoice(voiceId) ? 'male' : 'female')
+    : characterVoiceGender(characterId);
   const runSynth = (onDone: () => void): boolean => {
     if (typeof speechSynthesis === 'undefined') return false;
     try {
-      synthSpeak(text, characterId, lang, emotion, expr, tic, amp, undefined, onDone);
+      synthSpeak(text, characterId, lang, emotion, expr, tic, amp, undefined, onDone, spokenGender);
       reportVoiceStatus('synth', true, 'browser voice queued');
       return true;
     } catch (err3) {
@@ -1454,7 +1458,7 @@ function performSpeak(
       try {
         tier1 = speakEdge(text, {
           lang,
-          gender: characterVoiceGender(characterId),
+          gender: spokenGender,
           character: characterId,
           expressiveness: expr * exprBoost,
           emotion,
@@ -1518,7 +1522,8 @@ function performSpeak(
     const gender = characterVoiceGender(characterId);
     const caption = leadKind && tic ? tic.text : text;
     const bodyIsBurst = () => burstSkipsTts(emotionClipKind(text, 'line'));
-    void playVoiceClip(clipFile(lang, gender, clipKind), caption, () => markVoiceStarted()).then(() => {
+    const burstFile = emotionClipPath(characterId, lang, gender, clipKind);
+    void playVoiceClip(burstFile, caption, () => markVoiceStarted()).then(() => {
       if (!speechAlive()) { settle(); return; }
       if (lineKind || bodyIsBurst()) { settle(); return; }
       // The lead already played from a file. The sentence after it may use TTS.
@@ -1957,6 +1962,7 @@ function synthSpeak(
   amp = 1,
   melody?: number[],
   onDone?: () => void,
+  genderOverride?: 'female' | 'male',
 ): void {
   let lineDone = false;
   let safety: ReturnType<typeof setTimeout> | undefined;
@@ -1970,7 +1976,7 @@ function synthSpeak(
   haltSynthQueue();
   const gen = synthGeneration;
 
-  const { voice, pitch: basePitch, rate: baseRate } = pickVoice(characterId, lang);
+  const { voice, pitch: basePitch, rate: baseRate } = pickVoice(characterId, lang, genderOverride);
   const locale = speechLocale(lang);
   const em = EMOTION_PROSODY[emotion] ?? EMOTION_PROSODY['neutral']!;
   // amplify the multipliers around 1 so intensity 1 is an exact no-op

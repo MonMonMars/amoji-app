@@ -1539,35 +1539,28 @@ export function voiceOpening(voice: VoiceId, motif: MotifId, frame: number, lang
   return fill(OPENING[voice][lang], { name, noun });
 }
 
-/** Short, plain lead so a tutor tip stays a tip. Motif keeps cast members distinct. */
+/** One real sentence before the how-to, so the tip stays a tip. */
 const TUTOR_LEAD: Record<VoiceId, Record<Lang, string>> = {
-  sunny:   { en: 'I like {noun}.', yue: '我鍾意{noun}。', zh: '我喜欢{noun}。', ja: '{noun}が好き。' },
-  shy:     { en: 'Um, {noun}.', yue: '嗯，{noun}。', zh: '嗯，{noun}。', ja: 'えっと、{noun}。' },
-  playful: { en: 'Hehe, {noun}.', yue: '嘻嘻，{noun}。', zh: '嘻嘻，{noun}。', ja: 'ふふ、{noun}。' },
-  gentle:  { en: 'Softly, about {noun}.', yue: '輕輕講下{noun}。', zh: '轻轻说说{noun}。', ja: 'そっと、{noun}の話。' },
-  dreamy:  { en: 'Thinking of {noun}.', yue: '諗緊{noun}。', zh: '想着{noun}。', ja: '{noun}のことを考えてる。' },
-  spark:   { en: 'Energy up, {noun}.', yue: '精神啲，{noun}。', zh: '打起精神，{noun}。', ja: '元気出して、{noun}。' },
-  steady:  { en: 'Here is a {noun} tip.', yue: '一個{noun}小貼士。', zh: '一个{noun}小提示。', ja: '{noun}の小さなヒント。' },
-  cool:    { en: 'Short version, {noun}.', yue: '短版本，{noun}。', zh: '短版本，{noun}。', ja: '短く言うと、{noun}。' },
-  warm:    { en: 'Pull up a chair. {noun}.', yue: '坐低啦。{noun}。', zh: '坐下来。{noun}。', ja: '座って。{noun}。' },
-  quiet:   { en: 'Quietly, {noun}.', yue: '靜靜哋，{noun}。', zh: '静静地，{noun}。', ja: '静かに、{noun}。' },
-  sporty:  { en: 'Team tip, {noun}.', yue: '隊伍貼士，{noun}。', zh: '队伍提示，{noun}。', ja: 'チームのヒント、{noun}。' },
-  wry:     { en: 'Funny thing, {noun}.', yue: '有件趣事，{noun}。', zh: '有件小事，{noun}。', ja: 'ちょっとした話、{noun}。' },
+  sunny:   { en: 'I like {noun}, so here is a useful tip.', yue: '我鍾意{noun}，同你講個有用嘅貼士。', zh: '我喜欢{noun}，告诉你一个有用的提示。', ja: '{noun}が好きだから、役に立つヒントを一つ。' },
+  shy:     { en: 'I like {noun}. May I share a small tip?', yue: '我鍾意{noun}。可唔可以講個細貼士？', zh: '我喜欢{noun}。可以讲一个小提示吗？', ja: '{noun}が好き。小さなヒント、言ってもいい？' },
+  playful: { en: 'I like {noun}, and I saved you a tip.', yue: '我鍾意{noun}，留咗個貼士俾你。', zh: '我喜欢{noun}，给你留了个提示。', ja: '{noun}が好きで、ヒントを一つ取ってある。' },
+  gentle:  { en: 'I like {noun}. Here is a gentle tip.', yue: '我鍾意{noun}。呢個係溫柔嘅貼士。', zh: '我喜欢{noun}。这是一个温柔的提示。', ja: '{noun}が好き。やさしいヒントを一つ。' },
+  dreamy:  { en: 'I like {noun}. A quiet tip, if you want it.', yue: '我鍾意{noun}。想聽就聽個靜靜嘅貼士。', zh: '我喜欢{noun}。想听的话，这是一个安静的提示。', ja: '{noun}が好き。静かなヒントを一つ、よかったら。' },
+  spark:   { en: 'I like {noun}. Ready for a quick tip?', yue: '我鍾意{noun}。想聽個快貼士嗎？', zh: '我喜欢{noun}。想听一个快提示吗？', ja: '{noun}が好き。早いヒント、聞く？' },
+  steady:  { en: 'I like {noun}. Here is a plain tip.', yue: '我鍾意{noun}。呢個係清楚嘅貼士。', zh: '我喜欢{noun}。这是一个清楚的提示。', ja: '{noun}が好き。わかりやすいヒントを一つ。' },
+  cool:    { en: 'I like {noun}. One short tip.', yue: '我鍾意{noun}。一個短貼士。', zh: '我喜欢{noun}。一个短提示。', ja: '{noun}が好き。短いヒントを一つ。' },
+  warm:    { en: 'I like {noun}. Pull up a chair for this tip.', yue: '我鍾意{noun}。坐低聽呢個貼士。', zh: '我喜欢{noun}。坐下来听这个提示。', ja: '{noun}が好き。このヒント、座って聞いて。' },
+  quiet:   { en: 'I like {noun}. A quiet tip.', yue: '我鍾意{noun}。一個靜靜嘅貼士。', zh: '我喜欢{noun}。一个安静的提示。', ja: '{noun}が好き。静かなヒント。' },
+  sporty:  { en: 'I like {noun}. Team tip, coming up.', yue: '我鍾意{noun}。隊伍貼士嚟喇。', zh: '我喜欢{noun}。队伍提示来了。', ja: '{noun}が好き。チームのヒント、いくよ。' },
+  wry:     { en: 'I like {noun}. One honest tip.', yue: '我鍾意{noun}。一個老實嘅貼士。', zh: '我喜欢{noun}。一个老实的提示。', ja: '{noun}が好き。正直なヒントを一つ。' },
 };
 
-const TUTOR_BRIDGE: Record<Lang, readonly string[]> = {
-  en: [' ', ' Also. ', ' Next. ', ' And. '],
-  yue: [' ', ' 另外。', ' 跟住。', ' 同埋。'],
-  zh: [' ', ' 另外。', ' 接着。', ' 还有。'],
-  ja: [' ', ' それと。', ' 次。', ' あと。'],
-};
-
-/** Short app-tip. The how-to stays intact; the lead is one calm clause. */
+/** App tip. The how-to stays intact; the lead is one finished sentence. */
 export function voiceTutorLine(voice: VoiceId, motif: MotifId, frame: number, lang: Lang, body: string): string {
+  void frame;
   const noun = LEX[motif][lang].noun;
   const lead = fill(TUTOR_LEAD[voice][lang], { noun });
-  const bridge = TUTOR_BRIDGE[lang][Math.abs(frame) % FRAME_COUNT] ?? ' ';
-  return `${lead}${bridge}${body}`;
+  return `${lead} ${body}`.replace(/\s+/g, ' ').trim();
 }
 
 function assertBanks(): void {

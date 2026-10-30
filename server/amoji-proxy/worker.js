@@ -35,8 +35,8 @@
 
 // Public read-aloud client token (same value the edge-tts project publishes).
 // Not a secret. env.EDGE_TTS_TOKEN overrides it if the public value rotates.
-const PUBLIC_EDGE_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
-const WS_BASE = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
+import { edgeAudioPayload, edgeReadAloudUrl } from './edge-gec.js';
+
 const OPENAI_SPEECH = '/v1/audio/speech';
 const OPENAI_UPSTREAM = 'https://api.openai.com';
 
@@ -107,11 +107,11 @@ async function relayNeuralTts(request, env) {
 
 /** Open the upstream readaloud socket from the worker, relay the mp3. */
 async function synthesize(ssml, env) {
-  const token = (env && typeof env.EDGE_TTS_TOKEN === 'string' && env.EDGE_TTS_TOKEN.trim()) || PUBLIC_EDGE_TOKEN;
+  // GEC is bound to the public client token. A custom EDGE_TTS_TOKEN is not
+  // hashed into that token, so the socket stays on the public client id.
+  void env;
   const requestId = crypto.randomUUID().replaceAll('-', '');
-  const ws = new WebSocket(
-    `${WS_BASE}?TrustedClientToken=${token}&ConnectionId=${crypto.randomUUID().replaceAll('-', '')}`,
-  );
+  const ws = new WebSocket(edgeReadAloudUrl(crypto.randomUUID().replaceAll('-', '')));
   const chunks = [];
   const pending = []; // frame-decoding promises, drained before resolve
 
@@ -135,13 +135,8 @@ async function synthesize(ssml, env) {
       // binary frame: ASCII headers, terminated by \r\n\r\n, then mp3 bytes
       pending.push(
         ev.data.arrayBuffer().then((buf) => {
-          const u8 = new Uint8Array(buf);
-          let headerEnd = -1;
-          const scan = Math.min(u8.length - 3, 160);
-          for (let i = 0; i < scan; i++) {
-            if (u8[i] === 13 && u8[i + 1] === 10 && u8[i + 2] === 13 && u8[i + 3] === 10) { headerEnd = i + 4; break; }
-          }
-          if (headerEnd >= 0 && u8.length > headerEnd) chunks.push(u8.slice(headerEnd));
+          const audio = edgeAudioPayload(new Uint8Array(buf));
+          if (audio && audio.length) chunks.push(audio);
         }),
       );
     });

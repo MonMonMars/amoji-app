@@ -1,3 +1,5 @@
+import { edgeAudioPayload, edgeReadAloudUrl } from '../../amoji-proxy/edge-gec.js';
+
 export interface TtsRequest {
   text: string;
   lang: string;
@@ -43,12 +45,12 @@ export function parseTtsBody(body: unknown): TtsRequest | { error: string } {
 }
 
 export const PUBLIC_EDGE_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
-const WS_BASE = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
 
 /** Edge read-aloud is the default voice. Token is the public client id, not an account key. */
 export async function synthesizeEdge(ssml: string, token = process.env.EDGE_TTS_TOKEN?.trim() || PUBLIC_EDGE_TOKEN): Promise<Uint8Array> {
+  void token;
   const requestId = crypto.randomUUID().replaceAll('-', '');
-  const ws = new WebSocket(`${WS_BASE}?TrustedClientToken=${token}&ConnectionId=${crypto.randomUUID().replaceAll('-', '')}`);
+  const ws = new WebSocket(edgeReadAloudUrl(crypto.randomUUID().replaceAll('-', '')));
   const chunks: Uint8Array[] = [];
   const pending: Promise<void>[] = [];
   const blob = await new Promise<Blob>((resolve, reject) => {
@@ -76,16 +78,8 @@ export async function synthesizeEdge(ssml: string, token = process.env.EDGE_TTS_
       const asBuf = data instanceof Blob ? data.arrayBuffer() : data instanceof ArrayBuffer ? Promise.resolve(data) : null;
       if (!asBuf) return;
       pending.push(asBuf.then((buf) => {
-        const u8 = new Uint8Array(buf);
-        let headerEnd = -1;
-        const scan = Math.min(u8.length - 3, 160);
-        for (let i = 0; i < scan; i++) {
-          if (u8[i] === 13 && u8[i + 1] === 10 && u8[i + 2] === 13 && u8[i + 3] === 10) {
-            headerEnd = i + 4;
-            break;
-          }
-        }
-        if (headerEnd >= 0 && u8.length > headerEnd) chunks.push(u8.slice(headerEnd));
+        const audio = edgeAudioPayload(new Uint8Array(buf));
+        if (audio && audio.length) chunks.push(audio);
       }));
     });
     ws.addEventListener('close', () => {

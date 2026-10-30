@@ -219,7 +219,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
               onLang={(next) => pick({ lang: next })}
             />
 
-            <EmotionClipRow lang={lang} gender={character.gender} accent={character.accent} />
+            <EmotionClipRow lang={lang} gender={character.gender} accent={character.accent} characterId={character.id} />
 
             <button
               onClick={confirm}
