@@ -217,6 +217,20 @@ function langHaPath(lang: string, gender: VoiceClipGender): string {
     : '/voice-clips/en/male/ha.mp3';
 }
 
+
+/** Gender+lang-matched um/ha filler. Think/search use short um/huh — never long thinking.wav. */
+export function recordedFillerClip(
+  gender: VoiceClipGender,
+  kind: 'um' | 'ha' | 'think' | 'search',
+  lang: string = 'yue',
+): string {
+  if (kind === 'ha') return langHaPath(lang, gender);
+  if (kind === 'search' && gender === 'female') {
+    const huh = '/voice-clips/universal/female/huh.mp3';
+    if (clipLibraryId(huh) !== null) return huh;
+  }
+  return langUmPath(lang, gender);
+}
 /** Poke SFX by body zone (SFX only — never TTS). Gender-matched um/oh/ha shorts. */
 const RECORDED_POKE_ZONE: Record<VoiceClipGender, Record<string, string>> = {
   female: {
@@ -227,7 +241,7 @@ const RECORDED_POKE_ZONE: Record<VoiceClipGender, Record<string, string>> = {
     hand: '/voice-clips/universal/female/giggle.mp3',
     side: '/voice-clips/universal/female/oh.mp3',
     back: '/voice-clips/universal/female/sigh.mp3',
-    default: '/voice-clips/universal/female/oh.mp3',
+    default: '/voice-clips/universal/female/wow_woven.mp3',
   },
   male: {
     head: '/voice-clips/ja/male/oh.mp3',
