@@ -1,14 +1,14 @@
-// Stage props (r2026-10-04.69) — when the dialogue turns to singing,
+// Stage props (r2026-10-04.69) ??when the dialogue turns to singing,
 // piano, violin, snacking or fine dining, the STAGE answers too: a real
 // prop fades in next to the character for exactly as long as her
-// performance runs. Master Simon's ask: "prepare some props and movement —
+// performance runs. Master Simon's ask: "prepare some props and movement ??
 // piano and violin etc., mic stand, ice cream model and eating movements,
 // trigger when user talks about it." The triggers already live in
 // moves.ts (detectMove on her reply); this catalog only decides WHAT
-// appears. Pure data + math, no DOM / no three imports — CompanionCanvas
+// appears. Pure data + math, no DOM / no three imports ??CompanionCanvas
 // turns each part into meshes. Scene space: character stands at the origin
 // facing +Z (toward the camera at HOME), ~1.5m tall, ground at y=0.
-// r.69: five props — micStand (sing), piano (piano), violin (violin),
+// r.69: five props ??micStand (sing), piano (piano), violin (violin),
 // iceCream (eat), dineTable (dine). Each part carries a micro-animation
 // hook so the prop feels alive (keys ripple, treat bobs, bow sways).
 
@@ -24,8 +24,8 @@ export interface PropPart {
   /** center position, meters, scene space */
   pos: [number, number, number];
   /**
-   * box: [width, height, depth] · cylinder: [rTop, rBottom, height]
-   * sphere: [radius, -, -] · cone: [radius, height, radius]
+   * box: [width, height, depth] 繚 cylinder: [rTop, rBottom, height]
+   * sphere: [radius, -, -] 繚 cone: [radius, height, radius]
    * (unused slots carry a mirrored placeholder so geometry stays positive)
    */
   size: [number, number, number];
@@ -48,15 +48,15 @@ const HEX = (s: string): string => s;
 
 export const PROPS: PropDef[] = [
   {
-    // the singer's mic — rises in front of her free hand while she sings
+    // the singer's mic ??rises in front of her free hand while she sings
     id: 'micStand',
     forMoves: ['sing'],
     parts: [
-      { kind: 'cylinder', pos: [0.3, 0.015, 0.42], size: [0.16, 0.18, 0.03], color: HEX('#111827') },
-      { kind: 'cylinder', pos: [0.3, 0.65, 0.42], size: [0.012, 0.014, 1.27], color: HEX('#374151') },
-      { kind: 'cylinder', pos: [0.3, 1.27, 0.42], size: [0.02, 0.02, 0.09], color: HEX('#4b5563'), rot: [0.5, 0, 0] },
-      { kind: 'sphere', pos: [0.3, 1.31, 0.385], size: [0.05, 0, 0], color: HEX('#1f2937'), anim: 'softBob', animPhase: 0.7 },
-      { kind: 'sphere', pos: [0.3, 1.31, 0.385], size: [0.028, 0, 0], color: HEX('#f472b6'), anim: 'sparkle', animPhase: 0 },
+      { kind: 'cylinder', pos: [0.14, 0.015, 0.16], size: [0.16, 0.18, 0.03], color: HEX('#111827') },
+      { kind: 'cylinder', pos: [0.14, 0.72, 0.16], size: [0.012, 0.014, 1.40], color: HEX('#374151') },
+      { kind: 'cylinder', pos: [0.14, 1.40, 0.16], size: [0.02, 0.02, 0.09], color: HEX('#4b5563'), rot: [0.5, 0, 0] },
+      { kind: 'sphere', pos: [0.12, 1.44, 0.12], size: [0.05, 0, 0], color: HEX('#1f2937'), anim: 'softBob', animPhase: 0.7 },
+      { kind: 'sphere', pos: [0.12, 1.44, 0.12], size: [0.028, 0, 0], color: HEX('#f472b6'), anim: 'sparkle', animPhase: 0 },
     ],
   },
   {
@@ -87,7 +87,7 @@ export const PROPS: PropDef[] = [
     ],
   },
   {
-    // double-scoop ice cream in her right hand — strawberry over vanilla
+    // double-scoop ice cream in her right hand ??strawberry over vanilla
     id: 'iceCream',
     forMoves: ['eat'],
     parts: [
@@ -120,10 +120,10 @@ export function propsForMove(kind: MoveKind | undefined): PropDef[] {
 const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 /**
- * How visible a prop is at move progress t (0→1): pops in fast (attack
+ * How visible a prop is at move progress t (0??): pops in fast (attack
  * 0.06), holds full through the performance, then melts away across
- * 0.82→0.90 so the stage is CLEAR before she moves on to her next motion —
- * the prop never pops out mid-transition. Multiply into group scale —
+ * 0.82??.90 so the stage is CLEAR before she moves on to her next motion ??
+ * the prop never pops out mid-transition. Multiply into group scale ??
  * 0 hides the group entirely.
  */
 export function propPresence(t: number): number {

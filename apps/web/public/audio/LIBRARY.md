@@ -86,3 +86,15 @@ Asking to **dance** plays `dance/` or `song-bed/` at BGM volume.
 2. Add a row to `PERFORMANCE_CLIPS` in `apps/web/lib/performance-clips.ts`.
    Songs need `voice: 'female'` or `'male'` and `volume: 'voiceVol'`. Dance and beds use `bgmVol` and omit voice.
 3. Add the file to the table above.
+
+
+## Long song sets (t718)
+
+Concatenations of existing CC0/PD shorts in this folder (~3 minutes each):
+
+| file | voice | ~duration |
+|---|---|---|
+| `sing-female/sing-f-long-set1.mp3` | female | 180s |
+| `sing-female/sing-f-long-set2.mp3` | female | 180s |
+| `sing-male/sing-m-long-set1.mp3` | male | 180s |
+| `sing-male/sing-m-long-set2.mp3` | male | 178s |

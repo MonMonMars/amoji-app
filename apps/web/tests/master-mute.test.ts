@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 function swapLs(): () => void {
   const g = globalThis as { localStorage?: Storage; window?: Window & typeof globalThis };
@@ -51,6 +51,18 @@ describe('master-mute', () => {
     expect(m.toggleMasterMute()).toBe(true);
     expect(m.isMasterMuted()).toBe(true);
     expect(m.toggleMasterMute()).toBe(false);
+    restore();
+  });
+
+  it('unmute exposes restore and clears mute flag', async () => {
+    const restore = swapLs();
+    const m = await import('../lib/master-mute');
+    m.setMasterMuted(true);
+    expect(m.isMasterMuted()).toBe(true);
+    m.setMasterMuted(false);
+    expect(m.isMasterMuted()).toBe(false);
+    expect(typeof m.restoreOutputsAfterUnmute).toBe('function');
+    await m.restoreOutputsAfterUnmute();
     restore();
   });
 });
