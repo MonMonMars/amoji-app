@@ -562,9 +562,10 @@ async function playClip(clip: PerformanceClip, token: number, characterId: strin
  */
 export function startLibraryPerformance(q: ClipQuery & { ms: number }): PerformanceClip {
   const clip = pickPerformanceClip(q);
+  const holdMs = Math.max(q.ms, (clip.durationMs || 0) + 600);
   if (isMasterMuted() || typeof window === 'undefined') return clip;
   if (clipId === clip.id && perfPreserve) {
-    armPerformance(q.ms);
+    armPerformance(holdMs);
     return clip;
   }
   endPerformanceMusic();
@@ -574,7 +575,7 @@ export function startLibraryPerformance(q: ClipQuery & { ms: number }): Performa
   clipVolumeKey = clip.volume;
   clipBase = CLIP_BASE_GAIN[clip.kind];
   clipCharacter = q.characterId ?? 'default';
-  armPerformance(q.ms);
+  armPerformance(holdMs);
   const token = ++loadToken;
   void playClip(clip, token, clipCharacter);
   return clip;

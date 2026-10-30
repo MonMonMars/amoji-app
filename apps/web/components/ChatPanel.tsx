@@ -137,7 +137,7 @@
 // field ("can't click the text box and the mic button"). The input row now
 // carries z-10 so it takes its clicks back.
 import { useEffect, useRef, useState } from 'react';
-import { feedUtterance, applyLlmHints, setThinkingPose, triggerLaugh, triggerMove } from '../lib/companion';
+import { feedUtterance, applyLlmHints, setThinkingPose, triggerLaugh, triggerMove, holdMove } from '../lib/companion';
 import { detectMove } from '../lib/moves';
 import { loadHistory, saveHistory } from '../lib/companion-store';
 import { notifySpeaking, isSpeaking } from '../lib/speech';
@@ -445,6 +445,7 @@ export default function ChatPanel({
 
   /** Start a premade song (matched to her gender) or dance bed, and show the pick. */
   const beginShow = (kind: 'song' | 'dance', ms: number, mood?: string, n = laughCountRef.current, bed = false) => {
+    // t718: music.ts arms to max(ms, clip.durationMs+600); hold body/mic for songs.
     const clip = startLibraryPerformance({
       kind,
       characterId,
@@ -455,7 +456,9 @@ export default function ChatPanel({
       ms,
       bed,
     });
-    showTrack(clip, ms);
+    const hold = Math.max(clip.durationMs + 600, ms);
+    if (kind === 'song') holdMove(hold);
+    showTrack(clip, hold);
     return clip;
   };
 
@@ -568,9 +571,12 @@ export default function ChatPanel({
     lastActivityRef.current = Date.now();
     lastUserRef.current = Date.now();
     reengageStageRef.current = 0;
-    playPokeBurst(characterId);
+    // SFX-only poke (Mon t691–t696): no TTS reaction / laugh lead — clip by zone.
+    playPokeBurst(characterId, pokeZone || 'torso');
     const line = pokeReactionLine(characterId, characterGender, pokeZone || 'torso', pokeDirection || 'front', lang, pokeCount);
-    sayLocal(line, { joy: 0.5 }, maybeLaughLead(lang));
+    feedUtterance(line);
+    notifySpeaking(line);
+    setHistory((h) => [...h, { role: 'assistant', content: line }]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pokeCount]);
 

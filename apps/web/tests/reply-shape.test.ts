@@ -38,4 +38,12 @@ Haha, it's about 29 degrees and drizzling. Want to stay in with tea?`;
   it('keeps an unfinished clause while the stream is still growing', () => {
     expect(shapeCompanionReply('It is raining in town. and the', { streaming: true })).toContain('and the');
   });
+
+  it('strips assistantfinal / planning leaks from reasoning models', () => {
+    const raw = 'assistantfinal Okay so the user wants a joke.\n\nHaha, why did the cat sit on the keyboard? Want another?';
+    const out = shapeCompanionReply(raw);
+    expect(out.toLowerCase()).not.toContain('assistantfinal');
+    expect(out.toLowerCase()).not.toContain('the user wants');
+    expect(out).toMatch(/haha|keyboard|another/i);
+  });
 });

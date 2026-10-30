@@ -134,7 +134,7 @@ describe('premade sing and dance library', () => {
     const allowed = new Set(['happy', 'angry', 'sad', 'tired', 'anxious']);
     const ids = PERFORMANCE_CLIPS.map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(PERFORMANCE_CLIPS).toHaveLength(64);
+    expect(PERFORMANCE_CLIPS).toHaveLength(68);
     for (const id of ['dance-boss-battle', 'bed-happy-vibes', 'sing-f-adele', 'sing-m-brindisi', 'sing-m-overtone-a', 'sing-m-mass-amen']) {
       expect(ids).toContain(id);
     }
@@ -148,9 +148,18 @@ describe('premade sing and dance library', () => {
     const songs = PERFORMANCE_CLIPS.filter((c) => c.kind === 'song');
     expect(dance.filter((c) => c.file.includes('/dance/')).length).toBeGreaterThanOrEqual(9);
     expect(dance.filter((c) => c.file.includes('/song-bed/')).length).toBeGreaterThanOrEqual(34);
-    expect(songs.filter((c) => c.voice === 'female')).toHaveLength(9);
-    expect(songs.filter((c) => c.voice === 'male')).toHaveLength(12);
+    expect(songs.filter((c) => c.voice === 'female')).toHaveLength(11);
+    expect(songs.filter((c) => c.voice === 'male')).toHaveLength(14);
     expect(pickPerformanceClip({ kind: 'dance', lang: 'en', n: 0 }).id).toBe('dance-silent-dance-floor');
     expect(pickPerformanceClip({ kind: 'song', gender: 'male', mood: 'happy', n: 0 }).id).toBe('sing-m-happy-birthday');
+  });
+
+  it('includes ~3min long song sets for both voices (t718)', () => {
+    for (const id of ['sing-f-long-set1', 'sing-f-long-set2', 'sing-m-long-set1', 'sing-m-long-set2']) {
+      const clip = PERFORMANCE_CLIPS.find((c) => c.id === id);
+      expect(clip, id).toBeTruthy();
+      expect(clip!.durationMs).toBeGreaterThanOrEqual(170_000);
+      expect(clip!.kind).toBe('song');
+    }
   });
 });

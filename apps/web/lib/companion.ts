@@ -62,6 +62,7 @@ export function lastLaughAt(): number { return laughAtMs; }
 // with the backing-track engine, which already owns those).
 let moveAtMs = -Infinity;
 let moveKind: MoveKind | null = null;
+let moveDurOverride: number | null = null;
 let thinkingPose = false;
 /** Subtle think idle while a reply is generating. No dance, no music. */
 export function setThinkingPose(on: boolean): void {
@@ -70,16 +71,22 @@ export function setThinkingPose(on: boolean): void {
 export function thinkingPoseActive(): boolean {
   return thinkingPose;
 }
-export function triggerMove(kind: MoveKind, now = perfNow()): void {
+export function triggerMove(kind: MoveKind, now = perfNow(), durationMs?: number): void {
   moveKind = kind;
   moveAtMs = now;
+  moveDurOverride = durationMs && durationMs > 0 ? durationMs : null;
   playMoveSfx(kind);
+}
+/** Extend the active move so body + props last for a long song (t718). */
+export function holdMove(durationMs: number): void {
+  if (!moveKind || !(durationMs > 0)) return;
+  moveDurOverride = Math.max(durationMs, MOVE_DUR[moveKind] ?? durationMs);
 }
 /** the running performance, normalized 0→1, or undefined when none is active */
 export function activeMove(now = perfNow()): { kind: MoveKind; t: number } | undefined {
   if (!moveKind) return undefined;
   const age = now - moveAtMs;
-  const dur = MOVE_DUR[moveKind];
+  const dur = moveDurOverride ?? MOVE_DUR[moveKind];
   if (age < 0 || age >= dur) return undefined;
   return { kind: moveKind, t: age / dur };
 }

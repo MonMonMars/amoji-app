@@ -946,16 +946,16 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   },
   'a94-rita': {
     yue: [
-      { lang: 'zh-HK', names: ['WanLung', 'Sin-ju', 'Male'], basePitch: 0.96, baseRate: 0.96 },
+      { lang: 'zh-HK', names: ['HiuGaai', 'HiuMaan', 'Female'], basePitch: 1.04, baseRate: 1.02 },
     ],
     zh: [
-      { lang: 'zh-CN', names: ['Yunyang', 'Yunjian', 'Kangkang', 'Male'], basePitch: 0.96, baseRate: 0.96 },
+      { lang: 'zh-CN', names: ['Xiaoxiao', 'Xiaoyi', 'Huihui', 'Female'], basePitch: 1.04, baseRate: 1.02 },
     ],
     ja: [
-      { lang: 'ja-JP', names: ['Keita', 'Otoya', 'Male'], basePitch: 0.96, baseRate: 0.97 },
+      { lang: 'ja-JP', names: ['Nanami', 'Ayumi', 'Female'], basePitch: 1.04, baseRate: 1.02 },
     ],
     en: [
-      { lang: 'en-US', names: ['Eric', 'Guy', 'David', 'Male'], basePitch: 0.96, baseRate: 0.97 },
+      { lang: 'en-US', names: ['Jenny', 'Aria', 'Zira', 'Female'], basePitch: 1.04, baseRate: 1.02 },
     ],
   },
   'a107-dm-office-casual': {
@@ -1286,6 +1286,14 @@ function drainSpeech(): void {
     lineQueue.finished(next.epoch);
     if (lineQueue.epochNow() === next.epoch) drainSpeech();
   });
+}
+
+/** Resume synth + AudioContext after master unmute (t719). */
+export function resumeVoiceEngines(): void {
+  try {
+    if (typeof speechSynthesis !== 'undefined') speechSynthesis.resume();
+  } catch { /* ignore */ }
+  unlockAudio();
 }
 
 export function stopSpeaking(): void {
@@ -1726,8 +1734,8 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
 }
 
 /** Poke hit: a recorded gasp, not the synthetic tap and not an Edge crop. */
-export function playPokeBurst(characterId: string): void {
-  const file = recordedPokeClip(characterVoiceGender(characterId));
+export function playPokeBurst(characterId: string, zone?: string): void {
+  const file = recordedPokeClip(characterVoiceGender(characterId), zone);
   void playVoiceClip(file, 'oh', () => markVoiceStarted()).catch(() => { /* a missing file stays quiet */ });
 }
 
