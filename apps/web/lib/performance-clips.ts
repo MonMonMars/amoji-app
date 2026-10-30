@@ -582,6 +582,8 @@ export interface ClipQuery {
   gender?: SingVoice;
   /** rotation counter — repeated asks walk the weighted pool */
   n?: number;
+  /** Instrumental song-bed only. Sung tracks stay on kind song. */
+  bed?: boolean;
 }
 
 /**
@@ -594,6 +596,10 @@ export function pickPerformanceClip(q: ClipQuery): PerformanceClip {
   const bank = PERFORMANCE_CLIPS.filter((c) => c.kind === q.kind);
   const moodHits = q.mood ? bank.filter((c) => c.moods.includes(q.mood!)) : [];
   let pool = moodHits.length ? moodHits : bank;
+  if (q.bed) {
+    const beds = pool.filter((c) => c.file.includes('/song-bed/'));
+    if (beds.length) pool = beds;
+  }
   if (q.kind === 'song' && (q.gender === 'female' || q.gender === 'male')) {
     const voiced = pool.filter((c) => c.voice === q.gender);
     if (voiced.length) pool = voiced;

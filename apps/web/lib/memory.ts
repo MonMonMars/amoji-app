@@ -306,12 +306,18 @@ export function editEntry(id: string, text: string, m: Memory = loadMemory()): v
  * remembered so her own word rides into future prompts.
  */
 export function rememberTurn(userText: string, reply: string, m: Memory = loadMemory()): void {
-  const u = userText.trim().replace(/\s+/g, ' ').slice(0, 60);
+  const fullUser = userText.trim();
+  const fullReply = reply.trim();
+  const u = fullUser.replace(/\s+/g, ' ').slice(0, 60);
   if (!u) return;
-  const r = reply.trim().replace(/\s+/g, ' ').slice(0, 60);
+  const r = fullReply.replace(/\s+/g, ' ').slice(0, 60);
   m.lastThread = { day: todayStr(), user: u, reply: r };
   pushPromise(m, reply);
   save(m);
+  void import('./talk-history').then((mod) => {
+    void mod.archiveTalkLine('user', fullUser);
+    if (fullReply) void mod.archiveTalkLine('assistant', fullReply);
+  }).catch(() => { /* history sync is best-effort */ });
 }
 
 // ---------- her promises (v6, r2026-10-06.130) ----------

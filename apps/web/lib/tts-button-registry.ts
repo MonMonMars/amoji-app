@@ -19,10 +19,10 @@ export interface TtsButtonVoice {
 
 /** How many Tier A buttons each language shows when the row is filtered. */
 export const TIER_A_COUNTS: Record<VoiceLocale, number> = {
-  yue: 3,
-  zh: 6,
-  ja: 2,
-  en: 17,
+  yue: EDGE_VOICE_BUTTONS.filter((b) => b.locale === 'yue').length,
+  zh: EDGE_VOICE_BUTTONS.filter((b) => b.locale === 'zh').length,
+  ja: EDGE_VOICE_BUTTONS.filter((b) => b.locale === 'ja').length,
+  en: EDGE_VOICE_BUTTONS.filter((b) => b.locale === 'en').length,
 };
 
 export const TTS_BUTTON_REGISTRY: readonly TtsButtonVoice[] = EDGE_VOICE_BUTTONS.map((button) => ({
