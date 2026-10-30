@@ -191,7 +191,7 @@ describe('modular wardrobe catalog', () => {
     expect(board).not.toContain("t(lang, 'back')");
     const chat = fs.readFileSync(path.resolve(here, '../app/chat/page.tsx'), 'utf8');
     expect(chat).toContain('CompanionCanvas');
-    expect(chat).toContain('h-10 w-10');
+    expect(chat).toContain('sm:h-10 sm:w-10');
     expect(chat).toContain('pointer-events-none absolute inset-x-0 bottom-0');
   });
 });

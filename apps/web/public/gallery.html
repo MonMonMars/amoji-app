@@ -48,8 +48,8 @@
 <body>
 <header>
   <h1>🧍 Amoji Idle Motion Gallery</h1>
-  <div class="sub">Feet-planted standing idles. <b>IdleBreathCalm</b> is the primary default. <b>StandardIdle</b>, <b>LookAround</b>, and <b>Relax</b> rotate with it. <b>WeightShift</b> is optional.<br>
-  Tap cards to pick → <b>Copy my picks</b> → paste back in chat (format: <code>My idle picks: IdleBreathCalm …</code>).</div>
+  <div class="sub">Feet-planted standing idles. Default rotation is <b>only</b> <b>IdleBreathCalm</b> (b01) → <b>StandardIdle</b> (b02). <b>LookAround</b> (b03) and <b>Relax</b> (b04) are optional side-rail picks — not defaults. a01–a04 stay out of the rotation.<br>
+  Tap cards to pick → <b>Copy my picks</b> → paste back in chat (format: <code>My idle picks: IdleBreathCalm …</code>). Clear a stuck chat pin with <code>localStorage.removeItem('amoji.idlePick.v1')</code>.</div>
 </header>
 <div class="bar">
   <button id="copy">Copy my picks</button>
@@ -70,7 +70,7 @@
 <div class="grid" id="gD"></div>
 
 <div class="note">
-  <b>IdleBreathCalm.vrma</b> is the primary default in <code>models/anims/</code> and leads every personality list in <code>lib/personality.ts</code>. <b>StandardIdle.vrma</b> is vendored locally beside it.<br>
+  <b>IdleBreathCalm.vrma</b> (b01) and <b>StandardIdle.vrma</b> (b02) are the only default rotation clips in <code>lib/personality.ts</code> / <code>CompanionCanvas</code>. LookAround / Relax are optional rails only.<br>
   Convert later (not wired): <b>IdleKaykitA</b>, <b>IdleKaykitB</b>, <b>IdleQuaterniusHuman</b> — FBX/glTF noted in <code>models/anims-fbx/README.txt</code>.<br>
   Mixamo: ship embedded in app OK; do not redistribute raw FBX publicly.
 </div>

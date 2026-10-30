@@ -308,3 +308,26 @@ button:not(:disabled):active,
     opacity: 0.86;
   }
 }
+
+/* DEV-ONLY QA marks (?dev=1). Hidden in public builds without the flag. */
+html[data-amoji-dev] [data-dev] {
+  position: relative;
+}
+html[data-amoji-dev] [data-dev]::after {
+  content: attr(data-dev);
+  position: absolute;
+  top: -0.35rem;
+  left: -0.35rem;
+  z-index: 40;
+  min-width: 1.1rem;
+  padding: 0.05rem 0.28rem;
+  border-radius: 999px;
+  background: #fbbf24;
+  color: #1a1200;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+}

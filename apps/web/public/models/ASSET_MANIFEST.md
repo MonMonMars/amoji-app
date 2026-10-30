@@ -140,10 +140,10 @@ Real VRMA animation clips (VRMC_vrm_animation), force-committed for GitHub Pages
 
 | File | Used for |
 |---|---|
-| anims/IdleBreathCalm.vrma | idle rotation (primary default) |
-| anims/StandardIdle.vrma | idle rotation (local neutral stand; vendored, not remote) |
-| anims/LookAround.vrma | idle rotation (curious variant) |
-| anims/Relax.vrma | idle rotation (soft variant) |
+| anims/IdleBreathCalm.vrma | idle rotation only (b01 primary default) |
+| anims/StandardIdle.vrma | idle rotation only (b02 local neutral stand) |
+| anims/LookAround.vrma | optional side-rail pick (b03; not default rotation) |
+| anims/Relax.vrma | optional side-rail pick (b04; not default rotation) |
 | (remote) weightShift.vrma | optional idle if fetch succeeds |
 | anims/IdleNeutral.vrma | on disk, out of the default rotation (neck pitched down) |
 | anims/Thinking.vrma | on disk, out of the default rotation (head pitched down) |

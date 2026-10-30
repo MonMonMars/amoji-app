@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AppleMeta from "../components/AppleMeta";
+import DevModeGate from "../components/DevModeGate";
 import ServiceWorkerRegistrar from "../components/ServiceWorkerRegistrar";
 import UiClickSound from "../components/UiClickSound";
 
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <AppleMeta />
         <ServiceWorkerRegistrar />
         <UiClickSound />
+        <DevModeGate />
         {children}
       </body>
     </html>

@@ -1,8 +1,24 @@
 // Per-companion idle pin. Same localStorage shape as the other chat prefs.
+// Default rotation is only b01 IdleBreathCalm + b02 StandardIdle.
+// Saved a01–a04 pins (old bad defaults) are cleared on load. b03/b04 stay
+// optional side-rail picks. Clear the whole key with resetIdlePicks() or
+// `localStorage.removeItem('amoji.idlePick.v1')`.
 
 import { idleClipById } from './idle-clips';
 
-const KEY = 'amoji.idlePick.v1';
+export const IDLE_PICK_KEY = 'amoji.idlePick.v1';
+const KEY = IDLE_PICK_KEY;
+
+/** Default rotation / safe persisted pins. */
+export const DEFAULT_IDLE_IDS = ['IdleBreathCalm', 'StandardIdle'] as const;
+
+/** Old rail defaults that must not stick after the calm-only change. */
+const BAD_SAVED_IDLE_IDS = new Set([
+  'IdleNeutral',
+  'IdleSassy',
+  'IdleChinHand',
+  'IdleHug',
+]);
 
 type PickMap = Record<string, string>;
 
@@ -19,10 +35,23 @@ function hydrate(): PickMap {
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== 'object') return memory;
     const next: PickMap = {};
+    let changed = false;
     for (const [id, clip] of Object.entries(parsed as Record<string, unknown>)) {
-      if (typeof clip === 'string' && idleClipById(clip)) next[id] = clip;
+      if (typeof clip !== 'string' || !idleClipById(clip)) {
+        changed = true;
+        continue;
+      }
+      // Drop legacy a01–a04 pins so the calm b01/b02 rotation returns.
+      if (BAD_SAVED_IDLE_IDS.has(clip)) {
+        changed = true;
+        continue;
+      }
+      next[id] = clip;
     }
     memory = next;
+    if (changed) {
+      try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* private mode */ }
+    }
   } catch { /* ignore */ }
   return memory;
 }
@@ -53,4 +82,15 @@ export function resetIdlePicks(): void {
   try {
     if (typeof localStorage !== 'undefined') localStorage.removeItem(KEY);
   } catch { /* ignore */ }
+}
+
+/** Test helper — drop the in-memory cache so the next read rehydrates. */
+export function forgetIdlePickCache(): void {
+  memory = {};
+  loaded = false;
+}
+
+/** True when this clip is part of the calm default rotation. */
+export function isDefaultIdleClip(clipId: string): boolean {
+  return (DEFAULT_IDLE_IDS as readonly string[]).includes(clipId);
 }

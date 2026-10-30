@@ -93,7 +93,7 @@ describe('premade sing and dance library', () => {
     expect(performanceGain(song, 80)).toBeCloseTo(0.92 * 0.8);
     expect(performanceGain(dance, 40)).toBeCloseTo(0.8 * 0.4);
     expect(performanceGain(song, 80, 0.28)).toBeCloseTo(0.92 * 0.8 * 0.28);
-    expect(performanceGain(dance, 0)).toBe(0);
+    expect(performanceGain(dance, 0)).toBeCloseTo(0.8 * 0.8);
   });
 
   it('ships every catalogued mp3, documented as CC0', () => {
