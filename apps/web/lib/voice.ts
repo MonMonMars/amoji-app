@@ -1726,8 +1726,8 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
 }
 
 /** Poke hit: a recorded gasp, not the synthetic tap and not an Edge crop. */
-export function playPokeBurst(characterId: string): void {
-  const file = recordedPokeClip(characterVoiceGender(characterId));
+export function playPokeBurst(characterId: string, zone?: string): void {
+  const file = recordedPokeClip(characterVoiceGender(characterId), zone);
   void playVoiceClip(file, 'oh', () => markVoiceStarted()).catch(() => { /* a missing file stays quiet */ });
 }
 

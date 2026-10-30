@@ -252,3 +252,13 @@ describe('TTS proxy URL (r131)', () => {
     expect(resolveTtsProxy(undefined, null, '  ')).toBeNull();
   });
 });
+
+describe('forcePlain SSML (voice hotfix)', () => {
+  it('forcePlain skips express-as even when emotion would style', () => {
+    const styled = buildEdgeSsml('你好呀', { lang: 'zh', gender: 'female', character: 'a01-shino', emotion: 'joy' });
+    expect(styled).toContain('mstts:express-as');
+    const plain = buildEdgeSsml('你好呀', { lang: 'zh', gender: 'female', character: 'a01-shino', emotion: 'joy', forcePlain: true });
+    expect(plain).not.toContain('mstts:express-as');
+    expect(plain).toContain("voice name=");
+  });
+});

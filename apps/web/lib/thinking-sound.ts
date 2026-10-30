@@ -9,6 +9,7 @@ import { volumeLinear } from './audio-levels';
 import { applyPlaybackVolume } from './playback-volume';
 import { sfxEnabled } from './sfx';
 import { recordedFillerClip, type VoiceClipGender } from './voice-clips';
+import { isMasterMuted } from './master-mute';
 
 /** Fraction of the voice/sfx level. Keeps the hum under the reply. */
 export const THINKING_GAIN = 0.32;
@@ -51,6 +52,7 @@ export function thinkingFillerPath(gender: VoiceClipGender = 'female', lang = 'y
 
 export function startThinkingSound(opts: ThinkingSoundOpts = {}): void {
   if (typeof window === 'undefined') return;
+  if (isMasterMuted()) return;
   const gain = thinkingAudibleGain(
     voiceRepliesOn(),
     sfxEnabled(),

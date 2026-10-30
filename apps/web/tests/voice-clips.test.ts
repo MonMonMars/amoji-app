@@ -173,8 +173,8 @@ describe('CLIP_LIBRARY numbering', () => {
     expect(clipLibraryPath(12)).toBe('/voice-clips/yue/male/um.mp3');
     expect(clipLibraryPath(52)).toBe('/voice-clips/ja/male/oh.mp3');
     expect(clipLibraryPath(94)).toBe('/voice-clips/universal/female/wow_woven.mp3');
-    expect(clipLibraryId(recordedPokeClip('female'))).toBe(94);
-    expect(clipLibraryId(recordedPokeClip('male'))).toBe(52);
+    expect(fs.existsSync(path.resolve(here, '../public', recordedPokeClip('female').slice(1)))).toBe(true);
+    expect(fs.existsSync(path.resolve(here, '../public', recordedPokeClip('male').slice(1)))).toBe(true);
     expect(clipLibraryIdFor('yue', 'female', 'um.mp3')).toBe(5);
     expect(clipLibraryIdFor('universal', 'female', 'wow_woven.mp3')).toBe(94);
   });
@@ -217,5 +217,21 @@ describe('TTS button registry', () => {
     expect(browserVoicesForLang(voices, 'zh').map((v) => v.lang)).toEqual(['zh-CN']);
     expect(browserVoicesForLang(voices, 'ja').map((v) => v.lang)).toEqual(['ja-JP']);
     expect(browserVoicesForLang(voices, 'en').map((v) => v.lang)).toEqual(['en-US', 'en-GB']);
+  });
+});
+
+describe('zone poke clips (SFX only)', () => {
+  it('returns distinct gender-matched paths per zone and files exist', () => {
+    const zones = ['head', 'chest', 'torso', 'belly', 'hand', 'side', 'back'];
+    for (const gender of VOICE_CLIP_GENDERS) {
+      const paths = new Set(zones.map((z) => recordedPokeClip(gender, z)));
+      expect(paths.size).toBeGreaterThan(1);
+      for (const z of zones) {
+        const rel = recordedPokeClip(gender, z);
+        const file = path.resolve(here, '../public', rel.slice(1));
+        expect(fs.existsSync(file), `${gender} ${z} ${rel}`).toBe(true);
+      }
+      expect(recordedPokeClip(gender)).toBe(recordedPokeClip(gender, 'default'));
+    }
   });
 });
