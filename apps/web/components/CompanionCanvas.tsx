@@ -14,6 +14,7 @@ import { PROPS, propsForMove, propPresence, type PropDef, type PropPart } from '
 import { characterById } from '../lib/prefs';
 import { modelUrl } from '../lib/asset';
 import { pokeStyleFor, poseIdsFor, lookFor } from '../lib/persona';
+import { DEFAULT_CAMERA_HOME, upperBodyHome } from '../lib/camera-frame';
 import { orderIdleClips, personalityMotion } from '../lib/personality';
 import { classifyPoke, pokeBodyReaction, type PokeDirection, type TalkZone } from '../lib/poke-hit';
 import { clipFreesFeet, collectPlantRest, pinPlantedClipTracks } from '../lib/vrm/plant-feet';
@@ -135,11 +136,11 @@ export interface CompanionCanvasProps {
 
 // r2026-10-04.92 (Master Simon): start FURTHER AWAY and at a NORMAL STRAIGHT
 // angle — the old phi 1.12 put the camera ~26° above her looking down (an
-// "upper camera" close-up). Now the lens sits ~2.4° above eye level, 2.6m
-// back: upper body centered, like someone standing across from you. Target
-// stays at chest height (y 1.05). Double-tap empty space still returns here.
-const HOME = { theta: 0, phi: PHI_HOME, dist: 2.6 };
-const HOME_TARGET = new THREE.Vector3(0, 1.05, 0);
+// "upper camera" close-up). Now the lens sits ~2.4° above eye level, ~2.6m
+// back: upper body centered. Per-character home is unified via upperBodyHome
+// after mount so short/tall cast share the same portrait framing.
+const HOME = { theta: 0, phi: PHI_HOME, dist: DEFAULT_CAMERA_HOME.dist };
+const HOME_TARGET = new THREE.Vector3(0, DEFAULT_CAMERA_HOME.lookY, 0);
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
 // Polar window lives in lib/orbit-limits.ts (PHI_MIN / PHI_MAX). Theta is
@@ -334,9 +335,11 @@ export default function CompanionCanvas({
 
     const camera = new THREE.PerspectiveCamera(35, host.clientWidth / host.clientHeight, 0.1, 20);
 
-    // spherical orbit state + pannable look-target
-    const target = HOME_TARGET.clone();
+    // spherical orbit state + pannable look-target (home retargeted per VRM)
+    const homeTarget = HOME_TARGET.clone();
+    const target = homeTarget.clone();
     const orbit = { theta: HOME.theta, phi: HOME.phi, dist: HOME.dist };
+    let framed = false;
     const applyCamera = () => {
       orbit.phi = clamp(orbit.phi, PHI_MIN, PHI_MAX);
       orbit.dist = clamp(orbit.dist, 0.7, 5);
@@ -350,6 +353,29 @@ export default function CompanionCanvas({
       camera.lookAt(target);
     };
     applyCamera();
+    const unifyFraming = (a: Avatar) => {
+      try {
+        a.root.scale.set(BASE_SX, BASE_SY, BASE_SX);
+        a.root.updateMatrixWorld(true);
+        const head = a.getBoneNode('head');
+        const hips = a.getBoneNode('hips');
+        const chest = a.getBoneNode('chest') ?? a.getBoneNode('spine');
+        if (!head || !hips) return;
+        const hp = head.getWorldPosition(new THREE.Vector3());
+        const ip = hips.getWorldPosition(new THREE.Vector3());
+        const cp = chest ? chest.getWorldPosition(new THREE.Vector3()) : ip.clone().lerp(hp, 0.55);
+        const home = upperBodyHome({ hipsY: ip.y, chestY: cp.y, headY: hp.y });
+        homeTarget.set(0, home.lookY, 0);
+        orbit.dist = home.dist;
+        if (!resetAnim) {
+          target.copy(homeTarget);
+          orbit.theta = HOME.theta;
+          orbit.phi = HOME.phi;
+          applyCamera();
+        }
+        framed = true;
+      } catch { /* keep default home */ }
+    };
 
     // smooth camera-reset animation state
     let resetAnim: {
@@ -1552,7 +1578,7 @@ export default function CompanionCanvas({
         orbit.theta = HOME.theta;
         orbit.phi = HOME.phi;
         orbit.dist = HOME.dist;
-        target.copy(HOME_TARGET);
+        target.copy(homeTarget);
         resetAnim = null;
         nextIdle(FADE.perfEnd);
       }
@@ -1563,7 +1589,7 @@ export default function CompanionCanvas({
         orbit.theta = resetAnim.from.theta + (HOME.theta - resetAnim.from.theta) * ease;
         orbit.phi = resetAnim.from.phi + (HOME.phi - resetAnim.from.phi) * ease;
         orbit.dist = resetAnim.from.dist + (HOME.dist - resetAnim.from.dist) * ease;
-        target.lerpVectors(resetAnim.fromTarget, HOME_TARGET, ease);
+        target.lerpVectors(resetAnim.fromTarget, homeTarget, ease);
         if (p >= 1) resetAnim = null;
       }
       if (!gameView) applyCamera();
@@ -1888,6 +1914,7 @@ export default function CompanionCanvas({
             if (revealLitFrames >= 2) {
               revealPending = false;
               avatar.root.visible = true;
+              if (!framed) unifyFraming(avatar);
               setLoadProgress(null);
               clearTimeout(loadWatchdog);
             }

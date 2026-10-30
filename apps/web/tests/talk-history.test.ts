@@ -27,12 +27,16 @@ describe('talk history', () => {
 });
 
 describe('recorded fillers and poke', () => {
-  it('plays human clips, not the Edge um crop', () => {
-    expect(recordedFillerClip('female', 'um')).toBe('/voice-clips/universal/female/um.mp3');
-    expect(recordedFillerClip('male', 'um')).toBe('/voice-clips/ja/male/um.mp3');
-    expect(recordedFillerClip('female', 'ha')).toBe('/voice-clips/universal/female/ha.mp3');
-    expect(recordedFillerClip('male', 'think')).not.toContain('think.mp3');
-    expect(recordedPokeClip('female')).toContain('wow_woven');
+  it('plays short lang+gender um clips and CLIP_LIBRARY poke hits', () => {
+    // Yue F #5 / Yue M #12
+    expect(recordedFillerClip('female', 'um', 'yue')).toBe('/voice-clips/yue/female/um.mp3');
+    expect(recordedFillerClip('male', 'um', 'yue')).toBe('/voice-clips/yue/male/um.mp3');
+    expect(recordedFillerClip('female', 'um', 'en')).toBe('/voice-clips/en/female/um.mp3');
+    expect(recordedFillerClip('female', 'ha', 'yue')).toBe('/voice-clips/yue/female/ha.mp3');
+    expect(recordedFillerClip('male', 'think', 'ja')).toBe('/voice-clips/ja/male/um.mp3');
+    expect(recordedFillerClip('male', 'think', 'ja')).not.toContain('think.mp3');
+    // Female poke = CLIP #94; Male poke = CLIP #52
+    expect(recordedPokeClip('female')).toBe('/voice-clips/universal/female/wow_woven.mp3');
     expect(recordedPokeClip('male')).toBe('/voice-clips/ja/male/oh.mp3');
     expect(loadingFillerKind('um……')).toBe('um');
     expect(loadingFillerKind('ha……')).toBe('ha');

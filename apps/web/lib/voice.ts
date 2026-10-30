@@ -1529,7 +1529,7 @@ function performSpeak(
   // Edge (then the browser voice) still speaks.
   const fillerKind = loadingFillerKind(text);
   if (fillerKind) {
-    const file = recordedFillerClip(characterVoiceGender(characterId), fillerKind);
+    const file = recordedFillerClip(characterVoiceGender(characterId), fillerKind, lang);
     void playVoiceClip(file, text, () => markVoiceStarted()).then(() => settle()).catch((err: unknown) => {
       if (!speechAlive() || (err as Error | undefined)?.message === 'canceled') { settle(); return; }
       beginTts();

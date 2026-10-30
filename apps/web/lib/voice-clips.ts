@@ -99,6 +99,54 @@ export function clipLibraryFile(folder: ClipFolder, gender: VoiceClipGender, fil
   return `/voice-clips/${folder}/${gender}/${file}`;
 }
 
+export interface ClipLibraryEntry {
+  /** 1-based index in CLIP_LIBRARY flatten order (yue→zh→ja→en→universal × F→M). */
+  id: number;
+  folder: ClipFolder;
+  gender: VoiceClipGender;
+  file: string;
+  path: string;
+}
+
+/** Flatten CLIP_LIBRARY in SoT order. SFX numbers use this, not filesystem sort. */
+export function listClipLibrary(): ClipLibraryEntry[] {
+  const out: ClipLibraryEntry[] = [];
+  let id = 1;
+  for (const folder of CLIP_FOLDERS) {
+    for (const gender of VOICE_CLIP_GENDERS) {
+      for (const file of CLIP_LIBRARY[folder][gender] as readonly string[]) {
+        out.push({
+          id,
+          folder,
+          gender,
+          file,
+          path: `/voice-clips/${folder}/${gender}/${file}`,
+        });
+        id += 1;
+      }
+    }
+  }
+  return out;
+}
+
+const CLIP_BY_PATH = new Map(listClipLibrary().map((e) => [e.path, e]));
+
+/** CLIP_LIBRARY # for a path, or null if the file is outside the library. */
+export function clipLibraryId(path: string): number | null {
+  return CLIP_BY_PATH.get(path)?.id ?? null;
+}
+
+/** Path for CLIP_LIBRARY #N (1–99), or null. */
+export function clipLibraryPath(id: number): string | null {
+  if (!Number.isInteger(id) || id < 1) return null;
+  return listClipLibrary()[id - 1]?.path ?? null;
+}
+
+/** CLIP_LIBRARY # for a folder/gender/file row shown in the select board. */
+export function clipLibraryIdFor(folder: ClipFolder, gender: VoiceClipGender, file: string): number | null {
+  return clipLibraryId(`/voice-clips/${folder}/${gender}/${file}`);
+}
+
 /** laugh.mp3 and laugh_anime.mp3 both belong to laugh. hehe → giggle, huh → um. */
 export function emotionKindForFile(file: string): BurstClipKind | 'sigh' | null {
   const stem = file.replace(/\.mp3$/i, '').toLowerCase();
@@ -147,37 +195,45 @@ export function clipFile(lang: string, gender: VoiceClipGender, kind: VoiceClipK
 }
 
 /**
- * Human recordings for loading fillers. Live TTS and the Edge crops sound
- * wrong here, so um / ha / think / search play these files and nothing else.
- * Male um is the Nox closed-mouth reflection. Female um/ha are the CC0 packs.
+ * Short um… fillers matched by gender + chat language.
+ * Yue F = CLIP #5, Yue M = CLIP #12. Other langs use that lang's um.mp3.
+ * Think / search stay short um / huh bursts — never the long thinking.wav.
  */
-const RECORDED_FILLER: Record<'um' | 'ha' | 'think' | 'search', Record<VoiceClipGender, string>> = {
-  um: {
-    female: '/voice-clips/universal/female/um.mp3',
-    male: '/voice-clips/ja/male/um.mp3',
-  },
-  ha: {
-    female: '/voice-clips/universal/female/ha.mp3',
-    male: '/voice-clips/en/male/ha.mp3',
-  },
-  think: {
-    female: '/voice-clips/universal/female/um.mp3',
-    male: '/voice-clips/ja/male/um.mp3',
-  },
-  search: {
-    female: '/voice-clips/universal/female/huh.mp3',
-    male: '/voice-clips/ja/male/um.mp3',
-  },
-};
+function langUmPath(lang: string, gender: VoiceClipGender): string {
+  const folder = clipLang(lang);
+  const path = `/voice-clips/${folder}/${gender}/um.mp3`;
+  if (clipLibraryId(path) !== null) return path;
+  return gender === 'female'
+    ? '/voice-clips/universal/female/um.mp3'
+    : '/voice-clips/ja/male/um.mp3';
+}
 
-/** Recorded hit for a poke. Not the Edge "oh" crop. */
+function langHaPath(lang: string, gender: VoiceClipGender): string {
+  const folder = clipLang(lang);
+  const path = `/voice-clips/${folder}/${gender}/ha.mp3`;
+  if (clipLibraryId(path) !== null) return path;
+  return gender === 'female'
+    ? '/voice-clips/universal/female/ha.mp3'
+    : '/voice-clips/en/male/ha.mp3';
+}
+
+/** Recorded hit for a poke. Female = CLIP #94 wow_woven; Male = CLIP #52 ja/male/oh. */
 const RECORDED_POKE: Record<VoiceClipGender, string> = {
   female: '/voice-clips/universal/female/wow_woven.mp3',
   male: '/voice-clips/ja/male/oh.mp3',
 };
 
-export function recordedFillerClip(gender: VoiceClipGender, kind: 'um' | 'ha' | 'think' | 'search'): string {
-  return RECORDED_FILLER[kind][gender];
+export function recordedFillerClip(
+  gender: VoiceClipGender,
+  kind: 'um' | 'ha' | 'think' | 'search',
+  lang: string = 'yue',
+): string {
+  if (kind === 'ha') return langHaPath(lang, gender);
+  if (kind === 'search' && gender === 'female') {
+    const huh = '/voice-clips/universal/female/huh.mp3';
+    if (clipLibraryId(huh) !== null) return huh;
+  }
+  return langUmPath(lang, gender);
 }
 
 export function recordedPokeClip(gender: VoiceClipGender): string {

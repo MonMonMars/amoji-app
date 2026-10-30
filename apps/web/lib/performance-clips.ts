@@ -617,6 +617,8 @@ export function pickPerformanceClip(q: ClipQuery): PerformanceClip {
 
 /** linear gain for a clip at a settings step (20–100) and an optional duck */
 export function performanceGain(clip: PerformanceClip, step: number, duck = 1): number {
-  const k = Math.max(0, Math.min(100, step)) / 100;
+  // Invalid / 0 used to mute. Steps are 20–100; anything else → 80.
+  const safe = step === 20 || step === 40 || step === 60 || step === 80 || step === 100 ? step : 80;
+  const k = safe / 100;
   return CLIP_BASE_GAIN[clip.kind] * k * Math.max(0, duck);
 }
