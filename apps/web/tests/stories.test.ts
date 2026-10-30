@@ -60,3 +60,14 @@ describe('mode + story entry (t741)', () => {
     expect(board).toContain('chat-mode-label');
   });
 });
+
+describe('story pack picker UI', () => {
+  it('lists every pack chip and a surprise control on /story', () => {
+    const page = read('../app/story/page.tsx');
+    expect(page).toContain('story-pack-random');
+    expect(page).toContain('STORY_SCENES.map');
+    expect(page).toContain('story-pack-${s.id}');
+    expect(page).toContain('rollStory');
+    expect(page).toMatch(/sceneId:\s*packId/);
+  });
+});

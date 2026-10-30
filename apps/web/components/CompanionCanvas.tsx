@@ -7,7 +7,7 @@ import type { VRM } from '@pixiv/three-vrm';
 import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-vrm-animation';
 import type { VRMAnimation } from '@pixiv/three-vrm-animation';
 import { mapFrameToVrm, posesByIds, sampleIdlePoseFrom } from '@amoji/vrm-renderer';
-import { tickEngine, lastLaughAt, activeMove, thinkingPoseActive } from '../lib/companion';
+import { tickEngine, lastLaughAt, activeMove, thinkingPoseActive, getPerfMotionProfile, clearPerfMotionProfile } from '../lib/companion';
 import { setLoadProgress } from '../lib/load-progress';
 import { type MoveKind } from '../lib/moves';
 import { PROPS, propsForMove, propPresence, type PropDef, type PropPart } from '../lib/props';
@@ -696,17 +696,34 @@ export default function CompanionCanvas({
 
     const playPerf = (name: string) => {
       if (!mixer) return;
-      const clip = clips.get(name);
+      // t725–729: prefer shortlist lib_C* when loaded; else Dance/Sing.
+      // Beat match via timeScale = clamp(trackBpm / clipBpm, 0.65, 1.45).
+      const profile = getPerfMotionProfile();
+      let clipName = name;
+      let clip = clips.get(name) ?? null;
+      if (profile) {
+        for (const id of [...profile.preferredClipIds, ...profile.fallbackClipIds]) {
+          const c = clips.get(id);
+          if (c) { clipName = id; clip = c; break; }
+        }
+      }
       if (!clip) return;
-      perfClipId = name;
+      perfClipId = clipName;
       beginBoneBlend(0.7);
       const action = mixer.clipAction(clip);
-      action.timeScale = personalityMotion(seedKey ?? '', gender).timeScale;
-      action.setLoop(THREE.LoopOnce, 1);
-      action.clampWhenFinished = true;
+      const personality = personalityMotion(seedKey ?? '', gender).timeScale;
+      action.timeScale = profile ? profile.timeScale : personality;
+      // Dance/sing shows loop with the music bed; other MOVE_CLIP one-shots stay LoopOnce.
+      if (profile && (name === 'Dance' || name === 'Sing')) {
+        action.setLoop(THREE.LoopRepeat, Infinity);
+        action.clampWhenFinished = false;
+      } else {
+        action.setLoop(THREE.LoopOnce, 1);
+        action.clampWhenFinished = true;
+      }
       action.reset();
       if (perfAction && perfAction !== action) {
-        // r59: glide out of the previous performance ??a hard stop() here
+        // r59: glide out of the previous performance — a hard stop() here
         // was the visible "snap" from pose A to pose B
         perfAction.crossFadeTo(action, FADE.perfCut, false);
       } else if (idleAction && idleAction !== action) {
@@ -717,7 +734,6 @@ export default function CompanionCanvas({
       action.play();
       perfAction = action;
     };
-
     const startClipEngine = (vrm: VRM) => {
       mixer = new THREE.AnimationMixer(vrm.scene);
       mixer.addEventListener('finished', (e) => {
