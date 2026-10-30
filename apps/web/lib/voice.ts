@@ -81,7 +81,10 @@ import type { Lang } from './prefs';
 import { characterVoiceGender } from './voice-gender';
 import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
 import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripVoicedGlyphs } from './speak-text';
-import { browserVoicesForLang, edgeSampleText, isMaleNeuralVoice, synthNameConflicts, synthNameList, voiceNameMatches } from './voice-catalog';
+import { analyzeText } from '@amoji/emotion-core';
+import { applyLlmHints } from './companion';
+import { browserVoiceGender, browserVoicesForLang, edgeSampleText, isMaleNeuralVoice, synthNameList, voiceNameMatches } from './voice-catalog';
+import { loadingFillerKind, recordedFillerClip, recordedPokeClip } from './voice-clips';
 import { LineQueue, speechRemainder } from './speech-queue';
 import { emotionClipPath } from './emotion-clip-picks';
 import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText, nextGreetingKind, type BurstClipKind, type ClipFolder, type VoiceClipGender } from './voice-clips';
@@ -1121,21 +1124,23 @@ function pickVoice(characterId: string, lang: Lang, genderOverride?: 'female' | 
   // Same pitch/pace as the Edge slot, so the browser fallback stays personal.
   const pitch = (gender === 'male' ? 0.94 : 1.06) + (color?.pitch ?? 0);
   const rate = (gender === 'male' ? 0.98 : 1.02) + (color?.rate ?? 0);
+  const sameGender = (name: string) => browserVoiceGender(name) === gender;
   for (const name of rotateNames(synthNameList(lang, gender), hashId(characterId))) {
-    const hit = pool.find((v) => voiceNameMatches(v.name, name) && !synthNameConflicts(gender, v.name));
+    const hit = pool.find((v) => voiceNameMatches(v.name, name) && sameGender(v.name));
     if (hit) return { voice: hit, pitch, rate };
   }
-  const safe = pool.find((v) => !synthNameConflicts(gender, v.name));
-  if (safe) return { voice: safe, pitch, rate };
+  const gendered = pool.find((v) => sameGender(v.name));
+  if (gendered) return { voice: gendered, pitch, rate };
   const matrixFallback = gender === 'male' ? 'atlas' : 'juno';
   const choices = VOICE_MATRIX[characterId]?.[lang] ?? VOICE_MATRIX[matrixFallback]?.[lang] ?? [];
   for (const c of choices) {
     const scoped = cached.filter((v) => v.lang.replace('_', '-').startsWith(c.lang));
     for (const name of c.names) {
-      const hit = scoped.find((v) => voiceNameMatches(v.name, name) && !synthNameConflicts(gender, v.name));
+      const hit = scoped.find((v) => voiceNameMatches(v.name, name) && sameGender(v.name));
       if (hit) return { voice: hit, pitch: c.basePitch, rate: c.baseRate };
     }
   }
+  // No opposite-gender OS voice. An unlabeled "Google US English" is not male-safe.
   return { voice: null, pitch, rate };
 }
 
@@ -1362,6 +1367,13 @@ function performSpeak(
   // string back into history.
   text = cleanForSpeech(text);
   if (!text || !voiceEnabled()) { settle(); return; }
+  // Loading fillers are recorded clips. Live TTS made "um" sound like a news voice.
+  const fillerKind = loadingFillerKind(text);
+  if (fillerKind) {
+    const file = recordedFillerClip(characterVoiceGender(characterId), fillerKind);
+    void playVoiceClip(file, text, () => markVoiceStarted()).then(() => settle()).catch(() => settle());
+    return;
+  }
   // r111: remember the line for gesture-gate replay
   const attemptAt = Date.now();
   lastSpeak = { text, characterId, lang, emotionHints, leadOverride, intensity, at: attemptAt };
@@ -1395,7 +1407,15 @@ function performSpeak(
   // tier fails silently this is what stops the "bell + typing" sound effects
   // from ringing over the failed attempt. Any tier's audio-START releases it.
   sfxVoiceHold();
-  const { emotion, value } = dominant(emotionHints);
+  const lex = analyzeText(text) as Record<string, number>;
+  const mergedHints: Record<string, number> = { ...(emotionHints ?? {}) };
+  for (const [key, weight] of Object.entries(lex)) {
+    if (typeof weight === 'number') mergedHints[key] = Math.max(mergedHints[key] ?? 0, weight);
+  }
+  if (Object.keys(lex).length) {
+    try { applyLlmHints(mergedHints); } catch { /* face engine is best-effort */ }
+  }
+  const { emotion, value } = dominant(mergedHints);
   const expr = EXPRESSIVENESS[characterId] ?? 1;
   const exprScale = 0.8 + 0.2 * expr; // expressive characters feel emotions harder
   // amplified feelings push pitch/energy further (intensity 1.5 → +25% swing);
@@ -1693,6 +1713,12 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
       settle();
     }
   });
+}
+
+/** Poke hit: a recorded gasp, not the synthetic tap and not an Edge crop. */
+export function playPokeBurst(characterId: string): void {
+  const file = recordedPokeClip(characterVoiceGender(characterId));
+  void playVoiceClip(file, 'oh', () => markVoiceStarted()).catch(() => { /* a missing file stays quiet */ });
 }
 
 /**

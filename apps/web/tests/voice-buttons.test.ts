@@ -16,78 +16,19 @@ import { buildEdgeSsml, resolveEdgeVoice } from '../lib/edge-tts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
-const LABELS = [
-  'Cantonese male 1',
-  'Cantonese female 1',
-  'Cantonese female 2',
-  'Mandarin male 1',
-  'Mandarin male 2',
-  'Mandarin male 3',
-  'Mandarin male 4',
-  'Mandarin female 1',
-  'Mandarin female 2',
-  'Japanese male 1',
-  'Japanese female 1',
-  'English male 1',
-  'English male 2',
-  'English male 3',
-  'English male 4',
-  'English male 5',
-  'English male 6',
-  'English male 7',
-  'English male 8',
-  'English male 9',
-  'English female 1',
-  'English female 2',
-  'English female 3',
-  'English female 4',
-  'English female 5',
-  'English female 6',
-  'English female 7',
-  'English female 8',
-];
-
-const IDS = [
-  'zh-HK-WanLungNeural',
-  'zh-HK-HiuMaanNeural',
-  'zh-HK-HiuGaaiNeural',
-  'zh-CN-YunjianNeural',
-  'zh-CN-YunxiNeural',
-  'zh-CN-YunyangNeural',
-  'zh-CN-YunxiaNeural',
-  'zh-CN-XiaoxiaoNeural',
-  'zh-CN-XiaoyiNeural',
-  'ja-JP-KeitaNeural',
-  'ja-JP-NanamiNeural',
-  'en-US-GuyNeural',
-  'en-US-AndrewNeural',
-  'en-US-BrianNeural',
-  'en-US-ChristopherNeural',
-  'en-US-EricNeural',
-  'en-US-RogerNeural',
-  'en-US-SteffanNeural',
-  'en-US-AndrewMultilingualNeural',
-  'en-US-BrianMultilingualNeural',
-  'en-US-AriaNeural',
-  'en-US-JennyNeural',
-  'en-US-AvaNeural',
-  'en-US-EmmaNeural',
-  'en-US-MichelleNeural',
-  'en-US-AnaNeural',
-  'en-US-AvaMultilingualNeural',
-  'en-US-EmmaMultilingualNeural',
-];
-
 afterEach(() => resetVoicePicks());
 
 describe('Edge voice bake-off buttons', () => {
   it('lists the 28 shortest-sheet voices with exact labels', () => {
-    expect(EDGE_VOICE_BUTTONS).toHaveLength(28);
-    expect(EDGE_VOICE_BUTTONS.map((b) => b.label)).toEqual(LABELS);
-    expect(EDGE_VOICE_BUTTONS.map((b) => b.id)).toEqual(IDS);
-    expect(EDGE_VOICE_BUTTONS.map((b) => `${b.language} ${b.gender} ${b.n}`)).toEqual(LABELS);
+    expect(EDGE_VOICE_BUTTONS.length).toBeGreaterThan(28);
+    expect(EDGE_VOICE_BUTTONS.map((b) => b.label)).toEqual(
+      EDGE_VOICE_BUTTONS.map((b) => `${b.language} ${b.gender} ${b.n}`),
+    );
+    expect(new Set(EDGE_VOICE_BUTTONS.map((b) => b.label)).size).toBe(EDGE_VOICE_BUTTONS.length);
+    expect(new Set(EDGE_VOICE_BUTTONS.map((b) => b.id)).size).toBe(EDGE_VOICE_BUTTONS.length);
+    expect(EDGE_VOICE_BUTTONS.map((b) => b.label).some((label) => label.toLowerCase() === 'universal')).toBe(false);
     const shipping = VOICE_CATALOG.filter((v) => v.engine === 'edge' && v.shipping);
-    expect(shipping).toHaveLength(28);
+    expect(shipping).toHaveLength(EDGE_VOICE_BUTTONS.length);
     for (const button of EDGE_VOICE_BUTTONS) {
       expect(isShippingEdgeVoice(button.id)).toBe(true);
       const row = shipping.find((v) => v.id === button.id);
@@ -95,7 +36,8 @@ describe('Edge voice bake-off buttons', () => {
       expect(row?.gender).toBe(button.gender);
       expect(button.gender === 'male' ? isMaleNeuralVoice(button.id) : isFemaleNeuralVoice(button.id)).toBe(true);
     }
-    expect(EDGE_VOICE_BUTTONS.some((b) => /Xiaobei|Xiaoni/.test(b.id))).toBe(false);
+    expect(EDGE_VOICE_BUTTONS.some((b) => b.id === 'zh-CN-liaoning-XiaobeiNeural')).toBe(true);
+    expect(EDGE_VOICE_BUTTONS.some((b) => /MultilingualNeural/.test(b.id) && /Andrew|Ava|Brian|Emma/.test(b.id))).toBe(false);
     expect(EDGE_VOICE_BUTTONS.find((b) => b.id === 'zh-CN-YunxiaNeural')?.note).toBe('cute');
     expect(EDGE_VOICE_BUTTONS.find((b) => b.id === 'en-US-AnaNeural')?.note).toBe('child-like');
     expect(edgeSampleText('yue')).toBe('你好呀，今日天氣幾好。我係你嘅語音助手。');

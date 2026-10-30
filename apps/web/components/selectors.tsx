@@ -63,8 +63,28 @@ export function BackgroundGrid({ lang, value, onChange }: { lang: Lang; value: s
   );
 }
 
-/** Face of a language card. The parent supplies the portrait frame. `compact` shrinks the badge and name for the small select row; the glyph still tracks the card via container query. */
+/** Face of a language card. The parent supplies the frame. `compact` is a short wide strip. */
 export function LangCardFace({ lang, active, compact = false }: { lang: LangDef; active: boolean; compact?: boolean }) {
+  if (compact) {
+    return (
+      <span
+        className="flex h-full w-full items-center gap-1 px-1.5"
+        style={{ background: `linear-gradient(90deg, #ffffffee, ${lang.accent} 42%, #1c1917 100%)` }}
+      >
+        <span className="shrink-0 text-[13px] font-black leading-none text-neutral-950">{lang.glyph}</span>
+        <span className="min-w-0 flex-1 truncate text-[10px] font-semibold leading-none text-neutral-950">{lang.native}</span>
+        <span
+          className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full border border-neutral-950 px-0.5 text-[8px] font-extrabold text-neutral-950"
+          style={{ background: lang.accent }}
+        >
+          {lang.mark}
+        </span>
+        {active && (
+          <span className="pointer-events-none absolute inset-0 rounded-2xl" style={{ boxShadow: `inset 0 0 0 2px ${lang.accent}` }} />
+        )}
+      </span>
+    );
+  }
   return (
     <>
       <span

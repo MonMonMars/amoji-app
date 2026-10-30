@@ -129,6 +129,8 @@ export interface CompanionCanvasProps {
   libraryOnly?: boolean;
   /** @deprecated r108: ignored — one neutral daylight rig lights every backdrop */
   lighting?: 'indoor' | 'outdoor';
+  /** Pinned idle clip id (a01 / b02 …). Empty keeps the calm rotation. */
+  idleClip?: string | null;
 }
 
 // r2026-10-04.92 (Master Simon): start FURTHER AWAY and at a NORMAL STRAIGHT
@@ -242,6 +244,7 @@ export default function CompanionCanvas({
   onNotice, onPoke, onHandHold, accent = '#f9a8d4', seedKey,
   wardrobeHeadId: wardrobeHeadProp, wardrobeBodyId: wardrobeBodyProp,
   libraryOnly = false,
+  idleClip = null,
 }: CompanionCanvasProps) {
   // Cloth swap is gated off. A stored outfit must not replace the base VRM.
   const wardrobeHeadId = WARDROBE_ENABLED ? wardrobeHeadProp : undefined;
@@ -257,6 +260,8 @@ export default function CompanionCanvas({
   const wardrobeBodyRef = useRef(wardrobeBodyId);
   wardrobeBodyRef.current = wardrobeBodyId;
   const libraryOnlyRef = useRef(libraryOnly);
+  const idleClipRef = useRef<string | null>(idleClip);
+  idleClipRef.current = idleClip;
   const showLibraryRef = useRef<() => void>(() => {});
   const swapBodyRef = useRef<(bodyId: string) => void>(() => {});
 
@@ -522,6 +527,15 @@ export default function CompanionCanvas({
       { id: 'IdleBreathCalm', urls: [`${ANIM_MIRROR}/IdleBreathCalm.vrma`] },
       { id: 'StandardIdle', urls: [`${ANIM_MIRROR}/StandardIdle.vrma`] },
     ];
+    // Side-rail A/B set. Loaded, but not in the default rotation.
+    const IDLE_PICKS: ClipSource[] = [
+      { id: 'IdleNeutral', urls: [`${ANIM_MIRROR}/IdleNeutral.vrma`] },
+      { id: 'IdleSassy', urls: [`${ANIM_MIRROR}/IdleSassy.vrma`] },
+      { id: 'IdleChinHand', urls: [`${ANIM_MIRROR}/IdleChinHand.vrma`] },
+      { id: 'IdleHug', urls: [`${ANIM_MIRROR}/IdleHug.vrma`] },
+      { id: 'LookAround', urls: [`${ANIM_MIRROR}/LookAround.vrma`] },
+      { id: 'Relax', urls: [`${ANIM_MIRROR}/Relax.vrma`] },
+    ];
     // one-shot dialogue performances (library clips with a real ending)
     // r96 (Master Simon): the move triggers get REAL performances too —
     // dance / sing / kungfu / piano / violin fire actual keyframed mocap
@@ -555,7 +569,7 @@ export default function CompanionCanvas({
       { id: 'Goodbye', urls: [`${ANIM_MIRROR}/Goodbye.vrma`] },
       { id: 'Blush', urls: [`${ANIM_MIRROR}/Blush.vrma`] },
     ];
-    const TOTAL_CLIPS = IDLE_SOURCES.length + PERF_SOURCES.length;
+    const TOTAL_CLIPS = IDLE_SOURCES.length + IDLE_PICKS.length + PERF_SOURCES.length;
     const clips = new Map<string, THREE.AnimationClip>();
     // r103: node names of every bone ANY loaded clip animates — scanned from
     // each clip's track names as it lands. The avatar hands those bones to
@@ -701,7 +715,9 @@ export default function CompanionCanvas({
       if (avatar) avatar.clipDrivesBody = true;
       // r59: blend IN from the current (procedural) pose over ~a second —
       // the very first clip no longer pops in from nowhere
-      nextIdle(FADE.entry);
+      const pinned = idleClipRef.current;
+      if (!(pinned && playNamedIdle(pinned, FADE.entry))) nextIdle(FADE.entry);
+      if (pinned) idleHoldUntil = Infinity;
       // r124 / r2026-10-12: after the entry crossfade settles, re-measure
       // facing (yaw) and upright (hips→head pitch/roll) on the inner model.
       {
@@ -763,7 +779,7 @@ export default function CompanionCanvas({
       // frame that already sits low), over-scale rig units are compressed
       // to a human hip-travel span, and no key may sink below a knee-deep
       // floor. X/Z sway and all genuine motion (hops, dips, bows) survive.
-      const IDLE_IDS = new Set(IDLE_SOURCES.map((s) => s.id));
+      const IDLE_IDS = new Set([...IDLE_SOURCES, ...IDLE_PICKS].map((s) => s.id));
       const HIP_TRAVEL_MAX = 0.8; // meters — no human hips-Y span exceeds this
       const FLOOR_FRAC = 0.55;    // never sink below 55% of rest hips height
       // r102: same idea on the horizontal plane — a clip authored on a rig
@@ -941,7 +957,7 @@ export default function CompanionCanvas({
           loadOne(src, idx + 1);
         });
       };
-      for (const src of [...IDLE_SOURCES, ...PERF_SOURCES]) loadOne(src);
+      for (const src of [...IDLE_SOURCES, ...IDLE_PICKS, ...PERF_SOURCES]) loadOne(src);
     };
 
     const mountAvatar = (a: Avatar) => {
@@ -1715,7 +1731,11 @@ export default function CompanionCanvas({
         // performance is on stage, glide into the next idle mid-motion. The
         // body is always inside a live loop: no straight stand between moves.
         if (mixerActive && !perfAction && !gameView) {
-          if (thinkingPoseActive()) {
+          const pinnedIdle = idleClipRef.current;
+          if (pinnedIdle) {
+            if (idleClipId !== pinnedIdle) playNamedIdle(pinnedIdle, FADE.idleRotate);
+            idleHoldUntil = Infinity;
+          } else if (thinkingPoseActive()) {
             // Hold the primary standing idle while a reply generates.
             if (idleClipId !== 'IdleBreathCalm' && !thinkMiss) {
               if (!playNamedIdle('IdleBreathCalm', FADE.idleRotate)) thinkMiss = true;
