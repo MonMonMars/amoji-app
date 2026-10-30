@@ -137,7 +137,7 @@
 // field ("can't click the text box and the mic button"). The input row now
 // carries z-10 so it takes its clicks back.
 import { useEffect, useRef, useState } from 'react';
-import { feedUtterance, applyLlmHints, setThinkingPose, triggerLaugh, triggerMove, holdMove } from '../lib/companion';
+import { feedUtterance, applyLlmHints, setThinkingPose, triggerLaugh, triggerMove, holdMove, setPerfMotionProfile } from '../lib/companion';
 import { detectMove } from '../lib/moves';
 import { loadHistory, saveHistory } from '../lib/companion-store';
 import { notifySpeaking, isSpeaking } from '../lib/speech';
@@ -156,6 +156,7 @@ import { startThinkingSound, stopThinkingSound } from '../lib/thinking-sound';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
 import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerformance } from '../lib/music';
 import { clipLabel, PERFORMANCE_CLIPS, type PerformanceClip } from '../lib/performance-clips';
+import { resolvePerfMotion } from '../lib/performance-motion';
 import { SHOWCASE_START, SHOWCASE_YES_RE, pickShowcaseOffer, skillOfferKind, type ShowcaseKind } from '../lib/showcase';
 import { recentUserMood } from '../lib/talk-history';
 import { detectGame, startGame, playTurn, gameFarewellLine, type GameState } from '../lib/games';
@@ -456,12 +457,13 @@ export default function ChatPanel({
       ms,
       bed,
     });
+    // t725–729: song/style → body tag + beat-matched timeScale for CompanionCanvas.
+    setPerfMotionProfile(resolvePerfMotion({ id: clip.id, kind: clip.kind, style: clip.style }));
     const hold = Math.max(clip.durationMs + 600, ms);
     if (kind === 'song') holdMove(hold);
     showTrack(clip, hold);
     return clip;
   };
-
   const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string, alreadySpoken?: { text: string; since: number }): string => {
     const mv = detectMove(userText) ?? detectMove(reply);
     // The first closed sentence already went out over the stream. If it is

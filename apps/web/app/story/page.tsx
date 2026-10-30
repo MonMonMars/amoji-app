@@ -1,5 +1,6 @@
 'use client';
-// t740: Story Mode setup — scene + random cast, then enter chat.
+// t740 / t741 / pack picker: Story Mode setup — pick a pack (or surprise),
+// roll cast, then enter chat.
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -12,7 +13,10 @@ import {
 import { STORY_SCENES, rollStory, type StoryScene } from '../../lib/stories';
 import { saveStorySession } from '../../lib/story-session';
 
-const LABEL: Record<'mode' | 'reroll' | 'start' | 'scene', Record<Lang, string>> = {
+const LABEL: Record<
+  'mode' | 'reroll' | 'start' | 'scene' | 'packs' | 'surprise' | 'castAgain',
+  Record<Lang, string>
+> = {
   mode: {
     en: 'STORY MODE',
     yue: '故事模式',
@@ -21,9 +25,15 @@ const LABEL: Record<'mode' | 'reroll' | 'start' | 'scene', Record<Lang, string>>
   },
   reroll: {
     en: 'Another scene',
-    yue: '換一個場景',
-    zh: '换一个场景',
+    yue: '換個場景',
+    zh: '换个场景',
     ja: '別の場面',
+  },
+  castAgain: {
+    en: 'Another cast',
+    yue: '換個人',
+    zh: '换个人',
+    ja: '別の相手',
   },
   start: {
     en: 'ENTER STORY',
@@ -37,17 +47,35 @@ const LABEL: Record<'mode' | 'reroll' | 'start' | 'scene', Record<Lang, string>>
     zh: '场景',
     ja: '場面',
   },
+  packs: {
+    en: 'Story packs',
+    yue: '故事包',
+    zh: '故事包',
+    ja: 'ストーリーパック',
+  },
+  surprise: {
+    en: 'Surprise me',
+    yue: '隨機',
+    zh: '随机',
+    ja: 'おまかせ',
+  },
 };
 
 export default function StorySetupPage() {
   const router = useRouter();
   const [prefs, setPrefs] = usePrefs();
   const lang = prefs.lang;
+  /** null = surprise / any pack; string = locked pack id */
+  const [packId, setPackId] = useState<string | null>(null);
   const [seed, setSeed] = useState(() => Date.now());
-  const roll = useMemo(() => rollStory({ n: seed }), [seed]);
+  const roll = useMemo(
+    () => rollStory(packId ? { sceneId: packId, n: seed } : { n: seed }),
+    [seed, packId],
+  );
   const scene: StoryScene = roll.scene;
   const character = characterById(roll.characterId);
   const background = backgroundById(scene.backgroundId);
+  const packLocked = packId != null;
 
   const enter = () => {
     saveStorySession({
@@ -64,6 +92,16 @@ export default function StorySetupPage() {
     router.push('/chat');
   };
 
+  const pickPack = (id: string) => {
+    setPackId(id);
+    setSeed((s) => s + 1);
+  };
+
+  const surprise = () => {
+    setPackId(null);
+    setSeed((s) => s + 1 + STORY_SCENES.length);
+  };
+
   return (
     <main className="fx-page relative flex min-h-dvh flex-col items-center justify-center overflow-x-hidden bg-neutral-950 px-4 py-8 text-white">
       <div
@@ -74,6 +112,45 @@ export default function StorySetupPage() {
         <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-fuchsia-200/80">
           {LABEL.mode[lang]}
         </p>
+
+        <div className="w-full">
+          <p className="mb-2 text-[10px] uppercase tracking-widest text-white/55">
+            {LABEL.packs[lang]}
+          </p>
+          <div className="flex max-w-full flex-wrap gap-2">
+            {STORY_SCENES.map((s) => {
+              const active = packId === s.id;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  data-testid={`story-pack-${s.id}`}
+                  onClick={() => pickPack(s.id)}
+                  className={`ui-btn max-w-full rounded-full border px-3 py-1.5 text-left text-xs backdrop-blur-md ${
+                    active
+                      ? 'border-fuchsia-300/60 bg-fuchsia-500/25 text-white'
+                      : 'border-white/15 bg-black/40 text-white/80 hover:border-white/30'
+                  }`}
+                >
+                  {s.title[lang]}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              data-testid="story-pack-random"
+              onClick={surprise}
+              className={`ui-btn rounded-full border px-3 py-1.5 text-xs backdrop-blur-md ${
+                !packLocked
+                  ? 'border-fuchsia-300/60 bg-fuchsia-500/25 text-white'
+                  : 'border-white/15 bg-black/40 text-white/80 hover:border-white/30'
+              }`}
+            >
+              {LABEL.surprise[lang]}
+            </button>
+          </div>
+        </div>
+
         <div className="relative aspect-square w-full max-w-full overflow-hidden rounded-3xl border border-white/15 bg-black/45 shadow-2xl backdrop-blur-md">
           {background.image ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -114,7 +191,7 @@ export default function StorySetupPage() {
             onClick={() => setSeed((s) => s + 1 + (STORY_SCENES.length > 1 ? 1 : 0))}
             className="ui-btn flex-1 rounded-full border border-white/20 bg-black/45 px-4 py-3 text-sm backdrop-blur-md"
           >
-            {LABEL.reroll[lang]}
+            {packLocked ? LABEL.castAgain[lang] : LABEL.reroll[lang]}
           </button>
           <button
             type="button"

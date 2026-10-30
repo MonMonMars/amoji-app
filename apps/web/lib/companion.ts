@@ -4,6 +4,7 @@ import type { EmotionConfig, EmotionFrame } from '@amoji/emotion-core';
 import { MOVE_DUR, type MoveKind } from './moves';
 import { loadConfig } from './companion-store';
 import { playLaughSfx, playMoveSfx } from './sfx';
+import type { PerfMotionProfile } from './performance-motion';
 
 let engine: EmotionEngine | null = null;
 export function getEngine(): EmotionEngine {
@@ -110,4 +111,17 @@ export function dominantMood(f: EmotionFrame | null): MoodId {
     if (v > bestV) { best = k; bestV = v; }
   }
   return best;
+}
+
+
+/** In-memory performance body-motion profile (t725–729). Not persisted. */
+let perfMotionProfile: PerfMotionProfile | null = null;
+export function setPerfMotionProfile(profile: PerfMotionProfile | null): void {
+  perfMotionProfile = profile;
+}
+export function getPerfMotionProfile(): PerfMotionProfile | null {
+  return perfMotionProfile;
+}
+export function clearPerfMotionProfile(): void {
+  perfMotionProfile = null;
 }
