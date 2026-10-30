@@ -11,6 +11,7 @@ import ArcFan from './ArcFan';
 import SceneBackdrop from './SceneBackdrop';
 import ModelThumb from './ModelThumb';
 import EmotionClipRow from './EmotionClipRow';
+import MuteButton from './MuteButton';
 import TtsVoiceRow from './TtsVoiceRow';
 import { LangCardFace } from './selectors';
 import { assetUrl } from '../lib/asset';
@@ -70,6 +71,11 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
       />
       <div data-testid="selection-hero" className="pointer-events-none absolute inset-0">
         <SceneBackdrop background={background} />
+      </div>
+
+      {/* Master mute — top-right. Top-left stays clear (exit/back lives on chat plate). */}
+      <div className="pointer-events-none absolute right-3 top-3 z-40 pt-[env(safe-area-inset-top)]">
+        <MuteButton lang={lang} className="pointer-events-auto" />
       </div>
 
       <div

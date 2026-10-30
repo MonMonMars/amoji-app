@@ -12,6 +12,7 @@ import DevPanel from '../../components/DevPanel';
 import FallbackNotice from '../../components/FallbackNotice';
 import SceneBackdrop from '../../components/SceneBackdrop';
 import SettingsSheet from '../../components/SettingsSheet';
+import MuteButton from '../../components/MuteButton';
 import StatusPlate from '../../components/StatusPlate';
 import WardrobeSwap from '../../components/WardrobeSwap';
 import { requestOpenMiniGame, subscribeMiniGameChrome } from '../../lib/minigames';
@@ -123,6 +124,7 @@ export default function Chat() {
             />
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <MuteButton lang={prefs.lang} compact />
             <WardrobeSwap
               lang={prefs.lang}
               characterId={character.id}
