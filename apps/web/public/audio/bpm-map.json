@@ -1,0 +1,397 @@
+{
+  "method": "onset-acf",
+  "sr": 22050,
+  "minConfidence": 0.22,
+  "clips": {
+    "dance-8bit-disco": {
+      "bpm": 123.0,
+      "confidence": 0.588,
+      "file": "dance/dance-8bit-disco.mp3"
+    },
+    "dance-boss-battle": {
+      "bpm": 107.7,
+      "confidence": 0.367,
+      "file": "dance/dance-boss-battle.mp3"
+    },
+    "dance-cant-resist": {
+      "bpm": 112.3,
+      "confidence": 0.567,
+      "file": "dance/dance-cant-resist.mp3"
+    },
+    "dance-celebrity": {
+      "bpm": 112.3,
+      "confidence": 0.469,
+      "file": "dance/dance-celebrity.mp3"
+    },
+    "dance-field": {
+      "bpm": 139.7,
+      "confidence": 0.662,
+      "file": "dance/dance-field.mp3"
+    },
+    "dance-happy-loop": {
+      "bpm": 99.4,
+      "confidence": 0.491,
+      "file": "dance/dance-happy-loop.mp3"
+    },
+    "dance-minstrel": {
+      "bpm": 129.2,
+      "confidence": 0.469,
+      "file": "dance/dance-minstrel.mp3"
+    },
+    "dance-silent-dance-floor": {
+      "bpm": 112.3,
+      "confidence": 0.621,
+      "file": "dance/dance-silent-dance-floor.mp3"
+    },
+    "dance-twin-layers": {
+      "bpm": 73.8,
+      "confidence": 0.17,
+      "file": "dance/dance-twin-layers.mp3"
+    },
+    "sing-f-adele-long": {
+      "bpm": 172.3,
+      "confidence": 0.161,
+      "file": "sing-female/sing-f-adele-long.mp3"
+    },
+    "sing-f-adele": {
+      "bpm": 103.4,
+      "confidence": 0.154,
+      "file": "sing-female/sing-f-adele.mp3"
+    },
+    "sing-f-cantate": {
+      "bpm": 161.5,
+      "confidence": 0.075,
+      "file": "sing-female/sing-f-cantate.mp3"
+    },
+    "sing-f-choir": {
+      "bpm": 112.3,
+      "confidence": 0.196,
+      "file": "sing-female/sing-f-choir.mp3"
+    },
+    "sing-f-citation": {
+      "bpm": 100.0,
+      "confidence": 0.0,
+      "file": "sing-female/sing-f-citation.mp3"
+    },
+    "sing-f-hello": {
+      "bpm": 117.5,
+      "confidence": 0.159,
+      "file": "sing-female/sing-f-hello.mp3"
+    },
+    "sing-f-joy": {
+      "bpm": 172.3,
+      "confidence": 0.159,
+      "file": "sing-female/sing-f-joy.mp3"
+    },
+    "sing-f-la-mamma-morta": {
+      "bpm": 143.6,
+      "confidence": 0.175,
+      "file": "sing-female/sing-f-la-mamma-morta.mp3"
+    },
+    "sing-f-long-set1": {
+      "bpm": 95.7,
+      "confidence": 0.301,
+      "file": "sing-female/sing-f-long-set1.mp3"
+    },
+    "sing-f-long-set2": {
+      "bpm": 103.4,
+      "confidence": 0.178,
+      "file": "sing-female/sing-f-long-set2.mp3"
+    },
+    "sing-f-soave-long": {
+      "bpm": 184.6,
+      "confidence": 0.107,
+      "file": "sing-female/sing-f-soave-long.mp3"
+    },
+    "sing-f-soave": {
+      "bpm": 68.0,
+      "confidence": 0.135,
+      "file": "sing-female/sing-f-soave.mp3"
+    },
+    "sing-f-sono-giunta": {
+      "bpm": 152.0,
+      "confidence": 0.249,
+      "file": "sing-female/sing-f-sono-giunta.mp3"
+    },
+    "sing-f-twinkle": {
+      "bpm": 112.3,
+      "confidence": 0.235,
+      "file": "sing-female/sing-f-twinkle.mp3"
+    },
+    "sing-f-una-voce-long": {
+      "bpm": 95.7,
+      "confidence": 0.112,
+      "file": "sing-female/sing-f-una-voce-long.mp3"
+    },
+    "sing-f-una-voce": {
+      "bpm": 80.7,
+      "confidence": 0.225,
+      "file": "sing-female/sing-f-una-voce.mp3"
+    },
+    "sing-m-brindisi-long": {
+      "bpm": 172.3,
+      "confidence": 0.139,
+      "file": "sing-male/sing-m-brindisi-long.mp3"
+    },
+    "sing-m-brindisi": {
+      "bpm": 103.4,
+      "confidence": 0.335,
+      "file": "sing-male/sing-m-brindisi.mp3"
+    },
+    "sing-m-buddham": {
+      "bpm": 156.6,
+      "confidence": 0.104,
+      "file": "sing-male/sing-m-buddham.mp3"
+    },
+    "sing-m-celeste-aida": {
+      "bpm": 156.6,
+      "confidence": 0.117,
+      "file": "sing-male/sing-m-celeste-aida.mp3"
+    },
+    "sing-m-happy-birthday": {
+      "bpm": 99.4,
+      "confidence": 0.188,
+      "file": "sing-male/sing-m-happy-birthday.mp3"
+    },
+    "sing-m-long-set1": {
+      "bpm": 103.4,
+      "confidence": 0.174,
+      "file": "sing-male/sing-m-long-set1.mp3"
+    },
+    "sing-m-long-set2": {
+      "bpm": 147.7,
+      "confidence": 0.175,
+      "file": "sing-male/sing-m-long-set2.mp3"
+    },
+    "sing-m-mass-amen": {
+      "bpm": 143.6,
+      "confidence": 0.302,
+      "file": "sing-male/sing-m-mass-amen.mp3"
+    },
+    "sing-m-mass": {
+      "bpm": 156.6,
+      "confidence": 0.109,
+      "file": "sing-male/sing-m-mass.mp3"
+    },
+    "sing-m-no-pagliaccio": {
+      "bpm": 184.6,
+      "confidence": 0.152,
+      "file": "sing-male/sing-m-no-pagliaccio.mp3"
+    },
+    "sing-m-overtone-a": {
+      "bpm": 123.0,
+      "confidence": 0.095,
+      "file": "sing-male/sing-m-overtone-a.mp3"
+    },
+    "sing-m-overtone-c": {
+      "bpm": 92.3,
+      "confidence": 0.137,
+      "file": "sing-male/sing-m-overtone-c.mp3"
+    },
+    "sing-m-overtone-e": {
+      "bpm": 64.6,
+      "confidence": 0.107,
+      "file": "sing-male/sing-m-overtone-e.mp3"
+    },
+    "sing-m-quando": {
+      "bpm": 103.4,
+      "confidence": 0.081,
+      "file": "sing-male/sing-m-quando.mp3"
+    },
+    "sing-m-shenandoah-long": {
+      "bpm": 184.6,
+      "confidence": 0.136,
+      "file": "sing-male/sing-m-shenandoah-long.mp3"
+    },
+    "sing-m-shenandoah": {
+      "bpm": 112.3,
+      "confidence": 0.179,
+      "file": "sing-male/sing-m-shenandoah.mp3"
+    },
+    "sing-m-tuvan": {
+      "bpm": 123.0,
+      "confidence": 0.117,
+      "file": "sing-male/sing-m-tuvan.mp3"
+    },
+    "sing-m-votre-toast-long": {
+      "bpm": 107.7,
+      "confidence": 0.151,
+      "file": "sing-male/sing-m-votre-toast-long.mp3"
+    },
+    "sing-m-votre-toast": {
+      "bpm": 73.8,
+      "confidence": 0.219,
+      "file": "sing-male/sing-m-votre-toast.mp3"
+    },
+    "bed-8bit-bossa": {
+      "bpm": 64.6,
+      "confidence": 0.446,
+      "file": "song-bed/bed-8bit-bossa.mp3"
+    },
+    "bed-banana": {
+      "bpm": 86.1,
+      "confidence": 0.606,
+      "file": "song-bed/bed-banana.mp3"
+    },
+    "bed-beepbox": {
+      "bpm": 102.0,
+      "confidence": 0.578,
+      "file": "song-bed/bed-beepbox.mp3"
+    },
+    "bed-bit-forest": {
+      "bpm": 107.7,
+      "confidence": 0.274,
+      "file": "song-bed/bed-bit-forest.mp3"
+    },
+    "bed-breathing": {
+      "bpm": 86.1,
+      "confidence": 0.619,
+      "file": "song-bed/bed-breathing.mp3"
+    },
+    "bed-breves": {
+      "bpm": 161.5,
+      "confidence": 0.191,
+      "file": "song-bed/bed-breves.mp3"
+    },
+    "bed-caketown": {
+      "bpm": 103.4,
+      "confidence": 0.143,
+      "file": "song-bed/bed-caketown.mp3"
+    },
+    "bed-calm": {
+      "bpm": 80.7,
+      "confidence": 0.205,
+      "file": "song-bed/bed-calm.mp3"
+    },
+    "bed-cate": {
+      "bpm": 71.8,
+      "confidence": 0.574,
+      "file": "song-bed/bed-cate.mp3"
+    },
+    "bed-chill-fever": {
+      "bpm": 64.6,
+      "confidence": 0.285,
+      "file": "song-bed/bed-chill-fever.mp3"
+    },
+    "bed-chill-lofi": {
+      "bpm": 103.4,
+      "confidence": 0.544,
+      "file": "song-bed/bed-chill-lofi.mp3"
+    },
+    "bed-chill-loop": {
+      "bpm": 71.8,
+      "confidence": 0.086,
+      "file": "song-bed/bed-chill-loop.mp3"
+    },
+    "bed-chill-menu": {
+      "bpm": 152.0,
+      "confidence": 0.12,
+      "file": "song-bed/bed-chill-menu.mp3"
+    },
+    "bed-deadship": {
+      "bpm": 60.1,
+      "confidence": 0.206,
+      "file": "song-bed/bed-deadship.mp3"
+    },
+    "bed-flowerbed": {
+      "bpm": 95.7,
+      "confidence": 0.833,
+      "file": "song-bed/bed-flowerbed.mp3"
+    },
+    "bed-happy-adventure": {
+      "bpm": 123.0,
+      "confidence": 0.633,
+      "file": "song-bed/bed-happy-adventure.mp3"
+    },
+    "bed-happy-vibes": {
+      "bpm": 73.8,
+      "confidence": 0.793,
+      "file": "song-bed/bed-happy-vibes.mp3"
+    },
+    "bed-jump": {
+      "bpm": 143.6,
+      "confidence": 0.74,
+      "file": "song-bed/bed-jump.mp3"
+    },
+    "bed-lifewave-2k": {
+      "bpm": 107.7,
+      "confidence": 0.217,
+      "file": "song-bed/bed-lifewave-2k.mp3"
+    },
+    "bed-lifewave": {
+      "bpm": 129.2,
+      "confidence": 0.148,
+      "file": "song-bed/bed-lifewave.mp3"
+    },
+    "bed-lofi": {
+      "bpm": 60.1,
+      "confidence": 0.165,
+      "file": "song-bed/bed-lofi.mp3"
+    },
+    "bed-lullaby": {
+      "bpm": 80.7,
+      "confidence": 0.08,
+      "file": "song-bed/bed-lullaby.mp3"
+    },
+    "bed-menu": {
+      "bpm": 95.7,
+      "confidence": 0.757,
+      "file": "song-bed/bed-menu.mp3"
+    },
+    "bed-montage": {
+      "bpm": 161.5,
+      "confidence": 0.546,
+      "file": "song-bed/bed-montage.mp3"
+    },
+    "bed-musicbox-tune": {
+      "bpm": 112.3,
+      "confidence": 0.705,
+      "file": "song-bed/bed-musicbox-tune.mp3"
+    },
+    "bed-musicbox-waltz": {
+      "bpm": 107.7,
+      "confidence": 0.926,
+      "file": "song-bed/bed-musicbox-waltz.mp3"
+    },
+    "bed-napping": {
+      "bpm": 161.5,
+      "confidence": 0.354,
+      "file": "song-bed/bed-napping.mp3"
+    },
+    "bed-observing-star": {
+      "bpm": 136.0,
+      "confidence": 0.184,
+      "file": "song-bed/bed-observing-star.mp3"
+    },
+    "bed-shenandoah": {
+      "bpm": 104.8,
+      "confidence": 0.115,
+      "file": "song-bed/bed-shenandoah.mp3"
+    },
+    "bed-space": {
+      "bpm": 95.7,
+      "confidence": 0.32,
+      "file": "song-bed/bed-space.mp3"
+    },
+    "bed-synthwave-15k-ii": {
+      "bpm": 161.5,
+      "confidence": 0.182,
+      "file": "song-bed/bed-synthwave-15k-ii.mp3"
+    },
+    "bed-synthwave-15k": {
+      "bpm": 161.5,
+      "confidence": 0.19,
+      "file": "song-bed/bed-synthwave-15k.mp3"
+    },
+    "bed-synthwave-421": {
+      "bpm": 129.2,
+      "confidence": 0.149,
+      "file": "song-bed/bed-synthwave-421.mp3"
+    },
+    "bed-town": {
+      "bpm": 92.3,
+      "confidence": 0.276,
+      "file": "song-bed/bed-town.mp3"
+    }
+  }
+}
