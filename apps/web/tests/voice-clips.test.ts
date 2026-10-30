@@ -21,12 +21,17 @@ import {
   burstSkipsTts,
   clipButtonLabel,
   clipFile,
+  clipLibraryId,
+  clipLibraryIdFor,
+  clipLibraryPath,
   emotionKindForFile,
   clipLibraryFile,
   emotionClipKind,
+  listClipLibrary,
   greetingText,
   nextGreetingKind,
   resetGreetingRotation,
+  recordedPokeClip,
 } from '../lib/voice-clips';
 import { emotionClipPath, resetEmotionClipPicks, saveEmotionClip } from '../lib/emotion-clip-picks';
 import { TIER_A_COUNTS, selectTtsButtons, ttsButtonKey } from '../lib/tts-button-registry';
@@ -156,6 +161,22 @@ describe('emotion clips', () => {
     saveEmotionClip('a01-shino', 'yue', 'female', 'giggle.mp3');
     expect(emotionClipPath('a01-shino', 'en', 'female', 'giggle')).toBe('/voice-clips/yue/female/giggle.mp3');
     resetEmotionClipPicks();
+  });
+});
+
+describe('CLIP_LIBRARY numbering', () => {
+  it('numbers 1–99 in yue→zh→ja→en→universal × F→M order', () => {
+    const list = listClipLibrary();
+    expect(list).toHaveLength(99);
+    expect(list[0]).toMatchObject({ id: 1, path: '/voice-clips/yue/female/laugh.mp3' });
+    expect(clipLibraryPath(5)).toBe('/voice-clips/yue/female/um.mp3');
+    expect(clipLibraryPath(12)).toBe('/voice-clips/yue/male/um.mp3');
+    expect(clipLibraryPath(52)).toBe('/voice-clips/ja/male/oh.mp3');
+    expect(clipLibraryPath(94)).toBe('/voice-clips/universal/female/wow_woven.mp3');
+    expect(clipLibraryId(recordedPokeClip('female'))).toBe(94);
+    expect(clipLibraryId(recordedPokeClip('male'))).toBe(52);
+    expect(clipLibraryIdFor('yue', 'female', 'um.mp3')).toBe(5);
+    expect(clipLibraryIdFor('universal', 'female', 'wow_woven.mp3')).toBe(94);
   });
 });
 

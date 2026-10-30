@@ -29,7 +29,7 @@ import { LangChips } from './selectors';
 import VoicePicker from './VoicePicker';
 import ModelThumb from './ModelThumb';
 import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, testOpenAiVoice, VOICE_TIER_LABEL } from '../lib/voice';
-import { VOLUME_STEPS, type VolumeStep } from '../lib/audio-levels';
+import { VOLUME_STEPS, isVolumeStep, type VolumeStep } from '../lib/audio-levels';
 import { applyBgmLevel, applyDialogueLevel } from '../lib/music';
 import { applySfxLevel } from '../lib/sfx';
 // r2026-10-06.131: the Voice section's optional HTTP TTS proxy field
@@ -380,20 +380,23 @@ export default function SettingsSheet({
             </div>
             <VolumeSteps
               label={`🔉 ${t(lang, 'voiceVolume')}`}
-              value={prefs.voiceVol ?? 80}
+              value={isVolumeStep(prefs.voiceVol) ? prefs.voiceVol : 80}
               accent={accent}
+              markBase={10}
               onPick={(step) => { onChange({ voiceVol: step }); applyDialogueLevel(step); }}
             />
             <VolumeSteps
               label={`🎵 ${t(lang, 'bgmVolume')}`}
-              value={prefs.bgmVol ?? 80}
+              value={isVolumeStep(prefs.bgmVol) ? prefs.bgmVol : 80}
               accent={accent}
+              markBase={20}
               onPick={(step) => { onChange({ bgmVol: step }); applyBgmLevel(step); }}
             />
             <VolumeSteps
               label={`✨ ${t(lang, 'sfxVolume')}`}
-              value={prefs.sfxVol ?? 80}
+              value={isVolumeStep(prefs.sfxVol) ? prefs.sfxVol : 80}
               accent={accent}
+              markBase={30}
               onPick={(step) => { onChange({ sfxVol: step }); applySfxLevel(step); }}
             />
             {/* r2026-10-06.134 — ChatGPT-voice tier (OpenAI): key + optional
@@ -767,24 +770,26 @@ export default function SettingsSheet({
 }
 
 function VolumeSteps({
-  label, value, accent, onPick,
+  label, value, accent, onPick, markBase = 0,
 }: {
   label: string;
   value: VolumeStep;
   accent: string;
   onPick: (step: VolumeStep) => void;
+  markBase?: number;
 }) {
   return (
     <div className="flex items-center justify-between gap-3 py-2">
       <span className="min-w-0 text-sm text-white/80">{label}</span>
       <span className="flex shrink-0 gap-1">
-        {VOLUME_STEPS.map((step) => (
+        {VOLUME_STEPS.map((step, i) => (
           <button
             key={step}
             type="button"
             aria-pressed={value === step}
+            data-dev={`W${markBase + i + 1}`}
             onClick={() => onPick(step)}
-            className={`ui-btn h-8 min-w-9 rounded-full px-1.5 text-[11px] ${
+            className={`ui-btn relative h-8 min-w-9 rounded-full px-1.5 text-[11px] ${
               value === step ? 'font-medium text-neutral-950' : 'bg-white/5 text-white/55 hover:text-white/80'
             }`}
             style={value === step ? { backgroundColor: accent } : undefined}

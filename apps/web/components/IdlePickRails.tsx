@@ -1,10 +1,11 @@
 'use client';
 // Tiny idle A/B buttons in the side gutters. They sit off the character
-// and off the chat column.
+// and off the chat column. Default rotation is only b01 + b02; a01–a04 /
+// b03/b04 are optional one-shot pins.
 
 import { useEffect, useState } from 'react';
 import { IDLE_CLIP_OPTIONS } from '../lib/idle-clips';
-import { idlePickFor, saveIdlePick } from '../lib/idle-pick';
+import { idlePickFor, isDefaultIdleClip, saveIdlePick } from '../lib/idle-pick';
 
 export default function IdlePickRails({
   characterId,
@@ -35,16 +36,18 @@ export default function IdlePickRails({
     >
       {items.map((item) => {
         const on = picked === item.id;
+        const calm = isDefaultIdleClip(item.id);
         return (
           <button
             key={item.label}
             type="button"
             aria-label={item.label}
-            title={item.id}
+            title={calm ? `${item.id} (default rotation)` : item.id}
             aria-pressed={on}
+            data-dev={item.label.toUpperCase()}
             onClick={() => tap(item.id)}
-            className={`pointer-events-auto rounded border px-0.5 py-px text-[8px] font-medium leading-none ${
-              on ? 'border-white/80 text-white' : 'border-white/20 bg-black/40 text-white/75'
+            className={`pointer-events-auto relative rounded border px-0.5 py-px text-[8px] font-medium leading-none ${
+              on ? 'border-white/80 text-white' : calm ? 'border-white/35 bg-black/45 text-white/85' : 'border-white/20 bg-black/40 text-white/75'
             }`}
           >
             {item.label}
