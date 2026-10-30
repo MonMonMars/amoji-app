@@ -231,6 +231,8 @@ describe('per-character Edge voices', () => {
     expect(first.name).toBe('zh-HK-WanLungNeural');
     expect(second.name).toBe('zh-HK-WanLungNeural');
     expect(first.pitch).not.toBe(second.pitch);
+    expect(first.pitch).toBeLessThanOrEqual(0);
+    expect(second.pitch).toBeLessThanOrEqual(0);
   });
 });
 

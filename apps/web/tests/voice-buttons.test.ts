@@ -144,6 +144,34 @@ describe('Edge voice bake-off buttons', () => {
     expect(isMaleNeuralVoice(female.name)).toBe(false);
   });
 
+  it('keeps the three Cantonese pills on distinct gendered Edge ids', () => {
+    const yue = EDGE_VOICE_BUTTONS.filter((b) => b.locale === 'yue');
+    expect(yue.map((b) => b.id)).toEqual([
+      'zh-HK-WanLungNeural',
+      'zh-HK-HiuMaanNeural',
+      'zh-HK-HiuGaaiNeural',
+    ]);
+    const male = buildEdgeSsml(edgeSampleText('yue'), {
+      lang: 'yue', gender: 'female', voiceId: 'zh-HK-WanLungNeural',
+    });
+    const female1 = buildEdgeSsml(edgeSampleText('yue'), {
+      lang: 'yue', gender: 'male', voiceId: 'zh-HK-HiuMaanNeural',
+    });
+    const female2 = buildEdgeSsml(edgeSampleText('yue'), {
+      lang: 'yue', gender: 'male', voiceId: 'zh-HK-HiuGaaiNeural',
+    });
+    expect(male).toContain("voice name='zh-HK-WanLungNeural'");
+    expect(male).not.toContain('HiuMaan');
+    expect(male).not.toContain('HiuGaai');
+    expect(female1).toContain("voice name='zh-HK-HiuMaanNeural'");
+    expect(female2).toContain("voice name='zh-HK-HiuGaaiNeural'");
+    expect(female1).not.toContain('HiuGaai');
+    expect(female2).not.toContain('HiuMaan');
+    expect(isMaleNeuralVoice('zh-HK-WanLungNeural')).toBe(true);
+    expect(isFemaleNeuralVoice('zh-HK-HiuMaanNeural')).toBe(true);
+    expect(isFemaleNeuralVoice('zh-HK-HiuGaaiNeural')).toBe(true);
+  });
+
   it('builds the sample SSML with the tapped short name', () => {
     const ssml = buildEdgeSsml(edgeSampleText('en'), {
       lang: 'en', gender: 'female', voiceId: 'en-US-AndrewNeural',

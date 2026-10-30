@@ -99,10 +99,33 @@ export function clipLibraryFile(folder: ClipFolder, gender: VoiceClipGender, fil
   return `/voice-clips/${folder}/${gender}/${file}`;
 }
 
+/** laugh.mp3 and laugh_anime.mp3 both belong to laugh. hehe → giggle, huh → um. */
+export function emotionKindForFile(file: string): BurstClipKind | 'sigh' | null {
+  const stem = file.replace(/\.mp3$/i, '').toLowerCase();
+  if (stem === 'hehe' || stem.startsWith('hehe_')) return 'giggle';
+  if (stem === 'huh' || stem.startsWith('huh_')) return 'um';
+  if (stem === 'sigh' || stem.startsWith('sigh_')) return 'sigh';
+  for (const kind of BURST_CLIP_KINDS) {
+    if (stem === kind || stem.startsWith(`${kind}_`)) return kind;
+  }
+  return null;
+}
+
+/** Visible pill text. Takes stay distinct; nothing is labeled only "Universal". */
 export function clipButtonLabel(lang: string, file: string): string {
-  const stem = file.replace(/\.mp3$/, '');
-  if ((BURST_CLIP_KINDS as readonly string[]).includes(stem)) {
-    return BURST_CLIP_LABEL[clipLang(lang)][stem as BurstClipKind];
+  const stem = file.replace(/\.mp3$/i, '');
+  const kind = emotionKindForFile(file);
+  const burst = kind && (BURST_CLIP_KINDS as readonly string[]).includes(kind)
+    ? BURST_CLIP_LABEL[clipLang(lang)][kind as BurstClipKind]
+    : null;
+  if (burst && stem.toLowerCase() === kind) return burst;
+  if (burst) {
+    const take = stem.replace(new RegExp(`^${kind}_`, 'i'), '').replace(/_/g, ' ');
+    return take ? `${burst} · ${take}` : burst;
+  }
+  if (kind === 'sigh') {
+    const take = stem.replace(/^sigh_?/i, '').replace(/_/g, ' ');
+    return take ? `Sigh · ${take}` : 'Sigh';
   }
   return stem.replace(/_/g, ' ');
 }
