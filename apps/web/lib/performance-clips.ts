@@ -558,6 +558,39 @@ export const PERFORMANCE_CLIPS: readonly PerformanceClip[] = [
     labels: label('Mass Amen'), license: 'CC0-1.0',
     credit: 'Joseph Sardin (BigSoundBank)', source: 'https://bigsoundbank.com/mass-amen-s2790.html',
   },
+  // t718: ~3 min sets (concat of existing CC0/PD shorts) — sing until track ends
+  {
+    id: 'sing-f-long-set1',
+    kind: 'song', style: 'soft ballad', voice: 'female',
+    file: '/audio/sing-female/sing-f-long-set1.mp3', durationMs: 180020,
+    volume: 'voiceVol', moods: ['happy', 'sad', 'tired'], langs: ALL, characters: [],
+    labels: label('Long Set 1'), license: 'CC0-1.0',
+    credit: 'Amoji long set (CC0/PD shorts concat)', source: 'https://github.com/MonMonMars/amoji-app/blob/main/apps/web/public/audio/LIBRARY.md',
+  },
+  {
+    id: 'sing-f-long-set2',
+    kind: 'song', style: 'cheerful pop', voice: 'female',
+    file: '/audio/sing-female/sing-f-long-set2.mp3', durationMs: 180020,
+    volume: 'voiceVol', moods: ['happy'], langs: ALL, characters: [],
+    labels: label('Long Set 2'), license: 'CC0-1.0',
+    credit: 'Amoji long set (CC0/PD shorts concat)', source: 'https://github.com/MonMonMars/amoji-app/blob/main/apps/web/public/audio/LIBRARY.md',
+  },
+  {
+    id: 'sing-m-long-set1',
+    kind: 'song', style: 'cheerful pop', voice: 'male',
+    file: '/audio/sing-male/sing-m-long-set1.mp3', durationMs: 180020,
+    volume: 'voiceVol', moods: ['happy', 'sad'], langs: ALL, characters: [],
+    labels: label('Long Set 1'), license: 'CC0-1.0',
+    credit: 'Amoji long set (CC0/PD shorts concat)', source: 'https://github.com/MonMonMars/amoji-app/blob/main/apps/web/public/audio/LIBRARY.md',
+  },
+  {
+    id: 'sing-m-long-set2',
+    kind: 'song', style: 'soft ballad', voice: 'male',
+    file: '/audio/sing-male/sing-m-long-set2.mp3', durationMs: 178020,
+    volume: 'voiceVol', moods: ['happy', 'sad', 'tired', 'anxious'], langs: ALL, characters: [],
+    labels: label('Long Set 2'), license: 'CC0-1.0',
+    credit: 'Amoji long set (CC0/PD shorts concat)', source: 'https://github.com/MonMonMars/amoji-app/blob/main/apps/web/public/audio/LIBRARY.md',
+  },
 ];
 
 const VOICE_WORD: Record<SingVoice, Record<PerformanceLang, string>> = {
@@ -609,6 +642,8 @@ export function pickPerformanceClip(q: ClipQuery): PerformanceClip {
     let w = 1;
     if (q.lang && (clip.langs as readonly string[]).includes(q.lang)) w += 1;
     if (q.characterId && clip.characters.includes(q.characterId)) w += 1;
+    // t718: bias toward ~3min songs so "sing" usually gets a long track
+    if (q.kind === 'song' && clip.durationMs >= 120_000) w += 4;
     for (let i = 0; i < w; i++) weighted.push(clip);
   }
   const n = Math.abs(q.n ?? 0);

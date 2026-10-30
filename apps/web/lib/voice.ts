@@ -1288,6 +1288,14 @@ function drainSpeech(): void {
   });
 }
 
+/** Resume synth + AudioContext after master unmute (t719). */
+export function resumeVoiceEngines(): void {
+  try {
+    if (typeof speechSynthesis !== 'undefined') speechSynthesis.resume();
+  } catch { /* ignore */ }
+  unlockAudio();
+}
+
 export function stopSpeaking(): void {
   lineQueue.interrupt();
   cancelIdleWaiters();
