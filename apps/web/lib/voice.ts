@@ -83,7 +83,7 @@ import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
 import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripVoicedGlyphs } from './speak-text';
 import { analyzeText } from '@amoji/emotion-core';
 import { applyLlmHints } from './companion';
-import { browserVoiceGender, browserVoicesForLang, edgeSampleText, isMaleNeuralVoice, synthNameList, voiceNameMatches } from './voice-catalog';
+import { browserVoicesForLang, edgeSampleText, isMaleNeuralVoice, selectBrowserVoice, synthNameList } from './voice-catalog';
 import { loadingFillerKind, recordedFillerClip, recordedPokeClip } from './voice-clips';
 import { LineQueue, speechRemainder } from './speech-queue';
 import { emotionClipPath } from './emotion-clip-picks';
@@ -293,9 +293,9 @@ function unlockAudio(): void {
 // ---- r102: speechSynthesis gesture prime ------------------------------------
 // iOS keeps the speechSynthesis ENGINE itself gated until a user gesture
 // performs a speak() — WebAudio unlock and media priming don't count for the
-// synth path. A zero-volume space utterance inside the first tap flips the
-// gate without an audible blip; synthPrimed latches so it only ever runs
-// once (before the first real line, not instead of it).
+// synth path. A short space inside the first tap flips the gate. Its volume
+// stays at the dialogue level: a cancelled volume-0 utterance mutes the next
+// line on Safari. synthPrimed latches so it only runs once.
 let synthPrimed = false;
 /** Bumped on every new line and on stop so a poke lead cannot outlive itself. */
 let synthGeneration = 0;
@@ -308,7 +308,8 @@ export function primeSynthInGesture(): void {
   try {
     speechSynthesis.resume();
     const u = new SpeechSynthesisUtterance(' ');
-    u.volume = 0;
+    // Volume 0 sticks on Safari after cancel() and mutes the real line.
+    u.volume = Math.max(0.2, getPlaybackVolume());
     u.pitch = 1;
     u.rate = 1;
     u.lang = 'en-US';
@@ -1124,23 +1125,19 @@ function pickVoice(characterId: string, lang: Lang, genderOverride?: 'female' | 
   // Same pitch/pace as the Edge slot, so the browser fallback stays personal.
   const pitch = (gender === 'male' ? 0.94 : 1.06) + (color?.pitch ?? 0);
   const rate = (gender === 'male' ? 0.98 : 1.02) + (color?.rate ?? 0);
-  const sameGender = (name: string) => browserVoiceGender(name) === gender;
-  for (const name of rotateNames(synthNameList(lang, gender), hashId(characterId))) {
-    const hit = pool.find((v) => voiceNameMatches(v.name, name) && sameGender(v.name));
-    if (hit) return { voice: hit, pitch, rate };
-  }
-  const gendered = pool.find((v) => sameGender(v.name));
-  if (gendered) return { voice: gendered, pitch, rate };
+  const preferred = rotateNames(synthNameList(lang, gender), hashId(characterId));
+  // Exact gender, then a matching-lang voice whose name does not say.
+  // iPhone voices ("Nicky", "Ting-Ting") are unlabeled; requiring a gender
+  // word rejected every one of them and Safari stayed silent.
+  const hit = selectBrowserVoice(pool, gender, preferred);
+  if (hit) return { voice: hit, pitch, rate };
   const matrixFallback = gender === 'male' ? 'atlas' : 'juno';
   const choices = VOICE_MATRIX[characterId]?.[lang] ?? VOICE_MATRIX[matrixFallback]?.[lang] ?? [];
   for (const c of choices) {
-    const scoped = cached.filter((v) => v.lang.replace('_', '-').startsWith(c.lang));
-    for (const name of c.names) {
-      const hit = scoped.find((v) => voiceNameMatches(v.name, name) && sameGender(v.name));
-      if (hit) return { voice: hit, pitch: c.basePitch, rate: c.baseRate };
-    }
+    const scoped = cached.filter((v) => v.lang.replace('_', '-').toLowerCase().startsWith(c.lang.toLowerCase()));
+    const matrixHit = selectBrowserVoice(scoped, gender, c.names);
+    if (matrixHit) return { voice: matrixHit, pitch: c.basePitch, rate: c.baseRate };
   }
-  // No opposite-gender OS voice. An unlabeled "Google US English" is not male-safe.
   return { voice: null, pitch, rate };
 }
 
@@ -1367,13 +1364,6 @@ function performSpeak(
   // string back into history.
   text = cleanForSpeech(text);
   if (!text || !voiceEnabled()) { settle(); return; }
-  // Loading fillers are recorded clips. Live TTS made "um" sound like a news voice.
-  const fillerKind = loadingFillerKind(text);
-  if (fillerKind) {
-    const file = recordedFillerClip(characterVoiceGender(characterId), fillerKind);
-    void playVoiceClip(file, text, () => markVoiceStarted()).then(() => settle()).catch(() => settle());
-    return;
-  }
   // r111: remember the line for gesture-gate replay
   const attemptAt = Date.now();
   lastSpeak = { text, characterId, lang, emotionHints, leadOverride, intensity, at: attemptAt };
@@ -1535,6 +1525,18 @@ function performSpeak(
   runFreeChain();
   };
 
+  // Recorded um / ha / think / search. A 404 on Pages must not end the line:
+  // Edge (then the browser voice) still speaks.
+  const fillerKind = loadingFillerKind(text);
+  if (fillerKind) {
+    const file = recordedFillerClip(characterVoiceGender(characterId), fillerKind);
+    void playVoiceClip(file, text, () => markVoiceStarted()).then(() => settle()).catch((err: unknown) => {
+      if (!speechAlive() || (err as Error | undefined)?.message === 'canceled') { settle(); return; }
+      beginTts();
+    });
+    return;
+  }
+
   const leadKind = tic ? emotionClipKind(tic.text, 'lead') : null;
   const lineKind = leadKind ? null : emotionClipKind(text, 'line');
   const clipKind = leadKind ?? lineKind;
@@ -1552,9 +1554,11 @@ function performSpeak(
     }).catch((err: unknown) => {
       if (!speechAlive() || (err as Error | undefined)?.message === 'canceled') { settle(); return; }
       if (leadKind) tic = undefined;
-      // A laugh / giggle / wow / um / oh / ha never goes to live TTS, even if the file fails.
+      // A laugh / giggle / wow stays a clip. A missing um / ha / think / search
+      // file must not swallow the sentence — Edge still speaks.
       if (burstSkipsTts(leadKind) || burstSkipsTts(lineKind) || bodyIsBurst()) {
-        if (leadKind && text.trim() && !bodyIsBurst()) beginTts();
+        const fillerMiss = loadingFillerKind(text) !== null || (tic ? loadingFillerKind(tic.text) !== null : false);
+        if ((leadKind && text.trim() && !bodyIsBurst()) || fillerMiss) beginTts();
         else settle();
         return;
       }
@@ -1959,10 +1963,16 @@ export async function testOpenAiVoice(characterId: string, lang: Lang): Promise<
 }
 
 function bindSynthVoice(u: SpeechSynthesisUtterance, voice: SpeechSynthesisVoice | null, locale: string): void {
-  u.lang = locale;
-  if (!voice) return;
-  const voiceLang = voice.lang.replace(/_/g, '-').toLowerCase();
-  if (voiceLang.startsWith(locale.toLowerCase())) u.voice = voice;
+  if (!voice) {
+    u.lang = locale;
+    return;
+  }
+  // Safari drops the utterance when lang is set and voice is left empty.
+  // A zh-TW voice found for Cantonese still has to be bound, in its own lang.
+  const voiceLang = voice.lang.replace(/_/g, '-');
+  const matches = voiceLang.toLowerCase().startsWith(locale.toLowerCase());
+  u.lang = matches ? locale : (voiceLang || locale);
+  u.voice = voice;
 }
 
 /** Silent utterance that puts pitch, rate, and voice back to the character default. */
@@ -1970,7 +1980,8 @@ function restoreSynthEngine(gen: number, voice: SpeechSynthesisVoice | null, loc
   if (gen !== synthGeneration || typeof speechSynthesis === 'undefined') return;
   try {
     const r = new SpeechSynthesisUtterance(' ');
-    r.volume = 0;
+    // A cancelled volume-0 utterance sticks on Safari and mutes the next line.
+    r.volume = Math.max(0.2, getPlaybackVolume());
     r.pitch = 1;
     r.rate = 1;
     bindSynthVoice(r, voice, locale);
