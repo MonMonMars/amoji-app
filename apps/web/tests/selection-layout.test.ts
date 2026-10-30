@@ -58,6 +58,8 @@ describe('selection layout', () => {
   it('grows the bighead fan into the stage the model used to fill', () => {
     const fan = read('../components/ArcFan.tsx');
     expect(fan).toContain('portraitCardBox');
+    expect(fan).toContain('stageWidth');
+    expect(fan).toContain('overflow-x-hidden');
     expect(fan).toContain('PORTRAIT_CENTER_SCALE');
     expect(fan).not.toContain('h-[8.4rem]');
     expect(fan).not.toContain('sm:h-[11rem]');
@@ -78,6 +80,11 @@ describe('selection layout', () => {
     const phone = portraitCardBox(280);
     expect(phone.height).toBeGreaterThan(241);
     expect(phone.height).toBeLessThan(280);
+    // t738: iPhone ~390 — without a width cap, tall stages made cards wider than the viewport.
+    const iphone = portraitCardBox(700, 390);
+    expect(iphone.width).toBeLessThanOrEqual(Math.round(390 * 0.72));
+    expect(iphone.width).toBeLessThanOrEqual(390);
+    expect(iphone.height).toBeLessThanOrEqual(Math.round(iphone.width / 0.88) + 1);
     expect(portraitCardBox(900).height).toBeGreaterThan(520);
     expect(portraitCardBox(900).height).toBeLessThanOrEqual(640);
     const fitted = portraitCardBox(456);
@@ -203,4 +210,11 @@ describe('selection layout', () => {
     expect(chat).toContain('fx-select-in');
     expect(chat).toContain('fx-select-out');
   });
+  it('keeps the minigame picker inside the viewport on phones', () => {
+    const picker = read('../components/MiniGamePicker.tsx');
+    expect(picker).toContain('max-w-[100vw]');
+    expect(picker).toContain('overflow-x-hidden');
+    expect(picker).toContain('max-w-full');
+  });
+
 });

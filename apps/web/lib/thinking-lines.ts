@@ -4,7 +4,7 @@
 export const LOADING_STUBS = {
   yue: [
     '嗯……',
-    '哈……',
+    '嗯……',
     '嗯…',
     '嗯嗯……',
     '嗯……等我諗下。',
@@ -12,7 +12,7 @@ export const LOADING_STUBS = {
   ],
   zh: [
     '嗯……',
-    '哈……',
+    '嗯……',
     '嗯…',
     '嗯嗯……',
     '嗯……让我想想。',
@@ -28,7 +28,7 @@ export const LOADING_STUBS = {
   ],
   en: [
     'um……',
-    'ha……',
+    'um……',
     'um…',
     'hmm……',
     'um…… let me think.',
@@ -45,10 +45,10 @@ export const YUE_THINKING_LINES: readonly string[] = LOADING_STUBS.yue;
  */
 export const LOADING_MOOD_STUBS = {
   happy: {
-    yue: ['哈……', '嗯……', '嗯……等我諗下。'],
-    zh: ['哈……', '嗯……', '嗯……让我想想。'],
-    ja: ['はあ……', 'うーん……', 'うーん……考えさせて。'],
-    en: ['ha……', 'um……', 'um…… let me think.'],
+    yue: ['嗯……', '嗯嗯……', '嗯……等我諗下。'],
+    zh: ['嗯……', '嗯嗯……', '嗯……让我想想。'],
+    ja: ['うん……', 'うーん……', 'うーん……考えさせて。'],
+    en: ['um……', 'ooh……', 'um…… let me think.'],
   },
   tired: {
     yue: ['嗯…', '嗯……', '嗯……等我諗下。'],
@@ -57,16 +57,16 @@ export const LOADING_MOOD_STUBS = {
     en: ['um…', 'um……', 'um…… let me think.'],
   },
   sad: {
-    yue: ['哈……', '嗯……', '嗯……等我諗下。'],
-    zh: ['哈……', '嗯……', '嗯……让我想想。'],
+    yue: ['嗯……', '唉……', '嗯……等我諗下。'],
+    zh: ['嗯……', '唉……', '嗯……让我想想。'],
     ja: ['はあ……', 'うーん……', 'うーん……考えさせて。'],
-    en: ['ha……', 'um……', 'um…… let me think.'],
+    en: ['hmm……', 'aww……', 'um…… let me think.'],
   },
   angry: {
-    yue: ['嗯……', '哈……', '嗯……等我上網搵下。'],
-    zh: ['嗯……', '哈……', '嗯……让我上网查一下。'],
+    yue: ['嗯……', '嗯……', '嗯……等我上網搵下。'],
+    zh: ['嗯……', '嗯……', '嗯……让我上网查一下。'],
     ja: ['うーん……', 'はあ……', 'うーん……ネットで調べるね。'],
-    en: ['um……', 'ha……', 'um…… let me search the web.'],
+    en: ['um……', 'um……', 'um…… let me search the web.'],
   },
   anxious: {
     yue: ['嗯…', '嗯嗯……', '嗯……等我諗下。'],

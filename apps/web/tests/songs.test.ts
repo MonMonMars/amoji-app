@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { SONG_MELODY, SONGS, CHARACTER_SONGS, pickCharacterSong, pickSong } from '../lib/songs';
 
@@ -76,5 +79,15 @@ describe('signature songs (r2026-10-04.48)', () => {
     expect(pickCharacterSong('juno', 'yue', 0)).toBe(CHARACTER_SONGS.juno!.yue);
     expect(pickCharacterSong('mystery-id', 'en', 1)).toBe(pickSong('en', 1));
     expect(pickCharacterSong('mystery-id', 'yue', 3)).toBe(pickSong('yue', 3));
+  });
+});
+
+describe('sing voice follows the selected character (t737)', () => {
+  it('pins the same Edge voiceId chat uses when singing via TTS', () => {
+    const voice = fs.readFileSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../lib/voice.ts'), 'utf8');
+    expect(voice).toContain('resolveEdgeVoice');
+    expect(voice).toContain('voiceId: singVoiceId');
+    expect(voice).toContain('function performSing');
+    expect(voice).toMatch(/resolveEdgeVoice\(\{[^}]*character: characterId/);
   });
 });
