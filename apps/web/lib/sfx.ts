@@ -285,7 +285,11 @@ export function playMoveSfx(kind: MoveKind): void {
 /** Resume the shared SFX AudioContext after master unmute (t719). */
 export function resumeSfxContext(): void {
   const c = ctx();
-  if (c && c.state === 'suspended') void c.resume().catch(() => undefined);
+  if (!c) return;
+  try {
+    // t719: always resume after mute — state may already be running yet output dead
+    void c.resume().catch(() => undefined);
+  } catch { /* ignore */ }
 }
 
 export function playLaughSfx(): void {

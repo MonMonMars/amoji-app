@@ -65,4 +65,26 @@ describe('master-mute', () => {
     await m.restoreOutputsAfterUnmute();
     restore();
   });
+
+  it('unmute restore path force-unlocks voice + sfx (t719 contract)', async () => {
+    const restore = swapLs();
+    const src = await import('node:fs').then((fs) =>
+      fs.readFileSync(new URL('../lib/master-mute.ts', import.meta.url), 'utf8'),
+    );
+    expect(src).toContain('resumeVoiceEngines');
+    expect(src).toContain('resumeSfxContext');
+    expect(src).toContain('applyPlaybackVolume');
+    const voice = await import('node:fs').then((fs) =>
+      fs.readFileSync(new URL('../lib/voice.ts', import.meta.url), 'utf8'),
+    );
+    expect(voice).toMatch(/function unlockAudio\(force/);
+    expect(voice).toContain('unlockAudio(true)');
+    const m = await import('../lib/master-mute');
+    m.setMasterMuted(true);
+    m.setMasterMuted(false);
+    await m.restoreOutputsAfterUnmute();
+    expect(m.isMasterMuted()).toBe(false);
+    restore();
+  });
+
 });

@@ -21,6 +21,7 @@ import { useModularSelection } from '../../lib/modular/storage';
 import { resolveMiniGameCompanion } from '../../lib/minigames/companion';
 import type { ActionGame } from '../../lib/minigames/types';
 import { usePrefs, characterById, backgroundById, KID_PERSONA_GUARD } from '../../lib/prefs';
+import { storyPersonaSuffix } from '../../lib/story-session';
 import { clearMemory, loadMemory, memorySummaryCount } from '../../lib/memory';
 import type { ChatStatus } from '../../lib/status';
 
@@ -168,7 +169,11 @@ export default function Chat() {
           characterId={character.id}
           lang={prefs.lang}
           accent={character.accent}
-          persona={prefs.kidMode ? `${character.persona}\n\n${KID_PERSONA_GUARD}` : character.persona}
+          persona={(() => {
+            const story = storyPersonaSuffix(prefs.lang);
+            const base = prefs.kidMode ? `${character.persona}\n\n${KID_PERSONA_GUARD}` : character.persona;
+            return story ? `${base}\n\n${story}` : base;
+          })()}
           backgroundId={background.id}
           characterGender={character.gender}
           kidMode={prefs.kidMode}

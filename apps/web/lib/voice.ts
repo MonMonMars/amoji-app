@@ -92,7 +92,7 @@ import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText
 import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
 export { speechRemainder };
 import { edgeCastVoice } from './edge-cast';
-import { speakEdge, stopEdge, getTtsProxy } from './edge-tts';
+import { speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice } from './edge-tts';
 import { stopGtts } from './gtts';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
 import { formatVoiceChain, freeVoiceHops } from './tts-chain';
@@ -262,8 +262,10 @@ function playSilentUnblock(): void {
 // first audio if no user gesture has happened yet. Resume speechSynthesis and
 // prime an AudioContext on the first tap/keypress anywhere so the greeting and
 // every later reply are allowed to sound.
-function unlockAudio(): void {
-  if (!ctxPrimed) {
+function unlockAudio(force = false): void {
+  // t719: unmute must re-kick engines even when ctxPrimed/mediaPrimed latched
+  // after the first gesture — otherwise resumeVoiceEngines() is a silent no-op.
+  if (!ctxPrimed || force) {
     ctxPrimed = true;
     try { if (typeof speechSynthesis !== 'undefined') speechSynthesis.resume(); } catch { /* ignore */ }
     try {
@@ -281,12 +283,21 @@ function unlockAudio(): void {
         }
       }
     } catch { /* ignore */ }
+  } else {
+    // Already primed: still resume synth + any suspended default context.
+    try { if (typeof speechSynthesis !== 'undefined') speechSynthesis.resume(); } catch { /* ignore */ }
+    try {
+      const ctx = createDefaultAudioContext();
+      if (ctx && ctx.state === 'suspended') void ctx.resume?.();
+    } catch { /* ignore */ }
   }
   // r85: WebAudio unlock alone does NOT un-gate HTMLMediaElement playback on
   // iOS — the neural path speaks through `new Audio(blobUrl)`, so prime a
   // real (silent) media element inside this gesture too. r99: retry until a
   // play() actually resolves (see the latches above).
-  if (!mediaPrimed) {
+  // t719 force: re-run silent media unblock even when mediaPrimed (Chrome may
+  // leave HTMLAudio paused after master-mute pause-all).
+  if (!mediaPrimed || force) {
     try { playSilentUnblock(); } catch { /* ignore */ }
   }
 }
@@ -326,7 +337,7 @@ export function primeSynthInGesture(): void {
 
 if (typeof window !== 'undefined') {
   for (const ev of ['pointerdown', 'keydown', 'touchstart'] as const) {
-    window.addEventListener(ev, unlockAudio, { once: true, passive: true });
+    window.addEventListener(ev, () => unlockAudio(), { once: true, passive: true });
     // r102: synth engine priming rides every gesture too — cheap and idempotent
     window.addEventListener(ev, primeSynthInGesture, { passive: true });
   }
@@ -1291,9 +1302,12 @@ function drainSpeech(): void {
 /** Resume synth + AudioContext after master unmute (t719). */
 export function resumeVoiceEngines(): void {
   try {
-    if (typeof speechSynthesis !== 'undefined') speechSynthesis.resume();
+    if (typeof speechSynthesis !== 'undefined') {
+      // cancel() during mute can leave Chrome/Edge synth paused; resume hard.
+      speechSynthesis.resume();
+    }
   } catch { /* ignore */ }
-  unlockAudio();
+  unlockAudio(true);
 }
 
 export function stopSpeaking(): void {
@@ -1692,13 +1706,17 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
     if (!text || !voiceOutputAllowed()) { settle(); return; }
     unlockAudio();
     const expr = EXPRESSIVENESS[characterId] ?? 1;
+    const gender = characterVoiceGender(characterId);
+    // t737: same Edge voiceId as chat (pin / cast), not a generic singer.
+    const singVoiceId = resolveEdgeVoice({ lang, gender, character: characterId }).name;
     if (neuralEnabled() && typeof WebSocket !== 'undefined') {
       let tier1: Promise<void>;
       try {
         tier1 = speakEdge(text, {
           lang,
-          gender: characterVoiceGender(characterId),
+          gender,
           character: characterId,
+          voiceId: singVoiceId,
           expressiveness: expr,
           melody: SONG_MELODY,
           rateDelta: -0.06,

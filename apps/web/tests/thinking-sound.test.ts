@@ -19,12 +19,12 @@ describe('thinking sound', () => {
     expect(thinkingAudibleGain(true, true, 1, 0.2)).toBeCloseTo(0.2 * THINKING_GAIN);
   });
 
-  it('uses short CLIP_LIBRARY um fillers instead of the long thinking.wav', () => {
-    expect(thinkingFillerPath('female', 'yue')).toBe('/voice-clips/yue/female/um.mp3');
-    expect(thinkingFillerPath('male', 'yue')).toBe('/voice-clips/yue/male/um.mp3');
+  it('uses long UM fillers instead of thinking.wav', () => {
+    expect(thinkingFillerPath('female', 'yue')).toMatch(/\/voice-clips\/yue\/female\/um_long/);
+    expect(thinkingFillerPath('male', 'yue')).toMatch(/\/voice-clips\/yue\/male\/um_long/);
     const yueF = path.resolve(
       path.dirname(fileURLToPath(import.meta.url)),
-      '../public/voice-clips/yue/female/um.mp3',
+      '../public/voice-clips/yue/female/um_long.mp3',
     );
     expect(fs.existsSync(yueF)).toBe(true);
     expect(fs.statSync(yueF).size).toBeGreaterThan(1500);

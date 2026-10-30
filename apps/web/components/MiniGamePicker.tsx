@@ -58,7 +58,7 @@ export default function MiniGamePicker({
 
   return (
     <div
-      className="fx-select fixed inset-0 z-[80] flex flex-col bg-black/55 text-white backdrop-blur-sm"
+      className="fx-select fixed inset-0 z-[80] flex max-w-[100vw] flex-col overflow-x-hidden bg-black/55 text-white backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label={ui.menu}
@@ -79,8 +79,8 @@ export default function MiniGamePicker({
         </button>
       </div>
 
-      <div className="flex flex-1 items-center px-4" onClick={(e) => e.stopPropagation()}>
-        <div className="w-full">
+      <div className="flex min-h-0 min-w-0 flex-1 items-center overflow-x-hidden px-3 sm:px-4" onClick={(e) => e.stopPropagation()}>
+        <div className="relative h-full min-h-[16rem] w-full max-w-full overflow-x-hidden">
           <ArcFan
             ariaLabel={ui.menu}
             size="portrait"
