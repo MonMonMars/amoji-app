@@ -18,6 +18,8 @@ import { DEFAULT_CAMERA_HOME, upperBodyHome } from '../lib/camera-frame';
 import { orderIdleClips, personalityMotion } from '../lib/personality';
 import { classifyPoke, pokeBodyReaction, type PokeDirection, type TalkZone } from '../lib/poke-hit';
 import { clipFreesFeet, collectPlantRest, pinPlantedClipTracks } from '../lib/vrm/plant-feet';
+import { dancePerfClipSources } from '../lib/dance-clip-sources';
+import { timeScaleForProfile } from '../lib/performance-motion';
 import { playableIdles } from '../lib/idle-library';
 import { listEnabledIdleClipIds } from '../lib/idle-enabled';
 import { chestPokeBounce } from '../lib/vrm/chest-bounce';
@@ -599,6 +601,9 @@ export default function CompanionCanvas({
       { id: 'Idea', urls: [`${ANIM_MIRROR}/Idea.vrma`] },
       { id: 'Goodbye', urls: [`${ANIM_MIRROR}/Goodbye.vrma`] },
       { id: 'Blush', urls: [`${ANIM_MIRROR}/Blush.vrma`] },
+      // Dance shortlist lib_C* — local VRMA when converted; interim Mixamo-class remotes for C03/C61/C62/C110.
+      // Rokoko C112–C128 / C09 / C60 stay local-only until FBX→VRMA (see DEFERRED_DANCE_VRMA.md).
+      ...dancePerfClipSources(ANIM_MIRROR),
     ];
     const TOTAL_CLIPS = IDLE_SOURCES.length + IDLE_PICKS.length + PERF_SOURCES.length;
     const clips = new Map<string, THREE.AnimationClip>();
@@ -712,9 +717,11 @@ export default function CompanionCanvas({
       beginBoneBlend(0.7);
       const action = mixer.clipAction(clip);
       const personality = personalityMotion(seedKey ?? '', gender).timeScale;
-      action.timeScale = profile ? profile.timeScale : personality;
+      action.timeScale = profile
+        ? timeScaleForProfile(profile, clipName)
+        : personality;
       // Dance/sing shows loop with the music bed; other MOVE_CLIP one-shots stay LoopOnce.
-      if (profile && (name === 'Dance' || name === 'Sing')) {
+      if (profile && (name === 'Dance' || name === 'Sing' || clipName.startsWith('lib_C'))) {
         action.setLoop(THREE.LoopRepeat, Infinity);
         action.clampWhenFinished = false;
       } else {
