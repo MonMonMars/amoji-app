@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -18,6 +18,8 @@ import { DEFAULT_CAMERA_HOME, upperBodyHome } from '../lib/camera-frame';
 import { orderIdleClips, personalityMotion } from '../lib/personality';
 import { classifyPoke, pokeBodyReaction, type PokeDirection, type TalkZone } from '../lib/poke-hit';
 import { clipFreesFeet, collectPlantRest, pinPlantedClipTracks } from '../lib/vrm/plant-feet';
+import { playableIdles } from '../lib/idle-library';
+import { listEnabledIdleClipIds } from '../lib/idle-enabled';
 import { chestPokeBounce } from '../lib/vrm/chest-bounce';
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
@@ -31,42 +33,42 @@ import { PHI_HOME, PHI_MAX, PHI_MIN } from '../lib/orbit-limits';
 import { CAM_LERP, getMiniGameView, miniGameModelCandidates, registerGroundPick, resolveGameClip, type GameAnim } from '../lib/minigames';
 import { disposeMiniGameStage, updateMiniGameStage } from './minigameStage';
 
-// r97 (Master Simon): idle-clip restoration — the mixer now starts the
+// r97 (Master Simon): idle-clip restoration ??the mixer now starts the
 // moment the FIRST clip lands (it used to wait for all 26 loads, so a single
 // hung URL meant no mixer at all and a permanent T-pose), every URL attempt
 // carries a 12s watchdog (a stalled stream can no longer block the chain),
-// and the dead tk256ailab host is removed — verified-live library hosts lead
+// and the dead tk256ailab host is removed ??verified-live library hosts lead
 // every chain, with the local mirror as fallback.
 // r98 (Master Simon): feet on the floor through TALK. Performance clips
-// (sing / dance / piano / violin / punch / jump / bow / hello — the ones a
+// (sing / dance / piano / violin / punch / jump / bow / hello ??the ones a
 // speech trigger fires the moment she starts talking about them) used to
 // keep their baked root-Y verbatim: authored on rigs of a different scale
 // and pose (seated / bent-knee mocap), that hips-Y dragged her body far
-// below the r94-pinned idle the instant a talk move took over — she visibly
+// below the r94-pinned idle the instant a talk move took over ??she visibly
 // "fell" (equivalently: the camera seemed to rise), then popped back up
 // when the idle returned. Now EVERY clip's hips-Y is normalized onto our
-// rest height — median baseline + over-scale compression + a knee-deep
-// floor clamp — while X/Z sway and genuine motion (hops, dips, bows) are
+// rest height ??median baseline + over-scale compression + a knee-deep
+// floor clamp ??while X/Z sway and genuine motion (hops, dips, bows) are
 // preserved. The camera target is static and clamped and nothing in the
 // speaking path touches it, so no camera change ships in r98.
 // r101 (Master Simon): no more black or lying first frames. Some VRMs ship
 // a rotated root (Z-up exports), and the old load path only ever yaws the
-// facing — nothing un-tilted the body, so those characters lay flat until
+// facing ??nothing un-tilted the body, so those characters lay flat until
 // (unless) their first rebased clip frame corrected them; generic VRM 0.x
-// models never get clips at all. lib/vrm/avatar.ts now un-tilts hips→head
+// models never get clips at all. lib/vrm/avatar.ts now un-tilts hips?ead
 // to +Y at calibration time (BEFORE the first rendered frame). And the
 // avatar no longer steps on stage the instant the glTF parses: she mounts
 // INVISIBLE and is revealed only after every texture has decoded AND the
 // first pose/clip frame has been applied AND two fully-lit frames have
-// been presented — on iPhone Safari a big MToon atlas decodes late, and
+// been presented ??on iPhone Safari a big MToon atlas decodes late, and
 // the old code showed the raw rest pose for those frames (the "completely
 // black at the beginning" report). The 25s load watchdog can force the
 // reveal so a stuck texture never leaves her invisible forever.
 // r102 (Master Simon): three iPhone-Safari fixes. (1) The loading bar can
 // never freeze at 99% again: byte/clip progress still counts up honestly,
 // but once an avatar MOUNTS the remaining wait is the reveal gate (clip
-// engine + texture decode + two lit frames) — not byte-measurable — so the
-// plate shows an indeterminate "preparing…" until she steps on stage or the
+// engine + texture decode + two lit frames) ??not byte-measurable ??so the
+// plate shows an indeterminate "preparing?? until she steps on stage or the
 // 25s watchdog retires it. (2) She can never drop off the stage again:
 // rebaseClipHips now clamps hips X/Z travel too (r98 clamped Y only, so a
 // clip authored on a differently-scaled rig could still WALK the hips
@@ -75,25 +77,25 @@ import { disposeMiniGameStage, updateMiniGameStage } from './minigameStage';
 // lib/sfx.ts (the "bell rings / typing sounds" were movement foley firing
 // while every TTS tier stayed silent).
 // r103 (Master Simon): relaxed hands + shoulder ROM clamp. (1) The library
-// idles animate BODY bones only — standard_idle.vrma's humanoid map carries
+// idles animate BODY bones only ??standard_idle.vrma's humanoid map carries
 // no finger entries at all, and even weightShift.vrma maps just thumb/index
-// chains — so between keyframes her fingers sat in the model's rigid rest
+// chains ??so between keyframes her fingers sat in the model's rigid rest
 // splay. avatar.ts now calibrates a gentle curl per finger ONCE at load
-// (fold-test: rotate all phalanges ±0.35 rad about each local axis, keep
-// the axis+sign that shortens tip↔wrist — pose-independent) and the render
+// (fold-test: rotate all phalanges 簣0.35 rad about each local axis, keep
+// the axis+sign that shortens tip?rist ??pose-independent) and the render
 // loop re-applies it every frame AFTER the mixer and applyPose as
-// base·delta (idempotent). Fingers a clip actually animates are tracked in
-// clipAnimatedBones — node names scanned from every loaded clip's track
-// names, dot- and bracket-binding forms both — and left entirely to the
-// clip. (2) A big swing could carry an upper arm past the body midline —
+// base繚delta (idempotent). Fingers a clip actually animates are tracked in
+// clipAnimatedBones ??node names scanned from every loaded clip's track
+// names, dot- and bracket-binding forms both ??and left entirely to the
+// clip. (2) A big swing could carry an upper arm past the body midline ??
 // clampShoulderROM floors the arm's outward (body-relative) direction at
-// ~8.6° past plumb, gated to at/below horizontal so dance crosses and
+// ~8.6簞 past plumb, gated to at/below horizontal so dance crosses and
 // overhead waves stay free.
-// r108 (Master Simon): neutral daylight everywhere — the indoor rig's warm
+// r108 (Master Simon): neutral daylight everywhere ??the indoor rig's warm
 // cream key ('#fff6ec') read as an orange cast against the warm ember/neon
 // backdrops; ONE neutral rig lights every backdrop now, and ACES filmic
 // tone mapping at exposure 1.0 pins the color pipeline.
-// r109 (Master Simon): intermittent "character renders all black" — three
+// r109 (Master Simon): intermittent "character renders all black" ??three
 // hardenings. (1) A texture whose request ERRORED (iPhone network hiccup)
 // never decodes, so the r101 texture gate could never pass and the 25s
 // watchdog revealed a model with broken texture slots (black). The gate now
@@ -101,7 +103,7 @@ import { disposeMiniGameStage, updateMiniGameStage } from './minigameStage';
 // and after 4s of undecoded textures a one-shot fallback neutralizes the
 // broken slots (null map + lifted base color + floored shade color).
 // (2) MToon shadeColor could sit near-black and render black at some
-// angles — it is floored at mount and in the fallback, and a whisper of
+// angles ??it is floored at mount and in the fallback, and a whisper of
 // flat ambient light guarantees no material state can render pure black.
 // (3) A NaN sweep for the first 60 frames after mount resets any corrupt
 // quaternion/scale, and the reveal gate re-compiles shaders on its first
@@ -114,7 +116,7 @@ export interface CompanionCanvasProps {
   /** Fired once when a hand grab starts, so chat can speak a hold line. */
   onHandHold?: () => void;
   accent?: string;
-  /** character id — gives her/him a deterministic, personal idle-motion sequence */
+  /** character id ??gives her/him a deterministic, personal idle-motion sequence */
   seedKey?: string;
   /**
    * Modular wardrobe. Head GLB is identity; body GLB is the outfit.
@@ -128,15 +130,15 @@ export interface CompanionCanvasProps {
    * No Seed-san demo and no modular stand-in.
    */
   libraryOnly?: boolean;
-  /** @deprecated r108: ignored — one neutral daylight rig lights every backdrop */
+  /** @deprecated r108: ignored ??one neutral daylight rig lights every backdrop */
   lighting?: 'indoor' | 'outdoor';
-  /** Pinned idle clip id (a01 / b02 …). Empty keeps the calm rotation. */
+  /** Pinned idle clip id (a01 / b02 ??. Empty keeps the calm rotation. */
   idleClip?: string | null;
 }
 
 // r2026-10-04.92 (Master Simon): start FURTHER AWAY and at a NORMAL STRAIGHT
-// angle — the old phi 1.12 put the camera ~26° above her looking down (an
-// "upper camera" close-up). Now the lens sits ~2.4° above eye level, ~2.6m
+// angle ??the old phi 1.12 put the camera ~26簞 above her looking down (an
+// "upper camera" close-up). Now the lens sits ~2.4簞 above eye level, ~2.6m
 // back: upper body centered. Per-character home is unified via upperBodyHome
 // after mount so short/tall cast share the same portrait framing.
 const HOME = { theta: 0, phi: PHI_HOME, dist: DEFAULT_CAMERA_HOME.dist };
@@ -144,11 +146,11 @@ const HOME_TARGET = new THREE.Vector3(0, DEFAULT_CAMERA_HOME.lookY, 0);
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
 // Polar window lives in lib/orbit-limits.ts (PHI_MIN / PHI_MAX). Theta is
-// unclamped (full 360° yaw). Drag, pinch, and reset share the clamp in
-// applyCamera below — poke and hand-grab do not write phi.
+// unclamped (full 360簞 yaw). Drag, pinch, and reset share the clamp in
+// applyCamera below ??poke and hand-grab do not write phi.
 
 // r101: texture slots that must hold a DECODED image before the avatar may
-// step on stage. On iPhone Safari the big MToon atlases decode late — the
+// step on stage. On iPhone Safari the big MToon atlases decode late ??the
 // old code rendered the model while they were still empty (the "completely
 // black at the beginning" report).
 // r109: sweep EVERY texture-typed property (MToon shadeTexture / rimTexture /
@@ -173,7 +175,7 @@ const modelTexturesReady = (root: THREE.Object3D): boolean => {
   return ready;
 };
 
-// r109: a texture that ERRORED (network hiccup on iPhone) never decodes —
+// r109: a texture that ERRORED (network hiccup on iPhone) never decodes ??
 // without a fallback the old gate either never passed (watchdog then
 // revealed a black model at 25s) or passed with a broken map that renders
 // black. This swaps every still-empty texture for null (the material then
@@ -192,7 +194,7 @@ const neutralizeBrokenTextures = (root: THREE.Object3D): void => {
       for (const key of Object.keys(rec)) {
         const v = rec[key] as THREE.Texture | null;
         if (v && (v as unknown as { isTexture?: boolean }).isTexture && !v.image) {
-          rec[key] = null; // failed slot — fall back to the material's base color
+          rec[key] = null; // failed slot ??fall back to the material's base color
           touched = true;
         }
       }
@@ -202,7 +204,7 @@ const neutralizeBrokenTextures = (root: THREE.Object3D): void => {
       }
       const std = m as THREE.MeshStandardMaterial;
       if (std.color && !std.map) {
-        // no map and a near-black base color can never be right — lift it
+        // no map and a near-black base color can never be right ??lift it
         if (Math.max(std.color.r, std.color.g, std.color.b) < 0.08) {
           std.color.copy(FALLBACK_BASE);
           touched = true;
@@ -222,14 +224,14 @@ const neutralizeBrokenTextures = (root: THREE.Object3D): void => {
   });
 };
 
-/** stable per-character hash → motion seed: same character, same body language */
+/** stable per-character hash ??motion seed: same character, same body language */
 function seedFromKey(key: string): number {
   let h = 7;
   for (let i = 0; i < key.length; i++) h = (Math.imul(h, 31) + key.charCodeAt(i)) % 100000;
   return h;
 }
 
-/** Punch window. Impact, one rebound, then settle — long enough to read. */
+/** Punch window. Impact, one rebound, then settle ??long enough to read. */
 const POKE_MS = 1200;
 
 /** how much each poke-twist flavor turns the body during the reaction */
@@ -257,7 +259,7 @@ export default function CompanionCanvas({
   onPokeRef.current = onPoke;
   const onHandHoldRef = useRef(onHandHold);
   onHandHoldRef.current = onHandHold;
-  // Body swaps must not rebuild the WebGL scene — the head mesh stays.
+  // Body swaps must not rebuild the WebGL scene ??the head mesh stays.
   const wardrobeBodyRef = useRef(wardrobeBodyId);
   wardrobeBodyRef.current = wardrobeBodyId;
   const libraryOnlyRef = useRef(libraryOnly);
@@ -270,10 +272,10 @@ export default function CompanionCanvas({
     libraryOnlyRef.current = libraryOnly;
   }, [libraryOnly]);
 
-  // r84 (Master Simon): while she loads, the stage stays EMPTY — no giant
+  // r84 (Master Simon): while she loads, the stage stays EMPTY ??no giant
   // placeholder figure. r91: the loading indicator moved OUT of this canvas
   // and INTO the top-left name bar (StatusPlate) through the shared store in
-  // lib/load-progress — smaller, next to the status it reports, and backed
+  // lib/load-progress ??smaller, next to the status it reports, and backed
   // by a watchdog so it can never spin at 99% forever. null = ready.
 
   useEffect(() => {
@@ -282,10 +284,10 @@ export default function CompanionCanvas({
     setLoadProgress(0);
     // r91 (Master Simon): the indicator must never spin forever. A model
     // request can stream to ~99% and then hang (progress events but no
-    // success/error — a stalled connection); without a guard the old ring
+    // success/error ??a stalled connection); without a guard the old ring
     // sat at 99% eternally. After 25s the indicator retires and the asset
     // notice takes over. Cleared the moment she mounts (or on unmount).
-    // r101: the watchdog ALSO forces the reveal gate — whatever happened,
+    // r101: the watchdog ALSO forces the reveal gate ??whatever happened,
     // a stuck texture must never leave her invisible off stage.
     const loadWatchdog = setTimeout(() => {
       setLoadProgress(null);
@@ -302,25 +304,25 @@ export default function CompanionCanvas({
     }
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(host.clientWidth, host.clientHeight);
-    // r108 (Master Simon): pin the color pipeline — ACES filmic at exposure
+    // r108 (Master Simon): pin the color pipeline ??ACES filmic at exposure
     // 1.0 keeps highlights from clipping warm and leaves midtones neutral.
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.0;
     host.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    // transparent canvas — the page's themed gradient shows through (alpha:true)
+    // transparent canvas ??the page's themed gradient shows through (alpha:true)
     scene.background = null;
     // r2026-10-05.108 (Master Simon): ONE neutral daylight rig for every
     // backdrop. The r77 indoor branch keyed her with a warm cream lamp
     // ('#fff6ec') that, against the warm ember/neon backdrops (the only
-    // 'indoor' settings), read as a full orange cast — the "strange colors"
+    // 'indoor' settings), read as a full orange cast ??the "strange colors"
     // report. The indoor/outdoor switch is gone: cool sky over a
-    // desaturated ground bounce, one clean white sun key, one cool fill —
+    // desaturated ground bounce, one clean white sun key, one cool fill ??
     // nothing on the character picks up a color cast.
     // These are scene-level lights: ANY avatar added to the scene (initial
     // load or a character switch, which remounts this effect) is inside
-    // their range by construction — there is no per-model light to miss.
+    // their range by construction ??there is no per-model light to miss.
     scene.add(new THREE.HemisphereLight('#f2f7ff', '#8f8a80', 0.85));
     const sun = new THREE.DirectionalLight('#ffffff', 1.75);
     sun.position.set(2.2, 3.8, 2.0);
@@ -328,7 +330,7 @@ export default function CompanionCanvas({
     const bounce = new THREE.DirectionalLight('#e3eaf5', 0.3);
     bounce.position.set(-1.8, 0.6, -1.4);
     scene.add(bounce);
-    // r109: lighting floor — a whisper of flat ambient so that NO material
+    // r109: lighting floor ??a whisper of flat ambient so that NO material
     // state (a black toon shade, a failed texture slot) can ever render
     // pure black, whatever the toon ramp says.
     scene.add(new THREE.AmbientLight('#ffffff', 0.14));
@@ -384,7 +386,7 @@ export default function CompanionCanvas({
       fromTarget: THREE.Vector3;
     } | null = null;
 
-    // r84 (Master Simon): NO placeholder mesh while loading — the old accent
+    // r84 (Master Simon): NO placeholder mesh while loading ??the old accent
     // capsule read as "a huge ball in the middle". The stage stays empty and
     // the name-bar indicator reports real progress: model bytes (75%) +
     // motion clips delivered (25%). Recomputed on every loader progress
@@ -393,9 +395,9 @@ export default function CompanionCanvas({
     let clipDone = 0;
     let lastReported: number | 'prep' = -1;
     // r102: once an avatar is MOUNTED the remaining wait is the reveal gate
-    // (clip engine + texture decode + two lit frames) — none of it is
+    // (clip engine + texture decode + two lit frames) ??none of it is
     // byte-measurable, so counting a percentage from there would be fiction.
-    // The bar goes honestly INDETERMINATE ('prep' → "preparing…" on the
+    // The bar goes honestly INDETERMINATE ('prep' ??"preparing?? on the
     // plate) until she steps on stage, instead of creeping to 99 and
     // freezing there. A character switch remounts this effect, which resets
     // everything (setLoadProgress(0) runs at effect start).
@@ -412,7 +414,7 @@ export default function CompanionCanvas({
       }
     };
 
-    // r2026-10-04.69: stage props — one THREE.Group per catalog entry. A
+    // r2026-10-04.69: stage props ??one THREE.Group per catalog entry. A
     // prop fades in while its move is on stage and melts away after, never
     // touching the skeleton (props are set dressing, not puppetry).
     interface AnimPart {
@@ -484,7 +486,7 @@ export default function CompanionCanvas({
     };
     let mixer: THREE.AnimationMixer | null = null;
     let mixerActive = false;
-    // r101 reveal gate — the avatar mounts INVISIBLE and steps on stage only
+    // r101 reveal gate ??the avatar mounts INVISIBLE and steps on stage only
     // when textures are decoded AND the first pose/clip frame is applied AND
     // two fully-lit frames have been presented. forceReveal (the 25s load
     // watchdog) overrides so nothing can keep her invisible forever.
@@ -492,7 +494,7 @@ export default function CompanionCanvas({
     let revealPoseApplied = false;
     let revealLitFrames = 0;
     let forceReveal = false;
-    // r109: reveal-gate hardening state — mount timestamp (textures that
+    // r109: reveal-gate hardening state ??mount timestamp (textures that
     // never decode must not hold her hostage until the 25s watchdog),
     // frames since mount (NaN sweep window), the one-shot flag for the
     // texture-error fallback, and a once-only log guard for the sweep.
@@ -501,14 +503,14 @@ export default function CompanionCanvas({
     let textureFallbackApplied = false;
     let nanLogged = false;
     // per-character motion personality: Rin always fidgets the same way,
-    // Ren drifts through his own calm sequence — deterministic per character.
+    // Ren drifts through his own calm sequence ??deterministic per character.
     const poseSeed = seedKey ? seedFromKey(seedKey) : Date.now() % 100000;
     const gender = seedKey ? characterById(seedKey).gender : 'female';
     // r2026-10-03.04: each character drifts through a personality-curated
     // subset of the pose library instead of the full shared catalog.
     const poseSubset = posesByIds(poseIdsFor(seedKey ?? 'juno'));
     const poke = pokeStyleFor(seedKey ?? 'juno');
-    // r2026-10-03.28: per-character look — the shared open-license VRM gets a
+    // r2026-10-03.28: per-character look ??the shared open-license VRM gets a
     // gentle palette tint and an individual build (height/shoulders), so each
     // character reads as her/his own person in the 3D scene.
     const look = lookFor(seedKey ?? 'a01-shino');
@@ -517,14 +519,14 @@ export default function CompanionCanvas({
     const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
     // r2026-10-04.50: every character maps to a local anime VRM under
     // /models/cast (see ASSET_MANIFEST.md). Load strategy per candidate:
-    //   1. three-vrm plugin parse → VRM 1.0 avatar (VRMA idle clip eligible)
-    //   2. plain GLTF parse → generic avatar (VRM 0.x legacy rig; bones and
+    //   1. three-vrm plugin parse ??VRM 1.0 avatar (VRMA idle clip eligible)
+    //   2. plain GLTF parse ??generic avatar (VRM 0.x legacy rig; bones and
     //      morphs are driven through the humanBones table with automatic
     //      facing + arm calibration, so a legacy model never shows its back
     //      or a raised-arms rest pose)
     //   3. any failure walks the chain to the next candidate.
     // r2026-10-04.58: body motion comes from the ONLINE MOTION LIBRARY
-    // (open .vrma clips — real keyframed performances, streamed from the
+    // (open .vrma clips ??real keyframed performances, streamed from the
     // library with a local /models/anims mirror taking over once vendored).
     // Master Simon's rule: the skeleton is NEVER rotated by hand while a
     // library clip drives the body. The old procedural pose/move math now
@@ -546,31 +548,34 @@ export default function CompanionCanvas({
     const ST_HOST = 'https://raw.githubusercontent.com/test157t/VRM-Assets-Pack-For-Silly-Tavern/main/animation_nitral-fork';
 
     interface ClipSource { id: string; urls: string[] }
-    const IDLE_SOURCES: ClipSource[] = [
-      // Calm standing only. LookAround yaws the head ~45°, Relax pitches it
-      // down and swings the arms, and WeightShift is an optional remote with
-      // the same problem. Those stay on disk for one-shot reactions.
-      { id: 'IdleBreathCalm', urls: [`${ANIM_MIRROR}/IdleBreathCalm.vrma`] },
-      { id: 'StandardIdle', urls: [`${ANIM_MIRROR}/StandardIdle.vrma`] },
-    ];
-    // Side-rail A/B set. Loaded, but not in the default rotation.
-    const IDLE_PICKS: ClipSource[] = [
-      { id: 'IdleNeutral', urls: [`${ANIM_MIRROR}/IdleNeutral.vrma`] },
-      { id: 'IdleSassy', urls: [`${ANIM_MIRROR}/IdleSassy.vrma`] },
-      { id: 'IdleChinHand', urls: [`${ANIM_MIRROR}/IdleChinHand.vrma`] },
-      { id: 'IdleHug', urls: [`${ANIM_MIRROR}/IdleHug.vrma`] },
-      { id: 'LookAround', urls: [`${ANIM_MIRROR}/LookAround.vrma`] },
-      { id: 'Relax', urls: [`${ANIM_MIRROR}/Relax.vrma`] },
-    ];
+    // Idle # SoT: apps/web/lib/idle-library.ts (free-library Cxx map).
+    // Default rotation = enabled playable nums (localStorage amoji.idleEnabled.v1),
+    // falling back to #1 IdleBreathCalm + #2 StandardIdle. Every idle gets
+    // rebaseClipHips + pinPlantedClipTracks (no floating feet).
+    const libPlayable = playableIdles();
+    const enabledIds = new Set(listEnabledIdleClipIds());
+    let IDLE_SOURCES: ClipSource[] = libPlayable
+      .filter((e) => enabledIds.has(e.clipId))
+      .map((e) => ({ id: e.clipId, urls: [`${ANIM_MIRROR}/${e.clipId}.vrma`] }));
+    if (!IDLE_SOURCES.length) {
+      IDLE_SOURCES.push(
+        { id: 'IdleBreathCalm', urls: [`${ANIM_MIRROR}/IdleBreathCalm.vrma`] },
+        { id: 'StandardIdle', urls: [`${ANIM_MIRROR}/StandardIdle.vrma`] },
+      );
+    }
+    // All other playable library idles (side picks / Mon # tap).
+    const IDLE_PICKS: ClipSource[] = libPlayable
+      .filter((e) => !enabledIds.has(e.clipId))
+      .map((e) => ({ id: e.clipId, urls: [`${ANIM_MIRROR}/${e.clipId}.vrma`] }));
     // one-shot dialogue performances (library clips with a real ending)
-    // r96 (Master Simon): the move triggers get REAL performances too —
+    // r96 (Master Simon): the move triggers get REAL performances too ??
     // dance / sing / kungfu / piano / violin fire actual keyframed mocap
     // from the 3dchat Mixamo-class library (file list verified via the
     // GitHub API) instead of leaving the body in its idle.
     // r106: eat / dine join them. No literal eating clip exists in any
     // reachable free VRMA library (3dchat / desktop-waifu / MotionPack all
-    // fully listed), so eat takes smoking.vrma — repetitive pinched-finger
-    // hand-to-mouth, the closest real motion to steady bites — and dine
+    // fully listed), so eat takes smoking.vrma ??repetitive pinched-finger
+    // hand-to-mouth, the closest real motion to steady bites ??and dine
     // takes blowAKiss.vrma, one graceful hand raise to lips (a toast/sip).
     // Kinds still without a clip (taichi / jog / yoga / stretch) keep the
     // r95 rule: the skeleton stays in the library idle.
@@ -583,11 +588,11 @@ export default function CompanionCanvas({
       { id: 'Punch', urls: [`${CHAT_HOST}/punch.vrma`, `${ANIM_MIRROR}/Punch.vrma`] },
       { id: 'Piano', urls: [`${CHAT_HOST}/pianoPlaying.vrma`, `${ANIM_MIRROR}/Piano.vrma`] },
       { id: 'Violin', urls: [`${CHAT_HOST}/playingTheViolin.vrma`, `${ANIM_MIRROR}/Violin.vrma`] },
-      // r106: eating performances — hand-to-mouth proxies, see note above
+      // r106: eating performances ??hand-to-mouth proxies, see note above
       { id: 'Eat', urls: [`${CHAT_HOST}/smoking.vrma`, `${ANIM_MIRROR}/Eat.vrma`] },
       { id: 'Dine', urls: [`${CHAT_HOST}/blowAKiss.vrma`, `${ANIM_MIRROR}/Dine.vrma`] },
       // r110 (Master Simon): emotion performances from the recovered handoff
-      // library — cheer-ups and reactions get REAL keyframed body language
+      // library ??cheer-ups and reactions get REAL keyframed body language
       // (her "you did it!" is a literal cheer, not just a smile blendshape).
       { id: 'Cheer', urls: [`${ANIM_MIRROR}/Cheer.vrma`] },
       { id: 'Clapping', urls: [`${ANIM_MIRROR}/Clapping.vrma`] },
@@ -597,10 +602,10 @@ export default function CompanionCanvas({
     ];
     const TOTAL_CLIPS = IDLE_SOURCES.length + IDLE_PICKS.length + PERF_SOURCES.length;
     const clips = new Map<string, THREE.AnimationClip>();
-    // r103: node names of every bone ANY loaded clip animates — scanned from
+    // r103: node names of every bone ANY loaded clip animates ??scanned from
     // each clip's track names as it lands. The avatar hands those bones to
     // the mixer untouched; relaxed hands apply only to fingers no clip keys.
-    // The SAME live Set is shared with the avatar (filled after mount —
+    // The SAME live Set is shared with the avatar (filled after mount ??
     // clips stream in asynchronously), so no re-handshake is ever needed.
     const clipAnimatedBones = new Set<string>();
     let idleAction: THREE.AnimationAction | null = null;
@@ -611,10 +616,10 @@ export default function CompanionCanvas({
     let thinkMiss = false;
     let idleIdx = 0;
     // r93: when the current idle hands over to the next one (RAF clock, ms).
-    // The handover is a crossfade between two LIVE loops — never a freeze.
+    // The handover is a crossfade between two LIVE loops ??never a freeze.
     let idleHoldUntil = Infinity;
     // dialogue performances that have a matching library clip; move kinds
-    // without one keep the library idle (r95/r96) — the skeleton is never
+    // without one keep the library idle (r95/r96) ??the skeleton is never
     // rotated by formula.
     const MOVE_CLIP: Partial<Record<MoveKind, string>> = {
       jump: 'Jump',
@@ -633,15 +638,15 @@ export default function CompanionCanvas({
       blush: 'Blush',
     };
     // r2026-10-04.59 (Master Simon): EVERY clip change is a blend, never a
-    // jump — pose A at 10° glides into pose B at 90° over `fade` seconds.
+    // jump ??pose A at 10簞 glides into pose B at 90簞 over `fade` seconds.
     // The mixer crossfades bone quaternions, so intermediate frames are real
     // in-between poses, not snaps.
     const FADE = {
-      entry: 1.15,     // procedural pose → first library clip
+      entry: 1.15,     // procedural pose ??first library clip
       idleRotate: 1.65, // longer glide so idle loops don't snap
-      toPerf: 0.6,     // idle → one-shot performance
-      perfCut: 0.35,   // performance → interrupted by another performance
-      perfEnd: 0.85,   // finished performance → back to idle
+      toPerf: 0.6,     // idle ??one-shot performance
+      perfCut: 0.35,   // performance ??interrupted by another performance
+      perfEnd: 0.85,   // finished performance ??back to idle
     };
 
     const playClipAsIdle = (clip: THREE.AnimationClip, id: string, fade: number) => {
@@ -649,7 +654,7 @@ export default function CompanionCanvas({
       beginBoneBlend(0.7);
       const action = mixer.clipAction(clip);
       action.timeScale = personalityMotion(seedKey ?? '', gender).timeScale;
-      // r93: idles LOOP — the old LoopOnce + clampWhenFinished parked her on
+      // r93: idles LOOP ??the old LoopOnce + clampWhenFinished parked her on
       // the clip's end frame (a straight stand) while the next clip faded
       // in: the "zombie pose between idle movements". A looping body is
       // never parked anywhere.
@@ -668,7 +673,7 @@ export default function CompanionCanvas({
       }
       idleAction = action;
       idleClipId = id;
-      // hold this idle for 1–2 of its own beats, then hand over mid-motion
+      // hold this idle for 1?? of its own beats, then hand over mid-motion
       const holdMs = Math.min(14000, Math.max(5000, clip.duration * 1000 * (1 + Math.random())));
       idleHoldUntil = performance.now() + holdMs;
     };
@@ -701,7 +706,7 @@ export default function CompanionCanvas({
       action.clampWhenFinished = true;
       action.reset();
       if (perfAction && perfAction !== action) {
-        // r59: glide out of the previous performance — a hard stop() here
+        // r59: glide out of the previous performance ??a hard stop() here
         // was the visible "snap" from pose A to pose B
         perfAction.crossFadeTo(action, FADE.perfCut, false);
       } else if (idleAction && idleAction !== action) {
@@ -719,16 +724,16 @@ export default function CompanionCanvas({
         if (e.action === perfAction) {
           // A mini-game pose holds its last frame. Idle stays paused until exit.
           if (getMiniGameView()) return;
-          // a one-shot performance ended → glide back into the idle playlist
+          // a one-shot performance ended ??glide back into the idle playlist
           perfAction = null;
           perfClipId = null;
           nextIdle(FADE.perfEnd);
         }
-        // r93: idles never "finish" — they loop until the swap timer hands
+        // r93: idles never "finish" ??they loop until the swap timer hands
         // over mid-motion, so there is no clamped end-frame freeze to
         // recover from and no neutral stand between idle movements
       });
-      // per-character deterministic idle playlist — r93: the WHOLE idle pool
+      // per-character deterministic idle playlist ??r93: the WHOLE idle pool
       // (16 library idles), each character rotated into a personal order
       idleOrder = orderIdleClips(
         IDLE_SOURCES.map((s) => s.id).filter((id) => clips.has(id)),
@@ -739,13 +744,13 @@ export default function CompanionCanvas({
       idleIdx = 0;
       mixerActive = true;
       if (avatar) avatar.clipDrivesBody = true;
-      // r59: blend IN from the current (procedural) pose over ~a second —
+      // r59: blend IN from the current (procedural) pose over ~a second ??
       // the very first clip no longer pops in from nowhere
       const pinned = idleClipRef.current;
       if (!(pinned && playNamedIdle(pinned, FADE.entry))) nextIdle(FADE.entry);
       if (pinned) idleHoldUntil = Infinity;
       // r124 / r2026-10-12: after the entry crossfade settles, re-measure
-      // facing (yaw) and upright (hips→head pitch/roll) on the inner model.
+      // facing (yaw) and upright (hips?ead pitch/roll) on the inner model.
       {
         const av = avatar;
         if (av) {
@@ -761,18 +766,18 @@ export default function CompanionCanvas({
       const animLoader = new GLTFLoader();
       animLoader.register((parser) => new VRMAnimationLoaderPlugin(parser));
       // r2026-10-04.79 (Master Simon): "she starts facing front, then later
-      // turns her back to me" — the library clips carry ABSOLUTE hips
-      // rotations authored on a rig whose rest faces 180° off ours. The
+      // turns her back to me" ??the library clips carry ABSOLUTE hips
+      // rotations authored on a rig whose rest faces 180簞 off ours. The
       // mixer's first clip overwrites the (calibrated) rest hips pose with
       // the source convention, and the whole body turns around inside the
       // calibrated wrapper the moment a clip takes over. Previous agents who
       // mixed load-time calibration with absolute library clips inherited
-      // the same bug. Fix: rebase every clip's hips tracks onto OUR rest —
-      //   rotation: key'(t) = restQ · key0⁻¹ · key(t)
-      //   position: key'(t) = key(t) − key0 + restP
+      // the same bug. Fix: rebase every clip's hips tracks onto OUR rest ??
+      //   rotation: key'(t) = restQ 繚 key0?鄞?繚 key(t)
+      //   position: key'(t) = key(t) ??key0 + restP
       // so each clip's neutral frame lands exactly on our rest pose while
       // all of its real motion (bows, sways, turns, jumps) is preserved.
-      // This MUST be captured before any action plays — the bones are still
+      // This MUST be captured before any action plays ??the bones are still
       // pristine at this point (mountAvatar only tints + wraps).
       const hipsNode = vrm.humanoid?.getNormalizedBoneNode('hips') ?? null;
       const hipsRestQ = hipsNode ? hipsNode.quaternion.clone() : null;
@@ -787,17 +792,17 @@ export default function CompanionCanvas({
           return null;
         }
       });
-      // r94 (Master Simon): "she keeps floating up and down — keep her feet
+      // r94 (Master Simon): "she keeps floating up and down ??keep her feet
       // on the ground". Many library idles carry breathing/bounce keys on
       // the hips Y that read as floating. Idle loops get their hips HEIGHT
-      // pinned to our rest foot-planted height (X/Z sway — weight shifts —
+      // pinned to our rest foot-planted height (X/Z sway ??weight shifts ??
       // is preserved).
       // r98 (Master Simon): the SAME protection now covers the performance
       // clips. Talking replies trigger MOVE_CLIP performances (sing / dance /
       // piano / violin / punch / jump / bow / hello) the moment speech
       // starts, and those clips carry baked root-Y authored on rigs of
       // a different scale and pose (seated / bent-knee mocap). Handed to the
-      // mixer verbatim, that hips-Y sank her far below the r94-pinned idle —
+      // mixer verbatim, that hips-Y sank her far below the r94-pinned idle ??
       // she visibly "fell" when talking began (equivalently: the camera
       // seemed to rise), then popped back up when the idle returned. Now
       // EVERY clip's hips-Y is normalized onto OUR rest height: the track's
@@ -806,9 +811,9 @@ export default function CompanionCanvas({
       // to a human hip-travel span, and no key may sink below a knee-deep
       // floor. X/Z sway and all genuine motion (hops, dips, bows) survive.
       const IDLE_IDS = new Set([...IDLE_SOURCES, ...IDLE_PICKS].map((s) => s.id));
-      const HIP_TRAVEL_MAX = 0.8; // meters — no human hips-Y span exceeds this
+      const HIP_TRAVEL_MAX = 0.8; // meters ??no human hips-Y span exceeds this
       const FLOOR_FRAC = 0.55;    // never sink below 55% of rest hips height
-      // r102: same idea on the horizontal plane — a clip authored on a rig
+      // r102: same idea on the horizontal plane ??a clip authored on a rig
       // at another scale can walk the hips METERS away in X/Z (she slid
       // right off the stage). Sway and steps survive; migration does not.
       const HORIZ_TRAVEL_MAX = 1.0; // meters of total hips X/Z drift from rest
@@ -817,7 +822,7 @@ export default function CompanionCanvas({
         const floorY = hipsRestP.y * FLOOR_FRAC;
         for (const track of clip.tracks) {
           // r113: match the hips track by REDUCING the binding path to its
-          // bare node name — the library emits `J_Bip_C_Hips.position`
+          // bare node name ??the library emits `J_Bip_C_Hips.position`
           // (no leading dot), while the old dot-wrapped tag `.Name.` only
           // matched the `.Name.position` form and silently skipped every
           // clip, letting foreign-rig baked hips-Y drop her at first talk.
@@ -843,7 +848,7 @@ export default function CompanionCanvas({
               q.set(v[i]!, v[i + 1]!, v[i + 2]!, v[i + 3]!).premultiply(fix);
               if (lockFeet) {
                 // r2026-10-12: library idles often bake a constant hips pitch/roll
-                // on foreign rigs — after landing frame 0 on our rest, keep only
+                // on foreign rigs ??after landing frame 0 on our rest, keep only
                 // yaw so the torso stays world-up (facing yaw is fine).
                 q.copy(hipsRestQ.clone().invert().multiply(q));
                 eDelta.setFromQuaternion(q, 'YXZ');
@@ -904,7 +909,7 @@ export default function CompanionCanvas({
       };
       let pending = TOTAL_CLIPS;
       // r97: the mixer starts when the FIRST clip lands, not when all 26
-      // resolve — one hung URL used to mean no mixer ever = the T-pose stand
+      // resolve ??one hung URL used to mean no mixer ever = the T-pose stand
       let engineStarted = false;
       const done = () => {
         // r84: every resolved clip (success or exhausted retries) nudges the
@@ -918,22 +923,22 @@ export default function CompanionCanvas({
         }
         pending -= 1;
         // r103 (one-time evidence): what does the library ACTUALLY animate?
-        // Logged when the last clip settles — the relaxed-hand guard keys on
+        // Logged when the last clip settles ??the relaxed-hand guard keys on
         // this (standard_idle.vrma maps zero finger bones; weightShift.vrma
-        // only thumb/index — so the calibrated curl almost always applies).
+        // only thumb/index ??so the calibrated curl almost always applies).
         if (pending === 0 && avatar) {
           const fingers = [...clipAnimatedBones].filter((n) => avatar!.fingerBones.has(n));
           console.info(`[amoji] r103: ${clips.size} clips, ${clipAnimatedBones.size} animated bones, clip-driven fingers: ${fingers.length ? fingers.join(', ') : 'none'}`);
         }
       };
       // try each candidate URL in order: verified-live library first, the
-      // local mirror as fallback (r97 — the dead hosts were cut, see above)
+      // local mirror as fallback (r97 ??the dead hosts were cut, see above)
       const loadOne = (src: ClipSource, idx = 0) => {
         if (idx >= src.urls.length) {
           done();
           return;
         }
-        // r97: per-attempt watchdog — without it a stalled stream (bytes
+        // r97: per-attempt watchdog ??without it a stalled stream (bytes
         // flowing, no load/error event) hung this chain forever and, with
         // the old all-clips gate, kept her in the T-pose. 12s per attempt,
         // then the chain falls through to the next URL. `settled` guards
@@ -953,7 +958,7 @@ export default function CompanionCanvas({
             const anims = (animGltf as unknown as { userData: { vrmAnimations: VRMAnimation[] } }).userData.vrmAnimations;
             if (anims?.length && avatar) {
               const clip = createVRMAnimationClip(anims[0]!, vrm);
-              // expression tracks stay ours — speech/visemes own the face
+              // expression tracks stay ours ??speech/visemes own the face
               clip.tracks = clip.tracks.filter((t) => !t.name.includes('expression'));
               // r79: land the clip's neutral frame on our calibrated rest;
               // r94: idle loops pin the hips height (no floating);
@@ -963,8 +968,8 @@ export default function CompanionCanvas({
               if (clip.tracks.length) clips.set(src.id, clip);
               // r103: record which bones this clip drives, so the avatar can
               // leave them to the mixer. Track names arrive as PropertyBinding
-              // paths — `Bone.quaternion`, `.Bone.quaternion`, or
-              // `.bones[Bone].quaternion` — all reduce to the bare node name.
+              // paths ??`Bone.quaternion`, `.Bone.quaternion`, or
+              // `.bones[Bone].quaternion` ??all reduce to the bare node name.
               for (const t of clip.tracks) {
                 if (!t.name.endsWith('.quaternion')) continue;
                 const path = t.name.slice(0, -'.quaternion'.length);
@@ -974,7 +979,7 @@ export default function CompanionCanvas({
                 clipAnimatedBones.add(bone);
               }
             }
-          } catch { /* this clip is unusable on this rig — skip it */ }
+          } catch { /* this clip is unusable on this rig ??skip it */ }
           done();
         }, undefined, () => {
           if (settled) return;
@@ -991,7 +996,7 @@ export default function CompanionCanvas({
       scene.add(a.root);
       a.root.position.set(0, 0, 0);
       // r101 (Master Simon): she mounts INVISIBLE and steps on stage only
-      // through the reveal gate in the render loop — textures decoded AND
+      // through the reveal gate in the render loop ??textures decoded AND
       // the first pose/clip frame applied AND two fully-lit frames
       // presented. No black (late-decoding MToon atlas), no raw T-pose, no
       // lying-flat first frame is ever shown.
@@ -1004,13 +1009,13 @@ export default function CompanionCanvas({
       mountFrame = 0;
       textureFallbackApplied = false;
       nanLogged = false;
-      // r102: from this moment the honest progress state is 'prep' — the
+      // r102: from this moment the honest progress state is 'prep' ??the
       // reveal-gate wait is not byte-measurable (see reportProgress above)
       mounted = true;
       // warm every shader program + upload whatever has decoded while she
       // is still off stage, so her first visible frame is fully lit
       renderer.compile(scene, camera);
-      // r84/r91 — progress reporting continues, but the spinner now retires
+      // r84/r91 ??progress reporting continues, but the spinner now retires
       // at the REVEAL (she counts as loaded only when she is actually on
       // stage, textured, posed and lit), not at glTF parse time
       modelPct = 100;
@@ -1028,7 +1033,7 @@ export default function CompanionCanvas({
           const mat = m as THREE.MeshStandardMaterial;
           if (isEyeMaterial(mat.name || '', mesh.name || '')) continue;
           if (mat.color) mat.color.multiply(tint);
-          // r109: MToon shadeColor floor — a near-black shade color plus
+          // r109: MToon shadeColor floor ??a near-black shade color plus
           // toon lighting can render near-black at some angles (the "all
           // black" reports). Lift it the same way neutralizeBrokenTextures
           // does.
@@ -1051,7 +1056,7 @@ export default function CompanionCanvas({
       plain.load(url, (gltf) => {
         if (cancelled || token !== loadToken) return;
         try {
-          // r103: hand the shared clip-animated-bone set to the avatar — the
+          // r103: hand the shared clip-animated-bone set to the avatar ??the
           // relaxed-hand guard reads it per frame (clips never load on this
           // path, so the set stays empty and every finger gets the curl)
           mountAvatar(createGenericAvatar(gltf, clipAnimatedBones));
@@ -1145,7 +1150,7 @@ export default function CompanionCanvas({
     const loadModel = (index: number, token: number) => {
       if (cancelled || token !== loadToken) return;
       if (index >= activeCandidates.length) {
-        // r84 — nothing left to try: stop waiting, show the notice
+        // r84 ??nothing left to try: stop waiting, show the notice
         loadingModel = '';
         setLoadProgress(null);
         clearTimeout(loadWatchdog);
@@ -1163,7 +1168,7 @@ export default function CompanionCanvas({
           loadPlain(index, url, token);
           return;
         }
-        // r103: the avatar keeps a LIVE reference to clipAnimatedBones — the
+        // r103: the avatar keeps a LIVE reference to clipAnimatedBones ??the
         // clips stream in after the mount and fill the same set
         clearAvatar();
         mountAvatar(createV1Avatar(v, clipAnimatedBones));
@@ -1191,7 +1196,7 @@ export default function CompanionCanvas({
           if (wardrobeBodyRef.current !== bodyId) return;
           replaceBodyMeshes(modularAsm, gltf);
         }).catch(() => {
-          // Split body missing — the outfit's full VRM is the visible mesh.
+          // Split body missing ??the outfit's full VRM is the visible mesh.
           if (cancelled || req !== swapReq) return;
           modularAsm = null;
           publishModularView('fallback');
@@ -1246,12 +1251,12 @@ export default function CompanionCanvas({
 
     bootAvatar();
 
-    // ---- pointer gestures ────────────────────────────────────────────────
+    // ---- pointer gestures ????????????????????????????????????????????????
     // one finger drag   = rotate around her
-    // two finger drag   = move (pan) the camera · pinch = zoom
-    // double tap empty  = reset camera · tap / double tap her = poke
-    // r115: the poke now knows WHERE it landed (nearest skeleton bone →
-    // head/body/armL/armR/belly reaction), and either HAND is grabbable —
+    // two finger drag   = move (pan) the camera 繚 pinch = zoom
+    // double tap empty  = reset camera 繚 tap / double tap her = poke
+    // r115: the poke now knows WHERE it landed (nearest skeleton bone ??
+    // head/body/armL/armR/belly reaction), and either HAND is grabbable ??
     // land a pointer within GRAB_PX of a projected hand bone and you can
     // pull that arm around; it springs home on release.
     const raycaster = new THREE.Raycaster();
@@ -1264,12 +1269,12 @@ export default function CompanionCanvas({
     // Push direction comes from the hit vs the character's facing.
     const pokeFallDir = new THREE.Vector3(0, 0, -1);
     // r2026-10-04.58: which library performance the move trigger already
-    // fired for (rising-edge firing — one clip start per triggerMove)
+    // fired for (rising-edge firing ??one clip start per triggerMove)
     let mvHandled: MoveKind | null = null;
     const pointers = new Map<number, { x: number; y: number; sx: number; sy: number; t: number; moved: number }>();
     let pinchDist = 0;
     let lastMid: { x: number; y: number } | null = null;
-    // r115 hand-drag state — released<0 means still held
+    // r115 hand-drag state ??released<0 means still held
     let handDrag: {
       side: 'left' | 'right'; pointerId: number;
       target: THREE.Vector3; depth: number; infl: number; released: number;
@@ -1374,7 +1379,7 @@ export default function CompanionCanvas({
       p.y = e.clientY;
       p.moved += Math.abs(dx) + Math.abs(dy);
       // r115: a held hand follows the pointer on the camera-facing plane at
-      // the grab depth — the camera does NOT rotate while a hand is held.
+      // the grab depth ??the camera does NOT rotate while a hand is held.
       if (handDrag && e.pointerId === handDrag.pointerId && handDrag.released < 0) {
         const rect = host.getBoundingClientRect();
         sV3.set(
@@ -1601,15 +1606,15 @@ export default function CompanionCanvas({
       // / kungfu / taichi / piano / jog), stamped on the same clock as `now`.
       const mv = activeMove(now);
       // r95 (Master Simon): NO hand-composed skeleton choreography. The old
-      // moveDeltas × moveEnvelope "semantic additives" made eating / dance /
-      // kungfu twist the spine past human limits (upper body spinning 360°).
+      // moveDeltas ? moveEnvelope "semantic additives" made eating / dance /
+      // kungfu twist the spine past human limits (upper body spinning 360簞).
       // New rule: a move either has a REAL clip in the online movement
-      // library (Jump / Bow / Hello — fired via MOVE_CLIP below) or the body
+      // library (Jump / Bow / Hello ??fired via MOVE_CLIP below) or the body
       // simply stays in its library idle. The skeleton is never rotated by
-      // formula. Stage props (piano, mic…) still ride the move clock.
+      // formula. Stage props (piano, mic?? still ride the move clock.
       if (avatar) {
         // Poke and laugh stay on the upper body. The root never translates,
-        // scales, or tips — that used to slide and lift both feet.
+        // scales, or tips ??that used to slide and lift both feet.
         const pokeAge = now - pokeAt;
         const boost = pokeAge < POKE_MS ? 1 - pokeAge / POKE_MS : 0;
         const laughAge = now - lastLaughAt();
@@ -1656,9 +1661,9 @@ export default function CompanionCanvas({
         avatar.root.position.set(0, 0, 0);
         avatar.root.scale.set(BASE_SX, BASE_SY, BASE_SX);
         avatar.root.rotation.set(0, 0, 0);
-        // r102: hard on-screen clamp — whatever a clip or reaction wrote
+        // r102: hard on-screen clamp ??whatever a clip or reaction wrote
         // into the root this frame, the avatar can never leave the visible
-        // stage. The camera target is already clamped (y 0.4–1.7 in
+        // stage. The camera target is already clamped (y 0.4??.7 in
         // applyCamera); this box is the matching root-side guarantee.
         avatar.root.position.x = clamp(avatar.root.position.x, -0.6, 0.6);
         avatar.root.position.y = clamp(avatar.root.position.y, -0.35, 0.5);
@@ -1753,7 +1758,7 @@ export default function CompanionCanvas({
         } else if (!mv) {
           mvHandled = null;
         }
-        // r93: idle handover — when this idle's hold expires and no one-shot
+        // r93: idle handover ??when this idle's hold expires and no one-shot
         // performance is on stage, glide into the next idle mid-motion. The
         // body is always inside a live loop: no straight stand between moves.
         if (mixerActive && !perfAction && !gameView) {
@@ -1773,7 +1778,7 @@ export default function CompanionCanvas({
           }
         }
         // r2026-10-04.58: while a library clip drives the body, the skeleton
-        // belongs to the mixer — so applyPose there is limited to its designed
+        // belongs to the mixer ??so applyPose there is limited to its designed
         // whisper + additives. r83: it MUST still be called in clip mode,
         // because the poke recoil and head life arrive through its additive
         // channels (spine/chest pitch, arm flinch), which compose on top of
@@ -1786,8 +1791,8 @@ export default function CompanionCanvas({
           avatar.applyPose(poseTargets);
         }
         // r103: relaxed fingers + shoulder ROM run AFTER the mixer and
-        // applyPose wrote the skeleton and BEFORE the spring bones react —
-        // both are idempotent absolute writes (base·delta / minimal-rotation
+        // applyPose wrote the skeleton and BEFORE the spring bones react ??
+        // both are idempotent absolute writes (base繚delta / minimal-rotation
         // fix), and both skip whatever a clip actively animates, so they
         // compose cleanly with every driving mode (clip, procedural, recoil).
         const calmIdle = !perfAction && boost === 0 && !gameView && !handDrag
@@ -1799,7 +1804,7 @@ export default function CompanionCanvas({
         // punch, a performance, a mini-game, or a hand grab.
         if (!perfAction && boost === 0 && !gameView && !handDrag) avatar.easeIdleHang();
 
-        // r115: hand-drag override — after everything else wrote the
+        // r115: hand-drag override ??after everything else wrote the
         // skeleton, pull the grabbed arm's two bones toward the pointer.
         // Influence eases in on grab and glides out over ~0.4s after release
         // (the spring home), then the drag state clears entirely.
@@ -1820,7 +1825,7 @@ export default function CompanionCanvas({
             // two-bone reach: swing the upper arm so the elbow heads for the
             // target, then the forearm so the hand closes the gap. Each
             // correction is a world-space delta re-expressed in the bone's
-            // local frame (pW⁻¹·Δ·pW) and slerped by the influence — partial
+            // local frame (pW?鄞嗽煎搆W) and slerped by the influence ??partial
             // while easing in, full while held, fading on the spring home.
             const tgt = handDrag.target;
             const k = handDrag.infl * 0.8;
@@ -1833,9 +1838,9 @@ export default function CompanionCanvas({
               sQ2.identity().slerp(sQ1, k);        // scaled by influence
               if (bone.parent) {
                 bone.parent.getWorldQuaternion(sQ3);   // pW
-                sQ1.copy(sQ3).invert()                  // pW⁻¹
-                  .multiply(sQ2)                          // ·Δ
-                  .multiply(sQ3);                         // ·pW
+                sQ1.copy(sQ3).invert()                  // pW?鄞?
+                  .multiply(sQ2)                          // 繚?
+                  .multiply(sQ3);                         // 繚pW
                 bone.quaternion.premultiply(sQ1);
               }
             };
@@ -1884,7 +1889,7 @@ export default function CompanionCanvas({
         // holds its first pose/clip frame. A VRM 1.0 avatar must additionally
         // wait for the clip engine (mixerActive) so a raw T-pose never shows;
         // generic (VRM 0.x) avatars are pose-driven from frame one. Textures
-        // must be decoded — but a texture that ERRORED never decodes, so
+        // must be decoded ??but a texture that ERRORED never decodes, so
         // after 4s the one-shot fallback neutralizes the broken slots (null
         // map + lifted base color + floored shade color) and the gate
         // proceeds; the watchdog's forceReveal applies the same fallback and
@@ -1922,7 +1927,7 @@ export default function CompanionCanvas({
         }
       }
 
-      // r2026-10-04.69: stage props ride the same move clock — pop in when
+      // r2026-10-04.69: stage props ride the same move clock ??pop in when
       // the performance starts, melt away after it ends, micro-animated all
       // the way through. Scale is smoothed so a retriggered move doesn't pop.
       for (const [propId, pg] of propGroups) {
@@ -2029,8 +2034,9 @@ export default function CompanionCanvas({
     showLibraryRef.current();
   }, [libraryOnly, seedKey, wardrobeHeadId]);
 
-  // r91 (Master Simon): no overlay here at all — the empty stage IS the
+  // r91 (Master Simon): no overlay here at all ??the empty stage IS the
   // loading state, and the top-left name bar (StatusPlate) carries a mini
   // spinner + the real percentage through lib/load-progress.
   return <div ref={hostRef} className="absolute inset-0 touch-none" aria-label="companion" />;
 }
+

@@ -1,24 +1,32 @@
-// Playable standing idles already on disk. Labels match the gallery
-// sections: A = in-app clips, B = ready VRMA. Convert-only C clips have
-// no VRMA yet, so they are not buttons.
+﻿// Playable idle buttons for chat rails. Labels are IDLE_LIBRARY # (Mon: "use #N").
+// Convert-only free-library rows stay in idle-library.ts but are not buttons.
+
+import { IDLE_LIBRARY, type IdleLibraryEntry } from './idle-library';
 
 export interface IdleClipOption {
-  /** Tiny button text, e.g. a01. */
+  /** Button text: the library # as a string. */
   label: string;
   /** Clip id CompanionCanvas can play. */
   id: string;
+  num: number;
+  cId: string | null;
+  name: string;
 }
 
-export const IDLE_CLIP_OPTIONS: readonly IdleClipOption[] = [
-  { label: 'a01', id: 'IdleNeutral' },
-  { label: 'a02', id: 'IdleSassy' },
-  { label: 'a03', id: 'IdleChinHand' },
-  { label: 'a04', id: 'IdleHug' },
-  { label: 'b01', id: 'IdleBreathCalm' },
-  { label: 'b02', id: 'StandardIdle' },
-  { label: 'b03', id: 'LookAround' },
-  { label: 'b04', id: 'Relax' },
-];
+function toOption(e: IdleLibraryEntry): IdleClipOption {
+  return {
+    label: String(e.num),
+    id: e.clipId,
+    num: e.num,
+    cId: e.cId,
+    name: e.name,
+  };
+}
+
+/** Every playable library row in # order (aliases like C01/C42 share a clipId). */
+export const IDLE_CLIP_OPTIONS: readonly IdleClipOption[] = IDLE_LIBRARY
+  .filter((e) => e.playable && e.vrmaUrl)
+  .map(toOption);
 
 export function idleClipByLabel(label: string): IdleClipOption | undefined {
   return IDLE_CLIP_OPTIONS.find((clip) => clip.label === label);
