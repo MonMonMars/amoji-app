@@ -17,7 +17,7 @@ export default function Login() {
 
   const go = () => {
     saveProfile({ name });
-    router.push('/select');
+    router.push('/mode');
   };
 
   const lang = prefs.lang;
