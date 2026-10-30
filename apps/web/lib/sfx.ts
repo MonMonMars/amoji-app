@@ -21,6 +21,7 @@
 import type { MoveKind } from './moves';
 import { createDefaultAudioContext } from './audio-output';
 import { DEFAULT_VOLUME, isVolumeStep, volumeLinear } from './audio-levels';
+import { isMasterMuted } from './master-mute';
 
 // ---------------------------------------------------------------------------
 // pure data — node-testable
@@ -93,6 +94,7 @@ function noise(c: AudioContext): AudioBuffer {
 
 export function sfxEnabled(): boolean {
   if (typeof window === 'undefined') return false;
+  if (isMasterMuted()) return false;
   try { return window.localStorage.getItem('amoji.sfx') !== 'off'; } catch { return true; }
 }
 
