@@ -80,6 +80,7 @@ import { getPlaybackVolume } from './playback-volume';
 import type { Lang } from './prefs';
 import { characterVoiceGender } from './voice-gender';
 import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
+import { isMasterMuted } from './master-mute';
 import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripVoicedGlyphs } from './speak-text';
 import { analyzeText } from '@amoji/emotion-core';
 import { applyLlmHints } from './companion';
@@ -1170,6 +1171,11 @@ const NEURAL_KEY = 'amoji.neural.v1';
 export function voiceEnabled(): boolean {
   try { return localStorage.getItem(MUTE_KEY) !== 'off'; } catch { return true; }
 }
+
+/** Voice replies on AND master mute off — use at speak choke points. */
+export function voiceOutputAllowed(): boolean {
+  return voiceEnabled() && !isMasterMuted();
+}
 export function setVoiceEnabled(on: boolean): void {
   try { localStorage.setItem(MUTE_KEY, on ? 'on' : 'off'); } catch { /* ignore */ }
   if (!on) stopSpeaking();
@@ -1301,7 +1307,7 @@ export function stopSpeaking(): void {
  * face/orb already wear the mood via applyLlmHints in the caller).
  */
 export function speakThinkingFiller(characterId: string, lang: Lang, mood?: string): void {
-  if (!voiceEnabled()) return;
+  if (!voiceOutputAllowed()) return;
   const filler = pickThinkingFiller(lang, mood);
   notifySpeaking(filler);
   speak(filler, characterId, lang, { confusion: 0.45, neutral: 0.3 });
@@ -1328,7 +1334,7 @@ export function speak(
   // Companion lines wait their turn. stopSpeaking() is the only cut, and
   // only the user's mic or a user turn calls it.
   const cleaned = cleanForSpeech(text);
-  if (!cleaned || !voiceEnabled()) return;
+  if (!cleaned || !voiceOutputAllowed()) return;
   lineQueue.enqueue({
     kind: 'speak',
     text: cleaned,
@@ -1363,7 +1369,7 @@ function performSpeak(
   // rewrite dashes. Chat bubbles stay on cleanForDisplay — do not write this
   // string back into history.
   text = cleanForSpeech(text);
-  if (!text || !voiceEnabled()) { settle(); return; }
+  if (!text || !voiceOutputAllowed()) { settle(); return; }
   // r111: remember the line for gesture-gate replay
   const attemptAt = Date.now();
   lastSpeak = { text, characterId, lang, emotionHints, leadOverride, intensity, at: attemptAt };
@@ -1576,7 +1582,7 @@ function performClip(job: SpeechJob): Promise<void> {
     stopThinkingSound();
     unlockAudio();
     const file = job.clipFile;
-    if (!file || !voiceEnabled()) { resolve(); return; }
+    if (!file || !voiceOutputAllowed()) { resolve(); return; }
     void playVoiceClip(file, job.text, () => markVoiceStarted()).then(() => resolve()).catch((err: unknown) => {
       if (lineQueue.epochNow() !== epoch || (err as Error | undefined)?.message === 'canceled' || job.clipOnly) {
         resolve();
@@ -1593,7 +1599,7 @@ function performClip(job: SpeechJob): Promise<void> {
  * The pin is saved by the caller so later chat lines use the same id.
  */
 export function playVoiceGreeting(characterId: string, lang: Lang, voiceId: string): void {
-  if (!voiceEnabled() || !voiceId) return;
+  if (!voiceOutputAllowed() || !voiceId) return;
   const kind = nextGreetingKind();
   unlockAudio();
   lineQueue.enqueue({
@@ -1637,7 +1643,7 @@ export function previewEmotionClip(lang: Lang, gender: 'female' | 'male', kind: 
 }
 
 export function playSelectGreeting(characterId: string, lang: Lang, gender: 'female' | 'male'): void {
-  if (!voiceEnabled()) return;
+  if (!voiceOutputAllowed()) return;
   const kind = nextGreetingKind();
   unlockAudio();
   lineQueue.enqueue({
@@ -1660,7 +1666,7 @@ export function playSelectGreeting(characterId: string, lang: Lang, gender: 'fem
  */
 export function sing(text: string, characterId: string, lang: Lang): void {
   const cleaned = cleanForSpeech(text);
-  if (!cleaned || !voiceEnabled()) return;
+  if (!cleaned || !voiceOutputAllowed()) return;
   lineQueue.enqueue({ kind: 'sing', text: cleaned, characterId, lang, intensity: 1 });
   drainSpeech();
 }
@@ -1675,7 +1681,7 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
     };
     stopThinkingSound();
     text = cleanForSpeech(text);
-    if (!text || !voiceEnabled()) { settle(); return; }
+    if (!text || !voiceOutputAllowed()) { settle(); return; }
     unlockAudio();
     const expr = EXPRESSIVENESS[characterId] ?? 1;
     if (neuralEnabled() && typeof WebSocket !== 'undefined') {
