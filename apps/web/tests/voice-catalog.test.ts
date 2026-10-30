@@ -57,6 +57,9 @@ describe('locale voice catalog', () => {
     expect(voiceNameMatches('Microsoft David Desktop - English Male', 'Male')).toBe(true);
     expect(synthNameConflicts('male', 'Microsoft Zira Desktop - English Female')).toBe(true);
     expect(synthNameConflicts('male', 'Microsoft David Desktop')).toBe(false);
+    expect(synthNameConflicts('male', 'Samantha (English America)')).toBe(true);
+    expect(voiceNameMatches('Microsoft Ryan Online', 'Yan')).toBe(false);
+    expect(synthNameConflicts('female', 'Microsoft Andrew Online')).toBe(true);
   });
 
   it('does not select NC-licensed engines', () => {

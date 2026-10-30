@@ -3,8 +3,10 @@
 // settings gear (top right), boxless fading chat history + mic orb (bottom).
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
+import { idlePickFor } from '../../lib/idle-pick';
 import { useRouter } from 'next/navigation';
 import ChatPanel from '../../components/ChatPanel';
+import IdlePickRails from '../../components/IdlePickRails';
 import MiniGamePicker, { MiniGameMenuButton } from '../../components/MiniGamePicker';
 import DevPanel from '../../components/DevPanel';
 import FallbackNotice from '../../components/FallbackNotice';
@@ -38,6 +40,7 @@ export default function Chat() {
   const [leaving, setLeaving] = useState(false);
   const [gameChromeHidden, setGameChromeHidden] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [idleClip, setIdleClip] = useState<string | null>(null);
 
   useEffect(() => subscribeMiniGameChrome(setGameChromeHidden), []);
 
@@ -65,6 +68,7 @@ export default function Chat() {
   }, []);
 
   const character = characterById(prefs.character);
+  useEffect(() => { setIdleClip(idlePickFor(character.id)); }, [character.id]);
   const background = backgroundById(prefs.background);
   const storedWardrobe = useModularSelection();
   const wardrobe = activeWardrobe(character.id, storedWardrobe);
@@ -94,9 +98,13 @@ export default function Chat() {
         wardrobeBodyId={canvasWardrobe?.bodyId}
         lighting={background.setting === 'indoor' ? 'indoor' : 'outdoor'}
         onNotice={setNotice}
+        idleClip={gameChromeHidden ? null : idleClip}
         onPoke={(zone, direction) => { setPokeCount((c) => c + 1); setPokeZone(zone); setPokeDirection(direction || 'front'); }}
         onHandHold={() => setHandHold((c) => c + 1)}
       />
+      {!gameChromeHidden && (
+        <IdlePickRails characterId={character.id} onPick={setIdleClip} />
+      )}
 
       {/* top bar: status plate (left) + mini-games, wardrobe, settings (right).
           Hidden for the whole title → play session so the HUD does not overlap it. */}

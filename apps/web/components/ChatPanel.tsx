@@ -150,13 +150,14 @@ import { pickLaugh, laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { WARMUP_FIRST_MS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from '../lib/warmup';
 import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
 import { clientLiveContext } from '../lib/live-tools';
-import { speak, stopSpeaking, sing, voiceStartedSince, speechPending, speechStillQueued, speechRemainder, whenSpeechIdle } from '../lib/voice';
+import { speak, stopSpeaking, sing, playPokeBurst, voiceStartedSince, speechPending, speechStillQueued, speechRemainder, whenSpeechIdle } from '../lib/voice';
 import { productionChat } from '../lib/backend-client';
 import { startThinkingSound, stopThinkingSound } from '../lib/thinking-sound';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
 import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerformance } from '../lib/music';
 import { clipLabel, PERFORMANCE_CLIPS, type PerformanceClip } from '../lib/performance-clips';
-import { SHOWCASE_START, SHOWCASE_YES_RE, type ShowcaseKind } from '../lib/showcase';
+import { SHOWCASE_START, SHOWCASE_YES_RE, pickShowcaseOffer, skillOfferKind, type ShowcaseKind } from '../lib/showcase';
+import { recentUserMood } from '../lib/talk-history';
 import { detectGame, startGame, playTurn, gameFarewellLine, type GameState } from '../lib/games';
 import { detectActionGame, setMiniGameChromeHidden, subscribeMiniGameOpen, type ActionGame } from '../lib/minigames';
 import MiniGameOverlay from './MiniGameOverlay';
@@ -165,7 +166,7 @@ import { detectExercise, startExercise, advanceExercise, exerciseFarewellLine, t
 import { buildDailyGreeting, buildMemoryBlock, feltMood, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange, rememberTurn } from '../lib/memory';
 import { listenContinuous, listenSupported } from '../lib/listen';
 import { startVad } from '../lib/vad';
-import { ambientStart, ambientStop, playPokeSfx } from '../lib/sfx';
+import { ambientStart, ambientStop } from '../lib/sfx';
 import { t, backgroundById, type Lang, type StrKey } from '../lib/prefs';
 import { adaptiveBlock } from '../lib/adaptive';
 import { loadProfile, type Gender } from '../lib/profile';
@@ -378,8 +379,12 @@ export default function ChatPanel({
   ) => {
     feedUtterance(text);
     notifySpeaking(lead ? `${lead.text} ${text}` : text);
-    speak(text, characterId, lang, hints, lead);
-    if (hints) applyLlmHints(hints);
+    const remembered = recentUserMood();
+    const voiced = remembered
+      ? { ...(hints ?? {}), [remembered]: Math.max(hints?.[remembered] ?? 0, 0.45) }
+      : hints;
+    speak(text, characterId, lang, voiced, lead);
+    if (voiced) applyLlmHints(voiced);
     setHistory((h) => [...h, { role: 'assistant', content: text }]);
   };
 
@@ -439,7 +444,7 @@ export default function ChatPanel({
   };
 
   /** Start a premade song (matched to her gender) or dance bed, and show the pick. */
-  const beginShow = (kind: 'song' | 'dance', ms: number, mood?: string, n = laughCountRef.current) => {
+  const beginShow = (kind: 'song' | 'dance', ms: number, mood?: string, n = laughCountRef.current, bed = false) => {
     const clip = startLibraryPerformance({
       kind,
       characterId,
@@ -448,6 +453,7 @@ export default function ChatPanel({
       gender: characterGender,
       n,
       ms,
+      bed,
     });
     showTrack(clip, ms);
     return clip;
@@ -555,13 +561,14 @@ export default function ChatPanel({
   // next chat line sounded broken too. The face flinch still comes from the
   // poke animation. Displayed text is the line itself.
   const lastPokeRef = useRef(pokeCount);
+  const lastOfferAtRef = useRef(0);
   useEffect(() => {
     if (pokeCount === lastPokeRef.current) return;
     lastPokeRef.current = pokeCount;
     lastActivityRef.current = Date.now();
     lastUserRef.current = Date.now();
     reengageStageRef.current = 0;
-    playPokeSfx();
+    playPokeBurst(characterId);
     const line = pokeReactionLine(characterId, characterGender, pokeZone || 'torso', pokeDirection || 'front', lang, pokeCount);
     sayLocal(line, { joy: 0.5 }, maybeLaughLead(lang));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -610,8 +617,15 @@ export default function ChatPanel({
         sayLocal(pickLine('reengage', lang, n), feltHints);
         return;
       }
+      // Every fourth quiet line offers one skill. The gap keeps it from stacking.
+      if (n > 0 && n % 4 === 3 && Date.now() - lastOfferAtRef.current > 90_000) {
+        lastOfferAtRef.current = Date.now();
+        const kind = skillOfferKind(n);
+        pendingOfferRef.current = kind;
+        sayLocal(pickShowcaseOffer(kind, lang, n), feltHints);
+        return;
+      }
       // Idle talk is a short tutor tip, then one calm personality line.
-      // Showcase offers stay on an explicit yes, not this quiet clock.
       if (n % 2 === 0) {
         sayLocal(personalityTutorTip(characterId, characterGender, lang, Math.floor(n / 2)), feltHints);
         return;
@@ -746,11 +760,34 @@ export default function ChatPanel({
     // the show starts RIGHT NOW, no brain needed — her signature song sung
     // live on the melodic contour, or a full dance number, both over an
     // original WebAudio theme composed for her personality
+    if (/\b(play (?:some )?music|put on (?:some )?music)\b|播音樂|播音乐|放音樂|放音乐|音楽をかけ/.test(text)) {
+      perfCountRef.current += 1;
+      beginShow('dance', 18_000, undefined, perfCountRef.current, true);
+      sayLocal(SHOWCASE_START[lang].music);
+      done();
+      return;
+    }
     if (pendingOfferRef.current && SHOWCASE_YES_RE.test(text)) {
       const kind = pendingOfferRef.current;
       pendingOfferRef.current = null;
       perfCountRef.current += 1;
       applyLlmHints({ joy: 0.85 });
+      if (kind === 'news' || kind === 'weather') {
+        const ask = kind === 'weather'
+          ? (lang === 'ja' ? '今日の天気は？' : lang === 'zh' ? '今天天气怎么样？' : lang === 'yue' ? '今日天氣點呀？' : "what's the weather here?")
+          : (lang === 'ja' ? '最新ニュースは？' : lang === 'zh' ? '今天有什么新闻？' : lang === 'yue' ? '今日有咩新聞？' : "what's the latest news?");
+        void clientLiveContext(ask, lang).then((live) => {
+          sayLocal(live.spoken || SHOWCASE_START[lang][kind]);
+        });
+        done();
+        return;
+      }
+      if (kind === 'music') {
+        beginShow('dance', 18_000, undefined, perfCountRef.current, true);
+        sayLocal(SHOWCASE_START[lang].music);
+        done();
+        return;
+      }
       triggerMove(kind === 'song' ? 'sing' : 'dance');
       beginShow(kind === 'song' ? 'song' : 'dance', 12_000, undefined, perfCountRef.current);
       sayLocal(SHOWCASE_START[lang][kind]);
