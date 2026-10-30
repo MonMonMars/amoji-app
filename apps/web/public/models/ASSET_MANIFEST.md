@@ -77,7 +77,7 @@ Base URL for every row: `https://github.com/MonMonMars/amoji-app/releases/downlo
 
 ## Live cast ??realistic keepers (5 characters)
 
-Appended to the same roster after the original 46. They are selectable in the companion picker. Gallery `SKIP_STATIC` does not apply to cast selection (unrigged A457/A458/A462/A464?467 stay out).
+Appended to the same roster after the original 46. They are selectable in the companion picker. Gallery `SKIP_STATIC` does not apply to cast selection (unrigged A457/A458/A462/A464???67 stay out).
 
 | Character id | Library | Gender | Remote VRM |
 |---|---|---|---|
@@ -173,6 +173,16 @@ Real VRMA animation clips (VRMC_vrm_animation), force-committed for GitHub Pages
 | anims/lib_C128.vrma | perform DJ02 (Rokoko->VRMA local) |
 | anims/lib_C60.vrma | dance JazzDancing (Mixamo->VRMA local) |
 | anims/lib_C09.vrma | dance KayKitDance (KayKit retarget->Mixamo->VRMA local) |
+| anims/lib_C04.vrma | idle KayKitIdle (KayKit retarget->Mixamo->VRMA local) |
+| anims/lib_C25.vrma | idle Bored (Mixamo->VRMA local) |
+| anims/lib_C36.vrma | idle RokokoArguing (Rokoko Mixamo FBX->VRMA local; hips bone injected) |
+| anims/lib_C37.vrma | idle RokokoChatting (Rokoko Mixamo FBX->VRMA local) |
+| anims/lib_C38.vrma | idle RokokoChatting02 (Rokoko Mixamo FBX->VRMA local) |
+| anims/lib_C39.vrma | idle RokokoConversation (Rokoko Mixamo FBX->VRMA local) |
+| anims/lib_C41.vrma | idle RokokoListeningToMusic (Rokoko Mixamo FBX->VRMA local) |
+| anims/lib_C44.vrma | idle RokokoWatchingSomething (Rokoko Mixamo FBX->VRMA local) |
+| anims/lib_C57.vrma | idle NervouslyLookAround (Mixamo->VRMA local) |
+| anims/lib_C64.vrma | idle DefeatIdle (Mixamo->VRMA local) |
 
 Additional dormant clips ship on disk for future triggers (see repo `anims/` directory).
 
@@ -204,3 +214,4 @@ Female demo wardrobe (head = identity, body = outfit). The viewer loads these wh
 ## Companion art ??outside this directory
 
 Portraits for the want-list cast are the release PNGs (https URLs in `prefs.ts`). Legacy `/portraits/*` art remains for retired characters / face-lab only.
+

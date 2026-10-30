@@ -1,4 +1,4 @@
-﻿// Idle library SoT (CLIP_LIBRARY-style #). Standing/planted first.
+// Idle library SoT (CLIP_LIBRARY-style #). Standing/planted first.
 // Map: # → free-library Cxx + path; playable when a local VRMA exists.
 // Mon says "use #N". Defaults: #1 IdleBreathCalm + #2 StandardIdle only.
 
@@ -79,8 +79,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'KayKitIdle',
     path: 'animations/idle/kaykit/Idle.fbx',
     planted: true,
-    playable: false,
-    vrmaUrl: null,
+    playable: true,
+    vrmaUrl: VRMA('lib_C04'),
     defaultEnabled: false,
   },
   {
@@ -101,8 +101,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'Bored',
     path: 'animations/idle/mixamo/Bored.fbx',
     planted: true,
-    playable: false,
-    vrmaUrl: null,
+    playable: true,
+    vrmaUrl: VRMA('lib_C25'),
     defaultEnabled: false,
   },
   {
@@ -112,8 +112,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'RokokoArguing',
     path: 'animations/idle/rokoko_everyday_idles/Idle_Arguing_MIXAMO_WHS.fbx',
     planted: true,
-    playable: false,
-    vrmaUrl: null,
+    playable: true,
+    vrmaUrl: VRMA('lib_C36'),
     defaultEnabled: false,
   },
   {
@@ -123,8 +123,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'RokokoChatting',
     path: 'animations/idle/rokoko_everyday_idles/Idle_Chatting_MIXAMO_WHS.fbx',
     planted: true,
-    playable: false,
-    vrmaUrl: null,
+    playable: true,
+    vrmaUrl: VRMA('lib_C37'),
     defaultEnabled: false,
   },
   {
@@ -134,8 +134,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'RokokoChatting02',
     path: 'animations/idle/rokoko_everyday_idles/Idle_Chatting02_MIXAMO_WHS.fbx',
     planted: true,
-    playable: false,
-    vrmaUrl: null,
+    playable: true,
+    vrmaUrl: VRMA('lib_C38'),
     defaultEnabled: false,
   },
   {
@@ -145,8 +145,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'RokokoConversation',
     path: 'animations/idle/rokoko_everyday_idles/Idle_Conversation_Loop_MIXAMO_769_segment-2.fbx',
     planted: true,
-    playable: false,
-    vrmaUrl: null,
+    playable: true,
+    vrmaUrl: VRMA('lib_C39'),
     defaultEnabled: false,
   },
   {
@@ -156,8 +156,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'RokokoListeningToMusic',
     path: 'animations/idle/rokoko_everyday_idles/Idle_ListeningtoMusic_MIXAMO_WHS.fbx',
     planted: true,
-    playable: false,
-    vrmaUrl: null,
+    playable: true,
+    vrmaUrl: VRMA('lib_C41'),
     defaultEnabled: false,
   },
   {
@@ -178,8 +178,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'RokokoWatchingSomething',
     path: 'animations/idle/rokoko_everyday_idles/Idle_WatchingSomething_Loop_MIXAMO_769_segment.fbx',
     planted: true,
-    playable: false,
-    vrmaUrl: null,
+    playable: true,
+    vrmaUrl: VRMA('lib_C44'),
     defaultEnabled: false,
   },
   {
@@ -233,8 +233,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'NervouslyLookAround',
     path: 'animations/idle/mixamo/NervouslyLookAround.fbx',
     planted: true,
-    playable: false,
-    vrmaUrl: null,
+    playable: true,
+    vrmaUrl: VRMA('lib_C57'),
     defaultEnabled: false,
   },
   {
@@ -277,8 +277,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'DefeatIdle',
     path: 'animations/idle/mixamo/DefeatIdle.fbx',
     planted: true,
-    playable: false,
-    vrmaUrl: null,
+    playable: true,
+    vrmaUrl: VRMA('lib_C64'),
     defaultEnabled: false,
   },
   {

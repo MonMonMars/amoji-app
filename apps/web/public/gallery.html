@@ -109,7 +109,7 @@ const MANUAL = [
 ];
 
 
-/** Amoji chat # SoT — sync with apps/web/lib/idle-library.ts */
+/** Amoji chat # SoT — sync with apps/web/lib/idle-library.ts (#1–36) */
 const AMOJI_NUM = {
   IdleBreathCalm: 1, StandardIdle: 2, LookAround: 3,
   IdleQuaterniusLoop: 4, IdleKaykitA: 5, IdleMixamoBored: 7,
@@ -117,6 +117,19 @@ const AMOJI_NUM = {
   Relax: 32, IdleNeutral: 33, IdleSassy: 34, IdleChinHand: 35, IdleHug: 36,
   HelloWave: 15, Shrug: 16, Sleepy: 17, Thinking: 18, ThumbsUp: 20,
   Clapping: 21, Cheer: 22,
+  // free-library Cxx aliases (clipId keys)
+  lib_C02: 4, lib_C04: 5, lib_C11: 6, lib_C25: 7,
+  lib_C36: 8, lib_C37: 9, lib_C38: 10, lib_C39: 11, lib_C41: 12,
+  lib_C44: 14, lib_C57: 19, lib_C64: 23,
+  lib_C65: 24, lib_C75: 25, lib_C84: 26, lib_C85: 27, lib_C87: 28,
+  lib_C90: 29, lib_C92: 30, lib_C95: 31,
+};
+const AMOJI_CXX = {
+  1: null, 2: null, 3: 'C01', 4: 'C02', 5: 'C04', 6: 'C11', 7: 'C25',
+  8: 'C36', 9: 'C37', 10: 'C38', 11: 'C39', 12: 'C41', 13: 'C42', 14: 'C44',
+  15: 'C53', 16: 'C54', 17: 'C55', 18: 'C56', 19: 'C57', 20: 'C58', 21: 'C59',
+  22: 'C63', 23: 'C64', 24: 'C65', 25: 'C75', 26: 'C84', 27: 'C85', 28: 'C87',
+  29: 'C90', 30: 'C92', 31: 'C95', 32: null, 33: null, 34: null, 35: null, 36: null,
 };
 
 const store = JSON.parse(localStorage.getItem('amoji.idle.picks') || '{}');
@@ -134,7 +147,7 @@ function card(row) {
   const feetTxt = feet ? 'feetPlanted OK' : 'FLOAT feet - do not ship';
   d.innerHTML =
     '<div class="thumb"><div class="tile">' + label.replace(/ /g,'<br>') + '</div></div>' +
-    '<span class="num" title="' + id + '">#' + (AMOJI_NUM[id] != null ? AMOJI_NUM[id] + ' · ' + id : id) + '</span>' +
+    '<span class="num" title="' + id + '">#' + (AMOJI_NUM[id] != null ? AMOJI_NUM[id] + ' · ' + label + (AMOJI_CXX[AMOJI_NUM[id]] ? (' · ' + AMOJI_CXX[AMOJI_NUM[id]]) : '') : id) + '</span>' +
     '<span class="badge ' + badge + '">' + badgeLabel + '</span>' +
     '<div class="meta"><div class="nm">' + label + '</div>' +
     '<div class="tg">' + personality + '<br>' + license + ' · ' + format + '<br>' + feetTxt + '<br>' + srcLine +
