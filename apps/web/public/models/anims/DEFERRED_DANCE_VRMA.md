@@ -7,7 +7,7 @@ always wins over interim remotes (dancePerfClipSources).
 
 ## Shipped (local FBX->VRMA on DESKTOP)
 
-### #51 — direct Mixamo/Rokoko humanoid convert
+### #51 ??direct Mixamo/Rokoko humanoid convert
 
 Converted with Blender 5.2 + VRM Addon `bl_ext.user_default.vrm` 4.10.2
 (`D:\Blender\projects\mon-character\free-library\fbx_to_vrma.py`):
@@ -26,7 +26,7 @@ Converted with Blender 5.2 + VRM Addon `bl_ext.user_default.vrm` 4.10.2
 | C128 | DJ02 | anims/lib_C128.vrma | idle/rokoko_perform/C128_Rokoko_DJ02.fbx |
 | C60 | JazzDancing | anims/lib_C60.vrma | dance/mixamo/JazzDancing.fbx |
 
-### #52 — KayKit C09 retarget
+### #52 ??KayKit C09 retarget
 
 KayKit `Dance.fbx` is a **6-bone non-humanoid** (Body, Head, armLeft/Right,
 handSlotLeft/Right; CC0). Direct VRM1 humanoid assign fails. Retargeted onto
@@ -37,8 +37,8 @@ Mixamo JazzDancing skeleton (legs left at rest for plant-feet), then exported:
 | C09 | KayKitDance | anims/lib_C09.vrma | dance/kaykit/Dance.fbx | dance/mixamo/JazzDancing.fbx |
 
 Script: `D:\Blender\projects\mon-character\free-library\kaykit_retarget_to_vrma.py`
-(map Body→Hips/Spine*, Head→Neck/Head, arm*→Arm/ForeArm, handSlot*→Hand;
-hip translation clamped; frames 1–51 ≈ 1.67s). Validated: glTF + VRMC_vrm_animation,
+(map Body?ips/Spine*, Head?eck/Head, arm*?rm/ForeArm, handSlot*?and;
+hip translation clamped; frames 1??1 ??1.67s). Validated: glTF + VRMC_vrm_animation,
 52 humanBones, 35 channels.
 
 DANCE_CLIP_SOURCES marks C09 status: `local`. Interim Mixamo-class remotes
@@ -62,3 +62,13 @@ Ready idle VRMAs already in-repo: IdleBreathCalm.vrma, StandardIdle.vrma
 4. KayKit C09: `blender --background --python ...\kaykit_retarget_to_vrma.py`
 5. Copy `vrma-out/lib_C*.vrma` -> `apps/web/public/models/anims/`
 6. Manifest row + DANCE_CLIP_SOURCES status -> local
+
+## Idle local VRMA (#53)
+
+Planted idle FBX->VRMA on DESKTOP (same Blender 5.2 + VRM Addon pipeline).
+Hips-missing Rokoko Mixamo FBX: bx_to_vrma_idle.py injects mixamorig:Hips.
+KayKit Idle (6-bone): kaykit_idle_retarget_to_vrma.py onto Bored Mixamo skeleton.
+
+Shipped: lib_C04, lib_C25, lib_C36, lib_C37, lib_C38, lib_C39, lib_C41, lib_C44, lib_C57, lib_C64.
+Skipped gif-only: C02, C11, C65, C75, Kenney, PSX*, Squad.
+See IDLE_NUMBERED_MAP.md for full # map. Defaults remain #1+#2 only.
