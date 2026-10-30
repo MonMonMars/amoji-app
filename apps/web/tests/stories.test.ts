@@ -10,7 +10,10 @@ const read = (rel: string) => fs.readFileSync(path.resolve(here, rel), 'utf8');
 
 describe('story mode catalog (t740)', () => {
   it('ships at least one sample scene with a night-train beat', () => {
-    expect(STORY_SCENES.length).toBeGreaterThanOrEqual(1);
+    expect(STORY_SCENES.length).toBeGreaterThanOrEqual(5);
+    expect(STORY_SCENES.map((x) => x.id)).toEqual(
+      expect.arrayContaining(['night-train-downtown', 'rainy-cafe-window', 'rooftop-evening', 'bookstore-aisle', 'beach-dusk']),
+    );
     const train = storyById('night-train-downtown');
     expect(train).toBeTruthy();
     expect(train!.backgroundId).toBe('neon');
