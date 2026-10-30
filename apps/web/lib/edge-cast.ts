@@ -70,16 +70,13 @@ const POOLS: Record<VoiceLocale, { female: PoolVoice[]; male: PoolVoice[] }> = {
       'en-NZ-MollyNeural',
       'en-HK-YanNeural',
       'en-CA-ClaraNeural',
-      'en-US-AvaMultilingualNeural',
       'en-SG-LunaNeural',
-      'en-US-EmmaMultilingualNeural',
       'en-ZA-LeahNeural',
       'en-PH-RosaNeural',
       'en-GB-MaisieNeural',
       'en-KE-AsiliaNeural',
       'en-NG-EzinneNeural',
       'en-TZ-ImaniNeural',
-      'en-IN-NeerjaExpressiveNeural',
     ].map(voice),
     male: [
       'en-US-GuyNeural',
@@ -103,8 +100,6 @@ const POOLS: Record<VoiceLocale, { female: PoolVoice[]; male: PoolVoice[] }> = {
       'en-KE-ChilembaNeural',
       'en-NG-AbeoNeural',
       'en-TZ-ElimuNeural',
-      'en-US-AndrewMultilingualNeural',
-      'en-US-BrianMultilingualNeural',
     ].map(voice),
   },
 };
@@ -117,19 +112,26 @@ function voice(id: string): PoolVoice {
   return { id, ssmlLang };
 }
 
-// Wide enough that one Japanese voice can still give every companion a
-// different pitch/pace, and that a repeated English voice sits a clear
-// step away from the first character who uses it.
-const PITCH_STEPS = [0, 0.12, -0.12, 0.18, -0.18, 0.06, -0.06, 0.1, -0.1, 0.16, -0.16];
-const RATE_STEPS = [0, 0.08, -0.08, 0.14, -0.06];
+// Pitch stays on the character's side of neutral. A positive lift on a male
+// neural (WanLung especially) reads as female; a deep drop on a female neural
+// reads as male. Pace still separates people who share one voice.
+const FEMALE_PITCH = [0, 0.04, 0.08, 0.06, 0.1, 0.12, 0.02, 0.14, 0.16, 0.18];
+const FEMALE_RATE = [0, 0.04, -0.04, 0.08, -0.06];
+const MALE_PITCH = [0, -0.04, -0.08, -0.06, -0.1, -0.12, -0.02, -0.14];
+const MALE_RATE = [0, -0.04, 0.04, -0.06, 0.06];
 
-function combosFor(poolSize: number, count: number): { pitch: number; rate: number }[] {
-  for (let rates = 1; rates <= RATE_STEPS.length; rates++) {
-    for (let pitches = 1; pitches <= PITCH_STEPS.length; pitches++) {
-      if (poolSize * pitches * rates >= count) {
+function combosFor(
+  poolSize: number,
+  count: number,
+  pitches: readonly number[],
+  rates: readonly number[],
+): { pitch: number; rate: number }[] {
+  for (let rateN = 1; rateN <= rates.length; rateN++) {
+    for (let pitchN = 1; pitchN <= pitches.length; pitchN++) {
+      if (poolSize * pitchN * rateN >= count) {
         const out: { pitch: number; rate: number }[] = [];
-        for (let r = 0; r < rates; r++) {
-          for (let p = 0; p < pitches; p++) out.push({ pitch: PITCH_STEPS[p]!, rate: RATE_STEPS[r]! });
+        for (let r = 0; r < rateN; r++) {
+          for (let p = 0; p < pitchN; p++) out.push({ pitch: pitches[p]!, rate: rates[r]! });
         }
         return out;
       }
@@ -138,8 +140,13 @@ function combosFor(poolSize: number, count: number): { pitch: number; rate: numb
   throw new Error(`edge cast: ${count} characters and only ${poolSize} voices`);
 }
 
-function assign(ids: readonly string[], pool: readonly PoolVoice[]): Map<string, EdgeCastVoice> {
-  const combos = combosFor(pool.length, ids.length);
+function assign(
+  ids: readonly string[],
+  pool: readonly PoolVoice[],
+  pitches: readonly number[],
+  rates: readonly number[],
+): Map<string, EdgeCastVoice> {
+  const combos = combosFor(pool.length, ids.length, pitches, rates);
   const map = new Map<string, EdgeCastVoice>();
   ids.forEach((id, i) => {
     const picked = pool[i % pool.length]!;
@@ -177,10 +184,10 @@ function assignTuned(
 }
 
 const CAST: Record<VoiceLocale, Map<string, EdgeCastVoice>> = {
-  yue: merge(assign(FEMALE_IDS, POOLS.yue.female), assignTuned(MALE_IDS, POOLS.yue.male, YUE_MALE_PITCH, YUE_MALE_RATE)),
-  zh: merge(assign(FEMALE_IDS, POOLS.zh.female), assign(MALE_IDS, POOLS.zh.male)),
-  ja: merge(assign(FEMALE_IDS, POOLS.ja.female), assign(MALE_IDS, POOLS.ja.male)),
-  en: merge(assign(FEMALE_IDS, POOLS.en.female), assign(MALE_IDS, POOLS.en.male)),
+  yue: merge(assign(FEMALE_IDS, POOLS.yue.female, FEMALE_PITCH, FEMALE_RATE), assignTuned(MALE_IDS, POOLS.yue.male, YUE_MALE_PITCH, YUE_MALE_RATE)),
+  zh: merge(assign(FEMALE_IDS, POOLS.zh.female, FEMALE_PITCH, FEMALE_RATE), assign(MALE_IDS, POOLS.zh.male, MALE_PITCH, MALE_RATE)),
+  ja: merge(assign(FEMALE_IDS, POOLS.ja.female, FEMALE_PITCH, FEMALE_RATE), assign(MALE_IDS, POOLS.ja.male, MALE_PITCH, MALE_RATE)),
+  en: merge(assign(FEMALE_IDS, POOLS.en.female, FEMALE_PITCH, FEMALE_RATE), assign(MALE_IDS, POOLS.en.male, MALE_PITCH, MALE_RATE)),
 };
 
 function merge(a: Map<string, EdgeCastVoice>, b: Map<string, EdgeCastVoice>): Map<string, EdgeCastVoice> {

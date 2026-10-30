@@ -20,10 +20,12 @@ describe('per-character Edge cast', () => {
         if (c.gender === 'female') {
           expect(isFemaleNeuralVoice(voice!.id), voice!.id).toBe(true);
           expect(isMaleNeuralVoice(voice!.id), voice!.id).toBe(false);
+          expect(voice!.pitch, `${locale} ${c.id}`).toBeGreaterThanOrEqual(0);
           femaleVoices.add(voice!.id);
         } else {
           expect(isMaleNeuralVoice(voice!.id), voice!.id).toBe(true);
           expect(isFemaleNeuralVoice(voice!.id), voice!.id).toBe(false);
+          expect(voice!.pitch, `${locale} ${c.id}`).toBeLessThanOrEqual(0);
         }
       }
       expect(femaleVoices.size).toBeGreaterThan(0);

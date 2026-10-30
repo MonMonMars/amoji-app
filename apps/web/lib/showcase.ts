@@ -11,7 +11,14 @@
 
 import type { Lang } from './prefs';
 
-export type ShowcaseKind = 'dance' | 'song';
+export type ShowcaseKind = 'dance' | 'song' | 'music' | 'news' | 'weather';
+
+/** Quiet idle offers rotate through these. Dance stays a yes-only specialty. */
+export const SKILL_OFFERS: readonly ShowcaseKind[] = ['song', 'music', 'news', 'weather'];
+
+export function skillOfferKind(n: number): ShowcaseKind {
+  return SKILL_OFFERS[Math.abs(n) % SKILL_OFFERS.length]!;
+}
 
 /**
  * What each character loves to perform — her offers lean on her specialty.
@@ -35,6 +42,18 @@ export const SHOWCASE_OFFERS: Record<Lang, Record<ShowcaseKind, string[]>> = {
       '呢首歌係為你而寫嘅——俾我唱俾你聽吖？',
       '我喺心入面錄咗段新歌，你係第一個聽眾吖！',
     ],
+    music: [
+      '想唔想我播段音樂俾你聽呀？',
+      '我有段輕鬆音樂，想聽吓嗎？',
+    ],
+    news: [
+      '想我讀一條輕鬆新聞俾你聽嗎？',
+      '要不要我講一件今日嘅好消息呀？',
+    ],
+    weather: [
+      '想我睇吓而家天氣再話你知嗎？',
+      '要不要我報個天氣俾你呀？',
+    ],
   },
   zh: {
     dance: [
@@ -46,6 +65,18 @@ export const SHOWCASE_OFFERS: Record<Lang, Record<ShowcaseKind, string[]>> = {
       '我的兴趣是写歌哦，刚写了首新歌，想不想听呀？',
       '这首歌是为你写的——让我唱给你听呀？',
       '我在心里录了一段新歌，你是第一个听众呀！',
+    ],
+    music: [
+      '想不想我放段音乐给你听呀？',
+      '我有段轻松的音乐，要听吗？',
+    ],
+    news: [
+      '想我读一条轻松新闻给你听吗？',
+      '要不要我讲一件今天的好消息呀？',
+    ],
+    weather: [
+      '想我看一下天气再告诉你吗？',
+      '要不要我报个天气给你呀？',
     ],
   },
   ja: {
@@ -59,6 +90,18 @@ export const SHOWCASE_OFFERS: Record<Lang, Record<ShowcaseKind, string[]>> = {
       'この歌はあなたのために書いたの——歌ってあげようか？',
       '心の中で新曲を録音してきたの。最初のリスナーはあなたね！',
     ],
+    music: [
+      '音楽を流そうか？',
+      '軽い曲があるよ。聴いてみる？',
+    ],
+    news: [
+      '軽いニュースを一つ読もうか？',
+      '今日のいい話、聞いてみる？',
+    ],
+    weather: [
+      '今の天気を見て伝えようか？',
+      '天気をチェックしようか？',
+    ],
   },
   en: {
     dance: [
@@ -71,15 +114,51 @@ export const SHOWCASE_OFFERS: Record<Lang, Record<ShowcaseKind, string[]>> = {
       'I wrote this one for you — let me sing it to you?',
       'I recorded a brand-new song in my heart, and you are the first listener!',
     ],
+    music: [
+      'Want me to put some music on for you?',
+      'I have a light tune. Want to hear it?',
+    ],
+    news: [
+      'Want me to read one cheerful headline?',
+      'Shall I share a bit of good news?',
+    ],
+    weather: [
+      'Want me to check the weather for you?',
+      'Shall I tell you what it is like outside?',
+    ],
   },
 };
 
 /** the one-liner that opens the show the moment you say yes */
 export const SHOWCASE_START: Record<Lang, Record<ShowcaseKind, string>> = {
-  yue: { dance: '好！音樂，起——睇清楚喇！', song: '好！我而家唱俾你聽——呢首係你嘅歌。' },
-  zh: { dance: '好！音乐，起——看仔细啦！', song: '好！我现在唱给你听——这首是你的歌。' },
-  ja: { dance: 'よーし、音楽スタート——見てて！', song: 'うん、いま歌うね——この歌はあなたのもの。' },
-  en: { dance: 'Alright — music, start! Watch closely now!', song: 'Okay, listen — this one is yours.' },
+  yue: {
+    dance: '好！音樂，起——睇清楚喇！',
+    song: '好！我而家唱俾你聽——呢首係你嘅歌。',
+    music: '好！我播段音樂俾你。',
+    news: '好！我讀一條新聞俾你聽。',
+    weather: '好！我睇吓天氣話你知。',
+  },
+  zh: {
+    dance: '好！音乐，起——看仔细啦！',
+    song: '好！我现在唱给你听——这首是你的歌。',
+    music: '好！我放段音乐给你。',
+    news: '好！我读一条新闻给你听。',
+    weather: '好！我看一下天气告诉你。',
+  },
+  ja: {
+    dance: 'よーし、音楽スタート——見てて！',
+    song: 'うん、いま歌うね——この歌はあなたのもの。',
+    music: 'うん、音楽をかけるね。',
+    news: 'うん、ニュースを一つ読むね。',
+    weather: 'うん、天気を見て伝えるね。',
+  },
+  en: {
+    dance: 'Alright — music, start! Watch closely now!',
+    song: 'Okay, listen — this one is yours.',
+    music: 'Okay — here is some music.',
+    news: 'Okay — one cheerful headline.',
+    weather: 'Okay — I will check the weather.',
+  },
 };
 
 /**

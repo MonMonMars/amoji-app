@@ -27,8 +27,8 @@ export const PORTRAIT_CENTER_SCALE = 1.05;
  */
 export function portraitCardBox(stageHeight: number): { width: number; height: number; step: number } {
   const stage = stageHeight > 0 ? stageHeight : 360;
-  const height = Math.round(Math.min(stage * 0.93, 640));
-  const width = Math.round(height * 0.8);
+  const height = Math.round(Math.min(stage * 0.95, 640));
+  const width = Math.round(height * 0.88);
   const step = Math.max(72, Math.round(width * 0.48));
   return { width, height, step };
 }
@@ -39,9 +39,9 @@ export function portraitCardBox(stageHeight: number): { width: number; height: n
  * (portraitCardBox(320) is ~298px). Same 0.8 portrait ratio as the bigheads.
  */
 export function compactCardBox(): { width: number; height: number; step: number } {
-  const height = 88;
-  const width = Math.round(height * 0.8);
-  const step = Math.max(24, Math.round(width * 0.55));
+  const height = 36;
+  const width = 128;
+  const step = 72;
   return { width, height, step };
 }
 
@@ -188,13 +188,13 @@ export default function ArcFan<T extends { id: string }>({
   };
 
   const cardClass = size === 'scene'
-    ? 'top-1 h-[6.1rem] w-[8.2rem] sm:h-[7.2rem] sm:w-[10.4rem]'
+    ? 'top-1 h-[3.4rem] w-[5.2rem] sm:h-[3.8rem] sm:w-[6rem]'
     : '';
   const stageClass = size === 'portrait'
     ? 'absolute inset-0 z-20'
     : size === 'compact'
-      ? 'relative z-10 h-[6.6rem] w-full'
-      : 'relative z-10 h-[8.6rem] w-full sm:h-[10.4rem]';
+      ? 'relative z-10 h-[2.6rem] w-full'
+      : 'relative z-10 h-[4.4rem] w-full sm:h-[4.8rem]';
 
   const arrow = (enabled: boolean) =>
     'fx-press-lite absolute top-1/2 z-[90] flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white/40 bg-black/75 text-white shadow-[0_4px_16px_rgba(0,0,0,0.6)] backdrop-blur-md ' +
@@ -223,7 +223,7 @@ export default function ArcFan<T extends { id: string }>({
             style={{
               width: size === 'scene' ? undefined : portrait.width,
               height: size === 'scene' ? undefined : portrait.height,
-              top: size === 'portrait' ? portraitTop(stageH, portrait.height) : size === 'compact' ? 6 : undefined,
+              top: size === 'portrait' ? portraitTop(stageH, portrait.height) : size === 'compact' ? 2 : undefined,
               transform: `translateX(calc(-50% + ${pose.x}px)) translateY(${pose.y}px) rotate(${pose.rot}deg) scale(${pose.scale})`,
               zIndex: pose.z,
               opacity: pose.opacity,

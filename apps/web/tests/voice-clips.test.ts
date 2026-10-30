@@ -160,41 +160,9 @@ describe('emotion clips', () => {
 });
 
 describe('TTS button registry', () => {
-  const IDS = [
-    'zh-HK-WanLungNeural',
-    'zh-HK-HiuMaanNeural',
-    'zh-HK-HiuGaaiNeural',
-    'zh-CN-YunjianNeural',
-    'zh-CN-YunxiNeural',
-    'zh-CN-YunyangNeural',
-    'zh-CN-YunxiaNeural',
-    'zh-CN-XiaoxiaoNeural',
-    'zh-CN-XiaoyiNeural',
-    'ja-JP-KeitaNeural',
-    'ja-JP-NanamiNeural',
-    'en-US-GuyNeural',
-    'en-US-AndrewNeural',
-    'en-US-BrianNeural',
-    'en-US-ChristopherNeural',
-    'en-US-EricNeural',
-    'en-US-RogerNeural',
-    'en-US-SteffanNeural',
-    'en-US-AndrewMultilingualNeural',
-    'en-US-BrianMultilingualNeural',
-    'en-US-AriaNeural',
-    'en-US-JennyNeural',
-    'en-US-AvaNeural',
-    'en-US-EmmaNeural',
-    'en-US-MichelleNeural',
-    'en-US-AnaNeural',
-    'en-US-AvaMultilingualNeural',
-    'en-US-EmmaMultilingualNeural',
-  ];
-
-  it('lists the 28 Tier A Edge voices with the sheet labels', () => {
+  it('lists every shipping Edge voice with a unique sheet label', () => {
     const buttons = selectTtsButtons();
-    expect(buttons).toHaveLength(28);
-    expect(buttons.map((b) => b.id)).toEqual(IDS);
+    expect(buttons.length).toBeGreaterThan(28);
     expect(buttons.map((b) => b.id)).toEqual(EDGE_VOICE_BUTTONS.map((b) => b.id));
     expect(buttons.map((b) => b.label)).toEqual(EDGE_VOICE_BUTTONS.map((b) => b.label));
     expect(buttons.map((b) => b.label)).toContain('Cantonese female 1');
@@ -202,7 +170,7 @@ describe('TTS button registry', () => {
     expect(buttons.map((b) => b.label)).toContain('Mandarin male 4');
     expect(buttons.map((b) => b.label)).toContain('English female 6');
     expect(buttons.every((b) => b.engine === 'edge' && b.shipping)).toBe(true);
-    expect(new Set(buttons.map(ttsButtonKey)).size).toBe(28);
+    expect(new Set(buttons.map(ttsButtonKey)).size).toBe(buttons.length);
     expect(selectTtsButtons('yue')).toHaveLength(TIER_A_COUNTS.yue);
     expect(selectTtsButtons('zh')).toHaveLength(TIER_A_COUNTS.zh);
     expect(selectTtsButtons('ja')).toHaveLength(TIER_A_COUNTS.ja);

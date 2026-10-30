@@ -146,6 +146,50 @@ export function clipFile(lang: string, gender: VoiceClipGender, kind: VoiceClipK
   return `/voice-clips/${clipLang(lang)}/${gender}/${kind}.mp3`;
 }
 
+/**
+ * Human recordings for loading fillers. Live TTS and the Edge crops sound
+ * wrong here, so um / ha / think / search play these files and nothing else.
+ * Male um is the Nox closed-mouth reflection. Female um/ha are the CC0 packs.
+ */
+const RECORDED_FILLER: Record<'um' | 'ha' | 'think' | 'search', Record<VoiceClipGender, string>> = {
+  um: {
+    female: '/voice-clips/universal/female/um.mp3',
+    male: '/voice-clips/ja/male/um.mp3',
+  },
+  ha: {
+    female: '/voice-clips/universal/female/ha.mp3',
+    male: '/voice-clips/en/male/ha.mp3',
+  },
+  think: {
+    female: '/voice-clips/universal/female/um.mp3',
+    male: '/voice-clips/ja/male/um.mp3',
+  },
+  search: {
+    female: '/voice-clips/universal/female/huh.mp3',
+    male: '/voice-clips/ja/male/um.mp3',
+  },
+};
+
+/** Recorded hit for a poke. Not the Edge "oh" crop. */
+const RECORDED_POKE: Record<VoiceClipGender, string> = {
+  female: '/voice-clips/universal/female/wow_woven.mp3',
+  male: '/voice-clips/ja/male/oh.mp3',
+};
+
+export function recordedFillerClip(gender: VoiceClipGender, kind: 'um' | 'ha' | 'think' | 'search'): string {
+  return RECORDED_FILLER[kind][gender];
+}
+
+export function recordedPokeClip(gender: VoiceClipGender): string {
+  return RECORDED_POKE[gender];
+}
+
+export function loadingFillerKind(text: string): 'um' | 'ha' | 'think' | 'search' | null {
+  const kind = emotionClipKind(text, 'line');
+  if (kind === 'um' || kind === 'ha' || kind === 'think' || kind === 'search') return kind;
+  return null;
+}
+
 export function greetingText(lang: string, kind: GreetingClipKind): string {
   return GREETING_TEXT[clipLang(lang)][kind];
 }

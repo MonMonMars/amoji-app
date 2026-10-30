@@ -40,6 +40,11 @@ export const VOICE_CATALOG: readonly VoiceOption[] = [
   { locale: 'zh', engine: 'edge', gender: 'male', id: 'zh-CN-YunxiNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Mandarin male peer.' },
   { locale: 'zh', engine: 'edge', gender: 'male', id: 'zh-CN-YunyangNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Mandarin male, clearer enunciation.' },
   { locale: 'zh', engine: 'edge', gender: 'male', id: 'zh-CN-YunxiaNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Mandarin male, cartoon/cute. Listed for the bake-off.' },
+  { locale: 'zh', engine: 'edge', gender: 'male', id: 'zh-TW-YunJheNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Taiwan Mandarin male.' },
+  { locale: 'zh', engine: 'edge', gender: 'female', id: 'zh-TW-HsiaoChenNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Taiwan Mandarin female.' },
+  { locale: 'zh', engine: 'edge', gender: 'female', id: 'zh-TW-HsiaoYuNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Taiwan Mandarin female peer.' },
+  { locale: 'zh', engine: 'edge', gender: 'female', id: 'zh-CN-liaoning-XiaobeiNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Liaoning female. Distinct from Xiaoxiao.' },
+  { locale: 'zh', engine: 'edge', gender: 'female', id: 'zh-CN-shaanxi-XiaoniNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Shaanxi female. Distinct from Xiaoyi.' },
   { locale: 'zh', engine: 'speech', gender: 'female', id: 'Xiaoxiao', shipping: true, license: 'browser', latency: 'low', notes: 'zh-CN female.' },
   { locale: 'zh', engine: 'speech', gender: 'female', id: 'Huihui', shipping: true, license: 'browser', latency: 'low', notes: 'Windows Huihui female.' },
   { locale: 'zh', engine: 'speech', gender: 'male', id: 'Yunxi', shipping: true, license: 'browser', latency: 'low', notes: 'zh-CN male.' },
@@ -66,15 +71,44 @@ export const VOICE_CATALOG: readonly VoiceOption[] = [
   { locale: 'en', engine: 'edge', gender: 'male', id: 'en-US-EricNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'English male.' },
   { locale: 'en', engine: 'edge', gender: 'male', id: 'en-US-RogerNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'English male.' },
   { locale: 'en', engine: 'edge', gender: 'male', id: 'en-US-SteffanNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'English male.' },
-  { locale: 'en', engine: 'edge', gender: 'male', id: 'en-US-AndrewMultilingualNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'English male, multilingual.' },
-  { locale: 'en', engine: 'edge', gender: 'male', id: 'en-US-BrianMultilingualNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'English male, multilingual.' },
+  { locale: 'en', engine: 'edge', gender: 'male', id: 'en-US-AndrewMultilingualNeural', shipping: false, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Near-duplicate of Andrew. Not a picker button.' },
+  { locale: 'en', engine: 'edge', gender: 'male', id: 'en-US-BrianMultilingualNeural', shipping: false, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Near-duplicate of Brian. Not a picker button.' },
+  { locale: 'en', engine: 'edge', gender: 'male', id: 'en-GB-RyanNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'British male.' },
+  { locale: 'en', engine: 'edge', gender: 'male', id: 'en-HK-SamNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Hong Kong English male.' },
+  { locale: 'en', engine: 'edge', gender: 'male', id: 'en-AU-WilliamMultilingualNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Australian male. Only William; not a twin of a US voice.' },
+  { locale: 'en', engine: 'edge', gender: 'male', id: 'en-GB-ThomasNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'British male peer.' },
+  { locale: 'en', engine: 'edge', gender: 'male', id: 'en-IE-ConnorNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Irish male.' },
+  { locale: 'en', engine: 'edge', gender: 'male', id: 'en-IN-PrabhatNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Indian English male.' },
+  { locale: 'en', engine: 'edge', gender: 'male', id: 'en-CA-LiamNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Canadian male.' },
+  { locale: 'en', engine: 'edge', gender: 'male', id: 'en-NZ-MitchellNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'New Zealand male.' },
+  { locale: 'en', engine: 'edge', gender: 'male', id: 'en-SG-WayneNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Singapore male.' },
+  { locale: 'en', engine: 'edge', gender: 'male', id: 'en-ZA-LukeNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'South African male.' },
+  { locale: 'en', engine: 'edge', gender: 'male', id: 'en-PH-JamesNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Philippine English male.' },
+  { locale: 'en', engine: 'edge', gender: 'male', id: 'en-KE-ChilembaNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Kenyan male.' },
+  { locale: 'en', engine: 'edge', gender: 'male', id: 'en-NG-AbeoNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Nigerian male.' },
+  { locale: 'en', engine: 'edge', gender: 'male', id: 'en-TZ-ElimuNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Tanzanian male.' },
   { locale: 'en', engine: 'edge', gender: 'female', id: 'en-US-AriaNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'English female. Research default peer; Jenny stays the unwired fallback.' },
   { locale: 'en', engine: 'edge', gender: 'female', id: 'en-US-AvaNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'English female peer.' },
   { locale: 'en', engine: 'edge', gender: 'female', id: 'en-US-EmmaNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'English female peer.' },
   { locale: 'en', engine: 'edge', gender: 'female', id: 'en-US-MichelleNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'English female.' },
   { locale: 'en', engine: 'edge', gender: 'female', id: 'en-US-AnaNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'English female, cartoon/cute and often child-like. Listed for the bake-off.' },
-  { locale: 'en', engine: 'edge', gender: 'female', id: 'en-US-AvaMultilingualNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'English female, multilingual.' },
-  { locale: 'en', engine: 'edge', gender: 'female', id: 'en-US-EmmaMultilingualNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'English female, multilingual.' },
+  { locale: 'en', engine: 'edge', gender: 'female', id: 'en-US-AvaMultilingualNeural', shipping: false, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Near-duplicate of Ava. Not a picker button.' },
+  { locale: 'en', engine: 'edge', gender: 'female', id: 'en-US-EmmaMultilingualNeural', shipping: false, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Near-duplicate of Emma. Not a picker button.' },
+  { locale: 'en', engine: 'edge', gender: 'female', id: 'en-GB-SoniaNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'British female.' },
+  { locale: 'en', engine: 'edge', gender: 'female', id: 'en-AU-NatashaNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Australian female.' },
+  { locale: 'en', engine: 'edge', gender: 'female', id: 'en-GB-LibbyNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'British female peer.' },
+  { locale: 'en', engine: 'edge', gender: 'female', id: 'en-IN-NeerjaNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Indian English female.' },
+  { locale: 'en', engine: 'edge', gender: 'female', id: 'en-IE-EmilyNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Irish female.' },
+  { locale: 'en', engine: 'edge', gender: 'female', id: 'en-NZ-MollyNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'New Zealand female.' },
+  { locale: 'en', engine: 'edge', gender: 'female', id: 'en-HK-YanNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Hong Kong English female.' },
+  { locale: 'en', engine: 'edge', gender: 'female', id: 'en-CA-ClaraNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Canadian female.' },
+  { locale: 'en', engine: 'edge', gender: 'female', id: 'en-SG-LunaNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Singapore female.' },
+  { locale: 'en', engine: 'edge', gender: 'female', id: 'en-ZA-LeahNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'South African female.' },
+  { locale: 'en', engine: 'edge', gender: 'female', id: 'en-PH-RosaNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Philippine English female.' },
+  { locale: 'en', engine: 'edge', gender: 'female', id: 'en-GB-MaisieNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'British female, child-like.' },
+  { locale: 'en', engine: 'edge', gender: 'female', id: 'en-KE-AsiliaNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Kenyan female.' },
+  { locale: 'en', engine: 'edge', gender: 'female', id: 'en-NG-EzinneNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Nigerian female.' },
+  { locale: 'en', engine: 'edge', gender: 'female', id: 'en-TZ-ImaniNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Tanzanian female.' },
   { locale: 'en', engine: 'speech', gender: 'female', id: 'Zira', shipping: true, license: 'browser', latency: 'low', notes: 'Windows Zira.' },
   { locale: 'en', engine: 'speech', gender: 'female', id: 'Samantha', shipping: true, license: 'browser', latency: 'low', notes: 'Apple Samantha.' },
   { locale: 'en', engine: 'speech', gender: 'female', id: 'Aria', shipping: true, license: 'browser', latency: 'low', notes: 'Microsoft Aria.' },
@@ -121,7 +155,7 @@ export function voicesForLocale(locale: VoiceLocale): readonly VoiceOption[] {
 /**
  * Bake-off buttons. One Edge Neural per row, labels fixed as
  * `{Language} {gender} {n}` within that language+gender group.
- * Dialect zh-CN Xiaobei / Xiaoni are intentionally absent.
+ * Near-duplicate multilingual twins of the same speaker are not buttons.
  */
 export interface EdgeVoiceButton {
   locale: VoiceLocale;
@@ -164,8 +198,13 @@ export const EDGE_VOICE_BUTTONS: readonly EdgeVoiceButton[] = [
   edgeButton('zh', 'Mandarin', 'male', 2, 'zh-CN-YunxiNeural'),
   edgeButton('zh', 'Mandarin', 'male', 3, 'zh-CN-YunyangNeural'),
   edgeButton('zh', 'Mandarin', 'male', 4, 'zh-CN-YunxiaNeural', 'cute'),
+  edgeButton('zh', 'Mandarin', 'male', 5, 'zh-TW-YunJheNeural'),
   edgeButton('zh', 'Mandarin', 'female', 1, 'zh-CN-XiaoxiaoNeural'),
   edgeButton('zh', 'Mandarin', 'female', 2, 'zh-CN-XiaoyiNeural'),
+  edgeButton('zh', 'Mandarin', 'female', 3, 'zh-TW-HsiaoChenNeural'),
+  edgeButton('zh', 'Mandarin', 'female', 4, 'zh-TW-HsiaoYuNeural'),
+  edgeButton('zh', 'Mandarin', 'female', 5, 'zh-CN-liaoning-XiaobeiNeural'),
+  edgeButton('zh', 'Mandarin', 'female', 6, 'zh-CN-shaanxi-XiaoniNeural'),
 
   edgeButton('ja', 'Japanese', 'male', 1, 'ja-JP-KeitaNeural'),
   edgeButton('ja', 'Japanese', 'female', 1, 'ja-JP-NanamiNeural'),
@@ -177,16 +216,41 @@ export const EDGE_VOICE_BUTTONS: readonly EdgeVoiceButton[] = [
   edgeButton('en', 'English', 'male', 5, 'en-US-EricNeural'),
   edgeButton('en', 'English', 'male', 6, 'en-US-RogerNeural'),
   edgeButton('en', 'English', 'male', 7, 'en-US-SteffanNeural'),
-  edgeButton('en', 'English', 'male', 8, 'en-US-AndrewMultilingualNeural'),
-  edgeButton('en', 'English', 'male', 9, 'en-US-BrianMultilingualNeural'),
+  edgeButton('en', 'English', 'male', 8, 'en-GB-RyanNeural'),
+  edgeButton('en', 'English', 'male', 9, 'en-HK-SamNeural'),
+  edgeButton('en', 'English', 'male', 10, 'en-AU-WilliamMultilingualNeural'),
+  edgeButton('en', 'English', 'male', 11, 'en-GB-ThomasNeural'),
+  edgeButton('en', 'English', 'male', 12, 'en-IE-ConnorNeural'),
+  edgeButton('en', 'English', 'male', 13, 'en-IN-PrabhatNeural'),
+  edgeButton('en', 'English', 'male', 14, 'en-CA-LiamNeural'),
+  edgeButton('en', 'English', 'male', 15, 'en-NZ-MitchellNeural'),
+  edgeButton('en', 'English', 'male', 16, 'en-SG-WayneNeural'),
+  edgeButton('en', 'English', 'male', 17, 'en-ZA-LukeNeural'),
+  edgeButton('en', 'English', 'male', 18, 'en-PH-JamesNeural'),
+  edgeButton('en', 'English', 'male', 19, 'en-KE-ChilembaNeural'),
+  edgeButton('en', 'English', 'male', 20, 'en-NG-AbeoNeural'),
+  edgeButton('en', 'English', 'male', 21, 'en-TZ-ElimuNeural'),
   edgeButton('en', 'English', 'female', 1, 'en-US-AriaNeural'),
   edgeButton('en', 'English', 'female', 2, 'en-US-JennyNeural'),
   edgeButton('en', 'English', 'female', 3, 'en-US-AvaNeural'),
   edgeButton('en', 'English', 'female', 4, 'en-US-EmmaNeural'),
   edgeButton('en', 'English', 'female', 5, 'en-US-MichelleNeural'),
   edgeButton('en', 'English', 'female', 6, 'en-US-AnaNeural', 'child-like'),
-  edgeButton('en', 'English', 'female', 7, 'en-US-AvaMultilingualNeural'),
-  edgeButton('en', 'English', 'female', 8, 'en-US-EmmaMultilingualNeural'),
+  edgeButton('en', 'English', 'female', 7, 'en-GB-SoniaNeural'),
+  edgeButton('en', 'English', 'female', 8, 'en-AU-NatashaNeural'),
+  edgeButton('en', 'English', 'female', 9, 'en-GB-LibbyNeural'),
+  edgeButton('en', 'English', 'female', 10, 'en-IN-NeerjaNeural'),
+  edgeButton('en', 'English', 'female', 11, 'en-IE-EmilyNeural'),
+  edgeButton('en', 'English', 'female', 12, 'en-NZ-MollyNeural'),
+  edgeButton('en', 'English', 'female', 13, 'en-HK-YanNeural'),
+  edgeButton('en', 'English', 'female', 14, 'en-CA-ClaraNeural'),
+  edgeButton('en', 'English', 'female', 15, 'en-SG-LunaNeural'),
+  edgeButton('en', 'English', 'female', 16, 'en-ZA-LeahNeural'),
+  edgeButton('en', 'English', 'female', 17, 'en-PH-RosaNeural'),
+  edgeButton('en', 'English', 'female', 18, 'en-GB-MaisieNeural', 'child-like'),
+  edgeButton('en', 'English', 'female', 19, 'en-KE-AsiliaNeural'),
+  edgeButton('en', 'English', 'female', 20, 'en-NG-EzinneNeural'),
+  edgeButton('en', 'English', 'female', 21, 'en-TZ-ImaniNeural'),
 ];
 
 export function edgeSampleText(locale: string): string {
@@ -280,12 +344,45 @@ export function synthNameList(locale: string, gender: VoiceGender): string[] {
   return names;
 }
 
-const FEMALE_VOICE = /female|hiumaan|hiugaai|sin-ji|xiaoxiao|xiaoyi|huihui|yaoyao|nanami|kyoko|haruka|zira|samantha|aria|jenny|hazel|susan/i;
-const MALE_VOICE = /(^|[^a-z])male([^a-z]|$)|wanlung|yunxi|yunjian|yunyang|keita|otoya|kangkang|david|mark|george|guy|daniel|christopher|eric|james|ryan/i;
+const BROWSER_MALE = new Set([
+  ...MALE_NAMES,
+  'male', 'david', 'mark', 'george', 'daniel', 'alex', 'fred', 'rishi', 'aaron',
+  'oliver', 'nathan', 'kangkang', 'otoya',
+]);
+const BROWSER_FEMALE = new Set([
+  ...FEMALE_NAMES,
+  'female', 'zira', 'samantha', 'hazel', 'susan', 'karen', 'victoria', 'allison',
+  'fiona', 'moira', 'tessa', 'veena', 'serena', 'huihui', 'yaoyao', 'haruka',
+  'sinji', 'kyoko',
+]);
 
-/** "Female" contains the letters "male". Strip it before the male test. */
-function maleVoiceName(voiceName: string): boolean {
-  return MALE_VOICE.test(voiceName.toLowerCase().replace(/female/g, ' '));
+/** Tokens only. "America" must not count as Eric, and "Ryan" must not count as Yan. */
+function voiceTokens(voiceName: string): string[] {
+  const raw = voiceName.toLowerCase();
+  const parts = raw.split(/[^a-z0-9]+/).filter((t) => t.length > 1);
+  const glued = raw.split(/[^a-z0-9-]+/).map((chunk) => chunk.replace(/-/g, '')).filter((t) => t.length > 2);
+  return [...parts, ...glued];
+}
+
+function mentions(voiceName: string, known: Set<string>): boolean {
+  return voiceTokens(voiceName).some((token) => known.has(token));
+}
+
+/**
+ * Gender heard in an OS voice name, or null when the name does not say.
+ * "Female" is not male. "English (America)" is not Eric.
+ */
+export function browserVoiceGender(voiceName: string): VoiceGender | null {
+  const lower = voiceName.toLowerCase();
+  const femaleWord = lower.includes('female');
+  const maleWord = /\bmale\b/.test(lower.replace(/female/g, ' '));
+  if (femaleWord && !maleWord) return 'female';
+  if (maleWord && !femaleWord) return 'male';
+  const female = mentions(voiceName, BROWSER_FEMALE);
+  const male = mentions(voiceName, BROWSER_MALE);
+  if (female && !male) return 'female';
+  if (male && !female) return 'male';
+  return null;
 }
 
 /**
@@ -295,15 +392,17 @@ function maleVoiceName(voiceName: string): boolean {
 export function voiceNameMatches(voiceName: string, needle: string): boolean {
   const name = voiceName.toLowerCase();
   const n = needle.toLowerCase();
-  if (n === 'male') return maleVoiceName(voiceName);
-  if (n === 'female') return name.includes('female');
+  if (n === 'male') return browserVoiceGender(voiceName) === 'male';
+  if (n === 'female') return browserVoiceGender(voiceName) === 'female';
+  if (/^[a-z0-9-]+$/i.test(needle)) {
+    const want = n.replace(/-/g, '');
+    return voiceTokens(voiceName).includes(n) || voiceTokens(voiceName).includes(want);
+  }
   return name.includes(n);
 }
 
 /** Browser voices whose names read as the opposite gender (Windows David has no "Male" in the name). */
 export function synthNameConflicts(gender: VoiceGender, voiceName: string): boolean {
-  const female = FEMALE_VOICE.test(voiceName);
-  const male = maleVoiceName(voiceName);
-  if (gender === 'female') return male && !female;
-  return female && !male;
+  const heard = browserVoiceGender(voiceName);
+  return heard !== null && heard !== gender;
 }
