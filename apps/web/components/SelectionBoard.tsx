@@ -24,6 +24,7 @@ import {
   backgroundById, backgroundLetter, characterById, t, usePrefs,
   type Prefs,
 } from '../lib/prefs';
+import { clearStorySession } from '../lib/story-session';
 
 export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   const router = useRouter();
@@ -48,6 +49,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   const confirm = () => {
     if (leaving) return;
     const go = () => {
+      clearStorySession();
       if (mode === 'change' && draft) setPrefs({ ...prefs, ...draft });
       router.push('/chat');
     };
@@ -98,6 +100,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
               </p>
             )}
             <h2 className="mb-1 mt-2 text-center text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
+              <span data-testid="chat-mode-label" className="mb-1 block text-[10px] font-bold uppercase tracking-[0.3em] text-sky-200/80">Chat mode</span>
               {t(lang, 'chooseCharacter')}
             </h2>
           </div>

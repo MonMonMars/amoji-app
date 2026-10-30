@@ -98,3 +98,35 @@ Concatenations of existing CC0/PD shorts in this folder (~3 minutes each):
 | `sing-female/sing-f-long-set2.mp3` | female | 180s |
 | `sing-male/sing-m-long-set1.mp3` | male | 180s |
 | `sing-male/sing-m-long-set2.mp3` | male | 178s |
+
+
+## Long songs pack (2026-10-31 overnight)
+
+Full-length PD/CC0 vocals (~2.5–3.5 min). See also `LONG-SONGS-LICENSE.txt`.
+
+| File | ~ms | Credit |
+|------|-----|--------|
+| sing-f-adele-long.mp3 | 203377 | Agnes Kimball / Adolf Philipp (1913) PD |
+| sing-f-soave-long.mp3 | 192470 | Mozart; USAF Singing Sergeants PD |
+| sing-f-una-voce-long.mp3 | 200882 | Rossini; USAF Singing Sergeants PD |
+| sing-f-la-mamma-morta.mp3 | 166720 | Elda Cavalieri 1906; Giordano PD |
+| sing-f-sono-giunta.mp3 | 183774 | Meta Seinemeyer 1927; Verdi PD |
+| sing-m-shenandoah-long.mp3 | 198374 | USAF Singing Sergeants (trad.) PD |
+| sing-m-brindisi-long.mp3 | 182439 | Verdi; USAF Singing Sergeants PD |
+| sing-m-votre-toast-long.mp3 | 154749 | Bizet; USAF Singing Sergeants PD |
+| sing-m-celeste-aida.mp3 | 204254 | Enrico Caruso 1902; Verdi PD |
+| sing-m-no-pagliaccio.mp3 | 199105 | Enrico Caruso; Leoncavallo PD |
+
+
+## Catalog paths (overnight ensure)
+
+- `sing-female/sing-f-adele-long.mp3`
+- `sing-female/sing-f-soave-long.mp3`
+- `sing-female/sing-f-una-voce-long.mp3`
+- `sing-female/sing-f-la-mamma-morta.mp3`
+- `sing-female/sing-f-sono-giunta.mp3`
+- `sing-male/sing-m-shenandoah-long.mp3`
+- `sing-male/sing-m-brindisi-long.mp3`
+- `sing-male/sing-m-votre-toast-long.mp3`
+- `sing-male/sing-m-celeste-aida.mp3`
+- `sing-male/sing-m-no-pagliaccio.mp3`

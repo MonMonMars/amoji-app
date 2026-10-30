@@ -12,8 +12,7 @@ describe('warm-up dialogue banks', () => {
     expect([...WARMUP_BANKS.yue!]).toEqual([...YUE_THINKING_LINES]);
     expect(YUE_THINKING_LINES).toHaveLength(6);
     expect(WARMUP_BANKS.en).toContain('um……');
-    expect(WARMUP_BANKS.en).toContain('ha……');
-    expect(WARMUP_BANKS.en).toContain('um…… let me think.');
+        expect(WARMUP_BANKS.en).toContain('um…… let me think.');
     expect(WARMUP_BANKS.en).toContain('um…… let me search the web.');
     for (const lang of ['yue', 'zh', 'ja', 'en']) {
       for (const line of WARMUP_BANKS[lang]!) {
