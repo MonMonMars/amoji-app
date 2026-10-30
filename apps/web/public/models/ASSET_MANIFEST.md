@@ -183,6 +183,16 @@ Real VRMA animation clips (VRMC_vrm_animation), force-committed for GitHub Pages
 | anims/lib_C44.vrma | idle RokokoWatchingSomething (Rokoko Mixamo FBX->VRMA local) |
 | anims/lib_C57.vrma | idle NervouslyLookAround (Mixamo->VRMA local) |
 | anims/lib_C64.vrma | idle DefeatIdle (Mixamo->VRMA local) |
+| anims/lib_C02.vrma | idle Idle_Loop (Quaternius UAL Unity FBX→VRMA; #4) |
+| anims/lib_C11.vrma | idle FoldArms (Quaternius UAL2 FBX→VRMA; #6) |
+| anims/lib_C65.vrma | idle Idle_Talking_Loop (Quaternius UAL; #24) |
+| anims/lib_C75.vrma | idle NinjaJump_Idle_Loop (Quaternius UAL2; #25) |
+| anims/IdleKenneyStand.vrma | idle Kenney Survivors (CC0; #26) |
+| anims/IdleKaykitB.vrma | idle KayKit Rig_Medium Idle_B retarget→Mixamo (#37) |
+| anims/IdleKaykitA.vrma | idle KayKit Rig_Medium Idle_A retarget→Mixamo (#38) |
+| anims/IdleQuaterniusHuman.vrma | idle Quaternius AnimatedHuman Idle (#39) |
+| anims/IdleMixamoBreathing.vrma | idle Mixamo BreathingIdle (#40) |
+| anims/IdleMixamoHappy.vrma | idle Mixamo HappyIdle (#41) |
 
 Additional dormant clips ship on disk for future triggers (see repo `anims/` directory).
 

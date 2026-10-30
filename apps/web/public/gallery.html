@@ -83,6 +83,14 @@ const EXISTING = [
   ['IdleSassy','Idle Sassy','cheerful, sassy, cool','app asset','vrma','models/anims/IdleSassy.vrma',true,'app','On disk',null,'Out of the default rotation — arms drive into the torso.'],
   ['IdleChinHand','Idle Chin Hand','cool, thoughtful, shy','app asset','vrma','models/anims/IdleChinHand.vrma',true,'app','On disk',null,'Out of the default rotation — arms drive into the torso.'],
   ['IdleHug','Idle Hug','cheerful, warm','app asset','vrma','models/anims/IdleHug.vrma',true,'app','On disk',null,'Out of the default rotation — hug pose puts the arms in the torso.'],
+['lib_C75','Ninja Idle','calm','CC0 Quaternius UAL2','vrma','models/anims/lib_C75.vrma',true,'app','On disk',null,'Planted'],
+
+['lib_C65','Talking Loop','calm','CC0 Quaternius UAL','vrma','models/anims/lib_C65.vrma',true,'app','On disk',null,'Planted'],
+
+['lib_C11','Fold Arms','calm','CC0 Quaternius UAL2','vrma','models/anims/lib_C11.vrma',true,'app','On disk',null,'Planted'],
+
+['lib_C02','Idle Loop','calm','CC0 Quaternius UAL','vrma','models/anims/lib_C02.vrma',true,'app','On disk',null,'Planted'],
+
 ];
 const READY = [
   ['IdleBreathCalm','Idle Breath Calm','calm, shy, soft','MIT (pixiv ChatVRM)','vrma','models/anims/IdleBreathCalm.vrma',true,'ready','Primary default','https://github.com/pixiv/ChatVRM','Primary default for every personality. Head forward, arms at the sides, feet planted.'],
@@ -111,18 +119,16 @@ const MANUAL = [
 
 /** Amoji chat # SoT — sync with apps/web/lib/idle-library.ts (#1–36) */
 const AMOJI_NUM = {
-  IdleBreathCalm: 1, StandardIdle: 2, LookAround: 3,
-  IdleQuaterniusLoop: 4, IdleKaykitA: 5, IdleMixamoBored: 7,
-  IdleMixamoLooking: 3, IdleTalkLoop: 24, IdleKenneyStand: 26,
-  Relax: 32, IdleNeutral: 33, IdleSassy: 34, IdleChinHand: 35, IdleHug: 36,
-  HelloWave: 15, Shrug: 16, Sleepy: 17, Thinking: 18, ThumbsUp: 20,
-  Clapping: 21, Cheer: 22,
-  // free-library Cxx aliases (clipId keys)
-  lib_C02: 4, lib_C04: 5, lib_C11: 6, lib_C25: 7,
-  lib_C36: 8, lib_C37: 9, lib_C38: 10, lib_C39: 11, lib_C41: 12,
-  lib_C44: 14, lib_C57: 19, lib_C64: 23,
-  lib_C65: 24, lib_C75: 25, lib_C84: 26, lib_C85: 27, lib_C87: 28,
-  lib_C90: 29, lib_C92: 30, lib_C95: 31,
+IdleBreathCalm: 1, StandardIdle: 2, LookAround: 3,
+lib_C02: 4, lib_C04: 5, lib_C11: 6, lib_C25: 7,
+lib_C36: 8, lib_C37: 9, lib_C38: 10, lib_C39: 11, lib_C41: 12,
+lib_C44: 14, HelloWave: 15, Shrug: 16, Sleepy: 17, Thinking: 18,
+lib_C57: 19, ThumbsUp: 20, Clapping: 21, Cheer: 22, lib_C64: 23,
+lib_C65: 24, lib_C75: 25, IdleKenneyStand: 26, lib_C84: 26,
+lib_C85: 27, lib_C87: 28, lib_C90: 29, lib_C92: 30, lib_C95: 31,
+Relax: 32, IdleNeutral: 33, IdleSassy: 34, IdleChinHand: 35, IdleHug: 36,
+IdleKaykitB: 37, IdleKaykitA: 38, IdleQuaterniusHuman: 39,
+IdleMixamoBreathing: 40, IdleMixamoHappy: 41,
 };
 const AMOJI_CXX = {
   1: null, 2: null, 3: 'C01', 4: 'C02', 5: 'C04', 6: 'C11', 7: 'C25',
