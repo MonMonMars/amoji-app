@@ -26,7 +26,7 @@ export interface BrainSpec {
 export const BRAIN_SPECS: BrainSpec[] = [
   {
     id: 'deepseek', label: 'DeepSeek', keyless: false,
-    baseUrl: 'https://api.deepseek.com', model: 'deepseek-chat',
+    baseUrl: 'https://api.deepseek.com', model: 'deepseek-v4-pro',
     blurb: 'Best free-tier quality — short natural companion replies (paste API key).',
     keyFrom: 'platform.deepseek.com',
   },

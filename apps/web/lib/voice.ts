@@ -946,16 +946,16 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   },
   'a94-rita': {
     yue: [
-      { lang: 'zh-HK', names: ['WanLung', 'Sin-ju', 'Male'], basePitch: 0.96, baseRate: 0.96 },
+      { lang: 'zh-HK', names: ['HiuGaai', 'HiuMaan', 'Female'], basePitch: 1.04, baseRate: 1.02 },
     ],
     zh: [
-      { lang: 'zh-CN', names: ['Yunyang', 'Yunjian', 'Kangkang', 'Male'], basePitch: 0.96, baseRate: 0.96 },
+      { lang: 'zh-CN', names: ['Xiaoxiao', 'Xiaoyi', 'Huihui', 'Female'], basePitch: 1.04, baseRate: 1.02 },
     ],
     ja: [
-      { lang: 'ja-JP', names: ['Keita', 'Otoya', 'Male'], basePitch: 0.96, baseRate: 0.97 },
+      { lang: 'ja-JP', names: ['Nanami', 'Ayumi', 'Female'], basePitch: 1.04, baseRate: 1.02 },
     ],
     en: [
-      { lang: 'en-US', names: ['Eric', 'Guy', 'David', 'Male'], basePitch: 0.96, baseRate: 0.97 },
+      { lang: 'en-US', names: ['Jenny', 'Aria', 'Zira', 'Female'], basePitch: 1.04, baseRate: 1.02 },
     ],
   },
   'a107-dm-office-casual': {

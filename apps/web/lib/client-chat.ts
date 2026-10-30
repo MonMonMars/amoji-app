@@ -318,7 +318,7 @@ function launchRacer(
   gate: (emit: () => void) => void,
   budgetMs: number,
   onPartial?: (text: string) => void,
-  maxTokens = 180,
+  maxTokens = 280,
 ): Racer {
   const ctl = new AbortController();
   let fired = false;
@@ -421,7 +421,7 @@ async function streamCompletion(
   system: string,
   messages: ChatMessage[],
   onPartial?: (text: string) => void,
-  maxTokens = 180,
+  maxTokens = 280,
 ): Promise<string> {
   const racer = launchRacer(spec, spec.model, key, system, messages, (emit) => emit(), KEYED_BUDGET_MS, onPartial, maxTokens);
   await racer.first;
@@ -435,7 +435,7 @@ async function racedPollinations(
   system: string,
   messages: ChatMessage[],
   onPartial?: (text: string) => void,
-  maxTokens = 180,
+  maxTokens = 280,
 ): Promise<string> {
   // gate: before the decision everyone may paint (a loser delta gets
   // overwritten by the winner's own accumulation on the next token);
@@ -479,7 +479,7 @@ export async function clientChat(
   opts?: ClientChatOptions,
 ): Promise<ClientChatResult> {
   const system = `${BASE_SYSTEM}\nReply in speakable sentences only — 1–2 short lines a friend would say. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". The only machine tag is the final [emotion:{...}] line.\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
-  const maxTokens = /\bRecipe:/.test(opts?.world ?? '') ? 520 : 180;
+  const maxTokens = /\bRecipe:/.test(opts?.world ?? '') ? 520 : 280;
   const onPartial = opts?.onPartial
     ? (partial: string) => { opts.onPartial?.(shapeCompanionReply(partial, { streaming: true })); }
     : undefined;

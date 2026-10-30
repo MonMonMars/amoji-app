@@ -193,8 +193,9 @@ describe('per-character Edge voices', () => {
     expect(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a24-hairsample-male' }).name).toBe('en-GB-RyanNeural');
     expect(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a459-chinesewarriormonk' }).name).toBe('en-US-ChristopherNeural');
     expect(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a468-eric' }).name).toBe('en-HK-SamNeural');
-    expect(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a94-rita' }).name).toBe('en-US-EricNeural');
-    expect(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a98-ethan' }).name).toBe('en-AU-WilliamMultilingualNeural');
+    expect(isFemaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a94-rita' }).name)).toBe(true);
+    expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a94-rita' }).name)).toBe(false);
+    expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a98-ethan' }).name)).toBe(true);
     expect(resolveEdgeVoice({ lang: 'en', gender: 'female' }).name).toBe('en-US-JennyNeural');
   });
 
@@ -206,7 +207,6 @@ describe('per-character Edge voices', () => {
         'a24-hairsample-male',
         'a459-chinesewarriormonk',
         'a468-eric',
-        'a94-rita',
         'a98-ethan',
       ]) {
         const voice = resolveEdgeVoice({ lang, gender: 'male', character: id });

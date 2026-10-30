@@ -223,8 +223,8 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   moodNeutral: { en: 'calm', yue: '平靜', zh: '平静', ja: '穏やか' },
   voiceReplies: { en: 'Voice replies', yue: '語音回覆', zh: '语音回复', ja: '音声返答' },
 
-  muteAll: { en: 'Mute', yue: '靜音', zh: '静音', ja: 'ミュート' },
-  unmuteAll: { en: 'Unmute', yue: '取消靜音', zh: '取消静音', ja: 'ミュート解除' },
+  muteAll: { en: 'Mute all', yue: '全部靜音', zh: '全部静音', ja: 'すべてミュート' },
+  unmuteAll: { en: 'Unmute all', yue: '取消全部靜音', zh: '取消全部静音', ja: 'すべて解除' },
   muteAllHint: {
     en: 'Turn off all sound, voice, and effects. Mic stays separate.',
     yue: '關閉全部聲音、語音同音效。咪高峰唔受影響。',

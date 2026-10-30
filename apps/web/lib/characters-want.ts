@@ -450,12 +450,12 @@ export const CHARACTERS_WANT = [
   {
     id: 'a94-rita',
     name: 'Rita',
-    gender: 'male',
+    gender: 'female',
     accent: '#34d399',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a94-rita.png',
     model: 'want/a94-rita.vrm',
-    voiceHint: { yue: 'zh-HK-WanLungNeural', en: 'en-HK-SamNeural' },
+    voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
     tagline: {
       en: 'Rita — warm friend, always listening',
       yue: 'Rita——陪你傾偈嘅小伙伴~',

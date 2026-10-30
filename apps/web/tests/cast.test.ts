@@ -46,7 +46,6 @@ describe('cast roster', () => {
       'a24-hairsample-male',
       'a459-chinesewarriormonk',
       'a468-eric',
-      'a94-rita',
       'a98-ethan',
     ].sort());
     for (const c of male) {
