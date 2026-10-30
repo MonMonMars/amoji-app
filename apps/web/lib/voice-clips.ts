@@ -217,27 +217,34 @@ function langHaPath(lang: string, gender: VoiceClipGender): string {
     : '/voice-clips/en/male/ha.mp3';
 }
 
-/** Recorded hit for a poke. Female = CLIP #94 wow_woven; Male = CLIP #52 ja/male/oh. */
-const RECORDED_POKE: Record<VoiceClipGender, string> = {
-  female: '/voice-clips/universal/female/wow_woven.mp3',
-  male: '/voice-clips/ja/male/oh.mp3',
+/** Poke SFX by body zone (SFX only — never TTS). Gender-matched um/oh/ha shorts. */
+const RECORDED_POKE_ZONE: Record<VoiceClipGender, Record<string, string>> = {
+  female: {
+    head: '/voice-clips/universal/female/huh.mp3',
+    chest: '/voice-clips/universal/female/oh.mp3',
+    torso: '/voice-clips/universal/female/ha.mp3',
+    belly: '/voice-clips/universal/female/um.mp3',
+    hand: '/voice-clips/universal/female/giggle.mp3',
+    side: '/voice-clips/universal/female/oh.mp3',
+    back: '/voice-clips/universal/female/sigh.mp3',
+    default: '/voice-clips/universal/female/oh.mp3',
+  },
+  male: {
+    head: '/voice-clips/ja/male/oh.mp3',
+    chest: '/voice-clips/ja/male/ha.mp3',
+    torso: '/voice-clips/ja/male/um.mp3',
+    belly: '/voice-clips/ja/male/oh.mp3',
+    hand: '/voice-clips/ja/male/ha.mp3',
+    side: '/voice-clips/ja/male/oh.mp3',
+    back: '/voice-clips/universal/male/sigh.mp3',
+    default: '/voice-clips/ja/male/oh.mp3',
+  },
 };
 
-export function recordedFillerClip(
-  gender: VoiceClipGender,
-  kind: 'um' | 'ha' | 'think' | 'search',
-  lang: string = 'yue',
-): string {
-  if (kind === 'ha') return langHaPath(lang, gender);
-  if (kind === 'search' && gender === 'female') {
-    const huh = '/voice-clips/universal/female/huh.mp3';
-    if (clipLibraryId(huh) !== null) return huh;
-  }
-  return langUmPath(lang, gender);
-}
-
-export function recordedPokeClip(gender: VoiceClipGender): string {
-  return RECORDED_POKE[gender];
+export function recordedPokeClip(gender: VoiceClipGender, zone?: string): string {
+  const table = RECORDED_POKE_ZONE[gender];
+  const key = (zone || 'default').toLowerCase();
+  return table[key] ?? table.default ?? table.torso!;
 }
 
 export function loadingFillerKind(text: string): 'um' | 'ha' | 'think' | 'search' | null {

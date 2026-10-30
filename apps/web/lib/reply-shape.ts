@@ -95,9 +95,21 @@ function spaceSentences(text: string): string {
   return text.replace(/([。！？!?])(?=[^\s])/g, '$1 ');
 }
 
+
+/** Drop GPT-OSS / reasoning-model leaks that slip past channel tags. */
+function stripReasoningLeak(text: string): string {
+  let s = text;
+  s = s.replace(/<think>[\s\S]*?<\/think>/gi, '\n');
+  s = s.replace(/^(?:analysis|reasoning|plan|scratchpad)\s*:\s*[\s\S]*?(?=\n\n|final|assistant|$)/i, '');
+  s = s.replace(/assistantfinal\s*/gi, '');
+  s = s.replace(/^(?:okay[,.]?\s+)?(?:so\s+)?(?:the\s+)?user\b[^.?!\n]{0,120}[.?!]?\s*/gim, '');
+  s = s.replace(/^(?:I need to|I should|Let's|Let me)\b[^.?!\n]{0,100}[.?!]?\s*/gim, '');
+  return s;
+}
+
 /** Spoken reply: on topic, finished sentences, personality intact. */
 export function shapeCompanionReply(raw: string, opts?: ShapeOpts): string {
-  let text = stripChannels(stripThink(raw.replace(/\r/g, '')));
+  let text = stripReasoningLeak(stripChannels(stripThink(raw.replace(/\r/g, ''))));
   text = text.replace(/<\|[^|>]+\|>/g, ' ');
   const sentences = splitSentences(text.replace(/\s+/g, ' ').trim());
   const kept = sentences.filter((s) => !isMeta(s));

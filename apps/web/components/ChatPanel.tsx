@@ -568,9 +568,12 @@ export default function ChatPanel({
     lastActivityRef.current = Date.now();
     lastUserRef.current = Date.now();
     reengageStageRef.current = 0;
-    playPokeBurst(characterId);
+    // SFX-only poke (Mon t691–t696): no TTS reaction / laugh lead — clip by zone.
+    playPokeBurst(characterId, pokeZone || 'torso');
     const line = pokeReactionLine(characterId, characterGender, pokeZone || 'torso', pokeDirection || 'front', lang, pokeCount);
-    sayLocal(line, { joy: 0.5 }, maybeLaughLead(lang));
+    feedUtterance(line);
+    notifySpeaking(line);
+    setHistory((h) => [...h, { role: 'assistant', content: line }]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pokeCount]);
 

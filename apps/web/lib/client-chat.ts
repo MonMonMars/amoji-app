@@ -478,7 +478,7 @@ export async function clientChat(
   messages: ChatMessage[],
   opts?: ClientChatOptions,
 ): Promise<ClientChatResult> {
-  const system = `${BASE_SYSTEM}\nReply in speakable sentences only. Do not show chain-of-thought, markdown, code, or emotion labels in the prose. The only machine tag is the final [emotion:{...}] line.\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
+  const system = `${BASE_SYSTEM}\nReply in speakable sentences only — 1–2 short lines a friend would say. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". The only machine tag is the final [emotion:{...}] line.\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
   const maxTokens = /\bRecipe:/.test(opts?.world ?? '') ? 520 : 180;
   const onPartial = opts?.onPartial
     ? (partial: string) => { opts.onPartial?.(shapeCompanionReply(partial, { streaming: true })); }
