@@ -1,18 +1,22 @@
-// Performance → body motion map (t725–729).
+﻿// Performance body motion map (t725-729 + measured BPM + lib_C* wiring).
 // Pure data — no audio, no DOM.
 //
 // Beat match: mixer timeScale = clamp(trackBpm / clipBpm, 0.65, 1.45).
-// Authored reference BPMs: Dance VRMA ≈100, Sing ≈90, GentleSway (C112) ≈72.
-// Plant-feet shortlist (when VRMA ships as lib_C###):
+// Track BPM prefers measuredBpm(clipId) from scripts/estimate-audio-bpm.py;
+// falls back to STYLE_BPM when confidence was too low.
+// Authored reference BPMs: Dance VRMA ~100, Sing ~90, GentleSway (C112) ~72.
+// Plant-feet shortlist (local VRMA as lib_C### when converted; interim Mixamo-
+// class remotes in CompanionCanvas for C03/C61/C62/C110):
 //   Sing/perform: C116 HypeMan, C117 DJ, C128 DJ02
 //   Dance: C112 GentleSway, C113 DancingMedium, C114 DancingParty, C110 Twist,
 //          C118 ClubDancer01, C03 Dance_Loop; also C111 Robot, C119/C124,
-//          C60–62 Jazz/HipHop/Salsa, C09 KayKit
+//          C60-62 Jazz/HipHop/Salsa, C09 KayKit
 // Soft/ballad → C112 (+ mic); upbeat/party → C114/C118; DJ → C117/C128/C116;
 // twist → C110; robot → C111; jazz/hiphop/salsa → C60/61/62; generic → C03/C113.
 // Skip C144 sitting + float Mixamo chicken-dance.
-// FBX→VRMA not in-repo yet: preferredClipIds are forward-looking; fallbackClipIds
-// use the Dance / Sing clips CompanionCanvas already loads.
+// See public/models/anims/DEFERRED_DANCE_VRMA.md for FBX→VRMA remaining IDs.
+
+import { measuredBpm } from './measured-bpm';
 
 export type MotionFamily = 'sing' | 'dance';
 
@@ -25,19 +29,23 @@ export type MotionTag =
 export interface PerfMotionProfile {
   tag: MotionTag;
   label: string;
-  /** estimated track BPM */
+  /** track BPM (measured when available, else style default) */
   bpm: number;
-  /** authored loop BPM for the body clip currently driving the mixer */
+  /** true when bpm came from measured-bpm map */
+  bpmMeasured: boolean;
+  /** authored loop BPM for the body clip currently assumed (fallback Dance/Sing) */
   clipBpm: number;
-  /** mixer timeScale = clamp(bpm / clipBpm, 0.65, 1.45) */
+  /** authored BPM for preferred lib_C* when that clip is the one playing */
+  preferredClipBpm: number;
+  /** mixer timeScale vs fallback clipBpm (canvas recomputes if preferred loads) */
   timeScale: number;
-  /** preferred VRMA ids when shipped under models/anims */
+  /** preferred VRMA ids when shipped / interim-loaded under models/anims or remote */
   preferredClipIds: readonly string[];
   /** mixer clip names already loaded today */
   fallbackClipIds: readonly string[];
 }
 
-/** Style → estimated BPM (sensible defaults; not measured from audio). */
+/** Style → estimated BPM (sensible defaults; used when measured BPM missing). */
 export const STYLE_BPM: Readonly<Record<string, number>> = {
   'soft ballad': 72,
   chill: 84,
@@ -116,12 +124,20 @@ const PREFERRED: Partial<Record<MotionTag, readonly string[]>> = {
 export function estimateBpm(style: string, _clipId?: string): number {
   const s = style.trim().toLowerCase();
   if (STYLE_BPM[s] != null) return STYLE_BPM[s]!;
-  // longest key match first so "soft ballad" wins over nothing
   const keys = Object.keys(STYLE_BPM).sort((a, b) => b.length - a.length);
   for (const k of keys) {
     if (s.includes(k)) return STYLE_BPM[k]!;
   }
   return 100;
+}
+
+/** Prefer measured track BPM; else style default. */
+export function trackBpmFor(style: string, clipId?: string): { bpm: number; measured: boolean } {
+  if (clipId) {
+    const m = measuredBpm(clipId);
+    if (m != null) return { bpm: m, measured: true };
+  }
+  return { bpm: estimateBpm(style, clipId), measured: false };
 }
 
 export function motionTagFor(
@@ -172,8 +188,9 @@ export function timeScaleForBpm(bpm: number, clipBpm: number): number {
 
 /**
  * Resolve motion for a performance clip.
- * Until shortlist VRMAs ship, mixer uses fallback Dance/Sing; timeScale still
- * follows track BPM vs that fallback's authored BPM (100 / 90).
+ * Until Rokoko VRMAs ship, mixer often uses Dance/Sing; interim Mixamo-class
+ * remotes may fill lib_C03 / lib_C61 / lib_C62 / lib_C110. timeScale uses
+ * fallback clip BPM; CompanionCanvas recomputes when a preferred clip plays.
  */
 export function resolvePerfMotion(clip: {
   id: string;
@@ -181,9 +198,9 @@ export function resolvePerfMotion(clip: {
   style: string;
 }): PerfMotionProfile {
   const tag = motionTagFor(clip.style, clip.kind, clip.id);
-  const bpm = estimateBpm(clip.style, clip.id);
-  // Prefer fallback authored BPM today (Dance/Sing); tag BPM is documented for when lib_C* loads.
+  const { bpm, measured } = trackBpmFor(clip.style, clip.id);
   const clipBpm = clip.kind === 'dance' ? 100 : 90;
+  const preferredClipBpm = clipBpmForTag(tag);
   const timeScale = timeScaleForBpm(bpm, clipBpm);
   const preferredClipIds = PREFERRED[tag] ?? (tag.startsWith('C') ? [`lib_${tag}`] : []);
   const fallbackClipIds: readonly string[] = clip.kind === 'song' ? ['Sing'] : ['Dance'];
@@ -191,14 +208,28 @@ export function resolvePerfMotion(clip: {
     tag,
     label: TAG_LABEL[tag] ?? tag,
     bpm,
+    bpmMeasured: measured,
     clipBpm,
+    preferredClipBpm,
     timeScale,
     preferredClipIds,
     fallbackClipIds,
   };
 }
 
-/** Documented tag→clip BPM (for tests / future when preferred VRMAs load). */
+/** Documented tag→clip BPM (for tests / when preferred VRMAs load). */
 export function clipBpmForTag(tag: MotionTag): number {
   return TAG_CLIP_BPM[tag] ?? (tag === 'generic-sing' ? 90 : 100);
+}
+
+/** Recompute mixer timeScale for the clip that actually played. */
+export function timeScaleForProfile(
+  profile: PerfMotionProfile,
+  playingClipId: string,
+): number {
+  const usePreferred =
+    playingClipId.startsWith('lib_') ||
+    profile.preferredClipIds.includes(playingClipId);
+  const clipBpm = usePreferred ? profile.preferredClipBpm : profile.clipBpm;
+  return timeScaleForBpm(profile.bpm, clipBpm);
 }
