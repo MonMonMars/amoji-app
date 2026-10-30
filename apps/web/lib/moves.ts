@@ -37,7 +37,7 @@ export type MoveKind =
 /** performance length per move, ms */
 export const MOVE_DUR: Record<MoveKind, number> = {
   dance: 9000,
-  sing: 210000,
+  sing: 9000,
   jump: 2600,
   kungfu: 3200,
   taichi: 8000,
