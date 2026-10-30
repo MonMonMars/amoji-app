@@ -29,15 +29,24 @@ describe('classifyPoke', () => {
     expect(classifyPoke({ x: 0, y: 1.2, z: 0.3 }, hips, head, chest, left, right).direction).toBe('back');
   });
 
-  it('follows the hit normal and picks arms, belly, and legs when the contact is there', () => {
+  it('follows the poke ray (then normal) and picks arms, belly, and legs when the contact is there', () => {
+    // Prefer rayDir: punch continues through. Front ray from +Z → impulse −Z
+    // on a calibrated +Z-facing model; this synthetic frame still uses L=-X/R=+X.
     const punched = classifyPoke(
       { x: 0, y: 1.28, z: -0.2 },
       hips, head, chest, left, right,
-      { normal: { x: 0, y: 0, z: -1 } },
+      { normal: { x: 0, y: 0, z: -1 }, rayDir: { x: 0, y: 0, z: 1 } },
     );
     expect(punched.zone).toBe('chest');
     expect(punched.impulse.z).toBeGreaterThan(0.9);
     expect(punched.direction).toBe('front');
+
+    const byNormal = classifyPoke(
+      { x: 0, y: 1.28, z: -0.2 },
+      hips, head, chest, left, right,
+      { normal: { x: 0, y: 0, z: -1 } },
+    );
+    expect(byNormal.impulse.z).toBeGreaterThan(0.9);
 
     const arm = classifyPoke(
       { x: -0.45, y: 1.05, z: -0.05 },

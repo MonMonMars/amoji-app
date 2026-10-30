@@ -25,7 +25,8 @@ export function MiniGameMenuButton({
       onClick={onClick}
       title={ui.menu}
       aria-label={ui.menu}
-      className="ui-btn pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/30 text-white/90 shadow-sm backdrop-blur-md hover:bg-black/50"
+      data-dev="G1"
+      className="ui-btn pointer-events-auto relative flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-black/30 text-white/90 shadow-sm backdrop-blur-md hover:bg-black/50 sm:h-10 sm:w-10"
     >
       <GamepadIcon />
     </button>
@@ -122,7 +123,7 @@ export default function MiniGamePicker({
 
 function GamepadIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+    <svg viewBox="0 0 24 24" className="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
       <rect x="2.5" y="8" width="19" height="9" rx="4.5" />
       <path d="M8 12.5h3M9.5 11v3" strokeLinecap="round" />
       <circle cx="16" cy="11.5" r="0.8" fill="currentColor" />

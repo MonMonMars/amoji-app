@@ -132,7 +132,8 @@ export default function Chat() {
               onClick={() => setSheetOpen(true)}
               title={prefs.lang === 'yue' ? '設定' : 'Settings'}
               aria-label={prefs.lang === 'yue' ? '設定' : 'Settings'}
-              className="ui-btn pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/30 text-base text-white/90 shadow-sm backdrop-blur-md hover:bg-black/50"
+              data-dev="S1"
+              className="ui-btn pointer-events-auto relative flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-black/30 text-base text-white/90 shadow-sm backdrop-blur-md hover:bg-black/50 sm:h-10 sm:w-10"
             >
               ⚙️
             </button>

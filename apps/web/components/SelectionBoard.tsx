@@ -147,7 +147,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
 
         </section>
 
-        <div className="flex w-full shrink-0 flex-col items-center bg-gradient-to-t from-black/75 via-black/40 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6">
+        <div className="flex max-h-[52dvh] w-full shrink-0 flex-col items-center overflow-y-auto overscroll-contain bg-gradient-to-t from-black/75 via-black/40 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:max-h-[48dvh] sm:px-6">
           <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col items-center gap-2">
             <section className="pointer-events-auto w-full min-w-0" style={{ '--d': '70ms' } as CSSProperties}>
               <h2 className="mb-1 text-center text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
@@ -207,7 +207,11 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                 }}
                 label={(l) => l.native}
               >
-                {(l, active) => <LangCardFace lang={l} active={active} compact />}
+                {(l, active) => (
+                  <span className="relative block h-full w-full" data-dev={`L${LANGS.findIndex((x) => x.id === l.id) + 1}`}>
+                    <LangCardFace lang={l} active={active} compact />
+                  </span>
+                )}
               </ArcFan>
             </section>
 
@@ -223,11 +227,12 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
 
             <button
               onClick={confirm}
-              className={`fx-press fx-start ui-btn ui-btn-primary pointer-events-auto mt-1 min-h-12 shrink-0 rounded-full px-10 text-sm ${
+              data-dev="T1"
+              className={`fx-press fx-start ui-btn ui-btn-primary pointer-events-auto relative mt-1 min-h-12 shrink-0 rounded-full px-10 text-sm ${
                 mode === 'start' ? 'min-w-40 tracking-[0.28em]' : 'min-w-32'
               }`}
             >
-              {mode === 'change' ? t(lang, 'changeCta') : t(lang, 'confirmCta')}
+              {mode === 'start' ? t(lang, 'confirmCta') : t(lang, 'changeCta')}
             </button>
           </div>
         </div>

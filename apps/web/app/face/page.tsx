@@ -178,7 +178,7 @@ export default function FacePage() {
       historyRef.current.push({ role: 'user', content: text });
 
       emit('thinking');
-      startThinkingSound();
+      startThinkingSound({ lang: optsRef.current.lang, gender: 'female' });
       const users = historyRef.current.filter((m) => m.role === 'user');
       const prior = users.length > 1 ? users[users.length - 2]?.content : undefined;
       const live = await clientLiveContext(text, optsRef.current.lang, prior);

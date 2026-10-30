@@ -12,7 +12,7 @@
 // the chat pipeline's generic stopMusic() calls for the length of the show.
 
 import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
-import { volumeLinear, type VolumeKey } from './audio-levels';
+import { DEFAULT_VOLUME, isVolumeStep, volumeLinear, type VolumeKey } from './audio-levels';
 import { assetUrl } from './asset';
 import { clearSpeechLevel, feedSpeechLevel, type VisemeVowel } from './speech';
 import {
@@ -257,9 +257,14 @@ let pianoMaster: GainNode | null = null;
 let pianoTimer: ReturnType<typeof setInterval> | null = null;
 let basePiano = 0.3;
 
+function stepLinear(step: number | undefined, key: VolumeKey): number {
+  if (typeof step !== 'number') return volumeLinear(key);
+  return (isVolumeStep(step) ? step : DEFAULT_VOLUME) / 100;
+}
+
 /** Re-apply the settings BGM step to a track that is already playing. */
 export function applyBgmLevel(step?: number): void {
-  const k = typeof step === 'number' ? step / 100 : volumeLinear('bgmVol');
+  const k = stepLinear(step, 'bgmVol');
   if (master) master.gain.value = baseBgm * k;
   if (pianoMaster) pianoMaster.gain.value = basePiano * k;
   if (clipVolumeKey === 'bgmVol') writeClipGain(k);
@@ -268,7 +273,7 @@ export function applyBgmLevel(step?: number): void {
 /** Re-apply the dialogue step to a premade song that is already playing. */
 export function applyDialogueLevel(step?: number): void {
   if (clipVolumeKey !== 'voiceVol') return;
-  const k = typeof step === 'number' ? step / 100 : volumeLinear('voiceVol');
+  const k = stepLinear(step, 'voiceVol');
   writeClipGain(k);
 }
 

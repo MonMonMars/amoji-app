@@ -822,7 +822,9 @@ export default function ChatPanel({
     setThinkingPose(true);
     // Ordinary turns get the quiet thinking hum. A sing or dance ask already
     // has a premade clip as the wait audio, so the hum stays out of that mix.
-    if (requested !== 'sing' && requested !== 'dance') startThinkingSound();
+    if (requested !== 'sing' && requested !== 'dance') {
+      startThinkingSound({ gender: characterGender, lang });
+    }
     // r.47 — ONE transient placeholder bubble carries the whole wait. It
     // starts as '…'; short um/ha stubs replace it every few seconds and are
     // spoken aloud. Each stub finishes before the next. The first stream

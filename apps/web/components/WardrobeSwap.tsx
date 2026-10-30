@@ -174,7 +174,8 @@ function WardrobeSwapLive({
         aria-expanded={false}
         title={copy.title}
         onClick={() => setOpen(true)}
-        className="ui-btn pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/30 text-base text-white/90 shadow-sm backdrop-blur-md hover:bg-black/50"
+        data-dev="S2"
+        className="ui-btn pointer-events-auto relative flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-black/30 text-base text-white/90 shadow-sm backdrop-blur-md hover:bg-black/50 sm:h-10 sm:w-10"
       >
         <span aria-hidden>👗</span>
       </button>
@@ -192,7 +193,8 @@ function WardrobeSwapLive({
           type="button"
           onClick={() => setOpen(false)}
           aria-label={copy.collapse}
-          className="ui-btn flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/10 text-sm hover:bg-white/20"
+          data-dev="S3"
+          className="ui-btn relative flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/10 text-sm hover:bg-white/20 sm:h-10 sm:w-10"
         >
           ✕
         </button>

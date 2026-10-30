@@ -20,7 +20,7 @@
 
 import type { MoveKind } from './moves';
 import { createDefaultAudioContext } from './audio-output';
-import { volumeLinear } from './audio-levels';
+import { DEFAULT_VOLUME, isVolumeStep, volumeLinear } from './audio-levels';
 
 // ---------------------------------------------------------------------------
 // pure data — node-testable
@@ -109,7 +109,9 @@ export function ambientPlaying(): boolean {
 
 /** Re-apply the settings SFX step without restarting the bed. */
 export function applySfxLevel(step?: number): void {
-  const g = typeof step === 'number' ? step / 100 : volumeLinear('sfxVol');
+  const g = typeof step === 'number'
+    ? (isVolumeStep(step) ? step : DEFAULT_VOLUME) / 100
+    : volumeLinear('sfxVol');
   if (!current || !ac) return;
   try { current.handle.master.gain.value = g; } catch { /* closed */ }
 }

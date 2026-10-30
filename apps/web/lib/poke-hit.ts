@@ -68,18 +68,17 @@ export function directionFromAxes(
 
 function recoilXZ(hit: Vec3, hips: Vec3, extra?: PokeHitExtra): { x: number; z: number } {
   const away = normXZ({ x: hips.x - hit.x, z: hips.z - hit.z });
-  let x = 0;
-  let z = 0;
-  if (extra?.normal) {
-    x = -extra.normal.x;
-    z = -extra.normal.z;
+  // Prefer the poke ray: the punch continues through the contact. Mesh
+  // normals are next (outward → recoil is −normal). Hips−hit is last.
+  // Verified on calibrated VRMs (forward +Z toward camera): a front chest
+  // hit yields impulse −Z so spine pitch leans away from the poke.
+  if (extra?.rayDir && Math.hypot(extra.rayDir.x, extra.rayDir.z) >= 0.25) {
+    return normXZ({ x: extra.rayDir.x, z: extra.rayDir.z });
   }
-  if (Math.hypot(x, z) < 0.25 && extra?.rayDir) {
-    x = extra.rayDir.x;
-    z = extra.rayDir.z;
+  if (extra?.normal && Math.hypot(extra.normal.x, extra.normal.z) >= 0.25) {
+    return normXZ({ x: -extra.normal.x, z: -extra.normal.z });
   }
-  if (Math.hypot(x, z) < 0.25) return away;
-  return normXZ({ x, z });
+  return away;
 }
 
 function nearestPart(hit: Vec3, hips: Vec3, extra?: PokeHitExtra): TalkZone | null {
