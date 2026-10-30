@@ -161,6 +161,17 @@ Real VRMA animation clips (VRMC_vrm_animation), force-committed for GitHub Pages
 | anims/Goodbye.vrma | performance clip |
 | anims/Cheer.vrma | performance clip |
 | anims/Idea.vrma | performance clip |
+| anims/lib_C112.vrma | dance GentleSway (Rokoko->VRMA local) |
+| anims/lib_C113.vrma | dance DancingMedium (Rokoko->VRMA local) |
+| anims/lib_C114.vrma | dance DancingParty (Rokoko->VRMA local) |
+| anims/lib_C111.vrma | dance DoTheRobot (Rokoko->VRMA local) |
+| anims/lib_C118.vrma | dance ClubDancer01 (Rokoko->VRMA local) |
+| anims/lib_C119.vrma | dance ClubDancer02 (Rokoko->VRMA local) |
+| anims/lib_C124.vrma | dance ClubDancer05 (Rokoko->VRMA local) |
+| anims/lib_C116.vrma | perform HypeMan (Rokoko->VRMA local) |
+| anims/lib_C117.vrma | perform DJ (Rokoko->VRMA local) |
+| anims/lib_C128.vrma | perform DJ02 (Rokoko->VRMA local) |
+| anims/lib_C60.vrma | dance JazzDancing (Mixamo->VRMA local) |
 
 Additional dormant clips ship on disk for future triggers (see repo `anims/` directory).
 
