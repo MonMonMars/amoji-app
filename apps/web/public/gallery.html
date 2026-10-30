@@ -108,6 +108,17 @@ const MANUAL = [
   ['IdleOribePoses','織部呉服 .vrmaポーズ5種','n/a (static)','Commercial OK · NO redistribution','vrma',null,false,'mix','Restricted','https://booth.pm/ja/items/5876268','Static poses. No redistribution including after modification — do not ship files.'],
 ];
 
+
+/** Amoji chat # SoT — sync with apps/web/lib/idle-library.ts */
+const AMOJI_NUM = {
+  IdleBreathCalm: 1, StandardIdle: 2, LookAround: 3,
+  IdleQuaterniusLoop: 4, IdleKaykitA: 5, IdleMixamoBored: 7,
+  IdleMixamoLooking: 3, IdleTalkLoop: 24, IdleKenneyStand: 26,
+  Relax: 32, IdleNeutral: 33, IdleSassy: 34, IdleChinHand: 35, IdleHug: 36,
+  HelloWave: 15, Shrug: 16, Sleepy: 17, Thinking: 18, ThumbsUp: 20,
+  Clapping: 21, Cheer: 22,
+};
+
 const store = JSON.parse(localStorage.getItem('amoji.idle.picks') || '{}');
 const save = () => localStorage.setItem('amoji.idle.picks', JSON.stringify(store));
 const toast = (m) => { const t = document.getElementById('toast'); t.textContent = m; t.style.opacity = 1; setTimeout(() => t.style.opacity = 0, 1800); };
@@ -120,10 +131,10 @@ function card(row) {
   d.dataset.id = id;
   const badgeLabel = badge === 'ready' ? 'VRMA' : badge === 'app' ? 'APP' : badge === 'fbx' ? 'CONV' : 'GET';
   const srcLine = src ? src : '(manual download)';
-  const feetTxt = feet ? 'feetPlanted ✓' : 'feetPlanted ✗';
+  const feetTxt = feet ? 'feetPlanted OK' : 'FLOAT feet - do not ship';
   d.innerHTML =
     '<div class="thumb"><div class="tile">' + label.replace(/ /g,'<br>') + '</div></div>' +
-    '<span class="num" title="' + id + '">' + id + '</span>' +
+    '<span class="num" title="' + id + '">#' + (AMOJI_NUM[id] != null ? AMOJI_NUM[id] + ' · ' + id : id) + '</span>' +
     '<span class="badge ' + badge + '">' + badgeLabel + '</span>' +
     '<div class="meta"><div class="nm">' + label + '</div>' +
     '<div class="tg">' + personality + '<br>' + license + ' · ' + format + '<br>' + feetTxt + '<br>' + srcLine +
