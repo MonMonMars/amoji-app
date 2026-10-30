@@ -13,6 +13,7 @@
 
 import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
 import { DEFAULT_VOLUME, isVolumeStep, volumeLinear, type VolumeKey } from './audio-levels';
+import { isMasterMuted } from './master-mute';
 import { assetUrl } from './asset';
 import { clearSpeechLevel, feedSpeechLevel, type VisemeVowel } from './speech';
 import {
@@ -169,6 +170,7 @@ function haltBand(): void {
  * is unavailable. Pair with stopMusic() when the performance ends.
  */
 export function startMusic(characterId: string): void {
+  if (isMasterMuted()) return;
   if (typeof window === 'undefined') return;
   haltBand();
   const theme = getTheme(characterId);
@@ -304,6 +306,7 @@ function haltPiano(): void {
  * timbre. The piano move finally SOUNDS like a piano, not generic plucks.
  */
 export function startPiano(characterId: string): void {
+  if (isMasterMuted()) return;
   if (typeof window === 'undefined') return;
   haltPiano();
   const theme = getTheme(characterId);
@@ -350,6 +353,7 @@ let perfTimer: ReturnType<typeof setTimeout> | null = null;
  * `ms` bounds the show; endPerformanceMusic() stops it early.
  */
 export function startPerformanceMusic(kind: 'band' | 'piano', characterId: string, ms: number): void {
+  if (isMasterMuted()) return;
   if (typeof window === 'undefined') return;
   endPerformanceMusic();
   perfPreserve = true;
@@ -558,7 +562,7 @@ async function playClip(clip: PerformanceClip, token: number, characterId: strin
  */
 export function startLibraryPerformance(q: ClipQuery & { ms: number }): PerformanceClip {
   const clip = pickPerformanceClip(q);
-  if (typeof window === 'undefined') return clip;
+  if (isMasterMuted() || typeof window === 'undefined') return clip;
   if (clipId === clip.id && perfPreserve) {
     armPerformance(q.ms);
     return clip;

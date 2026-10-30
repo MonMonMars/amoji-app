@@ -29,6 +29,7 @@ import { LangChips } from './selectors';
 import VoicePicker from './VoicePicker';
 import ModelThumb from './ModelThumb';
 import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, testOpenAiVoice, VOICE_TIER_LABEL } from '../lib/voice';
+import { isMasterMuted, setMasterMuted, subscribeMasterMute } from '../lib/master-mute';
 import { VOLUME_STEPS, isVolumeStep, type VolumeStep } from '../lib/audio-levels';
 import { applyBgmLevel, applyDialogueLevel } from '../lib/music';
 import { applySfxLevel } from '../lib/sfx';
@@ -115,6 +116,11 @@ export default function SettingsSheet({
 }) {
   const router = useRouter();
   const [voiceOn, setVoiceOnState] = useState(voiceEnabled());
+  const [masterMuted, setMasterMutedState] = useState(false);
+  useEffect(() => {
+    setMasterMutedState(isMasterMuted());
+    return subscribeMasterMute(setMasterMutedState);
+  }, []);
   const [neuralOn, setNeuralOnState] = useState(neuralEnabled());
   const [voiceBlocked, setVoiceBlocked] = useState(false);
   // r99: per-tier self-test result — 'edge-tts ✓ · google-tts ✗ · browser ✓'
@@ -362,7 +368,17 @@ export default function SettingsSheet({
               accent={accent}
               onLang={(next) => onChange({ lang: next })}
             />
-            <div className={row}>
+                        <div className="flex items-center justify-between gap-3 py-2">
+              <span className={label}>{t(lang, 'muteAll')}
+                <span className="block text-[11px] text-white/40">{t(lang, 'muteAllHint')}</span>
+              </span>
+              <Toggle
+                on={masterMuted}
+                accent={accent}
+                onClick={() => { const next = !masterMuted; setMasterMutedState(next); setMasterMuted(next); }}
+              />
+            </div>
+<div className={row}>
               <span className={label}>🔊 {t(lang, 'voiceReplies')}</span>
               <Toggle
                 on={voiceOn}
