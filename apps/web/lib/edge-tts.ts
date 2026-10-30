@@ -517,9 +517,17 @@ export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
 // stopEdge() cancels playback AND rejects the pending promise either way.
 function playMp3Blob(blob: Blob, opts: EdgeVoiceOpts, resolve: () => void, reject: (err: Error) => void): void {
   const url = URL.createObjectURL(blob);
-  const audio = new Audio(url);
-  pinDefaultOutput(audio);
-  applyPlaybackVolume(audio);
+  let audio: HTMLAudioElement;
+  try {
+    audio = new Audio(url);
+  } catch (err) {
+    URL.revokeObjectURL(url);
+    reject(err instanceof Error ? err : new Error(String(err)));
+    return;
+  }
+  try { pinDefaultOutput(audio); } catch { /* sink pin is best-effort */ }
+  // A read-only volume setter on iOS must not skip play().
+  try { applyPlaybackVolume(audio); } catch { /* playback still starts */ }
   currentAudio = audio;
   // r99: the caller learns the instant media playback actually begins —
   // that is the moment the iOS media gate is provably open.
@@ -594,6 +602,7 @@ function speakEdgeViaSocket(ssml: string, opts: EdgeVoiceOpts): Promise<void> {
     const chunks: ArrayBuffer[] = [];
     let settled = false;
     let gotAudio = false;
+    const pending: Array<Promise<void>> = [];
 
     const cleanup = () => { clearTimeout(timer); try { ws.close(); } catch { /* already closed */ } };
     const fail = (err: Error) => { if (!settled) { settled = true; cleanup(); stopEdge(); reject(err); } };
@@ -632,24 +641,46 @@ function speakEdgeViaSocket(ssml: string, opts: EdgeVoiceOpts): Promise<void> {
         }
         return;
       }
-      // binary frame: ASCII headers first, terminated by \r\n\r\n, then mp3 bytes
-      const audio = edgeAudioPayload(new Uint8Array(ev.data as ArrayBuffer));
-      if (audio && audio.length) {
+      // binary frame: ASCII headers first, terminated by \r\n\r\n, then mp3 bytes.
+      // Safari sometimes delivers a Blob even after binaryType = 'arraybuffer'.
+      const take = (bytes: Uint8Array) => {
+        const audio = edgeAudioPayload(bytes);
+        if (!audio?.length) return;
         const copy = new Uint8Array(audio.byteLength);
         copy.set(audio);
         chunks.push(copy.buffer);
         gotAudio = true;
-      }
+      };
+      try {
+        if (ev.data instanceof ArrayBuffer) {
+          take(new Uint8Array(ev.data));
+          return;
+        }
+        if (typeof Blob !== 'undefined' && ev.data instanceof Blob) {
+          pending.push(ev.data.arrayBuffer().then((ab) => { take(new Uint8Array(ab)); }).then(() => undefined, () => undefined));
+        }
+      } catch { /* a bad frame must not drop the rest of the line */ }
     };
 
     ws.onerror = () => fail(new Error('edge-tts socket error'));
     ws.onclose = () => {
       clearTimeout(timer);
-      if (settled) return;
-      if (!gotAudio || chunks.length === 0) { fail(new Error('edge-tts no audio')); return; }
-      settled = true;
-      pendingReject = null;
-      playMp3Blob(new Blob(chunks as BlobPart[], { type: 'audio/mpeg' }), opts, resolve, reject);
+      // Blob frames resolve after close. Don't wait forever — the synth
+      // fallback has to run if the mp3 never arrives.
+      void Promise.race([
+        Promise.all(pending),
+        new Promise<void>((r) => { setTimeout(r, 1200); }),
+      ]).then(() => {
+        if (settled) return;
+        if (!gotAudio || chunks.length === 0) { fail(new Error('edge-tts no audio')); return; }
+        settled = true;
+        pendingReject = null;
+        try {
+          playMp3Blob(new Blob(chunks as BlobPart[], { type: 'audio/mpeg' }), opts, resolve, reject);
+        } catch (err) {
+          reject(err instanceof Error ? err : new Error(String(err)));
+        }
+      });
     };
   });
 }

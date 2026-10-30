@@ -4,6 +4,7 @@ import {
   SKIPPED_ENGINES,
   VOICE_CATALOG,
   edgeVoiceId,
+  selectBrowserVoice,
   synthNameConflicts,
   voiceNameMatches,
   voicesForLocale,
@@ -60,6 +61,34 @@ describe('locale voice catalog', () => {
     expect(synthNameConflicts('male', 'Samantha (English America)')).toBe(true);
     expect(voiceNameMatches('Microsoft Ryan Online', 'Yan')).toBe(false);
     expect(synthNameConflicts('female', 'Microsoft Andrew Online')).toBe(true);
+  });
+
+  it('plays a matching-lang voice when the OS name does not say a gender', () => {
+    expect(synthNameConflicts('male', 'Google US English')).toBe(false);
+    expect(synthNameConflicts('female', 'Nicky')).toBe(false);
+    expect(synthNameConflicts('male', 'Ting-Ting')).toBe(false);
+    const unlabeled = [
+      { name: 'Nicky' },
+      { name: 'Eddy (English (United States))' },
+    ];
+    expect(selectBrowserVoice(unlabeled, 'female', ['Samantha', 'Female'])?.name).toBe('Nicky');
+    expect(selectBrowserVoice(unlabeled, 'male', ['Alex', 'Male'])?.name).toBe('Nicky');
+    expect(selectBrowserVoice(
+      [{ name: 'Samantha' }, { name: 'Nicky' }],
+      'female',
+      ['Samantha', 'Female'],
+    )?.name).toBe('Samantha');
+    expect(selectBrowserVoice(
+      [{ name: 'Samantha' }, { name: 'Nicky' }],
+      'male',
+      ['Alex', 'Male'],
+    )?.name).toBe('Nicky');
+    expect(selectBrowserVoice([{ name: 'Microsoft Zira Desktop - English Female' }], 'male', ['Male'])).toBeNull();
+    expect(selectBrowserVoice(
+      [{ name: 'Ting-Ting' }, { name: 'Mei-Jia' }],
+      'male',
+      ['Yunxi', 'Male'],
+    )?.name).toBe('Ting-Ting');
   });
 
   it('does not select NC-licensed engines', () => {

@@ -406,3 +406,34 @@ export function synthNameConflicts(gender: VoiceGender, voiceName: string): bool
   const heard = browserVoiceGender(voiceName);
   return heard !== null && heard !== gender;
 }
+
+/**
+ * OS voice for this gender.
+ * A name that says the gender wins. A name that does not say (iPhone "Nicky",
+ * "Ting-Ting", "Google US English") still plays. The opposite gender does not.
+ */
+export function selectBrowserVoice<T extends { name: string }>(
+  voices: readonly T[],
+  gender: VoiceGender,
+  preferredNames: readonly string[],
+): T | null {
+  const rank = (name: string): 0 | 1 | null => {
+    const heard = browserVoiceGender(name);
+    if (heard === gender) return 0;
+    if (heard === null) return 1;
+    return null;
+  };
+  const usable = voices.filter((v) => rank(v.name) !== null);
+  if (!usable.length) return null;
+  for (const name of preferredNames) {
+    const exact = usable.find((v) => rank(v.name) === 0 && voiceNameMatches(v.name, name));
+    if (exact) return exact;
+  }
+  const gendered = usable.find((v) => rank(v.name) === 0);
+  if (gendered) return gendered;
+  for (const name of preferredNames) {
+    const soft = usable.find((v) => rank(v.name) === 1 && voiceNameMatches(v.name, name));
+    if (soft) return soft;
+  }
+  return usable.find((v) => rank(v.name) === 1) ?? null;
+}

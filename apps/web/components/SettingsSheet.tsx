@@ -247,12 +247,13 @@ export default function SettingsSheet({
   // r99: run the per-tier chain probe and render its verdict under the button.
   // r100: iOS only unlocks speechSynthesis INSIDE the gesture handler — the
   // first await below leaves that context before any synth tier runs, so
-  // prime the engine synchronously with a zero-volume utterance first (the
-  // probe is the click's own first sound; volume 0 keeps it inaudible).
+  // prime the engine synchronously with a space. Volume stays at 1: a
+  // cancelled volume-0 utterance mutes the line under test on Safari.
   const runVoiceTest = () => {
     try {
-      const probe = new SpeechSynthesisUtterance('test');
-      probe.volume = 0;
+      const probe = new SpeechSynthesisUtterance(' ');
+      // Volume 0 sticks on Safari after cancel() and mutes the line under test.
+      probe.volume = 1;
       probe.rate = 2;
       window.speechSynthesis.speak(probe);
     } catch { /* probe is best-effort */ }
