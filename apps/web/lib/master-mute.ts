@@ -104,6 +104,19 @@ export async function restoreOutputsAfterUnmute(): Promise<void> {
     if (isMasterMuted()) return;
     resumeSfxContext();
   } catch { /* ignore */ }
+  // t719: silenceAllOutputs() paused every media element. Do not autoplay
+  // content, but clear sticky mute/volume-0 so the next Edge/clip speak works.
+  try {
+    if (isMasterMuted()) return;
+    const { applyPlaybackVolume } = await import('./playback-volume');
+    document.querySelectorAll('audio, video').forEach((el) => {
+      const media = el as HTMLMediaElement;
+      try {
+        media.muted = false;
+        applyPlaybackVolume(media);
+      } catch { /* ignore */ }
+    });
+  } catch { /* ignore */ }
 }
 
 export function setMasterMuted(muted: boolean): void {

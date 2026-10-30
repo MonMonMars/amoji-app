@@ -427,16 +427,19 @@ export default function MiniGameOverlay({ kind, lang, onEmotion, onExit }: MiniG
         >
           {backLabel}
         </button>
-        <div className={`flex w-full flex-col items-center ${platform === 'android' ? 'max-w-md gap-3' : 'max-w-3xl gap-4'}`}>
-          <h1 className="text-center text-3xl font-semibold tracking-wide">{title}</h1>
-          <img
-            src={assetUrl(HOWTO_SRC[kind])}
-            alt={title}
-            data-testid="minigame-howto"
-            className={`w-full rounded-2xl border border-white/15 object-contain shadow-2xl ${
-              platform === 'android' ? 'max-h-[min(34vh,260px)]' : 'max-h-[min(46vh,420px)]'
-            }`}
-          />
+        <div className="flex w-full max-w-[min(100%,22rem)] flex-col items-center gap-3 sm:max-w-[min(100%,24rem)] sm:gap-4">
+          <h1 className="text-center text-2xl font-semibold tracking-wide sm:text-3xl">{title}</h1>
+          <div
+            className="aspect-square w-full max-w-full overflow-hidden rounded-2xl border border-white/15 bg-black/35 shadow-2xl"
+            data-testid="minigame-howto-frame"
+          >
+            <img
+              src={assetUrl(HOWTO_SRC[kind])}
+              alt={title}
+              data-testid="minigame-howto"
+              className="h-full w-full object-contain"
+            />
+          </div>
           <button
             type="button"
             data-testid="minigame-start"

@@ -27,19 +27,19 @@ describe('talk history', () => {
 });
 
 describe('recorded fillers and poke', () => {
-  it('plays short lang+gender um clips and CLIP_LIBRARY poke hits', () => {
-    // Yue F #5 / Yue M #12
-    expect(recordedFillerClip('female', 'um', 'yue')).toBe('/voice-clips/yue/female/um.mp3');
-    expect(recordedFillerClip('male', 'um', 'yue')).toBe('/voice-clips/yue/male/um.mp3');
-    expect(recordedFillerClip('female', 'um', 'en')).toBe('/voice-clips/en/female/um.mp3');
-    expect(recordedFillerClip('female', 'ha', 'yue')).toBe('/voice-clips/yue/female/ha.mp3');
-    expect(recordedFillerClip('male', 'think', 'ja')).toBe('/voice-clips/ja/male/um.mp3');
+  it('plays long UM lang+gender fillers and CLIP_LIBRARY poke hits', () => {
+    // t722: loading/thinking fillers are long UM only (never short um / HA HA)
+    expect(recordedFillerClip('female', 'um', 'yue')).toMatch(/\/voice-clips\/yue\/female\/um_long/);
+    expect(recordedFillerClip('male', 'um', 'yue')).toMatch(/\/voice-clips\/yue\/male\/um_long/);
+    expect(recordedFillerClip('female', 'um', 'en')).toMatch(/\/voice-clips\/en\/female\/um_long/);
+    expect(recordedFillerClip('female', 'ha', 'yue')).toMatch(/\/voice-clips\/yue\/female\/um_long/);
+    expect(recordedFillerClip('male', 'think', 'ja')).toMatch(/\/voice-clips\/ja\/male\/um_long/);
     expect(recordedFillerClip('male', 'think', 'ja')).not.toContain('think.mp3');
     // Female poke = CLIP #94; Male poke = CLIP #52
     expect(recordedPokeClip('female')).toBe('/voice-clips/universal/female/wow_woven.mp3');
     expect(recordedPokeClip('male')).toBe('/voice-clips/ja/male/oh.mp3');
     expect(loadingFillerKind('um……')).toBe('um');
-    expect(loadingFillerKind('ha……')).toBe('ha');
+    expect(loadingFillerKind('ha……')).toBe('um');
     expect(loadingFillerKind('um…… let me think.')).toBe('think');
     expect(loadingFillerKind('um…… let me search the web.')).toBe('search');
   });

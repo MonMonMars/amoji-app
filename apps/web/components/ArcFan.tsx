@@ -25,11 +25,20 @@ export const PORTRAIT_CENTER_SCALE = 1.05;
  * Width is wider than the old 0.7 portrait ratio so names and faces read
  * larger. Step stays inside the card so neighbors overlap.
  */
-export function portraitCardBox(stageHeight: number): { width: number; height: number; step: number } {
+export function portraitCardBox(stageHeight: number, stageWidth = 0): { width: number; height: number; step: number } {
   const stage = stageHeight > 0 ? stageHeight : 360;
-  const height = Math.round(Math.min(stage * 0.95, 640));
-  const width = Math.round(height * 0.88);
-  const step = Math.max(72, Math.round(width * 0.48));
+  let height = Math.round(Math.min(stage * 0.95, 640));
+  let width = Math.round(height * 0.88);
+  // Phones: tall stage made cards wider than the viewport (iPhone ~390).
+  // Cap width so the focused card + scale fit; shrink height to keep ratio.
+  if (stageWidth > 0) {
+    const maxWidth = Math.max(120, Math.round(stageWidth * 0.72));
+    if (width > maxWidth) {
+      width = maxWidth;
+      height = Math.round(width / 0.88);
+    }
+  }
+  const step = Math.max(48, Math.round(width * 0.48));
   return { width, height, step };
 }
 
@@ -104,9 +113,10 @@ export default function ArcFan<T extends { id: string }>({
   const [compact, setCompact] = useState(false);
   const [fine, setFine] = useState(false);
   const [stageH, setStageH] = useState(0);
+  const [stageW, setStageW] = useState(0);
 
   const index = Math.max(0, items.findIndex((item) => item.id === selectedId));
-  const portrait = size === 'compact' ? compactCardBox() : portraitCardBox(stageH);
+  const portrait = size === 'compact' ? compactCardBox() : portraitCardBox(stageH, stageW);
   const step = size === 'scene' ? (compact ? 58 : 86) : portrait.step;
   const centerScale = size === 'compact' ? 1.04 : size === 'portrait' ? PORTRAIT_CENTER_SCALE : 1.1;
   const reach = compact ? 2 : 4;
@@ -116,8 +126,9 @@ export default function ArcFan<T extends { id: string }>({
     const el = root.current;
     if (!el) return;
     const measure = () => {
-      const h = el.getBoundingClientRect().height;
-      if (h > 0) setStageH(h);
+      const box = el.getBoundingClientRect();
+      if (box.height > 0) setStageH(box.height);
+      if (box.width > 0) setStageW(box.width);
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -191,7 +202,7 @@ export default function ArcFan<T extends { id: string }>({
     ? 'top-1 h-[3.4rem] w-[5.2rem] sm:h-[3.8rem] sm:w-[6rem]'
     : '';
   const stageClass = size === 'portrait'
-    ? 'absolute inset-0 z-20'
+    ? 'absolute inset-0 z-20 max-w-full overflow-x-hidden'
     : size === 'compact'
       ? 'relative z-10 h-[2.6rem] w-full'
       : 'relative z-10 h-[4.4rem] w-full sm:h-[4.8rem]';

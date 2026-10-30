@@ -199,13 +199,69 @@ export function clipFile(lang: string, gender: VoiceClipGender, kind: VoiceClipK
  * Yue F = CLIP #5, Yue M = CLIP #12. Other langs use that lang's um.mp3.
  * Think / search stay short um / huh bursts — never the long thinking.wav.
  */
-function langUmPath(lang: string, gender: VoiceClipGender): string {
+/**
+ * Long clean UM / hmm fillers (CMA00256–303). Preferred over short um.mp3 for
+ * loading / thinking / download waits. Kept OUTSIDE CLIP_LIBRARY flatten so
+ * emotion #1–99 SoT indices stay stable.
+ */
+export const NSFW_CMA_DROP = [
+  'CMA00040', 'CMA00098', 'CMA00099', 'CMA00100', 'CMA00196',
+  // borderline — never wire into Want / fillers
+  'CMA00060', 'CMA00086', 'CMA00088', 'CMA00107', 'CMA00108',
+  'CMA00119', 'CMA00206', 'CMA00207', 'CMA00253', 'CMA00254', 'CMA00255',
+] as const;
+
+/** Prefer longest first within each lang+gender folder. */
+const LONG_UM_FILES: Record<string, Partial<Record<VoiceClipGender, readonly string[]>>> = {
+  en: {
+    female: ['um_long.mp3', 'um_long_b.mp3', 'um_long_c.mp3', 'um_long_d.mp3', 'um_long_e.mp3', 'um_long_f.mp3'],
+    male: ['um_long.mp3', 'um_long_b.mp3', 'um_long_c.mp3', 'um_long_d.mp3', 'um_long_e.mp3', 'um_long_f.mp3', 'um_long_g.mp3'],
+  },
+  yue: {
+    female: ['um_long.mp3', 'um_long_b.mp3'],
+    male: ['um_long.mp3', 'um_long_b.mp3', 'um_long_c.mp3'],
+  },
+  zh: {
+    female: ['um_long.mp3', 'um_long_b.mp3'],
+    male: ['um_long.mp3', 'um_long_b.mp3', 'um_long_c.mp3', 'um_long_d.mp3'],
+  },
+  ja: {
+    female: ['um_long.mp3', 'um_long_b.mp3', 'um_long_c.mp3'],
+    male: ['um_long.mp3', 'um_long_b.mp3'],
+  },
+  universal: {
+    female: ['um_long.mp3', 'um_long_b.mp3', 'um_long_c.mp3', 'um_long_d.mp3', 'um_long_e.mp3', 'um_long_f.mp3', 'um_long_g.mp3'],
+    male: ['um_long.mp3', 'um_long_b.mp3', 'um_long_c.mp3', 'um_long_d.mp3', 'um_long_e.mp3', 'um_long_f.mp3', 'um_long_g.mp3', 'um_long_h.mp3'],
+  },
+}
+
+let longUmCursor = 0;
+
+function longUmPath(lang: string, gender: VoiceClipGender): string | null {
+  const folder = clipLang(lang);
+  const files = LONG_UM_FILES[folder]?.[gender]
+    ?? LONG_UM_FILES.universal?.[gender]
+    ?? [];
+  if (!files.length) return null;
+  const pick = files[longUmCursor % files.length]!;
+  longUmCursor += 1;
+  return `/voice-clips/${folder}/${gender}/${pick}`;
+}
+
+function langUmPathFallback(lang: string, gender: VoiceClipGender): string {
+
   const folder = clipLang(lang);
   const path = `/voice-clips/${folder}/${gender}/um.mp3`;
   if (clipLibraryId(path) !== null) return path;
   return gender === 'female'
     ? '/voice-clips/universal/female/um.mp3'
     : '/voice-clips/ja/male/um.mp3';
+}
+
+function langUmPath(lang: string, gender: VoiceClipGender): string {
+  const long = longUmPath(lang, gender);
+  if (long) return long;
+  return langUmPathFallback(lang, gender);
 }
 
 function langHaPath(lang: string, gender: VoiceClipGender): string {
@@ -218,18 +274,22 @@ function langHaPath(lang: string, gender: VoiceClipGender): string {
 }
 
 
-/** Gender+lang-matched um/ha filler. Think/search use short um/huh — never long thinking.wav. */
+/** Gender+lang-matched long UM filler (t722). Loading/thinking/download never HA HA. */
 export function recordedFillerClip(
   gender: VoiceClipGender,
   kind: 'um' | 'ha' | 'think' | 'search',
   lang: string = 'yue',
 ): string {
-  if (kind === 'ha') return langHaPath(lang, gender);
+  // t721–t723: ha/haha stubs must not loop — always long UM for wait cues.
+  if (kind === 'ha' || kind === 'um' || kind === 'think' || kind === 'search') {
+    const long = longUmPath(lang, gender);
+    if (long) return long;
+  }
   if (kind === 'search' && gender === 'female') {
     const huh = '/voice-clips/universal/female/huh.mp3';
     if (clipLibraryId(huh) !== null) return huh;
   }
-  return langUmPath(lang, gender);
+  return langUmPathFallback(lang, gender);
 }
 /** Poke SFX by body zone (SFX only — never TTS). Gender-matched um/oh/ha shorts. */
 const RECORDED_POKE_ZONE: Record<VoiceClipGender, Record<string, string>> = {
@@ -263,7 +323,9 @@ export function recordedPokeClip(gender: VoiceClipGender, zone?: string): string
 
 export function loadingFillerKind(text: string): 'um' | 'ha' | 'think' | 'search' | null {
   const kind = emotionClipKind(text, 'line');
-  if (kind === 'um' || kind === 'ha' || kind === 'think' || kind === 'search') return kind;
+  // t722: constant HA HA during wait — coerce ha → um (long UM clip).
+  if (kind === 'ha') return 'um';
+  if (kind === 'um' || kind === 'think' || kind === 'search') return kind;
   return null;
 }
 

@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
@@ -42,7 +43,7 @@ import {
 
 const LANGS = ['yue', 'zh', 'ja', 'en'] as const;
 const EMOTIONS: MiniEmotionKind[] = ['near_miss', 'catch', 'timeout', 'lane_near_miss', 'crash', 'survive', 'quit'];
-const here = path.dirname(new URL(import.meta.url).pathname);
+const here = path.dirname(fileURLToPath(import.meta.url));
 
 function frames<T>(start: T, n: number, dt: number, step: (s: T) => T): T {
   let s = start;
@@ -514,6 +515,9 @@ describe('mini-game host controls', () => {
     expect(overlay).toContain('data-phase="title"');
     expect(overlay).toContain('minigame-start');
     expect(overlay).toContain('minigame-howto');
+    expect(overlay).toContain('aspect-square');
+    expect(overlay).toContain('minigame-howto-frame');
+    expect(overlay).toContain('max-w-[min(100%,22rem)]');
     expect(overlay).toContain('HOWTO_SRC');
     expect(platform).toContain('/minigames/howto-tag.jpg');
     expect(platform).toContain('/minigames/howto-lane-dodge.jpg');

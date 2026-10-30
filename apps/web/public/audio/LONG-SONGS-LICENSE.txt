@@ -1,0 +1,81 @@
+Amoji long songs pack — free/CC vocals (~2.5–3.5 min)
+Prepared for Amoji Free Music Maker → D:\GrokBot_Files\amoji-long-songs\
+Policy: Public Domain / CC0 only. SFW. No paid APIs.
+
+=== Files ===
+
+sing-f-soave-sia-il-vento.mp3 (~192s)
+  Title: "Soave Sia Il Vento" from Così Fan Tutte
+  Performance: Singing Sergeants — United States Air Force Band
+  Composer: Wolfgang Amadeus Mozart (arr.)
+  License: Public Domain (US government work / PD composition)
+  Source: https://commons.wikimedia.org/wiki/File:%22Soave_Sia_Il_Vento%22_from_Cosi_Fan_Tutte_-_Singing_Sergeants_-_United_States_Air_Force_Band.mp3
+
+sing-f-una-voce-poco-fa.mp3 (~201s)
+  Title: "Una Voce Poco Fa" from Il Barbiere Di Siviglia
+  Performance: Singing Sergeants — United States Air Force Band
+  Composer: Gioachino Rossini
+  License: Public Domain
+  Source: https://commons.wikimedia.org/wiki/File:%22Una_Voce_Poco_Fa%22_from_Il_Barbiere_Di_Siviglia_-_Singing_Sergeants_-_United_States_Air_Force_Band.mp3
+
+sing-f-adele-agnes-kimball.mp3 (~203s)
+  Title: "Adele" from musical Adele, sung by soprano Agnes Kimball
+  Composer/lyricist: Adolf Philipp (1864–1936); Columbia Records, 1913
+  License: Public Domain
+  Source: https://commons.wikimedia.org/wiki/File:%22Adele%22_from_musical_Adele,_sung_by_soprano_Agnes_Kimball.flac
+
+sing-m-shenandoah.mp3 (~198s)
+  Title: Shenandoah
+  Performance: Singing Sergeants — United States Air Force Band
+  Composition: traditional; arr. Floyd Werle / Michael Davis
+  License: Public Domain (USAF recording)
+  Source: https://commons.wikimedia.org/wiki/File:Shenandoah_-_Singing_Sergeants_-_United_States_Air_Force_Band.mp3
+
+sing-m-brindisi-la-traviata.mp3 (~182s)
+  Title: "Brindisi" from La Traviata
+  Performance: Singing Sergeants — United States Air Force Band
+  Composer: Giuseppe Verdi
+  License: Public Domain
+  Source: https://commons.wikimedia.org/wiki/File:%22Brindisi%22_from_La_Traviata_-_Singing_Sergeants_-_United_States_Air_Force_Band.mp3
+
+sing-m-votre-toast-carmen.mp3 (~155s)
+  Title: "Votre Toast" from Carmen
+  Performance: Singing Sergeants — United States Air Force Band
+  Composer: Georges Bizet
+  License: Public Domain
+  Source: https://commons.wikimedia.org/wiki/File:%22Votre_Toast%22_from_Carmen_-_Singing_Sergeants_-_United_States_Air_Force_Band.mp3
+
+=== Notes ===
+- Filename prefixes: sing-f- = female-leaning lead; sing-m- = male-leaning lead.
+- Format: mp3 (re-encoded from pack masters under /workspace/amoji-music/).
+- More modern pop-style CC0 long vocals are scarce on free sites; these are full-length PD sung performances suitable for sing beds.
+
+=== Extra batch (2026-10-31) ===
+
+sing-f-la-mamma-morta-cavalieri.mp3 (~167s)
+  Title: La mamma morta (Andrea Chénier)
+  Performer: Elda Cavalieri (soprano), 1906
+  Composer: Umberto Giordano
+  License: Public Domain
+  Source: https://commons.wikimedia.org/wiki/File:La_mamma_morta._1906,_sung_of_Elda_Cavalieri.ogg
+
+sing-f-sono-giunta-seinemeyer.mp3 (~184s)
+  Title: Sono giunta! Grazie, o Dio! (La forza del destino)
+  Performer: Meta Seinemeyer (soprano), 1927
+  Composer: Giuseppe Verdi
+  License: Public Domain (PDP-CH)
+  Source: https://commons.wikimedia.org/wiki/File:PDP-CH_-_Meta_Seinemeyer,_soprano_with_Staatskapelle_Berlin_-_La_forza_del_destino_-_Sono_giunta_Grazie,_o_Dio_-_Verdi_-_Parlophon-p9116-20258.flac
+
+sing-m-no-pagliaccio-caruso.mp3 (~199s)
+  Title: No! Pagliaccio non son! (Pagliacci)
+  Performer: Enrico Caruso (tenor)
+  Composer: Ruggero Leoncavallo
+  License: Public Domain
+  Source: https://commons.wikimedia.org/wiki/File:No_Pagliaccio_non_son.ogg
+
+sing-m-celeste-aida-caruso.mp3 (~204s)
+  Title: Celeste Aida (Aida)
+  Performer: Enrico Caruso (tenor), 1902
+  Composer: Giuseppe Verdi
+  License: Public Domain
+  Source: https://commons.wikimedia.org/wiki/File:Celeste_Aida_(1902).opus
