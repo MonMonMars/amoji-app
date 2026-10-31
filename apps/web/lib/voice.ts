@@ -2013,6 +2013,7 @@ function restoreSynthEngine(gen: number, voice: SpeechSynthesisVoice | null, loc
   } catch { /* ignore */ }
 }
 
+function synthSpeak(
   text: string,
   characterId: string,
   lang: Lang,
@@ -2030,7 +2031,7 @@ function restoreSynthEngine(gen: number, voice: SpeechSynthesisVoice | null, loc
   const finishLine = () => {
     if (lineDone) return;
     lineDone = true;
-    if (safety) clearTimeout(safety, value) clearTimeout(safety);
+    if (safety) clearTimeout(safety);
     try { onDone?.(); } catch { /* ignore */ }
   };
   if (typeof speechSynthesis === 'undefined') { finishLine(); return; }
