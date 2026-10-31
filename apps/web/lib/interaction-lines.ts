@@ -8,9 +8,9 @@ import type { PersonalityId } from './personality';
 import { personalityFor, profilePokeLine } from './personality';
 import type { PokeDirection, TalkZone } from './poke-hit';
 
-export type InteractZone = TalkZone | 'hand';
+export type InteractZone = TalkZone;
 
-const ZONES: InteractZone[] = ['head', 'torso', 'chest', 'side', 'back', 'hand', 'armL', 'armR', 'belly', 'legL', 'legR'];
+const ZONES: InteractZone[] = ['head', 'torso', 'chest', 'side', 'back', 'hand', 'armL', 'armR', 'belly', 'butt', 'legL', 'legR', 'foot'];
 
 const REGION: Record<InteractZone, Record<Lang, string>> = {
   head:  { yue: '個頭', zh: '脑袋', ja: '頭', en: 'head' },
@@ -22,8 +22,10 @@ const REGION: Record<InteractZone, Record<Lang, string>> = {
   armL:  { yue: '左手', zh: '左手', ja: '左腕', en: 'left arm' },
   armR:  { yue: '右手', zh: '右手', ja: '右腕', en: 'right arm' },
   belly: { yue: '個肚', zh: '肚子', ja: 'お腹', en: 'tummy' },
+  butt:  { yue: '尻', zh: '屁股', ja: 'お尻', en: 'butt' },
   legL:  { yue: '左腳', zh: '左腿', ja: '左足', en: 'left leg' },
   legR:  { yue: '右腳', zh: '右腿', ja: '右足', en: 'right leg' },
+  foot:  { yue: '隻腳', zh: '脚', ja: '足', en: 'foot' },
 };
 
 const VIBE: Record<PersonalityId, Record<Lang, string>> = {

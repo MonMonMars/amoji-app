@@ -291,33 +291,69 @@ export function recordedFillerClip(
   }
   return langUmPathFallback(lang, gender);
 }
-/** Poke SFX by body zone (SFX only — never TTS). Gender-matched um/oh/ha shorts. */
+/** Poke SFX by body zone (SFX only — never TTS). Gender-matched short cute clips.
+ * Mon t761 remap: head←belly, breast←NEW, belly←breast; plus butt/hands/arm/legs/foot.
+ * CLIP_LIBRARY # cited in PR body. Never NSFW CMA / long-UM fillers for poke.
+ */
 const RECORDED_POKE_ZONE: Record<VoiceClipGender, Record<string, string>> = {
   female: {
-    head: '/voice-clips/universal/female/huh.mp3',
-    chest: '/voice-clips/universal/female/oh.mp3',
-    torso: '/voice-clips/universal/female/ha.mp3',
-    belly: '/voice-clips/universal/female/um.mp3',
+    // head ← was belly (#82 um); breast/chest ← NEW (#88 hehe); belly ← was breast (#83 oh)
+    head: '/voice-clips/universal/female/um.mp3',
+    chest: '/voice-clips/universal/female/hehe.mp3',
+    breast: '/voice-clips/universal/female/hehe.mp3',
+    belly: '/voice-clips/universal/female/oh.mp3',
+    butt: '/voice-clips/universal/female/sigh.mp3',
     hand: '/voice-clips/universal/female/giggle.mp3',
-    side: '/voice-clips/universal/female/oh.mp3',
-    back: '/voice-clips/universal/female/sigh.mp3',
+    hands: '/voice-clips/universal/female/giggle.mp3',
+    arm: '/voice-clips/universal/female/smile.mp3',
+    armL: '/voice-clips/universal/female/smile.mp3',
+    armR: '/voice-clips/universal/female/smile.mp3',
+    legs: '/voice-clips/universal/female/giggle_en.mp3',
+    legL: '/voice-clips/universal/female/giggle_en.mp3',
+    legR: '/voice-clips/universal/female/giggle_en.mp3',
+    foot: '/voice-clips/universal/female/ha_rpg.mp3',
+    torso: '/voice-clips/universal/female/ha.mp3',
+    side: '/voice-clips/universal/female/huh.mp3',
+    back: '/voice-clips/universal/female/wow.mp3',
     default: '/voice-clips/universal/female/wow_woven.mp3',
   },
   male: {
     head: '/voice-clips/ja/male/oh.mp3',
-    chest: '/voice-clips/ja/male/ha.mp3',
-    torso: '/voice-clips/ja/male/um.mp3',
-    belly: '/voice-clips/ja/male/oh.mp3',
-    hand: '/voice-clips/ja/male/ha.mp3',
-    side: '/voice-clips/ja/male/oh.mp3',
-    back: '/voice-clips/universal/male/sigh.mp3',
+    chest: '/voice-clips/ja/male/smile.mp3',
+    breast: '/voice-clips/ja/male/smile.mp3',
+    belly: '/voice-clips/ja/male/ha.mp3',
+    butt: '/voice-clips/universal/male/sigh.mp3',
+    hand: '/voice-clips/ja/male/giggle.mp3',
+    hands: '/voice-clips/ja/male/giggle.mp3',
+    arm: '/voice-clips/ja/male/wow.mp3',
+    armL: '/voice-clips/ja/male/wow.mp3',
+    armR: '/voice-clips/ja/male/wow.mp3',
+    legs: '/voice-clips/ja/male/um.mp3',
+    legL: '/voice-clips/ja/male/um.mp3',
+    legR: '/voice-clips/ja/male/um.mp3',
+    foot: '/voice-clips/en/male/ha_effort.mp3',
+    torso: '/voice-clips/ja/male/laugh.mp3',
+    side: '/voice-clips/universal/male/ha.mp3',
+    back: '/voice-clips/universal/male/wow.mp3',
     default: '/voice-clips/ja/male/oh.mp3',
   },
 };
 
+const POKE_ZONE_ALIASES: Record<string, string> = {
+  breast: 'chest',
+  hands: 'hand',
+  arms: 'arm',
+  leg: 'legs',
+  feet: 'foot',
+  tummy: 'belly',
+};
+
 export function recordedPokeClip(gender: VoiceClipGender, zone?: string): string {
   const table = RECORDED_POKE_ZONE[gender];
-  const key = (zone || 'default').toLowerCase();
+  let key = (zone || 'default').toLowerCase();
+  key = POKE_ZONE_ALIASES[key] ?? key;
+  if (key === 'arml' || key === 'armr') key = 'arm';
+  if (key === 'legl' || key === 'legr') key = 'legs';
   return table[key] ?? table.default ?? table.torso!;
 }
 
