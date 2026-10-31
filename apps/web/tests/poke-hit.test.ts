@@ -72,7 +72,7 @@ describe('classifyPoke', () => {
 });
 
 describe('pokeBodyReaction', () => {
-  const zones = ['head', 'torso', 'chest', 'side', 'back'] as const;
+  const zones = ['head', 'torso', 'chest', 'side', 'back', 'armL', 'armR', 'belly', 'butt', 'hand', 'legL', 'legR', 'foot'] as const;
 
   it('never translates the root', () => {
     for (const zone of zones) {
@@ -172,4 +172,21 @@ describe('pokeBodyReaction', () => {
     expect(Math.abs(front.chestPitch)).toBeGreaterThan(Math.abs(side.chestPitch));
     expect(Math.abs(side.chestRoll)).toBeGreaterThan(Math.abs(front.chestRoll));
   });
+
+  it('keeps belly local (spine, tiny hip, no shift) and butt counter-spined with feet planted', () => {
+    const belly = pokeBodyReaction({
+      t: 0.15, zone: 'belly', fallX: 0, fallZ: -1, sideSign: 1, softChest: false, twist: 0.05, direction: 'front',
+    });
+    expect(Math.abs(belly.spinePitch)).toBeGreaterThan(Math.abs(belly.hipPitch));
+    expect(Math.abs(belly.hipShiftX) + Math.abs(belly.hipShiftZ)).toBe(0);
+    expect(Math.abs(belly.hipPitch)).toBeLessThan(0.08);
+
+    const butt = pokeBodyReaction({
+      t: 0.15, zone: 'butt', fallX: 0, fallZ: 1, sideSign: 1, softChest: false, twist: 0.05, direction: 'back',
+    });
+    expect(butt.hipPitch).toBeGreaterThan(0);
+    expect(butt.spinePitch).toBeLessThan(0);
+    expect(Math.abs(butt.hipShiftX) + Math.abs(butt.hipShiftZ)).toBe(0);
+  });
+
 });
