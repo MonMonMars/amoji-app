@@ -35,3 +35,20 @@ Feet: all idle loads use `rebaseClipHips` + `pinPlantedClipTracks`.
 | 58 | lib_C45 | C45 UAL2No (Flash IdleUAL2No alias) | yes | off |
 | 59 | IdleUAL2Phone | C161 | yes | off |
 | 60 | lib_C46 | C46 Lantern | yes | off |
+
+| 61 | lib_C07 | C07 | yes | off |
+| 62 | lib_C08 | C08 | yes | off |
+| 63 | lib_C13 | C13 | yes | off |
+| 64–86 | UAL2/UAL1 leftovers | C47–C83 | yes | off |
+| 87–89 | Rokoko Hype/DJ/DJ02 | C116–C128 | yes | off |
+| 90 | IdleInnersceneSam | — | yes | off |
+| 91 | IdleInnersceneHarper | — | yes | off |
+| 92 | IdleInnersceneMaya | — | yes | off |
+| 93 | IdleRpmMStanding001 | — | yes | off |
+| 94 | IdleRpmMVar001 | — | yes | off |
+| 95 | IdleRpmMVar002 | — | yes | off |
+| 96 | IdleRpmMArmStanding001 | — | no | off (anim-only GLB) |
+| 97 | IdleGodotTPSPlayer | — | yes | off |
+| 98 | IdleRpmMStanding002 | — | yes | off |
+
+Batch4 remap: research #61–80 → picker #90+ after PR#64 rails #61–89. VERIFY #99–103 unwired.
