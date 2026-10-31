@@ -52,3 +52,19 @@ Feet: all idle loads use `rebaseClipHips` + `pinPlantedClipTracks`.
 | 98 | IdleRpmMStanding002 | — | yes | off |
 
 Batch4 remap: research #61–80 → picker #90+ after PR#64 rails #61–89. VERIFY #99–103 unwired.
+| 99 | lib_C09 | C09 KayKitDance | yes | off |
+| 100 | lib_C60 | C60 JazzDancing | yes | off |
+| 101 | lib_C111 | C111 DoTheRobot | yes | off |
+| 102 | lib_C112 | C112 GentleSway | yes | off |
+| 103 | lib_C113 | C113 DancingMedium | yes | off |
+| 104 | lib_C114 | C114 DancingParty | yes | off |
+| 105 | lib_C118 | C118 ClubDancer01 | yes | off |
+| 106 | lib_C119 | C119 ClubDancer02 | yes | off |
+| 107 | lib_C124 | C124 ClubDancer05 | yes | off |
+| 108 | PlayPunch | -- | yes | off |
+| 109 | YesCheer | -- | yes | off |
+| 110 | TaDa | -- | yes | off |
+| 111 | Bow | -- | yes | off |
+| 112 | StompAngry | -- | yes | off |
+
+PR4 action/dance: unused local VRMAs onto rails #99+ (after Batch4 #90-98). No convert. Kungfu C120+ FBX-only deferred. Jump/Spin/Bounce skipped (float/locomotion). Interim-remote C03/C61/C62/C110 (no local VRMA) deferred. Float-feet / gif-only / already-wired Cxx skipped.
