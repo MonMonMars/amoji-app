@@ -1,0 +1,10 @@
+Asset: library-room
+Source page: https://grab3d.com/models/buildings/library-room/
+Direct download: https://grab3d.com/dl/library-room/library-room.glb
+License: CC0-1.0 (public domain dedication — commercial OK, no attribution required)
+Publisher: Grab3D (grab3d.com)
+Amoji Story pack mapping: bookstore-aisle
+Style notes: Floor-to-ceiling shelves + rolling ladder — strongest aisle feel
+Poly/size (catalog): ~47.1k tris · 2.9MB
+Downloaded: 2026-11-01 01:48:03 HKT
+Staged bytes: 3004940

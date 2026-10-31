@@ -1,0 +1,10 @@
+Asset: balcony
+Source page: https://grab3d.com/models/buildings/balcony/
+Direct download: https://grab3d.com/dl/balcony/balcony.glb
+License: CC0-1.0 (public domain dedication — commercial OK, no attribution required)
+Publisher: Grab3D (grab3d.com)
+Amoji Story pack mapping: rooftop-evening
+Style notes: Modular balcony module to dress rooftop/evening overlook shots
+Poly/size (catalog): 2.3k tris · 507KB
+Downloaded: 2026-11-01 01:47:58 HKT
+Staged bytes: 519576

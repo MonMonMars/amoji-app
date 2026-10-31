@@ -1,0 +1,10 @@
+Asset: subway-car
+Source page: https://grab3d.com/models/vehicles/subway-car/
+Direct download: https://grab3d.com/dl/subway-car/subway-car.glb
+License: CC0-1.0 (public domain dedication — commercial OK, no attribution required)
+Publisher: Grab3D (grab3d.com)
+Amoji Story pack mapping: night-train-downtown
+Style notes: Stylized yellow subway car exterior; destination display glow helps night vibe
+Poly/size (catalog): ~29.5k tris · 1.7MB
+Downloaded: 2026-11-01 01:47:44 HKT
+Staged bytes: 1789824

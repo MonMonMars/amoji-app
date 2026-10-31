@@ -1,0 +1,10 @@
+Asset: subway-train
+Source page: https://grab3d.com/models/vehicles/subway-train/
+Direct download: https://grab3d.com/dl/subway-train/subway-train.glb
+License: CC0-1.0 (public domain dedication — commercial OK, no attribution required)
+Publisher: Grab3D (grab3d.com)
+Amoji Story pack mapping: night-train-downtown
+Style notes: Stylized cozy subway exterior (green tube profile); pair with city HDRI for neon windows
+Poly/size (catalog): ~30k tris · 1.8MB
+Downloaded: 2026-11-01 01:47:39 HKT
+Staged bytes: 1893404
