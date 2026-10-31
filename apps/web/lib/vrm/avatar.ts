@@ -624,6 +624,16 @@ export function idleHangDirection(
 interface ShoulderRest {
   q: THREE.Quaternion;
   drop: number;
+  /** Only restore bind clavicle when bind upper-arm already hangs (A-pose). */
+  restoreClavicle: boolean;
+}
+
+/** Hang-like bind arms (A-pose). T-pose arms are near horizontal (dir.y ~ 0). */
+export const SHOULDER_RESTORE_ARM_DIR_Y = -0.35;
+
+/** True when bind upper-arm world direction is hang-like enough to reuse clavicle. */
+export function clavicleRestoreFromArmDir(dirY: number): boolean {
+  return dirY <= SHOULDER_RESTORE_ARM_DIR_Y;
 }
 
 function captureShoulderRest(get: (name: string) => THREE.Object3D | null): Map<string, ShoulderRest> {
@@ -634,10 +644,21 @@ function captureShoulderRest(get: (name: string) => THREE.Object3D | null): Map<
   for (const side of SIDES) {
     const shoulder = get(`${side}Shoulder`);
     const upper = get(`${side}UpperArm`);
+    const lower = get(`${side}LowerArm`);
     if (!shoulder || !upper) continue;
+    const drop = upper.getWorldPosition(new THREE.Vector3()).y - cy;
+    // Arm chain direction at bind: T-pose ~horizontal (dir.y~0); A-pose hangs (dir.y low).
+    let dirY = 0;
+    if (lower) {
+      const a = upper.getWorldPosition(new THREE.Vector3());
+      const b = lower.getWorldPosition(new THREE.Vector3());
+      const d = b.sub(a);
+      if (d.lengthSq() > 1e-10) dirY = d.normalize().y;
+    }
     out.set(side, {
       q: shoulder.quaternion.clone(),
-      drop: upper.getWorldPosition(new THREE.Vector3()).y - cy,
+      drop,
+      restoreClavicle: clavicleRestoreFromArmDir(dirY),
     });
   }
   return out;
@@ -663,9 +684,10 @@ function easeIdleHangOn(
     const spec = rest.get(side);
     if (spec) {
       const drop = upper.getWorldPosition(_shA).y - cy;
-      // Copy the bind clavicle. A partial slerp left the idle clip and the
-      // correction blended into a collapsed shoulder.
-      if (drop < spec.drop - 0.004) shoulder.quaternion.copy(spec.q);
+      // Copy the bind clavicle only when bind was already a hang (A-pose).
+      // T-pose bind clavicles are for raised arms; pasting them onto a hanging
+      // upper arm collapses the shoulder into the torso (Mon t265u).
+      if (spec.restoreClavicle && drop < spec.drop - 0.004) shoulder.quaternion.copy(spec.q);
     }
     shoulder.updateMatrixWorld(true);
     const a = upper.getWorldPosition(_shA);
