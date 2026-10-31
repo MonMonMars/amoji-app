@@ -124,3 +124,16 @@ Research pack claimed #61–80; PR #64 already shipped rails #61–89 @ c77df56.
 Unused playable VRMAs already under `models/anims/` wired to picker **#99-112** (Batch4 left VERIFY research #99-103 unwired; free nums start at #99 after main #98).
 Defaults stay **#1+#2**. No voice/LLM/stories.
 **Skipped:** float-feet C10/C14-24/C26-35; gif-only; already-wired C116/C117/C128; #13 LookAround; BreathCalm tilt; Jump/Spin/Bounce (float/locomotion); kungfu C120-C147 FBX without VRMA (no convert this PR); interim-remote dance C03/C61/C62/C110 (no local VRMA); emotion-only named VRMAs (Angry/Cry/...).
+
+| 113 | RokokoMartialArtsKata | lib_C120 | C120 | yes | PR5 kungfu convert (mixamo synth hips) |
+| 114 | RokokoThaiChiTake | lib_C121 | C121 | yes | Rokoko hips map |
+| 115 | RokokoSamuraiDrawSword | lib_C122 | C122 | yes | mixamo synth hips |
+| 116 | RokokoBattleTauntsSword | lib_C123 | C123 | yes | mixamo synth hips |
+| 117 | UALPunchJab | lib_C146 | C146 | yes | UAL1 DEF |
+| 118 | UALPunchCross | lib_C147 | C147 | yes | UAL1 DEF |
+
+## PR5 kungfu (2026-11-01 Asia/Hong_Kong)
+
+Convert unused kungfu gallery FBX → VRMA; wire picker **#113-118** after PR4 #99-112 on main.
+Defaults stay **#1+#2**. No voice/LLM/stories.
+**Skipped:** KayKit Attack/Block C134–C138 (6-bone puppet, not humanoid); float/locomotion Jump/Hop/Run/Dash/Walk/Roll/Climb; dance C125–C129/C144–C145 (out of kungfu scope / already deferred).
