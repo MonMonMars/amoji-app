@@ -459,17 +459,28 @@ export default function CompanionCanvas({
     let blendT0 = -1;
     let blendDur = 0.68;
     let blendAvatar: Avatar | null = null;
+    // Humanoid (normalized) bones only — raw scene.traverse(isBone) mixed
+    // VRM 1.0 raw bind bones with the mixer’s normalized targets, so the
+    // entry crossfade slumped shoulders into the torso (Mon t265u).
+    const HUMAN_BLEND_BONES = [
+      'hips', 'spine', 'chest', 'upperChest', 'neck', 'head',
+      'leftShoulder', 'rightShoulder',
+      'leftUpperArm', 'rightUpperArm', 'leftLowerArm', 'rightLowerArm',
+      'leftHand', 'rightHand',
+      'leftUpperLeg', 'rightUpperLeg', 'leftLowerLeg', 'rightLowerLeg',
+      'leftFoot', 'rightFoot',
+    ] as const;
     const beginBoneBlend = (seconds = 0.68) => {
       if (!avatar) return;
       if (blendAvatar !== avatar) {
         blendNodes.length = 0;
         blendFrom.length = 0;
-        avatar.root.traverse((n) => {
-          if ((n as THREE.Bone).isBone) {
-            blendNodes.push(n);
-            blendFrom.push(new THREE.Quaternion());
-          }
-        });
+        for (const name of HUMAN_BLEND_BONES) {
+          const n = avatar.getBoneNode(name);
+          if (!n) continue;
+          blendNodes.push(n);
+          blendFrom.push(new THREE.Quaternion());
+        }
         blendAvatar = avatar;
       }
       for (let i = 0; i < blendNodes.length; i++) blendFrom[i]!.copy(blendNodes[i]!.quaternion);
@@ -659,7 +670,7 @@ export default function CompanionCanvas({
       beginBoneBlend(0.7);
       const action = mixer.clipAction(clip);
       action.timeScale = personalityMotion(seedKey ?? '', gender).timeScale;
-      // r93: idles LOOP ??the old LoopOnce + clampWhenFinished parked her on
+      // r93: idles LOOP — the old LoopOnce + clampWhenFinished parked her on
       // the clip's end frame (a straight stand) while the next clip faded
       // in: the "zombie pose between idle movements". A looping body is
       // never parked anywhere.
@@ -674,11 +685,16 @@ export default function CompanionCanvas({
         idleAction.crossFadeTo(action, fade, false);
         action.play();
       } else {
-        action.fadeIn(fade).play();
+        // First idle entry: no mixer fadeIn. fadeIn starts weight near 0 so
+        // the body sits on bind/T-pose while normalized tracks ramp in —
+        // that + raw-bone blend collapsed shoulders (Mon t265u). Full weight
+        // + beginBoneBlend crossfades the current humanoid pose into the clip.
+        action.setEffectiveWeight(1);
+        action.play();
       }
       idleAction = action;
       idleClipId = id;
-      // hold this idle for 1?? of its own beats, then hand over mid-motion
+      // hold this idle for 1–2 of its own beats, then hand over mid-motion
       const holdMs = Math.min(14000, Math.max(5000, clip.duration * 1000 * (1 + Math.random())));
       idleHoldUntil = performance.now() + holdMs;
     };
