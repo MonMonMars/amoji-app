@@ -21,7 +21,8 @@ import { useModularSelection } from '../../lib/modular/storage';
 import { resolveMiniGameCompanion } from '../../lib/minigames/companion';
 import type { ActionGame } from '../../lib/minigames/types';
 import { usePrefs, characterById, backgroundById, KID_PERSONA_GUARD } from '../../lib/prefs';
-import { storyPersonaSuffix } from '../../lib/story-session';
+import { activeStoryScene, storyPersonaSuffix } from '../../lib/story-session';
+import { resolveStorySceneGlb } from '../../lib/stories';
 import { clearMemory, loadMemory, memorySummaryCount } from '../../lib/memory';
 import type { ChatStatus } from '../../lib/status';
 
@@ -72,6 +73,8 @@ export default function Chat() {
   const character = characterById(prefs.character);
   useEffect(() => { setIdleClip(idlePickFor(character.id)); }, [character.id]);
   const background = backgroundById(prefs.background);
+  const storyScene = activeStoryScene();
+  const sceneGlbUrl = storyScene ? resolveStorySceneGlb(storyScene) : undefined;
   const storedWardrobe = useModularSelection();
   const wardrobe = activeWardrobe(character.id, storedWardrobe);
   const gameCompanion = resolveMiniGameCompanion(prefs.character, prefs.lastFemale);
@@ -94,6 +97,7 @@ export default function Chat() {
       <SceneBackdrop background={background} />
       <CompanionCanvas
         accent={canvasCharacter.accent}
+        sceneGlbUrl={sceneGlbUrl}
         seedKey={canvasCharacter.id}
         libraryOnly={gameChromeHidden}
         wardrobeHeadId={canvasWardrobe?.headId}

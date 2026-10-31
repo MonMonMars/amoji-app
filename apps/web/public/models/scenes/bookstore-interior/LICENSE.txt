@@ -1,0 +1,10 @@
+Asset: bookstore-interior
+Source page: https://grab3d.com/models/buildings/bookstore-interior/
+Direct download: https://grab3d.com/dl/bookstore-interior/bookstore-interior.glb
+License: CC0-1.0 (public domain dedication — commercial OK, no attribution required)
+Publisher: Grab3D (grab3d.com)
+Amoji Story pack mapping: bookstore-aisle
+Style notes: Bookstore interior with wall shelves + display tables + reading corner
+Poly/size (catalog): ~46.1k tris · 2.9MB
+Downloaded: 2026-11-01 01:48:00 HKT
+Staged bytes: 3019936

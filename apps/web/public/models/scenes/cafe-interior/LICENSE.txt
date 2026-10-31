@@ -1,0 +1,10 @@
+Asset: cafe-interior
+Source page: https://grab3d.com/models/buildings/cafe-interior/
+Direct download: https://grab3d.com/dl/cafe-interior/cafe-interior.glb
+License: CC0-1.0 (public domain dedication — commercial OK, no attribution required)
+Publisher: Grab3D (grab3d.com)
+Amoji Story pack mapping: rainy-cafe-window
+Style notes: Cozy cafe interior with window bench + bistro tables — best rainy-window seat
+Poly/size (catalog): ~48.6k tris · 2.9MB
+Downloaded: 2026-11-01 01:47:47 HKT
+Staged bytes: 3060036

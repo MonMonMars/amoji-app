@@ -71,3 +71,24 @@ describe('story pack picker UI', () => {
     expect(page).toMatch(/sceneId:\s*packId/);
   });
 });
+
+describe('story scene GLB map (want12)', () => {
+  it('exposes SCENE_GLB paths and resolveStorySceneGlb prefers primary', async () => {
+    const mod = await import('../lib/stories');
+    expect(mod.SCENE_GLB.cafeInterior).toContain('cafe-interior');
+    expect(mod.SCENE_GLB.subwayTrain).toContain('subway-train');
+    const cafe = mod.storyById('rainy-cafe-window');
+    expect(cafe?.sceneGlbUrl).toBe(mod.SCENE_GLB.cafeInterior);
+    expect(mod.resolveStorySceneGlb(cafe!)).toBe(mod.SCENE_GLB.cafeInterior);
+    expect(mod.storyById('engawa-dusk')?.sceneGlbUrl).toBe(mod.SCENE_GLB.japaneseHouse);
+  });
+
+  it('ships each SCENE_GLB file under public/models', async () => {
+    const { SCENE_GLB } = await import('../lib/stories');
+    const root = path.resolve(here, '../public/models');
+    for (const rel of Object.values(SCENE_GLB)) {
+      expect(fs.existsSync(path.join(root, rel))).toBe(true);
+    }
+  });
+});
+
