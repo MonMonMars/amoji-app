@@ -72,6 +72,32 @@ export const INTERJECTIONS: Record<string, Partial<Record<LangCode, { text: stri
     ja: { text: 'えっと……', pitch: 0.1, rate: -0.08 },
     en: { text: 'huh?', pitch: 0.12, rate: -0.06 },
   },
+  // Soft moods: breathy/warm tics — never typed laughs (SFX owns giggles).
+  love: {
+    yue: { text: '嗯……', pitch: 0.05, rate: -0.08 },
+    zh: { text: '嗯……', pitch: 0.05, rate: -0.08 },
+    ja: { text: 'ふぅ……', pitch: 0.04, rate: -0.08 },
+    en: { text: 'mm…', pitch: 0.04, rate: -0.08 },
+  },
+  contentment: {
+    yue: { text: '嗯。', pitch: 0.02, rate: -0.1 },
+    zh: { text: '嗯。', pitch: 0.02, rate: -0.1 },
+    ja: { text: 'うん。', pitch: 0.02, rate: -0.1 },
+    en: { text: 'mm.', pitch: 0.02, rate: -0.1 },
+  },
+  relief: {
+    yue: { text: '呼……', pitch: -0.02, rate: -0.1 },
+    zh: { text: '呼……', pitch: -0.02, rate: -0.1 },
+    ja: { text: 'ふう……', pitch: -0.02, rate: -0.1 },
+    en: { text: 'phew…', pitch: -0.02, rate: -0.1 },
+  },
+  pride: {
+    yue: { text: '嗯！', pitch: 0.08, rate: 0.02 },
+    zh: { text: '嗯！', pitch: 0.08, rate: 0.02 },
+    ja: { text: 'ふん！', pitch: 0.08, rate: 0.02 },
+    en: { text: 'hm!', pitch: 0.08, rate: 0.02 },
+  },
+
 };
 
 let fillerIdx = 0;
