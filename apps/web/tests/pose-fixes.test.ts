@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { IDLE_ARM_ABDUCT, calibrateRelaxedHands, idleHangDirection } from '../lib/vrm/avatar';
+import { IDLE_ARM_ABDUCT, calibrateRelaxedHands, clavicleRestoreFromArmDir, idleHangDirection } from '../lib/vrm/avatar';
 import { capEyeExpression, stabilizeEyeMaterials } from '../lib/vrm/eyes';
 
 describe('eye readability', () => {
@@ -95,5 +95,17 @@ describe('relaxed fingers', () => {
     const after = ringD.getWorldPosition(new THREE.Vector3()).distanceTo(hand.getWorldPosition(new THREE.Vector3()));
     expect(after).toBeLessThan(before);
     expect(indexD.getWorldPosition(new THREE.Vector3()).z).toBeLessThan(-0.01);
+  });
+});
+
+
+describe('clavicleRestoreFromArmDir', () => {
+  it('allows shoulder restore only for hang-like bind upper-arm dirY', () => {
+    expect(clavicleRestoreFromArmDir(-0.35)).toBe(true);
+    expect(clavicleRestoreFromArmDir(-0.351)).toBe(true);
+    expect(clavicleRestoreFromArmDir(-0.6)).toBe(true);
+    expect(clavicleRestoreFromArmDir(-0.34)).toBe(false);
+    expect(clavicleRestoreFromArmDir(0)).toBe(false);
+    expect(clavicleRestoreFromArmDir(0.35)).toBe(false);
   });
 });
