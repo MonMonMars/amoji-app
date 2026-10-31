@@ -26,9 +26,9 @@ function toOption(e: IdleLibraryEntry): IdleClipOption {
   };
 }
 
-/** Every numbered library row through the current wired set (#1�V41). */
+/** Every numbered library row through IDLE_LIBRARY max (#1-N). */
 export const IDLE_CLIP_OPTIONS: readonly IdleClipOption[] = IDLE_LIBRARY
-  .filter((e) => e.num >= 1 && e.num <= 41)
+  .filter((e) => e.num >= 1 && e.num <= Math.max(...IDLE_LIBRARY.map((x) => x.num)))
   .map(toOption);
 
 export function idleClipByLabel(label: string): IdleClipOption | undefined {
