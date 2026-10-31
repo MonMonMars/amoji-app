@@ -1479,10 +1479,22 @@ export default function CompanionCanvas({
           if (hipsN && headN && chestN && leftN && rightN) {
             const armL = avatar?.getBoneNode('leftLowerArm');
             const armR = avatar?.getBoneNode('rightLowerArm');
+            const handL = avatar?.getBoneNode('leftHand');
+            const handR = avatar?.getBoneNode('rightHand');
             const legL = avatar?.getBoneNode('leftLowerLeg');
             const legR = avatar?.getBoneNode('rightLowerLeg');
+            const footL = avatar?.getBoneNode('leftFoot');
+            const footR = avatar?.getBoneNode('rightFoot');
             const hipsW = worldOf(hipsN);
             const chestW = worldOf(chestN);
+            const headW = worldOf(headN);
+            // Character forward on XZ from shoulder axis (same as classifyPoke).
+            const shR = worldOf(rightN);
+            const shL = worldOf(leftN);
+            let fx = shR.z - shL.z;
+            let fz = -(shR.x - shL.x);
+            const fl = Math.hypot(fx, fz) || 1;
+            fx /= fl; fz /= fl;
             let hasNormal = false;
             if (hit.face) {
               sV2.copy(hit.face.normal).transformDirection(hit.object.matrixWorld);
@@ -1491,18 +1503,28 @@ export default function CompanionCanvas({
             const ray = raycaster.ray.direction;
             const cls = classifyPoke(
               { x: hit.point.x, y: hit.point.y, z: hit.point.z },
-              hipsW, worldOf(headN), chestW, worldOf(leftN), worldOf(rightN),
+              hipsW, headW, chestW, shL, shR,
               {
                 normal: hasNormal ? { x: sV2.x, y: sV2.y, z: sV2.z } : undefined,
                 rayDir: { x: ray.x, y: ray.y, z: ray.z },
                 leftArm: armL ? worldOf(armL) : undefined,
                 rightArm: armR ? worldOf(armR) : undefined,
+                leftHand: handL ? worldOf(handL) : undefined,
+                rightHand: handR ? worldOf(handR) : undefined,
                 leftLeg: legL ? worldOf(legL) : undefined,
                 rightLeg: legR ? worldOf(legR) : undefined,
+                leftFoot: footL ? worldOf(footL) : undefined,
+                rightFoot: footR ? worldOf(footR) : undefined,
                 belly: {
                   x: hipsW.x * 0.72 + chestW.x * 0.28,
                   y: hipsW.y * 0.72 + chestW.y * 0.28,
                   z: hipsW.z * 0.72 + chestW.z * 0.28,
+                },
+                // Slightly behind hips along -forward for rear-hips / butt probe.
+                butt: {
+                  x: hipsW.x - fx * 0.08,
+                  y: hipsW.y + 0.02,
+                  z: hipsW.z - fz * 0.08,
                 },
               },
             );
