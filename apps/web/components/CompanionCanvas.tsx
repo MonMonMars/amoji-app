@@ -136,6 +136,8 @@ export interface CompanionCanvasProps {
   lighting?: 'indoor' | 'outdoor';
   /** Pinned idle clip id (a01 / b02 ??. Empty keeps the calm rotation. */
   idleClip?: string | null;
+  /** Optional story-room GLB path used by modelUrl(); loads behind the companion. */
+  sceneGlbUrl?: string;
 }
 
 // r2026-10-04.92 (Master Simon): start FURTHER AWAY and at a NORMAL STRAIGHT
@@ -250,6 +252,7 @@ export default function CompanionCanvas({
   wardrobeHeadId: wardrobeHeadProp, wardrobeBodyId: wardrobeBodyProp,
   libraryOnly = false,
   idleClip = null,
+  sceneGlbUrl,
 }: CompanionCanvasProps) {
   // Cloth swap is gated off. A stored outfit must not replace the base VRM.
   const wardrobeHeadId = WARDROBE_ENABLED ? wardrobeHeadProp : undefined;
@@ -315,6 +318,7 @@ export default function CompanionCanvas({
     const scene = new THREE.Scene();
     // transparent canvas ??the page's themed gradient shows through (alpha:true)
     scene.background = null;
+    let cancelled = false;
     // r2026-10-05.108 (Master Simon): ONE neutral daylight rig for every
     // backdrop. The r77 indoor branch keyed her with a warm cream lamp
     // ('#fff6ec') that, against the warm ember/neon backdrops (the only
@@ -357,6 +361,46 @@ export default function CompanionCanvas({
       camera.lookAt(target);
     };
     applyCamera();
+
+    // Optional story-room GLB (WANT12): fire-and-forget; JPG SceneBackdrop stays as fallback.
+    const roomRoot = new THREE.Group();
+    roomRoot.name = 'amoji-story-room';
+    scene.add(roomRoot);
+    if (sceneGlbUrl) {
+      const roomUrl = modelUrl(sceneGlbUrl);
+      if (roomUrl) {
+        const roomLoader = new GLTFLoader();
+        roomLoader.load(
+          roomUrl,
+          (gltf) => {
+            if (cancelled) return;
+            try {
+              const room = gltf.scene;
+              const box = new THREE.Box3().setFromObject(room);
+              if (box.isEmpty()) return;
+              const size = box.getSize(new THREE.Vector3());
+              const targetWidth = 3.8;
+              const scale = size.x > 0 ? targetWidth / size.x : 1;
+              room.scale.setScalar(scale);
+              const fitted = new THREE.Box3().setFromObject(room);
+              const center = fitted.getCenter(new THREE.Vector3());
+              room.position.x -= center.x;
+              room.position.y -= fitted.min.y;
+              room.position.z -= center.z;
+              room.position.z -= 2.6; // sit behind the companion
+              roomRoot.add(room);
+              camera.far = Math.max(camera.far, 80);
+              camera.updateProjectionMatrix();
+            } catch {
+              /* keep JPG backdrop */
+            }
+          },
+          undefined,
+          () => { /* silent fail — painted backdrop remains */ },
+        );
+      }
+    }
+
     const unifyFraming = (a: Avatar) => {
       try {
         a.root.scale.set(BASE_SX, BASE_SY, BASE_SX);
@@ -1117,7 +1161,6 @@ export default function CompanionCanvas({
       });
     };
 
-    let cancelled = false;
     let modularAsm: ModularAssembly | null = null;
     // False until the first modular attempt settles. Outfit clicks during
     // that window are applied from wardrobeBodyRef at settle time.
@@ -2069,6 +2112,15 @@ export default function CompanionCanvas({
       host.removeEventListener('pointercancel', onPointerUp);
       host.removeEventListener('wheel', onWheel);
       avatar?.root.removeFromParent();
+      // dispose optional story-room GLB
+      roomRoot.traverse((node) => {
+        const mesh = node as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        mesh.geometry?.dispose();
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const m of mats) (m as THREE.Material | undefined)?.dispose();
+      });
+      roomRoot.removeFromParent();
       // r69: dispose the stage props with the scene
       for (const pg of propGroups.values()) {
         pg.group.traverse((node) => {
@@ -2083,7 +2135,7 @@ export default function CompanionCanvas({
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [accent, seedKey, wardrobeHeadId]);
+  }, [accent, seedKey, wardrobeHeadId, sceneGlbUrl]);
 
   // Outfit changes hot-swap body meshes when the modular GLBs mounted.
   // Otherwise they reload that outfit's full VRM. A head change rebuilds above.

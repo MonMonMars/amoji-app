@@ -1,0 +1,10 @@
+Asset: cafe-exterior
+Source page: https://grab3d.com/models/buildings/cafe/
+Direct download: https://grab3d.com/dl/cafe/cafe.glb
+License: CC0-1.0 (public domain dedication — commercial OK, no attribution required)
+Publisher: Grab3D (grab3d.com)
+Amoji Story pack mapping: rainy-cafe-window
+Style notes: Pink corner cafe exterior with terrace — optional outside cutaway
+Poly/size (catalog): ~33.9k tris · 3.3MB
+Downloaded: 2026-11-01 01:47:55 HKT
+Staged bytes: 3467312

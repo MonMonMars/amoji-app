@@ -1,0 +1,10 @@
+Asset: wooden-pier
+Source page: https://grab3d.com/models/buildings/wooden-pier/
+Direct download: https://grab3d.com/dl/wooden-pier/wooden-pier.glb
+License: CC0-1.0 (public domain dedication — commercial OK, no attribution required)
+Publisher: Grab3D (grab3d.com)
+Amoji Story pack mapping: beach-dusk
+Style notes: Modular wooden pier with lantern — dusk pier walk / shore
+Poly/size (catalog): ~26.4k tris · ~2MB?
+Downloaded: 2026-11-01 01:48:07 HKT
+Staged bytes: 1644820

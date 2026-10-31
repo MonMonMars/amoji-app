@@ -1,0 +1,10 @@
+Asset: apartment-building
+Source page: https://grab3d.com/models/buildings/apartment-building/
+Direct download: https://grab3d.com/dl/apartment-building/apartment-building.glb
+License: CC0-1.0 (public domain dedication — commercial OK, no attribution required)
+Publisher: Grab3D (grab3d.com)
+Amoji Story pack mapping: rooftop-evening
+Style notes: 5-storey peach block WITH roof terrace + pergola — rooftop overlook base
+Poly/size (catalog): ~33.5k tris · 2.0MB
+Downloaded: 2026-11-01 01:47:57 HKT
+Staged bytes: 2095780

@@ -10,6 +10,13 @@ export type StoryScene = {
   id: string;
   /** Existing BACKGROUNDS id — not freely picked in Story Mode. */
   backgroundId: string;
+  /**
+   * Optional Grab3D room GLB under /models/scenes (primary).
+   * CompanionCanvas loads it behind the character; SceneBackdrop JPG stays as fallback.
+   */
+  sceneGlbUrl?: string;
+  /** Optional alt GLB (DEV: localStorage amoji.dev.sceneGlbAlt=1). Kept on disk either way. */
+  sceneGlbAltUrl?: string;
   /** Prefer these companion ids; missing ids are skipped at roll time. */
   castPool: readonly string[];
   /** Prefer female / male / any when filtering the pool. */
@@ -22,11 +29,45 @@ export type StoryScene = {
   openingLine?: Record<Lang, string>;
 };
 
+/** Public path fragment for modelUrl() — files live in apps/web/public/models/scenes/. */
+export const SCENE_GLB = {
+  cafeInterior: 'scenes/cafe-interior/cafe-interior.glb',
+  cafeExterior: 'scenes/cafe-exterior/cafe-exterior.glb',
+  libraryRoom: 'scenes/library-room/library-room.glb',
+  bookstoreInterior: 'scenes/bookstore-interior/bookstore-interior.glb',
+  beachHouse: 'scenes/beach-house/beach-house.glb',
+  woodenPier: 'scenes/wooden-pier/wooden-pier.glb',
+  luxuryBeachHouse: 'scenes/luxury-beach-house/luxury-beach-house.glb',
+  apartmentBuilding: 'scenes/apartment-building/apartment-building.glb',
+  balcony: 'scenes/balcony/balcony.glb',
+  subwayTrain: 'scenes/subway-train/subway-train.glb',
+  subwayCar: 'scenes/subway-car/subway-car.glb',
+  japaneseHouse: 'scenes/japanese-house/japanese-house.glb',
+} as const;
+
+/** Resolve primary vs DEV alt GLB for a story scene. */
+export function resolveStorySceneGlb(scene: StoryScene): string | undefined {
+  const wantAlt =
+    typeof window !== 'undefined' &&
+    (() => {
+      try {
+        return window.localStorage.getItem('amoji.dev.sceneGlbAlt') === '1';
+      } catch {
+        return false;
+      }
+    })();
+  if (wantAlt && scene.sceneGlbAltUrl) return scene.sceneGlbAltUrl;
+  return scene.sceneGlbUrl;
+}
+
 /** Seed scenes — expand later. Night-train sample matches Mon's brief. */
 export const STORY_SCENES: readonly StoryScene[] = [
   {
     id: 'night-train-downtown',
     backgroundId: 'neon',
+    // Exterior metro only — no free commercial anime subway INTERIOR; JPG neon stays strong.
+    sceneGlbUrl: SCENE_GLB.subwayTrain,
+    sceneGlbAltUrl: SCENE_GLB.subwayCar,
     castGender: 'female',
     castPool: [
       'a01-shino', 'a02-shibu', 'a14-vivi', 'a16-vita', 'a17-victoria-rubin',
@@ -61,6 +102,8 @@ export const STORY_SCENES: readonly StoryScene[] = [
   {
     id: 'rainy-cafe-window',
     backgroundId: 'rain',
+    sceneGlbUrl: SCENE_GLB.cafeInterior,
+    sceneGlbAltUrl: SCENE_GLB.cafeExterior,
     castGender: 'any',
     castPool: [
       'a01-shino', 'a02-shibu', 'a14-vivi', 'a03-fumiriya',
@@ -88,6 +131,8 @@ export const STORY_SCENES: readonly StoryScene[] = [
   {
     id: 'rooftop-evening',
     backgroundId: 'sunset',
+    sceneGlbUrl: SCENE_GLB.apartmentBuilding,
+    sceneGlbAltUrl: SCENE_GLB.balcony,
     castGender: 'any',
     castPool: [
       'a14-vivi', 'a16-vita', 'a17-victoria-rubin', 'a64-lily-lily-animeit',
@@ -121,6 +166,8 @@ export const STORY_SCENES: readonly StoryScene[] = [
   {
     id: 'bookstore-aisle',
     backgroundId: 'ember',
+    sceneGlbUrl: SCENE_GLB.libraryRoom,
+    sceneGlbAltUrl: SCENE_GLB.bookstoreInterior,
     castGender: 'any',
     castPool: [
       'a01-shino', 'a02-shibu', 'a10-agahomei-normal', 'a61-saori-kamiya-llunne',
@@ -155,6 +202,8 @@ export const STORY_SCENES: readonly StoryScene[] = [
   {
     id: 'beach-dusk',
     backgroundId: 'cloudsea',
+    sceneGlbUrl: SCENE_GLB.beachHouse,
+    sceneGlbAltUrl: SCENE_GLB.woodenPier,
     castGender: 'any',
     castPool: [
       'a14-vivi', 'a16-vita', 'a17-victoria-rubin', 'a64-lily-lily-animeit',
@@ -186,6 +235,42 @@ export const STORY_SCENES: readonly StoryScene[] = [
       ja: 'もう少し歩かない？お水、まだ昼のぬくもり残ってる。',
     },
   },
+
+  {
+    id: 'engawa-dusk',
+    backgroundId: 'ember',
+    sceneGlbUrl: SCENE_GLB.japaneseHouse,
+    castGender: 'any',
+    castPool: [
+      'a01-shino', 'a02-shibu', 'a10-agahomei-normal', 'a61-saori-kamiya-llunne',
+      'a63-hinoame-satuki-mei-sirayuki', 'a74-mizuka', 'a79-amami-karasu',
+    ],
+    title: {
+      en: 'Engawa at dusk',
+      yue: '黃昏縁側',
+      zh: '黄昏缘侧',
+      ja: '夕暮れの縁側',
+    },
+    blurb: {
+      en: 'Wooden boards warm from the day. Someone sits on the engawa — soft light, quiet company.',
+      yue: '木地板仲留住日頭暖。有人坐喺縁側 — 柔光、靜靜陪住你。',
+      zh: '木板还留着白天的暖。有人坐在缘侧 — 柔光、安静陪着你。',
+      ja: '日中のぬくもりが残る縁側。誰かが座っている — やわらかい光と、静かな時間。',
+    },
+    systemBeat: {
+      en: 'STORY MODE: You sit on a traditional Japanese engawa at dusk. Wood scent, soft lantern light, gentle talk. Stay at the house unless the user clearly leaves.',
+      yue: '故事模式：你喺黃昏傳統日式縁側。木香、柔燈、輕輕傾偈。除非用戶明確離開，唔好換場。',
+      zh: '故事模式：你在黄昏的传统日式缘侧。木香、柔灯、轻声交谈。除非用户明确离开，不要换场。',
+      ja: 'ストーリーモード：夕暮れの縁側に座っている。木の匂い、やわらかい灯、やさしい会話。ユーザーが明確に離れない限り場面を変えない。',
+    },
+    openingLine: {
+      en: 'The boards are still warm… sit with me a minute?',
+      yue: '地板仲暖…坐一陣？',
+      zh: '地板还暖…坐一会儿？',
+      ja: '縁側、まだあったかいよ…ちょっと一緒にいる？',
+    },
+  },
+
 ];
 
 export function storyById(id: string): StoryScene | undefined {
