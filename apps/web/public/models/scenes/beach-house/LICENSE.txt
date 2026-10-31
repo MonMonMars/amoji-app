@@ -1,0 +1,10 @@
+Asset: beach-house
+Source page: https://grab3d.com/models/buildings/beach-house/
+Direct download: https://grab3d.com/dl/beach-house/beach-house.glb
+License: CC0-1.0 (public domain dedication — commercial OK, no attribution required)
+Publisher: Grab3D (grab3d.com)
+Amoji Story pack mapping: beach-dusk
+Style notes: Blue stilt beach house with wraparound deck — dusk shore anchor
+Poly/size (catalog): ~26.7k tris · 2.8MB
+Downloaded: 2026-11-01 01:48:05 HKT
+Staged bytes: 2979000
