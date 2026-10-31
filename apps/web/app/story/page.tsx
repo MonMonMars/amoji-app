@@ -12,6 +12,8 @@ import {
 } from '../../lib/prefs';
 import { STORY_SCENES, rollStory, type StoryScene } from '../../lib/stories';
 import { saveStorySession } from '../../lib/story-session';
+import { primeAudioForChatEnter } from '../../lib/voice';
+import { primeLocationForChatEnter } from '../../lib/live-tools';
 
 const LABEL: Record<
   'mode' | 'reroll' | 'start' | 'scene' | 'packs' | 'surprise' | 'castAgain',
@@ -78,6 +80,9 @@ export default function StorySetupPage() {
   const packLocked = packId != null;
 
   const enter = () => {
+    // t767/t777: ENTER STORY primes voice + location in this gesture.
+    primeAudioForChatEnter();
+    primeLocationForChatEnter();
     saveStorySession({
       sceneId: scene.id,
       characterId: character.id,

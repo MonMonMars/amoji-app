@@ -4,11 +4,13 @@ import {
   clientLiveContext,
   gatherLiveContext,
   liveToolsEnabled,
+  newsRegionFromPlace,
   parseRssItems,
   pickLightHeadlines,
   placeLabel,
   planTools,
   preferLiveReply,
+  regionalNewsFeedUrls,
   resolveDevicePlace,
   worldBlock,
   type GeoLike,
@@ -559,5 +561,23 @@ describe('parseRssItems', () => {
   it('skips the channel title and splits the publisher', () => {
     const xml = '<rss><channel><title>Google News</title><item><title>Harbour lights &amp; rain - Daily</title></item></channel></rss>';
     expect(parseRssItems(xml)).toEqual([{ title: 'Harbour lights & rain', source: 'Daily' }]);
+  });
+});
+
+describe('t775 regional news feeds', () => {
+  it('maps GPS countries to news regions', () => {
+    expect(newsRegionFromPlace({ country: 'Hong Kong', region: '', city: 'Central' })).toBe('HK');
+    expect(newsRegionFromPlace({ country: 'Japan', region: 'Tokyo', city: 'Shibuya' })).toBe('JP');
+    expect(newsRegionFromPlace({ country: 'United States', region: 'CA', city: 'SF' })).toBe('US');
+    expect(newsRegionFromPlace({ country: 'United Kingdom', region: '', city: 'London' })).toBe('UK');
+    expect(newsRegionFromPlace({ country: 'Taiwan', region: '', city: 'Taipei' })).toBe('TW');
+    expect(newsRegionFromPlace(null, 'en')).toBe('general');
+  });
+
+  it('returns free general RSS urls per region', () => {
+    expect(regionalNewsFeedUrls('UK').some((u) => u.includes('bbci.co.uk'))).toBe(true);
+    expect(regionalNewsFeedUrls('US').some((u) => u.includes('npr.org'))).toBe(true);
+    expect(regionalNewsFeedUrls('JP').some((u) => u.includes('nhk.or.jp'))).toBe(true);
+    expect(regionalNewsFeedUrls('general').length).toBeGreaterThan(0);
   });
 });

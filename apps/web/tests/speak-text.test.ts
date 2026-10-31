@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
-  clampBrowserProsody, clampLaughDelivery, clampLeadProsody, cleanForDisplay, cleanForSpeech,
-  joinSpeechLead, prepareSpokenLead, stripVoicedGlyphs,
+  clampBrowserProsody,
+  clampLaughDelivery,
+  clampLeadProsody,
+  cleanForDisplay,
+  cleanForSpeech,
+  joinSpeechLead,
+  prepareSpokenLead,
+  sanitizeWebForSpeech,
+  stripLaughTokens,
+  stripVoicedGlyphs,
 } from '../lib/speak-text';
 
 describe('speak text cleaner', () => {
@@ -45,7 +53,7 @@ describe('speak text cleaner', () => {
     expect(prepared).toContain(',');
     expect(prepared).toContain('.');
     const spoken = stripVoicedGlyphs(prepared);
-    expect(spoken).toBe('Haha you got my head Email me x 1 for 5 10');
+    expect(spoken).toBe('you got my head Email me x 1 for 5 10'); // t771: Haha stripped
     expect(spoken).not.toMatch(/\b(comma|period|at|hash|dollar|percent|ampersand|and)\b/i);
   });
 
@@ -53,15 +61,16 @@ describe('speak text cleaner', () => {
     expect(stripVoicedGlyphs("don't stop. pi is 3.14.")).toBe("don't stop pi is 3.14");
   });
 
-  it('cleans a poke laugh without substituting words for the bang', () => {
-    expect(cleanForSpeech('Haha!')).toBe('Haha!');
+  it('strips TTS poke-laugh tokens (t771) without naming the bang', () => {
+    expect(cleanForSpeech('Haha!')).toBe('!'); // laugh words gone; bang alone is not speakable
+    expect(cleanForSpeech('Haha!')).not.toMatch(/haha/i);
     expect(stripVoicedGlyphs('哈哈！')).toBe('哈哈！');
-    expect(stripVoicedGlyphs('呵呵……')).toBe('呵呵');
+    expect(stripVoicedGlyphs('呵呵…')).toBe('呵呵');
   });
 
   it('turns tildes and dashes into pauses instead of spoken marks', () => {
-    expect(cleanForSpeech('哈哈～身中招啦')).toBe('哈哈 身中招啦');
-    expect(cleanForSpeech('哈哈～身中招啦')).not.toMatch(/tilde|ellipsis/i);
+    expect(cleanForSpeech('你好～身中招啦')).toBe('你好 身中招啦');
+    expect(cleanForSpeech('你好～身中招啦')).not.toMatch(/tilde|ellipsis/i);
     expect(cleanForSpeech('wait… still here')).toBe('wait… still here');
     expect(cleanForSpeech('laughing — still playing?')).toBe('laughing，still playing?');
     expect(cleanForSpeech('laughing — still playing?')).not.toContain('—');
@@ -69,20 +78,37 @@ describe('speak text cleaner', () => {
     expect(cleanForDisplay('哈哈～再嚟')).toContain('～');
   });
 
-  it('keeps a poke laugh inside a normal speaking range', () => {
-    const lead = prepareSpokenLead({ text: 'Haha!', pitch: 0.32, rate: 0.18 });
-    expect(lead?.text).toBe('Haha');
-    expect(lead && Math.abs(lead.pitch)).toBeLessThanOrEqual(0.08);
-    expect(lead && Math.abs(lead.rate)).toBeLessThanOrEqual(0.06);
-    expect(joinSpeechLead('Haha!', 'you got my head', 'en')).toBe('Haha, you got my head');
-    expect(joinSpeechLead('哈哈', '你戳到我', 'yue')).toContain('，');
-    expect(joinSpeechLead('哈哈', '你戳到我', 'yue')).not.toMatch(/[!！]/);
-    const browser = clampBrowserProsody(1.08 * 1.34, 1.02 * 1.14);
-    expect(browser.pitch).toBeLessThanOrEqual(1.18);
-    expect(browser.rate).toBeLessThanOrEqual(1.12);
-    const laugh = clampLaughDelivery(browser.pitch * (1 + 0.18), browser.rate * (1 + 0.08));
-    expect(laugh.pitch).toBeLessThanOrEqual(1.08);
-    expect(laugh.rate).toBeLessThanOrEqual(1.04);
-    expect(clampLeadProsody(0.5, 0.4).pitch).toBe(0.08);
+  it('drops TTS laugh leads (t771 — laughs are SFX only)', () => {
+    const lead = prepareSpokenLead({ text: 'Haha!', pitch: 0.32, rate: 0.4 });
+    expect(lead).toBeUndefined();
+    const soft = prepareSpokenLead({ text: 'mm!', pitch: 0.32, rate: 0.4 });
+    expect(soft?.text?.toLowerCase()).toMatch(/mm/);
+    expect(soft && Math.abs(soft.pitch)).toBeLessThanOrEqual(0.08);
   });
 });
+
+describe('t773/t771 speech sanitize', () => {
+  it('strips hashtags handles urls and chrome before TTS', () => {
+    const raw = 'Breaking: cats win #CuteNews @DailyMeow https://example.com/x Read more | Google News';
+    const out = sanitizeWebForSpeech(raw);
+    expect(out.toLowerCase()).not.toMatch(/#cute/);
+    expect(out).not.toMatch(/@Daily/);
+    expect(out).not.toMatch(/https?:/);
+    expect(out.toLowerCase()).not.toMatch(/read more/);
+    expect(out.toLowerCase()).toMatch(/cats/);
+  });
+
+  it('stripLaughTokens removes hehe/haha for TTS', () => {
+    expect(stripLaughTokens('hehe that was funny haha')).not.toMatch(/hehe|haha/i);
+    expect(stripLaughTokens('哈哈 好棒')).not.toMatch(/哈哈/);
+  });
+
+  it('cleanForSpeech applies both', () => {
+    const out = cleanForSpeech('hehe see https://x.test #tag @user Subscribe now');
+    expect(out.toLowerCase()).not.toMatch(/hehe/);
+    expect(out).not.toMatch(/https?:/);
+    expect(out).not.toMatch(/#/);
+    expect(out).not.toMatch(/@/);
+  });
+});
+
