@@ -98,9 +98,11 @@ describe('t773/t771 speech sanitize', () => {
     expect(out.toLowerCase()).toMatch(/cats/);
   });
 
-  it('stripLaughTokens removes hehe/haha for TTS', () => {
+  it('stripLaughTokens removes hehe/haha/hey-hey for TTS', () => {
     expect(stripLaughTokens('hehe that was funny haha')).not.toMatch(/hehe|haha/i);
     expect(stripLaughTokens('哈哈 好棒')).not.toMatch(/哈哈/);
+    expect(stripLaughTokens('hey hey what is up')).not.toMatch(/hey\s*hey/i);
+    expect(stripLaughTokens('Hey hey! Careful')).not.toMatch(/hey\s*hey/i);
   });
 
   it('cleanForSpeech applies both', () => {

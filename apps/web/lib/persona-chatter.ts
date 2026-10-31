@@ -1421,7 +1421,7 @@ export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
   // ---- Alan (r2026-10-04.42): the goofy best mate --------------------------
   alan: {
     en: [
-      'Hey hey! Just in time — I was about to invent a snack. Taste-tester, or judge?',
+      'Hi! Just in time — I was about to invent a snack. Taste-tester, or judge?',
       'I practiced a victory dance in case you win something today. What are we celebrating?',
       'You know what this room needs? A theme song. Want to help me pick one?',
       'I lost three games of rock-paper-scissors to myself earlier. Rematch me so I can lose to a pro?',
@@ -1888,13 +1888,13 @@ export const CHARACTER_POKE: Record<string, Record<Lang, string[]>> = {
     ja: ['ダーリン！服がしわになるじゃない。損だった？', 'ふーん。大胆。認めるわ。何がほしいの、ダーリン？', '気をつけて。今のところあなたのスキャンダル話を三つ知ってるのよ。四つ目を追加する？', 'それがどうしてあなたがどのパーティーにも呼ばれるのか分かるでしょ？今夜出かける？'],
   },
   ruby: {
-    en: ['Eee! You found my tickle spot!', 'Boing! That surprised my whole body!', 'Hey hey hey! Careful, I might bounce into you!', 'Hee hee! Do it again, do it again!'],
+    en: ['Eee! You found my tickle spot!', 'Boing! That surprised my whole body!', 'Whoa! Careful, I might bounce into you!', 'Ooh! Do it again, do it again!'],
     yue: ['呀！你搵到我嘅痕位喇！', '彈！成身都俾你嚇親！', '喂喂喂！小心啲，我會彈返埋你度㗎！', '嘻嘻！再嚟一次再嚟一次！'],
     zh: ['呀！你找到我的痒位了！', '弹！全身都被你吓到了！', '喂喂喂！小心点，我会弹回去的！', '嘻嘻！再来一次再来一次！'],
     ja: ['きゃっ！くすぐりポイントを見つけちゃった！', 'ぴょん！びっくりして全身跳ねちゃった！', 'ちょちょちょ！気をつけて、跳ね返っちゃうよ！', 'うふふ！もう一度、もう一度！'],
   },
   snowy: {
-    en: ['Eep! You melted my concentration!', 'Oh! Snowflakes scattered everywhere!', 'Careful… I might freeze you… with a hug!', 'Hee hee. That tickled like a snowball!'],
+    en: ['Eep! You melted my concentration!', 'Oh! Snowflakes scattered everywhere!', 'Careful… I might freeze you… with a hug!', 'ooh. That tickled like a snowball!'],
     yue: ['呀！你融咗我嘅專注力喇！', '哦！雪花散到周圍都係！', '小心啲吖……我會冰凍你㗎……用一個抱抱！', '嘻嘻。痕得似個雪球咁！'],
     zh: ['呀！你融化了我的专注力！', '哦！雪花散得到处都是！', '小心点呀……我会冰冻你的……用一个抱抱！', '嘻嘻。痒得像个雪球！'],
     ja: ['きゃっ！集中が溶けちゃった！', 'あっ！雪が散らばっちゃった！', '気をつけて……氷漬けにしちゃうよ……ハグで！', 'うふふ。雪玉みたいにくすぐったい！'],
