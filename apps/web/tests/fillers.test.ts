@@ -52,3 +52,13 @@ describe('t771 joy interjection', () => {
     }
   });
 });
+
+describe('soft mood interjections', () => {
+  it('maps love/relief/contentment/pride without laugh tokens', () => {
+    for (const emotion of ['love', 'relief', 'contentment', 'pride'] as const) {
+      const hit = pickInterjection(emotion, 0.9, 'en');
+      expect(hit?.text, emotion).toBeTruthy();
+      expect((hit?.text ?? '').toLowerCase()).not.toMatch(/hehe|haha|hey\s*hey/);
+    }
+  });
+});

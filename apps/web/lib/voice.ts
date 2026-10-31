@@ -110,6 +110,7 @@ import { speakOpenAi, stopOpenAi, openAiVoiceReady } from './openai-tts';
 // is no runtime cycle here.
 import { resumeSfxContext, sfxVoiceHold, sfxVoiceRelease } from './sfx';
 import { dominant, pickInterjection, pickThinkingFiller } from './fillers';
+import { emotionIntensityScale, emotionProsody } from './emotion-prosody';
 import { SONG_MELODY } from './songs';
 import { endLipSync, finishLipSync, holdLipSync, noteSpeechStarted, notifySpeaking } from './speech';
 import { duckLibraryBed } from './music';
@@ -1044,27 +1045,7 @@ const EMOTION_PROSODY: Record<string, { pitch: number; rate: number; vol: number
  * the only lever we have; the widened deltas stay inside what still sounds
  * human (edge voices distort fast past ±0.35 pitch).
  */
-const NEURAL_PROSODY: Record<string, { rate: number; pitch: number; vol: number }> = {
-  joy: { rate: 0.15, pitch: 0.16, vol: 0.16 },
-  excitement: { rate: 0.24, pitch: 0.2, vol: 0.3 },
-  love: { rate: -0.09, pitch: 0.07, vol: -0.08 },
-  contentment: { rate: -0.1, pitch: 0.02, vol: -0.14 },
-  relief: { rate: -0.08, pitch: 0.02, vol: -0.14 },
-  sadness: { rate: -0.15, pitch: -0.12, vol: -0.32 },
-  shame: { rate: -0.16, pitch: -0.08, vol: -0.3 },
-  guilt: { rate: -0.14, pitch: -0.06, vol: -0.28 },
-  boredom: { rate: -0.13, pitch: -0.05, vol: -0.24 },
-  anger: { rate: 0.12, pitch: -0.08, vol: 0.32 },
-  contempt: { rate: -0.06, pitch: -0.06, vol: 0.04 },
-  disgust: { rate: 0.02, pitch: -0.07, vol: 0.1 },
-  fear: { rate: 0.17, pitch: 0.16, vol: -0.1 },
-  surprise: { rate: 0.14, pitch: 0.3, vol: 0.24 },
-  embarrassment: { rate: -0.07, pitch: 0.08, vol: -0.14 },
-  pride: { rate: -0.02, pitch: 0.1, vol: 0.1 },
-  jealousy: { rate: -0.05, pitch: -0.05, vol: -0.1 },
-  confusion: { rate: -0.08, pitch: 0.08, vol: -0.13 },
-  neutral: { rate: 0, pitch: 0, vol: 0 },
-};
+// NEURAL_PROSODY lives in emotion-prosody.ts (intensity-scaled via emotionProsody).
 
 /**
  * Per-character vocal expressiveness — how strongly the pitch contour and
@@ -1470,7 +1451,7 @@ function performSpeak(
   const runSynth = (onDone: () => void): boolean => {
     if (typeof speechSynthesis === 'undefined') return false;
     try {
-      synthSpeak(text, characterId, lang, emotion, expr, tic, amp, undefined, onDone, spokenGender);
+      synthSpeak(text, characterId, lang, emotion, expr, tic, amp, undefined, onDone, spokenGender, value);
       reportVoiceStatus('synth', true, 'browser voice queued');
       return true;
     } catch (err3) {
@@ -1500,7 +1481,7 @@ function performSpeak(
         });
         return;
       }
-      const np = NEURAL_PROSODY[emotion] ?? NEURAL_PROSODY['neutral']!;
+      const np = emotionProsody(emotion, value);
       const exprBoost = emotion === 'neutral' ? 1 : 1.12;
       let tier1: Promise<void>;
       try {
@@ -2032,7 +2013,6 @@ function restoreSynthEngine(gen: number, voice: SpeechSynthesisVoice | null, loc
   } catch { /* ignore */ }
 }
 
-function synthSpeak(
   text: string,
   characterId: string,
   lang: Lang,
@@ -2043,13 +2023,14 @@ function synthSpeak(
   melody?: number[],
   onDone?: () => void,
   genderOverride?: 'female' | 'male',
+  hintValue = 0.7,
 ): void {
   let lineDone = false;
   let safety: ReturnType<typeof setTimeout> | undefined;
   const finishLine = () => {
     if (lineDone) return;
     lineDone = true;
-    if (safety) clearTimeout(safety);
+    if (safety) clearTimeout(safety, value) clearTimeout(safety);
     try { onDone?.(); } catch { /* ignore */ }
   };
   if (typeof speechSynthesis === 'undefined') { finishLine(); return; }
@@ -2059,10 +2040,12 @@ function synthSpeak(
   const { voice, pitch: basePitch, rate: baseRate } = pickVoice(characterId, lang, genderOverride);
   const locale = speechLocale(lang);
   const em = EMOTION_PROSODY[emotion] ?? EMOTION_PROSODY['neutral']!;
+  // Same intensity curve as Edge (emotionIntensityScale).
+  const moodS = emotionIntensityScale(hintValue);
   // amplify the multipliers around 1 so intensity 1 is an exact no-op
-  const emPitch = 1 + (em.pitch - 1) * amp;
-  const emRate = 1 + (em.rate - 1) * amp;
-  const emVol = 1 + (em.vol - 1) * amp;
+  const emPitch = 1 + (em.pitch - 1) * moodS * amp;
+  const emRate = 1 + (em.rate - 1) * moodS * amp;
+  const emVol = 1 + (em.vol - 1) * moodS * amp;
   const shaped = clampBrowserProsody(basePitch * emPitch, baseRate * emRate);
   const pitch = shaped.pitch;
   const rate = shaped.rate;
