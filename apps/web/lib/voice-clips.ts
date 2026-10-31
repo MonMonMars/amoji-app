@@ -358,8 +358,9 @@ export function recordedPokeClip(gender: VoiceClipGender, zone?: string): string
 }
 
 export function loadingFillerKind(text: string): 'um' | 'ha' | 'think' | 'search' | null {
-  // Prefer line-role stubs; also inspect lead-role so hehe/haha never slip through.
-  const kind = emotionClipKind(text, 'line') ?? emotionClipKind(text, 'lead');
+  // t786: line-role ONLY. Lead-role scans ("funny"/"lol" in a real sentence)
+  // used to swallow the whole reply as long-UM and skip TTS.
+  const kind = emotionClipKind(text, 'line');
   // t722/t769/t771: waiting never plays laugh/giggle/smile/ha — long UM only.
   if (kind === 'ha' || kind === 'giggle' || kind === 'laugh' || kind === 'smile') return 'um';
   if (kind === 'um' || kind === 'think' || kind === 'search') return kind;

@@ -19,7 +19,8 @@ export default function IdlePickRails({
 
   useEffect(() => { setPicked(idlePickFor(characterId)); }, [characterId]);
 
-  const tap = (id: string) => {
+  const tap = (id: string, playable: boolean) => {
+    if (!playable) return;
     const saved = saveIdlePick(characterId, id);
     setPicked(saved);
     if (saved) onPick(saved);
@@ -34,7 +35,7 @@ export default function IdlePickRails({
   const rail = (side: 'left' | 'right', items: typeof IDLE_CLIP_OPTIONS[number][]) => (
     <div
       data-testid={`idle-rail-${side}`}
-      className={`pointer-events-none absolute bottom-36 top-16 z-20 flex w-8 flex-col items-center justify-center gap-0.5 ${
+      className={`pointer-events-none absolute bottom-32 top-14 z-20 flex w-11 flex-col items-center justify-center gap-1 overflow-y-auto ${
         side === 'left'
           ? 'left-[max(2px,env(safe-area-inset-left))]'
           : 'right-[max(2px,env(safe-area-inset-right))]'
@@ -61,14 +62,16 @@ export default function IdlePickRails({
             data-dev={`I${item.num}`}
             data-idle-num={item.num}
             data-c-id={item.cId ?? ''}
-            onClick={() => tap(item.id)}
+            onClick={() => tap(item.id, item.playable)}
             onContextMenu={(e) => {
               e.preventDefault();
               toggle(item.num);
             }}
-            className={`pointer-events-auto relative rounded border px-0.5 py-px text-[8px] font-medium leading-none ${
-              on
-                ? 'border-white/80 text-white'
+            className={`pointer-events-auto relative min-h-[18px] min-w-[28px] rounded border px-1 py-0.5 text-[10px] font-semibold leading-none ${
+              !item.playable
+                ? 'border-white/10 bg-black/20 text-white/30'
+                : on
+                ? 'border-white/80 bg-white/15 text-white'
                 : en
                   ? calm
                     ? 'border-white/35 bg-black/45 text-white/85'

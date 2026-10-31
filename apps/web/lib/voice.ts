@@ -1392,6 +1392,7 @@ function performSpeak(
   const settle = () => {
     if (settled) return;
     settled = true;
+    sfxVoiceRelease(); // t786: failed/silent speak must not hold poke/laugh 12s
     resolve();
   };
   // Reply TTS takes the speaker. The wait hum must not play under it.
@@ -1762,6 +1763,7 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
 
 /** Poke hit: a recorded gasp, not the synthetic tap and not an Edge crop. */
 export function playPokeBurst(characterId: string, zone?: string): void {
+  unlockAudio(); // t786: poke is a user gesture �X re-prime before clip
   const file = recordedPokeClip(characterVoiceGender(characterId), zone);
   void playVoiceClip(file, 'oh', () => markVoiceStarted()).catch(() => { /* a missing file stays quiet */ });
 }

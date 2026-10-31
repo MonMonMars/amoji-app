@@ -3,6 +3,8 @@
 // tail). Personality stays: laughs, pauses, and a real question are kept.
 // Running this twice is a no-op on text it already cleaned.
 
+import { stripLaughTokens } from './speak-text';
+
 export interface ShapeOpts {
   /** A stream is still growing, so an unfinished last clause stays. */
   streaming?: boolean;
@@ -119,5 +121,8 @@ export function shapeCompanionReply(raw: string, opts?: ShapeOpts): string {
     body = trimDangling(body);
     body = dropCutOffTail(body);
   }
-  return body.trim();
+  return stripLaughTokens(body)
+    .replace(/^[,�A�B;�F:\s]+/, '')
+    .replace(/s{2,}/g, ' ')
+    .trim();
 }
