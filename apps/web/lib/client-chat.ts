@@ -62,7 +62,7 @@
 import { analyzeText } from '@amoji/emotion-core';
 import { BASE_SYSTEM, languageBlock, parseEmotionHints, type ChatMessage } from './llm';
 import { BRAIN_SPECS, markBrainDead, pickBrain, type BrainSpec } from './brain';
-import { cleanForDisplay } from './speak-text';
+import { cleanForDisplay, stripLaughTokens } from './speak-text';
 import { withQuestion } from './follow-up';
 import { preferLiveReply, worldBlock } from './live-tools';
 import { shapeCompanionReply } from './reply-shape';
@@ -469,7 +469,11 @@ async function racedPollinations(
 /** Strip the trailing emotion tag → final chat result. Exported for tests. */
 export function finishReply(content: string): ClientChatResult {
   const hints = parseEmotionHints(content) as Record<string, number>;
-  const cleaned = cleanForDisplay(content.replace(/\[emotion:\{[^}]*\}\]/g, ''));
+  // Strip the machine tag, display chrome, then banned giggle tokens so neither
+  // the bubble nor TTS can reintroduce hehe/haha/hey-hey (laughs = SFX only).
+  const cleaned = stripLaughTokens(
+    cleanForDisplay(content.replace(/\[emotion:\{[^}]*\}\]/g, '')),
+  );
   const reply = shapeCompanionReply(cleaned);
   return { reply: reply || '…', emotionHints: hints };
 }
@@ -478,7 +482,7 @@ export async function clientChat(
   messages: ChatMessage[],
   opts?: ClientChatOptions,
 ): Promise<ClientChatResult> {
-  const system = `${BASE_SYSTEM}\nReply in speakable sentences only — 1–2 short lines a friend would say. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". The only machine tag is the final [emotion:{...}] line.\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
+  const system = `${BASE_SYSTEM}\nReply in speakable sentences only — 1–2 short lines a friend would say. Be specific and warm (callback + tiny sensory detail when it fits). NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
   const maxTokens = /\bRecipe:/.test(opts?.world ?? '') ? 520 : 280;
   const onPartial = opts?.onPartial
     ? (partial: string) => { opts.onPartial?.(shapeCompanionReply(partial, { streaming: true })); }

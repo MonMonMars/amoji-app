@@ -127,3 +127,14 @@ describe('finishReply (streamed text)', () => {
     expect(r.emotionHints.neutral).toBe(0.2);
   });
 });
+
+describe('BASE_SYSTEM companion voice', () => {
+  it('BASE_SYSTEM keeps laugh bans and asks for weighted emotion tags', async () => {
+    const { BASE_SYSTEM } = await import('../lib/llm');
+    expect(BASE_SYSTEM).toMatch(/hehe\/haha/);
+    expect(BASE_SYSTEM).toMatch(/hey-hey/);
+    expect(BASE_SYSTEM).toMatch(/Grok spark/);
+    expect(BASE_SYSTEM).toMatch(/sensory detail|warm mug|concrete callback/);
+    expect(BASE_SYSTEM).toMatch(/0\.7/);
+  });
+});
