@@ -378,11 +378,9 @@ const LAUGHS: Record<Lang, string[]> = {
  * a slight lift — an isolated "Haha!" at a high pitch/rate is what the
  * engines yelp, and that rate was sticking onto the next sentence.
  */
-export function maybeLaughLead(lang: Lang): { text: string; pitch: number; rate: number } | undefined {
-  if (Math.random() > 0.45) return undefined;
-  const list = LAUGHS[lang] ?? LAUGHS.en;
-  const text = list[Math.floor(Math.random() * list.length)]!;
-  return { text, pitch: 0.04, rate: 0 };
+/** t769/t771: unsolicited TTS chuckle leads are banned — poke laugh SFX still OK. */
+export function maybeLaughLead(_lang: Lang): { text: string; pitch: number; rate: number } | undefined {
+  return undefined;
 }
 
 export function personalityIdleLine(personality: PersonalityId, lang: Lang, n: number): string {

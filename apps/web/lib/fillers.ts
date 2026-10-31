@@ -29,11 +29,12 @@ export const MOOD_FILLERS: Record<string, Record<LangCode, readonly string[]>> =
  * applied to the tic itself (giggles pop up, sighs sink down).
  */
 export const INTERJECTIONS: Record<string, Partial<Record<LangCode, { text: string; pitch: number; rate: number }>>> = {
+  // t771: joy tic is a soft mm — never TTS hehe/haha (laugh = SFX only).
   joy: {
-    yue: { text: '哈哈！', pitch: 0.16, rate: 0.14 },
-    zh: { text: '哈哈！', pitch: 0.16, rate: 0.14 },
-    ja: { text: 'ふふっ！', pitch: 0.14, rate: 0.12 },
-    en: { text: 'hehe!', pitch: 0.16, rate: 0.14 },
+    yue: { text: '嗯！', pitch: 0.08, rate: 0.06 },
+    zh: { text: '嗯！', pitch: 0.08, rate: 0.06 },
+    ja: { text: 'うん！', pitch: 0.08, rate: 0.06 },
+    en: { text: 'mm!', pitch: 0.08, rate: 0.06 },
   },
   excitement: {
     yue: { text: '哇！', pitch: 0.2, rate: 0.16 },

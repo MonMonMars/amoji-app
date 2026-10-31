@@ -18,18 +18,9 @@ describe('interaction lines', () => {
     }
   });
 
-  it('poke laugh lead is a soft chuckle, not a yelped bang', () => {
-    const spy = vi.spyOn(Math, 'random').mockReturnValue(0);
-    try {
-      const lead = maybeLaughLead('en');
-      expect(lead?.text).toBeTruthy();
-      expect(lead!.text).not.toMatch(/[!！~～…]/);
-      expect(lead!.pitch).toBeLessThanOrEqual(0.08);
-      expect(lead!.rate).toBeLessThanOrEqual(0.06);
-      expect(maybeLaughLead('yue')!.text).not.toMatch(/[!！]/);
-    } finally {
-      spy.mockRestore();
-    }
+  it('poke laugh lead is disabled (t769/t771 — SFX only)', () => {
+    expect(maybeLaughLead('en')).toBeUndefined();
+    expect(maybeLaughLead('yue')).toBeUndefined();
   });
 
   it('poke talk is a short question, not a paragraph', () => {
@@ -71,5 +62,14 @@ describe('interaction lines', () => {
     expect(a).not.toBe(b);
     expect(b).not.toBe(c);
     expect(a).not.toBe(c);
+  });
+});
+
+describe('t769/t771 maybeLaughLead', () => {
+  it('never returns a TTS laugh lead', () => {
+    for (let i = 0; i < 20; i++) {
+      expect(maybeLaughLead('en')).toBeUndefined();
+      expect(maybeLaughLead('yue')).toBeUndefined();
+    }
   });
 });

@@ -11,19 +11,17 @@
 //   location  navigator.geolocation, then get.geojs.io (coarse IP)
 //   places    geocoding-api.open-meteo.com + bigdatacloud reverse geocode
 //   weather   api.open-meteo.com
-//   news      Google News RSS when the host can read it (Node). Browsers are
-//             blocked by Google (no CORS). rss2json is only a bridge and is
-//             often a Cloudflare challenge, so it is not required.
-//             Latest / recent headlines, and the fallback when local RSS
-//             comes back empty, use Wikipedia's "In the news" feed
-//             (/{lang}.wikipedia.org/api/rest_v1/feed/featured/YYYY/MM/DD).
-//             That feed is CORS-open and needs no key, which is what the
-//             GitHub Pages demo can actually fetch.
+//   news      Region-aware general feeds (t775): GPS/country picks Google News
+//             gl + a reputable regional RSS (BBC / NPR / NHK / RTHK / Guardian),
+//             then Wikipedia "In the news" as CORS-open fallback. No paid APIs.
+//             Spoken lines are sanitized summaries (t773) — no hashtags/URLs/chrome.
+//             Location: browser GPS on Start (t777), else IP, else ask city.
 //   search    DuckDuckGo instant answers + Wikipedia
 // Optional: BRAVE_SEARCH_API_KEY (server) or NEXT_PUBLIC_BRAVE_SEARCH_API_KEY
 // (published into the static bundle — avoid unless you mean to).
 
 import { withQuestion } from './follow-up';
+import { sanitizeWebForSpeech, stripLaughTokens } from './speak-text';
 import { isCuisineName, loadLifestyle, planLifestyle, type PlaceKind } from './live-lifestyle';
 
 export interface Place {
@@ -617,23 +615,82 @@ function lightNewsQuery(place: Place, lang: Lang4): string {
   return `${where} (funny OR weird OR odd OR quirky OR adorable OR heartwarming)`;
 }
 
-function newsPack(lang: Lang4): { hl: string; gl: string; ceid: string } {
-  return {
-    en: { hl: 'en-US', gl: 'US', ceid: 'US:en' },
-    zh: { hl: 'zh-CN', gl: 'CN', ceid: 'CN:zh-Hans' },
-    yue: { hl: 'zh-HK', gl: 'HK', ceid: 'HK:zh-Hant' },
-    ja: { hl: 'ja', gl: 'JP', ceid: 'JP:ja' },
-  }[lang];
+/** t775: map GPS/country (or lang fallback) → general news region. */
+export type NewsRegion = 'HK' | 'TW' | 'JP' | 'US' | 'UK' | 'general';
+
+export function newsRegionFromPlace(place: Pick<Place, 'country' | 'region' | 'city'> | null | undefined, lang?: Lang4): NewsRegion {
+  const blob = `${place?.country ?? ''} ${place?.region ?? ''} ${place?.city ?? ''}`.toLowerCase();
+  if (/hong\s*kong|香港|hk\b/.test(blob)) return 'HK';
+  if (/taiwan|台灣|台湾|taipei|台北/.test(blob)) return 'TW';
+  if (/japan|日本|tokyo|東京|osaka|大阪/.test(blob)) return 'JP';
+  if (/united kingdom|\buk\b|england|scotland|wales|london|britain/.test(blob)) return 'UK';
+  if (/united states|\busa\b|\bu\.s\.?\b|america|new york|california/.test(blob)) return 'US';
+  // lang fallback only when no place signal
+  if (!blob.trim()) {
+    if (lang === 'yue') return 'HK';
+    if (lang === 'ja') return 'JP';
+    if (lang === 'zh') return 'TW';
+  }
+  return 'general';
 }
 
-function newsRssUrl(query: string, lang: Lang4, top = false): string {
-  const pack = newsPack(lang);
+function newsPackForRegion(region: NewsRegion, lang: Lang4): { hl: string; gl: string; ceid: string } {
+  const byRegion: Record<NewsRegion, { hl: string; gl: string; ceid: string }> = {
+    HK: { hl: 'zh-HK', gl: 'HK', ceid: 'HK:zh-Hant' },
+    TW: { hl: 'zh-TW', gl: 'TW', ceid: 'TW:zh-Hant' },
+    JP: { hl: 'ja', gl: 'JP', ceid: 'JP:ja' },
+    US: { hl: 'en-US', gl: 'US', ceid: 'US:en' },
+    UK: { hl: 'en-GB', gl: 'GB', ceid: 'GB:en' },
+    general: { hl: 'en', gl: 'US', ceid: 'US:en' },
+  };
+  // Prefer region; for general, soften with UI lang.
+  if (region === 'general') {
+    return {
+      en: { hl: 'en-US', gl: 'US', ceid: 'US:en' },
+      zh: { hl: 'zh-CN', gl: 'US', ceid: 'US:zh-Hans' },
+      yue: { hl: 'zh-HK', gl: 'HK', ceid: 'HK:zh-Hant' },
+      ja: { hl: 'ja', gl: 'JP', ceid: 'JP:ja' },
+    }[lang];
+  }
+  return byRegion[region];
+}
+
+/** Reputable free RSS extras per region (no paid APIs). Google News + these + Wikipedia. */
+export function regionalNewsFeedUrls(region: NewsRegion): string[] {
+  const bbcWorld = 'https://feeds.bbci.co.uk/news/world/rss.xml';
+  const bbcUk = 'https://feeds.bbci.co.uk/news/rss.xml';
+  const npr = 'https://feeds.npr.org/1001/rss.xml';
+  const nhk = 'https://www3.nhk.or.jp/rss/news/cat0.xml';
+  const guardian = 'https://www.theguardian.com/world/rss';
+  const rthk = 'https://rthk.hk/rthk/news/rss/e_expressnews_elocal.xml';
+  switch (region) {
+    case 'HK':
+      return [rthk, bbcWorld];
+    case 'TW':
+      return [bbcWorld, guardian];
+    case 'JP':
+      return [nhk, bbcWorld];
+    case 'US':
+      return [npr, bbcWorld];
+    case 'UK':
+      return [bbcUk, guardian];
+    default:
+      return [bbcWorld, npr, guardian];
+  }
+}
+
+function newsRssUrl(query: string, lang: Lang4, top = false, region?: NewsRegion): string {
+  const pack = newsPackForRegion(region ?? newsRegionFromPlace(null, lang), lang);
   if (top) {
     const q = new URLSearchParams({ hl: pack.hl, gl: pack.gl, ceid: pack.ceid });
     return `https://news.google.com/rss?${q.toString()}`;
   }
   const q = new URLSearchParams({ q: query, hl: pack.hl, gl: pack.gl, ceid: pack.ceid });
   return `https://news.google.com/rss/search?${q.toString()}`;
+}
+
+function spokenHeadline(title: string): string {
+  return stripLaughTokens(sanitizeWebForSpeech(title));
 }
 
 interface Headline { title: string; source: string }
@@ -645,8 +702,9 @@ async function fetchNews(
   rssKey: string | undefined,
   cache: Map<string, { at: number; body: string }>,
   top = false,
+  region?: NewsRegion,
 ): Promise<Headline[]> {
-  const rss = newsRssUrl(query, lang, top);
+  const rss = newsRssUrl(query, lang, top, region);
   // Direct RSS works from Node. Browsers are blocked by Google (no CORS).
   // rss2json is attempted next; many networks get a Cloudflare challenge,
   // so callers also fall back to Wikipedia in-the-news.
@@ -667,7 +725,7 @@ async function fetchNews(
     if (!raw) continue;
     const cut = raw.lastIndexOf(' - ');
     out.push({
-      title: (cut > 0 ? raw.slice(0, cut) : raw).trim(),
+      title: spokenHeadline((cut > 0 ? raw.slice(0, cut) : raw).trim()),
       source: cut > 0 ? raw.slice(cut + 3).trim() : str(item.author),
     });
     if (out.length >= 12) break;
@@ -737,17 +795,48 @@ function mergeHeadlines(groups: Headline[][]): Headline[] {
   return out;
 }
 
+async function fetchRssFeedHeadlines(
+  fetchImpl: typeof fetch,
+  feedUrl: string,
+  rssKey: string | undefined,
+  cache: Map<string, { at: number; body: string }>,
+): Promise<Headline[]> {
+  const xml = await getText(fetchImpl, feedUrl, 6_000, { Accept: 'application/rss+xml, application/xml, text/xml, */*' }, cache);
+  if (xml && xml.includes('<item')) {
+    const parsed = parseRssItems(xml);
+    if (parsed.length) return parsed;
+  }
+  const bridge = new URL('https://api.rss2json.com/v1/api.json');
+  bridge.searchParams.set('rss_url', feedUrl);
+  if (rssKey) bridge.searchParams.set('api_key', rssKey);
+  const data = await getJson(fetchImpl, bridge.toString(), 6_000, cache);
+  const items = (data as { items?: Array<Record<string, unknown>> } | null)?.items;
+  if (!items?.length) return [];
+  const out: Headline[] = [];
+  for (const item of items) {
+    const raw = spokenHeadline(str(item.title));
+    if (!raw) continue;
+    out.push({ title: raw, source: str(item.author) || 'RSS' });
+    if (out.length >= 8) break;
+  }
+  return out;
+}
+
 async function fetchRecentHeadlines(
   fetchImpl: typeof fetch,
   lang: Lang4,
   rssKey: string | undefined,
   cache: Map<string, { at: number; body: string }>,
+  place?: Place | null,
 ): Promise<Headline[]> {
-  const [feed, wiki] = await Promise.all([
-    fetchNews(fetchImpl, '', lang, rssKey, cache, true),
+  const region = newsRegionFromPlace(place, lang);
+  const extras = regionalNewsFeedUrls(region).slice(0, 2);
+  const [feed, wiki, ...regional] = await Promise.all([
+    fetchNews(fetchImpl, '', lang, rssKey, cache, true, region),
     fetchWikipediaNews(fetchImpl, lang, cache),
+    ...extras.map((url) => fetchRssFeedHeadlines(fetchImpl, url, rssKey, cache)),
   ]);
-  return mergeHeadlines([feed, wiki]);
+  return mergeHeadlines([feed, ...regional, wiki]);
 }
 
 interface NewsPack { headlines: Headline[]; recent: boolean }
@@ -883,19 +972,22 @@ function sayWeather(lang: Lang4, label: string, w: WeatherFacts, coarse: boolean
 }
 
 function sayNews(lang: Lang4, label: string, title: string): string {
-  const t = clip(title, 80);
-  if (lang === 'en') return `There's a light little story near ${label}: “${t}.”`;
-  if (lang === 'zh') return `${label}附近有条轻松的新闻：「${t}」。`;
-  if (lang === 'ja') return `${label}の近くの軽いニュースは「${t}」だよ。`;
-  return `${label}附近有條輕鬆新聞：「${t}」。`;
+  // t773: natural spoken summary — sanitized title, no chrome.
+  const t = clip(spokenHeadline(title), 80);
+  if (!t) return sayMiss(lang, 'news');
+  if (lang === 'en') return `Near ${label}, one light story: ${t}.`;
+  if (lang === 'zh') return `${label}附近有条轻松新闻：${t}。`;
+  if (lang === 'ja') return `${label}の近くの軽いニュースは、${t}だよ。`;
+  return `${label}附近有條輕鬆新聞：${t}。`;
 }
 
 function sayRecent(lang: Lang4, title: string): string {
-  const t = clip(title, 80);
-  if (lang === 'en') return `Here's something from the news: “${t}.”`;
-  if (lang === 'zh') return `最近有条新闻：「${t}」。`;
-  if (lang === 'ja') return `最近のニュースは「${t}」だよ。`;
-  return `最近有條新聞：「${t}」。`;
+  const t = clip(spokenHeadline(title), 80);
+  if (!t) return sayMiss(lang, 'news');
+  if (lang === 'en') return `From the news: ${t}.`;
+  if (lang === 'zh') return `最近有条新闻：${t}。`;
+  if (lang === 'ja') return `最近のニュースは、${t}だよ。`;
+  return `最近有條新聞：${t}。`;
 }
 
 function sayWhere(lang: Lang4, label: string, coarse: boolean): string {
@@ -914,11 +1006,28 @@ function sayWhere(lang: Lang4, label: string, coarse: boolean): string {
 }
 
 function saySearch(lang: Lang4, snippet: string): string {
-  const bit = clip(snippet, 160);
+  const bit = clip(spokenHeadline(snippet), 160);
+  if (!bit) return sayMiss(lang, 'search');
   if (lang === 'en') return `I looked that up — ${bit}`;
   if (lang === 'zh') return `我查了一下 — ${bit}`;
   if (lang === 'ja') return `調べてみたよ — ${bit}`;
   return `我查過喇 — ${bit}`;
+}
+
+/** t777: no GPS and no city yet — ask before weather/local news. */
+function sayAskLocation(lang: Lang4, kind: 'weather' | 'news'): string {
+  if (lang === 'en') {
+    return kind === 'weather'
+      ? 'Which city or country should I check the weather for?'
+      : 'Which city or country should I pull the news for?';
+  }
+  if (lang === 'zh') {
+    return kind === 'weather' ? '你想查哪个城市或国家的天气？' : '你想看哪个城市或国家的新闻？';
+  }
+  if (lang === 'ja') {
+    return kind === 'weather' ? 'どの都市や国の天気を見る？' : 'どの都市や国のニュースを見る？';
+  }
+  return kind === 'weather' ? '你想查邊個城市或者國家嘅天氣？' : '你想睇邊個城市或者國家嘅新聞？';
 }
 
 function sayMiss(lang: Lang4, kind: 'weather' | 'news' | 'search' | 'where'): string {
@@ -1015,6 +1124,10 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
     if (weather && place) {
       promptLines.push(`Weather: ${weather.line}.`);
       spoken.push(sayWeather(lang, label, weather, coarse));
+    } else if (!place && !plan.placeQuery) {
+      // t777: GPS denied / unavailable — ask city instead of raw miss.
+      promptLines.push('Weather: need a city or country from the user.');
+      spoken.push(sayAskLocation(lang, 'weather'));
     } else {
       promptLines.push('Weather: unavailable right now.');
       spoken.push(sayMiss(lang, 'weather'));
@@ -1025,9 +1138,15 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
     const lead = headlines[0];
     if (lead) {
       const listed = headlines.map((h) => h.source ? `“${h.title}” (${h.source})` : `“${h.title}”`).join('; ');
-      const where = newsPack.recent ? 'Recent news' : `Light news${label ? ` near ${label}` : ''}`;
+      const regionTag = newsRegionFromPlace(place, lang);
+      const where = newsPack.recent
+        ? `Recent news (${regionTag})`
+        : `Light news${label ? ` near ${label}` : ''} (${regionTag})`;
       promptLines.push(`${where}: ${listed}.`);
       spoken.push(newsPack.recent ? sayRecent(lang, lead.title) : sayNews(lang, label || 'here', lead.title));
+    } else if (!place && !plan.placeQuery && !plan.newsQuery && !plan.recent) {
+      promptLines.push('News: need a city or country from the user.');
+      spoken.push(sayAskLocation(lang, 'news'));
     } else {
       promptLines.push('News: unavailable right now.');
       spoken.push(sayMiss(lang, 'news'));
@@ -1056,6 +1175,26 @@ function browserGeo(): GeoLike | null {
   const geo = navigator.geolocation;
   if (!geo || typeof geo.getCurrentPosition !== 'function') return null;
   return geo;
+}
+
+/**
+ * t777: call from the same Start / ENTER STORY gesture as primeAudioForChatEnter.
+ * Requests browser GPS once and caches the place (or marks deny). Mute All untouched.
+ * If the user denies, chat still opens; weather/news will ask for a city later.
+ */
+export function primeLocationForChatEnter(): void {
+  try {
+    const geo = browserGeo();
+    if (!geo) return;
+    void resolveDevicePlace({
+      fetch: globalThis.fetch.bind(globalThis),
+      geolocation: geo,
+      storage: safeStorage('local'),
+      session: safeStorage('session'),
+    });
+  } catch {
+    /* ignore — chat entry must not block on geo errors */
+  }
 }
 
 /** Browser entry: asks for geolocation when the question needs “here”. */

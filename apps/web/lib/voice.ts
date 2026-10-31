@@ -81,7 +81,7 @@ import type { Lang } from './prefs';
 import { characterVoiceGender } from './voice-gender';
 import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
 import { isMasterMuted } from './master-mute';
-import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripVoicedGlyphs } from './speak-text';
+import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripLaughTokens, stripVoicedGlyphs } from './speak-text';
 import { analyzeText } from '@amoji/emotion-core';
 import { applyLlmHints } from './companion';
 import { browserVoicesForLang, edgeSampleText, isMaleNeuralVoice, selectBrowserVoice, synthNameList } from './voice-catalog';
@@ -108,7 +108,7 @@ import { stopThinkingSound } from './thinking-sound';
 import { speakOpenAi, stopOpenAi, openAiVoiceReady } from './openai-tts';
 // r102: sfx.ts imports only a TYPE from moves (erased at compile), so there
 // is no runtime cycle here.
-import { sfxVoiceHold, sfxVoiceRelease } from './sfx';
+import { resumeSfxContext, sfxVoiceHold, sfxVoiceRelease } from './sfx';
 import { dominant, pickInterjection, pickThinkingFiller } from './fillers';
 import { SONG_MELODY } from './songs';
 import { endLipSync, finishLipSync, holdLipSync, noteSpeechStarted, notifySpeaking } from './speech';
@@ -1299,6 +1299,15 @@ function drainSpeech(): void {
   });
 }
 
+/** t767/t777: call from Start / ENTER STORY click (user gesture) before chat mounts.
+ * Primes AudioContext + silent media + synth gate + SFX context so first chat TTS can play.
+ * Does not clear Mute All — speak() still respects voiceOutputAllowed() / isMasterMuted(). */
+export function primeAudioForChatEnter(): void {
+  unlockAudio(true);
+  primeSynthInGesture();
+  try { resumeSfxContext(); } catch { /* ignore */ }
+}
+
 /** Resume synth + AudioContext after master unmute (t719). */
 export function resumeVoiceEngines(): void {
   try {
@@ -1355,7 +1364,7 @@ export function speak(
 ): void {
   // Companion lines wait their turn. stopSpeaking() is the only cut, and
   // only the user's mic or a user turn calls it.
-  const cleaned = cleanForSpeech(text);
+  const cleaned = stripLaughTokens(cleanForSpeech(text));
   if (!cleaned || !voiceOutputAllowed()) return;
   lineQueue.enqueue({
     kind: 'speak',
