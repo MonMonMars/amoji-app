@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyPoke, pokeBodyReaction, pokePunch } from '../lib/poke-hit';
+import { classifyPoke, pokeBodyReaction, pokePunch, breastCoverEnvelope } from '../lib/poke-hit';
 
 const hips = { x: 0, y: 1, z: 0 };
 const head = { x: 0, y: 1.6, z: 0 };
@@ -171,6 +171,44 @@ describe('pokeBodyReaction', () => {
     const side = pokeBodyReaction({ t: 0.12, zone: 'chest', fallX: 1, fallZ: 0, sideSign: 1, softChest: true, twist: 0, direction: 'right' });
     expect(Math.abs(front.chestPitch)).toBeGreaterThan(Math.abs(side.chestPitch));
     expect(Math.abs(side.chestRoll)).toBeGreaterThan(Math.abs(front.chestRoll));
+  });
+
+
+  it('soft breast poke: tiny body recoil, incomplete cover arms, feet planted (Mon t765)', () => {
+    expect(breastCoverEnvelope(0)).toBe(0);
+    expect(breastCoverEnvelope(0.1)).toBeGreaterThan(0);
+    expect(breastCoverEnvelope(0.1)).toBeLessThan(0.55);
+    expect(breastCoverEnvelope(0.3)).toBeCloseTo(0.55, 5);
+    expect(breastCoverEnvelope(0.7)).toBeGreaterThan(0);
+    expect(breastCoverEnvelope(0.7)).toBeLessThan(0.55);
+    expect(breastCoverEnvelope(1)).toBe(0);
+
+    const soft = pokeBodyReaction({
+      t: 0.28, zone: 'chest', fallX: 0, fallZ: -1, sideSign: 1, softChest: true, twist: 0.05, direction: 'front',
+    });
+    // Tiny body hit-back vs a normal (non-soft) chest poke.
+    const hard = pokeBodyReaction({
+      t: 0.28, zone: 'chest', fallX: 0, fallZ: -1, sideSign: 1, softChest: false, twist: 0.05, direction: 'front',
+    });
+    expect(Math.abs(soft.spinePitch)).toBeLessThan(Math.abs(hard.spinePitch) * 0.35);
+    expect(Math.abs(soft.chestPitch)).toBeLessThan(Math.abs(hard.chestPitch) * 0.35);
+    expect(Math.abs(soft.hipShiftX) + Math.abs(soft.hipShiftZ)).toBe(0);
+    // Arms raised mid-cover (lArmUp negative => raise), both sides, elbows bent.
+    expect(soft.lArmUp).toBeLessThan(0);
+    expect(soft.rArmUp).toBeLessThan(0);
+    expect(Math.abs(soft.lArmUp)).toBeGreaterThan(0.15);
+    expect(Math.abs(soft.lArmUp)).toBeLessThan(0.35); // incomplete — not a full cover
+    expect(soft.lElbowZ).toBeGreaterThan(0.15);
+    expect(soft.rElbowZ).toBeGreaterThan(0.15);
+
+    // Mid-hold then ease: at late t arms smaller than peak hold.
+    const hold = pokeBodyReaction({
+      t: 0.3, zone: 'chest', fallX: 0, fallZ: -1, sideSign: 1, softChest: true, twist: 0, direction: 'front',
+    });
+    const ease = pokeBodyReaction({
+      t: 0.75, zone: 'chest', fallX: 0, fallZ: -1, sideSign: 1, softChest: true, twist: 0, direction: 'front',
+    });
+    expect(Math.abs(ease.lArmUp)).toBeLessThan(Math.abs(hold.lArmUp));
   });
 
   it('keeps belly local (spine, tiny hip, no shift) and butt counter-spined with feet planted', () => {

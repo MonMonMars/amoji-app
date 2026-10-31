@@ -1,15 +1,19 @@
 // Secondary bounce for a chest or torso punch. A damped spring on the bust
-// bones (not the ribcage, shoulders, or hips): compress with the hit, one
-// rebound, then still. Peak is about 17°, enough to read on a poke.
+// bones (not the ribcage, shoulders, or hips): compress with the hit, rebound,
+// then still. Soft breast pokes (Mon t765) keep bouncing longer and bigger.
 
 import * as THREE from 'three';
 
-/** How long the spring is allowed to move, seconds. */
+/** How long the spring is allowed to move, seconds (default chest/torso). */
 export const CHEST_BOUNCE_SEC = 1.15;
 
-const PEAK = 0.38; // radians, ~22° — readable on a breast poke
+/** Soft breast poke: sustained jiggle (Mon t765). */
+export const SOFT_CHEST_BOUNCE_SEC = 2.45;
 
-/** Pitch offset for a chest poke. Negative first (yield), then one rebound. */
+const PEAK = 0.38; // radians, ~22° — readable on a breast poke
+const SOFT_PEAK = 0.58; // bigger sustained bounce for softChest
+
+/** Pitch offset for a chest poke. Negative first (yield), then rebound. */
 export function chestBouncePitch(tSec: number): number {
   if (!(tSec > 0) || tSec > CHEST_BOUNCE_SEC) return 0;
   const damp = Math.exp(-tSec * 3.6);
@@ -17,10 +21,22 @@ export function chestBouncePitch(tSec: number): number {
   return pitch === 0 ? 0 : pitch;
 }
 
+/**
+ * Soft breast spring: bigger amplitude, slower damp, more cycles so the
+ * bounce keeps reading after the tiny body recoil has settled.
+ */
+export function softChestBouncePitch(tSec: number): number {
+  if (!(tSec > 0) || tSec > SOFT_CHEST_BOUNCE_SEC) return 0;
+  const damp = Math.exp(-tSec * 1.85);
+  const pitch = -SOFT_PEAK * damp * Math.sin(tSec * 10.2);
+  return pitch === 0 ? 0 : pitch;
+}
+
 /** Chest and torso punches bounce. Head, arms, and legs stay still. */
-export function chestPokeBounce(zone: string, tSec: number): number {
+export function chestPokeBounce(zone: string, tSec: number, soft = false): number {
   const scale = zone === 'chest' ? 1 : zone === 'torso' ? 0.72 : 0;
   if (!scale) return 0;
+  if (soft && zone === 'chest') return softChestBouncePitch(tSec) * scale;
   return chestBouncePitch(tSec) * scale;
 }
 
@@ -28,6 +44,15 @@ export function chestPokeBounce(zone: string, tSec: number): number {
 export function isBustBoneName(name: string): boolean {
   if (/skirt|hair|tail|coat|ribbon/i.test(name)) return false;
   return /bust|breast/i.test(name);
+}
+
+/**
+ * When a rig has no bust bones, approximate bounce on chest / upper-chest
+ * (smaller scale so the ribcage does not look broken).
+ */
+export function isChestFallbackBoneName(name: string): boolean {
+  if (/skirt|hair|tail|coat|ribbon|bust|breast/i.test(name)) return false;
+  return /upperchest|upper_chest|(^|_)(c_)?chest$/i.test(name);
 }
 
 /** Left and right jiggle in opposite directions so a poke reads as a shake. */
@@ -109,5 +134,17 @@ function collectBust(root: THREE.Object3D, joints?: Iterable<SpringJoint> | null
       joint: byBone.get(node) ?? null,
     });
   });
+  // No bust bones: approximate with chest / upper-chest (Mon t765).
+  if (out.length === 0) {
+    root.traverse((node) => {
+      if (!isChestFallbackBoneName(node.name)) return;
+      out.push({
+        bone: node,
+        rest: node.quaternion.clone(),
+        scale: /upper/i.test(node.name) ? 0.55 : 0.4,
+        joint: byBone.get(node) ?? null,
+      });
+    });
+  }
   return out;
 }

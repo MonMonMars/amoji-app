@@ -313,6 +313,16 @@ function clamp(v: number, m: number): number {
  * A head poke tips only the head. Every other part bends hips, spine,
  * shoulders and arms together. Nothing here translates the scene root.
  */
+/** Incomplete cover raise for a soft breast poke (Mon t765): rise, hold mid-way, ease. */
+export function breastCoverEnvelope(t: number): number {
+  if (!(t > 0)) return 0;
+  // Peak 0.55 = too late / incomplete cover (never reaches a full cross).
+  if (t < 0.2) return (t / 0.2) * 0.55;
+  if (t < 0.42) return 0.55;
+  if (t < 0.92) return 0.55 * (1 - (t - 0.42) / 0.5);
+  return 0;
+}
+
 export function pokeBodyReaction(opts: {
   t: number;
   zone: TalkZone;
@@ -358,6 +368,33 @@ export function pokeBodyReaction(opts: {
   // Belly: abdomen/spine only — hips stay, no hip slide (feet planted).
   const localButt = opts.zone === 'butt';
   const localBelly = opts.zone === 'belly';
+  // Mon t765: soft breast poke — tiny body recoil; bounce is secondary; cover arms mid-raise.
+  const softBreast = opts.softChest && opts.zone === 'chest';
+  if (softBreast) {
+    const cover = breastCoverEnvelope(t);
+    const tiny = punch * 0.22; // very little hit-back
+    return {
+      ...STILL,
+      spinePitch: clamp(opts.fallZ * 0.14 * tiny, 0.1),
+      chestPitch: clamp(opts.fallZ * 0.1 * tiny, 0.08),
+      spineYaw: clamp(opts.fallX * 0.02 * tiny, CAP.yaw),
+      chestRoll: clamp(-opts.fallX * 0.08 * tiny, 0.08),
+      headX: clamp(opts.fallZ * 0.06 * tiny, 0.08),
+      headZ: clamp(-opts.fallX * 0.04 * tiny + opts.twist * 0.02 * tiny, 0.08),
+      hipPitch: clamp(opts.fallZ * 0.05 * tiny, 0.05),
+      hipRoll: clamp(-opts.fallX * 0.04 * tiny, 0.05),
+      hipShiftX: 0,
+      hipShiftZ: 0,
+      // Arms try to cover but stop mid-raise (incomplete), hold, ease via cover envelope.
+      // lArmRaise = -lArmUp in CompanionCanvas, so negative Up = raise.
+      lArmX: clamp(-0.32 * cover, CAP.arm),
+      rArmX: clamp(-0.32 * cover, CAP.arm),
+      lElbowZ: clamp(0.45 * cover, CAP.elbow),
+      rElbowZ: clamp(0.45 * cover, CAP.elbow),
+      lArmUp: clamp(-0.44 * cover, CAP.armUp),
+      rArmUp: clamp(-0.44 * cover, CAP.armUp),
+    };
+  }
   let spinePitch = clamp(opts.fallZ * g.spine * punch, CAP.spine);
   let hipPitch = clamp(opts.fallZ * g.hip * punch, CAP.hip);
   if (localButt) {
@@ -372,7 +409,7 @@ export function pokeBodyReaction(opts: {
   return {
     ...STILL,
     spinePitch,
-    chestPitch: clamp(opts.fallZ * g.chest * punch * (opts.softChest && opts.zone === 'chest' ? 1.12 : 1), CAP.chest),
+    chestPitch: clamp(opts.fallZ * g.chest * punch, CAP.chest),
     spineYaw: clamp(opts.fallX * g.yaw * punch, CAP.yaw),
     chestRoll: clamp(-opts.fallX * g.roll * punch, CAP.roll),
     headX: clamp(opts.fallZ * g.head * punch, CAP.head),
