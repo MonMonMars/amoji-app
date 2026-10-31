@@ -68,3 +68,13 @@ Batch4 remap: research #61–80 → picker #90+ after PR#64 rails #61–89. VERI
 | 112 | StompAngry | -- | yes | off |
 
 PR4 action/dance: unused local VRMAs onto rails #99+ (after Batch4 #90-98). No convert. Kungfu C120+ FBX-only deferred. Jump/Spin/Bounce skipped (float/locomotion). Interim-remote C03/C61/C62/C110 (no local VRMA) deferred. Float-feet / gif-only / already-wired Cxx skipped.
+
+| 113 | lib_C120 | C120 | yes | off |
+| 114 | lib_C121 | C121 | yes | off |
+| 115 | lib_C122 | C122 | yes | off |
+| 116 | lib_C123 | C123 | yes | off |
+| 117 | lib_C146 | C146 | yes | off |
+| 118 | lib_C147 | C147 | yes | off |
+
+PR5 kungfu: FBX→VRMA convert for planted martial clips onto rails **#113-118** (after PR4 #99-112 @ 2aa3e3b). Defaults stay **#1+#2**. No voice/LLM/stories.
+**Skipped:** KayKit C134–C138 (6-bone Body/Head/arm* puppet — not VRM humanoid after inspect+retry); jump/locomotion/pose C130–C133/C139–C143; non-kungfu dance leftovers C125–C129/C144–C145.
