@@ -8,7 +8,8 @@ describe('shapeCompanionReply', () => {
 
 Haha, it's about 29 degrees and drizzling. Want to stay in with tea?`;
     const out = shapeCompanionReply(raw);
-    expect(out).toBe("Haha, it's about 29 degrees and drizzling. Want to stay in with tea?");
+    expect(out).toBe("it's about 29 degrees and drizzling. Want to stay in with tea?");
+    expect(out.toLowerCase()).not.toMatch(/\bhaha\b/);
     expect(out.toLowerCase()).not.toContain('the user');
   });
 
@@ -44,6 +45,7 @@ Haha, it's about 29 degrees and drizzling. Want to stay in with tea?`;
     const out = shapeCompanionReply(raw);
     expect(out.toLowerCase()).not.toContain('assistantfinal');
     expect(out.toLowerCase()).not.toContain('the user wants');
-    expect(out).toMatch(/haha|keyboard|another/i);
+    expect(out).toMatch(/keyboard|another/i);
+    expect(out.toLowerCase()).not.toMatch(/\bhaha\b/);
   });
 });

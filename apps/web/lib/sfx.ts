@@ -293,7 +293,7 @@ export function resumeSfxContext(): void {
 }
 
 export function playLaughSfx(): void {
-  if (voiceHeld()) return; // r102: never ring foley over a speak attempt
+  // t786: reaction laugh SFX always allowed �X hold only blocks movement foley.
   const c = ctx();
   if (!c || !sfxEnabled()) return;
   const t = c.currentTime + 0.02;
@@ -339,7 +339,7 @@ export function playUiClick(): void {
 
 /** a short low tap when you poke her — no rising squeak over the spoken laugh */
 export function playPokeSfx(): void {
-  if (voiceHeld()) return; // r102: never ring foley over a speak attempt
+  // t786: user-gesture poke must not die behind a failed-speak hold.
   const c = ctx();
   if (!c || !sfxEnabled()) return;
   const t = c.currentTime + 0.02;

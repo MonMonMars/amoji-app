@@ -20,7 +20,7 @@ export default function SetupFlow() {
     if (step < STEPS.length - 1) setStep(step + 1);
     else {
       primeAudioForChatEnter();
-      primeLocationForChatEnter();
+      window.setTimeout(() => { try { primeLocationForChatEnter(); } catch { /* ignore */ } }, 120);
       savePrefs(prefs);
       router.push('/play');
     }

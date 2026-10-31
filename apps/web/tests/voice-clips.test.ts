@@ -255,3 +255,12 @@ describe('t771 loadingFillerKind', () => {
     expect(loadingFillerKind('哈哈')).toBe('um');
   });
 });
+
+describe('t786 loadingFillerKind line-only', () => {
+  it('does not swallow real sentences as fillers', () => {
+    expect(loadingFillerKind("That's so funny!")).toBeNull();
+    expect(loadingFillerKind('lol okay')).toBeNull();
+    expect(loadingFillerKind('hey hey what is up')).toBeNull();
+  });
+});
+
