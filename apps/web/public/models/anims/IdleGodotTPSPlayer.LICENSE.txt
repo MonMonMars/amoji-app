@@ -1,0 +1,1 @@
+﻿Godot TPS demo player Idle-cycle — MIT. Source IdleGodotTPSPlayer.glb (godotengine/tps-demo). Distinct from #58 platformer.

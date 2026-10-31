@@ -58,3 +58,48 @@ Defaults: **only #1 IdleBreathCalm + #2 StandardIdle** (`defaultEnabled`).
 | 58 | lib_C45 | C45 | UAL2No (=Flash IdleUAL2No) | yes | off |
 | 59 | IdleUAL2Phone | C161 | Idle_TalkingPhone_Loop | yes | off |
 | 60 | lib_C46 | C46 | UAL2Lantern (=Flash IdleUAL2Lantern) | yes | off |
+
+| 61 | KayKitLayingDownIdle | lib_C07 | C07 | yes | PR#64 gallery leftovers |
+| 62 | KayKitInteract | lib_C08 | C08 | yes | |
+| 63 | UAL2Consume | lib_C13 | C13 | yes | |
+| 64 | UAL2RailLoop | lib_C47 | C47 | yes | |
+| 65 | UAL2RailCall | lib_C48 | C48 | yes | |
+| 66 | UAL2ChestOpen | lib_C49 | C49 | yes | |
+| 67 | UAL2ZombieIdle | lib_C50 | C50 | yes | |
+| 68 | UAL2ZombieScratch | lib_C51 | C51 | yes | |
+| 69 | UAL2FarmHarvest | lib_C52 | C52 | yes | |
+| 70 | UAL2ShieldIdle | lib_C71 | C71 | yes | |
+| 71 | UAL2FarmPlantSeed | lib_C72 | C72 | yes | |
+| 72 | UAL2FarmWatering | lib_C73 | C73 | yes | |
+| 73 | UAL2TreeChopping | lib_C74 | C74 | yes | |
+| 74 | UAL1Torch | lib_C66 | C66 | yes | |
+| 75 | UAL1PistolIdle | lib_C67 | C67 | yes | |
+| 76 | UAL1SwordIdle | lib_C68 | C68 | yes | |
+| 77 | UAL1SpellIdle | lib_C69 | C69 | yes | |
+| 78 | UAL1Interact | lib_C70 | C70 | yes | |
+| 79 | UAL1CrouchIdle | lib_C76 | C76 | yes | |
+| 80 | UAL1SittingIdle | lib_C77 | C77 | yes | |
+| 81 | UAL1SittingTalking | lib_C78 | C78 | yes | |
+| 82 | UAL1SwimIdle | lib_C79 | C79 | yes | |
+| 83 | UAL1Driving | lib_C80 | C80 | yes | |
+| 84 | UAL1FixingKneeling | lib_C81 | C81 | yes | |
+| 85 | UAL1Push | lib_C82 | C82 | yes | |
+| 86 | UAL1PickUpTable | lib_C83 | C83 | yes | |
+| 87 | RokokoHypeMan | lib_C116 | C116 | yes | |
+| 88 | RokokoDJ | lib_C117 | C117 | yes | |
+| 89 | RokokoDJ02 | lib_C128 | C128 | yes | |
+| 90 | IdleInnersceneSam | IdleInnersceneSam | — | yes | Batch4 remap (research #61→90); CC0 |
+| 91 | IdleInnersceneHarper | IdleInnersceneHarper | — | yes | Batch4; CC0 |
+| 92 | IdleInnersceneMaya | IdleInnersceneMaya | — | yes | Batch4; CC0 |
+| 93 | IdleRpmMStanding001 | IdleRpmMStanding001 | — | yes | Batch4 RPM M |
+| 94 | IdleRpmMVar001 | IdleRpmMVar001 | — | yes | Batch4 RPM M |
+| 95 | IdleRpmMVar002 | IdleRpmMVar002 | — | yes | Batch4 RPM M |
+| 96 | IdleRpmMArmStanding001 | IdleRpmMArmStanding001 | — | no | anim-only GLB; skipped (near-dupe #93) |
+| 97 | IdleGodotTPSPlayer | IdleGodotTPSPlayer | — | yes | MIT TPS Idle-cycle; ≠ #58 |
+| 98 | IdleRpmMStanding002 | IdleRpmMStanding002 | — | yes | Batch4 RPM M longer |
+
+## Batch4 remap (2026-11-01 Asia/Hong_Kong)
+
+Research pack claimed #61–80; PR #64 already shipped rails #61–89 @ c77df56. Remapped convert to picker **#90+**. Defaults stay **#1+#2**.
+**Skipped:** MixamoLookingAround (≈#3/#13), UAL2FoldArms (already #6), pointer-only QuaterniusWomen/GodotRetarget/CMU/KinemIQ.
+**VERIFY/float-risk unwired:** #99–103 (NervousLook/Bored/Yawn near-dupes of #19/#7/#17; Rokoko LookingAround FLOAT-RISK).
