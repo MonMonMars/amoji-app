@@ -103,3 +103,24 @@ Defaults: **only #1 IdleBreathCalm + #2 StandardIdle** (`defaultEnabled`).
 Research pack claimed #61–80; PR #64 already shipped rails #61–89 @ c77df56. Remapped convert to picker **#90+**. Defaults stay **#1+#2**.
 **Skipped:** MixamoLookingAround (≈#3/#13), UAL2FoldArms (already #6), pointer-only QuaterniusWomen/GodotRetarget/CMU/KinemIQ.
 **VERIFY/float-risk unwired:** #99–103 (NervousLook/Bored/Yawn near-dupes of #19/#7/#17; Rokoko LookingAround FLOAT-RISK).
+
+| 99 | KayKitDance | lib_C09 | C09 | yes | PR4 action/dance unused VRMA |
+| 100 | JazzDancing | lib_C60 | C60 | yes | Mixamo dance |
+| 101 | RokokoDoTheRobot | lib_C111 | C111 | yes | Rokoko dance |
+| 102 | RokokoGentleSway | lib_C112 | C112 | yes | |
+| 103 | RokokoDancingMedium | lib_C113 | C113 | yes | |
+| 104 | RokokoDancingParty | lib_C114 | C114 | yes | |
+| 105 | RokokoClubDancer01 | lib_C118 | C118 | yes | |
+| 106 | RokokoClubDancer02 | lib_C119 | C119 | yes | |
+| 107 | RokokoClubDancer05 | lib_C124 | C124 | yes | |
+| 108 | PlayPunch | PlayPunch | -- | yes | app action VRMA |
+| 109 | YesCheer | YesCheer | -- | yes | |
+| 110 | TaDa | TaDa | -- | yes | |
+| 111 | Bow | Bow | -- | yes | |
+| 112 | StompAngry | StompAngry | -- | yes | |
+
+## PR4 action/dance (2026-11-01 Asia/Hong_Kong)
+
+Unused playable VRMAs already under `models/anims/` wired to picker **#99-112** (Batch4 left VERIFY research #99-103 unwired; free nums start at #99 after main #98).
+Defaults stay **#1+#2**. No voice/LLM/stories.
+**Skipped:** float-feet C10/C14-24/C26-35; gif-only; already-wired C116/C117/C128; #13 LookAround; BreathCalm tilt; Jump/Spin/Bounce (float/locomotion); kungfu C120-C147 FBX without VRMA (no convert this PR); interim-remote dance C03/C61/C62/C110 (no local VRMA); emotion-only named VRMAs (Angry/Cry/...).
