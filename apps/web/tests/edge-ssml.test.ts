@@ -109,28 +109,26 @@ describe('buildEdgeSsml — the SSML the socket receives (r131)', () => {
       lang: 'en', gender: 'female', character: 'sky', emotion: 'joy',
     });
     const spoken = ssml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    expect(spoken).toContain('Haha');
+    // t771: TTS poke-laugh tokens stripped — laughs are SFX only
+    expect(spoken).not.toMatch(/\bhaha\b/i);
     expect(spoken).toContain('you got my head');
     expect(spoken).toContain('Still playing?');
     expect(spoken).not.toMatch(/[,.]/);
     expect(ssml).toContain('<break');
   });
 
-  it('keeps a poke laugh pitch on the laugh, not the line after it', () => {
+  it('drops poke-laugh lead from SSML (t771 — laughs are SFX only)', () => {
     const ssml = buildEdgeSsml('Haha, you got my head. Still playing?', {
       lang: 'en', gender: 'female', character: 'sky', emotion: 'joy',
       pitchDelta: 0.16,
       lead: { text: 'Haha!', pitch: 0.33, rate: 0.08 },
     });
-    expect(ssml).toContain("pitch='+8%'");
+    // Laugh lead must not enter Edge SSML; body keeps its own contour.
+    expect(ssml).not.toMatch(/>Haha</i);
     expect(ssml).not.toContain("pitch='+33%'");
-    const laughPitch = ssml.indexOf("pitch='+8%'");
-    const lineAt = ssml.indexOf('you got my head');
-    expect(laughPitch).toBeGreaterThan(-1);
-    expect(lineAt).toBeGreaterThan(laughPitch);
-    expect(ssml.slice(laughPitch, lineAt)).toContain('>Haha<');
-    expect(ssml.slice(laughPitch, lineAt)).not.toContain('Haha!');
-    expect(ssml.slice(lineAt)).not.toContain("pitch='+33%'");
+    expect(ssml).not.toContain("pitch='+8%'");
+    expect(ssml).toContain('you got my head');
+    expect(ssml).toContain('Still playing?');
   });
 
   it('singing mode (melody) composes with a style', () => {

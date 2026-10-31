@@ -82,13 +82,41 @@ export function stripVoicedGlyphs(raw: string): string {
  * pause marks (not the words "hyphen" / "period" / "tilde"). Symbols are
  * already gone. Pause glyphs themselves are stripped later, at the synthesizer.
  */
+
+/** t771: ban spoken hehe/haha/giggle tokens — laughs are CLIP_LIBRARY / playLaughSfx only. */
+const LAUGH_TOKEN_RE = /\b(?:hehe|haha|ha\s*ha|heehee|hihi|giggle|giggling|teehee|tehee)\b|[哈呵嘻]{2,}|ふふ+|うふふ+|あはは+|えへへ+/gi;
+
+export function stripLaughTokens(raw: string): string {
+  return collapseSpaces(String(raw || '').replace(LAUGH_TOKEN_RE, ' '));
+}
+
+/** t773/t775/t777: strip hashtags, @handles, URLs, and common site chrome before TTS. */
+const HASHTAG_RE = /#(?!\d+\b)[\w\u00C0-\u024F\u3400-\u9FFF]*[A-Za-z\u00C0-\u024F\u3400-\u9FFF][\w\u00C0-\u024F\u3400-\u9FFF]*/g;
+const HANDLE_RE = /@[\w.\u00C0-\u024F\u3400-\u9FFF]+/g;
+const WEB_URL_RE = /(?:https?:\/\/|www\.)\S+/gi;
+const CHROME_RE = /\b(?:subscribe|sign up|read more|click here|share this|follow us|advertisement|sponsored|cookie policy|terms of (?:use|service)|all rights reserved)\b/gi;
+const SOURCE_TAIL_RE = /\s*[|\u2013\u2014\-]\s*(?:Google News|Reuters|BBC(?: News)?|NPR|CNN|The Guardian|NHK|RTHK|SCMP|Bloomberg|AP(?: News)?|Yahoo(?: News)?|Wikipedia)\s*$/i;
+
+export function sanitizeWebForSpeech(raw: string): string {
+  let s = String(raw || '')
+    .replace(WEB_URL_RE, ' ')
+    .replace(HASHTAG_RE, ' ')
+    .replace(HANDLE_RE, ' ')
+    .replace(CHROME_RE, ' ')
+    .replace(SOURCE_TAIL_RE, ' ');
+  s = s.replace(/\s+[-|]\s+[A-Za-z][A-Za-z .]{1,40}$/g, ' ');
+  return collapseSpaces(s);
+}
+
 export function cleanForSpeech(raw: string): string {
-  let s = stripMarkup(stripStageDirections(raw));
+  // t773/t777: drop web chrome before TTS; t771: never speak laugh tokens.
+  let s = sanitizeWebForSpeech(stripMarkup(stripStageDirections(raw)));
   s = s.replace(/\b(?:hyphen|dash|em dash|en dash|full stop|period|comma|semicolon|colon|tilde|ellipsis|exclamation(?: mark| point)?|question mark)\b/gi, ' ');
   s = s.replace(/\s*[—–―−]\s*/g, '，');
   s = s.replace(/\s+-\s+/g, '，');
   s = s.replace(/([\u3400-\u9fff])\s*\.\s*/g, '$1。');
   s = stripVoicedSymbols(s);
+  s = stripLaughTokens(s);
   s = s.replace(/\s+/g, ' ').trim();
   s = s.replace(/\s+([,.;!?，。！？])/g, '$1');
   return s;
