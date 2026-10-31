@@ -1,3 +1,4 @@
+import { INTERJECTIONS } from '../lib/fillers';
 import { describe, expect, it } from 'vitest';
 import { INTERJECTION_AT, MOOD_FILLERS, THINKING_FILLERS, dominant, pickInterjection, pickThinkingFiller } from '../lib/fillers';
 
@@ -39,5 +40,15 @@ describe('fillers', () => {
     expect(dominant({ joy: 0.8, neutral: 0.4 }).emotion).toBe('joy');
     expect(dominant({ joy: 0.3 }).emotion).toBe('neutral');
     expect(dominant(undefined).emotion).toBe('neutral');
+  });
+});
+
+describe('t771 joy interjection', () => {
+  it('does not TTS hehe/haha for joy', () => {
+    const joy = INTERJECTIONS.joy!;
+    for (const lang of ['en', 'yue', 'zh', 'ja'] as const) {
+      const text = (joy[lang]?.text ?? '').toLowerCase();
+      expect(text).not.toMatch(/hehe|haha|哈哈|ふふ/);
+    }
   });
 });

@@ -144,9 +144,9 @@ import { notifySpeaking, isSpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
 import { pickIdleLine } from '../lib/persona-chatter';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
-import { pickCharacterInteraction, maybeLaughLead, pokeReactionLine } from '../lib/interaction-lines';
+import { pickCharacterInteraction, pokeReactionLine } from '../lib/interaction-lines';
 import { cannedOpener, personalityPrompt, personalityTutorTip } from '../lib/personality';
-import { pickLaugh, laughStyleFor, LAUGH_RE } from '../lib/laugh';
+import { laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { WARMUP_FIRST_MS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from '../lib/warmup';
 import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
 import { clientLiveContext } from '../lib/live-tools';
@@ -533,11 +533,12 @@ export default function ChatPanel({
       return reply;
     }
     const style = laughStyleFor(mood);
+    // t771: laugh is CLIP_LIBRARY / playLaughSfx only — never TTS hehe/haha lead.
     triggerLaugh();
     applyLlmHints({ joy: style.joy });
-    const giggle = pickLaugh(characterId, lang, laughCountRef.current++, mood);
-    notifySpeaking(`${giggle} ${reply}`);
-    speak(reply, characterId, lang, { ...(hints ?? {}), joy: style.joy }, { text: giggle, pitch: style.pitch, rate: style.rate }, intensity);
+    laughCountRef.current++;
+    notifySpeaking(reply);
+    speak(reply, characterId, lang, { ...(hints ?? {}), joy: style.joy }, undefined, intensity);
     return reply;
   };
 
@@ -590,7 +591,8 @@ export default function ChatPanel({
     lastUserRef.current = Date.now();
     reengageStageRef.current = 0;
     const line = pickCharacterInteraction(characterId, characterGender, 'hand', lang);
-    sayLocal(line, { joy: 0.55 }, maybeLaughLead(lang));
+    // t769/t771: no unsolicited TTS laugh lead on hand-hold.
+    sayLocal(line, { joy: 0.55 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handHoldCount]);
 

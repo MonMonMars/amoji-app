@@ -31,8 +31,7 @@ import {
   greetingText,
   nextGreetingKind,
   resetGreetingRotation,
-  recordedPokeClip,
-} from '../lib/voice-clips';
+  recordedPokeClip, loadingFillerKind} from '../lib/voice-clips';
 import { emotionClipPath, resetEmotionClipPicks, saveEmotionClip } from '../lib/emotion-clip-picks';
 import { TIER_A_COUNTS, selectTtsButtons, ttsButtonKey } from '../lib/tts-button-registry';
 
@@ -98,7 +97,7 @@ describe('emotion clips', () => {
     expect(emotionClipKind('oh!', 'lead')).toBe('oh');
     expect(emotionClipKind('嗯……', 'line')).toBe('um');
     expect(emotionClipKind('ha……', 'line')).toBe('ha');
-    expect(emotionClipKind(INTERJECTIONS.joy?.en?.text ?? '', 'lead')).toBe('giggle');
+    expect(emotionClipKind(INTERJECTIONS.joy?.en?.text ?? '', 'lead')).toBeNull(); // t771: joy tic is mm, not hehe
     expect(emotionClipKind(INTERJECTIONS.excitement?.zh?.text ?? '', 'lead')).toBe('wow');
     expect(emotionClipKind('Cheers!', 'lead')).toBeNull();
     expect(emotionClipKind('So good, right?', 'lead')).toBeNull();
@@ -246,5 +245,13 @@ describe('zone poke clips (SFX only)', () => {
       }
       expect(recordedPokeClip(gender)).toBe(recordedPokeClip(gender, 'default'));
     }
+  });
+});
+
+describe('t771 loadingFillerKind', () => {
+  it('coerces laugh/giggle/smile/ha to um', () => {
+    expect(loadingFillerKind('haha')).toBe('um');
+    expect(loadingFillerKind('hehe')).toBe('um');
+    expect(loadingFillerKind('哈哈')).toBe('um');
   });
 });

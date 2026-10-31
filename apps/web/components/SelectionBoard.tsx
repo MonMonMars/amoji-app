@@ -16,7 +16,8 @@ import TtsVoiceRow from './TtsVoiceRow';
 import { LangCardFace } from './selectors';
 import { assetUrl } from '../lib/asset';
 import { bigheadPath } from '../lib/bighead';
-import { playVoiceGreeting } from '../lib/voice';
+import { playVoiceGreeting, primeAudioForChatEnter } from '../lib/voice';
+import { primeLocationForChatEnter } from '../lib/live-tools';
 import { voicePickFor } from '../lib/voice-picks';
 import { resolveEdgeVoice } from '../lib/edge-tts';
 import {
@@ -48,6 +49,10 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
 
   const confirm = () => {
     if (leaving) return;
+    // t767/t777: one Start gesture unlocks AudioContext + asks location for weather/news.
+    // Mute All stays intact; geo deny still enters chat (ask city later if needed).
+    primeAudioForChatEnter();
+    primeLocationForChatEnter();
     const go = () => {
       clearStorySession();
       if (mode === 'change' && draft) setPrefs({ ...prefs, ...draft });

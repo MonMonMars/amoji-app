@@ -358,9 +358,10 @@ export function recordedPokeClip(gender: VoiceClipGender, zone?: string): string
 }
 
 export function loadingFillerKind(text: string): 'um' | 'ha' | 'think' | 'search' | null {
-  const kind = emotionClipKind(text, 'line');
-  // t722: constant HA HA during wait — coerce ha → um (long UM clip).
-  if (kind === 'ha') return 'um';
+  // Prefer line-role stubs; also inspect lead-role so hehe/haha never slip through.
+  const kind = emotionClipKind(text, 'line') ?? emotionClipKind(text, 'lead');
+  // t722/t769/t771: waiting never plays laugh/giggle/smile/ha — long UM only.
+  if (kind === 'ha' || kind === 'giggle' || kind === 'laugh' || kind === 'smile') return 'um';
   if (kind === 'um' || kind === 'think' || kind === 'search') return kind;
   return null;
 }

@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePrefs, t, savePrefs, type Prefs } from '../lib/prefs';
+import { primeAudioForChatEnter } from '../lib/voice';
+import { primeLocationForChatEnter } from '../lib/live-tools';
 import { CharacterGrid, BackgroundGrid, LangChips } from './selectors';
 
 const STEPS = ['character', 'background', 'language'] as const;
@@ -17,6 +19,8 @@ export default function SetupFlow() {
   const next = () => {
     if (step < STEPS.length - 1) setStep(step + 1);
     else {
+      primeAudioForChatEnter();
+      primeLocationForChatEnter();
       savePrefs(prefs);
       router.push('/play');
     }
