@@ -1,0 +1,1 @@
+Quaternius UAL2 Idle_No_Loop — CC0 1.0. Gallery C45; Flash IdleUAL2No uses same clipId lib_C45 (no duplicate VRMA).
