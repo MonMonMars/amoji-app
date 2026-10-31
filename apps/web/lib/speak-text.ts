@@ -84,7 +84,7 @@ export function stripVoicedGlyphs(raw: string): string {
  */
 
 /** t771: ban spoken hehe/haha/giggle tokens — laughs are CLIP_LIBRARY / playLaughSfx only. */
-const LAUGH_TOKEN_RE = /\b(?:hehe|haha|ha\s*ha|heehee|hihi|giggle|giggling|teehee|tehee)\b|[哈呵嘻]{2,}|ふふ+|うふふ+|あはは+|えへへ+/gi;
+const LAUGH_TOKEN_RE = /\b(?:hehe|haha|ha\s*ha|hee\s*hee|heehee|hihi|giggle|giggling|teehee|tehee)\b|\bhey(?:\s*hey)+\b|[\u54c8\u5475\u563b\u563f]{2,}|\u3075\u3075+|\u3046\u3075\u3075+|\u3042\u306f\u306f+|\u3048\u3078\u3078+/gi;
 
 export function stripLaughTokens(raw: string): string {
   return collapseSpaces(String(raw || '').replace(LAUGH_TOKEN_RE, ' '));

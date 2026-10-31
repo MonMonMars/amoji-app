@@ -51,8 +51,10 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
     if (leaving) return;
     // t767/t777: one Start gesture unlocks AudioContext + asks location for weather/news.
     // Mute All stays intact; geo deny still enters chat (ask city later if needed).
+    // t786: unlock audio FIRST; defer geo so iOS silent-<audio> prime is not raced by the
+    // permission dialog (which can drop the gesture unlock on iPhone).
     primeAudioForChatEnter();
-    primeLocationForChatEnter();
+    window.setTimeout(() => { try { primeLocationForChatEnter(); } catch { /* ignore */ } }, 120);
     const go = () => {
       clearStorySession();
       if (mode === 'change' && draft) setPrefs({ ...prefs, ...draft });

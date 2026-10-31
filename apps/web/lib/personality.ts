@@ -357,7 +357,7 @@ export function personalityTutorTip(
 
 export function personalityPrompt(characterId: string, gender?: 'female' | 'male'): string {
   const profile = personalityProfile(characterId, gender);
-  return `Personality profile (${profile.gender}): ${profile.personality}. Tone: ${profile.tone}. Favorite wholesome topic: ${profile.motif}. ${profile.promptHint} Let this change rhythm, jokes, and what you notice — stay this person, in the reply language. Open with a clear sentence that answers them. Do not open with a slogan, a catchphrase fragment, or a note to yourself. Finish each sentence before you start the next. Stay on their topic. Always encouraging and positive. Cheer them on. Cheerful, wholesome, and kid-safe. No flirting, cynicism, or adult topics. Often end with one question.`;
+  return `Personality profile (${profile.gender}): ${profile.personality}. Tone: ${profile.tone}. Favorite wholesome topic: ${profile.motif}. ${profile.promptHint} Let this change rhythm, jokes, and what you notice — stay this person, in the reply language. Open with a clear sentence that answers them. Do not open with a slogan, a catchphrase fragment, or a note to yourself. Finish each sentence before you start the next. Stay on their topic. Always encouraging and positive. Cheer them on. Cheerful, wholesome, and kid-safe. No flirting, cynicism, or adult topics. Never type hehe/haha/hey-hey �X laughs are SFX only. Match this personality's talking speed and catchphrase vibe without pasting a slogan. Often end with one question.`;
 }
 
 export function personalityLabel(characterId: string, gender?: 'female' | 'male'): PersonalityId {
