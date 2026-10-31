@@ -22,7 +22,7 @@ import { dancePerfClipSources } from '../lib/dance-clip-sources';
 import { timeScaleForProfile } from '../lib/performance-motion';
 import { playableIdles } from '../lib/idle-library';
 import { listEnabledIdleClipIds } from '../lib/idle-enabled';
-import { chestPokeBounce } from '../lib/vrm/chest-bounce';
+import { chestPokeBounce, CHEST_BOUNCE_SEC, SOFT_CHEST_BOUNCE_SEC } from '../lib/vrm/chest-bounce';
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
 import { isEyeMaterial, stabilizeEyeMaterials } from '../lib/vrm/eyes';
@@ -1907,8 +1907,12 @@ export default function CompanionCanvas({
         });
         avatar.update(dt / 1000);
         // Chest and torso punches: bust spring after the skeleton update.
-        const bounceT = boost > 0 ? (1 - boost) * (POKE_MS / 1000) : -1;
-        avatar.applyChestBounce(chestPokeBounce(pokeZone, bounceT));
+        // Soft breast (Mon t765): bounce clock outlives the tiny body recoil.
+        const bounceSoft = pokeZone === 'chest' && gender === 'female';
+        const bounceLimit = bounceSoft ? SOFT_CHEST_BOUNCE_SEC : CHEST_BOUNCE_SEC;
+        const bounceAge = (now - pokeAt) / 1000;
+        const bounceT = pokeAt > 0 && bounceAge >= 0 && bounceAge < bounceLimit ? bounceAge : -1;
+        avatar.applyChestBounce(chestPokeBounce(pokeZone, bounceT, bounceSoft));
 
         // r109 NaN sweep: a corrupt clip key or a bad spring-bone write can
         // poison a quaternion/scale and make the whole skinned mesh collapse
