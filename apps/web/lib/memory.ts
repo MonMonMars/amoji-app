@@ -700,8 +700,9 @@ const ANNIVERSARY_LINE: Record<string, (label: string) => string> = {
   en: (p) => `Today is your ${p}! I’ve been counting down to celebrate it with you!`,
 };
 
-/** The "daily check-in" line she says when you open the app on a new day. */
-export function buildDailyGreeting(lang: string, info: VisitInfo): string {
+/** The "daily check-in" line she says when you open the app on a new day.
+ * Pass skipThread on a fresh session-gap open (t796) so she does not resume the old thread. */
+export function buildDailyGreeting(lang: string, info: VisitInfo, opts?: { skipThread?: boolean }): string {
   const L = ['yue', 'zh', 'ja', 'en'].includes(lang) ? lang : 'en';
   const h = new Date().getHours();
   const bang = L === 'en' ? '!' : '！';
@@ -714,7 +715,7 @@ export function buildDailyGreeting(lang: string, info: VisitInfo): string {
   if (!info.milestone && !info.anniversaryLabel && info.streak >= 2)
     parts.push(STREAK_LINE[L](info.streak));
   // v4 — she picks up where you two left off, before the older recalls
-  if (info.lastThreadUser) parts.push(LAST_THREAD[L](info.lastThreadUser.slice(0, 40)));
+  if (!opts?.skipThread && info.lastThreadUser) parts.push(LAST_THREAD[L](info.lastThreadUser.slice(0, 40)));
   if (info.lastMood) {
     const table = ((info.lastMoodIntensity ?? 1) >= 1.5 ? MOOD_FOLLOWUP_AMP[L] : undefined) ?? MOOD_FOLLOWUP[L] ?? MOOD_FOLLOWUP.en;
     parts.push(table[info.lastMood] ?? '');

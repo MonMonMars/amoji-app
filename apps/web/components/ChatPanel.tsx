@@ -150,6 +150,19 @@ import { laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { WARMUP_FIRST_MS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from '../lib/warmup';
 import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
 import { clientLiveContext } from '../lib/live-tools';
+import {
+  OPEN_CHEER_FOLLOW_MS,
+  OPEN_CHEER_MS,
+  OPEN_IDLE_BRIEF_MS,
+  isFreshOpenPhase,
+  markChatRoomClosed,
+  markChatRoomOpened,
+  markOpenIdleBriefDone,
+  openIdleBriefAlreadyDone,
+  openPhaseNewsAsk,
+  openPhaseWeatherAsk,
+  summarizeOpenPhaseSpoken,
+} from '../lib/open-phase';
 import { speak, stopSpeaking, sing, playPokeBurst, voiceStartedSince, speechPending, speechStillQueued, speechRemainder, whenSpeechIdle } from '../lib/voice';
 import { productionChat } from '../lib/backend-client';
 import { startThinkingSound, stopThinkingSound } from '../lib/thinking-sound';
@@ -273,6 +286,12 @@ export default function ChatPanel({
   const chatterCountRef = useRef(0);
   const reengageStageRef = useRef(0);
   const greetedRef = useRef(false);
+  /** Phase 2: user has sent a real chat turn this open stretch. */
+  const userHasSpokenRef = useRef(false);
+  /** Open-phase auto weather/news already fired this mount. */
+  const openIdleBriefDoneRef = useRef(false);
+  /** After Phase 2, one idle auto weather/news per quiet stretch. */
+  const idleAutoAfterUserRef = useRef(false);
   const listeningRef = useRef(false);
   const micModeRef = useRef(false);
   const micStopRef = useRef<{ stop(): void; flush(): void } | null>(null);
@@ -542,22 +561,65 @@ export default function ChatPanel({
     return reply;
   };
 
-  // startup: first a welcome line; if it's a NEW day, the second line is her
-  // daily check-in (time-of-day hello + streak + follow-up on yesterday's mood
-  // or the week-ago diary line). Whatever she recalls, she WEARS that feeling
-  // while saying it — face, mic orb and voice all take the recalled mood.
+  // t794/t796 open phase: cheer-up first; weather/light news only while still
+  // idle; session gap (>= OPEN_SESSION_GAP_MS, default 2.5h) = fresh open —
+  // clear history and skip lastThread resume. Keep #58 filler bans.
   useEffect(() => {
     if (greetedRef.current) return;
     greetedRef.current = true;
+    const fresh = isFreshOpenPhase();
+    markChatRoomOpened();
+    const prior = loadHistory();
+    const hadUser = prior.some((m) => m.role === 'user');
+    if (fresh) {
+      saveHistory([]);
+      setHistory([]);
+      userHasSpokenRef.current = false;
+    } else if (hadUser) {
+      userHasSpokenRef.current = true;
+    }
     const visit = recordVisit();
-    const daily = visit.isNewDay ? buildDailyGreeting(lang, visit) : undefined;
+    const daily = visit.isNewDay
+      ? buildDailyGreeting(lang, visit, { skipThread: fresh })
+      : undefined;
     const startupVars = { name: characterName };
-    const t1 = setTimeout(() => sayLocal(cannedOpener(characterId, characterGender, lang, characterName)), 1200);
-    const t2 = setTimeout(
-      () => sayLocal(daily ?? pickLine('startup', lang, 1, startupVars), daily ? greetingHints(visit) : undefined),
-      5200,
+    const cheerFollow = daily ?? pickLine('startup', lang, 1, startupVars);
+    const t1 = setTimeout(
+      () => sayLocal(cannedOpener(characterId, characterGender, lang, characterName), { joy: 0.62 }),
+      OPEN_CHEER_MS,
     );
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    const t2 = setTimeout(
+      () => sayLocal(cheerFollow, daily ? greetingHints(visit) : { joy: 0.5 }),
+      OPEN_CHEER_FOLLOW_MS,
+    );
+    const skipBrief = userHasSpokenRef.current || openIdleBriefAlreadyDone();
+    const t3 = skipBrief
+      ? null
+      : setTimeout(() => {
+          if (userHasSpokenRef.current || openIdleBriefDoneRef.current) return;
+          void (async () => {
+            if (userHasSpokenRef.current || busyRef.current) return;
+            try {
+              const weather = await clientLiveContext(openPhaseWeatherAsk(lang), lang);
+              if (userHasSpokenRef.current) return;
+              const news = await clientLiveContext(openPhaseNewsAsk(lang), lang);
+              if (userHasSpokenRef.current) return;
+              const line = summarizeOpenPhaseSpoken(weather.spoken, news.spoken);
+              if (!line) return;
+              openIdleBriefDoneRef.current = true;
+              markOpenIdleBriefDone();
+              sayLocal(line, { joy: 0.55 });
+            } catch {
+              /* live brief is best-effort */
+            }
+          })();
+        }, OPEN_IDLE_BRIEF_MS);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      if (t3) clearTimeout(t3);
+      markChatRoomClosed();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -633,6 +695,29 @@ export default function ChatPanel({
         const kind = skillOfferKind(n);
         pendingOfferRef.current = kind;
         sayLocal(pickShowcaseOffer(kind, lang, n), feltHints);
+        return;
+      }
+      // t794 Phase 2: after the user has spoken, one auto weather/light-news
+      // brief per quiet stretch — never while they are mid-turn (busyRef).
+      if (
+        userHasSpokenRef.current
+        && !idleAutoAfterUserRef.current
+        && !busyRef.current
+      ) {
+        idleAutoAfterUserRef.current = true;
+        void (async () => {
+          if (busyRef.current) return;
+          try {
+            const weather = await clientLiveContext(openPhaseWeatherAsk(lang), lang);
+            if (busyRef.current || Date.now() - lastUserRef.current < IDLE_AFTER_MS) return;
+            const news = await clientLiveContext(openPhaseNewsAsk(lang), lang);
+            if (busyRef.current || Date.now() - lastUserRef.current < IDLE_AFTER_MS) return;
+            const line = summarizeOpenPhaseSpoken(weather.spoken, news.spoken);
+            if (line) sayLocal(line, feltHints ?? { joy: 0.45 });
+          } catch {
+            /* idle live brief is best-effort */
+          }
+        })();
         return;
       }
       // Idle talk is a short tutor tip, then one calm personality line.
