@@ -51,3 +51,10 @@ Defaults: **only #1 IdleBreathCalm + #2 StandardIdle** (`defaultEnabled`).
 
 - PSX / Squad (#27–31): gif-only, no FBX→VRMA.
 - Float-feet gallery rows C10, C14–C24, C26–C35: not in IDLE_LIBRARY planted list.
+
+| 55 | lib_C05 | C05 | KayKitWave | yes | off |
+| 56 | lib_C06 | C06 | KayKitCheer | yes | off |
+| 57 | lib_C12 | C12 | UAL2Yes | yes | off |
+| 58 | lib_C45 | C45 | UAL2No (=Flash IdleUAL2No) | yes | off |
+| 59 | IdleUAL2Phone | C161 | Idle_TalkingPhone_Loop | yes | off |
+| 60 | lib_C46 | C46 | UAL2Lantern (=Flash IdleUAL2Lantern) | yes | off |

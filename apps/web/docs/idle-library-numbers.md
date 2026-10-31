@@ -29,3 +29,9 @@ Free-library: `D:\Blender\projects\mon-character\free-library\`
 
 Chat: `IdlePickRails` — tap `#N` to pin; right-click/long-press toggles ON/OFF (`amoji.idleEnabled.v1`).
 Feet: all idle loads use `rebaseClipHips` + `pinPlantedClipTracks`.
+
+| 55–56 | lib_C05/C06 | C05–C06 KayKit Wave/Cheer | yes | off |
+| 57 | lib_C12 | C12 UAL2Yes | yes | off |
+| 58 | lib_C45 | C45 UAL2No (Flash IdleUAL2No alias) | yes | off |
+| 59 | IdleUAL2Phone | C161 | yes | off |
+| 60 | lib_C46 | C46 Lantern | yes | off |
