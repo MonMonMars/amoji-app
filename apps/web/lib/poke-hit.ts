@@ -12,8 +12,11 @@ export type TalkZone =
   | 'armL'
   | 'armR'
   | 'belly'
+  | 'butt'
+  | 'hand'
   | 'legL'
-  | 'legR';
+  | 'legR'
+  | 'foot';
 
 export type PokeDirection = 'front' | 'back' | 'left' | 'right';
 
@@ -26,9 +29,15 @@ export interface PokeHitExtra {
   rayDir?: Vec3;
   leftArm?: Vec3;
   rightArm?: Vec3;
+  leftHand?: Vec3;
+  rightHand?: Vec3;
   leftLeg?: Vec3;
   rightLeg?: Vec3;
+  leftFoot?: Vec3;
+  rightFoot?: Vec3;
   belly?: Vec3;
+  /** Approx butt / rear-hips probe (behind hips). */
+  butt?: Vec3;
 }
 
 export interface PokeClass {
@@ -84,11 +93,16 @@ function recoilXZ(hit: Vec3, hips: Vec3, extra?: PokeHitExtra): { x: number; z: 
 function nearestPart(hit: Vec3, hips: Vec3, extra?: PokeHitExtra): TalkZone | null {
   if (!extra) return null;
   const cands: { zone: TalkZone; p: Vec3; r: number }[] = [];
+  if (extra.leftHand) cands.push({ zone: 'hand', p: extra.leftHand, r: 0.16 });
+  if (extra.rightHand) cands.push({ zone: 'hand', p: extra.rightHand, r: 0.16 });
   if (extra.leftArm) cands.push({ zone: 'armL', p: extra.leftArm, r: 0.28 });
   if (extra.rightArm) cands.push({ zone: 'armR', p: extra.rightArm, r: 0.28 });
+  if (extra.leftFoot && hit.y < hips.y - 0.35) cands.push({ zone: 'foot', p: extra.leftFoot, r: 0.2 });
+  if (extra.rightFoot && hit.y < hips.y - 0.35) cands.push({ zone: 'foot', p: extra.rightFoot, r: 0.2 });
   if (extra.leftLeg && hit.y < hips.y - 0.08) cands.push({ zone: 'legL', p: extra.leftLeg, r: 0.3 });
   if (extra.rightLeg && hit.y < hips.y - 0.08) cands.push({ zone: 'legR', p: extra.rightLeg, r: 0.3 });
   if (extra.belly) cands.push({ zone: 'belly', p: extra.belly, r: 0.18 });
+  if (extra.butt) cands.push({ zone: 'butt', p: extra.butt, r: 0.22 });
   let best: { zone: TalkZone; d: number } | null = null;
   for (const c of cands) {
     const d = dist(hit, c.p);
@@ -128,8 +142,14 @@ export function classifyPoke(
   if (zone !== 'head') {
     const part = nearestPart(hit, hips, extra);
     if (part === 'belly') {
-      if (zone === 'torso' && dist(hit, extra!.belly!) + 0.02 < dist(hit, chest)) zone = 'belly';
-    } else if (part === 'armL' || part === 'armR' || part === 'legL' || part === 'legR') {
+      if ((zone === 'torso' || zone === 'chest') && dist(hit, extra!.belly!) + 0.02 < dist(hit, chest)) zone = 'belly';
+    } else if (part === 'butt') {
+      // Rear-hips probe wins when closer than chest and not a clear arm hit.
+      if (zone === 'back' || zone === 'torso' || zone === 'side') zone = 'butt';
+    } else if (
+      part === 'armL' || part === 'armR' || part === 'legL' || part === 'legR'
+      || part === 'hand' || part === 'foot'
+    ) {
       zone = part;
     }
   }
@@ -235,7 +255,15 @@ function gainsFor(zone: TalkZone, direction: PokeDirection): Gains {
       }
       return { spine: 0.6, chest: 0.68, head: 0.2, hip: 0.38, hipRoll: 0.08, roll: 0.12, yaw: 0.03, arm: 0.42, elbow: 0.3, armUp: 0.1, shift: 0.04, kind: 'chest', elbowBias: 0.12, armUpBias: 0 };
     case 'belly':
-      return { spine: 0.44, chest: 0.14, head: 0.1, hip: 0.55, hipRoll: side ? 0.32 : 0.1, roll: side ? 0.2 : 0.08, yaw: 0.04, arm: 0.26, elbow: 0.18, armUp: 0.05, shift: 0.05, kind: 'heavy', elbowBias: 0.03, armUpBias: 0.05 };
+      // Local abdomen only (Mon t764): spine reacts, hips/feet stay, upper chest quiet.
+      return { spine: 0.72, chest: 0.08, head: 0.06, hip: 0.04, hipRoll: side ? 0.08 : 0.02, roll: side ? 0.1 : 0.04, yaw: 0.02, arm: 0.12, elbow: 0.08, armUp: 0.03, shift: 0, kind: 'body', elbowBias: 0.02, armUpBias: 0.02 };
+    case 'butt':
+      // Local rear-hips (Mon t762): butt displaces opposite poke; feet planted; upper body counters.
+      return { spine: 0.55, chest: 0.06, head: 0.04, hip: 0.72, hipRoll: side ? 0.36 : 0.08, roll: side ? 0.14 : 0.05, yaw: 0.03, arm: 0.1, elbow: 0.06, armUp: 0.02, shift: 0, kind: 'heavy', elbowBias: 0.02, armUpBias: 0 };
+    case 'hand':
+      return { spine: 0.12, chest: 0.1, head: 0.08, hip: 0.06, hipRoll: 0.08, roll: 0.16, yaw: 0.03, arm: 0.9, elbow: 0.55, armUp: 0.22, shift: 0, kind: 'arm', elbowBias: 0.14, armUpBias: -0.06 };
+    case 'foot':
+      return { spine: 0.1, chest: 0.04, head: 0.04, hip: 0.28, hipRoll: 0.22, roll: 0.1, yaw: 0.02, arm: 0.06, elbow: 0.04, armUp: 0.02, shift: 0, kind: 'heavy', elbowBias: 0.02, armUpBias: 0 };
     case 'armL':
       return { spine: 0.26, chest: 0.18, head: 0.12, hip: 0.18, hipRoll: 0.16, roll: 0.28, yaw: 0.04, arm: 0.98, elbow: 0.64, armUp: side ? 0.3 : 0.12, shift: 0.026, kind: 'arm', elbowBias: 0.18, armUpBias: -0.08 };
     case 'armR':
@@ -285,6 +313,16 @@ function clamp(v: number, m: number): number {
  * A head poke tips only the head. Every other part bends hips, spine,
  * shoulders and arms together. Nothing here translates the scene root.
  */
+/** Incomplete cover raise for a soft breast poke (Mon t765): rise, hold mid-way, ease. */
+export function breastCoverEnvelope(t: number): number {
+  if (!(t > 0)) return 0;
+  // Peak 0.55 = too late / incomplete cover (never reaches a full cross).
+  if (t < 0.2) return (t / 0.2) * 0.55;
+  if (t < 0.42) return 0.55;
+  if (t < 0.92) return 0.55 * (1 - (t - 0.42) / 0.5);
+  return 0;
+}
+
 export function pokeBodyReaction(opts: {
   t: number;
   zone: TalkZone;
@@ -307,7 +345,7 @@ export function pokeBodyReaction(opts: {
       headZ: clamp(-opts.fallX * amp * 0.8 + opts.twist * 0.04 * punch, CAP.head),
     };
   }
-  const lateral = direction === 'left' || direction === 'right' || opts.zone === 'side' || opts.zone === 'armL' || opts.zone === 'armR';
+  const lateral = direction === 'left' || direction === 'right' || opts.zone === 'side' || opts.zone === 'armL' || opts.zone === 'armR' || opts.zone === 'hand';
   let armL = g.arm;
   let armR = g.arm;
   if (opts.zone === 'armL') {
@@ -326,18 +364,60 @@ export function pokeBodyReaction(opts: {
   const armDir = opts.fallZ !== 0
     ? opts.fallZ
     : (lateral ? -opts.sideSign : (opts.fallX !== 0 ? -Math.sign(opts.fallX) : -0.35));
+  // Butt: hips carry the punch; spine counters so the upper body stays roughly put.
+  // Belly: abdomen/spine only — hips stay, no hip slide (feet planted).
+  const localButt = opts.zone === 'butt';
+  const localBelly = opts.zone === 'belly';
+  // Mon t765: soft breast poke — tiny body recoil; bounce is secondary; cover arms mid-raise.
+  const softBreast = opts.softChest && opts.zone === 'chest';
+  if (softBreast) {
+    const cover = breastCoverEnvelope(t);
+    const tiny = punch * 0.22; // very little hit-back
+    return {
+      ...STILL,
+      spinePitch: clamp(opts.fallZ * 0.14 * tiny, 0.1),
+      chestPitch: clamp(opts.fallZ * 0.1 * tiny, 0.08),
+      spineYaw: clamp(opts.fallX * 0.02 * tiny, CAP.yaw),
+      chestRoll: clamp(-opts.fallX * 0.08 * tiny, 0.08),
+      headX: clamp(opts.fallZ * 0.06 * tiny, 0.08),
+      headZ: clamp(-opts.fallX * 0.04 * tiny + opts.twist * 0.02 * tiny, 0.08),
+      hipPitch: clamp(opts.fallZ * 0.05 * tiny, 0.05),
+      hipRoll: clamp(-opts.fallX * 0.04 * tiny, 0.05),
+      hipShiftX: 0,
+      hipShiftZ: 0,
+      // Arms try to cover but stop mid-raise (incomplete), hold, ease via cover envelope.
+      // lArmRaise = -lArmUp in CompanionCanvas, so negative Up = raise.
+      lArmX: clamp(-0.32 * cover, CAP.arm),
+      rArmX: clamp(-0.32 * cover, CAP.arm),
+      lElbowZ: clamp(0.45 * cover, CAP.elbow),
+      rElbowZ: clamp(0.45 * cover, CAP.elbow),
+      lArmUp: clamp(-0.44 * cover, CAP.armUp),
+      rArmUp: clamp(-0.44 * cover, CAP.armUp),
+    };
+  }
+  let spinePitch = clamp(opts.fallZ * g.spine * punch, CAP.spine);
+  let hipPitch = clamp(opts.fallZ * g.hip * punch, CAP.hip);
+  if (localButt) {
+    hipPitch = clamp(opts.fallZ * g.hip * punch, CAP.hip);
+    // Counter upper body so only the poked rear-hips region reads.
+    spinePitch = clamp(-hipPitch * 0.92 - opts.fallZ * 0.08 * punch, CAP.spine);
+  } else if (localBelly) {
+    hipPitch = clamp(opts.fallZ * g.hip * punch, 0.06);
+    spinePitch = clamp(opts.fallZ * g.spine * punch, CAP.spine);
+  }
+  const shiftGain = (localButt || localBelly || opts.zone === 'foot' || opts.zone === 'hand') ? 0 : g.shift;
   return {
     ...STILL,
-    spinePitch: clamp(opts.fallZ * g.spine * punch, CAP.spine),
-    chestPitch: clamp(opts.fallZ * g.chest * punch * (opts.softChest && opts.zone === 'chest' ? 1.12 : 1), CAP.chest),
+    spinePitch,
+    chestPitch: clamp(opts.fallZ * g.chest * punch, CAP.chest),
     spineYaw: clamp(opts.fallX * g.yaw * punch, CAP.yaw),
     chestRoll: clamp(-opts.fallX * g.roll * punch, CAP.roll),
     headX: clamp(opts.fallZ * g.head * punch, CAP.head),
     headZ: clamp(-opts.fallX * g.head * 0.7 * punch + opts.twist * 0.04 * punch, CAP.head),
-    hipPitch: clamp(opts.fallZ * g.hip * punch, CAP.hip),
+    hipPitch,
     hipRoll: clamp(-opts.fallX * g.hipRoll * punch, CAP.hipRoll),
-    hipShiftX: clamp(opts.fallX * g.shift * punch, CAP.shift),
-    hipShiftZ: clamp(opts.fallZ * g.shift * punch, CAP.shift),
+    hipShiftX: clamp(opts.fallX * shiftGain * punch, CAP.shift),
+    hipShiftZ: clamp(opts.fallZ * shiftGain * punch, CAP.shift),
     lArmX: clamp(armDir * armL * punch, CAP.arm),
     rArmX: clamp(armDir * armR * 0.94 * punch, CAP.arm),
     lElbowZ: clamp((g.elbow + g.elbowBias) * punch, CAP.elbow),

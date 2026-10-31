@@ -6,9 +6,12 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin } from '@pixiv/three-vrm';
 import {
   chestBouncePitch,
+  softChestBouncePitch,
   chestPokeBounce,
   isBustBoneName,
+  isChestFallbackBoneName,
   CHEST_BOUNCE_SEC,
+  SOFT_CHEST_BOUNCE_SEC,
 } from '../lib/vrm/chest-bounce';
 import { createV1Avatar } from '../lib/vrm/avatar';
 
@@ -19,6 +22,9 @@ describe('chest bounce', () => {
     expect(isBustBoneName('J_Bip_C_Chest')).toBe(false);
     expect(isBustBoneName('J_Bip_C_UpperChest')).toBe(false);
     expect(isBustBoneName('hips')).toBe(false);
+    expect(isChestFallbackBoneName('J_Bip_C_UpperChest')).toBe(true);
+    expect(isChestFallbackBoneName('J_Bip_C_Chest')).toBe(true);
+    expect(isChestFallbackBoneName('J_Sec_L_Bust1')).toBe(false);
   });
 
   it('is a damped spring on chest and torso, and stays off for other zones', () => {
@@ -44,6 +50,27 @@ describe('chest bounce', () => {
     expect(rebound).toBe(true);
   });
 });
+
+  it('soft breast spring is bigger and lasts longer than the default', () => {
+    expect(softChestBouncePitch(0)).toBe(0);
+    expect(softChestBouncePitch(SOFT_CHEST_BOUNCE_SEC + 0.01)).toBe(0);
+    const softEarly = softChestBouncePitch(0.08);
+    const hardEarly = chestBouncePitch(0.08);
+    expect(Math.abs(softEarly)).toBeGreaterThan(Math.abs(hardEarly));
+    expect(chestPokeBounce('chest', 0.08, true)).toBe(softEarly);
+    expect(chestPokeBounce('chest', 0.08, false)).toBe(hardEarly);
+    // Still oscillating well after the default window ends.
+    expect(Math.abs(softChestBouncePitch(CHEST_BOUNCE_SEC + 0.2))).toBeGreaterThan(0.02);
+    let crossings = 0;
+    let prev = softChestBouncePitch(0.05);
+    for (let t = 0.07; t <= SOFT_CHEST_BOUNCE_SEC; t += 0.03) {
+      const p = softChestBouncePitch(t);
+      if (prev < 0 && p > 0) crossings += 1;
+      if (prev > 0 && p < 0) crossings += 1;
+      prev = p;
+    }
+    expect(crossings).toBeGreaterThanOrEqual(3);
+  });
 
 describe('kitagawa chest poke', () => {
   it('springs the bust and leaves both feet on the ground', async () => {
