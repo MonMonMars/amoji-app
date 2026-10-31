@@ -6,11 +6,14 @@ import {
   liveToolsEnabled,
   newsRegionFromPlace,
   parseRssItems,
+  pickDefaultHeadlines,
   pickLightHeadlines,
   placeLabel,
   planTools,
   preferLiveReply,
+  regionalLightNewsFeedUrls,
   regionalNewsFeedUrls,
+  isHeavyHeadline,
   resolveDevicePlace,
   worldBlock,
   type GeoLike,
@@ -93,6 +96,7 @@ describe('planTools', () => {
     const plan = planTools('what is the latest news?');
     expect(plan.news).toBe(true);
     expect(plan.recent).toBe(true);
+    expect(plan.heavyNews).toBe(false);
     expect(plan.needsDevice).toBe(false);
     expect(plan.searchQuery).toBeUndefined();
     expect(planTools('news near me').recent).toBe(false);
@@ -264,7 +268,7 @@ describe('gatherLiveContext', () => {
       locate: async () => { located = true; return HK; },
     });
     expect(located).toBe(false);
-    expect(live.prompt).toContain('Recent news');
+    expect(live.prompt).toContain('Light news');
     expect(live.prompt).toContain('funny contest');
     expect(live.prompt.toLowerCase()).not.toContain('shooting');
     expect(live.spoken).toContain('funny contest');
@@ -579,5 +583,46 @@ describe('t775 regional news feeds', () => {
     expect(regionalNewsFeedUrls('US').some((u) => u.includes('npr.org'))).toBe(true);
     expect(regionalNewsFeedUrls('JP').some((u) => u.includes('nhk.or.jp'))).toBe(true);
     expect(regionalNewsFeedUrls('general').length).toBeGreaterThan(0);
+  });
+});
+
+describe('t780 light default news topics', () => {
+  it('marks politics/war asks as heavyNews opt-in', () => {
+    expect(planTools('any news?').heavyNews).toBe(false);
+    expect(planTools('what is the latest news?').heavyNews).toBe(false);
+    expect(planTools('what is the latest news?').recent).toBe(true);
+    expect(planTools('politics news').heavyNews).toBe(true);
+    expect(planTools('news about the war').heavyNews).toBe(true);
+    expect(planTools('serious news please').heavyNews).toBe(true);
+  });
+
+  it('filters war/politics/tragedy from default picks', () => {
+    const items = [
+      { title: 'Missile strike escalates the war', source: 'Wire' },
+      { title: 'Senate election race tightens', source: 'Politico' },
+      { title: 'Scientists discover quirky deep-sea fish', source: 'Sci' },
+      { title: 'New AI chatbot helps with homework', source: 'Tech' },
+      { title: 'Celebrity opens a heartwarming bakery', source: 'Ent' },
+    ];
+    const picked = pickDefaultHeadlines(items);
+    expect(picked.every((h) => !isHeavyHeadline(h.title))).toBe(true);
+    expect(picked.map((h) => h.title).join(' ')).toMatch(/Scientists|AI|Celebrity/);
+    expect(picked.map((h) => h.title).join(' ')).not.toMatch(/Missile|election/i);
+  });
+
+  it('allows heavy headlines when opted in', () => {
+    const items = [
+      { title: 'Missile strike escalates the war', source: 'Wire' },
+      { title: 'Scientists discover quirky deep-sea fish', source: 'Sci' },
+    ];
+    const heavy = pickDefaultHeadlines(items, { allowHeavy: true, preferLight: false });
+    expect(heavy.some((h) => /Missile/.test(h.title))).toBe(true);
+  });
+
+  it('exposes light category RSS urls', () => {
+    const us = regionalLightNewsFeedUrls('US');
+    expect(us.some((u) => u.includes('science') || u.includes('1007'))).toBe(true);
+    expect(us.some((u) => u.includes('health') || u.includes('1128') || u.includes('entertainment'))).toBe(true);
+    expect(regionalLightNewsFeedUrls('UK').some((u) => u.includes('science_and_environment'))).toBe(true);
   });
 });
