@@ -1613,6 +1613,8 @@ function performClip(job: SpeechJob): Promise<void> {
  */
 export function playVoiceGreeting(characterId: string, lang: Lang, voiceId: string): void {
   if (!voiceOutputAllowed() || !voiceId) return;
+  // Select-page cut-through: rapid character/voice taps must not stack greetings.
+  stopSpeaking();
   const kind = nextGreetingKind();
   unlockAudio();
   lineQueue.enqueue({
@@ -1756,6 +1758,8 @@ export function playPokeBurst(characterId: string, zone?: string): void {
  * tier cannot name these neural voices.
  */
 export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
+  // Respect master mute + Voice replies — select/settings previews stay silent when muted.
+  if (!voiceOutputAllowed()) return Promise.resolve();
   unlockAudio();
   stopSpeaking();
   const gender = isMaleNeuralVoice(voiceId) ? 'male' : 'female';
