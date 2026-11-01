@@ -87,4 +87,40 @@ describe('master-mute', () => {
     restore();
   });
 
+  it('unmute sync kick runs before async restore (t719 residual)', async () => {
+    const restore = swapLs();
+    const src = await import('node:fs').then((fs) =>
+      fs.readFileSync(new URL('../lib/master-mute.ts', import.meta.url), 'utf8'),
+    );
+    expect(src).toContain('kickOutputsSyncAfterUnmute');
+    expect(src).toContain('restoreMediaElementsAfterUnmute');
+    // Sync kick must be invoked from setMasterMuted(false) before void restore.
+    const setIdx = src.indexOf('export function setMasterMuted');
+    const unmuteArm = src.slice(setIdx, setIdx + 900);
+    expect(unmuteArm).toContain('kickOutputsSyncAfterUnmute()');
+    expect(unmuteArm.indexOf('kickOutputsSyncAfterUnmute()')).toBeLessThan(
+      unmuteArm.indexOf('void restoreOutputsAfterUnmute()'),
+    );
+    // Emit precedes silence/restore so voice/sfx listeners stay in the click stack.
+    expect(unmuteArm.indexOf('emit(muted)')).toBeLessThan(unmuteArm.indexOf('if (muted)'));
+    const voice = await import('node:fs').then((fs) =>
+      fs.readFileSync(new URL('../lib/voice.ts', import.meta.url), 'utf8'),
+    );
+    expect(voice).toContain('subscribeMasterMute((muted)');
+    expect(voice).toContain('resumeVoiceEngines()');
+    expect(voice).toContain('sfxVoiceRelease()');
+    const sfx = await import('node:fs').then((fs) =>
+      fs.readFileSync(new URL('../lib/sfx.ts', import.meta.url), 'utf8'),
+    );
+    expect(sfx).toContain('subscribeMasterMute((muted)');
+    expect(sfx).toContain('resumeSfxContext()');
+    const m = await import('../lib/master-mute');
+    m.setMasterMuted(true);
+    m.setMasterMuted(false);
+    expect(m.isMasterMuted()).toBe(false);
+    expect(typeof m.kickOutputsSyncAfterUnmute).toBe('function');
+    m.kickOutputsSyncAfterUnmute();
+    restore();
+  });
+
 });
