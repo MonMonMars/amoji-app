@@ -299,7 +299,7 @@ export function cannedOpener(characterId: string, gender: 'female' | 'male' | un
   return voiceOpening(profile.personality as VoiceId, profile.motif, profile.frame, lang, name);
 }
 
-/** How to use the app, said in idle. Same facts, this character's voice. */
+/** How-to tip bank (statement-only). Kept for intentional tour / Help; ChatPanel idle no longer injects these. */
 const APP_TIPS: Record<Lang, readonly string[]> = {
   en: [
     'Poke me gently and I react.',
@@ -344,6 +344,7 @@ const APP_TIPS: Record<Lang, readonly string[]> = {
 };
 
 
+/** Pick one APP_TIPS line (cast-offset). Not used by ChatPanel idle anymore — keep for intentional tours. */
 export function personalityTutorTip(
   characterId: string,
   gender: 'female' | 'male' | undefined,

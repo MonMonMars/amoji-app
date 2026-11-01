@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   SUGGEST_TOPIC_LINES,
@@ -58,5 +61,16 @@ describe('idle-talk', () => {
     expect(a.trim().length).toBeGreaterThan(0);
     expect(b.trim().length).toBeGreaterThan(0);
     expect(b).not.toBe(a);
+  });
+});
+
+describe('idle tips gate', () => {
+  it('ChatPanel idle path does not inject personalityTutorTip / APP_TIPS', () => {
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const chat = fs.readFileSync(path.resolve(here, '../components/ChatPanel.tsx'), 'utf8');
+    expect(chat).not.toContain('personalityTutorTip');
+    expect(chat).not.toMatch(/n\s*%\s*6\s*===\s*5/);
+    // companion idle banks still drive quiet lines
+    expect(chat).toContain('pickIdleCompanionLine');
   });
 });
