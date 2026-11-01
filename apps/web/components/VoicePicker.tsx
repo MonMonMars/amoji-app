@@ -34,6 +34,7 @@ export default function VoicePicker({
   const [failed, setFailed] = useState<string | null>(null);
 
   const onTap = (button: EdgeVoiceButton) => {
+    if (button.gender !== companionGender) return;
     const next = saveVoicePick(button.locale, companionGender, button.id);
     setPicks(next);
     setFailed(null);
@@ -67,7 +68,8 @@ export default function VoicePicker({
         return (
           <div key={locale} className="space-y-1.5">
             <h4 className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/50">{language}</h4>
-            {(['male', 'female'] as const).map((gender) => {
+            {/* Only companion gender — aligns with voicePicks.v2 (no cross-gender sample). */}
+            {([companionGender] as const).map((gender) => {
               const group = rows.filter((b) => b.gender === gender);
               if (!group.length) return null;
               return (

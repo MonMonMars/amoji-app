@@ -34,11 +34,15 @@ export const TTS_BUTTON_REGISTRY: readonly TtsButtonVoice[] = EDGE_VOICE_BUTTONS
   shipping: true as const,
 }));
 
-/** Shipping buttons. Pass a locale to filter to the current language. */
-export function selectTtsButtons(locale?: VoiceLocale): readonly TtsButtonVoice[] {
-  const rows = TTS_BUTTON_REGISTRY.filter((voice) => voice.shipping);
-  if (!locale) return rows;
-  return rows.filter((voice) => voice.locale === locale);
+/** Shipping buttons. Optional locale and/or companion gender (voicePicks.v2 floor). */
+export function selectTtsButtons(
+  locale?: VoiceLocale,
+  gender?: VoiceGender,
+): readonly TtsButtonVoice[] {
+  let rows = TTS_BUTTON_REGISTRY.filter((voice) => voice.shipping);
+  if (locale) rows = rows.filter((voice) => voice.locale === locale);
+  if (gender) rows = rows.filter((voice) => voice.gender === gender);
+  return rows;
 }
 
 export function ttsButtonById(id: string): TtsButtonVoice | undefined {
