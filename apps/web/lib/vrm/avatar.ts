@@ -77,6 +77,8 @@ import { ARM_DOWN_BASE } from '@amoji/vrm-renderer';
 import { FootPlanter, type PlantLean } from './plant-feet';
 import { ChestBounce } from './chest-bounce';
 import { capEyeExpression } from './eyes';
+import { applyCastFix, captureCastFix, type CastFixState } from './cast-pose';
+import { needsFullUpright } from '../cast-adjust';
 
 export type AvatarKind = 'v1' | 'generic';
 
@@ -221,8 +223,15 @@ export interface Avatar {
    * when shoulders are already square.
    */
   recalibrateFacing(): void;
-  /** r2026-10-12: second upright pass after idle neutral frame settles */
-  recalibrateUpright(): void;
+  /** r2026-10-12: second upright pass after idle neutral frame settles.
+   *  strict: char 33 — cancel a forward lean smaller than the usual ~3° gate. */
+  recalibrateUpright(strict?: boolean): void;
+  /** Capture head / upper-body / shoulder corrections for this cast id. */
+  armCastFixes(characterId: string): void;
+  /** Re-apply those corrections after the mixer. Idempotent within a frame. */
+  applyCastFixes(): void;
+  /** V1 head-add must treat the corrected head quat as its own write. */
+  acknowledgeHeadPose(): void;
   update(dt: number): void;
 }
 
@@ -266,8 +275,14 @@ const DOWN = new THREE.Vector3(0, -1, 0);
  * through untouched; now anything past ~3° gets corrected.
  */
 const UPRIGHT_DOT_MIN = 0.998; // cos(~3.6°) — standing straight is baseline
+const UPRIGHT_DOT_STRICT = 0.99996; // ~0.5° — whole-body lean (char 33)
 
-function calibrateUpright(node: THREE.Object3D, hips: THREE.Object3D | null, head: THREE.Object3D | null): void {
+function calibrateUpright(
+  node: THREE.Object3D,
+  hips: THREE.Object3D | null,
+  head: THREE.Object3D | null,
+  minDot = UPRIGHT_DOT_MIN,
+): void {
   if (!hips || !head) return;
   node.updateMatrixWorld(true);
   const a = hips.getWorldPosition(new THREE.Vector3());
@@ -275,7 +290,7 @@ function calibrateUpright(node: THREE.Object3D, hips: THREE.Object3D | null, hea
   const up = b.sub(a);
   if (up.lengthSq() < 1e-10) return;
   up.normalize();
-  if (up.dot(UP) > UPRIGHT_DOT_MIN) return;
+  if (up.dot(UP) > minDot) return;
   node.quaternion.premultiply(new THREE.Quaternion().setFromUnitVectors(up, UP));
   node.updateMatrixWorld(true);
 }
@@ -758,6 +773,7 @@ class V1Avatar implements Avatar {
   private readonly addSlots = new Map<string, { base: THREE.Quaternion; written: THREE.Quaternion; init: boolean }>();
   private readonly addEuler = new THREE.Euler(0, 0, 0, 'XYZ');
   private readonly addDelta = new THREE.Quaternion();
+  private castFix: CastFixState | null = null;
 
   constructor(vrm: VRM, clipAnimatedBones: ReadonlySet<string> = new Set()) {
     this.vrm = vrm;
@@ -977,12 +993,28 @@ class V1Avatar implements Avatar {
     );
   }
 
-  recalibrateUpright(): void {
+  recalibrateUpright(strict = false): void {
     calibrateUpright(
       this.vrm.scene,
       this.vrm.humanoid?.getNormalizedBoneNode('hips') ?? null,
       this.vrm.humanoid?.getNormalizedBoneNode('head') ?? null,
+      strict ? UPRIGHT_DOT_STRICT : UPRIGHT_DOT_MIN,
     );
+  }
+
+  armCastFixes(characterId: string): void {
+    if (needsFullUpright(characterId)) this.recalibrateUpright(true);
+    this.castFix = captureCastFix(characterId, (name) => this.getBoneNode(name));
+  }
+
+  applyCastFixes(): void {
+    if (this.castFix) applyCastFix(this.castFix);
+    this.acknowledgeHeadPose();
+  }
+
+  acknowledgeHeadPose(): void {
+    const head = this.getBoneNode('head');
+    if (head) this.headAddWritten.copy(head.quaternion);
   }
 
   update(dt: number): void {
@@ -1024,6 +1056,7 @@ class GenericAvatar implements Avatar {
   private sE = new THREE.Euler();
   private planter = new FootPlanter();
   private chestBounce = new ChestBounce();
+  private castFix: CastFixState | null = null;
 
   constructor(gltf: GLTF, clipAnimatedBones: ReadonlySet<string> = new Set()) {
     // r2026-10-04.76: same wrapper split as V1Avatar — canvas overlays own
@@ -1300,13 +1333,25 @@ class GenericAvatar implements Avatar {
     );
   }
 
-  recalibrateUpright(): void {
+  recalibrateUpright(strict = false): void {
     calibrateUpright(
       this.inner,
       this.bones.get('hips') ?? null,
       this.bones.get('head') ?? null,
+      strict ? UPRIGHT_DOT_STRICT : UPRIGHT_DOT_MIN,
     );
   }
+
+  armCastFixes(characterId: string): void {
+    if (needsFullUpright(characterId)) this.recalibrateUpright(true);
+    this.castFix = captureCastFix(characterId, (name) => this.getBoneNode(name));
+  }
+
+  applyCastFixes(): void {
+    if (this.castFix) applyCastFix(this.castFix);
+  }
+
+  acknowledgeHeadPose(): void { /* procedural head has no additive layer */ }
 
   update(dt: number): void {
     // gentle periodic blink so legacy models feel alive

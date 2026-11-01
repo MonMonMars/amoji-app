@@ -25,6 +25,7 @@ import {
   backgroundById, backgroundLetter, characterById, t, usePrefs,
   type Prefs,
 } from '../lib/prefs';
+import { selectionBadge, selectionCast, selectPortraitPosition } from '../lib/cast-adjust';
 import { clearStorySession } from '../lib/story-session';
 
 export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
@@ -39,7 +40,8 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   const lang = live.lang;
   const dirty = draft !== null;
 
-  const cast = prefs.kidMode ? CHARACTERS.filter((c) => c.kidSafe) : CHARACTERS;
+  const roster = selectionCast(CHARACTERS);
+  const cast = prefs.kidMode ? roster.filter((c) => c.kidSafe) : roster;
   const scenes = prefs.kidMode ? BACKGROUNDS.filter((b) => b.kidSafe) : BACKGROUNDS;
 
   const pick = (patch: Partial<Prefs>) => {
@@ -134,7 +136,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
               label={(c) => c.name}
             >
               {(c, active) => {
-                const num = CHARACTERS.findIndex((x) => x.id === c.id) + 1;
+                const num = selectionBadge(c.id);
                 return (
                   <>
                     <span
@@ -144,7 +146,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                     >
                       {num}
                     </span>
-                    <ModelThumb accent={c.accent} name={c.name} image={c.image} bighead={bigheadPath(c.id)} crop="face" />
+                    <ModelThumb accent={c.accent} name={c.name} image={c.image} bighead={bigheadPath(c.id)} crop="face" portraitPosition={selectPortraitPosition(c.id)} />
                     <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-3 pb-3 pt-12 text-center">
                       <span className="block whitespace-normal break-words text-base font-semibold leading-tight sm:text-lg">{c.name}</span>
                       <span className="text-xs leading-none text-white/75 sm:text-sm">{c.gender === 'female' ? '♀' : '♂'}</span>
