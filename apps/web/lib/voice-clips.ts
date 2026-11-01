@@ -297,10 +297,11 @@ export function recordedFillerClip(
  */
 const RECORDED_POKE_ZONE: Record<VoiceClipGender, Record<string, string>> = {
   female: {
-    // head ← was belly (#82 um); breast/chest ← NEW (#88 hehe); belly ← was breast (#83 oh)
-    head: '/voice-clips/universal/female/um.mp3',
-    chest: '/voice-clips/universal/female/hehe.mp3',
-    breast: '/voice-clips/universal/female/hehe.mp3',
+    // Mon t294: head um.mp3 read as adult/hentai — breast/chest get that clip;
+    // head takes former breast hehe (#88). belly stays oh (#83).
+    head: '/voice-clips/universal/female/hehe.mp3',
+    chest: '/voice-clips/universal/female/um.mp3',
+    breast: '/voice-clips/universal/female/um.mp3',
     belly: '/voice-clips/universal/female/oh.mp3',
     butt: '/voice-clips/universal/female/sigh.mp3',
     hand: '/voice-clips/universal/female/giggle.mp3',
