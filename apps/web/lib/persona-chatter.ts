@@ -2,8 +2,8 @@
 // Per-character dialogue banks: 10 personality idle lines + 4 poke reactions
 // per character, in every UI language. Falls back to the generic CHATTER
 // banks for characters without an entry.
-// r2026-10-03.37: every line ends with a question or an invitation
-// (Master Simon's continuity rule — the conversation must never dead-end).
+// Idle path now prefers profileIdleLine (statement banks + motif rotate via idle-talk).
+// Legacy CHARACTER_IDLE may still end with hooks; chat idle no longer requires questions.
 //    idle → ends with ? / ？ / ~ ・ poke → ends with ? ？ ! ！ ~ 〜 …
 // r2026-10-04.42: Alan joins the cast — his own idle + poke banks below.
 // r2026-10-04.52: flagship nine (kizuna/alicia/ember/mei/atlas/sky/yuki/
@@ -1944,9 +1944,12 @@ const FALLBACK_LANG: Lang = 'en';
 
 /** Idle line. Legacy ids keep their bank; everyone else speaks from their cached voice profile. */
 export function pickIdleLine(characterId: string, lang: Lang, n: number): string {
+  // Prefer statement profile banks (less tea/question nonsense) over legacy CHARACTER_IDLE.
+  const fromProfile = profileIdleLine(characterId, lang, n);
+  if (fromProfile.trim()) return fromProfile;
   const bank = CHARACTER_IDLE[characterId]?.[lang] ?? CHARACTER_IDLE[characterId]?.[FALLBACK_LANG];
   if (bank?.length) return bank[((n % bank.length) + bank.length) % bank.length]!;
-  return profileIdleLine(characterId, lang, n) || pickLine('idleBored', lang, n);
+  return pickLine('idleBored', lang, n);
 }
 
 /** Deterministic per-character poke reaction; falls back to the voice profile. */
