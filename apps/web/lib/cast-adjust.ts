@@ -76,9 +76,23 @@ export const FULL_UPRIGHT_IDS: readonly string[] = [
 ];
 
 /**
- * Post-load MToon push toward the 1–3 body factors.
- * 4 hard toon, 5 thick outline, 6 ~3× outline. Do not touch the reference set.
+ * Reference look (castNo 1-3, 7-10, 12, 13) — do not retune materials.
+ * Everyone else gets the conservative MToon outlier pass (thick outline /
+ * hard cel only) so shade/brightness stays closer across the cast.
  */
+export const REF_LOOK_IDS: readonly string[] = [
+  'a01-shino', // 1
+  'a02-shibu', // 2
+  'a03-fumiriya', // 3
+  'a14-vivi', // 7
+  'a16-vita', // 8
+  'a17-victoria-rubin', // 9
+  'a23-hairsample-female', // 10
+  'a61-saori-kamiya-llunne', // 12
+  'a63-hinoame-satuki-mei-sirayuki', // 13
+];
+
+/** @deprecated kept for tests/callers; prefer needsMToonUnify / REF_LOOK_IDS. */
 export const MTOON_UNIFY_IDS: readonly string[] = [
   'a04-avatarsample-a',
   'a05-avatarsample-c',
@@ -108,7 +122,7 @@ const HEAD = new Set(HEAD_TILT_IDS);
 const SHOULDER = new Set(SHOULDER_LIFT_IDS);
 const UPPER = new Set(UPPER_BODY_IDS);
 const UPRIGHT = new Set(FULL_UPRIGHT_IDS);
-const MTOON = new Set(MTOON_UNIFY_IDS);
+const REF_LOOK = new Set(REF_LOOK_IDS);
 
 export function isHiddenCast(id: string): boolean {
   return HIDDEN.has(id);
@@ -135,7 +149,8 @@ export function needsFullUpright(id: string): boolean {
 }
 
 export function needsMToonUnify(id: string): boolean {
-  return MTOON.has(id);
+  // Skip the reviewed reference look; soft-fix hard cel / thick outline elsewhere.
+  return !REF_LOOK.has(id);
 }
 
 export interface MToonUnifyInput {

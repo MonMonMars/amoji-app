@@ -4,6 +4,7 @@ import {
   HIDDEN_CAST_IDS,
   MALE_CAST_IDS,
   MTOON_UNIFY_IDS,
+  REF_LOOK_IDS,
   REF_OUTLINE_WIDTH_FACTOR,
   REF_SHADING_SHIFT,
   REF_SHADING_TOONY,
@@ -59,7 +60,19 @@ describe('roster gender', () => {
 });
 
 describe('MToon unify', () => {
-  it('only targets characters 4, 5, and 6', () => {
+  it('skips the reference look and soft-fixes other cast', () => {
+    expect(REF_LOOK_IDS).toEqual([
+      'a01-shino',
+      'a02-shibu',
+      'a03-fumiriya',
+      'a14-vivi',
+      'a16-vita',
+      'a17-victoria-rubin',
+      'a23-hairsample-female',
+      'a61-saori-kamiya-llunne',
+      'a63-hinoame-satuki-mei-sirayuki',
+    ]);
+    // Historic allowlist retained for docs/callers.
     expect(MTOON_UNIFY_IDS).toEqual([
       'a04-avatarsample-a',
       'a05-avatarsample-c',
@@ -68,7 +81,8 @@ describe('MToon unify', () => {
     expect(needsMToonUnify('a01-shino')).toBe(false);
     expect(needsMToonUnify('a14-vivi')).toBe(false);
     expect(needsMToonUnify('a63-hinoame-satuki-mei-sirayuki')).toBe(false);
-    expect(needsMToonUnify('a94-rita')).toBe(false);
+    expect(needsMToonUnify('a04-avatarsample-a')).toBe(true);
+    expect(needsMToonUnify('a94-rita')).toBe(true);
   });
 
   it('softens a hard toon and thins a thick world outline without turning it off', () => {

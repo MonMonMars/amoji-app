@@ -27,6 +27,7 @@ import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
 import { isEyeMaterial, stabilizeEyeMaterials } from '../lib/vrm/eyes';
 import { patchCastTextures, stabilizeCastEyes, unifyCastMToon } from '../lib/vrm/cast-materials';
+import { addCastDaylight, applyCastToneMapping } from '../lib/vrm/cast-lighting';
 import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
 import { WARDROBE_ENABLED, modularGlbUrl, vrmCandidatesForOutfit } from '../lib/modular/catalog';
 import { assembleModular, replaceBodyMeshes, type ModularAssembly } from '../lib/modular/assemble';
@@ -310,37 +311,17 @@ export default function CompanionCanvas({
     }
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(host.clientWidth, host.clientHeight);
-    // r108 (Master Simon): pin the color pipeline ??ACES filmic at exposure
-    // 1.0 keeps highlights from clipping warm and leaves midtones neutral.
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
+    // Shared cast daylight + ACES (see lib/vrm/cast-lighting.ts).
+    applyCastToneMapping(renderer);
     host.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
     // transparent canvas ??the page's themed gradient shows through (alpha:true)
     scene.background = null;
     let cancelled = false;
-    // r2026-10-05.108 (Master Simon): ONE neutral daylight rig for every
-    // backdrop. The r77 indoor branch keyed her with a warm cream lamp
-    // ('#fff6ec') that, against the warm ember/neon backdrops (the only
-    // 'indoor' settings), read as a full orange cast ??the "strange colors"
-    // report. The indoor/outdoor switch is gone: cool sky over a
-    // desaturated ground bounce, one clean white sun key, one cool fill ??
-    // nothing on the character picks up a color cast.
-    // These are scene-level lights: ANY avatar added to the scene (initial
-    // load or a character switch, which remounts this effect) is inside
-    // their range by construction ??there is no per-model light to miss.
-    scene.add(new THREE.HemisphereLight('#f2f7ff', '#8f8a80', 0.85));
-    const sun = new THREE.DirectionalLight('#ffffff', 1.75);
-    sun.position.set(2.2, 3.8, 2.0);
-    scene.add(sun);
-    const bounce = new THREE.DirectionalLight('#e3eaf5', 0.3);
-    bounce.position.set(-1.8, 0.6, -1.4);
-    scene.add(bounce);
-    // r109: lighting floor ??a whisper of flat ambient so that NO material
-    // state (a black toon shade, a failed texture slot) can ever render
-    // pure black, whatever the toon ramp says.
-    scene.add(new THREE.AmbientLight('#ffffff', 0.14));
+    // ONE shared cast daylight rig (chat / preview / thumbs / bake).
+    // Cool sky hemi + white key + cool fill + ambient floor - no per-model lights.
+    addCastDaylight(scene);
 
     const camera = new THREE.PerspectiveCamera(35, host.clientWidth / host.clientHeight, 0.1, 20);
 
