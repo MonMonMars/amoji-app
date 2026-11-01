@@ -163,4 +163,56 @@ describe('Edge voice bake-off buttons', () => {
     expect(picker).toContain('saveVoicePick');
     expect(settings).toContain('VoicePicker');
   });
+
+  it('select-page greeting must stay Edge-only with the tapped voiceId (Mon)', () => {
+    const voice = fs.readFileSync(path.resolve(here, '../lib/voice.ts'), 'utf8');
+    const greetStart = voice.indexOf('export function playVoiceGreeting');
+    const greetEnd = voice.indexOf('export function previewLibraryClip', greetStart);
+    expect(greetStart).toBeGreaterThan(0);
+    expect(greetEnd).toBeGreaterThan(greetStart);
+    const greet = voice.slice(greetStart, greetEnd);
+    expect(greet).toContain('speakEdge(');
+    expect(greet).toContain('forcePlain: true');
+    expect(greet).toContain('voiceId');
+    expect(greet).not.toContain("kind: 'speak'");
+    expect(greet).not.toContain('drainSpeech()');
+    // Explicit picker id must not fall through to one OS synth voice.
+    expect(voice).toContain('if (voiceId) { settle(); return; }');
+  });
+
+  it('select row previews on tap only — no hover/focus race (Mon)', () => {
+    const row = fs.readFileSync(path.resolve(here, '../components/TtsVoiceRow.tsx'), 'utf8');
+    expect(row).toContain('onClick={() => onTap(button)}');
+    expect(row).not.toContain('onMouseEnter');
+    expect(row).not.toContain('onFocus={() => preview');
+    expect(row).toContain('playVoiceGreeting(characterId, button.locale, button.id)');
+  });
+
+  it('character tap auditions cast slot; language tap greets pin||cast (Mon)', () => {
+    const board = fs.readFileSync(path.resolve(here, '../components/SelectionBoard.tsx'), 'utf8');
+    const charIdx = board.indexOf('ariaLabel="characters"');
+    const langIdx = board.indexOf('ariaLabel="languages"');
+    expect(charIdx).toBeGreaterThan(0);
+    expect(langIdx).toBeGreaterThan(charIdx);
+    const charBlock = board.slice(charIdx, langIdx);
+    expect(charBlock).toContain('ignoreVoicePick: true');
+    expect(charBlock).toContain('playVoiceGreeting(chosen.id, lang, voiceId)');
+    // Must not prefer a gender pin over the cast (same voice for every same-sex char).
+    expect(charBlock).not.toContain('voicePickFor(lang, chosen.gender)');
+    const langBlock = board.slice(langIdx, langIdx + 900);
+    expect(langBlock).toContain('playVoiceGreeting(character.id, id, voiceId)');
+    expect(langBlock).toContain('voicePickFor(id, character.gender)');
+  });
+
+  it('maps every bake-off button to a distinct shipping Edge id', () => {
+    const ids = EDGE_VOICE_BUTTONS.map((b) => b.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids.length).toBe(58);
+    for (const id of ids) {
+      expect(isShippingEdgeVoice(id)).toBe(true);
+      const ssml = buildEdgeSsml('hi', { lang: 'en', gender: 'female', voiceId: id, forcePlain: true });
+      expect(ssml).toContain(`voice name='${id}'`);
+    }
+  });
+
 });
