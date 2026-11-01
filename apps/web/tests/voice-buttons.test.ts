@@ -13,6 +13,7 @@ import {
 } from '../lib/voice-catalog';
 import { resetVoicePicks, saveVoicePick, voicePickFor } from '../lib/voice-picks';
 import { buildEdgeSsml, resolveEdgeVoice } from '../lib/edge-tts';
+import { selectTtsButtons } from '../lib/tts-button-registry';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -55,6 +56,32 @@ describe('Edge voice bake-off buttons', () => {
     expect(edgeVoiceId('ja', 'male')).toBe('ja-JP-KeitaNeural');
     expect(edgeVoiceId('en', 'female')).toBe('en-US-JennyNeural');
     expect(edgeVoiceId('en', 'male')).toBe('en-US-GuyNeural');
+  });
+
+
+  it('filters bake-off buttons to the companion gender (voicePicks.v2 floor)', () => {
+    const femaleEn = selectTtsButtons('en', 'female');
+    const maleEn = selectTtsButtons('en', 'male');
+    expect(femaleEn.length).toBeGreaterThan(0);
+    expect(maleEn.length).toBeGreaterThan(0);
+    expect(femaleEn.every((b) => b.gender === 'female')).toBe(true);
+    expect(maleEn.every((b) => b.gender === 'male')).toBe(true);
+    expect(femaleEn.some((b) => isMaleNeuralVoice(b.id))).toBe(false);
+    expect(maleEn.some((b) => isFemaleNeuralVoice(b.id))).toBe(false);
+    const allFemale = selectTtsButtons(undefined, 'female');
+    expect(allFemale.every((b) => b.gender === 'female')).toBe(true);
+    expect(allFemale.length).toBe(EDGE_VOICE_BUTTONS.filter((b) => b.gender === 'female').length);
+  });
+
+  it('keeps select row and settings picker from offering cross-gender samples', () => {
+    const row = fs.readFileSync(path.resolve(here, '../components/TtsVoiceRow.tsx'), 'utf8');
+    expect(row).toContain('selectTtsButtons(lang, companionGender)');
+    expect(row).toContain('selectTtsButtons(undefined, companionGender)');
+    expect(row).toContain('button.gender !== companionGender');
+    const picker = fs.readFileSync(path.resolve(here, '../components/VoicePicker.tsx'), 'utf8');
+    expect(picker).toContain('button.gender !== companionGender');
+    expect(picker).toContain('([companionGender] as const)');
+    expect(picker).not.toContain("(['male', 'female'] as const)");
   });
 
   it('pins a tapped voice for that companion gender only', () => {
