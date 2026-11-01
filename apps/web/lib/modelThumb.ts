@@ -12,6 +12,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin } from '@pixiv/three-vrm';
 import type { VRM } from '@pixiv/three-vrm';
 import { APP_REVISION } from './revision';
+import { addCastDaylight, applyCastToneMapping } from './vrm/cast-lighting';
 
 interface ThumbEnv {
   renderer: THREE.WebGLRenderer;
@@ -47,11 +48,10 @@ function getEnv(): ThumbEnv | null {
     canvas.width = 128;
     canvas.height = 128;
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    applyCastToneMapping(renderer);
     const scene = new THREE.Scene();
-    scene.add(new THREE.HemisphereLight('#ffffff', '#334155', 1.4));
-    const dir = new THREE.DirectionalLight('#ffffff', 1.6);
-    dir.position.set(0.6, 1.4, 1.2);
-    scene.add(dir);
+    // Same daylight as CompanionCanvas so thumbs match chat / select.
+    addCastDaylight(scene);
     const camera = new THREE.PerspectiveCamera(30, 1, 0.01, 20);
     const loader = new GLTFLoader();
     loader.register((parser) => new VRMLoaderPlugin(parser));

@@ -17,6 +17,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin } from '@pixiv/three-vrm';
 import type { VRM } from '@pixiv/three-vrm';
 import { modelUrl } from '../lib/asset';
+import { addCastDaylight, applyCastToneMapping } from '../lib/vrm/cast-lighting';
 
 export default function ModelPreview({
   url,
@@ -50,13 +51,12 @@ export default function ModelPreview({
     }
     renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     renderer.setSize(host.clientWidth, host.clientHeight);
+    applyCastToneMapping(renderer);
     host.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.add(new THREE.HemisphereLight('#ffffff', '#334155', 1.4));
-    const dir = new THREE.DirectionalLight('#ffffff', 1.6);
-    dir.position.set(0.6, 1.4, 1.2);
-    scene.add(dir);
+    // Same daylight as CompanionCanvas so select preview matches chat.
+    addCastDaylight(scene);
 
     const camera = new THREE.PerspectiveCamera(30, host.clientWidth / host.clientHeight, 0.01, 20);
 
