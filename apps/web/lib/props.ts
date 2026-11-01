@@ -46,19 +46,35 @@ export interface PropDef {
 
 const HEX = (s: string): string => s;
 
+/**
+ * Sing-mic capsule center in scene space (meters). Shared offset for the
+ * head + sparkle; pole/boom/base are derived so the stand stays coherent.
+ * Nominal VRM mouth ~[0, 1.38, 0.06] on a ~1.5m cast facing +Z. Capsule
+ * radius 0.05 + softBob ±0.008 — keep a few cm of clearance so faces of
+ * varying depth do not clip badly. Closer than the t718 [0.12, 1.44, 0.12].
+ */
+export const MIC_MOUTH_POS: [number, number, number] = [0.06, 1.39, 0.08];
+
+/** Stand column slightly outward (+x / +z) from the capsule toward the floor. */
+const MIC_STAND_XZ: [number, number] = [MIC_MOUTH_POS[0] + 0.025, MIC_MOUTH_POS[2] + 0.04];
+const MIC_BOOM_Y = MIC_MOUTH_POS[1] - 0.04;
+const MIC_POLE_H = Math.max(0.9, MIC_BOOM_Y);
+const MIC_POLE_Y = MIC_POLE_H / 2;
+
 export const PROPS: PropDef[] = [
   {
-    // the singer's mic ??rises in front of her free hand while she sings
+    // the singer's mic — capsule at MIC_MOUTH_POS; stand derived beside it
     id: 'micStand',
     forMoves: ['sing'],
     parts: [
-      { kind: 'cylinder', pos: [0.14, 0.015, 0.16], size: [0.16, 0.18, 0.03], color: HEX('#111827') },
-      { kind: 'cylinder', pos: [0.14, 0.72, 0.16], size: [0.012, 0.014, 1.40], color: HEX('#374151') },
-      { kind: 'cylinder', pos: [0.14, 1.40, 0.16], size: [0.02, 0.02, 0.09], color: HEX('#4b5563'), rot: [0.5, 0, 0] },
-      { kind: 'sphere', pos: [0.12, 1.44, 0.12], size: [0.05, 0, 0], color: HEX('#1f2937'), anim: 'softBob', animPhase: 0.7 },
-      { kind: 'sphere', pos: [0.12, 1.44, 0.12], size: [0.028, 0, 0], color: HEX('#f472b6'), anim: 'sparkle', animPhase: 0 },
+      { kind: 'cylinder', pos: [MIC_STAND_XZ[0], 0.015, MIC_STAND_XZ[1]], size: [0.16, 0.18, 0.03], color: HEX('#111827') },
+      { kind: 'cylinder', pos: [MIC_STAND_XZ[0], MIC_POLE_Y, MIC_STAND_XZ[1]], size: [0.012, 0.014, MIC_POLE_H], color: HEX('#374151') },
+      { kind: 'cylinder', pos: [MIC_STAND_XZ[0], MIC_BOOM_Y, MIC_STAND_XZ[1]], size: [0.02, 0.02, 0.09], color: HEX('#4b5563'), rot: [0.55, 0, 0] },
+      { kind: 'sphere', pos: [MIC_MOUTH_POS[0], MIC_MOUTH_POS[1], MIC_MOUTH_POS[2]], size: [0.05, 0, 0], color: HEX('#1f2937'), anim: 'softBob', animPhase: 0.7 },
+      { kind: 'sphere', pos: [MIC_MOUTH_POS[0], MIC_MOUTH_POS[1], MIC_MOUTH_POS[2]], size: [0.028, 0, 0], color: HEX('#f472b6'), anim: 'sparkle', animPhase: 0 },
     ],
   },
+
   {
     // a little glossy upright keyboard she sits down to play
     id: 'piano',
