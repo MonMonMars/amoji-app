@@ -14,6 +14,9 @@ import { isMasterMuted } from './master-mute';
 /** Fraction of the voice/sfx level. Keeps the hum under the reply. */
 export const THINKING_GAIN = 0.32;
 
+/** Wait this long before the loading um — skip if the reply arrives first. */
+export const THINKING_SOUND_DELAY_MS = 1000;
+
 const VOICE_MUTE_KEY = 'amoji.voice.v1';
 
 export function thinkingAudibleGain(
@@ -39,6 +42,7 @@ function voiceRepliesOn(): boolean {
 let clip: HTMLAudioElement | null = null;
 let clipKey = '';
 let stallTimer: ReturnType<typeof setTimeout> | undefined;
+let delayTimer: ReturnType<typeof setTimeout> | undefined;
 
 export interface ThinkingSoundOpts {
   gender?: VoiceClipGender;
@@ -60,12 +64,26 @@ export function startThinkingSound(opts: ThinkingSoundOpts = {}): void {
     volumeLinear('sfxVol'),
   );
   if (gain <= 0) return;
+  if (delayTimer) clearTimeout(delayTimer);
+  // Delay so a fast reply never starts a loading um under TTS.
+  delayTimer = setTimeout(() => {
+    delayTimer = undefined;
+    beginThinkingClip(opts, gain);
+  }, THINKING_SOUND_DELAY_MS);
+}
+
+function beginThinkingClip(opts: ThinkingSoundOpts, gain: number): void {
+  if (typeof window === 'undefined') return;
+  if (isMasterMuted()) return;
   const gender = opts.gender ?? 'female';
   const lang = opts.lang ?? 'yue';
   const path = thinkingFillerPath(gender, lang);
   const key = `${gender}:${lang}:${path}`;
   if (!clip || clipKey !== key) {
-    stopThinkingSound();
+    if (clip) {
+      clip.pause();
+      try { clip.currentTime = 0; } catch { /* ignore */ }
+    }
     clip = new Audio(assetUrl(path));
     clip.loop = true;
     clip.preload = 'auto';
@@ -91,6 +109,10 @@ export function startThinkingSound(opts: ThinkingSoundOpts = {}): void {
 }
 
 export function stopThinkingSound(): void {
+  if (delayTimer) {
+    clearTimeout(delayTimer);
+    delayTimer = undefined;
+  }
   if (stallTimer) {
     clearTimeout(stallTimer);
     stallTimer = undefined;
