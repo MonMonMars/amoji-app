@@ -82,11 +82,11 @@ export function listEnabledIdleClipIds(): string[] {
   const seen = new Set<string>();
   for (const e of playableIdles()) {
     if (!enabled.has(e.num) || seen.has(e.clipId)) continue;
-    // Also accept if any library row with this clipId is enabled (C01/C42).
+    // Dedup by clipId (historically C01/C42 shared LookAround; #13 is now lib_C42).
     seen.add(e.clipId);
     ids.push(e.clipId);
   }
-  // If user enabled a later alias num (e.g. #13) but playableIdles kept #3:
+  // If user enabled a later num whose clipId was skipped by playableIdles first-wins:
   for (const num of hydrate()) {
     const e = idleByNum(num);
     if (!e?.playable || seen.has(e.clipId)) continue;
