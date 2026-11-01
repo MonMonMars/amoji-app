@@ -54,7 +54,7 @@
       "id": "a03-fumiriya",
       "libraryId": "A03",
       "name": "Fumiriya",
-      "gender": "female",
+      "gender": "male",
       "accent": "#ff9e7a",
       "kidSafe": true,
       "modelFile": "a03-fumiriya.vrm",
@@ -63,8 +63,8 @@
       "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a03-fumiriya.png",
       "sourceFolder": "Fumiriya",
       "voiceHint": {
-        "yue": "zh-HK-HiuGaaiNeural",
-        "en": "en-HK-YanNeural"
+        "yue": "zh-HK-WanLungNeural",
+        "en": "en-HK-SamNeural"
       }
     },
     {
@@ -88,7 +88,7 @@
       "id": "a05-avatarsample-c",
       "libraryId": "A05",
       "name": "AvatarSample C",
-      "gender": "female",
+      "gender": "male",
       "accent": "#ff6b4a",
       "kidSafe": true,
       "modelFile": "a05-avatarsample-c.vrm",
@@ -97,8 +97,8 @@
       "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a05-avatarsample-c.png",
       "sourceFolder": "AvatarSample_C",
       "voiceHint": {
-        "yue": "zh-HK-HiuGaaiNeural",
-        "en": "en-HK-YanNeural"
+        "yue": "zh-HK-WanLungNeural",
+        "en": "en-HK-SamNeural"
       }
     },
     {
@@ -309,7 +309,7 @@
       "id": "a75-sorano",
       "libraryId": "A75",
       "name": "Sorano",
-      "gender": "female",
+      "gender": "male",
       "accent": "#ff9e7a",
       "kidSafe": true,
       "modelFile": "a75-sorano.vrm",
@@ -318,8 +318,8 @@
       "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a75-sorano.png",
       "sourceFolder": "Sorano",
       "voiceHint": {
-        "yue": "zh-HK-HiuGaaiNeural",
-        "en": "en-HK-YanNeural"
+        "yue": "zh-HK-WanLungNeural",
+        "en": "en-HK-SamNeural"
       }
     },
     {
@@ -598,7 +598,7 @@
       "id": "a105-serizawa-aoi",
       "libraryId": "A105",
       "name": "Serizawa Aoi",
-      "gender": "female",
+      "gender": "male",
       "accent": "#ff6b4a",
       "kidSafe": true,
       "modelFile": "a105-serizawa-aoi.vrm",
@@ -607,8 +607,8 @@
       "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a105-serizawa-aoi.png",
       "sourceFolder": "Serizawa_Aoi",
       "voiceHint": {
-        "yue": "zh-HK-HiuGaaiNeural",
-        "en": "en-HK-YanNeural"
+        "yue": "zh-HK-WanLungNeural",
+        "en": "en-HK-SamNeural"
       }
     },
     {
@@ -632,7 +632,7 @@
       "id": "a107-dm-office-casual",
       "libraryId": "A107",
       "name": "DM Office Casual",
-      "gender": "male",
+      "gender": "female",
       "accent": "#f9a8d4",
       "kidSafe": true,
       "modelFile": "a107-dm-office-casual.vrm",
@@ -641,8 +641,8 @@
       "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a107-dm-office-casual.png",
       "sourceFolder": "DM_Office_Casual",
       "voiceHint": {
-        "yue": "zh-HK-WanLungNeural",
-        "en": "en-HK-SamNeural"
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
       }
     },
     {
@@ -802,7 +802,7 @@
       "id": "a459-chinesewarriormonk",
       "libraryId": "A459",
       "name": "Chinese Warrior Monk",
-      "gender": "male",
+      "gender": "female",
       "accent": "#c4a574",
       "kidSafe": true,
       "modelFile": "a459-chinesewarriormonk.vrm",
@@ -811,8 +811,8 @@
       "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-realistic-2026-10-18/a459-chinesewarriormonk.png",
       "sourceFolder": "ChineseWarriorMonk",
       "voiceHint": {
-        "yue": "zh-HK-WanLungNeural",
-        "en": "en-HK-SamNeural"
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
       },
       "license": "CC BY 4.0 Sketchfab fayjayfay"
     },
@@ -874,7 +874,7 @@
       "id": "a468-eric",
       "libraryId": "A468",
       "name": "Eric",
-      "gender": "male",
+      "gender": "female",
       "accent": "#4a90a4",
       "kidSafe": true,
       "modelFile": "a468-eric.vrm",
@@ -883,8 +883,8 @@
       "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-realistic-2026-10-18/a468-eric.png",
       "sourceFolder": "Eric",
       "voiceHint": {
-        "yue": "zh-HK-WanLungNeural",
-        "en": "en-HK-SamNeural"
+        "yue": "zh-HK-HiuGaaiNeural",
+        "en": "en-HK-YanNeural"
       },
       "license": "CC BY 4.0 Sketchfab"
     }

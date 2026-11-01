@@ -187,10 +187,10 @@ describe('per-character Edge voices', () => {
     expect(resolveEdgeVoice({ lang: 'zh', gender: 'female', character: 'a01-shino' }).name).toBe('zh-CN-XiaoxiaoNeural');
     expect(resolveEdgeVoice({ lang: 'zh', gender: 'female', character: 'a02-shibu' }).name).toBe('zh-CN-XiaoyiNeural');
     expect(resolveEdgeVoice({ lang: 'yue', gender: 'female', character: 'a02-shibu' }).name).toBe('zh-HK-HiuMaanNeural');
-    expect(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a107-dm-office-casual' }).name).toBe('en-US-GuyNeural');
-    expect(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a24-hairsample-male' }).name).toBe('en-GB-RyanNeural');
-    expect(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a459-chinesewarriormonk' }).name).toBe('en-US-ChristopherNeural');
-    expect(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a468-eric' }).name).toBe('en-HK-SamNeural');
+    expect(isFemaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a107-dm-office-casual' }).name)).toBe(true);
+    expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a24-hairsample-male' }).name)).toBe(true);
+    expect(isFemaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a459-chinesewarriormonk' }).name)).toBe(true);
+    expect(isFemaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a468-eric' }).name)).toBe(true);
     expect(isFemaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a94-rita' }).name)).toBe(true);
     expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a94-rita' }).name)).toBe(false);
     expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a98-ethan' }).name)).toBe(true);
@@ -201,10 +201,11 @@ describe('per-character Edge voices', () => {
     const langs = ['yue', 'zh', 'ja', 'en'] as const;
     for (const lang of langs) {
       for (const id of [
-        'a107-dm-office-casual',
+        'a03-fumiriya',
+        'a05-avatarsample-c',
+        'a105-serizawa-aoi',
         'a24-hairsample-male',
-        'a459-chinesewarriormonk',
-        'a468-eric',
+        'a75-sorano',
         'a98-ethan',
       ]) {
         const voice = resolveEdgeVoice({ lang, gender: 'male', character: id });

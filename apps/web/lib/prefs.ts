@@ -46,6 +46,7 @@ export interface CharacterDef {
 // Universal load fallback remains seed-san.vrm (see ASSET_MANIFEST.md).
 // ---------------------------------------------------------------------------
 import { CHARACTERS_WANT, WANT_CAST_RELEASE } from './characters-want';
+import { isHiddenCast } from './cast-adjust';
 
 export { WANT_CAST_RELEASE };
 export const CHARACTERS: CharacterDef[] = CHARACTERS_WANT as CharacterDef[];
@@ -460,6 +461,7 @@ export function loadPrefs(): Prefs {
       const kidMode = !!p.kidMode;
       const storedCharacter = typeof p.character === 'string' ? p.character : DEFAULT_PREFS.character;
       let character = CHARACTERS.some((c) => c.id === storedCharacter) ? storedCharacter : DEFAULT_PREFS.character;
+      if (isHiddenCast(character)) character = DEFAULT_PREFS.character;
       let background = BACKGROUNDS.some((b) => b.id === p.background) ? p.background! : DEFAULT_PREFS.background;
       // kid mode: current picks must stay wholesome — swap if not
       if (kidMode) {
