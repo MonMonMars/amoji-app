@@ -9,6 +9,7 @@ Free-library: `D:\Blender\projects\mon-character\free-library\`
 | 1 | IdleBreathCalm | — | yes | ON |
 | 2 | StandardIdle | — | yes | ON |
 | 3 | LookAround | C01 | yes | off |
+| 13 | lib_C42 | C42 | yes | off (unique LookingAround02; not #3) |
 | 4 | lib_C02 | C02 | yes | off |
 | 5 | lib_C04 | C04 | yes | off |
 | 6 | lib_C11 | C11 | yes | off |

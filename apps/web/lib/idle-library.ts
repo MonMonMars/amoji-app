@@ -162,13 +162,13 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
   },
   {
     num: 13,
-    clipId: 'LookAround',
+    clipId: 'lib_C42',
     cId: 'C42',
     name: 'RokokoLookingAround02',
     path: 'animations/idle/rokoko_everyday_idles/Idle_LookingAround02_MIXAMO_769.fbx',
     planted: true,
     playable: true,
-    vrmaUrl: VRMA('LookAround'),
+    vrmaUrl: VRMA('lib_C42'),
     defaultEnabled: false,
   },
   {
@@ -1362,7 +1362,7 @@ export function idleByCId(cId: string): IdleLibraryEntry | undefined {
   return BY_C.get(cId);
 }
 
-/** Unique playable entries (first # wins when clipId shared, e.g. C01/C42). */
+/** Unique playable entries (first # wins when clipId shared). #13 is lib_C42 (was LookAround alias). */
 export function playableIdles(): IdleLibraryEntry[] {
   const seen = new Set<string>();
   const out: IdleLibraryEntry[] = [];
