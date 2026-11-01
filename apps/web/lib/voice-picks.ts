@@ -1,11 +1,19 @@
 // Per companion-gender Edge voice pins. A tap on the bake-off grid saves the
 // short name under the CURRENT companion's gender for that voice's language.
-// The opposite gender keeps its own pin (or the cast default). A female
-// companion only stays on a male voice after that button is tapped.
+// Opposite gender keeps its own pin (or the cast default).
+// After the cast gender re-audit, cross-gender neurals are refused: a female
+// companion only pins a female neural, male only male. Bumping the storage
+// key clears stale pre-audit pins that left many voices sounding wrong.
 
-import { EDGE_VOICE_BUTTONS, type VoiceGender, type VoiceLocale } from './voice-catalog';
+import {
+  EDGE_VOICE_BUTTONS,
+  isFemaleNeuralVoice,
+  isMaleNeuralVoice,
+  type VoiceGender,
+  type VoiceLocale,
+} from './voice-catalog';
 
-const KEY = 'amoji.voicePicks.v1';
+const KEY = 'amoji.voicePicks.v2';
 
 export type VoicePickMap = Partial<Record<VoiceLocale, Partial<Record<VoiceGender, string>>>>;
 
@@ -22,6 +30,13 @@ function knownEdgeId(id: string): boolean {
   return EDGE_VOICE_BUTTONS.some((b) => b.id === id);
 }
 
+/** Pin must match companion gender (no male neural on female slot, etc.). */
+function pinMatchesGender(id: string, gender: VoiceGender): boolean {
+  if (!knownEdgeId(id)) return false;
+  if (gender === 'female') return isFemaleNeuralVoice(id);
+  return isMaleNeuralVoice(id);
+}
+
 function sanitize(raw: unknown): VoicePickMap {
   if (!raw || typeof raw !== 'object') return {};
   const out: VoicePickMap = {};
@@ -31,7 +46,7 @@ function sanitize(raw: unknown): VoicePickMap {
     const next: Partial<Record<VoiceGender, string>> = {};
     for (const gender of ['female', 'male'] as const) {
       const id = (slot as Record<string, unknown>)[gender];
-      if (typeof id === 'string' && knownEdgeId(id)) next[gender] = id;
+      if (typeof id === 'string' && pinMatchesGender(id, gender)) next[gender] = id;
     }
     if (next.female || next.male) out[locale] = next;
   }
@@ -65,16 +80,18 @@ export function loadVoicePicks(): VoicePickMap {
 /** Edge short name pinned for this companion gender, or null for the cast. */
 export function voicePickFor(locale: string, gender: VoiceGender): string | null {
   if (!isLocale(locale)) return null;
-  return hydrate()[locale]?.[gender] ?? null;
+  const id = hydrate()[locale]?.[gender] ?? null;
+  if (!id || !pinMatchesGender(id, gender)) return null;
+  return id;
 }
 
 /**
  * Pin `voiceId` for the companion's gender in that language.
- * Returns the map now stored. Invalid ids are ignored.
+ * Returns the map now stored. Invalid / cross-gender ids are ignored.
  */
 export function saveVoicePick(locale: VoiceLocale, companionGender: VoiceGender, voiceId: string): VoicePickMap {
   const current = { ...hydrate() };
-  if (!knownEdgeId(voiceId)) return current;
+  if (!pinMatchesGender(voiceId, companionGender)) return current;
   const slot = { ...current[locale] };
   slot[companionGender] = voiceId;
   current[locale] = slot;
