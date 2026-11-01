@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   THINKING_GAIN,
+  THINKING_SOUND_DELAY_MS,
   stopThinkingSound,
   thinkingAudibleGain,
   thinkingFillerPath,
@@ -29,5 +30,9 @@ describe('thinking sound', () => {
     expect(fs.existsSync(yueF)).toBe(true);
     expect(fs.statSync(yueF).size).toBeGreaterThan(1500);
     expect(() => stopThinkingSound()).not.toThrow();
+  });
+
+  it('delays the loading um so fast replies stay SFX-free', () => {
+    expect(THINKING_SOUND_DELAY_MS).toBe(1000);
   });
 });

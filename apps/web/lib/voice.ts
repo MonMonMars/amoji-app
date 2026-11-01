@@ -85,7 +85,7 @@ import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableTex
 import { analyzeText } from '@amoji/emotion-core';
 import { applyLlmHints } from './companion';
 import { browserVoicesForLang, edgeSampleText, isMaleNeuralVoice, selectBrowserVoice, synthNameList } from './voice-catalog';
-import { loadingFillerKind, recordedFillerClip, recordedPokeClip } from './voice-clips';
+import { loadingFillerKind, recordedFillerClip, recordedLaughClip, recordedPokeClip } from './voice-clips';
 import { LineQueue, speechRemainder } from './speech-queue';
 import { emotionClipPath } from './emotion-clip-picks';
 import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText, nextGreetingKind, type BurstClipKind, type ClipFolder, type VoiceClipGender } from './voice-clips';
@@ -96,7 +96,7 @@ import { speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice } from './edge-tts';
 import { stopGtts } from './gtts';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
 import { formatVoiceChain, freeVoiceHops } from './tts-chain';
-import { stopThinkingSound } from './thinking-sound';
+import { startThinkingSound, stopThinkingSound } from './thinking-sound';
 // r2026-10-05.112: tier 0 — OpenAI gpt-4o-mini-tts (ChatGPT-style emotional
 // voice via natural-language instructions). Sits AHEAD of the free chain;
 // any failure (no key, CORS, network) falls through silently to edge-tts.
@@ -108,8 +108,8 @@ import { stopThinkingSound } from './thinking-sound';
 import { speakOpenAi, stopOpenAi, openAiVoiceReady } from './openai-tts';
 // r102: sfx.ts imports only a TYPE from moves (erased at compile), so there
 // is no runtime cycle here.
-import { resumeSfxContext, sfxVoiceHold, sfxVoiceRelease } from './sfx';
-import { dominant, pickInterjection, pickThinkingFiller } from './fillers';
+import { resumeSfxContext, sfxEnabled, sfxVoiceHold, sfxVoiceRelease } from './sfx';
+import { dominant, pickInterjection } from './fillers';
 import { emotionIntensityScale, emotionProsody } from './emotion-prosody';
 import { SONG_MELODY } from './songs';
 import { endLipSync, finishLipSync, holdLipSync, noteSpeechStarted, notifySpeaking } from './speech';
@@ -1219,6 +1219,8 @@ interface SpeechJob {
   clipFile?: string;
   /** Emotion burst or preview. A missing file must not fall through to live TTS. */
   clipOnly?: boolean;
+  /** Reaction SFX (laugh/poke-queue): plays even when Voice replies is off; still respects Mute All + SFX. */
+  sfxOnly?: boolean;
   /** Exact Edge short name for a greeting. Chat still reads the saved pin. */
   voiceId?: string;
 }
@@ -1331,11 +1333,10 @@ export function stopSpeaking(): void {
  * r2026-10-03.24: an optional felt mood tints the filler text itself (the
  * face/orb already wear the mood via applyLlmHints in the caller).
  */
-export function speakThinkingFiller(characterId: string, lang: Lang, mood?: string): void {
-  if (!voiceOutputAllowed()) return;
-  const filler = pickThinkingFiller(lang, mood);
-  notifySpeaking(filler);
-  speak(filler, characterId, lang, { confusion: 0.45, neutral: 0.3 });
+export function speakThinkingFiller(characterId: string, lang: Lang, _mood?: string): void {
+  // Residual path: loading cue is CLIP_LIBRARY SFX only — never TTS um/hehe.
+  if (isMasterMuted()) return;
+  startThinkingSound({ gender: characterVoiceGender(characterId), lang });
 }
 
 /** A leading vocal tic (text + relative pitch/rate lift). */
@@ -1610,7 +1611,13 @@ function performClip(job: SpeechJob): Promise<void> {
     stopThinkingSound();
     unlockAudio();
     const file = job.clipFile;
-    if (!file || !voiceOutputAllowed()) { resolve(); return; }
+    if (!file) { resolve(); return; }
+    if (job.sfxOnly) {
+      if (isMasterMuted() || !sfxEnabled()) { resolve(); return; }
+    } else if (!voiceOutputAllowed()) {
+      resolve();
+      return;
+    }
     void playVoiceClip(file, job.text, () => markVoiceStarted()).then(() => resolve()).catch((err: unknown) => {
       if (lineQueue.epochNow() !== epoch || (err as Error | undefined)?.message === 'canceled' || job.clipOnly) {
         resolve();
@@ -1780,6 +1787,25 @@ export function playPokeBurst(characterId: string, zone?: string): void {
   const file = recordedPokeClip(characterVoiceGender(characterId), zone);
   void playVoiceClip(file, 'oh', () => markVoiceStarted()).catch(() => { /* a missing file stays quiet */ });
 }
+/** Funny-path laugh: queue a CLIP_LIBRARY laugh/giggle/smile before the reply TTS. Never speaks hehe. */
+export function playLaughBurst(characterId: string, lang: Lang): void {
+  if (typeof window === 'undefined') return;
+  if (isMasterMuted() || !sfxEnabled()) return;
+  unlockAudio();
+  const file = recordedLaughClip(characterVoiceGender(characterId), lang);
+  lineQueue.enqueue({
+    kind: 'clip',
+    text: 'laugh',
+    characterId,
+    lang,
+    intensity: 1,
+    clipFile: file,
+    clipOnly: true,
+    sfxOnly: true,
+  });
+  drainSpeech();
+}
+
 
 /**
  * Bake-off sample. Speaks the locale's sheet line in the exact Edge short
