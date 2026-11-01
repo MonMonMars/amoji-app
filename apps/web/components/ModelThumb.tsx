@@ -11,6 +11,7 @@ export default function ModelThumb({
   image,
   bighead,
   crop = 'center',
+  portraitPosition,
 }: {
   url?: string;
   accent: string;
@@ -23,6 +24,8 @@ export default function ModelThumb({
   bakedId?: string;
   /** face: keep hair and eyes on a tall select card. center: square chips. */
   crop?: 'center' | 'face';
+  /** CSS object-position override. Char 32 sits lower in the same card. */
+  portraitPosition?: string;
 }) {
   const primary = bighead ? assetUrl(bighead) : null;
   const fallback = image ? assetUrl(image) : null;
@@ -41,7 +44,8 @@ export default function ModelThumb({
           alt=""
           draggable={false}
           onError={fail}
-          className={`absolute inset-0 h-full w-full object-cover ${crop === 'face' ? 'object-[center_18%]' : 'object-center'}`}
+          className={`absolute inset-0 h-full w-full object-cover ${portraitPosition ? '' : crop === 'face' ? 'object-[center_18%]' : 'object-center'}`}
+          style={portraitPosition ? { objectPosition: portraitPosition } : undefined}
         />
       ) : (
         <span

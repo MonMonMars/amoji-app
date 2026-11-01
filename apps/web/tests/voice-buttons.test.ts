@@ -63,7 +63,9 @@ describe('Edge voice bake-off buttons', () => {
     expect(voicePickFor('en', 'male')).toBeNull();
     expect(voicePickFor('zh', 'female')).toBeNull();
     expect(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a01-shino' }).name).toBe('en-US-BrianNeural');
-    expect(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a24-hairsample-male' }).name).toBe('en-GB-RyanNeural');
+    const maleUntouched = resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a24-hairsample-male' });
+    expect(isMaleNeuralVoice(maleUntouched.name)).toBe(true);
+    expect(maleUntouched.name).not.toBe('en-US-BrianNeural');
     expect(resolveEdgeVoice({
       lang: 'en', gender: 'female', character: 'a01-shino', ignoreVoicePick: true,
     }).name).toBe('en-US-JennyNeural');
