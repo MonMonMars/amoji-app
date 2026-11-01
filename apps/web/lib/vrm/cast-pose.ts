@@ -120,9 +120,11 @@ export function liftedClavicleLocal(shoulder: THREE.Object3D, upper: THREE.Objec
   shoulder.getWorldQuaternion(_worldQ);
   _liftQ.multiply(_worldQ);
   const parent = shoulder.parent;
-  if (!parent) return _liftQ;
+  // Clone: callers capture left then right; returning scratch would alias both sides
+  // onto the last write (L/R clavicle mismatch / mirrored shoulder lift).
+  if (!parent) return _liftQ.clone();
   parent.getWorldQuaternion(_parentQ);
-  return _parentQ.invert().multiply(_liftQ);
+  return _parentQ.clone().invert().multiply(_liftQ);
 }
 
 export function captureCastFix(

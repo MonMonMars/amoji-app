@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyPoke, pokeBodyReaction, pokePunch, breastCoverEnvelope } from '../lib/poke-hit';
+import { classifyPoke, pokeBodyReaction, pokePunch, breastCoverEnvelope, screenSideSign, armZoneFromScreen } from '../lib/poke-hit';
 
 const hips = { x: 0, y: 1, z: 0 };
 const head = { x: 0, y: 1.6, z: 0 };
@@ -227,4 +227,41 @@ describe('pokeBodyReaction', () => {
     expect(Math.abs(butt.hipShiftX) + Math.abs(butt.hipShiftZ)).toBe(0);
   });
 
+});
+
+
+describe('screenSideSign', () => {
+  const hips = { x: 0, y: 1, z: 0 };
+  // Camera looking down -Z: world +X is screen-right.
+  const camRight = { x: 1, z: 0 };
+
+  it('signs the hit relative to camera right, not character right', () => {
+    expect(screenSideSign({ x: 0.3, y: 1.2, z: 0 }, hips, camRight)).toBe(1);
+    expect(screenSideSign({ x: -0.3, y: 1.2, z: 0 }, hips, camRight)).toBe(-1);
+  });
+
+  it('tracks orbit: camera right along -Z uses world Z, not character X', () => {
+    // Camera on +X looking at origin: world right ≈ -Z.
+    const orbitRight = { x: 0, z: -1 };
+    expect(screenSideSign({ x: 0, y: 1.2, z: -0.3 }, hips, orbitRight)).toBe(1);
+    expect(screenSideSign({ x: 0, y: 1.2, z: 0.3 }, hips, orbitRight)).toBe(-1);
+    // Same world +X hit that was "character right" face-on is neutral on this axis.
+    expect(screenSideSign({ x: 0.3, y: 1.2, z: 0 }, hips, orbitRight)).toBe(1);
+  });
+});
+
+describe('armZoneFromScreen', () => {
+  it('picks the arm nearer the tap in screen space', () => {
+    expect(armZoneFromScreen(100, 200, { x: 90, y: 200 }, { x: 300, y: 200 })).toBe('armL');
+    expect(armZoneFromScreen(310, 200, { x: 90, y: 200 }, { x: 300, y: 200 })).toBe('armR');
+  });
+
+  it('returns null when neither arm has a screen point', () => {
+    expect(armZoneFromScreen(100, 100, null, undefined)).toBeNull();
+  });
+
+  it('falls back to the single available arm', () => {
+    expect(armZoneFromScreen(0, 0, { x: 10, y: 10 }, null)).toBe('armL');
+    expect(armZoneFromScreen(0, 0, null, { x: 10, y: 10 })).toBe('armR');
+  });
 });
