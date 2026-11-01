@@ -21,7 +21,7 @@
 import type { MoveKind } from './moves';
 import { createDefaultAudioContext } from './audio-output';
 import { DEFAULT_VOLUME, isVolumeStep, volumeLinear } from './audio-levels';
-import { isMasterMuted } from './master-mute';
+import { isMasterMuted, subscribeMasterMute } from './master-mute';
 
 // ---------------------------------------------------------------------------
 // pure data — node-testable
@@ -290,6 +290,15 @@ export function resumeSfxContext(): void {
     // t719: always resume after mute — state may already be running yet output dead
     void c.resume().catch(() => undefined);
   } catch { /* ignore */ }
+}
+
+// t719 residual: resume inside unmute click (CustomEvent), before async import.
+if (typeof window !== 'undefined') {
+  subscribeMasterMute((muted) => {
+    if (!muted) {
+      try { resumeSfxContext(); } catch { /* ignore */ }
+    }
+  });
 }
 
 export function playLaughSfx(): void {
