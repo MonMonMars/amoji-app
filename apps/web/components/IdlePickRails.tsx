@@ -12,7 +12,7 @@ export default function IdlePickRails({
   onPick,
 }: {
   characterId: string;
-  onPick: (clipId: string) => void;
+  onPick?: (clipId: string) => void;
 }) {
   const [picked, setPicked] = useState<string | null>(null);
   const [enabled, setEnabled] = useState<number[]>(() => listEnabledNums());
@@ -23,7 +23,7 @@ export default function IdlePickRails({
     if (!playable) return;
     const saved = saveIdlePick(characterId, id);
     setPicked(saved);
-    if (saved) onPick(saved);
+    if (saved) onPick?.(saved);
   };
 
   const toggle = (num: number) => {
