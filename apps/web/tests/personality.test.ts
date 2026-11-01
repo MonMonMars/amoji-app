@@ -145,7 +145,10 @@ describe('per-character personality profiles', () => {
         expect(line).toMatch(/[.。!！?？]/);
         expect(line).not.toMatch(/sunshine!|plot twist|スパーク/);
       });
-      for (const line of idle) expect(line.trim()).toMatch(/[?？]$/);
+      for (const line of idle) {
+        expect(line.trim()).toMatch(/[.。!！…]$/);
+        expect(line.trim()).not.toMatch(/[?？]$/);
+      }
     }
     const head = profilePokeLine('a01-shino', 'en', 0, 'head', 'female');
     const hand = profilePokeLine('a01-shino', 'en', 0, 'hand', 'female');
@@ -169,7 +172,11 @@ describe('per-character personality profiles', () => {
     for (const kw of ['poke', 'hand', 'volume', 'name plate', 'sing', 'dance', 'mic']) {
       expect(blob).toContain(kw);
     }
-    for (const line of tour) expect(line.trim()).toMatch(/[?？]$/);
+    for (const line of tour) {
+      expect(line.trim()).toMatch(/[.。!！]$/);
+      expect(line.trim()).not.toMatch(/[?？]$/);
+      expect(line).not.toMatch(/^Tip:|^貼士：|^小提示：|^ヒント：/);
+    }
     const yue = Array.from({ length: 8 }, (_, i) => personalityTutorTip('a98-ethan', 'male', 'yue', i)).join(' ');
     for (const kw of ['隻手', '音量', '名牌', '唱歌', '跳舞', '咪']) {
       expect(yue).toContain(kw);
