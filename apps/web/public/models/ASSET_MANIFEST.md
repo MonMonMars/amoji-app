@@ -180,6 +180,7 @@ Real VRMA animation clips (VRMC_vrm_animation), force-committed for GitHub Pages
 | anims/lib_C38.vrma | idle RokokoChatting02 (Rokoko Mixamo FBX->VRMA local) |
 | anims/lib_C39.vrma | idle RokokoConversation (Rokoko Mixamo FBX->VRMA local) |
 | anims/lib_C41.vrma | idle RokokoListeningToMusic (Rokoko Mixamo FBX->VRMA local) |
+| anims/lib_C42.vrma | idle RokokoLookingAround02 (Rokoko Mixamo FBX->VRMA local; unique #13) |
 | anims/lib_C44.vrma | idle RokokoWatchingSomething (Rokoko Mixamo FBX->VRMA local) |
 | anims/lib_C57.vrma | idle NervouslyLookAround (Mixamo->VRMA local) |
 | anims/lib_C64.vrma | idle DefeatIdle (Mixamo->VRMA local) |

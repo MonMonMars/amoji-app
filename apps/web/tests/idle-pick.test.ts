@@ -48,6 +48,19 @@ describe('idle library numbers', () => {
     expect(idleByCId('C56')?.clipId).toBe('Thinking');
   });
 
+  it('maps #13 C42 to unique lib_C42 LookingAround02 (not LookAround/#3)', () => {
+    expect(idleByNum(13)?.cId).toBe('C42');
+    expect(idleByNum(13)?.clipId).toBe('lib_C42');
+    expect(idleByNum(13)?.vrmaUrl).toBe('models/anims/lib_C42.vrma');
+    expect(idleByCId('C42')?.num).toBe(13);
+    expect(idleByCId('C42')?.clipId).toBe('lib_C42');
+    expect(idleByNum(3)?.clipId).toBe('LookAround');
+    expect(idleByNum(13)?.clipId).not.toBe(idleByNum(3)?.clipId);
+    const playable = playableIdles().map((e) => e.clipId);
+    expect(playable).toContain('LookAround');
+    expect(playable).toContain('lib_C42');
+  });
+
   it('exposes playable options as # labels for chat rails', () => {
     expect(IDLE_CLIP_OPTIONS[0]?.label).toBe('1');
     expect(IDLE_CLIP_OPTIONS.find((c) => c.id === 'IdleBreathCalm')?.num).toBe(1);
