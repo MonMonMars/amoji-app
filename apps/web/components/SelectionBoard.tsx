@@ -12,6 +12,7 @@ import SceneBackdrop from './SceneBackdrop';
 import ModelThumb from './ModelThumb';
 import EmotionClipRow from './EmotionClipRow';
 import MuteButton from './MuteButton';
+import IdlePickRails from './IdlePickRails';
 import TtsVoiceRow from './TtsVoiceRow';
 import { LangCardFace } from './selectors';
 import { assetUrl } from '../lib/asset';
@@ -85,6 +86,9 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
       </div>
 
       {/* Master mute — top-right. Top-left stays clear (exit/back lives on chat plate). */}
+      {/* Same numbered idle rails as chat — pin before START; chat hydrates amoji.idlePick.v1. */}
+      <IdlePickRails characterId={character.id} onPick={() => { /* persist only */ }} />
+
       <div className="pointer-events-none absolute right-3 top-3 z-40 pt-[env(safe-area-inset-top)]">
         <MuteButton lang={lang} className="pointer-events-auto" />
       </div>

@@ -130,6 +130,19 @@ describe('selection layout', () => {
     expect(read('../components/ModelThumb.tsx')).toContain('onError');
   });
 
+
+  it('exposes IdlePickRails on select/change so Mon can pin idle before chat', () => {
+    expect(board).toContain("import IdlePickRails from './IdlePickRails'");
+    expect(board).toContain('<IdlePickRails characterId={character.id}');
+    expect(board).toContain('amoji.idlePick.v1');
+    expect(chat).toContain("import IdlePickRails from '../../components/IdlePickRails'");
+    expect(chat).toContain('<IdlePickRails characterId={character.id}');
+    const rails = read('../components/IdlePickRails.tsx');
+    expect(rails).toContain('saveIdlePick');
+    expect(rails).toContain('setIdleEnabled');
+    expect(rails).toContain('onPick?.');
+  });
+
   it('keeps language cards in the character style, smaller than scenes', () => {
     expect(LANGS.map((l) => l.id)).toEqual(['yue', 'zh', 'ja', 'en']);
     for (const lang of LANGS) {
@@ -185,6 +198,8 @@ describe('selection layout', () => {
     expect(selectors).not.toContain('rounded-full px-4');
     const row = read('../components/TtsVoiceRow.tsx');
     expect(row).toContain('selectTtsButtons');
+    expect(row).toContain('companionGender');
+    expect(row).toContain('button.gender !== companionGender');
     expect(row).toContain('saveVoicePick');
     expect(row).toContain('playVoiceGreeting');
     expect(row).toContain('text-[10px]');

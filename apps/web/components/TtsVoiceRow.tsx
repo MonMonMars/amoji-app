@@ -29,7 +29,10 @@ export default function TtsVoiceRow({
   const [showDev, setShowDev] = useState(false);
   useEffect(() => { setShowDev(isDevMode()); }, []);
   const previewKey = useRef<string | null>(null);
-  const buttons = showAll ? selectTtsButtons() : selectTtsButtons(lang);
+  // Gender floor matches voicePicks.v2 — never list / preview the opposite sex.
+  const buttons = showAll
+    ? selectTtsButtons(undefined, companionGender)
+    : selectTtsButtons(lang, companionGender);
   const pinned = voicePickFor(lang, companionGender);
   const castId = resolveEdgeVoice({
     lang,
@@ -40,6 +43,7 @@ export default function TtsVoiceRow({
   const activeId = pinned ?? castId;
 
   const preview = (button: TtsButtonVoice, pin: boolean) => {
+    if (button.gender !== companionGender) return;
     const key = ttsButtonKey(button);
     if (!pin && previewKey.current === key) return;
     previewKey.current = key;
