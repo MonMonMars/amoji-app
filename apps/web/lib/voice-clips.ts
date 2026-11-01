@@ -275,6 +275,41 @@ function langHaPath(lang: string, gender: VoiceClipGender): string {
 
 
 /** Gender+lang-matched long UM filler (t722). Loading/thinking/download never HA HA. */
+
+let laughClipCursor = 0;
+
+/** Recorded laugh / giggle / smile for funny reactions — CLIP_LIBRARY SFX only. */
+export function recordedLaughClip(gender: VoiceClipGender, lang: string = 'en'): string {
+  const folder = clipLang(lang);
+  const pool: string[] = [];
+  const push = (path: string) => {
+    if (clipLibraryId(path) !== null && !pool.includes(path)) pool.push(path);
+  };
+  for (const kind of ['laugh', 'giggle', 'smile'] as const) {
+    push(`/voice-clips/${folder}/${gender}/${kind}.mp3`);
+  }
+  for (const f of CLIP_FOLDERS) {
+    for (const file of CLIP_LIBRARY[f][gender] as readonly string[]) {
+      const kind = emotionKindForFile(file);
+      if (kind === 'laugh' || kind === 'giggle' || kind === 'smile') {
+        push(`/voice-clips/${f}/${gender}/${file}`);
+      }
+    }
+  }
+  if (!pool.length) {
+    return gender === 'female'
+      ? '/voice-clips/universal/female/laugh.mp3'
+      : '/voice-clips/ja/male/laugh.mp3';
+  }
+  const pick = pool[laughClipCursor % pool.length]!;
+  laughClipCursor += 1;
+  return pick;
+}
+
+export function resetLaughClipRotation(): void {
+  laughClipCursor = 0;
+}
+
 export function recordedFillerClip(
   gender: VoiceClipGender,
   kind: 'um' | 'ha' | 'think' | 'search',

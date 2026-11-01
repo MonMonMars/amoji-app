@@ -83,7 +83,7 @@ export function stripVoicedGlyphs(raw: string): string {
  * already gone. Pause glyphs themselves are stripped later, at the synthesizer.
  */
 
-/** t771: ban spoken hehe/haha/giggle tokens — laughs are CLIP_LIBRARY / playLaughSfx only. */
+/** t771: ban spoken hehe/haha/giggle tokens — laughs are CLIP_LIBRARY / playLaughBurst only. */
 const LAUGH_TOKEN_RE = /\b(?:hehe|haha|ha\s*ha|hee\s*hee|heehee|hihi|giggle|giggling|teehee|tehee)\b|\bhey(?:\s*hey)+\b|[\u54c8\u5475\u563b\u563f]{2,}|\u3075\u3075+|\u3046\u3075\u3075+|\u3042\u306f\u306f+|\u3048\u3078\u3078+/gi;
 
 export function stripLaughTokens(raw: string): string {
