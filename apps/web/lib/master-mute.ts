@@ -5,6 +5,12 @@
 // Top-left StatusPlate / Exit stays exit — Mute is a separate control.
 // t719: unmute must restore engines; in-flight silenceAllOutputs must not
 // keep killing audio after the user turns mute off.
+// Residual (t719 follow-up): restore that awaits dynamic import() loses the
+// unmute click's user gesture, so Chrome/Edge leave HTMLAudio + AudioContext
+// gated until a full refresh. Kick synth + media volume synchronously in the
+// click stack; voice/sfx modules also resume on the mute CustomEvent.
+
+import { applyPlaybackVolume } from './playback-volume';
 
 const MUTE_KEY = 'amoji.mute.v1';
 const EVENT = 'amoji:master-mute';
@@ -47,6 +53,33 @@ function emit(muted: boolean): void {
   }
 }
 
+/** Clear sticky mute/volume-0 on existing media. Sync — safe inside unmute click. */
+export function restoreMediaElementsAfterUnmute(): void {
+  if (typeof document === 'undefined') return;
+  document.querySelectorAll('audio, video').forEach((el) => {
+    const media = el as HTMLMediaElement;
+    try {
+      media.muted = false;
+      applyPlaybackVolume(media);
+    } catch { /* ignore */ }
+  });
+}
+
+/**
+ * Sync kick that must stay in the unmute gesture (no await).
+ * voice/sfx listeners on the mute event do the heavy unlockAudio/resume.
+ */
+export function kickOutputsSyncAfterUnmute(): void {
+  if (typeof window === 'undefined') return;
+  if (isMasterMuted()) return;
+  try {
+    if (typeof speechSynthesis !== 'undefined') {
+      speechSynthesis.resume();
+    }
+  } catch { /* ignore */ }
+  restoreMediaElementsAfterUnmute();
+}
+
 /** Stop anything currently audible. Safe to call from any module. */
 export async function silenceAllOutputs(): Promise<void> {
   if (typeof window === 'undefined') return;
@@ -85,15 +118,13 @@ export async function silenceAllOutputs(): Promise<void> {
 /**
  * After Mute All turns OFF: resume speechSynthesis + WebAudio so the next
  * Edge speak / SFX / clip is not stuck suspended from the silence pass.
+ * Prefer kickOutputsSyncAfterUnmute() for gesture-bound work; this async path
+ * is a backup after dynamic imports settle.
  */
 export async function restoreOutputsAfterUnmute(): Promise<void> {
   if (typeof window === 'undefined') return;
   if (isMasterMuted()) return;
-  try {
-    if (typeof speechSynthesis !== 'undefined') {
-      speechSynthesis.resume();
-    }
-  } catch { /* ignore */ }
+  kickOutputsSyncAfterUnmute();
   try {
     const { resumeVoiceEngines } = await import('./voice');
     if (isMasterMuted()) return;
@@ -108,14 +139,7 @@ export async function restoreOutputsAfterUnmute(): Promise<void> {
   // content, but clear sticky mute/volume-0 so the next Edge/clip speak works.
   try {
     if (isMasterMuted()) return;
-    const { applyPlaybackVolume } = await import('./playback-volume');
-    document.querySelectorAll('audio, video').forEach((el) => {
-      const media = el as HTMLMediaElement;
-      try {
-        media.muted = false;
-        applyPlaybackVolume(media);
-      } catch { /* ignore */ }
-    });
+    restoreMediaElementsAfterUnmute();
   } catch { /* ignore */ }
 }
 
@@ -126,10 +150,12 @@ export function setMasterMuted(muted: boolean): void {
   } catch { /* ignore */ }
   // Invalidate any in-flight silence before/after the flip.
   silenceGeneration += 1;
+  // Emit first so voice/sfx sync listeners unlock inside the unmute click.
   emit(muted);
   if (muted) {
     void silenceAllOutputs();
   } else {
+    kickOutputsSyncAfterUnmute();
     void restoreOutputsAfterUnmute();
   }
 }

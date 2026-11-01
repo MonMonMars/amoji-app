@@ -80,7 +80,7 @@ import { getPlaybackVolume } from './playback-volume';
 import type { Lang } from './prefs';
 import { characterVoiceGender } from './voice-gender';
 import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
-import { isMasterMuted } from './master-mute';
+import { isMasterMuted, subscribeMasterMute } from './master-mute';
 import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripLaughTokens, stripVoicedGlyphs } from './speak-text';
 import { analyzeText } from '@amoji/emotion-core';
 import { applyLlmHints } from './companion';
@@ -1300,6 +1300,17 @@ export function resumeVoiceEngines(): void {
   unlockAudio(true);
 }
 
+// t719 residual: unlock inside the unmute click via CustomEvent (sync), before
+// master-mute's async dynamic import() drops the user gesture.
+if (typeof window !== 'undefined') {
+  subscribeMasterMute((muted) => {
+    if (!muted) {
+      try { resumeVoiceEngines(); } catch { /* ignore */ }
+      try { sfxVoiceRelease(); } catch { /* ignore */ }
+    }
+  });
+}
+
 export function stopSpeaking(): void {
   lineQueue.interrupt();
   cancelIdleWaiters();
@@ -1310,6 +1321,8 @@ export function stopSpeaking(): void {
   stopGtts();
   haltSynthQueue();
   endLipSync();
+  // Mute / user cut must not leave the 12s foley hold stuck after unmute.
+  sfxVoiceRelease();
 }
 
 /**
