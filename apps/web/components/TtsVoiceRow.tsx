@@ -1,9 +1,9 @@
 'use client';
 // Edge voice row on the select board: Tier A Edge voices as small buttons.
-// Preview on tap and on focus/hover highlight. EN wraps inside a scroll box
+// Preview on tap only (hover/focus raced stopSpeaking). EN wraps inside a scroll box
 // so Start stays reachable.
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { resolveEdgeVoice } from '../lib/edge-tts';
 import { selectTtsButtons, ttsButtonKey, type TtsButtonVoice } from '../lib/tts-button-registry';
 import { playVoiceGreeting } from '../lib/voice';
@@ -28,7 +28,6 @@ export default function TtsVoiceRow({
   const [showAll, setShowAll] = useState(false);
   const [showDev, setShowDev] = useState(false);
   useEffect(() => { setShowDev(isDevMode()); }, []);
-  const previewKey = useRef<string | null>(null);
   // Gender floor matches voicePicks.v2 — never list / preview the opposite sex.
   const buttons = showAll
     ? selectTtsButtons(undefined, companionGender)
@@ -42,20 +41,15 @@ export default function TtsVoiceRow({
   }).name;
   const activeId = pinned ?? castId;
 
-  const preview = (button: TtsButtonVoice, pin: boolean) => {
+  // Tap only. Hover/focus used to fire greetings + stopSpeaking and made
+  // select-page voice-out flaky (Mon: not always).
+  const onTap = (button: TtsButtonVoice) => {
     if (button.gender !== companionGender) return;
-    const key = ttsButtonKey(button);
-    if (!pin && previewKey.current === key) return;
-    previewKey.current = key;
-    if (pin) {
-      saveVoicePick(button.locale, companionGender, button.id);
-      setRev((n) => n + 1);
-      if (button.locale !== lang) onLang(button.locale);
-    }
+    saveVoicePick(button.locale, companionGender, button.id);
+    setRev((n) => n + 1);
+    if (button.locale !== lang) onLang(button.locale);
     playVoiceGreeting(characterId, button.locale, button.id);
   };
-
-  const onTap = (button: TtsButtonVoice) => preview(button, true);
 
   return (
     <section className="pointer-events-auto w-full min-w-0" data-testid="tts-voice-row" data-rev={rev}>
@@ -87,8 +81,6 @@ export default function TtsVoiceRow({
                 title={button.id}
                 data-dev={showDev ? mark : undefined}
                 onClick={() => onTap(button)}
-                onFocus={() => preview(button, false)}
-                onMouseEnter={() => preview(button, false)}
                 className={`fx-press ui-btn relative shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium leading-tight ${
                   selected ? 'border-white/80 text-white' : 'border-white/15 bg-black/35 text-white/80'
                 }`}
