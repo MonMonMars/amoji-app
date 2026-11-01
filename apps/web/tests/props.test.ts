@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PROPS, propsForMove, propPresence, type PropPart } from '../lib/props';
+import { MIC_MOUTH_POS, PROPS, propsForMove, propPresence, type PropPart } from '../lib/props';
 import type { MoveKind } from '../lib/moves';
 
 const SERVED: MoveKind[] = ['sing', 'piano', 'violin', 'eat', 'dine'];
@@ -77,4 +77,33 @@ describe('stage props (r.69)', () => {
     }
     expect(animated).toBeGreaterThanOrEqual(5); // every prop has at least one living part
   });
+
+  it('micStand capsule sits near the mouth via MIC_MOUTH_POS', () => {
+    const mic = PROPS.find((p) => p.id === 'micStand');
+    expect(mic).toBeTruthy();
+    const head = mic!.parts.find((p) => p.kind === 'sphere' && p.anim === 'softBob');
+    expect(head).toBeTruthy();
+    expect(head!.pos).toEqual(MIC_MOUTH_POS);
+
+    const [x, y, z] = MIC_MOUTH_POS;
+    expect(Math.abs(x)).toBeLessThanOrEqual(0.10);
+    expect(y).toBeGreaterThanOrEqual(1.30);
+    expect(y).toBeLessThanOrEqual(1.48);
+    expect(z).toBeGreaterThanOrEqual(0.04);
+    expect(z).toBeLessThanOrEqual(0.11);
+
+    // Closer to a nominal VRM mouth than the previous t718 capsule.
+    const nominal: [number, number, number] = [0, 1.38, 0.06];
+    const dist = (a: [number, number, number]) => {
+      const dx = a[0] - nominal[0];
+      const dy = a[1] - nominal[1];
+      const dz = a[2] - nominal[2];
+      return Math.hypot(dx, dy, dz);
+    };
+    const prev: [number, number, number] = [0.12, 1.44, 0.12];
+    expect(dist(MIC_MOUTH_POS)).toBeLessThan(dist(prev));
+    // Soft clearance: capsule radius 0.05 should not swallow the mouth point.
+    expect(dist(MIC_MOUTH_POS)).toBeGreaterThan(0.04);
+  });
+
 });
