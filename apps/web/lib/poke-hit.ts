@@ -426,3 +426,39 @@ export function pokeBodyReaction(opts: {
     rArmUp: clamp(-Math.abs(opts.fallX) * (g.armUp - g.armUpBias * 0.5) * punch, CAP.armUp),
   };
 }
+
+/**
+ * Which screen side the hit sits on, relative to the camera.
+ * cameraRightXZ = camera world +X column flattened to XZ (orbit-safe).
+ * +1 = toward camera-right (screen right), -1 = screen left.
+ * Use this for lateral poke emphasis so orbit does not mirror L/R.
+ */
+export function screenSideSign(
+  hit: Vec3,
+  hips: Vec3,
+  cameraRightXZ: { x: number; z: number },
+): number {
+  const len = Math.hypot(cameraRightXZ.x, cameraRightXZ.z);
+  if (len < 1e-6) return 1;
+  const nx = cameraRightXZ.x / len;
+  const nz = cameraRightXZ.z / len;
+  const s = (hit.x - hips.x) * nx + (hit.z - hips.z) * nz;
+  return s >= 0 ? 1 : -1;
+}
+
+/**
+ * Pick armL/armR from screen proximity when both arms are valid candidates.
+ * Prefers the arm whose projected screen point is closer to the tap.
+ * Falls back to null when neither arm has a screen position.
+ */
+export function armZoneFromScreen(
+  tapX: number,
+  tapY: number,
+  left: { x: number; y: number } | null | undefined,
+  right: { x: number; y: number } | null | undefined,
+): 'armL' | 'armR' | null {
+  const dL = left ? Math.hypot(tapX - left.x, tapY - left.y) : Infinity;
+  const dR = right ? Math.hypot(tapX - right.x, tapY - right.y) : Infinity;
+  if (!(dL < Infinity) && !(dR < Infinity)) return null;
+  return dL <= dR ? 'armL' : 'armR';
+}
