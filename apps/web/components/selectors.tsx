@@ -2,12 +2,13 @@
 // Selection grids shared by the setup flow and the in-chat settings sheet.
 import { assetUrl } from '../lib/asset';
 import { CHARACTERS, BACKGROUNDS, LANGS, t, type CharacterDef, type Lang, type LangDef, type Prefs } from '../lib/prefs';
+import { selectionCast } from '../lib/cast-adjust';
 import ModelThumb from './ModelThumb';
 
 export function CharacterGrid({ lang, value, onChange }: { lang: Lang; value: string; onChange: (id: string) => void }) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-      {CHARACTERS.map((c: CharacterDef) => {
+      {selectionCast(CHARACTERS).map((c: CharacterDef) => {
         const active = c.id === value;
         return (
           <button

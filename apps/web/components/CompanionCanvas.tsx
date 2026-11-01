@@ -26,6 +26,7 @@ import { chestPokeBounce, CHEST_BOUNCE_SEC, SOFT_CHEST_BOUNCE_SEC } from '../lib
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
 import { isEyeMaterial, stabilizeEyeMaterials } from '../lib/vrm/eyes';
+import { patchCastTextures, stabilizeCastEyes, unifyCastMToon } from '../lib/vrm/cast-materials';
 import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
 import { WARDROBE_ENABLED, modularGlbUrl, vrmCandidatesForOutfit } from '../lib/modular/catalog';
 import { assembleModular, replaceBodyMeshes, type ModularAssembly } from '../lib/modular/assemble';
@@ -506,13 +507,15 @@ export default function CompanionCanvas({
     // Humanoid (normalized) bones only — raw scene.traverse(isBone) mixed
     // VRM 1.0 raw bind bones with the mixer’s normalized targets, so the
     // entry crossfade slumped shoulders into the torso (Mon t265u).
+    // Hips and legs stay out of the entry blend. Blending them from the
+    // bind pose twisted the upper body (char 6) and tugged the feet.
+    // Shoulders still blend so 1–3 do not snap, then applyCastFixes lifts
+    // only the sunk-shoulder ids.
     const HUMAN_BLEND_BONES = [
-      'hips', 'spine', 'chest', 'upperChest', 'neck', 'head',
+      'spine', 'chest', 'upperChest', 'neck', 'head',
       'leftShoulder', 'rightShoulder',
       'leftUpperArm', 'rightUpperArm', 'leftLowerArm', 'rightLowerArm',
       'leftHand', 'rightHand',
-      'leftUpperLeg', 'rightUpperLeg', 'leftLowerLeg', 'rightLowerLeg',
-      'leftFoot', 'rightFoot',
     ] as const;
     const beginBoneBlend = (seconds = 0.68) => {
       if (!avatar) return;
@@ -558,6 +561,7 @@ export default function CompanionCanvas({
     let mountTime = 0;
     let mountFrame = 0;
     let textureFallbackApplied = false;
+    let castLookPatched = false;
     let nanLogged = false;
     // per-character motion personality: Rin always fidgets the same way,
     // Ren drifts through his own calm sequence ??deterministic per character.
@@ -1091,6 +1095,7 @@ export default function CompanionCanvas({
       mountTime = performance.now();
       mountFrame = 0;
       textureFallbackApplied = false;
+      castLookPatched = false;
       nanLogged = false;
       // r102: from this moment the honest progress state is 'prep' ??the
       // reveal-gate wait is not byte-measurable (see reportProgress above)
@@ -1132,6 +1137,12 @@ export default function CompanionCanvas({
         }
       });
       stabilizeEyeMaterials(a.root);
+      if (seedKey) {
+        a.armCastFixes(seedKey);
+        unifyCastMToon(a.root, seedKey);
+        patchCastTextures(a.root, seedKey);
+        stabilizeCastEyes(a.root, seedKey);
+      }
     };
 
     const loadPlain = (index: number, url: string, token: number) => {
@@ -1954,6 +1965,9 @@ export default function CompanionCanvas({
         }
 
         applyBoneBlend(now);
+        // After blend + pose so head level, upper-body straighten, and the
+        // sunk-shoulder clavicle are not overwritten by the entry crossfade.
+        avatar.applyCastFixes();
         // After the mixer and the punch additives: both soles share one
         // ground contact. The hip lean bends the legs with the hit.
         // Walk/jump clips are the exception.
@@ -2020,6 +2034,12 @@ export default function CompanionCanvas({
             stabilizeEyeMaterials(avatar.root);
             textureFallbackApplied = true;
             texturesOk = true;
+          }
+          if (texturesOk && !castLookPatched && seedKey) {
+            patchCastTextures(avatar.root, seedKey);
+            stabilizeCastEyes(avatar.root, seedKey);
+            stabilizeEyeMaterials(avatar.root);
+            castLookPatched = true;
           }
           if (forceReveal || (poseSettled && texturesOk)) {
             revealLitFrames += 1;

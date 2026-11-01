@@ -5,6 +5,7 @@
 
 import type { Lang } from './prefs';
 import { characterById } from './prefs';
+import { isHiddenCast } from './cast-adjust';
 
 export type StoryScene = {
   id: string;
@@ -283,6 +284,7 @@ export function resolveStoryCast(scene: StoryScene): string[] {
   for (const id of scene.castPool) {
     const c = characterById(id);
     if (c.id !== id) continue; // unknown / retired id fell back
+    if (isHiddenCast(id)) continue;
     if (gender !== 'any' && c.gender !== gender) continue;
     out.push(c.id);
   }

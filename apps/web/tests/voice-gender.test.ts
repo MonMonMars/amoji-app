@@ -6,13 +6,14 @@ describe('characterVoiceGender', () => {
   it('follows roster gender for the want-list cast', () => {
     const males = CHARACTERS.filter((c) => c.gender === 'male').map((c) => c.id).sort();
     expect(males).toEqual([
-      'a107-dm-office-casual',
+      'a03-fumiriya',
+      'a05-avatarsample-c',
+      'a105-serizawa-aoi',
       'a24-hairsample-male',
-      'a459-chinesewarriormonk',
-      'a468-eric',
+      'a75-sorano',
       'a98-ethan',
     ]);
-    expect(CHARACTERS.filter((c) => c.gender === 'female').length).toBe(46);
+    expect(CHARACTERS.filter((c) => c.gender === 'female').length).toBe(45);
     for (const c of CHARACTERS) {
       expect(characterVoiceGender(c.id)).toBe(c.gender);
     }
