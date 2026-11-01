@@ -58,34 +58,36 @@ describe('Edge voice bake-off buttons', () => {
   });
 
   it('pins a tapped voice for that companion gender only', () => {
-    saveVoicePick('en', 'female', 'en-US-BrianNeural');
-    expect(voicePickFor('en', 'female')).toBe('en-US-BrianNeural');
+    saveVoicePick('en', 'female', 'en-US-AriaNeural');
+    expect(voicePickFor('en', 'female')).toBe('en-US-AriaNeural');
     expect(voicePickFor('en', 'male')).toBeNull();
     expect(voicePickFor('zh', 'female')).toBeNull();
-    expect(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a01-shino' }).name).toBe('en-US-BrianNeural');
+    expect(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a01-shino' }).name).toBe('en-US-AriaNeural');
     const maleUntouched = resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a24-hairsample-male' });
     expect(isMaleNeuralVoice(maleUntouched.name)).toBe(true);
-    expect(maleUntouched.name).not.toBe('en-US-BrianNeural');
+    expect(maleUntouched.name).not.toBe('en-US-AriaNeural');
     expect(resolveEdgeVoice({
       lang: 'en', gender: 'female', character: 'a01-shino', ignoreVoicePick: true,
     }).name).toBe('en-US-JennyNeural');
   });
 
-  it('keeps an explicit cross-gender pick and still gender-matches when nothing is pinned', () => {
-    saveVoicePick('zh', 'female', 'zh-CN-YunxiNeural');
-    const pinned = resolveEdgeVoice({ lang: 'zh', gender: 'female', character: 'a01-shino' });
-    expect(pinned.name).toBe('zh-CN-YunxiNeural');
-    expect(isMaleNeuralVoice(pinned.name)).toBe(true);
-    const male = resolveEdgeVoice({ lang: 'zh', gender: 'male', character: 'a24-hairsample-male' });
-    const maleCast = resolveEdgeVoice({
-      lang: 'zh', gender: 'male', character: 'a24-hairsample-male', ignoreVoicePick: true,
-    });
-    expect(male.name).toBe(maleCast.name);
-    expect(isMaleNeuralVoice(male.name)).toBe(true);
+  it('refuses cross-gender neural pins after cast gender re-audit', () => {
+    saveVoicePick('en', 'female', 'en-US-BrianNeural');
+    expect(voicePickFor('en', 'female')).toBeNull();
+    const femalePinned = resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a01-shino' });
+    expect(femalePinned.name).not.toBe('en-US-BrianNeural');
+    expect(isFemaleNeuralVoice(femalePinned.name)).toBe(true);
+    saveVoicePick('zh', 'male', 'zh-CN-XiaoxiaoNeural');
+    expect(voicePickFor('zh', 'male')).toBeNull();
+  });
+
+  it('gender-matches cast defaults when nothing is pinned', () => {
     resetVoicePicks();
     const female = resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a01-shino' });
     expect(isFemaleNeuralVoice(female.name)).toBe(true);
     expect(isMaleNeuralVoice(female.name)).toBe(false);
+    const male = resolveEdgeVoice({ lang: 'zh', gender: 'male', character: 'a24-hairsample-male' });
+    expect(isMaleNeuralVoice(male.name)).toBe(true);
   });
 
   it('keeps the three Cantonese pills on distinct gendered Edge ids', () => {
