@@ -1,6 +1,6 @@
 // Local dialogue banks — deterministic, offline, no LLM call.
-// r2026-10-03.37: every line ends with a question or a recommendation so the
-// conversation always has somewhere to go (Master Simon's continuity rule).
+// Idle banks (idleBored/idleCozy) are statement-only — no questions / think-aloud.
+// Other kinds may still invite; chat idle path prefers profile/idle-talk statements.
 // r2026-10-03.38: reengage + reengageSoft banks — the staged "you've gone
 // quiet" follow-ups (direct check-in) and the soft closer (said once).
 // r2026-10-04.63: startup + tutor lines pointed at the top-RIGHT gear for
@@ -30,50 +30,50 @@ export const CHATTER: Record<ChatterKind, Record<ChatterLang, string[]>> = {
   },
   idleBored: {
     en: [
-      'Still there? What are you thinking about?',
-      'Want to tap me? I tickle easily — go on~',
-      "It's quiet... what kind of noise should we make?",
-      'I counted to a thousand while you were away — how high can you count?',
+      'Still here with you in this quiet stretch.',
+      'A soft tap lands fine — I tickle easily.',
+      'The quiet is thick… soft noise can wait.',
+      'I counted for a while — numbers make decent company.',
     ],
     yue: [
-      '仲喺度呀？你諗緊咩呀？',
-      '想唔想撳下我？我好好痕㗎，嚟吖~',
-      '靜到發慌……我哋整啲咩聲好呢？',
-      '你唔喺陣我數到一千吖——你數到幾高呀？',
+      '仲喺度陪住你呢段靜。',
+      '輕輕撳一下都得——我好好痕㗎。',
+      '靜得好厚……柔和聲可以再等陣。',
+      '我數咗一陣——數字都算唔錯嘅伴。',
     ],
     zh: [
-      '还在吗？你在想什么呢？',
-      '想不想戳我一下？我很怕痒的，来呀~',
-      '静得发慌……我们弄点什么声音好呢？',
-      '你不在的时候我数到了一千——你能数到多高呀？',
+      '还在这里陪着你这段安静。',
+      '轻轻戳一下就好——我很怕痒的。',
+      '静得很厚……柔和声音可以再等一会。',
+      '我数了一阵——数字也算不错的伴。',
     ],
     ja: [
-      'まだいる？何考えてるの？',
-      'つんつんしてみる？くすぐったいけど、ほら~',
-      '静かすぎる…何か音を鳴らそうよ？',
-      'いない間に千まで数えたんだ——君はどこまで数えられる？',
+      'この静けさの中で、まだそばにいるよ。',
+      'やさしくつついても大丈夫——くすぐったいけど。',
+      '静けさが濃いね…やさしい音はあとでいい。',
+      'しばらく数えてた——数字もわりといいお伴。',
     ],
   },
   idleCozy: {
     en: [
-      "This scene suits me, don't you think?",
-      'I like it here — where do you feel most at home?',
-      'Somewhere between two heartbeats — can you feel it too?',
+      'This scene suits me more than I expected.',
+      'I like it here — home-feeling without the rush.',
+      'Somewhere between two heartbeats feels right.',
     ],
     yue: [
-      '呢個場景好襯我吖，你話係咪？',
-      '我鍾意呢度——你喺邊度最自在呀？',
-      '兩下心跳之間嘅地方，你都 feel 到㗎？',
+      '呢個場景比我預期更襯我。',
+      '我鍾意呢度——有屋企感覺又唔急。',
+      '兩下心跳之間嘅地方啱啱好。',
     ],
     zh: [
-      '这个场景很适合我，你觉得呢？',
-      '我喜欢这里——你在哪里最自在呀？',
-      '两次心跳之间的地方，你也感觉得到吗？',
+      '这个场景比我预期更适合我。',
+      '我喜欢这里——有家的感觉又不赶。',
+      '两次心跳之间的地方刚刚好。',
     ],
     ja: [
-      'この背景、私に似合うでしょ？',
-      'ここが好き——君はどこがいちばん落ち着くの？',
-      '二つの鼓動の間、君にも感じられる？',
+      'この背景、思ったより私に似合う。',
+      'ここが好き——急がない、おうち感。',
+      '二つの鼓動のあいだ、ちょうどいい。',
     ],
   },
   tutor: {
