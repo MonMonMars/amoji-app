@@ -16,12 +16,13 @@ import { modelUrl } from '../lib/asset';
 import { pokeStyleFor, poseIdsFor, lookFor } from '../lib/persona';
 import { DEFAULT_CAMERA_HOME, upperBodyHome } from '../lib/camera-frame';
 import { orderIdleClips, personalityMotion } from '../lib/personality';
-import { classifyPoke, pokeBodyReaction, type PokeDirection, type TalkZone } from '../lib/poke-hit';
+import { classifyPoke, pokeBodyReaction, screenSideSign, armZoneFromScreen, type PokeDirection, type TalkZone } from '../lib/poke-hit';
 import { clipFreesFeet, collectPlantRest, pinPlantedClipTracks } from '../lib/vrm/plant-feet';
 import { dancePerfClipSources } from '../lib/dance-clip-sources';
 import { timeScaleForProfile } from '../lib/performance-motion';
 import { playableIdles } from '../lib/idle-library';
 import { listEnabledIdleClipIds } from '../lib/idle-enabled';
+import { IDLE_JOINT_REFRESH_FADE_S, IDLE_JOINT_REFRESH_MS, nextIdleRefreshAt, shouldRefreshIdleJoints } from '../lib/idle-refresh';
 import { chestPokeBounce, CHEST_BOUNCE_SEC, SOFT_CHEST_BOUNCE_SEC } from '../lib/vrm/chest-bounce';
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
@@ -663,6 +664,10 @@ export default function CompanionCanvas({
     // r93: when the current idle hands over to the next one (RAF clock, ms).
     // The handover is a crossfade between two LIVE loops ??never a freeze.
     let idleHoldUntil = Infinity;
+    // Soft re-play deadline: looping the same VRMA for too long lets additive
+    // hang/plant/cast fixes accumulate into a visible joint drift. Re-blend
+    // the current idle on a timer without swapping clips (no pop).
+    let idleRefreshAt = nextIdleRefreshAt(performance.now());
     // dialogue performances that have a matching library clip; move kinds
     // without one keep the library idle (r95/r96) ??the skeleton is never
     // rotated by formula.
@@ -726,6 +731,7 @@ export default function CompanionCanvas({
       // hold this idle for 1–2 of its own beats, then hand over mid-motion
       const holdMs = Math.min(14000, Math.max(5000, clip.duration * 1000 * (1 + Math.random())));
       idleHoldUntil = performance.now() + holdMs;
+      idleRefreshAt = nextIdleRefreshAt(performance.now(), IDLE_JOINT_REFRESH_MS);
     };
 
     const nextIdle = (fade: number) => {
@@ -1583,6 +1589,43 @@ export default function CompanionCanvas({
             pokeDirection = cls.direction;
             pokeFallDir.set(cls.impulse.x, 0, cls.impulse.z);
             pokeSideSign = cls.sideSign;
+            // Camera-aware L/R (Mon queue #22): prefer the limb that sits nearer
+            // to the tap in screen space. Character-axis sideSign alone mirrors
+            // under orbit / face-on because shoulder forward and view axes disagree.
+            camera.updateMatrixWorld();
+            sV3.setFromMatrixColumn(camera.matrixWorld, 0);
+            const camSide = screenSideSign(
+              { x: hit.point.x, y: hit.point.y, z: hit.point.z },
+              hipsW,
+              { x: sV3.x, z: sV3.z },
+            );
+            // Lateral fall only: tip toward the poked screen side (r121).
+            // Keep classifyPoke impulse for front/back/chest so those leans stay axial.
+            if (
+              pokeZone === 'side' || pokeZone === 'armL' || pokeZone === 'armR' || pokeZone === 'hand'
+            ) {
+              sV3.y = 0;
+              if (sV3.lengthSq() > 1e-8) {
+                sV3.normalize();
+                pokeFallDir.copy(sV3).multiplyScalar(camSide);
+              }
+            }
+            const hsL = handScreen('left');
+            const hsR = handScreen('right');
+            const screenArm = armZoneFromScreen(e.clientX, e.clientY, hsL, hsR);
+            if (
+              screenArm
+              && (pokeZone === 'armL' || pokeZone === 'armR' || pokeZone === 'side' || pokeZone === 'hand')
+            ) {
+              pokeZone = screenArm;
+            }
+            // sideSign drives lateral arm emphasis: +1 => right arm, -1 => left.
+            if (pokeZone === 'armR') pokeSideSign = 1;
+            else if (pokeZone === 'armL') pokeSideSign = -1;
+            else if (pokeZone === 'side' || pokeZone === 'hand') pokeSideSign = camSide;
+            if (pokeZone === 'side' || pokeZone === 'armL' || pokeZone === 'armR' || pokeZone === 'hand') {
+              pokeDirection = pokeSideSign >= 0 ? 'right' : 'left';
+            }
           }
           // No full-skeleton slerp here. That blend was easing toward a
           // flipped euler and shrinking the punch to a twitch.
@@ -1871,6 +1914,17 @@ export default function CompanionCanvas({
           } else {
             thinkMiss = false;
             if (now >= idleHoldUntil) nextIdle(FADE.idleRotate);
+          }
+          // Periodic same-clip re-blend (pinned or rotating) — stops slow joint drift.
+          const idleBusy = !!perfAction || boost > 0 || !!handDrag || !!gameView;
+          if (shouldRefreshIdleJoints(now, idleRefreshAt, idleBusy) && idleClipId && idleAction) {
+            const cur = clips.get(idleClipId);
+            if (cur) {
+              playClipAsIdle(cur, idleClipId, IDLE_JOINT_REFRESH_FADE_S);
+              if (pinnedIdle) idleHoldUntil = Infinity;
+            } else {
+              idleRefreshAt = nextIdleRefreshAt(now, IDLE_JOINT_REFRESH_MS);
+            }
           }
         }
         // r2026-10-04.58: while a library clip drives the body, the skeleton
