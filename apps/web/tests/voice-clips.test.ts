@@ -220,15 +220,16 @@ describe('TTS button registry', () => {
 });
 
 describe('zone poke clips (SFX only)', () => {
-  it('remaps head←belly, breast←NEW, belly←breast (Mon t761)', () => {
-    // Female: head=um (was belly), chest=hehe (new), belly=oh (was chest)
-    expect(recordedPokeClip('female', 'head')).toContain('/um.mp3');
-    expect(recordedPokeClip('female', 'chest')).toContain('/hehe.mp3');
+  it('remaps head←hehe, breast/chest←um, belly←oh (Mon t761/t294)', () => {
+    // Female: head=hehe (former breast), chest/breast=um (former head), belly=oh
+    expect(recordedPokeClip('female', 'head')).toContain('/hehe.mp3');
+    expect(recordedPokeClip('female', 'chest')).toContain('/um.mp3');
     expect(recordedPokeClip('female', 'breast')).toBe(recordedPokeClip('female', 'chest'));
     expect(recordedPokeClip('female', 'belly')).toContain('/oh.mp3');
     expect(recordedPokeClip('female', 'head')).not.toBe(recordedPokeClip('female', 'belly'));
     expect(recordedPokeClip('female', 'chest')).not.toBe(recordedPokeClip('female', 'belly'));
-    // Male: chest=smile (new), belly=ha (was chest)
+    // Male is unchanged by t294: head=oh, chest=smile, belly=ha
+    expect(recordedPokeClip('male', 'head')).toContain('/oh.mp3');
     expect(recordedPokeClip('male', 'chest')).toContain('/smile.mp3');
     expect(recordedPokeClip('male', 'belly')).toContain('/ha.mp3');
   });
