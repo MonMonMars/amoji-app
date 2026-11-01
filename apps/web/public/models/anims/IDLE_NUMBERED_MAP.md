@@ -7,7 +7,7 @@ Defaults: **only #1 IdleBreathCalm + #2 StandardIdle** (`defaultEnabled`).
 |---|------|--------|-----|----------|-------|
 | 1 | IdleBreathCalm | IdleBreathCalm | — | yes | default ON |
 | 2 | StandardIdle | StandardIdle | — | yes | default ON |
-| 3 | RokokoEverydayIdles | LookAround | C01 | yes | shared clip with #13 |
+| 3 | RokokoEverydayIdles | LookAround | C01 | yes | LookingAround (unique) |
 | 4 | Idle_Loop | lib_C02 | C02 | yes | Quaternius UAL Idle_Loop (#54) |
 | 5 | KayKitIdle | lib_C04 | C04 | yes | KayKit retarget (#53) |
 | 6 | UAL2FoldArms | lib_C11 | C11 | yes | Quaternius UAL2 FoldArms (#54) |
@@ -17,7 +17,7 @@ Defaults: **only #1 IdleBreathCalm + #2 StandardIdle** (`defaultEnabled`).
 | 10 | RokokoChatting02 | lib_C38 | C38 | yes | Rokoko (#53) |
 | 11 | RokokoConversation | lib_C39 | C39 | yes | Rokoko (#53) |
 | 12 | RokokoListeningToMusic | lib_C41 | C41 | yes | Rokoko (#53) |
-| 13 | RokokoLookingAround02 | LookAround | C42 | yes | alias of #3 LookAround.vrma |
+| 13 | RokokoLookingAround02 | lib_C42 | C42 | yes | unique LookingAround02 VRMA |
 | 14 | RokokoWatchingSomething | lib_C44 | C44 | yes | Rokoko (#53) |
 | 15 | StandingGreeting | HelloWave | C53 | yes | |
 | 16 | Shrugging | Shrug | C54 | yes | |
