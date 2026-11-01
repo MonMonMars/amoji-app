@@ -8,7 +8,7 @@ import { CHARACTERS, characterById } from './prefs';
 import type { Lang } from './prefs';
 import {
   FRAME_COUNT, MOTIFS, PROMPT_HINT,
-  voiceCatchphrases, voiceIdleLines, voiceOpening, voicePokeLines, voiceTone, voiceTutorLine,
+  voiceCatchphrases, voiceIdleLines, voiceOpening, voicePokeLines, voiceTone,
   type MotifId, type VoiceId,
 } from './personality-voice';
 
@@ -302,46 +302,47 @@ export function cannedOpener(characterId: string, gender: 'female' | 'male' | un
 /** How to use the app, said in idle. Same facts, this character's voice. */
 const APP_TIPS: Record<Lang, readonly string[]> = {
   en: [
-    'Tip: poke me gently and I react. Want to try?',
-    'Tip: grab my hand and hold on. I will notice. Want to?',
-    'Tip: open the gear, top right, for dialogue, effects, and music volume. Want a look?',
-    'Tip: tap my name plate, top left, to switch character, scene, or language. Try it?',
-    'Tip: say sing or dance and I will perform. Shall we?',
-    'Tip: tap the mic and talk with your voice. Ready?',
-    'Tip: type in the box below and I answer. What is on your mind?',
-    'Tip: drag to spin the camera. Scroll or pinch to zoom. Give it a go?',
+    'Poke me gently and I react.',
+    'Grab my hand and hold on — I will notice.',
+    'Open the gear, top right, for dialogue, effects, and music volume.',
+    'Tap my name plate, top left, to switch character, scene, or language.',
+    'Say sing or dance and I will perform.',
+    'Tap the mic and talk with your voice.',
+    'Type in the box below and I answer.',
+    'Drag to spin the camera. Scroll or pinch to zoom.',
   ],
   yue: [
-    '貼士：溫柔咁撳我，我就會有反應。試下？',
-    '貼士：捉住我隻手唔好放。我會知道㗎。想試嗎？',
-    '貼士：右上角個齒輪可以調對白、音效同音樂音量。想睇睇嗎？',
-    '貼士：撳左上角我個名牌，可以換角色、場景或者語言。試下？',
-    '貼士：講唱歌或者跳舞，我就會表演。一齊好嗎？',
-    '貼士：撳個咪高峰，就可以用把聲同我傾。準備好未？',
-    '貼士：喺下面個框打字，我就會答你。你諗緊咩呀？',
-    '貼士：拖嚟轉鏡頭，滾輪或者雙指可以縮放。試下吖？',
+    '溫柔咁撳我，我就會有反應。',
+    '捉住我隻手唔好放——我會知道㗎。',
+    '右上角個齒輪可以調對白、音效同音樂音量。',
+    '撳左上角我個名牌，可以換角色、場景或者語言。',
+    '講唱歌或者跳舞，我就會表演。',
+    '撳個咪高峰，就可以用把聲同我傾。',
+    '喺下面個框打字，我就會答你。',
+    '拖嚟轉鏡頭，滾輪或者雙指可以縮放。',
   ],
   zh: [
-    '小提示：温柔地戳我，我就会有反应。试试？',
-    '小提示：抓住我的手不要放。我会知道的。想试吗？',
-    '小提示：右上角齿轮可以调对白、音效和音乐音量。想看看吗？',
-    '小提示：点左上角我的名牌，可以换角色、场景或者语言。试试？',
-    '小提示：说唱歌或者跳舞，我就会表演。一起好吗？',
-    '小提示：点麦克风，就可以用声音和我聊。准备好了吗？',
-    '小提示：在下面的框里打字，我就会回答。你在想什么呀？',
-    '小提示：拖动旋转镜头，滚轮或双指可以缩放。试试看？',
+    '温柔地戳我，我就会有反应。',
+    '抓住我的手不要放——我会知道的。',
+    '右上角齿轮可以调对白、音效和音乐音量。',
+    '点左上角我的名牌，可以换角色、场景或者语言。',
+    '说唱歌或者跳舞，我就会表演。',
+    '点麦克风，就可以用声音和我聊。',
+    '在下面的框里打字，我就会回答。',
+    '拖动旋转镜头，滚轮或双指可以缩放。',
   ],
   ja: [
-    'ヒント：やさしくつつくと反応するよ。やってみる？',
-    'ヒント：手をつかんで離さないで。気づくよ。やってみる？',
-    'ヒント：右上の歯車でセリフ、効果音、音楽の音量を変えられるよ。見てみる？',
-    'ヒント：左上のネームプレートでキャラ、背景、言語を切り替えられるよ。試す？',
-    'ヒント：「歌って」か「踊って」と言うと披露するよ。する？',
-    'ヒント：マイクを押せば声で話せるよ。準備はいい？',
-    'ヒント：下の欄に文字を入れると答えるよ。何を考えてる？',
-    'ヒント：ドラッグで回転、ホイールやピンチでズーム。試す？',
+    'やさしくつつくと反応するよ。',
+    '手をつかんで離さないで——気づくよ。',
+    '右上の歯車でセリフ、効果音、音楽の音量を変えられるよ。',
+    '左上のネームプレートでキャラ、背景、言語を切り替えられるよ。',
+    '「歌って」か「踊って」と言うと披露するよ。',
+    'マイクを押せば声で話せるよ。',
+    '下の欄に文字を入れると答えるよ。',
+    'ドラッグで回転、ホイールやピンチでズーム。',
   ],
 };
+
 
 export function personalityTutorTip(
   characterId: string,
@@ -351,8 +352,10 @@ export function personalityTutorTip(
 ): string {
   const profile = personalityProfile(characterId, gender);
   const bank = APP_TIPS[lang] ?? APP_TIPS.en;
-  const body = bank[Math.abs(n) % bank.length]!;
-  return voiceTutorLine(profile.personality as VoiceId, profile.motif, profile.frame, lang, body);
+  // Motif + frame offset so two cast members do not recite the same tip beat.
+  const motifIdx = Math.max(0, MOTIFS.indexOf(profile.motif));
+  const body = bank[Math.abs(n + profile.frame + motifIdx) % bank.length]!;
+  return body;
 }
 
 export function personalityPrompt(characterId: string, gender?: 'female' | 'male'): string {

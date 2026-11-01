@@ -55,7 +55,8 @@ describe('per-character persona coverage', () => {
       }
     }
     if (CHARACTER_IDLE.juno) {
-      expect(pickIdleLine('juno', 'en', 0)).toBe(CHARACTER_IDLE.juno.en![0]);
+      expect(pickIdleLine('juno', 'en', 0).trim().length).toBeGreaterThan(0);
+      expect(pickIdleLine('juno', 'en', 0)).not.toMatch(/[?？]$/);
     }
     if (CHARACTER_POKE.cloud) {
       expect(pickPokeLine('cloud', 'yue', 0)).toBe(CHARACTER_POKE.cloud.yue![0]);
@@ -90,15 +91,13 @@ describe('per-character persona coverage', () => {
     }
   });
 
-  it('legacy idle/poke banks still end with conversation hooks when present', () => {
-    for (const [id, bank] of Object.entries(CHARACTER_IDLE)) {
-      if (!CHARACTERS.some((c) => c.id === id)) continue;
+  it('legacy poke banks still end with conversation hooks; idle profile lines are statements', () => {
+    // CHARACTER_IDLE is legacy — active idle path uses profile/idle-talk statements (no ? required).
+    for (const c of CHARACTERS) {
       for (const lang of LANG_IDS) {
-        const lines = bank[lang];
-        if (!lines) continue;
-        for (const line of lines) {
-          expect(IDLE_HOOK.test(line.trim()), `${id}/${lang}: ${line}`).toBe(true);
-        }
+        const line = pickIdleLine(c.id, lang, 0).trim();
+        expect(line.length).toBeGreaterThan(0);
+        expect(line, `${c.id}/${lang}`).not.toMatch(/[?？]$/);
       }
     }
     for (const [id, bank] of Object.entries(CHARACTER_POKE)) {

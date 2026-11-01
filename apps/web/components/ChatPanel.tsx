@@ -143,6 +143,7 @@ import { loadHistory, saveHistory } from '../lib/companion-store';
 import { notifySpeaking, isSpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
 import { pickIdleLine } from '../lib/persona-chatter';
+import { pickIdleCompanionLine } from '../lib/idle-talk';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
 import { pickCharacterInteraction, pokeReactionLine } from '../lib/interaction-lines';
 import { cannedOpener, personalityPrompt, personalityTutorTip } from '../lib/personality';
@@ -720,12 +721,15 @@ export default function ChatPanel({
         })();
         return;
       }
-      // Idle talk is a short tutor tip, then one calm personality line.
-      if (n % 2 === 0) {
+      // Idle talk: stay on topic OR suggest a new one (statements). Rare plain tip.
+      // Motif/topic banks rotate via idle-talk — less tea, no question-form chatter.
+      if (n > 0 && n % 6 === 5 && Date.now() - lastOfferAtRef.current > 120_000) {
+        lastOfferAtRef.current = Date.now();
         sayLocal(personalityTutorTip(characterId, characterGender, lang, Math.floor(n / 2)), feltHints);
         return;
       }
       const line = (idleMood ? pickMoodIdleLine(idleMood, lang, n) : undefined)
+        ?? pickIdleCompanionLine(characterId, characterGender, lang, n)
         ?? pickIdleLine(characterId, lang, n);
       sayLocal(line, feltHints);
     }, 5000);
