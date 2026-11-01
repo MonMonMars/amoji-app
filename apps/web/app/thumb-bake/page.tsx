@@ -24,6 +24,7 @@ import { CHARACTERS } from '../../lib/prefs';
 import { modelUrl } from '../../lib/asset';
 import { createV1Avatar, createGenericAvatar } from '../../lib/vrm/avatar';
 import type { Avatar } from '../../lib/vrm/avatar';
+import { addCastDaylight, applyCastToneMapping } from '../../lib/vrm/cast-lighting';
 
 declare global {
   interface Window {
@@ -166,15 +167,11 @@ export default function ThumbBakePage() {
 
       const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
       renderer.setSize(512, 512, false);
+      applyCastToneMapping(renderer);
       const scene = new THREE.Scene();
       scene.background = BG;
-      scene.add(new THREE.HemisphereLight('#ffffff', '#334155', 1.15));
-      const key = new THREE.DirectionalLight('#ffffff', 1.7);
-      key.position.set(0.6, 1.4, 1.2);
-      scene.add(key);
-      const fill = new THREE.DirectionalLight('#dfe8ff', 0.5);
-      fill.position.set(-0.8, 0.6, -0.6);
-      scene.add(fill);
+      // Shared cast daylight — bake matches live chat / select look.
+      addCastDaylight(scene);
       const camera = new THREE.PerspectiveCamera(30, 1, 0.01, 20);
 
       const vrmLoader = new GLTFLoader();
