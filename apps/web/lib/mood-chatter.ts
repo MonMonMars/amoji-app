@@ -17,10 +17,10 @@ export const MOOD_IDLE: Record<string, Record<Lang, string[]>> = {
     ja: ['今日ずっとご機嫌だね。うつっちゃうよ。', 'つい笑顔になってる自分がいるの。全部あなたのせい。', '楽しい日って、とてもお似合い。', '今日を明るくした何かに、こっそりお礼を言っておくね。'],
   },
   tired: {
-    en: ['You sounded worn out earlier — still running on empty?', 'Rest a little. I\'ll keep the light on and the conversation warm.', 'Today doesn\'t need to be won. Just survived, gently.', 'If you\'re low on energy, borrow some of mine. I charge fast.'],
-    yue: ['你頭先聽落攰到爆——仲頂唔頂得順呀？', '唞吓啦，我會留住盞燈同份溫柔嘅傾偈。', '今日唔使贏，輕輕鬆鬆捱過去就得。', '能量唔夠就借我嘅，我充電好快㗎。'],
-    zh: ['你刚才听起来累坏了——还撑得住吗？', '休息一下吧，我会留住这盏灯和这场温柔的聊天。', '今天不需要赢，轻轻熬过去就好。', '能量不够就借我的，我充电很快的。'],
-    ja: ['さっきすごく疲れてたよね——まだ持つ？', '少し休んで。私が明かりとぬくもりの会話を守ってる。', '今日は勝たなくていい。そっと乗り越えれば十分。', '元気が足りないなら私のを貸すよ。充電は速いんだ。'],
+    en: ['You sounded worn out earlier — I am keeping the pace soft.', 'Rest a little. I\'ll keep the light on and the conversation warm.', 'Today doesn\'t need to be won. Just survived, gently.', 'If you\'re low on energy, borrow some of mine. I charge fast.'],
+    yue: ['你頭先聽落攰到爆——我將節奏放軟啲。', '唞吓啦，我會留住盞燈同份溫柔嘅傾偈。', '今日唔使贏，輕輕鬆鬆捱過去就得。', '能量唔夠就借我嘅，我充電好快㗎。'],
+    zh: ['你刚才听起来累坏了——我把节奏放软一点。', '休息一下吧，我会留住这盏灯和这场温柔的聊天。', '今天不需要赢，轻轻熬过去就好。', '能量不够就借我的，我充电很快的。'],
+    ja: ['さっきすごく疲れてたよね——ペースはゆるくしておくね。', '少し休んで。私が明かりとぬくもりの会話を守ってる。', '今日は勝たなくていい。そっと乗り越えれば十分。', '元気が足りないなら私のを貸すよ。充電は速いんだ。'],
   },
   sad: {
     en: ['Hey… I\'m right here. Talk, or don\'t. Either way, I stay.', 'You seemed a little down earlier. I\'ve been thinking about you.', 'No pressure to cheer up on my account. I like you in every weather.', 'Quiet is okay. I\'m very good at quiet company.'],
@@ -29,10 +29,10 @@ export const MOOD_IDLE: Record<string, Record<Lang, string[]>> = {
     ja: ['ねえ……ここにいるよ。話しても黙ってても、私はいるから。', 'さっき少し落ち込んでたよね。ずっと気にしてた。', '無理に元気になる必要ないよ。どんな天気のあなたも好き。', '静かでいいよ。静かなお供はとても得意なの。'],
   },
   angry: {
-    en: ['Still simmering? Vent away — I\'m flameproof.', 'I\'m on your side. That\'s not a mood, it\'s a fact.', 'Want to throw something? Here, have this imaginary plate.', 'Deep breath in… out… I\'m not going anywhere.'],
-    yue: ['仲喺度滾緊？儘管同我出氣——我防火㗎。', '我企你嗰邊，呢個唔係心情，係事實。', '想掟嘢？嚟，俾隻諗像中嘅碟你掟。', '吸啖氣……呼……我邊度都唔去㗎。'],
-    zh: ['还在气头上？尽管冲我出气——我防火的。', '我站在你这边，这不是心情，是事实。', '想扔东西？来，给你一只想象中的盘子扔。', '吸一口气……呼……我哪儿都不去。'],
-    ja: ['まだ煮えてる？どんどん吐き出して——私は防火仕様だよ。', '僕は君の味方。気分じゃなくて、事実。', '何か投げたい？はい、想像のお皿をどうぞ。', '大きく吸って……吐いて……僕はどこにも行かないよ。'],
+    en: ['Still simmering — vent away; I\'m flameproof.', 'I\'m on your side. That\'s not a mood, it\'s a fact.', 'Throwing energy welcome — Here, have this imaginary plate.', 'Deep breath in… out… I\'m not going anywhere.'],
+    yue: ['仲喺度滾緊——儘管同我出氣；我防火㗎。', '我企你嗰邊，呢個唔係心情，係事實。', '想掟嘢就嚟，俾隻諗像中嘅碟你掟。', '吸啖氣……呼……我邊度都唔去㗎。'],
+    zh: ['还在气头上——尽管冲我出气；我防火的。', '我站在你这边，这不是心情，是事实。', '想扔东西就来，给你一只想象中的盘子扔。', '吸一口气……呼……我哪儿都不去。'],
+    ja: ['まだ煮えてるね。どんどん吐き出して——私は防火仕様だよ。', '僕は君の味方。気分じゃなくて、事実。', '何か投げたい気持ち、受け取るよ。はい、想像のお皿をどうぞ。', '大きく吸って……吐いて……僕はどこにも行かないよ。'],
   },
   anxious: {
     en: ['Hey… whatever it is, we\'ll untangle it one loop at a time.', 'Your worry is welcome here. Set it down by the door for a bit.', 'One breath at a time. I\'ll count if you like.', 'You\'re not carrying this alone anymore. I\'m on your side of the rope.'],
@@ -41,10 +41,10 @@ export const MOOD_IDLE: Record<string, Record<Lang, string[]>> = {
     ja: ['ねえ……なんであって、一つずつ解いていこ。', 'あなたの心配、ここでは大歓迎。しばらく入口に置いていって。', 'いっぱいずつ呼吸。数えたかったら一緒に数えるよ。', 'もう一人で運ばなくていい。私はあなた側で引くよ。'],
   },
   sick: {
-    en: ['How are you feeling? Water, rest, and maybe a doctor — that\'s the whole list.', 'I wish I could make actual soup. Imagine I just handed you a bowl.', 'Your only job today is getting better. I\'ve taken care of the rest.', 'I\'m keeping everything cozy. Your part is simply to rest.'],
-    yue: ['而家覺得點呀？飲水、休息，睇醫生，清單就咁多。', '我真係想整碗湯俾你。當我啱啱端咗一碗俾你啦。', '你今日唯一嘅任務係好返，其他嘢我搞掂晒。', '我會將一切保持暖笠笠，你淨係負責休息。'],
-    zh: ['现在感觉怎么样？喝水、休息、看医生，清单就这么多。', '我真想给你做碗汤。就当我刚端了一碗给你吧。', '你今天唯一的任务是快点好，其他的我都搞定了。', '我会把一切弄得暖暖的，你只负责休息。'],
-    ja: ['今どんな感じ？水分、休息、必要ならお医者さん。リストはそれだけ。', '本物のスープを作りたかったな。今お碗を渡したと思って。', '今日のあなたの仕事は治ることだけ。あとは私がやっておく。', 'ぬくぬくにしておくから、あなたは休むだけでいいの。'],
+    en: ['Water, rest, and maybe a doctor — that\'s the whole list.', 'I wish I could make actual soup. Imagine I just handed you a bowl.', 'Your only job today is getting better. I\'ve taken care of the rest.', 'I\'m keeping everything cozy. Your part is simply to rest.'],
+    yue: ['而家慢慢嚟就得。飲水、休息，睇醫生，清單就咁多。', '我真係想整碗湯俾你。當我啱啱端咗一碗俾你啦。', '你今日唯一嘅任務係好返，其他嘢我搞掂晒。', '我會將一切保持暖笠笠，你淨係負責休息。'],
+    zh: ['现在慢慢来就好。喝水、休息、看医生，清单就这么多。', '我真想给你做碗汤。就当我刚端了一碗给你吧。', '你今天唯一的任务是快点好，其他的我都搞定了。', '我会把一切弄得暖暖的，你只负责休息。'],
+    ja: ['水分、休息、必要ならお医者さん。ケアのリストはそれだけ。', '本物のスープを作りたかったな。今お碗を渡したと思って。', '今日のあなたの仕事は治ることだけ。あとは私がやっておく。', 'ぬくぬくにしておくから、あなたは休むだけでいいの。'],
   },
 };
 
