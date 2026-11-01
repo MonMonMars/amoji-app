@@ -1508,6 +1508,8 @@ function performSpeak(
         if ((err as Error | undefined)?.message === 'canceled') { settle(); return; }
         reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'edge-tts failed');
         stopEdge();
+        // Explicit picker/greeting id: never collapse to one browser voice.
+        if (voiceId) { settle(); return; }
         next();
       });
     };
@@ -1607,25 +1609,40 @@ function performClip(job: SpeechJob): Promise<void> {
 }
 
 /**
- * Greeting in one Edge voice. Queued behind whatever is already speaking.
- * Only stopSpeaking() — the user's own turn — cuts it.
+ * Select-page greeting in one exact Edge neural id.
+ * Must NOT fall through to speechSynthesis: that tier cannot name Edge
+ * voices and collapses every dead/failed button to the same OS voice
+ * (Mon: many # buttons, only one sound). forcePlain avoids style rejects.
  * The pin is saved by the caller so later chat lines use the same id.
  */
 export function playVoiceGreeting(characterId: string, lang: Lang, voiceId: string): void {
   if (!voiceOutputAllowed() || !voiceId) return;
   // Select-page cut-through: rapid character/voice taps must not stack greetings.
   stopSpeaking();
-  const kind = nextGreetingKind();
   unlockAudio();
-  lineQueue.enqueue({
-    kind: 'speak',
-    text: greetingText(lang, kind),
-    characterId,
+  const kind = nextGreetingKind();
+  const text = greetingText(lang, kind);
+  const gender = isMaleNeuralVoice(voiceId) ? 'male' : 'female';
+  let session = 0;
+  void speakEdge(text, {
     lang,
-    intensity: 1,
+    gender,
+    character: characterId,
     voiceId,
+    forcePlain: true,
+    expressiveness: 1,
+    onPlaying: () => {
+      session = noteSpeechStarted(text);
+      markVoiceStarted();
+      reportVoiceStatus('edge', true, `greeting ${voiceId}`);
+    },
+  }).then(() => {
+    if (session) finishLipSync(session);
+  }).catch((err: unknown) => {
+    if ((err as Error | undefined)?.message === 'canceled') return;
+    if (session) endLipSync();
+    reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? `greeting failed ${voiceId}`);
   });
-  drainSpeech();
 }
 
 /**
@@ -1767,6 +1784,7 @@ export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
     lang: locale,
     gender,
     voiceId,
+    forcePlain: true,
     expressiveness: 1,
   });
 }

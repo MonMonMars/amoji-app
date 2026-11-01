@@ -128,13 +128,14 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                 pick({ character: id });
                 const chosen = cast.find((item) => item.id === id);
                 if (!chosen) return;
-                const voiceId = voicePickFor(lang, chosen.gender)
-                  ?? resolveEdgeVoice({
-                    lang,
-                    gender: chosen.gender,
-                    character: chosen.id,
-                    ignoreVoicePick: true,
-                  }).name;
+                // Audition the cast slot — a gender pin would make every
+                // character of that sex sound identical on select.
+                const voiceId = resolveEdgeVoice({
+                  lang,
+                  gender: chosen.gender,
+                  character: chosen.id,
+                  ignoreVoicePick: true,
+                }).name;
                 playVoiceGreeting(chosen.id, lang, voiceId);
               }}
               label={(c) => c.name}
@@ -225,7 +226,16 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                 items={LANGS}
                 selectedId={live.lang}
                 onSelect={(id) => {
-                  if (id === 'en' || id === 'yue' || id === 'zh' || id === 'ja') pick({ lang: id });
+                  if (id !== 'en' && id !== 'yue' && id !== 'zh' && id !== 'ja') return;
+                  pick({ lang: id });
+                  const voiceId = voicePickFor(id, character.gender)
+                    ?? resolveEdgeVoice({
+                      lang: id,
+                      gender: character.gender,
+                      character: character.id,
+                      ignoreVoicePick: true,
+                    }).name;
+                  playVoiceGreeting(character.id, id, voiceId);
                 }}
                 label={(l) => l.native}
               >
