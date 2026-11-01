@@ -3,7 +3,7 @@ import { EmotionEngine, analyzeText } from '@amoji/emotion-core';
 import type { EmotionConfig, EmotionFrame } from '@amoji/emotion-core';
 import { MOVE_DUR, type MoveKind } from './moves';
 import { loadConfig } from './companion-store';
-import { playLaughSfx, playMoveSfx } from './sfx';
+import { playMoveSfx } from './sfx';
 import type { PerfMotionProfile } from './performance-motion';
 
 let engine: EmotionEngine | null = null;
@@ -50,7 +50,7 @@ const perfNow = (): number => (typeof performance !== 'undefined' ? performance.
 let laughAtMs = -Infinity;
 export function triggerLaugh(now = perfNow()): void {
   laughAtMs = now;
-  playLaughSfx();
+  // Audio: CLIP_LIBRARY via playLaughBurst (reactions SFX-only). Body still giggles here.
 }
 export function lastLaughAt(): number { return laughAtMs; }
 

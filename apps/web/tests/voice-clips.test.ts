@@ -31,7 +31,11 @@ import {
   greetingText,
   nextGreetingKind,
   resetGreetingRotation,
-  recordedPokeClip, loadingFillerKind} from '../lib/voice-clips';
+  recordedPokeClip,
+  loadingFillerKind,
+  recordedLaughClip,
+  resetLaughClipRotation,
+} from '../lib/voice-clips';
 import { emotionClipPath, resetEmotionClipPicks, saveEmotionClip } from '../lib/emotion-clip-picks';
 import { TIER_A_COUNTS, selectTtsButtons, ttsButtonKey } from '../lib/tts-button-registry';
 
@@ -265,3 +269,35 @@ describe('t786 loadingFillerKind line-only', () => {
   });
 });
 
+
+describe('reactions SFX-only recordedLaughClip', () => {
+  it('returns on-disk CLIP_LIBRARY laugh/giggle/smile paths and rotates', () => {
+    resetLaughClipRotation();
+    const paths = Array.from({ length: 8 }, () => recordedLaughClip('female', 'en'));
+    for (const p of paths) {
+      expect(p).toMatch(/^\/voice-clips\//);
+      const file = p.split('/').pop()!;
+      const kind = emotionKindForFile(file);
+      expect(['laugh', 'giggle', 'smile']).toContain(kind);
+      expect(fs.existsSync(path.resolve(here, '../public', p.slice(1))), p).toBe(true);
+    }
+    expect(new Set(paths).size).toBeGreaterThan(1);
+    resetLaughClipRotation();
+    expect(recordedLaughClip('male', 'ja')).toMatch(/\/voice-clips\/.*\/male\//);
+  });
+
+  it('ChatPanel funny path queues playLaughBurst and never speak()s a hehe lead', () => {
+    const chat = fs.readFileSync(path.resolve(here, '../components/ChatPanel.tsx'), 'utf8');
+    expect(chat).toContain('playLaughBurst(characterId, lang)');
+    expect(chat).toContain('triggerLaugh()');
+    // funny path: no maybeLaughLead / pickLaugh as speak lead
+    const funny = chat.slice(chat.indexOf('const style = laughStyleFor'));
+    expect(funny).toMatch(/playLaughBurst/);
+    expect(funny).not.toMatch(/speak\([^)]*hehe/i);
+    expect(funny).not.toMatch(/maybeLaughLead/);
+    const voice = fs.readFileSync(path.resolve(here, '../lib/voice.ts'), 'utf8');
+    expect(voice).toContain('export function playLaughBurst');
+    expect(voice).toContain('sfxOnly: true');
+    expect(voice).toContain('recordedLaughClip');
+  });
+});

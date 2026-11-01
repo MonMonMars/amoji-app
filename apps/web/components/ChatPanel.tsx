@@ -164,7 +164,7 @@ import {
   openPhaseWeatherAsk,
   summarizeOpenPhaseSpoken,
 } from '../lib/open-phase';
-import { speak, stopSpeaking, sing, playPokeBurst, voiceStartedSince, speechPending, speechStillQueued, speechRemainder, whenSpeechIdle } from '../lib/voice';
+import { speak, stopSpeaking, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechRemainder, whenSpeechIdle } from '../lib/voice';
 import { productionChat } from '../lib/backend-client';
 import { startThinkingSound, stopThinkingSound } from '../lib/thinking-sound';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
@@ -553,8 +553,9 @@ export default function ChatPanel({
       return reply;
     }
     const style = laughStyleFor(mood);
-    // t771: laugh is CLIP_LIBRARY / playLaughSfx only — never TTS hehe/haha lead.
+        // Reactions SFX-only: body giggle + queued CLIP_LIBRARY laugh — never TTS hehe/haha lead.
     triggerLaugh();
+    playLaughBurst(characterId, lang);
     applyLlmHints({ joy: style.joy });
     laughCountRef.current++;
     notifySpeaking(reply);
