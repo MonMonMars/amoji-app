@@ -146,7 +146,7 @@ import { pickIdleLine } from '../lib/persona-chatter';
 import { pickIdleCompanionLine } from '../lib/idle-talk';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
 import { pickCharacterInteraction, pokeReactionLine } from '../lib/interaction-lines';
-import { cannedOpener, personalityPrompt, personalityTutorTip } from '../lib/personality';
+import { cannedOpener, personalityPrompt } from '../lib/personality';
 import { laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { WARMUP_FIRST_MS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from '../lib/warmup';
 import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
@@ -722,13 +722,10 @@ export default function ChatPanel({
         })();
         return;
       }
-      // Idle talk: stay on topic OR suggest a new one (statements). Rare plain tip.
+      // Idle talk: stay on topic OR suggest a new one (statements).
       // Motif/topic banks rotate via idle-talk — less tea, no question-form chatter.
-      if (n > 0 && n % 6 === 5 && Date.now() - lastOfferAtRef.current > 120_000) {
-        lastOfferAtRef.current = Date.now();
-        sayLocal(personalityTutorTip(characterId, characterGender, lang, Math.floor(n / 2)), feltHints);
-        return;
-      }
+      // Idle tutor tips cut — do not interrupt idle companion time with how-to tips.
+      // Showcase skill offers + Settings Help / showcase tutorial banks stay elsewhere.
       const line = (idleMood ? pickMoodIdleLine(idleMood, lang, n) : undefined)
         ?? pickIdleCompanionLine(characterId, characterGender, lang, n)
         ?? pickIdleLine(characterId, lang, n);
