@@ -20,7 +20,7 @@ import { activeWardrobe } from '../../lib/modular/catalog';
 import { useModularSelection } from '../../lib/modular/storage';
 import { resolveMiniGameCompanion } from '../../lib/minigames/companion';
 import type { ActionGame } from '../../lib/minigames/types';
-import { usePrefs, characterById, backgroundById, KID_PERSONA_GUARD } from '../../lib/prefs';
+import { usePrefs, characterById, backgroundById, KID_PERSONA_GUARD, loadPrefs } from '../../lib/prefs';
 import { activeStoryScene, storyPersonaSuffix } from '../../lib/story-session';
 import { resolveStorySceneGlb } from '../../lib/stories';
 import { clearMemory, loadMemory, memorySummaryCount } from '../../lib/memory';
@@ -44,8 +44,27 @@ export default function Chat() {
   const [gameChromeHidden, setGameChromeHidden] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [idleClip, setIdleClip] = useState<string | null>(null);
+  // false until amoji.prefs.v1 sync — hold chrome/canvas so DEFAULT_PREFS never paints.
+  const [bootReady, setBootReady] = useState(false);
 
   useEffect(() => subscribeMiniGameChrome(setGameChromeHidden), []);
+
+  useEffect(() => {
+    // Push stored prefs into usePrefs state in the same tick we flip bootReady
+    // (usePrefs also loads on mount; this keeps chrome off until both are aligned).
+    const stored = loadPrefs();
+    setPrefs({
+      character: stored.character,
+      background: stored.background,
+      kidMode: stored.kidMode,
+      lang: stored.lang,
+      sfxVol: stored.sfxVol,
+      bgmVol: stored.bgmVol,
+      voiceVol: stored.voiceVol,
+      ...(stored.lastFemale ? { lastFemale: stored.lastFemale } : {}),
+    });
+    setBootReady(true);
+  }, []);
 
   const openSelect = () => {
     if (leaving) return;
@@ -95,27 +114,31 @@ export default function Chat() {
         className={`pointer-events-none absolute inset-0 z-30 ${leaving ? 'fx-route-veil-out' : 'fx-route-veil-in'}`}
       />
       <SceneBackdrop background={background} />
-      <CompanionCanvas
-        accent={canvasCharacter.accent}
-        sceneGlbUrl={sceneGlbUrl}
-        seedKey={canvasCharacter.id}
-        libraryOnly={gameChromeHidden}
-        wardrobeHeadId={canvasWardrobe?.headId}
-        wardrobeBodyId={canvasWardrobe?.bodyId}
-        lighting={background.setting === 'indoor' ? 'indoor' : 'outdoor'}
-        onNotice={setNotice}
-        idleClip={gameChromeHidden ? null : idleClip}
-        onPoke={(zone, direction) => { setPokeCount((c) => c + 1); setPokeZone(zone); setPokeDirection(direction || 'front'); }}
-        onHandHold={() => setHandHold((c) => c + 1)}
-      />
+      {bootReady && (
+        <CompanionCanvas
+          accent={canvasCharacter.accent}
+          sceneGlbUrl={sceneGlbUrl}
+          seedKey={canvasCharacter.id}
+          libraryOnly={gameChromeHidden}
+          wardrobeHeadId={canvasWardrobe?.headId}
+          wardrobeBodyId={canvasWardrobe?.bodyId}
+          lighting={background.setting === 'indoor' ? 'indoor' : 'outdoor'}
+          onNotice={setNotice}
+          idleClip={gameChromeHidden ? null : idleClip}
+          onPoke={(zone, direction) => { setPokeCount((c) => c + 1); setPokeZone(zone); setPokeDirection(direction || 'front'); }}
+          onHandHold={() => setHandHold((c) => c + 1)}
+        />
+      )}
       {!gameChromeHidden && (
-        <IdlePickRails characterId={character.id} onPick={setIdleClip} />
+        <div className={bootReady ? undefined : 'opacity-0'}>
+          <IdlePickRails characterId={character.id} onPick={setIdleClip} />
+        </div>
       )}
 
       {/* top bar: status plate (left) + mini-games, wardrobe, settings (right).
           Hidden for the whole title → play session so the HUD does not overlap it. */}
       {!gameChromeHidden && (
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-3">
+        <div className={`pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-3 ${bootReady ? '' : 'opacity-0'}`}>
           <div className="pointer-events-auto min-w-0">
             <StatusPlate
               name={character.name}
@@ -164,10 +187,10 @@ export default function Chat() {
 
       {/* Empty margins pass through to the canvas. Only the chat controls take hits. */}
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-10"
+        className={`pointer-events-none absolute inset-x-0 bottom-0 z-10 ${bootReady ? '' : 'opacity-0'}`}
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        <ChatPanel
+        {bootReady && <ChatPanel
           key={character.id}
           characterName={character.name}
           characterId={character.id}
@@ -187,7 +210,7 @@ export default function Chat() {
           handHoldCount={handHold}
           onStatus={setStatus}
           onMemCount={setMemCount}
-        />
+        />}
       </div>
       {pickerOpen && (
         <MiniGamePicker
