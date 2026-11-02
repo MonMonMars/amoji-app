@@ -1,0 +1,16 @@
+﻿# Silencio-2 EN emotion/SFX CPU sidecar (DESKTOP only).
+# Install into D:\AI app development\silencio2-venv — never C:.
+# Weights download via huggingface_hub into HF_HOME (D:\LocalAI\cache\huggingface).
+torch>=2.5
+numpy>=2
+pydantic>=2
+pyyaml
+sentencepiece>=0.2.1
+tokenizers>=0.21
+safetensors>=0.4
+scipy>=1.5
+einops>=0.4
+huggingface_hub>=0.13
+requests>=2.20
+typing_extensions>=4.10
+soundfile>=0.12
