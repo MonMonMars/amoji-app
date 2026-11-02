@@ -1,4 +1,4 @@
-use client';
+"use client";
 // In-app CMA00304-CMA00349 Reaction SFX gallery.
 // Wanted picks feed recordedLaughClip / recordedPokeClip at play time. Skip stays out.
 // Play each clip, Want / Skip / Clear. Picks persist in localStorage.
