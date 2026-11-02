@@ -196,6 +196,7 @@ export default function SfxGalleryPage() {
           <div className="flex flex-wrap gap-2 pt-1">
             <a href="/select" className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/80 hover:bg-white/10">← Select</a>
             <a href="/chat" className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/80 hover:bg-white/10">Chat</a>
+        <a href="/en-sfx-ab" className="rounded-full border border-amber-400/40 px-3 py-1 text-xs text-amber-100/90 hover:bg-amber-500/10" data-testid="link-en-sfx-ab">EN SFX A/B (test)</a>
             <button
               type="button"
               data-testid="cma-export"
