@@ -149,6 +149,7 @@ import { pickCharacterInteraction, pokeReactionLine } from '../lib/interaction-l
 import { cannedOpener, personalityPrompt } from '../lib/personality';
 import { laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { WARMUP_FIRST_MS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from '../lib/warmup';
+import { assetUrl } from '../lib/asset';
 import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
 import { clientLiveContext } from '../lib/live-tools';
 import {
@@ -1083,7 +1084,7 @@ export default function ChatPanel({
         await browserLane();
       } else {
         try {
-          const res = await fetch('/api/chat', {
+          const res = await fetch(assetUrl('/api/chat'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
