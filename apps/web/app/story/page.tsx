@@ -2,6 +2,7 @@
 // t740 / t741 / pack picker: Story Mode setup — pick a pack (or surprise),
 // roll cast, then enter chat.
 import { useMemo, useState } from 'react';
+import { assetUrl } from '../../lib/asset';
 import { useRouter } from 'next/navigation';
 import {
   backgroundById,
@@ -160,7 +161,7 @@ export default function StorySetupPage() {
           {background.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={background.image}
+              src={assetUrl(background.image)}
               alt=""
               className="h-full w-full object-cover opacity-80"
             />
@@ -177,7 +178,7 @@ export default function StorySetupPage() {
         <div className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-black/40 px-3 py-2 backdrop-blur-md">
           {character.image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={character.image} alt="" className="h-14 w-14 rounded-xl object-cover" />
+            <img src={assetUrl(character.image)} alt="" className="h-14 w-14 rounded-xl object-cover" />
           ) : (
             <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/10 text-lg font-bold">
               {character.name.slice(0, 1)}
