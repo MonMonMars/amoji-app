@@ -97,7 +97,7 @@ function pushLevel(
   });
 }
 
-/** Clavicle rotation that tips the shoulderâ†’upper-arm direction upward. */
+/** Clavicle rotation that tips the shoulder?’upper-arm direction upward. */
 export function liftedClavicleLocal(shoulder: THREE.Object3D, upper: THREE.Object3D): THREE.Quaternion {
   shoulder.updateWorldMatrix(true, false);
   upper.updateWorldMatrix(true, false);
@@ -140,8 +140,10 @@ export function captureCastFix(
     pushLevel(levels, getBone('head'), mode);
   }
   if (needsUpperBodyLevel(characterId)) {
+    // upperChest carries most side-bend (char 34 left tilt); spine/chest alone left it leaning.
     pushLevel(levels, getBone('spine'), 'upper');
     pushLevel(levels, getBone('chest'), 'upper');
+    pushLevel(levels, getBone('upperChest'), 'upper');
   }
   if (needsFullUpright(characterId)) {
     pushLevel(levels, getBone('spine'), 'upright');
