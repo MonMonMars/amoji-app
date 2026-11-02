@@ -9,6 +9,7 @@
 // The mapped library also keeps extra takes (anime laughs, sighs) and a
 // universal/ folder. Chat leads still use the seven canonical names.
 
+import { stripBasePath } from './asset';
 import { pickWantedCmaReactionPath } from './cma-reaction-gallery';
 
 export const VOICE_CLIP_LANGS = ['yue', 'zh', 'ja', 'en'] as const;
@@ -135,7 +136,7 @@ const CLIP_BY_PATH = new Map(listClipLibrary().map((e) => [e.path, e]));
 
 /** CLIP_LIBRARY # for a path, or null if the file is outside the library. */
 export function clipLibraryId(path: string): number | null {
-  return CLIP_BY_PATH.get(path)?.id ?? null;
+  return CLIP_BY_PATH.get(stripBasePath(path))?.id ?? null;
 }
 
 /** Path for CLIP_LIBRARY #N (1–99), or null. */

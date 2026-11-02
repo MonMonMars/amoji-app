@@ -10,6 +10,17 @@ export function assetUrl(path: string): string {
   return `${base}${path}`;
 }
 
+
+/** Undo assetUrl prefixing so path identity (CLIP_LIBRARY maps, etc.) stays
+ *  stable whether callers pass bare /voice-clips/... or Pages /amoji-app/... */
+export function stripBasePath(path: string): string {
+  if (/^https?:\/\//.test(path)) return path;
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+  if (!base) return path;
+  if (path === base) return '/';
+  if (path.startsWith(base + '/')) return path.slice(base.length) || '/';
+  return path;
+}
 /** CharacterDef.model → fetchable URL: local cast paths under /models,
  *  absolute https URLs pass through, undefined in → undefined out. (r104) */
 export function modelUrl(model?: string): string | undefined {
