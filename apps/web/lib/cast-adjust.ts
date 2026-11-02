@@ -1,8 +1,8 @@
 // Cast notes from the selection review. Numbers are the stable castNo
-// badges (a01 = 1 …), not the position in the fan after hides/reorders.
+// badges (a01 = 1 ??, not the position in the fan after hides/reorders.
 //
-// Reference look (do not retune materials): 1–3, 7–10, 12, 13.
-// That look is VRM0 MToon world outline 0.075, ShadeToony 0, ShadeShift −0.6
+// Reference look (do not retune materials): 1??, 7??0, 12, 13.
+// That look is VRM0 MToon world outline 0.075, ShadeToony 0, ShadeShift ??.6
 // on the body. three-vrm converts those floats to the factors below.
 
 import { castNo } from './castNo';
@@ -51,7 +51,7 @@ export const HEAD_TILT_IDS: readonly string[] = [
   'a99-miyora', // 32
 ];
 
-/** Sunk clavicle when the arm hangs. Not applied to 1–3. */
+/** Sunk clavicle when the arm hangs. Not applied to 1??. */
 export const SHOULDER_LIFT_IDS: readonly string[] = [
   'a04-avatarsample-a', // 4
   'a05-avatarsample-c', // 5
@@ -76,7 +76,7 @@ export const FULL_UPRIGHT_IDS: readonly string[] = [
 ];
 
 /**
- * Reference look (castNo 1-3, 7-10, 12, 13) — do not retune materials.
+ * Reference look (castNo 1-3, 7-10, 12, 13) ??do not retune materials.
  * Everyone else gets the conservative MToon outlier pass (thick outline /
  * hard cel only) so shade/brightness stays closer across the cast.
  */
@@ -108,12 +108,12 @@ export const SELECT_LOWER_ID = 'a99-miyora';
 export const MALE_VOICE = { yue: 'zh-HK-WanLungNeural', en: 'en-HK-SamNeural' } as const;
 export const FEMALE_VOICE = { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' } as const;
 
-/** three-vrm: outlineWidthFactor = 0.01 * VRM0 _OutlineWidth. 0.075 → 0.00075. */
+/** three-vrm: outlineWidthFactor = 0.01 * VRM0 _OutlineWidth. 0.075 ??0.00075. */
 export const REF_OUTLINE_WIDTH_FACTOR = 0.00075;
 /**
- * VRM0 body ShadeToony 0, ShadeShift −0.6 converts as
+ * VRM0 body ShadeToony 0, ShadeShift ??.6 converts as
  * toony = lerp(0, 1, 0.5 + 0.5 * shift) = 0.2
- * shift = −shift − (1 − toony) = −0.2
+ * shift = ?�shift ??(1 ??toony) = ??.2
  */
 export const REF_SHADING_TOONY = 0.2;
 export const REF_SHADING_SHIFT = -0.2;
@@ -167,7 +167,7 @@ export interface MToonUnifyPatch {
 }
 
 /**
- * Push a loaded MToon material toward the 1–3 body setup.
+ * Push a loaded MToon material toward the 1?? body setup.
  * Outline mode is never switched off. Eyes should not be passed in.
  */
 export function unifyMToonParams(m: MToonUnifyInput): MToonUnifyPatch | null {
@@ -177,7 +177,7 @@ export function unifyMToonParams(m: MToonUnifyInput): MToonUnifyPatch | null {
   if (mode && mode !== 'none' && typeof width === 'number' && width > REF_OUTLINE_WIDTH_FACTOR * 1.15) {
     patch.outlineWidthFactor = REF_OUTLINE_WIDTH_FACTOR;
   }
-  // Char 4 body converts to toony 1 / shift 1 (hard cel). Gradient reference is 0.2 / −0.2.
+  // Char 4 body converts to toony 1 / shift 1 (hard cel). Gradient reference is 0.2 / ??.2.
   if (typeof m.shadingToonyFactor === 'number' && m.shadingToonyFactor >= 0.75) {
     patch.shadingToonyFactor = REF_SHADING_TOONY;
     patch.shadingShiftFactor = REF_SHADING_SHIFT;
@@ -191,7 +191,7 @@ export function selectionCast<T extends { id: string }>(characters: readonly T[]
   if (hit <= 0) return visible;
   const next = visible.slice();
   const [item] = next.splice(hit, 1);
-  // After the first three kept cards (1–3), before the rest.
+  // After the first three kept cards (1??), before the rest.
   const at = Math.min(3, next.length);
   next.splice(at, 0, item!);
   return next;
@@ -204,7 +204,7 @@ export function selectionBadge(id: string): number {
 
 /** object-position Y for the select portrait. Undefined keeps the shared face crop. */
 export function selectPortraitPosition(id: string): string | undefined {
-  if (id === SELECT_LOWER_ID) return 'center 46%';
+  if (id === SELECT_LOWER_ID) return 'center 52%';
   return undefined;
 }
 
@@ -287,7 +287,7 @@ export function paintSolidBlack(data: Uint8ClampedArray): number {
   return n;
 }
 
-/** Red hair texels → brown. Non-red pixels (highlights, shadows) stay. */
+/** Red hair texels ??brown. Non-red pixels (highlights, shadows) stay. */
 export function recolorRedToBrown(data: Uint8ClampedArray): number {
   let n = 0;
   for (let i = 0; i < data.length; i += 4) {
