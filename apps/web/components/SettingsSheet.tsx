@@ -116,7 +116,8 @@ export default function SettingsSheet({
 }) {
   const router = useRouter();
   const [voiceOn, setVoiceOnState] = useState(voiceEnabled());
-  const [masterMuted, setMasterMutedState] = useState(false);
+  // null until localStorage sync -- same class of flash as MuteButton.
+  const [masterMuted, setMasterMutedState] = useState<boolean | null>(null);
   useEffect(() => {
     setMasterMutedState(isMasterMuted());
     return subscribeMasterMute(setMasterMutedState);
@@ -373,9 +374,9 @@ export default function SettingsSheet({
                 <span className="block text-[11px] text-white/40">{t(lang, 'muteAllHint')}</span>
               </span>
               <Toggle
-                on={masterMuted}
+                on={masterMuted === true}
                 accent={accent}
-                onClick={() => { const next = !masterMuted; setMasterMutedState(next); setMasterMuted(next); }}
+                onClick={() => { const next = masterMuted !== true; setMasterMutedState(next); setMasterMuted(next); }}
               />
             </div>
 <div className={row}>

@@ -123,4 +123,20 @@ describe('master-mute', () => {
     restore();
   });
 
+  it('MuteButton hides glyph until localStorage sync (boot flash)', async () => {
+    const btn = await import('node:fs').then((fs) =>
+      fs.readFileSync(new URL('../components/MuteButton.tsx', import.meta.url), 'utf8'),
+    );
+    // Must not paint unmuted-as-default then flip after effect.
+    expect(btn).toContain('useState<boolean | null>(null)');
+    expect(btn).toContain("className={ready ? undefined : 'opacity-0'}");
+    expect(btn).toContain('isMasterMuted()');
+    expect(btn).not.toMatch(/useState\(false\)/);
+    const sheet = await import('node:fs').then((fs) =>
+      fs.readFileSync(new URL('../components/SettingsSheet.tsx', import.meta.url), 'utf8'),
+    );
+    expect(sheet).toContain('useState<boolean | null>(null)');
+    expect(sheet).toContain('on={masterMuted === true}');
+  });
+
 });
