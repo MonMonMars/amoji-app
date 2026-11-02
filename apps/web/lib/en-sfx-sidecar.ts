@@ -136,3 +136,51 @@ export const EN_SFX_AB_SAMPLES: readonly { id: string; label: string; text: stri
   { id: 'happy', label: 'happy filler', text: 'Nice! We can try that.' },
   { id: 'whisper', label: 'whisper', text: 'Keep your voice down.' },
 ];
+
+
+export type EnSfxGatewayHealth = {
+  ok?: boolean;
+  engines?: Record<string, { engine?: string; ready?: boolean; skipped?: boolean; reason?: string; hint?: string; venv?: boolean; sample_wav?: boolean }>;
+  error?: string;
+};
+
+export type EnSfxGatewayStatus = {
+  state: 'up' | 'down' | 'unknown';
+  label: string;
+  detail: string;
+};
+
+/** Pure helper for /en-sfx-ab gateway pill. */
+export function enSfxGatewayStatus(health: EnSfxGatewayHealth | null | undefined): EnSfxGatewayStatus {
+  if (health == null) {
+    return { state: 'unknown', label: 'Gateway…', detail: 'Probing 127.0.0.1:8765' };
+  }
+  if (health.ok === true) {
+    return { state: 'up', label: 'Gateway up', detail: 'Health OK — sidecars may still SKIP per engine' };
+  }
+  const err = health.error ? String(health.error) : 'unreachable';
+  return {
+    state: 'down',
+    label: 'Gateway down',
+    detail: `Fail-closed to Edge (${err})`,
+  };
+}
+
+/** Clearer fail-closed / CUDA-skip copy when a preview falls back to Edge. */
+export function enSfxFailClosedMessage(opts: {
+  engineId: string;
+  detail?: string;
+  engineHealth?: { ready?: boolean; skipped?: boolean; reason?: string; hint?: string } | null;
+}): string {
+  const detail = (opts.detail || '').trim();
+  const st = opts.engineHealth;
+  if (st?.skipped) {
+    const why = st.reason || st.hint || detail || 'engine skipped';
+    if (opts.engineId === 'vui-nano' || /cuda|gpu/i.test(why)) {
+      return `Vui CUDA/skip — fail-closed to Edge (${why})`;
+    }
+    return `Engine SKIP — fail-closed to Edge (${why})`;
+  }
+  if (detail) return `Fail-closed → Edge (${detail})`;
+  return 'Fail-closed → Edge';
+}

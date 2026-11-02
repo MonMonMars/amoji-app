@@ -4,7 +4,9 @@ import {
   EN_SFX_AB_SAMPLES,
   EN_SFX_GATEWAY_DEFAULT,
   EN_SFX_SIDECAR_ENGINES,
+  enSfxFailClosedMessage,
   enSfxGatewayBase,
+  enSfxGatewayStatus,
   enSfxSidecarEngine,
   isEnSfxSidecarFlagEnabled,
   isEnvFlagOn,
@@ -102,5 +104,21 @@ describe('EN SFX sidecar A/B catalog', () => {
     store.set(EN_SFX_AB_PICK_KEY, 'garbage');
     expect(readEnSfxAbPick()).toBe('edge');
     vi.unstubAllGlobals();
+  });
+});
+
+
+describe('EN SFX gateway status helpers', () => {
+  it('labels gateway up/down/unknown and fail-closed / Vui CUDA-skip copy', () => {
+    expect(enSfxGatewayStatus(null).state).toBe('unknown');
+    expect(enSfxGatewayStatus({ ok: true }).state).toBe('up');
+    expect(enSfxGatewayStatus({ ok: false, error: 'fetch failed' }).label).toBe('Gateway down');
+    expect(enSfxFailClosedMessage({ engineId: 'silencio2', detail: 'HTTP 503' })).toContain('Edge');
+    expect(
+      enSfxFailClosedMessage({
+        engineId: 'vui-nano',
+        engineHealth: { skipped: true, reason: 'CUDA unavailable' },
+      }),
+    ).toMatch(/Vui CUDA\/skip/);
   });
 });
