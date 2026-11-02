@@ -14,6 +14,8 @@ import {
   needsHeadLevel,
   needsMToonUnify,
   needsShoulderLift,
+  needsUpperBodyLevel,
+  UPPER_BODY_IDS,
   paintSolidBlack,
   recolorRedToBrown,
   selectionBadge,
@@ -46,7 +48,7 @@ describe('selection cast', () => {
   });
 
   it('lowers only character 32 on the select card', () => {
-    expect(selectPortraitPosition('a99-miyora')).toBe('center 46%');
+    expect(selectPortraitPosition('a99-miyora')).toBe('center 52%');
     expect(selectPortraitPosition('a01-shino')).toBeUndefined();
   });
 });
@@ -109,6 +111,42 @@ describe('MToon unify', () => {
       shadingToonyFactor: 0.2,
       shadingShiftFactor: -0.2,
     })).toBeNull();
+  });
+});
+
+
+describe('upper body level', () => {
+  it('covers Mon voice list 10 / 31 / 34 (and related bend ids)', () => {
+    expect(UPPER_BODY_IDS).toEqual([
+      'a10-agahomei-normal', // 6
+      'a23-hairsample-female', // 10
+      'a77-sasha', // 19
+      'a98-ethan', // 31
+      'a104-simplebrownsailorjk', // 34
+    ]);
+    expect(needsUpperBodyLevel('a23-hairsample-female')).toBe(true);
+    expect(needsUpperBodyLevel('a98-ethan')).toBe(true);
+    expect(needsUpperBodyLevel('a104-simplebrownsailorjk')).toBe(true);
+    expect(needsUpperBodyLevel('a01-shino')).toBe(false);
+  });
+
+  it('zeros yaw+roll on spine/chest/upperChest and keeps pitch (left-side bend)', () => {
+    const bones = new Map<string, THREE.Object3D>();
+    for (const name of ['spine', 'chest', 'upperChest'] as const) {
+      const b = new THREE.Object3D();
+      // side-bend-ish: pitch + yaw + roll
+      b.quaternion.setFromEuler(new THREE.Euler(0.15, 0.35, -0.45, 'YXZ'));
+      bones.set(name, b);
+    }
+    const state = captureCastFix('a104-simplebrownsailorjk', (name) => bones.get(name) ?? null);
+    expect(state?.levels.map((e) => e.bone)).toHaveLength(3);
+    applyCastFix(state!);
+    for (const b of bones.values()) {
+      const e = new THREE.Euler().setFromQuaternion(b.quaternion, 'YXZ');
+      expect(e.x).toBeCloseTo(0.15, 5);
+      expect(Math.abs(e.y)).toBeLessThan(1e-4);
+      expect(Math.abs(e.z)).toBeLessThan(1e-4);
+    }
   });
 });
 

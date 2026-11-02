@@ -204,7 +204,7 @@ export function selectionBadge(id: string): number {
 
 /** object-position Y for the select portrait. Undefined keeps the shared face crop. */
 export function selectPortraitPosition(id: string): string | undefined {
-  if (id === SELECT_LOWER_ID) return 'center 46%';
+  if (id === SELECT_LOWER_ID) return 'center 52%';
   return undefined;
 }
 
