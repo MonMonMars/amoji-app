@@ -2,6 +2,7 @@
 // t741: Mode selection BEFORE chat/story setup — Chat Mode vs Story Mode.
 import { useRouter } from 'next/navigation';
 import { clearStorySession } from '../../lib/story-session';
+import EarlyAudioWarm from '../../components/EarlyAudioWarm';
 import { t, usePrefs, type Lang } from '../../lib/prefs';
 
 const COPY: Record<'title' | 'hint' | 'chatTitle' | 'chatHint' | 'storyTitle' | 'storyHint', Record<Lang, string>> = {
@@ -51,6 +52,7 @@ export default function ModePage() {
 
   return (
     <main className="fx-page relative flex min-h-dvh flex-col items-center justify-center overflow-x-hidden bg-neutral-950 px-4 py-10 text-white">
+      <EarlyAudioWarm />
       <div className="pointer-events-none absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-pink-500/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 right-1/4 h-80 w-80 rounded-full bg-indigo-500/10 blur-3xl" />
 
