@@ -4,7 +4,10 @@
 // unchanged so the registry-hosted cast assets load as-is.
 export function assetUrl(path: string): string {
   if (/^https?:\/\//.test(path)) return path;
-  return `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}${path}`;
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+  // Idempotent: helpers like cmaReactionPath may already include basePath.
+  if (base && (path === base || path.startsWith(base + '/'))) return path;
+  return `${base}${path}`;
 }
 
 /** CharacterDef.model → fetchable URL: local cast paths under /models,
