@@ -23,3 +23,7 @@ apps/web/public/models/*.vrm
 apps/web/public/models/want/*.vrm
 tools/*.log
 tools/*.err
+
+# Silencio-2 local sidecar (weights/venv/out stay on D:, never commit)
+tools/silencio2-sidecar/out/
+*.safetensors
