@@ -75,6 +75,11 @@ function loadRuntime(): Promise<boolean> {
   return loadPromise;
 }
 
+/** Prefetch Silero/ORT CDN scripts without getUserMedia (early warm). */
+export function preloadVadRuntime(): Promise<boolean> {
+  return loadRuntime();
+}
+
 /**
  * Start voice-activity detection. Resolves a handle with stop(), or null
  * when the runtime could not load (offline / CDN blocked / unsupported) —

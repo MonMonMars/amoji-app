@@ -97,6 +97,7 @@ import { stopGtts } from './gtts';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
 import { formatVoiceChain, freeVoiceHops } from './tts-chain';
 import { startThinkingSound, stopThinkingSound } from './thinking-sound';
+import { runEarlyAudioPreload } from './early-audio-preload';
 // r2026-10-05.112: tier 0 — OpenAI gpt-4o-mini-tts (ChatGPT-style emotional
 // voice via natural-language instructions). Sits AHEAD of the free chain;
 // any failure (no key, CORS, network) falls through silently to edge-tts.
@@ -1289,6 +1290,8 @@ export function primeAudioForChatEnter(): void {
   unlockAudio(true);
   primeSynthInGesture();
   try { resumeSfxContext(); } catch { /* ignore */ }
+  // Reinforce early warm from /select|/mode (idempotent; still no cheer SFX).
+  void runEarlyAudioPreload();
 }
 
 /** Resume synth + AudioContext after master unmute (t719). */
