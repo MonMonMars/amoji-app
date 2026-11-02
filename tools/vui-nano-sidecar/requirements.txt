@@ -1,0 +1,7 @@
+﻿# Vui Nano EN emotion/SFX CPU sidecar (DESKTOP only).
+# Install into D:\AI app development\vui-nano-venv — never C:.
+torch>=2.5
+numpy>=1.24
+soundfile>=0.12
+huggingface_hub>=0.13
+vui-tts
