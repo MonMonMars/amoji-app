@@ -522,9 +522,11 @@ export function backgroundLetter(id: string): string {
   return String.fromCharCode(65 + i);
 }
 
-export function usePrefs(): [Prefs, (patch: Partial<Prefs>) => void] {
+export function usePrefs(): [Prefs, (patch: Partial<Prefs>) => void, boolean] {
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
-  useEffect(() => { setPrefs(loadPrefs()); }, []);
+  // false until localStorage sync - callers hold selected chrome to avoid DEFAULT_PREFS flash.
+  const [ready, setReady] = useState(false);
+  useEffect(() => { setPrefs(loadPrefs()); setReady(true); }, []);
   const update = (patch: Partial<Prefs>): void => {
     setPrefs((p) => {
       const next: Prefs = { ...p, ...patch };
@@ -533,5 +535,5 @@ export function usePrefs(): [Prefs, (patch: Partial<Prefs>) => void] {
       return next;
     });
   };
-  return [prefs, update];
+  return [prefs, update, ready];
 }
