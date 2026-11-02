@@ -1,4 +1,4 @@
-﻿# Silencio-2 EN emotion/SFX-tag sidecar (spike)
+# Silencio-2 EN emotion/SFX-tag sidecar (spike)
 
 **Status:** spike / pre-wire. **Default OFF.** Not in the free Edge path.
 **Date:** 2026-11-02 (HKT)
@@ -107,3 +107,7 @@ Ran `tools/silencio2-sidecar/smoke_silencio2.py` with CPU torch + `quantize=True
 | whisper | ~0.62 s |
 
 WAVs kept local only: `D:\AI app development\silencio2-out\` (not committed). Feasibility confirmed for offline EN bake / optional localhost sidecar. Still **not** wired into `speak()` / Edge / Yue.
+
+## Multi-engine A/B
+
+See [en-sfx-sidecar-ab.md](./en-sfx-sidecar-ab.md) for Silencio-2 + Chatterbox-Turbo + Vui Nano (+ Lure) voice-select buttons on `/en-sfx-ab`.

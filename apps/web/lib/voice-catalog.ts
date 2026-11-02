@@ -7,7 +7,7 @@
 
 export type VoiceLocale = 'yue' | 'zh' | 'ja' | 'en';
 export type VoiceGender = 'female' | 'male';
-export type VoiceEngine = 'edge' | 'speech' | 'kokoro' | 'piper' | 'melotts' | 'bark' | 'canto-nano' | 'silencio2';
+export type VoiceEngine = 'edge' | 'speech' | 'kokoro' | 'piper' | 'melotts' | 'bark' | 'canto-nano' | 'silencio2' | 'chatterbox-turbo' | 'vui-nano' | 'lure-tts';
 
 export interface VoiceOption {
   locale: VoiceLocale;
@@ -123,6 +123,13 @@ export const VOICE_CATALOG: readonly VoiceOption[] = [
   { locale: 'en', engine: 'bark', gender: 'female', id: 'v2/en_speaker_9', shipping: false, license: 'MIT', latency: 'high', notes: 'Optional only. Too slow for the live demo.' },
   { locale: 'en', engine: 'silencio2', gender: 'female', id: 'silencio2-en', shipping: false, license: 'CC-BY-4.0 weights / MIT core', latency: 'mid', notes: 'EN-only emotion/SFX-tag CPU sidecar (Pocket TTS FT). Not bundled. Flag NEXT_PUBLIC_AMOJI_SILENCIO2 default off. Never zh/Yue; never code-switch; never in freeVoiceHops.' },
   { locale: 'en', engine: 'silencio2', gender: 'male', id: 'silencio2-en', shipping: false, license: 'CC-BY-4.0 weights / MIT core', latency: 'mid', notes: 'EN-only emotion/SFX-tag CPU sidecar. Same skip as female row. Beside Edge only.' },
+
+  { locale: 'en', engine: 'chatterbox-turbo', gender: 'female', id: 'chatterbox-turbo-en', shipping: false, license: 'MIT', latency: 'mid', notes: 'EN-only Chatterbox-Turbo CPU sidecar (paralinguistic tags). Not bundled. Flag NEXT_PUBLIC_AMOJI_CHATTERBOX_TURBO default off. Never zh/Yue; never code-switch; never in freeVoiceHops. A/B via /en-sfx-ab.' },
+  { locale: 'en', engine: 'chatterbox-turbo', gender: 'male', id: 'chatterbox-turbo-en', shipping: false, license: 'MIT', latency: 'mid', notes: 'EN-only Chatterbox-Turbo CPU sidecar. Same skip as female row. Beside Edge only.' },
+  { locale: 'en', engine: 'vui-nano', gender: 'female', id: 'vui-nano-en', shipping: false, license: 'Apache-2.0', latency: 'mid', notes: 'EN-only Vui Nano CPU sidecar (conversational tags). Not bundled. Flag NEXT_PUBLIC_AMOJI_VUI_NANO default off. Never zh/Yue; never code-switch; never in freeVoiceHops. A/B via /en-sfx-ab.' },
+  { locale: 'en', engine: 'vui-nano', gender: 'male', id: 'vui-nano-en', shipping: false, license: 'Apache-2.0', latency: 'mid', notes: 'EN-only Vui Nano CPU sidecar. Same skip as female row. Beside Edge only.' },
+  { locale: 'en', engine: 'lure-tts', gender: 'female', id: 'lure-tts-en', shipping: false, license: 'Apache-2.0', latency: 'mid', notes: 'EN-only Lure-TTS-0.6B optional CPU sidecar ((laugh)/(sigh) tags). Not bundled. Flag NEXT_PUBLIC_AMOJI_LURE_TTS default off. May be SKIP on DESKTOP. Never zh/Yue; never in freeVoiceHops. A/B via /en-sfx-ab.' },
+  { locale: 'en', engine: 'lure-tts', gender: 'male', id: 'lure-tts-en', shipping: false, license: 'Apache-2.0', latency: 'mid', notes: 'EN-only Lure-TTS-0.6B optional sidecar. Same skip as female row. Beside Edge only.' },
 ];
 
 /**
@@ -142,9 +149,12 @@ export const SKIPPED_ENGINES: readonly { engine: string; license: string; notes:
  */
 export const HELD_GPU_ENGINES: readonly { engine: string; notes: string }[] = [
   { engine: 'voxcpm2', notes: 'Hold for a later GPU host. Not called.' },
-  { engine: 'chatterbox', notes: 'Hold for a later GPU host. Not called.' },
+  { engine: 'chatterbox', notes: 'Hold for a later GPU host. Not called. (Distinct from chatterbox-turbo test sidecar.)' },
+  { engine: 'chatterbox-turbo', notes: 'EN-only CPU sidecar stub for /en-sfx-ab. Not in freeVoiceHops. No zh/Yue / no code-switch.' },
   { engine: 'cosyvoice', notes: 'Hold for a later GPU host. Not called.' },
-  { engine: 'silencio2', notes: 'EN-only CPU sidecar stub. Tools smoke only; not in freeVoiceHops. No zh/Yue / no code-switch.' },
+  { engine: 'silencio2', notes: 'EN-only CPU sidecar stub for /en-sfx-ab. Tools smoke + gateway; not in freeVoiceHops. No zh/Yue / no code-switch.' },
+  { engine: 'vui-nano', notes: 'EN-only CPU sidecar stub for /en-sfx-ab. Not in freeVoiceHops. No zh/Yue / no code-switch.' },
+  { engine: 'lure-tts', notes: 'EN-only optional CPU sidecar stub for /en-sfx-ab (may SKIP). Not in freeVoiceHops.' },
   { engine: 'qwen3-tts', notes: 'Hold for a later GPU host. Not called.' },
   { engine: 'kokoro', notes: 'Catalog stub only. Weights are not bundled.' },
   { engine: 'melotts', notes: 'Catalog stub only. Weights are not bundled.' },
