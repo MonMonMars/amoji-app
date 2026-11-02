@@ -149,7 +149,7 @@ export interface CompanionCanvasProps {
 // back: upper body centered. Per-character home is unified via upperBodyHome
 // after mount so short/tall cast share the same portrait framing.
 const HOME = { theta: 0, phi: PHI_HOME, dist: DEFAULT_CAMERA_HOME.dist };
-const HOME_TARGET = new THREE.Vector3(0, DEFAULT_CAMERA_HOME.lookY, 0);
+const HOME_TARGET = new THREE.Vector3(DEFAULT_CAMERA_HOME.lookX, DEFAULT_CAMERA_HOME.lookY, 0);
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
 // Polar window lives in lib/orbit-limits.ts (PHI_MIN / PHI_MAX). Theta is
@@ -330,6 +330,9 @@ export default function CompanionCanvas({
     const homeTarget = HOME_TARGET.clone();
     const target = homeTarget.clone();
     const orbit = { theta: HOME.theta, phi: HOME.phi, dist: HOME.dist };
+    // Per-cast unified dist from upperBodyHome; reset/double-tap must reuse it
+    // (HOME.dist stays the pre-mount default 2.6).
+    let homeDist = HOME.dist;
     let framed = false;
     const applyCamera = () => {
       orbit.phi = clamp(orbit.phi, PHI_MIN, PHI_MAX);
@@ -395,9 +398,16 @@ export default function CompanionCanvas({
         const hp = head.getWorldPosition(new THREE.Vector3());
         const ip = hips.getWorldPosition(new THREE.Vector3());
         const cp = chest ? chest.getWorldPosition(new THREE.Vector3()) : ip.clone().lerp(hp, 0.55);
-        const home = upperBodyHome({ hipsY: ip.y, chestY: cp.y, headY: hp.y });
-        homeTarget.set(0, home.lookY, 0);
-        orbit.dist = home.dist;
+        const home = upperBodyHome({
+                  hipsY: ip.y,
+                  chestY: cp.y,
+                  headY: hp.y,
+                  hipsX: ip.x,
+                  chestX: cp.x,
+                });
+        homeTarget.set(home.lookX, home.lookY, 0);
+        homeDist = home.dist;
+        orbit.dist = homeDist;
         if (!resetAnim) {
           target.copy(homeTarget);
           orbit.theta = HOME.theta;
@@ -1721,7 +1731,7 @@ export default function CompanionCanvas({
         camera.updateProjectionMatrix();
         orbit.theta = HOME.theta;
         orbit.phi = HOME.phi;
-        orbit.dist = HOME.dist;
+        orbit.dist = homeDist;
         target.copy(homeTarget);
         resetAnim = null;
         nextIdle(FADE.perfEnd);
@@ -1732,7 +1742,7 @@ export default function CompanionCanvas({
         const ease = 1 - Math.pow(1 - p, 3);
         orbit.theta = resetAnim.from.theta + (HOME.theta - resetAnim.from.theta) * ease;
         orbit.phi = resetAnim.from.phi + (HOME.phi - resetAnim.from.phi) * ease;
-        orbit.dist = resetAnim.from.dist + (HOME.dist - resetAnim.from.dist) * ease;
+        orbit.dist = resetAnim.from.dist + (homeDist - resetAnim.from.dist) * ease;
         target.lerpVectors(resetAnim.fromTarget, homeTarget, ease);
         if (p >= 1) resetAnim = null;
       }
