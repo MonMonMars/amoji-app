@@ -15,7 +15,7 @@ import { isMasterMuted } from './master-mute';
 export const THINKING_GAIN = 0.32;
 
 /** Wait this long before the loading um — skip if the reply arrives first. */
-export const THINKING_SOUND_DELAY_MS = 1000;
+export const THINKING_SOUND_DELAY_MS = 3_500;
 
 const VOICE_MUTE_KEY = 'amoji.voice.v1';
 
