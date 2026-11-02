@@ -68,7 +68,11 @@ describe('legal-accept', () => {
     const gate = read('../components/LegalGate.tsx');
     expect(layout).toContain('LegalGate');
     expect(gate).toContain('data-testid="legal-gate"');
+    expect(gate).toContain('data-testid="legal-gate-boot"');
     expect(gate).toContain('data-testid="legal-accept"');
+    // Boot blocker must paint before localStorage sync (no app chrome flash).
+    expect(gate).toMatch(/if \(!ready\)[\s\S]*legal-gate-boot/);
+    expect(gate).not.toMatch(/if \(!ready \|\| accepted[^\n]*\) return null/);
     expect(gate).toContain('acceptCurrentLegal');
     expect(gate).toContain('hasAcceptedCurrentLegal');
     expect(gate).toContain('/privacy');
