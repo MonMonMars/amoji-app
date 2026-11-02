@@ -13,18 +13,24 @@ export default function SelectTopBars({
   accent,
   kidMode,
   onKidMode,
+  prefsReady = true,
 }: {
   lang: Lang;
   accent: string;
   kidMode: boolean;
   onKidMode: (next: boolean) => void;
+  /** false until amoji.prefs.v1 sync - hold kid chip highlight */
+  prefsReady?: boolean;
 }) {
   const router = useRouter();
-  const [gender, setGender] = useState<Gender>('secret');
+  // null until profile localStorage sync - avoid secret-chip flash when user saved male/female.
+  const [gender, setGender] = useState<Gender | null>(null);
 
   useEffect(() => {
     setGender(loadProfile().gender ?? 'secret');
   }, []);
+  const genderReady = gender !== null;
+  const genderOn = gender ?? 'secret';
 
   const setGenderPick = (g: Gender) => {
     setGender(g);
@@ -68,13 +74,15 @@ export default function SelectTopBars({
           <button
             type="button"
             data-testid="select-mode-kid"
-            aria-pressed={kidMode}
+            aria-pressed={prefsReady ? kidMode : undefined}
+            aria-busy={!prefsReady}
+            disabled={!prefsReady}
             className={`fx-press ui-btn rounded-full border px-3 py-1 text-[11px] font-semibold ${
-              kidMode
+              prefsReady && kidMode
                 ? 'border-white/75 text-white'
                 : 'border-white/20 bg-black/30 text-white/70'
             }`}
-            style={kidMode ? { backgroundColor: `${accent}66` } : undefined}
+            style={prefsReady && kidMode ? { backgroundColor: `${accent}66` } : undefined}
             onClick={() => onKidMode(!kidMode)}
           >
             {t(lang, 'kidMode')}
@@ -89,14 +97,16 @@ export default function SelectTopBars({
               key={g}
               type="button"
               data-testid={`select-gender-${g}`}
-              aria-pressed={gender === g}
+              aria-pressed={genderReady ? genderOn === g : undefined}
+              aria-busy={!genderReady}
+              disabled={!genderReady}
               onClick={() => setGenderPick(g)}
               className={`fx-press ui-btn rounded-full border px-3 py-1 text-[11px] font-medium ${
-                gender === g
+                genderReady && genderOn === g
                   ? 'border-white/80 text-neutral-950'
                   : 'border-white/15 bg-black/30 text-white/70'
               }`}
-              style={gender === g ? { backgroundColor: accent } : undefined}
+              style={genderReady && genderOn === g ? { backgroundColor: accent } : undefined}
             >
               {t(lang, g === 'male' ? 'genderMale' : g === 'female' ? 'genderFemale' : 'genderSecret')}
             </button>
