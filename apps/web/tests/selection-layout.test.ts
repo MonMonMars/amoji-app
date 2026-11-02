@@ -131,6 +131,23 @@ describe('selection layout', () => {
   });
 
 
+  it('holds chat boot + idle-rail until localStorage sync (no DEFAULT flash)', () => {
+    const rails = read('../components/IdlePickRails.tsx');
+    const chat = read('../app/chat/page.tsx');
+    expect(rails).toContain('const [ready, setReady] = useState(false)');
+    expect(rails).toContain('setReady(true)');
+    expect(rails).toContain('aria-busy={!ready}');
+    expect(rails).toContain("data-ready={ready ? '1' : '0'}");
+    expect(rails).toContain("ready ? '' : 'opacity-0'");
+    expect(rails).toContain('listEnabledNums()');
+    expect(chat).toContain('loadPrefs');
+    expect(chat).toContain('const [bootReady, setBootReady] = useState(false)');
+    expect(chat).toContain('setBootReady(true)');
+    expect(chat).toContain('{bootReady && (');
+    expect(chat).toContain('{bootReady && <ChatPanel');
+    expect(chat).toContain("bootReady ? '' : 'opacity-0'");
+  });
+
   it('keeps IdlePickRails chat-only as a multi-column grid (no select rails)', () => {
     expect(board).not.toContain("import IdlePickRails from './IdlePickRails'");
     expect(board).not.toContain('<IdlePickRails');
