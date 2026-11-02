@@ -4,6 +4,7 @@
 // Play each clip, Want / Skip / Clear. Picks persist in localStorage.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import {
   CMA_REACTION_GALLERY,
   CMA_REACTION_GALLERY_KEY,
@@ -30,7 +31,9 @@ function playClip(path: string, audioRef: { current: HTMLAudioElement | null }) 
   } catch { /* ignore */ }
   const a = new Audio(path);
   audioRef.current = a;
-  void a.play().catch(() => undefined);
+  void a.play().catch((err) => {
+    console.warn('[sfx-gallery] play failed', path, err);
+  });
 }
 
 function ClipCard({
@@ -193,6 +196,8 @@ export default function SfxGalleryPage() {
       if (e.key === 'w' || e.key === 'W') {
         e.preventDefault();
         setCmaReactionVerdict(clip.code, 'want');
+        setPlaying(clip.code);
+        playClip(cmaReactionPath(clip.file), audioRef);
         refresh();
         return;
       }
@@ -270,9 +275,9 @@ export default function SfxGalleryPage() {
             <kbd className="rounded border border-white/20 px-1">P</kbd>/Space Play.
           </p>
           <div className="flex flex-wrap gap-2 pt-1">
-            <a href="/select" className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/80 hover:bg-white/10">← Select</a>
-            <a href="/chat" className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/80 hover:bg-white/10">Chat</a>
-            <a href="/en-sfx-ab" className="rounded-full border border-amber-400/40 px-3 py-1 text-xs text-amber-100/90 hover:bg-amber-500/10" data-testid="link-en-sfx-ab">EN SFX A/B (test)</a>
+            <Link href="/select" className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/80 hover:bg-white/10">← Select</Link>
+            <Link href="/chat" className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/80 hover:bg-white/10">Chat</Link>
+            <Link href="/en-sfx-ab" className="rounded-full border border-amber-400/40 px-3 py-1 text-xs text-amber-100/90 hover:bg-amber-500/10" data-testid="link-en-sfx-ab">EN SFX A/B (test)</Link>
             <button
               type="button"
               data-testid="cma-export"
@@ -340,6 +345,8 @@ export default function SfxGalleryPage() {
                 onWant={() => {
                   setFocusIdx(idx);
                   setCmaReactionVerdict(clip.code, 'want');
+                  setPlaying(clip.code);
+                  playClip(cmaReactionPath(clip.file), audioRef);
                   refresh();
                 }}
                 onSkip={() => {

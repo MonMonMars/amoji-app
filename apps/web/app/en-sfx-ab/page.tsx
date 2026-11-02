@@ -137,8 +137,8 @@ export default function EnSfxAbPage() {
   return (
     <main className="min-h-screen bg-zinc-950 px-4 py-6 text-white" data-testid="en-sfx-ab-page">
       <nav className="mb-4 flex flex-wrap gap-2 text-xs">
-        <a href="/select" className="rounded-full border border-white/20 px-3 py-1 text-white/80 hover:bg-white/10">← Select</a>
-        <a href="/sfx-gallery" className="rounded-full border border-white/20 px-3 py-1 text-white/80 hover:bg-white/10" data-testid="link-sfx-gallery">Reaction SFX gallery</a>
+        <Link href="/select" className="rounded-full border border-white/20 px-3 py-1 text-white/80 hover:bg-white/10">← Select</Link>
+        <Link href="/sfx-gallery" className="rounded-full border border-white/20 px-3 py-1 text-white/80 hover:bg-white/10" data-testid="link-sfx-gallery">Reaction SFX gallery</Link>
       </nav>
 
       <div className="mx-auto flex max-w-3xl flex-col gap-4">

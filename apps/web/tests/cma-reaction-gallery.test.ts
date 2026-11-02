@@ -54,8 +54,25 @@ describe('CMA reaction gallery catalog', () => {
 
   it('builds public paths under /voice-clips/cma-reaction/', () => {
     const first = CMA_REACTION_GALLERY[0]!;
+    const prev = process.env.NEXT_PUBLIC_BASE_PATH;
+    delete process.env.NEXT_PUBLIC_BASE_PATH;
     expect(cmaReactionPath(first.file)).toBe(`/voice-clips/cma-reaction/${first.file}`);
     expect(first.file.startsWith('CMA00304')).toBe(true);
+    if (prev === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
+    else process.env.NEXT_PUBLIC_BASE_PATH = prev;
+  });
+
+  it('prefixes NEXT_PUBLIC_BASE_PATH on Pages and does not double-prefix', () => {
+    const first = CMA_REACTION_GALLERY[0]!;
+    const prev = process.env.NEXT_PUBLIC_BASE_PATH;
+    process.env.NEXT_PUBLIC_BASE_PATH = '/amoji-app';
+    const once = cmaReactionPath(first.file);
+    expect(once).toBe(`/amoji-app/voice-clips/cma-reaction/${first.file}`);
+    expect(once.startsWith('/amoji-app/amoji-app/')).toBe(false);
+    // Nested call still single prefix (path helper is pure; double-prefix guarded in assetUrl)
+    expect(cmaReactionPath(first.file)).toBe(once);
+    if (prev === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
+    else process.env.NEXT_PUBLIC_BASE_PATH = prev;
   });
 });
 
@@ -120,7 +137,8 @@ describe('CMA Wanted play pool (wired)', () => {
 
     const path = pickWantedCmaReactionPath({ gender: 'female', role: 'laugh' });
     expect(path).toBe(cmaReactionPath(cmaReactionByCode('CMA00304')!.file));
-    expect(path!.startsWith('/voice-clips/cma-reaction/')).toBe(true);
+    expect(path!.endsWith(cmaReactionByCode('CMA00304')!.file)).toBe(true);
+    expect(path!.includes('/voice-clips/cma-reaction/')).toBe(true);
   });
 
   it('empty Wanted returns null so callers fall back to legacy clips', () => {
