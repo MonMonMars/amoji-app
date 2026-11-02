@@ -5,7 +5,7 @@ import { planTools } from './live-tools';
 import { LOADING_STUBS } from './thinking-lines';
 
 /** delay before the first warm-up line lands (right after the "hmm…") */
-export const WARMUP_FIRST_MS = 1_300;
+export const WARMUP_FIRST_MS = 4_000;
 /** gap between warm-up lines — conversational, unhurried */
 export const WARMUP_GAP_MS = 3_800;
 /** never ramble: after this many lines she simply smiles and waits */

@@ -131,16 +131,37 @@ describe('selection layout', () => {
   });
 
 
-  it('exposes IdlePickRails on select/change so Mon can pin idle before chat', () => {
-    expect(board).toContain("import IdlePickRails from './IdlePickRails'");
-    expect(board).toContain('<IdlePickRails characterId={character.id}');
-    expect(board).toContain('amoji.idlePick.v1');
+  it('keeps IdlePickRails chat-only as a multi-column grid (no select rails)', () => {
+    expect(board).not.toContain("import IdlePickRails from './IdlePickRails'");
+    expect(board).not.toContain('<IdlePickRails');
     expect(chat).toContain("import IdlePickRails from '../../components/IdlePickRails'");
     expect(chat).toContain('<IdlePickRails characterId={character.id}');
     const rails = read('../components/IdlePickRails.tsx');
     expect(rails).toContain('saveIdlePick');
     expect(rails).toContain('setIdleEnabled');
     expect(rails).toContain('onPick?.');
+    expect(rails).toContain('idle-rail-grid');
+    expect(rails).toContain('grid-cols-4');
+    expect(rails).toContain('overflow-hidden');
+    expect(rails).not.toContain('overflow-y-auto');
+  });
+
+  it('puts mode + gender selectors at the top of the selection board', () => {
+    expect(board).toContain("import SelectTopBars from './SelectTopBars'");
+    expect(board).toContain('<SelectTopBars');
+    expect(board).toContain('onKidMode={setKidMode}');
+    const top = board.indexOf('<SelectTopBars');
+    const characters = board.indexOf('ariaLabel="characters"');
+    expect(top).toBeGreaterThan(-1);
+    expect(top).toBeLessThan(characters);
+    const bars = read('../components/SelectTopBars.tsx');
+    expect(bars).toContain('data-testid="select-top-bars"');
+    expect(bars).toContain('select-mode-chat');
+    expect(bars).toContain('select-mode-story');
+    expect(bars).toContain('select-mode-kid');
+    expect(bars).toContain('select-gender-${g}');
+    expect(bars).toContain('yourGender');
+    expect(bars).toContain('settingsMode');
   });
 
   it('keeps language cards in the character style, smaller than scenes', () => {
