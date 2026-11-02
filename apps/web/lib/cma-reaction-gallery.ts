@@ -1,6 +1,6 @@
-// CMA00304–CMA00349 Reaction SFX gallery catalog + Want/Skip picks.
-// Selection only — NOT wired into poke/laugh/loading production paths.
-// Assets: public/voice-clips/cma-reaction/*.mp3 (from D: amoji-reaction-sfx-library).
+// CMA00304-CMA00349 Reaction SFX gallery catalog + Want/Skip picks.
+// Wired: Wanted codes feed recordedLaughClip / recordedPokeClip at play time.
+// Skip and undecided never enter the play pool. Assets under public/voice-clips/cma-reaction/.
 
 export const CMA_REACTION_GALLERY_KEY = 'amoji.cmaReactionSfx.picks.v1';
 export const CMA_REACTION_RANGE = { from: 304, to: 349 } as const;
@@ -621,9 +621,58 @@ export function resetCmaReactionPicks(): void {
   } catch { /* ignore */ }
 }
 
+
+/** Play roles that map gallery burst/use onto laugh / poke / gasp pools. */
+export type CmaReactionPlayRole = 'laugh' | 'poke' | 'gasp';
+
+const LAUGH_BURSTS = new Set(['laugh', 'giggle', 'ha', 'smile', 'groan']);
+const POKE_BURSTS = new Set(['ouch', 'effort', 'yelp']);
+const GASP_BURSTS = new Set(['gasp']);
+
+function matchesPlayRole(clip: CmaReactionClip, role: CmaReactionPlayRole): boolean {
+  if (role === 'poke') return clip.use === 'poke' || POKE_BURSTS.has(clip.burst);
+  if (role === 'laugh') return LAUGH_BURSTS.has(clip.burst);
+  if (role === 'gasp') return GASP_BURSTS.has(clip.burst);
+  return false;
+}
+
+/** Wanted catalog rows only. Skip/undecided excluded. Optional gender + play-role filter. */
+export function wantedCmaReactionClips(opts?: {
+  gender?: 'female' | 'male';
+  role?: CmaReactionPlayRole;
+}): CmaReactionClip[] {
+  const wanted = new Set(wantedCmaReactionCodes());
+  return CMA_REACTION_GALLERY.filter((c) => {
+    if (!wanted.has(c.code)) return false;
+    if (opts?.gender && c.gender !== opts.gender) return false;
+    if (opts?.role && !matchesPlayRole(c, opts.role)) return false;
+    return true;
+  });
+}
+
+let wantedPlayCursor = 0;
+
+/**
+ * Next Wanted CMA path for this gender + role, or null when the Wanted pool is empty.
+ * Runtime localStorage picks only — never a hardcoded Want list.
+ */
+export function pickWantedCmaReactionPath(opts: {
+  gender: 'female' | 'male';
+  role: CmaReactionPlayRole;
+}): string | null {
+  const pool = wantedCmaReactionClips(opts);
+  if (!pool.length) return null;
+  const clip = pool[wantedPlayCursor % pool.length]!;
+  wantedPlayCursor += 1;
+  return cmaReactionPath(clip.file);
+}
+
+export function resetWantedCmaReactionRotation(): void {
+  wantedPlayCursor = 0;
+}
+
 /** Test helper — drop in-memory cache so the next read rehydrates. */
 export function forgetCmaReactionPickCache(): void {
   memory = {};
   loaded = false;
 }
-

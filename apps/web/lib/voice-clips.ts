@@ -9,6 +9,8 @@
 // The mapped library also keeps extra takes (anime laughs, sighs) and a
 // universal/ folder. Chat leads still use the seven canonical names.
 
+import { pickWantedCmaReactionPath } from './cma-reaction-gallery';
+
 export const VOICE_CLIP_LANGS = ['yue', 'zh', 'ja', 'en'] as const;
 export type VoiceClipLang = (typeof VOICE_CLIP_LANGS)[number];
 export const VOICE_CLIP_GENDERS = ['female', 'male'] as const;
@@ -280,6 +282,9 @@ let laughClipCursor = 0;
 
 /** Recorded laugh / giggle / smile for funny reactions — CLIP_LIBRARY SFX only. */
 export function recordedLaughClip(gender: VoiceClipGender, lang: string = 'en'): string {
+  // Prefer Mon's Wanted CMA00304-349 picks (all chat langs). Skip/undecided stay out.
+  const wantedCma = pickWantedCmaReactionPath({ gender, role: 'laugh' });
+  if (wantedCma) return wantedCma;
   const folder = clipLang(lang);
   const pool: string[] = [];
   const push = (path: string) => {
@@ -385,6 +390,9 @@ const POKE_ZONE_ALIASES: Record<string, string> = {
 };
 
 export function recordedPokeClip(gender: VoiceClipGender, zone?: string): string {
+  // Prefer Wanted CMA poke/ouch/effort/yelp for this gender (all langs). Else zone table.
+  const wantedCma = pickWantedCmaReactionPath({ gender, role: 'poke' });
+  if (wantedCma) return wantedCma;
   const table = RECORDED_POKE_ZONE[gender];
   let key = (zone || 'default').toLowerCase();
   key = POKE_ZONE_ALIASES[key] ?? key;
