@@ -560,21 +560,32 @@ type PickMap = Record<string, CmaReactionVerdict>;
 let memory: PickMap = {};
 let loaded = false;
 
+/** Fail-closed parse of localStorage JSON. Wrong shape / corrupt → empty picks. */
+export function parseCmaReactionPicksJson(raw: string | null | undefined): PickMap {
+  if (raw == null || raw === '') return {};
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    // Arrays / primitives / null are wrong-shaped — never throw, never apply.
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    const next: PickMap = {};
+    for (const [code, v] of Object.entries(parsed as Record<string, unknown>)) {
+      if (!cmaReactionByCode(code)) continue; // unknown / missing-from-catalog ids dropped
+      if (v === 'want' || v === 'skip') next[code] = v;
+      // 'undecided' and anything else are ignored (undecided = absent)
+    }
+    return next;
+  } catch {
+    return {};
+  }
+}
+
 function hydrate(): PickMap {
   if (loaded) return memory;
   loaded = true;
   try {
     if (typeof localStorage === 'undefined') return memory;
     const raw = localStorage.getItem(CMA_REACTION_GALLERY_KEY);
-    if (!raw) return memory;
-    const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== 'object') return memory;
-    const next: PickMap = {};
-    for (const [code, v] of Object.entries(parsed as Record<string, unknown>)) {
-      if (!cmaReactionByCode(code)) continue;
-      if (v === 'want' || v === 'skip' || v === 'undecided') next[code] = v;
-    }
-    memory = next;
+    memory = parseCmaReactionPicksJson(raw);
   } catch { /* ignore */ }
   return memory;
 }
@@ -621,6 +632,40 @@ export function resetCmaReactionPicks(): void {
   } catch { /* ignore */ }
 }
 
+/** Drop Skip verdicts only — Wanted stays. Returns how many skips cleared. */
+export function clearSkippedCmaReactionPicks(): number {
+  const cur = hydrate();
+  let removed = 0;
+  const next: PickMap = {};
+  for (const [code, v] of Object.entries(cur)) {
+    if (v === 'skip') {
+      removed += 1;
+      continue;
+    }
+    next[code] = v;
+  }
+  persist(next);
+  return removed;
+}
+
+/** Count helpers for gallery chips (CI-safe, no DOM). */
+export function countCmaReactionPicks(picks?: PickMap): {
+  all: number;
+  wanted: number;
+  skipped: number;
+  undecided: number;
+} {
+  const map = picks ?? hydrate();
+  let wanted = 0;
+  let skipped = 0;
+  for (const v of Object.values(map)) {
+    if (v === 'want') wanted += 1;
+    else if (v === 'skip') skipped += 1;
+  }
+  const all = CMA_REACTION_GALLERY.length;
+  return { all, wanted, skipped, undecided: Math.max(0, all - wanted - skipped) };
+}
+
 
 /** Play roles that map gallery burst/use onto laugh / poke / gasp pools. */
 export type CmaReactionPlayRole = 'laugh' | 'poke' | 'gasp';
@@ -659,12 +704,21 @@ let wantedPlayCursor = 0;
 export function pickWantedCmaReactionPath(opts: {
   gender: 'female' | 'male';
   role: CmaReactionPlayRole;
+  /** Optional playability gate (e.g. missing public file). Unplayable Wanted ids are skipped; all-miss → null → legacy. */
+  isPlayable?: (path: string) => boolean;
 }): string | null {
   const pool = wantedCmaReactionClips(opts);
   if (!pool.length) return null;
-  const clip = pool[wantedPlayCursor % pool.length]!;
-  wantedPlayCursor += 1;
-  return cmaReactionPath(clip.file);
+  const n = pool.length;
+  for (let i = 0; i < n; i++) {
+    const clip = pool[wantedPlayCursor % n]!;
+    wantedPlayCursor += 1;
+    const path = cmaReactionPath(clip.file);
+    if (!clip.file || !path) continue;
+    if (opts.isPlayable && !opts.isPlayable(path)) continue;
+    return path;
+  }
+  return null;
 }
 
 export function resetWantedCmaReactionRotation(): void {

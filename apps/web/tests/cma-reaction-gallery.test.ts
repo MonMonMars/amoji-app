@@ -3,6 +3,8 @@ import {
   CMA_REACTION_GALLERY,
   CMA_REACTION_GALLERY_KEY,
   CMA_REACTION_RANGE,
+  clearSkippedCmaReactionPicks,
+  countCmaReactionPicks,
   cmaReactionByCode,
   cmaReactionPath,
   cmaReactionVerdict,
@@ -11,6 +13,7 @@ import {
   listCmaReactionCodes,
   listCmaReactionPicks,
   missingCmaReactionCodes,
+  parseCmaReactionPicksJson,
   pickWantedCmaReactionPath,
   resetCmaReactionPicks,
   resetWantedCmaReactionRotation,
@@ -127,5 +130,75 @@ describe('CMA Wanted play pool (wired)', () => {
     expect(wantedCmaReactionCodes()).toEqual([]);
     expect(pickWantedCmaReactionPath({ gender: 'female', role: 'laugh' })).toBeNull();
     expect(pickWantedCmaReactionPath({ gender: 'male', role: 'poke' })).toBeNull();
+  });
+});
+
+
+describe('CMA pick harden + Clear Skipped', () => {
+  it('fail-closed on corrupt / wrong-shaped localStorage JSON', () => {
+    expect(parseCmaReactionPicksJson(null)).toEqual({});
+    expect(parseCmaReactionPicksJson('')).toEqual({});
+    expect(parseCmaReactionPicksJson('not-json')).toEqual({});
+    expect(parseCmaReactionPicksJson('[]')).toEqual({});
+    expect(parseCmaReactionPicksJson('"want"')).toEqual({});
+    expect(parseCmaReactionPicksJson('null')).toEqual({});
+    expect(parseCmaReactionPicksJson('{"CMA00304":"WANT"}')).toEqual({});
+    expect(parseCmaReactionPicksJson('{"CMA00999":"want"}')).toEqual({});
+    expect(parseCmaReactionPicksJson('{"CMA00304":"want","CMA00305":"skip","nope":"want"}')).toEqual({
+      CMA00304: 'want',
+      CMA00305: 'skip',
+    });
+
+    const store = mockStorage();
+    forgetCmaReactionPickCache();
+    store.set(CMA_REACTION_GALLERY_KEY, '{bad');
+    expect(listCmaReactionPicks()).toEqual({});
+    expect(pickWantedCmaReactionPath({ gender: 'female', role: 'laugh' })).toBeNull();
+  });
+
+  it('Skip-only (no Wanted) returns null; Clear Skipped keeps Wanted', () => {
+    mockStorage();
+    forgetCmaReactionPickCache();
+    resetWantedCmaReactionRotation();
+    setCmaReactionVerdict('CMA00305', 'skip');
+    setCmaReactionVerdict('CMA00317', 'skip');
+    expect(wantedCmaReactionCodes()).toEqual([]);
+    expect(pickWantedCmaReactionPath({ gender: 'female', role: 'laugh' })).toBeNull();
+    expect(countCmaReactionPicks().skipped).toBe(2);
+
+    setCmaReactionVerdict('CMA00304', 'want');
+    expect(clearSkippedCmaReactionPicks()).toBe(2);
+    expect(skippedCmaReactionCodes()).toEqual([]);
+    expect(wantedCmaReactionCodes()).toEqual(['CMA00304']);
+    expect(countCmaReactionPicks()).toMatchObject({ wanted: 1, skipped: 0 });
+  });
+
+  it('skips Wanted ids whose files are unplayable and falls back to null/legacy', () => {
+    mockStorage();
+    forgetCmaReactionPickCache();
+    resetWantedCmaReactionRotation();
+    setCmaReactionVerdict('CMA00304', 'want');
+    setCmaReactionVerdict('CMA00320', 'want');
+    const miss = new Set([
+      cmaReactionPath(cmaReactionByCode('CMA00304')!.file),
+      cmaReactionPath(cmaReactionByCode('CMA00320')!.file),
+    ]);
+    expect(
+      pickWantedCmaReactionPath({
+        gender: 'female',
+        role: 'laugh',
+        isPlayable: (p) => !miss.has(p),
+      }),
+    ).toBeNull();
+
+    // One playable remains → returns that one
+    resetWantedCmaReactionRotation();
+    const onlyMissFirst = new Set([cmaReactionPath(cmaReactionByCode('CMA00304')!.file)]);
+    const path = pickWantedCmaReactionPath({
+      gender: 'female',
+      role: 'laugh',
+      isPlayable: (p) => !onlyMissFirst.has(p),
+    });
+    expect(path).toContain('CMA00320');
   });
 });

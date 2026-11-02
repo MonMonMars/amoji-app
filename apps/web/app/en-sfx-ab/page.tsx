@@ -1,4 +1,4 @@
-'use client';
+"use client";
 // EN emotion/SFX sidecar A/B test page (Mon Path B).
 // Distinct buttons per engine. Edge baseline; sidecars fail-closed.
 // Does NOT touch Yue/ja Edge chat. Does NOT wire CMA Wanted.
@@ -8,7 +8,9 @@ import Link from 'next/link';
 import {
   EN_SFX_AB_SAMPLES,
   EN_SFX_SIDECAR_ENGINES,
+  enSfxFailClosedMessage,
   enSfxGatewayBase,
+  enSfxGatewayStatus,
   readEnSfxAbPick,
   writeEnSfxAbPick,
   type EnSfxSidecarEngineId,
@@ -38,6 +40,7 @@ export default function EnSfxAbPage() {
   const [busy, setBusy] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const gateway = useMemo(() => enSfxGatewayBase(), []);
+  const gatewayPill = useMemo(() => enSfxGatewayStatus(health), [health]);
 
   useEffect(() => {
     setPick(readEnSfxAbPick());
@@ -110,7 +113,7 @@ export default function EnSfxAbPage() {
         } catch {
           /* ignore */
         }
-        setStatus(`Fail-closed → Edge (${detail})`);
+        setStatus(enSfxFailClosedMessage({ engineId: pick, detail, engineHealth: health?.engines?.[pick] }));
         edgeFallback(sample.text);
         return;
       }
@@ -120,7 +123,7 @@ export default function EnSfxAbPage() {
       const samp = res.headers.get('X-Amoji-Sample') || '';
       setStatus(`Played ${eng}${samp ? ` (${samp})` : ''}`);
     } catch (e) {
-      setStatus(`Fail-closed → Edge (${e instanceof Error ? e.message : String(e)})`);
+      setStatus(enSfxFailClosedMessage({ engineId: pick, detail: e instanceof Error ? e.message : String(e), engineHealth: health?.engines?.[pick] }));
       try {
         edgeFallback(sample.text);
       } catch {
@@ -150,6 +153,27 @@ export default function EnSfxAbPage() {
             ← Select
           </Link>
         </header>
+
+        <div
+          className="flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-black/30 px-3 py-2"
+          data-testid="en-sfx-gateway-pill"
+          data-state={gatewayPill.state}
+        >
+          <span
+            className={[
+              'inline-block h-2.5 w-2.5 rounded-full',
+              gatewayPill.state === 'up' ? 'bg-emerald-400' : gatewayPill.state === 'down' ? 'bg-rose-400' : 'bg-amber-300',
+            ].join(' ')}
+            aria-hidden
+          />
+          <span className="text-sm font-medium">{gatewayPill.label}</span>
+          <span className="text-[11px] text-white/50">{gatewayPill.detail}</span>
+          {pick !== 'edge' && health?.engines?.[pick]?.skipped ? (
+            <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-amber-100" data-testid="en-sfx-engine-skip-hint">
+              {pick === 'vui-nano' ? 'Vui CUDA/skip → Edge' : 'Engine SKIP → Edge'}
+            </span>
+          ) : null}
+        </div>
 
         <section className="rounded-2xl border border-white/10 bg-black/40 p-3">
           <h2 className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-white/55">
