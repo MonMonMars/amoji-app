@@ -57,7 +57,12 @@ describe('mode + story entry (t741)', () => {
     expect(read('../app/chat/page.tsx')).toContain('storyPersonaSuffix');
     const board = read('../components/SelectionBoard.tsx');
     expect(board).toContain('clearStorySession');
-    expect(board).toContain('chat-mode-label');
+    // Mode chips moved to SelectTopBars (TOP of /select); old chat-mode-label retired.
+    const topBars = read('../components/SelectTopBars.tsx');
+    expect(topBars).toContain('clearStorySession');
+    expect(topBars).toContain('select-mode-chat');
+    expect(topBars).toContain('select-mode-story');
+    expect(topBars).toContain('select-top-bars');
   });
 });
 

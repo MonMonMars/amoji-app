@@ -33,6 +33,6 @@ describe('thinking sound', () => {
   });
 
   it('delays the loading um so fast replies stay SFX-free', () => {
-    expect(THINKING_SOUND_DELAY_MS).toBe(1000);
+    expect(THINKING_SOUND_DELAY_MS).toBe(3500);
   });
 });

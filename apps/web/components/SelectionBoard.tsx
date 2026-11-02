@@ -12,8 +12,8 @@ import SceneBackdrop from './SceneBackdrop';
 import ModelThumb from './ModelThumb';
 import EmotionClipRow from './EmotionClipRow';
 import MuteButton from './MuteButton';
-import IdlePickRails from './IdlePickRails';
 import TtsVoiceRow from './TtsVoiceRow';
+import SelectTopBars from './SelectTopBars';
 import { LangCardFace } from './selectors';
 import { assetUrl } from '../lib/asset';
 import { bigheadPath } from '../lib/bighead';
@@ -23,6 +23,7 @@ import { voicePickFor } from '../lib/voice-picks';
 import { resolveEdgeVoice } from '../lib/edge-tts';
 import {
   BACKGROUNDS, CHARACTERS, LANGS,
+  KID_BACKGROUND, KID_CHARACTER,
   backgroundById, backgroundLetter, characterById, t, usePrefs,
   type Prefs,
 } from '../lib/prefs';
@@ -41,6 +42,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   const lang = live.lang;
   const dirty = draft !== null;
 
+
   const roster = selectionCast(CHARACTERS);
   const cast = prefs.kidMode ? roster.filter((c) => c.kidSafe) : roster;
   const scenes = prefs.kidMode ? BACKGROUNDS.filter((b) => b.kidSafe) : BACKGROUNDS;
@@ -48,6 +50,15 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   const pick = (patch: Partial<Prefs>) => {
     if (mode === 'start') setPrefs(patch);
     else setDraft((d) => ({ ...d, ...patch }));
+  };
+
+  const setKidMode = (next: boolean) => {
+    const patch: Partial<Prefs> = { kidMode: next };
+    if (next) {
+      if (!characterById(live.character).kidSafe) patch.character = KID_CHARACTER;
+      if (!backgroundById(live.background).kidSafe) patch.background = KID_BACKGROUND;
+    }
+    pick(patch);
   };
 
   const confirm = () => {
@@ -87,8 +98,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
 
       {/* Master mute — top-right. Top-left stays clear (exit/back lives on chat plate). */}
       {/* Same numbered idle rails as chat — pin before START; chat hydrates amoji.idlePick.v1. */}
-      <IdlePickRails characterId={character.id} onPick={() => { /* persist only */ }} />
-
+      
       <div className="pointer-events-none absolute right-3 top-3 z-40 pt-[env(safe-area-inset-top)]">
         <MuteButton lang={lang} className="pointer-events-auto" />
       </div>
@@ -97,7 +107,13 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
         data-testid="selection-thumbs"
         className="relative z-20 flex min-h-0 flex-1 flex-col items-center"
       >
-        <section className="flex min-h-0 w-full max-w-7xl flex-1 flex-col items-center justify-center px-3 pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <SelectTopBars
+          lang={lang}
+          accent={character.accent}
+          kidMode={!!live.kidMode}
+          onKidMode={setKidMode}
+        />
+        <section className="flex min-h-0 w-full max-w-7xl flex-1 flex-col items-center justify-center px-3 pt-1">
           <div className="w-full shrink-0 px-1 text-center">
             <p className="truncate text-lg font-bold drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)] sm:text-xl">
               {character.name}
@@ -113,7 +129,6 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
               </p>
             )}
             <h2 className="mb-1 mt-2 text-center text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
-              <span data-testid="chat-mode-label" className="mb-1 block text-[10px] font-bold uppercase tracking-[0.3em] text-sky-200/80">Chat mode</span>
               {t(lang, 'chooseCharacter')}
             </h2>
           </div>
