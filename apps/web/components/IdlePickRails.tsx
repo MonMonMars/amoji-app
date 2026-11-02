@@ -16,19 +16,26 @@ export default function IdlePickRails({
   characterId: string;
   onPick?: (clipId: string) => void;
 }) {
+  // null / [] until localStorage sync — avoid default-chip flash then jump to saved pick.
   const [picked, setPicked] = useState<string | null>(null);
-  const [enabled, setEnabled] = useState<number[]>(() => listEnabledNums());
+  const [enabled, setEnabled] = useState<number[]>([]);
+  const [ready, setReady] = useState(false);
 
-  useEffect(() => { setPicked(idlePickFor(characterId)); }, [characterId]);
+  useEffect(() => {
+    setPicked(idlePickFor(characterId));
+    setEnabled(listEnabledNums());
+    setReady(true);
+  }, [characterId]);
 
   const tap = (id: string, playable: boolean) => {
-    if (!playable) return;
+    if (!playable || !ready) return;
     const saved = saveIdlePick(characterId, id);
     setPicked(saved);
     if (saved) onPick?.(saved);
   };
 
   const toggle = (num: number) => {
+    if (!ready) return;
     setEnabled(setIdleEnabled(num, !isIdleEnabled(num)));
   };
 
@@ -39,15 +46,17 @@ export default function IdlePickRails({
   return (
     <div
       data-testid="idle-rail-grid"
-      className="pointer-events-none absolute bottom-[7.5rem] left-[max(2px,env(safe-area-inset-left))] top-14 z-20 flex w-[min(42vw,11.5rem)] flex-col sm:w-[min(36vw,13rem)]"
+      data-ready={ready ? '1' : '0'}
+      aria-busy={!ready}
+      className={`pointer-events-none absolute bottom-[7.5rem] left-[max(2px,env(safe-area-inset-left))] top-14 z-20 flex w-[min(42vw,11.5rem)] flex-col sm:w-[min(36vw,13rem)] ${ready ? '' : 'opacity-0'}`}
     >
       <div
         data-testid="idle-rail-left"
         className="pointer-events-auto grid max-h-full grid-cols-4 content-start gap-0.5 overflow-hidden sm:grid-cols-5"
       >
         {shown.map((item) => {
-          const on = picked === item.id;
-          const en = enabled.includes(item.num);
+          const on = ready && picked === item.id;
+          const en = ready && enabled.includes(item.num);
           const calm = isDefaultIdleClip(item.id);
           const title = [
             `#${item.num}`,
@@ -62,7 +71,8 @@ export default function IdlePickRails({
               type="button"
               aria-label={`Idle #${item.num}`}
               title={title}
-              aria-pressed={on}
+              aria-pressed={ready ? on : undefined}
+              disabled={!ready}
               data-dev={`I${item.num}`}
               data-idle-num={item.num}
               data-c-id={item.cId ?? ''}
