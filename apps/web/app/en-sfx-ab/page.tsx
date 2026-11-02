@@ -1,4 +1,4 @@
-'use client';
+"use client";
 // EN emotion/SFX sidecar A/B test page (Mon Path B).
 // Distinct buttons per engine. Edge baseline; sidecars fail-closed.
 // Does NOT touch Yue/ja Edge chat. Does NOT wire CMA Wanted.
