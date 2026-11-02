@@ -1,0 +1,6 @@
+﻿# Lure-TTS-0.6B EN emotion/SFX CPU sidecar (DESKTOP only, optional).
+torch>=2.5
+numpy>=1.24
+soundfile>=0.12
+huggingface_hub>=0.13
+qwen-tts

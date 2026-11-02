@@ -1,0 +1,9 @@
+# Chatterbox-Turbo EN emotion/SFX CPU sidecar (DESKTOP only).
+# Install into D:\AI app development\chatterbox-turbo-venv — never C:.
+# Weights via huggingface_hub into HF_HOME (D:\LocalAI\cache\huggingface).
+torch>=2.5
+torchaudio>=2.5
+numpy>=1.26.4,<2.1
+soundfile>=0.12
+huggingface_hub>=0.13
+chatterbox-tts
