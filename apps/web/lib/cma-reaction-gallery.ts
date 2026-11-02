@@ -531,7 +531,10 @@ export const CMA_REACTION_GALLERY: readonly CmaReactionClip[] = [
 ] as const;
 
 export function cmaReactionPath(file: string): string {
-  return '/voice-clips/cma-reaction/' + file;
+  // Pages deploy sets NEXT_PUBLIC_BASE_PATH=/amoji-app; local/dev leaves it empty.
+  // Inline (do not import asset.ts — that module is 'use client').
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+  return base + '/voice-clips/cma-reaction/' + file;
 }
 
 export function cmaReactionByCode(code: string): CmaReactionClip | null {
