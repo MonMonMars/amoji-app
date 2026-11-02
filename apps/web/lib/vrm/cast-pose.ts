@@ -97,7 +97,7 @@ function pushLevel(
   });
 }
 
-/** Clavicle rotation that tips the shoulder?’upper-arm direction upward. */
+/** Clavicle rotation that tips the shoulderâ†’upper-arm direction upward. */
 export function liftedClavicleLocal(shoulder: THREE.Object3D, upper: THREE.Object3D): THREE.Quaternion {
   shoulder.updateWorldMatrix(true, false);
   upper.updateWorldMatrix(true, false);
