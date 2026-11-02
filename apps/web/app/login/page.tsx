@@ -8,14 +8,17 @@ import { APP_NAME, APP_REVISION, APP_TAGLINE } from '../../lib/revision';
 
 export default function Login() {
   const router = useRouter();
-  const [prefs] = usePrefs();
-  const [name, setName] = useState('');
+  const [prefs, , prefsReady] = usePrefs();
+  // null until profile sync — empty string would flash then jump, and a fast Continue could wipe the saved name.
+  const [name, setName] = useState<string | null>(null);
 
   useEffect(() => {
-    setName(loadProfile().name);
+    setName(loadProfile().name ?? '');
   }, []);
+  const bootReady = prefsReady && name !== null;
 
   const go = () => {
+    if (name === null) return;
     saveProfile({ name });
     router.push('/mode');
   };
@@ -34,25 +37,31 @@ export default function Login() {
       </div>
       <p className="text-sm tracking-[0.25em] text-white/35 uppercase">{APP_TAGLINE}</p>
 
-      <div className="fx-rise mt-8 w-full max-w-sm" style={{ '--d': '160ms' } as CSSProperties}>
+      <div
+        className={`fx-rise mt-8 w-full max-w-sm ${bootReady ? '' : 'opacity-0'}`}
+        style={{ '--d': '160ms' } as CSSProperties}
+        aria-busy={!bootReady}
+      >
         <label className="mb-2 block text-center text-sm text-white/60">{t(lang, 'loginPrompt')}</label>
         <input
-          value={name}
+          value={name ?? ''}
           onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && go()}
+          onKeyDown={(e) => e.key === 'Enter' && bootReady && go()}
           maxLength={24}
-          autoFocus
+          autoFocus={bootReady}
+          disabled={!bootReady}
           className="h-12 w-full rounded-full border border-white/15 bg-white/5 px-5 text-center text-lg text-white placeholder-white/25 outline-none backdrop-blur-md transition focus:border-pink-300/60 focus:bg-white/10"
           placeholder="Simon"
         />
         <button
           onClick={go}
-          className="ui-btn ui-btn-primary mt-4 h-12 w-full rounded-full bg-white text-base font-semibold text-black shadow-[0_10px_40px_-12px_rgba(255,255,255,0.45)]"
+          disabled={!bootReady}
+          className="ui-btn ui-btn-primary mt-4 h-12 w-full rounded-full bg-white text-base font-semibold text-black shadow-[0_10px_40px_-12px_rgba(255,255,255,0.45)] disabled:pointer-events-none disabled:opacity-60"
         >
           {t(lang, 'loginCta')}
         </button>
         <div className="mt-3 text-center">
-          <button onClick={() => router.push('/select')} className="ui-btn rounded-full px-3 py-1 text-xs text-white/35 underline-offset-4 hover:underline">
+          <button onClick={() => router.push('/select')} disabled={!bootReady} className="ui-btn rounded-full px-3 py-1 text-xs text-white/35 underline-offset-4 hover:underline disabled:pointer-events-none">
             {t(lang, 'loginSkip')}
           </button>
         </div>
