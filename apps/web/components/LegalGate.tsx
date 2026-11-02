@@ -83,7 +83,22 @@ export default function LegalGate() {
   }, []);
 
   // Let users read full demo Privacy/Terms pages without the blocking overlay.
-  if (!ready || accepted || LEGAL_DOC_PATHS.has(pathname)) return null;
+  if (LEGAL_DOC_PATHS.has(pathname)) return null;
+
+  // First paint: opaque blocker until localStorage is read. Returning users
+  // see a brief black frame; first-run never glimpses select/chat underneath.
+  if (!ready) {
+    return (
+      <div
+        data-testid="legal-gate-boot"
+        className="fixed inset-0 z-[10000] bg-neutral-950"
+        aria-busy="true"
+        aria-hidden="true"
+      />
+    );
+  }
+
+  if (accepted) return null;
 
   const c = COPY;
   return (
