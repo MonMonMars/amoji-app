@@ -1,14 +1,16 @@
-'use client';
-// In-app CMA00304–CMA00349 Reaction SFX gallery (pre-wire).
+use client';
+// In-app CMA00304-CMA00349 Reaction SFX gallery.
+// Wanted picks feed recordedLaughClip / recordedPokeClip at play time. Skip stays out.
 // Play each clip, Want / Skip / Clear. Picks persist in localStorage.
-// Does NOT wire into poke / laugh / loading production paths.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   CMA_REACTION_GALLERY,
   CMA_REACTION_GALLERY_KEY,
+  clearSkippedCmaReactionPicks,
   cmaReactionPath,
   cmaReactionVerdict,
+  countCmaReactionPicks,
   forgetCmaReactionPickCache,
   listCmaReactionPicks,
   missingCmaReactionCodes,
@@ -35,18 +37,22 @@ function ClipCard({
   clip,
   verdict,
   playing,
+  focused,
   onPlay,
   onWant,
   onSkip,
   onClear,
+  onFocusCard,
 }: {
   clip: CmaReactionClip;
   verdict: CmaReactionVerdict;
   playing: boolean;
+  focused: boolean;
   onPlay: () => void;
   onWant: () => void;
   onSkip: () => void;
   onClear: () => void;
+  onFocusCard: () => void;
 }) {
   const border =
     verdict === 'want'
@@ -54,11 +60,14 @@ function ClipCard({
       : verdict === 'skip'
         ? 'border-rose-400/40 bg-rose-500/5'
         : 'border-white/15 bg-black/35';
+  const ring = focused ? 'ring-2 ring-amber-300/80' : '';
   return (
     <article
       data-testid={`cma-card-${clip.code}`}
       data-verdict={verdict}
-      className={`rounded-xl border p-3 text-white shadow-sm ${border}`}
+      data-focused={focused ? '1' : '0'}
+      onClick={onFocusCard}
+      className={`rounded-xl border p-3 text-white shadow-sm ${border} ${ring}`}
     >
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="font-mono text-sm font-semibold tracking-wide">{clip.code}</h2>
@@ -128,6 +137,7 @@ export default function SfxGalleryPage() {
   const [filter, setFilter] = useState<Filter>('all');
   const [playing, setPlaying] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [focusIdx, setFocusIdx] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const missing = useMemo(() => missingCmaReactionCodes(), []);
 
@@ -152,13 +162,62 @@ export default function SfxGalleryPage() {
 
   const wanted = wantedCmaReactionCodes();
   const skipped = skippedCmaReactionCodes();
-  const undecided = CMA_REACTION_GALLERY.length - wanted.length - skipped.length;
+  const counts = countCmaReactionPicks(picks);
+  const undecided = counts.undecided;
+
+  useEffect(() => {
+    if (visible.length === 0) {
+      setFocusIdx(0);
+      return;
+    }
+    setFocusIdx((i) => Math.min(Math.max(0, i), visible.length - 1));
+  }, [visible.length, filter]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (!visible.length) return;
+      const clip = visible[focusIdx];
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        setFocusIdx((i) => (i + 1) % visible.length);
+        return;
+      }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        setFocusIdx((i) => (i - 1 + visible.length) % visible.length);
+        return;
+      }
+      if (!clip) return;
+      if (e.key === 'w' || e.key === 'W') {
+        e.preventDefault();
+        setCmaReactionVerdict(clip.code, 'want');
+        refresh();
+        return;
+      }
+      if (e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        setCmaReactionVerdict(clip.code, 'skip');
+        refresh();
+        return;
+      }
+      if (e.key === 'p' || e.key === 'P' || e.key === ' ') {
+        if (e.key === ' ' && t && t.tagName === 'BUTTON') return;
+        e.preventDefault();
+        setPlaying(clip.code);
+        playClip(cmaReactionPath(clip.file), audioRef);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [visible, focusIdx]);
 
   const exportJson = () => {
     const payload = {
       key: CMA_REACTION_GALLERY_KEY,
-      note: 'pre-wire selection only — not applied to production reaction paths',
-      range: 'CMA00304–CMA00349',
+      note: 'Wanted codes feed laugh/poke play pools; Skip never enters',
+      range: 'CMA00304-CMA00349',
       wanted,
       skipped,
       picks: listCmaReactionPicks(),
@@ -170,11 +229,26 @@ export default function SfxGalleryPage() {
     });
   };
 
+  const onClearSkipped = () => {
+    if (skipped.length === 0) return;
+    const ok = window.confirm(`Clear ${skipped.length} Skipped pick(s)? Wanted stays.`);
+    if (!ok) return;
+    clearSkippedCmaReactionPicks();
+    refresh();
+  };
+
+  const onResetAll = () => {
+    const ok = window.confirm('Reset ALL picks (Wanted + Skipped)? This cannot be undone.');
+    if (!ok) return;
+    resetCmaReactionPicks();
+    refresh();
+  };
+
   const filters: { id: Filter; label: string }[] = [
-    { id: 'all', label: `All (${CMA_REACTION_GALLERY.length})` },
+    { id: 'all', label: `All (${counts.all})` },
     { id: 'undecided', label: `Undecided (${undecided})` },
-    { id: 'want', label: `Want (${wanted.length})` },
-    { id: 'skip', label: `Skip (${skipped.length})` },
+    { id: 'want', label: `Wanted (${wanted.length})` },
+    { id: 'skip', label: `Skipped (${skipped.length})` },
     { id: 'female', label: 'Female' },
     { id: 'male', label: 'Male' },
   ];
@@ -183,20 +257,22 @@ export default function SfxGalleryPage() {
     <main className="min-h-screen bg-[#0b0d12] px-4 py-6 text-white sm:px-6">
       <div className="mx-auto max-w-5xl">
         <header className="mb-5 space-y-2">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-amber-300/90">
-            Selection only · not wired yet
+          <p className="text-[11px] uppercase tracking-[0.2em] text-emerald-300/90">
+            Wanted → laugh/poke wire live · Skip stays out
           </p>
           <h1 className="text-2xl font-semibold tracking-tight">Reaction SFX gallery</h1>
           <p className="max-w-2xl text-sm text-white/65">
-            CMA00304–CMA00349 ({CMA_REACTION_GALLERY.length} clips present
+            CMA00304-CMA00349 ({CMA_REACTION_GALLERY.length} clips present
             {missing.length ? `, ${missing.length} missing` : ', 0 missing'}). Play each clip, then
             Want or Skip. Picks stay in localStorage (<code className="text-white/80">{CMA_REACTION_GALLERY_KEY}</code>).
-            Production poke / laugh / loading paths are unchanged until a later wire PR.
+            Keyboard: arrows focus · <kbd className="rounded border border-white/20 px-1">W</kbd> Want ·{' '}
+            <kbd className="rounded border border-white/20 px-1">S</kbd> Skip ·{' '}
+            <kbd className="rounded border border-white/20 px-1">P</kbd>/Space Play.
           </p>
           <div className="flex flex-wrap gap-2 pt-1">
             <a href="/select" className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/80 hover:bg-white/10">← Select</a>
             <a href="/chat" className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/80 hover:bg-white/10">Chat</a>
-        <a href="/en-sfx-ab" className="rounded-full border border-amber-400/40 px-3 py-1 text-xs text-amber-100/90 hover:bg-amber-500/10" data-testid="link-en-sfx-ab">EN SFX A/B (test)</a>
+            <a href="/en-sfx-ab" className="rounded-full border border-amber-400/40 px-3 py-1 text-xs text-amber-100/90 hover:bg-amber-500/10" data-testid="link-en-sfx-ab">EN SFX A/B (test)</a>
             <button
               type="button"
               data-testid="cma-export"
@@ -207,11 +283,20 @@ export default function SfxGalleryPage() {
             </button>
             <button
               type="button"
+              data-testid="cma-clear-skipped"
+              onClick={onClearSkipped}
+              disabled={skipped.length === 0}
+              className="rounded-full border border-rose-400/35 bg-rose-500/10 px-3 py-1 text-xs text-rose-100 disabled:opacity-40"
+            >
+              Clear Skipped ({skipped.length})
+            </button>
+            <button
+              type="button"
               data-testid="cma-reset"
-              onClick={() => { resetCmaReactionPicks(); refresh(); }}
+              onClick={onResetAll}
               className="rounded-full border border-white/15 px-3 py-1 text-xs text-white/55"
             >
-              Reset picks
+              Reset all picks
             </button>
           </div>
         </header>
@@ -223,6 +308,7 @@ export default function SfxGalleryPage() {
               type="button"
               role="tab"
               aria-selected={filter === f.id}
+              data-testid={`cma-filter-${f.id}`}
               onClick={() => setFilter(f.id)}
               className={`rounded-full border px-3 py-1 text-xs ${
                 filter === f.id
@@ -236,7 +322,7 @@ export default function SfxGalleryPage() {
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="cma-gallery-grid">
-          {visible.map((clip) => {
+          {visible.map((clip, idx) => {
             const verdict = (picks[clip.code] ?? cmaReactionVerdict(clip.code)) as CmaReactionVerdict;
             return (
               <ClipCard
@@ -244,19 +330,25 @@ export default function SfxGalleryPage() {
                 clip={clip}
                 verdict={verdict}
                 playing={playing === clip.code}
+                focused={idx === focusIdx}
+                onFocusCard={() => setFocusIdx(idx)}
                 onPlay={() => {
+                  setFocusIdx(idx);
                   setPlaying(clip.code);
                   playClip(cmaReactionPath(clip.file), audioRef);
                 }}
                 onWant={() => {
+                  setFocusIdx(idx);
                   setCmaReactionVerdict(clip.code, 'want');
                   refresh();
                 }}
                 onSkip={() => {
+                  setFocusIdx(idx);
                   setCmaReactionVerdict(clip.code, 'skip');
                   refresh();
                 }}
                 onClear={() => {
+                  setFocusIdx(idx);
                   setCmaReactionVerdict(clip.code, 'undecided');
                   refresh();
                 }}
