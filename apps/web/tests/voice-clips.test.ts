@@ -37,6 +37,12 @@ import {
   resetLaughClipRotation,
 } from '../lib/voice-clips';
 import { emotionClipPath, resetEmotionClipPicks, saveEmotionClip } from '../lib/emotion-clip-picks';
+import {
+  forgetCmaReactionPickCache,
+  resetCmaReactionPicks,
+  resetWantedCmaReactionRotation,
+  setCmaReactionVerdict,
+} from '../lib/cma-reaction-gallery';
 import { TIER_A_COUNTS, selectTtsButtons, ttsButtonKey } from '../lib/tts-button-registry';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -299,5 +305,74 @@ describe('reactions SFX-only recordedLaughClip', () => {
     expect(voice).toContain('export function playLaughBurst');
     expect(voice).toContain('sfxOnly: true');
     expect(voice).toContain('recordedLaughClip');
+  });
+});
+
+
+describe('Wanted CMA reaction SFX wire', () => {
+  function mockStorage() {
+    const store = new Map<string, string>();
+    (globalThis as { localStorage: Storage }).localStorage = {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => { store.set(k, v); },
+      removeItem: (k: string) => { store.delete(k); },
+      clear: () => store.clear(),
+      key: () => null,
+      get length() { return store.size; },
+    };
+  }
+
+  afterEach(() => {
+    resetCmaReactionPicks();
+    forgetCmaReactionPickCache();
+    resetWantedCmaReactionRotation();
+    resetLaughClipRotation();
+  });
+
+  it('Wanted laugh enters recordedLaughClip; Skip excluded; empty Wanted uses CLIP_LIBRARY', () => {
+    mockStorage();
+    forgetCmaReactionPickCache();
+    resetWantedCmaReactionRotation();
+    resetLaughClipRotation();
+
+    // Empty Wanted -> legacy CLIP_LIBRARY path
+    const legacy = recordedLaughClip('female', 'en');
+    expect(legacy.startsWith('/voice-clips/')).toBe(true);
+    expect(legacy.includes('/cma-reaction/')).toBe(false);
+
+    setCmaReactionVerdict('CMA00304', 'want');
+    setCmaReactionVerdict('CMA00305', 'skip');
+    resetWantedCmaReactionRotation();
+    const wanted = recordedLaughClip('female', 'yue'); // all langs use CMA when Wanted
+    expect(wanted).toContain('/voice-clips/cma-reaction/');
+    expect(wanted).toContain('CMA00304');
+    expect(wanted).not.toContain('CMA00305');
+
+    // Skip-only (no Wanted matching) falls back
+    resetCmaReactionPicks();
+    forgetCmaReactionPickCache();
+    setCmaReactionVerdict('CMA00305', 'skip');
+    resetWantedCmaReactionRotation();
+    const afterSkipOnly = recordedLaughClip('female', 'en');
+    expect(afterSkipOnly.includes('/cma-reaction/')).toBe(false);
+  });
+
+  it('Wanted poke enters recordedPokeClip; Skip excluded; empty Wanted uses zone table', () => {
+    mockStorage();
+    forgetCmaReactionPickCache();
+    resetWantedCmaReactionRotation();
+
+    expect(recordedPokeClip('female', 'head')).toContain('/hehe.mp3');
+
+    setCmaReactionVerdict('CMA00335', 'want'); // female ouch poke
+    setCmaReactionVerdict('CMA00317', 'skip'); // male poke skip must never play for female either
+    resetWantedCmaReactionRotation();
+    const poke = recordedPokeClip('female', 'head');
+    expect(poke).toContain('/voice-clips/cma-reaction/');
+    expect(poke).toContain('CMA00335');
+    expect(poke).not.toContain('CMA00317');
+
+    // Male with no Wanted poke -> zone table
+    expect(recordedPokeClip('male', 'head')).toContain('/oh.mp3');
   });
 });
