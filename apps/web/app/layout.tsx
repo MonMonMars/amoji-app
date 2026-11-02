@@ -18,11 +18,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Pages deploy sets NEXT_PUBLIC_BASE_PATH=/amoji-app; bare "/icon.svg" 404s there
+// (live HTML emitted href="/icon.svg" → github.io root). Prefix like assetUrl.
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+
 export const metadata: Metadata = {
   title: "Amoji",
   description: "An emotional AI companion who laughs, sulks, and stays with you. 識笑、識嬲、識陪住你。",
   icons: {
-    icon: "/icon.svg",
+    icon: `${BASE_PATH}/icon.svg`,
     apple: "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a01-shino.png",
   },
 };
