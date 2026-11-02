@@ -7,7 +7,7 @@
 
 export type VoiceLocale = 'yue' | 'zh' | 'ja' | 'en';
 export type VoiceGender = 'female' | 'male';
-export type VoiceEngine = 'edge' | 'speech' | 'kokoro' | 'piper' | 'melotts' | 'bark' | 'canto-nano';
+export type VoiceEngine = 'edge' | 'speech' | 'kokoro' | 'piper' | 'melotts' | 'bark' | 'canto-nano' | 'silencio2';
 
 export interface VoiceOption {
   locale: VoiceLocale;
@@ -121,6 +121,8 @@ export const VOICE_CATALOG: readonly VoiceOption[] = [
   { locale: 'en', engine: 'piper', gender: 'male', id: 'en_US-ryan-medium', shipping: false, license: 'MIT', latency: 'low', notes: 'Piper English male. Not bundled.' },
   { locale: 'en', engine: 'melotts', gender: 'female', id: 'melotts-en', shipping: false, license: 'MIT', latency: 'mid', notes: 'MeloTTS English. Not bundled.' },
   { locale: 'en', engine: 'bark', gender: 'female', id: 'v2/en_speaker_9', shipping: false, license: 'MIT', latency: 'high', notes: 'Optional only. Too slow for the live demo.' },
+  { locale: 'en', engine: 'silencio2', gender: 'female', id: 'silencio2-en', shipping: false, license: 'CC-BY-4.0 weights / MIT core', latency: 'mid', notes: 'EN-only emotion/SFX-tag CPU sidecar (Pocket TTS FT). Not bundled. Flag NEXT_PUBLIC_AMOJI_SILENCIO2 default off. Never zh/Yue; never code-switch; never in freeVoiceHops.' },
+  { locale: 'en', engine: 'silencio2', gender: 'male', id: 'silencio2-en', shipping: false, license: 'CC-BY-4.0 weights / MIT core', latency: 'mid', notes: 'EN-only emotion/SFX-tag CPU sidecar. Same skip as female row. Beside Edge only.' },
 ];
 
 /**
@@ -142,6 +144,7 @@ export const HELD_GPU_ENGINES: readonly { engine: string; notes: string }[] = [
   { engine: 'voxcpm2', notes: 'Hold for a later GPU host. Not called.' },
   { engine: 'chatterbox', notes: 'Hold for a later GPU host. Not called.' },
   { engine: 'cosyvoice', notes: 'Hold for a later GPU host. Not called.' },
+  { engine: 'silencio2', notes: 'EN-only CPU sidecar stub. Tools smoke only; not in freeVoiceHops. No zh/Yue / no code-switch.' },
   { engine: 'qwen3-tts', notes: 'Hold for a later GPU host. Not called.' },
   { engine: 'kokoro', notes: 'Catalog stub only. Weights are not bundled.' },
   { engine: 'melotts', notes: 'Catalog stub only. Weights are not bundled.' },
