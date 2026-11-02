@@ -164,6 +164,24 @@ describe('selection layout', () => {
     expect(bars).toContain('settingsMode');
   });
 
+  it('holds gender + prefs chrome until localStorage sync (no DEFAULT flash)', () => {
+    const bars = read('../components/SelectTopBars.tsx');
+    const prefs = read('../lib/prefs.ts');
+    expect(prefs).toContain('usePrefs(): [Prefs, (patch: Partial<Prefs>) => void, boolean]');
+    expect(prefs).toContain('const [ready, setReady] = useState(false)');
+    expect(prefs).toContain('setReady(true)');
+    expect(prefs).toContain('return [prefs, update, ready]');
+    expect(bars).toContain('useState<Gender | null>(null)');
+    expect(bars).toContain('prefsReady');
+    expect(bars).toContain('genderReady');
+    expect(bars).toContain('aria-busy={!genderReady}');
+    expect(bars).toContain('aria-busy={!prefsReady}');
+    expect(board).toContain('const [prefs, setPrefs, prefsReady] = usePrefs()');
+    expect(board).toContain('prefsReady={prefsReady}');
+    expect(board).toContain("selectedId={prefsReady ? live.character : ''}");
+    expect(board).toContain("prefsReady ? '' : 'opacity-0'");
+  });
+
   it('keeps language cards in the character style, smaller than scenes', () => {
     expect(LANGS.map((l) => l.id)).toEqual(['yue', 'zh', 'ja', 'en']);
     for (const lang of LANGS) {

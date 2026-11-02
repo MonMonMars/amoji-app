@@ -33,7 +33,7 @@ import { clearStorySession } from '../lib/story-session';
 
 export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   const router = useRouter();
-  const [prefs, setPrefs] = usePrefs();
+  const [prefs, setPrefs, prefsReady] = usePrefs();
   const [draft, setDraft] = useState<Partial<Prefs> | null>(null);
   const [leaving, setLeaving] = useState(false);
   const live: Prefs = mode === 'change' ? { ...prefs, ...draft } : prefs;
@@ -107,13 +107,14 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
 
       <div
         data-testid="selection-thumbs"
-        className="relative z-20 flex min-h-0 flex-1 flex-col items-center"
+        className={`relative z-20 flex min-h-0 flex-1 flex-col items-center ${prefsReady ? '' : 'opacity-0'}`}
       >
         <SelectTopBars
           lang={lang}
           accent={character.accent}
           kidMode={!!live.kidMode}
           onKidMode={setKidMode}
+          prefsReady={prefsReady}
         />
         <section className="flex min-h-0 w-full max-w-7xl flex-1 flex-col items-center justify-center px-3 pt-1">
           <div className="w-full shrink-0 px-1 text-center">
@@ -140,7 +141,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
               ariaLabel="characters"
               size="portrait"
               items={cast}
-              selectedId={live.character}
+              selectedId={prefsReady ? live.character : ''}
               onSelect={(id) => {
                 pick({ character: id });
                 const chosen = cast.find((item) => item.id === id);
