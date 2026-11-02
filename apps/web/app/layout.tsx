@@ -52,6 +52,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         */}
         <link rel="preconnect" href="https://text.pollinations.ai" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://text.pollinations.ai" />
+        <link rel="preconnect" href="https://speech.platform.bing.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://speech.platform.bing.com" />
         <AppleMeta />
         <ServiceWorkerRegistrar />
         <UiClickSound />

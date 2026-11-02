@@ -12,6 +12,7 @@ import SceneBackdrop from './SceneBackdrop';
 import ModelThumb from './ModelThumb';
 import EmotionClipRow from './EmotionClipRow';
 import MuteButton from './MuteButton';
+import EarlyAudioWarm from './EarlyAudioWarm';
 import TtsVoiceRow from './TtsVoiceRow';
 import SelectTopBars from './SelectTopBars';
 import { LangCardFace } from './selectors';
@@ -92,6 +93,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
         aria-hidden
         className={`pointer-events-none absolute inset-0 z-30 ${leaving ? 'fx-route-veil-out' : 'fx-route-veil-in'}`}
       />
+      <EarlyAudioWarm />
       <div data-testid="selection-hero" className="pointer-events-none absolute inset-0">
         <SceneBackdrop background={background} />
       </div>
