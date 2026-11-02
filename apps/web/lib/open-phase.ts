@@ -17,11 +17,11 @@ export const OPEN_SESSION_GAP_MS = 2.5 * 60 * 60 * 1000;
 export const OPEN_PHASE_KEY = 'amoji.openPhase.v1';
 
 /** Cheer opener timing (matches prior cannedOpener delay). */
-export const OPEN_CHEER_MS = 1_200;
+export const OPEN_CHEER_MS = 3_500;
 /** Second cheer / daily check-in line. */
-export const OPEN_CHEER_FOLLOW_MS = 5_200;
+export const OPEN_CHEER_FOLLOW_MS = 7_500;
 /** Auto weather + light news if the user is still silent after cheer. */
-export const OPEN_IDLE_BRIEF_MS = 9_500;
+export const OPEN_IDLE_BRIEF_MS = 12_000;
 
 export interface OpenPhaseState {
   lastClosedAt?: number;

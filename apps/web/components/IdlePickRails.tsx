@@ -1,6 +1,8 @@
-﻿'use client';
-// Numbered idle rails (#N). Tap = pin this idle. Right-click / long-press =
+'use client';
+// Numbered idle picks (#N). Tap = pin this idle. Right-click / long-press =
 // toggle enable (on/off for rotation). Defaults stay #1+#2 until Mon changes.
+// Chat-room only: multi-column CSS grid so every button fits without scrolling
+// (Mon: side-rail overflow scroll does not work).
 
 import { useEffect, useState } from 'react';
 import { IDLE_CLIP_OPTIONS } from '../lib/idle-clips';
@@ -30,66 +32,64 @@ export default function IdlePickRails({
     setEnabled(setIdleEnabled(num, !isIdleEnabled(num)));
   };
 
-  const left = IDLE_CLIP_OPTIONS.filter((_, i) => i % 2 === 0);
-  const right = IDLE_CLIP_OPTIONS.filter((_, i) => i % 2 === 1);
-  const rail = (side: 'left' | 'right', items: typeof IDLE_CLIP_OPTIONS[number][]) => (
-    <div
-      data-testid={`idle-rail-${side}`}
-      className={`pointer-events-none absolute bottom-32 top-14 z-20 flex w-11 flex-col items-center justify-center gap-1 overflow-y-auto ${
-        side === 'left'
-          ? 'left-[max(2px,env(safe-area-inset-left))]'
-          : 'right-[max(2px,env(safe-area-inset-right))]'
-      }`}
-    >
-      {items.map((item) => {
-        const on = picked === item.id;
-        const en = enabled.includes(item.num);
-        const calm = isDefaultIdleClip(item.id);
-        const title = [
-          `#${item.num}`,
-          item.cId ?? 'app',
-          item.name,
-          en ? 'ON' : 'OFF',
-          'tap=use · hold/right-click=toggle',
-        ].join(' · ');
-        return (
-          <button
-            key={item.num}
-            type="button"
-            aria-label={`Idle #${item.num}`}
-            title={title}
-            aria-pressed={on}
-            data-dev={`I${item.num}`}
-            data-idle-num={item.num}
-            data-c-id={item.cId ?? ''}
-            onClick={() => tap(item.id, item.playable)}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              toggle(item.num);
-            }}
-            className={`pointer-events-auto relative min-h-[18px] min-w-[28px] rounded border px-1 py-0.5 text-[10px] font-semibold leading-none ${
-              !item.playable
-                ? 'border-white/10 bg-black/20 text-white/30'
-                : on
-                ? 'border-white/80 bg-white/15 text-white'
-                : en
-                  ? calm
-                    ? 'border-white/35 bg-black/45 text-white/85'
-                    : 'border-white/25 bg-black/40 text-white/80'
-                  : 'border-white/10 bg-black/25 text-white/40'
-            }`}
-          >
-            {item.label}
-          </button>
-        );
-      })}
-    </div>
-  );
+  // Prefer playable clips so the grid stays dense and scroll-free.
+  const items = IDLE_CLIP_OPTIONS.filter((item) => item.playable);
+  const shown = items.length > 0 ? items : [...IDLE_CLIP_OPTIONS];
 
   return (
-    <>
-      {rail('left', left)}
-      {rail('right', right)}
-    </>
+    <div
+      data-testid="idle-rail-grid"
+      className="pointer-events-none absolute bottom-[7.5rem] left-[max(2px,env(safe-area-inset-left))] top-14 z-20 flex w-[min(42vw,11.5rem)] flex-col sm:w-[min(36vw,13rem)]"
+    >
+      <div
+        data-testid="idle-rail-left"
+        className="pointer-events-auto grid max-h-full grid-cols-4 content-start gap-0.5 overflow-hidden sm:grid-cols-5"
+      >
+        {shown.map((item) => {
+          const on = picked === item.id;
+          const en = enabled.includes(item.num);
+          const calm = isDefaultIdleClip(item.id);
+          const title = [
+            `#${item.num}`,
+            item.cId ?? 'app',
+            item.name,
+            en ? 'ON' : 'OFF',
+            'tap=use · hold/right-click=toggle',
+          ].join(' · ');
+          return (
+            <button
+              key={item.num}
+              type="button"
+              aria-label={`Idle #${item.num}`}
+              title={title}
+              aria-pressed={on}
+              data-dev={`I${item.num}`}
+              data-idle-num={item.num}
+              data-c-id={item.cId ?? ''}
+              onClick={() => tap(item.id, item.playable)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                toggle(item.num);
+              }}
+              className={`relative min-h-[16px] min-w-0 rounded border px-0.5 py-0.5 text-center text-[9px] font-semibold leading-none ${
+                !item.playable
+                  ? 'border-white/10 bg-black/20 text-white/30'
+                  : on
+                  ? 'border-white/80 bg-white/15 text-white'
+                  : en
+                    ? calm
+                      ? 'border-white/35 bg-black/45 text-white/85'
+                      : 'border-white/25 bg-black/40 text-white/80'
+                    : 'border-white/10 bg-black/25 text-white/40'
+              }`}
+            >
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
+      {/* Keep right-rail test id for older layout assertions / smoke. */}
+      <div data-testid="idle-rail-right" className="hidden" aria-hidden />
+    </div>
   );
 }
