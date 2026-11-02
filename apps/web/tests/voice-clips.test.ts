@@ -185,6 +185,13 @@ describe('CLIP_LIBRARY numbering', () => {
     expect(fs.existsSync(path.resolve(here, '../public', recordedPokeClip('female').slice(1)))).toBe(true);
     expect(fs.existsSync(path.resolve(here, '../public', recordedPokeClip('male').slice(1)))).toBe(true);
     expect(clipLibraryIdFor('yue', 'female', 'um.mp3')).toBe(5);
+    // clipLibraryId resolves Pages basePath-prefixed paths to the same CLIP #
+    const prev = process.env.NEXT_PUBLIC_BASE_PATH;
+    process.env.NEXT_PUBLIC_BASE_PATH = '/amoji-app';
+    expect(clipLibraryId('/amoji-app/voice-clips/yue/female/um.mp3')).toBe(5);
+    expect(clipLibraryId('/voice-clips/yue/female/um.mp3')).toBe(5);
+    if (prev === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
+    else process.env.NEXT_PUBLIC_BASE_PATH = prev;
     expect(clipLibraryIdFor('universal', 'female', 'wow_woven.mp3')).toBe(94);
   });
 });
