@@ -46,7 +46,7 @@ const COPY: Record<'title' | 'hint' | 'chatTitle' | 'chatHint' | 'storyTitle' | 
 
 export default function ModePage() {
   const router = useRouter();
-  const [prefs] = usePrefs();
+  const [prefs, , prefsReady] = usePrefs();
   const lang = prefs.lang;
   const c = COPY;
 
@@ -56,7 +56,11 @@ export default function ModePage() {
       <div className="pointer-events-none absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-pink-500/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 right-1/4 h-80 w-80 rounded-full bg-indigo-500/10 blur-3xl" />
 
-      <div className="relative z-10 flex w-full max-w-lg flex-col items-center gap-6">
+      {/* Hold lang chrome until prefs sync — DEFAULT_PREFS.lang (yue) otherwise flashes. */}
+      <div
+        className={`relative z-10 flex w-full max-w-lg flex-col items-center gap-6 ${prefsReady ? '' : 'opacity-0'}`}
+        aria-busy={!prefsReady}
+      >
         <div className="text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-white/50">Amoji</p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">{c.title[lang]}</h1>
@@ -67,11 +71,12 @@ export default function ModePage() {
           <button
             type="button"
             data-testid="mode-chat"
+            disabled={!prefsReady}
             onClick={() => {
               clearStorySession();
               router.push('/select');
             }}
-            className="fx-press group flex min-h-[11rem] flex-col items-start justify-between rounded-3xl border border-white/15 bg-gradient-to-br from-sky-500/20 to-black/40 p-5 text-left shadow-xl backdrop-blur-md hover:border-sky-300/60"
+            className="fx-press group flex min-h-[11rem] flex-col items-start justify-between rounded-3xl border border-white/15 bg-gradient-to-br from-sky-500/20 to-black/40 p-5 text-left shadow-xl backdrop-blur-md hover:border-sky-300/60 disabled:pointer-events-none"
           >
             <span className="rounded-full border border-sky-300/40 bg-sky-400/15 px-3 py-1 text-[10px] font-bold tracking-widest text-sky-100">
               01
@@ -87,8 +92,9 @@ export default function ModePage() {
           <button
             type="button"
             data-testid="mode-story"
+            disabled={!prefsReady}
             onClick={() => router.push('/story')}
-            className="fx-press group flex min-h-[11rem] flex-col items-start justify-between rounded-3xl border border-white/15 bg-gradient-to-br from-fuchsia-500/20 to-black/40 p-5 text-left shadow-xl backdrop-blur-md hover:border-fuchsia-300/60"
+            className="fx-press group flex min-h-[11rem] flex-col items-start justify-between rounded-3xl border border-white/15 bg-gradient-to-br from-fuchsia-500/20 to-black/40 p-5 text-left shadow-xl backdrop-blur-md hover:border-fuchsia-300/60 disabled:pointer-events-none"
           >
             <span className="rounded-full border border-fuchsia-300/40 bg-fuchsia-400/15 px-3 py-1 text-[10px] font-bold tracking-widest text-fuchsia-100">
               02
@@ -104,8 +110,9 @@ export default function ModePage() {
 
         <button
           type="button"
+          disabled={!prefsReady}
           onClick={() => router.push('/login')}
-          className="ui-btn text-xs text-white/50 hover:text-white/80"
+          className="ui-btn text-xs text-white/50 hover:text-white/80 disabled:pointer-events-none"
         >
           {t(lang, 'back')}
         </button>
