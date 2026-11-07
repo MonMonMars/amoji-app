@@ -16,7 +16,17 @@ export default function Splash() {
 
   return (
     <main
+      aria-labelledby="amoji-splash-title"
+      aria-label="Continue to login"
+      role="button"
+      tabIndex={0}
       onClick={() => router.push('/login')}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          router.push('/login');
+        }
+      }}
       className={`relative flex min-h-dvh cursor-pointer flex-col items-center justify-center overflow-hidden bg-neutral-950 text-white transition-opacity duration-700 ${fade ? 'opacity-0' : 'opacity-100'}`}
     >
       {/* ambient glow */}
@@ -29,7 +39,7 @@ export default function Splash() {
           <span className="relative block h-5 w-5 rounded-full bg-pink-400 shadow-[0_0_50px_14px_rgba(244,114,182,0.45)]" />
         </div>
 
-        <h1 className="text-6xl font-bold tracking-tight">{APP_NAME}</h1>
+        <h1 id="amoji-splash-title" className="text-6xl font-bold tracking-tight">{APP_NAME}</h1>
         <p className="mt-3 text-sm tracking-[0.3em] text-white/40 uppercase">{APP_TAGLINE}</p>
       </div>
 
