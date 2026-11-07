@@ -1,26 +1,40 @@
 'use client';
-// Edge voice row on the select board: Tier A Edge voices as small buttons.
-// Shows the FULL locale set (male + female, numbered). Tap previews immediately
-// (mute-aware via playVoiceGreeting → stopSpeaking). Pin is per voice gender.
+// The voice row on the select board: one button per voice this language can
+// ACTUALLY produce.
+//
+// It used to render 58 Edge neural buttons (male+female, numbered) which all
+// played the same audio, because the Edge read-aloud endpoint refuses this app
+// and every tap fell through to the one Google Translate voice for that
+// language. Ten buttons, one sound.
+//
+// Now the row is driven by tts-button-registry, which is gated on the engine
+// audit: a dead or unbundled engine cannot appear here. Some languages end up
+// with a single button — Japanese is one voice for the whole language — and
+// when that happens the row says so plainly instead of leaving the user
+// wondering where the rest went.
 
 import { useEffect, useState } from 'react';
-import { resolveEdgeVoice } from '../lib/edge-tts';
-import { selectTtsButtons, ttsButtonKey, type TtsButtonVoice } from '../lib/tts-button-registry';
+import {
+  isSingleVoiceLocale,
+  selectTtsButtons,
+  ttsButtonKey,
+  type TtsButtonVoice,
+} from '../lib/tts-button-registry';
 import { playVoiceGreeting } from '../lib/voice';
-import { saveVoicePick, voicePickFor } from '../lib/voice-picks';
+import { saveVoicePick, voicePickFor, activeVoiceChoice } from '../lib/voice-picks';
 import { isDevMode, devMark } from '../lib/dev-mode';
 import { t, type Lang } from '../lib/prefs';
 
 export default function TtsVoiceRow({
   lang,
   characterId,
-  companionGender,
   accent,
   onLang,
 }: {
   lang: Lang;
   characterId: string;
-  companionGender: 'female' | 'male';
+  /** Kept for call-site compatibility; the live voices are not gendered. */
+  companionGender?: 'female' | 'male';
   accent: string;
   onLang: (lang: Lang) => void;
 }) {
@@ -28,26 +42,16 @@ export default function TtsVoiceRow({
   const [showAll, setShowAll] = useState(false);
   const [showDev, setShowDev] = useState(false);
   useEffect(() => { setShowDev(isDevMode()); }, []);
-  // Mon t533/t534: full distinct numbered voices including males — do not
-  // hide opposite-sex Edge ids from the language section.
-  const buttons = showAll
-    ? selectTtsButtons(undefined)
-    : selectTtsButtons(lang);
-  const pinnedFemale = voicePickFor(lang, 'female');
-  const pinnedMale = voicePickFor(lang, 'male');
-  // Exclusive: at most one pin per locale after saveVoicePick.
-  const pinnedId = pinnedFemale ?? pinnedMale;
-  const castId = resolveEdgeVoice({
-    lang,
-    gender: companionGender,
-    character: characterId,
-    ignoreVoicePick: true,
-  }).name;
-  const activeId = pinnedId ?? castId;
+
+  const buttons = showAll ? selectTtsButtons() : selectTtsButtons(lang);
+  const pinnedId = voicePickFor(lang);
+  const activeId = pinnedId ?? activeVoiceChoice(lang).id;
+  // A language with one voice has nothing to compare, so the button is shown
+  // together with a plain explanation of why the list is that short.
+  const single = !showAll && isSingleVoiceLocale(lang);
 
   const onTap = (button: TtsButtonVoice) => {
-    // Pin under the button's own gender slot (male pins stay male).
-    saveVoicePick(button.locale, button.gender, button.id);
+    saveVoicePick(button.locale, button.id);
     setRev((n) => n + 1);
     if (button.locale !== lang) onLang(button.locale);
     playVoiceGreeting(characterId, button.locale, button.id);
@@ -70,56 +74,41 @@ export default function TtsVoiceRow({
           {showAll ? t(lang, 'voiceThisLanguage') : t(lang, 'voiceShowAll')}
         </button>
       </div>
-      {/* Gender groups, both visible. The board owns the only vertical
-          scroller, so this grid must not add a nested one (Mon). */}
-      <div className="w-full" data-testid="tts-voice-grid">
-        {(['female', 'male'] as const).map((gender) => {
-          const group = buttons.filter((b) => b.gender === gender);
-          if (!group.length) return null;
-          const heading = gender === 'female' ? t(lang, 'genderFemale') : t(lang, 'genderMale');
-          return (
-            <div key={gender} role="group" aria-label={heading} className="mb-1.5">
-              <p className="mb-0.5 text-center text-[9px] uppercase tracking-[0.14em] text-white/40">{heading}</p>
-              <div className="grid w-full grid-cols-2 gap-1 min-[420px]:grid-cols-3 sm:grid-cols-4">
-                {group.map((button) => {
-                  const selected = button.locale === lang && button.id === activeId;
-                  const mark = devMark('V', button.n);
-                  const numLabel = `#${button.n} ${button.label}`;
-                  return (
-                    <button
-                      key={ttsButtonKey(button)}
-                      type="button"
-                      aria-label={numLabel}
-                      aria-pressed={selected}
-                      title={`${button.id} (${button.gender} #${button.n})`}
-                      data-dev={showDev ? mark : undefined}
-                      data-voice-n={button.n}
-                      data-voice-gender={button.gender}
-                      onClick={() => onTap(button)}
-                      className={`fx-press ui-btn relative min-h-9 rounded-xl border px-1.5 py-1 text-left text-[10px] font-medium leading-tight ${
-                        selected ? 'border-white/80 text-white' : 'border-white/15 bg-black/35 text-white/80'
-                      }`}
-                      style={selected ? { backgroundColor: `${accent}55`, boxShadow: `inset 0 0 0 1px ${accent}` } : undefined}
-                    >
-                      {showDev ? `${mark} ${numLabel}` : numLabel}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-        <div className="flex justify-center pt-0.5">
-          <button
-            type="button"
-            disabled
-            aria-disabled="true"
-            aria-label={t(lang, 'moreEnginesLater')}
-            className="cursor-default rounded-full border border-dashed border-white/20 px-2 py-0.5 text-[10px] text-white/40"
-          >
-            {t(lang, 'moreEnginesLater')}
-          </button>
+      <div className="max-h-[12rem] w-full overflow-y-auto overscroll-contain sm:max-h-[16rem]" data-testid="tts-voice-grid">
+        <div className="grid w-full grid-cols-2 gap-1 min-[420px]:grid-cols-3 sm:grid-cols-4">
+          {buttons.map((button) => {
+            const selected = button.locale === lang && button.id === activeId;
+            const mark = devMark('V', button.n);
+            const numLabel = `#${button.n} ${t(lang, button.labelKey)}`;
+            return (
+              <button
+                key={ttsButtonKey(button)}
+                type="button"
+                aria-label={numLabel}
+                aria-pressed={selected}
+                title={`${t(lang, button.labelKey)} · ${button.tl}`}
+                data-dev={showDev ? mark : undefined}
+                data-voice-n={button.n}
+                data-voice-id={button.id}
+                onClick={() => onTap(button)}
+                className={`fx-press ui-btn relative min-h-9 rounded-xl border px-1.5 py-1 text-left text-[10px] font-medium leading-tight ${
+                  selected ? 'border-white/80 text-white' : 'border-white/15 bg-black/35 text-white/80'
+                }`}
+                style={selected ? { backgroundColor: `${accent}55`, boxShadow: `inset 0 0 0 1px ${accent}` } : undefined}
+              >
+                {showDev ? `${mark} ${numLabel}` : numLabel}
+              </button>
+            );
+          })}
         </div>
+        {single && (
+          <p
+            className="mt-1 px-1 text-center text-[10px] leading-relaxed text-white/45"
+            data-testid="tts-voice-single-note"
+          >
+            {t(lang, 'voiceOnlyOneAvailable')}
+          </p>
+        )}
       </div>
     </section>
   );

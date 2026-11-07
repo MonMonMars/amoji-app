@@ -167,7 +167,17 @@ export type StrKey =
   // so keeping new blocks away from theirs avoids merge conflicts.
   | 'fallbackWebgl' | 'fallbackAsset'
   // mic not supported in this browser (was a yue/English ternary — zh/ja got English)
-  | 'micUnsupported';
+  | 'micUnsupported'
+  // worldwide weather/news location (Settings → Location)
+  | 'settingsLocation' | 'locationHint' | 'locationCityPlaceholder' | 'locationSave'
+  | 'locationClear' | 'locationSaved' | 'locationNotFound' | 'locationDetected'
+  | 'locationNone' | 'locationUseDevice'
+  // honest voice picker: only voices that really differ are offered, so a
+  // language with one voice says so, and the engines that cannot play are
+  // named once instead of being rendered as dead buttons.
+  | 'voiceOnlyOneAvailable' | 'voiceEnginesUnavailable'
+  | 'voiceRegionCantonese' | 'voiceRegionMandarin' | 'voiceRegionTaiwan' | 'voiceRegionJapanese'
+  | 'voiceRegionUs' | 'voiceRegionUk' | 'voiceRegionAu' | 'voiceRegionIn' | 'voiceRegionNg';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   chooseCharacter: { en: 'Choose your companion', yue: '揀你嘅小伙伴', zh: '选择你的伙伴', ja: '相棒を選ぶ' },
@@ -177,6 +187,31 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   voiceShowAll: { en: 'All', yue: '全部', zh: '全部', ja: '全部' },
   voiceThisLanguage: { en: 'This language', yue: '呢種語言', zh: '这个语言', ja: 'この言語' },
   moreEnginesLater: { en: 'More engines later', yue: '更多引擎稍後', zh: '更多引擎稍后', ja: 'ほかのエンジンはあとで' },
+  // Says why a language has only a button or two, instead of leaving the user
+  // to wonder where the rest went.
+  voiceOnlyOneAvailable: {
+    en: 'This language has one available voice right now.',
+    yue: '呢種語言而家得一把聲可以用。',
+    zh: '这个语言目前只有一把声音可用。',
+    ja: 'この言語で使える声は今ひとつだけです。',
+  },
+  // One line for every engine that cannot play, so the short list is explained.
+  voiceEnginesUnavailable: {
+    en: 'Other engines are not available here: the Microsoft neural endpoint refuses this app, and the offline models are not bundled.',
+    yue: '其他引擎喺度用唔到：微軟神經語音端點拒絕咗本程式，離線模型亦冇包埋。',
+    zh: '其他引擎在此不可用：微软神经语音端点拒绝了本应用，离线模型也未打包。',
+    ja: 'ほかのエンジンはここでは使えません。Microsoft のニューラル音声はこのアプリを拒否し、オフラインのモデルは同梱されていません。',
+  },
+  // Voice labels are the region of the speaker behind each Google `tl` code.
+  voiceRegionCantonese: { en: 'Cantonese', yue: '廣東話', zh: '粤语', ja: '広東語' },
+  voiceRegionMandarin: { en: 'Mandarin', yue: '國語', zh: '普通话', ja: '普通話' },
+  voiceRegionTaiwan: { en: 'Taiwan Mandarin', yue: '台灣國語', zh: '台湾国语', ja: '台湾華語' },
+  voiceRegionJapanese: { en: 'Japanese', yue: '日文', zh: '日语', ja: '日本語' },
+  voiceRegionUs: { en: 'US English', yue: '美國英文', zh: '美式英语', ja: 'アメリカ英語' },
+  voiceRegionUk: { en: 'UK English', yue: '英國英文', zh: '英式英语', ja: 'イギリス英語' },
+  voiceRegionAu: { en: 'Australian English', yue: '澳洲英文', zh: '澳洲英语', ja: 'オーストラリア英語' },
+  voiceRegionIn: { en: 'Indian English', yue: '印度英文', zh: '印度英语', ja: 'インド英語' },
+  voiceRegionNg: { en: 'Nigerian English', yue: '尼日利亞英文', zh: '尼日利亚英语', ja: 'ナイジェリア英語' },
   previewReactions: { en: 'Reactions', yue: '反應聲', zh: '反应声', ja: 'リアクション' },
   previewUniversal: { en: 'Universal', yue: '通用', zh: '通用', ja: '共通' },
   startChat: { en: 'Start chatting', yue: '開始傾偈', zh: '开始聊天', ja: '話し始める' },
@@ -228,12 +263,12 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   },
 
   neuralVoice: { en: 'Neural voice (online)', yue: '神經語音（在線）', zh: '神经语音（在线）', ja: 'ニューラル音声（オンライン）' },
-  voicePickerTitle: { en: 'Edge voices', yue: 'Edge 聲音', zh: 'Edge 声音', ja: 'Edge の声' },
+  voicePickerTitle: { en: 'Available voices', yue: '可用嘅聲線', zh: '可用的声音', ja: '使える声' },
   voicePickerHint: {
-    en: 'Tap a voice to hear it and pin it for that voice’s gender. Both genders stay listed so you can compare.',
-    yue: '撳一個聲嚟試聽，並儲存俾嗰把聲嘅性別。男女性別都列住，方便你比較。',
-    zh: '点一个声音试听，并保存给该声音的性别。男女都列出，方便比较。',
-    ja: '声をタップして試聴し、その声の性別に保存します。男女とも並べて比べられます。',
+    en: 'Tap a voice to hear it and keep it. Each language lists only the voices that actually sound different on this device.',
+    yue: '撳一把聲嚟試聽同記住。每種語言只會列出真係聽得出分別嘅聲。',
+    zh: '点一个声音试听并记住。每种语言只列出真的听得出分别的声音。',
+    ja: '声をタップして試聴し、その声を保存します。言語ごとに、実際に違って聞こえる声だけを並べています。',
   },
   memoryTitle: { en: 'Memory', yue: '記憶', zh: '记忆', ja: '記憶' },
   forgetBtn: { en: 'Forget everything', yue: '全部忘記', zh: '全部忘记', ja: 'すべて忘れる' },
@@ -420,6 +455,54 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: '你嘅瀏覽器唔支援語音輸入，請用最新版 Chrome 或者 Safari 再試。',
     zh: '这个浏览器不支持语音输入，请使用最新版 Chrome 或 Safari 再试。',
     ja: 'このブラウザは音声入力に対応していません。最新の Chrome か Safari でお試しください。',
+  },
+  // Worldwide location: weather and light news follow the city she should use.
+  settingsLocation: {
+    en: 'Your city', yue: '你嘅城市', zh: '你的城市', ja: 'あなたの街',
+  },
+  locationHint: {
+    en: 'Weather and light news use this city. Leave it empty to let her use your device location or network.',
+    yue: '天氣同輕鬆新聞會用呢個城市。留空就會用你部機嘅位置或者網絡估計。',
+    zh: '天气和轻松新闻会用这个城市。留空则使用你的设备定位或网络估计。',
+    ja: '天気と軽いニュースはこの街を使うよ。空欄なら端末の位置情報かネットワーク推定を使うよ。',
+  },
+  locationCityPlaceholder: {
+    en: 'City or city, country — e.g. Lisbon',
+    yue: '城市或者「城市, 國家」——例如 里斯本',
+    zh: '城市或「城市, 国家」——例如 里斯本',
+    ja: '都市、または「都市, 国」— 例: リスボン',
+  },
+  locationSave: { en: 'Save', yue: '儲存', zh: '保存', ja: '保存' },
+  locationClear: { en: 'Use my device', yue: '用我部機', zh: '用我的设备', ja: '端末の位置を使う' },
+  locationSaved: {
+    en: 'Saved — she will use {city} from now on.',
+    yue: '記住咗——之後佢會用{city}。',
+    zh: '已保存——之后她会用{city}。',
+    ja: '保存したよ——これからは{city}を使うね。',
+  },
+  locationNotFound: {
+    en: "I couldn't find that city — try adding the country.",
+    yue: '搵唔到嗰個城市——試下加埋國家名。',
+    zh: '找不到那个城市——试试加上国家名。',
+    ja: 'その街が見つからなかった——国名も入れてみて。',
+  },
+  locationDetected: {
+    en: 'Currently using your device or network location.',
+    yue: '而家用緊你部機或者網絡嘅位置。',
+    zh: '当前使用你的设备或网络位置。',
+    ja: 'いまは端末かネットワークの位置を使ってるよ。',
+  },
+  locationNone: {
+    en: 'No city yet — she will ask before talking about weather or local news.',
+    yue: '仲未有城市——佢會喺講天氣或者本地新聞之前問你。',
+    zh: '还没有城市——她在说天气或本地新闻之前会先问你。',
+    ja: 'まだ街がないよ——天気や地元ニュースの前に聞くね。',
+  },
+  locationUseDevice: {
+    en: 'Switch back to my device location',
+    yue: '轉返用我部機嘅位置',
+    zh: '恢复使用我的设备定位',
+    ja: '端末の位置に戻す',
   },
 };
 

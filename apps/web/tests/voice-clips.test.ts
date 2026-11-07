@@ -6,7 +6,8 @@ import { INTERJECTIONS } from '../lib/fillers';
 import { pickLaugh } from '../lib/laugh';
 import { CHARACTERS, type Lang } from '../lib/prefs';
 import { LOADING_STUBS } from '../lib/thinking-lines';
-import { EDGE_VOICE_BUTTONS, browserVoicesForLang } from '../lib/voice-catalog';
+import { browserVoicesForLang } from '../lib/voice-catalog';
+import { ENGINE_VERDICTS, engineIsOffered, engineStatus } from '../lib/voice-capability';
 import {
   BURST_CLIP_KINDS,
   BURST_CLIP_LABEL,
@@ -197,27 +198,41 @@ describe('CLIP_LIBRARY numbering', () => {
 });
 
 describe('TTS button registry', () => {
-  it('lists every shipping Edge voice with a unique sheet label', () => {
+  it('offers only voices that really differ, one per distinct speaker', () => {
     const buttons = selectTtsButtons();
-    expect(buttons.length).toBeGreaterThan(28);
-    expect(buttons.map((b) => b.id)).toEqual(EDGE_VOICE_BUTTONS.map((b) => b.id));
-    expect(buttons.map((b) => b.label)).toEqual(EDGE_VOICE_BUTTONS.map((b) => b.label));
-    expect(buttons.map((b) => b.label)).toContain('Cantonese female 1');
-    expect(buttons.map((b) => b.label)).toContain('Japanese male 1');
-    expect(buttons.map((b) => b.label)).toContain('Mandarin male 4');
-    expect(buttons.map((b) => b.label)).toContain('English female 6');
-    expect(buttons.every((b) => b.engine === 'edge' && b.shipping)).toBe(true);
+    // 58 Edge names collapsed to one sound; the real map is one button per
+    // distinct Google `tl` speaker (grouped by probing four sentences each).
+    expect(buttons).toHaveLength(9);
+    expect(buttons.every((b) => b.engine === 'gtts' && b.shipping)).toBe(true);
     expect(new Set(buttons.map(ttsButtonKey)).size).toBe(buttons.length);
+    expect(new Set(buttons.map((b) => b.id)).size).toBe(buttons.length);
     expect(selectTtsButtons('yue')).toHaveLength(TIER_A_COUNTS.yue);
     expect(selectTtsButtons('zh')).toHaveLength(TIER_A_COUNTS.zh);
     expect(selectTtsButtons('ja')).toHaveLength(TIER_A_COUNTS.ja);
     expect(selectTtsButtons('en')).toHaveLength(TIER_A_COUNTS.en);
-    expect(selectTtsButtons('yue').map((b) => b.label)).toEqual([
-      'Cantonese male 1',
-      'Cantonese female 1',
-      'Cantonese female 2',
-    ]);
-    expect(buttons.some((b) => b.id.startsWith('kokoro') || b.engine !== 'edge')).toBe(false);
+    expect(selectTtsButtons('yue').map((b) => b.tl)).toEqual(['yue']);
+    expect(selectTtsButtons('zh').map((b) => b.tl)).toEqual(['zh-CN', 'zh-TW']);
+    expect(selectTtsButtons('ja').map((b) => b.tl)).toEqual(['ja']);
+    // Every English button is a different speaker, so every `tl` is distinct.
+    const enTls = selectTtsButtons('en').map((b) => b.tl);
+    expect(enTls).toEqual(['en-US', 'en-GB', 'en-AU', 'en-IN', 'en-NG']);
+    expect(new Set(enTls).size).toBe(enTls.length);
+  });
+
+  it('never surfaces an engine the audit classifies as not playable', () => {
+    // The gate, not a comment: a dead or unbundled engine cannot be a button.
+    for (const button of selectTtsButtons()) {
+      expect(engineIsOffered(button.engine)).toBe(true);
+      expect(engineStatus(button.engine)).toBe('works');
+    }
+    const offeredEngines = new Set(selectTtsButtons().map((b) => b.engine));
+    for (const verdict of ENGINE_VERDICTS) {
+      if (verdict.status === 'works') continue;
+      expect(offeredEngines.has(verdict.engine as 'gtts')).toBe(false);
+    }
+    // Explicitly: the engine whose endpoint 403s us is not offered.
+    expect(engineStatus('edge')).toBe('dead');
+    expect(offeredEngines.has('edge' as 'gtts')).toBe(false);
   });
 
   it('filters browser voices by language tag and ignores the voice name', () => {

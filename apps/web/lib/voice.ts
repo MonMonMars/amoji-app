@@ -94,6 +94,8 @@ export { speechRemainder };
 import { edgeCastVoice } from './edge-cast';
 import { speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead } from './edge-tts';
 import { stopGtts, speakGtts, PITCH_BIAS_MALE, PITCH_BIAS_FEMALE } from './gtts';
+import { voicePickFor } from './voice-picks';
+import { tlForChoice } from './voice-capability';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
 import { formatVoiceChain, freeVoiceHops } from './tts-chain';
 import { startThinkingSound, stopThinkingSound } from './thinking-sound';
@@ -1994,17 +1996,23 @@ export function playLaughBurst(characterId: string, lang: Lang): void {
 
 
 /**
- * Bake-off sample. Speaks the locale's sheet line in the exact Edge short
- * name, even when Voice replies is off and even when the voice gender does
- * not match the companion. Does not fall through to speechSynthesis — that
- * tier cannot name these neural voices.
+ * Audition one of the real voices (a Google `tl` region) on this language's
+ * sample line, even while Voice replies is off.
+ *
+ * This used to be "preview an Edge neural voice". There is no such thing any
+ * more: Edge refuses this app, so that call named a speaker the user could
+ * never hear. Previewing the actual speaker keeps the button honest — what a
+ * tap plays is what chat will sound like.
  */
-export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
+export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void> {
   if (!voiceOutputAllowed()) return Promise.resolve();
   unlockAudio(true);
   stopSpeaking();
   primeSynthInGesture(true);
-  const gender = isMaleNeuralVoice(voiceId) ? 'male' : 'female';
+  // No character here, so keep the neutral female-ish pitch as before. The live
+  // voices are not gendered — this only shapes delivery.
+  const previewPitchBias = PITCH_BIAS_FEMALE;
+  const tl = tlForChoice(locale, choiceId);
   const text = edgeSampleText(locale);
   /** Set by whichever tier actually starts, so the loser can bail out. */
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
@@ -2012,10 +2020,10 @@ export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
     if (spokenBy) return Promise.resolve();
     return new Promise<void>((resolve) => {
       try {
-        synthSpeak(text, 'preview', locale, 'joy', 1.1, undefined, 1, undefined, () => resolve(), gender, 0.7, true);
+        synthSpeak(text, 'preview', locale, 'joy', 1.1, undefined, 1, undefined, () => resolve(), 'female', 0.7, true);
         spokenBy = 'synth';
         markVoiceStarted();
-        reportVoiceStatus('synth', true, `${tag} ${voiceId}`);
+        reportVoiceStatus('synth', true, `${tag} ${choiceId}`);
       } catch (e) {
         reportVoiceStatus('synth', false, (e as Error | undefined)?.message ?? 'preview synth failed');
         resolve();
@@ -2026,7 +2034,8 @@ export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
   // Exactly one tier speaks: whoever starts first halts the others.
   const gtts = speakGtts(text, {
     lang: locale,
-    pitchBias: gender === 'male' ? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE,
+    tl,
+    pitchBias: previewPitchBias,
     onPlaying: () => {
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
@@ -2034,7 +2043,7 @@ export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
       if (!spokenBy) {
         spokenBy = 'gtts';
         markVoiceStarted();
-        reportVoiceStatus('gtts', true, `preview gtts ${voiceId}`);
+        reportVoiceStatus('gtts', true, `preview gtts ${choiceId}`);
       }
     },
   }).catch((e: unknown) => {
@@ -2043,10 +2052,11 @@ export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
     return runSynthAudition('preview fallback');
   });
 
+  // Free upside only: if Microsoft ever re-opens read-aloud, the sample can be
+  // auditioned on a neural voice. Nothing waits on it and nothing depends on it.
   return speakEdge(text, {
     lang: locale,
-    gender,
-    voiceId,
+    gender: 'female',
     forcePlain: true,
     expressiveness: 1.15,
     rateDelta: 0.04,
@@ -2057,7 +2067,7 @@ export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
       if (!spokenBy) {
         spokenBy = 'edge';
         markVoiceStarted();
-        reportVoiceStatus('edge', true, `preview ${voiceId}`);
+        reportVoiceStatus('edge', true, `preview ${choiceId}`);
       }
     },
   }).then(() => gtts).catch((err: unknown) => {
