@@ -190,16 +190,16 @@ describe('selection layout', () => {
     expect(chat).toContain("bootReady ? '' : 'opacity-0'");
   });
 
-  it('change board follows draft live.kidMode for cast/scenes/badge (parity with select)', () => {
-    // /change keeps a draft until confirm; filtering must not stick to saved prefs.
+  it('the selection board never filters the cast by kidSafe (adult-only)', () => {
+    // r2026-11-08 — the kidSafe filter existed only for Kid Mode, which is
+    // retired. The board must now show the whole roster and every scene, both
+    // on /select and on the /change draft, so no pick silently disappears.
     expect(board).toContain("mode: 'start' | 'change'");
-    expect(board).toContain('const live: Prefs = mode ===');
-    expect(board).toContain('if (live.kidMode && !c.kidSafe) return false;');
-    expect(board).toContain('const scenes = live.kidMode ? BACKGROUNDS.filter((b) => b.kidSafe) : BACKGROUNDS;');
-    expect(board).toContain('{live.kidMode && <span');
-    expect(board).not.toContain('if (prefs.kidMode && !c.kidSafe) return false;');
-    expect(board).not.toContain('const scenes = prefs.kidMode ? BACKGROUNDS.filter');
-    expect(board).not.toContain('{prefs.kidMode && <span');
+    expect(board).not.toContain('kidSafe');
+    expect(board).not.toContain('KID_CHARACTER');
+    expect(board).not.toContain('const scenes = live.kidMode');
+    expect(board).toContain('const scenes = BACKGROUNDS;');
+    expect(board).not.toContain('{live.kidMode && <span');
     expect(board).not.toContain("kidMode={!!live.kidMode}");
     expect(board).not.toContain('onKidMode=');
   });
