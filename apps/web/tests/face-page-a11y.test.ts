@@ -6,9 +6,9 @@ const src = readFileSync(join(__dirname, '../app/face/page.tsx'), 'utf8');
 
 describe('face page main a11y', () => {
   it('labels main landmark and emotion canvas', () => {
-    expect(src).toContain('aria-label="Amoji face"');
+    expect(src).toContain('aria-label={faceCopy.main}');
     expect(src).toContain('role="img"');
-    expect(src).toContain('aria-label="Emotion face"');
+    expect(src).toContain('aria-label={faceCopy.canvas}');
   });
 
   it('exposes mode + subtitle as live status', () => {
