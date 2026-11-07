@@ -61,7 +61,17 @@
 //    the racer just loses that round and Pollinations carries the reply
 // r2026-11-08.142 — the free lane races HOSTS, not aliases (see the
 // RACER_COOLDOWN_MS block below for the evidence). One Pollinations request,
-// one OVHcloud request, one Puter call — three companies, three budgets.
+// one OVHcloud request, one Puter call.
+// r2026-11-08.143 — two premises corrected, capacity 3x higher:
+//  · NOT three companies. Pollinations' only anonymous model is literally
+//    described as "GPT-OSS 20B Reasoning LLM (OVH)", so Pollinations is a
+//    SECOND QUOTA on OVH's upstream, not a second host. Puter is the only
+//    genuinely independent third. Quota separation is still worth racing for;
+//    upstream diversity is not what we get from those two.
+//  · OVH's budget is per-IP PER MODEL, not per-IP (measured below), so one
+//    model id was throwing away ~5/6 of the capacity. OVH now rotates across
+//    a small verified-working model set with a per-(host, model) cooldown — a
+//    second message inside 30s still reaches OVH through a DIFFERENT model.
 import { analyzeText } from '@amoji/emotion-core';
 import { BASE_SYSTEM, languageBlock, parseEmotionHints, type ChatMessage } from './llm';
 import { brainBodyExtras, markBrainDead, pickBrain, type BrainSpec } from './brain';
@@ -99,12 +109,21 @@ export function trimHistoryForPrompt(messages: ChatMessage[]): ChatMessage[] {
 //    RACE_MODELS = ['openai-fast', 'openai'] therefore sent TWO requests to
 //    the SAME model at the SAME provider: two slots spent on one IP budget
 //    for zero diversity. A 5-request burst 402s from the third request on.
-//  · The race is now `{ id, host, buildRequest, parseChunk }` specs, one per
-//    company: Pollinations (exactly ONE request), OVHcloud's keyless trial
-//    endpoint, and Puter.js. Different hosts, different budgets — one going
-//    down or out of budget cannot take the reply hostage.
-//  · Anonymous budgets are respected with a per-host cooldown: a host that
+//  · The race is now `{ id, host, buildRequest, parseChunk }` specs: exactly
+//    ONE Pollinations request, the freshest OVHcloud model requests and one
+//    Puter call per turn (r143 raised OVH to one racer per model).
+//  · Anonymous budgets are respected with a cooldown: a (host, model) that
 //    just answered is skipped, so one user's rapid messages don't drain it.
+// r2026-11-08.143 — what is actually true about the three racers:
+//  · OVHcloud is THE upstream. Pollinations resells the same GPT-OSS 20B
+//    weights behind its own queue, so it is a second QUOTA on that upstream,
+//    not an independent company. That is still useful — two queues, two
+//    budget counters, two places one reply can come from — but a single OVH
+//    outage takes BOTH of them out together.
+//  · Puter is the only genuinely independent third: its own infra, its own
+//    budget, unaffected by anything OVH does.
+//  · OVH's anonymous budget is per-IP PER MODEL (see OVH_MODELS), so racing
+//    one model id there was leaving most of the capacity unused.
 //  · Kilo Gateway (api.kilocode.ai) answers anonymously from here but sends
 //    NO `Access-Control-Allow-Origin` and `Cross-Origin-Resource-Policy:
 //    same-origin`, so a browser can never read its reply — left out on
@@ -118,23 +137,90 @@ export const OVH_ORIGIN = 'https://oai.endpoints.kepler.ai.cloud.ovh.net';
 /** Puter's keyless browser SDK (loaded lazily by its racer). */
 export const PUTER_SDK_URL = 'https://js.puter.com/v2/';
 
-/** The ONE model Pollinations' anonymous tier serves (plus dead aliases). */
+/** The ONE model Pollinations' anonymous tier serves (plus dead aliases).
+ *  Pollinations describes it as "GPT-OSS 20B Reasoning LLM (OVH)" — the same
+ *  weights OVH serves as `gpt-oss-20b`. That is why this racer buys a second
+ *  QUOTA, not a second upstream (see the r143 note above). */
 export const POLLINATIONS_MODEL = 'openai-fast';
-/** Fastest of OVH's 21 keyless models (~0.9s to first token) and it speaks
- *  Cantonese. NOTE: it rejects `reasoning_effort` with HTTP 400, so only
- *  Pollinations' buildRequest sets that field. */
-export const OVH_MODEL = 'Mistral-Small-3.2-24B-Instruct-2506';
 
-/** Per-host anonymous-budget cooldown, in ms. A racer inside its window is
- *  skipped and the other hosts answer instead.
- *  · pollinations — ~1 request / 30-45s per IP; 35s sits inside that
- *  · ovhcloud     — measured: exactly 2 requests per ~60s, then HTTP 429, so
- *                   a 30s gate spends that budget evenly instead of bursting
- *  · puter        — no anonymous per-IP budget to protect */
+/**
+ * OVH's keyless chat models we are willing to ask, in preference order.
+ * Verified by direct probe against the live endpoint (2026-11-08).
+ *
+ * Only models that emit `delta.content` may be listed. OVH's reasoning models
+ * stream `delta.reasoning` and finish with an EMPTY content string, which
+ * would burn a racer's whole 14s budget and return nothing:
+ *   Qwen3.6-27B / Qwen3.5-9B / Qwen3.5-397B-A17B → 0 content chars, ~700 of
+ *   reasoning. Those are excluded on purpose, not by accident.
+ *
+ * Ordering is Cantonese quality first (Amoji is Cantonese-first), then speed:
+ *  1. Meta-Llama-3_3-70B-Instruct — best Cantonese by a clear margin. In the
+ *     probe it produced genuinely colloquial lines with 囉/嘅/咁 particles and
+ *     ZERO Mandarin-only characters, e.g. 「我都係咁囉，你點解返工咁攰呢？」
+ *     and 「你哋點解會嘈交呀？算啦，慢慢傾吓，總會解決到嘅。」 Also quick:
+ *     0.87-0.96s to first token, with no reasoning phase to pay for.
+ *  2. Qwen2.5-VL-72B-Instruct — no reasoning phase either and the same ~0.9s
+ *     to first token, with the strongest Cantonese of the Qwen family probed
+ *     (「點解唔試下同佢傾計，了解下彼此嘅想法？」). It answers plain text
+ *     fine; only the name says VL.
+ *  3. gpt-oss-120b — close behind on Cantonese (「聽落你今日真係好辛苦，
+ *     記得好好休息同放鬆下先。」) and more headroom than 20b, but it spends
+ *     ~450-550 chars of hidden reasoning first, so time-to-first-token is
+ *     3.9-12.1s. Last, because the race usually needs the answer sooner.
+ *
+ * `reasoning_effort` is deliberately NOT sent to any of these: OVH answers
+ * HTTP 400 "feature 'reasoning_effort for this model' is not currently
+ * supported" for Llama-3.3-70B and Mistral-Small, and it is not needed for
+ * the others. And no `Authorization` header is sent at all — a placeholder
+ * like `Bearer no-key` is answered with HTTP 403 (verified), so a dummy key
+ * from an OpenAI-style SDK would break the whole host.
+ */
+export const OVH_MODELS = [
+  'Meta-Llama-3_3-70B-Instruct',
+  'Qwen2.5-VL-72B-Instruct',
+  'gpt-oss-120b',
+] as const;
+
+/** The Cantonese-first default — what OVH is asked for when nothing is hot. */
+export const OVH_MODEL = OVH_MODELS[0];
+
+/** Per-(host, model) anonymous-budget cooldown, in ms.
+ *
+ *  What the OVH budget actually is (measured 2026-11-08, from one IP):
+ *   · per-IP PER MODEL, not per-IP. Two quick calls to ONE model succeed, the
+ *     third is HTTP 429; the same two calls to a DIFFERENT model succeed
+ *     again straight away. Rotating 3 models gave 6 successful calls back to
+ *     back where one model allowed 2, and a 20-request burst across 5 models
+ *     landed exactly 10 OK (2 per model) in 4.7s.
+ *   · the window is ~25s, not 60s. After 2 calls, one more succeeded again
+ *     at 25s and was still refused at 15s and 20s.
+ *  So the old "2 requests per 60s, 30s per host" rule was spending about a
+ *  ninth of the real allowance. A model that just answered now rests 25s
+ *  while its siblings carry the next turn — a second message 5s later still
+ *  reaches OVH, on a different model, instead of being told to wait.
+ *
+ *  The budget is enforced per (host, model), which is why the map is keyed by
+ *  `host::model`: same host + different model is a DIFFERENT budget.
+ *
+ *   · pollinations — ~1 request / 30-45s per IP; 35s sits inside that
+ *   · ovhcloud     — 2 requests / 25s per (IP, model), re-checked below
+ *   · puter        — no anonymous per-IP budget to protect
+ */
 export const RACER_COOLDOWN_MS = {
   pollinations: 35_000,
-  ovhcloud: 30_000,
+  ovhcloud: 25_000,
   puter: 0,
+} as const;
+
+/** How many dispatches one (host, model) slot may spend inside its window.
+ *  Measured on OVH: two quick calls to one model both succeed and only the
+ *  THIRD is refused, so a single-shot window per 25s would leave half of each
+ *  model's allowance on the table. The cap exists so a hot retry loop cannot
+ *  burst straight into a 429. */
+export const RACER_MAX_SENDS = {
+  pollinations: 1,
+  ovhcloud: 2,
+  puter: Number.POSITIVE_INFINITY,
 } as const;
 
 export const RACER_BUDGET_MS = 14_000;
@@ -153,16 +239,25 @@ export type RacerRequest =
   | { transport: 'http'; url: string; headers: Record<string, string>; body: Record<string, unknown> }
   | { transport: 'sdk'; sdk: 'puter'; messages: Array<{ role: string; content: string }> };
 
-/** One independent racer. `host` is the company/endpoint — the whole point of
- *  the lane is that no two racers share it. */
+/** One racer = one (host, model) budget slot. Two racers may share a `host`
+ *  when that host meters quota PER MODEL (OVH does); they must never share a
+ *  `host` + `model` pair, because that spends one budget twice for nothing. */
 export interface RacerSpec {
   id: string;
-  /** owning company/endpoint; the race must span several of these */
+  /** owning endpoint. NOTE: a shared host does not mean an independent
+   *  upstream — Pollinations and OVHcloud both land on OVH's inference, so
+   *  they are two quotas on one upstream, not two companies. Puter is the
+   *  only genuinely independent third. */
   host: string;
-  /** model id sent to that host (`host` + `model` is globally unique) */
+  /** model id sent to that host. `host::model` is the budget key, so it must
+   *  be globally unique. */
   model: string;
-  /** ms to wait after a dispatch to this host before dispatching again */
+  /** ms to wait after a dispatch to this (host, model) before dispatching
+   *  again — the anonymous quota is counted per pair, not per host */
   cooldownMs: number;
+  /** dispatches allowed per window; the measured allowance, so a fast retry
+   *  cannot waste it and cannot burst past it either */
+  maxSends: number;
   buildRequest: (ctx: RacerRequestContext) => RacerRequest;
   /** the spoken delta inside one stream part (SSE `data:` JSON or SDK chunk) */
   parseChunk: (payload: unknown) => string;
@@ -197,42 +292,54 @@ const chatBody = (
 const withSystem = (system: string, messages: ChatMessage[]) =>
   [{ role: 'system', content: system }, ...messages];
 
-/** The free lane. One request per host per turn, first token wins. */
+/** The free lane. One request per racer per turn, first token wins.
+ *  r143 — OVH is expanded into one racer PER MODEL: its anonymous quota is
+ *  metered per (IP, model), so N model racers give ~N x the turns before any
+ *  of them is refused. The list below is therefore ordered "best Cantonese
+ *  first, then speed", and `selectRacers` walks it in that order. */
 export const FREE_RACERS: RacerSpec[] = [
   {
     id: 'pollinations',
     host: 'pollinations',
     model: POLLINATIONS_MODEL,
     cooldownMs: RACER_COOLDOWN_MS.pollinations,
+    maxSends: RACER_MAX_SENDS.pollinations,
     buildRequest: (ctx) => ({
       transport: 'http',
       url: `${LANE_ORIGIN}/openai`,
       headers: { 'Content-Type': 'application/json' },
       // `reasoning_effort: low` skips the hidden chain so the first spoken
-      // token arrives sooner — Pollinations accepts it, OVH does not.
+      // token arrives sooner. Pollinations accepts it; OVH answers 400, so
+      // no OVH racer below may set it.
       body: chatBody(POLLINATIONS_MODEL, ctx, { reasoning_effort: 'low' }),
     }),
     parseChunk: openAiDelta,
   },
-  {
-    id: 'ovhcloud',
+  // One OVH racer per verified-working model, best Cantonese first. Each has
+  // its own quota, so they race side by side instead of queueing.
+  ...OVH_MODELS.map((model, i): RacerSpec => ({
+    id: i === 0 ? 'ovhcloud' : `ovhcloud-${model}`,
     host: 'ovhcloud',
-    model: OVH_MODEL,
+    model,
     cooldownMs: RACER_COOLDOWN_MS.ovhcloud,
+    maxSends: RACER_MAX_SENDS.ovhcloud,
     buildRequest: (ctx) => ({
       transport: 'http',
       url: `${OVH_ORIGIN}/v1/chat/completions`,
-      // No Authorization header at all — the trial tier is anonymous.
+      // No Authorization header at all — the trial tier is anonymous, and a
+      // placeholder (`Bearer no-key`) is answered with 403, so an SDK that
+      // injects a dummy key silently kills this whole host.
       headers: { 'Content-Type': 'application/json' },
-      body: chatBody(OVH_MODEL, ctx),
+      body: chatBody(model, ctx),
     }),
     parseChunk: openAiDelta,
-  },
+  })),
   {
     id: 'puter',
     host: 'puter',
     model: 'puter-auto',
     cooldownMs: RACER_COOLDOWN_MS.puter,
+    maxSends: RACER_MAX_SENDS.puter,
     buildRequest: ({ system, messages }) => ({
       transport: 'sdk',
       sdk: 'puter',
@@ -242,65 +349,127 @@ export const FREE_RACERS: RacerSpec[] = [
   },
 ];
 
-// ---------- per-host cooldown ----------
+// ---------- per-(host, model) cooldown ----------
 // r2026-10-06.136 — keyless Puter racer plumbing (one of the FREE_RACERS
-// below); declared here so the cooldown reset can clear the cached promise.
+// above); declared here so the cooldown reset can clear the cached promise.
 type PuterPart = { text?: string };
 type PuterAI = { chat: (messages: unknown[], opts?: Record<string, unknown>) => Promise<AsyncIterable<PuterPart>> };
 type PuterSDK = { ai: PuterAI };
 
-const racerLastSentAt = new Map<string, number>();
+/** The anonymity budget key. Quota is counted per model, so OVH sharing one
+ *  host across three racers still gets three separate windows. */
+export function racerKey(spec: Pick<RacerSpec, 'host' | 'model'>): string {
+  return `${spec.host}::${spec.model}`;
+}
+
+/** Dispatch timestamps inside each (host, model)'s current window. A list,
+ *  not one number, because OVH's allowance is TWO requests per window — a
+ *  single timestamp could only enforce one, or none. */
+const racerSends = new Map<string, number[]>();
 // Puter's SDK promise, reset alongside the windows so a retry really retries.
 let puterLoader: Promise<PuterSDK> | null = null;
 
-/** True while this host is still inside its anonymous-budget window. */
+/** The window this key is currently in, pruned to `cooldownMs` of history. */
+function sendsInWindow(key: string, cooldownMs: number, at: number): number[] {
+  const sends = racerSends.get(key) ?? [];
+  const live = cooldownMs > 0 ? sends.filter((t) => at - t < cooldownMs) : sends;
+  if (live.length !== sends.length) {
+    if (live.length) racerSends.set(key, live); else racerSends.delete(key);
+  }
+  return live;
+}
+
+/** True while this (host, model) has spent its allowance for the window. */
 export function racerCoolingDown(
-  spec: Pick<RacerSpec, 'id' | 'cooldownMs'>,
+  spec: Pick<RacerSpec, 'id' | 'host' | 'model' | 'cooldownMs' | 'maxSends'>,
   at: number = Date.now(),
 ): boolean {
   if (spec.cooldownMs <= 0) return false;
-  const last = racerLastSentAt.get(spec.id);
-  return last !== undefined && at - last < spec.cooldownMs;
+  const sends = sendsInWindow(racerKey(spec), spec.cooldownMs, at);
+  return sends.length >= (spec.maxSends ?? 1);
 }
 
-/** Record a dispatch (or a 402/429) so the window starts now. */
-export function markRacerSent(id: string, at: number = Date.now()): void {
-  racerLastSentAt.set(id, at);
+/** Record a dispatch — or a 402/429, which spends the window's whole
+ *  allowance — for this (host, model). Accepts a racer id for convenience;
+ *  ids are unique per racer. */
+export function markRacerSent(id: string, at: number = Date.now(), exhausted = false): void {
+  const spec = FREE_RACERS.find((r) => r.id === id);
+  const key = spec ? racerKey(spec) : id;
+  if (exhausted && spec) {
+    // A refusal means the rest of the allowance is gone too, so stamp the
+    // window full instead of letting the next turn walk into another 429.
+    const max = Number.isFinite(spec.maxSends) ? spec.maxSends : 1;
+    racerSends.set(key, Array.from({ length: Math.max(max, 1) }, () => at));
+    return;
+  }
+  const sends = (racerSends.get(key) ?? []).filter((t) => spec ? at - t < spec.cooldownMs : true);
+  sends.push(at);
+  racerSends.set(key, sends);
 }
 
 /** Test hook: clear every window. */
 export function resetRacerCooldowns(): void {
-  racerLastSentAt.clear();
+  racerSends.clear();
   puterLoader = null;
 }
 
-/** Which racers may fire right now. */
+/** How many racers one turn should launch at once. The whole point of the
+ *  rotation is that a burst spreads across (host, model) slots instead of
+ *  re-asking one, so a turn takes the freshest few rather than all of them —
+ *  firing every slot every turn would spend five racers' allowances to answer
+ *  one line (and both of each OVH model's two sends). */
+export const RACERS_PER_TURN = 3;
+
+/** Which racers may fire right now, best-first. */
 export function eligibleRacers(at: number = Date.now()): RacerSpec[] {
   return FREE_RACERS.filter((r) => !racerCoolingDown(r, at));
 }
 
 /**
- * The lanes this turn should actually race. Cooling lanes are skipped so the
- * other hosts answer and the spent host keeps its slot for later. If every
- * lane happens to be inside its window (a rapid burst across all hosts), the
- * longest-idle one is used rather than dead-ending the chat — silence is worse
- * than one extra request.
+ * The lanes this turn should actually race: the best few racers that are not
+ * cooling down. Cooling lanes are skipped so their budget refills, and the
+ * next turn naturally arrives on a DIFFERENT model of the same host — that is
+ * the rotation. If fewer than RACERS_PER_TURN are fresh (a rapid burst), the
+ * remaining slots are filled with the hosts that have been waiting longest
+ * rather than dead-ending the chat: one extra request beats silence.
+ *
+ * Puter is kept in the round whenever it is fresh, because it is the only
+ * racer whose budget no OVH-side outage can take away.
  */
 export function selectRacers(at: number = Date.now()): RacerSpec[] {
   const fresh = eligibleRacers(at);
-  if (fresh.length) return fresh;
-  const oldest = longestIdleRacer(at);
-  return oldest ? [oldest] : [];
+  if (fresh.length >= RACERS_PER_TURN) return rankForTurn(fresh).slice(0, RACERS_PER_TURN);
+  const picked = rankForTurn(fresh);
+  const rest = FREE_RACERS
+    .filter((r) => !picked.includes(r))
+    .sort((a, b) => lastSendOf(a) - lastSendOf(b));
+  for (const r of rest) {
+    if (picked.length >= RACERS_PER_TURN) break;
+    picked.push(r);
+  }
+  return picked.length ? picked : [longestIdleRacer(at) ?? FREE_RACERS[0]!];
 }
 
-/** The cooling host that has been waiting longest — the reserve of last resort. */
+/** Newest dispatch to this slot, or -Infinity if it has never been asked. */
+function lastSendOf(spec: Pick<RacerSpec, 'host' | 'model'>): number {
+  const sends = racerSends.get(racerKey(spec));
+  return sends?.length ? sends[sends.length - 1]! : -Infinity;
+}
+
+/** Best-first, with Puter pulled forward whenever it is available: it is the
+ *  only genuinely independent racer, so it is worth a slot even when OVH has
+ *  fresher models. */
+function rankForTurn(specs: RacerSpec[]): RacerSpec[] {
+  const puter = specs.filter((r) => r.host === 'puter');
+  const rest = specs.filter((r) => r.host !== 'puter');
+  return [...puter, ...rest];
+}
+
+/** The cooling (host, model) that has been waiting longest — last resort. */
 export function longestIdleRacer(at: number = Date.now()): RacerSpec | undefined {
-  let oldest: RacerSpec | undefined;
-  for (const r of FREE_RACERS) {
-    if (!racerCoolingDown(r, at)) continue;
-    if (!oldest || (racerLastSentAt.get(r.id) ?? -Infinity) < (racerLastSentAt.get(oldest.id) ?? -Infinity)) oldest = r;
-  }
-  return oldest ?? FREE_RACERS[0];
+  const cooling = FREE_RACERS.filter((r) => racerCoolingDown(r, at));
+  if (!cooling.length) return FREE_RACERS[0];
+  return cooling.reduce((oldest, r) => (lastSendOf(r) < lastSendOf(oldest) ? r : oldest));
 }
 
 let laneWarmed = false;
@@ -448,7 +617,8 @@ function launchSpecRacer(
   onPartial?: (text: string) => void,
 ): Racer {
   const req = spec.buildRequest(ctx);
-  // A host only spends its anonymous budget when this actually dispatches.
+  // Only a real dispatch spends an anonymous slot, and it spends the slot of
+  // this (host, model) — a sibling model on the same host keeps its own.
   markRacerSent(spec.id);
   const ctl = new AbortController();
   let abortedByCaller = false;
@@ -497,11 +667,13 @@ function launchSpecRacer(
         });
         if (!res.ok) {
           // r.27 — read the error body: an out-of-credit gateway gets a clear
-          // signal instead of a bare status code. 402/429 mean the anonymous
-          // budget is spent, so the host's cooldown restarts from now.
+          // signal instead of a bare status code. 402/429 mean this slot's
+          // anonymous allowance is gone, so its window restarts from now —
+          // and it is stamped FULL, because a refusal promises nothing about
+          // the rest of the allowance.
           let body = '';
           try { body = await res.text(); } catch { /* unreadable — ignore */ }
-          if (res.status === 402 || res.status === 429) markRacerSent(spec.id);
+          if (res.status === 402 || res.status === 429) markRacerSent(spec.id, Date.now(), true);
           if (CREDIT_RE.test(body)) throw new Error(`${spec.id} out of credit`);
           throw new Error(`${spec.id} ${res.status}`);
         }
@@ -681,9 +853,11 @@ async function streamCompletion(
   return racer.finish();
 }
 
-/** Free lane: race independent HOSTS, first token wins, losers are aborted.
+/** Free lane: race the freshest few racers, first token wins, losers aborted.
  *  r142 — no longer takes a BrainSpec: the racers are host specs, so this can
- *  no longer accidentally fire two requests at one provider's budget. */
+ *  no longer accidentally fire two requests at one provider's budget.
+ *  r143 — a racer is one (host, model) budget slot, not one company, so a
+ *  turn can legitimately include several OVH models at once. */
 export async function raceFreeLanes(
   system: string,
   messages: ChatMessage[],
@@ -691,21 +865,21 @@ export async function raceFreeLanes(
   maxTokens = 280,
 ): Promise<string> {
   const ctx: RacerRequestContext = { system, messages, maxTokens };
-  // r142 — hosts whose anonymous budget is still fresh. Pollinations is in
-  // here at most once (it is one spec, not two aliases), and a host inside
-  // its cooldown is skipped so the others answer instead.
+  // r143 — the best few (host, model) slots whose window has refilled. A
+  // rapid second message lands on a DIFFERENT OVH model instead of being
+  // dropped, which is where the extra free capacity comes from.
   const lanes = selectRacers();
   if (!lanes.length) throw new Error('no free lane available');
   try {
     return await launchRace(lanes, ctx, onPartial);
   } catch (err) {
-    // Every FRESH host failed. Rather than dropping straight to the canned
-    // line, borrow the host that has been cooling longest — one extra request
-    // beats silence. Only if that also fails does the caller's unchanged
-    // fallback (live facts, then the local lane) take over.
-    const freshIds = new Set(lanes.map((r) => r.id));
+    // Every FRESH lane failed. Rather than dropping straight to the canned
+    // line, borrow the (host, model) that has been cooling longest — one
+    // extra request beats silence. Only if that also fails does the caller's
+    // unchanged fallback (live facts, then the local lane) take over.
+    const tried = new Set(lanes.map((r) => r.id));
     const spare = longestIdleRacer();
-    if (!spare || freshIds.has(spare.id) || !(err instanceof Error)) throw err;
+    if (!spare || tried.has(spare.id) || !(err instanceof Error)) throw err;
     return launchRace([spare], ctx, onPartial);
   }
 }
