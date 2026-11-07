@@ -207,8 +207,38 @@ function restoreFoot(inner: THREE.Object3D, leg: LegPlant): void {
 
 /** Cos-space floor along side-outward. Below = thigh adducted into the body. */
 export const THIGH_MIN_OUTWARD = 0.06;
+/**
+ * Ceiling for the measured floor. ~9.2° out from vertical still reads as a
+ * natural stance, so the clamp never asks for more than that.
+ */
+export const THIGH_MAX_OUTWARD = 0.16;
+/** Thigh length the base floor was tuned against (metres). */
+export const THIGH_REF_LEN = 0.36;
 /** Only unblend when the thigh roughly hangs (dir.y below this). */
 export const THIGH_GATE_Y = -0.2;
+
+/**
+ * Outward floor for one rig, from its own thigh length.
+ *
+ * THIGH_MIN_OUTWARD is a DIRECTION COSINE, so the notch it buys is an ANGLE
+ * times the thigh length. One constant therefore means a different stance on
+ * every cast: 0.06 opens ~21 mm on the 0.353 m thigh it was tuned against, but
+ * only ~8 mm on char 27's 0.134 m thigh (still reads as fused) and ~32 mm on
+ * char 3's 0.527 m thigh (already open enough, so nothing is gained there).
+ * That mismatch is why the correction looked right on average-height cast and
+ * thin on the short-legged ones.
+ *
+ * Scale by length so every rig gets a comparable ABSOLUTE notch. Only an
+ * under-provisioned rig is raised: for a thigh at or above THIGH_REF_LEN the
+ * floor stays exactly the tuned base, so cast that already reads correctly is
+ * untouched, and THIGH_MAX_OUTWARD bounds the ask on chibi rigs.
+ */
+export function thighFloorFor(thighLen: number): number {
+  if (!Number.isFinite(thighLen) || thighLen <= 1e-4) return THIGH_MIN_OUTWARD;
+  const scaled = THIGH_MIN_OUTWARD * (THIGH_REF_LEN / thighLen);
+  if (scaled <= THIGH_MIN_OUTWARD) return THIGH_MIN_OUTWARD;
+  return scaled >= THIGH_MAX_OUTWARD ? THIGH_MAX_OUTWARD : scaled;
+}
 
 const _thA = new THREE.Vector3();
 const _thB = new THREE.Vector3();
@@ -243,6 +273,9 @@ export function thighOutwardComponent(
  * the pelvis/torso (Mon: blended legs and body). Raised/folded legs
  * (dir.y >= THIGH_GATE_Y) keep full freedom. Mirror of shoulder adduction
  * clamp, but side-aware so left and right both open away from midline.
+ *
+ * `minOutward` is the outward floor; pass thighFloorFor(thighLen) so the
+ * notch scales with the rig instead of shrinking on short legs.
  */
 export function clampThighAdduction(
   upper: THREE.Object3D,
@@ -250,6 +283,7 @@ export function clampThighAdduction(
   leftUpper: THREE.Object3D,
   rightUpper: THREE.Object3D,
   left: boolean,
+  minOutward: number = THIGH_MIN_OUTWARD,
 ): boolean {
   const a = upper.getWorldPosition(_thA);
   const b = lower.getWorldPosition(_thB);
@@ -260,12 +294,12 @@ export function clampThighAdduction(
   const lp = leftUpper.getWorldPosition(_thLP);
   const rp = rightUpper.getWorldPosition(_thRP);
   const outD = thighOutwardComponent(d, lp, rp, left);
-  if (outD >= THIGH_MIN_OUTWARD) return false;
+  if (outD >= minOutward) return false;
   _thOut.subVectors(rp, lp);
   if (_thOut.lengthSq() < 1e-10) return false;
   _thOut.normalize();
   if (left) _thOut.negate();
-  const dFix = _thFix.copy(d).addScaledVector(_thOut, THIGH_MIN_OUTWARD - outD).normalize();
+  const dFix = _thFix.copy(d).addScaledVector(_thOut, minOutward - outD).normalize();
   _thQF.setFromUnitVectors(d, dFix);
   if (!upper.parent) return false;
   const parentW = upper.parent.getWorldQuaternion(_thQP);
@@ -284,9 +318,11 @@ export function applyThighUnblend(
   const ll = getBone('leftLowerLeg');
   const rl = getBone('rightLowerLeg');
   if (!lu || !ru || !ll || !rl) return 0;
+  // Scale the floor by this rig's own thigh length (see thighFloorFor).
+  const floor = thighFloorFor(lu.getWorldPosition(_thA).distanceTo(ll.getWorldPosition(_thB)));
   let n = 0;
-  if (clampThighAdduction(lu, ll, lu, ru, true)) n += 1;
-  if (clampThighAdduction(ru, rl, lu, ru, false)) n += 1;
+  if (clampThighAdduction(lu, ll, lu, ru, true, floor)) n += 1;
+  if (clampThighAdduction(ru, rl, lu, ru, false, floor)) n += 1;
   return n;
 }
 
