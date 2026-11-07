@@ -45,9 +45,26 @@ describe('voice does not switch speaker mid-line or between characters', () => {
     // and male companions sounded female. Pitch bias is the only lever.
     expect(gtts).toContain('pitchBias?: number');
     expect(gtts).toContain('preservesPitch = false');
-    expect(voice).toMatch(/pitchBias: spokenGender === 'male' \? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE/);
     expect(PITCH_BIAS_MALE).toBeLessThan(1); // male reads deeper
     expect(PITCH_BIAS_FEMALE).toBeGreaterThanOrEqual(1); // female slightly brighter
+  });
+
+  it('every gtts call site takes its pitch from ONE shared helper', () => {
+    // t790 — the loading filler had to sound like the same person as the
+    // reply. Copy-pasting the ternary per call site is how a new caller
+    // silently forgets it, so voice.ts owns a single resolver and every tier
+    // (reply, resumed tail, greeting, sing, preview, filler) calls it.
+    expect(voice).toContain('export function gttsPitchBias(gender:');
+    expect(voice).toMatch(/pitchBias: gttsPitchBias\(/);
+    const ternaries = voice.match(/pitchBias: [a-zA-Z]+ === 'male' \?/g) ?? [];
+    expect(ternaries).toEqual([]);
+    // The helper itself is the only place the constants are compared.
+    const helperBody = voice.slice(
+      voice.indexOf('export function gttsPitchBias'),
+      voice.indexOf('}', voice.indexOf('export function gttsPitchBias')) + 1,
+    );
+    expect(helperBody).toContain('PITCH_BIAS_MALE');
+    expect(helperBody).toContain('PITCH_BIAS_FEMALE');
   });
 
   it('the pitch shift stays bounded so the line is not garbled', () => {

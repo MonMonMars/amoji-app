@@ -4,9 +4,15 @@ import { WARMUP_FIRST_MS } from '../lib/warmup';
 import { OPEN_CHEER_MS, OPEN_CHEER_FOLLOW_MS, OPEN_IDLE_BRIEF_MS } from '../lib/open-phase';
 
 describe('loading voice / SFX delay (Mon: not in the first seconds)', () => {
-  it('defers thinking um, warmup, and chat-enter cheer past the first seconds', () => {
-    expect(THINKING_SOUND_DELAY_MS).toBeGreaterThanOrEqual(3000);
-    expect(WARMUP_FIRST_MS).toBeGreaterThanOrEqual(3500);
+  it('holds the thinking filler for a full two seconds', () => {
+    // t790 — the filler used to arrive too soon. Two seconds is the agreed
+    // wait: long enough that an ordinary reply beats it, short enough that a
+    // slow one still feels alive.
+    expect(THINKING_SOUND_DELAY_MS).toBe(2_000);
+    expect(WARMUP_FIRST_MS).toBe(THINKING_SOUND_DELAY_MS);
+  });
+
+  it('keeps the chat-enter cheer well past the first seconds', () => {
     expect(OPEN_CHEER_MS).toBeGreaterThanOrEqual(3000);
     expect(OPEN_CHEER_FOLLOW_MS).toBeGreaterThan(OPEN_CHEER_MS);
     expect(OPEN_IDLE_BRIEF_MS).toBeGreaterThan(OPEN_CHEER_FOLLOW_MS);

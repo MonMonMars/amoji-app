@@ -61,15 +61,20 @@ describe('greeting tier arbitration (one voice per tap)', () => {
 
   it('every tier carries the same per-character pitch', () => {
     // The SAME character must not sound different on select than in chat.
-    // Greeting:
-    expect(body).toContain("pitchBias: gender === 'male' ? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE");
+    // Both paths take the pitch from voice.ts's single resolver.
+    expect(body).toContain('pitchBias: gttsPitchBias(gender)');
+    expect(body).not.toMatch(/pitchBias: gender === 'male'/);
   });
 
   it('all gtts call sites use the character pitch', () => {
-    // chat, greeting, resume, sing, preview — none may fall back to the raw voice
+    // chat, greeting, resume, sing, preview, loading filler — none may fall
+    // back to the raw endpoint voice.
     const calls = voice.match(/speakGtts\((?:text|rest|line)/g) ?? [];
     expect(calls.length).toBeGreaterThanOrEqual(5);
-    const pitchUses = voice.match(/pitchBias:/g) ?? [];
+    // Every gtts call site resolves its pitch through the shared helper, so
+    // there is exactly one definition and no call site can drift.
+    const pitchUses = voice.match(/pitchBias: gttsPitchBias\(/g) ?? [];
     expect(pitchUses.length).toBeGreaterThanOrEqual(5);
+    expect(voice).not.toMatch(/pitchBias: [a-zA-Z]+ === 'male' \?/);
   });
 });
