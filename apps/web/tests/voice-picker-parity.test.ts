@@ -49,11 +49,13 @@ describe('Settings VoicePicker parity with select TtsVoiceRow', () => {
     expect(row).toContain('saveVoicePick(button.locale, button.gender, button.id)');
   });
 
-  it('keeps per-gender pin state and the companion cast highlight', () => {
+  it('keeps exclusive single pin per locale and cast default highlight', () => {
     expect(picker).toContain("voicePickFor(locale, 'female')");
     expect(picker).toContain("voicePickFor(locale, 'male')");
     expect(picker).toContain('ignoreVoicePick: true');
-    expect(picker).toContain('button.gender === companionGender && button.id === castId && !companionPinned');
+    expect(picker).toContain('const activeId = pinnedId ?? castId');
+    expect(picker).toContain('const selected = button.id === activeId');
+    expect(picker).not.toContain('castMatch');
   });
 
   it('previews on tap and switches language on a locale mismatch', () => {
