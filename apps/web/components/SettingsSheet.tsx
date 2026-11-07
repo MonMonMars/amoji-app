@@ -49,12 +49,13 @@ import {
   type Memory, type MemoryType,
 } from '../lib/memory';
 
-function Toggle({ on, onClick, accent, disabled = false }: { on: boolean; onClick: () => void; accent: string; disabled?: boolean }) {
+function Toggle({ on, onClick, accent, disabled = false, label }: { on: boolean; onClick: () => void; accent: string; disabled?: boolean; label: string }) {
   return (
     <button
       type="button"
       onClick={onClick}
       role="switch"
+      aria-label={label}
       aria-checked={disabled ? undefined : on}
       aria-busy={disabled || undefined}
       disabled={disabled}
@@ -384,7 +385,7 @@ export default function SettingsSheet({
               <span className={label}>🧸 {t(lang, 'kidMode')}
                 <span className="block text-[11px] text-white/40">{t(lang, 'kidModeHint')}</span>
               </span>
-              <Toggle on={prefs.kidMode} accent={accent} onClick={toggleKid} />
+              <Toggle label={t(lang, 'kidMode')} on={prefs.kidMode} accent={accent} onClick={toggleKid} />
             </div>
           </Section>
 
@@ -405,6 +406,7 @@ export default function SettingsSheet({
                 <span className="block text-[11px] text-white/40">{t(lang, 'muteAllHint')}</span>
               </span>
               <Toggle
+                label={t(lang, 'muteAll')}
                 on={masterMuted === true}
                 disabled={masterMuted === null}
                 accent={accent}
@@ -414,6 +416,7 @@ export default function SettingsSheet({
 <div className={row}>
               <span className={label}>🔊 {t(lang, 'voiceReplies')}</span>
               <Toggle
+                label={t(lang, 'voiceReplies')}
                 on={voiceOn}
                 accent={accent}
                 onClick={() => { const next = !voiceOn; setVoiceOnState(next); setVoiceEnabled(next); }}
@@ -422,6 +425,7 @@ export default function SettingsSheet({
             <div className={row}>
               <span className={label}>✨ {t(lang, 'neuralVoice')}</span>
               <Toggle
+                label={t(lang, 'neuralVoice')}
                 on={neuralOn}
                 accent={accent}
                 onClick={() => { const next = !neuralOn; setNeuralOnState(next); setNeuralEnabled(next); }}
@@ -457,6 +461,7 @@ export default function SettingsSheet({
                   <span className="block text-[11px] text-white/40">{t(lang, 'openaiVoiceHint')}</span>
                 </span>
                 <Toggle
+                  label={t(lang, 'openaiVoice')}
                   on={oaOn}
                   accent={accent}
                   onClick={() => { const next = !oaOn; setOaOn(next); setOpenAiEnabled(next); }}
