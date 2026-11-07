@@ -11,7 +11,7 @@ const STEPS = ['character', 'background', 'language'] as const;
 
 export default function SetupFlow() {
   const router = useRouter();
-  const [prefs, setPrefs] = usePrefs();
+  const [prefs, setPrefs, prefsReady] = usePrefs();
   const [step, setStep] = useState(0);
   const lang = prefs.lang;
   const patch = (p: Partial<Prefs>) => setPrefs(p);
@@ -27,7 +27,10 @@ export default function SetupFlow() {
   };
 
   return (
-    <div className="flex w-full max-w-2xl flex-col items-center gap-6 px-4">
+    <div
+      className={`flex w-full max-w-2xl flex-col items-center gap-6 px-4 ${prefsReady ? '' : 'opacity-0'}`}
+      aria-busy={!prefsReady}
+    >
       <div className="flex items-center gap-2">
         {STEPS.map((_, i) => (
           <span
