@@ -1412,7 +1412,7 @@ function performSpeak(
   // used to run only on window gestures, so a session where the user typed
   // before ever tapping fetched every voice tier and stayed silent (autoplay
   // policy). Speaking a reply IS a user-intended audio act: take the unlock.
-  unlockAudio();
+  unlockAudio(true);
   // A premade song/dance bed ducks while a real line plays (poke, dance
   // reply) so the words stay intelligible. Singing itself does not come
   // through speak(), so a song stays full until something else talks.
@@ -1526,7 +1526,10 @@ function performSpeak(
         reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'edge-tts failed');
         stopEdge();
         // Explicit picker/greeting id: never collapse to one browser voice.
-        if (voiceId) { settle(); return; }
+        // Pinned Edge id failed (often browser wss 403). Still fall through to
+        // mute-aware synth so chat is not silent on iPhone without a TTS proxy.
+        next();
+        return;
         next();
       });
     };
@@ -1640,18 +1643,37 @@ function performClip(job: SpeechJob): Promise<void> {
  */
 export function playVoiceGreeting(characterId: string, lang: Lang, voiceId: string): void {
   if (!voiceOutputAllowed() || !voiceId) return;
-  // Unlock inside the tap gesture BEFORE stop so iOS/Chrome keep user activation.
+  // Unlock + synth prime INSIDE the tap. Browser Edge wss often 403s (no
+  // extension Origin/muid Cookie); iOS then needs a gesture-primed synth path.
   unlockAudio(true);
   stopSpeaking();
+  primeSynthInGesture();
   const kind = nextGreetingKind();
   const text = greetingText(lang, kind);
   const gender = isMaleNeuralVoice(voiceId) ? 'male' : 'female';
   let session = 0;
+  let edgePlaying = false;
+  let synthStarted = false;
   const onStart = () => {
     session = noteSpeechStarted(text);
     markVoiceStarted();
     reportVoiceStatus('edge', true, `greeting ${voiceId}`);
   };
+  const runSynthAudition = (tag: string) => {
+    if (edgePlaying || synthStarted) return;
+    synthStarted = true;
+    try {
+      synthSpeak(text, characterId, lang, 'joy', 1.1, undefined, 1, undefined, () => {
+        if (session) finishLipSync(session);
+      }, gender);
+      reportVoiceStatus('synth', true, `${tag} ${voiceId}`);
+    } catch (e) {
+      synthStarted = false;
+      reportVoiceStatus('synth', false, (e as Error | undefined)?.message ?? 'greeting synth failed');
+    }
+  };
+  // Audition via synth soon after the in-gesture prime (Edge may still win).
+  const synthTimer = setTimeout(() => runSynthAudition('greeting gesture'), 180);
   void speakEdge(text, {
     lang,
     gender,
@@ -1661,29 +1683,26 @@ export function playVoiceGreeting(characterId: string, lang: Lang, voiceId: stri
     expressiveness: 1.15,
     rateDelta: 0.04,
     pitchDelta: 0.06,
-    onPlaying: onStart,
+    onPlaying: () => {
+      edgePlaying = true;
+      clearTimeout(synthTimer);
+      try { haltSynthQueue(); } catch { /* ignore */ }
+      onStart();
+    },
   }).then(() => {
+    clearTimeout(synthTimer);
     if (session) finishLipSync(session);
   }).catch((err: unknown) => {
+    clearTimeout(synthTimer);
     if ((err as Error | undefined)?.message === 'canceled') return;
+    if (edgePlaying) return;
     if (session) endLipSync();
     reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? `greeting failed ${voiceId}`);
-    // When Edge socket is blocked, still audition via browser voice (mute-aware).
-    try {
-      synthSpeak(text, characterId, lang, 'joy', 1.1, undefined, 1, undefined, () => {
-        if (session) finishLipSync(session);
-      }, gender);
-      reportVoiceStatus('synth', true, `greeting fallback ${voiceId}`);
-    } catch (e) {
-      reportVoiceStatus('synth', false, (e as Error | undefined)?.message ?? 'greeting synth failed');
-    }
+    // Mute-aware browser fallback when Edge socket/proxy is blocked.
+    runSynthAudition('greeting fallback');
   });
 }
 
-/**
- * Tap-to-hear one file from the burst library. Never synthesizes it.
- * `folder` may be `universal`. The speech job still carries the UI language.
- */
 export function previewLibraryClip(folder: ClipFolder, gender: VoiceClipGender, file: string, lang: Lang): void {
   // Same mute gate as playVoiceGreeting / previewEdgeVoice: never cut speech or
   // enqueue a clip while Mute All / Voice replies are off (EmotionClipRow taps).
@@ -1835,8 +1854,26 @@ export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
   if (!voiceOutputAllowed()) return Promise.resolve();
   unlockAudio(true);
   stopSpeaking();
+  primeSynthInGesture();
   const gender = isMaleNeuralVoice(voiceId) ? 'male' : 'female';
   const text = edgeSampleText(locale);
+  let edgePlaying = false;
+  let synthStarted = false;
+  const runSynthAudition = (tag: string) => {
+    if (edgePlaying || synthStarted) return;
+    synthStarted = true;
+    return new Promise<void>((resolve) => {
+      try {
+        synthSpeak(text, 'preview', locale, 'joy', 1.1, undefined, 1, undefined, () => resolve(), gender);
+        reportVoiceStatus('synth', true, `${tag} ${voiceId}`);
+      } catch (e) {
+        synthStarted = false;
+        reportVoiceStatus('synth', false, (e as Error | undefined)?.message ?? 'preview synth failed');
+        resolve();
+      }
+    });
+  };
+  const synthTimer = setTimeout(() => { void runSynthAudition('preview gesture'); }, 180);
   return speakEdge(text, {
     lang: locale,
     gender,
@@ -1845,38 +1882,24 @@ export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
     expressiveness: 1.15,
     rateDelta: 0.04,
     pitchDelta: 0.06,
+    onPlaying: () => {
+      edgePlaying = true;
+      clearTimeout(synthTimer);
+      try { haltSynthQueue(); } catch { /* ignore */ }
+      markVoiceStarted();
+      reportVoiceStatus('edge', true, `preview ${voiceId}`);
+    },
+  }).then(() => {
+    clearTimeout(synthTimer);
   }).catch((err: unknown) => {
+    clearTimeout(synthTimer);
     if ((err as Error | undefined)?.message === 'canceled') return;
+    if (edgePlaying) return;
     reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'preview edge failed');
-    return new Promise<void>((resolve) => {
-      try {
-        synthSpeak(text, 'preview', locale, 'joy', 1.1, undefined, 1, undefined, () => resolve(), gender);
-        reportVoiceStatus('synth', true, `preview fallback ${voiceId}`);
-      } catch (e) {
-        reportVoiceStatus('synth', false, (e as Error | undefined)?.message ?? 'preview synth failed');
-        resolve();
-      }
-    });
+    return runSynthAudition('preview fallback');
   });
 }
 
-/** one short happy line per language for the settings self-test (r2026-10-04.75) */
-const TEST_LINES: Record<Lang, string> = {
-  yue: '喂，聽唔聽到我呀？我而家好開心見到你！',
-  zh: '喂，你能听到我吗？我现在好开心见到你！',
-  ja: 'ねえ、聞こえる？会えて嬉しいな！',
-  en: "Hey, can you hear me? I'm so happy to see you!",
-};
-
-/**
- * r2026-10-04.75 — one-tap voice self-test from the Settings sheet: forces
- * the iOS gesture unlock and speaks a short line in the current language with
- * the current character's voice. Works even while Voice replies is off (the
- * setting itself is left untouched — only the storage flag is borrowed for
- * the duration of the call, so stopSpeaking() can't cancel the test). If the
- * browser refuses to produce sound, `amoji:voice-blocked` fires and the
- * settings sheet shows the "check silent switch" hint.
- */
 export function testVoice(characterId: string, lang: Lang): void {
   // Mute All wins over Voice-replies self-test (never cut speech / probe while muted).
   if (isMasterMuted()) return;
