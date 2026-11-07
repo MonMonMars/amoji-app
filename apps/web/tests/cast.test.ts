@@ -158,6 +158,9 @@ describe('scene roster', () => {
 
 describe('kid mode roster', () => {
   it('kid fallback is a wholesome female from the want list', () => {
+    // r2026-11-08: Kid Mode itself is unreachable (adult-only product), but the
+    // kidSafe tags stay on the data because the cast records carry them and the
+    // .aigf format ships them. This pins the data, not a live filtering path.
     const safe = CHARACTERS.filter((c) => c.kidSafe);
     expect(safe.length).toBeGreaterThanOrEqual(4);
     expect(KID_CHARACTER).toBe('a02-shibu');

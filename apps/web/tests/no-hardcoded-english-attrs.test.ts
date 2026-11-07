@@ -50,12 +50,20 @@ describe('no hardcoded English in user-facing attributes', () => {
 
   it('the Kid Mode badge title is localized', () => {
     const src = readFileSync(join(componentsDir, 'StatusPlate.tsx'), 'utf8');
-    expect(src).toContain("title={t(lang, 'kidMode')}");
+    // r2026-11-08: the 🧸 badge retired with Kid Mode (adult-only product), so
+    // the old title assertion moved to the adult-only gate copy instead.
+    expect(src).not.toContain('title={t(lang, \'kidMode\')}');
     expect(src).not.toContain('title="Kid mode"');
+    expect(t('en', 'settingsAdultOnly')).toContain('18+');
   });
 
   it('the reused keys resolve in every shipped language', () => {
-    for (const key of ['chooseCharacter', 'chooseBackground', 'chooseLanguage', 'kidMode'] as const) {
+    // 'kidMode' is retained (data field + string, retired from the UI); the
+    // gate keys below are what the live entry screen actually renders.
+    for (const key of [
+      'chooseCharacter', 'chooseBackground', 'chooseLanguage', 'kidMode',
+      'settingsAdultOnly', 'gate18Title', 'gate18Ack',
+    ] as const) {
       const seen = new Set<string>();
       for (const lang of ['en', 'yue', 'zh', 'ja'] as const) {
         const s = t(lang, key);

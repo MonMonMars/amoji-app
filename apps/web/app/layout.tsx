@@ -53,9 +53,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           at page load (preconnect) so the first chat turn skips the ~1s
           handshake stall. Pollinations is warmed because it is the always-
           present fallback lane even when a keyed brain is configured.
-          r142 — the free lane now races independent hosts, so the OVHcloud
-          racer gets the same head start; otherwise it would pay the full
-          handshake on the very first turn and always lose to Pollinations.
+          r142 — the free lane races hosts, so the OVHcloud endpoint gets the
+          same head start; otherwise it would pay the full handshake on the
+          very first turn and always lose to Pollinations.
+          r143 — OVH is where most of the free capacity now comes from (its
+          quota is per model, so it rotates several), which makes this warm
+          connection worth even more than before. Note Pollinations' one
+          anonymous model is itself "GPT-OSS 20B (OVH)", so these two
+          preconnects are not two vendors — they are two quotas on one
+          upstream plus Puter, which loads its SDK on demand.
         */}
         <link rel="preconnect" href="https://text.pollinations.ai" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://text.pollinations.ai" />

@@ -323,7 +323,21 @@
 // one Puter call race each other; a per-host cooldown (Pollinations 35s,
 // OVHcloud 30s) keeps rapid messages from draining a shared budget, and the
 // local lane is still the last resort when every host fails.
-export const APP_REVISION = 'r2026-11-08.142';
+// r2026-11-08.143: the free lane's capacity went up roughly 3x, and the
+// story about where it comes from got honest. OVHcloud meters its anonymous
+// quota per IP PER MODEL (measured: 2 calls to one model then HTTP 429, while
+// the same calls to a sibling model succeed immediately, and the window is
+// ~25s not 60s), so OVH is no longer one model on a 30s host gate — it
+// rotates Meta-Llama-3.3-70B-Instruct (best Cantonese, asked first),
+// Qwen2.5-VL-72B-Instruct and gpt-oss-120b, each on its own 25s window. A
+// second message inside 30s now reaches OVH on a different model instead of
+// waiting. The framing is also corrected: Pollinations' only anonymous model
+// is "GPT-OSS 20B Reasoning LLM (OVH)", so it is a second QUOTA on OVH's
+// upstream, not a second company — Puter is the only independent third.
+// Reasoning-only OVH models that emit no delta.content are never asked, and
+// OVH still gets no Authorization header (a placeholder 403s) and no
+// reasoning_effort (400). The last-resort local lane is unchanged.
+export const APP_REVISION = 'r2026-11-08.143';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
