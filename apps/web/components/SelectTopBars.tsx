@@ -27,10 +27,13 @@ export default function SelectTopBars({
   castGender?: CastGenderFilter;
   onCastGender?: (next: CastGenderFilter) => void;
 }) {
+  // `uppercase` keeps the English chips looking exactly as before while CJK
+  // labels (yue/zh/ja) render unchanged — CSS uppercase is a no-op there.
   const modeChip = (active: boolean) =>
     active
       ? {
-          className: 'fx-press ui-btn rounded-full border px-3 py-1 text-[11px] font-semibold text-white',
+          className:
+            'fx-press ui-btn rounded-full border px-3 py-1 text-[11px] font-semibold uppercase text-white',
           style: {
             borderColor: 'rgba(255,255,255,0.75)',
             backgroundColor: `${accent}66`,
@@ -39,7 +42,7 @@ export default function SelectTopBars({
         }
       : {
           className:
-            'fx-press ui-btn rounded-full border border-white/20 bg-black/30 px-3 py-1 text-[11px] font-semibold text-white/75',
+            'fx-press ui-btn rounded-full border border-white/20 bg-black/30 px-3 py-1 text-[11px] font-semibold uppercase text-white/75',
           style: undefined as CSSProperties | undefined,
         };
 
@@ -77,7 +80,7 @@ export default function SelectTopBars({
               onBoardMode?.('chat');
             }}
           >
-            CHAT
+            {t(lang, 'modeChat')}
           </button>
           <button
             type="button"
@@ -87,7 +90,7 @@ export default function SelectTopBars({
             style={storyChip.style}
             onClick={() => onBoardMode?.('story')}
           >
-            STORY
+            {t(lang, 'modeStory')}
           </button>
         </div>
         <div
