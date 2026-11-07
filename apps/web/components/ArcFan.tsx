@@ -3,6 +3,7 @@
 // middle, in front, a little larger and brighter. Neighbors overlap it,
 // scale down, and tilt — an arcade ring, not a left-packed strip.
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
+import { t, loadPrefs } from '../lib/prefs';
 
 export type ArcPose = {
   x: number;
@@ -128,6 +129,7 @@ export default function ArcFan<T extends { id: string }>({
   label: (item: T) => string;
   children: (item: T, active: boolean) => ReactNode;
 }) {
+  const lang = loadPrefs().lang;
   const root = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; moved: boolean } | null>(null);
   const suppress = useRef(false);
@@ -341,10 +343,10 @@ export default function ArcFan<T extends { id: string }>({
       })}
       {showArrows && (
         <>
-          <button type="button" aria-label="scroll left" title="Scroll left" disabled={index <= 0} onClick={() => go(index - 1)} className={`${arrow(index > 0)} left-1`}>
+          <button type="button" aria-label={t(lang, 'scrollLeft')} title={t(lang, 'scrollLeft')} disabled={index <= 0} onClick={() => go(index - 1)} className={`${arrow(index > 0)} left-1`}>
             <Chevron dir="left" />
           </button>
-          <button type="button" aria-label="scroll right" title="Scroll right" disabled={index >= items.length - 1} onClick={() => go(index + 1)} className={`${arrow(index < items.length - 1)} right-1`}>
+          <button type="button" aria-label={t(lang, 'scrollRight')} title={t(lang, 'scrollRight')} disabled={index >= items.length - 1} onClick={() => go(index + 1)} className={`${arrow(index < items.length - 1)} right-1`}>
             <Chevron dir="right" />
           </button>
         </>
