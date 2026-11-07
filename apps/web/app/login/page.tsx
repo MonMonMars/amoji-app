@@ -31,7 +31,7 @@ export default function Login() {
   const lang = prefs.lang;
 
   return (
-    <main className="fx-page relative flex min-h-dvh flex-col items-center justify-center gap-6 overflow-hidden bg-neutral-950 px-6 text-white">
+    <main aria-labelledby="amoji-login-title" className="fx-page relative flex min-h-dvh flex-col items-center justify-center gap-6 overflow-hidden bg-neutral-950 px-6 text-white">
       <EarlyAudioUnlock />
       {/* ambient glows — same mood as the splash */}
       <div className="pointer-events-none absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-pink-500/10 blur-3xl" />
@@ -39,7 +39,7 @@ export default function Login() {
 
       <div className="fx-logo mb-2 flex items-center gap-2">
         <span className="h-3.5 w-3.5 rounded-full bg-pink-400 shadow-[0_0_30px_6px_rgba(244,114,182,0.4)]" />
-        <h1 className="text-3xl font-bold tracking-tight">{APP_NAME}</h1>
+        <h1 id="amoji-login-title" className="text-3xl font-bold tracking-tight">{APP_NAME}</h1>
       </div>
       <p className="text-sm tracking-[0.25em] text-white/35 uppercase">{APP_TAGLINE}</p>
 
@@ -66,12 +66,13 @@ export default function Login() {
           type="button"
           onClick={go}
           disabled={!bootReady}
+          aria-label={t(lang, 'loginCta')}
           className="ui-btn ui-btn-primary mt-4 h-12 w-full rounded-full bg-white text-base font-semibold text-black shadow-[0_10px_40px_-12px_rgba(255,255,255,0.45)] disabled:pointer-events-none disabled:opacity-60"
         >
           {t(lang, 'loginCta')}
         </button>
         <div className="mt-3 text-center">
-          <button type="button" onClick={() => { try { primeAudioForChatEnter(); } catch { /* ignore */ } router.push('/select'); }} disabled={!bootReady} className="ui-btn rounded-full px-3 py-1 text-xs text-white/35 underline-offset-4 hover:underline disabled:pointer-events-none">
+          <button type="button" onClick={() => { try { primeAudioForChatEnter(); } catch { /* ignore */ } router.push('/select'); }} disabled={!bootReady} aria-label={t(lang, 'loginSkip')} className="ui-btn rounded-full px-3 py-1 text-xs text-white/35 underline-offset-4 hover:underline disabled:pointer-events-none">
             {t(lang, 'loginSkip')}
           </button>
         </div>
