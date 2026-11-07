@@ -65,7 +65,7 @@ const LABEL: Record<
 
 export default function StorySetupPanel() {
   const router = useRouter();
-  const [prefs, setPrefs] = usePrefs();
+  const [prefs, setPrefs, prefsReady] = usePrefs();
   const lang = prefs.lang;
   /** null = surprise / any pack; string = locked pack id */
   const [packId, setPackId] = useState<string | null>(null);
@@ -108,7 +108,10 @@ export default function StorySetupPanel() {
   };
 
   return (
-    <main className="relative z-20 flex min-h-0 w-full flex-1 flex-col items-center justify-center overflow-x-hidden px-4 py-4 text-white">
+    <main
+      className={`relative z-20 flex min-h-0 w-full flex-1 flex-col items-center justify-center overflow-x-hidden px-4 py-4 text-white ${prefsReady ? '' : 'opacity-0'}`}
+      aria-busy={!prefsReady}
+    >
       <div
         className="pointer-events-none absolute inset-0 opacity-40"
         style={{ background: background.css }}
