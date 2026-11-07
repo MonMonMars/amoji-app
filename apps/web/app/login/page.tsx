@@ -6,6 +6,8 @@ import { loadProfile, saveProfile } from '../../lib/profile';
 import { ensureUserNameFromProfile } from '../../lib/memory';
 import { t, usePrefs } from '../../lib/prefs';
 import { APP_NAME, APP_REVISION, APP_TAGLINE } from '../../lib/revision';
+import EarlyAudioUnlock from '../../components/EarlyAudioUnlock';
+import { primeAudioForChatEnter } from '../../lib/voice';
 
 export default function Login() {
   const router = useRouter();
@@ -20,6 +22,7 @@ export default function Login() {
 
   const go = () => {
     if (name === null) return;
+    try { primeAudioForChatEnter(); } catch { /* ignore */ }
     saveProfile({ name });
     ensureUserNameFromProfile(name);
     router.push('/select');
@@ -29,6 +32,7 @@ export default function Login() {
 
   return (
     <main className="fx-page relative flex min-h-dvh flex-col items-center justify-center gap-6 overflow-hidden bg-neutral-950 px-6 text-white">
+      <EarlyAudioUnlock />
       {/* ambient glows — same mood as the splash */}
       <div className="pointer-events-none absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-pink-500/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 left-1/4 h-80 w-80 rounded-full bg-indigo-500/10 blur-3xl" />
@@ -67,7 +71,7 @@ export default function Login() {
           {t(lang, 'loginCta')}
         </button>
         <div className="mt-3 text-center">
-          <button type="button" onClick={() => router.push('/select')} disabled={!bootReady} className="ui-btn rounded-full px-3 py-1 text-xs text-white/35 underline-offset-4 hover:underline disabled:pointer-events-none">
+          <button type="button" onClick={() => { try { primeAudioForChatEnter(); } catch { /* ignore */ } router.push('/select'); }} disabled={!bootReady} className="ui-btn rounded-full px-3 py-1 text-xs text-white/35 underline-offset-4 hover:underline disabled:pointer-events-none">
             {t(lang, 'loginSkip')}
           </button>
         </div>
