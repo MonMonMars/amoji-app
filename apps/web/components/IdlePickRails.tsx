@@ -3,11 +3,22 @@
 // toggle enable (on/off for rotation). Defaults stay #1+#2 until Mon changes.
 // Chat-room only: multi-column CSS grid so every button fits without scrolling
 // (Mon: side-rail overflow scroll does not work).
+//
+// The toggle used to be pointer-only: long-press was advertised in the tooltip
+// but never wired (on iPhone a long press raises the callout instead), and a
+// keyboard user had no way to reach it at all — WCAG 2.1.1 (keyboard). Both are
+// handled now: a real long-press timer plus Alt/Shift+Enter and the context-menu
+// key, and the label announces ON/OFF so the state change is not colour-only.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { IDLE_CLIP_OPTIONS } from '../lib/idle-clips';
 import { isIdleEnabled, listEnabledNums, setIdleEnabled } from '../lib/idle-enabled';
 import { idlePickFor, isDefaultIdleClip, saveIdlePick } from '../lib/idle-pick';
+
+/** How long a press must be held before it counts as a toggle, not a tap. */
+const LONG_PRESS_MS = 500;
+/** Movement that cancels a long press (finger/mouse is scrolling, not holding). */
+const MOVE_CANCEL_PX = 12;
 
 export default function IdlePickRails({
   characterId,
@@ -21,11 +32,25 @@ export default function IdlePickRails({
   const [enabled, setEnabled] = useState<number[]>([]);
   const [ready, setReady] = useState(false);
 
+  // Long-press bookkeeping. A ref, because a re-render mid-press must not cancel it.
+  const holdRef = useRef<{ timer: ReturnType<typeof setTimeout>; x: number; y: number } | null>(null);
+  /** Set once a long press fires, so the following click does not also pin the clip. */
+  const suppressClickRef = useRef(false);
+
   useEffect(() => {
     setPicked(idlePickFor(characterId));
     setEnabled(listEnabledNums());
     setReady(true);
   }, [characterId]);
+
+  const clearHold = () => {
+    if (holdRef.current) {
+      clearTimeout(holdRef.current.timer);
+      holdRef.current = null;
+    }
+  };
+
+  useEffect(() => clearHold, []);
 
   const tap = (id: string, playable: boolean) => {
     if (!playable || !ready) return;
@@ -37,6 +62,27 @@ export default function IdlePickRails({
   const toggle = (num: number) => {
     if (!ready) return;
     setEnabled(setIdleEnabled(num, !isIdleEnabled(num)));
+  };
+
+  const startHold = (num: number, x: number, y: number) => {
+    if (!ready) return;
+    clearHold();
+    suppressClickRef.current = false;
+    holdRef.current = {
+      x,
+      y,
+      timer: setTimeout(() => {
+        holdRef.current = null;
+        suppressClickRef.current = true;
+        toggle(num);
+      }, LONG_PRESS_MS),
+    };
+  };
+
+  const moveHold = (x: number, y: number) => {
+    const h = holdRef.current;
+    if (!h) return;
+    if (Math.abs(x - h.x) > MOVE_CANCEL_PX || Math.abs(y - h.y) > MOVE_CANCEL_PX) clearHold();
   };
 
   // Prefer playable clips so the grid stays dense and scroll-free.
@@ -63,25 +109,52 @@ export default function IdlePickRails({
             item.cId ?? 'app',
             item.name,
             en ? 'ON' : 'OFF',
+            calm ? 'calm default' : null,
             'tap=use · hold/right-click=toggle',
-          ].join(' · ');
+            'Alt+Enter toggles',
+          ].filter(Boolean).join(' · ');
           return (
             <button
               key={item.num}
               type="button"
-              aria-label={`Idle #${item.num}`}
+              aria-label={`Idle #${item.num} ${item.name}, ${en ? 'enabled' : 'disabled'}`}
+              aria-keyshortcuts="Alt+Enter"
               title={title}
               aria-pressed={ready ? on : undefined}
               disabled={!ready}
               data-dev={`I${item.num}`}
               data-idle-num={item.num}
               data-c-id={item.cId ?? ''}
-              onClick={() => tap(item.id, item.playable)}
+              onClick={() => {
+                // A long press already toggled; do not also pin the clip.
+                if (suppressClickRef.current) {
+                  suppressClickRef.current = false;
+                  return;
+                }
+                tap(item.id, item.playable);
+              }}
               onContextMenu={(e) => {
                 e.preventDefault();
+                clearHold();
                 toggle(item.num);
               }}
-              className={`relative min-h-0 min-w-0 rounded border px-0 py-0 text-center text-[8px] font-semibold leading-none ${
+              onPointerDown={(e) => {
+                // Mouse/pen only: touch gets pointerdown too, but the callout on
+                // iOS is suppressed by CSS below; pointer events cover both.
+                startHold(item.num, e.clientX, e.clientY);
+              }}
+              onPointerMove={(e) => moveHold(e.clientX, e.clientY)}
+              onPointerUp={clearHold}
+              onPointerCancel={clearHold}
+              onPointerLeave={clearHold}
+              onKeyDown={(e) => {
+                // Keyboard equivalent of long-press / right-click.
+                if (e.key === 'Enter' && (e.altKey || e.shiftKey)) {
+                  e.preventDefault();
+                  toggle(item.num);
+                }
+              }}
+              className={`relative min-h-0 min-w-0 rounded border px-0 py-0 text-center text-[8px] font-semibold leading-none select-none [-webkit-touch-callout:none] ${
                 !item.playable
                   ? 'border-white/10 bg-black/20 text-white/30'
                   : on
