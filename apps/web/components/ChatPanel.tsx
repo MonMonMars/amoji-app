@@ -180,6 +180,8 @@ import { recentUserMood } from '../lib/talk-history';
 import { detectGame, startGame, playTurn, gameFarewellLine, type GameState } from '../lib/games';
 import { detectActionGame, setMiniGameChromeHidden, subscribeMiniGameOpen, type ActionGame } from '../lib/minigames';
 import MiniGameOverlay from './MiniGameOverlay';
+import ChatMessage from './ChatMessage';
+import ReportDialog from './ReportDialog';
 import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodbyeLine, pickMealToast } from '../lib/activities';
 import { detectExercise, startExercise, advanceExercise, exerciseFarewellLine, type ExerciseState } from '../lib/exercises';
 import { buildDailyGreeting, buildEnterNameGreeting, buildMemoryBlock, ensureUserNameFromProfile, feltMood, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange, rememberTurn } from '../lib/memory';
@@ -258,6 +260,8 @@ export default function ChatPanel({
   const [nowPlaying, setNowPlaying] = useState<string | null>(null);
   // the last turn was caught by the crisis guard — show the /safety card
   const [crisisCard, setCrisisCard] = useState(false);
+  // the AI reply the user is reporting (null = the report sheet is closed)
+  const [reportFor, setReportFor] = useState<string | null>(null);
   const [actionGame, setActionGame] = useState<ActionGame | null>(null);
   const actionGameRef = useRef(false);
   const [clipState, setClipState] = useState<'starting' | 'playing' | null>(null);
@@ -1290,21 +1294,17 @@ export default function ChatPanel({
         style={{ maxHeight: '17vh' }}
       >
         {history.length === 0 && <p className="text-center text-white/40">{t(lang, 'sayHi', { name: characterName })}</p>}
-        {history.map((m, i) => {
-          const isUser = m.role === 'user';
-          return (
-            <div key={i} className={isUser ? 'text-right' : 'text-left'}>
-              {!isUser && i === history.length - 1 && (
-                <p className="mb-0.5 pl-1 text-[10px] font-medium uppercase tracking-widest" style={{ color: `${accent}b0` }}>
-                  {characterName}
-                </p>
-              )}
-              <p className={isUser ? '' : 'text-white/95'} style={isUser ? { color: accent } : undefined}>
-                {m.content}
-              </p>
-            </div>
-          );
-        })}
+        {history.map((m, i) => (
+          <ChatMessage
+            key={i}
+            role={m.role}
+            content={m.content}
+            lang={lang}
+            accent={accent}
+            label={m.role === 'assistant' && i === history.length - 1 ? characterName : undefined}
+            onReport={(reply) => setReportFor(reply)}
+          />
+        ))}
         {/* r81 — the words you're speaking RIGHT NOW: italic + slightly dimmed
             in your accent colour, replaced by the committed message the
             instant the ~1s silence endpoint sends it, exactly like ChatGPT. */}
@@ -1435,6 +1435,17 @@ export default function ChatPanel({
           ➤
         </button>
       </div>
+      {/* Play requirement: an in-app route to report generated content. Kept
+          outside the scroll area so opening it cannot scroll the history. */}
+      {reportFor !== null && (
+        <ReportDialog
+          reply={reportFor}
+          lang={lang}
+          accent={accent}
+          characterId={characterId}
+          onClose={() => setReportFor(null)}
+        />
+      )}
     </div>
   );
 }
