@@ -72,7 +72,25 @@ pnpm dev               # start the web app (http://localhost:3000/play)
 pnpm test              # run all package tests
 pnpm typecheck         # typecheck all packages
 pnpm build             # production build of the web app
+pnpm --filter @amoji/web build:app   # store bundle (no QA pages, no adult content)
 ```
+
+### Store bundle vs. web build
+
+`pnpm --filter @amoji/web build:app` sets `AMOJI_APP=1` and produces the payload
+that goes inside the App Store / Play Store wrapper. It is the same static export
+as GitHub Pages, minus the internal QA pages and with a hard content gate.
+
+The QA pages (`catalog.html`, `decisions.html`, `gallery.html`, `voice-debug.html`)
+live in `apps/web/dev-pages/`, **not** in `public/`. That is not cosmetic:
+`next build` copies `public/` into `out/` verbatim and Next has no option to
+exclude a file from that copy, so anything left in `public/` ships. `pnpm dev`
+mirrors them into `public/` (`predev`) so `localhost:3000/catalog.html` still
+works, and every build clears that mirror first (`prebuild`).
+
+`scripts/check-store-bundle.mjs` then scans the whole `out/` tree and fails the
+build on any adult-content token. CI builds and gates both modes on every push.
+See [`docs/ASSETS.md`](docs/ASSETS.md) for the policy this enforces.
 
 ## Free voice (no key)
 
