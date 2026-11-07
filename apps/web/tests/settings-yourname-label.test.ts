@@ -16,4 +16,10 @@ describe("SettingsSheet yourName htmlFor/id", () => {
     expect(sheet).toContain('name="name"');
     expect(sheet).toContain('autoComplete="nickname"');
   });
+
+  it("localizes the example-name placeholder and labels the field", () => {
+    expect(sheet).toContain("placeholder={t(lang, 'yourNamePlaceholder')}");
+    expect(sheet).toContain("aria-label={t(lang, 'yourName')}");
+    expect(sheet).not.toContain('placeholder="Simon"');
+  });
 });
