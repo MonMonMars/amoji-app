@@ -128,7 +128,6 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
       )}
 
       {/* Master mute - top-right. Hold until prefsReady so aria/title lang is not DEFAULT_PREFS. */}
-      {/* Same numbered idle rails as chat - pin before START; chat hydrates amoji.idlePick.v1. */}
       {prefsReady && (
         <div
           data-testid="selection-mute"

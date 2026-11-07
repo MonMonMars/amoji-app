@@ -214,7 +214,9 @@ describe('selection layout', () => {
     expect(rails).toContain('setIdleEnabled');
     expect(rails).toContain('onPick?.');
     expect(rails).toContain('idle-rail-grid');
-    expect(rails).toContain('grid-cols-4');
+    expect(rails).toContain('grid-cols-6');
+    expect(rails).toContain('sm:grid-cols-8');
+    expect(rails).toContain("gridAutoRows: 'minmax(0, 1fr)'");
     expect(rails).toContain('overflow-hidden');
     expect(rails).not.toContain('overflow-y-auto');
   });
