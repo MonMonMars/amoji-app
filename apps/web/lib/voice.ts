@@ -313,11 +313,13 @@ function unlockAudio(force = false): void {
 let synthPrimed = false;
 /** Bumped on every new line and on stop so a poke lead cannot outlive itself. */
 let synthGeneration = 0;
-export function primeSynthInGesture(): void {
-  if (synthPrimed || typeof speechSynthesis === 'undefined') return;
-  // Latch immediately. This used to re-queue a rate-2, volume-0 blip on every
-  // poke and keydown until a synth onstart, and Chrome kept that rate for the
-  // next real line — the "talking after a poke sounds weird" bug.
+export function primeSynthInGesture(force = false): void {
+  if (typeof speechSynthesis === 'undefined') return;
+  // Sticky latch avoids re-queuing a blip on every poke/keydown (Chrome kept
+  // a cancelled rate for the next real line). force=true after stopSpeaking()
+  // so iOS gets a fresh in-gesture speak — cancel() clears the prior unlock
+  // but used to leave synthPrimed true and skip the re-prime.
+  if (synthPrimed && !force) return;
   synthPrimed = true;
   try {
     speechSynthesis.resume();
@@ -340,8 +342,11 @@ export function primeSynthInGesture(): void {
 if (typeof window !== 'undefined') {
   for (const ev of ['pointerdown', 'keydown', 'touchstart'] as const) {
     window.addEventListener(ev, () => unlockAudio(), { once: true, passive: true });
-    // r102: synth engine priming rides every gesture too — cheap and idempotent
-    window.addEventListener(ev, primeSynthInGesture, { passive: true });
+    // r102: synth engine priming rides every gesture too — cheap and idempotent.
+    // Must stay a no-arg wrapper: the listener's Event would land in `force`
+    // (always truthy) and re-queue a blip on every keystroke, interrupting
+    // the line that is speaking.
+    window.addEventListener(ev, () => primeSynthInGesture(), { passive: true });
   }
 }
 
@@ -1172,6 +1177,9 @@ function clearLipHold(): void {
  */
 function haltSynthQueue(): void {
   synthGeneration += 1;
+  // cancel() kills any in-flight prime; clear the latch so the next tap can
+  // force-reprime inside the user gesture (iPhone Safari gate).
+  synthPrimed = false;
   clearSynthKeepAlive();
   clearLipHold();
   if (typeof speechSynthesis === 'undefined') return;
@@ -1259,7 +1267,8 @@ function drainSpeech(): void {
  * Does not clear Mute All — speak() still respects voiceOutputAllowed() / isMasterMuted(). */
 export function primeAudioForChatEnter(): void {
   unlockAudio(true);
-  primeSynthInGesture();
+  // force: a prior stopSpeaking/cancel must not leave a false synthPrimed latch.
+  primeSynthInGesture(true);
   try { resumeSfxContext(); } catch { /* ignore */ }
   // Reinforce early warm from /select (idempotent; still no cheer SFX).
   void runEarlyAudioPreload();
@@ -1384,6 +1393,9 @@ function performSpeak(
   // before ever tapping fetched every voice tier and stayed silent (autoplay
   // policy). Speaking a reply IS a user-intended audio act: take the unlock.
   unlockAudio(true);
+  // Best-effort re-prime (force). Chat may be outside a tap; sticky unlock from
+  // select/splash still needs a cleared latch after stopSpeaking().
+  try { primeSynthInGesture(true); } catch { /* ignore */ }
   // A premade song/dance bed ducks while a real line plays (poke, dance
   // reply) so the words stay intelligible. Singing itself does not come
   // through speak(), so a song stays full until something else talks.
@@ -1617,7 +1629,8 @@ export function playVoiceGreeting(characterId: string, lang: Lang, voiceId: stri
   // extension Origin/muid Cookie); iOS then needs a gesture-primed synth path.
   unlockAudio(true);
   stopSpeaking();
-  primeSynthInGesture();
+  // force: stopSpeaking cancelled any window-level prime and cleared the latch.
+  primeSynthInGesture(true);
   const kind = nextGreetingKind();
   const text = greetingText(lang, kind);
   const gender = isMaleNeuralVoice(voiceId) ? 'male' : 'female';
@@ -1633,17 +1646,19 @@ export function playVoiceGreeting(characterId: string, lang: Lang, voiceId: stri
     if (edgePlaying || synthStarted) return;
     synthStarted = true;
     try {
+      // syncGesture: must speak in this tap — deferred speak stays silent on iOS.
       synthSpeak(text, characterId, lang, 'joy', 1.1, undefined, 1, undefined, () => {
         if (session) finishLipSync(session);
-      }, gender);
+      }, gender, 0.7, true);
       reportVoiceStatus('synth', true, `${tag} ${voiceId}`);
     } catch (e) {
       synthStarted = false;
       reportVoiceStatus('synth', false, (e as Error | undefined)?.message ?? 'greeting synth failed');
     }
   };
-  // Audition via synth soon after the in-gesture prime (Edge may still win).
-  const synthTimer = setTimeout(() => runSynthAudition('greeting gesture'), 180);
+  // Audition immediately in-gesture (do not wait 180ms — iOS gesture expires).
+  // Edge still preferred: onPlaying halts the synth queue.
+  runSynthAudition('greeting gesture');
   void speakEdge(text, {
     lang,
     gender,
@@ -1655,15 +1670,12 @@ export function playVoiceGreeting(characterId: string, lang: Lang, voiceId: stri
     pitchDelta: 0.06,
     onPlaying: () => {
       edgePlaying = true;
-      clearTimeout(synthTimer);
       try { haltSynthQueue(); } catch { /* ignore */ }
       onStart();
     },
   }).then(() => {
-    clearTimeout(synthTimer);
     if (session) finishLipSync(session);
   }).catch((err: unknown) => {
-    clearTimeout(synthTimer);
     if ((err as Error | undefined)?.message === 'canceled') return;
     if (edgePlaying) return;
     if (session) endLipSync();
@@ -1824,7 +1836,7 @@ export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
   if (!voiceOutputAllowed()) return Promise.resolve();
   unlockAudio(true);
   stopSpeaking();
-  primeSynthInGesture();
+  primeSynthInGesture(true);
   const gender = isMaleNeuralVoice(voiceId) ? 'male' : 'female';
   const text = edgeSampleText(locale);
   let edgePlaying = false;
@@ -1834,7 +1846,7 @@ export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
     synthStarted = true;
     return new Promise<void>((resolve) => {
       try {
-        synthSpeak(text, 'preview', locale, 'joy', 1.1, undefined, 1, undefined, () => resolve(), gender);
+        synthSpeak(text, 'preview', locale, 'joy', 1.1, undefined, 1, undefined, () => resolve(), gender, 0.7, true);
         reportVoiceStatus('synth', true, `${tag} ${voiceId}`);
       } catch (e) {
         synthStarted = false;
@@ -1843,7 +1855,8 @@ export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
       }
     });
   };
-  const synthTimer = setTimeout(() => { void runSynthAudition('preview gesture'); }, 180);
+  // Immediate in-gesture audition (no 180ms defer — iOS).
+  void runSynthAudition('preview gesture');
   return speakEdge(text, {
     lang: locale,
     gender,
@@ -1854,15 +1867,13 @@ export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
     pitchDelta: 0.06,
     onPlaying: () => {
       edgePlaying = true;
-      clearTimeout(synthTimer);
       try { haltSynthQueue(); } catch { /* ignore */ }
       markVoiceStarted();
       reportVoiceStatus('edge', true, `preview ${voiceId}`);
     },
   }).then(() => {
-    clearTimeout(synthTimer);
+    /* edge finished */
   }).catch((err: unknown) => {
-    clearTimeout(synthTimer);
     if ((err as Error | undefined)?.message === 'canceled') return;
     if (edgePlaying) return;
     reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'preview edge failed');
@@ -2135,6 +2146,8 @@ function synthSpeak(
   onDone?: () => void,
   genderOverride?: 'female' | 'male',
   hintValue = 0.7,
+  /** When true (select/preview tap): speak in this turn — iOS drops speak() outside the gesture. */
+  syncGesture = false,
 ): void {
   let lineDone = false;
   let safety: ReturnType<typeof setTimeout> | undefined;
@@ -2309,6 +2322,9 @@ function synthSpeak(
     speakOne();
     // Chromium and WebKit drop an utterance pumped in the same beat as
     // cancel(). One retry, and only if this line is still the current one.
+    // Gesture path: retry sooner so iOS keeps the user-gesture unlock;
+    // async chat keeps the longer retry.
+    const retryMs = syncGesture ? 32 : 600;
     setTimeout(() => {
       if (gen !== synthGeneration || started || retries >= 1) return;
       try {
@@ -2318,9 +2334,16 @@ function synthSpeak(
           speakOne();
         }
       } catch { /* ignore */ }
-    }, 600);
+    }, retryMs);
   };
-  // Defer one beat after cancel() on every platform — same-tick speak() is
-  // dropped, and it is also how a cancelled rate used to stick.
-  setTimeout(pump, 120);
+  if (syncGesture) {
+    // iPhone: speechSynthesis.speak must run inside the tap. A 120ms defer
+    // leaves the gesture window and Safari stays silent (Edge already 403s).
+    pump();
+  } else {
+    // Defer one beat after cancel() on non-gesture paths — same-tick speak()
+    // is dropped on Chromium, and it is also how a cancelled rate used to stick.
+    setTimeout(pump, 120);
+  }
 }
+

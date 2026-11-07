@@ -141,11 +141,13 @@ export function captureCastFix(
   }
   if (needsUpperBodyLevel(characterId)) {
     // upperChest carries most side-bend (char 34 left tilt); spine/chest alone left it leaning.
+    pushLevel(levels, getBone('hips'), 'upper');
     pushLevel(levels, getBone('spine'), 'upper');
     pushLevel(levels, getBone('chest'), 'upper');
     pushLevel(levels, getBone('upperChest'), 'upper');
   }
   if (needsFullUpright(characterId)) {
+    pushLevel(levels, getBone('hips'), 'upper');
     pushLevel(levels, getBone('spine'), 'upright');
     pushLevel(levels, getBone('chest'), 'upright');
     pushLevel(levels, getBone('upperChest'), 'upright');

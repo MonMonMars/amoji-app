@@ -203,6 +203,93 @@ function restoreFoot(inner: THREE.Object3D, leg: LegPlant): void {
   if (leg.toes && leg.toesLocal) leg.toes.quaternion.copy(leg.toesLocal);
 }
 
+
+
+/** Cos-space floor along side-outward. Below = thigh adducted into the body. */
+export const THIGH_MIN_OUTWARD = 0.06;
+/** Only unblend when the thigh roughly hangs (dir.y below this). */
+export const THIGH_GATE_Y = -0.2;
+
+const _thA = new THREE.Vector3();
+const _thB = new THREE.Vector3();
+const _thD = new THREE.Vector3();
+const _thLP = new THREE.Vector3();
+const _thRP = new THREE.Vector3();
+const _thOut = new THREE.Vector3();
+const _thFix = new THREE.Vector3();
+const _thQF = new THREE.Quaternion();
+const _thQP = new THREE.Quaternion();
+const _thQW = new THREE.Quaternion();
+
+/**
+ * Side-outward component of a thigh direction.
+ * hipLine = leftUpper -> rightUpper; sideOut points away from the midline.
+ */
+export function thighOutwardComponent(
+  thighDir: THREE.Vector3,
+  leftUpperPos: THREE.Vector3,
+  rightUpperPos: THREE.Vector3,
+  left: boolean,
+): number {
+  _thOut.subVectors(rightUpperPos, leftUpperPos);
+  if (_thOut.lengthSq() < 1e-10) return 0;
+  _thOut.normalize();
+  if (left) _thOut.negate();
+  return thighDir.dot(_thOut);
+}
+
+/**
+ * Floor a hanging upper-leg's outward swing so the thigh cannot fold into
+ * the pelvis/torso (Mon: blended legs and body). Raised/folded legs
+ * (dir.y >= THIGH_GATE_Y) keep full freedom. Mirror of shoulder adduction
+ * clamp, but side-aware so left and right both open away from midline.
+ */
+export function clampThighAdduction(
+  upper: THREE.Object3D,
+  lower: THREE.Object3D,
+  leftUpper: THREE.Object3D,
+  rightUpper: THREE.Object3D,
+  left: boolean,
+): boolean {
+  const a = upper.getWorldPosition(_thA);
+  const b = lower.getWorldPosition(_thB);
+  const d = _thD.subVectors(b, a);
+  if (d.lengthSq() < 1e-10) return false;
+  d.normalize();
+  if (d.y >= THIGH_GATE_Y) return false;
+  const lp = leftUpper.getWorldPosition(_thLP);
+  const rp = rightUpper.getWorldPosition(_thRP);
+  const outD = thighOutwardComponent(d, lp, rp, left);
+  if (outD >= THIGH_MIN_OUTWARD) return false;
+  _thOut.subVectors(rp, lp);
+  if (_thOut.lengthSq() < 1e-10) return false;
+  _thOut.normalize();
+  if (left) _thOut.negate();
+  const dFix = _thFix.copy(d).addScaledVector(_thOut, THIGH_MIN_OUTWARD - outD).normalize();
+  _thQF.setFromUnitVectors(d, dFix);
+  if (!upper.parent) return false;
+  const parentW = upper.parent.getWorldQuaternion(_thQP);
+  const world = upper.getWorldQuaternion(_thQW);
+  // W' = qFix * W  =>  local = parentW^-1 * qFix * W
+  upper.quaternion.copy(parentW.invert()).multiply(_thQF).multiply(world);
+  return true;
+}
+
+/** Unblend both thighs when hanging into the body. Returns sides fixed. */
+export function applyThighUnblend(
+  getBone: (name: string) => THREE.Object3D | null,
+): number {
+  const lu = getBone('leftUpperLeg');
+  const ru = getBone('rightUpperLeg');
+  const ll = getBone('leftLowerLeg');
+  const rl = getBone('rightLowerLeg');
+  if (!lu || !ru || !ll || !rl) return 0;
+  let n = 0;
+  if (clampThighAdduction(lu, ll, lu, ru, true)) n += 1;
+  if (clampThighAdduction(ru, rl, lu, ru, false)) n += 1;
+  return n;
+}
+
 export class FootPlanter {
   private inner: THREE.Object3D | null = null;
   private hips: THREE.Object3D | null = null;

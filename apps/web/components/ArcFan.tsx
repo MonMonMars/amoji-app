@@ -157,8 +157,9 @@ export default function ArcFan<T extends { id: string }>({
     if (!el) return;
     const measure = () => {
       const box = el.getBoundingClientRect();
-      if (box.height > 0) setStageH(box.height);
-      if (box.width > 0) setStageW(box.width);
+      // Ignore transient collapsed boxes during iPhone rotate (cards would vanish).
+      if (box.height >= 96) setStageH(box.height);
+      if (box.width >= 96) setStageW(box.width);
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -273,7 +274,7 @@ export default function ArcFan<T extends { id: string }>({
     ? 'top-1 h-[3.4rem] w-[5.2rem] sm:h-[3.8rem] sm:w-[6rem]'
     : '';
   const stageClass = size === 'portrait'
-    ? 'absolute inset-0 z-20 max-w-full overflow-x-hidden overflow-y-visible'
+    ? 'absolute inset-0 z-20 max-w-full overflow-visible'
     : size === 'compact'
       ? 'relative z-10 h-[2.6rem] w-full'
       : 'relative z-10 h-[4.4rem] w-full sm:h-[4.8rem]';
