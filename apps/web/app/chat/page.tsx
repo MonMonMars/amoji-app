@@ -108,6 +108,7 @@ export default function Chat() {
     <main
       className={`${leaving ? 'fx-select-out' : 'fx-select-in'} relative h-dvh w-screen overflow-hidden text-white`}
       style={{ background: bootReady ? background.css : '#0a0a0f' }}
+      aria-busy={!bootReady}
     >
       <div
         aria-hidden
