@@ -20,6 +20,16 @@ export type TalkZone =
 
 export type PokeDirection = 'front' | 'back' | 'left' | 'right';
 
+/**
+ * How long one poke reaction occupies the body, milliseconds.
+ * The poke SFX table is held to this budget (pinned by tests): a clip longer
+ * than the recoil keeps sounding after she has settled, which reads as the
+ * wrong sound — the hit landed, the body finished, and something was still
+ * talking. CompanionCanvas currently carries its own `POKE_MS` literal; it
+ * should import this instead so the two cannot drift.
+ */
+export const POKE_REACTION_MS = 1200;
+
 export interface Vec3 { x: number; y: number; z: number }
 
 export interface PokeHitExtra {
@@ -361,9 +371,18 @@ export function pokeBodyReaction(opts: {
     armL = g.arm;
     armR = g.arm * 0.18;
   }
-  const armDir = opts.fallZ !== 0
-    ? opts.fallZ
-    : (lateral ? -opts.sideSign : (opts.fallX !== 0 ? -Math.sign(opts.fallX) : -0.35));
+  // A poke that came from the SIDE pushes her across, not front-to-back, so
+  // both arms have to swing AWAY from it together. `fallZ` is the right sign
+  // for a front/back punch, but on a side tap it carries no poke information —
+  // CompanionCanvas builds it from the camera's right vector, so it is really
+  // the camera azimuth wearing a costume. Its sign therefore flipped with
+  // orbit angle and the same tap swung her arms backwards at one angle and
+  // forwards at another. Side taps take their swing from the camera-aware
+  // sideSign the classifier already computed; front/back taps are untouched.
+  const fromSide = direction === 'left' || direction === 'right';
+  const armDir = fromSide
+    ? -opts.sideSign
+    : (opts.fallZ !== 0 ? opts.fallZ : (opts.fallX !== 0 ? -Math.sign(opts.fallX) : -0.35));
   // Butt: hips carry the punch; spine counters so the upper body stays roughly put.
   // Belly: abdomen/spine only — hips stay, no hip slide (feet planted).
   const localButt = opts.zone === 'butt';

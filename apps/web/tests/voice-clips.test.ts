@@ -245,10 +245,15 @@ describe('zone poke clips (SFX only)', () => {
     expect(recordedPokeClip('female', 'belly')).toContain('/oh.mp3');
     expect(recordedPokeClip('female', 'head')).not.toBe(recordedPokeClip('female', 'belly'));
     expect(recordedPokeClip('female', 'chest')).not.toBe(recordedPokeClip('female', 'belly'));
-    // Male is unchanged by t294: head=oh, chest=smile, belly=ha
-    expect(recordedPokeClip('male', 'head')).toContain('/oh.mp3');
-    expect(recordedPokeClip('male', 'chest')).toContain('/smile.mp3');
-    expect(recordedPokeClip('male', 'belly')).toContain('/ha.mp3');
+    // Male used to be `ja/male/*` for every zone — a Japanese yelp whatever
+    // language the companion speaks — and the torso row played a laugh. The
+    // table is language-neutral now; head stays a wonder, chest an ouch,
+    // belly a yelp. Exact rows are pinned in poke-voice-motion-sync.test.ts.
+    expect(recordedPokeClip('male', 'head')).toContain('/universal/male/wow.mp3');
+    expect(recordedPokeClip('male', 'chest')).toContain('_male_ouch.mp3');
+    expect(recordedPokeClip('male', 'belly')).toContain('_male_yelp.mp3');
+    expect(recordedPokeClip('male', 'head')).not.toMatch(/\/ja\//);
+    expect(recordedPokeClip('male', 'torso')).not.toContain('laugh');
   });
 
   it('returns distinct gender-matched paths per zone and files exist', () => {
@@ -379,7 +384,7 @@ describe('Wanted CMA reaction SFX wire', () => {
     expect(poke).toContain('CMA00335');
     expect(poke).not.toContain('CMA00317');
 
-    // Male with no Wanted poke -> zone table
-    expect(recordedPokeClip('male', 'head')).toContain('/oh.mp3');
+    // Male with no Wanted poke -> zone table (language-neutral now)
+    expect(recordedPokeClip('male', 'head')).toContain('/universal/male/wow.mp3');
   });
 });
