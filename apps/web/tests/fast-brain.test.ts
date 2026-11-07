@@ -54,6 +54,14 @@ describe('free-lane race config', () => {
     expect(FREE_RACERS.length).toBeGreaterThanOrEqual(2);
     expect(FREE_RACERS.map((r) => r.id)).toContain('pollinations');
   });
+
+  it('races more budget slots than hosts (OVH is metered per model)', () => {
+    // r143 — OVH's anonymous quota is per (IP, model), so its models are
+    // separate racers and one turn can ask several at once. Keep that: fewer
+    // racers than hosts would mean the rotation silently collapsed again.
+    expect(FREE_RACERS.length).toBeGreaterThan(new Set(FREE_RACERS.map((r) => r.host)).size);
+    expect(new Set(FREE_RACERS.map((r) => r.host)).size).toBeGreaterThanOrEqual(2);
+  });
 });
 
 // ---------- r2026-10-06.126: speed tier ----------
