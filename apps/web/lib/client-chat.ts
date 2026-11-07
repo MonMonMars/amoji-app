@@ -59,9 +59,12 @@
 //    first token wins
 //  · If Puter shows its "user pays" gate, the 14s race budget absorbs it —
 //    the racer just loses that round and Pollinations carries the reply
+// r2026-11-08.142 — the free lane races HOSTS, not aliases (see the
+// RACER_COOLDOWN_MS block below for the evidence). One Pollinations request,
+// one OVHcloud request, one Puter call — three companies, three budgets.
 import { analyzeText } from '@amoji/emotion-core';
 import { BASE_SYSTEM, languageBlock, parseEmotionHints, type ChatMessage } from './llm';
-import { BRAIN_SPECS, brainBodyExtras, markBrainDead, pickBrain, type BrainSpec } from './brain';
+import { brainBodyExtras, markBrainDead, pickBrain, type BrainSpec } from './brain';
 import { cleanForDisplay, stripLaughTokens } from './speak-text';
 import { withQuestion } from './follow-up';
 import { preferLiveReply, worldBlock } from './live-tools';
@@ -89,21 +92,216 @@ export function trimHistoryForPrompt(messages: ChatMessage[]): ChatMessage[] {
   return messages.length > PROMPT_HISTORY_CAP ? messages.slice(-PROMPT_HISTORY_CAP) : messages;
 }
 
-/** the free lane races these models; first token wins, loser is aborted.
- *  Aliases of the same backend are fine — two in-flight requests on a busy
- *  shared queue can land on different workers, and any alias that no longer
- *  exists rejects immediately without slowing the race.
- *  r97: openai-fast (GPT-OSS-20B) leads; plain 'openai' is its alias backup. */
-/** Anonymous Pollinations currently serves only GPT-OSS-20B (reasoning) and
- *  its `openai` alias. Dead ids (mistral, llama) 404. Two live aliases race
- *  so the faster worker wins. `reasoning_effort: low` keeps first token short. */
-export const RACE_MODELS = ['openai-fast', 'openai'];
-const RACER_BUDGET_MS = 14_000;
+// r2026-11-08.142 — the free lane races HOSTS, not aliases:
+//  · `GET text.pollinations.ai/models` (checked live) lists exactly one
+//    anonymous model — openai-fast, "GPT-OSS 20B Reasoning LLM (OVH)" — with
+//    aliases openai / gpt-oss / gpt-oss-20b / ovh-reasoning. The old
+//    RACE_MODELS = ['openai-fast', 'openai'] therefore sent TWO requests to
+//    the SAME model at the SAME provider: two slots spent on one IP budget
+//    for zero diversity. A 5-request burst 402s from the third request on.
+//  · The race is now `{ id, host, buildRequest, parseChunk }` specs, one per
+//    company: Pollinations (exactly ONE request), OVHcloud's keyless trial
+//    endpoint, and Puter.js. Different hosts, different budgets — one going
+//    down or out of budget cannot take the reply hostage.
+//  · Anonymous budgets are respected with a per-host cooldown: a host that
+//    just answered is skipped, so one user's rapid messages don't drain it.
+//  · Kilo Gateway (api.kilocode.ai) answers anonymously from here but sends
+//    NO `Access-Control-Allow-Origin` and `Cross-Origin-Resource-Policy:
+//    same-origin`, so a browser can never read its reply — left out on
+//    purpose rather than shipped as a racer that always throws.
+
+/** Pollinations' origin; preconnected in the layout and warmed by warmLane()
+ *  so the first real turn starts on a hot connection. */
+export const LANE_ORIGIN = 'https://text.pollinations.ai';
+/** OVHcloud's public "kepler" OpenAI-compatible endpoint — no key, CORS `*`. */
+export const OVH_ORIGIN = 'https://oai.endpoints.kepler.ai.cloud.ovh.net';
+/** Puter's keyless browser SDK (loaded lazily by its racer). */
+export const PUTER_SDK_URL = 'https://js.puter.com/v2/';
+
+/** The ONE model Pollinations' anonymous tier serves (plus dead aliases). */
+export const POLLINATIONS_MODEL = 'openai-fast';
+/** Fastest of OVH's 21 keyless models (~0.9s to first token) and it speaks
+ *  Cantonese. NOTE: it rejects `reasoning_effort` with HTTP 400, so only
+ *  Pollinations' buildRequest sets that field. */
+export const OVH_MODEL = 'Mistral-Small-3.2-24B-Instruct-2506';
+
+/** Per-host anonymous-budget cooldown, in ms. A racer inside its window is
+ *  skipped and the other hosts answer instead.
+ *  · pollinations — ~1 request / 30-45s per IP; 35s sits inside that
+ *  · ovhcloud     — measured: exactly 2 requests per ~60s, then HTTP 429, so
+ *                   a 30s gate spends that budget evenly instead of bursting
+ *  · puter        — no anonymous per-IP budget to protect */
+export const RACER_COOLDOWN_MS = {
+  pollinations: 35_000,
+  ovhcloud: 30_000,
+  puter: 0,
+} as const;
+
+export const RACER_BUDGET_MS = 14_000;
 const KEYED_BUDGET_MS = 20_000;
 
-// r126 — the free lane's origin; preconnected in the layout and warmed by
-// warmLane() so the first real turn starts on a hot connection.
-export const LANE_ORIGIN = 'https://text.pollinations.ai';
+/** What every racer is asked to generate. */
+export interface RacerRequestContext {
+  system: string;
+  messages: ChatMessage[];
+  maxTokens: number;
+}
+
+/** How a racer reaches its host: an OpenAI-compatible POST, or an SDK call
+ *  (Puter hands us an async iterator instead of a stream of bytes). */
+export type RacerRequest =
+  | { transport: 'http'; url: string; headers: Record<string, string>; body: Record<string, unknown> }
+  | { transport: 'sdk'; sdk: 'puter'; messages: Array<{ role: string; content: string }> };
+
+/** One independent racer. `host` is the company/endpoint — the whole point of
+ *  the lane is that no two racers share it. */
+export interface RacerSpec {
+  id: string;
+  /** owning company/endpoint; the race must span several of these */
+  host: string;
+  /** model id sent to that host (`host` + `model` is globally unique) */
+  model: string;
+  /** ms to wait after a dispatch to this host before dispatching again */
+  cooldownMs: number;
+  buildRequest: (ctx: RacerRequestContext) => RacerRequest;
+  /** the spoken delta inside one stream part (SSE `data:` JSON or SDK chunk) */
+  parseChunk: (payload: unknown) => string;
+}
+
+interface StreamChunk {
+  choices?: Array<{ delta?: { content?: string }; message?: { content?: string } }>;
+}
+
+/** Speech delta from one OpenAI-compatible SSE payload — shared by every
+ *  racer that speaks that shape, so nobody re-implements the parse. */
+export function openAiDelta(payload: unknown): string {
+  const j = payload as StreamChunk | null;
+  return j?.choices?.[0]?.delta?.content ?? j?.choices?.[0]?.message?.content ?? '';
+}
+
+const chatBody = (
+  model: string,
+  { system, messages, maxTokens }: RacerRequestContext,
+  extra: Record<string, unknown> = {},
+): Record<string, unknown> => ({
+  model,
+  messages: [{ role: 'system', content: system }, ...messages],
+  temperature: 0.7,
+  // Tail cap: her replies are 1-3 cozy sentences, so the last seconds of a
+  // reasoning-prone free model never bite real text.
+  max_tokens: maxTokens,
+  stream: true,
+  ...extra,
+});
+
+const withSystem = (system: string, messages: ChatMessage[]) =>
+  [{ role: 'system', content: system }, ...messages];
+
+/** The free lane. One request per host per turn, first token wins. */
+export const FREE_RACERS: RacerSpec[] = [
+  {
+    id: 'pollinations',
+    host: 'pollinations',
+    model: POLLINATIONS_MODEL,
+    cooldownMs: RACER_COOLDOWN_MS.pollinations,
+    buildRequest: (ctx) => ({
+      transport: 'http',
+      url: `${LANE_ORIGIN}/openai`,
+      headers: { 'Content-Type': 'application/json' },
+      // `reasoning_effort: low` skips the hidden chain so the first spoken
+      // token arrives sooner — Pollinations accepts it, OVH does not.
+      body: chatBody(POLLINATIONS_MODEL, ctx, { reasoning_effort: 'low' }),
+    }),
+    parseChunk: openAiDelta,
+  },
+  {
+    id: 'ovhcloud',
+    host: 'ovhcloud',
+    model: OVH_MODEL,
+    cooldownMs: RACER_COOLDOWN_MS.ovhcloud,
+    buildRequest: (ctx) => ({
+      transport: 'http',
+      url: `${OVH_ORIGIN}/v1/chat/completions`,
+      // No Authorization header at all — the trial tier is anonymous.
+      headers: { 'Content-Type': 'application/json' },
+      body: chatBody(OVH_MODEL, ctx),
+    }),
+    parseChunk: openAiDelta,
+  },
+  {
+    id: 'puter',
+    host: 'puter',
+    model: 'puter-auto',
+    cooldownMs: RACER_COOLDOWN_MS.puter,
+    buildRequest: ({ system, messages }) => ({
+      transport: 'sdk',
+      sdk: 'puter',
+      messages: withSystem(system, messages),
+    }),
+    parseChunk: (payload) => (payload as { text?: string } | null)?.text ?? '',
+  },
+];
+
+// ---------- per-host cooldown ----------
+// r2026-10-06.136 — keyless Puter racer plumbing (one of the FREE_RACERS
+// below); declared here so the cooldown reset can clear the cached promise.
+type PuterPart = { text?: string };
+type PuterAI = { chat: (messages: unknown[], opts?: Record<string, unknown>) => Promise<AsyncIterable<PuterPart>> };
+type PuterSDK = { ai: PuterAI };
+
+const racerLastSentAt = new Map<string, number>();
+// Puter's SDK promise, reset alongside the windows so a retry really retries.
+let puterLoader: Promise<PuterSDK> | null = null;
+
+/** True while this host is still inside its anonymous-budget window. */
+export function racerCoolingDown(
+  spec: Pick<RacerSpec, 'id' | 'cooldownMs'>,
+  at: number = Date.now(),
+): boolean {
+  if (spec.cooldownMs <= 0) return false;
+  const last = racerLastSentAt.get(spec.id);
+  return last !== undefined && at - last < spec.cooldownMs;
+}
+
+/** Record a dispatch (or a 402/429) so the window starts now. */
+export function markRacerSent(id: string, at: number = Date.now()): void {
+  racerLastSentAt.set(id, at);
+}
+
+/** Test hook: clear every window. */
+export function resetRacerCooldowns(): void {
+  racerLastSentAt.clear();
+  puterLoader = null;
+}
+
+/** Which racers may fire right now. */
+export function eligibleRacers(at: number = Date.now()): RacerSpec[] {
+  return FREE_RACERS.filter((r) => !racerCoolingDown(r, at));
+}
+
+/**
+ * The lanes this turn should actually race. Cooling lanes are skipped so the
+ * other hosts answer and the spent host keeps its slot for later. If every
+ * lane happens to be inside its window (a rapid burst across all hosts), the
+ * longest-idle one is used rather than dead-ending the chat — silence is worse
+ * than one extra request.
+ */
+export function selectRacers(at: number = Date.now()): RacerSpec[] {
+  const fresh = eligibleRacers(at);
+  if (fresh.length) return fresh;
+  const oldest = longestIdleRacer(at);
+  return oldest ? [oldest] : [];
+}
+
+/** The cooling host that has been waiting longest — the reserve of last resort. */
+export function longestIdleRacer(at: number = Date.now()): RacerSpec | undefined {
+  let oldest: RacerSpec | undefined;
+  for (const r of FREE_RACERS) {
+    if (!racerCoolingDown(r, at)) continue;
+    if (!oldest || (racerLastSentAt.get(r.id) ?? -Infinity) < (racerLastSentAt.get(oldest.id) ?? -Infinity)) oldest = r;
+  }
+  return oldest ?? FREE_RACERS[0];
+}
 
 let laneWarmed = false;
 /** Fire-and-forget lane warm-up: GET /models keeps DNS+TLS+connection hot
@@ -131,10 +329,6 @@ export function shouldSkipServerProbe(): boolean {
 export function markNoApiRoute(): void {
   noRouteMemory.set = true;
   try { sessionStorage.setItem(NO_ROUTE_KEY, '1'); } catch { /* in-memory only */ }
-}
-
-interface StreamChunk {
-  choices?: Array<{ delta?: { content?: string }; message?: { content?: string } }>;
 }
 
 /** Gateways (and the free shared queue) phrase money trouble a few ways. */
@@ -214,26 +408,18 @@ interface Racer {
   abort: () => void;
 }
 
-// r2026-10-06.136 — keyless Puter racer. puter.ai.chat needs NO API key,
-// works worldwide, and streams tokens; the SDK script loads lazily on the
-// first call (8s ceiling) and the racer obeys the SAME contract as
-// launchRacer: `first` on the first token, `finish` with the full text,
-// budget timer + abort as the escape hatches. Iteration is manual (explicit
-// next() on Symbol.asyncIterator) so no tsconfig async-iteration flag is
-// required.
-type PuterPart = { text?: string };
-type PuterAI = { chat: (messages: unknown[], opts?: Record<string, unknown>) => Promise<AsyncIterable<PuterPart>> };
-type PuterSDK = { ai: PuterAI };
-
-let puterLoader: Promise<PuterSDK> | null = null;
-function loadPuter(): Promise<PuterSDK> {
+// r2026-10-06.136 — keyless Puter racer: puter.ai.chat needs NO API key and
+// works worldwide; the SDK script loads lazily on the first call (8s ceiling).
+// r142 — it is now just one of the FREE_RACERS and its request comes from its
+// spec's buildRequest, so the loader only has to hand back the SDK.
+export function loadPuter(): Promise<PuterSDK> {
   if (puterLoader) return puterLoader;
   puterLoader = new Promise<PuterSDK>((resolve, reject) => {
-    const w = window as unknown as { puter?: PuterSDK };
-    if (w.puter) { resolve(w.puter); return; }
+    const w = typeof window === 'undefined' ? undefined : window as unknown as { puter?: PuterSDK };
+    if (w?.puter) { resolve(w.puter); return; }
     if (typeof document === 'undefined') { puterLoader = null; reject(new Error('no dom')); return; }
     const s = document.createElement('script');
-    s.src = 'https://js.puter.com/v2/';
+    s.src = PUTER_SDK_URL;
     const timer = setTimeout(() => { puterLoader = null; reject(new Error('puter sdk timeout')); }, 8_000);
     s.onload = () => {
       clearTimeout(timer);
@@ -246,14 +432,26 @@ function loadPuter(): Promise<PuterSDK> {
   return puterLoader;
 }
 
-function launchPuterRacer(
-  system: string,
-  messages: ChatMessage[],
+/**
+ * One streaming attempt for one racer spec. Both transports share the same
+ * contract (`first` on the first token, `finish` with the full text) so a race
+ * can treat them identically. `gate` decides whether an emit may reach the UI
+ * (the race uses it so a losing racer can't scribble into the winner's bubble
+ * after the decision). Aborts cleanly on `abort()` and on the budget timer;
+ * every rejection is funnelled into `first` so a race can observe failures.
+ */
+function launchSpecRacer(
+  spec: RacerSpec,
+  ctx: RacerRequestContext,
   gate: (emit: () => void) => void,
   budgetMs: number,
   onPartial?: (text: string) => void,
 ): Racer {
-  const ctl = { aborted: false };
+  const req = spec.buildRequest(ctx);
+  // A host only spends its anonymous budget when this actually dispatches.
+  markRacerSent(spec.id);
+  const ctl = new AbortController();
+  let abortedByCaller = false;
   let fired = false;
   let report: (e?: Error) => void = () => {};
   const first = new Promise<void>((resolve, reject) => {
@@ -263,43 +461,117 @@ function launchPuterRacer(
       if (e) reject(e); else resolve();
     };
   });
+  // silenced here; a race attaches its own handlers (or doesn't care)
   void first.catch(() => {});
   const timer = setTimeout(() => {
-    ctl.aborted = true;
-    report(new Error('puter too slow'));
+    ctl.abort();
+    report(new Error(`${spec.id} too slow`));
   }, budgetMs);
   let text = '';
+  const note = (delta: string) => {
+    if (!delta) return;
+    text += delta;
+    gate(() => onPartial?.(text));
+    report();
+  };
   const done = (async () => {
     try {
-      const sdk = await loadPuter();
-      if (ctl.aborted) throw new Error('puter aborted');
-      const res = await sdk.ai.chat(
-        [{ role: 'system', content: system }, ...messages],
-        { stream: true },
-      );
-      const iter = res[Symbol.asyncIterator]();
-      for (;;) {
-        if (ctl.aborted) throw new Error('puter aborted');
-        const step = await iter.next();
-        if (step.done) break;
-        const delta = step.value?.text ?? '';
-        if (delta) { text += delta; gate(() => onPartial?.(text)); report(); }
+      if (req.transport === 'sdk') {
+        const sdk = await loadPuter();
+        if (ctl.signal.aborted) throw new Error(`${spec.id} aborted`);
+        const res = await sdk.ai.chat(req.messages, { stream: true });
+        // Manual next() so no tsconfig async-iteration flag is required.
+        const iter = res[Symbol.asyncIterator]();
+        for (;;) {
+          if (ctl.signal.aborted) throw new Error(`${spec.id} aborted`);
+          const step = await iter.next();
+          if (step.done) break;
+          note(spec.parseChunk(step.value));
+        }
+      } else {
+        const res = await fetch(req.url, {
+          method: 'POST',
+          headers: req.headers,
+          signal: ctl.signal,
+          body: JSON.stringify(req.body),
+        });
+        if (!res.ok) {
+          // r.27 — read the error body: an out-of-credit gateway gets a clear
+          // signal instead of a bare status code. 402/429 mean the anonymous
+          // budget is spent, so the host's cooldown restarts from now.
+          let body = '';
+          try { body = await res.text(); } catch { /* unreadable — ignore */ }
+          if (res.status === 402 || res.status === 429) markRacerSent(spec.id);
+          if (CREDIT_RE.test(body)) throw new Error(`${spec.id} out of credit`);
+          throw new Error(`${spec.id} ${res.status}`);
+        }
+        // Some endpoints ignore `stream` and answer with plain JSON.
+        if (!(res.headers.get('content-type') ?? '').includes('text/event-stream') || !res.body) {
+          const data = (await res.json()) as { choices?: Array<{ message: { content: string } }> };
+          const content = data.choices?.[0]?.message.content ?? '';
+          if (!content.trim()) throw new Error(`${spec.id} empty`);
+          note(content);
+          return content;
+        }
+        await readEventStream(res, spec.parseChunk, (accumulated) => {
+          text = accumulated;
+          gate(() => onPartial?.(text));
+          report();
+        });
       }
-      if (!text.trim()) throw new Error('puter empty');
+      if (!text.trim()) throw new Error(`${spec.id} empty`);
       return text;
     } catch (e) {
-      report(e instanceof Error ? e : new Error('puter failed'));
+      if (!abortedByCaller) report(e instanceof Error ? e : new Error(`${spec.id} failed`));
       throw e;
     } finally {
       clearTimeout(timer);
     }
   })();
+  // silenced here; finish() re-awaits it for the winner, losers drop it
   void done.catch(() => {});
   return {
     first,
     finish: () => done,
-    abort: () => { ctl.aborted = true; report(new Error('puter aborted')); },
+    abort: () => {
+      abortedByCaller = true;
+      ctl.abort();
+      report(new Error(`${spec.id} aborted`));
+    },
   };
+}
+
+/** Pump an OpenAI-compatible SSE body through `onText` (which receives the
+ *  text accumulated so far), returning the whole reply. Shared by the keyed
+ *  brains and the host racers so the parse lives in exactly one place. */
+async function readEventStream(
+  res: Response,
+  parse: (payload: unknown) => string,
+  onText: (accumulated: string) => void,
+): Promise<string> {
+  let text = '';
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buf = '';
+  let eof = false;
+  while (!eof) {
+    const chunk = await reader.read();
+    eof = chunk.done;
+    if (chunk.value) buf += decoder.decode(chunk.value, { stream: true });
+    let nl: number;
+    while ((nl = buf.indexOf('\n')) >= 0) {
+      const line = buf.slice(0, nl).trim();
+      buf = buf.slice(nl + 1);
+      if (!line.startsWith('data:')) continue;
+      const payload = line.slice(5).trim();
+      if (payload === '[DONE]') { eof = true; break; }
+      try {
+        const delta = parse(JSON.parse(payload));
+        if (delta) { text += delta; onText(text); }
+      } catch { /* partial JSON line — keep buffering */ }
+    }
+  }
+  return text;
 }
 
 /**
@@ -380,28 +652,7 @@ function launchRacer(
         report();
         return content;
       }
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = '';
-      let eof = false;
-      while (!eof) {
-        const chunk = await reader.read();
-        eof = chunk.done;
-        if (chunk.value) buf += decoder.decode(chunk.value, { stream: true });
-        let nl: number;
-        while ((nl = buf.indexOf('\n')) >= 0) {
-          const line = buf.slice(0, nl).trim();
-          buf = buf.slice(nl + 1);
-          if (!line.startsWith('data:')) continue;
-          const payload = line.slice(5).trim();
-          if (payload === '[DONE]') { eof = true; break; }
-          try {
-            const j = JSON.parse(payload) as StreamChunk;
-            const delta = j.choices?.[0]?.delta?.content ?? j.choices?.[0]?.message?.content ?? '';
-            if (delta) { text += delta; gate(() => onPartial?.(text)); report(); }
-          } catch { /* partial JSON line — keep buffering */ }
-        }
-      }
+      text = await readEventStream(res, openAiDelta, (accumulated) => { gate(() => onPartial?.(accumulated)); report(); });
       if (!text.trim()) throw new Error(`${model} empty`);
       return text;
     } catch (e) {
@@ -430,41 +681,61 @@ async function streamCompletion(
   return racer.finish();
 }
 
-/** Free lane: race the model list, first token wins, losers are aborted. */
-async function racedPollinations(
-  spec: BrainSpec,
-  key: string,
+/** Free lane: race independent HOSTS, first token wins, losers are aborted.
+ *  r142 — no longer takes a BrainSpec: the racers are host specs, so this can
+ *  no longer accidentally fire two requests at one provider's budget. */
+export async function raceFreeLanes(
   system: string,
   messages: ChatMessage[],
   onPartial?: (text: string) => void,
   maxTokens = 280,
 ): Promise<string> {
+  const ctx: RacerRequestContext = { system, messages, maxTokens };
+  // r142 — hosts whose anonymous budget is still fresh. Pollinations is in
+  // here at most once (it is one spec, not two aliases), and a host inside
+  // its cooldown is skipped so the others answer instead.
+  const lanes = selectRacers();
+  if (!lanes.length) throw new Error('no free lane available');
+  try {
+    return await launchRace(lanes, ctx, onPartial);
+  } catch (err) {
+    // Every FRESH host failed. Rather than dropping straight to the canned
+    // line, borrow the host that has been cooling longest — one extra request
+    // beats silence. Only if that also fails does the caller's unchanged
+    // fallback (live facts, then the local lane) take over.
+    const freshIds = new Set(lanes.map((r) => r.id));
+    const spare = longestIdleRacer();
+    if (!spare || freshIds.has(spare.id) || !(err instanceof Error)) throw err;
+    return launchRace([spare], ctx, onPartial);
+  }
+}
+
+/** One round: launch these lanes, first token wins, losers are aborted. */
+async function launchRace(
+  lanes: RacerSpec[],
+  ctx: RacerRequestContext,
+  onPartial?: (text: string) => void,
+): Promise<string> {
   // gate: before the decision everyone may paint (a loser delta gets
   // overwritten by the winner's own accumulation on the next token);
   // after it, only the winner's tokens reach the bubble
   let leader = -1;
-  const racers = RACE_MODELS.map((model, i) =>
-    launchRacer(spec, model, key, system, messages, (emit) => {
+  const racers = lanes.map((lane, i) =>
+    launchSpecRacer(lane, ctx, (emit) => {
       if (leader === -1 || leader === i) emit();
-    }, RACER_BUDGET_MS, onPartial, maxTokens),
+    }, RACER_BUDGET_MS, onPartial),
   );
-  // r136 — Puter races alongside the Pollinations models under the same gate;
-  // first token across ALL racers wins, losers are aborted
-  const puterIdx = racers.length;
-  racers.push(launchPuterRacer(system, messages, (emit) => {
-    if (leader === -1 || leader === puterIdx) emit();
-  }, RACER_BUDGET_MS, onPartial));
   let winIdx: number;
   try {
     winIdx = await Promise.any(racers.map((r, i) => r.first.then(() => i)));
   } catch (err) {
     racers.forEach((r) => r.abort());
-    throw err instanceof Error ? err : new Error('pollinations unavailable');
+    throw err instanceof Error ? err : new Error('every free lane failed');
   }
   leader = winIdx;
   racers.forEach((r, j) => { if (j !== winIdx) r.abort(); });
-  const text = await racers[winIdx].finish();
-  if (!text.trim()) throw new Error('pollinations empty');
+  const text = await racers[winIdx]!.finish();
+  if (!text.trim()) throw new Error(`${lanes[winIdx]!.id} empty`);
   return text;
 }
 
@@ -505,7 +776,7 @@ export async function clientChat(
   const first = pickBrain();
   try {
     const content = first.spec.id === 'pollinations'
-      ? await racedPollinations(first.spec, first.key, system, recent, onPartial, maxTokens)
+      ? await raceFreeLanes(system, recent, onPartial, maxTokens)
       : await streamCompletion(first.spec, first.key, system, recent, onPartial, maxTokens);
     // r.27 — some gateways answer HTTP 200 with the out-of-credit sentence AS
     // the content; that is a failed provider, not something she should speak
@@ -534,9 +805,8 @@ export async function clientChat(
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('amoji:brain-degraded', { detail: degradedNote(first.spec, opts?.language, credit) }));
     }
-    const free = BRAIN_SPECS.find((s) => s.id === 'pollinations') ?? first.spec;
     try {
-      const content = await racedPollinations(free, '', system, recent, onPartial, maxTokens);
+      const content = await raceFreeLanes(system, recent, onPartial, maxTokens);
       if (content.length < 160 && CREDIT_RE.test(content)) throw new Error('pollinations credit');
       const done = finishReply(content, { detailed, world: opts?.world });
       const reply = preferLiveReply(withQuestion(done.reply, opts?.language), opts?.world, opts?.worldSpoken, opts?.language);
