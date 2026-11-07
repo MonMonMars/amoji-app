@@ -148,7 +148,6 @@ import { pickMoodIdleLine } from '../lib/mood-chatter';
 import { pickCharacterInteraction, pokeReactionLine } from '../lib/interaction-lines';
 import { cannedOpener, personalityPrompt } from '../lib/personality';
 import { laughStyleFor, LAUGH_RE } from '../lib/laugh';
-import { WARMUP_FIRST_MS, WARMUP_GAP_MS, WARMUP_MAX_LINES, pickWarmupLine } from '../lib/warmup';
 import { assetUrl } from '../lib/asset';
 import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
 import { clientLiveContext } from '../lib/live-tools';
@@ -167,9 +166,9 @@ import {
   openPhaseWeatherAsk,
   summarizeOpenPhaseSpoken,
 } from '../lib/open-phase';
-import { speak, stopSpeaking, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechRemainder, whenSpeechIdle } from '../lib/voice';
+import { speak, stopSpeaking, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechRemainder, whenSpeechIdle, speakThinkingFiller } from '../lib/voice';
 import { productionChat } from '../lib/backend-client';
-import { startThinkingSound, stopThinkingSound } from '../lib/thinking-sound';
+import { stopThinkingSound } from '../lib/thinking-sound';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
 import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerformance } from '../lib/music';
 import { clipLabel, PERFORMANCE_CLIPS, type PerformanceClip } from '../lib/performance-clips';
@@ -936,34 +935,27 @@ export default function ChatPanel({
       beginShow(requested === 'sing' ? 'song' : 'dance', 18_000, felt?.mood);
     }
     setThinkingPose(true);
-    // Ordinary turns get the quiet thinking hum. A sing or dance ask already
-    // has a premade clip as the wait audio, so the hum stays out of that mix.
+    // t790 — the wait cue is HER OWN TTS voice, silent until the reply has
+    // been loading for two seconds, then two full "let me think" lines. The
+    // same beat paints the placeholder bubble, so screen and speaker agree.
+    // A sing or dance ask already has a premade clip as the wait audio.
     if (requested !== 'sing' && requested !== 'dance') {
-      startThinkingSound({ gender: characterGender, lang });
+      speakThinkingFiller(characterId, lang, felt?.mood, text, (line) => {
+        if (!transientRef.current) return;
+        setHistory((h) => {
+          const last = h.length - 1;
+          const tail = h[last];
+          if (!tail || tail.role !== 'assistant') return h;
+          return [...h.slice(0, last), { ...tail, content: line }];
+        });
+        notifySpeaking(line);
+      });
     }
     // r.47 — ONE transient placeholder bubble carries the whole wait. It
-    // starts as '…'; short um/ha stubs replace it every few seconds and are
-    // spoken aloud. Each stub finishes before the next. The first stream
-    // token takes the bubble over, and the final reply commits in its place.
+    // starts as '…' and takes the wait beats above. The first stream token
+    // takes the bubble over, and the final reply commits in its place.
     setHistory((h) => [...h, { role: 'assistant', content: '…' }]);
     transientRef.current = true;
-    let warmCount = 0;
-    let warmTimer: ReturnType<typeof setTimeout>;
-    const playWarm = () => {
-      if (warmCount >= WARMUP_MAX_LINES || !transientRef.current) return;
-      const line = pickWarmupLine(characterId, lang, warmCount, text, felt?.mood);
-      warmCount += 1;
-      setHistory((h) => {
-        const last = h.length - 1;
-        const tail = h[last];
-        if (!tail || tail.role !== 'assistant') return h;
-        return [...h.slice(0, last), { ...tail, content: line }];
-      });
-      notifySpeaking(line);
-      speak(line, characterId, lang, feltHints ?? { joy: 0.5, neutral: 0.4 }, undefined, felt?.intensity);
-      warmTimer = setTimeout(playWarm, WARMUP_GAP_MS);
-    };
-    warmTimer = setTimeout(playWarm, WARMUP_FIRST_MS);
     // one exit path for every outcome: the final reply (or the failure note)
     // takes the placeholder's place instead of stacking a second bubble
     const commitReply = (content: string) => {
@@ -1017,9 +1009,8 @@ export default function ChatPanel({
           world,
           worldSpoken,
           onPartial: (partial) => {
-            // r.47 — the real stream is painting now: the warm-up loop stands down
-            clearTimeout(warmTimer);
-            warmCount = WARMUP_MAX_LINES;
+            // r.47 — the real stream is painting now: the wait cue stands down
+            stopThinkingSound();
             // hide a half-typed [emotion:{...}] tag so it never flashes on screen
             const clean = partial
               .replace(/\[emotion:[^\]]*$/, '')
@@ -1118,8 +1109,7 @@ export default function ChatPanel({
         }
       }
     } finally {
-      clearTimeout(warmTimer); // reply (or failure) is here — stop the warm-up
-      stopThinkingSound();
+      stopThinkingSound(); // reply (or failure) is here — stop the wait cue
       setThinkingPose(false);
       stopMusic(); // r.48 — belt-and-braces: no PLAIN music outlives the turn
       // r86 — a live sing/duet/piano performance survives this stopMusic();

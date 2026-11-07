@@ -29,6 +29,20 @@ export class LineQueue<T> {
     this.items.push(item);
   }
 
+  /**
+   * Drop queued items that match, and the active one too. Dropping the active
+   * item bumps the epoch, so whatever is already playing observes a stale
+   * epoch and stops. Returns true when the speaker was taken from that item.
+   */
+  drop(pred: (item: T) => boolean): boolean {
+    this.items = this.items.filter((item) => !pred(item));
+    if (!this.active || !pred(this.active)) return false;
+    this.epoch += 1;
+    this.active = null;
+    this.playing = false;
+    return true;
+  }
+
   epochNow(): number {
     return this.epoch;
   }
