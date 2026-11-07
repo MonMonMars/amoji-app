@@ -9,7 +9,9 @@ describe('login + select START type=button', () => {
   it('login Continue and Skip are type=button', () => {
     const src = read('app/login/page.tsx');
     expect(src).toMatch(/type="button"[\s\S]*?onClick=\{go\}/);
-    expect(src).toContain('type="button" onClick={() => router.push(\'/select\')}');
+    expect(src).toContain('type="button"');
+    expect(src).toContain("router.push('/select')");
+    expect(src).toMatch(/onClick=\{\(\) => \{[\s\S]*?primeAudioForChatEnter\(\)[\s\S]*?router\.push\('\/select'\)/);
   });
 
   it('SelectionBoard START/confirm is type=button', () => {

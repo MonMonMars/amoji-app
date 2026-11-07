@@ -3,6 +3,7 @@
 // Returning null flashed a blank frame on Pages bookmarks / old SW shells.
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import EarlyAudioUnlock from './EarlyAudioUnlock';
 
 type SoftLandSelectProps = {
   /** Seed SelectionBoard mode via sessionStorage before replace. */
@@ -32,6 +33,7 @@ export default function SoftLandSelect({
       aria-busy="true"
       aria-label={label}
     >
+      <EarlyAudioUnlock />
       <div className="pointer-events-none absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-pink-500/10 blur-3xl" />
       <p role="status" className="relative text-sm tracking-wide text-white/45">{label}</p>
     </main>

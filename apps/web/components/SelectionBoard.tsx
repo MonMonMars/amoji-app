@@ -13,6 +13,7 @@ import ModelThumb from './ModelThumb';
 import EmotionClipRow from './EmotionClipRow';
 import MuteButton from './MuteButton';
 import EarlyAudioWarm from './EarlyAudioWarm';
+import EarlyAudioUnlock from './EarlyAudioUnlock';
 import TtsVoiceRow from './TtsVoiceRow';
 import SelectTopBars, { type BoardMode, type CastGenderFilter } from './SelectTopBars';
 import StorySetupPanel from './StorySetupPanel';
@@ -123,6 +124,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
         className={`pointer-events-none absolute inset-0 z-30 ${leaving ? 'fx-route-veil-out' : 'fx-route-veil-in'}`}
       />
       <EarlyAudioWarm />
+      <EarlyAudioUnlock />
       {prefsReady && (
         <div data-testid="selection-hero" className="pointer-events-none absolute inset-0">
           <SceneBackdrop background={background} />
