@@ -341,10 +341,10 @@ export default function ArcFan<T extends { id: string }>({
       })}
       {showArrows && (
         <>
-          <button type="button" aria-label="scroll left" disabled={index <= 0} onClick={() => go(index - 1)} className={`${arrow(index > 0)} left-1`}>
+          <button type="button" aria-label="scroll left" title="Scroll left" disabled={index <= 0} onClick={() => go(index - 1)} className={`${arrow(index > 0)} left-1`}>
             <Chevron dir="left" />
           </button>
-          <button type="button" aria-label="scroll right" disabled={index >= items.length - 1} onClick={() => go(index + 1)} className={`${arrow(index < items.length - 1)} right-1`}>
+          <button type="button" aria-label="scroll right" title="Scroll right" disabled={index >= items.length - 1} onClick={() => go(index + 1)} className={`${arrow(index < items.length - 1)} right-1`}>
             <Chevron dir="right" />
           </button>
         </>
