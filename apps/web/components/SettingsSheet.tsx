@@ -310,11 +310,14 @@ export default function SettingsSheet({
   return (
     <div className="fx-fade-in absolute inset-0 z-20 flex justify-end bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="amoji-settings-title"
         className="fx-sheet-in h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-neutral-950/90 p-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">{t(lang, 'settings')}</h2>
+          <h2 id="amoji-settings-title" className="text-lg font-semibold text-white">{t(lang, 'settings')}</h2>
           <button type="button" onClick={onClose} aria-label="Close" className="ui-btn rounded-full bg-white/10 px-3 py-1 text-sm text-white/70 hover:bg-white/20">✕</button>
         </div>
 
