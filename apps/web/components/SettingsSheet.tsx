@@ -654,7 +654,7 @@ export default function SettingsSheet({
                     type="button"
                     onClick={() => removeEntry(e.id)}
                     className="ui-btn shrink-0 rounded-full px-1.5 text-xs text-white/30 hover:bg-white/10 hover:text-white/70"
-                    aria-label="forget"
+                    aria-label={t(lang, 'forgetOneConfirm')}
                   >
                     ✕
                   </button>
@@ -677,7 +677,7 @@ export default function SettingsSheet({
                     type="button"
                     onClick={() => removeDiary(d.id)}
                     className="ui-btn shrink-0 rounded-full px-1.5 text-xs text-white/30 hover:bg-white/10 hover:text-white/70"
-                    aria-label="forget diary line"
+                    aria-label={t(lang, 'forgetOneConfirm')}
                   >
                     ✕
                   </button>
@@ -699,7 +699,7 @@ export default function SettingsSheet({
                     type="button"
                     onClick={() => removeDate(d.id)}
                     className="ui-btn shrink-0 rounded-full px-1.5 text-xs text-white/30 hover:bg-white/10 hover:text-white/70"
-                    aria-label="forget date"
+                    aria-label={t(lang, 'forgetOneConfirm')}
                   >
                     ✕
                   </button>
@@ -721,7 +721,7 @@ export default function SettingsSheet({
                     type="button"
                     onClick={() => removePromise(p.id)}
                     className="ui-btn shrink-0 rounded-full px-1.5 text-xs text-white/30 hover:bg-white/10 hover:text-white/70"
-                    aria-label="forget promise"
+                    aria-label={t(lang, 'forgetOneConfirm')}
                   >
                     ✕
                   </button>
