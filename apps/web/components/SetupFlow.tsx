@@ -27,21 +27,23 @@ export default function SetupFlow() {
   };
 
   return (
-    <div
+    <main
       className={`flex w-full max-w-2xl flex-col items-center gap-6 px-4 ${prefsReady ? '' : 'opacity-0'}`}
       aria-busy={!prefsReady}
+      aria-labelledby="amoji-setup-title"
     >
       <div role="group" aria-label="Setup progress" className="flex items-center gap-2">
         {STEPS.map((_, i) => (
           <span
             key={i}
+            aria-label={`Step ${i + 1} of ${STEPS.length}`}
             aria-current={i === step ? 'step' : undefined}
             className={`h-1.5 rounded-full transition-all ${i === step ? 'w-8 bg-white' : 'w-1.5 bg-white/30'}`}
           />
         ))}
       </div>
 
-      <h1 className="text-center text-2xl font-bold text-white">
+      <h1 id="amoji-setup-title" className="text-center text-2xl font-bold text-white">
         {step === 0 && t(lang, 'chooseCharacter')}
         {step === 1 && t(lang, 'chooseBackground')}
         {step === 2 && t(lang, 'chooseLanguage')}
@@ -68,6 +70,6 @@ export default function SetupFlow() {
           {step < STEPS.length - 1 ? '→' : t(lang, 'startChat')}
         </button>
       </div>
-    </div>
+    </main>
   );
 }
