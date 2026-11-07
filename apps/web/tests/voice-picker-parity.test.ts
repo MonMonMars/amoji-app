@@ -1,71 +1,86 @@
+/**
+ * Settings → Voice must show the SAME real voices as the select board's row.
+ *
+ * Both used to render the full 58-name Edge grid. Every one of those names
+ * played the same audio (Edge refuses this app), so "parity" then meant two
+ * surfaces agreeing on a list of buttons that could not change the sound. The
+ * parity that matters now is: same registry, same one-per-distinct-speaker
+ * collapse, same single-voice explanation.
+ */
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { EDGE_VOICE_BUTTONS } from '../lib/voice-catalog';
+import { selectTtsButtons, isSingleVoiceLocale } from '../lib/tts-button-registry';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const picker = fs.readFileSync(path.resolve(here, '../components/VoicePicker.tsx'), 'utf8');
 const row = fs.readFileSync(path.resolve(here, '../components/TtsVoiceRow.tsx'), 'utf8');
 
-// Settings VoicePicker must show the SAME full numbered Edge set as the select
-// board's TtsVoiceRow: both genders per locale, `#n` labels, pin by the
-// button's own gender. Source contracts only — no jsdom mount.
 describe('Settings VoicePicker parity with select TtsVoiceRow', () => {
-  it('lists both genders per locale instead of flooring to companionGender', () => {
-    expect(picker).toContain("const GENDERS: readonly VoiceGender[] = ['female', 'male']");
-    expect(picker).toContain('GENDERS.map((gender)');
-    // The old floor: early return on opposite gender + single-gender loop.
-    expect(picker).not.toContain('button.gender !== companionGender) return');
-    expect(picker).not.toContain('([companionGender] as const)');
-    // Companion gender still only decides the cast default, not the list.
-    expect(picker).toContain('gender: companionGender');
+  it('both read the same gated registry', () => {
+    expect(picker).toContain('selectTtsButtons');
+    expect(row).toContain('selectTtsButtons');
+    expect(picker).not.toContain('EDGE_VOICE_BUTTONS');
+    expect(row).not.toContain('EDGE_VOICE_BUTTONS');
   });
 
-  it('renders every catalog button, in the same grouped order as TtsVoiceRow', () => {
-    expect(picker).toContain("const LOCALES: VoiceLocale[] = ['yue', 'zh', 'ja', 'en']");
-    expect(picker).toContain('EDGE_VOICE_BUTTONS.filter((b) => b.locale === locale)');
-    expect(picker).toContain('rows.filter((b) => b.gender === gender)');
-    // Female group heading renders before the male group heading.
-    expect(picker).toContain('genderLabel(gender)');
-    expect(picker).toContain("t(lang, gender === 'female' ? 'genderFemale' : 'genderMale')");
+  it('neither surface invents a male/female split the audio does not have', () => {
+    expect(picker).not.toContain("const GENDERS");
+    expect(picker).not.toContain('genderLabel');
+    expect(row).not.toContain("(['female', 'male'] as const)");
     for (const locale of ['yue', 'zh', 'ja', 'en'] as const) {
-      for (const gender of ['female', 'male'] as const) {
-        expect(EDGE_VOICE_BUTTONS.some((b) => b.locale === locale && b.gender === gender)).toBe(true);
+      for (const button of selectTtsButtons(locale)) {
+        expect('gender' in button).toBe(false);
       }
     }
   });
 
-  it('shows the numbered `#n` label like the select row', () => {
-    expect(picker).toContain('`#${button.n} ${button.label}`');
-    expect(picker).toContain('{numLabel}');
+  it('both list every locale, using a per-language heading', () => {
+    expect(picker).toContain("const LOCALES: VoiceLocale[] = ['yue', 'zh', 'ja', 'en']");
+    expect(picker).toContain('selectTtsButtons(locale)');
+    for (const locale of ['yue', 'zh', 'ja', 'en'] as const) {
+      expect(selectTtsButtons(locale).length).toBeGreaterThan(0);
+    }
+  });
+
+  it('both number their buttons `#n` and label them from the string table', () => {
+    expect(picker).toContain('`#${button.n} ${t(lang, button.labelKey)}`');
+    expect(row).toContain('`#${button.n} ${t(lang, button.labelKey)}`');
     expect(picker).toContain('aria-label={numLabel}');
-    expect(row).toContain('`#${button.n} ${button.label}`');
+    expect(row).toContain('aria-label={numLabel}');
+    expect(picker).toContain('aria-pressed={selected}');
+    expect(row).toContain('aria-pressed={selected}');
   });
 
-  it('pins with the button’s own gender, not the companion gender', () => {
-    expect(picker).toContain('saveVoicePick(button.locale, button.gender, button.id)');
-    expect(picker).not.toContain('saveVoicePick(button.locale, companionGender');
-    expect(row).toContain('saveVoicePick(button.locale, button.gender, button.id)');
+  it('both pin by language only, with no gender slot left over', () => {
+    expect(picker).toContain('saveVoicePick(button.locale, button.id)');
+    expect(row).toContain('saveVoicePick(button.locale, button.id)');
+    expect(picker).not.toContain('button.gender');
+    expect(row).not.toContain('button.gender');
   });
 
-  it('keeps exclusive single pin per locale and cast default highlight', () => {
-    expect(picker).toContain("voicePickFor(locale, 'female')");
-    expect(picker).toContain("voicePickFor(locale, 'male')");
-    expect(picker).toContain('ignoreVoicePick: true');
-    expect(picker).toContain('const activeId = pinnedId ?? castId');
-    expect(picker).toContain('const selected = button.id === activeId');
-    expect(picker).not.toContain('castMatch');
+  it('both explain a single-voice language and highlight the active voice', () => {
+    expect(picker).toContain('isSingleVoiceLocale');
+    expect(row).toContain('isSingleVoiceLocale');
+    expect(picker).toContain("t(lang, 'voiceOnlyOneAvailable')");
+    expect(row).toContain("t(lang, 'voiceOnlyOneAvailable')");
+    expect(picker).toContain('activeVoiceChoice(locale)');
+    expect(row).toContain('activeVoiceChoice(lang)');
+    expect(isSingleVoiceLocale('ja')).toBe(true);
   });
 
-  it('previews on tap and switches language on a locale mismatch', () => {
-    expect(picker).toContain('previewEdgeVoice(button.locale, button.id)');
-    expect(picker).toContain('if (button.locale !== lang) onLang(button.locale)');
-    expect(picker).not.toContain('onMouseEnter');
+  it('both preview the exact voice a tap will keep', () => {
+    expect(picker).toContain('previewVoiceChoice(button.locale, button.id)');
+    expect(row).toContain('playVoiceGreeting(characterId, button.locale, button.id)');
+    expect(picker).not.toContain('previewEdgeVoice');
+    expect(row).not.toContain('previewEdgeVoice');
   });
 
   it('exposes data attrs the tests can read', () => {
     expect(picker).toContain('data-voice-n={button.n}');
-    expect(picker).toContain('data-voice-gender={button.gender}');
+    expect(picker).toContain('data-voice-id={button.id}');
+    expect(row).toContain('data-voice-n={button.n}');
+    expect(row).toContain('data-voice-id={button.id}');
   });
 });
