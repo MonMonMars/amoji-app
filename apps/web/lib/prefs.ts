@@ -133,7 +133,7 @@ export type StrKey =
   | 'statusIdle' | 'statusThinking' | 'statusSpeaking' | 'statusListening' | 'statusPreparing'
   | 'moodJoy' | 'moodAngry' | 'moodSad' | 'moodSurprised' | 'moodRelaxed' | 'moodNeutral'
   | 'voiceReplies' | 'neuralVoice' | 'muteAll' | 'unmuteAll' | 'muteAllHint' | 'voicePickerTitle' | 'voicePickerHint'
-  | 'memoryTitle' | 'forgetBtn' | 'tutorBtn' | 'micTitle' | 'sendBtn'
+  | 'memoryTitle' | 'forgetBtn' | 'tutorBtn' | 'micTitle' | 'sendBtn' | 'scrollLeft' | 'scrollRight'
   // consolidated settings menu (r2026-10-02.7)
   | 'settingsCompanion' | 'settingsScene' | 'settingsVoice' | 'settingsData' | 'settingsHelp'
   | 'yourName' | 'yourGender' | 'genderMale' | 'genderFemale' | 'genderSecret'
@@ -246,6 +246,8 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   tutorBtn: { en: 'How to use', yue: '使用教學', zh: '使用教学', ja: '使い方' },
   micTitle: { en: 'Tap the orb to talk', yue: '撳個波講嘢', zh: '点彩球说话', ja: 'オーブをタップして話す' },
   sendBtn: { en: 'Send', yue: '傳送', zh: '发送', ja: '送信' },
+  scrollLeft: { en: 'Scroll left', yue: '向左滑', zh: '向左滚动', ja: '左にスクロール' },
+  scrollRight: { en: 'Scroll right', yue: '向右滑', zh: '向右滚动', ja: '右にスクロール' },
   settingsCompanion: { en: 'Companion', yue: '小伙伴', zh: '伙伴', ja: '相棒' },
   settingsScene: { en: 'Scene', yue: '場景', zh: '场景', ja: '場所' },
   settingsVoice: { en: 'Voice', yue: '聲音', zh: '声音', ja: '音声' },

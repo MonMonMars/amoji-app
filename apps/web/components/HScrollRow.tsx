@@ -16,6 +16,7 @@
  * memory, so the next entry centers on the NEW pick.
  */
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { t, loadPrefs } from '../lib/prefs';
 
 function Chevron({ dir }: { dir: 'left' | 'right' }) {
   return (
@@ -47,6 +48,7 @@ export default function HScrollRow({
   /** data-row-item id of the currently selected tile — centered on entry */
   selectedId?: string;
 }) {
+  const lang = loadPrefs().lang;
   const ref = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const didMount = useRef(false);
@@ -226,8 +228,8 @@ export default function HScrollRow({
           <button
             type="button"
             onClick={() => nudge(-1)}
-            aria-label="scroll left"
-            title="Scroll left"
+            aria-label={t(lang, 'scrollLeft')}
+            title={t(lang, 'scrollLeft')}
             disabled={!canLeft}
             className={`${arrow(canLeft)} -left-1`}
           >
@@ -236,8 +238,8 @@ export default function HScrollRow({
           <button
             type="button"
             onClick={() => nudge(1)}
-            aria-label="scroll right"
-            title="Scroll right"
+            aria-label={t(lang, 'scrollRight')}
+            title={t(lang, 'scrollRight')}
             disabled={!canRight}
             className={`${arrow(canRight)} -right-1`}
           >

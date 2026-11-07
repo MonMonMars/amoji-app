@@ -61,7 +61,7 @@ describe('selection layout', () => {
     expect(fan).toContain('stageWidth');
     expect(fan).toContain('overflow-x-hidden');
     expect(fan).toContain('showArrows');
-    expect(fan).toContain('scroll left');
+    expect(fan).toContain("aria-label={t(lang, 'scrollLeft')}");
     expect(fan).toContain('orientationchange');
     expect(fan).toContain('role="group"');
     expect(fan).toContain('landscapeMax');
