@@ -1857,6 +1857,8 @@ const TEST_LINES: Record<Lang, string> = {
  * settings sheet shows the "check silent switch" hint.
  */
 export function testVoice(characterId: string, lang: Lang): void {
+  // Mute All wins over Voice-replies self-test (never cut speech / probe while muted).
+  if (isMasterMuted()) return;
   unlockAudio();
   // The settings button is a user action: it may cut the current line, then
   // speak the test. Restoring the mute flag below must not call stopSpeaking.
@@ -1926,6 +1928,9 @@ function probeSynth(text: string, characterId: string, lang: Lang): Promise<bool
  * tier it actually tried. Stops at the first tier that speaks.
  */
 export async function testVoiceChain(characterId: string, lang: Lang): Promise<VoiceTierResult[]> {
+  if (isMasterMuted()) {
+    return [{ tier: 'edge', ok: false, detail: 'muted' }];
+  }
   unlockAudio();
   const wasOn = voiceEnabled();
   if (!wasOn) {
@@ -2010,6 +2015,7 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
  * utterance completed without error.
  */
 export async function testProxyVoice(characterId: string, lang: Lang): Promise<boolean> {
+  if (isMasterMuted()) return false;
   unlockAudio();
   const line = TEST_LINES[lang] ?? TEST_LINES.en;
   const viaProxy = !!getTtsProxy();
@@ -2039,6 +2045,7 @@ export async function testProxyVoice(characterId: string, lang: Lang): Promise<b
  */
 export async function testOpenAiVoice(characterId: string, lang: Lang): Promise<boolean | null> {
   if (!openAiVoiceReady()) return null;
+  if (isMasterMuted()) return false;
   unlockAudio();
   const line = TEST_LINES[lang] ?? TEST_LINES.en;
   try {

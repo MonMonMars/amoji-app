@@ -137,6 +137,24 @@ describe('master-mute', () => {
     );
     expect(sheet).toContain('useState<boolean | null>(null)');
     expect(sheet).toContain('on={masterMuted === true}');
+    expect(sheet).toContain('disabled={masterMuted === null}');
+    expect(sheet).toContain("disabled={voiceTesting || masterMuted === true}");
+    expect(sheet).toContain('if (masterMuted === true) return;');
+  });
+
+  it('testVoiceChain / testVoice respect Mute All before unlock', async () => {
+    const voice = await import('node:fs').then((fs) =>
+      fs.readFileSync(new URL('../lib/voice.ts', import.meta.url), 'utf8'),
+    );
+    const chain = voice.indexOf('export async function testVoiceChain');
+    const chainSlice = voice.slice(chain, chain + 280);
+    expect(chainSlice).toContain('isMasterMuted()');
+    expect(chainSlice.indexOf('isMasterMuted()')).toBeLessThan(chainSlice.indexOf('unlockAudio()'));
+    const tv = voice.indexOf('export function testVoice');
+    const tvSlice = voice.slice(tv, tv + 420);
+    expect(tvSlice).toContain('isMasterMuted()');
+    expect(tvSlice.indexOf('isMasterMuted()')).toBeLessThan(tvSlice.indexOf('unlockAudio()'));
+    expect(tvSlice.indexOf('isMasterMuted()')).toBeLessThan(tvSlice.indexOf('stopSpeaking()'));
   });
 
 });
