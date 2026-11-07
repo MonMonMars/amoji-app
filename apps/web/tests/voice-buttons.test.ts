@@ -227,7 +227,9 @@ describe('tl mapping', () => {
 
   it('uses real Google Translate codes', () => {
     for (const choice of VOICE_CHOICES) {
-      expect(choice.tl).toMatch(/^[a-z]{2}(-[A-Z]{2})?$/);
+      // Google accepts both a bare language ('yue', 'ja') and a language-region
+      // pair ('zh-TW', 'en-GB'); both are live and both select a speaker.
+      expect(choice.tl).toMatch(/^[a-z]{2,3}(-[A-Z]{2})?$/);
       expect(voiceChoicesFor(choice.locale)).toContain(choice);
     }
   });
