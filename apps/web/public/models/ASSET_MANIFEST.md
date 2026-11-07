@@ -2,9 +2,9 @@
 
 Every binary in this directory (top level or under `cast/`) must have an entry. CI fails on unmanifested files.
 
-Live companion cast (46 characters) streams from GitHub Releases; binaries are **not** committed to git (`models/want/` stays `.gitkeep`). Pages downloads each roster `modelUrl` at build time.
+Live companion cast (**44 characters**) streams from GitHub Releases; binaries are **not** committed to git (`models/want/` stays `.gitkeep`). Pages downloads each roster `modelUrl` at build time.
 
-- **`free-library-want-2026-10-12`** ??original 46 want-list characters ([release](https://github.com/MonMonMars/amoji-app/releases/tag/free-library-want-2026-10-12))
+- **`free-library-want-2026-10-12`** ??the want-list release ([release](https://github.com/MonMonMars/amoji-app/releases/tag/free-library-want-2026-10-12)). It carries 46 assets; the app ships 44. `a04-avatarsample-a` and `a05-avatarsample-c` left the roster on 2026-11-08 — see "Removed from the roster" below.
 
 ## Shipped binaries (in-repo)
 
@@ -12,7 +12,7 @@ Live companion cast (46 characters) streams from GitHub Releases; binaries are *
 |---|---|---|---|
 | seed-san.vrm | VRM Public License 1.0 (https://vrm.dev/en/licenses/1.0/index) ??"Seed-san" model by VirtualCast, Inc.; credit notation required | Official VRM 1.0 conformance sample: https://github.com/vrm-c/vrm-specification/tree/master/samples/Seed-san | Licensed fallback avatar for open-source and GitHub Pages builds. Also the universal fallback whenever a cast file is missing or fails to load. Credit: Seed-san model by VirtualCast, Inc. |
 
-## Live cast ??free-library WANT list (46 characters)
+## Live cast — free-library WANT list (44 characters)
 
 Source of truth: `apps/web/lib/want-roster.json` ??generated `apps/web/lib/characters-want.ts` (`node scripts/generate-want-cast.mjs`).
 
@@ -21,8 +21,6 @@ Source of truth: `apps/web/lib/want-roster.json` ??generated `apps/web/lib/chara
 | a01-shino | female | `??a01-shino.vrm` |
 | a02-shibu | female | `??a02-shibu.vrm` |
 | a03-fumiriya | female | `??a03-fumiriya.vrm` |
-| a04-avatarsample-a | female | `??a04-avatarsample-a.vrm` |
-| a05-avatarsample-c | female | `??a05-avatarsample-c.vrm` |
 | a10-agahomei-normal | female | `??a10-agahomei-normal.vrm` |
 | a14-vivi | female | `??a14-vivi.vrm` |
 | a16-vita | female | `??a16-vita.vrm` |
@@ -67,49 +65,85 @@ Source of truth: `apps/web/lib/want-roster.json` ??generated `apps/web/lib/chara
 
 Base URL for every row: `https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/` (matching PNG portraits at the same path with `.png`).
 
-**License / credits** (from roster `creditNotes`):
+### FROZEN — do not re-export (a14, a16, a17)
+
+`a14-vivi`, `a16-vita` and `a17-victoria-rubin` are **CC0 only because they are
+β-era VRoid Studio exports**. VRoid Studio v0.14.0 (2021-06-29) renamed these
+samples to AvatarSample_E/F/G **and disabled CC0 export for them**:
+
+> "- Copyright Waiver (CC0) when exporting VRM files for the new sample models has been disabled"
+
+Their CC0 status therefore lives entirely in the bytes already on disk
+(`licenseName=CC0` in each file). Opening any of the three in VRoid Studio
+≥ v0.14.0 and re-saving **permanently loses the CC0 declaration** — the file
+comes back with `licenseName=Other` and no licence URL, i.e. an unlicensed model,
+and no document can restore it. Never re-export, re-bake or "repair" these three.
+If one is ever damaged, the only safe move is to drop it from the roster.
+
+### Removed from the roster 2026-11-08
+
+| Character id | Embedded licence | Why removed |
+|---|---|---|
+| a04-avatarsample-a | `licenseName=Other`, `otherPermissionUrl` empty, title `AvatarSample_A` | VRoidPreset_A original. Terms prohibit "redistributing the .vroid or VRM file of the sample model ... in exchange for a fee". |
+| a05-avatarsample-c | `licenseName=Other`, `otherPermissionUrl` empty, title `AvatarSample_C` | VRoidPreset_C original, same clause. |
+
+Both still exist in the release and in local `want/` trees; they are simply no
+longer roster entries, so nothing loads them. `apps/web/lib/castNo.ts` keeps their
+badge numbers (4 and 5) reserved so the rest of the fan is not renumbered.
+
+**License / credits**: every model that requires attribution is credited on the `/credits` page (`apps/web/lib/credits.ts`), with the strings read from the VRM's own embedded metadata. Roster `creditNotes` summarise the rest.
 
 - VRoid Sendagaya Shino/Shibu and Sakurada Fumiriya: **CC0**
-- AvatarSample_A/C: VRoid sample terms ??commercial OK; do not sell raw VRM alone
+- **Removed 2026-11-08:** AvatarSample_A/C — VRoidPreset originals. The pixiv terms forbid redistributing the sample VRM file in exchange for a fee, which is what bundling it in a paid product is. Not merely unattributed: affirmatively restricted.
 - Other Hub/BOOTH free commercial entries: follow each folder README.txt
 - Removed from public picker: kitagawa, kizuna, and other unverified agent3 cast slots
 
-## Retired local cast (`cast/*.vrm`) ??demo-only
+## Retired local cast (`cast/*.vrm`) — CC0 only
 
-The former in-repo `cast/` binaries are **retired** from the active picker (face-lab / local demos only). Each file on disk must stay listed here for CI.
+The former in-repo `cast/` binaries are **retired** from the active picker (face-lab / local demos only). Every file that remains is **CC0**, verified by reading the embedded VRM licence metadata (`extensions.VRM.meta.licenseName`) out of each file — not from a folder README.
 
-| Cast file | Status |
-|---|---|
-| cast/alicia.vrm | Retired ??unverified agent3 demo |
-| cast/atlas.vrm | Retired ??unverified agent3 demo |
-| cast/avatarsample-a.vrm | Retired ??local demo |
-| cast/cyrus.vrm | Retired ??local demo |
-| cast/elio.vrm | Retired ??local demo |
-| cast/ember.vrm | Retired ??unverified agent3 demo |
-| cast/fumiriya.vrm | Retired ??local demo |
-| cast/hana.vrm | Retired ??local demo |
-| cast/hina.vrm | Retired ??unverified agent3 demo |
-| cast/juno.vrm | Retired ??Kizuna-style demo; never public roster |
-| cast/kael.vrm | Retired ??local demo |
-| cast/kai.vrm | Retired ??local demo |
-| cast/kitagawa.vrm | Retired ??copyright-risk; removed from picker |
-| cast/kizuna.vrm | Retired ??copyright-risk; removed from picker |
-| cast/luna.vrm | Retired ??local demo |
-| cast/lydia.vrm | Retired ??local demo |
-| cast/mei.vrm | Retired ??unverified agent3 demo |
-| cast/mikel.vrm | Retired ??local demo |
-| cast/mimi.vrm | Retired ??local demo |
-| cast/mio.vrm | Retired ??unverified agent3 demo |
-| cast/nana.vrm | Retired ??local demo |
-| cast/nova.vrm | Retired ??unverified agent3 demo |
-| cast/olivia.vrm | Retired ??local demo |
-| cast/rex.vrm | Retired ??local demo |
-| cast/rin.vrm | Retired ??local demo |
-| cast/sky.vrm | Retired ??unverified agent3 demo |
-| cast/sumire.vrm | Retired ??local demo |
-| cast/vroid-male.vrm | Retired ??local demo |
-| cast/yuki.vrm | Retired ??unverified agent3 demo |
-| cast/zane.vrm | Retired ??local demo |
+`.gitignore` blocks `apps/web/public/models/cast/*.vrm`, so a new binary here cannot be committed without deliberately editing that rule. Each file on disk must still stay listed below for CI (`apps/web/tests/assets.test.ts`).
+
+| Cast file | License | Source | Notes |
+|---|---|---|---|
+| cast/cyrus.vrm | CC0 | Polygonal Mind (100Avatars, "Udom") | local demo |
+| cast/fumiriya.vrm | CC0 | VRoid official sample (Sakurada Fumiriya) | same model as `a03-fumiriya` |
+| cast/hina.vrm | CC0 | Polygonal Mind ("Lydia") | local demo |
+| cast/juno.vrm | CC0 | Polygonal Mind | local demo; never a public roster id |
+| cast/kael.vrm | CC0 | Polygonal Mind ("Rose") | local demo |
+| cast/luna.vrm | CC0 | CC0 (VIPEDeployer, "Cyberpal") | local demo |
+| cast/lydia.vrm | CC0 | Polygonal Mind ("Lydia") | local demo |
+| cast/mikel.vrm | CC0 | Polygonal Mind ("Mikel") | local demo |
+| cast/mimi.vrm | CC0 | Polygonal Mind ("Rabbit") | local demo |
+| cast/mio.vrm | CC0 | Polygonal Mind ("Kate") | local demo |
+| cast/olivia.vrm | CC0 | Polygonal Mind ("Olivia") | local demo |
+| cast/rin.vrm | CC0 | Polygonal Mind ("Chill") | local demo |
+| cast/sumire.vrm | CC0 | Polygonal Mind ("Jennifer") | local demo |
+| cast/yuki.vrm | CC0 | Polygonal Mind ("Olivia") | local demo |
+
+### Purged 2026-11-08 (licensing)
+
+16 binaries were removed from git and from the tree. Re-adding any of them needs a fresh licence review; most are not merely unattributed but affirmatively restricted.
+
+| Cast file | Embedded licence | Why removed |
+|---|---|---|
+| cast/kitagawa.vrm | `Other` + Hub params `corporate_commercial_use=disallow`, `redistribution=disallow`, `personal_commercial_use=nonprofit` | Copyrighted anime character (喜多川海夢), title in the file |
+| cast/kizuna.vrm | VRM 1.0 `commercialUsage=personalNonProfit`, `allowRedistribution=false` | Kizuna AI official model |
+| cast/hana.vrm | `Redistribution_Prohibited` | licence string is the prohibition |
+| cast/nana.vrm | `Redistribution_Prohibited` | same model as hana |
+| cast/alicia.vrm | `Other`, `https://3d.nicovideo.jp/alicia/rule.html` | Dwango "Alicia Solid", separate terms |
+| cast/atlas.vrm | `Other`, no URL, author "jin", title "masc vroid" | provenance unprovable |
+| cast/vroid-male.vrm | `Other`, no URL, author "jin", title "masc vroid" | provenance unprovable |
+| cast/zane.vrm | `Other`, no URL, author "jin", title "masc vroid" | provenance unprovable |
+| cast/mei.vrm | `Other`, no URL, title "AvatarSample_B" | VRoidPreset original |
+| cast/elio.vrm | `Other`, no URL, title "AvatarSample_C" | VRoidPreset original |
+| cast/avatarsample-a.vrm | `Other`, no URL, title "AvatarSample_A" | VRoidPreset original |
+| cast/ember.vrm | CC_BY (VTubeMe, "MetaPerson Avatar") | attribution required; retired demo meshes carry no credit surface |
+| cast/kai.vrm | CC_BY (VTubeMe) | same |
+| cast/nova.vrm | CC_BY (VTubeMe) | same |
+| cast/rex.vrm | CC_BY (VTubeMe) | same |
+| cast/sky.vrm | CC_BY (VTubeMe) | same |
+
 
 ## Motion library ??`anims/`
 
@@ -179,7 +213,7 @@ Additional dormant clips ship on disk for future triggers (see repo `anims/` dir
 | File | Why |
 |---|---|
 | marin.vrm | Copyright-flagged; must never be committed under any path. |
-| cast/kitagawa.vrm, cast/kizuna.vrm, etc. | Retired unverified agent3 roster ??not in want-list release. |
+| cast/kitagawa.vrm, cast/kizuna.vrm, cast/hana.vrm, cast/nana.vrm, cast/alicia.vrm | Deleted 2026-11-08 — the embedded licence on each forbids redistribution; see "Purged 2026-11-08" above. |
 | juno.vrm (Kizuna AI "Kamatte") | Never committed; public builds use seed-san.vrm. |
 
 ## Modular head / body GLBs ??drop-in, not committed here

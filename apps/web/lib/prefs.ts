@@ -21,8 +21,8 @@ export interface CharacterDef {
   /** portrait image under /portraits, or an absolute https URL (remote thumb) */
   image?: string;
   /**
-   * drop-in VRM under /models — the local anime cast lives in /models/cast
-   * (write `cast/<slug>.vrm`). VRM 1.0 loads through three-vrm (VRMA idle
+   * drop-in VRM under /models — the live cast lives in /models/want
+   * (write `want/<slug>.vrm`). VRM 1.0 loads through three-vrm (VRMA idle
    * clip eligible); VRM 0.x legacy rigs load through the generic avatar path
    * (auto-calibrated facing + arms, procedural idle, expression aliasing).
    * Any load failure falls back to seed-san.vrm — see ASSET_MANIFEST.md.
@@ -45,6 +45,7 @@ export interface CharacterDef {
 // Universal load fallback remains seed-san.vrm (see ASSET_MANIFEST.md).
 // ---------------------------------------------------------------------------
 import { CHARACTERS_WANT, WANT_CAST_RELEASE } from './characters-want';
+import { RETIRED_CAST_IDS } from './castNo';
 import { isHiddenCast } from './cast-adjust';
 
 export { WANT_CAST_RELEASE };
@@ -233,7 +234,11 @@ export type StrKey =
   | 'gateMicTitle' | 'gateMicBody' | 'gateMicAllow' | 'gateMicSkip'
   | 'gateMicGranted' | 'gateMicDenied' | 'gateMicUnsupported' | 'gateEnter'
   // adult-only replacement for the old Kid Mode row in Settings
-  | 'settingsAdultOnly';
+  | 'settingsAdultOnly'
+  // Appended after the safety keys for the 2026-11-08 licensing pass: the
+  // /credits page is an attribution obligation, so it needs a title in the
+  // shared table like /privacy and /terms do.
+  | 'creditsTitle';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   chooseCharacter: { en: 'Choose your companion', yue: '揀你嘅小伙伴', zh: '选择你的伙伴', ja: '相棒を選ぶ' },
@@ -1047,6 +1052,12 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: 'Amoji 会发送什么、发送到哪里',
     ja: 'Amoji が何をどこへ送るか',
   },
+  creditsTitle: {
+    en: 'Credits',
+    yue: '鳴謝',
+    zh: '鸣谢',
+    ja: 'クレジット',
+  },
   // Reporting an AI reply (Play requirement). Every sentence that mentions
   // sending is written to match the code: localStorage on this device, an
   // export the user sends themselves, and nothing leaving the browser.
@@ -1259,6 +1270,25 @@ export function femaleLibraryId(id: string | undefined | null): string | undefin
   return c.id;
 }
 
+/**
+ * Where a saved pick goes when its character was pulled from the roster.
+ *
+ * a04/a05 (VRoidPreset originals, removed 2026-11-08 for licensing) both sat at
+ * the front of the fan next to the VRoid Studio samples, so a sample-style
+ * companion is the closest thing the user was looking at. Gender is preserved:
+ * a05 was the roster's male sample, and landing a male pick on a female
+ * companion would also silently overwrite the remembered `lastFemale`. Anything
+ * unmapped lands on the default companion.
+ */
+export function retiredReplacement(id: string): string {
+  const map: Record<string, string> = {
+    'a04-avatarsample-a': 'a02-shibu',
+    'a05-avatarsample-c': 'a24-hairsample-male',
+  };
+  const next = map[id];
+  return next && CHARACTERS.some((c) => c.id === next) ? next : DEFAULT_PREFS.character;
+}
+
 export function loadPrefs(): Prefs {
   try {
     const raw = localStorage.getItem(KEY);
@@ -1278,6 +1308,14 @@ export function loadPrefs(): Prefs {
       const storedCharacter = typeof p.character === 'string' ? p.character : DEFAULT_PREFS.character;
       let character = CHARACTERS.some((c) => c.id === storedCharacter) ? storedCharacter : DEFAULT_PREFS.character;
       if (isHiddenCast(character)) character = DEFAULT_PREFS.character;
+      // A pick that was removed from the roster (a04/a05, 2026-11-08 licensing
+      // purge) is not an unknown id: keep the saved companion usable by moving
+      // to the nearest still-shipping character rather than silently resetting
+      // to the default. `characterById` also falls back, but doing it here means
+      // the migrated value is what gets persisted and shown.
+      if (character === DEFAULT_PREFS.character && RETIRED_CAST_IDS.includes(storedCharacter)) {
+        character = retiredReplacement(storedCharacter);
+      }
       const background = BACKGROUNDS.some((b) => b.id === p.background) ? p.background! : DEFAULT_PREFS.background;
       const picked = CHARACTERS.find((c) => c.id === character);
       let lastFemale = femaleLibraryId(typeof p.lastFemale === 'string' ? p.lastFemale : undefined);

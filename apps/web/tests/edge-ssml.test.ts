@@ -202,7 +202,6 @@ describe('per-character Edge voices', () => {
     for (const lang of langs) {
       for (const id of [
         'a03-fumiriya',
-        'a05-avatarsample-c',
         'a105-serizawa-aoi',
         'a107-dm-office-casual',
         'a24-hairsample-male',
