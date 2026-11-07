@@ -82,7 +82,7 @@ function str(v: unknown): string {
   return typeof v === 'string' ? v.trim() : '';
 }
 
-interface Place { latitude: number; longitude: number; label: string; coarse: boolean }
+interface Place { latitude: number; longitude: number; label: string; coarse: boolean; countryCode?: string }
 
 async function locateIp(fetchImpl: typeof fetch, ip: string | undefined): Promise<Place | null> {
   const specific = ip && !/^(127\.|10\.|192\.168\.|::1$)/.test(ip)
@@ -95,7 +95,8 @@ async function locateIp(fetchImpl: typeof fetch, ip: string | undefined): Promis
   const longitude = num(d.longitude);
   if (latitude == null || longitude == null) return null;
   const label = [str(d.city), str(d.region), str(d.country)].filter(Boolean).join(', ') || 'your area';
-  return { latitude, longitude, label, coarse: true };
+  const countryCode = (str(d.country_code) || str(d.countryCode)).toUpperCase();
+  return { latitude, longitude, label, coarse: true, ...(countryCode ? { countryCode } : {}) };
 }
 
 async function geocode(fetchImpl: typeof fetch, name: string): Promise<Place | null> {
@@ -106,7 +107,8 @@ async function geocode(fetchImpl: typeof fetch, name: string): Promise<Place | n
   const longitude = num(hit.longitude);
   if (latitude == null || longitude == null) return null;
   const label = [str(hit.name) || name, str(hit.admin1), str(hit.country)].filter(Boolean).join(', ');
-  return { latitude, longitude, label, coarse: false };
+  const countryCode = str(hit.country_code).toUpperCase();
+  return { latitude, longitude, label, coarse: false, ...(countryCode ? { countryCode } : {}) };
 }
 
 function namedPlace(text: string): string | undefined {
@@ -173,14 +175,21 @@ async function wikipediaNews(fetchImpl: typeof fetch, lang: Lang4): Promise<stri
   return [];
 }
 
-async function googleNews(fetchImpl: typeof fetch, query: string, lang: Lang4, top: boolean): Promise<string[]> {
+async function googleNews(fetchImpl: typeof fetch, query: string, lang: Lang4, top: boolean, countryCode?: string): Promise<string[]> {
+  // Edition = the user's country; language = the UI language. A place we know
+  // therefore never gets another country's front page (the old table sent
+  // everyone outside HK/TW/JP/US/UK to the US edition). With no country we
+  // fall back to the UI language's home edition — never a fixed one.
+  const home: Record<Lang4, string> = { en: 'US', zh: 'TW', yue: 'HK', ja: 'JP' };
+  const iso = countryCode && /^[A-Za-z]{2}$/.test(countryCode) ? countryCode.toUpperCase() : home[lang];
+  const gl = iso === 'UK' ? 'GB' : iso;
   const pack = {
-    en: { hl: 'en-US', gl: 'US', ceid: 'US:en' },
-    zh: { hl: 'zh-CN', gl: 'CN', ceid: 'CN:zh-Hans' },
-    yue: { hl: 'zh-HK', gl: 'HK', ceid: 'HK:zh-Hant' },
-    ja: { hl: 'ja', gl: 'JP', ceid: 'JP:ja' },
+    en: { hl: 'en', tag: 'en' },
+    zh: { hl: 'zh-CN', tag: 'zh-Hans' },
+    yue: { hl: 'zh-HK', tag: 'zh-Hant' },
+    ja: { hl: 'ja', tag: 'ja' },
   }[lang];
-  const q = new URLSearchParams({ hl: pack.hl, gl: pack.gl, ceid: pack.ceid });
+  const q = new URLSearchParams({ hl: pack.hl, gl, ceid: `${gl}:${pack.tag}` });
   if (!top) q.set('q', query);
   const url = top ? `https://news.google.com/rss?${q.toString()}` : `https://news.google.com/rss/search?${q.toString()}`;
   const xml = await getText(fetchImpl, url);
@@ -223,8 +232,7 @@ export async function gatherChatWorld(message: string, input: GatherInput = {}):
 
   const lines: string[] = [];
   const spoken: string[] = [];
-  if (place) lines.push(`Place: ${place.label} (${place.coarse ? 'coarse network estimate, not a precise fix' : 'the place they named'}).`);
-  if (weather) {
+  if (place) lines.push(`Place: ${place.label} (${place.coarse ? 'coarse network estimate, not a precise fix' : 'the place they named'}).`);  if (weather) {
     const temp = place ? await weatherLine(fetchImpl, place) : null;
     if (temp && place) {
       lines.push(`Weather: ${temp}.`);
@@ -235,7 +243,7 @@ export async function gatherChatWorld(message: string, input: GatherInput = {}):
   }
   if (news) {
     const localQuery = place && !recent ? `${place.label.split(',')[0] ?? place.label} (funny OR weird OR quirky OR heartwarming)` : '';
-    const google = await googleNews(fetchImpl, recent || !localQuery ? '' : localQuery, lang, recent || !localQuery);
+    const google = await googleNews(fetchImpl, recent || !localQuery ? '' : localQuery, lang, recent || !localQuery, place?.countryCode);
     const wiki = google.length ? [] : await wikipediaNews(fetchImpl, lang);
     const title = google[0] ?? wiki[0];
     if (title) {

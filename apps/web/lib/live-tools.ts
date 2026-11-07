@@ -32,8 +32,13 @@ export interface Place {
   city: string;
   region: string;
   country: string;
-  /** browser = permission fix; ip = coarse network guess; name = a place the user typed */
-  source: 'browser' | 'ip' | 'name';
+  /** ISO 3166-1 alpha-2 country code, when the source gave us one. Drives the
+   *  news edition so a user in Germany reads German-edition headlines rather
+   *  than a hardcoded region. */
+  countryCode?: string;
+  /** browser = permission fix; ip = coarse network guess; name = a place the
+   *  user typed; manual = the city they pinned in Settings (wins over all). */
+  source: 'browser' | 'ip' | 'name' | 'manual';
 }
 
 export interface LiveContext {
@@ -80,6 +85,7 @@ export interface GeoLike {
 interface Kv {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
+  removeItem?(key: string): void;
 }
 
 export interface LocateEnv {
@@ -101,9 +107,13 @@ export interface GatherOpts {
   braveKey?: string;
   rssKey?: string;
   cache?: Map<string, { at: number; body: string }>;
+  /** Unprompted open-phase brief: skip the line entirely (instead of asking
+   *  the user for a city) when no location could be resolved. */
+  brief?: boolean;
 }
 
 const PLACE_KEY = 'amoji.place.v1';
+const MANUAL_KEY = 'amoji.place.manual.v1';
 const DENY_KEY = 'amoji.geo.denied';
 const PLACE_TTL_MS = 30 * 60 * 1000;
 const FETCH_TTL_MS = 10 * 60 * 1000;
@@ -382,7 +392,74 @@ function writeCachedPlace(storage: Kv | null | undefined, place: Place, now: num
   try { storage.setItem(PLACE_KEY, JSON.stringify({ ...place, at: now })); } catch { /* private mode */ }
 }
 
-async function reverseGeocode(fetchImpl: typeof fetch, latitude: number, longitude: number, cache: Map<string, { at: number; body: string }>): Promise<Pick<Place, 'city' | 'region' | 'country'> | null> {
+/** A city the user pinned in Settings. Never expires, and outranks every
+ *  automatic guess — someone who typed "Lisbon" must not be dragged back to
+ *  whatever their IP says. */
+function readManualPlace(storage: Kv | null | undefined): Place | null {
+  if (!storage) return null;
+  try {
+    const raw = storage.getItem(MANUAL_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Place;
+    if (!parsed || parsed.source !== 'manual') return null;
+    if (!Number.isFinite(parsed.latitude) || !Number.isFinite(parsed.longitude)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export interface PlaceOverrideInput {
+  /** city or "city, country" as typed by the user */
+  query: string;
+  lang?: string;
+  fetch?: typeof fetch;
+  storage?: Kv | null;
+  cache?: Map<string, { at: number; body: string }>;
+}
+
+/** Geocode a manual city and pin it as the user's place.
+ *  Returns null when the name could not be resolved (nothing is stored then,
+ *  so a typo never silently wipes the previous choice). */
+export async function setManualPlace(input: PlaceOverrideInput): Promise<Place | null> {
+  const name = input.query.trim().slice(0, 80);
+  if (!name) return null;
+  const fetchImpl = input.fetch ?? globalThis.fetch.bind(globalThis);
+  const cache = input.cache ?? sharedCache;
+  const hit = await geocodeName(fetchImpl, name, input.lang, cache);
+  if (!hit) return null;
+  const place: Place = { ...hit, source: 'manual' };
+  try { input.storage?.setItem(MANUAL_KEY, JSON.stringify(place)); } catch { /* private mode */ }
+  return place;
+}
+
+/** Drop the manual city so automatic (GPS / network) location takes over. */
+export function clearManualPlace(storage: Kv | null | undefined = safeStorage('local')): void {
+  try { storage?.removeItem?.(MANUAL_KEY); } catch { /* ignore */ }
+}
+
+/** Read back the pinned city, for prefilling the Settings field. */
+export function manualPlace(storage: Kv | null | undefined = safeStorage('local')): Place | null {
+  return readManualPlace(storage);
+}
+
+/** The last automatic place we worked out (any age), for the Settings sheet
+ *  to show "device says Berlin" next to the manual override field. */
+export function lastDevicePlace(storage: Kv | null | undefined = safeStorage('local')): Place | null {
+  if (!storage) return null;
+  try {
+    const raw = storage.getItem(PLACE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as StoredPlace;
+    if (parsed?.source !== 'browser' && parsed?.source !== 'ip') return null;
+    if (!Number.isFinite(parsed.latitude) || !Number.isFinite(parsed.longitude)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+async function reverseGeocode(fetchImpl: typeof fetch, latitude: number, longitude: number, cache: Map<string, { at: number; body: string }>): Promise<Pick<Place, 'city' | 'region' | 'country' | 'countryCode'> | null> {
   const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}&localityLanguage=en`;
   const data = await getJson(fetchImpl, url, 5_000, cache);
   if (!data || typeof data !== 'object') return null;
@@ -390,8 +467,9 @@ async function reverseGeocode(fetchImpl: typeof fetch, latitude: number, longitu
   const city = str(d.city) || str(d.locality);
   const region = str(d.principalSubdivision);
   const country = str(d.countryName);
+  const countryCode = str(d.countryCode).toUpperCase();
   if (!city && !region && !country) return null;
-  return { city, region, country };
+  return countryCode ? { city, region, country, countryCode } : { city, region, country };
 }
 
 async function geocodeName(fetchImpl: typeof fetch, name: string, lang: string | undefined, cache: Map<string, { at: number; body: string }>): Promise<Place | null> {
@@ -404,12 +482,14 @@ async function geocodeName(fetchImpl: typeof fetch, name: string, lang: string |
   const latitude = num(hit.latitude);
   const longitude = num(hit.longitude);
   if (latitude == null || longitude == null) return null;
+  const countryCode = str(hit.country_code).toUpperCase();
   return {
     latitude,
     longitude,
     city: str(hit.name) || name,
     region: str(hit.admin1),
     country: str(hit.country),
+    ...(countryCode ? { countryCode } : {}),
     source: 'name',
   };
 }
@@ -420,12 +500,14 @@ function placeFromGeo(data: unknown): Place | null {
   const latitude = num(d.latitude);
   const longitude = num(d.longitude);
   if (latitude == null || longitude == null) return null;
+  const countryCode = (str(d.country_code) || str(d.countryCode)).toUpperCase();
   return {
     latitude,
     longitude,
     city: str(d.city),
     region: str(d.region),
     country: str(d.country),
+    ...(countryCode ? { countryCode } : {}),
     source: 'ip',
   };
 }
@@ -481,6 +563,12 @@ export function clearLiveCache(): void {
 export async function resolveDevicePlace(env: LocateEnv): Promise<Place | null> {
   const now = env.now ?? Date.now();
   const cache = env.cache ?? sharedCache;
+
+  // A city the user pinned in Settings outranks every automatic guess: they
+  // asked for it explicitly, and a VPN or a trip must not override it.
+  const manual = readManualPlace(env.storage);
+  if (manual) return manual;
+
   const cached = readCachedPlace(env.storage, now);
   if (cached?.source === 'browser') return cached;
 
@@ -497,6 +585,7 @@ export async function resolveDevicePlace(env: LocateEnv): Promise<Place | null> 
         city: rev?.city ?? '',
         region: rev?.region ?? '',
         country: rev?.country ?? '',
+        ...(rev?.countryCode ? { countryCode: rev.countryCode } : {}),
         source: 'browser',
       };
       writeCachedPlace(env.storage, place, now);
@@ -654,47 +743,104 @@ function lightNewsQuery(place: Place, lang: Lang4): string {
   return `${where} (funny OR science OR AI OR entertainment OR health OR quirky OR heartwarming)`;
 }
 
-/** t775: map GPS/country (or lang fallback) → general news region. */
-export type NewsRegion = 'HK' | 'TW' | 'JP' | 'US' | 'UK' | 'general';
+/** A Google News edition: an ISO-3166 alpha-2 country code, the legacy 'UK'
+ *  spelling of GB, or 'general' when we have no country at all.
+ *
+ *  It is deliberately a plain string: the feed is worldwide, so the edition
+ *  comes from the resolved country instead of a five-entry lookup table that
+ *  sent everyone outside HK/TW/JP/US/UK to a US (or Hong Kong) edition. */
+export type NewsRegion = string;
 
-export function newsRegionFromPlace(place: Pick<Place, 'country' | 'region' | 'city'> | null | undefined, lang?: Lang4): NewsRegion {
-  const blob = `${place?.country ?? ''} ${place?.region ?? ''} ${place?.city ?? ''}`.toLowerCase();
-  if (/hong\s*kong|香港|hk\b/.test(blob)) return 'HK';
-  if (/taiwan|台灣|台湾|taipei|台北/.test(blob)) return 'TW';
-  if (/japan|日本|tokyo|東京|osaka|大阪/.test(blob)) return 'JP';
-  if (/united kingdom|\buk\b|england|scotland|wales|london|britain/.test(blob)) return 'UK';
-  if (/united states|\busa\b|\bu\.s\.?\b|america|new york|california/.test(blob)) return 'US';
-  // lang fallback only when no place signal
-  if (!blob.trim()) {
-    if (lang === 'yue') return 'HK';
-    if (lang === 'ja') return 'JP';
-    if (lang === 'zh') return 'TW';
+/** Country names we may still receive from a source without a country code
+ *  (old cached entries) mapped to their ISO code. */
+const COUNTRY_NAME_CODES: Record<string, string> = {
+  'hong kong': 'HK', 'taiwan': 'TW', 'japan': 'JP', 'united kingdom': 'UK', 'great britain': 'UK',
+  'england': 'UK', 'scotland': 'UK', 'wales': 'UK', 'northern ireland': 'UK', 'ireland': 'IE',
+  'united states': 'US', 'united states of america': 'US', 'usa': 'US', 'canada': 'CA',
+  'germany': 'DE', 'austria': 'AT', 'switzerland': 'CH', 'france': 'FR', 'spain': 'ES',
+  'italy': 'IT', 'portugal': 'PT', 'netherlands': 'NL', 'belgium': 'BE', 'denmark': 'DK',
+  'sweden': 'SE', 'norway': 'NO', 'finland': 'FI', 'poland': 'PL', 'czechia': 'CZ',
+  'czech republic': 'CZ', 'greece': 'GR', 'turkey': 'TR', 'israel': 'IL', 'egypt': 'EG',
+  'south africa': 'ZA', 'nigeria': 'NG', 'kenya': 'KE', 'morocco': 'MA', 'ghana': 'GH',
+  'india': 'IN', 'pakistan': 'PK', 'bangladesh': 'BD', 'sri lanka': 'LK', 'nepal': 'NP',
+  'china': 'CN', 'mainland china': 'CN', 'south korea': 'KR', 'korea': 'KR',
+  'north korea': 'KP', 'singapore': 'SG', 'malaysia': 'MY', 'indonesia': 'ID',
+  'thailand': 'TH', 'vietnam': 'VN', 'viet nam': 'VN', 'philippines': 'PH', 'myanmar': 'MM',
+  'cambodia': 'KH', 'laos': 'LA', 'mongolia': 'MN', 'australia': 'AU', 'new zealand': 'NZ',
+  'brazil': 'BR', 'argentina': 'AR', 'chile': 'CL', 'colombia': 'CO', 'peru': 'PE',
+  'mexico': 'MX', 'venezuela': 'VE', 'ecuador': 'EC', 'uruguay': 'UY', 'bolivia': 'BO',
+  'saudi arabia': 'SA', 'united arab emirates': 'AE', 'qatar': 'QA', 'kuwait': 'KW',
+  'bahrain': 'BH', 'oman': 'OM', 'jordan': 'JO', 'lebanon': 'LB', 'iraq': 'IQ', 'iran': 'IR',
+  'kazakhstan': 'KZ', 'ukraine': 'UA', 'romania': 'RO', 'hungary': 'HU', 'bulgaria': 'BG',
+  'croatia': 'HR', 'serbia': 'RS', 'slovakia': 'SK', 'slovenia': 'SI', 'lithuania': 'LT',
+  'latvia': 'LV', 'estonia': 'EE', 'iceland': 'IS', 'luxembourg': 'LU', 'malta': 'MT',
+  'cyprus': 'CY', 'georgia': 'GE', 'armenia': 'AM', 'azerbaijan': 'AZ', 'uzbekistan': 'UZ',
+  '俄羅斯': 'RU', 'russia': 'RU', '台灣': 'TW', '台湾': 'TW', '香港': 'HK', '日本': 'JP',
+  '中國': 'CN', '中国': 'CN', '韓國': 'KR', '韩国': 'KR', '新加坡': 'SG', '馬來西亞': 'MY',
+  '马来西亚': 'MY', '泰國': 'TH', '泰国': 'TH', '越南': 'VN', '印度': 'IN', '澳洲': 'AU',
+  '澳大利亚': 'AU', '新西蘭': 'NZ', '新西兰': 'NZ', '加拿大': 'CA', '美國': 'US', '美国': 'US',
+  '英國': 'UK', '英国': 'UK', '德國': 'DE', '德国': 'DE', '法國': 'FR', '法国': 'FR',
+  'ドイツ': 'DE', 'フランス': 'FR', 'アメリカ': 'US', 'イギリス': 'UK', '韓国': 'KR',
+};
+
+/**
+ * Country the headlines should be edition-scoped to.
+ *
+ * Order: the place's ISO code (both geocoders return one), then a country /
+ * region / city name table, then — only when we know no place at all — the UI
+ * language's home edition. HK is therefore a *language* fallback for Cantonese
+ * users with no location, never an override for someone we know is in Berlin.
+ */
+export function newsRegionFromPlace(place: Pick<Place, 'country' | 'region' | 'city'> & { countryCode?: string } | null | undefined, lang?: Lang4): NewsRegion {
+  const code = (place?.countryCode ?? '').trim().toUpperCase();
+  if (/^[A-Z]{2}$/.test(code)) return code === 'GB' ? 'UK' : code;
+
+  const blob = `${place?.country ?? ''} ${place?.region ?? ''} ${place?.city ?? ''}`.toLowerCase().trim();
+  if (blob) {
+    if (/hong\s*kong|香港/.test(blob)) return 'HK';
+    if (/taiwan|台灣|台湾|taipei|台北/.test(blob)) return 'TW';
+    if (/japan|日本|tokyo|東京|osaka|大阪/.test(blob)) return 'JP';
+    if (/united kingdom|\buk\b|england|scotland|wales|london|britain/.test(blob)) return 'UK';
+    if (/united states|\busa\b|\bu\.s\.?\b|america|new york|california/.test(blob)) return 'US';
+    // "Berlin, Berlin, Germany" → DE; the country is the last label in our
+    // geocoder labels, but check every word group so a region name also hits.
+    for (const [name, iso] of Object.entries(COUNTRY_NAME_CODES)) {
+      if (blob === name || blob.includes(name)) return iso;
+    }
+    // A place we cannot map to a country still deserves that country's edition
+    // via Google's own IP guess, which the caller passes as no gl filter.
+    return 'general';
   }
+
+  if (lang === 'yue') return 'HK';
+  if (lang === 'ja') return 'JP';
+  if (lang === 'zh') return 'TW';
   return 'general';
 }
 
-function newsPackForRegion(region: NewsRegion, lang: Lang4): { hl: string; gl: string; ceid: string } {
-  const byRegion: Record<NewsRegion, { hl: string; gl: string; ceid: string }> = {
-    HK: { hl: 'zh-HK', gl: 'HK', ceid: 'HK:zh-Hant' },
-    TW: { hl: 'zh-TW', gl: 'TW', ceid: 'TW:zh-Hant' },
-    JP: { hl: 'ja', gl: 'JP', ceid: 'JP:ja' },
-    US: { hl: 'en-US', gl: 'US', ceid: 'US:en' },
-    UK: { hl: 'en-GB', gl: 'GB', ceid: 'GB:en' },
-    general: { hl: 'en', gl: 'US', ceid: 'US:en' },
-  };
-  // Prefer region; for general, soften with UI lang.
-  if (region === 'general') {
-    return {
-      en: { hl: 'en-US', gl: 'US', ceid: 'US:en' },
-      zh: { hl: 'zh-CN', gl: 'US', ceid: 'US:zh-Hans' },
-      yue: { hl: 'zh-HK', gl: 'HK', ceid: 'HK:zh-Hant' },
-      ja: { hl: 'ja', gl: 'JP', ceid: 'JP:ja' },
-    }[lang];
-  }
-  return byRegion[region];
+/** Google News `hl` / `ceid` language fragment for the UI language. */
+function newsLangPack(lang: Lang4): { hl: string; tag: string } {
+  if (lang === 'ja') return { hl: 'ja', tag: 'ja' };
+  if (lang === 'zh') return { hl: 'zh-CN', tag: 'zh-Hans' };
+  if (lang === 'yue') return { hl: 'zh-HK', tag: 'zh-Hant' };
+  return { hl: 'en', tag: 'en' };
 }
 
-/** Reputable free RSS extras per region (no paid APIs). Google News + these + Wikipedia. */
+/** Edition pack for a resolved region. `gl` scopes the country; `hl` is the
+ *  UI language, so a Japanese reader in Germany still reads Japanese.
+ *  'general' (a place we could not map to a country) falls back to the UI
+ *  language's home edition — Google News will not guess a country for us. */
+export function newsPackForRegion(region: NewsRegion, lang: Lang4): { hl: string; gl: string; ceid: string } {
+  const home: Record<Lang4, string> = { en: 'US', zh: 'TW', yue: 'HK', ja: 'JP' };
+  const iso = /^[A-Za-z]{2}$/.test(region) ? region.toUpperCase() : home[lang];
+  const gl = iso === 'UK' ? 'GB' : iso;
+  const { hl, tag } = newsLangPack(lang);
+  return { hl, gl, ceid: `${gl}:${tag}` };
+}
+
+/** Reputable free RSS extras per region (no paid APIs). Google News + these + Wikipedia.
+ *  Unknown countries still get the world wires, so a user in Nairobi or Lima
+ *  hears real headlines instead of nothing. */
 export function regionalNewsFeedUrls(region: NewsRegion): string[] {
   const bbcWorld = 'https://feeds.bbci.co.uk/news/world/rss.xml';
   const bbcUk = 'https://feeds.bbci.co.uk/news/rss.xml';
@@ -702,6 +848,13 @@ export function regionalNewsFeedUrls(region: NewsRegion): string[] {
   const nhk = 'https://www3.nhk.or.jp/rss/news/cat0.xml';
   const guardian = 'https://www.theguardian.com/world/rss';
   const rthk = 'https://rthk.hk/rthk/news/rss/e_expressnews_elocal.xml';
+  const dw = 'https://rss.dw.com/rdf/rss-en-all';
+  const france24 = 'https://www.france24.com/en/rss';
+  const abcAu = 'https://www.abc.net.au/news/feed/51120/rss.xml';
+  const cbc = 'https://www.cbc.ca/webfeed/rss/rss-world';
+  const cna = 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml';
+  const rte = 'https://www.rte.ie/feeds/rss/?index=/news/';
+  const hindu = 'https://www.thehindu.com/news/international/feeder/default.rss';
   switch (region) {
     case 'HK':
       return [rthk, bbcWorld];
@@ -713,8 +866,35 @@ export function regionalNewsFeedUrls(region: NewsRegion): string[] {
       return [npr, bbcWorld];
     case 'UK':
       return [bbcUk, guardian];
+    case 'CN':
+      return [bbcWorld, cna];
+    case 'SG':
+    case 'MY':
+      return [cna, bbcWorld];
+    case 'IN':
+    case 'PK':
+    case 'BD':
+    case 'LK':
+    case 'NP':
+      return [hindu, bbcWorld];
+    case 'AU':
+    case 'NZ':
+      return [abcAu, bbcWorld];
+    case 'CA':
+      return [cbc, bbcWorld];
+    case 'IE':
+      return [rte, bbcUk];
+    case 'DE':
+    case 'AT':
+    case 'CH':
+      return [dw, bbcWorld];
+    case 'FR':
+    case 'BE':
+    case 'LU':
+    case 'MC':
+      return [france24, bbcWorld];
     default:
-      return [bbcWorld, npr, guardian];
+      return [bbcWorld, npr, dw, guardian];
   }
 }
 
@@ -727,6 +907,11 @@ export function regionalLightNewsFeedUrls(region: NewsRegion): string[] {
   const nprHealth = 'https://feeds.npr.org/1128/rss.xml';
   const guardianSci = 'https://www.theguardian.com/science/rss';
   const guardianTech = 'https://www.theguardian.com/technology/rss';
+  const nprPop = 'https://feeds.npr.org/1008/rss.xml';
+  const dw = 'https://rss.dw.com/rdf/rss-en-all';
+  const france24 = 'https://www.france24.com/en/rss';
+  const abcAuSci = 'https://www.abc.net.au/news/feed/10582/rss.xml';
+  const cbcSci = 'https://www.cbc.ca/webfeed/rss/rss-technology';
   const nhk = 'https://www3.nhk.or.jp/rss/news/cat0.xml';
   const rthk = 'https://rthk.hk/rthk/news/rss/e_expressnews_elocal.xml';
   switch (region) {
@@ -740,8 +925,22 @@ export function regionalLightNewsFeedUrls(region: NewsRegion): string[] {
       return [nprScience, nprHealth, bbcSci, bbcEnt];
     case 'UK':
       return [bbcSci, bbcEnt, bbcHealth, guardianSci];
+    case 'DE':
+    case 'AT':
+    case 'CH':
+      return [dw, bbcSci, bbcEnt];
+    case 'FR':
+    case 'BE':
+    case 'LU':
+    case 'MC':
+      return [france24, bbcSci, bbcEnt];
+    case 'AU':
+    case 'NZ':
+      return [abcAuSci, bbcSci, bbcEnt];
+    case 'CA':
+      return [cbcSci, bbcSci, bbcEnt];
     default:
-      return [bbcSci, bbcEnt, bbcHealth, nprScience, guardianTech];
+      return [bbcSci, bbcEnt, bbcHealth, nprScience, guardianTech, nprPop];
   }
 }
 
@@ -938,17 +1137,18 @@ async function fetchAreaNews(
     };
   }
   if (topical) {
-    const raw = await fetchNews(fetchImpl, topical, lang, rssKey, cache);
+    const raw = await fetchNews(fetchImpl, topical, lang, rssKey, cache, false, newsRegionFromPlace(place, lang));
     const filtered = allowHeavy
       ? raw.filter((h) => !GRIM_RE.test(h.title)).slice(0, 3)
       : pickDefaultHeadlines(raw, { allowHeavy: false });
     return { headlines: filtered.length ? filtered : raw.filter((h) => !isHeavyHeadline(h.title)).slice(0, 3), recent: false };
   }
   if (place) {
-    const primary = await fetchNews(fetchImpl, lightNewsQuery(place, lang), lang, rssKey, cache);
+    const region = newsRegionFromPlace(place, lang);
+    const primary = await fetchNews(fetchImpl, lightNewsQuery(place, lang), lang, rssKey, cache, false, region);
     let picked = pickLightHeadlines(primary, place);
     if (!picked.length && (place.city || place.region)) {
-      const broader = await fetchNews(fetchImpl, place.city || place.region, lang, rssKey, cache);
+      const broader = await fetchNews(fetchImpl, place.city || place.region, lang, rssKey, cache, false, region);
       picked = pickLightHeadlines(broader, place);
     }
     if (picked.length) return { headlines: picked, recent: false };
@@ -1154,6 +1354,9 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
   if (!place && plan.needsDevice && opts.locate) {
     try { place = await opts.locate(); } catch { place = null; }
   }
+  // The auto open/return brief stays silent when we have no idea where the
+  // user is: a wrong-city temperature is worse than no temperature.
+  if (opts.brief && !place && !plan.placeQuery) return EMPTY_LIVE;
 
   const label = place ? placeLabel(place) : plan.placeQuery || '';
   const coarse = place?.source === 'ip';
@@ -1204,7 +1407,9 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
       ? 'browser location'
       : place.source === 'ip'
         ? 'coarse network estimate, not a precise fix'
-        : 'the place they named';
+        : place.source === 'manual'
+          ? 'the city they set in Settings'
+          : 'the place they named';
     promptLines.push(`Place: ${label} (${how}).`);
   }
   if (plan.where && !plan.weather) {
@@ -1290,9 +1495,10 @@ export function primeLocationForChatEnter(): void {
   }
 }
 
-/** Browser entry: asks for geolocation when the question needs “here”. */
-export function clientLiveContext(text: string, lang?: string, priorUser?: string): Promise<LiveContext> {
-  if (!liveToolsEnabled()) return Promise.resolve(EMPTY_LIVE);
+/** Browser entry: asks for geolocation when the question needs “here”.
+ *  `brief` marks the unprompted open-phase line: silent rather than asking the
+ *  user for a city when no location is known. */
+export function clientLiveContext(text: string, lang?: string, priorUser?: string, opts?: { brief?: boolean }): Promise<LiveContext> {  if (!liveToolsEnabled()) return Promise.resolve(EMPTY_LIVE);
   const fetchImpl = globalThis.fetch.bind(globalThis);
   return gatherLiveContext(text, {
     lang,
@@ -1300,6 +1506,7 @@ export function clientLiveContext(text: string, lang?: string, priorUser?: strin
     fetch: fetchImpl,
     braveKey: process.env.NEXT_PUBLIC_BRAVE_SEARCH_API_KEY || undefined,
     rssKey: process.env.NEXT_PUBLIC_RSS2JSON_API_KEY || undefined,
+    ...(opts?.brief ? { brief: true } : {}),
     locate: () => resolveDevicePlace({
       fetch: fetchImpl,
       geolocation: browserGeo(),
@@ -1310,7 +1517,7 @@ export function clientLiveContext(text: string, lang?: string, priorUser?: strin
 }
 
 /** Server entry for `/api/chat` when the browser did not already fetch. */
-export function serverLiveContext(text: string, opts?: { lang?: string; priorUser?: string; clientIp?: string }): Promise<LiveContext> {
+export function serverLiveContext(text: string, opts?: { lang?: string; priorUser?: string; clientIp?: string; brief?: boolean }): Promise<LiveContext> {
   if (!liveToolsEnabled()) return Promise.resolve(EMPTY_LIVE);
   const fetchImpl = globalThis.fetch.bind(globalThis);
   return gatherLiveContext(text, {
@@ -1319,6 +1526,7 @@ export function serverLiveContext(text: string, opts?: { lang?: string; priorUse
     fetch: fetchImpl,
     braveKey: process.env.BRAVE_SEARCH_API_KEY || process.env.NEXT_PUBLIC_BRAVE_SEARCH_API_KEY || undefined,
     rssKey: process.env.RSS2JSON_API_KEY || process.env.NEXT_PUBLIC_RSS2JSON_API_KEY || undefined,
+    ...(opts?.brief ? { brief: true } : {}),
     locate: () => resolveDevicePlace({ fetch: fetchImpl, geolocation: null, ip: opts?.clientIp }),
   });
 }
