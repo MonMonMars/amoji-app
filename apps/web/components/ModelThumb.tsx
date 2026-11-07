@@ -41,7 +41,7 @@ export default function ModelThumb({
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={poster}
-          alt=""
+          alt={name}
           draggable={false}
           onError={fail}
           className={`absolute inset-0 h-full w-full object-cover ${portraitPosition ? '' : crop === 'face' ? 'object-[center_6%]' : 'object-center'}`}
