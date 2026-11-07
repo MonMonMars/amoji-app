@@ -275,4 +275,17 @@ describe('poke reaction clock', () => {
     const rel = withEmptyGallery(() => recordedPokeClip('female', 'chest'));
     expect(rel).toBe(RECORDED_POKE_ZONE.female.chest);
   });
+
+  it('the canvas reads the shared window instead of hard-coding its own', () => {
+    // The window lives in two files: poke-hit owns POKE_REACTION_MS (which the
+    // SFX budget is measured against), and CompanionCanvas drives the recoil.
+    // They were duplicated as a literal 1200, so editing one silently desynced
+    // the other — which is how a 2.06s clip ended up playing over a 1.2s recoil.
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const canvas = readFileSync(path.join(here, '../components/CompanionCanvas.tsx'), 'utf8');
+    expect(canvas).toContain('POKE_REACTION_MS');
+    expect(canvas).toMatch(/const POKE_MS = POKE_REACTION_MS;/);
+    // No stray literal window left behind.
+    expect(canvas).not.toMatch(/const POKE_MS = \d+;/);
+  });
 });
