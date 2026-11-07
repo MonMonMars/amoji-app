@@ -1,42 +1,63 @@
 'use client';
-// Top of /select + /change: Chat vs Story mode chips + "You are" gender.
-// Mon: these two selectors must sit at the very top of the character page.
+// Top of /select + /change:
+//   row 1 — Chat / Story / Kid mode chips (in-place; no route change)
+//   row 2 — anime CHARACTER gender filter: All / Male / Female (cast filter only)
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import type { CSSProperties } from 'react';
 import { clearStorySession } from '../lib/story-session';
-import { loadProfile, saveProfile, type Gender } from '../lib/profile';
 import { t, type Lang } from '../lib/prefs';
+
+export type CastGenderFilter = 'all' | 'male' | 'female';
+export type BoardMode = 'chat' | 'story';
 
 export default function SelectTopBars({
   lang,
   accent,
   kidMode,
   onKidMode,
+  boardMode = 'chat',
+  onBoardMode,
+  castGender = 'all',
+  onCastGender,
   prefsReady = true,
 }: {
   lang: Lang;
   accent: string;
   kidMode: boolean;
   onKidMode: (next: boolean) => void;
+  /** chat vs story — both stay on /select; only the board body swaps */
+  boardMode?: BoardMode;
+  onBoardMode?: (next: BoardMode) => void;
+  /** Filter the anime cast by character gender (not the user's gender). */
+  castGender?: CastGenderFilter;
+  onCastGender?: (next: CastGenderFilter) => void;
   /** false until amoji.prefs.v1 sync - hold kid chip highlight */
   prefsReady?: boolean;
 }) {
-  const router = useRouter();
-  // null until profile localStorage sync - avoid secret-chip flash when user saved male/female.
-  const [gender, setGender] = useState<Gender | null>(null);
+  const modeChip = (active: boolean) =>
+    active
+      ? {
+          className: 'fx-press ui-btn rounded-full border px-3 py-1 text-[11px] font-semibold text-white',
+          style: {
+            borderColor: 'rgba(255,255,255,0.75)',
+            backgroundColor: `${accent}66`,
+            color: '#fff',
+          } as CSSProperties,
+        }
+      : {
+          className:
+            'fx-press ui-btn rounded-full border border-white/20 bg-black/30 px-3 py-1 text-[11px] font-semibold text-white/75',
+          style: undefined as CSSProperties | undefined,
+        };
 
-  useEffect(() => {
-    setGender(loadProfile().gender ?? 'secret');
-  }, []);
-  const genderReady = gender !== null;
-  const genderOn = gender ?? 'secret';
+  const chatChip = modeChip(boardMode === 'chat');
+  const storyChip = modeChip(boardMode === 'story');
 
-  const setGenderPick = (g: Gender) => {
-    setGender(g);
-    saveProfile({ ...loadProfile(), gender: g });
-    window.dispatchEvent(new Event('amoji:profile'));
-  };
+  const genderOpts: { id: CastGenderFilter; label: string; testId: string }[] = [
+    { id: 'all', label: t(lang, 'voiceShowAll'), testId: 'select-cast-gender-all' },
+    { id: 'male', label: t(lang, 'genderMale'), testId: 'select-cast-gender-male' },
+    { id: 'female', label: t(lang, 'genderFemale'), testId: 'select-cast-gender-female' },
+  ];
 
   return (
     <div
@@ -51,23 +72,23 @@ export default function SelectTopBars({
           <button
             type="button"
             data-testid="select-mode-chat"
-            aria-pressed="true"
-            className="fx-press ui-btn rounded-full border px-3 py-1 text-[11px] font-semibold"
-            style={{
-              borderColor: 'rgba(255,255,255,0.75)',
-              backgroundColor: `${accent}66`,
-              color: '#fff',
+            aria-pressed={boardMode === 'chat'}
+            className={chatChip.className}
+            style={chatChip.style}
+            onClick={() => {
+              clearStorySession();
+              onBoardMode?.('chat');
             }}
-            onClick={() => clearStorySession()}
           >
             CHAT
           </button>
           <button
             type="button"
             data-testid="select-mode-story"
-            aria-pressed="false"
-            className="fx-press ui-btn rounded-full border border-white/20 bg-black/30 px-3 py-1 text-[11px] font-semibold text-white/75"
-            onClick={() => router.push('/story')}
+            aria-pressed={boardMode === 'story'}
+            className={storyChip.className}
+            style={storyChip.style}
+            onClick={() => onBoardMode?.('story')}
           >
             STORY
           </button>
@@ -90,27 +111,26 @@ export default function SelectTopBars({
         </div>
         <div className="flex w-full flex-wrap items-center justify-center gap-1.5">
           <span className="mr-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white/55">
-            {t(lang, 'yourGender')}
+            {t(lang, 'chooseCharacter')}
           </span>
-          {(['male', 'female', 'secret'] as Gender[]).map((g) => (
-            <button
-              key={g}
-              type="button"
-              data-testid={`select-gender-${g}`}
-              aria-pressed={genderReady ? genderOn === g : undefined}
-              aria-busy={!genderReady}
-              disabled={!genderReady}
-              onClick={() => setGenderPick(g)}
-              className={`fx-press ui-btn rounded-full border px-3 py-1 text-[11px] font-medium ${
-                genderReady && genderOn === g
-                  ? 'border-white/80 text-neutral-950'
-                  : 'border-white/15 bg-black/30 text-white/70'
-              }`}
-              style={genderReady && genderOn === g ? { backgroundColor: accent } : undefined}
-            >
-              {t(lang, g === 'male' ? 'genderMale' : g === 'female' ? 'genderFemale' : 'genderSecret')}
-            </button>
-          ))}
+          {genderOpts.map((g) => {
+            const on = castGender === g.id;
+            return (
+              <button
+                key={g.id}
+                type="button"
+                data-testid={g.testId}
+                aria-pressed={on}
+                onClick={() => onCastGender?.(g.id)}
+                className={`fx-press ui-btn rounded-full border px-3 py-1 text-[11px] font-medium ${
+                  on ? 'border-white/80 text-neutral-950' : 'border-white/15 bg-black/30 text-white/70'
+                }`}
+                style={on ? { backgroundColor: accent } : undefined}
+              >
+                {g.label}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

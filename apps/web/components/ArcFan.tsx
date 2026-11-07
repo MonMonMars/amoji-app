@@ -27,7 +27,11 @@ export const PORTRAIT_CENTER_SCALE = 1.05;
  */
 export function portraitCardBox(stageHeight: number, stageWidth = 0): { width: number; height: number; step: number } {
   const stage = stageHeight > 0 ? stageHeight : 360;
-  let height = Math.round(Math.min(stage * 0.95, 640));
+  // iPhone portrait→landscape: keep a readable floor so cards do not vanish (Mon t530).
+  const landscapeFloor = stageWidth > 0 && stageWidth > stage * 1.15
+    ? Math.min(200, Math.max(120, Math.round(stage * 0.88)))
+    : 0;
+  let height = Math.round(Math.min(Math.max(stage * 0.95, landscapeFloor), 640));
   let width = Math.round(height * 0.88);
   // Phones: tall stage made cards wider than the viewport (iPhone ~390).
   // Cap width so the focused card + scale fit; shrink height to keep ratio.
@@ -37,6 +41,11 @@ export function portraitCardBox(stageHeight: number, stageWidth = 0): { width: n
       width = maxWidth;
       height = Math.round(width / 0.88);
     }
+  }
+  if (landscapeFloor > 0 && height < landscapeFloor && stageWidth > 0) {
+    height = Math.min(landscapeFloor, Math.max(96, Math.round(stage * 0.92)));
+    width = Math.min(Math.round(height * 0.88), Math.max(120, Math.round(stageWidth * 0.72)));
+    height = Math.round(width / 0.88);
   }
   const step = Math.max(48, Math.round(width * 0.48));
   return { width, height, step };
@@ -59,7 +68,10 @@ export function portraitTop(stageHeight: number, cardHeight: number): number {
   const stage = stageHeight > 0 ? stageHeight : 360;
   const slack = Math.max(0, stage - cardHeight);
   const scaleOverflow = Math.ceil(cardHeight * ((PORTRAIT_CENTER_SCALE - 1) / 2));
-  return Math.max(scaleOverflow, Math.round(slack * 0.16));
+  const desired = Math.max(scaleOverflow, Math.round(slack * 0.22));
+  const overflow = (PORTRAIT_CENTER_SCALE - 1) / 2;
+  const maxTop = Math.max(scaleOverflow, Math.floor(stage - cardHeight * (1 + overflow)));
+  return Math.min(desired, maxTop);
 }
 
 /** Pose of a card `offset` steps from the focused index. Negative is left. */
@@ -111,7 +123,7 @@ export default function ArcFan<T extends { id: string }>({
   const suppress = useRef(false);
   const indexRef = useRef(0);
   const [compact, setCompact] = useState(false);
-  const [fine, setFine] = useState(false);
+  const [showArrows, setShowArrows] = useState(size === 'portrait');
   const [stageH, setStageH] = useState(0);
   const [stageW, setStageW] = useState(0);
 
@@ -133,24 +145,35 @@ export default function ArcFan<T extends { id: string }>({
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
-    return () => ro.disconnect();
+    const onOrient = () => { window.setTimeout(measure, 80); window.setTimeout(measure, 320); };
+    window.addEventListener('resize', measure);
+    window.addEventListener('orientationchange', onOrient);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('orientationchange', onOrient);
+    };
   }, [size]);
 
   useEffect(() => {
     const narrow = window.matchMedia('(max-width: 640px)');
-    const pointer = window.matchMedia('(pointer: fine), (hover: hover)');
+    // Separate queries (HScrollRow). Portrait always keeps arrows for Windows mouse (Mon t530).
+    const fine = window.matchMedia('(pointer: fine)');
+    const hover = window.matchMedia('(hover: hover)');
     const apply = () => {
       setCompact(narrow.matches);
-      setFine(pointer.matches);
+      setShowArrows(size === 'portrait' || fine.matches || hover.matches);
     };
     apply();
     narrow.addEventListener('change', apply);
-    pointer.addEventListener('change', apply);
+    fine.addEventListener('change', apply);
+    hover.addEventListener('change', apply);
     return () => {
       narrow.removeEventListener('change', apply);
-      pointer.removeEventListener('change', apply);
+      fine.removeEventListener('change', apply);
+      hover.removeEventListener('change', apply);
     };
-  }, []);
+  }, [size]);
 
   const go = (next: number) => {
     const item = items[next];
@@ -202,13 +225,13 @@ export default function ArcFan<T extends { id: string }>({
     ? 'top-1 h-[3.4rem] w-[5.2rem] sm:h-[3.8rem] sm:w-[6rem]'
     : '';
   const stageClass = size === 'portrait'
-    ? 'absolute inset-0 z-20 max-w-full overflow-x-hidden'
+    ? 'absolute inset-0 z-20 max-w-full overflow-x-hidden overflow-y-visible'
     : size === 'compact'
       ? 'relative z-10 h-[2.6rem] w-full'
       : 'relative z-10 h-[4.4rem] w-full sm:h-[4.8rem]';
 
   const arrow = (enabled: boolean) =>
-    'fx-press-lite absolute top-1/2 z-[90] flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white/40 bg-black/75 text-white shadow-[0_4px_16px_rgba(0,0,0,0.6)] backdrop-blur-md ' +
+    'fx-press-lite pointer-events-auto absolute top-1/2 z-[90] flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white/40 bg-black/75 text-white shadow-[0_4px_16px_rgba(0,0,0,0.6)] backdrop-blur-md ' +
     (enabled ? 'cursor-pointer hover:border-white hover:bg-black/90' : 'cursor-default opacity-30');
 
   return (
@@ -266,12 +289,12 @@ export default function ArcFan<T extends { id: string }>({
           </div>
         );
       })}
-      {fine && (
+      {showArrows && (
         <>
-          <button type="button" aria-label="scroll left" disabled={index <= 0} onClick={() => go(index - 1)} className={`${arrow(index > 0)} left-0`}>
+          <button type="button" aria-label="scroll left" disabled={index <= 0} onClick={() => go(index - 1)} className={`${arrow(index > 0)} left-1`}>
             <Chevron dir="left" />
           </button>
-          <button type="button" aria-label="scroll right" disabled={index >= items.length - 1} onClick={() => go(index + 1)} className={`${arrow(index < items.length - 1)} right-0`}>
+          <button type="button" aria-label="scroll right" disabled={index >= items.length - 1} onClick={() => go(index + 1)} className={`${arrow(index < items.length - 1)} right-1`}>
             <Chevron dir="right" />
           </button>
         </>
