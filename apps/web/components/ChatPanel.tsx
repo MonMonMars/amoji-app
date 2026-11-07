@@ -161,6 +161,8 @@ import {
   markChatRoomOpened,
   markOpenIdleBriefDone,
   openIdleBriefAlreadyDone,
+  markOpenCheerDone,
+  openCheerAlreadyDone,
   openPhaseNewsAsk,
   openPhaseWeatherAsk,
   summarizeOpenPhaseSpoken,
@@ -571,6 +573,9 @@ export default function ChatPanel({
     if (greetedRef.current) return;
     greetedRef.current = true;
     const fresh = isFreshOpenPhase();
+    // Latch check BEFORE markChatRoomOpened so Strict Mode remount still sees
+    // the prior openCheerAt >= lastOpenedAt (name greet once per stretch).
+    const skipCheer = !fresh && openCheerAlreadyDone();
     markChatRoomOpened();
     const prior = loadHistory();
     const hadUser = prior.some((m) => m.role === 'user');
@@ -590,8 +595,16 @@ export default function ChatPanel({
     const startupVars = { name: characterName };
     // Prefer daily check-in (already names the user) → short name hello → generic startup.
     const cheerFollow = daily ?? namedHello ?? pickLine('startup', lang, 1, startupVars);
+    if (skipCheer) {
+      return () => { markChatRoomClosed(); };
+    }
+    // Latch when cheer actually speaks (not on arm) so Strict Mode cleanup
+    // that clears timers before fire still allows one real greet.
     const t1 = setTimeout(
-      () => sayLocal(cannedOpener(characterId, characterGender, lang, characterName), { joy: 0.62 }),
+      () => {
+        markOpenCheerDone();
+        sayLocal(cannedOpener(characterId, characterGender, lang, characterName), { joy: 0.62 });
+      },
       OPEN_CHEER_MS,
     );
     const t2 = setTimeout(

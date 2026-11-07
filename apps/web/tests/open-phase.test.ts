@@ -7,6 +7,8 @@ import {
   markChatRoomClosed,
   markChatRoomOpened,
   markOpenIdleBriefDone,
+  markOpenCheerDone,
+  openCheerAlreadyDone,
   openIdleBriefAlreadyDone,
   openPhaseNewsAsk,
   openPhaseWeatherAsk,
@@ -96,6 +98,33 @@ describe('openPhase asks + spoken summary', () => {
   });
 });
 
+
+describe('open cheer / name-greet once latch', () => {
+  it('openCheerAlreadyDone gates Strict Mode remount before markChatRoomOpened', () => {
+    const t0 = 70_000_000;
+    markChatRoomOpened(t0);
+    expect(openCheerAlreadyDone()).toBe(false);
+    markOpenCheerDone(t0);
+    expect(openCheerAlreadyDone()).toBe(true);
+    // Simulate leave: close does not clear openCheerAt.
+    markChatRoomClosed(t0 + 500);
+    // Remount path checks latch BEFORE bumping lastOpenedAt.
+    expect(isFreshOpenPhase(t0 + 1000)).toBe(false);
+    expect(openCheerAlreadyDone()).toBe(true);
+  });
+
+  it('fresh gap open allows cheer again', () => {
+    const t0 = 80_000_000;
+    markChatRoomOpened(t0);
+    markOpenCheerDone(t0);
+    markChatRoomClosed(t0 + 1000);
+    const later = t0 + OPEN_SESSION_GAP_MS + 5_000;
+    expect(isFreshOpenPhase(later)).toBe(true);
+    // After a fresh open bump, prior cheerAt is older than lastOpenedAt.
+    markChatRoomOpened(later);
+    expect(openCheerAlreadyDone()).toBe(false);
+  });
+});
 describe('buildDailyGreeting skipThread', () => {
   it('omits lastThread resume when skipThread is true', () => {
     const info = {
