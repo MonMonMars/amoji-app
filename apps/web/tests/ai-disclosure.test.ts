@@ -63,7 +63,8 @@ describe('AI disclosure — system prompt hard rule', () => {
     // written Chinese; a prompt edit must never quietly damage it.
     const yue = languageBlock('yue');
     expect(yue).toContain('粵語口語書面');
-    expect(yue).toContain('用係/嘅/唔/喎/啦/吓/咩');
+    expect(yue).toContain('係/嘅/唔/喎/啦/吓/咩');
+    expect(yue).toContain('Hard Cantonese rules');
     expect(yue).toContain('ALWAYS reply in natural Hong Kong Cantonese');
     // the no-language default is Cantonese too
     expect(languageBlock(undefined)).toBe(yue);

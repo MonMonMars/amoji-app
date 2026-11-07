@@ -58,13 +58,20 @@ describe('voice does not switch speaker mid-line or between characters', () => {
     expect(voice).toMatch(/pitchBias: gttsPitchBias\(/);
     const ternaries = voice.match(/pitchBias: [a-zA-Z]+ === 'male' \?/g) ?? [];
     expect(ternaries).toEqual([]);
-    // The helper itself is the only place the constants are compared.
+    // Gender base + per-character jitter live in gtts-timbre; voice.ts only
+    // re-exports so every call site stays on one name.
+    expect(voice).toContain('gttsCharacterPitchBias');
     const helperBody = voice.slice(
       voice.indexOf('export function gttsPitchBias'),
       voice.indexOf('}', voice.indexOf('export function gttsPitchBias')) + 1,
     );
-    expect(helperBody).toContain('PITCH_BIAS_MALE');
-    expect(helperBody).toContain('PITCH_BIAS_FEMALE');
+    expect(helperBody).toContain('gttsCharacterPitchBias');
+  });
+
+  it('passes characterId into the pitch helper on live speak paths', () => {
+    // Same-gender cast members must not collapse to one sound.
+    expect(voice).toMatch(/gttsPitchBias\(spokenGender,\s*characterId\)/);
+    expect(voice).toMatch(/gttsPitchBias\(gender,\s*characterId\)/);
   });
 
   it('the pitch shift stays bounded so the line is not garbled', () => {

@@ -52,7 +52,14 @@ End every reply with a line: [emotion:{"<emotion>":0..1,...}] using any of: joy,
 
 export function languageBlock(language?: string): string {
   if (!language || language === 'yue') {
-    return `Language: ALWAYS reply in natural Hong Kong Cantonese (粵語口語書面 — 用係/嘅/唔/喎/啦/吓/咩 naturally). Keep it short and spoken. Mirror another language only if the user clearly switched.`;
+    // Free 20B models slip into Mandarin textbook 書面語 or English filler.
+    // Concrete particle / vocab rules beat "speak Cantonese" alone.
+    return `Language: ALWAYS reply in natural Hong Kong Cantonese (粵語口語書面).
+Hard Cantonese rules:
+- Particles: 係/嘅/唔/喎/啦/吓/咩/囉/咋/啫 — never Mandarin 的/了/吗/呢/吧 as your default ending.
+- Spoken vocab: 返工 not 上班, 食咗飯未 not 吃饭了没有, 攰 not 累, 屋企 not 家, 傾偈 not 聊天.
+- Never open with empty filler (「哈哈」「嘿嘿」「hey hey」) or a Mandarin 您.
+- Keep it short and spoken — one concrete callback, then a real question. Mirror another language only if the user clearly switched.`;
   }
   const names: Record<string, string> = { en: 'English', zh: 'Mandarin Chinese (简体中文)', ja: 'Japanese (日本語)' };
   return `Language: reply in ${names[language] ?? language}, regardless of the user's language.`;

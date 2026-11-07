@@ -11,7 +11,7 @@
  * reply against every filler beat. Same locale, same pitch bias, same voice.
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { PITCH_BIAS_FEMALE, PITCH_BIAS_MALE } from '../lib/gtts';
+import { gttsCharacterPitchBias } from '../lib/gtts-timbre';
 import { recordedFillerClip } from '../lib/voice-clips';
 import { planThinkingSound } from '../lib/thinking-sound';
 
@@ -68,10 +68,11 @@ describe('the wait filler speaks in the reply voice', () => {
     await settle();
 
     expect(calls.length).toBeGreaterThan(0);
+    const expectedMale = gttsCharacterPitchBias('male', 'a03-fumiriya');
     for (const beat of calls) {
       expect(beat.opts.lang).toBe(reply.opts.lang);
       expect(beat.opts.pitchBias).toBe(reply.opts.pitchBias);
-      expect(beat.opts.pitchBias).toBe(PITCH_BIAS_MALE);
+      expect(beat.opts.pitchBias).toBe(expectedMale);
     }
   }, 20_000);
 
@@ -87,7 +88,8 @@ describe('the wait filler speaks in the reply voice', () => {
     await settle();
 
     expect(calls.length).toBeGreaterThan(0);
-    expect(reply.opts.pitchBias).toBe(PITCH_BIAS_FEMALE);
+    const expectedFemale = gttsCharacterPitchBias('female', 'a01-shino');
+    expect(reply.opts.pitchBias).toBe(expectedFemale);
     for (const beat of calls) expect(beat.opts.pitchBias).toBe(reply.opts.pitchBias);
   }, 20_000);
 
