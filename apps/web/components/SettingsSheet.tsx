@@ -788,8 +788,11 @@ export default function SettingsSheet({
               </div>
             </div>
             <div className={`${row} !justify-start gap-3`}>
-              <span className={label}>👤 {t(lang, 'yourName')}</span>
+              <label htmlFor="amoji-settings-your-name" className={label}>{t(lang, 'yourName')}</label>
               <input
+                id="amoji-settings-your-name"
+                name="name"
+                autoComplete="nickname"
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
