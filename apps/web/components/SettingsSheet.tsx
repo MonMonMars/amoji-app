@@ -315,7 +315,7 @@ export default function SettingsSheet({
       >
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-white">{t(lang, 'settings')}</h2>
-          <button type="button" onClick={onClose} className="ui-btn rounded-full bg-white/10 px-3 py-1 text-sm text-white/70 hover:bg-white/20">✕</button>
+          <button type="button" onClick={onClose} aria-label="Close" className="ui-btn rounded-full bg-white/10 px-3 py-1 text-sm text-white/70 hover:bg-white/20">✕</button>
         </div>
 
         <div className="space-y-6">
@@ -721,6 +721,7 @@ export default function SettingsSheet({
               <button
                 type="button"
                 onClick={clearHistory}
+                aria-label={t(lang, 'clearHistory')}
                 className="ui-btn rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 hover:bg-white/20"
               >
                 ✕
