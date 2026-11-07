@@ -58,13 +58,20 @@ export default function MiniGamePicker({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        // SettingsSheet parity: swallow Escape so it closes the picker
+        // without leaking to the page underneath.
+        e.preventDefault();
+        e.stopPropagation();
+        onClose();
+        return;
+      }
       const index = GAME_CARDS.findIndex((card) => card.id === focus);
       if (e.key === 'ArrowRight') setFocus(GAME_CARDS[Math.min(GAME_CARDS.length - 1, index + 1)]!.id);
       if (e.key === 'ArrowLeft') setFocus(GAME_CARDS[Math.max(0, index - 1)]!.id);
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
   }, [focus, onClose]);
 
   return (
