@@ -65,4 +65,36 @@ describe('production live facts', () => {
     expect(live.prompt).toBe('');
     expect(calls).toBe(0);
   });
+
+  it('scopes the news edition to the resolved country, not a fixed one', async () => {
+    const urls: string[] = [];
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      urls.push(url);
+      if (url.includes('geojs.io')) {
+        return Response.json({
+          city: 'Berlin', region: 'Berlin', country: 'Germany', country_code: 'DE',
+          latitude: '52.52', longitude: '13.405',
+        });
+      }
+      if (url.includes('api.open-meteo.com/v1/forecast')) {
+        return Response.json({ current: { temperature_2m: 11.2, weather_code: 3 } });
+      }
+      if (url.includes('news.google.com')) {
+        return new Response(
+          '<rss><channel><item><title>Berlin bakery wins a quirky contest - Local</title></item></channel></rss>',
+          { status: 200, headers: { 'content-type': 'application/xml' } },
+        );
+      }
+      return new Response('no', { status: 404 });
+    };
+    const live = await gatherChatWorld('what is the weather here and the news?', { language: 'ja', fetch: fetchImpl });
+    const forecastUrl = urls.find((u) => u.includes('/v1/forecast')) ?? '';
+    expect(forecastUrl).toContain('latitude=52.52');
+    const newsUrl = urls.find((u) => u.includes('news.google.com')) ?? '';
+    expect(newsUrl).toContain('gl=DE');
+    expect(newsUrl).toContain('ceid=DE%3Aja');
+    expect(live.prompt).toContain('Berlin');
+    expect(live.prompt).not.toContain('Hong Kong');
+  });
 });
