@@ -7,13 +7,14 @@ import ModelThumb from './ModelThumb';
 
 export function CharacterGrid({ lang, value, onChange }: { lang: Lang; value: string; onChange: (id: string) => void }) {
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div role="group" aria-label="Character" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       {selectionCast(CHARACTERS).map((c: CharacterDef) => {
         const active = c.id === value;
         return (
           <button
             type="button"
             key={c.id}
+            aria-label={c.name}
             aria-pressed={active}
             onClick={() => onChange(c.id)}
             className={`group flex flex-col items-center gap-2 rounded-2xl border p-4 transition-all ${
@@ -41,13 +42,14 @@ export function CharacterGrid({ lang, value, onChange }: { lang: Lang; value: st
 
 export function BackgroundGrid({ lang, value, onChange }: { lang: Lang; value: string; onChange: (id: string) => void }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+    <div role="group" aria-label="Background" className="grid grid-cols-2 gap-3 sm:grid-cols-5">
       {BACKGROUNDS.map((b) => {
         const active = b.id === value;
         return (
           <button
             type="button"
             key={b.id}
+            aria-label={t(lang, b.nameKey as never)}
             aria-pressed={active}
             onClick={() => onChange(b.id)}
             className={`overflow-hidden rounded-2xl border text-left transition-all ${
