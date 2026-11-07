@@ -29,6 +29,7 @@ import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
 import { isEyeMaterial, stabilizeEyeMaterials } from '../lib/vrm/eyes';
 import { patchCastTextures, stabilizeCastEyes, unifyCastMToon } from '../lib/vrm/cast-materials';
 import { addCastDaylight, applyCastToneMapping } from '../lib/vrm/cast-lighting';
+import { placeStoryRoomBehind, sanitizeStoryRoomMaterials } from '../lib/vrm/story-room';
 import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
 import { WARDROBE_ENABLED, modularGlbUrl, vrmCandidatesForOutfit } from '../lib/modular/catalog';
 import { assembleModular, replaceBodyMeshes, type ModularAssembly } from '../lib/modular/assemble';
@@ -376,6 +377,10 @@ export default function CompanionCanvas({
               room.position.y -= fitted.min.y;
               room.position.z -= center.z;
               room.position.z -= 2.6; // sit behind the companion
+              // Grab3D PBR rooms go black without envMap; also push so the
+              // front wall cannot occlude the companion (JPG backdrop stays).
+              sanitizeStoryRoomMaterials(room);
+              placeStoryRoomBehind(room);
               roomRoot.add(room);
               camera.far = Math.max(camera.far, 80);
               camera.updateProjectionMatrix();
