@@ -94,6 +94,8 @@ export default function MiniGameOverlay({ kind, lang, onEmotion, onExit }: MiniG
   const langRef = useRef(lang);
   const schemeRef = useRef(scheme);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  /** The minigame result card — the only modal surface in this overlay. */
+  const resultRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     onEmotionRef.current = onEmotion;
@@ -109,6 +111,49 @@ export default function MiniGameOverlay({ kind, lang, onEmotion, onExit }: MiniG
       previousFocusRef.current?.focus?.();
     };
   }, []);
+
+  // The result card is aria-modal="true", so it has to behave like a modal:
+  // move focus into it when it appears (otherwise a keyboard user is left on a
+  // control the screen reader has just been told is inert), keep Tab inside it
+  // while it is open, and hand focus back to the game when it goes away.
+  useEffect(() => {
+    if (hud.phase !== 'result') return;
+    const card = resultRef.current;
+    if (!card) return;
+    const first = card.querySelector<HTMLElement>('button:not([disabled])');
+    first?.focus();
+
+    const onTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const focusables = Array.from(
+        card.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => el.offsetParent !== null);
+      if (focusables.length === 0) return;
+      const firstEl = focusables[0]!;
+      const lastEl = focusables[focusables.length - 1]!;
+      const active = document.activeElement as HTMLElement | null;
+      // Wrap at both ends, and pull focus back if it has escaped the card.
+      if (!active || !card.contains(active)) {
+        e.preventDefault();
+        (e.shiftKey ? lastEl : firstEl).focus();
+        return;
+      }
+      if (e.shiftKey && active === firstEl) {
+        e.preventDefault();
+        lastEl.focus();
+      } else if (!e.shiftKey && active === lastEl) {
+        e.preventDefault();
+        firstEl.focus();
+      }
+    };
+    document.addEventListener('keydown', onTab);
+    return () => {
+      document.removeEventListener('keydown', onTab);
+      previousFocusRef.current?.focus?.();
+    };
+  }, [hud.phase]);
 
   const tagCmd = useRef<TagCommand>({ hold: false, aimX: 0, aimZ: 0, dash: false });
   const laneCmd = useRef<LaneCommand>({ swipe: 0, pick: null });
@@ -528,9 +573,11 @@ export default function MiniGameOverlay({ kind, lang, onEmotion, onExit }: MiniG
       {hud.phase === 'result' && (
         <div className="absolute inset-0 flex items-center justify-center p-6">
           <div
+            ref={resultRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="amoji-minigame-result-line"
+            tabIndex={-1}
             data-testid="minigame-result"
             className="pointer-events-auto w-full max-w-sm rounded-3xl border border-white/15 bg-black/70 p-6 text-center shadow-2xl backdrop-blur-md"
             onPointerDown={(e) => e.stopPropagation()}
