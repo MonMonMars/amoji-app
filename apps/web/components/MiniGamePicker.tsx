@@ -9,6 +9,7 @@ import { GAME_CARDS, gameCardCopy } from '../lib/minigames/catalog';
 import { uiCopy } from '../lib/minigames/lines';
 import type { ActionGame } from '../lib/minigames/types';
 import type { Lang } from '../lib/prefs';
+import { useFocusTrap } from '../lib/use-focus-trap';
 
 export function MiniGameMenuButton({
   lang,
@@ -46,6 +47,8 @@ export default function MiniGamePicker({
   const [focus, setFocus] = useState<ActionGame>(GAME_CARDS[0]!.id);
   const pickerCloseRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  // aria-modal="true": Tab must stay inside the picker.
+  const pickerRef = useFocusTrap<HTMLDivElement>(true);
 
   // Focus Close on open; restore the control that opened the picker on close.
   useEffect(() => {
@@ -76,11 +79,13 @@ export default function MiniGamePicker({
 
   return (
     <div
+      ref={pickerRef}
       className="fx-select fixed inset-0 z-[80] flex max-w-[100vw] flex-col overflow-x-hidden bg-black/55 text-white backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="amoji-minigame-picker-title"
       aria-describedby="amoji-minigame-picker-hint"
+      tabIndex={-1}
       data-testid="minigame-picker"
       onClick={onClose}
     >
