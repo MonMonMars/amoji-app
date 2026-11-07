@@ -128,12 +128,16 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
         </div>
       )}
 
-      {/* Master mute — top-right. Top-left stays clear (exit/back lives on chat plate). */}
-      {/* Same numbered idle rails as chat — pin before START; chat hydrates amoji.idlePick.v1. */}
-      
-      <div className="pointer-events-none absolute right-3 top-3 z-40 pt-[env(safe-area-inset-top)]">
-        <MuteButton lang={lang} className="pointer-events-auto" />
-      </div>
+      {/* Master mute - top-right. Hold until prefsReady so aria/title lang is not DEFAULT_PREFS. */}
+      {/* Same numbered idle rails as chat - pin before START; chat hydrates amoji.idlePick.v1. */}
+      {prefsReady && (
+        <div
+          data-testid="selection-mute"
+          className="pointer-events-none absolute right-3 top-3 z-40 pt-[env(safe-area-inset-top)]"
+        >
+          <MuteButton lang={lang} className="pointer-events-auto" />
+        </div>
+      )}
 
       <div
         data-testid="selection-thumbs"
