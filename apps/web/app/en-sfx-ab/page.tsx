@@ -135,16 +135,16 @@ export default function EnSfxAbPage() {
   };
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-4 py-6 text-white" data-testid="en-sfx-ab-page">
+    <main aria-labelledby="amoji-en-sfx-ab-title" className="min-h-screen bg-zinc-950 px-4 py-6 text-white" data-testid="en-sfx-ab-page">
       <nav className="mb-4 flex flex-wrap gap-2 text-xs">
-        <Link href="/select" className="rounded-full border border-white/20 px-3 py-1 text-white/80 hover:bg-white/10">← Select</Link>
+        <Link href="/select" aria-label="Back to select" className="rounded-full border border-white/20 px-3 py-1 text-white/80 hover:bg-white/10">← Select</Link>
         <Link href="/sfx-gallery" className="rounded-full border border-white/20 px-3 py-1 text-white/80 hover:bg-white/10" data-testid="link-sfx-gallery">Reaction SFX gallery</Link>
       </nav>
 
       <div className="mx-auto flex max-w-3xl flex-col gap-4">
         <header className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h1 className="text-lg font-semibold tracking-wide">EN SFX sidecar A/B</h1>
+            <h1 id="amoji-en-sfx-ab-title" className="text-lg font-semibold tracking-wide">EN SFX sidecar A/B</h1>
             <p className="text-xs text-white/55">
               Path B test lane — Edge / Yue / ja chat untouched. No EN+Cantonese combine. CMA Wanted not wired here.
             </p>
