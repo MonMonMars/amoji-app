@@ -315,7 +315,15 @@
 // splays ring/little into the palm, and idle talk is a short tutor tip
 // plus a calm personality line. Standing idle is IdleBreathCalm and
 // StandardIdle.
-export const APP_REVISION = 'r2026-10-28.141';
+// r2026-11-08.142: the free lane races INDEPENDENT HOSTS instead of two
+// aliases of one Pollinations model. `GET text.pollinations.ai/models` lists
+// only openai-fast (aliases openai / gpt-oss / gpt-oss-20b / ovh-reasoning),
+// so the old race spent two slots of one anonymous IP budget for zero
+// diversity. Now one Pollinations request, one OVHcloud keyless request and
+// one Puter call race each other; a per-host cooldown (Pollinations 35s,
+// OVHcloud 30s) keeps rapid messages from draining a shared budget, and the
+// local lane is still the last resort when every host fails.
+export const APP_REVISION = 'r2026-11-08.142';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
