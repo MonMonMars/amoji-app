@@ -3,8 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/store-bundle.mjs dev-sync",
     "dev": "next dev --webpack",
+    "prebuild": "node scripts/store-bundle.mjs clean-mirrors",
     "build": "next build --webpack",
+    "postbuild": "node scripts/store-bundle.mjs postbuild",
+    "build:app": "node scripts/store-build.mjs",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",

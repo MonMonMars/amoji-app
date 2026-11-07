@@ -26,7 +26,6 @@ import { primeLocationForChatEnter } from '../lib/live-tools';
 import { activeVoiceChoice } from '../lib/voice-picks';
 import {
   BACKGROUNDS, CHARACTERS, LANGS,
-  KID_BACKGROUND, KID_CHARACTER,
   backgroundById, backgroundLetter, characterById, t, usePrefs,
   type Prefs,
 } from '../lib/prefs';
@@ -49,7 +48,11 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   });
   const [castGender, setCastGender] = useState<CastGenderFilter>('all');
   const live: Prefs = mode === 'change' ? { ...prefs, ...draft } : prefs;
-  // /change drafts kidMode before confirm — cast/scenes/badge must follow live, not prefs.
+  // r2026-11-08 (ADULT ONLY): this board no longer filters the cast by the
+  // kid-safe flag. The cast and every scene are always fully available; the
+  // wholesome-only subset existed solely for Kid Mode, which is now
+  // unreachable. `kidMode` still exists on `live` (pinned false by loadPrefs)
+  // so the shape of the prefs object is unchanged for anything reading it.
 
   const character = characterById(live.character);
   const background = backgroundById(live.background);
@@ -59,11 +62,11 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
 
   const roster = selectionCast(CHARACTERS);
   const cast = roster.filter((c) => {
-    if (live.kidMode && !c.kidSafe) return false;
     if (castGender !== 'all' && c.gender !== castGender) return false;
     return true;
   });
-  const scenes = live.kidMode ? BACKGROUNDS.filter((b) => b.kidSafe) : BACKGROUNDS;
+  // Every scene, in the fixed daytime → nighttime order (letters stay stable).
+  const scenes = BACKGROUNDS;
 
   const pick = (patch: Partial<Prefs>) => {
     if (mode === 'start') setPrefs(patch);
@@ -74,7 +77,6 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   const applyCastGender = (next: CastGenderFilter) => {
     setCastGender(next);
     const nextCast = roster.filter((c) => {
-      if (live.kidMode && !c.kidSafe) return false;
       if (next !== 'all' && c.gender !== next) return false;
       return true;
     });
@@ -165,7 +167,6 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                 <p className="truncate text-lg font-bold drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)] sm:text-xl">
                   {character.name}
                   <span className="ml-1.5 text-sm font-normal text-white/75">{character.gender === 'female' ? '♀' : '♂'}</span>
-                  {live.kidMode && <span className="ml-1 text-sm">🧸</span>}
                 </p>
                 <p className="truncate text-xs text-white/80 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] sm:text-sm">
                   {character.tagline[lang] ?? character.tagline.en}

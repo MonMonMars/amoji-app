@@ -14,6 +14,7 @@ import SceneBackdrop from '../../components/SceneBackdrop';
 import SettingsSheet from '../../components/SettingsSheet';
 import MuteButton from '../../components/MuteButton';
 import StatusPlate from '../../components/StatusPlate';
+import RequireEntryGate from '../../components/RequireEntryGate';
 import WardrobeSwap from '../../components/WardrobeSwap';
 import { requestOpenMiniGame, subscribeMiniGameChrome } from '../../lib/minigames';
 import { activeWardrobe } from '../../lib/modular/catalog';
@@ -29,6 +30,19 @@ import type { ChatStatus } from '../../lib/status';
 const CompanionCanvas = dynamic(() => import('../../components/CompanionCanvas'), { ssr: false });
 
 export default function Chat() {
+  // r2026-11-08: the 18+ / audio gate renders INSTEAD of the room until it is
+  // answered, so no model load, greeting voice or poke SFX can happen for a
+  // user who has not confirmed they are an adult and can hear her. This is a
+  // render-swap rather than a redirect because a redirect would let the room
+  // mount and paint first.
+  return (
+    <RequireEntryGate>
+      <ChatRoom />
+    </RequireEntryGate>
+  );
+}
+
+function ChatRoom() {
   const [prefs, setPrefs] = usePrefs();
   const router = useRouter();
   const [notice, setNotice] = useState<{ reason: 'webgl' | 'asset' } | null>(null);
@@ -152,7 +166,6 @@ export default function Chat() {
               lang={prefs.lang}
               status={status}
               memCount={memCount}
-              kid={prefs.kidMode}
               onOpenSelect={openSelect}
             />
           </div>
@@ -205,6 +218,10 @@ export default function Chat() {
           accent={character.accent}
           persona={(() => {
             const story = storyPersonaSuffix(prefs.lang);
+            // r2026-11-08: `prefs.kidMode` is pinned false by loadPrefs/savePrefs
+            // (adult-only product), so the KID_PERSONA_GUARD branch is now
+            // unreachable. It is kept so the persisted field keeps a meaning
+            // rather than being a dangling key in old records.
             const base = prefs.kidMode ? `${character.persona}\n\n${KID_PERSONA_GUARD}` : character.persona;
             return story ? `${base}\n\n${story}` : base;
           })()}

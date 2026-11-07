@@ -49,7 +49,6 @@ export default function StatusPlate({
   lang,
   status,
   memCount,
-  kid,
   onOpenSelect,
 }: {
   name: string;
@@ -58,8 +57,6 @@ export default function StatusPlate({
   lang: Lang;
   status: ChatStatus;
   memCount: number;
-  /** Kid Mode is on — show the 🧸 badge */
-  kid?: boolean;
   onOpenSelect: () => void;
 }) {
   const [faceOk, setFaceOk] = useState(true);
@@ -150,7 +147,8 @@ export default function StatusPlate({
             ) : (
               <span title={voiceDot.title} className="shrink-0 text-[10px] leading-none text-red-400">✗</span>
             ))}
-            {kid && <span title={t(lang, 'kidMode')}>🧸</span>}
+            {/* r2026-11-08 (ADULT ONLY): the kid-mode badge retired with the
+                mode itself; the whole product is 18+ now. */}
             {memCount > 0 && (
               <span className="rounded-full bg-white/15 px-1.5 text-[10px] font-normal text-white/70">🧠{memCount}</span>
             )}

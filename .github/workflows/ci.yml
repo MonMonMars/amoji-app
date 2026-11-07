@@ -37,3 +37,39 @@ jobs:
             echo "banned asset present:"; find apps/web/public/models -iname '*marin*'
             exit 1
           fi
+
+      # This job's `pnpm --filter @amoji/web build` above is a server build
+      # (no AMOJI_EXPORT), so it produces no out/ and no store bundle. The two
+      # static builds below are the ones that can actually ship.
+      #
+      # 1) Store bundle (AMOJI_APP=1): App Store / Play Store wrapper payload.
+      #    No internal QA pages, no adult-content strings anywhere in out/.
+      - name: store bundle build (AMOJI_APP=1)
+        run: pnpm --filter @amoji/web build:app
+      - name: store bundle gate
+        run: node scripts/check-store-bundle.mjs apps/web/out --store
+      - name: store bundle ships no internal QA pages
+        run: |
+          for f in catalog.html decisions.html gallery.html voice-debug.html; do
+            if [ -e "apps/web/out/$f" ]; then
+              echo "internal QA page shipped in store bundle: $f"
+              exit 1
+            fi
+          done
+          echo "ok: no internal QA pages in store bundle"
+
+      # 2) GitHub Pages build: must be UNCHANGED, i.e. the QA pages it has always
+      #    served must still be there. This is the regression guard for the move
+      #    of those files out of public/.
+      - name: pages build still ships the QA pages
+        run: pnpm --filter @amoji/web build
+        env:
+          AMOJI_EXPORT: "1"
+          AMOJI_BASE_PATH: /amoji-app
+          NEXT_PUBLIC_BASE_PATH: /amoji-app
+      - name: pages build keeps its QA pages
+        run: |
+          for f in catalog.html decisions.html gallery.html voice-debug.html; do
+            [ -e "apps/web/out/$f" ] || { echo "web build lost QA page: $f"; exit 1; }
+          done
+          node scripts/check-store-bundle.mjs apps/web/out

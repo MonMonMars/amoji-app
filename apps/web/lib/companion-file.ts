@@ -98,7 +98,11 @@ export function applyCompanionFile(f: CompanionFile): void {
     character: characterId,
     background: f.appearance?.backgroundId ?? current.background,
     lang: (f.voice?.lang && ['en', 'yue', 'zh', 'ja'].includes(f.voice.lang) ? f.voice.lang : 'yue') as Lang,
-    kidMode: !!f.settings?.kidMode,
+    // An imported card can still carry settings.kidMode from before the ADULT
+    // ONLY decision (r2026-11-08). It is accepted by the parser but never
+    // applied: savePrefs pins the field false, so a shared card cannot turn a
+    // current install back into a kid-safe one.
+    kidMode: false,
     sfxVol: current.sfxVol,
     bgmVol: current.bgmVol,
     voiceVol: current.voiceVol,
