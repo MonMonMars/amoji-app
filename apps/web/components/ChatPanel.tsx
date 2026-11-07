@@ -619,9 +619,11 @@ export default function ChatPanel({
           void (async () => {
             if (userHasSpokenRef.current || busyRef.current) return;
             try {
-              const weather = await clientLiveContext(openPhaseWeatherAsk(lang), lang);
+              // `brief`: an unprompted line says nothing at all when we cannot
+              // place the user — a wrong city is worse than staying quiet.
+              const weather = await clientLiveContext(openPhaseWeatherAsk(lang), lang, undefined, { brief: true });
               if (userHasSpokenRef.current) return;
-              const news = await clientLiveContext(openPhaseNewsAsk(lang), lang);
+              const news = await clientLiveContext(openPhaseNewsAsk(lang), lang, undefined, { brief: true });
               if (userHasSpokenRef.current) return;
               const line = summarizeOpenPhaseSpoken(weather.spoken, news.spoken);
               if (!line) return;
@@ -727,9 +729,9 @@ export default function ChatPanel({
         void (async () => {
           if (busyRef.current) return;
           try {
-            const weather = await clientLiveContext(openPhaseWeatherAsk(lang), lang);
+            const weather = await clientLiveContext(openPhaseWeatherAsk(lang), lang, undefined, { brief: true });
             if (busyRef.current || Date.now() - lastUserRef.current < IDLE_AFTER_MS) return;
-            const news = await clientLiveContext(openPhaseNewsAsk(lang), lang);
+            const news = await clientLiveContext(openPhaseNewsAsk(lang), lang, undefined, { brief: true });
             if (busyRef.current || Date.now() - lastUserRef.current < IDLE_AFTER_MS) return;
             const line = summarizeOpenPhaseSpoken(weather.spoken, news.spoken);
             if (line) sayLocal(line, feltHints ?? { joy: 0.45 });

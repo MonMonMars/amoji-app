@@ -45,6 +45,7 @@ import { loadProfile, saveProfile, type Gender } from '../lib/profile';
 import { saveHistory } from '../lib/companion-store';
 import { APP_REVISION } from '../lib/revision';
 import { downloadCompanionFile, parseCompanionFile, applyCompanionFile } from '../lib/companion-file';
+import { manualPlace, lastDevicePlace, setManualPlace, clearManualPlace, type Place } from '../lib/live-tools';
 import {
   addEntry, deleteEntry, deleteDiaryEntry, deleteImportantDate, deletePromise, ensureUserNameFromProfile, exportMemory, loadMemory,
   type Memory, type MemoryType,
@@ -156,6 +157,15 @@ export default function SettingsSheet({
   const [oaTesting, setOaTesting] = useState(false);
   const [oaTestResult, setOaTestResult] = useState<boolean | null>(null);
   const tutorNRef = useRef(0);
+  // WW location: the city she should talk about. Blank draft + a saved place
+  // means "device location"; the field is the manual override.
+  const [placeDraft, setPlaceDraft] = useState<string>(() => {
+    const saved = manualPlace();
+    return saved ? [saved.city, saved.country].filter(Boolean).join(', ') : '';
+  });
+  const [placePinned, setPlacePinned] = useState<Place | null>(() => manualPlace());
+  const [placeDevice, setPlaceDevice] = useState<Place | null>(() => lastDevicePlace());
+  const [placeState, setPlaceState] = useState<'idle' | 'saving' | 'saved' | 'missing'>('idle');
   const settingsCloseRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   // aria-modal="true": Tab must stay inside the sheet while it is open.
@@ -333,6 +343,27 @@ export default function SettingsSheet({
     }).catch(() => { setOaTesting(false); setOaTestResult(false); });
   };
 
+  // City override: geocode the draft, pin it, and let every later weather/news
+  // lookup use it. A name we cannot resolve leaves the previous choice alone.
+  const savePlace = () => {
+    const query = placeDraft.trim();
+    if (!query) { useDevicePlace(); return; }
+    setPlaceState('saving');
+    void setManualPlace({ query, lang }).then((place) => {
+      if (!place) { setPlaceState('missing'); return; }
+      setPlacePinned(place);
+      setPlaceDraft([place.city, place.country].filter(Boolean).join(', '));
+      setPlaceState('saved');
+    }).catch(() => setPlaceState('missing'));
+  };
+  const useDevicePlace = () => {
+    clearManualPlace();
+    setPlacePinned(null);
+    setPlaceDevice(lastDevicePlace());
+    setPlaceDraft('');
+    setPlaceState('idle');
+  };
+
   return (
     <div className="fx-fade-in absolute inset-0 z-20 flex justify-end bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div
@@ -397,6 +428,63 @@ export default function SettingsSheet({
 
           <Section title={`🌐 ${t(lang, 'chooseLanguage')}`}>
             <LangChips value={prefs.lang} onChange={(l) => onChange({ lang: l })} />
+          </Section>
+
+          {/* Worldwide weather + light news: she follows YOUR city, not a
+              built-in one. Blank = device GPS / network, a typed city wins. */}
+          <Section title={`📍 ${t(lang, 'settingsLocation')}`}>
+            <p className="text-[11px] leading-relaxed text-white/40">{t(lang, 'locationHint')}</p>
+            <div className="flex gap-2">
+              <input
+                id="amoji-settings-city"
+                name="city"
+                type="text"
+                autoComplete="address-level2"
+                aria-label={t(lang, 'locationCityPlaceholder')}
+                value={placeDraft}
+                onChange={(e) => { setPlaceDraft(e.target.value); setPlaceState('idle'); }}
+                onKeyDown={(e) => e.key === 'Enter' && savePlace()}
+                placeholder={t(lang, 'locationCityPlaceholder')}
+                className="h-9 min-w-0 flex-1 rounded-full border border-white/10 bg-black/30 px-3 text-xs text-white placeholder-white/30 outline-none focus:border-white/40"
+              />
+              <button
+                type="button"
+                aria-label={t(lang, 'locationSave')}
+                onClick={savePlace}
+                disabled={placeState === 'saving'}
+                className="ui-btn h-9 shrink-0 rounded-full px-3.5 text-xs text-white/90 disabled:opacity-50"
+                style={{ backgroundColor: `${accent}2e` }}
+              >
+                {placeState === 'saving' ? '…' : t(lang, 'locationSave')}
+              </button>
+            </div>
+            {placeState === 'saved' && placePinned && (
+              <p className="text-[11px] text-emerald-200/80">
+                ✓ {t(lang, 'locationSaved', { city: [placePinned.city, placePinned.country].filter(Boolean).join(', ') })}
+              </p>
+            )}
+            {placeState === 'missing' && (
+              <p className="text-[11px] text-amber-200/80">{t(lang, 'locationNotFound')}</p>
+            )}
+            <div className="flex items-center justify-between gap-3 py-1">
+              <span className="text-[11px] text-white/45">
+                {placePinned
+                  ? `📍 ${[placePinned.city, placePinned.region, placePinned.country].filter(Boolean).join(', ')}`
+                  : placeDevice
+                    ? t(lang, 'locationDetected')
+                    : t(lang, 'locationNone')}
+              </span>
+              {placePinned && (
+                <button
+                  type="button"
+                  aria-label={t(lang, 'locationUseDevice')}
+                  onClick={useDevicePlace}
+                  className="ui-btn shrink-0 rounded-full bg-white/10 px-3 py-1.5 text-[11px] text-white/70 hover:bg-white/20"
+                >
+                  {t(lang, 'locationClear')}
+                </button>
+              )}
+            </div>
           </Section>
 
           <Section title={`🔊 ${t(lang, 'settingsVoice')}`}>
