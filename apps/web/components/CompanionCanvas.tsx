@@ -2017,12 +2017,10 @@ export default function CompanionCanvas({
         }
 
         applyBoneBlend(now);
-        // After blend + pose so head level, upper-body straighten, and the
-        // sunk-shoulder clavicle are not overwritten by the entry crossfade.
-        avatar.applyCastFixes();
-        // After the mixer and the punch additives: both soles share one
-        // ground contact. The hip lean bends the legs with the hit.
-        // Walk/jump clips are the exception.
+        // Plant first so rest hips land, then cast-fix levels hips/spine
+        // (twisted rest hips + leveled spine sheared the waist into a
+        // blended legs/body read on the distorted cast). Thigh unblend
+        // runs last so hanging adducted thighs open off the torso.
         const feetFree = clipFreesFeet(perfClipId);
         avatar.plantFeet(feetFree ? false : true, feetFree ? undefined : {
           pitch: skHip,
@@ -2030,6 +2028,8 @@ export default function CompanionCanvas({
           shiftX: skHipX,
           shiftZ: skHipZ,
         });
+        avatar.applyCastFixes();
+        if (!feetFree) avatar.unblendLegs();
         avatar.update(dt / 1000);
         // Chest and torso punches: bust spring after the skeleton update.
         // Soft breast (Mon t765): bounce clock outlives the tiny body recoil.
