@@ -3,6 +3,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import { loadProfile, saveProfile } from '../../lib/profile';
+import { ensureUserNameFromProfile } from '../../lib/memory';
 import { t, usePrefs } from '../../lib/prefs';
 import { APP_NAME, APP_REVISION, APP_TAGLINE } from '../../lib/revision';
 
@@ -20,7 +21,8 @@ export default function Login() {
   const go = () => {
     if (name === null) return;
     saveProfile({ name });
-    router.push('/mode');
+    ensureUserNameFromProfile(name);
+    router.push('/select');
   };
 
   const lang = prefs.lang;

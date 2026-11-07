@@ -179,7 +179,7 @@ import { detectActionGame, setMiniGameChromeHidden, subscribeMiniGameOpen, type 
 import MiniGameOverlay from './MiniGameOverlay';
 import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodbyeLine, pickMealToast } from '../lib/activities';
 import { detectExercise, startExercise, advanceExercise, exerciseFarewellLine, type ExerciseState } from '../lib/exercises';
-import { buildDailyGreeting, buildMemoryBlock, feltMood, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange, rememberTurn } from '../lib/memory';
+import { buildDailyGreeting, buildEnterNameGreeting, buildMemoryBlock, ensureUserNameFromProfile, feltMood, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange, rememberTurn } from '../lib/memory';
 import { listenContinuous, listenSupported } from '../lib/listen';
 import { startVad } from '../lib/vad';
 import { ambientStart, ambientStop } from '../lib/sfx';
@@ -581,12 +581,15 @@ export default function ChatPanel({
     } else if (hadUser) {
       userHasSpokenRef.current = true;
     }
+    const userName = ensureUserNameFromProfile(loadProfile().name);
     const visit = recordVisit();
     const daily = visit.isNewDay
       ? buildDailyGreeting(lang, visit, { skipThread: fresh })
       : undefined;
+    const namedHello = buildEnterNameGreeting(lang, userName ?? visit.userName);
     const startupVars = { name: characterName };
-    const cheerFollow = daily ?? pickLine('startup', lang, 1, startupVars);
+    // Prefer daily check-in (already names the user) → short name hello → generic startup.
+    const cheerFollow = daily ?? namedHello ?? pickLine('startup', lang, 1, startupVars);
     const t1 = setTimeout(
       () => sayLocal(cannedOpener(characterId, characterGender, lang, characterName), { joy: 0.62 }),
       OPEN_CHEER_MS,
