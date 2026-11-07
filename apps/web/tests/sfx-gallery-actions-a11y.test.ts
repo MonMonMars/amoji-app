@@ -8,10 +8,10 @@ describe('sfx-gallery Clear/Export/Chat residual a11y', () => {
   it('labels Chat nav + export/clear/reset toolbar', () => {
     expect(src).toContain('aria-label={openChat}');
     expect(src).toContain('href="/chat"');
-    expect(src).toContain('aria-label="Copy Want/Skip JSON"');
+    expect(src).toContain('aria-label={copyWantSkip}');
     expect(src).toContain('data-testid="cma-export"');
-    expect(src).toContain('aria-label="Clear skipped picks"');
-    expect(src).toContain('aria-label="Reset all picks"');
+    expect(src).toContain('aria-label={clearSkipped}');
+    expect(src).toContain('aria-label={resetAll}');
   });
 
   it('scopes Play/Want/Skip/Clear labels to clip code', () => {
