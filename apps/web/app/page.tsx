@@ -3,10 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { APP_NAME, APP_REVISION, APP_TAGLINE } from '../lib/revision';
+import { loadPrefs } from '../lib/prefs';
 
 export default function Splash() {
   const router = useRouter();
   const [fade, setFade] = useState(false);
+  const lang = loadPrefs().lang;
+  const continueLogin =
+    lang === 'yue' ? '繼續登入' : lang === 'zh' ? '继续登录' : lang === 'ja' ? 'ログインへ進む' : 'Continue to login';
 
   useEffect(() => {
     const t1 = setTimeout(() => setFade(true), 2100);
@@ -18,7 +22,7 @@ export default function Splash() {
     <main
       aria-labelledby="amoji-splash-title"
       aria-describedby="amoji-splash-tagline amoji-splash-revision"
-      aria-label="Continue to login"
+      aria-label={continueLogin}
       aria-busy={fade}
       role="button"
       tabIndex={0}
