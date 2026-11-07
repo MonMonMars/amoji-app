@@ -23,10 +23,10 @@ describe('ArcFan keyboard navigation', () => {
   });
 
   it('matches HScrollRow hover titles on scroll chevrons', () => {
-    expect(fan).toContain('aria-label="scroll left"');
-    expect(fan).toContain('aria-label="scroll right"');
-    expect(fan).toContain('title="Scroll left"');
-    expect(fan).toContain('title="Scroll right"');
+    expect(fan).toContain("aria-label={t(lang, 'scrollLeft')}");
+    expect(fan).toContain("aria-label={t(lang, 'scrollRight')}");
+    expect(fan).toContain("title={t(lang, 'scrollLeft')}");
+    expect(fan).toContain("title={t(lang, 'scrollRight')}");
   });
 
   it('decides compact/scene mouse arrows on first paint (no false→true flash)', () => {
