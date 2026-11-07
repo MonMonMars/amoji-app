@@ -52,6 +52,7 @@ import {
 function Toggle({ on, onClick, accent, disabled = false }: { on: boolean; onClick: () => void; accent: string; disabled?: boolean }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       role="switch"
       aria-checked={disabled ? undefined : on}
@@ -314,7 +315,7 @@ export default function SettingsSheet({
       >
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-white">{t(lang, 'settings')}</h2>
-          <button onClick={onClose} className="ui-btn rounded-full bg-white/10 px-3 py-1 text-sm text-white/70 hover:bg-white/20">✕</button>
+          <button type="button" onClick={onClose} className="ui-btn rounded-full bg-white/10 px-3 py-1 text-sm text-white/70 hover:bg-white/20">✕</button>
         </div>
 
         <div className="space-y-6">
@@ -322,6 +323,7 @@ export default function SettingsSheet({
               one tap to the selection board. The sheet now opens with WHO
               you are talking to, themed in her accent. */}
           <button
+            type="button"
             onClick={() => { onClose(); router.push('/change'); }}
             className="ui-btn group flex w-full items-center gap-3.5 rounded-2xl border p-3.5 text-left transition-all"
             style={{
@@ -455,6 +457,7 @@ export default function SettingsSheet({
               />
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
                   onClick={() => { setOpenAiKey(oaKeyDraft); setOpenAiEndpoint(oaEpDraft); setOaSaved(true); }}
                   className="ui-btn rounded-full px-3 py-1.5 text-xs text-white/90"
                   style={{ backgroundColor: `${accent}2e` }}
@@ -462,6 +465,7 @@ export default function SettingsSheet({
                   {t(lang, 'ttsProxySave')}
                 </button>
                 <button
+                  type="button"
                   onClick={runOpenAiTest}
                   disabled={oaTesting}
                   className="ui-btn rounded-full px-3 py-1.5 text-xs text-white/80 disabled:opacity-50"
@@ -485,6 +489,7 @@ export default function SettingsSheet({
                 <span className={label}>🛰️ {t(lang, 'ttsProxy')}</span>
                 <div className="flex shrink-0 gap-1.5">
                   <button
+                    type="button"
                     onClick={() => {
                       const v = proxyDraft.trim();
                       setTtsProxy(v ? v.replace(/\/+$/, '') : null);
@@ -496,6 +501,7 @@ export default function SettingsSheet({
                     {t(lang, 'ttsProxySave')}
                   </button>
                   <button
+                    type="button"
                     onClick={() => { setProxyDraft(''); setTtsProxy(null); setProxySaved(true); }}
                     className="ui-btn rounded-full px-3 py-1.5 text-xs text-white/60"
                     style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
@@ -503,6 +509,7 @@ export default function SettingsSheet({
                     {t(lang, 'ttsProxyClear')}
                   </button>
                   <button
+                    type="button"
                     onClick={runProxyTest}
                     disabled={proxyTesting}
                     className="ui-btn rounded-full px-3 py-1.5 text-xs text-white/80 disabled:opacity-50"
@@ -534,6 +541,7 @@ export default function SettingsSheet({
             <div className={row}>
               <span className={label}>🎙️ {t(lang, 'testVoice')}</span>
               <button
+                type="button"
                 onClick={runVoiceTest}
                 disabled={voiceTesting || masterMuted === true}
                 className="ui-btn shrink-0 rounded-full px-3.5 py-1.5 text-xs text-white/90 disabled:opacity-40"
@@ -562,12 +570,14 @@ export default function SettingsSheet({
               </span>
               <div className="flex shrink-0 gap-2">
                 <button
+                  type="button"
                   onClick={() => void copyAll()}
                   className="ui-btn rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 hover:bg-white/20"
                 >
                   {copied ? t(lang, 'memoryCopied') : t(lang, 'memoryExport')}
                 </button>
                 <button
+                  type="button"
                   onClick={forgetAll}
                   className="ui-btn rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 hover:bg-white/20"
                 >
@@ -593,6 +603,7 @@ export default function SettingsSheet({
                   )}
                   {!e.dueDay && e.day && <span className="shrink-0 pt-0.5 text-[10px] text-white/30">{shortDay(e.day)}</span>}
                   <button
+                    type="button"
                     onClick={() => removeEntry(e.id)}
                     className="ui-btn shrink-0 rounded-full px-1.5 text-xs text-white/30 hover:bg-white/10 hover:text-white/70"
                     aria-label="forget"
@@ -615,6 +626,7 @@ export default function SettingsSheet({
                   <span className="min-w-0 flex-1 text-xs leading-relaxed text-white/80">{d.text}</span>
                   <span className="shrink-0 pt-0.5 text-[10px] text-white/30">{shortDay(d.day)}</span>
                   <button
+                    type="button"
                     onClick={() => removeDiary(d.id)}
                     className="ui-btn shrink-0 rounded-full px-1.5 text-xs text-white/30 hover:bg-white/10 hover:text-white/70"
                     aria-label="forget diary line"
@@ -636,6 +648,7 @@ export default function SettingsSheet({
                   <span className="min-w-0 flex-1 text-xs leading-relaxed text-white/80">{d.label}</span>
                   <span className="shrink-0 rounded bg-pink-400/10 px-1.5 py-0.5 text-[10px] text-pink-200/80">{d.month}/{d.day}</span>
                   <button
+                    type="button"
                     onClick={() => removeDate(d.id)}
                     className="ui-btn shrink-0 rounded-full px-1.5 text-xs text-white/30 hover:bg-white/10 hover:text-white/70"
                     aria-label="forget date"
@@ -657,6 +670,7 @@ export default function SettingsSheet({
                   <span className="min-w-0 flex-1 text-xs leading-relaxed text-white/80">{p.text}</span>
                   <span className="shrink-0 pt-0.5 text-[10px] text-white/30">{shortDay(p.day)}</span>
                   <button
+                    type="button"
                     onClick={() => removePromise(p.id)}
                     className="ui-btn shrink-0 rounded-full px-1.5 text-xs text-white/30 hover:bg-white/10 hover:text-white/70"
                     aria-label="forget promise"
@@ -672,6 +686,7 @@ export default function SettingsSheet({
               <div className="flex gap-1.5">
                 {(['preference', 'event', 'plan'] as MemoryType[]).map((tp) => (
                   <button
+                    type="button"
                     key={tp}
                     onClick={() => setNewType(tp)}
                     className={`ui-btn rounded-full px-2.5 py-1 text-[10px] ${
@@ -691,6 +706,7 @@ export default function SettingsSheet({
                   className="h-9 min-w-0 flex-1 rounded-full border border-white/10 bg-black/30 px-3 text-xs text-white placeholder-white/30 outline-none focus:border-white/40"
                 />
                 <button
+                  type="button"
                   onClick={addNew}
                   disabled={!newText.trim()}
                   className="ui-btn h-9 shrink-0 rounded-full bg-white/10 px-3.5 text-xs text-white/80 hover:bg-white/20 disabled:opacity-40"
@@ -703,6 +719,7 @@ export default function SettingsSheet({
             <div className={row}>
               <span className={label}>💬 {t(lang, 'clearHistory')}</span>
               <button
+                type="button"
                 onClick={clearHistory}
                 className="ui-btn rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 hover:bg-white/20"
               >
@@ -716,6 +733,7 @@ export default function SettingsSheet({
               <span className={label}>💾 {t(lang, 'companionFile')}</span>
               <div className="flex shrink-0 gap-1.5">
                 <button
+                  type="button"
                   onClick={() => downloadCompanionFile(APP_REVISION)}
                   className="ui-btn rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 hover:bg-white/20"
                 >
@@ -762,6 +780,7 @@ export default function SettingsSheet({
               <div className="flex min-w-0 flex-1 gap-1.5">
                 {(['male', 'female', 'secret'] as Gender[]).map((g) => (
                   <button
+                    type="button"
                     key={g}
                     onClick={() => setGenderPick(g)}
                     className={`ui-btn h-8 flex-1 rounded-full px-2 text-xs ${
@@ -779,7 +798,7 @@ export default function SettingsSheet({
           </Section>
 
           <Section title={`❓ ${t(lang, 'settingsHelp')}`}>
-            <button onClick={tutor} className={`ui-btn ${row} w-full text-left hover:bg-white/10`}>
+            <button type="button" onClick={tutor} className={`ui-btn ${row} w-full text-left hover:bg-white/10`}>
               <span className={label}>❓ {t(lang, 'tutorBtn')}</span>
               <span className="text-white/30">→</span>
             </button>
