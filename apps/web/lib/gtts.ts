@@ -27,13 +27,25 @@ import { followAudioElement } from './speech';
 
 /** Amoji lang → Google TTS locale */
 const LANG_MAP: Record<Lang, string> = {
-  yue: 'zh-HK',
+  // Google Translate's TTS accepts `yue` and renders actual Cantonese. `zh-HK`
+  // also returns audio but is the Mandarin Hong Kong voice, which mispronounces
+  // the colloquial Cantonese lines this app speaks.
+  yue: 'yue',
   zh: 'zh-CN',
   ja: 'ja-JP',
   en: 'en-US',
 };
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
+
+/**
+ * Pitch bias for the HTTP MP3 tier. That endpoint serves ONE voice per language,
+ * so character identity has to come from pitch: a male companion reads deeper,
+ * a female one slightly brighter. Bounded tightly — this is resampling, so a
+ * large value makes her sound sped up rather than like a different person.
+ */
+export const PITCH_BIAS_MALE = 0.88;
+export const PITCH_BIAS_FEMALE = 1.04;
 
 /**
  * Split a line into endpoint-sized chunks (the service caps a request near
@@ -79,17 +91,29 @@ let currentAudio: HTMLAudioElement | null = null;
 /** bumped by stopGtts() — any in-flight chain sees a stale gen and cancels */
 let generation = 0;
 let gapTimer: ReturnType<typeof setTimeout> | null = null;
+/**
+ * Rejects the in-flight line. Without this, stopGtts() only paused the element:
+ * the pending promise stayed unresolved until the 10s stall watchdog fired, so a
+ * superseded line reported "chunk stalled" a full 10 seconds later instead of
+ * cancelling immediately.
+ */
+let pendingReject: ((err: Error) => void) | null = null;
 
 export function stopGtts(): void {
   generation++;
   if (gapTimer) { clearTimeout(gapTimer); gapTimer = null; }
+  const reject = pendingReject;
+  pendingReject = null;
   if (currentAudio) {
     currentAudio.onended = null;
     currentAudio.onerror = null;
     try { currentAudio.playbackRate = 1; } catch { /* ignore */ }
-    currentAudio.pause();
+    try { currentAudio.pause(); } catch { /* ignore */ }
     currentAudio = null;
   }
+  // Cancel the awaiting caller right away so the chain falls through instead of
+  // sitting in a 10-second stall.
+  try { reject?.(new Error('canceled')); } catch { /* ignore */ }
 }
 
 export interface GttsOpts {
@@ -100,6 +124,19 @@ export interface GttsOpts {
   lead?: string;
   /** r99: fired the moment the first chunk actually starts playing (media gate open) */
   onPlaying?: () => void;
+  /**
+   * Fires as each chunk finishes, with the characters spoken so far. A fallback
+   * tier uses this to speak only the remainder, so the line does not restart in
+   * a different voice mid-sentence.
+   */
+  onProgress?: (spokenChars: number) => void;
+  /**
+   * Shifts the perceived pitch by resampling: the endpoint exposes ONE voice per
+   * language, so without this every character sounds identical and male
+   * characters sound female. Setting preservesPitch=false makes playbackRate
+   * change pitch as well as speed. Bias 1 = unchanged, <1 deeper, >1 higher.
+   */
+  pitchBias?: number;
 }
 
 /**
@@ -118,6 +155,7 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
   const gen = generation;
   const lang = LANG_MAP[opts.lang] ?? 'en-US';
   const rate = clamp(opts.rate ?? 1, 0.88, 1.15);
+  const pitchBias = clamp(opts.pitchBias ?? 1, 0.82, 1.2);
   // Lead (poke laugh / ouch) is its own chunk. It is not glued on with a
   // comma, and every chunk sets playbackRate itself so the laugh cannot
   // leave the following line fast or pitched.
@@ -135,9 +173,22 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
     if (pieces.length === 0) { resolve(); return; }
     let i = 0;
     let reportedPlaying = false;
+    /** Characters fully spoken, so a fallback can resume instead of restarting. */
+    let spokenChars = 0;
+    /** Clears the module-level cancel hook so a later stopGtts() is a no-op. */
+    const clearPending = () => { pendingReject = null; };
+    const failLine = (err: Error) => {
+      clearPending();
+      reject(err);
+    };
+    const doneLine = () => {
+      clearPending();
+      resolve();
+    };
+    pendingReject = failLine;
     const playNext = () => {
-      if (gen !== generation) { reject(new Error('canceled')); return; }
-      if (i >= pieces.length) { resolve(); return; }
+      if (gen !== generation) { failLine(new Error('canceled')); return; }
+      if (i >= pieces.length) { doneLine(); return; }
       const piece = pieces[i]!;
       const q = encodeURIComponent(piece.text);
       i++;
@@ -149,6 +200,18 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
       audio.preload = 'auto';
       currentAudio = audio;
       try { audio.playbackRate = rate; } catch { /* iOS guard */ }
+      // One endpoint voice per language means every character would sound the
+      // same. Let a per-character bias reshape the pitch: with
+      // preservesPitch=false, playbackRate shifts pitch AND tempo, which is how
+      // a deeper/male voice is approximated here. Rate stays bounded so the
+      // line never becomes unintelligibly fast or slow.
+      if (pitchBias !== 1) {
+        try {
+          const el = audio as HTMLAudioElement & { preservesPitch?: boolean };
+          el.preservesPitch = false;
+          el.playbackRate = Math.min(1.25, Math.max(0.8, rate * pitchBias));
+        } catch { /* ignore */ }
+      }
       // r99: a stalled Safari media request used to wedge this chain forever
       // (no error event, no ended) — tier 3 never ran. 10s per-chunk
       // watchdog bails the whole line out so the fallthrough can speak.
@@ -163,12 +226,14 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
         settle(() => {
           if (currentAudio === audio) currentAudio = null;
           try { audio.pause(); } catch { /* ignore */ }
-          reject(new Error('gtts chunk stalled'));
+          failLine(new Error('gtts chunk stalled'));
         });
       }, 10_000);
       audio.onended = () => {
         settle(() => {
           if (currentAudio === audio) currentAudio = null;
+          spokenChars += piece.text.length;
+          try { opts.onProgress?.(spokenChars); } catch { /* ignore */ }
           const more = i < pieces.length;
           if (more && piece.pauseAfter > 0 && gen === generation) {
             gapTimer = setTimeout(() => { gapTimer = null; playNext(); }, piece.pauseAfter);
@@ -180,7 +245,7 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
       audio.onerror = () => {
         settle(() => {
           if (currentAudio === audio) currentAudio = null;
-          reject(new Error('gtts playback failed'));
+          failLine(new Error('gtts playback failed'));
         });
       };
       audio.onplay = () => {
@@ -195,7 +260,7 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
       audio.play().catch((e: unknown) => {
         settle(() => {
           if (currentAudio === audio) currentAudio = null;
-          reject(e instanceof Error ? e : new Error(String(e)));
+          failLine(e instanceof Error ? e : new Error(String(e)));
         });
       });
     };
