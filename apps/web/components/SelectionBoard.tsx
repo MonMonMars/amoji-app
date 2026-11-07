@@ -48,6 +48,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   });
   const [castGender, setCastGender] = useState<CastGenderFilter>('all');
   const live: Prefs = mode === 'change' ? { ...prefs, ...draft } : prefs;
+  // /change drafts kidMode before confirm — cast/scenes/badge must follow live, not prefs.
 
   const character = characterById(live.character);
   const background = backgroundById(live.background);
@@ -57,11 +58,11 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
 
   const roster = selectionCast(CHARACTERS);
   const cast = roster.filter((c) => {
-    if (prefs.kidMode && !c.kidSafe) return false;
+    if (live.kidMode && !c.kidSafe) return false;
     if (castGender !== 'all' && c.gender !== castGender) return false;
     return true;
   });
-  const scenes = prefs.kidMode ? BACKGROUNDS.filter((b) => b.kidSafe) : BACKGROUNDS;
+  const scenes = live.kidMode ? BACKGROUNDS.filter((b) => b.kidSafe) : BACKGROUNDS;
 
   const pick = (patch: Partial<Prefs>) => {
     if (mode === 'start') setPrefs(patch);
@@ -80,7 +81,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   const applyCastGender = (next: CastGenderFilter) => {
     setCastGender(next);
     const nextCast = roster.filter((c) => {
-      if (prefs.kidMode && !c.kidSafe) return false;
+      if (live.kidMode && !c.kidSafe) return false;
       if (next !== 'all' && c.gender !== next) return false;
       return true;
     });
@@ -156,7 +157,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
             <p className="truncate text-lg font-bold drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)] sm:text-xl">
               {character.name}
               <span className="ml-1.5 text-sm font-normal text-white/75">{character.gender === 'female' ? '♀' : '♂'}</span>
-              {prefs.kidMode && <span className="ml-1 text-sm">🧸</span>}
+              {live.kidMode && <span className="ml-1 text-sm">🧸</span>}
             </p>
             <p className="truncate text-xs text-white/80 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] sm:text-sm">
               {character.tagline[lang] ?? character.tagline.en}
