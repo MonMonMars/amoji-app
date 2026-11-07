@@ -146,6 +146,8 @@ export type StrKey =
   | 'datesTitle' | 'datesEmpty' | 'promisesTitle' | 'promisesEmpty'
   // kid mode (r2026-10-03.03)
   | 'settingsMode' | 'kidMode' | 'kidModeHint'
+  // select top bars: chat vs story board chips
+  | 'modeChat' | 'modeStory'
   // brain routing (r2026-10-03.05)
   | 'brainTitle' | 'brainAuto' | 'brainAutoHint' | 'brainKeyPlaceholder' | 'brainNoKey'
   // voice self-test + diagnostics (r2026-10-04.75)
@@ -320,6 +322,8 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     ja: 'まだない——約束したことはちゃんと覚えてるよ。',
   },
   settingsMode: { en: 'Mode', yue: '模式', zh: '模式', ja: 'モード' },
+  modeChat: { en: 'Chat', yue: '傾偈', zh: '聊天', ja: 'チャット' },
+  modeStory: { en: 'Story', yue: '故事', zh: '故事', ja: 'ストーリー' },
   kidMode: { en: 'Kid mode', yue: '兒童模式', zh: '儿童模式', ja: 'キッズモード' },
   kidModeHint: {
     en: 'Wholesome characters & sunny scenes only',
