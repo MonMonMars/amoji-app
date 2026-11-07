@@ -253,7 +253,7 @@ function WardrobeSwapLive({
         )}
         <div>
           <p className="mb-1.5 pl-1 text-[11px] font-medium uppercase tracking-[0.18em] text-white/55">{copy.head}</p>
-          <HScrollRow ariaLabel="wardrobe heads" rowKey="wardrobe-heads" selectedId={active?.headId}>
+          <HScrollRow ariaLabel={copy.head} rowKey="wardrobe-heads" selectedId={active?.headId}>
             {DEMO_HEADS.map((asset) => (
               <Thumb
                 key={asset.id}
@@ -267,7 +267,7 @@ function WardrobeSwapLive({
         </div>
         <div>
           <p className="mb-1.5 pl-1 text-[11px] font-medium uppercase tracking-[0.18em] text-white/55">{copy.body}</p>
-          <HScrollRow ariaLabel="wardrobe outfits" rowKey="wardrobe-bodies" selectedId={active?.bodyId}>
+          <HScrollRow ariaLabel={copy.body} rowKey="wardrobe-bodies" selectedId={active?.bodyId}>
             {DEMO_BODIES.map((asset) => (
               <Thumb
                 key={asset.id}
