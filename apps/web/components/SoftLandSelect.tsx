@@ -30,10 +30,10 @@ export default function SoftLandSelect({
     <main
       className="flex min-h-dvh cursor-default flex-col items-center justify-center bg-neutral-950 text-white"
       aria-busy="true"
-      aria-live="polite"
+      aria-label={label}
     >
       <div className="pointer-events-none absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-pink-500/10 blur-3xl" />
-      <p className="relative text-sm tracking-wide text-white/45">{label}</p>
+      <p role="status" className="relative text-sm tracking-wide text-white/45">{label}</p>
     </main>
   );
 }
