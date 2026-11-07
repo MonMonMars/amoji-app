@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
@@ -72,9 +72,16 @@ describe('chest bounce', () => {
     expect(crossings).toBeGreaterThanOrEqual(3);
   });
 
-describe('kitagawa chest poke', () => {
-  it('springs the bust and leaves both feet on the ground', async () => {
-    const url = fileURLToPath(new URL('../public/models/cast/kitagawa.vrm', import.meta.url));
+// Fixture: any rig with real J_Sec_L_Bust1/J_Sec_L_Bust2 bones. It used to be
+// cast/kitagawa.vrm, which was deleted with the rest of the non-CC0 cast; every
+// VRoid sample rig in want/ carries the same bust bones, so a02-shibu (CC0)
+// stands in. The want/ files are gitignored, so the spec is skipped when the
+// local tree has not downloaded them.
+const BUST_FIXTURE = fileURLToPath(new URL('../public/models/want/a02-shibu.vrm', import.meta.url));
+
+describe('bust spring on a real rig', () => {
+  it.skipIf(!existsSync(BUST_FIXTURE))('springs the bust and leaves both feet on the ground', async () => {
+    const url = BUST_FIXTURE;
     const buf = readFileSync(url);
     (globalThis as { self?: unknown }).self ??= globalThis;
     const loader = new GLTFLoader();

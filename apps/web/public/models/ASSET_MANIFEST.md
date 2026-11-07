@@ -74,42 +74,52 @@ Base URL for every row: `https://github.com/MonMonMars/amoji-app/releases/downlo
 - Other Hub/BOOTH free commercial entries: follow each folder README.txt
 - Removed from public picker: kitagawa, kizuna, and other unverified agent3 cast slots
 
-## Retired local cast (`cast/*.vrm`) ??demo-only
+## Retired local cast (`cast/*.vrm`) — CC0 only
 
-The former in-repo `cast/` binaries are **retired** from the active picker (face-lab / local demos only). Each file on disk must stay listed here for CI.
+The former in-repo `cast/` binaries are **retired** from the active picker (face-lab / local demos only). Every file that remains is **CC0**, verified by reading the embedded VRM licence metadata (`extensions.VRM.meta.licenseName`) out of each file — not from a folder README.
 
-| Cast file | Status |
-|---|---|
-| cast/alicia.vrm | Retired ??unverified agent3 demo |
-| cast/atlas.vrm | Retired ??unverified agent3 demo |
-| cast/avatarsample-a.vrm | Retired ??local demo |
-| cast/cyrus.vrm | Retired ??local demo |
-| cast/elio.vrm | Retired ??local demo |
-| cast/ember.vrm | Retired ??unverified agent3 demo |
-| cast/fumiriya.vrm | Retired ??local demo |
-| cast/hana.vrm | Retired ??local demo |
-| cast/hina.vrm | Retired ??unverified agent3 demo |
-| cast/juno.vrm | Retired ??Kizuna-style demo; never public roster |
-| cast/kael.vrm | Retired ??local demo |
-| cast/kai.vrm | Retired ??local demo |
-| cast/kitagawa.vrm | Retired ??copyright-risk; removed from picker |
-| cast/kizuna.vrm | Retired ??copyright-risk; removed from picker |
-| cast/luna.vrm | Retired ??local demo |
-| cast/lydia.vrm | Retired ??local demo |
-| cast/mei.vrm | Retired ??unverified agent3 demo |
-| cast/mikel.vrm | Retired ??local demo |
-| cast/mimi.vrm | Retired ??local demo |
-| cast/mio.vrm | Retired ??unverified agent3 demo |
-| cast/nana.vrm | Retired ??local demo |
-| cast/nova.vrm | Retired ??unverified agent3 demo |
-| cast/olivia.vrm | Retired ??local demo |
-| cast/rex.vrm | Retired ??local demo |
-| cast/rin.vrm | Retired ??local demo |
-| cast/sky.vrm | Retired ??unverified agent3 demo |
-| cast/sumire.vrm | Retired ??local demo |
-| cast/vroid-male.vrm | Retired ??local demo |
-| cast/yuki.vrm | Retired ??unverified agent3 demo |
-| cast/zane.vrm | Retired ??local demo |
+`.gitignore` blocks `apps/web/public/models/cast/*.vrm`, so a new binary here cannot be committed without deliberately editing that rule. Each file on disk must still stay listed below for CI (`apps/web/tests/assets.test.ts`).
+
+| Cast file | License | Source | Notes |
+|---|---|---|---|
+| cast/cyrus.vrm | CC0 | Polygonal Mind (100Avatars, "Udom") | local demo |
+| cast/fumiriya.vrm | CC0 | VRoid official sample (Sakurada Fumiriya) | same model as `a03-fumiriya` |
+| cast/hina.vrm | CC0 | Polygonal Mind ("Lydia") | local demo |
+| cast/juno.vrm | CC0 | Polygonal Mind | local demo; never a public roster id |
+| cast/kael.vrm | CC0 | Polygonal Mind ("Rose") | local demo |
+| cast/luna.vrm | CC0 | CC0 (VIPEDeployer, "Cyberpal") | local demo |
+| cast/lydia.vrm | CC0 | Polygonal Mind ("Lydia") | local demo |
+| cast/mikel.vrm | CC0 | Polygonal Mind ("Mikel") | local demo |
+| cast/mimi.vrm | CC0 | Polygonal Mind ("Rabbit") | local demo |
+| cast/mio.vrm | CC0 | Polygonal Mind ("Kate") | local demo |
+| cast/olivia.vrm | CC0 | Polygonal Mind ("Olivia") | local demo |
+| cast/rin.vrm | CC0 | Polygonal Mind ("Chill") | local demo |
+| cast/sumire.vrm | CC0 | Polygonal Mind ("Jennifer") | local demo |
+| cast/yuki.vrm | CC0 | Polygonal Mind ("Olivia") | local demo |
+
+### Purged 2026-11-08 (licensing)
+
+16 binaries were removed from git and from the tree. Re-adding any of them needs a fresh licence review; most are not merely unattributed but affirmatively restricted.
+
+| Cast file | Embedded licence | Why removed |
+|---|---|---|
+| cast/kitagawa.vrm | `Other` + Hub params `corporate_commercial_use=disallow`, `redistribution=disallow`, `personal_commercial_use=nonprofit` | Copyrighted anime character (喜多川海夢), title in the file |
+| cast/kizuna.vrm | VRM 1.0 `commercialUsage=personalNonProfit`, `allowRedistribution=false` | Kizuna AI official model |
+| cast/hana.vrm | `Redistribution_Prohibited` | licence string is the prohibition |
+| cast/nana.vrm | `Redistribution_Prohibited` | same model as hana |
+| cast/alicia.vrm | `Other`, `https://3d.nicovideo.jp/alicia/rule.html` | Dwango "Alicia Solid", separate terms |
+| cast/atlas.vrm | `Other`, no URL, author "jin", title "masc vroid" | provenance unprovable |
+| cast/vroid-male.vrm | `Other`, no URL, author "jin", title "masc vroid" | provenance unprovable |
+| cast/zane.vrm | `Other`, no URL, author "jin", title "masc vroid" | provenance unprovable |
+| cast/mei.vrm | `Other`, no URL, title "AvatarSample_B" | VRoidPreset original |
+| cast/elio.vrm | `Other`, no URL, title "AvatarSample_C" | VRoidPreset original |
+| cast/avatarsample-a.vrm | `Other`, no URL, title "AvatarSample_A" | VRoidPreset original |
+| cast/ember.vrm | CC_BY (VTubeMe, "MetaPerson Avatar") | attribution required; retired demo meshes carry no credit surface |
+| cast/kai.vrm | CC_BY (VTubeMe) | same |
+| cast/nova.vrm | CC_BY (VTubeMe) | same |
+| cast/rex.vrm | CC_BY (VTubeMe) | same |
+| cast/sky.vrm | CC_BY (VTubeMe) | same |
+
 
 ## Motion library ??`anims/`
 
@@ -179,7 +189,7 @@ Additional dormant clips ship on disk for future triggers (see repo `anims/` dir
 | File | Why |
 |---|---|
 | marin.vrm | Copyright-flagged; must never be committed under any path. |
-| cast/kitagawa.vrm, cast/kizuna.vrm, etc. | Retired unverified agent3 roster ??not in want-list release. |
+| cast/kitagawa.vrm, cast/kizuna.vrm, cast/hana.vrm, cast/nana.vrm, cast/alicia.vrm | Deleted 2026-11-08 — the embedded licence on each forbids redistribution; see "Purged 2026-11-08" above. |
 | juno.vrm (Kizuna AI "Kamatte") | Never committed; public builds use seed-san.vrm. |
 
 ## Modular head / body GLBs ??drop-in, not committed here

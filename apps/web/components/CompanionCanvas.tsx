@@ -584,8 +584,8 @@ export default function CompanionCanvas({
     const BASE_SX = look.width;
     const BASE_SY = look.height;
     const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
-    // r2026-10-04.50: every character maps to a local anime VRM under
-    // /models/cast (see ASSET_MANIFEST.md). Load strategy per candidate:
+    // r2026-10-04.50: every character maps to a VRM under /models/want
+    // (remote release asset, downloaded same-origin at build). Load strategy per candidate:
     //   1. three-vrm plugin parse ??VRM 1.0 avatar (VRMA idle clip eligible)
     //   2. plain GLTF parse ??generic avatar (VRM 0.x legacy rig; bones and
     //      morphs are driven through the humanBones table with automatic
