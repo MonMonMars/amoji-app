@@ -3,5 +3,5 @@
 import SoftLandSelect from '../../components/SoftLandSelect';
 
 export default function StoryRedirect() {
-  return <SoftLandSelect seedSelectMode="story" label="Opening story select…" />;
+  return <SoftLandSelect seedSelectMode="story" label="Opening story select..." />;
 }

@@ -1,5 +1,5 @@
 'use client';
-// Shared chrome for legacy URL soft-lands (/mode, /story, /setup → /select).
+// Shared chrome for legacy URL soft-lands (/mode, /story, /setup -> /select).
 // Returning null flashed a blank frame on Pages bookmarks / old SW shells.
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -12,7 +12,7 @@ type SoftLandSelectProps = {
 
 export default function SoftLandSelect({
   seedSelectMode,
-  label = 'Taking you to character select…',
+  label = 'Taking you to character select...',
 }: SoftLandSelectProps) {
   const router = useRouter();
   useEffect(() => {

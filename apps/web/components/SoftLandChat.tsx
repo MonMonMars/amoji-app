@@ -9,7 +9,7 @@ type SoftLandChatProps = {
 };
 
 export default function SoftLandChat({
-  label = 'Taking you to chat…',
+  label = 'Taking you to chat...',
 }: SoftLandChatProps) {
   const router = useRouter();
   useEffect(() => {
