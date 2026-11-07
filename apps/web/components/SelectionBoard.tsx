@@ -268,7 +268,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={assetUrl(b.image)}
-                            alt=""
+                            alt={t(lang, b.nameKey as never)}
                             draggable={false}
                             className="absolute inset-0 h-full w-full object-cover"
                           />
