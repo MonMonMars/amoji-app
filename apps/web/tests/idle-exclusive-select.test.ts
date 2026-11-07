@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+﻿import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { join } from "node:path";
 
@@ -14,6 +14,8 @@ describe("idle/pose exclusive single-select", () => {
 
   it("emotion/pose row keeps one playing selection", () => {
     expect(row).toContain("Exclusive single-select");
-    expect(row).toContain("const selected = playing === file");
+    expect(row).toContain("const selected = playing === clip.code");
+    expect(row).toContain("CMA_REACTION_GALLERY");
+    expect(row).not.toContain("CLIP_LIBRARY");
   });
 });
