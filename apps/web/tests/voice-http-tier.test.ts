@@ -41,22 +41,28 @@ describe('the HTTP MP3 voice tier is actually reachable', () => {
     expect(gtts).not.toContain('wss://');
   });
 
-  it('the greeting fallback no longer re-enters an exhausted synth audition', () => {
-    // runSynthAudition() returns early once synthStarted is true, so calling it
-    // as the "fallback" made the greeting silent forever on a muted iPhone.
+  it('the greeting starts the HTTP tier, not a dead Edge attempt', () => {
+    // Edge 403s for every client, so blocking the greeting on it would mean a
+    // visible delay before any sound. gtts is started first; Edge can still
+    // interrupt if it ever answers again.
     const greetStart = voice.indexOf('export function playVoiceGreeting');
     const greetEnd = voice.indexOf('export function previewLibraryClip', greetStart);
     const greet = voice.slice(greetStart, greetEnd);
     expect(greet).toContain('speakGtts(');
-    expect(greet).not.toMatch(/runSynthAudition\('greeting fallback'\)/);
+    const gttsAt = greet.indexOf('speakGtts(');
+    const edgeAt = greet.indexOf('speakEdge(');
+    expect(gttsAt).toBeGreaterThan(-1);
+    expect(edgeAt).toBeGreaterThan(gttsAt); // MP3 tier is kicked off first
+    // synth survives only as the final fallback when even HTTP cannot play
+    expect(greet).toContain("runSynthAudition('greeting fallback')");
   });
 
-  it('the preview fallback also uses gtts', () => {
+  it('the preview path starts the HTTP tier too', () => {
     const start = voice.indexOf('export function previewEdgeVoice');
-    const end = voice.indexOf('export function testVoice(', start);
+    const end = voice.indexOf('const TEST_LINES', start);
     const block = voice.slice(start, end);
     expect(block).toContain('speakGtts(');
-    expect(block).not.toMatch(/runSynthAudition\('preview fallback'\)/);
+    expect(block).toContain("runSynthAudition('preview fallback')");
   });
 
   it('the settings self-test exercises the gtts tier so a silent phone is diagnosable', () => {
