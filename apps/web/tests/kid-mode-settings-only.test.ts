@@ -10,7 +10,7 @@ describe('Kid mode control lives in Settings only', () => {
     const sheet = read('components/SettingsSheet.tsx');
     expect(sheet).toContain("t(lang, 'kidMode')");
     expect(sheet).toContain('toggleKid');
-    expect(sheet).toContain('<Toggle on={prefs.kidMode}');
+    expect(sheet).toContain("<Toggle label={t(lang, 'kidMode')} on={prefs.kidMode}");
   });
 
   it('character select top bars have no kid mode chip', () => {
