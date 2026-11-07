@@ -56,6 +56,7 @@ export default function Login() {
           placeholder="Simon"
         />
         <button
+          type="button"
           onClick={go}
           disabled={!bootReady}
           className="ui-btn ui-btn-primary mt-4 h-12 w-full rounded-full bg-white text-base font-semibold text-black shadow-[0_10px_40px_-12px_rgba(255,255,255,0.45)] disabled:pointer-events-none disabled:opacity-60"
@@ -63,7 +64,7 @@ export default function Login() {
           {t(lang, 'loginCta')}
         </button>
         <div className="mt-3 text-center">
-          <button onClick={() => router.push('/select')} disabled={!bootReady} className="ui-btn rounded-full px-3 py-1 text-xs text-white/35 underline-offset-4 hover:underline disabled:pointer-events-none">
+          <button type="button" onClick={() => router.push('/select')} disabled={!bootReady} className="ui-btn rounded-full px-3 py-1 text-xs text-white/35 underline-offset-4 hover:underline disabled:pointer-events-none">
             {t(lang, 'loginSkip')}
           </button>
         </div>
