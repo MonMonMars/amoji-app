@@ -9,7 +9,7 @@ import { assetUrl } from './asset';
 import { createDefaultAudioContext } from './audio-output';
 import { resumeSfxContext } from './sfx';
 import { preloadVadRuntime } from './vad';
-import { clipLang, type VoiceClipGender } from './voice-clips';
+import { clipLang, pokeZoneClipPaths, POKE_PREFETCH_ZONES, type VoiceClipGender } from './voice-clips';
 
 /** Edge readaloud origin (wss host). Preconnect only — no audible open. */
 export const EDGE_SPEECH_ORIGIN = 'https://speech.platform.bing.com';
@@ -45,6 +45,13 @@ export function criticalChatAudioPaths(
       '/voice-clips/universal/male/wow.mp3',
       '/voice-clips/ja/male/um.mp3',
     );
+  }
+  // Poke is a tap on the body, so it has to answer instantly — but the zone
+  // clip was being fetched only after the tap, which put the sound a beat
+  // behind the recoil. Warm the zones a tap actually lands on. Deduped
+  // against the paths above so nothing is fetched twice.
+  for (const path of pokeZoneClipPaths(gender, POKE_PREFETCH_ZONES)) {
+    if (!paths.includes(path)) paths.push(path);
   }
   return paths;
 }
