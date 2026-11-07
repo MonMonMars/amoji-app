@@ -51,7 +51,9 @@ export default function EmotionClipRow({
           {t(lang, 'previewReactions')}
         </h2>
       </div>
-      <div className="max-h-28 w-full overflow-y-auto overscroll-contain sm:max-h-36">
+      {/* Full numbered set, no inner scroll: the select board is the only
+          vertical scroller on the page (Mon). */}
+      <div className="w-full">
         <div className="grid w-full grid-cols-2 gap-1 min-[420px]:grid-cols-3 sm:grid-cols-4">
           {ordered.map((clip, i) => {
             const n = i + 1;

@@ -100,6 +100,20 @@ export function arcPose(offset: number, step: number, centerScale = 1.1): ArcPos
   };
 }
 
+/**
+ * Nearest ancestor that can take a vertical wheel, or null at the document
+ * edge. The fan uses this to hand a plain vertical wheel back to the page
+ * instead of hijacking it (the select board has a single shared scroller).
+ */
+function verticalScrollParent(el: HTMLElement): HTMLElement | null {
+  for (let node = el.parentElement; node; node = node.parentElement) {
+    const overflowY = window.getComputedStyle(node).overflowY;
+    if (overflowY !== 'auto' && overflowY !== 'scroll') continue;
+    if (node.scrollHeight > node.clientHeight + 1) return node;
+  }
+  return null;
+}
+
 function Chevron({ dir }: { dir: 'left' | 'right' }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 h-6 w-6" aria-hidden="true">
@@ -238,9 +252,16 @@ export default function ArcFan<T extends { id: string }>({
   useEffect(() => {
     const el = root.current;
     if (!el) return;
+    // Sideways intent (trackpad swipe / shift+wheel) steps the fan. A plain
+    // vertical wheel belongs to whatever page scroller owns the fan — the
+    // select board has exactly one and the row must not trap it. With no
+    // vertical scroller around (e.g. the minigame picker) a vertical wheel
+    // still walks the ring.
     const onWheel = (event: WheelEvent) => {
-      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+      const horizontal = Math.abs(event.deltaX) > Math.abs(event.deltaY);
+      const delta = horizontal ? event.deltaX : event.deltaY;
       if (Math.abs(delta) < 8) return;
+      if (!horizontal && verticalScrollParent(el)) return;
       event.preventDefault();
       const next = indexRef.current + (delta > 0 ? 1 : -1);
       const item = items[next];
@@ -289,7 +310,7 @@ export default function ArcFan<T extends { id: string }>({
       role="group"
       aria-label={ariaLabel}
       tabIndex={0}
-      className={`mx-auto touch-none ${stageClass}`}
+      className={`mx-auto touch-pan-y ${stageClass}`}
       onKeyDown={onKeyNav}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
