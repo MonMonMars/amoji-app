@@ -1391,10 +1391,14 @@ export default function ChatPanel({
           )}
         </button>
         <input
+          id="amoji-chat-composer"
+          name="message"
+          autoComplete="off"
+          aria-label={t(lang, 'sayHi', { name: characterName })}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && void send()}
-          placeholder={t(lang, 'sayHi', { name: characterName } )}
+          placeholder={t(lang, 'sayHi', { name: characterName })}
           className="h-11 flex-1 overflow-hidden rounded-full border border-white/10 bg-black/30 px-4 text-[15px] text-white placeholder-white/30 outline-none backdrop-blur-md focus:border-white/40"
         />
         <button
