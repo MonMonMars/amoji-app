@@ -463,14 +463,20 @@ export default function SettingsSheet({
                 />
               </div>
               <input
+                id="amoji-settings-openai-key"
+                name="openai-api-key"
                 type="password"
                 autoComplete="off"
+                aria-label={t(lang, 'openaiKeyPlaceholder')}
                 value={oaKeyDraft}
                 onChange={(e) => { setOaKeyDraft(e.target.value); setOaSaved(false); }}
                 placeholder={t(lang, 'openaiKeyPlaceholder')}
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs text-white/85 outline-none placeholder:text-white/30 focus:border-white/25"
               />
               <input
+                id="amoji-settings-openai-endpoint"
+                name="openai-endpoint"
+                aria-label={t(lang, 'openaiEndpointPlaceholder')}
                 value={oaEpDraft}
                 onChange={(e) => { setOaEpDraft(e.target.value); setOaSaved(false); }}
                 placeholder={t(lang, 'openaiEndpointPlaceholder')}
@@ -511,7 +517,7 @@ export default function SettingsSheet({
             {/* r2026-10-06.131 — optional HTTP proxy for wss-blocked networks */}
             <div className="space-y-1.5">
               <div className={row}>
-                <span className={label}>🛰️ {t(lang, 'ttsProxy')}</span>
+                <label htmlFor="amoji-settings-tts-proxy" className={label}>🛰️ {t(lang, 'ttsProxy')}</label>
                 <div className="flex shrink-0 gap-1.5">
                   <button
                     type="button"
@@ -545,6 +551,9 @@ export default function SettingsSheet({
                 </div>
               </div>
               <input
+                id="amoji-settings-tts-proxy"
+                name="tts-proxy"
+                aria-label={t(lang, 'ttsProxy')}
                 value={proxyDraft}
                 onChange={(e) => { setProxyDraft(e.target.value); setProxySaved(false); }}
                 placeholder={t(lang, 'ttsProxyPlaceholder')}
