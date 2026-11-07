@@ -27,6 +27,7 @@ export default function PrivacyPage() {
         ))}
       </div>
       <Link href="/safety" className="text-sm text-pink-200 underline-offset-4 hover:underline">{t(lang, 'safetyTitle')}</Link>
+      <Link href="/credits" className="text-sm text-pink-200 underline-offset-4 hover:underline">{t(lang, 'creditsTitle')}</Link>
       <Link href="/" aria-label={backHome} className="mt-4 text-sm text-pink-200 underline-offset-4 hover:underline">{t(lang, 'back')}</Link>
     </main>
   );

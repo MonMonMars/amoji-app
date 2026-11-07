@@ -18,8 +18,10 @@ import { usePrefs, t, type Lang } from '../lib/prefs';
 import { useFocusTrap } from '../lib/use-focus-trap';
 
 // /safety belongs here too: the gate itself points at it, so it must be
-// readable without first accepting the terms.
-const LEGAL_DOC_PATHS = new Set(['/privacy', '/terms', '/safety']);
+// readable without first accepting the terms. /credits is here for the same
+// reason — it is an attribution obligation, not app content, and a user must be
+// able to read it without accepting anything.
+const LEGAL_DOC_PATHS = new Set(['/privacy', '/terms', '/safety', '/credits']);
 
 const COPY: Record<'title' | 'lead' | 'accept', Record<Lang, string>> = {
   title: {
