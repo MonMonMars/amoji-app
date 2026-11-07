@@ -117,8 +117,12 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
     <main
       className={`${leaving ? 'fx-select-out' : 'fx-select-in'} fx-select relative flex h-dvh w-screen flex-col overflow-hidden text-white`}
       style={{ background: prefsReady ? background.css : '#0a0a0f' }}
+      aria-labelledby="amoji-selection-title"
       aria-busy={!prefsReady}
     >
+      <h1 id="amoji-selection-title" className="sr-only">
+        {mode === 'start' ? t(lang, 'selectTitle') : t(lang, 'changeCta')}
+      </h1>
       <div
         aria-hidden
         className={`pointer-events-none absolute inset-0 z-30 ${leaving ? 'fx-route-veil-out' : 'fx-route-veil-in'}`}
