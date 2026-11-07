@@ -70,8 +70,9 @@ export default function TtsVoiceRow({
           {showAll ? t(lang, 'voiceThisLanguage') : t(lang, 'voiceShowAll')}
         </button>
       </div>
-      {/* Gender groups + taller grid: males stay visible (Mon: many missing). */}
-      <div className="max-h-[12rem] w-full overflow-y-auto overscroll-contain sm:max-h-[16rem]" data-testid="tts-voice-grid">
+      {/* Gender groups, both visible. The board owns the only vertical
+          scroller, so this grid must not add a nested one (Mon). */}
+      <div className="w-full" data-testid="tts-voice-grid">
         {(['female', 'male'] as const).map((gender) => {
           const group = buttons.filter((b) => b.gender === gender);
           if (!group.length) return null;
