@@ -74,7 +74,7 @@ import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
 import { ARM_DOWN_BASE } from '@amoji/vrm-renderer';
-import { FootPlanter, type PlantLean } from './plant-feet';
+import { FootPlanter, applyThighUnblend, type PlantLean } from './plant-feet';
 import { ChestBounce } from './chest-bounce';
 import { capEyeExpression } from './eyes';
 import { applyCastFix, captureCastFix, type CastFixState } from './cast-pose';
@@ -230,6 +230,8 @@ export interface Avatar {
   armCastFixes(characterId: string): void;
   /** Re-apply those corrections after the mixer. Idempotent within a frame. */
   applyCastFixes(): void;
+  /** Open hanging thighs that folded into the torso (blended legs/body). */
+  unblendLegs(): void;
   /** V1 head-add must treat the corrected head quat as its own write. */
   acknowledgeHeadPose(): void;
   update(dt: number): void;
@@ -1012,6 +1014,10 @@ class V1Avatar implements Avatar {
     this.acknowledgeHeadPose();
   }
 
+  unblendLegs(): void {
+    applyThighUnblend((name) => this.getBoneNode(name));
+  }
+
   acknowledgeHeadPose(): void {
     const head = this.getBoneNode('head');
     if (head) this.headAddWritten.copy(head.quaternion);
@@ -1349,6 +1355,10 @@ class GenericAvatar implements Avatar {
 
   applyCastFixes(): void {
     if (this.castFix) applyCastFix(this.castFix);
+  }
+
+  unblendLegs(): void {
+    applyThighUnblend((name) => this.getBoneNode(name));
   }
 
   acknowledgeHeadPose(): void { /* procedural head has no additive layer */ }
