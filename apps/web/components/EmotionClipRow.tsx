@@ -47,9 +47,9 @@ export default function EmotionClipRow({
   };
 
   return (
-    <section className="pointer-events-auto w-full min-w-0" data-testid="emotion-clip-row">
+    <section role="group" aria-labelledby="amoji-emotion-clip-title" className="pointer-events-auto w-full min-w-0" data-testid="emotion-clip-row">
       <div className="mb-1 flex items-center justify-center gap-2">
-        <h2 className="text-center text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
+        <h2 id="amoji-emotion-clip-title" className="text-center text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
           {t(lang, 'previewReactions')}
         </h2>
         <button
