@@ -4,7 +4,7 @@
  * Blocks the app until Privacy + Terms are accepted for LEGAL_ACCEPT_VERSION.
  * Demo / placeholder copy — not final lawyer text.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -75,12 +75,28 @@ export default function LegalGate() {
   const [ready, setReady] = useState(false);
   const [accepted, setAccepted] = useState(true);
 
+  const acceptRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     const sync = () => setAccepted(hasAcceptedCurrentLegal());
     sync();
     setReady(true);
     return subscribeLegalAccept(sync);
   }, []);
+
+  // Focus Accept when the gate opens; swallow Escape so it cannot dismiss
+  // the mandatory click-to-accept dialog or leak to the page underneath.
+  useEffect(() => {
+    if (!ready || accepted) return;
+    acceptRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [ready, accepted]);
 
   // Let users read full demo Privacy/Terms pages without the blocking overlay.
   if (LEGAL_DOC_PATHS.has(pathname)) return null;
@@ -140,6 +156,7 @@ export default function LegalGate() {
 
         <div className="border-t border-white/10 px-5 py-4">
           <button
+            ref={acceptRef}
             type="button"
             data-testid="legal-accept"
             onClick={() => acceptCurrentLegal()}
