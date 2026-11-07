@@ -444,6 +444,7 @@ export default function MiniGameOverlay({ kind, lang, onEmotion, onExit }: MiniG
             type="button"
             data-testid="minigame-start"
             onClick={() => setStarted(true)}
+            aria-label={ui.start}
             className="min-h-11 min-w-36 rounded-full bg-white px-10 py-3 text-base font-semibold tracking-widest text-black"
           >
             {ui.start}
@@ -524,6 +525,7 @@ export default function MiniGameOverlay({ kind, lang, onEmotion, onExit }: MiniG
               <button
                 type="button"
                 onClick={() => resetRound(prefersReduced())}
+                aria-label={ui.again}
                 className="min-h-11 rounded-full bg-white px-5 py-2 text-sm font-medium text-black"
               >
                 {ui.again}
