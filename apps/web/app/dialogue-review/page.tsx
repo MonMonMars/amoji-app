@@ -9,6 +9,7 @@
 // directly instead of only picking from the preset lists.
 
 import { useMemo, useState } from 'react';
+import { loadPrefs } from '../../lib/prefs';
 
 type Verdict = 'keep' | 'drop' | 'undecided';
 
@@ -499,6 +500,11 @@ const SECTIONS: { key: SectionKey; title: string; hint: string }[] = [
 ];
 
 export default function DialogueReviewPage() {
+  const lang = loadPrefs().lang;
+  const copyResultLabel =
+    lang === 'yue' ? '複製結果' : lang === 'zh' ? '复制结果' : lang === 'ja' ? '結果をコピー' : 'Copy result';
+  const searchLinesLabel =
+    lang === 'yue' ? '搜尋對白' : lang === 'zh' ? '搜索台词' : lang === 'ja' ? '台詞を検索' : 'Search lines';
   const [verdicts, setVerdicts] = useState<Record<string, Verdict>>(initialVerdicts);
   const [charFilter, setCharFilter] = useState<string>('all');
   const [query, setQuery] = useState('');
@@ -593,7 +599,7 @@ export default function DialogueReviewPage() {
       <header className="drv-head">
         <h1 id="amoji-drv-title">Amoji Dialogue Review</h1>
         <p className="drv-sub">r2026-10-04.67 · tap a line to cycle ✅ keep → ❌ drop → ❓ undecided · paste the result back to me in chat</p>
-        <button type="button" className="drv-copy" onClick={copyResult} aria-label="Copy result">{copied ? '✓ Copied!' : '📋 Copy result'}</button>
+        <button type="button" className="drv-copy" onClick={copyResult} aria-label={copyResultLabel}>{copied ? '✓ Copied!' : '📋 Copy result'}</button>
       </header>
 
       <div className="drv-controls">
@@ -602,7 +608,7 @@ export default function DialogueReviewPage() {
           name="search"
           type="search"
           autoComplete="off"
-          aria-label="Search lines"
+          aria-label={searchLinesLabel}
           className="drv-search"
           placeholder="Search lines..."
           value={query}
@@ -693,7 +699,7 @@ export default function DialogueReviewPage() {
       })}
 
       <footer className="drv-foot">
-        <button type="button" className="drv-copy" onClick={copyResult} aria-label="Copy result">{copied ? '✓ Copied!' : '📋 Copy result'}</button>
+        <button type="button" className="drv-copy" onClick={copyResult} aria-label={copyResultLabel}>{copied ? '✓ Copied!' : '📋 Copy result'}</button>
         <p>Then paste it here in the chat and I will apply your picks to the app.</p>
       </footer>
     </main>

@@ -9,7 +9,7 @@ describe("dialogue-review controls a11y", () => {
     expect(page).toContain('id="amoji-drv-search"');
     expect(page).toContain('name="search"');
     expect(page).toContain('type="search"');
-    expect(page).toContain('aria-label="Search lines"');
+    expect(page).toContain('aria-label={searchLinesLabel}');
     expect(page).toContain('placeholder="Search lines..."');
   });
 
