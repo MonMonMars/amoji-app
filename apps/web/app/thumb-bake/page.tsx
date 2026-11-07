@@ -369,12 +369,18 @@ export default function ThumbBakePage() {
   return (
     <main aria-labelledby="amoji-thumb-bake-title" className="min-h-dvh bg-[#16161f] p-6 font-mono text-sm text-white/80">
       <h1 id="amoji-thumb-bake-title" className="mb-1 text-lg font-bold text-white">Thumb Bake Studio</h1>
-      <p className="mb-4 text-white/50">
+      <p className="mb-4 text-white/50" role="status" aria-live="polite">
         Rendering every cast member through the real avatar pipeline — {done ? 'finished' : 'running…'}
       </p>
       <div className="flex gap-6">
-        <div ref={hostRef} className="shrink-0" />
-        <div className="max-h-[70vh] flex-1 overflow-y-auto whitespace-pre-wrap">
+        <div ref={hostRef} className="shrink-0" role="img" aria-label="Avatar bake canvas" />
+        <div
+          className="max-h-[70vh] flex-1 overflow-y-auto whitespace-pre-wrap"
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions"
+          aria-label="Bake progress log"
+        >
           {log.map((l, i) => (
             <div key={i} className={l.includes('FAILED') ? 'text-red-400' : 'text-white/70'}>{l}</div>
           ))}
