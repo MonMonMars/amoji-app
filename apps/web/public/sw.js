@@ -16,7 +16,7 @@
  */
 'use strict';
 
-var CACHE = 'amoji-r2026-11-07.16';
+var CACHE = 'amoji-r2026-11-07.17';
 var SHELL = [
   './',
   './chat',
@@ -34,6 +34,15 @@ var SHELL = [
   './favicon.ico',
 ];
 var MAX_ENTRIES = 300;
+/**
+ * Scope-relative shell URLs, precomputed so trim() can recognise them without
+ * rebuilding a URL for every key on every trim pass.
+ */
+function shellUrls() {
+  return SHELL.map(function (p) {
+    return new URL(p, self.registration.scope).href;
+  });
+}
 
 self.addEventListener('install', function (event) {
   event.waitUntil(
@@ -72,9 +81,17 @@ self.addEventListener('activate', function (event) {
 
 function trim(cache) {
   return cache.keys().then(function (keys) {
-    if (keys.length <= MAX_ENTRIES) return null;
-    var excess = keys.length - MAX_ENTRIES;
-    var oldest = keys.slice(0, excess);
+    // The shell is precached at install, which makes it the OLDEST entries —
+    // so a plain oldest-first trim deleted the offline pages first and left
+    // 300 thumbnails. Installed app then opened to a blank frame with no
+    // cached page to fall back to. The shell is the whole point of the cache:
+    // never evict it, and cap only the opportunistic asset entries on top.
+    var shell = shellUrls();
+    var evictable = keys.filter(function (req) {
+      return shell.indexOf(req.url) === -1;
+    });
+    if (evictable.length <= MAX_ENTRIES) return null;
+    var oldest = evictable.slice(0, evictable.length - MAX_ENTRIES);
     return Promise.all(
       oldest.map(function (req) {
         return cache.delete(req);
