@@ -26,7 +26,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  characterById, backgroundById, KID_CHARACTER, KID_BACKGROUND,
+  characterById, backgroundById,
   t, type Prefs, type StrKey,
 } from '../lib/prefs';
 import { LangChips } from './selectors';
@@ -244,16 +244,9 @@ export default function SettingsSheet({
     window.dispatchEvent(new Event('amoji:profile'));
   };
 
-  // Kid Mode: turning it on swaps to a wholesome character + sunny scene.
-  const toggleKid = () => {
-    const next = !prefs.kidMode;
-    const patch: Partial<Prefs> = { kidMode: next };
-    if (next) {
-      if (!characterById(prefs.character).kidSafe) patch.character = KID_CHARACTER;
-      if (!backgroundById(prefs.background).kidSafe) patch.background = KID_BACKGROUND;
-    }
-    onChange(patch);
-  };
+  // r2026-11-08 (ADULT ONLY): the Kid Mode toggle is gone. Amoji presents as an
+  // 18+ product, so there is no in-app switch that could turn it into a
+  // kid-safe one. `prefs.kidMode` still exists and is pinned false in prefs.ts.
 
   const copyAll = async () => {
     try {
@@ -410,7 +403,6 @@ export default function SettingsSheet({
               <span className="flex items-center gap-1.5 text-base font-semibold text-white">
                 {me.name}
                 <span className="text-xs text-white/45">{me.gender === 'female' ? '♀' : '♂'}</span>
-                {prefs.kidMode && <span className="text-[10px]">🧸</span>}
               </span>
               <span className="block truncate text-xs text-white/50">{me.tagline[lang] ?? me.tagline.en}</span>
               <span className="mt-0.5 block text-[11px]" style={{ color: `${accent}cc` }}>
@@ -422,13 +414,10 @@ export default function SettingsSheet({
             </span>
           </button>
 
-          <Section title={`🧸 ${t(lang, 'settingsMode')}`}>
-            <div className={row}>
-              <span className={label}>🧸 {t(lang, 'kidMode')}
-                <span className="block text-[11px] text-white/40">{t(lang, 'kidModeHint')}</span>
-              </span>
-              <Toggle label={t(lang, 'kidMode')} on={prefs.kidMode} accent={accent} onClick={toggleKid} />
-            </div>
+          <Section title={`🔞 ${t(lang, 'settingsMode')}`}>
+            {/* Replaces the retired Kid Mode row: the only thing to say about
+                mode now is that the product is adults-only. */}
+            <p className={`${label} text-white/60`}>{t(lang, 'settingsAdultOnly')}</p>
           </Section>
 
           <Section title={`🌐 ${t(lang, 'chooseLanguage')}`}>
