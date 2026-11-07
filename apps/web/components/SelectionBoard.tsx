@@ -171,7 +171,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
             </h2>
           </div>
 
-          <div className="relative mx-auto mt-1 min-h-0 w-full flex-1">
+          <div className="relative mx-auto mt-1 min-h-[11rem] w-full flex-1 sm:min-h-[14rem]">
             <ArcFan
               ariaLabel="characters"
               size="portrait"
@@ -223,7 +223,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
 
         </section>
 
-        <div className="flex max-h-[52dvh] w-full shrink-0 flex-col items-center overflow-y-auto overscroll-contain bg-gradient-to-t from-black/75 via-black/40 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:max-h-[48dvh] sm:px-6">
+        <div className="flex max-h-[52dvh] w-full shrink-0 flex-col items-center overflow-y-auto overscroll-contain bg-gradient-to-t from-black/75 via-black/40 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:max-h-[48dvh] sm:px-6 [@media(orientation:landscape)_and_(max-height:500px)]:max-h-[34dvh]">
           <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col items-center gap-2">
             <section className="pointer-events-auto w-full min-w-0" style={{ '--d': '70ms' } as CSSProperties}>
               <h2 className="mb-1 text-center text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">

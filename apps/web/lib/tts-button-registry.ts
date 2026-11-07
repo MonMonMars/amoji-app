@@ -1,4 +1,4 @@
-// Tier A select-page buttons: the 28 Edge neural voices, one real short name
+// Tier A select-page buttons: shipping Edge neurals (tts-voices-catalog wire-now), one real short name
 // each. A later engine is not a numbered male/female button until it has a
 // real speaker id. The row renders `selectTtsButtons()` and nothing else.
 
@@ -14,6 +14,8 @@ export interface TtsButtonVoice {
   gender: VoiceGender;
   /** Exact label, e.g. "Cantonese female 1". */
   label: string;
+  /** Per-locale gender index (male 1, female 1, ...). */
+  n: number;
   shipping: true;
 }
 
@@ -31,6 +33,7 @@ export const TTS_BUTTON_REGISTRY: readonly TtsButtonVoice[] = EDGE_VOICE_BUTTONS
   locale: button.locale,
   gender: button.gender,
   label: button.label,
+  n: button.n,
   shipping: true as const,
 }));
 

@@ -73,11 +73,14 @@ describe('Edge voice bake-off buttons', () => {
     expect(allFemale.length).toBe(EDGE_VOICE_BUTTONS.filter((b) => b.gender === 'female').length);
   });
 
-  it('keeps select row and settings picker from offering cross-gender samples', () => {
+  it('select row shows full numbered Edge set incl males; settings picker keeps gender floor', () => {
     const row = fs.readFileSync(path.resolve(here, '../components/TtsVoiceRow.tsx'), 'utf8');
-    expect(row).toContain('selectTtsButtons(lang, companionGender)');
-    expect(row).toContain('selectTtsButtons(undefined, companionGender)');
-    expect(row).toContain('button.gender !== companionGender');
+    // Mon t533/t534: language section lists both genders (catalog wire-now + males).
+    expect(row).toContain('selectTtsButtons(lang)');
+    expect(row).toContain('selectTtsButtons(undefined)');
+    expect(row).toContain('button.n');
+    expect(row).toContain('playVoiceGreeting');
+    expect(row).not.toContain('selectTtsButtons(lang, companionGender)');
     const picker = fs.readFileSync(path.resolve(here, '../components/VoicePicker.tsx'), 'utf8');
     expect(picker).toContain('button.gender !== companionGender');
     expect(picker).toContain('([companionGender] as const)');
