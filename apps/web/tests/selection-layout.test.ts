@@ -151,6 +151,19 @@ describe('selection layout', () => {
     expect(chat).toContain("bootReady ? '' : 'opacity-0'");
   });
 
+  it('change board follows draft live.kidMode for cast/scenes/badge (parity with select)', () => {
+    // /change keeps a draft until confirm; filtering must not stick to saved prefs.
+    expect(board).toContain("mode: 'start' | 'change'");
+    expect(board).toContain('const live: Prefs = mode ===');
+    expect(board).toContain('if (live.kidMode && !c.kidSafe) return false;');
+    expect(board).toContain('const scenes = live.kidMode ? BACKGROUNDS.filter((b) => b.kidSafe) : BACKGROUNDS;');
+    expect(board).toContain('{live.kidMode && <span');
+    expect(board).not.toContain('if (prefs.kidMode && !c.kidSafe) return false;');
+    expect(board).not.toContain('const scenes = prefs.kidMode ? BACKGROUNDS.filter');
+    expect(board).not.toContain('{prefs.kidMode && <span');
+    expect(board).toContain("kidMode={!!live.kidMode}");
+  });
+
   it('keeps IdlePickRails chat-only as a multi-column grid (no select rails)', () => {
     expect(board).not.toContain("import IdlePickRails from './IdlePickRails'");
     expect(board).not.toContain('<IdlePickRails');
