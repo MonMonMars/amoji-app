@@ -243,3 +243,52 @@ export function tlForChoice(locale: VoiceLocale, id?: string | null): string {
 export function distinctVoiceCount(locale: VoiceLocale): number {
   return voiceChoicesFor(locale).length;
 }
+
+// ---------------------------------------------------------------------------
+// OS voices: a SECOND source, when the device really has more speakers.
+// ---------------------------------------------------------------------------
+
+/**
+ * The gtts list above is the only HOSTED engine that works, and it tops out at
+ * one or two speakers per language. speechSynthesis is the other live source,
+ * and on Windows/macOS it exposes genuinely different installed voices — three
+ * or more per gender for some languages.
+ *
+ * So it is declared here as a supplementary source rather than folded into
+ * VOICE_CHOICES: those ids are Google `tl` codes, and an OS voice is not one.
+ * `lib/browser-voices.ts` enumerates what this device actually has and infers
+ * each voice's gender from its name; this block only states the policy, so the
+ * picker can ask "is it worth showing OS voices at all?" without importing the
+ * enumeration.
+ */
+
+export interface OsSourceVerdict {
+  /** Can be a button when the device reports usable voices. */
+  status: 'browser';
+  /** Why it is not a button today, in the same shape as the audit above. */
+  evidence: string;
+  /**
+   * Usable voices per inferred gender a language must reach before the picker
+   * offers this source instead of just explaining its absence.
+   */
+  minPerGender: number;
+}
+
+export const OS_VOICE_SOURCE: OsSourceVerdict = {
+  status: 'browser',
+  minPerGender: 2,
+  evidence:
+    'speechSynthesis.getVoices(): installed OS voices, verified as 15 local voices in Chrome, Edge and bundled Chromium on Windows 11 (zh-HK Danny male + Tracy female; ja-JP Ayumi/Haruka/Sayaka female + Ichiro male). SpeechSynthesisVoice has no gender field, so gender is inferred from the name by lib/browser-voices.ts. Muted entirely by the iOS silent switch; on iOS and Android only one voice per language actually plays.',
+};
+
+/**
+ * Should the picker show OS voices for this language as real choices?
+ *
+ * `usablePerGender` is the count from browser-voices.ts, which already excludes
+ * voices the platform will silently swap out. The bar is `minPerGender` in BOTH
+ * genders: one lonely extra voice is not worth a row that implies a choice.
+ */
+export function osVoicesAreChoosable(usablePerGender: { female: number; male: number }): boolean {
+  return usablePerGender.female >= OS_VOICE_SOURCE.minPerGender
+    && usablePerGender.male >= OS_VOICE_SOURCE.minPerGender;
+}

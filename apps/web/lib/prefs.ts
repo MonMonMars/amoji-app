@@ -177,7 +177,17 @@ export type StrKey =
   // named once instead of being rendered as dead buttons.
   | 'voiceOnlyOneAvailable' | 'voiceEnginesUnavailable'
   | 'voiceRegionCantonese' | 'voiceRegionMandarin' | 'voiceRegionTaiwan' | 'voiceRegionJapanese'
-  | 'voiceRegionUs' | 'voiceRegionUk' | 'voiceRegionAu' | 'voiceRegionIn' | 'voiceRegionNg';
+  | 'voiceRegionUs' | 'voiceRegionUk' | 'voiceRegionAu' | 'voiceRegionIn' | 'voiceRegionNg'
+  // OS-provided voices (speechSynthesis). These exist because the OS genuinely
+  // ships several real voices per language on desktop — the picker must be able
+  // to show them as an extra source, and must be equally able to say when the
+  // device only has one.
+  | 'osVoicesTitle' | 'osVoicesCount' | 'osVoicesNone' | 'osVoicesProbe'
+  | 'osVoicesGenderUnknown' | 'osVoicesInferred' | 'osVoicesNetwork'
+  | 'osVoicesDiagTitle' | 'osVoicesDiagHint' | 'osVoicesDiagEmpty'
+  | 'osVoicesCaveatIosSilent' | 'osVoicesCaveatIosOnePerLang'
+  | 'osVoicesCaveatAndroidSystem' | 'osVoicesCaveatMacDownload'
+  | 'osVoicesUnreachable' | 'osVoicesSubstitute';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   chooseCharacter: { en: 'Choose your companion', yue: '揀你嘅小伙伴', zh: '选择你的伙伴', ja: '相棒を選ぶ' },
@@ -211,6 +221,71 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   voiceRegionAu: { en: 'Australian English', yue: '澳洲英文', zh: '澳洲英语', ja: 'オーストラリア英語' },
   voiceRegionIn: { en: 'Indian English', yue: '印度英文', zh: '印度英语', ja: 'インド英語' },
   voiceRegionNg: { en: 'Nigerian English', yue: '尼日利亞英文', zh: '尼日利亚英语', ja: 'ナイジェリア英語' },
+  // ---- OS-provided voices (speechSynthesis) -------------------------------
+  // The OS genuinely ships several real voices per language on desktop, so the
+  // picker can offer them as an extra source; it must also be able to say when
+  // this device only has one.
+  osVoicesTitle: { en: 'Voices built into this device', yue: '呢部機本身有嘅聲線', zh: '本机自带的声音', ja: 'この端末に入っている声' },
+  osVoicesCount: {
+    en: '{n} device voices · {female} female, {male} male',
+    yue: '{n} 把機內聲線 · 女 {female} · 男 {male}',
+    zh: '{n} 个机内声音 · 女 {female} · 男 {male}',
+    ja: '端末内の声 {n} 個 · 女性 {female} · 男性 {male}',
+  },
+  osVoicesNone: {
+    en: 'This browser exposed no speech voices for this language.',
+    yue: '呢個瀏覽器冇提供任何呢種語言嘅聲線。',
+    zh: '这个浏览器没有提供任何该语言的声音。',
+    ja: 'このブラウザはこの言語の声をひとつも公開していません。',
+  },
+  osVoicesProbe: { en: 'Check this device’s voices', yue: '檢查呢部機有咩聲線', zh: '检查本机有哪些声音', ja: 'この端末の声を調べる' },
+  osVoicesGenderUnknown: { en: 'gender unknown', yue: '性別未知', zh: '性别未知', ja: '性別不明' },
+  osVoicesInferred: {
+    en: 'Gender is read from the voice name — the browser API has no gender field. A name it does not recognise shows as unknown rather than being guessed.',
+    yue: '性別係由聲線名估出嚟——瀏覽器 API 冇性別欄位。認唔到嘅名會顯示「未知」，唔會亂估。',
+    zh: '性别是从声音名称推断的——浏览器 API 没有性别字段。认不出的名称会显示「未知」，不会乱猜。',
+    ja: '性別は声の名前から推定しています。ブラウザ API に性別の項目はないため、判別できない名前は推測せず「不明」と表示します。',
+  },
+  osVoicesNetwork: { en: 'network', yue: '要上網', zh: '需要联网', ja: 'ネットワーク' },
+  osVoicesDiagTitle: { en: 'Which voices this device really has', yue: '呢部機實際有邊啲聲線', zh: '本机实际有哪些声音', ja: 'この端末にある声の一覧' },
+  osVoicesDiagHint: {
+    en: 'This is the raw list the browser reports. If a language shows one voice here, that is why you only hear one — no setting in the app can add another.',
+    yue: '呢個係瀏覽器報返嚟嘅原始清單。如果某種語言得一把聲，就係你只聽到一把聲嘅原因——App 入面點設定都變唔出第二把。',
+    zh: '这是浏览器报告的原始清单。若某语言只有一把声音，这就是你只听到一把的原因——应用里任何设置都变不出第二把。',
+    ja: 'ブラウザが報告している生の一覧です。ある言語の声がひとつだけなら、それが「ひとつしか聞こえない」理由です。アプリ側の設定では増やせません。',
+  },
+  osVoicesDiagEmpty: { en: 'No voices reported by this browser.', yue: '呢個瀏覽器冇報告任何聲線。', zh: '这个浏览器没有报告任何声音。', ja: 'このブラウザは声を報告していません。' },
+  osVoicesCaveatIosSilent: {
+    en: 'On iPhone and iPad the hardware silent switch mutes all browser speech, and no page can detect it. If voices are listed but you hear nothing, check that switch first.',
+    yue: 'iPhone 同 iPad 嘅硬件靜音開關會靜音所有網頁語音，而且任何網頁都偵測唔到。聲線明明有但你聽唔到，先檢查嗰個掣。',
+    zh: 'iPhone 和 iPad 的硬件静音开关会让所有网页语音静音，而且任何网页都检测不到。声音明明存在却听不见，请先检查该开关。',
+    ja: 'iPhone / iPad の本体横のサイレントスイッチは、ブラウザの音声をすべて消音します。ページ側からは検知できません。声はあるのに聞こえないときは、まずこのスイッチを確認してください。',
+  },
+  osVoicesCaveatIosOnePerLang: {
+    en: 'iOS lists many voices but speaks only one per language — asking for another name in the same language silently plays the default instead.',
+    yue: 'iOS 會列出好多聲線，但每種語言實際只會出一把——叫同語言另一個名，會靜靜雞變返預設嗰把。',
+    zh: 'iOS 会列出很多声音，但每种语言实际只播一把——请求同语言的另一个名称，会静默改回默认那把。',
+    ja: 'iOS は多くの声を一覧に出しますが、実際に鳴るのは言語ごとにひとつだけです。同じ言語の別名を指定しても、既定の声に黙って置き換わります。',
+  },
+  osVoicesCaveatAndroidSystem: {
+    en: 'Android plays whichever voice is set in the system Text-to-speech settings. The page can pick the language, not the voice.',
+    yue: 'Android 會用系統「文字轉語音」設定揀好嗰把聲。網頁只可以揀語言，揀唔到聲線。',
+    zh: 'Android 会播放系统「文字转语音」设置里选定的声音。网页只能选择语言，不能选择声音。',
+    ja: 'Android は端末の「テキスト読み上げ」設定で選ばれている声を再生します。ページ側で選べるのは言語だけで、声そのものは選べません。',
+  },
+  osVoicesCaveatMacDownload: {
+    en: 'macOS installs one compact voice per language by default. Extra enhanced or premium voices must be downloaded in System Settings → Accessibility → Spoken Content.',
+    yue: 'macOS 每種語言預設只裝一把精簡聲線。其他增強／高級聲線要去「系統設定 → 輔助使用 → 朗讀內容」自己下載。',
+    zh: 'macOS 每种语言默认只装一个精简声音。其他增强／高级声音需在「系统设置 → 辅助功能 → 朗读内容」中自行下载。',
+    ja: 'macOS は言語ごとにコンパクトな声をひとつだけ標準で入れています。追加の拡張／プレミアム音声は「システム設定 → アクセシビリティ → 読み上げコンテンツ」からダウンロードが必要です。',
+  },
+  osVoicesUnreachable: { en: 'listed, but will not play', yue: '列出但唔會出聲', zh: '已列出但不会播放', ja: '一覧にあるが再生されない' },
+  osVoicesSubstitute: {
+    en: 'other language — mispronounces this one',
+    yue: '第二種語言——讀呢種語言會讀錯',
+    zh: '其他语言——朗读本语言会读错',
+    ja: '別の言語 — この言語を正しく発音しません',
+  },
   previewReactions: { en: 'Reactions', yue: '反應聲', zh: '反应声', ja: 'リアクション' },
   previewUniversal: { en: 'Universal', yue: '通用', zh: '通用', ja: '共通' },
   startChat: { en: 'Start chatting', yue: '開始傾偈', zh: '开始聊天', ja: '話し始める' },
