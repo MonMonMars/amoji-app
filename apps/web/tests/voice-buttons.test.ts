@@ -88,15 +88,17 @@ describe('Edge voice bake-off buttons', () => {
     expect(picker).toContain('const GENDERS');
   });
 
-  it('pins a tapped voice for that companion gender only', () => {
+  it('pins a tapped voice exclusively for that locale (clears the other gender)', () => {
     saveVoicePick('en', 'female', 'en-US-AriaNeural');
     expect(voicePickFor('en', 'female')).toBe('en-US-AriaNeural');
     expect(voicePickFor('en', 'male')).toBeNull();
-    expect(voicePickFor('zh', 'female')).toBeNull();
     expect(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a01-shino' }).name).toBe('en-US-AriaNeural');
-    const maleUntouched = resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a24-hairsample-male' });
-    expect(isMaleNeuralVoice(maleUntouched.name)).toBe(true);
-    expect(maleUntouched.name).not.toBe('en-US-AriaNeural');
+    // Tapping a male voice clears the female pin — exclusive single-select.
+    saveVoicePick('en', 'male', 'en-US-GuyNeural');
+    expect(voicePickFor('en', 'male')).toBe('en-US-GuyNeural');
+    expect(voicePickFor('en', 'female')).toBeNull();
+    const malePinned = resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a24-hairsample-male' });
+    expect(malePinned.name).toBe('en-US-GuyNeural');
     expect(resolveEdgeVoice({
       lang: 'en', gender: 'female', character: 'a01-shino', ignoreVoicePick: true,
     }).name).toBe('en-US-JennyNeural');
@@ -158,6 +160,14 @@ describe('Edge voice bake-off buttons', () => {
     expect(ssml).toContain("xml:lang='en-US'");
   });
 
+  it('select + settings voice rows use exclusive single-select highlight', () => {
+    const row = fs.readFileSync(path.resolve(here, '../components/TtsVoiceRow.tsx'), 'utf8');
+    const picker = fs.readFileSync(path.resolve(here, '../components/VoicePicker.tsx'), 'utf8');
+    expect(row).toContain('button.id === activeId');
+    expect(picker).toContain('button.id === activeId');
+    expect(row).toContain('Exclusive: at most one pin per locale');
+  });
+
   it('renders one button per voice inside the voice settings panel', () => {
     const picker = fs.readFileSync(path.resolve(here, '../components/VoicePicker.tsx'), 'utf8');
     const settings = fs.readFileSync(path.resolve(here, '../components/SettingsSheet.tsx'), 'utf8');
@@ -180,6 +190,8 @@ describe('Edge voice bake-off buttons', () => {
     expect(greet).toContain('voiceId');
     expect(greet).not.toContain("kind: 'speak'");
     expect(greet).not.toContain('drainSpeech()');
+    expect(greet).toContain('synthSpeak(');
+    expect(greet).toContain('greeting fallback');
     // Explicit picker id must not fall through to one OS synth voice.
     expect(voice).toContain('if (voiceId) { settle(); return; }');
   });

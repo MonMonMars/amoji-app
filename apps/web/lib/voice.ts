@@ -1640,34 +1640,43 @@ function performClip(job: SpeechJob): Promise<void> {
  */
 export function playVoiceGreeting(characterId: string, lang: Lang, voiceId: string): void {
   if (!voiceOutputAllowed() || !voiceId) return;
-  // Select-page cut-through: rapid character/voice taps must not stack greetings.
+  // Unlock inside the tap gesture BEFORE stop so iOS/Chrome keep user activation.
+  unlockAudio(true);
   stopSpeaking();
-  unlockAudio();
   const kind = nextGreetingKind();
   const text = greetingText(lang, kind);
   const gender = isMaleNeuralVoice(voiceId) ? 'male' : 'female';
   let session = 0;
+  const onStart = () => {
+    session = noteSpeechStarted(text);
+    markVoiceStarted();
+    reportVoiceStatus('edge', true, `greeting ${voiceId}`);
+  };
   void speakEdge(text, {
     lang,
     gender,
     character: characterId,
     voiceId,
     forcePlain: true,
-    // Mild friendly contour even without express-as (select taps / WanLung).
     expressiveness: 1.15,
     rateDelta: 0.04,
     pitchDelta: 0.06,
-    onPlaying: () => {
-      session = noteSpeechStarted(text);
-      markVoiceStarted();
-      reportVoiceStatus('edge', true, `greeting ${voiceId}`);
-    },
+    onPlaying: onStart,
   }).then(() => {
     if (session) finishLipSync(session);
   }).catch((err: unknown) => {
     if ((err as Error | undefined)?.message === 'canceled') return;
     if (session) endLipSync();
     reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? `greeting failed ${voiceId}`);
+    // When Edge socket is blocked, still audition via browser voice (mute-aware).
+    try {
+      synthSpeak(text, characterId, lang, 'joy', 1.1, undefined, 1, undefined, () => {
+        if (session) finishLipSync(session);
+      }, gender);
+      reportVoiceStatus('synth', true, `greeting fallback ${voiceId}`);
+    } catch (e) {
+      reportVoiceStatus('synth', false, (e as Error | undefined)?.message ?? 'greeting synth failed');
+    }
   });
 }
 
@@ -1823,12 +1832,12 @@ export function playLaughBurst(characterId: string, lang: Lang): void {
  * tier cannot name these neural voices.
  */
 export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
-  // Respect master mute + Voice replies — select/settings previews stay silent when muted.
   if (!voiceOutputAllowed()) return Promise.resolve();
-  unlockAudio();
+  unlockAudio(true);
   stopSpeaking();
   const gender = isMaleNeuralVoice(voiceId) ? 'male' : 'female';
-  return speakEdge(edgeSampleText(locale), {
+  const text = edgeSampleText(locale);
+  return speakEdge(text, {
     lang: locale,
     gender,
     voiceId,
@@ -1836,6 +1845,18 @@ export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
     expressiveness: 1.15,
     rateDelta: 0.04,
     pitchDelta: 0.06,
+  }).catch((err: unknown) => {
+    if ((err as Error | undefined)?.message === 'canceled') return;
+    reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'preview edge failed');
+    return new Promise<void>((resolve) => {
+      try {
+        synthSpeak(text, 'preview', locale, 'joy', 1.1, undefined, 1, undefined, () => resolve(), gender);
+        reportVoiceStatus('synth', true, `preview fallback ${voiceId}`);
+      } catch (e) {
+        reportVoiceStatus('synth', false, (e as Error | undefined)?.message ?? 'preview synth failed');
+        resolve();
+      }
+    });
   });
 }
 

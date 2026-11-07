@@ -85,12 +85,10 @@ export default function IdlePickRails({
                 !item.playable
                   ? 'border-white/10 bg-black/20 text-white/30'
                   : on
-                  ? 'border-white/80 bg-white/15 text-white'
+                  ? 'border-white/80 bg-white/20 text-white ring-1 ring-white/50'
                   : en
-                    ? calm
-                      ? 'border-white/35 bg-black/45 text-white/85'
-                      : 'border-white/25 bg-black/40 text-white/80'
-                    : 'border-white/10 bg-black/25 text-white/40'
+                    ? 'border-white/15 bg-black/30 text-white/55'
+                    : 'border-white/10 bg-black/20 text-white/35'
               }`}
             >
               {item.label}
