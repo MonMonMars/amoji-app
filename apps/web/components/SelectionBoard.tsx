@@ -21,6 +21,7 @@ import { LangCardFace } from './selectors';
 import { assetUrl } from '../lib/asset';
 import { bigheadPath } from '../lib/bighead';
 import { playVoiceGreeting, primeAudioForChatEnter } from '../lib/voice';
+import { introText } from '../lib/character-intro';
 import { primeLocationForChatEnter } from '../lib/live-tools';
 import { voicePickFor } from '../lib/voice-picks';
 import { resolveEdgeVoice } from '../lib/edge-tts';
@@ -191,7 +192,12 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                   character: chosen.id,
                   ignoreVoicePick: true,
                 }).name;
-                playVoiceGreeting(chosen.id, lang, voiceId);
+                playVoiceGreeting(
+                  chosen.id,
+                  lang,
+                  voiceId,
+                  introText(chosen.name, chosen.tagline?.[lang] ?? chosen.tagline?.en, lang),
+                );
               }}
               label={(c) => c.name}
             >
