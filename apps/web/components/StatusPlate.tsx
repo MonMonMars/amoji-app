@@ -121,6 +121,7 @@ export default function StatusPlate({
       <button
         type="button"
         onClick={onOpenSelect}
+        aria-label={t(lang, 'openSelect')}
         title={t(lang, 'openSelect')}
         className="ui-btn flex max-w-[46vw] items-center gap-2 rounded-full border border-white/10 bg-black/55 py-1 pl-1 pr-3 shadow-lg shadow-black/30 backdrop-blur-md transition hover:bg-black/70"
       >
