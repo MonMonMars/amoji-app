@@ -7,7 +7,7 @@ import ModelThumb from './ModelThumb';
 
 export function CharacterGrid({ lang, value, onChange }: { lang: Lang; value: string; onChange: (id: string) => void }) {
   return (
-    <div role="group" aria-label="Character" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div role="group" aria-label={t(lang, 'chooseCharacter')} className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       {selectionCast(CHARACTERS).map((c: CharacterDef) => {
         const active = c.id === value;
         return (
@@ -42,7 +42,7 @@ export function CharacterGrid({ lang, value, onChange }: { lang: Lang; value: st
 
 export function BackgroundGrid({ lang, value, onChange }: { lang: Lang; value: string; onChange: (id: string) => void }) {
   return (
-    <div role="group" aria-label="Background" className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+    <div role="group" aria-label={t(lang, 'chooseBackground')} className="grid grid-cols-2 gap-3 sm:grid-cols-5">
       {BACKGROUNDS.map((b) => {
         const active = b.id === value;
         return (
@@ -148,7 +148,9 @@ const langCardFrame = (active: boolean): { className: string; style: { boxShadow
 /** Settings and setup: the same portrait cards, in a centered row. */
 export function LangChips({ value, onChange }: { value: Lang; onChange: (l: Lang) => void }) {
   return (
-    <div role="group" aria-label="Language" className="mx-auto grid w-full max-w-lg grid-cols-4 items-center justify-center gap-2">
+    // No `lang` prop: this control selects the language itself, so it labels
+    // its group with the currently-selected one.
+    <div role="group" aria-label={t(value, 'chooseLanguage')} className="mx-auto grid w-full max-w-lg grid-cols-4 items-center justify-center gap-2">
       {LANGS.map((l) => {
         const active = value === l.id;
         const frame = langCardFrame(active);

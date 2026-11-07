@@ -12,7 +12,10 @@ describe('LangChips aria-labels', () => {
     expect(slice).toContain('aria-pressed={active}');
     expect(slice).toContain('type="button"');
     expect(slice).toContain('role="group"');
-    expect(slice).toContain('aria-label="Language"');
+    // Localized: this control picks the language, so it labels itself in the
+    // currently-selected one instead of shipping the English "Language".
+    expect(slice).toContain("aria-label={t(value, 'chooseLanguage')}");
+    expect(slice).not.toContain('aria-label="Language"');
   });
 
   it('LangChips still maps LANGS ids', () => {
