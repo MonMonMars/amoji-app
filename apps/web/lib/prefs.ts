@@ -164,9 +164,11 @@ export type StrKey =
   // no-audio watchdog tap-to-replay chip (r2026-10-05.119)
   | 'replayHint'
   // 3D fallback notices (WebGL missing / model failed to load).
-  // Appended at the tail on purpose: #234 and #238 also insert into this
-  // union, so keeping this block away from theirs avoids a merge conflict.
-  | 'fallbackWebgl' | 'fallbackAsset';
+  // Appended at the tail on purpose: other PRs also insert into this union,
+  // so keeping new blocks away from theirs avoids merge conflicts.
+  | 'fallbackWebgl' | 'fallbackAsset'
+  // mic not supported in this browser (was a yue/English ternary — zh/ja got English)
+  | 'micUnsupported';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   tagline: {
@@ -442,6 +444,12 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: '3D 模型載入唔到 — 暫時顯示佔位圖，傾偈照樣得。',
     zh: '3D 模型无法加载 — 先显示占位图，聊天仍可正常使用。',
     ja: '3D モデルを読み込めません — 代わりにプレースホルダーを表示しています。チャットは使えます。',
+  },
+  micUnsupported: {
+    en: 'Speech input is not supported in this browser — try the latest Chrome or Safari.',
+    yue: '你嘅瀏覽器唔支援語音輸入，請用最新版 Chrome 或者 Safari 再試。',
+    zh: '这个浏览器不支持语音输入，请使用最新版 Chrome 或 Safari 再试。',
+    ja: 'このブラウザは音声入力に対応していません。最新の Chrome か Safari でお試しください。',
   },
 };
 
