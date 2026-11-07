@@ -206,7 +206,17 @@ export type StrKey =
   | 'privacyTitle' | 'termsTitle' | 'policyVersion' | 'safetyCrisisLine'
   | 'safetyCrisisTitle' | 'safetyOpenPage'
   | 'safetyTitle' | 'safetyLead' | 'safetyHelplinesTitle' | 'safetyEmergencyTitle'
-  | 'safetyStepsTitle' | 'safetyStepsBody' | 'safetyAboutAi' | 'safetyPrivacyLink';
+  | 'safetyStepsTitle' | 'safetyStepsBody' | 'safetyAboutAi' | 'safetyPrivacyLink'
+  // Appended at the tail on purpose (see the note above): reporting an AI
+  // reply. Play requires an in-app route for reporting generated content, and
+  // the copy has to say where the report actually goes — this device only.
+  | 'reportCta' | 'reportAria' | 'reportTitle' | 'reportIntro' | 'reportReasonLabel'
+  | 'reportReasonOffensive' | 'reportReasonMinorSexual' | 'reportReasonSelfHarm'
+  | 'reportReasonHarmfulAdvice' | 'reportReasonOther'
+  | 'reportNoteLabel' | 'reportNotePlaceholder' | 'reportSubmit' | 'reportCancel' | 'reportDone'
+  | 'reportSaved' | 'reportSavedNext' | 'reportSaveFailed'
+  | 'reportExport' | 'reportExportEmpty' | 'reportCountLabel' | 'reportExported' | 'reportExportFailed'
+  | 'reportSendTo' | 'reportSendToHint';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   chooseCharacter: { en: 'Choose your companion', yue: '揀你嘅小伙伴', zh: '选择你的伙伴', ja: '相棒を選ぶ' },
@@ -831,6 +841,159 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: 'Amoji 會送啲咩出去、送去邊',
     zh: 'Amoji 会发送什么、发送到哪里',
     ja: 'Amoji が何をどこへ送るか',
+  },
+  // Reporting an AI reply (Play requirement). Every sentence that mentions
+  // sending is written to match the code: localStorage on this device, an
+  // export the user sends themselves, and nothing leaving the browser.
+  reportCta: {
+    en: 'Report',
+    yue: '舉報',
+    zh: '举报',
+    ja: '報告',
+  },
+  reportAria: {
+    en: 'Report this AI reply',
+    yue: '舉報呢個 AI 回覆',
+    zh: '举报这条 AI 回复',
+    ja: 'このAIの返信を報告する',
+  },
+  reportTitle: {
+    en: 'Report this reply',
+    yue: '舉報呢個回覆',
+    zh: '举报这条回复',
+    ja: 'この返信を報告',
+  },
+  reportIntro: {
+    en: 'A language model wrote this reply. You can flag it here — but to be clear up front: Amoji has no server of its own, so this report is not sent anywhere automatically.',
+    yue: '呢個回覆係語言模型寫嘅。你可以喺度標記佢——不過先講清楚：Amoji 冇自己嘅伺服器，所以呢份舉報唔會自動送去任何地方。',
+    zh: '这条回复由语言模型生成。你可以在这里标记它——但先说清楚：Amoji 没有自己的服务器，所以这份举报不会自动发送到任何地方。',
+    ja: 'この返信は言語モデルが書いたものです。ここで印を付けられます。ただし先に言っておきます。Amoji には自前のサーバーがないので、この報告はどこにも自動送信されません。',
+  },
+  reportReasonLabel: {
+    en: "What's wrong with it?",
+    yue: '邊度有問題？',
+    zh: '哪里有问题？',
+    ja: 'どこが問題ですか？',
+  },
+  reportReasonOffensive: {
+    en: 'Offensive or inappropriate',
+    yue: '冒犯或不當內容',
+    zh: '冒犯或不合适的内容',
+    ja: '不快・不適切な内容',
+  },
+  reportReasonMinorSexual: {
+    en: 'Sexual content involving minors',
+    yue: '涉及未成年人士嘅性內容',
+    zh: '涉及未成年人的性内容',
+    ja: '未成年者に関する性的な内容',
+  },
+  reportReasonSelfHarm: {
+    en: 'Self-harm or suicide',
+    yue: '自殘或自殺相關內容',
+    zh: '自残或自杀相关内容',
+    ja: '自傷や自殺に関わる内容',
+  },
+  reportReasonHarmfulAdvice: {
+    en: 'Wrong or harmful advice',
+    yue: '錯誤或有害嘅建議',
+    zh: '错误或有害的建议',
+    ja: '誤った、または危険な助言',
+  },
+  reportReasonOther: {
+    en: 'Something else',
+    yue: '其他',
+    zh: '其他',
+    ja: 'その他',
+  },
+  reportNoteLabel: {
+    en: 'Anything to add? (optional)',
+    yue: '想補充啲咩？（可以唔填）',
+    zh: '想补充什么？（可不填）',
+    ja: '補足があれば（任意）',
+  },
+  reportNotePlaceholder: {
+    en: 'e.g. it told me to do something dangerous',
+    yue: '例如：佢叫我做危險嘅事',
+    zh: '例如：它让我去做危险的事',
+    ja: '例：危険なことをするよう勧められた',
+  },
+  reportSubmit: {
+    en: 'Save report',
+    yue: '儲存舉報',
+    zh: '保存举报',
+    ja: '報告を保存',
+  },
+  reportCancel: {
+    en: 'Cancel',
+    yue: '取消',
+    zh: '取消',
+    ja: 'キャンセル',
+  },
+  reportDone: {
+    en: 'Done',
+    yue: '搞掂',
+    zh: '完成',
+    ja: '完了',
+  },
+  reportSaved: {
+    en: 'Saved on this device only. Amoji has no server, so this report has not been sent anywhere.',
+    yue: '只係儲存喺呢部裝置。Amoji 冇伺服器，所以呢份舉報冇送去任何地方。',
+    zh: '只保存在这台设备上。Amoji 没有服务器，所以这份举报没有发送到任何地方。',
+    ja: 'この端末に保存しただけです。Amoji にサーバーはないので、この報告はどこにも送信されていません。',
+  },
+  reportSavedNext: {
+    en: 'Export it as a JSON file and send that file to the developer yourself.',
+    yue: '你可以將佢匯出成 JSON 檔案，再自己send俾開發者跟進。',
+    zh: '你可以把它导出成 JSON 文件，再自己发给开发者跟进。',
+    ja: 'JSON ファイルに書き出して、ご自分で開発者に送ってください。',
+  },
+  reportSaveFailed: {
+    en: "This device would not store the report — storage is blocked or full. Nothing was saved. Try again with storage enabled, or take a screenshot and send it to the developer.",
+    yue: '呢部裝置儲存唔到呢份舉報——儲存空間被封鎖或者滿咗，所以咩都冇save低。你可以開返儲存空間再試，或者截圖send俾開發者。',
+    zh: '这台设备无法保存举报——存储被禁用或已满，所以什么都没保存。你可以开启存储后再试，或截图发给开发者。',
+    ja: 'この端末に報告を保存できませんでした（ストレージが無効か容量不足）。何も保存されていません。ストレージを有効にして再試行するか、スクリーンショットを開発者に送ってください。',
+  },
+  reportExport: {
+    en: 'Export reports (JSON)',
+    yue: '匯出舉報（JSON）',
+    zh: '导出举报（JSON）',
+    ja: '報告を書き出す（JSON）',
+  },
+  reportExportEmpty: {
+    en: 'No reports saved on this device yet.',
+    yue: '呢部裝置暫時未有儲存嘅舉報。',
+    zh: '这台设备上还没有保存的举报。',
+    ja: 'この端末にはまだ保存された報告がありません。',
+  },
+  reportCountLabel: {
+    en: '{n} saved on this device',
+    yue: '呢部裝置儲存咗 {n} 份',
+    zh: '这台设备上保存了 {n} 份',
+    ja: 'この端末に {n} 件保存',
+  },
+  reportExported: {
+    en: 'Exported — the file was downloaded to this device.',
+    yue: '已匯出，檔案下載咗去呢部裝置。',
+    zh: '已导出，文件已下载到这台设备。',
+    ja: '書き出しました。ファイルはこの端末にダウンロードされています。',
+  },
+  reportExportFailed: {
+    en: 'This browser would not start the download. Try again, or copy the reports from Settings.',
+    yue: '呢個瀏覽器開唔到下載。你可以再試一次，或者喺設定度複製呢啲舉報。',
+    zh: '这个浏览器没能开始下载。请再试一次，或在设置里复制这些举报。',
+    ja: 'このブラウザではダウンロードを開始できませんでした。もう一度試すか、設定から報告をコピーしてください。',
+  },
+  reportSendTo: {
+    en: 'Send it to the developer',
+    yue: '交俾開發者',
+    zh: '交给开发者',
+    ja: '開発者に送る',
+  },
+  reportSendToHint: {
+    en: "Amoji's source code and issue tracker are on GitHub:",
+    yue: 'Amoji 嘅原始碼同問題回報都喺 GitHub：',
+    zh: 'Amoji 的源代码和问题反馈都在 GitHub：',
+    ja: 'Amoji のソースコードと不具合報告は GitHub にあります：',
   },
 };
 
