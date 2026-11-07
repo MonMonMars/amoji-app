@@ -14,6 +14,7 @@ import {
   subscribeLegalAccept,
 } from '../lib/legal-accept';
 import { usePrefs, type Lang } from '../lib/prefs';
+import { useFocusTrap } from '../lib/use-focus-trap';
 
 const LEGAL_DOC_PATHS = new Set(['/privacy', '/terms']);
 
@@ -98,6 +99,10 @@ export default function LegalGate() {
     return () => window.removeEventListener('keydown', onKey, true);
   }, [ready, accepted]);
 
+  // This gate is mandatory, so Tab must not walk out of it into the page
+  // behind — that let a keyboard user skip accepting entirely.
+  const gateRef = useFocusTrap<HTMLDivElement>(ready && !accepted);
+
   // Let users read full demo Privacy/Terms pages without the blocking overlay.
   if (LEGAL_DOC_PATHS.has(pathname)) return null;
 
@@ -119,9 +124,11 @@ export default function LegalGate() {
   const c = COPY;
   return (
     <div
+      ref={gateRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="amoji-legal-title"
+      tabIndex={-1}
       data-testid="legal-gate"
       className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
     >
