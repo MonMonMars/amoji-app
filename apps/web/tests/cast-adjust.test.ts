@@ -132,14 +132,14 @@ describe('upper body level', () => {
 
   it('zeros yaw+roll on spine/chest/upperChest and keeps pitch (left-side bend)', () => {
     const bones = new Map<string, THREE.Object3D>();
-    for (const name of ['spine', 'chest', 'upperChest'] as const) {
+    for (const name of ['hips', 'spine', 'chest', 'upperChest'] as const) {
       const b = new THREE.Object3D();
       // side-bend-ish: pitch + yaw + roll
       b.quaternion.setFromEuler(new THREE.Euler(0.15, 0.35, -0.45, 'YXZ'));
       bones.set(name, b);
     }
     const state = captureCastFix('a104-simplebrownsailorjk', (name) => bones.get(name) ?? null);
-    expect(state?.levels.map((e) => e.bone)).toHaveLength(3);
+    expect(state?.levels.map((e) => e.bone)).toHaveLength(4);
     applyCastFix(state!);
     for (const b of bones.values()) {
       const e = new THREE.Euler().setFromQuaternion(b.quaternion, 'YXZ');
