@@ -74,7 +74,8 @@ export default function TtsVoiceRow({
           {showAll ? t(lang, 'voiceThisLanguage') : t(lang, 'voiceShowAll')}
         </button>
       </div>
-      <div className="max-h-[12rem] w-full overflow-y-auto overscroll-contain sm:max-h-[16rem]" data-testid="tts-voice-grid">
+      {/* No nested scroller: the select board owns the only vertical one. */}
+      <div className="w-full" data-testid="tts-voice-grid">
         <div className="grid w-full grid-cols-2 gap-1 min-[420px]:grid-cols-3 sm:grid-cols-4">
           {buttons.map((button) => {
             const selected = button.locale === lang && button.id === activeId;
@@ -103,6 +104,7 @@ export default function TtsVoiceRow({
         </div>
         {single && (
           <p
+            role="status"
             className="mt-1 px-1 text-center text-[10px] leading-relaxed text-white/45"
             data-testid="tts-voice-single-note"
           >

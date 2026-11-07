@@ -86,10 +86,10 @@ describe('legal-accept', () => {
 });
 
 describe('select voice preview cut-through', () => {
-  it('stops prior speech inside playVoiceGreeting and mutes previewEdgeVoice', () => {
+  it('stops prior speech inside the greeting and the preview', () => {
     const voice = read('../lib/voice.ts');
     const greet = voice.indexOf('export function playVoiceGreeting');
-    const preview = voice.indexOf('export function previewEdgeVoice');
+    const preview = voice.indexOf('export function previewVoiceChoice');
     const greetSlice = voice.slice(greet, greet + 420);
     const previewSlice = voice.slice(preview, preview + 420);
     expect(greetSlice).toContain('stopSpeaking()');
