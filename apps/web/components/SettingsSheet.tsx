@@ -26,6 +26,7 @@ import {
   t, type Prefs, type StrKey,
 } from '../lib/prefs';
 import { LangChips } from './selectors';
+import { useFocusTrap } from '../lib/use-focus-trap';
 import VoicePicker from './VoicePicker';
 import ModelThumb from './ModelThumb';
 import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, testOpenAiVoice, VOICE_TIER_LABEL } from '../lib/voice';
@@ -157,6 +158,8 @@ export default function SettingsSheet({
   const tutorNRef = useRef(0);
   const settingsCloseRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  // aria-modal="true": Tab must stay inside the sheet while it is open.
+  const sheetRef = useFocusTrap<HTMLDivElement>(open);
 
   // Dismissible sheet: focus Close on open, restore prior focus on close,
   // Escape closes (unlike LegalGate, which must swallow Escape).
@@ -333,9 +336,11 @@ export default function SettingsSheet({
   return (
     <div className="fx-fade-in absolute inset-0 z-20 flex justify-end bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div
+        ref={sheetRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="amoji-settings-title"
+        tabIndex={-1}
         className="fx-sheet-in h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-neutral-950/90 p-5"
         onClick={(e) => e.stopPropagation()}
       >

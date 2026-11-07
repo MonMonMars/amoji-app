@@ -21,6 +21,7 @@ import {
   useModularView,
 } from '../lib/modular/storage';
 import { characterById, type Lang } from '../lib/prefs';
+import { useFocusTrap } from '../lib/use-focus-trap';
 
 const COPY: Record<Lang, {
   title: string;
@@ -148,6 +149,8 @@ function WardrobeSwapLive({
   const wardrobeCloseRef = useRef<HTMLButtonElement>(null);
   const wardrobeExpandRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  // aria-modal="true": Tab must stay inside the full-screen wardrobe.
+  const swapRef = useFocusTrap<HTMLElement>(open);
 
   // Dismissible overlay: focus Close on open, restore prior/expand focus on
   // close, Escape closes (SettingsSheet parity; unlike mandatory LegalGate).
@@ -213,9 +216,11 @@ function WardrobeSwapLive({
 
   return (
     <section
+      ref={swapRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="amoji-wardrobe-title"
+      tabIndex={-1}
       data-testid="wardrobe-swap"
       className="pointer-events-auto fixed inset-0 z-50 flex flex-col bg-neutral-950/95 text-white backdrop-blur-md"
     >
