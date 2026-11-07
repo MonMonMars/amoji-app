@@ -177,7 +177,20 @@ export type StrKey =
   // named once instead of being rendered as dead buttons.
   | 'voiceOnlyOneAvailable' | 'voiceEnginesUnavailable'
   | 'voiceRegionCantonese' | 'voiceRegionMandarin' | 'voiceRegionTaiwan' | 'voiceRegionJapanese'
-  | 'voiceRegionUs' | 'voiceRegionUk' | 'voiceRegionAu' | 'voiceRegionIn' | 'voiceRegionNg';
+  | 'voiceRegionUs' | 'voiceRegionUk' | 'voiceRegionAu' | 'voiceRegionIn' | 'voiceRegionNg'
+  // OPTIONAL bring-your-own API key (r2026-11-08). Keys are `byok*` so this
+  // block cannot collide with another worker's `brain*` additions; keep it
+  // last and contiguous.
+  | 'byokTitle' | 'byokHint' | 'byokWorksWithout' | 'byokProvider' | 'byokAuto'
+  | 'byokKeyLabel' | 'byokKeyPlaceholder' | 'byokLocalOnly' | 'byokGetKey'
+  | 'byokNoKey' | 'byokNoKeyNeeded' | 'byokKeySaved' | 'byokSave' | 'byokRemove'
+  | 'byokTest' | 'byokTesting'
+  | 'byokTestOk' | 'byokTestNokey' | 'byokTestAuth' | 'byokTestBlocked'
+  | 'byokTestModel' | 'byokTestCredit' | 'byokTestOffline' | 'byokTestTimeout' | 'byokTestError'
+  | 'byokTestDetail'
+  | 'byokTierDeepseek' | 'byokTierMoonshot' | 'byokTierGroq' | 'byokTierOpenrouter'
+  | 'byokTierPollinations'
+  | 'byokRegionGroq' | 'byokRegionOpenrouter';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   chooseCharacter: { en: 'Choose your companion', yue: '揀你嘅小伙伴', zh: '选择你的伙伴', ja: '相棒を選ぶ' },
@@ -502,6 +515,213 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: '轉返用我部機嘅位置',
     zh: '恢复使用我的设备定位',
     ja: '端末の位置に戻す',
+  },
+  // ---- optional bring-your-own API key (r2026-11-08) -------------------------
+  // Copy rule for this block: BYOK is an OPTION, never a setup step. The app
+  // already answers with no key, and every line here has to say so out loud.
+  byokTitle: {
+    en: 'Sharper brain',
+    yue: '更叻嘅腦',
+    zh: '更强的大脑',
+    ja: 'もっと賢い頭脳',
+  },
+  byokHint: {
+    en: 'Add your own API key to get faster, sharper replies. Pick a provider, paste the key, then tap Test.',
+    yue: '加自己嘅 API key，回覆會快啲、醒啲。揀個供應商、貼上 key，再撳「試一試」。',
+    zh: '加上你自己的 API 密钥，回复会更快、更聪明。选择服务商，粘贴密钥，然后点「测一测」。',
+    ja: '自分のAPIキーを入れると、返事が速く、賢くなります。提供元を選んでキーを貼り、「テスト」を押してください。',
+  },
+  byokWorksWithout: {
+    en: 'She already works without a key — this is only if you want her sharper.',
+    yue: '冇 key 佢都照樣傾得——呢個純粹係想佢再叻啲先加。',
+    zh: '没有密钥她也照常能聊——这只在你希望她更聪明时才需要。',
+    ja: 'キーがなくても彼女は話せます。もっと賢くしたいときだけ設定してね。',
+  },
+  byokProvider: {
+    en: 'Provider',
+    yue: '供應商',
+    zh: '服务商',
+    ja: '提供元',
+  },
+  byokAuto: {
+    en: 'Automatic (best available)',
+    yue: '自動（用最好嘅）',
+    zh: '自动（用最好的）',
+    ja: '自動（いちばん良いもの）',
+  },
+  byokKeyLabel: {
+    en: 'API key',
+    yue: 'API 密鑰',
+    zh: 'API 密钥',
+    ja: 'APIキー',
+  },
+  byokKeyPlaceholder: {
+    en: 'Paste the key here — it never leaves this device',
+    yue: '喺度貼個 key——佢唔會離開呢部機',
+    zh: '在这里粘贴密钥——它不会离开这台设备',
+    ja: 'ここにキーを貼り付け——この端末から出ません',
+  },
+  byokLocalOnly: {
+    en: 'Saved only in this browser on this device. It is never sent to us, never logged, and never saved in the app’s files.',
+    yue: '只會存喺呢部機嘅瀏覽器度。絕對唔會傳俾我哋、唔會寫落記錄、亦唔會存入程式嘅檔案。',
+    zh: '只保存在这台设备的这个浏览器里。绝不会发给我们，不会写进日志，也不会存进应用的文件。',
+    ja: 'この端末のこのブラウザにだけ保存されます。こちらへ送られることも、ログに残ることも、アプリのファイルに入ることもありません。',
+  },
+  byokGetKey: {
+    en: 'Get a key →',
+    yue: '攞個 key →',
+    zh: '获取密钥 →',
+    ja: 'キーを取得 →',
+  },
+  byokNoKey: {
+    en: 'No key saved yet.',
+    yue: '仲未存 key。',
+    zh: '还没有保存密钥。',
+    ja: 'キーはまだ保存されていません。',
+  },
+  byokNoKeyNeeded: {
+    en: 'This one needs no key at all — nothing to paste.',
+    yue: '呢個完全唔使 key——冇嘢要貼。',
+    zh: '这个完全不需要密钥——没有要粘贴的东西。',
+    ja: 'これはキーが不要です。貼り付けるものはありません。',
+  },
+  byokKeySaved: {
+    en: 'Key saved on this device.',
+    yue: 'Key 已經存喺呢部機。',
+    zh: '密钥已保存在这台设备。',
+    ja: 'キーをこの端末に保存しました。',
+  },
+  byokSave: {
+    en: 'Save',
+    yue: '儲存',
+    zh: '保存',
+    ja: '保存',
+  },
+  byokRemove: {
+    en: 'Remove',
+    yue: '刪除',
+    zh: '删除',
+    ja: '削除',
+  },
+  byokTest: {
+    en: 'Test',
+    yue: '試一試',
+    zh: '测一测',
+    ja: 'テスト',
+  },
+  byokTesting: {
+    en: 'Testing…',
+    yue: '試緊…',
+    zh: '正在测试…',
+    ja: 'テスト中…',
+  },
+  // One verdict per failure cause, so the Test button always says something
+  // actionable instead of a bare ✗.
+  byokTestOk: {
+    en: 'It works — she will use this key from now on.',
+    yue: '得咗——之後佢就會用呢個 key。',
+    zh: '成功了——之后她就会用这个密钥。',
+    ja: '成功しました——これからこのキーを使います。',
+  },
+  byokTestNokey: {
+    en: 'Paste a key first, then test it.',
+    yue: '先貼個 key 落去，再試。',
+    zh: '请先粘贴密钥，然后再测。',
+    ja: 'まずキーを貼り付けてからテストしてね。',
+  },
+  byokTestAuth: {
+    en: 'The provider rejected this key. Check you copied the whole thing, and that it is not expired or deleted.',
+    yue: '供應商唔認得呢個 key。睇下係咪複製齊晒，同埋個 key 有冇過期或者刪咗。',
+    zh: '服务商不认这个密钥。请检查是否复制完整，以及密钥是否已过期或被删除。',
+    ja: '提供元がこのキーを受け付けませんでした。全部コピーできているか、期限切れや削除がないか確認してね。',
+  },
+  byokTestBlocked: {
+    en: 'The provider refused the connection from your network or region — the key itself was not even checked. Try another provider, or a network where this one is reachable.',
+    yue: '供應商拒絕咗你個網絡或者地區嘅連線——連個 key 都未睇過。試下第二個供應商，或者轉去連得到嘅網絡。',
+    zh: '服务商拒绝了你所在网络或地区的连接——连密钥都还没检查。请换一个服务商，或换到能连上它的网络。',
+    ja: 'お使いの回線・地域からの接続を提供元が拒否しました。キーの確認まで届いていません。別の提供元か、つながる回線で試してね。',
+  },
+  byokTestModel: {
+    en: 'This key works, but that model is no longer offered. Pick another provider, or tell us and we will update the list.',
+    yue: '個 key 冇問題，不過嗰個型號已經冇得用。揀過第二個供應商，或者話俾我哋知，我哋更新個清單。',
+    zh: '密钥没问题，但这个模型已经下架了。请换一个服务商，或告诉我们，我们会更新列表。',
+    ja: 'キーは有効ですが、そのモデルはもう提供されていません。別の提供元を選ぶか、教えてくれれば一覧を更新します。',
+  },
+  byokTestCredit: {
+    en: 'This key is out of credit or over its free quota for today. Top it up or wait for the quota to reset.',
+    yue: '呢個 key 冇額度喇，或者今日嘅免費額度用晒。增值或者等額度重置。',
+    zh: '这个密钥额度用完了，或者今天的免费额度已用尽。请充值或等额度重置。',
+    ja: 'このキーは残高切れか、本日の無料枠を使い切りました。チャージするか、枠のリセットを待ってね。',
+  },
+  byokTestOffline: {
+    en: 'Could not reach the provider at all — check your internet connection (or a firewall blocking it), then test again.',
+    yue: '完全連唔到個供應商——睇下你個網絡（或者防火牆擋住），再試一次。',
+    zh: '完全连不上服务商——请检查你的网络（或被防火墙拦截），然后再测一次。',
+    ja: '提供元にまったく届きませんでした。インターネット接続（またはファイアウォール）を確認して、もう一度テストしてね。',
+  },
+  byokTestTimeout: {
+    en: 'The provider took too long to answer. It may be busy — try again in a moment.',
+    yue: '供應商太耐都冇回應，可能好忙——等一陣再試。',
+    zh: '服务商太久没有回应，可能正忙——请稍后再测。',
+    ja: '提供元の応答が遅すぎました。混み合っているかもしれないので、少し待ってからもう一度。',
+  },
+  byokTestError: {
+    en: 'The provider returned an error. The exact reply is shown below.',
+    yue: '供應商回咗個錯誤，佢原本講嘅嘢喺下面。',
+    zh: '服务商返回了错误，它原本的内容显示在下面。',
+    ja: '提供元がエラーを返しました。実際の応答を下に表示します。',
+  },
+  byokTestDetail: {
+    en: 'Provider said: {detail}',
+    yue: '供應商話：{detail}',
+    zh: '服务商说：{detail}',
+    ja: '提供元の応答：{detail}',
+  },
+  // Plain-language allowance, per provider. Numbers verified 2026-11-08 against
+  // each provider's own published limits.
+  byokTierDeepseek: {
+    en: 'Pay as you go — no monthly fee. Roughly US$0.001 per chat turn; no free plan is published, so top up a little first.',
+    yue: '用幾多計幾多——冇月費。大約每次對話 US$0.001；官方冇公布免費額度，所以先入少少錢。',
+    zh: '按用量计费——没有月费。每次对话约 US$0.001；官方没有公布免费额度，请先充值少量。',
+    ja: '使った分だけの後払いで、月額はありません。1回の会話で約0.001米ドル。無料枠は公表されていないので、少しだけ入金してね。',
+  },
+  byokTierMoonshot: {
+    en: 'Pay as you go; you must add at least US$1 before the first call. Mainland-China sign-ups get a ¥15 voucher for 3 months.',
+    yue: '用幾多計幾多；第一次用之前最少要入 US$1。中國大陸登記嘅新用戶有 ¥15 代金券，有效三個月。',
+    zh: '按用量计费；首次调用前至少充值 US$1。中国大陆注册的新用户有 ¥15 代金券，有效期三个月。',
+    ja: '使った分だけの後払いで、初回の前に1米ドル以上の入金が必要です。中国本土で登録した新規ユーザーには15元のクーポン（3か月有効）があります。',
+  },
+  byokTierGroq: {
+    en: 'Free plan: 1,000 requests a day and 30 a minute — no card needed.',
+    yue: '免費計劃：每日 1,000 次、每分鐘 30 次——唔使信用卡。',
+    zh: '免费计划：每天 1,000 次、每分钟 30 次——无需信用卡。',
+    ja: '無料プランは1日1,000回・1分30回まで。カード登録は不要です。',
+  },
+  byokTierOpenrouter: {
+    en: 'Free models: 50 requests a day and 20 a minute. Buying 10 credits once raises it to 1,000 a day.',
+    yue: '免費模型：每日 50 次、每分鐘 20 次。一次性買 10 credits 就會升到每日 1,000 次。',
+    zh: '免费模型：每天 50 次、每分钟 20 次。一次性购买 10 credits 可升到每天 1,000 次。',
+    ja: '無料モデルは1日50回・1分20回まで。10クレジットを一度購入すると1日1,000回に増えます。',
+  },
+  byokTierPollinations: {
+    en: 'No key at all — a free shared queue. Slower when lots of people are chatting.',
+    yue: '完全唔使 key——免費共用隊列。多人傾嘅時候會慢啲。',
+    zh: '完全不需要密钥——免费共享队列。人多的时后会慢一些。',
+    ja: 'キーは不要です。無料の共用キューなので、混んでいるときは遅くなります。',
+  },
+  // Regional notes. Only the two we could verify are written; silence beats a
+  // confident guess.
+  byokRegionGroq: {
+    en: 'Not reachable from Hong Kong or mainland China — verified here: the endpoint refuses the connection itself, before any key is checked.',
+    yue: '香港同中國大陸連唔到——我哋實測過：個端點自己拒絕連線，連 key 都未睇。',
+    zh: '香港和中国大陆无法连接——我们实测过：接口本身拒绝连接，连密钥都还没检查。',
+    ja: '香港と中国本土からは接続できません（こちらで実測）。キーを確認する前に、接続そのものが拒否されます。',
+  },
+  byokRegionOpenrouter: {
+    en: 'Works from Hong Kong and mainland China, but GPT, Claude and Gemini models stay blocked for accounts billed there. The free router here is fine.',
+    yue: '香港同中國大陸都連得到，不過帳單地址喺嗰度嘅帳戶用唔到 GPT、Claude、Gemini。呢度用嘅免費路由冇問題。',
+    zh: '香港和中国大陆可以连接，但账单地址在那里的账户无法使用 GPT、Claude、Gemini。这里用的免费路由不受影响。',
+    ja: '香港と中国本土からも使えますが、その地域の請求先のアカウントではGPT・Claude・Geminiが使えません。ここの無料ルーターは問題ありません。',
   },
 };
 

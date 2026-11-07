@@ -17,8 +17,12 @@
 // zero-volume utterance SYNCHRONOUSLY inside the click — iOS only unlocks
 // the engine within the gesture itself, and the first await below used to
 // leave that context before any synth tier could run.
-// r2026-10-06.136: the 🧠 Brain (LLM provider + API keys) section is GONE —
-// we pick the best free/fast/global brain for our users; no keys to manage.
+// r2026-11-08: the 🧠 Brain section is BACK (<BrainByok />), as an OPTIONAL
+// bring-your-own-key upgrade under Memory & data. It was removed in
+// r2026-10-06.136 on the assumption that one free brain could carry every user;
+// that assumption is false — the anonymous lane is rate-limited and cannot
+// scale. The app still answers with no key: BYOK is a faster/sharper option,
+// never a requirement.
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -27,6 +31,7 @@ import {
 } from '../lib/prefs';
 import { LangChips } from './selectors';
 import { useFocusTrap } from '../lib/use-focus-trap';
+import BrainByok from './BrainByok';
 import VoicePicker from './VoicePicker';
 import ModelThumb from './ModelThumb';
 import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, testOpenAiVoice, VOICE_TIER_LABEL } from '../lib/voice';
@@ -949,6 +954,13 @@ export default function SettingsSheet({
                 ))}
               </div>
             </div>
+          </Section>
+
+          {/* r2026-11-08 — optional sharper brain (BYOK). Placed AFTER Memory &
+              data on purpose: it is an upgrade for people who go looking, not
+              the first thing a new user meets. */}
+          <Section title={`🧠 ${t(lang, 'byokTitle')}`}>
+            <BrainByok lang={lang} accent={accent} />
           </Section>
 
           <Section title={`❓ ${t(lang, 'settingsHelp')}`}>
