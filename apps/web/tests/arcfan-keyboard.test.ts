@@ -21,4 +21,12 @@ describe('ArcFan keyboard navigation', () => {
     expect(fan).toContain('btn?.focus()');
     expect(fan).toContain('CSS.escape(item.id)');
   });
+
+  it('decides compact/scene mouse arrows on first paint (no false→true flash)', () => {
+    expect(fan).toContain("if (size === 'portrait') return true;");
+    expect(fan).toContain("window.matchMedia('(pointer: fine)')");
+    expect(fan).toContain("window.matchMedia('(hover: hover)')");
+    expect(fan).toMatch(/useState\(\(\) => \{/);
+    expect(fan).not.toMatch(/useState\(size === 'portrait'\)/);
+  });
 });
