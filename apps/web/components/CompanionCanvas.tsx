@@ -307,6 +307,8 @@ export default function CompanionCanvas({
     try {
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     } catch {
+      clearTimeout(loadWatchdog);
+      setLoadProgress(null);
       onNoticeRef.current?.({ reason: 'webgl' });
       return;
     }
@@ -2167,6 +2169,9 @@ export default function CompanionCanvas({
       publishModularView('idle');
       cancelAnimationFrame(raf);
       clearTimeout(loadWatchdog);
+      // Match the r91 comment: retire the StatusPlate spinner on unmount so a
+      // mid-load leave/chat remount never flashes a stale % or "preparing…".
+      setLoadProgress(null);
       document.removeEventListener('visibilitychange', onGameVis);
       registerGroundPick(null);
       disposeMiniGameStage(scene);
