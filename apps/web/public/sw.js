@@ -16,13 +16,15 @@
  */
 'use strict';
 
-var CACHE = 'amoji-r2026-11-07.4';
+var CACHE = 'amoji-r2026-11-07.5';
 var SHELL = [
   './',
   './chat',
   './select',
   './change',
   './login',
+  './mode',
+  './setup',
   './story',
   './manifest.webmanifest',
   './icon.svg',
