@@ -39,8 +39,13 @@ describe('store bundle: QA pages are outside the shipped tree', () => {
   });
 
   it('the adult-content page still exists for QA (moved, not deleted)', () => {
+    // Deliberately does NOT assert the catalogue still contains adult tokens:
+    // a separate branch removes those rows, and the page staying present is the
+    // property this test owns. Scan non-vacuity is proven with a synthetic
+    // fixture below instead, so the two cannot disagree.
     const catalog = fs.readFileSync(path.join(DEV_PAGES_DIR, 'catalog.html'), 'utf8');
-    expect(catalog.toLowerCase()).toContain('hentai');
+    expect(catalog.length).toBeGreaterThan(0);
+    expect(catalog).toContain('<');
   });
 });
 
@@ -144,10 +149,20 @@ describe('store bundle: adult-token scan', () => {
   });
 });
 
-describe('store bundle: the committed QA pages contain the string we gate on', () => {
-  it('catalog.html is the source of the adult tokens (so the scan is not vacuous)', () => {
-    const catalog = fs.readFileSync(path.join(DEV_PAGES_DIR, 'catalog.html'), 'utf8');
-    expect(catalog.toLowerCase().match(/hentai/g)?.length ?? 0).toBeGreaterThan(0);
+describe('store bundle: the scan is proven non-vacuous by fixture', () => {
+  // This used to read the committed catalogue and assert it still contained
+  // adult tokens, which made it a tripwire for the branch that removes those
+  // rows: that branch is a correct fix, and this test would have called it a
+  // regression. Vacuity is now proven the way it should be — by feeding the
+  // scanner a tree that does contain a token and requiring a hit.
+  it('findToken reports a token planted in a temporary tree', () => {
+    const dir = tmpDir();
+    try {
+      fs.writeFileSync(path.join(dir, 'page.html'), "['B23','Hentai Girl','18+']");
+      expect(findToken(fs.readFileSync(path.join(dir, 'page.html')), 'hentai')).toHaveLength(1);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 
