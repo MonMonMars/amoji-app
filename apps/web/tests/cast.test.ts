@@ -6,9 +6,7 @@ import { CAST_NO, castNo } from '../lib/castNo';
 
 const WANT_RELEASE =
   'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/';
-const REALISTIC_RELEASE =
-  'https://github.com/MonMonMars/amoji-app/releases/download/free-library-realistic-2026-10-18/';
-const REALISTIC_IDS = [
+const DROPPED_REALISTIC_IDS = [
   'a459-chinesewarriormonk',
   'a460-freerealisticfemale',
   'a461-fashionruffle',
@@ -17,14 +15,12 @@ const REALISTIC_IDS = [
 ];
 
 describe('cast roster', () => {
-  it('has 51 want-list characters with taglines in every language', () => {
-    expect(CHARACTERS.length).toBe(51);
+  it('has 46 want-list characters with taglines in every language', () => {
+    expect(CHARACTERS.length).toBe(46);
     expect(WANT_CAST_RELEASE).toBe('free-library-want-2026-10-12');
-    expect(CHARACTERS.slice(0, 46).map((c) => c.id)).not.toEqual(expect.arrayContaining(REALISTIC_IDS));
-    expect(CHARACTERS.slice(-5).map((c) => c.id)).toEqual(REALISTIC_IDS);
+    expect(CHARACTERS.map((c) => c.id)).not.toEqual(expect.arrayContaining(DROPPED_REALISTIC_IDS));
     for (const c of CHARACTERS) {
-      const release = REALISTIC_IDS.includes(c.id) ? REALISTIC_RELEASE : WANT_RELEASE;
-      expect(c.image, c.id).toBe(`${release}${c.id}.png`);
+      expect(c.image, c.id).toBe(`${WANT_RELEASE}${c.id}.png`);
       for (const l of ['en', 'yue', 'zh', 'ja'] as Lang[]) expect(c.tagline[l].length).toBeGreaterThan(0);
       expect(c.persona.length).toBeGreaterThan(20);
       expect(['female', 'male']).toContain(c.gender);
@@ -39,14 +35,16 @@ describe('cast roster', () => {
     expect(new Set(CHARACTERS.map((c) => c.model)).size).toBe(CHARACTERS.length);
   });
 
-  it('male voice hints differ from female (A24, A94, A98, A107, A459, A468)', () => {
+  it('male voice hints differ from female (A24, A77, A94, A98, A105, A107)', () => {
     const male = CHARACTERS.filter((c) => c.gender === 'male');
     expect(male.map((c) => c.id).sort()).toEqual([
       'a03-fumiriya',
       'a05-avatarsample-c',
       'a105-serizawa-aoi',
+      'a107-dm-office-casual',
       'a24-hairsample-male',
-      'a75-sorano',
+      'a77-sasha',
+      'a94-rita',
       'a98-ethan',
     ].sort());
     for (const c of male) {
@@ -57,17 +55,25 @@ describe('cast roster', () => {
       expect(c.voiceHint?.en).toBe('en-HK-YanNeural');
       expect(c.voiceHint?.yue).toBe('zh-HK-HiuGaaiNeural');
     }
+    expect(CHARACTERS.find((c) => c.id === 'a75-sorano')?.gender).toBe('female');
+    expect(CHARACTERS.find((c) => c.id === 'a77-sasha')?.gender).toBe('male');
+    expect(CHARACTERS.find((c) => c.id === 'a94-rita')?.gender).toBe('male');
+    expect(CHARACTERS.find((c) => c.id === 'a107-dm-office-casual')?.gender).toBe('male');
   });
 
-  it('every character has a stable number — unique, 1..51', () => {
+  it('every character has a stable number — unique, 1..46', () => {
     const numbers = CHARACTERS.map((c) => castNo(c.id));
     for (const n of numbers) {
       expect(n).toBeGreaterThanOrEqual(1);
-      expect(n).toBeLessThanOrEqual(51);
+      expect(n).toBeLessThanOrEqual(46);
     }
     expect(castNo('a122-shiratori-hikari-shifuku')).toBe(46);
-    expect(castNo('a459-chinesewarriormonk')).toBe(47);
-    expect(castNo('a468-eric')).toBe(51);
+    expect(castNo('a75-sorano')).toBe(18);
+    expect(castNo('a77-sasha')).toBe(19);
+    expect(castNo('a94-rita')).toBe(27);
+    expect(castNo('a107-dm-office-casual')).toBe(37);
+    expect(castNo('a459-chinesewarriormonk')).toBe(0);
+    expect(castNo('a468-eric')).toBe(0);
     expect(new Set(numbers).size).toBe(CHARACTERS.length);
     expect(Object.keys(CAST_NO).sort()).toEqual(CHARACTERS.map((c) => c.id).sort());
   });
@@ -99,7 +105,7 @@ describe('scene roster', () => {
     expect(backgroundById(DEFAULT_PREFS.background).id).toBe(DEFAULT_PREFS.background);
   });
 
-  it('orders scenes daytime to nighttime and letters them A…', () => {
+  it('orders scenes daytime to nighttime and letters them A-L', () => {
     expect(BACKGROUNDS.map((b) => b.id)).toEqual([
       'meadow', 'sakura', 'sunset', 'cloudsea',
       'rain', 'ember', 'neon', 'aurora',
