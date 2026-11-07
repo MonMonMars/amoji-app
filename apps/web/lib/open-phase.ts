@@ -28,6 +28,8 @@ export interface OpenPhaseState {
   lastOpenedAt?: number;
   /** Wall clock when the open-phase idle weather/news brief last spoke. */
   idleBriefAt?: number;
+  /** Wall clock when open cheer (leading into name-hello) last spoke this stretch. */
+  openCheerAt?: number;
 }
 
 function readStorage(): Storage | null {
@@ -50,6 +52,7 @@ export function loadOpenPhaseState(): OpenPhaseState {
       lastClosedAt: typeof p.lastClosedAt === 'number' ? p.lastClosedAt : undefined,
       lastOpenedAt: typeof p.lastOpenedAt === 'number' ? p.lastOpenedAt : undefined,
       idleBriefAt: typeof p.idleBriefAt === 'number' ? p.idleBriefAt : undefined,
+      openCheerAt: typeof p.openCheerAt === 'number' ? p.openCheerAt : undefined,
     };
   } catch {
     return {};
@@ -97,6 +100,17 @@ export function openIdleBriefAlreadyDone(): boolean {
   const s = loadOpenPhaseState();
   if (s.idleBriefAt == null || s.lastOpenedAt == null) return false;
   return s.idleBriefAt >= s.lastOpenedAt;
+}
+export function markOpenCheerDone(now = Date.now()): OpenPhaseState {
+  return saveOpenPhaseState({ openCheerAt: now });
+}
+
+/** Skip cheer + name-hello on within-gap remount after cheer already spoke.
+ *  Call BEFORE markChatRoomOpened so lastOpenedAt is still the prior stretch. */
+export function openCheerAlreadyDone(): boolean {
+  const s = loadOpenPhaseState();
+  if (s.openCheerAt == null || s.lastOpenedAt == null) return false;
+  return s.openCheerAt >= s.lastOpenedAt;
 }
 
 /** planTools-friendly weather ask (same phrasing as showcase accept). */
