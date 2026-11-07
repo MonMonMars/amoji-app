@@ -733,6 +733,11 @@ export default function SettingsSheet({
               </div>
               <div className="flex gap-2">
                 <input
+                  id="amoji-settings-memory-add"
+                  name="memory"
+                  type="text"
+                  autoComplete="off"
+                  aria-label={t(lang, 'memoryAddPlaceholder')}
                   value={newText}
                   onChange={(e) => setNewText(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addNew()}
