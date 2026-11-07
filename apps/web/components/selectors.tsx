@@ -12,7 +12,9 @@ export function CharacterGrid({ lang, value, onChange }: { lang: Lang; value: st
         const active = c.id === value;
         return (
           <button
+            type="button"
             key={c.id}
+            aria-pressed={active}
             onClick={() => onChange(c.id)}
             className={`group flex flex-col items-center gap-2 rounded-2xl border p-4 transition-all ${
               active ? 'border-transparent bg-white/10' : 'border-white/10 bg-white/5 hover:bg-white/10'
@@ -44,7 +46,9 @@ export function BackgroundGrid({ lang, value, onChange }: { lang: Lang; value: s
         const active = b.id === value;
         return (
           <button
+            type="button"
             key={b.id}
+            aria-pressed={active}
             onClick={() => onChange(b.id)}
             className={`overflow-hidden rounded-2xl border text-left transition-all ${
               active ? 'border-white/80' : 'border-white/10 hover:border-white/40'
