@@ -22,6 +22,13 @@ describe('ArcFan keyboard navigation', () => {
     expect(fan).toContain('CSS.escape(item.id)');
   });
 
+  it('matches HScrollRow hover titles on scroll chevrons', () => {
+    expect(fan).toContain('aria-label="scroll left"');
+    expect(fan).toContain('aria-label="scroll right"');
+    expect(fan).toContain('title="Scroll left"');
+    expect(fan).toContain('title="Scroll right"');
+  });
+
   it('decides compact/scene mouse arrows on first paint (no false→true flash)', () => {
     expect(fan).toContain("if (size === 'portrait') return true;");
     expect(fan).toContain("window.matchMedia('(pointer: fine)')");
