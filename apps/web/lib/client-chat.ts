@@ -110,8 +110,8 @@ export function trimHistoryForPrompt(messages: ChatMessage[]): ChatMessage[] {
 //    the SAME model at the SAME provider: two slots spent on one IP budget
 //    for zero diversity. A 5-request burst 402s from the third request on.
 //  · The race is now `{ id, host, buildRequest, parseChunk }` specs: exactly
-//    ONE Pollinations request, up to one OVHcloud keyless request and one
-//    Puter call per turn.
+//    ONE Pollinations request, the freshest OVHcloud model requests and one
+//    Puter call per turn (r143 raised OVH to one racer per model).
 //  · Anonymous budgets are respected with a cooldown: a (host, model) that
 //    just answered is skipped, so one user's rapid messages don't drain it.
 // r2026-11-08.143 — what is actually true about the three racers:
@@ -416,7 +416,8 @@ export function resetRacerCooldowns(): void {
 /** How many racers one turn should launch at once. The whole point of the
  *  rotation is that a burst spreads across (host, model) slots instead of
  *  re-asking one, so a turn takes the freshest few rather than all of them —
- *  firing every slot every turn would burn six budgets to answer one line. */
+ *  firing every slot every turn would spend five racers' allowances to answer
+ *  one line (and both of each OVH model's two sends). */
 export const RACERS_PER_TURN = 3;
 
 /** Which racers may fire right now, best-first. */
