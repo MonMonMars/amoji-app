@@ -166,23 +166,16 @@ export function voicesForLocale(locale: VoiceLocale): readonly VoiceOption[] {
 }
 
 /**
- * Bake-off buttons. One Edge Neural per row, labels fixed as
- * `{Language} {gender} {n}` within that language+gender group.
- * Near-duplicate multilingual twins of the same speaker are not buttons.
+ * REMOVED: the Edge "bake-off" button list (58 short names).
+ *
+ * Every entry in it produced the same audio, because the Edge read-aloud
+ * endpoint refuses this app and each tap fell through to the one Google
+ * Translate voice for that language. Keeping the list around only invited the
+ * UI to render 58 buttons that could not change what the user heard, so the
+ * buttons now come from voice-capability.ts, which only offers voices that
+ * really differ. The cast table and `edgeSampleText` below still use Edge short
+ * names for the case where Microsoft ever re-opens the endpoint.
  */
-export interface EdgeVoiceButton {
-  locale: VoiceLocale;
-  /** Group title. Also the first word of `label`. */
-  language: 'Cantonese' | 'Mandarin' | 'Japanese' | 'English';
-  gender: VoiceGender;
-  /** 1-based index inside this language + gender. */
-  n: number;
-  /** Exact button text. */
-  label: string;
-  id: string;
-  /** Soft note for cute / child-like voices. Not part of `label`. */
-  note?: 'cute' | 'child-like';
-}
 
 const EDGE_SAMPLES: Record<VoiceLocale, string> = {
   yue: '你好呀，今日天氣幾好。我係你嘅語音助手。',
@@ -191,88 +184,9 @@ const EDGE_SAMPLES: Record<VoiceLocale, string> = {
   en: "Hi there. Nice to meet you. I'm your voice companion.",
 };
 
-function edgeButton(
-  locale: VoiceLocale,
-  language: EdgeVoiceButton['language'],
-  gender: VoiceGender,
-  n: number,
-  id: string,
-  note?: EdgeVoiceButton['note'],
-): EdgeVoiceButton {
-  return { locale, language, gender, n, label: `${language} ${gender} ${n}`, id, note };
-}
-
-export const EDGE_VOICE_BUTTONS: readonly EdgeVoiceButton[] = [
-  edgeButton('yue', 'Cantonese', 'male', 1, 'zh-HK-WanLungNeural'),
-  edgeButton('yue', 'Cantonese', 'female', 1, 'zh-HK-HiuMaanNeural'),
-  edgeButton('yue', 'Cantonese', 'female', 2, 'zh-HK-HiuGaaiNeural'),
-
-  edgeButton('zh', 'Mandarin', 'male', 1, 'zh-CN-YunjianNeural'),
-  edgeButton('zh', 'Mandarin', 'male', 2, 'zh-CN-YunxiNeural'),
-  edgeButton('zh', 'Mandarin', 'male', 3, 'zh-CN-YunyangNeural'),
-  edgeButton('zh', 'Mandarin', 'male', 4, 'zh-CN-YunxiaNeural', 'cute'),
-  edgeButton('zh', 'Mandarin', 'male', 5, 'zh-TW-YunJheNeural'),
-  edgeButton('zh', 'Mandarin', 'female', 1, 'zh-CN-XiaoxiaoNeural'),
-  edgeButton('zh', 'Mandarin', 'female', 2, 'zh-CN-XiaoyiNeural'),
-  edgeButton('zh', 'Mandarin', 'female', 3, 'zh-TW-HsiaoChenNeural'),
-  edgeButton('zh', 'Mandarin', 'female', 4, 'zh-TW-HsiaoYuNeural'),
-  edgeButton('zh', 'Mandarin', 'female', 5, 'zh-CN-liaoning-XiaobeiNeural'),
-  edgeButton('zh', 'Mandarin', 'female', 6, 'zh-CN-shaanxi-XiaoniNeural'),
-
-  edgeButton('ja', 'Japanese', 'male', 1, 'ja-JP-KeitaNeural'),
-  edgeButton('ja', 'Japanese', 'female', 1, 'ja-JP-NanamiNeural'),
-
-  edgeButton('en', 'English', 'male', 1, 'en-US-GuyNeural'),
-  edgeButton('en', 'English', 'male', 2, 'en-US-AndrewNeural'),
-  edgeButton('en', 'English', 'male', 3, 'en-US-BrianNeural'),
-  edgeButton('en', 'English', 'male', 4, 'en-US-ChristopherNeural'),
-  edgeButton('en', 'English', 'male', 5, 'en-US-EricNeural'),
-  edgeButton('en', 'English', 'male', 6, 'en-US-RogerNeural'),
-  edgeButton('en', 'English', 'male', 7, 'en-US-SteffanNeural'),
-  edgeButton('en', 'English', 'male', 8, 'en-GB-RyanNeural'),
-  edgeButton('en', 'English', 'male', 9, 'en-HK-SamNeural'),
-  edgeButton('en', 'English', 'male', 10, 'en-AU-WilliamMultilingualNeural'),
-  edgeButton('en', 'English', 'male', 11, 'en-GB-ThomasNeural'),
-  edgeButton('en', 'English', 'male', 12, 'en-IE-ConnorNeural'),
-  edgeButton('en', 'English', 'male', 13, 'en-IN-PrabhatNeural'),
-  edgeButton('en', 'English', 'male', 14, 'en-CA-LiamNeural'),
-  edgeButton('en', 'English', 'male', 15, 'en-NZ-MitchellNeural'),
-  edgeButton('en', 'English', 'male', 16, 'en-SG-WayneNeural'),
-  edgeButton('en', 'English', 'male', 17, 'en-ZA-LukeNeural'),
-  edgeButton('en', 'English', 'male', 18, 'en-PH-JamesNeural'),
-  edgeButton('en', 'English', 'male', 19, 'en-KE-ChilembaNeural'),
-  edgeButton('en', 'English', 'male', 20, 'en-NG-AbeoNeural'),
-  edgeButton('en', 'English', 'male', 21, 'en-TZ-ElimuNeural'),
-  edgeButton('en', 'English', 'female', 1, 'en-US-AriaNeural'),
-  edgeButton('en', 'English', 'female', 2, 'en-US-JennyNeural'),
-  edgeButton('en', 'English', 'female', 3, 'en-US-AvaNeural'),
-  edgeButton('en', 'English', 'female', 4, 'en-US-EmmaNeural'),
-  edgeButton('en', 'English', 'female', 5, 'en-US-MichelleNeural'),
-  edgeButton('en', 'English', 'female', 6, 'en-US-AnaNeural', 'child-like'),
-  edgeButton('en', 'English', 'female', 7, 'en-GB-SoniaNeural'),
-  edgeButton('en', 'English', 'female', 8, 'en-AU-NatashaNeural'),
-  edgeButton('en', 'English', 'female', 9, 'en-GB-LibbyNeural'),
-  edgeButton('en', 'English', 'female', 10, 'en-IN-NeerjaNeural'),
-  edgeButton('en', 'English', 'female', 11, 'en-IE-EmilyNeural'),
-  edgeButton('en', 'English', 'female', 12, 'en-NZ-MollyNeural'),
-  edgeButton('en', 'English', 'female', 13, 'en-HK-YanNeural'),
-  edgeButton('en', 'English', 'female', 14, 'en-CA-ClaraNeural'),
-  edgeButton('en', 'English', 'female', 15, 'en-SG-LunaNeural'),
-  edgeButton('en', 'English', 'female', 16, 'en-ZA-LeahNeural'),
-  edgeButton('en', 'English', 'female', 17, 'en-PH-RosaNeural'),
-  edgeButton('en', 'English', 'female', 18, 'en-GB-MaisieNeural', 'child-like'),
-  edgeButton('en', 'English', 'female', 19, 'en-KE-AsiliaNeural'),
-  edgeButton('en', 'English', 'female', 20, 'en-NG-EzinneNeural'),
-  edgeButton('en', 'English', 'female', 21, 'en-TZ-ImaniNeural'),
-];
-
 export function edgeSampleText(locale: string): string {
   if (locale === 'yue' || locale === 'zh' || locale === 'ja' || locale === 'en') return EDGE_SAMPLES[locale];
   return EDGE_SAMPLES.en;
-}
-
-export function edgeVoiceButton(id: string): EdgeVoiceButton | undefined {
-  return EDGE_VOICE_BUTTONS.find((b) => b.id === id);
 }
 
 export function isShippingEdgeVoice(id: string): boolean {

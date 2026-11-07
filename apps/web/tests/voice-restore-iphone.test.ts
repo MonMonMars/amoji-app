@@ -12,7 +12,7 @@ function fnBody(name: string, nextName: string): string {
 }
 
 const greet = fnBody('playVoiceGreeting', 'previewLibraryClip');
-const preview = fnBody('previewEdgeVoice', 'const TEST_LINES');
+const preview = fnBody('previewVoiceChoice', 'const TEST_LINES');
 
 describe('voice restore — one tier speaks, never two', () => {
   it('the greeting starts the HTTP MP3 tier (the only live tier)', () => {

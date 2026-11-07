@@ -58,11 +58,15 @@ describe('the HTTP MP3 voice tier is actually reachable', () => {
   });
 
   it('the preview path starts the HTTP tier too', () => {
-    const start = voice.indexOf('export function previewEdgeVoice');
+    const start = voice.indexOf('export function previewVoiceChoice');
     const end = voice.indexOf('const TEST_LINES', start);
     const block = voice.slice(start, end);
     expect(block).toContain('speakGtts(');
     expect(block).toContain("runSynthAudition('preview fallback')");
+    // The preview must send the chosen speaker, or it auditions the default and
+    // every button still sounds the same.
+    expect(block).toContain('tlForChoice(locale, choiceId)');
+    expect(block).toMatch(/speakGtts\(text, \{\s*lang: locale,\s*tl,/);
   });
 
   it('the settings self-test exercises the gtts tier so a silent phone is diagnosable', () => {
@@ -74,6 +78,14 @@ describe('the HTTP MP3 voice tier is actually reachable', () => {
     // Mandarin Hong Kong voice, which mispronounces colloquial Cantonese.
     expect(gtts).toMatch(/yue:\s*'yue'/);
     expect(gtts).not.toMatch(/yue:\s*'zh-HK'/);
+  });
+
+  it('accepts an explicit speaker code from the picker', () => {
+    // `tl` is the only voice selector this endpoint has: voice/name/speaker
+    // params all return byte-identical audio (verified). Without this the
+    // picker could not change the sound at all.
+    expect(gtts).toContain('tl?: string');
+    expect(gtts).toMatch(/opts\.tl \?\? LANG_MAP\[opts\.lang\]/);
   });
 
   it('does not set crossOrigin, so plain <audio> playback is not CORS-blocked', () => {

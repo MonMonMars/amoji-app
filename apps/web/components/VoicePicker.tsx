@@ -1,58 +1,57 @@
 'use client';
-// One button per shipping Edge Neural voice. Grouped by language, then gender
-// (female group first, then male) so Settings shows the same full numbered set
-// as the select board's TtsVoiceRow. A tap previews that voice and pins it
-// under the BUTTON's own gender slot, then switches the companion language to
-// the voice's locale. Opposite-gender buttons are auditionable, not blocked.
+// Settings → Voice. One button per voice this app can actually play.
+//
+// This used to list every Edge neural short name — 58 of them — grouped by
+// language and gender. The Edge read-aloud endpoint refuses this app, so all 58
+// produced the same fallback audio and the picker was a wall of buttons that
+// could not change what you heard.
+//
+// It now lists the voices that really differ, per language, and states the
+// engine verdict for everything that does not work, so the short list is
+// explained rather than mysterious.
 
 import { useState } from 'react';
-import {
-  EDGE_VOICE_BUTTONS,
-  type EdgeVoiceButton,
-  type VoiceGender,
-  type VoiceLocale,
-} from '../lib/voice-catalog';
-import { loadVoicePicks, saveVoicePick, voicePickFor, type VoicePickMap } from '../lib/voice-picks';
-import { previewEdgeVoice } from '../lib/voice';
-import { resolveEdgeVoice } from '../lib/edge-tts';
+import { selectTtsButtons, type TtsButtonVoice } from '../lib/tts-button-registry';
+import { isSingleVoiceLocale } from '../lib/tts-button-registry';
+import { activeVoiceChoice, loadVoicePicks, saveVoicePick, type VoicePickMap } from '../lib/voice-picks';
+import { previewVoiceChoice } from '../lib/voice';
 import { t, type Lang } from '../lib/prefs';
+import type { VoiceLocale } from '../lib/voice-catalog';
 
 const LOCALES: VoiceLocale[] = ['yue', 'zh', 'ja', 'en'];
-const GENDERS: readonly VoiceGender[] = ['female', 'male'];
+/** Native names, so the language itself is readable in any UI language. */
+const LANGUAGE_LABEL: Record<VoiceLocale, string> = {
+  yue: '廣東話',
+  zh: '中文',
+  ja: '日本語',
+  en: 'English',
+};
 
 export default function VoicePicker({
   lang,
   characterId,
-  companionGender,
   accent,
   onLang,
 }: {
   lang: Lang;
   characterId: string;
-  companionGender: 'female' | 'male';
+  /** Kept for call-site compatibility; the live voices are not gendered. */
+  companionGender?: 'female' | 'male';
   accent: string;
   onLang: (lang: Lang) => void;
 }) {
   const [picks, setPicks] = useState<VoicePickMap>(() => loadVoicePicks());
   const [playing, setPlaying] = useState<string | null>(null);
-  const [failed, setFailed] = useState<string | null>(null);
 
-  const onTap = (button: EdgeVoiceButton) => {
-    // Same pin rule as TtsVoiceRow: the button's own gender owns the pin.
-    const next = saveVoicePick(button.locale, button.gender, button.id);
+  const onTap = (button: TtsButtonVoice) => {
+    const next = saveVoicePick(button.locale, button.id);
     setPicks(next);
-    setFailed(null);
     setPlaying(button.id);
     if (button.locale !== lang) onLang(button.locale);
-    void previewEdgeVoice(button.locale, button.id)
+    void previewVoiceChoice(button.locale, button.id)
       .then(() => setPlaying((id) => (id === button.id ? null : id)))
-      .catch(() => {
-        setPlaying((id) => (id === button.id ? null : id));
-        setFailed(button.label);
-      });
+      .catch(() => setPlaying((id) => (id === button.id ? null : id)));
   };
-
-  const genderLabel = (gender: VoiceGender) => t(lang, gender === 'female' ? 'genderFemale' : 'genderMale');
 
   return (
     <div className="space-y-3">
@@ -61,64 +60,53 @@ export default function VoicePicker({
         <p className="mt-0.5 text-[11px] leading-relaxed text-white/45">{t(lang, 'voicePickerHint')}</p>
       </div>
       {LOCALES.map((locale) => {
-        const rows = EDGE_VOICE_BUTTONS.filter((b) => b.locale === locale);
-        const language = rows[0]?.language ?? locale;
-        const pinnedFemale = voicePickFor(locale, 'female') ?? picks[locale]?.female ?? null;
-        const pinnedMale = voicePickFor(locale, 'male') ?? picks[locale]?.male ?? null;
-        const pinnedId = pinnedFemale ?? pinnedMale;
-        const castId = resolveEdgeVoice({
-          lang: locale,
-          gender: companionGender,
-          character: characterId,
-          ignoreVoicePick: true,
-        }).name;
-        const activeId = pinnedId ?? castId;
+        const rows = selectTtsButtons(locale);
+        const activeId = picks[locale] ?? activeVoiceChoice(locale).id;
         return (
           <div key={locale} role="group" aria-labelledby={`amoji-voice-locale-${locale}`} className="space-y-1.5">
-            <h4 id={`amoji-voice-locale-${locale}`} className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/50">{language}</h4>
-            {/* Full locale set: female group, then male. Both genders stay tappable. */}
-            {GENDERS.map((gender) => {
-              const group = rows.filter((b) => b.gender === gender);
-              if (!group.length) return null;
-              return (
-                <div key={gender} role="group" aria-labelledby={`amoji-voice-gender-${locale}-${gender}`} className="space-y-1">
-                  <h5 id={`amoji-voice-gender-${locale}-${gender}`} className="text-[10px] uppercase tracking-[0.12em] text-white/35">{genderLabel(gender)}</h5>
-                  <div className="grid grid-cols-1 gap-1.5 min-[380px]:grid-cols-2">
-                    {group.map((button) => {
-                      const numLabel = `#${button.n} ${button.label}`;
-                      const selected = button.id === activeId;
-                      const live = playing === button.id;
-                      return (
-                        <button
-                          key={button.id}
-                          type="button"
-                          aria-label={numLabel}
-                          aria-pressed={selected}
-                          title={`${button.label} (${button.gender} #${button.n})`}
-                          data-voice-n={button.n}
-                          data-voice-gender={button.gender}
-                          onClick={() => onTap(button)}
-                          className={`ui-btn min-h-11 rounded-xl border px-2.5 py-1.5 text-left leading-tight ${
-                            selected ? 'border-white/80 text-white' : 'border-white/10 bg-white/5 text-white/80 hover:bg-white/10'
-                          }`}
-                          style={selected ? { backgroundColor: `${accent}33`, boxShadow: `inset 0 0 0 1px ${accent}` } : undefined}
-                        >
-                          <span className="block text-[12px] font-medium">{numLabel}</span>
-                          {button.note && (
-                            <span className="block text-[10px] text-white/45">{button.note}</span>
-                          )}
-                          {live && <span className="block text-[10px] text-white/55">…</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+            <h4 id={`amoji-voice-locale-${locale}`} className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/50">
+              {LANGUAGE_LABEL[locale]}
+            </h4>
+            <div className="grid grid-cols-1 gap-1.5 min-[380px]:grid-cols-2">
+              {rows.map((button) => {
+                const numLabel = `#${button.n} ${t(lang, button.labelKey)}`;
+                const selected = button.id === activeId;
+                const live = playing === button.id;
+                return (
+                  <button
+                    key={button.id}
+                    type="button"
+                    aria-label={numLabel}
+                    aria-pressed={selected}
+                    title={button.tl}
+                    data-voice-n={button.n}
+                    data-voice-id={button.id}
+                    onClick={() => onTap(button)}
+                    className={`ui-btn min-h-11 rounded-xl border px-2.5 py-1.5 text-left leading-tight ${
+                      selected ? 'border-white/80 text-white' : 'border-white/10 bg-white/5 text-white/80 hover:bg-white/10'
+                    }`}
+                    style={selected ? { backgroundColor: `${accent}33`, boxShadow: `inset 0 0 0 1px ${accent}` } : undefined}
+                  >
+                    <span className="block text-[12px] font-medium">{numLabel}</span>
+                    {live && <span className="block text-[10px] text-white/55">…</span>}
+                  </button>
+                );
+              })}
+            </div>
+            {isSingleVoiceLocale(locale) && (
+              <p
+                className="text-[10px] leading-relaxed text-white/40"
+                data-testid={`voice-single-note-${locale}`}
+              >
+                {t(lang, 'voiceOnlyOneAvailable')}
+              </p>
+            )}
           </div>
         );
       })}
-      {failed && <p className="text-[10px] text-white/45">{failed}</p>}
+      <p className="text-[10px] leading-relaxed text-white/35" data-testid="voice-engines-note">
+        {t(lang, 'voiceEnginesUnavailable')}
+      </p>
     </div>
   );
 }

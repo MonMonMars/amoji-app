@@ -25,7 +25,11 @@ import type { Lang } from './prefs';
 import { stripVoicedGlyphs } from './speak-text';
 import { followAudioElement } from './speech';
 
-/** Amoji lang → Google TTS locale */
+/**
+ * Amoji lang → default Google TTS locale. This is only the DEFAULT: the
+ * endpoint's `tl` parameter is the one thing that selects a speaker, so the
+ * picker passes its own code through `tl` and this map is the fallback.
+ */
 const LANG_MAP: Record<Lang, string> = {
   // Google Translate's TTS accepts `yue` and renders actual Cantonese. `zh-HK`
   // also returns audio but is the Mandarin Hong Kong voice, which mispronounces
@@ -118,6 +122,12 @@ export function stopGtts(): void {
 
 export interface GttsOpts {
   lang: Lang;
+  /**
+   * Google `tl` code to request, e.g. 'yue' | 'zh-TW' | 'en-GB'. This is the
+   * only way to select a speaker on this endpoint — there is no voice id. An
+   * unknown value falls back to the language default.
+   */
+  tl?: string;
   /** 1 = neutral; excitement pushes toward 1.3, sadness toward 0.75 */
   rate?: number;
   /** leading vocal tic, spoken as its own chunk ahead of the line */
@@ -153,7 +163,7 @@ function pauseAfterClause(chunk: string): number {
 export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
   stopGtts();
   const gen = generation;
-  const lang = LANG_MAP[opts.lang] ?? 'en-US';
+  const lang = opts.tl ?? LANG_MAP[opts.lang] ?? 'en-US';
   const rate = clamp(opts.rate ?? 1, 0.88, 1.15);
   const pitchBias = clamp(opts.pitchBias ?? 1, 0.82, 1.2);
   // Lead (poke laugh / ouch) is its own chunk. It is not glued on with a
