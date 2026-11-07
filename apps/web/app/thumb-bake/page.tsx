@@ -360,15 +360,15 @@ export default function ThumbBakePage() {
 
   if (!isLocal) {
     return (
-      <main className="flex h-dvh items-center justify-center bg-[#16161f] text-white/70">
+      <main aria-label="Thumb Bake Studio" className="flex h-dvh items-center justify-center bg-[#16161f] text-white/70">
         Thumb bake studio is a dev-only tool — run the app locally.
       </main>
     );
   }
 
   return (
-    <main className="min-h-dvh bg-[#16161f] p-6 font-mono text-sm text-white/80">
-      <h1 className="mb-1 text-lg font-bold text-white">Thumb Bake Studio</h1>
+    <main aria-labelledby="amoji-thumb-bake-title" className="min-h-dvh bg-[#16161f] p-6 font-mono text-sm text-white/80">
+      <h1 id="amoji-thumb-bake-title" className="mb-1 text-lg font-bold text-white">Thumb Bake Studio</h1>
       <p className="mb-4 text-white/50">
         Rendering every cast member through the real avatar pipeline — {done ? 'finished' : 'running…'}
       </p>
