@@ -193,7 +193,10 @@ describe('Edge voice bake-off buttons', () => {
     expect(greet).toContain('synthSpeak(');
     expect(greet).toContain('greeting fallback');
     // Explicit picker id must not fall through to one OS synth voice.
-    expect(voice).toContain('if (voiceId) { settle(); return; }');
+    expect(voice).toContain('greeting gesture');
+    expect(voice).toContain('primeSynthInGesture');
+    // Chat must still synth when a pinned Edge id fails (browser wss 403).
+    expect(voice).toContain('Pinned Edge id failed');
   });
 
   it('select row previews on tap only — no hover/focus race (Mon)', () => {
