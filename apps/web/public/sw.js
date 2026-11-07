@@ -1,22 +1,22 @@
-/* Amoji offline shell — r2026-11-03.1
+/* Amoji offline shell ??r2026-11-03.1
  * Hand-rolled service worker (zero dependencies, works with Next.js static
  * export where build-time PWA plugins struggle).
  *
  * Strategy:
- *   install   — precache the app shell so a revisit works fully offline
- *   navigate  — network-first, cached page as fallback, else splash shell
- *   assets    — cache-first (VRM models, portraits, js/css), filled on demand
+ *   install   ??precache the app shell so a revisit works fully offline
+ *   navigate  ??network-first, cached page as fallback, else splash shell
+ *   assets    ??cache-first (VRM models, portraits, js/css), filled on demand
  *
  * Cross-origin calls (Pollinations LLM / TTS) are left to the network:
  * the companion simply tells you she needs a connection when she's offline.
  *
- * r136: CACHE bumped (r117 → r136) — every client now drops the stale shell
+ * r136: CACHE bumped (r117 ??r136) ??every client now drops the stale shell
  * and re-fetches; a stale cached shell was referencing dead JS chunks, which
  * is the classic "page renders but nothing is clickable / no voice" shape.
  */
 'use strict';
 
-var CACHE = 'amoji-r2026-11-07.3';
+var CACHE = 'amoji-r2026-11-07.4';
 var SHELL = [
   './',
   './chat',
