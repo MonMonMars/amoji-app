@@ -187,7 +187,18 @@ export type StrKey =
   | 'osVoicesDiagTitle' | 'osVoicesDiagHint' | 'osVoicesDiagEmpty'
   | 'osVoicesCaveatIosSilent' | 'osVoicesCaveatIosOnePerLang'
   | 'osVoicesCaveatAndroidSystem' | 'osVoicesCaveatMacDownload'
-  | 'osVoicesUnreachable' | 'osVoicesSubstitute';
+  | 'osVoicesUnreachable' | 'osVoicesSubstitute'
+  // OPTIONAL "sharper brain" (BYOK) — a collapsed Advanced section only.
+  // Deliberately NOT called "setup": the app is complete without a key, and
+  // roughly 40–92% of users abandon a product at the API-key step, so the copy
+  // has to read as an extra, not a missing piece.
+  | 'brainAdvanced' | 'brainAdvancedHint' | 'brainOptional' | 'brainWorksWithout'
+  | 'brainHide' | 'brainProvider' | 'brainAuto'
+  | 'brainKeyLabel' | 'brainKeyPlaceholder' | 'brainKeyStored' | 'brainGetKey'
+  | 'brainTest' | 'brainTesting'
+  | 'brainTestOk' | 'brainTestNokey' | 'brainTestAuth' | 'brainTestBlocked'
+  | 'brainTestModel' | 'brainTestCredit' | 'brainTestOffline' | 'brainTestTimeout'
+  | 'brainPrivacy' | 'brainClearKey';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   chooseCharacter: { en: 'Choose your companion', yue: '揀你嘅小伙伴', zh: '选择你的伙伴', ja: '相棒を選ぶ' },
@@ -577,6 +588,146 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: '轉返用我部機嘅位置',
     zh: '恢复使用我的设备定位',
     ja: '端末の位置に戻す',
+  },
+  // OPTIONAL sharper brain (BYOK). Copy rule for this block: never imply the
+  // app is incomplete without a key — it works fully on the free lane.
+  brainAdvanced: {
+    en: 'Advanced',
+    yue: '進階',
+    zh: '高级',
+    ja: '詳細設定',
+  },
+  brainAdvancedHint: {
+    en: 'For a sharper brain. Totally optional — she already works.',
+    yue: '想要更醒嘅腦袋先用。完全自選——佢本身已經行得。',
+    zh: '想让她更聪明时再用。完全可选——她本来就能聊天。',
+    ja: 'もっと賢くしたい人向け。完全に任意——このままでも話せるよ。',
+  },
+  brainOptional: {
+    en: 'Optional',
+    yue: '自選',
+    zh: '可选',
+    ja: '任意',
+  },
+  brainWorksWithout: {
+    en: 'This app already works without a key — a key only makes her sharper.',
+    yue: '呢個 App 本身唔使鎖匙都行得——有鎖匙只係會醒啲。',
+    zh: '这个应用本身不用密钥也能用——有密钥只是让她更聪明。',
+    ja: 'このアプリはキーなしでも動くよ——キーがあるともっと賢くなるだけ。',
+  },
+  brainHide: {
+    en: 'Hide key settings',
+    yue: '收埋鎖匙設定',
+    zh: '收起密钥设置',
+    ja: 'キー設定を閉じる',
+  },
+  brainProvider: {
+    en: 'Provider',
+    yue: '供應商',
+    zh: '服务商',
+    ja: 'プロバイダー',
+  },
+  brainAuto: {
+    en: 'Automatic (best available)',
+    yue: '自動（用最好嘅）',
+    zh: '自动（用最好的）',
+    ja: '自動（いちばん良いもの）',
+  },
+  brainKeyLabel: {
+    en: 'API key',
+    yue: 'API 鎖匙',
+    zh: 'API 密钥',
+    ja: 'APIキー',
+  },
+  brainKeyPlaceholder: {
+    en: 'Paste a key — saved only on this device',
+    yue: '貼上鎖匙——只存喺呢部機',
+    zh: '粘贴密钥——只保存在这台设备',
+    ja: 'キーを貼り付け——この端末だけに保存',
+  },
+  brainKeyStored: {
+    en: 'A key is saved on this device.',
+    yue: '呢部機已經存咗一條鎖匙。',
+    zh: '这台设备已保存一个密钥。',
+    ja: 'この端末にキーが保存されてるよ。',
+  },
+  brainGetKey: {
+    en: 'Get a key',
+    yue: '攞鎖匙',
+    zh: '获取密钥',
+    ja: 'キーを取得',
+  },
+  brainTest: {
+    en: 'Test',
+    yue: '試下',
+    zh: '测试',
+    ja: 'テスト',
+  },
+  brainTesting: {
+    en: 'Testing…',
+    yue: '試緊…',
+    zh: '测试中…',
+    ja: 'テスト中…',
+  },
+  brainTestOk: {
+    en: '{provider} works — she will use it from now on.',
+    yue: '{provider} 行得——佢而家開始會用佢。',
+    zh: '{provider} 可用——她现在会改用这个。',
+    ja: '{provider} は使えるよ——これからこれを使うね。',
+  },
+  brainTestNokey: {
+    en: 'Paste a key first.',
+    yue: '先貼條鎖匙落去。',
+    zh: '请先粘贴密钥。',
+    ja: '先にキーを貼り付けてね。',
+  },
+  brainTestAuth: {
+    en: 'The key was rejected. Check you copied all of it.',
+    yue: '鎖匙唔收貨。睇下有冇抄齊。',
+    zh: '密钥被拒绝。检查是否复制完整。',
+    ja: 'キーが受け付けられなかった。全部コピーできたか確認してね。',
+  },
+  brainTestBlocked: {
+    en: 'This provider is blocked from Hong Kong — no key can fix that.',
+    yue: '呢個供應商喺香港連唔到——幾多鎖匙都冇用。',
+    zh: '这个服务商在香港被封锁，换什么密钥都没用。',
+    ja: 'このプロバイダーは香港から使えないよ——キーでは解決しない。',
+  },
+  brainTestModel: {
+    en: 'The key works but the model id is retired here.',
+    yue: '鎖匙得，但呢個型號已經冇得用。',
+    zh: '密钥可用，但这个模型已下线。',
+    ja: 'キーは大丈夫だけど、このモデルはもう使えない。',
+  },
+  brainTestCredit: {
+    en: 'The key works but has no credit or quota left.',
+    yue: '鎖匙得，但額度用晒喇。',
+    zh: '密钥可用，但额度已用完。',
+    ja: 'キーは大丈夫だけど、残高か回数が足りない。',
+  },
+  brainTestOffline: {
+    en: 'Could not reach the provider — try again later.',
+    yue: '連唔到個供應商——遲啲再試。',
+    zh: '连不上服务商——稍后再试。',
+    ja: 'プロバイダーに届かなかった——あとで試してね。',
+  },
+  brainTestTimeout: {
+    en: 'The test timed out — try again.',
+    yue: '測試超時——再試多次。',
+    zh: '测试超时——请重试。',
+    ja: 'テストが時間切れ——もう一度試してね。',
+  },
+  brainPrivacy: {
+    en: 'The key stays in this browser and is sent only to that provider.',
+    yue: '鎖匙只留喺呢個瀏覽器，只會送去嗰個供應商。',
+    zh: '密钥只留在这个浏览器，只会发送给该服务商。',
+    ja: 'キーはこのブラウザだけに残り、そのプロバイダーにだけ送られるよ。',
+  },
+  brainClearKey: {
+    en: 'Remove key',
+    yue: '刪除鎖匙',
+    zh: '删除密钥',
+    ja: 'キーを削除',
   },
 };
 
