@@ -154,6 +154,28 @@ export default function SettingsSheet({
   const [oaTesting, setOaTesting] = useState(false);
   const [oaTestResult, setOaTestResult] = useState<boolean | null>(null);
   const tutorNRef = useRef(0);
+  const settingsCloseRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  // Dismissible sheet: focus Close on open, restore prior focus on close,
+  // Escape closes (unlike LegalGate, which must swallow Escape).
+  useEffect(() => {
+    if (!open) return;
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    settingsCloseRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      onClose();
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => {
+      window.removeEventListener('keydown', onKey, true);
+      previousFocusRef.current?.focus?.();
+    };
+  }, [open, onClose]);
+
   // r2026-10-04.75: listen for the voice layer reporting a refused utterance
   // so the hint appears right where the toggles live.
   useEffect(() => {
@@ -318,7 +340,7 @@ export default function SettingsSheet({
       >
         <div className="mb-5 flex items-center justify-between">
           <h2 id="amoji-settings-title" className="text-lg font-semibold text-white">{t(lang, 'settings')}</h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="ui-btn rounded-full bg-white/10 px-3 py-1 text-sm text-white/70 hover:bg-white/20">✕</button>
+          <button ref={settingsCloseRef} type="button" onClick={onClose} aria-label="Close" className="ui-btn rounded-full bg-white/10 px-3 py-1 text-sm text-white/70 hover:bg-white/20">✕</button>
         </div>
 
         <div className="space-y-6">
