@@ -119,6 +119,7 @@ export default function StatusPlate({
     // below it, so a long "preparing…" can never widen/deform the plate.
     <div className="flex flex-col items-start gap-1.5">
       <button
+        type="button"
         onClick={onOpenSelect}
         title={t(lang, 'openSelect')}
         className="ui-btn flex max-w-[46vw] items-center gap-2 rounded-full border border-white/10 bg-black/55 py-1 pl-1 pr-3 shadow-lg shadow-black/30 backdrop-blur-md transition hover:bg-black/70"
