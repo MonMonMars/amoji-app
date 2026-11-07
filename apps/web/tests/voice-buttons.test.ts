@@ -73,7 +73,7 @@ describe('Edge voice bake-off buttons', () => {
     expect(allFemale.length).toBe(EDGE_VOICE_BUTTONS.filter((b) => b.gender === 'female').length);
   });
 
-  it('select row shows full numbered Edge set incl males; settings picker keeps gender floor', () => {
+  it('select row shows full numbered Edge set incl males; settings picker matches parity', () => {
     const row = fs.readFileSync(path.resolve(here, '../components/TtsVoiceRow.tsx'), 'utf8');
     // Mon t533/t534: language section lists both genders (catalog wire-now + males).
     expect(row).toContain('selectTtsButtons(lang)');
@@ -81,10 +81,11 @@ describe('Edge voice bake-off buttons', () => {
     expect(row).toContain('button.n');
     expect(row).toContain('playVoiceGreeting');
     expect(row).not.toContain('selectTtsButtons(lang, companionGender)');
+    // Settings VoicePicker no longer floors to the companion gender.
     const picker = fs.readFileSync(path.resolve(here, '../components/VoicePicker.tsx'), 'utf8');
-    expect(picker).toContain('button.gender !== companionGender');
-    expect(picker).toContain('([companionGender] as const)');
-    expect(picker).not.toContain("(['male', 'female'] as const)");
+    expect(picker).not.toContain('button.gender !== companionGender) return');
+    expect(picker).not.toContain('([companionGender] as const)');
+    expect(picker).toContain('const GENDERS');
   });
 
   it('pins a tapped voice for that companion gender only', () => {
@@ -161,7 +162,7 @@ describe('Edge voice bake-off buttons', () => {
     const picker = fs.readFileSync(path.resolve(here, '../components/VoicePicker.tsx'), 'utf8');
     const settings = fs.readFileSync(path.resolve(here, '../components/SettingsSheet.tsx'), 'utf8');
     expect(picker).toContain('EDGE_VOICE_BUTTONS');
-    expect(picker).toContain('aria-label={button.label}');
+    expect(picker).toContain('aria-label={numLabel}');
     expect(picker).toContain('previewEdgeVoice');
     expect(picker).toContain('saveVoicePick');
     expect(settings).toContain('VoicePicker');
