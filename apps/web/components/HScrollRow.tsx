@@ -15,7 +15,7 @@
  * selected tile; picking a new tile re-centers smoothly and invalidates the
  * memory, so the next entry centers on the NEW pick.
  */
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 
 function Chevron({ dir }: { dir: 'left' | 'right' }) {
   return (
@@ -53,7 +53,11 @@ export default function HScrollRow({
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
-  const [showArrows, setShowArrows] = useState(false);
+  // Match ArcFan: decide mouse/trackpad arrows on first client paint (no false→true flash).
+  const [showArrows, setShowArrows] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(pointer: fine)').matches || window.matchMedia('(hover: hover)').matches;
+  });
   const storageKey = rowKey ? `amoji.row.${rowKey}` : null;
 
   // scroll so the selected tile sits centered in the row viewport; rect-based
@@ -170,6 +174,18 @@ export default function HScrollRow({
     if (el) el.scrollBy({ left: dir * el.clientWidth * 0.85, behavior: 'smooth' });
   };
 
+  const onKeyNav = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      nudge(-1);
+      return;
+    }
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      nudge(1);
+    }
+  };
+
   // Prominent game-UI style disc: solid, glows on hover, clearly dimmed only
   // when that direction is exhausted.
   const arrow = (enabled: boolean) =>
@@ -180,7 +196,13 @@ export default function HScrollRow({
       : 'cursor-default opacity-30');
 
   return (
-    <div className="relative mx-auto w-full min-w-0">
+    <div
+      role="group"
+      aria-label={ariaLabel}
+      tabIndex={ariaLabel ? 0 : undefined}
+      onKeyDown={onKeyNav}
+      className="relative mx-auto w-full min-w-0"
+    >
       {/*
         The scroller is the centered viewport. The inner track is at least
         as wide as that viewport and centers its tiles; when the tiles are
@@ -190,7 +212,6 @@ export default function HScrollRow({
       */}
       <div
         ref={ref}
-        aria-label={ariaLabel}
         className="w-full min-w-0 overflow-x-auto overscroll-x-contain scroll-smooth [scrollbar-width:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden"
       >
         <div
@@ -203,6 +224,7 @@ export default function HScrollRow({
       {showArrows && (
         <>
           <button
+            type="button"
             onClick={() => nudge(-1)}
             aria-label="scroll left"
             title="Scroll left"
@@ -212,6 +234,7 @@ export default function HScrollRow({
             <Chevron dir="left" />
           </button>
           <button
+            type="button"
             onClick={() => nudge(1)}
             aria-label="scroll right"
             title="Scroll right"
