@@ -53,14 +53,15 @@ export default function TtsVoiceRow({
   };
 
   return (
-    <section className="pointer-events-auto w-full min-w-0" data-testid="tts-voice-row" data-rev={rev}>
+    <section role="group" aria-labelledby="amoji-tts-voice-title" className="pointer-events-auto w-full min-w-0" data-testid="tts-voice-row" data-rev={rev}>
       <div className="mb-1 flex items-center justify-center gap-2">
-        <h2 className="text-center text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
+        <h2 id="amoji-tts-voice-title" className="text-center text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
           {t(lang, 'chooseVoice')}
         </h2>
         <button
           type="button"
           aria-pressed={showAll}
+          aria-label={showAll ? t(lang, 'voiceThisLanguage') : t(lang, 'voiceShowAll')}
           data-dev={showDev ? 'V0' : undefined}
           onClick={() => setShowAll((on) => !on)}
           className="fx-press relative rounded-full border border-white/15 bg-black/30 px-2 py-0.5 text-[10px] text-white/70"
