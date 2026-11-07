@@ -65,8 +65,12 @@ export default function SelectTopBars({
       className="pointer-events-auto relative z-30 w-full max-w-7xl shrink-0 px-3 pt-[max(0.35rem,env(safe-area-inset-top))]"
     >
       <div className="mx-auto flex w-full flex-col items-center gap-1.5 rounded-2xl border border-white/10 bg-black/35 px-2.5 py-2 backdrop-blur-md">
-        <div className="flex w-full flex-wrap items-center justify-center gap-1.5">
-          <span className="mr-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white/55">
+        <div
+          role="group"
+          aria-label={t(lang, 'settingsMode')}
+          className="flex w-full flex-wrap items-center justify-center gap-1.5"
+        >
+          <span className="mr-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white/55" aria-hidden="true">
             {t(lang, 'settingsMode')}
           </span>
           <button
@@ -109,8 +113,12 @@ export default function SelectTopBars({
             {t(lang, 'kidMode')}
           </button>
         </div>
-        <div className="flex w-full flex-wrap items-center justify-center gap-1.5">
-          <span className="mr-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white/55">
+        <div
+          role="group"
+          aria-label={t(lang, 'chooseCharacter')}
+          className="flex w-full flex-wrap items-center justify-center gap-1.5"
+        >
+          <span className="mr-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white/55" aria-hidden="true">
             {t(lang, 'chooseCharacter')}
           </span>
           {genderOpts.map((g) => {
