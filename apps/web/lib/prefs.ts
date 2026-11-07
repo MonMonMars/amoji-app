@@ -120,14 +120,14 @@ export const LANGS: LangDef[] = [
 ];
 
 export type StrKey =
-  | 'tagline' | 'meetCta' | 'chooseCharacter' | 'chooseBackground' | 'chooseLanguage' | 'chooseVoice'
+  | 'chooseCharacter' | 'chooseBackground' | 'chooseLanguage' | 'chooseVoice'
   | 'voiceShowAll' | 'voiceThisLanguage' | 'moreEnginesLater' | 'previewReactions' | 'previewUniversal'
-  | 'startChat' | 'back' | 'settings' | 'sayHi' | 'typing' | 'tapHint'
+  | 'startChat' | 'back' | 'settings' | 'sayHi' | 'typing'
   | 'bgVoid' | 'bgAurora' | 'bgEmber' | 'bgSakura' | 'bgAbyss' | 'bgRain' | 'bgSunset' | 'bgMeadow'
   | 'bgCloudsea' | 'bgNeon' | 'bgSnowmoon' | 'bgGalaxy'
   // v0.9.3 flow: splash → login → select → chat
   | 'loginPrompt' | 'loginCta' | 'loginSkip'
-  | 'selectTitle' | 'confirmCta' | 'comingSoon' | 'openSelect'
+  | 'selectTitle' | 'confirmCta' | 'openSelect'
   | 'changeCta' | 'previewCurrent' | 'previewNew'
   | 'statusIdle' | 'statusThinking' | 'statusSpeaking' | 'statusListening' | 'statusPreparing'
   | 'moodJoy' | 'moodAngry' | 'moodSad' | 'moodSurprised' | 'moodRelaxed' | 'moodNeutral'
@@ -150,8 +150,7 @@ export type StrKey =
   | 'modeChat' | 'modeStory'
   // legacy-URL soft-land status lines (/mode, /setup, /story, /play)
   | 'softLandSelect' | 'softLandStory' | 'softLandChat'
-  // brain routing (r2026-10-03.05)
-  | 'brainTitle' | 'brainAuto' | 'brainAutoHint' | 'brainKeyPlaceholder' | 'brainNoKey'
+  // brain routing removed with the Settings Brain section (r2026-10-06.136)
   // voice self-test + diagnostics (r2026-10-04.75)
   | 'testVoice' | 'testVoiceBtn' | 'voiceBlockedHint' | 'voiceVolume'
   | 'sfxVolume' | 'bgmVolume'
@@ -169,13 +168,6 @@ export type StrKey =
   | 'fallbackWebgl' | 'fallbackAsset';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
-  tagline: {
-    en: 'An AI companion who laughs, sulks, and stays with you.',
-    yue: '你嘅 AI 小伙伴，識笑、識嬲、識陪住你。',
-    zh: '你的 AI 伙伴，会笑、会闹、会陪着你。',
-    ja: '笑い、拗ねて、そばにいるAI相棒。',
-  },
-  meetCta: { en: 'Meet your companion →', yue: '同佢見面 →', zh: '和TA见面 →', ja: '会いに行く →' },
   chooseCharacter: { en: 'Choose your companion', yue: '揀你嘅小伙伴', zh: '选择你的伙伴', ja: '相棒を選ぶ' },
   chooseBackground: { en: 'Choose a scene', yue: '揀個場景', zh: '选择场景', ja: '場所を選ぶ' },
   chooseLanguage: { en: 'Choose a language', yue: '揀語言', zh: '选择语言', ja: '言語を選ぶ' },
@@ -190,12 +182,6 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   settings: { en: 'Settings', yue: '設定', zh: '设置', ja: '設定' },
   sayHi: { en: 'Say hi to {name} 👋', yue: '同 {name} 打個招呼 👋', zh: '跟 {name} 打个招呼 👋', ja: '{name}に挨拶してね 👋' },
   typing: { en: '{name} is typing…', yue: '{name} 緊打緊字…', zh: '{name} 正在输入…', ja: '{name}が入力中…' },
-  tapHint: {
-    en: 'Tap her · drag to spin · pinch to zoom',
-    yue: '撳佢一下 · 拖住轉 · 雙指縮放',
-    zh: '戳TA一下 · 拖动旋转 · 双指缩放',
-    ja: 'タップ・ドラッグで回転・ピンチで拡大',
-  },
   bgVoid: { en: 'Night Void', yue: '夜空', zh: '夜空', ja: '夜空' },
   bgAurora: { en: 'Aurora', yue: '極光', zh: '极光', ja: 'オーロラ' },
   bgEmber: { en: 'Ember', yue: '餘燼', zh: '余烬', ja: '余燼' },
@@ -213,7 +199,6 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   loginSkip: { en: 'skip', yue: '略過', zh: '跳过', ja: 'スキップ' },
   selectTitle: { en: 'Build your companion', yue: '打造你嘅小伙伴', zh: '打造你的伙伴', ja: '相棒をつくる' },
   confirmCta: { en: 'START', yue: 'START', zh: 'START', ja: 'START' },
-  comingSoon: { en: 'Coming soon', yue: '即將推出', zh: '即将推出', ja: 'Coming soon' },
   changeCta: { en: 'Change', yue: '更改', zh: '更改', ja: '変更' },
   previewCurrent: { en: 'current companion', yue: '而家嘅小伙伴', zh: '当前的伙伴', ja: 'いまの相棒' },
   previewNew: { en: 'new choice — tap Change to apply', yue: '新選擇——撳「更改」先會生效', zh: '新选择——点「更改」后生效', ja: '新しい選択——「変更」で適用' },
@@ -355,21 +340,6 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: '只保留健康向上的角色和明亮场景',
     ja: '健全なキャラと明るい場所だけ',
   },
-  brainTitle: { en: 'AI brain', yue: 'AI 大腦', zh: 'AI 大脑', ja: 'AIの頭脳' },
-  brainAuto: { en: 'Auto ✦', yue: '自動 ✦', zh: '自动 ✦', ja: '自動 ✦' },
-  brainAutoHint: {
-    en: 'Auto picks the smartest brain you add a key for — otherwise the free shared lane.',
-    yue: '「自動」會用你加咗 Key 嘅最強大腦——冇就用免費共享通道。',
-    zh: '「自动」会使用你已添加密钥的最强大脑——没有则使用免费共享通道。',
-    ja: '「自動」はキーを登録した最強の頭脳を使い、なければ無料の共有レーン。',
-  },
-  brainKeyPlaceholder: {
-    en: 'paste API key — saved only on this device',
-    yue: '貼上 API 密鑰——只喺呢部機保存',
-    zh: '粘贴 API 密钥——仅保存在本设备',
-    ja: 'APIキーを貼り付け——この端末のみ保存',
-  },
-  brainNoKey: { en: 'no key — free lane', yue: '冇 Key——免費通道', zh: '没有密钥——免费通道', ja: 'キーなし——無料レーン' },
   testVoice: { en: 'Test voice', yue: '試吓把聲', zh: '试试声音', ja: '声テスト' },
   voiceVolume: { en: 'Dialogue volume', yue: '對白音量', zh: '对白音量', ja: 'セリフ音量' },
   sfxVolume: { en: 'Sound effects', yue: '音效', zh: '音效', ja: '効果音' },
