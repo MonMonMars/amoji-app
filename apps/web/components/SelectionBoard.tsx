@@ -115,16 +115,18 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   return (
     <main
       className={`${leaving ? 'fx-select-out' : 'fx-select-in'} fx-select relative flex h-dvh w-screen flex-col overflow-hidden text-white`}
-      style={{ background: background.css }}
+      style={{ background: prefsReady ? background.css : '#0a0a0f' }}
     >
       <div
         aria-hidden
         className={`pointer-events-none absolute inset-0 z-30 ${leaving ? 'fx-route-veil-out' : 'fx-route-veil-in'}`}
       />
       <EarlyAudioWarm />
-      <div data-testid="selection-hero" className="pointer-events-none absolute inset-0">
-        <SceneBackdrop background={background} />
-      </div>
+      {prefsReady && (
+        <div data-testid="selection-hero" className="pointer-events-none absolute inset-0">
+          <SceneBackdrop background={background} />
+        </div>
+      )}
 
       {/* Master mute — top-right. Top-left stays clear (exit/back lives on chat plate). */}
       {/* Same numbered idle rails as chat — pin before START; chat hydrates amoji.idlePick.v1. */}
