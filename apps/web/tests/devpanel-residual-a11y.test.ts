@@ -7,8 +7,8 @@ const panel = readFileSync(join(__dirname, '../components/DevPanel.tsx'), 'utf8'
 describe('DevPanel residual a11y', () => {
   it('exposes the panel as a labeled region', () => {
     expect(panel).toContain('role="region"');
-    expect(panel).toContain('aria-label="dev tuning"');
-    expect(panel).toContain('dev tuning (persisted)');
+    expect(panel).toContain('aria-label={copy.region}');
+    expect(panel).toContain('{copy.summary}');
   });
 
   it('keeps labeled sliders and adds spoken valuetext', () => {
