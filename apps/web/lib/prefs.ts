@@ -899,14 +899,16 @@ export function femaleLibraryId(id: string | undefined | null): string | undefin
  * Where a saved pick goes when its character was pulled from the roster.
  *
  * a04/a05 (VRoidPreset originals, removed 2026-11-08 for licensing) both sat at
- * the front of the fan next to the VRoid Studio samples, so a Shibu-style sample
- * is the closest thing the user was looking at. Anything unmapped lands on the
- * default companion.
+ * the front of the fan next to the VRoid Studio samples, so a sample-style
+ * companion is the closest thing the user was looking at. Gender is preserved:
+ * a05 was the roster's male sample, and landing a male pick on a female
+ * companion would also silently overwrite the remembered `lastFemale`. Anything
+ * unmapped lands on the default companion.
  */
 export function retiredReplacement(id: string): string {
   const map: Record<string, string> = {
     'a04-avatarsample-a': 'a02-shibu',
-    'a05-avatarsample-c': 'a02-shibu',
+    'a05-avatarsample-c': 'a24-hairsample-male',
   };
   const next = map[id];
   return next && CHARACTERS.some((c) => c.id === next) ? next : DEFAULT_PREFS.character;
