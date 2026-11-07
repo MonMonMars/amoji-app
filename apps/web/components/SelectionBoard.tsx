@@ -69,14 +69,6 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
     else setDraft((d) => ({ ...d, ...patch }));
   };
 
-  const setKidMode = (next: boolean) => {
-    const patch: Partial<Prefs> = { kidMode: next };
-    if (next) {
-      if (!characterById(live.character).kidSafe) patch.character = KID_CHARACTER;
-      if (!backgroundById(live.background).kidSafe) patch.background = KID_BACKGROUND;
-    }
-    pick(patch);
-  };
 
   const applyCastGender = (next: CastGenderFilter) => {
     setCastGender(next);
@@ -147,13 +139,10 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
         <SelectTopBars
           lang={lang}
           accent={character.accent}
-          kidMode={!!live.kidMode}
-          onKidMode={setKidMode}
           boardMode={boardMode}
           onBoardMode={setBoardMode}
           castGender={castGender}
           onCastGender={applyCastGender}
-          prefsReady={prefsReady}
         />
         {boardMode === 'story' ? (
           <StorySetupPanel />
