@@ -516,11 +516,13 @@ export default function MiniGameOverlay({ kind, lang, onEmotion, onExit }: MiniG
         <div className="absolute inset-0 flex items-center justify-center p-6">
           <div
             role="dialog"
+            aria-modal="true"
+            aria-labelledby="amoji-minigame-result-line"
             data-testid="minigame-result"
             className="pointer-events-auto w-full max-w-sm rounded-3xl border border-white/15 bg-black/70 p-6 text-center shadow-2xl backdrop-blur-md"
             onPointerDown={(e) => e.stopPropagation()}
           >
-            <p className="text-lg leading-relaxed">{hud.line}</p>
+            <p id="amoji-minigame-result-line" className="text-lg leading-relaxed">{hud.line}</p>
             <div className="mt-5 flex justify-center gap-3">
               <button
                 type="button"
@@ -533,6 +535,7 @@ export default function MiniGameOverlay({ kind, lang, onEmotion, onExit }: MiniG
               <button
                 type="button"
                 onClick={back}
+                aria-label={ui.back}
                 className="min-h-11 rounded-full border border-white/20 px-5 py-2 text-sm"
               >
                 {ui.back}
