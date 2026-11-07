@@ -27,11 +27,16 @@ export const PORTRAIT_CENTER_SCALE = 1.05;
  */
 export function portraitCardBox(stageHeight: number, stageWidth = 0): { width: number; height: number; step: number } {
   const stage = stageHeight > 0 ? stageHeight : 360;
-  // iPhone portrait→landscape: keep a readable floor so cards do not vanish (Mon t530).
-  const landscapeFloor = stageWidth > 0 && stageWidth > stage * 1.15
-    ? Math.min(200, Math.max(120, Math.round(stage * 0.88)))
+  // iPhone portrait→landscape: keep a readable floor so cards do not vanish (Mon t530),
+  // and a max so PORTRAIT_CENTER_SCALE + portraitTop do not top-trim the focused card.
+  const isLandscape = stageWidth > 0 && stageWidth > stage * 1.15;
+  const landscapeFloor = isLandscape
+    ? Math.min(200, Math.max(120, Math.round(stage * 0.55)))
     : 0;
-  let height = Math.round(Math.min(Math.max(stage * 0.95, landscapeFloor), 640));
+  const landscapeMax = isLandscape
+    ? Math.max(landscapeFloor, Math.round(stage * 0.78))
+    : 640;
+  let height = Math.round(Math.min(Math.max(stage * 0.95, landscapeFloor), landscapeMax, 640));
   let width = Math.round(height * 0.88);
   // Phones: tall stage made cards wider than the viewport (iPhone ~390).
   // Cap width so the focused card + scale fit; shrink height to keep ratio.
@@ -42,8 +47,13 @@ export function portraitCardBox(stageHeight: number, stageWidth = 0): { width: n
       height = Math.round(width / 0.88);
     }
   }
+  if (isLandscape && height > landscapeMax) {
+    height = landscapeMax;
+    width = Math.min(Math.round(height * 0.88), Math.max(120, Math.round(stageWidth * 0.72)));
+    height = Math.round(width / 0.88);
+  }
   if (landscapeFloor > 0 && height < landscapeFloor && stageWidth > 0) {
-    height = Math.min(landscapeFloor, Math.max(96, Math.round(stage * 0.92)));
+    height = Math.min(landscapeFloor, Math.max(96, Math.round(stage * 0.72)));
     width = Math.min(Math.round(height * 0.88), Math.max(120, Math.round(stageWidth * 0.72)));
     height = Math.round(width / 0.88);
   }
@@ -237,6 +247,7 @@ export default function ArcFan<T extends { id: string }>({
   return (
     <div
       ref={root}
+      role="group"
       aria-label={ariaLabel}
       className={`mx-auto touch-none ${stageClass}`}
       onPointerDown={onPointerDown}
