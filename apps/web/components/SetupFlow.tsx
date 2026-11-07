@@ -22,7 +22,7 @@ export default function SetupFlow() {
       primeAudioForChatEnter();
       window.setTimeout(() => { try { primeLocationForChatEnter(); } catch { /* ignore */ } }, 120);
       savePrefs(prefs);
-      router.push('/play');
+      router.push('/chat');
     }
   };
 
