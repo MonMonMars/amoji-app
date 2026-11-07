@@ -12,11 +12,12 @@ describe('SettingsSheet Toggle switch labels', () => {
   });
 
   it('every Settings switch passes a translated label', () => {
-    for (const key of ['kidMode', 'muteAll', 'voiceReplies', 'neuralVoice', 'openaiVoice'] as const) {
+    // r2026-11-08: 'kidMode' left this list with the adult-only decision.
+    for (const key of ['muteAll', 'voiceReplies', 'neuralVoice', 'openaiVoice'] as const) {
       expect(sheet).toContain(`label={t(lang, '${key}')}`);
     }
     const toggles = sheet.match(/<Toggle[\s\S]*?\/>/g) || [];
-    expect(toggles.length).toBeGreaterThanOrEqual(5);
+    expect(toggles.length).toBeGreaterThanOrEqual(4);
     for (const t of toggles) {
       expect(t).toContain('label=');
     }

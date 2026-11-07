@@ -144,8 +144,13 @@ export type StrKey =
   | 'diaryTitle' | 'diaryEmpty'
   // memory v6: annual dates + her promises (r2026-10-06.130)
   | 'datesTitle' | 'datesEmpty' | 'promisesTitle' | 'promisesEmpty'
-  // kid mode (r2026-10-03.03)
-  | 'settingsMode' | 'kidMode' | 'kidModeHint'
+  // kid mode (r2026-10-03.03). Retired by the ADULT ONLY decision
+  // (r2026-11-08): the UI is gone, but the persisted `kidMode` data field and
+  // its label string stay so old records / .aigf cards keep a readable name.
+  // `kidModeHint` was deleted outright — it described a control that no longer
+  // exists anywhere, which is exactly the orphan prose the string-table
+  // hygiene test is there to catch.
+  | 'settingsMode' | 'kidMode'
   // select top bars: chat vs story board chips
   | 'modeChat' | 'modeStory'
   // legacy-URL soft-land status lines (/mode, /setup, /story, /play)
@@ -199,9 +204,9 @@ export type StrKey =
   | 'brainTestOk' | 'brainTestNokey' | 'brainTestAuth' | 'brainTestBlocked'
   | 'brainTestModel' | 'brainTestCredit' | 'brainTestOffline' | 'brainTestTimeout'
   | 'brainPrivacy' | 'brainClearKey'
-  // Appended at the tail on purpose (see the note above): AI disclosure,
-  // the /safety page, and the in-chat crisis card. Legal document titles are
-  // here too, because /privacy, /terms and /safety all render in 4 languages.
+  // Appended at the tail on purpose: AI disclosure, the /safety page, and the
+  // in-chat crisis card. Legal document titles are here too, because /privacy,
+  // /terms and /safety all render in 4 languages.
   | 'aiNotice'
   | 'privacyTitle' | 'termsTitle' | 'policyVersion' | 'safetyCrisisLine'
   | 'safetyCrisisTitle' | 'safetyOpenPage'
@@ -216,7 +221,19 @@ export type StrKey =
   | 'reportNoteLabel' | 'reportNotePlaceholder' | 'reportSubmit' | 'reportCancel' | 'reportDone'
   | 'reportSaved' | 'reportSavedNext' | 'reportSaveFailed'
   | 'reportExport' | 'reportExportEmpty' | 'reportCountLabel' | 'reportExported' | 'reportExportFailed'
-  | 'reportSendTo' | 'reportSendToHint';
+  | 'reportSendTo' | 'reportSendToHint'
+  // 18+ entry gate (r2026-11-08). Amoji is an adults-only product, and it is a
+  // voice companion — so the first screen has to get an explicit "I am 18+"
+  // and an honest answer to "could you hear her?" before select.
+  | 'gateStep' | 'gate18Title' | 'gate18Body' | 'gate18Ack' | 'gate18Cta'
+  | 'gateAudioTitle' | 'gateAudioBody' | 'gateAudioIosHint' | 'gateAudioTest'
+  | 'gateAudioPlaying' | 'gateAudioQuestion' | 'gateAudioYes' | 'gateAudioNo'
+  | 'gateHelpTitle' | 'gateHelpSwitch' | 'gateHelpVolume' | 'gateHelpBluetooth'
+  | 'gateHelpTabMuted' | 'gateHelpRetry' | 'gateHelpContinue' | 'gateHelpNote'
+  | 'gateMicTitle' | 'gateMicBody' | 'gateMicAllow' | 'gateMicSkip'
+  | 'gateMicGranted' | 'gateMicDenied' | 'gateMicUnsupported' | 'gateEnter'
+  // adult-only replacement for the old Kid Mode row in Settings
+  | 'settingsAdultOnly';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   chooseCharacter: { en: 'Choose your companion', yue: '揀你嘅小伙伴', zh: '选择你的伙伴', ja: '相棒を選ぶ' },
@@ -473,13 +490,9 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: '正在带你去聊天…',
     ja: 'チャットへ移動中…',
   },
+  // Retired from the UI by the ADULT ONLY decision (r2026-11-08); kept with the
+  // data field so an old record or imported card still resolves to a name.
   kidMode: { en: 'Kid mode', yue: '兒童模式', zh: '儿童模式', ja: 'キッズモード' },
-  kidModeHint: {
-    en: 'Wholesome characters & sunny scenes only',
-    yue: '只有健康角色同開心場景',
-    zh: '只保留健康向上的角色和明亮场景',
-    ja: '健全なキャラと明るい場所だけ',
-  },
   testVoice: { en: 'Test voice', yue: '試吓把聲', zh: '试试声音', ja: '声テスト' },
   voiceVolume: { en: 'Dialogue volume', yue: '對白音量', zh: '对白音量', ja: 'セリフ音量' },
   sfxVolume: { en: 'Sound effects', yue: '音效', zh: '音效', ja: '効果音' },
@@ -746,6 +759,198 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: '刪除鎖匙',
     zh: '删除密钥',
     ja: 'キーを削除',
+  },
+  // ---- 18+ entry gate (r2026-11-08) ---------------------------------------
+  // Mon's decision: Amoji is ADULT ONLY. The first screen says so plainly and
+  // takes an explicit acknowledgement, because the age-rating question becomes
+  // live the moment the app is submitted to a store — and because a companion
+  // product that lets a child in is the wrong product.
+  //
+  // The audio half of the gate exists for one measured reason: the iPhone
+  // hardware silent switch mutes speechSynthesis completely and NO page can
+  // detect it. A user who hears nothing assumes the app is broken. So the copy
+  // names that switch directly rather than saying "check your sound".
+  gateStep: {
+    en: 'Step {n} of {total}',
+    yue: '第 {n} 步，共 {total} 步',
+    zh: '第 {n} 步，共 {total} 步',
+    ja: '{total} 中 {n} 番目',
+  },
+  gate18Title: {
+    en: 'Amoji is for adults (18+)',
+    yue: 'Amoji 只限成人（18+）',
+    zh: 'Amoji 仅限成人（18+）',
+    ja: 'Amoji は成人向けです（18+）',
+  },
+  gate18Body: {
+    en: 'Amoji is a companion app made for grown-ups. Conversations can be intimate, and nothing here is designed, moderated, or filtered for children. If you are under 18, please close this app.',
+    yue: 'Amoji 係為成年人而做嘅陪伴 App。對話可以好親密，呢度嘅內容亦冇為小朋友設計、審核或者過濾。如果你未夠 18 歲，請離開呢個 App。',
+    zh: 'Amoji 是为成年人打造的陪伴应用。对话可以很亲密，这里的内容也没有为儿童设计、审核或过滤。如果你未满 18 岁，请关闭本应用。',
+    ja: 'Amoji は大人のためのコンパニオンアプリです。会話は親密になることがあり、子ども向けの設計・監視・フィルタは行っていません。18歳未満の方はこのアプリを閉じてください。',
+  },
+  gate18Ack: {
+    en: 'I am 18 or older',
+    yue: '我已經滿 18 歲',
+    zh: '我已满 18 岁',
+    ja: '私は18歳以上です',
+  },
+  gate18Cta: {
+    en: 'Continue',
+    yue: '繼續',
+    zh: '继续',
+    ja: '次へ',
+  },
+  gateAudioTitle: {
+    en: 'Amoji speaks out loud',
+    yue: 'Amoji 會出聲講嘢',
+    zh: 'Amoji 会出声说话',
+    ja: 'Amoji は声に出して話します',
+  },
+  gateAudioBody: {
+    en: 'She talks, laughs and reacts with sound — that is the whole point of her. If your phone is muted you will see her move but hear nothing, and the app cannot tell the difference.',
+    yue: '佢會講嘢、會笑、會有反應聲——呢個就係佢。電話一靜音，你只會見到佢郁但聽唔到聲，而 App 分唔出。',
+    zh: '她会说话、会笑、会发出反应声——这就是她。手机一静音，你只会看到她动却听不到声音，而应用分辨不出来。',
+    ja: '彼女は話し、笑い、音で反応します。それが彼女そのものです。端末が消音だと、動いているのに何も聞こえず、アプリ側では区別できません。',
+  },
+  // The single most important line on this screen: the silent switch is the
+  // #1 cause of "the app is broken" reports, and it is undetectable.
+  gateAudioIosHint: {
+    en: 'On iPhone, flip the hardware silent switch — the small switch above the volume buttons — OFF. It mutes all browser speech, and no page can detect it.',
+    yue: '用 iPhone 嘅話，請將音量鍵上面嗰粒硬件靜音掣撥返去「響」嘅一邊。佢會靜音所有網頁語音，而且任何網頁都偵測唔到。',
+    zh: '如果使用 iPhone，请把音量键上方的硬件静音开关拨回响铃一侧。它会让所有网页语音静音，而且任何网页都检测不到。',
+    ja: 'iPhone の場合、音量ボタンの上にある本体のサイレントスイッチを「リング」側に戻してください。ブラウザの音声はすべて消音され、ページ側からは検知できません。',
+  },
+  gateAudioTest: {
+    en: 'Test my sound',
+    yue: '試吓我嘅聲音',
+    zh: '测试我的声音',
+    ja: '音をテストする',
+  },
+  gateAudioPlaying: {
+    en: 'Playing…',
+    yue: '播緊…',
+    zh: '正在播放…',
+    ja: '再生中…',
+  },
+  gateAudioQuestion: {
+    en: 'Did you hear her just now?',
+    yue: '你啱啱聽唔聽到佢把聲？',
+    zh: '你刚刚听到她说话了吗？',
+    ja: '今、彼女の声が聞こえましたか？',
+  },
+  gateAudioYes: {
+    en: 'Yes, I heard her',
+    yue: '聽到',
+    zh: '听到了',
+    ja: '聞こえた',
+  },
+  gateAudioNo: {
+    en: 'No, I heard nothing',
+    yue: '聽唔到',
+    zh: '没听到',
+    ja: '聞こえない',
+  },
+  gateHelpTitle: {
+    en: 'Four things that can silence her',
+    yue: '四個會令佢冇聲嘅原因',
+    zh: '四个让她没声音的原因',
+    ja: '音が消える4つの原因',
+  },
+  gateHelpSwitch: {
+    en: 'Silent switch — on iPhone, the small switch above the volume buttons must be OFF (no orange showing).',
+    yue: '靜音掣——iPhone 上音量鍵上面嗰粒掣要撥去唔見橙色嘅一邊。',
+    zh: '静音开关——iPhone 上音量键上方的小开关要拨到不显示橙色的一侧。',
+    ja: 'サイレントスイッチ——iPhone の音量ボタンの上にある小さなスイッチを、オレンジが見えない側にしてください。',
+  },
+  gateHelpVolume: {
+    en: 'Volume — press the side buttons up while a sound is playing. Media volume is separate from the ringtone.',
+    yue: '音量——播緊聲嘅時候用側邊鍵較大聲。媒體音量同鈴聲係分開嘅。',
+    zh: '音量——在播放声音时用侧边键调高。媒体音量和铃声音量是分开的。',
+    ja: '音量——音が鳴っている間に側面のボタンで上げてください。メディア音量は着信音とは別です。',
+  },
+  gateHelpBluetooth: {
+    en: 'Bluetooth — if earbuds or a speaker are still connected, the sound is playing to them, not to this phone.',
+    yue: '藍牙——如果耳機或者喇叭仲駁住，聲會播去嗰邊，唔會由部電話出。',
+    zh: '蓝牙——如果耳机或音箱还连着，声音会播到那边，而不是这台手机。',
+    ja: 'Bluetooth——イヤホンやスピーカーがつながったままだと、音はそちらに流れ、この端末からは出ません。',
+  },
+  gateHelpTabMuted: {
+    en: 'Muted tab — a tab can be muted on its own. Right-click this tab, or look for the speaker icon on it.',
+    yue: '分頁靜音——單獨一頁都可以被靜音。右撳呢個分頁，或者睇下分頁上面有冇喇叭圖示。',
+    zh: '标签页静音——单个标签页也可以被静音。右键点击此标签页，或查看标签页上是否有喇叭图标。',
+    ja: 'タブのミュート——タブ単体がミュートされていることがあります。このタブを右クリックするか、タブのスピーカーアイコンを確認してください。',
+  },
+  gateHelpRetry: {
+    en: 'Test again',
+    yue: '再試一次',
+    zh: '再试一次',
+    ja: 'もう一度テスト',
+  },
+  gateHelpContinue: {
+    en: 'Continue anyway',
+    yue: '照樣繼續',
+    zh: '仍然继续',
+    ja: 'このまま続ける',
+  },
+  gateHelpNote: {
+    en: 'The app cannot hear your speaker, so only you can answer that question. If you continue without sound, her voice is still switched on — you can test it again any time in Settings.',
+    yue: 'App 聽唔到你個喇叭，所以呢條問題只可以由你答。就算你冇聲都繼續，佢把聲仍然開住——你隨時可以喺設定再試。',
+    zh: '应用听不到你的扬声器，所以这个问题只有你能回答。即使没有声音也继续，她的声音仍然是开着的——你随时可以在设置里再测试。',
+    ja: 'アプリはスピーカーの音を聞けません。だからこの質問に答えられるのはあなただけです。音が出ないまま進んでも彼女の声は有効なままで、設定からいつでも試せます。',
+  },
+  gateMicTitle: {
+    en: 'Microphone (optional)',
+    yue: '咪高峰（可選）',
+    zh: '麦克风（可选）',
+    ja: 'マイク（任意）',
+  },
+  gateMicBody: {
+    en: 'You can talk to her instead of typing. Asking now, while you are already tapping, matters on iPhone: once the microphone is denied, it stays denied for the whole page until you reload.',
+    yue: '你可以用講嘅方式同佢傾，唔一定要打字。而家一次過問，係因為 iPhone 一旦拒絕咗咪高峰，成個頁面都要重新載入先用得返。',
+    zh: '你可以直接用说的方式和她聊，不必打字。现在一并询问，是因为在 iPhone 上麦克风一旦被拒绝，整个页面都要重新加载才能恢复。',
+    ja: '入力の代わりに話しかけられます。いま聞いておくのは、iPhone ではマイクを一度拒否すると、再読み込みするまでページ全体で使えなくなるからです。',
+  },
+  gateMicAllow: {
+    en: 'Allow microphone',
+    yue: '允許用咪高峰',
+    zh: '允许使用麦克风',
+    ja: 'マイクを許可',
+  },
+  gateMicSkip: {
+    en: 'Not now',
+    yue: '遲啲先',
+    zh: '以后再说',
+    ja: 'あとで',
+  },
+  gateMicGranted: {
+    en: 'Microphone is ready.',
+    yue: '咪高峰準備好。',
+    zh: '麦克风已就绪。',
+    ja: 'マイクの準備ができました。',
+  },
+  gateMicDenied: {
+    en: 'The microphone is blocked — typing still works, and you can allow it again in your browser settings.',
+    yue: '咪高峰被封鎖——打字一樣得，你亦可以喺瀏覽器設定再開返。',
+    zh: '麦克风被阻止——打字仍然可用，你也可以在浏览器设置里重新允许。',
+    ja: 'マイクがブロックされています——入力は使えます。ブラウザ設定で許可し直せます。',
+  },
+  gateMicUnsupported: {
+    en: 'This browser cannot take speech input — typing works the same.',
+    yue: '呢個瀏覽器收唔到語音輸入——打字一樣得。',
+    zh: '这个浏览器不支持语音输入——打字一样可以。',
+    ja: 'このブラウザは音声入力に対応していません——入力は同じように使えます。',
+  },
+  gateEnter: {
+    en: 'Enter Amoji',
+    yue: '入去 Amoji',
+    zh: '进入 Amoji',
+    ja: 'Amoji をはじめる',
+  },
+  settingsAdultOnly: {
+    en: '18+ · adult only',
+    yue: '18+ · 只限成人',
+    zh: '18+ · 仅限成人',
+    ja: '18+ · 成人のみ',
   },
   // ---- AI disclosure + safety layer (r2026-11-08.143) --------------------
   // One plain line, shown at the name step on first run. Says what Amoji is
@@ -1030,10 +1235,17 @@ function volOf(v: unknown): VolumeStep {
   return isVolumeStep(n) ? n : DEFAULT_VOLUME;
 }
 
-// Kid Mode fallbacks — wholesome cast + sunny scene (female default from want list)
+// Kid Mode is retired (r2026-11-08, Mon's decision: ADULT ONLY).
+// The `kidMode` field is deliberately KEPT in `Prefs` and in the stored JSON
+// rather than deleted: it is read by chat / adaptive / companion-file today and
+// lives in every existing user's localStorage, so removing it would be a
+// half-migrated field that can still arrive from an old record or an imported
+// .aigf card. Instead it is pinned to false on load (see loadPrefs) so no code
+// path can ever turn the product back into a kid-safe one.
 export const KID_CHARACTER = 'a02-shibu';
 export const KID_BACKGROUND = 'meadow';
-// Appended to the persona while kid mode is on (chat page).
+// Appended to the persona while kid mode is on (chat page). Unreachable now;
+// kept so the persisted field still has a meaning if it is ever re-enabled.
 export const KID_PERSONA_GUARD = '\n\nKid mode: the user is a child. Use simple, gentle, encouraging language. Never use romantic, flirty, scary, violent, or adult content. Be patient, positive, and supportive.';
 
 /** Female want-list id. Retired roster ids and non-library models are dropped. */
@@ -1052,16 +1264,21 @@ export function loadPrefs(): Prefs {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const p = JSON.parse(raw) as Partial<Prefs>;
-      const kidMode = !!p.kidMode;
+      // r2026-11-08 — ADULT ONLY (Mon's decision). Kid Mode is unreachable, so
+      // the persisted flag is coerced to false here, the single place every
+      // reader (chat, adaptive, selection board, .aigf import) goes through.
+      // Notes on why it is a coercion and not a deletion:
+      //  - the field still exists on old records and in imported companion
+      //    cards, so a deleted field would just re-appear and be undefined;
+      //  - the previous behaviour swapped the user's character/scene to the
+      //    wholesome defaults when the flag was on. That is NOT done any more:
+      //    an adult keeps whichever companion they actually picked, and sees
+      //    the full cast and all scenes instead of a filtered subset.
+      const kidMode = false;
       const storedCharacter = typeof p.character === 'string' ? p.character : DEFAULT_PREFS.character;
       let character = CHARACTERS.some((c) => c.id === storedCharacter) ? storedCharacter : DEFAULT_PREFS.character;
       if (isHiddenCast(character)) character = DEFAULT_PREFS.character;
-      let background = BACKGROUNDS.some((b) => b.id === p.background) ? p.background! : DEFAULT_PREFS.background;
-      // kid mode: current picks must stay wholesome — swap if not
-      if (kidMode) {
-        if (!characterById(character).kidSafe) character = KID_CHARACTER;
-        if (!backgroundById(background).kidSafe) background = KID_BACKGROUND;
-      }
+      const background = BACKGROUNDS.some((b) => b.id === p.background) ? p.background! : DEFAULT_PREFS.background;
       const picked = CHARACTERS.find((c) => c.id === character);
       let lastFemale = femaleLibraryId(typeof p.lastFemale === 'string' ? p.lastFemale : undefined);
       if (picked?.gender === 'female') lastFemale = femaleLibraryId(picked.id) ?? lastFemale;
@@ -1076,7 +1293,8 @@ export function loadPrefs(): Prefs {
         voiceVol: volOf(p.voiceVol),
         ...(lastFemale ? { lastFemale } : {}),
       };
-      // Persist migration when an old roster id (juno, kitagawa, …) no longer ships.
+      // Persist migration when an old roster id (juno, kitagawa, …) no longer
+      // ships, or when a stored kidMode:true was just coerced off.
       if (
         storedCharacter !== character
         || p.background !== next.background
@@ -1097,7 +1315,10 @@ export function savePrefs(p: Prefs): void {
   let lastFemale = femaleLibraryId(p.lastFemale);
   if (picked?.gender === 'female') lastFemale = femaleLibraryId(picked.id) ?? lastFemale;
   if (!lastFemale) lastFemale = femaleLibraryId(DEFAULT_PREFS.character);
-  const next: Prefs = lastFemale ? { ...p, lastFemale } : p;
+  // Adult-only product: never persist a kid-mode pick, even if a caller (an
+  // imported .aigf card, a stale draft) hands one in.
+  const base: Prefs = { ...p, kidMode: false };
+  const next: Prefs = lastFemale ? { ...base, lastFemale } : base;
   try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* ignore */ }
   scheduleStatePush();
 }
