@@ -137,6 +137,7 @@
 // field ("can't click the text box and the mic button"). The input row now
 // carries z-10 so it takes its clicks back.
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { feedUtterance, applyLlmHints, setThinkingPose, triggerLaugh, triggerMove, holdMove, setPerfMotionProfile } from '../lib/companion';
 import { detectMove } from '../lib/moves';
 import { loadHistory, saveHistory } from '../lib/companion-store';
@@ -150,6 +151,7 @@ import { cannedOpener, personalityPrompt } from '../lib/personality';
 import { laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { assetUrl } from '../lib/asset';
 import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
+import { guardCompanionTurn } from '../lib/crisis';
 import { clientLiveContext } from '../lib/live-tools';
 import {
   OPEN_CHEER_FOLLOW_MS,
@@ -254,6 +256,8 @@ export default function ChatPanel({
   const [replayHint, setReplayHint] = useState(false);
   // premade sing/dance clip currently on stage — the name is the visible pick
   const [nowPlaying, setNowPlaying] = useState<string | null>(null);
+  // the last turn was caught by the crisis guard — show the /safety card
+  const [crisisCard, setCrisisCard] = useState(false);
   const [actionGame, setActionGame] = useState<ActionGame | null>(null);
   const actionGameRef = useRef(false);
   const [clipState, setClipState] = useState<'starting' | 'playing' | null>(null);
@@ -778,6 +782,17 @@ export default function ChatPanel({
       busyRef.current = false;
       lastActivityRef.current = Date.now();
     };
+    // Crisis / self-harm guard — FIRST, before games, duets, live facts and any
+    // brain. A fixed human-written reply with real helplines, in her language.
+    // The model never sees this turn: a 20B model must not improvise here.
+    const crisis = guardCompanionTurn(text, lang);
+    if (crisis.blocked) {
+      setCrisisCard(true);
+      sayLocal(crisis.reply, { sadness: 0.35 });
+      done();
+      return;
+    }
+    setCrisisCard(false);
     {
       const action = detectActionGame(text);
       if (action) {
@@ -1299,6 +1314,23 @@ export default function ChatPanel({
           </div>
         )}
         {busy && <p className="text-white/40">{t(lang, 'typing', { name: characterName })}</p>}
+        {/* Crisis guard fired on the last turn: the fixed reply is above, and
+            this card carries the tap-through to the helplines. It stays until
+            the next message so it cannot be missed by a scroll. */}
+        {crisisCard && (
+          <div
+            data-testid="crisis-card"
+            className="rounded-2xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-left"
+          >
+            <p className="text-xs font-semibold text-rose-50">{t(lang, 'safetyCrisisTitle')}</p>
+            <Link
+              href="/safety"
+              className="mt-1 inline-block text-xs text-pink-200 underline-offset-4 hover:underline"
+            >
+              {t(lang, 'safetyOpenPage')}
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* input row — ChatGPT-style hero mic with the living emotion orb.
