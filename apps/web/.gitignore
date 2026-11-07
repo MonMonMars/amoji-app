@@ -44,3 +44,11 @@ next-env.d.ts
 
 # licensed public avatar (see ASSET_MANIFEST.md)
 !seed-san.vrm
+
+# Internal QA pages: source of truth is apps/web/dev-pages/. `pnpm dev` mirrors
+# them back into public/ so they stay reachable at localhost:3000; that mirror
+# is a build artifact and must never be committed (it would ship in out/).
+/public/catalog.html
+/public/decisions.html
+/public/gallery.html
+/public/voice-debug.html
