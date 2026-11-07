@@ -63,6 +63,8 @@ describe('selection layout', () => {
     expect(fan).toContain('showArrows');
     expect(fan).toContain('scroll left');
     expect(fan).toContain('orientationchange');
+    expect(fan).toContain('role="group"');
+    expect(fan).toContain('landscapeMax');
     expect(fan).toContain('PORTRAIT_CENTER_SCALE');
     expect(fan).not.toContain('h-[8.4rem]');
     expect(fan).not.toContain('sm:h-[11rem]');
@@ -88,6 +90,11 @@ describe('selection layout', () => {
     expect(iphone.width).toBeLessThanOrEqual(Math.round(390 * 0.72));
     expect(iphone.width).toBeLessThanOrEqual(390);
     expect(iphone.height).toBeLessThanOrEqual(Math.round(iphone.width / 0.88) + 1);
+    // Landscape: leave slack for PORTRAIT_CENTER_SCALE + portraitTop (no top trim).
+    const iphoneLand = portraitCardBox(390, 844);
+    expect(iphoneLand.height).toBeLessThanOrEqual(Math.round(390 * 0.78));
+    expect(iphoneLand.height).toBeGreaterThanOrEqual(120);
+    expect(iphoneLand.width / iphoneLand.height).toBeCloseTo(0.88, 1);
     expect(portraitCardBox(900).height).toBeGreaterThan(520);
     expect(portraitCardBox(900).height).toBeLessThanOrEqual(640);
     const fitted = portraitCardBox(456);
@@ -225,6 +232,9 @@ describe('selection layout', () => {
     expect(bars).toContain('prefsReady');
     expect(bars).toContain('aria-busy={!prefsReady}');
     expect(bars).toContain('disabled={!prefsReady}');
+    expect(bars).toContain('role="group"');
+    expect(bars).toContain("aria-label={t(lang, 'settingsMode')}");
+    expect(bars).toContain("aria-label={t(lang, 'chooseCharacter')}");
     expect(bars).not.toContain('loadProfile');
     expect(bars).not.toContain('genderReady');
   });
