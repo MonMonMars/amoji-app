@@ -18,7 +18,7 @@ describe('offline service worker', () => {
   });
 
   it('precaches the app shell pages', () => {
-    for (const p of ['./', './chat', './select', './change', './login', './mode', './setup', './story', './privacy', './terms']) {
+    for (const p of ['./', './chat', './play', './select', './change', './login', './mode', './setup', './story', './privacy', './terms']) {
       expect(sw).toContain(`'${p}'`);
     }
   });
