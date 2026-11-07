@@ -13,8 +13,8 @@ describe('HScrollRow wardrobe a11y + mouse arrows', () => {
     expect(row).toContain("event.key === 'ArrowLeft'");
     expect(row).toContain("event.key === 'ArrowRight'");
     expect(row).toContain('type="button"');
-    expect(row).toContain('scroll left');
-    expect(row).toContain('scroll right');
+    expect(row).toContain("aria-label={t(lang, 'scrollLeft')}");
+    expect(row).toContain("aria-label={t(lang, 'scrollRight')}");
   });
 
   it('decides mouse/trackpad arrows on first client paint (no false?true flash)', () => {
