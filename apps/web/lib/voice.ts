@@ -95,7 +95,9 @@ import { edgeCastVoice } from './edge-cast';
 import { speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead } from './edge-tts';
 import { stopGtts, speakGtts, PITCH_BIAS_MALE, PITCH_BIAS_FEMALE } from './gtts';
 import { voicePickFor } from './voice-picks';
-import { tlForChoice } from './voice-capability';
+import { osVoicePinFor, saveOsVoicePin } from './os-voice-picks';
+import { resolveOsPin, resolvePinnedVoice } from './os-voice-resolve';
+import { isVoiceLocale, tlForChoice } from './voice-capability';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
 import { formatVoiceChain, freeVoiceHops } from './tts-chain';
 import { startThinkingSound, stopThinkingSound } from './thinking-sound';
@@ -1097,6 +1099,13 @@ function pickVoice(characterId: string, lang: Lang, genderOverride?: 'female' | 
   // Same pitch/pace as the Edge slot, so the browser fallback stays personal.
   const pitch = (gender === 'male' ? 0.94 : 1.06) + (color?.pitch ?? 0);
   const rate = (gender === 'male' ? 0.98 : 1.02) + (color?.rate ?? 0);
+  // A pinned OS voice beats the matrix. The user chose that exact speaker in
+  // Settings, so it must be what chat plays — otherwise the picker promises a
+  // difference the chat does not have. A pin whose voice is gone (device swap,
+  // removed language pack) resolves to null and the matrix below takes over,
+  // so a stale pin degrades to a working voice instead of silence.
+  const pinned = resolveOsPin(cached, osVoicePinFor(lang, gender));
+  if (pinned) return { voice: pinned, pitch, rate };
   const preferred = rotateNames(synthNameList(lang, gender), hashId(characterId));
   // Exact gender, then a matching-lang voice whose name does not say.
   // iPhone voices ("Nicky", "Ting-Ting") are unlabeled; requiring a gender
@@ -2091,6 +2100,66 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
     if (spokenBy === 'edge') return gtts;
     reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'preview edge failed');
     return gtts;
+  });
+}
+
+/**
+ * Audition ONE OS voice by name.
+ *
+ * speechSynthesis is the only tier that can address a specific installed
+ * speaker, so a preview bypasses the Edge/Google chain entirely: those tiers
+ * either refuse this app or ignore a voice id, and routing a preview through
+ * them would play a DIFFERENT speaker than the button the user tapped.
+ *
+ * On success the choice is pinned so chat honours it afterwards. A failed
+ * utterance is reported and NOT pinned, so a device that lists a voice it
+ * cannot synthesize never leaves a dead pin behind.
+ */
+export function previewOsVoice(
+  locale: Lang,
+  voiceName: string,
+  gender: 'female' | 'male',
+): Promise<boolean> {
+  if (!voiceOutputAllowed()) return Promise.resolve(false);
+  unlockAudio(true);
+  stopSpeaking();
+  primeSynthInGesture(true);
+  refresh();
+  const voice = resolvePinnedVoice(cached, voiceName, speechLocale(locale));
+  if (!voice) return Promise.resolve(false);
+  const text = edgeSampleText(locale);
+  return new Promise<boolean>((resolve) => {
+    let settled = false;
+    const settle = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      if (ok && isVoiceLocale(locale)) saveOsVoicePin(locale, gender, voiceName, voice.lang);
+      resolve(ok);
+    };
+    try {
+      const u = new SpeechSynthesisUtterance(stripVoicedGlyphs(text));
+      bindSynthVoice(u, voice, speechLocale(locale));
+      u.pitch = 1;
+      u.rate = 1;
+      u.volume = Math.max(0.2, getPlaybackVolume());
+      u.onstart = () => {
+        markVoiceStarted();
+        reportVoiceStatus('synth', true, `os voice preview ${voiceName}`);
+      };
+      u.onend = () => settle(true);
+      // An OS voice can fail for reasons a page cannot see (no audio device, a
+      // language pack that lists but will not synthesize). Report, do not pin.
+      u.onerror = (e) => {
+        reportVoiceStatus('synth', false, `os voice preview failed: ${(e as SpeechSynthesisErrorEvent).error}`);
+        settle(false);
+      };
+      speechSynthesis.speak(u);
+      // Watchdog: a dropped utterance never fires onend or onerror.
+      setTimeout(() => settle(false), 6_000);
+    } catch (e) {
+      reportVoiceStatus('synth', false, (e as Error | undefined)?.message ?? 'os voice preview threw');
+      settle(false);
+    }
   });
 }
 
