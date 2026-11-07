@@ -153,7 +153,8 @@ export default function Chat() {
             />
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <MuteButton lang={prefs.lang} compact />
+            {/* Hold until bootReady so MuteButton aria/title lang is not DEFAULT_PREFS (select prefsReady parity). */}
+            {bootReady && <MuteButton lang={prefs.lang} compact />}
             <WardrobeSwap
               lang={prefs.lang}
               characterId={character.id}
