@@ -252,6 +252,29 @@ describe('TTS proxy URL (r131)', () => {
   });
 });
 
+describe('additive SSML contour (human feel on flat deltas)', () => {
+  it('multi-clause neutral lines still warble pitch when rate/pitch deltas are 0', () => {
+    const ssml = buildEdgeSsml('你好呀，今天好吗？还好吗？', {
+      lang: 'yue', gender: 'male', character: 'a98-ethan', forcePlain: true, expressiveness: 1.15,
+    });
+    const pitches = [...ssml.matchAll(/pitch='([+-]?\d+)%'/g)].map((m) => Number(m[1]));
+    expect(pitches.length).toBeGreaterThan(1);
+    expect(new Set(pitches).size).toBeGreaterThan(1);
+    for (const p of pitches) expect(Math.abs(p)).toBeLessThanOrEqual(18);
+  });
+
+  it('Japanese emotional lines keep a non-flat prosody wave without express-as', () => {
+    const ssml = buildEdgeSsml('会えて嬉しい！元気？', {
+      lang: 'ja', gender: 'female', character: 'juno', emotion: 'excitement',
+      rateDelta: 0, pitchDelta: 0, expressiveness: 1.2,
+    });
+    expect(ssml).not.toContain('express-as');
+    const pitches = [...ssml.matchAll(/pitch='([+-]?\d+)%'/g)].map((m) => Number(m[1]));
+    expect(pitches.length).toBeGreaterThan(0);
+    expect(pitches.some((p) => p !== 0)).toBe(true);
+  });
+});
+
 describe('forcePlain SSML (voice hotfix)', () => {
   it('forcePlain skips express-as even when emotion would style', () => {
     const styled = buildEdgeSsml('你好呀', { lang: 'zh', gender: 'female', character: 'a01-shino', emotion: 'joy' });
