@@ -13,5 +13,7 @@ export default defineConfig({
       '@amoji/engine': pkg('engine'),
     },
   },
-  test: { include: ['tests/**/*.test.ts'], environment: 'node' },
+  // .tsx is included for tests that must RENDER a component (react-dom/server)
+  // rather than grep its source — see tests/brain-optional-ui.test.tsx.
+  test: { include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'], environment: 'node' },
 });

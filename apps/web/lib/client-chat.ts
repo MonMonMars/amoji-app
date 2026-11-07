@@ -61,7 +61,7 @@
 //    the racer just loses that round and Pollinations carries the reply
 import { analyzeText } from '@amoji/emotion-core';
 import { BASE_SYSTEM, languageBlock, parseEmotionHints, type ChatMessage } from './llm';
-import { BRAIN_SPECS, markBrainDead, pickBrain, type BrainSpec } from './brain';
+import { BRAIN_SPECS, brainBodyExtras, markBrainDead, pickBrain, type BrainSpec } from './brain';
 import { cleanForDisplay, stripLaughTokens } from './speak-text';
 import { withQuestion } from './follow-up';
 import { preferLiveReply, worldBlock } from './live-tools';
@@ -353,9 +353,11 @@ function launchRacer(
           model,
           messages: [{ role: 'system', content: system }, ...messages],
           temperature: 0.7,
-          // The only keyless model is a reasoning model. Low effort skips the
-          // long hidden chain so the first spoken token arrives sooner.
-          reasoning_effort: 'low',
+          // Provider-specific extras. The keyless lane is a reasoning model and
+          // low effort skips the long hidden chain so the first spoken token
+          // arrives sooner; Z.ai needs its documented thinking-off switch instead
+          // (see brainBodyExtras) or the GLM-4.7 chain blows the keyed budget.
+          ...brainBodyExtras(spec.id),
           // Tail cap. Recipes need room for numbered steps; ordinary replies stay short.
           max_tokens: maxTokens,
           stream: true,

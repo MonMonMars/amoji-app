@@ -56,33 +56,52 @@ describe('brain router', () => {
     } finally { restore(); }
   });
 
-  it('auto prefers the first keyed provider (moonshot first)', async () => {
-    const restore = swapLs({ 'amoji.brain.key.moonshot': 'sk-test' });
+  it('auto prefers the first keyed provider in HK order (Z.ai GLM first)', async () => {
+    const restore = swapLs({ 'amoji.brain.key.moonshot': 'sk-test', 'amoji.brain.key.zai': 'z-test' });
     try {
       const { pickBrain } = await import('../lib/brain');
-      expect(pickBrain().spec.id).toBe('moonshot');
-      expect(pickBrain().key).toBe('sk-test');
+      expect(pickBrain().spec.id).toBe('zai');
+      expect(pickBrain().key).toBe('z-test');
     } finally { restore(); }
   });
 
   it('explicit provider with a key is used as picked', async () => {
     const restore = swapLs({
-      'amoji.brain.provider': 'groq',
-      'amoji.brain.key.groq': 'gsk-test',
+      'amoji.brain.provider': 'zai',
+      'amoji.brain.key.zai': 'z-test',
     });
     try {
       const { brainProvider, pickBrain } = await import('../lib/brain');
-      expect(brainProvider()).toBe('groq');
-      expect(pickBrain().spec.id).toBe('groq');
+      expect(brainProvider()).toBe('zai');
+      expect(pickBrain().spec.id).toBe('zai');
     } finally { restore(); }
   });
 
   it('explicit provider without a key falls back to the free lane', async () => {
-    const restore = swapLs({ 'amoji.brain.provider': 'groq' });
+    const restore = swapLs({ 'amoji.brain.provider': 'zai' });
     try {
       const { pickBrain } = await import('../lib/brain');
       expect(pickBrain().spec.id).toBe('pollinations');
     } finally { restore(); }
+  });
+
+  it('a legacy geo-blocked provider is only honoured while its key survives', async () => {
+    // Groq answers 403 with no credential at all from Hong Kong (measured
+    // 2026-11-07), so it must never be entered by accident. A user who stored
+    // a key on an older build keeps working; a bare leftover choice does not.
+    const withKey = swapLs({ 'amoji.brain.provider': 'groq', 'amoji.brain.key.groq': 'gsk-old' });
+    try {
+      const { brainProvider, pickBrain } = await import('../lib/brain');
+      expect(brainProvider()).toBe('groq');
+      expect(pickBrain().spec.id).toBe('groq');
+    } finally { withKey(); }
+
+    const bare = swapLs({ 'amoji.brain.provider': 'groq' });
+    try {
+      const { brainProvider, pickBrain } = await import('../lib/brain');
+      expect(brainProvider()).toBe('auto');
+      expect(pickBrain().spec.id).toBe('pollinations');
+    } finally { bare(); }
   });
 
   it('setBrainKey stores and clears', async () => {
