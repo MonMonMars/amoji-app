@@ -14,7 +14,7 @@ describe('voice restore mute-aware Edge to synth (iPhone)', () => {
     expect(greet).toContain('stopSpeaking()');
     expect(greet).toContain('primeSynthInGesture(true)');
     expect(greet).toContain('greeting gesture');
-    expect(greet).toContain('greeting fallback');
+    expect(greet).toContain('greeting gtts');
     expect(greet).toContain('haltSynthQueue()');
     expect(greet).toContain('speakEdge(');
   });
@@ -25,7 +25,7 @@ describe('voice restore mute-aware Edge to synth (iPhone)', () => {
     const block = voice.slice(start, end);
     expect(block).toContain('primeSynthInGesture(true)');
     expect(block).toContain('preview gesture');
-    expect(block).toContain('preview fallback');
+    expect(block).toContain('preview gtts');
     expect(block).toContain('speakEdge(');
   });
 

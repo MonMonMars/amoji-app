@@ -191,7 +191,7 @@ describe('Edge voice bake-off buttons', () => {
     expect(greet).not.toContain("kind: 'speak'");
     expect(greet).not.toContain('drainSpeech()');
     expect(greet).toContain('synthSpeak(');
-    expect(greet).toContain('greeting fallback');
+    expect(greet).toContain('speakGtts(');
     // Explicit picker id must not fall through to one OS synth voice.
     expect(voice).toContain('greeting gesture');
     expect(voice).toContain('primeSynthInGesture');
