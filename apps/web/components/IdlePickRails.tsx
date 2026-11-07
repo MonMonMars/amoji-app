@@ -48,11 +48,11 @@ export default function IdlePickRails({
       data-testid="idle-rail-grid"
       data-ready={ready ? '1' : '0'}
       aria-busy={!ready}
-      className={`pointer-events-none absolute bottom-[7.5rem] left-[max(2px,env(safe-area-inset-left))] top-14 z-20 flex w-[min(42vw,11.5rem)] flex-col sm:w-[min(36vw,13rem)] ${ready ? '' : 'opacity-0'}`}
+      className={`pointer-events-none absolute bottom-[7.5rem] left-[max(2px,env(safe-area-inset-left))] top-14 z-20 flex w-[min(52vw,15.5rem)] min-h-0 flex-col sm:w-[min(44vw,17rem)] ${ready ? '' : 'opacity-0'}`}
     >
       <div
         data-testid="idle-rail-left"
-        className="pointer-events-auto grid max-h-full grid-cols-4 content-start gap-0.5 overflow-hidden sm:grid-cols-5"
+        className="pointer-events-auto grid h-full min-h-0 max-h-full grid-cols-6 content-start gap-0.5 overflow-hidden sm:grid-cols-8" style={{ gridAutoRows: 'minmax(0, 1fr)' }}
       >
         {shown.map((item) => {
           const on = ready && picked === item.id;
@@ -81,7 +81,7 @@ export default function IdlePickRails({
                 e.preventDefault();
                 toggle(item.num);
               }}
-              className={`relative min-h-[16px] min-w-0 rounded border px-0.5 py-0.5 text-center text-[9px] font-semibold leading-none ${
+              className={`relative min-h-0 min-w-0 rounded border px-0 py-0 text-center text-[8px] font-semibold leading-none ${
                 !item.playable
                   ? 'border-white/10 bg-black/20 text-white/30'
                   : on
