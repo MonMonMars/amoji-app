@@ -214,13 +214,23 @@ export default function FacePage() {
   return (
     <main
       aria-label="Amoji face"
+      aria-describedby="amoji-face-mode"
+      aria-busy={mode !== 'idle'}
+      tabIndex={auto ? -1 : 0}
       className="relative flex h-dvh w-full items-center justify-center overflow-hidden bg-black select-none"
       onClick={() => { if (!auto) void loopOnce(); }}
+      onKeyDown={(e) => {
+        if (auto) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          void loopOnce();
+        }
+      }}
     >
       <canvas ref={canvasRef} width={720} height={560} role="img" aria-label="Emotion face" className="h-full max-h-[110vh] w-full object-contain" />
 
       {/* mode pill */}
-      <div role="status" aria-live="polite" className="pointer-events-none absolute top-5 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-white/45">
+      <div id="amoji-face-mode" role="status" aria-live="polite" className="pointer-events-none absolute top-5 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-white/45">
         {MODE_LABEL[mode]}
         {!micOk ? ' · mic unsupported' : ''}
       </div>
@@ -234,7 +244,7 @@ export default function FacePage() {
 
       {/* debug status pill */}
       {debug && (
-        <div className="pointer-events-none absolute bottom-4 left-1/2 max-w-[92%] -translate-x-1/2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-center text-[11px] text-white/45">
+        <div role="status" aria-live="polite" className="pointer-events-none absolute bottom-4 left-1/2 max-w-[92%] -translate-x-1/2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-center text-[11px] text-white/45">
           {APP_REVISION} · {optsRef.current.character} · {optsRef.current.lang} · {mode}
           {heard ? ` · heard: ${heard}` : ''}
           {said ? ` · said: ${said.slice(0, 60)}` : ''}
