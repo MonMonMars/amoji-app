@@ -16,7 +16,7 @@
  */
 'use strict';
 
-var CACHE = 'amoji-r2026-11-07.6';
+var CACHE = 'amoji-r2026-11-07.7';
 var SHELL = [
   './',
   './chat',
@@ -26,6 +26,8 @@ var SHELL = [
   './mode',
   './setup',
   './story',
+  './privacy',
+  './terms',
   './manifest.webmanifest',
   './icon.svg',
   './favicon.ico',
@@ -126,3 +128,5 @@ self.addEventListener('fetch', function (event) {
     })
   );
 });
+
+
