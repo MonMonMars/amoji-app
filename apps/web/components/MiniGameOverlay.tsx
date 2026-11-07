@@ -93,12 +93,22 @@ export default function MiniGameOverlay({ kind, lang, onEmotion, onExit }: MiniG
   const onExitRef = useRef(onExit);
   const langRef = useRef(lang);
   const schemeRef = useRef(scheme);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     onEmotionRef.current = onEmotion;
     onExitRef.current = onExit;
     langRef.current = lang;
     schemeRef.current = scheme;
   });
+
+  // Restore the control that opened the minigame when the overlay unmounts.
+  useEffect(() => {
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    return () => {
+      previousFocusRef.current?.focus?.();
+    };
+  }, []);
 
   const tagCmd = useRef<TagCommand>({ hold: false, aimX: 0, aimZ: 0, dash: false });
   const laneCmd = useRef<LaneCommand>({ swipe: 0, pick: null });

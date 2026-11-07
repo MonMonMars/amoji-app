@@ -3,7 +3,7 @@
 // Top-right games button and the same overlapping card fan as character select.
 // Drag, wheel, or the arrows move the focus. A tap opens that game's title screen.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ArcFan from './ArcFan';
 import { GAME_CARDS, gameCardCopy } from '../lib/minigames/catalog';
 import { uiCopy } from '../lib/minigames/lines';
@@ -44,6 +44,17 @@ export default function MiniGamePicker({
 }) {
   const ui = uiCopy(lang);
   const [focus, setFocus] = useState<ActionGame>(GAME_CARDS[0]!.id);
+  const pickerCloseRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  // Focus Close on open; restore the control that opened the picker on close.
+  useEffect(() => {
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    pickerCloseRef.current?.focus();
+    return () => {
+      previousFocusRef.current?.focus?.();
+    };
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -71,6 +82,7 @@ export default function MiniGamePicker({
           <p className="text-xs text-white/70">{ui.menuHint}</p>
         </div>
         <button
+          ref={pickerCloseRef}
           type="button"
           onClick={onClose}
           aria-label={ui.close}
