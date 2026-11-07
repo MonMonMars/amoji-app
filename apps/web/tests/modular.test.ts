@@ -134,7 +134,7 @@ describe('modular wardrobe catalog', () => {
       bodyId: 'A120',
     });
     expect(wardrobePair('a98-ethan', { headId: 'A02', bodyId: 'A10' })).toBeNull();
-    for (const id of ['a94-rita', 'a107-dm-office-casual', 'a459-chinesewarriormonk', 'a468-eric']) {
+    for (const id of ['a94-rita', 'a107-dm-office-casual', 'a77-sasha']) {
       expect(wardrobePair(id, { headId: 'A02', bodyId: 'A120' }), id).toBeNull();
       expect(activeWardrobe(id, { headId: 'A02', bodyId: 'A120' }), id).toBeNull();
     }

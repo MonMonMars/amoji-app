@@ -24,9 +24,11 @@ export const MALE_CAST_IDS: readonly string[] = [
   'a03-fumiriya', // 3
   'a05-avatarsample-c', // 5
   'a24-hairsample-male', // 11
-  'a75-sorano', // 18
+  'a77-sasha', // 19
+  'a94-rita', // 27
   'a98-ethan', // 31
   'a105-serizawa-aoi', // 35
+  'a107-dm-office-casual', // 37
 ];
 
 /** Neck/head yaw + roll leveled. 13 is the severe case; same full correction. */

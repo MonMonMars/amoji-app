@@ -207,8 +207,6 @@ export const CHARACTER_LOOKS: Record<string, CharacterLook> = {
   'a94-rita': { tint: '#ffffff', height: 1.03, width: 1.05 },
   'a98-ethan': { tint: '#ffffff', height: 1.04, width: 1.07 },
   'a107-dm-office-casual': { tint: '#ffffff', height: 1.05, width: 1.07 },
-  'a459-chinesewarriormonk': { tint: '#ffffff', height: 1.06, width: 1.08 },
-  'a468-eric': { tint: '#ffffff', height: 1.05, width: 1.06 },
 };
 
 export function lookFor(characterId: string): CharacterLook {
