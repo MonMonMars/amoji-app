@@ -325,12 +325,16 @@ describe('clips, lines, and chat entry', () => {
 
   it('plays the selected female library companion, never a retired demo mesh', () => {
     expect(resolveMiniGameCompanion('a01-shino').id).toBe('a01-shino');
-    expect(resolveMiniGameCompanion('a04-avatarsample-a').id).toBe('a04-avatarsample-a');
     expect(resolveMiniGameCompanion('a98-ethan', 'a02-shibu').id).toBe('a02-shibu');
     expect(resolveMiniGameCompanion('a98-ethan').id).toBe('a01-shino');
     expect(resolveMiniGameCompanion('a24-hairsample-male', 'juno').id).toBe('a01-shino');
     expect(resolveMiniGameCompanion('juno').id).toBe('a01-shino');
     expect(resolveMiniGameCompanion('avatarsample-a', 'a10-agahomei-normal').id).toBe('a10-agahomei-normal');
+    // a04/a05 were pulled from the roster for licensing. A saved pick pointing
+    // at one still gets a playable companion — never an undefined mesh.
+    expect(resolveMiniGameCompanion('a04-avatarsample-a').id).toBe('a01-shino');
+    expect(resolveMiniGameCompanion('a05-avatarsample-c', 'a10-agahomei-normal').id).toBe('a10-agahomei-normal');
+    expect(resolveMiniGameCompanion('a04-avatarsample-a').model).toMatch(/^want\//);
     expect(miniGameModelCandidates(resolveMiniGameCompanion('a98-ethan', 'a02-shibu').model)).toEqual([
       'want/a02-shibu.vrm',
     ]);
