@@ -1,50 +1,47 @@
 'use client';
-// Select-board preview for the burst library. Tap plays a clip file.
-// Numbers are CLIP_LIBRARY order (yue→zh→ja→en→universal × F→M), not path sort.
-// No live TTS, no VRM. Universal switches the folder, not the chat language.
+// Select-board reaction preview: NEWER CMA00304–CMA00349 set only (Mon).
+// Numbers = gallery order for Mon assignment. Want/Skip on /sfx-gallery.
+// Tap previews only (mute-aware Audio); does not auto-Want.
 
 import { useEffect, useState } from 'react';
 import { t, type Lang } from '../lib/prefs';
-import { saveEmotionClip } from '../lib/emotion-clip-picks';
-import { previewEmotionClip, previewLibraryClip } from '../lib/voice';
 import { isDevMode, devMark } from '../lib/dev-mode';
+import { voiceOutputAllowed } from '../lib/voice';
 import {
-  BURST_CLIP_KINDS,
-  CLIP_LIBRARY,
-  clipButtonLabel,
-  clipLibraryIdFor,
-  type BurstClipKind,
-  type ClipFolder,
-} from '../lib/voice-clips';
+  CMA_REACTION_GALLERY,
+  cmaReactionPath,
+  type CmaReactionClip,
+} from '../lib/cma-reaction-gallery';
 
 export default function EmotionClipRow({
   lang,
   gender,
   accent,
-  characterId,
+  characterId: _characterId,
 }: {
   lang: Lang;
   gender: 'female' | 'male';
   accent: string;
   characterId: string;
 }) {
-  const [universal, setUniversal] = useState(false);
   const [playing, setPlaying] = useState<string | null>(null);
   const [showDev, setShowDev] = useState(false);
   useEffect(() => { setShowDev(isDevMode()); }, []);
-  const folder: ClipFolder = universal ? 'universal' : lang;
-  const files = CLIP_LIBRARY[folder][gender];
 
-  const onTap = (file: string) => {
-    // Exclusive single-select: only the tapped clip stays pressed.
-    setPlaying(file);
-    saveEmotionClip(characterId, folder, gender, file);
-    const stem = file.replace(/\.mp3$/, '');
-    if (!universal && (BURST_CLIP_KINDS as readonly string[]).includes(stem)) {
-      previewEmotionClip(lang, gender, stem as BurstClipKind);
-      return;
-    }
-    previewLibraryClip(folder, gender, file, lang);
+  // Prefer matching companion gender; still show the other group below so Mon can assign.
+  const ordered: CmaReactionClip[] = [
+    ...CMA_REACTION_GALLERY.filter((c) => c.gender === gender),
+    ...CMA_REACTION_GALLERY.filter((c) => c.gender !== gender),
+  ];
+
+  const onTap = (clip: CmaReactionClip) => {
+    // Exclusive single-select: only the tapped CMA clip stays pressed.
+    if (!voiceOutputAllowed()) return;
+    setPlaying(clip.code);
+    try {
+      const a = new Audio(cmaReactionPath(clip.file));
+      void a.play().catch(() => { /* ignore autoplay */ });
+    } catch { /* ignore */ }
   };
 
   return (
@@ -53,41 +50,35 @@ export default function EmotionClipRow({
         <h2 id="amoji-emotion-clip-title" className="text-center text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
           {t(lang, 'previewReactions')}
         </h2>
-        <button
-          type="button"
-          aria-pressed={universal}
-          aria-label={t(lang, 'previewUniversal')}
-          data-dev={showDev ? 'R0' : undefined}
-          onClick={() => { setUniversal((on) => !on); setPlaying(null); }}
-          className="fx-press relative rounded-full border border-white/15 bg-black/30 px-2 py-0.5 text-[10px] text-white/70"
-        >
-          {t(lang, 'previewUniversal')}
-        </button>
       </div>
-      <div className="flex max-h-24 w-full flex-wrap justify-center gap-1 overflow-y-auto overscroll-contain sm:max-h-none">
-        {files.map((file) => {
-          const selected = playing === file;
-          const clipId = clipLibraryIdFor(folder, gender, file);
-          const label = clipButtonLabel(lang, file);
-          const mark = clipId ? devMark('R', clipId) : undefined;
-          return (
-            <button
-              key={file}
-              type="button"
-              aria-label={clipId ? `#${clipId} ${label}` : label}
-              aria-pressed={selected}
-              title={clipId ? `CLIP #${clipId}` : label}
-              data-dev={showDev ? mark : undefined}
-              onClick={() => onTap(file)}
-              className={`fx-press ui-btn relative shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium leading-tight ${
-                selected ? 'border-white/80 text-white' : 'border-white/15 bg-black/35 text-white/80'
-              }`}
-              style={selected ? { backgroundColor: `${accent}55`, boxShadow: `inset 0 0 0 1px ${accent}` } : undefined}
-            >
-              {showDev && clipId ? `#${clipId} ${label}` : label}
-            </button>
-          );
-        })}
+      <div className="max-h-28 w-full overflow-y-auto overscroll-contain sm:max-h-36">
+        <div className="grid w-full grid-cols-2 gap-1 min-[420px]:grid-cols-3 sm:grid-cols-4">
+          {ordered.map((clip, i) => {
+            const n = i + 1;
+            const selected = playing === clip.code;
+            const label = `#${n} ${clip.burst} (${clip.gender[0]})`;
+            const mark = showDev ? devMark('R', n) : undefined;
+            return (
+              <button
+                key={clip.code}
+                type="button"
+                aria-label={`${label} ${clip.code}`}
+                aria-pressed={selected}
+                title={`${clip.code} · ${clip.file}`}
+                data-cma-code={clip.code}
+                data-reaction-n={n}
+                data-dev={mark}
+                onClick={() => onTap(clip)}
+                className={`fx-press ui-btn relative min-h-9 rounded-xl border px-1.5 py-1 text-left text-[10px] font-medium leading-tight ${
+                  selected ? 'border-white/80 text-white' : 'border-white/15 bg-black/35 text-white/80'
+                }`}
+                style={selected ? { backgroundColor: `${accent}55`, boxShadow: `inset 0 0 0 1px ${accent}` } : undefined}
+              >
+                {showDev && mark ? `${mark} ${label}` : label}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
