@@ -20,7 +20,12 @@ describe('play/mode SoftLand labelledby a11y', () => {
     expect(select).toContain('aria-labelledby="amoji-softland-status"');
     expect(select).toContain('id="amoji-softland-status"');
     expect(select).toContain('aria-label={label}');
-    expect(read('app/play/page.tsx')).toContain('label="Taking you to chat..."');
-    expect(read('app/mode/page.tsx')).toContain('Taking you to character select...');
+    // The status line is localized now, so the pages pass a string key instead
+    // of the literal English sentence (which yue/zh/ja users never saw translated).
+    expect(read('app/play/page.tsx')).toContain('SoftLandChat');
+    expect(read('app/mode/page.tsx')).toContain('SoftLandSelect');
+    expect(read('app/story/page.tsx')).toContain('labelKey="softLandStory"');
+    expect(read('components/SoftLandSelect.tsx')).toContain("labelKey = 'softLandSelect'");
+    expect(read('components/SoftLandChat.tsx')).toContain("labelKey = 'softLandChat'");
   });
 });
