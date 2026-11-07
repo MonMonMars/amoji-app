@@ -588,10 +588,10 @@ export default function DialogueReviewPage() {
   const charIds = Object.keys(IDLE);
 
   return (
-    <div className="drv-root">
+    <main className="drv-root" aria-labelledby="amoji-drv-title">
       <style>{DRV_CSS}</style>
       <header className="drv-head">
-        <h1>Amoji Dialogue Review</h1>
+        <h1 id="amoji-drv-title">Amoji Dialogue Review</h1>
         <p className="drv-sub">r2026-10-04.67 · tap a line to cycle ✅ keep → ❌ drop → ❓ undecided · paste the result back to me in chat</p>
         <button type="button" className="drv-copy" onClick={copyResult}>{copied ? '✓ Copied!' : '📋 Copy result'}</button>
       </header>
@@ -645,7 +645,7 @@ export default function DialogueReviewPage() {
           onChange={(e) => setCustomText(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') addCustom(); }}
         />
-        <button type="button" className="drv-add" onClick={addCustom} disabled={!customText.trim()}>＋ Add</button>
+        <button type="button" className="drv-add" onClick={addCustom} disabled={!customText.trim()} aria-label="Add custom line">＋ Add</button>
       </div>
 
       {SECTIONS.map((sec) => {
@@ -661,8 +661,8 @@ export default function DialogueReviewPage() {
             <p className="drv-hint">{sec.hint}</p>
             {items.length > 0 && (
               <div className="drv-bulk">
-                <button type="button" onClick={() => setAll(sec.key, 'keep')}>all ✅</button>
-                <button type="button" onClick={() => setAll(sec.key, 'drop')}>all ❌</button>
+                <button type="button" onClick={() => setAll(sec.key, 'keep')} aria-label={`Mark all ${sec.title} keep`}>all ✅</button>
+                <button type="button" onClick={() => setAll(sec.key, 'drop')} aria-label={`Mark all ${sec.title} drop`}>all ❌</button>
               </div>
             )}
             <ul className="drv-list">
@@ -674,6 +674,7 @@ export default function DialogueReviewPage() {
                       type="button"
                       className={`drv-line v-${v}${it.isNew ? ' drv-new' : ''}`}
                       onClick={() => toggle(it.id)}
+                      aria-label={`${it.text}; ${v}; ${NEXT_HINT[v]}`}
                       title={NEXT_HINT[v]}
                     >
                       <span className="drv-mark">{MARK[v]}</span>
@@ -695,7 +696,7 @@ export default function DialogueReviewPage() {
         <button type="button" className="drv-copy" onClick={copyResult}>{copied ? '✓ Copied!' : '📋 Copy result'}</button>
         <p>Then paste it here in the chat and I will apply your picks to the app.</p>
       </footer>
-    </div>
+    </main>
   );
 }
 
