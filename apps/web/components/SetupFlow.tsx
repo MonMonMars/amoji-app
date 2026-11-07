@@ -18,6 +18,12 @@ export default function SetupFlow() {
     lang === 'yue' ? '設定進度' : lang === 'zh' ? '设置进度' : lang === 'ja' ? 'セットアップの進行状況' : 'Setup progress';
   const nextLabel =
     lang === 'yue' ? '下一步' : lang === 'zh' ? '下一步' : lang === 'ja' ? '次へ' : 'Next';
+  const stepLabel = (n: number, total: number) =>
+    lang === 'yue' || lang === 'zh'
+      ? `第 ${n} 步，共 ${total} 步`
+      : lang === 'ja'
+        ? `${total} 中の ${n}`
+        : `Step ${n} of ${total}`;
   const patch = (p: Partial<Prefs>) => setPrefs(p);
 
   const next = () => {
@@ -40,7 +46,7 @@ export default function SetupFlow() {
         {STEPS.map((_, i) => (
           <span
             key={i}
-            aria-label={`Step ${i + 1} of ${STEPS.length}`}
+            aria-label={stepLabel(i + 1, STEPS.length)}
             aria-current={i === step ? 'step' : undefined}
             className={`h-1.5 rounded-full transition-all ${i === step ? 'w-8 bg-white' : 'w-1.5 bg-white/30'}`}
           />
