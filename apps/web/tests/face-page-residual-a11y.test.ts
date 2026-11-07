@@ -6,7 +6,7 @@ const src = readFileSync(join(__dirname, '../app/face/page.tsx'), 'utf8');
 
 describe('face page residual a11y', () => {
   it('wires main to mode status + keyboard activate when not auto', () => {
-    expect(src).toContain('aria-label="Amoji face"');
+    expect(src).toContain('aria-label={faceCopy.main}');
     expect(src).toContain('aria-describedby="amoji-face-mode"');
     expect(src).toContain("aria-busy={mode !== 'idle'}");
     expect(src).toContain('tabIndex={auto ? -1 : 0}');
