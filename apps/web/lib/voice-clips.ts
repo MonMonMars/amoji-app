@@ -332,19 +332,31 @@ export function recordedFillerClip(
   }
   return langUmPathFallback(lang, gender);
 }
-/** Poke SFX by body zone (SFX only — never TTS). Gender-matched short cute clips.
+/** Poke SFX by body zone (SFX only — never TTS). Gender-matched short clips.
  * Mon t761 remap: head←belly, breast←NEW, belly←breast; plus butt/hands/arm/legs/foot.
  * CLIP_LIBRARY # cited in PR body. Never NSFW CMA / long-UM fillers for poke.
+ *
+ * Two rules every row has to obey (pinned by poke-voice-motion-sync.test.ts):
+ *  1. The clip must fit the poke reaction window (POKE_REACTION_MS). A 2s clip
+ *     kept sounding for a second after the body had already finished recoiling
+ *     and settling, which read as the wrong sound.
+ *  2. The clip must be language-neutral. The old `ja/male/*` rows meant an
+ *     English or Cantonese companion yelped in Japanese on every poke.
+ * `universal/` and `cma-reaction/` are language-neutral, and the CMA ouch/yelp
+ * rows are real impact vocalizations — which is what a hit should answer with.
+ * Exported so those two rules can be asserted instead of trusted.
  */
-const RECORDED_POKE_ZONE: Record<VoiceClipGender, Record<string, string>> = {
+export const RECORDED_POKE_ZONE: Record<VoiceClipGender, Record<string, string>> = {
   female: {
-    // Mon t294: head um.mp3 read as adult/hentai — breast/chest get that clip;
-    // head takes former breast hehe (#88). belly stays oh (#83).
+    // Mon t294 stands: head um.mp3 read as adult/hentai — breast/chest get that
+    // clip; head keeps the former breast hehe (#88). belly stays oh (#83).
     head: '/voice-clips/universal/female/hehe.mp3',
     chest: '/voice-clips/universal/female/um.mp3',
     breast: '/voice-clips/universal/female/um.mp3',
     belly: '/voice-clips/universal/female/oh.mp3',
-    butt: '/voice-clips/universal/female/sigh.mp3',
+    // Was `sigh` (1.12s) — a bored exhale, not an answer to a hit, and it ran
+    // almost to the end of the recoil. A short yelp-laugh answers rear hips.
+    butt: '/voice-clips/universal/female/giggle_en.mp3',
     hand: '/voice-clips/universal/female/giggle.mp3',
     hands: '/voice-clips/universal/female/giggle.mp3',
     arm: '/voice-clips/universal/female/smile.mp3',
@@ -355,31 +367,53 @@ const RECORDED_POKE_ZONE: Record<VoiceClipGender, Record<string, string>> = {
     legR: '/voice-clips/universal/female/giggle_en.mp3',
     foot: '/voice-clips/universal/female/ha_rpg.mp3',
     torso: '/voice-clips/universal/female/ha.mp3',
-    side: '/voice-clips/universal/female/huh.mp3',
+    // Was `huh.mp3` (2.06s) — nearly twice the reaction window, so the
+    // questioning tone was still going after she had fully settled.
+    side: '/voice-clips/universal/female/oh.mp3',
     back: '/voice-clips/universal/female/wow.mp3',
     default: '/voice-clips/universal/female/wow_woven.mp3',
   },
   male: {
-    head: '/voice-clips/ja/male/oh.mp3',
-    chest: '/voice-clips/ja/male/smile.mp3',
-    breast: '/voice-clips/ja/male/smile.mp3',
-    belly: '/voice-clips/ja/male/ha.mp3',
-    butt: '/voice-clips/universal/male/sigh.mp3',
-    hand: '/voice-clips/ja/male/giggle.mp3',
-    hands: '/voice-clips/ja/male/giggle.mp3',
-    arm: '/voice-clips/ja/male/wow.mp3',
-    armL: '/voice-clips/ja/male/wow.mp3',
-    armR: '/voice-clips/ja/male/wow.mp3',
-    legs: '/voice-clips/ja/male/um.mp3',
-    legL: '/voice-clips/ja/male/um.mp3',
-    legR: '/voice-clips/ja/male/um.mp3',
+    // Every row here was `ja/male/*` — a Japanese yelp whatever language the
+    // companion speaks — and the torso row played a LAUGH (1.72s) at a punch.
+    // Language-neutral pools only, impact-shaped, inside the reaction window.
+    head: '/voice-clips/universal/male/wow.mp3',
+    chest: '/voice-clips/cma-reaction/CMA00341_universal_male_ouch.mp3',
+    breast: '/voice-clips/cma-reaction/CMA00341_universal_male_ouch.mp3',
+    belly: '/voice-clips/cma-reaction/CMA00342_universal_male_yelp.mp3',
+    butt: '/voice-clips/cma-reaction/CMA00343_universal_male_ouch.mp3',
+    hand: '/voice-clips/cma-reaction/CMA00336_universal_male_ouch_ow.mp3',
+    hands: '/voice-clips/cma-reaction/CMA00336_universal_male_ouch_ow.mp3',
+    arm: '/voice-clips/cma-reaction/CMA00344_universal_male_yelp.mp3',
+    armL: '/voice-clips/cma-reaction/CMA00344_universal_male_yelp.mp3',
+    armR: '/voice-clips/cma-reaction/CMA00344_universal_male_yelp.mp3',
+    legs: '/voice-clips/cma-reaction/CMA00339_universal_male_ouch.mp3',
+    legL: '/voice-clips/cma-reaction/CMA00339_universal_male_ouch.mp3',
+    legR: '/voice-clips/cma-reaction/CMA00339_universal_male_ouch.mp3',
     foot: '/voice-clips/en/male/ha_effort.mp3',
-    torso: '/voice-clips/ja/male/laugh.mp3',
-    side: '/voice-clips/universal/male/ha.mp3',
+    torso: '/voice-clips/cma-reaction/CMA00344_universal_male_yelp.mp3',
+    side: '/voice-clips/cma-reaction/CMA00340_universal_male_yelp.mp3',
     back: '/voice-clips/universal/male/wow.mp3',
-    default: '/voice-clips/ja/male/oh.mp3',
+    default: '/voice-clips/cma-reaction/CMA00341_universal_male_ouch.mp3',
   },
 };
+
+/** Zones worth warming before the first tap: the ones a body-on-screen tap
+ *  actually lands on. Playback latency on the first poke used to start the
+ *  sound a beat after the body had already recoiled. */
+export const POKE_PREFETCH_ZONES = ['head', 'torso', 'chest', 'belly', 'side', 'back'] as const;
+
+/** Every distinct poke clip for this gender (zone table, deduped). */
+export function pokeZoneClipPaths(gender: VoiceClipGender, zones?: readonly string[]): string[] {
+  const table = RECORDED_POKE_ZONE[gender];
+  const keys = zones ?? Object.keys(table);
+  const out: string[] = [];
+  for (const key of keys) {
+    const path = table[key];
+    if (path && !out.includes(path)) out.push(path);
+  }
+  return out;
+}
 
 const POKE_ZONE_ALIASES: Record<string, string> = {
   breast: 'chest',

@@ -16,7 +16,7 @@ import { modelUrl } from '../lib/asset';
 import { pokeStyleFor, poseIdsFor, lookFor } from '../lib/persona';
 import { DEFAULT_CAMERA_HOME, upperBodyHome } from '../lib/camera-frame';
 import { orderIdleClips, personalityMotion } from '../lib/personality';
-import { classifyPoke, pokeBodyReaction, screenSideSign, armZoneFromScreen, type PokeDirection, type TalkZone } from '../lib/poke-hit';
+import { classifyPoke, pokeBodyReaction, screenSideSign, armZoneFromScreen, POKE_REACTION_MS, type PokeDirection, type TalkZone } from '../lib/poke-hit';
 import { clipFreesFeet, collectPlantRest, pinPlantedClipTracks } from '../lib/vrm/plant-feet';
 import { dancePerfClipSources } from '../lib/dance-clip-sources';
 import { timeScaleForProfile } from '../lib/performance-motion';
@@ -239,8 +239,15 @@ function seedFromKey(key: string): number {
   return h;
 }
 
-/** Punch window. Impact, one rebound, then settle ??long enough to read. */
-const POKE_MS = 1200;
+/**
+ * Punch window. Impact, one rebound, then settle — long enough to read.
+ *
+ * Sourced from poke-hit so the animation window and the AUDIO budget are the
+ * same number. They were duplicated (1200 here, POKE_REACTION_MS there), which
+ * let a clip run ~0.9s past a settled body — measured: female `huh.mp3` is
+ * 2.06s against this 1.2s window, female `sigh.mp3` 1.12s.
+ */
+const POKE_MS = POKE_REACTION_MS;
 
 /** how much each poke-twist flavor turns the body during the reaction */
 const TWIST_AMOUNT: Record<string, number> = {
