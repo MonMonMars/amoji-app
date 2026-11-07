@@ -87,6 +87,7 @@ function ClipCard({
         <button
           type="button"
           data-testid={`cma-play-${clip.code}`}
+          aria-label={`Play ${clip.code}`}
           onClick={onPlay}
           className={`rounded-full border px-3 py-1 text-xs font-medium ${
             playing ? 'border-white/80 bg-white/20 text-white' : 'border-white/25 bg-black/40 text-white/85'
@@ -97,6 +98,7 @@ function ClipCard({
         <button
           type="button"
           data-testid={`cma-want-${clip.code}`}
+          aria-label={`Want ${clip.code}`}
           aria-pressed={verdict === 'want'}
           onClick={onWant}
           className={`rounded-full border px-3 py-1 text-xs font-medium ${
@@ -110,6 +112,7 @@ function ClipCard({
         <button
           type="button"
           data-testid={`cma-skip-${clip.code}`}
+          aria-label={`Skip ${clip.code}`}
           aria-pressed={verdict === 'skip'}
           onClick={onSkip}
           className={`rounded-full border px-3 py-1 text-xs font-medium ${
@@ -124,6 +127,7 @@ function ClipCard({
           <button
             type="button"
             data-testid={`cma-clear-${clip.code}`}
+            aria-label={`Clear ${clip.code}`}
             onClick={onClear}
             className="rounded-full border border-white/15 bg-transparent px-2 py-1 text-[10px] text-white/60"
           >
@@ -276,11 +280,12 @@ export default function SfxGalleryPage() {
           </p>
           <div className="flex flex-wrap gap-2 pt-1">
             <Link href="/select" aria-label="Back to select" className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/80 hover:bg-white/10">← Select</Link>
-            <Link href="/chat" className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/80 hover:bg-white/10">Chat</Link>
+            <Link href="/chat" aria-label="Open chat" className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/80 hover:bg-white/10">Chat</Link>
             <Link href="/en-sfx-ab" className="rounded-full border border-amber-400/40 px-3 py-1 text-xs text-amber-100/90 hover:bg-amber-500/10" data-testid="link-en-sfx-ab">EN SFX A/B (test)</Link>
             <button
               type="button"
               data-testid="cma-export"
+              aria-label="Copy Want/Skip JSON"
               onClick={exportJson}
               className="rounded-full border border-sky-400/40 bg-sky-500/15 px-3 py-1 text-xs text-sky-100"
             >
@@ -289,6 +294,7 @@ export default function SfxGalleryPage() {
             <button
               type="button"
               data-testid="cma-clear-skipped"
+              aria-label="Clear skipped picks"
               onClick={onClearSkipped}
               disabled={skipped.length === 0}
               className="rounded-full border border-rose-400/35 bg-rose-500/10 px-3 py-1 text-xs text-rose-100 disabled:opacity-40"
@@ -298,6 +304,7 @@ export default function SfxGalleryPage() {
             <button
               type="button"
               data-testid="cma-reset"
+              aria-label="Reset all picks"
               onClick={onResetAll}
               className="rounded-full border border-white/15 px-3 py-1 text-xs text-white/55"
             >
