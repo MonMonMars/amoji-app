@@ -1,18 +1,31 @@
 'use client';
 // Shared chrome for legacy URL soft-land (/play -> /chat).
 // Returning null flashed a blank frame on Pages bookmarks / old SW shells.
-import { useEffect } from 'react';
+// The status line is localized for the same reason as SoftLandSelect.
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import EarlyAudioUnlock from './EarlyAudioUnlock';
+import { loadPrefs, t, type StrKey } from '../lib/prefs';
 
 type SoftLandChatProps = {
-  label?: string;
+  /** Localized status copy. Defaults to the taking-you-to-chat line. */
+  labelKey?: StrKey;
 };
 
 export default function SoftLandChat({
-  label = 'Taking you to chat...',
+  labelKey = 'softLandChat',
 }: SoftLandChatProps) {
   const router = useRouter();
+  const [label, setLabel] = useState(() => t('en', labelKey));
+
+  useEffect(() => {
+    try {
+      setLabel(t(loadPrefs().lang, labelKey));
+    } catch {
+      /* localStorage blocked — keep the English line */
+    }
+  }, [labelKey]);
+
   useEffect(() => {
     router.replace('/chat');
   }, [router]);

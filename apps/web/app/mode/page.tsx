@@ -4,5 +4,5 @@
 import SoftLandSelect from '../../components/SoftLandSelect';
 
 export default function ModeRedirect() {
-  return <SoftLandSelect label="Taking you to character select..." />;
+  return <SoftLandSelect />;
 }
