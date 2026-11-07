@@ -324,6 +324,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
               type="button"
               onClick={confirm}
               data-dev="T1"
+              aria-label={mode === 'start' ? t(lang, 'confirmCta') : t(lang, 'changeCta')}
               className={`fx-press fx-start ui-btn ui-btn-primary pointer-events-auto relative mt-1 min-h-12 shrink-0 rounded-full px-10 text-sm ${
                 mode === 'start' ? 'min-w-40 tracking-[0.28em]' : 'min-w-32'
               }`}
