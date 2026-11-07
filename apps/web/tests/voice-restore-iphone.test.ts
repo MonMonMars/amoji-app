@@ -71,4 +71,21 @@ describe('voice restore mute-aware Edge to synth (iPhone)', () => {
     expect(block).toContain('if (syncGesture)');
     expect(block).toContain('pump();');
   });
+
+  it('window gesture listeners never pass the Event into force', () => {
+    // primeSynthInGesture(force) is truthy for any Event argument, so a bare
+    // listener reference would force-reprime on every keystroke and interrupt
+    // the line that is speaking.
+    expect(voice).not.toContain('addEventListener(ev, primeSynthInGesture');
+    expect(voice).toContain('window.addEventListener(ev, () => primeSynthInGesture(), { passive: true })');
+  });
+
+  it('voice.ts has balanced braces around the prime block', () => {
+    const start = voice.indexOf('let synthPrimed = false;');
+    const end = voice.indexOf('/** r2026-10-04.75: fired on `window`', start);
+    const block = voice.slice(start, end);
+    const opens = (block.match(/\{/g) ?? []).length;
+    const closes = (block.match(/\}/g) ?? []).length;
+    expect(opens).toBe(closes);
+  });
 });

@@ -338,13 +338,15 @@ export function primeSynthInGesture(force = false): void {
     synthPrimed = false;
   }
 }
-}
 
 if (typeof window !== 'undefined') {
   for (const ev of ['pointerdown', 'keydown', 'touchstart'] as const) {
     window.addEventListener(ev, () => unlockAudio(), { once: true, passive: true });
-    // r102: synth engine priming rides every gesture too — cheap and idempotent
-    window.addEventListener(ev, primeSynthInGesture, { passive: true });
+    // r102: synth engine priming rides every gesture too — cheap and idempotent.
+    // Must stay a no-arg wrapper: the listener's Event would land in `force`
+    // (always truthy) and re-queue a blip on every keystroke, interrupting
+    // the line that is speaking.
+    window.addEventListener(ev, () => primeSynthInGesture(), { passive: true });
   }
 }
 
