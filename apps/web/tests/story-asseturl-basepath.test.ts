@@ -8,11 +8,11 @@ import { fileURLToPath } from 'node:url';
 // must too. Character portraits are mostly absolute https (pass-through) but
 // wrap for consistency / future local stills.
 const here = dirname(fileURLToPath(import.meta.url));
-const src = readFileSync(join(here, '../app/story/page.tsx'), 'utf8');
+const src = readFileSync(join(here, '../components/StorySetupPanel.tsx'), 'utf8');
 
-describe('story page Pages basePath assets', () => {
+describe('story panel Pages basePath assets', () => {
   it('imports assetUrl', () => {
-    expect(src).toMatch(/import\s*\{\s*assetUrl\s*\}\s*from\s*['\"]\.\.\/\.\.\/lib\/asset['\"]/);
+    expect(src).toMatch(/import\s*\{\s*assetUrl\s*\}\s*from\s*['"]\.\.\/lib\/asset['"]/);
   });
 
   it('does not paint bare background.image / character.image src', () => {

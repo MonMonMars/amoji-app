@@ -163,40 +163,35 @@ describe('selection layout', () => {
     expect(rails).not.toContain('overflow-y-auto');
   });
 
-  it('puts mode + gender selectors at the top of the selection board', () => {
-    expect(board).toContain("import SelectTopBars from './SelectTopBars'");
+  it('puts mode + cast-gender filter at the top of the selection board', () => {
+    const board = read('../components/SelectionBoard.tsx');
+    expect(board).toContain("import SelectTopBars");
     expect(board).toContain('<SelectTopBars');
     expect(board).toContain('onKidMode={setKidMode}');
+    expect(board).toContain('onCastGender={applyCastGender}');
+    expect(board).toContain('castGender');
     const top = board.indexOf('<SelectTopBars');
-    const characters = board.indexOf('ariaLabel="characters"');
     expect(top).toBeGreaterThan(-1);
-    expect(top).toBeLessThan(characters);
     const bars = read('../components/SelectTopBars.tsx');
-    expect(bars).toContain('data-testid="select-top-bars"');
     expect(bars).toContain('select-mode-chat');
     expect(bars).toContain('select-mode-story');
     expect(bars).toContain('select-mode-kid');
-    expect(bars).toContain('select-gender-${g}');
-    expect(bars).toContain('yourGender');
+    expect(bars).toContain('select-cast-gender-all');
+    expect(bars).toContain('select-cast-gender-male');
+    expect(bars).toContain('select-cast-gender-female');
     expect(bars).toContain('settingsMode');
+    expect(bars).not.toContain('yourGender');
+    expect(bars).not.toContain('select-gender-${g}');
+    expect(bars).not.toContain("router.push('/story')");
   });
 
-  it('holds gender + prefs chrome until localStorage sync (no DEFAULT flash)', () => {
+  it('holds kid prefs chrome until localStorage sync (no DEFAULT flash)', () => {
     const bars = read('../components/SelectTopBars.tsx');
-    const prefs = read('../lib/prefs.ts');
-    expect(prefs).toContain('usePrefs(): [Prefs, (patch: Partial<Prefs>) => void, boolean]');
-    expect(prefs).toContain('const [ready, setReady] = useState(false)');
-    expect(prefs).toContain('setReady(true)');
-    expect(prefs).toContain('return [prefs, update, ready]');
-    expect(bars).toContain('useState<Gender | null>(null)');
     expect(bars).toContain('prefsReady');
-    expect(bars).toContain('genderReady');
-    expect(bars).toContain('aria-busy={!genderReady}');
     expect(bars).toContain('aria-busy={!prefsReady}');
-    expect(board).toContain('const [prefs, setPrefs, prefsReady] = usePrefs()');
-    expect(board).toContain('prefsReady={prefsReady}');
-    expect(board).toContain("selectedId={prefsReady ? live.character : ''}");
-    expect(board).toContain("prefsReady ? '' : 'opacity-0'");
+    expect(bars).toContain('disabled={!prefsReady}');
+    expect(bars).not.toContain('loadProfile');
+    expect(bars).not.toContain('genderReady');
   });
 
   it('keeps language cards in the character style, smaller than scenes', () => {

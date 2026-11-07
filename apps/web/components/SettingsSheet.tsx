@@ -45,7 +45,7 @@ import { saveHistory } from '../lib/companion-store';
 import { APP_REVISION } from '../lib/revision';
 import { downloadCompanionFile, parseCompanionFile, applyCompanionFile } from '../lib/companion-file';
 import {
-  addEntry, deleteEntry, deleteDiaryEntry, deleteImportantDate, deletePromise, exportMemory, loadMemory,
+  addEntry, deleteEntry, deleteDiaryEntry, deleteImportantDate, deletePromise, ensureUserNameFromProfile, exportMemory, loadMemory,
   type Memory, type MemoryType,
 } from '../lib/memory';
 
@@ -745,6 +745,7 @@ export default function SettingsSheet({
                 onChange={(e) => {
                   setName(e.target.value);
                   saveProfile({ ...loadProfile(), name: e.target.value });
+                  ensureUserNameFromProfile(e.target.value);
                 }}
                 className="h-8 min-w-0 flex-1 rounded-full border border-white/10 bg-black/30 px-3 text-sm text-white placeholder-white/30 outline-none focus:border-white/40"
                 placeholder="Simon"
