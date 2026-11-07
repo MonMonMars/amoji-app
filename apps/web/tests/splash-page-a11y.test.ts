@@ -12,7 +12,7 @@ describe('splash/home page a11y', () => {
   });
 
   it('exposes keyboard-activatable continue control', () => {
-    expect(src).toContain('aria-label="Continue to login"');
+    expect(src).toContain('aria-label={continueLogin}');
     expect(src).toContain('role="button"');
     expect(src).toContain('tabIndex={0}');
     expect(src).toContain("e.key === 'Enter' || e.key === ' '");
