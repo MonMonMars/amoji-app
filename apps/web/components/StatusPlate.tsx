@@ -150,7 +150,7 @@ export default function StatusPlate({
             ) : (
               <span title={voiceDot.title} className="shrink-0 text-[10px] leading-none text-red-400">✗</span>
             ))}
-            {kid && <span title="Kid mode">🧸</span>}
+            {kid && <span title={t(lang, 'kidMode')}>🧸</span>}
             {memCount > 0 && (
               <span className="rounded-full bg-white/15 px-1.5 text-[10px] font-normal text-white/70">🧠{memCount}</span>
             )}
