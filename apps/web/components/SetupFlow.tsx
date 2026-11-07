@@ -31,10 +31,11 @@ export default function SetupFlow() {
       className={`flex w-full max-w-2xl flex-col items-center gap-6 px-4 ${prefsReady ? '' : 'opacity-0'}`}
       aria-busy={!prefsReady}
     >
-      <div className="flex items-center gap-2">
+      <div role="group" aria-label="Setup progress" className="flex items-center gap-2">
         {STEPS.map((_, i) => (
           <span
             key={i}
+            aria-current={i === step ? 'step' : undefined}
             className={`h-1.5 rounded-full transition-all ${i === step ? 'w-8 bg-white' : 'w-1.5 bg-white/30'}`}
           />
         ))}
@@ -54,7 +55,7 @@ export default function SetupFlow() {
 
       <div className="flex items-center gap-3">
         {step > 0 && (
-          <button type="button" onClick={() => setStep(step - 1)} className="rounded-full bg-white/10 px-5 py-2.5 text-sm text-white/80 hover:bg-white/20">
+          <button type="button" onClick={() => setStep(step - 1)} aria-label={t(lang, 'back')} className="rounded-full bg-white/10 px-5 py-2.5 text-sm text-white/80 hover:bg-white/20">
             {t(lang, 'back')}
           </button>
         )}
