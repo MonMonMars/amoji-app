@@ -318,6 +318,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
             <EmotionClipRow lang={lang} gender={character.gender} accent={character.accent} characterId={character.id} />
 
             <button
+              type="button"
               onClick={confirm}
               data-dev="T1"
               className={`fx-press fx-start ui-btn ui-btn-primary pointer-events-auto relative mt-1 min-h-12 shrink-0 rounded-full px-10 text-sm ${
