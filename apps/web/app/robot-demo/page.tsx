@@ -26,6 +26,7 @@ export default function RobotDemoPage() {
   const ledRef = useRef<HTMLCanvasElement>(null);
   const faceRef = useRef<AmojiFace | null>(null);
   const [text, setText] = useState('');
+  const [emotion, setEmotion] = useState<string | null>(null);
 
   useEffect(() => {
     const face = new AmojiFace({ canvas: canvasRef.current, holdMs: 4000 });
@@ -68,6 +69,7 @@ export default function RobotDemoPage() {
 
       <a
         href="./face"
+        aria-label="Fullscreen robot display"
         className="rounded-full border border-[#7c6cff]/50 bg-[#7c6cff]/15 px-5 py-2 text-sm font-semibold text-[#b3a8ff] transition hover:bg-[#7c6cff]/30"
       >
         ⛶ Fullscreen robot display — open <code className="mx-1">/face</code>
@@ -84,10 +86,16 @@ export default function RobotDemoPage() {
         {EMOTION_BUTTONS.map((e) => (
           <button
             type="button"
+            onClick={() => {
+              faceRef.current?.setEmotion(e, 1);
+              setEmotion(e);
+            }}
             key={e}
-            onClick={() => faceRef.current?.setEmotion(e, 1)}
             aria-label={e}
-            className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs capitalize hover:bg-white/15"
+            aria-pressed={emotion === e}
+            className={`rounded-full border px-3 py-1.5 text-xs capitalize hover:bg-white/15 ${
+              emotion === e ? 'border-white/60 bg-white/20' : 'border-white/10 bg-white/5'
+            }`}
           >
             {e}
           </button>
