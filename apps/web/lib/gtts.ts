@@ -145,6 +145,9 @@ export interface GttsOpts {
    * language, so without this every character sounds identical and male
    * characters sound female. Setting preservesPitch=false makes playbackRate
    * change pitch as well as speed. Bias 1 = unchanged, <1 deeper, >1 higher.
+   * Web Audio formant filtering is deliberately NOT used here: gTTS responses
+   * ship Cross-Origin-Resource-Policy with no ACAO, so MediaElementSource /
+   * decodeAudioData would silence the free tier on Chrome and iOS Safari.
    */
   pitchBias?: number;
 }

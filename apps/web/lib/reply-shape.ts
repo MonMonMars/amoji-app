@@ -63,6 +63,10 @@ function isMeta(sentence: string): boolean {
   if (/^(?:we|i) (?:need to|should|must|will|'ll|’ll) (?:answer|respond|reply)\b/i.test(s) && !/\d/.test(s)) return true;
   if (/^(用戶|用户)(想|問|问|說|说|正在|要求)/.test(s)) return true;
   if (/^(我應該先|我应该先|讓我先|让我先)/.test(s)) return true;
+  // Cantonese / CJK reasoning leaks free models still emit after the English ones.
+  if (/^(分析|推理|計劃|计划|思考)\s*[:：]/.test(s)) return true;
+  if (/^(用戶想要|用户想要|對方想|对方想|需要回覆|需要回复)/.test(s)) return true;
+  if (/^(我哋應該|我們應該|我们应该|我要回覆|我要回复)/.test(s)) return true;
   return false;
 }
 
