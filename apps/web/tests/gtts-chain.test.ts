@@ -49,13 +49,17 @@ describe('gtts chunk chain behaviour', () => {
     expect(src).toContain('gtts chunk stalled');
   });
 
-  it('exposes a generation-based cancel so a newer line wins', async () => {
+  it('exposes an immediate cancel so a newer line wins', async () => {
     const { readFileSync } = await import('node:fs');
     const { join } = await import('node:path');
     const src = readFileSync(join(__dirname, '../lib/gtts.ts'), 'utf8');
     expect(src).toMatch(/let generation = 0/);
     expect(src).toMatch(/export function stopGtts\(\): void \{\s*generation\+\+/);
-    expect(src).toMatch(/gen !== generation.*reject\(new Error\('canceled'\)\)/);
+    // Rejecting the pending promise is what makes a cancel take effect at once.
+    // Without it the caller waited for the 10s stall watchdog and then saw
+    // "chunk stalled" instead of "canceled".
+    expect(src).toContain('pendingReject');
+    expect(src).toMatch(/reject\?\.\(new Error\('canceled'\)\)/);
   });
 
   it('splits long text so no chunk exceeds the endpoint limit', async () => {

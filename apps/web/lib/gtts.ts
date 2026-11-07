@@ -82,17 +82,29 @@ let currentAudio: HTMLAudioElement | null = null;
 /** bumped by stopGtts() — any in-flight chain sees a stale gen and cancels */
 let generation = 0;
 let gapTimer: ReturnType<typeof setTimeout> | null = null;
+/**
+ * Rejects the in-flight line. Without this, stopGtts() only paused the element:
+ * the pending promise stayed unresolved until the 10s stall watchdog fired, so a
+ * superseded line reported "chunk stalled" a full 10 seconds later instead of
+ * cancelling immediately.
+ */
+let pendingReject: ((err: Error) => void) | null = null;
 
 export function stopGtts(): void {
   generation++;
   if (gapTimer) { clearTimeout(gapTimer); gapTimer = null; }
+  const reject = pendingReject;
+  pendingReject = null;
   if (currentAudio) {
     currentAudio.onended = null;
     currentAudio.onerror = null;
     try { currentAudio.playbackRate = 1; } catch { /* ignore */ }
-    currentAudio.pause();
+    try { currentAudio.pause(); } catch { /* ignore */ }
     currentAudio = null;
   }
+  // Cancel the awaiting caller right away so the chain falls through instead of
+  // sitting in a 10-second stall.
+  try { reject?.(new Error('canceled')); } catch { /* ignore */ }
 }
 
 export interface GttsOpts {
@@ -138,9 +150,20 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
     if (pieces.length === 0) { resolve(); return; }
     let i = 0;
     let reportedPlaying = false;
+    /** Clears the module-level cancel hook so a later stopGtts() is a no-op. */
+    const clearPending = () => { pendingReject = null; };
+    const failLine = (err: Error) => {
+      clearPending();
+      reject(err);
+    };
+    const doneLine = () => {
+      clearPending();
+      resolve();
+    };
+    pendingReject = failLine;
     const playNext = () => {
-      if (gen !== generation) { reject(new Error('canceled')); return; }
-      if (i >= pieces.length) { resolve(); return; }
+      if (gen !== generation) { failLine(new Error('canceled')); return; }
+      if (i >= pieces.length) { doneLine(); return; }
       const piece = pieces[i]!;
       const q = encodeURIComponent(piece.text);
       i++;
@@ -166,7 +189,7 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
         settle(() => {
           if (currentAudio === audio) currentAudio = null;
           try { audio.pause(); } catch { /* ignore */ }
-          reject(new Error('gtts chunk stalled'));
+          failLine(new Error('gtts chunk stalled'));
         });
       }, 10_000);
       audio.onended = () => {
@@ -183,7 +206,7 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
       audio.onerror = () => {
         settle(() => {
           if (currentAudio === audio) currentAudio = null;
-          reject(new Error('gtts playback failed'));
+          failLine(new Error('gtts playback failed'));
         });
       };
       audio.onplay = () => {
@@ -198,7 +221,7 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
       audio.play().catch((e: unknown) => {
         settle(() => {
           if (currentAudio === audio) currentAudio = null;
-          reject(e instanceof Error ? e : new Error(String(e)));
+          failLine(e instanceof Error ? e : new Error(String(e)));
         });
       });
     };
