@@ -184,11 +184,14 @@ function WardrobeSwapLive({
 
   return (
     <section
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="amoji-wardrobe-title"
       data-testid="wardrobe-swap"
       className="pointer-events-auto fixed inset-0 z-50 flex flex-col bg-neutral-950/95 text-white backdrop-blur-md"
     >
       <header className="flex items-center justify-between gap-3 px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <h2 className="text-base font-semibold tracking-tight">{copy.title}</h2>
+        <h2 id="amoji-wardrobe-title" className="text-base font-semibold tracking-tight">{copy.title}</h2>
         <button
           type="button"
           onClick={() => setOpen(false)}
