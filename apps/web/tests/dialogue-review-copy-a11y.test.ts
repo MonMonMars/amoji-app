@@ -9,7 +9,7 @@ describe('dialogue-review Copy-result a11y', () => {
     const tags = page.match(/<button type="button" className="drv-copy"[^>]*>/g) ?? [];
     expect(tags.length).toBe(2);
     for (const tag of tags) {
-      expect(tag).toContain('aria-label="Copy result"');
+      expect(tag).toContain('aria-label={copyResultLabel}');
       expect(tag).toContain('onClick={copyResult}');
     }
   });
