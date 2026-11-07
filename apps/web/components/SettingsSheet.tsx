@@ -734,6 +734,7 @@ export default function SettingsSheet({
                   <button
                     type="button"
                     key={tp}
+                    aria-pressed={newType === tp}
                     onClick={() => setNewType(tp)}
                     className={`ui-btn rounded-full px-2.5 py-1 text-[10px] ${
                       newType === tp ? `${TYPE_STYLE[tp]} ring-1 ring-white/30` : 'bg-white/5 text-white/40 hover:text-white/70'
