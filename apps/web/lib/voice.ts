@@ -1653,7 +1653,10 @@ export function playVoiceGreeting(characterId: string, lang: Lang, voiceId: stri
     character: characterId,
     voiceId,
     forcePlain: true,
-    expressiveness: 1,
+    // Mild friendly contour even without express-as (select taps / WanLung).
+    expressiveness: 1.15,
+    rateDelta: 0.04,
+    pitchDelta: 0.06,
     onPlaying: () => {
       session = noteSpeechStarted(text);
       markVoiceStarted();
@@ -1827,7 +1830,9 @@ export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
     gender,
     voiceId,
     forcePlain: true,
-    expressiveness: 1,
+    expressiveness: 1.15,
+    rateDelta: 0.04,
+    pitchDelta: 0.06,
   });
 }
 
