@@ -159,7 +159,7 @@ export default function StatusPlate({
             <span>{MOOD_EMOJI[mood]}</span>
             <span className="max-w-[16vw] truncate">{t(lang, MOOD_LABEL[mood])}</span>
             <span className="text-white/25">·</span>
-            <span className={status === 'listening' ? 'text-white/90' : ''}>{t(lang, STATUS_LABEL[status])}</span>
+            <span role="status" className={status === 'listening' ? 'text-white/90' : ''}>{t(lang, STATUS_LABEL[status])}</span>
           </span>
         </span>
       </button>
@@ -168,7 +168,7 @@ export default function StatusPlate({
           frozen 99%), a number counts up honestly, and the 25s watchdog in
           CompanionCanvas still retires the whole thing. */}
       {(loadingPct === 'prep' || typeof loadingPct === 'number') && (
-        <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/55 px-2.5 py-1 shadow-lg shadow-black/30 backdrop-blur-md">
+        <div role="status" aria-busy="true" className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/55 px-2.5 py-1 shadow-lg shadow-black/30 backdrop-blur-md">
           <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
             <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.22)" strokeWidth="3.5" />
             <circle cx="12" cy="12" r="10" stroke={accent} strokeWidth="3.5" strokeLinecap="round" strokeDasharray="14 49" />
