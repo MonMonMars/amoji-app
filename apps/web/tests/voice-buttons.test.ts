@@ -193,7 +193,7 @@ describe('Edge voice bake-off buttons', () => {
     expect(greet).toContain('synthSpeak(');
     expect(greet).toContain('speakGtts(');
     // Explicit picker id must not fall through to one OS synth voice.
-    expect(voice).toContain('greeting gesture');
+    expect(voice).toContain('greeting fallback');
     expect(voice).toContain('primeSynthInGesture');
     // Chat must still synth when a pinned Edge id fails (browser wss 403).
     expect(voice).toContain('Pinned Edge id failed');

@@ -1175,7 +1175,8 @@ function clearLipHold(): void {
  * keeps the cancelled utterance's rate/pitch, so the next line squeaks.
  * Bumping the generation retires any chained pump still in flight.
  */
-function haltSynthQueue(): void {
+/** Halt only the browser speechSynthesis queue (leaves the MP3 tier alone). */
+function haltBrowserSynth(): void {
   synthGeneration += 1;
   // cancel() kills any in-flight prime; clear the latch so the next tap can
   // force-reprime inside the user gesture (iPhone Safari gate).
@@ -1185,6 +1186,14 @@ function haltSynthQueue(): void {
   if (typeof speechSynthesis === 'undefined') return;
   try { speechSynthesis.cancel(); } catch { /* ignore */ }
   try { speechSynthesis.resume(); } catch { /* ignore */ }
+}
+
+/** Halt every speech engine. Used when a line is cut or replaced. */
+function haltSynthQueue(): void {
+  haltBrowserSynth();
+  // The HTTP MP3 tier is a separate engine; halting "the current line" means it
+  // too, or two voices talk over each other.
+  try { stopGtts(); } catch { /* ignore */ }
 }
 
 interface SpeechJob {
@@ -1649,15 +1658,18 @@ function performClip(job: SpeechJob): Promise<void> {
 
 /**
  * Select-page greeting in one exact Edge neural id.
- * Must NOT fall through to speechSynthesis: that tier cannot name Edge
- * voices and collapses every dead/failed button to the same OS voice
- * (Mon: many # buttons, only one sound). forcePlain avoids style rejects.
- * The pin is saved by the caller so later chat lines use the same id.
+ * Must NOT fall through to speechSynthesis when Edge is healthy: that tier
+ * cannot name Edge voices and collapses every dead/failed button to the same
+ * OS voice (Mon: many # buttons, only one sound).
+ *
+ * Edge is dead for everyone now (its endpoint 403s the published client token
+ * server-side), so the real sequence is: audition the HTTP MP3 tier inside the
+ * tap gesture — the only tier that survives a blocked socket AND the iOS
+ * hardware silent switch — and let Edge interrupt it if Edge ever works again.
+ * Exactly one tier speaks: whoever starts first halts the other.
  */
 export function playVoiceGreeting(characterId: string, lang: Lang, voiceId: string): void {
   if (!voiceOutputAllowed() || !voiceId) return;
-  // Unlock + synth prime INSIDE the tap. Browser Edge wss often 403s (no
-  // extension Origin/muid Cookie); iOS then needs a gesture-primed synth path.
   unlockAudio(true);
   stopSpeaking();
   // force: stopSpeaking cancelled any window-level prime and cleared the latch.
@@ -1666,30 +1678,48 @@ export function playVoiceGreeting(characterId: string, lang: Lang, voiceId: stri
   const text = greetingText(lang, kind);
   const gender = isMaleNeuralVoice(voiceId) ? 'male' : 'female';
   let session = 0;
-  let edgePlaying = false;
-  let synthStarted = false;
-  const onStart = () => {
+  /** Set by whichever tier actually starts, so the loser can bail out. */
+  let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
+  const onStart = (tier: 'edge' | 'gtts' | 'synth') => {
+    spokenBy = tier;
     session = noteSpeechStarted(text);
     markVoiceStarted();
-    reportVoiceStatus('edge', true, `greeting ${voiceId}`);
+    reportVoiceStatus(tier, true, `greeting ${voiceId}`);
   };
+  /** Last-resort tier for a device where even the HTTP MP3 cannot play. */
   const runSynthAudition = (tag: string) => {
-    if (edgePlaying || synthStarted) return;
-    synthStarted = true;
+    if (spokenBy) return;
     try {
       // syncGesture: must speak in this tap — deferred speak stays silent on iOS.
       synthSpeak(text, characterId, lang, 'joy', 1.1, undefined, 1, undefined, () => {
         if (session) finishLipSync(session);
       }, gender, 0.7, true);
+      onStart('synth');
       reportVoiceStatus('synth', true, `${tag} ${voiceId}`);
     } catch (e) {
-      synthStarted = false;
       reportVoiceStatus('synth', false, (e as Error | undefined)?.message ?? 'greeting synth failed');
     }
   };
-  // Audition immediately in-gesture (do not wait 180ms — iOS gesture expires).
-  // Edge still preferred: onPlaying halts the synth queue.
-  runSynthAudition('greeting gesture');
+  // Start the HTTP tier first and synchronously inside the gesture. It fetches
+  // over plain HTTPS, so it does not need the gesture itself, but starting here
+  // means the greeting begins immediately instead of after a dead Edge attempt.
+  void speakGtts(text, {
+    lang,
+    onPlaying: () => {
+      if (spokenBy && spokenBy !== 'gtts') return;
+      // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
+      try { haltBrowserSynth(); } catch { /* ignore */ }
+      if (!spokenBy) onStart('gtts');
+    },
+  }).then(() => {
+    if (session) finishLipSync(session);
+  }).catch((e: unknown) => {
+    if ((e as Error | undefined)?.message === 'canceled') return;
+    reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'greeting gtts failed');
+    runSynthAudition('greeting fallback');
+  });
+
+  // Edge still wins if it ever answers again: onPlaying halts the other tiers.
   void speakEdge(text, {
     lang,
     gender,
@@ -1700,36 +1730,17 @@ export function playVoiceGreeting(characterId: string, lang: Lang, voiceId: stri
     rateDelta: 0.04,
     pitchDelta: 0.06,
     onPlaying: () => {
-      edgePlaying = true;
+      if (spokenBy === 'gtts') return; // MP3 tier already got there first
       try { haltSynthQueue(); } catch { /* ignore */ }
-      onStart();
+      if (!spokenBy) onStart('edge');
     },
   }).then(() => {
     if (session) finishLipSync(session);
   }).catch((err: unknown) => {
     if ((err as Error | undefined)?.message === 'canceled') return;
-    if (edgePlaying) return;
-    if (session) endLipSync();
+    if (spokenBy) return; // gtts already spoke; Edge failing is irrelevant
     reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? `greeting failed ${voiceId}`);
-    // Edge answers 403 for every client now, so this is the normal path, not
-    // an edge case. The old fallback re-entered runSynthAudition, which is a
-    // no-op once synthStarted is set — so on a phone whose silent switch mutes
-    // speechSynthesis the greeting was simply silent forever. Take the HTTP
-    // MP3 tier instead, and halt the in-gesture synth audition if it wins so
-    // the two never talk over each other.
-    void speakGtts(text, {
-      lang,
-      onPlaying: () => {
-        try { haltSynthQueue(); } catch { /* ignore */ }
-        onStart();
-        reportVoiceStatus('gtts', true, `greeting gtts ${voiceId}`);
-      },
-    }).then(() => {
-      if (session) finishLipSync(session);
-    }).catch((e: unknown) => {
-      if ((e as Error | undefined)?.message === 'canceled') return;
-      reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'greeting gtts failed');
-    });
+    runSynthAudition('greeting fallback');
   });
 }
 
@@ -1826,15 +1837,25 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
       }
       void tier1.then(() => settle()).catch((err: unknown) => {
         if ((err as Error | undefined)?.message === 'canceled') { settle(); return; }
-        // endpoint unreachable — same melody on the browser voice
+        // endpoint unreachable — same line on the HTTP MP3 tier first, since
+        // speechSynthesis is muted by the iOS silent switch.
         stopEdge();
-        try {
-          synthSpeak(text, characterId, lang, 'joy', expr, undefined, 1, SONG_MELODY, settle);
-          reportVoiceStatus('synth', true, 'browser voice queued (singing)');
-        } catch (err2) {
-          reportVoiceStatus('synth', false, (err2 as Error | undefined)?.message ?? 'browser voice failed');
-          settle();
-        }
+        void speakGtts(text, {
+          lang,
+          onPlaying: () => {
+            noteSpeechStarted(text);
+            markVoiceStarted();
+            reportVoiceStatus('gtts', true, 'google-tts singing');
+          },
+        }).then(() => settle()).catch(() => {
+          try {
+            synthSpeak(text, characterId, lang, 'joy', expr, undefined, 1, SONG_MELODY, settle);
+            reportVoiceStatus('synth', true, 'browser voice queued (singing)');
+          } catch (err2) {
+            reportVoiceStatus('synth', false, (err2 as Error | undefined)?.message ?? 'browser voice failed');
+            settle();
+          }
+        });
       });
       return;
     }
@@ -1887,24 +1908,42 @@ export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
   primeSynthInGesture(true);
   const gender = isMaleNeuralVoice(voiceId) ? 'male' : 'female';
   const text = edgeSampleText(locale);
-  let edgePlaying = false;
-  let synthStarted = false;
+  /** Set by whichever tier actually starts, so the loser can bail out. */
+  let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
   const runSynthAudition = (tag: string) => {
-    if (edgePlaying || synthStarted) return;
-    synthStarted = true;
+    if (spokenBy) return Promise.resolve();
     return new Promise<void>((resolve) => {
       try {
         synthSpeak(text, 'preview', locale, 'joy', 1.1, undefined, 1, undefined, () => resolve(), gender, 0.7, true);
+        spokenBy = 'synth';
+        markVoiceStarted();
         reportVoiceStatus('synth', true, `${tag} ${voiceId}`);
       } catch (e) {
-        synthStarted = false;
         reportVoiceStatus('synth', false, (e as Error | undefined)?.message ?? 'preview synth failed');
         resolve();
       }
     });
   };
-  // Immediate in-gesture audition (no 180ms defer — iOS).
-  void runSynthAudition('preview gesture');
+  // HTTP MP3 tier first, started inside the gesture so preview is immediate.
+  // Exactly one tier speaks: whoever starts first halts the others.
+  const gtts = speakGtts(text, {
+    lang: locale,
+    onPlaying: () => {
+      if (spokenBy && spokenBy !== 'gtts') return;
+      // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
+      try { haltBrowserSynth(); } catch { /* ignore */ }
+      if (!spokenBy) {
+        spokenBy = 'gtts';
+        markVoiceStarted();
+        reportVoiceStatus('gtts', true, `preview gtts ${voiceId}`);
+      }
+    },
+  }).catch((e: unknown) => {
+    if ((e as Error | undefined)?.message === 'canceled') return;
+    reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'preview gtts failed');
+    return runSynthAudition('preview fallback');
+  });
+
   return speakEdge(text, {
     lang: locale,
     gender,
@@ -1914,30 +1953,19 @@ export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
     rateDelta: 0.04,
     pitchDelta: 0.06,
     onPlaying: () => {
-      edgePlaying = true;
+      if (spokenBy === 'gtts') return; // MP3 tier already got there first
       try { haltSynthQueue(); } catch { /* ignore */ }
-      markVoiceStarted();
-      reportVoiceStatus('edge', true, `preview ${voiceId}`);
-    },
-  }).then(() => {
-    /* edge finished */
-  }).catch((err: unknown) => {
-    if ((err as Error | undefined)?.message === 'canceled') return;
-    if (edgePlaying) return;
-    reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'preview edge failed');
-    // Edge 403s for every client, so fall through to the HTTP MP3 tier rather
-    // than re-entering the already-consumed synth audition.
-    return speakGtts(text, {
-      lang: locale,
-      onPlaying: () => {
-        try { haltSynthQueue(); } catch { /* ignore */ }
+      if (!spokenBy) {
+        spokenBy = 'edge';
         markVoiceStarted();
-        reportVoiceStatus('gtts', true, `preview gtts ${voiceId}`);
-      },
-    }).catch((e: unknown) => {
-      if ((e as Error | undefined)?.message === 'canceled') return;
-      reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'preview gtts failed');
-    });
+        reportVoiceStatus('edge', true, `preview ${voiceId}`);
+      }
+    },
+  }).then(() => gtts).catch((err: unknown) => {
+    if ((err as Error | undefined)?.message === 'canceled') return gtts;
+    if (spokenBy === 'edge') return gtts;
+    reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'preview edge failed');
+    return gtts;
   });
 }
 
@@ -2152,6 +2180,22 @@ export async function testProxyVoice(characterId: string, lang: Lang): Promise<b
     if ((err as Error | undefined)?.message !== 'canceled') {
       stopEdge();
       reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'edge-tts failed');
+    }
+  }
+  // Edge refuses the published client token server-side, so reporting only its
+  // failure would tell the user nothing about whether they can hear anything.
+  // Probe the tier that actually carries speech now.
+  try {
+    await withTimeout(speakGtts(line, {
+      lang,
+      onPlaying: () => reportVoiceStatus('gtts', true, 'google-tts playing (proxy probe)'),
+    }), 20_000, 'google-tts timeout');
+    reportVoiceStatus('gtts', true, 'voice played via google-tts (edge unavailable)');
+    return true;
+  } catch (err) {
+    if ((err as Error | undefined)?.message !== 'canceled') {
+      stopGtts();
+      reportVoiceStatus('gtts', false, (err as Error | undefined)?.message ?? 'google-tts failed');
     }
     return false;
   }
