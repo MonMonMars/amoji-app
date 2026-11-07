@@ -52,12 +52,20 @@ describe('public/ ships no adult content', () => {
   });
 });
 
-describe('catalog.html stays valid after the adult rows were removed', () => {
-  const html = fs.readFileSync(path.join(PUBLIC, 'catalog.html'), 'utf8');
+// The catalogue is an internal shortlist page, not a product page, and a
+// sibling branch moves it out of `public/` entirely (store-bundle exclusions).
+// So locate it wherever the tree keeps it: shipped, or already relocated.
+const CATALOG = [path.join(PUBLIC, 'catalog.html'), path.resolve(here, '../dev-pages/catalog.html')]
+  .find((p) => fs.existsSync(p));
+
+describe.skipIf(!CATALOG)('catalog.html stays valid after the adult rows were removed', () => {
+  // Read lazily: `describe.skipIf` still runs this factory at collection time,
+  // so reading at the top would throw (not skip) when the page has been moved.
+  const html = () => fs.readFileSync(CATALOG!, 'utf8');
 
   /** Pull `const NAME = [ ... ];` out of the page and evaluate just that literal. */
   function rows(name: string): unknown[][] {
-    const m = html.match(new RegExp('const ' + name + ' = (\\[[\\s\\S]*?\\n\\]);'));
+    const m = html().match(new RegExp('const ' + name + ' = (\\[[\\s\\S]*?\\n\\]);'));
     expect(m, 'const ' + name + ' = [...] missing from catalog.html').not.toBeNull();
     return new Function('return ' + m![1])() as unknown[][];
   }
@@ -72,8 +80,8 @@ describe('catalog.html stays valid after the adult rows were removed', () => {
     expect(rows('HI')).toHaveLength(30);
     expect(rows('VT')).toHaveLength(14);
     expect(rows('APP')).toHaveLength(10);
-    expect(html).toContain('high-poly shortlist (30)');
-    expect(html).toContain('low-poly Vtuber shortlist (14)');
+    expect(html()).toContain('high-poly shortlist (30)');
+    expect(html()).toContain('low-poly Vtuber shortlist (14)');
   });
 
   it('no row carries a name or tag that reads as adult', () => {
