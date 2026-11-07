@@ -27,6 +27,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AmojiFace } from '../../lib/robot-face';
 import { clientChat } from '../../lib/client-chat';
+import { guardCompanionTurn } from '../../lib/crisis';
 import { clientLiveContext } from '../../lib/live-tools';
 import type { ChatMessage } from '../../lib/llm';
 import { notifySpeaking, isSpeaking, sampleSpeech } from '../../lib/speech';
@@ -186,6 +187,19 @@ export default function FacePage() {
       const text = await listenOnce(optsRef.current.lang);
       setHeard(text);
       historyRef.current.push({ role: 'user', content: text });
+
+      // Same crisis guard as the chat room — this surface also reaches a brain.
+      const crisis = guardCompanionTurn(text, optsRef.current.lang);
+      if (crisis.blocked) {
+        historyRef.current.push({ role: 'assistant', content: crisis.reply });
+        notifySpeaking(crisis.reply);
+        setSaid(crisis.reply);
+        emit('speaking');
+        speak(crisis.reply, optsRef.current.character, optsRef.current.lang, { sadness: 0.35 });
+        await waitForSpeechEnd();
+        emit('idle');
+        return;
+      }
 
       emit('thinking');
       speakThinkingFiller(optsRef.current.character, optsRef.current.lang, undefined, text);

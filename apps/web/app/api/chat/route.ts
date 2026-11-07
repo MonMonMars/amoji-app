@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createLlm, OfflineLlm, PollinationsLlm, type ChatMessage } from '../../../lib/llm';
+import { guardCompanionTurn } from '../../../lib/crisis';
 import { withQuestion } from '../../../lib/follow-up';
 import { preferLiveReply, serverLiveContext } from '../../../lib/live-tools';
 
@@ -19,6 +20,13 @@ export async function POST(req: Request) {
     message?: unknown; history?: unknown; language?: unknown; persona?: unknown; memory?: unknown; world?: unknown; worldSpoken?: unknown;
   };
   if (typeof message !== 'string' || !message.trim()) return NextResponse.json({ error: 'message required' }, { status: 400 });
+  // Crisis guard — before history is trimmed, before live tools, before any
+  // model. A direct API caller must not be able to reach an LLM with a
+  // self-harm message either.
+  const crisis = guardCompanionTurn(message, typeof language === 'string' ? language : undefined);
+  if (crisis.blocked) {
+    return NextResponse.json({ reply: crisis.reply, emotionHints: { sadness: 0.35 }, crisis: true });
+  }
   const safeHistory: ChatMessage[] = Array.isArray(history)
     ? history.filter((m): m is ChatMessage => m && typeof m === 'object' && typeof (m as ChatMessage).content === 'string').slice(-20)
     : [];

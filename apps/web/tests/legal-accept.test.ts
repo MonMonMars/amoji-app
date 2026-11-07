@@ -79,8 +79,12 @@ describe('legal-accept', () => {
     expect(gate).toContain('/terms');
     expect(gate).toContain("LEGAL_DOC_PATHS");
     expect(gate).toContain("usePathname");
-    expect(read('../app/privacy/page.tsx')).toContain('Privacy Policy');
-    expect(read('../app/terms/page.tsx')).toContain('Terms of Use');
+    expect(read('../app/privacy/page.tsx')).toContain('privacyDoc');
+    expect(read('../app/terms/page.tsx')).toContain('termsDoc');
+    // Titles now live in one localized table (lib/legal-copy.ts) so the gate,
+    // /privacy and /terms cannot drift apart; the docs still name themselves.
+    expect(read('../lib/legal-copy.ts')).toContain('Privacy Policy');
+    expect(read('../lib/legal-copy.ts')).toContain('Terms of Use');
     expect(read('../lib/legal-accept.ts')).toContain('LEGAL_ACCEPT_VERSION');
   });
 });
