@@ -111,6 +111,7 @@ export default function StorySetupPanel() {
     <main
       className={`relative z-20 flex min-h-0 w-full flex-1 flex-col items-center justify-center overflow-x-hidden px-4 py-4 text-white ${prefsReady ? '' : 'opacity-0'}`}
       aria-busy={!prefsReady}
+      aria-labelledby="amoji-story-setup-title"
     >
       <div
         className="pointer-events-none absolute inset-0 opacity-40"
@@ -176,7 +177,7 @@ export default function StorySetupPanel() {
           )}
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 pt-16">
             <p className="text-[10px] uppercase tracking-widest text-white/55">{LABEL.scene[lang]}</p>
-            <h1 className="text-xl font-bold leading-tight">{scene.title[lang]}</h1>
+            <h1 id="amoji-story-setup-title" className="text-xl font-bold leading-tight">{scene.title[lang]}</h1>
             <p className="mt-1 text-sm text-white/75">{scene.blurb[lang]}</p>
           </div>
         </div>
@@ -184,7 +185,7 @@ export default function StorySetupPanel() {
         <div className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-black/40 px-3 py-2 backdrop-blur-md">
           {character.image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={assetUrl(character.image)} alt="" className="h-14 w-14 rounded-xl object-cover" />
+            <img src={assetUrl(character.image)} alt={character.name} className="h-14 w-14 rounded-xl object-cover" />
           ) : (
             <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/10 text-lg font-bold">
               {character.name.slice(0, 1)}
