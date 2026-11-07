@@ -3,5 +3,5 @@
 import SoftLandChat from '../../components/SoftLandChat';
 
 export default function PlayRedirect() {
-  return <SoftLandChat />;
+  return <SoftLandChat label="Taking you to chat..." />;
 }
