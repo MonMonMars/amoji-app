@@ -1343,8 +1343,10 @@ export default function ChatPanel({
             bg-black/55 keeps the same readability with zero blur — nothing
             rectangular is rendered at all. */}
         <button
+          type="button"
           onClick={() => mic()}
           title={t(lang, 'micTitle')}
+          aria-label={t(lang, 'micTitle')}
           className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black/55 transition active:scale-95"
           style={
             listening
@@ -1396,6 +1398,7 @@ export default function ChatPanel({
           className="h-11 flex-1 overflow-hidden rounded-full border border-white/10 bg-black/30 px-4 text-[15px] text-white placeholder-white/30 outline-none backdrop-blur-md focus:border-white/40"
         />
         <button
+          type="button"
           onClick={() => void send()}
           disabled={busy}
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-black transition disabled:opacity-40"
