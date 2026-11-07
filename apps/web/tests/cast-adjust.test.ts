@@ -40,6 +40,17 @@ describe('selection cast', () => {
     expect(shown).toHaveLength(CHARACTERS.length - 3);
   });
 
+  it('retires a04/a05 badge numbers instead of renumbering the fan', () => {
+    // Removed from the roster for licensing, but 4 and 5 must not come back as
+    // someone else's badge — the rest of the cast keeps what it shipped with.
+    expect(selectionBadge('a04-avatarsample-a')).toBe(4);
+    expect(selectionBadge('a05-avatarsample-c')).toBe(5);
+    expect(selectionBadge('a10-agahomei-normal')).toBe(6);
+    expect(selectionBadge('a122-shiratori-hikari-shifuku')).toBe(46);
+    expect(selectionCast(CHARACTERS).map((c) => c.id)).not.toContain('a04-avatarsample-a');
+    expect(selectionCast(CHARACTERS).map((c) => c.id)).not.toContain('a05-avatarsample-c');
+  });
+
   it('moves character 34 forward without renumbering it', () => {
     const shown = selectionCast(CHARACTERS);
     expect(shown[3]?.id).toBe('a104-simplebrownsailorjk');
@@ -178,7 +189,10 @@ describe('head level', () => {
     expect(Math.abs(e.y)).toBeLessThan(1e-4);
     expect(Math.abs(e.z)).toBeLessThan(1e-4);
     expect(needsShoulderLift('a01-shino')).toBe(false);
-    expect(needsShoulderLift('a04-avatarsample-a')).toBe(true);
+    expect(needsShoulderLift('a70-vtuber-aihina-sample')).toBe(true);
+    // a04/a05 were removed from the roster for licensing; the shoulder fix
+    // list must not keep entries for characters nobody can pick any more.
+    expect(needsShoulderLift('a04-avatarsample-a')).toBe(false);
   });
 });
 

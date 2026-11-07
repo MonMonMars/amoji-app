@@ -207,7 +207,11 @@ export type StrKey =
   | 'privacyTitle' | 'termsTitle' | 'policyVersion' | 'safetyCrisisLine'
   | 'safetyCrisisTitle' | 'safetyOpenPage'
   | 'safetyTitle' | 'safetyLead' | 'safetyHelplinesTitle' | 'safetyEmergencyTitle'
-  | 'safetyStepsTitle' | 'safetyStepsBody' | 'safetyAboutAi' | 'safetyPrivacyLink';
+  | 'safetyStepsTitle' | 'safetyStepsBody' | 'safetyAboutAi' | 'safetyPrivacyLink'
+  // Appended after the safety keys for the 2026-11-08 licensing pass: the
+  // /credits page is an attribution obligation, so it needs a title in the
+  // shared table like /privacy and /terms do.
+  | 'creditsTitle';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   chooseCharacter: { en: 'Choose your companion', yue: '揀你嘅小伙伴', zh: '选择你的伙伴', ja: '相棒を選ぶ' },
@@ -832,6 +836,12 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: 'Amoji 會送啲咩出去、送去邊',
     zh: 'Amoji 会发送什么、发送到哪里',
     ja: 'Amoji が何をどこへ送るか',
+  },
+  creditsTitle: {
+    en: 'Credits',
+    yue: '鳴謝',
+    zh: '鸣谢',
+    ja: 'クレジット',
   },
 };
 

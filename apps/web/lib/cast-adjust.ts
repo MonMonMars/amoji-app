@@ -18,11 +18,11 @@ const HIDDEN = new Set(HIDDEN_CAST_IDS);
 
 /**
  * Explicit males. Every other roster id stays female, including unreviewed
- * models that used to be tagged male.
+ * models that used to be tagged male. a05 was removed from the roster for
+ * licensing (2026-11-08), so it no longer appears here.
  */
 export const MALE_CAST_IDS: readonly string[] = [
   'a03-fumiriya', // 3
-  'a05-avatarsample-c', // 5
   'a24-hairsample-male', // 11
   'a77-sasha', // 19
   'a94-rita', // 27
@@ -55,8 +55,6 @@ export const HEAD_TILT_IDS: readonly string[] = [
 
 /** Sunk clavicle when the arm hangs. Not applied to 1–3. */
 export const SHOULDER_LIFT_IDS: readonly string[] = [
-  'a04-avatarsample-a', // 4
-  'a05-avatarsample-c', // 5
   'a70-vtuber-aihina-sample', // 15
 ];
 
@@ -94,7 +92,12 @@ export const REF_LOOK_IDS: readonly string[] = [
   'a63-hinoame-satuki-mei-sirayuki', // 13
 ];
 
-/** @deprecated kept for tests/callers; prefer needsMToonUnify / REF_LOOK_IDS. */
+/**
+ * @deprecated kept for tests/callers; prefer needsMToonUnify / REF_LOOK_IDS.
+ * a04/a05 were removed from the roster for licensing (2026-11-08, VRoidPreset
+ * originals); their ids stay listed here only because this array is a historic
+ * allowlist other code and docs still read.
+ */
 export const MTOON_UNIFY_IDS: readonly string[] = [
   'a04-avatarsample-a',
   'a05-avatarsample-c',
