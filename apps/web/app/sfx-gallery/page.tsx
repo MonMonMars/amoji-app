@@ -5,6 +5,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { loadPrefs } from '../../lib/prefs';
 import {
   CMA_REACTION_GALLERY,
   CMA_REACTION_GALLERY_KEY,
@@ -262,6 +263,12 @@ export default function SfxGalleryPage() {
     { id: 'male', label: 'Male' },
   ];
 
+  const lang = loadPrefs().lang;
+  const backSelect =
+    lang === 'yue' ? '返回選擇' : lang === 'zh' ? '返回选择' : lang === 'ja' ? '選択に戻る' : 'Back to select';
+  const openChat =
+    lang === 'yue' ? '打開傾偈' : lang === 'zh' ? '打开聊天' : lang === 'ja' ? 'チャットを開く' : 'Open chat';
+
   return (
     <main aria-labelledby="amoji-sfx-gallery-title" className="min-h-screen bg-[#0b0d12] px-4 py-6 text-white sm:px-6">
       <div className="mx-auto max-w-5xl">
@@ -279,8 +286,8 @@ export default function SfxGalleryPage() {
             <kbd className="rounded border border-white/20 px-1">P</kbd>/Space Play.
           </p>
           <div className="flex flex-wrap gap-2 pt-1">
-            <Link href="/select" aria-label="Back to select" className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/80 hover:bg-white/10">← Select</Link>
-            <Link href="/chat" aria-label="Open chat" className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/80 hover:bg-white/10">Chat</Link>
+            <Link href="/select" aria-label={backSelect} className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/80 hover:bg-white/10">← Select</Link>
+            <Link href="/chat" aria-label={openChat} className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/80 hover:bg-white/10">Chat</Link>
             <Link href="/en-sfx-ab" className="rounded-full border border-amber-400/40 px-3 py-1 text-xs text-amber-100/90 hover:bg-amber-500/10" data-testid="link-en-sfx-ab">EN SFX A/B (test)</Link>
             <button
               type="button"
