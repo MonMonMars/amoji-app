@@ -134,6 +134,25 @@ describe('selection layout', () => {
   });
 
 
+  it('holds select+/change scene until prefsReady (no DEFAULT backdrop flash)', () => {
+    const board = read('../components/SelectionBoard.tsx');
+    expect(board).toContain("style={{ background: prefsReady ? background.css : '#0a0a0f' }}");
+    expect(board).toContain('{prefsReady && (');
+    expect(board).toContain('data-testid="selection-hero"');
+    // Must not paint SceneBackdrop before prefs sync.
+    const heroIdx = board.indexOf('data-testid="selection-hero"');
+    const gateIdx = board.lastIndexOf('{prefsReady && (', heroIdx);
+    expect(gateIdx).toBeGreaterThan(-1);
+    expect(gateIdx).toBeLessThan(heroIdx);
+  });
+
+  it('holds chat SceneBackdrop until bootReady (no DEFAULT scene flash)', () => {
+    const chat = read('../app/chat/page.tsx');
+    expect(chat).toContain("style={{ background: bootReady ? background.css : '#0a0a0f' }}");
+    expect(chat).toContain('{bootReady && <SceneBackdrop background={background} />}');
+    expect(chat).not.toMatch(/\n\s*<SceneBackdrop background=\{background\} \/>\s*\n\s*\{bootReady && \(/);
+  });
+
   it('holds chat boot + idle-rail until localStorage sync (no DEFAULT flash)', () => {
     const rails = read('../components/IdlePickRails.tsx');
     const chat = read('../app/chat/page.tsx');
