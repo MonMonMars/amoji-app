@@ -80,6 +80,22 @@ describe('asset governance', () => {
     for (const entry of REQUIRED_CREDITS) expect(ids.has(entry.id), entry.id).toBe(true);
   });
 
+  it('the legacy cast importer cannot silently restore the purged binaries', () => {
+    // import-cast.mjs maps the retired 29-character roster; running it would
+    // write all 16 deleted non-CC0 models back into cast/.
+    const src = fs.readFileSync(path.resolve(here, '../../../scripts/import-cast.mjs'), 'utf8');
+    expect(src).toContain('ALLOW_CAST_IMPORT');
+    expect(src).toContain("process.env.ALLOW_CAST_IMPORT !== '1'");
+    expect(src).toContain('process.exit(1)');
+    // and it must point at the real generator instead
+    expect(src).toContain('generate-want-cast.mjs');
+  });
+
+  it('.gitignore blocks cast binaries so a purge cannot be undone by a commit', () => {
+    const ignore = fs.readFileSync(path.resolve(here, '../../../.gitignore'), 'utf8');
+    expect(ignore).toContain('apps/web/public/models/cast/*.vrm');
+  });
+
   it('seed-san fallback binary is structurally valid when present', () => {
     const seed = path.join(MODELS, 'seed-san.vrm');
     if (!fs.existsSync(seed)) {
