@@ -1724,14 +1724,24 @@ function performClip(job: SpeechJob): Promise<void> {
  * hardware silent switch — and let Edge interrupt it if Edge ever works again.
  * Exactly one tier speaks: whoever starts first halts the other.
  */
-export function playVoiceGreeting(characterId: string, lang: Lang, voiceId: string): void {
+/**
+ * Select-page greeting. Pass `line` to speak a specific sentence instead of the
+ * rotating canned greeting — the select board uses this to introduce the
+ * character by name and personality instead of saying "Hello!" for all 46.
+ */
+export function playVoiceGreeting(
+  characterId: string,
+  lang: Lang,
+  voiceId: string,
+  line?: string,
+): void {
   if (!voiceOutputAllowed() || !voiceId) return;
   unlockAudio(true);
   stopSpeaking();
   // force: stopSpeaking cancelled any window-level prime and cleared the latch.
   primeSynthInGesture(true);
   const kind = nextGreetingKind();
-  const text = greetingText(lang, kind);
+  const text = line?.trim() ? line.trim() : greetingText(lang, kind);
   const gender = isMaleNeuralVoice(voiceId) ? 'male' : 'female';
   let session = 0;
   /** Set by whichever tier actually starts, so the loser can bail out. */

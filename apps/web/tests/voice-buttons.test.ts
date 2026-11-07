@@ -215,7 +215,10 @@ describe('Edge voice bake-off buttons', () => {
     expect(langIdx).toBeGreaterThan(charIdx);
     const charBlock = board.slice(charIdx, langIdx);
     expect(charBlock).toContain('ignoreVoicePick: true');
-    expect(charBlock).toContain('playVoiceGreeting(chosen.id, lang, voiceId)');
+    // Character tap speaks a personal introduction, still auditioning the cast
+    // slot. Match the call across its new multi-line form.
+    expect(charBlock).toMatch(/playVoiceGreeting\(\s*chosen\.id,\s*lang,\s*voiceId,/);
+    expect(charBlock).toContain('introText(');
     // Must not prefer a gender pin over the cast (same voice for every same-sex char).
     expect(charBlock).not.toContain('voicePickFor(lang, chosen.gender)');
     const langBlock = board.slice(langIdx, langIdx + 900);
