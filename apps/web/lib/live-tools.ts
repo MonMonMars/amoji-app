@@ -1,11 +1,12 @@
 // Live world step for the companion chat.
 //
-// The free lane (Pollinations / Puter) and the static GitHub Pages build do
-// not give us a reliable OpenAI tool-calling loop: Pages has no server, and
-// those models are raced as plain chat streams. So both the browser lane and
-// `/api/chat` run this short step first — only when the message actually
-// asks — then drop a few sentences of live facts into the existing system
-// prompt. She answers in her own voice. No key is required.
+// The free lane (OVHcloud + Pollinations on that same upstream, plus Puter)
+// and the static GitHub Pages build do not give us a reliable OpenAI
+// tool-calling loop: Pages has no server, and those models are raced as plain
+// chat streams. So both the browser lane and `/api/chat` run this short step
+// first — only when the message actually asks — then drop a few sentences of
+// live facts into the existing system prompt. She answers in her own voice.
+// No key is required.
 //
 // Sources (all CORS-open, no key):
 //   location  navigator.geolocation, then get.geojs.io (coarse IP)
