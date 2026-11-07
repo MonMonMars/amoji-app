@@ -213,20 +213,21 @@ export default function FacePage() {
 
   return (
     <main
+      aria-label="Amoji face"
       className="relative flex h-dvh w-full items-center justify-center overflow-hidden bg-black select-none"
       onClick={() => { if (!auto) void loopOnce(); }}
     >
-      <canvas ref={canvasRef} width={720} height={560} className="h-full max-h-[110vh] w-full object-contain" />
+      <canvas ref={canvasRef} width={720} height={560} role="img" aria-label="Emotion face" className="h-full max-h-[110vh] w-full object-contain" />
 
       {/* mode pill */}
-      <div className="pointer-events-none absolute top-5 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-white/45">
+      <div role="status" aria-live="polite" className="pointer-events-none absolute top-5 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-white/45">
         {MODE_LABEL[mode]}
         {!micOk ? ' · mic unsupported' : ''}
       </div>
 
       {/* subtitles of what she says */}
       {subs && said && (
-        <div className="pointer-events-none absolute bottom-10 left-1/2 max-w-[88%] -translate-x-1/2 rounded-2xl bg-black/60 px-5 py-2.5 text-center text-base leading-relaxed text-white/90">
+        <div role="status" aria-live="polite" className="pointer-events-none absolute bottom-10 left-1/2 max-w-[88%] -translate-x-1/2 rounded-2xl bg-black/60 px-5 py-2.5 text-center text-base leading-relaxed text-white/90">
           {said}
         </div>
       )}
