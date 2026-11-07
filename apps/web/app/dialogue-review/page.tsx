@@ -593,7 +593,7 @@ export default function DialogueReviewPage() {
       <header className="drv-head">
         <h1>Amoji Dialogue Review</h1>
         <p className="drv-sub">r2026-10-04.67 · tap a line to cycle ✅ keep → ❌ drop → ❓ undecided · paste the result back to me in chat</p>
-        <button className="drv-copy" onClick={copyResult}>{copied ? '✓ Copied!' : '📋 Copy result'}</button>
+        <button type="button" className="drv-copy" onClick={copyResult}>{copied ? '✓ Copied!' : '📋 Copy result'}</button>
       </header>
 
       <div className="drv-controls">
@@ -625,7 +625,7 @@ export default function DialogueReviewPage() {
           onChange={(e) => setCustomText(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') addCustom(); }}
         />
-        <button className="drv-add" onClick={addCustom} disabled={!customText.trim()}>＋ Add</button>
+        <button type="button" className="drv-add" onClick={addCustom} disabled={!customText.trim()}>＋ Add</button>
       </div>
 
       {SECTIONS.map((sec) => {
@@ -641,8 +641,8 @@ export default function DialogueReviewPage() {
             <p className="drv-hint">{sec.hint}</p>
             {items.length > 0 && (
               <div className="drv-bulk">
-                <button onClick={() => setAll(sec.key, 'keep')}>all ✅</button>
-                <button onClick={() => setAll(sec.key, 'drop')}>all ❌</button>
+                <button type="button" onClick={() => setAll(sec.key, 'keep')}>all ✅</button>
+                <button type="button" onClick={() => setAll(sec.key, 'drop')}>all ❌</button>
               </div>
             )}
             <ul className="drv-list">
@@ -651,6 +651,7 @@ export default function DialogueReviewPage() {
                 return (
                   <li key={it.id}>
                     <button
+                      type="button"
                       className={`drv-line v-${v}${it.isNew ? ' drv-new' : ''}`}
                       onClick={() => toggle(it.id)}
                       title={NEXT_HINT[v]}
@@ -671,7 +672,7 @@ export default function DialogueReviewPage() {
       })}
 
       <footer className="drv-foot">
-        <button className="drv-copy" onClick={copyResult}>{copied ? '✓ Copied!' : '📋 Copy result'}</button>
+        <button type="button" className="drv-copy" onClick={copyResult}>{copied ? '✓ Copied!' : '📋 Copy result'}</button>
         <p>Then paste it here in the chat and I will apply your picks to the app.</p>
       </footer>
     </div>
