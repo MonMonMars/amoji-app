@@ -4,7 +4,7 @@
 // sounds like the same female speaker. Token shape matches edge-tts drm.py.
 
 const TRUSTED_CLIENT_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
-export const EDGE_GEC_VERSION = '2-143.0.3650.75';
+export const EDGE_GEC_VERSION = '2-155.0.4283.45';
 const WIN_EPOCH = 11644473600n;
 const U32 = 0xffffffffn;
 const M32 = 0x100000001n;

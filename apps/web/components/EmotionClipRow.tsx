@@ -36,6 +36,7 @@ export default function EmotionClipRow({
   const files = CLIP_LIBRARY[folder][gender];
 
   const onTap = (file: string) => {
+    // Exclusive single-select: only the tapped clip stays pressed.
     setPlaying(file);
     saveEmotionClip(characterId, folder, gender, file);
     const stem = file.replace(/\.mp3$/, '');
