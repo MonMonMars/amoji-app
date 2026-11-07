@@ -94,13 +94,7 @@ export default function RobotDemoPage() {
       </div>
 
       <div className="flex w-full max-w-sm gap-2">
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && speak()}
-          placeholder="Type anything… the face feels it"
-          className="h-11 flex-1 rounded-full border border-white/10 bg-black/40 px-4 text-white placeholder-white/30 outline-none focus:border-white/40"
-        />
+        <input id="amoji-robot-demo-speak" name="speech" autoComplete="off" aria-label="Type anything - the face feels it" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && speak()} placeholder="Type anything - the face feels it" className="h-11 flex-1 rounded-full border border-white/10 bg-black/40 px-4 text-white placeholder-white/30 outline-none focus:border-white/40" />
         <button type="button" onClick={speak} aria-label="Speak" className="h-11 rounded-full bg-[#7c6cff] px-5 text-sm font-semibold">➤</button>
       </div>
 
