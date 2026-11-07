@@ -138,14 +138,14 @@ export default function LegalGate() {
           <section>
             <h3 className="font-semibold text-white">{c.privacyTitle[lang]}</h3>
             <p className="mt-1">{c.privacyBody[lang]}</p>
-            <Link href="/privacy" className="mt-2 inline-block text-xs text-pink-200/90 underline-offset-4 hover:underline">
+            <Link href="/privacy" aria-label={c.privacyTitle[lang]} className="mt-2 inline-block text-xs text-pink-200/90 underline-offset-4 hover:underline">
               /privacy
             </Link>
           </section>
           <section>
             <h3 className="font-semibold text-white">{c.termsTitle[lang]}</h3>
             <p className="mt-1">{c.termsBody[lang]}</p>
-            <Link href="/terms" className="mt-2 inline-block text-xs text-pink-200/90 underline-offset-4 hover:underline">
+            <Link href="/terms" aria-label={c.termsTitle[lang]} className="mt-2 inline-block text-xs text-pink-200/90 underline-offset-4 hover:underline">
               /terms
             </Link>
           </section>
