@@ -9,11 +9,13 @@ describe('characterVoiceGender', () => {
       'a03-fumiriya',
       'a05-avatarsample-c',
       'a105-serizawa-aoi',
+      'a107-dm-office-casual',
       'a24-hairsample-male',
-      'a75-sorano',
+      'a77-sasha',
+      'a94-rita',
       'a98-ethan',
     ]);
-    expect(CHARACTERS.filter((c) => c.gender === 'female').length).toBe(45);
+    expect(CHARACTERS.filter((c) => c.gender === 'female').length).toBe(38);
     for (const c of CHARACTERS) {
       expect(characterVoiceGender(c.id)).toBe(c.gender);
     }
