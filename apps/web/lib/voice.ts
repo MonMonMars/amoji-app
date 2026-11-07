@@ -1676,6 +1676,9 @@ export function playVoiceGreeting(characterId: string, lang: Lang, voiceId: stri
  * `folder` may be `universal`. The speech job still carries the UI language.
  */
 export function previewLibraryClip(folder: ClipFolder, gender: VoiceClipGender, file: string, lang: Lang): void {
+  // Same mute gate as playVoiceGreeting / previewEdgeVoice: never cut speech or
+  // enqueue a clip while Mute All / Voice replies are off (EmotionClipRow taps).
+  if (!voiceOutputAllowed()) return;
   const path = clipLibraryFile(folder, gender, file);
   if (!path) return;
   stopSpeaking();
