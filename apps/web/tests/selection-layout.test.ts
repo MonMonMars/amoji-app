@@ -153,6 +153,17 @@ describe('selection layout', () => {
     expect(gateIdx).toBeLessThan(heroIdx);
   });
 
+  it('holds MuteButton until prefsReady (no DEFAULT_PREFS lang aria flash)', () => {
+    const board = read('../components/SelectionBoard.tsx');
+    expect(board).toContain('data-testid="selection-mute"');
+    expect(board).toContain('{prefsReady && (');
+    const muteIdx = board.indexOf('data-testid="selection-mute"');
+    const gateIdx = board.lastIndexOf('{prefsReady && (', muteIdx);
+    expect(gateIdx).toBeGreaterThan(-1);
+    expect(muteIdx).toBeGreaterThan(gateIdx);
+    expect(board).toContain('<MuteButton lang={lang}');
+  });
+
   it('holds chat SceneBackdrop until bootReady (no DEFAULT scene flash)', () => {
     const chat = read('../app/chat/page.tsx');
     expect(chat).toContain("style={{ background: bootReady ? background.css : '#0a0a0f' }}");
