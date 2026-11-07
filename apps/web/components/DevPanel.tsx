@@ -38,7 +38,12 @@ export default function DevPanel() {
   };
 
   return (
-    <details open className="pointer-events-auto fixed top-3 right-3 z-10 w-64 rounded-lg bg-black/70 p-3 font-mono text-xs text-neutral-200">
+    <details
+      open
+      role="region"
+      aria-label="dev tuning"
+      className="pointer-events-auto fixed top-3 right-3 z-10 w-64 rounded-lg bg-black/70 p-3 font-mono text-xs text-neutral-200"
+    >
       <summary className="cursor-pointer select-none text-neutral-400">dev tuning (persisted)</summary>
       <div className="mt-2 space-y-2">
         {SLIDERS.map((s) => (
@@ -55,6 +60,7 @@ export default function DevPanel() {
               max={s.max}
               step={s.step}
               value={cfg[s.key] as number}
+              aria-valuetext={`${Math.round((cfg[s.key] as number) * (s.step < 1 ? 100 : 1)) / (s.step < 1 ? 100 : 1)}${s.unit ?? ''}`}
               onChange={(e) => update(s.key, Number(e.target.value))}
               className="w-full accent-pink-500"
             />
