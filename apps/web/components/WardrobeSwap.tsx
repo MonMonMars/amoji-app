@@ -1,7 +1,7 @@
 'use client';
 // Head = who she is (name, face, voice). Body = the outfit. The head is
 // never rescaled to fit the clothes.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import HScrollRow from './HScrollRow';
 import { assetUrl } from '../lib/asset';
 import {
@@ -144,6 +144,33 @@ function WardrobeSwapLive({
   const view = useModularView();
   const active = activeWardrobe(characterId, stored);
   const [open, setOpen] = useState(false);
+  const wardrobeCloseRef = useRef<HTMLButtonElement>(null);
+  const wardrobeExpandRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  // Dismissible overlay: focus Close on open, restore prior/expand focus on
+  // close, Escape closes (SettingsSheet parity; unlike mandatory LegalGate).
+  useEffect(() => {
+    if (!open) return;
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    wardrobeCloseRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(false);
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => {
+      window.removeEventListener('keydown', onKey, true);
+      const prior = previousFocusRef.current;
+      // Expand trigger remounts when closed — defer + fall back to it.
+      requestAnimationFrame(() => {
+        if (prior?.isConnected) prior.focus();
+        else wardrobeExpandRef.current?.focus();
+      });
+    };
+  }, [open]);
 
   const pickHead = (headId: string) => {
     const head = demoHeadById(headId);
@@ -169,6 +196,7 @@ function WardrobeSwapLive({
     return (
       <button
         type="button"
+        ref={wardrobeExpandRef}
         data-testid="wardrobe-swap"
         aria-label={copy.expand}
         aria-expanded={false}
@@ -193,6 +221,7 @@ function WardrobeSwapLive({
       <header className="flex items-center justify-between gap-3 px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <h2 id="amoji-wardrobe-title" className="text-base font-semibold tracking-tight">{copy.title}</h2>
         <button
+          ref={wardrobeCloseRef}
           type="button"
           onClick={() => setOpen(false)}
           aria-label={copy.collapse}
