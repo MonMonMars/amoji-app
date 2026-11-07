@@ -20,7 +20,7 @@ import { activeWardrobe } from '../../lib/modular/catalog';
 import { useModularSelection } from '../../lib/modular/storage';
 import { resolveMiniGameCompanion } from '../../lib/minigames/companion';
 import type { ActionGame } from '../../lib/minigames/types';
-import { usePrefs, characterById, backgroundById, KID_PERSONA_GUARD, loadPrefs } from '../../lib/prefs';
+import { usePrefs, characterById, backgroundById, KID_PERSONA_GUARD, loadPrefs, t } from '../../lib/prefs';
 import { activeStoryScene, storyPersonaSuffix } from '../../lib/story-session';
 import { resolveStorySceneGlb } from '../../lib/stories';
 import { clearMemory, loadMemory, memorySummaryCount } from '../../lib/memory';
@@ -167,8 +167,8 @@ export default function Chat() {
             <button
               type="button"
               onClick={() => setSheetOpen(true)}
-              title={prefs.lang === 'yue' ? '設定' : 'Settings'}
-              aria-label={prefs.lang === 'yue' ? '設定' : 'Settings'}
+              title={t(prefs.lang, 'settings')}
+              aria-label={t(prefs.lang, 'settings')}
               data-dev="S1"
               className="ui-btn pointer-events-auto relative flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-black/30 text-base text-white/90 shadow-sm backdrop-blur-md hover:bg-black/50 sm:h-10 sm:w-10"
             >
