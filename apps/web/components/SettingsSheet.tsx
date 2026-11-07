@@ -49,14 +49,16 @@ import {
   type Memory, type MemoryType,
 } from '../lib/memory';
 
-function Toggle({ on, onClick, accent }: { on: boolean; onClick: () => void; accent: string }) {
+function Toggle({ on, onClick, accent, disabled = false }: { on: boolean; onClick: () => void; accent: string; disabled?: boolean }) {
   return (
     <button
       onClick={onClick}
       role="switch"
-      aria-checked={on}
-      className={`ui-btn relative h-7 w-12 rounded-full transition-colors ${on ? '' : 'bg-white/15'}`}
-      style={on ? { backgroundColor: accent } : undefined}
+      aria-checked={disabled ? undefined : on}
+      aria-busy={disabled || undefined}
+      disabled={disabled}
+      className={`ui-btn relative h-7 w-12 rounded-full transition-colors ${on ? '' : 'bg-white/15'} ${disabled ? 'opacity-0' : ''}`}
+      style={on && !disabled ? { backgroundColor: accent } : undefined}
     >
       <span
         className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${on ? 'left-[22px]' : 'left-0.5'}`}
@@ -257,6 +259,8 @@ export default function SettingsSheet({
   // prime the engine synchronously with a space. Volume stays at 1: a
   // cancelled volume-0 utterance mutes the line under test on Safari.
   const runVoiceTest = () => {
+    // Mute All: do not prime synth or run the chain (matches testVoiceChain gate).
+    if (masterMuted === true) return;
     try {
       const probe = new SpeechSynthesisUtterance(' ');
       // Volume 0 sticks on Safari after cancel() and mutes the line under test.
@@ -375,6 +379,7 @@ export default function SettingsSheet({
               </span>
               <Toggle
                 on={masterMuted === true}
+                disabled={masterMuted === null}
                 accent={accent}
                 onClick={() => { const next = masterMuted !== true; setMasterMutedState(next); setMasterMuted(next); }}
               />
@@ -530,7 +535,7 @@ export default function SettingsSheet({
               <span className={label}>🎙️ {t(lang, 'testVoice')}</span>
               <button
                 onClick={runVoiceTest}
-                disabled={voiceTesting}
+                disabled={voiceTesting || masterMuted === true}
                 className="ui-btn shrink-0 rounded-full px-3.5 py-1.5 text-xs text-white/90 disabled:opacity-40"
                 style={{ backgroundColor: `${accent}2e` }}
               >
