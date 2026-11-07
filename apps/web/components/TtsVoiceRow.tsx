@@ -35,14 +35,15 @@ export default function TtsVoiceRow({
     : selectTtsButtons(lang);
   const pinnedFemale = voicePickFor(lang, 'female');
   const pinnedMale = voicePickFor(lang, 'male');
+  // Exclusive: at most one pin per locale after saveVoicePick.
+  const pinnedId = pinnedFemale ?? pinnedMale;
   const castId = resolveEdgeVoice({
     lang,
     gender: companionGender,
     character: characterId,
     ignoreVoicePick: true,
   }).name;
-  const companionPinned = companionGender === 'female' ? pinnedFemale : pinnedMale;
-  const activeCompanionId = companionPinned ?? castId;
+  const activeId = pinnedId ?? castId;
 
   const onTap = (button: TtsButtonVoice) => {
     // Pin under the button's own gender slot (male pins stay male).
@@ -72,9 +73,7 @@ export default function TtsVoiceRow({
       <div className="max-h-[5.5rem] w-full overflow-y-auto overscroll-contain sm:max-h-[7.5rem]">
         <div className="flex w-full flex-wrap justify-center gap-1">
           {buttons.map((button, i) => {
-            const pinnedForGender = button.gender === 'female' ? pinnedFemale : pinnedMale;
-            const castMatch = button.gender === companionGender && button.id === castId && !companionPinned;
-            const selected = button.locale === lang && (button.id === pinnedForGender || castMatch || (button.gender === companionGender && button.id === activeCompanionId && !pinnedForGender));
+            const selected = button.locale === lang && button.id === activeId;
             const mark = devMark('V', i + 1);
             const numLabel = `#${button.n} ${button.label}`;
             return (

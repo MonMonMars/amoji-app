@@ -1,6 +1,6 @@
 // Per companion-gender Edge voice pins. A tap on the bake-off grid saves the
 // short name under the CURRENT companion's gender for that voice's language.
-// Opposite gender keeps its own pin (or the cast default).
+// Only one pin stays active per locale (tap clears the other gender).
 // After the cast gender re-audit, cross-gender neurals are refused: a female
 // companion only pins a female neural, male only male. Bumping the storage
 // key clears stale pre-audit pins that left many voices sounding wrong.
@@ -92,9 +92,8 @@ export function voicePickFor(locale: string, gender: VoiceGender): string | null
 export function saveVoicePick(locale: VoiceLocale, companionGender: VoiceGender, voiceId: string): VoicePickMap {
   const current = { ...hydrate() };
   if (!pinMatchesGender(voiceId, companionGender)) return current;
-  const slot = { ...current[locale] };
-  slot[companionGender] = voiceId;
-  current[locale] = slot;
+  // Exclusive single-select: one active Edge pin per locale (clear the other gender).
+  current[locale] = { [companionGender]: voiceId };
   persist(current);
   return current;
 }
