@@ -146,7 +146,7 @@ const langCardFrame = (active: boolean): { className: string; style: { boxShadow
 /** Settings and setup: the same portrait cards, in a centered row. */
 export function LangChips({ value, onChange }: { value: Lang; onChange: (l: Lang) => void }) {
   return (
-    <div className="mx-auto grid w-full max-w-lg grid-cols-4 items-center justify-center gap-2">
+    <div role="group" aria-label="Language" className="mx-auto grid w-full max-w-lg grid-cols-4 items-center justify-center gap-2">
       {LANGS.map((l) => {
         const active = value === l.id;
         const frame = langCardFrame(active);
@@ -154,6 +154,7 @@ export function LangChips({ value, onChange }: { value: Lang; onChange: (l: Lang
           <button
             key={l.id}
             type="button"
+            aria-label={l.native}
             aria-pressed={active}
             onClick={() => onChange(l.id)}
             className={frame.className}
