@@ -1,5 +1,10 @@
 'use client';
 // Login — just a name. Kept on-device; she can learn it into memory later.
+// r2026-11-08: both Continue and Skip now go to /gate (18+ + audio readiness)
+// instead of straight to /select. The gate is what makes the product's
+// adult-only promise explicit and catches the iPhone silent switch before the
+// user meets the chat room; /select keeps its own EntryGuard as a backstop for
+// deep links and old service-worker shells.
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import { loadProfile, saveProfile } from '../../lib/profile';
@@ -7,7 +12,17 @@ import { ensureUserNameFromProfile } from '../../lib/memory';
 import { t, usePrefs } from '../../lib/prefs';
 import { APP_NAME, APP_REVISION, APP_TAGLINE } from '../../lib/revision';
 import EarlyAudioUnlock from '../../components/EarlyAudioUnlock';
+import { hasPassedEntryGate } from '../../lib/entry-gate';
 import { primeAudioForChatEnter } from '../../lib/voice';
+
+/** Gate first; already-passed users keep the direct path to /select. */
+function afterLoginPath(): string {
+  try {
+    return hasPassedEntryGate() ? '/select' : '/gate';
+  } catch {
+    return '/gate';
+  }
+}
 
 export default function Login() {
   const router = useRouter();
@@ -25,7 +40,7 @@ export default function Login() {
     try { primeAudioForChatEnter(); } catch { /* ignore */ }
     saveProfile({ name });
     ensureUserNameFromProfile(name);
-    router.push('/select');
+    router.push(afterLoginPath());
   };
 
   const lang = prefs.lang;
@@ -72,7 +87,7 @@ export default function Login() {
           {t(lang, 'loginCta')}
         </button>
         <div className="mt-3 text-center">
-          <button type="button" onClick={() => { try { primeAudioForChatEnter(); } catch { /* ignore */ } router.push('/select'); }} disabled={!bootReady} aria-label={t(lang, 'loginSkip')} className="ui-btn rounded-full px-3 py-1 text-xs text-white/35 underline-offset-4 hover:underline disabled:pointer-events-none">
+          <button type="button" onClick={() => { try { primeAudioForChatEnter(); } catch { /* ignore */ } router.push(afterLoginPath()); }} disabled={!bootReady} aria-label={t(lang, 'loginSkip')} className="ui-btn rounded-full px-3 py-1 text-xs text-white/35 underline-offset-4 hover:underline disabled:pointer-events-none">
             {t(lang, 'loginSkip')}
           </button>
         </div>
