@@ -12,9 +12,33 @@
 // Hard rule: a source file whose name contains "marin" is NEVER copied
 // (CI copyright ban — see ASSET_MANIFEST.md). The Marin character uses
 // cast/fumiriya.vrm instead.
+//
+// SUPERSEDED (2026-11-08): this script maps the retired 29-character roster and
+// would re-create every non-CC0 binary the licensing purge deleted, straight
+// into a directory `.gitignore` now blocks. It only serves the legacy face-lab
+// cast; the live cast is generated from `want-roster.json` by
+// `scripts/generate-want-cast.mjs` and downloaded by `scripts/fetch-want-vrms.mjs`.
+// Running it now requires ALLOW_CAST_IMPORT=1 so it cannot happen by accident.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+if (process.env.ALLOW_CAST_IMPORT !== '1') {
+  console.error([
+    'Refusing to run: this script re-creates the non-CC0 cast binaries purged on',
+    '2026-11-08 for licensing reasons (kitagawa, kizuna, hana, nana, alicia, atlas,',
+    'vroid-male, zane, mei, elio, avatarsample-a, plus the five CC-BY VTubeMe',
+    'models). See apps/web/public/models/ASSET_MANIFEST.md.',
+    '',
+    'The live cast comes from want-roster.json:',
+    '  node scripts/generate-want-cast.mjs    # regenerate characters-want.ts',
+    '  node scripts/fetch-want-vrms.mjs       # download the want/ binaries',
+    '',
+    'If you genuinely need the legacy face-lab meshes back, get a licence review',
+    'first, then re-run with ALLOW_CAST_IMPORT=1.',
+  ].join('\n'));
+  process.exit(1);
+}
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DEST_MODELS = path.join(root, 'apps/web/public/models/cast');

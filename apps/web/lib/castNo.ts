@@ -1,12 +1,15 @@
 'use client';
 // AUTO-GENERATED from want-roster.json — keep in sync with CHARACTERS order in prefs.ts
 // releaseTag: free-library-want-2026-10-12
+//
+// Badge numbers are STABLE and deliberately not renumbered: a04 (4) and a05 (5)
+// were removed for licensing, so those two numbers are retired. Everything after
+// them keeps the number it already shipped with. Retired ids still resolve, so a
+// saved prefs/localStorage value cannot come back as "unknown character".
 export const CAST_NO = {
   'a01-shino': 1,
   'a02-shibu': 2,
   'a03-fumiriya': 3,
-  'a04-avatarsample-a': 4,
-  'a05-avatarsample-c': 5,
   'a10-agahomei-normal': 6,
   'a14-vivi': 7,
   'a16-vita': 8,
@@ -48,7 +51,12 @@ export const CAST_NO = {
   'a120-morikawa-yuki-summer-uniform': 44,
   'a121-nagano-mami-uniform': 45,
   'a122-shiratori-hikari-shifuku': 46,
+  'a04-avatarsample-a': 4, // retired — removed for licensing
+  'a05-avatarsample-c': 5, // retired — removed for licensing
 } as const;
+
+/** Ids that shipped before the 2026-11-08 licensing purge. `prefs` migrates them. */
+export const RETIRED_CAST_IDS: readonly string[] = ['a04-avatarsample-a', 'a05-avatarsample-c'];
 
 export type CastId = keyof typeof CAST_NO;
 

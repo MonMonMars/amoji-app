@@ -37,9 +37,11 @@ describe('full-cast cry archetypes (r2026-10-04.74)', () => {
   });
 
   it('the five archetypes genuinely sound different (en, first pick)', () => {
-    // r2026-10-05.118 survivors: marin playful, nova cheerful, kasumi gentle,
-    // onyx cool, ember fiery
-    const reps = ['a01-shino', 'a02-shibu', 'a03-fumiriya', 'a04-avatarsample-a', 'a05-avatarsample-c'];
+    // One pick per flavor. The want-roster cycles cheerful → playful → gentle →
+    // cool → fiery, so the first five ids cover all five banks. a04/a05 used to
+    // fill two of these slots but were removed for licensing (2026-11-08), and
+    // the legacy face-lab entries they left behind are not roster ids.
+    const reps = ['a01-shino', 'a02-shibu', 'a03-fumiriya', 'a10-agahomei-normal', 'a14-vivi'];
     const laughs = reps.map((id) => pickLaugh(id, 'en', 0));
     const ouches = reps.map((id) => pickOuch(id, 'en', 0));
     expect(new Set(laughs).size).toBe(FLAVORS.length);

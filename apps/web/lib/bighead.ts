@@ -7,8 +7,6 @@ const BIGHEAD_IDS: readonly string[] = [
   'a01-shino',
   'a02-shibu',
   'a03-fumiriya',
-  'a04-avatarsample-a',
-  'a05-avatarsample-c',
   'a10-agahomei-normal',
   'a103-rockredgradientjk',
   'a104-simplebrownsailorjk',

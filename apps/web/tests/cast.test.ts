@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BACKGROUNDS, CHARACTERS, characterById, backgroundById, backgroundLetter, DEFAULT_PREFS, KID_CHARACTER, WANT_CAST_RELEASE, type Lang,
 } from '../lib/prefs';
-import { CAST_NO, castNo } from '../lib/castNo';
+import { CAST_NO, RETIRED_CAST_IDS, castNo } from '../lib/castNo';
 
 const WANT_RELEASE =
   'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/';
@@ -14,11 +14,18 @@ const DROPPED_REALISTIC_IDS = [
   'a468-eric',
 ];
 
+/** Removed 2026-11-08 — VRoidPreset originals, not redistributable for a fee. */
+const REMOVED_LICENSING_IDS = ['a04-avatarsample-a', 'a05-avatarsample-c'];
+
 describe('cast roster', () => {
-  it('has 46 want-list characters with taglines in every language', () => {
-    expect(CHARACTERS.length).toBe(46);
+  it('has 44 want-list characters with taglines in every language', () => {
+    // 46 minus a04-avatarsample-a and a05-avatarsample-c, removed 2026-11-08:
+    // both are VRoidPreset originals whose pixiv terms forbid redistributing
+    // the sample VRM file in exchange for a fee.
+    expect(CHARACTERS.length).toBe(44);
     expect(WANT_CAST_RELEASE).toBe('free-library-want-2026-10-12');
     expect(CHARACTERS.map((c) => c.id)).not.toEqual(expect.arrayContaining(DROPPED_REALISTIC_IDS));
+    expect(CHARACTERS.map((c) => c.id)).not.toEqual(expect.arrayContaining(REMOVED_LICENSING_IDS));
     for (const c of CHARACTERS) {
       expect(c.image, c.id).toBe(`${WANT_RELEASE}${c.id}.png`);
       for (const l of ['en', 'yue', 'zh', 'ja'] as Lang[]) expect(c.tagline[l].length).toBeGreaterThan(0);
@@ -35,11 +42,33 @@ describe('cast roster', () => {
     expect(new Set(CHARACTERS.map((c) => c.model)).size).toBe(CHARACTERS.length);
   });
 
+  it('renamed sample-asset characters keep their ids and change only the display name', () => {
+    // The ids are localStorage pick keys and must never move; the display names
+    // were the problem ("HairSample", "Vtuber ... Sample" read like an
+    // un-swapped dev asset to anyone reviewing the store listing).
+    const RENAMED: [string, string][] = [
+      ['a23-hairsample-female', 'Nagi'],
+      ['a24-hairsample-male', 'Ren'],
+      ['a70-vtuber-aihina-sample', 'Aihina'],
+    ];
+    for (const [id, name] of RENAMED) {
+      const c = CHARACTERS.find((x) => x.id === id);
+      expect(c, id).toBeTruthy();
+      expect(c!.name).toBe(name);
+      // the model path still matches the unchanged id
+      expect(c!.model).toBe(`want/${id}.vrm`);
+      expect(c!.image).toBe(`${WANT_RELEASE}${id}.png`);
+    }
+    // and no shipped display name still advertises itself as a sample asset
+    for (const c of CHARACTERS) {
+      expect(c.name, c.id).not.toMatch(/hairsample|^vtuber\b|\bsample\b/i);
+    }
+  });
+
   it('male voice hints differ from female (A24, A77, A94, A98, A105, A107)', () => {
     const male = CHARACTERS.filter((c) => c.gender === 'male');
     expect(male.map((c) => c.id).sort()).toEqual([
       'a03-fumiriya',
-      'a05-avatarsample-c',
       'a105-serizawa-aoi',
       'a107-dm-office-casual',
       'a24-hairsample-male',
@@ -61,7 +90,7 @@ describe('cast roster', () => {
     expect(CHARACTERS.find((c) => c.id === 'a107-dm-office-casual')?.gender).toBe('male');
   });
 
-  it('every character has a stable number — unique, 1..46', () => {
+  it('every character has a stable number — unique, 1..46, with 4 and 5 retired', () => {
     const numbers = CHARACTERS.map((c) => castNo(c.id));
     for (const n of numbers) {
       expect(n).toBeGreaterThanOrEqual(1);
@@ -75,7 +104,15 @@ describe('cast roster', () => {
     expect(castNo('a459-chinesewarriormonk')).toBe(0);
     expect(castNo('a468-eric')).toBe(0);
     expect(new Set(numbers).size).toBe(CHARACTERS.length);
-    expect(Object.keys(CAST_NO).sort()).toEqual(CHARACTERS.map((c) => c.id).sort());
+    // 4 and 5 belonged to the two VRoidPreset characters removed for licensing.
+    // They stay reserved so the rest of the fan is not renumbered.
+    expect(numbers).not.toContain(4);
+    expect(numbers).not.toContain(5);
+    expect(castNo('a04-avatarsample-a')).toBe(4);
+    expect(castNo('a05-avatarsample-c')).toBe(5);
+    expect(Object.keys(CAST_NO).sort()).toEqual(
+      [...CHARACTERS.map((c) => c.id), ...RETIRED_CAST_IDS].sort(),
+    );
   });
 
   it('default is a01-shino; roster resolves by id', () => {

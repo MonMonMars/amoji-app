@@ -21,6 +21,10 @@ server/backend/data/
 # sample avatar stays local-only (copyright) — see ASSET_MANIFEST.md
 apps/web/public/models/*.vrm
 apps/web/public/models/want/*.vrm
+# The retired anime cast was purged for licensing (2026-11-08): only the CC0
+# models already tracked may live here. This makes re-committing a non-CC0 cast
+# binary impossible by accident.
+apps/web/public/models/cast/*.vrm
 tools/*.log
 tools/*.err
 

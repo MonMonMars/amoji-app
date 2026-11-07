@@ -7,7 +7,6 @@ describe('characterVoiceGender', () => {
     const males = CHARACTERS.filter((c) => c.gender === 'male').map((c) => c.id).sort();
     expect(males).toEqual([
       'a03-fumiriya',
-      'a05-avatarsample-c',
       'a105-serizawa-aoi',
       'a107-dm-office-casual',
       'a24-hairsample-male',
@@ -15,7 +14,7 @@ describe('characterVoiceGender', () => {
       'a94-rita',
       'a98-ethan',
     ]);
-    expect(CHARACTERS.filter((c) => c.gender === 'female').length).toBe(38);
+    expect(CHARACTERS.filter((c) => c.gender === 'female').length).toBe(37);
     for (const c of CHARACTERS) {
       expect(characterVoiceGender(c.id)).toBe(c.gender);
     }
