@@ -876,6 +876,7 @@ function VolumeSteps({
           <button
             key={step}
             type="button"
+            aria-label={`${label} ${step}%`}
             aria-pressed={value === step}
             data-dev={`W${markBase + i + 1}`}
             onClick={() => onPick(step)}
