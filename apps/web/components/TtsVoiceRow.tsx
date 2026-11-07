@@ -100,6 +100,7 @@ export default function TtsVoiceRow({
             type="button"
             disabled
             aria-disabled="true"
+            aria-label={t(lang, 'moreEnginesLater')}
             className="shrink-0 cursor-default rounded-full border border-dashed border-white/20 px-2 py-0.5 text-[10px] text-white/40"
           >
             {t(lang, 'moreEnginesLater')}
