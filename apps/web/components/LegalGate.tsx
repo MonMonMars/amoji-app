@@ -159,6 +159,7 @@ export default function LegalGate() {
             ref={acceptRef}
             type="button"
             data-testid="legal-accept"
+            aria-label={c.accept[lang]}
             onClick={() => acceptCurrentLegal()}
             className="ui-btn ui-btn-primary h-12 w-full rounded-full bg-white text-base font-semibold text-black shadow-[0_10px_40px_-12px_rgba(255,255,255,0.45)]"
           >
