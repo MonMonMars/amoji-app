@@ -1,10 +1,7 @@
 'use client';
 // /play used to be the chat room — it moved to /chat.
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import SoftLandChat from '../../components/SoftLandChat';
 
-export default function Play() {
-  const router = useRouter();
-  useEffect(() => { router.replace('/chat'); }, [router]);
-  return null;
+export default function PlayRedirect() {
+  return <SoftLandChat />;
 }
