@@ -41,10 +41,11 @@ describe('story mode catalog (t740)', () => {
 });
 
 describe('mode + story entry (t741)', () => {
-  it('login/setup land on select; standalone /mode is gone', () => {
+  it('login/setup/mode land on select; /mode is soft-land only', () => {
     expect(read('../app/login/page.tsx')).toContain("router.push('/select')");
     expect(read('../app/setup/page.tsx')).toContain("router.replace('/select')");
-    expect(fs.existsSync(path.resolve(here, '../app/mode/page.tsx'))).toBe(false);
+    expect(read('../app/mode/page.tsx')).toContain("router.replace('/select')");
+    expect(read('../app/mode/page.tsx')).toContain('ModeRedirect');
     expect(read('../app/story/page.tsx')).toContain("router.replace('/select')");
     expect(read('../app/story/page.tsx')).toContain('amoji.selectMode');
   });
