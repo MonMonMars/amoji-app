@@ -351,6 +351,7 @@ export default function SettingsSheet({
           <button
             type="button"
             onClick={() => { onClose(); router.push('/change'); }}
+            aria-label={t(lang, 'changeCta')}
             className="ui-btn group flex w-full items-center gap-3.5 rounded-2xl border p-3.5 text-left transition-all"
             style={{
               borderColor: `${accent}44`,
@@ -494,6 +495,7 @@ export default function SettingsSheet({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
+                  aria-label={t(lang, 'ttsProxySave')}
                   onClick={() => { setOpenAiKey(oaKeyDraft); setOpenAiEndpoint(oaEpDraft); setOaSaved(true); }}
                   className="ui-btn rounded-full px-3 py-1.5 text-xs text-white/90"
                   style={{ backgroundColor: `${accent}2e` }}
@@ -502,6 +504,7 @@ export default function SettingsSheet({
                 </button>
                 <button
                   type="button"
+                  aria-label={t(lang, 'testVoiceBtn')}
                   onClick={runOpenAiTest}
                   disabled={oaTesting}
                   className="ui-btn rounded-full px-3 py-1.5 text-xs text-white/80 disabled:opacity-50"
@@ -526,6 +529,7 @@ export default function SettingsSheet({
                 <div className="flex shrink-0 gap-1.5">
                   <button
                     type="button"
+                    aria-label={t(lang, 'ttsProxySave')}
                     onClick={() => {
                       const v = proxyDraft.trim();
                       setTtsProxy(v ? v.replace(/\/+$/, '') : null);
@@ -538,6 +542,7 @@ export default function SettingsSheet({
                   </button>
                   <button
                     type="button"
+                    aria-label={t(lang, 'ttsProxyClear')}
                     onClick={() => { setProxyDraft(''); setTtsProxy(null); setProxySaved(true); }}
                     className="ui-btn rounded-full px-3 py-1.5 text-xs text-white/60"
                     style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
@@ -546,6 +551,7 @@ export default function SettingsSheet({
                   </button>
                   <button
                     type="button"
+                    aria-label={t(lang, 'testVoiceBtn')}
                     onClick={runProxyTest}
                     disabled={proxyTesting}
                     className="ui-btn rounded-full px-3 py-1.5 text-xs text-white/80 disabled:opacity-50"
@@ -581,6 +587,7 @@ export default function SettingsSheet({
               <span className={label}>🎙️ {t(lang, 'testVoice')}</span>
               <button
                 type="button"
+                aria-label={t(lang, 'testVoiceBtn')}
                 onClick={runVoiceTest}
                 disabled={voiceTesting || masterMuted === true}
                 className="ui-btn shrink-0 rounded-full px-3.5 py-1.5 text-xs text-white/90 disabled:opacity-40"
@@ -830,6 +837,7 @@ export default function SettingsSheet({
                   <button
                     type="button"
                     key={g}
+                    aria-pressed={gender === g}
                     onClick={() => setGenderPick(g)}
                     className={`ui-btn h-8 flex-1 rounded-full px-2 text-xs ${
                       gender === g
