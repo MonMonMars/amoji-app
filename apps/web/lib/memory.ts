@@ -766,6 +766,39 @@ export function greetingHints(info: VisitInfo): Record<string, number> | undefin
   return moodToHints(info.diaryWeekAgoMood, info.diaryWeekAgoMoodIntensity) ?? moodToHints(info.lastMood, info.lastMoodIntensity);
 }
 
+/** Sync login/profile display name into memory so greetings + LLM can use it. Profile wins when set. */
+export function ensureUserNameFromProfile(profileName?: string): string | undefined {
+  let name = (profileName ?? '').trim();
+  if (!name) {
+    try {
+      // lazy read — avoid hard import cycle with profile.ts in some bundles
+      const raw = localStorage.getItem('amoji.profile.v1');
+      if (raw) {
+        const p = JSON.parse(raw) as { name?: string };
+        if (p && typeof p.name === 'string') name = p.name.trim();
+      }
+    } catch { /* ignore */ }
+  }
+  const m = loadMemory();
+  if (name) {
+    if (m.userName !== name) {
+      m.userName = name;
+      save(m);
+    }
+    return name;
+  }
+  return m.userName;
+}
+
+/** Short enter-chat hello that voices the user's name (mute still honored via speak()). */
+export function buildEnterNameGreeting(lang: string, userName?: string): string | undefined {
+  if (!userName) return undefined;
+  const L = ['yue', 'zh', 'ja', 'en'].includes(lang) ? lang : 'en';
+  const h = new Date().getHours();
+  const bang = L === 'en' ? '!' : '！';
+  return HELLO[L](h, userName) + bang;
+}
+
 // ---------- extraction (local regex, runs on the user's text) ----------
 
 const NAME_RES: RegExp[] = [

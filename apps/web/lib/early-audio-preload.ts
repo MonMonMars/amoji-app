@@ -1,5 +1,5 @@
 'use client';
-// Silent early warm of the chat audio stack from /select|/mode before /chat.
+// Silent early warm of the chat audio stack from /select before /chat.
 // Prefetches critical CLIP um / laugh / poke bytes + Silero VAD CDN scripts,
 // creates a (possibly suspended) AudioContext, and DNS-preconnects Edge TTS.
 // Does NOT play enter/cheer SFX — OPEN_CHEER_MS / THINKING_SOUND_DELAY_MS stay
@@ -116,7 +116,7 @@ export function earlyAudioPreloadStarted(): boolean {
   return started;
 }
 
-/** Idempotent. Safe to call from /select|/mode mount and again on Start. */
+/** Idempotent. Safe to call from /select mount and again on Start. */
 export function runEarlyAudioPreload(opts?: {
   lang?: string;
   gender?: VoiceClipGender;

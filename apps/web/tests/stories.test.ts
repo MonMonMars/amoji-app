@@ -41,39 +41,44 @@ describe('story mode catalog (t740)', () => {
 });
 
 describe('mode + story entry (t741)', () => {
-  it('login lands on mode; chat and story routes exist', () => {
-    expect(read('../app/login/page.tsx')).toContain("router.push('/mode')");
-    expect(read('../app/setup/page.tsx')).toContain("router.replace('/mode')");
-    const mode = read('../app/mode/page.tsx');
-    expect(mode).toContain('data-testid="mode-chat"');
-    expect(mode).toContain('data-testid="mode-story"');
-    expect(mode).toContain("router.push('/select')");
-    expect(mode).toContain("router.push('/story')");
-    expect(read('../app/story/page.tsx')).toContain('data-testid="story-start"');
-    expect(read('../app/story/page.tsx')).toContain('saveStorySession');
+  it('login/setup land on select; standalone /mode is gone', () => {
+    expect(read('../app/login/page.tsx')).toContain("router.push('/select')");
+    expect(read('../app/setup/page.tsx')).toContain("router.replace('/select')");
+    expect(fs.existsSync(path.resolve(here, '../app/mode/page.tsx'))).toBe(false);
+    expect(read('../app/story/page.tsx')).toContain("router.replace('/select')");
+    expect(read('../app/story/page.tsx')).toContain('amoji.selectMode');
   });
 
-  it('chat prepends the story beat and select clears the session', () => {
+  it('chat prepends the story beat; select clears session; mode chips stay in-place', () => {
     expect(read('../app/chat/page.tsx')).toContain('storyPersonaSuffix');
     const board = read('../components/SelectionBoard.tsx');
     expect(board).toContain('clearStorySession');
-    // Mode chips moved to SelectTopBars (TOP of /select); old chat-mode-label retired.
+    expect(board).toContain('StorySetupPanel');
+    expect(board).toContain('boardMode');
+    expect(board).toContain('castGender');
     const topBars = read('../components/SelectTopBars.tsx');
     expect(topBars).toContain('clearStorySession');
     expect(topBars).toContain('select-mode-chat');
     expect(topBars).toContain('select-mode-story');
     expect(topBars).toContain('select-top-bars');
+    expect(topBars).not.toContain("router.push('/story')");
+    expect(topBars).not.toContain("router.push('/mode')");
+    expect(topBars).toContain('onBoardMode');
+    expect(topBars).toContain('select-cast-gender-all');
+    expect(topBars).toContain('CastGenderFilter');
   });
 });
 
 describe('story pack picker UI', () => {
-  it('lists every pack chip and a surprise control on /story', () => {
-    const page = read('../app/story/page.tsx');
+  it('lists every pack chip and a surprise control on StorySetupPanel', () => {
+    const page = read('../components/StorySetupPanel.tsx');
     expect(page).toContain('story-pack-random');
     expect(page).toContain('STORY_SCENES.map');
     expect(page).toContain('story-pack-${s.id}');
     expect(page).toContain('rollStory');
     expect(page).toMatch(/sceneId:\s*packId/);
+    expect(page).toContain('data-testid="story-start"');
+    expect(page).toContain('saveStorySession');
   });
 });
 

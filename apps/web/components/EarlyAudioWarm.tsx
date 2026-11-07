@@ -1,5 +1,5 @@
 'use client';
-// Mount on /select and /mode so chat SFX + VAD CDN warm before /chat.
+// Mount on /select (and /change) so chat SFX + VAD CDN warm before /chat.
 // Silent: never plays enter/cheer. Start still calls primeAudioForChatEnter.
 
 import { useEffect } from 'react';

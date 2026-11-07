@@ -1290,7 +1290,7 @@ export function primeAudioForChatEnter(): void {
   unlockAudio(true);
   primeSynthInGesture();
   try { resumeSfxContext(); } catch { /* ignore */ }
-  // Reinforce early warm from /select|/mode (idempotent; still no cheer SFX).
+  // Reinforce early warm from /select (idempotent; still no cheer SFX).
   void runEarlyAudioPreload();
 }
 

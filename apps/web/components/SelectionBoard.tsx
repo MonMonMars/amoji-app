@@ -14,7 +14,8 @@ import EmotionClipRow from './EmotionClipRow';
 import MuteButton from './MuteButton';
 import EarlyAudioWarm from './EarlyAudioWarm';
 import TtsVoiceRow from './TtsVoiceRow';
-import SelectTopBars from './SelectTopBars';
+import SelectTopBars, { type BoardMode, type CastGenderFilter } from './SelectTopBars';
+import StorySetupPanel from './StorySetupPanel';
 import { LangCardFace } from './selectors';
 import { assetUrl } from '../lib/asset';
 import { bigheadPath } from '../lib/bighead';
@@ -36,6 +37,16 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   const [prefs, setPrefs, prefsReady] = usePrefs();
   const [draft, setDraft] = useState<Partial<Prefs> | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const [boardMode, setBoardMode] = useState<BoardMode>(() => {
+    try {
+      if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('amoji.selectMode') === 'story') {
+        sessionStorage.removeItem('amoji.selectMode');
+        return 'story';
+      }
+    } catch { /* ignore */ }
+    return 'chat';
+  });
+  const [castGender, setCastGender] = useState<CastGenderFilter>('all');
   const live: Prefs = mode === 'change' ? { ...prefs, ...draft } : prefs;
 
   const character = characterById(live.character);
@@ -45,7 +56,11 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
 
 
   const roster = selectionCast(CHARACTERS);
-  const cast = prefs.kidMode ? roster.filter((c) => c.kidSafe) : roster;
+  const cast = roster.filter((c) => {
+    if (prefs.kidMode && !c.kidSafe) return false;
+    if (castGender !== 'all' && c.gender !== castGender) return false;
+    return true;
+  });
   const scenes = prefs.kidMode ? BACKGROUNDS.filter((b) => b.kidSafe) : BACKGROUNDS;
 
   const pick = (patch: Partial<Prefs>) => {
@@ -60,6 +75,18 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
       if (!backgroundById(live.background).kidSafe) patch.background = KID_BACKGROUND;
     }
     pick(patch);
+  };
+
+  const applyCastGender = (next: CastGenderFilter) => {
+    setCastGender(next);
+    const nextCast = roster.filter((c) => {
+      if (prefs.kidMode && !c.kidSafe) return false;
+      if (next !== 'all' && c.gender !== next) return false;
+      return true;
+    });
+    if (nextCast.length && !nextCast.some((c) => c.id === live.character)) {
+      pick({ character: nextCast[0]!.id });
+    }
   };
 
   const confirm = () => {
@@ -114,8 +141,16 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
           accent={character.accent}
           kidMode={!!live.kidMode}
           onKidMode={setKidMode}
+          boardMode={boardMode}
+          onBoardMode={setBoardMode}
+          castGender={castGender}
+          onCastGender={applyCastGender}
           prefsReady={prefsReady}
         />
+        {boardMode === 'story' ? (
+          <StorySetupPanel />
+        ) : (
+        <>
         <section className="flex min-h-0 w-full max-w-7xl flex-1 flex-col items-center justify-center px-3 pt-1">
           <div className="w-full shrink-0 px-1 text-center">
             <p className="truncate text-lg font-bold drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)] sm:text-xl">
@@ -136,7 +171,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
             </h2>
           </div>
 
-          <div className="relative mx-auto mt-1 min-h-0 w-full flex-1">
+          <div className="relative mx-auto mt-1 min-h-[11rem] w-full flex-1 sm:min-h-[14rem]">
             <ArcFan
               ariaLabel="characters"
               size="portrait"
@@ -188,7 +223,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
 
         </section>
 
-        <div className="flex max-h-[52dvh] w-full shrink-0 flex-col items-center overflow-y-auto overscroll-contain bg-gradient-to-t from-black/75 via-black/40 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:max-h-[48dvh] sm:px-6">
+        <div className="flex max-h-[52dvh] w-full shrink-0 flex-col items-center overflow-y-auto overscroll-contain bg-gradient-to-t from-black/75 via-black/40 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:max-h-[48dvh] sm:px-6 [@media(orientation:landscape)_and_(max-height:500px)]:max-h-[34dvh]">
           <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col items-center gap-2">
             <section className="pointer-events-auto w-full min-w-0" style={{ '--d': '70ms' } as CSSProperties}>
               <h2 className="mb-1 text-center text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
@@ -286,6 +321,8 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
             </button>
           </div>
         </div>
+        </>
+        )}
       </div>
     </main>
   );
