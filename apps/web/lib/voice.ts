@@ -92,8 +92,8 @@ import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText
 import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
 export { speechRemainder };
 import { edgeCastVoice } from './edge-cast';
-import { speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice } from './edge-tts';
-import { stopGtts } from './gtts';
+import { speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead } from './edge-tts';
+import { stopGtts, speakGtts } from './gtts';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
 import { formatVoiceChain, freeVoiceHops } from './tts-chain';
 import { startThinkingSound, stopThinkingSound } from './thinking-sound';
@@ -1405,7 +1405,9 @@ function performSpeak(
   // (tier 'attempt'), so a silent device answers "was speak() called?"
   // independently of "did sound start?" (the start callbacks below).
   const useOpenAi = openAiVoiceReady();
-  const edgeOn = neuralEnabled() && typeof WebSocket !== 'undefined';
+  // Skip the neural tier entirely while its endpoint is known to be refusing
+  // us, so a dead socket does not delay every line before the HTTP tier speaks.
+  const edgeOn = neuralEnabled() && typeof WebSocket !== 'undefined' && !edgeEndpointsDead();
   const chain = formatVoiceChain(
     freeVoiceHops(lang, { cantoNano: cantoNanoAvailable(), edge: edgeOn }),
     useOpenAi ? 'openai' : null,
@@ -1461,12 +1463,42 @@ function performSpeak(
   };
   const runFreeChain = (): void => {
     const hops = freeVoiceHops(lang, { cantoNano: cantoNanoAvailable(), edge: edgeOn });
+    const np = emotionProsody(emotion, value);
     const runAt = (index: number): void => {
       const hop = hops[index];
       if (!hop) { settle(); return; }
       const next = (): void => runAt(index + 1);
       if (hop === 'synth') {
         if (!runSynth(settle)) next();
+        return;
+      }
+      if (hop === 'gtts') {
+        // Plain-HTTPS MP3 tier. Real audio via <audio>, so the iOS hardware
+        // silent switch and a blocked Edge socket both stop mattering.
+        let tier: Promise<void>;
+        try {
+          tier = speakGtts(text, {
+            lang,
+            rate: clamp(1 + np.rate * 0.12, 0.88, 1.15),
+            lead: tic?.text,
+            onPlaying: () => {
+              onHeard();
+              markVoiceStarted();
+              reportVoiceStatus('gtts', true, 'google-tts playing');
+            },
+          });
+        } catch (err) {
+          tier = Promise.reject(err instanceof Error ? err : new Error(String(err)));
+        }
+        void tier.then(() => {
+          reportVoiceStatus('gtts', true, 'google-tts finished');
+          settle();
+        }).catch((err: unknown) => {
+          if ((err as Error | undefined)?.message === 'canceled') { settle(); return; }
+          reportVoiceStatus('gtts', false, (err as Error | undefined)?.message ?? 'google-tts failed');
+          stopGtts();
+          next();
+        });
         return;
       }
       if (hop === 'canto-nano') {
@@ -1481,7 +1513,6 @@ function performSpeak(
         });
         return;
       }
-      const np = emotionProsody(emotion, value);
       const exprBoost = emotion === 'neutral' ? 1 : 1.12;
       let tier1: Promise<void>;
       try {
@@ -1680,8 +1711,25 @@ export function playVoiceGreeting(characterId: string, lang: Lang, voiceId: stri
     if (edgePlaying) return;
     if (session) endLipSync();
     reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? `greeting failed ${voiceId}`);
-    // Mute-aware browser fallback when Edge socket/proxy is blocked.
-    runSynthAudition('greeting fallback');
+    // Edge answers 403 for every client now, so this is the normal path, not
+    // an edge case. The old fallback re-entered runSynthAudition, which is a
+    // no-op once synthStarted is set — so on a phone whose silent switch mutes
+    // speechSynthesis the greeting was simply silent forever. Take the HTTP
+    // MP3 tier instead, and halt the in-gesture synth audition if it wins so
+    // the two never talk over each other.
+    void speakGtts(text, {
+      lang,
+      onPlaying: () => {
+        try { haltSynthQueue(); } catch { /* ignore */ }
+        onStart();
+        reportVoiceStatus('gtts', true, `greeting gtts ${voiceId}`);
+      },
+    }).then(() => {
+      if (session) finishLipSync(session);
+    }).catch((e: unknown) => {
+      if ((e as Error | undefined)?.message === 'canceled') return;
+      reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'greeting gtts failed');
+    });
   });
 }
 
@@ -1877,7 +1925,19 @@ export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
     if ((err as Error | undefined)?.message === 'canceled') return;
     if (edgePlaying) return;
     reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'preview edge failed');
-    return runSynthAudition('preview fallback');
+    // Edge 403s for every client, so fall through to the HTTP MP3 tier rather
+    // than re-entering the already-consumed synth audition.
+    return speakGtts(text, {
+      lang: locale,
+      onPlaying: () => {
+        try { haltSynthQueue(); } catch { /* ignore */ }
+        markVoiceStarted();
+        reportVoiceStatus('gtts', true, `preview gtts ${voiceId}`);
+      },
+    }).catch((e: unknown) => {
+      if ((e as Error | undefined)?.message === 'canceled') return;
+      reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'preview gtts failed');
+    });
   });
 }
 
@@ -2021,6 +2081,25 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
           if ((err as Error | undefined)?.message !== 'canceled') {
             stopEdge();
             push('edge', false, (err as Error | undefined)?.message ?? 'edge-tts failed');
+          }
+        }
+        continue;
+      }
+      if (hop === 'gtts') {
+        try {
+          await withTimeout(
+            speakGtts(line, {
+              lang,
+              onPlaying: () => push('gtts', true, 'google-tts playing'),
+            }),
+            15_000,
+            'google-tts timeout',
+          );
+          push('gtts', true, 'google-tts played');
+        } catch (err) {
+          if ((err as Error | undefined)?.message !== 'canceled') {
+            stopGtts();
+            push('gtts', false, (err as Error | undefined)?.message ?? 'google-tts failed');
           }
         }
         continue;

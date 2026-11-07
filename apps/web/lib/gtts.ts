@@ -27,7 +27,10 @@ import { followAudioElement } from './speech';
 
 /** Amoji lang → Google TTS locale */
 const LANG_MAP: Record<Lang, string> = {
-  yue: 'zh-HK',
+  // Google Translate's TTS accepts `yue` and renders actual Cantonese. `zh-HK`
+  // also returns audio but is the Mandarin Hong Kong voice, which mispronounces
+  // the colloquial Cantonese lines this app speaks.
+  yue: 'yue',
   zh: 'zh-CN',
   ja: 'ja-JP',
   en: 'en-US',

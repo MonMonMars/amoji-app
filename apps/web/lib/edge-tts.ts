@@ -506,21 +506,69 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
  * r131: transports are (1) the configured HTTP proxy when set, else
  * (2) the direct readaloud WebSocket.
  */
+
+// ---- endpoint circuit breaker ---------------------------------------------
+// Microsoft's readaloud endpoint now rejects the published client token
+// outright: verified from Node, the socket answers 401 without the token and
+// 403 with it, with or without an Edge UA and the extension Origin. So this is
+// not a browser-Origin restriction and a proxy built on the same token 403s
+// too. After a few consecutive failures, stop paying for the round trip on
+// every line and let the HTTP MP3 tier speak immediately.
+const EDGE_FAILURE_LIMIT = 2;
+/** How long a tripped breaker stays open before the endpoint is retried. */
+const EDGE_COOLDOWN_MS = 5 * 60_000;
+let edgeFailures = 0;
+let edgeDeadUntil = 0;
+
+function noteEdgeFailure(): void {
+  edgeFailures += 1;
+  if (edgeFailures >= EDGE_FAILURE_LIMIT) edgeDeadUntil = Date.now() + EDGE_COOLDOWN_MS;
+}
+
+/** True while the breaker is open — caller should go straight to the next tier. */
+export function edgeEndpointsDead(): boolean {
+  if (edgeDeadUntil && Date.now() >= edgeDeadUntil) {
+    // Cooldown elapsed: try the endpoint again.
+    edgeDeadUntil = 0;
+    edgeFailures = 0;
+  }
+  return edgeDeadUntil > 0;
+}
+
+/** A successful play, or the user toggling neural voice, clears the breaker. */
+export function resetEdgeHealth(): void {
+  edgeFailures = 0;
+  edgeDeadUntil = 0;
+}
+
 export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
   stopEdge();
+  if (edgeEndpointsDead()) {
+    return Promise.reject(new Error('edge-tts endpoint blocked (recent 403)'));
+  }
   const ssml = buildEdgeSsml(text, opts);
   const proxy = getTtsProxy();
   const run = (markup: string) =>
     proxy ? speakEdgeViaProxy(markup, proxy, opts) : speakEdgeViaSocket(markup, opts);
-  return run(ssml).catch((err: unknown) => {
-    const msg = (err as Error | undefined)?.message ?? '';
-    if (msg === 'canceled' || opts.forcePlain) return Promise.reject(err);
-    // Styled utterance failed → one plain retry so non-Yue / male voices still speak
-    // when express-as is rejected. Yue female often succeeds on the styled first try.
-    stopEdge();
-    const plain = buildEdgeSsml(text, { ...opts, forcePlain: true });
-    return run(plain);
-  });
+  return run(ssml).then(
+    (v) => {
+      edgeFailures = 0;
+      return v;
+    },
+    (err: unknown) => {
+      const msg = (err as Error | undefined)?.message ?? '';
+      // A real transport failure (not a user cut) means the endpoint refused us.
+      // Microsoft now answers 403 to the published client token for every
+      // client, so retrying this tier on every single line just delays speech.
+      if (msg !== 'canceled') noteEdgeFailure();
+      if (msg === 'canceled' || opts.forcePlain) return Promise.reject(err);
+      // Styled utterance failed → one plain retry so non-Yue / male voices still speak
+      // when express-as is rejected. Yue female often succeeds on the styled first try.
+      stopEdge();
+      const plain = buildEdgeSsml(text, { ...opts, forcePlain: true });
+      return run(plain);
+    },
+  );
 }
 
 // Shared tail: hand a finished mp3 blob to an <audio> element. The
