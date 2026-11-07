@@ -146,8 +146,6 @@ export type StrKey =
   | 'datesTitle' | 'datesEmpty' | 'promisesTitle' | 'promisesEmpty'
   // kid mode (r2026-10-03.03)
   | 'settingsMode' | 'kidMode' | 'kidModeHint'
-  // 3D fallback notices (WebGL missing / model failed to load)
-  | 'fallbackWebgl' | 'fallbackAsset'
   // brain routing (r2026-10-03.05)
   | 'brainTitle' | 'brainAuto' | 'brainAutoHint' | 'brainKeyPlaceholder' | 'brainNoKey'
   // voice self-test + diagnostics (r2026-10-04.75)
@@ -160,7 +158,11 @@ export type StrKey =
   // companion card (.aigf) export/import (r2026-10-05.122)
   | 'companionFile' | 'exportCompanion' | 'importCompanion' | 'companionFileBad'
   // no-audio watchdog tap-to-replay chip (r2026-10-05.119)
-  | 'replayHint';
+  | 'replayHint'
+  // 3D fallback notices (WebGL missing / model failed to load).
+  // Appended at the tail on purpose: #234 and #238 also insert into this
+  // union, so keeping this block away from theirs avoids a merge conflict.
+  | 'fallbackWebgl' | 'fallbackAsset';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   tagline: {
@@ -329,18 +331,6 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: '只保留健康向上的角色和明亮场景',
     ja: '健全なキャラと明るい場所だけ',
   },
-  fallbackWebgl: {
-    en: 'WebGL is unavailable in this browser — showing the calm view. Chat still works.',
-    yue: '你嘅瀏覽器用唔到 WebGL — 暫時顯示平靜畫面，傾偈照樣得。',
-    zh: '这个浏览器无法使用 WebGL — 先显示平静画面，聊天仍可正常使用。',
-    ja: 'このブラウザは WebGL が使えません — 落ち着いた表示にしています。チャットは使えます。',
-  },
-  fallbackAsset: {
-    en: 'The 3D model could not load — showing a placeholder. Chat still works.',
-    yue: '3D 模型載入唔到 — 暫時顯示佔位圖，傾偈照樣得。',
-    zh: '3D 模型无法加载 — 先显示占位图，聊天仍可正常使用。',
-    ja: '3D モデルを読み込めません — 代わりにプレースホルダーを表示しています。チャットは使えます。',
-  },
   brainTitle: { en: 'AI brain', yue: 'AI 大腦', zh: 'AI 大脑', ja: 'AIの頭脳' },
   brainAuto: { en: 'Auto ✦', yue: '自動 ✦', zh: '自动 ✦', ja: '自動 ✦' },
   brainAutoHint: {
@@ -416,6 +406,18 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   },
   ttsProxyClear: {
     en: 'Clear', yue: '清除', zh: '清除', ja: 'クリア',
+  },
+  fallbackWebgl: {
+    en: 'WebGL is unavailable in this browser — showing the calm view. Chat still works.',
+    yue: '你嘅瀏覽器用唔到 WebGL — 暫時顯示平靜畫面，傾偈照樣得。',
+    zh: '这个浏览器无法使用 WebGL — 先显示平静画面，聊天仍可正常使用。',
+    ja: 'このブラウザは WebGL が使えません — 落ち着いた表示にしています。チャットは使えます。',
+  },
+  fallbackAsset: {
+    en: 'The 3D model could not load — showing a placeholder. Chat still works.',
+    yue: '3D 模型載入唔到 — 暫時顯示佔位圖，傾偈照樣得。',
+    zh: '3D 模型无法加载 — 先显示占位图，聊天仍可正常使用。',
+    ja: '3D モデルを読み込めません — 代わりにプレースホルダーを表示しています。チャットは使えます。',
   },
 };
 
