@@ -17,8 +17,8 @@ describe('SoftLand glow + DevPanel summary residual a11y', () => {
 
   it('names the DevPanel details summary toggle', () => {
     const panel = read('components/DevPanel.tsx');
-    expect(panel).toContain('aria-label="Toggle dev tuning"');
+    expect(panel).toContain('aria-label={copy.toggle}');
     expect(panel).toContain('role="region"');
-    expect(panel).toContain('aria-label="dev tuning"');
+    expect(panel).toContain('aria-label={copy.region}');
   });
 });
