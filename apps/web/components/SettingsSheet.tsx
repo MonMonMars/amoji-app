@@ -617,6 +617,7 @@ export default function SettingsSheet({
               <div className="flex shrink-0 gap-2">
                 <button
                   type="button"
+                  aria-label={t(lang, 'memoryExport')}
                   onClick={() => void copyAll()}
                   className="ui-btn rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 hover:bg-white/20"
                 >
@@ -624,6 +625,7 @@ export default function SettingsSheet({
                 </button>
                 <button
                   type="button"
+                  aria-label={t(lang, 'forgetBtn')}
                   onClick={forgetAll}
                   className="ui-btn rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 hover:bg-white/20"
                 >
@@ -787,6 +789,7 @@ export default function SettingsSheet({
               <div className="flex shrink-0 gap-1.5">
                 <button
                   type="button"
+                  aria-label={t(lang, 'exportCompanion')}
                   onClick={() => downloadCompanionFile(APP_REVISION)}
                   className="ui-btn rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 hover:bg-white/20"
                 >
@@ -797,6 +800,7 @@ export default function SettingsSheet({
                   <input
                     type="file"
                     accept=".json,application/json"
+                    aria-label={t(lang, 'importCompanion')}
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
@@ -855,7 +859,7 @@ export default function SettingsSheet({
           </Section>
 
           <Section title={`❓ ${t(lang, 'settingsHelp')}`}>
-            <button type="button" onClick={tutor} className={`ui-btn ${row} w-full text-left hover:bg-white/10`}>
+            <button type="button" onClick={tutor} aria-label={t(lang, 'tutorBtn')} className={`ui-btn ${row} w-full text-left hover:bg-white/10`}>
               <span className={label}>❓ {t(lang, 'tutorBtn')}</span>
               <span className="text-white/30">→</span>
             </button>
