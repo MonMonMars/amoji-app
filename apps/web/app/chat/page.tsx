@@ -107,13 +107,13 @@ export default function Chat() {
   return (
     <main
       className={`${leaving ? 'fx-select-out' : 'fx-select-in'} relative h-dvh w-screen overflow-hidden text-white`}
-      style={{ background: background.css }}
+      style={{ background: bootReady ? background.css : '#0a0a0f' }}
     >
       <div
         aria-hidden
         className={`pointer-events-none absolute inset-0 z-30 ${leaving ? 'fx-route-veil-out' : 'fx-route-veil-in'}`}
       />
-      <SceneBackdrop background={background} />
+      {bootReady && <SceneBackdrop background={background} />}
       {bootReady && (
         <CompanionCanvas
           accent={canvasCharacter.accent}
