@@ -121,7 +121,7 @@ export const LANGS: LangDef[] = [
 
 export type StrKey =
   | 'chooseCharacter' | 'chooseBackground' | 'chooseLanguage' | 'chooseVoice'
-  | 'voiceShowAll' | 'voiceThisLanguage' | 'moreEnginesLater' | 'previewReactions' | 'previewUniversal'
+  | 'voiceShowAll' | 'voiceThisLanguage' | 'previewReactions' | 'previewUniversal'
   | 'startChat' | 'back' | 'settings' | 'sayHi' | 'typing'
   | 'bgVoid' | 'bgAurora' | 'bgEmber' | 'bgSakura' | 'bgAbyss' | 'bgRain' | 'bgSunset' | 'bgMeadow'
   | 'bgCloudsea' | 'bgNeon' | 'bgSnowmoon' | 'bgGalaxy'
@@ -182,7 +182,6 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   chooseVoice: { en: 'Voice', yue: '聲線', zh: '声音', ja: '声' },
   voiceShowAll: { en: 'All', yue: '全部', zh: '全部', ja: '全部' },
   voiceThisLanguage: { en: 'This language', yue: '呢種語言', zh: '这个语言', ja: 'この言語' },
-  moreEnginesLater: { en: 'More engines later', yue: '更多引擎稍後', zh: '更多引擎稍后', ja: 'ほかのエンジンはあとで' },
   // Says why a language has only a button or two, instead of leaving the user
   // to wonder where the rest went.
   voiceOnlyOneAvailable: {

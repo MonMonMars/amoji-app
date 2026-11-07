@@ -1859,7 +1859,7 @@ export function playVoiceGreeting(
 }
 
 export function previewLibraryClip(folder: ClipFolder, gender: VoiceClipGender, file: string, lang: Lang): void {
-  // Same mute gate as playVoiceGreeting / previewEdgeVoice: never cut speech or
+  // Same mute gate as playVoiceGreeting / previewVoiceChoice: never cut speech or
   // enqueue a clip while Mute All / Voice replies are off (EmotionClipRow taps).
   if (!voiceOutputAllowed()) return;
   const path = clipLibraryFile(folder, gender, file);
