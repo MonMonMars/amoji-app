@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { getEngine, patchConfig } from '../lib/companion';
 import { saveConfig } from '../lib/companion-store';
 import type { EmotionConfig } from '@amoji/emotion-core';
+import { loadPrefs, type Lang } from '../lib/prefs';
 
 interface SliderSpec {
   key: keyof EmotionConfig;
@@ -21,8 +22,17 @@ const SLIDERS: SliderSpec[] = [
   { key: 'intensity', label: 'intensity', min: 0, max: 1, step: 0.01 },
 ];
 
+
+const COPY: Record<Lang, { region: string; toggle: string; summary: string }> = {
+  en: { region: 'dev tuning', toggle: 'Toggle dev tuning', summary: 'dev tuning (persisted)' },
+  yue: { region: '開發調校', toggle: '開關開發調校', summary: '開發調校（會儲存）' },
+  zh: { region: '开发调试', toggle: '切换开发调试', summary: '开发调试（已保存）' },
+  ja: { region: '開発チューニング', toggle: '開発チューニングを切替', summary: '開発チューニング（保存あり）' },
+};
+
 export default function DevPanel() {
   const [cfg, setCfg] = useState<EmotionConfig | null>(null);
+  const copy = COPY[loadPrefs().lang] ?? COPY.en;
 
   useEffect(() => {
     setCfg(getEngine().getConfig());
@@ -41,10 +51,10 @@ export default function DevPanel() {
     <details
       open
       role="region"
-      aria-label="dev tuning"
+      aria-label={copy.region}
       className="pointer-events-auto fixed top-3 right-3 z-10 w-64 rounded-lg bg-black/70 p-3 font-mono text-xs text-neutral-200"
     >
-      <summary className="cursor-pointer select-none text-neutral-400" aria-label="Toggle dev tuning">dev tuning (persisted)</summary>
+      <summary className="cursor-pointer select-none text-neutral-400" aria-label={copy.toggle}>{copy.summary}</summary>
       <div className="mt-2 space-y-2">
         {SLIDERS.map((s) => (
           <label key={s.key} htmlFor={`amoji-dev-${s.key}`} className="block">
