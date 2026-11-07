@@ -32,12 +32,12 @@ export default function Splash() {
       className={`relative flex min-h-dvh cursor-pointer flex-col items-center justify-center overflow-hidden bg-neutral-950 text-white transition-opacity duration-700 ${fade ? 'opacity-0' : 'opacity-100'}`}
     >
       {/* ambient glow */}
-      <div className="pointer-events-none absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-pink-500/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-40 left-1/4 h-80 w-80 rounded-full bg-indigo-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-pink-500/10 blur-3xl" aria-hidden />
+      <div className="pointer-events-none absolute -bottom-40 left-1/4 h-80 w-80 rounded-full bg-indigo-500/10 blur-3xl" aria-hidden />
 
       <div className="fx-logo flex flex-col items-center">
         <div className="relative mb-6">
-          <span className="absolute -inset-5 animate-ping rounded-full bg-pink-400/15" />
+          <span className="absolute -inset-5 animate-ping rounded-full bg-pink-400/15" aria-hidden />
           <span className="relative block h-5 w-5 rounded-full bg-pink-400 shadow-[0_0_50px_14px_rgba(244,114,182,0.45)]" />
         </div>
 
