@@ -93,7 +93,7 @@ import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
 export { speechRemainder };
 import { edgeCastVoice } from './edge-cast';
 import { speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead } from './edge-tts';
-import { stopGtts, speakGtts } from './gtts';
+import { stopGtts, speakGtts, PITCH_BIAS_MALE, PITCH_BIAS_FEMALE } from './gtts';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
 import { formatVoiceChain, freeVoiceHops } from './tts-chain';
 import { startThinkingSound, stopThinkingSound } from './thinking-sound';
@@ -1470,9 +1470,47 @@ function performSpeak(
       return false;
     }
   };
+  /**
+   * Browser-voice fallback for the TAIL of a line only. Used after another tier
+   * spoke part of it, so the listener hears a continuation rather than the
+   * whole sentence restarting in a different voice.
+   */
+  const runSynthTail = (rest: string, onDone: () => void): boolean => {
+    if (typeof speechSynthesis === 'undefined') return false;
+    try {
+      synthSpeak(rest, characterId, lang, emotion, expr, undefined, amp, undefined, onDone, spokenGender, value);
+      reportVoiceStatus('synth', true, 'browser voice queued (tail)');
+      return true;
+    } catch (err3) {
+      reportVoiceStatus('synth', false, (err3 as Error | undefined)?.message ?? 'browser voice failed');
+      return false;
+    }
+  };
   const runFreeChain = (): void => {
     const hops = freeVoiceHops(lang, { cantoNano: cantoNanoAvailable(), edge: edgeOn });
     const np = emotionProsody(emotion, value);
+    /**
+     * Speak the tail of a line this tier already started. Retries the MP3 tier
+     * once for just the remainder, then falls back to the browser voice for the
+     * remainder only. Restarting the whole sentence in a new voice is what made
+     * her appear to "switch speaker" halfway through.
+     */
+    const speakRemainderInChain = (rest: string): void => {
+      void speakGtts(rest, {
+        lang,
+        rate: clamp(1 + np.rate * 0.12, 0.88, 1.15),
+        onPlaying: () => { onHeard(); markVoiceStarted(); reportVoiceStatus('gtts', true, 'google-tts resuming'); },
+      }).then(() => {
+        reportVoiceStatus('gtts', true, 'google-tts resume finished');
+        settle();
+      }).catch((e: unknown) => {
+        if ((e as Error | undefined)?.message === 'canceled') { settle(); return; }
+        reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'google-tts resume failed');
+        stopGtts();
+        // Last resort: browser voice for the remainder only.
+        if (!runSynthTail(rest, settle)) settle();
+      });
+    };
     const runAt = (index: number): void => {
       const hop = hops[index];
       if (!hop) { settle(); return; }
@@ -1485,16 +1523,24 @@ function performSpeak(
         // Plain-HTTPS MP3 tier. Real audio via <audio>, so the iOS hardware
         // silent switch and a blocked Edge socket both stop mattering.
         let tier: Promise<void>;
+        /** How much of the line this tier actually spoke before failing. */
+        let spokenChars = 0;
         try {
           tier = speakGtts(text, {
             lang,
             rate: clamp(1 + np.rate * 0.12, 0.88, 1.15),
             lead: tic?.text,
+            // The endpoint has one voice per language, so character identity is
+            // carried by pitch: male companions get a deeper read, female ones a
+            // slightly brighter one. Without this every cast member sounds the
+            // same and male characters sound female.
+            pitchBias: spokenGender === 'male' ? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE,
             onPlaying: () => {
               onHeard();
               markVoiceStarted();
               reportVoiceStatus('gtts', true, 'google-tts playing');
             },
+            onProgress: (n) => { spokenChars = n; },
           });
         } catch (err) {
           tier = Promise.reject(err instanceof Error ? err : new Error(String(err)));
@@ -1506,11 +1552,21 @@ function performSpeak(
           if ((err as Error | undefined)?.message === 'canceled') { settle(); return; }
           reportVoiceStatus('gtts', false, (err as Error | undefined)?.message ?? 'google-tts failed');
           stopGtts();
+          // If this tier died mid-line, do NOT replay the whole sentence in the
+          // next voice — that is the "she suddenly switches speaker" effect.
+          // Resume from where the audio actually got to.
+          if (spokenChars > 0 && spokenChars < text.length) {
+            const rest = speechRemainder(text, text.slice(0, spokenChars));
+            if (rest) {
+              reportVoiceStatus('gtts', false, `resuming ${rest.length} chars`);
+              speakRemainderInChain(rest);
+              return;
+            }
+          }
           next();
         });
         return;
-      }
-      if (hop === 'canto-nano') {
+      }      if (hop === 'canto-nano') {
         void speakCantoNano(stripVoicedGlyphs(text)).then(() => {
           markVoiceStarted();
           reportVoiceStatus('canto-nano', true, 'canto-tts-nano finished');

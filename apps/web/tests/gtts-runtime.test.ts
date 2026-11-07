@@ -18,6 +18,7 @@
  */
 import { describe, expect, it, beforeAll } from 'vitest';
 import { execFileSync } from 'node:child_process';
+import { existsSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
@@ -26,14 +27,33 @@ const here = dirname(fileURLToPath(import.meta.url));
 const WEB = join(here, '..');
 const REPO = join(WEB, '..', '..');
 const SRC = join(WEB, 'lib/gtts.ts');
-const ESBUILD = join(
-  REPO,
-  'node_modules/.pnpm/@esbuild+win32-x64@0.28.2/node_modules/@esbuild/win32-x64/esbuild.exe',
-);
+
+/**
+ * Resolve the esbuild binary for the HOST platform. Hardcoding the win32 path
+ * broke CI on Linux, so look up the platform package in the pnpm store.
+ */
+function findEsbuild(): string | null {
+  const triple = `${process.platform}-${process.arch}`;
+  const binName = process.platform === 'win32' ? 'esbuild.exe' : 'esbuild';
+  try {
+    const store = join(REPO, 'node_modules/.pnpm');
+    const dir = readdirSync(store).find((d) => d.startsWith(`@esbuild+${triple}@`));
+    if (!dir) return null;
+    const candidate = join(store, dir, 'node_modules', '@esbuild', triple, binName);
+    return existsSync(candidate) ? candidate : null;
+  } catch {
+    return null;
+  }
+}
+
+const ESBUILD = findEsbuild();
+/** The runtime suite needs esbuild; skip (not fail) where it is unavailable. */
+const esbuildAvailable = ESBUILD !== null;
 
 let JS = '';
 
 beforeAll(() => {
+  if (!ESBUILD) return;
   JS = execFileSync(
     ESBUILD,
     [
@@ -143,7 +163,10 @@ const textOf = (a: Stub) => {
   return decodeURIComponent(q);
 };
 
-describe('speakGtts real behaviour (esbuild + vm)', () => {
+// Skip (not fail) when the host has no esbuild binary: this suite is a
+// behavioural proof, not a CI gate. The source-shape suite (gtts-chain) still
+// runs everywhere.
+describe.skipIf(!esbuildAvailable)('speakGtts real behaviour (esbuild + vm)', () => {
   it('merges short clauses into one request (fewer round trips)', async () => {
     // splitChunks cuts at clause punctuation, then RE-MERGES up to maxLen so a
     // short line is a single request rather than three. That is intentional and
