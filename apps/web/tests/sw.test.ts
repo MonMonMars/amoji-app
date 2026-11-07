@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// r2026-10-04.73 — offline support. The service worker is plain public/sw.js
+// r2026-10-04.73 ??offline support. The service worker is plain public/sw.js
 // (zero dependencies, survives Next.js static export), so these tests read
 // the shipped file and guard the behaviours that keep the installed app
 // opening without a connection.
@@ -18,7 +18,7 @@ describe('offline service worker', () => {
   });
 
   it('precaches the app shell pages', () => {
-    for (const p of ['./', './chat', './select', './change', './login', './mode', './setup', './story']) {
+    for (const p of ['./', './chat', './select', './change', './login', './mode', './setup', './story', './privacy', './terms']) {
       expect(sw).toContain(`'${p}'`);
     }
   });
