@@ -6,7 +6,7 @@ const src = readFileSync(join(__dirname, '../app/sfx-gallery/page.tsx'), 'utf8')
 
 describe('sfx-gallery Clear/Export/Chat residual a11y', () => {
   it('labels Chat nav + export/clear/reset toolbar', () => {
-    expect(src).toContain('aria-label="Open chat"');
+    expect(src).toContain('aria-label={openChat}');
     expect(src).toContain('href="/chat"');
     expect(src).toContain('aria-label="Copy Want/Skip JSON"');
     expect(src).toContain('data-testid="cma-export"');
@@ -25,6 +25,6 @@ describe('sfx-gallery Clear/Export/Chat residual a11y', () => {
 
   it('keeps main landmark from #182', () => {
     expect(src).toContain('aria-labelledby="amoji-sfx-gallery-title"');
-    expect(src).toContain('aria-label="Back to select"');
+    expect(src).toContain('aria-label={backSelect}');
   });
 });

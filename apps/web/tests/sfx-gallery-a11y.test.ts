@@ -11,6 +11,6 @@ describe('sfx-gallery main a11y', () => {
     expect(src).toContain('aria-labelledby="amoji-sfx-gallery-title"');
     expect(src).toContain('id="amoji-sfx-gallery-title"');
     expect(src).toContain('Reaction SFX gallery');
-    expect(src).toContain('aria-label="Back to select"');
+    expect(src).toContain('aria-label={backSelect}');
   });
 });
