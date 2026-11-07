@@ -116,6 +116,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
     <main
       className={`${leaving ? 'fx-select-out' : 'fx-select-in'} fx-select relative flex h-dvh w-screen flex-col overflow-hidden text-white`}
       style={{ background: prefsReady ? background.css : '#0a0a0f' }}
+      aria-busy={!prefsReady}
     >
       <div
         aria-hidden
