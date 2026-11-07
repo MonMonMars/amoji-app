@@ -1530,7 +1530,6 @@ function performSpeak(
         // mute-aware synth so chat is not silent on iPhone without a TTS proxy.
         next();
         return;
-        next();
       });
     };
     runAt(0);
@@ -1900,6 +1899,23 @@ export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
   });
 }
 
+/** one short happy line per language for the settings self-test (r2026-10-04.75) */
+const TEST_LINES: Record<Lang, string> = {
+  yue: '喂，聽唔聽到我呀？我而家好開心見到你！',
+  zh: '喂，你能听到我吗？我现在好开心见到你！',
+  ja: 'ねえ、聞こえる？会えて嬉しいな！',
+  en: "Hey, can you hear me? I'm so happy to see you!",
+};
+
+/**
+ * r2026-10-04.75 — one-tap voice self-test from the Settings sheet: forces
+ * the iOS gesture unlock and speaks a short line in the current language with
+ * the current character's voice. Works even while Voice replies is off (the
+ * setting itself is left untouched — only the storage flag is borrowed for
+ * the duration of the call, so stopSpeaking() can't cancel the test). If the
+ * browser refuses to produce sound, `amoji:voice-blocked` fires and the
+ * settings sheet shows the "check silent switch" hint.
+ */
 export function testVoice(characterId: string, lang: Lang): void {
   // Mute All wins over Voice-replies self-test (never cut speech / probe while muted).
   if (isMasterMuted()) return;
