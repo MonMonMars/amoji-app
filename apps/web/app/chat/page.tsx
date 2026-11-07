@@ -109,7 +109,11 @@ export default function Chat() {
       className={`${leaving ? 'fx-select-out' : 'fx-select-in'} relative h-dvh w-screen overflow-hidden text-white`}
       style={{ background: bootReady ? background.css : '#0a0a0f' }}
       aria-busy={!bootReady}
+      aria-labelledby="amoji-chat-title"
     >
+      <h1 id="amoji-chat-title" className="sr-only">
+        {character.name}
+      </h1>
       <div
         aria-hidden
         className={`pointer-events-none absolute inset-0 z-30 ${leaving ? 'fx-route-veil-out' : 'fx-route-veil-in'}`}
