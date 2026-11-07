@@ -8,6 +8,46 @@ import { stripLaughTokens } from './speak-text';
 export interface ShapeOpts {
   /** A stream is still growing, so an unfinished last clause stays. */
   streaming?: boolean;
+  /** A cook-along or a lesson: the 1–3 sentence cap does not apply. */
+  detailed?: boolean;
+  /** The live-facts block this turn was built from (see worldBlock). A turn
+   *  that asked for the weather, a headline, or a place is allowed to run
+   *  long, because it is answering with the facts the user wanted. */
+  world?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Spoken-length budget.
+//
+// The user's complaint was "too long, says nonsense". A prompt alone cannot
+// hold a free 20B model to a length, so the budget is enforced here, in code,
+// before the text reaches the bubble or the synthesizer. The unit is
+// characters with whitespace ignored, because that is what a voice actually
+// spends time on. CJK carries far more meaning per glyph, so one reply lands
+// near 3 short spoken sentences at roughly a third of the Latin count.
+// Trimming always happens on a sentence boundary — never mid-word.
+// ---------------------------------------------------------------------------
+export const REPLY_BUDGET = {
+  /** zh / yue / ja: ~3 short spoken sentences (「今日好凍呀……你著咗幾多件衫？」) */
+  cjk: 68,
+  /** en and other Latin scripts: ~3 short spoken sentences */
+  latin: 230,
+  /** A normal turn is a reply, not a monologue. Recipes/lessons opt out. */
+  sentences: 3,
+} as const;
+
+const CJK_CHAR = /[\u3400-\u9fff\u3040-\u30ff\uac00-\ud7af]/g;
+
+/** Character allowance for this reply, decided by the script it is written in. */
+export function replyCharBudget(text: string): number {
+  const dense = text.replace(/\s/g, '');
+  if (dense.length === 0) return REPLY_BUDGET.latin;
+  const cjk = (text.match(CJK_CHAR) ?? []).length;
+  return cjk * 2 >= dense.length ? REPLY_BUDGET.cjk : REPLY_BUDGET.latin;
+}
+
+function width(s: string): number {
+  return s.replace(/\s/g, '').length;
 }
 
 const FINAL_MARK = '<|channel|>final<|message|>';
@@ -32,12 +72,18 @@ function splitSentences(text: string): string[] {
   for (let i = 0; i < text.length; i++) {
     const ch = text.charAt(i);
     buf += ch;
-    const end = ch === '。' || ch === '！' || ch === '？' || ch === '!' || ch === '?';
+    // CJK terminators end a sentence with no following space, so they split
+    // unconditionally. ASCII marks only split at a word boundary, so a
+    // decimal, an abbreviation, or a URL does not get chopped in half.
+    // 「…」 is a soft pause in her voice, never a sentence end.
+    const cjkEnd = ch === '。' || ch === '！' || ch === '？';
+    const latinEnd = ch === '!' || ch === '?';
     const period = ch === '.' && !/\d\.\d/.test(text.slice(Math.max(0, i - 1), i + 2));
-    if (!end && !period) continue;
+    if (!cjkEnd && !latinEnd && !period) continue;
     const next = text.charAt(i + 1);
+    if (next === '。' || next === '！' || next === '？' || next === '!') continue;
     if (period && next === '.') continue;
-    if (next && !/\s/.test(next) && next !== '\n') continue;
+    if ((latinEnd || period) && next && !/[\s\n]/.test(next)) continue;
     const piece = buf.trim();
     if (piece) out.push(piece);
     buf = '';
@@ -82,7 +128,7 @@ function dropCutOffTail(text: string): string {
   if (sentences.length < 2) return text;
   const tail = sentences[sentences.length - 1] ?? '';
   if (/[。！？!?]$/.test(tail) || (tail.endsWith('.') && !/\d\.$/.test(tail))) return text;
-  if (isCutOff(tail)) return sentences.slice(0, -1).join(' ').trim();
+  if (isCutOff(tail)) return joinSentences(sentences.slice(0, -1)).trim();
   return text;
 }
 
@@ -93,8 +139,138 @@ function isCutOff(tail: string): boolean {
   return false;
 }
 
+/** Glue risk is Latin-only: CJK never spaces after 。！？, and inserting one
+ *  there changes text that was already correct. */
 function spaceSentences(text: string): string {
-  return text.replace(/([。！？!?])(?=[^\s])/g, '$1 ');
+  return text.replace(/([.!?])(?=[A-Za-z0-9])/g, '$1 ');
+}
+
+/** Sentences are stored separately, so rejoin them the way the script writes:
+ *  CJK runs on with no space after a mark, Latin needs one. */
+function joinSentences(parts: string[]): string {
+  return parts.join(' ').replace(/([。！？，、；：])\s+(?=[\u3400-\u9fff\u3040-\u30ff])/g, '$1');
+}
+
+/** A cook-along or a taught answer is allowed to be long; chat is not. */
+export function isDetailedReply(text: string): boolean {
+  if (/\b(?:Recipe|Learn)\s*:/.test(text)) return true;
+  const markers = text.match(/(?:^|[\s。！？.!?:：])\s*(?:\d{1,2}[.)、]|[-•·])\s+\p{L}/gu);
+  return (markers?.length ?? 0) >= 2;
+}
+
+/**
+ * A fetch the user actually asked for — weather, a headline, a place, a
+ * recipe, a search — may run a sentence past the normal chat budget, because
+ * it is carrying facts they requested. Free chatter never gets this.
+ * The labels here are the ones live-tools writes into the fact block.
+ */
+const ASKED_FOR_FACTS = /^(?:Place|Weather|News|Recent news|Light news|Places|Cafes|Parks|Outings|Recipe|Learn|Web|Shopping|Dining|Events)\b[^:\n]{0,40}:/m;
+
+/** Longer than a chat line on purpose? Then the budget steps aside. */
+export function mayRunLong(text: string, world?: string): boolean {
+  return isDetailedReply(text) || ASKED_FOR_FACTS.test(world ?? '');
+}
+
+/**
+ * A reply that says nothing: a lone mood word, a bare ellipsis, or a
+ * punctuation-only fragment. Kept when it is the WHOLE reply (「嗯…」 is a
+ * real answer to being poked) and dropped only as filler among real lines.
+ */
+const EMPTY_EMPHASIS =
+  /^(?:(?:嗯+|啊+|哦+|喔+|呀+|唉+|哎+|咦+|唔+|okay|ok|oh|ah|hmm+|mm+|well|like|so|right|yeah|yes)[\s…\.。~～,，、!！?？]*|[\s…\.。~～,，、!！?？:：;；()（）\-—]+)$/i;
+
+/** Repeated sentence: compare on letters/digits only, so punctuation drift
+ *  and case changes still register as the same line said twice. */
+function sentenceKey(sentence: string): string {
+  return sentence.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+}
+
+/**
+ * Remove what a small model emits when it has nothing to say: the same
+ * sentence twice, and empty "嗯…" padding between real lines. Genuine short
+ * answers survive — a one-sentence reply is never touched, and a line is
+ * only dropped when something else is left to say.
+ *
+ * `keepLeadingEmphasis` (streaming) keeps a lone lead-in while the stream is
+ * still growing, so a bubble that already showed 「嗯…」 does not blank it out
+ * a token later.
+ */
+export function stripEmptyAndDuplicateSentences(sentences: string[], keepLeadingEmphasis = false): string[] {
+  if (sentences.length < 2) return sentences;
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (let i = 0; i < sentences.length; i++) {
+    const s = sentences[i]!;
+    const key = sentenceKey(s);
+    if (!key) continue;                 // punctuation-only fragment
+    if (EMPTY_EMPHASIS.test(s.trim())) {
+      if (keepLeadingEmphasis && i === 0) { out.push(s); continue; }
+      continue;                          // 「嗯…」 padding between real lines
+    }
+    if (seen.has(key)) continue;        // same sentence said twice
+    seen.add(key);
+    out.push(s);
+  }
+  return out.length ? out : sentences.slice(0, 1);
+}
+
+/** Cut one runaway sentence at a clause boundary so nothing is cut mid-word. */
+function cutLongSentence(sentence: string, budget: number): string {
+  const clauses = sentence.split(/(?<=[，,、;；:：])\s*/u);
+  if (clauses.length < 2) return sentence;
+  let out = '';
+  for (const clause of clauses) {
+    if (out && width(out + clause) > budget) break;
+    out += clause;
+  }
+  const trimmed = out.trim();
+  return trimmed || sentence;
+}
+
+/**
+ * Keep the reply inside its spoken budget, on sentence boundaries.
+ *
+ * The closing question is reserved a slot BEFORE the answer sentences are
+ * chosen, not swapped in afterwards. That ordering is what makes the streamed
+ * preview a strict prefix of the final reply: nothing the bubble already
+ * painted ever gets deleted or rewritten in front of the user.
+ *
+ * `stable` (streaming) never reorders — it only appends.
+ */
+export function fitReplyBudget(
+  sentences: string[],
+  budget: number,
+  limit = REPLY_BUDGET.sentences,
+  stable = false,
+): string[] {
+  if (!sentences.length) return sentences;
+  const last = sentences[sentences.length - 1]!;
+  // A question only counts as the reply's own closer when it is a separate
+  // sentence; a reply that IS one question is just an answer.
+  const hasCloser = sentences.length > 1 && /[?？]\s*$/.test(last);
+  const answerLimit = hasCloser ? Math.max(1, limit - 1) : limit;
+
+  const picked: string[] = [];
+  let used = 0;
+  for (const s of sentences) {
+    if (picked.length >= answerLimit) break;
+    if (hasCloser && s === last) break;
+    const w = width(s);
+    if (picked.length > 0 && used + w > budget) break;
+    picked.push(s);
+    used += w;
+  }
+  if (picked.length === 0) picked.push(cutLongSentence(sentences[0]!, budget));
+  else if (picked.length === 1 && width(picked[0]!) > budget) picked[0] = cutLongSentence(picked[0]!, budget);
+
+  if (hasCloser) {
+    // The closer was reserved a slot, so it costs at most the slack budget —
+    // and if even that would overflow, the last answer sentence yields to it,
+    // because a reply with nothing to answer ends the conversation.
+    if (width(picked.join(' ')) + width(last) <= budget + 24) picked.push(last);
+    else if (!stable && picked.length > 1) picked[picked.length - 1] = last;
+  }
+  return picked;
 }
 
 
@@ -115,14 +291,21 @@ export function shapeCompanionReply(raw: string, opts?: ShapeOpts): string {
   text = text.replace(/<\|[^|>]+\|>/g, ' ');
   const sentences = splitSentences(text.replace(/\s+/g, ' ').trim());
   const kept = sentences.filter((s) => !isMeta(s));
-  const chosen = kept.length ? kept : [];
-  let body = spaceSentences(chosen.join(' ').replace(/\s{2,}/g, ' ').trim());
+  const chosen = stripEmptyAndDuplicateSentences(kept, !!opts?.streaming);
+  let body = joinSentences(chosen).replace(/\s{2,}/g, ' ').trim();
   if (!opts?.streaming) {
     body = trimDangling(body);
     body = dropCutOffTail(body);
   }
-  return stripLaughTokens(body)
-    .replace(/^[,�A�B;�F:\s]+/, '')
-    .replace(/s{2,}/g, ' ')
+  // The budget is applied while streaming too, so the bubble never paints text
+  // the finished reply is about to delete, and a long model reply stops
+  // growing in the UI instead of running on for another ten seconds.
+  if (!opts?.detailed && !mayRunLong(body, opts?.world)) {
+    const budget = replyCharBudget(body);
+    body = joinSentences(fitReplyBudget(splitSentences(body), budget, REPLY_BUDGET.sentences, !!opts?.streaming)).trim();
+  }
+  return stripLaughTokens(spaceSentences(body))
+    .replace(/^[\s,，、。;；:：!！?？…·~～]+/, '')
+    .replace(/\s{2,}/g, ' ')
     .trim();
 }
