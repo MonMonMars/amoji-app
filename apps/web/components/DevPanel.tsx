@@ -42,12 +42,14 @@ export default function DevPanel() {
       <summary className="cursor-pointer select-none text-neutral-400">dev tuning (persisted)</summary>
       <div className="mt-2 space-y-2">
         {SLIDERS.map((s) => (
-          <label key={s.key} className="block">
+          <label key={s.key} htmlFor={`amoji-dev-${s.key}`} className="block">
             <span className="flex justify-between">
               <span>{s.label}</span>
               <span>{Math.round(cfg[s.key] as number * (s.step < 1 ? 100 : 1)) / (s.step < 1 ? 100 : 1)}{s.unit ?? ''}</span>
             </span>
             <input
+              id={`amoji-dev-${s.key}`}
+              name={String(s.key)}
               type="range"
               min={s.min}
               max={s.max}
