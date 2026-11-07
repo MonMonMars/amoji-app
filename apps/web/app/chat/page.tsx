@@ -179,7 +179,7 @@ export default function Chat() {
         </div>
       )}
 
-      {notice && !gameChromeHidden && <FallbackNotice reason={notice.reason} />}
+      {notice && !gameChromeHidden && <FallbackNotice reason={notice.reason} lang={prefs.lang} />}
       {dev && !gameChromeHidden && <DevPanel />}
       {!gameChromeHidden && (
         <SettingsSheet
