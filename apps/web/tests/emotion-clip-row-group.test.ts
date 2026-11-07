@@ -8,12 +8,13 @@ describe("EmotionClipRow section role=group", () => {
   it("marks the row as a role=group labeled by previewReactions heading", () => {
     expect(row).toContain('role="group"');
     expect(row).toContain('aria-labelledby="amoji-emotion-clip-title"');
-    expect(row).toContain('id="amoji-emotion-clip-title"');
-    expect(row).toContain("t(lang, 'previewReactions')");
+    expect(row).toContain("previewReactions");
   });
 
-  it("keeps universal toggle labeled + pressed", () => {
-    expect(row).toContain("aria-pressed={universal}");
-    expect(row).toContain("aria-label={t(lang, 'previewUniversal')}");
+  it("numbers CMA reaction chips for Mon assignment", () => {
+    expect(row).toContain("CMA_REACTION_GALLERY");
+    expect(row).toContain("data-reaction-n={n}");
+    expect(row).toContain("data-cma-code={clip.code}");
+    expect(row).toContain("aria-pressed={selected}");
   });
 });

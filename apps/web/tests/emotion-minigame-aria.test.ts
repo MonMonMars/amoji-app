@@ -6,9 +6,11 @@ const emotion = readFileSync(join(__dirname, "../components/EmotionClipRow.tsx")
 const overlay = readFileSync(join(__dirname, "../components/MiniGameOverlay.tsx"), "utf8");
 
 describe("EmotionClipRow / MiniGameOverlay chrome aria-labels", () => {
-  it("EmotionClipRow universal toggle has aria-label + aria-pressed", () => {
-    expect(emotion).toContain("aria-pressed={universal}");
-    expect(emotion).toContain("aria-label={t(lang, 'previewUniversal')}");
+  it("EmotionClipRow CMA chips expose aria-label + aria-pressed", () => {
+    expect(emotion).toContain("aria-pressed={selected}");
+    expect(emotion).toContain("aria-label={");
+    expect(emotion).toContain("clip.code");
+    expect(emotion).toContain("CMA_REACTION_GALLERY");
   });
 
   it("MiniGameOverlay start and again expose aria-label", () => {

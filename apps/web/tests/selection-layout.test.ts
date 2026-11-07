@@ -282,7 +282,7 @@ describe('selection layout', () => {
     expect(board).toContain('gender={character.gender}');
     expect(board).not.toContain('CompanionCanvas');
     const reactionsFile = read('../components/EmotionClipRow.tsx');
-    expect(reactionsFile).toContain('previewEmotionClip');
+    expect(reactionsFile).toContain('CMA_REACTION_GALLERY');
     expect(reactionsFile).toContain('data-testid="emotion-clip-row"');
     expect(reactionsFile).not.toContain('CompanionCanvas');
     expect(reactionsFile).not.toContain('speakEdge');

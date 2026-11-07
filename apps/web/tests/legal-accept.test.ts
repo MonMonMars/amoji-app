@@ -100,14 +100,16 @@ describe('select voice preview cut-through', () => {
     expect(read('../components/TtsVoiceRow.tsx')).toContain('playVoiceGreeting');
   });
 
-  it('gates EmotionClipRow library previews on voiceOutputAllowed before stopSpeaking', () => {
+  it('gates EmotionClipRow CMA previews on voiceOutputAllowed (mute-aware)', () => {
     const voice = read('../lib/voice.ts');
     const clip = voice.indexOf('export function previewLibraryClip');
     const clipSlice = voice.slice(clip, clip + 520);
     expect(clipSlice).toContain('voiceOutputAllowed()');
     expect(clipSlice).toContain('stopSpeaking()');
     expect(clipSlice.indexOf('voiceOutputAllowed()')).toBeLessThan(clipSlice.indexOf('stopSpeaking()'));
-    expect(read('../components/EmotionClipRow.tsx')).toContain('previewLibraryClip');
-    expect(read('../components/EmotionClipRow.tsx')).toContain('previewEmotionClip');
+    const row = read('../components/EmotionClipRow.tsx');
+    expect(row).toContain('voiceOutputAllowed()');
+    expect(row).toContain('CMA_REACTION_GALLERY');
+    expect(row).not.toContain('previewLibraryClip');
   });
 });

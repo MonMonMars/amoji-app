@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 // Select-board reaction preview: NEWER CMA00304–CMA00349 set only (Mon).
 // Numbers = gallery order for Mon assignment. Want/Skip on /sfx-gallery.
 // Tap previews only (mute-aware Audio); does not auto-Want.
@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import { t, type Lang } from '../lib/prefs';
 import { isDevMode, devMark } from '../lib/dev-mode';
+import { voiceOutputAllowed } from '../lib/voice';
 import {
   CMA_REACTION_GALLERY,
   cmaReactionPath,
@@ -35,6 +36,7 @@ export default function EmotionClipRow({
 
   const onTap = (clip: CmaReactionClip) => {
     // Exclusive single-select: only the tapped CMA clip stays pressed.
+    if (!voiceOutputAllowed()) return;
     setPlaying(clip.code);
     try {
       const a = new Audio(cmaReactionPath(clip.file));
