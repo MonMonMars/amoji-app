@@ -1,9 +1,12 @@
 'use client';
 import Link from 'next/link';
 import { LEGAL_ACCEPT_VERSION } from '../../lib/legal-accept';
+import { t, loadPrefs } from '../../lib/prefs';
 
 /** Demo Terms of Use page — placeholder, not final lawyer text. */
 export default function TermsPage() {
+  const lang = loadPrefs().lang;
+  const backHome = lang === 'yue' ? '返回主頁' : lang === 'zh' ? '返回首页' : lang === 'ja' ? 'ホームに戻る' : 'Back to home';
   return (
     <main aria-labelledby="amoji-terms-title" className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-4 bg-neutral-950 px-5 py-10 text-white">
       <p className="text-xs uppercase tracking-[0.28em] text-white/45">Amoji</p>
@@ -14,7 +17,7 @@ export default function TermsPage() {
         <p>You are responsible for API keys you paste in, content you generate, and how you share the app with others.</p>
         <p>Features may change without notice in this open demo. Production terms will replace this page when counsel reviews them.</p>
       </div>
-      <Link href="/" aria-label="Back to home" className="mt-4 text-sm text-pink-200 underline-offset-4 hover:underline">Back</Link>
+      <Link href="/" aria-label={backHome} className="mt-4 text-sm text-pink-200 underline-offset-4 hover:underline">{t(lang, 'back')}</Link>
     </main>
   );
 }

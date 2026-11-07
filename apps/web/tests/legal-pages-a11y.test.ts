@@ -19,9 +19,13 @@ describe('legal pages + LegalGate link a11y', () => {
     const terms = read('app/terms/page.tsx');
     expect(privacy).toContain('id="amoji-privacy-title"');
     expect(privacy).toContain('aria-labelledby="amoji-privacy-title"');
-    expect(privacy).toContain('aria-label="Back to home"');
+    expect(privacy).toContain('aria-label={backHome}');
+    expect(privacy).toContain("const backHome = lang === 'yue' ? '返回主頁'");
+    expect(privacy).toContain("{t(lang, 'back')}");
     expect(terms).toContain('id="amoji-terms-title"');
     expect(terms).toContain('aria-labelledby="amoji-terms-title"');
-    expect(terms).toContain('aria-label="Back to home"');
+    expect(terms).toContain('aria-label={backHome}');
+    expect(terms).toContain("const backHome = lang === 'yue' ? '返回主頁'");
+    expect(terms).toContain("{t(lang, 'back')}");
   });
 });
