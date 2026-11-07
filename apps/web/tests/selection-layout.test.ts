@@ -271,7 +271,10 @@ describe('selection layout', () => {
     expect(board).toContain('size="compact"');
     expect(board.split('size="portrait"').length - 1).toBe(1);
     expect(board).toContain('size="scene"');
-    expect(board.match(/relative mx-auto[^"]*flex-1/g)).toHaveLength(1);
+    // Mon: one scroll container for the whole board, so the character stage
+    // has a definite height (no flex-1 against the page scroller).
+    expect(board.match(/relative mx-auto[^"]*h-\[clamp\(/g)).toHaveLength(1);
+    expect(board).not.toMatch(/relative mx-auto[^"]*flex-1/);
     expect(board).toContain('<LangCardFace');
     expect(board).toContain('compact');
     expect(board).toContain('pick({ lang: id })');

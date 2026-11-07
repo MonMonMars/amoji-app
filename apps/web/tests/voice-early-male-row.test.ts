@@ -11,10 +11,12 @@ describe('early splash audio unlock + male voice row (Mon voice queue)', () => {
     expect(splash).toContain('<EarlyAudioUnlock />');
   });
 
-  it('select TTS row groups female then male in a taller grid', () => {
+  it('select TTS row groups female then male in one shared grid', () => {
     expect(row).toContain("(['female', 'male'] as const)");
     expect(row).toContain('data-testid="tts-voice-grid"');
-    expect(row).toContain('max-h-[12rem]');
+    // Mon: no inner scrollbar — the select board owns the only vertical scroller.
+    expect(row).not.toContain('max-h-[12rem]');
+    expect(row).not.toContain('overflow-y-auto');
     expect(row).toContain("data-voice-gender={button.gender}");
     expect(row).toContain('genderMale');
     expect(row).toContain('genderFemale');
