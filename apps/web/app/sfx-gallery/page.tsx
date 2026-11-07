@@ -320,6 +320,7 @@ export default function SfxGalleryPage() {
               type="button"
               role="tab"
               aria-selected={filter === f.id}
+              aria-label={f.label}
               data-testid={`cma-filter-${f.id}`}
               onClick={() => setFilter(f.id)}
               className={`rounded-full border px-3 py-1 text-xs ${
