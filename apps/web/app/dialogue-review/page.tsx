@@ -598,12 +598,24 @@ export default function DialogueReviewPage() {
 
       <div className="drv-controls">
         <input
+          id="amoji-drv-search"
+          name="search"
+          type="search"
+          autoComplete="off"
+          aria-label="Search lines"
           className="drv-search"
-          placeholder="Search lines…"
+          placeholder="Search lines..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <select className="drv-select" value={charFilter} onChange={(e) => setCharFilter(e.target.value)}>
+        <select
+          id="amoji-drv-char-filter"
+          name="character"
+          aria-label="Filter by character"
+          className="drv-select"
+          value={charFilter}
+          onChange={(e) => setCharFilter(e.target.value)}
+        >
           <option value="all">All characters (idle)</option>
           {charIds.map((c) => <option key={c} value={c}>{CHARACTER_NAMES[c] ?? c}</option>)}
         </select>
