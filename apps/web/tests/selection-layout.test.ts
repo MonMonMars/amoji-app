@@ -59,7 +59,9 @@ describe('selection layout', () => {
     const fan = read('../components/ArcFan.tsx');
     expect(fan).toContain('portraitCardBox');
     expect(fan).toContain('stageWidth');
-    expect(fan).toContain('overflow-x-hidden');
+    expect(fan).toContain('overflow-visible');
+    expect(fan).toContain('box.height >= 96');
+    expect(fan).toContain('box.width >= 96');
     expect(fan).toContain('showArrows');
     expect(fan).toContain("aria-label={t(lang, 'scrollLeft')}");
     expect(fan).toContain('orientationchange');
