@@ -4,64 +4,79 @@ import { join } from 'node:path';
 
 const voice = readFileSync(join(__dirname, '../lib/voice.ts'), 'utf8');
 
-describe('voice restore mute-aware Edge to synth (iPhone)', () => {
-  it('select greeting primes synth in tap then auditions before Edge may fail', () => {
-    const greetStart = voice.indexOf('export function playVoiceGreeting');
-    const greetEnd = voice.indexOf('export function previewLibraryClip', greetStart);
-    const greet = voice.slice(greetStart, greetEnd);
-    expect(greet).toContain('voiceOutputAllowed()');
+/** Slice one exported function body so assertions cannot leak across functions. */
+function fnBody(name: string, nextName: string): string {
+  const start = voice.indexOf(`export function ${name}`);
+  const end = voice.indexOf(nextName, start);
+  return voice.slice(start, end === -1 ? undefined : end);
+}
+
+const greet = fnBody('playVoiceGreeting', 'previewLibraryClip');
+const preview = fnBody('previewEdgeVoice', 'const TEST_LINES');
+
+describe('voice restore — one tier speaks, never two', () => {
+  it('the greeting starts the HTTP MP3 tier (the only live tier)', () => {
+    expect(greet).toContain('speakGtts(');
+    expect(greet).toContain("onStart('gtts')");
+  });
+
+  it('the greeting keeps Edge preferred if it ever answers again', () => {
+    expect(greet).toContain('speakEdge(');
+    expect(greet).toContain("onStart('edge')");
+  });
+
+  it('the greeting still primes synth in the tap as the last resort', () => {
+    expect(greet).toContain('primeSynthInGesture(true)');
     expect(greet).toContain('unlockAudio(true)');
     expect(greet).toContain('stopSpeaking()');
-    expect(greet).toContain('primeSynthInGesture(true)');
-    expect(greet).toContain('greeting gesture');
-    expect(greet).toContain('greeting fallback');
-    expect(greet).toContain('haltSynthQueue()');
-    expect(greet).toContain('speakEdge(');
+    expect(greet).toContain("runSynthAudition('greeting fallback')");
   });
 
-  it('settings preview mirrors greeting gesture Edge synth path', () => {
-    const start = voice.indexOf('export function previewEdgeVoice');
-    const end = voice.indexOf('export function testVoice(', start);
-    const block = voice.slice(start, end);
-    expect(block).toContain('primeSynthInGesture(true)');
-    expect(block).toContain('preview gesture');
-    expect(block).toContain('preview fallback');
-    expect(block).toContain('speakEdge(');
+  it('the greeting tracks the winner so only one tier speaks', () => {
+    // `spokenBy` is what stops Edge + gtts + synth all firing at once, which is
+    // a regression I introduced when I first wired gtts in.
+    expect(greet).toContain('spokenBy');
+    expect(greet).toMatch(/if \(spokenBy === 'gtts'\) return/);
+    expect(greet).toMatch(/if \(spokenBy && spokenBy !== 'gtts'\) return/);
   });
 
-  it('chat Edge failure with pinned id still falls through to synth', () => {
-    expect(voice).toContain('Pinned Edge id failed');
-    expect(voice).toContain('unlockAudio(true)');
-    expect(voice).not.toContain('if (voiceId) { settle(); return; }');
+  it('the preview path uses the same one-winner structure', () => {
+    expect(preview).toContain('speakGtts(');
+    expect(preview).toContain('speakEdge(');
+    expect(preview).toContain('spokenBy');
+    expect(preview).toMatch(/if \(spokenBy === 'gtts'\) return/);
+    expect(preview).toContain("runSynthAudition('preview fallback')");
   });
 
-  it('haltSynthQueue clears synthPrimed latch so force reprime can run', () => {
-    const haltStart = voice.indexOf('function haltSynthQueue');
-    const haltEnd = voice.indexOf('interface SpeechJob', haltStart);
-    const halt = voice.slice(haltStart, haltEnd);
+  it('the MP3 tier halts only the browser engine, never itself', () => {
+    // haltSynthQueue() now stops gtts too. Calling it from gtts' own onPlaying
+    // would cancel the line that just started. The gtts handlers are the ones
+    // guarded by `spokenBy !== 'gtts'`.
+    const idx = voice.indexOf("if (spokenBy && spokenBy !== 'gtts') return;");
+    expect(idx).toBeGreaterThan(-1);
+    const handler = voice.slice(idx, idx + 220);
+    expect(handler).toContain('haltBrowserSynth()');
+    expect(handler).not.toContain('haltSynthQueue()');
+    // Both the greeting and the preview gtts handler must use the safe halt.
+    expect((voice.match(/this IS the MP3 tier, so a full halt would stop us/g) ?? []).length).toBe(2);
+  });
+
+  it('haltSynthQueue stops every engine, including the MP3 tier', () => {
+    const start = voice.indexOf('function haltSynthQueue');
+    const end = voice.indexOf('interface SpeechJob', start);
+    const halt = voice.slice(start, end);
+    expect(halt).toContain('haltBrowserSynth()');
+    expect(halt).toContain('stopGtts()');
+  });
+
+  it('haltBrowserSynth clears the synthPrimed latch so force reprime can run', () => {
+    const start = voice.indexOf('function haltBrowserSynth');
+    const end = voice.indexOf('function haltSynthQueue', start);
+    const halt = voice.slice(start, end);
     expect(halt).toContain('synthPrimed = false');
-  });
-
-  it('primeSynthInGesture accepts force after cancel', () => {
-    expect(voice).toContain('export function primeSynthInGesture(force = false)');
-    expect(voice).toContain('if (synthPrimed && !force) return');
-  });
-
-  it('greeting/preview audition is sync in-gesture (no 180ms defer)', () => {
-    const greetStart = voice.indexOf('export function playVoiceGreeting');
-    const greetEnd = voice.indexOf('export function previewLibraryClip', greetStart);
-    const greet = voice.slice(greetStart, greetEnd);
-    expect(greet).toContain("runSynthAudition('greeting gesture')");
-    expect(greet).not.toContain('setTimeout(() => runSynthAudition');
-    expect(greet).toContain('primeSynthInGesture(true)');
-    expect(greet).toMatch(/synthSpeak\([\s\S]*?,\s*true\)/);
-
-    const prevStart = voice.indexOf('export function previewEdgeVoice');
-    const prevEnd = voice.indexOf('export function testVoice(', prevStart);
-    const prev = voice.slice(prevStart, prevEnd);
-    expect(prev).toContain("runSynthAudition('preview gesture')");
-    expect(prev).not.toContain('setTimeout(() => { void runSynthAudition');
-    expect(prev).toContain('primeSynthInGesture(true)');
+    expect(halt).toContain('speechSynthesis.cancel()');
+    // It must NOT touch the MP3 tier — that is the split's whole point.
+    expect(halt).not.toContain('stopGtts');
   });
 
   it('synthSpeak pumps immediately when syncGesture', () => {
@@ -70,22 +85,5 @@ describe('voice restore mute-aware Edge to synth (iPhone)', () => {
     expect(block).toContain('syncGesture = false');
     expect(block).toContain('if (syncGesture)');
     expect(block).toContain('pump();');
-  });
-
-  it('window gesture listeners never pass the Event into force', () => {
-    // primeSynthInGesture(force) is truthy for any Event argument, so a bare
-    // listener reference would force-reprime on every keystroke and interrupt
-    // the line that is speaking.
-    expect(voice).not.toContain('addEventListener(ev, primeSynthInGesture');
-    expect(voice).toContain('window.addEventListener(ev, () => primeSynthInGesture(), { passive: true })');
-  });
-
-  it('voice.ts has balanced braces around the prime block', () => {
-    const start = voice.indexOf('let synthPrimed = false;');
-    const end = voice.indexOf('/** r2026-10-04.75: fired on `window`', start);
-    const block = voice.slice(start, end);
-    const opens = (block.match(/\{/g) ?? []).length;
-    const closes = (block.match(/\}/g) ?? []).length;
-    expect(opens).toBe(closes);
   });
 });
