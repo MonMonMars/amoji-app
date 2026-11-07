@@ -117,8 +117,9 @@ export default async function SelfTestPage() {
         whiteSpace: 'pre-wrap',
         wordBreak: 'break-word',
       }}
-    >
-      <h1 style={{ fontSize: 18, marginBottom: 8 }}>Amoji self-test</h1>
+    
+      aria-labelledby="amoji-selftest-title">
+      <h1 id="amoji-selftest-title" style={{ fontSize: 18, marginBottom: 8 }}>Amoji self-test</h1>
       <p style={{ marginBottom: 16 }}>{summary}</p>
       {failures.length > 0 && <section>{failures.join('\n\n—————\n\n')}</section>}
       {extra ? <section>{extra}</section> : null}
