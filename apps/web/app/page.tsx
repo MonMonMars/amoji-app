@@ -17,7 +17,9 @@ export default function Splash() {
   return (
     <main
       aria-labelledby="amoji-splash-title"
+      aria-describedby="amoji-splash-tagline amoji-splash-revision"
       aria-label="Continue to login"
+      aria-busy={fade}
       role="button"
       tabIndex={0}
       onClick={() => router.push('/login')}
@@ -40,10 +42,10 @@ export default function Splash() {
         </div>
 
         <h1 id="amoji-splash-title" className="text-6xl font-bold tracking-tight">{APP_NAME}</h1>
-        <p className="mt-3 text-sm tracking-[0.3em] text-white/40 uppercase">{APP_TAGLINE}</p>
+        <p id="amoji-splash-tagline" className="mt-3 text-sm tracking-[0.3em] text-white/40 uppercase">{APP_TAGLINE}</p>
       </div>
 
-      <p className="absolute bottom-10 text-xs text-white/30">{APP_REVISION} · web demo</p>
+      <p id="amoji-splash-revision" className="absolute bottom-10 text-xs text-white/30">{APP_REVISION} · web demo</p>
     </main>
   );
 }
