@@ -53,9 +53,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           at page load (preconnect) so the first chat turn skips the ~1s
           handshake stall. Pollinations is warmed because it is the always-
           present fallback lane even when a keyed brain is configured.
+          r142 — the free lane now races independent hosts, so the OVHcloud
+          racer gets the same head start; otherwise it would pay the full
+          handshake on the very first turn and always lose to Pollinations.
         */}
         <link rel="preconnect" href="https://text.pollinations.ai" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://text.pollinations.ai" />
+        <link rel="preconnect" href="https://oai.endpoints.kepler.ai.cloud.ovh.net" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://oai.endpoints.kepler.ai.cloud.ovh.net" />
         <link rel="preconnect" href="https://speech.platform.bing.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://speech.platform.bing.com" />
         <AppleMeta />

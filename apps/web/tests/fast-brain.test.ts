@@ -4,7 +4,7 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import {
   LANE_ORIGIN, localFallbackReply, markNoApiRoute, shouldSkipServerProbe,
-  trimHistoryForPrompt, PROMPT_HISTORY_CAP, RACE_MODELS, warmLane,
+  trimHistoryForPrompt, PROMPT_HISTORY_CAP, FREE_RACERS, warmLane,
 } from '../lib/client-chat';
 import type { ChatMessage } from '../lib/llm';
 
@@ -51,8 +51,8 @@ describe('localFallbackReply', () => {
 
 describe('free-lane race config', () => {
   it('races at least two models so the fastest first token wins', () => {
-    expect(RACE_MODELS.length).toBeGreaterThanOrEqual(2);
-    expect(RACE_MODELS).toContain('openai');
+    expect(FREE_RACERS.length).toBeGreaterThanOrEqual(2);
+    expect(FREE_RACERS.map((r) => r.id)).toContain('pollinations');
   });
 });
 
