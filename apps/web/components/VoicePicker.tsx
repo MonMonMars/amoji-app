@@ -73,16 +73,16 @@ export default function VoicePicker({
         }).name;
         const companionPinned = companionGender === 'female' ? pinnedFemale : pinnedMale;
         return (
-          <div key={locale} className="space-y-1.5">
-            <h4 className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/50">{language}</h4>
+          <div key={locale} role="group" aria-labelledby={`amoji-voice-locale-${locale}`} className="space-y-1.5">
+            <h4 id={`amoji-voice-locale-${locale}`} className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/50">{language}</h4>
             {/* Full locale set: female group, then male. Both genders stay tappable. */}
             {GENDERS.map((gender) => {
               const group = rows.filter((b) => b.gender === gender);
               if (!group.length) return null;
               const pinnedForGender = gender === 'female' ? pinnedFemale : pinnedMale;
               return (
-                <div key={gender} className="space-y-1">
-                  <h5 className="text-[10px] uppercase tracking-[0.12em] text-white/35">{genderLabel(gender)}</h5>
+                <div key={gender} role="group" aria-labelledby={`amoji-voice-gender-${locale}-${gender}`} className="space-y-1">
+                  <h5 id={`amoji-voice-gender-${locale}-${gender}`} className="text-[10px] uppercase tracking-[0.12em] text-white/35">{genderLabel(gender)}</h5>
                   <div className="grid grid-cols-1 gap-1.5 min-[380px]:grid-cols-2">
                     {group.map((button) => {
                       const numLabel = `#${button.n} ${button.label}`;
