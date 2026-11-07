@@ -168,10 +168,6 @@ export type StrKey =
   | 'fallbackWebgl' | 'fallbackAsset'
   // mic not supported in this browser (was a yue/English ternary — zh/ja got English)
   | 'micUnsupported'
-  // worldwide weather/news location (Settings → Location)
-  | 'settingsLocation' | 'locationHint' | 'locationCityPlaceholder' | 'locationSave'
-  | 'locationClear' | 'locationSaved' | 'locationNotFound' | 'locationDetected'
-  | 'locationNone' | 'locationUseDevice'
   // honest voice picker: only voices that really differ are offered, so a
   // language with one voice says so, and the engines that cannot play are
   // named once instead of being rendered as dead buttons.
@@ -455,54 +451,6 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: '你嘅瀏覽器唔支援語音輸入，請用最新版 Chrome 或者 Safari 再試。',
     zh: '这个浏览器不支持语音输入，请使用最新版 Chrome 或 Safari 再试。',
     ja: 'このブラウザは音声入力に対応していません。最新の Chrome か Safari でお試しください。',
-  },
-  // Worldwide location: weather and light news follow the city she should use.
-  settingsLocation: {
-    en: 'Your city', yue: '你嘅城市', zh: '你的城市', ja: 'あなたの街',
-  },
-  locationHint: {
-    en: 'Weather and light news use this city. Leave it empty to let her use your device location or network.',
-    yue: '天氣同輕鬆新聞會用呢個城市。留空就會用你部機嘅位置或者網絡估計。',
-    zh: '天气和轻松新闻会用这个城市。留空则使用你的设备定位或网络估计。',
-    ja: '天気と軽いニュースはこの街を使うよ。空欄なら端末の位置情報かネットワーク推定を使うよ。',
-  },
-  locationCityPlaceholder: {
-    en: 'City or city, country — e.g. Lisbon',
-    yue: '城市或者「城市, 國家」——例如 里斯本',
-    zh: '城市或「城市, 国家」——例如 里斯本',
-    ja: '都市、または「都市, 国」— 例: リスボン',
-  },
-  locationSave: { en: 'Save', yue: '儲存', zh: '保存', ja: '保存' },
-  locationClear: { en: 'Use my device', yue: '用我部機', zh: '用我的设备', ja: '端末の位置を使う' },
-  locationSaved: {
-    en: 'Saved — she will use {city} from now on.',
-    yue: '記住咗——之後佢會用{city}。',
-    zh: '已保存——之后她会用{city}。',
-    ja: '保存したよ——これからは{city}を使うね。',
-  },
-  locationNotFound: {
-    en: "I couldn't find that city — try adding the country.",
-    yue: '搵唔到嗰個城市——試下加埋國家名。',
-    zh: '找不到那个城市——试试加上国家名。',
-    ja: 'その街が見つからなかった——国名も入れてみて。',
-  },
-  locationDetected: {
-    en: 'Currently using your device or network location.',
-    yue: '而家用緊你部機或者網絡嘅位置。',
-    zh: '当前使用你的设备或网络位置。',
-    ja: 'いまは端末かネットワークの位置を使ってるよ。',
-  },
-  locationNone: {
-    en: 'No city yet — she will ask before talking about weather or local news.',
-    yue: '仲未有城市——佢會喺講天氣或者本地新聞之前問你。',
-    zh: '还没有城市——她在说天气或本地新闻之前会先问你。',
-    ja: 'まだ街がないよ——天気や地元ニュースの前に聞くね。',
-  },
-  locationUseDevice: {
-    en: 'Switch back to my device location',
-    yue: '轉返用我部機嘅位置',
-    zh: '恢复使用我的设备定位',
-    ja: '端末の位置に戻す',
   },
 };
 
