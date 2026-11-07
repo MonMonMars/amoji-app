@@ -1,5 +1,5 @@
 'use client';
-// Mount on login / SoftLand / select so the first user gesture unlocks
+// Mount on splash / login / SoftLand / select so the first user gesture unlocks
 // AudioContext + silent media + synth + SFX BEFORE /chat (iPhone gate).
 // Does not play cheer/enter SFX. Mute All still honored by speak().
 // Imports primeAudioForChatEnter only — does not edit voice.ts (#158 lock).
