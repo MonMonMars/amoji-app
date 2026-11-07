@@ -169,7 +169,7 @@ export default function StorySetupPanel() {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={assetUrl(background.image)}
-              alt=""
+              alt={scene.title[lang]}
               className="h-full w-full object-cover opacity-80"
             />
           ) : (
