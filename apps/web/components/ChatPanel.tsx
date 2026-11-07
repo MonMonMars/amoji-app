@@ -1407,7 +1407,7 @@ export default function ChatPanel({
           disabled={busy}
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-black transition disabled:opacity-40"
           style={{ backgroundColor: accent }}
-          aria-label="send"
+          aria-label={t(lang, 'sendBtn')}
         >
           ➤
         </button>
