@@ -268,6 +268,12 @@ export default function SfxGalleryPage() {
     lang === 'yue' ? '返回選擇' : lang === 'zh' ? '返回选择' : lang === 'ja' ? '選択に戻る' : 'Back to select';
   const openChat =
     lang === 'yue' ? '打開傾偈' : lang === 'zh' ? '打开聊天' : lang === 'ja' ? 'チャットを開く' : 'Open chat';
+  const copyWantSkip =
+    lang === 'yue' ? '複製 Want/Skip JSON' : lang === 'zh' ? '复制 Want/Skip JSON' : lang === 'ja' ? 'Want/Skip JSONをコピー' : 'Copy Want/Skip JSON';
+  const clearSkipped =
+    lang === 'yue' ? '清除已 Skip' : lang === 'zh' ? '清除已 Skip' : lang === 'ja' ? 'Skip をクリア' : 'Clear skipped picks';
+  const resetAll =
+    lang === 'yue' ? '重設全部選擇' : lang === 'zh' ? '重置全部选择' : lang === 'ja' ? 'すべての選択をリセット' : 'Reset all picks';
 
   return (
     <main aria-labelledby="amoji-sfx-gallery-title" className="min-h-screen bg-[#0b0d12] px-4 py-6 text-white sm:px-6">
@@ -292,7 +298,7 @@ export default function SfxGalleryPage() {
             <button
               type="button"
               data-testid="cma-export"
-              aria-label="Copy Want/Skip JSON"
+              aria-label={copyWantSkip}
               onClick={exportJson}
               className="rounded-full border border-sky-400/40 bg-sky-500/15 px-3 py-1 text-xs text-sky-100"
             >
@@ -301,7 +307,7 @@ export default function SfxGalleryPage() {
             <button
               type="button"
               data-testid="cma-clear-skipped"
-              aria-label="Clear skipped picks"
+              aria-label={clearSkipped}
               onClick={onClearSkipped}
               disabled={skipped.length === 0}
               className="rounded-full border border-rose-400/35 bg-rose-500/10 px-3 py-1 text-xs text-rose-100 disabled:opacity-40"
@@ -311,7 +317,7 @@ export default function SfxGalleryPage() {
             <button
               type="button"
               data-testid="cma-reset"
-              aria-label="Reset all picks"
+              aria-label={resetAll}
               onClick={onResetAll}
               className="rounded-full border border-white/15 px-3 py-1 text-xs text-white/55"
             >
