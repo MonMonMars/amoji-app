@@ -54,11 +54,11 @@ export default function SetupFlow() {
 
       <div className="flex items-center gap-3">
         {step > 0 && (
-          <button onClick={() => setStep(step - 1)} className="rounded-full bg-white/10 px-5 py-2.5 text-sm text-white/80 hover:bg-white/20">
+          <button type="button" onClick={() => setStep(step - 1)} className="rounded-full bg-white/10 px-5 py-2.5 text-sm text-white/80 hover:bg-white/20">
             {t(lang, 'back')}
           </button>
         )}
-        <button onClick={next} className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black hover:bg-white/85">
+        <button type="button" onClick={next} className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black hover:bg-white/85">
           {step < STEPS.length - 1 ? '→' : t(lang, 'startChat')}
         </button>
       </div>
