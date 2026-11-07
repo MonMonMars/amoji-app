@@ -298,7 +298,10 @@ export default function MiniGameOverlay({ kind, lang, onEmotion, onExit }: MiniG
     if (scheme !== 'keyboard') return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        // SettingsSheet / MiniGamePicker parity: swallow Escape so back
+        // does not leak to the page underneath.
         e.preventDefault();
+        e.stopPropagation();
         backRef.current();
         return;
       }
@@ -321,10 +324,10 @@ export default function MiniGameOverlay({ kind, lang, onEmotion, onExit }: MiniG
       if (kind !== 'tag') return;
       tagKeys.current = tagKeysFromEvent(e.key, false, tagKeys.current);
     };
-    window.addEventListener('keydown', onKey);
+    window.addEventListener('keydown', onKey, true);
     window.addEventListener('keyup', onUp);
     return () => {
-      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('keydown', onKey, true);
       window.removeEventListener('keyup', onUp);
       tagKeys.current = { ...EMPTY_KEYS };
     };
