@@ -1223,6 +1223,8 @@ interface SpeechJob {
   sfxOnly?: boolean;
   /** Exact Edge short name for a greeting. Chat still reads the saved pin. */
   voiceId?: string;
+  /** Loading filler: dropped the moment a real line needs the speaker. */
+  filler?: boolean;
 }
 
 const lineQueue = new LineQueue<SpeechJob>();
@@ -1275,7 +1277,7 @@ function drainSpeech(): void {
     ? performSing(job.text, job.characterId, job.lang)
     : job.kind === 'clip'
       ? performClip(job)
-      : performSpeak(job.text, job.characterId, job.lang, job.emotionHints, job.leadOverride, job.intensity, job.voiceId);
+      : performSpeak(job.text, job.characterId, job.lang, job.emotionHints, job.leadOverride, job.intensity, job.voiceId, job.filler);
   void run.finally(() => {
     lineQueue.finished(next.epoch);
     if (lineQueue.epochNow() === next.epoch) drainSpeech();
@@ -1335,11 +1337,68 @@ export function stopSpeaking(): void {
  * stub. The reply waits until this utterance finishes.
  * r2026-10-03.24: an optional felt mood tints the filler text itself (the
  * face/orb already wear the mood via applyLlmHints in the caller).
+ * t790: the wait is now two beats starting at 2s, and every beat is spoken by
+ * HER OWN TTS chain — the same voice and pitch as a reply — instead of a
+ * recorded CLIP_LIBRARY um, which was a different person talking.
+ * `onBeat` lets the caller paint the same line in the placeholder bubble, so
+ * screen and speaker never disagree.
  */
-export function speakThinkingFiller(characterId: string, lang: Lang, _mood?: string): void {
-  // Residual path: loading cue is CLIP_LIBRARY SFX only — never TTS um/hehe.
-  if (isMasterMuted()) return;
-  startThinkingSound({ gender: characterVoiceGender(characterId), lang });
+export function speakThinkingFiller(
+  characterId: string,
+  lang: Lang,
+  mood?: string,
+  userText?: string,
+  onBeat?: (text: string) => void,
+): void {
+  if (!voiceOutputAllowed()) return;
+  startThinkingSound({
+    lang,
+    characterId,
+    mood,
+    userText,
+    say: (text) => {
+      enqueueThinkingFiller(text, characterId, lang);
+      onBeat?.(text);
+    },
+  });
+}
+
+/**
+ * Queue one filler beat. It is a sentence in her voice, not a reaction SFX, so
+ * it runs through the normal speak chain and inherits the reply's gender,
+ * locale and pitch.
+ */
+function enqueueThinkingFiller(text: string, characterId: string, lang: Lang): void {
+  const line = text.trim();
+  if (!line) return;
+  lineQueue.enqueue({ kind: 'speak', text: line, characterId, lang, intensity: 1, filler: true });
+  drainSpeech();
+}
+
+/**
+ * The reply always wins the speaker. This drops a filler that is still waiting
+ * or already talking; a real line that is playing is never touched.
+ */
+function yieldFillerToReply(): void {
+  stopThinkingSound();
+  if (!lineQueue.drop((job) => job.filler === true)) return;
+  // The filler may own a tier right now — cut it so the reply's first syllable
+  // cannot land on top of the "um…".
+  stopGtts();
+  stopEdge();
+  haltBrowserSynth();
+  stopVoiceClip();
+}
+
+/**
+ * Pitch multiplier that carries a character's identity through the HTTP MP3
+ * tier, which serves one voice per language. ONE definition on purpose: the
+ * reply, a resumed tail, the greeting, a sung line, a preview, and the loading
+ * filler must all resolve to the same number or the listener hears a
+ * different person.
+ */
+export function gttsPitchBias(gender: 'female' | 'male'): number {
+  return gender === 'male' ? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE;
 }
 
 /** A leading vocal tic (text + relative pitch/rate lift). */
@@ -1364,6 +1423,9 @@ export function speak(
   // only the user's mic or a user turn calls it.
   const cleaned = stripLaughTokens(cleanForSpeech(text));
   if (!cleaned || !voiceOutputAllowed()) return;
+  // A real line outranks the wait cue: drop a pending or speaking filler so
+  // the reply is never talked over, and never interrupted by one.
+  yieldFillerToReply();
   lineQueue.enqueue({
     kind: 'speak',
     text: cleaned,
@@ -1384,6 +1446,8 @@ function performSpeak(
   leadOverride?: VocalLead,
   intensity = 1,
   voiceId?: string,
+  /** Loading filler: always live TTS in her voice, never a recorded clip. */
+  filler = false,
 ): Promise<void> {
   return new Promise((resolve) => {
   let settled = false;
@@ -1393,8 +1457,9 @@ function performSpeak(
     sfxVoiceRelease(); // t786: failed/silent speak must not hold poke/laugh 12s
     resolve();
   };
-  // Reply TTS takes the speaker. The wait hum must not play under it.
-  stopThinkingSound();
+  // Reply TTS takes the speaker. The wait cue must not play under it.
+  // A filler beat is the cue itself, so it must not cancel its own later beat.
+  if (!filler) stopThinkingSound();
   // Spoken string only. cleanForSpeech may drop punctuation-mark names and
   // rewrite dashes. Chat bubbles stay on cleanForDisplay — do not write this
   // string back into history.
@@ -1402,12 +1467,16 @@ function performSpeak(
   if (!text || !voiceOutputAllowed()) { settle(); return; }
   // r111: remember the line for gesture-gate replay
   const attemptAt = Date.now();
-  lastSpeak = { text, characterId, lang, emotionHints, leadOverride, intensity, at: attemptAt };
-  // r119: a fresh attempt retires any previous replay hint, and the watchdog
-  // re-arms for THIS line — if no tier's audio starts within 8s the visible
-  // tap-to-replay chip appears (catches silent failures that throw no error)
-  dismissReplayHint();
-  armNoAudioWatchdog(attemptAt);
+  // A filler is disposable: it must not become the line a gesture-gate tap
+  // replays, and it must not raise the "no voice" chip.
+  if (!filler) {
+    lastSpeak = { text, characterId, lang, emotionHints, leadOverride, intensity, at: attemptAt };
+    // r119: a fresh attempt retires any previous replay hint, and the watchdog
+    // re-arms for THIS line — if no tier's audio starts within 8s the visible
+    // tap-to-replay chip appears (catches silent failures that throw no error)
+    dismissReplayHint();
+    armNoAudioWatchdog(attemptAt);
+  }
   // r97: a reply can be the very first sound after page load — unlockAudio()
   // used to run only on window gestures, so a session where the user typed
   // before ever tapping fetched every voice tier and stayed silent (autoplay
@@ -1453,10 +1522,13 @@ function performSpeak(
   // plain moods (intensity 1) leave every delta exactly where it was
   const amp = 1 + 0.5 * Math.max(0, intensity - 1);
   // strong feelings get an audible tic (giggle/sigh/gasp) before the words —
-  // unless the caller supplies its own lead (e.g. a guaranteed poke ouch)
-  let tic = leadOverride
-    ? prepareSpokenLead(leadOverride)
-    : prepareSpokenLead(pickInterjection(emotion, value, lang));
+  // unless the caller supplies its own lead (e.g. a guaranteed poke ouch).
+  // A filler is a neutral "let me think", never a reaction, so it takes no tic.
+  let tic = filler
+    ? undefined
+    : leadOverride
+      ? prepareSpokenLead(leadOverride)
+      : prepareSpokenLead(pickInterjection(emotion, value, lang));
   const speechEpoch = lineQueue.epochNow();
   const speechAlive = () => lineQueue.epochNow() === speechEpoch;
   const onHeard = () => { noteSpeechStarted(tic ? `${tic.text} ${text}` : text); };
@@ -1516,7 +1588,7 @@ function performSpeak(
         rate: clamp(1 + np.rate * 0.12, 0.88, 1.15),
         // Keep the character's pitch on a resumed tail, or the second half of
         // the sentence would come back in a different voice.
-        pitchBias: spokenGender === 'male' ? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE,
+        pitchBias: gttsPitchBias(spokenGender),
         onPlaying: () => { onHeard(); markVoiceStarted(); reportVoiceStatus('gtts', true, 'google-tts resuming'); },
       }).then(() => {
         reportVoiceStatus('gtts', true, 'google-tts resume finished');
@@ -1553,7 +1625,7 @@ function performSpeak(
             // carried by pitch: male companions get a deeper read, female ones a
             // slightly brighter one. Without this every cast member sounds the
             // same and male characters sound female.
-            pitchBias: spokenGender === 'male' ? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE,
+            pitchBias: gttsPitchBias(spokenGender),
             onPlaying: () => {
               onHeard();
               markVoiceStarted();
@@ -1665,8 +1737,11 @@ function performSpeak(
 
   // Recorded um / ha / think / search. A 404 on Pages must not end the line:
   // Edge (then the browser voice) still speaks.
+  // Filler jobs are the exception: a recorded CLIP_LIBRARY um is a different
+  // person from the reply's TTS, which is the mismatch Mon reported, so every
+  // filler beat takes the live chain below instead.
   const fillerKind = loadingFillerKind(text);
-  if (fillerKind) {
+  if (fillerKind && !filler) {
     const file = recordedFillerClip(characterVoiceGender(characterId), fillerKind, lang);
     void playVoiceClip(file, text, () => markVoiceStarted()).then(() => settle()).catch((err: unknown) => {
       if (!speechAlive() || (err as Error | undefined)?.message === 'canceled') { settle(); return; }
@@ -1678,7 +1753,7 @@ function performSpeak(
   const leadKind = tic ? emotionClipKind(tic.text, 'lead') : null;
   const lineKind = leadKind ? null : emotionClipKind(text, 'line');
   const clipKind = leadKind ?? lineKind;
-  if (clipKind) {
+  if (clipKind && !filler) {
     const gender = characterVoiceGender(characterId);
     const caption = leadKind && tic ? tic.text : text;
     const bodyIsBurst = () => burstSkipsTts(emotionClipKind(text, 'line'));
@@ -1810,7 +1885,7 @@ export function playVoiceGreeting(
     // Same per-character pitch as chat. Without it the SAME character sounded
     // different on select than in the chat room, which reads as "her voice
     // jumped to someone else".
-    pitchBias: gender === 'male' ? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE,
+    pitchBias: gttsPitchBias(gender),
     onPlaying: () => {
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
@@ -1966,7 +2041,7 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
         void speakGtts(text, {
           lang,
           tl: tlForChoice(lang, voicePickFor(lang)),
-          pitchBias: gender === 'male' ? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE,
+          pitchBias: gttsPitchBias(gender),
           onPlaying: () => {
             noteSpeechStarted(text);
             markVoiceStarted();
@@ -2036,7 +2111,6 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   primeSynthInGesture(true);
   // No character here, so keep the neutral female-ish pitch as before. The live
   // voices are not gendered — this only shapes delivery.
-  const previewPitchBias = PITCH_BIAS_FEMALE;
   const tl = tlForChoice(locale, choiceId);
   const text = edgeSampleText(locale);
   /** Set by whichever tier actually starts, so the loser can bail out. */
@@ -2060,7 +2134,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const gtts = speakGtts(text, {
     lang: locale,
     tl,
-    pitchBias: previewPitchBias,
+    pitchBias: gttsPitchBias('female'),
     onPlaying: () => {
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
