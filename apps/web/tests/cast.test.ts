@@ -42,6 +42,29 @@ describe('cast roster', () => {
     expect(new Set(CHARACTERS.map((c) => c.model)).size).toBe(CHARACTERS.length);
   });
 
+  it('renamed sample-asset characters keep their ids and change only the display name', () => {
+    // The ids are localStorage pick keys and must never move; the display names
+    // were the problem ("HairSample", "Vtuber ... Sample" read like an
+    // un-swapped dev asset to anyone reviewing the store listing).
+    const RENAMED: [string, string][] = [
+      ['a23-hairsample-female', 'Nagi'],
+      ['a24-hairsample-male', 'Ren'],
+      ['a70-vtuber-aihina-sample', 'Aihina'],
+    ];
+    for (const [id, name] of RENAMED) {
+      const c = CHARACTERS.find((x) => x.id === id);
+      expect(c, id).toBeTruthy();
+      expect(c!.name).toBe(name);
+      // the model path still matches the unchanged id
+      expect(c!.model).toBe(`want/${id}.vrm`);
+      expect(c!.image).toBe(`${WANT_RELEASE}${id}.png`);
+    }
+    // and no shipped display name still advertises itself as a sample asset
+    for (const c of CHARACTERS) {
+      expect(c.name, c.id).not.toMatch(/hairsample|^vtuber\b|\bsample\b/i);
+    }
+  });
+
   it('male voice hints differ from female (A24, A77, A94, A98, A105, A107)', () => {
     const male = CHARACTERS.filter((c) => c.gender === 'male');
     expect(male.map((c) => c.id).sort()).toEqual([
