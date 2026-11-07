@@ -1157,9 +1157,8 @@ export default function ChatPanel({
       return;
     }
     if (!listenSupported()) {
-      window.alert(lang === 'yue'
-        ? '你嘅瀏覽器唔支援語音輸入，請用最新版 Chrome 或者 Safari 再試。'
-        : 'Speech input is not supported in this browser — try the latest Chrome or Safari.');
+      // Was a yue/English ternary, so zh and ja users got English here.
+      window.alert(t(lang, 'micUnsupported'));
       return;
     }
     micModeRef.current = true;
