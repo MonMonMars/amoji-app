@@ -1461,6 +1461,9 @@ function performSpeak(
   const spokenGender: 'female' | 'male' = voiceId
     ? (isMaleNeuralVoice(voiceId) ? 'male' : 'female')
     : characterVoiceGender(characterId);
+  // The live free tier's speaker is chosen by Google `tl` alone. Read it once
+  // per line so a resume/tail and the chat line stay the same speaker.
+  const ttsTl = tlForChoice(lang, voicePickFor(lang));
   const runSynth = (onDone: () => void): boolean => {
     if (typeof speechSynthesis === 'undefined') return false;
     try {
@@ -1500,6 +1503,7 @@ function performSpeak(
     const speakRemainderInChain = (rest: string): void => {
       void speakGtts(rest, {
         lang,
+        tl: ttsTl,
         rate: clamp(1 + np.rate * 0.12, 0.88, 1.15),
         // Keep the character's pitch on a resumed tail, or the second half of
         // the sentence would come back in a different voice.
@@ -1533,6 +1537,7 @@ function performSpeak(
         try {
           tier = speakGtts(text, {
             lang,
+            tl: ttsTl,
             rate: clamp(1 + np.rate * 0.12, 0.88, 1.15),
             lead: tic?.text,
             // The endpoint has one voice per language, so character identity is
@@ -1733,21 +1738,29 @@ function performClip(job: SpeechJob): Promise<void> {
  * Select-page greeting. Pass `line` to speak a specific sentence instead of the
  * rotating canned greeting — the select board uses this to introduce the
  * character by name and personality instead of saying "Hello!" for all 46.
+ *
+ * `choiceId` names one of the real voices (a Google `tl` region, see
+ * voice-capability.ts). The greeting auditions exactly that speaker, so the
+ * button the user tapped is the voice they hear.
  */
 export function playVoiceGreeting(
   characterId: string,
   lang: Lang,
-  voiceId: string,
+  choiceId: string,
   line?: string,
 ): void {
-  if (!voiceOutputAllowed() || !voiceId) return;
+  if (!voiceOutputAllowed()) return;
   unlockAudio(true);
   stopSpeaking();
   // force: stopSpeaking cancelled any window-level prime and cleared the latch.
   primeSynthInGesture(true);
   const kind = nextGreetingKind();
   const text = line?.trim() ? line.trim() : greetingText(lang, kind);
-  const gender = isMaleNeuralVoice(voiceId) ? 'male' : 'female';
+  // Gender comes from the CHARACTER, not from the voice id. The live voices are
+  // not gendered, so reading a gender out of a region code would be fiction —
+  // and it used to default every greeting to the female pitch.
+  const gender = characterVoiceGender(characterId);
+  const tl = tlForChoice(lang, choiceId);
   let session = 0;
   /** Set by whichever tier actually starts, so the loser can bail out. */
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
@@ -1763,7 +1776,7 @@ export function playVoiceGreeting(
     if (edgeGrace) clearTimeout(edgeGrace);
     session = noteSpeechStarted(text);
     markVoiceStarted();
-    reportVoiceStatus(tier, true, `greeting ${voiceId}`);
+    reportVoiceStatus(tier, true, `greeting ${choiceId}`);
   };
   /** Last-resort tier for a device where even the HTTP MP3 cannot play. */
   const runSynthAudition = (tag: string) => {
@@ -1774,7 +1787,7 @@ export function playVoiceGreeting(
         if (session) finishLipSync(session);
       }, gender, 0.7, true);
       onStart('synth');
-      reportVoiceStatus('synth', true, `${tag} ${voiceId}`);
+      reportVoiceStatus('synth', true, `${tag} ${choiceId}`);
     } catch (e) {
       reportVoiceStatus('synth', false, (e as Error | undefined)?.message ?? 'greeting synth failed');
     }
@@ -1784,6 +1797,7 @@ export function playVoiceGreeting(
   // means the greeting begins immediately instead of after a dead Edge attempt.
   void speakGtts(text, {
     lang,
+    tl,
     // Same per-character pitch as chat. Without it the SAME character sounded
     // different on select than in the chat room, which reads as "her voice
     // jumped to someone else".
@@ -1819,11 +1833,12 @@ export function playVoiceGreeting(
     if (!spokenBy) runSynthAudition('greeting fallback (no tier started)');
   }, 1500);
   // Edge still wins if it ever answers again: onPlaying halts the other tiers.
+  // It is not a button and not a promise — just a free upside if Microsoft
+  // re-opens the endpoint, which would also restore real per-voice identities.
   void speakEdge(text, {
     lang,
     gender,
     character: characterId,
-    voiceId,
     forcePlain: true,
     expressiveness: 1.15,
     rateDelta: 0.04,
@@ -1839,7 +1854,7 @@ export function playVoiceGreeting(
   }).catch((err: unknown) => {
     clearTimeout(edgeGrace);
     if ((err as Error | undefined)?.message === 'canceled') return;
-    onEdgeFail((err as Error | undefined)?.message ?? `greeting failed ${voiceId}`);
+    onEdgeFail((err as Error | undefined)?.message ?? `greeting failed ${choiceId}`);
   });
 }
 
@@ -1941,6 +1956,7 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
         stopEdge();
         void speakGtts(text, {
           lang,
+          tl: tlForChoice(lang, voicePickFor(lang)),
           pitchBias: gender === 'male' ? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE,
           onPlaying: () => {
             noteSpeechStarted(text);
@@ -2227,6 +2243,7 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
           await withTimeout(
             speakGtts(line, {
               lang,
+              tl: tlForChoice(lang, voicePickFor(lang)),
               onPlaying: () => push('gtts', true, 'google-tts playing'),
             }),
             15_000,
@@ -2297,6 +2314,7 @@ export async function testProxyVoice(characterId: string, lang: Lang): Promise<b
   try {
     await withTimeout(speakGtts(line, {
       lang,
+      tl: tlForChoice(lang, voicePickFor(lang)),
       onPlaying: () => reportVoiceStatus('gtts', true, 'google-tts playing (proxy probe)'),
     }), 20_000, 'google-tts timeout');
     reportVoiceStatus('gtts', true, 'voice played via google-tts (edge unavailable)');
