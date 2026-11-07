@@ -623,6 +623,9 @@ export default function DialogueReviewPage() {
 
       <div className="drv-composer">
         <select
+          id="amoji-drv-custom-kind"
+          name="customKind"
+          aria-label="Custom line kind"
           className="drv-select drv-kind"
           value={customKind}
           onChange={(e) => setCustomKind(e.target.value as 'loading' | 'idle')}
@@ -631,6 +634,11 @@ export default function DialogueReviewPage() {
           <option value="loading">Loading filler</option>
         </select>
         <input
+          id="amoji-drv-custom-line"
+          name="customLine"
+          type="text"
+          autoComplete="off"
+          aria-label="Write your own line"
           className="drv-search"
           placeholder="Write your own line… (e.g. Hey love, missed you — what shall we do today?)"
           value={customText}
