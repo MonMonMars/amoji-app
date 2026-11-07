@@ -30,8 +30,8 @@ import { clientChat } from '../../lib/client-chat';
 import { clientLiveContext } from '../../lib/live-tools';
 import type { ChatMessage } from '../../lib/llm';
 import { notifySpeaking, isSpeaking, sampleSpeech } from '../../lib/speech';
-import { speak, stopSpeaking } from '../../lib/voice';
-import { startThinkingSound, stopThinkingSound } from '../../lib/thinking-sound';
+import { speak, stopSpeaking, speakThinkingFiller } from '../../lib/voice';
+import { stopThinkingSound } from '../../lib/thinking-sound';
 import { listenOnce, listenSupported } from '../../lib/listen';
 import type { Lang } from '../../lib/prefs';
 import { APP_REVISION } from '../../lib/revision';
@@ -188,7 +188,7 @@ export default function FacePage() {
       historyRef.current.push({ role: 'user', content: text });
 
       emit('thinking');
-      startThinkingSound({ lang: optsRef.current.lang, gender: 'female' });
+      speakThinkingFiller(optsRef.current.character, optsRef.current.lang, undefined, text);
       const users = historyRef.current.filter((m) => m.role === 'user');
       const prior = users.length > 1 ? users[users.length - 2]?.content : undefined;
       const live = await clientLiveContext(text, optsRef.current.lang, prior);
