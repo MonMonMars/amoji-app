@@ -41,6 +41,14 @@ const LANGS = ['yue', 'zh', 'ja', 'en'];
 
 type Mode = 'idle' | 'listening' | 'thinking' | 'speaking';
 
+
+const FACE_COPY: Record<Lang, { main: string; canvas: string }> = {
+  en: { main: 'Amoji face', canvas: 'Emotion face' },
+  yue: { main: 'Amoji 面孔', canvas: '表情面孔' },
+  zh: { main: 'Amoji 面孔', canvas: '表情面孔' },
+  ja: { main: 'Amojiフェイス', canvas: '表情フェイス' },
+};
+
 const MODE_LABEL: Record<Mode, string> = {
   idle: 'tap anywhere to talk',
   listening: '● listening',
@@ -57,6 +65,7 @@ export default function FacePage() {
   const [debug, setDebug] = useState(false);
   const [subs, setSubs] = useState(false);
   const [micOk] = useState(listenSupported);
+  const [lang, setLang] = useState<Lang>('yue');
   const optsRef = useRef({ lang: 'yue' as Lang, character: 'juno', auto: false });
   const busyRef = useRef(false);
   const stoppedRef = useRef(false);
@@ -68,6 +77,7 @@ export default function FacePage() {
     const character = CHARACTERS.includes(q.get('character') ?? '') ? q.get('character')! : 'juno';
     const auto = q.get('auto') === '1';
     optsRef.current = { lang, character, auto };
+    setLang(lang);
     setDebug(q.get('debug') === '1');
     setSubs(q.get('subs') === '1');
 
@@ -210,10 +220,11 @@ export default function FacePage() {
   };
 
   const auto = optsRef.current.auto;
+  const faceCopy = FACE_COPY[lang] ?? FACE_COPY.en;
 
   return (
     <main
-      aria-label="Amoji face"
+      aria-label={faceCopy.main}
       aria-describedby="amoji-face-mode"
       aria-busy={mode !== 'idle'}
       tabIndex={auto ? -1 : 0}
@@ -227,7 +238,7 @@ export default function FacePage() {
         }
       }}
     >
-      <canvas ref={canvasRef} width={720} height={560} role="img" aria-label="Emotion face" className="h-full max-h-[110vh] w-full object-contain" />
+      <canvas ref={canvasRef} width={720} height={560} role="img" aria-label={faceCopy.canvas} className="h-full max-h-[110vh] w-full object-contain" />
 
       {/* mode pill */}
       <div id="amoji-face-mode" role="status" aria-live="polite" className="pointer-events-none absolute top-5 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-white/45">
