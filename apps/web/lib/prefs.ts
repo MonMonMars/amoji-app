@@ -146,6 +146,10 @@ export type StrKey =
   | 'datesTitle' | 'datesEmpty' | 'promisesTitle' | 'promisesEmpty'
   // kid mode (r2026-10-03.03)
   | 'settingsMode' | 'kidMode' | 'kidModeHint'
+  // select top bars: chat vs story board chips
+  | 'modeChat' | 'modeStory'
+  // legacy-URL soft-land status lines (/mode, /setup, /story, /play)
+  | 'softLandSelect' | 'softLandStory' | 'softLandChat'
   // brain routing (r2026-10-03.05)
   | 'brainTitle' | 'brainAuto' | 'brainAutoHint' | 'brainKeyPlaceholder' | 'brainNoKey'
   // voice self-test + diagnostics (r2026-10-04.75)
@@ -320,6 +324,26 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     ja: 'まだない——約束したことはちゃんと覚えてるよ。',
   },
   settingsMode: { en: 'Mode', yue: '模式', zh: '模式', ja: 'モード' },
+  modeChat: { en: 'Chat', yue: '傾偈', zh: '聊天', ja: 'チャット' },
+  modeStory: { en: 'Story', yue: '故事', zh: '故事', ja: 'ストーリー' },
+  softLandSelect: {
+    en: 'Taking you to character select...',
+    yue: '帶緊你去揀角色…',
+    zh: '正在带你去选择角色…',
+    ja: 'キャラクター選択へ移動中…',
+  },
+  softLandStory: {
+    en: 'Opening story select...',
+    yue: '打開緊故事選擇…',
+    zh: '正在打开故事选择…',
+    ja: 'ストーリー選択を開いています…',
+  },
+  softLandChat: {
+    en: 'Taking you to chat...',
+    yue: '帶緊你去傾偈…',
+    zh: '正在带你去聊天…',
+    ja: 'チャットへ移動中…',
+  },
   kidMode: { en: 'Kid mode', yue: '兒童模式', zh: '儿童模式', ja: 'キッズモード' },
   kidModeHint: {
     en: 'Wholesome characters & sunny scenes only',
