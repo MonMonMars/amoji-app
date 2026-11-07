@@ -187,7 +187,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
 
           <div className="relative mx-auto mt-1 min-h-[11rem] w-full flex-1 sm:min-h-[14rem]">
             <ArcFan
-              ariaLabel="characters"
+              ariaLabel={t(lang, 'chooseCharacter')}
               size="portrait"
               items={cast}
               selectedId={prefsReady ? live.character : ''}
@@ -244,7 +244,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                 {t(lang, 'chooseBackground')}
               </h2>
               <ArcFan
-                ariaLabel="scenes"
+                ariaLabel={t(lang, 'chooseBackground')}
                 size="scene"
                 items={scenes}
                 selectedId={live.background}
@@ -288,7 +288,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                 {t(lang, 'chooseLanguage')}
               </h2>
               <ArcFan
-                ariaLabel="languages"
+                ariaLabel={t(lang, 'chooseLanguage')}
                 size="compact"
                 items={LANGS}
                 selectedId={live.lang}

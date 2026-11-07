@@ -259,7 +259,7 @@ describe('selection layout', () => {
     }
     expect(board).not.toContain('HScrollRow');
     expect(board).not.toContain('rounded-full px-3');
-    expect(board).toContain('ariaLabel="languages"');
+    expect(board).toContain("ariaLabel={t(lang, 'chooseLanguage')}");
     expect(board).toContain('size="compact"');
     expect(board.split('size="portrait"').length - 1).toBe(1);
     expect(board).toContain('size="scene"');
@@ -267,9 +267,9 @@ describe('selection layout', () => {
     expect(board).toContain('<LangCardFace');
     expect(board).toContain('compact');
     expect(board).toContain('pick({ lang: id })');
-    const characters = board.indexOf('ariaLabel="characters"');
-    const scenes = board.indexOf('ariaLabel="scenes"');
-    const languages = board.indexOf('ariaLabel="languages"');
+    const characters = board.indexOf("ariaLabel={t(lang, 'chooseCharacter')}");
+    const scenes = board.indexOf("ariaLabel={t(lang, 'chooseBackground')}");
+    const languages = board.indexOf("ariaLabel={t(lang, 'chooseLanguage')}");
     const voices = board.indexOf('<TtsVoiceRow');
     const reactions = board.indexOf('<EmotionClipRow');
     const start = board.indexOf('fx-start');

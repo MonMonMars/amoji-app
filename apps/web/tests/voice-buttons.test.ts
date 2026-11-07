@@ -206,8 +206,8 @@ describe('Edge voice bake-off buttons', () => {
 
   it('character tap auditions cast slot; language tap greets pin||cast (Mon)', () => {
     const board = fs.readFileSync(path.resolve(here, '../components/SelectionBoard.tsx'), 'utf8');
-    const charIdx = board.indexOf('ariaLabel="characters"');
-    const langIdx = board.indexOf('ariaLabel="languages"');
+    const charIdx = board.indexOf("ariaLabel={t(lang, 'chooseCharacter')}");
+    const langIdx = board.indexOf("ariaLabel={t(lang, 'chooseLanguage')}");
     expect(charIdx).toBeGreaterThan(0);
     expect(langIdx).toBeGreaterThan(charIdx);
     const charBlock = board.slice(charIdx, langIdx);
