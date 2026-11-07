@@ -593,7 +593,7 @@ export default function DialogueReviewPage() {
       <header className="drv-head">
         <h1 id="amoji-drv-title">Amoji Dialogue Review</h1>
         <p className="drv-sub">r2026-10-04.67 · tap a line to cycle ✅ keep → ❌ drop → ❓ undecided · paste the result back to me in chat</p>
-        <button type="button" className="drv-copy" onClick={copyResult}>{copied ? '✓ Copied!' : '📋 Copy result'}</button>
+        <button type="button" className="drv-copy" onClick={copyResult} aria-label="Copy result">{copied ? '✓ Copied!' : '📋 Copy result'}</button>
       </header>
 
       <div className="drv-controls">
@@ -693,7 +693,7 @@ export default function DialogueReviewPage() {
       })}
 
       <footer className="drv-foot">
-        <button type="button" className="drv-copy" onClick={copyResult}>{copied ? '✓ Copied!' : '📋 Copy result'}</button>
+        <button type="button" className="drv-copy" onClick={copyResult} aria-label="Copy result">{copied ? '✓ Copied!' : '📋 Copy result'}</button>
         <p>Then paste it here in the chat and I will apply your picks to the app.</p>
       </footer>
     </main>
