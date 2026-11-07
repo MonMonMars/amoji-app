@@ -200,6 +200,7 @@ export default function StorySetupPanel() {
           <button
             type="button"
             data-testid="story-reroll"
+            aria-label={packLocked ? LABEL.castAgain[lang] : LABEL.reroll[lang]}
             onClick={() => setSeed((s) => s + 1 + (STORY_SCENES.length > 1 ? 1 : 0))}
             className="ui-btn flex-1 rounded-full border border-white/20 bg-black/45 px-4 py-3 text-sm backdrop-blur-md"
           >
@@ -208,6 +209,7 @@ export default function StorySetupPanel() {
           <button
             type="button"
             data-testid="story-start"
+            aria-label={LABEL.start[lang]}
             onClick={enter}
             className="fx-start flex-[1.4] rounded-full bg-white px-4 py-3 text-sm font-bold tracking-wide text-black"
           >
