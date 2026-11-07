@@ -176,6 +176,28 @@ button:not(:disabled):active,
   outline-offset: 2px;
 }
 
+/* ---- visible keyboard focus for custom controls ---------------------------
+ * .ui-btn and .ui-card carry their own ring, but hand-rolled controls (the
+ * idle rail #N chips, ArcFan arrows, the mic button, minigame buttons,
+ * selector cards...) had none. A keyboard user could tab to them and see no
+ * indication of where focus was.
+ *
+ * Rather than add a class to every call site, give every interactive element a
+ * baseline ring. .ui-btn / .ui-card below are more specific and keep their
+ * existing treatment.
+ */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[role="group"][tabindex]:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: 2px solid rgba(249, 168, 212, 0.9);
+  outline-offset: 2px;
+  /* Chips sit on a photographic backdrop — a dark inner edge keeps the pink
+   * ring readable over bright scenes. */
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55);
+}
+
 /* ---- preview panel slow sheen sweep ---- */
 .fx-sheen { position: relative; }
 .fx-sheen::after {
