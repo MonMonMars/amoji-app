@@ -44,7 +44,7 @@ export default function DevPanel() {
       aria-label="dev tuning"
       className="pointer-events-auto fixed top-3 right-3 z-10 w-64 rounded-lg bg-black/70 p-3 font-mono text-xs text-neutral-200"
     >
-      <summary className="cursor-pointer select-none text-neutral-400">dev tuning (persisted)</summary>
+      <summary className="cursor-pointer select-none text-neutral-400" aria-label="Toggle dev tuning">dev tuning (persisted)</summary>
       <div className="mt-2 space-y-2">
         {SLIDERS.map((s) => (
           <label key={s.key} htmlFor={`amoji-dev-${s.key}`} className="block">
