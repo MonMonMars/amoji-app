@@ -6,7 +6,7 @@ import {
 import { finishReply } from '../lib/client-chat';
 import { withQuestion } from '../lib/follow-up';
 import { cleanForSpeech, isSpeakableText } from '../lib/speak-text';
-import { BASE_SYSTEM } from '../lib/llm';
+import { BASE_SYSTEM, languageBlock } from '../lib/llm';
 
 const dense = (s: string) => s.replace(/\s/g, '').length;
 
@@ -217,5 +217,47 @@ describe('system prompt states the four reply rules', () => {
     expect(BASE_SYSTEM).toMatch(/Grok spark/);
     expect(BASE_SYSTEM).toMatch(/\[emotion:\{/);
     expect(BASE_SYSTEM).toMatch(/0\.7–1\.0/);
+  });
+
+  it('pins concrete Hong Kong Cantonese particle and vocab rules', () => {
+    const block = languageBlock('yue');
+    expect(block).toMatch(/係\/嘅\/唔/);
+    expect(block).toMatch(/返工 not 上班/);
+    expect(block).toMatch(/攰 not 累/);
+    expect(block).toMatch(/Hard Cantonese rules/);
+  });
+});
+
+describe('Cantonese reply quality — before / after shaping', () => {
+  it('strips a reasoning leak and trims a rambling 粵語 turn into a short spoken answer', () => {
+    // BEFORE: free-model sludge — plan line + Mandarin-ish padding + monologue.
+    const before =
+      '分析：用戶想傾返工。'
+      + '今天你看起来很累，上班一定很辛苦吧，我一直都在这里陪伴着你，一切都会好起来的。'
+      + '你對眼都紅晒，地鐵又迫。'
+      + '其實你唔使咩都自己扛㗎。'
+      + '今晚想食啲咩？';
+    const after = shapeCompanionReply(before);
+    // AFTER: meta gone, budget capped, closing question kept.
+    expect(after).not.toMatch(/^分析/);
+    expect(after).not.toContain('用戶想');
+    expect(dense(after)).toBeLessThan(dense(before));
+    expect(dense(after)).toBeLessThanOrEqual(REPLY_BUDGET.cjk + 20);
+    expect(after).toMatch(/[？?]/);
+  });
+
+  it('turns a flat Cantonese answer into something the user can reply to', () => {
+    // BEFORE: finished sentence, no question — chat dies.
+    const before = '聽落你今日真係好攰喎。';
+    // AFTER: same answer + a real open question (not the empty「你覺得點呀？」).
+    const after = withQuestion(finishReply(before).reply, 'yue');
+    expect(after.startsWith(before)).toBe(true);
+    expect(after).toMatch(/[？?]/);
+    expect(after).not.toBe(before);
+  });
+
+  it('keeps a good short Cantonese reply untouched', () => {
+    const good = '返工咁攰，返到屋企早啲唞啦。想唔想講多啲俾我聽？';
+    expect(shapeCompanionReply(good)).toBe(good);
   });
 });

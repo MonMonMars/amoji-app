@@ -79,13 +79,15 @@ export const ENGINE_VERDICTS: readonly EngineVerdict[] = [
     engine: 'kokoro',
     status: 'not-bundled',
     locales: ['en', 'zh'],
-    evidence: 'Apache-2.0 weights and a runtime are not in this repo.',
+    evidence:
+      'Apache-2.0 weights and a runtime are not in this repo. No keyless CORS-reachable yue endpoint; HF inference needs a key and is not browser-CORS for live TTS.',
   },
   {
     engine: 'piper',
     status: 'not-bundled',
     locales: ['en', 'zh', 'ja'],
-    evidence: 'ONNX voices are not in this repo and nothing downloads them.',
+    evidence:
+      'ONNX voices are not in this repo and nothing downloads them. Piper has no verified free keyless Cantonese (yue) voice reachable from the browser without a host.',
   },
   {
     engine: 'melotts',

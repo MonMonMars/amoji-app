@@ -93,7 +93,8 @@ import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
 export { speechRemainder };
 import { edgeCastVoice } from './edge-cast';
 import { speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead } from './edge-tts';
-import { stopGtts, speakGtts, PITCH_BIAS_MALE, PITCH_BIAS_FEMALE } from './gtts';
+import { stopGtts, speakGtts } from './gtts';
+import { gttsCharacterPitchBias } from './gtts-timbre';
 import { voicePickFor } from './voice-picks';
 import { osVoicePinFor, saveOsVoicePin } from './os-voice-picks';
 import { resolveOsPin, resolvePinnedVoice } from './os-voice-resolve';
@@ -1395,10 +1396,11 @@ function yieldFillerToReply(): void {
  * tier, which serves one voice per language. ONE definition on purpose: the
  * reply, a resumed tail, the greeting, a sung line, a preview, and the loading
  * filler must all resolve to the same number or the listener hears a
- * different person.
+ * different person. Gender sets the base; characterId spreads same-gender
+ * companions (see gtts-timbre.ts — Web Audio formant is not CORS-safe here).
  */
-export function gttsPitchBias(gender: 'female' | 'male'): number {
-  return gender === 'male' ? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE;
+export function gttsPitchBias(gender: 'female' | 'male', characterId?: string): number {
+  return gttsCharacterPitchBias(gender, characterId);
 }
 
 /** A leading vocal tic (text + relative pitch/rate lift). */
@@ -1588,7 +1590,7 @@ function performSpeak(
         rate: clamp(1 + np.rate * 0.12, 0.88, 1.15),
         // Keep the character's pitch on a resumed tail, or the second half of
         // the sentence would come back in a different voice.
-        pitchBias: gttsPitchBias(spokenGender),
+        pitchBias: gttsPitchBias(spokenGender, characterId),
         onPlaying: () => { onHeard(); markVoiceStarted(); reportVoiceStatus('gtts', true, 'google-tts resuming'); },
       }).then(() => {
         reportVoiceStatus('gtts', true, 'google-tts resume finished');
@@ -1623,9 +1625,9 @@ function performSpeak(
             lead: tic?.text,
             // The endpoint has one voice per language, so character identity is
             // carried by pitch: male companions get a deeper read, female ones a
-            // slightly brighter one. Without this every cast member sounds the
-            // same and male characters sound female.
-            pitchBias: gttsPitchBias(spokenGender),
+            // slightly brighter one, and a per-id jitter keeps same-gender cast
+            // members from sounding identical.
+            pitchBias: gttsPitchBias(spokenGender, characterId),
             onPlaying: () => {
               onHeard();
               markVoiceStarted();
@@ -1885,7 +1887,7 @@ export function playVoiceGreeting(
     // Same per-character pitch as chat. Without it the SAME character sounded
     // different on select than in the chat room, which reads as "her voice
     // jumped to someone else".
-    pitchBias: gttsPitchBias(gender),
+    pitchBias: gttsPitchBias(gender, characterId),
     onPlaying: () => {
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
@@ -2041,7 +2043,7 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
         void speakGtts(text, {
           lang,
           tl: tlForChoice(lang, voicePickFor(lang)),
-          pitchBias: gttsPitchBias(gender),
+          pitchBias: gttsPitchBias(gender, characterId),
           onPlaying: () => {
             noteSpeechStarted(text);
             markVoiceStarted();
@@ -2387,6 +2389,7 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
             speakGtts(line, {
               lang,
               tl: tlForChoice(lang, voicePickFor(lang)),
+              pitchBias: gttsPitchBias(characterVoiceGender(characterId), characterId),
               onPlaying: () => push('gtts', true, 'google-tts playing'),
             }),
             15_000,
@@ -2458,6 +2461,7 @@ export async function testProxyVoice(characterId: string, lang: Lang): Promise<b
     await withTimeout(speakGtts(line, {
       lang,
       tl: tlForChoice(lang, voicePickFor(lang)),
+      pitchBias: gttsPitchBias(characterVoiceGender(characterId), characterId),
       onPlaying: () => reportVoiceStatus('gtts', true, 'google-tts playing (proxy probe)'),
     }), 20_000, 'google-tts timeout');
     reportVoiceStatus('gtts', true, 'voice played via google-tts (edge unavailable)');
