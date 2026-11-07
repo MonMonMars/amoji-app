@@ -61,9 +61,9 @@ export default function RobotDemoPage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col items-center gap-5 bg-[#0b0b0f] px-4 py-8 text-white">
-      <a href="./select" className="self-start text-white/50">←</a>
-      <h1 className="text-2xl font-bold">🤖 Amoji Robot Face</h1>
+    <main aria-labelledby="amoji-robot-demo-title" className="mx-auto flex min-h-screen w-full max-w-2xl flex-col items-center gap-5 bg-[#0b0b0f] px-4 py-8 text-white">
+      <a href="./select" aria-label="Back to select" className="self-start text-white/50">←</a>
+      <h1 id="amoji-robot-demo-title" className="text-2xl font-bold">🤖 Amoji Robot Face</h1>
       <p className="-mt-3 text-sm text-white/50">B2B demo — the emotion engine your robot can plug into</p>
 
       <a
@@ -73,19 +73,20 @@ export default function RobotDemoPage() {
         ⛶ Fullscreen robot display — open <code className="mx-1">/face</code>
       </a>
 
-      <canvas ref={canvasRef} width={360} height={300} className="w-full max-w-sm rounded-3xl border border-white/10 bg-black" />
+      <canvas ref={canvasRef} width={360} height={300} role="img" aria-label="Emotion face" className="w-full max-w-sm rounded-3xl border border-white/10 bg-black" />
 
       <div className="flex items-center gap-3">
-        <canvas ref={ledRef} width={LED_SIZE} height={LED_SIZE} className="h-28 w-28 rounded-xl border border-white/10" style={{ imageRendering: 'pixelated' }} />
+        <canvas ref={ledRef} width={LED_SIZE} height={LED_SIZE} role="img" aria-label="LED matrix preview" className="h-28 w-28 rounded-xl border border-white/10" style={{ imageRendering: 'pixelated' }} />
         <p className="max-w-[10rem] text-xs text-white/40">LED-matrix preview — same buffer your robot receives (16×16 RGB)</p>
       </div>
 
-      <div className="flex w-full max-w-sm flex-wrap justify-center gap-2">
+      <div role="group" aria-label="Emotions" className="flex w-full max-w-sm flex-wrap justify-center gap-2">
         {EMOTION_BUTTONS.map((e) => (
           <button
             type="button"
             key={e}
             onClick={() => faceRef.current?.setEmotion(e, 1)}
+            aria-label={e}
             className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs capitalize hover:bg-white/15"
           >
             {e}
@@ -95,6 +96,7 @@ export default function RobotDemoPage() {
 
       <div className="flex w-full max-w-sm gap-2">
         <input
+          aria-label="Line to speak"
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && speak()}
