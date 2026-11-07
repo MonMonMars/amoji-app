@@ -90,7 +90,7 @@ function FrontStill({ characterId, mark }: { characterId: string; mark: string }
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={assetUrl(image)}
-      alt=""
+      alt={characterById(characterId).name}
       draggable={false}
       onError={() => setOk(false)}
       className="h-full w-full object-cover object-top"
