@@ -10,8 +10,11 @@ describe('login + select START type=button', () => {
     const src = read('app/login/page.tsx');
     expect(src).toMatch(/type="button"[\s\S]*?onClick=\{go\}/);
     expect(src).toContain('type="button"');
-    expect(src).toContain("router.push('/select')");
-    expect(src).toMatch(/onClick=\{\(\) => \{[\s\S]*?primeAudioForChatEnter\(\)[\s\S]*?router\.push\('\/select'\)/);
+    expect(src).toContain("'/select'");
+    // r2026-11-08: first run detours through the 18+ / audio gate, so the
+    // Skip button now pushes the gated path rather than a bare '/select'.
+    expect(src).toContain("return hasPassedEntryGate() ? '/select' : '/gate';");
+    expect(src).toMatch(/onClick=\{\(\) => \{[\s\S]*?primeAudioForChatEnter\(\)[\s\S]*?router\.push\(afterLoginPath\(\)\)/);
   });
 
   it('SelectionBoard START/confirm is type=button', () => {

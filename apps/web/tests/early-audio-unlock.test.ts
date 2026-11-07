@@ -29,6 +29,8 @@ describe('EarlyAudioUnlock (iPhone pre-chat gesture)', () => {
     const login = read('app/login/page.tsx');
     expect(login).toContain('primeAudioForChatEnter()');
     expect(login).toMatch(/const go = \(\) => \{[\s\S]*?primeAudioForChatEnter\(\)/);
-    expect(login).toContain("router.push('/select')");
+    expect(login).toContain("afterLoginPath");
+    expect(login).toContain("'/select'");
+    expect(login).toContain("'/gate'");
   });
 });

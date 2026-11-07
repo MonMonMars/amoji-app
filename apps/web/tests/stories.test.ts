@@ -42,7 +42,7 @@ describe('story mode catalog (t740)', () => {
 
 describe('mode + story entry (t741)', () => {
     it('login/setup/mode land on select; /mode is soft-land only', () => {
-    expect(read('../app/login/page.tsx')).toContain("router.push('/select')");
+    expect(read('../app/login/page.tsx')).toContain("'/select'");
     expect(read('../app/setup/page.tsx')).toContain('SoftLandSelect');
     expect(read('../app/mode/page.tsx')).toContain('SoftLandSelect');
     expect(read('../app/mode/page.tsx')).toContain('ModeRedirect');
