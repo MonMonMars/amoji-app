@@ -2,7 +2,7 @@
 // Overlapping card fan for the selection board. The chosen card sits in the
 // middle, in front, a little larger and brighter. Neighbors overlap it,
 // scale down, and tilt — an arcade ring, not a left-packed strip.
-import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 
 export type ArcPose = {
   x: number;
@@ -175,11 +175,41 @@ export default function ArcFan<T extends { id: string }>({
     };
   }, [size]);
 
-  const go = (next: number) => {
+  const go = (next: number, opts?: { focus?: boolean }) => {
     const item = items[next];
     if (!item) return;
     indexRef.current = next;
     onSelect(item.id);
+    if (opts?.focus) {
+      // Keep keyboard focus on the newly selected card (screen readers + further arrows).
+      requestAnimationFrame(() => {
+        const sel = `[data-row-item="${CSS.escape(item.id)}"]`;
+        const btn = root.current?.querySelector(sel) as HTMLElement | null;
+        btn?.focus();
+      });
+    }
+  };
+
+  const onKeyNav = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      go(indexRef.current - 1, { focus: true });
+      return;
+    }
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      go(indexRef.current + 1, { focus: true });
+      return;
+    }
+    if (event.key === 'Home') {
+      event.preventDefault();
+      go(0, { focus: true });
+      return;
+    }
+    if (event.key === 'End') {
+      event.preventDefault();
+      go(items.length - 1, { focus: true });
+    }
   };
 
   useEffect(() => {
@@ -238,7 +268,9 @@ export default function ArcFan<T extends { id: string }>({
     <div
       ref={root}
       aria-label={ariaLabel}
+      tabIndex={0}
       className={`mx-auto touch-none ${stageClass}`}
+      onKeyDown={onKeyNav}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -270,6 +302,7 @@ export default function ArcFan<T extends { id: string }>({
               data-row-item={item.id}
               aria-label={label(item)}
               aria-pressed={active}
+              onKeyDown={onKeyNav}
               onClick={() => {
                 if (suppress.current) return;
                 if (onConfirm) onConfirm(item.id);
