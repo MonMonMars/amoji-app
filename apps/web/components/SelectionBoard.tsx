@@ -153,86 +153,93 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
         {boardMode === 'story' ? (
           <StorySetupPanel />
         ) : (
-        <>
-        <section className="flex min-h-0 w-full max-w-7xl flex-1 flex-col items-center justify-center px-3 pt-1">
-          <div className="w-full shrink-0 px-1 text-center">
-            <p className="truncate text-lg font-bold drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)] sm:text-xl">
-              {character.name}
-              <span className="ml-1.5 text-sm font-normal text-white/75">{character.gender === 'female' ? '♀' : '♂'}</span>
-              {live.kidMode && <span className="ml-1 text-sm">🧸</span>}
-            </p>
-            <p className="truncate text-xs text-white/80 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] sm:text-sm">
-              {character.tagline[lang] ?? character.tagline.en}
-            </p>
-            {mode === 'change' && (
-              <p className="mt-0.5 text-[10px] uppercase tracking-widest text-white/60">
-                {dirty ? t(lang, 'previewNew') : t(lang, 'previewCurrent')}
-              </p>
-            )}
-            <h2 className="mb-1 mt-2 text-center text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
-              {t(lang, 'chooseCharacter')}
-            </h2>
-          </div>
-
-          <div className="relative mx-auto mt-1 min-h-[11rem] w-full flex-1 sm:min-h-[14rem]">
-            <ArcFan
-              ariaLabel={t(lang, 'chooseCharacter')}
-              size="portrait"
-              items={cast}
-              selectedId={prefsReady ? live.character : ''}
-              onSelect={(id) => {
-                pick({ character: id });
-                const chosen = cast.find((item) => item.id === id);
-                if (!chosen) return;
-                // Audition the cast slot — a gender pin would make every
-                // character of that sex sound identical on select.
-                const voiceId = resolveEdgeVoice({
-                  lang,
-                  gender: chosen.gender,
-                  character: chosen.id,
-                  ignoreVoicePick: true,
-                }).name;
-                playVoiceGreeting(
-                  chosen.id,
-                  lang,
-                  voiceId,
-                  introText(chosen.name, chosen.tagline?.[lang] ?? chosen.tagline?.en, lang),
-                );
-              }}
-              label={(c) => c.name}
-            >
-              {(c, active) => {
-                const num = selectionBadge(c.id);
-                return (
-                  <>
-                    <span
-                      className="absolute right-2.5 top-2.5 z-20 flex h-8 min-w-8 items-center justify-center rounded-full border-2 border-neutral-950 px-1.5 text-xs font-extrabold text-neutral-950 shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
-                      style={{ background: c.accent }}
-                      title={`#${num}`}
-                    >
-                      {num}
-                    </span>
-                    <ModelThumb accent={c.accent} name={c.name} image={c.image} bighead={bigheadPath(c.id)} crop="face" portraitPosition={selectPortraitPosition(c.id)} />
-                    <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-3 pb-3 pt-12 text-center">
-                      <span className="block whitespace-normal break-words text-base font-semibold leading-tight sm:text-lg">{c.name}</span>
-                      <span className="text-xs leading-none text-white/75 sm:text-sm">{c.gender === 'female' ? '♀' : '♂'}</span>
-                    </span>
-                    {active && (
-                      <span
-                        className="pointer-events-none absolute inset-0 rounded-2xl"
-                        style={{ boxShadow: `inset 0 0 0 2px ${c.accent}` }}
-                      />
-                    )}
-                  </>
-                );
-              }}
-            </ArcFan>
-          </div>
-
-        </section>
-
-        <div className="flex max-h-[52dvh] w-full shrink-0 flex-col items-center overflow-y-auto overscroll-contain bg-gradient-to-t from-black/75 via-black/40 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:max-h-[48dvh] sm:px-6 [@media(orientation:landscape)_and_(max-height:500px)]:max-h-[34dvh]">
+        /* One scroller for the whole board (Mon): cast, scenes, languages,
+           voices, reactions and START stack in this single column and share
+           this one vertical scrollbar. No row owns its own. */
+        <div
+          data-testid="select-scroll"
+          className="flex min-h-0 w-full flex-1 flex-col items-center overflow-x-hidden overflow-y-auto overscroll-contain bg-gradient-to-t from-black/60 via-black/25 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6"
+        >
           <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col items-center gap-2">
+            <section className="pointer-events-auto w-full min-w-0">
+              <div className="w-full shrink-0 px-1 text-center">
+                <p className="truncate text-lg font-bold drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)] sm:text-xl">
+                  {character.name}
+                  <span className="ml-1.5 text-sm font-normal text-white/75">{character.gender === 'female' ? '♀' : '♂'}</span>
+                  {live.kidMode && <span className="ml-1 text-sm">🧸</span>}
+                </p>
+                <p className="truncate text-xs text-white/80 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] sm:text-sm">
+                  {character.tagline[lang] ?? character.tagline.en}
+                </p>
+                {mode === 'change' && (
+                  <p className="mt-0.5 text-[10px] uppercase tracking-widest text-white/60">
+                    {dirty ? t(lang, 'previewNew') : t(lang, 'previewCurrent')}
+                  </p>
+                )}
+                <h2 className="mb-1 mt-2 text-center text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
+                  {t(lang, 'chooseCharacter')}
+                </h2>
+              </div>
+
+              {/* Definite stage height: a flex-1 child has nothing to resolve
+                  against inside the page scroller, and the fan measures this box
+                  to size its cards. */}
+              <div className="relative mx-auto mt-1 h-[clamp(12rem,46dvh,34rem)] w-full">
+                <ArcFan
+                  ariaLabel={t(lang, 'chooseCharacter')}
+                  size="portrait"
+                  items={cast}
+                  selectedId={prefsReady ? live.character : ''}
+                  onSelect={(id) => {
+                    pick({ character: id });
+                    const chosen = cast.find((item) => item.id === id);
+                    if (!chosen) return;
+                    // Audition the cast slot — a gender pin would make every
+                    // character of that sex sound identical on select.
+                    const voiceId = resolveEdgeVoice({
+                      lang,
+                      gender: chosen.gender,
+                      character: chosen.id,
+                      ignoreVoicePick: true,
+                    }).name;
+                    playVoiceGreeting(
+                      chosen.id,
+                      lang,
+                      voiceId,
+                      introText(chosen.name, chosen.tagline?.[lang] ?? chosen.tagline?.en, lang),
+                    );
+                  }}
+                  label={(c) => c.name}
+                >
+                  {(c, active) => {
+                    const num = selectionBadge(c.id);
+                    return (
+                      <>
+                        <span
+                          className="absolute right-2.5 top-2.5 z-20 flex h-8 min-w-8 items-center justify-center rounded-full border-2 border-neutral-950 px-1.5 text-xs font-extrabold text-neutral-950 shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
+                          style={{ background: c.accent }}
+                          title={`#${num}`}
+                        >
+                          {num}
+                        </span>
+                        <ModelThumb accent={c.accent} name={c.name} image={c.image} bighead={bigheadPath(c.id)} crop="face" portraitPosition={selectPortraitPosition(c.id)} />
+                        <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-3 pb-3 pt-12 text-center">
+                          <span className="block whitespace-normal break-words text-base font-semibold leading-tight sm:text-lg">{c.name}</span>
+                          <span className="text-xs leading-none text-white/75 sm:text-sm">{c.gender === 'female' ? '♀' : '♂'}</span>
+                        </span>
+                        {active && (
+                          <span
+                            className="pointer-events-none absolute inset-0 rounded-2xl"
+                            style={{ boxShadow: `inset 0 0 0 2px ${c.accent}` }}
+                          />
+                        )}
+                      </>
+                    );
+                  }}
+                </ArcFan>
+              </div>
+            </section>
+
             <section className="pointer-events-auto w-full min-w-0" style={{ '--d': '70ms' } as CSSProperties}>
               <h2 className="mb-1 text-center text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
                 {t(lang, 'chooseBackground')}
@@ -318,20 +325,24 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
 
             <EmotionClipRow lang={lang} gender={character.gender} accent={character.accent} characterId={character.id} />
 
-            <button
-              type="button"
-              onClick={confirm}
-              data-dev="T1"
-              aria-label={mode === 'start' ? t(lang, 'confirmCta') : t(lang, 'changeCta')}
-              className={`fx-press fx-start ui-btn ui-btn-primary pointer-events-auto relative mt-1 min-h-12 shrink-0 rounded-full px-10 text-sm ${
-                mode === 'start' ? 'min-w-40 tracking-[0.28em]' : 'min-w-32'
-              }`}
-            >
-              {mode === 'start' ? t(lang, 'confirmCta') : t(lang, 'changeCta')}
-            </button>
+            {/* Sticky inside the one scroller so START / Change is always in
+                reach without hunting for the end of the list. The bottom pad
+                keeps the pill clear of the iPhone home indicator. */}
+            <div className="sticky bottom-0 z-20 mt-1 flex w-full justify-center bg-gradient-to-t from-black/85 via-black/60 to-transparent pt-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+              <button
+                type="button"
+                onClick={confirm}
+                data-dev="T1"
+                aria-label={mode === 'start' ? t(lang, 'confirmCta') : t(lang, 'changeCta')}
+                className={`fx-press fx-start ui-btn ui-btn-primary pointer-events-auto relative min-h-12 shrink-0 rounded-full px-10 text-sm ${
+                  mode === 'start' ? 'min-w-40 tracking-[0.28em]' : 'min-w-32'
+                }`}
+              >
+                {mode === 'start' ? t(lang, 'confirmCta') : t(lang, 'changeCta')}
+              </button>
+            </div>
           </div>
         </div>
-        </>
         )}
       </div>
     </main>
