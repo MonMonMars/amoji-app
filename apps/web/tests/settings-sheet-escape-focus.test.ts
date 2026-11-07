@@ -9,7 +9,7 @@ describe("SettingsSheet Escape + focus restore", () => {
     expect(sheet).toContain("settingsCloseRef");
     expect(sheet).toContain("settingsCloseRef.current?.focus()");
     expect(sheet).toContain("ref={settingsCloseRef}");
-    expect(sheet).toContain('aria-label="Close"');
+    expect(sheet).toContain("aria-label={lang === 'yue' ? '關閉' : lang === 'zh' ? '关闭' : lang === 'ja' ? '閉じる' : 'Close'}");
   });
 
   it("closes on Escape (does not swallow like LegalGate)", () => {
