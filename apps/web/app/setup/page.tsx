@@ -1,10 +1,7 @@
 'use client';
 // /setup redirect — mode chips live on /select (in-place chat/story).
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import SoftLandSelect from '../../components/SoftLandSelect';
 
 export default function Setup() {
-  const router = useRouter();
-  useEffect(() => { router.replace('/select'); }, [router]);
-  return null;
+  return <SoftLandSelect label="Taking you to character select…" />;
 }

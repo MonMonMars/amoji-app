@@ -41,13 +41,17 @@ describe('story mode catalog (t740)', () => {
 });
 
 describe('mode + story entry (t741)', () => {
-  it('login/setup/mode land on select; /mode is soft-land only', () => {
+    it('login/setup/mode land on select; /mode is soft-land only', () => {
     expect(read('../app/login/page.tsx')).toContain("router.push('/select')");
-    expect(read('../app/setup/page.tsx')).toContain("router.replace('/select')");
-    expect(read('../app/mode/page.tsx')).toContain("router.replace('/select')");
+    expect(read('../app/setup/page.tsx')).toContain('SoftLandSelect');
+    expect(read('../app/mode/page.tsx')).toContain('SoftLandSelect');
     expect(read('../app/mode/page.tsx')).toContain('ModeRedirect');
-    expect(read('../app/story/page.tsx')).toContain("router.replace('/select')");
-    expect(read('../app/story/page.tsx')).toContain('amoji.selectMode');
+    expect(read('../app/story/page.tsx')).toContain('SoftLandSelect');
+    expect(read('../app/story/page.tsx')).toContain('seedSelectMode="story"');
+    const soft = read('../components/SoftLandSelect.tsx');
+    expect(soft).toContain("router.replace('/select')");
+    expect(soft).toContain("sessionStorage.setItem('amoji.selectMode'");
+    expect(soft).toContain('aria-busy');
   });
 
   it('chat prepends the story beat; select clears session; mode chips stay in-place', () => {

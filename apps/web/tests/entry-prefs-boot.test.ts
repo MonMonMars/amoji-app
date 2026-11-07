@@ -5,10 +5,14 @@ import { join } from 'node:path';
 const web = join(__dirname, '..');
 
 describe('entry funnel prefs/profile boot flash', () => {
-  it('select board holds prefs chrome; /mode soft-lands on /select', () => {
+  it('select board holds prefs chrome; /mode soft-lands on /select with chrome', () => {
     const mode = readFileSync(join(web, 'app/mode/page.tsx'), 'utf8');
-    expect(mode).toContain("router.replace('/select')");
+    expect(mode).toContain('SoftLandSelect');
     expect(mode).toContain('ModeRedirect');
+    const soft = readFileSync(join(web, 'components/SoftLandSelect.tsx'), 'utf8');
+    expect(soft).toContain("router.replace('/select')");
+    expect(soft).toContain('aria-busy');
+    expect(soft).toContain('bg-neutral-950');
     const board = readFileSync(join(web, 'components/SelectionBoard.tsx'), 'utf8');
     expect(board).toContain('prefsReady');
     expect(board).toContain('boardMode');
