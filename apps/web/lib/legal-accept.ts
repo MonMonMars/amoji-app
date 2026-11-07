@@ -2,10 +2,13 @@
 /**
  * Versioned first-run Privacy + Terms acceptance.
  * Bump LEGAL_ACCEPT_VERSION when policy copy changes to re-prompt.
- * Demo / placeholder legal text — not final lawyer copy.
+ *
+ * v2 — the unfinished first-run wording was replaced with plain, specific
+ * statements naming the actual data recipients, and a /safety page was
+ * added. Existing users hold a v1 record, so they are re-prompted.
  */
 
-export const LEGAL_ACCEPT_VERSION = 1;
+export const LEGAL_ACCEPT_VERSION = 2;
 export const LEGAL_ACCEPT_KEY = 'amoji.legalAccept.v1';
 const EVENT = 'amoji:legal-accept';
 

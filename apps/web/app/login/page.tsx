@@ -2,6 +2,7 @@
 // Login — just a name. Kept on-device; she can learn it into memory later.
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { loadProfile, saveProfile } from '../../lib/profile';
 import { ensureUserNameFromProfile } from '../../lib/memory';
 import { t, usePrefs } from '../../lib/prefs';
@@ -76,6 +77,22 @@ export default function Login() {
             {t(lang, 'loginSkip')}
           </button>
         </div>
+        {/* AI disclosure — the first screen a new user interacts with says
+            plainly that they are talking to a model, not a person. Given a
+            bordered card and near-body contrast on purpose: this is the
+            transparency notice, not fine print. */}
+        <p
+          data-testid="ai-notice"
+          className="mt-6 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-center text-xs leading-relaxed text-white/60"
+        >
+          {t(lang, 'aiNotice')}
+        </p>
+        <p className="mt-2 text-center text-[11px] leading-relaxed text-white/35">
+          {t(lang, 'safetyCrisisLine')}{' '}
+          <Link href="/safety" className="underline underline-offset-4 hover:text-white/60">
+            {t(lang, 'safetyTitle')}
+          </Link>
+        </p>
       </div>
 
       <p className="absolute bottom-8 text-xs text-white/25">{APP_REVISION}</p>
