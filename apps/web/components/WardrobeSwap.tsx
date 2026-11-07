@@ -115,6 +115,7 @@ function Thumb({
       data-testid={testId}
       data-row-item={asset.id}
       aria-pressed={pressed}
+      aria-label={asset.name}
       title={asset.name}
       onClick={() => onPick(asset.id)}
       className={`w-14 shrink-0 snap-start overflow-hidden rounded-lg border text-left transition-colors ${
