@@ -55,6 +55,7 @@ export default function EmotionClipRow({
         <button
           type="button"
           aria-pressed={universal}
+          aria-label={t(lang, 'previewUniversal')}
           data-dev={showDev ? 'R0' : undefined}
           onClick={() => { setUniversal((on) => !on); setPlaying(null); }}
           className="fx-press relative rounded-full border border-white/15 bg-black/30 px-2 py-0.5 text-[10px] text-white/70"
