@@ -461,16 +461,19 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
       // Sing-song stays inside what neural prosody can do without artifacts.
       // Past about ±20% pitch the free voices distort — a poke "haha!" at the
       // old +50% ceiling was the squeak.
-      const contour = parts.length > 1
-        ? 1 + 0.08 * expr * Math.sin((i / (parts.length - 1)) * Math.PI * (rising ? 1 : 0.7))
-        : 1;
-      const tailLift = isTail && rising ? 1.1 : isTail && !rising ? 0.94 : 1;
+      // Additive wave (not base*contour): greetings/previews pass ~0 deltas, and
+      // the old multiply erased the ChatGPT-style warble on style-less voices
+      // (WanLung / Keita / Jenny) and every forcePlain select tap.
+      const wave = parts.length > 1
+        ? 0.07 * expr * Math.sin((i / (parts.length - 1)) * Math.PI * (rising ? 1 : 0.7))
+        : 0;
+      const tailLift = isTail && rising ? 0.04 : isTail && !rising ? -0.03 : 0;
       const bang = /[!！]\s*$/.test(part);
       const trail = /[…\.{3}—–]/.test(part);
-      const swellP = bang ? 1.12 : trail ? 0.88 : 1;
-      const swellR = bang ? 1.04 : trail ? 0.92 : 1;
-      const rate = clamp(baseRate * contour * (isTail ? 0.96 : 1) * swellR, -0.14, 0.14);
-      const pitch = clamp(basePitch * contour * tailLift * swellP + (bang ? 0.02 * expr : 0), -0.18, 0.18);
+      const swellP = bang ? 0.04 : trail ? -0.04 : 0;
+      const swellR = bang ? 0.025 : trail ? -0.03 : 0;
+      const rate = clamp(baseRate + wave * 0.45 + swellR + (isTail ? -0.02 : 0), -0.14, 0.14);
+      const pitch = clamp(basePitch + wave + tailLift + swellP + (bang ? 0.02 * expr : 0), -0.18, 0.18);
       // breath pauses: commas shorter than sentence ends; ellipses linger
       const breakAfter = /[。！？!?…\.]$/.test(part) && !isTail
         ? `<break time='${trail ? '320ms' : '230ms'}'/>`
