@@ -17,8 +17,12 @@
 // zero-volume utterance SYNCHRONOUSLY inside the click — iOS only unlocks
 // the engine within the gesture itself, and the first await below used to
 // leave that context before any synth tier could run.
-// r2026-10-06.136: the 🧠 Brain (LLM provider + API keys) section is GONE —
-// we pick the best free/fast/global brain for our users; no keys to manage.
+// r2026-10-06.136: the 🧠 Brain section was removed — we pick the best free/fast
+// brain for our users; no keys to manage.
+// r2026-11-08: it is back, but ONLY as a collapsed, explicitly OPTIONAL
+// "Advanced" row (components/BrainAdvanced): the app is complete on the free
+// lane, and a non-technical user never meets a key field. See lib/brain.ts for
+// why the provider list is Hong Kong-specific.
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -29,6 +33,7 @@ import { LangChips } from './selectors';
 import { useFocusTrap } from '../lib/use-focus-trap';
 import VoicePicker from './VoicePicker';
 import ModelThumb from './ModelThumb';
+import BrainAdvanced from './BrainAdvanced';
 import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, testOpenAiVoice, VOICE_TIER_LABEL } from '../lib/voice';
 import { isMasterMuted, setMasterMuted, subscribeMasterMute } from '../lib/master-mute';
 import { VOLUME_STEPS, isVolumeStep, type VolumeStep } from '../lib/audio-levels';
@@ -950,6 +955,11 @@ export default function SettingsSheet({
               </div>
             </div>
           </Section>
+
+          {/* r2026-11-08 — OPTIONAL sharper brain. Rendered last on purpose:
+              it sits below everything the user actually needs, collapsed, so
+              the sheet still reads as "settings", never as "setup". */}
+          <BrainAdvanced lang={lang} accent={accent} />
 
           <Section title={`❓ ${t(lang, 'settingsHelp')}`}>
             <button type="button" onClick={tutor} aria-label={t(lang, 'tutorBtn')} className={`ui-btn ${row} w-full text-left hover:bg-white/10`}>

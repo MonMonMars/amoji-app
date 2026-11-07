@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { markBrainDead, pickBrain, resetBrainDead, setBrainKey } from '../lib/brain';
+import { markBrainDead, pickBrain, resetBrainDead, setBrainKey, BRAIN_SPECS } from '../lib/brain';
 
 // minimal localStorage stand-in so brain keys can be "stored" in node
 const mem = new Map<string, string>();
@@ -27,7 +27,7 @@ describe('session-dead brain parking (r2026-10-03.27)', () => {
   });
 
   it('never dead-ends: even with every spec parked the free lane answers', () => {
-    for (const id of ['moonshot', 'groq', 'openrouter', 'deepseek', 'pollinations']) markBrainDead(id);
+    for (const s of BRAIN_SPECS) markBrainDead(s.id);
     expect(pickBrain().spec.id).toBe('pollinations');
   });
 });
