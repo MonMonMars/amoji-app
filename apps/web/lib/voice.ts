@@ -1499,6 +1499,9 @@ function performSpeak(
       void speakGtts(rest, {
         lang,
         rate: clamp(1 + np.rate * 0.12, 0.88, 1.15),
+        // Keep the character's pitch on a resumed tail, or the second half of
+        // the sentence would come back in a different voice.
+        pitchBias: spokenGender === 'male' ? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE,
         onPlaying: () => { onHeard(); markVoiceStarted(); reportVoiceStatus('gtts', true, 'google-tts resuming'); },
       }).then(() => {
         reportVoiceStatus('gtts', true, 'google-tts resume finished');
@@ -1746,8 +1749,16 @@ export function playVoiceGreeting(
   let session = 0;
   /** Set by whichever tier actually starts, so the loser can bail out. */
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
+  /**
+   * Fires if NO tier has started shortly after the tap. Edge 403s instantly, so
+   * without this the synth fallback ran on nearly every greeting and talked over
+   * the MP3 tier — two different voices at once, which is the "she jumped to
+   * another speaker" report.
+   */
+  let edgeGrace: ReturnType<typeof setTimeout> | undefined;
   const onStart = (tier: 'edge' | 'gtts' | 'synth') => {
     spokenBy = tier;
+    if (edgeGrace) clearTimeout(edgeGrace);
     session = noteSpeechStarted(text);
     markVoiceStarted();
     reportVoiceStatus(tier, true, `greeting ${voiceId}`);
@@ -1771,6 +1782,10 @@ export function playVoiceGreeting(
   // means the greeting begins immediately instead of after a dead Edge attempt.
   void speakGtts(text, {
     lang,
+    // Same per-character pitch as chat. Without it the SAME character sounded
+    // different on select than in the chat room, which reads as "her voice
+    // jumped to someone else".
+    pitchBias: gender === 'male' ? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE,
     onPlaying: () => {
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
@@ -1784,7 +1799,23 @@ export function playVoiceGreeting(
     reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'greeting gtts failed');
     runSynthAudition('greeting fallback');
   });
-
+  /**
+   * Edge failing is the NORMAL case now (its endpoint rejects the client token
+   * server-side). Its failure must not start a synth fallback while the MP3
+   * tier is mid-sentence — that is a second, different voice talking over the
+   * first. Only fall through when nothing has spoken at all.
+   */
+  const onEdgeFail = (why: string) => {
+    if (spokenBy) return; // gtts owns the line
+    reportVoiceStatus('edge', false, why);
+    runSynthAudition('greeting fallback');
+  };
+  // Give the MP3 tier a moment to prove itself before declaring silence: Edge
+  // 403s immediately, so without this the synth fallback fires on virtually
+  // every greeting, overlapping the MP3 tier.
+  edgeGrace = setTimeout(() => {
+    if (!spokenBy) runSynthAudition('greeting fallback (no tier started)');
+  }, 1500);
   // Edge still wins if it ever answers again: onPlaying halts the other tiers.
   void speakEdge(text, {
     lang,
@@ -1801,12 +1832,12 @@ export function playVoiceGreeting(
       if (!spokenBy) onStart('edge');
     },
   }).then(() => {
+    clearTimeout(edgeGrace);
     if (session) finishLipSync(session);
   }).catch((err: unknown) => {
+    clearTimeout(edgeGrace);
     if ((err as Error | undefined)?.message === 'canceled') return;
-    if (spokenBy) return; // gtts already spoke; Edge failing is irrelevant
-    reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? `greeting failed ${voiceId}`);
-    runSynthAudition('greeting fallback');
+    onEdgeFail((err as Error | undefined)?.message ?? `greeting failed ${voiceId}`);
   });
 }
 
@@ -1908,6 +1939,7 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
         stopEdge();
         void speakGtts(text, {
           lang,
+          pitchBias: gender === 'male' ? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE,
           onPlaying: () => {
             noteSpeechStarted(text);
             markVoiceStarted();
@@ -1994,6 +2026,7 @@ export function previewEdgeVoice(locale: Lang, voiceId: string): Promise<void> {
   // Exactly one tier speaks: whoever starts first halts the others.
   const gtts = speakGtts(text, {
     lang: locale,
+    pitchBias: gender === 'male' ? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE,
     onPlaying: () => {
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
