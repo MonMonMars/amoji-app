@@ -1,7 +1,7 @@
 'use client';
 // Edge voice row on the select board: Tier A Edge voices as small buttons.
-// Preview on tap only (hover/focus raced stopSpeaking). EN wraps inside a scroll box
-// so Start stays reachable.
+// Shows the FULL locale set (male + female, numbered). Tap previews immediately
+// (mute-aware via playVoiceGreeting → stopSpeaking). Pin is per voice gender.
 
 import { useEffect, useState } from 'react';
 import { resolveEdgeVoice } from '../lib/edge-tts';
@@ -28,24 +28,25 @@ export default function TtsVoiceRow({
   const [showAll, setShowAll] = useState(false);
   const [showDev, setShowDev] = useState(false);
   useEffect(() => { setShowDev(isDevMode()); }, []);
-  // Gender floor matches voicePicks.v2 — never list / preview the opposite sex.
+  // Mon t533/t534: full distinct numbered voices including males — do not
+  // hide opposite-sex Edge ids from the language section.
   const buttons = showAll
-    ? selectTtsButtons(undefined, companionGender)
-    : selectTtsButtons(lang, companionGender);
-  const pinned = voicePickFor(lang, companionGender);
+    ? selectTtsButtons(undefined)
+    : selectTtsButtons(lang);
+  const pinnedFemale = voicePickFor(lang, 'female');
+  const pinnedMale = voicePickFor(lang, 'male');
   const castId = resolveEdgeVoice({
     lang,
     gender: companionGender,
     character: characterId,
     ignoreVoicePick: true,
   }).name;
-  const activeId = pinned ?? castId;
+  const companionPinned = companionGender === 'female' ? pinnedFemale : pinnedMale;
+  const activeCompanionId = companionPinned ?? castId;
 
-  // Tap only. Hover/focus used to fire greetings + stopSpeaking and made
-  // select-page voice-out flaky (Mon: not always).
   const onTap = (button: TtsButtonVoice) => {
-    if (button.gender !== companionGender) return;
-    saveVoicePick(button.locale, companionGender, button.id);
+    // Pin under the button's own gender slot (male pins stay male).
+    saveVoicePick(button.locale, button.gender, button.id);
     setRev((n) => n + 1);
     if (button.locale !== lang) onLang(button.locale);
     playVoiceGreeting(characterId, button.locale, button.id);
@@ -70,23 +71,28 @@ export default function TtsVoiceRow({
       <div className="max-h-[5.5rem] w-full overflow-y-auto overscroll-contain sm:max-h-[7.5rem]">
         <div className="flex w-full flex-wrap justify-center gap-1">
           {buttons.map((button, i) => {
-            const selected = button.locale === lang && button.id === activeId;
+            const pinnedForGender = button.gender === 'female' ? pinnedFemale : pinnedMale;
+            const castMatch = button.gender === companionGender && button.id === castId && !companionPinned;
+            const selected = button.locale === lang && (button.id === pinnedForGender || castMatch || (button.gender === companionGender && button.id === activeCompanionId && !pinnedForGender));
             const mark = devMark('V', i + 1);
+            const numLabel = `#${button.n} ${button.label}`;
             return (
               <button
                 key={ttsButtonKey(button)}
                 type="button"
-                aria-label={button.label}
+                aria-label={numLabel}
                 aria-pressed={selected}
-                title={button.id}
+                title={`${button.id} (${button.gender} #${button.n})`}
                 data-dev={showDev ? mark : undefined}
+                data-voice-n={button.n}
+                data-voice-gender={button.gender}
                 onClick={() => onTap(button)}
                 className={`fx-press ui-btn relative shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium leading-tight ${
                   selected ? 'border-white/80 text-white' : 'border-white/15 bg-black/35 text-white/80'
                 }`}
                 style={selected ? { backgroundColor: `${accent}55`, boxShadow: `inset 0 0 0 1px ${accent}` } : undefined}
               >
-                {showDev ? `${mark} ${button.label}` : button.label}
+                {showDev ? `${mark} ${numLabel}` : numLabel}
               </button>
             );
           })}

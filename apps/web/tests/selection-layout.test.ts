@@ -60,6 +60,9 @@ describe('selection layout', () => {
     expect(fan).toContain('portraitCardBox');
     expect(fan).toContain('stageWidth');
     expect(fan).toContain('overflow-x-hidden');
+    expect(fan).toContain('showArrows');
+    expect(fan).toContain('scroll left');
+    expect(fan).toContain('orientationchange');
     expect(fan).toContain('PORTRAIT_CENTER_SCALE');
     expect(fan).not.toContain('h-[8.4rem]');
     expect(fan).not.toContain('sm:h-[11rem]');
@@ -250,7 +253,8 @@ describe('selection layout', () => {
     const row = read('../components/TtsVoiceRow.tsx');
     expect(row).toContain('selectTtsButtons');
     expect(row).toContain('companionGender');
-    expect(row).toContain('button.gender !== companionGender');
+    expect(row).toContain('button.n');
+    expect(row).toContain('selectTtsButtons(lang)');
     expect(row).toContain('saveVoicePick');
     expect(row).toContain('playVoiceGreeting');
     expect(row).toContain('text-[10px]');

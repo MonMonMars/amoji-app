@@ -22,7 +22,7 @@ export default function ModelThumb({
   bighead?: string;
   /** Ignored. Old /cast-thumbs/<id>.jpg bakes are back views. */
   bakedId?: string;
-  /** face: keep hair and eyes on a tall select card. center: square chips. */
+  /** face: keep hair/heads on a tall select card (top-biased). center: square chips. */
   crop?: 'center' | 'face';
   /** CSS object-position override. Char 32 sits lower in the same card. */
   portraitPosition?: string;
@@ -44,7 +44,7 @@ export default function ModelThumb({
           alt=""
           draggable={false}
           onError={fail}
-          className={`absolute inset-0 h-full w-full object-cover ${portraitPosition ? '' : crop === 'face' ? 'object-[center_18%]' : 'object-center'}`}
+          className={`absolute inset-0 h-full w-full object-cover ${portraitPosition ? '' : crop === 'face' ? 'object-[center_6%]' : 'object-center'}`}
           style={portraitPosition ? { objectPosition: portraitPosition } : undefined}
         />
       ) : (
