@@ -8,8 +8,10 @@ const read = (rel: string) => readFileSync(join(web, rel), 'utf8');
 describe('legal pages + LegalGate link a11y', () => {
   it('LegalGate privacy/terms links expose title aria-labels (not path-only names)', () => {
     const gate = read('components/LegalGate.tsx');
-    expect(gate).toContain('aria-label={c.privacyTitle[lang]}');
-    expect(gate).toContain('aria-label={c.termsTitle[lang]}');
+    // Titles come from the localized legal-copy table, so the link's accessible
+    // name is the document's own title in every language.
+    expect(gate).toContain('aria-label={privacy.title}');
+    expect(gate).toContain('aria-label={terms.title}');
     expect(gate).toContain('href="/privacy"');
     expect(gate).toContain('href="/terms"');
   });
