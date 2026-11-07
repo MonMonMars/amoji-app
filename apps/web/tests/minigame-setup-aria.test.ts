@@ -12,7 +12,7 @@ describe("MiniGamePicker / SetupFlow aria-label leftovers", () => {
   });
 
   it("SetupFlow next labels the arrow step and final startChat", () => {
-    expect(setup).toContain("aria-label={step < STEPS.length - 1 ? 'Next' : t(lang, 'startChat')}");
+    expect(setup).toContain("aria-label={step < STEPS.length - 1 ? nextLabel : t(lang, 'startChat')}");
     expect(setup).toContain("type=\"button\"");
     expect(setup).toContain("onClick={next}");
   });

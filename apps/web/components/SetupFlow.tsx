@@ -14,6 +14,10 @@ export default function SetupFlow() {
   const [prefs, setPrefs, prefsReady] = usePrefs();
   const [step, setStep] = useState(0);
   const lang = prefs.lang;
+  const setupProgress =
+    lang === 'yue' ? '設定進度' : lang === 'zh' ? '设置进度' : lang === 'ja' ? 'セットアップの進行状況' : 'Setup progress';
+  const nextLabel =
+    lang === 'yue' ? '下一步' : lang === 'zh' ? '下一步' : lang === 'ja' ? '次へ' : 'Next';
   const patch = (p: Partial<Prefs>) => setPrefs(p);
 
   const next = () => {
@@ -32,7 +36,7 @@ export default function SetupFlow() {
       aria-busy={!prefsReady}
       aria-labelledby="amoji-setup-title"
     >
-      <div role="group" aria-label="Setup progress" className="flex items-center gap-2">
+      <div role="group" aria-label={setupProgress} className="flex items-center gap-2">
         {STEPS.map((_, i) => (
           <span
             key={i}
@@ -64,7 +68,7 @@ export default function SetupFlow() {
         <button
           type="button"
           onClick={next}
-          aria-label={step < STEPS.length - 1 ? 'Next' : t(lang, 'startChat')}
+          aria-label={step < STEPS.length - 1 ? nextLabel : t(lang, 'startChat')}
           className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black hover:bg-white/85"
         >
           {step < STEPS.length - 1 ? '→' : t(lang, 'startChat')}
