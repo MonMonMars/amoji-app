@@ -62,7 +62,7 @@ export default function RobotDemoPage() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col items-center gap-5 bg-[#0b0b0f] px-4 py-8 text-white">
-      <a href="./setup" className="self-start text-white/50">←</a>
+      <a href="./select" className="self-start text-white/50">←</a>
       <h1 className="text-2xl font-bold">🤖 Amoji Robot Face</h1>
       <p className="-mt-3 text-sm text-white/50">B2B demo — the emotion engine your robot can plug into</p>
 
