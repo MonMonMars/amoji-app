@@ -323,7 +323,6 @@ describe('selection layout', () => {
     expect(row).toContain('playVoiceGreeting');
     expect(row).toContain('text-[10px]');
     expect(row).toContain('rounded-full');
-    expect(row).toContain('moreEnginesLater');
     expect(row).toContain('voiceShowAll');
     expect(row).not.toContain('ArcFan');
     expect(board).toContain('playVoiceGreeting');

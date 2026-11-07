@@ -1,54 +1,42 @@
-// Per companion-gender Edge voice pins. A tap on the bake-off grid saves the
-// short name under the CURRENT companion's gender for that voice's language.
-// Only one pin stays active per locale (tap clears the other gender).
-// After the cast gender re-audit, cross-gender neurals are refused: a female
-// companion only pins a female neural, male only male. Bumping the storage
-// key clears stale pre-audit pins that left many voices sounding wrong.
+// Which of the genuinely different voices the user picked, per language.
+//
+// This replaced an earlier map that stored Edge neural short names (e.g.
+// `en-US-AriaNeural`) under a male/female slot. That pin recorded a choice
+// that no longer had any audible effect: the Edge read-aloud endpoint refuses
+// this app, so all 58 short names and both gender slots resolved to the same
+// fallback speaker. Storing them kept the UI asserting a difference that did
+// not exist.
+//
+// A pin now names one real speaker: a Google Translate `tl` region, which is
+// the only handle that still changes the sound. There is no gender slot,
+// because the live voices are not gendered — a language simply has one or a
+// few distinct speakers.
+//
+// The old storage key is deleted on read rather than migrated: ten Edge short
+// names shared a single voice, so there is no truthful one-to-one mapping.
 
-import {
-  EDGE_VOICE_BUTTONS,
-  isFemaleNeuralVoice,
-  isMaleNeuralVoice,
-  type VoiceGender,
-  type VoiceLocale,
-} from './voice-catalog';
+import { isVoiceLocale, voiceChoiceById, voiceChoicesFor, type VoiceChoice } from './voice-capability';
+import type { VoiceLocale } from './voice-catalog';
 
-const KEY = 'amoji.voicePicks.v2';
+const KEY = 'amoji.voiceChoices.v1';
+/** Predecessor key: Edge short names in gender slots. Cleared, never migrated. */
+const LEGACY_KEY = 'amoji.voicePicks.v2';
 
-export type VoicePickMap = Partial<Record<VoiceLocale, Partial<Record<VoiceGender, string>>>>;
-
-const LOCALES: readonly VoiceLocale[] = ['yue', 'zh', 'ja', 'en'];
+export type VoicePickMap = Partial<Record<VoiceLocale, string>>;
 
 let memory: VoicePickMap = {};
 let loaded = false;
 
-function isLocale(v: string): v is VoiceLocale {
-  return v === 'yue' || v === 'zh' || v === 'ja' || v === 'en';
-}
-
-function knownEdgeId(id: string): boolean {
-  return EDGE_VOICE_BUTTONS.some((b) => b.id === id);
-}
-
-/** Pin must match companion gender (no male neural on female slot, etc.). */
-function pinMatchesGender(id: string, gender: VoiceGender): boolean {
-  if (!knownEdgeId(id)) return false;
-  if (gender === 'female') return isFemaleNeuralVoice(id);
-  return isMaleNeuralVoice(id);
-}
-
 function sanitize(raw: unknown): VoicePickMap {
   if (!raw || typeof raw !== 'object') return {};
   const out: VoicePickMap = {};
-  for (const locale of LOCALES) {
-    const slot = (raw as Record<string, unknown>)[locale];
-    if (!slot || typeof slot !== 'object') continue;
-    const next: Partial<Record<VoiceGender, string>> = {};
-    for (const gender of ['female', 'male'] as const) {
-      const id = (slot as Record<string, unknown>)[gender];
-      if (typeof id === 'string' && pinMatchesGender(id, gender)) next[gender] = id;
-    }
-    if (next.female || next.male) out[locale] = next;
+  for (const [locale, id] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof id !== 'string' || !isVoiceLocale(locale)) continue;
+    const hit = voiceChoiceById(id);
+    // A stored id must still exist AND belong to that language. A stale or
+    // cross-language id is dropped so the language default applies, rather
+    // than quietly playing a speaker from the wrong language.
+    if (hit && hit.locale === locale) out[locale] = id;
   }
   return out;
 }
@@ -69,6 +57,7 @@ function hydrate(): VoicePickMap {
     if (typeof localStorage === 'undefined') return memory;
     const raw = localStorage.getItem(KEY);
     if (raw) memory = sanitize(JSON.parse(raw));
+    if (localStorage.getItem(LEGACY_KEY) !== null) localStorage.removeItem(LEGACY_KEY);
   } catch { /* ignore */ }
   return memory;
 }
@@ -77,32 +66,40 @@ export function loadVoicePicks(): VoicePickMap {
   return hydrate();
 }
 
-/** Edge short name pinned for this companion gender, or null for the cast. */
-export function voicePickFor(locale: string, gender: VoiceGender): string | null {
-  if (!isLocale(locale)) return null;
-  const id = hydrate()[locale]?.[gender] ?? null;
-  if (!id || !pinMatchesGender(id, gender)) return null;
-  return id;
+/** Pinned choice id for this language, or null to use the language default. */
+export function voicePickFor(locale: string): string | null {
+  if (!isVoiceLocale(locale)) return null;
+  return hydrate()[locale] ?? null;
+}
+
+/** The choice to highlight for this language. Never null. */
+export function activeVoiceChoice(locale: VoiceLocale): VoiceChoice {
+  const pinned = voiceChoiceById(voicePickFor(locale));
+  if (pinned && pinned.locale === locale) return pinned;
+  const direct = voiceChoiceById(`gtts:${locale}`);
+  return direct ?? voiceChoicesFor(locale)[0] ?? voiceChoiceById('gtts:en-US')!;
 }
 
 /**
- * Pin `voiceId` for the companion's gender in that language.
- * Returns the map now stored. Invalid / cross-gender ids are ignored.
+ * Pin `choiceId` for that language. Returns the map now stored. An id that
+ * does not exist, or that belongs to another language, is ignored.
  */
-export function saveVoicePick(locale: VoiceLocale, companionGender: VoiceGender, voiceId: string): VoicePickMap {
+export function saveVoicePick(locale: VoiceLocale, choiceId: string): VoicePickMap {
   const current = { ...hydrate() };
-  if (!pinMatchesGender(voiceId, companionGender)) return current;
-  // Exclusive single-select: one active Edge pin per locale (clear the other gender).
-  current[locale] = { [companionGender]: voiceId };
+  const hit = voiceChoiceById(choiceId);
+  if (!hit || hit.locale !== locale) return current;
+  current[locale] = choiceId;
   persist(current);
   return current;
 }
 
-/** Test isolation. Also clears the stored pin. */
+/** Test isolation. Also clears the legacy Edge-pin key. */
 export function resetVoicePicks(): void {
   memory = {};
   loaded = true;
   try {
-    if (typeof localStorage !== 'undefined') localStorage.removeItem(KEY);
+    if (typeof localStorage === 'undefined') return;
+    localStorage.removeItem(KEY);
+    localStorage.removeItem(LEGACY_KEY);
   } catch { /* ignore */ }
 }

@@ -1,58 +1,86 @@
-// Tier A select-page buttons: shipping Edge neurals (tts-voices-catalog wire-now), one real short name
-// each. A later engine is not a numbered male/female button until it has a
-// real speaker id. The row renders `selectTtsButtons()` and nothing else.
+// The voice buttons the UI is allowed to render.
+//
+// This registry used to be built from a list of 58 Edge neural short names.
+// Every one of them produced the SAME audio, because the Edge read-aloud
+// endpoint refuses this app's client token and each tap fell through to the
+// Google Translate MP3 tier, which selects a speaker with `tl` and has no
+// voice-id parameter at all. Fifty-eight buttons, one sound.
+//
+// So the registry is now built from the voices that actually differ, and it is
+// gated on the engine audit in voice-capability.ts: an engine whose status is
+// not 'works' cannot become a button at all. That gate, not a comment, is what
+// keeps a dead engine from reappearing here.
 
-import { EDGE_VOICE_BUTTONS, type VoiceGender, type VoiceLocale } from './voice-catalog';
+import type { VoiceLocale } from './voice-catalog';
+import {
+  VOICE_CHOICES,
+  distinctVoiceCount,
+  engineIsOffered,
+  type VoiceChoice,
+} from './voice-capability';
 
-export type TtsEngineId = 'edge';
+export type TtsEngineId = 'gtts';
 
 export interface TtsButtonVoice {
-  /** Edge neural short name. */
+  /** Choice id, e.g. 'gtts:en-GB'. */
   id: string;
   engine: TtsEngineId;
   locale: VoiceLocale;
-  gender: VoiceGender;
-  /** Exact label, e.g. "Cantonese female 1". */
-  label: string;
-  /** Per-locale gender index (male 1, female 1, ...). */
+  /** Google Translate `tl` — the actual speaker selector. */
+  tl: string;
+  /** Localized region label key, e.g. voiceRegionUk. */
+  labelKey: VoiceChoice['labelKey'];
+  /** Per-language index, 1-based. */
   n: number;
   shipping: true;
 }
 
-/** How many Tier A buttons each language shows when the row is filtered. */
-export const TIER_A_COUNTS: Record<VoiceLocale, number> = {
-  yue: EDGE_VOICE_BUTTONS.filter((b) => b.locale === 'yue').length,
-  zh: EDGE_VOICE_BUTTONS.filter((b) => b.locale === 'zh').length,
-  ja: EDGE_VOICE_BUTTONS.filter((b) => b.locale === 'ja').length,
-  en: EDGE_VOICE_BUTTONS.filter((b) => b.locale === 'en').length,
-};
-
-export const TTS_BUTTON_REGISTRY: readonly TtsButtonVoice[] = EDGE_VOICE_BUTTONS.map((button) => ({
-  id: button.id,
-  engine: 'edge' as const,
-  locale: button.locale,
-  gender: button.gender,
-  label: button.label,
-  n: button.n,
+export const TTS_BUTTON_REGISTRY: readonly TtsButtonVoice[] = VOICE_CHOICES.filter((choice) =>
+  engineIsOffered(choice.engine),
+).map((choice) => ({
+  id: choice.id,
+  engine: 'gtts' as const,
+  locale: choice.locale,
+  tl: choice.tl,
+  labelKey: choice.labelKey,
+  n: choice.n,
   shipping: true as const,
 }));
 
-/** Shipping buttons. Optional locale and/or companion gender (voicePicks.v2 floor). */
-export function selectTtsButtons(
-  locale?: VoiceLocale,
-  gender?: VoiceGender,
-): readonly TtsButtonVoice[] {
-  let rows = TTS_BUTTON_REGISTRY.filter((voice) => voice.shipping);
-  if (locale) rows = rows.filter((voice) => voice.locale === locale);
-  if (gender) rows = rows.filter((voice) => voice.gender === gender);
-  return rows;
+/** How many genuinely different sounds each language offers. */
+export const TIER_A_COUNTS: Record<VoiceLocale, number> = {
+  yue: distinctVoiceCount('yue'),
+  zh: distinctVoiceCount('zh'),
+  ja: distinctVoiceCount('ja'),
+  en: distinctVoiceCount('en'),
+};
+
+/**
+ * Buttons for a language (or every language when omitted).
+ *
+ * There is no gender filter any more. The live voices are not gendered — a
+ * language has one or a few distinct speakers — so a male/female split would
+ * invent a distinction the audio does not have. Gender still shapes a
+ * character's delivery through pitch, but it is not a voice choice.
+ */
+export function selectTtsButtons(locale?: VoiceLocale): readonly TtsButtonVoice[] {
+  if (!locale) return TTS_BUTTON_REGISTRY;
+  return TTS_BUTTON_REGISTRY.filter((voice) => voice.locale === locale);
 }
 
 export function ttsButtonById(id: string): TtsButtonVoice | undefined {
   return TTS_BUTTON_REGISTRY.find((voice) => voice.id === id);
 }
 
-/** Stable key if a later engine reuses an id. */
+/** Stable React key. Ids are already unique. */
 export function ttsButtonKey(voice: TtsButtonVoice): string {
   return `${voice.engine}:${voice.id}`;
+}
+
+/**
+ * True when this language offers a single voice, i.e. the row is one button and
+ * the UI should say why rather than look broken.
+ */
+export function isSingleVoiceLocale(locale: VoiceLocale): boolean {
+  return selectTtsButtons(locale).length <= 1;
 }

@@ -23,8 +23,7 @@ import { bigheadPath } from '../lib/bighead';
 import { playVoiceGreeting, primeAudioForChatEnter } from '../lib/voice';
 import { introText } from '../lib/character-intro';
 import { primeLocationForChatEnter } from '../lib/live-tools';
-import { voicePickFor } from '../lib/voice-picks';
-import { resolveEdgeVoice } from '../lib/edge-tts';
+import { activeVoiceChoice } from '../lib/voice-picks';
 import {
   BACKGROUNDS, CHARACTERS, LANGS,
   KID_BACKGROUND, KID_CHARACTER,
@@ -194,18 +193,15 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                     pick({ character: id });
                     const chosen = cast.find((item) => item.id === id);
                     if (!chosen) return;
-                    // Audition the cast slot — a gender pin would make every
-                    // character of that sex sound identical on select.
-                    const voiceId = resolveEdgeVoice({
-                      lang,
-                      gender: chosen.gender,
-                      character: chosen.id,
-                      ignoreVoicePick: true,
-                    }).name;
+                    // Audition this character in the language's real speaker.
+                    // The old Edge "cast slot" no longer exists — Edge refuses
+                    // this app — so all it did was label audio that came from
+                    // one fallback voice. Character identity now rides on pitch,
+                    // which is applied inside the greeting.
                     playVoiceGreeting(
                       chosen.id,
                       lang,
-                      voiceId,
+                      activeVoiceChoice(lang).id,
                       introText(chosen.name, chosen.tagline?.[lang] ?? chosen.tagline?.en, lang),
                     );
                   }}
@@ -296,14 +292,9 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                 onSelect={(id) => {
                   if (id !== 'en' && id !== 'yue' && id !== 'zh' && id !== 'ja') return;
                   pick({ lang: id });
-                  const voiceId = voicePickFor(id, character.gender)
-                    ?? resolveEdgeVoice({
-                      lang: id,
-                      gender: character.gender,
-                      character: character.id,
-                      ignoreVoicePick: true,
-                    }).name;
-                  playVoiceGreeting(character.id, id, voiceId);
+                  // Greet with the speaker this language will actually use, so
+                  // tapping a language auditions the voice chat will speak in.
+                  playVoiceGreeting(character.id, id, activeVoiceChoice(id).id);
                 }}
                 label={(l) => l.native}
               >
