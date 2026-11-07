@@ -9,7 +9,7 @@ describe('SetupFlow / robot-demo type=button', () => {
   it('SetupFlow back and next are type=button', () => {
     const src = read('components/SetupFlow.tsx');
     expect(src).toContain('type="button" onClick={() => setStep(step - 1)}');
-    expect(src).toContain('type="button" onClick={next}');
+    expect(src).toMatch(/type="button"[\s\S]{0,80}onClick=\{next\}/);
   });
 
   it('robot-demo emotion and speak are type=button', () => {

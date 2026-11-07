@@ -73,6 +73,7 @@ export default function MiniGamePicker({
         <button
           type="button"
           onClick={onClose}
+          aria-label={ui.close}
           className="ui-btn rounded-full border border-white/15 bg-black/45 px-3 py-2 text-xs backdrop-blur-md"
         >
           {ui.close}

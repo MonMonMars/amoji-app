@@ -58,7 +58,12 @@ export default function SetupFlow() {
             {t(lang, 'back')}
           </button>
         )}
-        <button type="button" onClick={next} className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black hover:bg-white/85">
+        <button
+          type="button"
+          onClick={next}
+          aria-label={step < STEPS.length - 1 ? 'Next' : t(lang, 'startChat')}
+          className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black hover:bg-white/85"
+        >
           {step < STEPS.length - 1 ? '→' : t(lang, 'startChat')}
         </button>
       </div>
