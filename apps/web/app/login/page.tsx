@@ -44,8 +44,11 @@ export default function Login() {
         style={{ '--d': '160ms' } as CSSProperties}
         aria-busy={!bootReady}
       >
-        <label className="mb-2 block text-center text-sm text-white/60">{t(lang, 'loginPrompt')}</label>
+        <label htmlFor="amoji-login-name" className="mb-2 block text-center text-sm text-white/60">{t(lang, 'loginPrompt')}</label>
         <input
+          id="amoji-login-name"
+          name="name"
+          autoComplete="nickname"
           value={name ?? ''}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && bootReady && go()}
