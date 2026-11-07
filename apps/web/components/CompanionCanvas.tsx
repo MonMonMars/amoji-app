@@ -2224,6 +2224,6 @@ export default function CompanionCanvas({
   // r91 (Master Simon): no overlay here at all ??the empty stage IS the
   // loading state, and the top-left name bar (StatusPlate) carries a mini
   // spinner + the real percentage through lib/load-progress.
-  return <div ref={hostRef} className="absolute inset-0 touch-none" aria-label="companion" />;
+  return <div ref={hostRef} className="absolute inset-0 touch-none" aria-label={characterById(seedKey ?? '').name} />;
 }
 
