@@ -25,7 +25,7 @@ export default function SoftLandChat({
       aria-label={label}
     >
       <EarlyAudioUnlock />
-      <div className="pointer-events-none absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-pink-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-pink-500/10 blur-3xl" aria-hidden />
       <p id="amoji-softland-status" role="status" className="relative text-sm tracking-wide text-white/45">{label}</p>
     </main>
   );
