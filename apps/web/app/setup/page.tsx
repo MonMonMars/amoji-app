@@ -3,5 +3,5 @@
 import SoftLandSelect from '../../components/SoftLandSelect';
 
 export default function Setup() {
-  return <SoftLandSelect label="Taking you to character select…" />;
+  return <SoftLandSelect label="Taking you to character select..." />;
 }
