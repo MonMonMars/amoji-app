@@ -70,38 +70,51 @@ export default function TtsVoiceRow({
           {showAll ? t(lang, 'voiceThisLanguage') : t(lang, 'voiceShowAll')}
         </button>
       </div>
-      <div className="max-h-[5.5rem] w-full overflow-y-auto overscroll-contain sm:max-h-[7.5rem]">
-        <div className="flex w-full flex-wrap justify-center gap-1">
-          {buttons.map((button, i) => {
-            const selected = button.locale === lang && button.id === activeId;
-            const mark = devMark('V', i + 1);
-            const numLabel = `#${button.n} ${button.label}`;
-            return (
-              <button
-                key={ttsButtonKey(button)}
-                type="button"
-                aria-label={numLabel}
-                aria-pressed={selected}
-                title={`${button.id} (${button.gender} #${button.n})`}
-                data-dev={showDev ? mark : undefined}
-                data-voice-n={button.n}
-                data-voice-gender={button.gender}
-                onClick={() => onTap(button)}
-                className={`fx-press ui-btn relative shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium leading-tight ${
-                  selected ? 'border-white/80 text-white' : 'border-white/15 bg-black/35 text-white/80'
-                }`}
-                style={selected ? { backgroundColor: `${accent}55`, boxShadow: `inset 0 0 0 1px ${accent}` } : undefined}
-              >
-                {showDev ? `${mark} ${numLabel}` : numLabel}
-              </button>
-            );
-          })}
+      {/* Gender groups + taller grid: males stay visible (Mon: many missing). */}
+      <div className="max-h-[12rem] w-full overflow-y-auto overscroll-contain sm:max-h-[16rem]" data-testid="tts-voice-grid">
+        {(['female', 'male'] as const).map((gender) => {
+          const group = buttons.filter((b) => b.gender === gender);
+          if (!group.length) return null;
+          const heading = gender === 'female' ? t(lang, 'genderFemale') : t(lang, 'genderMale');
+          return (
+            <div key={gender} role="group" aria-label={heading} className="mb-1.5">
+              <p className="mb-0.5 text-center text-[9px] uppercase tracking-[0.14em] text-white/40">{heading}</p>
+              <div className="grid w-full grid-cols-2 gap-1 min-[420px]:grid-cols-3 sm:grid-cols-4">
+                {group.map((button) => {
+                  const selected = button.locale === lang && button.id === activeId;
+                  const mark = devMark('V', button.n);
+                  const numLabel = `#${button.n} ${button.label}`;
+                  return (
+                    <button
+                      key={ttsButtonKey(button)}
+                      type="button"
+                      aria-label={numLabel}
+                      aria-pressed={selected}
+                      title={`${button.id} (${button.gender} #${button.n})`}
+                      data-dev={showDev ? mark : undefined}
+                      data-voice-n={button.n}
+                      data-voice-gender={button.gender}
+                      onClick={() => onTap(button)}
+                      className={`fx-press ui-btn relative min-h-9 rounded-xl border px-1.5 py-1 text-left text-[10px] font-medium leading-tight ${
+                        selected ? 'border-white/80 text-white' : 'border-white/15 bg-black/35 text-white/80'
+                      }`}
+                      style={selected ? { backgroundColor: `${accent}55`, boxShadow: `inset 0 0 0 1px ${accent}` } : undefined}
+                    >
+                      {showDev ? `${mark} ${numLabel}` : numLabel}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+        <div className="flex justify-center pt-0.5">
           <button
             type="button"
             disabled
             aria-disabled="true"
             aria-label={t(lang, 'moreEnginesLater')}
-            className="shrink-0 cursor-default rounded-full border border-dashed border-white/20 px-2 py-0.5 text-[10px] text-white/40"
+            className="cursor-default rounded-full border border-dashed border-white/20 px-2 py-0.5 text-[10px] text-white/40"
           >
             {t(lang, 'moreEnginesLater')}
           </button>
