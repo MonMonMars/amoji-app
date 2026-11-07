@@ -137,7 +137,7 @@ export const STORY_SCENES: readonly StoryScene[] = [
     castGender: 'any',
     castPool: [
       'a14-vivi', 'a16-vita', 'a17-victoria-rubin', 'a64-lily-lily-animeit',
-      'a71-mary-sweety', 'a75-sorano', 'a81-cinna', 'a98-ethan', 'a468-eric',
+      'a71-mary-sweety', 'a75-sorano', 'a81-cinna', 'a98-ethan',
     ],
     title: {
       en: 'Rooftop evening',
@@ -209,7 +209,6 @@ export const STORY_SCENES: readonly StoryScene[] = [
     castPool: [
       'a14-vivi', 'a16-vita', 'a17-victoria-rubin', 'a64-lily-lily-animeit',
       'a70-vtuber-aihina-sample', 'a71-mary-sweety', 'a75-sorano', 'a81-cinna',
-      'a468-eric',
     ],
     title: {
       en: 'Beach at dusk',
