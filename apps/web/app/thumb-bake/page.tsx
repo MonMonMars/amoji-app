@@ -20,7 +20,7 @@ import { VRMLoaderPlugin } from '@pixiv/three-vrm';
 import type { VRM } from '@pixiv/three-vrm';
 import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-vrm-animation';
 import type { VRMAnimation } from '@pixiv/three-vrm-animation';
-import { CHARACTERS } from '../../lib/prefs';
+import { CHARACTERS, loadPrefs, type Lang } from '../../lib/prefs';
 import { modelUrl } from '../../lib/asset';
 import { createV1Avatar, createGenericAvatar } from '../../lib/vrm/avatar';
 import type { Avatar } from '../../lib/vrm/avatar';
@@ -139,7 +139,16 @@ function cropAlphaPng(src: HTMLCanvasElement, pad = 8): string {
   return out.toDataURL('image/png');
 }
 
+
+const THUMB_COPY: Record<Lang, { studio: string; canvas: string; log: string }> = {
+  en: { studio: 'Thumb Bake Studio', canvas: 'Avatar bake canvas', log: 'Bake progress log' },
+  yue: { studio: '縮圖烘焙工作室', canvas: '角色烘焙畫布', log: '烘焙進度日誌' },
+  zh: { studio: '缩略图烘焙工作室', canvas: '角色烘焙画布', log: '烘焙进度日志' },
+  ja: { studio: 'サムネイル焼成スタジオ', canvas: 'アバター焼成キャンバス', log: '焼成進捗ログ' },
+};
+
 export default function ThumbBakePage() {
+  const copy = THUMB_COPY[loadPrefs().lang] ?? THUMB_COPY.en;
   const [log, setLog] = useState<string[]>([]);
   const [done, setDone] = useState<{ ok: string[]; fail: string[] } | null>(null);
   const hostRef = useRef<HTMLDivElement>(null);
@@ -360,7 +369,7 @@ export default function ThumbBakePage() {
 
   if (!isLocal) {
     return (
-      <main aria-label="Thumb Bake Studio" className="flex h-dvh items-center justify-center bg-[#16161f] text-white/70">
+      <main aria-label={copy.studio} className="flex h-dvh items-center justify-center bg-[#16161f] text-white/70">
         Thumb bake studio is a dev-only tool — run the app locally.
       </main>
     );
@@ -368,18 +377,18 @@ export default function ThumbBakePage() {
 
   return (
     <main aria-labelledby="amoji-thumb-bake-title" className="min-h-dvh bg-[#16161f] p-6 font-mono text-sm text-white/80">
-      <h1 id="amoji-thumb-bake-title" className="mb-1 text-lg font-bold text-white">Thumb Bake Studio</h1>
+      <h1 id="amoji-thumb-bake-title" className="mb-1 text-lg font-bold text-white">{copy.studio}</h1>
       <p className="mb-4 text-white/50" role="status" aria-live="polite">
         Rendering every cast member through the real avatar pipeline — {done ? 'finished' : 'running…'}
       </p>
       <div className="flex gap-6">
-        <div ref={hostRef} className="shrink-0" role="img" aria-label="Avatar bake canvas" />
+        <div ref={hostRef} className="shrink-0" role="img" aria-label={copy.canvas} />
         <div
           className="max-h-[70vh] flex-1 overflow-y-auto whitespace-pre-wrap"
           role="log"
           aria-live="polite"
           aria-relevant="additions"
-          aria-label="Bake progress log"
+          aria-label={copy.log}
         >
           {log.map((l, i) => (
             <div key={i} className={l.includes('FAILED') ? 'text-red-400' : 'text-white/70'}>{l}</div>
