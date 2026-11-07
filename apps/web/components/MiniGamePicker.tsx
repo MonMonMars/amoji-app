@@ -79,14 +79,15 @@ export default function MiniGamePicker({
       className="fx-select fixed inset-0 z-[80] flex max-w-[100vw] flex-col overflow-x-hidden bg-black/55 text-white backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-label={ui.menu}
+      aria-labelledby="amoji-minigame-picker-title"
+      aria-describedby="amoji-minigame-picker-hint"
       data-testid="minigame-picker"
       onClick={onClose}
     >
       <div className="flex items-start justify-between gap-3 p-4" onClick={(e) => e.stopPropagation()}>
         <div>
-          <p className="text-lg font-semibold tracking-wide">{ui.menu}</p>
-          <p className="text-xs text-white/70">{ui.menuHint}</p>
+          <h2 id="amoji-minigame-picker-title" className="text-lg font-semibold tracking-wide">{ui.menu}</h2>
+          <p id="amoji-minigame-picker-hint" className="text-xs text-white/70">{ui.menuHint}</p>
         </div>
         <button
           ref={pickerCloseRef}
