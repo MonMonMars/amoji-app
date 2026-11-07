@@ -83,6 +83,7 @@ export default function RobotDemoPage() {
       <div className="flex w-full max-w-sm flex-wrap justify-center gap-2">
         {EMOTION_BUTTONS.map((e) => (
           <button
+            type="button"
             key={e}
             onClick={() => faceRef.current?.setEmotion(e, 1)}
             className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs capitalize hover:bg-white/15"
@@ -100,7 +101,7 @@ export default function RobotDemoPage() {
           placeholder="Type anything… the face feels it"
           className="h-11 flex-1 rounded-full border border-white/10 bg-black/40 px-4 text-white placeholder-white/30 outline-none focus:border-white/40"
         />
-        <button onClick={speak} className="h-11 rounded-full bg-[#7c6cff] px-5 text-sm font-semibold">➤</button>
+        <button type="button" onClick={speak} className="h-11 rounded-full bg-[#7c6cff] px-5 text-sm font-semibold">➤</button>
       </div>
 
       <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/5 p-4">
