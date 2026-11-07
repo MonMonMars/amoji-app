@@ -159,6 +159,7 @@ export default function Chat() {
               onCharacter={(id) => setPrefs({ character: id })}
             />
             <button
+              type="button"
               onClick={() => setSheetOpen(true)}
               title={prefs.lang === 'yue' ? '設定' : 'Settings'}
               aria-label={prefs.lang === 'yue' ? '設定' : 'Settings'}
