@@ -1,6 +1,6 @@
 'use client';
 // Top of /select + /change:
-//   row 1 — Chat / Story / Kid mode chips (in-place; no route change)
+//   row 1 — Chat / Story chips (in-place; no route change). Kid mode lives in Settings.
 //   row 2 — anime CHARACTER gender filter: All / Male / Female (cast filter only)
 
 import type { CSSProperties } from 'react';
@@ -13,26 +13,19 @@ export type BoardMode = 'chat' | 'story';
 export default function SelectTopBars({
   lang,
   accent,
-  kidMode,
-  onKidMode,
   boardMode = 'chat',
   onBoardMode,
   castGender = 'all',
   onCastGender,
-  prefsReady = true,
 }: {
   lang: Lang;
   accent: string;
-  kidMode: boolean;
-  onKidMode: (next: boolean) => void;
   /** chat vs story — both stay on /select; only the board body swaps */
   boardMode?: BoardMode;
   onBoardMode?: (next: BoardMode) => void;
   /** Filter the anime cast by character gender (not the user's gender). */
   castGender?: CastGenderFilter;
   onCastGender?: (next: CastGenderFilter) => void;
-  /** false until amoji.prefs.v1 sync - hold kid chip highlight */
-  prefsReady?: boolean;
 }) {
   const modeChip = (active: boolean) =>
     active
@@ -95,22 +88,6 @@ export default function SelectTopBars({
             onClick={() => onBoardMode?.('story')}
           >
             STORY
-          </button>
-          <button
-            type="button"
-            data-testid="select-mode-kid"
-            aria-pressed={prefsReady ? kidMode : undefined}
-            aria-busy={!prefsReady}
-            disabled={!prefsReady}
-            className={`fx-press ui-btn rounded-full border px-3 py-1 text-[11px] font-semibold ${
-              prefsReady && kidMode
-                ? 'border-white/75 text-white'
-                : 'border-white/20 bg-black/30 text-white/70'
-            }`}
-            style={prefsReady && kidMode ? { backgroundColor: `${accent}66` } : undefined}
-            onClick={() => onKidMode(!kidMode)}
-          >
-            {t(lang, 'kidMode')}
           </button>
         </div>
         <div

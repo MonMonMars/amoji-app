@@ -198,7 +198,8 @@ describe('selection layout', () => {
     expect(board).not.toContain('if (prefs.kidMode && !c.kidSafe) return false;');
     expect(board).not.toContain('const scenes = prefs.kidMode ? BACKGROUNDS.filter');
     expect(board).not.toContain('{prefs.kidMode && <span');
-    expect(board).toContain("kidMode={!!live.kidMode}");
+    expect(board).not.toContain("kidMode={!!live.kidMode}");
+    expect(board).not.toContain('onKidMode=');
   });
 
   it('keeps IdlePickRails chat-only as a multi-column grid (no select rails)', () => {
@@ -220,7 +221,8 @@ describe('selection layout', () => {
     const board = read('../components/SelectionBoard.tsx');
     expect(board).toContain("import SelectTopBars");
     expect(board).toContain('<SelectTopBars');
-    expect(board).toContain('onKidMode={setKidMode}');
+    expect(board).not.toContain('onKidMode');
+    expect(board).not.toContain('setKidMode');
     expect(board).toContain('onCastGender={applyCastGender}');
     expect(board).toContain('castGender');
     const top = board.indexOf('<SelectTopBars');
@@ -228,7 +230,8 @@ describe('selection layout', () => {
     const bars = read('../components/SelectTopBars.tsx');
     expect(bars).toContain('select-mode-chat');
     expect(bars).toContain('select-mode-story');
-    expect(bars).toContain('select-mode-kid');
+    expect(bars).not.toContain('select-mode-kid');
+    expect(bars).not.toContain('kidMode');
     expect(bars).toContain('select-cast-gender-all');
     expect(bars).toContain('select-cast-gender-male');
     expect(bars).toContain('select-cast-gender-female');
@@ -238,11 +241,12 @@ describe('selection layout', () => {
     expect(bars).not.toContain("router.push('/story')");
   });
 
-  it('holds kid prefs chrome until localStorage sync (no DEFAULT flash)', () => {
+  it('select top bars keep Chat/Story mode chips without kid control', () => {
     const bars = read('../components/SelectTopBars.tsx');
-    expect(bars).toContain('prefsReady');
-    expect(bars).toContain('aria-busy={!prefsReady}');
-    expect(bars).toContain('disabled={!prefsReady}');
+    expect(bars).toContain('select-mode-chat');
+    expect(bars).toContain('select-mode-story');
+    expect(bars).not.toContain('select-mode-kid');
+    expect(bars).not.toContain('prefsReady');
     expect(bars).toContain('role="group"');
     expect(bars).toContain("aria-label={t(lang, 'settingsMode')}");
     expect(bars).toContain("aria-label={t(lang, 'chooseCharacter')}");
