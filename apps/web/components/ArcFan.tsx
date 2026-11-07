@@ -133,7 +133,13 @@ export default function ArcFan<T extends { id: string }>({
   const suppress = useRef(false);
   const indexRef = useRef(0);
   const [compact, setCompact] = useState(false);
-  const [showArrows, setShowArrows] = useState(size === 'portrait');
+  // Match HScrollRow: portrait always; compact/scene decide mouse/trackpad on first
+  // client paint so chevrons do not false→true flash after the effect (Mon t530).
+  const [showArrows, setShowArrows] = useState(() => {
+    if (size === 'portrait') return true;
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(pointer: fine)').matches || window.matchMedia('(hover: hover)').matches;
+  });
   const [stageH, setStageH] = useState(0);
   const [stageW, setStageW] = useState(0);
 
