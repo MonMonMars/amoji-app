@@ -62,7 +62,7 @@ describe('greeting tier arbitration (one voice per tap)', () => {
   it('every tier carries the same per-character pitch', () => {
     // The SAME character must not sound different on select than in chat.
     // Both paths take the pitch from voice.ts's single resolver.
-    expect(body).toContain('pitchBias: gttsPitchBias(gender)');
+    expect(body).toContain('pitchBias: gttsPitchBias(gender, characterId)');
     expect(body).not.toMatch(/pitchBias: gender === 'male'/);
   });
 
