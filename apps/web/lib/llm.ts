@@ -116,14 +116,18 @@ export class OfflineLlm implements LlmPort {
 
 interface ProviderSpec { env: string; baseUrl: string; model: string; extraHeaders?: Record<string, string> }
 
+// r2026-11-08: three ids here had died and would hard-fail on every call.
+// Groq retired `llama-3.3-70b-versatile` on 2026-08-16 (its own deprecation
+// page names `openai/gpt-oss-120b` as the replacement) and Moonshot lists
+// `kimi-k2.5` as Deprecated, so both are now the current model.
 const PROVIDERS: ProviderSpec[] = [
   { env: 'DEEPSEEK_API_KEY', baseUrl: 'https://api.deepseek.com', model: 'deepseek-v4-pro' },
   { env: 'GEMINI_API_KEY', baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', model: 'gemini-2.5-flash' },
   { env: 'GOOGLE_API_KEY', baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', model: 'gemini-2.5-flash' },
-  { env: 'GROQ_API_KEY', baseUrl: 'https://api.groq.com/openai/v1', model: 'llama-3.3-70b-versatile' },
+  { env: 'GROQ_API_KEY', baseUrl: 'https://api.groq.com/openai/v1', model: 'openai/gpt-oss-120b' },
   { env: 'OPENROUTER_API_KEY', baseUrl: 'https://openrouter.ai/api/v1', model: 'auto', extraHeaders: { 'HTTP-Referer': 'https://amoji.app', 'X-Title': 'Amoji' } },
   { env: 'GITHUB_TOKEN', baseUrl: 'https://models.inference.ai.azure.com', model: 'gpt-4o-mini' },
-  { env: 'MOONSHOT_API_KEY', baseUrl: 'https://api.moonshot.ai/v1', model: 'kimi-k2.5' },
+  { env: 'MOONSHOT_API_KEY', baseUrl: 'https://api.moonshot.ai/v1', model: 'kimi-k3' },
 ];
 
 export function createLlm(): LlmPort {
