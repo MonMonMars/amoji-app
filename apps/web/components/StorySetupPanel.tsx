@@ -125,7 +125,7 @@ export default function StorySetupPanel() {
           <p className="mb-2 text-[10px] uppercase tracking-widest text-white/55">
             {LABEL.packs[lang]}
           </p>
-          <div className="flex max-w-full flex-wrap gap-2">
+          <div role="group" aria-label={LABEL.packs[lang]} className="flex max-w-full flex-wrap gap-2">
             {STORY_SCENES.map((s) => {
               const active = packId === s.id;
               return (
@@ -133,6 +133,8 @@ export default function StorySetupPanel() {
                   key={s.id}
                   type="button"
                   data-testid={`story-pack-${s.id}`}
+                  aria-label={s.title[lang]}
+                  aria-pressed={active}
                   onClick={() => pickPack(s.id)}
                   className={`ui-btn max-w-full rounded-full border px-3 py-1.5 text-left text-xs backdrop-blur-md ${
                     active
@@ -147,6 +149,8 @@ export default function StorySetupPanel() {
             <button
               type="button"
               data-testid="story-pack-random"
+              aria-label={LABEL.surprise[lang]}
+              aria-pressed={!packLocked}
               onClick={surprise}
               className={`ui-btn rounded-full border px-3 py-1.5 text-xs backdrop-blur-md ${
                 !packLocked
