@@ -16,6 +16,6 @@ describe('splash/home describedby residual a11y', () => {
   it('marks fade-out busy and keeps title/continue labels', () => {
     expect(src).toContain('aria-busy={fade}');
     expect(src).toContain('aria-labelledby="amoji-splash-title"');
-    expect(src).toContain('aria-label="Continue to login"');
+    expect(src).toContain('aria-label={continueLogin}');
   });
 });
