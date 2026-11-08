@@ -5,15 +5,15 @@ import { join } from 'node:path';
 const web = join(__dirname, '..');
 const read = (rel: string) => readFileSync(join(web, rel), 'utf8');
 
-describe('privacy/terms Back to home localized a11y', () => {
-  it('localizes Back aria-label in yue/zh/ja/en on both pages', () => {
-    for (const rel of ['app/privacy/page.tsx', 'app/terms/page.tsx'] as const) {
-      const src = read(rel);
-      expect(src).toContain("const lang = loadPrefs().lang");
-      expect(src).toContain("const backHome = lang === 'yue' ? '返回主頁' : lang === 'zh' ? '返回首页' : lang === 'ja' ? 'ホームに戻る' : 'Back to home'");
-      expect(src).toContain('aria-label={backHome}');
-      expect(src).toContain("{t(lang, 'back')}");
-      expect(src).not.toContain('aria-label="Back to home"');
+describe('unified setup back control a11y', () => {
+  it('QuickSetup exposes a localized back button on routed legal URLs', () => {
+    const quick = read('components/QuickSetup.tsx');
+    expect(quick).toContain("backTestId = 'setup-back'");
+    expect(quick).toContain('navigateNavBack(router)');
+    expect(quick).toContain("aria-label={t(lang, 'back')}");
+    for (const rel of ['app/privacy/page.tsx', 'app/terms/page.tsx', 'app/safety/page.tsx'] as const) {
+      expect(read(rel)).toContain('QuickSetup');
     }
+    expect(read('app/terms/page.tsx')).toContain('terms-back');
   });
 });

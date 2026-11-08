@@ -6,28 +6,23 @@ const web = join(__dirname, '..');
 const read = (rel: string) => readFileSync(join(web, rel), 'utf8');
 
 describe('legal pages + LegalGate link a11y', () => {
-  it('LegalGate privacy/terms links expose title aria-labels (not path-only names)', () => {
+  it('LegalGate privacy/terms links expose title aria-labels and point at /setup anchors', () => {
     const gate = read('components/LegalGate.tsx');
-    // Titles come from the localized legal-copy table, so the link's accessible
-    // name is the document's own title in every language.
     expect(gate).toContain('aria-label={privacy.title}');
     expect(gate).toContain('aria-label={terms.title}');
-    expect(gate).toContain('href="/privacy"');
-    expect(gate).toContain('href="/terms"');
+    expect(gate).toContain('href="/setup#setup-privacy-heading"');
+    expect(gate).toContain('href="/setup#setup-terms-heading"');
   });
 
-  it('privacy + terms pages name the main and Back control', () => {
+  it('legacy privacy/terms/safety URLs render the unified QuickSetup scroll', () => {
     const privacy = read('app/privacy/page.tsx');
     const terms = read('app/terms/page.tsx');
-    expect(privacy).toContain('id="amoji-privacy-title"');
-    expect(privacy).toContain('aria-labelledby="amoji-privacy-title"');
-    expect(privacy).toContain('aria-label={backHome}');
-    expect(privacy).toContain("const backHome = lang === 'yue' ? '返回主頁'");
-    expect(privacy).toContain("{t(lang, 'back')}");
-    expect(terms).toContain('id="amoji-terms-title"');
-    expect(terms).toContain('aria-labelledby="amoji-terms-title"');
-    expect(terms).toContain('aria-label={backHome}');
-    expect(terms).toContain("const backHome = lang === 'yue' ? '返回主頁'");
-    expect(terms).toContain("{t(lang, 'back')}");
+    const safety = read('app/safety/page.tsx');
+    expect(privacy).toContain('QuickSetup');
+    expect(terms).toContain('QuickSetup');
+    expect(safety).toContain('QuickSetup');
+    expect(privacy).toContain('setup-privacy-heading');
+    expect(terms).toContain('setup-terms-heading');
+    expect(safety).toContain('setup-safety-heading');
   });
 });

@@ -11,9 +11,7 @@ const read = (rel: string) => readFileSync(join(web, rel), 'utf8');
 /** Every user-facing legal surface. */
 const LEGAL_FILES = [
   'components/LegalGate.tsx',
-  'app/privacy/page.tsx',
-  'app/terms/page.tsx',
-  'app/safety/page.tsx',
+  'components/setup-one-shared.tsx',
   'lib/legal-copy.ts',
   'lib/legal-accept.ts',
 ] as const;
@@ -81,9 +79,12 @@ describe('legal copy names the real data recipients', () => {
     }
   });
 
-  it('links the /safety page from privacy and terms', () => {
-    expect(read('app/privacy/page.tsx')).toContain('href="/safety"');
-    expect(read('app/terms/page.tsx')).toContain('href="/safety"');
+  it('inlines full safety copy in the unified setup scroll (no separate mini-pages)', () => {
+    const shared = read('components/setup-one-shared.tsx');
+    expect(shared).toContain('safetyHelplinesTitle');
+    expect(shared).toContain('CRISIS_HELPLINES');
+    expect(read('app/privacy/page.tsx')).toContain('QuickSetup');
+    expect(read('app/safety/page.tsx')).toContain('setup-safety-heading');
   });
 });
 

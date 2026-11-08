@@ -4,22 +4,29 @@
  * Same contract as the title START — scroll disclosures, one button, app does the rest.
  */
 import { useRouter } from 'next/navigation';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { t, usePrefs } from '../lib/prefs';
 import { oneClickBootstrap } from '../lib/one-click-setup';
 import { useScrollReachedEnd } from '../lib/scroll-unlock';
 import EarlyAudioUnlock from './EarlyAudioUnlock';
 import { SetupOneScrollBody } from './setup-one-shared';
 import { APP_REVISION } from '../lib/revision';
+import { absorbNavReturnFromReferrer, navigateNavBack } from '../lib/nav-return';
 
 export default function QuickSetup({
   onDone,
   showBack = true,
+  initialSectionId,
+  backTestId = 'setup-back',
 }: {
   lang?: import('../lib/prefs').Lang;
   onDone?: () => void;
   /** /setup and /gate show back; EntryGate fallback does not. */
   showBack?: boolean;
+  /** Scroll in-page anchor (legacy /privacy, /terms, /safety URLs). */
+  initialSectionId?: string;
+  /** E.g. terms-back on /terms legacy URL. */
+  backTestId?: string;
 }) {
   const router = useRouter();
   const [prefs, , prefsReady] = usePrefs();
@@ -28,6 +35,20 @@ export default function QuickSetup({
   const [voiceHint, setVoiceHint] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const readToEnd = useScrollReachedEnd(scrollRef, prefsReady);
+
+  useEffect(() => {
+    absorbNavReturnFromReferrer();
+  }, []);
+
+  useEffect(() => {
+    if (!prefsReady || !scrollRef.current) return;
+    const sectionId =
+      initialSectionId ??
+      (typeof window !== 'undefined' && window.location.hash ? window.location.hash.slice(1) : '');
+    if (!sectionId) return;
+    const target = scrollRef.current.querySelector(`#${CSS.escape(sectionId)}`);
+    if (target instanceof HTMLElement) target.scrollIntoView({ block: 'start' });
+  }, [initialSectionId, prefsReady]);
 
   const start = useCallback(async () => {
     if (busy || !prefsReady || !readToEnd) return;
@@ -55,9 +76,9 @@ export default function QuickSetup({
       {showBack && (
         <button
           type="button"
-          data-testid="setup-back"
+          data-testid={backTestId}
           aria-label={t(lang, 'back')}
-          onClick={() => router.push('/')}
+          onClick={() => navigateNavBack(router)}
           className="ui-btn absolute left-4 top-4 z-20 rounded-full border border-white/15 bg-black/35 px-3.5 py-2 text-sm text-white/85 backdrop-blur-md safe-t"
         >
           ← {t(lang, 'back')}

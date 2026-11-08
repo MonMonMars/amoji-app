@@ -8,7 +8,7 @@ const __dirname = dirname(__filename);
 const WEB_DIR = resolve(__dirname, '..');
 
 const LEGACY_ROUTER_PATTERN =
-  /router\.(?:push|replace)\s*\(\s*['"`]\/?(?:play|mode|story|setup)['"`]/;
+  /router\.(?:push|replace)\s*\(\s*['"`]\/?(?:play|mode|story)['"`]/;
 
 const LEGACY_HREF_PATTERN =
   /href\s*=\s*["'`](?:\.\/|\/)(?:play|mode|story)["'`]/;

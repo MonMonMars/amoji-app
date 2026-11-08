@@ -11,9 +11,10 @@ describe('AI disclosure — first run', () => {
   const splash = read('app/page.tsx');
   const gate = read('components/LegalGate.tsx');
 
-  it('shows AI + 18+ on the first interactive screen (title START disclaimer)', () => {
-    expect(splash).toContain("t(lang, 'setupOneDisclaimer')");
-    expect(splash).toContain('amoji-splash-legal');
+  it('shows AI notice on title; full 18+ disclaimer lives on unified /setup scroll', () => {
+    expect(splash).toContain('SetupOneAiNotice');
+    expect(read('components/setup-one-shared.tsx')).toContain("t(lang, 'setupOneDisclaimer')");
+    expect(splash).toContain('href="/setup"');
   });
 
   it('shows the notice in the legal gate too, at the first tap', () => {
@@ -85,9 +86,11 @@ describe('AI disclosure — system prompt hard rule', () => {
 
 describe('safety page', () => {
   const page = read('app/safety/page.tsx');
+  const scroll = read('components/setup-one-shared.tsx');
 
   it('exists as a route and is reachable without accepting the gate', () => {
-    expect(page).toContain('amoji-safety-title');
+    expect(page).toContain('QuickSetup');
+    expect(scroll).toContain('setup-safety-heading');
     expect(read('components/LegalGate.tsx')).toContain("'/safety'");
   });
 
@@ -99,17 +102,17 @@ describe('safety page', () => {
   });
 
   it('renders the helpline list from the crisis module, not hard-coded copy', () => {
-    expect(page).toContain('CRISIS_HELPLINES');
-    expect(page).toContain('tel:');
+    expect(scroll).toContain('CRISIS_HELPLINES');
+    expect(scroll).toContain('tel:');
   });
 
-  it('localizes every heading', () => {
+  it('localizes every heading in the unified scroll body', () => {
     const KEYS = [
       'safetyTitle', 'safetyLead', 'safetyHelplinesTitle', 'safetyEmergencyTitle',
-      'safetyStepsTitle', 'safetyStepsBody', 'safetyAboutAi', 'safetyPrivacyLink',
+      'safetyStepsTitle', 'safetyStepsBody', 'safetyAboutAi',
     ] as const;
     for (const key of KEYS) {
-      expect(page).toContain(`t(lang, '${key}')`);
+      expect(scroll).toContain(`'${key}'`);
       for (const { id } of LANGS) {
         expect(t(id, key).trim().length).toBeGreaterThan(0);
       }

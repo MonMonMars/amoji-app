@@ -382,10 +382,10 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     ja: '最後までスクロールすると次へ進めます。',
   },
   splashOpenSetup: {
-    en: 'Open setup page',
-    yue: '開設定頁',
-    zh: '打开设置页',
-    ja: 'セットアップページ',
+    en: 'Read terms & start →',
+    yue: '睇條款同開始 →',
+    zh: '阅读条款并开始 →',
+    ja: '規約を読んで開始 →',
   },
   setupOneTitle: {
     en: 'Ready to play',

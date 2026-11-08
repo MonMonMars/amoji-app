@@ -27,14 +27,15 @@ describe('setup one — full scroll disclosure', () => {
     expect(shared).toContain("t(lang, 'gateAudioTitle')");
     expect(shared).toContain("t(lang, 'gateMicTitle')");
     expect(shared).toContain("t(lang, 'safetyLead')");
+    expect(shared).toContain("t(lang, 'safetyHelplinesTitle')");
+    expect(shared).toContain('CRISIS_HELPLINES');
     expect(shared).toContain("t(lang, 'aiNotice')");
-    expect(shared).toContain('SetupLegalLinks');
+    expect(shared).not.toContain('SetupLegalLinks');
   });
 
   it('new setup strings exist in every shipped language', () => {
     for (const { id } of LANGS) {
       expect(t(id, 'setupDisclosureAiTitle')).toBeTruthy();
-      expect(t(id, 'setupFullDocHint')).toBeTruthy();
     }
   });
 });

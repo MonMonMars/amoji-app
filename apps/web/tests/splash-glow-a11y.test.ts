@@ -12,7 +12,7 @@ describe('splash decorative glow residual a11y', () => {
 
   it('keeps splash main labels from prior slices', () => {
     expect(src).toContain('aria-labelledby="amoji-splash-title"');
-    expect(src).toContain('aria-describedby="amoji-splash-tagline amoji-splash-revision amoji-splash-legal"');
+    expect(src).toContain('aria-describedby="amoji-splash-tagline amoji-splash-revision"');
     expect(src).toContain('aria-label={startLabel}');
   });
 });

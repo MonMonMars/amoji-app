@@ -119,13 +119,9 @@ describe('/credits page', () => {
     expect(html).toContain('href="/"');
   });
 
-  it('is reachable pre-consent and linked from the legal pages', () => {
-    // The gate would otherwise cover the page a licence requires us to publish.
+  it('is reachable pre-consent via LegalGate LEGAL_DOC_PATHS', () => {
     expect(read('components/LegalGate.tsx')).toContain("'/credits'");
-    expect(read('app/privacy/page.tsx')).toContain('href="/credits"');
-    expect(read('app/terms/page.tsx')).toContain('href="/credits"');
-    expect(read('app/privacy/page.tsx')).toContain("t(lang, 'creditsTitle')");
-    expect(read('app/terms/page.tsx')).toContain("t(lang, 'creditsTitle')");
+    expect(read('app/credits/page.tsx')).toContain('creditsDoc');
   });
 
   it('carries no placeholder or demo wording, same rule as the legal docs', () => {

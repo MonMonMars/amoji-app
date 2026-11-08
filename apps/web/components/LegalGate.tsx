@@ -22,9 +22,9 @@ import { useScrollReachedEnd } from '../lib/scroll-unlock';
 // readable without first accepting the terms. /credits is here for the same
 // reason — it is an attribution obligation, not app content, and a user must be
 // able to read it without accepting anything.
-const LEGAL_DOC_PATHS = new Set(['/privacy', '/terms', '/safety', '/credits']);
-/** One-tap START on title/setup accepts legal — do not stack a second modal. */
-const ONE_CLICK_PATHS = new Set(['/', '/setup', '/login', '/gate']);
+const LEGAL_DOC_PATHS = new Set(['/credits']);
+/** One-scroll START accepts legal — do not stack a second modal on these routes. */
+const ONE_CLICK_PATHS = new Set(['/', '/setup', '/login', '/gate', '/privacy', '/terms', '/safety']);
 
 const COPY: Record<'title' | 'lead' | 'accept', Record<Lang, string>> = {
   title: {
@@ -134,22 +134,22 @@ export default function LegalGate() {
           <section>
             <h3 className="font-semibold text-white">{privacy.title}</h3>
             <p className="mt-1">{privacy.body}</p>
-            <Link href="/privacy" aria-label={privacy.title} className="mt-2 inline-block text-xs text-pink-200/90 underline-offset-4 hover:underline">
-              /privacy
+            <Link href="/setup#setup-privacy-heading" aria-label={privacy.title} className="mt-2 inline-block text-xs text-pink-200/90 underline-offset-4 hover:underline">
+              /setup
             </Link>
           </section>
           <section>
             <h3 className="font-semibold text-white">{terms.title}</h3>
             <p className="mt-1">{terms.body}</p>
-            <Link href="/terms" aria-label={terms.title} className="mt-2 inline-block text-xs text-pink-200/90 underline-offset-4 hover:underline">
-              /terms
+            <Link href="/setup#setup-terms-heading" aria-label={terms.title} className="mt-2 inline-block text-xs text-pink-200/90 underline-offset-4 hover:underline">
+              /setup
             </Link>
           </section>
           <section>
             <h3 className="font-semibold text-white">{t(lang, 'safetyTitle')}</h3>
             <p className="mt-1">{t(lang, 'safetyCrisisLine')}</p>
-            <Link href="/safety" aria-label={t(lang, 'safetyTitle')} className="mt-2 inline-block text-xs text-pink-200/90 underline-offset-4 hover:underline">
-              /safety
+            <Link href="/setup#setup-safety-heading" aria-label={t(lang, 'safetyTitle')} className="mt-2 inline-block text-xs text-pink-200/90 underline-offset-4 hover:underline">
+              /setup
             </Link>
           </section>
           <p className="text-xs text-white/40">

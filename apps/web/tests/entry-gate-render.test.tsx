@@ -20,7 +20,7 @@ describe('entry gate — one-tap fallback screen (source)', () => {
   it('QuickSetup shows a single START, back, and disclaimer copy', () => {
     expect(quick).toContain('data-testid="entry-gate"');
     expect(quick).toContain('data-testid="setup-start"');
-    expect(quick).toContain('data-testid="setup-back"');
+    expect(quick).toContain("backTestId = 'setup-back'");
     expect(quick).toContain('data-testid="setup-one-scroll"');
     expect(quick).toContain("t(lang, 'splashStart')");
     expect(quick).toContain('SetupOneScrollBody');
