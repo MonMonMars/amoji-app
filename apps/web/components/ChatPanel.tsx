@@ -1406,13 +1406,14 @@ export default function ChatPanel({
           old line DOWN into the bright zone makes it crisp and readable. */}
       <div
         ref={scrollRef}
+        data-testid="chat-history-scroll"
         onScroll={(e) => {
           const el = e.currentTarget;
           const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
           nearBottomRef.current = atBottom;
           setPinnedBottom(atBottom);
         }}
-        className="pointer-events-auto w-full touch-pan-y select-none space-y-2.5 overflow-y-auto overscroll-contain px-2 pb-1 pt-6 [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)] [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)]"
+        className="pointer-events-auto w-full touch-pan-y space-y-2.5 overflow-y-auto overscroll-contain px-2 pb-1 pt-6 [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)] [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)]"
         style={{ maxHeight: '17vh' }}
       >
         {history.length === 0 && <p className="text-center text-white/40">{t(lang, 'sayHi', { name: characterName })}</p>}
@@ -1462,7 +1463,7 @@ export default function ChatPanel({
             instant the ~1s silence endpoint sends it, exactly like ChatGPT. */}
         {liveText.trim() && (
           <div className="text-right">
-            <p className="italic opacity-75" style={{ color: accent }}>{liveText}</p>
+            <p className="select-text italic opacity-75" style={{ color: accent }}>{liveText}</p>
           </div>
         )}
         {busy && <p className="text-white/40">{t(lang, 'typing', { name: characterName })}</p>}
