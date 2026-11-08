@@ -36,7 +36,7 @@ describe('wait beat banks', () => {
   });
 
   it('spaces the beats but stays conversational', () => {
-    expect(WARMUP_FIRST_MS).toBe(2_000);
+    expect(WARMUP_FIRST_MS).toBe(1_000);
     expect(WARMUP_GAP_MS).toBeGreaterThanOrEqual(2500);
     expect(WARMUP_GAP_MS).toBeLessThanOrEqual(6000);
     expect(WARMUP_MAX_LINES).toBe(2);

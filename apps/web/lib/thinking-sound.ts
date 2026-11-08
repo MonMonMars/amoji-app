@@ -2,7 +2,7 @@
 // takes the floor back.
 //
 // Mon's three complaints (t790) map onto the three things this module owns:
-//   1. TIMING — nothing audible until WARMUP_FIRST_MS (2s) after the turn is
+//   1. TIMING — nothing audible until WARMUP_FIRST_MS (~1s) after the turn is
 //      sent, so a fast reply is answered in silence.
 //   2. LENGTH — two beats, and each beat after the threshold is a whole
 //      "let me think / let me search" sentence, never one bare "um…".
@@ -11,7 +11,7 @@
 //      character's pitch instead of by a recorded clip of someone else.
 //
 // Nothing here plays audio: a beat is a timer that calls `say`. That is what
-// makes "no filler before 2s" and "a fast reply never emits one" provable in a
+// makes "no filler before ~1s" and "a fast reply never emits one" provable in a
 // unit test with injected timers.
 
 import type { Lang } from './prefs';
@@ -64,7 +64,7 @@ export interface ThinkingSoundPlanOpts {
 }
 
 /**
- * The whole cue for one wait: her first beat at 2s, the next a gap later.
+ * The whole cue for one wait: her first beat at ~1s, the next a gap later.
  * Consecutive beats are always different lines, so the wait sounds like
  * continued thought rather than a stuck record.
  */

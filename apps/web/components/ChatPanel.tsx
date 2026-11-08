@@ -190,7 +190,11 @@ import ChatMessage from './ChatMessage';
 import ReportDialog from './ReportDialog';
 import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodbyeLine, pickMealToast } from '../lib/activities';
 import { detectExercise, startExercise, advanceExercise, exerciseFarewellLine, type ExerciseState } from '../lib/exercises';
-import { buildDailyGreeting, buildEnterNameGreeting, buildMemoryBlock, ensureUserNameFromProfile, feltMood, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange, rememberTurn } from '../lib/memory';
+import {
+  buildDailyGreeting, buildEnterNameGreeting, buildMemoryBlock, ensureUserNameFromProfile, feltMood,
+  forgetInjectedMemory, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange,
+  rememberTurn, type TurnMemoryUsed,
+} from '../lib/memory';
 import { listenContinuous, listenSupported } from '../lib/listen';
 import { getEntryGateRecord, micPreflightGrantedThisSession } from '../lib/entry-gate';
 import {
@@ -208,7 +212,7 @@ import { loadProfile, type Gender } from '../lib/profile';
 import type { ChatStatus } from '../lib/status';
 import EmotionOrb from './EmotionOrb';
 
-interface Msg { role: 'user' | 'assistant'; content: string }
+interface Msg { role: 'user' | 'assistant'; content: string; memoryUsed?: TurnMemoryUsed[] }
 
 export interface ChatPanelProps {
   characterName?: string;
@@ -998,7 +1002,7 @@ export default function ChatPanel({
     }
     setThinkingPose(true);
     // t790 — the wait cue is HER OWN TTS voice, silent until the reply has
-    // been loading for two seconds, then two full "let me think" lines. The
+    // been loading for about a second, then two full "let me think" lines. The
     // same beat paints the placeholder bubble, so screen and speaker agree.
     // A sing or dance ask already has a premade clip as the wait audio.
     if (requested !== 'sing' && requested !== 'dance') {
@@ -1018,6 +1022,12 @@ export default function ChatPanel({
     // takes the bubble over, and the final reply commits in its place.
     setHistory((h) => [...h, { role: 'assistant', content: '…' }]);
     transientRef.current = true;
+    // learn from the user's words, then inject what she remembers into her prompt
+    onMemCountRef.current?.(memorySummaryCount(rememberExchange(text)));
+    // r125 — pass the user's words so OLD on-topic memories surface too
+    const memoryBuilt = buildMemoryBlock(lang, undefined, text);
+    const memory = memoryBuilt?.block;
+    const turnMemoryUsed = memoryBuilt?.used ?? [];
     // one exit path for every outcome: the final reply (or the failure note)
     // takes the placeholder's place instead of stacking a second bubble
     const commitReply = (content: string) => {
@@ -1027,16 +1037,15 @@ export default function ChatPanel({
       const replace = transientRef.current;
       transientRef.current = false;
       setStreamDraft('');
+      const memStrip = turnMemoryUsed.length > 0 ? turnMemoryUsed : undefined;
       setHistory((h) => {
         const tail = h[h.length - 1];
-        if (replace && tail?.role === 'assistant') return [...h.slice(0, -1), { role: 'assistant', content }];
-        return [...h, { role: 'assistant', content }];
+        if (replace && tail?.role === 'assistant') {
+          return [...h.slice(0, -1), { role: 'assistant', content, memoryUsed: memStrip }];
+        }
+        return [...h, { role: 'assistant', content, memoryUsed: memStrip }];
       });
     };
-    // learn from the user's words, then inject what she remembers into her prompt
-    onMemCountRef.current?.(memorySummaryCount(rememberExchange(text)));
-    // r125 — pass the user's words so OLD on-topic memories surface too
-    const memory = buildMemoryBlock(lang, undefined, text);
     // r70 — persona + adaptive block (scene + warmth calibration)
     const personaForBrain = fullPersona();
     // Weather, local news, and web lookups run before either brain so the
@@ -1391,6 +1400,19 @@ export default function ChatPanel({
               lang={lang}
               accent={accent}
               label={m.role === 'assistant' && i === history.length - 1 ? characterName : undefined}
+              memoryUsed={m.memoryUsed}
+              onForgetMemory={(id) => {
+                forgetInjectedMemory(id);
+                onMemCountRef.current?.(memorySummaryCount());
+                setHistory((prev) => prev.map((row, idx) => (
+                  idx === i && row.memoryUsed
+                    ? {
+                      ...row,
+                      memoryUsed: row.memoryUsed.filter((u) => u.id !== id),
+                    }
+                    : row
+                )));
+              }}
               onReport={(reply) => setReportFor(reply)}
             />
           );
