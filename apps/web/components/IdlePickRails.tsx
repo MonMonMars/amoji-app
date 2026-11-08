@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from 'react';
 import { IDLE_CLIP_OPTIONS } from '../lib/idle-clips';
 import { isIdleEnabled, listEnabledNums, setIdleEnabled } from '../lib/idle-enabled';
 import { idlePickFor, isDefaultIdleClip, saveIdlePick } from '../lib/idle-pick';
+import { usePrefs, t } from '../lib/prefs';
 
 /** How long a press must be held before it counts as a toggle, not a tap. */
 const LONG_PRESS_MS = 500;
@@ -27,6 +28,8 @@ export default function IdlePickRails({
   characterId: string;
   onPick?: (clipId: string) => void;
 }) {
+  const [prefs] = usePrefs();
+  const lang = prefs.lang;
   // null / [] until localStorage sync — avoid default-chip flash then jump to saved pick.
   const [picked, setPicked] = useState<string | null>(null);
   const [enabled, setEnabled] = useState<number[]>([]);
@@ -117,7 +120,11 @@ export default function IdlePickRails({
             <button
               key={item.num}
               type="button"
-              aria-label={`Idle rail #${item.num} ${item.name}, ${en ? 'enabled' : 'disabled'}`}
+              aria-label={t(lang, 'idleRailAria', {
+                num: String(item.num),
+                name: item.name,
+                state: t(lang, en ? 'idleEnabled' : 'idleDisabled'),
+              })}
               aria-keyshortcuts="Alt+Enter"
               title={title}
               aria-pressed={ready ? on : undefined}

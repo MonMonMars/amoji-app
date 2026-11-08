@@ -63,6 +63,7 @@ describe('no hardcoded English in user-facing attributes', () => {
     for (const key of [
       'chooseCharacter', 'chooseBackground', 'chooseLanguage', 'kidMode',
       'settingsAdultOnly', 'gate18Title', 'gate18Ack',
+      'close', 'setupProgress', 'next', 'setupStepOf', 'idleRailAria', 'idleEnabled', 'idleDisabled',
     ] as const) {
       const seen = new Set<string>();
       for (const lang of ['en', 'yue', 'zh', 'ja'] as const) {

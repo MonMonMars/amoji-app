@@ -137,6 +137,8 @@ export type StrKey =
   | 'moodJoy' | 'moodAngry' | 'moodSad' | 'moodSurprised' | 'moodRelaxed' | 'moodNeutral'
   | 'voiceReplies' | 'neuralVoice' | 'muteAll' | 'unmuteAll' | 'muteAllHint' | 'voicePickerTitle' | 'voicePickerHint'
   | 'memoryTitle' | 'forgetBtn' | 'tutorBtn' | 'micTitle' | 'micOff' | 'sendBtn' | 'scrollLeft' | 'scrollRight'
+  | 'close' | 'setupProgress' | 'next' | 'setupStepOf'
+  | 'idleRailAria' | 'idleEnabled' | 'idleDisabled'
   // consolidated settings menu (r2026-10-02.7)
   | 'settingsCompanion' | 'settingsScene' | 'settingsVoice' | 'settingsData' | 'settingsHelp'
   | 'yourName' | 'yourGender' | 'genderMale' | 'genderFemale' | 'genderSecret'
@@ -460,6 +462,28 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   sendBtn: { en: 'Send', yue: '傳送', zh: '发送', ja: '送信' },
   scrollLeft: { en: 'Scroll left', yue: '向左滑', zh: '向左滚动', ja: '左にスクロール' },
   scrollRight: { en: 'Scroll right', yue: '向右滑', zh: '向右滚动', ja: '右にスクロール' },
+  close: { en: 'Close', yue: '關閉', zh: '关闭', ja: '閉じる' },
+  setupProgress: {
+    en: 'Setup progress',
+    yue: '設定進度',
+    zh: '设置进度',
+    ja: 'セットアップの進行状況',
+  },
+  next: { en: 'Next', yue: '下一步', zh: '下一步', ja: '次へ' },
+  setupStepOf: {
+    en: 'Step {n} of {total}',
+    yue: '第 {n} 步，共 {total} 步',
+    zh: '第 {n} 步，共 {total} 步',
+    ja: '{total} 中の {n}',
+  },
+  idleRailAria: {
+    en: 'Idle rail #{num} {name}, {state}',
+    yue: '閒置軌道 #{num} {name}，{state}',
+    zh: '闲置轨道 #{num} {name}，{state}',
+    ja: 'アイドル軌道 #{num} {name}、{state}',
+  },
+  idleEnabled: { en: 'enabled', yue: '已啟用', zh: '已启用', ja: 'オン' },
+  idleDisabled: { en: 'disabled', yue: '已停用', zh: '已停用', ja: 'オフ' },
   settingsCompanion: { en: 'Companion', yue: '小伙伴', zh: '伙伴', ja: '相棒' },
   settingsScene: { en: 'Scene', yue: '場景', zh: '场景', ja: '場所' },
   settingsVoice: { en: 'Voice', yue: '聲音', zh: '声音', ja: '音声' },
