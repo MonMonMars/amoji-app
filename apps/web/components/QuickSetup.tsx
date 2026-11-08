@@ -11,13 +11,11 @@ import { useScrollReachedEnd } from '../lib/scroll-unlock';
 import EarlyAudioUnlock from './EarlyAudioUnlock';
 import { SetupOneScrollBody } from './setup-one-shared';
 import { APP_REVISION } from '../lib/revision';
-import { absorbNavReturnFromReferrer, navigateNavBack } from '../lib/nav-return';
 
 export default function QuickSetup({
   onDone,
   showBack = true,
   initialSectionId,
-  backTestId = 'setup-back',
 }: {
   lang?: import('../lib/prefs').Lang;
   onDone?: () => void;
@@ -25,8 +23,6 @@ export default function QuickSetup({
   showBack?: boolean;
   /** Scroll in-page anchor (legacy /privacy, /terms, /safety URLs). */
   initialSectionId?: string;
-  /** E.g. terms-back on /terms legacy URL. */
-  backTestId?: string;
 }) {
   const router = useRouter();
   const [prefs, , prefsReady] = usePrefs();
@@ -35,10 +31,6 @@ export default function QuickSetup({
   const [voiceHint, setVoiceHint] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const readToEnd = useScrollReachedEnd(scrollRef, prefsReady);
-
-  useEffect(() => {
-    absorbNavReturnFromReferrer();
-  }, []);
 
   useEffect(() => {
     if (!prefsReady || !scrollRef.current) return;
@@ -76,9 +68,9 @@ export default function QuickSetup({
       {showBack && (
         <button
           type="button"
-          data-testid={backTestId}
+          data-testid="setup-back"
           aria-label={t(lang, 'back')}
-          onClick={() => navigateNavBack(router)}
+          onClick={() => router.push('/')}
           className="ui-btn absolute left-4 top-4 z-20 rounded-full border border-white/15 bg-black/35 px-3.5 py-2 text-sm text-white/85 backdrop-blur-md safe-t"
         >
           ← {t(lang, 'back')}
