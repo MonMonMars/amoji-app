@@ -159,7 +159,8 @@ import {
   consumeChatTurn,
   quotaExceededCopy,
 } from '../lib/daily-quota';
-import { clientLiveContext } from '../lib/live-tools';
+import { clientLiveContext, isLiveFactsOnlyTurn, planTools } from '../lib/live-tools';
+import { withQuestion } from '../lib/follow-up';
 import {
   OPEN_CHEER_MS,
   OPEN_IDLE_BRIEF_MS,
@@ -664,7 +665,6 @@ export default function ChatPanel({
       sayLocal(openLine, openHints);
     }, OPEN_CHEER_MS);
     const skipBrief =
-      fresh ||
       OPEN_IDLE_BRIEF_MS <= 0 ||
       userHasSpokenRef.current ||
       openIdleBriefAlreadyDone(characterId);
@@ -817,6 +817,7 @@ export default function ChatPanel({
     lastActivityRef.current = Date.now();
     lastUserRef.current = Date.now();
     reengageStageRef.current = 0;
+    idleAutoAfterUserRef.current = false;
     nearBottomRef.current = true;
     setHistory((h) => [...h, { role: 'user', content: text }]);
     feedUtterance(text);
@@ -1063,13 +1064,27 @@ export default function ChatPanel({
     // immediately, without a location prompt.
     let world = '';
     let worldSpoken = '';
+    let answered = false;
     try {
       const priorUser = [...history].reverse().find((m) => m.role === 'user')?.content;
       const live = await clientLiveContext(text, lang, priorUser);
       world = live.prompt;
       worldSpoken = live.spoken;
+      const livePlan = planTools(text, priorUser);
+      if (isLiveFactsOnlyTurn(livePlan, worldSpoken)) {
+        stopThinkingSound();
+        const line = withQuestion(worldSpoken, lang);
+        rememberTurn(text, line);
+        onMemCountRef.current?.(memorySummaryCount());
+        feedUtterance(line);
+        if (feltHints) applyLlmHints(feltHints);
+        notifySpeaking(line);
+        speak(line, characterId, lang, feltHints, undefined, felt?.intensity);
+        pushAutoIdle(line, feltHints);
+        commitReply(line);
+        answered = true;
+      }
     } catch { /* live lookup is best-effort — she still answers */ }
-    let answered = false;
     // r97 — the first complete sentence of a streamed reply, spoken live the
     // moment it closes (see onPartial below); '' until then.
     // r100 — sentenceStamp is captured at that live-speak attempt, so the
@@ -1160,31 +1175,33 @@ export default function ChatPanel({
       answered = true;
     };
     try {
-      const payload = { message: text, history, persona: personaForBrain, memory, language: lang, world, worldSpoken };
-      // Set only on a Node host. GitHub Pages leaves this empty, so the
-      // static demo still uses /api/chat (absent) and then the browser lane.
-      const produced = await productionChat(payload);
-      if (produced) {
-        commitServer(produced);
-      } else if (shouldSkipServerProbe()) {
-        // r126 — this session already learned there's no /api/chat (static
-        // host): skip the dead round-trip, go straight to the browser lane
-        await browserLane();
-      } else {
-        try {
-          const res = await fetch(assetUrl('/api/chat'), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          });
-          if (!res.ok) throw new Error(String(res.status));
-          const data = await res.json() as { reply?: string; emotionHints?: Record<string, number> };
-          commitServer(data);
-        } catch {
-          // no server (e.g. static GitHub Pages build) — remember it for the
-          // rest of the session, then free keyless LLM from the browser
-          markNoApiRoute();
+      if (!answered) {
+        const payload = { message: text, history, persona: personaForBrain, memory, language: lang, world, worldSpoken };
+        // Set only on a Node host. GitHub Pages leaves this empty, so the
+        // static demo still uses /api/chat (absent) and then the browser lane.
+        const produced = await productionChat(payload);
+        if (produced) {
+          commitServer(produced);
+        } else if (shouldSkipServerProbe()) {
+          // r126 — this session already learned there's no /api/chat (static
+          // host): skip the dead round-trip, go straight to the browser lane
           await browserLane();
+        } else {
+          try {
+            const res = await fetch(assetUrl('/api/chat'), {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            if (!res.ok) throw new Error(String(res.status));
+            const data = await res.json() as { reply?: string; emotionHints?: Record<string, number> };
+            commitServer(data);
+          } catch {
+            // no server (e.g. static GitHub Pages build) — remember it for the
+            // rest of the session, then free keyless LLM from the browser
+            markNoApiRoute();
+            await browserLane();
+          }
         }
       }
     } finally {

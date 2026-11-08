@@ -280,6 +280,16 @@ function planHasWork(plan: ToolPlan): boolean {
   return plan.weather || plan.news || plan.where || plan.places || Boolean(plan.searchQuery) || Boolean(plan.recipeQuery);
 }
 
+/** Weather / news / where-only turns with fetched spoken facts — answer by TTS
+ *  without waiting on the LLM (Mon: “read me the weather/news”). */
+export function isLiveFactsOnlyTurn(plan: ToolPlan, spoken: string): boolean {
+  if (!spoken.trim()) return false;
+  return (plan.weather || plan.news || plan.where)
+    && !plan.places
+    && !plan.searchQuery
+    && !plan.recipeQuery;
+}
+
 /** What to fetch for this message. A short follow-up ("and tomorrow?")
  *  keeps the previous question's tools. */
 export function planTools(text: string, priorUser?: string): ToolPlan {

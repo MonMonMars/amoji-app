@@ -14,6 +14,6 @@ describe('loading voice / SFX delay (Mon: not in the first seconds)', () => {
 
   it('holds the single open welcome past immediate load without stacking delays', () => {
     expect(OPEN_CHEER_MS).toBeGreaterThanOrEqual(2000);
-    expect(OPEN_IDLE_BRIEF_MS).toBe(0);
+    expect(OPEN_IDLE_BRIEF_MS).toBeGreaterThan(OPEN_CHEER_MS);
   });
 });

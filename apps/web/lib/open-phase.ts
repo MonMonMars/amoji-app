@@ -20,8 +20,8 @@ export const OPEN_PHASE_KEY = 'amoji.openPhase.v1';
 export const OPEN_CHEER_MS = 2_800;
 /** Legacy spacing constant — follow-up cheer disabled; mic delay may still reference it. */
 export const OPEN_CHEER_FOLLOW_MS = OPEN_CHEER_MS;
-/** Auto weather + light news while idle — 0 = off on first open (no unprompted brief). */
-export const OPEN_IDLE_BRIEF_MS = 0;
+/** Auto weather + light news while still silent after the welcome (t794 phase 1). */
+export const OPEN_IDLE_BRIEF_MS = 12_000;
 
 export interface OpenPhaseState {
   lastClosedAt?: number;
