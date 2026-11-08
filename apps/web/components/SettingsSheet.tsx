@@ -375,7 +375,7 @@ export default function SettingsSheet({
       >
         <div className="mb-5 flex items-center justify-between">
           <h2 id="amoji-settings-title" className="text-lg font-semibold text-white">{t(lang, 'settings')}</h2>
-          <button ref={settingsCloseRef} type="button" onClick={onClose} aria-label={lang === 'yue' ? '關閉' : lang === 'zh' ? '关闭' : lang === 'ja' ? '閉じる' : 'Close'} className="ui-btn rounded-full bg-white/10 px-3 py-1 text-sm text-white/70 hover:bg-white/20">✕</button>
+          <button ref={settingsCloseRef} type="button" onClick={onClose} aria-label={t(lang, 'close')} className="ui-btn rounded-full bg-white/10 px-3 py-1 text-sm text-white/70 hover:bg-white/20">✕</button>
         </div>
 
         <div className="space-y-6">

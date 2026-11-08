@@ -16,6 +16,6 @@ describe('SetupFlow main + progress residual a11y', () => {
   it('names each progress step for screen readers', () => {
     expect(src).toContain('aria-label={stepLabel(i + 1, STEPS.length)}');
     expect(src).toContain("aria-current={i === step ? 'step' : undefined}");
-    expect(src).toContain('aria-label={setupProgress}');
+    expect(src).toContain("aria-label={t(lang, 'setupProgress')}");
   });
 });
