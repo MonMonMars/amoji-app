@@ -147,14 +147,13 @@ import { pickIdleLine } from '../lib/persona-chatter';
 import { pickIdleCompanionLine } from '../lib/idle-talk';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
 import { pickCharacterInteraction, pokeReactionLine } from '../lib/interaction-lines';
-import { cannedOpener, personalityPrompt } from '../lib/personality';
+import { personalityPrompt } from '../lib/personality';
 import { laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { assetUrl } from '../lib/asset';
 import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
 import { guardCompanionTurn } from '../lib/crisis';
 import { clientLiveContext } from '../lib/live-tools';
 import {
-  OPEN_CHEER_FOLLOW_MS,
   OPEN_CHEER_MS,
   OPEN_IDLE_BRIEF_MS,
   isFreshOpenPhase,
@@ -198,6 +197,7 @@ import { startVad } from '../lib/vad';
 import { ambientStart, ambientStop } from '../lib/sfx';
 import { t, backgroundById, type Lang, type StrKey } from '../lib/prefs';
 import { adaptiveBlock } from '../lib/adaptive';
+import { SPEECH_CAPTION_EVENT, rollingCaptionFromText } from '../lib/speech-caption';
 import { loadProfile, type Gender } from '../lib/profile';
 import type { ChatStatus } from '../lib/status';
 import EmotionOrb from './EmotionOrb';
@@ -255,6 +255,11 @@ export default function ChatPanel({
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
   const [speakingNow, setSpeakingNow] = useState(false);
+  /** Clause synced to active TTS (movie subtitle). */
+  const [speechCaption, setSpeechCaption] = useState('');
+  /** Streamed reply draft — not painted full-width in history while speaking. */
+  const [streamDraft, setStreamDraft] = useState('');
+  const [pinnedBottom, setPinnedBottom] = useState(true);
   // r81 — the half-heard words of the current voice burst, painted live in
   // an italic user bubble; cleared the moment the utterance finalizes and
   // the committed message takes its place in the history
@@ -292,6 +297,14 @@ export default function ChatPanel({
     const onHint = (e: Event) => setReplayHint(!!((e as CustomEvent<{ armed?: boolean }>).detail?.armed));
     window.addEventListener('amoji:voice-replay-hint', onHint);
     return () => window.removeEventListener('amoji:voice-replay-hint', onHint);
+  }, []);
+  useEffect(() => {
+    const onCap = (e: Event) => {
+      const line = (e as CustomEvent<{ line?: string }>).detail?.line ?? '';
+      setSpeechCaption(line);
+    };
+    window.addEventListener(SPEECH_CAPTION_EVENT, onCap);
+    return () => window.removeEventListener(SPEECH_CAPTION_EVENT, onCap);
   }, []);
   // r126 — warm the free lane while she's still saying hello: DNS+TLS and a
   // live connection are ready before the first real message is typed/spoken
@@ -609,30 +622,28 @@ export default function ChatPanel({
     }
     const userName = ensureUserNameFromProfile(loadProfile().name);
     const visit = recordVisit();
-    const daily = visit.isNewDay
-      ? buildDailyGreeting(lang, visit, { skipThread: fresh })
-      : undefined;
     const namedHello = buildEnterNameGreeting(lang, userName ?? visit.userName);
     const startupVars = { name: characterName };
-    // Prefer daily check-in (already names the user) → short name hello → generic startup.
-    const cheerFollow = daily ?? namedHello ?? pickLine('startup', lang, 1, startupVars);
+    const shortDaily =
+      !fresh && visit.isNewDay
+        ? buildDailyGreeting(lang, visit, { skipThread: true, short: true })
+        : undefined;
+    const openLine =
+      namedHello ?? shortDaily ?? pickLine('startup', lang, 1, startupVars);
     if (skipCheer) {
       return () => { markChatRoomClosed(); };
     }
-    // Latch when cheer actually speaks (not on arm) so Strict Mode cleanup
-    // that clears timers before fire still allows one real greet.
-    const t1 = setTimeout(
-      () => {
-        markOpenCheerDone(Date.now(), characterId);
-        sayLocal(cannedOpener(characterId, characterGender, lang, characterName), { joy: 0.62 });
-      },
-      OPEN_CHEER_MS,
-    );
-    const t2 = setTimeout(
-      () => sayLocal(cheerFollow, daily ? greetingHints(visit) : { joy: 0.5 }),
-      OPEN_CHEER_FOLLOW_MS,
-    );
-    const skipBrief = userHasSpokenRef.current || openIdleBriefAlreadyDone(characterId);
+    const openHints = shortDaily ? greetingHints(visit) : namedHello ? { joy: 0.55 } : { joy: 0.58 };
+    // One short welcome line; latch when it actually speaks (per-character).
+    const t1 = setTimeout(() => {
+      markOpenCheerDone(Date.now(), characterId);
+      sayLocal(openLine, openHints);
+    }, OPEN_CHEER_MS);
+    const skipBrief =
+      fresh ||
+      OPEN_IDLE_BRIEF_MS <= 0 ||
+      userHasSpokenRef.current ||
+      openIdleBriefAlreadyDone(characterId);
     const t3 = skipBrief
       ? null
       : setTimeout(() => {
@@ -640,8 +651,6 @@ export default function ChatPanel({
           void (async () => {
             if (userHasSpokenRef.current || busyRef.current) return;
             try {
-              // `brief`: an unprompted line says nothing at all when we cannot
-              // place the user — a wrong city is worse than staying quiet.
               const weather = await clientLiveContext(openPhaseWeatherAsk(lang), lang, undefined, { brief: true });
               if (userHasSpokenRef.current) return;
               const news = await clientLiveContext(openPhaseNewsAsk(lang), lang, undefined, { brief: true });
@@ -658,7 +667,6 @@ export default function ChatPanel({
         }, OPEN_IDLE_BRIEF_MS);
     return () => {
       clearTimeout(t1);
-      clearTimeout(t2);
       if (t3) clearTimeout(t3);
       markChatRoomClosed();
     };
@@ -997,6 +1005,7 @@ export default function ChatPanel({
       // (the performance layer preserves it); a plain dance bed still ends
       const replace = transientRef.current;
       transientRef.current = false;
+      setStreamDraft('');
       setHistory((h) => {
         const tail = h[h.length - 1];
         if (replace && tail?.role === 'assistant') return [...h.slice(0, -1), { role: 'assistant', content }];
@@ -1063,12 +1072,7 @@ export default function ChatPanel({
                 speak(firstSentence, characterId, lang, feltHints ?? { joy: 0.4, neutral: 0.3 }, undefined, felt?.intensity);
               }
             }
-            setHistory((h) => {
-              const last = h.length - 1;
-              const tail = h[last];
-              if (!tail || tail.role !== 'assistant') return h;
-              return [...h.slice(0, last), { ...tail, content: clean || '…' }];
-            });
+            setStreamDraft(clean || '');
           },
         });
         // same floor logic on the streaming path (.18b: guarded — replyHints
@@ -1331,23 +1335,35 @@ export default function ChatPanel({
         ref={scrollRef}
         onScroll={(e) => {
           const el = e.currentTarget;
-          nearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+          const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+          nearBottomRef.current = atBottom;
+          setPinnedBottom(atBottom);
         }}
         className="pointer-events-auto w-full touch-pan-y select-none space-y-2.5 overflow-y-auto overscroll-contain px-2 pb-1 pt-6 [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)] [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)]"
         style={{ maxHeight: '17vh' }}
       >
         {history.length === 0 && <p className="text-center text-white/40">{t(lang, 'sayHi', { name: characterName })}</p>}
-        {history.map((m, i) => (
-          <ChatMessage
-            key={i}
-            role={m.role}
-            content={m.content}
-            lang={lang}
-            accent={accent}
-            label={m.role === 'assistant' && i === history.length - 1 ? characterName : undefined}
-            onReport={(reply) => setReportFor(reply)}
-          />
-        ))}
+        {history.map((m, i) => {
+          const hideTail =
+            m.role === 'assistant' &&
+            i === history.length - 1 &&
+            pinnedBottom &&
+            (speakingNow || (busy && streamDraft.trim().length > 0)) &&
+            m.content.trim() !== '' &&
+            m.content.trim() !== '…';
+          const bubble = hideTail ? '…' : m.content;
+          return (
+            <ChatMessage
+              key={i}
+              role={m.role}
+              content={bubble}
+              lang={lang}
+              accent={accent}
+              label={m.role === 'assistant' && i === history.length - 1 ? characterName : undefined}
+              onReport={(reply) => setReportFor(reply)}
+            />
+          );
+        })}
         {/* r81 — the words you're speaking RIGHT NOW: italic + slightly dimmed
             in your accent colour, replaced by the committed message the
             instant the ~1s silence endpoint sends it, exactly like ChatGPT. */}
@@ -1381,6 +1397,14 @@ export default function ChatPanel({
           renders AFTER this row; at equal stacking level the later DOM node
           wins, so the pad used to paint over and swallow every tap on the
           mic and the text field. z-10 puts the row back on top. */}
+      {(speechCaption.trim() || (busy && streamDraft.trim())) && (
+        <p
+          data-testid="speech-caption"
+          className="pointer-events-none z-20 w-full px-3 text-center text-sm font-medium leading-snug text-white/95 drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]"
+        >
+          {speechCaption.trim() || rollingCaptionFromText(streamDraft)}
+        </p>
+      )}
       {nowPlaying && (
         <div
           data-now-playing={nowPlaying}

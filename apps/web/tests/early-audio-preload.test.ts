@@ -36,7 +36,7 @@ describe('early audio preload', () => {
   });
 
   it('keeps enter/cheer and thinking delays (no early audible open)', () => {
-    expect(OPEN_CHEER_MS).toBeGreaterThanOrEqual(3500);
+    expect(OPEN_CHEER_MS).toBeGreaterThanOrEqual(2500);
     // t790: the wait cue is tied to the 2s reply-loading threshold, so it is
     // no longer the same number as the enter cheer — both stay off the first
     // instant of the page, which is what this guards.

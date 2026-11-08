@@ -123,6 +123,7 @@ import { dominant, pickInterjection } from './fillers';
 import { emotionIntensityScale, emotionProsody } from './emotion-prosody';
 import { SONG_MELODY } from './songs';
 import { endLipSync, finishLipSync, holdLipSync, noteSpeechStarted, notifySpeaking } from './speech';
+import { clearSpeechCaption, dispatchSpeechCaption, rollCaptionsForLine } from './speech-caption';
 import { duckLibraryBed } from './music';
 import { duckExternalAudioForCompanion } from './voice-chat-focus';
 
@@ -1334,6 +1335,7 @@ export function stopSpeaking(): void {
   stopGtts();
   haltSynthQueue();
   endLipSync();
+  clearSpeechCaption();
   // Mute / user cut must not leave the 12s foley hold stuck after unmute.
   sfxVoiceRelease();
 }
@@ -1476,6 +1478,7 @@ function performSpeak(
   const settle = () => {
     if (settled) return;
     settled = true;
+    if (!filler) clearSpeechCaption();
     sfxVoiceRelease(); // t786: failed/silent speak must not hold poke/laugh 12s
     resolve();
   };
@@ -1707,7 +1710,12 @@ function performSpeak(
           rateDelta: clamp(np.rate * exprScale * amp, -0.4, 0.5),
           pitchDelta: clamp(np.pitch * exprScale * amp, -0.3, 0.4),
           volumeDelta: clamp(np.vol * exprScale * amp, -0.5, 0.5),
-          onPlaying: () => { onHeard(); markVoiceStarted(); reportVoiceStatus('edge', true, 'neural voice playing'); },
+          onPlaying: () => {
+            onHeard();
+            markVoiceStarted();
+            try { rollCaptionsForLine(text); } catch { /* ignore */ }
+            reportVoiceStatus('edge', true, 'neural voice playing');
+          },
         });
       } catch (err) {
         tier1 = Promise.reject(err instanceof Error ? err : new Error(String(err)));
@@ -1738,7 +1746,12 @@ function performSpeak(
         character: characterId,
         emotion,
         expressiveness: expr,
-        onPlaying: () => { onHeard(); markVoiceStarted(); reportVoiceStatus('openai', true, 'chatgpt voice playing'); },
+        onPlaying: () => {
+          onHeard();
+          markVoiceStarted();
+          try { rollCaptionsForLine(text); } catch { /* ignore */ }
+          reportVoiceStatus('openai', true, 'chatgpt voice playing');
+        },
       });
     } catch (err) {
       tier0 = Promise.reject(err instanceof Error ? err : new Error(String(err)));
@@ -2721,6 +2734,7 @@ function synthSpeak(
     };
     u.onstart = () => {
       if (gen !== synthGeneration) return;
+      try { dispatchSpeechCaption(u.text); } catch { /* ignore */ }
       if (!started) {
         liveLip = noteSpeechStarted(tic ? `${tic.text} ${text}` : text);
         armLipHold();

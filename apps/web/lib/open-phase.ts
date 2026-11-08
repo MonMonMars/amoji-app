@@ -16,12 +16,12 @@ export const OPEN_SESSION_GAP_MS = 2.5 * 60 * 60 * 1000;
 
 export const OPEN_PHASE_KEY = 'amoji.openPhase.v1';
 
-/** Cheer opener timing (matches prior cannedOpener delay). */
-export const OPEN_CHEER_MS = 3_500;
-/** Second cheer / daily check-in line. */
-export const OPEN_CHEER_FOLLOW_MS = 7_500;
-/** Auto weather + light news if the user is still silent after cheer. */
-export const OPEN_IDLE_BRIEF_MS = 12_000;
+/** Single short welcome line after chat enter (not stacked cheer + follow-up). */
+export const OPEN_CHEER_MS = 2_800;
+/** Legacy spacing constant — follow-up cheer disabled; mic delay may still reference it. */
+export const OPEN_CHEER_FOLLOW_MS = OPEN_CHEER_MS;
+/** Auto weather + light news while idle — 0 = off on first open (no unprompted brief). */
+export const OPEN_IDLE_BRIEF_MS = 0;
 
 export interface OpenPhaseState {
   lastClosedAt?: number;

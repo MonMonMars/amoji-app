@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { THINKING_SOUND_DELAY_MS } from '../lib/thinking-sound';
 import { WARMUP_FIRST_MS } from '../lib/warmup';
-import { OPEN_CHEER_MS, OPEN_CHEER_FOLLOW_MS, OPEN_IDLE_BRIEF_MS } from '../lib/open-phase';
+import { OPEN_CHEER_MS, OPEN_IDLE_BRIEF_MS } from '../lib/open-phase';
 
 describe('loading voice / SFX delay (Mon: not in the first seconds)', () => {
   it('holds the thinking filler for a full two seconds', () => {
@@ -12,9 +12,8 @@ describe('loading voice / SFX delay (Mon: not in the first seconds)', () => {
     expect(WARMUP_FIRST_MS).toBe(THINKING_SOUND_DELAY_MS);
   });
 
-  it('keeps the chat-enter cheer well past the first seconds', () => {
-    expect(OPEN_CHEER_MS).toBeGreaterThanOrEqual(3000);
-    expect(OPEN_CHEER_FOLLOW_MS).toBeGreaterThan(OPEN_CHEER_MS);
-    expect(OPEN_IDLE_BRIEF_MS).toBeGreaterThan(OPEN_CHEER_FOLLOW_MS);
+  it('holds the single open welcome past immediate load without stacking delays', () => {
+    expect(OPEN_CHEER_MS).toBeGreaterThanOrEqual(2000);
+    expect(OPEN_IDLE_BRIEF_MS).toBe(0);
   });
 });

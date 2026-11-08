@@ -24,6 +24,7 @@ import { applyPlaybackVolume } from './playback-volume';
 import type { Lang } from './prefs';
 import { stripVoicedGlyphs } from './speak-text';
 import { followAudioElement } from './speech';
+import { dispatchSpeechCaption, clearSpeechCaption } from './speech-caption';
 
 /**
  * Amoji lang → default Google TTS locale. This is only the DEFAULT: the
@@ -100,6 +101,7 @@ let pendingReject: ((err: Error) => void) | null = null;
 
 export function stopGtts(): void {
   generation++;
+  clearSpeechCaption();
   if (gapTimer) { clearTimeout(gapTimer); gapTimer = null; }
   const reject = pendingReject;
   pendingReject = null;
@@ -156,8 +158,8 @@ export interface GttsOpts {
 export function pauseAfterClause(chunk: string): number {
   // Audible breath: 180/90 was too short once chunks were separate — the next
   // MP3 started before the ear registered a stop at 。 or ，.
-  if (/[。！？!?…\.]$/.test(chunk)) return 420;
-  if (/[,，、；;:：—–]$/.test(chunk)) return 220;
+  if (/[。！？!?…\.]$/.test(chunk)) return 520;
+  if (/[,，、；;:：—–]$/.test(chunk)) return 300;
   return 0;
 }
 
@@ -194,6 +196,7 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
     };
     const doneLine = () => {
       clearPending();
+      clearSpeechCaption();
       resolve();
     };
     pendingReject = failLine;
@@ -261,6 +264,7 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
       };
       audio.onplay = () => {
         const last = i >= pieces.length;
+        try { dispatchSpeechCaption(piece.text); } catch { /* ignore */ }
         if (!reportedPlaying) {
           reportedPlaying = true;
           try { opts.onPlaying?.(); } catch { /* ignore */ }

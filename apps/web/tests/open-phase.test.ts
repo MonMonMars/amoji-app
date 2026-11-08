@@ -146,7 +146,14 @@ describe('open cheer / name-greet once latch', () => {
     expect(openIdleBriefAlreadyDone('luna')).toBe(false);
   });
 });
-describe('buildDailyGreeting skipThread', () => {
+describe('buildDailyGreeting short / skipThread', () => {
+  it('short mode is only the time-of-day hello', () => {
+    const info = { isNewDay: true, streak: 9, planToday: '面試', lastThreadUser: 'hiking' };
+    const line = buildDailyGreeting('yue', info, { skipThread: true, short: true });
+    expect(line.length).toBeLessThan(24);
+    expect(line).not.toContain('面試');
+    expect(line.toLowerCase()).not.toContain('hiking');
+  });
   it('omits lastThread resume when skipThread is true', () => {
     const info = {
       isNewDay: true,
