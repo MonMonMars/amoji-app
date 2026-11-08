@@ -416,19 +416,19 @@ export const CHARACTERS_WANT = [
   {
     id: 'a93-edokko',
     name: 'Edokko',
-    gender: 'female',
+    gender: 'male',
     accent: '#a78bfa',
     kidSafe: true,
     image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a93-edokko.png',
     model: 'want/a93-edokko.vrm',
-    voiceHint: { yue: 'zh-HK-HiuGaaiNeural', en: 'en-HK-YanNeural' },
+    voiceHint: { yue: 'zh-HK-WanLungNeural', en: 'en-HK-SamNeural' },
     tagline: {
       en: 'Edokko — sunny companion, kind voice',
       yue: 'Edokko——陪你傾偈嘅小伙伴~',
       zh: 'Edokko——陪你聊天的小伙伴~',
       ja: 'Edokko——一緒にお話しする相棒~',
     },
-    persona: 'You are Edokko: a wholesome, kid-friendly companion. You speak warmly and expressively, with sincere encouragement and gentle humor. You keep things cozy, kid-safe, and full of friendly energy.',
+    persona: 'You are Edokko: a wholesome, kid-friendly companion. You speak calmly and supportively, with dry humor kept wholesome. You keep things cozy, kid-safe, and full of friendly energy.',
   },
   {
     id: 'a94-rita',

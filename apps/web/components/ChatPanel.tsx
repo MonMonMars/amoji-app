@@ -139,6 +139,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { feedUtterance, applyLlmHints, setThinkingPose, triggerLaugh, triggerMove, holdMove, setPerfMotionProfile } from '../lib/companion';
+import { resolveChatAutoIdle } from '../lib/chat-auto-idle';
 import { detectMove } from '../lib/moves';
 import { loadHistory, saveHistory } from '../lib/companion-store';
 import { notifySpeaking, isSpeaking } from '../lib/speech';
@@ -238,6 +239,8 @@ export interface ChatPanelProps {
   handHoldCount?: number;
   onStatus?: (s: ChatStatus) => void;
   onMemCount?: (n: number) => number | void;
+  /** Content-driven idle clip for CompanionCanvas (replaces manual rail pins). */
+  onAutoIdle?: (clipId: string | null) => void;
 }
 
 const IDLE_AFTER_MS = 40_000;
@@ -262,6 +265,7 @@ export default function ChatPanel({
   handHoldCount = 0,
   onStatus,
   onMemCount,
+  onAutoIdle,
 }: ChatPanelProps) {
   const [history, setHistory] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
@@ -370,6 +374,11 @@ export default function ChatPanel({
   onStatusRef.current = onStatus;
   const onMemCountRef = useRef(onMemCount);
   onMemCountRef.current = onMemCount;
+  const onAutoIdleRef = useRef(onAutoIdle);
+  onAutoIdleRef.current = onAutoIdle;
+  const pushAutoIdle = (assistantText: string, emotionHints?: Record<string, number>, thinking?: boolean) => {
+    onAutoIdleRef.current?.(resolveChatAutoIdle({ assistantText, emotionHints, thinking }));
+  };
 
   // r70 — the user's own gender (Settings → "You are"; never-set = undefined,
   // which the adaptive block treats as 'secret': no warmth guidance at all,
@@ -1001,6 +1010,7 @@ export default function ChatPanel({
       beginShow(requested === 'sing' ? 'song' : 'dance', 18_000, felt?.mood);
     }
     setThinkingPose(true);
+    pushAutoIdle('', undefined, true);
     // t790 — the wait cue is HER OWN TTS voice, silent until the reply has
     // been loading for about a second, then two full "let me think" lines. The
     // same beat paints the placeholder bubble, so screen and speaker agree.
@@ -1121,6 +1131,7 @@ export default function ChatPanel({
           felt?.mood,
           firstSentence ? { text: firstSentence, since: sentenceStamp } : undefined,
         );
+        pushAutoIdle(r.reply, replyHints);
         commitReply(spoken);
         answered = true;
       } catch {
@@ -1144,6 +1155,7 @@ export default function ChatPanel({
       onMemCountRef.current?.(memorySummaryCount());
       feedUtterance(reply);
       const spoken = speakReply(text, reply, replyHints, felt?.intensity, felt?.mood);
+      pushAutoIdle(reply, replyHints);
       commitReply(spoken);
       answered = true;
     };
@@ -1181,7 +1193,11 @@ export default function ChatPanel({
       stopMusic(); // r.48 — belt-and-braces: no PLAIN music outlives the turn
       // r86 — a live sing/duet/piano performance survives this stopMusic();
       // it ends on its own performance timer or the next user interrupt
-      if (!answered) commitReply('… (connection hiccup — I’m still here)');
+      if (!answered) {
+        const hiccup = '… (connection hiccup — I’m still here)';
+        commitReply(hiccup);
+        pushAutoIdle(hiccup);
+      }
       setBusy(false);
       busyRef.current = false;
       lastActivityRef.current = Date.now();

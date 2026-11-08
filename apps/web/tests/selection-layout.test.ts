@@ -174,20 +174,15 @@ describe('selection layout', () => {
     expect(chat).not.toMatch(/\n\s*<SceneBackdrop background=\{background\} \/>\s*\n\s*\{bootReady && \(/);
   });
 
-  it('holds chat boot + idle-rail until localStorage sync (no DEFAULT flash)', () => {
-    const rails = read('../components/IdlePickRails.tsx');
+  it('holds chat boot until localStorage sync (no DEFAULT flash)', () => {
     const chat = read('../app/chat/page.tsx');
-    expect(rails).toContain('const [ready, setReady] = useState(false)');
-    expect(rails).toContain('setReady(true)');
-    expect(rails).toContain('aria-busy={!ready}');
-    expect(rails).toContain("data-ready={ready ? '1' : '0'}");
-    expect(rails).toContain("ready ? '' : 'opacity-0'");
-    expect(rails).toContain('listEnabledNums()');
     expect(chat).toContain('prefsReady');
     expect(chat).toContain('const bootReady = prefsReady');
     expect(chat).toContain('{bootReady && (');
     expect(chat).toContain('{bootReady && <ChatPanel');
     expect(chat).toContain("bootReady ? '' : 'opacity-0'");
+    expect(chat).not.toContain('IdlePickRails');
+    expect(chat).toContain('onAutoIdle');
   });
 
   it('the selection board never filters the cast by kidSafe (adult-only)', () => {
@@ -204,21 +199,13 @@ describe('selection layout', () => {
     expect(board).not.toContain('onKidMode=');
   });
 
-  it('keeps IdlePickRails chat-only as a multi-column grid (no select rails)', () => {
+  it('keeps IdlePickRails out of chat (content-driven idle only)', () => {
     expect(board).not.toContain("import IdlePickRails from './IdlePickRails'");
     expect(board).not.toContain('<IdlePickRails');
-    expect(chat).toContain("import IdlePickRails from '../../components/IdlePickRails'");
-    expect(chat).toContain('<IdlePickRails characterId={character.id}');
+    expect(chat).not.toContain('IdlePickRails');
+    expect(chat).toContain('resolveChatAutoIdle');
     const rails = read('../components/IdlePickRails.tsx');
-    expect(rails).toContain('saveIdlePick');
-    expect(rails).toContain('setIdleEnabled');
-    expect(rails).toContain('onPick?.');
     expect(rails).toContain('idle-rail-grid');
-    expect(rails).toContain('grid-cols-6');
-    expect(rails).toContain('sm:grid-cols-8');
-    expect(rails).toContain("gridAutoRows: 'minmax(0, 1fr)'");
-    expect(rails).toContain('overflow-hidden');
-    expect(rails).not.toContain('overflow-y-auto');
   });
 
   it('puts mode + cast-gender filter at the top of the selection board', () => {

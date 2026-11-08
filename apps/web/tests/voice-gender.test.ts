@@ -11,10 +11,11 @@ describe('characterVoiceGender', () => {
       'a107-dm-office-casual',
       'a24-hairsample-male',
       'a77-sasha',
+      'a93-edokko',
       'a94-rita',
       'a98-ethan',
     ]);
-    expect(CHARACTERS.filter((c) => c.gender === 'female').length).toBe(37);
+    expect(CHARACTERS.filter((c) => c.gender === 'female').length).toBe(36);
     for (const c of CHARACTERS) {
       expect(characterVoiceGender(c.id)).toBe(c.gender);
     }

@@ -73,6 +73,7 @@ describe('cast roster', () => {
       'a107-dm-office-casual',
       'a24-hairsample-male',
       'a77-sasha',
+      'a93-edokko',
       'a94-rita',
       'a98-ethan',
     ].sort());

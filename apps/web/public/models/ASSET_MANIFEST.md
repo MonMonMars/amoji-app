@@ -41,7 +41,7 @@ Source of truth: `apps/web/lib/want-roster.json` ??generated `apps/web/lib/chara
 | a83-ao-witch | female | `??a83-ao-witch.vrm` |
 | a85-kara | female | `??a85-kara.vrm` |
 | a89-rurina | female | `??a89-rurina.vrm` |
-| a93-edokko | female | `??a93-edokko.vrm` |
+| a93-edokko | male | `??a93-edokko.vrm` |
 | a94-rita | male | `??a94-rita.vrm` |
 | a95-mizu | female | `??a95-mizu.vrm` |
 | a96-pee-aruako | female | `??a96-pee-aruako.vrm` |
