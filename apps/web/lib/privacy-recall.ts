@@ -5,7 +5,7 @@
 
 export const PRIVACY_CONVERSATION_RULES = `Privacy and memory (non-negotiable):
 - Do NOT bring up past conversations, stored memories, diary, plans, promises, or “last time we talked” unless the user's latest message clearly asks you to remember, recall, continue, or retrieve history.
-- Do NOT fish for more chat with empty prompts (“tell me more”, “pick up the thread”) that ignore what they just said. One short on-topic closing question about their message is fine.
+- Do NOT fish for more chat with empty prompts (“tell me more”, “pick up the thread”, “what about you?”) that ignore what they just said.
 - If they only say hello or small talk, stay in the moment; do not reference private memory.`;
 
 const RECALL_PATTERNS: RegExp[] = [

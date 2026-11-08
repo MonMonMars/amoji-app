@@ -172,9 +172,8 @@ describe('nonsense and duplicate stripping', () => {
   });
 });
 
-describe('end-to-end: a trimmed reply still ends with a question', () => {
-  it('hands the user something to answer after the budget cut', () => {
-    // The model wrote its own closer; the budget trimmed the middle away.
+describe('end-to-end: trimmed replies stay speakable without forced follow-ups', () => {
+  it('keeps the model’s own question after the budget cut', () => {
     const raw = 'The train was late again this morning and the platform was freezing. '
       + 'I counted eleven people wearing the same grey coat as me, which felt like a strange club. '
       + 'Then the announcement crackled and everyone groaned at once. '
@@ -185,9 +184,9 @@ describe('end-to-end: a trimmed reply still ends with a question', () => {
     expect(reply).toContain('mess too?');
   });
 
-  it('adds a question when the model forgot one', () => {
+  it('does not add a question when the model forgot one', () => {
     const reply = withQuestion(finishReply('The soup smells amazing.').reply, 'en');
-    expect(reply).toMatch(/^The soup smells amazing\. .+\?$/);
+    expect(reply).toBe('The soup smells amazing.');
   });
 
   it('keeps display and speech text identical, so lip-sync stays in step', () => {
@@ -203,12 +202,13 @@ describe('end-to-end: a trimmed reply still ends with a question', () => {
   });
 });
 
-describe('system prompt states the four reply rules', () => {
-  it('asks for a short precise answer, no nonsense, and a closing question', () => {
+describe('system prompt states the reply rules', () => {
+  it('asks for a short precise answer, no nonsense, and no fishing follow-ups', () => {
     expect(BASE_SYSTEM).toMatch(/1 to 3 short sentences/);
     expect(BASE_SYSTEM).toMatch(/NO NONSENSE/);
-    expect(BASE_SYSTEM).toMatch(/END WITH A QUESTION/);
     expect(BASE_SYSTEM).toMatch(/BE PRECISE/);
+    expect(BASE_SYSTEM).toMatch(/do not fish for more chat/i);
+    expect(BASE_SYSTEM).not.toMatch(/END WITH A QUESTION/);
   });
 
   it('keeps the voice bans and the emotion tag contract intact', () => {
@@ -248,14 +248,10 @@ describe('Cantonese reply quality — before / after shaping', () => {
     expect(after).toMatch(/[？?]/);
   });
 
-  it('turns a flat Cantonese answer into something the user can reply to', () => {
-    // BEFORE: finished sentence, no question — chat dies.
+  it('leaves a flat Cantonese answer unchanged (no forced follow-up)', () => {
     const before = '聽落你今日真係好攰喎。';
-    // AFTER: same answer + a real open question (not the empty「你覺得點呀？」).
     const after = withQuestion(finishReply(before).reply, 'yue');
-    expect(after.startsWith(before)).toBe(true);
-    expect(after).toMatch(/[？?]/);
-    expect(after).not.toBe(before);
+    expect(after).toBe(before);
   });
 
   it('keeps a good short Cantonese reply untouched', () => {

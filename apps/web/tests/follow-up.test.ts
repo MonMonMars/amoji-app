@@ -2,30 +2,37 @@ import { describe, expect, it } from 'vitest';
 import { withQuestion } from '../lib/follow-up';
 
 describe('follow-up questions', () => {
-  it('appends a question when the reply has none', () => {
-    expect(withQuestion('今日好開心', 'yue')).toMatch(/[?？]$/);
-    expect(withQuestion('Nice day', 'en')).toMatch(/[?]$/);
+  it('does not append a question by default', () => {
+    expect(withQuestion('今日好開心', 'yue')).toBe('今日好開心');
+    expect(withQuestion('Nice day', 'en')).toBe('Nice day');
+  });
+
+  it('can append a question when forceFollowUp is set', () => {
+    expect(withQuestion('今日好開心', 'yue', { forceFollowUp: true })).toMatch(/[?？]$/);
+    expect(withQuestion('Nice day', 'en', { forceFollowUp: true })).toMatch(/[?]$/);
   });
 
   it('leaves a reply that already asks something', () => {
     expect(withQuestion('你好呀？', 'yue')).toBe('你好呀？');
   });
 
-  it('does not tack a question onto a goodbye', () => {
+  it('does not tack a question onto a goodbye even when forced', () => {
     const bye = '好啦，我要走先喇，拜拜。';
-    expect(withQuestion(bye, 'yue')).toBe(bye);
-    expect(withQuestion('Okay, good night!', 'en')).toBe('Okay, good night!');
+    expect(withQuestion(bye, 'yue', { forceFollowUp: true })).toBe(bye);
+    expect(withQuestion('Okay, good night!', 'en', { forceFollowUp: true })).toBe('Okay, good night!');
   });
 
-  it('asks something on-topic rather than the empty "what do you think"', () => {
+  it('forced follow-ups avoid the empty "what do you think"', () => {
     for (const lang of ['en', 'yue', 'zh', 'ja']) {
-      const line = withQuestion('The rain finally stopped.', lang);
+      const line = withQuestion('The rain finally stopped.', lang, { forceFollowUp: true });
       expect(line).not.toMatch(/what do you think/i);
       expect(line).not.toContain('你覺得點呀');
     }
   });
 
-  it('is deterministic for the same reply', () => {
-    expect(withQuestion('Nice day', 'en')).toBe(withQuestion('Nice day', 'en'));
+  it('is deterministic for the same reply when forced', () => {
+    expect(withQuestion('Nice day', 'en', { forceFollowUp: true })).toBe(
+      withQuestion('Nice day', 'en', { forceFollowUp: true }),
+    );
   });
 });
