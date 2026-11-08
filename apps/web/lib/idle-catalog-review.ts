@@ -82,7 +82,7 @@ const PIXEL_NOTES_1_93: Readonly<Partial<Record<number, string>>> = {
   12: 'Listening to music — library.',
   13: 'LookingAround02 — distinct from #3; curated look.',
   14: 'DELETE — watching something loop; retired.',
-  15: 'Hello wave — library gesture.',
+  15: 'Hello wave (#15 HelloWave) — farewell-only; never passive idle rotation.',
   16: 'Female stand — library.',
   17: 'Male stand gesture — library.',
   18: 'Thinking — curated think rail.',

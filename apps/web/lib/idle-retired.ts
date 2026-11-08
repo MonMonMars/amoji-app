@@ -1,5 +1,6 @@
 // Retired idle # / clipId — no imports from curated rail or pixel review (breaks cycles).
 
+import { isFarewellOnlyIdleClip } from './idle-farewell';
 import { idleByNum } from './idle-library';
 
 /** #N hidden from picker; no rotation; saved pins remap. */
@@ -25,6 +26,6 @@ export function isRetiredIdleClip(clipId: string): boolean {
 }
 
 export function resolveIdleClipId(clipId: string): string {
-  if (isRetiredIdleClip(clipId)) return IDLE_PIN_FALLBACK_CLIP_ID;
+  if (isRetiredIdleClip(clipId) || isFarewellOnlyIdleClip(clipId)) return IDLE_PIN_FALLBACK_CLIP_ID;
   return clipId;
 }

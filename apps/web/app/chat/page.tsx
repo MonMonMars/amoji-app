@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ChatPanel from '../../components/ChatPanel';
 import { resolveChatAutoIdle } from '../../lib/chat-auto-idle';
+import { FAREWELL_WAVE_CLIP_ID } from '../../lib/idle-farewell';
+import { COPY_CHAT_HISTORY_EVENT } from '../../lib/chat-transcript';
 import MiniGamePicker, { MiniGameMenuButton } from '../../components/MiniGamePicker';
 import DevPanel from '../../components/DevPanel';
 import FallbackNotice from '../../components/FallbackNotice';
@@ -92,7 +94,14 @@ function ChatRoom() {
   }, []);
 
   const character = characterById(prefs.character);
-  useEffect(() => { setIdleClip(resolveChatAutoIdle({ assistantText: '' })); }, [character.id]);
+  useEffect(() => {
+    setIdleClip(resolveChatAutoIdle({ assistantText: '', openGreet: true }));
+  }, [character.id]);
+
+  useEffect(() => {
+    if (!leaving) return;
+    setIdleClip(resolveChatAutoIdle({ assistantText: '', sessionFarewell: true }) ?? FAREWELL_WAVE_CLIP_ID);
+  }, [leaving]);
   const background = backgroundById(prefs.background);
   const storyScene = activeStoryScene();
   const sceneGlbUrl = storyScene ? resolveStorySceneGlb(storyScene) : undefined;
@@ -159,6 +168,16 @@ function ChatRoom() {
           <div className="flex shrink-0 items-center gap-2">
             {/* Hold until bootReady so MuteButton aria/title lang is not DEFAULT_PREFS (select prefsReady parity). */}
             {bootReady && <MuteButton lang={prefs.lang} compact />}
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event(COPY_CHAT_HISTORY_EVENT))}
+              title={t(prefs.lang, 'copyChatHistory')}
+              aria-label={t(prefs.lang, 'copyChatHistory')}
+              data-testid="copy-chat-history"
+              className="ui-btn pointer-events-auto relative flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-black/30 text-base text-white/90 shadow-sm backdrop-blur-md hover:bg-black/50 sm:h-10 sm:w-10"
+            >
+              📋
+            </button>
             <WardrobeSwap
               lang={prefs.lang}
               characterId={character.id}

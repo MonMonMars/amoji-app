@@ -1423,7 +1423,7 @@ export default function ChatPanel({
         className="pointer-events-auto w-full touch-pan-y space-y-2.5 overflow-y-auto overscroll-contain px-2 pb-1 pt-6 [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)] [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)]"
         style={{ maxHeight: '17vh' }}
       >
-        {history.length === 0 && <p className="text-center text-white/40">{t(lang, 'sayHi', { name: characterName })}</p>}
+        {history.length === 0 && <p className="select-text [-webkit-user-select:text] text-center text-white/40">{t(lang, 'sayHi', { name: characterName })}</p>}
         {history.map((m, i) => {
           const tailAssistant =
             m.role === 'assistant' &&

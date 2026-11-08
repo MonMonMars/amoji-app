@@ -19,6 +19,7 @@ const BAD_SAVED_IDLE_IDS = new Set([
   'IdleSassy',
   'IdleChinHand',
   'IdleHug',
+  'HelloWave',
 ]);
 
 type PickMap = Record<string, string>;
