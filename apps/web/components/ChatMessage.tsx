@@ -14,6 +14,10 @@ export interface ChatMessageProps {
   accent: string;
   /** companion name — only the newest reply carries it, as before */
   label?: string;
+  /** Current TTS clause while the assistant bubble is still streaming/speaking */
+  liveClause?: string;
+  /** Tail assistant line is in flux (stream or speak) — hide full text until done */
+  tailStreaming?: boolean;
   /** memories injected into her prompt for this turn */
   memoryUsed?: TurnMemoryUsed[];
   onForgetMemory?: (id: string) => void;
@@ -22,12 +26,16 @@ export interface ChatMessageProps {
 }
 
 export default function ChatMessage({
-  role, content, lang, accent, label, memoryUsed, onForgetMemory, onReport,
+  role, content, lang, accent, label, liveClause, tailStreaming, memoryUsed, onForgetMemory, onReport,
 }: ChatMessageProps) {
   const isUser = role === 'user';
+  const clause = liveClause?.trim() ?? '';
+  const visible = isUser
+    ? content
+    : clause || (tailStreaming ? '…' : content);
   // The "…" wait bubble is a transient placeholder, not generated text —
   // there is nothing there to report.
-  const reportable = !isUser && content.trim() !== '' && content.trim() !== '…';
+  const reportable = !isUser && !tailStreaming && content.trim() !== '' && content.trim() !== '…';
   const showMemory = !isUser && memoryUsed && memoryUsed.length > 0;
   return (
     <div className={isUser ? 'text-right' : 'text-left'}>
@@ -36,8 +44,14 @@ export default function ChatMessage({
           {label}
         </p>
       )}
-      <p className={isUser ? '' : 'text-white/95'} style={isUser ? { color: accent } : undefined}>
-        {content}
+      <p
+        className={isUser ? '' : clause ? 'text-white/95 italic' : 'text-white/95'}
+        style={isUser ? { color: accent } : undefined}
+        data-testid={!isUser && clause ? 'speech-caption' : undefined}
+        aria-live={!isUser && clause ? 'polite' : undefined}
+        aria-atomic={!isUser && clause ? true : undefined}
+      >
+        {visible}
       </p>
       {showMemory && (
         <details
