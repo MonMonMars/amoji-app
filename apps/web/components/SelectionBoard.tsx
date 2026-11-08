@@ -26,7 +26,7 @@ import { primeLocationForChatEnter } from '../lib/live-tools';
 import { activeVoiceChoice } from '../lib/voice-picks';
 import {
   BACKGROUNDS, CHARACTERS, LANGS,
-  backgroundById, backgroundLetter, characterById, t, usePrefs,
+  backgroundById, backgroundLetter, characterById, loadPrefs, savePrefs, t, usePrefs,
   type Prefs,
 } from '../lib/prefs';
 import { selectionBadge, selectionCast, selectPortraitPosition } from '../lib/cast-adjust';
@@ -74,6 +74,17 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   };
 
 
+  /** Merge the visible board into localStorage before /chat (start or change). */
+  const flushLivePrefs = (): Prefs => {
+    const base = loadPrefs();
+    const next: Prefs =
+      mode === 'change'
+        ? { ...base, ...prefs, ...(draft ?? {}) }
+        : { ...base, ...prefs };
+    savePrefs(next);
+    return next;
+  };
+
   const applyCastGender = (next: CastGenderFilter) => {
     setCastGender(next);
     const nextCast = roster.filter((c) => {
@@ -95,7 +106,8 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
     window.setTimeout(() => { try { primeLocationForChatEnter(); } catch { /* ignore */ } }, 120);
     const go = () => {
       clearStorySession();
-      if (mode === 'change' && draft) setPrefs({ ...prefs, ...draft });
+      const next = flushLivePrefs();
+      setPrefs(next);
       router.push('/chat');
     };
     // Fade + slight scale, then navigate. Reduced motion skips the wait.

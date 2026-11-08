@@ -46,10 +46,11 @@ describe('selection layout', () => {
     expect(board).toContain('ModelThumb');
     expect(board).toContain('SceneBackdrop');
     expect(board).toContain("router.push('/chat')");
-    const save = board.indexOf('setPrefs({ ...prefs, ...draft })');
+    const flush = board.indexOf('flushLivePrefs()');
     const push = board.indexOf("router.push('/chat')");
-    expect(save).toBeGreaterThan(-1);
-    expect(save).toBeLessThan(push);
+    expect(flush).toBeGreaterThan(-1);
+    expect(flush).toBeLessThan(push);
+    expect(board).toContain('savePrefs(next)');
     expect(chat).toContain('CompanionCanvas');
     expect(read('../app/select/page.tsx')).not.toContain('CompanionCanvas');
     expect(read('../app/change/page.tsx')).not.toContain('CompanionCanvas');
@@ -182,9 +183,8 @@ describe('selection layout', () => {
     expect(rails).toContain("data-ready={ready ? '1' : '0'}");
     expect(rails).toContain("ready ? '' : 'opacity-0'");
     expect(rails).toContain('listEnabledNums()');
-    expect(chat).toContain('loadPrefs');
-    expect(chat).toContain('const [bootReady, setBootReady] = useState(false)');
-    expect(chat).toContain('setBootReady(true)');
+    expect(chat).toContain('prefsReady');
+    expect(chat).toContain('const bootReady = prefsReady');
     expect(chat).toContain('{bootReady && (');
     expect(chat).toContain('{bootReady && <ChatPanel');
     expect(chat).toContain("bootReady ? '' : 'opacity-0'");

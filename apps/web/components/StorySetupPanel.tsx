@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import {
   backgroundById,
   characterById,
+  loadPrefs,
   usePrefs,
   type Lang,
 } from '../lib/prefs';
@@ -88,7 +89,9 @@ export default function StorySetupPanel() {
       characterId: character.id,
       backgroundId: background.id,
     });
+    const base = loadPrefs();
     setPrefs({
+      ...base,
       ...prefs,
       character: character.id,
       background: background.id,
