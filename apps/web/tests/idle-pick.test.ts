@@ -61,10 +61,11 @@ describe('idle library numbers', () => {
     expect(playable).toContain('lib_C42');
   });
 
-  it('exposes playable options as # labels for chat rails', () => {
+  it('exposes curated rail options as sequential # labels', () => {
     expect(IDLE_CLIP_OPTIONS[0]?.label).toBe('1');
     expect(IDLE_CLIP_OPTIONS.find((c) => c.id === 'IdleBreathCalm')?.num).toBe(1);
     expect(new Set(IDLE_CLIP_OPTIONS.map((c) => c.num)).size).toBe(IDLE_CLIP_OPTIONS.length);
+    expect(IDLE_CLIP_OPTIONS.length).toBeLessThan(playableIdles().length);
     expect(playableIdles().every((e) => e.planted && e.playable)).toBe(true);
   });
 });
@@ -82,12 +83,13 @@ describe('idle enable + pick', () => {
     };
     forgetIdleEnabledCache();
     expect(isIdleEnabled(1)).toBe(true);
-    setIdleEnabled(3, true);
-    expect(isIdleEnabled(3)).toBe(true);
+    const lookRail = IDLE_CLIP_OPTIONS.find((c) => c.id === 'LookAround')!.num;
+    setIdleEnabled(lookRail, true);
+    expect(isIdleEnabled(lookRail)).toBe(true);
     expect(listEnabledIdleClipIds()).toContain('LookAround');
     setIdleEnabled(1, false);
     setIdleEnabled(2, false);
-    setIdleEnabled(3, false);
+    setIdleEnabled(lookRail, false);
     expect(listEnabledIdleClipIds()).toEqual(['IdleBreathCalm', 'StandardIdle']);
   });
 

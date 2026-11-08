@@ -1,6 +1,6 @@
 'use client';
-// Numbered idle picks (#N). Tap = pin this idle. Right-click / long-press =
-// toggle enable (on/off for rotation). Defaults stay #1+#2 until Mon changes.
+// Curated idle picks (rail #1..N, not full library #). Tap = pin. Right-click /
+// long-press = toggle enable (on/off for rotation). Defaults stay rail #1+#2.
 // Chat-room only: multi-column CSS grid so every button fits without scrolling
 // (Mon: side-rail overflow scroll does not work).
 //
@@ -59,12 +59,12 @@ export default function IdlePickRails({
     if (saved) onPick?.(saved);
   };
 
-  const toggle = (num: number) => {
+  const toggle = (railNum: number) => {
     if (!ready) return;
-    setEnabled(setIdleEnabled(num, !isIdleEnabled(num)));
+    setEnabled(setIdleEnabled(railNum, !isIdleEnabled(railNum)));
   };
 
-  const startHold = (num: number, x: number, y: number) => {
+  const startHold = (railNum: number, x: number, y: number) => {
     if (!ready) return;
     clearHold();
     suppressClickRef.current = false;
@@ -74,7 +74,7 @@ export default function IdlePickRails({
       timer: setTimeout(() => {
         holdRef.current = null;
         suppressClickRef.current = true;
-        toggle(num);
+        toggle(railNum);
       }, LONG_PRESS_MS),
     };
   };
@@ -85,9 +85,7 @@ export default function IdlePickRails({
     if (Math.abs(x - h.x) > MOVE_CANCEL_PX || Math.abs(y - h.y) > MOVE_CANCEL_PX) clearHold();
   };
 
-  // Prefer playable clips so the grid stays dense and scroll-free.
-  const items = IDLE_CLIP_OPTIONS.filter((item) => item.playable);
-  const shown = items.length > 0 ? items : [...IDLE_CLIP_OPTIONS];
+  const shown = IDLE_CLIP_OPTIONS.filter((item) => item.playable);
 
   return (
     <div
@@ -105,7 +103,9 @@ export default function IdlePickRails({
           const en = ready && enabled.includes(item.num);
           const calm = isDefaultIdleClip(item.id);
           const title = [
-            `#${item.num}`,
+            `rail #${item.num}`,
+            `lib #${item.libNum}`,
+            item.category,
             item.cId ?? 'app',
             item.name,
             en ? 'ON' : 'OFF',
@@ -117,13 +117,14 @@ export default function IdlePickRails({
             <button
               key={item.num}
               type="button"
-              aria-label={`Idle #${item.num} ${item.name}, ${en ? 'enabled' : 'disabled'}`}
+              aria-label={`Idle rail #${item.num} ${item.name}, ${en ? 'enabled' : 'disabled'}`}
               aria-keyshortcuts="Alt+Enter"
               title={title}
               aria-pressed={ready ? on : undefined}
               disabled={!ready}
               data-dev={`I${item.num}`}
-              data-idle-num={item.num}
+              data-idle-rail={item.num}
+              data-idle-lib={item.libNum}
               data-c-id={item.cId ?? ''}
               onClick={() => {
                 // A long press already toggled; do not also pin the clip.

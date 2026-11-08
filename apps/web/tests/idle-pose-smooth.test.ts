@@ -12,6 +12,7 @@ import {
   resolveIdleClipId,
 } from '../lib/idle-catalog-review';
 import { IDLE_CLIP_OPTIONS } from '../lib/idle-clips';
+import { CHAT_IDLE_CURATED } from '../lib/idle-curated-rail';
 import { idleByNum, playableIdles } from '../lib/idle-library';
 
 const root = path.resolve(import.meta.dirname, '..');
@@ -30,31 +31,34 @@ describe('idle pose smooth + catalog trim', () => {
     expect(canvas).toContain('IDLE_PIN_CROSSFADE_S');
   });
 
-  it('retired nums are absent from picker but kept # still registered for smoke keeps', () => {
+  it('retired nums are absent from curated rail but kept in library', () => {
     for (const n of RETIRED_IDLE_NUMS) {
-      expect(IDLE_CLIP_OPTIONS.some((o) => o.num === n)).toBe(false);
+      expect(IDLE_CLIP_OPTIONS.some((o) => o.libNum === n)).toBe(false);
+      expect(CHAT_IDLE_CURATED.some((r) => r.legacyLibNum === n)).toBe(false);
       expect(idleByNum(n)?.retired).toBe(true);
     }
     expect(resolveIdleClipId('lib_C65')).toBe('IdleBreathCalm');
     expect(RETIRED_IDLE_CLIP_IDS.size).toBe(RETIRED_IDLE_NUMS.size);
   });
 
-  it('smoke keeps #3 #20 #34 #36 #41 #53 still on rails', () => {
+  it('smoke keeps #3 #20 #34 #36 #41 #53 in library and on curated rail where mapped', () => {
     const keepNums = [3, 20, 34, 36, 41, 53];
     for (const n of keepNums) {
       const e = idleByNum(n);
       expect(e?.playable).toBe(true);
-      expect(IDLE_CLIP_OPTIONS.some((o) => o.num === n)).toBe(true);
+      const rail = CHAT_IDLE_CURATED.find((r) => r.legacyLibNum === n);
+      expect(rail).toBeTruthy();
+      expect(IDLE_CLIP_OPTIONS.some((o) => o.libNum === n)).toBe(true);
     }
-    const playableCount = playableIdles().length;
-    expect(playableCount).toBeGreaterThan(80);
+    expect(playableIdles().length).toBeGreaterThan(80);
+    expect(IDLE_CLIP_OPTIONS.length).toBeLessThan(playableIdles().length);
   });
 
-  it('Pixel #94–118: retired 96–100, 105–107 off rotation; keeps still registered', () => {
+  it('Pixel #94–118: retired 96–100, 105–107 off rotation; keeps still in library', () => {
     const retiredBatch = [96, 97, 98, 99, 100, 105, 106, 107];
     for (const n of retiredBatch) {
       expect(RETIRED_IDLE_NUMS.has(n)).toBe(true);
-      expect(IDLE_CLIP_OPTIONS.some((o) => o.num === n)).toBe(false);
+      expect(IDLE_CLIP_OPTIONS.some((o) => o.libNum === n)).toBe(false);
       expect(playableIdles().some((e) => e.num === n)).toBe(false);
     }
     expect(resolveIdleClipId('lib_C60')).toBe('IdleBreathCalm');
@@ -67,7 +71,8 @@ describe('idle pose smooth + catalog trim', () => {
       const e = idleByNum(n);
       expect(e?.retired).not.toBe(true);
       expect(e?.playable).toBe(true);
-      expect(IDLE_CLIP_OPTIONS.some((o) => o.num === n)).toBe(true);
     }
+    const onRail = keepNums.filter((n) => CHAT_IDLE_CURATED.some((r) => r.legacyLibNum === n));
+    expect(onRail.length).toBeGreaterThan(10);
   });
 });

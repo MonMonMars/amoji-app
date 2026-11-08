@@ -1,9 +1,14 @@
-﻿// Which idle #s are ON for rotation / pick pool. Persists like mute prefs.
-// Default = IDLE_LIBRARY defaultEnabled (#1 IdleBreathCalm + #2 StandardIdle).
+﻿// Which curated idle rail #s are ON for rotation. Persists like mute prefs.
+// Default = curated #1+#2 (IdleBreathCalm + StandardIdle).
 
-import { isRetiredIdleNum } from './idle-catalog-review';
+import { isRetiredIdleNum } from './idle-retired';
 import {
-  defaultEnabledNums,
+  CHAT_IDLE_CURATED,
+  curatedRailByNum,
+  defaultCuratedRailNums,
+  migrateEnabledNumsToRail,
+} from './idle-curated-rail';
+import {
   idleByNum,
   playableIdles,
   type IdleLibraryEntry,
@@ -20,26 +25,29 @@ function hydrate(): number[] {
   loaded = true;
   try {
     if (typeof localStorage === 'undefined') {
-      memory = defaultEnabledNums();
+      memory = defaultCuratedRailNums();
       return memory;
     }
     const raw = localStorage.getItem(KEY);
     if (!raw) {
-      memory = defaultEnabledNums();
+      memory = defaultCuratedRailNums();
       return memory;
     }
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) {
-      memory = defaultEnabledNums();
+      memory = defaultCuratedRailNums();
       return memory;
     }
     const nums = parsed
-      .filter((n): n is number => typeof n === 'number' && Number.isInteger(n))
-      .filter((n) => !!idleByNum(n) && !isRetiredIdleNum(n));
-    memory = nums.length ? [...new Set(nums)].sort((a, b) => a - b) : defaultEnabledNums();
+      .filter((n): n is number => typeof n === 'number' && Number.isInteger(n));
+    const migrated = migrateEnabledNumsToRail(nums);
+    memory = migrated;
+    if (JSON.stringify(migrated) !== JSON.stringify(nums)) {
+      try { localStorage.setItem(KEY, JSON.stringify(migrated)); } catch { /* private mode */ }
+    }
     return memory;
   } catch {
-    memory = defaultEnabledNums();
+    memory = defaultCuratedRailNums();
     return memory;
   }
 }
@@ -57,19 +65,18 @@ export function listEnabledNums(): number[] {
   return [...hydrate()];
 }
 
-export function isIdleEnabled(num: number): boolean {
-  return hydrate().includes(num);
+export function isIdleEnabled(railNum: number): boolean {
+  return hydrate().includes(railNum);
 }
 
-export function setIdleEnabled(num: number, on: boolean): number[] {
-  if (!idleByNum(num) || isRetiredIdleNum(num)) return listEnabledNums();
+export function setIdleEnabled(railNum: number, on: boolean): number[] {
+  if (!curatedRailByNum(railNum)) return listEnabledNums();
   const cur = new Set(hydrate());
-  if (on) cur.add(num);
-  else cur.delete(num);
+  if (on) cur.add(railNum);
+  else cur.delete(railNum);
   const next = [...cur];
-  // Never leave the pool empty — fall back to defaults.
   if (!next.length) {
-    persist(defaultEnabledNums());
+    persist(defaultCuratedRailNums());
     return listEnabledNums();
   }
   persist(next);
@@ -81,29 +88,23 @@ export function listEnabledIdleClipIds(): string[] {
   const enabled = new Set(hydrate());
   const ids: string[] = [];
   const seen = new Set<string>();
-  for (const e of playableIdles()) {
-    if (!enabled.has(e.num) || seen.has(e.clipId)) continue;
-    // Dedup by clipId (historically C01/C42 shared LookAround; #13 is now lib_C42).
-    seen.add(e.clipId);
-    ids.push(e.clipId);
-  }
-  // If user enabled a later num whose clipId was skipped by playableIdles first-wins:
-  for (const num of hydrate()) {
-    const e = idleByNum(num);
-    if (!e?.playable || seen.has(e.clipId)) continue;
-    seen.add(e.clipId);
-    ids.push(e.clipId);
+  for (const row of CHAT_IDLE_CURATED) {
+    if (!enabled.has(row.railNum) || seen.has(row.clipId)) continue;
+    const lib = idleByNum(row.legacyLibNum);
+    if (!lib?.playable || lib.retired || isRetiredIdleNum(row.legacyLibNum)) continue;
+    seen.add(row.clipId);
+    ids.push(row.clipId);
   }
   if (!ids.length) {
-    return playableIdles()
-      .filter((e) => e.defaultEnabled)
-      .map((e) => e.clipId);
+    return defaultCuratedRailNums()
+      .map((n) => curatedRailByNum(n)?.clipId)
+      .filter((id): id is string => !!id);
   }
   return ids;
 }
 
 export function resetIdleEnabled(): void {
-  memory = defaultEnabledNums();
+  memory = defaultCuratedRailNums();
   loaded = true;
   try {
     if (typeof localStorage !== 'undefined') localStorage.removeItem(KEY);

@@ -1,41 +1,73 @@
-// Playable idle buttons for chat rails. Labels are IDLE_LIBRARY # (Mon: "use #N").
-// Convert-only free-library rows stay in idle-library.ts but are not buttons.
+// Playable idle buttons for chat rails — curated CHAT_IDLE_CURATED only (#1..N).
+// Full library rows stay in idle-library.ts for gallery / dev smoke.
 
-import { isRetiredIdleNum } from './idle-catalog-review';
-import { IDLE_LIBRARY, type IdleLibraryEntry } from './idle-library';
+import {
+  CHAT_IDLE_CURATED,
+  curatedLibraryRow,
+  curatedRailByClipId,
+  type IdleCuratedRailEntry,
+} from './idle-curated-rail';
+import { idleByClipId, type IdleLibraryEntry } from './idle-library';
 
 export interface IdleClipOption {
-  /** Button text: the library # as a string. */
+  /** Button text: curated rail # as a string. */
   label: string;
   /** Clip id CompanionCanvas can play. */
   id: string;
+  /** Curated rail # (not library #). */
   num: number;
+  /** Library # (Mon smoke / gallery). */
+  libNum: number;
   cId: string | null;
   name: string;
-  /** False when VRMA is not on disk yet �X still shown, tap no-ops. */
+  category: IdleCuratedRailEntry['category'];
+  labelKey: string;
+  /** False when VRMA is not on disk yet — still shown, tap no-ops. */
   playable: boolean;
 }
 
-function toOption(e: IdleLibraryEntry): IdleClipOption {
+function toCuratedOption(e: IdleCuratedRailEntry, lib: IdleLibraryEntry): IdleClipOption {
   return {
-    label: String(e.num),
+    label: String(e.railNum),
     id: e.clipId,
-    num: e.num,
-    cId: e.cId,
-    name: e.name,
-    playable: Boolean(e.playable && e.vrmaUrl),
+    num: e.railNum,
+    libNum: e.legacyLibNum,
+    cId: lib.cId,
+    name: lib.name,
+    category: e.category,
+    labelKey: e.labelKey,
+    playable: Boolean(lib.playable && lib.vrmaUrl),
   };
 }
 
-/** Every numbered library row through IDLE_LIBRARY max (#1-N), minus retired #. */
-export const IDLE_CLIP_OPTIONS: readonly IdleClipOption[] = IDLE_LIBRARY
-  .filter((e) => e.num >= 1 && e.num <= Math.max(...IDLE_LIBRARY.map((x) => x.num)) && !e.retired && !isRetiredIdleNum(e.num))
-  .map(toOption);
+/** Curated chat rail options only. */
+export const IDLE_CLIP_OPTIONS: readonly IdleClipOption[] = CHAT_IDLE_CURATED.map((e) => {
+  const lib = curatedLibraryRow(e.clipId);
+  if (!lib) throw new Error(`curated rail missing library row: ${e.clipId}`);
+  return toCuratedOption(e, lib);
+});
 
 export function idleClipByLabel(label: string): IdleClipOption | undefined {
   return IDLE_CLIP_OPTIONS.find((clip) => clip.label === label);
 }
 
+/** Resolve clip for pin / canvas — curated first, then any playable library row. */
 export function idleClipById(id: string): IdleClipOption | undefined {
-  return IDLE_CLIP_OPTIONS.find((clip) => clip.id === id);
+  const curated = curatedRailByClipId(id);
+  const lib = idleByClipId(id);
+  if (!lib || lib.retired || !lib.playable || !lib.vrmaUrl) {
+    return undefined;
+  }
+  if (curated) return toCuratedOption(curated, lib);
+  return {
+    label: `L${lib.num}`,
+    id: lib.clipId,
+    num: lib.num,
+    libNum: lib.num,
+    cId: lib.cId,
+    name: lib.name,
+    category: 'breathe',
+    labelKey: `idle.lib.${lib.clipId}`,
+    playable: true,
+  };
 }
