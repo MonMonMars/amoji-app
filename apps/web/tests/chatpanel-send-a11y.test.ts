@@ -10,7 +10,7 @@ describe('ChatPanel sendBtn localized a11y', () => {
     const panel = read('components/ChatPanel.tsx');
     expect(panel).toContain("aria-label={t(lang, 'sendBtn')}");
     expect(panel).not.toContain('aria-label="send"');
-    expect(panel).toContain("aria-label={t(lang, 'micTitle')}");
+    expect(panel).toContain("t(lang, 'micOff')");
   });
 
   it('ships sendBtn copy for en/yue/zh/ja', () => {

@@ -136,7 +136,7 @@ export type StrKey =
   | 'statusIdle' | 'statusThinking' | 'statusSpeaking' | 'statusListening' | 'statusPreparing'
   | 'moodJoy' | 'moodAngry' | 'moodSad' | 'moodSurprised' | 'moodRelaxed' | 'moodNeutral'
   | 'voiceReplies' | 'neuralVoice' | 'muteAll' | 'unmuteAll' | 'muteAllHint' | 'voicePickerTitle' | 'voicePickerHint'
-  | 'memoryTitle' | 'forgetBtn' | 'tutorBtn' | 'micTitle' | 'sendBtn' | 'scrollLeft' | 'scrollRight'
+  | 'memoryTitle' | 'forgetBtn' | 'tutorBtn' | 'micTitle' | 'micOff' | 'sendBtn' | 'scrollLeft' | 'scrollRight'
   // consolidated settings menu (r2026-10-02.7)
   | 'settingsCompanion' | 'settingsScene' | 'settingsVoice' | 'settingsData' | 'settingsHelp'
   | 'yourName' | 'yourGender' | 'genderMale' | 'genderFemale' | 'genderSecret'
@@ -454,6 +454,7 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   forgetBtn: { en: 'Forget everything', yue: '全部忘記', zh: '全部忘记', ja: 'すべて忘れる' },
   tutorBtn: { en: 'How to use', yue: '使用教學', zh: '使用教学', ja: '使い方' },
   micTitle: { en: 'Tap the orb to talk', yue: '撳個波講嘢', zh: '点彩球说话', ja: 'オーブをタップして話す' },
+  micOff: { en: 'Microphone off — tap to turn on', yue: '咪高峰咗 — 撳開返', zh: '麦克风已关 — 点按开启', ja: 'マイクオフ — タップでオン' },
   sendBtn: { en: 'Send', yue: '傳送', zh: '发送', ja: '送信' },
   scrollLeft: { en: 'Scroll left', yue: '向左滑', zh: '向左滚动', ja: '左にスクロール' },
   scrollRight: { en: 'Scroll right', yue: '向右滑', zh: '向右滚动', ja: '右にスクロール' },

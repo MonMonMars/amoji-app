@@ -14,7 +14,7 @@ describe("ChatPanel composer field a11y", () => {
   });
 
   it("keeps mic + send controls labeled", () => {
-    expect(chat).toContain("aria-label={t(lang, 'micTitle')}");
+    expect(chat).toMatch(/aria-label=\{listening[\s\S]*micOff/);
     expect(chat).toContain("aria-label={t(lang, 'sendBtn')}");
   });
 });

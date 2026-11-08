@@ -254,6 +254,8 @@ export default function ChatPanel({
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
+  /** User turned voice mode off (distinct from pre-first-open idle). */
+  const [micDismissed, setMicDismissed] = useState(false);
   const [speakingNow, setSpeakingNow] = useState(false);
   /** Clause synced to active TTS (movie subtitle). */
   const [speechCaption, setSpeechCaption] = useState('');
@@ -1178,6 +1180,7 @@ export default function ChatPanel({
     setUserSpeaking(false);
     listeningRef.current = false;
     setListening(false);
+    setMicDismissed(true);
     setLiveText('');
     lastActivityRef.current = Date.now();
     lastUserRef.current = Date.now();
@@ -1195,6 +1198,7 @@ export default function ChatPanel({
     micModeRef.current = true;
     listeningRef.current = true;
     setListening(true);
+    setMicDismissed(false);
     // Auto-open on chat enter must not cancel the first reply still loading on gTTS.
     if (opts?.cutCompanion !== false) stopSpeaking();
     let bargeInArmed = true; // first real speech of a burst cuts her off
@@ -1242,6 +1246,7 @@ export default function ChatPanel({
         setUserSpeaking(false);
         listeningRef.current = false;
         setListening(false);
+        setMicDismissed(true);
         setLiveText('');
       },
     });
@@ -1442,8 +1447,9 @@ export default function ChatPanel({
         <button
           type="button"
           onClick={() => mic()}
-          title={t(lang, 'micTitle')}
-          aria-label={t(lang, 'micTitle')}
+          title={listening ? t(lang, 'micTitle') : micDismissed ? t(lang, 'micOff') : t(lang, 'micTitle')}
+          aria-label={listening ? t(lang, 'micTitle') : micDismissed ? t(lang, 'micOff') : t(lang, 'micTitle')}
+          aria-pressed={listening}
           className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black/55 transition active:scale-95"
           style={
             listening
@@ -1456,11 +1462,16 @@ export default function ChatPanel({
                     // she is speaking — soft accent halo, no border line
                     boxShadow: `0 0 26px -4px ${accent}99, inset 0 0 0 1px rgba(255,255,255,0.14)`,
                   }
-                : {
-                    // idle — a faint circular ring only (inset shadows follow
-                    // the border-radius, so this is a circle, never a square)
-                    boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.14), 0 6px 24px -10px rgba(0,0,0,0.7)',
-                  }
+                : micDismissed
+                  ? {
+                      // voice mode OFF — muted ring, unmistakable idle mic
+                      boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.08), 0 4px 18px -12px rgba(0,0,0,0.85)',
+                    }
+                  : {
+                      // pre-open idle — a faint circular ring only (inset shadows follow
+                      // the border-radius, so this is a circle, never a square)
+                      boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.14), 0 6px 24px -10px rgba(0,0,0,0.7)',
+                    }
           }
         >
           {speakingNow && !listening && (
@@ -1469,10 +1480,28 @@ export default function ChatPanel({
               style={{ borderTopColor: `${accent}d0`, borderRightColor: `${accent}60` }}
             />
           )}
-          {/* idle = a clean white mic icon only; live = the soft emotion orb */}
+          {/* live = soft emotion orb; dismissed = crossed mic; else invite mic */}
           {(listening || speakingNow) && <EmotionOrb size={72} accent={accent} listening={listening} userSpeaking={userSpeaking} />}
-          {!listening && !speakingNow && (
+          {!listening && !speakingNow && micDismissed && (
             <svg
+              data-testid="hero-mic-off"
+              viewBox="0 0 24 24"
+              className="pointer-events-none h-7 w-7 text-white/45"
+              fill="none"
+              aria-hidden
+            >
+              <path
+                d="M12 15.2a3.7 3.7 0 0 0 3.7-3.7V6.6a3.7 3.7 0 1 0-7.4 0v4.9a3.7 3.7 0 0 0 3.7 3.7Z"
+                fill="currentColor"
+              />
+              <path d="M5.4 11.4a6.6 6.6 0 0 0 13.2 0" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+              <path d="M12 18v3.4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+              <path d="M4.2 4.2l15.6 15.6" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" />
+            </svg>
+          )}
+          {!listening && !speakingNow && !micDismissed && (
+            <svg
+              data-testid="hero-mic-idle"
               viewBox="0 0 24 24"
               className="pointer-events-none h-7 w-7 text-white"
               fill="none"
