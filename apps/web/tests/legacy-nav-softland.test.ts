@@ -11,7 +11,7 @@ const LEGACY_ROUTER_PATTERN =
   /router\.(?:push|replace)\s*\(\s*['"`]\/?(?:play|mode|story|setup)['"`]/;
 
 const LEGACY_HREF_PATTERN =
-  /href\s*=\s*["'`](?:\.\/|\/)(?:play|mode|story|setup)["'`]/;
+  /href\s*=\s*["'`](?:\.\/|\/)(?:play|mode|story)["'`]/;
 
 function read(file: string): string {
   return readFileSync(file, 'utf8');
@@ -27,7 +27,7 @@ function isSoftLandPage(file: string): boolean {
   return (
     parts.length === 2 &&
     parts[1] === 'page.tsx' &&
-    ['mode', 'story', 'setup', 'play'].includes(parts[0])
+    ['mode', 'story', 'play'].includes(parts[0])
   );
 }
 
@@ -58,8 +58,11 @@ describe('legacy nav after soft-lands', () => {
   it('soft-land pages still render SoftLand chrome', () => {
     expect(read(join(WEB_DIR, 'app', 'mode', 'page.tsx'))).toContain('SoftLandSelect');
     expect(read(join(WEB_DIR, 'app', 'story', 'page.tsx'))).toContain('SoftLandSelect');
-    expect(read(join(WEB_DIR, 'app', 'setup', 'page.tsx'))).toContain('SoftLandSelect');
     expect(read(join(WEB_DIR, 'app', 'play', 'page.tsx'))).toContain('SoftLandChat');
+  });
+
+  it('/setup is a first-class QuickSetup route, not a soft-land', () => {
+    expect(read(join(WEB_DIR, 'app', 'setup', 'page.tsx'))).toContain('QuickSetup');
   });
 
   it('live UI does not navigate to soft-landed legacy routes', () => {

@@ -22,6 +22,7 @@ describe('entry funnel prefs/profile boot flash', () => {
   it('QuickSetup holds chrome until prefs sync', () => {
     const setup = readFileSync(join(web, 'components/QuickSetup.tsx'), 'utf8');
     expect(setup).toContain('const [prefs, , prefsReady] = usePrefs()');
-    expect(setup).toContain('disabled={!prefsReady || busy}');
+    expect(setup).toContain('const startDisabled = !prefsReady || busy || !readToEnd');
+    expect(setup).toContain('disabled={startDisabled}');
   });
 });

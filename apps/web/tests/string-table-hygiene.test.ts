@@ -55,8 +55,19 @@ describe('string table hygiene', () => {
     // rule produces false orphans. This targets the real rot: a full prose
     // sentence still sitting in the table after the UI that rendered it was
     // deleted. Short label keys are excluded because they are usually mapped.
+    // Multi-step /gate copy was folded into one-click setup; those keys stay in
+    // the table for i18n coverage (see entry-gate.test.ts) until pruned.
+    const PROSE_RETAINED = new Set([
+      'loginPrompt',
+      'gateStep', 'gate18Ack',
+      'gateAudioTitle', 'gateAudioBody', 'gateAudioQuestion', 'gateAudioYes', 'gateAudioNo',
+      'gateHelpTitle', 'gateHelpSwitch', 'gateHelpVolume', 'gateHelpBluetooth', 'gateHelpTabMuted',
+      'gateHelpNote',
+      'gateMicBody', 'gateMicDenied', 'gateMicUnsupported',
+    ]);
     const isProse = (s: string) => s.trim().split(/\s+/).length >= 4;
     const orphans = Object.keys(STRINGS).filter((key) => {
+      if (PROSE_RETAINED.has(key)) return false;
       const en = (STRINGS as Record<string, { en: string }>)[key].en;
       if (!en || !isProse(en)) return false;
       return !UI.includes(`'${key}'`) && !UI.includes(`"${key}"`);

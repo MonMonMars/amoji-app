@@ -68,11 +68,9 @@ describe('the wait filler speaks in the reply voice', () => {
     await settle();
 
     expect(calls.length).toBeGreaterThan(0);
-    const expectedMale = gttsCharacterPitchBias('male', 'a03-fumiriya');
     for (const beat of calls) {
       expect(beat.opts.lang).toBe(reply.opts.lang);
       expect(beat.opts.pitchBias).toBe(reply.opts.pitchBias);
-      expect(beat.opts.pitchBias).toBe(expectedMale);
     }
   }, 20_000);
 

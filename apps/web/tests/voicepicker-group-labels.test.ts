@@ -10,12 +10,12 @@ describe("VoicePicker locale group labels", () => {
     expect(src).toContain('id={`amoji-voice-locale-${locale}`}');
   });
 
-  it("has no gender sub-groups, because the live voices are not gendered", () => {
-    // The gender sections went away with the Edge grid: a male/female split
-    // over one Google Translate voice per language labelled a difference the
-    // audio did not have.
+  it("has no gender sub-groups; delivery gender is inline on each button label", () => {
+    // The old Edge grid used nested gender role=group shells. HTTP gTTS is one
+    // speaker per language; delivery gender is stated in the button aria-label.
     expect(src).not.toContain('amoji-voice-gender-');
-    expect(src).not.toContain('genderLabel');
+    expect(src).toContain('genderLabel');
+    expect(src).toContain('deliveryGender');
   });
 
   it("still groups a language's buttons accessibly", () => {

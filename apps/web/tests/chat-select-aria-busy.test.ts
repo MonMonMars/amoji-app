@@ -17,6 +17,6 @@ describe("chat / select boot aria-busy parity", () => {
     const board = read("components/SelectionBoard.tsx");
     expect(board).toContain("aria-busy={!prefsReady}");
     expect(board).toContain("prefsReady ? background.css");
-    expect(board).toContain("prefsReady ? '' : 'opacity-0'");
+    expect(board).toContain("prefsReady ? '' : 'pointer-events-none opacity-0'");
   });
 });

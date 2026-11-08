@@ -41,7 +41,7 @@ describe('select board uses exactly one vertical scroll container', () => {
 
   it('stacks every row inside the one scroller, in order', () => {
     const scrollStart = board.indexOf('data-testid="select-scroll"');
-    const scrollEnd = board.indexOf('sticky bottom-0');
+    const scrollEnd = board.indexOf('data-testid="selection-confirm"');
     expect(scrollStart).toBeGreaterThan(-1);
     expect(scrollEnd).toBeGreaterThan(scrollStart);
 
@@ -64,12 +64,13 @@ describe('select board uses exactly one vertical scroll container', () => {
     expect(inner).not.toContain('max-h-[34dvh]');
   });
 
-  it('keeps the bottom CTA reachable (sticky inside the shared scroller)', () => {
-    expect(board).toContain('sticky bottom-0');
-    const sticky = board.indexOf('sticky bottom-0');
-    const cta = board.indexOf('fx-start');
-    expect(sticky).toBeGreaterThan(-1);
-    expect(cta).toBeGreaterThan(sticky);
+  it('keeps the bottom CTA reachable outside the scroller (always visible)', () => {
+    const scrollEnd = board.indexOf('data-testid="selection-confirm"');
+    const cta = board.indexOf('data-testid="selection-confirm-cta"');
+    const scrollStart = board.indexOf('data-testid="select-scroll"');
+    expect(scrollEnd).toBeGreaterThan(scrollStart);
+    expect(cta).toBeGreaterThan(scrollEnd);
+    expect(board).toContain('fx-start');
   });
 
   it('keeps mobile safe-area padding on the shared scroller', () => {

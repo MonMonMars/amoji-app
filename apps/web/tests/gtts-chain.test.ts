@@ -70,8 +70,8 @@ describe('gtts chunk chain behaviour', () => {
     expect(src).toMatch(/maxLen = 120/);
     expect(src).toContain('splitChunks');
     // Clause pauses must stay audible — do not quietly shrink them again.
-    expect(src).toMatch(/return 420/);
-    expect(src).toMatch(/return 220/);
+    expect(src).toMatch(/return 520/);
+    expect(src).toMatch(/return 300/);
     expect(src).toContain('gapTimer');
   });
 
