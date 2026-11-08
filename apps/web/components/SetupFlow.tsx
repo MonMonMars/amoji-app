@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePrefs, t, savePrefs, type Prefs } from '../lib/prefs';
-import { beginMicPreflightFromGesture, primeChatStartGesture } from '../lib/chat-start-gesture';
+import { primeChatStartGesture } from '../lib/chat-start-gesture';
+import { hasChatAudioReady } from '../lib/pre-chat-audio';
 import { primeLocationForChatEnter } from '../lib/live-tools';
 import { CharacterGrid, BackgroundGrid, LangChips } from './selectors';
 
@@ -22,10 +23,9 @@ export default function SetupFlow() {
     if (step < STEPS.length - 1) setStep(step + 1);
     else {
       primeChatStartGesture();
-      beginMicPreflightFromGesture();
       window.setTimeout(() => { try { primeLocationForChatEnter(); } catch { /* ignore */ } }, 120);
       savePrefs(prefs);
-      router.push('/chat');
+      router.push(hasChatAudioReady() ? '/chat' : '/gate/audio?next=/chat');
     }
   };
 

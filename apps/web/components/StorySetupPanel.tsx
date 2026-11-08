@@ -13,7 +13,8 @@ import {
 } from '../lib/prefs';
 import { STORY_SCENES, rollStory, type StoryScene } from '../lib/stories';
 import { saveStorySession } from '../lib/story-session';
-import { beginMicPreflightFromGesture, primeChatStartGesture } from '../lib/chat-start-gesture';
+import { primeChatStartGesture } from '../lib/chat-start-gesture';
+import { hasChatAudioReady } from '../lib/pre-chat-audio';
 import { primeLocationForChatEnter } from '../lib/live-tools';
 
 const LABEL: Record<
@@ -83,7 +84,6 @@ export default function StorySetupPanel() {
   const enter = () => {
     // t767/t777: ENTER STORY primes voice + location in this gesture.
     primeChatStartGesture();
-    beginMicPreflightFromGesture();
     primeLocationForChatEnter();
     saveStorySession({
       sceneId: scene.id,
@@ -98,7 +98,7 @@ export default function StorySetupPanel() {
       background: background.id,
       ...(character.gender === 'female' ? { lastFemale: character.id } : {}),
     });
-    router.push('/chat');
+    router.push(hasChatAudioReady() ? '/chat' : '/gate/audio?next=/chat');
   };
 
   const pickPack = (id: string) => {
