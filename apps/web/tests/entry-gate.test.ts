@@ -298,13 +298,14 @@ describe('entry gate — wiring', () => {
     }
   });
 
-  it('title START runs one-click setup then opens /select; /login redirects home', () => {
+  it('title START sends first-run users to /setup, then /select; /login redirects home', () => {
     const splash = read('app/page.tsx');
-    expect(splash).toContain('oneClickBootstrap');
     expect(splash).toContain('hasPassedEntryGate');
+    expect(splash).toContain("router.push('/setup')");
     expect(splash).toContain("router.push('/select')");
+    expect(splash).toContain('data-testid="splash-setup-link"');
     expect(splash).toContain('href="/setup"');
-    expect(splash).toContain('href="/gate"');
+    expect(splash).not.toContain('splash-gate-link');
     const login = read('app/login/page.tsx');
     expect(login).toContain("router.replace('/')");
   });

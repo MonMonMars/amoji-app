@@ -10,10 +10,10 @@ import { APP_NAME, APP_REVISION, APP_TAGLINE } from '../lib/revision';
 import { t, usePrefs } from '../lib/prefs';
 import { assetUrl } from '../lib/asset';
 import EarlyAudioUnlock from '../components/EarlyAudioUnlock';
-import { SetupLegalLinks, SetupOneAiNotice } from '../components/setup-one-shared';
-import { oneClickBootstrap } from '../lib/one-click-setup';
+import { SetupOneAiNotice } from '../components/setup-one-shared';
 import { hasPassedEntryGate } from '../lib/entry-gate';
 import { acceptCurrentLegal, hasAcceptedCurrentLegal } from '../lib/legal-accept';
+import { recordNavReturn } from '../lib/nav-return';
 
 const display = Cormorant_Garamond({
   subsets: ['latin'],
@@ -33,8 +33,11 @@ export default function Splash() {
     setBusy(true);
     try {
       if (!hasPassedEntryGate()) {
-        await oneClickBootstrap({ lang });
-      } else if (!hasAcceptedCurrentLegal()) {
+        recordNavReturn('/');
+        router.push('/setup');
+        return;
+      }
+      if (!hasAcceptedCurrentLegal()) {
         acceptCurrentLegal();
       }
       router.push('/select');
@@ -46,7 +49,7 @@ export default function Splash() {
   return (
     <main
       aria-labelledby="amoji-splash-title"
-      aria-describedby="amoji-splash-tagline amoji-splash-revision amoji-splash-legal"
+      aria-describedby="amoji-splash-tagline amoji-splash-revision"
       className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-[#0c0810] text-white"
     >
       <EarlyAudioUnlock />
@@ -92,35 +95,19 @@ export default function Splash() {
           {busy ? t(lang, 'gateAudioPlaying') : startLabel}
         </button>
 
-        <div
-          id="amoji-splash-legal"
-          className="mt-6 flex max-w-sm flex-col items-center gap-2 text-[11px] leading-relaxed text-rose-50/45"
-        >
-          <p className="font-medium text-rose-50/60">{t(lang, 'gate18Title')}</p>
+        <p className="mt-6 max-w-sm text-[11px] leading-relaxed text-rose-50/45">
           <SetupOneAiNotice lang={lang} className="text-[11px] leading-relaxed text-rose-50/50" />
-          <p>{t(lang, 'setupOneDisclaimer')}</p>
-          <SetupLegalLinks lang={lang} className="text-rose-100/70 underline underline-offset-2" />
-        </div>
+        </p>
 
-        <nav aria-label={t(lang, 'splashOpenSetup')} className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-rose-50/50">
-          <Link
-            href="/setup"
-            data-testid="splash-setup-link"
-            className="text-rose-100/65 underline underline-offset-2 hover:text-rose-50/80"
-          >
-            /setup
-          </Link>
-          <span aria-hidden className="text-white/20">
-            ·
-          </span>
-          <Link
-            href="/gate"
-            data-testid="splash-gate-link"
-            className="text-rose-100/65 underline underline-offset-2 hover:text-rose-50/80"
-          >
-            /gate
-          </Link>
-        </nav>
+        <Link
+          href="/setup"
+          data-testid="splash-setup-link"
+          aria-label={t(lang, 'splashOpenSetup')}
+          onClick={() => recordNavReturn('/')}
+          className="mt-5 text-sm font-medium text-rose-100/80 underline underline-offset-4 hover:text-rose-50"
+        >
+          {t(lang, 'splashOpenSetup')}
+        </Link>
       </div>
 
       <p

@@ -85,10 +85,10 @@ export default function CreditsPage() {
       </section>
 
       <nav className="flex flex-col gap-2 text-sm">
-        <Link href="/privacy" aria-label={t(lang, 'privacyTitle')} className="text-pink-200 underline-offset-4 hover:underline">
+        <Link href="/setup#setup-privacy-heading" aria-label={t(lang, 'privacyTitle')} className="text-pink-200 underline-offset-4 hover:underline">
           {t(lang, 'privacyTitle')}
         </Link>
-        <Link href="/terms" aria-label={t(lang, 'termsTitle')} className="text-pink-200 underline-offset-4 hover:underline">
+        <Link href="/setup#setup-terms-heading" aria-label={t(lang, 'termsTitle')} className="text-pink-200 underline-offset-4 hover:underline">
           {t(lang, 'termsTitle')}
         </Link>
         <Link href="/" aria-label={doc.back} className="mt-2 text-pink-200 underline-offset-4 hover:underline">{doc.back}</Link>

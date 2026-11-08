@@ -1,39 +1,17 @@
 'use client';
 /**
- * Shared first-run legal + safety copy for title, /setup, /gate, and EntryGate.
- * Setup scroll shows the full policy body; links below point at printable pages.
+ * Shared first-run legal + safety copy for title and the unified /setup scroll.
+ * All policy bodies live in SetupOneScrollBody — no separate legal mini-flow.
  */
-import Link from 'next/link';
 import type { LegalDoc } from '../lib/legal-copy';
-import { privacyDoc, privacySummary, termsDoc, termsSummary } from '../lib/legal-copy';
+import { privacyDoc, termsDoc } from '../lib/legal-copy';
+import { CRISIS_HELPLINES } from '../lib/crisis';
 import { LEGAL_ACCEPT_VERSION } from '../lib/legal-accept';
 import { t, type Lang } from '../lib/prefs';
 
-export function SetupLegalLinks({
-  lang,
-  className = 'text-pink-200/80 underline underline-offset-2',
-}: {
-  lang: Lang;
-  className?: string;
-}) {
-  const privacy = privacySummary(lang);
-  const terms = termsSummary(lang);
-  return (
-    <p className="text-xs leading-relaxed">
-      <Link href="/privacy" aria-label={privacy.title} className={className}>
-        /privacy
-      </Link>
-      {' · '}
-      <Link href="/terms" aria-label={terms.title} className={className}>
-        /terms
-      </Link>
-      {' · '}
-      <Link href="/safety" aria-label={t(lang, 'safetyTitle')} className={className}>
-        /safety
-      </Link>
-    </p>
-  );
-}
+/** Emergency numbers by the places Amoji is most used from. */
+const EMERGENCY =
+  'Hong Kong 999 · United States / Canada 911 · Japan 110 (police) · 119 (ambulance)';
 
 export function SetupOneAiNotice({ lang, className }: { lang: Lang; className?: string }) {
   return (
@@ -114,8 +92,40 @@ export function SetupOneScrollBody({ lang }: { lang: Lang }) {
         <h2 id="setup-safety-heading" className="text-base font-semibold text-white">
           {t(lang, 'safetyTitle')}
         </h2>
-        <p className="mt-2 font-medium text-white/75">{t(lang, 'safetyCrisisLine')}</p>
-        <p className="mt-2 text-white/70">{t(lang, 'safetyLead')}</p>
+        <p className="mt-2 rounded-xl border border-rose-400/25 bg-rose-500/10 px-3 py-2 font-medium text-rose-50/95">
+          {t(lang, 'safetyLead')}
+        </p>
+        <p className="mt-2 text-white/70">{t(lang, 'safetyCrisisLine')}</p>
+        <h3 id="setup-safety-helplines" className="mt-4 text-sm font-semibold text-white">
+          {t(lang, 'safetyHelplinesTitle')}
+        </h3>
+        <ul className="mt-2 space-y-2">
+          {CRISIS_HELPLINES.map((h) => (
+            <li
+              key={`${h.name}-${h.tel}`}
+              className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs"
+            >
+              <a
+                href={`tel:${h.tel.replace(/[^0-9+]/g, '')}`}
+                aria-label={`${h.name} ${h.tel}`}
+                className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-pink-200 underline-offset-4 hover:underline"
+              >
+                <span className="font-medium">{h.name}</span>
+                <span className="tabular-nums text-sm font-semibold text-white">{h.tel}</span>
+              </a>
+              <p className="mt-0.5 text-white/45">{h.where}</p>
+            </li>
+          ))}
+        </ul>
+        <h3 id="setup-safety-emergency" className="mt-4 text-sm font-semibold text-white">
+          {t(lang, 'safetyEmergencyTitle')}
+        </h3>
+        <p className="mt-1 text-white/70">{EMERGENCY}</p>
+        <h3 id="setup-safety-steps" className="mt-4 text-sm font-semibold text-white">
+          {t(lang, 'safetyStepsTitle')}
+        </h3>
+        <p className="mt-1 text-white/70">{t(lang, 'safetyStepsBody')}</p>
+        <p className="mt-3 text-xs text-white/50">{t(lang, 'safetyAboutAi')}</p>
       </section>
 
       <section aria-labelledby="setup-privacy-heading">
@@ -136,8 +146,6 @@ export function SetupOneScrollBody({ lang }: { lang: Lang }) {
       <p className="text-xs text-white/40">
         {t(lang, 'policyVersion')} {LEGAL_ACCEPT_VERSION}
       </p>
-      <p className="text-xs text-white/45">{t(lang, 'setupFullDocHint')}</p>
-      <SetupLegalLinks lang={lang} />
     </>
   );
 }

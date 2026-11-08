@@ -11,7 +11,7 @@ describe('title + select START type=button', () => {
     expect(src).toContain('type="button"');
     expect(src).toContain('data-testid="splash-start"');
     expect(src).toContain("router.push('/select')");
-    expect(src).toContain('oneClickBootstrap');
+    expect(src).toContain("router.push('/setup')");
   });
 
   it('QuickSetup fallback START is type=button', () => {

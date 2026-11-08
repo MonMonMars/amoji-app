@@ -28,8 +28,8 @@ describe('EarlyAudioUnlock (iPhone pre-chat gesture)', () => {
     expect(bootstrap).toContain('testVoiceChain');
     expect(bootstrap).toContain('acceptCurrentLegal');
     const splash = read('app/page.tsx');
-    expect(splash).toContain('oneClickBootstrap');
-    expect(splash).toContain("router.push('/select')");
+    expect(splash).toContain("router.push('/setup')");
+    expect(read('components/QuickSetup.tsx')).toContain('oneClickBootstrap');
   });
 
   it('selection-flow START primes voice + mic preflight in the same gesture', () => {

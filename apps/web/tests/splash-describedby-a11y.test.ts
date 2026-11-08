@@ -6,7 +6,7 @@ const src = readFileSync(join(__dirname, '../app/page.tsx'), 'utf8');
 
 describe('splash/home describedby residual a11y', () => {
   it('keeps tagline + revision describedby ids', () => {
-    expect(src).toContain('aria-describedby="amoji-splash-tagline amoji-splash-revision amoji-splash-legal"');
+    expect(src).toContain('aria-describedby="amoji-splash-tagline amoji-splash-revision"');
     expect(src).toContain('id="amoji-splash-tagline"');
     expect(src).toContain('id="amoji-splash-revision"');
   });

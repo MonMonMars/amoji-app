@@ -1476,7 +1476,7 @@ export default function ChatPanel({
           >
             <p className="text-xs font-semibold text-rose-50">{t(lang, 'safetyCrisisTitle')}</p>
             <Link
-              href="/safety"
+              href="/setup#setup-safety-heading"
               className="mt-1 inline-block text-xs text-pink-200 underline-offset-4 hover:underline"
             >
               {t(lang, 'safetyOpenPage')}
