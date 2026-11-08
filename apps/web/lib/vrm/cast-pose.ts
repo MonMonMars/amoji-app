@@ -12,6 +12,8 @@ import {
   needsShoulderLift,
   needsUpperBodyLevel,
 } from '../cast-adjust';
+import { boneEulerLimits, clampBoneQuaternionYXZ } from './bone-joint-limits';
+import { shortestQuatSlerp } from './quat-blend';
 
 const _e = new THREE.Euler();
 const _from = new THREE.Vector3();
@@ -20,6 +22,7 @@ const _q = new THREE.Quaternion();
 const _parentQ = new THREE.Quaternion();
 const _worldQ = new THREE.Quaternion();
 const _liftQ = new THREE.Quaternion();
+const _idQ = new THREE.Quaternion();
 
 export type LevelMode = 'head' | 'upper' | 'upright';
 
@@ -113,8 +116,7 @@ export function liftedClavicleLocal(shoulder: THREE.Object3D, upper: THREE.Objec
   const ang = quatAngle(_liftQ);
   const max = 0.42;
   if (ang > max) {
-    _q.identity();
-    _q.slerp(_liftQ, max / ang);
+    shortestQuatSlerp(_q, _idQ.identity(), _liftQ, max / ang);
     _liftQ.copy(_q);
   }
   shoulder.getWorldQuaternion(_worldQ);
@@ -180,6 +182,11 @@ function armHanging(upper: THREE.Object3D, lower: THREE.Object3D | null): boolea
   return _to.y < -0.2;
 }
 
+function clampCastBone(bone: THREE.Object3D): void {
+  const lim = boneEulerLimits(bone.name);
+  if (lim) clampBoneQuaternionYXZ(bone.quaternion, lim);
+}
+
 export function applyCastFix(state: CastFixState): void {
   for (const entry of state.levels) {
     const q = entry.bone.quaternion;
@@ -193,6 +200,7 @@ export function applyCastFix(state: CastFixState): void {
     } else {
       q.copy(levelQuaternion(q, entry.mode));
     }
+    clampCastBone(entry.bone);
   }
   for (const entry of state.shoulders) {
     const sticky = entry.shoulder.quaternion.equals(entry.lifted);
