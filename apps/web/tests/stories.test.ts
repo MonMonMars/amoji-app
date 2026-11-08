@@ -54,7 +54,7 @@ describe('mode + story entry (t741)', () => {
     expect(read('../app/story/page.tsx')).toContain('SoftLandSelect');
     expect(read('../app/story/page.tsx')).toContain('seedSelectMode="story"');
     const soft = read('../components/SoftLandSelect.tsx');
-    expect(soft).toContain("router.replace('/select')");
+    expect(soft).toContain('replaceSelect(router, selectReturnFrom)');
     expect(soft).toContain("sessionStorage.setItem('amoji.selectMode'");
     expect(soft).toContain('aria-busy');
   });

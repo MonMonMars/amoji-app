@@ -5,7 +5,7 @@
 // uses that same portrait card, shrunk so it is the smallest row. A last row
 // of small TTS buttons persists the Edge voice pin. START / Change writes
 // prefs, then /chat loads the chosen character. This page does not stream a model.
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import ArcFan from './ArcFan';
 import SceneBackdrop from './SceneBackdrop';
@@ -33,6 +33,7 @@ import {
 } from '../lib/prefs';
 import { selectionBadge, selectionCast, selectPortraitPosition } from '../lib/cast-adjust';
 import { clearStorySession } from '../lib/story-session';
+import { absorbSelectReturnFromSearch, resolveSelectReturnPath } from '../lib/select-return';
 
 export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   const router = useRouter();
@@ -50,6 +51,12 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   });
   const [castGender, setCastGender] = useState<CastGenderFilter>('all');
   const live: Prefs = mode === 'change' ? { ...prefs, ...draft } : prefs;
+
+  useEffect(() => {
+    if (mode !== 'start' || typeof window === 'undefined') return;
+    absorbSelectReturnFromSearch(window.location.search);
+  }, [mode]);
+
   // r2026-11-08 (ADULT ONLY): this board no longer filters the cast by the
   // kid-safe flag. The cast and every scene are always fully available; the
   // wholesome-only subset existed solely for Kid Mode, which is now
@@ -138,6 +145,17 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
       />
       <EarlyAudioWarm />
       <EarlyAudioUnlock />
+      {prefsReady && (
+        <button
+          type="button"
+          data-testid="select-back"
+          aria-label={t(lang, 'back')}
+          onClick={() => router.push(mode === 'change' ? '/chat' : resolveSelectReturnPath())}
+          className="ui-btn pointer-events-auto absolute left-3 top-3 z-40 rounded-full border border-white/15 bg-black/35 px-3.5 py-2 text-sm text-white/85 backdrop-blur-md safe-t"
+        >
+          ← {t(lang, 'back')}
+        </button>
+      )}
       {prefsReady && (
         <div data-testid="selection-hero" className="pointer-events-none absolute inset-0">
           <SceneBackdrop background={background} />

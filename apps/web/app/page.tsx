@@ -14,6 +14,7 @@ import { SetupOneAiNotice } from '../components/setup-one-shared';
 import { hasPassedEntryGate } from '../lib/entry-gate';
 import { acceptCurrentLegal, hasAcceptedCurrentLegal } from '../lib/legal-accept';
 import { recordNavReturn } from '../lib/nav-return';
+import { pushSelect } from '../lib/select-return';
 
 const display = Cormorant_Garamond({
   subsets: ['latin'],
@@ -40,7 +41,7 @@ export default function Splash() {
       if (!hasAcceptedCurrentLegal()) {
         acceptCurrentLegal();
       }
-      router.push('/select');
+      pushSelect(router, 'splash');
     } finally {
       setBusy(false);
     }

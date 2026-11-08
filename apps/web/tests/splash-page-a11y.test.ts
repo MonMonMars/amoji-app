@@ -15,7 +15,7 @@ describe('splash/home page a11y', () => {
     expect(src).toContain('data-testid="splash-start"');
     expect(src).toContain("t(lang, 'splashStart')");
     expect(src).toContain('hasPassedEntryGate');
-    expect(src).toContain("router.push('/select')");
+    expect(src).toContain("pushSelect(router, 'splash')");
     expect(src).not.toContain('setTimeout');
     expect(src).not.toContain('role="button"');
   });

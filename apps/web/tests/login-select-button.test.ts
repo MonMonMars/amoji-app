@@ -10,7 +10,7 @@ describe('title + select START type=button', () => {
     const src = read('app/page.tsx');
     expect(src).toContain('type="button"');
     expect(src).toContain('data-testid="splash-start"');
-    expect(src).toContain("router.push('/select')");
+    expect(src).toContain("pushSelect(router, 'splash')");
     expect(src).toContain("router.push('/setup')");
   });
 

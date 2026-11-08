@@ -10,7 +10,7 @@ describe('entry funnel prefs/profile boot flash', () => {
     expect(mode).toContain('SoftLandSelect');
     expect(mode).toContain('ModeRedirect');
     const soft = readFileSync(join(web, 'components/SoftLandSelect.tsx'), 'utf8');
-    expect(soft).toContain("router.replace('/select')");
+    expect(soft).toContain('replaceSelect(router, selectReturnFrom)');
     expect(soft).toContain('aria-busy');
     expect(soft).toContain('bg-neutral-950');
     const board = readFileSync(join(web, 'components/SelectionBoard.tsx'), 'utf8');

@@ -29,6 +29,7 @@ describe('EarlyAudioUnlock (iPhone pre-chat gesture)', () => {
     expect(bootstrap).toContain('acceptCurrentLegal');
     const splash = read('app/page.tsx');
     expect(splash).toContain("router.push('/setup')");
+    expect(splash).toContain("pushSelect(router, 'splash')");
     expect(read('components/QuickSetup.tsx')).toContain('oneClickBootstrap');
   });
 
