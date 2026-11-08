@@ -79,6 +79,7 @@ import { ChestBounce } from './chest-bounce';
 import { capEyeExpression } from './eyes';
 import { applyCastFix, captureCastFix, type CastFixState } from './cast-pose';
 import { needsFullUpright } from '../cast-adjust';
+import { shortestQuatSlerp } from './quat-blend';
 
 export type AvatarKind = 'v1' | 'generic';
 
@@ -739,13 +740,14 @@ function smoothClipFingers(
   for (const e of entries) {
     if (!fullIdle && !clipAnimatedBones.has(e.node.name)) continue;
     _fgTgt.copy(e.base).multiply(e.delta);
-    _fgBlend.copy(e.node.quaternion).slerp(_fgTgt, bend);
+    shortestQuatSlerp(_fgBlend, e.node.quaternion, _fgTgt, bend);
     let q = shown.get(e.node);
     if (!q) {
       q = _fgBlend.clone();
       shown.set(e.node, q);
     } else {
-      q.slerp(_fgBlend, a);
+      shortestQuatSlerp(_fgBlend, q, _fgBlend, a);
+      q.copy(_fgBlend);
     }
     e.node.quaternion.copy(q);
   }

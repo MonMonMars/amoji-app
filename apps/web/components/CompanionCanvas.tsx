@@ -28,8 +28,10 @@ import {
   IDLE_PIN_CROSSFADE_S,
   IDLE_SWAP_BLEND_BONES,
   IDLE_SWAP_LEG_BLEND_S,
+  idleCrossfadeAdditiveScale,
   idleSwapBlendActive,
 } from '../lib/idle-crossfade';
+import { shortestQuatSlerp, shortestQuatSlerpClamped } from '../lib/vrm/quat-blend';
 import { applyIdleClipSoftening } from '../lib/idle-stance-soften';
 import { chestPokeBounce, CHEST_BOUNCE_SEC, SOFT_CHEST_BOUNCE_SEC } from '../lib/vrm/chest-bounce';
 import { sampleSpeech } from '../lib/speech';
@@ -513,6 +515,7 @@ export default function CompanionCanvas({
 
     let avatar: Avatar | null = null;
     const blendNodes: THREE.Object3D[] = [];
+    const blendNames: string[] = [];
     const blendFrom: THREE.Quaternion[] = [];
     const blendQ = new THREE.Quaternion();
     let blendT0 = -1;
@@ -538,16 +541,19 @@ export default function CompanionCanvas({
       swapBlendActive = includeLegs;
       if (blendAvatar !== avatar) {
         blendNodes.length = 0;
+        blendNames.length = 0;
         blendFrom.length = 0;
         blendAvatar = avatar;
       }
       blendNodes.length = 0;
+      blendNames.length = 0;
       blendFrom.length = 0;
       for (const name of bones) {
         const n = avatar.getBoneNode(name);
         if (!n) continue;
         blendNodes.push(n);
-        blendFrom.push(n.quaternion.clone());
+        blendNames.push(name);
+        blendFrom.push(n.quaternion.clone().normalize());
       }
       blendT0 = performance.now();
       blendDur = seconds;
@@ -567,8 +573,8 @@ export default function CompanionCanvas({
       }
       const k = u * u * u * (u * (u * 6 - 15) + 10);
       for (let i = 0; i < blendNodes.length; i++) {
-        const tgt = blendNodes[i]!.quaternion.clone();
-        blendQ.copy(blendFrom[i]!).slerp(tgt, k);
+        const tgt = blendNodes[i]!.quaternion;
+        shortestQuatSlerpClamped(blendQ, blendFrom[i]!, tgt, k, blendNames[i]);
         blendNodes[i]!.quaternion.copy(blendQ);
       }
     };
@@ -1812,7 +1818,9 @@ export default function CompanionCanvas({
         // Poke and laugh stay on the upper body. The root never translates,
         // scales, or tips ??that used to slide and lift both feet.
         const pokeAge = now - pokeAt;
-        const boost = pokeAge < POKE_MS ? 1 - pokeAge / POKE_MS : 0;
+        const pokeRaw = pokeAge < POKE_MS ? 1 - pokeAge / POKE_MS : 0;
+        const pokeDamp = idleCrossfadeAdditiveScale(now, swapBlendUntil);
+        const boost = pokeRaw * pokeDamp;
         const laughAge = now - lastLaughAt();
         const laugh = laughAge >= 0 && laughAge < 1600 ? 1 - laughAge / 1600 : 0;
         let skSpine = 0, skChest = 0, skHeadX = 0, skHeadZ = 0;
@@ -2043,7 +2051,7 @@ export default function CompanionCanvas({
               sV1.copy(tgt).sub(sV3).normalize(); // want
               sV2.copy(sV4).sub(sV3).normalize();  // have
               sQ1.setFromUnitVectors(sV2, sV1);   // world delta
-              sQ2.identity().slerp(sQ1, k);        // scaled by influence
+              shortestQuatSlerp(sQ2, sQ3.identity(), sQ1, k); // scaled by influence
               if (bone.parent) {
                 bone.parent.getWorldQuaternion(sQ3);   // pW
                 sQ1.copy(sQ3).invert()                  // pW?鄞?
