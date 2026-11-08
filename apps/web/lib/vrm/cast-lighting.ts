@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { castLightingMultipliers } from './cast-lighting-profile';
 
 /**
  * ONE neutral daylight rig for every cast surface (chat, select preview,
@@ -25,27 +26,43 @@ export const CAST_AMBIENT_COLOR = '#ffffff';
 /** Whisper floor so broken toon shade never renders pure black. */
 export const CAST_AMBIENT_INTENSITY = 0.14;
 
-export function applyCastToneMapping(renderer: THREE.WebGLRenderer): void {
-  renderer.toneMapping = CAST_TONE_MAPPING;
-  renderer.toneMappingExposure = CAST_TONE_MAPPING_EXPOSURE;
-}
-
-/** Adds the shared hemi + key + fill + ambient. Returns handles for dispose. */
-export function addCastDaylight(scene: THREE.Scene): {
+export interface CastDaylightRig {
   hemi: THREE.HemisphereLight;
   key: THREE.DirectionalLight;
   fill: THREE.DirectionalLight;
   ambient: THREE.AmbientLight;
-} {
-  const hemi = new THREE.HemisphereLight(CAST_HEMI_SKY, CAST_HEMI_GROUND, CAST_HEMI_INTENSITY);
+}
+
+export function castToneMappingExposure(characterId?: string): number {
+  return CAST_TONE_MAPPING_EXPOSURE * castLightingMultipliers(characterId).exposure;
+}
+
+export function applyCastToneMapping(renderer: THREE.WebGLRenderer, characterId?: string): void {
+  renderer.toneMapping = CAST_TONE_MAPPING;
+  renderer.toneMappingExposure = castToneMappingExposure(characterId);
+}
+
+/** Apply roster-specific multipliers to an existing rig (thumb bake loop, shared thumb env). */
+export function retuneCastDaylightRig(rig: CastDaylightRig, characterId?: string): void {
+  const m = castLightingMultipliers(characterId);
+  rig.hemi.intensity = CAST_HEMI_INTENSITY * m.hemi;
+  rig.key.intensity = CAST_KEY_INTENSITY * m.key;
+  rig.fill.intensity = CAST_FILL_INTENSITY * m.fill;
+  rig.ambient.intensity = CAST_AMBIENT_INTENSITY * m.ambient;
+}
+
+/** Adds the shared hemi + key + fill + ambient. Returns handles for dispose / retune. */
+export function addCastDaylight(scene: THREE.Scene, characterId?: string): CastDaylightRig {
+  const m = castLightingMultipliers(characterId);
+  const hemi = new THREE.HemisphereLight(CAST_HEMI_SKY, CAST_HEMI_GROUND, CAST_HEMI_INTENSITY * m.hemi);
   scene.add(hemi);
-  const key = new THREE.DirectionalLight(CAST_KEY_COLOR, CAST_KEY_INTENSITY);
+  const key = new THREE.DirectionalLight(CAST_KEY_COLOR, CAST_KEY_INTENSITY * m.key);
   key.position.set(CAST_KEY_POSITION[0], CAST_KEY_POSITION[1], CAST_KEY_POSITION[2]);
   scene.add(key);
-  const fill = new THREE.DirectionalLight(CAST_FILL_COLOR, CAST_FILL_INTENSITY);
+  const fill = new THREE.DirectionalLight(CAST_FILL_COLOR, CAST_FILL_INTENSITY * m.fill);
   fill.position.set(CAST_FILL_POSITION[0], CAST_FILL_POSITION[1], CAST_FILL_POSITION[2]);
   scene.add(fill);
-  const ambient = new THREE.AmbientLight(CAST_AMBIENT_COLOR, CAST_AMBIENT_INTENSITY);
+  const ambient = new THREE.AmbientLight(CAST_AMBIENT_COLOR, CAST_AMBIENT_INTENSITY * m.ambient);
   scene.add(ambient);
   return { hemi, key, fill, ambient };
 }

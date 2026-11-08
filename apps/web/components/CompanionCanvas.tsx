@@ -37,7 +37,7 @@ import { chestPokeBounce, CHEST_BOUNCE_SEC, SOFT_CHEST_BOUNCE_SEC } from '../lib
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
 import { isEyeMaterial, stabilizeEyeMaterials } from '../lib/vrm/eyes';
-import { patchCastTextures, stabilizeCastEyes, unifyCastMToon } from '../lib/vrm/cast-materials';
+import { dampenCastMatcap, patchCastTextures, stabilizeCastEyes, unifyCastMToon } from '../lib/vrm/cast-materials';
 import { addCastDaylight, applyCastToneMapping } from '../lib/vrm/cast-lighting';
 import { placeStoryRoomBehind, sanitizeStoryRoomMaterials } from '../lib/vrm/story-room';
 import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
@@ -333,7 +333,7 @@ export default function CompanionCanvas({
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(host.clientWidth, host.clientHeight);
     // Shared cast daylight + ACES (see lib/vrm/cast-lighting.ts).
-    applyCastToneMapping(renderer);
+    applyCastToneMapping(renderer, seedKey);
     host.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
@@ -342,7 +342,7 @@ export default function CompanionCanvas({
     let cancelled = false;
     // ONE shared cast daylight rig (chat / preview / thumbs / bake).
     // Cool sky hemi + white key + cool fill + ambient floor - no per-model lights.
-    addCastDaylight(scene);
+    addCastDaylight(scene, seedKey);
 
     const camera = new THREE.PerspectiveCamera(35, host.clientWidth / host.clientHeight, 0.1, 20);
 
@@ -693,6 +693,7 @@ export default function CompanionCanvas({
       { id: 'Clapping', urls: [`${ANIM_MIRROR}/Clapping.vrma`] },
       { id: 'Idea', urls: [`${ANIM_MIRROR}/Idea.vrma`] },
       { id: 'Goodbye', urls: [`${ANIM_MIRROR}/Goodbye.vrma`] },
+      { id: 'HelloWave', urls: [`${ANIM_MIRROR}/HelloWave.vrma`] },
       { id: 'Blush', urls: [`${ANIM_MIRROR}/Blush.vrma`] },
       // Dance shortlist lib_C* — local VRMA when converted; interim Mixamo-class remotes for C03/C61/C62/C110.
       // Rokoko C112–C128 / C09 / C60 stay local-only until FBX→VRMA (see DEFERRED_DANCE_VRMA.md).
@@ -736,7 +737,7 @@ export default function CompanionCanvas({
       cheer: 'Cheer',
       clap: 'Clapping',
       idea: 'Idea',
-      goodbye: 'Goodbye',
+      goodbye: 'HelloWave',
       blush: 'Blush',
     };
     // r2026-10-04.59 (Master Simon): EVERY clip change is a blend, never a
@@ -1188,6 +1189,7 @@ export default function CompanionCanvas({
       if (seedKey) {
         a.armCastFixes(seedKey);
         unifyCastMToon(a.root, seedKey);
+        dampenCastMatcap(a.root, seedKey);
         patchCastTextures(a.root, seedKey);
         stabilizeCastEyes(a.root, seedKey);
       }

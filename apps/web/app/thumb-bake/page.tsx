@@ -24,7 +24,13 @@ import { CHARACTERS, loadPrefs, type Lang } from '../../lib/prefs';
 import { modelUrl } from '../../lib/asset';
 import { createV1Avatar, createGenericAvatar } from '../../lib/vrm/avatar';
 import type { Avatar } from '../../lib/vrm/avatar';
-import { addCastDaylight, applyCastToneMapping } from '../../lib/vrm/cast-lighting';
+import {
+  addCastDaylight,
+  applyCastToneMapping,
+  castToneMappingExposure,
+  retuneCastDaylightRig,
+} from '../../lib/vrm/cast-lighting';
+import { dampenCastMatcap } from '../../lib/vrm/cast-materials';
 
 declare global {
   interface Window {
@@ -180,7 +186,7 @@ export default function ThumbBakePage() {
       const scene = new THREE.Scene();
       scene.background = BG;
       // Shared cast daylight — bake matches live chat / select look.
-      addCastDaylight(scene);
+      const daylight = addCastDaylight(scene);
       const camera = new THREE.PerspectiveCamera(30, 1, 0.01, 20);
 
       const vrmLoader = new GLTFLoader();
@@ -200,6 +206,8 @@ export default function ThumbBakePage() {
         ? CHARACTERS.filter((c) => wanted.split(',').map((s) => s.trim()).includes(c.id))
         : CHARACTERS;
       for (const c of queue) {
+        retuneCastDaylightRig(daylight, c.id);
+        renderer.toneMappingExposure = castToneMappingExposure(c.id);
         const label = `#${c.id} ${c.name}`;
         const prog = (s: string) => {
           window.__bakeProgress = `${ok.length + fail.length + 1}/${queue.length} ${label}: ${s}`;
@@ -235,6 +243,7 @@ export default function ThumbBakePage() {
             });
           }
           root = avatar.root;
+          dampenCastMatcap(root, c.id);
           scene.add(root);
 
           if (vrm && idleAnim) {

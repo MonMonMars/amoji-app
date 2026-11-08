@@ -3,6 +3,7 @@
 
 import * as THREE from 'three';
 import { needsMToonUnify } from '../cast-adjust';
+import { needsCastMatcapDampen } from './cast-lighting-profile';
 import {
   addMissingEyeHighlight,
   fillEnclosedHoles,
@@ -49,6 +50,43 @@ export function unifyCastMToon(root: THREE.Object3D, characterId: string): numbe
       if (patch.shadingShiftFactor !== undefined) m.shadingShiftFactor = patch.shadingShiftFactor;
       m.needsUpdate = true;
       n += 1;
+    }
+  });
+  return n;
+}
+
+/** VRoid ref mats (#1–3): pull matcap/rim mix down so hair does not blow out under key 1.75. */
+export function dampenCastMatcap(root: THREE.Object3D, characterId: string): number {
+  if (!needsCastMatcapDampen(characterId)) return 0;
+  let n = 0;
+  const cap = (v: number, mul: number) => Math.min(v, v * mul);
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (!mesh.isMesh || !mesh.material) return;
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const mat of mats) {
+      const m = mat as THREE.Material & {
+        matcapFactor?: number;
+        rimLightingMixFactor?: number;
+        lightingMixFactor?: number;
+      };
+      let touched = false;
+      if (typeof m.matcapFactor === 'number' && m.matcapFactor > 0.01) {
+        m.matcapFactor = cap(m.matcapFactor, 0.42);
+        touched = true;
+      }
+      if (typeof m.rimLightingMixFactor === 'number' && m.rimLightingMixFactor > 0.15) {
+        m.rimLightingMixFactor = cap(m.rimLightingMixFactor, 0.55);
+        touched = true;
+      }
+      if (typeof m.lightingMixFactor === 'number' && m.lightingMixFactor > 0.85) {
+        m.lightingMixFactor = Math.min(m.lightingMixFactor, 0.82);
+        touched = true;
+      }
+      if (touched) {
+        m.needsUpdate = true;
+        n += 1;
+      }
     }
   });
   return n;

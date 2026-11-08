@@ -12,13 +12,22 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin } from '@pixiv/three-vrm';
 import type { VRM } from '@pixiv/three-vrm';
 import { APP_REVISION } from './revision';
-import { addCastDaylight, applyCastToneMapping } from './vrm/cast-lighting';
+import {
+  addCastDaylight,
+  applyCastToneMapping,
+  castToneMappingExposure,
+  retuneCastDaylightRig,
+  type CastDaylightRig,
+} from './vrm/cast-lighting';
+import { characterIdFromModelRef } from './vrm/cast-lighting-profile';
+import { dampenCastMatcap } from './vrm/cast-materials';
 
 interface ThumbEnv {
   renderer: THREE.WebGLRenderer;
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   loader: GLTFLoader;
+  daylight: CastDaylightRig;
 }
 
 let env: ThumbEnv | null | undefined; // undefined = unbuilt, null = unavailable
@@ -51,11 +60,11 @@ function getEnv(): ThumbEnv | null {
     applyCastToneMapping(renderer);
     const scene = new THREE.Scene();
     // Same daylight as CompanionCanvas so thumbs match chat / select.
-    addCastDaylight(scene);
+    const daylight = addCastDaylight(scene);
     const camera = new THREE.PerspectiveCamera(30, 1, 0.01, 20);
     const loader = new GLTFLoader();
     loader.register((parser) => new VRMLoaderPlugin(parser));
-    env = { renderer, scene, camera, loader };
+    env = { renderer, scene, camera, loader, daylight };
   } catch {
     env = null;
   }
@@ -126,13 +135,17 @@ export function requestModelThumb(url: string): Promise<string | null> {
   const task = async (): Promise<string | null> => {
     const e = getEnv();
     if (!e) return null;
-    const { renderer, scene, camera, loader } = e;
+    const { renderer, scene, camera, loader, daylight } = e;
+    const characterId = characterIdFromModelRef(url);
+    retuneCastDaylightRig(daylight, characterId);
+    renderer.toneMappingExposure = castToneMappingExposure(characterId);
     let root: THREE.Object3D | null = null;
     let vrm: VRM | undefined;
     try {
       const loaded = await withTimeout(loadModel(loader, url), 30_000, 'thumbnail load timed out');
       root = loaded.root;
       vrm = loaded.vrm;
+      if (characterId) dampenCastMatcap(root, characterId);
       scene.add(root);
       // frame the face exactly like ModelPreview does — head height from the
       // bounding box so every cast member fills the chip the same way
