@@ -723,11 +723,8 @@ export default function ChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // poke replies — the cheer line is spoken once, in her normal voice.
-  // A surprise-pitched "Haha!" lead (and the rising poke squeak) used to
-  // stack on that line and leave speechSynthesis at the wrong rate, so the
-  // next chat line sounded broken too. The face flinch still comes from the
-  // poke animation. Displayed text is the line itself.
+  // poke reactions — SFX + VRM motion only; lip hooks run off the reaction line
+  // but never land in persisted chat history or copy transcript.
   const lastPokeRef = useRef(pokeCount);
   const lastOfferAtRef = useRef(0);
   useEffect(() => {
@@ -742,7 +739,6 @@ export default function ChatPanel({
     const line = pokeSectionPlaceholderLine(key, lang);
     feedUtterance(line);
     notifySpeaking(line);
-    setHistory((h) => [...h, { role: 'assistant', content: line }]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pokeCount]);
 
