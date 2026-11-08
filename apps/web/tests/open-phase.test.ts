@@ -11,6 +11,8 @@ import {
   openCheerAlreadyDone,
   openIdleBriefAlreadyDone,
   shouldPlayOpenCheer,
+  OPEN_IDLE_BRIEF_MS,
+  openPhaseGreetingLine,
   openPhaseNewsAsk,
   openPhaseWeatherAsk,
   saveOpenPhaseState,
@@ -76,6 +78,21 @@ describe('open idle brief flags', () => {
     markChatRoomClosed(60_000_000);
     expect(loadOpenPhaseState().lastClosedAt).toBe(60_000_000);
     expect(store.get(OPEN_PHASE_KEY)).toContain('lastClosedAt');
+  });
+});
+
+describe('open phase greeting (no auto weather on enter)', () => {
+  it('disables legacy idle brief constant', () => {
+    expect(OPEN_IDLE_BRIEF_MS).toBe(0);
+  });
+
+  it('greeting lines use companion name and stay offline', () => {
+    for (const lang of ['en', 'yue', 'zh', 'ja'] as const) {
+      const line = openPhaseGreetingLine(lang, 'Nova', 0);
+      expect(line).toContain('Nova');
+      expect(line.length).toBeGreaterThan(8);
+      expect(line.toLowerCase()).not.toMatch(/\bweather\b|天氣|天气|ニュース|news/);
+    }
   });
 });
 

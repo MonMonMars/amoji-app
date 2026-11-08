@@ -163,7 +163,7 @@ import { clientLiveContext, isLiveFactsOnlyTurn, planTools } from '../lib/live-t
 import { withQuestion } from '../lib/follow-up';
 import {
   OPEN_CHEER_MS,
-  OPEN_IDLE_BRIEF_MS,
+  OPEN_IDLE_GREET_MS,
   isFreshOpenPhase,
   markChatRoomClosed,
   markChatRoomOpened,
@@ -172,6 +172,7 @@ import {
   markOpenCheerDone,
   openCheerAlreadyDone,
   shouldPlayOpenCheer,
+  openPhaseGreetingLine,
   openPhaseNewsAsk,
   openPhaseWeatherAsk,
   summarizeOpenPhaseSpoken,
@@ -200,6 +201,7 @@ import {
 import { listenContinuous, listenSupported } from '../lib/listen';
 import { getEntryGateRecord, micPreflightGrantedThisSession } from '../lib/entry-gate';
 import {
+  bindVoiceChatFocusLifecycle,
   duckExternalAudioForCompanion,
   enterVoiceChatAudioSession,
   leaveVoiceChatAudioSession,
@@ -329,6 +331,7 @@ export default function ChatPanel({
   // r126 — warm the free lane while she's still saying hello: DNS+TLS and a
   // live connection are ready before the first real message is typed/spoken
   useEffect(() => { warmLane(); }, []);
+  useEffect(() => bindVoiceChatFocusLifecycle(), []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const nearBottomRef = useRef(true);
   const busyRef = useRef(false);
@@ -664,31 +667,19 @@ export default function ChatPanel({
       markOpenCheerDone(Date.now(), characterId);
       sayLocal(openLine, openHints);
     }, OPEN_CHEER_MS);
-    const skipBrief =
-      OPEN_IDLE_BRIEF_MS <= 0 ||
+    const skipGreet =
+      OPEN_IDLE_GREET_MS <= 0 ||
       userHasSpokenRef.current ||
       openIdleBriefAlreadyDone(characterId);
-    const t3 = skipBrief
+    const t3 = skipGreet
       ? null
       : setTimeout(() => {
-          if (userHasSpokenRef.current || openIdleBriefDoneRef.current) return;
-          void (async () => {
-            if (userHasSpokenRef.current || busyRef.current) return;
-            try {
-              const weather = await clientLiveContext(openPhaseWeatherAsk(lang), lang, undefined, { brief: true });
-              if (userHasSpokenRef.current) return;
-              const news = await clientLiveContext(openPhaseNewsAsk(lang), lang, undefined, { brief: true });
-              if (userHasSpokenRef.current) return;
-              const line = summarizeOpenPhaseSpoken(weather.spoken, news.spoken);
-              if (!line) return;
-              openIdleBriefDoneRef.current = true;
-              markOpenIdleBriefDone(Date.now(), characterId);
-              sayLocal(line, { joy: 0.55 });
-            } catch {
-              /* live brief is best-effort */
-            }
-          })();
-        }, OPEN_IDLE_BRIEF_MS);
+          if (userHasSpokenRef.current || openIdleBriefDoneRef.current || busyRef.current) return;
+          const line = openPhaseGreetingLine(lang, characterName, 0);
+          openIdleBriefDoneRef.current = true;
+          markOpenIdleBriefDone(Date.now(), characterId);
+          sayLocal(line, { joy: 0.52 });
+        }, OPEN_IDLE_GREET_MS);
     return () => {
       clearTimeout(t1);
       if (t3) clearTimeout(t3);
