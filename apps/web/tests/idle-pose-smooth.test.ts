@@ -49,4 +49,25 @@ describe('idle pose smooth + catalog trim', () => {
     const playableCount = playableIdles().length;
     expect(playableCount).toBeGreaterThan(80);
   });
+
+  it('Pixel #94–118: retired 96–100, 105–107 off rotation; keeps still registered', () => {
+    const retiredBatch = [96, 97, 98, 99, 100, 105, 106, 107];
+    for (const n of retiredBatch) {
+      expect(RETIRED_IDLE_NUMS.has(n)).toBe(true);
+      expect(IDLE_CLIP_OPTIONS.some((o) => o.num === n)).toBe(false);
+      expect(playableIdles().some((e) => e.num === n)).toBe(false);
+    }
+    expect(resolveIdleClipId('lib_C60')).toBe('IdleBreathCalm');
+    expect(resolveIdleClipId('lib_C124')).toBe('IdleBreathCalm');
+
+    const keepNums = [
+      94, 95, 101, 102, 103, 104, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118,
+    ];
+    for (const n of keepNums) {
+      const e = idleByNum(n);
+      expect(e?.retired).not.toBe(true);
+      expect(e?.playable).toBe(true);
+      expect(IDLE_CLIP_OPTIONS.some((o) => o.num === n)).toBe(true);
+    }
+  });
 });
