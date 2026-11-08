@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Amoji — Project Status Board</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #1a2420;
+      --muted: #5a6b62;
+      --paper: #f3eee4;
+      --panel: #fffaf2;
+      --line: #d5cdb8;
+      --done: #2f7a55;
+      --done-bg: #d8efe3;
+      --pr: #b06a14;
+      --pr-bg: #f7e6c8;
+      --out: #8a3b3b;
+      --out-bg: #f3d9d6;
+      --blocked: #4a5560;
+      --blocked-bg: #e2e6ea;
+      --accent: #0e6b5c;
+      --accent-deep: #084c42;
+      --chart-done: #2f7a55;
+      --chart-pr: #c4872a;
+      --chart-out: #a24d4d;
+      --shadow: 0 18px 40px rgba(26, 36, 32, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Source Sans 3", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #d9efe6 0%, transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, #f0dfb8 0%, transparent 45%),
+        linear-gradient(180deg, #efe7d6 0%, var(--paper) 40%, #ebe4d5 100%);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 2.5rem 0 4rem;
+    }
+
+    header.hero {
+      display: grid;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      padding: 1.75rem 1.75rem 1.5rem;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(135deg, rgba(14, 107, 92, 0.12), transparent 42%),
+        var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    h1 {
+      margin: 0;
+      font-family: Fraunces, Georgia, serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--accent-deep);
+    }
+
+    .lede {
+      margin: 0;
+      max-width: 48rem;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.55;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem 1rem;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .meta a { color: var(--accent-deep); }
+
+    .grid-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 1rem 1.1rem;
+      box-shadow: var(--shadow);
+    }
+
+    .stat .n {
+      font-family: Fraunces, Georgia, serif;
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .stat .l {
+      margin-top: 0.35rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .stat.done .n { color: var(--done); }
+    .stat.pr .n { color: var(--pr); }
+    .stat.out .n { color: var(--out); }
+    .stat.docs .n { color: var(--accent); }
+
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      padding: 1.35rem 1.4rem 1.5rem;
+      margin-bottom: 1.15rem;
+    }
+
+    h2 {
+      margin: 0 0 0.85rem;
+      font-family: Fraunces, Georgia, serif;
+      font-size: 1.45rem;
+      color: var(--accent-deep);
+    }
+
+    h3 {
+      margin: 1.25rem 0 0.55rem;
+      font-size: 1.02rem;
+      color: var(--ink);
+    }
+
+    p.note {
+      margin: 0 0 1rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .charts {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 1.25rem;
+      align-items: start;
+    }
+
+    .bar-block { margin-bottom: 1rem; }
+    .bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.92rem;
+      margin-bottom: 0.35rem;
+    }
+    .track {
+      height: 14px;
+      background: #e8e0d0;
+      overflow: hidden;
+      display: flex;
+    }
+    .seg-done { background: var(--chart-done); }
+    .seg-pr { background: var(--chart-pr); }
+    .seg-out { background: var(--chart-out); }
+
+    .cat-bars .row {
+      display: grid;
+      grid-template-columns: 7.5rem 1fr 3rem;
+      gap: 0.55rem;
+      align-items: center;
+      margin-bottom: 0.55rem;
+      font-size: 0.9rem;
+    }
+    .mini-track {
+      height: 10px;
+      background: #e8e0d0;
+      overflow: hidden;
+    }
+    .mini-fill { height: 100%; background: linear-gradient(90deg, var(--chart-done), #4ea57a); }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.1rem;
+      margin: 0.75rem 0 0;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+    .swatch {
+      display: inline-block;
+      width: 0.75rem;
+      height: 0.75rem;
+      margin-right: 0.35rem;
+      vertical-align: -1px;
+    }
+    .swatch.done { background: var(--chart-done); }
+    .swatch.pr { background: var(--chart-pr); }
+    .swatch.out { background: var(--chart-out); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.94rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.55rem 0.45rem;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    th {
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    tr:last-child td { border-bottom: 0; }
+    a { color: var(--accent-deep); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+    a:hover { color: var(--accent); }
+
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .badge.done { background: var(--done-bg); color: var(--done); }
+    .badge.pr { background: var(--pr-bg); color: var(--pr); }
+    .badge.out { background: var(--out-bg); color: var(--out); }
+    .badge.blocked { background: var(--blocked-bg); color: var(--blocked); }
+    .badge.missing { background: var(--out-bg); color: var(--out); }
+    .badge.update { background: var(--pr-bg); color: var(--pr); }
+    .badge.complete { background: var(--done-bg); color: var(--done); }
+
+    .stack-list {
+      margin: 0;
+      padding-left: 1.15rem;
+      color: var(--ink);
+      line-height: 1.55;
+    }
+    .stack-list li { margin-bottom: 0.35rem; }
+
+    footer {
+      margin-top: 1.5rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 860px) {
+      .grid-stats { grid-template-columns: repeat(2, 1fr); }
+      .charts { grid-template-columns: 1fr; }
+      .cat-bars .row { grid-template-columns: 6rem 1fr 2.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="eyebrow">Amoji · Project Status</div>
+      <h1>Done vs outstanding board</h1>
+      <p class="lede">
+        Visual snapshot of merged work, open CI-ready PRs, remaining product gaps,
+        and documentation still needed. Built for Pixel / design review — open this
+        file in a browser.
+      </p>
+      <div class="meta">
+        <span>Generated: <strong>2026-11-09 03:15 HKT</strong> (Asia/Hong_Kong)</span>
+        <span>Repo: <a href="https://github.com/MonMonMars/amoji-app">MonMonMars/amoji-app</a></span>
+        <span>Live: <a href="https://monmonmars.github.io/amoji-app/setup">github.io/amoji-app</a></span>
+        <span>Companion: <a href="./PROJECT_STATUS.md">PROJECT_STATUS.md</a></span>
+      </div>
+    </header>
+
+    <div class="grid-stats">
+      <div class="stat done">
+        <div class="n" id="n-done">18</div>
+        <div class="l">Merged / shipped on main</div>
+      </div>
+      <div class="stat pr">
+        <div class="n" id="n-pr">20</div>
+        <div class="l">In PR (awaiting merge)</div>
+      </div>
+      <div class="stat out">
+        <div class="n" id="n-out">7</div>
+        <div class="l">Outstanding / blocked</div>
+      </div>
+      <div class="stat docs">
+        <div class="n" id="n-docs">6</div>
+        <div class="l">Docs missing or needed</div>
+      </div>
+    </div>
+
+    <section>
+      <h2>Progress charts</h2>
+      <p class="note">
+        Feature-area items from the recent Pixel stack (chat UX, audio, VRM, privacy, setup, docs).
+        “In PR” means code exists on a branch with an open pull request; not yet on <code>main</code>.
+      </p>
+      <div class="charts">
+        <div>
+          <div class="bar-block">
+            <div class="bar-label">
+              <span>Overall feature stack</span>
+              <span><strong>40%</strong> merged · <strong>44%</strong> in PR · <strong>16%</strong> outstanding</span>
+            </div>
+            <div class="track" aria-label="Overall progress">
+              <div class="seg-done" style="width:40%"></div>
+              <div class="seg-pr" style="width:44%"></div>
+              <div class="seg-out" style="width:16%"></div>
+            </div>
+          </div>
+          <div class="legend">
+            <span><i class="swatch done"></i>Merged / Done</span>
+            <span><i class="swatch pr"></i>In PR</span>
+            <span><i class="swatch out"></i>Outstanding</span>
+          </div>
+          <h3>Recommended merge stack (CI green → merge order)</h3>
+          <ol class="stack-list">
+            <li><a href="https://github.com/MonMonMars/amoji-app/pull/285">#285</a> one-page setup / legal scroll / single START</li>
+            <li><a href="https://github.com/MonMonMars/amoji-app/pull/292">#292</a> pre-chat audio gate <code>/gate/audio</code></li>
+            <li><a href="https://github.com/MonMonMars/amoji-app/pull/291">#291</a> selectable chat history</li>
+            <li><a href="https://github.com/MonMonMars/amoji-app/pull/301">#301</a> reply quality + privacy (before #302)</li>
+            <li><a href="https://github.com/MonMonMars/amoji-app/pull/302">#302</a> chat entry 7-step flow</li>
+          </ol>
+        </div>
+        <div class="cat-bars" aria-label="Progress by category">
+          <div class="row"><span>Chat UX</span><div class="mini-track"><div class="mini-fill" style="width:25%"></div></div><span>25%</span></div>
+          <div class="row"><span>Audio / TTS</span><div class="mini-track"><div class="mini-fill" style="width:33%"></div></div><span>33%</span></div>
+          <div class="row"><span>VRM / Idle</span><div class="mini-track"><div class="mini-fill" style="width:40%"></div></div><span>40%</span></div>
+          <div class="row"><span>Privacy</span><div class="mini-track"><div class="mini-fill" style="width:50%"></div></div><span>50%</span></div>
+          <div class="row"><span>Setup / Gate</span><div class="mini-track"><div class="mini-fill" style="width:50%"></div></div><span>50%</span></div>
+          <div class="row"><span>Docs</span><div class="mini-track"><div class="mini-fill" style="width:45%"></div></div><span>45%</span></div>
+          <div class="row"><span>Merge to main</span><div class="mini-track"><div class="mini-fill" style="width:10%"></div></div><span>10%</span></div>
+          <p class="note" style="margin-top:0.75rem">Category % = merged items ÷ (merged + in-PR + outstanding) in that category. Most recent Pixel polish is still sitting in open PRs.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Feature status table</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Area</th>
+            <th>Item</th>
+            <th>Status</th>
+            <th>PR / note</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Setup</td>
+            <td>Setup full legal scroll + scroll-to-enable START</td>
+            <td><span class="badge done">Done</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/282">#282</a> merged</td>
+          </tr>
+          <tr>
+            <td>Setup</td>
+            <td>One-page setup / single START CTA</td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/285">#285</a></td>
+          </tr>
+          <tr>
+            <td>Setup</td>
+            <td>Select page context-aware back button</td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/283">#283</a></td>
+          </tr>
+          <tr>
+            <td>Setup</td>
+            <td>Back buttons on setup / terms (gal-game entry)</td>
+            <td><span class="badge done">Done</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/266">#266</a> merged</td>
+          </tr>
+          <tr>
+            <td>Audio</td>
+            <td>Pre-chat audio gate <code>/gate/audio</code></td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/292">#292</a></td>
+          </tr>
+          <tr>
+            <td>Audio</td>
+            <td>TTS clause pauses on every tier</td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/289">#289</a></td>
+          </tr>
+          <tr>
+            <td>Audio</td>
+            <td>Weather / news TTS routing</td>
+            <td><span class="badge done">Done</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/280">#280</a> merged</td>
+          </tr>
+          <tr>
+            <td>Audio</td>
+            <td>Stable volume on tab focus / master cap</td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/295">#295</a></td>
+          </tr>
+          <tr>
+            <td>Audio</td>
+            <td>Singing mic position + new karaoke songs</td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/286">#286</a></td>
+          </tr>
+          <tr>
+            <td>Audio</td>
+            <td>Music streaming / embed playlist stub</td>
+            <td><span class="badge out">Outstanding</span></td>
+            <td>No <code>resolveStreamPlaylist</code> in tree yet — procedural WebAudio only</td>
+          </tr>
+          <tr>
+            <td>Chat UX</td>
+            <td>Selectable / copyable chat history</td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/291">#291</a></td>
+          </tr>
+          <tr>
+            <td>Chat UX</td>
+            <td>Reply quality sanity gate + strict retry</td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/301">#301</a> (before #302)</td>
+          </tr>
+          <tr>
+            <td>Chat UX</td>
+            <td>Chat entry 7-step flow (intro / topic menu)</td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/302">#302</a></td>
+          </tr>
+          <tr>
+            <td>Chat UX</td>
+            <td>Open greeting — no auto weather on enter</td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/293">#293</a> (+ #302)</td>
+          </tr>
+          <tr>
+            <td>Chat UX</td>
+            <td>Long story-mode replies</td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/290">#290</a></td>
+          </tr>
+          <tr>
+            <td>Chat UX</td>
+            <td>Scene lines vs LLM backdrop nonsense</td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/288">#288</a></td>
+          </tr>
+          <tr>
+            <td>Chat UX</td>
+            <td>Hide poke reactions from chat history</td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/297">#297</a></td>
+          </tr>
+          <tr>
+            <td>Privacy</td>
+            <td>No proactive / unsolicited memory recall</td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/296">#296</a> (earlier #275 merged)</td>
+          </tr>
+          <tr>
+            <td>VRM / Idle</td>
+            <td>Per-character lighting allowlist (#1–3, #13)</td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/299">#299</a></td>
+          </tr>
+          <tr>
+            <td>VRM / Idle</td>
+            <td>Mood talking-ball colors</td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/300">#300</a></td>
+          </tr>
+          <tr>
+            <td>VRM / Idle</td>
+            <td>Soft idle arms / elbow floor</td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/294">#294</a></td>
+          </tr>
+          <tr>
+            <td>VRM / Idle</td>
+            <td>HelloWave for goodbye only (not idle)</td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/298">#298</a></td>
+          </tr>
+          <tr>
+            <td>VRM / Idle</td>
+            <td>Dance only on request / content-driven auto-idle</td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/287">#287</a> (base #278 merged)</td>
+          </tr>
+          <tr>
+            <td>VRM / Idle</td>
+            <td>Pose ROM limits + short-path blends</td>
+            <td><span class="badge done">Done</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/281">#281</a> merged</td>
+          </tr>
+          <tr>
+            <td>i18n</td>
+            <td>Hardcoded aria / attr localization</td>
+            <td><span class="badge done">Done</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/276">#276</a> (+ #238) merged</td>
+          </tr>
+          <tr>
+            <td>Docs</td>
+            <td>Strategy kept off public repo</td>
+            <td><span class="badge done">Done</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/274">#274</a> — policy in <code>docs/README.md</code></td>
+          </tr>
+          <tr>
+            <td>Merge</td>
+            <td>Merge recommended stack into <code>main</code></td>
+            <td><span class="badge blocked">Blocked</span></td>
+            <td>Awaiting human merge sequence</td>
+          </tr>
+          <tr>
+            <td>Verify</td>
+            <td>Post-merge live check on Pages setup</td>
+            <td><span class="badge out">Outstanding</span></td>
+            <td><a href="https://monmonmars.github.io/amoji-app/setup">live /setup</a> after merges</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Open pull requests snapshot</h2>
+      <p class="note">
+        GitHub reported <strong>31 open PRs</strong> at generation time. Priority Pixel stack below;
+        older spikes (#1 voice bake-off, #20 CosyVoice, a11y leftovers, LLM host race, etc.) remain open separately.
+      </p>
+      <h3>Polish PRs</h3>
+      <ul class="stack-list">
+        <li><a href="https://github.com/MonMonMars/amoji-app/pull/297">#297</a> hide poke from history</li>
+        <li><a href="https://github.com/MonMonMars/amoji-app/pull/298">#298</a> HelloWave for bye only</li>
+        <li><a href="https://github.com/MonMonMars/amoji-app/pull/299">#299</a> VRM lighting #1–3 &amp; #13</li>
+        <li><a href="https://github.com/MonMonMars/amoji-app/pull/300">#300</a> mood talking ball</li>
+        <li><a href="https://github.com/MonMonMars/amoji-app/pull/283">#283</a> select back button</li>
+      </ul>
+      <h3>Also open (recent feature branches)</h3>
+      <ul class="stack-list">
+        <li>#286 singing · #287 auto-idle · #288 bg phrases · #289 TTS pauses · #290 story replies</li>
+        <li>#293 open greet · #294 soft idle · #295 volume · #296 memory privacy</li>
+        <li>Older: #250–#257 (cast legs, OS voices, BYOK UI, safety disclosure, …), #1, #20, #154, #240</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Documents audit</h2>
+      <p class="note">Existing repo docs vs gaps still needed for contributors and Pixel handoff.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Document</th>
+            <th>Path</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Docs index / strategy policy</td>
+            <td><code>docs/README.md</code></td>
+            <td><span class="badge complete">Complete</span></td>
+          </tr>
+          <tr>
+            <td>Asset / license pipeline</td>
+            <td><code>docs/ASSETS.md</code></td>
+            <td><span class="badge complete">Complete</span></td>
+          </tr>
+          <tr>
+            <td>Model shortlist</td>
+            <td><code>docs/MODELS.md</code></td>
+            <td><span class="badge complete">Complete</span></td>
+          </tr>
+          <tr>
+            <td>Robot face integration</td>
+            <td><code>docs/ROBOT-FACE.md</code></td>
+            <td><span class="badge complete">Complete</span></td>
+          </tr>
+          <tr>
+            <td>Job / voice checklist</td>
+            <td><code>AMOJI_JOB_CHECKLIST.md</code></td>
+            <td><span class="badge update">Needs update</span> — still describes older selection/LLM state</td>
+          </tr>
+          <tr>
+            <td>Idle Pixel review / catalog notes</td>
+            <td><code>apps/web/docs/*</code></td>
+            <td><span class="badge complete">Complete</span></td>
+          </tr>
+          <tr>
+            <td>Package / tool READMEs</td>
+            <td><code>packages/*</code>, <code>tools/*</code></td>
+            <td><span class="badge complete">Complete</span></td>
+          </tr>
+          <tr>
+            <td>Public strategy / monetization</td>
+            <td><em>intentionally off-repo</em></td>
+            <td><span class="badge complete">Complete</span> (policy: keep private)</td>
+          </tr>
+          <tr>
+            <td>User-facing privacy / memory policy</td>
+            <td>—</td>
+            <td><span class="badge missing">Missing</span></td>
+          </tr>
+          <tr>
+            <td>Chat entry flow / conversation UX spec</td>
+            <td>—</td>
+            <td><span class="badge missing">Missing</span></td>
+          </tr>
+          <tr>
+            <td>Voice / TTS pipeline notes (end-to-end)</td>
+            <td>partial in checklist + #277 headers</td>
+            <td><span class="badge missing">Missing</span> dedicated doc</td>
+          </tr>
+          <tr>
+            <td>Cast lighting profile notes</td>
+            <td>—</td>
+            <td><span class="badge missing">Missing</span> (pairs with #299)</td>
+          </tr>
+          <tr>
+            <td>Setup / onboarding flow diagram</td>
+            <td>—</td>
+            <td><span class="badge missing">Missing</span></td>
+          </tr>
+          <tr>
+            <td>Contributor merge checklist</td>
+            <td>—</td>
+            <td><span class="badge missing">Missing</span></td>
+          </tr>
+          <tr>
+            <td>This status board</td>
+            <td><code>docs/project-status.html</code> + <code>docs/PROJECT_STATUS.md</code></td>
+            <td><span class="badge complete">Complete</span> (this PR)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer>
+      Counts at generation: <strong>18</strong> representative Done items on main ·
+      <strong>20</strong> priority items In PR · <strong>7</strong> Outstanding/Blocked ·
+      <strong>6</strong> docs Missing · <strong>1</strong> docs Needs update ·
+      <strong>31</strong> total open GitHub PRs.<br />
+      Do not treat In PR as shipped until merged to <code>main</code> and verified on Pages.
+    </footer>
+  </div>
+</body>
+</html>
