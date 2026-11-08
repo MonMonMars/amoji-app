@@ -1,9 +1,10 @@
 'use client';
 import { pinDefaultOutput, pinDefaultOutputAsync } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
-// Not on the free wire-now chain (Edge → speechSynthesis). Kept as an
-// optional unofficial Translate MP3 client. Paid Google Cloud TTS is a
-// different product and is not called from here.
+// First hop on the free wire-now chain (gtts → synth → edge; tts-chain.ts).
+// Unofficial Google Translate MP3 client over plain HTTPS. Edge read-aloud is
+// dead-by-default in voice-capability, so this tier runs before synth. Paid Google
+// Cloud TTS is a different product and is not called from here.
 // r2026-10-04.89 — mid-tier insurance voice path.
 // Why it exists: Simon's iPhone hears NOTHING from either previous path.
 // (a) the Edge neural socket is frequently blocked on mobile networks, and

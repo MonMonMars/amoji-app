@@ -1,14 +1,15 @@
 'use client';
 import { getPlaybackVolume } from './playback-volume';
-// Emotional voice — ChatGPT-style prosody. Primary path: FREE neural voices via
-// the edge-tts.ts endpoint — Cantonese 曉曼/雲龍 etc., with SSML pitch/rate/volume
-// per emotion. Fallback path: the browser's own speechSynthesis with matched
-// platform voices. Zero cost, zero API key.
-// Wire-now order: Edge (locale + gender) → speechSynthesis on every device.
-// Yue stays on Edge zh-HK, then Web Speech, then canto-tts-nano only when
-// that runtime is bundled (it is not, so the hop is skipped). gtts.ts is not
-// a hop. Google Cloud, Azure, and Polly are not called. OpenAI speech runs
-// only when the user has saved a key.
+// Emotional voice — ChatGPT-style prosody. Wire-now free chain (tts-chain.ts):
+// gtts → synth → edge — Google Translate MP3 first (plain HTTPS; survives blocked
+// sockets and the iOS silent switch), then speechSynthesis with matched platform
+// voices, then Edge neural last (SSML pitch/rate/volume per emotion when it works).
+// voice-capability marks Edge dead-by-default (read-aloud 403s with the published
+// client token); it stays on the chain only as a rare upside. Handoff target
+// architecture (not wired): edge-relay → synth → gtts — full spec is off-repo.
+// Yue may add canto-tts-nano when that runtime is bundled (it is not, so skipped).
+// Google Cloud, Azure, and Polly are not called. OpenAI speech runs only when the
+// user has saved a key.
 // r2026-10-04.64: emotional range widened — every NEURAL_PROSODY mood now swings
 // further (sadder sinks slower/softer, joy rings brighter/quicker, anger bites
 // harder) and any felt emotion also widens the per-clause contour ×1.12, so her
@@ -2369,7 +2370,7 @@ function probeSynth(text: string, characterId: string, lang: Lang): Promise<bool
 }
 
 /**
- * Settings self-test. Walks the free chain (Edge → speechSynthesis, then
+ * Settings self-test. Walks the free chain (gtts → synth → edge, then
  * canto-tts-nano for Yue when that runtime is bundled) and returns every
  * tier it actually tried. Stops at the first tier that speaks.
  */
