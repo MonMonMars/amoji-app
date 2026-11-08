@@ -2,7 +2,7 @@
 /**
  * First-run legal click-to-accept gate.
  * Blocks the app until Privacy + Terms are accepted for LEGAL_ACCEPT_VERSION.
- * Copy is plain and specific — see lib/legal-copy.ts for the recipients named.
+ * Accept stays locked until the reader scrolls the warning copy to the end.
  */
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -16,6 +16,7 @@ import {
 import { privacySummary, termsSummary } from '../lib/legal-copy';
 import { usePrefs, t, type Lang } from '../lib/prefs';
 import { useFocusTrap } from '../lib/use-focus-trap';
+import { useScrollReachedEnd } from '../lib/scroll-unlock';
 
 // /safety belongs here too: the gate itself points at it, so it must be
 // readable without first accepting the terms. /credits is here for the same
@@ -52,6 +53,8 @@ export default function LegalGate() {
   const [accepted, setAccepted] = useState(true);
 
   const acceptRef = useRef<HTMLButtonElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const readToEnd = useScrollReachedEnd(scrollRef, ready && !accepted);
 
   useEffect(() => {
     const sync = () => setAccepted(hasAcceptedCurrentLegal());
@@ -60,10 +63,10 @@ export default function LegalGate() {
     return subscribeLegalAccept(sync);
   }, []);
 
-  // Focus Accept when the gate opens; swallow Escape so it cannot dismiss
-  // the mandatory click-to-accept dialog or leak to the page underneath.
+  // Focus Accept when the gate opens AND unlock is ready; swallow Escape so it
+  // cannot dismiss the mandatory click-to-accept dialog or leak underneath.
   useEffect(() => {
-    if (!ready || accepted) return;
+    if (!ready || accepted || !readToEnd) return;
     acceptRef.current?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
@@ -72,7 +75,7 @@ export default function LegalGate() {
     };
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-  }, [ready, accepted]);
+  }, [ready, accepted, readToEnd]);
 
   // This gate is mandatory, so Tab must not walk out of it into the page
   // behind — that let a keyboard user skip accepting entirely.
@@ -120,7 +123,11 @@ export default function LegalGate() {
           <p className="mt-2 text-xs leading-relaxed text-white/50">{t(lang, 'aiNotice')}</p>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4 text-sm leading-relaxed text-white/80">
+        <div
+          ref={scrollRef}
+          data-testid="legal-gate-scroll"
+          className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4 text-sm leading-relaxed text-white/80"
+        >
           <section>
             <h3 className="font-semibold text-white">{privacy.title}</h3>
             <p className="mt-1">{privacy.body}</p>
@@ -145,16 +152,32 @@ export default function LegalGate() {
           <p className="text-xs text-white/40">
             {t(lang, 'policyVersion')} {LEGAL_ACCEPT_VERSION}
           </p>
+          {/* Anchor so short viewports still have a true bottom to reach as
+              the warning copy grows over time. */}
+          <div data-testid="legal-gate-scroll-end" aria-hidden className="h-1" />
         </div>
 
         <div className="border-t border-white/10 px-5 py-4">
+          {!readToEnd && (
+            <p
+              data-testid="legal-scroll-hint"
+              className="mb-2 text-center text-xs text-white/45"
+            >
+              {t(lang, 'legalScrollHint')}
+            </p>
+          )}
           <button
             ref={acceptRef}
             type="button"
             data-testid="legal-accept"
             aria-label={COPY.accept[lang]}
-            onClick={() => acceptCurrentLegal()}
-            className="ui-btn ui-btn-primary h-12 w-full rounded-full bg-white text-base font-semibold text-black shadow-[0_10px_40px_-12px_rgba(255,255,255,0.45)]"
+            aria-disabled={!readToEnd}
+            disabled={!readToEnd}
+            onClick={() => {
+              if (!readToEnd) return;
+              acceptCurrentLegal();
+            }}
+            className="ui-btn ui-btn-primary h-12 w-full rounded-full bg-white text-base font-semibold text-black shadow-[0_10px_40px_-12px_rgba(255,255,255,0.45)] disabled:pointer-events-none disabled:opacity-40"
           >
             {COPY.accept[lang]}
           </button>
