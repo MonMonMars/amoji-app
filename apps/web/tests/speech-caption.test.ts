@@ -14,5 +14,6 @@ describe('speech caption helpers', () => {
     expect(pauseAfterClause('你好，')).toBeGreaterThanOrEqual(250);
     expect(pauseAfterClause('返工咁攰。')).toBeGreaterThanOrEqual(450);
     expect(pauseAfterClause('返工咁攰。')).toBeGreaterThan(pauseAfterClause('你好，'));
+    expect(pauseAfterClause('Note:')).toBeGreaterThanOrEqual(250);
   });
 });
