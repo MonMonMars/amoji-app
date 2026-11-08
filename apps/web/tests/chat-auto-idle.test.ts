@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const CHITCHAT = ['lib_C25', 'LookAround', 'Thinking', 'IdleInnersceneSam'] as const;
-const BREATHE = ['IdleBreathCalm', 'StandardIdle', 'IdleMixamoBreathing'] as const;
+const NEUTRAL = ['IdleBreathCalm', 'StandardIdle', 'IdleMixamoBreathing', 'LookAround', 'Thinking', 'IdleNeutral'];
 
 describe('chat auto idle resolver', () => {
   it('maps greet keywords to chit-chat idles, not HelloWave', () => {
@@ -37,20 +37,60 @@ describe('chat auto idle resolver', () => {
     expect(resolveChatAutoIdle({ assistantText: '', thinking: true })).toBe('Thinking');
   });
 
-  it('maps dance keywords and joy hints to playful idles', () => {
+  it('maps explicit dance keywords to hip-hop dance idle', () => {
     const kw = resolveChatAutoIdle({ assistantText: 'Let us dance tonight!' });
     expect(kw).toBe('lib_C113');
+    const user = resolveChatAutoIdle({ assistantText: 'Sure!', userText: '跳舞吧' });
+    expect(user).toBe('lib_C113');
+  });
+
+  it('maps music / concert keywords to a listening idle, not dance', () => {
+    const clip = resolveChatAutoIdle({ userText: '播個音樂會', assistantText: '好呀，一起聽。' });
+    expect(clip).toBe('LookAround');
+    const en = resolveChatAutoIdle({ assistantText: 'That concert sounds amazing!' });
+    expect(en).toBe('LookAround');
+  });
+
+  it('does not treat generic joy hints as sing/dance idles', () => {
     const joy = resolveChatAutoIdle({
       assistantText: 'That sounds fun.',
       emotionHints: { joy: 0.9 },
     });
-    expect(joy).toBe('IdleMixamoHappy');
+    expect(NEUTRAL).toContain(joy);
   });
 
-  it('falls back to breathing rails for neutral replies', () => {
+  it('maps sing intent plus joy to a happy idle', () => {
+    const sing = resolveChatAutoIdle({
+      userText: '唱首歌',
+      assistantText: '好，我來唱。',
+      emotionHints: { joy: 0.85 },
+    });
+    expect(sing).toBe('IdleMixamoHappy');
+  });
+
+  it('falls back to neutral chat idles for weather and Q&A', () => {
     const clip = resolveChatAutoIdle({ assistantText: 'Sure, tell me more.' });
-    expect(BREATHE as readonly string[]).toContain(clip);
+    expect(NEUTRAL).toContain(clip);
     expect(clip).not.toBe(FAREWELL_WAVE_CLIP_ID);
+    const weather = resolveChatAutoIdle({
+      userText: '今日天氣點呀？',
+      assistantText: '今日多雲，大概 26 度。',
+    });
+    expect(NEUTRAL).toContain(weather);
+    expect(weather).not.toBe('lib_C113');
+  });
+
+  it('varies neutral idles across different reply text', () => {
+    const a = resolveChatAutoIdle({ assistantText: 'First neutral reply.' });
+    const b = resolveChatAutoIdle({ assistantText: 'A totally different answer about cats.' });
+    expect(NEUTRAL).toContain(a);
+    expect(NEUTRAL).toContain(b);
+    expect(a).not.toBe(b);
+  });
+
+  it('does not match loose party wording without dance', () => {
+    const clip = resolveChatAutoIdle({ assistantText: 'We had a fun party last weekend.' });
+    expect(NEUTRAL).toContain(clip);
   });
 });
 
