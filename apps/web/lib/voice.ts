@@ -1164,6 +1164,11 @@ export function voiceEnabled(): boolean {
 export function voiceOutputAllowed(): boolean {
   return voiceEnabled() && !isMasterMuted();
 }
+
+/** Select/settings auditions: speak on tap even when Voice replies is off. */
+export function selectAuditionAllowed(): boolean {
+  return !isMasterMuted();
+}
 export function setVoiceEnabled(on: boolean): void {
   try { localStorage.setItem(MUTE_KEY, on ? 'on' : 'off'); } catch { /* ignore */ }
   if (!on) stopSpeaking();
@@ -1871,7 +1876,7 @@ export function playVoiceGreeting(
   choiceId: string,
   line?: string,
 ): void {
-  if (!voiceOutputAllowed()) return;
+  if (!selectAuditionAllowed()) return;
   unlockAudio(true);
   stopSpeaking();
   // force: stopSpeaking cancelled any window-level prime and cleared the latch.
@@ -2153,7 +2158,7 @@ export function playLaughBurst(characterId: string, lang: Lang): void {
  * tap plays is what chat will sound like.
  */
 export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void> {
-  if (!voiceOutputAllowed()) return Promise.resolve();
+  if (!selectAuditionAllowed()) return Promise.resolve();
   unlockAudio(true);
   stopSpeaking();
   primeSynthInGesture(true);
@@ -2243,7 +2248,7 @@ export function previewOsVoice(
   voiceName: string,
   gender: 'female' | 'male',
 ): Promise<boolean> {
-  if (!voiceOutputAllowed()) return Promise.resolve(false);
+  if (!selectAuditionAllowed()) return Promise.resolve(false);
   unlockAudio(true);
   stopSpeaking();
   primeSynthInGesture(true);

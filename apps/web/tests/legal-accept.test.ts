@@ -97,8 +97,8 @@ describe('select voice preview cut-through', () => {
     const greetSlice = voice.slice(greet, greet + 420);
     const previewSlice = voice.slice(preview, preview + 420);
     expect(greetSlice).toContain('stopSpeaking()');
-    expect(greetSlice).toContain('voiceOutputAllowed()');
-    expect(previewSlice).toContain('voiceOutputAllowed()');
+    expect(greetSlice).toContain('selectAuditionAllowed()');
+    expect(previewSlice).toContain('selectAuditionAllowed()');
     expect(previewSlice).toContain('stopSpeaking()');
     expect(read('../components/SelectionBoard.tsx')).toContain('playVoiceGreeting');
     expect(read('../components/TtsVoiceRow.tsx')).toContain('playVoiceGreeting');

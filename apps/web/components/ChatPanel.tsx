@@ -1400,19 +1400,26 @@ export default function ChatPanel({
       >
         {history.length === 0 && <p className="text-center text-white/40">{t(lang, 'sayHi', { name: characterName })}</p>}
         {history.map((m, i) => {
-          const hideTail =
+          const tailAssistant =
             m.role === 'assistant' &&
             i === history.length - 1 &&
-            pinnedBottom &&
-            (speakingNow || (busy && streamDraft.trim().length > 0)) &&
-            m.content.trim() !== '' &&
-            m.content.trim() !== '…';
-          const bubble = hideTail ? '…' : m.content;
+            pinnedBottom;
+          const streamingTail =
+            tailAssistant &&
+            (speakingNow
+              || (busy && streamDraft.trim().length > 0)
+              || speechCaption.trim().length > 0) &&
+            m.content.trim() !== '';
+          const liveClause = streamingTail
+            ? (speechCaption.trim() || (streamDraft.trim() ? rollingCaptionFromText(streamDraft) : ''))
+            : '';
           return (
             <ChatMessage
               key={i}
               role={m.role}
-              content={bubble}
+              content={m.content}
+              tailStreaming={streamingTail}
+              liveClause={liveClause || undefined}
               lang={lang}
               accent={accent}
               label={m.role === 'assistant' && i === history.length - 1 ? characterName : undefined}
@@ -1466,14 +1473,6 @@ export default function ChatPanel({
           renders AFTER this row; at equal stacking level the later DOM node
           wins, so the pad used to paint over and swallow every tap on the
           mic and the text field. z-10 puts the row back on top. */}
-      {(speechCaption.trim() || (busy && streamDraft.trim())) && (
-        <p
-          data-testid="speech-caption"
-          className="pointer-events-none z-20 w-full px-3 text-center text-sm font-medium leading-snug text-white/95 drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]"
-        >
-          {speechCaption.trim() || rollingCaptionFromText(streamDraft)}
-        </p>
-      )}
       {nowPlaying && (
         <div
           data-now-playing={nowPlaying}
