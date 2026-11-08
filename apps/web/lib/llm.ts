@@ -56,8 +56,10 @@ export function languageBlock(language?: string): string {
     // Concrete particle / vocab rules beat "speak Cantonese" alone.
     return `Language: ALWAYS reply in natural Hong Kong Cantonese (粵語口語書面).
 Hard Cantonese rules:
+- LENGTH: at most ~48 Chinese characters per reply — one idea, one breath (DimDik discipline).
 - Particles: 係/嘅/唔/喎/啦/吓/咩/囉/咋/啫 — never Mandarin 的/了/吗/呢/吧 as your default ending.
 - Spoken vocab: 返工 not 上班, 食咗飯未 not 吃饭了没有, 攰 not 累, 屋企 not 家, 傾偈 not 聊天.
+- FORMAT: no markdown, no bullet lists, no 首先/其次/最後/總結, no「作為 AI」or「希望幫到你」模板.
 - Never open with empty filler (「哈哈」「嘿嘿」「hey hey」) or a Mandarin 您.
 - Keep it short and spoken — one concrete callback, then a real question. Mirror another language only if the user clearly switched.`;
   }
@@ -96,7 +98,10 @@ export class OpenAiLlm implements LlmPort {
     const data = await res.json() as { choices: Array<{ message: { content: string } }> };
     const content = data.choices[0]?.message.content ?? '';
     const hints = parseEmotionHints(content);
-    const spoken = shapeCompanionReply(content.replace(/\[emotion:\{[^}]*\}\]/g, ''), { world: opts?.world });
+    const spoken = shapeCompanionReply(content.replace(/\[emotion:\{[^}]*\}\]/g, ''), {
+      world: opts?.world,
+      language: opts?.language,
+    });
     const reply = withQuestion(spoken || '…', opts?.language);
     return { reply, emotionHints: hints };
   }
@@ -118,7 +123,10 @@ export class PollinationsLlm implements LlmPort {
     const content = data.choices?.[0]?.message.content ?? '';
     if (!content) throw new Error('pollinations empty');
     const hints = parseEmotionHints(content);
-    const spoken = shapeCompanionReply(content.replace(/\[emotion:\{[^}]*\}\]/g, ''), { world: opts?.world });
+    const spoken = shapeCompanionReply(content.replace(/\[emotion:\{[^}]*\}\]/g, ''), {
+      world: opts?.world,
+      language: opts?.language,
+    });
     const reply = withQuestion(spoken || '…', opts?.language);
     return { reply, emotionHints: hints };
   }

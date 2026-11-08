@@ -1024,13 +1024,16 @@ function factLine(fact: string, lang: string): string {
   return `${labels[kind] ?? kind} ${detail}`;
 }
 
+/** Max fact lines injected — pairs with client-chat PROMPT_HISTORY_CAP (8). */
+export const MEMORY_PROMPT_FACT_CAP = 8;
+
 /** Build the "you remember them" block injected into her system prompt.
  *  v5: pass the user's CURRENT message as userText and older, on-topic
  *  memories surface into the block — she connects today's words to things
  *  told to her weeks ago. Kept to ≤2 short lines (free-lane prompt size). */
 export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userText?: string): string | undefined {
   if (!m.userName && m.facts.length === 0 && m.entries.length === 0 && (m.diary?.length ?? 0) === 0 && m.exchanges < 3) return undefined;
-  const recent = m.facts.slice(-8);
+  const recent = m.facts.slice(-MEMORY_PROMPT_FACT_CAP);
   const plans = m.entries.filter((e) => e.type === 'plan').slice(-3).map((e) => e.text);
   const moments = m.entries.filter((e) => e.type === 'event').slice(-3).map((e) => e.text);
   const diary = diarySummary(m, 3);

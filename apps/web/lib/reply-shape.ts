@@ -3,6 +3,7 @@
 // tail). Personality stays: laughs, pauses, and a real question are kept.
 // Running this twice is a no-op on text it already cleaned.
 
+import { polishCantoneseReply } from './cantonese-quality';
 import { stripLaughTokens } from './speak-text';
 
 export interface ShapeOpts {
@@ -14,6 +15,8 @@ export interface ShapeOpts {
    *  that asked for the weather, a headline, or a place is allowed to run
    *  long, because it is answering with the facts the user wanted. */
   world?: string;
+  /** Selected UI language — tightens the spoken budget for yue (DimDik ~40). */
+  language?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -28,8 +31,10 @@ export interface ShapeOpts {
 // Trimming always happens on a sentence boundary — never mid-word.
 // ---------------------------------------------------------------------------
 export const REPLY_BUDGET = {
-  /** zh / yue / ja: ~3 short spoken sentences (「今日好凍呀……你著咗幾多件衫？」) */
+  /** zh / ja: ~3 short spoken sentences (「今日好凍呀……你著咗幾多件衫？」) */
   cjk: 68,
+  /** Hong Kong Cantonese — DimDik Phase 0 cap (PRD 60; code enforces 48). */
+  yue: 48,
   /** en and other Latin scripts: ~3 short spoken sentences */
   latin: 230,
   /** A normal turn is a reply, not a monologue. Recipes/lessons opt out. */
@@ -39,11 +44,13 @@ export const REPLY_BUDGET = {
 const CJK_CHAR = /[\u3400-\u9fff\u3040-\u30ff\uac00-\ud7af]/g;
 
 /** Character allowance for this reply, decided by the script it is written in. */
-export function replyCharBudget(text: string): number {
+export function replyCharBudget(text: string, language?: string): number {
   const dense = text.replace(/\s/g, '');
   if (dense.length === 0) return REPLY_BUDGET.latin;
   const cjk = (text.match(CJK_CHAR) ?? []).length;
-  return cjk * 2 >= dense.length ? REPLY_BUDGET.cjk : REPLY_BUDGET.latin;
+  if (cjk * 2 < dense.length) return REPLY_BUDGET.latin;
+  if (language === 'yue') return REPLY_BUDGET.yue;
+  return REPLY_BUDGET.cjk;
 }
 
 function width(s: string): number {
@@ -304,8 +311,9 @@ export function shapeCompanionReply(raw: string, opts?: ShapeOpts): string {
   // The budget is applied while streaming too, so the bubble never paints text
   // the finished reply is about to delete, and a long model reply stops
   // growing in the UI instead of running on for another ten seconds.
+  if (opts?.language === 'yue' && body) body = polishCantoneseReply(body);
   if (!opts?.detailed && !mayRunLong(body, opts?.world)) {
-    const budget = replyCharBudget(body);
+    const budget = replyCharBudget(body, opts?.language);
     body = joinSentences(fitReplyBudget(splitSentences(body), budget, REPLY_BUDGET.sentences, !!opts?.streaming)).trim();
   }
   return stripLaughTokens(spaceSentences(body))

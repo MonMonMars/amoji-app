@@ -31,6 +31,11 @@ import { getLoadProgress, onLoadProgress, type LoadProgress } from '../lib/load-
 import { assetUrl } from '../lib/asset';
 import { t, type Lang, type StrKey } from '../lib/prefs';
 import type { ChatStatus } from '../lib/status';
+import {
+  DAILY_QUOTA_EVENT,
+  dailyTurnLimit,
+  dailyTurnsRemaining,
+} from '../lib/daily-quota';
 
 const MOOD_EMOJI: Record<MoodId, string> = {
   joy: '😊', angry: '😠', sad: '😢', surprised: '😲', relaxed: '😌', neutral: '🙂',
@@ -82,6 +87,13 @@ export default function StatusPlate({
   // r100: 'attempt' events (the speak() choke point) get their own label and
   // the tooltip prefers the event's own detail string when present.
   const [voiceDot, setVoiceDot] = useState<{ ok: boolean; title: string } | null>(null);
+  const [turnsLeft, setTurnsLeft] = useState(dailyTurnsRemaining());
+  useEffect(() => {
+    const onQuota = () => setTurnsLeft(dailyTurnsRemaining());
+    window.addEventListener(DAILY_QUOTA_EVENT, onQuota);
+    return () => window.removeEventListener(DAILY_QUOTA_EVENT, onQuota);
+  }, []);
+
   useEffect(() => {
     let fade: ReturnType<typeof setTimeout> | null = null;
     const onStatus = (e: Event) => {
@@ -158,6 +170,15 @@ export default function StatusPlate({
             <span className="max-w-[16vw] truncate">{t(lang, MOOD_LABEL[mood])}</span>
             <span className="text-white/25">·</span>
             <span role="status" className={status === 'listening' ? 'text-white/90' : ''}>{t(lang, STATUS_LABEL[status])}</span>
+            <>
+              <span className="text-white/25">·</span>
+              <span
+                className="max-w-[22vw] truncate text-white/45 tabular-nums"
+                title={t(lang, 'dailyTurnsRemaining', { n: String(turnsLeft) })}
+              >
+                {turnsLeft}/{dailyTurnLimit()}
+              </span>
+            </>
           </span>
         </span>
       </button>

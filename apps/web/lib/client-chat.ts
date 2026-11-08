@@ -914,14 +914,18 @@ async function launchRace(
 }
 
 /** Strip the trailing emotion tag → final chat result. Exported for tests. */
-export function finishReply(content: string, opts?: { detailed?: boolean; world?: string }): ClientChatResult {
+export function finishReply(content: string, opts?: { detailed?: boolean; world?: string; language?: string }): ClientChatResult {
   const hints = parseEmotionHints(content) as Record<string, number>;
   // Strip the machine tag, display chrome, then banned giggle tokens so neither
   // the bubble nor TTS can reintroduce hehe/haha/hey-hey (laughs = SFX only).
   const cleaned = stripLaughTokens(
     cleanForDisplay(content.replace(/\[emotion:\{[^}]*\}\]/g, '')),
   );
-  const reply = shapeCompanionReply(cleaned, { detailed: opts?.detailed, world: opts?.world });
+  const reply = shapeCompanionReply(cleaned, {
+    detailed: opts?.detailed,
+    world: opts?.world,
+    language: opts?.language,
+  });
   return { reply: reply || '…', emotionHints: hints };
 }
 
@@ -938,7 +942,13 @@ export async function clientChat(
   const detailed = wantsDetail(opts?.world);
   const maxTokens = detailed ? 520 : 280;
   const onPartial = opts?.onPartial
-    ? (partial: string) => { opts.onPartial?.(shapeCompanionReply(partial, { streaming: true, world: opts?.world })); }
+    ? (partial: string) => {
+        opts.onPartial?.(shapeCompanionReply(partial, {
+          streaming: true,
+          world: opts?.world,
+          language: opts?.language,
+        }));
+      }
     : undefined;
   const factsReply = (): ClientChatResult | null => {
     const spoken = opts?.worldSpoken?.trim();
@@ -957,7 +967,7 @@ export async function clientChat(
     if (first.spec.id !== 'pollinations' && content.length < 160 && CREDIT_RE.test(content)) {
       throw new Error(`${first.spec.id} out of credit`);
     }
-    const done = finishReply(content, { detailed, world: opts?.world });
+    const done = finishReply(content, { detailed, world: opts?.world, language: opts?.language });
     const reply = preferLiveReply(withQuestion(done.reply, opts?.language), opts?.world, opts?.worldSpoken, opts?.language);
     return { ...done, reply };
   } catch (err) {
@@ -982,7 +992,7 @@ export async function clientChat(
     try {
       const content = await raceFreeLanes(system, recent, onPartial, maxTokens);
       if (content.length < 160 && CREDIT_RE.test(content)) throw new Error('pollinations credit');
-      const done = finishReply(content, { detailed, world: opts?.world });
+      const done = finishReply(content, { detailed, world: opts?.world, language: opts?.language });
       const reply = preferLiveReply(withQuestion(done.reply, opts?.language), opts?.world, opts?.worldSpoken, opts?.language);
       return { ...done, reply };
     } catch {

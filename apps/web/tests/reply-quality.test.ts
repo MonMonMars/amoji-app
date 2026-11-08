@@ -37,15 +37,15 @@ describe('reply length budget', () => {
     expect(dense(out)).toBeLessThanOrEqual(REPLY_BUDGET.latin + 30);
   });
 
-  it('caps a rambling Cantonese reply at the shorter CJK budget', () => {
+  it('caps a rambling Cantonese reply at the yue budget (48)', () => {
     const raw = '今日嘅事真係好煩呀。你一早就起身趕住返工，連早餐都未食。'
       + '地鐵又迫又熱，企咗成半個鐘先有位坐。返到公司仲要俾人催交報告。'
       + '你個樣睇落好攰，對眼都紅晒。'
       + '其實你唔使咩都自己扛㗎。'
       + '今晚想食啲咩？';
-    const out = shapeCompanionReply(raw);
-    expect(replyCharBudget(out)).toBe(REPLY_BUDGET.cjk);
-    expect(dense(out)).toBeLessThanOrEqual(REPLY_BUDGET.cjk + 20);
+    const out = shapeCompanionReply(raw, { language: 'yue' });
+    expect(replyCharBudget(out, 'yue')).toBe(REPLY_BUDGET.yue);
+    expect(dense(out)).toBeLessThanOrEqual(REPLY_BUDGET.yue + 20);
     expect(out).toContain('？');
   });
 
@@ -225,6 +225,8 @@ describe('system prompt states the four reply rules', () => {
     expect(block).toMatch(/返工 not 上班/);
     expect(block).toMatch(/攰 not 累/);
     expect(block).toMatch(/Hard Cantonese rules/);
+    expect(block).toMatch(/48 Chinese characters/);
+    expect(block).toMatch(/作為 AI/);
   });
 });
 
@@ -237,12 +239,12 @@ describe('Cantonese reply quality — before / after shaping', () => {
       + '你對眼都紅晒，地鐵又迫。'
       + '其實你唔使咩都自己扛㗎。'
       + '今晚想食啲咩？';
-    const after = shapeCompanionReply(before);
+    const after = shapeCompanionReply(before, { language: 'yue' });
     // AFTER: meta gone, budget capped, closing question kept.
     expect(after).not.toMatch(/^分析/);
     expect(after).not.toContain('用戶想');
     expect(dense(after)).toBeLessThan(dense(before));
-    expect(dense(after)).toBeLessThanOrEqual(REPLY_BUDGET.cjk + 20);
+    expect(dense(after)).toBeLessThanOrEqual(REPLY_BUDGET.yue + 20);
     expect(after).toMatch(/[？?]/);
   });
 
