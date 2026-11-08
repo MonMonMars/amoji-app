@@ -167,10 +167,9 @@ const textOf = (a: Stub) => {
 // behavioural proof, not a CI gate. The source-shape suite (gtts-chain) still
 // runs everywhere.
 describe.skipIf(!esbuildAvailable)('speakGtts real behaviour (esbuild + vm)', () => {
-  it('merges short clauses into one request (fewer round trips)', async () => {
-    // splitChunks cuts at clause punctuation, then RE-MERGES up to maxLen so a
-    // short line is a single request rather than three. That is intentional and
-    // worth pinning: it is why a brief greeting starts fast.
+  it('keeps each clause as its own request so pauses can breathe', async () => {
+    // Merging short clauses into one MP3 erased the gap after 。 — she sounded
+    // breathless. One request per clause; onPlaying still fires once for the line.
     const { api, created } = boot();
     let onPlayingCount = 0;
     const p = api.speakGtts('第一句。第二句。第三句。', {
@@ -178,10 +177,9 @@ describe.skipIf(!esbuildAvailable)('speakGtts real behaviour (esbuild + vm)', ()
       onPlaying: () => { onPlayingCount += 1; },
     });
     await playThrough(created, p);
-    expect(created.length).toBe(1);
+    expect(created.length).toBe(3);
     expect(textOf(created[0]!)).toContain('第一句');
-    expect(textOf(created[0]!)).toContain('第三句');
-    // onPlaying reports the LINE starting, not each chunk
+    expect(textOf(created[2]!)).toContain('第三句');
     expect(onPlayingCount).toBe(1);
   });
 
