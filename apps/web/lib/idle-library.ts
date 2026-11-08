@@ -21,6 +21,8 @@ export interface IdleLibraryEntry {
   vrmaUrl: string | null;
   /** In default rotation when no amoji.idleEnabled.v1 yet. */
   defaultEnabled: boolean;
+  /** Retired from picker / rotation (SoT # kept contiguous). */
+  retired?: boolean;
 }
 
 const VRMA = (id: string) => `models/anims/${id}.vrma`;
@@ -65,10 +67,10 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     num: 4,
     clipId: 'lib_C02',
     cId: 'C02',
-    name: 'Idle_Loop',
+    name: 'Idle_Loop (clip-through — disabled pending angles)',
     path: 'animations/idle/quaternius_ual1/AnimationLibrary_Unity_Standard.fbx',
     planted: true,
-    playable: true,
+    playable: false,
     vrmaUrl: VRMA('lib_C02'),
     defaultEnabled: false,
   },
@@ -178,7 +180,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'RokokoWatchingSomething',
     path: 'animations/idle/rokoko_everyday_idles/Idle_WatchingSomething_Loop_MIXAMO_769_segment.fbx',
     planted: true,
-    playable: true,
+    playable: false,
+    retired: true,
     vrmaUrl: VRMA('lib_C44'),
     defaultEnabled: false,
   },
@@ -288,7 +291,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'UAL1Talking',
     path: 'animations/idle/quaternius_ual1/AnimationLibrary_Unity_Standard.fbx',
     planted: true,
-    playable: true,
+    playable: false,
+    retired: true,
     vrmaUrl: VRMA('lib_C65'),
     defaultEnabled: false,
   },
@@ -299,7 +303,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'UAL2NinjaIdle',
     path: 'animations/idle/quaternius_ual2/UAL2_Standard.fbx',
     planted: true,
-    playable: true,
+    playable: false,
+    retired: true,
     vrmaUrl: VRMA('lib_C75'),
     defaultEnabled: false,
   },
@@ -433,7 +438,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'IdleKaykitB',
     path: VRMA('IdleKaykitB'),
     planted: true,
-    playable: true,
+    playable: false,
+    retired: true,
     vrmaUrl: VRMA('IdleKaykitB'),
     defaultEnabled: false,
   },
@@ -444,7 +450,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'IdleKaykitA',
     path: VRMA('IdleKaykitA'),
     planted: true,
-    playable: true,
+    playable: false,
+    retired: true,
     vrmaUrl: VRMA('IdleKaykitA'),
     defaultEnabled: false,
   },
@@ -546,7 +553,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'RokokoLeanWall',
     path: 'animations/idle/rokoko_everyday_idles/Idle_LeaningonWall_MIXAMO_WHS.fbx',
     planted: true,
-    playable: true,
+    playable: false,
+    retired: true,
     vrmaUrl: VRMA('lib_C40'),
     defaultEnabled: false,
   },
@@ -557,7 +565,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'RokokoPointing',
     path: 'animations/idle/rokoko_everyday_idles/Idle_Pointing_MIXAMO_769.fbx',
     planted: true,
-    playable: true,
+    playable: false,
+    retired: true,
     vrmaUrl: VRMA('lib_C43'),
     defaultEnabled: false,
   },
@@ -623,7 +632,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'IdleThreeJsSoldier',
     path: 'amoji-idle-batch3-new/ThreeJsSoldier.glb',
     planted: true,
-    playable: true,
+    playable: false,
+    retired: true,
     vrmaUrl: VRMA('IdleThreeJsSoldier'),
     defaultEnabled: false,
   },
@@ -635,7 +645,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'KayKitWave',
     path: 'animations/idle/kaykit/Wave.fbx',
     planted: true,
-    playable: true,
+    playable: false,
+    retired: true,
     vrmaUrl: VRMA('lib_C05'),
     defaultEnabled: false,
   },
@@ -646,7 +657,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'KayKitCheer',
     path: 'animations/idle/kaykit/Cheer.fbx',
     planted: true,
-    playable: true,
+    playable: false,
+    retired: true,
     vrmaUrl: VRMA('lib_C06'),
     defaultEnabled: false,
   },
@@ -657,7 +669,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'UAL2Yes',
     path: 'animations/idle/quaternius_ual2/UAL2_Standard.fbx',
     planted: true,
-    playable: true,
+    playable: false,
+    retired: true,
     vrmaUrl: VRMA('lib_C12'),
     defaultEnabled: false,
   },
@@ -668,7 +681,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'UAL2No (Flash IdleUAL2No)',
     path: 'animations/idle/quaternius_ual2/UAL2_Standard.fbx',
     planted: true,
-    playable: true,
+    playable: false,
+    retired: true,
     vrmaUrl: VRMA('lib_C45'),
     defaultEnabled: false,
   },
@@ -679,7 +693,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'IdleUAL2Phone',
     path: 'animations/idle/quaternius_ual2/UAL2_Standard.fbx',
     planted: true,
-    playable: true,
+    playable: false,
+    retired: true,
     vrmaUrl: VRMA('IdleUAL2Phone'),
     defaultEnabled: false,
   },
@@ -1367,7 +1382,7 @@ export function playableIdles(): IdleLibraryEntry[] {
   const seen = new Set<string>();
   const out: IdleLibraryEntry[] = [];
   for (const e of IDLE_LIBRARY) {
-    if (!e.playable || !e.vrmaUrl || seen.has(e.clipId)) continue;
+    if (e.retired || !e.playable || !e.vrmaUrl || seen.has(e.clipId)) continue;
     seen.add(e.clipId);
     out.push(e);
   }

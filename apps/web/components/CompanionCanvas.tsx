@@ -23,6 +23,13 @@ import { timeScaleForProfile } from '../lib/performance-motion';
 import { playableIdles } from '../lib/idle-library';
 import { listEnabledIdleClipIds } from '../lib/idle-enabled';
 import { IDLE_JOINT_REFRESH_FADE_S, IDLE_JOINT_REFRESH_MS, nextIdleRefreshAt, shouldRefreshIdleJoints } from '../lib/idle-refresh';
+import {
+  IDLE_PIN_CROSSFADE_S,
+  IDLE_SWAP_BLEND_BONES,
+  IDLE_SWAP_LEG_BLEND_S,
+  idleSwapBlendActive,
+} from '../lib/idle-crossfade';
+import { applyIdleClipSoftening } from '../lib/idle-stance-soften';
 import { chestPokeBounce, CHEST_BOUNCE_SEC, SOFT_CHEST_BOUNCE_SEC } from '../lib/vrm/chest-bounce';
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
@@ -509,6 +516,8 @@ export default function CompanionCanvas({
     const blendQ = new THREE.Quaternion();
     let blendT0 = -1;
     let blendDur = 0.68;
+    let swapBlendActive = false;
+    let swapBlendUntil = 0;
     let blendAvatar: Avatar | null = null;
     // Humanoid (normalized) bones only — raw scene.traverse(isBone) mixed
     // VRM 1.0 raw bind bones with the mixer’s normalized targets, so the
@@ -523,30 +532,42 @@ export default function CompanionCanvas({
       'leftUpperArm', 'rightUpperArm', 'leftLowerArm', 'rightLowerArm',
       'leftHand', 'rightHand',
     ] as const;
-    const beginBoneBlend = (seconds = 0.68) => {
+    const beginBoneBlend = (seconds = 0.68, bones: readonly string[] = HUMAN_BLEND_BONES, includeLegs = false) => {
       if (!avatar) return;
+      swapBlendActive = includeLegs;
       if (blendAvatar !== avatar) {
         blendNodes.length = 0;
         blendFrom.length = 0;
-        for (const name of HUMAN_BLEND_BONES) {
-          const n = avatar.getBoneNode(name);
-          if (!n) continue;
-          blendNodes.push(n);
-          blendFrom.push(new THREE.Quaternion());
-        }
         blendAvatar = avatar;
       }
-      for (let i = 0; i < blendNodes.length; i++) blendFrom[i]!.copy(blendNodes[i]!.quaternion);
+      blendNodes.length = 0;
+      blendFrom.length = 0;
+      for (const name of bones) {
+        const n = avatar.getBoneNode(name);
+        if (!n) continue;
+        blendNodes.push(n);
+        blendFrom.push(n.quaternion.clone());
+      }
       blendT0 = performance.now();
       blendDur = seconds;
+      swapBlendUntil = swapBlendActive ? blendT0 + seconds * 1000 : 0;
+    };
+    const beginIdleSwapBlend = (seconds = IDLE_SWAP_LEG_BLEND_S) => {
+      beginBoneBlend(seconds, IDLE_SWAP_BLEND_BONES, true);
     };
     const applyBoneBlend = (nowMs: number) => {
       if (blendT0 < 0) return;
       const u = (nowMs - blendT0) / (blendDur * 1000);
-      if (u >= 1) { blendT0 = -1; return; }
+      if (u >= 1) {
+        blendT0 = -1;
+        swapBlendActive = false;
+        swapBlendUntil = 0;
+        return;
+      }
       const k = u * u * u * (u * (u * 6 - 15) + 10);
       for (let i = 0; i < blendNodes.length; i++) {
-        blendQ.copy(blendFrom[i]!).slerp(blendNodes[i]!.quaternion, k);
+        const tgt = blendNodes[i]!.quaternion.clone();
+        blendQ.copy(blendFrom[i]!).slerp(tgt, k);
         blendNodes[i]!.quaternion.copy(blendQ);
       }
     };
@@ -725,7 +746,12 @@ export default function CompanionCanvas({
 
     const playClipAsIdle = (clip: THREE.AnimationClip, id: string, fade: number) => {
       if (!mixer) return;
-      beginBoneBlend(0.7);
+      const swapping = !!idleAction && idleClipId !== id;
+      const blendS = swapping
+        ? Math.max(fade, IDLE_SWAP_LEG_BLEND_S)
+        : 0.7;
+      if (swapping) beginIdleSwapBlend(blendS);
+      else beginBoneBlend(0.7);
       const action = mixer.clipAction(clip);
       action.timeScale = personalityMotion(seedKey ?? '', gender).timeScale;
       // r93: idles LOOP — the old LoopOnce + clampWhenFinished parked her on
@@ -734,10 +760,14 @@ export default function CompanionCanvas({
       // never parked anywhere.
       action.setLoop(THREE.LoopRepeat, Infinity);
       action.reset();
-      // start mid-clip at a random offset: the entry frame is never the
-      // clip's neutral first frame, and two consecutive idles blend
-      // motion-into-motion instead of neutral-into-neutral
-      action.time = Math.random() * clip.duration;
+      if (swapping && idleAction) {
+        action.time = idleAction.time % clip.duration;
+      } else {
+        // start mid-clip at a random offset: the entry frame is never the
+        // clip's neutral first frame, and two consecutive idles blend
+        // motion-into-motion instead of neutral-into-neutral
+        action.time = Math.random() * clip.duration;
+      }
       if (idleAction && idleAction !== action) {
         // blend from wherever the body currently is into this clip
         idleAction.crossFadeTo(action, fade, false);
@@ -1927,7 +1957,7 @@ export default function CompanionCanvas({
         if (mixerActive && !perfAction && !gameView) {
           const pinnedIdle = idleClipRef.current;
           if (pinnedIdle) {
-            if (idleClipId !== pinnedIdle) playNamedIdle(pinnedIdle, FADE.idleRotate);
+            if (idleClipId !== pinnedIdle) playNamedIdle(pinnedIdle, IDLE_PIN_CROSSFADE_S);
             idleHoldUntil = Infinity;
           } else if (thinkingPoseActive()) {
             // Hold the primary standing idle while a reply generates.
@@ -1960,6 +1990,7 @@ export default function CompanionCanvas({
         if (gameView) playGameBody(gameView.anim);
         if (avatar.clipDrivesBody) {
           mixer?.update(dt / 1000);
+          applyIdleClipSoftening((name) => avatar.getBoneNode(name), idleClipId);
           avatar.applyPose(poseTargets);
         } else {
           avatar.applyPose(poseTargets);
@@ -2029,14 +2060,19 @@ export default function CompanionCanvas({
         // blended legs/body read on the distorted cast). Thigh unblend
         // runs last so hanging adducted thighs open off the torso.
         const feetFree = clipFreesFeet(perfClipId);
-        avatar.plantFeet(feetFree ? false : true, feetFree ? undefined : {
-          pitch: skHip,
-          roll: skHipRoll,
-          shiftX: skHipX,
-          shiftZ: skHipZ,
-        });
+        const idleLegGlide = idleSwapBlendActive(now, swapBlendUntil);
+        if (!feetFree && !idleLegGlide) {
+          avatar.plantFeet(true, {
+            pitch: skHip,
+            roll: skHipRoll,
+            shiftX: skHipX,
+            shiftZ: skHipZ,
+          });
+        } else if (feetFree) {
+          avatar.plantFeet(false);
+        }
         avatar.applyCastFixes();
-        if (!feetFree) avatar.unblendLegs();
+        if (!feetFree && !idleLegGlide) avatar.unblendLegs();
         avatar.update(dt / 1000);
         // Chest and torso punches: bust spring after the skeleton update.
         // Soft breast (Mon t765): bounce clock outlives the tiny body recoil.

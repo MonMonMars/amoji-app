@@ -1,6 +1,7 @@
 // Playable idle buttons for chat rails. Labels are IDLE_LIBRARY # (Mon: "use #N").
 // Convert-only free-library rows stay in idle-library.ts but are not buttons.
 
+import { isRetiredIdleNum } from './idle-catalog-review';
 import { IDLE_LIBRARY, type IdleLibraryEntry } from './idle-library';
 
 export interface IdleClipOption {
@@ -26,9 +27,9 @@ function toOption(e: IdleLibraryEntry): IdleClipOption {
   };
 }
 
-/** Every numbered library row through IDLE_LIBRARY max (#1-N). */
+/** Every numbered library row through IDLE_LIBRARY max (#1-N), minus retired #. */
 export const IDLE_CLIP_OPTIONS: readonly IdleClipOption[] = IDLE_LIBRARY
-  .filter((e) => e.num >= 1 && e.num <= Math.max(...IDLE_LIBRARY.map((x) => x.num)))
+  .filter((e) => e.num >= 1 && e.num <= Math.max(...IDLE_LIBRARY.map((x) => x.num)) && !e.retired && !isRetiredIdleNum(e.num))
   .map(toOption);
 
 export function idleClipByLabel(label: string): IdleClipOption | undefined {
