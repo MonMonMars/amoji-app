@@ -154,6 +154,7 @@ import { voiceOpening, type VoiceId } from '../lib/personality-voice';
 import { laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { assetUrl } from '../lib/asset';
 import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
+import { loadStorySession } from '../lib/story-session';
 import { guardCompanionTurn } from '../lib/crisis';
 import {
   checkChatTurnQuota,
@@ -1130,6 +1131,7 @@ export default function ChatPanel({
           memory,
           world,
           worldSpoken,
+          storySession: !!loadStorySession(),
           onPartial: (partial) => {
             // r.47 — the real stream is painting now: the wait cue stands down
             stopThinkingSound();

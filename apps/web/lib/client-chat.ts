@@ -81,6 +81,7 @@ import { preferLiveReply, worldBlock } from './live-tools';
 import { replyLooksNonsense, STRICT_REPLY_APPENDIX } from './reply-sanity';
 import { shapeCompanionReply } from './reply-shape';
 import { wantsLongCompanionReply } from './topic-suggestions';
+import { maxTokensForStoryTurn, storySystemBlock, wantsStoryTurn } from './story-reply';
 
 export interface ClientChatResult { reply: string; emotionHints: Record<string, number> }
 
@@ -94,6 +95,8 @@ export interface ClientChatOptions {
   worldSpoken?: string;
   /** fired with the accumulated text as stream chunks arrive */
   onPartial?: (text: string) => void;
+  /** Live Story Mode session — long narrative budget for every turn. */
+  storySession?: boolean;
 }
 
 /** only the most recent turns go into the prompt — old topics live in memory.
@@ -962,24 +965,20 @@ async function streamModelReply(
 
 function packageReply(
   content: string,
-  ctx: SanityContext & { world?: string; worldSpoken?: string },
+  ctx: SanityContext & { world?: string; worldSpoken?: string; story?: boolean },
 ): ClientChatResult {
   const done = finishReply(content, {
     detailed: ctx.detailed,
     world: ctx.world,
     language: ctx.language,
   });
-  const reply = preferLiveReply(
-    withQuestion(done.reply, ctx.language),
-    ctx.world,
-    ctx.worldSpoken,
-    ctx.language,
-  );
+  const spoken = ctx.story ? done.reply : withQuestion(done.reply, ctx.language);
+  const reply = preferLiveReply(spoken, ctx.world, ctx.worldSpoken, ctx.language);
   return { ...done, reply };
 }
 
-/** A cook-along turn legitimately needs more room than a chat turn. */
-function wantsDetail(world?: string, userText?: string): boolean {
+/** A cook-along / long companion turn legitimately needs more room than a chat turn. */
+export function wantsDetail(world?: string, userText?: string): boolean {
   if (/\b(?:Recipe|Learn)\s*:/.test(world ?? '')) return true;
   return userText ? wantsLongCompanionReply(userText) : false;
 }
@@ -988,15 +987,18 @@ export async function clientChat(
   messages: ChatMessage[],
   opts?: ClientChatOptions,
 ): Promise<ClientChatResult> {
-  const system = `${BASE_SYSTEM}\nReply in speakable sentences only. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
   const recent = trimHistoryForPrompt(messages);
   const lastUser = recent[recent.length - 1]?.content ?? '';
-  const detailed = wantsDetail(opts?.world, lastUser);
-  const maxTokens = detailed ? 520 : 280;
+  const story = wantsStoryTurn(lastUser, { persona: opts?.persona, storySession: opts?.storySession });
+  const detailed = wantsDetail(opts?.world, lastUser) || story;
+  const shapeLong = detailed;
+  const system = `${BASE_SYSTEM}\nReply in speakable sentences only. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${story ? `\n${storySystemBlock(opts?.language)}` : ''}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
+  const maxTokens = maxTokensForStoryTurn(story, wantsDetail(opts?.world, lastUser));
   const onPartial = opts?.onPartial
     ? (partial: string) => {
         opts.onPartial?.(shapeCompanionReply(partial, {
           streaming: true,
+          detailed: shapeLong,
           world: opts?.world,
           language: opts?.language,
         }));
@@ -1014,7 +1016,8 @@ export async function clientChat(
     lastUser,
     detailed,
   };
-  const finalize = (raw: string) => packageReply(raw, { ...sanityCtx, world: opts?.world, worldSpoken: opts?.worldSpoken });
+  const finalize = (raw: string) =>
+    packageReply(raw, { ...sanityCtx, world: opts?.world, worldSpoken: opts?.worldSpoken, story });
   const rejectCreditBody = (specId: string, content: string) => {
     if (specId !== 'pollinations' && content.length < 160 && CREDIT_RE.test(content)) {
       throw new Error(`${specId} out of credit`);
