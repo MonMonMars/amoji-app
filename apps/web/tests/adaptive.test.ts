@@ -33,6 +33,12 @@ describe('adaptiveBlock', () => {
   it('always names the scene', () => {
     expect(adaptiveBlock({ ...base, userGender: 'secret' })).toContain('Sakura');
   });
+  it('does not force backdrop mentions in every reply', () => {
+    const b = adaptiveBlock({ ...base, userGender: 'secret' });
+    expect(b.toLowerCase()).toContain('do not pad');
+    expect(b).not.toMatch(/casually mention the surroundings/i);
+    expect(b).not.toMatch(/suggest something to do there/i);
+  });
   it('secret gender adds NO gender guidance at all', () => {
     const b = adaptiveBlock({ ...base, userGender: 'secret' });
     expect(b).not.toContain('user is a man');

@@ -215,7 +215,7 @@ import {
 import { startVad } from '../lib/vad';
 import { ambientStart, ambientStop } from '../lib/sfx';
 import { t, backgroundById, type Lang, type StrKey } from '../lib/prefs';
-import { adaptiveBlock } from '../lib/adaptive';
+import { adaptiveBlock, pickSceneLine } from '../lib/adaptive';
 import { SPEECH_CAPTION_EVENT, rollingCaptionFromText } from '../lib/speech-caption';
 import { loadProfile, type Gender } from '../lib/profile';
 import type { ChatStatus } from '../lib/status';
@@ -811,7 +811,13 @@ export default function ChatPanel({
       // Motif/topic banks rotate via idle-talk — less tea, no question-form chatter.
       // Idle tutor tips cut — do not interrupt idle companion time with how-to tips.
       // Showcase skill offers + Settings Help / showcase tutorial banks stay elsewhere.
+      // Backdrop ambient (curated SCENE_LINES): TTS-only flavour — LLM chat stays content-first.
+      const sceneAmbient =
+        reengageStageRef.current === 0 && !idleMood && n % 4 === 1
+          ? pickSceneLine(backgroundId, lang, n)
+          : undefined;
       const line = (idleMood ? pickMoodIdleLine(idleMood, lang, n) : undefined)
+        ?? sceneAmbient
         ?? pickIdleCompanionLine(characterId, characterGender, lang, n)
         ?? pickIdleLine(characterId, lang, n);
       sayLocal(line, feltHints);

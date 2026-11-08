@@ -4,7 +4,7 @@ import type { Gender } from './profile';
 // r2026-10-04.70 — the dialogue adapts to the world around her:
 // 1. SCENE_LINES: every backdrop gets its own ambient idle voice, so the
 //    place she sits in shows up in what she says between conversations.
-// 2. adaptiveBlock: a system-prompt add-on that names the scene and
+// 2. adaptiveBlock: light scene context for the model (no forced scenery) and
 //    calibrates warmth to the pairing — opposite-sex gets gentle affection,
 //    same-gender gets best-mate tone, kid mode and "secret" stay
 //    friendship-only.
@@ -308,7 +308,7 @@ export interface AdaptiveOpts {
 export function adaptiveBlock(opts: AdaptiveOpts): string {
   const parts: string[] = [];
   parts.push(
-    `Setting: you are in "${opts.sceneName}" with the user. Answer what they said first; only add one brief scene detail when it fits their topic — do not monologue about the backdrop or suggest random activities.`,
+    `Setting: you and the user are in "${opts.sceneName}". Treat the scene as quiet backdrop context — answer what the user actually asked first; only nod to the setting when they bring it up or when one brief natural touch fits. Do not pad replies with forced scenery, weather metaphors, or activity suggestions tied to the backdrop.`,
   );
   const ug = opts.userGender;
   if (opts.kidMode) {
