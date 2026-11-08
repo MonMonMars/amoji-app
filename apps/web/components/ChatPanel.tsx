@@ -186,7 +186,7 @@ import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodb
 import { detectExercise, startExercise, advanceExercise, exerciseFarewellLine, type ExerciseState } from '../lib/exercises';
 import { buildDailyGreeting, buildEnterNameGreeting, buildMemoryBlock, ensureUserNameFromProfile, feltMood, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange, rememberTurn } from '../lib/memory';
 import { listenContinuous, listenSupported } from '../lib/listen';
-import { getEntryGateRecord } from '../lib/entry-gate';
+import { getEntryGateRecord, micPreflightGrantedThisSession } from '../lib/entry-gate';
 import {
   duckExternalAudioForCompanion,
   enterVoiceChatAudioSession,
@@ -1292,10 +1292,17 @@ export default function ChatPanel({
     pauseForeignPageMedia();
     if (micAutoArmedRef.current) return;
     if (!listenSupported()) return;
-    const rec = getEntryGateRecord();
-    if (rec?.mic === 'denied' || rec?.mic === 'unsupported') return;
+    const preflight = micPreflightGrantedThisSession();
+    if (!preflight) {
+      const rec = getEntryGateRecord();
+      if (rec?.mic === 'denied' || rec?.mic === 'unsupported') return;
+    }
     micAutoArmedRef.current = true;
-    const micDelay = shouldPlayOpenCheer(characterId) ? OPEN_CHEER_MS + 300 : 400;
+    const micDelay = preflight
+      ? 0
+      : shouldPlayOpenCheer(characterId)
+        ? OPEN_CHEER_MS + 300
+        : 400;
     const t0 = window.setTimeout(() => {
       if (!micModeRef.current) beginVoiceMode({ cutCompanion: false });
     }, micDelay);

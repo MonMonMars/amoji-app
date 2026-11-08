@@ -50,8 +50,9 @@ describe('voice + master mute defaults', () => {
 
   it('one-click bootstrap unmutes stale voice + master flags', () => {
     const bootstrap = readFileSync(join(web, 'lib/one-click-setup.ts'), 'utf8');
-    expect(bootstrap).toMatch(/if \(isMasterMuted\(\)\) setMasterMuted\(false\)/);
-    expect(bootstrap).toMatch(/if \(!voiceEnabled\(\)\) setVoiceEnabled\(true\)/);
-    expect(bootstrap).toContain('primeAudioForChatEnter');
+    expect(bootstrap).toContain('primeChatStartGesture');
+    const gesture = readFileSync(join(web, 'lib/chat-start-gesture.ts'), 'utf8');
+    expect(gesture).toMatch(/if \(isMasterMuted\(\)\) setMasterMuted\(false\)/);
+    expect(gesture).toMatch(/if \(!voiceEnabled\(\)\) setVoiceEnabled\(true\)/);
   });
 });

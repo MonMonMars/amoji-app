@@ -20,7 +20,8 @@ import StorySetupPanel from './StorySetupPanel';
 import { LangCardFace } from './selectors';
 import { assetUrl } from '../lib/asset';
 import { bigheadPath } from '../lib/bighead';
-import { playVoiceGreeting, primeAudioForChatEnter } from '../lib/voice';
+import { playVoiceGreeting } from '../lib/voice';
+import { beginMicPreflightFromGesture, primeChatStartGesture } from '../lib/chat-start-gesture';
 import { introText } from '../lib/character-intro';
 import { primeLocationForChatEnter } from '../lib/live-tools';
 import { activeVoiceChoice } from '../lib/voice-picks';
@@ -102,7 +103,8 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
     // Mute All stays intact; geo deny still enters chat (ask city later if needed).
     // t786: unlock audio FIRST; defer geo so iOS silent-<audio> prime is not raced by the
     // permission dialog (which can drop the gesture unlock on iPhone).
-    primeAudioForChatEnter();
+    primeChatStartGesture();
+    beginMicPreflightFromGesture();
     window.setTimeout(() => { try { primeLocationForChatEnter(); } catch { /* ignore */ } }, 120);
     const go = () => {
       clearStorySession();

@@ -12,7 +12,9 @@ describe('chat mic auto-on + external audio duck', () => {
     expect(chat).toContain('beginVoiceMode');
     expect(chat).toContain('shouldPlayOpenCheer');
     expect(chat).toContain('cutCompanion: false');
+    expect(chat).toContain('micPreflightGrantedThisSession');
     expect(chat).toMatch(/micDelay[\s\S]*?beginVoiceMode\(\{ cutCompanion: false \}\)/);
+    expect(chat).toMatch(/preflight[\s\S]*?\? 0/);
     expect(chat).toContain("rec?.mic === 'denied'");
   });
 

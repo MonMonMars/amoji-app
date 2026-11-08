@@ -5,26 +5,13 @@
  * voice sample and mic run with a short cap; chat still works if they fail.
  */
 import { acceptCurrentLegal, hasAcceptedCurrentLegal } from './legal-accept';
-import { passEntryGate, type MicOutcome } from './entry-gate';
+import { passEntryGate, setMicPreflightSession } from './entry-gate';
 import { loadPrefs, type Lang } from './prefs';
 import { saveProfile, loadProfile } from './profile';
 import { ensureUserNameFromProfile } from './memory';
-import { isMasterMuted, setMasterMuted } from './master-mute';
-import { listenSupported } from './listen';
-import { primeAudioForChatEnter, setVoiceEnabled, testVoiceChain, voiceEnabled } from './voice';
-
-async function requestMic(): Promise<MicOutcome> {
-  if (!listenSupported()) return 'unsupported';
-  const md = typeof navigator !== 'undefined' ? navigator.mediaDevices : undefined;
-  if (!md?.getUserMedia) return 'unsupported';
-  try {
-    const stream = await md.getUserMedia({ audio: true });
-    stream.getTracks().forEach((track) => track.stop());
-    return 'granted';
-  } catch {
-    return 'denied';
-  }
-}
+import { primeChatStartGesture } from './chat-start-gesture';
+import { requestMic } from './mic-preflight';
+import { testVoiceChain } from './voice';
 
 async function voiceSampleOk(characterId: string, lang: Lang, ms: number): Promise<boolean> {
   try {
@@ -52,9 +39,7 @@ export interface OneClickSetupOpts {
 export async function oneClickBootstrap(opts: OneClickSetupOpts = {}): Promise<{ voiceOk: boolean }> {
   if (!hasAcceptedCurrentLegal()) acceptCurrentLegal();
 
-  try { if (isMasterMuted()) setMasterMuted(false); } catch { /* ignore */ }
-  try { if (!voiceEnabled()) setVoiceEnabled(true); } catch { /* ignore */ }
-  try { primeAudioForChatEnter(); } catch { /* ignore */ }
+  try { primeChatStartGesture(); } catch { /* ignore */ }
 
   const lang = opts.lang ?? loadPrefs().lang;
   const name = opts.name ?? loadProfile().name ?? '';
@@ -74,6 +59,7 @@ export async function oneClickBootstrap(opts: OneClickSetupOpts = {}): Promise<{
     audioHeard: voiceOk ? 'yes' : 'no',
     mic,
   });
+  if (mic === 'granted') setMicPreflightSession(true);
 
   return { voiceOk };
 }

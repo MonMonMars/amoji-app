@@ -310,10 +310,11 @@ describe('entry gate — wiring', () => {
   });
 
   it('one-click bootstrap unmutes voice replies and master mute', () => {
-    const bootstrap = read('lib/one-click-setup.ts');
-    expect(bootstrap).toContain('setVoiceEnabled(true)');
-    expect(bootstrap).toContain('voiceEnabled()');
-    expect(bootstrap).toContain('setMasterMuted(false)');
+    expect(read('lib/one-click-setup.ts')).toContain('primeChatStartGesture');
+    const gesture = read('lib/chat-start-gesture.ts');
+    expect(gesture).toContain('setVoiceEnabled(true)');
+    expect(gesture).toContain('voiceEnabled()');
+    expect(gesture).toContain('setMasterMuted(false)');
   });
 
   it('the guard renders an opaque blocker before it knows, then the gate', () => {
@@ -333,10 +334,11 @@ describe('entry gate — wiring', () => {
   });
 
   it('one-click setup asks for the mic with getUserMedia and stops the track', () => {
-    const bootstrap = read('lib/one-click-setup.ts');
-    expect(bootstrap).toContain('getUserMedia');
-    expect(bootstrap).toContain('track.stop()');
-    expect(bootstrap).toContain("'unsupported'");
+    expect(read('lib/one-click-setup.ts')).toContain('requestMic');
+    const mic = read('lib/mic-preflight.ts');
+    expect(mic).toContain('getUserMedia');
+    expect(mic).toContain('track.stop()');
+    expect(mic).toContain("'unsupported'");
   });
 
   it('the honest-limitation comment is present where the decision lives', () => {
