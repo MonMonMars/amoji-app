@@ -1233,7 +1233,11 @@ export default function ChatPanel({
       onSpeechStart: () => {
         setUserSpeaking(true);
         if (vadGraceRef.current) { clearTimeout(vadGraceRef.current); vadGraceRef.current = null; }
-        if (bargeInArmed) {
+        // Silero hears raw mic frames — her own TTS from the speakers trips
+        // "speech" and used to call stopSpeaking() on every reply after mic
+        // open. Leave barge-in to Web Speech onSpeechStart (recognized words
+        // only). VAD still owns UI + endpointing.
+        if (bargeInArmed && !isSpeaking() && !speechPending()) {
           bargeInArmed = false;
           stopSpeaking();
         }
