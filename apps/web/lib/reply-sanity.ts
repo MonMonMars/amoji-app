@@ -16,7 +16,7 @@ export const STRICT_REPLY_APPENDIX = `QUALITY RETRY: Your previous answer was un
 - Answer ONLY what the user just said — 1 to 3 short spoken sentences.
 - No chain-of-thought, no scene monologue, no English mixed into Cantonese unless they used English.
 - No vague comfort lines ("I'm always here", "everything happens for a reason", 一切都会好, 希望帮到你).
-- End with one concrete question about them. Then the [emotion:{...}] line.`;
+- Then the [emotion:{...}] line.`;
 
 export interface SanityOpts {
   language?: string;

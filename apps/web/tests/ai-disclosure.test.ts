@@ -73,7 +73,8 @@ describe('AI disclosure — system prompt hard rule', () => {
   it('still carries every rule the reply-quality suite pinned', () => {
     expect(BASE_SYSTEM).toMatch(/1 to 3 short sentences/);
     expect(BASE_SYSTEM).toMatch(/NO NONSENSE/);
-    expect(BASE_SYSTEM).toMatch(/END WITH A QUESTION/);
+    expect(BASE_SYSTEM).not.toMatch(/END WITH A QUESTION/);
+    expect(BASE_SYSTEM).toMatch(/Privacy and memory/i);
     expect(BASE_SYSTEM).toMatch(/BE PRECISE/);
     expect(BASE_SYSTEM).toMatch(/hehe\/haha/);
     expect(BASE_SYSTEM).toMatch(/hey-hey/);

@@ -1,13 +1,11 @@
 import type { Lang } from './prefs';
 
-// The closing question is the continuity rule: a reply that ends flat gives the
-// user nothing to answer, and the chat dies. The model is told to write its own
-// on-topic question; this is the safety net for when it forgets.
+// Privacy-first: do not tack on a generic follow-up question in code. The
+// companion may ask something only when it naturally fits the user's message;
+// empty "tell me more" prompts are worse than a short statement.
 //
-// The bank is deliberately OPEN questions — they work after any reply, and they
-// beat the old single "你覺得點呀？/ What do you think?", which is exactly the
-// content-free prompt the user complained about ("sounds nonsense"). Pick is
-// deterministic so tests and repeated turns stay stable.
+// The bank remains for deterministic tests / opt-in callers that pass
+// `forceFollowUp: true` (not used in the default chat path).
 const FOLLOW: Record<Lang, readonly string[]> = {
   yue: [
     '咁你呢？',
@@ -40,12 +38,12 @@ function bank(lang?: string): readonly string[] {
   return FOLLOW[key] ?? FOLLOW.yue;
 }
 
-/** Keep the chat going: if a reply has no question yet, add one in the UI
- *  language. A reply that already asks something, or that is a goodbye, is
- *  left exactly as written. */
-export function withQuestion(reply: string, lang?: string): string {
+export type WithQuestionOpts = { forceFollowUp?: boolean };
+
+/** By default returns the reply unchanged (privacy — no automatic fishing). */
+export function withQuestion(reply: string, lang?: string, opts?: WithQuestionOpts): string {
   const text = reply.trim();
-  if (!text) return reply;
+  if (!text || !opts?.forceFollowUp) return reply;
   if (/[?？]/.test(text)) return text;
   if (FAREWELL_RE.test(text)) return text;
   const options = bank(lang);
