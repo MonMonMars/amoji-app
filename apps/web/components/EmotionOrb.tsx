@@ -3,7 +3,8 @@
 // r2026-10-03.13: pure soft blob. One blurry-edged sphere — the alpha melts
 // to zero at the rim, so there is NO ring, NO hard outline, no square edge.
 // The ball breathes with her voice volume (louder = bigger), and the color
-// follows her mood: yellow when happy, red when angry, ChatGPT-blue tint
+// follows her mood (lib/emotion-orb-colors): yellow/orange excited, green/blue
+// calm, red angry only — never the character accent. ChatGPT-blue tint
 // with ripple rings while listening.
 // r2026-10-04.87: the orb now also breathes for the USER — while the VAD
 // hears you speaking, the ball swells bigger and burns white-hot in the
@@ -17,30 +18,15 @@
 // alpha zero well inside the canvas and nothing can ever be squared off.
 import { useEffect, useRef } from 'react';
 import { getLatestFrame, dominantMood } from '../lib/companion';
+import { orbBaseRgb } from '../lib/emotion-orb-colors';
 import { sampleSpeech } from '../lib/speech';
-
-const MOOD_RGB: Record<string, [number, number, number]> = {
-  joy: [255, 205, 80],
-  angry: [255, 95, 90],
-  sad: [95, 140, 255],
-  surprised: [110, 225, 255],
-  relaxed: [125, 255, 175],
-  neutral: [150, 220, 220],
-};
 
 // ChatGPT "voice active" blue — the tint the orb takes while listening
 const LISTEN_RGB: [number, number, number] = [72, 160, 255];
 
-function hexToRgb(hex: string): [number, number, number] {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
-  if (!m) return [150, 220, 220];
-  const n = parseInt(m[1]!, 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-}
-
 export default function EmotionOrb({
   size = 72,
-  accent = '#f9a8d4',
+  accent: _accent = '#f9a8d4',
   listening = false,
   userSpeaking = false,
 }: {
@@ -63,8 +49,6 @@ export default function EmotionOrb({
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     canvas.width = size * dpr;
     canvas.height = size * dpr;
-    const accentRgb = hexToRgb(accent);
-
     let raf = 0;
     let t = 0;
     let last = performance.now();
@@ -79,7 +63,7 @@ export default function EmotionOrb({
 
       const frame = getLatestFrame();
       const mood = dominantMood(frame);
-      const base = mood === 'neutral' ? accentRgb : MOOD_RGB[mood]!;
+      const base = orbBaseRgb(mood, frame);
       // r87 — while YOU speak, the ball burns white-hot; while listening
       // (nobody talking yet) it blends toward the ChatGPT voice-blue
       const target: [number, number, number] = userSpeakRef.current
@@ -189,7 +173,7 @@ export default function EmotionOrb({
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [size, accent]);
+  }, [size]);
 
   return <canvas ref={ref} style={{ width: size, height: size }} aria-hidden />;
 }
