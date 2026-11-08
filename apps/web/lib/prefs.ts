@@ -127,7 +127,7 @@ export type StrKey =
   | 'bgVoid' | 'bgAurora' | 'bgEmber' | 'bgSakura' | 'bgAbyss' | 'bgRain' | 'bgSunset' | 'bgMeadow'
   | 'bgCloudsea' | 'bgNeon' | 'bgSnowmoon' | 'bgGalaxy'
   // v0.9.3 flow: splash → login → select → chat
-  | 'splashStart' | 'legalScrollHint' | 'gateScrollHint'
+  | 'splashStart' | 'splashOpenSetup' | 'legalScrollHint' | 'gateScrollHint'
   | 'setupOneTitle' | 'setupOneLead' | 'setupOneDisclaimer'
   | 'setupSoundFailTitle' | 'setupSoundFailLead'
   | 'loginPrompt' | 'loginCta' | 'loginSkip'
@@ -374,6 +374,12 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: '請先滾到最底，先可以繼續。',
     zh: '请先滚到最底，才能继续。',
     ja: '最後までスクロールすると次へ進めます。',
+  },
+  splashOpenSetup: {
+    en: 'Open setup page',
+    yue: '開設定頁',
+    zh: '打开设置页',
+    ja: 'セットアップページ',
   },
   setupOneTitle: {
     en: 'Ready to play',

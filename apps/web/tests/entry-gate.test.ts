@@ -303,8 +303,17 @@ describe('entry gate — wiring', () => {
     expect(splash).toContain('oneClickBootstrap');
     expect(splash).toContain('hasPassedEntryGate');
     expect(splash).toContain("router.push('/select')");
+    expect(splash).toContain('href="/setup"');
+    expect(splash).toContain('href="/gate"');
     const login = read('app/login/page.tsx');
     expect(login).toContain("router.replace('/')");
+  });
+
+  it('one-click bootstrap unmutes voice replies and master mute', () => {
+    const bootstrap = read('lib/one-click-setup.ts');
+    expect(bootstrap).toContain('setVoiceEnabled(true)');
+    expect(bootstrap).toContain('voiceEnabled()');
+    expect(bootstrap).toContain('setMasterMuted(false)');
   });
 
   it('the guard renders an opaque blocker before it knows, then the gate', () => {

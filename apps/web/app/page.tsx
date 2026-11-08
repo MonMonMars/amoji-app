@@ -97,6 +97,26 @@ export default function Splash() {
           {' · '}
           <Link href="/terms" className="text-rose-100/70 underline underline-offset-2">/terms</Link>
         </p>
+
+        <nav aria-label={t(lang, 'splashOpenSetup')} className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-rose-50/50">
+          <Link
+            href="/setup"
+            data-testid="splash-setup-link"
+            className="text-rose-100/65 underline underline-offset-2 hover:text-rose-50/80"
+          >
+            /setup
+          </Link>
+          <span aria-hidden className="text-white/20">
+            ·
+          </span>
+          <Link
+            href="/gate"
+            data-testid="splash-gate-link"
+            className="text-rose-100/65 underline underline-offset-2 hover:text-rose-50/80"
+          >
+            /gate
+          </Link>
+        </nav>
       </div>
 
       <p

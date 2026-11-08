@@ -11,7 +11,7 @@ import { saveProfile, loadProfile } from './profile';
 import { ensureUserNameFromProfile } from './memory';
 import { isMasterMuted, setMasterMuted } from './master-mute';
 import { listenSupported } from './listen';
-import { primeAudioForChatEnter, testVoiceChain } from './voice';
+import { primeAudioForChatEnter, setVoiceEnabled, testVoiceChain, voiceEnabled } from './voice';
 
 async function requestMic(): Promise<MicOutcome> {
   if (!listenSupported()) return 'unsupported';
@@ -53,6 +53,7 @@ export async function oneClickBootstrap(opts: OneClickSetupOpts = {}): Promise<{
   if (!hasAcceptedCurrentLegal()) acceptCurrentLegal();
 
   try { if (isMasterMuted()) setMasterMuted(false); } catch { /* ignore */ }
+  try { if (!voiceEnabled()) setVoiceEnabled(true); } catch { /* ignore */ }
   try { primeAudioForChatEnter(); } catch { /* ignore */ }
 
   const lang = opts.lang ?? loadPrefs().lang;

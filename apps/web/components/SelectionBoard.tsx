@@ -141,7 +141,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
 
       <div
         data-testid="selection-thumbs"
-        className={`relative z-20 flex min-h-0 flex-1 flex-col items-center ${prefsReady ? '' : 'opacity-0'}`}
+        className="relative z-20 flex min-h-0 flex-1 flex-col items-center"
       >
         <SelectTopBars
           lang={lang}
@@ -159,7 +159,9 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
            this one vertical scrollbar. No row owns its own. */
         <div
           data-testid="select-scroll"
-          className="flex min-h-0 w-full flex-1 flex-col items-center overflow-x-hidden overflow-y-auto overscroll-contain bg-gradient-to-t from-black/60 via-black/25 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6"
+          className={`flex min-h-0 w-full flex-1 flex-col items-center overflow-x-hidden overflow-y-auto overscroll-contain bg-gradient-to-t from-black/60 via-black/25 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6 ${
+            prefsReady ? '' : 'pointer-events-none opacity-0'
+          }`}
         >
           <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col items-center gap-2">
             <section className="pointer-events-auto w-full min-w-0">
@@ -316,26 +318,29 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
             />
 
             <EmotionClipRow lang={lang} gender={character.gender} accent={character.accent} characterId={character.id} />
-
-            {/* Sticky inside the one scroller so START / Change is always in
-                reach without hunting for the end of the list. The bottom pad
-                keeps the pill clear of the iPhone home indicator. */}
-            <div className="sticky bottom-0 z-20 mt-1 flex w-full justify-center bg-gradient-to-t from-black/85 via-black/60 to-transparent pt-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-              <button
-                type="button"
-                onClick={confirm}
-                data-dev="T1"
-                aria-label={mode === 'start' ? t(lang, 'confirmCta') : t(lang, 'changeCta')}
-                className={`fx-press fx-start ui-btn ui-btn-primary pointer-events-auto relative min-h-12 shrink-0 rounded-full px-10 text-sm ${
-                  mode === 'start' ? 'min-w-40 tracking-[0.28em]' : 'min-w-32'
-                }`}
-              >
-                {mode === 'start' ? t(lang, 'confirmCta') : t(lang, 'changeCta')}
-              </button>
-            </div>
           </div>
         </div>
         )}
+        {/* START / Change stays visible while prefs sync — only the grid above fades. */}
+        <div
+          data-testid="selection-confirm"
+          className="pointer-events-auto z-30 flex w-full shrink-0 justify-center bg-gradient-to-t from-black/85 via-black/60 to-transparent px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+        >
+          <button
+            type="button"
+            onClick={confirm}
+            disabled={!prefsReady || leaving}
+            data-dev="T1"
+            data-testid="selection-confirm-cta"
+            aria-label={mode === 'start' ? t(lang, 'confirmCta') : t(lang, 'changeCta')}
+            aria-busy={!prefsReady}
+            className={`fx-press fx-start ui-btn ui-btn-primary relative min-h-12 shrink-0 rounded-full px-10 text-sm disabled:opacity-60 ${
+              mode === 'start' ? 'min-w-40 tracking-[0.28em]' : 'min-w-32'
+            }`}
+          >
+            {mode === 'start' ? t(lang, 'confirmCta') : t(lang, 'changeCta')}
+          </button>
+        </div>
       </div>
     </main>
   );
