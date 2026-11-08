@@ -385,8 +385,21 @@ export default function ChatPanel({
   onMemCountRef.current = onMemCount;
   const onAutoIdleRef = useRef(onAutoIdle);
   onAutoIdleRef.current = onAutoIdle;
-  const pushAutoIdle = (assistantText: string, emotionHints?: Record<string, number>, thinking?: boolean) => {
-    onAutoIdleRef.current?.(resolveChatAutoIdle({ assistantText, emotionHints, thinking }));
+  const pushAutoIdle = (
+    assistantText: string,
+    emotionHints?: Record<string, number>,
+    thinking?: boolean,
+    opts?: { openGreet?: boolean; sessionFarewell?: boolean },
+  ) => {
+    onAutoIdleRef.current?.(
+      resolveChatAutoIdle({
+        assistantText,
+        emotionHints,
+        thinking,
+        openGreet: opts?.openGreet,
+        sessionFarewell: opts?.sessionFarewell,
+      }),
+    );
   };
 
   // r70 — the user's own gender (Settings → "You are"; never-set = undefined,
@@ -710,8 +723,11 @@ export default function ChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // poke reactions — SFX + VRM motion only; lip hooks run off the reaction line
-  // but never land in persisted chat history or copy transcript.
+  // poke replies — the cheer line is spoken once, in her normal voice.
+  // A surprise-pitched "Haha!" lead (and the rising poke squeak) used to
+  // stack on that line and leave speechSynthesis at the wrong rate, so the
+  // next chat line sounded broken too. The face flinch still comes from the
+  // poke animation. Displayed text is the line itself.
   const lastPokeRef = useRef(pokeCount);
   const lastOfferAtRef = useRef(0);
   useEffect(() => {
@@ -726,6 +742,7 @@ export default function ChatPanel({
     const line = pokeSectionPlaceholderLine(key, lang);
     feedUtterance(line);
     notifySpeaking(line);
+    setHistory((h) => [...h, { role: 'assistant', content: line }]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pokeCount]);
 
@@ -1413,17 +1430,16 @@ export default function ChatPanel({
           old line DOWN into the bright zone makes it crisp and readable. */}
       <div
         ref={scrollRef}
-        data-testid="chat-history-scroll"
         onScroll={(e) => {
           const el = e.currentTarget;
           const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
           nearBottomRef.current = atBottom;
           setPinnedBottom(atBottom);
         }}
-        className="pointer-events-auto w-full touch-pan-y space-y-2.5 overflow-y-auto overscroll-contain px-2 pb-1 pt-6 [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)] [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)]"
+        className="pointer-events-auto w-full touch-pan-y select-none space-y-2.5 overflow-y-auto overscroll-contain px-2 pb-1 pt-6 [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)] [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)]"
         style={{ maxHeight: '17vh' }}
       >
-        {history.length === 0 && <p className="select-text [-webkit-user-select:text] text-center text-white/40">{t(lang, 'sayHi', { name: characterName })}</p>}
+        {history.length === 0 && <p className="text-center text-white/40">{t(lang, 'sayHi', { name: characterName })}</p>}
         {history.map((m, i) => {
           const tailAssistant =
             m.role === 'assistant' &&
@@ -1470,7 +1486,7 @@ export default function ChatPanel({
             instant the ~1s silence endpoint sends it, exactly like ChatGPT. */}
         {liveText.trim() && (
           <div className="text-right">
-            <p className="select-text italic opacity-75" style={{ color: accent }}>{liveText}</p>
+            <p className="italic opacity-75" style={{ color: accent }}>{liveText}</p>
           </div>
         )}
         {busy && <p className="text-white/40">{t(lang, 'typing', { name: characterName })}</p>}
