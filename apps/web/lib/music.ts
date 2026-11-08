@@ -62,9 +62,10 @@ export function getTheme(characterId: string): MusicTheme {
 }
 
 /**
- * Pixel chat-entry — prefer royalty-free streaming/embed URLs for sing/dance
- * backing when a legal catalog exists; until then WebAudio + `performance-clips`
- * stay primary. `style` is the user's music/dance preference when they pick sing.
+ * Prefer a royalty-free streaming/embed URL for sing/dance beds when a legal
+ * catalog exists. Until then WebAudio + `performance-clips` stay primary.
+ * `style` is reserved for the user's music/dance preference; always returns
+ * null today — never scrape commercial platforms (see docs/MUSIC_STREAMING.md).
  */
 export function resolveStreamPlaylist(_style?: string): string | null {
   return null;
