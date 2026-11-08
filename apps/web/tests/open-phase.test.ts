@@ -11,7 +11,9 @@ import {
   openCheerAlreadyDone,
   openIdleBriefAlreadyDone,
   shouldPlayOpenCheer,
+  buildOpenCheerLine,
   openPhaseNewsAsk,
+  openPhaseTopicAsk,
   openPhaseWeatherAsk,
   saveOpenPhaseState,
   summarizeOpenPhaseSpoken,
@@ -96,6 +98,24 @@ describe('openPhase asks + spoken summary', () => {
   it('summarizeOpenPhaseSpoken drops empty parts', () => {
     expect(summarizeOpenPhaseSpoken('', null, undefined, 'Hello there')).toMatch(/hello there/i);
     expect(summarizeOpenPhaseSpoken('', '  ')).toBe('');
+  });
+
+  it('openPhaseTopicAsk exists per UI language', () => {
+    for (const lang of ['en', 'yue', 'zh', 'ja']) {
+      expect(openPhaseTopicAsk(lang).length).toBeGreaterThan(4);
+    }
+  });
+
+  it('buildOpenCheerLine orders hi + intro before duplicate topic ask', () => {
+    const line = buildOpenCheerLine('yue', {
+      nameHello: '夜安，阿明',
+      personaIntro: '你好，我係Shino！我鍾意茶。今日想傾咩呀？',
+      topicAsk: openPhaseTopicAsk('yue'),
+    });
+    expect(line).toContain('阿明');
+    expect(line).toContain('Shino');
+    const asks = (line.match(/傾咩/g) ?? []).length;
+    expect(asks).toBeLessThanOrEqual(2);
   });
 });
 

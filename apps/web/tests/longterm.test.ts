@@ -120,8 +120,9 @@ describe('topic-relevant recall (v5)', () => {
     m.userName = 'Simon';
     m.exchanges = 5;
     rememberExchange('yesterday I went hiking with my dog', m);
-    const built = buildMemoryBlock('en', m, 'remember')!;
+    const built = buildMemoryBlock('en', m, 'hello')!;
     const block = built.block;
     expect(block).not.toContain('older memories related');
+    expect(block).toContain('do NOT volunteer');
   });
 });

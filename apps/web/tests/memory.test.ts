@@ -401,6 +401,8 @@ describe('memory v6 — annual dates + her promises (r2026-10-06.130)', () => {
     const m = fresh();
     m.userName = 'Simon';
     rememberExchange('I love ramen', m);
+    const gated = buildMemoryBlock('en', m, 'hi')!;
+    expect(gated.used.length).toBe(1);
     const built = buildMemoryBlock('en', m, 'what do you remember about me?')!;
     const fact = m.facts.find((f) => f.startsWith('likes:'));
     expect(fact).toBeDefined();

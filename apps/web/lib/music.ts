@@ -61,6 +61,15 @@ export function getTheme(characterId: string): MusicTheme {
   return MUSIC_THEMES[characterId] ?? MUSIC_THEMES['default']!;
 }
 
+/**
+ * Pixel chat-entry — prefer royalty-free streaming/embed URLs for sing/dance
+ * backing when a legal catalog exists; until then WebAudio + `performance-clips`
+ * stay primary. `style` is the user's music/dance preference when they pick sing.
+ */
+export function resolveStreamPlaylist(_style?: string): string | null {
+  return null;
+}
+
 /** equal temperament: semitone offset from A4 → Hz */
 export function noteFreq(semitoneOffsetFromA4: number): number {
   return 440 * Math.pow(2, semitoneOffsetFromA4 / 12);

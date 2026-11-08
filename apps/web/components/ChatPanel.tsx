@@ -149,7 +149,8 @@ import { pickIdleCompanionLine } from '../lib/idle-talk';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
 import { pickCharacterInteraction } from '../lib/interaction-lines';
 import { pokeSectionPlaceholderLine, type PokeSectionId } from '../lib/poke-zones';
-import { personalityPrompt } from '../lib/personality';
+import { personalityProfile, personalityPrompt } from '../lib/personality';
+import { voiceOpening, type VoiceId } from '../lib/personality-voice';
 import { laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { assetUrl } from '../lib/asset';
 import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
@@ -164,6 +165,7 @@ import { withQuestion } from '../lib/follow-up';
 import {
   OPEN_CHEER_MS,
   OPEN_IDLE_BRIEF_MS,
+  buildOpenCheerLine,
   isFreshOpenPhase,
   markChatRoomClosed,
   markChatRoomOpened,
@@ -171,11 +173,14 @@ import {
   openIdleBriefAlreadyDone,
   markOpenCheerDone,
   openCheerAlreadyDone,
-  shouldPlayOpenCheer,
-  openPhaseNewsAsk,
-  openPhaseWeatherAsk,
-  summarizeOpenPhaseSpoken,
+  openPhaseTopicAsk,
 } from '../lib/open-phase';
+import {
+  formatTopicSuggestionLine,
+  pickTopicSuggestions,
+  undecidedTopicReply,
+  userUndecided,
+} from '../lib/topic-suggestions';
 import { speak, stopSpeaking, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechRemainder, whenSpeechIdle, speakThinkingFiller } from '../lib/voice';
 import { productionChat } from '../lib/backend-client';
 import { stopThinkingSound } from '../lib/thinking-sound';
@@ -627,9 +632,9 @@ export default function ChatPanel({
     return reply;
   };
 
-  // t794/t796 open phase: cheer-up first; weather/light news only while still
-  // idle; session gap (>= OPEN_SESSION_GAP_MS, default 2.5h) = fresh open —
-  // clear history and skip lastThread resume. Keep #58 filler bans.
+  // t794/t796 + Pixel entry: hi + persona intro + topic ask; silent stretch
+  // gets 2–3 topic suggestions (no auto weather/news). Session gap = fresh
+  // open — clear history and skip lastThread resume. Keep #58 filler bans.
   useEffect(() => {
     if (greetedRef.current) return;
     greetedRef.current = true;
@@ -655,8 +660,22 @@ export default function ChatPanel({
       !fresh && visit.isNewDay
         ? buildDailyGreeting(lang, visit, { skipThread: true, privacyOnly: true })
         : undefined;
+    const profile = personalityProfile(characterId, characterGender);
+    const personaIntro = voiceOpening(
+      profile.personality as VoiceId,
+      profile.motif,
+      profile.frame,
+      lang,
+      characterName ?? 'friend',
+    );
     const openLine =
-      namedHello ?? shortDaily ?? pickLine('startup', lang, 1, startupVars);
+      buildOpenCheerLine(lang, {
+        nameHello: namedHello,
+        personaIntro,
+        topicAsk: openPhaseTopicAsk(lang),
+      })
+      || shortDaily
+      || pickLine('startup', lang, 1, startupVars);
     if (skipCheer) {
       return () => { markChatRoomClosed(); };
     }
@@ -674,22 +693,13 @@ export default function ChatPanel({
       ? null
       : setTimeout(() => {
           if (userHasSpokenRef.current || openIdleBriefDoneRef.current) return;
-          void (async () => {
-            if (userHasSpokenRef.current || busyRef.current) return;
-            try {
-              const weather = await clientLiveContext(openPhaseWeatherAsk(lang), lang, undefined, { brief: true });
-              if (userHasSpokenRef.current) return;
-              const news = await clientLiveContext(openPhaseNewsAsk(lang), lang, undefined, { brief: true });
-              if (userHasSpokenRef.current) return;
-              const line = summarizeOpenPhaseSpoken(weather.spoken, news.spoken);
-              if (!line) return;
-              openIdleBriefDoneRef.current = true;
-              markOpenIdleBriefDone(Date.now(), characterId);
-              sayLocal(line, { joy: 0.55 });
-            } catch {
-              /* live brief is best-effort */
-            }
-          })();
+          if (userHasSpokenRef.current || busyRef.current) return;
+          const topics = pickTopicSuggestions(lang, characterId?.length ?? 0, 3);
+          const line = formatTopicSuggestionLine(lang, topics);
+          if (!line) return;
+          openIdleBriefDoneRef.current = true;
+          markOpenIdleBriefDone(Date.now(), characterId);
+          sayLocal(line, { joy: 0.52 });
         }, OPEN_IDLE_BRIEF_MS);
     return () => {
       clearTimeout(t1);
@@ -774,27 +784,12 @@ export default function ChatPanel({
         sayLocal(pickShowcaseOffer(kind, lang, n), feltHints);
         return;
       }
-      // t794 Phase 2: after the user has spoken, one auto weather/light-news
-      // brief per quiet stretch — never while they are mid-turn (busyRef).
-      if (
-        userHasSpokenRef.current
-        && !idleAutoAfterUserRef.current
-        && !busyRef.current
-      ) {
+      // After the user has spoken, one topic-menu hint per quiet stretch if
+      // they have not picked a direction (no auto weather/news).
+      if (userHasSpokenRef.current && !idleAutoAfterUserRef.current && !busyRef.current) {
         idleAutoAfterUserRef.current = true;
-        void (async () => {
-          if (busyRef.current) return;
-          try {
-            const weather = await clientLiveContext(openPhaseWeatherAsk(lang), lang, undefined, { brief: true });
-            if (busyRef.current || Date.now() - lastUserRef.current < IDLE_AFTER_MS) return;
-            const news = await clientLiveContext(openPhaseNewsAsk(lang), lang, undefined, { brief: true });
-            if (busyRef.current || Date.now() - lastUserRef.current < IDLE_AFTER_MS) return;
-            const line = summarizeOpenPhaseSpoken(weather.spoken, news.spoken);
-            if (line) sayLocal(line, feltHints ?? { joy: 0.45 });
-          } catch {
-            /* idle live brief is best-effort */
-          }
-        })();
+        const topics = pickTopicSuggestions(lang, chatterCountRef.current + 1, 3);
+        sayLocal(formatTopicSuggestionLine(lang, topics), feltHints ?? { joy: 0.45 });
         return;
       }
       // Idle talk: stay on topic OR suggest a new one (statements).
@@ -814,6 +809,17 @@ export default function ChatPanel({
     const text = (override ?? input).trim();
     if (!text || busy) return;
     setInput('');
+    if (userUndecided(text)) {
+      lastActivityRef.current = Date.now();
+      lastUserRef.current = Date.now();
+      userHasSpokenRef.current = true;
+      reengageStageRef.current = 0;
+      setHistory((h) => [...h, { role: 'user', content: text }]);
+      feedUtterance(text);
+      const line = undecidedTopicReply(lang, text.length);
+      sayLocal(line, { joy: 0.5 });
+      return;
+    }
     setBusy(true);
     busyRef.current = true;
     lastActivityRef.current = Date.now();
@@ -1007,6 +1013,8 @@ export default function ChatPanel({
     // the track is audible and named while she thinks. A sing request skips
     // the thinking filler — the clip is the vocal.
     const requested = detectMove(text);
+    // Sing/dance: moves + procedural clip now; ask taste when vague — streaming
+    // URL hook is resolveStreamPlaylist() in lib/music (follow-up).
     if (requested === 'sing' || requested === 'dance') {
       triggerMove(requested);
       applyLlmHints({ joy: requested === 'sing' ? 0.88 : 0.72 });
