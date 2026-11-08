@@ -10,6 +10,7 @@ import {
   pickLightHeadlines,
   placeLabel,
   planTools,
+  isLiveFactsOnlyTurn,
   preferLiveReply,
   regionalLightNewsFeedUrls,
   regionalNewsFeedUrls,
@@ -67,6 +68,18 @@ describe('planTools', () => {
       const plan = planTools(text);
       expect(plan.weather || plan.news || plan.where || plan.places || Boolean(plan.searchQuery) || Boolean(plan.recipeQuery) || Boolean(plan.learnQuery), text).toBe(false);
     }
+  });
+
+  it('isLiveFactsOnlyTurn gates weather/news TTS bypass', () => {
+    const weather = planTools("what's the weather here?");
+    expect(isLiveFactsOnlyTurn(weather, 'It is 22° in Berlin.')).toBe(true);
+    expect(isLiveFactsOnlyTurn(weather, '')).toBe(false);
+    const news = planTools('what is the latest news?');
+    expect(isLiveFactsOnlyTurn(news, 'Light headline from Wikipedia.')).toBe(true);
+    const cafe = planTools('cafes near me');
+    expect(isLiveFactsOnlyTurn(cafe, 'Two spots nearby.')).toBe(false);
+    const learn = planTools('search how photosynthesis works');
+    expect(isLiveFactsOnlyTurn(learn, 'Plants use light.')).toBe(false);
   });
 
   it('plans weather here without treating the question words as a city', () => {
