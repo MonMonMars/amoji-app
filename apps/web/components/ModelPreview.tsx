@@ -18,6 +18,8 @@ import { VRMLoaderPlugin } from '@pixiv/three-vrm';
 import type { VRM } from '@pixiv/three-vrm';
 import { modelUrl } from '../lib/asset';
 import { addCastDaylight, applyCastToneMapping } from '../lib/vrm/cast-lighting';
+import { characterIdFromModelRef } from '../lib/vrm/cast-lighting-profile';
+import { dampenCastMatcap } from '../lib/vrm/cast-materials';
 
 export default function ModelPreview({
   url,
@@ -51,12 +53,13 @@ export default function ModelPreview({
     }
     renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     renderer.setSize(host.clientWidth, host.clientHeight);
-    applyCastToneMapping(renderer);
+    const characterId = characterIdFromModelRef(url);
+    applyCastToneMapping(renderer, characterId);
     host.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
     // Same daylight as CompanionCanvas so select preview matches chat.
-    addCastDaylight(scene);
+    addCastDaylight(scene, characterId);
 
     const camera = new THREE.PerspectiveCamera(30, host.clientWidth / host.clientHeight, 0.01, 20);
 
@@ -65,6 +68,7 @@ export default function ModelPreview({
     loader.load(modelUrl(url) ?? url, (gltf) => {
       if (disposed) { renderer.dispose(); return; }
       const vrm = (gltf as unknown as { userData: { vrm: VRM } }).userData.vrm;
+      if (characterId) dampenCastMatcap(vrm.scene, characterId);
       // same identity treatment as the chat room: gentle palette tint + build
       const tintCol = new THREE.Color(tint);
       vrm.scene.traverse((node) => {
