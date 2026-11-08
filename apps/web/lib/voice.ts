@@ -85,6 +85,11 @@ import {
   pinDefaultOutput,
   primeDefaultSpeakerBeforeSynth,
 } from './audio-output';
+import {
+  initAudioTabVisibility,
+  registerTabVisibilityHooks,
+  shouldSuppressVisibilityAudioBurst,
+} from './audio-tab-visibility';
 import { isMasterMuted, subscribeMasterMute } from './master-mute';
 import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripLaughTokens, stripVoicedGlyphs } from './speak-text';
 import { analyzeText } from '@amoji/emotion-core';
@@ -97,8 +102,8 @@ import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText
 import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
 export { speechRemainder };
 import { edgeCastVoice } from './edge-cast';
-import { speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead } from './edge-tts';
-import { pauseAfterClause, splitClauses, stopGtts, speakGtts } from './gtts';
+import { pauseEdgeForTabHide, speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead } from './edge-tts';
+import { pauseAfterClause, pauseGttsForTabHide, splitClauses, stopGtts, speakGtts } from './gtts';
 import { gttsCharacterPitchBias } from './gtts-timbre';
 import { voicePickFor } from './voice-picks';
 import { osVoicePinFor, saveOsVoicePin } from './os-voice-picks';
@@ -203,6 +208,7 @@ export function dismissReplayHint(): void {
 
 if (typeof window !== 'undefined') {
   window.addEventListener('pointerdown', () => {
+    if (shouldSuppressVisibilityAudioBurst()) return;
     if (!replayArmed || !lastSpeak) return;
     replayArmed = false;
     dismissReplayHint();
@@ -277,6 +283,7 @@ function playSilentUnblock(): void {
 // prime an AudioContext on the first tap/keypress anywhere so the greeting and
 // every later reply are allowed to sound.
 function unlockAudio(force = false): void {
+  if (!force && shouldSuppressVisibilityAudioBurst()) return;
   // t719: unmute must re-kick engines even when ctxPrimed/mediaPrimed latched
   // after the first gesture — otherwise resumeVoiceEngines() is a silent no-op.
   if (!ctxPrimed || force) {
@@ -2798,3 +2805,23 @@ function synthSpeak(
   }
 }
 
+if (typeof window !== 'undefined') {
+  registerTabVisibilityHooks({
+    pauseTtsMedia: () => {
+      pauseGttsForTabHide();
+      pauseEdgeForTabHide();
+    },
+    pauseSynth: () => {
+      try {
+        if (typeof speechSynthesis !== 'undefined' && speechSynthesis.speaking) {
+          speechSynthesis.pause();
+        }
+      } catch { /* ignore */ }
+    },
+    onHide: () => {
+      replayArmed = false;
+      dismissReplayHint();
+    },
+  });
+  initAudioTabVisibility();
+}

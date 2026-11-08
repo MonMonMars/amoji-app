@@ -106,6 +106,12 @@ let gapTimer: ReturnType<typeof setTimeout> | null = null;
  */
 let pendingReject: ((err: Error) => void) | null = null;
 
+/** Pause in-flight chunk when the tab is hidden (chain stays alive). */
+export function pauseGttsForTabHide(): void {
+  if (!currentAudio) return;
+  try { currentAudio.pause(); } catch { /* ignore */ }
+}
+
 export function stopGtts(): void {
   generation++;
   clearSpeechCaption();
@@ -216,6 +222,7 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
       const audio = new Audio(
         `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=${q}`,
       );
+      audio.dataset.amojiAudio = '1';
       pinDefaultOutput(audio);
       applyPlaybackVolume(audio);
       audio.preload = 'auto';

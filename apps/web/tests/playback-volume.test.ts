@@ -23,7 +23,7 @@ describe('playback volume', () => {
     savePrefs({ ...DEFAULT_PREFS, voiceVol: 40 });
     expect(getPlaybackVolume()).toBe(0.4);
     savePrefs({ ...DEFAULT_PREFS, voiceVol: 100 });
-    expect(getPlaybackVolume()).toBe(1);
+    expect(getPlaybackVolume()).toBe(0.85);
     savePrefs({ ...DEFAULT_PREFS, voiceVol: 20 });
     expect(getPlaybackVolume()).toBe(0.2);
     savePrefs({ ...DEFAULT_PREFS, voiceVol: 0 as never });

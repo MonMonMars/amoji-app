@@ -303,6 +303,12 @@ let currentAudio: HTMLAudioElement | null = null;
 // later and a stale, already-replaced line gets spoken out of nowhere.
 let pendingReject: ((err: Error) => void) | null = null;
 
+/** Pause in-flight neural audio when the tab is hidden. */
+export function pauseEdgeForTabHide(): void {
+  if (!currentAudio) return;
+  try { currentAudio.pause(); } catch { /* ignore */ }
+}
+
 export function stopEdge(): void {
   if (currentAudio) {
     currentAudio.pause();
@@ -553,6 +559,7 @@ function playMp3Blob(blob: Blob, opts: EdgeVoiceOpts, resolve: () => void, rejec
   let audio: HTMLAudioElement;
   try {
     audio = new Audio(url);
+    audio.dataset.amojiAudio = '1';
   } catch (err) {
     URL.revokeObjectURL(url);
     reject(err instanceof Error ? err : new Error(String(err)));
