@@ -16,12 +16,12 @@ export const OPEN_SESSION_GAP_MS = 2.5 * 60 * 60 * 1000;
 
 export const OPEN_PHASE_KEY = 'amoji.openPhase.v1';
 
-/** Cheer opener timing (matches prior cannedOpener delay). */
-export const OPEN_CHEER_MS = 3_500;
-/** Second cheer / daily check-in line. */
-export const OPEN_CHEER_FOLLOW_MS = 7_500;
-/** Auto weather + light news if the user is still silent after cheer. */
-export const OPEN_IDLE_BRIEF_MS = 12_000;
+/** Single short welcome line after chat enter (not stacked cheer + follow-up). */
+export const OPEN_CHEER_MS = 2_800;
+/** Legacy spacing constant — follow-up cheer disabled; mic delay may still reference it. */
+export const OPEN_CHEER_FOLLOW_MS = OPEN_CHEER_MS;
+/** Auto weather + light news while idle — 0 = off on first open (no unprompted brief). */
+export const OPEN_IDLE_BRIEF_MS = 0;
 
 export interface OpenPhaseState {
   lastClosedAt?: number;
@@ -30,6 +30,10 @@ export interface OpenPhaseState {
   idleBriefAt?: number;
   /** Wall clock when open cheer (leading into name-hello) last spoke this stretch. */
   openCheerAt?: number;
+  /** Companion id when open cheer last spoke (per-character welcome latch). */
+  openCheerCharacterId?: string;
+  /** Companion id when the open idle brief last spoke. */
+  idleBriefCharacterId?: string;
 }
 
 function readStorage(): Storage | null {
@@ -53,6 +57,8 @@ export function loadOpenPhaseState(): OpenPhaseState {
       lastOpenedAt: typeof p.lastOpenedAt === 'number' ? p.lastOpenedAt : undefined,
       idleBriefAt: typeof p.idleBriefAt === 'number' ? p.idleBriefAt : undefined,
       openCheerAt: typeof p.openCheerAt === 'number' ? p.openCheerAt : undefined,
+      openCheerCharacterId: typeof p.openCheerCharacterId === 'string' ? p.openCheerCharacterId : undefined,
+      idleBriefCharacterId: typeof p.idleBriefCharacterId === 'string' ? p.idleBriefCharacterId : undefined,
     };
   } catch {
     return {};
@@ -91,26 +97,52 @@ export function markChatRoomClosed(now = Date.now()): OpenPhaseState {
   return saveOpenPhaseState({ lastClosedAt: now });
 }
 
-export function markOpenIdleBriefDone(now = Date.now()): OpenPhaseState {
-  return saveOpenPhaseState({ idleBriefAt: now });
-}
-
 /** Skip repeating the open idle brief on a within-gap remount this stretch. */
-export function openIdleBriefAlreadyDone(): boolean {
+export function openIdleBriefAlreadyDone(characterId?: string): boolean {
   const s = loadOpenPhaseState();
   if (s.idleBriefAt == null || s.lastOpenedAt == null) return false;
+  if (
+    characterId != null &&
+    s.idleBriefCharacterId != null &&
+    s.idleBriefCharacterId !== characterId
+  ) {
+    return false;
+  }
   return s.idleBriefAt >= s.lastOpenedAt;
 }
-export function markOpenCheerDone(now = Date.now()): OpenPhaseState {
-  return saveOpenPhaseState({ openCheerAt: now });
+export function markOpenCheerDone(now = Date.now(), characterId?: string): OpenPhaseState {
+  return saveOpenPhaseState({
+    openCheerAt: now,
+    ...(characterId != null ? { openCheerCharacterId: characterId } : {}),
+  });
+}
+
+export function markOpenIdleBriefDone(now = Date.now(), characterId?: string): OpenPhaseState {
+  return saveOpenPhaseState({
+    idleBriefAt: now,
+    ...(characterId != null ? { idleBriefCharacterId: characterId } : {}),
+  });
 }
 
 /** Skip cheer + name-hello on within-gap remount after cheer already spoke.
  *  Call BEFORE markChatRoomOpened so lastOpenedAt is still the prior stretch. */
-export function openCheerAlreadyDone(): boolean {
+export function openCheerAlreadyDone(characterId?: string): boolean {
   const s = loadOpenPhaseState();
   if (s.openCheerAt == null || s.lastOpenedAt == null) return false;
+  if (
+    characterId != null &&
+    s.openCheerCharacterId != null &&
+    s.openCheerCharacterId !== characterId
+  ) {
+    return false;
+  }
   return s.openCheerAt >= s.lastOpenedAt;
+}
+
+/** True when the entering chat should play open cheer for this companion. */
+export function shouldPlayOpenCheer(characterId?: string, now = Date.now(), gapMs = OPEN_SESSION_GAP_MS): boolean {
+  if (isFreshOpenPhase(now, gapMs)) return true;
+  return !openCheerAlreadyDone(characterId);
 }
 
 /** planTools-friendly weather ask (same phrasing as showcase accept). */

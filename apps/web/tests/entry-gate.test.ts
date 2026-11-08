@@ -290,7 +290,7 @@ describe('entry gate — the record stores a confirmation, never a detection', (
 describe('entry gate — wiring', () => {
   it('a /gate route renders the gate, and the protected screens render it in place', () => {
     const page = read('app/gate/page.tsx');
-    expect(page).toContain('EntryGate');
+    expect(page).toContain('QuickSetup');
     // Render-swap, not redirect: the board/room must never mount first.
     for (const rel of ['app/select/page.tsx', 'app/change/page.tsx', 'app/chat/page.tsx']) {
       expect(read(rel), rel).toContain('RequireEntryGate');
@@ -298,11 +298,23 @@ describe('entry gate — wiring', () => {
     }
   });
 
-  it('login sends a first-run user to the gate instead of straight to /select', () => {
+  it('title START runs one-click setup then opens /select; /login redirects home', () => {
+    const splash = read('app/page.tsx');
+    expect(splash).toContain('oneClickBootstrap');
+    expect(splash).toContain('hasPassedEntryGate');
+    expect(splash).toContain("router.push('/select')");
+    expect(splash).toContain('href="/setup"');
+    expect(splash).toContain('href="/gate"');
     const login = read('app/login/page.tsx');
-    expect(login).toContain('hasPassedEntryGate');
-    expect(login).toContain("'/gate'");
-    expect(login).toContain('afterLoginPath');
+    expect(login).toContain("router.replace('/')");
+  });
+
+  it('one-click bootstrap unmutes voice replies and master mute', () => {
+    expect(read('lib/one-click-setup.ts')).toContain('primeChatStartGesture');
+    const gesture = read('lib/chat-start-gesture.ts');
+    expect(gesture).toContain('setVoiceEnabled(true)');
+    expect(gesture).toContain('voiceEnabled()');
+    expect(gesture).toContain('setMasterMuted(false)');
   });
 
   it('the guard renders an opaque blocker before it knows, then the gate', () => {
@@ -315,20 +327,18 @@ describe('entry gate — wiring', () => {
     expect(guard).toMatch(/return <>\{children\}<\/>;/);
   });
 
-  it('the test button plays the app voice path, not a beep', () => {
-    const gate = read('components/EntryGate.tsx');
-    expect(gate).toContain('testVoiceChain');
-    expect(gate).not.toContain('new Audio(');
-    expect(gate).not.toContain('AudioContext');
-    // The gate never claims its own result proves sound.
-    expect(gate).toMatch(/IGNORED on purpose|only the user/i);
+  it('one-click setup plays the app voice path, not a beep', () => {
+    const bootstrap = read('lib/one-click-setup.ts');
+    expect(bootstrap).toContain('testVoiceChain');
+    expect(bootstrap).not.toContain('new Audio(');
   });
 
-  it('the gate asks for the mic with getUserMedia and stops the track', () => {
-    const gate = read('components/EntryGate.tsx');
-    expect(gate).toContain('getUserMedia');
-    expect(gate).toContain('track.stop()');
-    expect(gate).toContain("'unsupported'");
+  it('one-click setup asks for the mic with getUserMedia and stops the track', () => {
+    expect(read('lib/one-click-setup.ts')).toContain('requestMic');
+    const mic = read('lib/mic-preflight.ts');
+    expect(mic).toContain('getUserMedia');
+    expect(mic).toContain('track.stop()');
+    expect(mic).toContain("'unsupported'");
   });
 
   it('the honest-limitation comment is present where the decision lives', () => {

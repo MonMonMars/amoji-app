@@ -127,14 +127,16 @@ export type StrKey =
   | 'bgVoid' | 'bgAurora' | 'bgEmber' | 'bgSakura' | 'bgAbyss' | 'bgRain' | 'bgSunset' | 'bgMeadow'
   | 'bgCloudsea' | 'bgNeon' | 'bgSnowmoon' | 'bgGalaxy'
   // v0.9.3 flow: splash → login → select → chat
-  | 'splashStart' | 'legalScrollHint' | 'gateScrollHint'
+  | 'splashStart' | 'splashOpenSetup' | 'legalScrollHint' | 'gateScrollHint'
+  | 'setupOneTitle' | 'setupOneLead' | 'setupOneDisclaimer'
+  | 'setupSoundFailTitle' | 'setupSoundFailLead'
   | 'loginPrompt' | 'loginCta' | 'loginSkip'
   | 'selectTitle' | 'confirmCta' | 'openSelect'
   | 'changeCta' | 'previewCurrent' | 'previewNew'
   | 'statusIdle' | 'statusThinking' | 'statusSpeaking' | 'statusListening' | 'statusPreparing'
   | 'moodJoy' | 'moodAngry' | 'moodSad' | 'moodSurprised' | 'moodRelaxed' | 'moodNeutral'
   | 'voiceReplies' | 'neuralVoice' | 'muteAll' | 'unmuteAll' | 'muteAllHint' | 'voicePickerTitle' | 'voicePickerHint'
-  | 'memoryTitle' | 'forgetBtn' | 'tutorBtn' | 'micTitle' | 'sendBtn' | 'scrollLeft' | 'scrollRight'
+  | 'memoryTitle' | 'forgetBtn' | 'tutorBtn' | 'micTitle' | 'micOff' | 'sendBtn' | 'scrollLeft' | 'scrollRight'
   // consolidated settings menu (r2026-10-02.7)
   | 'settingsCompanion' | 'settingsScene' | 'settingsVoice' | 'settingsData' | 'settingsHelp'
   | 'yourName' | 'yourGender' | 'genderMale' | 'genderFemale' | 'genderSecret'
@@ -185,6 +187,7 @@ export type StrKey =
   | 'voiceOnlyOneAvailable' | 'voiceEnginesUnavailable'
   | 'voiceRegionCantonese' | 'voiceRegionMandarin' | 'voiceRegionTaiwan' | 'voiceRegionJapanese'
   | 'voiceRegionUs' | 'voiceRegionUk' | 'voiceRegionAu' | 'voiceRegionIn' | 'voiceRegionNg'
+  | 'voiceFreeFemale' | 'voiceFreeMale'
   // OS-provided voices (speechSynthesis). These exist because the OS genuinely
   // ships several real voices per language on desktop — the picker must be able
   // to show them as an extra source, and must be equally able to say when the
@@ -273,6 +276,8 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   voiceRegionAu: { en: 'Australian English', yue: '澳洲英文', zh: '澳洲英语', ja: 'オーストラリア英語' },
   voiceRegionIn: { en: 'Indian English', yue: '印度英文', zh: '印度英语', ja: 'インド英語' },
   voiceRegionNg: { en: 'Nigerian English', yue: '尼日利亞英文', zh: '尼日利亚英语', ja: 'ナイジェリア英語' },
+  voiceFreeFemale: { en: 'Female', yue: '女聲', zh: '女声', ja: '女性' },
+  voiceFreeMale: { en: 'Male', yue: '男聲', zh: '男声', ja: '男性' },
   // ---- OS-provided voices (speechSynthesis) -------------------------------
   // The OS genuinely ships several real voices per language on desktop, so the
   // picker can offer them as an extra source; it must also be able to say when
@@ -370,6 +375,42 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: '请先滚到最底，才能继续。',
     ja: '最後までスクロールすると次へ進めます。',
   },
+  splashOpenSetup: {
+    en: 'Open setup page',
+    yue: '開設定頁',
+    zh: '打开设置页',
+    ja: 'セットアップページ',
+  },
+  setupOneTitle: {
+    en: 'Ready to play',
+    yue: '準備好就開始',
+    zh: '准备好就开始',
+    ja: 'すぐ遊べます',
+  },
+  setupOneLead: {
+    en: 'One tap — we accept the terms, check sound & mic, and open the cast for you.',
+    yue: '撳一下就得——條款、聲音同麥克風我哋幫你搞掂，跟住開角色畫面。',
+    zh: '点一下即可——条款、声音和麦克风由我们处理，然后打开角色页。',
+    ja: 'ワンタップで利用規約・音声・マイクを済ませ、キャスト画面を開きます。',
+  },
+  setupOneDisclaimer: {
+    en: 'By tapping START you confirm you are 18+, accept Privacy & Terms, and understand Amoji is AI.',
+    yue: '撳「開始」即表示你滿 18 歲、接受私隱同條款，並知 Amoji 係 AI。',
+    zh: '点「开始」即表示你已满 18 岁、接受隐私与条款，并知 Amoji 为 AI。',
+    ja: '「はじめる」を押すと18歳以上・規約同意・AIであることを確認したことになります。',
+  },
+  setupSoundFailTitle: {
+    en: 'No sound heard?',
+    yue: '聽唔到聲？',
+    zh: '听不到声音？',
+    ja: '声が聞こえない？',
+  },
+  setupSoundFailLead: {
+    en: 'You can still play — type in chat. Fix sound in Settings later, or try: silent switch off, volume up, unplug Bluetooth.',
+    yue: '仍然玩得——打字傾偈就得。之後去設定調聲，或者試：關靜音掣、大聲啲、拔藍牙。',
+    zh: '仍可游玩——在聊天里打字即可。稍后在设置里调声音，或试：关静音键、调大音量、拔掉蓝牙。',
+    ja: 'そのまま遊べます——チャット入力でOK。あとで設定から直すか、消音スイッチ・音量・Bluetoothを確認。',
+  },
   loginPrompt: { en: 'What should I call you?', yue: '點稱呼你呀？', zh: '该怎么称呼你？', ja: 'なんて呼べばいい？' },
   loginCta: { en: 'Continue →', yue: '開始 →', zh: '开始 →', ja: '始める →' },
   loginSkip: { en: 'skip', yue: '略過', zh: '跳过', ja: 'スキップ' },
@@ -413,6 +454,7 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   forgetBtn: { en: 'Forget everything', yue: '全部忘記', zh: '全部忘记', ja: 'すべて忘れる' },
   tutorBtn: { en: 'How to use', yue: '使用教學', zh: '使用教学', ja: '使い方' },
   micTitle: { en: 'Tap the orb to talk', yue: '撳個波講嘢', zh: '点彩球说话', ja: 'オーブをタップして話す' },
+  micOff: { en: 'Microphone off — tap to turn on', yue: '咪高峰咗 — 撳開返', zh: '麦克风已关 — 点按开启', ja: 'マイクオフ — タップでオン' },
   sendBtn: { en: 'Send', yue: '傳送', zh: '发送', ja: '送信' },
   scrollLeft: { en: 'Scroll left', yue: '向左滑', zh: '向左滚动', ja: '左にスクロール' },
   scrollRight: { en: 'Scroll right', yue: '向右滑', zh: '向右滚动', ja: '右にスクロール' },

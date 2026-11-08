@@ -6,7 +6,7 @@
 // authoritative on chat mount (#90). Never prompts for mic permission.
 
 import { assetUrl } from './asset';
-import { createDefaultAudioContext } from './audio-output';
+import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
 import { resumeSfxContext } from './sfx';
 import { preloadVadRuntime } from './vad';
 import { clipLang, pokeZoneClipPaths, POKE_PREFETCH_ZONES, type VoiceClipGender } from './voice-clips';
@@ -75,6 +75,7 @@ export function prefetchAudioPath(path: string): Promise<void> {
         new Promise<void>((resolve) => {
           try {
             const a = new Audio();
+            pinDefaultOutput(a);
             a.preload = 'auto';
             a.src = url;
             const done = () => resolve();

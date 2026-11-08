@@ -8,12 +8,12 @@ const web = join(__dirname, '..');
 const read = (rel: string) => readFileSync(join(web, rel), 'utf8');
 
 describe('AI disclosure — first run', () => {
-  const login = read('app/login/page.tsx');
+  const splash = read('app/page.tsx');
   const gate = read('components/LegalGate.tsx');
 
-  it('shows a notice on the first interactive screen (the name step)', () => {
-    expect(login).toContain("t(lang, 'aiNotice')");
-    expect(login).toContain('data-testid="ai-notice"');
+  it('shows AI + 18+ on the first interactive screen (title START disclaimer)', () => {
+    expect(splash).toContain("t(lang, 'setupOneDisclaimer')");
+    expect(splash).toContain('amoji-splash-legal');
   });
 
   it('shows the notice in the legal gate too, at the first tap', () => {

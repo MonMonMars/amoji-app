@@ -7,12 +7,13 @@ import { useRouter } from 'next/navigation';
 import {
   backgroundById,
   characterById,
+  loadPrefs,
   usePrefs,
   type Lang,
 } from '../lib/prefs';
 import { STORY_SCENES, rollStory, type StoryScene } from '../lib/stories';
 import { saveStorySession } from '../lib/story-session';
-import { primeAudioForChatEnter } from '../lib/voice';
+import { beginMicPreflightFromGesture, primeChatStartGesture } from '../lib/chat-start-gesture';
 import { primeLocationForChatEnter } from '../lib/live-tools';
 
 const LABEL: Record<
@@ -81,14 +82,17 @@ export default function StorySetupPanel() {
 
   const enter = () => {
     // t767/t777: ENTER STORY primes voice + location in this gesture.
-    primeAudioForChatEnter();
+    primeChatStartGesture();
+    beginMicPreflightFromGesture();
     primeLocationForChatEnter();
     saveStorySession({
       sceneId: scene.id,
       characterId: character.id,
       backgroundId: background.id,
     });
+    const base = loadPrefs();
     setPrefs({
+      ...base,
       ...prefs,
       character: character.id,
       background: background.id,

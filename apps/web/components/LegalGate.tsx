@@ -23,6 +23,8 @@ import { useScrollReachedEnd } from '../lib/scroll-unlock';
 // reason — it is an attribution obligation, not app content, and a user must be
 // able to read it without accepting anything.
 const LEGAL_DOC_PATHS = new Set(['/privacy', '/terms', '/safety', '/credits']);
+/** One-tap START on title/setup accepts legal — do not stack a second modal. */
+const ONE_CLICK_PATHS = new Set(['/', '/setup', '/login', '/gate']);
 
 const COPY: Record<'title' | 'lead' | 'accept', Record<Lang, string>> = {
   title: {
@@ -83,6 +85,7 @@ export default function LegalGate() {
 
   // Let users read the full Privacy/Terms pages without the blocking overlay.
   if (LEGAL_DOC_PATHS.has(pathname)) return null;
+  if (ONE_CLICK_PATHS.has(pathname)) return null;
 
   // First paint: opaque blocker until localStorage is read. Returning users
   // see a brief black frame; first-run never glimpses select/chat underneath.

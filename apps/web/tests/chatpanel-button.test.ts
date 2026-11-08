@@ -17,7 +17,8 @@ describe('ChatPanel mic/send type=button', () => {
   it('mic and send controls are typed buttons', () => {
     expect(src).toMatch(/type="button"[\s\S]{0,80}onClick=\{\(\) => mic\(\)\}/);
     expect(src).toMatch(/type="button"[\s\S]{0,80}onClick=\{\(\) => void send\(\)\}/);
-    expect(src).toContain("aria-label={t(lang, 'micTitle')}");
+    expect(src).toContain("aria-pressed={listening}");
+    expect(src).toContain("t(lang, 'micOff')");
     expect(src).toContain("aria-label={t(lang, 'sendBtn')}");
   });
 });

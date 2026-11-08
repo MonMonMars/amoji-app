@@ -1,7 +1,6 @@
 'use client';
-// /setup redirect -> mode chips live on /select (in-place chat/story).
-import SoftLandSelect from '../../components/SoftLandSelect';
+import QuickSetup from '../../components/QuickSetup';
 
-export default function Setup() {
-  return <SoftLandSelect />;
+export default function SetupPage() {
+  return <QuickSetup />;
 }

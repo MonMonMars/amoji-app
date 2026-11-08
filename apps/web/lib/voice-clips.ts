@@ -37,13 +37,13 @@ export const GREETING_TEXT: Record<VoiceClipLang, Record<GreetingClipKind, strin
     pleasure: 'My pleasure.',
   },
   yue: {
-    hello: '你好！',
+    hello: 'Hello！',
     nice: '好開心認識你。',
     hihi: '嗨嗨！',
     pleasure: '唔使客氣。',
   },
   zh: {
-    hello: '你好！',
+    hello: 'Hello！',
     nice: '很高兴认识你。',
     hihi: '嗨嗨！',
     pleasure: '不客气。',

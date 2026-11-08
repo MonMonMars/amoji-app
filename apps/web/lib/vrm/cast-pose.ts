@@ -141,7 +141,8 @@ export function captureCastFix(
   }
   if (needsUpperBodyLevel(characterId)) {
     // upperChest carries most side-bend (char 34 left tilt); spine/chest alone left it leaning.
-    pushLevel(levels, getBone('hips'), 'upper');
+    // Hips stay out: leveling them while feet are planted sheared one thigh into
+    // the torso (blended leg/body on the character's right / viewer's left).
     pushLevel(levels, getBone('spine'), 'upper');
     pushLevel(levels, getBone('chest'), 'upper');
     pushLevel(levels, getBone('upperChest'), 'upper');

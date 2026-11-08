@@ -12,15 +12,13 @@ export function freeVoiceHops(
   opts?: { cantoNano?: boolean; edge?: boolean; gtts?: boolean },
 ): FreeVoiceHop[] {
   const hops: FreeVoiceHop[] = [];
-  if (opts?.edge !== false) hops.push('edge');
-  // The Edge readaloud endpoint answers 403 to every client now (verified: 401
-  // without the client token, 403 with it), so this HTTP tier is the only path
-  // that reliably produces real speech on a phone. Keep it ahead of synth:
-  // speechSynthesis is muted by the iOS hardware silent switch and ships no
-  // voice on some devices, which is what made the app go totally silent.
+  // Google Translate MP3 is the only keyless hosted tier that still works
+  // (Edge read-aloud 403s). Try it first so chat is not stuck behind a dead
+  // socket; speechSynthesis last (iOS silent switch); Edge only as a rare upside.
   if (opts?.gtts !== false) hops.push('gtts');
   hops.push('synth');
   if (locale === 'yue' && opts?.cantoNano) hops.push('canto-nano');
+  if (opts?.edge !== false) hops.push('edge');
   return hops;
 }
 

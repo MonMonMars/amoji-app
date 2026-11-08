@@ -5,6 +5,7 @@ import { PITCH_BIAS_FEMALE, PITCH_BIAS_MALE } from '../lib/gtts';
 import {
   CHAR_PITCH_SPREAD,
   characterPitchUnit,
+  GTTS_MALE_BIAS_JA,
   gttsCharacterPitchBias,
   pitchesDiffer,
 } from '../lib/gtts-timbre';
@@ -50,6 +51,14 @@ describe('free-chain character pitch fingerprint', () => {
     expect(gttsCharacterPitchBias('female')).toBe(PITCH_BIAS_FEMALE);
   });
 
+  it('lowers ja male base pitch so male/female delivery are audibly distinct', () => {
+    const jaMale = gttsCharacterPitchBias('male', 'a01-shino', 'ja');
+    const jaFemale = gttsCharacterPitchBias('female', 'a01-shino', 'ja');
+    expect(GTTS_MALE_BIAS_JA).toBeLessThan(PITCH_BIAS_MALE);
+    expect(jaMale).toBeLessThan(jaFemale);
+    expect(jaMale).toBeGreaterThanOrEqual(0.82);
+  });
+
   it('stays inside the gtts playbackRate-safe clamp', () => {
     for (const id of [...FEMALE_IDS, ...MALE_IDS]) {
       const f = gttsCharacterPitchBias('female', id);
@@ -64,7 +73,7 @@ describe('free-chain character pitch fingerprint', () => {
   it('voice.ts re-exports the same helper so every speak path stays in sync', () => {
     const voice = readFileSync(join(__dirname, '../lib/voice.ts'), 'utf8');
     expect(voice).toContain("import { gttsCharacterPitchBias } from './gtts-timbre'");
-    expect(voice).toMatch(/export function gttsPitchBias\(gender: 'female' \| 'male', characterId\?: string\)/);
-    expect(voice).toContain('return gttsCharacterPitchBias(gender, characterId)');
+    expect(voice).toMatch(/export function gttsPitchBias\(/);
+    expect(voice).toContain('gttsCharacterPitchBias(gender, characterId, lang)');
   });
 });

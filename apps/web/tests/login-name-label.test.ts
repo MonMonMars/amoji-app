@@ -1,18 +1,17 @@
-import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
-import { join } from "node:path";
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+import { join } from 'node:path';
 
-const login = readFileSync(join(__dirname, "../app/login/page.tsx"), "utf8");
+const bootstrap = readFileSync(join(__dirname, '../lib/one-click-setup.ts'), 'utf8');
+const settings = readFileSync(join(__dirname, '../components/SettingsSheet.tsx'), 'utf8');
 
-describe("login name htmlFor/id association", () => {
-  it("wires the prompt label to the name field", () => {
-    expect(login).toContain('htmlFor="amoji-login-name"');
-    expect(login).toContain('id="amoji-login-name"');
-    expect(login).toContain("t(lang, 'loginPrompt')");
+describe('display name (no dedicated /login step)', () => {
+  it('one-click bootstrap can seed profile name into memory', () => {
+    expect(bootstrap).toContain('ensureUserNameFromProfile');
+    expect(bootstrap).toContain('saveProfile');
   });
 
-  it("keeps a stable name + autocomplete hint for the field", () => {
-    expect(login).toContain('name="name"');
-    expect(login).toContain('autoComplete="nickname"');
+  it('settings still exposes a name field with label wiring', () => {
+    expect(settings).toContain('ensureUserNameFromProfile');
   });
 });

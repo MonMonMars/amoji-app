@@ -19,15 +19,9 @@ describe('entry funnel prefs/profile boot flash', () => {
     expect(board).toContain('castGender');
   });
 
-  it('holds /login lang+name chrome until prefs+profile sync', () => {
-    const login = readFileSync(join(web, 'app/login/page.tsx'), 'utf8');
-    expect(login).toContain('const [prefs, , prefsReady] = usePrefs()');
-    expect(login).toContain('useState<string | null>(null)');
-    expect(login).toContain('const bootReady = prefsReady && name !== null');
-    expect(login).toContain("bootReady ? '' : 'opacity-0'");
-    expect(login).toContain('aria-busy={!bootReady}');
-    expect(login).toContain('if (name === null) return');
-    expect(login).toContain('disabled={!bootReady}');
-    expect(login).toContain('ensureUserNameFromProfile');
+  it('QuickSetup holds chrome until prefs sync', () => {
+    const setup = readFileSync(join(web, 'components/QuickSetup.tsx'), 'utf8');
+    expect(setup).toContain('const [prefs, , prefsReady] = usePrefs()');
+    expect(setup).toContain('disabled={!prefsReady || busy}');
   });
 });

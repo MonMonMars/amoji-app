@@ -702,10 +702,15 @@ const ANNIVERSARY_LINE: Record<string, (label: string) => string> = {
 
 /** The "daily check-in" line she says when you open the app on a new day.
  * Pass skipThread on a fresh session-gap open (t796) so she does not resume the old thread. */
-export function buildDailyGreeting(lang: string, info: VisitInfo, opts?: { skipThread?: boolean }): string {
+export function buildDailyGreeting(
+  lang: string,
+  info: VisitInfo,
+  opts?: { skipThread?: boolean; short?: boolean },
+): string {
   const L = ['yue', 'zh', 'ja', 'en'].includes(lang) ? lang : 'en';
   const h = new Date().getHours();
   const bang = L === 'en' ? '!' : '！';
+  if (opts?.short) return HELLO[L](h, info.userName) + bang;
   const parts: string[] = [HELLO[L](h, info.userName) + bang];
   // v5 — a relationship milestone outranks the plain visit streak: the
   // anniversary of "us" is the bigger deal

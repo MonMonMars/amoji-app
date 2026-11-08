@@ -11,7 +11,7 @@
 // right hand) plus a PERFORMANCE layer so sing/duet/piano music survives
 // the chat pipeline's generic stopMusic() calls for the length of the show.
 
-import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
+import { createDefaultAudioContext, pinDefaultOutput, pinDefaultOutputAsync } from './audio-output';
 import { DEFAULT_VOLUME, isVolumeStep, volumeLinear, type VolumeKey } from './audio-levels';
 import { isMasterMuted } from './master-mute';
 import { assetUrl } from './asset';
@@ -483,7 +483,7 @@ function playClipElement(url: string, token: number, characterId: string): boole
     audio.loop = true;
     clipEl = audio;
     applyActiveClipGain();
-    void audio.play().then(() => {
+    void pinDefaultOutputAsync(audio).then(() => audio.play()).then(() => {
       if (token !== loadToken) return;
       window.dispatchEvent(new CustomEvent('amoji:library-clip', { detail: { state: 'playing', id: clipId } }));
     }, () => {

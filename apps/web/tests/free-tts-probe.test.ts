@@ -15,8 +15,8 @@ const web = join(__dirname, '..');
 const read = (rel: string) => readFileSync(join(web, rel), 'utf8');
 
 describe('free TTS alternatives — only ship what is free, keyless, CORS-playable, yue-capable', () => {
-  it('keeps the live chain as edge → gtts → synth', () => {
-    expect(freeVoiceHops('yue')).toEqual(['edge', 'gtts', 'synth']);
+  it('keeps the live chain as gtts → synth → edge (MP3 first; Edge read-aloud dead)', () => {
+    expect(freeVoiceHops('yue')).toEqual(['gtts', 'synth', 'edge']);
   });
 
   it('marks Edge dead and gTTS as the working free engine', () => {

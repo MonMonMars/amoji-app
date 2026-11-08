@@ -41,9 +41,12 @@ describe('story mode catalog (t740)', () => {
 });
 
 describe('mode + story entry (t741)', () => {
-    it('login/setup/mode land on select; /mode is soft-land only', () => {
-    expect(read('../app/login/page.tsx')).toContain("'/select'");
-    expect(read('../app/setup/page.tsx')).toContain('SoftLandSelect');
+    it('login redirects home; /setup and /gate are one-tap QuickSetup; /mode soft-lands', () => {
+    expect(read('../app/login/page.tsx')).toContain("router.replace('/')");
+    const setup = read('../app/setup/page.tsx');
+    expect(setup).toContain('QuickSetup');
+    expect(read('../app/gate/page.tsx')).toContain('QuickSetup');
+    expect(read('../components/QuickSetup.tsx')).toContain('data-testid="setup-back"');
     expect(read('../app/mode/page.tsx')).toContain('SoftLandSelect');
     expect(read('../app/mode/page.tsx')).toContain('ModeRedirect');
     expect(read('../app/story/page.tsx')).toContain('SoftLandSelect');

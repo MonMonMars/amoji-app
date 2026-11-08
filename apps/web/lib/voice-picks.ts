@@ -15,7 +15,13 @@
 // The old storage key is deleted on read rather than migrated: ten Edge short
 // names shared a single voice, so there is no truthful one-to-one mapping.
 
-import { isVoiceLocale, voiceChoiceById, voiceChoicesFor, type VoiceChoice } from './voice-capability';
+import {
+  isVoiceLocale,
+  resolveVoiceChoiceId,
+  voiceChoiceById,
+  voiceChoicesFor,
+  type VoiceChoice,
+} from './voice-capability';
 import type { VoiceLocale } from './voice-catalog';
 
 const KEY = 'amoji.voiceChoices.v1';
@@ -32,11 +38,9 @@ function sanitize(raw: unknown): VoicePickMap {
   const out: VoicePickMap = {};
   for (const [locale, id] of Object.entries(raw as Record<string, unknown>)) {
     if (typeof id !== 'string' || !isVoiceLocale(locale)) continue;
-    const hit = voiceChoiceById(id);
-    // A stored id must still exist AND belong to that language. A stale or
-    // cross-language id is dropped so the language default applies, rather
-    // than quietly playing a speaker from the wrong language.
-    if (hit && hit.locale === locale) out[locale] = id;
+    const resolved = resolveVoiceChoiceId(id) ?? id;
+    const hit = voiceChoiceById(resolved);
+    if (hit && hit.locale === locale) out[locale] = hit.id;
   }
   return out;
 }
@@ -76,8 +80,7 @@ export function voicePickFor(locale: string): string | null {
 export function activeVoiceChoice(locale: VoiceLocale): VoiceChoice {
   const pinned = voiceChoiceById(voicePickFor(locale));
   if (pinned && pinned.locale === locale) return pinned;
-  const direct = voiceChoiceById(`gtts:${locale}`);
-  return direct ?? voiceChoicesFor(locale)[0] ?? voiceChoiceById('gtts:en-US')!;
+  return voiceChoicesFor(locale)[0] ?? voiceChoiceById('gtts:en-US:f')!;
 }
 
 /**
@@ -88,7 +91,7 @@ export function saveVoicePick(locale: VoiceLocale, choiceId: string): VoicePickM
   const current = { ...hydrate() };
   const hit = voiceChoiceById(choiceId);
   if (!hit || hit.locale !== locale) return current;
-  current[locale] = choiceId;
+  current[locale] = hit.id;
   persist(current);
   return current;
 }

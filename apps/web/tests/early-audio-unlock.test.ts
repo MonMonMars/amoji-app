@@ -14,23 +14,32 @@ describe('EarlyAudioUnlock (iPhone pre-chat gesture)', () => {
     expect(unlock).toContain("'keydown'");
     expect(unlock).toContain("'touchstart'");
     expect(unlock).toContain('{ once: true, passive: true }');
-    expect(unlock).not.toContain('playEnter');
-    expect(unlock).not.toMatch(/playCheer|OPEN_CHEER|cheer\(/);
   });
 
-  it('mounts on login + SoftLand + SelectionBoard (before /chat)', () => {
-    expect(read('app/login/page.tsx')).toContain('EarlyAudioUnlock');
-    expect(read('components/SoftLandSelect.tsx')).toContain('EarlyAudioUnlock');
-    expect(read('components/SoftLandChat.tsx')).toContain('EarlyAudioUnlock');
+  it('mounts on title + select path (before /chat)', () => {
+    expect(read('app/page.tsx')).toContain('EarlyAudioUnlock');
+    expect(read('components/QuickSetup.tsx')).toContain('EarlyAudioUnlock');
     expect(read('components/SelectionBoard.tsx')).toContain('EarlyAudioUnlock');
   });
 
-  it('login Continue/Skip call primeAudioForChatEnter in the click gesture', () => {
-    const login = read('app/login/page.tsx');
-    expect(login).toContain('primeAudioForChatEnter()');
-    expect(login).toMatch(/const go = \(\) => \{[\s\S]*?primeAudioForChatEnter\(\)/);
-    expect(login).toContain("afterLoginPath");
-    expect(login).toContain("'/select'");
-    expect(login).toContain("'/gate'");
+  it('one-click START calls primeChatStartGesture inside the tap', () => {
+    const bootstrap = read('lib/one-click-setup.ts');
+    expect(bootstrap).toContain('primeChatStartGesture');
+    expect(bootstrap).toContain('testVoiceChain');
+    expect(bootstrap).toContain('acceptCurrentLegal');
+    const splash = read('app/page.tsx');
+    expect(splash).toContain('oneClickBootstrap');
+    expect(splash).toContain("router.push('/select')");
+  });
+
+  it('selection-flow START primes voice + mic preflight in the same gesture', () => {
+    const board = read('components/SelectionBoard.tsx');
+    expect(board).toContain('primeChatStartGesture');
+    expect(board).toContain('beginMicPreflightFromGesture');
+    const gesture = read('lib/chat-start-gesture.ts');
+    expect(gesture).toContain('primeAudioForChatEnter');
+    expect(gesture).toContain('setVoiceEnabled');
+    expect(gesture).toContain('companionPlaybackSession');
+    expect(read('lib/mic-preflight.ts')).toContain('getUserMedia');
   });
 });

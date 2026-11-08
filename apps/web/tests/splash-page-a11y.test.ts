@@ -14,7 +14,8 @@ describe('splash/home page a11y', () => {
   it('exposes an explicit Start control (no auto-advance)', () => {
     expect(src).toContain('data-testid="splash-start"');
     expect(src).toContain("t(lang, 'splashStart')");
-    expect(src).toContain("router.push('/login')");
+    expect(src).toContain('oneClickBootstrap');
+    expect(src).toContain("router.push('/select')");
     expect(src).not.toContain('setTimeout');
     expect(src).not.toContain('role="button"');
   });

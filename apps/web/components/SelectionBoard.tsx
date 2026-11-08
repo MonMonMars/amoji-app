@@ -20,13 +20,14 @@ import StorySetupPanel from './StorySetupPanel';
 import { LangCardFace } from './selectors';
 import { assetUrl } from '../lib/asset';
 import { bigheadPath } from '../lib/bighead';
-import { playVoiceGreeting, primeAudioForChatEnter } from '../lib/voice';
+import { playVoiceGreeting } from '../lib/voice';
+import { beginMicPreflightFromGesture, primeChatStartGesture } from '../lib/chat-start-gesture';
 import { introText } from '../lib/character-intro';
 import { primeLocationForChatEnter } from '../lib/live-tools';
 import { activeVoiceChoice } from '../lib/voice-picks';
 import {
   BACKGROUNDS, CHARACTERS, LANGS,
-  backgroundById, backgroundLetter, characterById, t, usePrefs,
+  backgroundById, backgroundLetter, characterById, loadPrefs, savePrefs, t, usePrefs,
   type Prefs,
 } from '../lib/prefs';
 import { selectionBadge, selectionCast, selectPortraitPosition } from '../lib/cast-adjust';
@@ -74,6 +75,17 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
   };
 
 
+  /** Merge the visible board into localStorage before /chat (start or change). */
+  const flushLivePrefs = (): Prefs => {
+    const base = loadPrefs();
+    const next: Prefs =
+      mode === 'change'
+        ? { ...base, ...prefs, ...(draft ?? {}) }
+        : { ...base, ...prefs };
+    savePrefs(next);
+    return next;
+  };
+
   const applyCastGender = (next: CastGenderFilter) => {
     setCastGender(next);
     const nextCast = roster.filter((c) => {
@@ -91,11 +103,13 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
     // Mute All stays intact; geo deny still enters chat (ask city later if needed).
     // t786: unlock audio FIRST; defer geo so iOS silent-<audio> prime is not raced by the
     // permission dialog (which can drop the gesture unlock on iPhone).
-    primeAudioForChatEnter();
+    primeChatStartGesture();
+    beginMicPreflightFromGesture();
     window.setTimeout(() => { try { primeLocationForChatEnter(); } catch { /* ignore */ } }, 120);
     const go = () => {
       clearStorySession();
-      if (mode === 'change' && draft) setPrefs({ ...prefs, ...draft });
+      const next = flushLivePrefs();
+      setPrefs(next);
       router.push('/chat');
     };
     // Fade + slight scale, then navigate. Reduced motion skips the wait.
@@ -141,7 +155,7 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
 
       <div
         data-testid="selection-thumbs"
-        className={`relative z-20 flex min-h-0 flex-1 flex-col items-center ${prefsReady ? '' : 'opacity-0'}`}
+        className="relative z-20 flex min-h-0 flex-1 flex-col items-center"
       >
         <SelectTopBars
           lang={lang}
@@ -159,7 +173,9 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
            this one vertical scrollbar. No row owns its own. */
         <div
           data-testid="select-scroll"
-          className="flex min-h-0 w-full flex-1 flex-col items-center overflow-x-hidden overflow-y-auto overscroll-contain bg-gradient-to-t from-black/60 via-black/25 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6"
+          className={`flex min-h-0 w-full flex-1 flex-col items-center overflow-x-hidden overflow-y-auto overscroll-contain bg-gradient-to-t from-black/60 via-black/25 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6 ${
+            prefsReady ? '' : 'pointer-events-none opacity-0'
+          }`}
         >
           <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col items-center gap-2">
             <section className="pointer-events-auto w-full min-w-0">
@@ -316,26 +332,29 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
             />
 
             <EmotionClipRow lang={lang} gender={character.gender} accent={character.accent} characterId={character.id} />
-
-            {/* Sticky inside the one scroller so START / Change is always in
-                reach without hunting for the end of the list. The bottom pad
-                keeps the pill clear of the iPhone home indicator. */}
-            <div className="sticky bottom-0 z-20 mt-1 flex w-full justify-center bg-gradient-to-t from-black/85 via-black/60 to-transparent pt-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-              <button
-                type="button"
-                onClick={confirm}
-                data-dev="T1"
-                aria-label={mode === 'start' ? t(lang, 'confirmCta') : t(lang, 'changeCta')}
-                className={`fx-press fx-start ui-btn ui-btn-primary pointer-events-auto relative min-h-12 shrink-0 rounded-full px-10 text-sm ${
-                  mode === 'start' ? 'min-w-40 tracking-[0.28em]' : 'min-w-32'
-                }`}
-              >
-                {mode === 'start' ? t(lang, 'confirmCta') : t(lang, 'changeCta')}
-              </button>
-            </div>
           </div>
         </div>
         )}
+        {/* START / Change stays visible while prefs sync — only the grid above fades. */}
+        <div
+          data-testid="selection-confirm"
+          className="pointer-events-auto z-30 flex w-full shrink-0 justify-center bg-gradient-to-t from-black/85 via-black/60 to-transparent px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+        >
+          <button
+            type="button"
+            onClick={confirm}
+            disabled={!prefsReady || leaving}
+            data-dev="T1"
+            data-testid="selection-confirm-cta"
+            aria-label={mode === 'start' ? t(lang, 'confirmCta') : t(lang, 'changeCta')}
+            aria-busy={!prefsReady}
+            className={`fx-press fx-start ui-btn ui-btn-primary relative min-h-12 shrink-0 rounded-full px-10 text-sm disabled:opacity-60 ${
+              mode === 'start' ? 'min-w-40 tracking-[0.28em]' : 'min-w-32'
+            }`}
+          >
+            {mode === 'start' ? t(lang, 'confirmCta') : t(lang, 'changeCta')}
+          </button>
+        </div>
       </div>
     </main>
   );

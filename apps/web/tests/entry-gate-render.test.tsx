@@ -1,66 +1,51 @@
-// Renders the REAL gate component rather than grepping its source, for the
-// properties that a source scan cannot prove:
-//   - the first screen a user meets really shows the 18+ copy and a tick box;
-//   - the Continue button is disabled until the box is ticked, so a stray tap
-//     cannot walk past the age question;
-//   - the audio question is NOT on screen before any sample was played;
-//   - the protected screen never renders while the gate is unanswered.
-//
-// react-dom/server is used because this repo ships no DOM test environment
-// (see tests/brain-optional-ui.test.tsx for the same pattern). A server render
-// is enough for all four properties: they are about what is emitted, not about
-// what a click later changes.
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import EntryGate from '../components/EntryGate';
 import RequireEntryGate from '../components/RequireEntryGate';
 import { LANGS, t } from '../lib/prefs';
 
-const render = (lang: 'en' | 'yue' | 'zh' | 'ja' = 'en') =>
-  renderToStaticMarkup(<EntryGate lang={lang} />);
+const web = join(__dirname, '..');
+const read = (rel: string) => readFileSync(join(web, rel), 'utf8');
 
-describe('entry gate — what the user actually sees first', () => {
-  it('step 1 is the 18+ statement, a tick box and a disabled Continue', () => {
-    const html = render();
-    expect(html).toContain(t('en', 'gate18Title'));
-    expect(html).toContain(t('en', 'gate18Body'));
-    expect(html).toContain(t('en', 'gate18Ack'));
-    expect(html).toContain('type="checkbox"');
-    expect(html).toContain('data-testid="entry-gate-18"');
-    // Continue must be inert until the box is ticked (attribute order varies).
-    expect(html).toContain('data-testid="entry-gate-18-continue"');
-    expect(html).toMatch(/<button[^>]*disabled=""[^>]*data-testid="entry-gate-18-continue"/);
-    expect(html).toMatch(/<button[^>]*type="button"[^>]*disabled=""/);
+describe('entry gate — one-tap fallback screen (source)', () => {
+  const quick = read('components/QuickSetup.tsx');
+  const gate = read('components/EntryGate.tsx');
+
+  it('EntryGate re-exports QuickSetup only', () => {
+    expect(gate).toContain('QuickSetup');
+    expect(gate).not.toContain('entry-gate-18-continue');
   });
 
-  it('the audio step (and its test button) is not reachable on first paint', () => {
-    const html = render();
-    expect(html).not.toContain(t('en', 'gateAudioTest'));
-    expect(html).not.toContain('entry-gate-test-sound');
-    expect(html).not.toContain(t('en', 'gateAudioIosHint'));
+  it('QuickSetup shows a single START, back, and disclaimer copy', () => {
+    expect(quick).toContain('data-testid="entry-gate"');
+    expect(quick).toContain('data-testid="setup-start"');
+    expect(quick).toContain('data-testid="setup-back"');
+    expect(quick).toContain('data-testid="setup-one-scroll"');
+    expect(quick).toContain("t(lang, 'splashStart')");
+    expect(quick).toContain("t(lang, 'setupOneDisclaimer')");
+    expect(quick).toContain("t(lang, 'gate18Title')");
+    expect(quick).toContain('SetupOneAiNotice');
+    expect(read('components/setup-one-shared.tsx')).toContain("t(lang, 'aiNotice')");
+    expect(quick).toContain("t(lang, 'gateScrollHint')");
+    expect(quick).toContain('oneClickBootstrap');
+    expect(quick).toContain('useScrollReachedEnd');
   });
 
-  it('the 18+ wording is rendered in every shipped language', () => {
+  it('EntryGate hides back on the in-flow fallback', () => {
+    expect(gate).toContain('showBack={false}');
+  });
+
+  it('does not ship the old multi-step 18+ checkbox flow', () => {
+    expect(quick).not.toContain('entry-gate-18-continue');
+    expect(quick).not.toContain('entry-gate-test-sound');
+  });
+
+  it('setupOne strings exist in every shipped language', () => {
     for (const { id } of LANGS) {
-      const html = renderToStaticMarkup(<EntryGate lang={id} />);
-      expect(html, id).toContain(t(id, 'gate18Title'));
-      expect(html, id).toContain(t(id, 'gate18Ack'));
-      // the age itself is legible in the copy, not only in a data attribute
-      expect(html, id).toContain('18');
+      expect(t(id, 'setupOneTitle')).toBeTruthy();
+      expect(t(id, 'setupOneDisclaimer')).toBeTruthy();
     }
-  });
-
-  it('announces the step through a labelled progress group', () => {
-    const html = render();
-    expect(html).toContain('role="group"');
-    expect(html).toContain(t('en', 'gateStep', { n: '1', total: '3' }));
-  });
-
-  it('the gate is one main landmark with a titled heading', () => {
-    const html = render();
-    expect(html).toContain('data-testid="entry-gate"');
-    expect(html).toContain('aria-labelledby="amoji-gate-title"');
-    expect(html).toContain('id="amoji-gate-title"');
   });
 });
 

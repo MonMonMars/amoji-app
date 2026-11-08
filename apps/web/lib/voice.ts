@@ -79,7 +79,11 @@ import { getPlaybackVolume } from './playback-volume';
 // dhahlia bright-floral, onyx low-male, velara calm-navigator.
 import type { Lang } from './prefs';
 import { characterVoiceGender } from './voice-gender';
-import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
+import {
+  createDefaultAudioContext,
+  pinDefaultOutput,
+  primeDefaultSpeakerBeforeSynth,
+} from './audio-output';
 import { isMasterMuted, subscribeMasterMute } from './master-mute';
 import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripLaughTokens, stripVoicedGlyphs } from './speak-text';
 import { analyzeText } from '@amoji/emotion-core';
@@ -98,7 +102,7 @@ import { gttsCharacterPitchBias } from './gtts-timbre';
 import { voicePickFor } from './voice-picks';
 import { osVoicePinFor, saveOsVoicePin } from './os-voice-picks';
 import { resolveOsPin, resolvePinnedVoice } from './os-voice-resolve';
-import { isVoiceLocale, tlForChoice } from './voice-capability';
+import { deliveryGenderForChoice, isVoiceLocale, tlForChoice } from './voice-capability';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
 import { formatVoiceChain, freeVoiceHops } from './tts-chain';
 import { startThinkingSound, stopThinkingSound } from './thinking-sound';
@@ -119,7 +123,9 @@ import { dominant, pickInterjection } from './fillers';
 import { emotionIntensityScale, emotionProsody } from './emotion-prosody';
 import { SONG_MELODY } from './songs';
 import { endLipSync, finishLipSync, holdLipSync, noteSpeechStarted, notifySpeaking } from './speech';
+import { clearSpeechCaption, dispatchSpeechCaption, rollCaptionsForLine } from './speech-caption';
 import { duckLibraryBed } from './music';
+import { duckExternalAudioForCompanion } from './voice-chat-focus';
 
 // ---- r2026-10-05.99: media-gate latches -------------------------------------
 // ctxPrimed runs once (an AudioContext resume is global and idempotent).
@@ -1329,6 +1335,7 @@ export function stopSpeaking(): void {
   stopGtts();
   haltSynthQueue();
   endLipSync();
+  clearSpeechCaption();
   // Mute / user cut must not leave the 12s foley hold stuck after unmute.
   sfxVoiceRelease();
 }
@@ -1399,8 +1406,23 @@ function yieldFillerToReply(): void {
  * different person. Gender sets the base; characterId spreads same-gender
  * companions (see gtts-timbre.ts — Web Audio formant is not CORS-safe here).
  */
-export function gttsPitchBias(gender: 'female' | 'male', characterId?: string): number {
-  return gttsCharacterPitchBias(gender, characterId);
+export function gttsPitchBias(
+  gender: 'female' | 'male',
+  characterId?: string,
+  lang?: Lang,
+): number {
+  return gttsCharacterPitchBias(gender, characterId, lang);
+}
+
+/** Free-tier pitch: pinned voice delivery gender, else companion gender. */
+function gttsPitchForLang(
+  lang: Lang,
+  characterId: string,
+  companionGender: 'female' | 'male',
+  choiceId?: string | null,
+): number {
+  const delivery = deliveryGenderForChoice(lang, choiceId ?? voicePickFor(lang), companionGender);
+  return gttsPitchBias(delivery, characterId, lang);
 }
 
 /** A leading vocal tic (text + relative pitch/rate lift). */
@@ -1456,6 +1478,7 @@ function performSpeak(
   const settle = () => {
     if (settled) return;
     settled = true;
+    if (!filler) clearSpeechCaption();
     sfxVoiceRelease(); // t786: failed/silent speak must not hold poke/laugh 12s
     resolve();
   };
@@ -1491,6 +1514,7 @@ function performSpeak(
   // reply) so the words stay intelligible. Singing itself does not come
   // through speak(), so a song stays full until something else talks.
   duckLibraryBed();
+  duckExternalAudioForCompanion();
   // r100: single choke-point trace — EVERY speak() call lands here with its
   // length and planned chain, and pings the status bus on the attempt itself
   // (tier 'attempt'), so a silent device answers "was speak() called?"
@@ -1546,7 +1570,8 @@ function performSpeak(
     : characterVoiceGender(characterId);
   // The live free tier's speaker is chosen by Google `tl` alone. Read it once
   // per line so a resume/tail and the chat line stay the same speaker.
-  const ttsTl = tlForChoice(lang, voicePickFor(lang));
+  const voicePin = voicePickFor(lang);
+  const ttsTl = tlForChoice(lang, voicePin);
   const runSynth = (onDone: () => void): boolean => {
     if (typeof speechSynthesis === 'undefined') return false;
     try {
@@ -1590,7 +1615,7 @@ function performSpeak(
         rate: clamp(1 + np.rate * 0.12, 0.88, 1.15),
         // Keep the character's pitch on a resumed tail, or the second half of
         // the sentence would come back in a different voice.
-        pitchBias: gttsPitchBias(spokenGender, characterId),
+        pitchBias: gttsPitchForLang(lang, characterId, spokenGender, voicePin),
         onPlaying: () => { onHeard(); markVoiceStarted(); reportVoiceStatus('gtts', true, 'google-tts resuming'); },
       }).then(() => {
         reportVoiceStatus('gtts', true, 'google-tts resume finished');
@@ -1627,7 +1652,7 @@ function performSpeak(
             // carried by pitch: male companions get a deeper read, female ones a
             // slightly brighter one, and a per-id jitter keeps same-gender cast
             // members from sounding identical.
-            pitchBias: gttsPitchBias(spokenGender, characterId),
+            pitchBias: gttsPitchForLang(lang, characterId, spokenGender, voicePin),
             onPlaying: () => {
               onHeard();
               markVoiceStarted();
@@ -1685,7 +1710,12 @@ function performSpeak(
           rateDelta: clamp(np.rate * exprScale * amp, -0.4, 0.5),
           pitchDelta: clamp(np.pitch * exprScale * amp, -0.3, 0.4),
           volumeDelta: clamp(np.vol * exprScale * amp, -0.5, 0.5),
-          onPlaying: () => { onHeard(); markVoiceStarted(); reportVoiceStatus('edge', true, 'neural voice playing'); },
+          onPlaying: () => {
+            onHeard();
+            markVoiceStarted();
+            try { rollCaptionsForLine(text); } catch { /* ignore */ }
+            reportVoiceStatus('edge', true, 'neural voice playing');
+          },
         });
       } catch (err) {
         tier1 = Promise.reject(err instanceof Error ? err : new Error(String(err)));
@@ -1716,7 +1746,12 @@ function performSpeak(
         character: characterId,
         emotion,
         expressiveness: expr,
-        onPlaying: () => { onHeard(); markVoiceStarted(); reportVoiceStatus('openai', true, 'chatgpt voice playing'); },
+        onPlaying: () => {
+          onHeard();
+          markVoiceStarted();
+          try { rollCaptionsForLine(text); } catch { /* ignore */ }
+          reportVoiceStatus('openai', true, 'chatgpt voice playing');
+        },
       });
     } catch (err) {
       tier0 = Promise.reject(err instanceof Error ? err : new Error(String(err)));
@@ -1840,16 +1875,20 @@ export function playVoiceGreeting(
   stopSpeaking();
   // force: stopSpeaking cancelled any window-level prime and cleared the latch.
   primeSynthInGesture(true);
-  const kind = nextGreetingKind();
-  const text = line?.trim() ? line.trim() : greetingText(lang, kind);
+  // Select-board voice/language taps (no custom line) always open with Hello,
+  // not the rotating nice/hihi/pleasure clips — HK users expect Hello, not 你好.
+  const text = line?.trim() ? line.trim() : greetingText(lang, 'hello');
   // Gender comes from the CHARACTER, not from the voice id. The live voices are
   // not gendered, so reading a gender out of a region code would be fiction —
   // and it used to default every greeting to the female pitch.
   const gender = characterVoiceGender(characterId);
   const tl = tlForChoice(lang, choiceId);
+  const delivery = deliveryGenderForChoice(lang, choiceId, gender);
   let session = 0;
   /** Set by whichever tier actually starts, so the loser can bail out. */
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
+  /** True until the MP3 tier's promise settles (success or fail). */
+  let gttsPending = true;
   /**
    * Fires if NO tier has started shortly after the tap. Edge 403s instantly, so
    * without this the synth fallback ran on nearly every greeting and talked over
@@ -1881,13 +1920,14 @@ export function playVoiceGreeting(
   // Start the HTTP tier first and synchronously inside the gesture. It fetches
   // over plain HTTPS, so it does not need the gesture itself, but starting here
   // means the greeting begins immediately instead of after a dead Edge attempt.
+  const markGttsDone = () => { gttsPending = false; };
   void speakGtts(text, {
     lang,
     tl,
     // Same per-character pitch as chat. Without it the SAME character sounded
     // different on select than in the chat room, which reads as "her voice
     // jumped to someone else".
-    pitchBias: gttsPitchBias(gender, characterId),
+    pitchBias: gttsPitchBias(delivery, characterId, lang),
     onPlaying: () => {
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
@@ -1895,8 +1935,10 @@ export function playVoiceGreeting(
       if (!spokenBy) onStart('gtts');
     },
   }).then(() => {
+    markGttsDone();
     if (session) finishLipSync(session);
   }).catch((e: unknown) => {
+    markGttsDone();
     if ((e as Error | undefined)?.message === 'canceled') return;
     reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'greeting gtts failed');
     runSynthAudition('greeting fallback');
@@ -1909,6 +1951,9 @@ export function playVoiceGreeting(
    */
   const onEdgeFail = (why: string) => {
     if (spokenBy) return; // gtts owns the line
+    // Edge 403s instantly while the MP3 tier may still be fetching — synth here
+    // calls haltSynthQueue() and cancels gTTS, which is silence on iOS.
+    if (gttsPending) return;
     reportVoiceStatus('edge', false, why);
     runSynthAudition('greeting fallback');
   };
@@ -1916,7 +1961,7 @@ export function playVoiceGreeting(
   // 403s immediately, so without this the synth fallback fires on virtually
   // every greeting, overlapping the MP3 tier.
   edgeGrace = setTimeout(() => {
-    if (!spokenBy) runSynthAudition('greeting fallback (no tier started)');
+    if (!spokenBy && !gttsPending) runSynthAudition('greeting fallback (no tier started)');
   }, 1500);
   // Edge still wins if it ever answers again: onPlaying halts the other tiers.
   // It is not a button and not a promise — just a free upside if Microsoft
@@ -2043,7 +2088,7 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
         void speakGtts(text, {
           lang,
           tl: tlForChoice(lang, voicePickFor(lang)),
-          pitchBias: gttsPitchBias(gender, characterId),
+          pitchBias: gttsPitchForLang(lang, characterId, gender),
           onPlaying: () => {
             noteSpeechStarted(text);
             markVoiceStarted();
@@ -2114,6 +2159,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   // No character here, so keep the neutral female-ish pitch as before. The live
   // voices are not gendered — this only shapes delivery.
   const tl = tlForChoice(locale, choiceId);
+  const previewGender = deliveryGenderForChoice(locale, choiceId, 'female');
   const text = edgeSampleText(locale);
   /** Set by whichever tier actually starts, so the loser can bail out. */
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
@@ -2121,7 +2167,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
     if (spokenBy) return Promise.resolve();
     return new Promise<void>((resolve) => {
       try {
-        synthSpeak(text, 'preview', locale, 'joy', 1.1, undefined, 1, undefined, () => resolve(), 'female', 0.7, true);
+        synthSpeak(text, 'preview', locale, 'joy', 1.1, undefined, 1, undefined, () => resolve(), previewGender, 0.7, true);
         spokenBy = 'synth';
         markVoiceStarted();
         reportVoiceStatus('synth', true, `${tag} ${choiceId}`);
@@ -2136,7 +2182,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const gtts = speakGtts(text, {
     lang: locale,
     tl,
-    pitchBias: gttsPitchBias('female'),
+    pitchBias: gttsPitchBias(previewGender, 'preview', locale),
     onPlaying: () => {
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
@@ -2267,13 +2313,13 @@ export function testVoice(characterId: string, lang: Lang): void {
   if (!wasOn) {
     try { localStorage.setItem(MUTE_KEY, 'on'); } catch { /* ignore */ }
   }
-  try {
-    speak(TEST_LINES[lang] ?? TEST_LINES.en, characterId, lang, { joy: 0.6 });
-  } finally {
-    if (!wasOn) {
-      // restore without stopSpeaking() — that would cancel the line we just queued
+  speak(TEST_LINES[lang] ?? TEST_LINES.en, characterId, lang, { joy: 0.6 });
+  if (!wasOn) {
+    // Restore only after the queued line leaves the speaker — a synchronous
+    // finally used to flip Voice off before performSpeak() ran (total silence).
+    void whenSpeechIdle(() => {
       try { localStorage.setItem(MUTE_KEY, 'off'); } catch { /* ignore */ }
-    }
+    });
   }
 }
 
@@ -2389,7 +2435,7 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
             speakGtts(line, {
               lang,
               tl: tlForChoice(lang, voicePickFor(lang)),
-              pitchBias: gttsPitchBias(characterVoiceGender(characterId), characterId),
+              pitchBias: gttsPitchForLang(lang, characterId, characterVoiceGender(characterId)),
               onPlaying: () => push('gtts', true, 'google-tts playing'),
             }),
             15_000,
@@ -2461,7 +2507,7 @@ export async function testProxyVoice(characterId: string, lang: Lang): Promise<b
     await withTimeout(speakGtts(line, {
       lang,
       tl: tlForChoice(lang, voicePickFor(lang)),
-      pitchBias: gttsPitchBias(characterVoiceGender(characterId), characterId),
+      pitchBias: gttsPitchForLang(lang, characterId, characterVoiceGender(characterId)),
       onPlaying: () => reportVoiceStatus('gtts', true, 'google-tts playing (proxy probe)'),
     }), 20_000, 'google-tts timeout');
     reportVoiceStatus('gtts', true, 'voice played via google-tts (edge unavailable)');
@@ -2555,6 +2601,7 @@ function synthSpeak(
     try { onDone?.(); } catch { /* ignore */ }
   };
   if (typeof speechSynthesis === 'undefined') { finishLine(); return; }
+  void primeDefaultSpeakerBeforeSynth();
   haltSynthQueue();
   const gen = synthGeneration;
 
@@ -2687,6 +2734,7 @@ function synthSpeak(
     };
     u.onstart = () => {
       if (gen !== synthGeneration) return;
+      try { dispatchSpeechCaption(u.text); } catch { /* ignore */ }
       if (!started) {
         liveLip = noteSpeechStarted(tic ? `${tic.text} ${text}` : text);
         armLipHold();

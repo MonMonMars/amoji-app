@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import EarlyAudioUnlock from './EarlyAudioUnlock';
+import { primeChatStartGesture } from '../lib/chat-start-gesture';
 import { loadPrefs, t, type StrKey } from '../lib/prefs';
 
 type SoftLandSelectProps = {
@@ -33,6 +34,11 @@ export default function SoftLandSelect({
   }, [labelKey]);
 
   useEffect(() => {
+    try {
+      primeChatStartGesture();
+    } catch {
+      /* ignore */
+    }
     if (seedSelectMode) {
       try {
         sessionStorage.setItem('amoji.selectMode', seedSelectMode);

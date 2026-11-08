@@ -76,7 +76,16 @@ describe('character self-introduction', () => {
   it('playVoiceGreeting still works without a line (picker previews)', () => {
     const voice = readFileSync(join(__dirname, '../lib/voice.ts'), 'utf8');
     expect(voice).toMatch(/line\?: string/);
-    // Falls back to the rotating canned greeting when no line is given.
-    expect(voice).toMatch(/line\?\.trim\(\) \? line\.trim\(\) : greetingText\(lang, kind\)/);
+    // Bare taps on select (language / voice row) always open with Hello, not rotation.
+    expect(voice).toMatch(/line\?\.trim\(\) \? line\.trim\(\) : greetingText\(lang, 'hello'\)/);
+  });
+
+  it('HK / Mandarin intros open with Hello, not 你好', () => {
+    const yue = introText('阿May', 'warm friend, always listening', 'yue');
+    const zh = introText('阿May', 'warm friend, always listening', 'zh');
+    expect(yue.startsWith('Hello')).toBe(true);
+    expect(zh.startsWith('Hello')).toBe(true);
+    expect(yue).not.toMatch(/^你好/);
+    expect(zh).not.toMatch(/^你好/);
   });
 });

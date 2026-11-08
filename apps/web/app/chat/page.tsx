@@ -21,7 +21,7 @@ import { activeWardrobe } from '../../lib/modular/catalog';
 import { useModularSelection } from '../../lib/modular/storage';
 import { resolveMiniGameCompanion } from '../../lib/minigames/companion';
 import type { ActionGame } from '../../lib/minigames/types';
-import { usePrefs, characterById, backgroundById, KID_PERSONA_GUARD, loadPrefs, t } from '../../lib/prefs';
+import { usePrefs, characterById, backgroundById, KID_PERSONA_GUARD, t } from '../../lib/prefs';
 import { activeStoryScene, storyPersonaSuffix } from '../../lib/story-session';
 import { resolveStorySceneGlb } from '../../lib/stories';
 import { clearMemory, loadMemory, memorySummaryCount } from '../../lib/memory';
@@ -43,7 +43,7 @@ export default function Chat() {
 }
 
 function ChatRoom() {
-  const [prefs, setPrefs] = usePrefs();
+  const [prefs, setPrefs, prefsReady] = usePrefs();
   const router = useRouter();
   const [notice, setNotice] = useState<{ reason: 'webgl' | 'asset' } | null>(null);
   const [dev, setDev] = useState(false);
@@ -51,6 +51,7 @@ function ChatRoom() {
   const [pokeCount, setPokeCount] = useState(0);
   const [pokeZone, setPokeZone] = useState('');
   const [pokeDirection, setPokeDirection] = useState('front');
+  const [pokeSectionId, setPokeSectionId] = useState('');
   const [handHold, setHandHold] = useState(0);
   const [status, setStatus] = useState<ChatStatus>('idle');
   const [memCount, setMemCount] = useState(0);
@@ -58,27 +59,10 @@ function ChatRoom() {
   const [gameChromeHidden, setGameChromeHidden] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [idleClip, setIdleClip] = useState<string | null>(null);
-  // false until amoji.prefs.v1 sync — hold chrome/canvas so DEFAULT_PREFS never paints.
-  const [bootReady, setBootReady] = useState(false);
+  // Hold chrome/canvas until amoji.prefs.v1 sync — same gate as /select prefsReady.
+  const bootReady = prefsReady;
 
   useEffect(() => subscribeMiniGameChrome(setGameChromeHidden), []);
-
-  useEffect(() => {
-    // Push stored prefs into usePrefs state in the same tick we flip bootReady
-    // (usePrefs also loads on mount; this keeps chrome off until both are aligned).
-    const stored = loadPrefs();
-    setPrefs({
-      character: stored.character,
-      background: stored.background,
-      kidMode: stored.kidMode,
-      lang: stored.lang,
-      sfxVol: stored.sfxVol,
-      bgmVol: stored.bgmVol,
-      voiceVol: stored.voiceVol,
-      ...(stored.lastFemale ? { lastFemale: stored.lastFemale } : {}),
-    });
-    setBootReady(true);
-  }, []);
 
   const openSelect = () => {
     if (leaving) return;
@@ -144,7 +128,12 @@ function ChatRoom() {
           lighting={background.setting === 'indoor' ? 'indoor' : 'outdoor'}
           onNotice={setNotice}
           idleClip={gameChromeHidden ? null : idleClip}
-          onPoke={(zone, direction) => { setPokeCount((c) => c + 1); setPokeZone(zone); setPokeDirection(direction || 'front'); }}
+          onPoke={(zone, direction, sectionId) => {
+            setPokeCount((c) => c + 1);
+            setPokeZone(zone);
+            setPokeDirection(direction || 'front');
+            setPokeSectionId(sectionId || '');
+          }}
           onHandHold={() => setHandHold((c) => c + 1)}
         />
       )}
@@ -211,7 +200,7 @@ function ChatRoom() {
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         {bootReady && <ChatPanel
-          key={character.id}
+          key={`${character.id}:${prefs.lang}`}
           characterName={character.name}
           characterId={character.id}
           lang={prefs.lang}
@@ -231,6 +220,7 @@ function ChatRoom() {
           pokeCount={pokeCount}
           pokeZone={pokeZone}
           pokeDirection={pokeDirection}
+          pokeSectionId={pokeSectionId}
           handHoldCount={handHold}
           onStatus={setStatus}
           onMemCount={setMemCount}

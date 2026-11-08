@@ -37,6 +37,8 @@ export interface EntryGateRecord {
 /** Bump to re-prompt everyone (e.g. this screen's promises change). */
 export const ENTRY_GATE_VERSION = 1;
 export const ENTRY_GATE_KEY = 'amoji.entryGate.v1';
+/** Set on /select START when getUserMedia succeeded in that gesture — chat mic opens with no delay. */
+export const MIC_PREFLIGHT_SESSION_KEY = 'amoji.micPreflight.granted';
 const EVENT = 'amoji:entry-gate';
 
 function readRaw(): EntryGateRecord | null {
@@ -67,6 +69,43 @@ function readRaw(): EntryGateRecord | null {
 
 export function getEntryGateRecord(): EntryGateRecord | null {
   return readRaw();
+}
+
+export function setMicPreflightSession(granted: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (granted) window.sessionStorage.setItem(MIC_PREFLIGHT_SESSION_KEY, '1');
+    else window.sessionStorage.removeItem(MIC_PREFLIGHT_SESSION_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function micPreflightGrantedThisSession(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.sessionStorage.getItem(MIC_PREFLIGHT_SESSION_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** Update mic field on an existing gate record (e.g. after /select START preflight). */
+export function patchEntryGateMic(mic: MicOutcome): void {
+  if (typeof window === 'undefined') return;
+  const existing = readRaw();
+  if (!existing) return;
+  const rec: EntryGateRecord = { ...existing, mic };
+  try {
+    window.localStorage.setItem(ENTRY_GATE_KEY, JSON.stringify(rec));
+  } catch {
+    /* ignore */
+  }
+  try {
+    window.dispatchEvent(new CustomEvent(EVENT, { detail: rec }));
+  } catch {
+    /* ignore */
+  }
 }
 
 /**

@@ -15,9 +15,9 @@ describe('gTTS clause pauses', () => {
   });
 
   it('gives a longer breath after sentence ends than after commas', () => {
-    expect(pauseAfterClause('返工咁攰。')).toBeGreaterThanOrEqual(350);
-    expect(pauseAfterClause('想唔想傾吓？')).toBeGreaterThanOrEqual(350);
-    expect(pauseAfterClause('你好，')).toBeGreaterThanOrEqual(180);
+    expect(pauseAfterClause('返工咁攰。')).toBeGreaterThanOrEqual(450);
+    expect(pauseAfterClause('想唔想傾吓？')).toBeGreaterThanOrEqual(450);
+    expect(pauseAfterClause('你好，')).toBeGreaterThanOrEqual(250);
     expect(pauseAfterClause('你好，')).toBeLessThan(pauseAfterClause('返工咁攰。'));
     expect(pauseAfterClause('no punctuation')).toBe(0);
   });

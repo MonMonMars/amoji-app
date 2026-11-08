@@ -40,6 +40,12 @@ describe('voice restore — one tier speaks, never two', () => {
     expect(greet).toMatch(/if \(spokenBy && spokenBy !== 'gtts'\) return/);
   });
 
+  it('does not start synth while the MP3 tier is still in flight', () => {
+    expect(greet).toContain('gttsPending');
+    expect(greet).toMatch(/if \(gttsPending\) return/);
+    expect(greet).toMatch(/!gttsPending\)/);
+  });
+
   it('the preview path uses the same one-winner structure', () => {
     expect(preview).toContain('speakGtts(');
     expect(preview).toContain('speakEdge(');

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePrefs, t, savePrefs, type Prefs } from '../lib/prefs';
-import { primeAudioForChatEnter } from '../lib/voice';
+import { beginMicPreflightFromGesture, primeChatStartGesture } from '../lib/chat-start-gesture';
 import { primeLocationForChatEnter } from '../lib/live-tools';
 import { CharacterGrid, BackgroundGrid, LangChips } from './selectors';
 
@@ -29,7 +29,8 @@ export default function SetupFlow() {
   const next = () => {
     if (step < STEPS.length - 1) setStep(step + 1);
     else {
-      primeAudioForChatEnter();
+      primeChatStartGesture();
+      beginMicPreflightFromGesture();
       window.setTimeout(() => { try { primeLocationForChatEnter(); } catch { /* ignore */ } }, 120);
       savePrefs(prefs);
       router.push('/chat');
