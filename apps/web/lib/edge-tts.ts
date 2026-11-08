@@ -22,7 +22,7 @@
 // token / blocked network) the browser-voice fallback now takes over in half
 // the time, so a dead endpoint reads as a voice switch, not a long silence.
 import { edgeAudioPayload, edgeReadAloudUrl } from '../../../server/amoji-proxy/edge-gec.js';
-import { pinDefaultOutput } from './audio-output';
+import { pinDefaultOutput, pinDefaultOutputAsync } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 import { characterVoiceGender } from './voice-gender';
 import { edgeVoiceId, isFemaleNeuralVoice, isMaleNeuralVoice, isShippingEdgeVoice, ssmlLangForEdgeId } from './voice-catalog';
@@ -601,11 +601,13 @@ function playMp3Blob(blob: Blob, opts: EdgeVoiceOpts, resolve: () => void, rejec
     URL.revokeObjectURL(url);
     reject(new Error('edge-tts playback failed'));
   };
-  audio.play().catch((e: unknown) => {
-    if (currentAudio === audio) currentAudio = null;
-    URL.revokeObjectURL(url);
-    reject(e instanceof Error ? e : new Error(String(e)));
-  });
+  void pinDefaultOutputAsync(audio)
+    .then(() => audio.play())
+    .catch((e: unknown) => {
+      if (currentAudio === audio) currentAudio = null;
+      URL.revokeObjectURL(url);
+      reject(e instanceof Error ? e : new Error(String(e)));
+    });
 }
 
 /**

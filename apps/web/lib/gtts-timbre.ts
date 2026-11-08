@@ -19,10 +19,14 @@
 // males) are still audibly different. Bounds stay inside the gtts clamp so
 // the line does not turn into chipmunk / slurry audio.
 
+import type { Lang } from './prefs';
 import { PITCH_BIAS_FEMALE, PITCH_BIAS_MALE } from './gtts';
 
 /** Half-width of the per-character spread around the gender base. */
 export const CHAR_PITCH_SPREAD = 0.045;
+
+/** Google ja-JP reads bright; male delivery needs extra depth (still inside gtts clamp). */
+export const GTTS_MALE_BIAS_JA = 0.82;
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
@@ -52,8 +56,10 @@ export function characterPitchUnit(characterId: string): number {
 export function gttsCharacterPitchBias(
   gender: 'female' | 'male',
   characterId?: string,
+  lang?: Lang,
 ): number {
-  const base = gender === 'male' ? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE;
+  let base = gender === 'male' ? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE;
+  if (gender === 'male' && lang === 'ja') base = GTTS_MALE_BIAS_JA;
   if (!characterId) return base;
   const jitter = characterPitchUnit(characterId) * CHAR_PITCH_SPREAD;
   // Keep inside the same clamp gtts.ts applies to pitchBias.

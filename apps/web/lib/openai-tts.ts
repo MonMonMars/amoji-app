@@ -1,5 +1,5 @@
 'use client';
-import { pinDefaultOutput } from './audio-output';
+import { pinDefaultOutput, pinDefaultOutputAsync } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 import { stripVoicedSymbols } from './speak-text';
 import { followAudioElement } from './speech';
@@ -274,11 +274,13 @@ export function speakOpenAi(text: string, opts: OpenAiVoiceOpts): Promise<void> 
         URL.revokeObjectURL(url);
         reject(new Error('openai-tts playback failed'));
       };
-      audio.play().catch((e: unknown) => {
-        if (currentAudio === audio) { currentAudio = null; currentUrl = null; }
-        URL.revokeObjectURL(url);
-        reject(e instanceof Error ? e : new Error(String(e)));
-      });
+      void pinDefaultOutputAsync(audio)
+        .then(() => audio.play())
+        .catch((e: unknown) => {
+          if (currentAudio === audio) { currentAudio = null; currentUrl = null; }
+          URL.revokeObjectURL(url);
+          reject(e instanceof Error ? e : new Error(String(e)));
+        });
     }).catch((err: unknown) => {
       if (settled) return;
       // fetch rejection: AbortError (timeout) or TypeError (network/CORS block)

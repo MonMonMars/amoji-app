@@ -45,8 +45,21 @@ export function pauseForeignPageMedia(): void {
   }
 }
 
-/** Called when companion TTS starts — duck OS session + in-page media. */
+/**
+ * Companion TTS should use the default speakers, not the communications
+ * endpoint Windows selects under play-and-record. Mic mode still calls
+ * enterVoiceChatAudioSession() when recording actually starts.
+ */
+export function companionPlaybackSession(): void {
+  if (typeof navigator === 'undefined') return;
+  try {
+    const nav = navigator as AudioSessionNav;
+    if (nav.audioSession) nav.audioSession.type = 'playback';
+  } catch { /* ignore */ }
+}
+
+/** Called when companion TTS starts — duck in-page media; route playback to default. */
 export function duckExternalAudioForCompanion(): void {
-  enterVoiceChatAudioSession();
+  companionPlaybackSession();
   pauseForeignPageMedia();
 }

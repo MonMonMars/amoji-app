@@ -54,18 +54,14 @@ describe('voice does not switch speaker mid-line or between characters', () => {
     // reply. Copy-pasting the ternary per call site is how a new caller
     // silently forgets it, so voice.ts owns a single resolver and every tier
     // (reply, resumed tail, greeting, sing, preview, filler) calls it.
-    expect(voice).toContain('export function gttsPitchBias(gender:');
+    expect(voice).toMatch(/export function gttsPitchBias\(/);
     expect(voice).toMatch(/pitchBias: gttsPitchBias\(/);
     const ternaries = voice.match(/pitchBias: [a-zA-Z]+ === 'male' \?/g) ?? [];
     expect(ternaries).toEqual([]);
     // Gender base + per-character jitter live in gtts-timbre; voice.ts only
     // re-exports so every call site stays on one name.
     expect(voice).toContain('gttsCharacterPitchBias');
-    const helperBody = voice.slice(
-      voice.indexOf('export function gttsPitchBias'),
-      voice.indexOf('}', voice.indexOf('export function gttsPitchBias')) + 1,
-    );
-    expect(helperBody).toContain('gttsCharacterPitchBias');
+    expect(voice).toMatch(/return gttsCharacterPitchBias\(gender, characterId, lang\)/);
   });
 
   it('passes characterId into the pitch helper on live speak paths', () => {
@@ -85,5 +81,13 @@ describe('voice does not switch speaker mid-line or between characters', () => {
   it('a canceled tier still settles immediately rather than falling through', () => {
     // A user cut must not trigger the resume path.
     expect(voice).toMatch(/message === 'canceled'\)\s*\{\s*settle\(\);\s*return;\s*\}/);
+  });
+
+  it('pins sinks before HTML audio play and primes synth against wrong Windows route', () => {
+    expect(gtts).toContain('pinDefaultOutputAsync');
+    expect(voice).toContain('primeDefaultSpeakerBeforeSynth');
+    const focus = readFileSync(join(web, 'lib/voice-chat-focus.ts'), 'utf8');
+    expect(focus).toContain('companionPlaybackSession');
+    expect(focus).toMatch(/duckExternalAudioForCompanion[\s\S]*companionPlaybackSession/);
   });
 });

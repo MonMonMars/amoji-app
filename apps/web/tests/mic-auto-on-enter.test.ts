@@ -16,10 +16,12 @@ describe('chat mic auto-on + external audio duck', () => {
     expect(chat).toContain("rec?.mic === 'denied'");
   });
 
-  it('claims play-and-record and pauses foreign page media', () => {
+  it('routes companion TTS through playback while mic keeps play-and-record', () => {
     const focus = read('lib/voice-chat-focus.ts');
     expect(focus).toContain("play-and-record");
+    expect(focus).toContain('companionPlaybackSession');
     expect(focus).toContain('pauseForeignPageMedia');
     expect(read('lib/voice.ts')).toContain('duckExternalAudioForCompanion');
+    expect(read('lib/voice.ts')).toContain('primeDefaultSpeakerBeforeSynth');
   });
 });

@@ -79,7 +79,11 @@ import { getPlaybackVolume } from './playback-volume';
 // dhahlia bright-floral, onyx low-male, velara calm-navigator.
 import type { Lang } from './prefs';
 import { characterVoiceGender } from './voice-gender';
-import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
+import {
+  createDefaultAudioContext,
+  pinDefaultOutput,
+  primeDefaultSpeakerBeforeSynth,
+} from './audio-output';
 import { isMasterMuted, subscribeMasterMute } from './master-mute';
 import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripLaughTokens, stripVoicedGlyphs } from './speak-text';
 import { analyzeText } from '@amoji/emotion-core';
@@ -1400,8 +1404,12 @@ function yieldFillerToReply(): void {
  * different person. Gender sets the base; characterId spreads same-gender
  * companions (see gtts-timbre.ts — Web Audio formant is not CORS-safe here).
  */
-export function gttsPitchBias(gender: 'female' | 'male', characterId?: string): number {
-  return gttsCharacterPitchBias(gender, characterId);
+export function gttsPitchBias(
+  gender: 'female' | 'male',
+  characterId?: string,
+  lang?: Lang,
+): number {
+  return gttsCharacterPitchBias(gender, characterId, lang);
 }
 
 /** Free-tier pitch: pinned voice delivery gender, else companion gender. */
@@ -1412,7 +1420,7 @@ function gttsPitchForLang(
   choiceId?: string | null,
 ): number {
   const delivery = deliveryGenderForChoice(lang, choiceId ?? voicePickFor(lang), companionGender);
-  return gttsPitchBias(delivery, characterId);
+  return gttsPitchBias(delivery, characterId, lang);
 }
 
 /** A leading vocal tic (text + relative pitch/rate lift). */
@@ -1906,7 +1914,7 @@ export function playVoiceGreeting(
     // Same per-character pitch as chat. Without it the SAME character sounded
     // different on select than in the chat room, which reads as "her voice
     // jumped to someone else".
-    pitchBias: gttsPitchBias(delivery, characterId),
+    pitchBias: gttsPitchBias(delivery, characterId, lang),
     onPlaying: () => {
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
@@ -2161,7 +2169,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const gtts = speakGtts(text, {
     lang: locale,
     tl,
-    pitchBias: gttsPitchBias(previewGender),
+    pitchBias: gttsPitchBias(previewGender, 'preview', locale),
     onPlaying: () => {
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
@@ -2580,6 +2588,7 @@ function synthSpeak(
     try { onDone?.(); } catch { /* ignore */ }
   };
   if (typeof speechSynthesis === 'undefined') { finishLine(); return; }
+  void primeDefaultSpeakerBeforeSynth();
   haltSynthQueue();
   const gen = synthGeneration;
 

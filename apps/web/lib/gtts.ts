@@ -1,5 +1,5 @@
 'use client';
-import { pinDefaultOutput } from './audio-output';
+import { pinDefaultOutput, pinDefaultOutputAsync } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 // Not on the free wire-now chain (Edge → speechSynthesis). Kept as an
 // optional unofficial Translate MP3 client. Paid Google Cloud TTS is a
@@ -268,12 +268,14 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
         // Later chunks keep the mouth open; only the last one may close it.
         followAudioElement(audio, last);
       };
-      audio.play().catch((e: unknown) => {
-        settle(() => {
-          if (currentAudio === audio) currentAudio = null;
-          failLine(e instanceof Error ? e : new Error(String(e)));
+      void pinDefaultOutputAsync(audio)
+        .then(() => audio.play())
+        .catch((e: unknown) => {
+          settle(() => {
+            if (currentAudio === audio) currentAudio = null;
+            failLine(e instanceof Error ? e : new Error(String(e)));
+          });
         });
-      });
     };
     playNext();
   });

@@ -4,7 +4,7 @@
 // the user interrupts.
 
 import { assetUrl } from './asset';
-import { pinDefaultOutput } from './audio-output';
+import { pinDefaultOutput, pinDefaultOutputAsync } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 import { followAudioElement, noteSpeechStarted } from './speech';
 
@@ -60,8 +60,10 @@ export function playVoiceClip(file: string, caption: string, onPlay?: () => void
       try { followAudioElement(audio, true); } catch { /* ignore */ }
       try { onPlay?.(); } catch { /* ignore */ }
     };
-    void audio.play().catch((err: unknown) => {
-      finish(err instanceof Error ? err : new Error(String(err)));
-    });
+    void pinDefaultOutputAsync(audio)
+      .then(() => audio.play())
+      .catch((err: unknown) => {
+        finish(err instanceof Error ? err : new Error(String(err)));
+      });
   });
 }

@@ -110,7 +110,12 @@ function boot() {
     module: moduleObj,
     exports: moduleObj.exports,
     require: (id: string) => {
-      if (id.includes('audio-output')) return { pinDefaultOutput: () => {} };
+      if (id.includes('audio-output')) {
+        return {
+          pinDefaultOutput: () => {},
+          pinDefaultOutputAsync: () => Promise.resolve(),
+        };
+      }
       if (id.includes('playback-volume')) return { applyPlaybackVolume: () => {} };
       if (id.includes('speak-text')) return { stripVoicedGlyphs: (s: string) => s };
       if (id.includes('speech')) return { followAudioElement: () => {} };

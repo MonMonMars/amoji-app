@@ -150,10 +150,15 @@ describe('upper body level', () => {
       bones.set(name, b);
     }
     const state = captureCastFix('a104-simplebrownsailorjk', (name) => bones.get(name) ?? null);
-    expect(state?.levels.map((e) => e.bone)).toHaveLength(4);
+    expect(state?.levels.map((e) => e.bone)).toHaveLength(3);
+    expect(state?.levels.some((e) => e.bone === bones.get('hips'))).toBe(false);
     applyCastFix(state!);
-    for (const b of bones.values()) {
-      const e = new THREE.Euler().setFromQuaternion(b.quaternion, 'YXZ');
+    const hipsE = new THREE.Euler().setFromQuaternion(bones.get('hips')!.quaternion, 'YXZ');
+    expect(hipsE.x).toBeCloseTo(0.15, 5);
+    expect(hipsE.y).toBeCloseTo(0.35, 5);
+    expect(hipsE.z).toBeCloseTo(-0.45, 5);
+    for (const name of ['spine', 'chest', 'upperChest'] as const) {
+      const e = new THREE.Euler().setFromQuaternion(bones.get(name)!.quaternion, 'YXZ');
       expect(e.x).toBeCloseTo(0.15, 5);
       expect(Math.abs(e.y)).toBeLessThan(1e-4);
       expect(Math.abs(e.z)).toBeLessThan(1e-4);
