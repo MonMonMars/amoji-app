@@ -16,7 +16,8 @@ import { modelUrl } from '../lib/asset';
 import { pokeStyleFor, poseIdsFor, lookFor } from '../lib/persona';
 import { DEFAULT_CAMERA_HOME, upperBodyHome } from '../lib/camera-frame';
 import { orderIdleClips, personalityMotion } from '../lib/personality';
-import { classifyPoke, pokeBodyReaction, screenSideSign, armZoneFromScreen, POKE_REACTION_MS, type PokeDirection, type TalkZone } from '../lib/poke-hit';
+import { classifyPoke, screenSideSign, armZoneFromScreen, POKE_REACTION_MS, type PokeDirection, type TalkZone } from '../lib/poke-hit';
+import { pokeSectionBodyReaction, resolvePokeSection, type PokeSection, type PokeSectionId } from '../lib/poke-zones';
 import { clipFreesFeet, collectPlantRest, pinPlantedClipTracks } from '../lib/vrm/plant-feet';
 import { dancePerfClipSources } from '../lib/dance-clip-sources';
 import { timeScaleForProfile } from '../lib/performance-motion';
@@ -118,7 +119,7 @@ import { disposeMiniGameStage, updateMiniGameStage } from './minigameStage';
 export interface CompanionCanvasProps {
   onNotice?: (n: { reason: 'webgl' | 'asset' }) => void;
   /** Where the poke landed: head, torso, chest, side, or back. */
-  onPoke?: (zone: string, direction?: string) => void;
+  onPoke?: (zone: string, direction?: string, sectionId?: PokeSectionId) => void;
   /** Fired once when a hand grab starts, so chat can speak a hold line. */
   onHandHold?: () => void;
   accent?: string;
@@ -1369,6 +1370,7 @@ export default function CompanionCanvas({
     // r115: which body zone the current poke reaction belongs to
     let pokeZone: TalkZone = 'torso';
     let pokeDirection: PokeDirection = 'front';
+    let pokeSection: PokeSection = resolvePokeSection('torso', 'front');
     let pokeSideSign = 1;
     // Push direction comes from the hit vs the character's facing.
     const pokeFallDir = new THREE.Vector3(0, 0, -1);
@@ -1650,10 +1652,11 @@ export default function CompanionCanvas({
             if (pokeZone === 'side' || pokeZone === 'armL' || pokeZone === 'armR' || pokeZone === 'hand') {
               pokeDirection = pokeSideSign >= 0 ? 'right' : 'left';
             }
+            pokeSection = resolvePokeSection(pokeZone, pokeDirection);
           }
           // No full-skeleton slerp here. That blend was easing toward a
           // flipped euler and shrinking the punch to a twitch.
-          onPokeRef.current?.(pokeZone, pokeDirection);
+          onPokeRef.current?.(pokeZone, pokeDirection, pokeSection.id);
         } else {
           const nowTs = performance.now();
           if (nowTs - lastEmptyTap < 350) {
@@ -1787,10 +1790,10 @@ export default function CompanionCanvas({
         let skLArm = 0, skRArm = 0, skLElb = 0, skRElb = 0, skLUp = 0, skRUp = 0;
         let skHip = 0, skHipRoll = 0, skHipX = 0, skHipZ = 0;
         if (boost > 0) {
-          const hit = pokeBodyReaction({
+          const hit = pokeSectionBodyReaction({
             t: 1 - boost,
-            zone: pokeZone,
-            direction: pokeDirection,
+            section: pokeSection,
+            hitZone: pokeZone,
             fallX: pokeFallDir.x,
             fallZ: pokeFallDir.z,
             sideSign: pokeSideSign,

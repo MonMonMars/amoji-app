@@ -51,6 +51,7 @@ function ChatRoom() {
   const [pokeCount, setPokeCount] = useState(0);
   const [pokeZone, setPokeZone] = useState('');
   const [pokeDirection, setPokeDirection] = useState('front');
+  const [pokeSectionId, setPokeSectionId] = useState('');
   const [handHold, setHandHold] = useState(0);
   const [status, setStatus] = useState<ChatStatus>('idle');
   const [memCount, setMemCount] = useState(0);
@@ -127,7 +128,12 @@ function ChatRoom() {
           lighting={background.setting === 'indoor' ? 'indoor' : 'outdoor'}
           onNotice={setNotice}
           idleClip={gameChromeHidden ? null : idleClip}
-          onPoke={(zone, direction) => { setPokeCount((c) => c + 1); setPokeZone(zone); setPokeDirection(direction || 'front'); }}
+          onPoke={(zone, direction, sectionId) => {
+            setPokeCount((c) => c + 1);
+            setPokeZone(zone);
+            setPokeDirection(direction || 'front');
+            setPokeSectionId(sectionId || '');
+          }}
           onHandHold={() => setHandHold((c) => c + 1)}
         />
       )}
@@ -214,6 +220,7 @@ function ChatRoom() {
           pokeCount={pokeCount}
           pokeZone={pokeZone}
           pokeDirection={pokeDirection}
+          pokeSectionId={pokeSectionId}
           handHoldCount={handHold}
           onStatus={setStatus}
           onMemCount={setMemCount}

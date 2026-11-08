@@ -146,7 +146,8 @@ import { pickLine } from '../lib/chatter';
 import { pickIdleLine } from '../lib/persona-chatter';
 import { pickIdleCompanionLine } from '../lib/idle-talk';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
-import { pickCharacterInteraction, pokeReactionLine } from '../lib/interaction-lines';
+import { pickCharacterInteraction } from '../lib/interaction-lines';
+import { pokeSectionPlaceholderLine, type PokeSectionId } from '../lib/poke-zones';
 import { personalityPrompt } from '../lib/personality';
 import { laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { assetUrl } from '../lib/asset';
@@ -222,6 +223,8 @@ export interface ChatPanelProps {
   pokeZone?: string;
   /** front | back | left | right — the side the punch came from */
   pokeDirection?: string;
+  /** `poke:${tier}:${angle}` — 24-slot voice key from canvas hit test */
+  pokeSectionId?: string;
   /** increments when the user holds a hand */
   handHoldCount?: number;
   onStatus?: (s: ChatStatus) => void;
@@ -246,6 +249,7 @@ export default function ChatPanel({
   pokeCount = 0,
   pokeZone = '',
   pokeDirection = 'front',
+  pokeSectionId = '',
   handHoldCount = 0,
   onStatus,
   onMemCount,
@@ -690,7 +694,8 @@ export default function ChatPanel({
     reengageStageRef.current = 0;
     // SFX-only poke (Mon t691–t696): no TTS reaction / laugh lead — clip by zone.
     playPokeBurst(characterId, pokeZone || 'torso');
-    const line = pokeReactionLine(characterId, characterGender, pokeZone || 'torso', pokeDirection || 'front', lang, pokeCount);
+    const key = (pokeSectionId || `poke:belly:${pokeDirection || 'front'}`) as PokeSectionId;
+    const line = pokeSectionPlaceholderLine(key, lang);
     feedUtterance(line);
     notifySpeaking(line);
     setHistory((h) => [...h, { role: 'assistant', content: line }]);
