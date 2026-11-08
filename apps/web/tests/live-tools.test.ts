@@ -631,6 +631,12 @@ describe('t780 light default news topics', () => {
     expect(heavy.some((h) => /Missile/.test(h.title))).toBe(true);
   });
 
+  it('isHeavyHeadline filters tragedy and war keywords', () => {
+    expect(isHeavyHeadline('Missile strike escalates the war')).toBe(true);
+    expect(isHeavyHeadline('Local cat wins funny costume parade')).toBe(false);
+    expect(isHeavyHeadline('多地发生悲剧遇难')).toBe(true);
+  });
+
   it('exposes light category RSS urls', () => {
     const us = regionalLightNewsFeedUrls('US');
     expect(us.some((u) => u.includes('science') || u.includes('1007'))).toBe(true);

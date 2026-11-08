@@ -1125,7 +1125,18 @@ const MEMORY_RECALL_TAIL: Record<string, string> = {
   en: 'They asked to recall or continue — use only the facts listed below; do not invent extra history.',
 };
 
-/** Build the memory block for the LLM. Full recall only after an explicit user request. */
+const MEMORY_PERSONAL_TAIL: Record<string, string> = {
+  yue: '私人話題：用心聆聽，唔批判、唔道德綁架，多啲支持同關心。',
+  zh: '私人话题：用心倾听，不评判、不说教，多给支持和关心。',
+  ja: '個人的な話題では批判せず、寄り添いと励ましを。',
+  en: 'On personal topics: listen without judging; be supportive and caring — never lecture.',
+};
+
+/** Build the "you remember them" block injected into her system prompt.
+ *  v5: pass the user's CURRENT message as userText and older, on-topic
+ *  memories surface into the block — she connects today's words to things
+ *  told to her weeks ago. Kept to ≤2 short lines (free-lane prompt size).
+ *  #296 / #301: full recall only after an explicit user request. */
 export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userText?: string): MemoryBlockResult | undefined {
   const L = ['yue', 'zh', 'ja', 'en'].includes(lang) ? lang : 'en';
   const explicitRecall = userExplicitlyWantsRecall(userText);
@@ -1134,12 +1145,12 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userTex
     const used: TurnMemoryUsed[] = [];
     pushTurnUsed(used, { id: 'name', snippet: m.userName, source: 'name', deletable: false });
     const block = L === 'yue'
-      ? `（記憶只存在佢部機）佢叫 ${m.userName}。${MEMORY_PRIVACY_TAIL.yue}`
+      ? `（記憶只存在佢部機）佢叫 ${m.userName}。${MEMORY_PRIVACY_TAIL.yue} ${MEMORY_PERSONAL_TAIL.yue}`
       : L === 'zh'
-        ? `（记忆只存在TA设备）TA 叫 ${m.userName}。${MEMORY_PRIVACY_TAIL.zh}`
+        ? `（记忆只存在TA设备）TA 叫 ${m.userName}。${MEMORY_PRIVACY_TAIL.zh} ${MEMORY_PERSONAL_TAIL.zh}`
         : L === 'ja'
-          ? `（記憶は端末のみ）名前は ${m.userName}。${MEMORY_PRIVACY_TAIL.ja}`
-          : `(memory stays on their device) Their name is ${m.userName}. ${MEMORY_PRIVACY_TAIL.en}`;
+          ? `（記憶は端末のみ）名前は ${m.userName}。${MEMORY_PRIVACY_TAIL.ja} ${MEMORY_PERSONAL_TAIL.ja}`
+          : `(memory stays on their device) Their name is ${m.userName}. ${MEMORY_PRIVACY_TAIL.en} ${MEMORY_PERSONAL_TAIL.en}`;
     return { block, used };
   }
   if (!m.userName && m.facts.length === 0 && m.entries.length === 0 && (m.diary?.length ?? 0) === 0 && m.exchanges < 3) return undefined;
@@ -1211,7 +1222,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userTex
     if (related.length) bits.push(`同佢而家講嘅嘢有關嘅舊記憶：${related.join('；')}`);
     if (m.exchanges >= 3) bits.push(`你哋已經傾咗 ${m.exchanges} 次偈`);
     if (lastMood) bits.push(`佢最近一次嘅心情係${(MOOD_LABEL[L] ?? MOOD_LABEL.en)[lastMood] ?? lastMood}`);
-    block = `你記得呢個人（記憶私密噉存放喺佢部電話）：${bits.join('；')}。${MEMORY_RECALL_TAIL.yue}`;
+    block = `你記得呢個人（記憶私密噉存放喺佢部電話）：${bits.join('；')}。${MEMORY_RECALL_TAIL.yue} ${MEMORY_PERSONAL_TAIL.yue}`;
   } else if (L === 'zh') {
     const bits: string[] = [];
     if (m.userName) bits.push(`TA 叫 ${m.userName}`);
@@ -1224,7 +1235,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userTex
     if (related.length) bits.push(`与TA现在说的内容有关的旧记忆：${related.join('；')}`);
     if (m.exchanges >= 3) bits.push(`你们已经聊了 ${m.exchanges} 次`);
     if (lastMood) bits.push(`TA 最近一次的心情是${(MOOD_LABEL[L] ?? MOOD_LABEL.en)[lastMood] ?? lastMood}`);
-    block = `你记得这个人（记忆私密地存在 TA 的手机上）：${bits.join('；')}。${MEMORY_RECALL_TAIL.zh}`;
+    block = `你记得这个人（记忆私密地存在 TA 的手机上）：${bits.join('；')}。${MEMORY_RECALL_TAIL.zh} ${MEMORY_PERSONAL_TAIL.zh}`;
   } else if (L === 'ja') {
     const bits: string[] = [];
     if (m.userName) bits.push(`名前は ${m.userName}`);
@@ -1237,7 +1248,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userTex
     if (related.length) bits.push(`今の話題に関する昔の記憶：${related.join('；')}`);
     if (m.exchanges >= 3) bits.push(`これまで ${m.exchanges} 回話した`);
     if (lastMood) bits.push(`最近の気分は${(MOOD_LABEL[L] ?? MOOD_LABEL.en)[lastMood] ?? lastMood}`);
-    block = `この人のことを覚えている（記憶はこの端末にだけ保存）：${bits.join('；')}。${MEMORY_RECALL_TAIL.ja}`;
+    block = `この人のことを覚えている（記憶はこの端末にだけ保存）：${bits.join('；')}。${MEMORY_RECALL_TAIL.ja} ${MEMORY_PERSONAL_TAIL.ja}`;
   } else {
     const bits: string[] = [];
     if (m.userName) bits.push(`their name is ${m.userName}`);
@@ -1250,7 +1261,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userTex
     if (related.length) bits.push(`older memories related to what they just said: ${related.join('; ')}`);
     if (m.exchanges >= 3) bits.push(`you two have talked ${m.exchanges} times`);
     if (lastMood) bits.push(`their most recent mood was ${(MOOD_LABEL.en)[lastMood] ?? lastMood}`);
-    block = `You remember this person (the memory lives privately on their device): ${bits.join('; ')}. ${MEMORY_RECALL_TAIL.en}`;
+    block = `You remember this person (the memory lives privately on their device): ${bits.join('; ')}. ${MEMORY_RECALL_TAIL.en} ${MEMORY_PERSONAL_TAIL.en}`;
   }
   return { block, used };
 }

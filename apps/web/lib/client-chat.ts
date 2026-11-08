@@ -80,6 +80,7 @@ import { withQuestion } from './follow-up';
 import { preferLiveReply, worldBlock } from './live-tools';
 import { replyLooksNonsense, STRICT_REPLY_APPENDIX } from './reply-sanity';
 import { shapeCompanionReply } from './reply-shape';
+import { wantsLongCompanionReply } from './topic-suggestions';
 
 export interface ClientChatResult { reply: string; emotionHints: Record<string, number> }
 
@@ -978,8 +979,9 @@ function packageReply(
 }
 
 /** A cook-along turn legitimately needs more room than a chat turn. */
-function wantsDetail(world?: string): boolean {
-  return /\b(?:Recipe|Learn)\s*:/.test(world ?? '');
+function wantsDetail(world?: string, userText?: string): boolean {
+  if (/\b(?:Recipe|Learn)\s*:/.test(world ?? '')) return true;
+  return userText ? wantsLongCompanionReply(userText) : false;
 }
 
 export async function clientChat(
@@ -987,7 +989,9 @@ export async function clientChat(
   opts?: ClientChatOptions,
 ): Promise<ClientChatResult> {
   const system = `${BASE_SYSTEM}\nReply in speakable sentences only. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
-  const detailed = wantsDetail(opts?.world);
+  const recent = trimHistoryForPrompt(messages);
+  const lastUser = recent[recent.length - 1]?.content ?? '';
+  const detailed = wantsDetail(opts?.world, lastUser);
   const maxTokens = detailed ? 520 : 280;
   const onPartial = opts?.onPartial
     ? (partial: string) => {
@@ -1003,8 +1007,6 @@ export async function clientChat(
     if (!spoken) return null;
     return { reply: withQuestion(spoken, opts?.language), emotionHints: analyzeText(spoken) as Record<string, number> };
   };
-  const recent = trimHistoryForPrompt(messages);
-  const lastUser = recent[recent.length - 1]?.content ?? '';
   const first = pickBrain();
   const sanityCtx: SanityContext = {
     language: opts?.language,

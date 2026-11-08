@@ -166,7 +166,8 @@ function joinSentences(parts: string[]): string {
 export function isDetailedReply(text: string): boolean {
   if (/\b(?:Recipe|Learn)\s*:/.test(text)) return true;
   const markers = text.match(/(?:^|[\s。！？.!?:：])\s*(?:\d{1,2}[.)、]|[-•·])\s+\p{L}/gu);
-  return (markers?.length ?? 0) >= 2;
+  if ((markers?.length ?? 0) >= 2) return true;
+  return /(?:\bstory\b|tell\s+me\s+a\s+story|fun\s+fact|fun\s+science)|講個?故|故事|冷知識|豆知識|讲个故|物語/i.test(text);
 }
 
 /**

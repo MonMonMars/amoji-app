@@ -1,9 +1,9 @@
-/** Chat-room open phase (t794) + session-gap re-open (t796).
+/** Chat-room open phase (t794) + session-gap re-open (t796) + Pixel entry flow.
  *
- * Phase 1 — first open / fresh session: character cheer-up, then auto
- * weather and/or light news only while the user is still silent.
- * Phase 2 — after the user speaks: stay on their topic; auto weather/news
- * only when they go idle again (never injected over an active turn).
+ * Phase 1 — first open / fresh session: hi + persona self-intro + what to
+ * talk about; if still silent, 2–3 topic *suggestions* (no auto weather/news).
+ * Phase 2 — user-driven chat; if they are idle / "don't know", companion
+ * suggests topics (weather/news/story/etc. only when they pick or ask).
  *
  * Session gap: leaving the chat room for OPEN_SESSION_GAP_MS (default 2.5h,
  * mid of Mon's ~2–3h) starts a NEW open phase — fresh cheer-up, cleared
@@ -20,7 +20,7 @@ export const OPEN_PHASE_KEY = 'amoji.openPhase.v1';
 export const OPEN_CHEER_MS = 2_800;
 /** Legacy spacing constant — follow-up cheer disabled; mic delay may still reference it. */
 export const OPEN_CHEER_FOLLOW_MS = OPEN_CHEER_MS;
-/** Auto weather + light news while still silent after the welcome (t794 phase 1). */
+/** Topic menu while still silent after the welcome (no live weather/news auto-play). */
 export const OPEN_IDLE_BRIEF_MS = 12_000;
 
 export interface OpenPhaseState {
@@ -153,12 +153,39 @@ export function openPhaseWeatherAsk(lang: string): string {
   return "what's the weather here?";
 }
 
-/** Light / cheerful news ask — heavy topics stay opt-in (#57). */
+/** Light / cheerful news ask — heavy topics stay opt-in (#57); user-picked only. */
 export function openPhaseNewsAsk(lang: string): string {
   if (lang === 'ja') return '明るいニュースある？';
   if (lang === 'zh') return '有什么轻松的新闻？';
   if (lang === 'yue') return '有咩輕鬆新聞？';
   return 'any light cheerful news?';
+}
+
+/** Standalone "what shall we talk about?" (persona intro may already ask). */
+export function openPhaseTopicAsk(lang: string): string {
+  if (lang === 'ja') return '今日は何を話したい？';
+  if (lang === 'zh') return '今天想聊点什么呀？';
+  if (lang === 'yue') return '今日想傾咩呀？';
+  return 'what do you want to talk about today?';
+}
+
+/** Enter-chat TTS: optional name hello + persona self-intro (weather not first). */
+export function buildOpenCheerLine(
+  lang: string,
+  opts: { nameHello?: string; personaIntro: string; topicAsk?: string },
+): string {
+  const L = ['yue', 'zh', 'ja', 'en'].includes(lang) ? lang : 'en';
+  void L;
+  const intro = opts.personaIntro.trim();
+  const named = opts.nameHello?.trim();
+  const ask = opts.topicAsk?.trim();
+  const base = summarizeOpenPhaseSpoken(named, intro);
+  if (!base) return summarizeOpenPhaseSpoken(ask) || ask || '';
+  if (!ask) return base;
+  const lower = base.toLowerCase();
+  const askLower = ask.toLowerCase();
+  if (lower.includes(askLower.slice(0, 12))) return base;
+  return summarizeOpenPhaseSpoken(base, ask);
 }
 
 /** Join spoken snippets for TTS; strip hashtags/symbols via cleanForSpeech. */
