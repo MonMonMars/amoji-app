@@ -1993,7 +1993,7 @@ export default function CompanionCanvas({
         if (gameView) playGameBody(gameView.anim);
         if (avatar.clipDrivesBody) {
           mixer?.update(dt / 1000);
-          applyIdleClipSoftening((name) => avatar.getBoneNode(name), idleClipId);
+          applyIdleClipSoftening((name) => avatar!.getBoneNode(name), idleClipId);
           avatar.applyPose(poseTargets);
         } else {
           avatar.applyPose(poseTargets);
