@@ -242,7 +242,9 @@ export type StrKey =
   // Appended after the safety keys for the 2026-11-08 licensing pass: the
   // /credits page is an attribution obligation, so it needs a title in the
   // shared table like /privacy and /terms do.
-  | 'creditsTitle';
+  | 'creditsTitle'
+  // Daily chat turn budget (DimDik Phase 0 — device-local, default 40/day).
+  | 'dailyTurnsRemaining' | 'dailyQuotaExceeded';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   chooseCharacter: { en: 'Choose your companion', yue: '揀你嘅小伙伴', zh: '选择你的伙伴', ja: '相棒を選ぶ' },
@@ -1113,6 +1115,18 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: '鳴謝',
     zh: '鸣谢',
     ja: 'クレジット',
+  },
+  dailyTurnsRemaining: {
+    en: '{n} chats left today',
+    yue: '今日仲可以傾 {n} 次',
+    zh: '今天还可聊 {n} 次',
+    ja: '今日あと {n} 回',
+  },
+  dailyQuotaExceeded: {
+    en: "Today's free chat limit is used up. Try again tomorrow, or open Settings (top right) → Advanced brain (BYOK) to use your own API key.",
+    yue: '今日免費傾偈額度用完喇，聽日再傾啦。或者撳右上角「設定」→「進階大腦（BYOK）」用自己嘅 API key 繼續。',
+    zh: '今天的免费聊天额度已用完，请明天再来；或点右上角「设置」→「进阶大脑（BYOK）」使用自己的 API 密钥继续。',
+    ja: '今日の無料チャット上限に達しました。明日また試すか、右上の設定 → 高度な脳（BYOK）で自分の API キーを使ってください。',
   },
   // Reporting an AI reply (Play requirement). Every sentence that mentions
   // sending is written to match the code: localStorage on this device, an

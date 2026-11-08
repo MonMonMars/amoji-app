@@ -153,6 +153,11 @@ import { laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { assetUrl } from '../lib/asset';
 import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
 import { guardCompanionTurn } from '../lib/crisis';
+import {
+  checkChatTurnQuota,
+  consumeChatTurn,
+  quotaExceededCopy,
+} from '../lib/daily-quota';
 import { clientLiveContext } from '../lib/live-tools';
 import {
   OPEN_CHEER_MS,
@@ -973,6 +978,15 @@ export default function ChatPanel({
     lastFeltRef.current = felt?.mood;
     const feltHints = moodToHints(felt?.mood, felt?.intensity);
     if (feltHints) applyLlmHints(feltHints);
+    const quota = checkChatTurnQuota();
+    if (!quota.ok) {
+      const line = quotaExceededCopy(lang);
+      setHistory((h) => [...h, { role: 'assistant', content: line }]);
+      sayLocal(line, { sadness: 0.2 });
+      done();
+      return;
+    }
+    consumeChatTurn();
     // Sing / dance start the premade clip NOW, before the reply arrives, so
     // the track is audible and named while she thinks. A sing request skips
     // the thinking filler — the clip is the vocal.
