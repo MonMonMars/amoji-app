@@ -98,7 +98,7 @@ import { gttsCharacterPitchBias } from './gtts-timbre';
 import { voicePickFor } from './voice-picks';
 import { osVoicePinFor, saveOsVoicePin } from './os-voice-picks';
 import { resolveOsPin, resolvePinnedVoice } from './os-voice-resolve';
-import { isVoiceLocale, tlForChoice } from './voice-capability';
+import { deliveryGenderForChoice, isVoiceLocale, tlForChoice } from './voice-capability';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
 import { formatVoiceChain, freeVoiceHops } from './tts-chain';
 import { startThinkingSound, stopThinkingSound } from './thinking-sound';
@@ -120,6 +120,7 @@ import { emotionIntensityScale, emotionProsody } from './emotion-prosody';
 import { SONG_MELODY } from './songs';
 import { endLipSync, finishLipSync, holdLipSync, noteSpeechStarted, notifySpeaking } from './speech';
 import { duckLibraryBed } from './music';
+import { duckExternalAudioForCompanion } from './voice-chat-focus';
 
 // ---- r2026-10-05.99: media-gate latches -------------------------------------
 // ctxPrimed runs once (an AudioContext resume is global and idempotent).
@@ -1403,6 +1404,17 @@ export function gttsPitchBias(gender: 'female' | 'male', characterId?: string): 
   return gttsCharacterPitchBias(gender, characterId);
 }
 
+/** Free-tier pitch: pinned voice delivery gender, else companion gender. */
+function gttsPitchForLang(
+  lang: Lang,
+  characterId: string,
+  companionGender: 'female' | 'male',
+  choiceId?: string | null,
+): number {
+  const delivery = deliveryGenderForChoice(lang, choiceId ?? voicePickFor(lang), companionGender);
+  return gttsPitchBias(delivery, characterId);
+}
+
 /** A leading vocal tic (text + relative pitch/rate lift). */
 export interface VocalLead {
   text: string;
@@ -1491,6 +1503,7 @@ function performSpeak(
   // reply) so the words stay intelligible. Singing itself does not come
   // through speak(), so a song stays full until something else talks.
   duckLibraryBed();
+  duckExternalAudioForCompanion();
   // r100: single choke-point trace — EVERY speak() call lands here with its
   // length and planned chain, and pings the status bus on the attempt itself
   // (tier 'attempt'), so a silent device answers "was speak() called?"
@@ -1546,7 +1559,8 @@ function performSpeak(
     : characterVoiceGender(characterId);
   // The live free tier's speaker is chosen by Google `tl` alone. Read it once
   // per line so a resume/tail and the chat line stay the same speaker.
-  const ttsTl = tlForChoice(lang, voicePickFor(lang));
+  const voicePin = voicePickFor(lang);
+  const ttsTl = tlForChoice(lang, voicePin);
   const runSynth = (onDone: () => void): boolean => {
     if (typeof speechSynthesis === 'undefined') return false;
     try {
@@ -1590,7 +1604,7 @@ function performSpeak(
         rate: clamp(1 + np.rate * 0.12, 0.88, 1.15),
         // Keep the character's pitch on a resumed tail, or the second half of
         // the sentence would come back in a different voice.
-        pitchBias: gttsPitchBias(spokenGender, characterId),
+        pitchBias: gttsPitchForLang(lang, characterId, spokenGender, voicePin),
         onPlaying: () => { onHeard(); markVoiceStarted(); reportVoiceStatus('gtts', true, 'google-tts resuming'); },
       }).then(() => {
         reportVoiceStatus('gtts', true, 'google-tts resume finished');
@@ -1627,7 +1641,7 @@ function performSpeak(
             // carried by pitch: male companions get a deeper read, female ones a
             // slightly brighter one, and a per-id jitter keeps same-gender cast
             // members from sounding identical.
-            pitchBias: gttsPitchBias(spokenGender, characterId),
+            pitchBias: gttsPitchForLang(lang, characterId, spokenGender, voicePin),
             onPlaying: () => {
               onHeard();
               markVoiceStarted();
@@ -1847,6 +1861,7 @@ export function playVoiceGreeting(
   // and it used to default every greeting to the female pitch.
   const gender = characterVoiceGender(characterId);
   const tl = tlForChoice(lang, choiceId);
+  const delivery = deliveryGenderForChoice(lang, choiceId, gender);
   let session = 0;
   /** Set by whichever tier actually starts, so the loser can bail out. */
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
@@ -1887,7 +1902,7 @@ export function playVoiceGreeting(
     // Same per-character pitch as chat. Without it the SAME character sounded
     // different on select than in the chat room, which reads as "her voice
     // jumped to someone else".
-    pitchBias: gttsPitchBias(gender, characterId),
+    pitchBias: gttsPitchBias(delivery, characterId),
     onPlaying: () => {
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
@@ -2043,7 +2058,7 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
         void speakGtts(text, {
           lang,
           tl: tlForChoice(lang, voicePickFor(lang)),
-          pitchBias: gttsPitchBias(gender, characterId),
+          pitchBias: gttsPitchForLang(lang, characterId, gender),
           onPlaying: () => {
             noteSpeechStarted(text);
             markVoiceStarted();
@@ -2114,6 +2129,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   // No character here, so keep the neutral female-ish pitch as before. The live
   // voices are not gendered — this only shapes delivery.
   const tl = tlForChoice(locale, choiceId);
+  const previewGender = deliveryGenderForChoice(locale, choiceId, 'female');
   const text = edgeSampleText(locale);
   /** Set by whichever tier actually starts, so the loser can bail out. */
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
@@ -2121,7 +2137,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
     if (spokenBy) return Promise.resolve();
     return new Promise<void>((resolve) => {
       try {
-        synthSpeak(text, 'preview', locale, 'joy', 1.1, undefined, 1, undefined, () => resolve(), 'female', 0.7, true);
+        synthSpeak(text, 'preview', locale, 'joy', 1.1, undefined, 1, undefined, () => resolve(), previewGender, 0.7, true);
         spokenBy = 'synth';
         markVoiceStarted();
         reportVoiceStatus('synth', true, `${tag} ${choiceId}`);
@@ -2136,7 +2152,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const gtts = speakGtts(text, {
     lang: locale,
     tl,
-    pitchBias: gttsPitchBias('female'),
+    pitchBias: gttsPitchBias(previewGender),
     onPlaying: () => {
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
@@ -2389,7 +2405,7 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
             speakGtts(line, {
               lang,
               tl: tlForChoice(lang, voicePickFor(lang)),
-              pitchBias: gttsPitchBias(characterVoiceGender(characterId), characterId),
+              pitchBias: gttsPitchForLang(lang, characterId, characterVoiceGender(characterId)),
               onPlaying: () => push('gtts', true, 'google-tts playing'),
             }),
             15_000,
@@ -2461,7 +2477,7 @@ export async function testProxyVoice(characterId: string, lang: Lang): Promise<b
     await withTimeout(speakGtts(line, {
       lang,
       tl: tlForChoice(lang, voicePickFor(lang)),
-      pitchBias: gttsPitchBias(characterVoiceGender(characterId), characterId),
+      pitchBias: gttsPitchForLang(lang, characterId, characterVoiceGender(characterId)),
       onPlaying: () => reportVoiceStatus('gtts', true, 'google-tts playing (proxy probe)'),
     }), 20_000, 'google-tts timeout');
     reportVoiceStatus('gtts', true, 'voice played via google-tts (edge unavailable)');

@@ -16,9 +16,9 @@ describe('enter-chat name voice', () => {
     expect(chat).toContain('namedHello');
   });
 
-  it('login Continue syncs the name into memory', () => {
-    const login = read('app/login/page.tsx');
-    expect(login).toContain('ensureUserNameFromProfile(name)');
+  it('one-click START syncs the profile name into memory', () => {
+    const boot = read('lib/one-click-setup.ts');
+    expect(boot).toContain('ensureUserNameFromProfile(name)');
   });
 
   it('ChatPanel arms open-cheer latch once (Strict Mode remount safe)', () => {

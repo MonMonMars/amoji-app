@@ -22,12 +22,13 @@ import {
 export type TtsEngineId = 'gtts';
 
 export interface TtsButtonVoice {
-  /** Choice id, e.g. 'gtts:en-GB'. */
+  /** Choice id, e.g. 'gtts:en-GB:f'. */
   id: string;
   engine: TtsEngineId;
   locale: VoiceLocale;
   /** Google Translate `tl` — the actual speaker selector. */
   tl: string;
+  deliveryGender: 'female' | 'male';
   /** Localized region label key, e.g. voiceRegionUk. */
   labelKey: VoiceChoice['labelKey'];
   /** Per-language index, 1-based. */
@@ -42,6 +43,7 @@ export const TTS_BUTTON_REGISTRY: readonly TtsButtonVoice[] = VOICE_CHOICES.filt
   engine: 'gtts' as const,
   locale: choice.locale,
   tl: choice.tl,
+  deliveryGender: choice.deliveryGender,
   labelKey: choice.labelKey,
   n: choice.n,
   shipping: true as const,
@@ -58,10 +60,8 @@ export const TIER_A_COUNTS: Record<VoiceLocale, number> = {
 /**
  * Buttons for a language (or every language when omitted).
  *
- * There is no gender filter any more. The live voices are not gendered — a
- * language has one or a few distinct speakers — so a male/female split would
- * invent a distinction the audio does not have. Gender still shapes a
- * character's delivery through pitch, but it is not a voice choice.
+ * Female + male delivery are separate buttons on the same `tl` where Google
+ * only exposes one speaker — pitch reshaping is documented in voice-capability.
  */
 export function selectTtsButtons(locale?: VoiceLocale): readonly TtsButtonVoice[] {
   if (!locale) return TTS_BUTTON_REGISTRY;
@@ -82,5 +82,5 @@ export function ttsButtonKey(voice: TtsButtonVoice): string {
  * the UI should say why rather than look broken.
  */
 export function isSingleVoiceLocale(locale: VoiceLocale): boolean {
-  return selectTtsButtons(locale).length <= 1;
+  return selectTtsButtons(locale).length <= 2;
 }

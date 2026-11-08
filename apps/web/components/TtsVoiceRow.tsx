@@ -80,7 +80,10 @@ export default function TtsVoiceRow({
           {buttons.map((button) => {
             const selected = button.locale === lang && button.id === activeId;
             const mark = devMark('V', button.n);
-            const numLabel = `#${button.n} ${t(lang, button.labelKey)}`;
+            const genderLabel = button.deliveryGender === 'male'
+              ? t(lang, 'voiceFreeMale')
+              : t(lang, 'voiceFreeFemale');
+            const numLabel = `#${button.n} ${t(lang, button.labelKey)} · ${genderLabel}`;
             return (
               <button
                 key={ttsButtonKey(button)}

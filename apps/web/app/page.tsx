@@ -1,15 +1,18 @@
 'use client';
 /**
- * Title screen — gal-game style opening beat.
- * Brand first, one short line, one Start. No auto-advance: the player presses
- * Start when they are ready (like a Japanese visual-novel title menu).
+ * Title screen — one START runs terms + setup; the app opens /select.
  */
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import Link from 'next/link';
 import { Cormorant_Garamond } from 'next/font/google';
 import { APP_NAME, APP_REVISION, APP_TAGLINE } from '../lib/revision';
 import { t, usePrefs } from '../lib/prefs';
 import { assetUrl } from '../lib/asset';
 import EarlyAudioUnlock from '../components/EarlyAudioUnlock';
+import { oneClickBootstrap } from '../lib/one-click-setup';
+import { hasPassedEntryGate } from '../lib/entry-gate';
+import { acceptCurrentLegal, hasAcceptedCurrentLegal } from '../lib/legal-accept';
 
 const display = Cormorant_Garamond({
   subsets: ['latin'],
@@ -21,21 +24,32 @@ export default function Splash() {
   const router = useRouter();
   const [prefs] = usePrefs();
   const lang = prefs.lang;
+  const [busy, setBusy] = useState(false);
   const startLabel = t(lang, 'splashStart');
 
-  const start = () => {
-    router.push('/login');
+  const start = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      if (!hasPassedEntryGate()) {
+        await oneClickBootstrap({ lang });
+      } else if (!hasAcceptedCurrentLegal()) {
+        acceptCurrentLegal();
+      }
+      router.push('/select');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
     <main
       aria-labelledby="amoji-splash-title"
-      aria-describedby="amoji-splash-tagline amoji-splash-revision"
+      aria-describedby="amoji-splash-tagline amoji-splash-revision amoji-splash-legal"
       className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-[#0c0810] text-white"
     >
       <EarlyAudioUnlock />
 
-      {/* Full-bleed hero atmosphere — sakura night, not a flat card. */}
       <div className="pointer-events-none absolute inset-0" aria-hidden>
         <img
           src={assetUrl('/backgrounds/sakura.jpg')}
@@ -67,11 +81,22 @@ export default function Splash() {
           type="button"
           data-testid="splash-start"
           aria-label={startLabel}
-          onClick={start}
-          className="ui-btn splash-start-pulse mt-14 h-14 min-w-[14rem] rounded-full border border-rose-100/35 bg-gradient-to-b from-rose-100 to-rose-200/90 px-10 text-lg font-semibold tracking-[0.18em] text-[#2a1218] shadow-[0_18px_50px_-18px_rgba(255,200,210,0.85)] transition hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rose-100"
+          disabled={busy}
+          onClick={() => void start()}
+          className="ui-btn splash-start-pulse mt-14 h-14 min-w-[14rem] rounded-full border border-rose-100/35 bg-gradient-to-b from-rose-100 to-rose-200/90 px-10 text-lg font-semibold tracking-[0.18em] text-[#2a1218] shadow-[0_18px_50px_-18px_rgba(255,200,210,0.85)] transition hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rose-100 disabled:opacity-60"
         >
-          {startLabel}
+          {busy ? t(lang, 'gateAudioPlaying') : startLabel}
         </button>
+
+        <p
+          id="amoji-splash-legal"
+          className="mt-6 max-w-xs text-[11px] leading-relaxed text-rose-50/45"
+        >
+          {t(lang, 'setupOneDisclaimer')}{' '}
+          <Link href="/privacy" className="text-rose-100/70 underline underline-offset-2">/privacy</Link>
+          {' · '}
+          <Link href="/terms" className="text-rose-100/70 underline underline-offset-2">/terms</Link>
+        </p>
       </div>
 
       <p

@@ -186,6 +186,13 @@ import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodb
 import { detectExercise, startExercise, advanceExercise, exerciseFarewellLine, type ExerciseState } from '../lib/exercises';
 import { buildDailyGreeting, buildEnterNameGreeting, buildMemoryBlock, ensureUserNameFromProfile, feltMood, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange, rememberTurn } from '../lib/memory';
 import { listenContinuous, listenSupported } from '../lib/listen';
+import { getEntryGateRecord } from '../lib/entry-gate';
+import {
+  duckExternalAudioForCompanion,
+  enterVoiceChatAudioSession,
+  leaveVoiceChatAudioSession,
+  pauseForeignPageMedia,
+} from '../lib/voice-chat-focus';
 import { startVad } from '../lib/vad';
 import { ambientStart, ambientStop } from '../lib/sfx';
 import { t, backgroundById, type Lang, type StrKey } from '../lib/prefs';
@@ -313,6 +320,7 @@ export default function ChatPanel({
   // was TS2349.
   const vadStopRef = useRef<{ stop(): void } | null>(null);
   const vadGraceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const micAutoArmedRef = useRef(false);
   const laughCountRef = useRef(0);
   // r.47 — the last assistant bubble is a TRANSIENT placeholder while she
   // waits for her brain: warm-up lines and stream tokens paint it, and the
@@ -375,7 +383,12 @@ export default function ChatPanel({
     return () => window.removeEventListener('amoji:brain-degraded', note);
   }, []);
   // never leave the mic (or the VAD) running if the panel unmounts
-  useEffect(() => () => { micStopRef.current?.stop(); vadStopRef.current?.stop(); }, []);
+  useEffect(() => () => {
+    micStopRef.current?.stop();
+    vadStopRef.current?.stop();
+    micModeRef.current = false;
+    leaveVoiceChatAudioSession();
+  }, []);
   useEffect(() => {
     if (nearBottomRef.current) {
       scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -1149,33 +1162,35 @@ export default function ChatPanel({
   // real speech BEFORE the first recognized word (so barge-in is earlier and
   // noise can never fake it) and knows the true moment you stop talking. If
   // the VAD can't load, everything falls back to the r86 behaviour exactly.
-  const mic = () => {
-    if (micModeRef.current) {
-      micModeRef.current = false;
-      micStopRef.current?.stop();
-      micStopRef.current = null;
-      if (vadGraceRef.current) { clearTimeout(vadGraceRef.current); vadGraceRef.current = null; }
-      vadStopRef.current?.stop();
-      vadStopRef.current = null;
-      setUserSpeaking(false);
-      listeningRef.current = false;
-      setListening(false);
-      setLiveText(''); // r81 — a half-spoken line must not linger on screen
-      // Mic open/close does not change BGM, ambient, or SFX levels.
-      lastActivityRef.current = Date.now();
-      lastUserRef.current = Date.now();
-      reengageStageRef.current = 0;
-      return;
-    }
+  const endVoiceMode = () => {
+    if (!micModeRef.current) return;
+    micModeRef.current = false;
+    micStopRef.current?.stop();
+    micStopRef.current = null;
+    if (vadGraceRef.current) { clearTimeout(vadGraceRef.current); vadGraceRef.current = null; }
+    vadStopRef.current?.stop();
+    vadStopRef.current = null;
+    setUserSpeaking(false);
+    listeningRef.current = false;
+    setListening(false);
+    setLiveText('');
+    lastActivityRef.current = Date.now();
+    lastUserRef.current = Date.now();
+    reengageStageRef.current = 0;
+  };
+
+  const beginVoiceMode = () => {
+    if (micModeRef.current) return;
     if (!listenSupported()) {
-      // Was a yue/English ternary, so zh and ja users got English here.
       window.alert(t(lang, 'micUnsupported'));
       return;
     }
+    enterVoiceChatAudioSession();
+    duckExternalAudioForCompanion();
     micModeRef.current = true;
     listeningRef.current = true;
     setListening(true);
-    stopSpeaking(); // interrupt her spoken line; music and ambience stay put
+    stopSpeaking();
     let bargeInArmed = true; // first real speech of a burst cuts her off
     const micHandle = listenContinuous(lang, {
       // r87 — the VAD owns endpointing now; its onPartial flushes via handle
@@ -1259,6 +1274,27 @@ export default function ChatPanel({
       else vadHandle?.stop();
     });
   };
+
+  const mic = () => {
+    if (micModeRef.current) endVoiceMode();
+    else beginVoiceMode();
+  };
+
+  // Grok-style: mic opens as soon as you enter chat; OS / Audio Session ducks other apps.
+  useEffect(() => {
+    enterVoiceChatAudioSession();
+    pauseForeignPageMedia();
+    if (micAutoArmedRef.current) return;
+    if (!listenSupported()) return;
+    const rec = getEntryGateRecord();
+    if (rec?.mic === 'denied' || rec?.mic === 'unsupported') return;
+    micAutoArmedRef.current = true;
+    const t0 = window.setTimeout(() => {
+      if (!micModeRef.current) beginVoiceMode();
+    }, 400);
+    return () => clearTimeout(t0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
 
   useEffect(() => subscribeMiniGameOpen(beginActionGame), [beginActionGame]);
   useEffect(() => {

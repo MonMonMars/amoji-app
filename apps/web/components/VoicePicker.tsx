@@ -94,7 +94,10 @@ export default function VoicePicker({
             </h4>
             <div className="grid grid-cols-1 gap-1.5 min-[380px]:grid-cols-2">
               {rows.map((button) => {
-                const numLabel = `#${button.n} ${t(lang, button.labelKey)}`;
+                const genderLabel = button.deliveryGender === 'male'
+                  ? t(lang, 'voiceFreeMale')
+                  : t(lang, 'voiceFreeFemale');
+                const numLabel = `#${button.n} ${t(lang, button.labelKey)} · ${genderLabel}`;
                 const selected = button.id === activeId;
                 const live = playing === button.id;
                 return (

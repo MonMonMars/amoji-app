@@ -25,14 +25,14 @@ describe('Settings VoicePicker parity with select TtsVoiceRow', () => {
     expect(row).not.toContain('EDGE_VOICE_BUTTONS');
   });
 
-  it('neither surface invents a male/female split the audio does not have', () => {
-    expect(picker).not.toContain("const GENDERS");
-    expect(picker).not.toContain('genderLabel');
-    expect(row).not.toContain("(['female', 'male'] as const)");
+  it('both label honest female/male free delivery on each button', () => {
+    expect(picker).toContain('voiceFreeFemale');
+    expect(picker).toContain('voiceFreeMale');
+    expect(row).toContain('deliveryGender');
     for (const locale of ['yue', 'zh', 'ja', 'en'] as const) {
-      for (const button of selectTtsButtons(locale)) {
-        expect('gender' in button).toBe(false);
-      }
+      const buttons = selectTtsButtons(locale);
+      expect(buttons.some((b) => b.deliveryGender === 'female')).toBe(true);
+      expect(buttons.some((b) => b.deliveryGender === 'male')).toBe(true);
     }
   });
 
@@ -45,8 +45,10 @@ describe('Settings VoicePicker parity with select TtsVoiceRow', () => {
   });
 
   it('both number their buttons `#n` and label them from the string table', () => {
-    expect(picker).toContain('`#${button.n} ${t(lang, button.labelKey)}`');
-    expect(row).toContain('`#${button.n} ${t(lang, button.labelKey)}`');
+    expect(picker).toContain('voiceFreeFemale');
+    expect(row).toContain('voiceFreeFemale');
+    expect(picker).toContain('button.labelKey');
+    expect(row).toContain('button.labelKey');
     expect(picker).toContain('aria-label={numLabel}');
     expect(row).toContain('aria-label={numLabel}');
     expect(picker).toContain('aria-pressed={selected}');
@@ -68,6 +70,7 @@ describe('Settings VoicePicker parity with select TtsVoiceRow', () => {
     expect(picker).toContain('activeVoiceChoice(locale)');
     expect(row).toContain('activeVoiceChoice(lang)');
     expect(isSingleVoiceLocale('ja')).toBe(true);
+    expect(isSingleVoiceLocale('en')).toBe(false);
   });
 
   it('both preview the exact voice a tap will keep', () => {

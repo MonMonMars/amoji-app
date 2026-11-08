@@ -2,19 +2,19 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
 
-const src = readFileSync(join(__dirname, '../app/login/page.tsx'), 'utf8');
+const redirect = readFileSync(join(__dirname, '../app/login/page.tsx'), 'utf8');
+const quick = readFileSync(join(__dirname, '../components/QuickSetup.tsx'), 'utf8');
 
-describe('login page main a11y', () => {
-  it('labels main landmark via titled h1', () => {
-    expect(src).toContain('aria-labelledby="amoji-login-title"');
-    expect(src).toContain('id="amoji-login-title"');
-    expect(src).toContain('{APP_NAME}');
+describe('login legacy path + quick setup a11y', () => {
+  it('/login is a redirect landmark', () => {
+    expect(redirect).toContain('data-testid="login-redirect"');
+    expect(redirect).toContain("router.replace('/')");
   });
 
-  it('labels Continue and Skip controls', () => {
-    expect(src).toContain("aria-label={t(lang, 'loginCta')}");
-    expect(src).toContain("aria-label={t(lang, 'loginSkip')}");
-    expect(src).toContain('type="button"');
-    expect(src).toContain('onClick={go}');
+  it('quick setup labels main landmark and START', () => {
+    expect(quick).toContain('aria-labelledby="amoji-setup-title"');
+    expect(quick).toContain('id="amoji-setup-title"');
+    expect(quick).toContain('data-testid="setup-start"');
+    expect(quick).toContain("aria-label={t(lang, 'splashStart')}");
   });
 });
