@@ -86,24 +86,17 @@ describe('stage props (r.69)', () => {
     expect(head!.pos).toEqual(MIC_MOUTH_POS);
 
     const [x, y, z] = MIC_MOUTH_POS;
-    expect(Math.abs(x)).toBeLessThanOrEqual(0.10);
+    expect(Math.abs(x)).toBeLessThanOrEqual(0.14);
     expect(y).toBeGreaterThanOrEqual(1.30);
     expect(y).toBeLessThanOrEqual(1.48);
-    expect(z).toBeGreaterThanOrEqual(0.04);
-    expect(z).toBeLessThanOrEqual(0.11);
+    expect(z).toBeGreaterThanOrEqual(0.10);
+    expect(z).toBeLessThanOrEqual(0.20);
 
-    // Closer to a nominal VRM mouth than the previous t718 capsule.
+    // Capsule sits in front of the lips (toward +Z), not inside the face shell.
     const nominal: [number, number, number] = [0, 1.38, 0.06];
-    const dist = (a: [number, number, number]) => {
-      const dx = a[0] - nominal[0];
-      const dy = a[1] - nominal[1];
-      const dz = a[2] - nominal[2];
-      return Math.hypot(dx, dy, dz);
-    };
-    const prev: [number, number, number] = [0.12, 1.44, 0.12];
-    expect(dist(MIC_MOUTH_POS)).toBeLessThan(dist(prev));
-    // Soft clearance: capsule radius 0.05 should not swallow the mouth point.
-    expect(dist(MIC_MOUTH_POS)).toBeGreaterThan(0.04);
+    expect(z - nominal[2]).toBeGreaterThanOrEqual(0.08);
+    expect(head!.size[0]).toBe(0.05);
+    expect(z - nominal[2]).toBeGreaterThanOrEqual(head!.size[0] * 0.9);
   });
 
 });

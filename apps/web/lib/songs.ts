@@ -21,7 +21,7 @@ export type SongLang = 'yue' | 'zh' | 'ja' | 'en';
  */
 export const SONG_MELODY: number[] = [0.02, 0.1, 0.16, 0.08, 0.04, 0.12, 0.06, 0.0];
 
-/** per-language ditty bank — 2 songs each, original lyrics */
+/** per-language ditty bank — original lyrics, rotated by pickSong */
 export const SONGS: Record<SongLang, string[][]> = {
   yue: [
     [
@@ -31,6 +31,14 @@ export const SONGS: Record<SongLang, string[][]> = {
     [
       '月光光，照地堂，唱歌仔俾你聽呀。',
       '唔開心嘅時候，記住有我，喺度陪你～',
+    ],
+    [
+      '霓虹閃呀閃，節拍牽住我手跑。',
+      '一齊大聲唱出口，今夜呀，燈火都知我驕傲～',
+    ],
+    [
+      '裙擺轉呀轉，節拍跟住我心跳。',
+      '大聲唱出自己名，今晚呀，我最閃耀～',
     ],
   ],
   zh: [
@@ -42,6 +50,14 @@ export const SONGS: Record<SongLang, string[][]> = {
       '小星星，眨眼睛，唱首歌儿给你听。',
       '难过的时候，别忘记，有我在这里～',
     ],
+    [
+      '霓虹在呼唤，节拍落在心上跳。',
+      '一起大声唱出来，今夜呀，直到天亮～',
+    ],
+    [
+      '裙摆轻轻转，节拍跟着心跳走。',
+      '唱出自己的名字，今晚呀，我最闪耀～',
+    ],
   ],
   ja: [
     [
@@ -52,6 +68,14 @@ export const SONGS: Record<SongLang, string[][]> = {
       'きらきら光る、星みたいに、歌おうよ。',
       'つらい日には、私の歌、聞いてね～',
     ],
+    [
+      'ネオンの光、ビートが胸を鳴らす夜。',
+      '一緒に声を上げよう、朝まで、輝こう～',
+    ],
+    [
+      'スカートがくるり、リズムにのせて。',
+      '自分の名前を歌う、今夜、いちばん輝く～',
+    ],
   ],
   en: [
     [
@@ -61,6 +85,14 @@ export const SONGS: Record<SongLang, string[][]> = {
     [
       'Twinkle twinkle tune, I will sing, just for you.',
       'When your day feels heavy, I will sing, you through~',
+    ],
+    [
+      'Neon lights are calling, heartbeat on the floor tonight.',
+      'Lift your voice with me, we can shine, until the morning light~',
+    ],
+    [
+      'Sugar rush and stardust, dancing on my own.',
+      'Every little dream I hold, tonight yeah, feels like home~',
     ],
   ],
 };
