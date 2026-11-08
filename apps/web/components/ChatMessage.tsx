@@ -5,6 +5,7 @@
 // The report control exists on AI replies only: the user's own words are not
 // model output, so there is nothing for a store reviewer to report there.
 import { t, type Lang } from '../lib/prefs';
+import type { TurnMemoryUsed } from '../lib/memory';
 
 export interface ChatMessageProps {
   role: 'user' | 'assistant';
@@ -13,15 +14,21 @@ export interface ChatMessageProps {
   accent: string;
   /** companion name — only the newest reply carries it, as before */
   label?: string;
+  /** memories injected into her prompt for this turn */
+  memoryUsed?: TurnMemoryUsed[];
+  onForgetMemory?: (id: string) => void;
   /** opens the report sheet for this reply */
   onReport: (reply: string) => void;
 }
 
-export default function ChatMessage({ role, content, lang, accent, label, onReport }: ChatMessageProps) {
+export default function ChatMessage({
+  role, content, lang, accent, label, memoryUsed, onForgetMemory, onReport,
+}: ChatMessageProps) {
   const isUser = role === 'user';
   // The "…" wait bubble is a transient placeholder, not generated text —
   // there is nothing there to report.
   const reportable = !isUser && content.trim() !== '' && content.trim() !== '…';
+  const showMemory = !isUser && memoryUsed && memoryUsed.length > 0;
   return (
     <div className={isUser ? 'text-right' : 'text-left'}>
       {!isUser && label && (
@@ -32,6 +39,34 @@ export default function ChatMessage({ role, content, lang, accent, label, onRepo
       <p className={isUser ? '' : 'text-white/95'} style={isUser ? { color: accent } : undefined}>
         {content}
       </p>
+      {showMemory && (
+        <details
+          data-testid="memory-turn-used"
+          className="ui-btn mt-1 max-w-full rounded-xl border border-white/10 bg-white/5 px-2 py-1 text-left text-[10px] text-white/70"
+        >
+          <summary className="cursor-pointer list-none marker:content-none [&::-webkit-details-marker]:hidden">
+            {t(lang, 'memoryTurnUsed')}
+          </summary>
+          <ul className="mt-1 space-y-0.5" data-testid="memory-turn-list">
+            {memoryUsed.map((item) => (
+              <li key={item.id} className="flex items-start gap-1" data-memory-id={item.id}>
+                <span className="min-w-0 flex-1 break-words text-white/80">{item.snippet}</span>
+                {item.deletable && onForgetMemory && (
+                  <button
+                    type="button"
+                    onClick={() => onForgetMemory(item.id)}
+                    aria-label={t(lang, 'memoryTurnDeleteAria')}
+                    data-testid="memory-turn-forget"
+                    className="ui-btn shrink-0 rounded px-1 py-0.5 text-white/40 hover:bg-white/10 hover:text-white/90"
+                  >
+                    {t(lang, 'memoryTurnDelete')}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
       {reportable && (
         <button
           type="button"

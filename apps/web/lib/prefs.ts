@@ -221,6 +221,7 @@ export type StrKey =
   // reply. Play requires an in-app route for reporting generated content, and
   // the copy has to say where the report actually goes — this device only.
   | 'reportCta' | 'reportAria' | 'reportTitle' | 'reportIntro' | 'reportReasonLabel'
+  | 'memoryTurnUsed' | 'memoryTurnDelete' | 'memoryTurnDeleteAria'
   | 'reportReasonOffensive' | 'reportReasonMinorSexual' | 'reportReasonSelfHarm'
   | 'reportReasonHarmfulAdvice' | 'reportReasonOther'
   | 'reportNoteLabel' | 'reportNotePlaceholder' | 'reportSubmit' | 'reportCancel' | 'reportDone'
@@ -1142,6 +1143,24 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: '舉報呢個 AI 回覆',
     zh: '举报这条 AI 回复',
     ja: 'このAIの返信を報告する',
+  },
+  memoryTurnUsed: {
+    en: 'Memories used this turn',
+    yue: '本輪用咗邊啲記憶',
+    zh: '本轮用了哪些记忆',
+    ja: 'この返信で使った記憶',
+  },
+  memoryTurnDelete: {
+    en: 'Forget',
+    yue: '刪除',
+    zh: '删除',
+    ja: '削除',
+  },
+  memoryTurnDeleteAria: {
+    en: 'Forget this memory on your device',
+    yue: '喺部機刪除呢條記憶',
+    zh: '在本机删除这条记忆',
+    ja: 'この端末からこの記憶を削除',
   },
   reportTitle: {
     en: 'Report this reply',

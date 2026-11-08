@@ -285,7 +285,16 @@ export function addEntry(type: MemoryType, text: string, m: Memory = loadMemory(
 }
 
 export function deleteEntry(id: string, m: Memory = loadMemory()): void {
+  const hit = m.entries.find((e) => e.id === id);
   m.entries = m.entries.filter((e) => e.id !== id);
+  if (hit?.type === 'preference') m.facts = m.facts.filter((f) => f !== hit.text);
+  save(m);
+}
+
+/** Remove a legacy fact line and any matching typed preference entry. */
+export function deleteFact(fact: string, m: Memory = loadMemory()): void {
+  m.facts = m.facts.filter((f) => f !== fact);
+  m.entries = m.entries.filter((e) => e.text !== fact);
   save(m);
 }
 
@@ -1032,27 +1041,138 @@ function factLine(fact: string, lang: string): string {
 /** Max fact lines injected — pairs with client-chat PROMPT_HISTORY_CAP (8). */
 export const MEMORY_PROMPT_FACT_CAP = 8;
 
+export type TurnMemorySource =
+  | 'fact'
+  | 'entry'
+  | 'promise'
+  | 'diary'
+  | 'thread'
+  | 'name'
+  | 'mood'
+  | 'exchanges'
+  | 'related';
+
+/** One line the user can inspect (and sometimes delete) under a reply. */
+export interface TurnMemoryUsed {
+  id: string;
+  snippet: string;
+  source: TurnMemorySource;
+  deletable: boolean;
+}
+
+export interface MemoryBlockResult {
+  block: string;
+  used: TurnMemoryUsed[];
+}
+
+export const FACT_MEMORY_ID_PREFIX = 'fact:';
+
+function factMemoryId(fact: string): string {
+  return `${FACT_MEMORY_ID_PREFIX}${fact}`;
+}
+
+function pushTurnUsed(used: TurnMemoryUsed[], item: TurnMemoryUsed): void {
+  if (used.some((u) => u.id === item.id)) return;
+  used.push(item);
+}
+
+function resolveRecalledUsed(text: string, m: Memory, lang: string): TurnMemoryUsed {
+  const exact = m.facts.find((f) => f === text);
+  if (exact) return { id: factMemoryId(exact), snippet: factLine(exact, lang), source: 'related', deletable: true };
+  const fact = m.facts.find((f) => f.includes(text) || text.includes(f.slice(0, 40)));
+  if (fact) return { id: factMemoryId(fact), snippet: text, source: 'related', deletable: true };
+  const entry = m.entries.find((e) => e.text === text || e.text.includes(text) || text.includes(e.text.slice(0, 48)));
+  if (entry) return { id: entry.id, snippet: text, source: 'related', deletable: true };
+  const diary = (m.diary ?? []).find((d) => d.text.includes(text) || text.includes(d.text.slice(0, 48)));
+  if (diary) return { id: diary.id, snippet: text, source: 'related', deletable: true };
+  return { id: `related:${text.slice(0, 32)}`, snippet: text, source: 'related', deletable: false };
+}
+
+/** Forget one item shown in the per-turn memory strip (settings browser uses other APIs). */
+export function forgetInjectedMemory(id: string, m: Memory = loadMemory()): boolean {
+  if (id.startsWith(FACT_MEMORY_ID_PREFIX)) {
+    deleteFact(id.slice(FACT_MEMORY_ID_PREFIX.length), m);
+    return true;
+  }
+  if (id.startsWith('related:')) return false;
+  if (m.entries.some((e) => e.id === id)) {
+    deleteEntry(id, m);
+    return true;
+  }
+  if (m.promises?.some((p) => p.id === id)) {
+    deletePromise(id, m);
+    return true;
+  }
+  if (m.diary?.some((d) => d.id === id)) {
+    deleteDiaryEntry(id, m);
+    return true;
+  }
+  return false;
+}
+
 /** Build the "you remember them" block injected into her system prompt.
  *  v5: pass the user's CURRENT message as userText and older, on-topic
  *  memories surface into the block — she connects today's words to things
  *  told to her weeks ago. Kept to ≤2 short lines (free-lane prompt size). */
-export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userText?: string): string | undefined {
+export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userText?: string): MemoryBlockResult | undefined {
   if (!m.userName && m.facts.length === 0 && m.entries.length === 0 && (m.diary?.length ?? 0) === 0 && m.exchanges < 3) return undefined;
+  const used: TurnMemoryUsed[] = [];
   const recent = m.facts.slice(-MEMORY_PROMPT_FACT_CAP);
-  const plans = m.entries.filter((e) => e.type === 'plan').slice(-3).map((e) => e.text);
-  const moments = m.entries.filter((e) => e.type === 'event').slice(-3).map((e) => e.text);
+  const planEntries = m.entries.filter((e) => e.type === 'plan').slice(-3);
+  const momentEntries = m.entries.filter((e) => e.type === 'event').slice(-3);
+  const plans = planEntries.map((e) => e.text);
+  const moments = momentEntries.map((e) => e.text);
   const diary = diarySummary(m, 3);
   const lastMood = m.moods[m.moods.length - 1];
   // v4 — the open thread: what you two were discussing when you last left off
   const threadUser = m.lastThread?.user ? m.lastThread.user.slice(0, 40) : undefined;
   // v6 — what SHE promised: her own word rides into the prompt so she keeps it
-  const promises = (m.promises ?? []).slice(-3).map((p) => p.text);
+  const promiseRows = (m.promises ?? []).slice(-3);
+  const promises = promiseRows.map((p) => p.text);
   // v5 — old memories that touch what the user just said (deduped against
   // the standard bits so nothing appears twice in the block)
   const standard = new Set([...recent, ...plans, ...moments].map((t) => t.slice(0, 24)));
   const related = userText ? recallRelevant(userText, m, 2).filter((t) => !standard.has(t.slice(0, 24))) : [];
   const L = ['yue', 'zh', 'ja', 'en'].includes(lang) ? lang : 'en';
 
+  if (m.userName) pushTurnUsed(used, { id: 'name', snippet: m.userName, source: 'name', deletable: false });
+  for (const f of recent) {
+    pushTurnUsed(used, { id: factMemoryId(f), snippet: factLine(f, L), source: 'fact', deletable: true });
+  }
+  for (const e of planEntries) pushTurnUsed(used, { id: e.id, snippet: e.text, source: 'entry', deletable: true });
+  for (const e of momentEntries) pushTurnUsed(used, { id: e.id, snippet: e.text, source: 'entry', deletable: true });
+  for (const p of promiseRows) pushTurnUsed(used, { id: p.id, snippet: p.text, source: 'promise', deletable: true });
+  if (threadUser) pushTurnUsed(used, { id: 'thread', snippet: threadUser, source: 'thread', deletable: false });
+  if (m.diary && m.diary.length > 0) {
+    const byDay = new Map<string, DiaryEntry[]>();
+    for (const d of m.diary) {
+      const list = byDay.get(d.day);
+      if (list) list.push(d); else byDay.set(d.day, [d]);
+    }
+    for (const day of [...byDay.keys()].slice(-3)) {
+      const last = byDay.get(day)!.at(-1)!;
+      pushTurnUsed(used, { id: last.id, snippet: last.text.slice(0, 80), source: 'diary', deletable: true });
+    }
+  }
+  for (const r of related) pushTurnUsed(used, resolveRecalledUsed(r, m, L));
+  if (m.exchanges >= 3) {
+    pushTurnUsed(used, {
+      id: 'exchanges',
+      snippet: String(m.exchanges),
+      source: 'exchanges',
+      deletable: false,
+    });
+  }
+  if (lastMood) {
+    pushTurnUsed(used, {
+      id: 'mood',
+      snippet: (MOOD_LABEL[L] ?? MOOD_LABEL.en)[lastMood] ?? lastMood,
+      source: 'mood',
+      deletable: false,
+    });
+  }
+
+  let block: string;
   if (L === 'yue') {
     const bits: string[] = [];
     if (m.userName) bits.push(`佢叫 ${m.userName}`);
@@ -1065,9 +1185,8 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userTex
     if (related.length) bits.push(`同佢而家講嘅嘢有關嘅舊記憶：${related.join('；')}`);
     if (m.exchanges >= 3) bits.push(`你哋已經傾咗 ${m.exchanges} 次偈`);
     if (lastMood) bits.push(`佢最近一次嘅心情係${(MOOD_LABEL[L] ?? MOOD_LABEL.en)[lastMood] ?? lastMood}`);
-    return `你記得呢個人（記憶私密噉存放喺佢部電話）：${bits.join('；')}。自然咁用佢個名，間中提吓佢講過嘅嘢同佢嘅計劃，唔好背書噉背出嚟。`;
-  }
-  if (L === 'zh') {
+    block = `你記得呢個人（記憶私密噉存放喺佢部電話）：${bits.join('；')}。自然咁用佢個名，間中提吓佢講過嘅嘢同佢嘅計劃，唔好背書噉背出嚟。`;
+  } else if (L === 'zh') {
     const bits: string[] = [];
     if (m.userName) bits.push(`TA 叫 ${m.userName}`);
     bits.push(...recent.map((f) => factLine(f, L)));
@@ -1079,9 +1198,8 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userTex
     if (related.length) bits.push(`与TA现在说的内容有关的旧记忆：${related.join('；')}`);
     if (m.exchanges >= 3) bits.push(`你们已经聊了 ${m.exchanges} 次`);
     if (lastMood) bits.push(`TA 最近一次的心情是${(MOOD_LABEL[L] ?? MOOD_LABEL.en)[lastMood] ?? lastMood}`);
-    return `你记得这个人（记忆私密地存在 TA 的手机上）：${bits.join('；')}。自然地叫 TA 的名字，偶尔提起 TA 说过的事和计划，不要像背书一样。`;
-  }
-  if (L === 'ja') {
+    block = `你记得这个人（记忆私密地存在 TA 的手机上）：${bits.join('；')}。自然地叫 TA 的名字，偶尔提起 TA 说过的事和计划，不要像背书一样。`;
+  } else if (L === 'ja') {
     const bits: string[] = [];
     if (m.userName) bits.push(`名前は ${m.userName}`);
     bits.push(...recent.map((f) => factLine(f, L)));
@@ -1093,18 +1211,20 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userTex
     if (related.length) bits.push(`今の話題に関する昔の記憶：${related.join('；')}`);
     if (m.exchanges >= 3) bits.push(`これまで ${m.exchanges} 回話した`);
     if (lastMood) bits.push(`最近の気分は${(MOOD_LABEL[L] ?? MOOD_LABEL.en)[lastMood] ?? lastMood}`);
-    return `この人のことを覚えている（記憶はこの端末にだけ保存）：${bits.join('；')}。自然に名前を呼び、時々覚えていることや予定を話題にして。`;
+    block = `この人のことを覚えている（記憶はこの端末にだけ保存）：${bits.join('；')}。自然に名前を呼び、時々覚えていることや予定を話題にして。`;
+  } else {
+    const bits: string[] = [];
+    if (m.userName) bits.push(`their name is ${m.userName}`);
+    bits.push(...recent.map((f) => factLine(f, 'en')));
+    if (plans.length) bits.push(`plans they mentioned: ${plans.join('; ')}`);
+    if (moments.length) bits.push(`recent moments: ${moments.join('; ')}`);
+    if (promises.length) bits.push(`promises you made to them: ${promises.join('; ')} — remember your own word and follow up when it fits`);
+    if (threadUser) bits.push(`last topic you discussed: "${threadUser}"`);
+    if (diary.length) bits.push(`recent days together: ${diary.join(' | ')}`);
+    if (related.length) bits.push(`older memories related to what they just said: ${related.join('; ')}`);
+    if (m.exchanges >= 3) bits.push(`you two have talked ${m.exchanges} times`);
+    if (lastMood) bits.push(`their most recent mood was ${(MOOD_LABEL.en)[lastMood] ?? lastMood}`);
+    block = `You remember this person (the memory lives privately on their device): ${bits.join('; ')}. Use their name naturally and occasionally reference what they told you and their plans — never recite it like a list.`;
   }
-  const bits: string[] = [];
-  if (m.userName) bits.push(`their name is ${m.userName}`);
-  bits.push(...recent.map((f) => factLine(f, 'en')));
-  if (plans.length) bits.push(`plans they mentioned: ${plans.join('; ')}`);
-  if (moments.length) bits.push(`recent moments: ${moments.join('; ')}`);
-  if (promises.length) bits.push(`promises you made to them: ${promises.join('; ')} — remember your own word and follow up when it fits`);
-  if (threadUser) bits.push(`last topic you discussed: "${threadUser}"`);
-  if (diary.length) bits.push(`recent days together: ${diary.join(' | ')}`);
-  if (related.length) bits.push(`older memories related to what they just said: ${related.join('; ')}`);
-  if (m.exchanges >= 3) bits.push(`you two have talked ${m.exchanges} times`);
-  if (lastMood) bits.push(`their most recent mood was ${(MOOD_LABEL.en)[lastMood] ?? lastMood}`);
-  return `You remember this person (the memory lives privately on their device): ${bits.join('; ')}. Use their name naturally and occasionally reference what they told you and their plans — never recite it like a list.`;
+  return { block, used };
 }

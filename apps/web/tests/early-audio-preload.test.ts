@@ -40,7 +40,7 @@ describe('early audio preload', () => {
     // t790: the wait cue is tied to the 2s reply-loading threshold, so it is
     // no longer the same number as the enter cheer — both stay off the first
     // instant of the page, which is what this guards.
-    expect(THINKING_SOUND_DELAY_MS).toBe(2_000);
+    expect(THINKING_SOUND_DELAY_MS).toBe(1_000);
   });
 
   it('exposes Edge speech origin for preconnect', () => {

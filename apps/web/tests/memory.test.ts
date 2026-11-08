@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  addEntry, buildDailyGreeting, buildMemoryBlock, deleteEntry, detectMood, detectMoodIntensity, editEntry, exportMemory, feltMood,
+  addEntry, buildDailyGreeting, buildMemoryBlock, deleteEntry, deleteFact, detectMood, detectMoodIntensity, editEntry, exportMemory, feltMood,
+  forgetInjectedMemory, FACT_MEMORY_ID_PREFIX,
   diarySummary, greetingHints, moodToHints, recordVisit, rememberExchange, rememberTurn, type Memory,
 } from '../lib/memory';
 
@@ -56,9 +57,9 @@ describe('memory v2 typed entries', () => {
     m.userName = 'Simon';
     rememberExchange('tomorrow I have a job interview', m);
     rememberExchange('yesterday I adopted a cat', m);
-    const block = buildMemoryBlock('en', m)!;
-    expect(block).toContain('job interview');
-    expect(block).toContain('adopted a cat');
+    const built = buildMemoryBlock('en', m)!;
+    expect(built.block).toContain('job interview');
+    expect(built.block).toContain('adopted a cat');
   });
 
   it('daily greeting cheers a plan due today', () => {
@@ -116,8 +117,8 @@ describe('emotion diary', () => {
     m.userName = 'Simon';
     m.exchanges = 5;
     rememberExchange('yesterday I adopted a cat', m);
-    const block = buildMemoryBlock('en', m)!;
-    expect(block).toContain('adopted a cat');
+    const built = buildMemoryBlock('en', m)!;
+    expect(built.block).toContain('adopted a cat');
   });
 
   it('daily greeting recalls this day last week from the diary', () => {
@@ -391,9 +392,21 @@ describe('memory v6 — annual dates + her promises (r2026-10-06.130)', () => {
     const m = fresh();
     m.userName = 'Simon';
     m.promises = [{ id: 'p1', text: "I'll remind you about the interview", day: daysAgo(1) }];
-    const block = buildMemoryBlock('en', m)!;
-    expect(block).toContain('promises you made');
-    expect(block).toContain('interview');
+    const built = buildMemoryBlock('en', m)!;
+    expect(built.block).toContain('promises you made');
+    expect(built.block).toContain('interview');
+  });
+
+  it('lists injected memories for transparency', () => {
+    const m = fresh();
+    m.userName = 'Simon';
+    rememberExchange('I love ramen', m);
+    const built = buildMemoryBlock('en', m)!;
+    const fact = m.facts.find((f) => f.startsWith('likes:'));
+    expect(fact).toBeDefined();
+    expect(built.used.some((u) => u.id === `${FACT_MEMORY_ID_PREFIX}${fact}` && u.deletable)).toBe(true);
+    forgetInjectedMemory(`${FACT_MEMORY_ID_PREFIX}${fact}`, m);
+    expect(m.facts).toHaveLength(0);
   });
 
   it('exportMemory carries dates and promises', () => {

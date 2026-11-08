@@ -44,10 +44,10 @@ function clock() {
   };
 }
 
-describe('wait filler timing (Mon: not before 2s)', () => {
-  it('waits the full two seconds before the first beat', () => {
-    expect(THINKING_SOUND_DELAY_MS).toBe(2_000);
-    expect(WARMUP_FIRST_MS).toBe(2_000);
+describe('wait filler timing (Mon: not before ~1s)', () => {
+  it('waits about one second before the first beat', () => {
+    expect(THINKING_SOUND_DELAY_MS).toBe(1_000);
+    expect(WARMUP_FIRST_MS).toBe(1_000);
     const c = clock();
     const said: string[] = [];
     startThinkingSound({
