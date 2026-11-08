@@ -90,9 +90,9 @@ describe('one button per genuinely different voice', () => {
   it('offers exactly the distinct speakers, never the 58 Edge names', () => {
     // 58 Edge short names all collapsed to one voice. The real map is one
     // button per distinct Google `tl` speaker measured with four sentences.
-    expect(selectTtsButtons()).toHaveLength(12);
+    expect(selectTtsButtons()).toHaveLength(11);
     expect(selectTtsButtons('yue')).toHaveLength(2);
-    expect(selectTtsButtons('zh')).toHaveLength(3);
+    expect(selectTtsButtons('zh')).toHaveLength(2);
     expect(selectTtsButtons('ja')).toHaveLength(2);
     expect(selectTtsButtons('en')).toHaveLength(5);
   });
@@ -100,14 +100,13 @@ describe('one button per genuinely different voice', () => {
   it('collapses to exactly one selectable entry where only one voice exists', () => {
     // Cantonese and Japanese really do have a single voice each. That is a
     // finding, not a bug: the row shows one button and says why.
-    for (const locale of ['yue', 'ja'] as const) {
+    for (const locale of ['yue', 'zh', 'ja'] as const) {
       expect(distinctVoiceCount(locale)).toBe(2);
       expect(selectTtsButtons(locale)).toHaveLength(2);
       expect(isSingleVoiceLocale(locale)).toBe(true);
     }
-    // A language with more than one voice is not a single-voice locale.
+    // English keeps multiple regional `tl` speakers on the row.
     expect(isSingleVoiceLocale('en')).toBe(false);
-    expect(isSingleVoiceLocale('zh')).toBe(false);
   });
 
   it('never produces duplicate choice ids; same tl may pair female + male delivery', () => {
@@ -129,7 +128,7 @@ describe('one button per genuinely different voice', () => {
   });
 
   it('agrees with TIER_A_COUNTS', () => {
-    expect(TIER_A_COUNTS).toEqual({ yue: 2, zh: 3, ja: 2, en: 5 });
+    expect(TIER_A_COUNTS).toEqual({ yue: 2, zh: 2, ja: 2, en: 5 });
   });
 
   it('labels female and male free delivery honestly on each button', () => {
@@ -202,6 +201,13 @@ describe('pin storage names a real voice', () => {
     expect(voicePickFor('yue')).toBe('gtts:yue:f');
   });
 
+  it('migrates legacy Taiwan gTTS pins to mainland Mandarin female', () => {
+    saveVoicePick('zh', 'gtts:zh-TW');
+    expect(voicePickFor('zh')).toBe('gtts:zh-CN:f');
+    saveVoicePick('zh', 'gtts:zh-TW:f');
+    expect(voicePickFor('zh')).toBe('gtts:zh-CN:f');
+  });
+
   it('refuses an id that no longer exists', () => {
     saveVoicePick('en', 'en-US-AriaNeural');
     expect(voicePickFor('en')).toBeNull();
@@ -227,8 +233,8 @@ describe('tl mapping', () => {
 
   it('honours a pinned choice for this language and ignores a foreign one', () => {
     expect(tlForChoice('en', 'gtts:en-IN:f')).toBe('en-IN');
-    expect(tlForChoice('en', 'gtts:zh-TW:f')).toBe('en-US');
-    expect(tlForChoice('zh', 'gtts:zh-TW:f')).toBe('zh-TW');
+    expect(tlForChoice('en', 'gtts:zh-CN:m')).toBe('en-US');
+    expect(tlForChoice('zh', 'gtts:zh-CN:m')).toBe('zh-CN');
   });
 
   it('uses real Google Translate codes', () => {

@@ -199,7 +199,6 @@ export const VOICE_CHOICES: readonly VoiceChoice[] = [
 
   { id: 'gtts:zh-CN:f', locale: 'zh', engine: 'gtts', tl: 'zh-CN', deliveryGender: 'female', labelKey: 'voiceRegionMandarin', n: 1 },
   { id: 'gtts:zh-CN:m', locale: 'zh', engine: 'gtts', tl: 'zh-CN', deliveryGender: 'male', labelKey: 'voiceRegionMandarin', n: 2 },
-  { id: 'gtts:zh-TW:f', locale: 'zh', engine: 'gtts', tl: 'zh-TW', deliveryGender: 'female', labelKey: 'voiceRegionTaiwan', n: 3 },
 
   { id: 'gtts:ja:f', locale: 'ja', engine: 'gtts', tl: 'ja', deliveryGender: 'female', labelKey: 'voiceRegionJapanese', n: 1 },
   { id: 'gtts:ja:m', locale: 'ja', engine: 'gtts', tl: 'ja', deliveryGender: 'male', labelKey: 'voiceRegionJapanese', n: 2 },
@@ -216,7 +215,8 @@ export const LEGACY_VOICE_CHOICE_IDS: Readonly<Record<string, string>> = {
   'gtts:yue': 'gtts:yue:f',
   'gtts:ja': 'gtts:ja:f',
   'gtts:zh-CN': 'gtts:zh-CN:f',
-  'gtts:zh-TW': 'gtts:zh-TW:f',
+  'gtts:zh-TW': 'gtts:zh-CN:f',
+  'gtts:zh-TW:f': 'gtts:zh-CN:f',
   'gtts:en-US': 'gtts:en-US:f',
   'gtts:en-GB': 'gtts:en-GB:f',
   'gtts:en-AU': 'gtts:en-AU:f',
