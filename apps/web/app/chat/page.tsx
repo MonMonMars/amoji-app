@@ -3,10 +3,9 @@
 // settings gear (top right), boxless fading chat history + mic orb (bottom).
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
-import { idlePickFor } from '../../lib/idle-pick';
 import { useRouter } from 'next/navigation';
 import ChatPanel from '../../components/ChatPanel';
-import IdlePickRails from '../../components/IdlePickRails';
+import { resolveChatAutoIdle } from '../../lib/chat-auto-idle';
 import MiniGamePicker, { MiniGameMenuButton } from '../../components/MiniGamePicker';
 import DevPanel from '../../components/DevPanel';
 import FallbackNotice from '../../components/FallbackNotice';
@@ -88,7 +87,7 @@ function ChatRoom() {
   }, []);
 
   const character = characterById(prefs.character);
-  useEffect(() => { setIdleClip(idlePickFor(character.id)); }, [character.id]);
+  useEffect(() => { setIdleClip(resolveChatAutoIdle({ assistantText: '' })); }, [character.id]);
   const background = backgroundById(prefs.background);
   const storyScene = activeStoryScene();
   const sceneGlbUrl = storyScene ? resolveStorySceneGlb(storyScene) : undefined;
@@ -137,12 +136,6 @@ function ChatRoom() {
           onHandHold={() => setHandHold((c) => c + 1)}
         />
       )}
-      {!gameChromeHidden && (
-        <div className={bootReady ? undefined : 'opacity-0'}>
-          <IdlePickRails characterId={character.id} onPick={setIdleClip} />
-        </div>
-      )}
-
       {/* top bar: status plate (left) + mini-games, wardrobe, settings (right).
           Hidden for the whole title → play session so the HUD does not overlap it. */}
       {!gameChromeHidden && (
@@ -224,6 +217,7 @@ function ChatRoom() {
           handHoldCount={handHold}
           onStatus={setStatus}
           onMemCount={setMemCount}
+          onAutoIdle={(clip) => setIdleClip(clip)}
         />}
       </div>
       {pickerOpen && (

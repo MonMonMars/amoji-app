@@ -406,7 +406,7 @@
       "id": "a93-edokko",
       "libraryId": "A93",
       "name": "Edokko",
-      "gender": "female",
+      "gender": "male",
       "accent": "#a78bfa",
       "kidSafe": true,
       "modelFile": "a93-edokko.vrm",
@@ -415,8 +415,8 @@
       "imageUrl": "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a93-edokko.png",
       "sourceFolder": "Edokko",
       "voiceHint": {
-        "yue": "zh-HK-HiuGaaiNeural",
-        "en": "en-HK-YanNeural"
+        "yue": "zh-HK-WanLungNeural",
+        "en": "en-HK-SamNeural"
       }
     },
     {

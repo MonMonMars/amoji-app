@@ -25,6 +25,7 @@ export const MALE_CAST_IDS: readonly string[] = [
   'a03-fumiriya', // 3
   'a24-hairsample-male', // 11
   'a77-sasha', // 19
+  'a93-edokko', // 26 — male cast; card bighead rebaked from VRM thumbnail
   'a94-rita', // 27
   'a98-ethan', // 31
   'a105-serizawa-aoi', // 35
