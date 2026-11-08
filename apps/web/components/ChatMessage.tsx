@@ -38,14 +38,14 @@ export default function ChatMessage({
   const reportable = !isUser && !tailStreaming && content.trim() !== '' && content.trim() !== '…';
   const showMemory = !isUser && memoryUsed && memoryUsed.length > 0;
   return (
-    <div data-testid="chat-message" className={isUser ? 'text-right' : 'text-left'}>
+    <div className={isUser ? 'text-right' : 'text-left'}>
       {!isUser && label && (
         <p className="mb-0.5 pl-1 text-[10px] font-medium uppercase tracking-widest" style={{ color: `${accent}b0` }}>
           {label}
         </p>
       )}
       <p
-        className={`select-text ${isUser ? '' : clause ? 'text-white/95 italic' : 'text-white/95'}`}
+        className={isUser ? '' : clause ? 'text-white/95 italic' : 'text-white/95'}
         style={isUser ? { color: accent } : undefined}
         data-testid={!isUser && clause ? 'speech-caption' : undefined}
         aria-live={!isUser && clause ? 'polite' : undefined}
@@ -64,7 +64,7 @@ export default function ChatMessage({
           <ul className="mt-1 space-y-0.5" data-testid="memory-turn-list">
             {memoryUsed.map((item) => (
               <li key={item.id} className="flex items-start gap-1" data-memory-id={item.id}>
-                <span className="min-w-0 flex-1 break-words select-text text-white/80">{item.snippet}</span>
+                <span className="min-w-0 flex-1 break-words text-white/80">{item.snippet}</span>
                 {item.deletable && onForgetMemory && (
                   <button
                     type="button"

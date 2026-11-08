@@ -99,6 +99,21 @@ describe('idle enable + pick', () => {
     expect(saveIdlePick('a01-shino', 'not-a-clip')).toBe('IdleBreathCalm');
   });
 
+  it('drops HelloWave pins — farewell wave is not a saved idle', () => {
+    const store = new Map<string, string>();
+    (globalThis as { localStorage: Storage }).localStorage = {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => { store.set(k, v); },
+      removeItem: (k: string) => { store.delete(k); },
+      clear: () => store.clear(),
+      key: () => null,
+      length: 0,
+    };
+    store.set('amoji.idlePick.v1', JSON.stringify({ 'a01-shino': 'HelloWave' }));
+    forgetIdlePickCache();
+    expect(idlePickFor('a01-shino')).toBeNull();
+  });
+
   it('clears legacy a01-a04 pins so calm defaults return', () => {
     const store = new Map<string, string>();
     (globalThis as { localStorage: Storage }).localStorage = {

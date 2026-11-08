@@ -2,6 +2,8 @@
 // Map: # → free-library Cxx + path; playable when a local VRMA exists.
 // Mon says "use #N". Defaults: #1 IdleBreathCalm + #2 StandardIdle only.
 
+import { isFarewellOnlyIdleClip } from './idle-farewell';
+
 export interface IdleLibraryEntry {
   /** 1-based contiguous number shown in chat. */
   num: number;
@@ -1391,6 +1393,7 @@ export function playableIdles(): IdleLibraryEntry[] {
   const out: IdleLibraryEntry[] = [];
   for (const e of IDLE_LIBRARY) {
     if (e.retired || !e.playable || !e.vrmaUrl || seen.has(e.clipId)) continue;
+    if (isFarewellOnlyIdleClip(e.clipId)) continue;
     seen.add(e.clipId);
     out.push(e);
   }

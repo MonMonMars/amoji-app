@@ -3,8 +3,12 @@
 
 import { idleClipById } from './idle-clips';
 import type { IdleCuratedCategory } from './idle-curated-rail';
+import { FAREWELL_WAVE_CLIP_ID, isFarewellText } from './idle-farewell';
 
 const BREATHING_CLIPS = ['IdleBreathCalm', 'StandardIdle', 'IdleMixamoBreathing'] as const;
+
+/** Opening greet / light chit-chat — never the wave gesture. */
+const CHITCHAT_CLIPS = ['lib_C25', 'LookAround', 'Thinking', 'IdleInnersceneSam'] as const;
 
 type Bucket = { category: IdleCuratedCategory | 'greet' | 'scared'; patterns: RegExp[] };
 
@@ -12,9 +16,9 @@ const KEYWORD_BUCKETS: readonly Bucket[] = [
   {
     category: 'greet',
     patterns: [
-      /\b(hi|hello|hey|good\s+(morning|evening|night)|welcome)\b/i,
-      /你好|您好|哈囉|嗨|早晨|晚安|歡迎|欢迎/,
-      /こんにちは|こんばんは|おはよう|やあ|いらっしゃい/,
+      /\b(hi|hello|hey|good\s+(morning|evening)|welcome)\b/i,
+      /你好|您好|哈囉|嗨|早晨|歡迎|欢迎/,
+      /こんにちは|おはよう|やあ|いらっしゃい/,
     ],
   },
   {
@@ -52,8 +56,8 @@ const KEYWORD_BUCKETS: readonly Bucket[] = [
 ];
 
 /** Category → curated clip id (first playable match). */
-const CATEGORY_CLIP: Record<Bucket['category'], string> = {
-  greet: 'HelloWave',
+const CATEGORY_CLIP: Record<Bucket['category'] | IdleCuratedCategory, string> = {
+  greet: 'lib_C25',
   think: 'Thinking',
   dance: 'lib_C113',
   scared: 'lib_C146',
@@ -65,11 +69,21 @@ const CATEGORY_CLIP: Record<Bucket['category'], string> = {
   martial: 'lib_C121',
 };
 
-function pickBreathingDefault(seed: string): string {
+function pickFromList(seed: string, list: readonly string[]): string {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
-  const idx = Math.abs(h) % BREATHING_CLIPS.length;
-  return BREATHING_CLIPS[idx]!;
+  const playable = list.filter((id) => idleClipById(id));
+  const pool = playable.length ? playable : [...BREATHING_CLIPS];
+  const idx = Math.abs(h) % pool.length;
+  return pool[idx]!;
+}
+
+function pickBreathingDefault(seed: string): string {
+  return pickFromList(seed, BREATHING_CLIPS);
+}
+
+function pickChitchatDefault(seed: string): string {
+  return pickFromList(seed, CHITCHAT_CLIPS);
 }
 
 function topEmotionCategory(hints: Record<string, number> | undefined): IdleCuratedCategory | null {
@@ -100,7 +114,8 @@ function matchBucket(text: string): Bucket['category'] | null {
 
 function clipForCategory(cat: Bucket['category'] | IdleCuratedCategory, seed: string): string {
   if (cat === 'breathe') return pickBreathingDefault(seed);
-  const id = CATEGORY_CLIP[cat as Bucket['category']];
+  if (cat === 'greet') return pickChitchatDefault(seed);
+  const id = CATEGORY_CLIP[cat];
   if (id && idleClipById(id)) return id;
   if (cat === 'sing') return 'IdleMixamoHappy';
   if (cat === 'think') return 'Thinking';
@@ -109,21 +124,36 @@ function clipForCategory(cat: Bucket['category'] | IdleCuratedCategory, seed: st
   return pickBreathingDefault(seed);
 }
 
+function resolveFarewellWave(): string | null {
+  return idleClipById(FAREWELL_WAVE_CLIP_ID) ? FAREWELL_WAVE_CLIP_ID : null;
+}
+
 export interface ChatAutoIdleInput {
-  /** Last assistant line (primary signal). */
   assistantText: string;
   emotionHints?: Record<string, number>;
-  /** When the brain is still generating. */
   thinking?: boolean;
+  openGreet?: boolean;
+  sessionFarewell?: boolean;
 }
 
 /** Resolve a playable idle clip id, or null when nothing fits. */
 export function resolveChatAutoIdle(input: ChatAutoIdleInput): string | null {
+  if (input.sessionFarewell) {
+    return resolveFarewellWave() ?? pickBreathingDefault('bye');
+  }
   if (input.thinking) {
     return idleClipById('Thinking') ? 'Thinking' : 'IdleBreathCalm';
   }
   const text = input.assistantText.trim();
   const seed = text || 'idle';
+
+  if (isFarewellText(text)) {
+    return resolveFarewellWave() ?? pickBreathingDefault(seed);
+  }
+  if (input.openGreet) {
+    return pickChitchatDefault(seed);
+  }
+
   const bucket = matchBucket(text);
   if (bucket) return clipForCategory(bucket, seed);
   const emo = topEmotionCategory(input.emotionHints);

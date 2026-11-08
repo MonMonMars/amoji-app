@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ChatPanel from '../../components/ChatPanel';
 import { resolveChatAutoIdle } from '../../lib/chat-auto-idle';
+import { FAREWELL_WAVE_CLIP_ID } from '../../lib/idle-farewell';
 import MiniGamePicker, { MiniGameMenuButton } from '../../components/MiniGamePicker';
 import DevPanel from '../../components/DevPanel';
 import FallbackNotice from '../../components/FallbackNotice';
@@ -92,7 +93,14 @@ function ChatRoom() {
   }, []);
 
   const character = characterById(prefs.character);
-  useEffect(() => { setIdleClip(resolveChatAutoIdle({ assistantText: '' })); }, [character.id]);
+  useEffect(() => {
+    setIdleClip(resolveChatAutoIdle({ assistantText: '', openGreet: true }));
+  }, [character.id]);
+
+  useEffect(() => {
+    if (!leaving) return;
+    setIdleClip(resolveChatAutoIdle({ assistantText: '', sessionFarewell: true }) ?? FAREWELL_WAVE_CLIP_ID);
+  }, [leaving]);
   const background = backgroundById(prefs.background);
   const storyScene = activeStoryScene();
   const sceneGlbUrl = storyScene ? resolveStorySceneGlb(storyScene) : undefined;
