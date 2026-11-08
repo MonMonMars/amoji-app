@@ -8,17 +8,21 @@ import { useRouter } from 'next/navigation';
 import EarlyAudioUnlock from './EarlyAudioUnlock';
 import { primeChatStartGesture } from '../lib/chat-start-gesture';
 import { loadPrefs, t, type StrKey } from '../lib/prefs';
+import { replaceSelect, type SelectReturnFrom } from '../lib/select-return';
 
 type SoftLandSelectProps = {
   /** Seed SelectionBoard mode via sessionStorage before replace. */
   seedSelectMode?: 'chat' | 'story' | 'kid';
   /** Localized status copy. Defaults to the character-select line. */
   labelKey?: StrKey;
+  /** Record legacy soft-land origin for /select back navigation. */
+  selectReturnFrom?: SelectReturnFrom;
 };
 
 export default function SoftLandSelect({
   seedSelectMode,
   labelKey = 'softLandSelect',
+  selectReturnFrom = 'mode',
 }: SoftLandSelectProps) {
   const router = useRouter();
   // Start from the English default so the static export keeps a stable first
@@ -46,8 +50,8 @@ export default function SoftLandSelect({
         /* ignore */
       }
     }
-    router.replace('/select');
-  }, [router, seedSelectMode]);
+    replaceSelect(router, selectReturnFrom);
+  }, [router, seedSelectMode, selectReturnFrom]);
 
   return (
     <main

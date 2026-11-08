@@ -12,12 +12,14 @@ import EarlyAudioUnlock from './EarlyAudioUnlock';
 import { SetupOneScrollBody } from './setup-one-shared';
 import { APP_REVISION } from '../lib/revision';
 import { absorbNavReturnFromReferrer, navigateNavBack } from '../lib/nav-return';
+import { replaceSelect, type SelectReturnFrom } from '../lib/select-return';
 
 export default function QuickSetup({
   onDone,
   showBack = true,
   initialSectionId,
   backTestId = 'setup-back',
+  selectReturnFrom = 'setup',
 }: {
   lang?: import('../lib/prefs').Lang;
   onDone?: () => void;
@@ -27,6 +29,8 @@ export default function QuickSetup({
   initialSectionId?: string;
   /** E.g. terms-back on /terms legacy URL. */
   backTestId?: string;
+  /** Record where /select back should return after START. */
+  selectReturnFrom?: SelectReturnFrom;
 }) {
   const router = useRouter();
   const [prefs, , prefsReady] = usePrefs();
@@ -57,11 +61,11 @@ export default function QuickSetup({
       const { voiceOk } = await oneClickBootstrap({ lang });
       if (!voiceOk) setVoiceHint(true);
       onDone?.();
-      router.replace('/select');
+      replaceSelect(router, selectReturnFrom);
     } finally {
       setBusy(false);
     }
-  }, [busy, lang, onDone, prefsReady, readToEnd, router]);
+  }, [busy, lang, onDone, prefsReady, readToEnd, router, selectReturnFrom]);
 
   const startDisabled = !prefsReady || busy || !readToEnd;
 

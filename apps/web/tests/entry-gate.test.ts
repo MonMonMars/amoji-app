@@ -302,7 +302,7 @@ describe('entry gate — wiring', () => {
     const splash = read('app/page.tsx');
     expect(splash).toContain('hasPassedEntryGate');
     expect(splash).toContain("router.push('/setup')");
-    expect(splash).toContain("router.push('/select')");
+    expect(splash).toContain("pushSelect(router, 'splash')");
     expect(splash).toContain('data-testid="splash-setup-link"');
     expect(splash).toContain('href="/setup"');
     expect(splash).not.toContain('splash-gate-link');

@@ -188,7 +188,7 @@ describe('modular wardrobe catalog', () => {
     expect(ui).toContain('fixed inset-0');
     expect(board).toContain('data-testid="selection-hero"');
     expect(board).not.toContain('comingSoon');
-    expect(board).not.toContain("t(lang, 'back')");
+    expect(board).toContain('data-testid="select-back"');
     const chat = fs.readFileSync(path.resolve(here, '../app/chat/page.tsx'), 'utf8');
     expect(chat).toContain('CompanionCanvas');
     expect(chat).toContain('sm:h-10 sm:w-10');

@@ -65,6 +65,11 @@ describe('legacy nav after soft-lands', () => {
     expect(read(join(WEB_DIR, 'app', 'setup', 'page.tsx'))).toContain('QuickSetup');
   });
 
+  it('/select records entry origin for back navigation', () => {
+    expect(read(join(WEB_DIR, 'lib', 'select-return.ts'))).toContain('recordSelectReturn');
+    expect(read(join(WEB_DIR, 'components', 'SelectionBoard.tsx'))).toContain('data-testid="select-back"');
+  });
+
   it('live UI does not navigate to soft-landed legacy routes', () => {
     const componentDir = join(WEB_DIR, 'components');
     const componentFiles = existsSync(componentDir)
