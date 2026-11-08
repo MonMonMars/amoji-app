@@ -69,6 +69,10 @@ describe('gtts chunk chain behaviour', () => {
     // 120-char cap: the public endpoint truncates around 200
     expect(src).toMatch(/maxLen = 120/);
     expect(src).toContain('splitChunks');
+    // Clause pauses must stay audible — do not quietly shrink them again.
+    expect(src).toMatch(/return 420/);
+    expect(src).toMatch(/return 220/);
+    expect(src).toContain('gapTimer');
   });
 
   it('reports onPlaying once, on the first chunk only', async () => {

@@ -52,14 +52,15 @@ export const PITCH_BIAS_MALE = 0.88;
 export const PITCH_BIAS_FEMALE = 1.04;
 
 /**
- * Split a line into endpoint-sized chunks (the service caps a request near
- * 200 chars; we stay well under). Same clause boundaries as the neural path
- * so pauses still land where a human would breathe.
+ * Split a line into one request per clause (the service caps near 200 chars;
+ * we stay under 120). Each 。，！？ keeps its own chunk so pauseAfterClause can
+ * insert a real breath between them — merging short clauses into one MP3 used
+ * to erase those gaps and make her sound breathless.
  * r2026-10-05.99: NO regex lookbehind (SyntaxError on WebKit < iOS 16.4) —
  * manual scanner: cut right AFTER any clause-ending punctuation, trim each.
  */
 const CLAUSE_END = /[。！？!?；;，,、—…\.]/;
-function splitChunks(text: string, maxLen = 120): string[] {
+export function splitChunks(text: string, maxLen = 120): string[] {
   const parts: string[] = [];
   let cur = '';
   for (const ch of text) {
@@ -73,21 +74,15 @@ function splitChunks(text: string, maxLen = 120): string[] {
   const tail = cur.trim();
   if (tail) parts.push(tail);
   const chunks: string[] = [];
-  let acc = '';
   for (const p of parts) {
-    if (acc && (acc + p).length > maxLen) {
-      chunks.push(acc);
-      acc = p;
-    } else {
-      acc += p;
-    }
+    let acc = p;
     // a single clause longer than the cap gets hard-wrapped
     while (acc.length > maxLen) {
       chunks.push(acc.slice(0, maxLen));
       acc = acc.slice(maxLen);
     }
+    if (acc) chunks.push(acc);
   }
-  if (acc) chunks.push(acc);
   return chunks;
 }
 
@@ -157,9 +152,12 @@ export interface GttsOpts {
  * when the whole line has played; rejects with Error('canceled') if
  * stopGtts() cuts it, or with a playback error the caller can fall back on.
  */
-function pauseAfterClause(chunk: string): number {
-  if (/[。！？!?…\.]$/.test(chunk)) return 180;
-  if (/[,，、；;:：—–]$/.test(chunk)) return 90;
+/** ms of silence after a clause chunk before the next request starts. */
+export function pauseAfterClause(chunk: string): number {
+  // Audible breath: 180/90 was too short once chunks were separate — the next
+  // MP3 started before the ear registered a stop at 。 or ，.
+  if (/[。！？!?…\.]$/.test(chunk)) return 420;
+  if (/[,，、；;:：—–]$/.test(chunk)) return 220;
   return 0;
 }
 
