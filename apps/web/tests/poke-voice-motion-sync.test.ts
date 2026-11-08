@@ -276,6 +276,18 @@ describe('poke reaction clock', () => {
     expect(rel).toBe(RECORDED_POKE_ZONE.female.chest);
   });
 
+  it('ChatPanel keeps poke off persisted chat history', () => {
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const panel = readFileSync(path.join(here, '../components/ChatPanel.tsx'), 'utf8');
+    const pokeBlock = panel.slice(
+      panel.indexOf('const lastPokeRef = useRef(pokeCount)'),
+      panel.indexOf('const lastHandRef = useRef(handHoldCount)'),
+    );
+    expect(pokeBlock).toContain('playPokeBurst');
+    expect(pokeBlock).toMatch(/pokeReactionLine|pokeSectionPlaceholderLine/);
+    expect(pokeBlock).not.toContain('setHistory');
+  });
+
   it('the canvas reads the shared window instead of hard-coding its own', () => {
     // The window lives in two files: poke-hit owns POKE_REACTION_MS (which the
     // SFX budget is measured against), and CompanionCanvas drives the recoil.
