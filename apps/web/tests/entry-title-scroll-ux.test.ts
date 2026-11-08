@@ -25,5 +25,15 @@ describe('entry UX — one-tap title START', () => {
     const legal = read('components/LegalGate.tsx');
     expect(legal).toContain('ONE_CLICK_PATHS');
     expect(legal).toContain("'/'");
+    expect(legal).toContain("'/setup'");
+    expect(legal).toContain("'/gate'");
+  });
+
+  it('title splash aligns one-click copy and safety links with setup', () => {
+    const splash = read('app/page.tsx');
+    expect(splash).toContain('setupOneLead');
+    expect(splash).toContain('gate18Title');
+    expect(splash).toContain('SetupLegalLinks');
+    expect(splash).toContain('SetupOneAiNotice');
   });
 });

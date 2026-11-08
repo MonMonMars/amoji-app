@@ -3,5 +3,5 @@
 import QuickSetup from './QuickSetup';
 
 export default function EntryGate(props: { lang?: import('../lib/prefs').Lang; onDone?: () => void }) {
-  return <QuickSetup {...props} />;
+  return <QuickSetup {...props} showBack={false} />;
 }

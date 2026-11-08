@@ -21,9 +21,19 @@ describe('entry gate — one-tap fallback screen (source)', () => {
     expect(quick).toContain('data-testid="entry-gate"');
     expect(quick).toContain('data-testid="setup-start"');
     expect(quick).toContain('data-testid="setup-back"');
+    expect(quick).toContain('data-testid="setup-one-scroll"');
     expect(quick).toContain("t(lang, 'splashStart')");
     expect(quick).toContain("t(lang, 'setupOneDisclaimer')");
+    expect(quick).toContain("t(lang, 'gate18Title')");
+    expect(quick).toContain('SetupOneAiNotice');
+    expect(read('components/setup-one-shared.tsx')).toContain("t(lang, 'aiNotice')");
+    expect(quick).toContain("t(lang, 'gateScrollHint')");
     expect(quick).toContain('oneClickBootstrap');
+    expect(quick).toContain('useScrollReachedEnd');
+  });
+
+  it('EntryGate hides back on the in-flow fallback', () => {
+    expect(gate).toContain('showBack={false}');
   });
 
   it('does not ship the old multi-step 18+ checkbox flow', () => {
