@@ -241,6 +241,7 @@ export type StrKey =
   | 'gateHelpTabMuted' | 'gateHelpRetry' | 'gateHelpContinue' | 'gateHelpNote'
   | 'gateMicTitle' | 'gateMicBody' | 'gateMicAllow' | 'gateMicSkip'
   | 'gateMicGranted' | 'gateMicDenied' | 'gateMicUnsupported' | 'gateEnter'
+  | 'preChatGateTitle' | 'preChatGateLead' | 'preChatEnterChat' | 'preChatUnmuteHint' | 'preChatSoundOk'
   // adult-only replacement for the old Kid Mode row in Settings
   | 'settingsAdultOnly'
   // Appended after the safety keys for the 2026-11-08 licensing pass: the
@@ -1047,6 +1048,21 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: '进入 Amoji',
     ja: 'Amoji をはじめる',
   },
+  preChatGateTitle: { en: 'Turn on voice chat', yue: '開聲傾偈', zh: '开启语音聊天', ja: 'ボイスチャットをオンに' },
+  preChatGateLead: {
+    en: 'Before you meet her, turn on sound and the microphone. This is a voice companion — typing alone will feel broken.',
+    yue: '見佢之前，先開聲同咪高峰。Amoji 係語音伙伴——淨係打字會好似壞咗咁。',
+    zh: '见她之前，请先打开声音和麦克风。Amoji 是语音伙伴——只打字会像坏了一样。',
+    ja: '会う前に、スピーカーとマイクをオンに。音声コンパニオンなので、入力だけだと壊れたように感じます。',
+  },
+  preChatEnterChat: { en: 'Enter chat room', yue: '入傾偈房', zh: '进入聊天室', ja: 'チャットに入る' },
+  preChatUnmuteHint: {
+    en: 'Master mute is still on — use “Unmute all” or play the test again.',
+    yue: '全部靜音仲開住——撳「取消全部靜音」或者再試播聲。',
+    zh: '全部静音仍开着——点「取消全部静音」或再试听。',
+    ja: '全体ミュートがオンです。「すべて解除」か、もう一度テスト再生を。',
+  },
+  preChatSoundOk: { en: 'Sound is unmuted. Did you hear her?', yue: '聲已開。聽到佢未？', zh: '声音已开。听到她了吗？', ja: '音声オン。聞こえましたか？' },
   settingsAdultOnly: {
     en: '18+ · adult only',
     yue: '18+ · 只限成人',

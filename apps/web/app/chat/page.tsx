@@ -14,6 +14,8 @@ import SettingsSheet from '../../components/SettingsSheet';
 import MuteButton from '../../components/MuteButton';
 import StatusPlate from '../../components/StatusPlate';
 import RequireEntryGate from '../../components/RequireEntryGate';
+import RequireChatAudio from '../../components/RequireChatAudio';
+import { restorePriorMasterMuteAfterChat } from '../../lib/pre-chat-audio';
 import WardrobeSwap from '../../components/WardrobeSwap';
 import { requestOpenMiniGame, subscribeMiniGameChrome } from '../../lib/minigames';
 import { activeWardrobe } from '../../lib/modular/catalog';
@@ -36,7 +38,9 @@ export default function Chat() {
   // mount and paint first.
   return (
     <RequireEntryGate>
-      <ChatRoom />
+      <RequireChatAudio>
+        <ChatRoom />
+      </RequireChatAudio>
     </RequireEntryGate>
   );
 }
@@ -62,6 +66,7 @@ function ChatRoom() {
   const bootReady = prefsReady;
 
   useEffect(() => subscribeMiniGameChrome(setGameChromeHidden), []);
+  useEffect(() => () => { restorePriorMasterMuteAfterChat(); }, []);
 
   const openSelect = () => {
     if (leaving) return;

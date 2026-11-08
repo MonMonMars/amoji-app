@@ -35,7 +35,7 @@ describe('EarlyAudioUnlock (iPhone pre-chat gesture)', () => {
   it('selection-flow START primes voice + mic preflight in the same gesture', () => {
     const board = read('components/SelectionBoard.tsx');
     expect(board).toContain('primeChatStartGesture');
-    expect(board).toContain('beginMicPreflightFromGesture');
+    expect(board).toContain("'/gate/audio?next=/chat'");
     const gesture = read('lib/chat-start-gesture.ts');
     expect(gesture).toContain('primeAudioForChatEnter');
     expect(gesture).toContain('setVoiceEnabled');

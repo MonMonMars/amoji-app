@@ -200,6 +200,7 @@ import {
 import { listenContinuous, listenSupported } from '../lib/listen';
 import { getEntryGateRecord, micPreflightGrantedThisSession } from '../lib/entry-gate';
 import {
+  bindVoiceChatFocusLifecycle,
   duckExternalAudioForCompanion,
   enterVoiceChatAudioSession,
   leaveVoiceChatAudioSession,
@@ -329,6 +330,7 @@ export default function ChatPanel({
   // r126 — warm the free lane while she's still saying hello: DNS+TLS and a
   // live connection are ready before the first real message is typed/spoken
   useEffect(() => { warmLane(); }, []);
+  useEffect(() => bindVoiceChatFocusLifecycle(), []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const nearBottomRef = useRef(true);
   const busyRef = useRef(false);

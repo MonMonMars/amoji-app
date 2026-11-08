@@ -63,3 +63,23 @@ export function duckExternalAudioForCompanion(): void {
   companionPlaybackSession();
   pauseForeignPageMedia();
 }
+
+export function bindVoiceChatFocusLifecycle(): () => void {
+  if (typeof document === 'undefined') return () => undefined;
+  duckExternalAudioForCompanion();
+  companionPlaybackSession();
+  const onVisibility = () => {
+    if (!document.hidden) {
+      companionPlaybackSession();
+      pauseForeignPageMedia();
+    }
+  };
+  document.addEventListener('visibilitychange', onVisibility);
+  try {
+    if (navigator.mediaSession) navigator.mediaSession.playbackState = 'playing';
+  } catch { /* ignore */ }
+  return () => {
+    document.removeEventListener('visibilitychange', onVisibility);
+    leaveVoiceChatAudioSession();
+  };
+}

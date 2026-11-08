@@ -23,6 +23,7 @@ describe('chat mic auto-on + external audio duck', () => {
     expect(focus).toContain("play-and-record");
     expect(focus).toContain('companionPlaybackSession');
     expect(focus).toContain('pauseForeignPageMedia');
+    expect(focus).toContain('bindVoiceChatFocusLifecycle');
     expect(read('lib/voice.ts')).toContain('duckExternalAudioForCompanion');
     expect(read('lib/voice.ts')).toContain('primeDefaultSpeakerBeforeSynth');
   });

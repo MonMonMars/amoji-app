@@ -347,4 +347,8 @@ describe('entry gate — wiring', () => {
     expect(lib).toMatch(/no way to know that speechSynthesis actually produced sound/i);
     expect(lib).toMatch(/silent switch/i);
   });
+
+  it('/chat adds per-session audio readiness guard', () => {
+    expect(read('app/chat/page.tsx')).toContain('RequireChatAudio');
+  });
 });
