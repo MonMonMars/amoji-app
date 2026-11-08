@@ -1,57 +1,85 @@
 'use client';
-// Splash / title screen — shows the name + revision, then glides to login.
-import { useEffect, useState } from 'react';
+/**
+ * Title screen — gal-game style opening beat.
+ * Brand first, one short line, one Start. No auto-advance: the player presses
+ * Start when they are ready (like a Japanese visual-novel title menu).
+ */
 import { useRouter } from 'next/navigation';
+import { Cormorant_Garamond } from 'next/font/google';
 import { APP_NAME, APP_REVISION, APP_TAGLINE } from '../lib/revision';
-import { loadPrefs } from '../lib/prefs';
+import { t, usePrefs } from '../lib/prefs';
+import { assetUrl } from '../lib/asset';
 import EarlyAudioUnlock from '../components/EarlyAudioUnlock';
+
+const display = Cormorant_Garamond({
+  subsets: ['latin'],
+  weight: ['500', '600', '700'],
+  display: 'swap',
+});
 
 export default function Splash() {
   const router = useRouter();
-  const [fade, setFade] = useState(false);
-  const lang = loadPrefs().lang;
-  const continueLogin =
-    lang === 'yue' ? '繼續登入' : lang === 'zh' ? '继续登录' : lang === 'ja' ? 'ログインへ進む' : 'Continue to login';
+  const [prefs] = usePrefs();
+  const lang = prefs.lang;
+  const startLabel = t(lang, 'splashStart');
 
-  useEffect(() => {
-    const t1 = setTimeout(() => setFade(true), 2100);
-    const t2 = setTimeout(() => router.push('/login'), 2700);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [router]);
+  const start = () => {
+    router.push('/login');
+  };
 
   return (
     <main
       aria-labelledby="amoji-splash-title"
       aria-describedby="amoji-splash-tagline amoji-splash-revision"
-      aria-label={continueLogin}
-      aria-busy={fade}
-      role="button"
-      tabIndex={0}
-      onClick={() => router.push('/login')}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          router.push('/login');
-        }
-      }}
-      className={`relative flex min-h-dvh cursor-pointer flex-col items-center justify-center overflow-hidden bg-neutral-950 text-white transition-opacity duration-700 ${fade ? 'opacity-0' : 'opacity-100'}`}
+      className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-[#0c0810] text-white"
     >
       <EarlyAudioUnlock />
-      {/* ambient glow */}
-      <div className="pointer-events-none absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-pink-500/10 blur-3xl" aria-hidden />
-      <div className="pointer-events-none absolute -bottom-40 left-1/4 h-80 w-80 rounded-full bg-indigo-500/10 blur-3xl" aria-hidden />
 
-      <div className="fx-logo flex flex-col items-center">
-        <div className="relative mb-6">
-          <span className="absolute -inset-5 animate-ping rounded-full bg-pink-400/15" aria-hidden />
-          <span className="relative block h-5 w-5 rounded-full bg-pink-400 shadow-[0_0_50px_14px_rgba(244,114,182,0.45)]" />
-        </div>
-
-        <h1 id="amoji-splash-title" className="text-6xl font-bold tracking-tight">{APP_NAME}</h1>
-        <p id="amoji-splash-tagline" className="mt-3 text-sm tracking-[0.3em] text-white/40 uppercase">{APP_TAGLINE}</p>
+      {/* Full-bleed hero atmosphere — sakura night, not a flat card. */}
+      <div className="pointer-events-none absolute inset-0" aria-hidden>
+        <img
+          src={assetUrl('/backgrounds/sakura.jpg')}
+          alt=""
+          className="animate-kenburns h-full w-full object-cover opacity-55"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0c0810]/55 via-[#1a0f18]/45 to-[#0c0810]/92" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_30%,rgba(255,180,200,0.18),transparent_55%)]" />
       </div>
 
-      <p id="amoji-splash-revision" className="absolute bottom-10 text-xs text-white/30">{APP_REVISION} · web demo</p>
+      <div className="fx-logo relative z-10 flex flex-col items-center px-6 text-center">
+        <p className="mb-5 text-[11px] uppercase tracking-[0.42em] text-rose-100/55">
+          Amoji
+        </p>
+        <h1
+          id="amoji-splash-title"
+          className={`${display.className} splash-title-breathe text-7xl font-semibold tracking-tight text-rose-50 drop-shadow-[0_8px_40px_rgba(0,0,0,0.45)] sm:text-8xl`}
+        >
+          {APP_NAME}
+        </h1>
+        <p
+          id="amoji-splash-tagline"
+          className="mt-4 max-w-sm text-sm leading-relaxed tracking-[0.12em] text-rose-50/65"
+        >
+          {APP_TAGLINE}
+        </p>
+
+        <button
+          type="button"
+          data-testid="splash-start"
+          aria-label={startLabel}
+          onClick={start}
+          className="ui-btn splash-start-pulse mt-14 h-14 min-w-[14rem] rounded-full border border-rose-100/35 bg-gradient-to-b from-rose-100 to-rose-200/90 px-10 text-lg font-semibold tracking-[0.18em] text-[#2a1218] shadow-[0_18px_50px_-18px_rgba(255,200,210,0.85)] transition hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rose-100"
+        >
+          {startLabel}
+        </button>
+      </div>
+
+      <p
+        id="amoji-splash-revision"
+        className="absolute bottom-10 z-10 text-xs text-white/35"
+      >
+        {APP_REVISION} · web demo
+      </p>
     </main>
   );
 }

@@ -53,6 +53,16 @@ export default function Login() {
       <div className="pointer-events-none absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-pink-500/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 left-1/4 h-80 w-80 rounded-full bg-indigo-500/10 blur-3xl" />
 
+      <button
+        type="button"
+        data-testid="login-back"
+        aria-label={t(lang, 'back')}
+        onClick={() => router.push('/')}
+        className="ui-btn absolute left-4 top-4 z-20 rounded-full border border-white/15 bg-black/35 px-3.5 py-2 text-sm text-white/85 backdrop-blur-md safe-t"
+      >
+        ← {t(lang, 'back')}
+      </button>
+
       <div className="fx-logo mb-2 flex items-center gap-2">
         <span className="h-3.5 w-3.5 rounded-full bg-pink-400 shadow-[0_0_30px_6px_rgba(244,114,182,0.4)]" />
         <h1 id="amoji-login-title" className="text-3xl font-bold tracking-tight">{APP_NAME}</h1>
