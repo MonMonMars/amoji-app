@@ -28,6 +28,9 @@ apps/web/public/models/cast/*.vrm
 tools/*.log
 tools/*.err
 
+# Internal product strategy (off-repo; private D: copies only)
+docs/strategy/
+
 # Silencio-2 local sidecar (weights/venv/out stay on D:, never commit)
 tools/silencio2-sidecar/out/
 *.safetensors
