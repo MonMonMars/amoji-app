@@ -28,7 +28,7 @@ Free-library: `D:\Blender\projects\mon-character\free-library\`
 | 40 | IdleMixamoBreathing | — | yes | off |
 | 41 | IdleMixamoHappy | — | yes | off |
 
-Chat: `IdlePickRails` — tap `#N` to pin; right-click/long-press toggles ON/OFF (`amoji.idleEnabled.v1`).
+Chat: `IdlePickRails` — curated rail **#1..39** (not full library #); see `docs/idle-pixel-review.md` + `idle-curated-rail.ts`. Tap rail `#` to pin; right-click/long-press toggles ON/OFF (`amoji.idleEnabled.v1`, migrates legacy library #).
 Feet: all idle loads use `rebaseClipHips` + `pinPlantedClipTracks`.
 
 | 55–56 | lib_C05/C06 | C05–C06 KayKit Wave/Cheer | yes | off |

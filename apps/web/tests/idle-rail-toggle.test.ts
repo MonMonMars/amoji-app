@@ -35,7 +35,7 @@ describe('IdlePickRails toggle is reachable without a right-click', () => {
   });
 
   it('announces ON/OFF state in the label, not just via colour', () => {
-    expect(rails).toMatch(/aria-label=\{`Idle #\$\{item\.num\}[\s\S]{0,120}enabled' : 'disabled'/);
+    expect(rails).toMatch(/aria-label=\{`Idle rail #\$\{item\.num\}[\s\S]{0,120}enabled' : 'disabled'/);
     expect(rails).toContain('aria-pressed');
   });
 

@@ -4,7 +4,7 @@
 // optional side-rail picks. Clear the whole key with resetIdlePicks() or
 // `localStorage.removeItem('amoji.idlePick.v1')`.
 
-import { resolveIdleClipId, isRetiredIdleClip } from './idle-catalog-review';
+import { resolveIdleClipId, isRetiredIdleClip } from './idle-retired';
 import { idleClipById } from './idle-clips';
 
 export const IDLE_PICK_KEY = 'amoji.idlePick.v1';
