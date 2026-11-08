@@ -164,6 +164,7 @@ import {
   openIdleBriefAlreadyDone,
   markOpenCheerDone,
   openCheerAlreadyDone,
+  shouldPlayOpenCheer,
   openPhaseNewsAsk,
   openPhaseWeatherAsk,
   summarizeOpenPhaseSpoken,
@@ -595,7 +596,7 @@ export default function ChatPanel({
     const fresh = isFreshOpenPhase();
     // Latch check BEFORE markChatRoomOpened so Strict Mode remount still sees
     // the prior openCheerAt >= lastOpenedAt (name greet once per stretch).
-    const skipCheer = !fresh && openCheerAlreadyDone();
+    const skipCheer = !fresh && openCheerAlreadyDone(characterId);
     markChatRoomOpened();
     const prior = loadHistory();
     const hadUser = prior.some((m) => m.role === 'user');
@@ -622,7 +623,7 @@ export default function ChatPanel({
     // that clears timers before fire still allows one real greet.
     const t1 = setTimeout(
       () => {
-        markOpenCheerDone();
+        markOpenCheerDone(Date.now(), characterId);
         sayLocal(cannedOpener(characterId, characterGender, lang, characterName), { joy: 0.62 });
       },
       OPEN_CHEER_MS,
@@ -631,7 +632,7 @@ export default function ChatPanel({
       () => sayLocal(cheerFollow, daily ? greetingHints(visit) : { joy: 0.5 }),
       OPEN_CHEER_FOLLOW_MS,
     );
-    const skipBrief = userHasSpokenRef.current || openIdleBriefAlreadyDone();
+    const skipBrief = userHasSpokenRef.current || openIdleBriefAlreadyDone(characterId);
     const t3 = skipBrief
       ? null
       : setTimeout(() => {
@@ -648,7 +649,7 @@ export default function ChatPanel({
               const line = summarizeOpenPhaseSpoken(weather.spoken, news.spoken);
               if (!line) return;
               openIdleBriefDoneRef.current = true;
-              markOpenIdleBriefDone();
+              markOpenIdleBriefDone(Date.now(), characterId);
               sayLocal(line, { joy: 0.55 });
             } catch {
               /* live brief is best-effort */
@@ -1290,12 +1291,13 @@ export default function ChatPanel({
     const rec = getEntryGateRecord();
     if (rec?.mic === 'denied' || rec?.mic === 'unsupported') return;
     micAutoArmedRef.current = true;
+    const micDelay = shouldPlayOpenCheer(characterId) ? OPEN_CHEER_MS + 300 : 400;
     const t0 = window.setTimeout(() => {
       if (!micModeRef.current) beginVoiceMode({ cutCompanion: false });
-    }, 400);
+    }, micDelay);
     return () => clearTimeout(t0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lang]);
+  }, [lang, characterId]);
 
   useEffect(() => subscribeMiniGameOpen(beginActionGame), [beginActionGame]);
   useEffect(() => {

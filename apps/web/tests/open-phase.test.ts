@@ -10,6 +10,7 @@ import {
   markOpenCheerDone,
   openCheerAlreadyDone,
   openIdleBriefAlreadyDone,
+  shouldPlayOpenCheer,
   openPhaseNewsAsk,
   openPhaseWeatherAsk,
   saveOpenPhaseState,
@@ -102,27 +103,47 @@ describe('openPhase asks + spoken summary', () => {
 describe('open cheer / name-greet once latch', () => {
   it('openCheerAlreadyDone gates Strict Mode remount before markChatRoomOpened', () => {
     const t0 = 70_000_000;
+    const char = 'nova';
     markChatRoomOpened(t0);
-    expect(openCheerAlreadyDone()).toBe(false);
-    markOpenCheerDone(t0);
-    expect(openCheerAlreadyDone()).toBe(true);
+    expect(openCheerAlreadyDone(char)).toBe(false);
+    markOpenCheerDone(t0, char);
+    expect(openCheerAlreadyDone(char)).toBe(true);
     // Simulate leave: close does not clear openCheerAt.
     markChatRoomClosed(t0 + 500);
     // Remount path checks latch BEFORE bumping lastOpenedAt.
     expect(isFreshOpenPhase(t0 + 1000)).toBe(false);
-    expect(openCheerAlreadyDone()).toBe(true);
+    expect(openCheerAlreadyDone(char)).toBe(true);
   });
 
   it('fresh gap open allows cheer again', () => {
     const t0 = 80_000_000;
+    const char = 'nova';
     markChatRoomOpened(t0);
-    markOpenCheerDone(t0);
+    markOpenCheerDone(t0, char);
     markChatRoomClosed(t0 + 1000);
     const later = t0 + OPEN_SESSION_GAP_MS + 5_000;
     expect(isFreshOpenPhase(later)).toBe(true);
     // After a fresh open bump, prior cheerAt is older than lastOpenedAt.
     markChatRoomOpened(later);
-    expect(openCheerAlreadyDone()).toBe(false);
+    expect(openCheerAlreadyDone(char)).toBe(false);
+  });
+
+  it('different character within gap is not gated by prior cheer latch', () => {
+    const t0 = 90_000_000;
+    markChatRoomOpened(t0);
+    markOpenCheerDone(t0, 'nova');
+    expect(openCheerAlreadyDone('nova')).toBe(true);
+    expect(openCheerAlreadyDone('luna')).toBe(false);
+    expect(shouldPlayOpenCheer('luna', t0 + 1000)).toBe(true);
+    expect(shouldPlayOpenCheer('nova', t0 + 1000)).toBe(false);
+  });
+
+  it('idle brief latch is per character', () => {
+    const t0 = 91_000_000;
+    markChatRoomOpened(t0);
+    markOpenIdleBriefDone(t0 + 500, 'nova');
+    expect(openIdleBriefAlreadyDone('nova')).toBe(true);
+    expect(openIdleBriefAlreadyDone('luna')).toBe(false);
   });
 });
 describe('buildDailyGreeting skipThread', () => {

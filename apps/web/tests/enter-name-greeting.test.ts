@@ -25,10 +25,10 @@ describe('enter-chat name voice', () => {
     const chat = read('components/ChatPanel.tsx');
     expect(chat).toContain('openCheerAlreadyDone');
     expect(chat).toContain('markOpenCheerDone');
-    expect(chat).toContain('const skipCheer = !fresh && openCheerAlreadyDone()');
+    expect(chat).toContain('openCheerAlreadyDone(characterId)');
     expect(chat).toContain('if (skipCheer)');
     // Latch must be read before bumping lastOpenedAt.
-    const skipIdx = chat.indexOf('const skipCheer = !fresh && openCheerAlreadyDone()');
+    const skipIdx = chat.indexOf('openCheerAlreadyDone(characterId)');
     const openIdx = chat.indexOf('markChatRoomOpened()', skipIdx);
     expect(skipIdx).toBeGreaterThan(-1);
     expect(openIdx).toBeGreaterThan(skipIdx);

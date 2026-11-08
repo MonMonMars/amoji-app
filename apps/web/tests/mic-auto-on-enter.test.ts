@@ -10,7 +10,9 @@ describe('chat mic auto-on + external audio duck', () => {
     const chat = read('components/ChatPanel.tsx');
     expect(chat).toContain('micAutoArmedRef');
     expect(chat).toContain('beginVoiceMode');
-    expect(chat).toMatch(/setTimeout\(\(\) => \{[\s\S]*?beginVoiceMode\(\)/);
+    expect(chat).toContain('shouldPlayOpenCheer');
+    expect(chat).toContain('cutCompanion: false');
+    expect(chat).toMatch(/micDelay[\s\S]*?beginVoiceMode\(\{ cutCompanion: false \}\)/);
     expect(chat).toContain("rec?.mic === 'denied'");
   });
 
