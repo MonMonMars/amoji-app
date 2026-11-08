@@ -1,4 +1,5 @@
 'use client';
+import { userExplicitlyWantsRecall } from './privacy-recall';
 // Long-term memory, stored privately on the user's device (localStorage).
 // Nothing is uploaded anywhere: what she remembers is only injected into the
 // LLM prompt as context so she recognises the human across sessions.
@@ -714,12 +715,12 @@ const ANNIVERSARY_LINE: Record<string, (label: string) => string> = {
 export function buildDailyGreeting(
   lang: string,
   info: VisitInfo,
-  opts?: { skipThread?: boolean; short?: boolean },
+  opts?: { skipThread?: boolean; short?: boolean; privacyOnly?: boolean },
 ): string {
   const L = ['yue', 'zh', 'ja', 'en'].includes(lang) ? lang : 'en';
   const h = new Date().getHours();
   const bang = L === 'en' ? '!' : '！';
-  if (opts?.short) return HELLO[L](h, info.userName) + bang;
+  if (opts?.short || opts?.privacyOnly) return HELLO[L](h, info.userName) + bang;
   const parts: string[] = [HELLO[L](h, info.userName) + bang];
   // v5 — a relationship milestone outranks the plain visit streak: the
   // anniversary of "us" is the bigger deal
@@ -1110,11 +1111,37 @@ export function forgetInjectedMemory(id: string, m: Memory = loadMemory()): bool
   return false;
 }
 
-/** Build the "you remember them" block injected into her system prompt.
- *  v5: pass the user's CURRENT message as userText and older, on-topic
- *  memories surface into the block — she connects today's words to things
- *  told to her weeks ago. Kept to ≤2 short lines (free-lane prompt size). */
+const MEMORY_PRIVACY_TAIL: Record<string, string> = {
+  yue: '除非佢明確叫你記得、繼續上次話題、或查歷史，否則唔好主動提起儲存記憶、上次傾計、日記、計劃或心情。',
+  zh: '除非TA明确要求你记得、继续上次话题或查历史，否则不要主动提起储存记忆、上次聊天、日记、计划或心情。',
+  ja: 'ユーザーが覚えているか・続き・履歴をはっきり頼まない限り、保存メモ・前回の会話・日記・予定・気分を勝手に出さない。',
+  en: 'Unless they clearly ask you to remember, continue a past thread, or retrieve history, do NOT volunteer stored memories, last chat, diary, plans, or mood.',
+};
+
+const MEMORY_RECALL_TAIL: Record<string, string> = {
+  yue: '佢而家想睇返記憶或繼續話題——只可用下面列出嘅資料作答，唔好加未列出嘅嘢。',
+  zh: 'TA 现在要查看记忆或继续话题——只用下列内容回答，勿添加未列出的内容。',
+  ja: '記憶や続きを求めている——以下の情報だけ使い、リスト外は出さない。',
+  en: 'They asked to recall or continue — use only the facts listed below; do not invent extra history.',
+};
+
+/** Build the memory block for the LLM. Full recall only after an explicit user request. */
 export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userText?: string): MemoryBlockResult | undefined {
+  const L = ['yue', 'zh', 'ja', 'en'].includes(lang) ? lang : 'en';
+  const explicitRecall = userExplicitlyWantsRecall(userText);
+  if (!explicitRecall) {
+    if (!m.userName) return undefined;
+    const used: TurnMemoryUsed[] = [];
+    pushTurnUsed(used, { id: 'name', snippet: m.userName, source: 'name', deletable: false });
+    const block = L === 'yue'
+      ? `（記憶只存在佢部機）佢叫 ${m.userName}。${MEMORY_PRIVACY_TAIL.yue}`
+      : L === 'zh'
+        ? `（记忆只存在TA设备）TA 叫 ${m.userName}。${MEMORY_PRIVACY_TAIL.zh}`
+        : L === 'ja'
+          ? `（記憶は端末のみ）名前は ${m.userName}。${MEMORY_PRIVACY_TAIL.ja}`
+          : `(memory stays on their device) Their name is ${m.userName}. ${MEMORY_PRIVACY_TAIL.en}`;
+    return { block, used };
+  }
   if (!m.userName && m.facts.length === 0 && m.entries.length === 0 && (m.diary?.length ?? 0) === 0 && m.exchanges < 3) return undefined;
   const used: TurnMemoryUsed[] = [];
   const recent = m.facts.slice(-MEMORY_PROMPT_FACT_CAP);
@@ -1133,7 +1160,6 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userTex
   // the standard bits so nothing appears twice in the block)
   const standard = new Set([...recent, ...plans, ...moments].map((t) => t.slice(0, 24)));
   const related = userText ? recallRelevant(userText, m, 2).filter((t) => !standard.has(t.slice(0, 24))) : [];
-  const L = ['yue', 'zh', 'ja', 'en'].includes(lang) ? lang : 'en';
 
   if (m.userName) pushTurnUsed(used, { id: 'name', snippet: m.userName, source: 'name', deletable: false });
   for (const f of recent) {
@@ -1185,7 +1211,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userTex
     if (related.length) bits.push(`同佢而家講嘅嘢有關嘅舊記憶：${related.join('；')}`);
     if (m.exchanges >= 3) bits.push(`你哋已經傾咗 ${m.exchanges} 次偈`);
     if (lastMood) bits.push(`佢最近一次嘅心情係${(MOOD_LABEL[L] ?? MOOD_LABEL.en)[lastMood] ?? lastMood}`);
-    block = `你記得呢個人（記憶私密噉存放喺佢部電話）：${bits.join('；')}。自然咁用佢個名，間中提吓佢講過嘅嘢同佢嘅計劃，唔好背書噉背出嚟。`;
+    block = `你記得呢個人（記憶私密噉存放喺佢部電話）：${bits.join('；')}。${MEMORY_RECALL_TAIL.yue}`;
   } else if (L === 'zh') {
     const bits: string[] = [];
     if (m.userName) bits.push(`TA 叫 ${m.userName}`);
@@ -1198,7 +1224,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userTex
     if (related.length) bits.push(`与TA现在说的内容有关的旧记忆：${related.join('；')}`);
     if (m.exchanges >= 3) bits.push(`你们已经聊了 ${m.exchanges} 次`);
     if (lastMood) bits.push(`TA 最近一次的心情是${(MOOD_LABEL[L] ?? MOOD_LABEL.en)[lastMood] ?? lastMood}`);
-    block = `你记得这个人（记忆私密地存在 TA 的手机上）：${bits.join('；')}。自然地叫 TA 的名字，偶尔提起 TA 说过的事和计划，不要像背书一样。`;
+    block = `你记得这个人（记忆私密地存在 TA 的手机上）：${bits.join('；')}。${MEMORY_RECALL_TAIL.zh}`;
   } else if (L === 'ja') {
     const bits: string[] = [];
     if (m.userName) bits.push(`名前は ${m.userName}`);
@@ -1211,7 +1237,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userTex
     if (related.length) bits.push(`今の話題に関する昔の記憶：${related.join('；')}`);
     if (m.exchanges >= 3) bits.push(`これまで ${m.exchanges} 回話した`);
     if (lastMood) bits.push(`最近の気分は${(MOOD_LABEL[L] ?? MOOD_LABEL.en)[lastMood] ?? lastMood}`);
-    block = `この人のことを覚えている（記憶はこの端末にだけ保存）：${bits.join('；')}。自然に名前を呼び、時々覚えていることや予定を話題にして。`;
+    block = `この人のことを覚えている（記憶はこの端末にだけ保存）：${bits.join('；')}。${MEMORY_RECALL_TAIL.ja}`;
   } else {
     const bits: string[] = [];
     if (m.userName) bits.push(`their name is ${m.userName}`);
@@ -1224,7 +1250,7 @@ export function buildMemoryBlock(lang = 'yue', m: Memory = loadMemory(), userTex
     if (related.length) bits.push(`older memories related to what they just said: ${related.join('; ')}`);
     if (m.exchanges >= 3) bits.push(`you two have talked ${m.exchanges} times`);
     if (lastMood) bits.push(`their most recent mood was ${(MOOD_LABEL.en)[lastMood] ?? lastMood}`);
-    block = `You remember this person (the memory lives privately on their device): ${bits.join('; ')}. Use their name naturally and occasionally reference what they told you and their plans — never recite it like a list.`;
+    block = `You remember this person (the memory lives privately on their device): ${bits.join('; ')}. ${MEMORY_RECALL_TAIL.en}`;
   }
   return { block, used };
 }

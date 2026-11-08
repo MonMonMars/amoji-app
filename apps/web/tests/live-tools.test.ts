@@ -518,7 +518,7 @@ describe('tool switch and prompt wiring', () => {
         { language: 'yue', worldSpoken: '香港而家大約29度，落毛毛雨。' },
       );
       expect(r.reply).toContain('29度');
-      expect(r.reply).toMatch(/[?？]/);
+      expect(r.reply).not.toMatch(/咁你呢|想唔想講多啲/);
     } finally {
       globalThis.fetch = prev;
     }
@@ -548,8 +548,7 @@ describe('local light news and reply guard', () => {
     const world = 'Place: Hong Kong (browser location).\nWeather: 29°C, feels 32°C, drizzling.';
     const spoken = '香港而家大約29度，落毛毛雨。';
     const shrug = preferLiveReply("Sorry, I don't have real-time weather. Which city are you in?", world, spoken, 'yue');
-    expect(shrug).toContain('29度');
-    expect(shrug).toMatch(/[?？]/);
+    expect(shrug).toBe(spoken);
     const used = preferLiveReply('It is 29° and drizzly in Hong Kong. Want to stay in?', world, spoken, 'en');
     expect(used).toContain('Want to stay in?');
   });

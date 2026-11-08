@@ -107,7 +107,7 @@ describe('topic-relevant recall (v5)', () => {
     rememberExchange('yesterday I went hiking with my dog', m);
     // older, on-topic entry NOT in the standard recent/plan/moment slices
     m.entries.push({ id: 'old', type: 'preference', text: 'dreams of hiking the Alps one day', day: daysAgo(40) });
-    const built = buildMemoryBlock('en', m, 'I bought new hiking boots for our Alps trip!')!;
+    const built = buildMemoryBlock('en', m, 'remember our Alps trip — I bought new hiking boots')!;
     const block = built.block;
     expect(block).toContain('older memories related');
     expect(block).toContain('Alps');
@@ -120,7 +120,7 @@ describe('topic-relevant recall (v5)', () => {
     m.userName = 'Simon';
     m.exchanges = 5;
     rememberExchange('yesterday I went hiking with my dog', m);
-    const built = buildMemoryBlock('en', m)!;
+    const built = buildMemoryBlock('en', m, 'remember')!;
     const block = built.block;
     expect(block).not.toContain('older memories related');
   });

@@ -57,7 +57,7 @@ describe('memory v2 typed entries', () => {
     m.userName = 'Simon';
     rememberExchange('tomorrow I have a job interview', m);
     rememberExchange('yesterday I adopted a cat', m);
-    const built = buildMemoryBlock('en', m)!;
+    const built = buildMemoryBlock('en', m, 'remember')!;
     expect(built.block).toContain('job interview');
     expect(built.block).toContain('adopted a cat');
   });
@@ -117,7 +117,7 @@ describe('emotion diary', () => {
     m.userName = 'Simon';
     m.exchanges = 5;
     rememberExchange('yesterday I adopted a cat', m);
-    const built = buildMemoryBlock('en', m)!;
+    const built = buildMemoryBlock('en', m, 'remember')!;
     expect(built.block).toContain('adopted a cat');
   });
 
@@ -392,7 +392,7 @@ describe('memory v6 — annual dates + her promises (r2026-10-06.130)', () => {
     const m = fresh();
     m.userName = 'Simon';
     m.promises = [{ id: 'p1', text: "I'll remind you about the interview", day: daysAgo(1) }];
-    const built = buildMemoryBlock('en', m)!;
+    const built = buildMemoryBlock('en', m, 'remember')!;
     expect(built.block).toContain('promises you made');
     expect(built.block).toContain('interview');
   });
@@ -401,7 +401,7 @@ describe('memory v6 — annual dates + her promises (r2026-10-06.130)', () => {
     const m = fresh();
     m.userName = 'Simon';
     rememberExchange('I love ramen', m);
-    const built = buildMemoryBlock('en', m)!;
+    const built = buildMemoryBlock('en', m, 'what do you remember about me?')!;
     const fact = m.facts.find((f) => f.startsWith('likes:'));
     expect(fact).toBeDefined();
     expect(built.used.some((u) => u.id === `${FACT_MEMORY_ID_PREFIX}${fact}` && u.deletable)).toBe(true);

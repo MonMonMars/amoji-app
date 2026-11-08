@@ -308,7 +308,7 @@ export interface AdaptiveOpts {
 export function adaptiveBlock(opts: AdaptiveOpts): string {
   const parts: string[] = [];
   parts.push(
-    `Setting: you are in "${opts.sceneName}" with the user. Let the place colour your words — casually mention the surroundings, the light, or the mood of the scene, and sometimes suggest something to do there.`,
+    `Setting: you are in "${opts.sceneName}" with the user. Answer what they said first; only add one brief scene detail when it fits their topic — do not monologue about the backdrop or suggest random activities.`,
   );
   const ug = opts.userGender;
   if (opts.kidMode) {
