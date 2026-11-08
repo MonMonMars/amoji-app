@@ -72,6 +72,8 @@ describe('emotion clips', () => {
       .toEqual(['hello', 'nice', 'hihi', 'pleasure', 'hello']);
     expect(greetingText('en', 'hello')).toBe('Hello!');
     expect(greetingText('en', 'nice')).toBe('Nice to meet you.');
+    expect(greetingText('yue', 'hello')).toBe('Hello！');
+    expect(greetingText('zh', 'hello')).toBe('Hello！');
     expect(greetingText('ja', 'pleasure')).toContain('どう');
     expect(GREETING_TEXT.yue.hihi).toBe('嗨嗨！');
     expect(FILLER_CLIP_TEXT.en.think).toBe('um…… let me think.');

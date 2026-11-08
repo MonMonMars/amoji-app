@@ -264,8 +264,8 @@ describe('Edge cast machinery still stands for the day Edge returns', () => {
   });
 
   it('keeps the per-language sample lines the preview speaks', () => {
-    expect(edgeSampleText('yue')).toBe('你好呀，今日天氣幾好。我係你嘅語音助手。');
-    expect(edgeSampleText('zh')).toBe('你好，今天天气不错。我是你的语音助手。');
+    expect(edgeSampleText('yue')).toBe('Hello，今日天氣幾好。我係你嘅語音助手。');
+    expect(edgeSampleText('zh')).toBe('Hello，今天天气不错。我是你的语音助手。');
     expect(edgeSampleText('ja')).toBe('こんにちは。今日はいい天気ですね。私は音声アシスタントです。');
     expect(edgeSampleText('en')).toBe("Hi there. Nice to meet you. I'm your voice companion.");
   });

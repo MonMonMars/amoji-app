@@ -42,14 +42,14 @@ type IntroSet = Record<Lang, (name: string) => string>;
 const INTROS: Record<TaglineArchetype, IntroSet> = {
   warm: {
     en: (n) => `Hi, I'm ${n}. I'm a good listener, so tell me anything.`,
-    yue: (n) => `你好，我係 ${n}。我鍾意聽人講嘢，有咩都可以同我講。`,
-    zh: (n) => `你好，我是 ${n}。我很喜欢听你说话，什么都可以跟我讲。`,
+    yue: (n) => `Hello，我係 ${n}。我鍾意聽人講嘢，有咩都可以同我講。`,
+    zh: (n) => `Hello，我是 ${n}。我很喜欢听你说话，什么都可以跟我讲。`,
     ja: (n) => `こんにちは、${n}です。聞き上手だから、何でも話してね。`,
   },
   gentle: {
     en: (n) => `Hello, I'm ${n}. I'll cheer you on, nice and steady.`,
-    yue: (n) => `你好，我係 ${n}。我會一直喺度陪你、支持你。`,
-    zh: (n) => `你好，我是 ${n}。我会一直陪着你、支持你。`,
+    yue: (n) => `Hello，我係 ${n}。我會一直喺度陪你、支持你。`,
+    zh: (n) => `Hello，我是 ${n}。我会一直陪着你、支持你。`,
     ja: (n) => `こんにちは、${n}です。ずっとそばで応援するね。`,
   },
   sunny: {
@@ -60,14 +60,14 @@ const INTROS: Record<TaglineArchetype, IntroSet> = {
   },
   calm: {
     en: (n) => `Hi, I'm ${n}. I'm curious about you, so ask me anything.`,
-    yue: (n) => `你好，我係 ${n}。我對你好有興趣，有咩想問就問啦。`,
-    zh: (n) => `你好，我是 ${n}。我对你很好奇，想问什么就问吧。`,
+    yue: (n) => `Hello，我係 ${n}。我對你好有興趣，有咩想問就問啦。`,
+    zh: (n) => `Hello，我是 ${n}。我对你很好奇，想问什么就问吧。`,
     ja: (n) => `こんにちは、${n}です。あなたのことが知りたいから、何でも聞いてね。`,
   },
   generic: {
     en: (n) => `Hi, I'm ${n}. Nice to meet you.`,
-    yue: (n) => `你好，我係 ${n}。好開心認識你。`,
-    zh: (n) => `你好，我是 ${n}。很高兴认识你。`,
+    yue: (n) => `Hello，我係 ${n}。好開心認識你。`,
+    zh: (n) => `Hello，我是 ${n}。很高兴认识你。`,
     ja: (n) => `こんにちは、${n}です。はじめまして。`,
   },
 };

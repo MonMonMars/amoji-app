@@ -1854,8 +1854,9 @@ export function playVoiceGreeting(
   stopSpeaking();
   // force: stopSpeaking cancelled any window-level prime and cleared the latch.
   primeSynthInGesture(true);
-  const kind = nextGreetingKind();
-  const text = line?.trim() ? line.trim() : greetingText(lang, kind);
+  // Select-board voice/language taps (no custom line) always open with Hello,
+  // not the rotating nice/hihi/pleasure clips — HK users expect Hello, not 你好.
+  const text = line?.trim() ? line.trim() : greetingText(lang, 'hello');
   // Gender comes from the CHARACTER, not from the voice id. The live voices are
   // not gendered, so reading a gender out of a region code would be fiction —
   // and it used to default every greeting to the female pitch.

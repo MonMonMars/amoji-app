@@ -178,8 +178,8 @@ export function voicesForLocale(locale: VoiceLocale): readonly VoiceOption[] {
  */
 
 const EDGE_SAMPLES: Record<VoiceLocale, string> = {
-  yue: '你好呀，今日天氣幾好。我係你嘅語音助手。',
-  zh: '你好，今天天气不错。我是你的语音助手。',
+  yue: 'Hello，今日天氣幾好。我係你嘅語音助手。',
+  zh: 'Hello，今天天气不错。我是你的语音助手。',
   ja: 'こんにちは。今日はいい天気ですね。私は音声アシスタントです。',
   en: "Hi there. Nice to meet you. I'm your voice companion.",
 };
