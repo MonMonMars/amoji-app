@@ -4,6 +4,7 @@
 // optional side-rail picks. Clear the whole key with resetIdlePicks() or
 // `localStorage.removeItem('amoji.idlePick.v1')`.
 
+import { resolveIdleClipId, isRetiredIdleClip } from './idle-catalog-review';
 import { idleClipById } from './idle-clips';
 
 export const IDLE_PICK_KEY = 'amoji.idlePick.v1';
@@ -37,7 +38,7 @@ function hydrate(): PickMap {
     const next: PickMap = {};
     let changed = false;
     for (const [id, clip] of Object.entries(parsed as Record<string, unknown>)) {
-      if (typeof clip !== 'string' || !idleClipById(clip)) {
+      if (typeof clip !== 'string' || isRetiredIdleClip(clip) || !idleClipById(clip)) {
         changed = true;
         continue;
       }
@@ -66,11 +67,14 @@ function persist(next: PickMap): void {
 }
 
 export function idlePickFor(characterId: string): string | null {
-  return hydrate()[characterId] ?? null;
+  const raw = hydrate()[characterId];
+  if (!raw) return null;
+  const resolved = resolveIdleClipId(raw);
+  return idleClipById(resolved) ? resolved : null;
 }
 
 export function saveIdlePick(characterId: string, clipId: string): string | null {
-  if (!characterId || !idleClipById(clipId)) return idlePickFor(characterId);
+  if (!characterId || isRetiredIdleClip(clipId) || !idleClipById(clipId)) return idlePickFor(characterId);
   const next = { ...hydrate(), [characterId]: clipId };
   persist(next);
   return clipId;

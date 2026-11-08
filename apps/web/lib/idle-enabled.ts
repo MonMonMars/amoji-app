@@ -1,6 +1,7 @@
 ﻿// Which idle #s are ON for rotation / pick pool. Persists like mute prefs.
 // Default = IDLE_LIBRARY defaultEnabled (#1 IdleBreathCalm + #2 StandardIdle).
 
+import { isRetiredIdleNum } from './idle-catalog-review';
 import {
   defaultEnabledNums,
   idleByNum,
@@ -34,7 +35,7 @@ function hydrate(): number[] {
     }
     const nums = parsed
       .filter((n): n is number => typeof n === 'number' && Number.isInteger(n))
-      .filter((n) => !!idleByNum(n));
+      .filter((n) => !!idleByNum(n) && !isRetiredIdleNum(n));
     memory = nums.length ? [...new Set(nums)].sort((a, b) => a - b) : defaultEnabledNums();
     return memory;
   } catch {
@@ -61,7 +62,7 @@ export function isIdleEnabled(num: number): boolean {
 }
 
 export function setIdleEnabled(num: number, on: boolean): number[] {
-  if (!idleByNum(num)) return listEnabledNums();
+  if (!idleByNum(num) || isRetiredIdleNum(num)) return listEnabledNums();
   const cur = new Set(hydrate());
   if (on) cur.add(num);
   else cur.delete(num);
