@@ -129,6 +129,7 @@ export type StrKey =
   // v0.9.3 flow: splash → login → select → chat
   | 'splashStart' | 'splashOpenSetup' | 'legalScrollHint' | 'gateScrollHint'
   | 'setupOneTitle' | 'setupOneLead' | 'setupOneDisclaimer'
+  | 'setupDisclosureAiTitle' | 'setupFullDocHint'
   | 'setupSoundFailTitle' | 'setupSoundFailLead'
   | 'loginPrompt' | 'loginCta' | 'loginSkip'
   | 'selectTitle' | 'confirmCta' | 'openSelect'
@@ -403,6 +404,18 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: '撳「開始」即表示你滿 18 歲、接受私隱同條款，並知 Amoji 係 AI。',
     zh: '点「开始」即表示你已满 18 岁、接受隐私与条款，并知 Amoji 为 AI。',
     ja: '「はじめる」を押すと18歳以上・規約同意・AIであることを確認したことになります。',
+  },
+  setupDisclosureAiTitle: {
+    en: 'AI disclosure',
+    yue: 'AI 說明',
+    zh: 'AI 说明',
+    ja: 'AIに関する説明',
+  },
+  setupFullDocHint: {
+    en: 'Full printable pages:',
+    yue: '可列印／完整版頁面：',
+    zh: '可打印完整版页面：',
+    ja: '全文のページ：',
   },
   setupSoundFailTitle: {
     en: 'No sound heard?',

@@ -23,9 +23,8 @@ describe('entry gate — one-tap fallback screen (source)', () => {
     expect(quick).toContain('data-testid="setup-back"');
     expect(quick).toContain('data-testid="setup-one-scroll"');
     expect(quick).toContain("t(lang, 'splashStart')");
-    expect(quick).toContain("t(lang, 'setupOneDisclaimer')");
-    expect(quick).toContain("t(lang, 'gate18Title')");
-    expect(quick).toContain('SetupOneAiNotice');
+    expect(quick).toContain('SetupOneScrollBody');
+    expect(read('components/setup-one-shared.tsx')).toContain("t(lang, 'setupOneDisclaimer')");
     expect(read('components/setup-one-shared.tsx')).toContain("t(lang, 'aiNotice')");
     expect(quick).toContain("t(lang, 'gateScrollHint')");
     expect(quick).toContain('oneClickBootstrap');

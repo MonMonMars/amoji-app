@@ -9,7 +9,7 @@ import { t, usePrefs } from '../lib/prefs';
 import { oneClickBootstrap } from '../lib/one-click-setup';
 import { useScrollReachedEnd } from '../lib/scroll-unlock';
 import EarlyAudioUnlock from './EarlyAudioUnlock';
-import { SetupLegalLinks, SetupOneAiNotice } from './setup-one-shared';
+import { SetupOneScrollBody } from './setup-one-shared';
 import { APP_REVISION } from '../lib/revision';
 
 export default function QuickSetup({
@@ -74,14 +74,7 @@ export default function QuickSetup({
           data-testid="setup-one-scroll"
           className="min-h-0 flex-1 space-y-4 overflow-y-auto rounded-2xl border border-white/10 bg-black/25 px-4 py-4 text-left text-sm leading-relaxed text-white/75"
         >
-          <section>
-            <h2 className="text-base font-semibold text-white">{t(lang, 'gate18Title')}</h2>
-            <p className="mt-2 text-white/70">{t(lang, 'gate18Body')}</p>
-          </section>
-          <SetupOneAiNotice lang={lang} />
-          <p className="text-white/65">{t(lang, 'setupOneLead')}</p>
-          <p className="text-xs text-white/50">{t(lang, 'setupOneDisclaimer')}</p>
-          <SetupLegalLinks lang={lang} />
+          <SetupOneScrollBody lang={lang} />
           <div data-testid="setup-one-scroll-end" aria-hidden className="h-1" />
         </div>
 
