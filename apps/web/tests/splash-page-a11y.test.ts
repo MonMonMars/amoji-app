@@ -11,11 +11,11 @@ describe('splash/home page a11y', () => {
     expect(src).toContain('{APP_NAME}');
   });
 
-  it('exposes keyboard-activatable continue control', () => {
-    expect(src).toContain('aria-label={continueLogin}');
-    expect(src).toContain('role="button"');
-    expect(src).toContain('tabIndex={0}');
-    expect(src).toContain("e.key === 'Enter' || e.key === ' '");
+  it('exposes an explicit Start control (no auto-advance)', () => {
+    expect(src).toContain('data-testid="splash-start"');
+    expect(src).toContain("t(lang, 'splashStart')");
     expect(src).toContain("router.push('/login')");
+    expect(src).not.toContain('setTimeout');
+    expect(src).not.toContain('role="button"');
   });
 });

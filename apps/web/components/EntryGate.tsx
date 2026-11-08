@@ -35,6 +35,7 @@ import { testVoiceChain } from '../lib/voice';
 import { isMasterMuted, setMasterMuted } from '../lib/master-mute';
 import { listenSupported } from '../lib/listen';
 import { INITIAL_GATE, reduceGate, type GateEvent, type GateState } from '../lib/entry-gate-flow';
+import { useScrollReachedEnd } from '../lib/scroll-unlock';
 
 const STEP_OF: Record<GateState['phase'], number> = {
   adult: 1,
@@ -75,7 +76,10 @@ export default function EntryGate({
   const [playing, setPlaying] = useState(false);
   const [micBusy, setMicBusy] = useState(false);
   const titleRef = useRef<HTMLHeadingElement>(null);
+  const adultScrollRef = useRef<HTMLDivElement>(null);
   const finished = useRef(false);
+  const adultReadToEnd = useScrollReachedEnd(adultScrollRef, state.phase === 'adult');
+  const canGoBack = state.phase === 'audio' || state.phase === 'help' || state.phase === 'mic';
 
   useEffect(() => {
     // localStorage cannot be read during render (the server has none, and
@@ -161,6 +165,18 @@ export default function EntryGate({
       <div className="pointer-events-none absolute -top-32 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-pink-500/10 blur-3xl" aria-hidden />
       <div className="pointer-events-none absolute -bottom-40 left-1/4 h-72 w-72 rounded-full bg-indigo-500/10 blur-3xl" aria-hidden />
 
+      {canGoBack && (
+        <button
+          type="button"
+          data-testid="entry-gate-back"
+          aria-label={t(lang, 'back')}
+          onClick={() => send({ type: 'back' })}
+          className="ui-btn absolute left-4 top-4 z-20 rounded-full border border-white/15 bg-black/35 px-3.5 py-2 text-sm text-white/85 backdrop-blur-md safe-t"
+        >
+          ← {t(lang, 'back')}
+        </button>
+      )}
+
       <div className="relative flex w-full max-w-lg flex-col gap-4">
         <div role="group" aria-label={stepLabel} className="flex items-center justify-center gap-2">
           {Array.from({ length: TOTAL_STEPS }, (_, i) => (
@@ -184,7 +200,16 @@ export default function EntryGate({
               >
                 {t(lang, 'gate18Title')}
               </h1>
-              <p className="text-sm leading-relaxed text-white/70">{t(lang, 'gate18Body')}</p>
+              {/* Scroll pane: short copy unlocks immediately; longer future
+                  warnings force a real read-to-end before Continue. */}
+              <div
+                ref={adultScrollRef}
+                data-testid="entry-gate-adult-scroll"
+                className="max-h-[min(40vh,16rem)] space-y-3 overflow-y-auto pr-1 text-sm leading-relaxed text-white/70"
+              >
+                <p>{t(lang, 'gate18Body')}</p>
+                <div data-testid="entry-gate-adult-scroll-end" aria-hidden className="h-1" />
+              </div>
 
               <label
                 htmlFor="amoji-gate-adult"
@@ -202,12 +227,19 @@ export default function EntryGate({
                 <span className="text-white/85">{t(lang, 'gate18Ack')}</span>
               </label>
 
+              {!adultReadToEnd && (
+                <p data-testid="entry-gate-scroll-hint" className="text-center text-xs text-white/45">
+                  {t(lang, 'gateScrollHint')}
+                </p>
+              )}
+
               <button
                 type="button"
                 onClick={() => send({ type: 'confirmAdult' })}
-                disabled={!state.adult}
+                disabled={!state.adult || !adultReadToEnd}
                 data-testid="entry-gate-18-continue"
                 aria-label={t(lang, 'gate18Cta')}
+                aria-disabled={!state.adult || !adultReadToEnd}
                 className="ui-btn ui-btn-primary h-12 w-full rounded-full bg-white text-base font-semibold text-black disabled:pointer-events-none disabled:opacity-40"
               >
                 {t(lang, 'gate18Cta')}

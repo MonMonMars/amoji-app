@@ -127,6 +127,7 @@ export type StrKey =
   | 'bgVoid' | 'bgAurora' | 'bgEmber' | 'bgSakura' | 'bgAbyss' | 'bgRain' | 'bgSunset' | 'bgMeadow'
   | 'bgCloudsea' | 'bgNeon' | 'bgSnowmoon' | 'bgGalaxy'
   // v0.9.3 flow: splash → login → select → chat
+  | 'splashStart' | 'legalScrollHint' | 'gateScrollHint'
   | 'loginPrompt' | 'loginCta' | 'loginSkip'
   | 'selectTitle' | 'confirmCta' | 'openSelect'
   | 'changeCta' | 'previewCurrent' | 'previewNew'
@@ -356,6 +357,19 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   bgNeon: { en: 'Neon City', yue: '霓虹都市', zh: '霓虹都市', ja: 'ネオン都市' },
   bgSnowmoon: { en: 'Snow Moon', yue: '雪月', zh: '雪月夜', ja: '雪の月夜' },
   bgGalaxy: { en: 'Milky Way', yue: '銀河', zh: '银河', ja: '天の川' },
+  splashStart: { en: 'START', yue: '開始', zh: '开始', ja: 'はじめる' },
+  legalScrollHint: {
+    en: 'Scroll to the end to unlock Accept.',
+    yue: '請先滾到最底，先可以撳「接受」。',
+    zh: '请先滚到最底，才能点「接受」。',
+    ja: '最後までスクロールすると「同意する」が押せます。',
+  },
+  gateScrollHint: {
+    en: 'Scroll to the end to continue.',
+    yue: '請先滾到最底，先可以繼續。',
+    zh: '请先滚到最底，才能继续。',
+    ja: '最後までスクロールすると次へ進めます。',
+  },
   loginPrompt: { en: 'What should I call you?', yue: '點稱呼你呀？', zh: '该怎么称呼你？', ja: 'なんて呼べばいい？' },
   loginCta: { en: 'Continue →', yue: '開始 →', zh: '开始 →', ja: '始める →' },
   loginSkip: { en: 'skip', yue: '略過', zh: '跳过', ja: 'スキップ' },

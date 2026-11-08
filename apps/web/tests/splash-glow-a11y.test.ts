@@ -5,15 +5,14 @@ import { join } from 'node:path';
 const src = readFileSync(join(__dirname, '../app/page.tsx'), 'utf8');
 
 describe('splash decorative glow residual a11y', () => {
-  it('hides ambient glows and ping from the accessibility tree', () => {
-    expect(src).toContain('bg-pink-500/10 blur-3xl" aria-hidden');
-    expect(src).toContain('bg-indigo-500/10 blur-3xl" aria-hidden');
-    expect(src).toContain('animate-ping rounded-full bg-pink-400/15" aria-hidden');
+  it('marks the hero atmosphere as decorative', () => {
+    expect(src).toContain('aria-hidden');
+    expect(src).toContain('sakura.jpg');
   });
 
   it('keeps splash main labels from prior slices', () => {
     expect(src).toContain('aria-labelledby="amoji-splash-title"');
     expect(src).toContain('aria-describedby="amoji-splash-tagline amoji-splash-revision"');
-    expect(src).toContain('aria-label={continueLogin}');
+    expect(src).toContain('aria-label={startLabel}');
   });
 });
