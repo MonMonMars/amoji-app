@@ -69,9 +69,10 @@ describe('voice does not switch speaker mid-line or between characters', () => {
   });
 
   it('passes characterId into the pitch helper on live speak paths', () => {
-    // Same-gender cast members must not collapse to one sound.
-    expect(voice).toMatch(/gttsPitchBias\(spokenGender,\s*characterId\)/);
-    expect(voice).toMatch(/gttsPitchBias\(gender,\s*characterId\)/);
+    // Same-gender cast members must not collapse to one sound; pinned delivery
+    // gender rides through gttsPitchForLang so male/female voice buttons match.
+    expect(voice).toMatch(/gttsPitchForLang\(lang, characterId, spokenGender/);
+    expect(voice).toMatch(/gttsPitchForLang\(lang, characterId, gender/);
   });
 
   it('the pitch shift stays bounded so the line is not garbled', () => {

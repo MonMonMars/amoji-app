@@ -1865,6 +1865,8 @@ export function playVoiceGreeting(
   let session = 0;
   /** Set by whichever tier actually starts, so the loser can bail out. */
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
+  /** True until the MP3 tier's promise settles (success or fail). */
+  let gttsPending = true;
   /**
    * Fires if NO tier has started shortly after the tap. Edge 403s instantly, so
    * without this the synth fallback ran on nearly every greeting and talked over
@@ -1896,6 +1898,7 @@ export function playVoiceGreeting(
   // Start the HTTP tier first and synchronously inside the gesture. It fetches
   // over plain HTTPS, so it does not need the gesture itself, but starting here
   // means the greeting begins immediately instead of after a dead Edge attempt.
+  const markGttsDone = () => { gttsPending = false; };
   void speakGtts(text, {
     lang,
     tl,
@@ -1910,8 +1913,10 @@ export function playVoiceGreeting(
       if (!spokenBy) onStart('gtts');
     },
   }).then(() => {
+    markGttsDone();
     if (session) finishLipSync(session);
   }).catch((e: unknown) => {
+    markGttsDone();
     if ((e as Error | undefined)?.message === 'canceled') return;
     reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'greeting gtts failed');
     runSynthAudition('greeting fallback');
@@ -1924,6 +1929,9 @@ export function playVoiceGreeting(
    */
   const onEdgeFail = (why: string) => {
     if (spokenBy) return; // gtts owns the line
+    // Edge 403s instantly while the MP3 tier may still be fetching — synth here
+    // calls haltSynthQueue() and cancels gTTS, which is silence on iOS.
+    if (gttsPending) return;
     reportVoiceStatus('edge', false, why);
     runSynthAudition('greeting fallback');
   };
@@ -1931,7 +1939,7 @@ export function playVoiceGreeting(
   // 403s immediately, so without this the synth fallback fires on virtually
   // every greeting, overlapping the MP3 tier.
   edgeGrace = setTimeout(() => {
-    if (!spokenBy) runSynthAudition('greeting fallback (no tier started)');
+    if (!spokenBy && !gttsPending) runSynthAudition('greeting fallback (no tier started)');
   }, 1500);
   // Edge still wins if it ever answers again: onPlaying halts the other tiers.
   // It is not a button and not a promise — just a free upside if Microsoft
@@ -2283,13 +2291,13 @@ export function testVoice(characterId: string, lang: Lang): void {
   if (!wasOn) {
     try { localStorage.setItem(MUTE_KEY, 'on'); } catch { /* ignore */ }
   }
-  try {
-    speak(TEST_LINES[lang] ?? TEST_LINES.en, characterId, lang, { joy: 0.6 });
-  } finally {
-    if (!wasOn) {
-      // restore without stopSpeaking() — that would cancel the line we just queued
+  speak(TEST_LINES[lang] ?? TEST_LINES.en, characterId, lang, { joy: 0.6 });
+  if (!wasOn) {
+    // Restore only after the queued line leaves the speaker — a synchronous
+    // finally used to flip Voice off before performSpeak() ran (total silence).
+    void whenSpeechIdle(() => {
       try { localStorage.setItem(MUTE_KEY, 'off'); } catch { /* ignore */ }
-    }
+    });
   }
 }
 

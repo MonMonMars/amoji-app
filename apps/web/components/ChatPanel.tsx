@@ -1179,7 +1179,7 @@ export default function ChatPanel({
     reengageStageRef.current = 0;
   };
 
-  const beginVoiceMode = () => {
+  const beginVoiceMode = (opts?: { cutCompanion?: boolean }) => {
     if (micModeRef.current) return;
     if (!listenSupported()) {
       window.alert(t(lang, 'micUnsupported'));
@@ -1190,7 +1190,8 @@ export default function ChatPanel({
     micModeRef.current = true;
     listeningRef.current = true;
     setListening(true);
-    stopSpeaking();
+    // Auto-open on chat enter must not cancel the first reply still loading on gTTS.
+    if (opts?.cutCompanion !== false) stopSpeaking();
     let bargeInArmed = true; // first real speech of a burst cuts her off
     const micHandle = listenContinuous(lang, {
       // r87 — the VAD owns endpointing now; its onPartial flushes via handle
@@ -1290,7 +1291,7 @@ export default function ChatPanel({
     if (rec?.mic === 'denied' || rec?.mic === 'unsupported') return;
     micAutoArmedRef.current = true;
     const t0 = window.setTimeout(() => {
-      if (!micModeRef.current) beginVoiceMode();
+      if (!micModeRef.current) beginVoiceMode({ cutCompanion: false });
     }, 400);
     return () => clearTimeout(t0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
