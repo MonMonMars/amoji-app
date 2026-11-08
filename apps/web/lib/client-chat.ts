@@ -78,6 +78,7 @@ import { brainBodyExtras, markBrainDead, pickBrain, type BrainSpec } from './bra
 import { cleanForDisplay, stripLaughTokens } from './speak-text';
 import { withQuestion } from './follow-up';
 import { preferLiveReply, worldBlock } from './live-tools';
+import { replyLooksNonsense, STRICT_REPLY_APPENDIX } from './reply-sanity';
 import { shapeCompanionReply } from './reply-shape';
 
 export interface ClientChatResult { reply: string; emotionHints: Record<string, number> }
@@ -929,6 +930,53 @@ export function finishReply(content: string, opts?: { detailed?: boolean; world?
   return { reply: reply || '…', emotionHints: hints };
 }
 
+interface SanityContext {
+  language?: string;
+  persona?: string;
+  lastUser: string;
+  detailed: boolean;
+}
+
+function sanityOpts(ctx: SanityContext) {
+  return {
+    language: ctx.language,
+    persona: ctx.persona,
+    lastUser: ctx.lastUser,
+    detailed: ctx.detailed,
+  };
+}
+
+async function streamModelReply(
+  spec: ReturnType<typeof pickBrain>['spec'],
+  key: string,
+  system: string,
+  messages: ChatMessage[],
+  onPartial: ClientChatOptions['onPartial'],
+  maxTokens: number,
+): Promise<string> {
+  return spec.id === 'pollinations'
+    ? raceFreeLanes(system, messages, onPartial, maxTokens)
+    : streamCompletion(spec, key, system, messages, onPartial, maxTokens);
+}
+
+function packageReply(
+  content: string,
+  ctx: SanityContext & { world?: string; worldSpoken?: string },
+): ClientChatResult {
+  const done = finishReply(content, {
+    detailed: ctx.detailed,
+    world: ctx.world,
+    language: ctx.language,
+  });
+  const reply = preferLiveReply(
+    withQuestion(done.reply, ctx.language),
+    ctx.world,
+    ctx.worldSpoken,
+    ctx.language,
+  );
+  return { ...done, reply };
+}
+
 /** A cook-along turn legitimately needs more room than a chat turn. */
 function wantsDetail(world?: string): boolean {
   return /\b(?:Recipe|Learn)\s*:/.test(world ?? '');
@@ -958,18 +1006,33 @@ export async function clientChat(
   const recent = trimHistoryForPrompt(messages);
   const lastUser = recent[recent.length - 1]?.content ?? '';
   const first = pickBrain();
-  try {
-    const content = first.spec.id === 'pollinations'
-      ? await raceFreeLanes(system, recent, onPartial, maxTokens)
-      : await streamCompletion(first.spec, first.key, system, recent, onPartial, maxTokens);
-    // r.27 — some gateways answer HTTP 200 with the out-of-credit sentence AS
-    // the content; that is a failed provider, not something she should speak
-    if (first.spec.id !== 'pollinations' && content.length < 160 && CREDIT_RE.test(content)) {
-      throw new Error(`${first.spec.id} out of credit`);
+  const sanityCtx: SanityContext = {
+    language: opts?.language,
+    persona: opts?.persona,
+    lastUser,
+    detailed,
+  };
+  const finalize = (raw: string) => packageReply(raw, { ...sanityCtx, world: opts?.world, worldSpoken: opts?.worldSpoken });
+  const rejectCreditBody = (specId: string, content: string) => {
+    if (specId !== 'pollinations' && content.length < 160 && CREDIT_RE.test(content)) {
+      throw new Error(`${specId} out of credit`);
     }
-    const done = finishReply(content, { detailed, world: opts?.world, language: opts?.language });
-    const reply = preferLiveReply(withQuestion(done.reply, opts?.language), opts?.world, opts?.worldSpoken, opts?.language);
-    return { ...done, reply };
+  };
+  try {
+    const content = await streamModelReply(first.spec, first.key, system, recent, onPartial, maxTokens);
+    rejectCreditBody(first.spec.id, content);
+    const out = finalize(content);
+    if (replyLooksNonsense(out.reply, sanityOpts(sanityCtx))) {
+      const strict = `${system}\n${STRICT_REPLY_APPENDIX}`;
+      try {
+        const retry = await streamModelReply(first.spec, first.key, strict, recent, undefined, maxTokens);
+        rejectCreditBody(first.spec.id, retry);
+        const retryOut = finalize(retry);
+        if (!replyLooksNonsense(retryOut.reply, sanityOpts(sanityCtx))) return retryOut;
+      } catch { /* local fallback */ }
+      return localFallbackReply(lastUser, opts?.language);
+    }
+    return out;
   } catch (err) {
     if (first.spec.id === 'pollinations') {
       // r.46 — the free lane itself is too slow/down: she answers instantly
@@ -992,9 +1055,17 @@ export async function clientChat(
     try {
       const content = await raceFreeLanes(system, recent, onPartial, maxTokens);
       if (content.length < 160 && CREDIT_RE.test(content)) throw new Error('pollinations credit');
-      const done = finishReply(content, { detailed, world: opts?.world, language: opts?.language });
-      const reply = preferLiveReply(withQuestion(done.reply, opts?.language), opts?.world, opts?.worldSpoken, opts?.language);
-      return { ...done, reply };
+      const out = finalize(content);
+      if (replyLooksNonsense(out.reply, sanityOpts(sanityCtx))) {
+        const strict = `${system}\n${STRICT_REPLY_APPENDIX}`;
+        try {
+          const retry = await raceFreeLanes(strict, recent, undefined, maxTokens);
+          const retryOut = finalize(retry);
+          if (!replyLooksNonsense(retryOut.reply, sanityOpts(sanityCtx))) return retryOut;
+        } catch { /* local fallback */ }
+        return localFallbackReply(lastUser, opts?.language);
+      }
+      return out;
     } catch {
       // r.46 — even the free race lost: keep the conversation alive NOW
       const facts = factsReply();
