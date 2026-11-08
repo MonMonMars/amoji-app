@@ -174,6 +174,7 @@ import {
   markOpenCheerDone,
   openCheerAlreadyDone,
   openPhaseTopicAsk,
+  shouldPlayOpenCheer,
 } from '../lib/open-phase';
 import {
   formatTopicSuggestionLine,
