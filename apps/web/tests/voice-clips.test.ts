@@ -202,9 +202,9 @@ describe('CLIP_LIBRARY numbering', () => {
 describe('TTS button registry', () => {
   it('offers only voices that really differ, one per distinct speaker', () => {
     const buttons = selectTtsButtons();
-    // 58 Edge names collapsed to one sound; the real map is one button per
-    // distinct Google `tl` speaker (grouped by probing four sentences each).
-    expect(buttons).toHaveLength(9);
+    // 58 Edge names collapsed to one sound; the registry is gated voices with
+    // female + male delivery per `tl` where Google only exposes one speaker.
+    expect(buttons).toHaveLength(12);
     expect(buttons.every((b) => b.engine === 'gtts' && b.shipping)).toBe(true);
     expect(new Set(buttons.map(ttsButtonKey)).size).toBe(buttons.length);
     expect(new Set(buttons.map((b) => b.id)).size).toBe(buttons.length);
@@ -212,13 +212,12 @@ describe('TTS button registry', () => {
     expect(selectTtsButtons('zh')).toHaveLength(TIER_A_COUNTS.zh);
     expect(selectTtsButtons('ja')).toHaveLength(TIER_A_COUNTS.ja);
     expect(selectTtsButtons('en')).toHaveLength(TIER_A_COUNTS.en);
-    expect(selectTtsButtons('yue').map((b) => b.tl)).toEqual(['yue']);
-    expect(selectTtsButtons('zh').map((b) => b.tl)).toEqual(['zh-CN', 'zh-TW']);
-    expect(selectTtsButtons('ja').map((b) => b.tl)).toEqual(['ja']);
-    // Every English button is a different speaker, so every `tl` is distinct.
+    expect(selectTtsButtons('yue').map((b) => b.tl)).toEqual(['yue', 'yue']);
+    expect(selectTtsButtons('zh').map((b) => b.tl)).toEqual(['zh-CN', 'zh-CN', 'zh-TW']);
+    expect(selectTtsButtons('ja').map((b) => b.tl)).toEqual(['ja', 'ja']);
     const enTls = selectTtsButtons('en').map((b) => b.tl);
-    expect(enTls).toEqual(['en-US', 'en-GB', 'en-AU', 'en-IN', 'en-NG']);
-    expect(new Set(enTls).size).toBe(enTls.length);
+    expect(enTls).toEqual(['en-US', 'en-US', 'en-GB', 'en-AU', 'en-IN']);
+    expect(new Set(enTls).size).toBe(4);
   });
 
   it('never surfaces an engine the audit classifies as not playable', () => {
