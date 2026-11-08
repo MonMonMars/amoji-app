@@ -77,7 +77,7 @@ describe('AI disclosure — system prompt hard rule', () => {
     expect(BASE_SYSTEM).toMatch(/BE PRECISE/);
     expect(BASE_SYSTEM).toMatch(/hehe\/haha/);
     expect(BASE_SYSTEM).toMatch(/hey-hey/);
-    expect(BASE_SYSTEM).toMatch(/Grok spark/);
+    expect(BASE_SYSTEM).toMatch(/grounded|not surreal/);
     expect(BASE_SYSTEM).toMatch(/\[emotion:\{/);
     expect(BASE_SYSTEM).toMatch(/0\.7–1\.0/);
   });

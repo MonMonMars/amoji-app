@@ -651,7 +651,7 @@ export default function ChatPanel({
     const startupVars = { name: characterName };
     const shortDaily =
       !fresh && visit.isNewDay
-        ? buildDailyGreeting(lang, visit, { skipThread: true, short: true })
+        ? buildDailyGreeting(lang, visit, { skipThread: true, privacyOnly: true })
         : undefined;
     const openLine =
       namedHello ?? shortDaily ?? pickLine('startup', lang, 1, startupVars);

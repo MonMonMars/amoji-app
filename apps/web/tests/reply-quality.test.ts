@@ -214,7 +214,7 @@ describe('system prompt states the four reply rules', () => {
   it('keeps the voice bans and the emotion tag contract intact', () => {
     expect(BASE_SYSTEM).toMatch(/hehe\/haha/);
     expect(BASE_SYSTEM).toMatch(/hey-hey/);
-    expect(BASE_SYSTEM).toMatch(/Grok spark/);
+    expect(BASE_SYSTEM).toMatch(/grounded|not surreal/);
     expect(BASE_SYSTEM).toMatch(/\[emotion:\{/);
     expect(BASE_SYSTEM).toMatch(/0\.7–1\.0/);
   });

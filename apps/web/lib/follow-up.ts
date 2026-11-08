@@ -49,8 +49,6 @@ export function withQuestion(reply: string, lang?: string): string {
   if (/[?？]/.test(text)) return text;
   if (FAREWELL_RE.test(text)) return text;
   const options = bank(lang);
-  // Rotate on the reply's length so consecutive turns do not repeat a line,
-  // while the same reply always gets the same question (tests, replays).
   const q = options[text.length % options.length] ?? options[0]!;
   return `${text} ${q}`;
 }
