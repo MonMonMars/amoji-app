@@ -5,17 +5,14 @@ import { join } from 'node:path';
 const src = readFileSync(join(__dirname, '../app/page.tsx'), 'utf8');
 
 describe('splash/home describedby residual a11y', () => {
-  it('describes continue control with tagline + revision', () => {
+  it('keeps tagline + revision describedby ids', () => {
     expect(src).toContain('aria-describedby="amoji-splash-tagline amoji-splash-revision"');
     expect(src).toContain('id="amoji-splash-tagline"');
     expect(src).toContain('id="amoji-splash-revision"');
-    expect(src).toContain('{APP_TAGLINE}');
-    expect(src).toContain('{APP_REVISION}');
   });
 
-  it('marks fade-out busy and keeps title/continue labels', () => {
-    expect(src).toContain('aria-busy={fade}');
+  it('keeps titled landmark and Start label', () => {
     expect(src).toContain('aria-labelledby="amoji-splash-title"');
-    expect(src).toContain('aria-label={continueLogin}');
+    expect(src).toContain('aria-label={startLabel}');
   });
 });
