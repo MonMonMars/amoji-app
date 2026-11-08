@@ -16,7 +16,8 @@ describe('entry UX — one-tap title START', () => {
 
   it('fallback gate + quick setup expose back and a single START', () => {
     const quick = read('components/QuickSetup.tsx');
-    expect(quick).toContain('data-testid="setup-back"');
+    expect(quick).toContain('data-testid={backTestId}');
+    expect(quick).toContain('navigateNavBack');
     expect(quick).toContain('data-testid="setup-start"');
     expect(quick).toContain('oneClickBootstrap');
     expect(read('app/login/page.tsx')).toContain('login-redirect');

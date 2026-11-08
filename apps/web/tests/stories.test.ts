@@ -46,7 +46,9 @@ describe('mode + story entry (t741)', () => {
     const setup = read('../app/setup/page.tsx');
     expect(setup).toContain('QuickSetup');
     expect(read('../app/gate/page.tsx')).toContain('QuickSetup');
-    expect(read('../components/QuickSetup.tsx')).toContain('data-testid="setup-back"');
+    const quick = read('../components/QuickSetup.tsx');
+    expect(quick).toContain('data-testid={backTestId}');
+    expect(quick).toContain('navigateNavBack');
     expect(read('../app/mode/page.tsx')).toContain('SoftLandSelect');
     expect(read('../app/mode/page.tsx')).toContain('ModeRedirect');
     expect(read('../app/story/page.tsx')).toContain('SoftLandSelect');
