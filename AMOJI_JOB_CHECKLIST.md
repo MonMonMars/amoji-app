@@ -17,7 +17,9 @@ Locale → engine → voice lives in `apps/web/lib/voice-catalog.ts`. Non-Yue en
 
 ## In progress
 
-- None in this branch.
+- Merge stack (human): #285 setup → #292 audio gate → #291 selectable history → **#301 reply quality/privacy** → #302 chat entry. See `docs/MERGE_CHECKLIST.md`.
+- Polish open: #297 poke hide, #298 HelloWave bye-only, #299 cast lighting, #300 mood orb, #283 select back.
+- Status board: `docs/PROJECT_STATUS.md` + `docs/project-status.html`.
 
 ## Open / remains
 
@@ -28,6 +30,8 @@ Locale → engine → voice lives in `apps/web/lib/voice-catalog.ts`. Non-Yue en
 - `speechSynthesis` has no sink pin. If Edge is blocked and only the browser voice plays, Windows can still route that API to a communications device.
 - Anonymous Pollinations only exposes `openai-fast` (GPT-OSS 20B). No smarter keyless model to switch to.
 - `think-phrases.ts` is unused by the wait UI. The spoken wait lines are `thinking-lines.ts`.
+- Music streaming: `resolveStreamPlaylist()` returns `null` until a **licensed** catalog/embed exists (`docs/MUSIC_STREAMING.md`). Do not scrape Spotify/YouTube/etc.
+- Post-merge live verify on https://monmonmars.github.io/amoji-app/setup after the stack lands.
 
 ## Voices
 
@@ -59,7 +63,8 @@ So there is no 20-line preset bank to preserve. If Mon wants a longer spoken wai
 
 - Loading stubs live in `apps/web/lib/thinking-lines.ts`; `think-phrases.ts` selects a stub by mood and is referenced only by `tests/mood-voice.test.ts`.
 - Layout files: `SelectionBoard.tsx`, `WardrobeSwap.tsx`, `app/chat/page.tsx`, `ChatPanel.tsx`.
-- PR: https://github.com/MonMonMars/amoji-app/pull/7
-- GitHub Pages: `.github/workflows/pages.yml` runs on every push to `main` (and `workflow_dispatch`). It static-exports `@amoji/web` with `AMOJI_BASE_PATH=/amoji-app` and deploys `apps/web/out` to the `github-pages` environment. Merging this PR is what updates https://monmonmars.github.io/amoji-app/. The PR branch itself does not deploy.
+- TTS map: `docs/TTS_PIPELINE.md`. Privacy: `docs/PRIVACY_MEMORY.md`. Entry: `docs/CHAT_ENTRY_FLOW.md`.
+- GitHub Pages: `.github/workflows/pages.yml` runs on every push to `main` (and `workflow_dispatch`). It static-exports `@amoji/web` with `AMOJI_BASE_PATH=/amoji-app` and deploys `apps/web/out` to the `github-pages` environment. Merging to `main` updates https://monmonmars.github.io/amoji-app/. Feature branches do not deploy.
 - Piper / Melo / Kokoro / Bark stay in `voice-catalog.ts` as non-shipping stubs. VoxCPM2, Chatterbox, CosyVoice, and Qwen3-TTS are held for a later GPU host and are not called. Google Cloud, Azure, and Polly are not wired. **Google Translate's free MP3 endpoint IS wired** (`lib/gtts.ts`, a real chain hop since 2026-11-07) — that is not Google Cloud TTS.
 - Verify: selection shows the live chat VRM on the chat backdrop; face thumbs are release portraits; scene thumbs run A (day) through L (night); a thumb tap swaps the body; chat icon opens wardrobe full-screen and close restores orbit; history wheel-scrolls; hold on a side margin pans.
+- Last checklist refresh: 2026-11-09 (HKT) — docs pack + music stub + open PR merge board.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MUSIC_THEMES, getTheme, noteFreq, melodyStep, bassStep } from '../lib/music';
+import { MUSIC_THEMES, getTheme, noteFreq, melodyStep, bassStep, resolveStreamPlaylist } from '../lib/music';
 
 describe('procedural backing-track themes (r2026-10-04.48)', () => {
   it('has a default theme plus per-character themes, all musically sane', () => {
@@ -43,5 +43,10 @@ describe('procedural backing-track themes (r2026-10-04.48)', () => {
 
   it('unknown characters fall back to the default theme', () => {
     expect(getTheme('whoever')).toBe(MUSIC_THEMES.default);
+  });
+
+  it('resolveStreamPlaylist stays a safe null stub (no scrape URLs)', () => {
+    expect(resolveStreamPlaylist()).toBeNull();
+    expect(resolveStreamPlaylist('jazz')).toBeNull();
   });
 });
