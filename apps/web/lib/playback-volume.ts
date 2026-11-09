@@ -3,12 +3,13 @@
 // Stored on prefs as voiceVol. Mic state does not touch this.
 
 import { DEFAULT_VOLUME, volumeLinear } from './audio-levels';
+import { MASTER_OUTPUT_CAP } from './audio-output';
 
 export function getPlaybackVolume(): number {
   const v = volumeLinear('voiceVol');
   // A stored 0 (or a bad parse) used to mute Edge and every clip. Steps start at 20.
-  if (!Number.isFinite(v) || v <= 0) return DEFAULT_VOLUME / 100;
-  return v;
+  if (!Number.isFinite(v) || v <= 0) return Math.min(DEFAULT_VOLUME / 100, MASTER_OUTPUT_CAP);
+  return Math.min(v, MASTER_OUTPUT_CAP);
 }
 
 /** @deprecated levels are saved on prefs.voiceVol. Kept so old callers compile. */

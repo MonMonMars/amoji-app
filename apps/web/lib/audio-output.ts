@@ -12,8 +12,19 @@
 
 type SinkTarget = { setSinkId?: (sinkId: string) => Promise<void> };
 
+/** Hard cap so resume/unlock never stacks above a comfortable level. */
+export const MASTER_OUTPUT_CAP = 0.85;
+
 /** Last sink id that successfully pinned ( '' | 'default' ). Undefined = not tried yet. */
 let cachedDefaultSink: string | undefined;
+
+let sharedCtx: AudioContext | null = null;
+let sharedMasterGain: GainNode | null = null;
+
+export function resetSharedAudioContextForTests(): void {
+  sharedCtx = null;
+  sharedMasterGain = null;
+}
 
 /** Vitest only — module-level sink cache is global across cases in one file. */
 export function resetDefaultSinkCacheForTests(): void {
@@ -71,9 +82,38 @@ export function pinDefaultOutput(node: SinkTarget | null | undefined): void {
   });
 }
 
+/** Shared master gain (0 … MASTER_OUTPUT_CAP) — connect WebAudio sinks here when practical. */
+export function getSharedMasterGain(): GainNode | null {
+  createDefaultAudioContext();
+  return sharedMasterGain;
+}
+
+export function suspendSharedAudioOutput(): void {
+  if (!sharedCtx || sharedCtx.state === 'closed') return;
+  try {
+    void sharedCtx.suspend();
+  } catch { /* ignore */ }
+}
+
+export function resumeSharedAudioOutput(): void {
+  if (!sharedCtx || sharedCtx.state === 'closed') return;
+  try {
+    void sharedCtx.resume();
+  } catch { /* ignore */ }
+  if (sharedMasterGain) {
+    try {
+      sharedMasterGain.gain.value = MASTER_OUTPUT_CAP;
+    } catch { /* ignore */ }
+  }
+}
+
 /** AudioContext bound to the default speakers. Falls back if sinkId options throw. */
 export function createDefaultAudioContext(): AudioContext | null {
   if (typeof window === 'undefined') return null;
+  if (sharedCtx && sharedCtx.state !== 'closed') {
+    pinDefaultOutput(sharedCtx as unknown as SinkTarget);
+    return sharedCtx;
+  }
   const AC = window.AudioContext
     ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AC) return null;
@@ -84,7 +124,15 @@ export function createDefaultAudioContext(): AudioContext | null {
     ctx = new AC();
   }
   pinDefaultOutput(ctx as unknown as SinkTarget);
-  return ctx;
+  sharedCtx = ctx;
+  try {
+    sharedMasterGain = ctx.createGain();
+    sharedMasterGain.gain.value = MASTER_OUTPUT_CAP;
+    sharedMasterGain.connect(ctx.destination);
+  } catch {
+    sharedMasterGain = null;
+  }
+  return sharedCtx;
 }
 
 let synthPrimeEl: HTMLAudioElement | null = null;
