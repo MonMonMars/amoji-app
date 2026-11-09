@@ -2088,6 +2088,10 @@ export default function CompanionCanvas({
           avatar.plantFeet(false);
         }
         avatar.applyCastFixes();
+        // Final axial ROM — after mixer / poke / dance sway / idle crossfade /
+        // cast leveling. Fixes Normalized_J_Bip_* clamps that used to miss
+        // BONE_BLEND_LIMITS and let spine/back/head travel a full turn.
+        avatar.clampAxialNoFlip();
         if (!feetFree && !idleLegGlide) avatar.unblendLegs();
         avatar.update(dt / 1000);
         // Chest and torso punches: bust spring after the skeleton update.

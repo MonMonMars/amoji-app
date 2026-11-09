@@ -80,6 +80,7 @@ import { capEyeExpression } from './eyes';
 import { applyCastFix, captureCastFix, type CastFixState } from './cast-pose';
 import { needsFullUpright } from '../cast-adjust';
 import { shortestQuatSlerp } from './quat-blend';
+import { clampAxialNoFlipBones, clampBoneByName } from './bone-joint-limits';
 
 export type AvatarKind = 'v1' | 'generic';
 
@@ -231,6 +232,11 @@ export interface Avatar {
   armCastFixes(characterId: string): void;
   /** Re-apply those corrections after the mixer. Idempotent within a frame. */
   applyCastFixes(): void;
+  /**
+   * Hard ROM clamp on spine/chest/upperChest/neck/head so idle/poke/dance
+   * overlays and library clips cannot spin those bones a full turn.
+   */
+  clampAxialNoFlip(): void;
   /** Open hanging thighs that folded into the torso (blended legs/body). */
   unblendLegs(): void;
   /** V1 head-add must treat the corrected head quat as its own write. */
@@ -772,7 +778,7 @@ class V1Avatar implements Avatar {
   private headAddInit = false;
   private planter = new FootPlanter();
   private chestBounce = new ChestBounce();
-  private readonly headAddBaseE = new THREE.Euler();
+  private readonly headAddBaseQ = new THREE.Quaternion();
   private readonly headAddWritten = new THREE.Quaternion();
   private readonly addSlots = new Map<string, { base: THREE.Quaternion; written: THREE.Quaternion; init: boolean }>();
   private readonly addEuler = new THREE.Euler(0, 0, 0, 'XYZ');
@@ -897,6 +903,9 @@ class V1Avatar implements Avatar {
     this.addEuler.set(x, y, z);
     this.addDelta.setFromEuler(this.addEuler);
     node.quaternion.copy(slot.base).multiply(this.addDelta);
+    // Post-multiply clamp: base·delta can still push spine/chest past ROM
+    // when the mixer rest already leans (idle VRMA + poke recoil).
+    clampBoneByName(node.quaternion, name);
     slot.written.copy(node.quaternion);
   }
 
@@ -906,34 +915,29 @@ class V1Avatar implements Avatar {
    * a raw euler accumulate on the bone. When the active clip(s) carry no
    * head track, the mixer never rewrites the head between frames, so the
    * += compounded (up to ~0.18 rad/frame) and the head swept full circles.
-   * Fix: rebuild the additive layer every frame from an explicit base.
+   * Fix: rebuild the additive layer every frame from an explicit quaternion
+   * base (not synced Euler — ±π discontinuities used to flip the head).
    *   · base refresh — if the bone's quaternion differs from what WE wrote
-   *     last frame, the mixer (re)wrote it (it owns a head track): refresh
-   *     the base from the synced euler. If it matches exactly, nothing
-   *     touched the bone since (no head track): reuse the stored base, so
-   *     the SAME offset re-applies identically instead of accumulating.
-   *   · shortest path — the offset is an absolute, ROM-clamped target,
-   *     never a frame-over-frame delta, so no angle can travel the long
-   *     way around; the total stays within base ± the neck ROM below.
-   *   · ROM — pitch ±45° / yaw ±80° / roll ±25°: even a runaway pose value
-   *     can only tilt a human amount from the clip pose. The clip pose
-   *     itself is untouched — library performances keep full freedom.
+   *     last frame, the mixer (re)wrote it: refresh the base quat. Else
+   *     reuse the stored base so the SAME offset re-applies.
+   *   · shortest path — absolute ROM-clamped delta via quat multiply, never
+   *     a frame-over-frame euler +=.
+   *   · ROM — pitch ±45° / yaw ±80° / roll ±25°, then head bone Euler clamp.
    */
   private applyClipHeadAdd(p: AvatarPose): void {
     const node = this.vrm.humanoid?.getNormalizedBoneNode('head');
     if (!node) return;
     if (!this.headAddInit || !node.quaternion.equals(this.headAddWritten)) {
-      this.headAddBaseE.copy(node.rotation); // synced euler = what the mixer wrote
+      this.headAddBaseQ.copy(node.quaternion);
       this.headAddInit = true;
     }
     const ox = clampField(p.headX * 0.3 + (p.headPitchAdd ?? 0), HUMAN_LIMITS.headPitchAdd);
     const oy = clampField(p.headY * 0.3, [-HEAD_ADD_ROM.y, HEAD_ADD_ROM.y] as const);
     const oz = clampField(p.headZ * 0.3 + (p.headRollAdd ?? 0), HUMAN_LIMITS.headRollAdd);
-    node.rotation.set(
-      this.headAddBaseE.x + ox,
-      this.headAddBaseE.y + oy,
-      this.headAddBaseE.z + oz,
-    );
+    this.addEuler.set(ox, oy, oz);
+    this.addDelta.setFromEuler(this.addEuler);
+    node.quaternion.copy(this.headAddBaseQ).multiply(this.addDelta);
+    clampBoneByName(node.quaternion, 'head');
     this.headAddWritten.copy(node.quaternion);
   }
 
@@ -1013,6 +1017,11 @@ class V1Avatar implements Avatar {
 
   applyCastFixes(): void {
     if (this.castFix) applyCastFix(this.castFix);
+    this.acknowledgeHeadPose();
+  }
+
+  clampAxialNoFlip(): void {
+    clampAxialNoFlipBones((name) => this.getBoneNode(name));
     this.acknowledgeHeadPose();
   }
 
@@ -1287,6 +1296,7 @@ class GenericAvatar implements Avatar {
     const base = this.baseLocal.get(node.name);
     node.quaternion.copy(this.sPw).invert().multiply(this.sRw).multiply(this.sPw);
     if (base) node.quaternion.multiply(base);
+    clampBoneByName(node.quaternion, name);
   }
 
   // r103: same contract as V1Avatar — idempotent base·delta, clip-owned
@@ -1357,6 +1367,10 @@ class GenericAvatar implements Avatar {
 
   applyCastFixes(): void {
     if (this.castFix) applyCastFix(this.castFix);
+  }
+
+  clampAxialNoFlip(): void {
+    clampAxialNoFlipBones((name) => this.getBoneNode(name));
   }
 
   unblendLegs(): void {

@@ -12,7 +12,7 @@ import {
   needsShoulderLift,
   needsUpperBodyLevel,
 } from '../cast-adjust';
-import { boneEulerLimits, clampBoneQuaternionYXZ } from './bone-joint-limits';
+import { clampBoneByName } from './bone-joint-limits';
 import { shortestQuatSlerp } from './quat-blend';
 
 const _e = new THREE.Euler();
@@ -183,8 +183,9 @@ function armHanging(upper: THREE.Object3D, lower: THREE.Object3D | null): boolea
 }
 
 function clampCastBone(bone: THREE.Object3D): void {
-  const lim = boneEulerLimits(bone.name);
-  if (lim) clampBoneQuaternionYXZ(bone.quaternion, lim);
+  // Resolve Normalized_J_Bip_* / J_Bip_* / semantic names — bare bone.name
+  // used to miss BONE_BLEND_LIMITS and leave 360° spine/head flips unclamped.
+  clampBoneByName(bone.quaternion, bone.name);
 }
 
 export function applyCastFix(state: CastFixState): void {
