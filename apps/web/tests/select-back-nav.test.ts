@@ -74,7 +74,8 @@ describe('select back nav — wiring', () => {
 
   it('entry routes record select return before opening /select', () => {
     expect(read('app/page.tsx')).toContain("pushSelect(router, 'splash')");
-    expect(read('components/QuickSetup.tsx')).toContain('replaceSelect(router, selectReturnFrom)');
+    // Rules START soft-gates audio first; select return is recorded later from title/splash.
+    expect(read('components/QuickSetup.tsx')).toContain('/gate/audio?next=');
     expect(read('components/SoftLandSelect.tsx')).toContain('replaceSelect(router, selectReturnFrom)');
     expect(read('app/gate/page.tsx')).toContain('selectReturnFrom="gate"');
     expect(read('app/story/page.tsx')).toContain('selectReturnFrom="story"');
