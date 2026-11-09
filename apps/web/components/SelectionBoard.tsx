@@ -22,7 +22,6 @@ import { assetUrl } from '../lib/asset';
 import { bigheadPath } from '../lib/bighead';
 import { playVoiceGreeting } from '../lib/voice';
 import { primeChatStartGesture } from '../lib/chat-start-gesture';
-import { introText } from '../lib/character-intro';
 import { primeLocationForChatEnter } from '../lib/live-tools';
 import { activeVoiceChoice } from '../lib/voice-picks';
 import {
@@ -228,17 +227,10 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                     pick({ character: id });
                     const chosen = cast.find((item) => item.id === id);
                     if (!chosen) return;
-                    // Audition this character in the language's real speaker.
-                    // The old Edge "cast slot" no longer exists — Edge refuses
-                    // this app — so all it did was label audio that came from
-                    // one fallback voice. Character identity now rides on pitch,
-                    // which is applied inside the greeting.
-                    playVoiceGreeting(
-                      chosen.id,
-                      lang,
-                      activeVoiceChoice(lang).id,
-                      introText(chosen.name, chosen.tagline?.[lang] ?? chosen.tagline?.en, lang),
-                    );
+                    // Short rotating greet in this character's pitch + the
+                    // language's real speaker. Non-blocking; selection already
+                    // applied above.
+                    playVoiceGreeting(chosen.id, lang, activeVoiceChoice(lang).id);
                   }}
                   label={(c) => c.name}
                 >

@@ -66,18 +66,17 @@ describe('character self-introduction', () => {
     }
   });
 
-  it('the select board speaks the intro, not the canned greeting', () => {
-    const board = readFileSync(join(__dirname, '../components/SelectionBoard.tsx'), 'utf8');
-    expect(board).toContain('introText(');
-    // The intro is actually passed to the speaker.
-    expect(board).toMatch(/playVoiceGreeting\([\s\S]{0,220}introText\(/);
+  it('intro helper stays available for callers that want a named self-intro', () => {
+    const line = introText('Shino', 'gentle heart, steady cheer', 'en');
+    expect(line).toContain('Shino');
+    expect(line.length).toBeGreaterThan(20);
   });
 
-  it('playVoiceGreeting still works without a line (picker previews)', () => {
+  it('playVoiceGreeting accepts an optional override line', () => {
     const voice = readFileSync(join(__dirname, '../lib/voice.ts'), 'utf8');
     expect(voice).toMatch(/line\?: string/);
-    // Bare taps on select (language / voice row) always open with Hello, not rotation.
-    expect(voice).toMatch(/line\?\.trim\(\) \? line\.trim\(\) : greetingText\(lang, 'hello'\)/);
+    // Bare card taps rotate CARD_GREET_PHRASES instead of a fixed Hello.
+    expect(voice).toMatch(/line\?\.trim\(\) \? line\.trim\(\) : nextCardGreetPhrase\(lang\)/);
   });
 
   it('HK / Mandarin intros open with Hello, not 你好', () => {
