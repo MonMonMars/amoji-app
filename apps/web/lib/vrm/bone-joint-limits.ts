@@ -2,7 +2,8 @@ import * as THREE from 'three';
 
 /**
  * Human-feasible local Euler (YXZ) limits for bones we blend or cast-correct.
- * Radians; applied after mixer / crossfade writes so library clips keep freedom upstream.
+ * Radians; applied after mixer / crossfade writes so library clips keep freedom upstream
+ * except for axial no-flip bones (spine / chest / neck / head) which are always clamped.
  */
 export type EulerLimit = readonly [min: number, max: number];
 
@@ -26,20 +27,117 @@ export const BONE_BLEND_LIMITS: Readonly<Record<string, BoneEulerLimitsYXZ>> = {
   rightLowerArm: { x: [-0.1, 2.4], y: [-0.6, 0.6], z: [-0.6, 0.6] },
 } as const;
 
+/**
+ * Spine / back / neck / head — never allow a full turn. Clamped every frame
+ * after mixer + poke/dance overlays, even when a library clip keys the bone.
+ */
+export const AXIAL_NO_FLIP_BONES = [
+  'spine',
+  'chest',
+  'upperChest',
+  'neck',
+  'head',
+] as const;
+
+export type AxialNoFlipBone = (typeof AXIAL_NO_FLIP_BONES)[number];
+
+/** Raw / Normalized VRM names → semantic limit keys. */
+const RAW_TO_SEMANTIC: Readonly<Record<string, string>> = {
+  J_Bip_C_Hips: 'hips',
+  J_Bip_C_Spine: 'spine',
+  J_Bip_C_Chest: 'chest',
+  J_Bip_C_UpperChest: 'upperChest',
+  J_Bip_C_Neck: 'neck',
+  J_Bip_C_Head: 'head',
+  J_Bip_L_UpperArm: 'leftUpperArm',
+  J_Bip_R_UpperArm: 'rightUpperArm',
+  J_Bip_L_LowerArm: 'leftLowerArm',
+  J_Bip_R_LowerArm: 'rightLowerArm',
+  hips: 'hips',
+  spine: 'spine',
+  chest: 'chest',
+  upperChest: 'upperChest',
+  neck: 'neck',
+  head: 'head',
+  leftUpperArm: 'leftUpperArm',
+  rightUpperArm: 'rightUpperArm',
+  leftLowerArm: 'leftLowerArm',
+  rightLowerArm: 'rightLowerArm',
+};
+
 const _e = new THREE.Euler(0, 0, 0, 'YXZ');
 
 const clamp = (v: number, [lo, hi]: EulerLimit): number =>
   v < lo ? lo : v > hi ? hi : v;
 
-export function boneEulerLimits(boneName: string): BoneEulerLimitsYXZ | undefined {
-  return BONE_BLEND_LIMITS[boneName];
+/** Wrap radians into (−π, π]. */
+export function wrapAngleToPi(a: number): number {
+  const twoPi = Math.PI * 2;
+  let x = ((a + Math.PI) % twoPi + twoPi) % twoPi - Math.PI;
+  if (x <= -Math.PI) x += twoPi;
+  return x;
 }
 
-/** Clamp a local quaternion to anatomy (YXZ). Mutates `q`. */
+/**
+ * Shortest signed turn from `from` to `to` in (−π, π].
+ * +170° → −170° is −20° (≈ −0.349), never −340°.
+ */
+export function shortestAngleDelta(from: number, to: number): number {
+  return wrapAngleToPi(to - from);
+}
+
+/** Interpolate angles along the short arc, result wrapped to (−π, π]. */
+export function lerpAngleShortest(from: number, to: number, t: number): number {
+  return wrapAngleToPi(from + shortestAngleDelta(from, to) * t);
+}
+
+/**
+ * Map a bone Object3D.name or semantic humanoid id onto a BONE_BLEND_LIMITS key.
+ * VRM 1.0 normalized nodes are `Normalized_<raw>` (e.g. Normalized_J_Bip_C_Spine).
+ */
+export function resolveBoneLimitKey(boneName: string): string | undefined {
+  if (!boneName) return undefined;
+  if (BONE_BLEND_LIMITS[boneName]) return boneName;
+  let raw = boneName;
+  if (raw.startsWith('Normalized_')) raw = raw.slice('Normalized_'.length);
+  if (BONE_BLEND_LIMITS[raw]) return raw;
+  const mapped = RAW_TO_SEMANTIC[raw];
+  if (mapped && BONE_BLEND_LIMITS[mapped]) return mapped;
+  return undefined;
+}
+
+export function boneEulerLimits(boneName: string): BoneEulerLimitsYXZ | undefined {
+  const key = resolveBoneLimitKey(boneName);
+  return key ? BONE_BLEND_LIMITS[key] : undefined;
+}
+
+/** Clamp a local quaternion to anatomy (YXZ). Mutates `q`. Wraps first so ±π edges do not flip. */
 export function clampBoneQuaternionYXZ(q: THREE.Quaternion, limits: BoneEulerLimitsYXZ): void {
   _e.setFromQuaternion(q, 'YXZ');
-  _e.x = clamp(_e.x, limits.x);
-  _e.y = clamp(_e.y, limits.y);
-  _e.z = clamp(_e.z, limits.z);
+  _e.x = clamp(wrapAngleToPi(_e.x), limits.x);
+  _e.y = clamp(wrapAngleToPi(_e.y), limits.y);
+  _e.z = clamp(wrapAngleToPi(_e.z), limits.z);
   q.setFromEuler(_e);
+}
+
+/** Resolve limits from any name form and clamp. Returns true if a limit was applied. */
+export function clampBoneByName(q: THREE.Quaternion, boneName: string): boolean {
+  const limits = boneEulerLimits(boneName);
+  if (!limits) return false;
+  clampBoneQuaternionYXZ(q, limits);
+  return true;
+}
+
+/**
+ * Hard stop for 360° spine/back/head flips — call once per frame after
+ * mixer, applyPose, poke overlays, idle crossfade, and cast fixes.
+ */
+export function clampAxialNoFlipBones(
+  getBone: (name: string) => THREE.Object3D | null | undefined,
+): void {
+  for (const name of AXIAL_NO_FLIP_BONES) {
+    const node = getBone(name);
+    if (!node) continue;
+    clampBoneByName(node.quaternion, name);
+  }
 }

@@ -1,7 +1,17 @@
 import * as THREE from 'three';
-import { boneEulerLimits, clampBoneQuaternionYXZ } from './bone-joint-limits';
+import {
+  clampBoneByName,
+  lerpAngleShortest,
+  shortestAngleDelta,
+  wrapAngleToPi,
+} from './bone-joint-limits';
+
+export { lerpAngleShortest, shortestAngleDelta, wrapAngleToPi };
 
 const _align = new THREE.Quaternion();
+const _eFrom = new THREE.Euler(0, 0, 0, 'YXZ');
+const _eTo = new THREE.Euler(0, 0, 0, 'YXZ');
+const _eOut = new THREE.Euler(0, 0, 0, 'YXZ');
 
 /** Quaternion dot product (same sign ⇒ same hemisphere). */
 export function quatDot(a: THREE.Quaternion, b: THREE.Quaternion): number {
@@ -39,7 +49,28 @@ export function shortestQuatSlerp(
   return dst.copy(from).slerp(quatAlignHemisphere(from, to, _align), t);
 }
 
-/** After slerp, optionally clamp named bone to {@link boneEulerLimits}. */
+/**
+ * Euler (YXZ) blend along the short arc per axis — +170°→−170° travels 20°, not 340°.
+ * Prefer {@link shortestQuatSlerp} for full orientations; this is for axis-angle pose fields.
+ */
+export function shortestEulerYXZSlerp(
+  dst: THREE.Quaternion,
+  from: THREE.Quaternion,
+  to: THREE.Quaternion,
+  t: number,
+): THREE.Quaternion {
+  _eFrom.setFromQuaternion(from, 'YXZ');
+  _eTo.setFromQuaternion(quatAlignHemisphere(from, to, _align), 'YXZ');
+  _eOut.set(
+    lerpAngleShortest(_eFrom.x, _eTo.x, t),
+    lerpAngleShortest(_eFrom.y, _eTo.y, t),
+    lerpAngleShortest(_eFrom.z, _eTo.z, t),
+    'YXZ',
+  );
+  return dst.setFromEuler(_eOut);
+}
+
+/** After slerp, optionally clamp named bone (semantic or Normalized_/J_Bip_*). */
 export function shortestQuatSlerpClamped(
   dst: THREE.Quaternion,
   from: THREE.Quaternion,
@@ -48,7 +79,6 @@ export function shortestQuatSlerpClamped(
   boneName?: string,
 ): THREE.Quaternion {
   shortestQuatSlerp(dst, from, to, t);
-  const limits = boneName ? boneEulerLimits(boneName) : undefined;
-  if (limits) clampBoneQuaternionYXZ(dst, limits);
+  if (boneName) clampBoneByName(dst, boneName);
   return dst;
 }
