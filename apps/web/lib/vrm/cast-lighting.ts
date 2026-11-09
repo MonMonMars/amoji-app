@@ -26,11 +26,17 @@ export const CAST_AMBIENT_COLOR = '#ffffff';
 /** Whisper floor so broken toon shade never renders pure black. */
 export const CAST_AMBIENT_INTENSITY = 0.14;
 
+/** Soft frontal key for VRoid ref faces (Sendagaya #1–3 / grazing #13). */
+export const CAST_FACE_COLOR = '#fff4ec';
+export const CAST_FACE_INTENSITY = 0.42;
+export const CAST_FACE_POSITION = [0.2, 1.55, 2.6] as const;
+
 export interface CastDaylightRig {
   hemi: THREE.HemisphereLight;
   key: THREE.DirectionalLight;
   fill: THREE.DirectionalLight;
   ambient: THREE.AmbientLight;
+  face: THREE.DirectionalLight;
 }
 
 export function castToneMappingExposure(characterId?: string): number {
@@ -49,9 +55,11 @@ export function retuneCastDaylightRig(rig: CastDaylightRig, characterId?: string
   rig.key.intensity = CAST_KEY_INTENSITY * m.key;
   rig.fill.intensity = CAST_FILL_INTENSITY * m.fill;
   rig.ambient.intensity = CAST_AMBIENT_INTENSITY * m.ambient;
+  rig.face.intensity = CAST_FACE_INTENSITY * m.face;
+  rig.face.visible = m.face > 0;
 }
 
-/** Adds the shared hemi + key + fill + ambient. Returns handles for dispose / retune. */
+/** Adds the shared hemi + key + fill + ambient (+ optional face). Returns handles for dispose / retune. */
 export function addCastDaylight(scene: THREE.Scene, characterId?: string): CastDaylightRig {
   const m = castLightingMultipliers(characterId);
   const hemi = new THREE.HemisphereLight(CAST_HEMI_SKY, CAST_HEMI_GROUND, CAST_HEMI_INTENSITY * m.hemi);
@@ -64,5 +72,9 @@ export function addCastDaylight(scene: THREE.Scene, characterId?: string): CastD
   scene.add(fill);
   const ambient = new THREE.AmbientLight(CAST_AMBIENT_COLOR, CAST_AMBIENT_INTENSITY * m.ambient);
   scene.add(ambient);
-  return { hemi, key, fill, ambient };
+  const face = new THREE.DirectionalLight(CAST_FACE_COLOR, CAST_FACE_INTENSITY * m.face);
+  face.position.set(CAST_FACE_POSITION[0], CAST_FACE_POSITION[1], CAST_FACE_POSITION[2]);
+  face.visible = m.face > 0;
+  scene.add(face);
+  return { hemi, key, fill, ambient, face };
 }

@@ -37,7 +37,13 @@ import { chestPokeBounce, CHEST_BOUNCE_SEC, SOFT_CHEST_BOUNCE_SEC } from '../lib
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
 import { isEyeMaterial, stabilizeEyeMaterials } from '../lib/vrm/eyes';
-import { dampenCastMatcap, patchCastTextures, stabilizeCastEyes, unifyCastMToon } from '../lib/vrm/cast-materials';
+import {
+  dampenCastMatcap,
+  floorCastShadeColors,
+  patchCastTextures,
+  stabilizeCastEyes,
+  unifyCastMToon,
+} from '../lib/vrm/cast-materials';
 import { addCastDaylight, applyCastToneMapping } from '../lib/vrm/cast-lighting';
 import { placeStoryRoomBehind, sanitizeStoryRoomMaterials } from '../lib/vrm/story-room';
 import type { Avatar, AvatarPose } from '../lib/vrm/avatar';
@@ -228,18 +234,11 @@ const neutralizeBrokenTextures = (root: THREE.Object3D): void => {
           touched = true;
         }
       }
-      const shade = (m as unknown as { shadeColor?: THREE.Color }).shadeColor;
-      if (shade) {
-        const lum = Math.max(shade.r, shade.g, shade.b);
-        if (lum < 0.2) {
-          if (lum < 1e-4) shade.setRGB(0.45, 0.43, 0.42);
-          else shade.multiplyScalar(0.2 / lum); // keep the hue, floor the darkness
-          touched = true;
-        }
-      }
       if (touched) m.needsUpdate = true;
     }
   });
+  // three-vrm MToon uses shadeColorFactor; the old shadeColor alias is a no-op.
+  floorCastShadeColors(root);
 };
 
 /** stable per-character hash ??motion seed: same character, same body language */
@@ -1170,21 +1169,10 @@ export default function CompanionCanvas({
           const mat = m as THREE.MeshStandardMaterial;
           if (isEyeMaterial(mat.name || '', mesh.name || '')) continue;
           if (mat.color) mat.color.multiply(tint);
-          // r109: MToon shadeColor floor ??a near-black shade color plus
-          // toon lighting can render near-black at some angles (the "all
-          // black" reports). Lift it the same way neutralizeBrokenTextures
-          // does.
-          if (isEyeMaterial((m as THREE.Material).name || '', mesh.name || '')) continue;
-          const shade = (m as unknown as { shadeColor?: THREE.Color }).shadeColor;
-          if (shade) {
-            const lum = Math.max(shade.r, shade.g, shade.b);
-            if (lum < 0.2) {
-              if (lum < 1e-4) shade.setRGB(0.45, 0.43, 0.42);
-              else shade.multiplyScalar(0.2 / lum); // keep the hue, floor the darkness
-            }
-          }
         }
       });
+      // r109/r144: floor MToon shadeColorFactor (not the missing shadeColor alias).
+      floorCastShadeColors(a.root);
       stabilizeEyeMaterials(a.root);
       if (seedKey) {
         a.armCastFixes(seedKey);

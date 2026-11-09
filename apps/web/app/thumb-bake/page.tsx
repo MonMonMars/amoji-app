@@ -30,7 +30,7 @@ import {
   castToneMappingExposure,
   retuneCastDaylightRig,
 } from '../../lib/vrm/cast-lighting';
-import { dampenCastMatcap } from '../../lib/vrm/cast-materials';
+import { dampenCastMatcap, floorCastShadeColors } from '../../lib/vrm/cast-materials';
 
 declare global {
   interface Window {
@@ -243,6 +243,7 @@ export default function ThumbBakePage() {
             });
           }
           root = avatar.root;
+          floorCastShadeColors(root);
           dampenCastMatcap(root, c.id);
           scene.add(root);
 
