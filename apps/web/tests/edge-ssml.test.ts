@@ -261,6 +261,21 @@ describe('clause breath pauses in SSML', () => {
     const breaks = ssml.match(/<break time='/g) ?? [];
     expect(breaks.length).toBeGreaterThanOrEqual(2);
   });
+
+  it('inserts a longer break across paragraph blank lines', () => {
+    const ssml = buildEdgeSsml('第一段说完。\n\n第二段再讲。', {
+      lang: 'zh', gender: 'female', character: 'juno', forcePlain: true,
+    });
+    expect(ssml).toContain("<break time='750ms'/>");
+    const en = buildEdgeSsml('First paragraph ends.\n\nSecond paragraph begins.', {
+      lang: 'en', gender: 'female', character: 'juno', forcePlain: true,
+    });
+    expect(en).toContain("<break time='750ms'/>");
+    const ja = buildEdgeSsml('会えたね。\n\n元気だった？', {
+      lang: 'ja', gender: 'female', character: 'juno', forcePlain: true,
+    });
+    expect(ja).toContain("<break time='750ms'/>");
+  });
 });
 
 describe('additive SSML contour (human feel on flat deltas)', () => {

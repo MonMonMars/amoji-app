@@ -29,7 +29,7 @@ import { edgeVoiceId, isFemaleNeuralVoice, isMaleNeuralVoice, isShippingEdgeVoic
 import { edgeCastVoice } from './edge-cast';
 import { clampLeadProsody, cleanForSpeech, isSpeakableText, stripVoicedGlyphs } from './speak-text';
 import { followAudioElement } from './speech';
-import { splitClauses } from './gtts';
+import { splitClauses, ssmlBreakAfterClause } from './gtts';
 
 // r2026-10-04.89: timeout 7s → 4.5s — the Google-TTS mid tier in voice.ts now
 // catches a dead socket even faster; and stopEdge() finally rejects the
@@ -430,12 +430,8 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
         const note = melody[i % melody.length]!;
         const rate = clamp(baseRate * 0.92, -0.5, 0.5);
         const pitch = clamp(basePitch + note, -0.5, 0.5);
-        // musical rests: a beat after phrase ends, a half-beat after commas
-        const breakAfter = !isTail
-          ? /[。！？!?…\.]$/.test(part) ? `<break time='420ms'/>`
-            : /[,，、；;:：]$/.test(part) ? `<break time='160ms'/>`
-            : ''
-          : '';
+        // musical rests: same phrase/paragraph table as speech (melody keeps the gap)
+        const breakAfter = ssmlBreakAfterClause(part, isTail);
         return prosodyClause(part, pitch, rate, baseVol, breakAfter);
       }
       // Sing-song stays inside what neural prosody can do without artifacts.
@@ -454,11 +450,8 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
       const swellR = bang ? 0.025 : trail ? -0.03 : 0;
       const rate = clamp(baseRate + wave * 0.45 + swellR + (isTail ? -0.02 : 0), -0.14, 0.14);
       const pitch = clamp(basePitch + wave + tailLift + swellP + (bang ? 0.02 * expr : 0), -0.18, 0.18);
-      // breath pauses: commas shorter than sentence ends; ellipses linger
-      const breakAfter = /[。！？!?…\.]$/.test(part) && !isTail
-        ? `<break time='${trail ? '320ms' : '280ms'}'/>`
-        : /[,，、；;:：—]$/.test(part) ? `<break time='150ms'/>`
-        : '';
+      // breath pauses: shared table — sentence ~480ms, paragraph ~750ms, comma ~300ms
+      const breakAfter = ssmlBreakAfterClause(part, isTail);
       return prosodyClause(part, pitch, rate, baseVol, breakAfter);
     })
     .join('');

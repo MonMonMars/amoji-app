@@ -27,6 +27,12 @@ describe('speak text cleaner', () => {
     expect(cleanForSpeech('say tilde then ellipsis please')).not.toMatch(/\b(tilde|ellipsis)\b/i);
   });
 
+  it('preserves paragraph blank lines for phrase pauses', () => {
+    expect(cleanForSpeech('第一段。\n\n第二段。')).toBe('第一段。\n\n第二段。');
+    expect(cleanForSpeech('First beat.\n\nSecond beat.')).toBe('First beat.\n\nSecond beat.');
+    expect(cleanForSpeech('会えたね。\n\n\n元気？')).toBe('会えたね。\n\n元気？');
+  });
+
   it('leaves display punctuation in place when speech rewrites it', () => {
     const raw = 'Wait — really. hyphen next.';
     const shown = cleanForDisplay(raw);

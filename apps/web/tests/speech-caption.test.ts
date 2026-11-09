@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { rollingCaptionFromText } from '../lib/speech-caption';
 import { pauseAfterClause } from '../lib/gtts';
 
@@ -15,5 +17,12 @@ describe('speech caption helpers', () => {
     expect(pauseAfterClause('返工咁攰。')).toBeGreaterThanOrEqual(450);
     expect(pauseAfterClause('返工咁攰。')).toBeGreaterThan(pauseAfterClause('你好，'));
     expect(pauseAfterClause('Note:')).toBeGreaterThanOrEqual(250);
+  });
+
+  it('caption roll uses raw clause markers so paragraph gaps stay in the clock', () => {
+    const src = readFileSync(join(__dirname, '../lib/speech-caption.ts'), 'utf8');
+    expect(src).toContain('pauseAfterClause(raw)');
+    expect(src).toContain('splitChunks(spoken)');
+    expect(pauseAfterClause('第一段完。\n\n')).toBeGreaterThan(pauseAfterClause('第一段完。'));
   });
 });
