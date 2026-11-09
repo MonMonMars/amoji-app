@@ -253,6 +253,16 @@ describe('TTS proxy URL (r131)', () => {
   });
 });
 
+describe('clause breath pauses in SSML', () => {
+  it('inserts breaks between comma- and period-separated clauses', () => {
+    const ssml = buildEdgeSsml('你好呀，今天好吗？还好吗？', {
+      lang: 'yue', gender: 'male', character: 'a98-ethan', forcePlain: true,
+    });
+    const breaks = ssml.match(/<break time='/g) ?? [];
+    expect(breaks.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
 describe('additive SSML contour (human feel on flat deltas)', () => {
   it('multi-clause neutral lines still warble pitch when rate/pitch deltas are 0', () => {
     const ssml = buildEdgeSsml('你好呀，今天好吗？还好吗？', {

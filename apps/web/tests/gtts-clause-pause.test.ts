@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { pauseAfterClause, splitChunks } from '../lib/gtts';
+import { pauseAfterClause, splitChunks, splitClauses } from '../lib/gtts';
 
 describe('gTTS clause pauses', () => {
   it('keeps each punctuated clause as its own chunk', () => {
     expect(splitChunks('返工咁攰。想唔想傾吓？')).toEqual(['返工咁攰。', '想唔想傾吓？']);
     expect(splitChunks('你好，食咗飯未？')).toEqual(['你好，', '食咗飯未？']);
+    expect(splitClauses('First: details here. Still going?')).toEqual([
+      'First:',
+      'details here.',
+      'Still going?',
+    ]);
   });
 
   it('still hard-wraps a single oversize clause', () => {

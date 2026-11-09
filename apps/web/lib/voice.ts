@@ -98,7 +98,7 @@ import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
 export { speechRemainder };
 import { edgeCastVoice } from './edge-cast';
 import { speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead } from './edge-tts';
-import { stopGtts, speakGtts } from './gtts';
+import { pauseAfterClause, splitClauses, stopGtts, speakGtts } from './gtts';
 import { gttsCharacterPitchBias } from './gtts-timbre';
 import { voicePickFor } from './voice-picks';
 import { osVoicePinFor, saveOsVoicePin } from './os-voice-picks';
@@ -1130,29 +1130,6 @@ function pickVoice(characterId: string, lang: Lang, genderOverride?: 'female' | 
   return { voice: null, pitch, rate };
 }
 
-// Split into breath-sized clauses so the pitch contour can rise and fall inside a
-// sentence — the sing-song quality that makes ChatGPT's voice feel alive.
-// r2026-10-05.99: NO regex lookbehind — `(?<=…)` is a hard SyntaxError on
-// WebKit before Safari 16.4 (iOS 16.4) and it killed the whole voice chain
-// on those devices. Manual scanner: cut right AFTER any clause-ending
-// punctuation, trimming whitespace (equivalent to the old split+trim).
-const CLAUSE_END = /[。！？!?；;，,、—…\.]/;
-function clauses(text: string): string[] {
-  const out: string[] = [];
-  let cur = '';
-  for (const ch of text) {
-    cur += ch;
-    if (CLAUSE_END.test(ch)) {
-      const s = cur.trim();
-      if (s) out.push(s);
-      cur = '';
-    }
-  }
-  const tail = cur.trim();
-  if (tail) out.push(tail);
-  return out;
-}
-
 const MUTE_KEY = 'amoji.voice.v1';
 const NEURAL_KEY = 'amoji.neural.v1';
 
@@ -1185,6 +1162,7 @@ export function setNeuralEnabled(on: boolean): void {
 
 let synthKeepAlive: ReturnType<typeof setInterval> | null = null;
 let lipHold: ReturnType<typeof setInterval> | null = null;
+let synthGapTimer: ReturnType<typeof setTimeout> | null = null;
 
 function clearSynthKeepAlive(): void {
   if (synthKeepAlive) { clearInterval(synthKeepAlive); synthKeepAlive = null; }
@@ -1192,6 +1170,10 @@ function clearSynthKeepAlive(): void {
 
 function clearLipHold(): void {
   if (lipHold) { clearInterval(lipHold); lipHold = null; }
+}
+
+function clearSynthGap(): void {
+  if (synthGapTimer) { clearTimeout(synthGapTimer); synthGapTimer = null; }
 }
 
 /**
@@ -1207,6 +1189,7 @@ function haltBrowserSynth(): void {
   synthPrimed = false;
   clearSynthKeepAlive();
   clearLipHold();
+  clearSynthGap();
   if (typeof speechSynthesis === 'undefined') return;
   try { speechSynthesis.cancel(); } catch { /* ignore */ }
   try { speechSynthesis.resume(); } catch { /* ignore */ }
@@ -2625,8 +2608,9 @@ function synthSpeak(
   const rate = shaped.rate;
   const vol = clamp(emVol * getPlaybackVolume(), 0.05, 1);
 
-  const parts = clauses(text).filter(isSpeakableText);
-  const utterances: SpeechSynthesisUtterance[] = [];
+  const parts = splitClauses(text).filter(isSpeakableText);
+  interface SynthPiece { utterance: SpeechSynthesisUtterance; pauseAfter: number }
+  const queue: SynthPiece[] = [];
   const leadSpoken = tic ? stripVoicedGlyphs(tic.text) : '';
   if (leadSpoken && tic) {
     const t = new SpeechSynthesisUtterance(leadSpoken);
@@ -2635,7 +2619,7 @@ function synthSpeak(
     t.pitch = laugh.pitch;
     t.rate = laugh.rate;
     t.volume = vol;
-    utterances.push(t);
+    queue.push({ utterance: t, pauseAfter: 140 });
   }
   // One utterance at a time. Queueing the laugh with the line made Chrome
   // keep the laugh pitch for every clause, and for the chat line after.
@@ -2651,7 +2635,7 @@ function synthSpeak(
       u.pitch = sung.pitch;
       u.rate = sung.rate;
       u.volume = vol;
-      utterances.push(u);
+      queue.push({ utterance: u, pauseAfter: pauseAfterClause(part) });
       return;
     }
     const contour = parts.length > 1
@@ -2663,9 +2647,9 @@ function synthSpeak(
     u.pitch = delivered.pitch;
     u.rate = delivered.rate;
     u.volume = vol;
-    utterances.push(u);
+    queue.push({ utterance: u, pauseAfter: pauseAfterClause(part) });
   });
-  if (!utterances.length) { finishLine(); return; }
+  if (!queue.length) { finishLine(); return; }
 
   let index = 0;
   let started = false;
@@ -2714,29 +2698,45 @@ function synthSpeak(
 
   const speakOne = () => {
     if (gen !== synthGeneration) { finishLine(); return; }
-    if (index >= utterances.length) {
+    if (index >= queue.length) {
       clearSynthKeepAlive();
+      clearSynthGap();
       closeMouth();
       restoreSynthEngine(gen, voice, locale);
       finishLine();
       return;
     }
-    const u = utterances[index]!;
-    const last = index === utterances.length - 1;
+    const piece = queue[index]!;
+    const u = piece.utterance;
+    const last = index === queue.length - 1;
     let settled = false;
+    const advanceQueue = () => {
+      index += 1;
+      if (!last) holdLipSync(liveLip, 700);
+      speakOne();
+    };
     const finish = (advance: boolean) => {
       if (gen !== synthGeneration) { finishLine(); return; }
       if (settled) return;
       settled = true;
       if (!advance) {
         clearSynthKeepAlive();
+        clearSynthGap();
         closeMouth();
         finishLine();
         return;
       }
-      index += 1;
-      if (!last) holdLipSync(liveLip, 700);
-      speakOne();
+      const gap = piece.pauseAfter;
+      if (gap > 0 && !last) {
+        clearSynthGap();
+        synthGapTimer = setTimeout(() => {
+          synthGapTimer = null;
+          if (gen !== synthGeneration) { finishLine(); return; }
+          advanceQueue();
+        }, gap);
+        return;
+      }
+      advanceQueue();
     };
     u.onstart = () => {
       if (gen !== synthGeneration) return;

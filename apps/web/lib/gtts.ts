@@ -61,8 +61,10 @@ export const PITCH_BIAS_FEMALE = 1.04;
  * r2026-10-05.99: NO regex lookbehind (SyntaxError on WebKit < iOS 16.4) —
  * manual scanner: cut right AFTER any clause-ending punctuation, trim each.
  */
-const CLAUSE_END = /[。！？!?；;，,、—…\.]/;
-export function splitChunks(text: string, maxLen = 120): string[] {
+const CLAUSE_END = /[。！？!?；;，,、:：—…\.\n]/;
+
+/** One clause per pause mark — shared by gTTS, Edge SSML, and speechSynthesis. */
+export function splitClauses(text: string): string[] {
   const parts: string[] = [];
   let cur = '';
   for (const ch of text) {
@@ -75,8 +77,12 @@ export function splitChunks(text: string, maxLen = 120): string[] {
   }
   const tail = cur.trim();
   if (tail) parts.push(tail);
+  return parts;
+}
+
+export function splitChunks(text: string, maxLen = 120): string[] {
   const chunks: string[] = [];
-  for (const p of parts) {
+  for (const p of splitClauses(text)) {
     let acc = p;
     // a single clause longer than the cap gets hard-wrapped
     while (acc.length > maxLen) {

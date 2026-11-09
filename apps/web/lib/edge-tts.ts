@@ -29,6 +29,7 @@ import { edgeVoiceId, isFemaleNeuralVoice, isMaleNeuralVoice, isShippingEdgeVoic
 import { edgeCastVoice } from './edge-cast';
 import { clampLeadProsody, cleanForSpeech, isSpeakableText, stripVoicedGlyphs } from './speak-text';
 import { followAudioElement } from './speech';
+import { splitClauses } from './gtts';
 
 // r2026-10-04.89: timeout 7s → 4.5s — the Google-TTS mid tier in voice.ts now
 // catches a dead socket even faster; and stopEdge() finally rejects the
@@ -295,29 +296,6 @@ const pct = (n: number) => `${n >= 0 ? '+' : ''}${Math.round(n * 100)}%`;
 const db = (n: number) => `${n >= 0 ? '+' : ''}${(n * 8).toFixed(1)}dB`;
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
-// Split into breath-sized clauses so the pitch contour can rise and fall inside
-// a sentence — the sing-song quality that makes ChatGPT's voice feel alive.
-// r2026-10-05.99: NO regex lookbehind — `(?<=…)` is a hard SyntaxError on
-// WebKit before Safari 16.4 (iOS 16.4) and it killed the whole voice chain
-// on those devices. Manual scanner: cut right AFTER any clause-ending
-// punctuation, trimming whitespace (equivalent to the old split+trim).
-const CLAUSE_END = /[。！？!?；;，,、—…\.]/;
-function clauses(text: string): string[] {
-  const out: string[] = [];
-  let cur = '';
-  for (const ch of text) {
-    cur += ch;
-    if (CLAUSE_END.test(ch)) {
-      const s = cur.trim();
-      if (s) out.push(s);
-      cur = '';
-    }
-  }
-  const tail = cur.trim();
-  if (tail) out.push(tail);
-  return out;
-}
-
 // ---- current playback (so stopSpeaking can cut it) ----
 let currentAudio: HTMLAudioElement | null = null;
 // r2026-10-04.89 — the promise currently awaiting playback, if any. Cutting
@@ -424,7 +402,7 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
   const baseVol = opts.volumeDelta ?? 0;
   const spoken = cleanForSpeech(text);
   const rising = /[？?]\s*$/.test(spoken);
-  const parts = clauses(spoken).filter(isSpeakableText);
+  const parts = splitClauses(spoken).filter(isSpeakableText);
   const leadText = opts.lead ? cleanForSpeech(opts.lead.text).replace(/[!！]+$/g, '').trim() : '';
   const leadProsody = opts.lead ? clampLeadProsody(opts.lead.pitch, opts.lead.rate) : null;
 
@@ -449,7 +427,7 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
         // musical rests: a beat after phrase ends, a half-beat after commas
         const breakAfter = !isTail
           ? /[。！？!?…\.]$/.test(part) ? `<break time='420ms'/>`
-            : /[,，、；;]$/.test(part) ? `<break time='160ms'/>`
+            : /[,，、；;:：]$/.test(part) ? `<break time='160ms'/>`
             : ''
           : '';
         return prosodyClause(part, pitch, rate, baseVol, breakAfter);
@@ -472,8 +450,8 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
       const pitch = clamp(basePitch + wave + tailLift + swellP + (bang ? 0.02 * expr : 0), -0.18, 0.18);
       // breath pauses: commas shorter than sentence ends; ellipses linger
       const breakAfter = /[。！？!?…\.]$/.test(part) && !isTail
-        ? `<break time='${trail ? '320ms' : '230ms'}'/>`
-        : /[,，、；;—]$/.test(part) ? `<break time='110ms'/>`
+        ? `<break time='${trail ? '320ms' : '280ms'}'/>`
+        : /[,，、；;:：—]$/.test(part) ? `<break time='150ms'/>`
         : '';
       return prosodyClause(part, pitch, rate, baseVol, breakAfter);
     })
