@@ -63,7 +63,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     planted: true,
     playable: true,
     vrmaUrl: VRMA('LookAround'),
-    defaultEnabled: false,
+    // Passiveive idle loop beat (relax → stretch → relax → look)
+    defaultEnabled: true,
   },
   {
     num: 4,
@@ -386,7 +387,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     planted: true,
     playable: true,
     vrmaUrl: VRMA('Relax'),
-    defaultEnabled: false,
+    // Passiveive idle loop beat (stretch)
+    defaultEnabled: true,
   },
   {
     num: 33,

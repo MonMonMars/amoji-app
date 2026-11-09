@@ -188,6 +188,8 @@ import { productionChat } from '../lib/backend-client';
 import { stopThinkingSound } from '../lib/thinking-sound';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
 import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerformance, detectMusicStyle } from '../lib/music';
+import { nextPassiveIdleClip, PASSIVE_IDLE_LOOP_TEMPLATE } from '../lib/idle-passive-loop';
+import { resolveContentMotion } from '../lib/content-motion';
 import { clipLabel, PERFORMANCE_CLIPS, type PerformanceClip } from '../lib/performance-clips';
 import { resolvePerfMotion } from '../lib/performance-motion';
 import { SHOWCASE_START, SHOWCASE_YES_RE, pickShowcaseOffer, skillOfferKind, type ShowcaseKind } from '../lib/showcase';
@@ -253,6 +255,8 @@ export interface ChatPanelProps {
 }
 
 const IDLE_AFTER_MS = 40_000;
+/** Advance relax → stretch → look body loop while the user stays quiet. */
+const PASSIVE_IDLE_BODY_MS = 9_000;
 /** user silence beyond this switches idle chatter to direct re-engagement */
 const REENGAGE_AFTER_MS = 110_000;
 /** user silence beyond this gets the soft closer — once, then she waits */
@@ -345,6 +349,9 @@ export default function ChatPanel({
   const lastUserRef = useRef(Date.now());
   const lastChatterAtRef = useRef(0);
   const chatterCountRef = useRef(0);
+  /** Steps the relax → stretch → look body playlist while the room is quiet. */
+  const passiveIdleStepRef = useRef(0);
+  const lastPassiveBodyAtRef = useRef(0);
   const reengageStageRef = useRef(0);
   const greetedRef = useRef(false);
   /** Phase 2: user has sent a real chat turn this open stretch. */
@@ -770,6 +777,24 @@ export default function ChatPanel({
     sayLocal(line, { joy: 0.55 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handHoldCount]);
+
+  // Body idle loop while quiet: relax → stretch → relax → look around → repeat.
+  // Starts a bit before spoken idle chatter so the pose keeps changing even
+  // when she is not talking. Content-driven pins (dance/sing/thinking) still
+  // win while busy / speaking.
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (busyRef.current || isSpeaking() || speechPending() || actionGameRef.current) return;
+      const silent = Date.now() - lastUserRef.current;
+      // After a short calm, start cycling; keep going for as long as idle.
+      if (silent < 8_000) return;
+      if (Date.now() - lastPassiveBodyAtRef.current < PASSIVE_IDLE_BODY_MS) return;
+      lastPassiveBodyAtRef.current = Date.now();
+      const clip = nextPassiveIdleClip([...PASSIVE_IDLE_LOOP_TEMPLATE], passiveIdleStepRef.current++);
+      onAutoIdleRef.current?.(clip);
+    }, 2000);
+    return () => clearInterval(timer);
+  }, []);
 
   // idle chatter + staged re-engagement (r.38): she never lets a quiet room
   // die. Measured from the USER's last real action (message, poke, spoken

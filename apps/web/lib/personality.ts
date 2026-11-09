@@ -11,6 +11,7 @@ import {
   voiceCatchphrases, voiceIdleLines, voiceOpening, voicePokeLines, voiceTone,
   type MotifId, type VoiceId,
 } from './personality-voice';
+import { orderPassiveIdleClips, PASSIVE_IDLE_LOOP_TEMPLATE } from './idle-passive-loop';
 
 export const FEMALE_PERSONALITIES = ['sunny', 'shy', 'playful', 'gentle', 'dreamy', 'spark'] as const;
 export const MALE_PERSONALITIES = ['steady', 'cool', 'warm', 'quiet', 'sporty', 'wry'] as const;
@@ -32,13 +33,9 @@ export interface PersonalityMotion {
   squash: number;
 }
 
-// IdleBreathCalm.vrma (pixiv ChatVRM idle_loop, MIT) is the primary default
-// for every personality: forward head, arms at the sides, feet planted.
-// StandardIdle is the only other standing clip. LookAround, Relax, and
-// WeightShift pitched the head down or swung the arms and stay off this list.
-// Convert-ready, not wired yet: IdleKaykitA, IdleKaykitB, IdleQuaterniusHuman
-// (see public/gallery.html and public/models/anims-fbx/README.txt).
-const CALM_CLIPS = ['IdleBreathCalm', 'StandardIdle'] as const;
+// Passiveive idle while quiet: relax -> stretch -> relax -> look around -> repeat.
+// See idle-passive-loop.ts. HelloWave / dance stay out of this list.
+const CALM_CLIPS = [...PASSIVE_IDLE_LOOP_TEMPLATE] as string[];
 // Procedural fallback when no VRMA binds. Small sway and a slight head tilt
 // only — hugs, hands-behind, and sky-gazing pulled the arms into the body
 // or the head down.
@@ -109,10 +106,12 @@ export function personalityMotion(characterId: string, gender?: 'female' | 'male
 }
 
 export function orderIdleClips(available: string[], characterId: string, gender?: 'female' | 'male'): string[] {
+  // Prefer the shared passive loop (relax → stretch → relax → look). Do NOT
+  // append the rest of the library — that used to sticky-dance through every clip.
+  const loop = orderPassiveIdleClips(available);
+  if (loop.length) return loop;
   const pref = personalityMotion(characterId, gender).idleClips;
-  const front = pref.filter((id) => available.includes(id));
-  const rest = available.filter((id) => !front.includes(id));
-  return [...front, ...rest];
+  return pref.filter((id) => available.includes(id));
 }
 
 const BLURB: Record<PersonalityId, string> = {
