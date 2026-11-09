@@ -45,8 +45,12 @@ describe('procedural backing-track themes (r2026-10-04.48)', () => {
     expect(getTheme('whoever')).toBe(MUSIC_THEMES.default);
   });
 
-  it('resolveStreamPlaylist stays a safe null stub (no scrape URLs)', () => {
+  it('resolveStreamPlaylist returns Mixkit/PD URLs only (no scrape hosts)', () => {
     expect(resolveStreamPlaylist()).toBeNull();
-    expect(resolveStreamPlaylist('jazz')).toBeNull();
+    const jazz = resolveStreamPlaylist('jazz');
+    expect(jazz).toMatch(/^https:\/\//);
+    expect(jazz).not.toMatch(/spotify|youtube|youtu\.be/i);
+    expect(MUSIC_THEMES.jazz?.mood).toMatch(/jazz/i);
+    expect(MUSIC_THEMES.pop?.bpm).toBeGreaterThan(100);
   });
 });

@@ -187,7 +187,7 @@ import { speak, stopSpeaking, sing, playPokeBurst, playLaughBurst, voiceStartedS
 import { productionChat } from '../lib/backend-client';
 import { stopThinkingSound } from '../lib/thinking-sound';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
-import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerformance } from '../lib/music';
+import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerformance, detectMusicStyle } from '../lib/music';
 import { clipLabel, PERFORMANCE_CLIPS, type PerformanceClip } from '../lib/performance-clips';
 import { resolvePerfMotion } from '../lib/performance-motion';
 import { SHOWCASE_START, SHOWCASE_YES_RE, pickShowcaseOffer, skillOfferKind, type ShowcaseKind } from '../lib/showcase';
@@ -554,8 +554,16 @@ export default function ChatPanel({
   };
 
   /** Start a premade song (matched to her gender) or dance bed, and show the pick. */
-  const beginShow = (kind: 'song' | 'dance', ms: number, mood?: string, n = laughCountRef.current, bed = false) => {
+  const beginShow = (
+    kind: 'song' | 'dance',
+    ms: number,
+    mood?: string,
+    n = laughCountRef.current,
+    bed = false,
+    styleHint?: string,
+  ) => {
     // t718: music.ts arms to max(ms, clip.durationMs+600); hold body/mic for songs.
+    // Style (jazz/pop/lofi…) prefers Mixkit royalty-free streams for dance beds.
     const clip = startLibraryPerformance({
       kind,
       characterId,
@@ -565,6 +573,7 @@ export default function ChatPanel({
       n,
       ms,
       bed,
+      style: styleHint,
     });
     // t725–729: song/style → body tag + beat-matched timeScale for CompanionCanvas.
     setPerfMotionProfile(resolvePerfMotion({ id: clip.id, kind: clip.kind, style: clip.style }));
@@ -585,7 +594,7 @@ export default function ChatPanel({
     if (firstLive && alreadySpoken) {
       if (mv === 'dance') {
         triggerMove('dance');
-        beginShow('dance', 9300, mood);
+        beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText));
       } else if (mv) triggerMove(mv);
       notifySpeaking(reply);
       const rest = speechRemainder(reply, alreadySpoken.text);
@@ -598,7 +607,8 @@ export default function ChatPanel({
     if (mv === 'sing') {
       triggerMove('sing');
       applyLlmHints({ joy: 0.88 });
-      whenSpeechIdle(() => beginShow('song', 9300, mood));
+      const style = detectMusicStyle(userText);
+      whenSpeechIdle(() => beginShow('song', 9300, mood, laughCountRef.current, false, style));
       const compact = reply.replace(/\s/g, '');
       const song = compact.length > 0 && compact.length <= 48
         ? reply
@@ -609,7 +619,7 @@ export default function ChatPanel({
     if (mv === 'dance') {
       triggerMove('dance');
       applyLlmHints({ joy: 0.72 });
-      beginShow('dance', 9300, mood);
+      beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText));
       notifySpeaking(reply);
       speak(reply, characterId, lang, hints, undefined, intensity);
       return reply;
@@ -1035,12 +1045,12 @@ export default function ChatPanel({
     // the track is audible and named while she thinks. A sing request skips
     // the thinking filler — the clip is the vocal.
     const requested = detectMove(text);
-    // Sing/dance: moves + procedural clip now; ask taste when vague — streaming
-    // URL hook is resolveStreamPlaylist() in lib/music (follow-up).
+    // Sing/dance: local CC0 clips + Mixkit style streams when the user names a genre.
     if (requested === 'sing' || requested === 'dance') {
       triggerMove(requested);
       applyLlmHints({ joy: requested === 'sing' ? 0.88 : 0.72 });
-      beginShow(requested === 'sing' ? 'song' : 'dance', 18_000, felt?.mood);
+      const style = detectMusicStyle(text);
+      beginShow(requested === 'sing' ? 'song' : 'dance', 18_000, felt?.mood, laughCountRef.current, false, style);
     }
     setThinkingPose(true);
     pushAutoIdle('', undefined, true);
