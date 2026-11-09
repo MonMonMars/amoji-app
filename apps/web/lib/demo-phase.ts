@@ -2,7 +2,8 @@
 // Demo-phase chips above the chat composer — one-tap tutorials for what
 // the character can do when the user would rather not talk or type (esp.
 // iPhone). Labels stay short; `prompt` is a real user line that ChatPanel
-// already knows how to answer (live weather/news, show, dance, sing…).
+// already knows how to answer (live weather/news, show, dance, sing,
+// trainer lessons, instruments, meals, duets, mini-games…).
 
 import type { Lang } from './prefs';
 import { showcaseStoryAsk } from './showcase';
@@ -15,7 +16,17 @@ export type DemoPhaseId =
   | 'dance'
   | 'sing'
   | 'funFact'
-  | 'yoga';
+  | 'yoga'
+  | 'kungfu'
+  | 'taichi'
+  | 'stretch'
+  | 'jog'
+  | 'eat'
+  | 'piano'
+  | 'violin'
+  | 'duet'
+  | 'funScience'
+  | 'tag';
 
 export type DemoPhaseButton = {
   id: DemoPhaseId;
@@ -104,6 +115,106 @@ export const DEMO_PHASE_BUTTONS: readonly DemoPhaseButton[] = [
       yue: '一齊做瑜伽',
       zh: '一起做瑜伽',
       ja: 'ヨガしよう',
+    },
+  },
+  {
+    id: 'kungfu',
+    label: { en: 'Kung fu', yue: '功夫', zh: '功夫', ja: 'カンフー' },
+    prompt: {
+      en: 'show me kung fu',
+      yue: '教我功夫啦',
+      zh: '教我功夫吧',
+      ja: 'カンフー見せて',
+    },
+  },
+  {
+    id: 'taichi',
+    label: { en: 'Tai chi', yue: '太極', zh: '太极', ja: '太極' },
+    prompt: {
+      en: "let's do tai chi",
+      yue: '一齊打太極',
+      zh: '一起打太极',
+      ja: '太極しよう',
+    },
+  },
+  {
+    id: 'stretch',
+    label: { en: 'Stretch', yue: '伸展', zh: '伸展', ja: 'ストレッチ' },
+    prompt: {
+      en: "let's warm up",
+      yue: '一齊熱身',
+      zh: '一起热身',
+      ja: 'ストレッチしよう',
+    },
+  },
+  {
+    id: 'jog',
+    label: { en: 'Jog', yue: '慢跑', zh: '慢跑', ja: 'ジョギング' },
+    prompt: {
+      en: "let's go jogging",
+      yue: '一齊慢跑',
+      zh: '一起慢跑',
+      ja: 'ジョギングしよう',
+    },
+  },
+  {
+    id: 'eat',
+    label: { en: 'Eat', yue: '一齊食', zh: '一起吃', ja: '一緒に食' },
+    prompt: {
+      en: 'eat with me',
+      yue: '一齊食飯喇',
+      zh: '陪我吃饭吧',
+      ja: 'ごはん一緒に食べよう',
+    },
+  },
+  {
+    id: 'piano',
+    label: { en: 'Piano', yue: '鋼琴', zh: '钢琴', ja: 'ピアノ' },
+    prompt: {
+      en: 'play the piano',
+      yue: '彈鋼琴俾我聽',
+      zh: '弹钢琴给我听',
+      ja: 'ピアノを弾いて',
+    },
+  },
+  {
+    id: 'violin',
+    label: { en: 'Violin', yue: '小提琴', zh: '小提琴', ja: 'バイオリン' },
+    prompt: {
+      en: 'play the violin',
+      yue: '拉小提琴俾我聽',
+      zh: '拉小提琴给我听',
+      ja: 'バイオリンを弾いて',
+    },
+  },
+  {
+    id: 'duet',
+    label: { en: 'Duet', yue: '合唱', zh: '合唱', ja: 'デュエット' },
+    prompt: {
+      en: 'sing with me',
+      yue: '一齊唱歌',
+      zh: '陪我唱歌',
+      ja: '一緒に歌おう',
+    },
+  },
+  {
+    id: 'funScience',
+    label: { en: 'Science', yue: '科學', zh: '科学', ja: '科学' },
+    prompt: {
+      en: 'tell me some fun science',
+      yue: '講啲科學趣聞俾我聽',
+      zh: '讲点科学趣味给我听',
+      ja: '面白い科学を教えて',
+    },
+  },
+  {
+    id: 'tag',
+    label: { en: 'Tag', yue: '捉人', zh: '捉人', ja: '鬼ごっこ' },
+    prompt: {
+      en: 'play tag',
+      yue: '玩捉人',
+      zh: '玩捉人游戏',
+      ja: '捕まえて',
     },
   },
 ];
