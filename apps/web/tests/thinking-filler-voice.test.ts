@@ -63,8 +63,8 @@ describe('the wait filler speaks in the reply voice', () => {
 
     calls.length = 0;
     voice.speakThinkingFiller('a03-fumiriya', 'en', undefined, 'hello');
-    // Beats are on a 2s timer; drive them the way the real clock would.
-    await new Promise((r) => setTimeout(r, 2_100));
+    // First beat waits WARMUP_FIRST_MS (3s); drive past that like the real clock.
+    await new Promise((r) => setTimeout(r, 3_200));
     await settle();
 
     expect(calls.length).toBeGreaterThan(0);
@@ -82,7 +82,7 @@ describe('the wait filler speaks in the reply voice', () => {
 
     calls.length = 0;
     voice.speakThinkingFiller('a01-shino', 'yue', undefined, 'hello');
-    await new Promise((r) => setTimeout(r, 2_100));
+    await new Promise((r) => setTimeout(r, 3_200));
     await settle();
 
     expect(calls.length).toBeGreaterThan(0);
@@ -94,7 +94,7 @@ describe('the wait filler speaks in the reply voice', () => {
   it('never plays a recorded clip for the filler, only live TTS', async () => {
     const voice = await import('../lib/voice');
     voice.speakThinkingFiller('a01-shino', 'yue', undefined, 'hello');
-    await new Promise((r) => setTimeout(r, 2_100));
+    await new Promise((r) => setTimeout(r, 3_200));
     await settle();
     // The old path asked voice-clips for a gender um.mp3 — that is the
     // different-person sound Mon heard. Every beat must be gTTS text instead.
@@ -107,7 +107,7 @@ describe('the wait filler speaks in the reply voice', () => {
   it('a real reply drops the filler so the reply is never talked over', async () => {
     const voice = await import('../lib/voice');
     voice.speakThinkingFiller('a01-shino', 'en', undefined, 'hello');
-    await new Promise((r) => setTimeout(r, 2_100));
+    await new Promise((r) => setTimeout(r, 3_200));
     await settle();
     const saidByFiller = calls.length;
     expect(saidByFiller).toBeGreaterThan(0);
