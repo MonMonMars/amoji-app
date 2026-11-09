@@ -188,6 +188,9 @@ export type StrKey =
   // language with one voice says so, and the engines that cannot play are
   // named once instead of being rendered as dead buttons.
   | 'voiceOnlyOneAvailable' | 'voiceEnginesUnavailable'
+  | 'ttsLabTitle' | 'ttsLabHint' | 'ttsLabPlay' | 'ttsLabPlayed'
+  | 'ttsLabStatusWorks' | 'ttsLabStatusBrowser' | 'ttsLabStatusDead'
+  | 'ttsLabStatusGated' | 'ttsLabStatusDemo' | 'ttsLabStatusMissing'
   | 'voiceRegionCantonese' | 'voiceRegionMandarin' | 'voiceRegionTaiwan' | 'voiceRegionJapanese'
   | 'voiceRegionUs' | 'voiceRegionUk' | 'voiceRegionAu' | 'voiceRegionIn' | 'voiceRegionNg'
   | 'voiceFreeFemale' | 'voiceFreeMale'
@@ -273,6 +276,26 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: '其他引擎在此不可用：微软神经语音端点拒绝了本应用，离线模型也未打包。',
     ja: 'ほかのエンジンはここでは使えません。Microsoft のニューラル音声はこのアプリを拒否し、オフラインのモデルは同梱されていません。',
   },
+  ttsLabTitle: {
+    en: 'TTS lab — tap to test each engine',
+    yue: '語音實驗 — 撳吓逐個試',
+    zh: '语音实验 — 点一下逐个试',
+    ja: '音声ラボ — タップして一つずつ試す',
+  },
+  ttsLabHint: {
+    en: 'Every free and backup TTS path from research. Playable ones speak here; demos open in a new tab.',
+    yue: '研究入面所有免費同後備 TTS。得播嘅會喺度出聲；示範會開新分頁。',
+    zh: '研究里所有免费与备用 TTS。能播的会在这里出声；演示会开新标签页。',
+    ja: '調査した無料／バックアップ TTS をすべて並べます。再生できるものはここで鳴り、デモは新しいタブで開きます。',
+  },
+  ttsLabPlay: { en: 'Play', yue: '試聽', zh: '试听', ja: '再生' },
+  ttsLabPlayed: { en: 'playing', yue: '播放緊', zh: '播放中', ja: '再生中' },
+  ttsLabStatusWorks: { en: 'works in-app', yue: 'App 入面可用', zh: '应用内可用', ja: 'アプリ内で動作' },
+  ttsLabStatusBrowser: { en: 'device voices', yue: '裝置聲線', zh: '设备声音', ja: '端末の声' },
+  ttsLabStatusDead: { en: 'endpoint dead', yue: '端點失效', zh: '端点失效', ja: 'エンドポイント停止' },
+  ttsLabStatusGated: { en: 'needs paid key', yue: '要付費金鑰', zh: '需要付费密钥', ja: '有料キーが必要' },
+  ttsLabStatusDemo: { en: 'external demo', yue: '外部示範', zh: '外部演示', ja: '外部デモ' },
+  ttsLabStatusMissing: { en: 'not bundled', yue: '未打包', zh: '未打包', ja: '未同梱' },
   // Voice labels are the region of the speaker behind each Google `tl` code.
   voiceRegionCantonese: { en: 'Cantonese', yue: '廣東話', zh: '粤语', ja: '広東語' },
   voiceRegionMandarin: { en: 'Mandarin', yue: '國語', zh: '普通话', ja: '普通話' },
