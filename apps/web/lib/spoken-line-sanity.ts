@@ -39,7 +39,14 @@ export const SAFE_IDLE_FALLBACK: Record<Lang, readonly string[]> = {
 
 /** Hard-banned idle interrogations (rude / often empty). */
 const BANNED_IDLE_ASK =
-  /what\s+are\s+you\s+thinking\b|what\s+shall\s+we\s+think\s+about\b|what'?s\s+on\s+your\s+mind\b|what'?s\s+your\s+quiet\s+thought\b|penny\s+for\s+your\s+thoughts\b|are\s+you\s+thinking\b|what'?s\s+going\s+on\s+in\s+that\s+head\b|one\s+thing\s+on\s+your\s+mind\b|心入面諗緊咩|你諗緊咩呀|你心入面而家得咩|你而家嘅安靜諗法|今日我哋諗咩好|你在想什么|心里面在想什么|心里现在只有哪一件|你现在的安静想法|今天我们想点什么好|今なに考えてる|何か考えてることある|今、何を考えてる|今日は何を考えよう|今一番頭にあるのは何/i;
+  /what\s+are\s+you\s+thinking\b|what\s+shall\s+we\s+think\s+about\b|what'?s\s+on\s+your\s+mind\b|what\s+is\s+on\s+your\s+mind\b|what'?s\s+your\s+quiet\s+thought\b|quiet\s+thought\s+right\s+now\b|penny\s+for\s+your\s+thoughts\b|are\s+you\s+thinking\b|what'?s\s+going\s+on\s+in\s+that\s+head\b|in\s+that\s+head\s+of\s+yours\b|one\s+thing\s+on\s+your\s+mind\b|tell\s+me\s+what(?:'s|\s+is)\s+on\s+your\s+mind\b|心入面諗緊咩|你諗緊咩|你個腦而家轉緊咩|你心入面而家得咩|你而家嘅安靜諗法|今日我哋諗咩好|你在想什么|你在想什麼|心里面在想什么|脑子里现在转着什么|心里现在只有哪一件|你现在的安静想法|今天我们想点什么好|今なに考えてる|なに考えてる|何か考えてることある|今[、,]?\s*何を考えてる|今日は何を考えよう|今一番頭にあるのは何|頭の中で何が/i;
+
+/** Pixel: never interrogate the user's private thoughts in idle / open / reengage. */
+export function asksUserInnerThoughts(line: string): boolean {
+  const t = (line ?? '').trim();
+  if (!t) return false;
+  return BANNED_IDLE_ASK.test(t);
+}
 
 /**
  * Half-sentence / motif-fill leftovers that shipped as spoken lines.
@@ -80,7 +87,7 @@ export function spokenLineLooksBroken(text: string, opts?: SpokenGateOpts): bool
   if (/\s{2,}/.test(t)) return true;
   if (/^(?:of|to|for|with|and|or|the|a|an)\b/i.test(t)) return true;
   if (!hasCjk && UNFINISHED_EN.test(t) && t.split(/\s+/).length < 8) return true;
-  if ((opts?.mode ?? 'local') === 'idle' && BANNED_IDLE_ASK.test(t)) return true;
+  if ((opts?.mode ?? 'local') === 'idle' && asksUserInnerThoughts(t)) return true;
   return false;
 }
 

@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  asksUserInnerThoughts,
   gateSpokenLine,
   safeIdleFallback,
   spokenLineLooksBroken,
@@ -58,9 +59,11 @@ describe('spokenLineLooksBroken', () => {
       '今一番頭にあるのは何？',
     ];
     for (const ask of asks) {
+      expect(asksUserInnerThoughts(ask), ask).toBe(true);
       expect(spokenLineLooksBroken(ask, { mode: 'idle' }), ask).toBe(true);
       expect(spokenLineLooksBroken(ask, { mode: 'local' }), ask).toBe(false);
     }
+    expect(asksUserInnerThoughts('Looking at a pocket map made me think of you, softly.')).toBe(false);
   });
 
   it('keeps finished companion statements', () => {
