@@ -150,40 +150,24 @@ export const POLLINATIONS_MODEL = 'openai-fast';
 
 /**
  * OVH's keyless chat models we are willing to ask, in preference order.
- * Verified by direct probe against the live endpoint (2026-11-08).
+ * Ranked by the 2026-11-09 live A/B bench (speed · language · reason · price):
+ *   Meta-Llama-3_3-70B  overall 91.7 · med TTFC 934ms · lang 88.3 · reason 90 · 0 empty
+ *   Qwen2.5-VL-72B      overall 90.8 · med TTFC 850ms · lang 85.8 · reason 90 · 0 empty
+ *   Mistral-Small-3.2   overall 87.5 · med TTFC 957ms · lang 85.0 · reason 75 · 0 empty
+ *   Pollinations openai-fast 67.8 (slow ~12s TTFC — kept as separate thin quota only)
+ *   gpt-oss-120b / 20b / Qwen3.8 — often EMPTY `content` (reasoning-only) → excluded
  *
- * Only models that emit `delta.content` may be listed. OVH's reasoning models
- * stream `delta.reasoning` and finish with an EMPTY content string, which
- * would burn a racer's whole 14s budget and return nothing:
- *   Qwen3.6-27B / Qwen3.5-9B / Qwen3.5-397B-A17B → 0 content chars, ~700 of
- *   reasoning. Those are excluded on purpose, not by accident.
+ * Only models that emit `delta.content` may be listed. Reasoning-only empties
+ * (gpt-oss-*, Qwen3.6/3.5/3.8 on many turns) burn the 14s race budget for nothing.
  *
- * Ordering is Cantonese quality first (Amoji is Cantonese-first), then speed:
- *  1. Meta-Llama-3_3-70B-Instruct — best Cantonese by a clear margin. In the
- *     probe it produced genuinely colloquial lines with 囉/嘅/咁 particles and
- *     ZERO Mandarin-only characters, e.g. 「我都係咁囉，你點解返工咁攰呢？」
- *     and 「你哋點解會嘈交呀？算啦，慢慢傾吓，總會解決到嘅。」 Also quick:
- *     0.87-0.96s to first token, with no reasoning phase to pay for.
- *  2. Qwen2.5-VL-72B-Instruct — no reasoning phase either and the same ~0.9s
- *     to first token, with the strongest Cantonese of the Qwen family probed
- *     (「點解唔試下同佢傾計，了解下彼此嘅想法？」). It answers plain text
- *     fine; only the name says VL.
- *  3. gpt-oss-120b — close behind on Cantonese (「聽落你今日真係好辛苦，
- *     記得好好休息同放鬆下先。」) and more headroom than 20b, but it spends
- *     ~450-550 chars of hidden reasoning first, so time-to-first-token is
- *     3.9-12.1s. Last, because the race usually needs the answer sooner.
- *
- * `reasoning_effort` is deliberately NOT sent to any of these: OVH answers
- * HTTP 400 "feature 'reasoning_effort for this model' is not currently
- * supported" for Llama-3.3-70B and Mistral-Small, and it is not needed for
- * the others. And no `Authorization` header is sent at all — a placeholder
- * like `Bearer no-key` is answered with HTTP 403 (verified), so a dummy key
- * from an OpenAI-style SDK would break the whole host.
+ * Ordering: Cantonese quality + reliability first, then speed. All are $0
+ * (2 req/min per IP per model). No `Authorization` header — `Bearer no-key`
+ * returns HTTP 403. Do not send `reasoning_effort` (OVH 400 on Llama/Mistral).
  */
 export const OVH_MODELS = [
   'Meta-Llama-3_3-70B-Instruct',
   'Qwen2.5-VL-72B-Instruct',
-  'gpt-oss-120b',
+  'Mistral-Small-3.2-24B-Instruct-2506',
 ] as const;
 
 /** The Cantonese-first default — what OVH is asked for when nothing is hot. */

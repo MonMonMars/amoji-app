@@ -89,10 +89,18 @@ describe('every racer is its own budget slot', () => {
     expect(OVH_MODEL).toBe('Meta-Llama-3_3-70B-Instruct');
     expect(OVH_MODELS[0]).toBe(OVH_MODEL);
     expect(ovhRacers()[0]!.model).toBe(OVH_MODEL);
-    // and the "no delta.content at all" reasoning-only models are never asked
-    for (const dead of ['Qwen3.6-27B', 'Qwen3.5-9B', 'Qwen3.5-397B-A17B']) {
+    // reasoning-only / empty-content models are never asked (2026-11-09 A/B)
+    for (const dead of [
+      'Qwen3.6-27B',
+      'Qwen3.5-9B',
+      'Qwen3.5-397B-A17B',
+      'Qwen3.8-27B',
+      'gpt-oss-120b',
+      'gpt-oss-20b',
+    ]) {
       expect(OVH_MODELS).not.toContain(dead);
     }
+    expect(OVH_MODELS[2]).toBe('Mistral-Small-3.2-24B-Instruct-2506');
   });
 
   it('asks Pollinations exactly ONCE, under its one anonymous model', () => {
