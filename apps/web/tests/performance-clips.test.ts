@@ -3,7 +3,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
-  PERFORMANCE_CLIPS, clipLabel, performanceGain, pickPerformanceClip,
+  PERFORMANCE_CLIPS, PREFERRED_DEMO_CLIPS, AVOID_DEMO_CLIPS,
+  clipLabel, performanceGain, pickPerformanceClip,
 } from '../lib/performance-clips';
 import { clearSpeechLevel, feedSpeechLevel, sampleSpeech } from '../lib/speech';
 import { startLibraryPerformance } from '../lib/music';
@@ -161,5 +162,20 @@ describe('premade sing and dance library', () => {
       expect(clip!.durationMs).toBeGreaterThanOrEqual(170_000);
       expect(clip!.kind).toBe('song');
     }
+  });
+
+  it('prefers classic / lullaby demos over overtone and SFX beds', () => {
+    for (const id of PREFERRED_DEMO_CLIPS) {
+      expect(PERFORMANCE_CLIPS.some((c) => c.id === id), id).toBe(true);
+    }
+    for (const id of AVOID_DEMO_CLIPS) {
+      expect(PERFORMANCE_CLIPS.some((c) => c.id === id), id).toBe(true);
+    }
+    const picks = new Set<string>();
+    for (let n = 0; n < 24; n++) {
+      picks.add(pickPerformanceClip({ kind: 'song', gender: 'female', lang: 'en', n }).id);
+    }
+    expect([...picks].some((id) => PREFERRED_DEMO_CLIPS.has(id))).toBe(true);
+    expect([...picks].some((id) => AVOID_DEMO_CLIPS.has(id))).toBe(false);
   });
 });

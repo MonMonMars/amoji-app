@@ -92,6 +92,12 @@ export function holdMove(durationMs: number): void {
   if (!moveKind || !(durationMs > 0)) return;
   moveDurOverride = Math.max(durationMs, MOVE_DUR[moveKind] ?? durationMs);
 }
+/** Drop any sticky sing/dance/move so a new talk or demo can take the stage. */
+export function clearMove(): void {
+  moveKind = null;
+  moveAtMs = -Infinity;
+  moveDurOverride = null;
+}
 /** the running performance, normalized 0→1, or undefined when none is active */
 export function activeMove(now = perfNow()): { kind: MoveKind; t: number } | undefined {
   if (!moveKind) return undefined;

@@ -635,18 +635,11 @@ export function startLibraryPerformance(
 }
 
 /**
- * Dip a live library bed so a spoken line (poke, dance reply, intro) stays
- * intelligible. Songs are not spoken through speak(), so a sing performance
- * stays full until something else actually talks. No-op when nothing is playing.
+ * Previously dipped a live library bed under spoken TTS. That made voice
+ * and BGM feel like they were auto-ducking each other mid-utterance.
+ * Spoken voice stays at a fixed gain; dance beds stay at ambient ~30%.
+ * Kept as a no-op so older call sites do not need a chase.
  */
-export function duckLibraryBed(amount = 0.28, ms = 4200): void {
-  if (typeof window === 'undefined' || !clipId) return;
-  duck = Math.max(0, Math.min(1, amount));
-  applyActiveClipGain();
-  if (duckTimer) clearTimeout(duckTimer);
-  duckTimer = setTimeout(() => {
-    duck = 1;
-    duckTimer = null;
-    applyActiveClipGain();
-  }, ms);
+export function duckLibraryBed(_amount = 0.28, _ms = 4200): void {
+  /* no auto duck / boost — voice and BGM keep steady levels */
 }

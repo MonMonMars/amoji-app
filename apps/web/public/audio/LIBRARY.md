@@ -13,6 +13,8 @@ Short clips that only repeated a track already here were skipped. Alternate take
 Asking to **sing** plays `sing-female/` or `sing-male/` at dialogue volume, matched to the companion.
 Asking to **dance** plays `dance/` or `song-bed/` at BGM volume.
 
+**Demo rotation preference:** classic / lullaby-feel vocals (Twinkle Twinkle, Hello There, Joy to the World, Shenandoah, Happy Birthday) and warm beds (Lullaby, Flowerbed, Napping, Music Box) are soft-weighted first. Overtone drones, 1s SFX (`sing-f-citation`), and sparse chant beds stay in the pack for completeness but are deprioritized — see `PREFERRED_DEMO_CLIPS` / `AVOID_DEMO_CLIPS` in `performance-clips.ts`.
+
 | file | title | voice | credit | source |
 |---|---|---|---|---|
 | `dance/dance-silent-dance-floor.mp3` | Silent Dance Floor | — | Umplix | https://opengameart.org/content/dance-music-pack |

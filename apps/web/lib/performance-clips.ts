@@ -706,6 +706,47 @@ export interface ClipQuery {
 }
 
 /**
+ * Classic-feel / lullaby-style demos users actually enjoy (Twinkle, Hello,
+ * Joy, Shenandoah, Happy Birthday, PD opera that still sings clearly).
+ * Prefer these over overtone drones, 1s SFX, or sparse chant beds.
+ */
+export const PREFERRED_DEMO_CLIPS = new Set([
+  'sing-f-twinkle',
+  'sing-f-hello',
+  'sing-f-joy',
+  'sing-f-adele',
+  'sing-f-soave',
+  'sing-f-una-voce',
+  'sing-m-happy-birthday',
+  'sing-m-shenandoah',
+  'sing-m-brindisi',
+  'sing-m-votre-toast',
+  'bed-lullaby',
+  'bed-flowerbed',
+  'bed-happy-adventure',
+  'bed-napping',
+  'bed-shenandoah',
+  'bed-musicbox-tune',
+  'dance-happy-loop',
+  'dance-minstrel',
+]);
+
+/** Short SFX, overtone drones, sparse chants — keep licensed, deprioritize demos. */
+export const AVOID_DEMO_CLIPS = new Set([
+  'sing-f-citation',
+  'sing-f-choir',
+  'sing-m-overtone-e',
+  'sing-m-overtone-c',
+  'sing-m-overtone-a',
+  'sing-m-mass-amen',
+  'sing-m-tuvan',
+  'sing-m-buddham',
+  'sing-m-mass',
+  'bed-beepbox',
+  'bed-deadship',
+]);
+
+/**
  * Pick a clip. A matching mood narrows the pool. For songs, the companion's
  * gender narrows it again to the female or male voice when that voice exists.
  * Language and character add weight but never lock the pool to one file,
@@ -723,6 +764,9 @@ export function pickPerformanceClip(q: ClipQuery): PerformanceClip {
     const voiced = pool.filter((c) => c.voice === q.gender);
     if (voiced.length) pool = voiced;
   }
+  // Drop ultra-short / non-musical SFX from the demo rotation when alternatives exist.
+  const curated = pool.filter((c) => !AVOID_DEMO_CLIPS.has(c.id) && c.durationMs >= 8_000);
+  if (curated.length) pool = curated;
   const styleNeedle = (q.style ?? '').toLowerCase().trim();
   const styleHints =
     styleNeedle && styleNeedle in STYLE_CLIP_HINTS
@@ -733,8 +777,11 @@ export function pickPerformanceClip(q: ClipQuery): PerformanceClip {
     let w = 1;
     if (q.lang && (clip.langs as readonly string[]).includes(q.lang)) w += 1;
     if (q.characterId && clip.characters.includes(q.characterId)) w += 1;
-    // t718: bias toward ~3min songs so "sing" usually gets a long track
-    if (q.kind === 'song' && clip.durationMs >= 120_000) w += 4;
+    // Prefer classic / lullaby-feel demos over long sparse opera packs by default.
+    if (PREFERRED_DEMO_CLIPS.has(clip.id)) w += 6;
+    // Mild bias for medium-length songs; avoid forcing 3+ min first every time.
+    if (q.kind === 'song' && clip.durationMs >= 15_000 && clip.durationMs < 90_000) w += 2;
+    if (q.kind === 'song' && clip.durationMs >= 120_000) w += 1;
     if (styleNeedle && clip.style.toLowerCase().includes(styleNeedle)) w += 5;
     if (styleHints.some((h) => clip.style.toLowerCase().includes(h.toLowerCase()))) w += 3;
     for (let i = 0; i < w; i++) weighted.push(clip);

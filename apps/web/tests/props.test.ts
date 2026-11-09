@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MIC_MOUTH_POS, PROPS, propsForMove, propPresence, type PropPart } from '../lib/props';
+import { MIC_MOUTH_POS, PROPS, propsForMove, propPresence, propEnterFromTop, propMagicDust, type PropPart } from '../lib/props';
 import type { MoveKind } from '../lib/moves';
 
 const SERVED: MoveKind[] = ['sing', 'piano', 'violin', 'eat', 'dine'];
@@ -65,7 +65,7 @@ describe('stage props (r.69)', () => {
   });
 
   it('animated parts declare a hook; hooks are a closed set', () => {
-    const HOOKS = new Set(['none', 'pianoKeys', 'softBob', 'sway', 'sparkle']);
+    const HOOKS = new Set(['none', 'pianoKeys', 'softBob', 'sway', 'sparkle', 'magicDust']);
     let animated = 0;
     for (const p of PROPS) {
       for (const part of p.parts as PropPart[]) {
@@ -84,19 +84,30 @@ describe('stage props (r.69)', () => {
     const head = mic!.parts.find((p) => p.kind === 'sphere' && p.anim === 'softBob');
     expect(head).toBeTruthy();
     expect(head!.pos).toEqual(MIC_MOUTH_POS);
+    expect(mic!.parts.some((p) => p.anim === 'magicDust')).toBe(true);
 
     const [x, y, z] = MIC_MOUTH_POS;
-    expect(Math.abs(x)).toBeLessThanOrEqual(0.14);
+    // Centered on the mouth mid-line with a sensible forward gap.
+    expect(Math.abs(x)).toBeLessThanOrEqual(0.04);
     expect(y).toBeGreaterThanOrEqual(1.30);
     expect(y).toBeLessThanOrEqual(1.48);
-    expect(z).toBeGreaterThanOrEqual(0.10);
-    expect(z).toBeLessThanOrEqual(0.20);
+    expect(z).toBeGreaterThanOrEqual(0.16);
+    expect(z).toBeLessThanOrEqual(0.28);
 
     // Capsule sits in front of the lips (toward +Z), not inside the face shell.
     const nominal: [number, number, number] = [0, 1.38, 0.06];
-    expect(z - nominal[2]).toBeGreaterThanOrEqual(0.08);
-    expect(head!.size[0]).toBe(0.05);
+    expect(z - nominal[2]).toBeGreaterThanOrEqual(0.12);
+    expect(head!.size[0]).toBe(0.045);
     expect(z - nominal[2]).toBeGreaterThanOrEqual(head!.size[0] * 0.9);
+  });
+
+  it('mic enters from above with settling dust, not from the floor', () => {
+    expect(propEnterFromTop(0)).toBeGreaterThan(0.4);
+    expect(propEnterFromTop(0.14)).toBe(0);
+    expect(propEnterFromTop(0.5)).toBe(0);
+    expect(propMagicDust(0)).toBe(1);
+    expect(propMagicDust(0.22)).toBe(0);
+    expect(propMagicDust(0.5)).toBe(0);
   });
 
 });

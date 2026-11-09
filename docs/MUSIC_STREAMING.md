@@ -38,3 +38,9 @@ pickStreamTrack(style, n): StreamTrack | null
 ## Product preference
 
 Ask the user what style they want when the request is vague; map that style to Mixkit / local beds. Prefer stream previews over growing the static export with large audio when a legal catalog exists.
+
+## Demo-phase / sing defaults (2026-11)
+
+`pickPerformanceClip` soft-weights **classic / lullaby-feel** CC0 tracks (Twinkle Twinkle, Hello There, Joy to the World, Shenandoah, Happy Birthday, flowerbed / lullaby beds) and deprioritizes short SFX, overtone drones, and sparse chant beds. All listed files remain **CC0-1.0 / public domain** — see `apps/web/public/audio/LIBRARY.md`. Do **not** ship copyrighted commercial recordings (no Louis Armstrong “What a Wonderful World” masters; use PD/CC0 equivalents already in the pack).
+
+Voice + BGM: spoken TTS keeps a **steady** gain. Library beds stay at ambient ~30% BGM gain and are **not** auto-ducked under dialogue.

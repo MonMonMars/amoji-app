@@ -10,7 +10,7 @@ import { mapFrameToVrm, posesByIds, sampleIdlePoseFrom } from '@amoji/vrm-render
 import { tickEngine, lastLaughAt, activeMove, thinkingPoseActive, getPerfMotionProfile, clearPerfMotionProfile } from '../lib/companion';
 import { setLoadProgress } from '../lib/load-progress';
 import { type MoveKind } from '../lib/moves';
-import { PROPS, propsForMove, propPresence, type PropDef, type PropPart } from '../lib/props';
+import { PROPS, propsForMove, propPresence, propEnterFromTop, propMagicDust, type PropDef, type PropPart } from '../lib/props';
 import { characterById } from '../lib/prefs';
 import { modelUrl } from '../lib/asset';
 import { pokeStyleFor, poseIdsFor, lookFor } from '../lib/persona';
@@ -729,6 +729,8 @@ export default function CompanionCanvas({
       dance: 'Dance',
       sing: 'Sing',
       kungfu: 'Punch',
+      // Idle-rail martial tai chi (lib_C121) — general flow, not cue-synced.
+      taichi: 'lib_C121',
       piano: 'Piano',
       violin: 'Violin',
       eat: 'Eat',
@@ -1962,6 +1964,15 @@ export default function CompanionCanvas({
           const clipName = MOVE_CLIP[mv.kind];
           if (clipName) playPerf(clipName);
         } else if (!mv) {
+          // Rising edge of move-end: stop sticky LoopRepeat sing/dance so a
+          // new talk / demo does not leave her performing forever.
+          if (mvHandled !== null && perfAction) {
+            perfAction.fadeOut(FADE.perfEnd);
+            perfAction = null;
+            perfClipId = null;
+            clearPerfMotionProfile();
+            if (!gameView) nextIdle(FADE.perfEnd);
+          }
           mvHandled = null;
         }
         // r93: idle handover ??when this idle's hold expires and no one-shot
@@ -2183,6 +2194,10 @@ export default function CompanionCanvas({
         }
         pg.group.visible = true;
         pg.group.scale.setScalar(Math.max(pg.scale, 0.001));
+        // Sing mic: settle from above instead of growing up from the floor.
+        const enterT = on && mv ? mv.t : 1;
+        pg.group.position.y = propId === 'micStand' ? propEnterFromTop(enterT) : 0;
+        const dust = propId === 'micStand' ? propMagicDust(enterT) : 0;
         for (const ap of pg.animParts) {
           if (ap.anim === 'pianoKeys') {
             ap.obj.position.y = ap.base.y - 0.011 * Math.max(0, Math.sin(now * 0.014 + ap.phase));
@@ -2192,6 +2207,12 @@ export default function CompanionCanvas({
             ap.obj.rotation.z = ap.baseRotZ + 0.09 * Math.sin(now * 0.004 + ap.phase);
           } else if (ap.anim === 'sparkle') {
             ap.obj.scale.setScalar(1 + 0.08 * Math.max(0, Math.sin(now * 0.009 + ap.phase)));
+          } else if (ap.anim === 'magicDust') {
+            const twinkle = 0.55 + 0.45 * Math.max(0, Math.sin(now * 0.012 + ap.phase));
+            const fall = dust * (0.04 + 0.03 * Math.sin(now * 0.009 + ap.phase));
+            ap.obj.position.y = ap.base.y - (1 - dust) * 0.18 + fall;
+            ap.obj.scale.setScalar(Math.max(0.001, dust * twinkle));
+            ap.obj.visible = dust > 0.02;
           }
         }
       }

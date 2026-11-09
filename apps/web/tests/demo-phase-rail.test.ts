@@ -1,0 +1,24 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
+
+const ROOTDIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+function read(rel: string): string {
+  return fs.readFileSync(path.join(ROOTDIR, rel), 'utf8');
+}
+
+describe('DemoPhaseRail scroll (iPhone + drag)', () => {
+  it('keeps overflow-x scroll, touch pan, and pointer drag wiring', () => {
+    const src = read('components/DemoPhaseRail.tsx');
+    expect(src).toContain('overflow-x-auto');
+    expect(src).toContain('touch-action:pan-x');
+    expect(src).toContain('-webkit-overflow-scrolling:touch');
+    expect(src).toContain('onPointerDown');
+    expect(src).toContain('onPointerMove');
+    expect(src).toContain('scrollLeft');
+    expect(src).toContain('skipClickRef');
+    expect(src).toContain('data-testid="demo-phase-rail"');
+  });
+});
