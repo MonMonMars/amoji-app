@@ -4,6 +4,7 @@
 // SFW: cheerful, kid-safe, no romance and no mean jokes.
 
 import type { Lang } from './prefs';
+import { spokenLineLooksBroken } from './spoken-line-sanity';
 
 export const VOICE_IDS = [
   'sunny', 'shy', 'playful', 'gentle', 'dreamy', 'spark',
@@ -95,10 +96,10 @@ const LEX: Record<MotifId, Record<Lang, Lex>> = {
     ja: { noun: '色', verb: '色を混ぜる', thing: '明るい色' },
   },
   maps: {
-    en: { noun: 'maps', verb: 'trace a path', thing: 'a tiny map' },
-    yue: { noun: '地圖', verb: '畫條小路', thing: '一張細地圖' },
-    zh: { noun: '地图', verb: '画一条小路', thing: '一张小地图' },
-    ja: { noun: '地図', verb: '道をたどる', thing: '小さな地図' },
+    en: { noun: 'maps', verb: 'trace a path', thing: 'a pocket map' },
+    yue: { noun: '地圖', verb: '畫條小路', thing: '一張袖珍地圖' },
+    zh: { noun: '地图', verb: '画一条小路', thing: '一张袖珍地图' },
+    ja: { noun: '地図', verb: '道をたどる', thing: '小さなポケット地図' },
   },
 };
 
@@ -321,50 +322,50 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
   shy: {
     en: [
       'I quietly tried to {verb}… and left room beside me.',
-      '{thing} reminded me of you in a soft way.',
-      'A little {noun} feels like enough company right now.',
+      'Looking at {thing} made me think of you, softly.',
+      'Having {noun} nearby feels like enough company right now.',
       'I may {verb} while we sit — slow and small.',
       'I saved {thing}, just in case it helps the calm.',
-      'Um, {noun} makes me a little shy, and that is okay.',
+      'Um, talking about {noun} makes me a little shy, and that is okay.',
       'I almost hid {thing}, then decided to keep it near.',
       'If you have a minute, we could {verb} at an easy pace.',
-      '{thing} is small, like this quiet hello.',
+      'I keep {thing} here quietly, like this soft hello.',
       'I like quiet {noun} time in rooms like this.',
     ],
     yue: [
       '我靜靜試過{verb}……喺隔離留咗位。',
-      '{thing}輕輕提醒我你。',
-      '少少{noun}而家已經夠陪。',
+      '睇住{thing}，我輕輕諗起你。',
+      '身邊有少少{noun}，而家已經夠陪。',
       '我可能會一邊坐一邊{verb}——慢慢細細。',
       '我留低{thing}，以防萬一幫到手靜。',
-      '嗯，{noun}令我有啲害羞，都唔緊要。',
+      '嗯，講起{noun}令我有啲害羞，都唔緊要。',
       '我差啲收埋{thing}，之後決定放近啲。',
       '你有一分鐘嘅話，我哋可以慢慢{verb}。',
-      '{thing}好細，好似呢聲靜靜嘅你好。',
+      '我將{thing}靜靜放喺度，好似呢聲輕輕嘅你好。',
       '我鍾意喺咁嘅房度過安靜{noun}時間。',
     ],
     zh: [
       '我悄悄试过{verb}……在旁边留了位置。',
-      '{thing}轻轻提醒我想起你。',
-      '一点点{noun}现在就够陪着了。',
+      '看着{thing}，我轻轻想起了你。',
+      '身边有一点点{noun}，现在就够陪着了。',
       '我可能会一边坐一边{verb}——慢慢小小的。',
       '我留着{thing}，以防万一能帮上这份静。',
-      '嗯，{noun}让我有点害羞，也没关系。',
+      '嗯，说起{noun}让我有点害羞，也没关系。',
       '我差点藏起{thing}，后来决定放近一点。',
       '你有一分钟的话，我们可以慢慢{verb}。',
-      '{thing}很小，像这声安静的你好。',
+      '我把{thing}安静地放在这里，像这声轻轻的你好。',
       '我喜欢在这样的房间里过安静的{noun}时光。',
     ],
     ja: [
       'そっと{verb}してみた…そばに席を空けておいたよ。',
-      '{thing}が、やさしくあなたを思い出させた。',
-      '少しの{noun}が、今は十分なお供。',
+      '{thing}を見ていたら、やさしくあなたを思い出した。',
+      'そばに{noun}があるだけで、今は十分なお供。',
       '座りながら{verb}するかも——ゆっくり小さく。',
       '万一のために{thing}を取ってある。落ち着きの助けに。',
-      'えっと、{noun}は少し照れる。それでも大丈夫。',
+      'えっと、{noun}の話は少し照れる。それでも大丈夫。',
       '{thing}を隠しそうになって、近くに置くことにした。',
       '一分あれば、ゆっくり{verb}できるよ。',
-      '{thing}は小さい。この静かな挨拶みたい。',
+      '{thing}を静かに置いてある。このやさしい挨拶みたい。',
       'こんな部屋で、静かな{noun}時間が好き。',
     ],
   },
@@ -422,7 +423,7 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
     en: [
       'I {verb} the way soft rain settles — no hurry.',
       '{thing} rests here if you need a calm anchor.',
-      'A little {noun} can steady a whole afternoon.',
+      'Soft {noun} energy can steady a whole afternoon.',
       'I will {verb} quietly so the room stays kind.',
       'Kept {thing} warm for whoever needs a pause.',
       '{noun} weather inside me feels gentle today.',
@@ -576,7 +577,7 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
       'I will {verb} if that helps the quiet.',
       'No fuss. {thing} is ready when you are.',
       'We can {verb} after a breath, in that order.',
-      '{noun} is on the list, not a rush.',
+      '{noun} can wait on the list — no rush.',
       'I kept {thing} safe for this stretch.',
       'Steady offer: we {verb} together without hurry.',
       'I am here, {noun} and all, keeping steady.',
@@ -622,7 +623,7 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
     en: [
       'I {verb}. That is the whole report for now.',
       '{thing}. Noted and left within reach.',
-      '{noun} is fine. Keeping it low-key.',
+      'Keeping {noun} low-key is fine.',
       'We could {verb}. Or not. Either works here.',
       'I left {thing} there. Your move when you want.',
       '{noun}. Interesting choice. Filing it quietly.',
@@ -672,7 +673,7 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
     en: [
       'I saved {thing} the way a good friend would.',
       'Hey, we could {verb} and swap soft stories later.',
-      '{noun} is better with company in the room.',
+      'Company makes {noun} nicer in the room.',
       'Pull up a chair. I {verb} when friends show up.',
       '{thing} has a warm spot with your name on it.',
       'No pressure — just {noun} and a small joke nearby.',
@@ -725,10 +726,10 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
       '{noun}. Quiet, but good enough.',
       'We could {verb}. Only if the mood stays soft.',
       'I set {thing} down for a later thought.',
-      'Not much to say. {noun} is enough.',
+      'Not much to say. {noun} can be enough.',
       'I might {verb}. Or leave the silence as is.',
       '{thing} can sit with us without noise.',
-      'A small {noun} pause is doing the work.',
+      'A quiet pause with {noun} is doing the work.',
       'I {verb} in the quiet and stay close.',
     ],
     yue: [
@@ -740,7 +741,7 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
       '冇咩好多講。{noun}已經夠。',
       '我可能會{verb}。或者就咁留住靜。',
       '{thing}可以陪我哋，唔使嘈。',
-      '一個細細{noun}停頓正做緊嘢。',
+      '同{noun}一齊嘅靜靜停頓正做緊嘢。',
       '我喺靜入面{verb}，仲挨近。',
     ],
     zh: [
@@ -752,7 +753,7 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
       '没什么好说。{noun}已经够。',
       '我可能会{verb}。或者就这样留着静。',
       '{thing}可以陪着我们，不用吵。',
-      '一个小小{noun}停顿正在做事。',
+      '和{noun}一起的安静停顿正在做事。',
       '我在静里{verb}，还挨近着。',
     ],
     ja: [
@@ -764,7 +765,7 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
       '言うことは少ない。{noun}で足りる。',
       '{verb}するかもしれない。あるいは沈黙のまま。',
       '{thing}は、音を立てずに一緒にいられる。',
-      '小さな{noun}の間が、仕事をしてる。',
+      '{noun}と一緒の静かな間が、仕事をしてる。',
       '静けさの中で{verb}して、近くにいる。',
     ],
   },
@@ -1416,10 +1417,10 @@ const OPENING: Record<VoiceId, Record<Lang, string>> = {
     ja: 'こんにちは、{name}です！元気いっぱいだし、{noun}が大好き。何したい？',
   },
   steady: {
-    en: "Hello, I'm {name}. I'm calm company and I like {noun} — what is on your mind?",
-    yue: '你好，我係{name}。我會靜靜陪你，亦鍾意{noun}。你諗緊咩呀？',
-    zh: '你好，我是{name}。我会安静陪着你，也喜欢{noun}。你在想什么呀？',
-    ja: 'こんにちは、{name}です。落ち着いて一緒にいるよ。{noun}も好き。今なに考えてる？',
+    en: "Hello, I'm {name}. I'm calm company and I like {noun} — what should we talk about?",
+    yue: '你好，我係{name}。我會靜靜陪你，亦鍾意{noun}。我哋傾咩好呀？',
+    zh: '你好，我是{name}。我会安静陪着你，也喜欢{noun}。我们聊什么好呀？',
+    ja: 'こんにちは、{name}です。落ち着いて一緒にいるよ。{noun}も好き。何を話そうか？',
   },
   cool: {
     en: "Hey, I'm {name}. I keep things simple and I like {noun} — want to talk?",
@@ -1471,7 +1472,24 @@ export const PROMPT_HINT: Record<VoiceId, string> = {
 const CADENCE = ['burst', 'aside', 'lilt', 'cheer'] as const;
 
 function fill(template: string, bits: Record<string, string>): string {
-  return template.replace(/\{(\w+)\}/g, (_, key: string) => bits[key] ?? '');
+  // Missing keys used to collapse into empty slots ("a  pause", " reminding you").
+  // Prefer a clear unfinished marker so callers/tests can reject the line.
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => {
+    const value = bits[key];
+    return value == null || value === '' ? `{${key}}` : value;
+  });
+}
+
+/** True when a rendered line still has unfilled {placeholders} or is empty. */
+export function isIncompleteIdleLine(line: string): boolean {
+  const trimmed = line.trim();
+  if (!trimmed) return true;
+  if (/\{[a-zA-Z_]+\}/.test(trimmed)) return true;
+  if (/\ba small map reminding you\b/i.test(trimmed)) return true;
+  if (/\ba tiny map reminded me of you\b/i.test(trimmed)) return true;
+  if (/提醒我你/.test(trimmed)) return true;
+  if (/轻轻提醒我想起你/.test(trimmed)) return true;
+  return false;
 }
 
 export function voiceCatchphrase(voice: VoiceId, motif: MotifId, frame: number, lang: Lang): string {
@@ -1522,7 +1540,10 @@ export function voiceIdleLines(voice: VoiceId, motif: MotifId, frame: number, la
   // made idle talk sound like nonsense. Frame rotates which line leads so two
   // companions who share a voice still differ.
   const lex = LEX[motif][lang];
-  const lines = IDLE[voice][lang].map((body) => fill(body, { noun: lex.noun, verb: lex.verb, thing: lex.thing }));
+  const filled = IDLE[voice][lang]
+    .map((body) => fill(body, { noun: lex.noun, verb: lex.verb, thing: lex.thing }))
+    .filter((line) => !isIncompleteIdleLine(line));
+  const lines = filled.length > 0 ? filled : ['…'];
   const shift = Math.abs(frame) % lines.length;
   return lines.slice(shift).concat(lines.slice(0, shift));
 }

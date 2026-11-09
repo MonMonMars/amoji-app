@@ -10,10 +10,27 @@ import {
   pickIdleCompanionLine,
   resetIdleTalkRecent,
 } from '../lib/idle-talk';
-import { MOTIFS } from '../lib/personality-voice';
+import {
+  MOTIFS,
+  VOICE_IDS,
+  isIncompleteIdleLine,
+  voiceIdleLines,
+} from '../lib/personality-voice';
 import { CHARACTERS, type Lang } from '../lib/prefs';
 
 const LANGS: Lang[] = ['en', 'yue', 'zh', 'ja'];
+
+/** Pixel idle bug: motif fill produced a broken English / truncated CJK fragment. */
+const FORBIDDEN_IDLE_FRAGMENTS = [
+  /a small map reminding you/i,
+  /a tiny map reminded(?: me of you)?/i,
+  /a tiny map is small/i,
+  /A little maps feels/i,
+  /Um, maps makes/i,
+  /^maps is\b/i,
+  /提醒我你/,
+  /轻轻提醒我想起你/,
+];
 
 describe('idle-talk', () => {
   it('rotates motifs away from a sticky first slot', () => {
@@ -61,6 +78,41 @@ describe('idle-talk', () => {
     expect(a.trim().length).toBeGreaterThan(0);
     expect(b.trim().length).toBeGreaterThan(0);
     expect(b).not.toBe(a);
+  });
+
+  it('forbids the Pixel nonsense map line and half-template idle fills', () => {
+    expect(isIncompleteIdleLine('a small map reminding you')).toBe(true);
+    expect(isIncompleteIdleLine('a tiny map reminded me of you in a soft way.')).toBe(true);
+    expect(isIncompleteIdleLine('一張細地圖輕輕提醒我你。')).toBe(true);
+    expect(isIncompleteIdleLine('{thing} reminded me of you')).toBe(true);
+    expect(isIncompleteIdleLine('')).toBe(true);
+    expect(isIncompleteIdleLine('Looking at a pocket map made me think of you, softly.')).toBe(false);
+
+    for (const voice of VOICE_IDS) {
+      for (const motif of MOTIFS) {
+        for (const lang of LANGS) {
+          for (const line of voiceIdleLines(voice, motif, 0, lang)) {
+            expect(isIncompleteIdleLine(line), `${voice}/${motif}/${lang}: ${line}`).toBe(false);
+            for (const re of FORBIDDEN_IDLE_FRAGMENTS) {
+              expect(line, `${voice}/${motif}/${lang}: ${line}`).not.toMatch(re);
+            }
+          }
+        }
+      }
+    }
+
+    resetIdleTalkRecent();
+    for (const c of CHARACTERS.slice(0, 8)) {
+      for (const lang of LANGS) {
+        for (let n = 0; n < 24; n++) {
+          const line = pickIdleCompanionLine(c.id, c.gender, lang, n);
+          expect(isIncompleteIdleLine(line), `${c.id}/${lang}/${n}: ${line}`).toBe(false);
+          for (const re of FORBIDDEN_IDLE_FRAGMENTS) {
+            expect(line, `${c.id}/${lang}/${n}: ${line}`).not.toMatch(re);
+          }
+        }
+      }
+    }
   });
 });
 

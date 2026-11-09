@@ -2,7 +2,7 @@
 // Idle companion talk: statement-only, topic stay/suggest, motif rotation.
 // Mon: never think aloud / ask in idle; less tea; rotate banks.
 import type { Lang } from './prefs';
-import { MOTIFS, type MotifId, type VoiceId, voiceIdleLines } from './personality-voice';
+import { MOTIFS, isIncompleteIdleLine, type MotifId, type VoiceId, voiceIdleLines } from './personality-voice';
 import { personalityProfile } from './personality';
 
 export type IdleTalkMode = 'stay' | 'suggest';
@@ -137,7 +137,11 @@ export function pickIdleCompanionLine(
     return pickBank(bank, lang, n + frame);
   }
   const motif = nextIdleMotif(n + frame, profile.motif);
-  const lines = voiceIdleLines(profile.personality as VoiceId, motif, frame, lang);
+  const lines = voiceIdleLines(profile.personality as VoiceId, motif, frame, lang)
+    .filter((line) => !isIncompleteIdleLine(line));
+  if (lines.length === 0) {
+    return pickBank(STAY_TOPIC_LINES, lang, n + frame);
+  }
   const start = Math.abs(n) % lines.length;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[(start + i) % lines.length]!;
