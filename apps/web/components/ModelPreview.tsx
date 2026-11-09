@@ -19,7 +19,7 @@ import type { VRM } from '@pixiv/three-vrm';
 import { modelUrl } from '../lib/asset';
 import { addCastDaylight, applyCastToneMapping } from '../lib/vrm/cast-lighting';
 import { characterIdFromModelRef } from '../lib/vrm/cast-lighting-profile';
-import { dampenCastMatcap } from '../lib/vrm/cast-materials';
+import { dampenCastMatcap, floorCastShadeColors } from '../lib/vrm/cast-materials';
 
 export default function ModelPreview({
   url,
@@ -68,6 +68,7 @@ export default function ModelPreview({
     loader.load(modelUrl(url) ?? url, (gltf) => {
       if (disposed) { renderer.dispose(); return; }
       const vrm = (gltf as unknown as { userData: { vrm: VRM } }).userData.vrm;
+      floorCastShadeColors(vrm.scene);
       if (characterId) dampenCastMatcap(vrm.scene, characterId);
       // same identity treatment as the chat room: gentle palette tint + build
       const tintCol = new THREE.Color(tint);

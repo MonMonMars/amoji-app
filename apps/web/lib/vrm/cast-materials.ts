@@ -3,7 +3,11 @@
 
 import * as THREE from 'three';
 import { needsMToonUnify } from '../cast-adjust';
-import { needsCastMatcapDampen } from './cast-lighting-profile';
+import {
+  CAST_MATCAP_COLOR_SCALE,
+  CAST_RIM_MIX_SCALE,
+  needsCastMatcapDampen,
+} from './cast-lighting-profile';
 import {
   addMissingEyeHighlight,
   fillEnclosedHoles,
@@ -55,38 +59,77 @@ export function unifyCastMToon(root: THREE.Object3D, characterId: string): numbe
   return n;
 }
 
-/** VRoid ref mats (#1–3): pull matcap/rim mix down so hair does not blow out under key 1.75. */
+/**
+ * VRoid ref mats (#1–3): pull matcap/rim down so hair/face do not blow out
+ * under key 1.75. three-vrm exposes matcapFactor as a Color (vec3), NOT a
+ * float — treating it as a number was a silent no-op in PR #299.
+ */
 export function dampenCastMatcap(root: THREE.Object3D, characterId: string): number {
   if (!needsCastMatcapDampen(characterId)) return 0;
   let n = 0;
-  const cap = (v: number, mul: number) => Math.min(v, v * mul);
   root.traverse((node) => {
     const mesh = node as THREE.Mesh;
     if (!mesh.isMesh || !mesh.material) return;
     const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     for (const mat of mats) {
       const m = mat as THREE.Material & {
-        matcapFactor?: number;
+        matcapFactor?: THREE.Color | number;
         rimLightingMixFactor?: number;
-        lightingMixFactor?: number;
       };
       let touched = false;
-      if (typeof m.matcapFactor === 'number' && m.matcapFactor > 0.01) {
-        m.matcapFactor = cap(m.matcapFactor, 0.42);
+      const cap = m.matcapFactor;
+      if (cap && typeof cap === 'object' && typeof (cap as THREE.Color).r === 'number') {
+        const c = cap as THREE.Color;
+        if (Math.max(c.r, c.g, c.b) > 0.01) {
+          c.multiplyScalar(CAST_MATCAP_COLOR_SCALE);
+          touched = true;
+        }
+      } else if (typeof cap === 'number' && cap > 0.01) {
+        // Defensive: older/alternate MToon builds may still expose a float.
+        (m as { matcapFactor: number }).matcapFactor = Math.min(cap, cap * CAST_MATCAP_COLOR_SCALE);
         touched = true;
       }
       if (typeof m.rimLightingMixFactor === 'number' && m.rimLightingMixFactor > 0.15) {
-        m.rimLightingMixFactor = cap(m.rimLightingMixFactor, 0.55);
-        touched = true;
-      }
-      if (typeof m.lightingMixFactor === 'number' && m.lightingMixFactor > 0.85) {
-        m.lightingMixFactor = Math.min(m.lightingMixFactor, 0.82);
+        m.rimLightingMixFactor = Math.min(
+          m.rimLightingMixFactor,
+          m.rimLightingMixFactor * CAST_RIM_MIX_SCALE,
+        );
         touched = true;
       }
       if (touched) {
         m.needsUpdate = true;
         n += 1;
       }
+    }
+  });
+  return n;
+}
+
+/**
+ * Floor near-black MToon shade so soft toon (Sendagaya ShadeShift −0.6) never
+ * collapses to pure black under grazing key. three-vrm uses shadeColorFactor;
+ * the legacy shadeColor alias does not exist on MToonMaterial.
+ */
+export function floorCastShadeColors(root: THREE.Object3D): number {
+  let n = 0;
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (!mesh.isMesh || !mesh.material) return;
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const mat of mats) {
+      if (isEyeMaterial(mat.name || '', mesh.name || '')) continue;
+      const m = mat as THREE.Material & {
+        shadeColorFactor?: THREE.Color;
+        shadeColor?: THREE.Color;
+      };
+      const shade = m.shadeColorFactor ?? m.shadeColor;
+      if (!shade || typeof shade.r !== 'number') continue;
+      const lum = Math.max(shade.r, shade.g, shade.b);
+      if (lum >= 0.2) continue;
+      if (lum < 1e-4) shade.setRGB(0.45, 0.43, 0.42);
+      else shade.multiplyScalar(0.2 / lum);
+      m.needsUpdate = true;
+      n += 1;
     }
   });
   return n;

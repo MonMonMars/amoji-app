@@ -20,7 +20,7 @@ import {
   type CastDaylightRig,
 } from './vrm/cast-lighting';
 import { characterIdFromModelRef } from './vrm/cast-lighting-profile';
-import { dampenCastMatcap } from './vrm/cast-materials';
+import { dampenCastMatcap, floorCastShadeColors } from './vrm/cast-materials';
 
 interface ThumbEnv {
   renderer: THREE.WebGLRenderer;
@@ -145,6 +145,7 @@ export function requestModelThumb(url: string): Promise<string | null> {
       const loaded = await withTimeout(loadModel(loader, url), 30_000, 'thumbnail load timed out');
       root = loaded.root;
       vrm = loaded.vrm;
+      floorCastShadeColors(root);
       if (characterId) dampenCastMatcap(root, characterId);
       scene.add(root);
       // frame the face exactly like ModelPreview does — head height from the

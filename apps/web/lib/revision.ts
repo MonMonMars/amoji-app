@@ -337,7 +337,9 @@
 // Reasoning-only OVH models that emit no delta.content are never asked, and
 // OVH still gets no Authorization header (a placeholder 403s) and no
 // reasoning_effort (400). The last-resort local lane is unchanged.
-export const APP_REVISION = 'r2026-11-08.143';
+// r2026-11-09.144: VRoid ref #1–3 lighting — matcapFactor is a Color (PR #299 treated it as a float = no-op); shade floors use shadeColorFactor;
+// frontal face fill for Sendagaya/#13; thumb cache bust.
+export const APP_REVISION = 'r2026-11-09.144';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
