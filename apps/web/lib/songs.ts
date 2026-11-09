@@ -40,6 +40,22 @@ export const SONGS: Record<SongLang, string[][]> = {
       '裙擺轉呀轉，節拍跟住我心跳。',
       '大聲唱出自己名，今晚呀，我最閃耀～',
     ],
+    [
+      '雨絲輕打窗，我想起你個笑容。',
+      '粵語情歌輕柔啲，今晚唱俾，我最愛嘅你聽～',
+    ],
+    [
+      '港鐵門一開，城市節奏跟住跑。',
+      '耳機入面流行曲，同你一齊，唱到尾～',
+    ],
+    [
+      '海風吹過維港，燈火一閃一閃。',
+      '女聲輕輕帶住你，慢板情歌，慢慢聽～',
+    ],
+    [
+      '咖啡未凍，旋律已經響。',
+      'Lo-fi 拍子搖呀搖，心都放軟，放低忙～',
+    ],
   ],
   zh: [
     [
@@ -57,6 +73,22 @@ export const SONGS: Record<SongLang, string[][]> = {
     [
       '裙摆轻轻转，节拍跟着心跳走。',
       '唱出自己的名字，今晚呀，我最闪耀～',
+    ],
+    [
+      '晚风轻轻吹，想把心事唱给你。',
+      '流行情歌慢一点，这一句，只给你～',
+    ],
+    [
+      '地铁门一开，城市节拍跟着跑。',
+      '耳机里的流行曲，和你一起，唱到尾～',
+    ],
+    [
+      '钢琴轻轻落，像雨打在窗台。',
+      '抒情慢歌抱一抱，今晚不赶，慢慢来～',
+    ],
+    [
+      '咖啡还热着，旋律已经响。',
+      'Lo-fi 拍子摇呀摇，心也放软，放下忙～',
     ],
   ],
   ja: [
@@ -76,6 +108,22 @@ export const SONGS: Record<SongLang, string[][]> = {
       'スカートがくるり、リズムにのせて。',
       '自分の名前を歌う、今夜、いちばん輝く～',
     ],
+    [
+      '雨音が窓を叩く、君の笑顔を思い出す。',
+      'やさしいバラードで、今夜は君にだけ歌うよ～',
+    ],
+    [
+      '電車のドアが開く、街のビートが走る。',
+      'イヤホンのポップス、一緒に最後まで歌おう～',
+    ],
+    [
+      'ピアノが静かに降る、窓辺の雨みたいに。',
+      'ゆっくり歌おう、急がなくていいからね～',
+    ],
+    [
+      'コーヒーがまだ熱い、メロディが始まる。',
+      'Lo-fiの拍子で、心もふわっとほどけて～',
+    ],
   ],
   en: [
     [
@@ -93,6 +141,26 @@ export const SONGS: Record<SongLang, string[][]> = {
     [
       'Sugar rush and stardust, dancing on my own.',
       'Every little dream I hold, tonight yeah, feels like home~',
+    ],
+    [
+      'City lights like diamonds, humming through the rain.',
+      'Pop song on repeat, girl, I sing your name again~',
+    ],
+    [
+      'Soft piano midnight, secrets in the air.',
+      'Ballad for your heartache, I will meet, you there~',
+    ],
+    [
+      'Kick drum in my sneakers, chorus in my chest.',
+      'Hip-hop little ditty, we can dance, no stress~',
+    ],
+    [
+      'Lo-fi vinyl crackle, coffee getting cold.',
+      'Quiet beats and daydreams, stories yet, untold~',
+    ],
+    [
+      'Neon Cantonese evenings, ferry lights below.',
+      'Female pop confession, let the soft, chorus flow~',
     ],
   ],
 };
@@ -162,6 +230,12 @@ export const DUETS: Record<SongLang, string[][]> = {
       '啦啦啦～你嗰句好聽過我㗎，再嚟一次吖？',
       '最後一句一齊唱——預備，唱～',
     ],
+    [
+      '流行副歌嚟啦——你接唔接得住呢句？',
+      '橋段交俾你，我輕輕同你和，得唔得？',
+      '靚呀！呢句和音閃親——再嚟多一次？',
+      '大結局一齊唱——燈亮，心亮，唱～',
+    ],
   ],
   zh: [
     [
@@ -185,6 +259,12 @@ export const DUETS: Record<SongLang, string[][]> = {
       'Your line now — I\'ll harmonize behind you, ready?',
       'La la la~ you sound even better than me, one more?',
       'Last line together — and a one, and a two, sing~',
+    ],
+    [
+      'Pop chorus rising — can you catch this hook with me?',
+      'Your turn on the bridge, I\'ll echo you softly, yeah?',
+      'Nice! That harmony glowed — one more sparkle pass?',
+      'Finale together — lights up, hearts up, sing~',
     ],
   ],
 };

@@ -45,8 +45,10 @@ describe('song bank (r2026-10-03.40)', () => {
     expect(pickSong('yue', 0)).toBe(SONGS.yue![0]);
     expect(pickSong('yue', 1)).toBe(SONGS.yue![1]);
     expect(pickSong('yue', 2)).toBe(SONGS.yue![2]);
-    expect(pickSong('yue', 4)).toBe(SONGS.yue![0]);
+    expect(pickSong('yue', SONGS.yue!.length)).toBe(SONGS.yue![0]);
     expect(pickSong('en', 5)).toBe(SONGS.en![5 % SONGS.en!.length]);
+    expect(SONGS.en!.length).toBeGreaterThanOrEqual(8);
+    expect(SONGS.yue!.length).toBeGreaterThanOrEqual(8);
   });
 
   it('melody contour is musical: 6-12 notes inside the SSML window', () => {

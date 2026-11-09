@@ -1,32 +1,40 @@
-# Music streaming / playlist stub
+# Music streaming / playlist
 
 ## Today
 
-Sing, dance, and piano use **original procedural WebAudio** themes plus optional **bundled library clips** (`apps/web/lib/music.ts`, `performance-clips`). No third-party stream scrape, no undocumented CDN hotlinks.
+Sing, dance, and piano use three layers:
 
-## Stub
+1. **Original procedural WebAudio** themes (`apps/web/lib/music.ts`) — including style aliases (`pop`, `jazz`, `lofi`, `hiphop`, `electronic`, `ballad`, `rock`, `cantopop`).
+2. **Bundled CC0 clips** under `apps/web/public/audio/` (`performance-clips.ts`, `LIBRARY.md`).
+3. **Royalty-free stream previews** from Mixkit Free Stock Music (`music-catalog.ts`) when the user names a genre (e.g. “play jazz”, “粵語歌”, “lofi”).
+
+TTS karaoke ditties live in `songs.ts` (original lyrics; no third-party audio).
+
+## API
 
 ```ts
-/** Prefer a legal catalog URL when one exists; otherwise null → keep WebAudio. */
-export function resolveStreamPlaylist(_style?: string): string | null {
-  return null;
-}
+resolveStreamPlaylist(style?: string): string | null
+detectMusicStyle(text: string): MusicStyleId | undefined
+pickStreamTrack(style, n): StreamTrack | null
 ```
 
-Call sites may check this before falling back to `startPerformanceMusic` / `startLibraryPerformance`. Returning `null` is the correct shipping behavior until a licensed source is wired.
+- Empty style → `null` → keep local CC0 / procedural band.
+- Named style → HTTPS Mixkit preview URL (or PD) played via `<audio>` for **dance beds**.
+- Sung “songs” still prefer gendered CC0 vocal clips + original lyric bank.
 
-## Allowed future sources
+## Allowed sources
 
-- First-party hosted files with clear redistribution rights
-- Explicit embed APIs / oEmbed partners under their ToS
-- Royalty-free catalogs with a documented license file in-repo or in ASSETS
+- First-party hosted CC0 files (`public/audio/`)
+- Mixkit Free Stock Music License (commercial OK; no attribution required)
+- Explicit Wikimedia / public-domain recordings already in the CC0 pack
+- Future: oEmbed partners under their ToS
 
 ## Not allowed
 
 - Scraping Spotify, YouTube, Apple Music, NetEase, etc.
 - Hard-coding private stream manifests or DRM-bypass URLs
-- Shipping copyrighted karaoke beds without a license row in `docs/ASSETS.md`
+- Shipping copyrighted karaoke beds without a license row in `docs/ASSETS.md` / `LIBRARY.md`
 
 ## Product preference
 
-Prefer **stream/embed URLs** over growing the static export with large audio when a legal catalog exists; until then keep the procedural band.
+Ask the user what style they want when the request is vague; map that style to Mixkit / local beds. Prefer stream previews over growing the static export with large audio when a legal catalog exists.

@@ -20,6 +20,13 @@ import {
   CLIP_BASE_GAIN, pickPerformanceClip,
   type ClipQuery, type PerformanceClip,
 } from './performance-clips';
+import {
+  pickStreamTrack,
+  STYLE_THEME_ID,
+  type MusicStyleId,
+} from './music-catalog';
+export { detectMusicStyle, resolveStreamPlaylist, pickStreamTrack, STREAM_TRACKS } from './music-catalog';
+export type { MusicStyleId, StreamTrack } from './music-catalog';
 
 export interface MusicTheme {
   /** personality group this theme belongs to */
@@ -54,21 +61,20 @@ export const MUSIC_THEMES: Record<string, MusicTheme> = {
   mika:    { mood: 'laid-back',   bpm: 82,  wave: 'sine',     root: -7, scale: MAJOR, progression: [0, 4, 1, 3], bassEvery: 4, volume: 0.11 },
   luna:    { mood: 'dreamy',      bpm: 72,  wave: 'sine',     root: 3,  scale: MINOR, progression: [0, 2, 4, 3], bassEvery: 8, volume: 0.10 },
   anchor:  { mood: 'sea shanty',  bpm: 92,  wave: 'sawtooth', root: -5, scale: MINOR, progression: [0, 0, 3, 4], bassEvery: 4, volume: 0.10 },
+  // Style aliases (user asks for jazz / pop / etc.) → procedural beds
+  pop:     { mood: 'bright pop',  bpm: 112, wave: 'triangle', root: 2,  scale: MAJOR, progression: [0, 4, 5, 3], bassEvery: 2, volume: 0.11 },
+  jazz:    { mood: 'smoky jazz',  bpm: 90,  wave: 'sine',     root: -3, scale: MINOR, progression: [0, 3, 4, 5], bassEvery: 2, volume: 0.11 },
+  hiphop:  { mood: 'boom bap',    bpm: 96,  wave: 'square',   root: -5, scale: MINOR, progression: [0, 0, 3, 5], bassEvery: 2, volume: 0.10 },
+  lofi:    { mood: 'lofi bed',    bpm: 76,  wave: 'sine',     root: 0,  scale: PENTA, progression: [0, 2, 4, 3], bassEvery: 4, volume: 0.09 },
+  electronic: { mood: 'pulse',    bpm: 124, wave: 'sawtooth', root: 5,  scale: MAJOR, progression: [0, 3, 4, 3], bassEvery: 2, volume: 0.09 },
+  ballad:  { mood: 'slow ballad', bpm: 68,  wave: 'sine',     root: -2, scale: MAJOR, progression: [0, 4, 1, 5], bassEvery: 8, volume: 0.10 },
+  rock:    { mood: 'drive rock',  bpm: 118, wave: 'sawtooth', root: -4, scale: MAJOR, progression: [0, 0, 4, 5], bassEvery: 2, volume: 0.10 },
+  cantopop:{ mood: 'canto glow',  bpm: 104, wave: 'triangle', root: 0,  scale: MAJOR, progression: [0, 4, 5, 4], bassEvery: 2, volume: 0.11 },
 };
 
 /** a character's theme — unknown ids fall back to the warm-pop default */
 export function getTheme(characterId: string): MusicTheme {
   return MUSIC_THEMES[characterId] ?? MUSIC_THEMES['default']!;
-}
-
-/**
- * Prefer a royalty-free streaming/embed URL for sing/dance beds when a legal
- * catalog exists. Until then WebAudio + `performance-clips` stay primary.
- * `style` is reserved for the user's music/dance preference; always returns
- * null today — never scrape commercial platforms (see docs/MUSIC_STREAMING.md).
- */
-export function resolveStreamPlaylist(_style?: string): string | null {
-  return null;
 }
 
 /** equal temperament: semitone offset from A4 → Hz */
@@ -563,14 +569,51 @@ async function playClip(clip: PerformanceClip, token: number, characterId: strin
 }
 
 /**
- * Play a premade song or dance bed from the library. Safe to call again with
- * the same pick — the show keeps going and only the timer re-arms — so a
- * reply that arrives mid-clip does not restart it. A new chat message ends
- * it via endPerformanceMusic(). Where WebAudio can't decode the file, the
- * same clip plays through an &lt;audio&gt; element; if that fails too, the
- * procedural band covers the show.
+ * Play a premade song or dance bed from the library. When `style` is set and
+ * a royalty-free stream URL exists, prefer that bed (HTMLAudioElement);
+ * otherwise local CC0 clips, then procedural band.
  */
-export function startLibraryPerformance(q: ClipQuery & { ms: number }): PerformanceClip {
+export function startLibraryPerformance(
+  q: ClipQuery & { ms: number; style?: MusicStyleId | string },
+): PerformanceClip {
+  const styleId = q.style as MusicStyleId | undefined;
+  const stream = styleId ? pickStreamTrack(styleId, q.n ?? 0) : null;
+  if (stream && q.kind === 'dance') {
+    const synthetic: PerformanceClip = {
+      id: `stream:${stream.id}`,
+      kind: 'dance',
+      style: stream.style,
+      file: stream.url,
+      durationMs: stream.durationMs,
+      volume: 'bgmVol',
+      moods: ['happy', 'neutral'],
+      langs: ['en', 'yue', 'zh', 'ja'],
+      characters: [],
+      labels: { en: stream.title, yue: stream.title, zh: stream.title, ja: stream.title },
+      license: 'CC0-1.0',
+      credit: stream.credit,
+      source: stream.source,
+    };
+    const holdMs = Math.max(q.ms, stream.durationMs + 600);
+    if (isMasterMuted() || typeof window === 'undefined') return synthetic;
+    if (clipId === synthetic.id && perfPreserve) {
+      armPerformance(holdMs);
+      return synthetic;
+    }
+    endPerformanceMusic();
+    perfPreserve = true;
+    duck = 1;
+    clipId = synthetic.id;
+    clipVolumeKey = 'bgmVol';
+    clipBase = CLIP_BASE_GAIN.dance;
+    clipCharacter = q.characterId ?? STYLE_THEME_ID[styleId ?? 'default'] ?? 'default';
+    armPerformance(holdMs);
+    const token = ++loadToken;
+    if (!playClipElement(stream.url, token, clipCharacter)) {
+      startMusic(clipCharacter);
+    }
+    return synthetic;
+  }
   const clip = pickPerformanceClip(q);
   const holdMs = Math.max(q.ms, (clip.durationMs || 0) + 600);
   if (isMasterMuted() || typeof window === 'undefined') return clip;

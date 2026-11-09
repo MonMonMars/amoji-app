@@ -6,6 +6,9 @@
 // Dance tracks and instrumental beds use BGM volume.
 // Pack v2 entries are appended so rotation index 0 stays the original first clip.
 // License: public/audio/LIBRARY.md (CC0 / public domain only; no CC-BY).
+// Genre soft-weights: see STYLE_CLIP_HINTS in music-catalog.ts.
+
+import { STYLE_CLIP_HINTS, type MusicStyleId } from './music-catalog';
 
 export type PerformanceKind = 'song' | 'dance';
 export type PerformanceLang = 'en' | 'yue' | 'zh' | 'ja';
@@ -698,6 +701,8 @@ export interface ClipQuery {
   n?: number;
   /** Instrumental song-bed only. Sung tracks stay on kind song. */
   bed?: boolean;
+  /** User-requested genre (pop / jazz / lofi…); soft-weights matching styles. */
+  style?: string;
 }
 
 /**
@@ -718,6 +723,11 @@ export function pickPerformanceClip(q: ClipQuery): PerformanceClip {
     const voiced = pool.filter((c) => c.voice === q.gender);
     if (voiced.length) pool = voiced;
   }
+  const styleNeedle = (q.style ?? '').toLowerCase().trim();
+  const styleHints =
+    styleNeedle && styleNeedle in STYLE_CLIP_HINTS
+      ? STYLE_CLIP_HINTS[styleNeedle as MusicStyleId]
+      : [];
   const weighted: PerformanceClip[] = [];
   for (const clip of pool) {
     let w = 1;
@@ -725,6 +735,8 @@ export function pickPerformanceClip(q: ClipQuery): PerformanceClip {
     if (q.characterId && clip.characters.includes(q.characterId)) w += 1;
     // t718: bias toward ~3min songs so "sing" usually gets a long track
     if (q.kind === 'song' && clip.durationMs >= 120_000) w += 4;
+    if (styleNeedle && clip.style.toLowerCase().includes(styleNeedle)) w += 5;
+    if (styleHints.some((h) => clip.style.toLowerCase().includes(h.toLowerCase()))) w += 3;
     for (let i = 0; i < w; i++) weighted.push(clip);
   }
   const n = Math.abs(q.n ?? 0);
