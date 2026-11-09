@@ -244,7 +244,8 @@ export type StrKey =
   | 'gateHelpTabMuted' | 'gateHelpRetry' | 'gateHelpContinue' | 'gateHelpNote'
   | 'gateMicTitle' | 'gateMicBody' | 'gateMicAllow' | 'gateMicSkip'
   | 'gateMicGranted' | 'gateMicDenied' | 'gateMicUnsupported' | 'gateEnter'
-  | 'preChatGateTitle' | 'preChatGateLead' | 'preChatEnterChat' | 'preChatUnmuteHint' | 'preChatSoundOk'
+  | 'preChatGateTitle' | 'preChatGateLead' | 'preChatEnterChat' | 'preChatUnmuteHint'
+  | 'preChatHeardOk'
   // adult-only replacement for the old Kid Mode row in Settings
   | 'settingsAdultOnly'
   // Appended after the safety keys for the 2026-11-08 licensing pass: the
@@ -1085,7 +1086,12 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: '全部静音仍开着——点「取消全部静音」或再试听。',
     ja: '全体ミュートがオンです。「すべて解除」か、もう一度テスト再生を。',
   },
-  preChatSoundOk: { en: 'Sound is unmuted. Did you hear her?', yue: '聲已開。聽到佢未？', zh: '声音已开。听到她了吗？', ja: '音声オン。聞こえましたか？' },
+  preChatHeardOk: {
+    en: 'Sound check OK — you can continue, or allow the microphone next.',
+    yue: '聲測試 OK——可以繼續，或者下一步允許咪高峰。',
+    zh: '声音测试 OK——可以继续，或下一步允许麦克风。',
+    ja: '音チェックOK——続けても、次にマイクを許可しても大丈夫です。',
+  },
   settingsAdultOnly: {
     en: '18+ · adult only',
     yue: '18+ · 只限成人',

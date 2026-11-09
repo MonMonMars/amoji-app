@@ -12,6 +12,9 @@ import { markChatAudioReady, stashPriorMasterMuteForChat } from '../lib/pre-chat
 import { primeChatStartGesture } from '../lib/chat-start-gesture';
 import EarlyAudioUnlock from './EarlyAudioUnlock';
 
+/** Soft sound-check step after the sample finishes (or is replayed). */
+export type SoundCheckUi = 'idle' | 'asked' | 'ok' | 'help';
+
 export default function PreChatAudioGate({
   onDone,
   showBack = true,
@@ -24,6 +27,8 @@ export default function PreChatAudioGate({
   const router = useRouter();
   const [lang, setLang] = useState<Lang>('en');
   const [soundTested, setSoundTested] = useState(false);
+  const [soundUi, setSoundUi] = useState<SoundCheckUi>('idle');
+  const [heard, setHeard] = useState<'yes' | 'no' | null>(null);
   const [playing, setPlaying] = useState(false);
   const [mic, setMic] = useState<MicOutcome | 'pending'>('pending');
   const [micBusy, setMicBusy] = useState(false);
@@ -37,6 +42,9 @@ export default function PreChatAudioGate({
   }, []);
 
   const playSample = useCallback(async () => {
+    // Re-click always restarts the hear/not-hear choice after playback.
+    setHeard(null);
+    setSoundUi('idle');
     setPlaying(true);
     try { if (isMasterMuted()) setMasterMuted(false); } catch { /* ignore */ }
     try { if (!voiceEnabled()) setVoiceEnabled(true); } catch { /* ignore */ }
@@ -50,17 +58,24 @@ export default function PreChatAudioGate({
     } finally {
       setPlaying(false);
       setSoundTested(true);
+      setSoundUi('asked');
     }
   }, [lang]);
 
   const allowMic = useCallback(async () => {
+    // Re-click re-triggers the browser/iOS permission prompt.
     setMicBusy(true);
-    setMic(await requestMic());
-    setMicBusy(false);
+    try {
+      const outcome = await requestMic();
+      setMic(outcome);
+      if (outcome === 'granted') setMicPreflightSession(true);
+    } finally {
+      setMicBusy(false);
+    }
   }, []);
 
-  // Best-effort auto prompt on mount: unmute, warm AudioContext, request mic.
-  // iOS may refuse without a gesture — that is fine; Continue stays enabled.
+  // Best-effort auto prompt on mount: unmute + warm AudioContext + mic.
+  // iOS may refuse without a gesture — that is fine; Allow stays available.
   useEffect(() => {
     if (autoStarted.current) return;
     autoStarted.current = true;
@@ -87,14 +102,20 @@ export default function PreChatAudioGate({
     const micOutcome: MicOutcome =
       mic === 'pending' ? 'skipped' : mic;
     if (micOutcome === 'granted') setMicPreflightSession(true);
+    const audioHeard =
+      heard === 'yes' || heard === 'no'
+        ? heard
+        : speakerOk
+          ? 'yes'
+          : 'no';
     passEntryGate({
-      audioHeard: speakerOk ? 'yes' : 'no',
+      audioHeard,
       mic: micOutcome,
     });
     markChatAudioReady();
     if (onDone) onDone();
     else router.replace(nextHref);
-  }, [mic, nextHref, onDone, router, speakerOk]);
+  }, [heard, mic, nextHref, onDone, router, speakerOk]);
 
   const continueLabel =
     nextHref === '/chat' || nextHref.startsWith('/chat?')
@@ -113,28 +134,118 @@ export default function PreChatAudioGate({
         <h1 className="text-2xl font-bold">{t(lang, 'preChatGateTitle')}</h1>
         <p className="mt-2 text-sm text-white/70">{t(lang, 'preChatGateLead')}</p>
         <p className="mt-4 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3 text-sm text-amber-100">{t(lang, 'gateAudioIosHint')}</p>
-        <button type="button" data-testid="pre-chat-test-sound" disabled={playing} onClick={() => void playSample()} className="ui-btn mt-3 h-12 w-full rounded-full bg-white font-semibold text-black">
+
+        <button
+          type="button"
+          data-testid="pre-chat-test-sound"
+          disabled={playing}
+          onClick={() => void playSample()}
+          className="ui-btn mt-3 h-12 w-full rounded-full bg-white font-semibold text-black"
+        >
           {playing ? t(lang, 'gateAudioPlaying') : t(lang, 'gateAudioTest')}
         </button>
-        {soundTested && (
-          <p className="mt-2 text-xs text-white/55">{isMasterMuted() ? t(lang, 'preChatUnmuteHint') : t(lang, 'preChatSoundOk')}</p>
+
+        {isMasterMuted() && soundTested && (
+          <p className="mt-2 text-xs text-amber-100/90">{t(lang, 'preChatUnmuteHint')}</p>
         )}
+
+        {soundUi === 'asked' && (
+          <div data-testid="pre-chat-hear-ask" className="mt-4 space-y-3">
+            <p className="text-sm text-white/80">{t(lang, 'gateAudioQuestion')}</p>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <button
+                type="button"
+                data-testid="pre-chat-hear-yes"
+                onClick={() => {
+                  setHeard('yes');
+                  setSoundUi('ok');
+                }}
+                className="ui-btn h-11 flex-1 rounded-full bg-emerald-400/90 font-semibold text-neutral-950"
+              >
+                {t(lang, 'gateAudioYes')}
+              </button>
+              <button
+                type="button"
+                data-testid="pre-chat-hear-no"
+                onClick={() => {
+                  setHeard('no');
+                  setSoundUi('help');
+                }}
+                className="ui-btn h-11 flex-1 rounded-full border border-white/25 bg-white/10 font-semibold text-white"
+              >
+                {t(lang, 'gateAudioNo')}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {soundUi === 'ok' && (
+          <p
+            data-testid="pre-chat-hear-ok"
+            className="mt-4 rounded-2xl border border-emerald-300/35 bg-emerald-400/10 p-3 text-sm text-emerald-50"
+          >
+            {t(lang, 'preChatHeardOk')}
+          </p>
+        )}
+
+        {soundUi === 'help' && (
+          <div
+            data-testid="pre-chat-hear-help"
+            className="mt-4 space-y-3 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3 text-sm text-amber-50"
+          >
+            <p className="font-semibold">{t(lang, 'gateHelpTitle')}</p>
+            <ul className="list-disc space-y-2 pl-5 text-amber-50/90">
+              <li>{t(lang, 'gateHelpSwitch')}</li>
+              <li>{t(lang, 'gateHelpVolume')}</li>
+              <li>{t(lang, 'gateHelpBluetooth')}</li>
+              <li>{t(lang, 'gateHelpTabMuted')}</li>
+            </ul>
+            <p className="text-xs text-amber-100/80">{t(lang, 'gateHelpNote')}</p>
+            <button
+              type="button"
+              data-testid="pre-chat-hear-retry"
+              disabled={playing}
+              onClick={() => void playSample()}
+              className="ui-btn h-10 w-full rounded-full bg-white font-semibold text-black"
+            >
+              {t(lang, 'gateHelpRetry')}
+            </button>
+          </div>
+        )}
+
+        <div className="mt-5 space-y-2">
+          <p className="text-sm font-semibold text-white/90">{t(lang, 'gateMicTitle')}</p>
+          <p className="text-xs text-white/55">{t(lang, 'gateMicBody')}</p>
+        </div>
+
         {mic !== 'pending' && (
-          <p data-testid="pre-chat-mic-result" data-outcome={mic} className="mt-4 rounded-2xl border border-white/15 bg-white/5 p-3 text-sm">
+          <p data-testid="pre-chat-mic-result" data-outcome={mic} className="mt-3 rounded-2xl border border-white/15 bg-white/5 p-3 text-sm">
             {mic === 'granted' && t(lang, 'gateMicGranted')}
             {mic === 'denied' && t(lang, 'gateMicDenied')}
             {mic === 'unsupported' && t(lang, 'gateMicUnsupported')}
             {mic === 'skipped' && t(lang, 'gateMicDenied')}
           </p>
         )}
-        {listenSupported() && mic !== 'granted' && mic !== 'unsupported' && (
-          <button type="button" data-testid="pre-chat-mic-allow" disabled={micBusy} onClick={() => void allowMic()} className="ui-btn mt-3 h-11 w-full rounded-full bg-white font-semibold text-black">
+
+        {/* Always keep Allow clickable when the browser supports mic so re-click
+            re-triggers the permission popup — no unused typing field here. */}
+        {listenSupported() && mic !== 'unsupported' && (
+          <button
+            type="button"
+            data-testid="pre-chat-mic-allow"
+            disabled={micBusy}
+            onClick={() => void allowMic()}
+            className="ui-btn mt-3 h-11 w-full rounded-full bg-white font-semibold text-black"
+          >
             {t(lang, 'gateMicAllow')}
           </button>
         )}
+
         {!speakerOk || !micOk ? (
           <p className="mt-4 text-xs text-white/45">{t(lang, 'setupSoundFailLead')}</p>
         ) : null}
+
+        {/* Next always stays enabled — soft gate never traps the user. */}
         <button
           type="button"
           data-testid="pre-chat-enter-chat"
