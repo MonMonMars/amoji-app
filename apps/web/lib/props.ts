@@ -50,10 +50,11 @@ const HEX = (s: string): string => s;
  * Sing-mic capsule center in scene space (meters). Shared offset for the
  * head + sparkle; pole/boom/base are derived so the stand stays coherent.
  * Nominal VRM mouth ~[0, 1.38, 0.06] on a ~1.5m cast facing +Z. Capsule
- * radius 0.05 + softBob ±0.008 — keep a few cm of clearance so faces of
- * varying depth do not clip badly. Closer than the t718 [0.12, 1.44, 0.12].
+ * radius 0.05 + softBob ±0.008 — sit slightly forward (+Z) and to the
+ * singer's mic-hand side (+X) so the mesh does not swallow the prop during
+ * Sing VRMA / curated sing idles (t718 pulled it too close to the lips).
  */
-export const MIC_MOUTH_POS: [number, number, number] = [0.06, 1.39, 0.08];
+export const MIC_MOUTH_POS: [number, number, number] = [0.11, 1.42, 0.17];
 
 /** Stand column slightly outward (+x / +z) from the capsule toward the floor. */
 const MIC_STAND_XZ: [number, number] = [MIC_MOUTH_POS[0] + 0.025, MIC_MOUTH_POS[2] + 0.04];
