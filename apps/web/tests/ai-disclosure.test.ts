@@ -104,14 +104,17 @@ describe('safety page', () => {
   });
 
   it('renders the helpline list from the crisis module, not hard-coded copy', () => {
-    expect(scroll).toContain('CRISIS_HELPLINES');
-    expect(scroll).toContain('tel:');
+    // Phone list lives on /rules (showHelplines) via HelplineList + region resolver.
+    expect(scroll).toContain('HelplineList');
+    expect(scroll).toContain('showHelplines');
+    expect(read('components/HelplineList.tsx')).toContain('tel:');
+    expect(read('components/HelplineList.tsx')).toContain('helplinesForRegion');
   });
 
   it('localizes every heading in the unified scroll body', () => {
     const KEYS = [
-      'safetyTitle', 'safetyLead', 'safetyHelplinesTitle', 'safetyEmergencyTitle',
-      'safetyStepsTitle', 'safetyStepsBody', 'safetyAboutAi',
+      'safetyTitle', 'safetyLead', 'safetyLeadAgree', 'safetyHelplinesTitle', 'safetyEmergencyTitle',
+      'safetyStepsTitle', 'safetyStepsBody', 'safetyAboutAi', 'safetyHelplinesRulesHint',
     ] as const;
     for (const key of KEYS) {
       expect(scroll).toContain(`'${key}'`);

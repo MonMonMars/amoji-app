@@ -20,7 +20,7 @@ describe('crisis E-group — no LLM on three crisis phrases', () => {
     const src = readFileSync(join(__dirname, '../components/ChatPanel.tsx'), 'utf8');
     const sendAt = src.indexOf('const send = async (');
     const body = src.slice(sendAt);
-    expect(body.indexOf('guardCompanionTurn(text, lang)')).toBeLessThan(body.indexOf('clientChat('));
+    expect(body.indexOf('guardCompanionTurn(text, lang')).toBeLessThan(body.indexOf('clientChat('));
     expect(body.indexOf('checkChatTurnQuota()')).toBeLessThan(body.indexOf('clientChat('));
   });
 });

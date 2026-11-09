@@ -148,8 +148,8 @@ export default function LegalGate() {
           <section>
             <h3 className="font-semibold text-white">{t(lang, 'safetyTitle')}</h3>
             <p className="mt-1">{t(lang, 'safetyCrisisLine')}</p>
-            <Link href="/setup#setup-safety-heading" aria-label={t(lang, 'safetyTitle')} className="mt-2 inline-block text-xs text-pink-200/90 underline-offset-4 hover:underline">
-              /setup
+            <Link href="/rules#setup-safety-helplines" aria-label={t(lang, 'safetyTitle')} className="mt-2 inline-block text-xs text-pink-200/90 underline-offset-4 hover:underline">
+              /rules
             </Link>
           </section>
           <p className="text-xs text-white/40">

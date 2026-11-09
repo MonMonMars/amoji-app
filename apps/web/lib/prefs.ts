@@ -221,8 +221,8 @@ export type StrKey =
   // /terms and /safety all render in 4 languages.
   | 'aiNotice'
   | 'privacyTitle' | 'termsTitle' | 'policyVersion' | 'safetyCrisisLine'
-  | 'safetyCrisisTitle' | 'safetyOpenPage'
-  | 'safetyTitle' | 'safetyLead' | 'safetyHelplinesTitle' | 'safetyEmergencyTitle'
+  | 'safetyCrisisTitle' | 'safetyOpenPage' | 'safetyHelplinesRulesHint'
+  | 'safetyTitle' | 'safetyLead' | 'safetyLeadAgree' | 'safetyHelplinesTitle' | 'safetyEmergencyTitle'
   | 'safetyStepsTitle' | 'safetyStepsBody' | 'safetyAboutAi' | 'safetyPrivacyLink'
   // Appended at the tail on purpose (see the note above): reporting an AI
   // reply. Play requires an in-app route for reporting generated content, and
@@ -1152,6 +1152,14 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: '查看求助电话',
     ja: '相談窓口を見る',
   },
+  // Consent / Agree scroll: point at /rules for the numbers — do not list
+  // helplines on the first-run START page itself.
+  safetyHelplinesRulesHint: {
+    en: 'Local helpline numbers live on the Rules & terms page (bottom link on the title screen).',
+    yue: '當地求助電話喺「條款同規則」頁（主頁底部連結）。',
+    zh: '当地求助电话在「条款与规则」页（主页底部链接）。',
+    ja: '地域の相談窓口番号は「規約とルール」ページ（タイトル画面の下部リンク）にあります。',
+  },
   safetyTitle: {
     en: 'If you are in crisis',
     yue: '如果你正喺危機入面',
@@ -1163,6 +1171,13 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: 'Amoji 係 AI 夥伴，唔係危機支援服務、唔係心理治療師、更加唔係緊急求助熱線。佢冇辦法幫你求救、冇辦法接觸到你、亦都保唔到你安全。如果你有傷害自己嘅念頭，請你即刻搵真人——下面嘅電話由受過訓練嘅義工接聽。',
     zh: 'Amoji 是 AI 伙伴，不是危机干预服务、不是心理治疗师，也不是紧急求助热线。它无法代你求救、无法接触到你，也保不住你的安全。如果你有伤害自己的念头，请马上联系真人——下面的电话由受过训练的义工接听。',
     ja: 'Amoji はAIの相棒で、危機対応の窓口でも、心理療法士でも、緊急通報先でもありません。助けを呼ぶことも、あなたに会いに行くことも、安全を守ることもできません。自分を傷つけたい気持ちがあるなら、いますぐ人に連絡してください。下の番号は訓練を受けた相談員が受けています。',
+  },
+  // First-run Agree / START — same disclaimer, but no "numbers below" (those live on /rules).
+  safetyLeadAgree: {
+    en: 'Amoji is an AI companion, not a crisis service, a therapist, or an emergency line. It cannot call for help, cannot reach you, and cannot keep you safe.',
+    yue: 'Amoji 係 AI 夥伴，唔係危機支援服務、唔係心理治療師、更加唔係緊急求助熱線。佢冇辦法幫你求救、冇辦法接觸到你、亦都保唔到你安全。',
+    zh: 'Amoji 是 AI 伙伴，不是危机干预服务、不是心理治疗师，也不是紧急求助热线。它无法代你求救、无法接触到你，也保不住你的安全。',
+    ja: 'Amoji はAIの相棒で、危機対応の窓口でも、心理療法士でも、緊急通報先でもありません。助けを呼ぶことも、あなたに会いに行くことも、安全を守ることもできません。',
   },
   safetyHelplinesTitle: {
     en: 'Talk to someone now',
@@ -1411,6 +1426,16 @@ export interface Prefs {
    * Mini-games use her when the current pick is male or a retired id.
    */
   lastFemale?: string;
+  /**
+   * ISO / country name the user registered or pinned (Settings city).
+   * Used by crisis helpline region precedence after realtime geo.
+   */
+  registerRegion?: string;
+  /**
+   * ISO region inferred from store / browser locale on first launch.
+   * Used by crisis helpline region precedence after register.
+   */
+  downloadRegion?: string;
 }
 
 const KEY = 'amoji.prefs.v1';
@@ -1499,6 +1524,12 @@ export function loadPrefs(): Prefs {
       let lastFemale = femaleLibraryId(typeof p.lastFemale === 'string' ? p.lastFemale : undefined);
       if (picked?.gender === 'female') lastFemale = femaleLibraryId(picked.id) ?? lastFemale;
       if (!lastFemale) lastFemale = femaleLibraryId(DEFAULT_PREFS.character);
+      const registerRegion = typeof p.registerRegion === 'string' && p.registerRegion.trim()
+        ? p.registerRegion.trim()
+        : undefined;
+      const downloadRegion = typeof p.downloadRegion === 'string' && p.downloadRegion.trim()
+        ? p.downloadRegion.trim()
+        : undefined;
       const next: Prefs = {
         character,
         background,
@@ -1508,6 +1539,8 @@ export function loadPrefs(): Prefs {
         bgmVol: volOf(p.bgmVol),
         voiceVol: volOf(p.voiceVol),
         ...(lastFemale ? { lastFemale } : {}),
+        ...(registerRegion ? { registerRegion } : {}),
+        ...(downloadRegion ? { downloadRegion } : {}),
       };
       // Persist migration when an old roster id (juno, kitagawa, …) no longer
       // ships, or when a stored kidMode:true was just coerced off.

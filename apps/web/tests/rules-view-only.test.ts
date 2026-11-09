@@ -72,4 +72,13 @@ describe('rules view-only (title bottom link)', () => {
     expect(rules).not.toContain('/gate/audio');
     expect(quick).not.toContain('requestMic');
   });
+
+  it('view-only shows 「即刻搵人傾」; first-run Agree does not', () => {
+    expect(quick).toContain('showHelplines={viewOnly}');
+    const shared = read('components/setup-one-shared.tsx');
+    expect(shared).toContain("t(lang, 'safetyHelplinesTitle')");
+    expect(shared).toContain('HelplineList');
+    expect(shared).toContain('setup-helplines-rules-hint');
+    expect(t('yue', 'safetyHelplinesTitle')).toBe('即刻搵人傾');
+  });
 });

@@ -154,7 +154,8 @@ import { laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { assetUrl } from '../lib/asset';
 import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
 import { loadStorySession } from '../lib/story-session';
-import { guardCompanionTurn } from '../lib/crisis';
+import { guardCompanionTurn, type HelplineRegion } from '../lib/crisis';
+import { readHelplineLocationHints } from '../lib/crisis-location';
 import {
   checkChatTurnQuota,
   consumeChatTurn,
@@ -203,6 +204,7 @@ import { detectActionGame, setMiniGameChromeHidden, subscribeMiniGameOpen, type 
 import MiniGameOverlay from './MiniGameOverlay';
 import ChatMessage from './ChatMessage';
 import ReportDialog from './ReportDialog';
+import CrisisHelplineDialog from './CrisisHelplineDialog';
 import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodbyeLine, pickMealToast } from '../lib/activities';
 import { detectExercise, startExercise, advanceExercise, exerciseFarewellLine, type ExerciseState } from '../lib/exercises';
 import {
@@ -308,8 +310,10 @@ export default function ChatPanel({
   const [replayHint, setReplayHint] = useState(false);
   // premade sing/dance clip currently on stage — the name is the visible pick
   const [nowPlaying, setNowPlaying] = useState<string | null>(null);
-  // the last turn was caught by the crisis guard — show the /safety card
+  // the last turn was caught by the crisis guard — show the /rules card
   const [crisisCard, setCrisisCard] = useState(false);
+  // warning popup with location-aware 「即刻搵人傾」 numbers (alongside the card)
+  const [crisisPopup, setCrisisPopup] = useState<HelplineRegion | null>(null);
   // the AI reply the user is reporting (null = the report sheet is closed)
   const [reportFor, setReportFor] = useState<string | null>(null);
   const [actionGame, setActionGame] = useState<ActionGame | null>(null);
@@ -918,14 +922,18 @@ export default function ChatPanel({
     // Crisis / self-harm guard — FIRST, before games, duets, live facts and any
     // brain. A fixed human-written reply with real helplines, in her language.
     // The model never sees this turn: a 20B model must not improvise here.
-    const crisis = guardCompanionTurn(text, lang);
+    // Also open the location-aware warning popup (realtime→register→download→lang).
+    const crisisHints = readHelplineLocationHints(lang);
+    const crisis = guardCompanionTurn(text, lang, crisisHints);
     if (crisis.blocked) {
       setCrisisCard(true);
+      setCrisisPopup(crisis.region ?? 'INTL');
       sayLocal(crisis.reply, { sadness: 0.35 });
       done();
       return;
     }
     setCrisisCard(false);
+    setCrisisPopup(null);
     {
       const action = detectActionGame(text);
       if (action) {
@@ -1568,7 +1576,7 @@ export default function ChatPanel({
           >
             <p className="text-xs font-semibold text-rose-50">{t(lang, 'safetyCrisisTitle')}</p>
             <Link
-              href="/setup#setup-safety-heading"
+              href="/rules#setup-safety-helplines"
               className="mt-1 inline-block text-xs text-pink-200 underline-offset-4 hover:underline"
             >
               {t(lang, 'safetyOpenPage')}
@@ -1722,6 +1730,13 @@ export default function ChatPanel({
           accent={accent}
           characterId={characterId}
           onClose={() => setReportFor(null)}
+        />
+      )}
+      {crisisPopup && (
+        <CrisisHelplineDialog
+          lang={lang}
+          region={crisisPopup}
+          onClose={() => setCrisisPopup(null)}
         />
       )}
     </div>

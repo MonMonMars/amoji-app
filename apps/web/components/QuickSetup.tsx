@@ -109,7 +109,11 @@ export default function QuickSetup({
           data-testid="setup-one-scroll"
           className="min-h-0 flex-1 space-y-4 overflow-y-auto rounded-2xl border border-white/10 bg-black/25 px-4 py-4 text-left text-sm leading-relaxed text-white/75"
         >
-          <SetupOneScrollBody lang={lang} showConsentDisclaimer={!viewOnly} />
+          <SetupOneScrollBody
+            lang={lang}
+            showConsentDisclaimer={!viewOnly}
+            showHelplines={viewOnly}
+          />
           <div data-testid="setup-one-scroll-end" aria-hidden className="h-1" />
         </div>
 

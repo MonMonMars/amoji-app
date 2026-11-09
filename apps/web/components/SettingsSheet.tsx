@@ -54,6 +54,7 @@ import { saveHistory } from '../lib/companion-store';
 import { APP_REVISION } from '../lib/revision';
 import { downloadCompanionFile, parseCompanionFile, applyCompanionFile } from '../lib/companion-file';
 import { manualPlace, lastDevicePlace, setManualPlace, clearManualPlace, type Place } from '../lib/live-tools';
+import { setRegisterRegion } from '../lib/crisis-location';
 import {
   addEntry, deleteEntry, deleteDiaryEntry, deleteImportantDate, deletePromise, ensureUserNameFromProfile, exportMemory, loadMemory,
   type Memory, type MemoryType,
@@ -360,6 +361,8 @@ export default function SettingsSheet({
       setPlacePinned(place);
       setPlaceDraft([place.city, place.country].filter(Boolean).join(', '));
       setPlaceState('saved');
+      // Register location for crisis helpline precedence (after realtime geo).
+      setRegisterRegion(place.countryCode || place.country || null);
     }).catch(() => setPlaceState('missing'));
   };
   const useDevicePlace = () => {
@@ -368,6 +371,7 @@ export default function SettingsSheet({
     setPlaceDevice(lastDevicePlace());
     setPlaceDraft('');
     setPlaceState('idle');
+    setRegisterRegion(null);
   };
 
   return (

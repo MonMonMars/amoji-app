@@ -82,9 +82,11 @@ describe('legal copy names the real data recipients', () => {
   it('inlines full safety copy in the unified setup scroll (no separate mini-pages)', () => {
     const shared = read('components/setup-one-shared.tsx');
     expect(shared).toContain('safetyHelplinesTitle');
-    expect(shared).toContain('CRISIS_HELPLINES');
+    expect(shared).toContain('HelplineList');
+    expect(shared).toContain('showHelplines');
     expect(read('app/privacy/page.tsx')).toContain('QuickSetup');
     expect(read('app/safety/page.tsx')).toContain('setup-safety-heading');
+    expect(read('app/safety/page.tsx')).toContain('viewOnly');
   });
 });
 

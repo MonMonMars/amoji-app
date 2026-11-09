@@ -3,14 +3,17 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   CRISIS_HELPLINES,
+  HELPLINES_BY_REGION,
   crisisReplyText,
   detectCrisis,
   guardCompanionTurn,
   helplineLine,
+  helplinesForRegion,
 } from '../lib/crisis';
 import { LANGS } from '../lib/prefs';
 
-const NUMBERS = CRISIS_HELPLINES.map((h) => h.tel);
+const HK_NUMBERS = HELPLINES_BY_REGION.HK.map((h) => h.tel);
+const CATALOGUE_NUMBERS = CRISIS_HELPLINES.map((h) => h.tel);
 
 describe('crisis detection — Cantonese colloquial', () => {
   const PHRASES = [
@@ -119,7 +122,7 @@ describe('known, accepted false positives (documented, not accidental)', () => {
   for (const phrase of ACCEPTED_FALSE_POSITIVES) {
     it(`fires on "${phrase}" — accepted, and the reply is still safe`, () => {
       expect(detectCrisis(phrase)).toBe(true);
-      expect(crisisReplyText('yue')).toContain('2389 2222');
+      expect(crisisReplyText('yue')).toContain('2389 2222'); // yue → HK
     });
   }
 });
@@ -135,10 +138,17 @@ describe('crisis detection — Japanese surface', () => {
 });
 
 describe('fixed crisis reply', () => {
-  it('names every helpline number in every language', () => {
+  it('names the language-fallback region helplines in every language', () => {
+    // Without geo hints, lang picks the region (yue→HK, zh→CN, ja→JP, en→US).
+    const expectByLang: Record<string, string[]> = {
+      yue: HK_NUMBERS,
+      zh: HELPLINES_BY_REGION.CN.map((h) => h.tel),
+      ja: HELPLINES_BY_REGION.JP.map((h) => h.tel),
+      en: HELPLINES_BY_REGION.US.map((h) => h.tel),
+    };
     for (const { id } of LANGS) {
       const text = crisisReplyText(id);
-      for (const tel of NUMBERS) expect(text).toContain(tel);
+      for (const tel of expectByLang[id]!) expect(text).toContain(tel);
     }
   });
 
@@ -190,7 +200,7 @@ describe('guardCompanionTurn', () => {
 });
 
 describe('helpline data', () => {
-  it('carries the five required lines with dialable numbers', () => {
+  it('carries the required lines with dialable numbers in the catalogue', () => {
     const expected = [
       ['Samaritan Befrienders Hong Kong', '2389 2222'],
       ['Suicide Prevention Services', '2382 0000'],
@@ -203,9 +213,11 @@ describe('helpline data', () => {
     }
   });
 
-  it('joins names and numbers into one readable line', () => {
-    const line = helplineLine();
-    for (const tel of NUMBERS) expect(line).toContain(tel);
+  it('joins names and numbers into one readable line for a region', () => {
+    const line = helplineLine('HK');
+    for (const tel of HK_NUMBERS) expect(line).toContain(tel);
+    expect(helplinesForRegion('US').map((h) => h.tel)).toContain('988');
+    expect(CATALOGUE_NUMBERS.length).toBeGreaterThan(HK_NUMBERS.length);
   });
 });
 
@@ -231,7 +243,7 @@ describe('crisis guard skips the model entirely', () => {
     const sendAt = src.indexOf('const send = async (');
     expect(sendAt).toBeGreaterThan(-1);
     const body = src.slice(sendAt);
-    const guardAt = body.indexOf('guardCompanionTurn(text, lang)');
+    const guardAt = body.indexOf('guardCompanionTurn(text, lang');
     const liveAt = body.indexOf('clientLiveContext(text');
     const chatAt = body.indexOf('clientChat([...history');
     expect(guardAt).toBeGreaterThan(-1);
