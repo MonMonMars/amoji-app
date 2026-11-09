@@ -318,6 +318,14 @@ describe('entry gate — wiring', () => {
     expect(gesture).toContain('setMasterMuted(false)');
   });
 
+  it('rules continue to soft audio gate before title', () => {
+    expect(read('components/QuickSetup.tsx')).toContain('/gate/audio?next=');
+    expect(read('components/PreChatAudioGate.tsx')).toContain('passEntryGate');
+    expect(read('components/PreChatAudioGate.tsx')).toContain('markChatAudioReady');
+    expect(read('app/page.tsx')).toContain('splash-boot');
+    expect(read('app/page.tsx')).toContain("router.replace('/setup')");
+  });
+
   it('the guard renders an opaque blocker before it knows, then the gate', () => {
     const guard = read('components/RequireEntryGate.tsx');
     expect(guard).toContain('hasPassedEntryGate');
@@ -328,14 +336,15 @@ describe('entry gate — wiring', () => {
     expect(guard).toMatch(/return <>\{children\}<\/>;/);
   });
 
-  it('one-click setup plays the app voice path, not a beep', () => {
-    const bootstrap = read('lib/one-click-setup.ts');
-    expect(bootstrap).toContain('testVoiceChain');
-    expect(bootstrap).not.toContain('new Audio(');
+  it('soft audio gate plays the app voice path, not a beep', () => {
+    const gate = read('components/PreChatAudioGate.tsx');
+    expect(gate).toContain('testVoiceChain');
+    expect(gate).not.toContain('new Audio(');
+    expect(read('lib/one-click-setup.ts')).not.toContain('new Audio(');
   });
 
-  it('one-click setup asks for the mic with getUserMedia and stops the track', () => {
-    expect(read('lib/one-click-setup.ts')).toContain('requestMic');
+  it('soft audio gate asks for the mic with getUserMedia and stops the track', () => {
+    expect(read('components/PreChatAudioGate.tsx')).toContain('requestMic');
     const mic = read('lib/mic-preflight.ts');
     expect(mic).toContain('getUserMedia');
     expect(mic).toContain('track.stop()');
@@ -348,7 +357,8 @@ describe('entry gate — wiring', () => {
     expect(lib).toMatch(/silent switch/i);
   });
 
-  it('/chat adds per-session audio readiness guard', () => {
+  it('/chat keeps a soft per-session audio marker (never hard-blocks)', () => {
     expect(read('app/chat/page.tsx')).toContain('RequireChatAudio');
+    expect(read('components/RequireChatAudio.tsx')).not.toContain("status === 'blocked'");
   });
 });

@@ -14,7 +14,6 @@ import {
 import { STORY_SCENES, rollStory, type StoryScene } from '../lib/stories';
 import { saveStorySession } from '../lib/story-session';
 import { primeChatStartGesture } from '../lib/chat-start-gesture';
-import { hasChatAudioReady } from '../lib/pre-chat-audio';
 import { primeLocationForChatEnter } from '../lib/live-tools';
 
 const LABEL: Record<
@@ -98,7 +97,7 @@ export default function StorySetupPanel() {
       background: background.id,
       ...(character.gender === 'female' ? { lastFemale: character.id } : {}),
     });
-    router.push(hasChatAudioReady() ? '/chat' : '/gate/audio?next=/chat');
+    router.push('/chat');
   };
 
   const pickPack = (id: string) => {

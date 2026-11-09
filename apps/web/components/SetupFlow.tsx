@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePrefs, t, savePrefs, type Prefs } from '../lib/prefs';
 import { primeChatStartGesture } from '../lib/chat-start-gesture';
-import { hasChatAudioReady } from '../lib/pre-chat-audio';
 import { primeLocationForChatEnter } from '../lib/live-tools';
 import { CharacterGrid, BackgroundGrid, LangChips } from './selectors';
 
@@ -25,7 +24,7 @@ export default function SetupFlow() {
       primeChatStartGesture();
       window.setTimeout(() => { try { primeLocationForChatEnter(); } catch { /* ignore */ } }, 120);
       savePrefs(prefs);
-      router.push(hasChatAudioReady() ? '/chat' : '/gate/audio?next=/chat');
+      router.push('/chat');
     }
   };
 

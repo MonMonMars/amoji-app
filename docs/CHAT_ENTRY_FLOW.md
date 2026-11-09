@@ -20,5 +20,4 @@ See [`PRIVACY_MEMORY.md`](./PRIVACY_MEMORY.md). Memory blocks stay gated until e
 
 ## Out of scope here
 
-- Pre-chat adult + audio gate: `/gate` / `/gate/audio` (PR #292) before `/chat`.
-- Setup / legal START: [`SETUP_ONBOARDING.md`](./SETUP_ONBOARDING.md).
+- Pre-chat flow order: APP OPEN → rules (`/setup`) → soft audio (`/gate/audio`) → title (`/`) → select → chat. See [`SETUP_ONBOARDING.md`](./SETUP_ONBOARDING.md).

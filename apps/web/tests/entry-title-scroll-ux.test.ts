@@ -23,12 +23,13 @@ describe('entry UX — one-tap title START', () => {
     expect(read('app/login/page.tsx')).toContain('login-redirect');
   });
 
-  it('LegalGate stays off title/setup so START is the only accept tap', () => {
+  it('LegalGate stays off title/setup/audio so START is the only accept tap', () => {
     const legal = read('components/LegalGate.tsx');
     expect(legal).toContain('ONE_CLICK_PATHS');
     expect(legal).toContain("'/'");
     expect(legal).toContain("'/setup'");
     expect(legal).toContain("'/gate'");
+    expect(legal).toContain("'/gate/audio'");
   });
 
   it('title splash has one setup link and AI notice — no separate legal URLs', () => {

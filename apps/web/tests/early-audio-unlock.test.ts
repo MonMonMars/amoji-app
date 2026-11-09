@@ -25,18 +25,20 @@ describe('EarlyAudioUnlock (iPhone pre-chat gesture)', () => {
   it('one-click START calls primeChatStartGesture inside the tap', () => {
     const bootstrap = read('lib/one-click-setup.ts');
     expect(bootstrap).toContain('primeChatStartGesture');
-    expect(bootstrap).toContain('testVoiceChain');
     expect(bootstrap).toContain('acceptCurrentLegal');
+    expect(bootstrap).not.toContain('testVoiceChain');
     const splash = read('app/page.tsx');
     expect(splash).toContain("router.push('/setup')");
     expect(splash).toContain("pushSelect(router, 'splash')");
     expect(read('components/QuickSetup.tsx')).toContain('oneClickBootstrap');
+    expect(read('components/QuickSetup.tsx')).toContain('/gate/audio?next=');
   });
 
-  it('selection-flow START primes voice + mic preflight in the same gesture', () => {
+  it('selection-flow START primes voice and goes straight to chat', () => {
     const board = read('components/SelectionBoard.tsx');
     expect(board).toContain('primeChatStartGesture');
-    expect(board).toContain("'/gate/audio?next=/chat'");
+    expect(board).toContain("router.push('/chat')");
+    expect(board).not.toContain("'/gate/audio?next=/chat'");
     const gesture = read('lib/chat-start-gesture.ts');
     expect(gesture).toContain('primeAudioForChatEnter');
     expect(gesture).toContain('setVoiceEnabled');

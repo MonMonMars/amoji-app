@@ -24,7 +24,7 @@ import { useScrollReachedEnd } from '../lib/scroll-unlock';
 // able to read it without accepting anything.
 const LEGAL_DOC_PATHS = new Set(['/credits']);
 /** One-scroll START accepts legal — do not stack a second modal on these routes. */
-const ONE_CLICK_PATHS = new Set(['/', '/setup', '/login', '/gate', '/privacy', '/terms', '/safety']);
+const ONE_CLICK_PATHS = new Set(['/', '/setup', '/login', '/gate', '/gate/audio', '/privacy', '/terms', '/safety']);
 
 const COPY: Record<'title' | 'lead' | 'accept', Record<Lang, string>> = {
   title: {
