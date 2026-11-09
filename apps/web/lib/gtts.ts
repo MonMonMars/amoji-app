@@ -277,7 +277,7 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
       const audio = new Audio(
         `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=${q}`,
       );
-      audio.dataset.amojiAudio = '1';
+      try { audio.dataset.amojiAudio = '1'; } catch { /* non-DOM Audio stubs */ }
       pinDefaultOutput(audio);
       applyPlaybackVolume(audio);
       audio.preload = 'auto';
