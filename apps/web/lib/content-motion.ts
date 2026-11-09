@@ -1,8 +1,9 @@
 'use client';
 // Content-driven motion director — body + idle + face mood come from the
 // CHAT TEXT (keyword / lexicon rules), never from LLM emotion tags.
+// ChatPanel must call applyContentMood (lexicon channel), never applyLlmHints.
 // Idle silence uses idle-passive-loop (relax → stretch → look). Explicit
- // activities use moves.ts. Everyday chat uses chat-auto-idle buckets.
+// activities use moves.ts. Everyday chat uses chat-auto-idle buckets.
 
 import { analyzeText } from '@amoji/emotion-core';
 import { resolveChatAutoIdle } from './chat-auto-idle';

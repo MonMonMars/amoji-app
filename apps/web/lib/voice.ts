@@ -93,7 +93,7 @@ import {
 import { isMasterMuted, subscribeMasterMute } from './master-mute';
 import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripLaughTokens, stripVoicedGlyphs } from './speak-text';
 import { analyzeText } from '@amoji/emotion-core';
-import { applyLlmHints } from './companion';
+import { applyContentMood } from './companion';
 import { browserVoicesForLang, edgeSampleText, isMaleNeuralVoice, selectBrowserVoice, synthNameList } from './voice-catalog';
 import { loadingFillerKind, recordedFillerClip, recordedLaughClip, recordedPokeClip } from './voice-clips';
 import { LineQueue, speechRemainder } from './speech-queue';
@@ -1340,7 +1340,7 @@ export function stopSpeaking(): void {
  * Short "um……" while the reply is still generating. The mouth moves with the
  * stub. The reply waits until this utterance finishes.
  * r2026-10-03.24: an optional felt mood tints the filler text itself (the
- * face/orb already wear the mood via applyLlmHints in the caller).
+ * face/orb already wear the mood via applyContentMood in the caller).
  * t790: the wait is now two beats starting at 2s, and every beat is spoken by
  * HER OWN TTS chain — the same voice and pitch as a reply — instead of a
  * recorded CLIP_LIBRARY um, which was a different person talking.
@@ -1535,7 +1535,7 @@ function performSpeak(
     if (typeof weight === 'number') mergedHints[key] = Math.max(mergedHints[key] ?? 0, weight);
   }
   if (Object.keys(lex).length) {
-    try { applyLlmHints(mergedHints); } catch { /* face engine is best-effort */ }
+    try { applyContentMood(mergedHints); } catch { /* face engine is best-effort */ }
   }
   const { emotion, value } = dominant(mergedHints);
   const expr = EXPRESSIVENESS[characterId] ?? 1;

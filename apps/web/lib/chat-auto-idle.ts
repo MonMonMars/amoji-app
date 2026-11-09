@@ -1,6 +1,6 @@
 // Content-driven idle pick for /chat — no manual rail pins.
-// Uses lightweight keyword buckets + emotionHints on the last assistant reply.
-// Dance / music moves only on explicit user (or matching assistant) intent.
+// Uses lightweight keyword buckets + content mood hints (lexicon / felt-mood),
+// never LLM [emotion:{…}] tags. Dance / music only on explicit intent.
 
 import { idleClipById } from './idle-clips';
 import type { IdleCuratedCategory } from './idle-curated-rail';

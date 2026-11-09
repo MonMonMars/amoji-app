@@ -18,8 +18,17 @@ export function feedUtterance(text: string): void {
   const lex = analyzeText(text);
   if (Object.keys(lex).length) e.update({ lexicon: lex });
 }
+/** @deprecated Chat / body mood must use applyContentMood — llmTags is LLM-only. */
 export function applyLlmHints(hints: Record<string, number>): void {
   getEngine().update({ llmTags: hints as never });
+}
+
+/**
+ * Face / orb mood from chat text, felt-mood, or game events.
+ * Uses the lexicon channel — never the LLM emotion-tag channel.
+ */
+export function applyContentMood(hints: Record<string, number>): void {
+  getEngine().update({ lexicon: hints as never });
 }
 export function patchConfig(patch: Partial<EmotionConfig>): void {
   getEngine().setConfig(patch);

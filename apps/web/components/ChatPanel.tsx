@@ -138,7 +138,7 @@
 // carries z-10 so it takes its clicks back.
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { feedUtterance, applyLlmHints, setThinkingPose, triggerLaugh, triggerMove, holdMove, setPerfMotionProfile } from '../lib/companion';
+import { feedUtterance, applyContentMood, setThinkingPose, triggerLaugh, triggerMove, holdMove, setPerfMotionProfile } from '../lib/companion';
 import { detectMove } from '../lib/moves';
 import { loadHistory, saveHistory } from '../lib/companion-store';
 import { notifySpeaking, isSpeaking } from '../lib/speech';
@@ -413,7 +413,7 @@ export default function ChatPanel({
       openGreet: opts.openGreet,
       sessionFarewell: opts.sessionFarewell,
     });
-    if (plan.moodHints) applyLlmHints(plan.moodHints);
+    if (plan.moodHints) applyContentMood(plan.moodHints);
     onAutoIdleRef.current?.(plan.idleClip);
   };
 
@@ -503,7 +503,7 @@ export default function ChatPanel({
       ? { ...(hints ?? {}), [remembered]: Math.max(hints?.[remembered] ?? 0, 0.45) }
       : hints;
     speak(text, characterId, lang, voiced, lead);
-    if (voiced) applyLlmHints(voiced);
+    if (voiced) applyContentMood(voiced);
     setHistory((h) => [...h, { role: 'assistant', content: text }]);
   };
 
@@ -595,7 +595,7 @@ export default function ChatPanel({
     // Content director owns move + face mood — LLM emotion tags are ignored here.
     const plan = resolveContentMotion({ userText, assistantText: reply });
     const mv = plan.move;
-    if (plan.moodHints) applyLlmHints(plan.moodHints);
+    if (plan.moodHints) applyContentMood(plan.moodHints);
     // Prefer content director; never fall back to LLM emotion tags.
     const contentHints = plan.moodHints;
     // The first closed sentence already went out over the stream. If it is
@@ -666,7 +666,7 @@ export default function ChatPanel({
         // Reactions SFX-only: body giggle + queued CLIP_LIBRARY laugh — never TTS hehe/haha lead.
     triggerLaugh();
     playLaughBurst(characterId, lang);
-    applyLlmHints({ ...(contentHints ?? {}), joy: style.joy });
+    applyContentMood({ ...(contentHints ?? {}), joy: style.joy });
     laughCountRef.current++;
     notifySpeaking(reply);
     speak(reply, characterId, lang, { ...(contentHints ?? {}), joy: style.joy }, undefined, intensity);
@@ -1022,7 +1022,7 @@ export default function ChatPanel({
       const kind = pendingOfferRef.current;
       pendingOfferRef.current = null;
       perfCountRef.current += 1;
-      applyLlmHints({ joy: 0.85 });
+      applyContentMood({ joy: 0.85 });
       if (kind === 'news' || kind === 'weather') {
         const ask = kind === 'weather'
           ? (lang === 'ja' ? '今日の天気は？' : lang === 'zh' ? '今天天气怎么样？' : lang === 'yue' ? '今日天氣點呀？' : "what's the weather here?")
@@ -1060,7 +1060,7 @@ export default function ChatPanel({
     const felt = feltMood(text);
     lastFeltRef.current = felt?.mood;
     const feltHints = moodToHints(felt?.mood, felt?.intensity);
-    if (feltHints) applyLlmHints(feltHints);
+    if (feltHints) applyContentMood(feltHints);
     const quota = checkChatTurnQuota();
     if (!quota.ok) {
       const line = quotaExceededCopy(lang);
@@ -1077,7 +1077,7 @@ export default function ChatPanel({
     // Sing/dance: local CC0 clips + Mixkit style streams when the user names a genre.
     if (requested === 'sing' || requested === 'dance') {
       triggerMove(requested);
-      applyLlmHints({ joy: requested === 'sing' ? 0.88 : 0.72 });
+      applyContentMood({ joy: requested === 'sing' ? 0.88 : 0.72 });
       const style = detectMusicStyle(text);
       beginShow(requested === 'sing' ? 'song' : 'dance', 18_000, felt?.mood, laughCountRef.current, false, style);
     }
@@ -1148,7 +1148,7 @@ export default function ChatPanel({
         rememberTurn(text, line);
         onMemCountRef.current?.(memorySummaryCount());
         feedUtterance(line);
-        if (feltHints) applyLlmHints(feltHints);
+        if (feltHints) applyContentMood(feltHints);
         notifySpeaking(line);
         speak(line, characterId, lang, feltHints, undefined, felt?.intensity);
         pushAutoIdle(line, feltHints, undefined, text);
@@ -1204,7 +1204,7 @@ export default function ChatPanel({
         });
         // Motion + face from chat content only — ignore LLM emotionHints.
         const contentPlan = resolveContentMotion({ userText: text, assistantText: r.reply });
-        if (contentPlan.moodHints) applyLlmHints(contentPlan.moodHints);
+        if (contentPlan.moodHints) applyContentMood(contentPlan.moodHints);
         // r.30 — the streaming path remembers the turn too (both paths learn)
         rememberTurn(text, r.reply);
         onMemCountRef.current?.(memorySummaryCount());
@@ -1233,7 +1233,7 @@ export default function ChatPanel({
       // Body/face from chat content — server emotionHints are not applied to motion.
       const reply = data.reply || '…';
       const contentPlan = resolveContentMotion({ userText: text, assistantText: reply });
-      if (contentPlan.moodHints) applyLlmHints(contentPlan.moodHints);
+      if (contentPlan.moodHints) applyContentMood(contentPlan.moodHints);
       // r.30 — remember the completed turn (your words + her reply) so the
       // next session can pick the conversation thread back up
       rememberTurn(text, reply);
@@ -1459,7 +1459,7 @@ export default function ChatPanel({
         key={actionGame}
         kind={actionGame}
         lang={lang}
-        onEmotion={() => { /* face/body mood is content-driven — ignore LLM emotion tags */ }}
+        onEmotion={(ev) => applyContentMood(ev.hints)}
         onExit={(result) => {
           actionGameRef.current = false;
           setActionGame(null);
