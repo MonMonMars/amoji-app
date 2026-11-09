@@ -65,4 +65,11 @@ describe('skill-offer guard (no offtopic dance tack-ons)', () => {
     expect(personalityPrompt('juno').toLowerCase()).toMatch(/never bolt dance/);
     expect(personalityPrompt('juno').toLowerCase()).toMatch(/keyed byok/);
   });
+
+  it('does not import use-client demo-phase (breaks Next /api/chat collect)', () => {
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const src = fs.readFileSync(path.resolve(here, '../lib/skill-offer-guard.ts'), 'utf8');
+    expect(src).not.toMatch(/from ['"]\.\/demo-phase['"]/);
+    expect(src).not.toMatch(/from ['"]\.\/topic-suggestions['"]/);
+  });
 });

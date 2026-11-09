@@ -3,57 +3,45 @@
 // see me dance?". Deterministic stripping of bolted invites lives in
 // topic-mixture.ts; this module owns the quiet-window mute + thin wrappers
 // ChatPanel already imports.
+//
+// IMPORTANT: do NOT import from 'use client' modules (demo-phase, prefs hooks,
+// …). Pulling client-only demo-phase exports into the /api/chat server graph
+// made Next page collection fail (array export no longer callable as .find).
 
-import { DEMO_PHASE_BUTTONS, type DemoPhaseId } from './demo-phase';
-import { wantsLongCompanionReply } from './topic-suggestions';
 import {
   detectAbilityOfferKind,
   detectUserAbilityTopics,
   stripOffTopicAbilityTacks,
+  type AbilityTopic,
 } from './topic-mixture';
 
 /** How long after a topical/content turn skill offers stay muted. */
 export const SKILL_OFFER_SUPPRESS_MS = 90_000;
 
-/** Demo-phase chips that deliver factual / narrative content — not performances. */
-export const TOPICAL_DEMO_PHASE_IDS: readonly DemoPhaseId[] = [
+/** Content topics that mute the idle ability rail (not dance/sing/music). */
+const TOPICAL_MUTE: ReadonlySet<AbilityTopic> = new Set([
   'weather',
   'news',
   'story',
   'funFact',
   'funScience',
-] as const;
+]);
 
 const WEATHER_OR_NEWS_RE =
   /\b(weather|forecast|temperature|headline|news|最新ニュース|天気)\b|天氣|天气|新聞|新闻|天氣預報|天气预报/i;
 
-function demoTopicalPromptSet(): Set<string> {
-  const out = new Set<string>();
-  for (const id of TOPICAL_DEMO_PHASE_IDS) {
-    const btn = DEMO_PHASE_BUTTONS.find((b) => b.id === id);
-    if (!btn) continue;
-    for (const line of Object.values(btn.prompt)) {
-      const t = line.trim().toLowerCase();
-      if (t) out.add(t);
-    }
-  }
-  return out;
-}
-
-const DEMO_TOPICAL_PROMPTS = demoTopicalPromptSet();
+const LONG_CONTENT_RE =
+  /(?:\bstory\b|tell\s+(?:me\s+)?a\s+story|bedtime\s+story|fun\s+fact|did\s+you\s+know|random\s+fact|fun\s+science|science\s+fact)|講個?故|故事|童話|冷知識|有趣知識|科學趣|豆知識|自然科学|讲个故|冷知识|科学趣味|お話して|物語|豆知識|面白い科学/i;
 
 /** True when the user asked for topical/demo content (fun fact, weather, …). */
 export function isTopicalContentTurn(text: string): boolean {
   const t = text.trim();
   if (!t) return false;
-  if (DEMO_TOPICAL_PROMPTS.has(t.toLowerCase())) return true;
-  if (wantsLongCompanionReply(t)) return true;
+  if (LONG_CONTENT_RE.test(t)) return true;
   if (WEATHER_OR_NEWS_RE.test(t)) return true;
   const topics = detectUserAbilityTopics(t);
   for (const k of topics) {
-    if (k === 'funFact' || k === 'funScience' || k === 'weather' || k === 'news' || k === 'story') {
-      return true;
-    }
+    if (TOPICAL_MUTE.has(k)) return true;
   }
   return false;
 }
