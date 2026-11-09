@@ -1,13 +1,13 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadPrefs, t, type Lang } from '../lib/prefs';
 import { testVoiceChain, setVoiceEnabled, voiceEnabled } from '../lib/voice';
 import { isMasterMuted, setMasterMuted } from '../lib/master-mute';
 import { listenSupported } from '../lib/listen';
 import { requestMic } from '../lib/mic-preflight';
-import { setMicPreflightSession, type MicOutcome } from '../lib/entry-gate';
+import { passEntryGate, setMicPreflightSession, type MicOutcome } from '../lib/entry-gate';
 import { markChatAudioReady, stashPriorMasterMuteForChat } from '../lib/pre-chat-audio';
 import { primeChatStartGesture } from '../lib/chat-start-gesture';
 import EarlyAudioUnlock from './EarlyAudioUnlock';
@@ -15,7 +15,7 @@ import EarlyAudioUnlock from './EarlyAudioUnlock';
 export default function PreChatAudioGate({
   onDone,
   showBack = true,
-  nextHref = '/chat',
+  nextHref = '/',
 }: {
   onDone?: () => void;
   showBack?: boolean;
@@ -27,6 +27,7 @@ export default function PreChatAudioGate({
   const [playing, setPlaying] = useState(false);
   const [mic, setMic] = useState<MicOutcome | 'pending'>('pending');
   const [micBusy, setMicBusy] = useState(false);
+  const autoStarted = useRef(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -39,12 +40,13 @@ export default function PreChatAudioGate({
     setPlaying(true);
     try { if (isMasterMuted()) setMasterMuted(false); } catch { /* ignore */ }
     try { if (!voiceEnabled()) setVoiceEnabled(true); } catch { /* ignore */ }
+    try { primeChatStartGesture(); } catch { /* ignore */ }
     let characterId = 'a01-shino';
     try { characterId = loadPrefs().character; } catch { /* default */ }
     try {
       await testVoiceChain(characterId, lang);
     } catch {
-      /* retryable */
+      /* retryable — never blocks Continue */
     } finally {
       setPlaying(false);
       setSoundTested(true);
@@ -57,24 +59,53 @@ export default function PreChatAudioGate({
     setMicBusy(false);
   }, []);
 
+  // Best-effort auto prompt on mount: unmute, warm AudioContext, request mic.
+  // iOS may refuse without a gesture — that is fine; Continue stays enabled.
+  useEffect(() => {
+    if (autoStarted.current) return;
+    autoStarted.current = true;
+    let cancelled = false;
+    void (async () => {
+      try { if (isMasterMuted()) setMasterMuted(false); } catch { /* ignore */ }
+      try { if (!voiceEnabled()) setVoiceEnabled(true); } catch { /* ignore */ }
+      try { primeChatStartGesture(); } catch { /* ignore */ }
+      if (!listenSupported()) {
+        if (!cancelled) setMic('unsupported');
+        return;
+      }
+      const outcome = await requestMic();
+      if (!cancelled) setMic(outcome);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const speakerOk = soundTested && !isMasterMuted() && voiceEnabled();
   const micOk = mic === 'granted' || mic === 'unsupported';
-  const canEnter = speakerOk && micOk;
 
   const enter = useCallback(() => {
-    if (!canEnter) return;
     primeChatStartGesture();
-    if (mic === 'granted') setMicPreflightSession(true);
+    const micOutcome: MicOutcome =
+      mic === 'pending' ? 'skipped' : mic;
+    if (micOutcome === 'granted') setMicPreflightSession(true);
+    passEntryGate({
+      audioHeard: speakerOk ? 'yes' : 'no',
+      mic: micOutcome,
+    });
     markChatAudioReady();
     if (onDone) onDone();
     else router.replace(nextHref);
-  }, [canEnter, mic, nextHref, onDone, router]);
+  }, [mic, nextHref, onDone, router, speakerOk]);
+
+  const continueLabel =
+    nextHref === '/chat' || nextHref.startsWith('/chat?')
+      ? t(lang, 'preChatEnterChat')
+      : t(lang, 'next');
 
   return (
     <main data-testid="pre-chat-audio-gate" className="fx-page flex min-h-dvh items-center justify-center bg-neutral-950 px-5 py-8 text-white">
       <EarlyAudioUnlock />
       {showBack && (
-        <button type="button" data-testid="pre-chat-audio-back" onClick={() => router.push('/select')} className="ui-btn absolute left-4 top-4">
+        <button type="button" data-testid="pre-chat-audio-back" onClick={() => router.push('/setup')} className="ui-btn absolute left-4 top-4">
           ← {t(lang, 'back')}
         </button>
       )}
@@ -93,6 +124,7 @@ export default function PreChatAudioGate({
             {mic === 'granted' && t(lang, 'gateMicGranted')}
             {mic === 'denied' && t(lang, 'gateMicDenied')}
             {mic === 'unsupported' && t(lang, 'gateMicUnsupported')}
+            {mic === 'skipped' && t(lang, 'gateMicDenied')}
           </p>
         )}
         {listenSupported() && mic !== 'granted' && mic !== 'unsupported' && (
@@ -100,8 +132,16 @@ export default function PreChatAudioGate({
             {t(lang, 'gateMicAllow')}
           </button>
         )}
-        <button type="button" data-testid="pre-chat-enter-chat" disabled={!canEnter} onClick={enter} className="ui-btn mt-6 h-12 w-full rounded-full bg-emerald-400/90 font-semibold text-neutral-950 disabled:opacity-40">
-          {t(lang, 'preChatEnterChat')}
+        {!speakerOk || !micOk ? (
+          <p className="mt-4 text-xs text-white/45">{t(lang, 'setupSoundFailLead')}</p>
+        ) : null}
+        <button
+          type="button"
+          data-testid="pre-chat-enter-chat"
+          onClick={enter}
+          className="ui-btn mt-6 h-12 w-full rounded-full bg-emerald-400/90 font-semibold text-neutral-950"
+        >
+          {continueLabel}
         </button>
       </div>
     </main>

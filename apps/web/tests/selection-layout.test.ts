@@ -45,10 +45,10 @@ describe('selection layout', () => {
     expect(board).not.toContain('requestModelThumb');
     expect(board).toContain('ModelThumb');
     expect(board).toContain('SceneBackdrop');
-    expect(board).toContain('router.push(dest)');
-    expect(board).toContain("'/gate/audio?next=/chat'");
+    expect(board).toContain("router.push('/chat')");
+    expect(board).not.toContain("'/gate/audio?next=/chat'");
     const flush = board.indexOf('flushLivePrefs()');
-    const push = board.indexOf('router.push(dest)');
+    const push = board.indexOf("router.push('/chat')");
     expect(flush).toBeGreaterThan(-1);
     expect(flush).toBeLessThan(push);
     expect(board).toContain('savePrefs(next)');

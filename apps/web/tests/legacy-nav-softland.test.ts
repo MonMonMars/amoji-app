@@ -45,7 +45,8 @@ function walk(dir: string): string[] {
 describe('legacy nav after soft-lands', () => {
   it('SetupFlow pushes /chat instead of soft-land /play', () => {
     const source = read(join(WEB_DIR, 'components', 'SetupFlow.tsx'));
-    expect(source).toContain("'/gate/audio?next=/chat'");
+    expect(source).toContain("router.push('/chat')");
+    expect(source).not.toContain("'/gate/audio?next=/chat'");
     expect(source).not.toContain("router.push('/play')");
   });
 

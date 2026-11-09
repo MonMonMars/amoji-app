@@ -22,7 +22,6 @@ import { assetUrl } from '../lib/asset';
 import { bigheadPath } from '../lib/bighead';
 import { playVoiceGreeting } from '../lib/voice';
 import { primeChatStartGesture } from '../lib/chat-start-gesture';
-import { hasChatAudioReady } from '../lib/pre-chat-audio';
 import { introText } from '../lib/character-intro';
 import { primeLocationForChatEnter } from '../lib/live-tools';
 import { activeVoiceChoice } from '../lib/voice-picks';
@@ -113,12 +112,12 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
     // permission dialog (which can drop the gesture unlock on iPhone).
     primeChatStartGesture();
     window.setTimeout(() => { try { primeLocationForChatEnter(); } catch { /* ignore */ } }, 120);
-    const dest = hasChatAudioReady() ? '/chat' : '/gate/audio?next=/chat';
+    // Audio soft-gate already ran after rules; select goes straight to chat.
     const go = () => {
       clearStorySession();
       const next = flushLivePrefs();
       setPrefs(next);
-      router.push(dest);
+      router.push('/chat');
     };
     // Fade + slight scale, then navigate. Reduced motion skips the wait.
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {

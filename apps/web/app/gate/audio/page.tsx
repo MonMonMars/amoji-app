@@ -7,8 +7,8 @@ import PreChatAudioGate from '../../../components/PreChatAudioGate';
 function AudioGateInner() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get('next') ?? '/chat';
-  const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/chat';
+  const next = params.get('next') ?? '/';
+  const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/';
   return <PreChatAudioGate nextHref={safeNext} onDone={() => router.replace(safeNext)} />;
 }
 

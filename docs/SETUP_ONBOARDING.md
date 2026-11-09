@@ -1,32 +1,40 @@
 # Setup / onboarding flow
 
-Route sketch for first-run → chat. Several steps are still in open PRs; merge order is in [`MERGE_CHECKLIST.md`](./MERGE_CHECKLIST.md).
+Canonical first-run order (Pixel):
 
 ```
-/setup  (legal scroll + consent)
+APP OPEN (/)
+   │  first-run auto → rules; loading ends by title
+   ▼
+/setup  (rules confirm — legal scroll + START)
    │
-   │  PR #285 — one-page setup, single START CTA
-   │  (legal scroll-to-enable already merged as #282)
    ▼
-/gate or /gate/audio
-   │  PR #292 — adult + hear-audio checkpoint before chat chrome
+/gate/audio  (speaker + mic soft-gate — Continue always works)
+   │
    ▼
-/select  (pick companion / scene)
-   │  back button context: #283
+/  (TITLE PAGE — bootstrap already finished)
+   │  START
+   ▼
+/select  (character / scene)
+   │
    ▼
 /chat
-   │  entry talking order: CHAT_ENTRY_FLOW.md (#302)
-   │  after #301 privacy / reply quality
 ```
+
+## Soft audio gate
+
+- `/gate/audio` auto-prompts mic/speaker (best effort) and never hard-blocks Continue.
+- `/chat` keeps a soft `RequireChatAudio` marker only — no stuck redirect loop.
+- After character select, navigate straight to `/chat`.
 
 ## START rules
 
-- START stays disabled until the user scrolls / accepts the legal block (#282 / #285).
-- Do not mount the chat room (VRM load, greeting TTS, poke SFX) until the entry gate is satisfied (#292).
+- Setup START stays disabled until the user scrolls / accepts the legal block.
+- Do not mount the chat room (VRM load, greeting TTS, poke SFX) until the entry gate record exists (`hasPassedEntryGate`).
 - Prefer render-swap gate over a redirect that paints `/chat` first.
 
 ## Related surfaces
 
-- `/terms`, `/privacy`, `/safety` — static policy pages.
+- `/terms`, `/privacy`, `/safety` — same one-scroll QuickSetup as `/setup`.
 - `/mode`, `/play`, `/change` — mode and re-select after first run.
 - GitHub Pages: `.github/workflows/pages.yml` deploys `main` → `https://monmonmars.github.io/amoji-app/`.

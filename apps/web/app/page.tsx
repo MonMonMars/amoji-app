@@ -1,9 +1,11 @@
 'use client';
 /**
- * Title screen — one START runs terms + setup; the app opens /select.
+ * Title screen — shown after rules + soft audio gate.
+ * Flow: APP OPEN → /setup (rules) → /gate/audio → / (title) → /select → /chat
+ * Bootstrap/loading finishes by the time this page is interactive.
  */
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Cormorant_Garamond } from 'next/font/google';
 import { APP_NAME, APP_REVISION, APP_TAGLINE } from '../lib/revision';
@@ -27,10 +29,26 @@ export default function Splash() {
   const [prefs] = usePrefs();
   const lang = prefs.lang;
   const [busy, setBusy] = useState(false);
+  const [bootReady, setBootReady] = useState(false);
   const startLabel = t(lang, 'splashStart');
 
+  // APP OPEN: first-run users go to rules immediately; returning users see title
+  // with loading already finished (no stuck overlay into this page).
+  useEffect(() => {
+    try {
+      if (!hasPassedEntryGate()) {
+        recordNavReturn('/');
+        router.replace('/setup');
+        return;
+      }
+    } catch {
+      /* show title */
+    }
+    setBootReady(true);
+  }, [router]);
+
   const start = async () => {
-    if (busy) return;
+    if (busy || !bootReady) return;
     setBusy(true);
     try {
       if (!hasPassedEntryGate()) {
@@ -46,6 +64,19 @@ export default function Splash() {
       setBusy(false);
     }
   };
+
+  if (!bootReady) {
+    return (
+      <main
+        data-testid="splash-boot"
+        className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-[#0c0810] text-white"
+        aria-busy="true"
+      >
+        <EarlyAudioUnlock />
+        <p className="text-xs uppercase tracking-[0.42em] text-rose-100/45">Amoji</p>
+      </main>
+    );
+  }
 
   return (
     <main

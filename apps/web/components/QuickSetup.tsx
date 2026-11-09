@@ -12,14 +12,14 @@ import EarlyAudioUnlock from './EarlyAudioUnlock';
 import { SetupOneScrollBody } from './setup-one-shared';
 import { APP_REVISION } from '../lib/revision';
 import { absorbNavReturnFromReferrer, navigateNavBack } from '../lib/nav-return';
-import { replaceSelect, type SelectReturnFrom } from '../lib/select-return';
+import { type SelectReturnFrom } from '../lib/select-return';
 
 export default function QuickSetup({
   onDone,
   showBack = true,
   initialSectionId,
   backTestId = 'setup-back',
-  selectReturnFrom = 'setup',
+  selectReturnFrom: _selectReturnFrom = 'setup',
 }: {
   lang?: import('../lib/prefs').Lang;
   onDone?: () => void;
@@ -29,14 +29,14 @@ export default function QuickSetup({
   initialSectionId?: string;
   /** E.g. terms-back on /terms legacy URL. */
   backTestId?: string;
-  /** Record where /select back should return after START. */
+  /** Kept for call-site compatibility; rules now continue to /gate/audio. */
   selectReturnFrom?: SelectReturnFrom;
 }) {
+  void _selectReturnFrom;
   const router = useRouter();
   const [prefs, , prefsReady] = usePrefs();
   const lang = prefs.lang;
   const [busy, setBusy] = useState(false);
-  const [voiceHint, setVoiceHint] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const readToEnd = useScrollReachedEnd(scrollRef, prefsReady);
 
@@ -58,14 +58,18 @@ export default function QuickSetup({
     if (busy || !prefsReady || !readToEnd) return;
     setBusy(true);
     try {
-      const { voiceOk } = await oneClickBootstrap({ lang });
-      if (!voiceOk) setVoiceHint(true);
-      onDone?.();
-      replaceSelect(router, selectReturnFrom);
+      // Rules only — speaker/mic soft-gate is the next step (never blocks entry).
+      await oneClickBootstrap({ lang });
+      // Standalone /setup → title after audio. In-place EntryGate → return to
+      // the protected route (select/change/chat) after the soft audio step.
+      const audioNext = onDone
+        ? (typeof window !== 'undefined' ? window.location.pathname || '/select' : '/select')
+        : '/';
+      router.replace(`/gate/audio?next=${encodeURIComponent(audioNext)}`);
     } finally {
       setBusy(false);
     }
-  }, [busy, lang, onDone, prefsReady, readToEnd, router, selectReturnFrom]);
+  }, [busy, lang, onDone, prefsReady, readToEnd, router]);
 
   const startDisabled = !prefsReady || busy || !readToEnd;
 
@@ -107,18 +111,6 @@ export default function QuickSetup({
           <p data-testid="setup-scroll-hint" className="text-center text-xs text-white/45">
             {t(lang, 'gateScrollHint')}
           </p>
-        )}
-
-        {voiceHint && (
-          <div
-            data-testid="setup-voice-hint"
-            role="status"
-            className="w-full rounded-2xl border border-amber-300/25 bg-amber-300/10 p-3 text-left text-sm text-amber-100"
-          >
-            <p className="font-medium">{t(lang, 'setupSoundFailTitle')}</p>
-            <p className="mt-1 text-xs text-white/70">{t(lang, 'gateAudioIosHint')}</p>
-            <p className="mt-2 text-xs text-white/55">{t(lang, 'setupSoundFailLead')}</p>
-          </div>
         )}
 
         <button
