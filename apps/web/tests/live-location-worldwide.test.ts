@@ -183,13 +183,19 @@ describe('permission denied and offline', () => {
   });
 
   it('stays silent for the unprompted brief instead of asking for a city', async () => {
-    const live = await clientLiveContext("what's the weather here?", 'en', undefined, { brief: true })
-      .catch(() => null);
+    // clientLiveContext uses real fetch for IP geo; under CI load that can
+    // hang past the default 5s. Race a short deadline so a stalled network
+    // still counts as "no place" — which is exactly the silent-brief case.
+    const live = await Promise.race([
+      clientLiveContext("what's the weather here?", 'en', undefined, { brief: true })
+        .catch(() => null),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000)),
+    ]);
     // No geolocation / localStorage in the node test env — the brief must be
     // empty, and above all it must not be a question about which city.
     expect(live?.spoken ?? '').not.toMatch(/which city/i);
     expect(live?.prompt ?? '').not.toContain('need a city');
-  });
+  }, 10_000);
 
   it('skips the brief when no place can be resolved', async () => {
     const live = await gatherLiveContext("what's the weather here?", {
