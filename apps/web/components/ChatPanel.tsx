@@ -227,6 +227,7 @@ import { SPEECH_CAPTION_EVENT, rollingCaptionFromText } from '../lib/speech-capt
 import { loadProfile, type Gender } from '../lib/profile';
 import type { ChatStatus } from '../lib/status';
 import EmotionOrb from './EmotionOrb';
+import DemoPhaseRail from './DemoPhaseRail';
 
 interface Msg { role: 'user' | 'assistant'; content: string; memoryUsed?: TurnMemoryUsed[] }
 
@@ -1591,7 +1592,16 @@ export default function ChatPanel({
           <span>{nowPlaying.replace(/^♪\s*/, '')}</span>
         </div>
       )}
-      <div className="relative z-10 flex w-full items-center gap-2.5">
+      {/* Demo-phase chips: one-tap tutorials (weather / dance / sing…) for
+          users who would rather not talk or type — especially on iPhone.
+          One small horizontal row; swipe for more. */}
+      <div className="relative z-10 flex w-full flex-col gap-1.5">
+        <DemoPhaseRail
+          lang={lang}
+          disabled={busy}
+          onPick={(prompt) => { void send(prompt); }}
+        />
+      <div className="relative flex w-full items-center gap-2.5">
         {/* r119: the voice watchdog armed a replay — a silent line is waiting
             for ANY tap to be re-spoken. Floating chip above the mic;
             pointer-events-none so the tap falls straight through to the
@@ -1701,6 +1711,7 @@ export default function ChatPanel({
         >
           ➤
         </button>
+      </div>
       </div>
       {/* Play requirement: an in-app route to report generated content. Kept
           outside the scroll area so opening it cannot scroll the history. */}
