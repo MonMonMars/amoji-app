@@ -132,7 +132,7 @@ export default function Splash() {
         </p>
 
         <Link
-          href="/setup"
+          href="/rules"
           data-testid="splash-setup-link"
           aria-label={t(lang, 'splashOpenSetup')}
           onClick={() => recordNavReturn('/')}

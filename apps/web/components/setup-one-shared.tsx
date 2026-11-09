@@ -2,12 +2,18 @@
 /**
  * Shared first-run legal + safety copy for title and the unified /setup scroll.
  * All policy bodies live in SetupOneScrollBody — no separate legal mini-flow.
+ *
+ * 「即刻搵人傾」 helpline numbers appear only on the view-only /rules reader
+ * (and crisis popup). The first-run Agree / START page keeps a short crisis
+ * notice and points people at /rules — it does not list numbers.
  */
+import { useMemo } from 'react';
 import type { LegalDoc } from '../lib/legal-copy';
 import { privacyDoc, termsDoc } from '../lib/legal-copy';
-import { CRISIS_HELPLINES } from '../lib/crisis';
 import { LEGAL_ACCEPT_VERSION } from '../lib/legal-accept';
+import { currentHelplineRegion } from '../lib/crisis-location';
 import { t, type Lang } from '../lib/prefs';
+import { HelplineList } from './HelplineList';
 
 /** Emergency numbers by the places Amoji is most used from. */
 const EMERGENCY =
@@ -49,10 +55,27 @@ function LegalDocInline({ doc, idPrefix }: { doc: LegalDoc; idPrefix: string }) 
   );
 }
 
-/** Full in-page disclosures — user must scroll this region before START unlocks. */
-export function SetupOneScrollBody({ lang }: { lang: Lang }) {
+/** Full in-page disclosures — consent mode requires scroll before START unlocks. */
+export function SetupOneScrollBody({
+  lang,
+  showConsentDisclaimer = true,
+  showHelplines = false,
+}: {
+  lang: Lang;
+  /** Hide "By tapping START…" on view-only /rules. */
+  showConsentDisclaimer?: boolean;
+  /**
+   * View-only /rules (and crisis deep-links): show 「即刻搵人傾」 with
+   * location-aware numbers. First-run Agree / START must keep this false.
+   */
+  showHelplines?: boolean;
+}) {
   const privacy = privacyDoc(lang);
   const terms = termsDoc(lang);
+  const helplineRegion = useMemo(
+    () => (showHelplines ? currentHelplineRegion(lang) : null),
+    [lang, showHelplines],
+  );
   return (
     <>
       <section aria-labelledby="setup-age-heading">
@@ -62,7 +85,9 @@ export function SetupOneScrollBody({ lang }: { lang: Lang }) {
         <p className="mt-2 text-white/70">{t(lang, 'gate18Body')}</p>
       </section>
 
-      <p className="text-white/65">{t(lang, 'setupOneLead')}</p>
+      {showConsentDisclaimer && (
+        <p className="text-white/65">{t(lang, 'setupOneLead')}</p>
+      )}
 
       <section aria-labelledby="setup-ai-heading">
         <h2 id="setup-ai-heading" className="text-base font-semibold text-white">
@@ -92,30 +117,24 @@ export function SetupOneScrollBody({ lang }: { lang: Lang }) {
           {t(lang, 'safetyTitle')}
         </h2>
         <p className="mt-2 rounded-xl border border-rose-400/25 bg-rose-500/10 px-3 py-2 font-medium text-rose-50/95">
-          {t(lang, 'safetyLead')}
+          {t(lang, showHelplines ? 'safetyLead' : 'safetyLeadAgree')}
         </p>
-        <p className="mt-2 text-white/70">{t(lang, 'safetyCrisisLine')}</p>
-        <h3 id="setup-safety-helplines" className="mt-4 text-sm font-semibold text-white">
-          {t(lang, 'safetyHelplinesTitle')}
-        </h3>
-        <ul className="mt-2 space-y-2">
-          {CRISIS_HELPLINES.map((h) => (
-            <li
-              key={`${h.name}-${h.tel}`}
-              className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs"
-            >
-              <a
-                href={`tel:${h.tel.replace(/[^0-9+]/g, '')}`}
-                aria-label={`${h.name} ${h.tel}`}
-                className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-pink-200 underline-offset-4 hover:underline"
-              >
-                <span className="font-medium">{h.name}</span>
-                <span className="tabular-nums text-sm font-semibold text-white">{h.tel}</span>
-              </a>
-              <p className="mt-0.5 text-white/45">{h.where}</p>
-            </li>
-          ))}
-        </ul>
+        {showHelplines ? (
+          <>
+            <p className="mt-2 text-white/70">{t(lang, 'safetyCrisisLine')}</p>
+            <h3 id="setup-safety-helplines" className="mt-4 text-sm font-semibold text-white">
+              {t(lang, 'safetyHelplinesTitle')}
+            </h3>
+            <HelplineList region={helplineRegion} testId="rules-helpline-list" />
+          </>
+        ) : (
+          <p
+            data-testid="setup-helplines-rules-hint"
+            className="mt-2 text-white/65"
+          >
+            {t(lang, 'safetyHelplinesRulesHint')}
+          </p>
+        )}
         <h3 id="setup-safety-emergency" className="mt-4 text-sm font-semibold text-white">
           {t(lang, 'safetyEmergencyTitle')}
         </h3>
@@ -141,7 +160,9 @@ export function SetupOneScrollBody({ lang }: { lang: Lang }) {
         <LegalDocInline doc={terms} idPrefix="setup-terms" />
       </section>
 
-      <p className="text-xs text-white/50">{t(lang, 'setupOneDisclaimer')}</p>
+      {showConsentDisclaimer && (
+        <p className="text-xs text-white/50">{t(lang, 'setupOneDisclaimer')}</p>
+      )}
       <p className="text-xs text-white/40">
         {t(lang, 'policyVersion')} {LEGAL_ACCEPT_VERSION}
       </p>

@@ -65,8 +65,9 @@ describe('/api/chat crisis guard', () => {
     const { json } = await post({ message: 'I want to kill myself', language: 'en' });
     expect(chatSpy).not.toHaveBeenCalled();
     expect(json.reply).toBe(crisisReplyText('en'));
+    // en → US region numbers (location-aware; no geo hints on the API path)
     expect(String(json.reply)).toContain('988');
-    expect(String(json.reply)).toContain('2389 2222');
+    expect(String(json.reply)).not.toContain('2389 2222');
   });
 
   it('does not run any live-tools lookup for a crisis message', async () => {

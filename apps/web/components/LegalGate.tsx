@@ -24,7 +24,7 @@ import { useScrollReachedEnd } from '../lib/scroll-unlock';
 // able to read it without accepting anything.
 const LEGAL_DOC_PATHS = new Set(['/credits']);
 /** One-scroll START accepts legal — do not stack a second modal on these routes. */
-const ONE_CLICK_PATHS = new Set(['/', '/setup', '/login', '/gate', '/gate/audio', '/privacy', '/terms', '/safety']);
+const ONE_CLICK_PATHS = new Set(['/', '/setup', '/rules', '/login', '/gate', '/gate/audio', '/privacy', '/terms', '/safety']);
 
 const COPY: Record<'title' | 'lead' | 'accept', Record<Lang, string>> = {
   title: {
@@ -148,8 +148,8 @@ export default function LegalGate() {
           <section>
             <h3 className="font-semibold text-white">{t(lang, 'safetyTitle')}</h3>
             <p className="mt-1">{t(lang, 'safetyCrisisLine')}</p>
-            <Link href="/setup#setup-safety-heading" aria-label={t(lang, 'safetyTitle')} className="mt-2 inline-block text-xs text-pink-200/90 underline-offset-4 hover:underline">
-              /setup
+            <Link href="/rules#setup-safety-helplines" aria-label={t(lang, 'safetyTitle')} className="mt-2 inline-block text-xs text-pink-200/90 underline-offset-4 hover:underline">
+              /rules
             </Link>
           </section>
           <p className="text-xs text-white/40">

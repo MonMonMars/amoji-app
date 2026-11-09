@@ -8,6 +8,7 @@ export const NAV_RETURN_FALLBACK = '/';
 const ALLOWED = new Set([
   '/',
   '/setup',
+  '/rules',
   '/gate',
   '/select',
   '/change',

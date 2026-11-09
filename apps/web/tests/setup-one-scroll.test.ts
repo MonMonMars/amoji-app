@@ -26,9 +26,11 @@ describe('setup one — full scroll disclosure', () => {
     expect(shared).toContain("t(lang, 'gate18Title')");
     expect(shared).toContain("t(lang, 'gateAudioTitle')");
     expect(shared).toContain("t(lang, 'gateMicTitle')");
-    expect(shared).toContain("t(lang, 'safetyLead')");
+    expect(shared).toContain("'safetyLead'");
+    expect(shared).toContain("'safetyLeadAgree'");
     expect(shared).toContain("t(lang, 'safetyHelplinesTitle')");
-    expect(shared).toContain('CRISIS_HELPLINES');
+    expect(shared).toContain('HelplineList');
+    expect(shared).toContain('showHelplines');
     expect(shared).toContain("t(lang, 'aiNotice')");
     expect(shared).not.toContain('SetupLegalLinks');
   });
@@ -45,9 +47,18 @@ describe('setup one — full scroll disclosure', () => {
     expect(micBlock).not.toContain("t(lang, 'gateMicUnsupported')");
   });
 
+  it('Agree / START hides 「即刻搵人傾」; view-only rules shows it', () => {
+    expect(quick).toContain('showHelplines={viewOnly}');
+    expect(shared).toContain('setup-helplines-rules-hint');
+    expect(shared).toContain("showHelplines ? 'safetyLead' : 'safetyLeadAgree'");
+    expect(shared).not.toMatch(/CRISIS_HELPLINES\.map/);
+  });
+
   it('new setup strings exist in every shipped language', () => {
     for (const { id } of LANGS) {
       expect(t(id, 'setupDisclosureAiTitle')).toBeTruthy();
+      expect(t(id, 'safetyLeadAgree')).toBeTruthy();
+      expect(t(id, 'safetyHelplinesRulesHint')).toBeTruthy();
     }
   });
 });

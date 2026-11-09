@@ -82,9 +82,11 @@ describe('legal copy names the real data recipients', () => {
   it('inlines full safety copy in the unified setup scroll (no separate mini-pages)', () => {
     const shared = read('components/setup-one-shared.tsx');
     expect(shared).toContain('safetyHelplinesTitle');
-    expect(shared).toContain('CRISIS_HELPLINES');
+    expect(shared).toContain('HelplineList');
+    expect(shared).toContain('showHelplines');
     expect(read('app/privacy/page.tsx')).toContain('QuickSetup');
     expect(read('app/safety/page.tsx')).toContain('setup-safety-heading');
+    expect(read('app/safety/page.tsx')).toContain('viewOnly');
   });
 });
 
@@ -154,7 +156,7 @@ describe('LEGAL_ACCEPT_VERSION bump forces re-consent', () => {
 describe('new strings exist in all four languages', () => {
   const NEW_KEYS: StrKey[] = [
     'aiNotice', 'privacyTitle', 'termsTitle', 'policyVersion',
-    'safetyCrisisLine', 'safetyCrisisTitle', 'safetyOpenPage',
+    'safetyCrisisLine', 'safetyCrisisTitle', 'safetyOpenPage', 'safetyHelplinesRulesHint',
     'safetyTitle', 'safetyLead', 'safetyHelplinesTitle', 'safetyEmergencyTitle',
     'safetyStepsTitle', 'safetyStepsBody', 'safetyAboutAi', 'safetyPrivacyLink',
   ];
