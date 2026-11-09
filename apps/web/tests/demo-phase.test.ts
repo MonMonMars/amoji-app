@@ -6,12 +6,33 @@ import {
   demoPhasePrompt,
 } from '../lib/demo-phase';
 import { detectMove } from '../lib/moves';
+import { detectExercise } from '../lib/exercises';
+import { DUET_TRIGGER, MEAL_TOGETHER_TRIGGER } from '../lib/activities';
+import { detectActionGame } from '../lib/minigames';
+import { wantsLongCompanionReply } from '../lib/topic-suggestions';
 
 describe('demo-phase buttons', () => {
   it('ships a short horizontal tutorial set', () => {
-    expect(DEMO_PHASE_BUTTONS.length).toBeGreaterThanOrEqual(6);
+    expect(DEMO_PHASE_BUTTONS.length).toBeGreaterThanOrEqual(14);
     expect(DEMO_PHASE_BUTTONS.map((b) => b.id)).toEqual(
-      expect.arrayContaining(['weather', 'news', 'story', 'music', 'dance', 'sing']),
+      expect.arrayContaining([
+        'weather',
+        'news',
+        'story',
+        'music',
+        'dance',
+        'sing',
+        'kungfu',
+        'taichi',
+        'stretch',
+        'jog',
+        'eat',
+        'piano',
+        'violin',
+        'duet',
+        'funScience',
+        'tag',
+      ]),
     );
   });
 
@@ -29,6 +50,31 @@ describe('demo-phase buttons', () => {
       expect(detectMove(demoPhasePrompt('dance', lang))).toBe('dance');
       expect(detectMove(demoPhasePrompt('sing', lang))).toBe('sing');
       expect(detectMove(demoPhasePrompt('yoga', lang))).toBe('yoga');
+    }
+  });
+
+  it('new move chips hit their detectors', () => {
+    for (const lang of ['en', 'yue', 'zh', 'ja'] as const) {
+      expect(detectExercise(demoPhasePrompt('kungfu', lang))).toBe('kungfu');
+      expect(detectExercise(demoPhasePrompt('taichi', lang))).toBe('taichi');
+      expect(detectExercise(demoPhasePrompt('stretch', lang))).toBe('warmup');
+      expect(detectMove(demoPhasePrompt('jog', lang))).toBe('jog');
+      expect(detectMove(demoPhasePrompt('piano', lang))).toBe('piano');
+      expect(detectMove(demoPhasePrompt('violin', lang))).toBe('violin');
+    }
+  });
+
+  it('together chips hit duet / meal / tag intercepts', () => {
+    for (const lang of ['en', 'yue', 'zh', 'ja'] as const) {
+      expect(DUET_TRIGGER.test(demoPhasePrompt('duet', lang))).toBe(true);
+      expect(MEAL_TOGETHER_TRIGGER.test(demoPhasePrompt('eat', lang))).toBe(true);
+      expect(detectActionGame(demoPhasePrompt('tag', lang))).toBe('tag');
+    }
+  });
+
+  it('fun science prompts ask for a longer teach turn', () => {
+    for (const lang of ['en', 'yue', 'zh', 'ja'] as const) {
+      expect(wantsLongCompanionReply(demoPhasePrompt('funScience', lang))).toBe(true);
     }
   });
 
