@@ -30,9 +30,11 @@ export default function ChatMessage({
 }: ChatMessageProps) {
   const isUser = role === 'user';
   const clause = liveClause?.trim() ?? '';
+  // While the caption ladder owns the spoken line (tailStreaming, no clause),
+  // hide the bubble body so history and the live subtitle never overlap.
   const visible = isUser
     ? content
-    : clause || (tailStreaming ? '…' : content);
+    : clause || (tailStreaming ? '' : content);
   // The "…" wait bubble is a transient placeholder, not generated text —
   // there is nothing there to report.
   const reportable = !isUser && !tailStreaming && content.trim() !== '' && content.trim() !== '…';
@@ -44,15 +46,17 @@ export default function ChatMessage({
           {label}
         </p>
       )}
-      <p
-        className={isUser ? '' : clause ? 'text-white/95 italic' : 'text-white/95'}
-        style={isUser ? { color: accent } : undefined}
-        data-testid={!isUser && clause ? 'speech-caption' : undefined}
-        aria-live={!isUser && clause ? 'polite' : undefined}
-        aria-atomic={!isUser && clause ? true : undefined}
-      >
-        {visible}
-      </p>
+      {visible !== '' && (
+        <p
+          className={isUser ? '' : clause ? 'text-white/95 italic' : 'text-white/95'}
+          style={isUser ? { color: accent } : undefined}
+          data-testid={!isUser && clause ? 'speech-caption' : undefined}
+          aria-live={!isUser && clause ? 'polite' : undefined}
+          aria-atomic={!isUser && clause ? true : undefined}
+        >
+          {visible}
+        </p>
+      )}
       {showMemory && (
         <details
           data-testid="memory-turn-used"

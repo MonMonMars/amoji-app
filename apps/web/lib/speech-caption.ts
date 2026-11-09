@@ -56,11 +56,32 @@ export function rollCaptionsForLine(text: string): void {
 }
 
 /** Last N spoken clauses for a streaming draft (subtitle preview before audio). */
-export function rollingCaptionFromText(text: string, maxClauses = 2): string {
+export function rollingCaptionFromText(text: string, maxClauses = 1): string {
   const spoken = cleanForSpeech(text);
   if (!spoken.trim()) return '';
   const parts = splitChunks(spoken)
     .map((c) => stripVoicedGlyphs(c).trim())
     .filter(Boolean);
   return parts.slice(-maxClauses).join(' ');
+}
+
+/**
+ * Caption ladder: the live front line stays alone at the bottom. When a new
+ * clause arrives, the previous front line moves up into settled history so
+ * captions never stack on top of each other in one row.
+ */
+export function stepCaptionLadder(
+  ladder: string[],
+  current: string,
+  next: string,
+  maxSettled = 6,
+): { ladder: string[]; current: string } {
+  const n = next.trim();
+  const c = current.trim();
+  if (!n) return { ladder: [], current: '' };
+  if (c && c !== n) {
+    const promoted = [...ladder, c].slice(-Math.max(1, maxSettled));
+    return { ladder: promoted, current: n };
+  }
+  return { ladder, current: n || c };
 }

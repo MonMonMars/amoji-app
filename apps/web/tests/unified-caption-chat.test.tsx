@@ -3,37 +3,51 @@ import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
 import ChatMessage from '../components/ChatMessage';
+import { stepCaptionLadder } from '../lib/speech-caption';
 
 const web = join(__dirname, '..');
 const read = (rel: string) => readFileSync(join(web, rel), 'utf8');
 
 describe('unified speech caption in chat history', () => {
-  it('ChatPanel does not mount a second caption strip outside history', () => {
+  it('ChatPanel mounts the live caption below history, not inside ChatMessage', () => {
     const panel = read('components/ChatPanel.tsx');
-    const captionHits = [...panel.matchAll(/data-testid="speech-caption"/g)];
-    expect(captionHits.length).toBe(0);
     expect(panel).toContain('SPEECH_CAPTION_EVENT');
-    expect(panel).toContain('liveClause');
-    expect(panel).toContain('tailStreaming');
+    expect(panel).toContain('stepCaptionLadder');
+    expect(panel).toContain('captionLadder');
+    expect(panel).toContain('data-testid="speech-caption"');
+    expect(panel).toContain('data-testid="speech-caption-settled"');
+    expect(panel).toContain('data-testid="speech-caption-front"');
+    // Live clause no longer painted inside the last history bubble.
+    expect(panel).not.toMatch(/liveClause=\{liveClause/);
   });
 
-  it('assistant streaming tail carries movie-style clause inside the bubble', () => {
+  it('assistant streaming tail hides the full bubble so captions cannot overlap it', () => {
     const html = renderToStaticMarkup(
       <ChatMessage
         role="assistant"
         content="Full reply stays for reporting."
-        liveClause="Just this clause on screen."
         tailStreaming
         lang="en"
         accent="#f9a8d4"
         onReport={() => {}}
       />,
     );
-    expect(html).toContain('data-testid="speech-caption"');
-    expect(html).toContain('Just this clause on screen.');
     expect(html).not.toContain('Full reply stays for reporting.');
-    expect(html).toContain('aria-live="polite"');
+    expect(html).not.toContain('data-testid="speech-caption"');
     expect(html).not.toContain('chat-report-button');
+  });
+
+  it('finished assistant bubbles still show full content', () => {
+    const html = renderToStaticMarkup(
+      <ChatMessage
+        role="assistant"
+        content="Full reply stays for reporting."
+        lang="en"
+        accent="#f9a8d4"
+        onReport={() => {}}
+      />,
+    );
+    expect(html).toContain('Full reply stays for reporting.');
   });
 
   it('user bubbles stay right-aligned in ChatMessage', () => {
@@ -48,6 +62,16 @@ describe('unified speech caption in chat history', () => {
     );
     expect(html).toContain('text-right');
     expect(html).not.toContain('speech-caption');
+  });
+
+  it('stepCaptionLadder promotes the previous front line before showing the next', () => {
+    const first = stepCaptionLadder([], '', 'Sunny and mild.');
+    expect(first).toEqual({ ladder: [], current: 'Sunny and mild.' });
+    const second = stepCaptionLadder(first.ladder, first.current, 'Bring a light jacket.');
+    expect(second.ladder).toEqual(['Sunny and mild.']);
+    expect(second.current).toBe('Bring a light jacket.');
+    const done = stepCaptionLadder(second.ladder, second.current, '');
+    expect(done).toEqual({ ladder: [], current: '' });
   });
 });
 
