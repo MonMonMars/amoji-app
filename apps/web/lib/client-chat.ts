@@ -97,6 +97,8 @@ export interface ClientChatOptions {
   onPartial?: (text: string) => void;
   /** Live Story Mode session — long narrative budget for every turn. */
   storySession?: boolean;
+  /** Cast id — picks a home OVH model and keys conversation sticky. */
+  characterId?: string;
 }
 
 /** only the most recent turns go into the prompt — old topics live in memory.
@@ -173,8 +175,108 @@ export const OVH_MODELS = [
   'Meta-Llama-3_3-70B-Instruct',
 ] as const;
 
-/** Multi-lang primary — what OVH is asked for when nothing is hot. */
+export type OvhModelId = (typeof OVH_MODELS)[number];
+
+/** Catalog default — also the fallback home when no character is set. */
 export const OVH_MODEL = OVH_MODELS[0];
+
+const STICKY_STORAGE_KEY = 'amoji.ovhSticky.v1';
+/** In-memory sticky OVH model per conversation (character). Keeps reasoning
+ *  aligned across turns; sessionStorage mirrors so a refresh keeps the same
+ *  brain. Failover (dead / cooling / timed-out lane) rewrites the sticky. */
+const stickyMemory = new Map<string, OvhModelId>();
+
+function hashCharacter(id: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+/** Conversation key for sticky brain — one cast member, one thread. */
+export function conversationBrainKey(characterId?: string): string {
+  return (characterId?.trim() || 'default').toLowerCase();
+}
+
+/** Stable home OVH model for a character — spreads the cast across the three. */
+export function preferOvhForCharacter(characterId?: string): OvhModelId {
+  const id = conversationBrainKey(characterId);
+  return OVH_MODELS[hashCharacter(id) % OVH_MODELS.length]!;
+}
+
+function readStickyStore(): Record<string, string> {
+  try {
+    if (typeof sessionStorage === 'undefined') return {};
+    const raw = sessionStorage.getItem(STICKY_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as unknown;
+    return parsed && typeof parsed === 'object' ? parsed as Record<string, string> : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeStickyStore(all: Record<string, string>): void {
+  try {
+    if (typeof sessionStorage === 'undefined') return;
+    sessionStorage.setItem(STICKY_STORAGE_KEY, JSON.stringify(all));
+  } catch { /* in-memory only */ }
+}
+
+export function getStickyOvh(conversationKey: string): OvhModelId | null {
+  const mem = stickyMemory.get(conversationKey);
+  if (mem && (OVH_MODELS as readonly string[]).includes(mem)) return mem;
+  const stored = readStickyStore()[conversationKey];
+  if (stored && (OVH_MODELS as readonly string[]).includes(stored)) {
+    const model = stored as OvhModelId;
+    stickyMemory.set(conversationKey, model);
+    return model;
+  }
+  return null;
+}
+
+/** Pin (or re-pin after failover) the OVH model for this conversation. */
+export function setStickyOvh(conversationKey: string, model: OvhModelId): void {
+  stickyMemory.set(conversationKey, model);
+  const all = readStickyStore();
+  all[conversationKey] = model;
+  writeStickyStore(all);
+}
+
+/** Test / character-switch hook. */
+export function clearStickyOvh(conversationKey?: string): void {
+  if (!conversationKey) {
+    stickyMemory.clear();
+    writeStickyStore({});
+    return;
+  }
+  stickyMemory.delete(conversationKey);
+  const all = readStickyStore();
+  delete all[conversationKey];
+  writeStickyStore(all);
+}
+
+export type PreferOvhOpts = {
+  characterId?: string;
+  /** defaults to conversationBrainKey(characterId) */
+  conversationKey?: string;
+};
+
+/**
+ * OVH order for this turn: sticky (same conversation) → character home → siblings.
+ * Failover walks the list when the lead is cooling or dead in this region.
+ */
+export function preferOvhModels(opts: PreferOvhOpts | string = {}): OvhModelId[] {
+  // string form kept for older call sites / tests that pass a conversation key
+  const normalized: PreferOvhOpts = typeof opts === 'string' ? { conversationKey: opts } : opts;
+  const key = normalized.conversationKey ?? conversationBrainKey(normalized.characterId);
+  const home = preferOvhForCharacter(normalized.characterId);
+  const sticky = getStickyOvh(key);
+  const primary = sticky ?? home;
+  return [primary, ...OVH_MODELS.filter((m) => m !== primary)];
+}
 
 /** Per-(host, model) anonymous-budget cooldown, in ms.
  *
@@ -399,10 +501,11 @@ export function markRacerSent(id: string, at: number = Date.now(), exhausted = f
   racerSends.set(key, sends);
 }
 
-/** Test hook: clear every window. */
+/** Test hook: clear every window (and conversation sticky brains). */
 export function resetRacerCooldowns(): void {
   racerSends.clear();
   puterLoader = null;
+  clearStickyOvh();
 }
 
 /** How many racers one turn should launch at once. The whole point of the
@@ -417,29 +520,34 @@ export function eligibleRacers(at: number = Date.now()): RacerSpec[] {
   return FREE_RACERS.filter((r) => !racerCoolingDown(r, at));
 }
 
+export type SelectRacersOpts = {
+  at?: number;
+  /** Preferred OVH model order for this turn's situation. */
+  preferOvh?: readonly OvhModelId[];
+};
+
 /**
  * The lanes this turn should actually race: the best few racers that are not
- * cooling down. Cooling lanes are skipped so their budget refills, and the
- * next turn naturally arrives on a DIFFERENT model of the same host — that is
- * the rotation. If fewer than RACERS_PER_TURN are fresh (a rapid burst), the
- * remaining slots are filled with the hosts that have been waiting longest
- * rather than dead-ending the chat: one extra request beats silence.
+ * cooling down. Cooling lanes are skipped so their budget refills.
  *
- * Puter is kept in the round whenever it is fresh, because it is the only
- * racer whose budget no OVH-side outage can take away.
+ * Puter stays in the round when fresh (only independent racer). OVH is capped
+ * to ONE model per turn — sticky / character home when fresh, otherwise the
+ * next sibling — so a conversation does not hop brains mid-thread. Sibling
+ * OVH models are the failover when the preferred lane is cooling, dead, or
+ * slow in this region.
  */
-export function selectRacers(at: number = Date.now()): RacerSpec[] {
-  const fresh = eligibleRacers(at);
-  if (fresh.length >= RACERS_PER_TURN) return rankForTurn(fresh).slice(0, RACERS_PER_TURN);
-  const picked = rankForTurn(fresh);
-  const rest = FREE_RACERS
-    .filter((r) => !picked.includes(r))
-    .sort((a, b) => lastSendOf(a) - lastSendOf(b));
-  for (const r of rest) {
-    if (picked.length >= RACERS_PER_TURN) break;
-    picked.push(r);
-  }
-  return picked.length ? picked : [longestIdleRacer(at) ?? FREE_RACERS[0]!];
+export function selectRacers(atOrOpts: number | SelectRacersOpts = Date.now()): RacerSpec[] {
+  const opts: SelectRacersOpts = typeof atOrOpts === 'number' ? { at: atOrOpts } : atOrOpts;
+  const at = opts.at ?? Date.now();
+  const prefer = opts.preferOvh ?? preferOvhModels();
+  const fresh = oneOvhMax(rankForTurn(eligibleRacers(at), prefer), prefer);
+  if (fresh.length >= RACERS_PER_TURN) return fresh.slice(0, RACERS_PER_TURN);
+  // Already have a viable set (e.g. Puter + sticky OVH). Do not pull cooling
+  // Pollinations / sibling OVH back in — that broke per-IP windows and could
+  // hop the conversation onto another brain. Only when EVERY lane is cooling
+  // do we fall through to the longest-idle spare.
+  if (fresh.length > 0) return fresh;
+  return [longestIdleRacer(at) ?? FREE_RACERS[0]!];
 }
 
 /** Newest dispatch to this slot, or -Infinity if it has never been asked. */
@@ -448,13 +556,45 @@ function lastSendOf(spec: Pick<RacerSpec, 'host' | 'model'>): number {
   return sends?.length ? sends[sends.length - 1]! : -Infinity;
 }
 
-/** Best-first, with Puter pulled forward whenever it is available: it is the
- *  only genuinely independent racer, so it is worth a slot even when OVH has
- *  fresher models. */
-function rankForTurn(specs: RacerSpec[]): RacerSpec[] {
+/** Index in the preference list; unknown models sort last. */
+function ovhPreferRank(model: string, prefer: readonly OvhModelId[]): number {
+  const i = prefer.indexOf(model as OvhModelId);
+  return i < 0 ? prefer.length + 1 : i;
+}
+
+/** Best-first: Puter first (independent), then non-OVH, then OVH by preference. */
+function rankForTurn(specs: RacerSpec[], prefer: readonly OvhModelId[]): RacerSpec[] {
   const puter = specs.filter((r) => r.host === 'puter');
-  const rest = specs.filter((r) => r.host !== 'puter');
-  return [...puter, ...rest];
+  const ovh = specs
+    .filter((r) => r.host === 'ovhcloud')
+    .sort((a, b) => ovhPreferRank(a.model, prefer) - ovhPreferRank(b.model, prefer));
+  const other = specs.filter((r) => r.host !== 'puter' && r.host !== 'ovhcloud');
+  return [...puter, ...other, ...ovh];
+}
+
+/** At most one OVH racer: preferred when fresh, else the first sibling in order. */
+export function oneOvhMax(specs: RacerSpec[], prefer: readonly OvhModelId[]): RacerSpec[] {
+  const preferred = prefer[0];
+  const preferredFresh = preferred
+    ? specs.find((r) => r.host === 'ovhcloud' && r.model === preferred)
+    : undefined;
+  let keptOvh = false;
+  const out: RacerSpec[] = [];
+  for (const r of specs) {
+    if (r.host !== 'ovhcloud') {
+      out.push(r);
+      continue;
+    }
+    if (preferredFresh) {
+      if (r.model === preferred) out.push(r);
+      continue;
+    }
+    if (!keptOvh) {
+      out.push(r);
+      keptOvh = true;
+    }
+  }
+  return out;
 }
 
 /** The cooling (host, model) that has been waiting longest — last resort. */
@@ -850,20 +990,28 @@ async function streamCompletion(
  *  no longer accidentally fire two requests at one provider's budget.
  *  r143 — a racer is one (host, model) budget slot, not one company, so a
  *  turn can legitimately include several OVH models at once. */
+export type RaceFreeLanesOpts = {
+  characterId?: string;
+  conversationKey?: string;
+};
+
 export async function raceFreeLanes(
   system: string,
   messages: ChatMessage[],
   onPartial?: (text: string) => void,
   maxTokens = 280,
+  raceOpts?: RaceFreeLanesOpts,
 ): Promise<string> {
   const ctx: RacerRequestContext = { system, messages, maxTokens };
-  // r143 — the best few (host, model) slots whose window has refilled. A
-  // rapid second message lands on a DIFFERENT OVH model instead of being
-  // dropped, which is where the extra free capacity comes from.
-  const lanes = selectRacers();
+  const conversationKey = raceOpts?.conversationKey ?? conversationBrainKey(raceOpts?.characterId);
+  const preferOvh = preferOvhModels({ characterId: raceOpts?.characterId, conversationKey });
+  // One OVH brain per conversation when healthy; siblings only on failover
+  // (cooling / dead / slow in this region). Puter + Pollinations still race
+  // as independent quotas beside that sticky OVH slot.
+  const lanes = selectRacers({ preferOvh });
   if (!lanes.length) throw new Error('no free lane available');
   try {
-    return await launchRace(lanes, ctx, onPartial);
+    return await launchRace(lanes, ctx, onPartial, conversationKey);
   } catch (err) {
     // Every FRESH lane failed. Rather than dropping straight to the canned
     // line, borrow the (host, model) that has been cooling longest — one
@@ -872,7 +1020,7 @@ export async function raceFreeLanes(
     const tried = new Set(lanes.map((r) => r.id));
     const spare = longestIdleRacer();
     if (!spare || tried.has(spare.id) || !(err instanceof Error)) throw err;
-    return launchRace([spare], ctx, onPartial);
+    return launchRace([spare], ctx, onPartial, conversationKey);
   }
 }
 
@@ -881,6 +1029,7 @@ async function launchRace(
   lanes: RacerSpec[],
   ctx: RacerRequestContext,
   onPartial?: (text: string) => void,
+  conversationKey?: string,
 ): Promise<string> {
   // gate: before the decision everyone may paint (a loser delta gets
   // overwritten by the winner's own accumulation on the next token);
@@ -900,8 +1049,15 @@ async function launchRace(
   }
   leader = winIdx;
   racers.forEach((r, j) => { if (j !== winIdx) r.abort(); });
+  const winner = lanes[winIdx]!;
+  // Pin the conversation to the OVH model that actually answered — including
+  // failover onto a sibling when the home / sticky lane was dead or slow.
+  if (conversationKey && winner.host === 'ovhcloud'
+    && (OVH_MODELS as readonly string[]).includes(winner.model)) {
+    setStickyOvh(conversationKey, winner.model as OvhModelId);
+  }
   const text = await racers[winIdx]!.finish();
-  if (!text.trim()) throw new Error(`${lanes[winIdx]!.id} empty`);
+  if (!text.trim()) throw new Error(`${winner.id} empty`);
   return text;
 }
 
@@ -944,9 +1100,10 @@ async function streamModelReply(
   messages: ChatMessage[],
   onPartial: ClientChatOptions['onPartial'],
   maxTokens: number,
+  raceOpts?: RaceFreeLanesOpts,
 ): Promise<string> {
   return spec.id === 'pollinations'
-    ? raceFreeLanes(system, messages, onPartial, maxTokens)
+    ? raceFreeLanes(system, messages, onPartial, maxTokens, raceOpts)
     : streamCompletion(spec, key, system, messages, onPartial, maxTokens);
 }
 
@@ -978,6 +1135,10 @@ export async function clientChat(
   const lastUser = recent[recent.length - 1]?.content ?? '';
   const story = wantsStoryTurn(lastUser, { persona: opts?.persona, storySession: opts?.storySession });
   const detailed = wantsDetail(opts?.world, lastUser) || story;
+  const raceOpts: RaceFreeLanesOpts = {
+    characterId: opts?.characterId,
+    conversationKey: conversationBrainKey(opts?.characterId),
+  };
   const shapeLong = detailed;
   const system = `${BASE_SYSTEM}\nReply in speakable sentences only. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${story ? `\n${storySystemBlock(opts?.language)}` : ''}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
   const maxTokens = maxTokensForStoryTurn(story, wantsDetail(opts?.world, lastUser));
@@ -1011,13 +1172,13 @@ export async function clientChat(
     }
   };
   try {
-    const content = await streamModelReply(first.spec, first.key, system, recent, onPartial, maxTokens);
+    const content = await streamModelReply(first.spec, first.key, system, recent, onPartial, maxTokens, raceOpts);
     rejectCreditBody(first.spec.id, content);
     const out = finalize(content);
     if (replyLooksNonsense(out.reply, sanityOpts(sanityCtx))) {
       const strict = `${system}\n${STRICT_REPLY_APPENDIX}`;
       try {
-        const retry = await streamModelReply(first.spec, first.key, strict, recent, undefined, maxTokens);
+        const retry = await streamModelReply(first.spec, first.key, strict, recent, undefined, maxTokens, raceOpts);
         rejectCreditBody(first.spec.id, retry);
         const retryOut = finalize(retry);
         if (!replyLooksNonsense(retryOut.reply, sanityOpts(sanityCtx))) return retryOut;
@@ -1045,13 +1206,13 @@ export async function clientChat(
       window.dispatchEvent(new CustomEvent('amoji:brain-degraded', { detail: degradedNote(first.spec, opts?.language, credit) }));
     }
     try {
-      const content = await raceFreeLanes(system, recent, onPartial, maxTokens);
+      const content = await raceFreeLanes(system, recent, onPartial, maxTokens, raceOpts);
       if (content.length < 160 && CREDIT_RE.test(content)) throw new Error('pollinations credit');
       const out = finalize(content);
       if (replyLooksNonsense(out.reply, sanityOpts(sanityCtx))) {
         const strict = `${system}\n${STRICT_REPLY_APPENDIX}`;
         try {
-          const retry = await raceFreeLanes(strict, recent, undefined, maxTokens);
+          const retry = await raceFreeLanes(strict, recent, undefined, maxTokens, raceOpts);
           const retryOut = finalize(retry);
           if (!replyLooksNonsense(retryOut.reply, sanityOpts(sanityCtx))) return retryOut;
         } catch { /* local fallback */ }

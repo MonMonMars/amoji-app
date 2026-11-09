@@ -1197,6 +1197,7 @@ export default function ChatPanel({
           world,
           worldSpoken,
           storySession: !!loadStorySession(),
+          characterId,
           onPartial: (partial) => {
             // r.47 — the real stream is painting now: the wait cue stands down
             stopThinkingSound();
