@@ -4,7 +4,7 @@
 // SFW: cheerful, kid-safe, no romance and no mean jokes.
 
 import type { Lang } from './prefs';
-import { spokenLineLooksBroken, asksUserInnerThoughts } from './spoken-line-sanity';
+import { asksUserInnerThoughts, spokenLineLooksBroken } from './spoken-line-sanity';
 
 export const VOICE_IDS = [
   'sunny', 'shy', 'playful', 'gentle', 'dreamy', 'spark',
@@ -99,7 +99,7 @@ const LEX: Record<MotifId, Record<Lang, Lex>> = {
     en: { noun: 'maps', verb: 'trace a path', thing: 'a pocket map' },
     yue: { noun: '地圖', verb: '畫條小路', thing: '一張袖珍地圖' },
     zh: { noun: '地图', verb: '画一条小路', thing: '一张袖珍地图' },
-    ja: { noun: '地図', verb: '道をたどる', thing: '小さな地図' },
+    ja: { noun: '地図', verb: '道をたどる', thing: '小さなポケット地図' },
   },
 };
 
@@ -329,7 +329,7 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
       'Um, talking about {noun} makes me a little shy, and that is okay.',
       'I almost hid {thing}, then decided to keep it near.',
       'If you have a minute, we could {verb} at an easy pace.',
-      '{thing} sits here quietly, like this soft hello.',
+      'I keep {thing} here quietly, like this soft hello.',
       'I like quiet {noun} time in rooms like this.',
     ],
     yue: [
@@ -341,7 +341,7 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
       '嗯，講起{noun}令我有啲害羞，都唔緊要。',
       '我差啲收埋{thing}，之後決定放近啲。',
       '你有一分鐘嘅話，我哋可以慢慢{verb}。',
-      '{thing}靜靜放喺度，好似呢聲輕輕嘅你好。',
+      '我將{thing}靜靜放喺度，好似呢聲輕輕嘅你好。',
       '我鍾意喺咁嘅房度過安靜{noun}時間。',
     ],
     zh: [
@@ -353,19 +353,19 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
       '嗯，说起{noun}让我有点害羞，也没关系。',
       '我差点藏起{thing}，后来决定放近一点。',
       '你有一分钟的话，我们可以慢慢{verb}。',
-      '{thing}安静地放在这里，像这声轻轻的你好。',
+      '我把{thing}安静地放在这里，像这声轻轻的你好。',
       '我喜欢在这样的房间里过安静的{noun}时光。',
     ],
     ja: [
       'そっと{verb}してみた…そばに席を空けておいたよ。',
       '{thing}を見ていたら、やさしくあなたを思い出した。',
-      'そばに{noun}があるだけで、今は十分なお伴。',
+      'そばに{noun}があるだけで、今は十分なお供。',
       '座りながら{verb}するかも——ゆっくり小さく。',
       '万一のために{thing}を取ってある。落ち着きの助けに。',
       'えっと、{noun}の話は少し照れる。それでも大丈夫。',
       '{thing}を隠しそうになって、近くに置くことにした。',
       '一分あれば、ゆっくり{verb}できるよ。',
-      '{thing}が静かにここにある。このやさしい挨拶みたい。',
+      '{thing}を静かに置いてある。このやさしい挨拶みたい。',
       'こんな部屋で、静かな{noun}時間が好き。',
     ],
   },
@@ -1417,10 +1417,10 @@ const OPENING: Record<VoiceId, Record<Lang, string>> = {
     ja: 'こんにちは、{name}です！元気いっぱいだし、{noun}が大好き。何したい？',
   },
   steady: {
-    en: "Hello, I'm {name}. I'm calm company and I like {noun} — I'm here whenever you want to talk.",
-    yue: '你好，我係{name}。我會靜靜陪你，亦鍾意{noun}。想傾就隨時得。',
-    zh: '你好，我是{name}。我会安静陪着你，也喜欢{noun}。想聊的时候我就在。',
-    ja: 'こんにちは、{name}です。落ち着いて一緒にいるよ。{noun}も好き。話したくなったらここにいるね。',
+    en: "Hello, I'm {name}. I'm calm company and I like {noun} — what should we talk about?",
+    yue: '你好，我係{name}。我會靜靜陪你，亦鍾意{noun}。我哋傾咩好呀？',
+    zh: '你好，我是{name}。我会安静陪着你，也喜欢{noun}。我们聊什么好呀？',
+    ja: 'こんにちは、{name}です。落ち着いて一緒にいるよ。{noun}も好き。何を話そうか？',
   },
   cool: {
     en: "Hey, I'm {name}. I keep things simple and I like {noun} — want to talk?",
@@ -1473,6 +1473,7 @@ const CADENCE = ['burst', 'aside', 'lilt', 'cheer'] as const;
 
 function fill(template: string, bits: Record<string, string>): string {
   // Missing keys used to collapse into empty slots ("a  pause", " reminding you").
+  // Prefer a clear unfinished marker so callers/tests can reject the line.
   return template.replace(/\{(\w+)\}/g, (_, key: string) => {
     const value = bits[key];
     return value == null || value === '' ? `{${key}}` : value;

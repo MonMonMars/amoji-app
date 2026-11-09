@@ -513,6 +513,8 @@ export default function ChatPanel({
     lead?: { text: string; pitch: number; rate: number },
     opts?: { idle?: boolean; n?: number },
   ) => {
+    // Durable spoken-line gate: reject unfinished templates / fragments /
+    // banned idle interrogations before TTS + history.
     const gated = gateSpokenLine(text, {
       mode: opts?.idle ? 'idle' : 'local',
       lang,

@@ -92,6 +92,7 @@ describe('idle-talk', () => {
     resetIdleTalkRecent();
     const a = pickIdleCompanionLine(CHARACTERS[0]!.id, CHARACTERS[0]!.gender, 'en', 0);
     const b = pickIdleCompanionLine(CHARACTERS[0]!.id, CHARACTERS[0]!.gender, 'en', 3);
+    // n%3===0 hits topic banks; consecutive topic beats should prefer a fresh line
     expect(a.trim().length).toBeGreaterThan(0);
     expect(b.trim().length).toBeGreaterThan(0);
     expect(b).not.toBe(a);
