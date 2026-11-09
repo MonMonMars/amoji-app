@@ -2,8 +2,9 @@
 // Idle companion talk: statement-only, topic stay/suggest, motif rotation.
 // Mon: never think aloud / ask in idle; less tea; rotate banks.
 import type { Lang } from './prefs';
-import { MOTIFS, type MotifId, type VoiceId, voiceIdleLines } from './personality-voice';
+import { MOTIFS, isIncompleteIdleLine, type MotifId, type VoiceId, voiceIdleLines } from './personality-voice';
 import { personalityProfile } from './personality';
+import { gateSpokenLine, safeIdleFallback } from './spoken-line-sanity';
 
 export type IdleTalkMode = 'stay' | 'suggest';
 
@@ -134,19 +135,25 @@ export function pickIdleCompanionLine(
   // Every third beat: explicit stay/suggest topic bank (statement).
   if (Math.abs(n) % 3 === 0) {
     const bank = mode === 'stay' ? STAY_TOPIC_LINES : SUGGEST_TOPIC_LINES;
-    return pickBank(bank, lang, n + frame);
+    const picked = pickBank(bank, lang, n + frame);
+    return gateSpokenLine(picked, { mode: 'idle', lang, n: n + frame }) ?? safeIdleFallback(lang, n + frame);
   }
   const motif = nextIdleMotif(n + frame, profile.motif);
-  const lines = voiceIdleLines(profile.personality as VoiceId, motif, frame, lang);
+  const lines = voiceIdleLines(profile.personality as VoiceId, motif, frame, lang)
+    .filter((line) => !isIncompleteIdleLine(line));
+  if (lines.length === 0) {
+    return safeIdleFallback(lang, n + frame);
+  }
   const start = Math.abs(n) % lines.length;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[(start + i) % lines.length]!;
-    if (!wasRecent(line)) {
-      rememberLine(line);
-      return line;
-    }
+    const gated = gateSpokenLine(line, { mode: 'idle', lang, n: n + i });
+    if (!gated || wasRecent(gated)) continue;
+    rememberLine(gated);
+    return gated;
   }
-  const fallback = lines[start]!;
+  const fallback = gateSpokenLine(lines[start]!, { mode: 'idle', lang, n })
+    ?? safeIdleFallback(lang, n);
   rememberLine(fallback);
   return fallback;
 }

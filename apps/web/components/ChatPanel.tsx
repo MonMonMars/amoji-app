@@ -146,6 +146,7 @@ import { pickLine } from '../lib/chatter';
 import { pickIdleLine } from '../lib/persona-chatter';
 import { pickIdleCompanionLine } from '../lib/idle-talk';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
+import { gateSpokenLine, safeIdleFallback } from '../lib/spoken-line-sanity';
 import { pickCharacterInteraction } from '../lib/interaction-lines';
 import { pokeSectionPlaceholderLine, type PokeSectionId } from '../lib/poke-zones';
 import { personalityProfile, personalityPrompt } from '../lib/personality';
@@ -510,16 +511,24 @@ export default function ChatPanel({
     text: string,
     hints?: Record<string, number>,
     lead?: { text: string; pitch: number; rate: number },
+    opts?: { idle?: boolean; n?: number },
   ) => {
-    feedUtterance(text);
-    notifySpeaking(lead ? `${lead.text} ${text}` : text);
+    const gated = gateSpokenLine(text, {
+      mode: opts?.idle ? 'idle' : 'local',
+      lang,
+      n: opts?.n ?? chatterCountRef.current,
+      fallback: opts?.idle ? safeIdleFallback(lang, opts?.n ?? chatterCountRef.current) : undefined,
+    });
+    if (!gated) return;
+    feedUtterance(gated);
+    notifySpeaking(lead ? `${lead.text} ${gated}` : gated);
     const remembered = recentUserMood();
     const voiced = remembered
       ? { ...(hints ?? {}), [remembered]: Math.max(hints?.[remembered] ?? 0, 0.45) }
       : hints;
-    speak(text, characterId, lang, voiced, lead);
+    speak(gated, characterId, lang, voiced, lead);
     if (voiced) applyContentMood(voiced);
-    setHistory((h) => [...h, { role: 'assistant', content: text }]);
+    setHistory((h) => [...h, { role: 'assistant', content: gated }]);
   };
 
   // speak a just-arrived reply; if the exchange was funny, giggle first and
@@ -841,12 +850,12 @@ export default function ChatPanel({
       const n = chatterCountRef.current++;
       if (silent >= CLOSER_AFTER_MS) {
         reengageStageRef.current = 2;
-        sayLocal(pickLine('reengageSoft', lang, n), feltHints);
+        sayLocal(pickLine('reengageSoft', lang, n), feltHints, undefined, { idle: true, n });
         return;
       }
       if (silent >= REENGAGE_AFTER_MS) {
         reengageStageRef.current = 1;
-        sayLocal(pickLine('reengage', lang, n), feltHints);
+        sayLocal(pickLine('reengage', lang, n), feltHints, undefined, { idle: true, n });
         return;
       }
       // One ability at a time when quiet — music / dance / song / weather / story / news.
@@ -892,7 +901,7 @@ export default function ChatPanel({
         ?? sceneAmbient
         ?? pickIdleCompanionLine(characterId, characterGender, lang, n)
         ?? pickIdleLine(characterId, lang, n);
-      sayLocal(line, feltHints);
+      sayLocal(line, feltHints, undefined, { idle: true, n });
     }, 5000);
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
