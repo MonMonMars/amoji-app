@@ -34,5 +34,7 @@ describe('ability reminders (one skill at a time)', () => {
     expect(chat).toContain('showcaseStoryAsk');
     // No multi-topic dump on the idle ability path
     expect(chat).toMatch(/One ability at a time when quiet/);
+    // Topical/demo replies mute offtopic dance/sing tack-ons
+    expect(chat).toContain('shouldSuppressSkillOffer');
   });
 });

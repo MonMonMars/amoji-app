@@ -197,6 +197,11 @@ import {
   showcaseStoryAsk,
   type ShowcaseKind,
 } from '../lib/showcase';
+import {
+  isTopicalContentTurn,
+  shouldSuppressSkillOffer,
+  stripOfftopicAbilityTack,
+} from '../lib/skill-offer-guard';
 import { recentUserMood } from '../lib/talk-history';
 import { detectGame, startGame, playTurn, gameFarewellLine, type GameState } from '../lib/games';
 import { detectActionGame, setMiniGameChromeHidden, subscribeMiniGameOpen, type ActionGame } from '../lib/minigames';
@@ -365,6 +370,8 @@ export default function ChatPanel({
   const openIdleBriefDoneRef = useRef(false);
   /** After Phase 2, one idle auto weather/news per quiet stretch. */
   const idleAutoAfterUserRef = useRef(false);
+  /** Last topical/demo content turn — mutes offtopic dance/sing/music offers. */
+  const lastTopicalContentAtRef = useRef(0);
   const listeningRef = useRef(false);
   const micModeRef = useRef(false);
   const micStopRef = useRef<{ stop(): void; flush(): void } | null>(null);
@@ -743,6 +750,8 @@ export default function ChatPanel({
       : setTimeout(() => {
           if (userHasSpokenRef.current || openIdleBriefDoneRef.current) return;
           if (userHasSpokenRef.current || busyRef.current) return;
+          // Never bolt a dance/sing invite onto a topical demo-phase answer.
+          if (shouldSuppressSkillOffer(lastTopicalContentAtRef.current)) return;
           // One ability reminder so newcomers learn what she can do.
           const kind = nextSkillOffer(characterId?.length ?? 0, lastOfferKindRef.current);
           lastOfferKindRef.current = kind;
@@ -842,7 +851,13 @@ export default function ChatPanel({
       }
       // One ability at a time when quiet — music / dance / song / weather / story / news.
       // Alternate with soft companion chatter so it does not nag every beat.
-      if (Date.now() - lastOfferAtRef.current > 45_000 && (n === 0 || n % 2 === 1)) {
+      // Skip after topical/demo content (fun fact → never "want to see me dance?").
+      const offerMuted = shouldSuppressSkillOffer(lastTopicalContentAtRef.current);
+      if (
+        !offerMuted
+        && Date.now() - lastOfferAtRef.current > 45_000
+        && (n === 0 || n % 2 === 1)
+      ) {
         lastOfferAtRef.current = Date.now();
         const kind = nextSkillOffer(n, lastOfferKindRef.current);
         lastOfferKindRef.current = kind;
@@ -852,7 +867,12 @@ export default function ChatPanel({
       }
       // After the user has spoken, one ability reminder per quiet stretch if
       // they have not picked a direction (no multi-topic dump).
-      if (userHasSpokenRef.current && !idleAutoAfterUserRef.current && !busyRef.current) {
+      if (
+        !offerMuted
+        && userHasSpokenRef.current
+        && !idleAutoAfterUserRef.current
+        && !busyRef.current
+      ) {
         idleAutoAfterUserRef.current = true;
         const kind = nextSkillOffer(n + 2, lastOfferKindRef.current);
         lastOfferKindRef.current = kind;
@@ -898,7 +918,16 @@ export default function ChatPanel({
     lastActivityRef.current = Date.now();
     lastUserRef.current = Date.now();
     reengageStageRef.current = 0;
-    idleAutoAfterUserRef.current = false;
+    // Any real send cancels the open-phase ability brief.
+    userHasSpokenRef.current = true;
+    // Topical/demo content: mute skill offers and consume the "first idle
+    // reminder" slot so a fun-fact never ends with a dance invite.
+    if (isTopicalContentTurn(text)) {
+      lastTopicalContentAtRef.current = Date.now();
+      idleAutoAfterUserRef.current = true;
+    } else {
+      idleAutoAfterUserRef.current = false;
+    }
     nearBottomRef.current = true;
     setHistory((h) => [...h, { role: 'user', content: text }]);
     feedUtterance(text);
@@ -1165,7 +1194,7 @@ export default function ChatPanel({
       const livePlan = planTools(text, priorUser);
       if (isLiveFactsOnlyTurn(livePlan, worldSpoken)) {
         stopThinkingSound();
-        const line = withQuestion(worldSpoken, lang);
+        const line = stripOfftopicAbilityTack(withQuestion(worldSpoken, lang), text);
         rememberTurn(text, line);
         onMemCountRef.current?.(memorySummaryCount());
         feedUtterance(line);
@@ -1225,21 +1254,22 @@ export default function ChatPanel({
           },
         });
         // Motion + face from chat content only — ignore LLM emotionHints.
-        const contentPlan = resolveContentMotion({ userText: text, assistantText: r.reply });
+        const cleanedReply = stripOfftopicAbilityTack(r.reply, text);
+        const contentPlan = resolveContentMotion({ userText: text, assistantText: cleanedReply });
         if (contentPlan.moodHints) applyContentMood(contentPlan.moodHints);
         // r.30 — the streaming path remembers the turn too (both paths learn)
-        rememberTurn(text, r.reply);
+        rememberTurn(text, cleanedReply);
         onMemCountRef.current?.(memorySummaryCount());
-        feedUtterance(r.reply);
+        feedUtterance(cleanedReply);
         const spoken = speakReply(
           text,
-          r.reply,
+          cleanedReply,
           contentPlan.moodHints,
           felt?.intensity,
           felt?.mood,
           firstSentence ? { text: firstSentence, since: sentenceStamp } : undefined,
         );
-        pushAutoIdle(r.reply, undefined, undefined, text);
+        pushAutoIdle(cleanedReply, undefined, undefined, text);
         commitReply(spoken);
         answered = true;
       } catch {
@@ -1253,7 +1283,7 @@ export default function ChatPanel({
 
     const commitServer = (data: { reply?: string; emotionHints?: Record<string, number> }) => {
       // Body/face from chat content — server emotionHints are not applied to motion.
-      const reply = data.reply || '…';
+      const reply = stripOfftopicAbilityTack(data.reply || '…', text);
       const contentPlan = resolveContentMotion({ userText: text, assistantText: reply });
       if (contentPlan.moodHints) applyContentMood(contentPlan.moodHints);
       // r.30 — remember the completed turn (your words + her reply) so the
@@ -1599,7 +1629,16 @@ export default function ChatPanel({
         <DemoPhaseRail
           lang={lang}
           disabled={busy}
-          onPick={(prompt) => { void send(prompt); }}
+          onPick={(prompt) => {
+            // Demo chips are one-topic tutorials — never carry a pending
+            // showcase/tutorial offer into the same beat as the chip reply.
+            pendingOfferRef.current = null;
+            if (isTopicalContentTurn(prompt)) {
+              lastTopicalContentAtRef.current = Date.now();
+              idleAutoAfterUserRef.current = true;
+            }
+            void send(prompt);
+          }}
         />
       <div className="relative flex w-full items-center gap-2.5">
         {/* r119: the voice watchdog armed a replay — a silent line is waiting

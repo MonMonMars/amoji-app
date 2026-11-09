@@ -82,6 +82,7 @@ import { replyLooksNonsense, STRICT_REPLY_APPENDIX } from './reply-sanity';
 import { shapeCompanionReply } from './reply-shape';
 import { wantsLongCompanionReply } from './topic-suggestions';
 import { maxTokensForStoryTurn, storySystemBlock, wantsStoryTurn } from './story-reply';
+import { mustStayOneTopic, stripOffTopicAbilityTacks } from './topic-mixture';
 
 export interface ClientChatResult { reply: string; emotionHints: Record<string, number> }
 
@@ -1116,9 +1117,19 @@ function packageReply(
     world: ctx.world,
     language: ctx.language,
   });
-  const spoken = ctx.story ? done.reply : withQuestion(done.reply, ctx.language);
+  // Ability/showcase invites stay idle-only — strip offtopic tack-ons even on
+  // rich/long paths (exception never authorizes dance-on-Jupiter).
+  const cleaned = stripOffTopicAbilityTacks(done.reply, ctx.lastUser) || done.reply;
+  const spoken = ctx.story ? cleaned : withQuestion(cleaned, ctx.language);
   const reply = preferLiveReply(spoken, ctx.world, ctx.worldSpoken, ctx.language);
   return { ...done, reply };
+}
+
+
+/** Keyed BYOK / capable brain (not the keyless free lane). */
+export function isKeyedBrain(picked?: ReturnType<typeof pickBrain>): boolean {
+  const p = picked ?? pickBrain();
+  return !p.spec.keyless && !!p.key;
 }
 
 /** A cook-along / long companion turn legitimately needs more room than a chat turn. */
@@ -1140,7 +1151,12 @@ export async function clientChat(
     conversationKey: conversationBrainKey(opts?.characterId),
   };
   const shapeLong = detailed;
-  const system = `${BASE_SYSTEM}\nReply in speakable sentences only. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${story ? `\n${storySystemBlock(opts?.language)}` : ''}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
+  const keyedBrain = isKeyedBrain(pickBrain());
+  // Free short / demo stays one-topic; story + keyed detailed get the multi-beat exception.
+  const oneTopicAppendix = mustStayOneTopic({ story, detailed, keyedBrain })
+    ? '\nTOPIC MIXTURE: Stay on ONE topic this turn. Never bolt dance/sing/music/weather/news/story invites onto an unrelated answer. Ability invites are idle-only.'
+    : '';
+  const system = `${BASE_SYSTEM}${oneTopicAppendix}\nReply in speakable sentences only. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${story ? `\n${storySystemBlock(opts?.language)}` : ''}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
   const maxTokens = maxTokensForStoryTurn(story, wantsDetail(opts?.world, lastUser));
   const onPartial = opts?.onPartial
     ? (partial: string) => {
