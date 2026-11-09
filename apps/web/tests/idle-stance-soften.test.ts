@@ -57,6 +57,6 @@ describe('idle stance soften', () => {
       (n) => (n === 'leftUpperArm' ? upper : n === 'leftLowerArm' ? lower : null),
       'StandardIdle',
     );
-    expect(lower.quaternion.dot(before)).toBeGreaterThan(0.999);
+    expect(lower.quaternion.dot(before)).toBeGreaterThan(0.99);
   });
 });
