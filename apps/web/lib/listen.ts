@@ -94,6 +94,12 @@ export interface ContinuousListenOptions {
    */
   onSpeechStart?: () => void;
   /**
+   * Return true to ignore this heard fragment (companion TTS echo from the
+   * speakers). Ignored fragments do not latch barge-in, so a later real
+   * user utterance can still cut her.
+   */
+  shouldIgnoreSpeech?: (heard: string) => boolean;
+  /**
    * r81 — the half-heard words, live. Fired on every result with whatever
    * the recognizer currently holds as not-yet-final (empty string once the
    * burst finalizes). The UI paints this as the user's in-progress bubble.
@@ -170,6 +176,14 @@ export function listenContinuous(lang: string, opts: ContinuousListenOptions): C
         else interim += t;
       }
       const heard = (finalText + interim).trim();
+      // Companion TTS often leaks into the mic. Ignore that fragment entirely
+      // so barge-in stays armed for a later real user utterance.
+      if (heard && opts.shouldIgnoreSpeech?.(heard)) {
+        if (!finalText.trim()) opts.onInterim?.('');
+        const saidEcho = finalText.trim();
+        if (saidEcho) { bargeInFired = false; disarmEndpoint(); }
+        return;
+      }
       // any recognized text means a real voice (noise never reaches here),
       // so barge-in exactly once per burst of talking
       if (heard && !bargeInFired) { bargeInFired = true; opts.onSpeechStart?.(); }

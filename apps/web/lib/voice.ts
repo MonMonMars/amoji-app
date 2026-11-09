@@ -96,11 +96,14 @@ import { analyzeText } from '@amoji/emotion-core';
 import { applyContentMood } from './companion';
 import { browserVoicesForLang, edgeSampleText, isMaleNeuralVoice, selectBrowserVoice, synthNameList } from './voice-catalog';
 import { loadingFillerKind, recordedFillerClip, recordedLaughClip, recordedPokeClip } from './voice-clips';
-import { LineQueue, speechRemainder } from './speech-queue';
+import { LineQueue, speechRemainder as rawSpeechRemainder } from './speech-queue';
 import { emotionClipPath } from './emotion-clip-picks';
 import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText, nextGreetingKind, type BurstClipKind, type ClipFolder, type VoiceClipGender } from './voice-clips';
 import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
-export { speechRemainder };
+/** Spoken-normalized remainder — avoids re-queuing a streamed first sentence. */
+export function speechRemainder(full: string, already: string): string {
+  return rawSpeechRemainder(full, already, (s) => stripLaughTokens(cleanForSpeech(s)));
+}
 import { edgeCastVoice } from './edge-cast';
 import { pauseEdgeForTabHide, speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead } from './edge-tts';
 import { pauseAfterClause, pauseGttsForTabHide, splitClauses, stopGtts, speakGtts } from './gtts';
@@ -1262,11 +1265,31 @@ export function speechPending(): boolean {
   return lineQueue.pending();
 }
 
-/** True when this exact sentence is the active line or still queued. */
+/** Same cleaning speak() applies before enqueue — used for queue identity. */
+export function normalizeQueuedSpeakText(text: string): string {
+  return stripLaughTokens(cleanForSpeech(text)).trim();
+}
+
+/**
+ * True when this sentence is the active line or still queued.
+ * Compares the speak()-normalized form so a streamed first sentence that still
+ * had em-dashes / symbols still matches the cleaned job (avoids re-speaking
+ * the opening line — the classic voice "echo").
+ */
 export function speechStillQueued(text: string): boolean {
-  const t = text.trim();
-  if (!t) return false;
-  return lineQueue.includes((job) => job.text.trim() === t);
+  const raw = text.trim();
+  const cleaned = normalizeQueuedSpeakText(text);
+  if (!raw && !cleaned) return false;
+  return lineQueue.includes((job) => {
+    const jt = job.text.trim();
+    return jt === raw || jt === cleaned || normalizeQueuedSpeakText(jt) === cleaned;
+  });
+}
+
+/** Last companion line handed to speak() (for mic self-echo guards). */
+let lastCompanionSpokenLine = '';
+export function lastCompanionSpoken(): string {
+  return lastCompanionSpokenLine;
 }
 
 function drainSpeech(): void {
@@ -1443,6 +1466,8 @@ export function speak(
   // only the user's mic or a user turn calls it.
   const cleaned = stripLaughTokens(cleanForSpeech(text));
   if (!cleaned || !voiceOutputAllowed()) return;
+  // Mic self-echo guards compare against this (speakers → Web Speech).
+  lastCompanionSpokenLine = cleaned;
   // A real line outranks the wait cue: drop a pending or speaking filler so
   // the reply is never talked over, and never interrupted by one.
   yieldFillerToReply();

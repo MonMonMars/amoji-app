@@ -21,6 +21,8 @@ describe('mic VAD must not kill companion TTS via speaker echo', () => {
     const listenBlock = panel.slice(listenStart, panel.indexOf('void startVad({', listenStart));
     expect(listenBlock).toMatch(/onSpeechStart:\s*\(\)\s*=>\s*\{[\s\S]*?stopSpeaking\(\)/);
     // ASR barge-in is not gated on isSpeaking — user words must always cut her.
+    // Speaker-bleed is filtered earlier via shouldIgnoreSpeech + looksLikeSpeechEcho.
     expect(listenBlock).not.toMatch(/onSpeechStart:[\s\S]*!isSpeaking\(\)/);
+    expect(listenBlock).toMatch(/shouldIgnoreSpeech:\s*\(heard\)\s*=>\s*looksLikeSpeechEcho/);
   });
 });

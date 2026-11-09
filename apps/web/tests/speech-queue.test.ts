@@ -42,4 +42,9 @@ describe('speechRemainder', () => {
     expect(speechRemainder('A different reply.', 'Hello there.')).toBe('A different reply.');
     expect(speechRemainder('  Hello.  ', '')).toBe('Hello.');
   });
+
+  it('uses an optional normalizer when the raw prefix misses', () => {
+    const norm = (s: string) => s.replace(/\s*—\s*/g, '，').trim();
+    expect(speechRemainder('Hello — there. More.', 'Hello，there.', norm)).toBe('More.');
+  });
 });

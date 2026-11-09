@@ -180,7 +180,8 @@ import {
   undecidedTopicReply,
   userUndecided,
 } from '../lib/topic-suggestions';
-import { speak, stopSpeaking, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechRemainder, whenSpeechIdle, speakThinkingFiller } from '../lib/voice';
+import { speak, stopSpeaking, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechRemainder, whenSpeechIdle, speakThinkingFiller, lastCompanionSpoken } from '../lib/voice';
+import { looksLikeSpeechEcho } from '../lib/speech-echo';
 import { productionChat } from '../lib/backend-client';
 import { stopThinkingSound } from '../lib/thinking-sound';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
@@ -1358,6 +1359,9 @@ export default function ChatPanel({
     const micHandle = listenContinuous(lang, {
       // r87 — the VAD owns endpointing now; its onPartial flushes via handle
       externalEndpoint: true,
+      // Speakers → mic: ignore fragments that match her last line so we never
+      // cut her for her own TTS or send it as a user turn (delayed echo).
+      shouldIgnoreSpeech: (heard) => looksLikeSpeechEcho(heard, lastCompanionSpoken()),
       onSpeechStart: () => {
         if (!bargeInArmed) return;
         bargeInArmed = false;

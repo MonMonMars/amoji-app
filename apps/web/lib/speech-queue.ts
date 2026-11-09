@@ -65,12 +65,31 @@ export class LineQueue<T> {
   }
 }
 
+/**
+ * Optional normalizer for spoken-form compares. `speak()` queues
+ * cleanForSpeech text; the streamed first sentence may still contain
+ * em-dashes / symbols, so a raw prefix miss would re-speak the opening
+ * (classic first-line echo). Callers that know the speak pipeline pass
+ * the same normalizer speak() uses.
+ */
+export type SpeakTextNormalizer = (text: string) => string;
+
 /** Text still to say after `already` was queued as the first sentence. */
-export function speechRemainder(full: string, already: string): string {
+export function speechRemainder(
+  full: string,
+  already: string,
+  normalize?: SpeakTextNormalizer,
+): string {
   const t = full.trim();
   const f = already.trim();
   if (!f) return t;
   if (t === f) return '';
   if (t.startsWith(f)) return t.slice(f.length).trim();
+  if (!normalize) return t;
+  const tc = normalize(t).trim();
+  const fc = normalize(f).trim();
+  if (!fc) return t;
+  if (tc === fc) return '';
+  if (tc.startsWith(fc)) return tc.slice(fc.length).trim();
   return t;
 }
