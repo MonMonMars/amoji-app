@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   DEMO_PHASE_BUTTONS,
@@ -10,6 +13,11 @@ import { detectExercise } from '../lib/exercises';
 import { DUET_TRIGGER, MEAL_TOGETHER_TRIGGER } from '../lib/activities';
 import { detectActionGame } from '../lib/minigames';
 import { wantsLongCompanionReply } from '../lib/topic-suggestions';
+
+const PANEL = fs.readFileSync(
+  path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../components/ChatPanel.tsx'),
+  'utf8',
+);
 
 describe('demo-phase buttons', () => {
   it('ships a short horizontal tutorial set', () => {
@@ -56,12 +64,20 @@ describe('demo-phase buttons', () => {
   it('new move chips hit their detectors', () => {
     for (const lang of ['en', 'yue', 'zh', 'ja'] as const) {
       expect(detectExercise(demoPhasePrompt('kungfu', lang))).toBe('kungfu');
+      // Tai chi demo plays the library move with general encouragement
+      // (ChatPanel one-shot path) — detector still tags the prompt.
       expect(detectExercise(demoPhasePrompt('taichi', lang))).toBe('taichi');
+      expect(detectMove(demoPhasePrompt('taichi', lang))).toBe('taichi');
       expect(detectExercise(demoPhasePrompt('stretch', lang))).toBe('warmup');
       expect(detectMove(demoPhasePrompt('jog', lang))).toBe('jog');
       expect(detectMove(demoPhasePrompt('piano', lang))).toBe('piano');
       expect(detectMove(demoPhasePrompt('violin', lang))).toBe('violin');
     }
+  });
+
+  it('ChatPanel wires tai chi as a one-shot library move, not cue sync', () => {
+    expect(PANEL).toContain("x === 'taichi'");
+    expect(PANEL).toContain("triggerMove('taichi')");
   });
 
   it('together chips hit duet / meal / tag intercepts', () => {

@@ -202,7 +202,7 @@ describe('gatherLiveContext', () => {
     expect(urls.some((u) => u.includes('geojs'))).toBe(false);
   });
 
-  it('labels a network estimate as coarse', async () => {
+  it('keeps coarse place metadata off the spoken weather line', async () => {
     const fetchImpl: typeof fetch = async (input) => {
       if (String(input).includes('api.open-meteo.com')) return jsonRes(weatherBody);
       return jsonRes({}, 404);
@@ -213,9 +213,13 @@ describe('gatherLiveContext', () => {
       cache: new Map(),
       locate: async () => ({ ...HK, city: 'Ashburn', region: 'Virginia', country: 'United States', source: 'ip' }),
     });
+    // Prompt may still note the source for the model; spoken weather must not
+    // mention GPS / network accuracy / "may be wrong".
     expect(live.prompt).toContain('coarse network estimate');
-    expect(live.spoken).toContain('rough network guess');
     expect(live.spoken).toContain('29°');
+    expect(live.spoken.toLowerCase()).not.toMatch(/gps|precise|network guess|may be wrong|accuracy/);
+    expect(live.spoken.toLowerCase()).toMatch(/take care/);
+    expect(live.spoken).toMatch(/umbrella|jacket|coat|layer|water|boots/i);
   });
 
   it('geocodes Osaka and does not ask the device', async () => {
@@ -485,6 +489,9 @@ describe('tool switch and prompt wiring', () => {
     expect(worldBlock('Weather: 29°C, drizzling.')).toContain('29°C');
     expect(worldBlock('Weather: 29°C.')).toContain('Do not invent');
     expect(worldBlock('Recipe: soup.')).toContain('cook-along');
+    const weatherGuide = worldBlock('Weather: 29°C.');
+    expect(weatherGuide).toMatch(/take care/i);
+    expect(weatherGuide).not.toMatch(/precise GPS|coarse network estimate, say it is approximate/i);
   });
 
   it('sends live facts to the model as system text, not as the user line', async () => {

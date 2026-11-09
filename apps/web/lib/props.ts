@@ -17,7 +17,7 @@ import type { MoveKind } from './moves';
 export type PropPartKind = 'box' | 'cylinder' | 'sphere' | 'cone';
 
 /** per-frame micro animation, sampled by CompanionCanvas with `now` ms */
-export type PropAnim = 'none' | 'pianoKeys' | 'softBob' | 'sway' | 'sparkle';
+export type PropAnim = 'none' | 'pianoKeys' | 'softBob' | 'sway' | 'sparkle' | 'magicDust';
 
 export interface PropPart {
   kind: PropPartKind;
@@ -50,29 +50,33 @@ const HEX = (s: string): string => s;
  * Sing-mic capsule center in scene space (meters). Shared offset for the
  * head + sparkle; pole/boom/base are derived so the stand stays coherent.
  * Nominal VRM mouth ~[0, 1.38, 0.06] on a ~1.5m cast facing +Z. Capsule
- * radius 0.05 + softBob ±0.008 — sit slightly forward (+Z) and to the
- * singer's mic-hand side (+X) so the mesh does not swallow the prop during
- * Sing VRMA / curated sing idles (t718 pulled it too close to the lips).
+ * sits on the mouth mid-line (near-zero X) with a sensible forward gap so
+ * Sing VRMA / curated sing idles do not swallow the mesh.
  */
-export const MIC_MOUTH_POS: [number, number, number] = [0.11, 1.42, 0.17];
+export const MIC_MOUTH_POS: [number, number, number] = [0.0, 1.38, 0.22];
 
 /** Stand column slightly outward (+x / +z) from the capsule toward the floor. */
-const MIC_STAND_XZ: [number, number] = [MIC_MOUTH_POS[0] + 0.025, MIC_MOUTH_POS[2] + 0.04];
+const MIC_STAND_XZ: [number, number] = [MIC_MOUTH_POS[0] + 0.08, MIC_MOUTH_POS[2] + 0.03];
 const MIC_BOOM_Y = MIC_MOUTH_POS[1] - 0.04;
 const MIC_POLE_H = Math.max(0.9, MIC_BOOM_Y);
 const MIC_POLE_Y = MIC_POLE_H / 2;
 
 export const PROPS: PropDef[] = [
   {
-    // the singer's mic — capsule at MIC_MOUTH_POS; stand derived beside it
+    // the singer's mic — capsule at MIC_MOUTH_POS; stand derived beside it.
+    // Magic-dust spheres float above the mouth and settle with the enter drop.
     id: 'micStand',
     forMoves: ['sing'],
     parts: [
       { kind: 'cylinder', pos: [MIC_STAND_XZ[0], 0.015, MIC_STAND_XZ[1]], size: [0.16, 0.18, 0.03], color: HEX('#111827') },
       { kind: 'cylinder', pos: [MIC_STAND_XZ[0], MIC_POLE_Y, MIC_STAND_XZ[1]], size: [0.012, 0.014, MIC_POLE_H], color: HEX('#374151') },
       { kind: 'cylinder', pos: [MIC_STAND_XZ[0], MIC_BOOM_Y, MIC_STAND_XZ[1]], size: [0.02, 0.02, 0.09], color: HEX('#4b5563'), rot: [0.55, 0, 0] },
-      { kind: 'sphere', pos: [MIC_MOUTH_POS[0], MIC_MOUTH_POS[1], MIC_MOUTH_POS[2]], size: [0.05, 0, 0], color: HEX('#1f2937'), anim: 'softBob', animPhase: 0.7 },
-      { kind: 'sphere', pos: [MIC_MOUTH_POS[0], MIC_MOUTH_POS[1], MIC_MOUTH_POS[2]], size: [0.028, 0, 0], color: HEX('#f472b6'), anim: 'sparkle', animPhase: 0 },
+      { kind: 'sphere', pos: [MIC_MOUTH_POS[0], MIC_MOUTH_POS[1], MIC_MOUTH_POS[2]], size: [0.045, 0, 0], color: HEX('#1f2937'), anim: 'softBob', animPhase: 0.7 },
+      { kind: 'sphere', pos: [MIC_MOUTH_POS[0], MIC_MOUTH_POS[1], MIC_MOUTH_POS[2]], size: [0.024, 0, 0], color: HEX('#f472b6'), anim: 'sparkle', animPhase: 0 },
+      { kind: 'sphere', pos: [MIC_MOUTH_POS[0] - 0.04, MIC_MOUTH_POS[1] + 0.28, MIC_MOUTH_POS[2]], size: [0.012, 0, 0], color: HEX('#fce7f3'), anim: 'magicDust', animPhase: 0.2 },
+      { kind: 'sphere', pos: [MIC_MOUTH_POS[0] + 0.05, MIC_MOUTH_POS[1] + 0.34, MIC_MOUTH_POS[2] + 0.02], size: [0.01, 0, 0], color: HEX('#fbcfe8'), anim: 'magicDust', animPhase: 1.1 },
+      { kind: 'sphere', pos: [MIC_MOUTH_POS[0] + 0.01, MIC_MOUTH_POS[1] + 0.42, MIC_MOUTH_POS[2] - 0.02], size: [0.014, 0, 0], color: HEX('#f9a8d4'), anim: 'magicDust', animPhase: 2.0 },
+      { kind: 'sphere', pos: [MIC_MOUTH_POS[0] - 0.06, MIC_MOUTH_POS[1] + 0.38, MIC_MOUTH_POS[2] + 0.03], size: [0.009, 0, 0], color: HEX('#fdf2f8'), anim: 'magicDust', animPhase: 2.7 },
     ],
   },
 
@@ -146,4 +150,23 @@ const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 export function propPresence(t: number): number {
   const u = clamp01(t);
   return Math.min(clamp01(u / 0.06), clamp01((0.9 - u) / 0.08));
+}
+
+/**
+ * Mic (and similar stage props) drop in from above with a magic-dust settle
+ * instead of scaling up from the ground. Returns a +Y offset in meters that
+ * eases to 0 by t≈0.14.
+ */
+export function propEnterFromTop(t: number): number {
+  const u = clamp01(t);
+  if (u >= 0.14) return 0;
+  const p = 1 - u / 0.14;
+  return 0.55 * p * p;
+}
+
+/** Dust sparkle strength during the top-enter attack (0 after settle). */
+export function propMagicDust(t: number): number {
+  const u = clamp01(t);
+  if (u >= 0.22) return 0;
+  return clamp01(1 - u / 0.22);
 }

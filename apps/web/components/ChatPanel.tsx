@@ -138,7 +138,7 @@
 // carries z-10 so it takes its clicks back.
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { feedUtterance, applyContentMood, setThinkingPose, triggerLaugh, triggerMove, holdMove, setPerfMotionProfile } from '../lib/companion';
+import { feedUtterance, applyContentMood, setThinkingPose, triggerLaugh, triggerMove, holdMove, clearMove, setPerfMotionProfile, clearPerfMotionProfile } from '../lib/companion';
 import { detectMove } from '../lib/moves';
 import { loadHistory, saveHistory } from '../lib/companion-store';
 import { notifySpeaking, isSpeaking } from '../lib/speech';
@@ -948,6 +948,8 @@ export default function ChatPanel({
     feedUtterance(text);
     stopSpeaking();
     endPerformanceMusic(); // r86 — a new message interrupts any live show
+    clearMove(); // stop sticky sing/dance body when a new talk/demo starts
+    clearPerfMotionProfile();
     showTrack(null);
     // r.42 — together-modes intercept the turn BEFORE any LLM work: quitting
     // a running game/duet, advancing a running game, taking the next duet
@@ -1037,6 +1039,24 @@ export default function ChatPanel({
     }
     {
       const x = detectExercise(text);
+      if (x === 'taichi') {
+        // Demo / "tai chi" ask: play the library tai chi once with general
+        // encouragement — no move-by-move cue sync (hard to keep in time).
+        exerciseRef.current = null;
+        triggerMove('taichi');
+        sayLocal(
+          lang === 'zh'
+            ? '好，跟我一起打一段太极——慢慢来，呼吸跟上就好，你很棒！'
+            : lang === 'ja'
+              ? 'よし、一緒に太極をひと流れ——ゆっくりでいいよ、呼吸に合わせて。上手だね！'
+              : lang === 'yue'
+                ? '好，一齊打一段太極——慢慢嚟，跟住呼吸就得，你好叻㗎！'
+                : 'Alright — let’s flow through some tai chi together. Nice and easy, breathe with me. You’re doing great!',
+          { relaxed: 0.85, joy: 0.2 },
+        );
+        done();
+        return;
+      }
       if (x) {
         // r.45 — "follow the trainer": she leads a step-by-step routine,
         // demos every cue with the matching movement-library performance,
@@ -1152,8 +1172,8 @@ export default function ChatPanel({
     }
     setThinkingPose(true);
     pushAutoIdle('', undefined, true);
-    // t790 — the wait cue is HER OWN TTS voice, silent until the reply has
-    // been loading for about a second, then two full "let me think" lines. The
+    // t790 / Pixel — the wait cue is HER OWN TTS voice, silent until the reply
+    // has been loading for 3 seconds, then two full "let me think" lines. The
     // same beat paints the placeholder bubble, so screen and speaker agree.
     // A sing or dance ask already has a premade clip as the wait audio.
     if (requested !== 'sing' && requested !== 'dance') {

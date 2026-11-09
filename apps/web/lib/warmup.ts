@@ -10,7 +10,7 @@ import { LOADING_MOOD_STUBS, LOADING_STUBS } from './thinking-lines';
  * turn feels instant, and a filler would talk over a reply that is already
  * arriving (Mon: the loading sound "still appear too soon").
  */
-export const WARMUP_FIRST_MS = 1_000;
+export const WARMUP_FIRST_MS = 3_000;
 /** Gap between wait beats — the first one is allowed to finish speaking. */
 export const WARMUP_GAP_MS = 4_500;
 /** Never ramble: two beats, then she simply smiles and waits. */
