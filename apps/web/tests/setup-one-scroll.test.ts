@@ -33,6 +33,18 @@ describe('setup one — full scroll disclosure', () => {
     expect(shared).not.toContain('SetupLegalLinks');
   });
 
+  it('mic optional section is copy-only — no composer or typing field', () => {
+    expect(shared).toContain('data-testid="setup-mic-section"');
+    const micStart = shared.indexOf('data-testid="setup-mic-section"');
+    const micEnd = shared.indexOf('setup-safety-heading', micStart);
+    const micBlock = shared.slice(micStart, micEnd === -1 ? undefined : micEnd);
+    expect(micBlock).toContain("t(lang, 'gateMicTitle')");
+    expect(micBlock).toContain("t(lang, 'gateMicBody')");
+    expect(micBlock).not.toMatch(/<textarea\b|<input\b/);
+    // Rules scroll is disclosure only — do not dump unsupported as a fake field.
+    expect(micBlock).not.toContain("t(lang, 'gateMicUnsupported')");
+  });
+
   it('new setup strings exist in every shipped language', () => {
     for (const { id } of LANGS) {
       expect(t(id, 'setupDisclosureAiTitle')).toBeTruthy();

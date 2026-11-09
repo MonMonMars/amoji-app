@@ -44,12 +44,20 @@ describe('pre-chat audio gate', () => {
 
   it('keeps mic allow simple and re-clickable without a typing field', () => {
     const gate = read('components/PreChatAudioGate.tsx');
+    expect(gate).toContain('data-testid="pre-chat-mic-section"');
     expect(gate).toContain('data-testid="pre-chat-mic-allow"');
     expect(gate).toContain('requestMic');
     expect(gate).toContain("t(lang, 'gateMicAllow')");
     // Do not force a useless text box for this permission step.
     expect(gate).not.toMatch(/<textarea\b/);
     expect(gate).not.toMatch(/<input\b[^>]*type=["']text["']/);
+    expect(gate).not.toMatch(/contentEditable/);
+    const micSection = gate.slice(
+      gate.indexOf('data-testid="pre-chat-mic-section"'),
+      gate.indexOf('data-testid="pre-chat-enter-chat"'),
+    );
+    expect(micSection).not.toMatch(/<textarea\b|<input\b/);
+    expect(micSection).toContain('role="status"');
     // Allow stays available after grant so re-click re-triggers the popup.
     expect(gate).toContain("mic !== 'unsupported'");
     expect(gate).not.toContain("mic !== 'granted' && mic !== 'unsupported'");
