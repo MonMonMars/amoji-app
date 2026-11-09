@@ -282,7 +282,7 @@
         Pixel NEW asks stay Outstanding until fixed, even when a related v1 PR already merged.
       </p>
       <div class="meta">
-        <span>Generated: <strong>2026-11-09 23:35 HKT</strong> (Asia/Hong_Kong)</span>
+        <span>Generated: <strong>2026-11-09 23:40 HKT</strong> (Asia/Hong_Kong)</span>
         <span>Repo: <a href="https://github.com/MonMonMars/amoji-app">MonMonMars/amoji-app</a></span>
         <span>Live: <a href="https://monmonmars.github.io/amoji-app/setup">github.io/amoji-app</a></span>
         <span>Companion: <a href="./PROJECT_STATUS.md">PROJECT_STATUS.md</a></span>
@@ -295,7 +295,7 @@
         <div class="l">Merged / shipped on main</div>
       </div>
       <div class="stat pr">
-        <div class="n" id="n-pr">5</div>
+        <div class="n" id="n-pr">6</div>
         <div class="l">Open PRs (verified)</div>
       </div>
       <div class="stat out">
@@ -312,7 +312,7 @@
       <h2>Progress charts</h2>
       <p class="note">
         Priority Pixel stack through #325 is largely on <code>main</code>. Remaining open work is crisis/rules (#320),
-        a11y leftovers, and Pixel’s nine NEW polish asks.
+        lighting fix (#327), a11y leftovers, and Pixel’s other NEW polish asks on the demo UX batch branch.
       </p>
       <div class="charts">
         <div>
@@ -403,7 +403,13 @@
             <td>VRM / Idle</td>
             <td>Content idle / soft arms / lighting allowlist v1</td>
             <td><span class="badge done">Done</span></td>
-            <td><a href="https://github.com/MonMonMars/amoji-app/pull/287">#287</a> / #294 / #299</td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/287">#287</a> / #294 / #299 · follow-up <a href="https://github.com/MonMonMars/amoji-app/pull/327">#327</a></td>
+          </tr>
+          <tr>
+            <td>VRM / Light</td>
+            <td>Character 1–3 lighting (matcap + shade floor)</td>
+            <td><span class="badge pr">In PR</span></td>
+            <td><a href="https://github.com/MonMonMars/amoji-app/pull/327">#327</a> <code>cursor/vrm-char-lighting-fix-0340</code></td>
           </tr>
           <tr>
             <td>VRM / Idle</td>
@@ -441,29 +447,37 @@
 
     <section>
       <h2>Pixel NEW asks — Outstanding until fixed</h2>
+      <p class="note">
+        Items 1–8 owned by Demo-phase UX batch (<code>cursor/demo-phase-ux-batch-0340</code>, PR pending — do not duplicate).
+        Item 9 in lighting fix PR <a href="https://github.com/MonMonMars/amoji-app/pull/327">#327</a>.
+      </p>
       <ol class="stack-list">
-        <li><strong>Weather no GPS talk</strong> — entry no longer auto-plays weather (#302); spoken weather must not sound like GPS.</li>
-        <li><strong>Consistent voice volume (no duck)</strong> — #295/#319 landed; duck helpers still active.</li>
-        <li><strong>Sing mic from top dust / mouth align</strong> — refine beyond #286 <code>MIC_MOUTH_POS</code>.</li>
-        <li><strong>Simple tai chi library move</strong> — procedural pose only; no VRMA clip yet.</li>
-        <li><strong>Stop sticky dance after sing</strong> — #287 fixed defaults; confirm residual after sing.</li>
-        <li><strong>Demo rail drag-scroll</strong> — overflow-x only; no desktop click-drag.</li>
-        <li><strong>“um…” after 3s only</strong> — <code>WARMUP_FIRST_MS</code> is still 1000 ms.</li>
-        <li><strong>Better royalty-free music / sing songs</strong> — improve beyond #307.</li>
-        <li><strong>Character 1–3 lighting</strong> — improve beyond #299 allowlist.</li>
+        <li><strong>Weather no GPS talk</strong> — entry no longer auto-plays weather (#302); spoken weather must not sound like GPS. → <em>demo UX batch</em></li>
+        <li><strong>Consistent voice volume (no duck)</strong> — #295/#319 landed; duck helpers still active. → <em>demo UX batch</em></li>
+        <li><strong>Sing mic from top dust / mouth align</strong> — refine beyond #286 <code>MIC_MOUTH_POS</code>. → <em>demo UX batch</em></li>
+        <li><strong>Simple tai chi library move</strong> — procedural pose only; no VRMA clip yet. → <em>demo UX batch</em></li>
+        <li><strong>Stop sticky dance after sing</strong> — #287 fixed defaults; confirm residual after sing. → <em>demo UX batch</em></li>
+        <li><strong>Demo rail drag-scroll</strong> — overflow-x only; no desktop click-drag. → <em>demo UX batch</em></li>
+        <li><strong>“um…” after 3s only</strong> — <code>WARMUP_FIRST_MS</code> is still 1000 ms. → <em>demo UX batch</em></li>
+        <li><strong>Better royalty-free music / sing songs</strong> — improve beyond #307. → <em>demo UX batch</em></li>
+        <li><strong>Character 1–3 lighting</strong> — <span class="badge pr">In PR</span> <a href="https://github.com/MonMonMars/amoji-app/pull/327">#327</a> (<code>cursor/vrm-char-lighting-fix-0340</code>).</li>
       </ol>
     </section>
 
     <section>
       <h2>Open pull requests snapshot</h2>
-      <p class="note">GitHub API reported <strong>5 open PRs</strong> at generation time.</p>
+      <p class="note">GitHub API reported <strong>6 open PRs</strong> at generation time.</p>
       <ul class="stack-list">
+        <li><a href="https://github.com/MonMonMars/amoji-app/pull/327">#327</a> VRoid chars 1–3 lighting (matcap + shade floor) — Pixel lighting fix</li>
         <li><a href="https://github.com/MonMonMars/amoji-app/pull/320">#320</a> view-only rules + geo helplines + crisis popup</li>
         <li><a href="https://github.com/MonMonMars/amoji-app/pull/240">#240</a> SettingsSheet memory-add + yourName a11y</li>
         <li><a href="https://github.com/MonMonMars/amoji-app/pull/154">#154</a> robot-demo speak field aria-label</li>
         <li><a href="https://github.com/MonMonMars/amoji-app/pull/20">#20</a> CosyVoice spike (draft)</li>
         <li><a href="https://github.com/MonMonMars/amoji-app/pull/1">#1</a> Voice bake-off UI (old spike)</li>
       </ul>
+      <p class="note">
+        In-flight (no PR yet): Demo-phase UX batch on <code>cursor/demo-phase-ux-batch-0340</code> for the other 8 Pixel NEW asks.
+      </p>
       <p class="note">
         Closed without merge (not shipped): #252, #253, #293, #296, #315, #318, #326.
       </p>
@@ -528,7 +542,7 @@
           <tr>
             <td>This status board</td>
             <td><code>docs/project-status.html</code> + <code>docs/PROJECT_STATUS.md</code></td>
-            <td><span class="badge complete">Complete</span> (refreshed 23:35 HKT)</td>
+            <td><span class="badge complete">Complete</span> (refreshed 23:40 HKT)</td>
           </tr>
         </tbody>
       </table>
@@ -536,7 +550,7 @@
 
     <footer>
       Counts at generation: <strong>40+</strong> Done on main ·
-      <strong>5</strong> open PRs · <strong>9</strong> Pixel NEW Outstanding ·
+      <strong>6</strong> open PRs · <strong>9</strong> Pixel NEW (1 in #327) ·
       <strong>0</strong> docs Missing.<br />
       Do not treat In PR as shipped until merged to <code>main</code> and verified on Pages.
     </footer>

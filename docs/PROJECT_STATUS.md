@@ -1,6 +1,6 @@
 # Amoji project status board
 
-**Generated:** 2026-11-09 23:35 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-09 23:40 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/setup)  
 **Visual board:** open [`project-status.html`](./project-status.html) in a browser.  
@@ -11,8 +11,8 @@
 | Bucket | Count |
 | --- | ---: |
 | Merged recently (#280–#325 finish / Pixel stack) | 40+ |
-| Open PRs (verified via GitHub API) | 5 |
-| Pixel NEW asks still outstanding | 9 |
+| Open PRs (verified via GitHub API) | 6 |
+| Pixel NEW asks still outstanding | 9 (1 in fix PR) |
 | Other outstanding / verify | 2 |
 | Docs missing | 0 |
 
@@ -34,11 +34,14 @@
 
 | PR | Title | Notes |
 | --- | --- | --- |
+| [#327](https://github.com/MonMonMars/amoji-app/pull/327) | Actually light VRoid chars 1–3 (matcap + shade floor) | **Pixel lighting fix** — `cursor/vrm-char-lighting-fix-0340` |
 | [#320](https://github.com/MonMonMars/amoji-app/pull/320) | View-only rules + geo helplines + crisis popup | In progress (supersedes closed #315) |
 | [#240](https://github.com/MonMonMars/amoji-app/pull/240) | SettingsSheet memory-add + yourName a11y | Polish leftover |
 | [#154](https://github.com/MonMonMars/amoji-app/pull/154) | robot-demo speak field aria-label | Polish leftover |
 | [#20](https://github.com/MonMonMars/amoji-app/pull/20) | CosyVoice TTS spike | Draft spike |
 | [#1](https://github.com/MonMonMars/amoji-app/pull/1) | Voice bake-off UI | Old spike |
+
+**In-flight (no PR yet — do not duplicate):** Demo-phase UX batch agent on branch `cursor/demo-phase-ux-batch-0340` owns the other 8 Pixel NEW asks (weather GPS talk, no duck, sing mic dust, tai chi VRMA, sticky dance after sing, demo rail drag-scroll, um-after-3s, better RF songs).
 
 Closed **without** merge (do not treat as shipped): #252 poke sync, #253 OS voices, #293 open-greet (superseded by #302), #296 privacy (landed via #301/#302), #315 rules view-only (→ #320), #318 TTS echo, #326 idle thinking asks (overlap with #325).
 
@@ -84,25 +87,27 @@ Earlier same-day / prior stack also on `main`: #305 audio-gate order, #304/#303 
 | Chat UX | Free LLM / OVH situation sticky | **Done** | #309–#312 |
 | VRM / Idle | Dance only on request / content idle | **Done** (v1) | #287 — Pixel re-asks post-sing sticky |
 | VRM / Idle | Soft idle arms | **Done** | #294 |
-| VRM / Idle | Cast lighting allowlist #1–3 / #13 | **Done** (v1) | #299 — Pixel wants better #1–3 |
+| VRM / Idle | Cast lighting allowlist #1–3 / #13 | **Done** (v1) | #299 — follow-up **#327** |
 | VRM / Idle | Idle nonsense / map-remind gate | **Done** | #325 |
 | Crisis / rules | View-only rules + geo helplines | **In progress** | **#320** |
+| VRM / Light | Character 1–3 lighting (real matcap/shade) | **In PR** | **[#327](https://github.com/MonMonMars/amoji-app/pull/327)** |
 | Verify | Post-merge live check on Pages | **Outstanding** | After Pages rebuild |
 | Music | Licensed stream/embed beyond Mixkit stub | **Outstanding** | `docs/MUSIC_STREAMING.md` |
 
 ## Outstanding — Pixel NEW asks (this turn)
 
-Keep these **Outstanding until fixed**, even where a related v1 PR already merged:
+Keep these **Outstanding until fixed**, even where a related v1 PR already merged.  
+**Ownership:** items 1–8 → Demo-phase UX batch (`cursor/demo-phase-ux-batch-0340`, PR pending). Item 9 → lighting PR **#327**.
 
-1. **Weather no GPS talk** — entry no longer auto-plays weather (#302), but spoken weather must not sound like GPS / newsreader.
-2. **Consistent voice volume (no duck)** — #295/#319 landed; `duckLibraryBed` / `duckExternalAudioForCompanion` still duck dialogue vs beds.
-3. **Sing mic from top dust / mouth align** — refine beyond #286 `MIC_MOUTH_POS`.
-4. **Simple tai chi library move** — procedural `taichi` pose exists; **no VRMA library clip** yet (`CompanionCanvas`: taichi/jog/yoga/stretch stay on idle).
-5. **Stop sticky dance after sing** — #287 fixed default sticky dance; confirm/fix residual after sing performance ends.
-6. **Demo rail drag-scroll** — `#313` rail is `overflow-x-auto` only; no desktop click-drag scroll yet.
-7. **“um…” after 3s only** — `WARMUP_FIRST_MS` / `THINKING_SOUND_DELAY_MS` is still **1000 ms**, not 3000.
-8. **Better royalty-free music / sing songs** — improve beyond #307 Mixkit + ditties.
-9. **Character 1–3 lighting** — improve beyond #299 allowlist until refs look right.
+1. **Weather no GPS talk** — entry no longer auto-plays weather (#302), but spoken weather must not sound like GPS / newsreader. → *demo UX batch*
+2. **Consistent voice volume (no duck)** — #295/#319 landed; `duckLibraryBed` / `duckExternalAudioForCompanion` still duck dialogue vs beds. → *demo UX batch*
+3. **Sing mic from top dust / mouth align** — refine beyond #286 `MIC_MOUTH_POS`. → *demo UX batch*
+4. **Simple tai chi library move** — procedural `taichi` pose exists; **no VRMA library clip** yet (`CompanionCanvas`: taichi/jog/yoga/stretch stay on idle). → *demo UX batch*
+5. **Stop sticky dance after sing** — #287 fixed default sticky dance; confirm/fix residual after sing performance ends. → *demo UX batch*
+6. **Demo rail drag-scroll** — `#313` rail is `overflow-x-auto` only; no desktop click-drag scroll yet. → *demo UX batch*
+7. **“um…” after 3s only** — `WARMUP_FIRST_MS` / `THINKING_SOUND_DELAY_MS` is still **1000 ms**, not 3000. → *demo UX batch*
+8. **Better royalty-free music / sing songs** — improve beyond #307 Mixkit + ditties. → *demo UX batch*
+9. **Character 1–3 lighting** — **In PR** [#327](https://github.com/MonMonMars/amoji-app/pull/327) (`cursor/vrm-char-lighting-fix-0340`); do not duplicate.
 
 ## Outstanding work (other)
 
@@ -123,4 +128,4 @@ Keep these **Outstanding until fixed**, even where a related v1 PR already merge
 | Merge checklist | `docs/MERGE_CHECKLIST.md` | Complete (historical merge order; stack already on main) |
 | Music streaming | `docs/MUSIC_STREAMING.md` | Complete |
 | Job / voice checklist | `AMOJI_JOB_CHECKLIST.md` | Complete (may lag this board) |
-| This status board | `docs/project-status.html` + this file | Refreshed 2026-11-09 23:35 HKT |
+| This status board | `docs/project-status.html` + this file | Refreshed 2026-11-09 23:40 HKT |
