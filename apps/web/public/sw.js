@@ -26,6 +26,7 @@ var SHELL = [
   './login',
   './mode',
   './setup',
+  './rules',
   './story',
   './privacy',
   './terms',

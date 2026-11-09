@@ -35,6 +35,9 @@ import VoicePicker from './VoicePicker';
 import ModelThumb from './ModelThumb';
 import BrainAdvanced from './BrainAdvanced';
 import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, testOpenAiVoice, VOICE_TIER_LABEL } from '../lib/voice';
+import { listenSupported } from '../lib/listen';
+import { requestMic } from '../lib/mic-preflight';
+import { patchEntryGateMic, type MicOutcome } from '../lib/entry-gate';
 import { isMasterMuted, setMasterMuted, subscribeMasterMute } from '../lib/master-mute';
 import { VOLUME_STEPS, isVolumeStep, type VolumeStep } from '../lib/audio-levels';
 import { applyBgmLevel, applyDialogueLevel } from '../lib/music';
@@ -138,6 +141,11 @@ export default function SettingsSheet({
   // r99: per-tier self-test result — 'edge-tts ✓ · google-tts ✗ · browser ✓'
   const [voiceTest, setVoiceTest] = useState<string | null>(null);
   const [voiceTesting, setVoiceTesting] = useState(false);
+  // Mic unlock lives here (not on /rules view) — same probe as first-run audio gate.
+  const [micOutcome, setMicOutcome] = useState<MicOutcome | 'pending'>(() =>
+    listenSupported() ? 'pending' : 'unsupported',
+  );
+  const [micBusy, setMicBusy] = useState(false);
   const [name, setName] = useState(() => loadProfile().name);
   const [gender, setGender] = useState<Gender | undefined>(() => loadProfile().gender);
   const [mem, setMem] = useState<Memory>(loadMemory);
@@ -691,6 +699,42 @@ export default function SettingsSheet({
             {voiceBlocked && (
               <p className="rounded-xl border border-amber-300/30 bg-amber-400/10 px-4 py-2.5 text-[11px] leading-relaxed text-amber-100/90">
                 🔇 {t(lang, 'voiceBlockedHint')}
+              </p>
+            )}
+            {listenSupported() && micOutcome !== 'granted' && micOutcome !== 'unsupported' && (
+              <div className={row}>
+                <span className={label}>🎤 {t(lang, 'gateMicTitle')}</span>
+                <button
+                  type="button"
+                  data-testid="settings-mic-allow"
+                  aria-label={t(lang, 'gateMicAllow')}
+                  disabled={micBusy}
+                  onClick={() => {
+                    void (async () => {
+                      setMicBusy(true);
+                      const outcome = await requestMic();
+                      setMicOutcome(outcome);
+                      try { patchEntryGateMic(outcome); } catch { /* ignore */ }
+                      setMicBusy(false);
+                    })();
+                  }}
+                  className="ui-btn shrink-0 rounded-full px-3.5 py-1.5 text-xs text-white/90 disabled:opacity-40"
+                  style={{ backgroundColor: `${accent}2e` }}
+                >
+                  {micBusy ? '…' : t(lang, 'gateMicAllow')}
+                </button>
+              </div>
+            )}
+            {micOutcome !== 'pending' && (
+              <p
+                data-testid="settings-mic-result"
+                data-outcome={micOutcome}
+                className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[11px] text-white/70"
+              >
+                {micOutcome === 'granted' && t(lang, 'gateMicGranted')}
+                {micOutcome === 'denied' && t(lang, 'gateMicDenied')}
+                {micOutcome === 'unsupported' && t(lang, 'gateMicUnsupported')}
+                {micOutcome === 'skipped' && t(lang, 'gateMicDenied')}
               </p>
             )}
           </Section>

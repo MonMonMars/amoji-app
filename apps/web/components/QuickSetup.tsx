@@ -1,7 +1,7 @@
 'use client';
 /**
- * Fallback one-tap setup when a deep link hits /select before the gate passed.
- * Same contract as the title START — scroll disclosures, one button, app does the rest.
+ * First-run: one-tap rules Agree / START → soft audio gate.
+ * View-only (/rules or /setup?view=1): same scroll, BACK only — no re-consent, no mic unlock.
  */
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -20,6 +20,7 @@ export default function QuickSetup({
   initialSectionId,
   backTestId = 'setup-back',
   selectReturnFrom: _selectReturnFrom = 'setup',
+  viewOnly = false,
 }: {
   lang?: import('../lib/prefs').Lang;
   onDone?: () => void;
@@ -31,6 +32,8 @@ export default function QuickSetup({
   backTestId?: string;
   /** Kept for call-site compatibility; rules now continue to /gate/audio. */
   selectReturnFrom?: SelectReturnFrom;
+  /** Returning-user rules reader — no Agree, no /gate/audio. */
+  viewOnly?: boolean;
 }) {
   void _selectReturnFrom;
   const router = useRouter();
@@ -38,7 +41,8 @@ export default function QuickSetup({
   const lang = prefs.lang;
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const readToEnd = useScrollReachedEnd(scrollRef, prefsReady);
+  // Consent gate still requires scroll-to-end; view-only never locks a CTA on scroll.
+  const readToEnd = useScrollReachedEnd(scrollRef, prefsReady && !viewOnly);
 
   useEffect(() => {
     absorbNavReturnFromReferrer();
@@ -55,7 +59,7 @@ export default function QuickSetup({
   }, [initialSectionId, prefsReady]);
 
   const start = useCallback(async () => {
-    if (busy || !prefsReady || !readToEnd) return;
+    if (viewOnly || busy || !prefsReady || !readToEnd) return;
     setBusy(true);
     try {
       // Rules only — speaker/mic soft-gate is the next step (never blocks entry).
@@ -69,19 +73,21 @@ export default function QuickSetup({
     } finally {
       setBusy(false);
     }
-  }, [busy, lang, onDone, prefsReady, readToEnd, router]);
+  }, [busy, lang, onDone, prefsReady, readToEnd, router, viewOnly]);
 
   const startDisabled = !prefsReady || busy || !readToEnd;
+  const showBackBtn = showBack || viewOnly;
 
   return (
     <main
-      data-testid="entry-gate"
+      data-testid={viewOnly ? 'rules-view' : 'entry-gate'}
+      data-view-only={viewOnly ? '1' : undefined}
       aria-labelledby="amoji-setup-title"
       className="fx-page relative flex min-h-dvh flex-col bg-neutral-950 px-5 text-white safe-px"
     >
-      <EarlyAudioUnlock />
+      {!viewOnly && <EarlyAudioUnlock />}
 
-      {showBack && (
+      {showBackBtn && (
         <button
           type="button"
           data-testid={backTestId}
@@ -95,7 +101,7 @@ export default function QuickSetup({
 
       <div className="mx-auto flex w-full max-w-md min-h-0 flex-1 flex-col gap-3 py-14 safe-b safe-t">
         <h1 id="amoji-setup-title" className="text-center text-2xl font-bold tracking-tight">
-          {t(lang, 'setupOneTitle')}
+          {t(lang, viewOnly ? 'rulesViewTitle' : 'setupOneTitle')}
         </h1>
 
         <div
@@ -103,27 +109,29 @@ export default function QuickSetup({
           data-testid="setup-one-scroll"
           className="min-h-0 flex-1 space-y-4 overflow-y-auto rounded-2xl border border-white/10 bg-black/25 px-4 py-4 text-left text-sm leading-relaxed text-white/75"
         >
-          <SetupOneScrollBody lang={lang} />
+          <SetupOneScrollBody lang={lang} showConsentDisclaimer={!viewOnly} />
           <div data-testid="setup-one-scroll-end" aria-hidden className="h-1" />
         </div>
 
-        {!readToEnd && prefsReady && (
+        {!viewOnly && !readToEnd && prefsReady && (
           <p data-testid="setup-scroll-hint" className="text-center text-xs text-white/45">
             {t(lang, 'gateScrollHint')}
           </p>
         )}
 
-        <button
-          type="button"
-          data-testid="setup-start"
-          disabled={startDisabled}
-          aria-label={t(lang, 'splashStart')}
-          aria-disabled={startDisabled}
-          onClick={() => void start()}
-          className="ui-btn splash-start-pulse mx-auto h-14 min-w-[14rem] rounded-full border border-rose-100/35 bg-gradient-to-b from-rose-100 to-rose-200/90 px-10 text-lg font-semibold tracking-[0.12em] text-[#2a1218] shadow-[0_18px_50px_-18px_rgba(255,200,210,0.85)] disabled:opacity-50"
-        >
-          {busy ? t(lang, 'gateAudioPlaying') : t(lang, 'splashStart')}
-        </button>
+        {!viewOnly && (
+          <button
+            type="button"
+            data-testid="setup-start"
+            disabled={startDisabled}
+            aria-label={t(lang, 'splashStart')}
+            aria-disabled={startDisabled}
+            onClick={() => void start()}
+            className="ui-btn splash-start-pulse mx-auto h-14 min-w-[14rem] rounded-full border border-rose-100/35 bg-gradient-to-b from-rose-100 to-rose-200/90 px-10 text-lg font-semibold tracking-[0.12em] text-[#2a1218] shadow-[0_18px_50px_-18px_rgba(255,200,210,0.85)] disabled:opacity-50"
+          >
+            {busy ? t(lang, 'gateAudioPlaying') : t(lang, 'splashStart')}
+          </button>
+        )}
       </div>
 
       <p className="pb-6 text-center text-xs text-white/25">{APP_REVISION}</p>

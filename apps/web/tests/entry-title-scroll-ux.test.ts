@@ -32,13 +32,19 @@ describe('entry UX — one-tap title START', () => {
     expect(legal).toContain("'/gate/audio'");
   });
 
-  it('title splash has one setup link and AI notice — no separate legal URLs', () => {
+  it('title splash has one rules link and AI notice — no separate legal URLs', () => {
     const splash = read('app/page.tsx');
     expect(splash).toContain('setupOneLead');
     expect(splash).toContain('data-testid="splash-setup-link"');
-    expect(splash).toContain('href="/setup"');
+    expect(splash).toContain('href="/rules"');
     expect(splash).not.toContain('href="/gate"');
     expect(splash).not.toContain('SetupLegalLinks');
     expect(splash).toContain('SetupOneAiNotice');
   });
+
+  it('LegalGate also skips the view-only /rules reader', () => {
+    const legal = read('components/LegalGate.tsx');
+    expect(legal).toContain("'/rules'");
+  });
 });
+
