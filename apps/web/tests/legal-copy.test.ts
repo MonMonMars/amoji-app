@@ -156,7 +156,7 @@ describe('LEGAL_ACCEPT_VERSION bump forces re-consent', () => {
 describe('new strings exist in all four languages', () => {
   const NEW_KEYS: StrKey[] = [
     'aiNotice', 'privacyTitle', 'termsTitle', 'policyVersion',
-    'safetyCrisisLine', 'safetyCrisisTitle', 'safetyOpenPage',
+    'safetyCrisisLine', 'safetyCrisisTitle', 'safetyOpenPage', 'safetyHelplinesRulesHint',
     'safetyTitle', 'safetyLead', 'safetyHelplinesTitle', 'safetyEmergencyTitle',
     'safetyStepsTitle', 'safetyStepsBody', 'safetyAboutAi', 'safetyPrivacyLink',
   ];

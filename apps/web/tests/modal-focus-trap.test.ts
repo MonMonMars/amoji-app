@@ -11,6 +11,7 @@ const MODALS = [
   'components/SettingsSheet.tsx',
   'components/WardrobeSwap.tsx',
   'components/MiniGamePicker.tsx',
+  'components/CrisisHelplineDialog.tsx',
 ] as const;
 
 describe('all aria-modal dialogs trap focus', () => {
