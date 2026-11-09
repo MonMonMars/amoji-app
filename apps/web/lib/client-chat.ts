@@ -150,27 +150,30 @@ export const POLLINATIONS_MODEL = 'openai-fast';
 
 /**
  * OVH's keyless chat models we are willing to ask, in preference order.
- * Ranked by the 2026-11-09 live A/B bench (speed · language · reason · price):
- *   Meta-Llama-3_3-70B  overall 91.7 · med TTFC 934ms · lang 88.3 · reason 90 · 0 empty
- *   Qwen2.5-VL-72B      overall 90.8 · med TTFC 850ms · lang 85.8 · reason 90 · 0 empty
- *   Mistral-Small-3.2   overall 87.5 · med TTFC 957ms · lang 85.0 · reason 75 · 0 empty
- *   Pollinations openai-fast 67.8 (slow ~12s TTFC — kept as separate thin quota only)
- *   gpt-oss-120b / 20b / Qwen3.8 — often EMPTY `content` (reasoning-only) → excluded
+ * Ranked by the 2026-11-09 multi-language A/B (yue/zh/en/ja × companion+ability+reason):
+ *   Qwen2.5-VL-72B      overall 90.2 · med TTFC 932ms · lang 85.0 · reason 90 · 0 empty
+ *   Mistral-Small-3.2   overall 88.4 · med TTFC 982ms · lang 84.2 · reason 82.5 · 0 empty
+ *   Meta-Llama-3_3-70B  overall 80.5 · med TTFC 5028ms · lang 85.0 · reason 81.2 · 0 empty
+ *     (Llama language quality still strong; TTFC spikes 16–100s+ tanked overall)
+ * Earlier same-day shallow bench had Llama ahead (91.7) — deeper multi-lang retest
+ * flipped the primary to Qwen for stable first-token latency across all 4 locales.
+ * Pollinations openai-fast kept as a separate thin-quota racer only.
+ * gpt-oss / Qwen3.8 — often EMPTY `content` (reasoning-only) → excluded.
  *
  * Only models that emit `delta.content` may be listed. Reasoning-only empties
- * (gpt-oss-*, Qwen3.6/3.5/3.8 on many turns) burn the 14s race budget for nothing.
+ * burn the 14s race budget for nothing.
  *
- * Ordering: Cantonese quality + reliability first, then speed. All are $0
- * (2 req/min per IP per model). No `Authorization` header — `Bearer no-key`
- * returns HTTP 403. Do not send `reasoning_effort` (OVH 400 on Llama/Mistral).
+ * Ordering: multi-lang quality + stable TTFC first. All are $0 (2 req/min per
+ * IP per model). No `Authorization` header — `Bearer no-key` returns HTTP 403.
+ * Do not send `reasoning_effort` (OVH 400 on Llama/Mistral).
  */
 export const OVH_MODELS = [
-  'Meta-Llama-3_3-70B-Instruct',
   'Qwen2.5-VL-72B-Instruct',
   'Mistral-Small-3.2-24B-Instruct-2506',
+  'Meta-Llama-3_3-70B-Instruct',
 ] as const;
 
-/** The Cantonese-first default — what OVH is asked for when nothing is hot. */
+/** Multi-lang primary — what OVH is asked for when nothing is hot. */
 export const OVH_MODEL = OVH_MODELS[0];
 
 /** Per-(host, model) anonymous-budget cooldown, in ms.
