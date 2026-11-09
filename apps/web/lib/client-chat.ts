@@ -173,8 +173,53 @@ export const OVH_MODELS = [
   'Meta-Llama-3_3-70B-Instruct',
 ] as const;
 
-/** Multi-lang primary — what OVH is asked for when nothing is hot. */
+export type OvhModelId = (typeof OVH_MODELS)[number];
+
+/** Multi-lang primary — default when the turn has no stronger situation. */
 export const OVH_MODEL = OVH_MODELS[0];
+
+/**
+ * Turn situations that reshuffle the three OVH models (quota siblings still
+ * cover each other when the preferred one is cooling).
+ *   companion — short chat / comfort / ability invite → Qwen (stable TTFC)
+ *   live      — weather / news / short world facts → Mistral (snappy short)
+ *   reason    — advice / conflict / "should I" → Qwen then Llama (reason scores)
+ *   story     — narrative / story mode → Llama then Qwen (long-form; wait OK)
+ */
+export type ChatSituation = 'companion' | 'live' | 'reason' | 'story';
+
+const REASON_ASK_RE =
+  /(?:\bshould\s+i\b|\bwhat\s+should\b|\badvice\b|\bhelp\s+me\s+decide\b|怎麼辦|怎么办|應唔應該|应不应该|該不該|该不该|點算|点算|どうすれば|どうしたらいい)/i;
+
+/** Classify the free-lane turn so OVH preference can follow the A/B matrix. */
+export function detectChatSituation(opts: {
+  story?: boolean;
+  world?: string;
+  lastUser?: string;
+}): ChatSituation {
+  if (opts.story) return 'story';
+  const world = opts.world ?? '';
+  if (/\b(?:Weather|News|Forecast|Headline)\s*:/i.test(world)) return 'live';
+  const user = opts.lastUser ?? '';
+  if (REASON_ASK_RE.test(user)) return 'reason';
+  return 'companion';
+}
+
+/**
+ * Preferred OVH model order for this situation (and a light language nudge).
+ * Always returns all three — cooling just walks the list.
+ */
+export function preferOvhModels(situation: ChatSituation, language?: string): OvhModelId[] {
+  const qwen: OvhModelId = 'Qwen2.5-VL-72B-Instruct';
+  const mistral: OvhModelId = 'Mistral-Small-3.2-24B-Instruct-2506';
+  const llama: OvhModelId = 'Meta-Llama-3_3-70B-Instruct';
+  if (situation === 'story') return [llama, qwen, mistral];
+  if (situation === 'live') return [mistral, qwen, llama];
+  if (situation === 'reason') return [qwen, llama, mistral];
+  // companion — zh keeps Llama ahead of Mistral (Mistral lagged on zh A/B)
+  if (language === 'zh') return [qwen, llama, mistral];
+  return [qwen, mistral, llama];
+}
 
 /** Per-(host, model) anonymous-budget cooldown, in ms.
  *
@@ -417,6 +462,12 @@ export function eligibleRacers(at: number = Date.now()): RacerSpec[] {
   return FREE_RACERS.filter((r) => !racerCoolingDown(r, at));
 }
 
+export type SelectRacersOpts = {
+  at?: number;
+  /** Preferred OVH model order for this turn's situation. */
+  preferOvh?: readonly OvhModelId[];
+};
+
 /**
  * The lanes this turn should actually race: the best few racers that are not
  * cooling down. Cooling lanes are skipped so their budget refills, and the
@@ -426,12 +477,17 @@ export function eligibleRacers(at: number = Date.now()): RacerSpec[] {
  * rather than dead-ending the chat: one extra request beats silence.
  *
  * Puter is kept in the round whenever it is fresh, because it is the only
- * racer whose budget no OVH-side outage can take away.
+ * racer whose budget no OVH-side outage can take away. OVH siblings are
+ * ordered by `preferOvh` so companion / live / reason / story pick different
+ * primaries while still racing the rest when the favourite is cooling.
  */
-export function selectRacers(at: number = Date.now()): RacerSpec[] {
+export function selectRacers(atOrOpts: number | SelectRacersOpts = Date.now()): RacerSpec[] {
+  const opts: SelectRacersOpts = typeof atOrOpts === 'number' ? { at: atOrOpts } : atOrOpts;
+  const at = opts.at ?? Date.now();
+  const prefer = opts.preferOvh ?? preferOvhModels('companion');
   const fresh = eligibleRacers(at);
-  if (fresh.length >= RACERS_PER_TURN) return rankForTurn(fresh).slice(0, RACERS_PER_TURN);
-  const picked = rankForTurn(fresh);
+  if (fresh.length >= RACERS_PER_TURN) return rankForTurn(fresh, prefer).slice(0, RACERS_PER_TURN);
+  const picked = rankForTurn(fresh, prefer);
   const rest = FREE_RACERS
     .filter((r) => !picked.includes(r))
     .sort((a, b) => lastSendOf(a) - lastSendOf(b));
@@ -448,13 +504,20 @@ function lastSendOf(spec: Pick<RacerSpec, 'host' | 'model'>): number {
   return sends?.length ? sends[sends.length - 1]! : -Infinity;
 }
 
-/** Best-first, with Puter pulled forward whenever it is available: it is the
- *  only genuinely independent racer, so it is worth a slot even when OVH has
- *  fresher models. */
-function rankForTurn(specs: RacerSpec[]): RacerSpec[] {
+/** Index in the situation preference list; unknown models sort last. */
+function ovhPreferRank(model: string, prefer: readonly OvhModelId[]): number {
+  const i = prefer.indexOf(model as OvhModelId);
+  return i < 0 ? prefer.length + 1 : i;
+}
+
+/** Best-first: Puter first (independent), then non-OVH, then OVH by situation. */
+function rankForTurn(specs: RacerSpec[], prefer: readonly OvhModelId[]): RacerSpec[] {
   const puter = specs.filter((r) => r.host === 'puter');
-  const rest = specs.filter((r) => r.host !== 'puter');
-  return [...puter, ...rest];
+  const ovh = specs
+    .filter((r) => r.host === 'ovhcloud')
+    .sort((a, b) => ovhPreferRank(a.model, prefer) - ovhPreferRank(b.model, prefer));
+  const other = specs.filter((r) => r.host !== 'puter' && r.host !== 'ovhcloud');
+  return [...puter, ...other, ...ovh];
 }
 
 /** The cooling (host, model) that has been waiting longest — last resort. */
@@ -850,17 +913,26 @@ async function streamCompletion(
  *  no longer accidentally fire two requests at one provider's budget.
  *  r143 — a racer is one (host, model) budget slot, not one company, so a
  *  turn can legitimately include several OVH models at once. */
+export type RaceFreeLanesOpts = {
+  situation?: ChatSituation;
+  language?: string;
+};
+
 export async function raceFreeLanes(
   system: string,
   messages: ChatMessage[],
   onPartial?: (text: string) => void,
   maxTokens = 280,
+  raceOpts?: RaceFreeLanesOpts,
 ): Promise<string> {
   const ctx: RacerRequestContext = { system, messages, maxTokens };
+  const situation = raceOpts?.situation ?? 'companion';
+  const preferOvh = preferOvhModels(situation, raceOpts?.language);
   // r143 — the best few (host, model) slots whose window has refilled. A
   // rapid second message lands on a DIFFERENT OVH model instead of being
-  // dropped, which is where the extra free capacity comes from.
-  const lanes = selectRacers();
+  // dropped, which is where the extra free capacity comes from. Situation
+  // preference only reshuffles which OVH sibling leads among the fresh set.
+  const lanes = selectRacers({ preferOvh });
   if (!lanes.length) throw new Error('no free lane available');
   try {
     return await launchRace(lanes, ctx, onPartial);
@@ -944,9 +1016,10 @@ async function streamModelReply(
   messages: ChatMessage[],
   onPartial: ClientChatOptions['onPartial'],
   maxTokens: number,
+  raceOpts?: RaceFreeLanesOpts,
 ): Promise<string> {
   return spec.id === 'pollinations'
-    ? raceFreeLanes(system, messages, onPartial, maxTokens)
+    ? raceFreeLanes(system, messages, onPartial, maxTokens, raceOpts)
     : streamCompletion(spec, key, system, messages, onPartial, maxTokens);
 }
 
@@ -978,6 +1051,8 @@ export async function clientChat(
   const lastUser = recent[recent.length - 1]?.content ?? '';
   const story = wantsStoryTurn(lastUser, { persona: opts?.persona, storySession: opts?.storySession });
   const detailed = wantsDetail(opts?.world, lastUser) || story;
+  const situation = detectChatSituation({ story, world: opts?.world, lastUser });
+  const raceOpts: RaceFreeLanesOpts = { situation, language: opts?.language };
   const shapeLong = detailed;
   const system = `${BASE_SYSTEM}\nReply in speakable sentences only. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${story ? `\n${storySystemBlock(opts?.language)}` : ''}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
   const maxTokens = maxTokensForStoryTurn(story, wantsDetail(opts?.world, lastUser));
@@ -1011,13 +1086,13 @@ export async function clientChat(
     }
   };
   try {
-    const content = await streamModelReply(first.spec, first.key, system, recent, onPartial, maxTokens);
+    const content = await streamModelReply(first.spec, first.key, system, recent, onPartial, maxTokens, raceOpts);
     rejectCreditBody(first.spec.id, content);
     const out = finalize(content);
     if (replyLooksNonsense(out.reply, sanityOpts(sanityCtx))) {
       const strict = `${system}\n${STRICT_REPLY_APPENDIX}`;
       try {
-        const retry = await streamModelReply(first.spec, first.key, strict, recent, undefined, maxTokens);
+        const retry = await streamModelReply(first.spec, first.key, strict, recent, undefined, maxTokens, raceOpts);
         rejectCreditBody(first.spec.id, retry);
         const retryOut = finalize(retry);
         if (!replyLooksNonsense(retryOut.reply, sanityOpts(sanityCtx))) return retryOut;
@@ -1045,13 +1120,13 @@ export async function clientChat(
       window.dispatchEvent(new CustomEvent('amoji:brain-degraded', { detail: degradedNote(first.spec, opts?.language, credit) }));
     }
     try {
-      const content = await raceFreeLanes(system, recent, onPartial, maxTokens);
+      const content = await raceFreeLanes(system, recent, onPartial, maxTokens, raceOpts);
       if (content.length < 160 && CREDIT_RE.test(content)) throw new Error('pollinations credit');
       const out = finalize(content);
       if (replyLooksNonsense(out.reply, sanityOpts(sanityCtx))) {
         const strict = `${system}\n${STRICT_REPLY_APPENDIX}`;
         try {
-          const retry = await raceFreeLanes(strict, recent, undefined, maxTokens);
+          const retry = await raceFreeLanes(strict, recent, undefined, maxTokens, raceOpts);
           const retryOut = finalize(retry);
           if (!replyLooksNonsense(retryOut.reply, sanityOpts(sanityCtx))) return retryOut;
         } catch { /* local fallback */ }
