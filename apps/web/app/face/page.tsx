@@ -211,6 +211,7 @@ export default function FacePage() {
         persona: 'You are the onboard companion of a robot with an emotive face. One or two short spoken sentences only.',
         world: live.prompt,
         worldSpoken: live.spoken,
+        characterId: optsRef.current.character,
       });
       historyRef.current.push({ role: 'assistant', content: reply });
       if (Object.keys(emotionHints).length) face.showHints(emotionHints);
