@@ -138,8 +138,7 @@
 // carries z-10 so it takes its clicks back.
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { feedUtterance, applyLlmHints, setThinkingPose, triggerLaugh, triggerMove, holdMove, setPerfMotionProfile } from '../lib/companion';
-import { resolveChatAutoIdle } from '../lib/chat-auto-idle';
+import { feedUtterance, applyContentMood, setThinkingPose, triggerLaugh, triggerMove, holdMove, setPerfMotionProfile } from '../lib/companion';
 import { detectMove } from '../lib/moves';
 import { loadHistory, saveHistory } from '../lib/companion-store';
 import { notifySpeaking, isSpeaking } from '../lib/speech';
@@ -178,8 +177,6 @@ import {
   shouldPlayOpenCheer,
 } from '../lib/open-phase';
 import {
-  formatTopicSuggestionLine,
-  pickTopicSuggestions,
   undecidedTopicReply,
   userUndecided,
 } from '../lib/topic-suggestions';
@@ -188,9 +185,18 @@ import { productionChat } from '../lib/backend-client';
 import { stopThinkingSound } from '../lib/thinking-sound';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
 import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerformance, detectMusicStyle } from '../lib/music';
+import { nextPassiveIdleClip, PASSIVE_IDLE_LOOP_TEMPLATE } from '../lib/idle-passive-loop';
+import { resolveContentMotion } from '../lib/content-motion';
 import { clipLabel, PERFORMANCE_CLIPS, type PerformanceClip } from '../lib/performance-clips';
 import { resolvePerfMotion } from '../lib/performance-motion';
-import { SHOWCASE_START, SHOWCASE_YES_RE, pickShowcaseOffer, skillOfferKind, type ShowcaseKind } from '../lib/showcase';
+import {
+  SHOWCASE_START,
+  SHOWCASE_YES_RE,
+  nextSkillOffer,
+  pickShowcaseOffer,
+  showcaseStoryAsk,
+  type ShowcaseKind,
+} from '../lib/showcase';
 import { recentUserMood } from '../lib/talk-history';
 import { detectGame, startGame, playTurn, gameFarewellLine, type GameState } from '../lib/games';
 import { detectActionGame, setMiniGameChromeHidden, subscribeMiniGameOpen, type ActionGame } from '../lib/minigames';
@@ -253,6 +259,8 @@ export interface ChatPanelProps {
 }
 
 const IDLE_AFTER_MS = 40_000;
+/** Advance relax → stretch → look body loop while the user stays quiet. */
+const PASSIVE_IDLE_BODY_MS = 9_000;
 /** user silence beyond this switches idle chatter to direct re-engagement */
 const REENGAGE_AFTER_MS = 110_000;
 /** user silence beyond this gets the soft closer — once, then she waits */
@@ -345,6 +353,9 @@ export default function ChatPanel({
   const lastUserRef = useRef(Date.now());
   const lastChatterAtRef = useRef(0);
   const chatterCountRef = useRef(0);
+  /** Steps the relax → stretch → look body playlist while the room is quiet. */
+  const passiveIdleStepRef = useRef(0);
+  const lastPassiveBodyAtRef = useRef(0);
   const reengageStageRef = useRef(0);
   const greetedRef = useRef(false);
   /** Phase 2: user has sent a real chat turn this open stretch. */
@@ -378,6 +389,8 @@ export default function ChatPanel({
   // r.48 — performance theatre: she offers private shows unprompted and
   // remembers the offer until you answer; a counter spaces the theatre out
   const pendingOfferRef = useRef<ShowcaseKind | null>(null);
+  const lastOfferKindRef = useRef<ShowcaseKind | null>(null);
+  const lastOfferAtRef = useRef(0);
   const perfCountRef = useRef(0);
   const lastFeltRef = useRef<string | undefined>(undefined);
   const onStatusRef = useRef(onStatus);
@@ -386,9 +399,13 @@ export default function ChatPanel({
   onMemCountRef.current = onMemCount;
   const onAutoIdleRef = useRef(onAutoIdle);
   onAutoIdleRef.current = onAutoIdle;
+  /**
+   * Body + idle from chat TEXT only (keyword / lexicon) — never LLM emotion tags.
+   * `_ignoredHints` kept so call sites stay stable; content-motion recomputes mood.
+   */
   const pushAutoIdle = (
     assistantText: string,
-    emotionHints?: Record<string, number>,
+    _ignoredHints?: Record<string, number>,
     thinking?: boolean,
     optsOrUserText?: string | { openGreet?: boolean; sessionFarewell?: boolean; userText?: string },
   ) => {
@@ -396,16 +413,15 @@ export default function ChatPanel({
       typeof optsOrUserText === 'string'
         ? { userText: optsOrUserText }
         : optsOrUserText ?? {};
-    onAutoIdleRef.current?.(
-      resolveChatAutoIdle({
-        assistantText,
-        emotionHints,
-        thinking,
-        userText: opts.userText,
-        openGreet: opts.openGreet,
-        sessionFarewell: opts.sessionFarewell,
-      }),
-    );
+    const plan = resolveContentMotion({
+      assistantText,
+      userText: opts.userText,
+      thinking,
+      openGreet: opts.openGreet,
+      sessionFarewell: opts.sessionFarewell,
+    });
+    if (plan.moodHints) applyContentMood(plan.moodHints);
+    onAutoIdleRef.current?.(plan.idleClip);
   };
 
   // r70 — the user's own gender (Settings → "You are"; never-set = undefined,
@@ -494,7 +510,7 @@ export default function ChatPanel({
       ? { ...(hints ?? {}), [remembered]: Math.max(hints?.[remembered] ?? 0, 0.45) }
       : hints;
     speak(text, characterId, lang, voiced, lead);
-    if (voiced) applyLlmHints(voiced);
+    if (voiced) applyContentMood(voiced);
     setHistory((h) => [...h, { role: 'assistant', content: text }]);
   };
 
@@ -583,7 +599,12 @@ export default function ChatPanel({
     return clip;
   };
   const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string, alreadySpoken?: { text: string; since: number }): string => {
-    const mv = detectMove(userText) ?? detectMove(reply);
+    // Content director owns move + face mood — LLM emotion tags are ignored here.
+    const plan = resolveContentMotion({ userText, assistantText: reply });
+    const mv = plan.move;
+    if (plan.moodHints) applyContentMood(plan.moodHints);
+    // Prefer content director; never fall back to LLM emotion tags.
+    const contentHints = plan.moodHints;
     // The first closed sentence already went out over the stream. If it is
     // still queued or its audio started, say only the rest — never replay
     // that sentence, and never cut it. If it never started and is gone from
@@ -598,7 +619,7 @@ export default function ChatPanel({
       } else if (mv) triggerMove(mv);
       notifySpeaking(reply);
       const rest = speechRemainder(reply, alreadySpoken.text);
-      if (rest) speak(rest, characterId, lang, hints, undefined, intensity);
+      if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity);
       return reply;
     }
     // Singing plays a premade clip in her gender's voice. The lyric still
@@ -606,7 +627,6 @@ export default function ChatPanel({
     // its turn — a live sentence is not cut to start the song.
     if (mv === 'sing') {
       triggerMove('sing');
-      applyLlmHints({ joy: 0.88 });
       const style = detectMusicStyle(userText);
       whenSpeechIdle(() => beginShow('song', 9300, mood, laughCountRef.current, false, style));
       const compact = reply.replace(/\s/g, '');
@@ -618,10 +638,9 @@ export default function ChatPanel({
     }
     if (mv === 'dance') {
       triggerMove('dance');
-      applyLlmHints({ joy: 0.72 });
       beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText));
       notifySpeaking(reply);
-      speak(reply, characterId, lang, hints, undefined, intensity);
+      speak(reply, characterId, lang, contentHints, undefined, intensity);
       return reply;
     }
     // r86 — the piano performance finally SOUNDS like a piano: the theme's
@@ -629,10 +648,9 @@ export default function ChatPanel({
     // physical-model timbre, for the 6s her body plays the seated keys.
     if (mv === 'piano') {
       triggerMove('piano');
-      applyLlmHints({ joy: 0.6 });
       startPerformanceMusic('piano', characterId, 6300);
       notifySpeaking(reply);
-      speak(reply, characterId, lang, hints, undefined, intensity);
+      speak(reply, characterId, lang, contentHints, undefined, intensity);
       return reply;
     }
     if (mv) triggerMove(mv);
@@ -645,7 +663,7 @@ export default function ChatPanel({
         reply,
         characterId,
         lang,
-        hints,
+        contentHints,
         meal ? { text: pickMealToast(lang, laughCountRef.current), pitch: 0.12, rate: 0 } : undefined,
         intensity,
       );
@@ -655,15 +673,15 @@ export default function ChatPanel({
         // Reactions SFX-only: body giggle + queued CLIP_LIBRARY laugh — never TTS hehe/haha lead.
     triggerLaugh();
     playLaughBurst(characterId, lang);
-    applyLlmHints({ joy: style.joy });
+    applyContentMood({ ...(contentHints ?? {}), joy: style.joy });
     laughCountRef.current++;
     notifySpeaking(reply);
-    speak(reply, characterId, lang, { ...(hints ?? {}), joy: style.joy }, undefined, intensity);
+    speak(reply, characterId, lang, { ...(contentHints ?? {}), joy: style.joy }, undefined, intensity);
     return reply;
   };
 
   // t794/t796 + Pixel entry: hi + persona intro + topic ask; silent stretch
-  // gets 2–3 topic suggestions (no auto weather/news). Session gap = fresh
+  // offers ONE ability reminder (music/dance/story/…). Session gap = fresh
   // open — clear history and skip lastThread resume. Keep #58 filler bans.
   useEffect(() => {
     if (greetedRef.current) return;
@@ -724,12 +742,14 @@ export default function ChatPanel({
       : setTimeout(() => {
           if (userHasSpokenRef.current || openIdleBriefDoneRef.current) return;
           if (userHasSpokenRef.current || busyRef.current) return;
-          const topics = pickTopicSuggestions(lang, characterId?.length ?? 0, 3);
-          const line = formatTopicSuggestionLine(lang, topics);
-          if (!line) return;
+          // One ability reminder so newcomers learn what she can do.
+          const kind = nextSkillOffer(characterId?.length ?? 0, lastOfferKindRef.current);
+          lastOfferKindRef.current = kind;
+          lastOfferAtRef.current = Date.now();
+          pendingOfferRef.current = kind;
           openIdleBriefDoneRef.current = true;
           markOpenIdleBriefDone(Date.now(), characterId);
-          sayLocal(line, { joy: 0.52 });
+          sayLocal(pickShowcaseOffer(kind, lang, chatterCountRef.current), { joy: 0.52 });
         }, OPEN_IDLE_BRIEF_MS);
     return () => {
       clearTimeout(t1);
@@ -742,7 +762,6 @@ export default function ChatPanel({
   // poke reactions — SFX + VRM motion only; lip hooks run off the reaction line
   // but never land in persisted chat history or copy transcript.
   const lastPokeRef = useRef(pokeCount);
-  const lastOfferAtRef = useRef(0);
   useEffect(() => {
     if (pokeCount === lastPokeRef.current) return;
     lastPokeRef.current = pokeCount;
@@ -770,6 +789,24 @@ export default function ChatPanel({
     sayLocal(line, { joy: 0.55 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handHoldCount]);
+
+  // Body idle loop while quiet: relax → stretch → relax → look around → repeat.
+  // Starts a bit before spoken idle chatter so the pose keeps changing even
+  // when she is not talking. Content-driven pins (dance/sing/thinking) still
+  // win while busy / speaking.
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (busyRef.current || isSpeaking() || speechPending() || actionGameRef.current) return;
+      const silent = Date.now() - lastUserRef.current;
+      // After a short calm, start cycling; keep going for as long as idle.
+      if (silent < 8_000) return;
+      if (Date.now() - lastPassiveBodyAtRef.current < PASSIVE_IDLE_BODY_MS) return;
+      lastPassiveBodyAtRef.current = Date.now();
+      const clip = nextPassiveIdleClip([...PASSIVE_IDLE_LOOP_TEMPLATE], passiveIdleStepRef.current++);
+      onAutoIdleRef.current?.(clip);
+    }, 2000);
+    return () => clearInterval(timer);
+  }, []);
 
   // idle chatter + staged re-engagement (r.38): she never lets a quiet room
   // die. Measured from the USER's last real action (message, poke, spoken
@@ -802,26 +839,29 @@ export default function ChatPanel({
         sayLocal(pickLine('reengage', lang, n), feltHints);
         return;
       }
-      // Every fourth quiet line offers one skill. The gap keeps it from stacking.
-      if (n > 0 && n % 4 === 3 && Date.now() - lastOfferAtRef.current > 90_000) {
+      // One ability at a time when quiet — music / dance / song / weather / story / news.
+      // Alternate with soft companion chatter so it does not nag every beat.
+      if (Date.now() - lastOfferAtRef.current > 45_000 && (n === 0 || n % 2 === 1)) {
         lastOfferAtRef.current = Date.now();
-        const kind = skillOfferKind(n);
+        const kind = nextSkillOffer(n, lastOfferKindRef.current);
+        lastOfferKindRef.current = kind;
         pendingOfferRef.current = kind;
         sayLocal(pickShowcaseOffer(kind, lang, n), feltHints);
         return;
       }
-      // After the user has spoken, one topic-menu hint per quiet stretch if
-      // they have not picked a direction (no auto weather/news).
+      // After the user has spoken, one ability reminder per quiet stretch if
+      // they have not picked a direction (no multi-topic dump).
       if (userHasSpokenRef.current && !idleAutoAfterUserRef.current && !busyRef.current) {
         idleAutoAfterUserRef.current = true;
-        const topics = pickTopicSuggestions(lang, chatterCountRef.current + 1, 3);
-        sayLocal(formatTopicSuggestionLine(lang, topics), feltHints ?? { joy: 0.45 });
+        const kind = nextSkillOffer(n + 2, lastOfferKindRef.current);
+        lastOfferKindRef.current = kind;
+        lastOfferAtRef.current = Date.now();
+        pendingOfferRef.current = kind;
+        sayLocal(pickShowcaseOffer(kind, lang, n + 2), feltHints ?? { joy: 0.45 });
         return;
       }
       // Idle talk: stay on topic OR suggest a new one (statements).
-      // Motif/topic banks rotate via idle-talk — less tea, no question-form chatter.
-      // Idle tutor tips cut — do not interrupt idle companion time with how-to tips.
-      // Showcase skill offers + Settings Help / showcase tutorial banks stay elsewhere.
+      // Ability reminders above teach music/dance/weather/story one at a time.
       // Backdrop ambient (curated SCENE_LINES): TTS-only flavour — LLM chat stays content-first.
       const sceneAmbient =
         reengageStageRef.current === 0 && !idleMood && n % 4 === 1
@@ -993,7 +1033,7 @@ export default function ChatPanel({
       const kind = pendingOfferRef.current;
       pendingOfferRef.current = null;
       perfCountRef.current += 1;
-      applyLlmHints({ joy: 0.85 });
+      applyContentMood({ joy: 0.85 });
       if (kind === 'news' || kind === 'weather') {
         const ask = kind === 'weather'
           ? (lang === 'ja' ? '今日の天気は？' : lang === 'zh' ? '今天天气怎么样？' : lang === 'yue' ? '今日天氣點呀？' : "what's the weather here?")
@@ -1002,6 +1042,15 @@ export default function ChatPanel({
           sayLocal(live.spoken || SHOWCASE_START[lang][kind]);
         });
         done();
+        return;
+      }
+      if (kind === 'story') {
+        sayLocal(SHOWCASE_START[lang].story);
+        done();
+        // Feed a canned story ask through the normal chat path (content-driven story mode).
+        window.setTimeout(() => {
+          void send(showcaseStoryAsk(lang));
+        }, 500);
         return;
       }
       if (kind === 'music') {
@@ -1031,7 +1080,7 @@ export default function ChatPanel({
     const felt = feltMood(text);
     lastFeltRef.current = felt?.mood;
     const feltHints = moodToHints(felt?.mood, felt?.intensity);
-    if (feltHints) applyLlmHints(feltHints);
+    if (feltHints) applyContentMood(feltHints);
     const quota = checkChatTurnQuota();
     if (!quota.ok) {
       const line = quotaExceededCopy(lang);
@@ -1048,7 +1097,7 @@ export default function ChatPanel({
     // Sing/dance: local CC0 clips + Mixkit style streams when the user names a genre.
     if (requested === 'sing' || requested === 'dance') {
       triggerMove(requested);
-      applyLlmHints({ joy: requested === 'sing' ? 0.88 : 0.72 });
+      applyContentMood({ joy: requested === 'sing' ? 0.88 : 0.72 });
       const style = detectMusicStyle(text);
       beginShow(requested === 'sing' ? 'song' : 'dance', 18_000, felt?.mood, laughCountRef.current, false, style);
     }
@@ -1119,7 +1168,7 @@ export default function ChatPanel({
         rememberTurn(text, line);
         onMemCountRef.current?.(memorySummaryCount());
         feedUtterance(line);
-        if (feltHints) applyLlmHints(feltHints);
+        if (feltHints) applyContentMood(feltHints);
         notifySpeaking(line);
         speak(line, characterId, lang, feltHints, undefined, felt?.intensity);
         pushAutoIdle(line, feltHints, undefined, text);
@@ -1173,10 +1222,9 @@ export default function ChatPanel({
             setStreamDraft(clean || '');
           },
         });
-        // same floor logic on the streaming path (.18b: guarded — replyHints
-        // can be undefined when the exchange carried no mood at all)
-        const replyHints = feltHints ? { ...feltHints, ...r.emotionHints } : r.emotionHints;
-        if (replyHints) applyLlmHints(replyHints);
+        // Motion + face from chat content only — ignore LLM emotionHints.
+        const contentPlan = resolveContentMotion({ userText: text, assistantText: r.reply });
+        if (contentPlan.moodHints) applyContentMood(contentPlan.moodHints);
         // r.30 — the streaming path remembers the turn too (both paths learn)
         rememberTurn(text, r.reply);
         onMemCountRef.current?.(memorySummaryCount());
@@ -1184,12 +1232,12 @@ export default function ChatPanel({
         const spoken = speakReply(
           text,
           r.reply,
-          replyHints,
+          contentPlan.moodHints,
           felt?.intensity,
           felt?.mood,
           firstSentence ? { text: firstSentence, since: sentenceStamp } : undefined,
         );
-        pushAutoIdle(r.reply, replyHints, undefined, text);
+        pushAutoIdle(r.reply, undefined, undefined, text);
         commitReply(spoken);
         answered = true;
       } catch {
@@ -1202,18 +1250,17 @@ export default function ChatPanel({
     };
 
     const commitServer = (data: { reply?: string; emotionHints?: Record<string, number> }) => {
-      // the felt mood is a FLOOR: her reply's hints win on conflicts, but the
-      // feeling the user just expressed never fully drops out
-      const replyHints = feltHints ? { ...feltHints, ...(data.emotionHints ?? {}) } : data.emotionHints;
-      if (replyHints) applyLlmHints(replyHints);
+      // Body/face from chat content — server emotionHints are not applied to motion.
       const reply = data.reply || '…';
+      const contentPlan = resolveContentMotion({ userText: text, assistantText: reply });
+      if (contentPlan.moodHints) applyContentMood(contentPlan.moodHints);
       // r.30 — remember the completed turn (your words + her reply) so the
       // next session can pick the conversation thread back up
       rememberTurn(text, reply);
       onMemCountRef.current?.(memorySummaryCount());
       feedUtterance(reply);
-      const spoken = speakReply(text, reply, replyHints, felt?.intensity, felt?.mood);
-      pushAutoIdle(reply, replyHints, undefined, text);
+      const spoken = speakReply(text, reply, contentPlan.moodHints, felt?.intensity, felt?.mood);
+      pushAutoIdle(reply, undefined, undefined, text);
       commitReply(spoken);
       answered = true;
     };
@@ -1432,7 +1479,7 @@ export default function ChatPanel({
         key={actionGame}
         kind={actionGame}
         lang={lang}
-        onEmotion={(ev) => applyLlmHints(ev.hints)}
+        onEmotion={(ev) => applyContentMood(ev.hints)}
         onExit={(result) => {
           actionGameRef.current = false;
           setActionGame(null);

@@ -60,7 +60,7 @@ describe('auto personality', () => {
     restore();
   });
 
-  it('leads every personality with IdleBreathCalm and keeps the dropped clips out', () => {
+  it('leads every personality with the relax → stretch → look passive loop', () => {
     const restore = swapLs();
     const g = globalThis as { localStorage: Storage };
     const female = ['sunny', 'shy', 'playful', 'gentle', 'dreamy', 'spark'] as const;
@@ -68,20 +68,21 @@ describe('auto personality', () => {
     const stored: Record<string, string> = {};
     for (const tag of [...female, ...male]) stored[`p-${tag}`] = tag;
     g.localStorage.setItem('amoji.personality.v1', JSON.stringify(stored));
-    const dropped = ['IdleNeutral', 'Thinking', 'IdleChinHand', 'IdleHug', 'IdleSassy', 'Impatient', 'Relax', 'LookAround', 'WeightShift'];
+    const loop = ['IdleBreathCalm', 'Relax', 'StandardIdle', 'LookAround'];
+    const dropped = ['IdleNeutral', 'Thinking', 'IdleChinHand', 'IdleHug', 'IdleSassy', 'Impatient', 'WeightShift', 'HelloWave'];
     for (const tag of female) {
       const clips = personalityMotion(`p-${tag}`, 'female').idleClips;
       expect(clips[0]).toBe('IdleBreathCalm');
-      expect(clips).toContain('StandardIdle');
+      expect(clips).toEqual(loop);
       for (const id of dropped) expect(clips).not.toContain(id);
     }
     for (const tag of male) {
       const clips = personalityMotion(`p-${tag}`, 'male').idleClips;
       expect(clips[0]).toBe('IdleBreathCalm');
-      expect(clips).toContain('StandardIdle');
+      expect(clips).toEqual(loop);
       for (const id of dropped) expect(clips).not.toContain(id);
     }
-    expect(personalityMotion('p-cool', 'male').idleClips).toEqual(['IdleBreathCalm', 'StandardIdle']);
+    expect(personalityMotion('p-cool', 'male').idleClips).toEqual(loop);
     restore();
   });
 });

@@ -21,11 +21,12 @@ describe('chat entry open order', () => {
     expect(line.toLowerCase()).toMatch(/talk about/);
   });
 
-  it('ChatPanel uses persona intro and topic menu, not open-phase weather fetch', () => {
+  it('ChatPanel uses persona intro and one-ability reminders, not open-phase weather fetch', () => {
     const chat = read('components/ChatPanel.tsx');
     expect(chat).toContain('voiceOpening');
     expect(chat).toContain('buildOpenCheerLine');
-    expect(chat).toContain('formatTopicSuggestionLine');
+    expect(chat).toContain('nextSkillOffer');
+    expect(chat).toContain('pickShowcaseOffer');
     expect(chat).not.toMatch(/openPhaseWeatherAsk\(lang\)/);
     expect(chat).not.toMatch(/openPhaseNewsAsk\(lang\)/);
     expect(chat).toContain('userUndecided');

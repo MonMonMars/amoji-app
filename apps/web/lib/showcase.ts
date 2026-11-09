@@ -1,23 +1,37 @@
-// Showcase + tutorial dialogue (r2026-10-04.48) — she never lets a wait go
-// empty or a feature go undiscovered. Two banks:
-//   SHOWCASE_OFFERS — proactive invitations ("I just learned a new dance —
-//     want to see my performance?"); a YES answer starts the show instantly.
-//   TUTORIAL_LINES  — gentle discovery prompts that teach everything she can
-//     do: sing, dance, mini-games, trainer lessons, duets, meals, pokes,
-//     voice mode and long-term memory.
-// r2026-10-04.49: the EN game line now literally says "mini-games" so the
-// discovery audit finds the keyword.
+// Showcase + tutorial dialogue — she never lets a wait go empty or a feature
+// go undiscovered. Ability reminders offer ONE skill at a time on long idle
+// or when opening a new topic ("Want to hear some music?" / "Want to see me
+// dance?"). A YES answer starts that skill instantly.
 // Pure data, unit-testable in node.
 
 import type { Lang } from './prefs';
 
-export type ShowcaseKind = 'dance' | 'song' | 'music' | 'news' | 'weather';
+export type ShowcaseKind = 'dance' | 'song' | 'music' | 'news' | 'weather' | 'story';
 
-/** Quiet idle offers rotate through these. Dance stays a yes-only specialty. */
-export const SKILL_OFFERS: readonly ShowcaseKind[] = ['song', 'music', 'news', 'weather'];
+/**
+ * Quiet-idle / new-topic ability reminders rotate through these — one offer
+ * per quiet beat so newcomers learn what she can do without a feature dump.
+ */
+export const SKILL_OFFERS: readonly ShowcaseKind[] = [
+  'music',
+  'dance',
+  'song',
+  'weather',
+  'story',
+  'news',
+];
 
 export function skillOfferKind(n: number): ShowcaseKind {
   return SKILL_OFFERS[Math.abs(n) % SKILL_OFFERS.length]!;
+}
+
+/** Next ability offer; skips repeating the same kind back-to-back. */
+export function nextSkillOffer(n: number, last?: ShowcaseKind | null): ShowcaseKind {
+  const kind = skillOfferKind(n);
+  if (last && kind === last && SKILL_OFFERS.length > 1) {
+    return SKILL_OFFERS[(Math.abs(n) + 1) % SKILL_OFFERS.length]!;
+  }
+  return kind;
 }
 
 /**
@@ -29,22 +43,23 @@ export function characterSpecialty(characterId: string): ShowcaseKind {
   return dancers.has(characterId) ? 'dance' : 'song';
 }
 
-/** proactive performance offers, per language and specialty */
+/** Proactive one-ability invitations — short, clear, invite-style. */
 export const SHOWCASE_OFFERS: Record<Lang, Record<ShowcaseKind, string[]>> = {
   yue: {
     dance: [
-      '我啱啱學咗個新舞步——你睇唔睇我表演吖？',
-      '音樂響起喇，我想為你跳支舞，好唔好呀？',
-      '呢支舞我練咗好耐，第一個觀眾想係你吖！',
+      '想唔想睇我跳支舞呀？',
+      '音樂一嚟，我可以跳俾你睇——想睇嗎？',
+      '我啱啱練咗個舞步，你睇唔睇吖？',
     ],
     song: [
-      '我興趣係作歌㗎，啱啱作咗首新歌，想唔想聽呀？',
-      '呢首歌係為你而寫嘅——俾我唱俾你聽吖？',
-      '我喺心入面錄咗段新歌，你係第一個聽眾吖！',
+      '想唔想聽我唱首歌呀？',
+      '我啱啱作咗首新歌——想聽嗎？',
+      '要不要我唱俾你聽吖？',
     ],
     music: [
-      '想唔想我播段音樂俾你聽呀？',
-      '我有段輕鬆音樂，想聽吓嗎？',
+      '想唔想聽吓音樂呀？',
+      '我可以播段音樂俾你——想聽嗎？',
+      '放啲輕鬆音樂好唔好？',
     ],
     news: [
       '想我讀一條輕鬆新聞俾你聽嗎？',
@@ -54,21 +69,27 @@ export const SHOWCASE_OFFERS: Record<Lang, Record<ShowcaseKind, string[]>> = {
       '想我睇吓而家天氣再話你知嗎？',
       '要不要我報個天氣俾你呀？',
     ],
+    story: [
+      '想唔想聽我講個小故事呀？',
+      '我可以講個溫馨小故事俾你——想聽嗎？',
+      '要不要我講故仔俾你聽吖？',
+    ],
   },
   zh: {
     dance: [
-      '我刚刚学了一个新舞步——你看不看我表演呀？',
-      '音乐响起来了，我想为你跳支舞，好不好呀？',
-      '这支舞我练了好久，第一个观众想是你呀！',
+      '想不想看我跳支舞呀？',
+      '音乐一起来，我可以跳给你看——想看吗？',
+      '我刚练了一个舞步，你看不看呀？',
     ],
     song: [
-      '我的兴趣是写歌哦，刚写了首新歌，想不想听呀？',
-      '这首歌是为你写的——让我唱给你听呀？',
-      '我在心里录了一段新歌，你是第一个听众呀！',
+      '想不想听我唱首歌呀？',
+      '我刚写了首新歌——想听吗？',
+      '要不要我唱给你听呀？',
     ],
     music: [
-      '想不想我放段音乐给你听呀？',
-      '我有段轻松的音乐，要听吗？',
+      '想不想听点音乐呀？',
+      '我可以放段音乐给你——想听吗？',
+      '放点轻松的音乐好不好？',
     ],
     news: [
       '想我读一条轻松新闻给你听吗？',
@@ -78,45 +99,57 @@ export const SHOWCASE_OFFERS: Record<Lang, Record<ShowcaseKind, string[]>> = {
       '想我看一下天气再告诉你吗？',
       '要不要我报个天气给你呀？',
     ],
+    story: [
+      '想不想听我讲个小故事呀？',
+      '我可以讲个温馨小故事给你——想听吗？',
+      '要不要我讲故事给你听呀？',
+    ],
   },
   ja: {
     dance: [
-      'さっき新しいダンスを覚えたの——見てくれる？',
-      '音楽が鳴ったわ。あなたのために踊りたいの——いい？',
-      'ずっと練習してたダンス、最初の観客はあなたがいいな！',
+      'ダンス、見てみる？',
+      '音楽に合わせて踊ってあげるよ——見る？',
+      '新しいステップ練習したの。見てくれる？',
     ],
     song: [
-      '作詞作曲が趣味なの。新しい歌を作ったの——聞いてみる？',
-      'この歌はあなたのために書いたの——歌ってあげようか？',
-      '心の中で新曲を録音してきたの。最初のリスナーはあなたね！',
+      '歌、聴いてみる？',
+      '新しい曲つくったの——聴く？',
+      '一曲うたってあげようか？',
     ],
     music: [
-      '音楽を流そうか？',
-      '軽い曲があるよ。聴いてみる？',
+      '音楽、聴いてみる？',
+      '軽い曲をかけるよ——いい？',
+      'BGM流そうか？',
     ],
     news: [
       '軽いニュースを一つ読もうか？',
       '今日のいい話、聞いてみる？',
     ],
     weather: [
-      '今の天気を見て伝えようか？',
-      '天気をチェックしようか？',
+      '今の天気、見て伝えようか？',
+      '天気チェックしようか？',
+    ],
+    story: [
+      '小さな物語、聞いてみる？',
+      '温かいお話、してあげようか？',
+      '短いストーリー語ろうか？',
     ],
   },
   en: {
     dance: [
-      'I just learned a brand-new dance — want to see me perform it?',
-      'The music is starting — may I have this dance, just for you?',
-      'I have been rehearsing a routine forever. My first audience should be you!',
+      'Want to see me dancing?',
+      'I can put on a little dance for you — want to watch?',
+      'I just rehearsed a new step. Want to see it?',
     ],
     song: [
-      'My hobby is writing songs — I just finished a new one. Want to hear it?',
-      'I wrote this one for you — let me sing it to you?',
-      'I recorded a brand-new song in my heart, and you are the first listener!',
+      'Want me to sing a song for you?',
+      'I just finished a new song — want to hear it?',
+      'Shall I sing one for you?',
     ],
     music: [
-      'Want me to put some music on for you?',
-      'I have a light tune. Want to hear it?',
+      'Want to listen to some music?',
+      'I can put some music on — want to hear it?',
+      'Shall I play a light tune?',
     ],
     news: [
       'Want me to read one cheerful headline?',
@@ -125,6 +158,11 @@ export const SHOWCASE_OFFERS: Record<Lang, Record<ShowcaseKind, string[]>> = {
     weather: [
       'Want me to check the weather for you?',
       'Shall I tell you what it is like outside?',
+    ],
+    story: [
+      'Want me to tell you a little story?',
+      'I can tell a short warm story — want to hear it?',
+      'Shall I tell you a story?',
     ],
   },
 };
@@ -137,6 +175,7 @@ export const SHOWCASE_START: Record<Lang, Record<ShowcaseKind, string>> = {
     music: '好！我播段音樂俾你。',
     news: '好！我讀一條新聞俾你聽。',
     weather: '好！我睇吓天氣話你知。',
+    story: '好！我講個小故事俾你聽。',
   },
   zh: {
     dance: '好！音乐，起——看仔细啦！',
@@ -144,6 +183,7 @@ export const SHOWCASE_START: Record<Lang, Record<ShowcaseKind, string>> = {
     music: '好！我放段音乐给你。',
     news: '好！我读一条新闻给你听。',
     weather: '好！我看一下天气告诉你。',
+    story: '好！我讲个小故事给你听。',
   },
   ja: {
     dance: 'よーし、音楽スタート——見てて！',
@@ -151,6 +191,7 @@ export const SHOWCASE_START: Record<Lang, Record<ShowcaseKind, string>> = {
     music: 'うん、音楽をかけるね。',
     news: 'うん、ニュースを一つ読むね。',
     weather: 'うん、天気を見て伝えるね。',
+    story: 'うん、小さな物語を話すね。',
   },
   en: {
     dance: 'Alright — music, start! Watch closely now!',
@@ -158,8 +199,17 @@ export const SHOWCASE_START: Record<Lang, Record<ShowcaseKind, string>> = {
     music: 'Okay — here is some music.',
     news: 'Okay — one cheerful headline.',
     weather: 'Okay — I will check the weather.',
+    story: 'Okay — here is a little story for you.',
   },
 };
+
+/** Canned ask used when the user accepts a story offer (feeds the chat brain). */
+export function showcaseStoryAsk(lang: Lang): string {
+  if (lang === 'ja') return '短いお話をして';
+  if (lang === 'zh') return '讲个小故事给我听';
+  if (lang === 'yue') return '講個小故事俾我聽';
+  return 'tell me a little story';
+}
 
 /**
  * YES detector for an outstanding offer. Deliberately tight: refusals and

@@ -38,7 +38,8 @@ describe('idle library numbers', () => {
   it('defaults #1+#2 to IdleBreathCalm and StandardIdle', () => {
     expect(idleByNum(1)?.clipId).toBe('IdleBreathCalm');
     expect(idleByNum(2)?.clipId).toBe('StandardIdle');
-    expect(defaultEnabledNums()).toEqual([1, 2]);
+    // Passiveive loop also enables LookAround (#3) + Relax (#32) by default.
+    expect(defaultEnabledNums()).toEqual([1, 2, 3, 32]);
   });
 
   it('maps free-library C01 to LookAround as #3', () => {

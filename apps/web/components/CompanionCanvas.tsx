@@ -869,13 +869,13 @@ export default function CompanionCanvas({
         // over mid-motion, so there is no clamped end-frame freeze to
         // recover from and no neutral stand between idle movements
       });
-      // per-character deterministic idle playlist ??r93: the WHOLE idle pool
-      // (16 library idles), each character rotated into a personal order
-      idleOrder = orderIdleClips(
-        IDLE_SOURCES.map((s) => s.id).filter((id) => clips.has(id)),
-        seedKey ?? '',
-        gender,
-      );
+      // Passiveive loop only: relax → stretch → relax → look around (repeat).
+      // Use every loaded idle id (enabled + side picks) so Relax / LookAround
+      // can play even when they are not rail-default-enabled.
+      const loadedIdleIds = [...IDLE_SOURCES, ...IDLE_PICKS]
+        .map((s) => s.id)
+        .filter((id) => clips.has(id));
+      idleOrder = orderIdleClips(loadedIdleIds, seedKey ?? '', gender);
       if (!idleOrder.length) idleOrder = orderIdleClips([...clips.keys()], seedKey ?? '', gender);
       idleIdx = 0;
       mixerActive = true;
