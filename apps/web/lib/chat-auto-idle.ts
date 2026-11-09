@@ -1,5 +1,6 @@
 // Content-driven idle pick for /chat — no manual rail pins.
 // Uses lightweight keyword buckets + emotionHints on the last assistant reply.
+// Dance / music moves only on explicit user (or matching assistant) intent.
 
 import { idleClipById } from './idle-clips';
 import type { IdleCuratedCategory } from './idle-curated-rail';
@@ -10,8 +11,28 @@ const BREATHING_CLIPS = ['IdleBreathCalm', 'StandardIdle', 'IdleMixamoBreathing'
 /** Opening greet / light chit-chat — never the wave gesture. */
 const CHITCHAT_CLIPS = ['lib_C25', 'LookAround', 'Thinking', 'IdleInnersceneSam'] as const;
 
-type Bucket = { category: IdleCuratedCategory | 'greet' | 'scared'; patterns: RegExp[] };
+/** Calm defaults for ordinary Q&A — no dance fallthrough. */
+const NEUTRAL_CHAT_CLIPS = [
+  'IdleBreathCalm',
+  'StandardIdle',
+  'IdleMixamoBreathing',
+  'LookAround',
+  'Thinking',
+  'IdleNeutral',
+] as const;
 
+const SING_INTENT =
+  /(唱歌|唱首歌|唱k|一齊唱|一齐唱|\bsing(?:ing)?\b|\bkaraoke\b|カラオケ|歌を歌)/i;
+
+type BucketCategory =
+  | IdleCuratedCategory
+  | 'greet'
+  | 'scared'
+  | 'music';
+
+type Bucket = { category: BucketCategory; patterns: RegExp[] };
+
+/** Explicit-intent buckets only — no loose "party" / "jazz" / joy→dance fallthrough. */
 const KEYWORD_BUCKETS: readonly Bucket[] = [
   {
     category: 'greet',
@@ -25,16 +46,32 @@ const KEYWORD_BUCKETS: readonly Bucket[] = [
     category: 'think',
     patterns: [
       /\b(let me think|hmm+|thinking|wonder|maybe|perhaps)\b/i,
-      /諗下|想想|思考|想想|或許|或许|可能|嗯+/,
+      /諗下|想想|思考|或許|或许|可能|嗯+/,
       /考え|思う|かな|うーん/,
     ],
   },
   {
     category: 'dance',
     patterns: [
-      /\b(dance|dancing|groove|party|hip[- ]?hop|jazz)\b/i,
-      /跳舞|舞曲|熱舞|热舞|派對|派对/,
-      /ダンス|踊/,
+      /\b(danc(?:e|ing)|let(?:'s| us)\s+dance|dance\s+with)\b/i,
+      /(跳舞|跳個舞|跳支舞|跳一支舞|舞一段|來跳舞|来跳舞)/,
+      /ダンス|踊って|踊ろう/,
+    ],
+  },
+  {
+    category: 'music',
+    patterns: [
+      /\b(music|concert|playlist|listen(?:ing)?\s+to\s+(?:music|a\s+song)|put\s+on\s+(?:some\s+)?music)\b/i,
+      /音樂|音乐|音樂會|音乐会|演唱會|演唱会|聽歌|听歌|播音樂|播音乐|放音樂|放音乐/,
+      /音楽|ライブ|コンサート|聴いて/,
+    ],
+  },
+  {
+    category: 'martial',
+    patterns: [
+      /\b(tai\s?chi|kung\s?fu|martial\s+arts)\b/i,
+      /太極|太极|功夫|武打/,
+      /太極拳|カンフー/,
     ],
   },
   {
@@ -55,55 +92,71 @@ const KEYWORD_BUCKETS: readonly Bucket[] = [
   },
 ];
 
-/** Category → curated clip id (first playable match). */
-const CATEGORY_CLIP: Record<Bucket['category'] | IdleCuratedCategory, string> = {
+/** Category → curated clip id (first playable match). HelloWave is farewell-only. */
+const CATEGORY_CLIP: Record<BucketCategory | 'breathe' | 'look' | 'stretch' | 'sing', string> = {
   greet: 'lib_C25',
   think: 'Thinking',
   dance: 'lib_C113',
+  music: 'LookAround',
+  martial: 'lib_C121',
   scared: 'lib_C146',
   react: 'Cheer',
   breathe: 'IdleBreathCalm',
   look: 'LookAround',
   stretch: 'Relax',
   sing: 'IdleMixamoHappy',
-  martial: 'lib_C121',
 };
 
-function pickFromList(seed: string, list: readonly string[]): string {
+function pickFromPool(seed: string, pool: readonly string[]): string {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
-  const playable = list.filter((id) => idleClipById(id));
-  const pool = playable.length ? playable : [...BREATHING_CLIPS];
-  const idx = Math.abs(h) % pool.length;
-  return pool[idx]!;
+  const playable = pool.filter((id) => idleClipById(id));
+  if (!playable.length) return 'IdleBreathCalm';
+  const idx = Math.abs(h) % playable.length;
+  return playable[idx]!;
 }
 
 function pickBreathingDefault(seed: string): string {
-  return pickFromList(seed, BREATHING_CLIPS);
+  return pickFromPool(seed, BREATHING_CLIPS);
 }
 
 function pickChitchatDefault(seed: string): string {
-  return pickFromList(seed, CHITCHAT_CLIPS);
+  return pickFromPool(seed, CHITCHAT_CLIPS);
 }
 
-function topEmotionCategory(hints: Record<string, number> | undefined): IdleCuratedCategory | null {
+function pickNeutralChatIdle(seed: string): string {
+  return pickFromPool(seed, NEUTRAL_CHAT_CLIPS);
+}
+
+function pickDanceClip(text: string): string {
+  const t = text.toLowerCase();
+  if (/jazz|爵士/.test(t)) return idleClipById('lib_C112') ? 'lib_C112' : 'lib_C113';
+  if (/robot|機器人|机器人/.test(t)) return idleClipById('lib_C111') ? 'lib_C111' : 'lib_C113';
+  if (/party|派對|派对|club|夜店/.test(t)) return idleClipById('lib_C114') ? 'lib_C114' : 'lib_C113';
+  if (/hip[- ]?hop|嘻哈/.test(t)) return idleClipById('lib_C113') ? 'lib_C113' : 'lib_C113';
+  return idleClipById('lib_C113') ? 'lib_C113' : pickBreathingDefault(text);
+}
+
+function topEmotionCategory(
+  hints: Record<string, number> | undefined,
+  corpus: string,
+): IdleCuratedCategory | null {
   if (!hints) return null;
   let best: { key: string; v: number } | null = null;
   for (const [key, v] of Object.entries(hints)) {
-    if (v <= 0.35) continue;
+    if (v <= 0.5) continue;
     if (!best || v > best.v) best = { key, v };
   }
   if (!best) return null;
   const k = best.key.toLowerCase();
-  if (k.includes('joy') || k.includes('happy') || k.includes('delight')) return 'sing';
-  if (k.includes('sad') || k.includes('fear') || k.includes('anx')) return 'react';
-  if (k.includes('anger') || k.includes('rage')) return 'react';
+  if (SING_INTENT.test(corpus) && (k.includes('joy') || k.includes('happy'))) return 'sing';
   if (k.includes('confus') || k.includes('think')) return 'think';
-  if (k.includes('surprise')) return 'react';
+  if (k.includes('surprise')) return 'look';
+  // Joy/sad/anger no longer map to sing/dance idles — neutral chat stays calm.
   return null;
 }
 
-function matchBucket(text: string): Bucket['category'] | null {
+function matchBucket(text: string): BucketCategory | null {
   const t = text.trim();
   if (!t) return null;
   for (const bucket of KEYWORD_BUCKETS) {
@@ -112,16 +165,31 @@ function matchBucket(text: string): Bucket['category'] | null {
   return null;
 }
 
-function clipForCategory(cat: Bucket['category'] | IdleCuratedCategory, seed: string): string {
+const USER_INTENT_CATEGORIES = new Set<BucketCategory>(['dance', 'music', 'martial']);
+
+function resolveBucket(userText: string, assistantText: string): BucketCategory | null {
+  const user = matchBucket(userText);
+  if (user && USER_INTENT_CATEGORIES.has(user)) return user;
+  const assist = matchBucket(assistantText);
+  if (assist) return assist;
+  return user;
+}
+
+function clipForCategory(cat: BucketCategory | IdleCuratedCategory, seed: string, corpus: string): string {
   if (cat === 'breathe') return pickBreathingDefault(seed);
   if (cat === 'greet') return pickChitchatDefault(seed);
-  const id = CATEGORY_CLIP[cat];
+  if (cat === 'dance') return pickDanceClip(corpus);
+  if (cat === 'music') {
+    const id = CATEGORY_CLIP.music;
+    if (idleClipById(id)) return id;
+    return pickNeutralChatIdle(seed);
+  }
+  const id = CATEGORY_CLIP[cat as BucketCategory];
   if (id && idleClipById(id)) return id;
-  if (cat === 'sing') return 'IdleMixamoHappy';
-  if (cat === 'think') return 'Thinking';
-  if (cat === 'react') return 'Cheer';
-  if (cat === 'dance') return 'lib_C113';
-  return pickBreathingDefault(seed);
+  if (cat === 'sing') return idleClipById('IdleMixamoHappy') ? 'IdleMixamoHappy' : pickBreathingDefault(seed);
+  if (cat === 'think') return idleClipById('Thinking') ? 'Thinking' : pickBreathingDefault(seed);
+  if (cat === 'react') return idleClipById('Cheer') ? 'Cheer' : pickBreathingDefault(seed);
+  return pickNeutralChatIdle(seed);
 }
 
 function resolveFarewellWave(): string | null {
@@ -130,6 +198,8 @@ function resolveFarewellWave(): string | null {
 
 export interface ChatAutoIdleInput {
   assistantText: string;
+  /** Latest user line — dance / music intents checked here first. */
+  userText?: string;
   emotionHints?: Record<string, number>;
   thinking?: boolean;
   openGreet?: boolean;
@@ -144,20 +214,22 @@ export function resolveChatAutoIdle(input: ChatAutoIdleInput): string | null {
   if (input.thinking) {
     return idleClipById('Thinking') ? 'Thinking' : 'IdleBreathCalm';
   }
-  const text = input.assistantText.trim();
-  const seed = text || 'idle';
+  const assistantText = input.assistantText.trim();
+  const userText = (input.userText ?? '').trim();
+  const corpus = `${userText} ${assistantText}`.trim();
+  const seed = assistantText || userText || 'idle';
 
-  if (isFarewellText(text)) {
+  if (isFarewellText(assistantText)) {
     return resolveFarewellWave() ?? pickBreathingDefault(seed);
   }
   if (input.openGreet) {
     return pickChitchatDefault(seed);
   }
 
-  const bucket = matchBucket(text);
-  if (bucket) return clipForCategory(bucket, seed);
-  const emo = topEmotionCategory(input.emotionHints);
-  if (emo) return clipForCategory(emo, seed);
-  const clip = pickBreathingDefault(seed);
+  const bucket = resolveBucket(userText, assistantText);
+  if (bucket) return clipForCategory(bucket, seed, corpus);
+  const emo = topEmotionCategory(input.emotionHints, corpus);
+  if (emo) return clipForCategory(emo, seed, corpus);
+  const clip = pickNeutralChatIdle(seed);
   return idleClipById(clip) ? clip : 'IdleBreathCalm';
 }

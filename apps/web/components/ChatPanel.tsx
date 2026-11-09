@@ -389,15 +389,20 @@ export default function ChatPanel({
     assistantText: string,
     emotionHints?: Record<string, number>,
     thinking?: boolean,
-    opts?: { openGreet?: boolean; sessionFarewell?: boolean },
+    optsOrUserText?: string | { openGreet?: boolean; sessionFarewell?: boolean; userText?: string },
   ) => {
+    const opts =
+      typeof optsOrUserText === 'string'
+        ? { userText: optsOrUserText }
+        : optsOrUserText ?? {};
     onAutoIdleRef.current?.(
       resolveChatAutoIdle({
         assistantText,
         emotionHints,
         thinking,
-        openGreet: opts?.openGreet,
-        sessionFarewell: opts?.sessionFarewell,
+        userText: opts.userText,
+        openGreet: opts.openGreet,
+        sessionFarewell: opts.sessionFarewell,
       }),
     );
   };
@@ -1100,7 +1105,7 @@ export default function ChatPanel({
         if (feltHints) applyLlmHints(feltHints);
         notifySpeaking(line);
         speak(line, characterId, lang, feltHints, undefined, felt?.intensity);
-        pushAutoIdle(line, feltHints);
+        pushAutoIdle(line, feltHints, undefined, text);
         commitReply(line);
         answered = true;
       }
@@ -1166,7 +1171,7 @@ export default function ChatPanel({
           felt?.mood,
           firstSentence ? { text: firstSentence, since: sentenceStamp } : undefined,
         );
-        pushAutoIdle(r.reply, replyHints);
+        pushAutoIdle(r.reply, replyHints, undefined, text);
         commitReply(spoken);
         answered = true;
       } catch {
@@ -1190,7 +1195,7 @@ export default function ChatPanel({
       onMemCountRef.current?.(memorySummaryCount());
       feedUtterance(reply);
       const spoken = speakReply(text, reply, replyHints, felt?.intensity, felt?.mood);
-      pushAutoIdle(reply, replyHints);
+      pushAutoIdle(reply, replyHints, undefined, text);
       commitReply(spoken);
       answered = true;
     };
