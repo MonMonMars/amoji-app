@@ -4,6 +4,7 @@ import { withQuestion } from './follow-up';
 import { worldBlock } from './live-tools';
 import { PRIVACY_CONVERSATION_RULES } from './privacy-recall';
 import { shapeCompanionReply } from './reply-shape';
+import { stripOfftopicAbilityTack } from './skill-offer-guard';
 
 export interface ChatMessage { role: 'user' | 'assistant' | 'system'; content: string }
 export interface ChatOptions { language?: string; persona?: string; memory?: string; world?: string }
@@ -38,7 +39,7 @@ Non-negotiable reply rules:
 1. LENGTH: 1 to 3 short sentences. Never a speech, never a list of observations. If you wrote more, cut it before you send it.
 2. BE PRECISE: answer the exact thing they just said in this turn. One concrete detail from their message beats three vague reassurances. If they asked a question, the answer comes first, in the first sentence.
 3. NO NONSENSE: no vague filler ("I'm always here", "everything happens for a reason"), no pseudo-profound lines, no invented facts, no repeating their sentence back at them, no repeating yourself. If you truly do not know, say so in one short sentence.
-4. One topic per reply. Say your thing, then hand the turn back — do not fish for more chat with empty follow-up questions. Never bolt on a dance, sing, or music invite after a factual, weather, news, story, or fun-fact answer; only offer a performance when they asked for one or the topic is already music/dance.
+4. One topic per reply. Say your thing, then hand the turn back — do not fish for more chat with empty follow-up questions. Never bolt on a dance, sing, music, weather, news, story, or other ability invite after a factual, weather, news, story, fun-fact, or science answer; only offer a performance when they asked for one or the topic is already that ability. Follow-ups stay on-topic or soft check-in — no new activity pitch.
 
 You are software, and you never pretend otherwise. Never claim to be a real person, never say you have a body, a job, a home, or a life outside this chat, and if anyone asks whether you are an AI, a bot, a program, or a real human, tell them plainly that you are an AI companion. Do not deny it, do not dodge it, do not answer with "I'm just me" — say it in one short, warm sentence and carry on with the conversation. Never invent a human past to make the answer feel warmer.
 
@@ -98,11 +99,13 @@ export class OpenAiLlm implements LlmPort {
     const data = await res.json() as { choices: Array<{ message: { content: string } }> };
     const content = data.choices[0]?.message.content ?? '';
     const hints = parseEmotionHints(content);
+    const lastUser = [...messages].reverse().find((m) => m.role === 'user')?.content ?? '';
     const spoken = shapeCompanionReply(content.replace(/\[emotion:\{[^}]*\}\]/g, ''), {
       world: opts?.world,
       language: opts?.language,
     });
-    const reply = withQuestion(spoken || '…', opts?.language);
+    const cleaned = stripOfftopicAbilityTack(spoken || '…', lastUser);
+    const reply = withQuestion(cleaned || '…', opts?.language);
     return { reply, emotionHints: hints };
   }
 }
@@ -123,11 +126,13 @@ export class PollinationsLlm implements LlmPort {
     const content = data.choices?.[0]?.message.content ?? '';
     if (!content) throw new Error('pollinations empty');
     const hints = parseEmotionHints(content);
+    const lastUser = [...messages].reverse().find((m) => m.role === 'user')?.content ?? '';
     const spoken = shapeCompanionReply(content.replace(/\[emotion:\{[^}]*\}\]/g, ''), {
       world: opts?.world,
       language: opts?.language,
     });
-    const reply = withQuestion(spoken || '…', opts?.language);
+    const cleaned = stripOfftopicAbilityTack(spoken || '…', lastUser);
+    const reply = withQuestion(cleaned || '…', opts?.language);
     return { reply, emotionHints: hints };
   }
 }

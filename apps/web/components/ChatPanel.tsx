@@ -1629,7 +1629,16 @@ export default function ChatPanel({
         <DemoPhaseRail
           lang={lang}
           disabled={busy}
-          onPick={(prompt) => { void send(prompt); }}
+          onPick={(prompt) => {
+            // Demo chips are one-topic tutorials — never carry a pending
+            // showcase/tutorial offer into the same beat as the chip reply.
+            pendingOfferRef.current = null;
+            if (isTopicalContentTurn(prompt)) {
+              lastTopicalContentAtRef.current = Date.now();
+              idleAutoAfterUserRef.current = true;
+            }
+            void send(prompt);
+          }}
         />
       <div className="relative flex w-full items-center gap-2.5">
         {/* r119: the voice watchdog armed a replay — a silent line is waiting

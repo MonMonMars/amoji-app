@@ -80,6 +80,7 @@ import { withQuestion } from './follow-up';
 import { preferLiveReply, worldBlock } from './live-tools';
 import { replyLooksNonsense, STRICT_REPLY_APPENDIX } from './reply-sanity';
 import { shapeCompanionReply } from './reply-shape';
+import { stripOfftopicAbilityTack } from './skill-offer-guard';
 import { wantsLongCompanionReply } from './topic-suggestions';
 import { maxTokensForStoryTurn, storySystemBlock, wantsStoryTurn } from './story-reply';
 
@@ -1062,18 +1063,24 @@ async function launchRace(
 }
 
 /** Strip the trailing emotion tag → final chat result. Exported for tests. */
-export function finishReply(content: string, opts?: { detailed?: boolean; world?: string; language?: string }): ClientChatResult {
+export function finishReply(content: string, opts?: {
+  detailed?: boolean;
+  world?: string;
+  language?: string;
+  lastUser?: string;
+}): ClientChatResult {
   const hints = parseEmotionHints(content) as Record<string, number>;
   // Strip the machine tag, display chrome, then banned giggle tokens so neither
   // the bubble nor TTS can reintroduce hehe/haha/hey-hey (laughs = SFX only).
   const cleaned = stripLaughTokens(
     cleanForDisplay(content.replace(/\[emotion:\{[^}]*\}\]/g, '')),
   );
-  const reply = shapeCompanionReply(cleaned, {
+  const shaped = shapeCompanionReply(cleaned, {
     detailed: opts?.detailed,
     world: opts?.world,
     language: opts?.language,
   });
+  const reply = stripOfftopicAbilityTack(shaped, opts?.lastUser ?? '');
   return { reply: reply || '…', emotionHints: hints };
 }
 
@@ -1115,9 +1122,11 @@ function packageReply(
     detailed: ctx.detailed,
     world: ctx.world,
     language: ctx.language,
+    lastUser: ctx.lastUser,
   });
   const spoken = ctx.story ? done.reply : withQuestion(done.reply, ctx.language);
-  const reply = preferLiveReply(spoken, ctx.world, ctx.worldSpoken, ctx.language);
+  const preferred = preferLiveReply(spoken, ctx.world, ctx.worldSpoken, ctx.language);
+  const reply = stripOfftopicAbilityTack(preferred, ctx.lastUser) || preferred;
   return { ...done, reply };
 }
 
