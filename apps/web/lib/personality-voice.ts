@@ -4,7 +4,6 @@
 // SFW: cheerful, kid-safe, no romance and no mean jokes.
 
 import type { Lang } from './prefs';
-import { spokenLineLooksBroken } from './spoken-line-sanity';
 
 export const VOICE_IDS = [
   'sunny', 'shy', 'playful', 'gentle', 'dreamy', 'spark',
