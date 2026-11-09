@@ -39,7 +39,7 @@ export const SAFE_IDLE_FALLBACK: Record<Lang, readonly string[]> = {
 
 /** Hard-banned idle interrogations (rude / often empty). */
 const BANNED_IDLE_ASK =
-  /what\s+are\s+you\s+thinking\b|what'?s\s+on\s+your\s+mind\b|penny\s+for\s+your\s+thoughts\b|are\s+you\s+thinking\b|what'?s\s+going\s+on\s+in\s+that\s+head\b|心入面諗緊咩|你諗緊咩呀|你在想什么|心里面在想什么|今なに考えてる|何か考えてることある|今、何を考えてる/i;
+  /what\s+are\s+you\s+thinking\b|what\s+shall\s+we\s+think\s+about\b|what'?s\s+on\s+your\s+mind\b|what'?s\s+your\s+quiet\s+thought\b|penny\s+for\s+your\s+thoughts\b|are\s+you\s+thinking\b|what'?s\s+going\s+on\s+in\s+that\s+head\b|one\s+thing\s+on\s+your\s+mind\b|心入面諗緊咩|你諗緊咩呀|你心入面而家得咩|你而家嘅安靜諗法|今日我哋諗咩好|你在想什么|心里面在想什么|心里现在只有哪一件|你现在的安静想法|今天我们想点什么好|今なに考えてる|何か考えてることある|今、何を考えてる|今日は何を考えよう|今一番頭にあるのは何/i;
 
 /**
  * Half-sentence / motif-fill leftovers that shipped as spoken lines.

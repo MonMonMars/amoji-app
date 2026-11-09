@@ -13,6 +13,7 @@
 import type { Lang } from './prefs';
 import { pickLine } from './chatter';
 import { profileIdleLine, profilePokeLine } from './personality';
+import { gateSpokenLine, safeIdleFallback } from './spoken-line-sanity';
 
 /** character id → idle lines, per language (exactly 10 each) */
 export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
@@ -288,7 +289,7 @@ export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
       '呢個角度睇城市靚啲。想睇我個view咩？',
       '我個世界新上架：好心情一份。要唔要？',
       '穿搭貼士：自信。你今日有幾多？',
-      '簡單啲。你心入面而家得咩一件事？',
+      '簡單啲。我哋可以一齊坐住一件小事。',
       '我鍾意茶同計劃都係淡啲好。你嘅又點？',
       'Vibes check。今日我哋vibe咩？',
     ],
@@ -300,7 +301,7 @@ export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
       '这个角度看城市更好看。想看看我的view吗？',
       '我这儿新上架：好心情一份。要不要？',
       '穿搭贴士：自信。你今天有多少？',
-      '简单点。你心里现在只有哪一件事？',
+      '简单点。我们可以一起坐着一件小事。',
       '我喜欢茶和计划都淡一点。你的呢？',
       'Vibes check。今天我们vibe什么？',
     ],
@@ -312,7 +313,7 @@ export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
       'この角度の街、一番きれい。私の見てる景色、見る？',
       '私の世界に新入荷：いい気分ひとつ。欲しい？',
       'スタイルのコツは自信。今日の在庫はどれくらい？',
-      'シンプルにいこう。今一番頭にあるのは何？',
+      'シンプルにいこう。小さなことを一緒に置いておこう。',
       'お茶も計画も薄めが好き。あなたはどっち派？',
       'バイブスチェック。今日は何に乗る？',
     ],
@@ -370,7 +371,7 @@ export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
   hina: {
     en: [
       'I dog-eared a poem that reminded me of you. May I read it to you?',
-      'The quiet suits us. What shall we think about today?',
+      'The quiet suits us. Which soft chapter shall we open today?',
       'I brewed chamomile and thought of you. Do you take honey with your tea?',
       'Every book here has a heartbeat. Which one should we listen to?',
       'I wrote a line in my journal about today. Want to hear it?',
@@ -382,7 +383,7 @@ export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
     ],
     yue: [
       '我喺一首詩嗰頁摺咗角，因為佢令我想起你。可唔可以讀俾你聽？',
-      '安靜啱晒我哋。今日我哋諗咩好呢？',
+      '安靜啱晒我哋。今日開邊章軟啲嘅好？',
       '我沖洋甘菊嗰陣諗起你。你飲茶落唔落蜜糖㗎？',
       '呢度每本書都有心跳。我哋聽邊本好？',
       '我喺日記寫咗一句關於今日嘅嘢。想聽嗎？',
@@ -394,7 +395,7 @@ export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
     ],
     zh: [
       '我在一首诗那页折了角，因为它让我想起你。可以读给你听吗？',
-      '安静正适合我们。今天我们想点什么好呢？',
+      '安静正适合我们。今天开哪一章柔软一点的好？',
       '我泡洋甘菊的时候想起你。你喝茶加不加蜂蜜呀？',
       '这里每本书都有心跳。我们听哪本好？',
       '我在日记里写了一句关于今天的话。想听吗？',
@@ -406,7 +407,7 @@ export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
     ],
     ja: [
       'あなたを思い出す詩があって、ページを折っておいたの。読んで聞かせようか？',
-      '静けさが私たちにはお似合いね。今日は何を考えよう？',
+      '静けさが私たちにはお似合いね。今日はどのやわらかい章を開こう？',
       'カモミールを淹れたらあなたを思い出したの。紅茶は蜂蜜入り？',
       'ここの本はみんな心拍があるの。どれを聴く？',
       '日記に今日のことを一行書いたの。聞きたい？',
@@ -1582,31 +1583,31 @@ export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
       'One lamp, one window, one guardian. Need anything before dawn?',
       'I checked the shadows. All clear. You safe on your end?',
       'Midnight has a sound, if you listen. Want to hear it with me?',
-      'Small hours suit small talk. What\'s your quiet thought right now?',
+      'Small hours suit small talk. Want a soft topic, or just quiet company?',
       'I marked your name in the star chart. Want to see which one you are?',
       'Silence isn\'t empty. It\'s full of watching. …Can you feel it watching over you?',
     ],
     yue: [
       '今晚守夜好靜。你嚟陪佢坐吓吖？',
-      '星星出嚟喇。同我一齊數，定係講咗你心事俾我聽呀？',
+      '星星出嚟喇。同我一齊數，定係揀個軟話題一齊傾呀？',
       '我講嘢少。但我咩都睇得清楚——包括你。有咩唔對路呀？',
       '成個城市瞓晒喇。咩嘢令你瞓唔著呀？',
       '一盞燈，一個窗，一個守夜人。天亮之前有咩需要呀？',
       '我查過啲陰影，冇嘢。你嗰邊安唔安全呀？',
       '午夜係有聲嘅，如果你肯聽。想唔想同我一齊聽呀？',
-      '深宵啱傾心事。你而家嘅安靜諗法係咩呀？',
+      '深宵啱傾少少。想傾軟話題，定係靜靜陪住都得。',
       '我喺星圖上面標咗你個名。想唔知你係邊粒星呀？',
       '靜唔係空嘅。佢裝滿咗守望。……你feel唔feel到佢喺度守緊你呀？',
     ],
     zh: [
       '今晚守夜好安静。你来陪它坐一会儿呀？',
-      '星星出来了。和我一起数，还是讲你的心事给我听呀？',
+      '星星出来了。和我一起数，还是挑个柔软话题一起聊呀？',
       '我讲话少。但我什么都看得清楚——包括你。有什么不对劲呀？',
       '整个城市都睡了。什么让你睡不着呀？',
       '一盏灯，一扇窗，一个守夜人。天亮之前有什么需要呀？',
       '我查过了阴影，没什么。你那边安不安全呀？',
       '午夜是有声音的，如果你肯听。想不想和我一起听呀？',
-      '深宵适合聊心事。你现在的安静想法是什么呀？',
+      '深宵适合聊一点点。想聊软话题，或者安静陪着都行。',
       '我在星图上标了你的名字。想不想知道你是哪颗星呀？',
       '安静不是空的。它装满了守望。……你感不感觉到它在守着你呀？',
     ],
@@ -1618,7 +1619,7 @@ export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
       '灯りひとつ、窓ひとつ、見張りひとり。夜明け前に必要なものは？',
       '影を調べた。異常なし。そっちは安全か？',
       '真夜中には音がある。聞けば、な。一緒に聞くか？',
-      '夜更けは短い言葉がお似合いだ。今、何を考えてる？',
+      '夜更けは短い言葉がお似合いだ。やわらかい話題でも、静かなままでもいい。',
       '星図にお前の名前を印した。どの星か、知りたいか？',
       '静けさは空っぽじゃない。見守りで満ちてる。……感じるか？',
     ],
@@ -1946,10 +1947,13 @@ const FALLBACK_LANG: Lang = 'en';
 export function pickIdleLine(characterId: string, lang: Lang, n: number): string {
   // Prefer statement profile banks (less tea/question nonsense) over legacy CHARACTER_IDLE.
   const fromProfile = profileIdleLine(characterId, lang, n);
-  if (fromProfile.trim()) return fromProfile;
-  const bank = CHARACTER_IDLE[characterId]?.[lang] ?? CHARACTER_IDLE[characterId]?.[FALLBACK_LANG];
-  if (bank?.length) return bank[((n % bank.length) + bank.length) % bank.length]!;
-  return pickLine('idleBored', lang, n);
+  const raw = (() => {
+    if (fromProfile.trim()) return fromProfile;
+    const bank = CHARACTER_IDLE[characterId]?.[lang] ?? CHARACTER_IDLE[characterId]?.[FALLBACK_LANG];
+    if (bank?.length) return bank[((n % bank.length) + bank.length) % bank.length]!;
+    return pickLine('idleBored', lang, n);
+  })();
+  return gateSpokenLine(raw, { mode: 'idle', lang, n }) ?? safeIdleFallback(lang, n);
 }
 
 /** Deterministic per-character poke reaction; falls back to the voice profile. */

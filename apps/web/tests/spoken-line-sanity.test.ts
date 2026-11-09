@@ -25,6 +25,15 @@ const KNOWN_BAD = [
   '一張細地圖輕輕提醒我你。',
   'What are you thinking?',
   "What's on your mind?",
+  "What's your quiet thought right now?",
+  'What shall we think about today?',
+  '你諗緊咩呀？',
+  '你在想什么？',
+  '今、何を考えてる？',
+  '今日は何を考えよう？',
+  '你而家嘅安靜諗法係咩呀？',
+  '你现在的安静想法是什么呀？',
+  '今一番頭にあるのは何？',
 ];
 
 describe('spokenLineLooksBroken', () => {
@@ -38,9 +47,20 @@ describe('spokenLineLooksBroken', () => {
   });
 
   it('rejects banned idle interrogations only in idle mode', () => {
-    const ask = 'What are you thinking about today?';
-    expect(spokenLineLooksBroken(ask, { mode: 'idle' })).toBe(true);
-    expect(spokenLineLooksBroken(ask, { mode: 'local' })).toBe(false);
+    const asks = [
+      'What are you thinking about today?',
+      "What's your quiet thought right now?",
+      'What shall we think about today?',
+      '今、何を考えてる？',
+      '今日は何を考えよう？',
+      '你现在的安静想法是什么呀？',
+      '你而家嘅安靜諗法係咩呀？',
+      '今一番頭にあるのは何？',
+    ];
+    for (const ask of asks) {
+      expect(spokenLineLooksBroken(ask, { mode: 'idle' }), ask).toBe(true);
+      expect(spokenLineLooksBroken(ask, { mode: 'local' }), ask).toBe(false);
+    }
   });
 
   it('keeps finished companion statements', () => {
@@ -83,8 +103,24 @@ describe('source banks never emit known nonsense', () => {
 
   it('steady openings no longer ask what you are thinking', () => {
     const open = voiceOpening('steady', 'maps', 0, 'en', 'Ada');
-    expect(open.toLowerCase()).not.toMatch(/on your mind|what are you thinking/);
+    expect(open.toLowerCase()).not.toMatch(/on your mind|what are you thinking|quiet thought/);
     expect(open.toLowerCase()).toContain('talk about');
+  });
+
+  it('persona idle banks no longer ask thinking interrogations', () => {
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const src = fs.readFileSync(path.resolve(here, '../lib/persona-chatter.ts'), 'utf8');
+    expect(src).not.toMatch(/What are you thinking/i);
+    expect(src).not.toMatch(/What'?s on your mind/i);
+    expect(src).not.toMatch(/What'?s your quiet thought/i);
+    expect(src).not.toMatch(/What shall we think about/i);
+    expect(src).not.toMatch(/今、何を考えてる？/);
+    expect(src).not.toMatch(/今日は何を考えよう？/);
+    expect(src).not.toMatch(/心入面諗緊咩/);
+    expect(src).not.toMatch(/心里面在想什么/);
+    expect(src).not.toMatch(/你现在的安静想法是什么/);
+    expect(src).not.toMatch(/你而家嘅安靜諗法係咩/);
+    expect(src).not.toMatch(/今一番頭にあるのは何/);
   });
 
   it('pickIdleCompanionLine never returns known bad fragments', () => {
