@@ -39,7 +39,7 @@ export interface PerformanceClip {
 /** master gain before the stepped volume and any dialogue duck */
 export const CLIP_BASE_GAIN: Record<PerformanceKind, number> = {
   song: 0.92,
-  dance: 0.8,
+  dance: 0.3,
 };
 
 const ALL: PerformanceLang[] = ['en', 'yue', 'zh', 'ja'];
