@@ -70,6 +70,14 @@ describe('spokenLineLooksBroken', () => {
     expect(
       spokenLineLooksBroken('Looking at a pocket map made me think of you, softly.', { mode: 'idle' }),
     ).toBe(false);
+    expect(
+      spokenLineLooksBroken('a pocket map. Noted and left within reach.', { mode: 'idle' }),
+    ).toBe(false);
+    expect(
+      spokenLineLooksBroken('a pocket map is acceptable company for this pause.', { mode: 'idle' }),
+    ).toBe(false);
+    expect(spokenLineLooksBroken('of you', { mode: 'idle' })).toBe(true);
+    expect(spokenLineLooksBroken('a map', { mode: 'idle' })).toBe(true);
   });
 });
 

@@ -85,7 +85,12 @@ export function spokenLineLooksBroken(text: string, opts?: SpokenGateOpts): bool
   }
 
   if (/\s{2,}/.test(t)) return true;
-  if (/^(?:of|to|for|with|and|or|the|a|an)\b/i.test(t)) return true;
+  // Leading article/preposition scraps ("a  pause", "of you") — not finished
+  // sentences that legitimately start with "a pocket map …".
+  if (/^(?:of|to|for|with|and|or|the|a|an)\b/i.test(t)) {
+    const words = t.split(/\s+/).filter(Boolean).length;
+    if (words < 6 || /^(?:of|to|for|with|and|or|the|a|an)\s*[.…]*$/i.test(t)) return true;
+  }
   if (!hasCjk && UNFINISHED_EN.test(t) && t.split(/\s+/).length < 8) return true;
   if ((opts?.mode ?? 'local') === 'idle' && asksUserInnerThoughts(t)) return true;
   return false;
