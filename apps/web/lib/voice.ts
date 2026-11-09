@@ -94,11 +94,11 @@ import { isMasterMuted, subscribeMasterMute } from './master-mute';
 import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripLaughTokens, stripVoicedGlyphs } from './speak-text';
 import { analyzeText } from '@amoji/emotion-core';
 import { applyContentMood } from './companion';
-import { browserVoicesForLang, edgeSampleText, isMaleNeuralVoice, selectBrowserVoice, synthNameList } from './voice-catalog';
+import { browserVoicesForLang, isMaleNeuralVoice, selectBrowserVoice, synthNameList } from './voice-catalog';
 import { loadingFillerKind, recordedFillerClip, recordedLaughClip, recordedPokeClip } from './voice-clips';
 import { LineQueue, speechRemainder } from './speech-queue';
 import { emotionClipPath } from './emotion-clip-picks';
-import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText, nextGreetingKind, type BurstClipKind, type ClipFolder, type VoiceClipGender } from './voice-clips';
+import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText, nextCardGreetPhrase, nextGreetingKind, type BurstClipKind, type ClipFolder, type VoiceClipGender } from './voice-clips';
 import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
 export { speechRemainder };
 import { edgeCastVoice } from './edge-cast';
@@ -1853,8 +1853,8 @@ function performClip(job: SpeechJob): Promise<void> {
  */
 /**
  * Select-page greeting. Pass `line` to speak a specific sentence instead of the
- * rotating canned greeting — the select board uses this to introduce the
- * character by name and personality instead of saying "Hello!" for all 46.
+ * rotating card-greet bank. Character / voice / language taps leave `line`
+ * unset so successive presses cycle Hi / Hello / Hey / …
  *
  * `choiceId` names one of the real voices (a Google `tl` region, see
  * voice-capability.ts). The greeting auditions exactly that speaker, so the
@@ -1871,9 +1871,8 @@ export function playVoiceGreeting(
   stopSpeaking();
   // force: stopSpeaking cancelled any window-level prime and cleared the latch.
   primeSynthInGesture(true);
-  // Select-board voice/language taps (no custom line) always open with Hello,
-  // not the rotating nice/hihi/pleasure clips — HK users expect Hello, not 你好.
-  const text = line?.trim() ? line.trim() : greetingText(lang, 'hello');
+  // Rotate a short phrase bank so re-taps do not always say the same Hello.
+  const text = line?.trim() ? line.trim() : nextCardGreetPhrase(lang);
   // Gender comes from the CHARACTER, not from the voice id. The live voices are
   // not gendered, so reading a gender out of a region code would be fiction —
   // and it used to default every greeting to the female pitch.
@@ -2156,7 +2155,8 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   // voices are not gendered — this only shapes delivery.
   const tl = tlForChoice(locale, choiceId);
   const previewGender = deliveryGenderForChoice(locale, choiceId, 'female');
-  const text = edgeSampleText(locale);
+  // Same rotating short greet as select-board voice cards.
+  const text = nextCardGreetPhrase(locale);
   /** Set by whichever tier actually starts, so the loser can bail out. */
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
   const runSynthAudition = (tag: string) => {
@@ -2245,7 +2245,7 @@ export function previewOsVoice(
   refresh();
   const voice = resolvePinnedVoice(cached, voiceName, speechLocale(locale));
   if (!voice) return Promise.resolve(false);
-  const text = edgeSampleText(locale);
+  const text = nextCardGreetPhrase(locale);
   return new Promise<boolean>((resolve) => {
     let settled = false;
     const settle = (ok: boolean) => {

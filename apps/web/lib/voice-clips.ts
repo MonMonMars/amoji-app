@@ -56,6 +56,18 @@ export const GREETING_TEXT: Record<VoiceClipLang, Record<GreetingClipKind, strin
   },
 };
 
+/**
+ * Short TTS lines for character / voice / language card taps on select + settings.
+ * Separate from GREETING_CLIP_KINDS (those map to recorded MP3s). Rotates so
+ * successive presses do not always say the same Hello.
+ */
+export const CARD_GREET_PHRASES: Record<VoiceClipLang, readonly string[]> = {
+  en: ['Hi!', 'Hello!', 'Hey!', 'Good to see you!', 'Nice to meet you!'],
+  yue: ['哈囉！', 'Hello！', '你好！', '好開心見到你！', '嗨！'],
+  zh: ['你好！', 'Hello！', '嗨！', '很高兴见到你！', '哈喽！'],
+  ja: ['こんにちは！', 'やあ！', 'どうも！', '元気？', 'はじめまして！'],
+};
+
 /** Longer loading lines. Short waits stay on um / ha. */
 export const FILLER_CLIP_TEXT: Record<VoiceClipLang, { think: string; search: string }> = {
   en: { think: 'um…… let me think.', search: 'um…… let me search the web.' },
@@ -461,6 +473,20 @@ export function nextGreetingKind(): GreetingClipKind {
 
 export function resetGreetingRotation(): void {
   greetCursor = 0;
+}
+
+let cardGreetCursor = 0;
+
+/** Next short card-press greeting for this language; advances the shared cursor. */
+export function nextCardGreetPhrase(lang: string): string {
+  const bank = CARD_GREET_PHRASES[clipLang(lang)];
+  const phrase = bank[cardGreetCursor % bank.length]!;
+  cardGreetCursor += 1;
+  return phrase;
+}
+
+export function resetCardGreetRotation(): void {
+  cardGreetCursor = 0;
 }
 
 function compact(text: string): string {
