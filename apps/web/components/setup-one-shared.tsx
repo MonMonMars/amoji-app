@@ -80,12 +80,11 @@ export function SetupOneScrollBody({ lang }: { lang: Lang }) {
         <p className="mt-2 text-xs text-white/55">{t(lang, 'gateHelpNote')}</p>
       </section>
 
-      <section aria-labelledby="setup-mic-heading">
+      <section aria-labelledby="setup-mic-heading" data-testid="setup-mic-section">
         <h2 id="setup-mic-heading" className="text-base font-semibold text-white">
           {t(lang, 'gateMicTitle')}
         </h2>
         <p className="mt-2 text-white/70">{t(lang, 'gateMicBody')}</p>
-        <p className="mt-2 text-xs text-white/55">{t(lang, 'gateMicUnsupported')}</p>
       </section>
 
       <section aria-labelledby="setup-safety-heading">

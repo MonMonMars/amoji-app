@@ -213,33 +213,42 @@ export default function PreChatAudioGate({
           </div>
         )}
 
-        <div className="mt-5 space-y-2">
-          <p className="text-sm font-semibold text-white/90">{t(lang, 'gateMicTitle')}</p>
-          <p className="text-xs text-white/55">{t(lang, 'gateMicBody')}</p>
-        </div>
+        {/* Mic optional: permission button only — no composer / typing field. */}
+        <section data-testid="pre-chat-mic-section" aria-labelledby="pre-chat-mic-heading" className="mt-5 space-y-3">
+          <div className="space-y-2">
+            <h2 id="pre-chat-mic-heading" className="text-sm font-semibold text-white/90">
+              {t(lang, 'gateMicTitle')}
+            </h2>
+            <p className="text-xs text-white/55">{t(lang, 'gateMicBody')}</p>
+          </div>
 
-        {mic !== 'pending' && (
-          <p data-testid="pre-chat-mic-result" data-outcome={mic} className="mt-3 rounded-2xl border border-white/15 bg-white/5 p-3 text-sm">
-            {mic === 'granted' && t(lang, 'gateMicGranted')}
-            {mic === 'denied' && t(lang, 'gateMicDenied')}
-            {mic === 'unsupported' && t(lang, 'gateMicUnsupported')}
-            {mic === 'skipped' && t(lang, 'gateMicDenied')}
-          </p>
-        )}
+          {mic !== 'pending' && (
+            <p
+              role="status"
+              data-testid="pre-chat-mic-result"
+              data-outcome={mic}
+              className="text-sm text-white/75"
+            >
+              {mic === 'granted' && t(lang, 'gateMicGranted')}
+              {mic === 'denied' && t(lang, 'gateMicDenied')}
+              {mic === 'unsupported' && t(lang, 'gateMicUnsupported')}
+              {mic === 'skipped' && t(lang, 'gateMicDenied')}
+            </p>
+          )}
 
-        {/* Always keep Allow clickable when the browser supports mic so re-click
-            re-triggers the permission popup — no unused typing field here. */}
-        {listenSupported() && mic !== 'unsupported' && (
-          <button
-            type="button"
-            data-testid="pre-chat-mic-allow"
-            disabled={micBusy}
-            onClick={() => void allowMic()}
-            className="ui-btn mt-3 h-11 w-full rounded-full bg-white font-semibold text-black"
-          >
-            {t(lang, 'gateMicAllow')}
-          </button>
-        )}
+          {/* Allow stays clickable so re-click re-triggers the iPhone/browser popup. */}
+          {listenSupported() && mic !== 'unsupported' && (
+            <button
+              type="button"
+              data-testid="pre-chat-mic-allow"
+              disabled={micBusy}
+              onClick={() => void allowMic()}
+              className="ui-btn h-11 w-full rounded-full bg-white font-semibold text-black"
+            >
+              {t(lang, 'gateMicAllow')}
+            </button>
+          )}
+        </section>
 
         {!speakerOk || !micOk ? (
           <p className="mt-4 text-xs text-white/45">{t(lang, 'setupSoundFailLead')}</p>
