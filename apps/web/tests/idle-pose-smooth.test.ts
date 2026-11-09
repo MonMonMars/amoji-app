@@ -25,7 +25,7 @@ describe('idle pose smooth + catalog trim', () => {
     expect(idleStiffClipGain('IdleMixamoExcited')).toBeGreaterThan(1);
     const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
     expect(canvas).toContain('applyIdleClipSoftening');
-    expect(canvas).toMatch(/!perfAction.*applyIdleClipSoftening/s);
+    expect(canvas).toMatch(/!perfAction[\s\S]*applyIdleClipSoftening/);
   });
 
   it('pins crossfade in ~300-500ms and defers foot IK during leg blend window', () => {
