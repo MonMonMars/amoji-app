@@ -304,11 +304,13 @@ describe('entry gate — wiring', () => {
     expect(splash).toContain("router.push('/setup')");
     expect(splash).toContain("pushSelect(router, 'splash')");
     expect(splash).toContain('data-testid="splash-setup-link"');
-    expect(splash).toContain('href="/setup"');
+    // Bottom link is view-only /rules; first-run consent stays on /setup.
+    expect(splash).toContain('href="/rules"');
     expect(splash).not.toContain('splash-gate-link');
     const login = read('app/login/page.tsx');
     expect(login).toContain("router.replace('/')");
   });
+
 
   it('one-click bootstrap unmutes voice replies and master mute', () => {
     expect(read('lib/one-click-setup.ts')).toContain('primeChatStartGesture');

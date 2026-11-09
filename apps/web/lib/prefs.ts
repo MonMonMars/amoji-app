@@ -128,6 +128,7 @@ export type StrKey =
   | 'bgCloudsea' | 'bgNeon' | 'bgSnowmoon' | 'bgGalaxy'
   // v0.9.3 flow: splash → login → select → chat
   | 'splashStart' | 'splashOpenSetup' | 'legalScrollHint' | 'gateScrollHint'
+  | 'rulesViewTitle'
   | 'setupOneTitle' | 'setupOneLead' | 'setupOneDisclaimer'
   | 'setupDisclosureAiTitle' | 'setupFullDocHint'
   | 'setupSoundFailTitle' | 'setupSoundFailLead'
@@ -407,10 +408,16 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     ja: '最後までスクロールすると次へ進めます。',
   },
   splashOpenSetup: {
-    en: 'Read terms & start →',
-    yue: '睇條款同開始 →',
-    zh: '阅读条款并开始 →',
-    ja: '規約を読んで開始 →',
+    en: 'Rules & terms →',
+    yue: '條款同規則 →',
+    zh: '条款与规则 →',
+    ja: '規約とルール →',
+  },
+  rulesViewTitle: {
+    en: 'Rules & terms',
+    yue: '條款同規則',
+    zh: '条款与规则',
+    ja: '規約とルール',
   },
   setupOneTitle: {
     en: 'Ready to play',

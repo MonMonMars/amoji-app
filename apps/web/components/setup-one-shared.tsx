@@ -49,8 +49,15 @@ function LegalDocInline({ doc, idPrefix }: { doc: LegalDoc; idPrefix: string }) 
   );
 }
 
-/** Full in-page disclosures — user must scroll this region before START unlocks. */
-export function SetupOneScrollBody({ lang }: { lang: Lang }) {
+/** Full in-page disclosures — consent mode requires scroll before START unlocks. */
+export function SetupOneScrollBody({
+  lang,
+  showConsentDisclaimer = true,
+}: {
+  lang: Lang;
+  /** Hide "By tapping START…" on view-only /rules. */
+  showConsentDisclaimer?: boolean;
+}) {
   const privacy = privacyDoc(lang);
   const terms = termsDoc(lang);
   return (
@@ -62,7 +69,9 @@ export function SetupOneScrollBody({ lang }: { lang: Lang }) {
         <p className="mt-2 text-white/70">{t(lang, 'gate18Body')}</p>
       </section>
 
-      <p className="text-white/65">{t(lang, 'setupOneLead')}</p>
+      {showConsentDisclaimer && (
+        <p className="text-white/65">{t(lang, 'setupOneLead')}</p>
+      )}
 
       <section aria-labelledby="setup-ai-heading">
         <h2 id="setup-ai-heading" className="text-base font-semibold text-white">
@@ -141,7 +150,9 @@ export function SetupOneScrollBody({ lang }: { lang: Lang }) {
         <LegalDocInline doc={terms} idPrefix="setup-terms" />
       </section>
 
-      <p className="text-xs text-white/50">{t(lang, 'setupOneDisclaimer')}</p>
+      {showConsentDisclaimer && (
+        <p className="text-xs text-white/50">{t(lang, 'setupOneDisclaimer')}</p>
+      )}
       <p className="text-xs text-white/40">
         {t(lang, 'policyVersion')} {LEGAL_ACCEPT_VERSION}
       </p>

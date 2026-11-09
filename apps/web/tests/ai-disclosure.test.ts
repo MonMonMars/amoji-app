@@ -14,8 +14,9 @@ describe('AI disclosure — first run', () => {
   it('shows AI notice on title; full 18+ disclaimer lives on unified /setup scroll', () => {
     expect(splash).toContain('SetupOneAiNotice');
     expect(read('components/setup-one-shared.tsx')).toContain("t(lang, 'setupOneDisclaimer')");
-    expect(splash).toContain('href="/setup"');
+    expect(splash).toContain('href="/rules"');
   });
+
 
   it('shows the notice in the legal gate too, at the first tap', () => {
     // EU AI Act Art 50 transparency attaches to the first interaction. The
