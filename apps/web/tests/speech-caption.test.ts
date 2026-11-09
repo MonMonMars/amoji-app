@@ -5,11 +5,13 @@ import { rollingCaptionFromText } from '../lib/speech-caption';
 import { pauseAfterClause } from '../lib/gtts';
 
 describe('speech caption helpers', () => {
-  it('shows the last one or two clauses of a streaming draft', () => {
+  it('shows only the latest clause of a streaming draft (no stacked overlap)', () => {
     const draft = '第一句好長。第二句跟上。第三句收尾。';
-    expect(rollingCaptionFromText(draft)).toContain('第三句收尾');
-    expect(rollingCaptionFromText(draft)).toContain('第二句跟上');
-    expect(rollingCaptionFromText(draft)).not.toContain('第一句');
+    const one = rollingCaptionFromText(draft);
+    expect(one).toContain('第三句收尾');
+    expect(one).not.toContain('第二句');
+    expect(one).not.toContain('第一句');
+    expect(rollingCaptionFromText(draft, 2)).toContain('第二句跟上');
   });
 
   it('clause pauses stay above the subtitle-sync floor', () => {

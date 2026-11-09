@@ -231,7 +231,7 @@ import { startVad } from '../lib/vad';
 import { ambientStart, ambientStop } from '../lib/sfx';
 import { t, backgroundById, type Lang, type StrKey } from '../lib/prefs';
 import { adaptiveBlock, pickSceneLine } from '../lib/adaptive';
-import { SPEECH_CAPTION_EVENT, rollingCaptionFromText } from '../lib/speech-caption';
+import { SPEECH_CAPTION_EVENT, rollingCaptionFromText, stepCaptionLadder } from '../lib/speech-caption';
 import { loadProfile, type Gender } from '../lib/profile';
 import type { ChatStatus } from '../lib/status';
 import EmotionOrb from './EmotionOrb';
@@ -300,8 +300,11 @@ export default function ChatPanel({
   /** User turned voice mode off (distinct from pre-first-open idle). */
   const [micDismissed, setMicDismissed] = useState(false);
   const [speakingNow, setSpeakingNow] = useState(false);
-  /** Clause synced to active TTS (movie subtitle). */
+  /** Clause synced to active TTS (movie subtitle) — front row only. */
   const [speechCaption, setSpeechCaption] = useState('');
+  /** Finished captions promoted above the live front row (no overlap). */
+  const [captionLadder, setCaptionLadder] = useState<string[]>([]);
+  const captionLadderRef = useRef<string[]>([]);
   /** Streamed reply draft — not painted full-width in history while speaking. */
   const [streamDraft, setStreamDraft] = useState('');
   const [pinnedBottom, setPinnedBottom] = useState(true);
@@ -348,7 +351,12 @@ export default function ChatPanel({
   useEffect(() => {
     const onCap = (e: Event) => {
       const line = (e as CustomEvent<{ line?: string }>).detail?.line ?? '';
-      setSpeechCaption(line);
+      setSpeechCaption((prev) => {
+        const stepped = stepCaptionLadder(captionLadderRef.current, prev, line);
+        captionLadderRef.current = stepped.ladder;
+        setCaptionLadder(stepped.ladder);
+        return stepped.current;
+      });
     };
     window.addEventListener(SPEECH_CAPTION_EVENT, onCap);
     return () => window.removeEventListener(SPEECH_CAPTION_EVENT, onCap);
@@ -490,6 +498,11 @@ export default function ChatPanel({
     }
     saveHistory(history);
   }, [history]);
+  useEffect(() => {
+    if (nearBottomRef.current) {
+      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+    }
+  }, [speechCaption, captionLadder]);
 
   // live status for the top-left plate + speaking flag for the mic orb
   useEffect(() => {
@@ -1582,22 +1595,24 @@ export default function ChatPanel({
             m.role === 'assistant' &&
             i === history.length - 1 &&
             pinnedBottom;
+          const captionActive =
+            speechCaption.trim().length > 0
+            || captionLadder.length > 0
+            || (busy && streamDraft.trim().length > 0 && speakingNow);
           const streamingTail =
             tailAssistant &&
             (speakingNow
               || (busy && streamDraft.trim().length > 0)
-              || speechCaption.trim().length > 0) &&
+              || captionActive) &&
             m.content.trim() !== '';
-          const liveClause = streamingTail
-            ? (speechCaption.trim() || (streamDraft.trim() ? rollingCaptionFromText(streamDraft) : ''))
-            : '';
+          // Caption ladder owns the spoken lines while TTS runs — keep the
+          // history bubble body empty so it cannot overlap the subtitle.
           return (
             <ChatMessage
               key={i}
               role={m.role}
               content={m.content}
               tailStreaming={streamingTail}
-              liveClause={liveClause || undefined}
               lang={lang}
               accent={accent}
               label={m.role === 'assistant' && i === history.length - 1 ? characterName : undefined}
@@ -1618,6 +1633,29 @@ export default function ChatPanel({
             />
           );
         })}
+        {/* Settled captions (moved up) sit above the live front caption. */}
+        {captionLadder.map((line, i) => (
+          <div key={`cap-settled-${i}-${line.slice(0, 12)}`} className="text-left" data-testid="speech-caption-settled">
+            <p className="text-white/70">{line}</p>
+          </div>
+        ))}
+        {(() => {
+          const front = speechCaption.trim()
+            || (speakingNow && streamDraft.trim() ? rollingCaptionFromText(streamDraft, 1) : '');
+          if (!front) return null;
+          return (
+            <div className="text-left" data-testid="speech-caption-front">
+              <p
+                className="text-white/95 italic"
+                data-testid="speech-caption"
+                aria-live="polite"
+                aria-atomic
+              >
+                {front}
+              </p>
+            </div>
+          );
+        })()}
         {/* r81 — the words you're speaking RIGHT NOW: italic + slightly dimmed
             in your accent colour, replaced by the committed message the
             instant the ~1s silence endpoint sends it, exactly like ChatGPT. */}
@@ -1626,7 +1664,9 @@ export default function ChatPanel({
             <p className="italic opacity-75" style={{ color: accent }}>{liveText}</p>
           </div>
         )}
-        {busy && <p className="text-white/40">{t(lang, 'typing', { name: characterName })}</p>}
+        {busy && !speechCaption.trim() && captionLadder.length === 0 && (
+          <p className="text-white/40">{t(lang, 'typing', { name: characterName })}</p>
+        )}
         {/* Crisis guard fired on the last turn: the fixed reply is above, and
             this card carries the tap-through to the helplines. It stays until
             the next message so it cannot be missed by a scroll. */}
