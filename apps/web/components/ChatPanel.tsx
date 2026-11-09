@@ -177,8 +177,6 @@ import {
   shouldPlayOpenCheer,
 } from '../lib/open-phase';
 import {
-  formatTopicSuggestionLine,
-  pickTopicSuggestions,
   undecidedTopicReply,
   userUndecided,
 } from '../lib/topic-suggestions';
@@ -191,7 +189,14 @@ import { nextPassiveIdleClip, PASSIVE_IDLE_LOOP_TEMPLATE } from '../lib/idle-pas
 import { resolveContentMotion } from '../lib/content-motion';
 import { clipLabel, PERFORMANCE_CLIPS, type PerformanceClip } from '../lib/performance-clips';
 import { resolvePerfMotion } from '../lib/performance-motion';
-import { SHOWCASE_START, SHOWCASE_YES_RE, pickShowcaseOffer, skillOfferKind, type ShowcaseKind } from '../lib/showcase';
+import {
+  SHOWCASE_START,
+  SHOWCASE_YES_RE,
+  nextSkillOffer,
+  pickShowcaseOffer,
+  showcaseStoryAsk,
+  type ShowcaseKind,
+} from '../lib/showcase';
 import { recentUserMood } from '../lib/talk-history';
 import { detectGame, startGame, playTurn, gameFarewellLine, type GameState } from '../lib/games';
 import { detectActionGame, setMiniGameChromeHidden, subscribeMiniGameOpen, type ActionGame } from '../lib/minigames';
@@ -384,6 +389,8 @@ export default function ChatPanel({
   // r.48 — performance theatre: she offers private shows unprompted and
   // remembers the offer until you answer; a counter spaces the theatre out
   const pendingOfferRef = useRef<ShowcaseKind | null>(null);
+  const lastOfferKindRef = useRef<ShowcaseKind | null>(null);
+  const lastOfferAtRef = useRef(0);
   const perfCountRef = useRef(0);
   const lastFeltRef = useRef<string | undefined>(undefined);
   const onStatusRef = useRef(onStatus);
@@ -674,7 +681,7 @@ export default function ChatPanel({
   };
 
   // t794/t796 + Pixel entry: hi + persona intro + topic ask; silent stretch
-  // gets 2–3 topic suggestions (no auto weather/news). Session gap = fresh
+  // offers ONE ability reminder (music/dance/story/…). Session gap = fresh
   // open — clear history and skip lastThread resume. Keep #58 filler bans.
   useEffect(() => {
     if (greetedRef.current) return;
@@ -735,12 +742,14 @@ export default function ChatPanel({
       : setTimeout(() => {
           if (userHasSpokenRef.current || openIdleBriefDoneRef.current) return;
           if (userHasSpokenRef.current || busyRef.current) return;
-          const topics = pickTopicSuggestions(lang, characterId?.length ?? 0, 3);
-          const line = formatTopicSuggestionLine(lang, topics);
-          if (!line) return;
+          // One ability reminder so newcomers learn what she can do.
+          const kind = nextSkillOffer(characterId?.length ?? 0, lastOfferKindRef.current);
+          lastOfferKindRef.current = kind;
+          lastOfferAtRef.current = Date.now();
+          pendingOfferRef.current = kind;
           openIdleBriefDoneRef.current = true;
           markOpenIdleBriefDone(Date.now(), characterId);
-          sayLocal(line, { joy: 0.52 });
+          sayLocal(pickShowcaseOffer(kind, lang, chatterCountRef.current), { joy: 0.52 });
         }, OPEN_IDLE_BRIEF_MS);
     return () => {
       clearTimeout(t1);
@@ -753,7 +762,6 @@ export default function ChatPanel({
   // poke reactions — SFX + VRM motion only; lip hooks run off the reaction line
   // but never land in persisted chat history or copy transcript.
   const lastPokeRef = useRef(pokeCount);
-  const lastOfferAtRef = useRef(0);
   useEffect(() => {
     if (pokeCount === lastPokeRef.current) return;
     lastPokeRef.current = pokeCount;
@@ -831,26 +839,29 @@ export default function ChatPanel({
         sayLocal(pickLine('reengage', lang, n), feltHints);
         return;
       }
-      // Every fourth quiet line offers one skill. The gap keeps it from stacking.
-      if (n > 0 && n % 4 === 3 && Date.now() - lastOfferAtRef.current > 90_000) {
+      // One ability at a time when quiet — music / dance / song / weather / story / news.
+      // Alternate with soft companion chatter so it does not nag every beat.
+      if (Date.now() - lastOfferAtRef.current > 45_000 && (n === 0 || n % 2 === 1)) {
         lastOfferAtRef.current = Date.now();
-        const kind = skillOfferKind(n);
+        const kind = nextSkillOffer(n, lastOfferKindRef.current);
+        lastOfferKindRef.current = kind;
         pendingOfferRef.current = kind;
         sayLocal(pickShowcaseOffer(kind, lang, n), feltHints);
         return;
       }
-      // After the user has spoken, one topic-menu hint per quiet stretch if
-      // they have not picked a direction (no auto weather/news).
+      // After the user has spoken, one ability reminder per quiet stretch if
+      // they have not picked a direction (no multi-topic dump).
       if (userHasSpokenRef.current && !idleAutoAfterUserRef.current && !busyRef.current) {
         idleAutoAfterUserRef.current = true;
-        const topics = pickTopicSuggestions(lang, chatterCountRef.current + 1, 3);
-        sayLocal(formatTopicSuggestionLine(lang, topics), feltHints ?? { joy: 0.45 });
+        const kind = nextSkillOffer(n + 2, lastOfferKindRef.current);
+        lastOfferKindRef.current = kind;
+        lastOfferAtRef.current = Date.now();
+        pendingOfferRef.current = kind;
+        sayLocal(pickShowcaseOffer(kind, lang, n + 2), feltHints ?? { joy: 0.45 });
         return;
       }
       // Idle talk: stay on topic OR suggest a new one (statements).
-      // Motif/topic banks rotate via idle-talk — less tea, no question-form chatter.
-      // Idle tutor tips cut — do not interrupt idle companion time with how-to tips.
-      // Showcase skill offers + Settings Help / showcase tutorial banks stay elsewhere.
+      // Ability reminders above teach music/dance/weather/story one at a time.
       // Backdrop ambient (curated SCENE_LINES): TTS-only flavour — LLM chat stays content-first.
       const sceneAmbient =
         reengageStageRef.current === 0 && !idleMood && n % 4 === 1
@@ -1031,6 +1042,15 @@ export default function ChatPanel({
           sayLocal(live.spoken || SHOWCASE_START[lang][kind]);
         });
         done();
+        return;
+      }
+      if (kind === 'story') {
+        sayLocal(SHOWCASE_START[lang].story);
+        done();
+        // Feed a canned story ask through the normal chat path (content-driven story mode).
+        window.setTimeout(() => {
+          void send(showcaseStoryAsk(lang));
+        }, 500);
         return;
       }
       if (kind === 'music') {

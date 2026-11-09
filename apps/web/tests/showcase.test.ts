@@ -1,28 +1,38 @@
 import { describe, expect, it } from 'vitest';
 import {
-  SHOWCASE_OFFERS, SHOWCASE_START, SHOWCASE_YES_RE, TUTORIAL_LINES,
-  characterSpecialty, pickShowcaseOffer, pickTutorialLine,
+  SHOWCASE_OFFERS, SHOWCASE_START, SHOWCASE_YES_RE, SKILL_OFFERS, TUTORIAL_LINES,
+  characterSpecialty, nextSkillOffer, pickShowcaseOffer, pickTutorialLine,
+  showcaseStoryAsk, skillOfferKind,
 } from '../lib/showcase';
 
 const LANGS = ['yue', 'zh', 'ja', 'en'] as const;
-const KINDS = ['dance', 'song'] as const;
+const KINDS = ['dance', 'song', 'music', 'weather', 'news', 'story'] as const;
 
 describe('showcase + tutorial dialogue (r2026-10-04.48)', () => {
-  it('every language has at least 3 offers per kind, each ending on a hook', () => {
+  it('rotates one ability at a time across the full skill set', () => {
+    expect(SKILL_OFFERS).toEqual(expect.arrayContaining([...KINDS]));
+    expect(new Set(SKILL_OFFERS).size).toBe(SKILL_OFFERS.length);
+    expect(skillOfferKind(0)).toBe(SKILL_OFFERS[0]);
+    expect(nextSkillOffer(0, SKILL_OFFERS[0])).not.toBe(SKILL_OFFERS[0]);
+  });
+
+  it('every language has invite-style offers per kind, each ending on a hook', () => {
     for (const lang of LANGS) {
       for (const kind of KINDS) {
         const bank = SHOWCASE_OFFERS[lang][kind];
-        expect(bank.length).toBeGreaterThanOrEqual(3);
+        expect(bank.length, `${lang}/${kind}`).toBeGreaterThanOrEqual(2);
         for (const line of bank) expect(line).toMatch(/[?？~～!！]$/);
       }
     }
   });
 
-  it('show-start one-liners exist in every language for both kinds', () => {
+  it('show-start one-liners exist in every language for every kind', () => {
     for (const lang of LANGS) {
-      expect(SHOWCASE_START[lang].dance.length).toBeGreaterThan(0);
-      expect(SHOWCASE_START[lang].song.length).toBeGreaterThan(0);
+      for (const kind of KINDS) {
+        expect(SHOWCASE_START[lang][kind].length).toBeGreaterThan(0);
+      }
     }
+    expect(showcaseStoryAsk('en')).toMatch(/story/i);
   });
 
   it('tutorial bank covers the feature set in every language', () => {
