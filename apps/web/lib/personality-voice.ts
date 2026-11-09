@@ -4,6 +4,7 @@
 // SFW: cheerful, kid-safe, no romance and no mean jokes.
 
 import type { Lang } from './prefs';
+import { spokenLineLooksBroken } from './spoken-line-sanity';
 
 export const VOICE_IDS = [
   'sunny', 'shy', 'playful', 'gentle', 'dreamy', 'spark',
@@ -1479,16 +1480,9 @@ function fill(template: string, bits: Record<string, string>): string {
   });
 }
 
-/** True when a rendered line still has unfilled {placeholders} or is empty. */
+/** True when a rendered idle line is unfinished / fragment / banned scrap. */
 export function isIncompleteIdleLine(line: string): boolean {
-  const trimmed = line.trim();
-  if (!trimmed) return true;
-  if (/\{[a-zA-Z_]+\}/.test(trimmed)) return true;
-  if (/\ba small map reminding you\b/i.test(trimmed)) return true;
-  if (/\ba tiny map reminded me of you\b/i.test(trimmed)) return true;
-  if (/提醒我你/.test(trimmed)) return true;
-  if (/轻轻提醒我想起你/.test(trimmed)) return true;
-  return false;
+  return spokenLineLooksBroken(line, { mode: 'idle' });
 }
 
 export function voiceCatchphrase(voice: VoiceId, motif: MotifId, frame: number, lang: Lang): string {
@@ -1542,9 +1536,9 @@ export function voiceIdleLines(voice: VoiceId, motif: MotifId, frame: number, la
   const filled = IDLE[voice][lang]
     .map((body) => fill(body, { noun: lex.noun, verb: lex.verb, thing: lex.thing }))
     .filter((line) => !isIncompleteIdleLine(line));
-  const lines = filled.length > 0 ? filled : ['…'];
-  const shift = Math.abs(frame) % lines.length;
-  return lines.slice(shift).concat(lines.slice(0, shift));
+  if (filled.length === 0) return [];
+  const shift = Math.abs(frame) % filled.length;
+  return filled.slice(shift).concat(filled.slice(0, shift));
 }
 
 export function voicePokeLines(voice: VoiceId, motif: MotifId, frame: number, lang: Lang, zone: string): string[] {

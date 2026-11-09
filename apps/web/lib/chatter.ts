@@ -132,28 +132,28 @@ export const CHATTER: Record<ChatterKind, Record<ChatterLang, string[]>> = {
   // has been quiet for ~2 minutes, so she leans in directly.
   reengage: {
     en: [
-      "You've gone quiet on me — are you thinking, or did I say something wrong?",
+      "You've gone quiet on me — I'm still here if you want to pick up again.",
       "It's been a minute... want to pick up where we left off?",
       'Hey~ I was really enjoying our chat — want to keep going?',
-      "Penny for your thoughts — what's going on in that head of yours?",
+      "Still with you — we can continue whenever you're ready.",
     ],
     yue: [
-      '你靜咗喎——係咪諗緊嘢，定係我講錯咗咩？',
+      '你靜咗喎——我仲喺度，想繼續隨時得。',
       '好耐冇聲喎……我哋繼續之前個話題好唔好？',
       '喂~我仲想同你傾落去㗎——繼續好唔好？',
-      '講嚟聽下吖——你個腦而家轉緊咩呀？',
+      '我仲陪住你——準備好就繼續傾。',
     ],
     zh: [
-      '你安静下来了——是在想事情，还是我说错什么了？',
+      '你安静下来了——我还在这里，想继续随时可以。',
       '好一会儿没声音了……我们继续刚才的话题好不好？',
       '喂~我还想和你聊下去呢——继续好不好？',
-      '说来听听嘛——你的脑子里现在转着什么呢？',
+      '我还陪着你——准备好了就继续聊。',
     ],
     ja: [
-      '静かになっちゃった——考え事？それとも何か失言しちゃった？',
+      '静かになっちゃった——でもここにいるよ。続きをしたくなったらね。',
       'しばらく無音だね……さっきの話、続きをしよっか？',
       'ねぇ、もっとおしゃべりしたいな——続き、しよっか？',
-      '教えてよ——今頭の中で何がぐるぐるしてるの？',
+      'そばにいるよ——準備ができたら、続きをしよう。',
     ],
   },
   // r2026-10-03.38 — stage 2: the soft closer, said ONCE after ~5 minutes of
