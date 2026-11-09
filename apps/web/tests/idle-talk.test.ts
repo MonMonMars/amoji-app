@@ -72,5 +72,7 @@ describe('idle tips gate', () => {
     expect(chat).not.toMatch(/n\s*%\s*6\s*===\s*5/);
     // companion idle banks still drive quiet lines
     expect(chat).toContain('pickIdleCompanionLine');
+    // backdrop flavour uses curated SCENE_LINES — not the LLM system prompt
+    expect(chat).toContain('pickSceneLine(backgroundId');
   });
 });
