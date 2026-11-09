@@ -117,8 +117,14 @@ export function cleanForSpeech(raw: string): string {
   s = s.replace(/([\u3400-\u9fff])\s*\.\s*/g, '$1。');
   s = stripVoicedSymbols(s);
   s = stripLaughTokens(s);
-  s = s.replace(/\s+/g, ' ').trim();
-  s = s.replace(/\s+([,.;!?，。！？])/g, '$1');
+  // Keep blank-line paragraph breaks so clause/caption pauses can breathe.
+  // Spaces/tabs still collapse; engines never hear the newlines (stripVoicedGlyphs).
+  s = s
+    .replace(/[^\S\n]+/g, ' ')
+    .replace(/ *\n */g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  s = s.replace(/[^\S\n]+([,.;!?，。！？])/g, '$1');
   return s;
 }
 

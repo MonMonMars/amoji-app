@@ -69,8 +69,10 @@ describe('gtts chunk chain behaviour', () => {
     // 120-char cap: the public endpoint truncates around 200
     expect(src).toMatch(/maxLen = 120/);
     expect(src).toContain('splitChunks');
-    // Clause pauses must stay audible — do not quietly shrink them again.
-    expect(src).toMatch(/return 520/);
+    // Clause pauses must stay audible — sentence/paragraph/comma table.
+    expect(src).toMatch(/return 480/);
+    expect(src).toMatch(/return 750/);
+    expect(src).toMatch(/return 500/);
     expect(src).toMatch(/return 300/);
     expect(src).toContain('gapTimer');
   });

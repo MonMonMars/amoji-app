@@ -37,17 +37,18 @@ export function rollCaptionsForLine(text: string): void {
     rollTimer = null;
   }
   const spoken = cleanForSpeech(text);
-  const parts = splitChunks(spoken)
-    .map((c) => stripVoicedGlyphs(c).trim())
-    .filter(Boolean);
-  if (!parts.length) return;
+  // Keep raw chunks (with `\n` / `\n\n` markers) so pauseAfterClause sees
+  // paragraph breaks; captions show the stripped spoken form.
+  const rawParts = splitChunks(spoken).filter((c) => stripVoicedGlyphs(c).trim());
+  if (!rawParts.length) return;
   let i = 0;
   const tick = () => {
-    dispatchSpeechCaption(parts[i]!);
-    const cur = parts[i]!;
+    const raw = rawParts[i]!;
+    const shown = stripVoicedGlyphs(raw).trim();
+    dispatchSpeechCaption(shown);
     i += 1;
-    if (i < parts.length) {
-      const gap = pauseAfterClause(cur) + speechDurationMs(cur);
+    if (i < rawParts.length) {
+      const gap = pauseAfterClause(raw) + speechDurationMs(shown);
       rollTimer = setTimeout(tick, Math.max(240, gap));
     }
   };

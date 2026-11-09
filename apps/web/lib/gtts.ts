@@ -60,23 +60,62 @@ export const PITCH_BIAS_FEMALE = 1.04;
  * to erase those gaps and make her sound breathless.
  * r2026-10-05.99: NO regex lookbehind (SyntaxError on WebKit < iOS 16.4) —
  * manual scanner: cut right AFTER any clause-ending punctuation, trim each.
+ * Trailing `\n` / `\n\n` markers record soft vs paragraph breaks for
+ * pauseAfterClause (stripped before audio via stripVoicedGlyphs).
  */
-const CLAUSE_END = /[。！？!?；;，,、:：—…\.\n]/;
+const CLAUSE_PUNCT = /[。！？!?；;，,、:：—…\.]/;
 
 /** One clause per pause mark — shared by gTTS, Edge SSML, and speechSynthesis. */
 export function splitClauses(text: string): string[] {
   const parts: string[] = [];
   let cur = '';
-  for (const ch of text) {
+  const flush = (breakNl: number) => {
+    const s = cur.trim();
+    cur = '';
+    if (!s) {
+      // Blank line after a punct-closed clause: upgrade to a paragraph pause.
+      if (breakNl >= 2 && parts.length) {
+        const prev = parts[parts.length - 1]!;
+        if (!/\n\n$/.test(prev)) {
+          parts[parts.length - 1] = prev.replace(/\n+$/, '') + '\n\n';
+        }
+      }
+      return;
+    }
+    if (breakNl >= 2) parts.push(`${s}\n\n`);
+    else if (breakNl === 1) parts.push(`${s}\n`);
+    else parts.push(s);
+  };
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]!;
+    if (ch === '\n') {
+      let n = 1;
+      while (i + 1 < text.length && text[i + 1] === '\n') {
+        n++;
+        i++;
+      }
+      flush(n);
+      continue;
+    }
     cur += ch;
-    if (CLAUSE_END.test(ch)) {
-      const s = cur.trim();
-      if (s) parts.push(s);
-      cur = '';
+    if (!CLAUSE_PUNCT.test(ch)) continue;
+    // Attach trailing newlines to this clause so pauseAfterClause sees them.
+    let j = i + 1;
+    while (j < text.length && (text[j] === ' ' || text[j] === '\t')) j++;
+    let n = 0;
+    while (j < text.length && text[j] === '\n') {
+      n++;
+      j++;
+    }
+    if (n > 0) {
+      flush(n);
+      i = j - 1;
+    } else {
+      flush(0);
     }
   }
-  const tail = cur.trim();
-  if (tail) parts.push(tail);
+  flush(0);
   return parts;
 }
 
@@ -167,13 +206,29 @@ export interface GttsOpts {
  * when the whole line has played; rejects with Error('canceled') if
  * stopGtts() cuts it, or with a playback error the caller can fall back on.
  */
-/** ms of silence after a clause chunk before the next request starts. */
+/**
+ * ms of silence after a clause chunk before the next request starts.
+ * Sentence ~250–500ms; paragraph (blank line) ~600–900ms; comma a short breath.
+ */
 export function pauseAfterClause(chunk: string): number {
+  // Paragraph beat between spoken paragraphs (yue/zh/en/ja blank lines).
+  if (/\n\n/.test(chunk)) return 750;
+  // Soft single newline without a blank line.
+  if (/\n/.test(chunk)) return 500;
+  const t = chunk.replace(/[^\S\n]+$/g, '');
   // Audible breath: 180/90 was too short once chunks were separate — the next
   // MP3 started before the ear registered a stop at 。 or ，.
-  if (/[。！？!?…\.]$/.test(chunk)) return 520;
-  if (/[,，、；;:：—–]$/.test(chunk)) return 300;
+  if (/[。！？!?…\.]$/.test(t)) return 480;
+  if (/[,，、；;:：—–]$/.test(t)) return 300;
   return 0;
+}
+
+/** Edge SSML `<break>` using the same timing table as pauseAfterClause. */
+export function ssmlBreakAfterClause(chunk: string, isTail = false): string {
+  if (isTail) return '';
+  const ms = pauseAfterClause(chunk);
+  if (ms <= 0) return '';
+  return `<break time='${ms}ms'/>`;
 }
 
 export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
@@ -222,7 +277,7 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
       const audio = new Audio(
         `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=${q}`,
       );
-      audio.dataset.amojiAudio = '1';
+      try { audio.dataset.amojiAudio = '1'; } catch { /* non-DOM Audio stubs */ }
       pinDefaultOutput(audio);
       applyPlaybackVolume(audio);
       audio.preload = 'auto';

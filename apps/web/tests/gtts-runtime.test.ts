@@ -90,6 +90,8 @@ function boot() {
     preload = '';
     volume = 1;
     paused = true;
+    /** Mirrors HTMLMediaElement.dataset so amojiAudio tagging does not throw. */
+    dataset: Record<string, string> = {};
     onended: (() => void) | null = null;
     onerror: (() => void) | null = null;
     onplay: (() => void) | null = null;
