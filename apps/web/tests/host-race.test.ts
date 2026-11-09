@@ -83,10 +83,10 @@ describe('every racer is its own budget slot', () => {
     }
   });
 
-  it('leads with the Cantonese-quality model', () => {
-    // Amoji is Cantonese-first: the 70B Llama is the model that produced
-    // genuinely colloquial 囉/嘅/咁 lines in the probe, so it is first.
-    expect(OVH_MODEL).toBe('Meta-Llama-3_3-70B-Instruct');
+  it('leads with the multi-lang A/B winner', () => {
+    // 2026-11-09 multi-lang bench (yue/zh/en/ja): Qwen wins overall on stable
+    // TTFC while matching Llama/Mistral on colloquial yue particles.
+    expect(OVH_MODEL).toBe('Qwen2.5-VL-72B-Instruct');
     expect(OVH_MODELS[0]).toBe(OVH_MODEL);
     expect(ovhRacers()[0]!.model).toBe(OVH_MODEL);
     // reasoning-only / empty-content models are never asked (2026-11-09 A/B)
@@ -100,7 +100,7 @@ describe('every racer is its own budget slot', () => {
     ]) {
       expect(OVH_MODELS).not.toContain(dead);
     }
-    expect(OVH_MODELS[2]).toBe('Mistral-Small-3.2-24B-Instruct-2506');
+    expect(OVH_MODELS[2]).toBe('Meta-Llama-3_3-70B-Instruct');
   });
 
   it('asks Pollinations exactly ONCE, under its one anonymous model', () => {
