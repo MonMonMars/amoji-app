@@ -18,8 +18,65 @@ describe('pre-chat audio gate', () => {
     expect(read('components/QuickSetup.tsx')).toContain('/gate/audio?next=');
   });
 
+  it('asks I can hear / I cannot hear after the sound test, with troubleshooting', () => {
+    const gate = read('components/PreChatAudioGate.tsx');
+    expect(gate).toContain('data-testid="pre-chat-test-sound"');
+    expect(gate).toContain('data-testid="pre-chat-hear-ask"');
+    expect(gate).toContain('data-testid="pre-chat-hear-yes"');
+    expect(gate).toContain('data-testid="pre-chat-hear-no"');
+    expect(gate).toContain('data-testid="pre-chat-hear-ok"');
+    expect(gate).toContain('data-testid="pre-chat-hear-help"');
+    expect(gate).toContain('data-testid="pre-chat-hear-retry"');
+    expect(gate).toContain("t(lang, 'gateAudioQuestion')");
+    expect(gate).toContain("t(lang, 'gateAudioYes')");
+    expect(gate).toContain("t(lang, 'gateAudioNo')");
+    expect(gate).toContain("t(lang, 'preChatHeardOk')");
+    expect(gate).toContain("t(lang, 'gateHelpTitle')");
+    expect(gate).toContain("t(lang, 'gateHelpSwitch')");
+    expect(gate).toContain("t(lang, 'gateHelpVolume')");
+    expect(gate).toContain("t(lang, 'gateHelpBluetooth')");
+    expect(gate).toContain("t(lang, 'gateHelpTabMuted')");
+    expect(gate).toContain("t(lang, 'gateHelpRetry')");
+    // Re-click of Test my sound resets the hear choice.
+    expect(gate).toContain("setSoundUi('asked')");
+    expect(gate).toContain('setHeard(null)');
+  });
+
+  it('keeps mic allow simple and re-clickable without a typing field', () => {
+    const gate = read('components/PreChatAudioGate.tsx');
+    expect(gate).toContain('data-testid="pre-chat-mic-allow"');
+    expect(gate).toContain('requestMic');
+    expect(gate).toContain("t(lang, 'gateMicAllow')");
+    // Do not force a useless text box for this permission step.
+    expect(gate).not.toMatch(/<textarea\b/);
+    expect(gate).not.toMatch(/<input\b[^>]*type=["']text["']/);
+    // Allow stays available after grant so re-click re-triggers the popup.
+    expect(gate).toContain("mic !== 'unsupported'");
+    expect(gate).not.toContain("mic !== 'granted' && mic !== 'unsupported'");
+  });
+
+  it('NEXT / enter stays always clickable', () => {
+    const gate = read('components/PreChatAudioGate.tsx');
+    expect(gate).toContain('data-testid="pre-chat-enter-chat"');
+    expect(gate).not.toMatch(/pre-chat-enter-chat[\s\S]{0,120}disabled/);
+    expect(gate).not.toContain('disabled={!canEnter}');
+    expect(gate).not.toContain('disabled={!speakerOk');
+  });
+
   it('i18n for pre-chat strings', () => {
-    const keys: StrKey[] = ['preChatGateTitle', 'preChatGateLead', 'preChatEnterChat', 'preChatUnmuteHint', 'preChatSoundOk'];
+    const keys: StrKey[] = [
+      'preChatGateTitle',
+      'preChatGateLead',
+      'preChatEnterChat',
+      'preChatUnmuteHint',
+      'preChatHeardOk',
+      'gateAudioQuestion',
+      'gateAudioYes',
+      'gateAudioNo',
+      'gateHelpTitle',
+      'gateHelpRetry',
+      'gateMicAllow',
+    ];
     for (const key of keys) {
       for (const { id } of LANGS) {
         expect(t(id, key)).toBeTruthy();
