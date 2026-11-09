@@ -2003,7 +2003,10 @@ export default function CompanionCanvas({
         if (gameView) playGameBody(gameView.anim);
         if (avatar.clipDrivesBody) {
           mixer?.update(dt / 1000);
-          applyIdleClipSoftening((name) => avatar!.getBoneNode(name), idleClipId);
+          // Idle-only arm soften — skip sing/poke/hand-drag so performances keep clip freedom.
+          if (!perfAction && boost === 0 && !gameView && !handDrag) {
+            applyIdleClipSoftening((name) => avatar!.getBoneNode(name), idleClipId);
+          }
           avatar.applyPose(poseTargets);
         } else {
           avatar.applyPose(poseTargets);

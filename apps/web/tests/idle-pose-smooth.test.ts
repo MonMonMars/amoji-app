@@ -14,10 +14,20 @@ import {
 import { IDLE_CLIP_OPTIONS } from '../lib/idle-clips';
 import { CHAT_IDLE_CURATED } from '../lib/idle-curated-rail';
 import { idleByNum, playableIdles } from '../lib/idle-library';
+import { IDLE_ELBOW_FLOOR_X, idleStiffClipGain } from '../lib/idle-stance-soften';
 
 const root = path.resolve(import.meta.dirname, '..');
 
 describe('idle pose smooth + catalog trim', () => {
+  it('exposes idle arm soften constants for stiff military clips', () => {
+    expect(IDLE_ELBOW_FLOOR_X).toBeGreaterThan(0.08);
+    expect(IDLE_ELBOW_FLOOR_X).toBeLessThan(0.35);
+    expect(idleStiffClipGain('IdleMixamoExcited')).toBeGreaterThan(1);
+    const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
+    expect(canvas).toContain('applyIdleClipSoftening');
+    expect(canvas).toMatch(/!perfAction[\s\S]*applyIdleClipSoftening/);
+  });
+
   it('pins crossfade in ~300-500ms and defers foot IK during leg blend window', () => {
     expect(IDLE_PIN_CROSSFADE_S).toBeGreaterThanOrEqual(0.3);
     expect(IDLE_PIN_CROSSFADE_S).toBeLessThanOrEqual(0.55);
