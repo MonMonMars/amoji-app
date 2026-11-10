@@ -94,6 +94,7 @@ Earlier same-day / prior stack also on `main`: #305 audio-gate order, #304/#303 
 | VRM / Light | Character 1–3 lighting (real matcap/shade) | **In PR** | **[#327](https://github.com/MonMonMars/amoji-app/pull/327)** |
 | Verify | Post-merge live check on Pages | **Outstanding** | After Pages rebuild |
 | Music | Licensed stream/embed beyond Mixkit stub | **Outstanding** | `docs/MUSIC_STREAMING.md` |
+| Payment | Charging + payment rules (free 40 turns, Plus, Stripe/demo) | **Done** (this stack) | `docs/SYSTEMS.md` · `lib/charging-rules.ts` · `lib/payment-rules.ts` |
 
 ## Outstanding — Pixel NEW asks (this turn)
 

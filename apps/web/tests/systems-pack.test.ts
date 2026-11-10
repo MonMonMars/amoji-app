@@ -85,7 +85,7 @@ describe('systems pack', () => {
     expect(paymentsConfigured()).toBe(false);
   });
 
-  it('Settings sheet links plan, systems, and legal', () => {
+  it('Settings sheet links plan, systems, charging, and checkout', () => {
     const src = readFileSync(join(web, 'components/SettingsSheet.tsx'), 'utf8');
     expect(src).toContain('settingsPlan');
     expect(src).toContain('settingsSystems');
@@ -93,6 +93,8 @@ describe('systems pack', () => {
     expect(src).toContain('href="/cookies"');
     expect(src).toContain('href="/systems"');
     expect(src).toContain('syncEntitlementFromApi');
+    expect(src).toContain('startCheckout');
+    expect(src).toContain('planChargingBlurb');
   });
 
   it('cookies and systems pages expose a localized back control', () => {
@@ -110,6 +112,7 @@ describe('systems pack', () => {
   it('docs SYSTEMS map is present', () => {
     const doc = readFileSync(join(web, '../../docs/SYSTEMS.md'), 'utf8');
     expect(doc).toContain('Payment');
+    expect(doc).toContain('Charging rules');
     expect(doc).toContain('Email');
     expect(doc).toContain('GitHub Pages');
   });

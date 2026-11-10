@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { createHmac } from 'node:crypto';
 import { openDb } from '../src/db.js';
-import { verifyStripeSignature, upsertPlus, readEntitlement } from '../src/billing.js';
+import {
+  verifyStripeSignature,
+  upsertPlus,
+  readEntitlement,
+  startCheckout,
+  buildPaymentLinkUrl,
+  billingRulesPayload,
+} from '../src/billing.js';
+import { CHARGING_RULES, freeDailyChatTurnLimit } from '../src/charging-rules.js';
 import { autoReply } from '../src/auto-reply.js';
 import { mailConfigured } from '../src/email.js';
 import { corsHeaders, rateLimit, _resetRateLimitsForTests } from '../src/security.js';
@@ -48,5 +56,34 @@ describe('backend systems helpers', () => {
   it('ships auto-reply templates and leaves mail off by default', () => {
     expect(autoReply('reportAck').subject).toMatch(/report/i);
     expect(mailConfigured()).toBe(false);
+  });
+
+  it('publishes charging rules aligned with the free daily turn budget', () => {
+    expect(freeDailyChatTurnLimit()).toBe(40);
+    expect(CHARGING_RULES.gatedFeatures).toContain('chat_llm_turn');
+    expect(billingRulesPayload(1_700_000_000_000).charging.version).toBe(1);
+  });
+
+  it('appends client_reference_id on payment links', () => {
+    expect(buildPaymentLinkUrl('https://buy.stripe.com/x', 'u1')).toContain('client_reference_id=u1');
+  });
+
+  it('demo checkout grants Plus without Stripe secrets', async () => {
+    const prev = process.env.AMOJI_BILLING_DEMO;
+    process.env.AMOJI_BILLING_DEMO = '1';
+    delete process.env.STRIPE_SECRET_KEY;
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+    delete process.env.STRIPE_PAYMENT_LINK;
+    delete process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK;
+    const db = openDb(':memory:');
+    const now = 1_700_000_000_000;
+    const result = await startCheckout(db, 'user-demo', now);
+    expect(result.ok).toBe(true);
+    expect(result.mode).toBe('demo');
+    expect(result.chargesRealMoney).toBe(false);
+    expect(readEntitlement(db, 'user-demo', now).plan).toBe('plus');
+    db.close();
+    if (prev === undefined) delete process.env.AMOJI_BILLING_DEMO;
+    else process.env.AMOJI_BILLING_DEMO = prev;
   });
 });
