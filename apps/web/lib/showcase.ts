@@ -170,7 +170,7 @@ export const SHOWCASE_OFFERS: Record<Lang, Record<ShowcaseKind, string[]>> = {
 /** the one-liner that opens the show the moment you say yes */
 export const SHOWCASE_START: Record<Lang, Record<ShowcaseKind, string>> = {
   yue: {
-    dance: '好！音樂，起——睇清楚喇！',
+    dance: '好！音樂——我哋開始，睇清楚喇！',
     song: '好！我而家唱俾你聽——呢首係你嘅歌。',
     music: '好！我播段音樂俾你。',
     news: '好！我讀一條新聞俾你聽。',
@@ -178,7 +178,7 @@ export const SHOWCASE_START: Record<Lang, Record<ShowcaseKind, string>> = {
     story: '好！我講個小故事俾你聽。',
   },
   zh: {
-    dance: '好！音乐，起——看仔细啦！',
+    dance: '好！音乐——我们开始，看仔细啦！',
     song: '好！我现在唱给你听——这首是你的歌。',
     music: '好！我放段音乐给你。',
     news: '好！我读一条新闻给你听。',
@@ -194,7 +194,7 @@ export const SHOWCASE_START: Record<Lang, Record<ShowcaseKind, string>> = {
     story: 'うん、小さな物語を話すね。',
   },
   en: {
-    dance: 'Alright — music, start! Watch closely now!',
+    dance: "Alright — music, let's start! Watch closely now!",
     song: 'Okay, listen — this one is yours.',
     music: 'Okay — here is some music.',
     news: 'Okay — one cheerful headline.',

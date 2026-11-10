@@ -33,6 +33,12 @@ describe('showcase + tutorial dialogue (r2026-10-04.48)', () => {
       }
     }
     expect(showcaseStoryAsk('en')).toMatch(/story/i);
+    // Pixel: never music 「起！」 — use 開始 / 开始.
+    expect(SHOWCASE_START.yue.dance).toContain('我哋開始');
+    expect(SHOWCASE_START.yue.dance).not.toMatch(/音樂，起/);
+    expect(SHOWCASE_START.zh.dance).toContain('我们开始');
+    expect(SHOWCASE_START.zh.dance).not.toMatch(/音乐，起/);
+    expect(SHOWCASE_START.en.dance).toMatch(/let'?s start/i);
   });
 
   it('tutorial bank covers the feature set in every language', () => {

@@ -27,6 +27,13 @@ describe('performance intro (name before play)', () => {
     }
     expect(performanceIntroLine('song', title, 'en')).toMatch(/song is called/i);
     expect(performanceIntroLine('music', title, 'en')).toMatch(/track is/i);
+    // Pixel: never 「起！」 (rise) — say let's start / 開始.
+    expect(performanceIntroLine('music', title, 'yue')).toContain('我哋開始');
+    expect(performanceIntroLine('music', title, 'yue')).not.toMatch(/——起！/);
+    expect(performanceIntroLine('music', title, 'zh')).toContain('我们开始');
+    expect(performanceIntroLine('music', title, 'zh')).not.toMatch(/——起！/);
+    expect(performanceIntroLine('music', title, 'en')).toMatch(/let'?s start/i);
+    expect(performanceIntroLine('music', title, 'en')).not.toMatch(/Here we go/i);
   });
 
   it('resolveLibraryPerformance matches startLibraryPerformance pick (stable announce)', () => {
