@@ -3,12 +3,15 @@ import Link from 'next/link';
 import { CLIENT_STORAGE_KEYS } from '../../lib/client-storage';
 import { FILE_LOCATIONS, FREE_SERVERS, systemsSnapshot } from '../../lib/systems-catalog';
 import { securityFacts } from '../../lib/security-policy';
-import { planStatusSummary, paymentsConfigured } from '../../lib/billing';
+import { planStatusSummary, paymentsConfigured, billingSnapshot } from '../../lib/billing';
+import { CHARGING_RULES, formatPlanPrice } from '../../lib/charging-rules';
+import { paymentDemoMode } from '../../lib/payment-rules';
 import { loadPrefs, t } from '../../lib/prefs';
 
 export default function SystemsPage() {
   const lang = loadPrefs().lang;
   const snap = systemsSnapshot();
+  const billing = billingSnapshot();
   return (
     <main className="mx-auto min-h-screen max-w-2xl px-4 py-10 text-white">
       <p className="mb-6 text-sm text-white/50">
@@ -25,10 +28,38 @@ export default function SystemsPage() {
         <h2 className="text-sm font-medium uppercase tracking-wide text-white/50">{t(lang, 'settingsPlan')}</h2>
         <p className="text-sm text-white/80">{planStatusSummary()}</p>
         <p className="text-xs text-white/45">
-          {paymentsConfigured() ? t(lang, 'planPaymentsOn') : t(lang, 'planPaymentsOff')}
+          {paymentsConfigured()
+            ? t(lang, 'planPaymentsOn')
+            : paymentDemoMode()
+              ? t(lang, 'planPaymentsDemo')
+              : t(lang, 'planPaymentsOff')}
         </p>
         <p className="text-xs text-white/45">
           API: {snap.productionApi ? 'configured' : 'unset (Pages / on-device)'}
+        </p>
+      </section>
+
+      <section className="mt-8 space-y-3">
+        <h2 className="text-sm font-medium uppercase tracking-wide text-white/50">{t(lang, 'systemsCharging')}</h2>
+        <p className="text-sm text-white/80">{CHARGING_RULES.plans.free.summary}</p>
+        <p className="text-sm text-white/80">
+          {CHARGING_RULES.plans.plus.summary} Catalog {formatPlanPrice()}.
+        </p>
+        <ul className="space-y-2">
+          {CHARGING_RULES.features.map((f) => (
+            <li key={f.id} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+              <p className="text-sm font-medium text-white/90">
+                {f.label}
+                <span className="ml-2 font-normal text-white/45">
+                  {f.gatedByDailyQuota ? `${f.costTurns} turn` : 'free'}
+                </span>
+              </p>
+              {f.notes && <p className="mt-1 text-xs text-white/55">{f.notes}</p>}
+            </li>
+          ))}
+        </ul>
+        <p className="text-xs text-white/45">
+          Rules v{billing.charging.version} · unit {billing.charging.unit} · reset {billing.charging.reset}
         </p>
       </section>
 

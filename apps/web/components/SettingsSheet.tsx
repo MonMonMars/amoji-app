@@ -59,7 +59,17 @@ import {
   addEntry, deleteEntry, deleteDiaryEntry, deleteImportantDate, deletePromise, ensureUserNameFromProfile, exportMemory, loadMemory,
   type Memory, type MemoryType,
 } from '../lib/memory';
-import { paymentsConfigured, planStatus, planStatusSummary, publicPaymentLink, syncEntitlementFromApi } from '../lib/billing';
+import {
+  checkoutPaymentUrl,
+  paymentsConfigured,
+  paymentsOrDemoAvailable,
+  planStatus,
+  planStatusSummary,
+  startCheckout,
+  syncEntitlementFromApi,
+} from '../lib/billing';
+import { CHARGING_RULES, formatPlanPrice } from '../lib/charging-rules';
+import { paymentDemoMode } from '../lib/payment-rules';
 import { listPresentClientKeys } from '../lib/client-storage';
 import Link from 'next/link';
 
@@ -173,6 +183,8 @@ export default function SettingsSheet({
   const [oaSaved, setOaSaved] = useState(false);
   const [oaTesting, setOaTesting] = useState(false);
   const [oaTestResult, setOaTestResult] = useState<boolean | null>(null);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [checkoutNote, setCheckoutNote] = useState<string | null>(null);
   const tutorNRef = useRef(0);
   // WW location: the city she should talk about. Blank draft + a saved place
   // means "device location"; the field is the manual override.
@@ -1020,18 +1032,60 @@ export default function SettingsSheet({
               <span className="text-xs text-white/55">{planStatusSummary()}</span>
             </div>
             <p className="text-[11px] text-white/45">
-              {paymentsConfigured() ? t(lang, 'planPaymentsOn') : t(lang, 'planPaymentsOff')}
+              {paymentsConfigured()
+                ? t(lang, 'planPaymentsOn')
+                : paymentDemoMode()
+                  ? t(lang, 'planPaymentsDemo')
+                  : t(lang, 'planPaymentsOff')}
             </p>
-            {paymentsConfigured() && planStatus().plan === 'free' && (
-              <a
-                href={publicPaymentLink()}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="ui-btn inline-flex rounded-full px-3.5 py-1.5 text-xs font-medium text-neutral-950"
+            <p className="text-[11px] text-white/45">
+              {t(lang, 'planChargingBlurb')
+                .replace('{n}', String(CHARGING_RULES.plans.free.dailyChatTurns))
+                .replace('{price}', formatPlanPrice())}
+            </p>
+            {paymentsOrDemoAvailable() && planStatus().plan === 'free' && (
+              <button
+                type="button"
+                disabled={checkoutBusy}
+                className="ui-btn inline-flex rounded-full px-3.5 py-1.5 text-xs font-medium text-neutral-950 disabled:opacity-60"
                 style={{ backgroundColor: accent }}
+                onClick={() => {
+                  setCheckoutBusy(true);
+                  setCheckoutNote(null);
+                  void (async () => {
+                    try {
+                      const result = await startCheckout();
+                      if (result.mode === 'demo') {
+                        setCheckoutNote(t(lang, 'planDemoUnlocked'));
+                        return;
+                      }
+                      if (result.url) {
+                        window.open(result.url, '_blank', 'noopener,noreferrer');
+                        return;
+                      }
+                      // Fallback: open static payment link if startCheckout returned none with a configured link.
+                      const fallback = checkoutPaymentUrl();
+                      if (fallback) {
+                        window.open(fallback, '_blank', 'noopener,noreferrer');
+                        return;
+                      }
+                      setCheckoutNote(t(lang, 'planPaymentsOff'));
+                    } finally {
+                      setCheckoutBusy(false);
+                    }
+                  })();
+                }}
               >
-                {t(lang, 'planUpgrade')}
-              </a>
+                {paymentDemoMode() && !paymentsConfigured()
+                  ? t(lang, 'planDemoUpgrade')
+                  : t(lang, 'planUpgrade')}
+              </button>
+            )}
+            {paymentDemoMode() && planStatus().plan === 'plus' && planStatus().source === 'demo' && (
+              <p className="text-[11px] text-amber-200/80">{t(lang, 'planDemoActive')}</p>
+            )}
+            {checkoutNote && (
+              <p className="text-[11px] text-white/60" role="status">{checkoutNote}</p>
             )}
           </Section>
 
