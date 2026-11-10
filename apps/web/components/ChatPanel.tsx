@@ -639,16 +639,23 @@ export default function ChatPanel({
     const title = clipTitle(clip, lang);
     const intro = performanceIntroLine(kind === 'song' ? 'song' : 'music', title, lang);
     const hold = Math.max(clip.durationMs + 600, ms);
+    // Body move for the whole show: music beds used to set a beat profile only
+    // and never triggerMove, so she stayed on calm idle with no beat motion.
+    const bodyMove = kind === 'song' ? 'sing' : 'dance';
+    triggerMove(bodyMove);
     // Name on the now-playing chip immediately; audio waits for the intro.
     showTrack(clip, hold);
     sayLocal(intro, { joy: kind === 'song' ? 0.82 : 0.7 });
     whenSpeechIdle(() => {
-      // t718: music.ts arms to max(ms, clip.durationMs+600); hold body/mic for songs.
+      // t718: music.ts arms to max(ms, clip.durationMs+600); hold body for the bed.
       // Style (jazz/pop/lofi…) prefers Mixkit royalty-free streams for dance beds.
       const playing = startLibraryPerformance(query);
       // t725–729: song/style → body tag + beat-matched timeScale for CompanionCanvas.
       setPerfMotionProfile(resolvePerfMotion({ id: playing.id, kind: playing.kind, style: playing.style }));
-      if (kind === 'song') holdMove(hold);
+      // Re-arm on bed start so the rising-edge playPerf syncs with audio, and
+      // hold past the default 9s move so dance/music beds keep moving to the beat.
+      triggerMove(bodyMove);
+      holdMove(hold);
       showTrack(playing, hold);
       afterStart?.();
     });
@@ -874,7 +881,11 @@ export default function ChatPanel({
 
   // idle chatter + soft topic offers (r.38): measured from the USER's last
   // real action — her own lines don't restart the clock. Stage 0 = persona /
+<<<<<<< HEAD
   // mood / topic offers; stage 1+ = soft NEW TOPIC nudges only — never
+=======
+  // mood / ability offers; stage 1+ = soft NEW TOPIC nudges only — never
+>>>>>>> 67352a0 (fix(web): scrub idle nonsense, cant-hear, mic, phase chips, thinking UI)
   // "you're so quiet" / "still there?" / "walk away" blame. After the soft
   // closer she waits. Her lines never pile onto her own voice.
   useEffect(() => {
@@ -1705,7 +1716,22 @@ export default function ChatPanel({
           </div>
         )}
         {busy && !speechCaption.trim() && captionLadder.length === 0 && (
-          <p className="text-white/40">{t(lang, 'typing', { name: characterName })}</p>
+          <div
+            data-testid="thinking-status"
+            className="flex flex-col items-start gap-1.5"
+            role="status"
+            aria-live="polite"
+            aria-label={t(lang, 'typing', { name: characterName })}
+          >
+            <p className="text-white/45">{t(lang, 'typing', { name: characterName })}</p>
+            {/* Indeterminate wait bar — no fake % (reply progress is unknown). */}
+            <div
+              className="ui-thinking-bar h-0.5 w-28 overflow-hidden rounded-full bg-white/10"
+              aria-hidden
+            >
+              <div className="ui-thinking-bar-fill h-full w-1/3 rounded-full bg-white/50" />
+            </div>
+          </div>
         )}
         {/* Crisis guard fired on the last turn: the fixed reply is above, and
             this card carries the tap-through to the helplines. It stays until

@@ -141,6 +141,10 @@ describe('idle-talk', () => {
     expect(isIncompleteIdleLine('')).toBe(true);
     expect(isIncompleteIdleLine('Looking at a pocket map made me think of you, softly.')).toBe(false);
     expect(spokenLineLooksBroken('a small map reminding you')).toBe(true);
+    expect(isIncompleteIdleLine('一條友善嘅謎語充滿電，等一陣細爆發。')).toBe(true);
+    expect(isIncompleteIdleLine('一条友善的谜语充满电，等一阵小爆发。')).toBe(true);
+    expect(isIncompleteIdleLine('a friendly riddle is charged and ready for a tiny burst.')).toBe(true);
+    expect(spokenLineLooksBroken('謎題電壓感覺友善，唔係慌張。')).toBe(true);
 
     for (const voice of VOICE_IDS) {
       for (const motif of MOTIFS) {

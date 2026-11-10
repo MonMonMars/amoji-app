@@ -52,7 +52,7 @@ describe('stage props (r.69)', () => {
     }
   });
 
-  it('prop presence pops in fast, melts out, full mid-performance', () => {
+  it('prop presence pops in fast, stays full mid-show, melts only at the end', () => {
     expect(propPresence(0)).toBe(0);
     expect(propPresence(1)).toBe(0);
     expect(propPresence(-1)).toBe(0);
@@ -60,8 +60,12 @@ describe('stage props (r.69)', () => {
     expect(propPresence(0.5)).toBe(1);
     // attack lands within the first 6% — the prop is there when she starts
     expect(propPresence(0.06)).toBe(1);
-    // release: gone by the last 18% of the performance
-    expect(propPresence(0.9)).toBeCloseTo(0, 5);
+    // Still fully visible deep into a long song (old curve died by 0.9).
+    expect(propPresence(0.85)).toBe(1);
+    expect(propPresence(0.95)).toBe(1);
+    // release: only the final ~4%
+    expect(propPresence(0.98)).toBeCloseTo(0.5, 5);
+    expect(propPresence(1)).toBe(0);
   });
 
   it('animated parts declare a hook; hooks are a closed set', () => {
@@ -78,7 +82,7 @@ describe('stage props (r.69)', () => {
     expect(animated).toBeGreaterThanOrEqual(5); // every prop has at least one living part
   });
 
-  it('micStand capsule sits near the mouth via MIC_MOUTH_POS', () => {
+  it('micStand capsule sits below the mouth (shorter stand, face clear)', () => {
     const mic = PROPS.find((p) => p.id === 'micStand');
     expect(mic).toBeTruthy();
     const head = mic!.parts.find((p) => p.kind === 'sphere' && p.anim === 'softBob');
@@ -87,18 +91,24 @@ describe('stage props (r.69)', () => {
     expect(mic!.parts.some((p) => p.anim === 'magicDust')).toBe(true);
 
     const [x, y, z] = MIC_MOUTH_POS;
-    // Centered on the mouth mid-line with a generous forward gap (not inside the body).
+    // Mid-line, chin/upper-chest height — not covering the face.
     expect(Math.abs(x)).toBeLessThanOrEqual(0.04);
-    expect(y).toBeGreaterThanOrEqual(1.28);
-    expect(y).toBeLessThanOrEqual(1.48);
-    expect(z).toBeGreaterThanOrEqual(0.30);
-    expect(z).toBeLessThanOrEqual(0.45);
+    expect(y).toBeGreaterThanOrEqual(1.05);
+    expect(y).toBeLessThanOrEqual(1.22);
+    expect(z).toBeGreaterThanOrEqual(0.28);
+    expect(z).toBeLessThanOrEqual(0.42);
 
-    // Capsule sits well in front of the lips (toward +Z), not inside the face shell.
-    const nominal: [number, number, number] = [0, 1.38, 0.06];
-    expect(z - nominal[2]).toBeGreaterThanOrEqual(0.24);
-    expect(head!.size[0]).toBe(0.045);
-    expect(z - nominal[2]).toBeGreaterThanOrEqual(head!.size[0] * 2);
+    // Capsule sits in front of the torso (toward +Z), not inside the body shell.
+    const nominalMouth: [number, number, number] = [0, 1.38, 0.06];
+    expect(y).toBeLessThan(nominalMouth[1] - 0.12);
+    expect(z - nominalMouth[2]).toBeGreaterThanOrEqual(0.22);
+    expect(head!.size[0]).toBeLessThanOrEqual(0.036);
+    expect(z - nominalMouth[2]).toBeGreaterThanOrEqual(head!.size[0] * 2);
+
+    // Dust stays near the capsule — never floating over the eyes.
+    for (const part of mic!.parts.filter((p) => p.anim === 'magicDust')) {
+      expect(part.pos[1]).toBeLessThan(MIC_MOUTH_POS[1] + 0.22);
+    }
   });
 
   it('mic enters from above with settling dust, not from the floor', () => {
