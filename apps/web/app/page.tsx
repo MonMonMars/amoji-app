@@ -7,7 +7,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Cormorant_Garamond } from 'next/font/google';
+import { splashDisplay } from './fonts';
 import { APP_NAME, APP_REVISION, APP_TAGLINE } from '../lib/revision';
 import { t, usePrefs } from '../lib/prefs';
 import { assetUrl } from '../lib/asset';
@@ -18,11 +18,7 @@ import { acceptCurrentLegal, hasAcceptedCurrentLegal } from '../lib/legal-accept
 import { recordNavReturn } from '../lib/nav-return';
 import { pushSelect } from '../lib/select-return';
 
-const display = Cormorant_Garamond({
-  subsets: ['latin'],
-  weight: ['500', '600', '700'],
-  display: 'swap',
-});
+const display = splashDisplay;
 
 export default function Splash() {
   const router = useRouter();

@@ -1,22 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Geist, Geist_Mono } from "next/font/google";
+import { geistMono, geistSans } from "./fonts";
 import "./globals.css";
 import AppleMeta from "../components/AppleMeta";
 import DevModeGate from "../components/DevModeGate";
 import LegalGate from "../components/LegalGate";
 import ServiceWorkerRegistrar from "../components/ServiceWorkerRegistrar";
 import UiClickSound from "../components/UiClickSound";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 // Pages deploy sets NEXT_PUBLIC_BASE_PATH=/amoji-app; bare "/icon.svg" 404s there
 // (live HTML emitted href="/icon.svg" → github.io root). Prefix like assetUrl.
