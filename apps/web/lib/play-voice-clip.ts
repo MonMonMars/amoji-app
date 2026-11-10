@@ -25,6 +25,39 @@ export function stopVoiceClip(): void {
   if (reject) reject(new Error('canceled'));
 }
 
+/**
+ * Same-origin clip started INSIDE a user gesture.
+ * Must call `audio.play()` in the same turn as the tap — awaiting
+ * `setSinkId` / `pinDefaultOutputAsync` first drops activation on Chrome and
+ * leaves card greets silent when hosted gTTS is blocked.
+ */
+export function playGestureClipSync(file: string, caption: string, onPlay?: () => void): void {
+  stopVoiceClip();
+  if (typeof Audio === 'undefined') return;
+  const audio = new Audio(assetUrl(file));
+  current = audio;
+  pinDefaultOutput(audio);
+  applyPlaybackVolume(audio);
+  let settled = false;
+  const finish = () => {
+    if (settled) return;
+    settled = true;
+    if (current === audio) current = null;
+    rejectCurrent = null;
+  };
+  rejectCurrent = () => finish();
+  audio.onended = () => finish();
+  audio.onerror = () => finish();
+  audio.onplay = () => {
+    try { noteSpeechStarted(caption || file); } catch { /* ignore */ }
+    try { followAudioElement(audio, true); } catch { /* ignore */ }
+    try { onPlay?.(); } catch { /* ignore */ }
+  };
+  // Do NOT await pinDefaultOutputAsync before play — that was the silent-tap bug.
+  void audio.play().catch(() => finish());
+  void pinDefaultOutputAsync(audio).catch(() => { /* sink pin is best-effort */ });
+}
+
 /** Resolves when the file finishes. Rejects on failure or stopVoiceClip(). */
 export function playVoiceClip(file: string, caption: string, onPlay?: () => void): Promise<void> {
   stopVoiceClip();
@@ -60,10 +93,15 @@ export function playVoiceClip(file: string, caption: string, onPlay?: () => void
       try { followAudioElement(audio, true); } catch { /* ignore */ }
       try { onPlay?.(); } catch { /* ignore */ }
     };
-    void pinDefaultOutputAsync(audio)
-      .then(() => audio.play())
-      .catch((err: unknown) => {
-        finish(err instanceof Error ? err : new Error(String(err)));
-      });
+    // Prefer gesture-safe play first; sink pin continues in parallel.
+    void audio.play().catch((err: unknown) => {
+      // Rare: if immediate play was rejected, retry after sink pin.
+      void pinDefaultOutputAsync(audio)
+        .then(() => audio.play())
+        .catch((e: unknown) => {
+          finish(e instanceof Error ? e : err instanceof Error ? err : new Error(String(e)));
+        });
+    });
+    void pinDefaultOutputAsync(audio).catch(() => { /* ignore */ });
   });
 }
