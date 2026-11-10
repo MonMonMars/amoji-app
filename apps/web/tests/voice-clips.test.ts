@@ -169,8 +169,7 @@ describe('emotion clips', () => {
     saveEmotionClip('a01-shino', 'universal', 'female', 'laugh_anime.mp3');
     expect(emotionClipPath('a01-shino', 'yue', 'female', 'laugh')).toBe('/voice-clips/universal/female/laugh_anime.mp3');
     expect(emotionClipPath('a01-shino', 'yue', 'female', 'wow')).toBe('/voice-clips/yue/female/wow.mp3');
-    // Yue F laugh (#1) deleted — defaults to zh/female/laugh.mp3
-    expect(emotionClipPath('a02-shibu', 'yue', 'female', 'laugh')).toBe('/voice-clips/zh/female/laugh.mp3');
+    expect(emotionClipPath('a02-shibu', 'yue', 'female', 'laugh')).toBe('/voice-clips/yue/female/laugh.mp3');
     saveEmotionClip('a01-shino', 'yue', 'female', 'giggle.mp3');
     expect(emotionClipPath('a01-shino', 'en', 'female', 'giggle')).toBe('/voice-clips/yue/female/giggle.mp3');
     resetEmotionClipPicks();
@@ -178,26 +177,25 @@ describe('emotion clips', () => {
 });
 
 describe('CLIP_LIBRARY numbering', () => {
-  it('numbers 1–98 in yue→zh→ja→en→universal × F→M order (Yue F laugh dropped)', () => {
+  it('numbers 1–99 in yue→zh→ja→en→universal × F→M order', () => {
     const list = listClipLibrary();
-    expect(list).toHaveLength(98);
-    expect(list[0]).toMatchObject({ id: 1, path: '/voice-clips/yue/female/smile.mp3' });
-    expect(clipLibraryPath(4)).toBe('/voice-clips/yue/female/um.mp3');
-    expect(clipLibraryPath(11)).toBe('/voice-clips/yue/male/um.mp3');
-    expect(clipLibraryPath(51)).toBe('/voice-clips/ja/male/oh.mp3');
-    expect(clipLibraryPath(93)).toBe('/voice-clips/universal/female/wow_woven.mp3');
+    expect(list).toHaveLength(99);
+    expect(list[0]).toMatchObject({ id: 1, path: '/voice-clips/yue/female/laugh.mp3' });
+    expect(clipLibraryPath(5)).toBe('/voice-clips/yue/female/um.mp3');
+    expect(clipLibraryPath(12)).toBe('/voice-clips/yue/male/um.mp3');
+    expect(clipLibraryPath(52)).toBe('/voice-clips/ja/male/oh.mp3');
+    expect(clipLibraryPath(94)).toBe('/voice-clips/universal/female/wow_woven.mp3');
     expect(fs.existsSync(path.resolve(here, '../public', recordedPokeClip('female').slice(1)))).toBe(true);
     expect(fs.existsSync(path.resolve(here, '../public', recordedPokeClip('male').slice(1)))).toBe(true);
-    expect(clipLibraryIdFor('yue', 'female', 'um.mp3')).toBe(4);
-    expect(clipLibraryIdFor('yue', 'female', 'laugh.mp3')).toBeNull();
+    expect(clipLibraryIdFor('yue', 'female', 'um.mp3')).toBe(5);
     // clipLibraryId resolves Pages basePath-prefixed paths to the same CLIP #
     const prev = process.env.NEXT_PUBLIC_BASE_PATH;
     process.env.NEXT_PUBLIC_BASE_PATH = '/amoji-app';
-    expect(clipLibraryId('/amoji-app/voice-clips/yue/female/um.mp3')).toBe(4);
-    expect(clipLibraryId('/voice-clips/yue/female/um.mp3')).toBe(4);
+    expect(clipLibraryId('/amoji-app/voice-clips/yue/female/um.mp3')).toBe(5);
+    expect(clipLibraryId('/voice-clips/yue/female/um.mp3')).toBe(5);
     if (prev === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
     else process.env.NEXT_PUBLIC_BASE_PATH = prev;
-    expect(clipLibraryIdFor('universal', 'female', 'wow_woven.mp3')).toBe(93);
+    expect(clipLibraryIdFor('universal', 'female', 'wow_woven.mp3')).toBe(94);
   });
 });
 
@@ -370,18 +368,18 @@ describe('Wanted CMA reaction SFX wire', () => {
     expect(legacy.startsWith('/voice-clips/')).toBe(true);
     expect(legacy.includes('/cma-reaction/')).toBe(false);
 
-    setCmaReactionVerdict('CMA00304', 'want');
-    setCmaReactionVerdict('CMA00305', 'skip');
+    setCmaReactionVerdict('CMA00320', 'want'); // kept female giggle
+    setCmaReactionVerdict('CMA00308', 'skip');
     resetWantedCmaReactionRotation();
     const wanted = recordedLaughClip('female', 'yue'); // all langs use CMA when Wanted
     expect(wanted).toContain('/voice-clips/cma-reaction/');
-    expect(wanted).toContain('CMA00304');
-    expect(wanted).not.toContain('CMA00305');
+    expect(wanted).toContain('CMA00320');
+    expect(wanted).not.toContain('CMA00308');
 
     // Skip-only (no Wanted matching) falls back
     resetCmaReactionPicks();
     forgetCmaReactionPickCache();
-    setCmaReactionVerdict('CMA00305', 'skip');
+    setCmaReactionVerdict('CMA00308', 'skip');
     resetWantedCmaReactionRotation();
     const afterSkipOnly = recordedLaughClip('female', 'en');
     expect(afterSkipOnly.includes('/cma-reaction/')).toBe(false);

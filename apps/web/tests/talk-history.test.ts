@@ -35,7 +35,7 @@ describe('recorded fillers and poke', () => {
     expect(recordedFillerClip('female', 'ha', 'yue')).toMatch(/\/voice-clips\/yue\/female\/um_long/);
     expect(recordedFillerClip('male', 'think', 'ja')).toMatch(/\/voice-clips\/ja\/male\/um_long/);
     expect(recordedFillerClip('male', 'think', 'ja')).not.toContain('think.mp3');
-    // Female poke default = CLIP #93. The male default is a language-neutral
+    // Female poke default = CLIP #94. The male default is a language-neutral
     // CMA ouch (the old `ja/male/oh.mp3` was a 0.20s Japanese gasp, wrong for
     // an English or Cantonese companion). See poke-voice-motion-sync.test.ts.
     expect(recordedPokeClip('female')).toBe('/voice-clips/universal/female/wow_woven.mp3');

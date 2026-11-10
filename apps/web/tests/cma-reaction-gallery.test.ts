@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+  CMA_REACTION_DROPPED_CODES,
   CMA_REACTION_GALLERY,
   CMA_REACTION_GALLERY_KEY,
   CMA_REACTION_RANGE,
@@ -42,12 +43,18 @@ afterEach(() => {
 });
 
 describe('CMA reaction gallery catalog', () => {
-  it('ships contiguous CMA00304–CMA00349 with no gaps', () => {
+  it('ships CMA00304–CMA00349 minus female-view #1–11 drops; keepers stay', () => {
     expect(CMA_REACTION_RANGE).toEqual({ from: 304, to: 349 });
-    expect(CMA_REACTION_GALLERY).toHaveLength(46);
+    expect(CMA_REACTION_DROPPED_CODES).toHaveLength(11);
+    expect(CMA_REACTION_GALLERY).toHaveLength(35);
     expect(missingCmaReactionCodes()).toEqual([]);
     expect(listCmaReactionCodes()).toEqual(expectedCmaReactionCodes());
-    expect(cmaReactionByCode('CMA00304')?.burst).toBe('laugh');
+    expect(cmaReactionByCode('CMA00304')).toBeNull(); // dropped #1
+    expect(cmaReactionByCode('CMA00320')?.burst).toBe('giggle'); // kept #12
+    expect(cmaReactionByCode('CMA00335')?.burst).toBe('ouch'); // kept #18
+    expect(cmaReactionByCode('CMA00318')?.burst).toBe('effort'); // kept #23
+    expect(cmaReactionByCode('CMA00327')?.burst).toBe('gasp'); // kept #27
+    expect(cmaReactionByCode('CMA00330')?.burst).toBe('yawn'); // kept #30
     expect(cmaReactionByCode('CMA00349')?.burst).toBe('laugh');
     expect(cmaReactionByCode('CMA00300')).toBeNull();
   });
@@ -57,7 +64,7 @@ describe('CMA reaction gallery catalog', () => {
     const prev = process.env.NEXT_PUBLIC_BASE_PATH;
     delete process.env.NEXT_PUBLIC_BASE_PATH;
     expect(cmaReactionPath(first.file)).toBe(`/voice-clips/cma-reaction/${first.file}`);
-    expect(first.file.startsWith('CMA00304')).toBe(true);
+    expect(first.file.startsWith('CMA00306')).toBe(true);
     if (prev === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
     else process.env.NEXT_PUBLIC_BASE_PATH = prev;
   });
@@ -80,19 +87,20 @@ describe('CMA reaction Want/Skip picks', () => {
   it('persists Want and Skip separately and exports lists', () => {
     const store = mockStorage();
     forgetCmaReactionPickCache();
-    expect(cmaReactionVerdict('CMA00304')).toBe('undecided');
-    expect(setCmaReactionVerdict('CMA00304', 'want')).toBe('want');
-    expect(setCmaReactionVerdict('CMA00305', 'skip')).toBe('skip');
+    expect(cmaReactionVerdict('CMA00320')).toBe('undecided');
+    expect(setCmaReactionVerdict('CMA00320', 'want')).toBe('want');
+    expect(setCmaReactionVerdict('CMA00308', 'skip')).toBe('skip');
     expect(setCmaReactionVerdict('CMA00999', 'want')).toBeNull();
-    expect(cmaReactionVerdict('CMA00304')).toBe('want');
-    expect(cmaReactionVerdict('CMA00305')).toBe('skip');
-    expect(wantedCmaReactionCodes()).toEqual(['CMA00304']);
-    expect(skippedCmaReactionCodes()).toEqual(['CMA00305']);
+    expect(setCmaReactionVerdict('CMA00304', 'want')).toBeNull(); // dropped
+    expect(cmaReactionVerdict('CMA00320')).toBe('want');
+    expect(cmaReactionVerdict('CMA00308')).toBe('skip');
+    expect(wantedCmaReactionCodes()).toEqual(['CMA00320']);
+    expect(skippedCmaReactionCodes()).toEqual(['CMA00308']);
     const raw = store.get(CMA_REACTION_GALLERY_KEY);
     expect(raw).toBeTruthy();
-    expect(JSON.parse(raw!)).toMatchObject({ CMA00304: 'want', CMA00305: 'skip' });
-    setCmaReactionVerdict('CMA00304', 'undecided');
-    expect(listCmaReactionPicks().CMA00304).toBeUndefined();
+    expect(JSON.parse(raw!)).toMatchObject({ CMA00320: 'want', CMA00308: 'skip' });
+    setCmaReactionVerdict('CMA00320', 'undecided');
+    expect(listCmaReactionPicks().CMA00320).toBeUndefined();
     expect(wantedCmaReactionCodes()).toEqual([]);
   });
 
@@ -113,20 +121,18 @@ describe('CMA Wanted play pool (wired)', () => {
     mockStorage();
     forgetCmaReactionPickCache();
     resetWantedCmaReactionRotation();
-    setCmaReactionVerdict('CMA00304', 'want'); // female laugh
-    setCmaReactionVerdict('CMA00305', 'skip'); // female laugh skipped
-    setCmaReactionVerdict('CMA00320', 'want'); // female giggle
-    setCmaReactionVerdict('CMA00335', 'want'); // female poke ouch
+    setCmaReactionVerdict('CMA00320', 'want'); // female giggle (kept #12)
+    setCmaReactionVerdict('CMA00308', 'skip'); // male laugh skipped
+    setCmaReactionVerdict('CMA00335', 'want'); // female poke ouch (kept #18)
     setCmaReactionVerdict('CMA00317', 'skip'); // male poke skipped
-    // CMA00319 undecided female laugh — not Wanted
 
-    expect(wantedCmaReactionCodes()).toEqual(['CMA00304', 'CMA00320', 'CMA00335']);
-    expect(skippedCmaReactionCodes()).toEqual(['CMA00305', 'CMA00317']);
+    expect(wantedCmaReactionCodes()).toEqual(['CMA00320', 'CMA00335']);
+    expect(skippedCmaReactionCodes()).toEqual(['CMA00308', 'CMA00317']);
 
     const laughPool = wantedCmaReactionClips({ gender: 'female', role: 'laugh' }).map((c) => c.code);
-    expect(laughPool).toEqual(['CMA00304', 'CMA00320']);
-    expect(laughPool).not.toContain('CMA00305');
-    expect(laughPool).not.toContain('CMA00319');
+    expect(laughPool).toEqual(['CMA00320']);
+    expect(laughPool).not.toContain('CMA00308');
+    expect(laughPool).not.toContain('CMA00304');
 
     const pokePool = wantedCmaReactionClips({ gender: 'female', role: 'poke' }).map((c) => c.code);
     expect(pokePool).toEqual(['CMA00335']);
@@ -136,8 +142,8 @@ describe('CMA Wanted play pool (wired)', () => {
     expect(malePoke).toEqual([]);
 
     const path = pickWantedCmaReactionPath({ gender: 'female', role: 'laugh' });
-    expect(path).toBe(cmaReactionPath(cmaReactionByCode('CMA00304')!.file));
-    expect(path!.endsWith(cmaReactionByCode('CMA00304')!.file)).toBe(true);
+    expect(path).toBe(cmaReactionPath(cmaReactionByCode('CMA00320')!.file));
+    expect(path!.endsWith(cmaReactionByCode('CMA00320')!.file)).toBe(true);
     expect(path!.includes('/voice-clips/cma-reaction/')).toBe(true);
   });
 
@@ -160,11 +166,12 @@ describe('CMA pick harden + Clear Skipped', () => {
     expect(parseCmaReactionPicksJson('[]')).toEqual({});
     expect(parseCmaReactionPicksJson('"want"')).toEqual({});
     expect(parseCmaReactionPicksJson('null')).toEqual({});
-    expect(parseCmaReactionPicksJson('{"CMA00304":"WANT"}')).toEqual({});
+    expect(parseCmaReactionPicksJson('{"CMA00320":"WANT"}')).toEqual({});
     expect(parseCmaReactionPicksJson('{"CMA00999":"want"}')).toEqual({});
-    expect(parseCmaReactionPicksJson('{"CMA00304":"want","CMA00305":"skip","nope":"want"}')).toEqual({
-      CMA00304: 'want',
-      CMA00305: 'skip',
+    // Dropped CMA00304/305 ignored even if stored historically
+    expect(parseCmaReactionPicksJson('{"CMA00304":"want","CMA00320":"want","CMA00308":"skip","nope":"want"}')).toEqual({
+      CMA00320: 'want',
+      CMA00308: 'skip',
     });
 
     const store = mockStorage();
@@ -178,16 +185,16 @@ describe('CMA pick harden + Clear Skipped', () => {
     mockStorage();
     forgetCmaReactionPickCache();
     resetWantedCmaReactionRotation();
-    setCmaReactionVerdict('CMA00305', 'skip');
+    setCmaReactionVerdict('CMA00308', 'skip');
     setCmaReactionVerdict('CMA00317', 'skip');
     expect(wantedCmaReactionCodes()).toEqual([]);
     expect(pickWantedCmaReactionPath({ gender: 'female', role: 'laugh' })).toBeNull();
     expect(countCmaReactionPicks().skipped).toBe(2);
 
-    setCmaReactionVerdict('CMA00304', 'want');
+    setCmaReactionVerdict('CMA00320', 'want');
     expect(clearSkippedCmaReactionPicks()).toBe(2);
     expect(skippedCmaReactionCodes()).toEqual([]);
-    expect(wantedCmaReactionCodes()).toEqual(['CMA00304']);
+    expect(wantedCmaReactionCodes()).toEqual(['CMA00320']);
     expect(countCmaReactionPicks()).toMatchObject({ wanted: 1, skipped: 0 });
   });
 
@@ -195,10 +202,11 @@ describe('CMA pick harden + Clear Skipped', () => {
     mockStorage();
     forgetCmaReactionPickCache();
     resetWantedCmaReactionRotation();
-    setCmaReactionVerdict('CMA00304', 'want');
     setCmaReactionVerdict('CMA00320', 'want');
+    setCmaReactionVerdict('CMA00321', 'want'); // male laugh — not in female laugh pool
+    setCmaReactionVerdict('CMA00306', 'want'); // male ha — female pool empty for these
+    // Two female laugh-role Wanteds: only CMA00320 qualifies for female+laugh
     const miss = new Set([
-      cmaReactionPath(cmaReactionByCode('CMA00304')!.file),
       cmaReactionPath(cmaReactionByCode('CMA00320')!.file),
     ]);
     expect(
@@ -209,13 +217,12 @@ describe('CMA pick harden + Clear Skipped', () => {
       }),
     ).toBeNull();
 
-    // One playable remains → returns that one
+    // Playable → returns kept giggle
     resetWantedCmaReactionRotation();
-    const onlyMissFirst = new Set([cmaReactionPath(cmaReactionByCode('CMA00304')!.file)]);
     const path = pickWantedCmaReactionPath({
       gender: 'female',
       role: 'laugh',
-      isPlayable: (p) => !onlyMissFirst.has(p),
+      isPlayable: () => true,
     });
     expect(path).toContain('CMA00320');
   });
