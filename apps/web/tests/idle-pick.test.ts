@@ -67,7 +67,15 @@ describe('idle library numbers', () => {
     expect(IDLE_CLIP_OPTIONS.find((c) => c.id === 'IdleBreathCalm')?.num).toBe(1);
     expect(new Set(IDLE_CLIP_OPTIONS.map((c) => c.num)).size).toBe(IDLE_CLIP_OPTIONS.length);
     expect(IDLE_CLIP_OPTIONS.length).toBeLessThan(playableIdles().length);
-    expect(playableIdles().every((e) => e.planted && e.playable)).toBe(true);
+    // Curated chat rail stays planted; dance shortlist is playable with free feet.
+    expect(playableIdles().every((e) => e.playable)).toBe(true);
+    expect(playableIdles().filter((e) => !e.planted).length).toBeGreaterThan(0);
+    expect(
+      IDLE_CLIP_OPTIONS.every((o) => {
+        const e = playableIdles().find((p) => p.clipId === o.id);
+        return e?.planted === true;
+      }),
+    ).toBe(true);
   });
 });
 
