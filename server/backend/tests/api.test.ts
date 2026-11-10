@@ -77,6 +77,40 @@ describe('production backend', () => {
     expect(body.mailConfigured).toBe(false);
   });
 
+  it('accepts anonymous support messages without a session', async () => {
+    const api = app();
+    const res = await api.handle(new Request('http://amoji.local/api/support', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'friend@example.com',
+        message: 'Hello from the support form',
+      }),
+    }));
+    expect(res.status).toBe(200);
+    const body = await res.json() as {
+      ok: boolean;
+      stored: boolean;
+      emailed: boolean;
+      skipped: boolean;
+      mailConfigured: boolean;
+    };
+    expect(body.ok).toBe(true);
+    expect(body.stored).toBe(true);
+    expect(body.emailed).toBe(false);
+    expect(body.skipped).toBe(true);
+    expect(body.mailConfigured).toBe(false);
+  });
+
+  it('rejects support posts missing an email', async () => {
+    const res = await app().handle(new Request('http://amoji.local/api/support', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'nope', message: 'hi' }),
+    }));
+    expect(res.status).toBe(400);
+  });
+
   it('returns free entitlement for a fresh session', async () => {
     const api = app();
     const token = await session(api);

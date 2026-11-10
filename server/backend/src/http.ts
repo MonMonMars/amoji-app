@@ -211,6 +211,56 @@ export function createBackend(opts: BackendOptions): Backend {
         return json({ id, stored: true, emailed: mailed, mailConfigured: mailConfigured() }, 200, req);
       }
 
+      // Support contact is anonymous (like reports) so Pages clients can open a
+      // session-less POST when NEXT_PUBLIC_AMOJI_API points at this host.
+      if (url.pathname === '/api/support' && req.method === 'POST') {
+        if (!rateLimit(`support:${ip}`, 10, 60_000, now())) {
+          return json({ error: 'rate limited' }, 429, req);
+        }
+        const body = await readJson(req) as { email?: unknown; message?: unknown };
+        const email = typeof body.email === 'string' ? body.email.trim().slice(0, 200) : '';
+        const message = typeof body.message === 'string' ? body.message.trim().slice(0, 2000) : '';
+        if (!email || !email.includes('@') || !message) {
+          return json({ error: 'email and message required' }, 400, req);
+        }
+        const supportToken = bearer(req);
+        const supportSession = supportToken ? readSession(opts.db, supportToken, now()) : undefined;
+        const id = randomBytes(16).toString('hex');
+        opts.db.prepare(
+          'INSERT INTO support_messages (id, user_id, email, message, created_at) VALUES (?, ?, ?, ?, ?)',
+        ).run(id, supportSession?.userId ?? null, email, message, now());
+
+        const tpl = autoReply('supportAck');
+        const result = await sendMail({
+          to: email,
+          subject: tpl.subject,
+          text: `${tpl.body}\n\n—\nYour message:\n${message}`,
+        });
+        logMail(opts.db, 'supportAck', email, result.ok, result.error ?? result.id ?? '', now());
+
+        let opsNotified = false;
+        const inbox = (process.env.AMOJI_SUPPORT_INBOX ?? '').trim();
+        if (inbox && inbox.includes('@') && mailConfigured()) {
+          const ops = await sendMail({
+            to: inbox,
+            subject: `Amoji support message (${id.slice(0, 8)})`,
+            text: `From: ${email}\nId: ${id}\n\n${message}`,
+          });
+          logMail(opts.db, 'supportOps', inbox, ops.ok, ops.error ?? ops.id ?? '', now());
+          opsNotified = ops.ok;
+        }
+
+        return json({
+          id,
+          ok: true,
+          stored: true,
+          emailed: result.ok,
+          skipped: !!result.skipped,
+          opsNotified,
+          mailConfigured: mailConfigured(),
+        }, 200, req);
+      }
+
       const token = bearer(req);
       const session = token ? readSession(opts.db, token, now()) : undefined;
       if (!session) return json({ error: 'unauthorized' }, 401, req);
@@ -241,20 +291,6 @@ export function createBackend(opts: BackendOptions): Backend {
           result.status,
           req,
         );
-      }
-
-      if (url.pathname === '/api/support' && req.method === 'POST') {
-        if (!rateLimit(`support:${ip}`, 10, 60_000, now())) {
-          return json({ error: 'rate limited' }, 429, req);
-        }
-        const body = await readJson(req) as { email?: unknown; message?: unknown };
-        const email = typeof body.email === 'string' ? body.email.trim().slice(0, 200) : '';
-        const message = typeof body.message === 'string' ? body.message.trim().slice(0, 2000) : '';
-        if (!email || !message) return json({ error: 'email and message required' }, 400, req);
-        const tpl = autoReply('supportAck');
-        const result = await sendMail({ to: email, subject: tpl.subject, text: `${tpl.body}\n\n—\nYour message:\n${message}` });
-        logMail(opts.db, 'supportAck', email, result.ok, result.error ?? result.id ?? '', now());
-        return json({ ok: true, emailed: result.ok, skipped: !!result.skipped, mailConfigured: mailConfigured() }, 200, req);
       }
 
       if (url.pathname === '/api/state' && req.method === 'GET') {
