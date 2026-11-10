@@ -49,6 +49,19 @@ export function asksUserInnerThoughts(line: string): boolean {
 }
 
 /**
+ * Pixel: never ask to “continue last time / pick up where we left off”.
+ * History is kept silently; only the user may bring it up.
+ */
+const BANNED_HISTORY_RESUME_ASK =
+  /\blast\s+time\s+we\s+(?:were\s+)?talking\b|\bpick\s+(?:it\s+)?(?:back\s+)?up\b.*\b(?:left\s+off|where)\b|\bpick\s+up\s+where\s+we\s+left\s+off\b|\bcontinue\s+(?:our\s+)?(?:talk|chat|conversation|thread)\b|\bcontinue\s+(?:the\s+)?(?:previous|last|earlier)\b|\bwhere\s+we\s+left\s+off\b|\bwant\s+to\s+pick\s+it\s+back\s+up\b|上次傾開|繼續嗰個話題|继续那个话题|继续刚才的话题|繼續之前個話題|我們繼續聊好嗎|我们继续聊好吗|我哋繼續傾好嗎|続きをし|さっきの話、続き|前回は「|続き、話す|Shall we continue the chat/i;
+
+export function asksToResumeHistory(line: string): boolean {
+  const t = (line ?? '').trim();
+  if (!t) return false;
+  return BANNED_HISTORY_RESUME_ASK.test(t);
+}
+
+/**
  * Half-sentence / motif-fill leftovers that shipped as spoken lines.
  * Includes the Pixel "a small map reminding you" class of fragments.
  */
@@ -93,6 +106,8 @@ export function spokenLineLooksBroken(text: string, opts?: SpokenGateOpts): bool
   }
   if (!hasCjk && UNFINISHED_EN.test(t) && t.split(/\s+/).length < 8) return true;
   if ((opts?.mode ?? 'local') === 'idle' && asksUserInnerThoughts(t)) return true;
+  // Local + idle: never volunteer “continue last time” — history is quiet.
+  if (asksToResumeHistory(t)) return true;
   return false;
 }
 

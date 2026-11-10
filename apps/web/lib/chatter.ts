@@ -131,29 +131,31 @@ export const CHATTER: Record<ChatterKind, Record<ChatterLang, string[]>> = {
   // r2026-10-03.38 — stage 1 of re-engagement: the USER (not just the room)
   // has been quiet for ~2 minutes, so she leans in directly.
   reengage: {
+    // Presence only — never “continue last time / pick up where we left off”.
+    // History is kept silently; the user decides the next topic.
     en: [
-      "You've gone quiet on me — I'm still here if you want to pick up again?",
-      "It's been a minute... want to pick up where we left off?",
-      'Hey~ I was really enjoying our chat — want to keep going?',
-      "Still with you — we can continue whenever you're ready~",
+      "You've gone quiet on me — I'm still right here with you~",
+      "It's been a minute… still here if you want company~",
+      'Hey~ enjoying this quiet stretch with you~',
+      'Still with you — no rush at all~',
     ],
     yue: [
-      '你靜咗喎——我仲喺度，想繼續隨時得~',
-      '好耐冇聲喎……我哋繼續之前個話題好唔好？',
-      '喂~我仲想同你傾落去㗎——繼續好唔好？',
-      '我仲陪住你——準備好就繼續傾~',
+      '你靜咗喎——我仲喺度陪住你~',
+      '好耐冇聲喎……我仲喺度，陪住你就得~',
+      '喂~呢段靜我都覺得幾好~',
+      '我仲陪住你——唔使急~',
     ],
     zh: [
-      '你安静下来了——我还在这里，想继续随时可以~',
-      '好一会儿没声音了……我们继续刚才的话题好不好？',
-      '喂~我还想和你聊下去呢——继续好不好？',
-      '我还陪着你——准备好了就继续聊~',
+      '你安静下来了——我还在这里陪着你~',
+      '好一会儿没声音了……我还在，陪着你就好~',
+      '喂~这段安静我觉得挺好~',
+      '我还陪着你——不用着急~',
     ],
     ja: [
-      '静かになっちゃった——でもここにいるよ。続きをしたくなったらね？',
-      'しばらく無音だね……さっきの話、続きをしよっか？',
-      'ねぇ、もっとおしゃべりしたいな——続き、しよっか？',
-      'そばにいるよ——準備ができたら、続きをしよう〜',
+      '静かになっちゃった——でもここにいるよ〜',
+      'しばらく無音だね……そばにいるよ〜',
+      'ねぇ、この静けさも悪くないね〜',
+      'そばにいるよ——急がなくていいよ〜',
     ],
   },
   // r2026-10-03.38 — stage 2: the soft closer, said ONCE after ~5 minutes of
