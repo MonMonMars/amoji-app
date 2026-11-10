@@ -12,6 +12,7 @@ import {
   planTools,
   isLiveFactsOnlyTurn,
   preferLiveReply,
+  weatherAccuracyLeak,
   regionalLightNewsFeedUrls,
   regionalNewsFeedUrls,
   isHeavyHeadline,
@@ -195,14 +196,15 @@ describe('gatherLiveContext', () => {
       locate: async () => HK,
     });
     expect(live.prompt).toContain('29°C');
-    expect(live.prompt).toContain('browser location');
-    expect(live.prompt).toContain('Hong Kong');
+    expect(live.prompt).toMatch(/Place:\s*Hong Kong/);
+    expect(live.prompt.toLowerCase()).not.toContain('browser location');
     expect(live.spoken).toContain('29度');
+    expect(live.spoken).not.toContain('香港'); // no city name in spoken weather
     expect(live.spoken).toContain('落毛毛雨');
     expect(urls.some((u) => u.includes('geojs'))).toBe(false);
   });
 
-  it('keeps coarse place metadata off the spoken weather line', async () => {
+  it('keeps GPS / accuracy talk out of both weather prompt and spoken line', async () => {
     const fetchImpl: typeof fetch = async (input) => {
       if (String(input).includes('api.open-meteo.com')) return jsonRes(weatherBody);
       return jsonRes({}, 404);
@@ -213,11 +215,11 @@ describe('gatherLiveContext', () => {
       cache: new Map(),
       locate: async () => ({ ...HK, city: 'Ashburn', region: 'Virginia', country: 'United States', source: 'ip' }),
     });
-    // Prompt may still note the source for the model; spoken weather must not
-    // mention GPS / network accuracy / "may be wrong".
-    expect(live.prompt).toContain('coarse network estimate');
+    // Place is named without source/accuracy so free LLMs cannot echo GPS talk.
+    expect(live.prompt).toMatch(/Place:\s*Ashburn/);
+    expect(live.prompt.toLowerCase()).not.toMatch(/gps|coarse network|precise fix|may be wrong|accuracy/);
     expect(live.spoken).toContain('29°');
-    expect(live.spoken.toLowerCase()).not.toMatch(/gps|precise|network guess|may be wrong|accuracy/);
+    expect(live.spoken.toLowerCase()).not.toMatch(/gps|precise|network guess|may be wrong|accuracy|ashburn/);
     expect(live.spoken.toLowerCase()).toMatch(/take care/);
     expect(live.spoken).toMatch(/umbrella|jacket|coat|layer|water|boots/i);
   });
@@ -240,7 +242,9 @@ describe('gatherLiveContext', () => {
     });
     expect(located).toBe(false);
     expect(live.prompt).toContain('Osaka');
-    expect(live.spoken).toContain('Osaka');
+    // Spoken weather is degrees + condition + prep — city stays in the prompt only.
+    expect(live.spoken).toMatch(/29°/);
+    expect(live.spoken).not.toContain('Osaka');
   });
 
   it('reads local headlines from RSS', async () => {
@@ -551,13 +555,21 @@ describe('local light news and reply guard', () => {
     expect(picked[0]?.title).toContain('tip');
   });
 
-  it('replaces a shrug with the weather we already fetched', () => {
-    const world = 'Place: Hong Kong (browser location).\nWeather: 29°C, feels 32°C, drizzling.';
+  it('replaces a shrug or GPS-accuracy leak with the weather we already fetched', () => {
+    const world = 'Place: Hong Kong.\nWeather: 29°C, feels 32°C, drizzling.';
     const spoken = '香港而家大約29度，落毛毛雨。';
     const shrug = preferLiveReply("Sorry, I don't have real-time weather. Which city are you in?", world, spoken, 'yue');
     expect(shrug).toBe(spoken);
-    const used = preferLiveReply('It is 29° and drizzly in Hong Kong. Want to stay in?', world, spoken, 'en');
-    expect(used).toContain('Want to stay in?');
+    const used = preferLiveReply('It is 29° and drizzly. Grab a jacket — take care!', world, spoken, 'en');
+    expect(used).toContain('29');
+    expect(weatherAccuracyLeak('It is 29° but the location may be wrong.')).toBe(true);
+    const leaked = preferLiveReply(
+      "It's about 29° and raining, but this location may be wrong — network estimate.",
+      world,
+      spoken,
+      'en',
+    );
+    expect(leaked).toBe(spoken);
   });
 
   it('falls back when a forwarded IP has no coordinates', async () => {

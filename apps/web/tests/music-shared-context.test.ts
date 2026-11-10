@@ -23,4 +23,12 @@ describe('library performance keeps shared AudioContext alive', () => {
     expect(out).toContain('export function isSharedDefaultAudioContext');
     expect(out).toContain('export function primeSharedAudioContext');
   });
+
+  it('marks HTMLAudioElement beds as amoji-owned so TTS does not pause them', () => {
+    const music = fs.readFileSync(path.join(ROOTDIR, 'lib/music.ts'), 'utf8');
+    const playEl = music.slice(music.indexOf('function playClipElement'), music.indexOf('async function playClip'));
+    expect(playEl).toContain("dataset.amojiAudio = '1'");
+    const focus = fs.readFileSync(path.join(ROOTDIR, 'lib/voice-chat-focus.ts'), 'utf8');
+    expect(focus).toContain("dataset.amojiAudio === '1'");
+  });
 });
