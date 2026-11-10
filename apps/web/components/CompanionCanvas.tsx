@@ -1668,6 +1668,7 @@ export default function CompanionCanvas({
             );
             // Lateral fall: lean toward the OPPOSITE screen side (Pixel).
             // Finger on screen-left → body tips right; right poke → tips left.
+            // Wired as −camSide so lean goes away from the poked screen side.
             // Keep classifyPoke impulse for front/back/chest so those leans stay axial.
             if (
               pokeZone === 'side' || pokeZone === 'armL' || pokeZone === 'armR' || pokeZone === 'hand'
