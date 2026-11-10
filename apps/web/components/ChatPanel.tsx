@@ -338,7 +338,11 @@ export default function ChatPanel({
         if (clip) setNowPlaying(clipLabel(clip, lang));
         setClipState('playing');
       } else if (detail?.state === 'stopped') {
-        setClipState((s) => (s === 'playing' ? null : s));
+        setClipState(null);
+        setNowPlaying(null);
+        // Show over — drop sticky sing/dance body + beat profile so talk idle returns.
+        clearMove();
+        clearPerfMotionProfile();
       }
     };
     window.addEventListener('amoji:library-clip', onClip);
