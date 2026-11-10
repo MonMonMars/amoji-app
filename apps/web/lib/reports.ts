@@ -163,6 +163,36 @@ export function exportReportsJson(revision: string): string {
   return JSON.stringify(buildReportFile(revision), null, 2);
 }
 
+/**
+ * Best-effort POST to the production API when configured. Always still saves
+ * locally via addReport first — Pages builds keep the honest local path.
+ */
+export async function submitReportRemote(input: ReportInput & { contactEmail?: string }): Promise<{
+  attempted: boolean;
+  ok: boolean;
+  emailed?: boolean;
+}> {
+  const base = (typeof process !== 'undefined' ? (process.env.NEXT_PUBLIC_AMOJI_API ?? '') : '').trim().replace(/\/$/, '');
+  if (!base || typeof fetch === 'undefined') return { attempted: false, ok: false };
+  try {
+    const res = await fetch(`${base}/api/reports`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        reason: input.reason,
+        note: input.note ?? '',
+        reply: input.reply,
+        contactEmail: input.contactEmail ?? '',
+      }),
+    });
+    if (!res.ok) return { attempted: true, ok: false };
+    const data = await res.json() as { emailed?: unknown };
+    return { attempted: true, ok: true, emailed: data.emailed === true };
+  } catch {
+    return { attempted: true, ok: false };
+  }
+}
+
 /** Trigger the browser download — `amoji-reports-<date>.json`. */
 export function downloadReports(revision: string): boolean {
   const json = exportReportsJson(revision);

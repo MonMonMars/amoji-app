@@ -59,6 +59,9 @@ import {
   addEntry, deleteEntry, deleteDiaryEntry, deleteImportantDate, deletePromise, ensureUserNameFromProfile, exportMemory, loadMemory,
   type Memory, type MemoryType,
 } from '../lib/memory';
+import { paymentsConfigured, planStatus, planStatusSummary, publicPaymentLink } from '../lib/billing';
+import { listPresentClientKeys } from '../lib/client-storage';
+import Link from 'next/link';
 
 function Toggle({ on, onClick, accent, disabled = false, label }: { on: boolean; onClick: () => void; accent: string; disabled?: boolean; label: string }) {
   return (
@@ -991,6 +994,61 @@ export default function SettingsSheet({
                 ))}
               </div>
             </div>
+          </Section>
+
+          <Section title={`💳 ${t(lang, 'settingsPlan')}`}>
+            <div className={row}>
+              <span className={label}>
+                {planStatus().plan === 'plus' ? t(lang, 'planPlusLabel') : t(lang, 'planFreeLabel')}
+              </span>
+              <span className="text-xs text-white/55">{planStatusSummary()}</span>
+            </div>
+            <p className="text-[11px] text-white/45">
+              {paymentsConfigured() ? t(lang, 'planPaymentsOn') : t(lang, 'planPaymentsOff')}
+            </p>
+            {paymentsConfigured() && planStatus().plan === 'free' && (
+              <a
+                href={publicPaymentLink()}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="ui-btn inline-flex rounded-full px-3.5 py-1.5 text-xs font-medium text-neutral-950"
+                style={{ backgroundColor: accent }}
+              >
+                {t(lang, 'planUpgrade')}
+              </a>
+            )}
+          </Section>
+
+          <Section title={`🛡️ ${t(lang, 'settingsSystems')}`}>
+            <p className="text-[11px] text-white/45">
+              {t(lang, 'systemsLead')}
+            </p>
+            <p className="text-[11px] text-white/55">
+              {listPresentClientKeys().length} local keys present
+            </p>
+            <Link href="/systems" className={`ui-btn ${row} w-full text-left hover:bg-white/10`}>
+              <span className={label}>{t(lang, 'openSystemsPage')}</span>
+              <span className="text-white/30">→</span>
+            </Link>
+          </Section>
+
+          <Section title={`📜 ${t(lang, 'settingsLegal')}`}>
+            <Link href="/privacy" className={`ui-btn ${row} w-full text-left hover:bg-white/10`}>
+              <span className={label}>{t(lang, 'privacyTitle')}</span>
+              <span className="text-white/30">→</span>
+            </Link>
+            <Link href="/terms" className={`ui-btn ${row} w-full text-left hover:bg-white/10`}>
+              <span className={label}>{t(lang, 'termsTitle')}</span>
+              <span className="text-white/30">→</span>
+            </Link>
+            <Link href="/cookies" className={`ui-btn ${row} w-full text-left hover:bg-white/10`}>
+              <span className={label}>{t(lang, 'cookiesTitle')}</span>
+              <span className="text-white/30">→</span>
+            </Link>
+            <Link href="/safety" className={`ui-btn ${row} w-full text-left hover:bg-white/10`}>
+              <span className={label}>{t(lang, 'safetyTitle')}</span>
+              <span className="text-white/30">→</span>
+            </Link>
           </Section>
 
           {/* r2026-11-08 — OPTIONAL sharper brain. Rendered last on purpose:

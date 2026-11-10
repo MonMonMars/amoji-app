@@ -6,9 +6,11 @@
  * v2 — the unfinished first-run wording was replaced with plain, specific
  * statements naming the actual data recipients, and a /safety page was
  * added. Existing users hold a v1 record, so they are re-prompted.
+ * v3 — cookies policy, free-host / file-location inventory, optional
+ * production API payment + transactional email facts.
  */
 
-export const LEGAL_ACCEPT_VERSION = 2;
+export const LEGAL_ACCEPT_VERSION = 3;
 export const LEGAL_ACCEPT_KEY = 'amoji.legalAccept.v1';
 const EVENT = 'amoji:legal-accept';
 

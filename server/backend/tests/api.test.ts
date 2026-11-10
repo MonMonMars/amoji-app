@@ -44,8 +44,53 @@ describe('production backend', () => {
   it('answers health without a session', async () => {
     const res = await app().handle(new Request('http://amoji.local/api/health'));
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true, tts: 'edge', db: 'sqlite' });
+    expect(await res.json()).toEqual({ ok: true, tts: 'edge', db: 'sqlite', mail: false, billing: false });
     expect(res.headers.get('access-control-allow-origin')).toBe('*');
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff');
+  });
+
+  it('publishes a systems inventory without a session', async () => {
+    const res = await app().handle(new Request('http://amoji.local/api/systems'));
+    expect(res.status).toBe(200);
+    const body = await res.json() as { mail: boolean; billing: boolean; freeServers: unknown[] };
+    expect(body.mail).toBe(false);
+    expect(body.billing).toBe(false);
+    expect(body.freeServers.length).toBeGreaterThan(0);
+  });
+
+  it('stores a content report and skips email when mail is off', async () => {
+    const api = app();
+    const res = await api.handle(new Request('http://amoji.local/api/reports', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        reason: 'offensive',
+        reply: 'bad line',
+        note: 'test',
+        contactEmail: 'user@example.com',
+      }),
+    }));
+    expect(res.status).toBe(200);
+    const body = await res.json() as { stored: boolean; emailed: boolean; mailConfigured: boolean };
+    expect(body.stored).toBe(true);
+    expect(body.emailed).toBe(false);
+    expect(body.mailConfigured).toBe(false);
+  });
+
+  it('returns free entitlement for a fresh session', async () => {
+    const api = app();
+    const token = await session(api);
+    const res = await api.handle(authed(token, '/api/billing/entitlement', 'GET'));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ plan: 'free' });
+  });
+
+  it('rejects stripe webhook when billing is not configured', async () => {
+    const res = await app().handle(new Request('http://amoji.local/api/billing/webhook', {
+      method: 'POST',
+      body: '{}',
+    }));
+    expect(res.status).toBe(503);
   });
 
   it('creates, resumes, and ends an anonymous session', async () => {

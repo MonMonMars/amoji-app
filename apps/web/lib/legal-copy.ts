@@ -106,6 +106,26 @@ export const PRIVACY_DOC: Record<Lang, LegalDoc> = {
           'Because different companies answer different messages depending on which host responds first, the exact recipient varies per message. If that matters to you, use a key from a provider you trust, which makes that provider the one that receives your messages.',
         ],
       },
+      {
+        heading: 'Cookies and similar storage',
+        body: [
+          'Amoji does not set advertising or analytics cookies. Preferences, memory, legal acceptance, and the optional production session token use this browser\u2019s local storage (and short-lived session storage for UI state). See the Cookies page for the full list of product keys.',
+        ],
+      },
+      {
+        heading: 'Optional production API, payments, and email',
+        body: [
+          'Some builds set a production API origin. That host may store an anonymous session, companion state, chat turns, content reports you submit, and a paid-plan entitlement in SQLite on that host.',
+          'Paid Plus unlocks, if offered, are processed by Stripe. Stripe receives the payment details you enter on Stripe\u2019s own pages. Amoji stores only the resulting plan entitlement for your anonymous session.',
+          'Transactional email (report acknowledgment, support auto-reply, payment receipt) is sent only when that build has a mail provider configured. GitHub Pages builds have no mail server of their own; reports stay on this device until you export them.',
+        ],
+      },
+      {
+        heading: 'Free hosts and file locations',
+        body: [
+          'The free companion UI is published on GitHub Pages. An optional free Cloudflare Worker can relay Edge TTS when a network blocks the browser socket. Weather uses Open-Meteo. Static models and audio ship from the same site origin under /models and /audio. A portable companion card (.aigf) is a file you download — it is not uploaded by the Pages build.',
+        ],
+      },
     ],
   },
   yue: {
@@ -145,6 +165,26 @@ export const PRIVACY_DOC: Record<Lang, LegalDoc> = {
         body: [
           '你可以喺設定清空對話紀錄、逐條忘記記憶，或者一次過清走全部記憶。清除瀏覽器網站資料就會刪除 Amoji 存過嘅所有嘢。關掉「語音回覆」就唔會再發 TTS 請求；改用機內聲線，就唔會送出任何文字。',
           '因為邊個主機先答到並唔固定，每條訊息實際收到嘅公司可能唔同。如果你想固定，就用一個你信得過嘅供應商嘅鎖匙，咁就只有佢會收到你嘅訊息。',
+        ],
+      },
+      {
+        heading: 'Cookie 同類似儲存',
+        body: [
+          'Amoji 唔會設廣告或者統計用 Cookie。偏好、記憶、條款接受紀錄，同埋可選嘅正式 API session，都用呢個瀏覽器嘅本機儲存（短命 UI 狀態用 session storage）。完整清單睇 Cookie 頁。',
+        ],
+      },
+      {
+        heading: '可選正式 API、付款同電郵',
+        body: [
+          '有啲版本會設定正式 API。嗰個主機可以用 SQLite 保存匿名 session、夥伴狀態、對話、你提交嘅舉報，同埋付費計劃權益。',
+          '如果有 Amoji Plus，付款由 Stripe 處理；Stripe 喺佢自己嘅頁面收到你輸入嘅付款資料。Amoji 只保存你匿名 session 對應嘅計劃權益。',
+          '交易電郵（舉報確認、支援自動回覆、付款收據）只會喺呢個版本有設定郵件供應商時送出。GitHub Pages 版本冇自己嘅郵件伺服器；舉報會留喺呢部機，直至你匯出。',
+        ],
+      },
+      {
+        heading: '免費主機同檔案位置',
+        body: [
+          '免費夥伴介面放喺 GitHub Pages。可選嘅免費 Cloudflare Worker 可以喺網絡封鎖 Edge 插座時轉發 TTS。天氣用 Open-Meteo。靜態模型同音訊由同一個站點嘅 /models 同 /audio 提供。可攜夥伴卡（.aigf）係你下載嘅檔案——Pages 版本唔會上傳佢。',
         ],
       },
     ],
@@ -188,6 +228,26 @@ export const PRIVACY_DOC: Record<Lang, LegalDoc> = {
           '由于哪个主机先回复并不固定，每条消息实际收到的公司可能不同。如果你希望固定，请使用你信任的服务商的密钥，这样只有它会收到你的消息。',
         ],
       },
+      {
+        heading: 'Cookie 与类似存储',
+        body: [
+          'Amoji 不设置广告或统计分析 Cookie。偏好、记忆、条款接受记录，以及可选的正式 API session，都使用本浏览器的本地存储（短暂 UI 状态使用 session storage）。完整列表见 Cookie 页面。',
+        ],
+      },
+      {
+        heading: '可选正式 API、付款与电子邮件',
+        body: [
+          '部分版本会配置正式 API。该主机可用 SQLite 保存匿名 session、伙伴状态、对话、你提交的举报，以及付费计划权益。',
+          '若提供 Amoji Plus，付款由 Stripe 处理；Stripe 在其自有页面接收你输入的付款信息。Amoji 只保存对应匿名 session 的计划权益。',
+          '交易邮件（举报确认、支持自动回复、付款收据）仅在该版本配置了邮件服务商时发送。GitHub Pages 版本没有自有邮件服务器；举报会留在本机，直到你导出。',
+        ],
+      },
+      {
+        heading: '免费主机与文件位置',
+        body: [
+          '免费伙伴界面发布在 GitHub Pages。可选的免费 Cloudflare Worker 可在网络阻止 Edge 套接字时转发 TTS。天气使用 Open-Meteo。静态模型与音频来自同一站点的 /models 与 /audio。可携伙伴卡（.aigf）是你下载的文件——Pages 版本不会上传它。',
+        ],
+      },
     ],
   },
   ja: {
@@ -227,6 +287,26 @@ export const PRIVACY_DOC: Record<Lang, LegalDoc> = {
         body: [
           '設定から会話履歴の消去、記憶をひとつずつ忘れる、記憶をすべて消す、ができます。ブラウザのサイトデータを消去すれば、Amoji が保存したものはすべて消えます。「音声返答」をオフにすればTTSのリクエストは送られません。オンライン音声ではなく端末内蔵の声にすれば、テキストは送られません。',
           'どのホストが先に返事をするかは固定ではないため、実際の送り先はメッセージごとに変わります。固定したい場合は、信頼できるプロバイダーのキーを使ってください。そのプロバイダーだけがメッセージを受け取ります。',
+        ],
+      },
+      {
+        heading: 'Cookie と類似の保存',
+        body: [
+          'Amoji は広告やアクセス解析の Cookie を置きません。設定・記憶・規約同意、および任意の本番APIセッションは、このブラウザのローカルストレージに保存されます（短いUI状態は session storage）。一覧は Cookie ページにあります。',
+        ],
+      },
+      {
+        heading: '任意の本番API・支払い・メール',
+        body: [
+          '一部のビルドでは本番APIが設定されます。そのホストは匿名セッション、相棒の状態、会話、送信した報告、有料プランの権利を SQLite に保存することがあります。',
+          'Amoji Plus がある場合、支払いは Stripe が処理します。決済情報は Stripe のページで Stripe が受け取ります。Amoji は匿名セッションに対応するプラン権利だけを保存します。',
+          '取引メール（報告の受付、サポート自動返信、支払い領収）は、そのビルドにメール事業者が設定されているときだけ送られます。GitHub Pages のビルドに自前のメールサーバはありません。報告はこの端末に残り、エクスポートするまで外へ出ません。',
+        ],
+      },
+      {
+        heading: '無料ホストとファイルの場所',
+        body: [
+          '無料の相棒UIは GitHub Pages で公開されます。任意の無料 Cloudflare Worker は、ネットワークが Edge の接続を遮断するときに TTS を中継できます。天気は Open-Meteo です。静的なモデルと音声は同一オリジンの /models と /audio から配信されます。持ち運び用の相棒カード（.aigf）はあなたがダウンロードするファイルで、Pages ビルドはそれをアップロードしません。',
         ],
       },
     ],
@@ -280,6 +360,13 @@ export const TERMS_DOC: Record<Lang, LegalDoc> = {
           'See the privacy policy: it names every recipient and says exactly what is sent to each. Chat content leaves the device to an AI host chosen at reply time, and reply text goes to Google Translate TTS when the free online voice is used.',
         ],
       },
+      {
+        heading: 'Free plan and optional paid turns',
+        body: [
+          'The free plan soft-limits ordinary chat turns on this device (forty per UTC day by default). Idle talk, crisis replies, and games do not spend that budget.',
+          'If a build offers Amoji Plus, payment is handled by Stripe. Until payment is confirmed, the free limit still applies. Refunds follow Stripe and the laws that apply where you live.',
+        ],
+      },
     ],
   },
   yue: {
@@ -326,6 +413,13 @@ export const TERMS_DOC: Record<Lang, LegalDoc> = {
         heading: '你嘅資料去咗邊',
         body: [
           '請睇私隱政策：裏面逐個列出收到資料嘅公司，同埋各自確實收到咩。對話內容會離開呢部機，送去回覆時揀中嘅 AI 主機；用免費網上聲線時，回覆文字會送去 Google Translate TTS。',
+        ],
+      },
+      {
+        heading: '免費計劃同可選付費',
+        body: [
+          '免費計劃會喺呢部機軟性限制普通對話次數（預設每個 UTC 日四十次）。閒聊、危機回覆同遊戲唔會用呢個額度。',
+          '如果版本有 Amoji Plus，付款由 Stripe 處理。確認付款之前仍然用免費額度。退款跟 Stripe 同你所在地適用嘅法律。',
         ],
       },
     ],
@@ -376,6 +470,13 @@ export const TERMS_DOC: Record<Lang, LegalDoc> = {
           '请见隐私政策：其中逐一列出接收方，并说明各自具体收到什么。对话内容会离开本机，发送给回复时选中的 AI 主机；使用免费在线声音时，回复文字会发送给 Google Translate TTS。',
         ],
       },
+      {
+        heading: '免费计划与可选付费',
+        body: [
+          '免费计划会在本机对普通对话次数做软限制（默认每个 UTC 日四十次）。闲聊、危机回复和游戏不占用该额度。',
+          '若版本提供 Amoji Plus，付款由 Stripe 处理。确认付款前仍适用免费额度。退款遵循 Stripe 以及你所在地适用的法律。',
+        ],
+      },
     ],
   },
   ja: {
@@ -424,6 +525,116 @@ export const TERMS_DOC: Record<Lang, LegalDoc> = {
           'プライバシーポリシーをご覧ください。受け取る相手をすべて挙げ、それぞれに何が送られるかを書いています。会話の内容は返事の時点で選ばれたAIホストへ端末の外に出て、無料のオンライン音声を使うときは返事のテキストが Google Translate TTS へ送られます。',
         ],
       },
+      {
+        heading: '無料プランと任意の有料',
+        body: [
+          '無料プランは、この端末での通常チャット回数を緩やかに制限します（既定は UTC 日あたり40回）。アイドルの独り言、危機時の定型返信、ゲームはこの枠を使いません。',
+          'ビルドに Amoji Plus がある場合、支払いは Stripe が処理します。支払い確認までは無料枠が適用されます。返金は Stripe とお住まいの地域の法令に従います。',
+        ],
+      },
+    ],
+  },
+};
+
+export const COOKIES_DOC: Record<Lang, LegalDoc> = {
+  en: {
+    title: 'Cookies & local storage',
+    intro: 'Amoji does not use advertising or analytics cookies. This page lists what the product stores in your browser.',
+    sections: [
+      {
+        heading: 'What we do not use',
+        body: [
+          'No advertising cookies, no analytics SDKs, no cross-site trackers, and no fingerprinting libraries ship with the companion app.',
+        ],
+      },
+      {
+        heading: 'Local storage keys',
+        body: [
+          'Preferences (amoji.prefs.v1), memory (amoji.memory.v2), profile, chat history, legal acceptance, daily free-turn counter, content reports, optional production session token, and related product keys listed in Settings → Systems.',
+          'Clearing site data in your browser removes these keys. Settings can also wipe product data while keeping your legal acceptance until the policy version changes.',
+        ],
+      },
+      {
+        heading: 'Session storage',
+        body: [
+          'Short-lived UI state (for example story session helpers) may use session storage and disappears when the tab closes.',
+        ],
+      },
+    ],
+  },
+  yue: {
+    title: 'Cookie 同本機儲存',
+    intro: 'Amoji 唔用廣告或者統計 Cookie。呢頁列出產品喺你瀏覽器入面存嘅嘢。',
+    sections: [
+      {
+        heading: '我哋唔會用嘅嘢',
+        body: [
+          '夥伴 App 唔會附帶廣告 Cookie、統計 SDK、跨站追蹤或者指紋庫。',
+        ],
+      },
+      {
+        heading: '本機儲存鍵',
+        body: [
+          '偏好（amoji.prefs.v1）、記憶（amoji.memory.v2）、個人檔、對話紀錄、條款接受、每日免費對話計數、內容舉報、可選正式 API session，以及其他列喺設定 → 系統嘅產品鍵。',
+          '清除瀏覽器網站資料會刪除呢啲鍵。設定亦可以清產品資料，同時保留條款接受，直至政策版本更新。',
+        ],
+      },
+      {
+        heading: 'Session storage',
+        body: [
+          '短命 UI 狀態（例如故事模式輔助）可能用 session storage，閂分頁就會消失。',
+        ],
+      },
+    ],
+  },
+  zh: {
+    title: 'Cookie 与本地存储',
+    intro: 'Amoji 不使用广告或统计分析 Cookie。本页列出产品在你浏览器中保存的内容。',
+    sections: [
+      {
+        heading: '我们不使用的内容',
+        body: [
+          '伙伴应用不附带广告 Cookie、统计 SDK、跨站追踪或指纹库。',
+        ],
+      },
+      {
+        heading: '本地存储键',
+        body: [
+          '偏好（amoji.prefs.v1）、记忆（amoji.memory.v2）、个人资料、聊天记录、条款接受、每日免费对话计数、内容举报、可选正式 API session，以及设置 → 系统中列出的其他产品键。',
+          '清除浏览器网站数据会删除这些键。设置也可清除产品数据，同时保留条款接受，直至政策版本更新。',
+        ],
+      },
+      {
+        heading: 'Session storage',
+        body: [
+          '短暂的界面状态（例如故事模式辅助）可能使用 session storage，关闭标签页后消失。',
+        ],
+      },
+    ],
+  },
+  ja: {
+    title: 'Cookie とローカルストレージ',
+    intro: 'Amoji は広告やアクセス解析の Cookie を使いません。このページは、製品がブラウザに保存するものを列挙します。',
+    sections: [
+      {
+        heading: '使わないもの',
+        body: [
+          '相棒アプリに広告 Cookie、解析 SDK、サイト横断トラッカー、フィンガープリント用ライブラリは同梱していません。',
+        ],
+      },
+      {
+        heading: 'ローカルストレージのキー',
+        body: [
+          '設定（amoji.prefs.v1）、記憶（amoji.memory.v2）、プロフィール、会話履歴、規約同意、無料会話の日次カウンタ、コンテンツ報告、任意の本番APIセッション、および設定 → システムに列挙するその他の製品キー。',
+          'ブラウザのサイトデータを消去するとこれらのキーは消えます。設定から製品データを消しても、ポリシー版が変わるまでは規約同意を残すことができます。',
+        ],
+      },
+      {
+        heading: 'Session storage',
+        body: [
+          '短い UI 状態（例：ストーリー補助）は session storage を使うことがあり、タブを閉じると消えます。',
+        ],
+      },
     ],
   },
 };
@@ -439,4 +650,7 @@ export function privacySummary(lang: Lang | string | undefined): LegalSummary {
 }
 export function termsSummary(lang: Lang | string | undefined): LegalSummary {
   return TERMS_SUMMARY[lang as Lang] ?? TERMS_SUMMARY.yue;
+}
+export function cookiesDoc(lang: Lang | string | undefined): LegalDoc {
+  return COOKIES_DOC[lang as Lang] ?? COOKIES_DOC.yue;
 }

@@ -21,6 +21,6 @@ describe('crisis E-group — no LLM on three crisis phrases', () => {
     const sendAt = src.indexOf('const send = async (');
     const body = src.slice(sendAt);
     expect(body.indexOf('guardCompanionTurn(text, lang')).toBeLessThan(body.indexOf('clientChat('));
-    expect(body.indexOf('checkChatTurnQuota()')).toBeLessThan(body.indexOf('clientChat('));
+    expect(body.indexOf('planStatus()')).toBeLessThan(body.indexOf('clientChat('));
   });
 });

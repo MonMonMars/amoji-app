@@ -1,0 +1,78 @@
+# Amoji product systems map
+
+Honest inventory of settings, payments, email, auto-reply, security, file
+locations, free servers, client storage, and legal surfaces. Values that are
+optional stay optional — GitHub Pages builds do not invent a server.
+
+## Free hosting (default)
+
+| Role | Location | Cost notes |
+| --- | --- | --- |
+| Companion UI | GitHub Pages (`monmonmars.github.io/amoji-app`) | Free static host |
+| Edge TTS relay | Cloudflare Worker (`server/amoji-proxy`) | Free tier (~100k req/day) |
+| Optional API | `server/backend` on any Node host (`AMOJI_PORT`, default `8787`) | Free/cheap VPS or local |
+| SQLite | `AMOJI_DB` path (default `data/amoji.sqlite`) | On the Node host disk |
+| Talk ciphertext (optional) | Supabase REST `talk_turns` when configured | Free Supabase tier |
+
+Unset `NEXT_PUBLIC_AMOJI_API` keeps the static Pages build fully on-device.
+
+## File locations
+
+| Kind | Path / key |
+| --- | --- |
+| Static models, audio, SFX | `apps/web/public/` |
+| Companion export (`.aigf`) | Downloaded by the user; never uploaded by Pages |
+| Content reports | `localStorage` key `amoji.reports.v1` (+ optional `POST /api/reports`) |
+| Production DB | `$AMOJI_DB` (SQLite) |
+| Legal copy source | `apps/web/lib/legal-copy.ts` |
+| This map | `docs/SYSTEMS.md` + runtime `lib/systems-catalog.ts` |
+
+There is no S3 / R2 / Blob upload path in the product today.
+
+## Client data storage
+
+All primary companion state is **browser `localStorage`** (see
+`apps/web/lib/client-storage.ts` for the keyed inventory). Optional
+`sessionStorage` holds short-lived UI state. Optional production API holds an
+anonymous session token + companion/chat rows in SQLite when configured.
+
+## Settings
+
+`SettingsSheet` is the single in-app settings surface: language, volumes,
+voice/TTS, location, memory/data, companion file, profile, Advanced brain
+keys, plan/quota, systems & legal links.
+
+## Payment
+
+Device-local daily chat quota (`lib/daily-quota.ts`, default 40 turns/UTC day)
+is the free plan. Paid unlocks require:
+
+- `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` on the Node API, and
+- `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` (or API-returned checkout URL) on the web build.
+
+Without those env vars, the UI shows the free quota only — no fake checkout.
+
+## Email
+
+Transactional mail (report receipt + support auto-ack) runs only when
+`RESEND_API_KEY` and `AMOJI_MAIL_FROM` are set on the Node API. Pages builds
+keep reports local and exportable.
+
+## Auto-reply
+
+1. **Crisis** — on-device keyword guard (`lib/crisis.ts`); never emailed; no LLM.
+2. **Ops / support** — fixed templates (`lib/auto-reply.ts` + server twin) for
+   report acknowledgment when email is configured.
+
+## Security
+
+Anonymous bearer sessions on the Node API; CORS origin lock via
+`AMOJI_CORS_ORIGIN`; per-IP rate limits; security headers on API responses;
+crisis fail-closed before the model; BYOK keys stay in the browser. See
+`lib/security-policy.ts` and `server/backend/src/security.ts`.
+
+## Legal
+
+Privacy, Terms, Safety, Cookies, and Credits. First-run gate uses
+`LEGAL_ACCEPT_VERSION` in `lib/legal-accept.ts` — bump it when policy facts
+change so returning users re-consent.
