@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   POKE_ANGLES,
@@ -9,6 +11,8 @@ import {
   resolvePokeSection,
   talkZoneToTier,
 } from '../lib/poke-zones';
+
+const root = path.resolve(import.meta.dirname, '..');
 
 describe('poke-zones grid', () => {
   it('defines 24 sections (6 tiers × 4 angles)', () => {
@@ -67,7 +71,7 @@ describe('pokeSectionBodyReaction', () => {
     expect(hit.hipShiftZ).toBe(0);
   });
 
-  it('head tier moves head more than spine at impact', () => {
+  it('head tier moves head more than spine at impact (upper body follows less)', () => {
     const section = resolvePokeSection('head', 'front');
     const hit = pokeSectionBodyReaction({
       t: 0.12,
@@ -80,6 +84,32 @@ describe('pokeSectionBodyReaction', () => {
       twist: 0,
     });
     expect(Math.abs(hit.headX)).toBeGreaterThan(0.4);
-    expect(hit.spinePitch).toBe(0);
+    // Pixel: head poke still takes the torso with a soft falloff — not head-only.
+    expect(Math.abs(hit.spinePitch)).toBeGreaterThan(0);
+    expect(Math.abs(hit.headX)).toBeGreaterThan(Math.abs(hit.spinePitch));
+    expect(Math.abs(hit.spinePitch)).toBeLessThan(0.2);
+  });
+
+  it('left lateral poke leans right (opposite-side) with chest roll', () => {
+    const section = resolvePokeSection('side', 'left');
+    const hit = pokeSectionBodyReaction({
+      t: 0.12,
+      section,
+      hitZone: 'side',
+      // Canvas lateral path: fall = cameraRight * (-camSide); left poke → +X.
+      fallX: 1,
+      fallZ: 0,
+      sideSign: -1,
+      softChest: false,
+      twist: 0,
+    });
+    expect(hit.chestRoll).toBeLessThan(0);
+    expect(Math.abs(hit.lArmX)).toBeGreaterThan(Math.abs(hit.rArmX));
+  });
+
+  it('CompanionCanvas lateral fall uses -camSide (opposite-side lean)', () => {
+    const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
+    expect(canvas).toMatch(/multiplyScalar\(\s*-camSide\s*\)/);
+    expect(canvas).not.toMatch(/multiplyScalar\(\s*camSide\s*\)/);
   });
 });
