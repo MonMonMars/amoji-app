@@ -48,8 +48,22 @@ for C110/C61/C62/C03 from #50 remain until local FBX for those ids lands.
 
 None for the KayKit/Rokoko/Jazz dance shortlist above.
 
-Also plant-feet shortlist idle gallery picks that lack FBX->VRMA remain deferred
-(C110 still interim-remote).
+## Local Mixamo-class dance legs (vendored)
+
+Downloaded from DavinciDreams/3dchat and committed as binary GLB VRMA:
+
+| Id | Name | File | Source |
+|---|---|---|---|
+| C03 | Dance_Loop | anims/lib_C03.vrma | hipHopDance.vrma |
+| C61 | HipHopDancing | anims/lib_C61.vrma | hipHopDancing.vrma |
+| C62 | SalsaDancing | anims/lib_C62.vrma | sambaDancing.vrma |
+| C110 | DoTheTwist | anims/lib_C110.vrma | twistDance.vrma |
+| C125 | BreakdanceFootwork1 | anims/lib_C125.vrma | breakdanceFootwork1.vrma |
+| C126 | BreakdanceFootwork2 | anims/lib_C126.vrma | breakdanceFootwork2.vrma |
+| C127 | RumbaDancing | anims/lib_C127.vrma | rumbaDancing.vrma |
+
+Runtime: `clipFreesFeet` includes these ids so plant-feet does **not** freeze
+hips/legs — legs move with the music BPM `timeScale`.
 
 Ready idle VRMAs already in-repo: IdleBreathCalm.vrma, StandardIdle.vrma
 (from `D:\GrokBot_Files\amoji-idle-library-ready\`).

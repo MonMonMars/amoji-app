@@ -1,0 +1,3 @@
+BreakdanceFootwork1 (lib_C125) — Mixamo-class VRMA mirrored from
+DavinciDreams/3dchat (public/animations/vrma/breakdanceFootwork1.vrma).
+Leg / footwork clip for dance + music.

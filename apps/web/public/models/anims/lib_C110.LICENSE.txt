@@ -1,0 +1,3 @@
+DoTheTwist (lib_C110) — Mixamo-class VRMA mirrored from
+DavinciDreams/3dchat (public/animations/vrma/twistDance.vrma).
+Used for dance + music beat matching with free feet.
