@@ -1236,7 +1236,7 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   settingsSystems: { en: 'Systems & security', yue: '系統同保安', zh: '系统与安全', ja: 'システムと安全' },
   settingsLegal: { en: 'Legal', yue: '法律文件', zh: '法律文件', ja: '法的文書' },
   planFreeLabel: { en: 'Free plan', yue: '免費計劃', zh: '免费计划', ja: '無料プラン' },
-  planPlusLabel: { en: 'Plus', yue: 'Plus', zh: 'Plus', ja: 'Plus' },
+  planPlusLabel: { en: 'Plus', yue: 'Plus 計劃', zh: 'Plus 计划', ja: 'Plusプラン' },
   planUpgrade: { en: 'Upgrade with Stripe', yue: '用 Stripe 升級', zh: '用 Stripe 升级', ja: 'Stripe でアップグレード' },
   planPaymentsOn: {
     en: 'This build has a Stripe payment link configured.',
