@@ -568,6 +568,39 @@ async function playClip(clip: PerformanceClip, token: number, characterId: strin
   }
 }
 
+function streamDanceClip(
+  stream: NonNullable<ReturnType<typeof pickStreamTrack>>,
+): PerformanceClip {
+  return {
+    id: `stream:${stream.id}`,
+    kind: 'dance',
+    style: stream.style,
+    file: stream.url,
+    durationMs: stream.durationMs,
+    volume: 'bgmVol',
+    moods: ['happy', 'neutral'],
+    langs: ['en', 'yue', 'zh', 'ja'],
+    characters: [],
+    labels: { en: stream.title, yue: stream.title, zh: stream.title, ja: stream.title },
+    license: 'CC0-1.0',
+    credit: stream.credit,
+    source: stream.source,
+  };
+}
+
+/**
+ * Resolve which library / stream clip would play — no audio side effects.
+ * Same inputs as {@link startLibraryPerformance} so announce-then-play stays stable.
+ */
+export function resolveLibraryPerformance(
+  q: ClipQuery & { ms?: number; style?: MusicStyleId | string },
+): PerformanceClip {
+  const styleId = q.style as MusicStyleId | undefined;
+  const stream = styleId ? pickStreamTrack(styleId, q.n ?? 0) : null;
+  if (stream && q.kind === 'dance') return streamDanceClip(stream);
+  return pickPerformanceClip(q);
+}
+
 /**
  * Play a premade song or dance bed from the library. When `style` is set and
  * a royalty-free stream URL exists, prefer that bed (HTMLAudioElement);
@@ -579,21 +612,7 @@ export function startLibraryPerformance(
   const styleId = q.style as MusicStyleId | undefined;
   const stream = styleId ? pickStreamTrack(styleId, q.n ?? 0) : null;
   if (stream && q.kind === 'dance') {
-    const synthetic: PerformanceClip = {
-      id: `stream:${stream.id}`,
-      kind: 'dance',
-      style: stream.style,
-      file: stream.url,
-      durationMs: stream.durationMs,
-      volume: 'bgmVol',
-      moods: ['happy', 'neutral'],
-      langs: ['en', 'yue', 'zh', 'ja'],
-      characters: [],
-      labels: { en: stream.title, yue: stream.title, zh: stream.title, ja: stream.title },
-      license: 'CC0-1.0',
-      credit: stream.credit,
-      source: stream.source,
-    };
+    const synthetic = streamDanceClip(stream);
     const holdMs = Math.max(q.ms, stream.durationMs + 600);
     if (isMasterMuted() || typeof window === 'undefined') return synthetic;
     if (clipId === synthetic.id && perfPreserve) {

@@ -186,7 +186,8 @@ import { speak, stopSpeaking, sing, playPokeBurst, playLaughBurst, voiceStartedS
 import { productionChat } from '../lib/backend-client';
 import { stopThinkingSound } from '../lib/thinking-sound';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
-import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerformance, detectMusicStyle } from '../lib/music';
+import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerformance, resolveLibraryPerformance, detectMusicStyle } from '../lib/music';
+import { clipTitle, performanceIntroLine } from '../lib/performance-intro';
 import { nextPassiveIdleClip, PASSIVE_IDLE_LOOP_TEMPLATE } from '../lib/idle-passive-loop';
 import { resolveContentMotion } from '../lib/content-motion';
 import { clipLabel, PERFORMANCE_CLIPS, type PerformanceClip } from '../lib/performance-clips';
@@ -605,7 +606,10 @@ export default function ChatPanel({
     setActionGame(kind);
   };
 
-  /** Start a premade song (matched to her gender) or dance bed, and show the pick. */
+  /**
+   * Resolve the clip, speak its name, THEN start audio when speech is idle.
+   * Pixel: always introduce the song / music title before playback.
+   */
   const beginShow = (
     kind: 'song' | 'dance',
     ms: number,
@@ -613,10 +617,9 @@ export default function ChatPanel({
     n = laughCountRef.current,
     bed = false,
     styleHint?: string,
+    afterStart?: () => void,
   ) => {
-    // t718: music.ts arms to max(ms, clip.durationMs+600); hold body/mic for songs.
-    // Style (jazz/pop/lofi…) prefers Mixkit royalty-free streams for dance beds.
-    const clip = startLibraryPerformance({
+    const query = {
       kind,
       characterId,
       lang,
@@ -626,12 +629,25 @@ export default function ChatPanel({
       ms,
       bed,
       style: styleHint,
-    });
-    // t725–729: song/style → body tag + beat-matched timeScale for CompanionCanvas.
-    setPerfMotionProfile(resolvePerfMotion({ id: clip.id, kind: clip.kind, style: clip.style }));
+    };
+    // Same pick for announce + play so the spoken title matches the bed.
+    const clip = resolveLibraryPerformance(query);
+    const title = clipTitle(clip, lang);
+    const intro = performanceIntroLine(kind === 'song' ? 'song' : 'music', title, lang);
     const hold = Math.max(clip.durationMs + 600, ms);
-    if (kind === 'song') holdMove(hold);
+    // Name on the now-playing chip immediately; audio waits for the intro.
     showTrack(clip, hold);
+    sayLocal(intro, { joy: kind === 'song' ? 0.82 : 0.7 });
+    whenSpeechIdle(() => {
+      // t718: music.ts arms to max(ms, clip.durationMs+600); hold body/mic for songs.
+      // Style (jazz/pop/lofi…) prefers Mixkit royalty-free streams for dance beds.
+      const playing = startLibraryPerformance(query);
+      // t725–729: song/style → body tag + beat-matched timeScale for CompanionCanvas.
+      setPerfMotionProfile(resolvePerfMotion({ id: playing.id, kind: playing.kind, style: playing.style }));
+      if (kind === 'song') holdMove(hold);
+      showTrack(playing, hold);
+      afterStart?.();
+    });
     return clip;
   };
   const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string, alreadySpoken?: { text: string; since: number }): string => {
@@ -651,20 +667,25 @@ export default function ChatPanel({
     if (firstLive && alreadySpoken) {
       if (mv === 'dance') {
         triggerMove('dance');
-        beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText));
+        beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
+          const rest = speechRemainder(reply, alreadySpoken.text);
+          if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity);
+        });
       } else if (mv) triggerMove(mv);
       notifySpeaking(reply);
-      const rest = speechRemainder(reply, alreadySpoken.text);
-      if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity);
+      if (mv !== 'dance') {
+        const rest = speechRemainder(reply, alreadySpoken.text);
+        if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity);
+      }
       return reply;
     }
     // Singing plays a premade clip in her gender's voice. The lyric still
-    // lands in the bubble; TTS does not sing over the clip. The clip waits
-    // its turn — a live sentence is not cut to start the song.
+    // lands in the bubble; TTS does not sing over the clip. She names the
+    // track first (beginShow), then the bed starts when speech is idle.
     if (mv === 'sing') {
       triggerMove('sing');
       const style = detectMusicStyle(userText);
-      whenSpeechIdle(() => beginShow('song', 9300, mood, laughCountRef.current, false, style));
+      beginShow('song', 9300, mood, laughCountRef.current, false, style);
       const compact = reply.replace(/\s/g, '');
       const song = compact.length > 0 && compact.length <= 48
         ? reply
@@ -674,9 +695,10 @@ export default function ChatPanel({
     }
     if (mv === 'dance') {
       triggerMove('dance');
-      beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText));
+      beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
+        speak(reply, characterId, lang, contentHints, undefined, intensity);
+      });
       notifySpeaking(reply);
-      speak(reply, characterId, lang, contentHints, undefined, intensity);
       return reply;
     }
     // r86 — the piano performance finally SOUNDS like a piano: the theme's
@@ -1106,8 +1128,8 @@ export default function ChatPanel({
     // original WebAudio theme composed for her personality
     if (/\b(play (?:some )?music|put on (?:some )?music)\b|播音樂|播音乐|放音樂|放音乐|音楽をかけ/.test(text)) {
       perfCountRef.current += 1;
+      // beginShow speaks the track name, then starts the bed.
       beginShow('dance', 18_000, undefined, perfCountRef.current, true);
-      sayLocal(SHOWCASE_START[lang].music);
       done();
       return;
     }
@@ -1137,13 +1159,12 @@ export default function ChatPanel({
       }
       if (kind === 'music') {
         beginShow('dance', 18_000, undefined, perfCountRef.current, true);
-        sayLocal(SHOWCASE_START[lang].music);
         done();
         return;
       }
       triggerMove(kind === 'song' ? 'sing' : 'dance');
+      // Intro names the piece; skip generic SHOWCASE_START so we don't double-talk.
       beginShow(kind === 'song' ? 'song' : 'dance', 12_000, undefined, perfCountRef.current);
-      sayLocal(SHOWCASE_START[lang][kind]);
       if (kind === 'song') {
         const song = pickCharacterSong(characterId, lang, perfCountRef.current).join(' ');
         notifySpeaking(song);
@@ -1586,7 +1607,7 @@ export default function ChatPanel({
           nearBottomRef.current = atBottom;
           setPinnedBottom(atBottom);
         }}
-        className="pointer-events-auto w-full touch-pan-y select-none space-y-2.5 overflow-y-auto overscroll-contain px-2 pb-1 pt-6 [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)] [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)]"
+        className="pointer-events-auto w-full touch-pan-y select-text space-y-2.5 overflow-y-auto overscroll-contain px-2 pb-1 pt-6 [-webkit-user-select:text] [user-select:text] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)] [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)]"
         style={{ maxHeight: '17vh' }}
       >
         {history.length === 0 && <p className="text-center text-white/40">{t(lang, 'sayHi', { name: characterName })}</p>}
