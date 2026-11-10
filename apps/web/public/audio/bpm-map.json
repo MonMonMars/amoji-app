@@ -73,11 +73,6 @@
       "confidence": 0.0,
       "file": "sing-female/sing-f-citation.mp3"
     },
-    "sing-f-hello": {
-      "bpm": 117.5,
-      "confidence": 0.159,
-      "file": "sing-female/sing-f-hello.mp3"
-    },
     "sing-f-joy": {
       "bpm": 172.3,
       "confidence": 0.159,
@@ -97,6 +92,11 @@
       "bpm": 103.4,
       "confidence": 0.178,
       "file": "sing-female/sing-f-long-set2.mp3"
+    },
+    "sing-f-silent-night": {
+      "bpm": 72.0,
+      "confidence": 0.159,
+      "file": "sing-female/sing-f-silent-night.mp3"
     },
     "sing-f-soave-long": {
       "bpm": 184.6,
