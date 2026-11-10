@@ -174,7 +174,7 @@ describe('buildDailyGreeting short / skipThread', () => {
     expect(line).not.toContain('面試');
     expect(line.toLowerCase()).not.toContain('hiking');
   });
-  it('omits lastThread resume when skipThread is true', () => {
+  it('never volunteers lastThread resume (history stays silent)', () => {
     const info = {
       isNewDay: true,
       streak: 2,
@@ -184,7 +184,8 @@ describe('buildDailyGreeting short / skipThread', () => {
     };
     const withThread = buildDailyGreeting('en', info);
     const without = buildDailyGreeting('en', info, { skipThread: true });
-    expect(withThread.toLowerCase()).toContain('hiking');
+    expect(withThread.toLowerCase()).not.toContain('hiking');
+    expect(withThread.toLowerCase()).not.toMatch(/last time|pick .+ up|continue/);
     expect(without.toLowerCase()).not.toContain('hiking');
   });
 });

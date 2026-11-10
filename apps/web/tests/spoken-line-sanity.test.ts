@@ -3,11 +3,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  asksToResumeHistory,
   asksUserInnerThoughts,
   gateSpokenLine,
   safeIdleFallback,
   spokenLineLooksBroken,
 } from '../lib/spoken-line-sanity';
+import { LAST_THREAD_RESUME_BANNED } from '../lib/memory';
 import {
   MOTIFS,
   VOICE_IDS,
@@ -35,6 +37,10 @@ const KNOWN_BAD = [
   '你而家嘅安靜諗法係咩呀？',
   '你现在的安静想法是什么呀？',
   '今一番頭にあるのは何？',
+  'Last time we were talking about "hiking" — want to pick it back up?',
+  "It's been a minute... want to pick up where we left off?",
+  '我们上次聊到「爬山」——要不要继续那个话题？',
+  '前回は「登山」の話してたね——続き、話す？',
 ];
 
 describe('spokenLineLooksBroken', () => {
@@ -152,5 +158,17 @@ describe('source banks never emit known nonsense', () => {
     expect(chat).toContain("from '../lib/spoken-line-sanity'");
     expect(chat).toContain('gateSpokenLine');
     expect(chat).toContain('idle: true');
+  });
+
+  it('blocks history-resume asks (continue last time) in any spoken gate mode', () => {
+    for (const lang of LANGS) {
+      const banned = LAST_THREAD_RESUME_BANNED[lang]!('topic');
+      expect(asksToResumeHistory(banned), lang).toBe(true);
+      expect(spokenLineLooksBroken(banned, { mode: 'local', lang }), lang).toBe(true);
+      expect(spokenLineLooksBroken(banned, { mode: 'idle', lang }), lang).toBe(true);
+      expect(gateSpokenLine(banned, { mode: 'idle', lang })?.toLowerCase() ?? '').not.toMatch(/last time|continue|続き|继续|繼續/);
+    }
+    expect(asksToResumeHistory("It's been a minute... want to pick up where we left off?")).toBe(true);
+    expect(asksToResumeHistory('Still here with you in this quiet stretch.')).toBe(false);
   });
 });

@@ -581,9 +581,10 @@ const STREAK_LINE: Record<string, (n: number) => string> = {
   en: (n) => `Day ${n} in a row — I look forward to you every day.`,
 };
 
-// v4: pick the previous conversation's thread back up — she remembers what
-// you two were last discussing and offers to continue it.
-const LAST_THREAD: Record<string, (u: string) => string> = {
+// Legacy last-thread resume lines — exported only so tests can assert the ban.
+// Pixel: never ask to continue last time; history is kept silently unless
+// the user asks about it. buildDailyGreeting must not speak these.
+export const LAST_THREAD_RESUME_BANNED: Record<string, (u: string) => string> = {
   yue: (u) => `我哋上次傾開「${u}」——想唔想繼續嗰個話題？`,
   zh: (u) => `我们上次聊到「${u}」——要不要继续那个话题？`,
   ja: (u) => `前回は「${u}」の話してたね——続き、話す？`,
@@ -711,7 +712,8 @@ const ANNIVERSARY_LINE: Record<string, (label: string) => string> = {
 };
 
 /** The "daily check-in" line she says when you open the app on a new day.
- * Pass skipThread on a fresh session-gap open (t796) so she does not resume the old thread. */
+ * History stays silent — never offer “continue last time” (Pixel).
+ * `skipThread` is kept for API compat; thread resume is always off. */
 export function buildDailyGreeting(
   lang: string,
   info: VisitInfo,
@@ -729,8 +731,9 @@ export function buildDailyGreeting(
   if (info.anniversaryLabel) parts.push(ANNIVERSARY_LINE[L](info.anniversaryLabel));
   if (!info.milestone && !info.anniversaryLabel && info.streak >= 2)
     parts.push(STREAK_LINE[L](info.streak));
-  // v4 — she picks up where you two left off, before the older recalls
-  if (!opts?.skipThread && info.lastThreadUser) parts.push(LAST_THREAD[L](info.lastThreadUser.slice(0, 40)));
+  // Do NOT speak last-thread / “continue our talk” — history is kept quietly.
+  void opts?.skipThread;
+  void info.lastThreadUser;
   if (info.lastMood) {
     const table = ((info.lastMoodIntensity ?? 1) >= 1.5 ? MOOD_FOLLOWUP_AMP[L] : undefined) ?? MOOD_FOLLOWUP[L] ?? MOOD_FOLLOWUP.en;
     parts.push(table[info.lastMood] ?? '');
