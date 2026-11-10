@@ -147,7 +147,6 @@ import { pickIdleCompanionLine } from '../lib/idle-talk';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
 import { gateSpokenLine, safeIdleFallback } from '../lib/spoken-line-sanity';
 import { pickCharacterInteraction } from '../lib/interaction-lines';
-import { pokeSectionPlaceholderLine, type PokeSectionId } from '../lib/poke-zones';
 import { personalityProfile, personalityPrompt } from '../lib/personality';
 import { voiceOpening, type VoiceId } from '../lib/personality-voice';
 import { laughStyleFor, LAUGH_RE } from '../lib/laugh';
@@ -287,8 +286,9 @@ export default function ChatPanel({
   kidMode = false,
   pokeCount = 0,
   pokeZone = '',
-  pokeDirection = 'front',
-  pokeSectionId = '',
+  // Kept for canvas wiring / future per-section copy; clip owns voice today.
+  pokeDirection: _pokeDirection = 'front',
+  pokeSectionId: _pokeSectionId = '',
   handHoldCount = 0,
   onStatus,
   onMemCount,
@@ -823,8 +823,10 @@ export default function ChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // poke reactions — SFX + VRM motion only; lip hooks run off the reaction line
-  // but never land in persisted chat history or copy transcript.
+  // poke reactions — SFX + VRM motion only. The zone MP3 owns the speaking
+  // indicator (playVoiceClip → noteSpeechStarted / followAudioElement). Do not
+  // feedUtterance / notifySpeaking / speak a parallel poke line — that was the
+  // synth/edge double beside the premade clip. Never land in chat history.
   const lastPokeRef = useRef(pokeCount);
   useEffect(() => {
     if (pokeCount === lastPokeRef.current) return;
@@ -832,12 +834,8 @@ export default function ChatPanel({
     lastActivityRef.current = Date.now();
     lastUserRef.current = Date.now();
     reengageStageRef.current = 0;
-    // SFX-only poke (Mon t691–t696): no TTS reaction / laugh lead — clip by zone.
+    // SFX-only poke (Mon t691–t696): recorded clip by zone — no TTS / utterance.
     playPokeBurst(characterId, pokeZone || 'torso');
-    const key = (pokeSectionId || `poke:belly:${pokeDirection || 'front'}`) as PokeSectionId;
-    const line = pokeSectionPlaceholderLine(key, lang);
-    feedUtterance(line);
-    notifySpeaking(line);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pokeCount]);
 
