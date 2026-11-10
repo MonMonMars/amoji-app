@@ -132,12 +132,21 @@ describe('poke SFX answers the zone that was hit', () => {
     }
   });
 
-  it('wraps the chest soft-poke tuning Mon set (t294) instead of losing it', () => {
-    // t294: `um` read as adult on the head, so chest/breast took it and the
-    // head kept the former breast clip. That intent must survive.
-    expect(RECORDED_POKE_ZONE.female.chest).toBe('/voice-clips/universal/female/um.mp3');
+  it('wraps soft-vs-hard female poke zones from the CMA ship-set', () => {
+    // Soft head (hehe→CMA00352) stays distinct from chest oh and hard belly ouch (#18).
+    expect(RECORDED_POKE_ZONE.female.chest).toContain('CMA00351');
     expect(RECORDED_POKE_ZONE.female.breast).toBe(RECORDED_POKE_ZONE.female.chest);
     expect(RECORDED_POKE_ZONE.female.head).not.toBe(RECORDED_POKE_ZONE.female.chest);
+    expect(RECORDED_POKE_ZONE.female.belly).toContain('CMA00335');
+    expect(RECORDED_POKE_ZONE.male.default).toContain('CMA00339');
+    expect(RECORDED_POKE_ZONE.male.torso).not.toBe(RECORDED_POKE_ZONE.male.chest);
+    // Runtime poke paths must come from the EmotionClipRow / CMA ship-set
+    // (keepers + CMA00350–362) — never orphaned universal CLIP_LIBRARY rows.
+    for (const gender of GENDERS) {
+      for (const rel of Object.values(RECORDED_POKE_ZONE[gender])) {
+        expect(rel.startsWith('/voice-clips/cma-reaction/'), rel).toBe(true);
+      }
+    }
   });
 });
 

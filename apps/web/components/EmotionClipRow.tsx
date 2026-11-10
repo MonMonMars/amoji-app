@@ -1,8 +1,7 @@
 'use client';
-// Select-board reaction preview: CMA00304–CMA00349 minus dropped #1–11 (Mon).
-// Numbers = gender-first gallery order for Mon assignment (female clips first
-// on female companions). Want/Skip on /sfx-gallery. Tap previews only
-// (mute-aware Audio); does not auto-Want. CMA codes stay stable when drops land.
+// Select-board reaction preview: Mon keepers + poke CMA00350–362 only.
+// Numbers = gender-first gallery order (female clips first on female companions).
+// Want/Skip on /sfx-gallery. Tap previews only (mute-aware Audio); does not auto-Want.
 
 import { useEffect, useState } from 'react';
 import { t, type Lang } from '../lib/prefs';

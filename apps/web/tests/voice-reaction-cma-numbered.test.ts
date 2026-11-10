@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import {
   CMA_REACTION_DROPPED_CODES,
   CMA_REACTION_GALLERY,
+  CMA_REACTION_KEEP_CODES,
   CMA_REACTION_RANGE,
   expectedCmaReactionCodes,
 } from '../lib/cma-reaction-gallery';
@@ -11,13 +12,12 @@ import {
 const row = readFileSync(join(__dirname, '../components/EmotionClipRow.tsx'), 'utf8');
 
 describe('select reaction row = numbered CMA newer set only', () => {
-  it('ships CMA00304–349 minus dropped #1–11 and drops old CLIP_LIBRARY from select row', () => {
+  it('ships Mon keepers + poke CMA00350–362 and drops old CLIP_LIBRARY from select row', () => {
     expect(CMA_REACTION_RANGE.from).toBe(304);
-    expect(CMA_REACTION_RANGE.to).toBe(349);
-    expect(CMA_REACTION_DROPPED_CODES).toHaveLength(11);
-    expect(CMA_REACTION_GALLERY.length).toBe(
-      CMA_REACTION_RANGE.to - CMA_REACTION_RANGE.from + 1 - CMA_REACTION_DROPPED_CODES.length,
-    );
+    expect(CMA_REACTION_RANGE.to).toBe(362);
+    expect(CMA_REACTION_KEEP_CODES).toHaveLength(6);
+    expect(CMA_REACTION_DROPPED_CODES).toHaveLength(40);
+    expect(CMA_REACTION_GALLERY).toHaveLength(19);
     expect(CMA_REACTION_GALLERY.map((c) => c.code)).toEqual(expectedCmaReactionCodes());
     expect(row).toContain('CMA_REACTION_GALLERY');
     expect(row).toContain('data-reaction-n={n}');
