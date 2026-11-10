@@ -65,12 +65,12 @@ export function moodHintsFromText(text: string): Record<string, number> | undefi
 export function resolveContentMotion(input: ContentMotionInput): ContentMotionPlan {
   const user = (input.userText ?? '').trim();
   const assistant = (input.assistantText ?? '').trim();
-  const corpus = `${user} ${assistant}`.trim();
+  const moodCorpus = `${user} ${assistant}`.trim();
 
   // Face mood: user felt-mood first, then lexicon on both lines (content only).
   const felt = feltMood(user);
   const feltHints = felt ? moodToHints(felt.mood, felt.intensity) : undefined;
-  const moodHints = mergeHints(feltHints, moodHintsFromText(corpus));
+  const moodHints = mergeHints(feltHints, moodHintsFromText(moodCorpus));
 
   if (input.sessionFarewell) {
     const idleClip = resolveChatAutoIdle({
@@ -89,8 +89,10 @@ export function resolveContentMotion(input: ContentMotionInput): ContentMotionPl
     return { idleClip, moodHints, passive: true };
   }
 
-  // Explicit activity from user first, then assistant wording.
-  const move = detectMove(user) ?? detectMove(assistant) ?? detectMove(corpus);
+  // Explicit activity from the USER only. Scanning the assistant reply used to
+  // start dance/sing when she merely mentioned those words in ordinary chat
+  // (motion ≠ talk / sticky show after weather & fun-facts).
+  const move = detectMove(user);
 
   const idleClip = resolveChatAutoIdle({
     assistantText: assistant,

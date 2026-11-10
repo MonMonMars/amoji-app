@@ -268,8 +268,8 @@ export interface ChatPanelProps {
 }
 
 const IDLE_AFTER_MS = 40_000;
-/** Advance relax → stretch → look body loop while the user stays quiet. */
-const PASSIVE_IDLE_BODY_MS = 9_000;
+/** Longer beat so calm idles dominate; stretch fires at most once per long cycle. */
+const PASSIVE_IDLE_BODY_MS = 12_000;
 /** user silence beyond this switches idle chatter to direct re-engagement */
 const REENGAGE_AFTER_MS = 110_000;
 /** user silence beyond this gets the soft closer — once, then she waits */
@@ -372,7 +372,7 @@ export default function ChatPanel({
   const lastUserRef = useRef(Date.now());
   const lastChatterAtRef = useRef(0);
   const chatterCountRef = useRef(0);
-  /** Steps the relax → stretch → look body playlist while the room is quiet. */
+  /** Steps the calm-heavy passive body playlist while the room is quiet. */
   const passiveIdleStepRef = useRef(0);
   const lastPassiveBodyAtRef = useRef(0);
   const reengageStageRef = useRef(0);
@@ -828,7 +828,7 @@ export default function ChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handHoldCount]);
 
-  // Body idle loop while quiet: relax → stretch → relax → look around → repeat.
+  // Body idle loop while quiet: mostly breath/stand, occasional look, rare stretch.
   // Starts a bit before spoken idle chatter so the pose keeps changing even
   // when she is not talking. Content-driven pins (dance/sing/thinking) still
   // win while busy / speaking.

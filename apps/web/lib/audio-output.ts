@@ -107,6 +107,29 @@ export function resumeSharedAudioOutput(): void {
   }
 }
 
+/** True when `ac` is the process-wide default context (must never be closed by BGM). */
+export function isSharedDefaultAudioContext(ac: AudioContext | null | undefined): boolean {
+  return !!ac && !!sharedCtx && ac === sharedCtx && sharedCtx.state !== 'closed';
+}
+
+/**
+ * Resume + silent buffer tick so sing/dance beds can start after a chat tap
+ * without importing voice.ts (music already feeds voice via duckLibraryBed).
+ */
+export function primeSharedAudioContext(): void {
+  const ctx = createDefaultAudioContext();
+  if (!ctx) return;
+  resumeSharedAudioOutput();
+  try {
+    if (ctx.state === 'suspended') void ctx.resume();
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+  } catch { /* ignore */ }
+}
+
 /** AudioContext bound to the default speakers. Falls back if sinkId options throw. */
 export function createDefaultAudioContext(): AudioContext | null {
   if (typeof window === 'undefined') return null;

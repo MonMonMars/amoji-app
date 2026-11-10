@@ -45,4 +45,12 @@ describe('content-driven motion director (not LLM)', () => {
     });
     expect(plan.move).toBe('piano');
   });
+
+  it('assistant mentioning dance does not start a move on topical talk', () => {
+    const plan = resolveContentMotion({
+      userText: '今日天氣點呀？',
+      assistantText: '好呀，我跳舞畀你睇！今日多雲。',
+    });
+    expect(plan.move).toBeUndefined();
+  });
 });

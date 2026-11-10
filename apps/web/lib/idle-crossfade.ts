@@ -1,8 +1,8 @@
 /** Crossfade timing when the user pins a new idle (#N) on chat. */
-export const IDLE_PIN_CROSSFADE_S = 0.45;
+export const IDLE_PIN_CROSSFADE_S = 0.85;
 
 /** Upper + leg slerp while mixer cross-fades idle VRMAs (avoids IK fighting the blend). */
-export const IDLE_SWAP_LEG_BLEND_S = 0.45;
+export const IDLE_SWAP_LEG_BLEND_S = 0.85;
 
 /** Humanoid bones eased during an idle A→B swap (includes legs; entry blend omits legs). */
 export const IDLE_SWAP_BLEND_BONES = [

@@ -15,7 +15,7 @@ import {
   clampBoneByName,
   resolveBoneLimitKey,
 } from '../lib/vrm/bone-joint-limits';
-import { idleCrossfadeAdditiveScale } from '../lib/idle-crossfade';
+import { IDLE_SWAP_LEG_BLEND_S, idleCrossfadeAdditiveScale } from '../lib/idle-crossfade';
 
 describe('shortestQuatSlerp + idle crossfade damp', () => {
   it('aligns opposing hemispheres before slerp', () => {
@@ -43,7 +43,7 @@ describe('shortestQuatSlerp + idle crossfade damp', () => {
   });
 
   it('dampens poke additives at start of idle swap crossfade', () => {
-    const end = 1000 + 450;
+    const end = 1000 + Math.round(IDLE_SWAP_LEG_BLEND_S * 1000);
     expect(idleCrossfadeAdditiveScale(1000, end)).toBeLessThan(0.35);
     expect(idleCrossfadeAdditiveScale(end + 1, end)).toBe(1);
   });

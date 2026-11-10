@@ -20,11 +20,16 @@ export const BONE_BLEND_LIMITS: Readonly<Record<string, BoneEulerLimitsYXZ>> = {
   spine: { x: [-0.45, 0.4], y: [-0.55, 0.55], z: [-0.35, 0.35] },
   chest: { x: [-0.35, 0.3], y: [-0.45, 0.45], z: [-0.4, 0.4] },
   upperChest: { x: [-0.3, 0.28], y: [-0.4, 0.4], z: [-0.35, 0.35] },
-  hips: { x: [-0.35, 0.35], y: [-0.5, 0.5], z: [-0.28, 0.28] },
+  hips: { x: [-0.35, 0.35], y: [-0.45, 0.45], z: [-0.28, 0.28] },
   leftUpperArm: { x: [-1.9, 1.9], y: [-0.8, 0.8], z: [-2.9, 1.6] },
   rightUpperArm: { x: [-1.9, 1.9], y: [-0.8, 0.8], z: [-1.6, 2.9] },
   leftLowerArm: { x: [-0.1, 2.4], y: [-0.6, 0.6], z: [-0.6, 0.6] },
   rightLowerArm: { x: [-0.1, 2.4], y: [-0.6, 0.6], z: [-0.6, 0.6] },
+  // Legs during idle A→B blend — caps stop ±350° thigh/knee wrap shakes.
+  leftUpperLeg: { x: [-1.35, 1.2], y: [-0.65, 0.65], z: [-0.7, 0.7] },
+  rightUpperLeg: { x: [-1.35, 1.2], y: [-0.65, 0.65], z: [-0.7, 0.7] },
+  leftLowerLeg: { x: [-0.05, 2.45], y: [-0.35, 0.35], z: [-0.35, 0.35] },
+  rightLowerLeg: { x: [-0.05, 2.45], y: [-0.35, 0.35], z: [-0.35, 0.35] },
 } as const;
 
 /**
@@ -53,6 +58,10 @@ const RAW_TO_SEMANTIC: Readonly<Record<string, string>> = {
   J_Bip_R_UpperArm: 'rightUpperArm',
   J_Bip_L_LowerArm: 'leftLowerArm',
   J_Bip_R_LowerArm: 'rightLowerArm',
+  J_Bip_L_UpperLeg: 'leftUpperLeg',
+  J_Bip_R_UpperLeg: 'rightUpperLeg',
+  J_Bip_L_LowerLeg: 'leftLowerLeg',
+  J_Bip_R_LowerLeg: 'rightLowerLeg',
   hips: 'hips',
   spine: 'spine',
   chest: 'chest',
@@ -63,6 +72,10 @@ const RAW_TO_SEMANTIC: Readonly<Record<string, string>> = {
   rightUpperArm: 'rightUpperArm',
   leftLowerArm: 'leftLowerArm',
   rightLowerArm: 'rightLowerArm',
+  leftUpperLeg: 'leftUpperLeg',
+  rightUpperLeg: 'rightUpperLeg',
+  leftLowerLeg: 'leftLowerLeg',
+  rightLowerLeg: 'rightLowerLeg',
 };
 
 const _e = new THREE.Euler(0, 0, 0, 'YXZ');
