@@ -99,7 +99,7 @@ import { loadingFillerKind, recordedFillerClip, recordedLaughClip, recordedPokeC
 import { LineQueue, speechRemainder } from './speech-queue';
 import { emotionClipPath } from './emotion-clip-picks';
 import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText, nextCardGreetPhrase, nextGreetingKind, type BurstClipKind, type ClipFolder, type VoiceClipGender } from './voice-clips';
-import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
+import { playGestureClipSync, playVoiceClip, stopVoiceClip } from './play-voice-clip';
 export { speechRemainder };
 import { edgeCastVoice } from './edge-cast';
 import { pauseEdgeForTabHide, speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead } from './edge-tts';
@@ -1862,6 +1862,14 @@ export function playVoiceGreeting(
   const gender = characterVoiceGender(characterId);
   const tl = tlForChoice(lang, choiceId);
   const delivery = deliveryGenderForChoice(lang, choiceId, gender);
+  // Same-origin greeting clip INSIDE the tap — audible even when Google TTS
+  // is offline/blocked or play() would otherwise run after the gesture dies.
+  const insuranceKind = nextGreetingKind();
+  playGestureClipSync(
+    clipFile(lang, gender, insuranceKind),
+    greetingText(lang, insuranceKind),
+    () => { markVoiceStarted(); },
+  );
   let session = 0;
   /** Set by whichever tier actually starts, so the loser can bail out. */
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
@@ -1910,6 +1918,8 @@ export function playVoiceGreeting(
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
       try { haltBrowserSynth(); } catch { /* ignore */ }
+      // Stop the local insurance clip so only the chosen voice speaks.
+      try { stopVoiceClip(); } catch { /* ignore */ }
       if (!spokenBy) onStart('gtts');
     },
   }).then(() => {
@@ -1919,6 +1929,7 @@ export function playVoiceGreeting(
     markGttsDone();
     if ((e as Error | undefined)?.message === 'canceled') return;
     reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'greeting gtts failed');
+    // Insurance clip may already be audible — only synth if nothing started.
     runSynthAudition('greeting fallback');
   });
   /**
@@ -1955,6 +1966,7 @@ export function playVoiceGreeting(
     onPlaying: () => {
       if (spokenBy === 'gtts') return; // MP3 tier already got there first
       try { haltSynthQueue(); } catch { /* ignore */ }
+      try { stopVoiceClip(); } catch { /* ignore */ }
       if (!spokenBy) onStart('edge');
     },
   }).then(() => {
@@ -2140,6 +2152,13 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const previewGender = deliveryGenderForChoice(locale, choiceId, 'female');
   // Same rotating short greet as select-board voice cards.
   const text = nextCardGreetPhrase(locale);
+  // Local insurance clip inside the tap (same-origin) — always audible offline.
+  const insuranceKind = nextGreetingKind();
+  playGestureClipSync(
+    clipFile(locale, previewGender, insuranceKind),
+    greetingText(locale, insuranceKind),
+    () => { markVoiceStarted(); },
+  );
   /** Set by whichever tier actually starts, so the loser can bail out. */
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
   const runSynthAudition = (tag: string) => {
@@ -2166,6 +2185,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
       try { haltBrowserSynth(); } catch { /* ignore */ }
+      try { stopVoiceClip(); } catch { /* ignore */ }
       if (!spokenBy) {
         spokenBy = 'gtts';
         markVoiceStarted();
@@ -2190,6 +2210,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
     onPlaying: () => {
       if (spokenBy === 'gtts') return; // MP3 tier already got there first
       try { haltSynthQueue(); } catch { /* ignore */ }
+      try { stopVoiceClip(); } catch { /* ignore */ }
       if (!spokenBy) {
         spokenBy = 'edge';
         markVoiceStarted();
