@@ -74,7 +74,7 @@ export const MOVE_DUR: Record<MoveKind, number> = {
  */
 export const MOVE_TRIGGERS: Record<MoveKind, RegExp> = {
   dance: /(跳舞|舞蹈|跳個舞|跳支舞|舞一段|\bdanc(?:e|ing)\b|ダンス|踊って|踊ろう)/i,
-  sing: /(唱歌|唱首歌|唱k|一齊唱|一齐唱|唱吓|唱啊|唱啦|唱個|唱个|\bsing(?:ing)?\b|\bkaraoke\b|カラオケ|歌を歌|うたって)/i,
+  sing: /(唱歌|唱首歌|唱一首|唱k|一齊唱|一齐唱|唱吓|唱啊|唱啦|唱個|唱个|\bsing(?:ing)?\b|\bkaraoke\b|カラオケ|歌を歌|うたって)/i,
   jump: /(跳一下|跳吓|跳跳|跳起|跳啊|跳啦|\bjump(?:ing)?\b|ジャンプ)/i,
   kungfu: /(功夫|武打|武術|武术|拳擊|拳击|\bkung\s?fu\b|martial arts|\bkarate\b|\bboxing\b|空手道|カンフー)/i,
   taichi: /(太極|太极|tai\s?chi)/i,

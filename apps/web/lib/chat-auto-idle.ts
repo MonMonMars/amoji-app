@@ -1,10 +1,13 @@
 // Content-driven idle pick for /chat — no manual rail pins.
 // Uses lightweight keyword buckets + content mood hints (lexicon / felt-mood),
-// never LLM [emotion:{…}] tags. Dance / music only on explicit intent.
+// never LLM [emotion:{…}] tags. Dance / music / sing only on explicit USER intent.
+// Weather / news / story talk stays calm look/breathe — never dance.
 
 import { idleClipById } from './idle-clips';
 import type { IdleCuratedCategory } from './idle-curated-rail';
 import { FAREWELL_WAVE_CLIP_ID, isFarewellText } from './idle-farewell';
+import { detectMusicStyle, STYLE_CLIP_HINTS } from './music-catalog';
+import { resolvePerfMotion } from './performance-motion';
 
 const BREATHING_CLIPS = ['IdleBreathCalm', 'StandardIdle', 'IdleMixamoBreathing'] as const;
 
@@ -21,14 +24,34 @@ const NEUTRAL_CHAT_CLIPS = [
   'IdleNeutral',
 ] as const;
 
+/** Weather / news / story / fun-fact talk — look + breathe only. */
+const TALK_CALM_CLIPS = [
+  'LookAround',
+  'IdleBreathCalm',
+  'StandardIdle',
+  'IdleMixamoBreathing',
+  'IdleNeutral',
+  'Thinking',
+] as const;
+
 const SING_INTENT =
-  /(唱歌|唱首歌|唱k|一齊唱|一齐唱|\bsing(?:ing)?\b|\bkaraoke\b|カラオケ|歌を歌)/i;
+  /(唱歌|唱首歌|唱一首|唱k|一齊唱|一齐唱|\bsing(?:ing)?\b|\bkaraoke\b|カラオケ|歌を歌)/i;
+
+const TALK_CALM_PATTERNS: readonly RegExp[] = [
+  /\b(weather|forecast|temperature|raining|rainy|sunny|cloudy|snowy|umbrella)\b/i,
+  /天氣|天气|落雨|下雨|幾多度|多少度|氣溫|气温|預報|预报|天気|気温|予報/,
+  /\b(news|headlines|what's happening|what is happening)\b/i,
+  /新聞|新闻|頭條|头条|ニュース|見出し/,
+  /\b(story|fun\s*facts?|once upon|bedtime story)\b/i,
+  /故事|小故事|講故|讲故|趣聞|趣闻|豆知識|豆知识|物語|むかしばなし/,
+];
 
 type BucketCategory =
   | IdleCuratedCategory
   | 'greet'
   | 'scared'
-  | 'music';
+  | 'music'
+  | 'talk';
 
 type Bucket = { category: BucketCategory; patterns: RegExp[] };
 
@@ -49,6 +72,10 @@ const KEYWORD_BUCKETS: readonly Bucket[] = [
       /諗下|想想|思考|或許|或许|可能|嗯+/,
       /考え|思う|かな|うーん/,
     ],
+  },
+  {
+    category: 'sing',
+    patterns: [SING_INTENT],
   },
   {
     category: 'dance',
@@ -107,6 +134,7 @@ const CATEGORY_CLIP: Record<BucketCategory | 'breathe' | 'look' | 'stretch' | 's
   look: 'LookAround',
   stretch: 'Relax',
   sing: 'IdleMixamoHappy',
+  talk: 'LookAround',
 };
 
 /** Music / concert talk without a full dance ask — sway + legs with the beat. */
@@ -119,6 +147,9 @@ const MUSIC_POSE_CLIPS = [
   'lib_C41', // ListeningToMusic
   'IdleMixamoHappy',
 ] as const;
+
+/** User must ask — assistant mere mention / offer must not start a show. */
+const USER_INTENT_CATEGORIES = new Set<BucketCategory>(['dance', 'music', 'martial', 'sing']);
 
 function pickFromPool(seed: string, pool: readonly string[]): string {
   let h = 0;
@@ -141,7 +172,43 @@ function pickNeutralChatIdle(seed: string): string {
   return pickFromPool(seed, NEUTRAL_CHAT_CLIPS);
 }
 
+function pickTalkCalmIdle(seed: string): string {
+  return pickFromPool(seed, TALK_CALM_CLIPS);
+}
+
+function firstPlayable(ids: readonly string[]): string | null {
+  for (const id of ids) {
+    if (idleClipById(id)) return id;
+  }
+  return null;
+}
+
+/** Map chat text → performance-motion style string (soft ballad / upbeat dance…). */
+function perfStyleHint(text: string, fallback: string): string {
+  const id = detectMusicStyle(text);
+  if (!id || id === 'default') return fallback;
+  const hints = STYLE_CLIP_HINTS[id];
+  return hints?.[0] ?? fallback;
+}
+
+/** Prefer plant-feet performance shortlist clips from performance-motion. */
+function preferredPerfIdle(
+  kind: 'song' | 'dance',
+  text: string,
+  fallbackStyle: string,
+): string | null {
+  const style = perfStyleHint(text, fallbackStyle);
+  const profile = resolvePerfMotion({
+    id: `chat-auto-${kind}`,
+    kind,
+    style,
+  });
+  return firstPlayable(profile.preferredClipIds);
+}
+
 function pickDanceClip(text: string): string {
+  const preferred = preferredPerfIdle('dance', text, 'cheerful pop');
+  if (preferred) return preferred;
   const t = text.toLowerCase();
   if (/jazz|爵士/.test(t)) return idleClipById('lib_C60') ? 'lib_C60' : 'lib_C112';
   if (/robot|機器人|机器人/.test(t)) return idleClipById('lib_C111') ? 'lib_C111' : 'lib_C113';
@@ -157,18 +224,32 @@ function pickMusicClip(text: string): string {
   const t = text.toLowerCase();
   // Genre cues share the dance shortlist so talk about music still moves.
   if (/jazz|爵士|lofi|lofí|chill|ballad|抒情/.test(t)) {
+    const soft = preferredPerfIdle('dance', text, 'soft ballad');
+    if (soft) return soft;
     return idleClipById('lib_C112') ? 'lib_C112' : pickFromPool(text, MUSIC_POSE_CLIPS);
   }
   if (/party|派對|派对|club|夜店|edm|disco/.test(t)) {
+    const up = preferredPerfIdle('dance', text, 'upbeat dance');
+    if (up) return up;
     return idleClipById('lib_C114') ? 'lib_C114' : pickFromPool(text, MUSIC_POSE_CLIPS);
   }
   if (/hip[- ]?hop|嘻哈|upbeat|快歌/.test(t)) {
+    const hip = preferredPerfIdle('dance', text, 'upbeat dance');
+    if (hip) return hip;
     return idleClipById('lib_C61') ? 'lib_C61' : idleClipById('lib_C03') ? 'lib_C03' : pickFromPool(text, MUSIC_POSE_CLIPS);
   }
   if (/listen|聽歌|听歌|concert|演唱會|演唱会|音樂會|音乐会/.test(t)) {
     return idleClipById('lib_C112') ? 'lib_C112' : pickFromPool(text, MUSIC_POSE_CLIPS);
   }
+  const preferred = preferredPerfIdle('dance', text, 'chill');
+  if (preferred) return preferred;
   return pickFromPool(text, MUSIC_POSE_CLIPS);
+}
+
+function pickSingClip(text: string): string {
+  const preferred = preferredPerfIdle('song', text, 'soft ballad');
+  if (preferred) return preferred;
+  return idleClipById('IdleMixamoHappy') ? 'IdleMixamoHappy' : pickBreathingDefault(text);
 }
 
 function topEmotionCategory(
@@ -199,24 +280,37 @@ function matchBucket(text: string): BucketCategory | null {
   return null;
 }
 
-const USER_INTENT_CATEGORIES = new Set<BucketCategory>(['dance', 'music', 'martial']);
+function isTalkCalmText(text: string): boolean {
+  const t = text.trim();
+  if (!t) return false;
+  return TALK_CALM_PATTERNS.some((re) => re.test(t));
+}
 
 function resolveBucket(userText: string, assistantText: string): BucketCategory | null {
   const user = matchBucket(userText);
+  // Dance / sing / music / martial only when the USER asks.
   if (user && USER_INTENT_CATEGORIES.has(user)) return user;
+
+  // Weather / news / story talk → calm look/breathe (never dance).
+  if (isTalkCalmText(userText) || isTalkCalmText(assistantText)) return 'talk';
+
   const assist = matchBucket(assistantText);
-  if (assist) return assist;
-  return user;
+  // Assistant may greet / think / react — but must not start dance/music/sing alone.
+  if (assist && !USER_INTENT_CATEGORIES.has(assist)) return assist;
+
+  if (user && !USER_INTENT_CATEGORIES.has(user)) return user;
+  return null;
 }
 
 function clipForCategory(cat: BucketCategory | IdleCuratedCategory, seed: string, corpus: string): string {
   if (cat === 'breathe') return pickBreathingDefault(seed);
+  if (cat === 'talk' || cat === 'look') return pickTalkCalmIdle(seed);
   if (cat === 'greet') return pickChitchatDefault(seed);
   if (cat === 'dance') return pickDanceClip(corpus);
   if (cat === 'music') return pickMusicClip(corpus);
+  if (cat === 'sing') return pickSingClip(corpus);
   const id = CATEGORY_CLIP[cat as BucketCategory];
   if (id && idleClipById(id)) return id;
-  if (cat === 'sing') return idleClipById('IdleMixamoHappy') ? 'IdleMixamoHappy' : pickBreathingDefault(seed);
   if (cat === 'think') return idleClipById('Thinking') ? 'Thinking' : pickBreathingDefault(seed);
   if (cat === 'react') return idleClipById('Cheer') ? 'Cheer' : pickBreathingDefault(seed);
   return pickNeutralChatIdle(seed);
@@ -228,7 +322,7 @@ function resolveFarewellWave(): string | null {
 
 export interface ChatAutoIdleInput {
   assistantText: string;
-  /** Latest user line — dance / music intents checked here first. */
+  /** Latest user line — dance / music / sing intents checked here first. */
   userText?: string;
   emotionHints?: Record<string, number>;
   thinking?: boolean;
@@ -262,4 +356,9 @@ export function resolveChatAutoIdle(input: ChatAutoIdleInput): string | null {
   if (emo) return clipForCategory(emo, seed, corpus);
   const clip = pickNeutralChatIdle(seed);
   return idleClipById(clip) ? clip : 'IdleBreathCalm';
+}
+
+/** Test / director helper: true when text is weather/news/story talk. */
+export function isCalmTalkContent(text: string): boolean {
+  return isTalkCalmText(text);
 }
