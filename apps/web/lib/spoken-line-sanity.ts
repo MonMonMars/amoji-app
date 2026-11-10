@@ -72,6 +72,10 @@ const BROKEN_FRAGMENT =
 const BROKEN_METAPHOR_SLUDGE =
   /充滿電|充满电|電壓感覺友善|电压感觉友善|細爆發|小爆发|短短.{0,8}爆發|短短.{0,8}爆发|is charged and ready|voltage feels friendly|tiny burst|充電済み|電圧は友好|小さなバースト|短い.{0,8}バースト/i;
 
+/** Meta topic-bank sludge Pixel flagged as nonsense idle. */
+const BROKEN_META_TOPIC =
+  /Holding the same topic gently|Keeping your subject warm on the table|輕輕留住同一個主題|轻轻留着同一个主题|同じ話題をそっと置いたまま/i;
+
 const UNFINISHED_EN =
   /\b(?:reminding|reminded|about|of|to|for|with|and|or|the|a|an|is|are|was|were|like)\s*[.…]*\s*$/i;
 
@@ -93,6 +97,7 @@ export function spokenLineLooksBroken(text: string, opts?: SpokenGateOpts): bool
   if (/\{[a-zA-Z_][a-zA-Z0-9_]*\}/.test(t)) return true;
   if (BROKEN_FRAGMENT.test(t)) return true;
   if (BROKEN_METAPHOR_SLUDGE.test(t)) return true;
+  if (BROKEN_META_TOPIC.test(t)) return true;
 
   const d = dense(t);
   const hasCjk = CJK.test(t);

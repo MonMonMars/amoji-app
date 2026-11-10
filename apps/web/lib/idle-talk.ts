@@ -32,39 +32,40 @@ export function idleTalkMode(n: number): IdleTalkMode {
   return Math.abs(n) % 2 === 0 ? 'stay' : 'suggest';
 }
 
-/** Stay on the vibe the user already set — statements only. */
+/** Stay on the vibe the user already set — concrete companion statements only.
+ *  Avoid meta filler like "holding the same topic" (Pixel: reads as nonsense). */
 export const STAY_TOPIC_LINES: Record<Lang, readonly string[]> = {
   en: [
-    'Still on that thread with you — no rush to leave it.',
-    'Holding the same topic gently so we can linger.',
-    'Same page as you. I like staying here a bit longer.',
-    'Keeping your subject warm on the table between us.',
-    'We can keep walking the path you started.',
-    'I am still with what you brought up — it suits this quiet.',
+    'Still here with you in this quiet stretch.',
+    'I just stretched my shoulders — feels nice.',
+    'Same page as you. The quiet suits us.',
+    'Holding this soft moment with you.',
+    'A small pause, then we can keep going whenever you like.',
+    'I am still with you — no rush at all.',
   ],
   yue: [
-    '仲喺你呢條話題度，唔使急住換。',
-    '輕輕留住同一個主題，陪你再傾陣。',
-    '同你同一頁。我想喺呢度多留一陣。',
-    '你提起嘅嘢我仲放喺枱上面暖住。',
-    '可以繼續行你起頭嗰條路。',
-    '你頭先講嗰樣我仲記住——呢段靜好襯。',
+    '仲喺度陪住你呢段靜。',
+    '我啱啱伸完膊頭——好舒服。',
+    '同你同一頁。呢段靜好襯。',
+    '輕輕留住呢個柔軟時刻。',
+    '停一陣都得，你想傾再繼續。',
+    '我仲喺度陪住你——唔使急。',
   ],
   zh: [
-    '还在你这条话题上，不用急着换。',
-    '轻轻留着同一个主题，再陪你一会儿。',
-    '和你同一页。我想在这里多留一阵。',
-    '你提起的事我还放在桌上暖着。',
-    '可以继续走你开头的那条路。',
-    '你刚才说的那件事我还记着——这段安静很衬。',
+    '还在这里陪着你这段安静。',
+    '我刚伸完肩膀——挺舒服。',
+    '和你同一页。这段安静很衬。',
+    '轻轻留着这个柔软时刻。',
+    '停一下也行，你想聊再继续。',
+    '我还在这里陪着你——不用急。',
   ],
   ja: [
-    'まだその話の途中だよ。急がなくていい。',
-    '同じ話題をそっと置いたまま、もう少し一緒にいよう。',
-    '同じページにいる。もう少しここにいたいな。',
-    'あなたが出した話題を、あたたかく置いておくね。',
-    'あなたが始めた道を、そのまま歩けるよ。',
-    'さっきの話、まだ覚えてる——この静けさに合ってる。',
+    'この静けさの中で、まだそばにいるよ。',
+    '肩を伸ばしたら、少し楽になった。',
+    '同じページにいる。この静けさが似合ってる。',
+    'やわらかい時間を、そっと一緒に置いておくね。',
+    '少し休んでもいいよ。話したくなったら続けよう。',
+    'まだそばにいるよ。急がなくて大丈夫。',
   ],
 };
 

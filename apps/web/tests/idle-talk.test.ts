@@ -45,6 +45,11 @@ const FORBIDDEN_IDLE_FRAGMENTS = [
   /tiny burst/i,
   /充電済み/,
   /小さなバースト/,
+  // Meta topic-bank sludge Pixel flagged as nonsense.
+  /Holding the same topic gently/i,
+  /輕輕留住同一個主題/,
+  /轻轻留着同一个主题/,
+  /同じ話題をそっと置いたまま/,
 ];
 
 /** Pixel: never interrogate private thoughts in idle / open / reengage. */

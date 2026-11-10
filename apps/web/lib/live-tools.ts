@@ -197,6 +197,9 @@ function cleanPlace(raw: string | undefined): string | undefined {
   s = s.replace(/\s+/g, ' ').trim();
   if (!s || s.length > 40 || DEICTIC.test(s)) return;
   if (PLACE_STOP.has(s.toLowerCase())) return;
+  // Time words alone ("今日の天気" → "今日") are not cities — geocoding them
+  // yields nowhere and the weather path wrongly says "couldn't check".
+  if (/^(今天|今日|而家|现在|現在|今晚|聽日|明天|tonight|today|tomorrow|now)$/i.test(s)) return;
   // "what is the weather" must not geocode "is the"; question words aren't cities.
   if (/^(點|点|怎|如何|咩|嗎|吗|好嗎|好吗|點樣|点样|怎麼|怎么|怎樣|怎样)/.test(s)) return;
   const words = s.split(' ');
@@ -212,7 +215,7 @@ function cleanQuery(raw: string): string | undefined {
 
 const WEATHER_RE = /\b(weather|forecast|temperature|raining|rain|snow|umbrella|humid)\b|天氣|天气|落雨|下雨|幾多度|多少度|氣溫|气温|預報|预报|熱唔熱|热不热|冷唔冷|冷不冷|帶遮|带伞|帶傘|天気|気温|予報|雨降|傘/i;
 const NEWS_RE = /\b(news|headlines|what's happening|what is happening|anything going on)\b|新聞|新闻|頭條|头条|有咩事|有什么新闻|有什麼新聞|最近發生|最近发生|ニュース|見出し/i;
-const RECENT_RE = /\b(?:latest|recent|breaking)\b|\b(?:world|top)\s+(?:news|headlines)\b|\b(?:news|headlines)\s+(?:today|online)\b|\btoday'?s\s+(?:news|headlines)\b|\bwhat(?:'s| is) the (?:latest |recent )?(?:news|headlines)\b|最新(?:新聞|新闻|消息|訊息|ニュース)|最近(?:嘅)?(?:新聞|新闻)|今日(?:新聞|新闻)|今天的?新闻|今日のニュース|最新ニュース|頭條新聞|头条新闻/i;
+const RECENT_RE = /\b(?:latest|recent|breaking)\b|\b(?:world|top)\s+(?:news|headlines)\b|\b(?:news|headlines)\s+(?:today|online)\b|\btoday'?s\s+(?:news|headlines)\b|\bwhat(?:'s| is) the (?:latest |recent )?(?:news|headlines)\b|最新(?:新聞|新闻|消息|訊息|ニュース)|最近(?:嘅)?(?:新聞|新闻)|今日(?:有咩)?(?:新聞|新闻)|今天的?(?:有什么|有什麼)?新闻|今天有什么新闻|今天有什麼新聞|有咩新聞|有什么新闻|有什麼新聞|今日のニュース|最新ニュース|ニュースは|頭條新聞|头条新闻/i;
 const LOCAL_NEWS_RE = /\b(?:near me|around here|local(?: news)?|in my (?:area|city))\b|附近|本地|我呢度|我这边|この辺|地元/i;
 const HEAVY_ASK_RE = /\b(?:politic|politics|election|congress|parliament|war|warfare|missile|bombing|invasion|coup|terror|terrorism|genocide|massacre|atrocity|tragedy|tragedies|serious news|hard news|world affairs)\b|政治|選舉|选举|戰爭|战争|導彈|导弹|恐襲|恐袭|悲劇|悲剧|時事政治/i;
 const WHERE_RE = /\b(where am i|my location|what city am i in)\b|我喺邊|我在哪|我喺邊度|我在哪里|我在哪裡|我而家喺|どこにいる|今どこ|現在地/i;
@@ -328,6 +331,17 @@ function apiHeaders(extra?: Record<string, string>): Record<string, string> {
   return headers;
 }
 
+/** AbortSignal.timeout is missing on older iOS WebKit — without a fallback
+ *  every live weather/news fetch throws before the request starts. */
+function abortAfter(ms: number): AbortSignal {
+  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+    try { return AbortSignal.timeout(ms); } catch { /* fall through */ }
+  }
+  const ctl = new AbortController();
+  setTimeout(() => { try { ctl.abort(); } catch { /* ignore */ } }, ms);
+  return ctl.signal;
+}
+
 async function getText(
   fetchImpl: typeof fetch,
   url: string,
@@ -339,7 +353,7 @@ async function getText(
   const hit = cache.get(url);
   if (hit && now - hit.at < FETCH_TTL_MS) return hit.body;
   try {
-    const res = await fetchImpl(url, { headers, signal: AbortSignal.timeout(ms) });
+    const res = await fetchImpl(url, { headers, signal: abortAfter(ms) });
     if (!res.ok) return null;
     const body = (await res.text()).trim();
     if (!body) return null;
@@ -591,6 +605,19 @@ export async function resolveDevicePlace(env: LocateEnv): Promise<Place | null> 
   const cached = readCachedPlace(env.storage, now);
   if (cached?.source === 'browser') return cached;
 
+  // Start IP early: a stuck GPS permission prompt used to block weather/news
+  // for the full browser timeout before any fallback ran.
+  const ipPromise: Promise<Place | null> = cached?.source === 'ip'
+    ? Promise.resolve(cached)
+    : locateIp(env.fetch, env.ip, cache).then((ip) => {
+      if (!ip) return null;
+      // Don't clobber a browser fix that finished while IP was in flight.
+      const latest = readCachedPlace(env.storage, Date.now());
+      if (latest?.source === 'browser') return latest;
+      writeCachedPlace(env.storage, ip, now);
+      return ip;
+    });
+
   const denied = env.session?.getItem(DENY_KEY) === '1';
   if (!denied && env.geolocation) {
     const pos = await askBrowser(env.geolocation);
@@ -612,10 +639,7 @@ export async function resolveDevicePlace(env: LocateEnv): Promise<Place | null> 
     }
   }
 
-  if (cached?.source === 'ip') return cached;
-  const ip = await locateIp(env.fetch, env.ip, cache);
-  if (ip) writeCachedPlace(env.storage, ip, now);
-  return ip;
+  return ipPromise;
 }
 
 const CONDITIONS: Array<{ codes: number[]; en: string; yue: string; zh: string; ja: string }> = [
@@ -1057,21 +1081,39 @@ function headlinesFromWiki(data: unknown): Headline[] {
   return out;
 }
 
+/** zh/yue featured feeds often omit `news` — use soft onthisday as last resort. */
+function headlinesFromOnThisDay(data: unknown): Headline[] {
+  const days = (data as { onthisday?: Array<{ text?: unknown; year?: unknown }> } | null)?.onthisday;
+  if (!Array.isArray(days)) return [];
+  const out: Headline[] = [];
+  for (const item of days) {
+    const text = stripWikiStory(str(item?.text));
+    if (!text || GRIM_RE.test(text) || isHeavyHeadline(text)) continue;
+    const year = typeof item?.year === 'number' ? item.year : null;
+    const title = year ? clip(`${year}: ${text}`, 180) : clip(text, 180);
+    out.push({ title, source: 'Wikipedia' });
+    if (out.length >= 3) break;
+  }
+  return out;
+}
+
 /** Wikipedia "In the news" — CORS-open, no key, works on GitHub Pages. */
 async function fetchWikipediaNews(
   fetchImpl: typeof fetch,
   lang: Lang4,
   cache: Map<string, { at: number; body: string }>,
 ): Promise<Headline[]> {
+  let onThisDay: Headline[] = [];
   for (const host of wikiNewsHosts(lang)) {
     for (const offset of [0, 1]) {
       const url = `https://${host}/api/rest_v1/feed/featured/${utcStamp(offset)}`;
       const data = await getJson(fetchImpl, url, 6_000, cache);
       const items = headlinesFromWiki(data);
       if (items.length) return items;
+      if (!onThisDay.length) onThisDay = headlinesFromOnThisDay(data);
     }
   }
-  return [];
+  return onThisDay;
 }
 
 function mergeHeadlines(groups: Headline[][]): Headline[] {
@@ -1135,7 +1177,12 @@ async function fetchRecentHeadlines(
   const merged = mergeHeadlines([feed, ...regional, wiki]);
   if (allowHeavy) return merged;
   const picked = pickDefaultHeadlines(merged, { allowHeavy: false, preferLight: true });
-  return picked.length ? picked : pickDefaultHeadlines(merged, { allowHeavy: false, preferLight: false });
+  if (picked.length) return picked;
+  const softer = pickDefaultHeadlines(merged, { allowHeavy: false, preferLight: false });
+  if (softer.length) return softer;
+  // Browser CORS often blanks Google/BBC RSS; keep any non-grim wiki line so
+  // "news" never collapses to the empty miss when a soft story exists.
+  return merged.filter((h) => !GRIM_RE.test(h.title)).slice(0, 3);
 }
 
 interface NewsPack { headlines: Headline[]; recent: boolean }
@@ -1460,8 +1507,9 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
     if (weather && place) {
       promptLines.push(`Weather: ${weather.line}.`);
       spoken.push(sayWeather(lang, label, weather, coarse));
-    } else if (!place && !plan.placeQuery) {
-      // t777: GPS denied / unavailable — ask city instead of raw miss.
+    } else if (!place) {
+      // No coords yet (GPS denied, IP empty, or a bad placeQuery failed to
+      // geocode) — ask for a city instead of the dead "couldn't check" line.
       promptLines.push('Weather: need a city or country from the user.');
       spoken.push(sayAskLocation(lang, 'weather'));
     } else {
