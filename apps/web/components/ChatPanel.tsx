@@ -181,7 +181,7 @@ import {
   undecidedTopicReply,
   userUndecided,
 } from '../lib/topic-suggestions';
-import { speak, stopSpeaking, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechRemainder, whenSpeechIdle, speakThinkingFiller } from '../lib/voice';
+import { speak, stopSpeaking, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechRemainder, whenSpeechIdle } from '../lib/voice';
 import { cantHearReply, isCantHearComplaint } from '../lib/cant-hear';
 import { productionChat } from '../lib/backend-client';
 import { stopThinkingSound } from '../lib/thinking-sound';
@@ -1236,25 +1236,12 @@ export default function ChatPanel({
     }
     setThinkingPose(true);
     pushAutoIdle('', undefined, true);
-    // t790 / Pixel — the wait cue is HER OWN TTS voice, silent until the reply
-    // has been loading for 3 seconds, then two full "let me think" lines. The
-    // same beat paints the placeholder bubble, so screen and speaker agree.
-    // A sing or dance ask already has a premade clip as the wait audio.
-    if (requested !== 'sing' && requested !== 'dance') {
-      speakThinkingFiller(characterId, lang, felt?.mood, text, (line) => {
-        if (!transientRef.current) return;
-        setHistory((h) => {
-          const last = h.length - 1;
-          const tail = h[last];
-          if (!tail || tail.role !== 'assistant') return h;
-          return [...h.slice(0, last), { ...tail, content: line }];
-        });
-        notifySpeaking(line);
-      });
-    }
+    // Pixel: no spoken "um…" loading filler — it never matched reply TTS.
+    // Wait is visual only (thinking pose + "…" bubble) until the reply lands.
+    stopThinkingSound();
     // r.47 — ONE transient placeholder bubble carries the whole wait. It
-    // starts as '…' and takes the wait beats above. The first stream token
-    // takes the bubble over, and the final reply commits in its place.
+    // starts as '…'. The first stream token takes the bubble over, and the
+    // final reply commits in its place.
     setHistory((h) => [...h, { role: 'assistant', content: '…' }]);
     transientRef.current = true;
     // learn from the user's words, then inject what she remembers into her prompt

@@ -111,7 +111,7 @@ import { resolveOsPin, resolvePinnedVoice } from './os-voice-resolve';
 import { deliveryGenderForChoice, isVoiceLocale, tlForChoice } from './voice-capability';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
 import { formatVoiceChain, freeVoiceHops } from './tts-chain';
-import { startThinkingSound, stopThinkingSound } from './thinking-sound';
+import { stopThinkingSound } from './thinking-sound';
 import { runEarlyAudioPreload } from './early-audio-preload';
 // r2026-10-05.112: tier 0 — OpenAI gpt-4o-mini-tts (ChatGPT-style emotional
 // voice via natural-language instructions). Sits AHEAD of the free chain;
@@ -1337,34 +1337,17 @@ export function stopSpeaking(): void {
 }
 
 /**
- * Short "um……" while the reply is still generating. The mouth moves with the
- * stub. The reply waits until this utterance finishes.
- * r2026-10-03.24: an optional felt mood tints the filler text itself (the
- * face/orb already wear the mood via applyContentMood in the caller).
- * t790: the wait is now two beats starting at 2s, and every beat is spoken by
- * HER OWN TTS chain — the same voice and pitch as a reply — instead of a
- * recorded CLIP_LIBRARY um, which was a different person talking.
- * `onBeat` lets the caller paint the same line in the placeholder bubble, so
- * screen and speaker never disagree.
+ * Loading filler — disabled (Pixel: um… voice did not match reply TTS).
+ * Kept as a no-op so ChatPanel / face callers do not need a parallel cut.
  */
 export function speakThinkingFiller(
-  characterId: string,
-  lang: Lang,
-  mood?: string,
-  userText?: string,
-  onBeat?: (text: string) => void,
+  _characterId: string,
+  _lang: Lang,
+  _mood?: string,
+  _userText?: string,
+  _onBeat?: (text: string) => void,
 ): void {
-  if (!voiceOutputAllowed()) return;
-  startThinkingSound({
-    lang,
-    characterId,
-    mood,
-    userText,
-    say: (text) => {
-      enqueueThinkingFiller(text, characterId, lang);
-      onBeat?.(text);
-    },
-  });
+  stopThinkingSound();
 }
 
 /**
