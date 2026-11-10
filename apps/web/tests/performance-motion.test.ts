@@ -80,15 +80,20 @@ describe('performance-motion (t725-729 + measured BPM)', () => {
   });
 });
 
-describe('dance-clip-sources interim remotes', () => {
+describe('dance-clip-sources local shortlist', () => {
   it('lists shortlist and builds ANIM_MIRROR-first URLs', () => {
     expect(DANCE_CLIP_SOURCES.length).toBeGreaterThanOrEqual(12);
-    const interim = DANCE_CLIP_SOURCES.filter((s) => s.status === 'interim-remote');
-    expect(interim.map((s) => s.id).sort()).toEqual(['lib_C03', 'lib_C110', 'lib_C61', 'lib_C62']);
+    const leggy = DANCE_CLIP_SOURCES.filter((s) =>
+      ['lib_C03', 'lib_C110', 'lib_C61', 'lib_C62', 'lib_C125', 'lib_C126', 'lib_C127'].includes(s.id),
+    );
+    expect(leggy.every((s) => s.status === 'local')).toBe(true);
+    expect(leggy.every((s) => s.localPreferred)).toBe(true);
     const sources = dancePerfClipSources('/models/anims');
     const twist = sources.find((s) => s.id === 'lib_C110')!;
     expect(twist.urls[0]).toBe('/models/anims/lib_C110.vrma');
     expect(twist.urls.some((u) => u.includes('twistDance.vrma'))).toBe(true);
+    const hipHop = sources.find((s) => s.id === 'lib_C61')!;
+    expect(hipHop.urls[0]).toBe('/models/anims/lib_C61.vrma');
     const sway = sources.find((s) => s.id === 'lib_C112')!;
     expect(sway.urls).toEqual(['/models/anims/lib_C112.vrma']);
   });

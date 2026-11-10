@@ -96,9 +96,10 @@ const KEYWORD_BUCKETS: readonly Bucket[] = [
 const CATEGORY_CLIP: Record<BucketCategory | 'breathe' | 'look' | 'stretch' | 'sing', string> = {
   greet: 'lib_C25',
   think: 'Thinking',
-  dance: 'lib_C113',
-  // Listening-to-music idle (rail / library #12) — not LookAround.
-  music: 'lib_C41',
+  // Hip-hop / dance-loop with real leg keys (feet free while music plays).
+  dance: 'lib_C61',
+  // Listening-to-music: sway + light footwork, not LookAround.
+  music: 'lib_C112',
   martial: 'lib_C121',
   scared: 'lib_C146',
   react: 'Cheer',
@@ -108,12 +109,14 @@ const CATEGORY_CLIP: Record<BucketCategory | 'breathe' | 'look' | 'stretch' | 's
   sing: 'IdleMixamoHappy',
 };
 
-/** Music / concert talk without a full dance ask — sway with the catalog. */
+/** Music / concert talk without a full dance ask — sway + legs with the beat. */
 const MUSIC_POSE_CLIPS = [
+  'lib_C112', // GentleSway (legs free)
+  'lib_C61', // HipHopDancing
+  'lib_C03', // Dance_Loop
+  'lib_C113', // DancingMedium
+  'lib_C110', // Twist
   'lib_C41', // ListeningToMusic
-  'lib_C112', // GentleSway
-  'lib_C113', // DancingMedium / hip-hop arms
-  'lib_C114', // Party
   'IdleMixamoHappy',
 ] as const;
 
@@ -140,11 +143,14 @@ function pickNeutralChatIdle(seed: string): string {
 
 function pickDanceClip(text: string): string {
   const t = text.toLowerCase();
-  if (/jazz|爵士/.test(t)) return idleClipById('lib_C112') ? 'lib_C112' : 'lib_C113';
+  if (/jazz|爵士/.test(t)) return idleClipById('lib_C60') ? 'lib_C60' : 'lib_C112';
   if (/robot|機器人|机器人/.test(t)) return idleClipById('lib_C111') ? 'lib_C111' : 'lib_C113';
-  if (/party|派對|派对|club|夜店/.test(t)) return idleClipById('lib_C114') ? 'lib_C114' : 'lib_C113';
-  if (/hip[- ]?hop|嘻哈/.test(t)) return idleClipById('lib_C113') ? 'lib_C113' : 'lib_C113';
-  return idleClipById('lib_C113') ? 'lib_C113' : pickBreathingDefault(text);
+  if (/party|派對|派对|club|夜店/.test(t)) return idleClipById('lib_C114') ? 'lib_C114' : 'lib_C61';
+  if (/salsa|samba|rumba|騷莎|萨尔萨/.test(t)) return idleClipById('lib_C62') ? 'lib_C62' : 'lib_C127';
+  if (/twist|扭/.test(t)) return idleClipById('lib_C110') ? 'lib_C110' : 'lib_C61';
+  if (/break|footwork|腳步|脚步/.test(t)) return idleClipById('lib_C125') ? 'lib_C125' : 'lib_C61';
+  if (/hip[- ]?hop|嘻哈/.test(t)) return idleClipById('lib_C61') ? 'lib_C61' : 'lib_C03';
+  return idleClipById('lib_C61') ? 'lib_C61' : idleClipById('lib_C03') ? 'lib_C03' : pickBreathingDefault(text);
 }
 
 function pickMusicClip(text: string): string {
@@ -157,10 +163,10 @@ function pickMusicClip(text: string): string {
     return idleClipById('lib_C114') ? 'lib_C114' : pickFromPool(text, MUSIC_POSE_CLIPS);
   }
   if (/hip[- ]?hop|嘻哈|upbeat|快歌/.test(t)) {
-    return idleClipById('lib_C113') ? 'lib_C113' : pickFromPool(text, MUSIC_POSE_CLIPS);
+    return idleClipById('lib_C61') ? 'lib_C61' : idleClipById('lib_C03') ? 'lib_C03' : pickFromPool(text, MUSIC_POSE_CLIPS);
   }
   if (/listen|聽歌|听歌|concert|演唱會|演唱会|音樂會|音乐会/.test(t)) {
-    return idleClipById('lib_C41') ? 'lib_C41' : pickFromPool(text, MUSIC_POSE_CLIPS);
+    return idleClipById('lib_C112') ? 'lib_C112' : pickFromPool(text, MUSIC_POSE_CLIPS);
   }
   return pickFromPool(text, MUSIC_POSE_CLIPS);
 }

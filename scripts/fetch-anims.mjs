@@ -80,6 +80,14 @@ const SOURCES = [
   // r106: eating performances (hand-to-mouth proxies — no literal eating clip exists)
   { id: 'Eat', urls: [`${CHAT}/smoking.vrma`] },
   { id: 'Dine', urls: [`${CHAT}/blowAKiss.vrma`] },
+  // Dance legs shortlist — free feet while music/dance plays (BPM timeScale)
+  { id: 'lib_C03', urls: [`${CHAT}/hipHopDance.vrma`] },
+  { id: 'lib_C61', urls: [`${CHAT}/hipHopDancing.vrma`] },
+  { id: 'lib_C62', urls: [`${CHAT}/sambaDancing.vrma`] },
+  { id: 'lib_C110', urls: [`${CHAT}/twistDance.vrma`] },
+  { id: 'lib_C125', urls: [`${CHAT}/breakdanceFootwork1.vrma`] },
+  { id: 'lib_C126', urls: [`${CHAT}/breakdanceFootwork2.vrma`] },
+  { id: 'lib_C127', urls: [`${CHAT}/rumbaDancing.vrma`] },
 ];
 
 fs.mkdirSync(DEST, { recursive: true });

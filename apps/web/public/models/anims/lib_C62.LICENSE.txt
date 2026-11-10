@@ -1,0 +1,3 @@
+Salsa / Samba dancing (lib_C62) — Mixamo-class VRMA mirrored from
+DavinciDreams/3dchat (public/animations/vrma/sambaDancing.vrma).
+Used for dance + music beat matching with free feet.

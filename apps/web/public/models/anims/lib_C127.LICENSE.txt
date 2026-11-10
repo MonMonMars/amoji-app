@@ -1,0 +1,3 @@
+RumbaDancing (lib_C127) — Mixamo-class VRMA mirrored from
+DavinciDreams/3dchat (public/animations/vrma/rumbaDancing.vrma).
+Used for dance + music beat matching with free feet.
