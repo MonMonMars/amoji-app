@@ -89,7 +89,7 @@ describe('premade sing and dance library', () => {
   });
 
   it('scales with the dialogue and BGM steps', () => {
-    const song = PERFORMANCE_CLIPS.find((c) => c.id === 'sing-f-hello')!;
+    const song = PERFORMANCE_CLIPS.find((c) => c.id === 'sing-f-twinkle')!;
     const dance = PERFORMANCE_CLIPS.find((c) => c.id === 'dance-silent-dance-floor')!;
     expect(performanceGain(song, 80)).toBeCloseTo(0.92 * 0.8);
     expect(performanceGain(dance, 40)).toBeCloseTo(0.3 * 0.4);
