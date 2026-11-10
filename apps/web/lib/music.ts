@@ -498,6 +498,9 @@ function playClipElement(url: string, token: number, characterId: string): boole
   if (typeof Audio === 'undefined') return false;
   try {
     const audio = new Audio(url);
+    // Own this element so duckExternalAudioForCompanion / pauseForeignPageMedia
+    // never pause the song/dance bed when companion TTS starts (Pixel: no volume dip).
+    try { audio.dataset.amojiAudio = '1'; } catch { /* non-DOM Audio stubs */ }
     pinDefaultOutput(audio);
     audio.loop = true;
     clipEl = audio;

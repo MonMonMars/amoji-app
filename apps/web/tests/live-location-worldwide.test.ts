@@ -123,7 +123,10 @@ describe('resolved location reaches both queries', () => {
     expect(weatherUrl).toContain('longitude=13.405');
     expect(live.prompt).toContain('Berlin');
     expect(live.prompt).not.toContain('Hong Kong');
-    expect(live.spoken).toContain('Berlin');
+    // Spoken weather: degrees + condition + prep — city stays in the prompt only.
+    expect(live.spoken).toMatch(/12°/);
+    expect(live.spoken).not.toContain('Berlin');
+    expect(live.spoken.toLowerCase()).toMatch(/take care/);
 
     clearLiveCache();
     const news = await gatherLiveContext('news near me', {

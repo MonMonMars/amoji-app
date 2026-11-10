@@ -152,6 +152,12 @@ function distinctiveToken(title: string): string {
 /** Free models often shrug ("I don't have live weather") even when the facts
  *  were in the prompt. If the reply missed the temperature or the headline,
  *  speak the facts we already fetched. */
+/** True when a model reply leaks GPS / accuracy / “may be wrong” location talk. */
+export function weatherAccuracyLeak(text: string): boolean {
+  return /gps|precise\s+fix|network\s+(?:estimate|guess)|may be wrong|might be wrong|not\s+accura|location\s+(?:is\s+)?(?:not\s+)?(?:accura|exact)|粗略|網絡估計|网络估计|定位不准|不够准|不夠準|精確定位|精确位置|GPS|測位.*正確|正確.*測位|位置.*違う|正確ではない/i
+    .test(text);
+}
+
 export function preferLiveReply(reply: string, world?: string, spoken?: string, lang?: string): string {
   const facts = world?.trim() ?? '';
   const line = spoken?.trim() ?? '';
@@ -166,6 +172,8 @@ export function preferLiveReply(reply: string, world?: string, spoken?: string, 
   const newsOk = !token || reply.toLowerCase().includes(token.toLowerCase());
   const venueOk = !venue?.[1] || reply.toLowerCase().includes(venue[1].toLowerCase());
   const dishOk = !dishWord || reply.toLowerCase().includes(dishWord.toLowerCase());
+  // Weather turns: if the model still talks about GPS / accuracy, speak our canned line.
+  if (temp && weatherAccuracyLeak(reply)) return withQuestion(line, lang);
   if (tempOk && newsOk && venueOk && dishOk && !REFUSAL_RE.test(reply)) return reply;
   return withQuestion(line, lang);
 }
@@ -1282,21 +1290,21 @@ function weatherPrep(code: number, tempC: number, lang: Lang4): string {
   return '薄外套就夠喇';
 }
 
-function sayWeather(lang: Lang4, label: string, w: WeatherFacts, _coarse: boolean): string {
+function sayWeather(lang: Lang4, _label: string, w: WeatherFacts, _coarse: boolean): string {
   const t = Math.round(w.temp);
   const cond = condition(w.code, lang);
   const prep = weatherPrep(w.code, w.temp, lang);
-  // Spoken weather never mentions GPS / network accuracy / city uncertainty.
+  // Pixel: degrees + condition + clothing/gear + take care — never city/GPS/accuracy talk.
   if (lang === 'en') {
-    return `It's about ${t}° and ${cond} in ${label} right now. ${prep} — take care!`;
+    return `It's about ${t}° and ${cond} right now. ${prep} — take care!`;
   }
   if (lang === 'zh') {
-    return `${label}这会儿大约${t}度，${cond}。${prep}，保重！`;
+    return `这会儿大约${t}度，${cond}。${prep}，保重！`;
   }
   if (lang === 'ja') {
-    return `${label}は今だいたい${t}度で${cond}。${prep}ね。気をつけて！`;
+    return `今だいたい${t}度で${cond}。${prep}ね。気をつけて！`;
   }
-  return `${label}而家大約${t}度，${cond}。${prep}，保重呀！`;
+  return `而家大約${t}度，${cond}。${prep}，保重呀！`;
 }
 
 function sayNews(lang: Lang4, label: string, title: string): string {
@@ -1440,14 +1448,9 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
   const spoken: string[] = [];
 
   if (place) {
-    const how = place.source === 'browser'
-      ? 'browser location'
-      : place.source === 'ip'
-        ? 'coarse network estimate, not a precise fix'
-        : place.source === 'manual'
-          ? 'the city they set in Settings'
-          : 'the place they named';
-    promptLines.push(`Place: ${label} (${how}).`);
+    // Never feed GPS / network-accuracy wording into the model — free LLMs
+    // echo it into spoken weather ("location may be wrong"). City alone is enough.
+    promptLines.push(`Place: ${label}.`);
   }
   if (plan.where && !plan.weather) {
     if (place) spoken.push(sayWhere(lang, label, coarse));
