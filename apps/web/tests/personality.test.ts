@@ -6,6 +6,7 @@ import {
 } from '../lib/personality';
 import { VOICE_IDS } from '../lib/personality-voice';
 import { pickIdleLine, pickPokeLine } from '../lib/persona-chatter';
+import { PASSIVE_IDLE_LOOP_TEMPLATE } from '../lib/idle-passive-loop';
 import { IDLE_POSES } from '@amoji/vrm-renderer';
 
 const POSE_IDS = new Set(IDLE_POSES.map((p) => p.id));
@@ -60,7 +61,7 @@ describe('auto personality', () => {
     restore();
   });
 
-  it('leads every personality with the relax → stretch → look passive loop', () => {
+  it('leads every personality with the calm-heavy passive idle loop', () => {
     const restore = swapLs();
     const g = globalThis as { localStorage: Storage };
     const female = ['sunny', 'shy', 'playful', 'gentle', 'dreamy', 'spark'] as const;
@@ -68,18 +69,24 @@ describe('auto personality', () => {
     const stored: Record<string, string> = {};
     for (const tag of [...female, ...male]) stored[`p-${tag}`] = tag;
     g.localStorage.setItem('amoji.personality.v1', JSON.stringify(stored));
-    const loop = ['IdleBreathCalm', 'Relax', 'StandardIdle', 'LookAround'];
-    const dropped = ['IdleNeutral', 'Thinking', 'IdleChinHand', 'IdleHug', 'IdleSassy', 'Impatient', 'WeightShift', 'HelloWave'];
+    // Calm-heavy: stretch once at end; no arm-raise / wave / dance fillers.
+    const loop = [...PASSIVE_IDLE_LOOP_TEMPLATE];
+    const dropped = [
+      'IdleNeutral', 'Thinking', 'IdleChinHand', 'IdleHug', 'IdleSassy',
+      'Impatient', 'WeightShift', 'HelloWave', 'IdleMixamoArmStretch',
+    ];
     for (const tag of female) {
       const clips = personalityMotion(`p-${tag}`, 'female').idleClips;
       expect(clips[0]).toBe('IdleBreathCalm');
       expect(clips).toEqual(loop);
+      expect(clips[clips.length - 1]).toBe('Relax');
       for (const id of dropped) expect(clips).not.toContain(id);
     }
     for (const tag of male) {
       const clips = personalityMotion(`p-${tag}`, 'male').idleClips;
       expect(clips[0]).toBe('IdleBreathCalm');
       expect(clips).toEqual(loop);
+      expect(clips[clips.length - 1]).toBe('Relax');
       for (const id of dropped) expect(clips).not.toContain(id);
     }
     expect(personalityMotion('p-cool', 'male').idleClips).toEqual(loop);
