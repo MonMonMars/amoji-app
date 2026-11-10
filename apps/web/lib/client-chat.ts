@@ -1120,7 +1120,10 @@ function packageReply(
   // Ability/showcase invites stay idle-only — strip offtopic tack-ons even on
   // rich/long paths (exception never authorizes dance-on-Jupiter).
   const cleaned = stripOffTopicAbilityTacks(done.reply, ctx.lastUser) || done.reply;
-  const spoken = ctx.story ? cleaned : withQuestion(cleaned, ctx.language);
+  const factsTurn = Boolean(ctx.worldSpoken?.trim()) || /\b(?:Weather|Light news|Recent news)\s*:/i.test(ctx.world ?? '');
+  const spoken = ctx.story || factsTurn
+    ? cleaned
+    : withQuestion(cleaned, ctx.language);
   const reply = preferLiveReply(spoken, ctx.world, ctx.worldSpoken, ctx.language);
   return { ...done, reply };
 }
@@ -1171,7 +1174,8 @@ export async function clientChat(
   const factsReply = (): ClientChatResult | null => {
     const spoken = opts?.worldSpoken?.trim();
     if (!spoken) return null;
-    return { reply: withQuestion(spoken, opts?.language), emotionHints: analyzeText(spoken) as Record<string, number> };
+    // Live weather/news already spoken — never append a follow-up question.
+    return { reply: spoken, emotionHints: analyzeText(spoken) as Record<string, number> };
   };
   const first = pickBrain();
   const sanityCtx: SanityContext = {

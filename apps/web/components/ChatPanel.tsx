@@ -161,7 +161,6 @@ import {
 } from '../lib/daily-quota';
 import { planStatus } from '../lib/billing';
 import { clientLiveContext, isLiveFactsOnlyTurn, planTools } from '../lib/live-tools';
-import { withQuestion } from '../lib/follow-up';
 import {
   OPEN_CHEER_MS,
   OPEN_IDLE_BRIEF_MS,
@@ -1277,7 +1276,8 @@ export default function ChatPanel({
       const livePlan = planTools(text, priorUser);
       if (isLiveFactsOnlyTurn(livePlan, worldSpoken)) {
         stopThinkingSound();
-        const line = stripOfftopicAbilityTack(withQuestion(worldSpoken, lang), text);
+        // Weather/news fact reads stay finished statements — no withQuestion fishing.
+        const line = stripOfftopicAbilityTack(worldSpoken, text);
         rememberTurn(text, line);
         onMemCountRef.current?.(memorySummaryCount());
         feedUtterance(line);
