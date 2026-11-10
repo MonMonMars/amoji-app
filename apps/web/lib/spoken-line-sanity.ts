@@ -16,7 +16,7 @@ export interface SpokenGateOpts {
 /** Known-good statement fallbacks when a candidate fails the gate. */
 export const SAFE_IDLE_FALLBACK: Record<Lang, readonly string[]> = {
   en: [
-    'Still here with you in this quiet stretch.',
+    'I just stretched my shoulders — feels nice.',
     'Holding this soft moment with you.',
     'Same page as you. The quiet suits us.',
   ],
@@ -68,6 +68,10 @@ export function asksToResumeHistory(line: string): boolean {
 const BROKEN_FRAGMENT =
   /\ba\s+small\s+map\s+reminding\s+you\b|\ba\s+tiny\s+map\s+reminded(?:\s+me\s+of\s+you)?\b|\ba\s+tiny\s+map\s+is\s+small\b|\ba\s+pocket\s+map\s+reminding\s+you\b|\breminding\s+you\s*[.…]*\s*$|\breminded\s+me\s+of\s*$|A\s+little\s+maps\s+feels\b|Um,\s+maps\s+makes\b|^maps\s+is\b|提醒我你|轻轻提醒我想起你|輕輕提醒我你/i;
 
+/** Metaphor-sludge idle fills: "friendly riddle is charged / voltage / tiny burst". */
+const BROKEN_METAPHOR_SLUDGE =
+  /充滿電|充满电|電壓感覺友善|电压感觉友善|細爆發|小爆发|短短.{0,8}爆發|短短.{0,8}爆发|is charged and ready|voltage feels friendly|tiny burst|充電済み|電圧は友好|小さなバースト|短い.{0,8}バースト/i;
+
 const UNFINISHED_EN =
   /\b(?:reminding|reminded|about|of|to|for|with|and|or|the|a|an|is|are|was|were|like)\s*[.…]*\s*$/i;
 
@@ -88,6 +92,7 @@ export function spokenLineLooksBroken(text: string, opts?: SpokenGateOpts): bool
   if (!t || t === '…' || t === '...') return true;
   if (/\{[a-zA-Z_][a-zA-Z0-9_]*\}/.test(t)) return true;
   if (BROKEN_FRAGMENT.test(t)) return true;
+  if (BROKEN_METAPHOR_SLUDGE.test(t)) return true;
 
   const d = dense(t);
   const hasCjk = CJK.test(t);

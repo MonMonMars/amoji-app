@@ -34,11 +34,10 @@
 // the conversation thread (last user words + her reply), so the next session
 // opens with "last time we were talking about…" and her prompt always
 // carries the open topic.
-// r2026-10-03.38: staged re-engagement — when the USER (not just the room)
-// goes quiet, she leans in over time: her usual idle chatter from 40s, direct
-// "you've gone quiet" follow-ups from ~2 min, and a soft closer at ~5 min
-// said ONCE — then she waits instead of nagging. Any real user action
-// (message, poke, spoken word, even tapping the mic off) resets the curve.
+// r2026-10-03.38: staged idle — when the USER goes quiet, body keeps moving
+// (passive idle / stretch) and soft topic offers may fire; never blame silence
+// ("you've gone quiet" / "are you still there" / "did you walk away"). Any real
+// user action (message, poke, spoken word, even tapping the mic off) resets.
 // r2026-10-03.39: activity dialogue sets her body off — "sing for me",
 // "跳一下", "kung fu!", "太極", "play the piano", "跑步" each trigger a
 // choreographed movement-library performance while her reply plays.
@@ -183,6 +182,7 @@ import {
   userUndecided,
 } from '../lib/topic-suggestions';
 import { speak, stopSpeaking, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechRemainder, whenSpeechIdle, speakThinkingFiller } from '../lib/voice';
+import { cantHearReply, isCantHearComplaint } from '../lib/cant-hear';
 import { productionChat } from '../lib/backend-client';
 import { stopThinkingSound } from '../lib/thinking-sound';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
@@ -639,16 +639,23 @@ export default function ChatPanel({
     const title = clipTitle(clip, lang);
     const intro = performanceIntroLine(kind === 'song' ? 'song' : 'music', title, lang);
     const hold = Math.max(clip.durationMs + 600, ms);
+    // Body move for the whole show: music beds used to set a beat profile only
+    // and never triggerMove, so she stayed on calm idle with no beat motion.
+    const bodyMove = kind === 'song' ? 'sing' : 'dance';
+    triggerMove(bodyMove);
     // Name on the now-playing chip immediately; audio waits for the intro.
     showTrack(clip, hold);
     sayLocal(intro, { joy: kind === 'song' ? 0.82 : 0.7 });
     whenSpeechIdle(() => {
-      // t718: music.ts arms to max(ms, clip.durationMs+600); hold body/mic for songs.
+      // t718: music.ts arms to max(ms, clip.durationMs+600); hold body for the bed.
       // Style (jazz/pop/lofi…) prefers Mixkit royalty-free streams for dance beds.
       const playing = startLibraryPerformance(query);
       // t725–729: song/style → body tag + beat-matched timeScale for CompanionCanvas.
       setPerfMotionProfile(resolvePerfMotion({ id: playing.id, kind: playing.kind, style: playing.style }));
-      if (kind === 'song') holdMove(hold);
+      // Re-arm on bed start so the rising-edge playPerf syncs with audio, and
+      // hold past the default 9s move so dance/music beds keep moving to the beat.
+      triggerMove(bodyMove);
+      holdMove(hold);
       showTrack(playing, hold);
       afterStart?.();
     });
@@ -872,13 +879,11 @@ export default function ChatPanel({
     return () => clearInterval(timer);
   }, []);
 
-  // idle chatter + staged re-engagement (r.38): she never lets a quiet room
-  // die. Measured from the USER's last real action (message, poke, spoken
-  // word, mic tap) — her own lines don't restart the clock. Stage 0 (<2 min
-  // of user silence) = her usual persona/mood idle lines; stage 1 (2 min+) =
-  // direct "you've gone quiet" follow-ups that lean in harder; stage 2 (5
-  // min+) = one soft closer ("I'll be right here") and then she simply
-  // waits instead of nagging. Her lines never pile onto her own voice.
+  // idle chatter + soft topic offers (r.38): measured from the USER's last
+  // real action — her own lines don't restart the clock. Stage 0 = persona /
+  // mood / ability offers; stage 1+ = soft NEW TOPIC nudges only — never
+  // "you're so quiet" / "still there?" / "walk away" blame. After the soft
+  // closer she waits. Her lines never pile onto her own voice.
   useEffect(() => {
     const timer = setInterval(() => {
       if (busyRef.current || isSpeaking() || speechPending() || actionGameRef.current) return;
@@ -1015,6 +1020,23 @@ export default function ChatPanel({
     }
     setCrisisCard(false);
     setCrisisPopup(null);
+    // Can't-hear / no-sound — local fix only. LLM used to invent nonsense story
+    // beats ("軍艦開到極光") instead of acknowledging the audio problem.
+    if (isCantHearComplaint(text)) {
+      const tip = cantHearReply(lang);
+      const lastSaid = [...history]
+        .reverse()
+        .find((m) => m.role === 'assistant' && m.content.trim().length > 8);
+      sayLocal(tip, { sadness: 0.15 });
+      if (lastSaid?.content) {
+        // Re-say the missed line after the tip — no new invented plot.
+        whenSpeechIdle(() => {
+          speak(lastSaid.content, characterId, lang, undefined, undefined, 1);
+        });
+      }
+      done();
+      return;
+    }
     {
       const action = detectActionGame(text);
       if (action) {
@@ -1690,7 +1712,22 @@ export default function ChatPanel({
           </div>
         )}
         {busy && !speechCaption.trim() && captionLadder.length === 0 && (
-          <p className="text-white/40">{t(lang, 'typing', { name: characterName })}</p>
+          <div
+            data-testid="thinking-status"
+            className="flex flex-col items-start gap-1.5"
+            role="status"
+            aria-live="polite"
+            aria-label={t(lang, 'typing', { name: characterName })}
+          >
+            <p className="text-white/45">{t(lang, 'typing', { name: characterName })}</p>
+            {/* Indeterminate wait bar — no fake % (reply progress is unknown). */}
+            <div
+              className="ui-thinking-bar h-0.5 w-28 overflow-hidden rounded-full bg-white/10"
+              aria-hidden
+            >
+              <div className="ui-thinking-bar-fill h-full w-1/3 rounded-full bg-white/50" />
+            </div>
+          </div>
         )}
         {/* Crisis guard fired on the last turn: the fixed reply is above, and
             this card carries the tap-through to the helplines. It stays until

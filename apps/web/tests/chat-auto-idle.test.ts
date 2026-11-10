@@ -44,11 +44,12 @@ describe('chat auto idle resolver', () => {
     expect(user).toBe('lib_C113');
   });
 
-  it('maps music / concert keywords to a listening idle, not dance', () => {
+  it('maps music / concert keywords to a listening / music-pose idle, not calm LookAround', () => {
     const clip = resolveChatAutoIdle({ userText: '播個音樂會', assistantText: '好呀，一起聽。' });
-    expect(clip).toBe('LookAround');
+    expect(clip).toBe('lib_C41');
     const en = resolveChatAutoIdle({ assistantText: 'That concert sounds amazing!' });
-    expect(en).toBe('LookAround');
+    expect(['lib_C41', 'lib_C112', 'lib_C113', 'lib_C114', 'IdleMixamoHappy']).toContain(en);
+    expect(en).not.toBe('LookAround');
   });
 
   it('does not treat generic joy hints as sing/dance idles', () => {

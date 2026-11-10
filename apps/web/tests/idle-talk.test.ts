@@ -33,6 +33,18 @@ const FORBIDDEN_IDLE_FRAGMENTS = [
   /^maps is\b/i,
   /提醒我你/,
   /轻轻提醒我想起你/,
+  // Spark metaphor sludge ("一條友善嘅謎語充滿電，等一陣細爆發").
+  /充滿電/,
+  /充满电/,
+  /細爆發/,
+  /小爆发/,
+  /電壓感覺友善/,
+  /电压感觉友善/,
+  /is charged and ready/i,
+  /voltage feels friendly/i,
+  /tiny burst/i,
+  /充電済み/,
+  /小さなバースト/,
 ];
 
 /** Pixel: never interrogate private thoughts in idle / open / reengage. */
@@ -106,6 +118,10 @@ describe('idle-talk', () => {
     expect(isIncompleteIdleLine('')).toBe(true);
     expect(isIncompleteIdleLine('Looking at a pocket map made me think of you, softly.')).toBe(false);
     expect(spokenLineLooksBroken('a small map reminding you')).toBe(true);
+    expect(isIncompleteIdleLine('一條友善嘅謎語充滿電，等一陣細爆發。')).toBe(true);
+    expect(isIncompleteIdleLine('一条友善的谜语充满电，等一阵小爆发。')).toBe(true);
+    expect(isIncompleteIdleLine('a friendly riddle is charged and ready for a tiny burst.')).toBe(true);
+    expect(spokenLineLooksBroken('謎題電壓感覺友善，唔係慌張。')).toBe(true);
 
     for (const voice of VOICE_IDS) {
       for (const motif of MOTIFS) {
