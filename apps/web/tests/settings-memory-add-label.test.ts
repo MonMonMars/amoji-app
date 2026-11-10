@@ -19,4 +19,8 @@ describe("SettingsSheet memory-add label", () => {
       /id="amoji-settings-memory-add"[\s\S]{0,400}onKeyDown=\{\(e\) => e\.key === 'Enter' && addNew\(\)\}/
     );
   });
+
+  it("labels the memory Add button", () => {
+    expect(sheet).toContain("aria-label={t(lang, 'memoryAdd')}");
+  });
 });

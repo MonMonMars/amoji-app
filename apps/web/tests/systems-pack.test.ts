@@ -92,6 +92,19 @@ describe('systems pack', () => {
     expect(src).toContain('settingsLegal');
     expect(src).toContain('href="/cookies"');
     expect(src).toContain('href="/systems"');
+    expect(src).toContain('syncEntitlementFromApi');
+  });
+
+  it('cookies and systems pages expose a localized back control', () => {
+    for (const rel of ['app/cookies/page.tsx', 'app/systems/page.tsx'] as const) {
+      const src = readFileSync(join(web, rel), 'utf8');
+      expect(src).toContain("aria-label={t(lang, 'back')}");
+    }
+  });
+
+  it('ReportDialog best-effort posts to the production API', () => {
+    const src = readFileSync(join(web, 'components/ReportDialog.tsx'), 'utf8');
+    expect(src).toContain('submitReportRemote');
   });
 
   it('docs SYSTEMS map is present', () => {

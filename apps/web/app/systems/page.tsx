@@ -12,7 +12,7 @@ export default function SystemsPage() {
   return (
     <main className="mx-auto min-h-screen max-w-2xl px-4 py-10 text-white">
       <p className="mb-6 text-sm text-white/50">
-        <Link href="/" className="underline-offset-4 hover:underline">{t(lang, 'close')}</Link>
+        <Link href="/" aria-label={t(lang, 'back')} className="underline-offset-4 hover:underline">{t(lang, 'back')}</Link>
         {' · '}
         <Link href="/privacy" className="underline-offset-4 hover:underline">{t(lang, 'privacyTitle')}</Link>
         {' · '}

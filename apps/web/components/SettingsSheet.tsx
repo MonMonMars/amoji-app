@@ -59,7 +59,7 @@ import {
   addEntry, deleteEntry, deleteDiaryEntry, deleteImportantDate, deletePromise, ensureUserNameFromProfile, exportMemory, loadMemory,
   type Memory, type MemoryType,
 } from '../lib/memory';
-import { paymentsConfigured, planStatus, planStatusSummary, publicPaymentLink } from '../lib/billing';
+import { paymentsConfigured, planStatus, planStatusSummary, publicPaymentLink, syncEntitlementFromApi } from '../lib/billing';
 import { listPresentClientKeys } from '../lib/client-storage';
 import Link from 'next/link';
 
@@ -215,7 +215,21 @@ export default function SettingsSheet({
     return () => window.removeEventListener('amoji:voice-blocked', onBlocked);
   }, []);
   useEffect(() => {
-    if (open) { setMem(loadMemory()); setCopied(false); setProxyDraft(getTtsProxy() ?? ''); setProxySaved(false); setProxyTestResult(null); setProxyTesting(false); setOaKeyDraft(openAiKey()); setOaEpDraft(openAiEndpoint()); setOaOn(openAiEnabled()); setOaSaved(false); setOaTestResult(null); setOaTesting(false); }
+    if (open) {
+      setMem(loadMemory());
+      setCopied(false);
+      setProxyDraft(getTtsProxy() ?? '');
+      setProxySaved(false);
+      setProxyTestResult(null);
+      setProxyTesting(false);
+      setOaKeyDraft(openAiKey());
+      setOaEpDraft(openAiEndpoint());
+      setOaOn(openAiEnabled());
+      setOaSaved(false);
+      setOaTestResult(null);
+      setOaTesting(false);
+      void syncEntitlementFromApi();
+    }
   }, [open]);
   if (!open) return null;
   const lang = prefs.lang;
@@ -901,6 +915,7 @@ export default function SettingsSheet({
                   type="button"
                   onClick={addNew}
                   disabled={!newText.trim()}
+                  aria-label={t(lang, 'memoryAdd')}
                   className="ui-btn h-9 shrink-0 rounded-full bg-white/10 px-3.5 text-xs text-white/80 hover:bg-white/20 disabled:opacity-40"
                 >
                   {t(lang, 'memoryAdd')}
@@ -962,6 +977,7 @@ export default function SettingsSheet({
                 id="amoji-settings-your-name"
                 name="name"
                 autoComplete="nickname"
+                aria-label={t(lang, 'yourName')}
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
@@ -969,7 +985,7 @@ export default function SettingsSheet({
                   ensureUserNameFromProfile(e.target.value);
                 }}
                 className="h-8 min-w-0 flex-1 rounded-full border border-white/10 bg-black/30 px-3 text-sm text-white placeholder-white/30 outline-none focus:border-white/40"
-                placeholder="Simon"
+                placeholder={t(lang, 'yourNamePlaceholder')}
               />
             </div>
             {/* r70 — gender drives the adaptive warmth; default 'secret' changes nothing */}

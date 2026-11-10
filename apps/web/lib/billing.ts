@@ -109,3 +109,45 @@ export function planStatusSummary(): string {
 export function usedToday(): number {
   return dailyTurnsUsed();
 }
+
+/** Pull Plus entitlement from the production API when configured. */
+export async function syncEntitlementFromApi(): Promise<PlanId | null> {
+  const base = (typeof process !== 'undefined' ? (process.env.NEXT_PUBLIC_AMOJI_API ?? '') : '').trim().replace(/\/$/, '');
+  if (!base || typeof fetch === 'undefined' || typeof localStorage === 'undefined') return null;
+  try {
+    let token = '';
+    try { token = localStorage.getItem('amoji.backend.session') ?? ''; } catch { token = ''; }
+    if (!token) {
+      const created = await fetch(`${base}/api/auth/session`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{}',
+      });
+      if (!created.ok) return null;
+      const data = await created.json() as { token?: unknown };
+      if (typeof data.token !== 'string' || !data.token) return null;
+      token = data.token;
+      try { localStorage.setItem('amoji.backend.session', token); } catch { /* ignore */ }
+    }
+    const res = await fetch(`${base}/api/billing/entitlement`, {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    if (res.status === 401) {
+      try { localStorage.removeItem('amoji.backend.session'); } catch { /* ignore */ }
+      return null;
+    }
+    if (!res.ok) return null;
+    const body = await res.json() as { plan?: unknown; expiresAt?: unknown };
+    if (body.plan === 'plus') {
+      const expiresAt = typeof body.expiresAt === 'number'
+        ? new Date(body.expiresAt).toISOString()
+        : undefined;
+      setPlusPlanLocal(expiresAt);
+      return 'plus';
+    }
+    clearPlusPlanLocal();
+    return 'free';
+  } catch {
+    return null;
+  }
+}

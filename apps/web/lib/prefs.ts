@@ -143,7 +143,7 @@ export type StrKey =
   | 'idleRailAria' | 'idleEnabled' | 'idleDisabled'
   // consolidated settings menu (r2026-10-02.7)
   | 'settingsCompanion' | 'settingsScene' | 'settingsVoice' | 'settingsData' | 'settingsHelp'
-  | 'yourName' | 'yourGender' | 'genderMale' | 'genderFemale' | 'genderSecret'
+  | 'yourName' | 'yourNamePlaceholder' | 'yourGender' | 'genderMale' | 'genderFemale' | 'genderSecret'
   | 'clearHistory' | 'clearHistoryConfirm' | 'forgetConfirm'
   // memory v2 browser (r2026-10-02.11)
   | 'memoryBrowser' | 'memoryEmpty' | 'memoryAddPlaceholder' | 'memoryAdd' | 'memoryExport'
@@ -541,6 +541,7 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   settingsData: { en: 'Memory & data', yue: '記憶同資料', zh: '记忆与数据', ja: '記憶とデータ' },
   settingsHelp: { en: 'Help', yue: '幫助', zh: '帮助', ja: 'ヘルプ' },
   yourName: { en: 'Your name', yue: '你嘅名字', zh: '你的名字', ja: 'あなたの名前' },
+  yourNamePlaceholder: { en: 'Simon', yue: '嘉欣', zh: '小明', ja: '太郎' },
   yourGender: { en: 'You are', yue: '你係', zh: '你是', ja: 'あなたは' },
   genderMale: { en: 'Male', yue: '男仔', zh: '男生', ja: '男性' },
   genderFemale: { en: 'Female', yue: '女仔', zh: '女生', ja: '女性' },
