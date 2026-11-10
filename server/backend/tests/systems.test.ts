@@ -13,8 +13,32 @@ import { CHARGING_RULES, freeDailyChatTurnLimit } from '../src/charging-rules.js
 import { autoReply } from '../src/auto-reply.js';
 import { mailConfigured } from '../src/email.js';
 import { corsHeaders, rateLimit, _resetRateLimitsForTests } from '../src/security.js';
+import { RATE_LIMIT_RULES, rateLimitRule } from '../src/security-rules.js';
+import { wipeUserProductData } from '../src/storage-wipe.js';
 
 describe('backend systems helpers', () => {
+  it('publishes named rate-limit budgets', () => {
+    expect(rateLimitRule('global').limit).toBe(240);
+    expect(RATE_LIMIT_RULES.map((r) => r.id)).toEqual(
+      expect.arrayContaining(['auth', 'chat', 'report', 'support', 'stripe']),
+    );
+  });
+
+  it('wipes user-scoped sqlite tables', () => {
+    const db = openDb(':memory:');
+    const now = 1_700_000_000_000;
+    db.prepare('INSERT INTO users (id, created_at) VALUES (?, ?)').run('u1', now);
+    db.prepare(
+      'INSERT INTO character_state (user_id, character_id, background_id, lang, kid_mode, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+    ).run('u1', 'a01', 'bed', 'en', 0, now);
+    db.prepare(
+      'INSERT INTO chat_turns (user_id, role, content, created_at) VALUES (?, ?, ?, ?)',
+    ).run('u1', 'user', 'hi', now);
+    const removed = wipeUserProductData(db, 'u1');
+    expect(removed).toEqual(expect.arrayContaining(['character_state', 'chat_turns']));
+    db.close();
+  });
+
   it('locks CORS when AMOJI_CORS_ORIGIN is set', () => {
     const prev = process.env.AMOJI_CORS_ORIGIN;
     process.env.AMOJI_CORS_ORIGIN = 'https://example.com,https://other.test';

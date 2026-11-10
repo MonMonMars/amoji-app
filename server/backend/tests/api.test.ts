@@ -52,10 +52,43 @@ describe('production backend', () => {
   it('publishes a systems inventory without a session', async () => {
     const res = await app().handle(new Request('http://amoji.local/api/systems'));
     expect(res.status).toBe(200);
-    const body = await res.json() as { mail: boolean; billing: boolean; freeServers: unknown[] };
+    const body = await res.json() as {
+      mail: boolean;
+      billing: boolean;
+      freeServers: unknown[];
+      corsLocked: boolean;
+      securityRulesVersion: number;
+      rateLimits: Array<{ id: string }>;
+    };
     expect(body.mail).toBe(false);
     expect(body.billing).toBe(false);
     expect(body.freeServers.length).toBeGreaterThan(0);
+    expect(body.corsLocked).toBe(false);
+    expect(body.securityRulesVersion).toBe(1);
+    expect(body.rateLimits.some((r) => r.id === 'global')).toBe(true);
+  });
+
+  it('wipes server product rows for the bearer session', async () => {
+    const api = app();
+    const token = await session(api);
+    await api.handle(authed(token, '/api/state', 'PUT', {
+      characterId: 'a01-shino',
+      backgroundId: 'void',
+      lang: 'en',
+      kidMode: false,
+    }));
+    const wiped = await api.handle(authed(token, '/api/storage/me', 'DELETE'));
+    expect(wiped.status).toBe(200);
+    const body = await wiped.json() as { ok: boolean; removed: string[] };
+    expect(body.ok).toBe(true);
+    expect(body.removed.length).toBeGreaterThan(0);
+    const again = await api.handle(authed(token, '/api/state', 'GET'));
+    expect(again.status).toBe(401);
+  });
+
+  it('rejects storage wipe without a bearer', async () => {
+    const res = await app().handle(new Request('http://amoji.local/api/storage/me', { method: 'DELETE' }));
+    expect(res.status).toBe(401);
   });
 
   it('stores a content report and skips email when mail is off', async () => {

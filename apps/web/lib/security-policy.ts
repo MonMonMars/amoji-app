@@ -33,7 +33,12 @@ export const SECURITY_FACTS: SecurityFact[] = [
   {
     id: 'cors-rate',
     title: 'API CORS and rate limits',
-    detail: 'Set AMOJI_CORS_ORIGIN on the Node host to lock origins. Per-IP rate limits apply to auth, chat, reports, and billing webhooks.',
+    detail: 'Set AMOJI_CORS_ORIGIN on the Node host to lock origins. Per-IP rate limits (see lib/security-rules.ts) apply to auth, chat, TTS, reports, support, and billing webhooks. Pages builds have no API surface to rate-limit.',
+  },
+  {
+    id: 'storage-wipe',
+    title: 'Device wipe and optional API wipe',
+    detail: 'Settings can export redacted product JSON and wipe local product keys (legal accept kept). DELETE /api/storage/me clears anonymous server rows when a bearer session exists.',
   },
   {
     id: 'no-tracking',

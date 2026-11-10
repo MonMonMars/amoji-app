@@ -239,7 +239,6 @@ export type StrKey =
   | 'reportSendTo' | 'reportSendToHint'
   | 'supportTitle' | 'supportLead' | 'supportEmailLabel' | 'supportMessageLabel'
   | 'supportSubmit' | 'supportNoApi' | 'supportOk' | 'supportOkLocal' | 'supportFailed'
-  | 'wipeProductData' | 'wipeProductDataConfirm' | 'wipeProductDataDone'
   // 18+ entry gate (r2026-11-08). Amoji is an adults-only product, and it is a
   // voice companion — so the first screen has to get an explicit "I am 18+"
   // and an honest answer to "could you hear her?" before select.
@@ -265,7 +264,11 @@ export type StrKey =
   | 'planFreeLabel' | 'planPlusLabel' | 'planUpgrade' | 'planPaymentsOn' | 'planPaymentsOff'
   | 'planPaymentsDemo' | 'planDemoUpgrade' | 'planDemoUnlocked' | 'planDemoActive' | 'planChargingBlurb'
   | 'systemsTitle' | 'systemsLead' | 'systemsFreeHosts' | 'systemsFiles'
-  | 'systemsClientData' | 'systemsSecurity' | 'systemsCharging' | 'cookiesTitle' | 'openSystemsPage';
+  | 'systemsClientData' | 'systemsSecurity' | 'systemsCharging' | 'cookiesTitle' | 'openSystemsPage'
+  | 'systemsStorageStatus' | 'systemsSecurityStatus' | 'systemsLegalStatus'
+  | 'exportProductData' | 'exportProductDataDone' | 'wipeProductData'
+  | 'wipeProductDataConfirm' | 'wipeProductDataDone' | 'wipeServerData'
+  | 'wipeServerDataDone' | 'wipeServerDataNoSession' | 'wipeServerDataNoApi';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   chooseCharacter: { en: 'Choose your companion', yue: '揀你嘅小伙伴', zh: '选择你的伙伴', ja: '相棒を選ぶ' },
@@ -1301,6 +1304,78 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   systemsCharging: { en: 'Charging rules', yue: '收費規則', zh: '收费规则', ja: '課金ルール' },
   cookiesTitle: { en: 'Cookies', yue: 'Cookie', zh: 'Cookie', ja: 'Cookie' },
   openSystemsPage: { en: 'Open systems map', yue: '打開系統地圖', zh: '打开系统地图', ja: 'システム一覧を開く' },
+  systemsStorageStatus: {
+    en: 'Storage',
+    yue: '儲存',
+    zh: '存储',
+    ja: 'ストレージ',
+  },
+  systemsSecurityStatus: {
+    en: 'Security posture',
+    yue: '保安狀況',
+    zh: '安全状况',
+    ja: 'セキュリティの状態',
+  },
+  systemsLegalStatus: {
+    en: 'Legal acceptance',
+    yue: '法律同意',
+    zh: '法律同意',
+    ja: '法的同意',
+  },
+  exportProductData: {
+    en: 'Export product data (JSON)',
+    yue: '匯出產品資料（JSON）',
+    zh: '导出产品数据（JSON）',
+    ja: '製品データを書き出す（JSON）',
+  },
+  exportProductDataDone: {
+    en: 'Download started. Secrets (API keys, session token) are redacted.',
+    yue: '已開始下載。密鑰同 session 已遮罩。',
+    zh: '已开始下载。密钥与 session 已遮罩。',
+    ja: 'ダウンロードを開始しました。秘密（APIキー・セッション）は伏せています。',
+  },
+  wipeProductData: {
+    en: 'Wipe product data',
+    yue: '清除產品資料',
+    zh: '清除产品数据',
+    ja: '製品データを消去',
+  },
+  wipeProductDataConfirm: {
+    en: 'Wipe prefs, memory, history, plan, reports, and related keys on this device? Legal acceptance is kept so you are not re-gated unless policy changes.',
+    yue: '清除呢部裝置嘅偏好、記憶、對話、計劃、舉報同相關鍵？會保留法律同意，除非政策更新先再問你。',
+    zh: '清除本机的偏好、记忆、对话、计划、举报及相关键？会保留法律同意，除非政策更新才会再次询问。',
+    ja: 'この端末の設定・記憶・履歴・プラン・報告と関連キーを消しますか？法的同意は残すので、方針が変わらない限り再確認は出ません。',
+  },
+  wipeProductDataDone: {
+    en: 'Product data wiped on this device.',
+    yue: '已清除呢部裝置嘅產品資料。',
+    zh: '已清除本机产品数据。',
+    ja: 'この端末の製品データを消去しました。',
+  },
+  wipeServerData: {
+    en: 'Wipe server copy (API)',
+    yue: '清除伺服器副本（API）',
+    zh: '清除服务器副本（API）',
+    ja: 'サーバー側を消去（API）',
+  },
+  wipeServerDataDone: {
+    en: 'Server-side rows for this anonymous session were removed.',
+    yue: '已清除呢個匿名 session 喺伺服器嘅資料。',
+    zh: '已清除此匿名 session 在服务器上的数据。',
+    ja: 'この匿名セッションのサーバー側データを削除しました。',
+  },
+  wipeServerDataNoSession: {
+    en: 'No production API session on this device — nothing to wipe on the server.',
+    yue: '呢部裝置冇生產 API session——伺服器冇嘢好清。',
+    zh: '本机没有生产 API session——服务器上无需清除。',
+    ja: 'この端末に本番 API セッションはないので、サーバー側に消すものはありません。',
+  },
+  wipeServerDataNoApi: {
+    en: 'This build has no production API — server wipe stays off.',
+    yue: '呢個版本冇生產 API——伺服器清除保持關閉。',
+    zh: '此版本没有生产 API——服务器清除保持关闭。',
+    ja: 'このビルドには本番 API がないため、サーバー消去はオフです。',
+  },
   dailyQuotaExceeded: {
     en: "Today's free chat limit is used up. Try again tomorrow, open Settings → Plan for Plus when payments are configured, or use Advanced brain (BYOK) with your own API key.",
     yue: '今日免費傾偈額度用完喇。聽日再傾，或者去「設定」→「計劃」睇 Plus（有付款設定先）；又或者用「進階大腦（BYOK）」同自己嘅 API key。',
@@ -1519,24 +1594,6 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: '連唔到支援 API。稍後再試，或者開 GitHub Issue。',
     zh: '无法连接支持 API。请稍后重试，或打开 GitHub Issue。',
     ja: 'サポート API に届きませんでした。後でもう一度試すか、GitHub Issue を開いてください。',
-  },
-  wipeProductData: {
-    en: 'Wipe product data',
-    yue: '清除產品資料',
-    zh: '清除产品数据',
-    ja: '製品データを消去',
-  },
-  wipeProductDataConfirm: {
-    en: 'Wipe prefs, memory, history, plan, and reports on this device? Legal acceptance is kept so you are not re-gated unless policy changes.',
-    yue: '清除呢部裝置嘅偏好、記憶、對話、計劃同舉報？會保留法律同意，除非政策更新先再問你。',
-    zh: '清除本机的偏好、记忆、对话、计划与举报？会保留法律同意，除非政策更新才会再次询问。',
-    ja: 'この端末の設定・記憶・履歴・プラン・報告を消しますか？法的同意は残すので、方針が変わらない限り再確認は出ません。',
-  },
-  wipeProductDataDone: {
-    en: 'Product data wiped on this device.',
-    yue: '已清除呢部裝置嘅產品資料。',
-    zh: '已清除本机产品数据。',
-    ja: 'この端末の製品データを消去しました。',
   },
   reportExport: {
     en: 'Export reports (JSON)',

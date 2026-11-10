@@ -76,7 +76,8 @@ export const PRIVACY_DOC: Record<Lang, LegalDoc> = {
         body: [
           'Your name, chosen companion, scene, language, volume, voice choices, mute state, the memories she keeps about you, her diary, your mood history, and the record that you accepted these terms — all of it lives in this browser\u2019s local storage.',
           'An API key you paste into Advanced is also stored only in this browser. It is sent only to the provider you chose for that provider\u2019s own API calls.',
-          'The app has no account system and no server that holds your profile. Clearing site data in your browser erases everything above.',
+          'Settings can export a JSON copy of product data (API keys and session tokens redacted) and can wipe product keys while keeping legal acceptance until the policy version changes. Clearing site data in your browser erases everything above.',
+          'GitHub Pages builds have no account server of ours. A production API origin, if configured for the build you are using, may hold an anonymous session and related rows until you wipe them or the session expires.',
         ],
       },
       {
@@ -137,7 +138,8 @@ export const PRIVACY_DOC: Record<Lang, LegalDoc> = {
         body: [
           '你嘅名、揀咗邊個夥伴、場景、語言、音量、聲線選擇、靜音狀態、佢記住你嘅事、佢嘅日記、你嘅心情紀錄，同埋你接受咗條款嘅紀錄——全部只存在呢個瀏覽器嘅本機儲存。',
           '你喺「進階」貼入去嘅 API 鎖匙，亦只存喺呢個瀏覽器，只會喺呼叫嗰個供應商嘅 API 時送去該供應商。',
-          '本程式冇帳戶系統，亦冇任何伺服器保存你嘅個人檔案。你喺瀏覽器清除網站資料，以上全部都會消失。',
+          '設定可以匯出產品資料 JSON（密鑰同 session 會遮罩），亦可以清產品鍵同時保留條款接受，直至政策版本更新。喺瀏覽器清除網站資料會刪除以上全部。',
+          'GitHub Pages 版本冇我哋嘅帳戶伺服器。如果你用嘅版本有正式 API，該處可能保存匿名 session 同相關資料，直至你清除或者 session 過期。',
         ],
       },
       {
@@ -198,7 +200,8 @@ export const PRIVACY_DOC: Record<Lang, LegalDoc> = {
         body: [
           '你的名字、选择的伙伴、场景、语言、音量、声音选择、静音状态、她记住的关于你的事、她的日记、你的心情记录，以及你接受条款的记录——全部只保存在这个浏览器的本地存储中。',
           '你在「高级」里粘贴的 API 密钥也只保存在这个浏览器，并且只在该服务商的 API 请求中发送给该服务商。',
-          '本应用没有账号系统，也没有保存你个人资料的服务器。清除浏览器的网站数据，以上内容会全部消失。',
+          '设置可导出产品数据 JSON（密钥与 session 会遮罩），也可清除产品键并保留条款接受，直至政策版本更新。清除浏览器网站数据会删除以上全部。',
+          'GitHub Pages 版本没有我们的账户服务器。若你使用的版本配置了正式 API，该处可能保存匿名 session 及相关数据，直至你清除或 session 过期。',
         ],
       },
       {
@@ -259,7 +262,8 @@ export const PRIVACY_DOC: Record<Lang, LegalDoc> = {
         body: [
           '名前、選んだ相棒、場所、言語、音量、声の選択、ミュート状態、あなたについて覚えていること、彼女の日記、気分の記録、規約に同意した記録——すべてこのブラウザのローカルストレージにあります。',
           '「詳細設定」で貼り付けたAPIキーもこのブラウザだけに保存され、そのプロバイダーのAPIを呼ぶときだけ、そのプロバイダーへ送られます。',
-          'アカウントの仕組みはなく、あなたのプロフィールを保持するサーバーもありません。ブラウザでサイトデータを消去すれば、上記はすべて消えます。',
+          '設定から製品データの JSON を書き出せます（秘密とセッションは伏せ字）。製品キーを消しても、ポリシー版が変わるまでは規約同意を残せます。ブラウザのサイトデータを消去すると上記はすべて消えます。',
+          'GitHub Pages のビルドに当方のアカウントサーバーはありません。本番APIがあるビルドでは、匿名セッションと関連行が消すか期限切れまで残ることがあります。',
         ],
       },
       {
@@ -550,14 +554,14 @@ export const COOKIES_DOC: Record<Lang, LegalDoc> = {
       {
         heading: 'Local storage keys',
         body: [
-          'Preferences (amoji.prefs.v1), memory (amoji.memory.v2), profile, chat history, legal acceptance, daily free-turn counter, content reports, optional production session token, and related product keys listed in Settings → Systems.',
-          'Clearing site data in your browser removes these keys. Settings can also wipe product data while keeping your legal acceptance until the policy version changes.',
+          'Preferences (amoji.prefs.v1), memory (amoji.memory.v2), profile, chat history, legal acceptance, daily free-turn counter, content reports, optional production session token, BYOK brain/TTS keys you paste, mute and place caches, idle picks, and other product keys listed in Settings → Systems.',
+          'Clearing site data in your browser removes these keys. Settings can export a JSON copy of product data (secrets redacted) and can wipe product data while keeping your legal acceptance until the policy version changes.',
         ],
       },
       {
         heading: 'Session storage',
         body: [
-          'Short-lived UI state (for example story session helpers) may use session storage and disappears when the tab closes.',
+          'Short-lived UI state (for example sticky brain lane, geo-denied, and nav return helpers) may use session storage and disappears when the tab closes.',
         ],
       },
     ],
@@ -575,14 +579,14 @@ export const COOKIES_DOC: Record<Lang, LegalDoc> = {
       {
         heading: '本機儲存鍵',
         body: [
-          '偏好（amoji.prefs.v1）、記憶（amoji.memory.v2）、個人檔、對話紀錄、條款接受、每日免費對話計數、內容舉報、可選正式 API session，以及其他列喺設定 → 系統嘅產品鍵。',
-          '清除瀏覽器網站資料會刪除呢啲鍵。設定亦可以清產品資料，同時保留條款接受，直至政策版本更新。',
+          '偏好（amoji.prefs.v1）、記憶（amoji.memory.v2）、個人檔、對話紀錄、條款接受、每日免費對話計數、內容舉報、可選正式 API session、你貼上嘅 BYOK 大腦/TTS 密鑰、靜音同地點快取、閒置動作選擇，以及其他列喺設定 → 系統嘅產品鍵。',
+          '清除瀏覽器網站資料會刪除呢啲鍵。設定可以匯出產品資料 JSON（密鑰會遮罩），亦可以清產品資料，同時保留條款接受，直至政策版本更新。',
         ],
       },
       {
         heading: 'Session storage',
         body: [
-          '短命 UI 狀態（例如故事模式輔助）可能用 session storage，閂分頁就會消失。',
+          '短命 UI 狀態（例如黏性腦線路、拒絕定位、返回路徑）可能用 session storage，閂分頁就會消失。',
         ],
       },
     ],
@@ -600,14 +604,14 @@ export const COOKIES_DOC: Record<Lang, LegalDoc> = {
       {
         heading: '本地存储键',
         body: [
-          '偏好（amoji.prefs.v1）、记忆（amoji.memory.v2）、个人资料、聊天记录、条款接受、每日免费对话计数、内容举报、可选正式 API session，以及设置 → 系统中列出的其他产品键。',
-          '清除浏览器网站数据会删除这些键。设置也可清除产品数据，同时保留条款接受，直至政策版本更新。',
+          '偏好（amoji.prefs.v1）、记忆（amoji.memory.v2）、个人资料、聊天记录、条款接受、每日免费对话计数、内容举报、可选正式 API session、你粘贴的 BYOK 大脑/TTS 密钥、静音与地点缓存、闲置动作选择，以及设置 → 系统中列出的其他产品键。',
+          '清除浏览器网站数据会删除这些键。设置可导出产品数据 JSON（密钥会遮罩），也可清除产品数据，同时保留条款接受，直至政策版本更新。',
         ],
       },
       {
         heading: 'Session storage',
         body: [
-          '短暂的界面状态（例如故事模式辅助）可能使用 session storage，关闭标签页后消失。',
+          '短暂的界面状态（例如粘性脑线路、拒绝定位、返回路径）可能使用 session storage，关闭标签页后消失。',
         ],
       },
     ],
@@ -625,14 +629,14 @@ export const COOKIES_DOC: Record<Lang, LegalDoc> = {
       {
         heading: 'ローカルストレージのキー',
         body: [
-          '設定（amoji.prefs.v1）、記憶（amoji.memory.v2）、プロフィール、会話履歴、規約同意、無料会話の日次カウンタ、コンテンツ報告、任意の本番APIセッション、および設定 → システムに列挙するその他の製品キー。',
-          'ブラウザのサイトデータを消去するとこれらのキーは消えます。設定から製品データを消しても、ポリシー版が変わるまでは規約同意を残すことができます。',
+          '設定（amoji.prefs.v1）、記憶（amoji.memory.v2）、プロフィール、会話履歴、規約同意、無料会話の日次カウンタ、コンテンツ報告、任意の本番APIセッション、貼り付けた BYOK 脳/TTS キー、ミュートと場所キャッシュ、アイドル選択、および設定 → システムに列挙するその他の製品キー。',
+          'ブラウザのサイトデータを消去するとこれらのキーは消えます。設定から製品データの JSON を書き出せます（秘密は伏せ字）。製品データを消しても、ポリシー版が変わるまでは規約同意を残すことができます。',
         ],
       },
       {
         heading: 'Session storage',
         body: [
-          '短い UI 状態（例：ストーリー補助）は session storage を使うことがあり、タブを閉じると消えます。',
+          '短い UI 状態（例：脳レーンの固定、位置情報拒否、戻る先）は session storage を使うことがあり、タブを閉じると消えます。',
         ],
       },
     ],

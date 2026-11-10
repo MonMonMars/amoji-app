@@ -70,8 +70,17 @@ import {
 } from '../lib/billing';
 import { CHARGING_RULES, formatPlanPrice } from '../lib/charging-rules';
 import { paymentDemoMode } from '../lib/payment-rules';
-import { listPresentClientKeys, wipeClientProductData } from '../lib/client-storage';
+import {
+  downloadProductDataExport,
+  listPresentClientKeys,
+  storageClientStatus,
+  wipeClientProductData,
+} from '../lib/client-storage';
 import { MAX_SUPPORT_MESSAGE, submitSupportMessage, supportApiConfigured } from '../lib/support';
+import { securityClientStatus } from '../lib/security-rules';
+import { legalClientStatus } from '../lib/legal-rules';
+import { productionApiConfigured } from '../lib/systems-catalog';
+import { storageApiConfigured, wipeServerProductData } from '../lib/storage-api';
 import Link from 'next/link';
 
 function Toggle({ on, onClick, accent, disabled = false, label }: { on: boolean; onClick: () => void; accent: string; disabled?: boolean; label: string }) {
@@ -303,6 +312,26 @@ export default function SettingsSheet({
       }
       setSupportNote(result.emailed ? t(lang, 'supportOk') : t(lang, 'supportOkLocal'));
       if (result.ok) setSupportMessage('');
+    });
+  };
+
+  const exportProduct = () => {
+    downloadProductDataExport();
+    window.alert(t(lang, 'exportProductDataDone'));
+  };
+
+  const wipeServer = () => {
+    if (!storageApiConfigured()) {
+      window.alert(t(lang, 'wipeServerDataNoApi'));
+      return;
+    }
+    void wipeServerProductData().then((result) => {
+      if (!result.ok) {
+        if (result.error === 'no-api') window.alert(t(lang, 'wipeServerDataNoApi'));
+        else window.alert(t(lang, 'wipeServerDataNoSession'));
+        return;
+      }
+      window.alert(t(lang, 'wipeServerDataDone'));
     });
   };
 
@@ -1143,8 +1172,43 @@ export default function SettingsSheet({
               {t(lang, 'systemsLead')}
             </p>
             <p className="text-[11px] text-white/55">
-              {listPresentClientKeys().length} local keys present
+              <span className="text-white/40">{t(lang, 'systemsSecurityStatus')}: </span>
+              {securityClientStatus().posture}
             </p>
+            <p className="text-[11px] text-white/55">
+              <span className="text-white/40">{t(lang, 'systemsStorageStatus')}: </span>
+              {storageClientStatus(productionApiConfigured()).posture}
+            </p>
+            <p className="text-[11px] text-white/55">
+              {listPresentClientKeys().length} keys present · ~
+              {Math.max(1, Math.round(storageClientStatus(productionApiConfigured()).estimatedBytes / 1024))} KB
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={exportProduct}
+                aria-label={t(lang, 'exportProductData')}
+                className="ui-btn rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/80 hover:bg-white/20"
+              >
+                {t(lang, 'exportProductData')}
+              </button>
+              <button
+                type="button"
+                onClick={wipeProduct}
+                aria-label={t(lang, 'wipeProductData')}
+                className="ui-btn rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 hover:bg-white/20"
+              >
+                {t(lang, 'wipeProductData')}
+              </button>
+              <button
+                type="button"
+                onClick={wipeServer}
+                aria-label={t(lang, 'wipeServerData')}
+                className="ui-btn rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 hover:bg-white/20"
+              >
+                {t(lang, 'wipeServerData')}
+              </button>
+            </div>
             <Link href="/systems" className={`ui-btn ${row} w-full text-left hover:bg-white/10`}>
               <span className={label}>{t(lang, 'openSystemsPage')}</span>
               <span className="text-white/30">→</span>
@@ -1152,6 +1216,10 @@ export default function SettingsSheet({
           </Section>
 
           <Section title={`📜 ${t(lang, 'settingsLegal')}`}>
+            <p className="text-[11px] text-white/55">
+              <span className="text-white/40">{t(lang, 'systemsLegalStatus')}: </span>
+              {legalClientStatus().posture}
+            </p>
             <Link href="/privacy" className={`ui-btn ${row} w-full text-left hover:bg-white/10`}>
               <span className={label}>{t(lang, 'privacyTitle')}</span>
               <span className="text-white/30">→</span>
