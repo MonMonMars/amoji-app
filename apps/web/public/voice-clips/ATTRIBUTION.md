@@ -93,7 +93,7 @@ Label: **source: edge-tts crop**. Subject to Microsoft Edge TTS / speech service
 
 | Library paths | Voice | Texts |
 |---|---|---|
-| `yue/female/{smile,giggle,wow,oh,um,ha}.mp3` | zh-HK-HiuMaanNeural / HiuGaaiNeural | 呵呵 / 嘻嘻 / 哇 / 哦 / 嗯 / 哈 (laugh dropped — bad edge-tts 哈哈; Yue F laugh defaults to `zh/female/laugh.mp3`) |
+| `yue/female/{laugh,smile,giggle,wow,oh,um,ha}.mp3` | zh-HK-HiuMaanNeural / HiuGaaiNeural | 哈哈 / 呵呵 / 嘻嘻 / 哇 / 哦 / 嗯 / 哈 |
 | `yue/male/*` (same 7) | zh-HK-WanLungNeural | same |
 | `zh/female/{ha,wow,oh,um,smile}.mp3` | zh-CN-XiaoxiaoNeural | 哈/哇/哦/嗯/呵呵 |
 | `zh/male/{laugh,wow,oh,um,smile,ha}.mp3` | zh-CN-YunxiNeural | 哈哈/哇/哦/嗯/呵呵/哈 |

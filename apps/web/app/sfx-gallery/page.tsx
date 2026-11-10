@@ -1,5 +1,5 @@
 "use client";
-// In-app CMA00304-CMA00349 Reaction SFX gallery.
+// In-app CMA00304-CMA00349 Reaction SFX gallery (minus dropped female-view #1–11).
 // Wanted picks feed recordedLaughClip / recordedPokeClip at play time. Skip stays out.
 // Play each clip, Want / Skip / Clear. Picks persist in localStorage.
 
@@ -227,7 +227,7 @@ export default function SfxGalleryPage() {
     const payload = {
       key: CMA_REACTION_GALLERY_KEY,
       note: 'Wanted codes feed laugh/poke play pools; Skip never enters',
-      range: 'CMA00304-CMA00349',
+      range: 'CMA00304-CMA00349 (minus dropped female-view #1–11)',
       wanted,
       skipped,
       picks: listCmaReactionPicks(),

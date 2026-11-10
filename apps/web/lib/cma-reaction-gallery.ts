@@ -1,9 +1,25 @@
 // CMA00304-CMA00349 Reaction SFX gallery catalog + Want/Skip picks.
 // Wired: Wanted codes feed recordedLaughClip / recordedPokeClip at play time.
 // Skip and undecided never enter the play pool. Assets under public/voice-clips/cma-reaction/.
+// Mon EmotionClipRow female-view #1–11 dropped (bad laughs/gasps/hiccups/yawns); CMA codes stay stable.
 
 export const CMA_REACTION_GALLERY_KEY = 'amoji.cmaReactionSfx.picks.v1';
 export const CMA_REACTION_RANGE = { from: 304, to: 349 } as const;
+
+/** Female-view EmotionClipRow #1–11 — removed from ship-set + disk. Codes kept for docs/history. */
+export const CMA_REACTION_DROPPED_CODES = [
+  'CMA00304', // #1 female laugh
+  'CMA00305', // #2 female laugh
+  'CMA00309', // #3 female gasp
+  'CMA00310', // #4 female gasp
+  'CMA00311', // #5 female hiccup
+  'CMA00312', // #6 female hiccup
+  'CMA00313', // #7 female hiccup
+  'CMA00314', // #8 female yawn
+  'CMA00315', // #9 female yawn
+  'CMA00316', // #10 female yawn
+  'CMA00319', // #11 female laugh
+] as const;
 
 export type CmaReactionVerdict = 'want' | 'skip' | 'undecided';
 
@@ -20,30 +36,8 @@ export interface CmaReactionClip {
   durationSec: number;
 }
 
-/** Ship-set for in-app Want/Skip. Contiguous CMA00304–CMA00349. */
+/** Ship-set for in-app Want/Skip. CMA00304–349 minus CMA_REACTION_DROPPED_CODES. */
 export const CMA_REACTION_GALLERY: readonly CmaReactionClip[] = [
-  {
-    code: "CMA00304",
-    file: "CMA00304_universal_female_laugh.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "laugh",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint laugh-09",
-    durationSec: 2.534,
-  },
-  {
-    code: "CMA00305",
-    file: "CMA00305_universal_female_laugh.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "laugh",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint laugh-10",
-    durationSec: 2.534,
-  },
   {
     code: "CMA00306",
     file: "CMA00306_universal_male_ha_chuckle.mp3",
@@ -78,94 +72,6 @@ export const CMA_REACTION_GALLERY: readonly CmaReactionClip[] = [
     durationSec: 2.116,
   },
   {
-    code: "CMA00309",
-    file: "CMA00309_universal_female_gasp.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "gasp",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint post-scream-gasp-01",
-    durationSec: 1.829,
-  },
-  {
-    code: "CMA00310",
-    file: "CMA00310_universal_female_gasp.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "gasp",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint post-scream-gasp-02",
-    durationSec: 1.829,
-  },
-  {
-    code: "CMA00311",
-    file: "CMA00311_universal_female_hiccup.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "hiccup",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint hiccup-01",
-    durationSec: 0.496,
-  },
-  {
-    code: "CMA00312",
-    file: "CMA00312_universal_female_hiccup.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "hiccup",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint hiccup-03",
-    durationSec: 0.627,
-  },
-  {
-    code: "CMA00313",
-    file: "CMA00313_universal_female_hiccup.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "hiccup",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint hiccup-04",
-    durationSec: 0.575,
-  },
-  {
-    code: "CMA00314",
-    file: "CMA00314_universal_female_yawn.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "yawn",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint yawn-06",
-    durationSec: 1.881,
-  },
-  {
-    code: "CMA00315",
-    file: "CMA00315_universal_female_yawn.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "yawn",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint yawn-08",
-    durationSec: 1.672,
-  },
-  {
-    code: "CMA00316",
-    file: "CMA00316_universal_female_yawn.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "yawn",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint yawn-04",
-    durationSec: 2.247,
-  },
-  {
     code: "CMA00317",
     file: "CMA00317_universal_male_ouch_effort.mp3",
     lang: "universal",
@@ -186,17 +92,6 @@ export const CMA_REACTION_GALLERY: readonly CmaReactionClip[] = [
     license: "CC0 1.0",
     source: "SFXMint exertion-breathing",
     durationSec: 2.038,
-  },
-  {
-    code: "CMA00319",
-    file: "CMA00319_universal_female_laugh.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "laugh",
-    use: "reaction",
-    license: "CC0",
-    source: "StoryCut/Freesound Kalibrk 433921 woman laugh",
-    durationSec: 1.829,
   },
   {
     code: "CMA00320",
@@ -546,9 +441,12 @@ export function listCmaReactionCodes(): string[] {
 }
 
 export function expectedCmaReactionCodes(): string[] {
+  const dropped = new Set<string>(CMA_REACTION_DROPPED_CODES);
   const out: string[] = [];
   for (let n = CMA_REACTION_RANGE.from; n <= CMA_REACTION_RANGE.to; n++) {
-    out.push('CMA' + String(n).padStart(5, '0'));
+    const code = 'CMA' + String(n).padStart(5, '0');
+    if (dropped.has(code)) continue;
+    out.push(code);
   }
   return out;
 }

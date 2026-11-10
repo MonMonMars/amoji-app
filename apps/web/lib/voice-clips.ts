@@ -87,9 +87,7 @@ export type ClipFolder = (typeof CLIP_FOLDERS)[number];
 /** Preview list for the select board. Canonical seven first, then extra takes. */
 export const CLIP_LIBRARY = {
   yue: {
-    // CLIP #1 was yue/female/laugh.mp3 (bad edge-tts 哈哈) — deleted; Yue F laugh
-    // defaults via clipFile → zh/female/laugh.mp3. Contiguous renumber after drop.
-    female: ['smile.mp3', 'giggle.mp3', 'wow.mp3', 'um.mp3', 'oh.mp3', 'ha.mp3'],
+    female: ['laugh.mp3', 'smile.mp3', 'giggle.mp3', 'wow.mp3', 'um.mp3', 'oh.mp3', 'ha.mp3'],
     male: ['laugh.mp3', 'smile.mp3', 'giggle.mp3', 'wow.mp3', 'um.mp3', 'oh.mp3', 'ha.mp3'],
   },
   zh: {
@@ -153,7 +151,7 @@ export function clipLibraryId(path: string): number | null {
   return CLIP_BY_PATH.get(stripBasePath(path))?.id ?? null;
 }
 
-/** Path for CLIP_LIBRARY #N (1–98), or null. */
+/** Path for CLIP_LIBRARY #N (1–99), or null. */
 export function clipLibraryPath(id: number): string | null {
   if (!Number.isInteger(id) || id < 1) return null;
   return listClipLibrary()[id - 1]?.path ?? null;
@@ -208,23 +206,18 @@ export function clipLang(lang: string): VoiceClipLang {
 }
 
 export function clipFile(lang: string, gender: VoiceClipGender, kind: VoiceClipKind): string {
-  const folder = clipLang(lang);
-  // Retired CLIP #1 (bad Yue F laugh). Keep a real laugh for chat defaults.
-  if (folder === 'yue' && gender === 'female' && kind === 'laugh') {
-    return '/voice-clips/zh/female/laugh.mp3';
-  }
-  return `/voice-clips/${folder}/${gender}/${kind}.mp3`;
+  return `/voice-clips/${clipLang(lang)}/${gender}/${kind}.mp3`;
 }
 
 /**
  * Short um… fillers matched by gender + chat language.
- * Yue F = CLIP #4, Yue M = CLIP #11. Other langs use that lang's um.mp3.
+ * Yue F = CLIP #5, Yue M = CLIP #12. Other langs use that lang's um.mp3.
  * Think / search stay short um / huh bursts — never the long thinking.wav.
  */
 /**
  * Long clean UM / hmm fillers (CMA00256–303). Preferred over short um.mp3 for
  * loading / thinking / download waits. Kept OUTSIDE CLIP_LIBRARY flatten so
- * emotion #1–98 SoT indices stay stable.
+ * emotion #1–99 SoT indices stay stable.
  */
 export const NSFW_CMA_DROP = [
   'CMA00040', 'CMA00098', 'CMA00099', 'CMA00100', 'CMA00196',
@@ -302,7 +295,7 @@ let laughClipCursor = 0;
 
 /** Recorded laugh / giggle / smile for funny reactions — CLIP_LIBRARY SFX only. */
 export function recordedLaughClip(gender: VoiceClipGender, lang: string = 'en'): string {
-  // Prefer Mon's Wanted CMA00304-349 picks (all chat langs). Skip/undecided stay out.
+  // Prefer Mon's Wanted CMA00304-349 picks (minus dropped #1–11; all chat langs). Skip/undecided stay out.
   const wantedCma = pickWantedCmaReactionPath({ gender, role: 'laugh' });
   if (wantedCma) return wantedCma;
   const folder = clipLang(lang);
@@ -368,7 +361,7 @@ export function recordedFillerClip(
 export const RECORDED_POKE_ZONE: Record<VoiceClipGender, Record<string, string>> = {
   female: {
     // Mon t294 stands: head um.mp3 read as adult/hentai — breast/chest get that
-    // clip; head keeps the former breast hehe (#87). belly stays oh (#82).
+    // clip; head keeps the former breast hehe (#88). belly stays oh (#83).
     head: '/voice-clips/universal/female/hehe.mp3',
     chest: '/voice-clips/universal/female/um.mp3',
     breast: '/voice-clips/universal/female/um.mp3',
