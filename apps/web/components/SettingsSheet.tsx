@@ -280,6 +280,7 @@ export default function SettingsSheet({
     wipeClientProductData({ keepLegal: true });
     saveHistory([]);
     window.dispatchEvent(new Event('amoji:clear-history'));
+    window.alert(t(lang, 'wipeProductDataDone'));
     // Prefs live in parent React state — reload so the wiped localStorage wins.
     window.location.reload();
   };

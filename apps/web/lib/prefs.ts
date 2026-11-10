@@ -1438,9 +1438,9 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   },
   reportContactEmailPlaceholder: {
     en: 'you@example.com',
-    yue: 'you@example.com',
-    zh: 'you@example.com',
-    ja: 'you@example.com',
+    yue: 'ming@example.hk',
+    zh: 'xiaoming@example.cn',
+    ja: 'taro@example.jp',
   },
   reportContactEmailHint: {
     en: 'Only used when a production API + mail provider are configured — then you get an automatic acknowledgment.',
