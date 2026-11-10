@@ -20,5 +20,8 @@ describe('DemoPhaseRail scroll (iPhone + drag)', () => {
     expect(src).toContain('scrollLeft');
     expect(src).toContain('skipClickRef');
     expect(src).toContain('data-testid="demo-phase-rail"');
+    // Tap jitter must not eat chip clicks — threshold ≥ 16px.
+    expect(src).toMatch(/DRAG_CLICK_PX\s*=\s*(1[6-9]|[2-9]\d)/);
+    expect(src).toContain('skipClickRef.current = drag.moved');
   });
 });

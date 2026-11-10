@@ -13,8 +13,8 @@ const RAIL_ARIA: Record<string, string> = {
   ja: 'できることを試す',
 };
 
-/** Ignore tiny pointer jitter so a real tap still fires onClick. */
-const DRAG_CLICK_PX = 8;
+/** Ignore pointer jitter so a real chip tap still fires onClick (iPhone + mouse). */
+const DRAG_CLICK_PX = 18;
 
 export default function DemoPhaseRail({
   lang,
@@ -76,7 +76,8 @@ export default function DemoPhaseRail({
       onPointerUp={(e) => {
         const drag = dragRef.current;
         if (!drag || drag.pointerId !== e.pointerId) return;
-        if (drag.moved) skipClickRef.current = true;
+        // Only suppress the following click after a real scroll drag.
+        skipClickRef.current = drag.moved;
         dragRef.current = null;
         try {
           railRef.current?.releasePointerCapture(e.pointerId);
@@ -86,6 +87,7 @@ export default function DemoPhaseRail({
       }}
       onPointerCancel={() => {
         dragRef.current = null;
+        skipClickRef.current = false;
       }}
     >
       {DEMO_PHASE_BUTTONS.map((btn) => (

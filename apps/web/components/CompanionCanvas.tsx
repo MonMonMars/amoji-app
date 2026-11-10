@@ -31,7 +31,12 @@ import {
   idleCrossfadeAdditiveScale,
   idleSwapBlendActive,
 } from '../lib/idle-crossfade';
-import { shortestQuatSlerp, shortestQuatSlerpClamped } from '../lib/vrm/quat-blend';
+import {
+  shortestEulerYXZSlerp,
+  shortestQuatSlerp,
+  shortestQuatSlerpClamped,
+} from '../lib/vrm/quat-blend';
+import { clampBoneByName } from '../lib/vrm/bone-joint-limits';
 import { applyIdleClipSoftening } from '../lib/idle-stance-soften';
 import { chestPokeBounce, CHEST_BOUNCE_SEC, SOFT_CHEST_BOUNCE_SEC } from '../lib/vrm/chest-bounce';
 import { sampleSpeech } from '../lib/speech';
@@ -573,7 +578,15 @@ export default function CompanionCanvas({
       const k = u * u * u * (u * (u * 6 - 15) + 10);
       for (let i = 0; i < blendNodes.length; i++) {
         const tgt = blendNodes[i]!.quaternion;
-        shortestQuatSlerpClamped(blendQ, blendFrom[i]!, tgt, k, blendNames[i]);
+        const name = blendNames[i];
+        // Euler short-arc per axis — stops +170°→−170° reading as a 350° spin
+        // on hips/legs during idle A→B handovers.
+        if (name && /hip|leg|foot|spine|chest|neck|head/i.test(name)) {
+          shortestEulerYXZSlerp(blendQ, blendFrom[i]!, tgt, k);
+          clampBoneByName(blendQ, name);
+        } else {
+          shortestQuatSlerpClamped(blendQ, blendFrom[i]!, tgt, k, name);
+        }
         blendNodes[i]!.quaternion.copy(blendQ);
       }
     };

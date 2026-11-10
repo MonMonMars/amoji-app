@@ -1,23 +1,28 @@
-// Passiveive idle body rotation while the user is quiet:
-//   relax → stretch → relax → look around → (repeat)
-// Never HelloWave / dance here — those stay farewell / explicit-intent only.
+// Passive idle body rotation while the user is quiet:
+//   mostly calm breath/stand → occasional look → rare mild stretch
+// Never HelloWave / dance / big arm-raise here — those stay farewell / explicit-intent only.
 
 import { idleClipById } from './idle-clips';
 
 /** Preferred clip ids for each beat of the loop. */
 export const PASSIVE_RELAX_CLIPS = ['IdleBreathCalm', 'StandardIdle'] as const;
-export const PASSIVE_STRETCH_CLIPS = ['Relax', 'IdleMixamoArmStretch'] as const;
+/** Mild stretch only — IdleMixamoArmStretch raised arms repeatedly and felt like a show. */
+export const PASSIVE_STRETCH_CLIPS = ['Relax'] as const;
 export const PASSIVE_LOOK_CLIPS = ['LookAround'] as const;
 
 /**
- * Canonical playlist (relax, stretch, relax, look). Duplicated relax beats
- * keep the body mostly calm with occasional stretch / look accents.
+ * Canonical playlist: calm-heavy with one look and one mild stretch per cycle.
+ * Stretch sits last so arm motion is at most once per full rotation.
  */
 export const PASSIVE_IDLE_LOOP_TEMPLATE = [
   'IdleBreathCalm',
-  'Relax',
+  'IdleBreathCalm',
   'StandardIdle',
+  'IdleBreathCalm',
   'LookAround',
+  'IdleBreathCalm',
+  'IdleBreathCalm',
+  'Relax',
 ] as const;
 
 function firstAvailable(candidates: readonly string[], available: ReadonlySet<string>): string | null {
@@ -44,10 +49,15 @@ export function orderPassiveIdleClips(availableIds: readonly string[]): string[]
   const look = firstAvailable(PASSIVE_LOOK_CLIPS, available);
 
   const loop: string[] = [];
-  if (relaxA) loop.push(relaxA);
-  if (stretch) loop.push(stretch);
-  if (relaxB) loop.push(relaxB);
+  if (relaxA) {
+    loop.push(relaxA, relaxA);
+    if (relaxB) loop.push(relaxB);
+    loop.push(relaxA);
+  }
   if (look) loop.push(look);
+  if (relaxA) loop.push(relaxA, relaxA);
+  // Stretch once at the end of the calm cycle — never back-to-back arm raises.
+  if (stretch) loop.push(stretch);
 
   if (loop.length >= 2) return loop;
   // Absolute fallback: whatever calm clips we have.
