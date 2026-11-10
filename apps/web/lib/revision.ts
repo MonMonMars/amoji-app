@@ -340,7 +340,8 @@
 // r2026-11-09.144: VRoid ref #1–3 lighting — matcapFactor is a Color (PR #299 treated it as a float = no-op); shade floors use shadeColorFactor;
 // frontal face fill for Sendagaya/#13; thumb cache bust.
 // r2026-11-10.145: systems pack (settings/payment/email/security/legal) + Settings a11y leftovers.
-export const APP_REVISION = 'r2026-11-10.145';
+// r2026-11-10.146: payment + charging rules (data-driven), checkout client_reference_id, demo mode, return handler.
+export const APP_REVISION = 'r2026-11-10.146';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

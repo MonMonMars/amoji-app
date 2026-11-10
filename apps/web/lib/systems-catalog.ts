@@ -92,5 +92,8 @@ export function systemsSnapshot() {
     fileLocations: FILE_LOCATIONS,
     productionApi: productionApiConfigured(),
     stripePaymentLink: stripePaymentLinkConfigured(),
+    paymentDemo:
+      typeof process !== 'undefined'
+      && ['1', 'true', 'yes'].includes((process.env.NEXT_PUBLIC_AMOJI_PAYMENT_DEMO ?? '').trim().toLowerCase()),
   };
 }

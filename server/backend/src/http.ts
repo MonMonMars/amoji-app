@@ -6,7 +6,13 @@ import { offlineComplete, parseChatBody, runChat, type ChatComplete } from './ch
 import { readState, writeState, type StatePatch } from './state.js';
 import { buildEdgeSsml, parseTtsBody, resolveEdgeVoice, synthesizeEdge } from './tts.js';
 import { clientKey, corsHeaders, rateLimit } from './security.js';
-import { handleStripeWebhook, readEntitlement, stripeConfigured } from './billing.js';
+import {
+  billingRulesPayload,
+  handleStripeWebhook,
+  readEntitlement,
+  startCheckout,
+  stripeConfigured,
+} from './billing.js';
 import { autoReply } from './auto-reply.js';
 import { mailConfigured, sendMail } from './email.js';
 
@@ -143,6 +149,10 @@ export function createBackend(opts: BackendOptions): Backend {
         return json(result.ok ? { received: true } : { error: result.error }, result.status, req);
       }
 
+      if (url.pathname === '/api/billing/rules' && req.method === 'GET') {
+        return json(billingRulesPayload(now()), 200, req);
+      }
+
       if (url.pathname === '/api/auth/session' && req.method === 'POST') {
         if (!rateLimit(`auth:${ip}`, 30, 60_000, now())) {
           return json({ error: 'rate limited' }, 429, req);
@@ -207,6 +217,30 @@ export function createBackend(opts: BackendOptions): Backend {
 
       if (url.pathname === '/api/billing/entitlement' && req.method === 'GET') {
         return json(readEntitlement(opts.db, session.userId, now()), 200, req);
+      }
+
+      if (url.pathname === '/api/billing/checkout' && req.method === 'POST') {
+        if (!rateLimit(`checkout:${ip}`, 10, 60_000, now())) {
+          return json({ error: 'rate limited' }, 429, req);
+        }
+        const body = await readJson(req) as { returnOrigin?: unknown; clientId?: unknown };
+        const checkoutOpts: { returnOrigin?: string; clientId?: string } = {};
+        if (typeof body.returnOrigin === 'string') checkoutOpts.returnOrigin = body.returnOrigin;
+        if (typeof body.clientId === 'string') checkoutOpts.clientId = body.clientId;
+        const result = await startCheckout(opts.db, session.userId, now(), checkoutOpts);
+        return json(
+          result.ok
+            ? {
+                mode: result.mode,
+                url: result.url,
+                plan: result.plan,
+                expiresAt: result.expiresAt,
+                chargesRealMoney: result.chargesRealMoney,
+              }
+            : { error: result.error, mode: result.mode },
+          result.status,
+          req,
+        );
       }
 
       if (url.pathname === '/api/support' && req.method === 'POST') {
