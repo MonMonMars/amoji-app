@@ -143,7 +143,7 @@ export type StrKey =
   | 'idleRailAria' | 'idleEnabled' | 'idleDisabled'
   // consolidated settings menu (r2026-10-02.7)
   | 'settingsCompanion' | 'settingsScene' | 'settingsVoice' | 'settingsData' | 'settingsHelp'
-  | 'yourName' | 'yourGender' | 'genderMale' | 'genderFemale' | 'genderSecret'
+  | 'yourName' | 'yourNamePlaceholder' | 'yourGender' | 'genderMale' | 'genderFemale' | 'genderSecret'
   | 'clearHistory' | 'clearHistoryConfirm' | 'forgetConfirm'
   // memory v2 browser (r2026-10-02.11)
   | 'memoryBrowser' | 'memoryEmpty' | 'memoryAddPlaceholder' | 'memoryAdd' | 'memoryExport'
@@ -254,7 +254,12 @@ export type StrKey =
   // shared table like /privacy and /terms do.
   | 'creditsTitle'
   // Daily chat turn budget (DimDik Phase 0 — device-local, default 40/day).
-  | 'dailyTurnsRemaining' | 'dailyQuotaExceeded';
+  | 'dailyTurnsRemaining' | 'dailyQuotaExceeded'
+  // Full systems pack: plan, cookies, systems inventory (settings + /systems).
+  | 'settingsPlan' | 'settingsSystems' | 'settingsLegal'
+  | 'planFreeLabel' | 'planPlusLabel' | 'planUpgrade' | 'planPaymentsOn' | 'planPaymentsOff'
+  | 'systemsTitle' | 'systemsLead' | 'systemsFreeHosts' | 'systemsFiles'
+  | 'systemsClientData' | 'systemsSecurity' | 'cookiesTitle' | 'openSystemsPage';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   chooseCharacter: { en: 'Choose your companion', yue: '揀你嘅小伙伴', zh: '选择你的伙伴', ja: '相棒を選ぶ' },
@@ -536,6 +541,7 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   settingsData: { en: 'Memory & data', yue: '記憶同資料', zh: '记忆与数据', ja: '記憶とデータ' },
   settingsHelp: { en: 'Help', yue: '幫助', zh: '帮助', ja: 'ヘルプ' },
   yourName: { en: 'Your name', yue: '你嘅名字', zh: '你的名字', ja: 'あなたの名前' },
+  yourNamePlaceholder: { en: 'Simon', yue: '嘉欣', zh: '小明', ja: '太郎' },
   yourGender: { en: 'You are', yue: '你係', zh: '你是', ja: 'あなたは' },
   genderMale: { en: 'Male', yue: '男仔', zh: '男生', ja: '男性' },
   genderFemale: { en: 'Female', yue: '女仔', zh: '女生', ja: '女性' },
@@ -1227,6 +1233,37 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: '今天还可聊 {n} 次',
     ja: '今日あと {n} 回',
   },
+  settingsPlan: { en: 'Plan & turns', yue: '計劃同次數', zh: '计划与次数', ja: 'プランと回数' },
+  settingsSystems: { en: 'Systems & security', yue: '系統同保安', zh: '系统与安全', ja: 'システムと安全' },
+  settingsLegal: { en: 'Legal', yue: '法律文件', zh: '法律文件', ja: '法的文書' },
+  planFreeLabel: { en: 'Free plan', yue: '免費計劃', zh: '免费计划', ja: '無料プラン' },
+  planPlusLabel: { en: 'Plus', yue: 'Plus 計劃', zh: 'Plus 计划', ja: 'Plusプラン' },
+  planUpgrade: { en: 'Upgrade with Stripe', yue: '用 Stripe 升級', zh: '用 Stripe 升级', ja: 'Stripe でアップグレード' },
+  planPaymentsOn: {
+    en: 'This build has a Stripe payment link configured.',
+    yue: '呢個版本已設定 Stripe 付款連結。',
+    zh: '此版本已配置 Stripe 付款链接。',
+    ja: 'このビルドには Stripe の支払いリンクが設定されています。',
+  },
+  planPaymentsOff: {
+    en: 'Payments stay off until a Stripe payment link is configured for this build.',
+    yue: '未設定 Stripe 付款連結前，付款功能保持關閉。',
+    zh: '未配置 Stripe 付款链接前，付款功能保持关闭。',
+    ja: 'Stripe の支払いリンクを設定するまで、支払いはオフのままです。',
+  },
+  systemsTitle: { en: 'Systems', yue: '系統', zh: '系统', ja: 'システム' },
+  systemsLead: {
+    en: 'Free hosts, file locations, client storage keys, and security posture for this build.',
+    yue: '呢個版本嘅免費主機、檔案位置、本機儲存鍵同保安狀況。',
+    zh: '此版本的免费主机、文件位置、本地存储键与安全状况。',
+    ja: 'このビルドの無料ホスト、ファイルの場所、端末内キー、安全の姿勢です。',
+  },
+  systemsFreeHosts: { en: 'Free servers', yue: '免費伺服器', zh: '免费服务器', ja: '無料サーバー' },
+  systemsFiles: { en: 'File locations', yue: '檔案位置', zh: '文件位置', ja: 'ファイルの場所' },
+  systemsClientData: { en: 'Client data storage', yue: '客戶端資料儲存', zh: '客户端数据存储', ja: 'クライアントデータ保存' },
+  systemsSecurity: { en: 'Security', yue: '保安', zh: '安全', ja: 'セキュリティ' },
+  cookiesTitle: { en: 'Cookies', yue: 'Cookie', zh: 'Cookie', ja: 'Cookie' },
+  openSystemsPage: { en: 'Open systems map', yue: '打開系統地圖', zh: '打开系统地图', ja: 'システム一覧を開く' },
   dailyQuotaExceeded: {
     en: "Today's free chat limit is used up. Try again tomorrow, or open Settings (top right) → Advanced brain (BYOK) to use your own API key.",
     yue: '今日免費傾偈額度用完喇，聽日再傾啦。或者撳右上角「設定」→「進階大腦（BYOK）」用自己嘅 API key 繼續。',

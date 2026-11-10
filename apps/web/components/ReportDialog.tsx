@@ -9,7 +9,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import { APP_REVISION } from '../lib/revision';
-import { REPORT_REASONS, MAX_REPLY_CHARS, addReport, downloadReports, reportCount, type ReportReason } from '../lib/reports';
+import { REPORT_REASONS, MAX_REPLY_CHARS, addReport, downloadReports, reportCount, submitReportRemote, type ReportReason } from '../lib/reports';
 import { t, type Lang, type StrKey } from '../lib/prefs';
 import { useFocusTrap } from '../lib/use-focus-trap';
 
@@ -71,6 +71,10 @@ export default function ReportDialog({ reply, lang, accent = '#f9a8d4', characte
     const saved = addReport({ reason, note, reply, characterId, lang });
     setCount(reportCount());
     setOutcome(saved ? 'saved' : 'failed');
+    // Best-effort API + email ack when a production origin is configured.
+    if (saved) {
+      void submitReportRemote({ reason, note, reply, characterId, lang });
+    }
   };
 
   const exportNow = () => setExported(downloadReports(APP_REVISION));

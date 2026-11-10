@@ -59,6 +59,9 @@ import {
   addEntry, deleteEntry, deleteDiaryEntry, deleteImportantDate, deletePromise, ensureUserNameFromProfile, exportMemory, loadMemory,
   type Memory, type MemoryType,
 } from '../lib/memory';
+import { paymentsConfigured, planStatus, planStatusSummary, publicPaymentLink, syncEntitlementFromApi } from '../lib/billing';
+import { listPresentClientKeys } from '../lib/client-storage';
+import Link from 'next/link';
 
 function Toggle({ on, onClick, accent, disabled = false, label }: { on: boolean; onClick: () => void; accent: string; disabled?: boolean; label: string }) {
   return (
@@ -212,7 +215,21 @@ export default function SettingsSheet({
     return () => window.removeEventListener('amoji:voice-blocked', onBlocked);
   }, []);
   useEffect(() => {
-    if (open) { setMem(loadMemory()); setCopied(false); setProxyDraft(getTtsProxy() ?? ''); setProxySaved(false); setProxyTestResult(null); setProxyTesting(false); setOaKeyDraft(openAiKey()); setOaEpDraft(openAiEndpoint()); setOaOn(openAiEnabled()); setOaSaved(false); setOaTestResult(null); setOaTesting(false); }
+    if (open) {
+      setMem(loadMemory());
+      setCopied(false);
+      setProxyDraft(getTtsProxy() ?? '');
+      setProxySaved(false);
+      setProxyTestResult(null);
+      setProxyTesting(false);
+      setOaKeyDraft(openAiKey());
+      setOaEpDraft(openAiEndpoint());
+      setOaOn(openAiEnabled());
+      setOaSaved(false);
+      setOaTestResult(null);
+      setOaTesting(false);
+      void syncEntitlementFromApi();
+    }
   }, [open]);
   if (!open) return null;
   const lang = prefs.lang;
@@ -898,6 +915,7 @@ export default function SettingsSheet({
                   type="button"
                   onClick={addNew}
                   disabled={!newText.trim()}
+                  aria-label={t(lang, 'memoryAdd')}
                   className="ui-btn h-9 shrink-0 rounded-full bg-white/10 px-3.5 text-xs text-white/80 hover:bg-white/20 disabled:opacity-40"
                 >
                   {t(lang, 'memoryAdd')}
@@ -959,6 +977,7 @@ export default function SettingsSheet({
                 id="amoji-settings-your-name"
                 name="name"
                 autoComplete="nickname"
+                aria-label={t(lang, 'yourName')}
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
@@ -966,7 +985,7 @@ export default function SettingsSheet({
                   ensureUserNameFromProfile(e.target.value);
                 }}
                 className="h-8 min-w-0 flex-1 rounded-full border border-white/10 bg-black/30 px-3 text-sm text-white placeholder-white/30 outline-none focus:border-white/40"
-                placeholder="Simon"
+                placeholder={t(lang, 'yourNamePlaceholder')}
               />
             </div>
             {/* r70 — gender drives the adaptive warmth; default 'secret' changes nothing */}
@@ -991,6 +1010,61 @@ export default function SettingsSheet({
                 ))}
               </div>
             </div>
+          </Section>
+
+          <Section title={`💳 ${t(lang, 'settingsPlan')}`}>
+            <div className={row}>
+              <span className={label}>
+                {planStatus().plan === 'plus' ? t(lang, 'planPlusLabel') : t(lang, 'planFreeLabel')}
+              </span>
+              <span className="text-xs text-white/55">{planStatusSummary()}</span>
+            </div>
+            <p className="text-[11px] text-white/45">
+              {paymentsConfigured() ? t(lang, 'planPaymentsOn') : t(lang, 'planPaymentsOff')}
+            </p>
+            {paymentsConfigured() && planStatus().plan === 'free' && (
+              <a
+                href={publicPaymentLink()}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="ui-btn inline-flex rounded-full px-3.5 py-1.5 text-xs font-medium text-neutral-950"
+                style={{ backgroundColor: accent }}
+              >
+                {t(lang, 'planUpgrade')}
+              </a>
+            )}
+          </Section>
+
+          <Section title={`🛡️ ${t(lang, 'settingsSystems')}`}>
+            <p className="text-[11px] text-white/45">
+              {t(lang, 'systemsLead')}
+            </p>
+            <p className="text-[11px] text-white/55">
+              {listPresentClientKeys().length} local keys present
+            </p>
+            <Link href="/systems" className={`ui-btn ${row} w-full text-left hover:bg-white/10`}>
+              <span className={label}>{t(lang, 'openSystemsPage')}</span>
+              <span className="text-white/30">→</span>
+            </Link>
+          </Section>
+
+          <Section title={`📜 ${t(lang, 'settingsLegal')}`}>
+            <Link href="/privacy" className={`ui-btn ${row} w-full text-left hover:bg-white/10`}>
+              <span className={label}>{t(lang, 'privacyTitle')}</span>
+              <span className="text-white/30">→</span>
+            </Link>
+            <Link href="/terms" className={`ui-btn ${row} w-full text-left hover:bg-white/10`}>
+              <span className={label}>{t(lang, 'termsTitle')}</span>
+              <span className="text-white/30">→</span>
+            </Link>
+            <Link href="/cookies" className={`ui-btn ${row} w-full text-left hover:bg-white/10`}>
+              <span className={label}>{t(lang, 'cookiesTitle')}</span>
+              <span className="text-white/30">→</span>
+            </Link>
+            <Link href="/safety" className={`ui-btn ${row} w-full text-left hover:bg-white/10`}>
+              <span className={label}>{t(lang, 'safetyTitle')}</span>
+              <span className="text-white/30">→</span>
+            </Link>
           </Section>
 
           {/* r2026-11-08 — OPTIONAL sharper brain. Rendered last on purpose:

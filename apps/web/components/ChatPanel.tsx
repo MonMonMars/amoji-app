@@ -158,10 +158,10 @@ import { loadStorySession } from '../lib/story-session';
 import { guardCompanionTurn, type HelplineRegion } from '../lib/crisis';
 import { readHelplineLocationHints } from '../lib/crisis-location';
 import {
-  checkChatTurnQuota,
   consumeChatTurn,
   quotaExceededCopy,
 } from '../lib/daily-quota';
+import { planStatus } from '../lib/billing';
 import { clientLiveContext, isLiveFactsOnlyTurn, planTools } from '../lib/live-tools';
 import { withQuestion } from '../lib/follow-up';
 import {
@@ -1188,15 +1188,15 @@ export default function ChatPanel({
     lastFeltRef.current = felt?.mood;
     const feltHints = moodToHints(felt?.mood, felt?.intensity);
     if (feltHints) applyContentMood(feltHints);
-    const quota = checkChatTurnQuota();
-    if (!quota.ok) {
+    const plan = planStatus();
+    if (!plan.chatAllowed) {
       const line = quotaExceededCopy(lang);
       setHistory((h) => [...h, { role: 'assistant', content: line }]);
       sayLocal(line, { sadness: 0.2 });
       done();
       return;
     }
-    consumeChatTurn();
+    if (plan.plan === 'free') consumeChatTurn();
     // Sing / dance start the premade clip NOW, before the reply arrives, so
     // the track is audible and named while she thinks. A sing request skips
     // the thinking filler — the clip is the vocal.

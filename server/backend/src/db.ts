@@ -34,6 +34,30 @@ export function openDb(path: string): DatabaseSync {
       content TEXT NOT NULL,
       created_at INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS entitlements (
+      user_id TEXT PRIMARY KEY,
+      plan TEXT NOT NULL,
+      expires_at INTEGER,
+      stripe_customer TEXT,
+      updated_at INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS reports (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      reason TEXT NOT NULL,
+      note TEXT NOT NULL,
+      reply TEXT NOT NULL,
+      contact_email TEXT,
+      created_at INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS mail_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      kind TEXT NOT NULL,
+      to_addr TEXT NOT NULL,
+      ok INTEGER NOT NULL,
+      detail TEXT,
+      created_at INTEGER NOT NULL
+    );
   `);
   return db;
 }
