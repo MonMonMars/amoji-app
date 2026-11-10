@@ -684,8 +684,8 @@ export default function CompanionCanvas({
     // fully listed), so eat takes smoking.vrma ??repetitive pinched-finger
     // hand-to-mouth, the closest real motion to steady bites ??and dine
     // takes blowAKiss.vrma, one graceful hand raise to lips (a toast/sip).
-    // Kinds still without a clip (taichi / jog / yoga / stretch) keep the
-    // r95 rule: the skeleton stays in the library idle.
+    // Jog / yoga / stretch still keep the r95 rule (library idle) until
+    // dedicated VRMAs land. Tai chi uses idle-rail lib_C121 (see MOVE_CLIP).
     const PERF_SOURCES: ClipSource[] = [
       { id: 'Jump', urls: [`${ANIM_MIRROR}/Jump.vrma`] },
       { id: 'Bow', urls: [`${ALT_HOST}/quick_formal_bow.vrma`, `${ANIM_MIRROR}/Bow.vrma`] },

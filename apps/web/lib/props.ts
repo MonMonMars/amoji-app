@@ -50,10 +50,10 @@ const HEX = (s: string): string => s;
  * Sing-mic capsule center in scene space (meters). Shared offset for the
  * head + sparkle; pole/boom/base are derived so the stand stays coherent.
  * Nominal VRM mouth ~[0, 1.38, 0.06] on a ~1.5m cast facing +Z. Capsule
- * sits on the mouth mid-line (near-zero X) with a sensible forward gap so
- * Sing VRMA / curated sing idles do not swallow the mesh.
+ * sits on the mouth mid-line (near-zero X) with a generous forward gap so
+ * Sing VRMA / curated sing idles never bury the mesh (Pixel: mic was inside).
  */
-export const MIC_MOUTH_POS: [number, number, number] = [0.0, 1.38, 0.22];
+export const MIC_MOUTH_POS: [number, number, number] = [0.0, 1.36, 0.36];
 
 /** Stand column slightly outward (+x / +z) from the capsule toward the floor. */
 const MIC_STAND_XZ: [number, number] = [MIC_MOUTH_POS[0] + 0.08, MIC_MOUTH_POS[2] + 0.03];

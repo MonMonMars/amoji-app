@@ -87,18 +87,18 @@ describe('stage props (r.69)', () => {
     expect(mic!.parts.some((p) => p.anim === 'magicDust')).toBe(true);
 
     const [x, y, z] = MIC_MOUTH_POS;
-    // Centered on the mouth mid-line with a sensible forward gap.
+    // Centered on the mouth mid-line with a generous forward gap (not inside the body).
     expect(Math.abs(x)).toBeLessThanOrEqual(0.04);
-    expect(y).toBeGreaterThanOrEqual(1.30);
+    expect(y).toBeGreaterThanOrEqual(1.28);
     expect(y).toBeLessThanOrEqual(1.48);
-    expect(z).toBeGreaterThanOrEqual(0.16);
-    expect(z).toBeLessThanOrEqual(0.28);
+    expect(z).toBeGreaterThanOrEqual(0.30);
+    expect(z).toBeLessThanOrEqual(0.45);
 
-    // Capsule sits in front of the lips (toward +Z), not inside the face shell.
+    // Capsule sits well in front of the lips (toward +Z), not inside the face shell.
     const nominal: [number, number, number] = [0, 1.38, 0.06];
-    expect(z - nominal[2]).toBeGreaterThanOrEqual(0.12);
+    expect(z - nominal[2]).toBeGreaterThanOrEqual(0.24);
     expect(head!.size[0]).toBe(0.045);
-    expect(z - nominal[2]).toBeGreaterThanOrEqual(head!.size[0] * 0.9);
+    expect(z - nominal[2]).toBeGreaterThanOrEqual(head!.size[0] * 2);
   });
 
   it('mic enters from above with settling dust, not from the floor', () => {
