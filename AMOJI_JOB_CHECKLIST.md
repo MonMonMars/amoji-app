@@ -17,9 +17,10 @@ Locale → engine → voice lives in `apps/web/lib/voice-catalog.ts`. Non-Yue en
 
 ## In progress
 
-- Merge stack (human): #285 setup → #292 audio gate → #291 selectable history → **#301 reply quality/privacy** → #302 chat entry. See `docs/MERGE_CHECKLIST.md`.
-- Polish open: #297 poke hide, #298 HelloWave bye-only, #299 cast lighting, #300 mood orb, #283 select back.
-- Status board: `docs/PROJECT_STATUS.md` + `docs/project-status.html`.
+- Open slices (2026-11-10): #338 chat-ux, #339 news, #340 card-greet, #342 Silent Night, #343 dance legs, mega #337. Prefer slices over mega when merging.
+- Branches ready, PR not opened: `content-motion-wire`, `poke-body-lean`, `cma-poke-sfx-pack` (parent must ManagePullRequest).
+- Leftover Pixel fixes branch: `cursor/leftover-pixel-fixes-0340-0eac` (LangChips audition, arm ROM every-frame clamp, longer 開聲傾偈 gate sample, status docs).
+- Status board: `docs/PROJECT_STATUS.md` (refreshed) + `docs/project-status.html` (may lag).
 
 ## Open / remains
 
@@ -30,8 +31,9 @@ Locale → engine → voice lives in `apps/web/lib/voice-catalog.ts`. Non-Yue en
 - `speechSynthesis` has no sink pin. If Edge is blocked and only the browser voice plays, Windows can still route that API to a communications device.
 - Anonymous Pollinations only exposes `openai-fast` (GPT-OSS 20B). No smarter keyless model to switch to.
 - `think-phrases.ts` is unused by the wait UI. The spoken wait lines are `thinking-lines.ts`.
-- Music streaming: `resolveStreamPlaylist()` returns `null` until a **licensed** catalog/embed exists (`docs/MUSIC_STREAMING.md`). Do not scrape Spotify/YouTube/etc.
-- Post-merge live verify on https://monmonmars.github.io/amoji-app/setup after the stack lands.
+- Music streaming: `resolveStreamPlaylist()` returns `null` until a **licensed** catalog/embed exists (`docs/MUSIC_STREAMING.md`). Do not scrape Spotify/YouTube/etc. **Hold.**
+- Post-merge live verify on https://monmonmars.github.io/amoji-app/setup after slices land. **Hold** without Pages access.
+- Pixel confirm: poke opposite lean + expanded CMA SFX after those PRs merge.
 
 ## Voices
 
