@@ -116,6 +116,29 @@ describe('planTools', () => {
     expect(planTools('news near me').recent).toBe(false);
     expect(planTools('新聞').recent).toBe(false);
     expect(planTools('最近新聞').recent).toBe(true);
+    // Demo-phase CJK prompts must not demand GPS just to read headlines.
+    expect(planTools('今日有咩新聞？').recent).toBe(true);
+    expect(planTools('今日有咩新聞？').needsDevice).toBe(false);
+    expect(planTools('今天有什么新闻？').recent).toBe(true);
+    expect(planTools('今天有什么新闻？').needsDevice).toBe(false);
+  });
+
+  it('does not treat Japanese “today” as a weather city', () => {
+    const plan = planTools('今日の天気は？');
+    expect(plan.weather).toBe(true);
+    expect(plan.placeQuery).toBeUndefined();
+    expect(plan.needsDevice).toBe(true);
+  });
+
+  it('asks for a city when a bad place name fails to geocode, instead of “couldn’t check”', async () => {
+    const live = await gatherLiveContext('weather in Nowhereville Zedland', {
+      lang: 'en',
+      fetch: async () => jsonRes({ results: [] }),
+      cache: new Map(),
+      locate: async () => null,
+    });
+    expect(live.spoken.toLowerCase()).toContain('which city');
+    expect(live.spoken.toLowerCase()).not.toContain("couldn't check the weather");
   });
 
   it('plans local news, topical news, and a web lookup separately', () => {
