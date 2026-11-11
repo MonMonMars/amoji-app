@@ -8,6 +8,7 @@
 ## Normal chat
 
 - User-driven. Weather/news/story/fun facts run only when the user asks or picks a suggestion (live-tools on demand).
+- Story, science/fun facts, and simple how-to / problem-help unlock longer reply budgets; idle chitchat stays short.
 - If the user says they do not know what to talk about, she offers the same style of **2–3 topic menu** (no LLM required).
 
 ## Privacy (#296 / #301)

@@ -12,7 +12,7 @@ Canonical short note for Pixel’s enter-chat talking order. Implementation land
 
 - User-driven. Weather, news, story, and fun-fact tools run only when asked or when a suggestion is picked.
 - “I don’t know what to talk about” reuses the same 2–3 topic menu (no LLM required).
-- Story / facts may use longer TTS; keep clauses paused per TTS notes.
+- Story, science/fun facts, and simple how-to / problem-help may use longer TTS and higher token budgets; idle chitchat stays short. Keep clauses paused per TTS notes.
 
 ## Privacy
 
