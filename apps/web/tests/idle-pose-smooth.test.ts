@@ -51,8 +51,8 @@ describe('idle pose smooth + catalog trim', () => {
     expect(RETIRED_IDLE_CLIP_IDS.size).toBe(RETIRED_IDLE_NUMS.size);
   });
 
-  it('smoke keeps #3 #20 #34 #36 #41 #53 in library and on curated rail where mapped', () => {
-    const keepNums = [3, 20, 34, 36, 41, 53];
+  it('smoke keeps #3 #20 #34 #41 #53 playable; IdleHug #36 retired blend-bad', () => {
+    const keepNums = [3, 20, 34, 41, 53];
     for (const n of keepNums) {
       const e = idleByNum(n);
       expect(e?.playable).toBe(true);
@@ -60,8 +60,19 @@ describe('idle pose smooth + catalog trim', () => {
       expect(rail).toBeTruthy();
       expect(IDLE_CLIP_OPTIONS.some((o) => o.libNum === n)).toBe(true);
     }
+    expect(RETIRED_IDLE_NUMS.has(36)).toBe(true);
+    expect(idleByNum(36)?.retired).toBe(true);
+    expect(resolveIdleClipId('IdleHug')).toBe('IdleBreathCalm');
+    expect(CHAT_IDLE_CURATED.some((r) => r.clipId === 'IdleHug')).toBe(false);
     expect(playableIdles().length).toBeGreaterThan(80);
     expect(IDLE_CLIP_OPTIONS.length).toBeLessThan(playableIdles().length);
+  });
+
+  it('idle A→B never syncs mismatched clip times (avoids spin-to-back blends)', () => {
+    const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
+    expect(canvas).not.toMatch(/action\.time = idleAction\.time % clip\.duration/);
+    expect(canvas).toContain('resolveIdleClipId');
+    expect(canvas).toMatch(/action\.time = Math\.min\(0\.08/);
   });
 
   it('Pixel #94–118: retired 96–100, 105–107 off rotation; keeps still in library', () => {

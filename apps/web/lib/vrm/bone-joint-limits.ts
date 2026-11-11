@@ -20,7 +20,8 @@ export const BONE_BLEND_LIMITS: Readonly<Record<string, BoneEulerLimitsYXZ>> = {
   spine: { x: [-0.45, 0.4], y: [-0.55, 0.55], z: [-0.35, 0.35] },
   chest: { x: [-0.35, 0.3], y: [-0.45, 0.45], z: [-0.4, 0.4] },
   upperChest: { x: [-0.3, 0.28], y: [-0.4, 0.4], z: [-0.35, 0.35] },
-  hips: { x: [-0.35, 0.35], y: [-0.5, 0.5], z: [-0.28, 0.28] },
+  // Hips yaw must stay tight — idle A→B used to spin the whole body "to the back".
+  hips: { x: [-0.35, 0.35], y: [-0.45, 0.45], z: [-0.25, 0.25] },
   leftUpperArm: { x: [-1.9, 1.9], y: [-0.8, 0.8], z: [-2.9, 1.6] },
   rightUpperArm: { x: [-1.9, 1.9], y: [-0.8, 0.8], z: [-1.6, 2.9] },
   leftLowerArm: { x: [-0.1, 2.4], y: [-0.6, 0.6], z: [-0.6, 0.6] },
@@ -28,10 +29,13 @@ export const BONE_BLEND_LIMITS: Readonly<Record<string, BoneEulerLimitsYXZ>> = {
 } as const;
 
 /**
- * Spine / back / neck / head — never allow a full turn. Clamped every frame
- * after mixer + poke/dance overlays, even when a library clip keys the bone.
+ * Hips / spine / back / neck / head — never allow a full turn. Clamped every
+ * frame after mixer + poke/dance overlays, even when a library clip keys the bone.
  */
 export const AXIAL_NO_FLIP_BONES = [
+  // Hips yaw must clamp too — mixer keys used to spin the whole body "to the
+  // back" (±π) during idle A→B even when spine/neck were capped.
+  'hips',
   'spine',
   'chest',
   'upperChest',

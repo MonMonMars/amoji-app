@@ -48,7 +48,7 @@
 | Item | Notes / evidence |
 |------|------------------|
 | Calm vs perf pose gating + retire bad poses | PR #365 / related pose commits |
-| Hips / idle A→B no spin-to-back | bone limits + idle start near 0 |
+| Hips / idle A→B no spin-to-back | **Re-ported 2026-11-12 onto this branch** (was missing; caused every-few-seconds flip) |
 | Talk calm clips only while speaking | chat-auto-idle / CompanionCanvas |
 | Gate: mic + location one page (where landed) | entry gate v2 / PreChatAudioGate (verify on branch) |
 | Male Yue TTS speed-up | gTTS floor, Edge offsets, synth base |
@@ -73,6 +73,7 @@
 | Confirm mic stays open on real device after gate → select → chat | **Verify after deploy** |
 | Location still asked only on gate (no second popup at Start) | Confirm on device |
 | Broader SCENE_LINES pass (other backdrops still ask a lot) | Optional cleanup |
+| Confirm spin-to-back gone on device after this push | **Verify after deploy** |
 | Production Pages update after merge to `main` | Waiting merge |
 | Keep bible current daily when owner gives new rules | Ongoing |
 
@@ -82,6 +83,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-12 night | Re-port spin-to-back fix onto `no-history-resume-ask` (hips clamp + idle t≈0; IdleHug retired) — owner reported still flipping every few seconds |
 | 2026-11-12 evening | Ban topic-menu asks; fix silly cloudsea “揀朵雲嚟坐好” ambient |
 | 2026-11-12 | Bible created; mic default-open fix; rolled in prior PR #366 rules |
 | 2026-11-11 | Rules collected from owner: poses, gate confirm, Yue pace, ask policy, news, UM→bar, pupils, recipe/continue, loud sound test |
