@@ -352,14 +352,19 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
         // Later chunks keep the mouth open; only the last one may close it.
         followAudioElement(audio, last);
       };
-      void pinDefaultOutputAsync(audio)
-        .then(() => audio.play())
-        .catch((e: unknown) => {
-          settle(() => {
-            if (currentAudio === audio) currentAudio = null;
-            failLine(e instanceof Error ? e : new Error(String(e)));
+      // Play in this turn — awaiting setSinkId first drops the user gesture on
+      // Chrome/Windows and leaves select-card greets silent when network is slow.
+      void audio.play().catch((e: unknown) => {
+        void pinDefaultOutputAsync(audio)
+          .then(() => audio.play())
+          .catch((err: unknown) => {
+            settle(() => {
+              if (currentAudio === audio) currentAudio = null;
+              failLine(err instanceof Error ? err : e instanceof Error ? e : new Error(String(err)));
+            });
           });
-        });
+      });
+      void pinDefaultOutputAsync(audio).catch(() => { /* sink pin is best-effort */ });
     };
     playNext();
   });

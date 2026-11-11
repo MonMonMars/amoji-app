@@ -63,6 +63,7 @@
 | Mic default-open at chat start (this turn) | gate Enter re-probe + chat micDelay 0/120 + retry |
 | Ban topic-menu double asks (我哋傾咩好呀 / 今日想傾咩呀) | scrubTopicMenuAsks + bank scrub |
 | Cloudsea ambient: no “sit on a cloud” silliness | grounded SCENE_LINES |
+| Character / voice card tap greets audible | Same-origin gesture clip + play-before-setSinkId (ported; was silent on this branch) |
 
 ---
 
@@ -74,6 +75,8 @@
 | Location still asked only on gate (no second popup at Start) | Confirm on device |
 | Broader SCENE_LINES pass (other backdrops still ask a lot) | Optional cleanup |
 | Confirm spin-to-back gone on device after this push | **Verify after deploy** |
+| Confirm character/voice card tap speaks on device / Pages | **Verify after deploy** |
+| CMA poke SFX #1–23 Want/archive/delete wiring | In progress on poke-sfx branch |
 | Production Pages update after merge to `main` | Waiting merge |
 | Keep bible current daily when owner gives new rules | Ongoing |
 
@@ -83,6 +86,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-12 late night | Port card-greet same-origin gesture clip — select character/voice taps were silent (fix never on this branch) |
 | 2026-11-12 night | Re-port spin-to-back fix onto `no-history-resume-ask` (hips clamp + idle t≈0; IdleHug retired) — owner reported still flipping every few seconds |
 | 2026-11-12 evening | Ban topic-menu asks; fix silly cloudsea “揀朵雲嚟坐好” ambient |
 | 2026-11-12 | Bible created; mic default-open fix; rolled in prior PR #366 rules |
