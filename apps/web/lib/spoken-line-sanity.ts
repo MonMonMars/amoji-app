@@ -16,22 +16,22 @@ export interface SpokenGateOpts {
 /** Known-good statement fallbacks when a candidate fails the gate. */
 export const SAFE_IDLE_FALLBACK: Record<Lang, readonly string[]> = {
   en: [
-    'Still here with you in this quiet stretch.',
+    'I just stretched my shoulders — feels nice.',
     'Holding this soft moment with you.',
     'Same page as you. The quiet suits us.',
   ],
   yue: [
-    '仲喺度陪住你呢段靜。',
+    '我啱啱伸咗下膊頭——舒服咗少少。',
     '輕輕留住呢個柔軟時刻。',
     '同你同一頁。呢段靜好襯。',
   ],
   zh: [
-    '还在这里陪着你这段安静。',
+    '我刚伸了伸肩膀——舒服一点了。',
     '轻轻留着这个柔软时刻。',
     '和你同一页。这段安静很衬。',
   ],
   ja: [
-    'この静けさの中で、まだそばにいるよ。',
+    '肩を伸ばしたばかり——ちょっと楽。',
     'やわらかい時間を、そっと一緒に置いておくね。',
     '同じページにいる。この静けさが似合ってる。',
   ],
@@ -62,11 +62,32 @@ export function asksToResumeHistory(line: string): boolean {
 }
 
 /**
+ * Presence nags that sound like "are you still there?" after silence.
+ * Idle / reengage should offer a concrete topic instead.
+ */
+const BANNED_PRESENCE_NAG =
+  /you'?ve\s+gone\s+quiet\b|are\s+you\s+still\s+there\b|still\s+there\s*\?|did\s+you\s+walk\s+away\b|it'?s\s+been\s+a\s+minute[.…]*\s*still\s+here\b|still\s+here\s+if\s+you\s+want\s+company\b|i'?ll\s+be\s+right\s+here\s+whenever\s+you'?re\s+back\b|你靜咗喎|好耐冇聲喎|你安静下来了|好一会儿没声音|静かになっちゃった|しばらく無音|仲喺度陪住你呢段靜|还在这里陪着你这段安静|この静けさの中で、まだそばにいる/i;
+
+export function asksPresenceNag(line: string): boolean {
+  const t = (line ?? '').trim();
+  if (!t) return false;
+  return BANNED_PRESENCE_NAG.test(t);
+}
+
+/**
  * Half-sentence / motif-fill leftovers that shipped as spoken lines.
  * Includes the Pixel "a small map reminding you" class of fragments.
  */
 const BROKEN_FRAGMENT =
   /\ba\s+small\s+map\s+reminding\s+you\b|\ba\s+tiny\s+map\s+reminded(?:\s+me\s+of\s+you)?\b|\ba\s+tiny\s+map\s+is\s+small\b|\ba\s+pocket\s+map\s+reminding\s+you\b|\breminding\s+you\s*[.…]*\s*$|\breminded\s+me\s+of\s*$|A\s+little\s+maps\s+feels\b|Um,\s+maps\s+makes\b|^maps\s+is\b|提醒我你|轻轻提醒我想起你|輕輕提醒我你/i;
+
+/** Metaphor-sludge idle fills: "friendly riddle is charged / voltage / tiny burst". */
+const BROKEN_METAPHOR_SLUDGE =
+  /充滿電|充满电|電壓感覺友善|电压感觉友善|細爆發|小爆发|短短.{0,8}爆發|短短.{0,8}爆发|is charged and ready|voltage feels friendly|tiny burst|充電済み|電圧は友好|小さなバースト|短い.{0,8}バースト/i;
+
+/** Meta topic-narration sludge ("holding this topic / same thread") — not real talk. */
+const BROKEN_META_TOPIC =
+  /still\s+on\s+that\s+thread\b|holding\s+the\s+same\s+topic\b|keeping\s+your\s+subject\s+warm\b|we\s+can\s+keep\s+walking\s+the\s+path\s+you\s+started\b|仲喺你呢條話題度|輕輕留住同一個主題|你提起嘅嘢我仲放喺枱上面暖住|还在你这条话题上|轻轻留着同一个主题|你提起的事我还放在桌上暖着|まだその話の途中|同じ話題をそっと置いたまま|あなたが出した話題を、あたたかく/i;
 
 const UNFINISHED_EN =
   /\b(?:reminding|reminded|about|of|to|for|with|and|or|the|a|an|is|are|was|were|like)\s*[.…]*\s*$/i;
@@ -88,6 +109,8 @@ export function spokenLineLooksBroken(text: string, opts?: SpokenGateOpts): bool
   if (!t || t === '…' || t === '...') return true;
   if (/\{[a-zA-Z_][a-zA-Z0-9_]*\}/.test(t)) return true;
   if (BROKEN_FRAGMENT.test(t)) return true;
+  if (BROKEN_METAPHOR_SLUDGE.test(t)) return true;
+  if (BROKEN_META_TOPIC.test(t)) return true;
 
   const d = dense(t);
   const hasCjk = CJK.test(t);
@@ -106,6 +129,7 @@ export function spokenLineLooksBroken(text: string, opts?: SpokenGateOpts): bool
   }
   if (!hasCjk && UNFINISHED_EN.test(t) && t.split(/\s+/).length < 8) return true;
   if ((opts?.mode ?? 'local') === 'idle' && asksUserInnerThoughts(t)) return true;
+  if ((opts?.mode ?? 'local') === 'idle' && asksPresenceNag(t)) return true;
   // Local + idle: never volunteer “continue last time” — history is quiet.
   if (asksToResumeHistory(t)) return true;
   return false;
