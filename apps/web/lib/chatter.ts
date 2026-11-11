@@ -1,8 +1,9 @@
 // Local dialogue banks — deterministic, offline, no LLM call.
 // Idle banks (idleBored/idleCozy) are statement-only — no questions / think-aloud.
 // Other kinds may still invite; chat idle path prefers profile/idle-talk statements.
-// r2026-10-03.38: reengage + reengageSoft banks — the staged "you've gone
-// quiet" follow-ups (direct check-in) and the soft closer (said once).
+// reengage / reengageSoft: soft topic offers only — NEVER blame the user for
+// being quiet ("you've gone quiet", "are you still there", "did you walk away").
+// Long silence → idle body motion + optional new-topic nudge, not a check-in nag.
 // r2026-10-04.63: startup + tutor lines pointed at the top-RIGHT gear for
 // character/scene/language changes — wrong button. Character switching is
 // the top-LEFT name plate; the gear is settings. Reworded all languages.
@@ -30,27 +31,27 @@ export const CHATTER: Record<ChatterKind, Record<ChatterLang, string[]>> = {
   },
   idleBored: {
     en: [
-      'Still here with you in this quiet stretch.',
+      'I just stretched my shoulders — feels nice.',
       'A soft tap lands fine — I tickle easily.',
-      'The quiet is thick… soft noise can wait.',
+      'Humming a tiny tune to myself…',
       'I counted for a while — numbers make decent company.',
     ],
     yue: [
-      '仲喺度陪住你呢段靜。',
+      '我啱啱伸咗下膊頭——舒服咗少少。',
       '輕輕撳一下都得——我好好痕㗎。',
-      '靜得好厚……柔和聲可以再等陣。',
+      '我自己哼緊一小段……',
       '我數咗一陣——數字都算唔錯嘅伴。',
     ],
     zh: [
-      '还在这里陪着你这段安静。',
+      '我刚伸了伸肩膀——舒服一点了。',
       '轻轻戳一下就好——我很怕痒的。',
-      '静得很厚……柔和声音可以再等一会。',
+      '我自己哼着一小段……',
       '我数了一阵——数字也算不错的伴。',
     ],
     ja: [
-      'この静けさの中で、まだそばにいるよ。',
+      '肩を伸ばしたばかり——ちょっと楽。',
       'やさしくつついても大丈夫——くすぐったいけど。',
-      '静けさが濃いね…やさしい音はあとでいい。',
+      'ひとりで小さな鼻歌…',
       'しばらく数えてた——数字もわりといいお伴。',
     ],
   },
@@ -128,54 +129,50 @@ export const CHATTER: Record<ChatterKind, Record<ChatterLang, string[]>> = {
       'つんつん受け取った！ハグとお返し、どっちがいい？',
     ],
   },
-  // r2026-10-03.38 — stage 1 of re-engagement: the USER (not just the room)
-  // has been quiet for ~2 minutes, so she leans in directly.
+  // Soft topic nudge after a long pause — never blame silence / ask "still there?".
   reengage: {
-    // Presence only — never “continue last time / pick up where we left off”.
-    // History is kept silently; the user decides the next topic.
     en: [
-      "You've gone quiet on me — I'm still right here with you~",
-      "It's been a minute… still here if you want company~",
-      'Hey~ enjoying this quiet stretch with you~',
-      'Still with you — no rush at all~',
+      'Want a tiny weather check, or a fun fact next?',
+      'I could hum a short tune — or we pick a new topic~',
+      'Story, stretch, or music — any of those sound good?',
+      'I have a little science tidbit ready if you want one~',
     ],
     yue: [
-      '你靜咗喎——我仲喺度陪住你~',
-      '好耐冇聲喎……我仲喺度，陪住你就得~',
-      '喂~呢段靜我都覺得幾好~',
-      '我仲陪住你——唔使急~',
+      '想聽吓天氣，定係聽個有趣事實？',
+      '我可以哼一小段——或者我哋換個新話題~',
+      '故事、伸展、定音樂——邊樣啱你？',
+      '我有個小小科學冷知識，想聽就講~',
     ],
     zh: [
-      '你安静下来了——我还在这里陪着你~',
-      '好一会儿没声音了……我还在，陪着你就好~',
-      '喂~这段安静我觉得挺好~',
-      '我还陪着你——不用着急~',
+      '要不要听天气，或者一个有趣事实？',
+      '我可以哼一小段——或者我们换个新话题~',
+      '故事、伸展、还是音乐——哪个顺你心意？',
+      '我有个小小科学冷知识，想听就说~',
     ],
     ja: [
-      '静かになっちゃった——でもここにいるよ〜',
-      'しばらく無音だね……そばにいるよ〜',
-      'ねぇ、この静けさも悪くないね〜',
-      'そばにいるよ——急がなくていいよ〜',
+      '天気チェックと豆知識、どっちがいい？',
+      '短い鼻歌でもいいし、新しい話題でもいいよ〜',
+      'お話・ストレッチ・音楽——どれがいい？',
+      '小さな科学トリビア、用意してあるよ〜',
     ],
   },
-  // r2026-10-03.38 — stage 2: the soft closer, said ONCE after ~5 minutes of
-  // user silence, then she simply waits instead of repeating herself.
+  // Rare soft closer — still a topic offer, never "are you still there / walk away".
   reengageSoft: {
     en: [
-      "I'll be right here whenever you're back — tap me, okay?",
-      "Take all the time you need. I'm not going anywhere — promise you'll say hi when you're back?",
+      'I can keep stretching over here — or we try a new topic whenever you like~',
+      'Whenever you want, pick weather, a story, or a song — I am ready~',
     ],
     yue: [
-      '我會喺度等你㗎——返嚟撳下我吖，好唔好？',
-      '慢慢嚟，我唔會走㗎。返嚟嗰陣記得同我打招呼吖？',
+      '我可以繼續喺度伸展——你想傾嘅時候，我哋再揀個新話題~',
+      '你想嘅時候，天氣、故事、定首歌——我準備好~',
     ],
     zh: [
-      '我会一直在这里等你——回来戳我一下，好不好？',
-      '慢慢来，我不会走的。回来的时候记得和我打个招呼呀？',
+      '我可以继续在这边伸展——你想聊的时候，我们再挑个新话题~',
+      '你想的时候，天气、故事、或一首歌——我准备好了~',
     ],
     ja: [
-      'ここで待ってるから——戻ったらタップしてね？',
-      'ゆっくりでいいよ、どこにも行かないから。戻ってきたら声をかけて？',
+      'こっちでストレッチしてるね——話したくなったら新しい話題で~',
+      'いつでも天気・お話・歌、どれでも準備できてるよ〜',
     ],
   },
 };

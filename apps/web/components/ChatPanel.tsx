@@ -34,11 +34,10 @@
 // the conversation thread (last user words + her reply), so the next session
 // opens with "last time we were talking about…" and her prompt always
 // carries the open topic.
-// r2026-10-03.38: staged re-engagement — when the USER (not just the room)
-// goes quiet, she leans in over time: her usual idle chatter from 40s, direct
-// "you've gone quiet" follow-ups from ~2 min, and a soft closer at ~5 min
-// said ONCE — then she waits instead of nagging. Any real user action
-// (message, poke, spoken word, even tapping the mic off) resets the curve.
+// r2026-10-03.38: staged idle — when the USER goes quiet, body keeps moving
+// (passive idle / stretch) and soft topic offers may fire; never blame silence
+// ("you've gone quiet" / "are you still there" / "did you walk away"). Any real
+// user action (message, poke, spoken word, even tapping the mic off) resets.
 // r2026-10-03.39: activity dialogue sets her body off — "sing for me",
 // "跳一下", "kung fu!", "太極", "play the piano", "跑步" each trigger a
 // choreographed movement-library performance while her reply plays.
@@ -183,6 +182,7 @@ import {
   userUndecided,
 } from '../lib/topic-suggestions';
 import { speak, stopSpeaking, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechRemainder, whenSpeechIdle, speakThinkingFiller } from '../lib/voice';
+import { cantHearReply, isCantHearComplaint } from '../lib/cant-hear';
 import { productionChat } from '../lib/backend-client';
 import { stopThinkingSound } from '../lib/thinking-sound';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
@@ -872,13 +872,11 @@ export default function ChatPanel({
     return () => clearInterval(timer);
   }, []);
 
-  // idle chatter + staged re-engagement (r.38): she never lets a quiet room
-  // die. Measured from the USER's last real action (message, poke, spoken
-  // word, mic tap) — her own lines don't restart the clock. Stage 0 (<2 min
-  // of user silence) = her usual persona/mood idle lines; stage 1 (2 min+) =
-  // direct "you've gone quiet" follow-ups that lean in harder; stage 2 (5
-  // min+) = one soft closer ("I'll be right here") and then she simply
-  // waits instead of nagging. Her lines never pile onto her own voice.
+  // idle chatter + soft topic offers (r.38): measured from the USER's last
+  // real action — her own lines don't restart the clock. Stage 0 = persona /
+  // mood / topic offers; stage 1+ = soft NEW TOPIC nudges only — never
+  // "you're so quiet" / "still there?" / "walk away" blame. After the soft
+  // closer she waits. Her lines never pile onto her own voice.
   useEffect(() => {
     const timer = setInterval(() => {
       if (busyRef.current || isSpeaking() || speechPending() || actionGameRef.current) return;
@@ -1015,6 +1013,23 @@ export default function ChatPanel({
     }
     setCrisisCard(false);
     setCrisisPopup(null);
+    // Can't-hear / no-sound — local fix only. LLM used to invent nonsense story
+    // beats ("軍艦開到極光") instead of acknowledging the audio problem.
+    if (isCantHearComplaint(text)) {
+      const tip = cantHearReply(lang);
+      const lastSaid = [...history]
+        .reverse()
+        .find((m) => m.role === 'assistant' && m.content.trim().length > 8);
+      sayLocal(tip, { sadness: 0.15 });
+      if (lastSaid?.content) {
+        // Re-say the missed line after the tip — no new invented plot.
+        whenSpeechIdle(() => {
+          speak(lastSaid.content, characterId, lang, undefined, undefined, 1);
+        });
+      }
+      done();
+      return;
+    }
     {
       const action = detectActionGame(text);
       if (action) {
