@@ -85,7 +85,7 @@ describe('systems pack', () => {
     expect(paymentsConfigured()).toBe(false);
   });
 
-  it('Settings sheet links plan, systems, charging, and checkout', () => {
+  it('Settings sheet links plan, systems, charging, support, and wipe', () => {
     const src = readFileSync(join(web, 'components/SettingsSheet.tsx'), 'utf8');
     expect(src).toContain('settingsPlan');
     expect(src).toContain('settingsSystems');
@@ -95,6 +95,9 @@ describe('systems pack', () => {
     expect(src).toContain('syncEntitlementFromApi');
     expect(src).toContain('startCheckout');
     expect(src).toContain('planChargingBlurb');
+    expect(src).toContain('submitSupportMessage');
+    expect(src).toContain('wipeClientProductData');
+    expect(src).toContain('supportTitle');
   });
 
   it('cookies and systems pages expose a localized back control', () => {
@@ -104,9 +107,11 @@ describe('systems pack', () => {
     }
   });
 
-  it('ReportDialog best-effort posts to the production API', () => {
+  it('ReportDialog best-effort posts to the production API with optional email', () => {
     const src = readFileSync(join(web, 'components/ReportDialog.tsx'), 'utf8');
     expect(src).toContain('submitReportRemote');
+    expect(src).toContain('contactEmail');
+    expect(src).toContain('reportContactEmailLabel');
   });
 
   it('docs SYSTEMS map is present', () => {
@@ -114,6 +119,7 @@ describe('systems pack', () => {
     expect(doc).toContain('Payment');
     expect(doc).toContain('Charging rules');
     expect(doc).toContain('Email');
+    expect(doc).toContain('/api/support');
     expect(doc).toContain('GitHub Pages');
   });
 

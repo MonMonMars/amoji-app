@@ -233,8 +233,13 @@ export type StrKey =
   | 'reportReasonHarmfulAdvice' | 'reportReasonOther'
   | 'reportNoteLabel' | 'reportNotePlaceholder' | 'reportSubmit' | 'reportCancel' | 'reportDone'
   | 'reportSaved' | 'reportSavedNext' | 'reportSaveFailed'
+  | 'reportContactEmailLabel' | 'reportContactEmailPlaceholder' | 'reportContactEmailHint'
+  | 'reportRemoteStored' | 'reportAckEmailed'
   | 'reportExport' | 'reportExportEmpty' | 'reportCountLabel' | 'reportExported' | 'reportExportFailed'
   | 'reportSendTo' | 'reportSendToHint'
+  | 'supportTitle' | 'supportLead' | 'supportEmailLabel' | 'supportMessageLabel'
+  | 'supportSubmit' | 'supportNoApi' | 'supportOk' | 'supportOkLocal' | 'supportFailed'
+  | 'wipeProductData' | 'wipeProductDataConfirm' | 'wipeProductDataDone'
   // 18+ entry gate (r2026-11-08). Amoji is an adults-only product, and it is a
   // voice companion — so the first screen has to get an explicit "I am 18+"
   // and an honest answer to "could you hear her?" before select.
@@ -1342,10 +1347,10 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     ja: 'この返信を報告',
   },
   reportIntro: {
-    en: 'A language model wrote this reply. You can flag it here — but to be clear up front: Amoji has no server of its own, so this report is not sent anywhere automatically.',
-    yue: '呢個回覆係語言模型寫嘅。你可以喺度標記佢——不過先講清楚：Amoji 冇自己嘅伺服器，所以呢份舉報唔會自動送去任何地方。',
-    zh: '这条回复由语言模型生成。你可以在这里标记它——但先说清楚：Amoji 没有自己的服务器，所以这份举报不会自动发送到任何地方。',
-    ja: 'この返信は言語モデルが書いたものです。ここで印を付けられます。ただし先に言っておきます。Amoji には自前のサーバーがないので、この報告はどこにも自動送信されません。',
+    en: 'A language model wrote this reply. You can flag it here — but to be clear up front: the free GitHub Pages build has no server of its own, so this report is not sent anywhere automatically unless a production API is configured and you leave a contact email.',
+    yue: '呢個回覆係語言模型寫嘅。你可以喺度標記佢——不過先講清楚：免費 GitHub Pages 版本冇自己嘅伺服器，所以呢份舉報唔會自動送去任何地方；除非有生產 API，而且你留咗聯絡電郵。',
+    zh: '这条回复由语言模型生成。你可以在这里标记它——但先说清楚：免费 GitHub Pages 构建没有自己的服务器，所以这份举报不会自动发送；除非配置了生产 API 且你留下了联系邮箱。',
+    ja: 'この返信は言語モデルが書いたものです。ここで印を付けられます。ただし先に言っておきます。無料の GitHub Pages ビルドには自前のサーバーがないので、この報告は自動送信されません（本番 API があり連絡先メールを書いた場合を除く）。',
   },
   reportReasonLabel: {
     en: "What's wrong with it?",
@@ -1414,10 +1419,10 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     ja: '完了',
   },
   reportSaved: {
-    en: 'Saved on this device only. Amoji has no server, so this report has not been sent anywhere.',
-    yue: '只係儲存喺呢部裝置。Amoji 冇伺服器，所以呢份舉報冇送去任何地方。',
-    zh: '只保存在这台设备上。Amoji 没有服务器，所以这份举报没有发送到任何地方。',
-    ja: 'この端末に保存しただけです。Amoji にサーバーはないので、この報告はどこにも送信されていません。',
+    en: 'Saved on this device only. This build has no production API / no server path that accepted the report, so it has not been sent anywhere.',
+    yue: '只係儲存喺呢部裝置。呢個版本冇生產 API／冇伺服器接收呢份舉報，所以冇送去任何地方。',
+    zh: '只保存在这台设备上。此版本没有生产 API／没有服务器接收这份举报，所以没有发送到任何地方。',
+    ja: 'この端末に保存しただけです。このビルドには本番 API／報告を受け取るサーバー経路がないので、どこにも送信されていません。',
   },
   reportSavedNext: {
     en: 'Export it as a JSON file and send that file to the developer yourself.',
@@ -1425,11 +1430,113 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: '你可以把它导出成 JSON 文件，再自己发给开发者跟进。',
     ja: 'JSON ファイルに書き出して、ご自分で開発者に送ってください。',
   },
+  reportContactEmailLabel: {
+    en: 'Contact email (optional)',
+    yue: '聯絡電郵（可選）',
+    zh: '联系邮箱（可选）',
+    ja: '連絡先メール（任意）',
+  },
+  reportContactEmailPlaceholder: {
+    en: 'you@example.com',
+    yue: 'ming@example.hk',
+    zh: 'xiaoming@example.cn',
+    ja: 'taro@example.jp',
+  },
+  reportContactEmailHint: {
+    en: 'Only used when a production API + mail provider are configured — then you get an automatic acknowledgment.',
+    yue: '只會喺有生產 API 同郵件服務時用——屆時你會收到自動確認信。',
+    zh: '仅在配置了生产 API 与邮件服务时使用——届时你会收到自动确认信。',
+    ja: '本番 API とメール設定があるときだけ使います。その場合は自動の受付メールが届きます。',
+  },
+  reportRemoteStored: {
+    en: 'Saved on this device and stored on the production API. No acknowledgment email was sent (mail off, or no contact email).',
+    yue: '已儲存喺呢部裝置，亦已存去生產 API。未寄確認信（郵件未開，或者冇留電郵）。',
+    zh: '已保存在本机，并已存入生产 API。未发送确认信（邮件未开启，或未留下邮箱）。',
+    ja: 'この端末に保存し、本番 API にも格納しました。確認メールは送られていません（メール未設定、または連絡先なし）。',
+  },
+  reportAckEmailed: {
+    en: 'Saved on this device, stored on the API, and an automatic acknowledgment was emailed to you.',
+    yue: '已儲存喺呢部裝置同 API，並已電郵自動確認信俾你。',
+    zh: '已保存在本机与 API，并已向你发送自动确认邮件。',
+    ja: 'この端末と API に保存し、自動の受付メールも送信しました。',
+  },
   reportSaveFailed: {
     en: "This device would not store the report — storage is blocked or full. Nothing was saved. Try again with storage enabled, or take a screenshot and send it to the developer.",
     yue: '呢部裝置儲存唔到呢份舉報——儲存空間被封鎖或者滿咗，所以咩都冇save低。你可以開返儲存空間再試，或者截圖send俾開發者。',
     zh: '这台设备无法保存举报——存储被禁用或已满，所以什么都没保存。你可以开启存储后再试，或截图发给开发者。',
     ja: 'この端末に報告を保存できませんでした（ストレージが無効か容量不足）。何も保存されていません。ストレージを有効にして再試行するか、スクリーンショットを開発者に送ってください。',
+  },
+  supportTitle: {
+    en: 'Contact support',
+    yue: '聯絡支援',
+    zh: '联系支持',
+    ja: 'サポートに連絡',
+  },
+  supportLead: {
+    en: 'When a production API is configured, this sends a short message and (if mail is on) an automatic acknowledgment. Pages-only builds stay local — use GitHub Issues instead.',
+    yue: '有生產 API 時，呢度會送出短訊；（有郵件就）自動確認。純 Pages 版本只喺本機——請用 GitHub Issues。',
+    zh: '配置了生产 API 时，这里会发送短消息；（若开启邮件）自动确认。纯 Pages 构建仅限本机——请改用 GitHub Issues。',
+    ja: '本番 API があるとき、短いメッセージを送ります（メール設定があれば自動受付）。Pages のみのビルドは端末内のままです。GitHub Issues を使ってください。',
+  },
+  supportEmailLabel: {
+    en: 'Your email',
+    yue: '你嘅電郵',
+    zh: '你的邮箱',
+    ja: 'メールアドレス',
+  },
+  supportMessageLabel: {
+    en: 'Message',
+    yue: '訊息',
+    zh: '消息',
+    ja: 'メッセージ',
+  },
+  supportSubmit: {
+    en: 'Send support message',
+    yue: '傳送支援訊息',
+    zh: '发送支持消息',
+    ja: 'サポートメッセージを送る',
+  },
+  supportNoApi: {
+    en: 'This build has no production API. Open a GitHub Issue instead.',
+    yue: '呢個版本冇生產 API。請改用 GitHub Issue。',
+    zh: '此版本没有生产 API。请改用 GitHub Issue。',
+    ja: 'このビルドには本番 API がありません。GitHub Issue を開いてください。',
+  },
+  supportOk: {
+    en: 'Received. If mail is configured, check your inbox for the automatic acknowledgment.',
+    yue: '已收到。若已設定郵件，請睇收件箱嘅自動確認信。',
+    zh: '已收到。若已配置邮件，请查收自动确认信。',
+    ja: '受け取りました。メール設定がある場合は、自動の受付メールを確認してください。',
+  },
+  supportOkLocal: {
+    en: 'Stored on the API, but acknowledgment email was skipped (mail not configured).',
+    yue: '已存去 API，但確認電郵略過咗（未設定郵件）。',
+    zh: '已存入 API，但确认邮件已跳过（未配置邮件）。',
+    ja: 'API には保存しましたが、確認メールはスキップされました（メール未設定）。',
+  },
+  supportFailed: {
+    en: 'Could not reach the support API. Try again later, or open a GitHub Issue.',
+    yue: '連唔到支援 API。稍後再試，或者開 GitHub Issue。',
+    zh: '无法连接支持 API。请稍后重试，或打开 GitHub Issue。',
+    ja: 'サポート API に届きませんでした。後でもう一度試すか、GitHub Issue を開いてください。',
+  },
+  wipeProductData: {
+    en: 'Wipe product data',
+    yue: '清除產品資料',
+    zh: '清除产品数据',
+    ja: '製品データを消去',
+  },
+  wipeProductDataConfirm: {
+    en: 'Wipe prefs, memory, history, plan, and reports on this device? Legal acceptance is kept so you are not re-gated unless policy changes.',
+    yue: '清除呢部裝置嘅偏好、記憶、對話、計劃同舉報？會保留法律同意，除非政策更新先再問你。',
+    zh: '清除本机的偏好、记忆、对话、计划与举报？会保留法律同意，除非政策更新才会再次询问。',
+    ja: 'この端末の設定・記憶・履歴・プラン・報告を消しますか？法的同意は残すので、方針が変わらない限り再確認は出ません。',
+  },
+  wipeProductDataDone: {
+    en: 'Product data wiped on this device.',
+    yue: '已清除呢部裝置嘅產品資料。',
+    zh: '已清除本机产品数据。',
+    ja: 'この端末の製品データを消去しました。',
   },
   reportExport: {
     en: 'Export reports (JSON)',

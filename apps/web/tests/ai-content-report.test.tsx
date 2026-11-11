@@ -144,6 +144,12 @@ describe('report dialog — honest, localized copy', () => {
     expect(t('en', 'reportIntro')).toMatch(/no server/i);
   });
 
+  it('offers an optional contact email for API acknowledgment', () => {
+    expect(dialog).toContain('amoji-report-email');
+    expect(dialog).toContain('reportContactEmailLabel');
+    expect(dialog).toContain('contactEmail');
+  });
+
   it('links to the real issue tracker and invents no email address', () => {
     expect(dialog).toContain('github.com/MonMonMars/amoji-app');
     expect(dialog).not.toMatch(/mailto:/);

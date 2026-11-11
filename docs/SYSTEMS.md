@@ -39,8 +39,9 @@ anonymous session token + companion/chat rows in SQLite when configured.
 ## Settings
 
 `SettingsSheet` is the single in-app settings surface: language, volumes,
-voice/TTS, location, memory/data, companion file, profile, Advanced brain
-keys, plan/quota, systems & legal links.
+voice/TTS, location, memory/data (including wipe product data), companion
+file, profile, Advanced brain keys, plan/quota, systems & legal links, and
+Help (tutorial + support contact).
 
 ## Payment
 
@@ -82,11 +83,17 @@ Transactional mail (report receipt + support auto-ack) runs only when
 `RESEND_API_KEY` and `AMOJI_MAIL_FROM` are set on the Node API. Pages builds
 keep reports local and exportable.
 
+| Surface | Behavior |
+| --- | --- |
+| Report dialog | Optional contact email → `POST /api/reports` (anonymous). Ack mail when configured. |
+| Settings → Help | Support form → `POST /api/support` (anonymous). Stores in SQLite; auto-acks the user; optional `AMOJI_SUPPORT_INBOX` gets an ops copy. |
+| Pages-only | No `NEXT_PUBLIC_AMOJI_API` → form tells the user to open a GitHub Issue; reports stay on-device + JSON export. |
+
 ## Auto-reply
 
 1. **Crisis** — on-device keyword guard (`lib/crisis.ts`); never emailed; no LLM.
 2. **Ops / support** — fixed templates (`lib/auto-reply.ts` + server twin) for
-   report acknowledgment when email is configured.
+   report acknowledgment and support auto-ack when email is configured.
 
 ## Security
 

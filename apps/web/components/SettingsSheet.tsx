@@ -70,7 +70,8 @@ import {
 } from '../lib/billing';
 import { CHARGING_RULES, formatPlanPrice } from '../lib/charging-rules';
 import { paymentDemoMode } from '../lib/payment-rules';
-import { listPresentClientKeys } from '../lib/client-storage';
+import { listPresentClientKeys, wipeClientProductData } from '../lib/client-storage';
+import { MAX_SUPPORT_MESSAGE, submitSupportMessage, supportApiConfigured } from '../lib/support';
 import Link from 'next/link';
 
 function Toggle({ on, onClick, accent, disabled = false, label }: { on: boolean; onClick: () => void; accent: string; disabled?: boolean; label: string }) {
@@ -195,6 +196,10 @@ export default function SettingsSheet({
   const [placePinned, setPlacePinned] = useState<Place | null>(() => manualPlace());
   const [placeDevice, setPlaceDevice] = useState<Place | null>(() => lastDevicePlace());
   const [placeState, setPlaceState] = useState<'idle' | 'saving' | 'saved' | 'missing'>('idle');
+  const [supportEmail, setSupportEmail] = useState('');
+  const [supportMessage, setSupportMessage] = useState('');
+  const [supportBusy, setSupportBusy] = useState(false);
+  const [supportNote, setSupportNote] = useState<string | null>(null);
   const settingsCloseRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   // aria-modal="true": Tab must stay inside the sheet while it is open.
@@ -240,6 +245,8 @@ export default function SettingsSheet({
       setOaSaved(false);
       setOaTestResult(null);
       setOaTesting(false);
+      setSupportNote(null);
+      setSupportBusy(false);
       void syncEntitlementFromApi();
     }
   }, [open]);
@@ -266,6 +273,37 @@ export default function SettingsSheet({
     if (!window.confirm(t(lang, 'clearHistoryConfirm'))) return;
     saveHistory([]);
     window.dispatchEvent(new Event('amoji:clear-history'));
+  };
+
+  const wipeProduct = () => {
+    if (!window.confirm(t(lang, 'wipeProductDataConfirm'))) return;
+    wipeClientProductData({ keepLegal: true });
+    saveHistory([]);
+    window.dispatchEvent(new Event('amoji:clear-history'));
+    window.alert(t(lang, 'wipeProductDataDone'));
+    // Prefs live in parent React state — reload so the wiped localStorage wins.
+    window.location.reload();
+  };
+
+  const sendSupport = () => {
+    const email = supportEmail.trim();
+    const message = supportMessage.trim();
+    if (!email || !message) return;
+    if (!supportApiConfigured()) {
+      setSupportNote(t(lang, 'supportNoApi'));
+      return;
+    }
+    setSupportBusy(true);
+    setSupportNote(null);
+    void submitSupportMessage({ email, message }).then((result) => {
+      setSupportBusy(false);
+      if (!result.ok) {
+        setSupportNote(t(lang, 'supportFailed'));
+        return;
+      }
+      setSupportNote(result.emailed ? t(lang, 'supportOk') : t(lang, 'supportOkLocal'));
+      if (result.ok) setSupportMessage('');
+    });
   };
 
   const forgetAll = () => {
@@ -946,6 +984,17 @@ export default function SettingsSheet({
                 ✕
               </button>
             </div>
+            <div className={row}>
+              <span className={label}>🧹 {t(lang, 'wipeProductData')}</span>
+              <button
+                type="button"
+                onClick={wipeProduct}
+                aria-label={t(lang, 'wipeProductData')}
+                className="ui-btn rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 hover:bg-white/20"
+              >
+                ✕
+              </button>
+            </div>
             {/* r2026-10-05.122 — the Companion Card: her whole soul in one
                 portable .aigf.json file. Export carries her to another
                 device/app/body; import brings her back with memory intact. */}
@@ -1131,6 +1180,54 @@ export default function SettingsSheet({
               <span className={label}>❓ {t(lang, 'tutorBtn')}</span>
               <span className="text-white/30">→</span>
             </button>
+            <div className="space-y-2 rounded-xl border border-white/10 bg-white/5 p-3">
+              <p className="text-xs font-medium text-white/80">{t(lang, 'supportTitle')}</p>
+              <p className="text-[11px] leading-relaxed text-white/45">{t(lang, 'supportLead')}</p>
+              <label htmlFor="amoji-support-email" className="block text-[11px] text-white/60">
+                {t(lang, 'supportEmailLabel')}
+              </label>
+              <input
+                id="amoji-support-email"
+                name="support-email"
+                type="email"
+                autoComplete="email"
+                value={supportEmail}
+                onChange={(e) => setSupportEmail(e.target.value)}
+                className="h-9 w-full rounded-full border border-white/10 bg-black/30 px-3 text-xs text-white outline-none focus:border-white/40"
+              />
+              <label htmlFor="amoji-support-message" className="block text-[11px] text-white/60">
+                {t(lang, 'supportMessageLabel')}
+              </label>
+              <textarea
+                id="amoji-support-message"
+                name="support-message"
+                rows={3}
+                maxLength={MAX_SUPPORT_MESSAGE}
+                value={supportMessage}
+                onChange={(e) => setSupportMessage(e.target.value)}
+                className="w-full resize-none rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white outline-none focus:border-white/40"
+              />
+              <button
+                type="button"
+                disabled={supportBusy || !supportEmail.trim() || !supportMessage.trim()}
+                onClick={sendSupport}
+                className="ui-btn inline-flex rounded-full px-3.5 py-1.5 text-xs font-medium text-neutral-950 disabled:opacity-40"
+                style={{ backgroundColor: accent }}
+              >
+                {t(lang, 'supportSubmit')}
+              </button>
+              {supportNote && (
+                <p className="text-[11px] text-white/55" role="status">{supportNote}</p>
+              )}
+              <a
+                href="https://github.com/MonMonMars/amoji-app/issues"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="block text-[11px] text-pink-200/80 underline-offset-4 hover:underline"
+              >
+                github.com/MonMonMars/amoji-app/issues
+              </a>
+            </div>
           </Section>
 
           <p className="pt-2 text-center text-[11px] text-white/25">Amoji · {APP_REVISION}</p>
