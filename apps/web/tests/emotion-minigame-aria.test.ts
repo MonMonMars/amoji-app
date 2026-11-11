@@ -7,7 +7,7 @@ const overlay = readFileSync(join(__dirname, "../components/MiniGameOverlay.tsx"
 
 describe("EmotionClipRow / MiniGameOverlay chrome aria-labels", () => {
   it("EmotionClipRow CMA chips expose aria-label + aria-pressed", () => {
-    expect(emotion).toContain("aria-pressed={selected}");
+    expect(emotion).toContain("aria-pressed={wanted}");
     expect(emotion).toContain("aria-label={");
     expect(emotion).toContain("clip.code");
     expect(emotion).toContain("CMA_REACTION_GALLERY");
