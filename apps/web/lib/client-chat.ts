@@ -77,6 +77,7 @@ import { BASE_SYSTEM, languageBlock, parseEmotionHints, type ChatMessage } from 
 import { brainBodyExtras, markBrainDead, pickBrain, type BrainSpec } from './brain';
 import { cleanForDisplay, stripLaughTokens } from './speak-text';
 import { withQuestion } from './follow-up';
+import { capCompanionReplyQuestions } from './spoken-line-sanity';
 import { preferLiveReply, worldBlock } from './live-tools';
 import { replyLooksNonsense, STRICT_REPLY_APPENDIX } from './reply-sanity';
 import { shapeCompanionReply } from './reply-shape';
@@ -670,27 +671,27 @@ function noteSlowLane(lang?: string): void {
   }
 }
 
-/** The instant local lane: warm, her own language, always ends with a question. */
+/** The instant local lane: warm, her own language — statement presence, not an interview. */
 const FALLBACK_BANKS: Record<string, string[]> = {
   yue: [
-    '我喺度㗎，慢慢嚟——你最想講邊樣先？',
-    '聽到喇，我陪住你。不如講下你而家最掛住嘅嘢？',
-    '唔使急，我有的是時間——話俾我聽多啲吖？',
+    '我喺度㗎，慢慢嚟——唔使急。',
+    '聽到喇，我陪住你。',
+    '唔使急，我有的是時間陪你。',
   ],
   zh: [
-    '我在呀，慢慢来——你最想先聊哪件事？',
-    '听到了，我陪着你。聊聊你现在最惦记的事？',
-    '不着急，我有的是时间——再多跟我说一点？',
+    '我在呀，慢慢来——不着急。',
+    '听到了，我陪着你。',
+    '不着急，我有的是时间陪你。',
   ],
   ja: [
-    'ここにいるよ、ゆっくりでいい——何から話したい？',
-    '聞こえてる、付き合うよ。いま一番気になってること、教えて？',
-    '急がなくていいから、もっと聞かせて？',
+    'ここにいるよ、ゆっくりでいい。',
+    '聞こえてる、付き合うよ。',
+    '急がなくていいから、そばにいるね。',
   ],
   en: [
-    "I'm right here, take your time — what do you want to talk about first?",
-    'I hear you, and I\'m with you. What\'s on your mind the most right now?',
-    'No rush at all — tell me a little more?',
+    "I'm right here — take your time.",
+    "I hear you, and I'm with you.",
+    "No rush at all; I'm staying with you.",
   ],
 };
 
@@ -1120,7 +1121,8 @@ function packageReply(
   // Ability/showcase invites stay idle-only — strip offtopic tack-ons even on
   // rich/long paths (exception never authorizes dance-on-Jupiter).
   const cleaned = stripOffTopicAbilityTacks(done.reply, ctx.lastUser) || done.reply;
-  const spoken = ctx.story ? cleaned : withQuestion(cleaned, ctx.language);
+  const capped = ctx.story ? cleaned : capCompanionReplyQuestions(cleaned, ctx.lastUser);
+  const spoken = ctx.story ? capped : withQuestion(capped, ctx.language);
   const reply = preferLiveReply(spoken, ctx.world, ctx.worldSpoken, ctx.language);
   return { ...done, reply };
 }

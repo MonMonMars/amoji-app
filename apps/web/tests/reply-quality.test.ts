@@ -208,6 +208,8 @@ describe('system prompt states the reply rules', () => {
     expect(BASE_SYSTEM).toMatch(/NO NONSENSE/);
     expect(BASE_SYSTEM).toMatch(/BE PRECISE/);
     expect(BASE_SYSTEM).toMatch(/do not fish for more chat/i);
+    expect(BASE_SYSTEM).toMatch(/ZERO questions back/i);
+    expect(BASE_SYSTEM).toMatch(/at most ONE short/i);
     expect(BASE_SYSTEM).not.toMatch(/END WITH A QUESTION/);
   });
 

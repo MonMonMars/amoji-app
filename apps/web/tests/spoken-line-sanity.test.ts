@@ -5,12 +5,15 @@ import { fileURLToPath } from 'node:url';
 import {
   asksToResumeHistory,
   asksUserInnerThoughts,
+  capCompanionReplyQuestions,
+  capSpokenQuestions,
   countSpokenQuestions,
   gateSpokenLine,
   openGreetTooManyQuestions,
   safeIdleFallback,
   spokenLineLooksBroken,
   stripQuestionSentences,
+  userMessageLooksLikeQuestion,
 } from '../lib/spoken-line-sanity';
 import { buildOpenCheerLine } from '../lib/open-phase';
 import { LAST_THREAD_RESUME_BANNED } from '../lib/memory';
@@ -104,6 +107,38 @@ describe('gateSpokenLine', () => {
     for (const lang of LANGS) {
       expect(spokenLineLooksBroken(safeIdleFallback(lang, 0), { mode: 'idle', lang })).toBe(false);
     }
+  });
+});
+
+describe('companion reply question cap', () => {
+  it('detects user questions across languages', () => {
+    expect(userMessageLooksLikeQuestion('What is the weather?')).toBe(true);
+    expect(userMessageLooksLikeQuestion('今日天氣點呀？')).toBe(true);
+    expect(userMessageLooksLikeQuestion('今天天气怎么样？')).toBe(true);
+    expect(userMessageLooksLikeQuestion('今日の天気は？')).toBe(true);
+    expect(userMessageLooksLikeQuestion('今日好攰呀。')).toBe(false);
+  });
+
+  it('strips all asks when the user asked something', () => {
+    const out = capCompanionReplyQuestions(
+      'Today is sunny and mild. Want to go for a walk? How about you?',
+      'What is the weather?',
+    );
+    expect(countSpokenQuestions(out)).toBe(0);
+    expect(out).toContain('sunny');
+  });
+
+  it('allows at most one check-in when the user did not ask', () => {
+    const out = capCompanionReplyQuestions(
+      'That sounds exhausting. Rest if you can. Want to vent more? How are you holding up?',
+      'I am so tired after work.',
+    );
+    expect(countSpokenQuestions(out)).toBe(1);
+    expect(out).toContain('exhausting');
+  });
+
+  it('capSpokenQuestions keeps answer sentences first', () => {
+    expect(capSpokenQuestions('A. B? C?', 1)).toBe('A. C?');
   });
 });
 

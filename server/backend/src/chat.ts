@@ -1,4 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
+import { capCompanionReplyQuestions } from '../../../apps/web/lib/spoken-line-sanity.js';
 import { shapeCompanionReply } from '../../../apps/web/lib/reply-shape.js';
 
 export interface ChatTurn { role: 'user' | 'assistant'; content: string }
@@ -25,18 +26,9 @@ export type ChatComplete = (input: {
   language?: string;
 }) => Promise<{ content: string; provider: string }>;
 
-const FOLLOW: Record<string, string> = {
-  yue: '你覺得點呀？',
-  zh: '你觉得呢？',
-  ja: 'どう思う？',
-  en: 'What do you think?',
-};
-
-export function withQuestion(reply: string, lang?: string): string {
-  const text = reply.trim();
-  if (!text) return reply;
-  if (/[?？]/.test(text)) return text;
-  return `${text} ${FOLLOW[lang ?? 'yue'] ?? FOLLOW.yue}`;
+/** Privacy-first: never tack on a generic follow-up question in code. */
+export function withQuestion(reply: string, _lang?: string): string {
+  return reply;
 }
 
 export function parseEmotionHints(text: string): Record<string, number> {
@@ -76,9 +68,9 @@ function preferFacts(reply: string, world?: string, spoken?: string, lang?: stri
 }
 
 const SYSTEM = `You are the user's chosen Amoji companion — a warm 3D friend, not an assistant.
-Stay in character. Keep replies to 1-3 spoken sentences and end with a question.
-Answer what they just said, in the selected language only. Open with a clear sentence.
-Finish each sentence before the next starts. No slogans, fragments, or notes to yourself.
+Stay in character. Keep replies to 1-3 spoken sentences. Answer what they just said first, in the selected language only.
+If they asked you a question, answer directly with zero questions back; otherwise at most one short on-topic check-in — never stack asks.
+Open with a clear sentence. Finish each sentence before the next starts. No slogans, fragments, or notes to yourself.
 End every reply with [emotion:{"joy":0.5}] using only real emotions the text conveys.`;
 
 export function offlineComplete(input: { language?: string }): { content: string; provider: string } {
@@ -115,7 +107,10 @@ export async function runChat(db: DatabaseSync, userId: string, req: ChatRequest
       : offlineComplete(req);
   }
   const emotionHints = parseEmotionHints(raw.content);
-  const shaped = shapeCompanionReply(stripEmotion(raw.content));
+  const shaped = capCompanionReplyQuestions(
+    shapeCompanionReply(stripEmotion(raw.content)),
+    req.message,
+  );
   const reply = preferFacts(withQuestion(shaped || '…', req.language), req.world, req.worldSpoken, req.language);
   const insert = db.prepare('INSERT INTO chat_turns (user_id, role, content, created_at) VALUES (?, ?, ?, ?)');
   insert.run(userId, 'user', req.message.slice(0, 4000), now);

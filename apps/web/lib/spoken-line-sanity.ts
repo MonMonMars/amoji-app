@@ -102,6 +102,61 @@ export function openGreetTooManyQuestions(line: string, maxQuestions = 0): boole
   return countSpokenQuestions(line) > maxQuestions;
 }
 
+function splitSpokenSentences(text: string): string[] {
+  return text
+    .split(/(?<=[。．.！!？?])\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/** True when the user's message is asking the companion something. */
+export function userMessageLooksLikeQuestion(text: string): boolean {
+  const t = (text ?? '').trim();
+  if (!t) return false;
+  if (/[?？]\s*$/.test(t)) return true;
+  if (/^(?:what|why|how|when|where|who|which|can you|could you|would you|do you|does|did|is |are |was |were |tell me)\b/i.test(t)) {
+    return true;
+  }
+  if (/(?:吗|嗎)\s*[？?]?\s*$/u.test(t)) return true;
+  if (/^(?:什麼|什么|為什麼|为什么|怎麼|怎么|幾時|几时|邊度|边度|點解|点解|幾多|几多|係咪|系咪|是不是)/u.test(t)) {
+    return true;
+  }
+  if (/^(?:何|なに|なんで|どう|どこ|いつ|誰|誰が|教えて|教えてください)/u.test(t)) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Cap how many question sentences survive in a companion reply. Answer
+ * sentences are always kept; extra asks are dropped (prefer zero when the
+ * user just asked something).
+ */
+export function capSpokenQuestions(text: string, maxQuestions = 1): string {
+  const t = (text ?? '').trim();
+  if (!t || maxQuestions < 0) return t;
+  const chunks = splitSpokenSentences(t);
+  if (chunks.length <= 1) {
+    if (maxQuestions === 0 && sentenceLooksLikeQuestion(t)) return '';
+    return t;
+  }
+  const answers = chunks.filter((c) => !sentenceLooksLikeQuestion(c));
+  const asks = chunks.filter((c) => sentenceLooksLikeQuestion(c));
+  const keptAsks = maxQuestions > 0 ? asks.slice(-maxQuestions) : [];
+  const merged = [...answers, ...keptAsks];
+  const joined = merged.join(' ').trim();
+  if (joined) return joined;
+  if (answers.length) return answers.join(' ').trim();
+  if (maxQuestions > 0 && asks[0]) return asks[0]!;
+  return t;
+}
+
+/** Post-process model chat replies — no stacked asks after a user question. */
+export function capCompanionReplyQuestions(text: string, lastUserMessage?: string): string {
+  const max = userMessageLooksLikeQuestion(lastUserMessage ?? '') ? 0 : 1;
+  return capSpokenQuestions(text, max);
+}
+
 /**
  * Half-sentence / motif-fill leftovers that shipped as spoken lines.
  * Includes the Pixel "a small map reminding you" class of fragments.

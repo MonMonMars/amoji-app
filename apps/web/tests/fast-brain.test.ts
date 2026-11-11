@@ -6,6 +6,7 @@ import {
   LANE_ORIGIN, localFallbackReply, markNoApiRoute, shouldSkipServerProbe,
   trimHistoryForPrompt, PROMPT_HISTORY_CAP, FREE_RACERS, warmLane,
 } from '../lib/client-chat';
+import { countSpokenQuestions } from '../lib/spoken-line-sanity';
 import type { ChatMessage } from '../lib/llm';
 
 const msg = (i: number): ChatMessage => ({
@@ -29,12 +30,12 @@ describe('trimHistoryForPrompt', () => {
 });
 
 describe('localFallbackReply', () => {
-  it('answers in every language, always ending with a question (continuity)', () => {
+  it('answers in every language with statement-only presence (no interview)', () => {
     for (const lang of ['yue', 'zh', 'ja', 'en']) {
       const r = localFallbackReply('今日好開心呀', lang);
       expect(r.reply.length, lang).toBeGreaterThan(4);
-      const tail = r.reply.trim();
-      expect(tail.endsWith('？') || tail.endsWith('?'), `${lang}: ${r.reply}`).toBe(true);
+      expect(r.reply, lang).not.toMatch(/[?？]\s*$/);
+      expect(countSpokenQuestions(r.reply), lang).toBe(0);
     }
   });
 
