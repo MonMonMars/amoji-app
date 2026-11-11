@@ -14,6 +14,7 @@ import {
 import { STORY_SCENES, rollStory, type StoryScene } from '../lib/stories';
 import { saveStorySession } from '../lib/story-session';
 import { primeChatStartGesture } from '../lib/chat-start-gesture';
+import { locationPreflightDoneThisSession } from '../lib/location-preflight';
 import { primeLocationForChatEnter } from '../lib/live-tools';
 
 const LABEL: Record<
@@ -81,9 +82,9 @@ export default function StorySetupPanel() {
   const packLocked = packId != null;
 
   const enter = () => {
-    // t767/t777: ENTER STORY primes voice + location in this gesture.
+    // Voice unlock here; location already asked on /gate/audio when possible.
     primeChatStartGesture();
-    primeLocationForChatEnter();
+    if (!locationPreflightDoneThisSession()) primeLocationForChatEnter();
     saveStorySession({
       sceneId: scene.id,
       characterId: character.id,

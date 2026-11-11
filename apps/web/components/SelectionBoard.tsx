@@ -22,6 +22,7 @@ import { assetUrl } from '../lib/asset';
 import { bigheadPath } from '../lib/bighead';
 import { playVoiceGreeting } from '../lib/voice';
 import { primeChatStartGesture } from '../lib/chat-start-gesture';
+import { locationPreflightDoneThisSession } from '../lib/location-preflight';
 import { primeLocationForChatEnter } from '../lib/live-tools';
 import { activeVoiceChoice } from '../lib/voice-picks';
 import {
@@ -105,12 +106,12 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
 
   const confirm = () => {
     if (leaving) return;
-    // t767/t777: one Start gesture unlocks AudioContext + asks location for weather/news.
-    // Mute All stays intact; geo deny still enters chat (ask city later if needed).
-    // t786: unlock audio FIRST; defer geo so iOS silent-<audio> prime is not raced by the
-    // permission dialog (which can drop the gesture unlock on iPhone).
+    // Unlock audio on Start. Location is asked on /gate/audio (same page as mic);
+    // only warm GPS here if that confirm page was skipped this session.
     primeChatStartGesture();
-    window.setTimeout(() => { try { primeLocationForChatEnter(); } catch { /* ignore */ } }, 120);
+    if (!locationPreflightDoneThisSession()) {
+      window.setTimeout(() => { try { primeLocationForChatEnter(); } catch { /* ignore */ } }, 120);
+    }
     // Audio soft-gate already ran after rules; select goes straight to chat.
     const go = () => {
       clearStorySession();

@@ -248,6 +248,8 @@ export type StrKey =
   | 'gateHelpTabMuted' | 'gateHelpRetry' | 'gateHelpContinue' | 'gateHelpNote'
   | 'gateMicTitle' | 'gateMicBody' | 'gateMicAllow' | 'gateMicSkip'
   | 'gateMicGranted' | 'gateMicDenied' | 'gateMicUnsupported' | 'gateEnter'
+  | 'gateLocTitle' | 'gateLocBody' | 'gateLocAllow'
+  | 'gateLocGranted' | 'gateLocDenied' | 'gateLocUnsupported'
   | 'preChatGateTitle' | 'preChatGateLead' | 'preChatEnterChat' | 'preChatUnmuteHint'
   | 'preChatHeardOk'
   // adult-only replacement for the old Kid Mode row in Settings
@@ -1088,18 +1090,54 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: '这个浏览器不支持语音输入——打字一样可以。',
     ja: 'このブラウザは音声入力に対応していません——入力は同じように使えます。',
   },
+  gateLocTitle: {
+    en: 'Location (optional)',
+    yue: '位置（可選）',
+    zh: '位置（可选）',
+    ja: '位置情報（任意）',
+  },
+  gateLocBody: {
+    en: 'So she can talk about weather and local news near you. You can skip and type a city later in Settings.',
+    yue: '等佢講到天氣同附近新聞。你可以唔開，之後喺設定打城市名。',
+    zh: '方便她讲天气和附近新闻。可以跳过，之后在设置里填写城市。',
+    ja: '天気や近くのニュースを話すため。スキップして、あとで設定に都市名を入れても大丈夫です。',
+  },
+  gateLocAllow: {
+    en: 'Allow location',
+    yue: '允許用位置',
+    zh: '允许使用位置',
+    ja: '位置情報を許可',
+  },
+  gateLocGranted: {
+    en: 'Location is ready for weather and news.',
+    yue: '位置準備好——天氣同新聞會用到。',
+    zh: '位置已就绪——天气和新闻会用到。',
+    ja: '位置情報の準備ができました（天気・ニュース用）。',
+  },
+  gateLocDenied: {
+    en: 'Location is blocked — she can still chat; set a city in Settings when you want local weather.',
+    yue: '位置被封鎖——仍然可以傾偈；想講天氣可以喺設定填城市。',
+    zh: '位置被阻止——仍可聊天；需要本地天气时在设置里填城市。',
+    ja: '位置情報がブロックされています——会話はできます。天気が必要なら設定で都市を入れてください。',
+  },
+  gateLocUnsupported: {
+    en: 'This browser cannot share location — set a city in Settings if you want local weather.',
+    yue: '呢個瀏覽器分享唔到位置——想講天氣就喺設定填城市。',
+    zh: '这个浏览器无法分享位置——需要本地天气请在设置里填城市。',
+    ja: 'このブラウザは位置情報に非対応です——天気が必要なら設定で都市を入れてください。',
+  },
   gateEnter: {
     en: 'Enter Amoji',
     yue: '入去 Amoji',
     zh: '进入 Amoji',
     ja: 'Amoji をはじめる',
   },
-  preChatGateTitle: { en: 'Turn on voice chat', yue: '開聲傾偈', zh: '开启语音聊天', ja: 'ボイスチャットをオンに' },
+  preChatGateTitle: { en: 'Confirm sound, mic & location', yue: '確認聲、咪同位置', zh: '确认声音、麦克风和位置', ja: '音・マイク・位置を確認' },
   preChatGateLead: {
-    en: 'Before you meet her, turn on sound and the microphone. This is a voice companion — typing alone will feel broken.',
-    yue: '見佢之前，先開聲同咪高峰。Amoji 係語音伙伴——淨係打字會好似壞咗咁。',
-    zh: '见她之前，请先打开声音和麦克风。Amoji 是语音伙伴——只打字会像坏了一样。',
-    ja: '会う前に、スピーカーとマイクをオンに。音声コンパニオンなので、入力だけだと壊れたように感じます。',
+    en: 'One page before chat: test sound, allow the microphone, and optionally share location for weather and news. You can skip mic or location and still enter.',
+    yue: '入傾偈房前一頁：試聲、允許咪高峰，同埋可選分享位置（天氣同新聞）。咪同位置都可以跳過。',
+    zh: '进入聊天前一页：试听声音、允许麦克风，并可选择分享位置（天气和新闻）。麦克风和位置都可以跳过。',
+    ja: 'チャット前の一画面：音の確認、マイク許可、任意で位置情報（天気・ニュース）。マイクも位置もスキップできます。',
   },
   preChatEnterChat: { en: 'Enter chat room', yue: '入傾偈房', zh: '进入聊天室', ja: 'チャットに入る' },
   preChatUnmuteHint: {
@@ -1109,10 +1147,10 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     ja: '全体ミュートがオンです。「すべて解除」か、もう一度テスト再生を。',
   },
   preChatHeardOk: {
-    en: 'Sound check OK — you can continue, or allow the microphone next.',
-    yue: '聲測試 OK——可以繼續，或者下一步允許咪高峰。',
-    zh: '声音测试 OK——可以继续，或下一步允许麦克风。',
-    ja: '音チェックOK——続けても、次にマイクを許可しても大丈夫です。',
+    en: 'Sound check OK — allow mic and location below, or enter when ready.',
+    yue: '聲測試 OK——下面可以允許咪同位置，或者直接入去。',
+    zh: '声音测试 OK——下面可允许麦克风和位置，或直接进入。',
+    ja: '音チェックOK——下でマイクと位置を許可するか、そのまま入れます。',
   },
   settingsAdultOnly: {
     en: '18+ · adult only',

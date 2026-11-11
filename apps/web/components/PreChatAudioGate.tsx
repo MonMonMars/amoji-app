@@ -7,7 +7,17 @@ import { testVoiceChain, setVoiceEnabled, voiceEnabled, GATE_TEST_LINES } from '
 import { isMasterMuted, setMasterMuted } from '../lib/master-mute';
 import { listenSupported } from '../lib/listen';
 import { requestMic } from '../lib/mic-preflight';
-import { passEntryGate, setMicPreflightSession, type MicOutcome } from '../lib/entry-gate';
+import {
+  locationSupported,
+  requestLocation,
+  setLocationPreflightDone,
+} from '../lib/location-preflight';
+import {
+  passEntryGate,
+  setMicPreflightSession,
+  type LocationOutcome,
+  type MicOutcome,
+} from '../lib/entry-gate';
 import { markChatAudioReady, stashPriorMasterMuteForChat } from '../lib/pre-chat-audio';
 import { primeChatStartGesture } from '../lib/chat-start-gesture';
 import EarlyAudioUnlock from './EarlyAudioUnlock';
@@ -32,6 +42,8 @@ export default function PreChatAudioGate({
   const [playing, setPlaying] = useState(false);
   const [mic, setMic] = useState<MicOutcome | 'pending'>('pending');
   const [micBusy, setMicBusy] = useState(false);
+  const [location, setLocation] = useState<LocationOutcome | 'pending'>('pending');
+  const [locBusy, setLocBusy] = useState(false);
   const autoStarted = useRef(false);
 
   useEffect(() => {
@@ -39,6 +51,7 @@ export default function PreChatAudioGate({
     try { setLang(loadPrefs().lang); } catch { /* en */ }
     stashPriorMasterMuteForChat();
     if (!listenSupported()) setMic('unsupported');
+    if (!locationSupported()) setLocation('unsupported');
   }, []);
 
   const playSample = useCallback(async () => {
@@ -75,7 +88,19 @@ export default function PreChatAudioGate({
     }
   }, []);
 
+  const allowLocation = useCallback(async () => {
+    setLocBusy(true);
+    try {
+      const outcome = await requestLocation();
+      setLocation(outcome);
+      setLocationPreflightDone(true);
+    } finally {
+      setLocBusy(false);
+    }
+  }, []);
+
   // Best-effort auto prompt on mount: unmute + warm AudioContext + mic.
+  // Location stays tap-only (second OS dialog) so it does not race the mic gesture.
   // iOS may refuse without a gesture — that is fine; Allow stays available.
   useEffect(() => {
     if (autoStarted.current) return;
@@ -102,7 +127,10 @@ export default function PreChatAudioGate({
     primeChatStartGesture();
     const micOutcome: MicOutcome =
       mic === 'pending' ? 'skipped' : mic;
+    const locOutcome: LocationOutcome =
+      location === 'pending' ? 'skipped' : location;
     if (micOutcome === 'granted') setMicPreflightSession(true);
+    setLocationPreflightDone(true);
     const audioHeard =
       heard === 'yes' || heard === 'no'
         ? heard
@@ -112,11 +140,12 @@ export default function PreChatAudioGate({
     passEntryGate({
       audioHeard,
       mic: micOutcome,
+      location: locOutcome,
     });
     markChatAudioReady();
     if (onDone) onDone();
     else router.replace(nextHref);
-  }, [heard, mic, nextHref, onDone, router, speakerOk]);
+  }, [heard, location, mic, nextHref, onDone, router, speakerOk]);
 
   const continueLabel =
     nextHref === '/chat' || nextHref.startsWith('/chat?')
@@ -247,6 +276,42 @@ export default function PreChatAudioGate({
               className="ui-btn h-11 w-full rounded-full bg-white font-semibold text-black"
             >
               {t(lang, 'gateMicAllow')}
+            </button>
+          )}
+        </section>
+
+        {/* Location optional: same page as mic — no second surprise at chat start. */}
+        <section data-testid="pre-chat-loc-section" aria-labelledby="pre-chat-loc-heading" className="mt-5 space-y-3">
+          <div className="space-y-2">
+            <h2 id="pre-chat-loc-heading" className="text-sm font-semibold text-white/90">
+              {t(lang, 'gateLocTitle')}
+            </h2>
+            <p className="text-xs text-white/55">{t(lang, 'gateLocBody')}</p>
+          </div>
+
+          {location !== 'pending' && (
+            <p
+              role="status"
+              data-testid="pre-chat-loc-result"
+              data-outcome={location}
+              className="text-sm text-white/75"
+            >
+              {location === 'granted' && t(lang, 'gateLocGranted')}
+              {location === 'denied' && t(lang, 'gateLocDenied')}
+              {location === 'unsupported' && t(lang, 'gateLocUnsupported')}
+              {location === 'skipped' && t(lang, 'gateLocDenied')}
+            </p>
+          )}
+
+          {locationSupported() && location !== 'unsupported' && (
+            <button
+              type="button"
+              data-testid="pre-chat-loc-allow"
+              disabled={locBusy}
+              onClick={() => void allowLocation()}
+              className="ui-btn h-11 w-full rounded-full bg-white font-semibold text-black"
+            >
+              {t(lang, 'gateLocAllow')}
             </button>
           )}
         </section>
