@@ -10,7 +10,7 @@
 // universal/ folder. Chat leads still use the seven canonical names.
 
 import { stripBasePath } from './asset';
-import { pickWantedCmaReactionPath } from './cma-reaction-gallery';
+import { pickEnabledPokeReactionPath, pickWantedCmaReactionPath } from './cma-reaction-gallery';
 
 export const VOICE_CLIP_LANGS = ['yue', 'zh', 'ja', 'en'] as const;
 export type VoiceClipLang = (typeof VOICE_CLIP_LANGS)[number];
@@ -295,7 +295,7 @@ let laughClipCursor = 0;
 
 /** Recorded laugh / giggle / smile for funny reactions — CLIP_LIBRARY SFX only. */
 export function recordedLaughClip(gender: VoiceClipGender, lang: string = 'en'): string {
-  // Prefer Mon's Wanted CMA00304-349 picks (all chat langs). Skip/undecided stay out.
+  // Prefer Mon's Wanted CMA gallery picks (keepers + poke CMA00350–366). Skip/undecided stay out.
   const wantedCma = pickWantedCmaReactionPath({ gender, role: 'laugh' });
   if (wantedCma) return wantedCma;
   const folder = clipLang(lang);
@@ -346,7 +346,7 @@ export function recordedFillerClip(
 }
 /** Poke SFX by body zone (SFX only — never TTS). Gender-matched short clips.
  * Mon t761 remap: head←belly, breast←NEW, belly←breast; plus butt/hands/arm/legs/foot.
- * CLIP_LIBRARY # cited in PR body. Never NSFW CMA / long-UM fillers for poke.
+ * EmotionClipRow/CMA keepers + new poke pack. Never NSFW CMA / long-UM fillers for poke.
  *
  * Two rules every row has to obey (pinned by poke-voice-motion-sync.test.ts):
  *  1. The clip must fit the poke reaction window (POKE_REACTION_MS). A 2s clip
@@ -359,54 +359,49 @@ export function recordedFillerClip(
  * Exported so those two rules can be asserted instead of trusted.
  */
 export const RECORDED_POKE_ZONE: Record<VoiceClipGender, Record<string, string>> = {
+  // Zone table = EmotionClipRow / CMA gallery ship-set only (Mon keepers + new poke).
+  // Every path is ≤ POKE_REACTION_MS and language-neutral under /voice-clips/cma-reaction/.
   female: {
-    // Mon t294 stands: head um.mp3 read as adult/hentai — breast/chest get that
-    // clip; head keeps the former breast hehe (#88). belly stays oh (#83).
-    head: '/voice-clips/universal/female/hehe.mp3',
-    chest: '/voice-clips/universal/female/um.mp3',
-    breast: '/voice-clips/universal/female/um.mp3',
-    belly: '/voice-clips/universal/female/oh.mp3',
-    // Was `sigh` (1.12s) — a bored exhale, not an answer to a hit, and it ran
-    // almost to the end of the recoil. A short yelp-laugh answers rear hips.
-    butt: '/voice-clips/universal/female/giggle_en.mp3',
-    hand: '/voice-clips/universal/female/giggle.mp3',
-    hands: '/voice-clips/universal/female/giggle.mp3',
-    arm: '/voice-clips/universal/female/smile.mp3',
-    armL: '/voice-clips/universal/female/smile.mp3',
-    armR: '/voice-clips/universal/female/smile.mp3',
-    legs: '/voice-clips/universal/female/giggle_en.mp3',
-    legL: '/voice-clips/universal/female/giggle_en.mp3',
-    legR: '/voice-clips/universal/female/giggle_en.mp3',
-    foot: '/voice-clips/universal/female/ha_rpg.mp3',
-    torso: '/voice-clips/universal/female/ha.mp3',
-    // Was `huh.mp3` (2.06s) — nearly twice the reaction window, so the
-    // questioning tone was still going after she had fully settled.
-    side: '/voice-clips/universal/female/oh.mp3',
-    back: '/voice-clips/universal/female/wow.mp3',
-    default: '/voice-clips/universal/female/wow_woven.mp3',
+    // Soft tease on the head (kept hehe→CMA00352); hard ouch (CMA00335 #18) on torso/belly.
+    head: '/voice-clips/cma-reaction/CMA00352_universal_female_ouch_hehe.mp3',
+    chest: '/voice-clips/cma-reaction/CMA00351_universal_female_ouch_oh.mp3',
+    breast: '/voice-clips/cma-reaction/CMA00351_universal_female_ouch_oh.mp3',
+    belly: '/voice-clips/cma-reaction/CMA00335_universal_female_ouch_ah.mp3',
+    butt: '/voice-clips/cma-reaction/CMA00353_universal_female_ouch_giggle.mp3',
+    hand: '/voice-clips/cma-reaction/CMA00358_universal_female_ouch_giggle_short.mp3',
+    hands: '/voice-clips/cma-reaction/CMA00358_universal_female_ouch_giggle_short.mp3',
+    arm: '/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3',
+    armL: '/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3',
+    armR: '/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3',
+    legs: '/voice-clips/cma-reaction/CMA00353_universal_female_ouch_giggle.mp3',
+    legL: '/voice-clips/cma-reaction/CMA00353_universal_female_ouch_giggle.mp3',
+    legR: '/voice-clips/cma-reaction/CMA00353_universal_female_ouch_giggle.mp3',
+    foot: '/voice-clips/cma-reaction/CMA00350_universal_female_ouch_ha.mp3',
+    torso: '/voice-clips/cma-reaction/CMA00335_universal_female_ouch_ah.mp3',
+    side: '/voice-clips/cma-reaction/CMA00359_universal_female_gasp_reitanna.mp3',
+    back: '/voice-clips/cma-reaction/CMA00360_universal_female_gasp_woven.mp3',
+    default: '/voice-clips/cma-reaction/CMA00335_universal_female_ouch_ah.mp3',
   },
   male: {
-    // Every row here was `ja/male/*` — a Japanese yelp whatever language the
-    // companion speaks — and the torso row played a LAUGH (1.72s) at a punch.
-    // Language-neutral pools only, impact-shaped, inside the reaction window.
-    head: '/voice-clips/universal/male/wow.mp3',
-    chest: '/voice-clips/cma-reaction/CMA00341_universal_male_ouch.mp3',
-    breast: '/voice-clips/cma-reaction/CMA00341_universal_male_ouch.mp3',
-    belly: '/voice-clips/cma-reaction/CMA00342_universal_male_yelp.mp3',
-    butt: '/voice-clips/cma-reaction/CMA00343_universal_male_ouch.mp3',
-    hand: '/voice-clips/cma-reaction/CMA00336_universal_male_ouch_ow.mp3',
-    hands: '/voice-clips/cma-reaction/CMA00336_universal_male_ouch_ow.mp3',
-    arm: '/voice-clips/cma-reaction/CMA00344_universal_male_yelp.mp3',
-    armL: '/voice-clips/cma-reaction/CMA00344_universal_male_yelp.mp3',
-    armR: '/voice-clips/cma-reaction/CMA00344_universal_male_yelp.mp3',
+    // #36 sword-ouch (CMA00339) is the impact default; short effort/gasp for variety.
+    head: '/voice-clips/cma-reaction/CMA00356_universal_male_ouch_wow.mp3',
+    chest: '/voice-clips/cma-reaction/CMA00339_universal_male_ouch.mp3',
+    breast: '/voice-clips/cma-reaction/CMA00339_universal_male_ouch.mp3',
+    belly: '/voice-clips/cma-reaction/CMA00355_universal_male_ouch_effort.mp3',
+    butt: '/voice-clips/cma-reaction/CMA00339_universal_male_ouch.mp3',
+    hand: '/voice-clips/cma-reaction/CMA00357_universal_male_ouch_effort_short.mp3',
+    hands: '/voice-clips/cma-reaction/CMA00357_universal_male_ouch_effort_short.mp3',
+    arm: '/voice-clips/cma-reaction/CMA00327_universal_male_gasp_astonished.mp3',
+    armL: '/voice-clips/cma-reaction/CMA00327_universal_male_gasp_astonished.mp3',
+    armR: '/voice-clips/cma-reaction/CMA00327_universal_male_gasp_astonished.mp3',
     legs: '/voice-clips/cma-reaction/CMA00339_universal_male_ouch.mp3',
     legL: '/voice-clips/cma-reaction/CMA00339_universal_male_ouch.mp3',
     legR: '/voice-clips/cma-reaction/CMA00339_universal_male_ouch.mp3',
-    foot: '/voice-clips/en/male/ha_effort.mp3',
-    torso: '/voice-clips/cma-reaction/CMA00344_universal_male_yelp.mp3',
-    side: '/voice-clips/cma-reaction/CMA00340_universal_male_yelp.mp3',
-    back: '/voice-clips/universal/male/wow.mp3',
-    default: '/voice-clips/cma-reaction/CMA00341_universal_male_ouch.mp3',
+    foot: '/voice-clips/cma-reaction/CMA00355_universal_male_ouch_effort.mp3',
+    torso: '/voice-clips/cma-reaction/CMA00362_universal_male_ouch_mixkit.mp3',
+    side: '/voice-clips/cma-reaction/CMA00327_universal_male_gasp_astonished.mp3',
+    back: '/voice-clips/cma-reaction/CMA00361_universal_male_gasp_woven.mp3',
+    default: '/voice-clips/cma-reaction/CMA00339_universal_male_ouch.mp3',
   },
 };
 
@@ -437,15 +432,18 @@ const POKE_ZONE_ALIASES: Record<string, string> = {
 };
 
 export function recordedPokeClip(gender: VoiceClipGender, zone?: string): string {
-  // Prefer Wanted CMA poke/ouch/effort/yelp for this gender (all langs). Else zone table.
-  const wantedCma = pickWantedCmaReactionPath({ gender, role: 'poke' });
-  if (wantedCma) return wantedCma;
+  // Resolve zone-table preference first (zone-accurate when still in the enabled set).
   const table = RECORDED_POKE_ZONE[gender];
   let key = (zone || 'default').toLowerCase();
   key = POKE_ZONE_ALIASES[key] ?? key;
   if (key === 'arml' || key === 'armr') key = 'arm';
   if (key === 'legl' || key === 'legr') key = 'legs';
-  return table[key] ?? table.default ?? table.torso!;
+  const zonePath = table[key] ?? table.default ?? table.torso!;
+  // User-selected poke pool (Wanted, else full poke list minus Skip). Never play
+  // outside that set when the pool is non-empty. Prefer the zone clip when it is enabled.
+  const enabled = pickEnabledPokeReactionPath({ gender, preferPath: zonePath });
+  if (enabled) return enabled;
+  return zonePath;
 }
 
 export function loadingFillerKind(text: string): 'um' | 'ha' | 'think' | 'search' | null {

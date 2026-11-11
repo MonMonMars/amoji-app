@@ -1,7 +1,8 @@
 // Interim + local sources for performance shortlist VRMAs (lib_C*).
 // Local ANIM_MIRROR paths win when lib_C*.vrma is under models/anims/.
-// Mixamo-class remotes from 3dchat still fill C03/C61/C62/C110 until local
-// FBX lands. Rokoko/Jazz/KayKit locals ship as status: local.
+// Mixamo-class clips from DavinciDreams/3dchat are vendored locally for
+// C03/C61/C62/C110 (+ footwork C125–C127) so dance legs move offline.
+// Rokoko/Jazz/KayKit locals ship as status: local.
 
 export interface DanceClipSource {
   id: string;
@@ -23,22 +24,37 @@ export const DANCE_CLIP_SOURCES: readonly DanceClipSource[] = [
   {
     id: 'lib_C110', cId: 'C110', label: 'DoTheTwist',
     remoteUrls: [`${CHAT}/twistDance.vrma`],
-    localPreferred: true, status: 'interim-remote',
+    localPreferred: true, status: 'local',
   },
   {
     id: 'lib_C61', cId: 'C61', label: 'HipHopDancing',
     remoteUrls: [`${CHAT}/hipHopDancing.vrma`, `${CHAT}/hipHopDance.vrma`],
-    localPreferred: true, status: 'interim-remote',
+    localPreferred: true, status: 'local',
   },
   {
     id: 'lib_C62', cId: 'C62', label: 'SalsaDancing',
     remoteUrls: [`${CHAT}/sambaDancing.vrma`, `${CHAT}/rumbaDancing.vrma`],
-    localPreferred: true, status: 'interim-remote',
+    localPreferred: true, status: 'local',
   },
   {
     id: 'lib_C03', cId: 'C03', label: 'Dance_Loop',
     remoteUrls: [`${CHAT}/hipHopDance.vrma`],
-    localPreferred: true, status: 'interim-remote',
+    localPreferred: true, status: 'local',
+  },
+  {
+    id: 'lib_C125', cId: 'C125', label: 'BreakdanceFootwork1',
+    remoteUrls: [`${CHAT}/breakdanceFootwork1.vrma`],
+    localPreferred: true, status: 'local',
+  },
+  {
+    id: 'lib_C126', cId: 'C126', label: 'BreakdanceFootwork2',
+    remoteUrls: [`${CHAT}/breakdanceFootwork2.vrma`],
+    localPreferred: true, status: 'local',
+  },
+  {
+    id: 'lib_C127', cId: 'C127', label: 'RumbaDancing',
+    remoteUrls: [`${CHAT}/rumbaDancing.vrma`],
+    localPreferred: true, status: 'local',
   },
   // Rokoko / Jazz / KayKit: local VRMA shipped
   { id: 'lib_C112', cId: 'C112', label: 'GentleSway', remoteUrls: [], localPreferred: true, status: 'local' },

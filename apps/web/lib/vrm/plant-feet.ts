@@ -9,8 +9,39 @@ import * as THREE from 'three';
 /** Clips that are allowed to lift and step. Everything else stays planted. */
 const LOCOMOTION_CLIP_IDS = new Set(['Jump', 'Walk', 'Jog', 'Run']);
 
+/**
+ * Dance / music-listen performances with authored hip+leg keys.
+ * Planting would freeze the legs so the body cannot move with the beat.
+ */
+const DANCE_LEG_CLIP_IDS = new Set([
+  'Dance',
+  'lib_C03',
+  'lib_C09',
+  'lib_C60',
+  'lib_C61',
+  'lib_C62',
+  'lib_C110',
+  'lib_C111',
+  'lib_C112',
+  'lib_C113',
+  'lib_C114',
+  'lib_C118',
+  'lib_C119',
+  'lib_C124',
+  'lib_C125',
+  'lib_C126',
+  'lib_C127',
+]);
+
+/** True when the mixer should own hips/legs (locomotion or dance-with-music). */
 export function clipFreesFeet(clipId: string | null | undefined): boolean {
-  return !!clipId && LOCOMOTION_CLIP_IDS.has(clipId);
+  if (!clipId) return false;
+  return LOCOMOTION_CLIP_IDS.has(clipId) || DANCE_LEG_CLIP_IDS.has(clipId);
+}
+
+/** Dance / music clips that must keep leg motion for beat matching. */
+export function clipDrivesDanceLegs(clipId: string | null | undefined): boolean {
+  return !!clipId && DANCE_LEG_CLIP_IDS.has(clipId);
 }
 
 /** One ground contact for both soles: the lower of the two rest heights. */

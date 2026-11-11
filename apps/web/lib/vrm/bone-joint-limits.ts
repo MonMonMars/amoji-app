@@ -3,7 +3,8 @@ import * as THREE from 'three';
 /**
  * Human-feasible local Euler (YXZ) limits for bones we blend or cast-correct.
  * Radians; applied after mixer / crossfade writes so library clips keep freedom upstream
- * except for axial no-flip bones (spine / chest / neck / head) which are always clamped.
+ * except for every-frame no-flip bones (hips / spine / chest / neck / head / arms) which are
+ * always clamped so library clips cannot spin a limb a full turn.
  */
 export type EulerLimit = readonly [min: number, max: number];
 
@@ -22,15 +23,24 @@ export const BONE_BLEND_LIMITS: Readonly<Record<string, BoneEulerLimitsYXZ>> = {
   upperChest: { x: [-0.3, 0.28], y: [-0.4, 0.4], z: [-0.35, 0.35] },
   // Hips yaw must stay tight — idle A→B used to spin the whole body "to the back".
   hips: { x: [-0.35, 0.35], y: [-0.45, 0.45], z: [-0.25, 0.25] },
-  leftUpperArm: { x: [-1.9, 1.9], y: [-0.8, 0.8], z: [-2.9, 1.6] },
-  rightUpperArm: { x: [-1.9, 1.9], y: [-0.8, 0.8], z: [-1.6, 2.9] },
-  leftLowerArm: { x: [-0.1, 2.4], y: [-0.6, 0.6], z: [-0.6, 0.6] },
-  rightLowerArm: { x: [-0.1, 2.4], y: [-0.6, 0.6], z: [-0.6, 0.6] },
+  // Upper-arm Z tightened from ±2.9 (~166°) so every-frame clamps stop scary
+  // near-360 swings while still allowing dance / raise gestures (~115°).
+  leftUpperArm: { x: [-1.9, 1.9], y: [-0.75, 0.75], z: [-2.0, 1.4] },
+  rightUpperArm: { x: [-1.9, 1.9], y: [-0.75, 0.75], z: [-1.4, 2.0] },
+  leftLowerArm: { x: [-0.1, 2.4], y: [-0.55, 0.55], z: [-0.55, 0.55] },
+  rightLowerArm: { x: [-0.1, 2.4], y: [-0.55, 0.55], z: [-0.55, 0.55] },
+  // Legs during idle A→B blend — caps stop ±350° thigh/knee wrap shakes.
+  leftUpperLeg: { x: [-1.35, 1.2], y: [-0.65, 0.65], z: [-0.7, 0.7] },
+  rightUpperLeg: { x: [-1.35, 1.2], y: [-0.65, 0.65], z: [-0.7, 0.7] },
+  leftLowerLeg: { x: [-0.05, 2.45], y: [-0.35, 0.35], z: [-0.35, 0.35] },
+  rightLowerLeg: { x: [-0.05, 2.45], y: [-0.35, 0.35], z: [-0.35, 0.35] },
 } as const;
 
 /**
- * Hips / spine / back / neck / head — never allow a full turn. Clamped every
+ * Hips / spine / back / neck / head / arms — never allow a full turn. Clamped every
  * frame after mixer + poke/dance overlays, even when a library clip keys the bone.
+ * Arms were blend-only before; scary 360° sleeve spins came from mixer keys
+ * that never hit clampBoneByName outside idle crossfade.
  */
 export const AXIAL_NO_FLIP_BONES = [
   // Hips yaw must clamp too — mixer keys used to spin the whole body "to the
@@ -41,6 +51,10 @@ export const AXIAL_NO_FLIP_BONES = [
   'upperChest',
   'neck',
   'head',
+  'leftUpperArm',
+  'rightUpperArm',
+  'leftLowerArm',
+  'rightLowerArm',
 ] as const;
 
 export type AxialNoFlipBone = (typeof AXIAL_NO_FLIP_BONES)[number];
@@ -57,6 +71,10 @@ const RAW_TO_SEMANTIC: Readonly<Record<string, string>> = {
   J_Bip_R_UpperArm: 'rightUpperArm',
   J_Bip_L_LowerArm: 'leftLowerArm',
   J_Bip_R_LowerArm: 'rightLowerArm',
+  J_Bip_L_UpperLeg: 'leftUpperLeg',
+  J_Bip_R_UpperLeg: 'rightUpperLeg',
+  J_Bip_L_LowerLeg: 'leftLowerLeg',
+  J_Bip_R_LowerLeg: 'rightLowerLeg',
   hips: 'hips',
   spine: 'spine',
   chest: 'chest',
@@ -67,6 +85,10 @@ const RAW_TO_SEMANTIC: Readonly<Record<string, string>> = {
   rightUpperArm: 'rightUpperArm',
   leftLowerArm: 'leftLowerArm',
   rightLowerArm: 'rightLowerArm',
+  leftUpperLeg: 'leftUpperLeg',
+  rightUpperLeg: 'rightUpperLeg',
+  leftLowerLeg: 'leftLowerLeg',
+  rightLowerLeg: 'rightLowerLeg',
 };
 
 const _e = new THREE.Euler(0, 0, 0, 'YXZ');
@@ -133,7 +155,7 @@ export function clampBoneByName(q: THREE.Quaternion, boneName: string): boolean 
 }
 
 /**
- * Hard stop for 360° spine/back/head flips — call once per frame after
+ * Hard stop for 360° body/arm/neck flips — call once per frame after
  * mixer, applyPose, poke overlays, idle crossfade, and cast fixes.
  */
 export function clampAxialNoFlipBones(

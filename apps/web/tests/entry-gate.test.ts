@@ -341,6 +341,7 @@ describe('entry gate — wiring', () => {
   it('soft audio gate plays the app voice path, not a beep', () => {
     const gate = read('components/PreChatAudioGate.tsx');
     expect(gate).toContain('testVoiceChain');
+    expect(gate).toContain('GATE_TEST_LINES');
     expect(gate).not.toContain('new Audio(');
     expect(read('lib/one-click-setup.ts')).not.toContain('new Audio(');
   });

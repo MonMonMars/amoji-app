@@ -134,9 +134,20 @@ export function userUndecided(text: string): boolean {
   return UNDECIDED_RE.test(t);
 }
 
-/** Story, fun fact, or fun science — allow longer TTS / detailed mode when picked. */
+/** Story, science/fact, or simple problem-help — longer TTS / detailed mode. */
 export function wantsLongCompanionReply(text: string): boolean {
   const t = text.trim();
   if (!t) return false;
-  return /(?:\bstory\b|tell\s+(?:me\s+)?a\s+story|bedtime\s+story|fun\s+fact|did\s+you\s+know|random\s+fact|fun\s+science|science\s+fact)|講個?故|故事|童話|冷知識|有趣知識|科學趣|豆知識|自然科学|讲个故|冷知识|科学趣味|お話して|物語|豆知識|面白い科学/i.test(t);
+  // Keep the regex self-contained (no client circular imports from long-talk).
+  if (
+    /(?:\bstory\b|tell\s+(?:me\s+)?a\s+story|bedtime\s+story|fun\s+fact|did\s+you\s+know|random\s+fact|fun\s+science|science\s+fact|why\s+is\s+(?:the\s+)?sky|explain\s+(?:the\s+)?science)|講個?故|故事|童話|冷知識|有趣知識|科學趣|豆知識|自然科学|讲个故|冷知识|科学趣味|お話して|物語|豆知識|面白い科学/i.test(t)
+  ) {
+    return true;
+  }
+  if (
+    /(?:\bhow\s+(?:do\s+i|to|can\s+i)\b|\bhelp\s+me\s+(?:fix|reset|set\s*up|setup|connect|install|solve)\b|\b(?:won'?t|doesn'?t|not)\s+work(?:ing)?\b|\bfix\s+(?:my|the|this)\b)|點樣(?:整|搞|設)|怎么(?:整|搞|设)|怎麼辦|怎么办|搞唔掂|打不开/i.test(t)
+  ) {
+    return true;
+  }
+  return false;
 }

@@ -23,9 +23,10 @@ describe('topic suggestions', () => {
     expect(userUndecided('tell me a story about cats')).toBe(false);
   });
 
-  it('flags story / fun fact for longer replies', () => {
+  it('flags story / fun fact / help for longer replies', () => {
     expect(wantsLongCompanionReply('tell me a fun fact')).toBe(true);
     expect(wantsLongCompanionReply('講個故事')).toBe(true);
+    expect(wantsLongCompanionReply('how do I fix my wifi')).toBe(true);
     expect(wantsLongCompanionReply('hi')).toBe(false);
   });
 });

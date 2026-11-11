@@ -2100,9 +2100,13 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
   });
 }
 
-/** Poke hit: a recorded gasp, not the synthetic tap and not an Edge crop. */
+/**
+ * Poke hit: a recorded gasp, not the synthetic tap and not an Edge crop.
+ * Clip-only — never falls through to gTTS / Edge / speechSynthesis. Lips and
+ * the speaking indicator follow the MP3 via playVoiceClip → noteSpeechStarted.
+ */
 export function playPokeBurst(characterId: string, zone?: string): void {
-  unlockAudio(); // t786: poke is a user gesture �X re-prime before clip
+  unlockAudio(); // t786: poke is a user gesture — re-prime before clip
   const file = recordedPokeClip(characterVoiceGender(characterId), zone);
   void playVoiceClip(file, 'oh', () => markVoiceStarted()).catch(() => { /* a missing file stays quiet */ });
 }
@@ -2280,8 +2284,8 @@ export function previewOsVoice(
 }
 
 /**
- * Loud, clear, multi-sentence sample for gate “Test my sound” and Settings
- * voice self-test. Short one-liners were easy to miss (quiet + too brief).
+ * Loud, clear, multi-sentence sample for gate “Test my sound” / 開聲傾偈.
+ * Short one-liners were easy to miss (quiet + too brief).
  */
 export const GATE_TEST_LINES: Record<Lang, string> = {
   yue: '喂，聽唔聽到我呀？而家係喇叭同語音測試，我會講多幾句，方便你聽清楚音量同音色。如果聽到呢段說話，就表示喇叭正常，咪高峰同位置可以之後再確認。之後我哋就可以入去傾偈啦，慢慢嚟，唔使急，聽到就撳得聽到我。',
@@ -2290,8 +2294,13 @@ export const GATE_TEST_LINES: Record<Lang, string> = {
   en: "Hey, can you hear me? This is a speaker and voice test — I'll keep talking for a few more sentences so you can clearly check the volume and tone. If you hear this whole line, your speakers are working; mic and location can wait until after. Then we can head into chat — no rush, take your time. Tap “I can hear” when this is clear.",
 };
 
-/** @deprecated alias — same long sample as the gate */
-const TEST_LINES = GATE_TEST_LINES;
+/** one short happy line per language for the settings self-test (r2026-10-04.75) */
+const TEST_LINES: Record<Lang, string> = {
+  yue: '喂，聽唔聽到我呀？我而家好開心見到你！',
+  zh: '喂，你能听到我吗？我现在好开心见到你！',
+  ja: 'ねえ、聞こえる？会えて嬉しいな！',
+  en: "Hey, can you hear me? I'm so happy to see you!",
+};
 
 /**
  * r2026-10-04.75 — one-tap voice self-test from the Settings sheet: forces
@@ -2376,7 +2385,11 @@ function probeSynth(text: string, characterId: string, lang: Lang): Promise<bool
  * canto-tts-nano for Yue when that runtime is bundled) and returns every
  * tier it actually tried. Stops at the first tier that speaks.
  */
-export async function testVoiceChain(characterId: string, lang: Lang): Promise<VoiceTierResult[]> {
+export async function testVoiceChain(
+  characterId: string,
+  lang: Lang,
+  lineOverride?: string,
+): Promise<VoiceTierResult[]> {
   if (isMasterMuted()) {
     return [{ tier: 'edge', ok: false, detail: 'muted' }];
   }
@@ -2390,7 +2403,8 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
     try { localStorage.setItem(MUTE_KEY, 'on'); } catch { /* ignore */ }
   }
   const results: VoiceTierResult[] = [];
-  const line = GATE_TEST_LINES[lang] ?? GATE_TEST_LINES.en;
+  // Gate/default: long GATE_TEST_LINES; callers may override; settings uses TEST_LINES via testVoice.
+  const line = (lineOverride?.trim() || GATE_TEST_LINES[lang] || GATE_TEST_LINES.en);
   const push = (tier: VoiceTier, ok: boolean, detail: string) => {
     results.push({ tier, ok, detail });
     reportVoiceStatus(tier, ok, detail);

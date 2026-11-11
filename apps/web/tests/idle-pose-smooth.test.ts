@@ -28,17 +28,27 @@ describe('idle pose smooth + catalog trim', () => {
     expect(canvas).toMatch(/!perfAction[\s\S]*applyIdleClipSoftening/);
   });
 
-  it('pins crossfade in ~300-500ms and defers foot IK during leg blend window', () => {
-    expect(IDLE_PIN_CROSSFADE_S).toBeGreaterThanOrEqual(0.3);
-    expect(IDLE_PIN_CROSSFADE_S).toBeLessThanOrEqual(0.55);
-    expect(IDLE_SWAP_LEG_BLEND_S).toBeGreaterThanOrEqual(0.3);
+  it('pins longer crossfade (~0.85s) and defers foot IK during leg blend window', () => {
+    expect(IDLE_PIN_CROSSFADE_S).toBeGreaterThanOrEqual(0.7);
+    expect(IDLE_PIN_CROSSFADE_S).toBeLessThanOrEqual(1.0);
+    expect(IDLE_SWAP_LEG_BLEND_S).toBeGreaterThanOrEqual(0.7);
     const t0 = 1000;
-    expect(idleSwapBlendActive(t0 + 100, t0 + 450)).toBe(true);
-    expect(idleSwapBlendActive(t0 + 500, t0 + 450)).toBe(false);
+    expect(idleSwapBlendActive(t0 + 100, t0 + 850)).toBe(true);
+    expect(idleSwapBlendActive(t0 + 900, t0 + 850)).toBe(false);
     const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
     expect(canvas).toContain('beginIdleSwapBlend');
     expect(canvas).toContain('idleLegGlide');
     expect(canvas).toContain('IDLE_PIN_CROSSFADE_S');
+    expect(canvas).toContain('shortestEulerYXZSlerp');
+  });
+
+  it('does not manually blend hips/legs during idle swap (mixer-only — no shake)', async () => {
+    const { IDLE_SWAP_BLEND_BONES } = await import('../lib/idle-crossfade');
+    const lower = IDLE_SWAP_BLEND_BONES.filter((b) => /hip|leg|foot/i.test(b));
+    expect(lower).toEqual([]);
+    const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
+    // plantFeet still deferred while mixer owns the legs
+    expect(canvas).toMatch(/!feetFree && !idleLegGlide/);
   });
 
   it('retired nums are absent from curated rail but kept in library', () => {

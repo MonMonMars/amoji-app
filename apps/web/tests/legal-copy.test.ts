@@ -114,8 +114,8 @@ describe('legal copy is localized', () => {
 });
 
 describe('LEGAL_ACCEPT_VERSION bump forces re-consent', () => {
-  it('is 2, not the original 1', () => {
-    expect(LEGAL_ACCEPT_VERSION).toBe(2);
+  it('is 4 after storage/export legal refresh', () => {
+    expect(LEGAL_ACCEPT_VERSION).toBe(4);
   });
 
   it('a stored v1 record no longer counts as accepted', async () => {

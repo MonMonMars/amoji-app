@@ -25,6 +25,7 @@ Technical notes for assets, models, robot face, chat UX, audio, and merge proces
 | [`SETUP_ONBOARDING.md`](./SETUP_ONBOARDING.md) | Setup → gate → select → chat |
 | [`MERGE_CHECKLIST.md`](./MERGE_CHECKLIST.md) | Recommended PR merge order |
 | [`MUSIC_STREAMING.md`](./MUSIC_STREAMING.md) | Legal streaming stub policy |
+| [`SYSTEMS.md`](./SYSTEMS.md) | Settings, payments, email, security, free hosts, storage, legal map |
 
 Root [`AMOJI_JOB_CHECKLIST.md`](../AMOJI_JOB_CHECKLIST.md) tracks voice/job verification.
 

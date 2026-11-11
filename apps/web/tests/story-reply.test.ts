@@ -62,6 +62,8 @@ describe('story token budget and shaping', () => {
 
   it('story system block overrides the short-reply rules', () => {
     expect(storySystemBlock('en')).toMatch(/multiple paragraphs/i);
+    expect(storySystemBlock('en')).toMatch(/6–14 sentences/);
     expect(storySystemBlock('yue')).toMatch(/唔使跟住/);
+    expect(storySystemBlock('yue')).toMatch(/6–14 句/);
   });
 });

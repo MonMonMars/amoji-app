@@ -32,7 +32,12 @@ import {
   idleCrossfadeAdditiveScale,
   idleSwapBlendActive,
 } from '../lib/idle-crossfade';
-import { shortestQuatSlerp, shortestQuatSlerpClamped } from '../lib/vrm/quat-blend';
+import {
+  shortestEulerYXZSlerp,
+  shortestQuatSlerp,
+  shortestQuatSlerpClamped,
+} from '../lib/vrm/quat-blend';
+import { clampBoneByName } from '../lib/vrm/bone-joint-limits';
 import { applyIdleClipSoftening } from '../lib/idle-stance-soften';
 import { chestPokeBounce, CHEST_BOUNCE_SEC, SOFT_CHEST_BOUNCE_SEC } from '../lib/vrm/chest-bounce';
 import { sampleSpeech } from '../lib/speech';
@@ -574,7 +579,15 @@ export default function CompanionCanvas({
       const k = u * u * u * (u * (u * 6 - 15) + 10);
       for (let i = 0; i < blendNodes.length; i++) {
         const tgt = blendNodes[i]!.quaternion;
-        shortestQuatSlerpClamped(blendQ, blendFrom[i]!, tgt, k, blendNames[i]);
+        const name = blendNames[i];
+        // Euler short-arc for axial torso/neck — legs are not in this blend
+        // (mixer-only) so we do not double-write and shake the lower body.
+        if (name && /spine|chest|neck|head/i.test(name)) {
+          shortestEulerYXZSlerp(blendQ, blendFrom[i]!, tgt, k);
+          clampBoneByName(blendQ, name);
+        } else {
+          shortestQuatSlerpClamped(blendQ, blendFrom[i]!, tgt, k, name);
+        }
         blendNodes[i]!.quaternion.copy(blendQ);
       }
     };
@@ -672,8 +685,8 @@ export default function CompanionCanvas({
     // fully listed), so eat takes smoking.vrma ??repetitive pinched-finger
     // hand-to-mouth, the closest real motion to steady bites ??and dine
     // takes blowAKiss.vrma, one graceful hand raise to lips (a toast/sip).
-    // Kinds still without a clip (taichi / jog / yoga / stretch) keep the
-    // r95 rule: the skeleton stays in the library idle.
+    // Jog / yoga / stretch still keep the r95 rule (library idle) until
+    // dedicated VRMAs land. Tai chi uses idle-rail lib_C121 (see MOVE_CLIP).
     const PERF_SOURCES: ClipSource[] = [
       { id: 'Jump', urls: [`${ANIM_MIRROR}/Jump.vrma`] },
       { id: 'Bow', urls: [`${ALT_HOST}/quick_formal_bow.vrma`, `${ANIM_MIRROR}/Bow.vrma`] },
@@ -1668,7 +1681,9 @@ export default function CompanionCanvas({
               hipsW,
               { x: sV3.x, z: sV3.z },
             );
-            // Lateral fall only: tip toward the poked screen side (r121).
+            // Lateral fall: lean toward the OPPOSITE screen side (Pixel).
+            // Finger on screen-left → body tips right; right poke → tips left.
+            // Wired as −camSide so lean goes away from the poked screen side.
             // Keep classifyPoke impulse for front/back/chest so those leans stay axial.
             if (
               pokeZone === 'side' || pokeZone === 'armL' || pokeZone === 'armR' || pokeZone === 'hand'
@@ -1676,7 +1691,7 @@ export default function CompanionCanvas({
               sV3.y = 0;
               if (sV3.lengthSq() > 1e-8) {
                 sV3.normalize();
-                pokeFallDir.copy(sV3).multiplyScalar(camSide);
+                pokeFallDir.copy(sV3).multiplyScalar(-camSide);
               }
             }
             const hsL = handScreen('left');
@@ -2091,6 +2106,8 @@ export default function CompanionCanvas({
         // blended legs/body read on the distorted cast). Thigh unblend
         // runs last so hanging adducted thighs open off the torso.
         const feetFree = clipFreesFeet(perfClipId);
+        // During idle A→B mixer crossfade, skip plantFeet + thigh unblend so
+        // IK does not tug legs against the mixer (was a visible shake).
         const idleLegGlide = idleSwapBlendActive(now, swapBlendUntil);
         if (!feetFree && !idleLegGlide) {
           avatar.plantFeet(true, {

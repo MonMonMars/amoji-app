@@ -15,7 +15,7 @@ import {
   clampBoneByName,
   resolveBoneLimitKey,
 } from '../lib/vrm/bone-joint-limits';
-import { idleCrossfadeAdditiveScale } from '../lib/idle-crossfade';
+import { IDLE_SWAP_LEG_BLEND_S, idleCrossfadeAdditiveScale } from '../lib/idle-crossfade';
 
 describe('shortestQuatSlerp + idle crossfade damp', () => {
   it('aligns opposing hemispheres before slerp', () => {
@@ -43,7 +43,7 @@ describe('shortestQuatSlerp + idle crossfade damp', () => {
   });
 
   it('dampens poke additives at start of idle swap crossfade', () => {
-    const end = 1000 + 450;
+    const end = 1000 + Math.round(IDLE_SWAP_LEG_BLEND_S * 1000);
     expect(idleCrossfadeAdditiveScale(1000, end)).toBeLessThan(0.35);
     expect(idleCrossfadeAdditiveScale(end + 1, end)).toBe(1);
   });
@@ -135,5 +135,33 @@ describe('axial bone clamps (spine/back/head)', () => {
     clampAxialNoFlipBones((name) => bones[name] ?? null);
     const e = new THREE.Euler().setFromQuaternion(hips.quaternion, 'YXZ');
     expect(Math.abs(e.y)).toBeLessThanOrEqual(0.45 + 1e-6);
+  });
+
+  it('clampAxialNoFlipBones stops upper-arm full turns (scary 360 sleeves)', () => {
+    const left = new THREE.Object3D();
+    left.name = 'Normalized_J_Bip_L_UpperArm';
+    left.quaternion.setFromEuler(new THREE.Euler(deg(20), deg(350), deg(-300), 'YXZ'));
+    const right = new THREE.Object3D();
+    right.name = 'J_Bip_R_UpperArm';
+    right.quaternion.setFromEuler(new THREE.Euler(deg(-40), deg(-340), deg(310), 'YXZ'));
+    const bones: Record<string, THREE.Object3D> = {
+      leftUpperArm: left,
+      rightUpperArm: right,
+    };
+    clampAxialNoFlipBones((name) => bones[name] ?? null);
+    const le = new THREE.Euler().setFromQuaternion(left.quaternion, 'YXZ');
+    const re = new THREE.Euler().setFromQuaternion(right.quaternion, 'YXZ');
+    const ll = BONE_BLEND_LIMITS.leftUpperArm;
+    const rl = BONE_BLEND_LIMITS.rightUpperArm;
+    expect(le.y).toBeGreaterThanOrEqual(ll.y[0] - 1e-9);
+    expect(le.y).toBeLessThanOrEqual(ll.y[1] + 1e-9);
+    expect(le.z).toBeGreaterThanOrEqual(ll.z[0] - 1e-9);
+    expect(le.z).toBeLessThanOrEqual(ll.z[1] + 1e-9);
+    expect(re.y).toBeGreaterThanOrEqual(rl.y[0] - 1e-9);
+    expect(re.y).toBeLessThanOrEqual(rl.y[1] + 1e-9);
+    expect(re.z).toBeGreaterThanOrEqual(rl.z[0] - 1e-9);
+    expect(re.z).toBeLessThanOrEqual(rl.z[1] + 1e-9);
+    expect(Math.abs(le.z)).toBeLessThan(Math.PI);
+    expect(Math.abs(re.z)).toBeLessThan(Math.PI);
   });
 });

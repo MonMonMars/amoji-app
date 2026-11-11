@@ -11,7 +11,13 @@
 // right hand) plus a PERFORMANCE layer so sing/duet/piano music survives
 // the chat pipeline's generic stopMusic() calls for the length of the show.
 
-import { createDefaultAudioContext, pinDefaultOutput, pinDefaultOutputAsync } from './audio-output';
+import {
+  createDefaultAudioContext,
+  isSharedDefaultAudioContext,
+  pinDefaultOutput,
+  pinDefaultOutputAsync,
+  primeSharedAudioContext,
+} from './audio-output';
 import { DEFAULT_VOLUME, isVolumeStep, volumeLinear, type VolumeKey } from './audio-levels';
 import { isMasterMuted } from './master-mute';
 import { assetUrl } from './asset';
@@ -158,7 +164,7 @@ function playNote(freq: number, when: number, dur: number, wave: OscillatorType,
   osc.stop(when + dur + 0.05);
 }
 
-/** stop the band engine and release its AudioContext (unguarded internals) */
+/** Stop the band engine. Never close the shared default AudioContext. */
 function haltBand(): void {
   if (schedTimer) {
     clearInterval(schedTimer);
@@ -169,15 +175,10 @@ function haltBand(): void {
       master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
       master.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.25);
     } catch { /* already closed */ }
+    try { master.disconnect(); } catch { /* ignore */ }
   }
-  const stale = ctx;
   ctx = null;
   master = null;
-  if (stale) {
-    setTimeout(() => {
-      void stale.close().catch(() => undefined);
-    }, 400);
-  }
 }
 
 /**
@@ -189,9 +190,11 @@ export function startMusic(characterId: string): void {
   if (isMasterMuted()) return;
   if (typeof window === 'undefined') return;
   haltBand();
+  primeSharedAudioContext();
   const theme = getTheme(characterId);
   const ac = createDefaultAudioContext();
   if (!ac) return;
+  try { void ac.resume(); } catch { /* ignore */ }
   ctx = ac;
   const gain = ac.createGain();
   gain.gain.value = theme.volume * volumeLinear('bgmVol');
@@ -305,15 +308,10 @@ function haltPiano(): void {
       pianoMaster.gain.setValueAtTime(pianoMaster.gain.value, pianoCtx.currentTime);
       pianoMaster.gain.linearRampToValueAtTime(0, pianoCtx.currentTime + 0.25);
     } catch { /* already closed */ }
+    try { pianoMaster.disconnect(); } catch { /* ignore */ }
   }
-  const stale = pianoCtx;
   pianoCtx = null;
   pianoMaster = null;
-  if (stale) {
-    setTimeout(() => {
-      void stale.close().catch(() => undefined);
-    }, 400);
-  }
 }
 
 /**
@@ -325,9 +323,11 @@ export function startPiano(characterId: string): void {
   if (isMasterMuted()) return;
   if (typeof window === 'undefined') return;
   haltPiano();
+  primeSharedAudioContext();
   const theme = getTheme(characterId);
   const ac = createDefaultAudioContext();
   if (!ac) return;
+  try { void ac.resume(); } catch { /* ignore */ }
   pianoCtx = ac;
   const gain = ac.createGain();
   basePiano = Math.min(0.4, theme.volume * 3.2);
@@ -485,8 +485,11 @@ function haltClip(): void {
       gain.gain.setValueAtTime(gain.gain.value, stale.currentTime);
       gain.gain.linearRampToValueAtTime(0, stale.currentTime + 0.2);
     } catch { /* closed */ }
+    try { gain.disconnect(); } catch { /* ignore */ }
   }
-  if (stale) {
+  // Never close the shared default AudioContext — voice/SFX still need it.
+  // Closing it after the first song made later sing/dance beds stay silent.
+  if (stale && !isSharedDefaultAudioContext(stale) && stale.state !== 'closed') {
     setTimeout(() => { void stale.close().catch(() => undefined); }, 280);
   }
 }
@@ -495,6 +498,9 @@ function playClipElement(url: string, token: number, characterId: string): boole
   if (typeof Audio === 'undefined') return false;
   try {
     const audio = new Audio(url);
+    // Own this element so duckExternalAudioForCompanion / pauseForeignPageMedia
+    // never pause the song/dance bed when companion TTS starts (Pixel: no volume dip).
+    try { audio.dataset.amojiAudio = '1'; } catch { /* non-DOM Audio stubs */ }
     pinDefaultOutput(audio);
     audio.loop = true;
     clipEl = audio;
@@ -516,6 +522,7 @@ function playClipElement(url: string, token: number, characterId: string): boole
 
 async function playClip(clip: PerformanceClip, token: number, characterId: string): Promise<void> {
   const url = assetUrl(clip.file);
+  primeSharedAudioContext();
   const ac = createDefaultAudioContext();
   if (!ac) {
     if (token !== loadToken) return;
@@ -523,19 +530,19 @@ async function playClip(clip: PerformanceClip, token: number, characterId: strin
     return;
   }
   try {
-    void ac.resume();
+    try { await ac.resume(); } catch { /* gesture may still be required */ }
+    // Suspended context → HTMLAudioElement (gesture-unlocked media path).
+    if (ac.state !== 'running') {
+      if (token !== loadToken) return;
+      if (!playClipElement(url, token, characterId)) startMusic(characterId);
+      return;
+    }
     const res = await fetch(url);
     if (!res.ok) throw new Error(String(res.status));
     const raw = await res.arrayBuffer();
-    if (token !== loadToken) {
-      void ac.close().catch(() => undefined);
-      return;
-    }
+    if (token !== loadToken) return;
     const buffer = await ac.decodeAudioData(raw.slice(0));
-    if (token !== loadToken) {
-      void ac.close().catch(() => undefined);
-      return;
-    }
+    if (token !== loadToken) return;
     clipCtx = ac;
     const gain = ac.createGain();
     clipGain = gain;
@@ -558,14 +565,43 @@ async function playClip(clip: PerformanceClip, token: number, characterId: strin
     clipSrc = src;
     window.dispatchEvent(new CustomEvent('amoji:library-clip', { detail: { state: 'playing', id: clip.id } }));
   } catch {
-    if (token !== loadToken) {
-      void ac.close().catch(() => undefined);
-      return;
-    }
+    if (token !== loadToken) return;
     if (clipCtx === ac) clipCtx = null;
-    void ac.close().catch(() => undefined);
     if (!playClipElement(url, token, characterId)) startMusic(characterId);
   }
+}
+
+function streamDanceClip(
+  stream: NonNullable<ReturnType<typeof pickStreamTrack>>,
+): PerformanceClip {
+  return {
+    id: `stream:${stream.id}`,
+    kind: 'dance',
+    style: stream.style,
+    file: stream.url,
+    durationMs: stream.durationMs,
+    volume: 'bgmVol',
+    moods: ['happy', 'neutral'],
+    langs: ['en', 'yue', 'zh', 'ja'],
+    characters: [],
+    labels: { en: stream.title, yue: stream.title, zh: stream.title, ja: stream.title },
+    license: 'CC0-1.0',
+    credit: stream.credit,
+    source: stream.source,
+  };
+}
+
+/**
+ * Resolve which library / stream clip would play — no audio side effects.
+ * Same inputs as {@link startLibraryPerformance} so announce-then-play stays stable.
+ */
+export function resolveLibraryPerformance(
+  q: ClipQuery & { ms?: number; style?: MusicStyleId | string },
+): PerformanceClip {
+  const styleId = q.style as MusicStyleId | undefined;
+  const stream = styleId ? pickStreamTrack(styleId, q.n ?? 0) : null;
+  if (stream && q.kind === 'dance') return streamDanceClip(stream);
+  return pickPerformanceClip(q);
 }
 
 /**
@@ -579,21 +615,7 @@ export function startLibraryPerformance(
   const styleId = q.style as MusicStyleId | undefined;
   const stream = styleId ? pickStreamTrack(styleId, q.n ?? 0) : null;
   if (stream && q.kind === 'dance') {
-    const synthetic: PerformanceClip = {
-      id: `stream:${stream.id}`,
-      kind: 'dance',
-      style: stream.style,
-      file: stream.url,
-      durationMs: stream.durationMs,
-      volume: 'bgmVol',
-      moods: ['happy', 'neutral'],
-      langs: ['en', 'yue', 'zh', 'ja'],
-      characters: [],
-      labels: { en: stream.title, yue: stream.title, zh: stream.title, ja: stream.title },
-      license: 'CC0-1.0',
-      credit: stream.credit,
-      source: stream.source,
-    };
+    const synthetic = streamDanceClip(stream);
     const holdMs = Math.max(q.ms, stream.durationMs + 600);
     if (isMasterMuted() || typeof window === 'undefined') return synthetic;
     if (clipId === synthetic.id && perfPreserve) {
@@ -601,6 +623,7 @@ export function startLibraryPerformance(
       return synthetic;
     }
     endPerformanceMusic();
+    primeSharedAudioContext();
     perfPreserve = true;
     duck = 1;
     clipId = synthetic.id;
@@ -622,6 +645,7 @@ export function startLibraryPerformance(
     return clip;
   }
   endPerformanceMusic();
+  primeSharedAudioContext();
   perfPreserve = true;
   duck = 1;
   clipId = clip.id;

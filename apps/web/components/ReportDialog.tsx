@@ -9,7 +9,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import { APP_REVISION } from '../lib/revision';
-import { REPORT_REASONS, MAX_REPLY_CHARS, addReport, downloadReports, reportCount, type ReportReason } from '../lib/reports';
+import { REPORT_REASONS, MAX_REPLY_CHARS, addReport, downloadReports, reportCount, submitReportRemote, type ReportReason } from '../lib/reports';
 import { t, type Lang, type StrKey } from '../lib/prefs';
 import { useFocusTrap } from '../lib/use-focus-trap';
 
@@ -33,8 +33,10 @@ export interface ReportDialogProps {
 export default function ReportDialog({ reply, lang, accent = '#f9a8d4', characterId, onClose }: ReportDialogProps) {
   const [reason, setReason] = useState<ReportReason | ''>('');
   const [note, setNote] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
   // null = still filling the form; 'saved' / 'failed' = the outcome screen
   const [outcome, setOutcome] = useState<'saved' | 'failed' | null>(null);
+  const [remoteKind, setRemoteKind] = useState<'none' | 'stored' | 'emailed'>('none');
   const [count, setCount] = useState(0);
   const [exported, setExported] = useState<null | boolean>(null);
 
@@ -71,6 +73,22 @@ export default function ReportDialog({ reply, lang, accent = '#f9a8d4', characte
     const saved = addReport({ reason, note, reply, characterId, lang });
     setCount(reportCount());
     setOutcome(saved ? 'saved' : 'failed');
+    setRemoteKind('none');
+    // Best-effort API + email ack when a production origin is configured.
+    if (saved) {
+      const email = contactEmail.trim();
+      void submitReportRemote({
+        reason,
+        note,
+        reply,
+        characterId,
+        lang,
+        ...(email ? { contactEmail: email } : {}),
+      }).then((remote) => {
+        if (!remote.attempted || !remote.ok) return;
+        setRemoteKind(remote.emailed ? 'emailed' : 'stored');
+      });
+    }
   };
 
   const exportNow = () => setExported(downloadReports(APP_REVISION));
@@ -153,8 +171,23 @@ export default function ReportDialog({ reply, lang, accent = '#f9a8d4', characte
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder={t(lang, 'reportNotePlaceholder')}
-              className="mb-4 w-full resize-none rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white placeholder-white/30 outline-none focus:border-white/40"
+              className="mb-3 w-full resize-none rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white placeholder-white/30 outline-none focus:border-white/40"
             />
+
+            <label htmlFor="amoji-report-email" className="mb-1 block text-xs font-medium text-white/70">
+              {t(lang, 'reportContactEmailLabel')}
+            </label>
+            <input
+              id="amoji-report-email"
+              name="report-email"
+              type="email"
+              autoComplete="email"
+              value={contactEmail}
+              onChange={(e) => setContactEmail(e.target.value)}
+              placeholder={t(lang, 'reportContactEmailPlaceholder')}
+              className="mb-1 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white placeholder-white/30 outline-none focus:border-white/40"
+            />
+            <p className="mb-4 text-[11px] leading-relaxed text-white/40">{t(lang, 'reportContactEmailHint')}</p>
 
             <div className="flex items-center justify-end gap-2">
               <button
@@ -186,9 +219,15 @@ export default function ReportDialog({ reply, lang, accent = '#f9a8d4', characte
                   : 'border-amber-400/30 bg-amber-500/10 text-amber-50'
               }`}
             >
-              {outcome === 'saved' ? t(lang, 'reportSaved') : t(lang, 'reportSaveFailed')}
+              {outcome === 'failed'
+                ? t(lang, 'reportSaveFailed')
+                : remoteKind === 'emailed'
+                  ? t(lang, 'reportAckEmailed')
+                  : remoteKind === 'stored'
+                    ? t(lang, 'reportRemoteStored')
+                    : t(lang, 'reportSaved')}
             </p>
-            {outcome === 'saved' && (
+            {outcome === 'saved' && remoteKind === 'none' && (
               <p className="mb-3 text-xs leading-relaxed text-white/60">{t(lang, 'reportSavedNext')}</p>
             )}
 

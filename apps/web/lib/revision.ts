@@ -342,7 +342,11 @@
 // reasoning_effort (400). The last-resort local lane is unchanged.
 // r2026-11-09.144: VRoid ref #1–3 lighting — matcapFactor is a Color (PR #299 treated it as a float = no-op); shade floors use shadeColorFactor;
 // frontal face fill for Sendagaya/#13; thumb cache bust.
-export const APP_REVISION = 'r2026-11-09.144';
+// r2026-11-10.145: systems pack (settings/payment/email/security/legal) + Settings a11y leftovers.
+// r2026-11-10.146: payment + charging rules (data-driven), checkout client_reference_id, demo mode, return handler.
+// r2026-11-10.147: support contact UI + anonymous /api/support, report contact email, wipe product data.
+// r2026-11-10.148: finish security/legal/storage rules — export/wipe, LEGAL_ACCEPT v4, rate-limit contracts.
+export const APP_REVISION = 'r2026-11-10.148';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

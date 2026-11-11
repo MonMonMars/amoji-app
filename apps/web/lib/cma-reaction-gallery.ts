@@ -1,9 +1,66 @@
-// CMA00304-CMA00349 Reaction SFX gallery catalog + Want/Skip picks.
-// Wired: Wanted codes feed recordedLaughClip / recordedPokeClip at play time.
-// Skip and undecided never enter the play pool. Assets under public/voice-clips/cma-reaction/.
+// CMA reaction SFX gallery + Want/Skip picks.
+// Mon EmotionClipRow female-view keepers: #12/#18/#23/#27/#30/#36 + poke CMA00350–362
+// + legacy main-poke CLIP rows CMA00363–366 (um/giggle/ha/wow) so every sound the
+// character could play on poke is listed and selectable.
+// Wanted codes feed recordedLaughClip / recordedPokeClip. Assets under public/voice-clips/cma-reaction/.
 
 export const CMA_REACTION_GALLERY_KEY = 'amoji.cmaReactionSfx.picks.v1';
-export const CMA_REACTION_RANGE = { from: 304, to: 349 } as const;
+/** Inclusive code span covering original pack + poke pack + legacy poke CLIP rows. */
+export const CMA_REACTION_RANGE = { from: 304, to: 366 } as const;
+
+/** Original Mon keepers (female-view EmotionClipRow #s). */
+export const CMA_REACTION_KEEP_CODES = [
+  'CMA00320', // #12 female giggle
+  'CMA00335', // #18 female poke ouch
+  'CMA00318', // #23 male effort breath
+  'CMA00327', // #27 male gasp
+  'CMA00330', // #30 male yawn
+  'CMA00339', // #36 male ouch / sword
+] as const;
+
+/** Every CMA00304–349 code not in the Mon keeper set (removed from ship-set + disk). */
+export const CMA_REACTION_DROPPED_CODES = [
+  'CMA00304',
+  'CMA00305',
+  'CMA00306',
+  'CMA00307',
+  'CMA00308',
+  'CMA00309',
+  'CMA00310',
+  'CMA00311',
+  'CMA00312',
+  'CMA00313',
+  'CMA00314',
+  'CMA00315',
+  'CMA00316',
+  'CMA00317',
+  'CMA00319',
+  'CMA00321',
+  'CMA00322',
+  'CMA00323',
+  'CMA00324',
+  'CMA00325',
+  'CMA00326',
+  'CMA00328',
+  'CMA00329',
+  'CMA00331',
+  'CMA00332',
+  'CMA00333',
+  'CMA00334',
+  'CMA00336',
+  'CMA00337',
+  'CMA00338',
+  'CMA00340',
+  'CMA00341',
+  'CMA00342',
+  'CMA00343',
+  'CMA00344',
+  'CMA00345',
+  'CMA00346',
+  'CMA00347',
+  'CMA00348',
+  'CMA00349',
+] as const;
 
 export type CmaReactionVerdict = 'want' | 'skip' | 'undecided';
 
@@ -20,183 +77,18 @@ export interface CmaReactionClip {
   durationSec: number;
 }
 
-/** Ship-set for in-app Want/Skip. Contiguous CMA00304–CMA00349. */
+/** Ship-set: 6 Mon keepers + poke CMA00350–362 + legacy main-poke CLIP CMA00363–366. */
 export const CMA_REACTION_GALLERY: readonly CmaReactionClip[] = [
-  {
-    code: "CMA00304",
-    file: "CMA00304_universal_female_laugh.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "laugh",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint laugh-09",
-    durationSec: 2.534,
-  },
-  {
-    code: "CMA00305",
-    file: "CMA00305_universal_female_laugh.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "laugh",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint laugh-10",
-    durationSec: 2.534,
-  },
-  {
-    code: "CMA00306",
-    file: "CMA00306_universal_male_ha_chuckle.mp3",
-    lang: "universal",
-    gender: "male",
-    burst: "ha",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint man-chuckle-06",
-    durationSec: 2.456,
-  },
-  {
-    code: "CMA00307",
-    file: "CMA00307_universal_male_ha_chuckle.mp3",
-    lang: "universal",
-    gender: "male",
-    burst: "ha",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint man-chuckle-07",
-    durationSec: 2.011,
-  },
-  {
-    code: "CMA00308",
-    file: "CMA00308_universal_male_laugh_chuckle.mp3",
-    lang: "universal",
-    gender: "male",
-    burst: "laugh",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint man-chuckle-08",
-    durationSec: 2.116,
-  },
-  {
-    code: "CMA00309",
-    file: "CMA00309_universal_female_gasp.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "gasp",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint post-scream-gasp-01",
-    durationSec: 1.829,
-  },
-  {
-    code: "CMA00310",
-    file: "CMA00310_universal_female_gasp.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "gasp",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint post-scream-gasp-02",
-    durationSec: 1.829,
-  },
-  {
-    code: "CMA00311",
-    file: "CMA00311_universal_female_hiccup.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "hiccup",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint hiccup-01",
-    durationSec: 0.496,
-  },
-  {
-    code: "CMA00312",
-    file: "CMA00312_universal_female_hiccup.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "hiccup",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint hiccup-03",
-    durationSec: 0.627,
-  },
-  {
-    code: "CMA00313",
-    file: "CMA00313_universal_female_hiccup.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "hiccup",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint hiccup-04",
-    durationSec: 0.575,
-  },
-  {
-    code: "CMA00314",
-    file: "CMA00314_universal_female_yawn.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "yawn",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint yawn-06",
-    durationSec: 1.881,
-  },
-  {
-    code: "CMA00315",
-    file: "CMA00315_universal_female_yawn.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "yawn",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint yawn-08",
-    durationSec: 1.672,
-  },
-  {
-    code: "CMA00316",
-    file: "CMA00316_universal_female_yawn.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "yawn",
-    use: "reaction",
-    license: "CC0 1.0",
-    source: "SFXMint yawn-04",
-    durationSec: 2.247,
-  },
-  {
-    code: "CMA00317",
-    file: "CMA00317_universal_male_ouch_effort.mp3",
-    lang: "universal",
-    gender: "male",
-    burst: "ouch",
-    use: "poke",
-    license: "CC0 1.0",
-    source: "SFXMint exertion-grunt",
-    durationSec: 1.646,
-  },
   {
     code: "CMA00318",
     file: "CMA00318_universal_male_effort.mp3",
     lang: "universal",
     gender: "male",
     burst: "effort",
-    use: "poke",
+    use: "reaction",
     license: "CC0 1.0",
     source: "SFXMint exertion-breathing",
     durationSec: 2.038,
-  },
-  {
-    code: "CMA00319",
-    file: "CMA00319_universal_female_laugh.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "laugh",
-    use: "reaction",
-    license: "CC0",
-    source: "StoryCut/Freesound Kalibrk 433921 woman laugh",
-    durationSec: 1.829,
   },
   {
     code: "CMA00320",
@@ -210,103 +102,15 @@ export const CMA_REACTION_GALLERY: readonly CmaReactionClip[] = [
     durationSec: 2.247,
   },
   {
-    code: "CMA00321",
-    file: "CMA00321_universal_male_laugh.mp3",
-    lang: "universal",
-    gender: "male",
-    burst: "laugh",
-    use: "reaction",
-    license: "CC0",
-    source: "StoryCut/Freesound dastudiospr 529818 man laughing",
-    durationSec: 2.429,
-  },
-  {
-    code: "CMA00322",
-    file: "CMA00322_universal_male_groan_laugh.mp3",
-    lang: "universal",
-    gender: "male",
-    burst: "groan",
-    use: "reaction",
-    license: "CC0",
-    source: "StoryCut/Freesound jayfrosting 333403 dad-joke groan-laugh",
-    durationSec: 2.351,
-  },
-  {
-    code: "CMA00323",
-    file: "CMA00323_universal_male_laugh_deep.mp3",
-    lang: "universal",
-    gender: "male",
-    burst: "laugh",
-    use: "reaction",
-    license: "CC0",
-    source: "StoryCut/Freesound Eneasz 119459 deep male laughter",
-    durationSec: 2.351,
-  },
-  {
-    code: "CMA00324",
-    file: "CMA00324_universal_female_gasp_shocked.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "gasp",
-    use: "reaction",
-    license: "Mixkit Free SFX",
-    source: "Mixkit 378",
-    durationSec: 1.228,
-  },
-  {
-    code: "CMA00325",
-    file: "CMA00325_universal_female_gasp_surprised.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "gasp",
-    use: "reaction",
-    license: "Mixkit Free SFX",
-    source: "Mixkit 379",
-    durationSec: 1.228,
-  },
-  {
-    code: "CMA00326",
-    file: "CMA00326_universal_female_gasp_astonished.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "gasp",
-    use: "reaction",
-    license: "Mixkit Free SFX",
-    source: "Mixkit 963",
-    durationSec: 1.228,
-  },
-  {
     code: "CMA00327",
     file: "CMA00327_universal_male_gasp_astonished.mp3",
     lang: "universal",
     gender: "male",
     burst: "gasp",
-    use: "reaction",
+    use: "poke",
     license: "Mixkit Free SFX",
     source: "Mixkit 967",
     durationSec: 1.123,
-  },
-  {
-    code: "CMA00328",
-    file: "CMA00328_universal_male_effort_scared_breath.mp3",
-    lang: "universal",
-    gender: "male",
-    burst: "effort",
-    use: "poke",
-    license: "Mixkit Free SFX",
-    source: "Mixkit 965",
-    durationSec: 1.123,
-  },
-  {
-    code: "CMA00329",
-    file: "CMA00329_universal_male_gasp_old.mp3",
-    lang: "universal",
-    gender: "male",
-    burst: "gasp",
-    use: "reaction",
-    license: "Mixkit Free SFX",
-    source: "Mixkit 1969",
-    durationSec: 1.489,
   },
   {
     code: "CMA00330",
@@ -320,50 +124,6 @@ export const CMA_REACTION_GALLERY: readonly CmaReactionClip[] = [
     durationSec: 2.429,
   },
   {
-    code: "CMA00331",
-    file: "CMA00331_universal_male_yawn_sleepy.mp3",
-    lang: "universal",
-    gender: "male",
-    burst: "yawn",
-    use: "reaction",
-    license: "Mixkit Free SFX",
-    source: "Mixkit 2468",
-    durationSec: 2.429,
-  },
-  {
-    code: "CMA00332",
-    file: "CMA00332_universal_female_yawn_cartoon.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "yawn",
-    use: "reaction",
-    license: "Mixkit Free SFX",
-    source: "Mixkit 2216",
-    durationSec: 1.541,
-  },
-  {
-    code: "CMA00333",
-    file: "CMA00333_universal_male_yawn_tired.mp3",
-    lang: "universal",
-    gender: "male",
-    burst: "yawn",
-    use: "reaction",
-    license: "Mixkit Free SFX",
-    source: "Mixkit 2231",
-    durationSec: 1.933,
-  },
-  {
-    code: "CMA00334",
-    file: "CMA00334_universal_female_yawn_cartoon2.mp3",
-    lang: "universal",
-    gender: "female",
-    burst: "yawn",
-    use: "reaction",
-    license: "Mixkit Free SFX",
-    source: "Mixkit 2661",
-    durationSec: 1.176,
-  },
-  {
     code: "CMA00335",
     file: "CMA00335_universal_female_ouch_ah.mp3",
     lang: "universal",
@@ -375,39 +135,6 @@ export const CMA_REACTION_GALLERY: readonly CmaReactionClip[] = [
     durationSec: 0.522,
   },
   {
-    code: "CMA00336",
-    file: "CMA00336_universal_male_ouch_ow.mp3",
-    lang: "universal",
-    gender: "male",
-    burst: "ouch",
-    use: "poke",
-    license: "Mixkit Free SFX",
-    source: "Mixkit 2205",
-    durationSec: 1.149,
-  },
-  {
-    code: "CMA00337",
-    file: "CMA00337_universal_male_ouch_ow.mp3",
-    lang: "universal",
-    gender: "male",
-    burst: "ouch",
-    use: "poke",
-    license: "Mixkit Free SFX",
-    source: "Mixkit 2278",
-    durationSec: 1.541,
-  },
-  {
-    code: "CMA00338",
-    file: "CMA00338_universal_male_ha_dwarf.mp3",
-    lang: "universal",
-    gender: "male",
-    burst: "ha",
-    use: "reaction",
-    license: "Mixkit Free SFX",
-    source: "Mixkit 10",
-    durationSec: 1.541,
-  },
-  {
     code: "CMA00339",
     file: "CMA00339_universal_male_ouch.mp3",
     lang: "universal",
@@ -415,120 +142,200 @@ export const CMA_REACTION_GALLERY: readonly CmaReactionClip[] = [
     burst: "ouch",
     use: "poke",
     license: "CC0",
-    source: "OGA HaelDB yelling sounds 3grunt1.wav",
+    source: "OpenGameArt HaelDB yelling",
     durationSec: 0.993,
   },
   {
-    code: "CMA00340",
-    file: "CMA00340_universal_male_yelp.mp3",
+    code: "CMA00350",
+    file: "CMA00350_universal_female_ouch_ha.mp3",
     lang: "universal",
-    gender: "male",
-    burst: "yelp",
-    use: "poke",
-    license: "CC0",
-    source: "OGA HaelDB yelling sounds 3grunt2.wav",
-    durationSec: 0.993,
-  },
-  {
-    code: "CMA00341",
-    file: "CMA00341_universal_male_ouch.mp3",
-    lang: "universal",
-    gender: "male",
+    gender: "female",
     burst: "ouch",
     use: "poke",
     license: "CC0",
-    source: "OGA HaelDB yelling sounds 3grunt3.wav",
-    durationSec: 0.549,
+    source: "OGA RPG Voice Starter jump1 (ha_rpg)",
+    durationSec: 0.366,
   },
   {
-    code: "CMA00342",
-    file: "CMA00342_universal_male_yelp.mp3",
+    code: "CMA00351",
+    file: "CMA00351_universal_female_ouch_oh.mp3",
     lang: "universal",
-    gender: "male",
-    burst: "yelp",
-    use: "poke",
-    license: "CC0",
-    source: "OGA HaelDB yelling sounds 3grunt4.wav",
-    durationSec: 0.549,
-  },
-  {
-    code: "CMA00343",
-    file: "CMA00343_universal_male_ouch.mp3",
-    lang: "universal",
-    gender: "male",
+    gender: "female",
     burst: "ouch",
     use: "poke",
     license: "CC0",
-    source: "OGA HaelDB yelling sounds 3grunt5.wav",
-    durationSec: 0.549,
+    source: "OGA Mature Female anime_wah crop (oh)",
+    durationSec: 0.81,
   },
   {
-    code: "CMA00344",
-    file: "CMA00344_universal_male_yelp.mp3",
+    code: "CMA00352",
+    file: "CMA00352_universal_female_ouch_hehe.mp3",
     lang: "universal",
-    gender: "male",
-    burst: "yelp",
+    gender: "female",
+    burst: "ouch",
+    use: "poke",
+    license: "CC BY 4.0",
+    source: "magicalmysticva Cute Girl Voice Reactions 734124",
+    durationSec: 0.836,
+  },
+  {
+    code: "CMA00353",
+    file: "CMA00353_universal_female_ouch_giggle.mp3",
+    lang: "universal",
+    gender: "female",
+    burst: "giggle",
     use: "poke",
     license: "CC0",
-    source: "OGA HaelDB yelling sounds 3grunt6.wav",
-    durationSec: 0.993,
+    source: "Freesound Reitanna 351170 quick giggle",
+    durationSec: 0.522,
   },
   {
-    code: "CMA00345",
-    file: "CMA00345_universal_male_laugh_oga0.mp3",
+    code: "CMA00354",
+    file: "CMA00354_universal_female_ouch_smile.mp3",
     lang: "universal",
-    gender: "male",
-    burst: "laugh",
-    use: "reaction",
+    gender: "female",
+    burst: "smile",
+    use: "poke",
     license: "CC0",
-    source: "OGA Supergeek ogalaughter_2 seg0",
-    durationSec: 0.444,
-  },
-  {
-    code: "CMA00346",
-    file: "CMA00346_universal_male_ha_oga1.mp3",
-    lang: "universal",
-    gender: "male",
-    burst: "ha",
-    use: "reaction",
-    license: "CC0",
-    source: "OGA Supergeek ogalaughter_2 seg1",
+    source: "OGA Bright Female smile crop",
     durationSec: 0.731,
   },
   {
-    code: "CMA00347",
-    file: "CMA00347_universal_male_laugh_oga2.mp3",
+    code: "CMA00355",
+    file: "CMA00355_universal_male_ouch_effort.mp3",
     lang: "universal",
     gender: "male",
-    burst: "laugh",
-    use: "reaction",
+    burst: "effort",
+    use: "poke",
     license: "CC0",
-    source: "OGA Supergeek ogalaughter_2 seg2",
-    durationSec: 0.601,
+    source: "Freesound Drkvixn91 318077 Whimper_Gasp",
+    durationSec: 1.019,
   },
   {
-    code: "CMA00348",
-    file: "CMA00348_universal_male_ha_oga3.mp3",
+    code: "CMA00356",
+    file: "CMA00356_universal_male_ouch_wow.mp3",
     lang: "universal",
     gender: "male",
-    burst: "ha",
-    use: "reaction",
+    burst: "gasp",
+    use: "poke",
     license: "CC0",
-    source: "OGA Supergeek ogalaughter_2 seg3",
+    source: "Woven male-gasp (universal/male/wow)",
     durationSec: 0.47,
   },
   {
-    code: "CMA00349",
-    file: "CMA00349_universal_male_laugh_oga4.mp3",
+    code: "CMA00357",
+    file: "CMA00357_universal_male_ouch_effort_short.mp3",
     lang: "universal",
     gender: "male",
-    burst: "laugh",
-    use: "reaction",
+    burst: "effort",
+    use: "poke",
+    license: "CC0 1.0",
+    source: "Crop of CMA00318 SFXMint exertion-breathing",
+    durationSec: 0.679,
+  },
+  {
+    code: "CMA00358",
+    file: "CMA00358_universal_female_ouch_giggle_short.mp3",
+    lang: "universal",
+    gender: "female",
+    burst: "giggle",
+    use: "poke",
     license: "CC0",
-    source: "OGA Supergeek ogalaughter_2 seg4",
-    durationSec: 0.575,
+    source: "Crop of CMA00320 BlueSiren giggle",
+    durationSec: 0.601,
+  },
+
+  {
+    code: "CMA00359",
+    file: "CMA00359_universal_female_gasp_reitanna.mp3",
+    lang: "universal",
+    gender: "female",
+    burst: "gasp",
+    use: "poke",
+    license: "CC0",
+    source: "Freesound Reitanna 242618 gasp",
+    durationSec: 0.549,
+  },
+  {
+    code: "CMA00360",
+    file: "CMA00360_universal_female_gasp_woven.mp3",
+    lang: "universal",
+    gender: "female",
+    burst: "gasp",
+    use: "poke",
+    license: "CC0",
+    source: "Woven SFX female-gasp.wav",
+    durationSec: 0.522,
+  },
+  {
+    code: "CMA00361",
+    file: "CMA00361_universal_male_gasp_woven.mp3",
+    lang: "universal",
+    gender: "male",
+    burst: "gasp",
+    use: "poke",
+    license: "CC0",
+    source: "Woven SFX male-gasp.wav",
+    durationSec: 0.496,
+  },
+  {
+    code: "CMA00362",
+    file: "CMA00362_universal_male_ouch_mixkit.mp3",
+    lang: "universal",
+    gender: "male",
+    burst: "ouch",
+    use: "poke",
+    license: "Mixkit Free SFX",
+    source: "Mixkit 2205 male ouch (crop)",
+    durationSec: 1.149,
+  },
+  // Legacy main RECORDED_POKE_ZONE rows that were still played but not listed.
+  {
+    code: "CMA00363",
+    file: "CMA00363_universal_female_ouch_um.mp3",
+    lang: "universal",
+    gender: "female",
+    burst: "um",
+    use: "poke",
+    license: "CC0",
+    source: "OGA Mature Female → universal/female/um.mp3 (main chest/breast poke)",
+    durationSec: 0.81,
+  },
+  {
+    code: "CMA00364",
+    file: "CMA00364_universal_female_ouch_giggle_full.mp3",
+    lang: "universal",
+    gender: "female",
+    burst: "giggle",
+    use: "poke",
+    license: "CC0",
+    source: "OGA Mature Female → universal/female/giggle.mp3 (main hand poke)",
+    durationSec: 0.888,
+  },
+  {
+    code: "CMA00365",
+    file: "CMA00365_universal_female_ouch_ha_full.mp3",
+    lang: "universal",
+    gender: "female",
+    burst: "ha",
+    use: "poke",
+    license: "CC0",
+    source: "OGA Mature Female → universal/female/ha.mp3 (main torso poke)",
+    durationSec: 0.862,
+  },
+  {
+    code: "CMA00366",
+    file: "CMA00366_universal_female_ouch_wow.mp3",
+    lang: "universal",
+    gender: "female",
+    burst: "gasp",
+    use: "poke",
+    license: "CC0",
+    source: "OGA Bright Female → universal/female/wow.mp3 (main back poke)",
+    durationSec: 0.888,
   },
 ] as const;
+
 
 export function cmaReactionPath(file: string): string {
   // Pages deploy sets NEXT_PUBLIC_BASE_PATH=/amoji-app; local/dev leaves it empty.
@@ -546,9 +353,12 @@ export function listCmaReactionCodes(): string[] {
 }
 
 export function expectedCmaReactionCodes(): string[] {
+  const dropped = new Set<string>(CMA_REACTION_DROPPED_CODES);
   const out: string[] = [];
   for (let n = CMA_REACTION_RANGE.from; n <= CMA_REACTION_RANGE.to; n++) {
-    out.push('CMA' + String(n).padStart(5, '0'));
+    const code = 'CMA' + String(n).padStart(5, '0');
+    if (dropped.has(code)) continue;
+    out.push(code);
   }
   return out;
 }
@@ -674,7 +484,7 @@ export function countCmaReactionPicks(picks?: PickMap): {
 export type CmaReactionPlayRole = 'laugh' | 'poke' | 'gasp';
 
 const LAUGH_BURSTS = new Set(['laugh', 'giggle', 'ha', 'smile', 'groan']);
-const POKE_BURSTS = new Set(['ouch', 'effort', 'yelp']);
+const POKE_BURSTS = new Set(['ouch', 'effort', 'yelp', 'gasp', 'um', 'ha']);
 const GASP_BURSTS = new Set(['gasp']);
 
 function matchesPlayRole(clip: CmaReactionClip, role: CmaReactionPlayRole): boolean {
@@ -682,6 +492,17 @@ function matchesPlayRole(clip: CmaReactionClip, role: CmaReactionPlayRole): bool
   if (role === 'laugh') return LAUGH_BURSTS.has(clip.burst);
   if (role === 'gasp') return GASP_BURSTS.has(clip.burst);
   return false;
+}
+
+/** Catalog rows that can feed poke playback (use=poke or poke-shaped burst). */
+export function pokeRoleClips(opts?: {
+  gender?: 'female' | 'male';
+}): CmaReactionClip[] {
+  return CMA_REACTION_GALLERY.filter((c) => {
+    if (!matchesPlayRole(c, 'poke')) return false;
+    if (opts?.gender && c.gender !== opts.gender) return false;
+    return true;
+  });
 }
 
 /** Wanted catalog rows only. Skip/undecided excluded. Optional gender + play-role filter. */
@@ -698,7 +519,22 @@ export function wantedCmaReactionClips(opts?: {
   });
 }
 
+/**
+ * Poke playback pool from user picks:
+ *  - Any Wanted poke-role clip for this gender → Wanted only
+ *  - Else → full poke-role list minus Skipped (default = full updated list)
+ */
+export function enabledPokeReactionClips(opts: {
+  gender: 'female' | 'male';
+}): CmaReactionClip[] {
+  const wanted = wantedCmaReactionClips({ gender: opts.gender, role: 'poke' });
+  if (wanted.length) return wanted;
+  const skipped = new Set(skippedCmaReactionCodes());
+  return pokeRoleClips({ gender: opts.gender }).filter((c) => !skipped.has(c.code));
+}
+
 let wantedPlayCursor = 0;
+let enabledPokePlayCursor = 0;
 
 /**
  * Next Wanted CMA path for this gender + role, or null when the Wanted pool is empty.
@@ -724,8 +560,114 @@ export function pickWantedCmaReactionPath(opts: {
   return null;
 }
 
+/**
+ * Next enabled poke path. Prefer `preferPath` when it is in the enabled set
+ * (keeps zone-table answers when the user has not narrowed Want). Else rotate.
+ */
+export function pickEnabledPokeReactionPath(opts: {
+  gender: 'female' | 'male';
+  preferPath?: string;
+  isPlayable?: (path: string) => boolean;
+}): string | null {
+  const pool = enabledPokeReactionClips(opts);
+  if (!pool.length) return null;
+  if (opts.preferPath) {
+    const hit = pool.find((c) => cmaReactionPath(c.file) === opts.preferPath);
+    if (hit) {
+      const path = cmaReactionPath(hit.file);
+      if (!opts.isPlayable || opts.isPlayable(path)) return path;
+    }
+  }
+  const n = pool.length;
+  for (let i = 0; i < n; i++) {
+    const clip = pool[enabledPokePlayCursor % n]!;
+    enabledPokePlayCursor += 1;
+    const path = cmaReactionPath(clip.file);
+    if (!clip.file || !path) continue;
+    if (opts.isPlayable && !opts.isPlayable(path)) continue;
+    return path;
+  }
+  return null;
+}
+
 export function resetWantedCmaReactionRotation(): void {
   wantedPlayCursor = 0;
+  enabledPokePlayCursor = 0;
+}
+
+/** CMA code embedded in a /voice-clips/cma-reaction/… path, or null. */
+export function cmaCodeFromPath(path: string): string | null {
+  const m = path.match(/CMA\d{5}/);
+  return m ? m[0]! : null;
+}
+
+export interface PokeSfxInventoryRow {
+  code: string;
+  path: string;
+  gender: 'female' | 'male';
+  burst: string;
+  inList: boolean;
+  selectable: boolean;
+  usedByCharacter: boolean;
+  source: 'zone' | 'gallery-poke' | 'legacy-main';
+}
+
+/**
+ * Every poke-capable gallery row + every RECORDED_POKE_ZONE path, for inventory
+ * diffs (list vs playback). `zonePaths` is injected so this module stays free
+ * of a voice-clips import cycle.
+ */
+export function listPokeSfxInventory(zonePaths: readonly string[]): PokeSfxInventoryRow[] {
+  const zoneSet = new Set(zonePaths);
+  const byCode = new Map<string, PokeSfxInventoryRow>();
+  for (const clip of pokeRoleClips()) {
+    const path = cmaReactionPath(clip.file);
+    const used = zoneSet.has(path);
+    const legacy = Number(clip.code.slice(3)) >= 363;
+    byCode.set(clip.code, {
+      code: clip.code,
+      path,
+      gender: clip.gender,
+      burst: clip.burst,
+      inList: true,
+      selectable: true,
+      usedByCharacter: used,
+      source: legacy ? 'legacy-main' : used ? 'zone' : 'gallery-poke',
+    });
+  }
+  for (const path of zonePaths) {
+    const code = cmaCodeFromPath(path);
+    if (!code) {
+      byCode.set(`orphan:${path}`, {
+        code: '',
+        path,
+        gender: path.includes('/male/') ? 'male' : 'female',
+        burst: 'unknown',
+        inList: false,
+        selectable: false,
+        usedByCharacter: true,
+        source: 'zone',
+      });
+      continue;
+    }
+    if (byCode.has(code)) {
+      const row = byCode.get(code)!;
+      row.usedByCharacter = true;
+      if (row.source === 'gallery-poke') row.source = 'zone';
+      continue;
+    }
+    byCode.set(code, {
+      code,
+      path,
+      gender: path.includes('_male_') || path.includes('/male/') ? 'male' : 'female',
+      burst: 'unknown',
+      inList: false,
+      selectable: false,
+      usedByCharacter: true,
+      source: 'zone',
+    });
+  }
+  return [...byCode.values()].sort((a, b) => a.path.localeCompare(b.path));
 }
 
 /** Test helper — drop in-memory cache so the next read rehydrates. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { withQuestion } from '../lib/follow-up';
+import { isFactSpokenLine, withQuestion } from '../lib/follow-up';
 
 describe('follow-up questions', () => {
   it('does not append a question by default', () => {
@@ -10,6 +10,18 @@ describe('follow-up questions', () => {
   it('can append a question when forceFollowUp is set', () => {
     expect(withQuestion('今日好開心', 'yue', { forceFollowUp: true })).toMatch(/[?？]$/);
     expect(withQuestion('Nice day', 'en', { forceFollowUp: true })).toMatch(/[?]$/);
+  });
+
+
+  it('never appends a question onto weather/news fact reads', () => {
+    const news = 'From the news: Scientists find quirky deep-sea fish.';
+    const weather = 'It is about 22 degrees and cloudy. Take care!';
+    expect(isFactSpokenLine(news)).toBe(true);
+    expect(isFactSpokenLine(weather)).toBe(true);
+    expect(withQuestion(news, 'en', { forceFollowUp: true })).toBe(news);
+    expect(withQuestion(weather, 'en', { forceFollowUp: true })).toBe(weather);
+    expect(withQuestion(news, 'en', { forceFollowUp: true, factsSpoken: true })).toBe(news);
+    expect(withQuestion(news, 'en', { forceFollowUp: true })).not.toMatch(/\?\s*$/);
   });
 
   it('leaves a reply that already asks something', () => {

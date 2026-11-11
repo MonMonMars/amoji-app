@@ -32,7 +32,7 @@ const WEATHER_OR_NEWS_RE =
   /\b(weather|forecast|temperature|headline|news|最新ニュース|天気)\b|天氣|天气|新聞|新闻|天氣預報|天气预报/i;
 
 const LONG_CONTENT_RE =
-  /(?:\bstory\b|tell\s+(?:me\s+)?a\s+story|bedtime\s+story|fun\s+fact|did\s+you\s+know|random\s+fact|fun\s+science|science\s+fact)|講個?故|故事|童話|冷知識|有趣知識|科學趣|豆知識|自然科学|讲个故|冷知识|科学趣味|お話して|物語|豆知識|面白い科学/i;
+  /(?:\bstory\b|tell\s+(?:me\s+)?a\s+story|bedtime\s+story|fun\s+fact|did\s+you\s+know|random\s+fact|fun\s+science|science\s+fact|how\s+(?:do\s+i|to|can\s+i)\b)|講個?故|故事|童話|冷知識|有趣知識|科學趣|豆知識|自然科学|讲个故|冷知识|科学趣味|お話して|物語|豆知識|面白い科学|點樣整|怎么搞|怎麼辦|怎么办/i;
 
 /** True when the user asked for topical/demo content (fun fact, weather, …). */
 export function isTopicalContentTurn(text: string): boolean {

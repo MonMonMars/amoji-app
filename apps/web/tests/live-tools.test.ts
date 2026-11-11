@@ -16,6 +16,7 @@ import {
   placeLabel,
   planTools,
   preferLiveReply,
+  weatherAccuracyLeak,
   regionalLightNewsFeedUrls,
   regionalNewsFeedUrls,
   resolveDevicePlace,
@@ -117,8 +118,92 @@ describe('planTools', () => {
     expect(plan.needsDevice).toBe(false);
     expect(plan.searchQuery).toBeUndefined();
     expect(planTools('news near me').recent).toBe(false);
-    expect(planTools('新聞').recent).toBe(false);
+    expect(planTools('news near me').needsDevice).toBe(true);
+    // Plain news asks (no near-me) use the recent/world path — never GPS/city ask.
+    expect(planTools('新聞').recent).toBe(true);
+    expect(planTools('新聞').needsDevice).toBe(false);
+    expect(planTools('tell me news').recent).toBe(true);
+    expect(planTools('tell me news').needsDevice).toBe(false);
+    expect(planTools('讀新聞').recent).toBe(true);
+    expect(planTools('讀新聞').needsDevice).toBe(false);
+    expect(planTools('any news?').recent).toBe(true);
+    expect(planTools('any news?').needsDevice).toBe(false);
     expect(planTools('最近新聞').recent).toBe(true);
+    // Demo-phase CJK prompts must not demand GPS just to read headlines.
+    expect(planTools('今日有咩新聞？').recent).toBe(true);
+    expect(planTools('今日有咩新聞？').needsDevice).toBe(false);
+    expect(planTools('今天有什么新闻？').recent).toBe(true);
+    expect(planTools('今天有什么新闻？').needsDevice).toBe(false);
+  });
+
+
+  it('reads a news fact line with no trailing question', async () => {
+    const live = await gatherLiveContext("what's the latest news?", {
+      lang: 'en',
+      fetch: async (input) => {
+        const url = String(input);
+        if (url.includes('news.google.com')) throw new Error('cors');
+        if (url.includes('rss2json.com')) return new Response('<html>blocked', { status: 403 });
+        if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
+          return jsonRes({
+            news: [{ story: '<!--x-->Scientists find a quirky deep-sea fish near the reef.' }],
+          });
+        }
+        return jsonRes({}, 404);
+      },
+      cache: new Map(),
+      locate: async () => null,
+    });
+    expect(live.spoken.trim().length).toBeGreaterThan(0);
+    expect(live.spoken).toContain('quirky deep-sea fish');
+    expect(live.spoken).not.toMatch(/[?？]/);
+    expect(live.spoken.toLowerCase()).not.toContain('which city');
+    expect(live.spoken.toLowerCase()).not.toContain('which topic');
+    expect(preferLiveReply("I don't have live news. Which city?", live.prompt, live.spoken, 'en')).toBe(live.spoken);
+    expect(preferLiveReply("I don't have live news. Which city?", live.prompt, live.spoken, 'en')).not.toMatch(/[?？]/);
+  });
+
+  it('falls back to recent news for plain tell-me-news without asking city', async () => {
+    let located = false;
+    const live = await gatherLiveContext('tell me news', {
+      lang: 'en',
+      fetch: async (input) => {
+        const url = String(input);
+        if (url.includes('news.google.com')) throw new Error('cors');
+        if (url.includes('rss2json.com')) return new Response('<html>blocked', { status: 403 });
+        if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
+          return jsonRes({
+            news: [{ story: 'Museum cat parade draws a cheerful crowd downtown.' }],
+          });
+        }
+        return jsonRes({}, 404);
+      },
+      cache: new Map(),
+      locate: async () => { located = true; return null; },
+    });
+    expect(planTools('tell me news').needsDevice).toBe(false);
+    expect(located).toBe(false);
+    expect(live.spoken.toLowerCase()).not.toContain('which city');
+    expect(live.spoken).not.toMatch(/[?？]/);
+    expect(live.spoken.toLowerCase()).toMatch(/museum|cat|parade|crowd|news/i);
+  });
+
+  it('does not treat Japanese “today” as a weather city', () => {
+    const plan = planTools('今日の天気は？');
+    expect(plan.weather).toBe(true);
+    expect(plan.placeQuery).toBeUndefined();
+    expect(plan.needsDevice).toBe(true);
+  });
+
+  it('asks for a city when a bad place name fails to geocode, instead of “couldn’t check”', async () => {
+    const live = await gatherLiveContext('weather in Nowhereville Zedland', {
+      lang: 'en',
+      fetch: async () => jsonRes({ results: [] }),
+      cache: new Map(),
+      locate: async () => null,
+    });
+    expect(live.spoken.toLowerCase()).toContain('which city');
+    expect(live.spoken.toLowerCase()).not.toContain("couldn't check the weather");
   });
 
   it('plans local news, topical news, and a web lookup separately', () => {
@@ -202,14 +287,15 @@ describe('gatherLiveContext', () => {
       locate: async () => HK,
     });
     expect(live.prompt).toContain('29°C');
-    expect(live.prompt).toContain('browser location');
-    expect(live.prompt).toContain('Hong Kong');
+    expect(live.prompt).toMatch(/Place:\s*Hong Kong/);
+    expect(live.prompt.toLowerCase()).not.toContain('browser location');
     expect(live.spoken).toContain('29度');
+    expect(live.spoken).not.toContain('香港'); // no city name in spoken weather
     expect(live.spoken).toContain('落毛毛雨');
     expect(urls.some((u) => u.includes('geojs'))).toBe(false);
   });
 
-  it('keeps coarse place metadata off the spoken weather line', async () => {
+  it('keeps GPS / accuracy talk out of both weather prompt and spoken line', async () => {
     const fetchImpl: typeof fetch = async (input) => {
       if (String(input).includes('api.open-meteo.com')) return jsonRes(weatherBody);
       return jsonRes({}, 404);
@@ -220,11 +306,11 @@ describe('gatherLiveContext', () => {
       cache: new Map(),
       locate: async () => ({ ...HK, city: 'Ashburn', region: 'Virginia', country: 'United States', source: 'ip' }),
     });
-    // Prompt may still note the source for the model; spoken weather must not
-    // mention GPS / network accuracy / "may be wrong".
-    expect(live.prompt).toContain('coarse network estimate');
+    // Place is named without source/accuracy so free LLMs cannot echo GPS talk.
+    expect(live.prompt).toMatch(/Place:\s*Ashburn/);
+    expect(live.prompt.toLowerCase()).not.toMatch(/gps|coarse network|precise fix|may be wrong|accuracy/);
     expect(live.spoken).toContain('29°');
-    expect(live.spoken.toLowerCase()).not.toMatch(/gps|precise|network guess|may be wrong|accuracy/);
+    expect(live.spoken.toLowerCase()).not.toMatch(/gps|precise|network guess|may be wrong|accuracy|ashburn/);
     expect(live.spoken.toLowerCase()).toMatch(/take care/);
     expect(live.spoken).toMatch(/umbrella|jacket|coat|layer|water|boots/i);
   });
@@ -247,7 +333,9 @@ describe('gatherLiveContext', () => {
     });
     expect(located).toBe(false);
     expect(live.prompt).toContain('Osaka');
-    expect(live.spoken).toContain('Osaka');
+    // Spoken weather is degrees + condition + prep — city stays in the prompt only.
+    expect(live.spoken).toMatch(/29°/);
+    expect(live.spoken).not.toContain('Osaka');
   });
 
   it('reads local headlines from RSS', async () => {
@@ -315,7 +403,10 @@ describe('gatherLiveContext', () => {
       locate: async () => HK,
     });
     expect(live.spoken).toContain('Funny night market');
-    expect(live.spoken).toContain('轻松');
+    // Plain 「新聞」 uses the recent/world path (finished statement, no local framing / city ask).
+    expect(live.spoken).toMatch(/最近有条新闻/);
+    expect(live.spoken).not.toMatch(/[?？]/);
+    expect(live.spoken).not.toContain('哪个城市');
   });
 
   it('answers a general lookup from Wikipedia and DuckDuckGo', async () => {
@@ -497,6 +588,7 @@ describe('tool switch and prompt wiring', () => {
     expect(worldBlock('')).toBe('');
     expect(worldBlock('Weather: 29°C, drizzling.')).toContain('29°C');
     expect(worldBlock('Weather: 29°C.')).toContain('Do not invent');
+    expect(worldBlock('Light news: “Cat parade”')).toMatch(/SIMPLY READ|finished spoken statements|Never ask which topic/i);
     expect(worldBlock('Recipe: soup.')).toContain('cook-along');
     const weatherGuide = worldBlock('Weather: 29°C.');
     expect(weatherGuide).toMatch(/take care/i);
@@ -560,13 +652,21 @@ describe('local light news and reply guard', () => {
     expect(picked[0]?.title).toContain('tip');
   });
 
-  it('replaces a shrug with the weather we already fetched', () => {
-    const world = 'Place: Hong Kong (browser location).\nWeather: 29°C, feels 32°C, drizzling.';
+  it('replaces a shrug or GPS-accuracy leak with the weather we already fetched', () => {
+    const world = 'Place: Hong Kong.\nWeather: 29°C, feels 32°C, drizzling.';
     const spoken = '香港而家大約29度，落毛毛雨。';
     const shrug = preferLiveReply("Sorry, I don't have real-time weather. Which city are you in?", world, spoken, 'yue');
     expect(shrug).toBe(spoken);
-    const used = preferLiveReply('It is 29° and drizzly in Hong Kong. Want to stay in?', world, spoken, 'en');
-    expect(used).toContain('Want to stay in?');
+    const used = preferLiveReply('It is 29° and drizzly. Grab a jacket — take care!', world, spoken, 'en');
+    expect(used).toContain('29');
+    expect(weatherAccuracyLeak('It is 29° but the location may be wrong.')).toBe(true);
+    const leaked = preferLiveReply(
+      "It's about 29° and raining, but this location may be wrong — network estimate.",
+      world,
+      spoken,
+      'en',
+    );
+    expect(leaked).toBe(spoken);
   });
 
   it('falls back when a forwarded IP has no coordinates', async () => {

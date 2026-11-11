@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadPrefs, t, type Lang } from '../lib/prefs';
-import { testVoiceChain, setVoiceEnabled, voiceEnabled } from '../lib/voice';
+import { testVoiceChain, setVoiceEnabled, voiceEnabled, GATE_TEST_LINES } from '../lib/voice';
 import { isMasterMuted, setMasterMuted } from '../lib/master-mute';
 import { listenSupported } from '../lib/listen';
 import { requestMic } from '../lib/mic-preflight';
@@ -56,7 +56,7 @@ export default function PreChatAudioGate({
     try { characterId = loadPrefs().character; } catch { /* default */ }
     try {
       // Long GATE_TEST_LINES + forcePlaybackVolume(1) inside testVoiceChain.
-      await testVoiceChain(characterId, lang);
+      await testVoiceChain(characterId, lang, GATE_TEST_LINES[lang] ?? GATE_TEST_LINES.en);
     } catch {
       /* retryable — never blocks Continue */
     } finally {

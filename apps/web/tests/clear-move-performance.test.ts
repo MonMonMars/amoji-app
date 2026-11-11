@@ -24,6 +24,14 @@ describe('sticky sing/dance performance clears on new talk', () => {
     expect(panel).toContain('endPerformanceMusic()');
   });
 
+  it('ChatPanel clears sticky move when the library bed stops', () => {
+    const panel = fs.readFileSync(path.join(ROOT, 'components/ChatPanel.tsx'), 'utf8');
+    const onClip = panel.slice(panel.indexOf("detail?.state === 'stopped'"), panel.indexOf('amoji:library-clip'));
+    expect(onClip).toContain('clearMove()');
+    expect(onClip).toContain('clearPerfMotionProfile()');
+    expect(onClip).toContain('setNowPlaying(null)');
+  });
+
   it('duckLibraryBed is a no-op so voice/BGM stay steady', () => {
     expect(() => duckLibraryBed(0.1, 100)).not.toThrow();
     const music = fs.readFileSync(path.join(ROOT, 'lib/music.ts'), 'utf8');

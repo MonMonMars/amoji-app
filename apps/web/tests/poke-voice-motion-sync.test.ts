@@ -132,12 +132,21 @@ describe('poke SFX answers the zone that was hit', () => {
     }
   });
 
-  it('wraps the chest soft-poke tuning Mon set (t294) instead of losing it', () => {
-    // t294: `um` read as adult on the head, so chest/breast took it and the
-    // head kept the former breast clip. That intent must survive.
-    expect(RECORDED_POKE_ZONE.female.chest).toBe('/voice-clips/universal/female/um.mp3');
+  it('wraps soft-vs-hard female poke zones from the CMA ship-set', () => {
+    // Soft head (hehe→CMA00352) stays distinct from chest oh and hard belly ouch (#18).
+    expect(RECORDED_POKE_ZONE.female.chest).toContain('CMA00351');
     expect(RECORDED_POKE_ZONE.female.breast).toBe(RECORDED_POKE_ZONE.female.chest);
     expect(RECORDED_POKE_ZONE.female.head).not.toBe(RECORDED_POKE_ZONE.female.chest);
+    expect(RECORDED_POKE_ZONE.female.belly).toContain('CMA00335');
+    expect(RECORDED_POKE_ZONE.male.default).toContain('CMA00339');
+    expect(RECORDED_POKE_ZONE.male.torso).not.toBe(RECORDED_POKE_ZONE.male.chest);
+    // Runtime poke paths must come from the EmotionClipRow / CMA ship-set
+    // (keepers + CMA00350–366) — never orphaned universal CLIP_LIBRARY rows.
+    for (const gender of GENDERS) {
+      for (const rel of Object.values(RECORDED_POKE_ZONE[gender])) {
+        expect(rel.startsWith('/voice-clips/cma-reaction/'), rel).toBe(true);
+      }
+    }
   });
 });
 
@@ -164,10 +173,11 @@ describe('poke recoil is the same gesture at every camera angle', () => {
     { label: 'orbit 110', x: -0.342, z: 0.94 },
   ];
 
-  /** Exactly what CompanionCanvas hands over on its lateral path. */
+  /** Exactly what CompanionCanvas hands over on its lateral path (opposite-side lean). */
   function lateralFall(camRight: { x: number; z: number }, camSide: number) {
     const n = Math.hypot(camRight.x, camRight.z);
-    return { fallX: (camRight.x / n) * camSide, fallZ: 0 };
+    // Pixel: lean away from the poked screen side → cameraRight * (-camSide).
+    return { fallX: (camRight.x / n) * -camSide, fallZ: 0 };
   }
 
   it('swings the arms away from the poke, identically across the orbit', () => {
@@ -284,8 +294,41 @@ describe('poke reaction clock', () => {
       panel.indexOf('const lastHandRef = useRef(handHoldCount)'),
     );
     expect(pokeBlock).toContain('playPokeBurst');
-    expect(pokeBlock).toMatch(/pokeReactionLine|pokeSectionPlaceholderLine/);
     expect(pokeBlock).not.toContain('setHistory');
+  });
+
+  it('ChatPanel poke plays the zone MP3 without a parallel TTS / utterance feed', () => {
+    // Regression: SFX-only poke still called feedUtterance + notifySpeaking on a
+    // placeholder line beside playPokeBurst, so the speaking indicator (and any
+    // synth/edge fallthrough) ran as a second utterance over the premade clip.
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const panel = readFileSync(path.join(here, '../components/ChatPanel.tsx'), 'utf8');
+    const pokeBlock = panel.slice(
+      panel.indexOf('const lastPokeRef = useRef(pokeCount)'),
+      panel.indexOf('const lastHandRef = useRef(handHoldCount)'),
+    );
+    expect(pokeBlock).toContain('playPokeBurst');
+    expect(pokeBlock).not.toContain('feedUtterance');
+    expect(pokeBlock).not.toContain('notifySpeaking');
+    expect(pokeBlock).not.toMatch(/\bspeak\s*\(/);
+    expect(pokeBlock).not.toMatch(/\bsayLocal\s*\(/);
+    expect(pokeBlock).not.toMatch(/pokeReactionLine|pokeSectionPlaceholderLine/);
+
+    const voice = readFileSync(path.join(here, '../lib/voice.ts'), 'utf8');
+    const burst = voice.slice(
+      voice.indexOf('export function playPokeBurst'),
+      voice.indexOf('export function playLaughBurst'),
+    );
+    expect(burst).toContain('playVoiceClip');
+    expect(burst).not.toMatch(/\bspeak\s*\(/);
+    expect(burst).not.toContain('beginTts');
+    expect(burst).not.toContain('speakGtts');
+    expect(burst).not.toContain('speakEdge');
+    expect(burst).not.toContain('synthSpeak');
+
+    const clip = readFileSync(path.join(here, '../lib/play-voice-clip.ts'), 'utf8');
+    expect(clip).toContain('noteSpeechStarted');
+    expect(clip).toContain('followAudioElement');
   });
 
   it('the canvas reads the shared window instead of hard-coding its own', () => {

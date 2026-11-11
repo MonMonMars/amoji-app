@@ -34,11 +34,10 @@
 // the conversation thread (last user words + her reply), so the next session
 // opens with "last time we were talking about…" and her prompt always
 // carries the open topic.
-// r2026-10-03.38: staged re-engagement — when the USER (not just the room)
-// goes quiet, she leans in over time: her usual idle chatter from 40s, direct
-// "you've gone quiet" follow-ups from ~2 min, and a soft closer at ~5 min
-// said ONCE — then she waits instead of nagging. Any real user action
-// (message, poke, spoken word, even tapping the mic off) resets the curve.
+// r2026-10-03.38: staged idle — when the USER goes quiet, body keeps moving
+// (passive idle / stretch) and soft topic offers may fire; never blame silence
+// ("you've gone quiet" / "are you still there" / "did you walk away"). Any real
+// user action (message, poke, spoken word, even tapping the mic off) resets.
 // r2026-10-03.39: activity dialogue sets her body off — "sing for me",
 // "跳一下", "kung fu!", "太極", "play the piano", "跑步" each trigger a
 // choreographed movement-library performance while her reply plays.
@@ -148,7 +147,6 @@ import { pickIdleCompanionLine } from '../lib/idle-talk';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
 import { gateSpokenLine, safeIdleFallback, scrubTopicMenuAsks } from '../lib/spoken-line-sanity';
 import { pickCharacterInteraction } from '../lib/interaction-lines';
-import { pokeSectionPlaceholderLine, type PokeSectionId } from '../lib/poke-zones';
 import { personalityProfile, personalityPrompt } from '../lib/personality';
 import { voiceOpening, type VoiceId } from '../lib/personality-voice';
 import { laughStyleFor, LAUGH_RE } from '../lib/laugh';
@@ -158,12 +156,11 @@ import { loadStorySession } from '../lib/story-session';
 import { guardCompanionTurn, type HelplineRegion } from '../lib/crisis';
 import { readHelplineLocationHints } from '../lib/crisis-location';
 import {
-  checkChatTurnQuota,
   consumeChatTurn,
   quotaExceededCopy,
 } from '../lib/daily-quota';
+import { planStatus } from '../lib/billing';
 import { clientLiveContext, isLiveFactsOnlyTurn, planTools } from '../lib/live-tools';
-import { withQuestion } from '../lib/follow-up';
 import {
   OPEN_CHEER_MS,
   OPEN_IDLE_BRIEF_MS,
@@ -181,10 +178,12 @@ import {
   userUndecided,
 } from '../lib/topic-suggestions';
 import { speak, stopSpeaking, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechRemainder, whenSpeechIdle } from '../lib/voice';
+import { cantHearReply, isCantHearComplaint } from '../lib/cant-hear';
 import { productionChat } from '../lib/backend-client';
 import { stopThinkingSound } from '../lib/thinking-sound';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
-import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerformance, detectMusicStyle } from '../lib/music';
+import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerformance, resolveLibraryPerformance, detectMusicStyle } from '../lib/music';
+import { clipTitle, performanceIntroLine } from '../lib/performance-intro';
 import { nextPassiveIdleClip, PASSIVE_IDLE_LOOP_TEMPLATE } from '../lib/idle-passive-loop';
 import { resolveContentMotion } from '../lib/content-motion';
 import { clipLabel, PERFORMANCE_CLIPS, type PerformanceClip } from '../lib/performance-clips';
@@ -223,8 +222,8 @@ import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodb
 import { detectExercise, startExercise, advanceExercise, exerciseFarewellLine, type ExerciseState } from '../lib/exercises';
 import {
   buildDailyGreeting, buildEnterNameGreeting, buildMemoryBlock, ensureUserNameFromProfile, feltMood,
-  forgetInjectedMemory, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange,
-  rememberTurn, type TurnMemoryUsed,
+  greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange,
+  rememberTurn,
 } from '../lib/memory';
 import { listenContinuous, listenSupported } from '../lib/listen';
 import { getEntryGateRecord, micPreflightGrantedThisSession } from '../lib/entry-gate';
@@ -245,7 +244,7 @@ import type { ChatStatus } from '../lib/status';
 import EmotionOrb from './EmotionOrb';
 import DemoPhaseRail from './DemoPhaseRail';
 
-interface Msg { role: 'user' | 'assistant'; content: string; memoryUsed?: TurnMemoryUsed[] }
+interface Msg { role: 'user' | 'assistant'; content: string }
 
 export interface ChatPanelProps {
   characterName?: string;
@@ -276,8 +275,8 @@ export interface ChatPanelProps {
 }
 
 const IDLE_AFTER_MS = 40_000;
-/** Advance relax → stretch → look body loop while the user stays quiet. */
-const PASSIVE_IDLE_BODY_MS = 9_000;
+/** Longer beat so calm idles dominate; stretch fires at most once per long cycle. */
+const PASSIVE_IDLE_BODY_MS = 12_000;
 /** user silence beyond this switches idle chatter to direct re-engagement */
 const REENGAGE_AFTER_MS = 110_000;
 /** user silence beyond this gets the soft closer — once, then she waits */
@@ -294,8 +293,9 @@ export default function ChatPanel({
   kidMode = false,
   pokeCount = 0,
   pokeZone = '',
-  pokeDirection = 'front',
-  pokeSectionId = '',
+  // Kept for canvas wiring / future per-section copy; clip owns voice today.
+  pokeDirection: _pokeDirection = 'front',
+  pokeSectionId: _pokeSectionId = '',
   handHoldCount = 0,
   onStatus,
   onMemCount,
@@ -345,7 +345,11 @@ export default function ChatPanel({
         if (clip) setNowPlaying(clipLabel(clip, lang));
         setClipState('playing');
       } else if (detail?.state === 'stopped') {
-        setClipState((s) => (s === 'playing' ? null : s));
+        setClipState(null);
+        setNowPlaying(null);
+        // Show over — drop sticky sing/dance body + beat profile so talk idle returns.
+        clearMove();
+        clearPerfMotionProfile();
       }
     };
     window.addEventListener('amoji:library-clip', onClip);
@@ -380,7 +384,7 @@ export default function ChatPanel({
   const lastUserRef = useRef(Date.now());
   const lastChatterAtRef = useRef(0);
   const chatterCountRef = useRef(0);
-  /** Steps the relax → stretch → look body playlist while the room is quiet. */
+  /** Steps the calm-heavy passive body playlist while the room is quiet. */
   const passiveIdleStepRef = useRef(0);
   const lastPassiveBodyAtRef = useRef(0);
   const reengageStageRef = useRef(0);
@@ -616,7 +620,10 @@ export default function ChatPanel({
     setActionGame(kind);
   };
 
-  /** Start a premade song (matched to her gender) or dance bed, and show the pick. */
+  /**
+   * Resolve the clip, speak its name, THEN start audio when speech is idle.
+   * Pixel: always introduce the song / music title before playback.
+   */
   const beginShow = (
     kind: 'song' | 'dance',
     ms: number,
@@ -624,10 +631,9 @@ export default function ChatPanel({
     n = laughCountRef.current,
     bed = false,
     styleHint?: string,
+    afterStart?: () => void,
   ) => {
-    // t718: music.ts arms to max(ms, clip.durationMs+600); hold body/mic for songs.
-    // Style (jazz/pop/lofi…) prefers Mixkit royalty-free streams for dance beds.
-    const clip = startLibraryPerformance({
+    const query = {
       kind,
       characterId,
       lang,
@@ -637,12 +643,32 @@ export default function ChatPanel({
       ms,
       bed,
       style: styleHint,
-    });
-    // t725–729: song/style → body tag + beat-matched timeScale for CompanionCanvas.
-    setPerfMotionProfile(resolvePerfMotion({ id: clip.id, kind: clip.kind, style: clip.style }));
+    };
+    // Same pick for announce + play so the spoken title matches the bed.
+    const clip = resolveLibraryPerformance(query);
+    const title = clipTitle(clip, lang);
+    const intro = performanceIntroLine(kind === 'song' ? 'song' : 'music', title, lang);
     const hold = Math.max(clip.durationMs + 600, ms);
-    if (kind === 'song') holdMove(hold);
+    // Body move for the whole show: music beds used to set a beat profile only
+    // and never triggerMove, so she stayed on calm idle with no beat motion.
+    const bodyMove = kind === 'song' ? 'sing' : 'dance';
+    triggerMove(bodyMove);
+    // Name on the now-playing chip immediately; audio waits for the intro.
     showTrack(clip, hold);
+    sayLocal(intro, { joy: kind === 'song' ? 0.82 : 0.7 });
+    whenSpeechIdle(() => {
+      // t718: music.ts arms to max(ms, clip.durationMs+600); hold body for the bed.
+      // Style (jazz/pop/lofi…) prefers Mixkit royalty-free streams for dance beds.
+      const playing = startLibraryPerformance(query);
+      // t725–729: song/style → body tag + beat-matched timeScale for CompanionCanvas.
+      setPerfMotionProfile(resolvePerfMotion({ id: playing.id, kind: playing.kind, style: playing.style }));
+      // Re-arm on bed start so the rising-edge playPerf syncs with audio, and
+      // hold past the default 9s move so dance/music beds keep moving to the beat.
+      triggerMove(bodyMove);
+      holdMove(hold);
+      showTrack(playing, hold);
+      afterStart?.();
+    });
     return clip;
   };
   const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string, alreadySpoken?: { text: string; since: number }): string => {
@@ -662,20 +688,25 @@ export default function ChatPanel({
     if (firstLive && alreadySpoken) {
       if (mv === 'dance') {
         triggerMove('dance');
-        beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText));
+        beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
+          const rest = speechRemainder(reply, alreadySpoken.text);
+          if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity);
+        });
       } else if (mv) triggerMove(mv);
       notifySpeaking(reply);
-      const rest = speechRemainder(reply, alreadySpoken.text);
-      if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity);
+      if (mv !== 'dance') {
+        const rest = speechRemainder(reply, alreadySpoken.text);
+        if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity);
+      }
       return reply;
     }
     // Singing plays a premade clip in her gender's voice. The lyric still
-    // lands in the bubble; TTS does not sing over the clip. The clip waits
-    // its turn — a live sentence is not cut to start the song.
+    // lands in the bubble; TTS does not sing over the clip. She names the
+    // track first (beginShow), then the bed starts when speech is idle.
     if (mv === 'sing') {
       triggerMove('sing');
       const style = detectMusicStyle(userText);
-      whenSpeechIdle(() => beginShow('song', 9300, mood, laughCountRef.current, false, style));
+      beginShow('song', 9300, mood, laughCountRef.current, false, style);
       const compact = reply.replace(/\s/g, '');
       const song = compact.length > 0 && compact.length <= 48
         ? reply
@@ -685,9 +716,10 @@ export default function ChatPanel({
     }
     if (mv === 'dance') {
       triggerMove('dance');
-      beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText));
+      beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
+        speak(reply, characterId, lang, contentHints, undefined, intensity);
+      });
       notifySpeaking(reply);
-      speak(reply, characterId, lang, contentHints, undefined, intensity);
       return reply;
     }
     // r86 — the piano performance finally SOUNDS like a piano: the theme's
@@ -807,8 +839,10 @@ export default function ChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // poke reactions — SFX + VRM motion only; lip hooks run off the reaction line
-  // but never land in persisted chat history or copy transcript.
+  // poke reactions — SFX + VRM motion only. The zone MP3 owns the speaking
+  // indicator (playVoiceClip → noteSpeechStarted / followAudioElement). Do not
+  // feedUtterance / notifySpeaking / speak a parallel poke line — that was the
+  // synth/edge double beside the premade clip. Never land in chat history.
   const lastPokeRef = useRef(pokeCount);
   useEffect(() => {
     if (pokeCount === lastPokeRef.current) return;
@@ -816,12 +850,8 @@ export default function ChatPanel({
     lastActivityRef.current = Date.now();
     lastUserRef.current = Date.now();
     reengageStageRef.current = 0;
-    // SFX-only poke (Mon t691–t696): no TTS reaction / laugh lead — clip by zone.
+    // SFX-only poke (Mon t691–t696): recorded clip by zone — no TTS / utterance.
     playPokeBurst(characterId, pokeZone || 'torso');
-    const key = (pokeSectionId || `poke:belly:${pokeDirection || 'front'}`) as PokeSectionId;
-    const line = pokeSectionPlaceholderLine(key, lang);
-    feedUtterance(line);
-    notifySpeaking(line);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pokeCount]);
 
@@ -838,7 +868,7 @@ export default function ChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handHoldCount]);
 
-  // Body idle loop while quiet: relax → stretch → relax → look around → repeat.
+  // Body idle loop while quiet: mostly breath/stand, occasional look, rare stretch.
   // Starts a bit before spoken idle chatter so the pose keeps changing even
   // when she is not talking. Content-driven pins (dance/sing/thinking) still
   // win while busy / speaking.
@@ -856,13 +886,11 @@ export default function ChatPanel({
     return () => clearInterval(timer);
   }, []);
 
-  // idle chatter + staged re-engagement (r.38): she never lets a quiet room
-  // die. Measured from the USER's last real action (message, poke, spoken
-  // word, mic tap) — her own lines don't restart the clock. Stage 0 (<2 min
-  // of user silence) = her usual persona/mood idle lines; stage 1 (2 min+) =
-  // direct "you've gone quiet" follow-ups that lean in harder; stage 2 (5
-  // min+) = one soft closer ("I'll be right here") and then she simply
-  // waits instead of nagging. Her lines never pile onto her own voice.
+  // idle chatter + soft topic offers (r.38): measured from the USER's last
+  // real action — her own lines don't restart the clock. Stage 0 = persona /
+  // mood / topic offers; stage 1+ = soft NEW TOPIC nudges only — never
+  // "you're so quiet" / "still there?" / "walk away" blame. After the soft
+  // closer she waits. Her lines never pile onto her own voice.
   useEffect(() => {
     const timer = setInterval(() => {
       if (busyRef.current || isSpeaking() || speechPending() || actionGameRef.current) return;
@@ -1016,6 +1044,23 @@ export default function ChatPanel({
     } else {
       idleAutoAfterUserRef.current = false;
     }
+    // Can't-hear / no-sound — local fix only. LLM used to invent nonsense story
+    // beats ("軍艦開到極光") instead of acknowledging the audio problem.
+    if (isCantHearComplaint(text)) {
+      const tip = cantHearReply(lang);
+      const lastSaid = [...history]
+        .reverse()
+        .find((m) => m.role === 'assistant' && m.content.trim().length > 8);
+      sayLocal(tip, { sadness: 0.15 });
+      if (lastSaid?.content) {
+        // Re-say the missed line after the tip — no new invented plot.
+        whenSpeechIdle(() => {
+          speak(lastSaid.content, characterId, lang, undefined, undefined, 1);
+        });
+      }
+      done();
+      return;
+    }
     {
       const action = detectActionGame(text);
       if (action) {
@@ -1133,8 +1178,8 @@ export default function ChatPanel({
     // original WebAudio theme composed for her personality
     if (/\b(play (?:some )?music|put on (?:some )?music)\b|播音樂|播音乐|放音樂|放音乐|音楽をかけ/.test(text)) {
       perfCountRef.current += 1;
+      // beginShow speaks the track name, then starts the bed.
       beginShow('dance', 18_000, undefined, perfCountRef.current, true);
-      sayLocal(SHOWCASE_START[lang].music);
       done();
       return;
     }
@@ -1168,13 +1213,12 @@ export default function ChatPanel({
       }
       if (kind === 'music') {
         beginShow('dance', 18_000, undefined, perfCountRef.current, true);
-        sayLocal(SHOWCASE_START[lang].music);
         done();
         return;
       }
       triggerMove(kind === 'song' ? 'sing' : 'dance');
+      // Intro names the piece; skip generic SHOWCASE_START so we don't double-talk.
       beginShow(kind === 'song' ? 'song' : 'dance', 12_000, undefined, perfCountRef.current);
-      sayLocal(SHOWCASE_START[lang][kind]);
       if (kind === 'song') {
         const song = pickCharacterSong(characterId, lang, perfCountRef.current).join(' ');
         notifySpeaking(song);
@@ -1194,15 +1238,15 @@ export default function ChatPanel({
     lastFeltRef.current = felt?.mood;
     const feltHints = moodToHints(felt?.mood, felt?.intensity);
     if (feltHints) applyContentMood(feltHints);
-    const quota = checkChatTurnQuota();
-    if (!quota.ok) {
+    const plan = planStatus();
+    if (!plan.chatAllowed) {
       const line = quotaExceededCopy(lang);
       setHistory((h) => [...h, { role: 'assistant', content: line }]);
       sayLocal(line, { sadness: 0.2 });
       done();
       return;
     }
-    consumeChatTurn();
+    if (plan.plan === 'free') consumeChatTurn();
     // Sing / dance start the premade clip NOW, before the reply arrives, so
     // the track is audible and named while she thinks. A sing request skips
     // the thinking filler — the clip is the vocal.
@@ -1229,7 +1273,6 @@ export default function ChatPanel({
     // r125 — pass the user's words so OLD on-topic memories surface too
     const memoryBuilt = buildMemoryBlock(lang, undefined, text);
     const memory = memoryBuilt?.block;
-    const turnMemoryUsed = memoryBuilt?.used ?? [];
     // one exit path for every outcome: the final reply (or the failure note)
     // takes the placeholder's place instead of stacking a second bubble
     const commitReply = (content: string) => {
@@ -1239,13 +1282,13 @@ export default function ChatPanel({
       const replace = transientRef.current;
       transientRef.current = false;
       setStreamDraft('');
-      const memStrip = turnMemoryUsed.length > 0 ? turnMemoryUsed : undefined;
+      // History shows talking only — no per-turn "memories used" strip.
       setHistory((h) => {
         const tail = h[h.length - 1];
         if (replace && tail?.role === 'assistant') {
-          return [...h.slice(0, -1), { role: 'assistant', content, memoryUsed: memStrip }];
+          return [...h.slice(0, -1), { role: 'assistant', content }];
         }
-        return [...h, { role: 'assistant', content, memoryUsed: memStrip }];
+        return [...h, { role: 'assistant', content }];
       });
     };
     // r70 — persona + adaptive block (scene + warmth calibration)
@@ -1271,7 +1314,8 @@ export default function ChatPanel({
       const livePlan = planTools(text, priorUser);
       if (isLiveFactsOnlyTurn(livePlan, worldSpoken)) {
         stopThinkingSound();
-        const line = stripOfftopicAbilityTack(withQuestion(worldSpoken, lang), text);
+        // Weather/news fact reads stay finished statements — no withQuestion fishing.
+        const line = stripOfftopicAbilityTack(worldSpoken, text);
         rememberTurn(text, line);
         onMemCountRef.current?.(memorySummaryCount());
         feedUtterance(line);
@@ -1621,7 +1665,7 @@ export default function ChatPanel({
           nearBottomRef.current = atBottom;
           setPinnedBottom(atBottom);
         }}
-        className="pointer-events-auto w-full touch-pan-y select-none space-y-2.5 overflow-y-auto overscroll-contain px-2 pb-1 pt-6 [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)] [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)]"
+        className="pointer-events-auto w-full touch-pan-y select-text space-y-2.5 overflow-y-auto overscroll-contain px-2 pb-1 pt-6 [-webkit-user-select:text] [user-select:text] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)] [mask-image:linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.2)_22%,rgba(0,0,0,0.4)_40%,rgba(0,0,0,0.6)_56%,rgba(0,0,0,0.8)_72%,black_90%)]"
         style={{ maxHeight: '17vh' }}
       >
         {history.length === 0 && <p className="text-center text-white/40">{t(lang, 'sayHi', { name: characterName })}</p>}
@@ -1651,19 +1695,6 @@ export default function ChatPanel({
               lang={lang}
               accent={accent}
               label={m.role === 'assistant' && i === history.length - 1 ? characterName : undefined}
-              memoryUsed={m.memoryUsed}
-              onForgetMemory={(id) => {
-                forgetInjectedMemory(id);
-                onMemCountRef.current?.(memorySummaryCount());
-                setHistory((prev) => prev.map((row, idx) => (
-                  idx === i && row.memoryUsed
-                    ? {
-                      ...row,
-                      memoryUsed: row.memoryUsed.filter((u) => u.id !== id),
-                    }
-                    : row
-                )));
-              }}
               onReport={(reply) => setReportFor(reply)}
             />
           );

@@ -11,10 +11,12 @@ describe("EmotionClipRow section role=group", () => {
     expect(row).toContain("previewReactions");
   });
 
-  it("numbers CMA reaction chips for Mon assignment", () => {
+  it("numbers CMA reaction chips for Mon assignment and Want/Skip", () => {
     expect(row).toContain("CMA_REACTION_GALLERY");
     expect(row).toContain("data-reaction-n={n}");
     expect(row).toContain("data-cma-code={clip.code}");
-    expect(row).toContain("aria-pressed={selected}");
+    expect(row).toContain("data-verdict={verdict}");
+    expect(row).toContain("aria-pressed={wanted}");
+    expect(row).toContain("setCmaReactionVerdict");
   });
 });
