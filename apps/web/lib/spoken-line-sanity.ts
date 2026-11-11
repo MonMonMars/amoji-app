@@ -17,23 +17,23 @@ export interface SpokenGateOpts {
 export const SAFE_IDLE_FALLBACK: Record<Lang, readonly string[]> = {
   en: [
     'I just stretched my shoulders — feels nice.',
-    'Holding this soft moment with you.',
-    'Same page as you. The quiet suits us.',
+    'I am right here with you — take your time.',
+    'We can sit with what you said, or pick a small new thing later.',
   ],
   yue: [
     '我啱啱伸咗下膊頭——舒服咗少少。',
-    '輕輕留住呢個柔軟時刻。',
-    '同你同一頁。呢段靜好襯。',
+    '我喺度陪住你——唔使急。',
+    '可以繼續你頭先講嗰樣，或者一陣再揀件小事。',
   ],
   zh: [
     '我刚伸了伸肩膀——舒服一点了。',
-    '轻轻留着这个柔软时刻。',
-    '和你同一页。这段安静很衬。',
+    '我在这里陪着你——不用着急。',
+    '可以继续你刚才说的那件事，或者等会儿再挑件小事。',
   ],
   ja: [
     '肩を伸ばしたばかり——ちょっと楽。',
-    'やわらかい時間を、そっと一緒に置いておくね。',
-    '同じページにいる。この静けさが似合ってる。',
+    'ここにいるよ——急がなくていい。',
+    'さっきの話のままでもいいし、あとで小さな話題でもいいよ。',
   ],
 };
 
@@ -83,11 +83,15 @@ const BROKEN_FRAGMENT =
 
 /** Metaphor-sludge idle fills: "friendly riddle is charged / voltage / tiny burst". */
 const BROKEN_METAPHOR_SLUDGE =
-  /充滿電|充满电|電壓感覺友善|电压感觉友善|細爆發|小爆发|短短.{0,8}爆發|短短.{0,8}爆发|is charged and ready|voltage feels friendly|tiny burst|充電済み|電圧は友好|小さなバースト|短い.{0,8}バースト/i;
+  /充滿電|充满电|電壓感覺友善|电压感觉友善|細爆發|小爆发|短短.{0,8}爆發|短短.{0,8}爆发|is charged and ready|voltage feels friendly|tiny burst|充電済み|電圧は友好|小さなバースト|短い.{0,8}バースト|soul\s+thread|energy\s+field\s+hums|cosmic\s+whisper|nexus\s+of\s+(?:feelings?|vibes?)|wavelength\s+of\s+(?:your\s+)?heart|quantum\s+vibes?|vibe\s+resonance|aura\s+sync/i;
 
 /** Meta topic-narration sludge ("holding this topic / same thread") — not real talk. */
 const BROKEN_META_TOPIC =
-  /still\s+on\s+that\s+thread\b|holding\s+the\s+same\s+topic\b|keeping\s+your\s+subject\s+warm\b|we\s+can\s+keep\s+walking\s+the\s+path\s+you\s+started\b|仲喺你呢條話題度|輕輕留住同一個主題|你提起嘅嘢我仲放喺枱上面暖住|还在你这条话题上|轻轻留着同一个主题|你提起的事我还放在桌上暖着|まだその話の途中|同じ話題をそっと置いたまま|あなたが出した話題を、あたたかく/i;
+  /still\s+on\s+that\s+thread\b|holding\s+the\s+same\s+topic\b|holding\s+this\s+soft\s+moment\b|same\s+page\s+as\s+you\b|keeping\s+your\s+subject\s+warm\b|we\s+can\s+keep\s+walking\s+the\s+path\s+you\s+started\b|仲喺你呢條話題度|輕輕留住同一個主題|輕輕留住呢個柔軟時刻|同你同一頁|你提起嘅嘢我仲放喺枱上面暖住|还在你这条话题上|轻轻留着同一个主题|轻轻留着这个柔软时刻|和你同一页|你提起的事我还放在桌上暖着|まだその話の途中|同じ話題をそっと置いたまま|同じページにいる|あなたが出した話題を、あたたかく|やわらかい時間を、そっと一緒に/i;
+
+/** Opaque / invented vocab with no clear meaning for the listener. */
+const BROKEN_OPAQUE_VOCAB =
+  /\b(?:vibronic|chrono\s+feelings?|soul\s+frequency|manifest(?:ing)?\s+abundance|quantum\s+vibes?|vibe\s+resonance|aura\s+sync)\b|(?:個|的|の)vibe\b|オーラ同期|量子バイブス|灵魂频率|靈魂頻率|量子\s*vibes?/i;
 
 const UNFINISHED_EN =
   /\b(?:reminding|reminded|about|of|to|for|with|and|or|the|a|an|is|are|was|were|like)\s*[.…]*\s*$/i;
@@ -111,6 +115,7 @@ export function spokenLineLooksBroken(text: string, opts?: SpokenGateOpts): bool
   if (BROKEN_FRAGMENT.test(t)) return true;
   if (BROKEN_METAPHOR_SLUDGE.test(t)) return true;
   if (BROKEN_META_TOPIC.test(t)) return true;
+  if (BROKEN_OPAQUE_VOCAB.test(t)) return true;
 
   const d = dense(t);
   const hasCjk = CJK.test(t);

@@ -676,27 +676,27 @@ function noteSlowLane(lang?: string): void {
   }
 }
 
-/** The instant local lane: warm, concrete topic offers — never "on your mind" / presence nags. */
+/** The instant local lane: caring ack + concrete offer — never "on your mind" / presence nags / opaque jargon. */
 const FALLBACK_BANKS: Record<string, string[]> = {
   yue: [
-    '我喺度㗎，慢慢嚟——想講天氣、小事，定係聽個冷知識？',
-    '聽到喇。不如講下今日一件細細嘅事，或者我講個短故事你聽？',
-    '唔使急。想聽首歌、伸展一下，定係繼續傾你頭先嗰樣？',
+    '我喺度聽緊你㗎，慢慢嚟——想講天氣、小事，定係聽個冷知識？',
+    '聽到喇，唔緊要。不如講下今日一件細細嘅事，或者我講個短故事你聽？',
+    '唔使急，我陪住你。想聽首歌、伸展一下，定係繼續傾你頭先嗰樣？',
   ],
   zh: [
-    '我在呀，慢慢来——想聊天气、小事，还是听个冷知识？',
-    '听到了。不如说说今天一件小事，或者我讲个短故事给你听？',
-    '不着急。想听首歌、伸展一下，还是继续你刚才那件事？',
+    '我在听着你，慢慢来——想聊天气、小事，还是听个冷知识？',
+    '听到了，没事。不如说说今天一件小事，或者我讲个短故事给你听？',
+    '不着急，我陪着你。想听首歌、伸展一下，还是继续你刚才那件事？',
   ],
   ja: [
-    'ここにいるよ、ゆっくりでいい——天気、小さなこと、それとも豆知識？',
-    '聞こえてる。今日の小さな話でもいいし、短いお話でもいいよ。',
-    '急がなくていい。歌、ストレッチ、それともさっきの続き？',
+    'ちゃんと聞いてるよ、ゆっくりでいい——天気、小さなこと、それとも豆知識？',
+    '聞こえてる、大丈夫。今日の小さな話でもいいし、短いお話でもいいよ。',
+    '急がなくていい、そばにいるよ。歌、ストレッチ、それともさっきの続き？',
   ],
   en: [
-    "I'm right here — weather, a tiny story, or a fun fact, whichever you want.",
-    'I hear you. We can talk about one small thing from today, or I can tell a short story.',
-    'No rush — a song, a stretch, or we stay with what you just said.',
+    "I'm listening — weather, a tiny story, or a fun fact, whichever you want.",
+    'I hear you; no pressure. We can talk about one small thing from today, or I can tell a short story.',
+    "I'm with you — a song, a stretch, or we stay with what you just said.",
   ],
 };
 

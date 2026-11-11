@@ -121,8 +121,13 @@ describe('companion coherence', () => {
     const { BASE_SYSTEM } = await import('../lib/llm');
     const { personalityPrompt } = await import('../lib/personality');
     expect(BASE_SYSTEM).toMatch(/Finish each sentence/);
+    expect(BASE_SYSTEM).toMatch(/LISTEN FIRST/i);
+    expect(BASE_SYSTEM).toMatch(/PLAIN WORDS/i);
     const prompt = personalityPrompt('a01-shino', 'female');
     expect(prompt).toMatch(/Finish each sentence/);
+    expect(prompt).toMatch(/LISTEN FIRST/i);
+    expect(prompt).toMatch(/PLAIN WORDS/i);
+    expect(prompt).toMatch(/care|respect|caring/i);
     expect(prompt).not.toMatch(/Catchphrase:/);
     expect(prompt).not.toMatch(/sunshine!/);
   });

@@ -55,6 +55,9 @@ describe('spokenLineLooksBroken', () => {
     expect(spokenLineLooksBroken('一個小謎語充滿電，等一陣細爆發。')).toBe(true);
     expect(spokenLineLooksBroken('{thing} is charged and ready for a tiny burst.')).toBe(true);
     expect(spokenLineLooksBroken('Still on that thread with you — no rush to leave it.')).toBe(true);
+    expect(spokenLineLooksBroken('Holding this soft moment with you.')).toBe(true);
+    expect(spokenLineLooksBroken('Your quantum vibes are aligning today.')).toBe(true);
+    expect(spokenLineLooksBroken('個vibe好靚喎。')).toBe(true);
   });
 
   it('rejects presence nags in idle mode', () => {

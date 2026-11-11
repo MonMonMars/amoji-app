@@ -45,13 +45,22 @@ const FORBIDDEN_IDLE_FRAGMENTS = [
   /tiny burst/i,
   /充電済み/,
   /小さなバースト/,
-  // Meta topic-narration / presence nags.
+  // Meta topic-narration / presence nags / empty soft sludge.
   /still on that thread/i,
   /holding the same topic/i,
+  /holding this soft moment/i,
+  /same page as you/i,
   /you've gone quiet/i,
   /are you still there/i,
   /仲喺你呢條話題/,
   /还在你这条话题/,
+  /輕輕留住呢個柔軟時刻/,
+  /轻轻留着这个柔软时刻/,
+  /同你同一頁/,
+  /和你同一页/,
+  /同じページにいる/,
+  /quantum vibes/i,
+  /個vibe/,
 ];
 
 /** Pixel: never interrogate private thoughts in idle / open / reengage. */

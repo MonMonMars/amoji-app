@@ -32,39 +32,39 @@ export function idleTalkMode(n: number): IdleTalkMode {
   return Math.abs(n) % 2 === 0 ? 'stay' : 'suggest';
 }
 
-/** Stay with the user's last vibe — concrete, statement-only (no meta "topic" talk). */
+/** Stay with what the user said — concrete, caring, statement-only (no meta "topic" talk). */
 export const STAY_TOPIC_LINES: Record<Lang, readonly string[]> = {
   en: [
     'That detail you shared still sits with me — no rush to change it.',
-    'I am chewing on what you said; take your time if more comes.',
-    'Same page as you. We can linger on that feeling a bit longer.',
+    'I heard you. I am chewing on what you said; take your time if more comes.',
+    'I am with you on that — we can stay with it a bit longer.',
     'Your last point landed — I am still right there with it.',
     'We can keep going from where you left the thought.',
-    'I am still with what you brought up — it suits this quiet.',
+    'I am still with what you brought up — tell me more whenever you like.',
   ],
   yue: [
     '你啱啱講嗰啲細節我仲記住——唔使急住換。',
-    '我仲喺度慢慢咀嚼你講嘅嘢；有多講再嚟都得。',
-    '同你同一頁。呢份感覺可以再留一陣。',
+    '我聽到喇。仲喺度慢慢想你講嘅嘢；有多講再嚟都得。',
+    '我同你一齊——呢樣可以再留一陣。',
     '你頭先嗰句我聽到喇——我仲跟住。',
     '可以繼續由你停低嗰度講落去。',
-    '你頭先講嗰樣我仲記住——呢段靜好襯。',
+    '你頭先講嗰樣我仲記住——想講多啲隨時得。',
   ],
   zh: [
     '你刚说的那些细节我还记着——不用急着换。',
-    '我还在慢慢想你说的话；有多说再来也行。',
-    '和你同一页。这份感觉可以再留一会儿。',
+    '我听到了。还在慢慢想你说的话；有多说再来也行。',
+    '我和你一起——这件事可以再留一会儿。',
     '你刚才那句我听到了——我还跟着。',
     '可以从你停下的地方继续说下去。',
-    '你刚才说的那件事我还记着——这段安静很衬。',
+    '你刚才说的那件事我还记着——想多说随时可以。',
   ],
   ja: [
     'さっきの細かい話、まだ覚えてるよ。急がなくていい。',
-    'いま言ってくれたことを、ゆっくりかみしめてる。続きがあればいつでも。',
-    '同じページにいる。その気持ち、もう少し置いておこう。',
+    '聞いてるよ。いま言ってくれたことを、ゆっくりかみしめてる。続きがあればいつでも。',
+    '一緒にいるよ——その話、もう少し置いておこう。',
     'さっきの一言、ちゃんと届いた——まだそこにいるよ。',
     'あなたが止めたところから、続けられるよ。',
-    'さっきの話、まだ覚えてる——この静けさに合ってる。',
+    'さっきの話、まだ覚えてる——もっと話したくなったらいつでも。',
   ],
 };
 
