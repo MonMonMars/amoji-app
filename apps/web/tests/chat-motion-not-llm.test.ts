@@ -14,6 +14,14 @@ describe('chat motion is not LLM-controlled', () => {
     resolve(__dirname, '../lib/companion.ts'),
     'utf8',
   );
+  const contentMotion = readFileSync(
+    resolve(__dirname, '../lib/content-motion.ts'),
+    'utf8',
+  );
+  const chatAutoIdle = readFileSync(
+    resolve(__dirname, '../lib/chat-auto-idle.ts'),
+    'utf8',
+  );
 
   it('ChatPanel imports applyContentMood, not applyLlmHints', () => {
     expect(chatPanel).toMatch(/applyContentMood/);
@@ -35,5 +43,21 @@ describe('chat motion is not LLM-controlled', () => {
     expect(companion).toMatch(/function applyContentMood/);
     expect(companion).toMatch(/update\(\{\s*lexicon:/);
     expect(companion).toMatch(/llmTags: hints/);
+  });
+
+  it('content-motion wires detectMove + performance-motion preferred clips', () => {
+    expect(contentMotion).toMatch(/detectContentMove/);
+    expect(contentMotion).toMatch(/resolvePerfMotion/);
+    expect(contentMotion).toMatch(/preferredPerfIdleForContent/);
+    expect(contentMotion).toMatch(/EMOTION_MOVES/);
+    // Must not call applyLlmHints (comment bans are OK).
+    expect(contentMotion).not.toMatch(/applyLlmHints\s*\(/);
+  });
+
+  it('chat-auto-idle keeps talk calm + user-only dance/sing/music', () => {
+    expect(chatAutoIdle).toMatch(/USER_INTENT_CATEGORIES/);
+    expect(chatAutoIdle).toMatch(/TALK_CALM/);
+    expect(chatAutoIdle).toMatch(/resolvePerfMotion/);
+    expect(chatAutoIdle).toMatch(/isTalkCalmText|isCalmTalkContent/);
   });
 });
