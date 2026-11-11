@@ -224,7 +224,14 @@ export function gateSpokenLine(
   if (!spokenLineLooksBroken(candidate, { ...opts, mode })) return candidate;
 
   const fb = (opts?.fallback ?? (mode === 'idle' ? safeIdleFallback(opts?.lang, opts?.n ?? 0) : '')).trim();
-  if (fb && !spokenLineLooksBroken(fb, { mode: 'local', lang: opts?.lang })) return fb;
+  if (
+    fb &&
+    !spokenLineLooksBroken(fb, {
+      mode: 'local',
+      ...(opts?.lang !== undefined ? { lang: opts.lang } : {}),
+    })
+  )
+    return fb;
   if (mode === 'idle') {
     const en = SAFE_IDLE_FALLBACK.en[0]!;
     return spokenLineLooksBroken(en, { mode: 'local' }) ? undefined : en;
