@@ -37,7 +37,12 @@ pickStreamTrack(style, n): StreamTrack | null
 
 ## Product preference
 
-Ask the user what style they want when the request is vague; map that style to Mixkit / local beds. Prefer stream previews over growing the static export with large audio when a legal catalog exists.
+**Music ask UX** (`apps/web/lib/music-ask.ts` + ChatPanel):
+
+- Generic “play music / sing something” → **random** autoplay from the short free catalog; speak the **song/track name** (and genre) before the bed (`performanceIntroLine`).
+- **Selection UI / chips only** when the user explicitly asks to choose / list / pick (“let me choose”, “what songs do you have”, “list songs”).
+- Genre asks (“play jazz”, “something calm/lofi”) → filter catalog then random within genre; if they also asked to choose, offer 2–3 named options.
+- Prefer Mixkit stream previews for instrumental beds; sung tracks stay on local CC0 vocal clips. Do not grow the static export with large audio when a legal catalog exists.
 
 ## Demo-phase / sing defaults (2026-11)
 
