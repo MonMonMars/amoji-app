@@ -22,6 +22,7 @@ Unset `NEXT_PUBLIC_AMOJI_API` keeps the static Pages build fully on-device.
 | --- | --- |
 | Static models, audio, SFX | `apps/web/public/` |
 | Companion export (`.aigf`) | Downloaded by the user; never uploaded by Pages |
+| Product data export (JSON) | Settings → Systems; secrets redacted |
 | Content reports | `localStorage` key `amoji.reports.v1` (+ optional `POST /api/reports`) |
 | Production DB | `$AMOJI_DB` (SQLite) |
 | Legal copy source | `apps/web/lib/legal-copy.ts` |
@@ -32,16 +33,23 @@ There is no S3 / R2 / Blob upload path in the product today.
 ## Client data storage
 
 All primary companion state is **browser `localStorage`** (see
-`apps/web/lib/client-storage.ts` for the keyed inventory). Optional
+`apps/web/lib/client-storage.ts` for the keyed inventory + prefixes). Optional
 `sessionStorage` holds short-lived UI state. Optional production API holds an
 anonymous session token + companion/chat rows in SQLite when configured.
+
+| Action | Behavior |
+| --- | --- |
+| Export | Settings downloads JSON; `amoji.backend.session` and BYOK keys are `[redacted]` |
+| Wipe (device) | Removes wipeable local keys; keeps `amoji.legalAccept.v1` by default |
+| Wipe (API) | `DELETE /api/storage/me` with bearer — clears chat/state/wardrobe/entitlement/sessions for that user. Pages-only builds show this as unavailable |
 
 ## Settings
 
 `SettingsSheet` is the single in-app settings surface: language, volumes,
-voice/TTS, location, memory/data (including wipe product data), companion
-file, profile, Advanced brain keys, plan/quota, systems & legal links, and
-Help (tutorial + support contact).
+voice/TTS, location, memory/data (including export/wipe product data), companion
+file, profile, Advanced brain keys, plan/quota, systems (security/storage
+posture + charging) & legal links + accept status, and Help (tutorial +
+support contact).
 
 ## Payment
 
@@ -97,13 +105,25 @@ keep reports local and exportable.
 
 ## Security
 
-Anonymous bearer sessions on the Node API; CORS origin lock via
-`AMOJI_CORS_ORIGIN`; per-IP rate limits; security headers on API responses;
-crisis fail-closed before the model; BYOK keys stay in the browser. See
-`lib/security-policy.ts` and `server/backend/src/security.ts`.
+Rules live in `lib/security-rules.ts` (client) and
+`server/backend/src/security-rules.ts` (rate-limit budgets). Enforcement:
+
+| Control | Env / surface |
+| --- | --- |
+| Anonymous bearer sessions | `POST /api/auth/session` — random hex token in `amoji.backend.session` |
+| CORS origin lock | `AMOJI_CORS_ORIGIN` (comma-separated). Unset/`*` = any origin (dev) |
+| Per-IP rate limits | global 240/min; auth 30; chat/tts/stripe 60; report/support 10 |
+| Security headers | `nosniff`, `DENY` frame, `no-referrer`, permissions-policy on API responses |
+| Crisis fail-closed | On-device before any model call |
+| BYOK keys | Browser-only; never required for Pages |
+
+`GET /api/systems` returns `cors`, `corsLocked`, `securityRulesVersion`, and
+`rateLimits` — never secret values. Pages builds with no API URL report an
+on-device posture and do not claim “connected”.
 
 ## Legal
 
 Privacy, Terms, Safety, Cookies, and Credits. First-run gate uses
-`LEGAL_ACCEPT_VERSION` in `lib/legal-accept.ts` — bump it when policy facts
-change so returning users re-consent.
+`LEGAL_ACCEPT_VERSION` in `lib/legal-accept.ts` (currently **4**) — bump it when
+policy facts change so returning users re-consent. Doc routes and accept status
+are catalogued in `lib/legal-rules.ts`.
