@@ -15,12 +15,15 @@ Locale → engine → voice lives in `apps/web/lib/voice-catalog.ts`. Non-Yue en
 - LLM: anonymous race is `openai-fast` and `openai` with `reasoning_effort: low`. Keyed Groq uses `llama-3.3-70b-versatile`.
 - Idle crossfades are longer so loops blend. Feet stay planted. Load T-pose is unchanged.
 
-## In progress
+## In progress (open green PRs — not on `main` yet)
 
-- Open slices (2026-11-10): #338 chat-ux, #339 news, #340 card-greet, #342 Silent Night, #343 dance legs, mega #337. Prefer slices over mega when merging.
-- Branches ready, PR not opened: `content-motion-wire`, `poke-body-lean`, `cma-poke-sfx-pack` (parent must ManagePullRequest).
-- Leftover Pixel fixes branch: `cursor/leftover-pixel-fixes-0340-0eac` (LangChips audition, arm ROM every-frame clamp, longer 開聲傾偈 gate sample, status docs).
-- Status board: `docs/PROJECT_STATUS.md` (refreshed) + `docs/project-status.html` (may lag).
+Prefer [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) for the live board. Agents: **0** code-actionable Outstanding items left (2026-11-11 audit).
+
+- Systems finish: #354 payment · #355 support email · #356 security/legal/storage (+ font cherry-pick) · optional standalone #336 fonts
+- SEO / long-talk: #357 · #359
+- Motion / chat slices: #338–#340 · #342–#345 · #348 · #350–#352 · poke Want/Skip #358
+- Mega / leftover (keep open until Pixel says close): #337 · #347 (superseded by #350–#353)
+- Status board: this refresh on #353
 
 ## Open / remains
 
@@ -32,8 +35,10 @@ Locale → engine → voice lives in `apps/web/lib/voice-catalog.ts`. Non-Yue en
 - Anonymous Pollinations only exposes `openai-fast` (GPT-OSS 20B). No smarter keyless model to switch to.
 - `think-phrases.ts` is unused by the wait UI. The spoken wait lines are `thinking-lines.ts`.
 - Music streaming: `resolveStreamPlaylist()` returns `null` until a **licensed** catalog/embed exists (`docs/MUSIC_STREAMING.md`). Do not scrape Spotify/YouTube/etc. **Hold.**
-- Post-merge live verify on https://monmonmars.github.io/amoji-app/setup after slices land. **Hold** without Pages access.
-- Pixel confirm: poke opposite lean + expanded CMA SFX after those PRs merge.
+- Stripe live keys / Payment Link env; Product Hunt shoot; Search Console sitemap submit. **Hold** (human).
+- Post-merge live verify on https://monmonmars.github.io/amoji-app/setup after slices land. **Hold** without Pages eyeball.
+- Pixel confirm: poke opposite lean + CMA SFX Want/Skip after #345 → #348 → #358 merge.
+- Stale spikes (triage only if Pixel asks): #1 · #20 · #154 · #240.
 
 ## Voices
 
@@ -69,4 +74,4 @@ So there is no 20-line preset bank to preserve. If Mon wants a longer spoken wai
 - GitHub Pages: `.github/workflows/pages.yml` runs on every push to `main` (and `workflow_dispatch`). It static-exports `@amoji/web` with `AMOJI_BASE_PATH=/amoji-app` and deploys `apps/web/out` to the `github-pages` environment. Merging to `main` updates https://monmonmars.github.io/amoji-app/. Feature branches do not deploy.
 - Piper / Melo / Kokoro / Bark stay in `voice-catalog.ts` as non-shipping stubs. VoxCPM2, Chatterbox, CosyVoice, and Qwen3-TTS are held for a later GPU host and are not called. Google Cloud, Azure, and Polly are not wired. **Google Translate's free MP3 endpoint IS wired** (`lib/gtts.ts`, a real chain hop since 2026-11-07) — that is not Google Cloud TTS.
 - Verify: selection shows the live chat VRM on the chat backdrop; face thumbs are release portraits; scene thumbs run A (day) through L (night); a thumb tap swaps the body; chat icon opens wardrobe full-screen and close restores orbit; history wheel-scrolls; hold on a side margin pans.
-- Last checklist refresh: 2026-11-09 (HKT) — docs pack + music stub + open PR merge board.
+- Last checklist refresh: 2026-11-11 (HKT) — status board Done / Open PRs ready / Outstanding=0 code / Hold; Pixel merge order in `docs/MERGE_CHECKLIST.md`.
