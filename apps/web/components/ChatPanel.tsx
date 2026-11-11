@@ -405,6 +405,8 @@ export default function ChatPanel({
   const vadStopRef = useRef<{ stop(): void } | null>(null);
   const vadGraceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const micAutoArmedRef = useRef(false);
+  /** True once auto-open (or user) successfully entered voice mode this mount. */
+  const micOpenedThisMountRef = useRef(false);
   const laughCountRef = useRef(0);
   // r.47 — the last assistant bubble is a TRANSIENT placeholder while she
   // waits for her brain: warm-up lines and stream tokens paint it, and the
@@ -1455,6 +1457,7 @@ export default function ChatPanel({
     enterVoiceChatAudioSession();
     duckExternalAudioForCompanion();
     micModeRef.current = true;
+    micOpenedThisMountRef.current = true;
     listeningRef.current = true;
     setListening(true);
     setMicDismissed(false);
@@ -1550,7 +1553,8 @@ export default function ChatPanel({
     else beginVoiceMode();
   };
 
-  // Grok-style: mic opens as soon as you enter chat; OS / Audio Session ducks other apps.
+  // Grok-style: mic opens as soon as you enter chat (default ON). Do not wait
+  // for the open cheer — cutCompanion:false keeps her greeting while listening.
   useEffect(() => {
     enterVoiceChatAudioSession();
     pauseForeignPageMedia();
@@ -1562,15 +1566,22 @@ export default function ChatPanel({
       if (rec?.mic === 'denied' || rec?.mic === 'unsupported') return;
     }
     micAutoArmedRef.current = true;
-    const micDelay = preflight
-      ? 0
-      : shouldPlayOpenCheer(characterId)
-        ? OPEN_CHEER_MS + 300
-        : 400;
+    // Preflight → immediate. Otherwise a short tick so the panel paints first.
+    // Never stall behind OPEN_CHEER_MS — that felt like “mic not open at start”.
+    const micDelay = preflight ? 0 : 120;
     const t0 = window.setTimeout(() => {
       if (!micModeRef.current) beginVoiceMode({ cutCompanion: false });
     }, micDelay);
-    return () => clearTimeout(t0);
+    // One retry if listen never stuck (permission race after gate Allow).
+    const t1 = window.setTimeout(() => {
+      if (!micOpenedThisMountRef.current && !micModeRef.current) {
+        beginVoiceMode({ cutCompanion: false });
+      }
+    }, micDelay + 700);
+    return () => {
+      clearTimeout(t0);
+      clearTimeout(t1);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang, characterId]);
 

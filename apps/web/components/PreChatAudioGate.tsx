@@ -73,6 +73,7 @@ export default function PreChatAudioGate({
       const outcome = await requestMic();
       setMic(outcome);
       if (outcome === 'granted') setMicPreflightSession(true);
+      else setMicPreflightSession(false);
     } finally {
       setMicBusy(false);
     }
@@ -93,7 +94,11 @@ export default function PreChatAudioGate({
         return;
       }
       const outcome = await requestMic();
-      if (!cancelled) setMic(outcome);
+      if (!cancelled) {
+        setMic(outcome);
+        // Same-session chat enter can open the mic with no delay when granted here.
+        if (outcome === 'granted') setMicPreflightSession(true);
+      }
     })();
     return () => { cancelled = true; };
   }, []);
@@ -102,23 +107,35 @@ export default function PreChatAudioGate({
   const micOk = mic === 'granted' || mic === 'unsupported';
 
   const enter = useCallback(() => {
-    primeChatStartGesture();
-    const micOutcome: MicOutcome =
-      mic === 'pending' ? 'skipped' : mic;
-    if (micOutcome === 'granted') setMicPreflightSession(true);
-    const audioHeard =
-      heard === 'yes' || heard === 'no'
-        ? heard
-        : speakerOk
-          ? 'yes'
-          : 'no';
-    passEntryGate({
-      audioHeard,
-      mic: micOutcome,
-    });
-    markChatAudioReady();
-    if (onDone) onDone();
-    else router.replace(nextHref);
+    // Enter is a real user gesture — re-probe mic here so chat can default-open.
+    void (async () => {
+      primeChatStartGesture();
+      let micOutcome: MicOutcome = mic === 'pending' ? 'skipped' : mic;
+      if (listenSupported() && micOutcome !== 'unsupported') {
+        try {
+          const outcome = await requestMic();
+          micOutcome = outcome;
+          setMic(outcome);
+          if (outcome === 'granted') setMicPreflightSession(true);
+        } catch {
+          /* keep prior outcome */
+        }
+      }
+      if (micOutcome === 'granted') setMicPreflightSession(true);
+      const audioHeard =
+        heard === 'yes' || heard === 'no'
+          ? heard
+          : speakerOk
+            ? 'yes'
+            : 'no';
+      passEntryGate({
+        audioHeard,
+        mic: micOutcome,
+      });
+      markChatAudioReady();
+      if (onDone) onDone();
+      else router.replace(nextHref);
+    })();
   }, [heard, mic, nextHref, onDone, router, speakerOk]);
 
   const continueLabel =

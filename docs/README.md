@@ -7,6 +7,10 @@ Technical notes for assets, models, robot face, chat UX, audio, and merge proces
 - Browser board: [`project-status.html`](./project-status.html)
 - Markdown twin: [`PROJECT_STATUS.md`](./PROJECT_STATUS.md)
 
+**Owner product bible (rules + done/outstanding — update same day):**
+
+- [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md)
+
 **Product / contributor notes:**
 
 | Doc | Topic |
