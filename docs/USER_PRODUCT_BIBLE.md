@@ -2,9 +2,10 @@
 
 **Purpose:** Living checklist of product rules from the product owner. Agents must read this before chat/voice/pose/permission work and update it when rules change.
 
-**Last reviewed:** 2026-11-12 (Asia/Hong_Kong) — evening update  
+**Last reviewed:** 2026-11-12 (Asia/Hong_Kong) — late night  
 **Branch for current pack:** `cursor/no-history-resume-ask-0340` · PR [#366](https://github.com/MonMonMars/amoji-app/pull/366)  
-**Agent copy:** also mirrored under the agent store as `USER_PRODUCT_BIBLE.md` when present.
+**Agent copy:** `/cursor/stores/self/USER_PRODUCT_BIBLE.md`  
+**Request log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn.
 
 ---
 
@@ -30,27 +31,30 @@
 ### Voice / TTS
 12. **Male Cantonese must not crawl** — Male Yue pace floor / Edge offsets stay at conversational speed (not slowed by pitch bias alone).
 13. **No loading “UM” sound** — Thinking wait uses a **loading bar / status UI**, not spoken um filler or thinking.wav.
+14. **Character / voice card tap speaks** — Select board auditions must be audible inside the tap (same-origin gesture clip + play before setSinkId).
 
 ### Character / body
-14. **Only Pixel-OK poses** — Calm idle/talk: `#3 #34 #42 #53 #94 #95`. Perf moves only when asked: `#20 #22 #41 #101–103 #108 #109 #113 #114`. Retired / “not OK” poses stay unreachable.
-15. **No blend-to-the-back** — Idle A→B must not axial-spin; hips yaw clamped; new idle starts near `t≈0`.
-16. **Talking body stays calm** — While speaking: calm stands only (e.g. IdleRpmFStanding001 / IdleSassy). No LookAround mid-sentence; no arguing/chatting gesture clips.
-17. **Pupils stay visible** — No off-center / vanished pupils (look-at pin + eye material stabilize).
+15. **Only Pixel-OK poses** — Calm idle/talk: `#3 #34 #42 #53 #94 #95`. Perf moves only when asked: `#20 #22 #41 #101–103 #108 #109 #113 #114`. Retired / “not OK” poses stay unreachable.
+16. **No blend-to-the-back** — Idle A→B must not axial-spin; hips yaw clamped; new idle starts near `t≈0`.
+17. **Talking body stays calm** — While speaking: calm stands only (e.g. IdleRpmFStanding001 / IdleSassy). No LookAround mid-sentence; no arguing/chatting gesture clips.
+18. **Pupils stay visible** — No off-center / vanished / white-empty pupils (look-at pin + eye material stabilize). Image look fixes use the image loop below.
 
 ### Product hygiene
-18. **Demo** — Production demo is GitHub Pages `main`: https://monmonmars.github.io/amoji-app/ (no per-PR preview unless added later).
-19. **Update this bible** — When the owner adds a rule, edit this file the same day: rules + Done + Outstanding. Agents: check this before claiming “done.”
+19. **Demo** — Production demo is GitHub Pages `main`: https://monmonmars.github.io/amoji-app/ (no per-PR preview unless added later).
+20. **Update Done + Outstanding every turn** — When the owner speaks a new ask, or work ships / stalls: refresh **Done** and **Outstanding** the same turn. Never leave the lists stale.
+21. **Log every owner request** — Same turn, append `/cursor/stores/self/OWNER_REQUEST_LOG.md`. Never drop an ask.
+22. **Image / pupil look loop** — Owner states image problem → change prompt → generate → show image here → ask one new advice. **No busy tests** unless asked.
 
 ---
 
-## Done (as of 2026-11-12 HKT)
+## Done (as of 2026-11-12 late night HKT)
 
 | Item | Notes / evidence |
 |------|------------------|
 | Calm vs perf pose gating + retire bad poses | PR #365 / related pose commits |
-| Hips / idle A→B no spin-to-back | **Re-ported 2026-11-12 onto this branch** (was missing; caused every-few-seconds flip) |
+| Hips / idle A→B no spin-to-back (code) | Re-ported onto this branch `afe36c0` |
 | Talk calm clips only while speaking | chat-auto-idle / CompanionCanvas |
-| Gate: mic + location one page (where landed) | entry gate v2 / PreChatAudioGate (verify on branch) |
+| Gate: mic + location one page (code) | entry gate v2 / PreChatAudioGate |
 | Male Yue TTS speed-up | gTTS floor, Edge offsets, synth base |
 | Statement-only enter greet | personality-voice / open-phase |
 | Answer-first + question cap | prompts + `capSpokenQuestions` |
@@ -58,12 +62,14 @@
 | Recipe deliver (咕嚕肉 etc.) | recipe planning + anti-teaser |
 | Topic continue until stop | content-continuation session |
 | Remove loading UM; thinking bar UI | no-loading-um / thinking-status |
-| Pupil / look-at stabilize | vrm/eyes pin + materials |
+| Pupil / look-at stabilize (app code) | vrm/eyes pin + materials `9a60c69` |
 | Gate speaker test loud/long | `GATE_TEST_LINES` + `forcePlaybackVolume(1)` |
-| Mic default-open at chat start (this turn) | gate Enter re-probe + chat micDelay 0/120 + retry |
-| Ban topic-menu double asks (我哋傾咩好呀 / 今日想傾咩呀) | scrubTopicMenuAsks + bank scrub |
-| Cloudsea ambient: no “sit on a cloud” silliness | grounded SCENE_LINES |
-| Character / voice card tap greets audible | Same-origin gesture clip + play-before-setSinkId (ported; was silent on this branch) |
+| Mic default-open at chat start (code) | gate Enter re-probe + chat micDelay 0/120 + retry |
+| Ban topic-menu double asks | scrubTopicMenuAsks + bank scrub |
+| Cloudsea ambient grounded | SCENE_LINES — no “sit on a cloud” |
+| Character / voice card tap greets (code) | gesture clip `b7848bc` on PR #366 |
+| Owner request log created | `/cursor/stores/self/OWNER_REQUEST_LOG.md` |
+| Image-loop process accepted | prompt → show → one question; no busy tests |
 
 ---
 
@@ -71,14 +77,15 @@
 
 | Item | Status |
 |------|--------|
+| **White pupil image look** — prompt loop until owner OK | **In loop** — Prompt v1 image shown; awaiting owner advice |
+| **CMA poke SFX #1–23** Want / archive / delete / wire punch+soft+smile | Open — female EmotionClipRow map ready; not wired yet |
 | Confirm mic stays open on real device after gate → select → chat | **Verify after deploy** |
 | Location still asked only on gate (no second popup at Start) | Confirm on device |
-| Broader SCENE_LINES pass (other backdrops still ask a lot) | Optional cleanup |
-| Confirm spin-to-back gone on device after this push | **Verify after deploy** |
+| Confirm spin-to-back gone on device | **Verify after deploy** |
 | Confirm character/voice card tap speaks on device / Pages | **Verify after deploy** |
-| CMA poke SFX #1–23 Want/archive/delete wiring | In progress on poke-sfx branch |
+| Broader SCENE_LINES pass (other backdrops still ask a lot) | Optional cleanup |
 | Production Pages update after merge to `main` | Waiting merge |
-| Keep bible current daily when owner gives new rules | Ongoing |
+| Keep bible Done/Outstanding + request log current every turn | Ongoing (owner rule) |
 
 ---
 
@@ -86,17 +93,19 @@
 
 | Date (HKT) | Change |
 |------------|--------|
-| 2026-11-12 late night | Port card-greet same-origin gesture clip — select character/voice taps were silent (fix never on this branch) |
-| 2026-11-12 night | Re-port spin-to-back fix onto `no-history-resume-ask` (hips clamp + idle t≈0; IdleHug retired) — owner reported still flipping every few seconds |
-| 2026-11-12 evening | Ban topic-menu asks; fix silly cloudsea “揀朵雲嚟坐好” ambient |
-| 2026-11-12 | Bible created; mic default-open fix; rolled in prior PR #366 rules |
-| 2026-11-11 | Rules collected from owner: poses, gate confirm, Yue pace, ask policy, news, UM→bar, pupils, recipe/continue, loud sound test |
+| 2026-11-12 late night | Owner: always update Done/Outstanding; log every request; image loop for white pupil (no busy tests); card-greet fix `b7848bc` |
+| 2026-11-12 night | Re-port spin-to-back fix; SFX #1–23 notes received (still Outstanding) |
+| 2026-11-12 evening | Ban topic-menu asks; fix silly cloudsea ambient |
+| 2026-11-12 | Bible created; mic default-open; rolled in prior PR #366 rules |
+| 2026-11-11 | Rules: poses, gate, Yue pace, ask policy, news, UM→bar, pupils, recipe/continue, loud sound test |
 
 ---
 
 ## Agent checklist (every turn that touches product)
 
-1. Read **Standing rules** above for the area you touch.  
-2. Prefer fixing regressions over new features if they conflict.  
-3. Update **Done / Outstanding / Change log** when you ship or when the owner adds a rule.  
-4. Do not mark Outstanding done without a commit or explicit owner confirmation.
+1. Read **Standing rules** for the area you touch.  
+2. Log the owner ask in `OWNER_REQUEST_LOG.md` the same turn.  
+3. Update **Done / Outstanding / Change log** the same turn — always.  
+4. Prefer fixing regressions over new features if they conflict.  
+5. Image look issues: prompt → generate → show → one question. No busy tests unless asked.  
+6. Do not mark Outstanding done without a commit **or** explicit owner confirmation (device verify stays Outstanding until they say OK).
