@@ -204,42 +204,19 @@ export function patchCastTextures(root: THREE.Object3D, characterId: string): vo
  */
 export function stabilizeCastEyes(root: THREE.Object3D, characterId: string): void {
   if (characterId !== 'a63-hinoame-satuki-mei-sirayuki') return;
+  // Char 13: red untextured iris reads as an empty socket until textures land.
   root.traverse((node) => {
     const mesh = node as THREE.Mesh;
     if (!mesh.isMesh || !mesh.material) return;
     const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-    let eye = false;
     for (const mat of mats) {
-      const kind = eyeMaterialKind(mat.name || '', mesh.name || '');
-      if (!kind) continue;
-      eye = true;
+      if (eyeMaterialKind(mat.name || '', mesh.name || '') !== 'iris') continue;
       const m = mat as THREE.MeshStandardMaterial;
-      m.visible = true;
-      if (kind === 'iris' || kind === 'white' || kind === 'highlight') {
-        m.opacity = 1;
-        if (kind !== 'highlight') m.transparent = false;
-        m.depthTest = true;
-        const col = m.color;
-        if (kind === 'iris' && col && col.r > col.g + 0.18 && col.r > 0.35 && !m.map) {
-          col.setRGB(0.12, 0.07, 0.06);
-        }
-        if (m.emissive) m.emissive.setRGB(0, 0, 0);
+      const col = m.color;
+      if (col && col.r > col.g + 0.18 && col.r > 0.35 && !m.map) {
+        col.setRGB(0.12, 0.07, 0.06);
+        m.needsUpdate = true;
       }
-      m.needsUpdate = true;
     }
-    if (!eye) return;
-    mesh.visible = true;
-    mesh.frustumCulled = false;
-    const s = mesh.scale;
-    if (s.x * s.x + s.y * s.y + s.z * s.z < 1e-8) s.set(1, 1, 1);
-  });
-  // The baked face keeps its eye islands, but a ribbon parented to the chest
-  // is scaled 10× and sits in front of the sockets: a red sheet that flickers
-  // against the pupils. Bring that accessory back to unit scale.
-  root.traverse((node) => {
-    const max = Math.max(Math.abs(node.scale.x), Math.abs(node.scale.y), Math.abs(node.scale.z));
-    if (max < 5) return;
-    if (!/ribon|ribbon|リボン/i.test(node.name || '')) return;
-    node.scale.set(1, 1, 1);
   });
 }

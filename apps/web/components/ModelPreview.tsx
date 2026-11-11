@@ -20,6 +20,7 @@ import { modelUrl } from '../lib/asset';
 import { addCastDaylight, applyCastToneMapping } from '../lib/vrm/cast-lighting';
 import { characterIdFromModelRef } from '../lib/vrm/cast-lighting-profile';
 import { dampenCastMatcap, floorCastShadeColors } from '../lib/vrm/cast-materials';
+import { disableVrmAutoLookAt, isEyeMaterial, pinVrmEyeGaze, stabilizeEyeMaterials } from '../lib/vrm/eyes';
 
 export default function ModelPreview({
   url,
@@ -70,6 +71,8 @@ export default function ModelPreview({
       const vrm = (gltf as unknown as { userData: { vrm: VRM } }).userData.vrm;
       floorCastShadeColors(vrm.scene);
       if (characterId) dampenCastMatcap(vrm.scene, characterId);
+      stabilizeEyeMaterials(vrm.scene);
+      disableVrmAutoLookAt(vrm);
       // same identity treatment as the chat room: gentle palette tint + build
       const tintCol = new THREE.Color(tint);
       vrm.scene.traverse((node) => {
@@ -78,6 +81,7 @@ export default function ModelPreview({
         const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
         for (const m of mats) {
           const mat = m as THREE.MeshStandardMaterial;
+          if (isEyeMaterial(mat.name || '', mesh.name || '')) continue;
           if (mat.color) mat.color.multiply(tintCol);
         }
       });
@@ -105,6 +109,7 @@ export default function ModelPreview({
         vrm.scene.rotation.y = orbit ? Math.sin(s * 0.5) * 0.6 : Math.sin(s * 0.7) * 0.09;
         vrm.scene.position.y = Math.sin(s * 1.4) * 0.006;
         vrm.update(1 / 60);
+        pinVrmEyeGaze(vrm);
         renderer.render(scene, camera);
       };
       raf = requestAnimationFrame(loop);

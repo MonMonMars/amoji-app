@@ -310,7 +310,10 @@
 // The poke line itself is a short question. Lip sync follows the real audio
 // duration through the last word, then stops. Chat text is unchanged.
 // r2026-10-28.141: pupils stay readable (iris drawn in front of the eye
-// white, eyelid morphs stop short of a full seal). Idle hang opens a
+// white, eyelid morphs stop short of a full seal).
+// r2026-11-11.144: VRM look-at disabled and lookLeft/Right morphs pinned so
+// pupils stay centered; eye meshes no longer frustum-cull or lose to ribbons.
+// Idle hang opens a
 // straight-down arm so shoulders are not slumped, finger curl no longer
 // splays ring/little into the palm, and idle talk is a short tutor tip
 // plus a calm personality line. Standing idle is IdleBreathCalm and

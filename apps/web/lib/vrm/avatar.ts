@@ -76,7 +76,7 @@ import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
 import { ARM_DOWN_BASE } from '@amoji/vrm-renderer';
 import { FootPlanter, applyThighUnblend, type PlantLean } from './plant-feet';
 import { ChestBounce } from './chest-bounce';
-import { capEyeExpression } from './eyes';
+import { capEyeExpression, disableVrmAutoLookAt, pinVrmEyeGaze } from './eyes';
 import { applyCastFix, captureCastFix, type CastFixState } from './cast-pose';
 import { needsFullUpright } from '../cast-adjust';
 import { shortestQuatSlerp } from './quat-blend';
@@ -825,8 +825,8 @@ class V1Avatar implements Avatar {
     this.root.updateMatrixWorld(true);
     this.shoulderRest = captureShoulderRest((name) => this.getBoneNode(name));
     this.planter.capture(vrm.scene, (name) => this.getBoneNode(name));
-    // A stray look-at target rolls the iris off the pupil. Gaze stays on the head.
-    if (vrm.lookAt) vrm.lookAt.autoUpdate = false;
+    // Stray look-at (target or lookLeft morphs) rolls the iris out of the socket.
+    disableVrmAutoLookAt(vrm);
   }
 
   setExpression(name: string, value: number): void {
@@ -1036,6 +1036,7 @@ class V1Avatar implements Avatar {
 
   update(dt: number): void {
     this.vrm.update(dt);
+    pinVrmEyeGaze(this.vrm);
   }
 }
 

@@ -3,8 +3,25 @@
 // wins the z-test on some frames and the pupil disappears. Expressions that
 // drive the eyelid (blink, happy) can also cover the iris completely; those
 // weights stay below a full seal so a dark pupil remains readable.
+//
+// VRM look-at (bone or lookLeft/lookRight expression morphs) can park the
+// iris off-center or slide it out of the socket when a stale target or clip
+// competes with our head-driven gaze — we pin look-at off and zero those morphs
+// every frame on VRM 1.0 avatars.
 
 import * as THREE from 'three';
+import type { VRM } from '@pixiv/three-vrm';
+
+const LOOK_EXPR = ['lookLeft', 'lookRight', 'lookUp', 'lookDown'] as const;
+
+type LookAtLike = {
+  autoUpdate: boolean;
+  yaw: number;
+  pitch: number;
+  target?: THREE.Object3D | null;
+  reset(): void;
+  update(delta: number): void;
+};
 
 export type EyeKind = 'white' | 'iris' | 'highlight' | 'line';
 
@@ -18,6 +35,10 @@ const EYE_CLOSE_CAP: Record<string, number> = {
   fun: 0.58,
   joy: 0.58,
   relaxed: 0.5,
+  lookleft: 0,
+  lookright: 0,
+  lookup: 0,
+  lookdown: 0,
 };
 
 /** Keep eyelid morphs from sealing the iris. Other expressions pass through. */
@@ -30,11 +51,44 @@ export function capEyeExpression(name: string, value: number): number {
 
 export function eyeMaterialKind(materialName: string, meshName = ''): EyeKind | null {
   const n = `${materialName} ${meshName}`.toLowerCase();
-  if (/iris|瞳/.test(n)) return 'iris';
+  if (/iris|pupil|瞳/.test(n)) return 'iris';
   if (/eyewhite|eye_white|eye-white|白目|sclera/.test(n)) return 'white';
   if (/highlight|catchlight|ハイライト|eyeextra|eye_extra/.test(n)) return 'highlight';
-  if (/eyeline|eyelash|eyelash|まつ|まぶた/.test(n)) return 'line';
+  if (/eyeline|eyelash|まつ|まぶた/.test(n)) return 'line';
   return null;
+}
+
+/** Turn off VRM look-at tracking; gaze is driven by head pose only. */
+export function disableVrmAutoLookAt(vrm: VRM): void {
+  const la = vrm.lookAt as LookAtLike | undefined;
+  if (!la) return;
+  la.autoUpdate = false;
+  la.target = null;
+  la.reset();
+  la.update(0);
+  const em = vrm.expressionManager;
+  if (!em) return;
+  for (const name of LOOK_EXPR) {
+    try { em.setValue(name, 0); } catch { /* preset absent */ }
+  }
+}
+
+/** Keep expression/bone look-at from drifting after clips or a stale target. */
+export function pinVrmEyeGaze(vrm: VRM): void {
+  const la = vrm.lookAt as LookAtLike | undefined;
+  if (!la || la.autoUpdate) return;
+  if (la.yaw !== 0 || la.pitch !== 0) {
+    la.reset();
+    la.update(0);
+  }
+  const em = vrm.expressionManager;
+  if (!em) return;
+  for (const name of LOOK_EXPR) {
+    try {
+      const cur = em.getValue(name);
+      if (typeof cur === 'number' && cur > 1e-4) em.setValue(name, 0);
+    } catch { /* preset absent */ }
+  }
 }
 
 function asStd(mat: THREE.Material): THREE.MeshStandardMaterial {
@@ -96,7 +150,20 @@ export function stabilizeEyeMaterials(root: THREE.Object3D): void {
       }
       m.needsUpdate = true;
     }
-    if (touched) mesh.renderOrder = order;
+    if (touched) {
+      mesh.renderOrder = order;
+      mesh.visible = true;
+      mesh.frustumCulled = false;
+      const s = mesh.scale;
+      if (s.x * s.x + s.y * s.y + s.z * s.z < 1e-8) s.set(1, 1, 1);
+    }
+  });
+  // Overscaled face ribbons (some cast exports) sit in front of the eye sockets.
+  root.traverse((node) => {
+    const max = Math.max(Math.abs(node.scale.x), Math.abs(node.scale.y), Math.abs(node.scale.z));
+    if (max < 5) return;
+    if (!/ribon|ribbon|リボン/i.test(node.name || '')) return;
+    node.scale.set(1, 1, 1);
   });
 }
 

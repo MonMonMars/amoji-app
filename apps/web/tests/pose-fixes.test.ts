@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { IDLE_ARM_ABDUCT, calibrateRelaxedHands, clavicleRestoreFromArmDir, idleHangDirection } from '../lib/vrm/avatar';
-import { capEyeExpression, stabilizeEyeMaterials } from '../lib/vrm/eyes';
+import { capEyeExpression, eyeMaterialKind, stabilizeEyeMaterials } from '../lib/vrm/eyes';
 
 describe('eye readability', () => {
   it('caps eyelid morphs and leaves other expressions alone', () => {
@@ -10,6 +10,14 @@ describe('eye readability', () => {
     expect(capEyeExpression('blinkLeft', 0.2)).toBe(0.2);
     expect(capEyeExpression('surprised', 0.9)).toBe(0.9);
     expect(capEyeExpression('aa', 1)).toBe(1);
+    expect(capEyeExpression('lookLeft', 0.9)).toBe(0);
+    expect(capEyeExpression('lookUp', 0.5)).toBe(0);
+  });
+
+  it('classifies pupil and VRoid iris/white materials', () => {
+    expect(eyeMaterialKind('CustomPupil_MAT')).toBe('iris');
+    expect(eyeMaterialKind('F00_EyeWhite_00_EYE')).toBe('white');
+    expect(eyeMaterialKind('F00_EyeIris_00_EYE')).toBe('iris');
   });
 
   it('draws the iris in front of the eye white', () => {
