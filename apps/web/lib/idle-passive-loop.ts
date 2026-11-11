@@ -1,28 +1,28 @@
 // Passive idle body rotation while the user is quiet:
-//   mostly calm breath/stand → occasional look → rare mild stretch
+//   mostly Pixel-OK calm stand → occasional look → rare mild stretch
 // Never HelloWave / dance / big arm-raise here — those stay farewell / explicit-intent only.
 
 import { idleClipById } from './idle-clips';
 
-/** Preferred clip ids for each beat of the loop. */
-export const PASSIVE_RELAX_CLIPS = ['IdleBreathCalm', 'StandardIdle'] as const;
-/** Mild stretch only — IdleMixamoArmStretch raised arms repeatedly and felt like a show. */
-export const PASSIVE_STRETCH_CLIPS = ['Relax'] as const;
+/** Preferred clip ids for each beat — Pixel OK only. */
+export const PASSIVE_RELAX_CLIPS = ['IdleRpmFStanding001'] as const;
+/** Mild neck stretch (#95 OK). Arm-raise IdleMixamoArmStretch stays rail-only (showy). */
+export const PASSIVE_STRETCH_CLIPS = ['IdleRpmMVar002'] as const;
 export const PASSIVE_LOOK_CLIPS = ['LookAround'] as const;
 
 /**
  * Canonical playlist: calm-heavy with one look and one mild stretch per cycle.
- * Stretch sits last so arm motion is at most once per full rotation.
+ * Stretch sits last so motion is at most once per full rotation.
  */
 export const PASSIVE_IDLE_LOOP_TEMPLATE = [
-  'IdleBreathCalm',
-  'IdleBreathCalm',
-  'StandardIdle',
-  'IdleBreathCalm',
+  'IdleRpmFStanding001',
+  'IdleRpmFStanding001',
+  'IdleRpmFStanding001',
+  'IdleRpmFStanding001',
   'LookAround',
-  'IdleBreathCalm',
-  'IdleBreathCalm',
-  'Relax',
+  'IdleRpmFStanding001',
+  'IdleRpmFStanding001',
+  'IdleRpmMVar002',
 ] as const;
 
 function firstAvailable(candidates: readonly string[], available: ReadonlySet<string>): string | null {
@@ -51,7 +51,8 @@ export function orderPassiveIdleClips(availableIds: readonly string[]): string[]
   const loop: string[] = [];
   if (relaxA) {
     loop.push(relaxA, relaxA);
-    if (relaxB) loop.push(relaxB);
+    if (relaxB && relaxB !== relaxA) loop.push(relaxB);
+    else loop.push(relaxA);
     loop.push(relaxA);
   }
   if (look) loop.push(look);
@@ -68,7 +69,7 @@ export function orderPassiveIdleClips(availableIds: readonly string[]): string[]
 /** Next clip in the loop (for ChatPanel silence cycling). */
 export function nextPassiveIdleClip(availableIds: readonly string[], step: number): string {
   const order = orderPassiveIdleClips(availableIds);
-  if (!order.length) return 'IdleBreathCalm';
+  if (!order.length) return 'IdleRpmFStanding001';
   return order[((step % order.length) + order.length) % order.length]!;
 }
 

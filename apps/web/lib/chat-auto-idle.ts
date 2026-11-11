@@ -8,30 +8,28 @@ import type { IdleCuratedCategory } from './idle-curated-rail';
 import { FAREWELL_WAVE_CLIP_ID, isFarewellText } from './idle-farewell';
 import { detectMusicStyle, STYLE_CLIP_HINTS } from './music-catalog';
 import { resolvePerfMotion } from './performance-motion';
+import { isPixelOkIdleClip } from './idle-retired';
 
-const BREATHING_CLIPS = ['IdleBreathCalm', 'StandardIdle', 'IdleMixamoBreathing'] as const;
+/** Pixel-OK calm stands only. */
+const BREATHING_CLIPS = ['IdleRpmFStanding001'] as const;
 
-/** Opening greet / light chit-chat — never the wave gesture. */
-const CHITCHAT_CLIPS = ['lib_C25', 'LookAround', 'Thinking', 'IdleInnersceneSam'] as const;
+/** Opening greet / light chit-chat — never the wave gesture. Pixel OK only. */
+const CHITCHAT_CLIPS = ['LookAround', 'IdleSassy', 'IdleRpmMVar001', 'IdleRpmFStanding001'] as const;
 
-/** Calm defaults for ordinary Q&A — no dance fallthrough. */
+/** Calm defaults for ordinary Q&A — no dance fallthrough. Pixel OK only. */
 const NEUTRAL_CHAT_CLIPS = [
-  'IdleBreathCalm',
-  'StandardIdle',
-  'IdleMixamoBreathing',
+  'IdleRpmFStanding001',
   'LookAround',
-  'Thinking',
-  'IdleNeutral',
+  'IdleSassy',
+  'IdleRpmMVar001',
 ] as const;
 
-/** Weather / news / story / fun-fact talk — look + breathe only. */
+/** Weather / news / story / fun-fact talk — look + breathe only. Pixel OK only. */
 const TALK_CALM_CLIPS = [
   'LookAround',
-  'IdleBreathCalm',
-  'StandardIdle',
-  'IdleMixamoBreathing',
-  'IdleNeutral',
-  'Thinking',
+  'IdleRpmFStanding001',
+  'IdleRpmMVar001',
+  'IdleSassy',
 ] as const;
 
 const SING_INTENT =
@@ -121,31 +119,29 @@ const KEYWORD_BUCKETS: readonly Bucket[] = [
 
 /** Category → curated clip id (first playable match). HelloWave is farewell-only. */
 const CATEGORY_CLIP: Record<BucketCategory | 'breathe' | 'look' | 'stretch' | 'sing', string> = {
-  greet: 'lib_C25',
-  think: 'Thinking',
-  // Hip-hop / dance-loop with real leg keys (feet free while music plays).
-  dance: 'lib_C61',
+  greet: 'LookAround',
+  think: 'IdleSassy',
+  // Pixel-OK hip-hop / dance with real leg keys.
+  dance: 'lib_C113',
   // Listening-to-music: sway + light footwork, not LookAround.
   music: 'lib_C112',
   martial: 'lib_C121',
-  scared: 'lib_C146',
+  scared: 'PlayPunch',
   react: 'Cheer',
-  breathe: 'IdleBreathCalm',
+  breathe: 'IdleRpmFStanding001',
   look: 'LookAround',
-  stretch: 'Relax',
+  stretch: 'IdleRpmMVar002',
   sing: 'IdleMixamoHappy',
   talk: 'LookAround',
 };
 
-/** Music / concert talk without a full dance ask — sway + legs with the beat. */
+/** Music / concert talk — Pixel-OK sway / dance / sing only. */
 const MUSIC_POSE_CLIPS = [
-  'lib_C112', // GentleSway (legs free)
-  'lib_C61', // HipHopDancing
-  'lib_C03', // Dance_Loop
-  'lib_C113', // DancingMedium
-  'lib_C110', // Twist
-  'lib_C41', // ListeningToMusic
+  'lib_C112',
+  'lib_C113',
+  'lib_C111',
   'IdleMixamoHappy',
+  'lib_C120',
 ] as const;
 
 /** User must ask — assistant mere mention / offer must not start a show. */
@@ -154,8 +150,8 @@ const USER_INTENT_CATEGORIES = new Set<BucketCategory>(['dance', 'music', 'marti
 function pickFromPool(seed: string, pool: readonly string[]): string {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
-  const playable = pool.filter((id) => idleClipById(id));
-  if (!playable.length) return 'IdleBreathCalm';
+  const playable = pool.filter((id) => isPixelOkIdleClip(id) && idleClipById(id));
+  if (!playable.length) return 'IdleRpmFStanding001';
   const idx = Math.abs(h) % playable.length;
   return playable[idx]!;
 }
@@ -178,7 +174,7 @@ function pickTalkCalmIdle(seed: string): string {
 
 function firstPlayable(ids: readonly string[]): string | null {
   for (const id of ids) {
-    if (idleClipById(id)) return id;
+    if (isPixelOkIdleClip(id) && idleClipById(id)) return id;
   }
   return null;
 }
@@ -210,33 +206,26 @@ function pickDanceClip(text: string): string {
   const preferred = preferredPerfIdle('dance', text, 'cheerful pop');
   if (preferred) return preferred;
   const t = text.toLowerCase();
-  if (/jazz|爵士/.test(t)) return idleClipById('lib_C60') ? 'lib_C60' : 'lib_C112';
+  if (/jazz|爵士/.test(t)) return idleClipById('lib_C112') ? 'lib_C112' : 'lib_C113';
   if (/robot|機器人|机器人/.test(t)) return idleClipById('lib_C111') ? 'lib_C111' : 'lib_C113';
-  if (/party|派對|派对|club|夜店/.test(t)) return idleClipById('lib_C114') ? 'lib_C114' : 'lib_C61';
-  if (/salsa|samba|rumba|騷莎|萨尔萨/.test(t)) return idleClipById('lib_C62') ? 'lib_C62' : 'lib_C127';
-  if (/twist|扭/.test(t)) return idleClipById('lib_C110') ? 'lib_C110' : 'lib_C61';
-  if (/break|footwork|腳步|脚步/.test(t)) return idleClipById('lib_C125') ? 'lib_C125' : 'lib_C61';
-  if (/hip[- ]?hop|嘻哈/.test(t)) return idleClipById('lib_C61') ? 'lib_C61' : 'lib_C03';
-  return idleClipById('lib_C61') ? 'lib_C61' : idleClipById('lib_C03') ? 'lib_C03' : pickBreathingDefault(text);
+  if (/party|派對|派对|club|夜店|hip[- ]?hop|嘻哈|twist|扭|break|footwork|腳步|脚步|salsa|samba|rumba|騷莎|萨尔萨/.test(t)) {
+    return idleClipById('lib_C113') ? 'lib_C113' : 'lib_C111';
+  }
+  return idleClipById('lib_C113') ? 'lib_C113' : idleClipById('lib_C111') ? 'lib_C111' : pickBreathingDefault(text);
 }
 
 function pickMusicClip(text: string): string {
   const t = text.toLowerCase();
-  // Genre cues share the dance shortlist so talk about music still moves.
+  // Genre cues share the Pixel-OK dance shortlist so talk about music still moves.
   if (/jazz|爵士|lofi|lofí|chill|ballad|抒情/.test(t)) {
     const soft = preferredPerfIdle('dance', text, 'soft ballad');
     if (soft) return soft;
     return idleClipById('lib_C112') ? 'lib_C112' : pickFromPool(text, MUSIC_POSE_CLIPS);
   }
-  if (/party|派對|派对|club|夜店|edm|disco/.test(t)) {
+  if (/party|派對|派对|club|夜店|edm|disco|hip[- ]?hop|嘻哈|upbeat|快歌/.test(t)) {
     const up = preferredPerfIdle('dance', text, 'upbeat dance');
     if (up) return up;
-    return idleClipById('lib_C114') ? 'lib_C114' : pickFromPool(text, MUSIC_POSE_CLIPS);
-  }
-  if (/hip[- ]?hop|嘻哈|upbeat|快歌/.test(t)) {
-    const hip = preferredPerfIdle('dance', text, 'upbeat dance');
-    if (hip) return hip;
-    return idleClipById('lib_C61') ? 'lib_C61' : idleClipById('lib_C03') ? 'lib_C03' : pickFromPool(text, MUSIC_POSE_CLIPS);
+    return idleClipById('lib_C113') ? 'lib_C113' : pickFromPool(text, MUSIC_POSE_CLIPS);
   }
   if (/listen|聽歌|听歌|concert|演唱會|演唱会|音樂會|音乐会/.test(t)) {
     return idleClipById('lib_C112') ? 'lib_C112' : pickFromPool(text, MUSIC_POSE_CLIPS);
@@ -336,7 +325,7 @@ export function resolveChatAutoIdle(input: ChatAutoIdleInput): string | null {
     return resolveFarewellWave() ?? pickBreathingDefault('bye');
   }
   if (input.thinking) {
-    return idleClipById('Thinking') ? 'Thinking' : 'IdleBreathCalm';
+    return idleClipById('IdleSassy') ? 'IdleSassy' : 'IdleRpmFStanding001';
   }
   const assistantText = input.assistantText.trim();
   const userText = (input.userText ?? '').trim();
@@ -355,7 +344,7 @@ export function resolveChatAutoIdle(input: ChatAutoIdleInput): string | null {
   const emo = topEmotionCategory(input.emotionHints, corpus);
   if (emo) return clipForCategory(emo, seed, corpus);
   const clip = pickNeutralChatIdle(seed);
-  return idleClipById(clip) ? clip : 'IdleBreathCalm';
+  return idleClipById(clip) ? clip : 'IdleRpmFStanding001';
 }
 
 /** Test / director helper: true when text is weather/news/story talk. */

@@ -7,6 +7,7 @@ import {
   idleSwapBlendActive,
 } from '../lib/idle-crossfade';
 import {
+  PIXEL_OK_IDLE_NUMS,
   RETIRED_IDLE_CLIP_IDS,
   RETIRED_IDLE_NUMS,
   resolveIdleClipId,
@@ -57,53 +58,60 @@ describe('idle pose smooth + catalog trim', () => {
       expect(CHAT_IDLE_CURATED.some((r) => r.legacyLibNum === n)).toBe(false);
       expect(idleByNum(n)?.retired).toBe(true);
     }
-    expect(resolveIdleClipId('lib_C65')).toBe('IdleBreathCalm');
+    expect(resolveIdleClipId('lib_C65')).toBe('IdleRpmFStanding001');
     expect(RETIRED_IDLE_CLIP_IDS.size).toBe(RETIRED_IDLE_NUMS.size);
   });
 
-  it('smoke keeps #3 #20 #34 #41 #53 playable; IdleHug #36 retired blend-bad', () => {
-    const keepNums = [3, 20, 34, 41, 53];
+  it('chat rail is Pixel OK only; IdleHug #36 retired', () => {
+    expect(CHAT_IDLE_CURATED).toHaveLength(PIXEL_OK_IDLE_NUMS.size);
+    for (const e of CHAT_IDLE_CURATED) {
+      expect(PIXEL_OK_IDLE_NUMS.has(e.legacyLibNum)).toBe(true);
+      expect(idleByNum(e.legacyLibNum)?.playable).toBe(true);
+      expect(IDLE_CLIP_OPTIONS.some((o) => o.libNum === e.legacyLibNum)).toBe(true);
+    }
+    const keepNums = [3, 20, 22, 34, 41, 42, 53, 94, 95, 101, 102, 103, 108, 109, 113, 114];
     for (const n of keepNums) {
-      const e = idleByNum(n);
-      expect(e?.playable).toBe(true);
-      const rail = CHAT_IDLE_CURATED.find((r) => r.legacyLibNum === n);
-      expect(rail).toBeTruthy();
-      expect(IDLE_CLIP_OPTIONS.some((o) => o.libNum === n)).toBe(true);
+      expect(PIXEL_OK_IDLE_NUMS.has(n)).toBe(true);
+      expect(CHAT_IDLE_CURATED.some((r) => r.legacyLibNum === n)).toBe(true);
     }
     expect(RETIRED_IDLE_NUMS.has(36)).toBe(true);
     expect(idleByNum(36)?.retired).toBe(true);
-    expect(resolveIdleClipId('IdleHug')).toBe('IdleBreathCalm');
+    expect(resolveIdleClipId('IdleHug')).toBe('IdleRpmFStanding001');
+    expect(resolveIdleClipId('IdleBreathCalm')).toBe('IdleRpmFStanding001');
     expect(CHAT_IDLE_CURATED.some((r) => r.clipId === 'IdleHug')).toBe(false);
-    expect(playableIdles().length).toBeGreaterThan(80);
-    expect(IDLE_CLIP_OPTIONS.length).toBeLessThan(playableIdles().length);
+    expect(IDLE_CLIP_OPTIONS.length).toBe(16);
+    expect(playableIdles().length).toBeGreaterThan(IDLE_CLIP_OPTIONS.length);
   });
 
   it('idle A→B never syncs mismatched clip times (avoids spin-to-back blends)', () => {
     const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
     expect(canvas).not.toMatch(/action\.time = idleAction\.time % clip\.duration/);
     expect(canvas).toContain('resolveIdleClipId');
+    expect(canvas).toContain('isPixelOkIdleClip');
     expect(canvas).toMatch(/action\.time = Math\.min\(0\.08/);
   });
 
-  it('Pixel #94–118: retired 96–100, 105–107 off rotation; keeps still in library', () => {
+  it('Pixel #94–118: retired bad batch; OK keeps on rail', () => {
     const retiredBatch = [96, 97, 98, 99, 100, 105, 106, 107];
     for (const n of retiredBatch) {
       expect(RETIRED_IDLE_NUMS.has(n)).toBe(true);
       expect(IDLE_CLIP_OPTIONS.some((o) => o.libNum === n)).toBe(false);
       expect(playableIdles().some((e) => e.num === n)).toBe(false);
     }
-    expect(resolveIdleClipId('lib_C60')).toBe('IdleBreathCalm');
-    expect(resolveIdleClipId('lib_C124')).toBe('IdleBreathCalm');
+    expect(resolveIdleClipId('lib_C60')).toBe('IdleRpmFStanding001');
+    expect(resolveIdleClipId('lib_C124')).toBe('IdleRpmFStanding001');
 
-    const keepNums = [
-      94, 95, 101, 102, 103, 104, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118,
-    ];
-    for (const n of keepNums) {
-      const e = idleByNum(n);
-      expect(e?.retired).not.toBe(true);
-      expect(e?.playable).toBe(true);
+    const okOnRail = [94, 95, 101, 102, 103, 108, 109, 113, 114];
+    for (const n of okOnRail) {
+      expect(PIXEL_OK_IDLE_NUMS.has(n)).toBe(true);
+      expect(CHAT_IDLE_CURATED.some((r) => r.legacyLibNum === n)).toBe(true);
+      expect(idleByNum(n)?.playable).toBe(true);
     }
-    const onRail = keepNums.filter((n) => CHAT_IDLE_CURATED.some((r) => r.legacyLibNum === n));
-    expect(onRail.length).toBeGreaterThan(10);
+    // MID keeps stay in library but off the OK-only rail
+    for (const n of [104, 110, 111, 112, 115, 116, 117, 118]) {
+      expect(PIXEL_OK_IDLE_NUMS.has(n)).toBe(false);
+      expect(CHAT_IDLE_CURATED.some((r) => r.legacyLibNum === n)).toBe(false);
+      expect(resolveIdleClipId(idleByNum(n)!.clipId)).toBe('IdleRpmFStanding001');
+    }
   });
 });

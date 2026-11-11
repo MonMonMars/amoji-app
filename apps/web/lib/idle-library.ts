@@ -1,6 +1,6 @@
 // Idle library SoT (CLIP_LIBRARY-style #). Standing/planted first.
 // Map: # → free-library Cxx + path; playable when a local VRMA exists.
-// Mon says "use #N". Defaults: #1 IdleBreathCalm + #2 StandardIdle only.
+// Mon says "use #N". Defaults: Pixel-OK #42 IdleRpmFStanding001 + #3 LookAround.
 
 import { isFarewellOnlyIdleClip } from './idle-farewell';
 
@@ -40,7 +40,7 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     planted: true,
     playable: true,
     vrmaUrl: VRMA('IdleBreathCalm'),
-    defaultEnabled: true,
+    defaultEnabled: false,
   },
   {
     num: 2,
@@ -51,7 +51,7 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     planted: true,
     playable: true,
     vrmaUrl: VRMA('StandardIdle'),
-    defaultEnabled: true,
+    defaultEnabled: false,
   },
   // free-library standing — playable only when VRMA already on disk
   {
@@ -128,7 +128,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'RokokoChatting',
     path: 'animations/idle/rokoko_everyday_idles/Idle_Chatting_MIXAMO_WHS.fbx',
     planted: true,
-    playable: true,
+    playable: false,
+    retired: true,
     vrmaUrl: VRMA('lib_C37'),
     defaultEnabled: false,
   },
@@ -150,7 +151,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'RokokoConversation',
     path: 'animations/idle/rokoko_everyday_idles/Idle_Conversation_Loop_MIXAMO_769_segment-2.fbx',
     planted: true,
-    playable: true,
+    playable: false,
+    retired: true,
     vrmaUrl: VRMA('lib_C39'),
     defaultEnabled: false,
   },
@@ -261,7 +263,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'StandingClap',
     path: 'animations/idle/mixamo/StandingClap.fbx',
     planted: true,
-    playable: true,
+    playable: false,
+    retired: true,
     vrmaUrl: VRMA('Clapping'),
     defaultEnabled: false,
   },
@@ -318,7 +321,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'KenneySurvivorsIdle',
     path: 'animations/idle/kenney_survivors/idle.fbx',
     planted: true,
-    playable: true,
+    playable: false,
+    retired: true,
     vrmaUrl: VRMA('IdleKenneyStand'),
     defaultEnabled: false,
   },
@@ -387,8 +391,7 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     planted: true,
     playable: true,
     vrmaUrl: VRMA('Relax'),
-    // Passiveive idle loop beat (stretch)
-    defaultEnabled: true,
+    defaultEnabled: false,
   },
   {
     num: 33,
@@ -419,7 +422,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'IdleChinHand',
     path: VRMA('IdleChinHand'),
     planted: true,
-    playable: true,
+    playable: false,
+    retired: true,
     vrmaUrl: VRMA('IdleChinHand'),
     defaultEnabled: false,
   },
@@ -467,7 +471,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     name: 'IdleQuaterniusHuman',
     path: VRMA('IdleQuaterniusHuman'),
     planted: true,
-    playable: true,
+    playable: false,
+    retired: true,
     vrmaUrl: VRMA('IdleQuaterniusHuman'),
     defaultEnabled: false,
   },
@@ -505,7 +510,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     planted: true,
     playable: true,
     vrmaUrl: VRMA('IdleRpmFStanding001'),
-    defaultEnabled: false,
+    // Pixel OK calm stand — default rotation with LookAround (#3)
+    defaultEnabled: true,
   },
   {
     num: 43,

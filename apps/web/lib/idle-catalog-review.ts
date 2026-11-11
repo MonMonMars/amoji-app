@@ -5,6 +5,7 @@ import { CHAT_IDLE_CURATED } from './idle-curated-rail';
 import { IDLE_LIBRARY, idleByNum } from './idle-library';
 import {
   IDLE_PIN_FALLBACK_CLIP_ID,
+  PIXEL_OK_IDLE_NUMS,
   RETIRED_IDLE_CLIP_IDS,
   RETIRED_IDLE_NUMS,
   isRetiredIdleClip,
@@ -14,8 +15,11 @@ import {
 
 export {
   IDLE_PIN_FALLBACK_CLIP_ID,
+  PIXEL_OK_IDLE_NUMS,
   RETIRED_IDLE_CLIP_IDS,
   RETIRED_IDLE_NUMS,
+  isPixelOkIdleClip,
+  isPixelOkIdleNum,
   isRetiredIdleClip,
   isRetiredIdleNum,
   resolveIdleClipId,
@@ -76,9 +80,9 @@ const PIXEL_NOTES_1_93: Readonly<Partial<Record<number, string>>> = {
   6: 'Folded arms — library only; not curated.',
   7: 'Bored — casual stand; curated breathe.',
   8: 'Arguing — too expressive for default rail.',
-  9: 'Chatting — library.',
+  9: 'DELETE — head/body blend left; retired.',
   10: 'Chatting02 — library.',
-  11: 'Conversation loop — library.',
+  11: 'DELETE — left hand blend strange; retired.',
   12: 'Listening to music — library.',
   13: 'LookingAround02 — distinct from #3; curated look.',
   14: 'DELETE — watching something loop; retired.',
@@ -88,12 +92,12 @@ const PIXEL_NOTES_1_93: Readonly<Partial<Record<number, string>>> = {
   18: 'Thinking — curated think rail.',
   19: 'Waving — library.',
   20: 'Thumbs up — curated react.',
-  21: 'Clapping — soften hands in mixer; library.',
+  21: 'DELETE — hands overlapped; retired (clap perf still loads Clapping.vrma).',
   22: 'Victory cheer — add oil reaction; curated react.',
   23: 'Defeat — library.',
   24: 'DELETE — UAL1 talking blend-bad; retired.',
   25: 'DELETE — ninja idle blend-bad; retired.',
-  26: 'Kenney stand — library breathe alt.',
+  26: 'DELETE — finger blend strange; retired.',
   27: 'PSX gif-only — grey.',
   28: 'PSX gif-only — grey.',
   29: 'PSX gif-only — grey.',
@@ -102,11 +106,11 @@ const PIXEL_NOTES_1_93: Readonly<Partial<Record<number, string>>> = {
   32: 'Relax / stretch — fix arm-down if layered; curated stretch.',
   33: 'Neutral breathe — curated; not default rotation.',
   34: 'Sassy think pose — curated think.',
-  35: 'Chin hand — old bad default pin; library only.',
+  35: 'DELETE — arm into body; retired.',
   36: 'DELETE — IdleHug lean/blend-bad (spins torso through the back); retired.',
-  37: 'Kaykit A — grey convert; retired.',
-  38: 'Kaykit B — grey convert; retired.',
-  39: 'Quaternius human — casual breathe; curated.',
+  37: 'DELETE — hands blend to back; retired.',
+  38: 'DELETE — same as 37 hands upper; retired.',
+  39: 'DELETE — body blend; retired.',
   40: 'Mixamo breathing — curated breathe.',
   41: 'Happy idle slow sing — curated.',
   42: 'RPM F standing — normal idle breathe; curated.',
@@ -165,11 +169,11 @@ const PIXEL_NOTES_1_93: Readonly<Partial<Record<number, string>>> = {
 
 function verdictForLibNum(libNum: number, entry: (typeof IDLE_LIBRARY)[number]): PixelIdleVerdict {
   if (RETIRED_IDLE_NUMS.has(libNum) || entry.retired) {
-    if ([14, 24, 25, 36, 47, 48, 54].includes(libNum)) return 'delete';
+    if ([9, 11, 14, 21, 24, 25, 26, 35, 36, 37, 38, 39, 47, 48, 54].includes(libNum)) return 'delete';
     if ([55, 56, 57, 58, 59, 96, 97, 98, 99, 100, 105, 106, 107].includes(libNum)) return 'grey';
     return 'blend-bad';
   }
-  if (CURATED_LEGACY_LIB_NUMS.has(libNum)) return 'keep-curated';
+  if (PIXEL_OK_IDLE_NUMS.has(libNum) || CURATED_LEGACY_LIB_NUMS.has(libNum)) return 'keep-curated';
   if (PIXEL_IDLE_REVIEW_KEEPS[libNum]) return 'keep-library';
   if (!entry.playable || !entry.vrmaUrl) return 'grey';
   return 'keep-library';
