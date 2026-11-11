@@ -10,7 +10,7 @@
 // universal/ folder. Chat leads still use the seven canonical names.
 
 import { stripBasePath } from './asset';
-import { pickWantedCmaReactionPath } from './cma-reaction-gallery';
+import { pickEnabledPokeReactionPath, pickWantedCmaReactionPath } from './cma-reaction-gallery';
 
 export const VOICE_CLIP_LANGS = ['yue', 'zh', 'ja', 'en'] as const;
 export type VoiceClipLang = (typeof VOICE_CLIP_LANGS)[number];
@@ -295,7 +295,7 @@ let laughClipCursor = 0;
 
 /** Recorded laugh / giggle / smile for funny reactions — CLIP_LIBRARY SFX only. */
 export function recordedLaughClip(gender: VoiceClipGender, lang: string = 'en'): string {
-  // Prefer Mon's Wanted CMA gallery picks (keepers + poke CMA00350–362). Skip/undecided stay out.
+  // Prefer Mon's Wanted CMA gallery picks (keepers + poke CMA00350–366). Skip/undecided stay out.
   const wantedCma = pickWantedCmaReactionPath({ gender, role: 'laugh' });
   if (wantedCma) return wantedCma;
   const folder = clipLang(lang);
@@ -432,15 +432,18 @@ const POKE_ZONE_ALIASES: Record<string, string> = {
 };
 
 export function recordedPokeClip(gender: VoiceClipGender, zone?: string): string {
-  // Prefer Wanted CMA poke/ouch/effort/yelp for this gender (all langs). Else zone table.
-  const wantedCma = pickWantedCmaReactionPath({ gender, role: 'poke' });
-  if (wantedCma) return wantedCma;
+  // Resolve zone-table preference first (zone-accurate when still in the enabled set).
   const table = RECORDED_POKE_ZONE[gender];
   let key = (zone || 'default').toLowerCase();
   key = POKE_ZONE_ALIASES[key] ?? key;
   if (key === 'arml' || key === 'armr') key = 'arm';
   if (key === 'legl' || key === 'legr') key = 'legs';
-  return table[key] ?? table.default ?? table.torso!;
+  const zonePath = table[key] ?? table.default ?? table.torso!;
+  // User-selected poke pool (Wanted, else full poke list minus Skip). Never play
+  // outside that set when the pool is non-empty. Prefer the zone clip when it is enabled.
+  const enabled = pickEnabledPokeReactionPath({ gender, preferPath: zonePath });
+  if (enabled) return enabled;
+  return zonePath;
 }
 
 export function loadingFillerKind(text: string): 'um' | 'ha' | 'think' | 'search' | null {
