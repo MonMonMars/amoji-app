@@ -23,6 +23,7 @@ describe('replyLooksNonsense', () => {
     expect(replyLooksNonsense("You've gone quiet on me.")).toBe(true);
     expect(replyLooksNonsense('Still on that thread with you.')).toBe(true);
     expect(replyLooksNonsense('Holding this soft moment with you.')).toBe(true);
+    expect(replyLooksNonsense('I nicknamed a friendly riddle after this soft moment.')).toBe(true);
     expect(replyLooksNonsense('一個小謎語充滿電，等一陣細爆發。')).toBe(true);
     expect(replyLooksNonsense('軍艦開到極光那邊。')).toBe(true);
   });
@@ -30,6 +31,7 @@ describe('replyLooksNonsense', () => {
   it('rejects opaque jargon and invented vocab with no meaning', () => {
     expect(replyLooksNonsense('Your quantum vibes are aligning today.')).toBe(true);
     expect(replyLooksNonsense('個vibe好靚喎。', { language: 'yue', lastUser: '今日開心' })).toBe(true);
+    expect(replyLooksNonsense('Vibes check. What are we vibing to?')).toBe(true);
     expect(replyLooksNonsense('オーラ同期できてるよ。', { language: 'ja', lastUser: '元気' })).toBe(true);
     expect(replyLooksNonsense('灵魂频率对上了。', { language: 'zh', lastUser: '开心' })).toBe(true);
   });

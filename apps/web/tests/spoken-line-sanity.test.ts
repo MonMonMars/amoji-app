@@ -56,8 +56,12 @@ describe('spokenLineLooksBroken', () => {
     expect(spokenLineLooksBroken('{thing} is charged and ready for a tiny burst.')).toBe(true);
     expect(spokenLineLooksBroken('Still on that thread with you — no rush to leave it.')).toBe(true);
     expect(spokenLineLooksBroken('Holding this soft moment with you.')).toBe(true);
+    expect(spokenLineLooksBroken('I nicknamed a friendly riddle after this soft moment.')).toBe(true);
+    expect(spokenLineLooksBroken('我用呢個柔軟瞬間幫小謎語改名。')).toBe(true);
     expect(spokenLineLooksBroken('Your quantum vibes are aligning today.')).toBe(true);
     expect(spokenLineLooksBroken('個vibe好靚喎。')).toBe(true);
+    expect(spokenLineLooksBroken('Vibes check. What are we vibing to?')).toBe(true);
+    expect(spokenLineLooksBroken('搵到首歌啱你個vibe。想知歌名嗎？')).toBe(true);
   });
 
   it('rejects presence nags in idle mode', () => {

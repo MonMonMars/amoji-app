@@ -87,11 +87,11 @@ const BROKEN_METAPHOR_SLUDGE =
 
 /** Meta topic-narration sludge ("holding this topic / same thread") — not real talk. */
 const BROKEN_META_TOPIC =
-  /still\s+on\s+that\s+thread\b|holding\s+the\s+same\s+topic\b|holding\s+this\s+soft\s+moment\b|same\s+page\s+as\s+you\b|keeping\s+your\s+subject\s+warm\b|we\s+can\s+keep\s+walking\s+the\s+path\s+you\s+started\b|仲喺你呢條話題度|輕輕留住同一個主題|輕輕留住呢個柔軟時刻|同你同一頁|你提起嘅嘢我仲放喺枱上面暖住|还在你这条话题上|轻轻留着同一个主题|轻轻留着这个柔软时刻|和你同一页|你提起的事我还放在桌上暖着|まだその話の途中|同じ話題をそっと置いたまま|同じページにいる|あなたが出した話題を、あたたかく|やわらかい時間を、そっと一緒に/i;
+  /still\s+on\s+that\s+thread\b|holding\s+the\s+same\s+topic\b|soft\s+moment\b|same\s+page\s+as\s+you\b|keeping\s+your\s+subject\s+warm\b|we\s+can\s+keep\s+walking\s+the\s+path\s+you\s+started\b|仲喺你呢條話題度|輕輕留住同一個主題|柔軟瞬間|柔软瞬间|柔軟時刻|柔软时刻|同你同一頁|你提起嘅嘢我仲放喺枱上面暖住|还在你这条话题上|轻轻留着同一个主题|和你同一页|你提起的事我还放在桌上暖着|まだその話の途中|同じ話題をそっと置いたまま|同じページにいる|あなたが出した話題を、あたたかく|やわらかい(?:時間|瞬間)を?/i;
 
 /** Opaque / invented vocab with no clear meaning for the listener. */
 const BROKEN_OPAQUE_VOCAB =
-  /\b(?:vibronic|chrono\s+feelings?|soul\s+frequency|manifest(?:ing)?\s+abundance|quantum\s+vibes?|vibe\s+resonance|aura\s+sync)\b|(?:個|的|の)vibe\b|オーラ同期|量子バイブス|灵魂频率|靈魂頻率|量子\s*vibes?/i;
+  /\b(?:vibronic|chrono\s+feelings?|soul\s+frequency|manifest(?:ing)?\s+abundance|quantum\s+vibes?|vibe\s+resonance|aura\s+sync|vibes?\s+check|matches\s+your\s+vibe|vibing)\b|(?:個|的|の)vibe\b|配你vibe|啱你個vibe|オーラ同期|量子バイブス|バイブスチェック|灵魂频率|靈魂頻率|量子\s*vibes?/i;
 
 const UNFINISHED_EN =
   /\b(?:reminding|reminded|about|of|to|for|with|and|or|the|a|an|is|are|was|were|like)\s*[.…]*\s*$/i;

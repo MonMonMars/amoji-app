@@ -14,14 +14,14 @@ const META =
 
 /** Pseudo-profound / surreal sludge free models invent when they stall. */
 const SURREAL_SLUDGE =
-  /充滿電|充满电|電壓感覺友善|voltage feels friendly|tiny burst|軍艦.{0,6}極光|月亮.{0,4}在.{0,6}口袋|clouds?\s+of\s+thought\s+voltage|the\s+universe\s+winks\b|destiny\s+threads?\b|宇宙在对你眨眼|命運的線|soft\s+moment\s+with\s+you|soul\s+thread|energy\s+field\s+hums|cosmic\s+whisper|nexus\s+of\s+(?:feelings?|vibes?)|wavelength\s+of\s+(?:your\s+)?heart/i;
+  /充滿電|充满电|電壓感覺友善|voltage feels friendly|tiny burst|軍艦.{0,6}極光|月亮.{0,4}在.{0,6}口袋|clouds?\s+of\s+thought\s+voltage|the\s+universe\s+winks\b|destiny\s+threads?\b|宇宙在对你眨眼|命運的線|soft\s+moment\b|柔軟瞬間|柔软瞬间|柔軟時刻|柔软时刻|やわらかい(?:時間|瞬間)|soul\s+thread|energy\s+field\s+hums|cosmic\s+whisper|nexus\s+of\s+(?:feelings?|vibes?)|wavelength\s+of\s+(?:your\s+)?heart/i;
 
 /**
  * Opaque / invented vocab and random English jargon that lands with no meaning —
  * especially when dropped into yue/zh/ja, or used as decorative nonsense.
  */
 const OPAQUE_VOCAB =
-  /\b(?:quantum\s+vibes?|vibe\s+resonance|aura\s+sync(?:h)?|soul\s+frequency|chrono\s+feelings?|vibronic|resonat(?:e|ion)\s+with\s+the\s+cosmos|manifest(?:ing)?\s+abundance)\b|(?:個|的|の)vibe\b|(?:個|的)resonance\b|オーラ同期|量子バイブス|灵魂频率|靈魂頻率|量子\s*vibes?/i;
+  /\b(?:quantum\s+vibes?|vibe\s+resonance|aura\s+sync(?:h)?|soul\s+frequency|chrono\s+feelings?|vibronic|resonat(?:e|ion)\s+with\s+the\s+cosmos|manifest(?:ing)?\s+abundance|vibes?\s+check|matches\s+your\s+vibe|vibing)\b|(?:個|的|の)vibe\b|(?:個|的)resonance\b|配你vibe|啱你個vibe|オーラ同期|量子バイブス|バイブスチェック|灵魂频率|靈魂頻率|量子\s*vibes?/i;
 
 /** Extra system lines for a single quality retry. */
 export const STRICT_REPLY_APPENDIX = `QUALITY RETRY: Your previous answer was unusable. Reply again NOW.

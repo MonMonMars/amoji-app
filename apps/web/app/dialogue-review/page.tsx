@@ -121,14 +121,14 @@ const IDLE: Record<string, string[]> = {
   sky: [
     'Good light today. Your outfit\'s speaking — what\'s it saying?',
     'Less is more. What are we leaving out today?',
-    'I found a track that matches your vibe. Want the title?',
+    'I found a track that fits your mood. Want the title?',
     'Chill isn\'t lazy. What\'s your kind of chill?',
     'The city looks better at this angle. Want to see my view?',
     'New drop in my world: one good mood. Want it?',
     'Style tip: confidence. How\'s yours today?',
-    'Keep it simple. What\'s the one thing on your mind?',
+    'Keep it simple. What is one small thing we can sit with?',
     'I like my tea like my plans — light. What\'s yours like?',
-    'Vibes check. What are we vibing to?',
+    'Mood check. What are we listening to?',
   ],
   yuki: [
     'Stretch break! Ready to reach for the sky with me?',

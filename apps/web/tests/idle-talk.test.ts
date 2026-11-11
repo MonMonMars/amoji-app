@@ -49,6 +49,10 @@ const FORBIDDEN_IDLE_FRAGMENTS = [
   /still on that thread/i,
   /holding the same topic/i,
   /holding this soft moment/i,
+  /soft moment/i,
+  /柔軟瞬間/,
+  /柔软瞬间/,
+  /やわらかい瞬間/,
   /same page as you/i,
   /you've gone quiet/i,
   /are you still there/i,
@@ -61,6 +65,9 @@ const FORBIDDEN_IDLE_FRAGMENTS = [
   /同じページにいる/,
   /quantum vibes/i,
   /個vibe/,
+  /Vibes check/i,
+  /matches your vibe/i,
+  /バイブスチェック/,
 ];
 
 /** Pixel: never interrogate private thoughts in idle / open / reengage. */
