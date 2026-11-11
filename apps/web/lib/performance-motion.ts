@@ -24,6 +24,7 @@ export type MotionTag =
   | 'C112' | 'C113' | 'C114' | 'C110' | 'C118'
   | 'C117' | 'C128' | 'C116' | 'C111'
   | 'C03' | 'C60' | 'C61' | 'C62' | 'C09' | 'C119' | 'C124'
+  | 'C125' | 'C126' | 'C127'
   | 'generic-sing' | 'generic-dance';
 
 export interface PerfMotionProfile {
@@ -76,6 +77,9 @@ const TAG_LABEL: Record<MotionTag, string> = {
   C09: 'KayKit',
   C119: 'ClubDancer02',
   C124: 'ClubDancer05',
+  C125: 'BreakdanceFootwork1',
+  C126: 'BreakdanceFootwork2',
+  C127: 'RumbaDancing',
   'generic-sing': 'Sing',
   'generic-dance': 'Dance',
 };
@@ -98,27 +102,34 @@ const TAG_CLIP_BPM: Partial<Record<MotionTag, number>> = {
   C09: 100,
   C119: 118,
   C124: 118,
+  C125: 112,
+  C126: 112,
+  C127: 96,
   'generic-sing': 90,
   'generic-dance': 100,
 };
 
 const PREFERRED: Partial<Record<MotionTag, readonly string[]>> = {
   C112: ['lib_C112'],
-  C113: ['lib_C113', 'lib_C03'],
-  C114: ['lib_C114', 'lib_C118'],
+  // Prefer clips that carry real hip+leg keys so feet free with the beat.
+  C113: ['lib_C61', 'lib_C03', 'lib_C113'],
+  C114: ['lib_C03', 'lib_C61', 'lib_C114', 'lib_C118'],
   C110: ['lib_C110'],
-  C118: ['lib_C118', 'lib_C114'],
+  C118: ['lib_C118', 'lib_C114', 'lib_C03'],
   C117: ['lib_C117', 'lib_C128', 'lib_C116'],
   C128: ['lib_C128', 'lib_C117', 'lib_C116'],
   C116: ['lib_C116', 'lib_C117', 'lib_C128'],
   C111: ['lib_C111'],
-  C03: ['lib_C03', 'lib_C113'],
+  C03: ['lib_C03', 'lib_C61', 'lib_C113'],
   C60: ['lib_C60'],
-  C61: ['lib_C61'],
-  C62: ['lib_C62'],
+  C61: ['lib_C61', 'lib_C03', 'lib_C125'],
+  C62: ['lib_C62', 'lib_C127'],
   C09: ['lib_C09'],
   C119: ['lib_C119', 'lib_C118'],
   C124: ['lib_C124', 'lib_C118'],
+  C125: ['lib_C125', 'lib_C61'],
+  C126: ['lib_C126', 'lib_C125'],
+  C127: ['lib_C127', 'lib_C62'],
 };
 
 export function estimateBpm(style: string, _clipId?: string): number {
@@ -155,28 +166,32 @@ export function motionTagFor(
   if (cid.includes('robot')) return 'C111';
   if (cid.includes('jazz')) return 'C60';
   if (cid.includes('hiphop') || cid.includes('hip-hop')) return 'C61';
-  if (cid.includes('salsa')) return 'C62';
+  if (cid.includes('salsa') || cid.includes('samba') || cid.includes('rumba')) return 'C62';
+  if (cid.includes('footwork') || cid.includes('breakdance')) return 'C125';
   if (cid.includes('kaykit')) return 'C09';
   if (cid.includes('club')) return 'C118';
 
   if (s.includes('soft ballad') || s === 'ballad') return 'C112';
+  // Party / club stays C114; generic upbeat prefers hip-hop legs (C61).
+  if (s.includes('club') || s.includes('party')) return 'C118';
   if (s.includes('upbeat dance') || s.includes('upbeat')) return 'C114';
-  if (s.includes('cheerful pop')) return 'C113';
+  if (s.includes('cheerful pop')) return 'C61';
   if (s.includes('cute bounce') || s.includes('cute tease')) return 'C113';
   if (s.includes('chill')) return 'C112';
   if (s.includes('twist')) return 'C110';
   if (s.includes('robot')) return 'C111';
   if (s.includes('jazz')) return 'C60';
   if (s.includes('hiphop') || s.includes('hip-hop')) return 'C61';
-  if (s.includes('salsa')) return 'C62';
+  if (s.includes('salsa') || s.includes('samba') || s.includes('rumba')) return 'C62';
+  if (s.includes('break') || s.includes('footwork')) return 'C125';
   if (s.includes('kaykit')) return 'C09';
-  if (s.includes('club') || s.includes('party')) return 'C118';
   if (s.includes('opera') || s.includes('folk choral')) {
     return kind === 'song' ? 'C116' : 'C113';
   }
 
   if (kind === 'song') return 'generic-sing';
-  return 'C03';
+  // Default dance: hip-hop with real leg motion (BPM-scaled in canvas).
+  return 'C61';
 }
 
 export function timeScaleForBpm(bpm: number, clipBpm: number): number {

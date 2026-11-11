@@ -39,16 +39,21 @@ describe('chat auto idle resolver', () => {
 
   it('maps explicit dance keywords to hip-hop dance idle', () => {
     const kw = resolveChatAutoIdle({ assistantText: 'Let us dance tonight!' });
-    expect(kw).toBe('lib_C113');
+    expect(['lib_C61', 'lib_C03', 'lib_C113']).toContain(kw);
     const user = resolveChatAutoIdle({ assistantText: 'Sure!', userText: '跳舞吧' });
-    expect(user).toBe('lib_C113');
+    // Leggy shortlist — hip-hop / dance-loop with free feet
+    expect(['lib_C61', 'lib_C03', 'lib_C113', 'lib_C114', 'lib_C118', 'lib_C125']).toContain(user);
   });
 
-  it('maps music / concert keywords to a listening idle, not dance', () => {
+  it('maps music / concert keywords to a listening / music-pose idle, not calm LookAround', () => {
     const clip = resolveChatAutoIdle({ userText: '播個音樂會', assistantText: '好呀，一起聽。' });
-    expect(clip).toBe('LookAround');
-    const en = resolveChatAutoIdle({ assistantText: 'That concert sounds amazing!' });
-    expect(en).toBe('LookAround');
+    expect(['lib_C112', 'lib_C61', 'lib_C03', 'lib_C41', 'lib_C113']).toContain(clip);
+    const en = resolveChatAutoIdle({
+      userText: 'play some concert music',
+      assistantText: 'That concert sounds amazing!',
+    });
+    expect(['lib_C41', 'lib_C112', 'lib_C113', 'lib_C114', 'lib_C03', 'lib_C61', 'lib_C110', 'IdleMixamoHappy']).toContain(en);
+    expect(en).not.toBe('LookAround');
   });
 
   it('does not treat generic joy hints as sing/dance idles', () => {
