@@ -1,7 +1,7 @@
 'use client';
-// Select-board reaction preview: NEWER CMA00304–CMA00349 set only (Mon).
-// Numbers = gallery order for Mon assignment. Want/Skip on /sfx-gallery.
-// Tap previews only (mute-aware Audio); does not auto-Want.
+// Select-board reaction preview: Mon keepers + poke CMA00350–362 only.
+// Numbers = gender-first gallery order (female clips first on female companions).
+// Want/Skip on /sfx-gallery. Tap previews only (mute-aware Audio); does not auto-Want.
 
 import { useEffect, useState } from 'react';
 import { t, type Lang } from '../lib/prefs';

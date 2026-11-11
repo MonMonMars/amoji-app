@@ -2094,9 +2094,13 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
   });
 }
 
-/** Poke hit: a recorded gasp, not the synthetic tap and not an Edge crop. */
+/**
+ * Poke hit: a recorded gasp, not the synthetic tap and not an Edge crop.
+ * Clip-only — never falls through to gTTS / Edge / speechSynthesis. Lips and
+ * the speaking indicator follow the MP3 via playVoiceClip → noteSpeechStarted.
+ */
 export function playPokeBurst(characterId: string, zone?: string): void {
-  unlockAudio(); // t786: poke is a user gesture �X re-prime before clip
+  unlockAudio(); // t786: poke is a user gesture — re-prime before clip
   const file = recordedPokeClip(characterVoiceGender(characterId), zone);
   void playVoiceClip(file, 'oh', () => markVoiceStarted()).catch(() => { /* a missing file stays quiet */ });
 }
