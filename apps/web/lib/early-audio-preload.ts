@@ -1,6 +1,6 @@
 'use client';
 // Silent early warm of the chat audio stack from /select before /chat.
-// Prefetches critical CLIP um / laugh / poke bytes + Silero VAD CDN scripts,
+// Prefetches critical CLIP laugh / poke bytes + Silero VAD CDN scripts,
 // creates a (possibly suspended) AudioContext, and DNS-preconnects Edge TTS.
 // Does NOT play enter/cheer SFX — OPEN_CHEER_MS / THINKING_SOUND_DELAY_MS stay
 // authoritative on chat mount (#90). Never prompts for mic permission.
@@ -9,7 +9,7 @@ import { assetUrl } from './asset';
 import { createDefaultAudioContext, pinDefaultOutput } from './audio-output';
 import { resumeSfxContext } from './sfx';
 import { preloadVadRuntime } from './vad';
-import { clipLang, pokeZoneClipPaths, POKE_PREFETCH_ZONES, type VoiceClipGender } from './voice-clips';
+import { pokeZoneClipPaths, POKE_PREFETCH_ZONES, type VoiceClipGender } from './voice-clips';
 
 /** Edge readaloud origin (wss host). Preconnect only — no audible open. */
 export const EDGE_SPEECH_ORIGIN = 'https://speech.platform.bing.com';
@@ -18,24 +18,20 @@ let started = false;
 let donePromise: Promise<void> | null = null;
 
 /**
- * Critical first-talk paths. Fixed names (no rotating filler/laugh cursors)
+ * Critical first-talk paths. Fixed names (no rotating laugh cursors)
  * so a background warm cannot burn the next spoken pick. Only files that
  * ship under public/voice-clips (404s are tolerated but avoided).
+ * Loading "um" fillers are NOT warmed — spoken wait cues are off (visual only).
  */
 export function criticalChatAudioPaths(
-  lang = 'yue',
+  _lang = 'yue',
   gender: VoiceClipGender = 'female',
 ): string[] {
-  const folder = clipLang(lang);
-  const other: VoiceClipGender = gender === 'female' ? 'male' : 'female';
   const paths = [
-    `/voice-clips/${folder}/${gender}/um_long.mp3`,
-    `/voice-clips/${folder}/${other}/um_long.mp3`,
     `/voice-clips/universal/${gender}/laugh.mp3`,
   ];
   if (gender === 'female') {
     paths.push(
-      '/voice-clips/universal/female/um.mp3',
       '/voice-clips/universal/female/wow_woven.mp3',
       '/voice-clips/universal/female/hehe.mp3',
     );
@@ -43,7 +39,6 @@ export function criticalChatAudioPaths(
     paths.push(
       '/voice-clips/ja/male/oh.mp3',
       '/voice-clips/universal/male/wow.mp3',
-      '/voice-clips/ja/male/um.mp3',
     );
   }
   // Poke is a tap on the body, so it has to answer instantly — but the zone

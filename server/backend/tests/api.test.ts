@@ -264,7 +264,8 @@ describe('production backend', () => {
     expect(res.status).toBe(200);
     const body = await res.json() as { reply: string; provider: string };
     expect(body.provider).toBe('offline');
-    expect(body.reply).toMatch(/\?/);
+    expect(body.reply).not.toMatch(/\?/);
+    expect(body.reply.length).toBeGreaterThan(0);
     const rows = api.db.prepare('SELECT role, content FROM chat_turns ORDER BY id').all() as Array<{ role: string }>;
     expect(rows.map((r) => r.role)).toEqual(['user', 'assistant']);
   });
@@ -317,7 +318,7 @@ describe('production backend', () => {
     const body = await res.json() as { reply: string; provider: string };
     expect(body.provider).toBe('test');
     expect(body.reply).toContain('21°');
-    expect(body.reply).toMatch(/\?/);
+    expect(body.reply).not.toMatch(/\?/);
     expect(body.reply.toLowerCase()).not.toContain("don't have");
   });
 
@@ -339,7 +340,7 @@ describe('production backend', () => {
     const body = await res.json() as { reply: string; provider: string };
     expect(body.provider).toBe('offline');
     expect(body.reply).toContain('29°');
-    expect(body.reply).toMatch(/\?/);
+    expect(body.reply).not.toMatch(/\?/);
   });
 
   it('speaks with the Edge default voice and honors an explicit neural name', async () => {

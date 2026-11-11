@@ -5,7 +5,20 @@
 import { DEFAULT_VOLUME, volumeLinear } from './audio-levels';
 import { MASTER_OUTPUT_CAP } from './audio-output';
 
+/** Gate / self-test override — full loudness, bypasses prefs + master cap. */
+let forcedPlaybackVolume: number | null = null;
+
+/** Pass `null` to clear. Values are clamped to 0…1. */
+export function forcePlaybackVolume(level: number | null): void {
+  if (level == null || !Number.isFinite(level)) {
+    forcedPlaybackVolume = null;
+    return;
+  }
+  forcedPlaybackVolume = Math.min(1, Math.max(0, level));
+}
+
 export function getPlaybackVolume(): number {
+  if (forcedPlaybackVolume != null) return forcedPlaybackVolume;
   const v = volumeLinear('voiceVol');
   // A stored 0 (or a bad parse) used to mute Edge and every clip. Steps start at 20.
   if (!Number.isFinite(v) || v <= 0) return Math.min(DEFAULT_VOLUME / 100, MASTER_OUTPUT_CAP);

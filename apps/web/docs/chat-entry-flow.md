@@ -2,7 +2,7 @@
 
 ## Enter chat
 
-1. Short delay (`OPEN_CHEER_MS`) then one TTS line: optional name hello + **persona self-intro** (`voiceOpening`) + what to talk about (`openPhaseTopicAsk`).
+1. Short delay (`OPEN_CHEER_MS`) then one TTS line: optional name hello + **statement-only persona self-intro** (`voiceOpening`) — no stacked topic ask.
 2. If the user stays silent, after `OPEN_IDLE_BRIEF_MS` she lists **2–3 topic suggestions** (`topic-suggestions.ts`) — not auto weather/news.
 
 ## Normal chat

@@ -77,7 +77,19 @@ import { BASE_SYSTEM, languageBlock, parseEmotionHints, type ChatMessage } from 
 import { brainBodyExtras, markBrainDead, pickBrain, type BrainSpec } from './brain';
 import { cleanForDisplay, stripLaughTokens } from './speak-text';
 import { withQuestion } from './follow-up';
+import {
+  capCompanionReplyQuestions,
+  capSpokenQuestions,
+  scrubTopicMenuAsks,
+} from './spoken-line-sanity';
+import {
+  contentContinuationSystemBlock,
+  contentReplyIsTeaser,
+  type ContentContinuationSession,
+  wantsContentContinuationTurn,
+} from './content-continuation';
 import { preferLiveReply, worldBlock } from './live-tools';
+import { userAsksForRecipe } from './recipe-reply';
 import { replyLooksNonsense, STRICT_REPLY_APPENDIX } from './reply-sanity';
 import { shapeCompanionReply } from './reply-shape';
 import { wantsLongCompanionReply } from './topic-suggestions';
@@ -104,6 +116,8 @@ export interface ClientChatOptions {
   onPartial?: (text: string) => void;
   /** Live Story Mode session — long narrative budget for every turn. */
   storySession?: boolean;
+  /** Same-topic elaboration until the user says stop. */
+  contentContinuation?: ContentContinuationSession | null;
   /** Cast id — picks a home OVH model and keys conversation sticky. */
   characterId?: string;
 }
@@ -676,27 +690,27 @@ function noteSlowLane(lang?: string): void {
   }
 }
 
-/** The instant local lane: caring ack + concrete offer — never "on your mind" / presence nags / opaque jargon. */
+/** The instant local lane: warm, her own language — statement presence, not an interview. */
 const FALLBACK_BANKS: Record<string, string[]> = {
   yue: [
-    '我喺度聽緊你㗎，慢慢嚟——想講天氣、小事，定係聽個冷知識？',
-    '聽到喇，唔緊要。不如講下今日一件細細嘅事，或者我講個短故事你聽？',
-    '唔使急，我陪住你。想聽首歌、伸展一下，定係繼續傾你頭先嗰樣？',
+    '我喺度㗎，慢慢嚟——唔使急。',
+    '聽到喇，我陪住你。',
+    '唔使急，我有的是時間陪你。',
   ],
   zh: [
-    '我在听着你，慢慢来——想聊天气、小事，还是听个冷知识？',
-    '听到了，没事。不如说说今天一件小事，或者我讲个短故事给你听？',
-    '不着急，我陪着你。想听首歌、伸展一下，还是继续你刚才那件事？',
+    '我在呀，慢慢来——不着急。',
+    '听到了，我陪着你。',
+    '不着急，我有的是时间陪你。',
   ],
   ja: [
-    'ちゃんと聞いてるよ、ゆっくりでいい——天気、小さなこと、それとも豆知識？',
-    '聞こえてる、大丈夫。今日の小さな話でもいいし、短いお話でもいいよ。',
-    '急がなくていい、そばにいるよ。歌、ストレッチ、それともさっきの続き？',
+    'ここにいるよ、ゆっくりでいい。',
+    '聞こえてる、付き合うよ。',
+    '急がなくていいから、そばにいるね。',
   ],
   en: [
-    "I'm listening — weather, a tiny story, or a fun fact, whichever you want.",
-    'I hear you; no pressure. We can talk about one small thing from today, or I can tell a short story.',
-    "I'm with you — a song, a stretch, or we stay with what you just said.",
+    "I'm right here — take your time.",
+    "I hear you, and I'm with you.",
+    "No rush at all; I'm staying with you.",
   ],
 };
 
@@ -1089,6 +1103,7 @@ interface SanityContext {
   persona?: string;
   lastUser: string;
   detailed: boolean;
+  contentContinuing?: boolean;
 }
 
 function sanityOpts(ctx: SanityContext) {
@@ -1116,7 +1131,7 @@ async function streamModelReply(
 
 function packageReply(
   content: string,
-  ctx: SanityContext & { world?: string; worldSpoken?: string; story?: boolean },
+  ctx: SanityContext & { world?: string; worldSpoken?: string; story?: boolean; contentContinuing?: boolean },
 ): ClientChatResult {
   const done = finishReply(content, {
     detailed: ctx.detailed,
@@ -1126,11 +1141,22 @@ function packageReply(
   // Ability/showcase invites stay idle-only — strip offtopic tack-ons even on
   // rich/long paths (exception never authorizes dance-on-Jupiter).
   const cleaned = stripOffTopicAbilityTacks(done.reply, ctx.lastUser) || done.reply;
-  const factsTurn = Boolean(ctx.worldSpoken?.trim()) || /\b(?:Weather|Light news|Recent news)\s*:/i.test(ctx.world ?? '');
-  const spoken = ctx.story || factsTurn
+  const capped = ctx.story
     ? cleaned
-    : withQuestion(cleaned, ctx.language);
-  const reply = preferLiveReply(spoken, ctx.world, ctx.worldSpoken, ctx.language);
+    : ctx.contentContinuing
+      ? capSpokenQuestions(cleaned, 0)
+      : capCompanionReplyQuestions(cleaned, ctx.lastUser);
+  // Never reintroduce “what should we talk about?” after capping.
+  const scrubbed = scrubTopicMenuAsks(capped) || capped;
+  const factsTurn = Boolean(ctx.worldSpoken?.trim()) || /\b(?:Weather|Light news|Recent news)\s*:/i.test(ctx.world ?? '');
+  const spoken = ctx.story || ctx.contentContinuing || factsTurn
+    ? scrubbed
+    : withQuestion(scrubbed, ctx.language);
+  let reply = preferLiveReply(spoken, ctx.world, ctx.worldSpoken, ctx.language);
+  reply = scrubTopicMenuAsks(reply) || reply;
+  if (contentReplyIsTeaser(reply, ctx.lastUser, ctx.world) && ctx.worldSpoken?.trim()) {
+    reply = ctx.worldSpoken.trim();
+  }
   return { ...done, reply };
 }
 
@@ -1144,6 +1170,7 @@ export function isKeyedBrain(picked?: ReturnType<typeof pickBrain>): boolean {
 /** A cook-along / long companion turn legitimately needs more room than a chat turn. */
 export function wantsDetail(world?: string, userText?: string): boolean {
   if (/\b(?:Recipe|Learn)\s*:/.test(world ?? '')) return true;
+  if (userText && userAsksForRecipe(userText)) return true;
   return userText ? wantsLongCompanionReply(userText) : false;
 }
 
@@ -1169,8 +1196,9 @@ export async function clientChat(
     persona: opts?.persona,
     storySession: opts?.storySession,
   });
+  const contentContinuing = wantsContentContinuationTurn(lastUser, opts?.contentContinuation);
   const recipeDetail = wantsDetail(opts?.world, lastUser);
-  const detailed = recipeDetail || longKind != null || story;
+  const detailed = recipeDetail || longKind != null || story || contentContinuing;
   const raceOpts: RaceFreeLanesOpts = {
     characterId: opts?.characterId,
     conversationKey: conversationBrainKey(opts?.characterId),
@@ -1181,9 +1209,12 @@ export async function clientChat(
   const oneTopicAppendix = mustStayOneTopic({ story, detailed, keyedBrain })
     ? '\nTOPIC MIXTURE: Stay on ONE topic this turn. Never bolt dance/sing/music/weather/news/story invites onto an unrelated answer. Ability invites are idle-only.'
     : '';
+  const continuationBlock = contentContinuing && opts?.contentContinuation
+    ? `\n${contentContinuationSystemBlock(opts?.language, opts.contentContinuation)}`
+    : '';
   const longBlock = longKind ? `\n${longTalkSystemBlock(longKind, opts?.language)}` : '';
-  const system = `${BASE_SYSTEM}${oneTopicAppendix}\nReply in speakable sentences only. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${longBlock}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
-  const maxTokens = maxTokensForLongTalk(longKind, recipeDetail && longKind == null);
+  const system = `${BASE_SYSTEM}${oneTopicAppendix}${continuationBlock}\nReply in speakable sentences only. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${longBlock}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
+  const maxTokens = maxTokensForLongTalk(longKind, (recipeDetail || contentContinuing) && longKind == null);
   const onPartial = opts?.onPartial
     ? (partial: string) => {
         opts.onPartial?.(shapeCompanionReply(partial, {
@@ -1206,9 +1237,16 @@ export async function clientChat(
     persona: opts?.persona,
     lastUser,
     detailed,
+    contentContinuing,
   };
   const finalize = (raw: string) =>
-    packageReply(raw, { ...sanityCtx, world: opts?.world, worldSpoken: opts?.worldSpoken, story });
+    packageReply(raw, {
+      ...sanityCtx,
+      world: opts?.world,
+      worldSpoken: opts?.worldSpoken,
+      story,
+      contentContinuing,
+    });
   const rejectCreditBody = (specId: string, content: string) => {
     if (specId !== 'pollinations' && content.length < 160 && CREDIT_RE.test(content)) {
       throw new Error(`${specId} out of credit`);

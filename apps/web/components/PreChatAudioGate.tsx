@@ -10,6 +10,7 @@ import { requestMic } from '../lib/mic-preflight';
 import { passEntryGate, setMicPreflightSession, type MicOutcome } from '../lib/entry-gate';
 import { markChatAudioReady, stashPriorMasterMuteForChat } from '../lib/pre-chat-audio';
 import { primeChatStartGesture } from '../lib/chat-start-gesture';
+import { companionPlaybackSession } from '../lib/voice-chat-focus';
 import EarlyAudioUnlock from './EarlyAudioUnlock';
 
 /** Soft sound-check step after the sample finishes (or is replayed). */
@@ -49,10 +50,12 @@ export default function PreChatAudioGate({
     try { if (isMasterMuted()) setMasterMuted(false); } catch { /* ignore */ }
     try { if (!voiceEnabled()) setVoiceEnabled(true); } catch { /* ignore */ }
     try { primeChatStartGesture(); } catch { /* ignore */ }
+    // Leave mic-ducked play-and-record so the long loud sample hits the speakers.
+    try { companionPlaybackSession(); } catch { /* ignore */ }
     let characterId = 'a01-shino';
     try { characterId = loadPrefs().character; } catch { /* default */ }
     try {
-      // Longer 開聲傾偈 sample so the hear-check is a real phrase, not a beep.
+      // Long GATE_TEST_LINES + forcePlaybackVolume(1) inside testVoiceChain.
       await testVoiceChain(characterId, lang, GATE_TEST_LINES[lang] ?? GATE_TEST_LINES.en);
     } catch {
       /* retryable — never blocks Continue */
@@ -70,6 +73,7 @@ export default function PreChatAudioGate({
       const outcome = await requestMic();
       setMic(outcome);
       if (outcome === 'granted') setMicPreflightSession(true);
+      else setMicPreflightSession(false);
     } finally {
       setMicBusy(false);
     }
@@ -90,7 +94,11 @@ export default function PreChatAudioGate({
         return;
       }
       const outcome = await requestMic();
-      if (!cancelled) setMic(outcome);
+      if (!cancelled) {
+        setMic(outcome);
+        // Same-session chat enter can open the mic with no delay when granted here.
+        if (outcome === 'granted') setMicPreflightSession(true);
+      }
     })();
     return () => { cancelled = true; };
   }, []);
@@ -99,23 +107,35 @@ export default function PreChatAudioGate({
   const micOk = mic === 'granted' || mic === 'unsupported';
 
   const enter = useCallback(() => {
-    primeChatStartGesture();
-    const micOutcome: MicOutcome =
-      mic === 'pending' ? 'skipped' : mic;
-    if (micOutcome === 'granted') setMicPreflightSession(true);
-    const audioHeard =
-      heard === 'yes' || heard === 'no'
-        ? heard
-        : speakerOk
-          ? 'yes'
-          : 'no';
-    passEntryGate({
-      audioHeard,
-      mic: micOutcome,
-    });
-    markChatAudioReady();
-    if (onDone) onDone();
-    else router.replace(nextHref);
+    // Enter is a real user gesture — re-probe mic here so chat can default-open.
+    void (async () => {
+      primeChatStartGesture();
+      let micOutcome: MicOutcome = mic === 'pending' ? 'skipped' : mic;
+      if (listenSupported() && micOutcome !== 'unsupported') {
+        try {
+          const outcome = await requestMic();
+          micOutcome = outcome;
+          setMic(outcome);
+          if (outcome === 'granted') setMicPreflightSession(true);
+        } catch {
+          /* keep prior outcome */
+        }
+      }
+      if (micOutcome === 'granted') setMicPreflightSession(true);
+      const audioHeard =
+        heard === 'yes' || heard === 'no'
+          ? heard
+          : speakerOk
+            ? 'yes'
+            : 'no';
+      passEntryGate({
+        audioHeard,
+        mic: micOutcome,
+      });
+      markChatAudioReady();
+      if (onDone) onDone();
+      else router.replace(nextHref);
+    })();
   }, [heard, mic, nextHref, onDone, router, speakerOk]);
 
   const continueLabel =

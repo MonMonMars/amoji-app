@@ -14,19 +14,19 @@ export const CHATTER: Record<ChatterKind, Record<ChatterLang, string[]>> = {
   startup: {
     en: [
       "Hi, I'm {name}. I'm here if you want to talk.",
-      'Type below, or tap the mic, and tell me what you want to chat about.',
+      'Type below or tap the mic — I will follow whatever you start.',
     ],
     yue: [
-      '你好，我係{name}。想傾偈嘅話，我喺度。',
-      '喺下面打字，或者撳個咪，同我講你想傾咩呀？',
+      '你好，我係{name}。我喺度陪住你。',
+      '喺下面打字或者撳個咪都得——你開口，我會跟住聽。',
     ],
     zh: [
-      '你好，我是{name}。想聊天的话，我在这里。',
-      '在下面打字，或者点麦克风，告诉我你想聊什么呀？',
+      '你好，我是{name}。我在这里陪着你。',
+      '在下面打字或者点麦克风都行——你开口，我会跟着听。',
     ],
     ja: [
       'こんにちは、{name}です。話したかったら、ここにいるよ。',
-      '下に書くか、マイクを押して、何を話したい？',
+      '下に書くかマイクを押して。あなたが始めたことに合わせるね。',
     ],
   },
   idleBored: {

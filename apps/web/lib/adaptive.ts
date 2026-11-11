@@ -12,9 +12,8 @@ import type { Gender } from './profile';
 //    passes undefined, which behaves exactly like "secret" (no guidance).
 
 // ---------------------------------------------------------------------------
-// Scene banks — one per backdrop. Every line ends with a question or an
-// invitation (the same continuity rule as the persona banks) so the room
-// never goes quiet.
+// Scene banks — one per backdrop. Prefer warm, grounded atmosphere
+// (statements OK). Avoid cartoon nonsense (“sit on a cloud”, “bounce”).
 // ---------------------------------------------------------------------------
 export const SCENE_LINES: Record<string, Record<Lang, string[]>> = {
   void: {
@@ -194,25 +193,26 @@ export const SCENE_LINES: Record<string, Record<Lang, string[]>> = {
     ],
   },
   cloudsea: {
+    // Grounded atmosphere — poetic but not cartoon “sit on a cloud / bounce”.
     en: [
-      'We’re above the clouds tonight… can you believe this view?',
-      'The sun’s melting into the sea of clouds… want to pick a cloud to ride?',
-      'It feels like standing on a soft ocean… shall we jump and see if it bounces?',
+      'We’re above the clouds tonight. The view is quiet and wide.',
+      'The sun is sinking into the cloud-sea — warm light on every layer.',
+      'It feels like looking over a soft ocean of mist. I’m glad you’re here for it.',
     ],
     yue: [
-      '我哋喺雲上面喇……你睇到咁靚嘅景色未呀？',
-      '個日落熔入雲海入面……揀朵雲嚟坐好唔好？',
-      '企喺度好似企喺軟綿綿嘅海上……不如跳吓睇彈唔彈得起？',
+      '我哋喺雲海上面。景色好靜，又好闊。',
+      '個日落慢慢沉入雲海，層層光都暖暖地。',
+      '望落去好似一片霧海。有你一齊睇，我覺得好襯。',
     ],
     zh: [
-      '我们在云海上面了……你看到这么美的景色了吗？',
-      '夕阳熔进云海里……挑一朵云坐坐好不好？',
-      '站在这里像踩在软绵绵的海上……跳一下看看会不会弹起来？',
+      '我们在云海上面。景色很静，也很开阔。',
+      '夕阳慢慢沉进云海，每一层光都带着暖意。',
+      '望下去像一片雾海。有你一起看，我觉得很合适。',
     ],
     ja: [
-      '雲の上にいるよ……この景色、見えてる？',
-      '夕日が雲海に溶けてる……雲に乗っちゃう？',
-      '柔らかい海の上に立ってるみたい……跳ねるか試してみる？',
+      '雲海の上にいるよ。景色は静かで、とても広い。',
+      '夕日が雲海に沈んでいく。層ごとの光がやさしい。',
+      '霧の海を見下ろしてるみたい。一緒に見られてうれしい。',
     ],
   },
   neon: {

@@ -127,6 +127,16 @@ describe('axial bone clamps (spine/back/head)', () => {
     expect(se.z).toBeLessThanOrEqual(BONE_BLEND_LIMITS.spine.z[1] + 1e-9);
   });
 
+  it('clampAxialNoFlipBones stops hips yaw spinning the body to the back', () => {
+    const hips = new THREE.Object3D();
+    hips.name = 'Normalized_J_Bip_C_Hips';
+    hips.quaternion.setFromEuler(new THREE.Euler(0, Math.PI, 0, 'YXZ'));
+    const bones: Record<string, THREE.Object3D> = { hips };
+    clampAxialNoFlipBones((name) => bones[name] ?? null);
+    const e = new THREE.Euler().setFromQuaternion(hips.quaternion, 'YXZ');
+    expect(Math.abs(e.y)).toBeLessThanOrEqual(0.45 + 1e-6);
+  });
+
   it('clampAxialNoFlipBones stops upper-arm full turns (scary 360 sleeves)', () => {
     const left = new THREE.Object3D();
     left.name = 'Normalized_J_Bip_L_UpperArm';

@@ -162,7 +162,9 @@ const MALE_IDS = CHARACTERS.filter((c) => c.gender === 'male').map((c) => c.id).
 // WanLung is the only male Cantonese neural. Positive pitch lifts him into
 // a female range, so male slots stay at or below his natural pitch.
 const YUE_MALE_PITCH = [0, -0.06, -0.1, -0.14, -0.04, -0.12];
-const YUE_MALE_RATE = [0, -0.04, 0.04, -0.08, 0.06, 0];
+// WanLung is naturally unhurried; negative SSML rate deltas made male 廣東話
+// feel sluggish vs female HiuMaan/HiuGaai. Keep spread for cast separation.
+const YUE_MALE_RATE = [0.06, 0.02, 0.1, 0.04, 0.12, 0.08];
 
 function assignTuned(
   ids: readonly string[],

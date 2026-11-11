@@ -8,6 +8,7 @@
 // …). Pulling client-only demo-phase exports into the /api/chat server graph
 // made Next page collection fail (array export no longer callable as .find).
 
+import { userOpensContentDelivery } from './content-continuation';
 import {
   detectAbilityOfferKind,
   detectUserAbilityTopics,
@@ -37,6 +38,7 @@ const LONG_CONTENT_RE =
 export function isTopicalContentTurn(text: string): boolean {
   const t = text.trim();
   if (!t) return false;
+  if (userOpensContentDelivery(t)) return true;
   if (LONG_CONTENT_RE.test(t)) return true;
   if (WEATHER_OR_NEWS_RE.test(t)) return true;
   const topics = detectUserAbilityTopics(t);

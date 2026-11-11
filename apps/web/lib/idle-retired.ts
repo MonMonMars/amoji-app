@@ -3,9 +3,13 @@
 import { isFarewellOnlyIdleClip } from './idle-farewell';
 import { idleByNum } from './idle-library';
 
-/** #N hidden from picker; no rotation; saved pins remap. */
+/**
+ * #N hidden from picker; no rotation; saved pins remap.
+ * Includes Pixel blend-bad deletes (lean-wall, pointing, UAL talking, ninja,
+ * IdleHug lean that spun the torso through the back on A→B).
+ */
 export const RETIRED_IDLE_NUMS = new Set([
-  14, 24, 25, 47, 48, 54, 55, 56, 57, 58, 59,
+  14, 24, 25, 36, 47, 48, 54, 55, 56, 57, 58, 59,
   96, 97, 98, 99, 100, 105, 106, 107,
 ]);
 

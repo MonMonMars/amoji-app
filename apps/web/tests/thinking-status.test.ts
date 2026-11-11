@@ -25,6 +25,20 @@ describe('chat thinking status (not typing)', () => {
     expect(panel).not.toMatch(/thinking-status[\s\S]{0,280}\d\s*%/);
   });
 
+  it('ChatPanel wires thinking pose + auto idle (no spoken um)', () => {
+    const panel = fs.readFileSync(path.join(ROOT, 'components/ChatPanel.tsx'), 'utf8');
+    expect(panel).toContain('setThinkingPose(true)');
+    expect(panel).toContain('pushAutoIdle(\'\', undefined, true)');
+    expect(panel).toContain('stopThinkingSound()');
+    expect(panel).not.toMatch(/speakThinkingFiller\s*\(/);
+  });
+
+  it('CompanionCanvas prefers Thinking pose while waiting', () => {
+    const canvas = fs.readFileSync(path.join(ROOT, 'components/CompanionCanvas.tsx'), 'utf8');
+    expect(canvas).toContain('thinkingPoseActive()');
+    expect(canvas).toMatch(/clips\.has\('Thinking'\)\s*\?\s*'Thinking'\s*:\s*'IdleBreathCalm'/);
+  });
+
   it('globals define the thinking-bar motion', () => {
     const css = fs.readFileSync(path.join(ROOT, 'app/globals.css'), 'utf8');
     expect(css).toContain('@keyframes fx-thinking-bar');

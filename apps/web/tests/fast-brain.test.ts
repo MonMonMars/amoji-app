@@ -6,6 +6,7 @@ import {
   LANE_ORIGIN, localFallbackReply, markNoApiRoute, shouldSkipServerProbe,
   trimHistoryForPrompt, PROMPT_HISTORY_CAP, FREE_RACERS, warmLane,
 } from '../lib/client-chat';
+import { countSpokenQuestions } from '../lib/spoken-line-sanity';
 import type { ChatMessage } from '../lib/llm';
 
 const msg = (i: number): ChatMessage => ({
@@ -29,12 +30,12 @@ describe('trimHistoryForPrompt', () => {
 });
 
 describe('localFallbackReply', () => {
-  it('answers in every language with a concrete caring offer (no forced fishing question)', () => {
+  it('answers in every language with statement-only presence (no interview)', () => {
     for (const lang of ['yue', 'zh', 'ja', 'en']) {
       const r = localFallbackReply('今日好開心呀', lang);
       expect(r.reply.length, lang).toBeGreaterThan(4);
-      // Continuity = warm grounded offer / listen cue, not a trailing "?" on every line.
-      expect(r.reply, lang).toMatch(/listen|hear|here|with you|天氣|天气|天気|story|故事|話|歌|stretch|伸展|ストレッチ|weather|fact|小事|豆知識|冷知識|聽|听|聞/i);
+      expect(r.reply, lang).not.toMatch(/[?？]\s*$/);
+      expect(countSpokenQuestions(r.reply), lang).toBe(0);
     }
   });
 

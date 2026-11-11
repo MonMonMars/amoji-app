@@ -18,14 +18,15 @@ afterEach(() => {
 });
 
 describe('early audio preload', () => {
-  it('lists fixed Pages-relative critical clips (no rotating fillers)', () => {
+  it('lists fixed Pages-relative critical clips (no loading um)', () => {
     const female = criticalChatAudioPaths('yue', 'female');
-    expect(female.some((p) => p.includes('/yue/female/um_long.mp3'))).toBe(true);
+    // Loading warmup no longer pulls um_long; poke chest may still reference um.mp3.
+    expect(female.some((p) => /\/um_long\.mp3$/.test(p))).toBe(false);
     expect(female).toContain('/voice-clips/universal/female/wow_woven.mp3');
     expect(female.every((p) => p.startsWith('/voice-clips/'))).toBe(true);
 
     const male = criticalChatAudioPaths('en', 'male');
-    expect(male.some((p) => p.includes('/en/male/um_long.mp3'))).toBe(true);
+    expect(male.some((p) => /\/um_long\.mp3$/.test(p))).toBe(false);
     expect(male).toContain('/voice-clips/ja/male/oh.mp3');
   });
 
