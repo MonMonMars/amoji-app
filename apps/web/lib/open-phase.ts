@@ -1,7 +1,7 @@
 /** Chat-room open phase (t794) + session-gap re-open (t796) + Pixel entry flow.
  *
- * Phase 1 — first open / fresh session: hi + persona self-intro + what to
- * talk about; if still silent, 2–3 topic *suggestions* (no auto weather/news).
+ * Phase 1 — first open / fresh session: hi + persona self-intro (statement
+ * only — no stacked topic asks); if still silent, 2–3 topic *suggestions*.
  * Phase 2 — user-driven chat; if they are idle / "don't know", companion
  * suggests topics (weather/news/story/etc. only when they pick or ask).
  *
@@ -10,6 +10,7 @@
  * chat history, no resume of the prior thread as continuous.
  */
 import { cleanForSpeech } from './speak-text';
+import { stripQuestionSentences } from './spoken-line-sanity';
 
 /** Mid of Mon's ~2–3h gap. Override in tests via isFreshOpenPhase(..., gapMs). */
 export const OPEN_SESSION_GAP_MS = 2.5 * 60 * 60 * 1000;
@@ -161,7 +162,7 @@ export function openPhaseNewsAsk(lang: string): string {
   return 'any light cheerful news?';
 }
 
-/** Standalone "what shall we talk about?" (persona intro may already ask). */
+/** Standalone topic ask for menus / undecided-user paths — not enter-chat TTS. */
 export function openPhaseTopicAsk(lang: string): string {
   if (lang === 'ja') return '今日は何を話したい？';
   if (lang === 'zh') return '今天想聊点什么呀？';
@@ -169,23 +170,18 @@ export function openPhaseTopicAsk(lang: string): string {
   return 'what do you want to talk about today?';
 }
 
-/** Enter-chat TTS: optional name hello + persona self-intro (weather not first). */
+/** Enter-chat TTS: optional name hello + statement persona intro (no interview). */
 export function buildOpenCheerLine(
   lang: string,
   opts: { nameHello?: string; personaIntro: string; topicAsk?: string },
 ): string {
   const L = ['yue', 'zh', 'ja', 'en'].includes(lang) ? lang : 'en';
   void L;
-  const intro = opts.personaIntro.trim();
+  const intro = stripQuestionSentences(opts.personaIntro.trim());
   const named = opts.nameHello?.trim();
-  const ask = opts.topicAsk?.trim();
+  void opts.topicAsk;
   const base = summarizeOpenPhaseSpoken(named, intro);
-  if (!base) return summarizeOpenPhaseSpoken(ask) || ask || '';
-  if (!ask) return base;
-  const lower = base.toLowerCase();
-  const askLower = ask.toLowerCase();
-  if (lower.includes(askLower.slice(0, 12))) return base;
-  return summarizeOpenPhaseSpoken(base, ask);
+  return base || '';
 }
 
 /** Join spoken snippets for TTS; strip hashtags/symbols via cleanForSpeech. */

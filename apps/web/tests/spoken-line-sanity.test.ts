@@ -5,10 +5,14 @@ import { fileURLToPath } from 'node:url';
 import {
   asksToResumeHistory,
   asksUserInnerThoughts,
+  countSpokenQuestions,
   gateSpokenLine,
+  openGreetTooManyQuestions,
   safeIdleFallback,
   spokenLineLooksBroken,
+  stripQuestionSentences,
 } from '../lib/spoken-line-sanity';
+import { buildOpenCheerLine } from '../lib/open-phase';
 import { LAST_THREAD_RESUME_BANNED } from '../lib/memory';
 import {
   MOTIFS,
@@ -103,6 +107,31 @@ describe('gateSpokenLine', () => {
   });
 });
 
+describe('open greet question cap', () => {
+  it('stripQuestionSentences removes trailing asks', () => {
+    expect(stripQuestionSentences('Hello. Want to chat?')).toBe('Hello.');
+    expect(stripQuestionSentences('你好，我鍾意茶。想傾咩呀？')).toBe('你好，我鍾意茶。');
+  });
+
+  it('buildOpenCheerLine has zero questions', () => {
+    const line = buildOpenCheerLine('en', {
+      nameHello: 'Hi, Sam',
+      personaIntro: "I'm here — what should we talk about?",
+    });
+    expect(countSpokenQuestions(line)).toBe(0);
+    expect(openGreetTooManyQuestions(line)).toBe(false);
+  });
+
+  it('voiceOpening banks are question-free in every language', () => {
+    for (const voice of VOICE_IDS) {
+      for (const lang of LANGS) {
+        const open = voiceOpening(voice, 'maps', 0, lang, 'Test');
+        expect(countSpokenQuestions(open), `${voice}/${lang}`).toBe(0);
+      }
+    }
+  });
+});
+
 describe('source banks never emit known nonsense', () => {
   it('voiceIdleLines pass the gate across voices/motifs/langs', () => {
     for (const voice of VOICE_IDS) {
@@ -118,10 +147,11 @@ describe('source banks never emit known nonsense', () => {
     }
   });
 
-  it('steady openings no longer ask what you are thinking', () => {
+  it('steady openings are statement-only presence lines', () => {
     const open = voiceOpening('steady', 'maps', 0, 'en', 'Ada');
     expect(open.toLowerCase()).not.toMatch(/on your mind|what are you thinking|quiet thought/);
-    expect(open.toLowerCase()).toContain('talk about');
+    expect(open).not.toMatch(/\?/);
+    expect(open.toLowerCase()).toMatch(/calm|company|one line/);
   });
 
   it('persona idle banks no longer ask thinking interrogations', () => {

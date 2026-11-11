@@ -175,7 +175,6 @@ import {
   openIdleBriefAlreadyDone,
   markOpenCheerDone,
   openCheerAlreadyDone,
-  openPhaseTopicAsk,
   shouldPlayOpenCheer,
 } from '../lib/open-phase';
 import {
@@ -756,7 +755,6 @@ export default function ChatPanel({
       buildOpenCheerLine(lang, {
         nameHello: namedHello,
         personaIntro,
-        topicAsk: openPhaseTopicAsk(lang),
       })
       || shortDaily
       || pickLine('startup', lang, 1, startupVars);

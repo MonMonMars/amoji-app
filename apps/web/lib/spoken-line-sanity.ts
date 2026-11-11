@@ -61,6 +61,47 @@ export function asksToResumeHistory(line: string): boolean {
   return BANNED_HISTORY_RESUME_ASK.test(t);
 }
 
+/** Rough count of spoken questions (ASCII ? + full-width ？). */
+export function countSpokenQuestions(text: string): number {
+  const t = (text ?? '').trim();
+  if (!t) return 0;
+  return (t.match(/[?？]/g) ?? []).length;
+}
+
+function sentenceLooksLikeQuestion(s: string): boolean {
+  const c = (s ?? '').trim();
+  if (!c) return false;
+  if (/[?？]$/.test(c)) return true;
+  if (/(?:吗|嗎)\s*[？?]?\s*$/.test(c)) return true;
+  if (/(?:想|要).*(?:傾|聊|讲|說|话|話).*(?:呀|吗|嗎)\s*$/u.test(c)) return true;
+  if (/^(?:what|want to|shall we|how are you|would you|do you)\b/i.test(c)) return true;
+  return false;
+}
+
+/**
+ * Open greet should output presence, not interview the user. Drop trailing
+ * question sentences so a legacy bank line cannot stack asks.
+ */
+export function stripQuestionSentences(text: string): string {
+  const t = (text ?? '').trim();
+  if (!t) return '';
+  const chunks = t
+    .split(/(?<=[。．.！!？?])\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (chunks.length <= 1) {
+    return sentenceLooksLikeQuestion(t) ? '' : t;
+  }
+  const kept = chunks.filter((c) => !sentenceLooksLikeQuestion(c));
+  const joined = kept.join(' ').trim();
+  return joined || chunks.find((c) => !sentenceLooksLikeQuestion(c))?.trim() || '';
+}
+
+/** True when an enter-chat line piles on multiple user-directed asks. */
+export function openGreetTooManyQuestions(line: string, maxQuestions = 0): boolean {
+  return countSpokenQuestions(line) > maxQuestions;
+}
+
 /**
  * Half-sentence / motif-fill leftovers that shipped as spoken lines.
  * Includes the Pixel "a small map reminding you" class of fragments.

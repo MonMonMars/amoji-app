@@ -106,7 +106,7 @@ describe('openPhase asks + spoken summary', () => {
     }
   });
 
-  it('buildOpenCheerLine orders hi + intro before duplicate topic ask', () => {
+  it('buildOpenCheerLine stacks hello + intro without topic ask or interview', () => {
     const line = buildOpenCheerLine('yue', {
       nameHello: '夜安，阿明',
       personaIntro: '你好，我係Shino！我鍾意茶。今日想傾咩呀？',
@@ -114,8 +114,8 @@ describe('openPhase asks + spoken summary', () => {
     });
     expect(line).toContain('阿明');
     expect(line).toContain('Shino');
-    const asks = (line.match(/傾咩/g) ?? []).length;
-    expect(asks).toBeLessThanOrEqual(2);
+    expect(line).not.toMatch(/傾咩/);
+    expect(line).not.toMatch(/[?？]/);
   });
 });
 
