@@ -203,6 +203,16 @@ import {
   shouldSuppressSkillOffer,
   stripOfftopicAbilityTack,
 } from '../lib/skill-offer-guard';
+import {
+  contentStopAck,
+  extractContentTopic,
+  resolveContentContinuationOnSend,
+} from '../lib/content-continuation';
+import {
+  clearContentContinuationSession,
+  loadContentContinuationSession,
+  saveContentContinuationSession,
+} from '../lib/content-continuation-session';
 import { recentUserMood } from '../lib/talk-history';
 import { detectGame, startGame, playTurn, gameFarewellLine, type GameState } from '../lib/games';
 import { detectActionGame, setMiniGameChromeHidden, subscribeMiniGameOpen, type ActionGame } from '../lib/minigames';
@@ -946,14 +956,6 @@ export default function ChatPanel({
     reengageStageRef.current = 0;
     // Any real send cancels the open-phase ability brief.
     userHasSpokenRef.current = true;
-    // Topical/demo content: mute skill offers and consume the "first idle
-    // reminder" slot so a fun-fact never ends with a dance invite.
-    if (isTopicalContentTurn(text)) {
-      lastTopicalContentAtRef.current = Date.now();
-      idleAutoAfterUserRef.current = true;
-    } else {
-      idleAutoAfterUserRef.current = false;
-    }
     nearBottomRef.current = true;
     setHistory((h) => [...h, { role: 'user', content: text }]);
     feedUtterance(text);
@@ -987,6 +989,31 @@ export default function ChatPanel({
     }
     setCrisisCard(false);
     setCrisisPopup(null);
+    let contentContinuation = loadContentContinuationSession();
+    const contTurn = resolveContentContinuationOnSend(text, contentContinuation);
+    if (contTurn.stopped) {
+      clearContentContinuationSession();
+      contentContinuation = null;
+      const line = stripOfftopicAbilityTack(contentStopAck(lang), text);
+      rememberTurn(text, line);
+      sayLocal(line, { neutral: 0.55 });
+      setHistory((h) => [...h, { role: 'assistant', content: line }]);
+      done();
+      return;
+    }
+    if (contTurn.session) {
+      contentContinuation = contTurn.session;
+      saveContentContinuationSession(contentContinuation);
+    } else if (contentContinuation) {
+      clearContentContinuationSession();
+      contentContinuation = null;
+    }
+    if (isTopicalContentTurn(text) || contTurn.continuing) {
+      lastTopicalContentAtRef.current = Date.now();
+      idleAutoAfterUserRef.current = true;
+    } else {
+      idleAutoAfterUserRef.current = false;
+    }
     {
       const action = detectActionGame(text);
       if (action) {
@@ -1232,6 +1259,13 @@ export default function ChatPanel({
       const live = await clientLiveContext(text, lang, priorUser);
       world = live.prompt;
       worldSpoken = live.spoken;
+      if (contentContinuation && (contTurn.started || contTurn.continuing)) {
+        const refined = extractContentTopic(text, world);
+        if (refined && refined !== 'this topic') {
+          contentContinuation = { ...contentContinuation, topic: refined };
+          saveContentContinuationSession(contentContinuation);
+        }
+      }
       const livePlan = planTools(text, priorUser);
       if (isLiveFactsOnlyTurn(livePlan, worldSpoken)) {
         stopThinkingSound();
@@ -1268,6 +1302,7 @@ export default function ChatPanel({
           world,
           worldSpoken,
           storySession: !!loadStorySession(),
+          contentContinuation,
           characterId,
           onPartial: (partial) => {
             // r.47 — the real stream is painting now: the wait cue stands down

@@ -77,7 +77,13 @@ import { BASE_SYSTEM, languageBlock, parseEmotionHints, type ChatMessage } from 
 import { brainBodyExtras, markBrainDead, pickBrain, type BrainSpec } from './brain';
 import { cleanForDisplay, stripLaughTokens } from './speak-text';
 import { withQuestion } from './follow-up';
-import { capCompanionReplyQuestions } from './spoken-line-sanity';
+import { capCompanionReplyQuestions, capSpokenQuestions } from './spoken-line-sanity';
+import {
+  contentContinuationSystemBlock,
+  contentReplyIsTeaser,
+  type ContentContinuationSession,
+  wantsContentContinuationTurn,
+} from './content-continuation';
 import { preferLiveReply, worldBlock } from './live-tools';
 import { userAsksForRecipe } from './recipe-reply';
 import { replyLooksNonsense, STRICT_REPLY_APPENDIX } from './reply-sanity';
@@ -100,6 +106,8 @@ export interface ClientChatOptions {
   onPartial?: (text: string) => void;
   /** Live Story Mode session — long narrative budget for every turn. */
   storySession?: boolean;
+  /** Same-topic elaboration until the user says stop. */
+  contentContinuation?: ContentContinuationSession | null;
   /** Cast id — picks a home OVH model and keys conversation sticky. */
   characterId?: string;
 }
@@ -1085,6 +1093,7 @@ interface SanityContext {
   persona?: string;
   lastUser: string;
   detailed: boolean;
+  contentContinuing?: boolean;
 }
 
 function sanityOpts(ctx: SanityContext) {
@@ -1112,7 +1121,7 @@ async function streamModelReply(
 
 function packageReply(
   content: string,
-  ctx: SanityContext & { world?: string; worldSpoken?: string; story?: boolean },
+  ctx: SanityContext & { world?: string; worldSpoken?: string; story?: boolean; contentContinuing?: boolean },
 ): ClientChatResult {
   const done = finishReply(content, {
     detailed: ctx.detailed,
@@ -1122,9 +1131,16 @@ function packageReply(
   // Ability/showcase invites stay idle-only — strip offtopic tack-ons even on
   // rich/long paths (exception never authorizes dance-on-Jupiter).
   const cleaned = stripOffTopicAbilityTacks(done.reply, ctx.lastUser) || done.reply;
-  const capped = ctx.story ? cleaned : capCompanionReplyQuestions(cleaned, ctx.lastUser);
-  const spoken = ctx.story ? capped : withQuestion(capped, ctx.language);
-  const reply = preferLiveReply(spoken, ctx.world, ctx.worldSpoken, ctx.language);
+  const capped = ctx.story
+    ? cleaned
+    : ctx.contentContinuing
+      ? capSpokenQuestions(cleaned, 0)
+      : capCompanionReplyQuestions(cleaned, ctx.lastUser);
+  const spoken = ctx.story || ctx.contentContinuing ? capped : withQuestion(capped, ctx.language);
+  let reply = preferLiveReply(spoken, ctx.world, ctx.worldSpoken, ctx.language);
+  if (contentReplyIsTeaser(reply, ctx.lastUser, ctx.world) && ctx.worldSpoken?.trim()) {
+    reply = ctx.worldSpoken.trim();
+  }
   return { ...done, reply };
 }
 
@@ -1149,7 +1165,8 @@ export async function clientChat(
   const recent = trimHistoryForPrompt(messages);
   const lastUser = recent[recent.length - 1]?.content ?? '';
   const story = wantsStoryTurn(lastUser, { persona: opts?.persona, storySession: opts?.storySession });
-  const detailed = wantsDetail(opts?.world, lastUser) || story;
+  const contentContinuing = wantsContentContinuationTurn(lastUser, opts?.contentContinuation);
+  const detailed = wantsDetail(opts?.world, lastUser) || story || contentContinuing;
   const raceOpts: RaceFreeLanesOpts = {
     characterId: opts?.characterId,
     conversationKey: conversationBrainKey(opts?.characterId),
@@ -1160,7 +1177,10 @@ export async function clientChat(
   const oneTopicAppendix = mustStayOneTopic({ story, detailed, keyedBrain })
     ? '\nTOPIC MIXTURE: Stay on ONE topic this turn. Never bolt dance/sing/music/weather/news/story invites onto an unrelated answer. Ability invites are idle-only.'
     : '';
-  const system = `${BASE_SYSTEM}${oneTopicAppendix}\nReply in speakable sentences only. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${story ? `\n${storySystemBlock(opts?.language)}` : ''}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
+  const continuationBlock = contentContinuing && opts?.contentContinuation
+    ? `\n${contentContinuationSystemBlock(opts?.language, opts.contentContinuation)}`
+    : '';
+  const system = `${BASE_SYSTEM}${oneTopicAppendix}${continuationBlock}\nReply in speakable sentences only. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${story ? `\n${storySystemBlock(opts?.language)}` : ''}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
   const maxTokens = maxTokensForStoryTurn(story, wantsDetail(opts?.world, lastUser));
   const onPartial = opts?.onPartial
     ? (partial: string) => {
@@ -1183,9 +1203,16 @@ export async function clientChat(
     persona: opts?.persona,
     lastUser,
     detailed,
+    contentContinuing,
   };
   const finalize = (raw: string) =>
-    packageReply(raw, { ...sanityCtx, world: opts?.world, worldSpoken: opts?.worldSpoken, story });
+    packageReply(raw, {
+      ...sanityCtx,
+      world: opts?.world,
+      worldSpoken: opts?.worldSpoken,
+      story,
+      contentContinuing,
+    });
   const rejectCreditBody = (specId: string, content: string) => {
     if (specId !== 'pollinations' && content.length < 160 && CREDIT_RE.test(content)) {
       throw new Error(`${specId} out of credit`);
