@@ -4,9 +4,17 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AppleMeta from "../components/AppleMeta";
 import DevModeGate from "../components/DevModeGate";
+import JsonLd from "../components/JsonLd";
 import LegalGate from "../components/LegalGate";
 import ServiceWorkerRegistrar from "../components/ServiceWorkerRegistrar";
 import UiClickSound from "../components/UiClickSound";
+import {
+  SITE_DESCRIPTION,
+  SITE_KEYWORDS,
+  SITE_OG_IMAGE,
+  SITE_TITLE,
+  SITE_URL,
+} from "../lib/site";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,11 +31,55 @@ const geistMono = Geist_Mono({
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 
 export const metadata: Metadata = {
-  title: "Amoji",
-  description: "An emotional AI companion who laughs, sulks, and stays with you. 識笑、識嬲、識陪住你。",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SITE_TITLE,
+    template: "%s · Amoji",
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: "Amoji",
+  keywords: [...SITE_KEYWORDS],
+  authors: [{ name: "MonMonMars", url: "https://github.com/MonMonMars/amoji-app" }],
+  creator: "MonMonMars",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "/",
+    siteName: "Amoji",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [
+      {
+        url: SITE_OG_IMAGE,
+        width: 512,
+        height: 512,
+        alt: "Amoji companion",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [SITE_OG_IMAGE],
+  },
   icons: {
     icon: `${BASE_PATH}/icon.svg`,
-    apple: "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a01-shino.png",
+    apple: SITE_OG_IMAGE,
   },
 };
 
@@ -69,6 +121,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <link rel="dns-prefetch" href="https://oai.endpoints.kepler.ai.cloud.ovh.net" />
         <link rel="preconnect" href="https://speech.platform.bing.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://speech.platform.bing.com" />
+        <JsonLd />
         <AppleMeta />
         <ServiceWorkerRegistrar />
         <UiClickSound />
