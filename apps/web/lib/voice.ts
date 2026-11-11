@@ -2288,10 +2288,10 @@ export function previewOsVoice(
  * Short one-liners were easy to miss (quiet + too brief).
  */
 export const GATE_TEST_LINES: Record<Lang, string> = {
-  yue: '喂，聽唔聽到我呀？而家係喇叭同語音測試，我會講多幾句，方便你聽清楚音量同音色。如果聽到呢段說話，就表示喇叭正常，咪高峰同位置可以之後再確認。之後我哋就可以入去傾偈啦，慢慢嚟，唔使急，聽到就撳得聽到我。',
+  yue: '喂，聽唔聽到我呀？而家係「開聲傾偈」喇叭同語音測試，我會講多幾句，方便你聽清楚音量同音色。如果聽到呢段說話，就表示喇叭正常，咪高峰同位置可以之後再確認。之後我哋就可以入去傾偈啦，慢慢嚟，唔使急，聽到就撳得聽到我。',
   zh: '喂，你能听到我吗？现在是扬声器和语音测试，我会多说几句，方便你听清楚音量和音色。如果你听得到这段话，就表示喇叭正常，麦克风和位置可以稍后再确认。之后我们就可以进去聊天了，慢慢来，不用着急，听到了就点“我听得到”。',
   ja: 'ねえ、聞こえる？いまはスピーカーと声のテストだよ。音量と声の感じが分かるように、もう少し長めに話すね。この声が聞こえたらスピーカーは大丈夫。マイクや位置情報はあとで確認していいよ。このあとチャットに入れるよ。焦らなくていいからね。聞こえたら「聞こえた」を押してね。',
-  en: "Hey, can you hear me? This is a speaker and voice test — I'll keep talking for a few more sentences so you can clearly check the volume and tone. If you hear this whole line, your speakers are working; mic and location can wait until after. Then we can head into chat — no rush, take your time. Tap “I can hear” when this is clear.",
+  en: "Hey, can you hear me? This is a speaker and voice-chat test — I'll keep talking for a few more sentences so you can clearly check the volume and tone. If you hear this whole line, your speakers are working; mic and location can wait until after. Then we can head into chat — no rush, take your time. Tap “I can hear” when this is clear.",
 };
 
 /** one short happy line per language for the settings self-test (r2026-10-04.75) */
