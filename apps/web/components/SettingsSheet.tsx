@@ -34,7 +34,8 @@ import { useFocusTrap } from '../lib/use-focus-trap';
 import VoicePicker from './VoicePicker';
 import ModelThumb from './ModelThumb';
 import BrainAdvanced from './BrainAdvanced';
-import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, testOpenAiVoice, VOICE_TIER_LABEL } from '../lib/voice';
+import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, testOpenAiVoice, playVoiceGreeting, VOICE_TIER_LABEL } from '../lib/voice';
+import { activeVoiceChoice } from '../lib/voice-picks';
 import { listenSupported } from '../lib/listen';
 import { requestMic } from '../lib/mic-preflight';
 import { patchEntryGateMic, type MicOutcome } from '../lib/entry-gate';
@@ -529,7 +530,15 @@ export default function SettingsSheet({
           </Section>
 
           <Section title={`🌐 ${t(lang, 'chooseLanguage')}`}>
-            <LangChips value={prefs.lang} onChange={(l) => onChange({ lang: l })} />
+            <LangChips
+              value={prefs.lang}
+              onChange={(l) => {
+                onChange({ lang: l });
+                // Same audition path as select ArcFan language cards (#340 lineage):
+                // tapping a language card must play a greeting, not only flip prefs.
+                playVoiceGreeting(me.id, l, activeVoiceChoice(l).id);
+              }}
+            />
           </Section>
 
           {/* Worldwide weather + light news: she follows YOUR city, not a
