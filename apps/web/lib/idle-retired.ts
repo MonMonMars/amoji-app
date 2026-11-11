@@ -31,8 +31,8 @@ export const PIXEL_PERF_OK_NUMS = new Set([
  * Includes Pixel DELETE / bad / blend-bad poses.
  */
 export const RETIRED_IDLE_NUMS = new Set([
-  // Pixel DELETE / bad (1–59)
-  9, 11, 14, 21, 24, 25, 26, 35, 36, 37, 38, 39, 47, 48, 54, 55, 56, 57, 58, 59,
+  // Pixel DELETE / bad / bad talking-gesture (1–59)
+  8, 9, 10, 11, 14, 21, 24, 25, 26, 35, 36, 37, 38, 39, 47, 48, 54, 55, 56, 57, 58, 59,
   // Pixel bad (94–118)
   96, 97, 98, 99, 100, 105, 106, 107,
 ]);

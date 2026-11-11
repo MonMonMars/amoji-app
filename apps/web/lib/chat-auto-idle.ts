@@ -10,27 +10,21 @@ import { detectMusicStyle, STYLE_CLIP_HINTS } from './music-catalog';
 import { resolvePerfMotion } from './performance-motion';
 import { isPixelOkIdleClip } from './idle-retired';
 
-/** Pixel-OK calm stands only. */
+/**
+ * While speaking / Q&A: only calm stands suitable for talk.
+ * LookAround / neck-search look wrong mid-sentence (Pixel: looking-around move).
+ * Expressive chatting/arguing clips (#8/#9/#10/#24) are retired.
+ */
 const BREATHING_CLIPS = ['IdleRpmFStanding001'] as const;
 
-/** Opening greet / light chit-chat — never the wave gesture. Pixel OK only. */
-const CHITCHAT_CLIPS = ['LookAround', 'IdleSassy', 'IdleRpmMVar001', 'IdleRpmFStanding001'] as const;
+/** Opening greet / light chit-chat — never wave, never look-search. */
+const CHITCHAT_CLIPS = ['IdleRpmFStanding001', 'IdleSassy'] as const;
 
-/** Calm defaults for ordinary Q&A — no dance fallthrough. Pixel OK only. */
-const NEUTRAL_CHAT_CLIPS = [
-  'IdleRpmFStanding001',
-  'LookAround',
-  'IdleSassy',
-  'IdleRpmMVar001',
-] as const;
+/** Ordinary Q&A body while talking. */
+const NEUTRAL_CHAT_CLIPS = ['IdleRpmFStanding001', 'IdleSassy'] as const;
 
-/** Weather / news / story / fun-fact talk — look + breathe only. Pixel OK only. */
-const TALK_CALM_CLIPS = [
-  'LookAround',
-  'IdleRpmFStanding001',
-  'IdleRpmMVar001',
-  'IdleSassy',
-] as const;
+/** Weather / news / story talk — same calm talk stands. */
+const TALK_CALM_CLIPS = ['IdleRpmFStanding001', 'IdleSassy'] as const;
 
 const SING_INTENT =
   /(唱歌|唱首歌|唱一首|唱k|一齊唱|一齐唱|\bsing(?:ing)?\b|\bkaraoke\b|カラオケ|歌を歌)/i;

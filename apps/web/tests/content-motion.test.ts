@@ -39,7 +39,7 @@ describe('content-driven motion director (not LLM)', () => {
   });
 
   it('weather / news / story talk uses calm look/breathe idle, not dance', () => {
-    const calm = ['LookAround', 'IdleRpmFStanding001', 'IdleRpmMVar001', 'IdleSassy'];
+    const calm = ['IdleRpmFStanding001', 'IdleSassy'];
     const weather = resolveContentMotion({
       userText: '今日天氣點呀？',
       assistantText: '今日多雲，大概 26 度，帶件薄外套，take care。',

@@ -86,9 +86,9 @@ const PIXEL_NOTES_1_93: Readonly<Partial<Record<number, string>>> = {
   5: 'KayKit idle — casual breathe candidate; curated rail.',
   6: 'Folded arms — library only; not curated.',
   7: 'Bored — casual stand; curated breathe.',
-  8: 'Arguing — too expressive for default rail.',
-  9: 'DELETE — head/body blend left; retired.',
-  10: 'Chatting02 — library.',
+  8: 'DELETE — fast arguing/talking gesture; retired (not for talk body).',
+  9: 'DELETE — head/body blend left chatting; retired.',
+  10: 'DELETE — thumbs-up explaining chat gesture; retired.',
   11: 'DELETE — left hand blend strange; retired.',
   12: 'Listening to music — library.',
   13: 'LookingAround02 — distinct from #3; curated look.',
@@ -176,7 +176,7 @@ const PIXEL_NOTES_1_93: Readonly<Partial<Record<number, string>>> = {
 
 function verdictForLibNum(libNum: number, entry: (typeof IDLE_LIBRARY)[number]): PixelIdleVerdict {
   if (RETIRED_IDLE_NUMS.has(libNum) || entry.retired) {
-    if ([9, 11, 14, 21, 24, 25, 26, 35, 36, 37, 38, 39, 47, 48, 54].includes(libNum)) return 'delete';
+    if ([8, 9, 10, 11, 14, 21, 24, 25, 26, 35, 36, 37, 38, 39, 47, 48, 54].includes(libNum)) return 'delete';
     if ([55, 56, 57, 58, 59, 96, 97, 98, 99, 100, 105, 106, 107].includes(libNum)) return 'grey';
     return 'blend-bad';
   }
