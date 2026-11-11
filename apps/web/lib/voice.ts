@@ -1113,7 +1113,8 @@ function pickVoice(characterId: string, lang: Lang, genderOverride?: 'female' | 
   const pool = byLang.length ? byLang : cached;
   // Same pitch/pace as the Edge slot, so the browser fallback stays personal.
   const pitch = (gender === 'male' ? 0.94 : 1.06) + (color?.pitch ?? 0);
-  const rate = (gender === 'male' ? 0.98 : 1.02) + (color?.rate ?? 0);
+  const rateBase = gender === 'male' && lang === 'yue' ? 1.04 : gender === 'male' ? 0.98 : 1.02;
+  const rate = rateBase + (color?.rate ?? 0);
   // A pinned OS voice beats the matrix. The user chose that exact speaker in
   // Settings, so it must be what chat plays — otherwise the picker promises a
   // difference the chat does not have. A pin whose voice is gone (device swap,

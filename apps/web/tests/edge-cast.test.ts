@@ -32,6 +32,13 @@ describe('per-character Edge cast', () => {
     }
   });
 
+  it('keeps male Cantonese SSML rate offsets conversational, not sluggish', () => {
+    const males = edgeCastRoster().filter((c) => c.gender === 'male');
+    const rates = males.map((c) => edgeCastVoice(c.id, 'yue')!.rate);
+    expect(rates.every((r) => r >= 0.02)).toBe(true);
+    expect(Math.min(...rates)).toBeGreaterThanOrEqual(0.02);
+  });
+
   it('spreads English and Mandarin across many neural voices, and keeps Yue on zh-HK', () => {
     const females = edgeCastRoster().filter((c) => c.gender === 'female');
     const ids = (locale: string) => new Set(females.map((c) => edgeCastVoice(c.id, locale)!.id));

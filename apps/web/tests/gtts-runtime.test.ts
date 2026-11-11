@@ -226,6 +226,14 @@ describe.skipIf(!esbuildAvailable)('speakGtts real behaviour (esbuild + vm)', ()
     expect(created[0]!.playbackRate).toBeGreaterThanOrEqual(0.88);
   });
 
+  it('keeps male Cantonese gTTS near conversational pace despite pitch bias', async () => {
+    const { api, created } = boot();
+    void api.speakGtts('你好呀。', { lang: 'yue', pitchBias: 0.88 }).catch(() => {});
+    await new Promise((r) => setTimeout(r, 20));
+    expect(created[0]!.playbackRate).toBeGreaterThanOrEqual(1.04);
+    expect(created[0]!.playbackRate).toBeLessThanOrEqual(1.25);
+  });
+
   it('splits a long line into several capped requests, played in order', async () => {
     const { api, created } = boot();
     // Well over 120 chars per clause, so the merge step cannot collapse it.
