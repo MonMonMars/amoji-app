@@ -60,6 +60,22 @@ function width(s: string): number {
 const FINAL_MARK = '<|channel|>final<|message|>';
 const DANGLING = /^(.*\S)\s+(and|but|so|or|because|then|the|a|an|to|of|for|with|my|your|while|而|但|所以|然後|然后|跟住)$/i;
 
+/** Vague comfort / presence / meta-topic sludge — drop when other sentences remain. */
+function isVagueSludge(sentence: string): boolean {
+  const s = sentence.trim();
+  if (!s) return false;
+  if (/^(?:i'?m\s+)?always\s+here\b/i.test(s)) return true;
+  if (/everything\s+happens\s+for\s+a\s+reason/i.test(s)) return true;
+  if (/hope\s+this\s+helps/i.test(s)) return true;
+  if (/you'?ve\s+gone\s+quiet\b|are\s+you\s+still\s+there\b/i.test(s)) return true;
+  if (/still\s+on\s+that\s+thread\b|holding\s+the\s+same\s+topic\b/i.test(s)) return true;
+  if (/充滿電|充满电|電壓感覺友善|voltage feels friendly|tiny burst/.test(s)) return true;
+  if (/^(?:我一直都在|一切都会好|希望帮到你|希望幫到你)/.test(s)) return true;
+  if (/你靜咗喎|好耐冇聲喎|你安静下来了|静かになっちゃった/.test(s)) return true;
+  if (/仲喺你呢條話題|还在你这条话题|輕輕留住同一個主題|轻轻留着同一个主题/.test(s)) return true;
+  return false;
+}
+
 function isMeta(sentence: string): boolean {
   const s = sentence.trim();
   if (!s) return false;
@@ -74,6 +90,7 @@ function isMeta(sentence: string): boolean {
   if (/^(分析|推理|計劃|计划|思考)\s*[:：]/.test(s)) return true;
   if (/^(用戶想要|用户想要|對方想|对方想|需要回覆|需要回复)/.test(s)) return true;
   if (/^(我哋應該|我們應該|我们应该|我要回覆|我要回复)/.test(s)) return true;
+  if (isVagueSludge(s)) return true;
   return false;
 }
 
