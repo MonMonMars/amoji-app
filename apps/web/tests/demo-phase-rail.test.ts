@@ -10,7 +10,7 @@ function read(rel: string): string {
 }
 
 describe('DemoPhaseRail scroll (iPhone + drag)', () => {
-  it('keeps overflow-x scroll, touch pan, and pointer drag wiring', () => {
+  it('keeps overflow-x scroll, touch pan, and deferred pointer-drag wiring', () => {
     const src = read('components/DemoPhaseRail.tsx');
     expect(src).toContain('overflow-x-auto');
     expect(src).toContain('touch-action:pan-x');
@@ -23,5 +23,16 @@ describe('DemoPhaseRail scroll (iPhone + drag)', () => {
     // Tap jitter must not eat chip clicks — threshold ≥ 16px.
     expect(src).toMatch(/DRAG_CLICK_PX\s*=\s*(1[6-9]|[2-9]\d)/);
     expect(src).toContain('skipClickRef.current = drag.moved');
+    // Capture only after a real drag — immediate rail capture kills chip clicks in Chrome.
+    expect(src).toContain('setPointerCapture');
+    expect(src).toMatch(/if \(!drag\.captured\)[\s\S]*setPointerCapture/);
+    expect(src).toMatch(/onPointerDown[\s\S]*Do NOT capture yet/);
+  });
+
+  it('ChatPanel wires DemoPhaseRail onPick into send()', () => {
+    const panel = read('components/ChatPanel.tsx');
+    expect(panel).toContain('<DemoPhaseRail');
+    expect(panel).toContain('void send(prompt)');
+    expect(panel).toContain('disabled={busy}');
   });
 });
