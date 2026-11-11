@@ -9,8 +9,10 @@ import {
   capSpokenQuestions,
   countSpokenQuestions,
   gateSpokenLine,
+  isTopicMenuAsk,
   openGreetTooManyQuestions,
   safeIdleFallback,
+  scrubTopicMenuAsks,
   spokenLineLooksBroken,
   stripQuestionSentences,
   userMessageLooksLikeQuestion,
@@ -146,6 +148,14 @@ describe('open greet question cap', () => {
   it('stripQuestionSentences removes trailing asks', () => {
     expect(stripQuestionSentences('Hello. Want to chat?')).toBe('Hello.');
     expect(stripQuestionSentences('你好，我鍾意茶。想傾咩呀？')).toBe('你好，我鍾意茶。');
+  });
+
+  it('never keeps stacked topic-menu asks like 我哋傾咩好呀 / 今日想傾咩呀', () => {
+    expect(isTopicMenuAsk('我哋傾咩好呀？')).toBe(true);
+    expect(isTopicMenuAsk('今日想傾咩呀？')).toBe(true);
+    expect(scrubTopicMenuAsks('我哋傾咩好呀？ 今日想傾咩呀？')).toBe('');
+    expect(capSpokenQuestions('你好。我哋傾咩好呀？ 今日想傾咩呀？', 1)).toBe('你好。');
+    expect(capSpokenQuestions('我哋傾咩好呀？ 今日想傾咩呀？', 1)).toBe('');
   });
 
   it('buildOpenCheerLine has zero questions', () => {

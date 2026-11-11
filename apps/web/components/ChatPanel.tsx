@@ -146,7 +146,7 @@ import { pickLine } from '../lib/chatter';
 import { pickIdleLine } from '../lib/persona-chatter';
 import { pickIdleCompanionLine } from '../lib/idle-talk';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
-import { gateSpokenLine, safeIdleFallback } from '../lib/spoken-line-sanity';
+import { gateSpokenLine, safeIdleFallback, scrubTopicMenuAsks } from '../lib/spoken-line-sanity';
 import { pickCharacterInteraction } from '../lib/interaction-lines';
 import { pokeSectionPlaceholderLine, type PokeSectionId } from '../lib/poke-zones';
 import { personalityProfile, personalityPrompt } from '../lib/personality';
@@ -541,8 +541,9 @@ export default function ChatPanel({
     opts?: { idle?: boolean; n?: number },
   ) => {
     // Durable spoken-line gate: reject unfinished templates / fragments /
-    // banned idle interrogations before TTS + history.
-    const gated = gateSpokenLine(text, {
+    // banned idle interrogations / topic-menu interviews before TTS + history.
+    const scrubbed = scrubTopicMenuAsks(text) || text;
+    const gated = gateSpokenLine(scrubbed, {
       mode: opts?.idle ? 'idle' : 'local',
       lang,
       n: opts?.n ?? chatterCountRef.current,

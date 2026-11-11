@@ -77,7 +77,11 @@ import { BASE_SYSTEM, languageBlock, parseEmotionHints, type ChatMessage } from 
 import { brainBodyExtras, markBrainDead, pickBrain, type BrainSpec } from './brain';
 import { cleanForDisplay, stripLaughTokens } from './speak-text';
 import { withQuestion } from './follow-up';
-import { capCompanionReplyQuestions, capSpokenQuestions } from './spoken-line-sanity';
+import {
+  capCompanionReplyQuestions,
+  capSpokenQuestions,
+  scrubTopicMenuAsks,
+} from './spoken-line-sanity';
 import {
   contentContinuationSystemBlock,
   contentReplyIsTeaser,
@@ -1136,8 +1140,11 @@ function packageReply(
     : ctx.contentContinuing
       ? capSpokenQuestions(cleaned, 0)
       : capCompanionReplyQuestions(cleaned, ctx.lastUser);
-  const spoken = ctx.story || ctx.contentContinuing ? capped : withQuestion(capped, ctx.language);
+  // Never reintroduce “what should we talk about?” after capping.
+  const scrubbed = scrubTopicMenuAsks(capped) || capped;
+  const spoken = ctx.story || ctx.contentContinuing ? scrubbed : withQuestion(scrubbed, ctx.language);
   let reply = preferLiveReply(spoken, ctx.world, ctx.worldSpoken, ctx.language);
+  reply = scrubTopicMenuAsks(reply) || reply;
   if (contentReplyIsTeaser(reply, ctx.lastUser, ctx.world) && ctx.worldSpoken?.trim()) {
     reply = ctx.worldSpoken.trim();
   }

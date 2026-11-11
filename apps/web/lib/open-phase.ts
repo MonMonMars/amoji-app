@@ -162,12 +162,15 @@ export function openPhaseNewsAsk(lang: string): string {
   return 'any light cheerful news?';
 }
 
-/** Standalone topic ask for menus / undecided-user paths — not enter-chat TTS. */
+/**
+ * Legacy helper for menus / undecided paths.
+ * Must stay statement-only — never “what should we talk about?”.
+ */
 export function openPhaseTopicAsk(lang: string): string {
-  if (lang === 'ja') return '今日は何を話したい？';
-  if (lang === 'zh') return '今天想聊点什么呀？';
-  if (lang === 'yue') return '今日想傾咩呀？';
-  return 'what do you want to talk about today?';
+  if (lang === 'ja') return 'そばにいるよ。好きな話を始めてくれて大丈夫。';
+  if (lang === 'zh') return '我在这里。你想聊什么都可以慢慢开口。';
+  if (lang === 'yue') return '我喺度。你想講咩都可以慢慢開口。';
+  return "I'm here. Start with whatever you like whenever you're ready.";
 }
 
 /** Enter-chat TTS: optional name hello + statement persona intro (no interview). */
@@ -179,9 +182,10 @@ export function buildOpenCheerLine(
   void L;
   const intro = stripQuestionSentences(opts.personaIntro.trim());
   const named = opts.nameHello?.trim();
+  // topicAsk is ignored on enter cheer — never bolt a second interview ask.
   void opts.topicAsk;
   const base = summarizeOpenPhaseSpoken(named, intro);
-  return base || '';
+  return stripQuestionSentences(base || '');
 }
 
 /** Join spoken snippets for TTS; strip hashtags/symbols via cleanForSpeech. */

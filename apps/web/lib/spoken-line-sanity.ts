@@ -68,9 +68,22 @@ export function countSpokenQuestions(text: string): number {
   return (t.match(/[?？]/g) ?? []).length;
 }
 
+/**
+ * “What should we talk about?” interview lines — banned even as the single
+ * soft check-in. Owner sample: 我哋傾咩好呀？ + 今日想傾咩呀？
+ */
+export function isTopicMenuAsk(s: string): boolean {
+  const c = (s ?? '').trim();
+  if (!c) return false;
+  return /我哋傾咩好|今日想傾咩|想傾咩呀|傾咩好呀|想傾偈嘅話.*[?？]|今天想聊[点點什什麼]+|聊[点點]什么好|聊[点點]什麼好|何を話したい|何を話そう|what should we talk about|what do you want to talk about|what shall we (?:talk|chat) about/i.test(
+    c,
+  );
+}
+
 function sentenceLooksLikeQuestion(s: string): boolean {
   const c = (s ?? '').trim();
   if (!c) return false;
+  if (isTopicMenuAsk(c)) return true;
   if (/[?？]$/.test(c)) return true;
   if (/(?:吗|嗎)\s*[？?]?\s*$/.test(c)) return true;
   if (/(?:想|要).*(?:傾|聊|讲|說|话|話).*(?:呀|吗|嗎)\s*$/u.test(c)) return true;
@@ -137,24 +150,31 @@ export function capSpokenQuestions(text: string, maxQuestions = 1): string {
   if (!t || maxQuestions < 0) return t;
   const chunks = splitSpokenSentences(t);
   if (chunks.length <= 1) {
+    // Topic-menu asks never survive, even when maxQuestions allows one soft ask.
+    if (isTopicMenuAsk(t)) return '';
     if (maxQuestions === 0 && sentenceLooksLikeQuestion(t)) return '';
     return t;
   }
   const answers = chunks.filter((c) => !sentenceLooksLikeQuestion(c));
-  const asks = chunks.filter((c) => sentenceLooksLikeQuestion(c));
+  const asks = chunks.filter((c) => sentenceLooksLikeQuestion(c) && !isTopicMenuAsk(c));
   const keptAsks = maxQuestions > 0 ? asks.slice(-maxQuestions) : [];
   const merged = [...answers, ...keptAsks];
   const joined = merged.join(' ').trim();
   if (joined) return joined;
   if (answers.length) return answers.join(' ').trim();
   if (maxQuestions > 0 && asks[0]) return asks[0]!;
-  return t;
+  return '';
 }
 
 /** Post-process model chat replies — no stacked asks after a user question. */
 export function capCompanionReplyQuestions(text: string, lastUserMessage?: string): string {
   const max = userMessageLooksLikeQuestion(lastUserMessage ?? '') ? 0 : 1;
   return capSpokenQuestions(text, max);
+}
+
+/** Open cheer / idle: zero topic-menu interviews. */
+export function scrubTopicMenuAsks(text: string): string {
+  return capSpokenQuestions(stripQuestionSentences(text), 0);
 }
 
 /**
@@ -204,6 +224,8 @@ export function spokenLineLooksBroken(text: string, opts?: SpokenGateOpts): bool
   if ((opts?.mode ?? 'local') === 'idle' && asksUserInnerThoughts(t)) return true;
   // Local + idle: never volunteer “continue last time” — history is quiet.
   if (asksToResumeHistory(t)) return true;
+  // Never speak pure “what should we talk about?” interview lines.
+  if (isTopicMenuAsk(t) && countSpokenQuestions(t) > 0 && !/[。．.！!]/.test(t)) return true;
   return false;
 }
 

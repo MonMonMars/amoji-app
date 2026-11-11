@@ -1172,7 +1172,7 @@ export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
   mika: {
     en: [
       'Hey. I wrote a new chord while you were gone — want to hear it?',
-      'No rush. What should we talk about while the mood settles?',
+      'No rush. Soft chords while the mood settles — I can keep company quietly.',
       'I tuned my guitar three times today. Can you help me pick a mood?',
       'Life\'s like a jam session — what should we play today?',
       'Coffee, tea, or just the quiet — what\'s your order?',
@@ -1184,7 +1184,7 @@ export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
     ],
     yue: [
       '喂。你走咗之後我寫咗個新和弦——彈俾你聽吖？',
-      '唔使急。等心情沉澱嗰陣，我哋傾咩好呀？',
+      '唔使急。等心情沉澱嗰陣，我喺度輕輕陪住你。',
       '今日我調咗三次結他音。你可唔可以幟我揀個心情呀？',
       '人生似即興演奏——今日我哋彈咩呀？',
       '咖啡、茶，定係淨係要份靜——你點咩呀？',
@@ -1196,7 +1196,7 @@ export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
     ],
     zh: [
       '嘿。你走了之后我写了个新和弦——弹给你听呀？',
-      '不用急。等心情沉淀的时候，我们聊点什么好呀？',
+      '不用急。等心情沉淀的时候，我在这里轻轻陪着你。',
       '今天我调了三次吉他音。你可不可以帮我选个心情呀？',
       '人生像即兴演奏——今天我们弹什么呀？',
       '咖啡、茶，还是只要这份安静——你点什么呀？',
@@ -1208,7 +1208,7 @@ export const CHARACTER_IDLE: Record<string, Record<Lang, string[]>> = {
     ],
     ja: [
       'よう。いない間に新しいコードを書いたんだ——弾いて聞かせようか？',
-      '焦らなくていい。気分が整うまで、何を話そうか？',
+      '焦らなくていい。気分が整うまで、静かにそばにいるよ。',
       '今日は三回もギターの調律をした。気分、選ぶの手伝ってくれる？',
       '人生はセッションみたいなものだ——今日は何を弾こうか？',
       'コーヒー、お茶、それとも静けりだけ——注文は？',
