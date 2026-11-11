@@ -17,7 +17,7 @@ import {
   voiceIdleLines,
   voiceOpening,
 } from '../lib/personality-voice';
-import { asksUserInnerThoughts, spokenLineLooksBroken } from '../lib/spoken-line-sanity';
+import { asksPresenceNag, asksUserInnerThoughts, spokenLineLooksBroken } from '../lib/spoken-line-sanity';
 import { CHATTER } from '../lib/chatter';
 import { CHARACTERS, type Lang } from '../lib/prefs';
 
@@ -33,6 +33,25 @@ const FORBIDDEN_IDLE_FRAGMENTS = [
   /^maps is\b/i,
   /提醒我你/,
   /轻轻提醒我想起你/,
+  // Spark metaphor sludge ("一個小謎語充滿電，等一陣細爆發").
+  /充滿電/,
+  /充满电/,
+  /細爆發/,
+  /小爆发/,
+  /電壓感覺友善/,
+  /电压感觉友善/,
+  /is charged and ready/i,
+  /voltage feels friendly/i,
+  /tiny burst/i,
+  /充電済み/,
+  /小さなバースト/,
+  // Meta topic-narration / presence nags.
+  /still on that thread/i,
+  /holding the same topic/i,
+  /you've gone quiet/i,
+  /are you still there/i,
+  /仲喺你呢條話題/,
+  /还在你这条话题/,
 ];
 
 /** Pixel: never interrogate private thoughts in idle / open / reengage. */
@@ -142,13 +161,16 @@ describe('idle-talk', () => {
     expect(asksUserInnerThoughts('你諗緊咩呀？')).toBe(true);
     expect(asksUserInnerThoughts('你在想什么呀？')).toBe(true);
     expect(asksUserInnerThoughts('今、何を考えてる？')).toBe(true);
-    expect(asksUserInnerThoughts('Still here with you in this quiet stretch.')).toBe(false);
+    expect(asksUserInnerThoughts('I just stretched my shoulders — feels nice.')).toBe(false);
     expect(asksUserInnerThoughts('Looking at a pocket map made me think of you, softly.')).toBe(false);
+    expect(asksPresenceNag("You've gone quiet on me — I'm still right here with you~")).toBe(true);
+    expect(asksPresenceNag('Want a tiny weather check, or a fun fact next?')).toBe(false);
 
     for (const lang of LANGS) {
       for (const kind of ['idleBored', 'idleCozy', 'reengage', 'reengageSoft'] as const) {
         for (const line of CHATTER[kind][lang]) {
           expect(asksUserInnerThoughts(line), `${kind}/${lang}: ${line}`).toBe(false);
+          expect(asksPresenceNag(line), `${kind}/${lang}: ${line}`).toBe(false);
           for (const re of FORBIDDEN_THOUGHT_ASK) {
             expect(line, `${kind}/${lang}: ${line}`).not.toMatch(re);
           }
