@@ -20,16 +20,19 @@ import {
   isShippingEdgeVoice,
 } from '../lib/voice-catalog';
 import { resetVoicePicks, saveVoicePick, voicePickFor, activeVoiceChoice } from '../lib/voice-picks';
+import { resetVoiceExtras } from '../lib/voice-extras';
 import { buildEdgeSsml } from '../lib/edge-tts';
 import { selectTtsButtons, isSingleVoiceLocale, TIER_A_COUNTS } from '../lib/tts-button-registry';
 import {
   ENGINE_VERDICTS,
   VOICE_CHOICES,
+  addVoiceOption,
   distinctVoiceCount,
   engineIsOffered,
   engineStatus,
   hiddenEngines,
   tlForChoice,
+  voiceAddRemaining,
   voiceChoicesFor,
 } from '../lib/voice-capability';
 
@@ -37,7 +40,10 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const row = fs.readFileSync(path.resolve(here, '../components/TtsVoiceRow.tsx'), 'utf8');
 const picker = fs.readFileSync(path.resolve(here, '../components/VoicePicker.tsx'), 'utf8');
 
-afterEach(() => resetVoicePicks());
+afterEach(() => {
+  resetVoicePicks();
+  resetVoiceExtras();
+});
 
 describe('engine audit', () => {
   it('classifies every engine the catalog mentions', () => {
@@ -90,22 +96,38 @@ describe('one button per genuinely different voice', () => {
   it('offers exactly the distinct speakers, never the 58 Edge names', () => {
     // 58 Edge short names all collapsed to one voice. The real map is one
     // button per distinct Google `tl` speaker measured with four sentences.
-    expect(selectTtsButtons()).toHaveLength(11);
+    expect(selectTtsButtons()).toHaveLength(18);
     expect(selectTtsButtons('yue')).toHaveLength(2);
-    expect(selectTtsButtons('zh')).toHaveLength(2);
+    expect(selectTtsButtons('zh')).toHaveLength(4);
     expect(selectTtsButtons('ja')).toHaveLength(2);
-    expect(selectTtsButtons('en')).toHaveLength(5);
+    expect(selectTtsButtons('en')).toHaveLength(10);
   });
 
-  it('collapses to exactly one selectable entry where only one voice exists', () => {
-    // Cantonese and Japanese really do have a single voice each. That is a
-    // finding, not a bug: the row shows one button and says why.
-    for (const locale of ['yue', 'zh', 'ja'] as const) {
+  it('keeps female + male for every shipping language and regional speaker', () => {
+    for (const locale of ['yue', 'zh', 'ja', 'en'] as const) {
+      const buttons = selectTtsButtons(locale);
+      expect(buttons.some((b) => b.deliveryGender === 'female'), locale).toBe(true);
+      expect(buttons.some((b) => b.deliveryGender === 'male'), locale).toBe(true);
+      const byTl = new Map<string, Set<string>>();
+      for (const b of buttons) {
+        const set = byTl.get(b.tl) ?? new Set();
+        set.add(b.deliveryGender);
+        byTl.set(b.tl, set);
+      }
+      for (const [tl, genders] of byTl) {
+        expect(genders.has('female'), `${locale}/${tl}`).toBe(true);
+        expect(genders.has('male'), `${locale}/${tl}`).toBe(true);
+      }
+    }
+  });
+
+  it('marks single-speaker languages (yue/ja) and multi-region ones (zh/en)', () => {
+    for (const locale of ['yue', 'ja'] as const) {
       expect(distinctVoiceCount(locale)).toBe(2);
       expect(selectTtsButtons(locale)).toHaveLength(2);
       expect(isSingleVoiceLocale(locale)).toBe(true);
     }
-    // English keeps multiple regional `tl` speakers on the row.
+    expect(isSingleVoiceLocale('zh')).toBe(false);
     expect(isSingleVoiceLocale('en')).toBe(false);
   });
 
@@ -128,13 +150,23 @@ describe('one button per genuinely different voice', () => {
   });
 
   it('agrees with TIER_A_COUNTS', () => {
-    expect(TIER_A_COUNTS).toEqual({ yue: 2, zh: 2, ja: 2, en: 5 });
+    expect(TIER_A_COUNTS).toEqual({ yue: 2, zh: 4, ja: 2, en: 10 });
   });
 
   it('labels female and male free delivery honestly on each button', () => {
     for (const button of selectTtsButtons()) {
       expect(button.deliveryGender === 'female' || button.deliveryGender === 'male').toBe(true);
     }
+  });
+
+  it('Add appends the next free test-pool voice for a language', () => {
+    expect(voiceAddRemaining('en')).toBeGreaterThan(0);
+    const before = selectTtsButtons('en').length;
+    const added = addVoiceOption('en');
+    expect(added).not.toBeNull();
+    expect(added!.locale).toBe('en');
+    expect(selectTtsButtons('en')).toHaveLength(before + 1);
+    expect(selectTtsButtons('en').some((b) => b.id === added!.id)).toBe(true);
   });
 });
 
@@ -201,11 +233,10 @@ describe('pin storage names a real voice', () => {
     expect(voicePickFor('yue')).toBe('gtts:yue:f');
   });
 
-  it('migrates legacy Taiwan gTTS pins to mainland Mandarin female', () => {
+  it('migrates legacy Taiwan gTTS pins to Taiwan Mandarin female', () => {
     saveVoicePick('zh', 'gtts:zh-TW');
-    expect(voicePickFor('zh')).toBe('gtts:zh-CN:f');
-    saveVoicePick('zh', 'gtts:zh-TW:f');
-    expect(voicePickFor('zh')).toBe('gtts:zh-CN:f');
+    expect(voicePickFor('zh')).toBe('gtts:zh-TW:f');
+    expect(activeVoiceChoice('zh').tl).toBe('zh-TW');
   });
 
   it('refuses an id that no longer exists', () => {

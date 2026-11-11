@@ -16,6 +16,7 @@ import {
   VOICE_CHOICES,
   distinctVoiceCount,
   engineIsOffered,
+  voiceChoicesFor,
   type VoiceChoice,
 } from './voice-capability';
 
@@ -36,20 +37,25 @@ export interface TtsButtonVoice {
   shipping: true;
 }
 
+function toButton(choice: VoiceChoice): TtsButtonVoice {
+  return {
+    id: choice.id,
+    engine: 'gtts' as const,
+    locale: choice.locale,
+    tl: choice.tl,
+    deliveryGender: choice.deliveryGender,
+    labelKey: choice.labelKey,
+    n: choice.n,
+    shipping: true as const,
+  };
+}
+
+/** Shipping buttons only (no user-added extras). */
 export const TTS_BUTTON_REGISTRY: readonly TtsButtonVoice[] = VOICE_CHOICES.filter((choice) =>
   engineIsOffered(choice.engine),
-).map((choice) => ({
-  id: choice.id,
-  engine: 'gtts' as const,
-  locale: choice.locale,
-  tl: choice.tl,
-  deliveryGender: choice.deliveryGender,
-  labelKey: choice.labelKey,
-  n: choice.n,
-  shipping: true as const,
-}));
+).map(toButton);
 
-/** How many genuinely different sounds each language offers. */
+/** How many shipping free voices each language offers. */
 export const TIER_A_COUNTS: Record<VoiceLocale, number> = {
   yue: distinctVoiceCount('yue'),
   zh: distinctVoiceCount('zh'),
@@ -62,14 +68,20 @@ export const TIER_A_COUNTS: Record<VoiceLocale, number> = {
  *
  * Female + male delivery are separate buttons on the same `tl` where Google
  * only exposes one speaker — pitch reshaping is documented in voice-capability.
+ * User-added extras from the Add pool are included after shipping voices.
  */
 export function selectTtsButtons(locale?: VoiceLocale): readonly TtsButtonVoice[] {
-  if (!locale) return TTS_BUTTON_REGISTRY;
-  return TTS_BUTTON_REGISTRY.filter((voice) => voice.locale === locale);
+  const choices = locale ? voiceChoicesFor(locale) : [
+    ...voiceChoicesFor('yue'),
+    ...voiceChoicesFor('zh'),
+    ...voiceChoicesFor('ja'),
+    ...voiceChoicesFor('en'),
+  ];
+  return choices.filter((choice) => engineIsOffered(choice.engine)).map(toButton);
 }
 
 export function ttsButtonById(id: string): TtsButtonVoice | undefined {
-  return TTS_BUTTON_REGISTRY.find((voice) => voice.id === id);
+  return selectTtsButtons().find((voice) => voice.id === id);
 }
 
 /** Stable React key. Ids are already unique. */
@@ -78,9 +90,10 @@ export function ttsButtonKey(voice: TtsButtonVoice): string {
 }
 
 /**
- * True when this language offers a single voice, i.e. the row is one button and
- * the UI should say why rather than look broken.
+ * True when this language's shipping grid is only the default female+male pair
+ * (one Google speaker). Used to explain a short list — extras from Add are
+ * still shown when present.
  */
 export function isSingleVoiceLocale(locale: VoiceLocale): boolean {
-  return selectTtsButtons(locale).length <= 2;
+  return distinctVoiceCount(locale) <= 2;
 }

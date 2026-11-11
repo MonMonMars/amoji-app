@@ -8,12 +8,14 @@
 //
 // It now lists the voices that really differ, per language, and states the
 // engine verdict for everything that does not work, so the short list is
-// explained rather than mysterious.
+// explained rather than mysterious. An Add button pulls optional same-bucket
+// regional codes from the test pool for auditioning.
 
 import { useCallback, useState } from 'react';
 import { selectTtsButtons, type TtsButtonVoice } from '../lib/tts-button-registry';
 import { isSingleVoiceLocale } from '../lib/tts-button-registry';
 import { activeVoiceChoice, loadVoicePicks, saveVoicePick, type VoicePickMap } from '../lib/voice-picks';
+import { addVoiceOption, voiceAddRemaining } from '../lib/voice-capability';
 import { previewVoiceChoice, previewOsVoice } from '../lib/voice';
 import { t, type Lang } from '../lib/prefs';
 import type { VoiceLocale } from '../lib/voice-catalog';
@@ -32,13 +34,13 @@ const LANGUAGE_LABEL: Record<VoiceLocale, string> = {
 
 export default function VoicePicker({
   lang,
-  characterId,
+  characterId: _characterId,
   accent,
   onLang,
 }: {
   lang: Lang;
   characterId: string;
-  /** Kept for call-site compatibility; the live voices are not gendered. */
+  /** Kept for call-site compatibility; free delivery gender is per button. */
   companionGender?: 'female' | 'male';
   accent: string;
   onLang: (lang: Lang) => void;
@@ -46,6 +48,8 @@ export default function VoicePicker({
   const [picks, setPicks] = useState<VoicePickMap>(() => loadVoicePicks());
   const [playing, setPlaying] = useState<string | null>(null);
   const [showDiag, setShowDiag] = useState(false);
+  const [rev, setRev] = useState(0);
+  const [addNote, setAddNote] = useState<Partial<Record<VoiceLocale, string>>>({});
   /**
    * How many OS voices this device contributes per language. Used only to keep
    * the "one available voice" note from contradicting the device row directly
@@ -73,8 +77,25 @@ export default function VoicePicker({
       .catch(() => setPlaying((id) => (id === button.id ? null : id)));
   };
 
+  const onAdd = (locale: VoiceLocale) => {
+    const added = addVoiceOption(locale);
+    if (!added) {
+      setAddNote((prev) => ({ ...prev, [locale]: t(lang, 'voiceAddNone') }));
+      return;
+    }
+    setAddNote((prev) => ({ ...prev, [locale]: undefined }));
+    setRev((n) => n + 1);
+    const next = saveVoicePick(locale, added.id);
+    setPicks(next);
+    setPlaying(added.id);
+    if (locale !== lang) onLang(locale);
+    void previewVoiceChoice(locale, added.id)
+      .then(() => setPlaying((id) => (id === added.id ? null : id)))
+      .catch(() => setPlaying((id) => (id === added.id ? null : id)));
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-voice-rev={rev}>
       <div>
         <p className="text-sm text-white/85">{t(lang, 'voicePickerTitle')}</p>
         <p className="mt-0.5 text-[11px] leading-relaxed text-white/45">{t(lang, 'voicePickerHint')}</p>
@@ -84,15 +105,30 @@ export default function VoicePicker({
         const activeId = picks[locale] ?? activeVoiceChoice(locale).id;
         const os = osUsable[locale];
         const osVoiceCount = os ? os.female + os.male : 0;
-        // "One available voice" is true of the hosted tier and false of the
-        // screen once device voices are below it, so the note is suppressed
-        // whenever the device contributes any voice of its own.
         const hostedOnly = isSingleVoiceLocale(locale) && osVoiceCount === 0;
+        const canAdd = voiceAddRemaining(locale) > 0;
         return (
           <div key={locale} role="group" aria-labelledby={`amoji-voice-locale-${locale}`} className="space-y-1.5">
-            <h4 id={`amoji-voice-locale-${locale}`} className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/50">
-              {LANGUAGE_LABEL[locale]}
-            </h4>
+            <div className="flex items-center justify-between gap-2">
+              <h4 id={`amoji-voice-locale-${locale}`} className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/50">
+                {LANGUAGE_LABEL[locale]}
+              </h4>
+              <button
+                type="button"
+                data-testid={`voice-add-${locale}`}
+                aria-label={t(lang, 'voiceAdd')}
+                title={t(lang, 'voiceAddHint')}
+                disabled={!canAdd}
+                onClick={() => onAdd(locale)}
+                className={`rounded-full border px-2.5 py-0.5 text-[10px] ${
+                  canAdd
+                    ? 'border-white/25 bg-white/10 text-white/85 hover:bg-white/15'
+                    : 'cursor-not-allowed border-white/10 bg-transparent text-white/30'
+                }`}
+              >
+                {t(lang, 'voiceAdd')}
+              </button>
+            </div>
             <div className="grid grid-cols-1 gap-1.5 min-[380px]:grid-cols-2">
               {rows.map((button) => {
                 const genderLabel = button.deliveryGender === 'male'
@@ -122,6 +158,11 @@ export default function VoicePicker({
                 );
               })}
             </div>
+            {addNote[locale] && (
+              <p className="text-[10px] leading-relaxed text-white/40" role="status" data-testid={`voice-add-note-${locale}`}>
+                {addNote[locale]}
+              </p>
+            )}
             {hostedOnly && (
               <p
                 className="text-[10px] leading-relaxed text-white/40"
@@ -130,10 +171,6 @@ export default function VoicePicker({
                 {t(lang, 'voiceOnlyOneAvailable')}
               </p>
             )}
-            {/* The OS's own voices. They are a genuinely different speaker from
-                the Google tier, and on desktop there are often several per
-                gender — so they go here, under the hosted voices, labelled as
-                coming from the device rather than the network. */}
             <OsVoiceRow
               locale={locale}
               lang={lang}
@@ -152,8 +189,6 @@ export default function VoicePicker({
         {t(lang, 'voiceEnginesUnavailable')}
       </p>
       <TtsLabPanel lang={lang} accent={accent} />
-      {/* The diagnostic the user can point at when they ask "why do I only hear
-          one voice?". Collapsed by default so the picker stays short. */}
       <div>
         <button
           type="button"
