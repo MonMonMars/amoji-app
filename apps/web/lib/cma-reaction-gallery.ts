@@ -1,10 +1,12 @@
 // CMA reaction SFX gallery + Want/Skip picks.
-// Mon EmotionClipRow female-view keepers: #12/#18/#23/#27/#30/#36 + new poke CMA00350–362.
+// Mon EmotionClipRow female-view keepers: #12/#18/#23/#27/#30/#36 + poke CMA00350–362
+// + legacy main-poke CLIP rows CMA00363–366 (um/giggle/ha/wow) so every sound the
+// character could play on poke is listed and selectable.
 // Wanted codes feed recordedLaughClip / recordedPokeClip. Assets under public/voice-clips/cma-reaction/.
 
 export const CMA_REACTION_GALLERY_KEY = 'amoji.cmaReactionSfx.picks.v1';
-/** Inclusive code span covering original pack + new poke additions. */
-export const CMA_REACTION_RANGE = { from: 304, to: 362 } as const;
+/** Inclusive code span covering original pack + poke pack + legacy poke CLIP rows. */
+export const CMA_REACTION_RANGE = { from: 304, to: 366 } as const;
 
 /** Original Mon keepers (female-view EmotionClipRow #s). */
 export const CMA_REACTION_KEEP_CODES = [
@@ -75,7 +77,7 @@ export interface CmaReactionClip {
   durationSec: number;
 }
 
-/** Ship-set: 6 Mon keepers + new poke clips CMA00350–362. */
+/** Ship-set: 6 Mon keepers + poke CMA00350–362 + legacy main-poke CLIP CMA00363–366. */
 export const CMA_REACTION_GALLERY: readonly CmaReactionClip[] = [
   {
     code: "CMA00318",
@@ -287,6 +289,51 @@ export const CMA_REACTION_GALLERY: readonly CmaReactionClip[] = [
     source: "Mixkit 2205 male ouch (crop)",
     durationSec: 1.149,
   },
+  // Legacy main RECORDED_POKE_ZONE rows that were still played but not listed.
+  {
+    code: "CMA00363",
+    file: "CMA00363_universal_female_ouch_um.mp3",
+    lang: "universal",
+    gender: "female",
+    burst: "um",
+    use: "poke",
+    license: "CC0",
+    source: "OGA Mature Female → universal/female/um.mp3 (main chest/breast poke)",
+    durationSec: 0.81,
+  },
+  {
+    code: "CMA00364",
+    file: "CMA00364_universal_female_ouch_giggle_full.mp3",
+    lang: "universal",
+    gender: "female",
+    burst: "giggle",
+    use: "poke",
+    license: "CC0",
+    source: "OGA Mature Female → universal/female/giggle.mp3 (main hand poke)",
+    durationSec: 0.888,
+  },
+  {
+    code: "CMA00365",
+    file: "CMA00365_universal_female_ouch_ha_full.mp3",
+    lang: "universal",
+    gender: "female",
+    burst: "ha",
+    use: "poke",
+    license: "CC0",
+    source: "OGA Mature Female → universal/female/ha.mp3 (main torso poke)",
+    durationSec: 0.862,
+  },
+  {
+    code: "CMA00366",
+    file: "CMA00366_universal_female_ouch_wow.mp3",
+    lang: "universal",
+    gender: "female",
+    burst: "gasp",
+    use: "poke",
+    license: "CC0",
+    source: "OGA Bright Female → universal/female/wow.mp3 (main back poke)",
+    durationSec: 0.888,
+  },
 ] as const;
 
 
@@ -437,7 +484,7 @@ export function countCmaReactionPicks(picks?: PickMap): {
 export type CmaReactionPlayRole = 'laugh' | 'poke' | 'gasp';
 
 const LAUGH_BURSTS = new Set(['laugh', 'giggle', 'ha', 'smile', 'groan']);
-const POKE_BURSTS = new Set(['ouch', 'effort', 'yelp', 'gasp']);
+const POKE_BURSTS = new Set(['ouch', 'effort', 'yelp', 'gasp', 'um', 'ha']);
 const GASP_BURSTS = new Set(['gasp']);
 
 function matchesPlayRole(clip: CmaReactionClip, role: CmaReactionPlayRole): boolean {
@@ -445,6 +492,17 @@ function matchesPlayRole(clip: CmaReactionClip, role: CmaReactionPlayRole): bool
   if (role === 'laugh') return LAUGH_BURSTS.has(clip.burst);
   if (role === 'gasp') return GASP_BURSTS.has(clip.burst);
   return false;
+}
+
+/** Catalog rows that can feed poke playback (use=poke or poke-shaped burst). */
+export function pokeRoleClips(opts?: {
+  gender?: 'female' | 'male';
+}): CmaReactionClip[] {
+  return CMA_REACTION_GALLERY.filter((c) => {
+    if (!matchesPlayRole(c, 'poke')) return false;
+    if (opts?.gender && c.gender !== opts.gender) return false;
+    return true;
+  });
 }
 
 /** Wanted catalog rows only. Skip/undecided excluded. Optional gender + play-role filter. */
@@ -461,7 +519,22 @@ export function wantedCmaReactionClips(opts?: {
   });
 }
 
+/**
+ * Poke playback pool from user picks:
+ *  - Any Wanted poke-role clip for this gender → Wanted only
+ *  - Else → full poke-role list minus Skipped (default = full updated list)
+ */
+export function enabledPokeReactionClips(opts: {
+  gender: 'female' | 'male';
+}): CmaReactionClip[] {
+  const wanted = wantedCmaReactionClips({ gender: opts.gender, role: 'poke' });
+  if (wanted.length) return wanted;
+  const skipped = new Set(skippedCmaReactionCodes());
+  return pokeRoleClips({ gender: opts.gender }).filter((c) => !skipped.has(c.code));
+}
+
 let wantedPlayCursor = 0;
+let enabledPokePlayCursor = 0;
 
 /**
  * Next Wanted CMA path for this gender + role, or null when the Wanted pool is empty.
@@ -487,8 +560,114 @@ export function pickWantedCmaReactionPath(opts: {
   return null;
 }
 
+/**
+ * Next enabled poke path. Prefer `preferPath` when it is in the enabled set
+ * (keeps zone-table answers when the user has not narrowed Want). Else rotate.
+ */
+export function pickEnabledPokeReactionPath(opts: {
+  gender: 'female' | 'male';
+  preferPath?: string;
+  isPlayable?: (path: string) => boolean;
+}): string | null {
+  const pool = enabledPokeReactionClips(opts);
+  if (!pool.length) return null;
+  if (opts.preferPath) {
+    const hit = pool.find((c) => cmaReactionPath(c.file) === opts.preferPath);
+    if (hit) {
+      const path = cmaReactionPath(hit.file);
+      if (!opts.isPlayable || opts.isPlayable(path)) return path;
+    }
+  }
+  const n = pool.length;
+  for (let i = 0; i < n; i++) {
+    const clip = pool[enabledPokePlayCursor % n]!;
+    enabledPokePlayCursor += 1;
+    const path = cmaReactionPath(clip.file);
+    if (!clip.file || !path) continue;
+    if (opts.isPlayable && !opts.isPlayable(path)) continue;
+    return path;
+  }
+  return null;
+}
+
 export function resetWantedCmaReactionRotation(): void {
   wantedPlayCursor = 0;
+  enabledPokePlayCursor = 0;
+}
+
+/** CMA code embedded in a /voice-clips/cma-reaction/… path, or null. */
+export function cmaCodeFromPath(path: string): string | null {
+  const m = path.match(/CMA\d{5}/);
+  return m ? m[0]! : null;
+}
+
+export interface PokeSfxInventoryRow {
+  code: string;
+  path: string;
+  gender: 'female' | 'male';
+  burst: string;
+  inList: boolean;
+  selectable: boolean;
+  usedByCharacter: boolean;
+  source: 'zone' | 'gallery-poke' | 'legacy-main';
+}
+
+/**
+ * Every poke-capable gallery row + every RECORDED_POKE_ZONE path, for inventory
+ * diffs (list vs playback). `zonePaths` is injected so this module stays free
+ * of a voice-clips import cycle.
+ */
+export function listPokeSfxInventory(zonePaths: readonly string[]): PokeSfxInventoryRow[] {
+  const zoneSet = new Set(zonePaths);
+  const byCode = new Map<string, PokeSfxInventoryRow>();
+  for (const clip of pokeRoleClips()) {
+    const path = cmaReactionPath(clip.file);
+    const used = zoneSet.has(path);
+    const legacy = Number(clip.code.slice(3)) >= 363;
+    byCode.set(clip.code, {
+      code: clip.code,
+      path,
+      gender: clip.gender,
+      burst: clip.burst,
+      inList: true,
+      selectable: true,
+      usedByCharacter: used,
+      source: legacy ? 'legacy-main' : used ? 'zone' : 'gallery-poke',
+    });
+  }
+  for (const path of zonePaths) {
+    const code = cmaCodeFromPath(path);
+    if (!code) {
+      byCode.set(`orphan:${path}`, {
+        code: '',
+        path,
+        gender: path.includes('/male/') ? 'male' : 'female',
+        burst: 'unknown',
+        inList: false,
+        selectable: false,
+        usedByCharacter: true,
+        source: 'zone',
+      });
+      continue;
+    }
+    if (byCode.has(code)) {
+      const row = byCode.get(code)!;
+      row.usedByCharacter = true;
+      if (row.source === 'gallery-poke') row.source = 'zone';
+      continue;
+    }
+    byCode.set(code, {
+      code,
+      path,
+      gender: path.includes('_male_') || path.includes('/male/') ? 'male' : 'female',
+      burst: 'unknown',
+      inList: false,
+      selectable: false,
+      usedByCharacter: true,
+      source: 'zone',
+    });
+  }
+  return [...byCode.values()].sort((a, b) => a.path.localeCompare(b.path));
 }
 
 /** Test helper — drop in-memory cache so the next read rehydrates. */

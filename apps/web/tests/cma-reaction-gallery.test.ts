@@ -7,16 +7,21 @@ import {
   CMA_REACTION_RANGE,
   clearSkippedCmaReactionPicks,
   countCmaReactionPicks,
+  cmaCodeFromPath,
   cmaReactionByCode,
   cmaReactionPath,
   cmaReactionVerdict,
+  enabledPokeReactionClips,
   expectedCmaReactionCodes,
   forgetCmaReactionPickCache,
   listCmaReactionCodes,
   listCmaReactionPicks,
+  listPokeSfxInventory,
   missingCmaReactionCodes,
   parseCmaReactionPicksJson,
+  pickEnabledPokeReactionPath,
   pickWantedCmaReactionPath,
+  pokeRoleClips,
   resetCmaReactionPicks,
   resetWantedCmaReactionRotation,
   setCmaReactionVerdict,
@@ -24,6 +29,7 @@ import {
   wantedCmaReactionClips,
   wantedCmaReactionCodes,
 } from '../lib/cma-reaction-gallery';
+import { pokeZoneClipPaths, recordedPokeClip, VOICE_CLIP_GENDERS } from '../lib/voice-clips';
 
 function mockStorage() {
   const store = new Map<string, string>();
@@ -44,13 +50,13 @@ afterEach(() => {
 });
 
 describe('CMA reaction gallery catalog', () => {
-  it('ships only Mon keepers #12/#18/#23/#27/#30/#36 + new poke CMA00350–362', () => {
-    expect(CMA_REACTION_RANGE).toEqual({ from: 304, to: 362 });
+  it('ships Mon keepers + poke CMA00350–362 + legacy CLIP CMA00363–366', () => {
+    expect(CMA_REACTION_RANGE).toEqual({ from: 304, to: 366 });
     expect(CMA_REACTION_KEEP_CODES).toEqual([
       'CMA00320', 'CMA00335', 'CMA00318', 'CMA00327', 'CMA00330', 'CMA00339',
     ]);
     expect(CMA_REACTION_DROPPED_CODES).toHaveLength(40);
-    expect(CMA_REACTION_GALLERY).toHaveLength(19);
+    expect(CMA_REACTION_GALLERY).toHaveLength(23);
     expect(missingCmaReactionCodes()).toEqual([]);
     expect(listCmaReactionCodes()).toEqual(expectedCmaReactionCodes());
     expect(cmaReactionByCode('CMA00304')).toBeNull();
@@ -64,6 +70,8 @@ describe('CMA reaction gallery catalog', () => {
     expect(cmaReactionByCode('CMA00339')?.burst).toBe('ouch'); // #36
     expect(cmaReactionByCode('CMA00350')?.use).toBe('poke');
     expect(cmaReactionByCode('CMA00362')?.use).toBe('poke');
+    expect(cmaReactionByCode('CMA00363')?.use).toBe('poke');
+    expect(cmaReactionByCode('CMA00366')?.use).toBe('poke');
     expect(cmaReactionByCode('CMA00349')).toBeNull();
   });
 
@@ -204,5 +212,73 @@ describe('CMA pick harden + Clear Skipped', () => {
       isPlayable: () => true,
     });
     expect(path).toContain('CMA00320');
+  });
+});
+
+describe('poke SFX inventory + selection → playback pool', () => {
+  it('lists every zone-table path as in-list + selectable', () => {
+    const zonePaths = VOICE_CLIP_GENDERS.flatMap((g) => pokeZoneClipPaths(g));
+    const inv = listPokeSfxInventory(zonePaths);
+    for (const path of zonePaths) {
+      const row = inv.find((r) => r.path === path);
+      expect(row, path).toBeTruthy();
+      expect(row!.inList, path).toBe(true);
+      expect(row!.selectable, path).toBe(true);
+      expect(row!.usedByCharacter, path).toBe(true);
+      expect(cmaCodeFromPath(path)).toBeTruthy();
+      expect(cmaReactionByCode(cmaCodeFromPath(path)!)).toBeTruthy();
+    }
+    // Legacy main poke CLIP rows are listed even when not on the zone table.
+    for (const code of ['CMA00363', 'CMA00364', 'CMA00365', 'CMA00366'] as const) {
+      const row = inv.find((r) => r.code === code);
+      expect(row, code).toBeTruthy();
+      expect(row!.inList).toBe(true);
+      expect(row!.selectable).toBe(true);
+      expect(row!.source).toBe('legacy-main');
+    }
+    expect(pokeRoleClips().length).toBeGreaterThanOrEqual(zonePaths.length);
+  });
+
+  it('default enabled poke pool = full poke-role list; Want narrows; Skip drops', () => {
+    mockStorage();
+    forgetCmaReactionPickCache();
+    resetWantedCmaReactionRotation();
+
+    const femaleAll = enabledPokeReactionClips({ gender: 'female' }).map((c) => c.code);
+    expect(femaleAll).toEqual(pokeRoleClips({ gender: 'female' }).map((c) => c.code));
+    expect(femaleAll).toContain('CMA00335');
+    expect(femaleAll).toContain('CMA00363');
+
+    setCmaReactionVerdict('CMA00335', 'skip');
+    expect(enabledPokeReactionClips({ gender: 'female' }).map((c) => c.code)).not.toContain('CMA00335');
+    expect(enabledPokeReactionClips({ gender: 'female' }).map((c) => c.code)).toContain('CMA00363');
+
+    setCmaReactionVerdict('CMA00363', 'want');
+    setCmaReactionVerdict('CMA00366', 'want');
+    expect(enabledPokeReactionClips({ gender: 'female' }).map((c) => c.code).sort()).toEqual([
+      'CMA00363',
+      'CMA00366',
+    ]);
+
+    const path = pickEnabledPokeReactionPath({ gender: 'female' });
+    expect(path).toMatch(/CMA0036[36]/);
+  });
+
+  it('recordedPokeClip prefers zone clip when still enabled; Wanted-only otherwise', () => {
+    mockStorage();
+    forgetCmaReactionPickCache();
+    resetWantedCmaReactionRotation();
+
+    // Default: zone belly stays CMA00335.
+    expect(recordedPokeClip('female', 'belly')).toContain('CMA00335');
+
+    // Want only legacy um → every poke uses that pool (not outside it).
+    setCmaReactionVerdict('CMA00363', 'want');
+    expect(recordedPokeClip('female', 'belly')).toContain('CMA00363');
+    expect(recordedPokeClip('female', 'head')).toContain('CMA00363');
+
+    // Want zone belly clip → belly prefers it.
+    setCmaReactionVerdict('CMA00335', 'want');
+    expect(recordedPokeClip('female', 'belly')).toContain('CMA00335');
   });
 });

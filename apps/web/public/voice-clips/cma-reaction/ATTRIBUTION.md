@@ -33,4 +33,15 @@ All other CMA00304–349 codes deleted from catalog + disk.
 | CMA00361 | CC0 | Woven SFX male-gasp.wav |
 | CMA00362 | Mixkit Free SFX | Mixkit 2205 male ouch (crop ≤ poke window) |
 
+## Legacy main poke CLIP rows CMA00363–366
+
+Copied from `universal/female/*` so the selectable gallery matches sounds main still played on poke.
+
+| Code | File | License | Source |
+|---|---|---|---|
+| CMA00363 | um (main chest/breast) | CC0 | OGA Mature Female → `universal/female/um.mp3` |
+| CMA00364 | giggle full (main hand) | CC0 | OGA Mature Female → `universal/female/giggle.mp3` |
+| CMA00365 | ha full (main torso) | CC0 | OGA Mature Female → `universal/female/ha.mp3` |
+| CMA00366 | wow (main back) | CC0 | OGA Bright Female → `universal/female/wow.mp3` |
+
 Credit **magicalmysticva** (Freesound) for CMA00352 (CC BY 4.0). See parent `ATTRIBUTION.md` for full URLs.

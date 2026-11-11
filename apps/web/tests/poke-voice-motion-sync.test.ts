@@ -141,7 +141,7 @@ describe('poke SFX answers the zone that was hit', () => {
     expect(RECORDED_POKE_ZONE.male.default).toContain('CMA00339');
     expect(RECORDED_POKE_ZONE.male.torso).not.toBe(RECORDED_POKE_ZONE.male.chest);
     // Runtime poke paths must come from the EmotionClipRow / CMA ship-set
-    // (keepers + CMA00350–362) — never orphaned universal CLIP_LIBRARY rows.
+    // (keepers + CMA00350–366) — never orphaned universal CLIP_LIBRARY rows.
     for (const gender of GENDERS) {
       for (const rel of Object.values(RECORDED_POKE_ZONE[gender])) {
         expect(rel.startsWith('/voice-clips/cma-reaction/'), rel).toBe(true);
