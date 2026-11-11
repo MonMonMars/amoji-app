@@ -1987,9 +1987,10 @@ export default function CompanionCanvas({
             if (idleClipId !== pinnedIdle) playNamedIdle(pinnedIdle, IDLE_PIN_CROSSFADE_S);
             idleHoldUntil = Infinity;
           } else if (thinkingPoseActive()) {
-            // Hold the primary standing idle while a reply generates.
-            if (idleClipId !== 'IdleBreathCalm' && !thinkMiss) {
-              if (!playNamedIdle('IdleBreathCalm', FADE.idleRotate)) thinkMiss = true;
+            // Visual wait cue: Thinking pose (C56), calm breath if VRMA missing.
+            const thinkClip = clips.has('Thinking') ? 'Thinking' : 'IdleBreathCalm';
+            if (idleClipId !== thinkClip && !thinkMiss) {
+              if (!playNamedIdle(thinkClip, FADE.idleRotate)) thinkMiss = true;
               else idleHoldUntil = performance.now() + 20000;
             }
           } else {

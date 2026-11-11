@@ -6,13 +6,15 @@ import {
   startThinkingSound,
   stopThinkingSound,
   thinkingFillerAllowed,
+  loadingUmSfxAllowed,
 } from '../lib/thinking-sound';
 import { SUBSTANTIAL_STUB_CHARS, WARMUP_FIRST_MS, WARMUP_MAX_LINES, isSubstantialStub } from '../lib/warmup';
 import { LOADING_STUBS } from '../lib/thinking-lines';
 
 describe('loading um filler disabled (Pixel)', () => {
-  it('never allows spoken filler', () => {
+  it('never allows spoken filler or recorded um SFX', () => {
     expect(thinkingFillerAllowed()).toBe(false);
+    expect(loadingUmSfxAllowed()).toBe(false);
   });
 
   it('startThinkingSound never calls say', () => {

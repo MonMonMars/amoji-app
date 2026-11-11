@@ -27,8 +27,8 @@ describe('talk history', () => {
 });
 
 describe('recorded fillers and poke', () => {
-  it('plays long UM lang+gender fillers and CLIP_LIBRARY poke hits', () => {
-    // t722: loading/thinking fillers are long UM only (never short um / HA HA)
+  it('maps long-UM path helpers; loading kind still classifies stubs (playback gated off)', () => {
+    // Path helpers remain for tests / history — voice.ts no longer plays them on wait.
     expect(recordedFillerClip('female', 'um', 'yue')).toMatch(/\/voice-clips\/yue\/female\/um_long/);
     expect(recordedFillerClip('male', 'um', 'yue')).toMatch(/\/voice-clips\/yue\/male\/um_long/);
     expect(recordedFillerClip('female', 'um', 'en')).toMatch(/\/voice-clips\/en\/female\/um_long/);
