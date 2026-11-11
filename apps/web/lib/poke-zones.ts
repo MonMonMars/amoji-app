@@ -196,6 +196,11 @@ function scaleBody(body: PokeBody, scale: typeof TIER_BAND_SCALE.head): PokeBody
 
 /**
  * Tier-aware punch recoil: opposite-side lean with tier falloff; tier 6 = no motion.
+ *
+ * Head tier keeps full head amplitude from the head recipe, then layers a
+ * soft torso follow (Pixel: head poke moves upper body less, not zero).
+ * The head-only early return in pokeBodyReaction would otherwise leave
+ * TIER_BAND_SCALE.chest/spine unused.
  */
 export function pokeSectionBodyReaction(opts: {
   t: number;
@@ -209,15 +214,39 @@ export function pokeSectionBodyReaction(opts: {
 }): PokeBody {
   if (opts.section.voiceOnly) return { ...STILL };
   const legacy = tierLegacyZone(opts.section.tier, opts.hitZone);
-  const raw = pokeBodyReaction({
+  const common = {
     t: opts.t,
-    zone: legacy,
     direction: opts.section.angle,
     fallX: opts.fallX,
     fallZ: opts.fallZ,
     sideSign: opts.sideSign,
-    softChest: opts.softChest && legacy === 'chest',
     twist: opts.twist,
+  } as const;
+  if (opts.section.tier === 'head') {
+    const headOnly = pokeBodyReaction({
+      ...common,
+      zone: 'head',
+      softChest: false,
+    });
+    // Soft opposite-side follow through the torso — same fall vector, low band scale.
+    const follow = scaleBody(
+      pokeBodyReaction({
+        ...common,
+        zone: 'torso',
+        softChest: false,
+      }),
+      TIER_BAND_SCALE.head,
+    );
+    return {
+      ...follow,
+      headX: headOnly.headX,
+      headZ: headOnly.headZ,
+    };
+  }
+  const raw = pokeBodyReaction({
+    ...common,
+    zone: legacy,
+    softChest: opts.softChest && legacy === 'chest',
   });
   return scaleBody(raw, TIER_BAND_SCALE[opts.section.tier]);
 }
