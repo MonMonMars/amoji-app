@@ -2289,6 +2289,14 @@ const TEST_LINES: Record<Lang, string> = {
   en: "Hey, can you hear me? I'm so happy to see you!",
 };
 
+/** Longer special sample for 開聲傾偈 / pre-chat hear-check — not the short settings beep. */
+export const GATE_TEST_LINES: Record<Lang, string> = {
+  yue: '喂！聽唔聽到我呀？我係你嘅 Amoji 夥伴，而家同你開聲傾偈。如果你聽到呢段說話，就撳下面「聽到」——我哋就可以一齊傾、一齊玩啦！',
+  zh: '喂！你能听到我吗？我是你的 Amoji 伙伴，现在和你开启语音聊天。如果你听到了这段话，就点下面的「听到了」——我们就可以一起聊、一起玩了！',
+  ja: 'ねえ、聞こえる？私はあなたの Amoji の相棒。これからボイスチャットを始めるよ。この声が聞こえたら、下の「聞こえた」を押してね。一緒に話して遊ぼう！',
+  en: "Hey — can you hear me clearly? I'm your Amoji companion, and this is your voice-chat check. If you heard this whole greeting, tap Yes below — then we can talk and play together!",
+};
+
 /**
  * r2026-10-04.75 — one-tap voice self-test from the Settings sheet: forces
  * the iOS gesture unlock and speaks a short line in the current language with
@@ -2369,7 +2377,11 @@ function probeSynth(text: string, characterId: string, lang: Lang): Promise<bool
  * canto-tts-nano for Yue when that runtime is bundled) and returns every
  * tier it actually tried. Stops at the first tier that speaks.
  */
-export async function testVoiceChain(characterId: string, lang: Lang): Promise<VoiceTierResult[]> {
+export async function testVoiceChain(
+  characterId: string,
+  lang: Lang,
+  lineOverride?: string,
+): Promise<VoiceTierResult[]> {
   if (isMasterMuted()) {
     return [{ tier: 'edge', ok: false, detail: 'muted' }];
   }
@@ -2379,7 +2391,7 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
     try { localStorage.setItem(MUTE_KEY, 'on'); } catch { /* ignore */ }
   }
   const results: VoiceTierResult[] = [];
-  const line = TEST_LINES[lang] ?? TEST_LINES.en;
+  const line = (lineOverride?.trim() || TEST_LINES[lang] || TEST_LINES.en);
   const push = (tier: VoiceTier, ok: boolean, detail: string) => {
     results.push({ tier, ok, detail });
     reportVoiceStatus(tier, ok, detail);
