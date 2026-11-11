@@ -59,7 +59,7 @@ const FUN_RE = /\b(things to do|what should we do|museum|somewhere fun|day out|d
 const NEAR_RE = /\b(near me|nearby|around here|in my (?:area|city)|local)\b|附近|呢度|这里|这儿|この辺|近く/i;
 const RECOMMEND_RE = /\b(recommend|suggestion|best|good)\b|推薦|推荐|介紹|介绍/i;
 
-const RECIPE_WORD_RE = /\b(recipes?|cook(?:ing)?|bake(?:d|ing)?)\b|食譜|食谱|點煮|点煮|怎么煮|怎麼煮|如何煮|料理|レシピ/i;
+const RECIPE_WORD_RE = /\b(recipes?|cook(?:ing)?|bake(?:d|ing)?)\b|食譜|食谱|點煮|点煮|怎么煮|怎麼煮|如何煮|料理|做法|點整|点整|點做|点做|レシピ/i;
 const HOW_MAKE_RE = /\bhow (?:do i|to|can i) (?:make|cook|bake|prepare)\b/i;
 const NOT_FOOD_RE = /\b(friends?|money|sense|a living|it work|time|the bed|plans?)\b/i;
 
@@ -100,19 +100,52 @@ function namedPlace(text: string): string | undefined {
   return cleanSpot(m?.[1]);
 }
 
+function cleanDishName(raw: string): string | undefined {
+  let s = raw.replace(/[?？!！。，,、]+$/g, '').trim();
+  s = s.replace(/(?:嘅|的)?(?:食譜|食谱|做法|點煮|点煮)$/u, '').trim();
+  s = s.replace(/(?:嘅|的)$/u, '').trim();
+  s = s.replace(/^(?:一碗|一份|一碟|一個|一个)\s*/u, '').trim();
+  if (s.length < 2 || s.length > 60) return;
+  return s;
+}
+
+function cjkDishFallback(text: string): string | undefined {
+  const want = /想(?:食|整|做|煮)([\u4e00-\u9fff]{2,8})/u.exec(text)?.[1];
+  if (want) return cleanDishName(want);
+  const hits = text.match(/[\u4e00-\u9fff]{2,8}/gu) ?? [];
+  const skip = new Set(['食譜', '食谱', '點煮', '点煮', '教我', '教下', '我想', '可以', '講個', '讲个', '俾個', '给个', '今日', '今晚', '而家', '现在', '什麼', '什么', '點解', '点解', '做法', '點整', '点整']);
+  for (const w of hits) {
+    if (skip.has(w) || DISH_SKIP_RE.test(w)) continue;
+    const cleaned = cleanDishName(w);
+    if (cleaned && !DISH_SKIP_RE.test(cleaned)) return cleaned;
+  }
+  return;
+}
+
+const DISH_SKIP_RE = /^(?:俾個|俾个|俾我|给我|給我|给个|給个|一份|一碗|想食|想整|想做)$/u;
+
 function recipeDish(text: string): string | undefined {
+  const eager = /想(?:食|整|做|煮)([\u4e00-\u9fff]{2,8})(?=[，,、\s?？。]|$)/u.exec(text)?.[1];
+  const eagerDish = eager ? cleanDishName(eager) : undefined;
+  if (eagerDish && !DISH_SKIP_RE.test(eagerDish)) return eagerDish;
+
   const patterns = [
     /\b(?:recipe for|how (?:do i|to|can i) (?:make|cook|bake|prepare))\s+(.{2,60})/i,
     /\b(?:cook|bake|cooking)\s+(.{2,40})/i,
     /(.{2,40})\s+recipes?\b/i,
-    /(?:食譜|食谱|點煮|点煮|怎么煮|怎麼煮|レシピ)[:：\s]*([^\s?？]{1,30})/,
-    /教我(?:煮|做)(.{1,20})/,
+    /(?:食譜|食谱|點煮|点煮|怎么煮|怎麼煮|做法|點整|点整|レシピ)[:：\s]*([^\s?？]{1,30})/u,
+    /([\u4e00-\u9fffA-Za-z0-9]{2,12})(?:嘅|的)?(?:食譜|食谱|做法)/u,
+    /([\u4e00-\u9fffA-Za-z0-9]{2,12})(?:點煮|点煮|怎麼煮|怎么煮|點整|点整|點做|点做)/u,
+    /(?:點煮|点煮|怎麼煮|怎么煮|點整|点整|點做|点做)\s*([\u4e00-\u9fffA-Za-z0-9]{2,20})/u,
+    /教我(?:煮|做|整)\s*([\u4e00-\u9fffA-Za-z0-9]{1,20})/u,
+    /(?:整|做|煮)\s*([\u4e00-\u9fff]{2,12})/u,
   ];
   for (const re of patterns) {
     const hit = patternsMatch(text, re);
-    if (hit) return hit;
+    const cleaned = hit ? cleanDishName(hit) : undefined;
+    if (cleaned && !DISH_SKIP_RE.test(cleaned)) return cleaned;
   }
-  return;
+  return cjkDishFallback(text);
 }
 
 function patternsMatch(text: string, re: RegExp): string | undefined {
@@ -141,6 +174,8 @@ export function planLifestyle(text: string): LifestylePlan {
   if (recipe) {
     const recipeQuery = recipeDish(text) ?? cuisineOf(text);
     if (recipeQuery) return { ...EMPTY, recipeQuery };
+    const fallback = cjkDishFallback(text);
+    if (fallback) return { ...EMPTY, recipeQuery: fallback };
   }
 
   const cuisine = cuisineOf(text);
@@ -298,8 +333,24 @@ function fromMeal(meal: Record<string, unknown>): RecipeCard | null {
   return { title, ingredients, steps };
 }
 
+const DISH_ALIASES: Record<string, string> = {
+  咕嚕肉: 'sweet and sour pork',
+  咕噜肉: 'sweet and sour pork',
+  糖醋里脊: 'sweet and sour pork',
+  宫保鸡丁: 'kung pao chicken',
+  宮保雞丁: 'kung pao chicken',
+  麻婆豆腐: 'mapo tofu',
+  番茄炒蛋: 'tomato omelette',
+};
+
+function mealSearchName(dish: string): string {
+  const key = dish.trim();
+  return DISH_ALIASES[key] ?? DISH_ALIASES[key.replace(/\s+/g, '')] ?? key;
+}
+
 async function fetchMeal(fetchImpl: typeof fetch, dish: string, cache: Cache): Promise<RecipeCard | null> {
-  const url = `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(dish)}`;
+  const query = mealSearchName(dish);
+  const url = `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(query)}`;
   const data = await getJson(fetchImpl, url, cache);
   const meals = (data as { meals?: Array<Record<string, unknown>> | null } | null)?.meals;
   const meal = meals?.[0];
@@ -352,11 +403,23 @@ function sayPlaces(lang: Lang4, label: string, venues: Venue[], coarse: boolean)
 }
 
 function sayRecipe(lang: Lang4, card: RecipeCard): string {
-  const first = card.steps[0] ?? '';
-  if (lang === 'zh') return `我们一起做${card.title}。第一步：${first} 准备好下一步了吗？`;
-  if (lang === 'ja') return `一緒に${card.title}を作ろう。最初は、${first} 次に進む？`;
-  if (lang === 'yue') return `我哋一齊整${card.title}。第一步：${first} 準備好下一步未？`;
-  return `Let's cook ${card.title} together. First: ${first} Ready for the next step?`;
+  const steps = card.steps.slice(0, 4);
+  const ing = card.ingredients.slice(0, 6).join('、');
+  const stepLine = steps.map((s, i) => (lang === 'en' ? `Step ${i + 1}: ${s}` : `第${i + 1}步，${s}`)).join(' ');
+  if (lang === 'zh') {
+    const head = ing ? `材料：${ing}。` : '';
+    return `${head}我们一起做${card.title}。${stepLine}`;
+  }
+  if (lang === 'ja') {
+    const head = ing ? `材料は${ing}。` : '';
+    return `${head}${card.title}を一緒に作ろう。${steps.map((s, i) => `${i + 1}つ目、${s}`).join(' ')}`;
+  }
+  if (lang === 'yue') {
+    const head = ing ? `材料有${ing}。` : '';
+    return `${head}我哋整${card.title}：${stepLine}`;
+  }
+  const head = ing ? `Ingredients: ${ing}. ` : '';
+  return `${head}Let's cook ${card.title}. ${stepLine}`;
 }
 
 function sayMiss(lang: Lang4, kind: 'places' | 'recipe'): string {

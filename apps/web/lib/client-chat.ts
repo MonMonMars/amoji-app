@@ -79,6 +79,7 @@ import { cleanForDisplay, stripLaughTokens } from './speak-text';
 import { withQuestion } from './follow-up';
 import { capCompanionReplyQuestions } from './spoken-line-sanity';
 import { preferLiveReply, worldBlock } from './live-tools';
+import { userAsksForRecipe } from './recipe-reply';
 import { replyLooksNonsense, STRICT_REPLY_APPENDIX } from './reply-sanity';
 import { shapeCompanionReply } from './reply-shape';
 import { wantsLongCompanionReply } from './topic-suggestions';
@@ -1137,6 +1138,7 @@ export function isKeyedBrain(picked?: ReturnType<typeof pickBrain>): boolean {
 /** A cook-along / long companion turn legitimately needs more room than a chat turn. */
 export function wantsDetail(world?: string, userText?: string): boolean {
   if (/\b(?:Recipe|Learn)\s*:/.test(world ?? '')) return true;
+  if (userText && userAsksForRecipe(userText)) return true;
   return userText ? wantsLongCompanionReply(userText) : false;
 }
 

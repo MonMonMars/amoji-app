@@ -162,6 +162,9 @@ describe('planTools', () => {
 
     expect(planTools('how do I make friends?').recipeQuery).toBeUndefined();
     expect(planTools('I like pizza').places).toBe(false);
+
+    expect(planTools('咕嚕肉食譜').recipeQuery).toBe('咕嚕肉');
+    expect(planTools('咕嚕肉點煮').recipeQuery).toBe('咕嚕肉');
   });
 
   it('keeps the previous tools on a short follow-up', () => {
@@ -398,6 +401,8 @@ describe('gatherLiveContext', () => {
     expect(live.prompt).toContain('2. Stir in a pinch of salt');
     expect(live.spoken).toContain('Tomato Soup');
     expect(live.spoken).toContain('Simmer the tomatoes');
+    expect(live.spoken).toMatch(/Step 1:|第1步/);
+    expect(live.spoken).not.toMatch(/Ready for the next step|準備好下一步/);
   });
 
   it('looks up a hobby lesson on Wikipedia', async () => {
