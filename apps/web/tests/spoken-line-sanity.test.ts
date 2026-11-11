@@ -153,6 +153,8 @@ describe('open greet question cap', () => {
   it('never keeps stacked topic-menu asks like 我哋傾咩好呀 / 今日想傾咩呀', () => {
     expect(isTopicMenuAsk('我哋傾咩好呀？')).toBe(true);
     expect(isTopicMenuAsk('今日想傾咩呀？')).toBe(true);
+    expect(isTopicMenuAsk('你想傾嗎？')).toBe(true);
+    expect(isTopicMenuAsk('Do you want to talk?')).toBe(true);
     expect(scrubTopicMenuAsks('我哋傾咩好呀？ 今日想傾咩呀？')).toBe('');
     expect(capSpokenQuestions('你好。我哋傾咩好呀？ 今日想傾咩呀？', 1)).toBe('你好。');
     expect(capSpokenQuestions('我哋傾咩好呀？ 今日想傾咩呀？', 1)).toBe('');

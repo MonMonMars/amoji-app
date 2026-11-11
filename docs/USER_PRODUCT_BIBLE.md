@@ -67,9 +67,9 @@
 | Mic default-open at chat start (code) | gate Enter re-probe + chat micDelay 0/120 + retry |
 | Ban topic-menu double asks | scrubTopicMenuAsks + bank scrub |
 | Cloudsea ambient grounded | SCENE_LINES — no “sit on a cloud” |
+| Topic-menu ask scrub + bank harden | scrubTopicMenuAsks + statement-only residual banks |
+| Spin-to-back code fix | hips clamp + idle t≈0 + IdleHug retired |
 | Character / voice card tap greets (code) | gesture clip `b7848bc` on PR #366 |
-| Owner request log created | `/cursor/stores/self/OWNER_REQUEST_LOG.md` |
-| Image-loop process accepted | prompt → show → one question; no busy tests |
 
 ---
 
@@ -77,15 +77,13 @@
 
 | Item | Status |
 |------|--------|
-| **White pupil image look** — prompt loop until owner OK | **In loop** — Prompt v1 image shown; awaiting owner advice |
-| **CMA poke SFX #1–23** Want / archive / delete / wire punch+soft+smile | Open — female EmotionClipRow map ready; not wired yet |
-| Confirm mic stays open on real device after gate → select → chat | **Verify after deploy** |
+| **CMA poke SFX #1–23** Want / archive / delete / wire punch+soft+smile | Open — map ready; not wired yet |
+| Confirm mic stays open on real device after gate → select → chat | **Verify after Pages gets PR #366** |
 | Location still asked only on gate (no second popup at Start) | Confirm on device |
-| Confirm spin-to-back gone on device | **Verify after deploy** |
-| Confirm character/voice card tap speaks on device / Pages | **Verify after deploy** |
+| Confirm spin-to-back / cloudsea / topic-asks gone on **live Pages** | **Needs merge of PR #366 to main** — code already on branch |
+| Confirm character/voice card tap speaks on live Pages | Verify after merge |
 | Broader SCENE_LINES pass (other backdrops still ask a lot) | Optional cleanup |
-| Production Pages update after merge to `main` | Waiting merge |
-| Keep bible Done/Outstanding + request log current every turn | Ongoing (owner rule) |
+| Production Pages update after merge to `main` | **Waiting merge** |
 
 ---
 
@@ -93,7 +91,8 @@
 
 | Date (HKT) | Change |
 |------------|--------|
-| 2026-11-12 late night | Owner: always update Done/Outstanding; log every request; image loop for white pupil (no busy tests); card-greet fix `b7848bc` |
+| 2026-11-12 late night | Harden leftover 想傾/想聊 banks; owner re-reported cloudsea/asks/spin — still not on live Pages until PR #366 merges |
+| 2026-11-12 late night | Card-greet gesture clip `b7848bc`; fonts CI flake cherry-pick |
 | 2026-11-12 night | Re-port spin-to-back fix; SFX #1–23 notes received (still Outstanding) |
 | 2026-11-12 evening | Ban topic-menu asks; fix silly cloudsea ambient |
 | 2026-11-12 | Bible created; mic default-open; rolled in prior PR #366 rules |

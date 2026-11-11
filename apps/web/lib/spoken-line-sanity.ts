@@ -75,7 +75,7 @@ export function countSpokenQuestions(text: string): number {
 export function isTopicMenuAsk(s: string): boolean {
   const c = (s ?? '').trim();
   if (!c) return false;
-  return /我哋傾咩好|今日想傾咩|想傾咩呀|傾咩好呀|想傾偈嘅話.*[?？]|今天想聊[点點什什麼]+|聊[点點]什么好|聊[点點]什麼好|何を話したい|何を話そう|what should we talk about|what do you want to talk about|what shall we (?:talk|chat) about/i.test(
+  return /我哋傾咩好|今日想傾咩|想傾咩呀|傾咩好呀|你想傾嗎|你想傾吗|想傾嗎|想傾吗|你想聊吗|你想聊嗎|想聊吗|想聊嗎|想傾偈嘅話.*[?？]|今天想聊[点點什什麼]+|聊[点點]什么好|聊[点點]什麼好|何を話したい|何を話そう|what should we talk about|what do you want to talk about|what shall we (?:talk|chat) about|do you want to talk\b|shall we talk\b/i.test(
     c,
   );
 }

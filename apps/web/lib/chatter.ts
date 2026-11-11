@@ -16,11 +16,11 @@ export const CHATTER: Record<ChatterKind, Record<ChatterLang, string[]>> = {
       'Type below or tap the mic — I will follow whatever you start.',
     ],
     yue: [
-      '你好，我係{name}。想傾偈嘅話，我喺度。',
+      '你好，我係{name}。我喺度陪住你。',
       '喺下面打字或者撳個咪都得——你開口，我會跟住聽。',
     ],
     zh: [
-      '你好，我是{name}。想聊天的话，我在这里。',
+      '你好，我是{name}。我在这里陪着你。',
       '在下面打字或者点麦克风都行——你开口，我会跟着听。',
     ],
     ja: [
