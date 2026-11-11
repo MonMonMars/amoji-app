@@ -881,11 +881,7 @@ export default function ChatPanel({
 
   // idle chatter + soft topic offers (r.38): measured from the USER's last
   // real action — her own lines don't restart the clock. Stage 0 = persona /
-<<<<<<< HEAD
   // mood / topic offers; stage 1+ = soft NEW TOPIC nudges only — never
-=======
-  // mood / ability offers; stage 1+ = soft NEW TOPIC nudges only — never
->>>>>>> 67352a0 (fix(web): scrub idle nonsense, cant-hear, mic, phase chips, thinking UI)
   // "you're so quiet" / "still there?" / "walk away" blame. After the soft
   // closer she waits. Her lines never pile onto her own voice.
   useEffect(() => {
