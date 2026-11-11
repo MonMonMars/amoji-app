@@ -1114,13 +1114,17 @@ export default function ChatPanel({
       pendingOfferRef.current = null;
       perfCountRef.current += 1;
       applyContentMood({ joy: 0.85 });
-      if (kind === 'news' || kind === 'weather') {
-        const ask = kind === 'weather'
-          ? (lang === 'ja' ? '今日の天気は？' : lang === 'zh' ? '今天天气怎么样？' : lang === 'yue' ? '今日天氣點呀？' : "what's the weather here?")
-          : (lang === 'ja' ? '最新ニュースは？' : lang === 'zh' ? '今天有什么新闻？' : lang === 'yue' ? '今日有咩新聞？' : "what's the latest news?");
+      if (kind === 'weather') {
+        const ask = lang === 'ja' ? '今日の天気は？' : lang === 'zh' ? '今天天气怎么样？' : lang === 'yue' ? '今日天氣點呀？' : "what's the weather here?";
         void clientLiveContext(ask, lang).then((live) => {
-          sayLocal(live.spoken || SHOWCASE_START[lang][kind]);
+          sayLocal(live.spoken || SHOWCASE_START[lang].weather);
         });
+        done();
+        return;
+      }
+      if (kind === 'news') {
+        const ask = lang === 'ja' ? '最新ニュースは？' : lang === 'zh' ? '今天有什么新闻？' : lang === 'yue' ? '今日有咩新聞？' : "what's the latest news?";
+        void send(ask);
         done();
         return;
       }

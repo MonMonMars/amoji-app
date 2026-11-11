@@ -3,19 +3,23 @@ import {
   clearLiveCache,
   clientLiveContext,
   gatherLiveContext,
+  invalidateNewsFeedCache,
+  isNewsFeedCacheKey,
+  isLiveFactsOnlyTurn,
+  isHeavyHeadline,
   liveToolsEnabled,
   newsRegionFromPlace,
+  NEWS_LAST_KEY,
   parseRssItems,
   pickDefaultHeadlines,
   pickLightHeadlines,
   placeLabel,
   planTools,
-  isLiveFactsOnlyTurn,
   preferLiveReply,
   regionalLightNewsFeedUrls,
   regionalNewsFeedUrls,
-  isHeavyHeadline,
   resolveDevicePlace,
+  selectNewsLead,
   worldBlock,
   type GeoLike,
   type Place,
@@ -70,12 +74,12 @@ describe('planTools', () => {
     }
   });
 
-  it('isLiveFactsOnlyTurn gates weather/news TTS bypass', () => {
+  it('isLiveFactsOnlyTurn gates weather TTS bypass but sends news through the model', () => {
     const weather = planTools("what's the weather here?");
     expect(isLiveFactsOnlyTurn(weather, 'It is 22° in Berlin.')).toBe(true);
     expect(isLiveFactsOnlyTurn(weather, '')).toBe(false);
     const news = planTools('what is the latest news?');
-    expect(isLiveFactsOnlyTurn(news, 'Light headline from Wikipedia.')).toBe(true);
+    expect(isLiveFactsOnlyTurn(news, 'Light headline from Wikipedia.')).toBe(false);
     const cafe = planTools('cafes near me');
     expect(isLiveFactsOnlyTurn(cafe, 'Two spots nearby.')).toBe(false);
     const learn = planTools('search how photosynthesis works');
@@ -649,5 +653,68 @@ describe('t780 light default news topics', () => {
     expect(us.some((u) => u.includes('science') || u.includes('1007'))).toBe(true);
     expect(us.some((u) => u.includes('health') || u.includes('1128') || u.includes('entertainment'))).toBe(true);
     expect(regionalLightNewsFeedUrls('UK').some((u) => u.includes('science_and_environment'))).toBe(true);
+  });
+});
+
+describe('news cache bust + headline rotation', () => {
+  const memKv = () => {
+    const m = new Map<string, string>();
+    return {
+      getItem: (k: string) => m.get(k) ?? null,
+      setItem: (k: string, v: string) => { m.set(k, v); },
+      removeItem: (k: string) => { m.delete(k); },
+    };
+  };
+
+  it('classifies headline feed URLs for cache invalidation', () => {
+    expect(isNewsFeedCacheKey('https://news.google.com/rss?hl=en')).toBe(true);
+    expect(isNewsFeedCacheKey('https://en.wikipedia.org/api/rest_v1/feed/featured/2026/11/11')).toBe(true);
+    expect(isNewsFeedCacheKey('https://api.open-meteo.com/v1/forecast')).toBe(false);
+    expect(isNewsFeedCacheKey('https://en.wikipedia.org/w/api.php?action=query')).toBe(false);
+  });
+
+  it('invalidateNewsFeedCache drops feeds but keeps weather entries', () => {
+    const cache = new Map<string, { at: number; body: string }>();
+    const now = Date.now();
+    cache.set('https://news.google.com/rss', { at: now, body: '<rss/>' });
+    cache.set('https://api.open-meteo.com/v1/forecast', { at: now, body: '{}' });
+    invalidateNewsFeedCache(cache);
+    expect(cache.has('https://news.google.com/rss')).toBe(false);
+    expect(cache.has('https://api.open-meteo.com/v1/forecast')).toBe(true);
+  });
+
+  it('selectNewsLead rotates and remembers the last spoken title', () => {
+    const items = [
+      { title: 'Alpha story' },
+      { title: 'Beta story' },
+      { title: 'Gamma story' },
+    ];
+    const kv = memKv();
+    expect(selectNewsLead(items, kv)?.title).toBe('Alpha story');
+    kv.setItem(NEWS_LAST_KEY, 'Alpha story');
+    expect(selectNewsLead(items, kv)?.title).toBe('Beta story');
+    expect(selectNewsLead(items, kv)?.title).toBe('Gamma story');
+    expect(selectNewsLead(items, kv)?.title).toBe('Alpha story');
+  });
+
+  it('refetches Google News on each user news tap instead of reusing cache', async () => {
+    let rssHits = 0;
+    const rss = '<rss><channel><item><title>Orbit gnome wins science fair - Sci</title></item><item><title>Moon bakery opens at night - Local</title></item></channel></rss>';
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('news.google.com')) {
+        rssHits += 1;
+        return new Response(rss, { status: 200 });
+      }
+      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
+        return jsonRes({ news: [] });
+      }
+      return jsonRes({}, 404);
+    };
+    const cache = new Map<string, { at: number; body: string }>();
+    const opts = { lang: 'en' as const, fetch: fetchImpl, cache, locate: async () => null };
+    await gatherLiveContext('what is the latest news?', opts);
+    await gatherLiveContext('what is the latest news?', opts);
+    expect(rssHits).toBeGreaterThanOrEqual(2);
   });
 });

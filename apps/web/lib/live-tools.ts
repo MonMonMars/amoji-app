@@ -111,11 +111,14 @@ export interface GatherOpts {
   /** Unprompted open-phase brief: skip the line entirely (instead of asking
    *  the user for a city) when no location could be resolved. */
   brief?: boolean;
+  /** User-initiated news: drop cached RSS/Wikipedia feeds and rotate headlines. */
+  freshNews?: boolean;
 }
 
 const PLACE_KEY = 'amoji.place.v1';
 const MANUAL_KEY = 'amoji.place.manual.v1';
 const DENY_KEY = 'amoji.geo.denied';
+export const NEWS_LAST_KEY = 'amoji.news.last.v1';
 const PLACE_TTL_MS = 30 * 60 * 1000;
 const FETCH_TTL_MS = 10 * 60 * 1000;
 const sharedCache = new Map<string, { at: number; body: string }>();
@@ -280,11 +283,13 @@ function planHasWork(plan: ToolPlan): boolean {
   return plan.weather || plan.news || plan.where || plan.places || Boolean(plan.searchQuery) || Boolean(plan.recipeQuery);
 }
 
-/** Weather / news / where-only turns with fetched spoken facts — answer by TTS
- *  without waiting on the LLM (Mon: “read me the weather/news”). */
+/** Weather / where-only turns with fetched spoken facts — answer by TTS without
+ *  waiting on the LLM. News goes through the model so she can summarize and
+ *  react in character from the live headline sheet. */
 export function isLiveFactsOnlyTurn(plan: ToolPlan, spoken: string): boolean {
   if (!spoken.trim()) return false;
-  return (plan.weather || plan.news || plan.where)
+  if (plan.news) return false;
+  return (plan.weather || plan.where)
     && !plan.places
     && !plan.searchQuery
     && !plan.recipeQuery;
@@ -569,6 +574,40 @@ function askBrowser(geo: GeoLike): Promise<{ latitude: number; longitude: number
  *  A fresh browser fix is reused for 30 minutes so we don't re-prompt. */
 export function clearLiveCache(): void {
   sharedCache.clear();
+}
+
+/** HTTP cache keys that back headline feeds — not weather/geo/learn lookups. */
+export function isNewsFeedCacheKey(url: string): boolean {
+  const u = url.toLowerCase();
+  if (u.includes('api.open-meteo.com') || u.includes('geocoding-api.open-meteo.com')) return false;
+  if (u.includes('get.geojs.io') || u.includes('bigdatacloud.net')) return false;
+  if (u.includes('duckduckgo.com') || u.includes('api.search.brave.com')) return false;
+  if (u.includes('wikipedia.org/w/api.php')) return false;
+  if (u.includes('news.google.com') || u.includes('rss2json.com')) return true;
+  if (u.includes('/feed/featured/')) return true;
+  if (/\/rss|\.rss|feeds\.|feed\./i.test(u)) return true;
+  return false;
+}
+
+/** Drop cached RSS / Wikipedia featured responses so the next news tap refetches. */
+export function invalidateNewsFeedCache(cache: Map<string, { at: number; body: string }> = sharedCache): void {
+  for (const key of [...cache.keys()]) {
+    if (isNewsFeedCacheKey(key)) cache.delete(key);
+  }
+}
+
+/** Rotate among headline picks so repeat News taps do not replay the same story. */
+export function selectNewsLead<T extends { title: string }>(
+  headlines: T[],
+  storage?: Kv | null,
+): T | undefined {
+  if (!headlines.length) return undefined;
+  let last = '';
+  try { last = storage?.getItem(NEWS_LAST_KEY) ?? ''; } catch { /* private mode */ }
+  const idx = headlines.findIndex((h) => h.title === last);
+  const pick = headlines[(idx + 1) % headlines.length] ?? headlines[0];
+  try { storage?.setItem(NEWS_LAST_KEY, pick.title); } catch { /* private mode */ }
+  return pick;
 }
 
 export async function resolveDevicePlace(env: LocateEnv): Promise<Place | null> {
@@ -1385,6 +1424,8 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
   const fetchImpl = opts.fetch ?? globalThis.fetch.bind(globalThis);
   const cache = opts.cache ?? sharedCache;
   const lang = asLang(opts.lang);
+  const freshNews = Boolean(plan.news && opts.freshNews !== false && !opts.brief);
+  if (freshNews) invalidateNewsFeedCache(cache);
 
   let place: Place | null = null;
   if (plan.placeQuery) place = await geocodeName(fetchImpl, plan.placeQuery, opts.lang, cache);
@@ -1468,16 +1509,23 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
   }
   if (plan.news) {
     const headlines = newsPack.headlines;
-    const lead = headlines[0];
+    const lead = selectNewsLead(headlines, safeStorage('session')) ?? headlines[0];
     if (lead) {
-      const listed = headlines.map((h) => h.source ? `“${h.title}” (${h.source})` : `“${h.title}”`).join('; ');
+      const ordered = [lead, ...headlines.filter((h) => h.title !== lead.title)];
+      const listed = ordered.map((h) => h.source ? `“${h.title}” (${h.source})` : `“${h.title}”`).join('; ');
       const regionTag = newsRegionFromPlace(place, lang);
       const where = plan.heavyNews && newsPack.recent
         ? `Recent news (${regionTag})`
         : newsPack.recent
           ? `Light news (${regionTag})`
           : `Light news${label ? ` near ${label}` : ''} (${regionTag})`;
-      promptLines.push(`${where}: ${listed}.`);
+      let context = '';
+      if (newsPack.recent || plan.recent) {
+        const topic = lead.title.replace(/\s+[-–|]\s+.*$/, '').trim() || lead.title;
+        const wiki = await searchWikipedia(fetchImpl, topic, lang, cache);
+        if (wiki[0]) context = ` Context: ${wiki[0]}`;
+      }
+      promptLines.push(`${where}: ${listed}.${context}`);
       spoken.push(plan.heavyNews && newsPack.recent ? sayRecent(lang, lead.title) : sayNews(lang, label || 'here', lead.title));
     } else if (!place && !plan.placeQuery && !plan.newsQuery && !plan.recent) {
       promptLines.push('News: need a city or country from the user.');
@@ -1535,8 +1583,10 @@ export function primeLocationForChatEnter(): void {
 /** Browser entry: asks for geolocation when the question needs “here”.
  *  `brief` marks the unprompted open-phase line: silent rather than asking the
  *  user for a city when no location is known. */
-export function clientLiveContext(text: string, lang?: string, priorUser?: string, opts?: { brief?: boolean }): Promise<LiveContext> {  if (!liveToolsEnabled()) return Promise.resolve(EMPTY_LIVE);
+export function clientLiveContext(text: string, lang?: string, priorUser?: string, opts?: { brief?: boolean }): Promise<LiveContext> {
+  if (!liveToolsEnabled()) return Promise.resolve(EMPTY_LIVE);
   const fetchImpl = globalThis.fetch.bind(globalThis);
+  const plan = planTools(text, priorUser);
   return gatherLiveContext(text, {
     lang,
     priorUser,
@@ -1544,6 +1594,7 @@ export function clientLiveContext(text: string, lang?: string, priorUser?: strin
     braveKey: process.env.NEXT_PUBLIC_BRAVE_SEARCH_API_KEY || undefined,
     rssKey: process.env.NEXT_PUBLIC_RSS2JSON_API_KEY || undefined,
     ...(opts?.brief ? { brief: true } : {}),
+    ...(plan.news && !opts?.brief ? { freshNews: true } : {}),
     locate: () => resolveDevicePlace({
       fetch: fetchImpl,
       geolocation: browserGeo(),
