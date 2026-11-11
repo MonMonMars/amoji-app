@@ -95,7 +95,7 @@ import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableTex
 import { analyzeText } from '@amoji/emotion-core';
 import { applyContentMood } from './companion';
 import { browserVoicesForLang, isMaleNeuralVoice, selectBrowserVoice, synthNameList } from './voice-catalog';
-import { loadingFillerKind, recordedFillerClip, recordedLaughClip, recordedPokeClip } from './voice-clips';
+import { loadingFillerKind, recordedLaughClip, recordedPokeClip } from './voice-clips';
 import { LineQueue, speechRemainder } from './speech-queue';
 import { emotionClipPath } from './emotion-clip-picks';
 import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText, nextCardGreetPhrase, nextGreetingKind, type BurstClipKind, type ClipFolder, type VoiceClipGender } from './voice-clips';
@@ -111,7 +111,7 @@ import { resolveOsPin, resolvePinnedVoice } from './os-voice-resolve';
 import { deliveryGenderForChoice, isVoiceLocale, tlForChoice } from './voice-capability';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
 import { formatVoiceChain, freeVoiceHops } from './tts-chain';
-import { startThinkingSound, stopThinkingSound } from './thinking-sound';
+import { stopThinkingSound } from './thinking-sound';
 import { runEarlyAudioPreload } from './early-audio-preload';
 // r2026-10-05.112: tier 0 — OpenAI gpt-4o-mini-tts (ChatGPT-style emotional
 // voice via natural-language instructions). Sits AHEAD of the free chain;
@@ -1338,46 +1338,29 @@ export function stopSpeaking(): void {
 }
 
 /**
- * Short "um……" while the reply is still generating. The mouth moves with the
- * stub. The reply waits until this utterance finishes.
- * r2026-10-03.24: an optional felt mood tints the filler text itself (the
- * face/orb already wear the mood via applyContentMood in the caller).
- * t790: the wait is now two beats starting at 2s, and every beat is spoken by
- * HER OWN TTS chain — the same voice and pitch as a reply — instead of a
- * recorded CLIP_LIBRARY um, which was a different person talking.
- * `onBeat` lets the caller paint the same line in the placeholder bubble, so
- * screen and speaker never disagree.
+ * Loading filler — disabled (Pixel: um… voice did not match reply TTS).
+ * Kept as a no-op so ChatPanel / face callers do not need a parallel cut.
  */
 export function speakThinkingFiller(
-  characterId: string,
-  lang: Lang,
-  mood?: string,
-  userText?: string,
-  onBeat?: (text: string) => void,
+  _characterId: string,
+  _lang: Lang,
+  _mood?: string,
+  _userText?: string,
+  _onBeat?: (text: string) => void,
 ): void {
-  if (!voiceOutputAllowed()) return;
-  startThinkingSound({
-    lang,
-    characterId,
-    mood,
-    userText,
-    say: (text) => {
-      enqueueThinkingFiller(text, characterId, lang);
-      onBeat?.(text);
-    },
-  });
+  stopThinkingSound();
 }
 
 /**
- * Queue one filler beat. It is a sentence in her voice, not a reaction SFX, so
- * it runs through the normal speak chain and inherits the reply's gender,
- * locale and pitch.
+ * Queue one filler beat — disabled with spoken loading um (Pixel).
+ * Kept so a stray call cannot reintroduce filler TTS.
  */
-function enqueueThinkingFiller(text: string, characterId: string, lang: Lang): void {
-  const line = text.trim();
-  if (!line) return;
-  lineQueue.enqueue({ kind: 'speak', text: line, characterId, lang, intensity: 1, filler: true });
-  drainSpeech();
+function enqueueThinkingFiller(
+  _text: string,
+  _characterId: string,
+  _lang: Lang,
+): void {
+  stopThinkingSound();
 }
 
 /**
@@ -1769,18 +1752,11 @@ function performSpeak(
   runFreeChain();
   };
 
-  // Recorded um / ha / think / search. A 404 on Pages must not end the line:
-  // Edge (then the browser voice) still speaks.
-  // Filler jobs are the exception: a recorded CLIP_LIBRARY um is a different
-  // person from the reply's TTS, which is the mismatch Mon reported, so every
-  // filler beat takes the live chain below instead.
-  const fillerKind = loadingFillerKind(text);
-  if (fillerKind && !filler) {
-    const file = recordedFillerClip(characterVoiceGender(characterId), fillerKind, lang);
-    void playVoiceClip(file, text, () => markVoiceStarted()).then(() => settle()).catch((err: unknown) => {
-      if (!speechAlive() || (err as Error | undefined)?.message === 'canceled') { settle(); return; }
-      beginTts();
-    });
+  // Loading um / ha / think / search stubs: never play recorded long-UM or TTS.
+  // Pixel: the filler voice never matched reply TTS. Wait feedback is visual
+  // only (thinking bar + Thinking pose). Real replies fall through below.
+  if (loadingFillerKind(text)) {
+    settle();
     return;
   }
 

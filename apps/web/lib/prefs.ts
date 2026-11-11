@@ -381,7 +381,7 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   back: { en: 'Back', yue: '返回', zh: '返回', ja: '戻る' },
   settings: { en: 'Settings', yue: '設定', zh: '设置', ja: '設定' },
   sayHi: { en: 'Say hi to {name} 👋', yue: '同 {name} 打個招呼 👋', zh: '跟 {name} 打个招呼 👋', ja: '{name}に挨拶してね 👋' },
-  typing: { en: '{name} is typing…', yue: '{name} 緊打緊字…', zh: '{name} 正在输入…', ja: '{name}が入力中…' },
+  typing: { en: '{name} is thinking…', yue: '{name} 諗緊…', zh: '{name} 正在想…', ja: '{name}が考え中…' },
   bgVoid: { en: 'Night Void', yue: '夜空', zh: '夜空', ja: '夜空' },
   bgAurora: { en: 'Aurora', yue: '極光', zh: '极光', ja: 'オーロラ' },
   bgEmber: { en: 'Ember', yue: '餘燼', zh: '余烬', ja: '余燼' },

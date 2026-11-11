@@ -181,7 +181,7 @@ import {
   undecidedTopicReply,
   userUndecided,
 } from '../lib/topic-suggestions';
-import { speak, stopSpeaking, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechRemainder, whenSpeechIdle, speakThinkingFiller } from '../lib/voice';
+import { speak, stopSpeaking, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechRemainder, whenSpeechIdle } from '../lib/voice';
 import { productionChat } from '../lib/backend-client';
 import { stopThinkingSound } from '../lib/thinking-sound';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
@@ -1183,25 +1183,12 @@ export default function ChatPanel({
     }
     setThinkingPose(true);
     pushAutoIdle('', undefined, true);
-    // t790 / Pixel — the wait cue is HER OWN TTS voice, silent until the reply
-    // has been loading for 3 seconds, then two full "let me think" lines. The
-    // same beat paints the placeholder bubble, so screen and speaker agree.
-    // A sing or dance ask already has a premade clip as the wait audio.
-    if (requested !== 'sing' && requested !== 'dance') {
-      speakThinkingFiller(characterId, lang, felt?.mood, text, (line) => {
-        if (!transientRef.current) return;
-        setHistory((h) => {
-          const last = h.length - 1;
-          const tail = h[last];
-          if (!tail || tail.role !== 'assistant') return h;
-          return [...h.slice(0, last), { ...tail, content: line }];
-        });
-        notifySpeaking(line);
-      });
-    }
+    // Pixel: no spoken "um…" loading filler — it never matched reply TTS.
+    // Wait is visual only (thinking pose, bubble "…", indeterminate bar).
+    stopThinkingSound();
     // r.47 — ONE transient placeholder bubble carries the whole wait. It
-    // starts as '…' and takes the wait beats above. The first stream token
-    // takes the bubble over, and the final reply commits in its place.
+    // starts as '…'. The first stream token takes the bubble over, and the
+    // final reply commits in its place.
     setHistory((h) => [...h, { role: 'assistant', content: '…' }]);
     transientRef.current = true;
     // learn from the user's words, then inject what she remembers into her prompt
@@ -1663,7 +1650,22 @@ export default function ChatPanel({
           </div>
         )}
         {busy && !speechCaption.trim() && captionLadder.length === 0 && (
-          <p className="text-white/40">{t(lang, 'typing', { name: characterName })}</p>
+          <div
+            data-testid="thinking-status"
+            className="flex flex-col items-start gap-1.5"
+            role="status"
+            aria-live="polite"
+            aria-label={t(lang, 'typing', { name: characterName })}
+          >
+            <p className="text-white/45">{t(lang, 'typing', { name: characterName })}</p>
+            {/* Indeterminate wait bar — no fake % (reply progress is unknown). */}
+            <div
+              className="ui-thinking-bar h-0.5 w-28 overflow-hidden rounded-full bg-white/10"
+              aria-hidden
+            >
+              <div className="ui-thinking-bar-fill h-full w-1/3 rounded-full bg-white/50" />
+            </div>
+          </div>
         )}
         {/* Crisis guard fired on the last turn: the fixed reply is above, and
             this card carries the tap-through to the helplines. It stays until
