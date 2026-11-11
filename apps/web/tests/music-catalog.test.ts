@@ -12,6 +12,7 @@ describe('royalty-free music catalog', () => {
     expect(detectMusicStyle('play some jazz')).toBe('jazz');
     expect(detectMusicStyle('來首粵語歌')).toBe('cantopop');
     expect(detectMusicStyle('lofi beats please')).toBe('lofi');
+    expect(detectMusicStyle('play something calm')).toBe('chill');
     expect(detectMusicStyle('電子音樂')).toBe('electronic');
     expect(detectMusicStyle('hello')).toBeUndefined();
   });
