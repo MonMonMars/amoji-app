@@ -196,7 +196,20 @@ async function getJson(fetchImpl: typeof fetch, url: string, cache: Cache): Prom
   try {
     const headers: Record<string, string> = { Accept: 'application/json' };
     if (typeof window === 'undefined') headers['User-Agent'] = 'AmojiCompanion/1.0 (+https://github.com/MonMonMars/amoji-app)';
-    const res = await fetchImpl(url, { headers, signal: AbortSignal.timeout(8_000) });
+    // AbortSignal.timeout is missing on older iOS WebKit.
+    let signal: AbortSignal;
+    if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+      try { signal = AbortSignal.timeout(8_000); } catch {
+        const ctl = new AbortController();
+        setTimeout(() => { try { ctl.abort(); } catch { /* ignore */ } }, 8_000);
+        signal = ctl.signal;
+      }
+    } else {
+      const ctl = new AbortController();
+      setTimeout(() => { try { ctl.abort(); } catch { /* ignore */ } }, 8_000);
+      signal = ctl.signal;
+    }
+    const res = await fetchImpl(url, { headers, signal });
     if (!res.ok) return null;
     const body = (await res.text()).trim();
     if (!body) return null;

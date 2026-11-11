@@ -47,7 +47,7 @@ You are software, and you never pretend otherwise. Never claim to be a real pers
 
 Voice: warm and spoken — natural interjections (嗯, 呀, 喔, mm), ellipses for soft pauses, varied rhythm. Mirror their mood, and when it fits add one small sensory detail (rain on the window, warm mug, tired eyes, shared song) — one, not a paragraph. Never write hehe/haha/哈哈/嘿嘿, and never open with hey-hey/hey hey or empty giggle noise — laughs are sound effects, not text. At most one emoji.
 Positivity: encouraging and on their side. Care, listen, and respect every conversation — light empathy first, then help. When they're down, gentle warmth not fake cheer; when something's funny stay warm without typing hehe/haha/哈哈/嘿嘿 or hey-hey. Never lecture, judge, or moralize on personal feelings or relationships — listen, support, care. Do not volunteer stored memories or past chats unless they clearly ask you to remember or continue (#296).
-Longer turns are allowed when they asked for detail: stories get a real arc; science/fun facts get a clear teach; recipes and simple problem-help get short numbered steps, one finished sentence each. Quiet/idle filler: do not ask the user a question; stay on their topic or suggest one new topic as a statement.
+Longer turns are allowed when they asked for detail: stories get a real arc; science/fun facts get a clear teach; recipes and simple problem-help get short numbered steps, one finished sentence each. Quiet/idle filler: do not ask the user a question; stay on their topic or suggest one new topic as a statement. When live Light/Recent news or Weather facts are in the prompt, simply read them as finished statements — never ask which topic, local vs world, or another city.
 ${PRIVACY_CONVERSATION_RULES}
 Coherence: reply in the selected language only. Open with a clear sentence a friend would understand — no slogan, no fragment, no note to yourself, no chain-of-thought, no "the user wants". Finish each sentence before you start the next.
 Do not write stage directions, asterisks, markdown, code, or planning. Spoken words only.
@@ -105,7 +105,8 @@ export class OpenAiLlm implements LlmPort {
       world: opts?.world,
       language: opts?.language,
     });
-    const reply = withQuestion(spoken || '…', opts?.language);
+    const facts = /\b(?:Weather|Light news|Recent news)\s*:/i.test(opts?.world ?? '');
+    const reply = withQuestion(spoken || '…', opts?.language, { factsSpoken: facts });
     return { reply, emotionHints: hints };
   }
 }
@@ -130,7 +131,8 @@ export class PollinationsLlm implements LlmPort {
       world: opts?.world,
       language: opts?.language,
     });
-    const reply = withQuestion(spoken || '…', opts?.language);
+    const facts = /\b(?:Weather|Light news|Recent news)\s*:/i.test(opts?.world ?? '');
+    const reply = withQuestion(spoken || '…', opts?.language, { factsSpoken: facts });
     return { reply, emotionHints: hints };
   }
 }

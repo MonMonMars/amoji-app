@@ -161,7 +161,6 @@ import {
 } from '../lib/daily-quota';
 import { planStatus } from '../lib/billing';
 import { clientLiveContext, isLiveFactsOnlyTurn, planTools } from '../lib/live-tools';
-import { withQuestion } from '../lib/follow-up';
 import {
   OPEN_CHEER_MS,
   OPEN_IDLE_BRIEF_MS,
@@ -215,8 +214,8 @@ import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodb
 import { detectExercise, startExercise, advanceExercise, exerciseFarewellLine, type ExerciseState } from '../lib/exercises';
 import {
   buildDailyGreeting, buildEnterNameGreeting, buildMemoryBlock, ensureUserNameFromProfile, feltMood,
-  forgetInjectedMemory, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange,
-  rememberTurn, type TurnMemoryUsed,
+  greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange,
+  rememberTurn,
 } from '../lib/memory';
 import { listenContinuous, listenSupported } from '../lib/listen';
 import { getEntryGateRecord, micPreflightGrantedThisSession } from '../lib/entry-gate';
@@ -237,7 +236,7 @@ import type { ChatStatus } from '../lib/status';
 import EmotionOrb from './EmotionOrb';
 import DemoPhaseRail from './DemoPhaseRail';
 
-interface Msg { role: 'user' | 'assistant'; content: string; memoryUsed?: TurnMemoryUsed[] }
+interface Msg { role: 'user' | 'assistant'; content: string }
 
 export interface ChatPanelProps {
   characterName?: string;
@@ -1243,7 +1242,6 @@ export default function ChatPanel({
     // r125 — pass the user's words so OLD on-topic memories surface too
     const memoryBuilt = buildMemoryBlock(lang, undefined, text);
     const memory = memoryBuilt?.block;
-    const turnMemoryUsed = memoryBuilt?.used ?? [];
     // one exit path for every outcome: the final reply (or the failure note)
     // takes the placeholder's place instead of stacking a second bubble
     const commitReply = (content: string) => {
@@ -1253,13 +1251,13 @@ export default function ChatPanel({
       const replace = transientRef.current;
       transientRef.current = false;
       setStreamDraft('');
-      const memStrip = turnMemoryUsed.length > 0 ? turnMemoryUsed : undefined;
+      // History shows talking only — no per-turn "memories used" strip.
       setHistory((h) => {
         const tail = h[h.length - 1];
         if (replace && tail?.role === 'assistant') {
-          return [...h.slice(0, -1), { role: 'assistant', content, memoryUsed: memStrip }];
+          return [...h.slice(0, -1), { role: 'assistant', content }];
         }
-        return [...h, { role: 'assistant', content, memoryUsed: memStrip }];
+        return [...h, { role: 'assistant', content }];
       });
     };
     // r70 — persona + adaptive block (scene + warmth calibration)
@@ -1278,7 +1276,8 @@ export default function ChatPanel({
       const livePlan = planTools(text, priorUser);
       if (isLiveFactsOnlyTurn(livePlan, worldSpoken)) {
         stopThinkingSound();
-        const line = stripOfftopicAbilityTack(withQuestion(worldSpoken, lang), text);
+        // Weather/news fact reads stay finished statements — no withQuestion fishing.
+        const line = stripOfftopicAbilityTack(worldSpoken, text);
         rememberTurn(text, line);
         onMemCountRef.current?.(memorySummaryCount());
         feedUtterance(line);
@@ -1648,19 +1647,6 @@ export default function ChatPanel({
               lang={lang}
               accent={accent}
               label={m.role === 'assistant' && i === history.length - 1 ? characterName : undefined}
-              memoryUsed={m.memoryUsed}
-              onForgetMemory={(id) => {
-                forgetInjectedMemory(id);
-                onMemCountRef.current?.(memorySummaryCount());
-                setHistory((prev) => prev.map((row, idx) => (
-                  idx === i && row.memoryUsed
-                    ? {
-                      ...row,
-                      memoryUsed: row.memoryUsed.filter((u) => u.id !== id),
-                    }
-                    : row
-                )));
-              }}
               onReport={(reply) => setReportFor(reply)}
             />
           );
