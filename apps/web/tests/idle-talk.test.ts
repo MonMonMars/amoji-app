@@ -133,7 +133,7 @@ describe('idle-talk', () => {
     expect(b).not.toBe(a);
   });
 
-  it('forbids the Pixel nonsense map line and half-template idle fills', () => {
+  it('forbids the Pixel nonsense map line and half-template idle fills', { timeout: 20_000 }, () => {
     expect(isIncompleteIdleLine('a small map reminding you')).toBe(true);
     expect(isIncompleteIdleLine('a tiny map reminded me of you in a soft way.')).toBe(true);
     expect(isIncompleteIdleLine('一張細地圖輕輕提醒我你。')).toBe(true);

@@ -252,24 +252,6 @@ function pickSingClip(text: string): string {
   return idleClipById('IdleMixamoHappy') ? 'IdleMixamoHappy' : pickBreathingDefault(text);
 }
 
-function pickMusicClip(text: string): string {
-  const t = text.toLowerCase();
-  // Genre cues share the dance shortlist so talk about music still moves.
-  if (/jazz|爵士|lofi|lofí|chill|ballad|抒情/.test(t)) {
-    return idleClipById('lib_C112') ? 'lib_C112' : pickFromPool(text, MUSIC_POSE_CLIPS);
-  }
-  if (/party|派對|派对|club|夜店|edm|disco/.test(t)) {
-    return idleClipById('lib_C114') ? 'lib_C114' : pickFromPool(text, MUSIC_POSE_CLIPS);
-  }
-  if (/hip[- ]?hop|嘻哈|upbeat|快歌/.test(t)) {
-    return idleClipById('lib_C113') ? 'lib_C113' : pickFromPool(text, MUSIC_POSE_CLIPS);
-  }
-  if (/listen|聽歌|听歌|concert|演唱會|演唱会|音樂會|音乐会/.test(t)) {
-    return idleClipById('lib_C41') ? 'lib_C41' : pickFromPool(text, MUSIC_POSE_CLIPS);
-  }
-  return pickFromPool(text, MUSIC_POSE_CLIPS);
-}
-
 function topEmotionCategory(
   hints: Record<string, number> | undefined,
   corpus: string,
