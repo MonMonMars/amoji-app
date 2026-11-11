@@ -175,7 +175,6 @@ import {
   openIdleBriefAlreadyDone,
   markOpenCheerDone,
   openCheerAlreadyDone,
-  shouldPlayOpenCheer,
 } from '../lib/open-phase';
 import {
   undecidedTopicReply,
