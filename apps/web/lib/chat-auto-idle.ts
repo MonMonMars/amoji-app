@@ -8,7 +8,7 @@ import type { IdleCuratedCategory } from './idle-curated-rail';
 import { FAREWELL_WAVE_CLIP_ID, isFarewellText } from './idle-farewell';
 import { detectMusicStyle, STYLE_CLIP_HINTS } from './music-catalog';
 import { resolvePerfMotion } from './performance-motion';
-import { isPixelOkIdleClip } from './idle-retired';
+import { isPixelCalmIdleClip, isPixelOkIdleClip, isPixelPerfOkClip } from './idle-retired';
 
 /**
  * While speaking / Q&A: only calm stands suitable for talk.
@@ -112,21 +112,21 @@ const KEYWORD_BUCKETS: readonly Bucket[] = [
 ];
 
 /** Category → curated clip id (first playable match). HelloWave is farewell-only. */
+/** Pixel OK by role: calm for idle/talk; perf only for matching moves. */
 const CATEGORY_CLIP: Record<BucketCategory | 'breathe' | 'look' | 'stretch' | 'sing', string> = {
-  greet: 'LookAround',
+  greet: 'IdleRpmFStanding001',
   think: 'IdleSassy',
-  // Pixel-OK hip-hop / dance with real leg keys.
+  talk: 'IdleRpmFStanding001',
+  breathe: 'IdleRpmFStanding001',
+  look: 'LookAround',
+  stretch: 'IdleRpmMVar002',
+  // Performance OK — only when user asks for that move.
   dance: 'lib_C113',
-  // Listening-to-music: sway + light footwork, not LookAround.
   music: 'lib_C112',
   martial: 'lib_C121',
   scared: 'PlayPunch',
   react: 'Cheer',
-  breathe: 'IdleRpmFStanding001',
-  look: 'LookAround',
-  stretch: 'IdleRpmMVar002',
   sing: 'IdleMixamoHappy',
-  talk: 'LookAround',
 };
 
 /** Music / concert talk — Pixel-OK sway / dance / sing only. */
@@ -141,10 +141,11 @@ const MUSIC_POSE_CLIPS = [
 /** User must ask — assistant mere mention / offer must not start a show. */
 const USER_INTENT_CATEGORIES = new Set<BucketCategory>(['dance', 'music', 'martial', 'sing']);
 
-function pickFromPool(seed: string, pool: readonly string[]): string {
+function pickFromPool(seed: string, pool: readonly string[], calmOnly = true): string {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
-  const playable = pool.filter((id) => isPixelOkIdleClip(id) && idleClipById(id));
+  const ok = calmOnly ? isPixelCalmIdleClip : isPixelOkIdleClip;
+  const playable = pool.filter((id) => ok(id) && idleClipById(id));
   if (!playable.length) return 'IdleRpmFStanding001';
   const idx = Math.abs(h) % playable.length;
   return playable[idx]!;
@@ -168,7 +169,8 @@ function pickTalkCalmIdle(seed: string): string {
 
 function firstPlayable(ids: readonly string[]): string | null {
   for (const id of ids) {
-    if (isPixelOkIdleClip(id) && idleClipById(id)) return id;
+    // Moves: prefer performance-OK; never fall back to non-OK library junk.
+    if ((isPixelPerfOkClip(id) || isPixelCalmIdleClip(id)) && idleClipById(id)) return id;
   }
   return null;
 }
@@ -214,19 +216,19 @@ function pickMusicClip(text: string): string {
   if (/jazz|爵士|lofi|lofí|chill|ballad|抒情/.test(t)) {
     const soft = preferredPerfIdle('dance', text, 'soft ballad');
     if (soft) return soft;
-    return idleClipById('lib_C112') ? 'lib_C112' : pickFromPool(text, MUSIC_POSE_CLIPS);
+    return idleClipById('lib_C112') ? 'lib_C112' : pickFromPool(text, MUSIC_POSE_CLIPS, false);
   }
   if (/party|派對|派对|club|夜店|edm|disco|hip[- ]?hop|嘻哈|upbeat|快歌/.test(t)) {
     const up = preferredPerfIdle('dance', text, 'upbeat dance');
     if (up) return up;
-    return idleClipById('lib_C113') ? 'lib_C113' : pickFromPool(text, MUSIC_POSE_CLIPS);
+    return idleClipById('lib_C113') ? 'lib_C113' : pickFromPool(text, MUSIC_POSE_CLIPS, false);
   }
   if (/listen|聽歌|听歌|concert|演唱會|演唱会|音樂會|音乐会/.test(t)) {
-    return idleClipById('lib_C112') ? 'lib_C112' : pickFromPool(text, MUSIC_POSE_CLIPS);
+    return idleClipById('lib_C112') ? 'lib_C112' : pickFromPool(text, MUSIC_POSE_CLIPS, false);
   }
   const preferred = preferredPerfIdle('dance', text, 'chill');
   if (preferred) return preferred;
-  return pickFromPool(text, MUSIC_POSE_CLIPS);
+  return pickFromPool(text, MUSIC_POSE_CLIPS, false);
 }
 
 function pickSingClip(text: string): string {
@@ -286,16 +288,26 @@ function resolveBucket(userText: string, assistantText: string): BucketCategory 
 }
 
 function clipForCategory(cat: BucketCategory | IdleCuratedCategory, seed: string, corpus: string): string {
-  if (cat === 'breathe') return pickBreathingDefault(seed);
-  if (cat === 'talk' || cat === 'look') return pickTalkCalmIdle(seed);
+  if (cat === 'breathe' || cat === 'talk') return pickTalkCalmIdle(seed);
+  if (cat === 'look') {
+    return idleClipById('LookAround') && isPixelCalmIdleClip('LookAround')
+      ? 'LookAround'
+      : pickTalkCalmIdle(seed);
+  }
   if (cat === 'greet') return pickChitchatDefault(seed);
   if (cat === 'dance') return pickDanceClip(corpus);
   if (cat === 'music') return pickMusicClip(corpus);
   if (cat === 'sing') return pickSingClip(corpus);
+  if (cat === 'think') {
+    return idleClipById('IdleSassy') && isPixelCalmIdleClip('IdleSassy')
+      ? 'IdleSassy'
+      : pickBreathingDefault(seed);
+  }
+  if (cat === 'react') {
+    return idleClipById('Cheer') && isPixelPerfOkClip('Cheer') ? 'Cheer' : pickBreathingDefault(seed);
+  }
   const id = CATEGORY_CLIP[cat as BucketCategory];
-  if (id && idleClipById(id)) return id;
-  if (cat === 'think') return idleClipById('Thinking') ? 'Thinking' : pickBreathingDefault(seed);
-  if (cat === 'react') return idleClipById('Cheer') ? 'Cheer' : pickBreathingDefault(seed);
+  if (id && idleClipById(id) && (isPixelCalmIdleClip(id) || isPixelPerfOkClip(id))) return id;
   return pickNeutralChatIdle(seed);
 }
 
