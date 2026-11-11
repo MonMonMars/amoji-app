@@ -20,6 +20,7 @@ export const CLIENT_STORAGE_KEYS: ClientStorageKey[] = [
   { key: 'amoji.legalAccept.v1', kind: 'local', purpose: 'Privacy + Terms acceptance' },
   { key: 'amoji.dailyTurns.v1', kind: 'local', purpose: 'Free daily chat quota' },
   { key: 'amoji.plan.v1', kind: 'local', purpose: 'Free / Plus entitlement mirror' },
+  { key: 'amoji.billing.clientId', kind: 'local', purpose: 'Anonymous id for Stripe client_reference_id' },
   { key: 'amoji.reports.v1', kind: 'local', purpose: 'In-app content reports' },
   { key: 'amoji.backend.session', kind: 'local', purpose: 'Optional production API bearer', sensitive: true },
   { key: 'amoji.modular.v1', kind: 'local', purpose: 'Modular wardrobe picks' },

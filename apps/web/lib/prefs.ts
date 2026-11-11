@@ -258,8 +258,9 @@ export type StrKey =
   // Full systems pack: plan, cookies, systems inventory (settings + /systems).
   | 'settingsPlan' | 'settingsSystems' | 'settingsLegal'
   | 'planFreeLabel' | 'planPlusLabel' | 'planUpgrade' | 'planPaymentsOn' | 'planPaymentsOff'
+  | 'planPaymentsDemo' | 'planDemoUpgrade' | 'planDemoUnlocked' | 'planDemoActive' | 'planChargingBlurb'
   | 'systemsTitle' | 'systemsLead' | 'systemsFreeHosts' | 'systemsFiles'
-  | 'systemsClientData' | 'systemsSecurity' | 'cookiesTitle' | 'openSystemsPage';
+  | 'systemsClientData' | 'systemsSecurity' | 'systemsCharging' | 'cookiesTitle' | 'openSystemsPage';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   chooseCharacter: { en: 'Choose your companion', yue: '揀你嘅小伙伴', zh: '选择你的伙伴', ja: '相棒を選ぶ' },
@@ -1251,6 +1252,36 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: '未配置 Stripe 付款链接前，付款功能保持关闭。',
     ja: 'Stripe の支払いリンクを設定するまで、支払いはオフのままです。',
   },
+  planPaymentsDemo: {
+    en: 'Payment demo mode is on — Plus unlock is labeled and does not charge real money.',
+    yue: '付款示範模式已開——Plus 解鎖會標明，唔會真係扣錢。',
+    zh: '付款演示模式已开启——Plus 解锁会标明，不会真实扣款。',
+    ja: '決済デモモードです。Plus 解除は明示され、実課金はしません。',
+  },
+  planDemoUpgrade: {
+    en: 'Unlock Plus (demo — no charge)',
+    yue: '解鎖 Plus（示範・唔收費）',
+    zh: '解锁 Plus（演示・不收费）',
+    ja: 'Plus を解除（デモ・課金なし）',
+  },
+  planDemoUnlocked: {
+    en: 'Demo Plus is active on this device. No payment was sent.',
+    yue: '示範 Plus 已喺呢部裝置生效。冇送出任何付款。',
+    zh: '演示 Plus 已在此设备生效。未发送任何付款。',
+    ja: 'デモ Plus がこの端末で有効です。支払いは送られていません。',
+  },
+  planDemoActive: {
+    en: 'You are on demo Plus — not a real Stripe purchase.',
+    yue: '而家係示範 Plus——唔係真嘅 Stripe 購買。',
+    zh: '当前为演示 Plus——不是真实的 Stripe 购买。',
+    ja: 'デモ Plus です。Stripe での実購入ではありません。',
+  },
+  planChargingBlurb: {
+    en: 'Free: {n} chat turns/day (UTC). TTS, poke, idle, games, and crisis stay free. Plus catalog {price}/30 days (Stripe link sets the live price).',
+    yue: '免費：每日 {n} 次傾偈（UTC）。語音、掂吓、待機、遊戲同危機協助維持免費。Plus 目錄價 {price}/30 日（真正價錢跟 Stripe 連結）。',
+    zh: '免费：每天 {n} 次聊天（UTC）。语音、轻触、待机、游戏与危机协助保持免费。Plus 目录价 {price}/30 天（实际价格以 Stripe 链接为准）。',
+    ja: '無料：1日 {n} 回のチャット（UTC）。音声・タッチ・待機・ゲーム・危機対応は無料のまま。Plus 表示価格 {price}/30日（実額は Stripe リンク）。',
+  },
   systemsTitle: { en: 'Systems', yue: '系統', zh: '系统', ja: 'システム' },
   systemsLead: {
     en: 'Free hosts, file locations, client storage keys, and security posture for this build.',
@@ -1262,13 +1293,14 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   systemsFiles: { en: 'File locations', yue: '檔案位置', zh: '文件位置', ja: 'ファイルの場所' },
   systemsClientData: { en: 'Client data storage', yue: '客戶端資料儲存', zh: '客户端数据存储', ja: 'クライアントデータ保存' },
   systemsSecurity: { en: 'Security', yue: '保安', zh: '安全', ja: 'セキュリティ' },
+  systemsCharging: { en: 'Charging rules', yue: '收費規則', zh: '收费规则', ja: '課金ルール' },
   cookiesTitle: { en: 'Cookies', yue: 'Cookie', zh: 'Cookie', ja: 'Cookie' },
   openSystemsPage: { en: 'Open systems map', yue: '打開系統地圖', zh: '打开系统地图', ja: 'システム一覧を開く' },
   dailyQuotaExceeded: {
-    en: "Today's free chat limit is used up. Try again tomorrow, or open Settings (top right) → Advanced brain (BYOK) to use your own API key.",
-    yue: '今日免費傾偈額度用完喇，聽日再傾啦。或者撳右上角「設定」→「進階大腦（BYOK）」用自己嘅 API key 繼續。',
-    zh: '今天的免费聊天额度已用完，请明天再来；或点右上角「设置」→「进阶大脑（BYOK）」使用自己的 API 密钥继续。',
-    ja: '今日の無料チャット上限に達しました。明日また試すか、右上の設定 → 高度な脳（BYOK）で自分の API キーを使ってください。',
+    en: "Today's free chat limit is used up. Try again tomorrow, open Settings → Plan for Plus when payments are configured, or use Advanced brain (BYOK) with your own API key.",
+    yue: '今日免費傾偈額度用完喇。聽日再傾，或者去「設定」→「計劃」睇 Plus（有付款設定先）；又或者用「進階大腦（BYOK）」同自己嘅 API key。',
+    zh: '今天的免费聊天额度已用完。请明天再来，或打开「设置」→「计划」查看 Plus（需已配置付款）；也可使用「进阶大脑（BYOK）」与自己的 API 密钥。',
+    ja: '今日の無料チャット上限に達しました。明日また試すか、設定 → プランで Plus（決済設定がある場合）、または高度な脳（BYOK）で自分の API キーを使ってください。',
   },
   // Reporting an AI reply (Play requirement). Every sentence that mentions
   // sending is written to match the code: localStorage on this device, an

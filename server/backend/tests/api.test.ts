@@ -93,6 +93,34 @@ describe('production backend', () => {
     expect(res.status).toBe(503);
   });
 
+  it('publishes billing rules without a session', async () => {
+    const res = await app().handle(new Request('http://amoji.local/api/billing/rules'));
+    expect(res.status).toBe(200);
+    const body = await res.json() as { charging: { version: number }; payment: { demoMode: boolean } };
+    expect(body.charging.version).toBe(1);
+    expect(typeof body.payment.demoMode).toBe('boolean');
+  });
+
+  it('demo checkout endpoint grants Plus when AMOJI_BILLING_DEMO=1', async () => {
+    const prev = process.env.AMOJI_BILLING_DEMO;
+    process.env.AMOJI_BILLING_DEMO = '1';
+    delete process.env.STRIPE_SECRET_KEY;
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+    delete process.env.STRIPE_PAYMENT_LINK;
+    const api = app();
+    const token = await session(api);
+    const res = await api.handle(authed(token, '/api/billing/checkout', 'POST', {}));
+    expect(res.status).toBe(200);
+    const body = await res.json() as { mode: string; chargesRealMoney: boolean; plan: string };
+    expect(body.mode).toBe('demo');
+    expect(body.chargesRealMoney).toBe(false);
+    expect(body.plan).toBe('plus');
+    const ent = await api.handle(authed(token, '/api/billing/entitlement', 'GET'));
+    expect(await ent.json()).toMatchObject({ plan: 'plus' });
+    if (prev === undefined) delete process.env.AMOJI_BILLING_DEMO;
+    else process.env.AMOJI_BILLING_DEMO = prev;
+  });
+
   it('creates, resumes, and ends an anonymous session', async () => {
     const api = app();
     const token = await session(api);

@@ -44,13 +44,37 @@ keys, plan/quota, systems & legal links.
 
 ## Payment
 
-Device-local daily chat quota (`lib/daily-quota.ts`, default 40 turns/UTC day)
-is the free plan. Paid unlocks require:
+Device-local daily chat quota (`lib/daily-quota.ts`, limit from
+`lib/charging-rules.ts`, default **40 turns/UTC day**) is the free plan.
+Plus unlocks unlimited chat turns for **30 days** after a verified Stripe
+webhook (or a labeled **demo** unlock — see below).
 
-- `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` on the Node API, and
-- `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` (or API-returned checkout URL) on the web build.
+### Payment rules (`lib/payment-rules.ts` + `lib/billing.ts`)
 
-Without those env vars, the UI shows the free quota only — no fake checkout.
+| Rule | Behavior |
+| --- | --- |
+| When payment is required | Free plan + daily LLM chat quota exhausted. TTS / poke / idle / games / crisis / setup never require payment. |
+| Upgrade offered | `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` set, **or** `NEXT_PUBLIC_AMOJI_PAYMENT_DEMO=1`. |
+| Checkout | Prefer `POST /api/billing/checkout` (attaches session `userId`). Else open Payment Link with `client_reference_id`. |
+| Success return | `?amoji_pay=success` → sync entitlement from API; strip query. |
+| Cancel return | `?amoji_pay=cancel` → no charge; free limits stay. |
+| Demo | `NEXT_PUBLIC_AMOJI_PAYMENT_DEMO=1` (web) / `AMOJI_BILLING_DEMO=1` (API) unlocks Plus **without charging** and labels it in Settings. |
+
+Live money requires:
+
+- `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` on the Node API (webhook → SQLite entitlement), and
+- `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` and/or `STRIPE_PRICE_ID` (+ optional `AMOJI_PUBLIC_ORIGIN` for Checkout Session success/cancel URLs).
+
+Without those secrets, the UI shows free quota only (or labeled demo) — no silent fake charge.
+
+### Charging rules (`lib/charging-rules.ts`)
+
+Only **`chat_llm_turn`** costs 1 free daily turn. Everything else in the table
+(`tts_free`, poke, idle, game, crisis, local music/sing/dance, setup, BYOK)
+costs **0** and is not gated. Catalog Plus display price is **$4.99 / 30 days**;
+the live Stripe link or `STRIPE_PRICE_ID` owns the real charge amount.
+
+`GET /api/billing/rules` publishes the same numbers for operators.
 
 ## Email
 
