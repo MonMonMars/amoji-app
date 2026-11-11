@@ -30,7 +30,7 @@ Chat rail uses **fresh curated #1..39** in `apps/web/lib/idle-curated-rail.ts` (
 | 20 | IdleMixamoArmStretch | stretch | 53 |
 | 21 | IdleRpmMVar002 | stretch | 95 |
 | 22 | IdleMixamoHappy | sing | 41 |
-| 23 | IdleHug | sing | 36 |
+| 23 | IdleMixamoHappy (IdleHug #36 retired) | sing | 41 |
 | 24 | lib_C120 | sing | 113 |
 | 25 | lib_C111 | dance | 101 |
 | 26 | lib_C112 | dance | 102 |

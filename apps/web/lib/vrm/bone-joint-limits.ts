@@ -42,6 +42,9 @@ export const BONE_BLEND_LIMITS: Readonly<Record<string, BoneEulerLimitsYXZ>> = {
  * that never hit clampBoneByName outside idle crossfade.
  */
 export const AXIAL_NO_FLIP_BONES = [
+  // Hips yaw must clamp too — mixer keys used to spin the whole body "to the
+  // back" (±π) during idle A→B even when spine/neck were capped.
+  'hips',
   'spine',
   'chest',
   'upperChest',

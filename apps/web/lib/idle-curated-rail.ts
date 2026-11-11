@@ -54,7 +54,8 @@ export const CHAT_IDLE_CURATED: readonly IdleCuratedRailEntry[] = [
   { railNum: 21, clipId: 'IdleRpmMVar002', labelKey: 'idle.rail.neckStretch', category: 'stretch', legacyLibNum: 95 },
   // sing / slow
   { railNum: 22, clipId: 'IdleMixamoHappy', labelKey: 'idle.rail.happyIdle', category: 'sing', legacyLibNum: 41 },
-  { railNum: 23, clipId: 'IdleHug', labelKey: 'idle.rail.hugSlow', category: 'sing', legacyLibNum: 36 },
+  // IdleHug (#36) retired — lean/hug spun torso through the back on A→B blends.
+  { railNum: 23, clipId: 'IdleMixamoHappy', labelKey: 'idle.rail.happyIdleAlt', category: 'sing', legacyLibNum: 41 },
   { railNum: 24, clipId: 'lib_C120', labelKey: 'idle.rail.slowArmDance', category: 'sing', legacyLibNum: 113 },
   // dance
   { railNum: 25, clipId: 'lib_C111', labelKey: 'idle.rail.robotDance', category: 'dance', legacyLibNum: 101 },
