@@ -54,13 +54,24 @@ describe('pre-chat audio gate', () => {
     expect(gate).not.toMatch(/contentEditable/);
     const micSection = gate.slice(
       gate.indexOf('data-testid="pre-chat-mic-section"'),
-      gate.indexOf('data-testid="pre-chat-enter-chat"'),
+      gate.indexOf('data-testid="pre-chat-loc-section"'),
     );
     expect(micSection).not.toMatch(/<textarea\b|<input\b/);
     expect(micSection).toContain('role="status"');
     // Allow stays available after grant so re-click re-triggers the popup.
     expect(gate).toContain("mic !== 'unsupported'");
     expect(gate).not.toContain("mic !== 'granted' && mic !== 'unsupported'");
+  });
+
+  it('asks location on the same confirm page as mic (not at chat start)', () => {
+    const gate = read('components/PreChatAudioGate.tsx');
+    expect(gate).toContain('data-testid="pre-chat-loc-section"');
+    expect(gate).toContain('data-testid="pre-chat-loc-allow"');
+    expect(gate).toContain('requestLocation');
+    expect(gate).toContain("t(lang, 'gateLocAllow')");
+    expect(gate).toContain('location:');
+    const select = read('components/SelectionBoard.tsx');
+    expect(select).toContain('locationPreflightDoneThisSession');
   });
 
   it('NEXT / enter stays always clickable', () => {
@@ -84,6 +95,12 @@ describe('pre-chat audio gate', () => {
       'gateHelpTitle',
       'gateHelpRetry',
       'gateMicAllow',
+      'gateLocTitle',
+      'gateLocBody',
+      'gateLocAllow',
+      'gateLocGranted',
+      'gateLocDenied',
+      'gateLocUnsupported',
     ];
     for (const key of keys) {
       for (const { id } of LANGS) {

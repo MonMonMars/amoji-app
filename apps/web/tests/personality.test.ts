@@ -72,21 +72,21 @@ describe('auto personality', () => {
     // Calm-heavy: stretch once at end; no arm-raise / wave / dance fillers.
     const loop = [...PASSIVE_IDLE_LOOP_TEMPLATE];
     const dropped = [
-      'IdleNeutral', 'Thinking', 'IdleChinHand', 'IdleHug', 'IdleSassy',
-      'Impatient', 'WeightShift', 'HelloWave', 'IdleMixamoArmStretch',
+      'IdleBreathCalm', 'StandardIdle', 'IdleNeutral', 'Thinking', 'IdleChinHand', 'IdleHug',
+      'Impatient', 'WeightShift', 'HelloWave', 'IdleMixamoArmStretch', 'Relax',
     ];
     for (const tag of female) {
       const clips = personalityMotion(`p-${tag}`, 'female').idleClips;
-      expect(clips[0]).toBe('IdleBreathCalm');
+      expect(clips[0]).toBe('IdleRpmFStanding001');
       expect(clips).toEqual(loop);
-      expect(clips[clips.length - 1]).toBe('Relax');
+      expect(clips[clips.length - 1]).toBe('IdleRpmMVar002');
       for (const id of dropped) expect(clips).not.toContain(id);
     }
     for (const tag of male) {
       const clips = personalityMotion(`p-${tag}`, 'male').idleClips;
-      expect(clips[0]).toBe('IdleBreathCalm');
+      expect(clips[0]).toBe('IdleRpmFStanding001');
       expect(clips).toEqual(loop);
-      expect(clips[clips.length - 1]).toBe('Relax');
+      expect(clips[clips.length - 1]).toBe('IdleRpmMVar002');
       for (const id of dropped) expect(clips).not.toContain(id);
     }
     expect(personalityMotion('p-cool', 'male').idleClips).toEqual(loop);

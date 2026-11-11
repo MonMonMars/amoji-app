@@ -247,6 +247,7 @@ describe('entry gate — the record stores a confirmation, never a detection', (
     const rec = m.getEntryGateRecord()!;
     expect(rec.version).toBe(m.ENTRY_GATE_VERSION);
     expect(rec.audioHeard).toBe('yes');
+    expect(rec.location).toBe('skipped');
     expect(typeof rec.audioCheckedAt).toBe('string');
     restore();
   });
@@ -254,11 +255,12 @@ describe('entry gate — the record stores a confirmation, never a detection', (
   it('a stored "heard nothing" still passes the gate but is recorded as such', async () => {
     const { restore } = withStorage();
     const m = await import('../lib/entry-gate');
-    m.passEntryGate({ audioHeard: 'no', mic: 'denied' });
+    m.passEntryGate({ audioHeard: 'no', mic: 'denied', location: 'denied' });
     expect(m.hasPassedEntryGate()).toBe(true);
     const rec = m.getEntryGateRecord()!;
     expect(rec.audioHeard).toBe('no');
     expect(rec.mic).toBe('denied');
+    expect(rec.location).toBe('denied');
     restore();
   });
 

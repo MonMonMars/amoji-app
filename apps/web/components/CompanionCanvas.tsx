@@ -23,6 +23,13 @@ import { dancePerfClipSources } from '../lib/dance-clip-sources';
 import { timeScaleForProfile } from '../lib/performance-motion';
 import { playableIdles } from '../lib/idle-library';
 import { listEnabledIdleClipIds } from '../lib/idle-enabled';
+import {
+  isPixelCalmIdleClip,
+  isPixelOkIdleClip,
+  isRetiredIdleClip,
+  resolveCalmIdleClipId,
+  resolveIdleClipId,
+} from '../lib/idle-retired';
 import { IDLE_JOINT_REFRESH_FADE_S, IDLE_JOINT_REFRESH_MS, nextIdleRefreshAt, shouldRefreshIdleJoints } from '../lib/idle-refresh';
 import {
   IDLE_PIN_CROSSFADE_S,
@@ -644,36 +651,33 @@ export default function CompanionCanvas({
       : [ownModel, 'seed-san.vrm'].filter((m): m is string => !!m);
 
     // -- clip library ---------------------------------------------------------
-    // Standing idle rotation. IdleBreathCalm is the primary default (forward
-    // head, arms outside the torso, feet planted). StandardIdle is the local
-    // neutral stand. LookAround is the curious variant. WeightShift stays an
-    // optional remote. Relax is the soft variant. rebaseClipHips pins feet
-    // and yaw-only hips on every idle in this list.
+    // Standing idle rotation — Pixel calm OK only (breathe/look/think/stretch).
+    // Sing/dance/react OK stay loaded for content moves, never in idleOrder.
     const ANIM_MIRROR = `${ASSET_BASE}/models/anims`;
     const CHAT_HOST = 'https://raw.githubusercontent.com/DavinciDreams/3dchat/main/public/animations/vrma';
     const ALT_HOST = 'https://raw.githubusercontent.com/hirokazuniimoto/virtual-avatar-sdk/main/assets/animations';
     const ST_HOST = 'https://raw.githubusercontent.com/test157t/VRM-Assets-Pack-For-Silly-Tavern/main/animation_nitral-fork';
 
     interface ClipSource { id: string; urls: string[] }
-    // Idle # SoT: apps/web/lib/idle-library.ts (free-library Cxx map).
-    // Default rotation = enabled playable nums (localStorage amoji.idleEnabled.v1),
-    // falling back to #1 IdleBreathCalm + #2 StandardIdle. Every idle gets
-    // rebaseClipHips + pinPlantedClipTracks (no floating feet).
-    const libPlayable = playableIdles();
+    const libCalm = playableIdles().filter((e) => isPixelCalmIdleClip(e.clipId));
+    const libPerfOk = playableIdles().filter(
+      (e) => isPixelOkIdleClip(e.clipId) && !isPixelCalmIdleClip(e.clipId),
+    );
     const enabledIds = new Set(listEnabledIdleClipIds());
-    let IDLE_SOURCES: ClipSource[] = libPlayable
+    let IDLE_SOURCES: ClipSource[] = libCalm
       .filter((e) => enabledIds.has(e.clipId))
       .map((e) => ({ id: e.clipId, urls: [`${ANIM_MIRROR}/${e.clipId}.vrma`] }));
     if (!IDLE_SOURCES.length) {
       IDLE_SOURCES.push(
-        { id: 'IdleBreathCalm', urls: [`${ANIM_MIRROR}/IdleBreathCalm.vrma`] },
-        { id: 'StandardIdle', urls: [`${ANIM_MIRROR}/StandardIdle.vrma`] },
+        { id: 'IdleRpmFStanding001', urls: [`${ANIM_MIRROR}/IdleRpmFStanding001.vrma`] },
+        { id: 'IdleSassy', urls: [`${ANIM_MIRROR}/IdleSassy.vrma`] },
       );
     }
-    // All other playable library idles (side picks / Mon # tap).
-    const IDLE_PICKS: ClipSource[] = libPlayable
-      .filter((e) => !enabledIds.has(e.clipId))
-      .map((e) => ({ id: e.clipId, urls: [`${ANIM_MIRROR}/${e.clipId}.vrma`] }));
+    // Other calm rail beats + performance-OK for content named idle (sing/dance).
+    const IDLE_PICKS: ClipSource[] = [
+      ...libCalm.filter((e) => !enabledIds.has(e.clipId)),
+      ...libPerfOk,
+    ].map((e) => ({ id: e.clipId, urls: [`${ANIM_MIRROR}/${e.clipId}.vrma`] }));
     // one-shot dialogue performances (library clips with a real ending)
     // r96 (Master Simon): the move triggers get REAL performances too ??
     // dance / sing / kungfu / piano / violin fire actual keyframed mocap
@@ -766,9 +770,17 @@ export default function CompanionCanvas({
       perfEnd: 0.85,   // finished performance ??back to idle
     };
 
-    const playClipAsIdle = (clip: THREE.AnimationClip, id: string, fade: number) => {
+    const playClipAsIdle = (clip: THREE.AnimationClip, id: string, fade: number, allowPerf = false) => {
       if (!mixer) return;
-      const swapping = !!idleAction && idleClipId !== id;
+      // Passive idle: calm Pixel-OK only. Content may pass allowPerf for sing/dance.
+      const safeId = allowPerf ? resolveIdleClipId(id) : resolveCalmIdleClipId(id);
+      if (safeId !== id) {
+        const safeClip = clips.get(safeId);
+        if (safeClip) return playClipAsIdle(safeClip, safeId, fade, allowPerf);
+        return;
+      }
+      if (isRetiredIdleClip(safeId)) return;
+      const swapping = !!idleAction && idleClipId !== safeId;
       const blendS = swapping
         ? Math.max(fade, IDLE_SWAP_LEG_BLEND_S)
         : 0.7;
@@ -782,14 +794,11 @@ export default function CompanionCanvas({
       // never parked anywhere.
       action.setLoop(THREE.LoopRepeat, Infinity);
       action.reset();
-      if (swapping && idleAction) {
-        action.time = idleAction.time % clip.duration;
-      } else {
-        // start mid-clip at a random offset: the entry frame is never the
-        // clip's neutral first frame, and two consecutive idles blend
-        // motion-into-motion instead of neutral-into-neutral
-        action.time = Math.random() * clip.duration;
-      }
+      // Pixel: never sync absolute time across *different* clips — that
+      // blended mismatched mid-poses and looked like a sudden spin "to the
+      // back". Always enter the new idle near its start; crossfade owns the
+      // A→B glide (shortest-arc + axial clamps).
+      action.time = Math.min(0.08, Math.max(0, clip.duration * 0.02));
       if (idleAction && idleAction !== action) {
         // blend from wherever the body currently is into this clip
         idleAction.crossFadeTo(action, fade, false);
@@ -803,7 +812,7 @@ export default function CompanionCanvas({
         action.play();
       }
       idleAction = action;
-      idleClipId = id;
+      idleClipId = safeId;
       // hold this idle for 1–2 of its own beats, then hand over mid-motion
       const holdMs = Math.min(14000, Math.max(5000, clip.duration * 1000 * (1 + Math.random())));
       idleHoldUntil = performance.now() + holdMs;
@@ -812,17 +821,23 @@ export default function CompanionCanvas({
 
     const nextIdle = (fade: number) => {
       if (!mixer || !idleOrder.length) return;
-      const id = idleOrder[idleIdx % idleOrder.length]!;
+      const raw = idleOrder[idleIdx % idleOrder.length]!;
       idleIdx++;
+      const id = resolveCalmIdleClipId(raw);
+      if (isRetiredIdleClip(id)) return;
       const clip = clips.get(id);
       if (!clip) return;
-      playClipAsIdle(clip, id, fade);
+      playClipAsIdle(clip, id, fade, false);
     };
 
     const playNamedIdle = (id: string, fade: number): boolean => {
-      const clip = clips.get(id);
+      // Content / pin may request a performance-OK clip; remap unknown to calm.
+      const wantsPerf = isPixelOkIdleClip(id) && !isPixelCalmIdleClip(id);
+      const safeId = wantsPerf ? resolveIdleClipId(id) : resolveCalmIdleClipId(id);
+      if (isRetiredIdleClip(safeId)) return false;
+      const clip = clips.get(safeId);
       if (!clip) return false;
-      playClipAsIdle(clip, id, fade);
+      playClipAsIdle(clip, safeId, fade, wantsPerf);
       return true;
     };
 
@@ -883,14 +898,18 @@ export default function CompanionCanvas({
         // over mid-motion, so there is no clamped end-frame freeze to
         // recover from and no neutral stand between idle movements
       });
-      // Passiveive loop only: relax → stretch → relax → look around (repeat).
-      // Use every loaded idle id (enabled + side picks) so Relax / LookAround
-      // can play even when they are not rail-default-enabled.
-      const loadedIdleIds = [...IDLE_SOURCES, ...IDLE_PICKS]
+      // Passive loop: calm Pixel-OK only (never sing/dance/react as idle).
+      const loadedCalmIds = [...IDLE_SOURCES, ...IDLE_PICKS]
         .map((s) => s.id)
-        .filter((id) => clips.has(id));
-      idleOrder = orderIdleClips(loadedIdleIds, seedKey ?? '', gender);
-      if (!idleOrder.length) idleOrder = orderIdleClips([...clips.keys()], seedKey ?? '', gender);
+        .filter((id) => clips.has(id) && isPixelCalmIdleClip(id));
+      idleOrder = orderIdleClips(loadedCalmIds, seedKey ?? '', gender);
+      if (!idleOrder.length) {
+        idleOrder = orderIdleClips(
+          [...clips.keys()].filter((id) => isPixelCalmIdleClip(id)),
+          seedKey ?? '',
+          gender,
+        );
+      }
       idleIdx = 0;
       mixerActive = true;
       if (avatar) avatar.clipDrivesBody = true;
@@ -1987,9 +2006,9 @@ export default function CompanionCanvas({
             if (idleClipId !== pinnedIdle) playNamedIdle(pinnedIdle, IDLE_PIN_CROSSFADE_S);
             idleHoldUntil = Infinity;
           } else if (thinkingPoseActive()) {
-            // Hold the primary standing idle while a reply generates.
-            if (idleClipId !== 'IdleBreathCalm' && !thinkMiss) {
-              if (!playNamedIdle('IdleBreathCalm', FADE.idleRotate)) thinkMiss = true;
+            // Hold Pixel-OK calm stand while a reply generates (no Thinking #18).
+            if (idleClipId !== 'IdleRpmFStanding001' && !thinkMiss) {
+              if (!playNamedIdle('IdleRpmFStanding001', FADE.idleRotate)) thinkMiss = true;
               else idleHoldUntil = performance.now() + 20000;
             }
           } else {
@@ -2031,7 +2050,7 @@ export default function CompanionCanvas({
         // fix), and both skip whatever a clip actively animates, so they
         // compose cleanly with every driving mode (clip, procedural, recoil).
         const calmIdle = !perfAction && boost === 0 && !gameView && !handDrag
-          && (idleClipId === 'IdleBreathCalm' || idleClipId === 'StandardIdle');
+          && isPixelCalmIdleClip(idleClipId);
         avatar.applyRelaxedHands(calmIdle);
         avatar.smoothFingers(dt / 1000, calmIdle);
         avatar.clampShoulderROM();

@@ -1,25 +1,27 @@
 // Per-companion idle pin. Same localStorage shape as the other chat prefs.
-// Default rotation is only b01 IdleBreathCalm + b02 StandardIdle.
-// Saved a01–a04 pins (old bad defaults) are cleared on load. b03/b04 stay
-// optional side-rail picks. Clear the whole key with resetIdlePicks() or
-// `localStorage.removeItem('amoji.idlePick.v1')`.
+// Default rotation is Pixel-OK IdleRpmFStanding001 + LookAround.
+// Saved non-OK / retired pins are cleared on load.
 
-import { resolveIdleClipId, isRetiredIdleClip } from './idle-retired';
+import { isPixelCalmIdleClip, isRetiredIdleClip, resolveCalmIdleClipId } from './idle-retired';
 import { idleClipById } from './idle-clips';
 
 export const IDLE_PICK_KEY = 'amoji.idlePick.v1';
 const KEY = IDLE_PICK_KEY;
 
-/** Default rotation / safe persisted pins. */
-export const DEFAULT_IDLE_IDS = ['IdleBreathCalm', 'StandardIdle'] as const;
+/** Default rotation / safe persisted pins — Pixel calm idle only. */
+export const DEFAULT_IDLE_IDS = ['IdleRpmFStanding001', 'IdleSassy'] as const;
 
-/** Old rail defaults that must not stick after the calm-only change. */
+/** Legacy pins that must not stick after Pixel-OK-only change. */
 const BAD_SAVED_IDLE_IDS = new Set([
+  'IdleBreathCalm',
+  'StandardIdle',
   'IdleNeutral',
-  'IdleSassy',
   'IdleChinHand',
   'IdleHug',
   'HelloWave',
+  'Relax',
+  'Thinking',
+  'IdleQuaterniusHuman',
 ]);
 
 type PickMap = Record<string, string>;
@@ -43,8 +45,7 @@ function hydrate(): PickMap {
         changed = true;
         continue;
       }
-      // Drop legacy a01–a04 pins so the calm b01/b02 rotation returns.
-      if (BAD_SAVED_IDLE_IDS.has(clip)) {
+      if (BAD_SAVED_IDLE_IDS.has(clip) || !isPixelCalmIdleClip(clip)) {
         changed = true;
         continue;
       }
@@ -70,12 +71,19 @@ function persist(next: PickMap): void {
 export function idlePickFor(characterId: string): string | null {
   const raw = hydrate()[characterId];
   if (!raw) return null;
-  const resolved = resolveIdleClipId(raw);
-  return idleClipById(resolved) ? resolved : null;
+  const resolved = resolveCalmIdleClipId(raw);
+  return isPixelCalmIdleClip(resolved) && idleClipById(resolved) ? resolved : null;
 }
 
 export function saveIdlePick(characterId: string, clipId: string): string | null {
-  if (!characterId || isRetiredIdleClip(clipId) || !idleClipById(clipId)) return idlePickFor(characterId);
+  if (
+    !characterId
+    || isRetiredIdleClip(clipId)
+    || !isPixelCalmIdleClip(clipId)
+    || !idleClipById(clipId)
+  ) {
+    return idlePickFor(characterId);
+  }
   const next = { ...hydrate(), [characterId]: clipId };
   persist(next);
   return clipId;

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePrefs, t, savePrefs, type Prefs } from '../lib/prefs';
 import { primeChatStartGesture } from '../lib/chat-start-gesture';
+import { locationPreflightDoneThisSession } from '../lib/location-preflight';
 import { primeLocationForChatEnter } from '../lib/live-tools';
 import { playVoiceGreeting } from '../lib/voice';
 import { activeVoiceChoice } from '../lib/voice-picks';
@@ -24,7 +25,9 @@ export default function SetupFlow() {
     if (step < STEPS.length - 1) setStep(step + 1);
     else {
       primeChatStartGesture();
-      window.setTimeout(() => { try { primeLocationForChatEnter(); } catch { /* ignore */ } }, 120);
+      if (!locationPreflightDoneThisSession()) {
+        window.setTimeout(() => { try { primeLocationForChatEnter(); } catch { /* ignore */ } }, 120);
+      }
       savePrefs(prefs);
       router.push('/chat');
     }

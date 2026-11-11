@@ -23,6 +23,7 @@
 
 export type AudioHeard = 'yes' | 'no' | null;
 export type MicOutcome = 'granted' | 'denied' | 'unsupported' | 'skipped';
+export type LocationOutcome = 'granted' | 'denied' | 'unsupported' | 'skipped';
 
 export interface EntryGateRecord {
   version: number;
@@ -32,10 +33,12 @@ export interface EntryGateRecord {
   audioHeard: AudioHeard;
   audioCheckedAt: string | null;
   mic: MicOutcome;
+  /** Device location ask on the same confirm page as mic (weather/news “here”). */
+  location: LocationOutcome;
 }
 
 /** Bump to re-prompt everyone (e.g. this screen's promises change). */
-export const ENTRY_GATE_VERSION = 1;
+export const ENTRY_GATE_VERSION = 2;
 export const ENTRY_GATE_KEY = 'amoji.entryGate.v1';
 /** Set on /select START when getUserMedia succeeded in that gesture — chat mic opens with no delay. */
 export const MIC_PREFLIGHT_SESSION_KEY = 'amoji.micPreflight.granted';
@@ -55,12 +58,19 @@ function readRaw(): EntryGateRecord | null {
       parsed.mic === 'granted' || parsed.mic === 'denied' || parsed.mic === 'unsupported'
         ? parsed.mic
         : 'skipped';
+    const location: LocationOutcome =
+      parsed.location === 'granted'
+      || parsed.location === 'denied'
+      || parsed.location === 'unsupported'
+        ? parsed.location
+        : 'skipped';
     return {
       version: parsed.version,
       adultAcknowledgedAt: parsed.adultAcknowledgedAt,
       audioHeard: heard,
       audioCheckedAt: typeof parsed.audioCheckedAt === 'string' ? parsed.audioCheckedAt : null,
       mic,
+      location,
     };
   } catch {
     return null;
@@ -108,6 +118,24 @@ export function patchEntryGateMic(mic: MicOutcome): void {
   }
 }
 
+/** Update location field after the confirm-page Allow location tap. */
+export function patchEntryGateLocation(location: LocationOutcome): void {
+  if (typeof window === 'undefined') return;
+  const existing = readRaw();
+  if (!existing) return;
+  const rec: EntryGateRecord = { ...existing, location };
+  try {
+    window.localStorage.setItem(ENTRY_GATE_KEY, JSON.stringify(rec));
+  } catch {
+    /* ignore */
+  }
+  try {
+    window.dispatchEvent(new CustomEvent(EVENT, { detail: rec }));
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * True only when the CURRENT gate version was completed — both the 18+
  * acknowledgement and the audio question were answered. Bumping
@@ -124,6 +152,7 @@ export function passEntryGate(patch: {
   adultAcknowledgedAt?: string;
   audioHeard: Exclude<AudioHeard, null>;
   mic?: MicOutcome;
+  location?: LocationOutcome;
 }): EntryGateRecord {
   const now = new Date().toISOString();
   const rec: EntryGateRecord = {
@@ -132,6 +161,7 @@ export function passEntryGate(patch: {
     audioHeard: patch.audioHeard,
     audioCheckedAt: now,
     mic: patch.mic ?? 'skipped',
+    location: patch.location ?? 'skipped',
   };
   if (typeof window !== 'undefined') {
     try {

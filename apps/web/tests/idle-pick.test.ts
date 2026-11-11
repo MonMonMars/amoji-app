@@ -35,11 +35,11 @@ describe('idle library numbers', () => {
     }
   });
 
-  it('defaults #1+#2 to IdleBreathCalm and StandardIdle', () => {
+  it('defaults library enable to Pixel-OK #42 stand + #3 look', () => {
     expect(idleByNum(1)?.clipId).toBe('IdleBreathCalm');
     expect(idleByNum(2)?.clipId).toBe('StandardIdle');
-    // Passiveive loop also enables LookAround (#3) + Relax (#32) by default.
-    expect(defaultEnabledNums()).toEqual([1, 2, 3, 32]);
+    expect(idleByNum(42)?.clipId).toBe('IdleRpmFStanding001');
+    expect(defaultEnabledNums()).toEqual([3, 42]);
   });
 
   it('maps free-library C01 to LookAround as #3', () => {
@@ -62,14 +62,15 @@ describe('idle library numbers', () => {
     expect(playable).toContain('lib_C42');
   });
 
-  it('exposes curated rail options as sequential # labels', () => {
+  it('exposes curated rail options as sequential # labels (Pixel calm idle only)', () => {
     expect(IDLE_CLIP_OPTIONS[0]?.label).toBe('1');
-    expect(IDLE_CLIP_OPTIONS.find((c) => c.id === 'IdleBreathCalm')?.num).toBe(1);
+    expect(IDLE_CLIP_OPTIONS.find((c) => c.id === 'IdleRpmFStanding001')?.num).toBe(1);
+    expect(IDLE_CLIP_OPTIONS.find((c) => c.id === 'IdleSassy')?.num).toBe(2);
+    expect(IDLE_CLIP_OPTIONS.find((c) => c.id === 'LookAround')?.num).toBe(3);
     expect(new Set(IDLE_CLIP_OPTIONS.map((c) => c.num)).size).toBe(IDLE_CLIP_OPTIONS.length);
+    expect(IDLE_CLIP_OPTIONS.length).toBe(6);
     expect(IDLE_CLIP_OPTIONS.length).toBeLessThan(playableIdles().length);
-    // Curated chat rail stays planted; dance shortlist is playable with free feet.
     expect(playableIdles().every((e) => e.playable)).toBe(true);
-    expect(playableIdles().filter((e) => !e.planted).length).toBeGreaterThan(0);
     expect(
       IDLE_CLIP_OPTIONS.every((o) => {
         const e = playableIdles().find((p) => p.clipId === o.id);
@@ -96,16 +97,19 @@ describe('idle enable + pick', () => {
     setIdleEnabled(lookRail, true);
     expect(isIdleEnabled(lookRail)).toBe(true);
     expect(listEnabledIdleClipIds()).toContain('LookAround');
+    // Emptying the pool resets to curated defaults (rail 1+2 = stand + sassy).
     setIdleEnabled(1, false);
     setIdleEnabled(2, false);
     setIdleEnabled(lookRail, false);
-    expect(listEnabledIdleClipIds()).toEqual(['IdleBreathCalm', 'StandardIdle']);
+    expect(listEnabledIdleClipIds()).toEqual(['IdleRpmFStanding001', 'IdleSassy']);
   });
 
-  it('saves a pin per companion by clip id', () => {
-    expect(saveIdlePick('a01-shino', 'IdleBreathCalm')).toBe('IdleBreathCalm');
-    expect(idlePickFor('a01-shino')).toBe('IdleBreathCalm');
-    expect(saveIdlePick('a01-shino', 'not-a-clip')).toBe('IdleBreathCalm');
+  it('saves a pin per companion by clip id (Pixel calm only)', () => {
+    expect(saveIdlePick('a01-shino', 'IdleRpmFStanding001')).toBe('IdleRpmFStanding001');
+    expect(idlePickFor('a01-shino')).toBe('IdleRpmFStanding001');
+    expect(saveIdlePick('a01-shino', 'not-a-clip')).toBe('IdleRpmFStanding001');
+    expect(saveIdlePick('a01-shino', 'IdleBreathCalm')).toBe('IdleRpmFStanding001');
+    expect(saveIdlePick('a01-shino', 'YesCheer')).toBe('IdleRpmFStanding001');
   });
 
   it('drops HelloWave pins — farewell wave is not a saved idle', () => {
@@ -140,7 +144,7 @@ describe('idle enable + pick', () => {
     }));
     forgetIdlePickCache();
     expect(idlePickFor('a01-shino')).toBeNull();
-    expect(idlePickFor('a02-shibu')).toBe('StandardIdle');
+    expect(idlePickFor('a02-shibu')).toBeNull();
     expect(idlePickFor('a03-fumiriya')).toBe('LookAround');
   });
 });

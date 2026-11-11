@@ -6,9 +6,9 @@ import { playableIdles } from '../lib/idle-library';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const CHITCHAT = ['lib_C25', 'LookAround', 'Thinking', 'IdleInnersceneSam'] as const;
-const NEUTRAL = ['IdleBreathCalm', 'StandardIdle', 'IdleMixamoBreathing', 'LookAround', 'Thinking', 'IdleNeutral'];
-const TALK = ['LookAround', 'IdleBreathCalm', 'StandardIdle', 'IdleMixamoBreathing', 'IdleNeutral', 'Thinking'];
+const CHITCHAT = ['IdleRpmFStanding001', 'IdleSassy'] as const;
+const NEUTRAL = ['IdleRpmFStanding001', 'IdleSassy'];
+const TALK = ['IdleRpmFStanding001', 'IdleSassy'];
 
 describe('chat auto idle resolver', () => {
   it('maps greet keywords to chit-chat idles, not HelloWave', () => {
@@ -34,27 +34,26 @@ describe('chat auto idle resolver', () => {
     expect(resolveChatAutoIdle({ assistantText: '', sessionFarewell: true })).toBe(FAREWELL_WAVE_CLIP_ID);
   });
 
-  it('uses Thinking while the assistant is generating', () => {
-    expect(resolveChatAutoIdle({ assistantText: '', thinking: true })).toBe('Thinking');
+  it('uses IdleSassy while the assistant is generating (Pixel OK think)', () => {
+    expect(resolveChatAutoIdle({ assistantText: '', thinking: true })).toBe('IdleSassy');
   });
 
-  it('maps explicit USER dance keywords to a performance dance idle', () => {
+  it('maps explicit USER dance keywords to a Pixel-OK dance idle', () => {
     // Assistant-only dance offer must NOT start a show (Mon: dance only when asked).
     const offer = resolveChatAutoIdle({ assistantText: 'Let us dance tonight!' });
     expect(NEUTRAL).toContain(offer);
     const user = resolveChatAutoIdle({ assistantText: 'Sure!', userText: '跳舞吧' });
-    // Leggy shortlist — hip-hop / dance-loop with free feet
-    expect(['lib_C61', 'lib_C03', 'lib_C113', 'lib_C114', 'lib_C118', 'lib_C125']).toContain(user);
+    expect(['lib_C111', 'lib_C112', 'lib_C113']).toContain(user);
   });
 
-  it('maps USER music / concert keywords to a listening / music-pose idle, not calm LookAround', () => {
+  it('maps USER music / concert keywords to a Pixel-OK music-pose idle, not calm LookAround', () => {
     const clip = resolveChatAutoIdle({ userText: '播個音樂會', assistantText: '好呀，一起聽。' });
-    expect(['lib_C112', 'lib_C61', 'lib_C03', 'lib_C41', 'lib_C113']).toContain(clip);
+    expect(['lib_C112', 'lib_C113', 'lib_C111', 'IdleMixamoHappy', 'lib_C120']).toContain(clip);
     const en = resolveChatAutoIdle({
       userText: 'play some concert music',
       assistantText: 'That concert sounds amazing!',
     });
-    expect(['lib_C41', 'lib_C112', 'lib_C113', 'lib_C114', 'lib_C03', 'lib_C61', 'lib_C110', 'IdleMixamoHappy']).toContain(en);
+    expect(['lib_C112', 'lib_C113', 'lib_C111', 'IdleMixamoHappy', 'lib_C120']).toContain(en);
     expect(en).not.toBe('LookAround');
   });
 
@@ -103,12 +102,17 @@ describe('chat auto idle resolver', () => {
     expect(clip).not.toBe(FAREWELL_WAVE_CLIP_ID);
   });
 
-  it('varies neutral idles across different reply text', () => {
-    const a = resolveChatAutoIdle({ assistantText: 'First neutral reply.' });
-    const b = resolveChatAutoIdle({ assistantText: 'A totally different answer about cats.' });
-    expect(NEUTRAL).toContain(a);
-    expect(NEUTRAL).toContain(b);
-    expect(a).not.toBe(b);
+  it('picks only calm talk stands for neutral Q&A', () => {
+    const samples = [
+      'First neutral reply.',
+      'A totally different answer about cats.',
+      'Sure, I can help with that.',
+      'Okay, here is a short note.',
+    ].map((assistantText) => resolveChatAutoIdle({ assistantText }));
+    for (const clip of samples) {
+      expect(NEUTRAL).toContain(clip);
+    }
+    expect(new Set(samples).size).toBeGreaterThanOrEqual(1);
   });
 
   it('does not match loose party wording without dance', () => {

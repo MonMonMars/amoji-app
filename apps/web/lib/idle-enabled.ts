@@ -1,5 +1,5 @@
 ﻿// Which curated idle rail #s are ON for rotation. Persists like mute prefs.
-// Default = curated #1+#2 (IdleBreathCalm + StandardIdle).
+// Default = curated #1+#2 (IdleRpmFStanding001 + LookAround).
 
 import { isRetiredIdleNum } from './idle-retired';
 import {
