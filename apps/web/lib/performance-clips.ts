@@ -154,12 +154,12 @@ export const PERFORMANCE_CLIPS: readonly PerformanceClip[] = [
     credit: 'United States Air Force Concert Band (trad.)', source: 'https://commons.wikimedia.org/wiki/File:Shenandoah.ogg',
   },
   {
-    id: 'sing-f-hello',
-    kind: 'song', style: 'cute tease', voice: 'female',
-    file: '/audio/sing-female/sing-f-hello.mp3', durationMs: 20036,
-    volume: 'voiceVol', moods: ['happy'], langs: ALL, characters: [],
-    labels: label('Hello There'), license: 'CC0-1.0',
-    credit: 'Pro Sensory (Alex McCulloch)', source: 'https://opengameart.org/content/hello-there-singing',
+    id: 'sing-f-silent-night',
+    kind: 'song', style: 'soft ballad', voice: 'female',
+    file: '/audio/sing-female/sing-f-silent-night.mp3', durationMs: 20088,
+    volume: 'voiceVol', moods: ['happy', 'sad', 'tired'], langs: ALL, characters: [],
+    labels: label('Silent Night'), license: 'CC0-1.0',
+    credit: 'Catharine Eastman (trad. Mohr / Gruber)', source: 'https://commons.wikimedia.org/wiki/File:Silent_Night_Librivox_2009.ogg',
   },
   {
     id: 'sing-f-twinkle',
@@ -706,13 +706,13 @@ export interface ClipQuery {
 }
 
 /**
- * Classic-feel / lullaby-style demos users actually enjoy (Twinkle, Hello,
+ * Classic-feel / lullaby-style demos users actually enjoy (Twinkle, Silent Night,
  * Joy, Shenandoah, Happy Birthday, PD opera that still sings clearly).
  * Prefer these over overtone drones, 1s SFX, or sparse chant beds.
  */
 export const PREFERRED_DEMO_CLIPS = new Set([
   'sing-f-twinkle',
-  'sing-f-hello',
+  'sing-f-silent-night',
   'sing-f-joy',
   'sing-f-adele',
   'sing-f-soave',

@@ -38,12 +38,24 @@ function bank(lang?: string): readonly string[] {
   return FOLLOW[key] ?? FOLLOW.yue;
 }
 
-export type WithQuestionOpts = { forceFollowUp?: boolean };
+export type WithQuestionOpts = {
+  forceFollowUp?: boolean;
+  /** Live weather/news (or other fact) line — never append a fishing question. */
+  factsSpoken?: boolean;
+};
 
-/** By default returns the reply unchanged (privacy — no automatic fishing). */
+/** True when the spoken line is already a weather/news/search fact read. */
+export function isFactSpokenLine(text: string): boolean {
+  return /(?:°C|degrees?|forecast|take care|From the news|Light news|Recent news|headline|天氣|天气|新聞|新闻|ニュース|天気|查唔到|找不到|確認でき|couldn't (?:check|find))/i
+    .test(text);
+}
+
+/** By default returns the reply unchanged (privacy — no automatic fishing).
+ *  Never appends on weather/news fact reads even when forceFollowUp is set. */
 export function withQuestion(reply: string, lang?: string, opts?: WithQuestionOpts): string {
   const text = reply.trim();
   if (!text || !opts?.forceFollowUp) return reply;
+  if (opts.factsSpoken || isFactSpokenLine(text)) return text;
   if (/[?？]/.test(text)) return text;
   if (FAREWELL_RE.test(text)) return text;
   const options = bank(lang);

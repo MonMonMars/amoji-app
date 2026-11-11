@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  asksPresenceNag,
   asksToResumeHistory,
   asksUserInnerThoughts,
   gateSpokenLine,
@@ -51,6 +52,23 @@ describe('spokenLineLooksBroken', () => {
     expect(spokenLineLooksBroken('a small map reminding you')).toBe(true);
     expect(spokenLineLooksBroken('a tiny map reminded me of you')).toBe(true);
     expect(spokenLineLooksBroken('一張細地圖輕輕提醒我你。')).toBe(true);
+    expect(spokenLineLooksBroken('一個小謎語充滿電，等一陣細爆發。')).toBe(true);
+    expect(spokenLineLooksBroken('{thing} is charged and ready for a tiny burst.')).toBe(true);
+    expect(spokenLineLooksBroken('Still on that thread with you — no rush to leave it.')).toBe(true);
+    expect(spokenLineLooksBroken('Holding this soft moment with you.')).toBe(true);
+    expect(spokenLineLooksBroken('I nicknamed a friendly riddle after this soft moment.')).toBe(true);
+    expect(spokenLineLooksBroken('我用呢個柔軟瞬間幫小謎語改名。')).toBe(true);
+    expect(spokenLineLooksBroken('Your quantum vibes are aligning today.')).toBe(true);
+    expect(spokenLineLooksBroken('個vibe好靚喎。')).toBe(true);
+    expect(spokenLineLooksBroken('Vibes check. What are we vibing to?')).toBe(true);
+    expect(spokenLineLooksBroken('搵到首歌啱你個vibe。想知歌名嗎？')).toBe(true);
+  });
+
+  it('rejects presence nags in idle mode', () => {
+    expect(asksPresenceNag("You've gone quiet on me — I'm still right here.")).toBe(true);
+    expect(asksPresenceNag('Are you still there?')).toBe(true);
+    expect(spokenLineLooksBroken("You've gone quiet on me.", { mode: 'idle' })).toBe(true);
+    expect(spokenLineLooksBroken('I just stretched my shoulders — feels nice.', { mode: 'idle' })).toBe(false);
   });
 
   it('rejects banned idle interrogations only in idle mode', () => {

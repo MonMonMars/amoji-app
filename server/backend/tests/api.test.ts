@@ -52,10 +52,43 @@ describe('production backend', () => {
   it('publishes a systems inventory without a session', async () => {
     const res = await app().handle(new Request('http://amoji.local/api/systems'));
     expect(res.status).toBe(200);
-    const body = await res.json() as { mail: boolean; billing: boolean; freeServers: unknown[] };
+    const body = await res.json() as {
+      mail: boolean;
+      billing: boolean;
+      freeServers: unknown[];
+      corsLocked: boolean;
+      securityRulesVersion: number;
+      rateLimits: Array<{ id: string }>;
+    };
     expect(body.mail).toBe(false);
     expect(body.billing).toBe(false);
     expect(body.freeServers.length).toBeGreaterThan(0);
+    expect(body.corsLocked).toBe(false);
+    expect(body.securityRulesVersion).toBe(1);
+    expect(body.rateLimits.some((r) => r.id === 'global')).toBe(true);
+  });
+
+  it('wipes server product rows for the bearer session', async () => {
+    const api = app();
+    const token = await session(api);
+    await api.handle(authed(token, '/api/state', 'PUT', {
+      characterId: 'a01-shino',
+      backgroundId: 'void',
+      lang: 'en',
+      kidMode: false,
+    }));
+    const wiped = await api.handle(authed(token, '/api/storage/me', 'DELETE'));
+    expect(wiped.status).toBe(200);
+    const body = await wiped.json() as { ok: boolean; removed: string[] };
+    expect(body.ok).toBe(true);
+    expect(body.removed.length).toBeGreaterThan(0);
+    const again = await api.handle(authed(token, '/api/state', 'GET'));
+    expect(again.status).toBe(401);
+  });
+
+  it('rejects storage wipe without a bearer', async () => {
+    const res = await app().handle(new Request('http://amoji.local/api/storage/me', { method: 'DELETE' }));
+    expect(res.status).toBe(401);
   });
 
   it('stores a content report and skips email when mail is off', async () => {
@@ -77,6 +110,40 @@ describe('production backend', () => {
     expect(body.mailConfigured).toBe(false);
   });
 
+  it('accepts anonymous support messages without a session', async () => {
+    const api = app();
+    const res = await api.handle(new Request('http://amoji.local/api/support', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'friend@example.com',
+        message: 'Hello from the support form',
+      }),
+    }));
+    expect(res.status).toBe(200);
+    const body = await res.json() as {
+      ok: boolean;
+      stored: boolean;
+      emailed: boolean;
+      skipped: boolean;
+      mailConfigured: boolean;
+    };
+    expect(body.ok).toBe(true);
+    expect(body.stored).toBe(true);
+    expect(body.emailed).toBe(false);
+    expect(body.skipped).toBe(true);
+    expect(body.mailConfigured).toBe(false);
+  });
+
+  it('rejects support posts missing an email', async () => {
+    const res = await app().handle(new Request('http://amoji.local/api/support', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'nope', message: 'hi' }),
+    }));
+    expect(res.status).toBe(400);
+  });
+
   it('returns free entitlement for a fresh session', async () => {
     const api = app();
     const token = await session(api);
@@ -91,6 +158,34 @@ describe('production backend', () => {
       body: '{}',
     }));
     expect(res.status).toBe(503);
+  });
+
+  it('publishes billing rules without a session', async () => {
+    const res = await app().handle(new Request('http://amoji.local/api/billing/rules'));
+    expect(res.status).toBe(200);
+    const body = await res.json() as { charging: { version: number }; payment: { demoMode: boolean } };
+    expect(body.charging.version).toBe(1);
+    expect(typeof body.payment.demoMode).toBe('boolean');
+  });
+
+  it('demo checkout endpoint grants Plus when AMOJI_BILLING_DEMO=1', async () => {
+    const prev = process.env.AMOJI_BILLING_DEMO;
+    process.env.AMOJI_BILLING_DEMO = '1';
+    delete process.env.STRIPE_SECRET_KEY;
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+    delete process.env.STRIPE_PAYMENT_LINK;
+    const api = app();
+    const token = await session(api);
+    const res = await api.handle(authed(token, '/api/billing/checkout', 'POST', {}));
+    expect(res.status).toBe(200);
+    const body = await res.json() as { mode: string; chargesRealMoney: boolean; plan: string };
+    expect(body.mode).toBe('demo');
+    expect(body.chargesRealMoney).toBe(false);
+    expect(body.plan).toBe('plus');
+    const ent = await api.handle(authed(token, '/api/billing/entitlement', 'GET'));
+    expect(await ent.json()).toMatchObject({ plan: 'plus' });
+    if (prev === undefined) delete process.env.AMOJI_BILLING_DEMO;
+    else process.env.AMOJI_BILLING_DEMO = prev;
   });
 
   it('creates, resumes, and ends an anonymous session', async () => {

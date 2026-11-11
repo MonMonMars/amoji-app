@@ -49,34 +49,34 @@ const HEX = (s: string): string => s;
 /**
  * Sing-mic capsule center in scene space (meters). Shared offset for the
  * head + sparkle; pole/boom/base are derived so the stand stays coherent.
- * Nominal VRM mouth ~[0, 1.38, 0.06] on a ~1.5m cast facing +Z. Capsule
- * sits on the mouth mid-line (near-zero X) with a generous forward gap so
- * Sing VRMA / curated sing idles never bury the mesh (Pixel: mic was inside).
+ * Nominal VRM mouth ~[0, 1.38, 0.06] on a ~1.5m cast facing +Z.
+ * Capsule sits BELOW the mouth (chin / upper-chest) on the mid-line with a
+ * forward gap — tall mouth-height mics covered the face (Pixel: too high).
  */
-export const MIC_MOUTH_POS: [number, number, number] = [0.0, 1.36, 0.36];
+export const MIC_MOUTH_POS: [number, number, number] = [0.0, 1.14, 0.34];
 
 /** Stand column slightly outward (+x / +z) from the capsule toward the floor. */
-const MIC_STAND_XZ: [number, number] = [MIC_MOUTH_POS[0] + 0.08, MIC_MOUTH_POS[2] + 0.03];
-const MIC_BOOM_Y = MIC_MOUTH_POS[1] - 0.04;
-const MIC_POLE_H = Math.max(0.9, MIC_BOOM_Y);
+const MIC_STAND_XZ: [number, number] = [MIC_MOUTH_POS[0] + 0.07, MIC_MOUTH_POS[2] + 0.02];
+const MIC_BOOM_Y = MIC_MOUTH_POS[1] - 0.03;
+const MIC_POLE_H = Math.max(0.7, MIC_BOOM_Y);
 const MIC_POLE_Y = MIC_POLE_H / 2;
 
 export const PROPS: PropDef[] = [
   {
-    // the singer's mic — capsule at MIC_MOUTH_POS; stand derived beside it.
-    // Magic-dust spheres float above the mouth and settle with the enter drop.
+    // the singer's mic — shorter stand + lower capsule so the face stays clear.
+    // Magic-dust spheres stay near the capsule (not floating over the eyes).
     id: 'micStand',
     forMoves: ['sing'],
     parts: [
-      { kind: 'cylinder', pos: [MIC_STAND_XZ[0], 0.015, MIC_STAND_XZ[1]], size: [0.16, 0.18, 0.03], color: HEX('#111827') },
-      { kind: 'cylinder', pos: [MIC_STAND_XZ[0], MIC_POLE_Y, MIC_STAND_XZ[1]], size: [0.012, 0.014, MIC_POLE_H], color: HEX('#374151') },
-      { kind: 'cylinder', pos: [MIC_STAND_XZ[0], MIC_BOOM_Y, MIC_STAND_XZ[1]], size: [0.02, 0.02, 0.09], color: HEX('#4b5563'), rot: [0.55, 0, 0] },
-      { kind: 'sphere', pos: [MIC_MOUTH_POS[0], MIC_MOUTH_POS[1], MIC_MOUTH_POS[2]], size: [0.045, 0, 0], color: HEX('#1f2937'), anim: 'softBob', animPhase: 0.7 },
-      { kind: 'sphere', pos: [MIC_MOUTH_POS[0], MIC_MOUTH_POS[1], MIC_MOUTH_POS[2]], size: [0.024, 0, 0], color: HEX('#f472b6'), anim: 'sparkle', animPhase: 0 },
-      { kind: 'sphere', pos: [MIC_MOUTH_POS[0] - 0.04, MIC_MOUTH_POS[1] + 0.28, MIC_MOUTH_POS[2]], size: [0.012, 0, 0], color: HEX('#fce7f3'), anim: 'magicDust', animPhase: 0.2 },
-      { kind: 'sphere', pos: [MIC_MOUTH_POS[0] + 0.05, MIC_MOUTH_POS[1] + 0.34, MIC_MOUTH_POS[2] + 0.02], size: [0.01, 0, 0], color: HEX('#fbcfe8'), anim: 'magicDust', animPhase: 1.1 },
-      { kind: 'sphere', pos: [MIC_MOUTH_POS[0] + 0.01, MIC_MOUTH_POS[1] + 0.42, MIC_MOUTH_POS[2] - 0.02], size: [0.014, 0, 0], color: HEX('#f9a8d4'), anim: 'magicDust', animPhase: 2.0 },
-      { kind: 'sphere', pos: [MIC_MOUTH_POS[0] - 0.06, MIC_MOUTH_POS[1] + 0.38, MIC_MOUTH_POS[2] + 0.03], size: [0.009, 0, 0], color: HEX('#fdf2f8'), anim: 'magicDust', animPhase: 2.7 },
+      { kind: 'cylinder', pos: [MIC_STAND_XZ[0], 0.012, MIC_STAND_XZ[1]], size: [0.12, 0.14, 0.025], color: HEX('#111827') },
+      { kind: 'cylinder', pos: [MIC_STAND_XZ[0], MIC_POLE_Y, MIC_STAND_XZ[1]], size: [0.01, 0.012, MIC_POLE_H], color: HEX('#374151') },
+      { kind: 'cylinder', pos: [MIC_STAND_XZ[0], MIC_BOOM_Y, MIC_STAND_XZ[1]], size: [0.016, 0.016, 0.07], color: HEX('#4b5563'), rot: [0.5, 0, 0] },
+      { kind: 'sphere', pos: [MIC_MOUTH_POS[0], MIC_MOUTH_POS[1], MIC_MOUTH_POS[2]], size: [0.032, 0, 0], color: HEX('#1f2937'), anim: 'softBob', animPhase: 0.7 },
+      { kind: 'sphere', pos: [MIC_MOUTH_POS[0], MIC_MOUTH_POS[1], MIC_MOUTH_POS[2]], size: [0.016, 0, 0], color: HEX('#f472b6'), anim: 'sparkle', animPhase: 0 },
+      { kind: 'sphere', pos: [MIC_MOUTH_POS[0] - 0.03, MIC_MOUTH_POS[1] + 0.1, MIC_MOUTH_POS[2]], size: [0.008, 0, 0], color: HEX('#fce7f3'), anim: 'magicDust', animPhase: 0.2 },
+      { kind: 'sphere', pos: [MIC_MOUTH_POS[0] + 0.035, MIC_MOUTH_POS[1] + 0.12, MIC_MOUTH_POS[2] + 0.015], size: [0.007, 0, 0], color: HEX('#fbcfe8'), anim: 'magicDust', animPhase: 1.1 },
+      { kind: 'sphere', pos: [MIC_MOUTH_POS[0] + 0.01, MIC_MOUTH_POS[1] + 0.16, MIC_MOUTH_POS[2] - 0.01], size: [0.009, 0, 0], color: HEX('#f9a8d4'), anim: 'magicDust', animPhase: 2.0 },
+      { kind: 'sphere', pos: [MIC_MOUTH_POS[0] - 0.04, MIC_MOUTH_POS[1] + 0.14, MIC_MOUTH_POS[2] + 0.02], size: [0.006, 0, 0], color: HEX('#fdf2f8'), anim: 'magicDust', animPhase: 2.7 },
     ],
   },
 
@@ -141,15 +141,15 @@ export function propsForMove(kind: MoveKind | undefined): PropDef[] {
 const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 /**
- * How visible a prop is at move progress t (0??): pops in fast (attack
- * 0.06), holds full through the performance, then melts away across
- * 0.82??.90 so the stage is CLEAR before she moves on to her next motion ??
- * the prop never pops out mid-transition. Multiply into group scale ??
- * 0 hides the group entirely.
+ * How visible a prop is at move progress t (0→1): pops in fast (attack
+ * 0.06), stays FULL for almost the whole performance, then melts only in
+ * the last ~4% so a long song/music bed does not lose the mic mid-show
+ * (old 0.82→0.90 release made the mic vanish "after music starts a while").
+ * Multiply into group scale — 0 hides the group entirely.
  */
 export function propPresence(t: number): number {
   const u = clamp01(t);
-  return Math.min(clamp01(u / 0.06), clamp01((0.9 - u) / 0.08));
+  return Math.min(clamp01(u / 0.06), clamp01((1 - u) / 0.04));
 }
 
 /**

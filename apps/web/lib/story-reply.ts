@@ -57,18 +57,19 @@ export function storySystemBlock(language?: string): string {
   if (yue) {
     return `STORY / NARRATIVE TURN (overrides the short-reply rules above):
 - 呢個係講故事或故事模式 — 唔使跟住「48字 / 1–3句」上限。
-- 用多段、有畫面感嘅口語粵語敘事，大約 4–12 句，可以分兩三段（段落之間空一行）。
-- 推進情節、角色同場景；可以留懸念，但唔使每段都追問用戶。
+- 用多段、有畫面感嘅口語粵語敘事：開頭鋪場 → 中段推進 → 收束或懸念；大約 6–14 句，分兩三段（段落之間空一行）。
+- 推進情節、角色同場景；可以留懸念，但唔使每段都追問用戶。唔好一句講完成個故事。
 - 仍然用口語粒子（係／嘅／唔），唔好 markdown 列表。
 - 照舊喺最後一行輸出 [emotion:{...}]。`;
   }
   return `STORY / NARRATIVE TURN (overrides the short-reply rules above):
-- Tell a real story in rich spoken prose — multiple paragraphs are welcome (about 4–12 sentences, 2–3 short paragraphs with a blank line between beats).
-- Paint the scene, advance the plot, show character feeling; chapter-style beats are OK. Do not pack everything into one tiny sentence.
+- Tell a real story in rich spoken prose — multiple paragraphs are welcome (about 6–14 sentences, 2–3 short paragraphs with a blank line between beats).
+- Arc: open the scene → advance the plot with character feeling → land a soft ending or cliffhanger. Do not pack the whole tale into one tiny sentence.
 - Do not end every paragraph with a question to the user — only when it fits the scene.
 - No markdown, no numbered list unless they asked for steps. Still end with one line: [emotion:{...}].`;
 }
 
+/** @deprecated Prefer maxTokensForLongTalk in long-talk.ts — kept for existing tests. */
 export function maxTokensForStoryTurn(story: boolean, detailedRecipe: boolean): number {
   if (story) return STORY_MAX_TOKENS;
   if (detailedRecipe) return 520;

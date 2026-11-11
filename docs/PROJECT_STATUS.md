@@ -1,101 +1,100 @@
 # Amoji project status board
 
-**Generated:** 2026-11-11 15:51 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-11 18:06 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/setup)  
 **Visual board:** open [`project-status.html`](./project-status.html) in a browser.  
-**`main` tip:** `dd90e87` (includes #335 systems pack; open green PRs below are **not** on `main` yet)
+**`main` tip:** `2fec7d3` (mass merge landed — systems / SEO / long-talk / talk-sense / motion / poke / chat UX)
 
 ## Snapshot
 
 | Bucket | Count |
 | --- | ---: |
-| **Done** — merged to `main` (#320 / #327 / #329–#335 + earlier finish pass) | 9+ recent · 40+ stack |
-| **Open PRs ready** (CI green, mergeable) — systems / SEO / motion / chat / poke / long-talk | 21 product + 4 stale spikes |
+| **Done** — merged to `main` (Pixel NEW + systems finish + motion/chat/poke mass merge) | 60+ recent · 80+ stack |
+| **Open product PRs** | **1** — #353 (this status board) |
 | **Outstanding** — actionable code left for agents | **0** |
-| **Outstanding** — Pixel / human actions | merge order · env · eyeball |
-| **Hold** | licensed music · Stripe live keys · Product Hunt · Search Console · Pages eyeball |
+| **Outstanding** — Pixel / human actions | Pages eyeball · env · Hold items |
+| **Hold** | licensed music · Stripe live keys · Product Hunt · Search Console · Pages eyeball · stale spikes #1 / #20 / #154 / #240 |
 | Docs missing | 0 |
 
-**Overall feature stack (approx.):** ~93% merged to `main` · ~5% open green PRs · ~2% Hold / human
+**Overall feature stack (approx.):** ~98% merged to `main` · ~0% open product PRs (docs only) · ~2% Hold / human
 
 ### Progress by category (% merged to `main`)
 
 | Category | Merged % |
 | --- | ---: |
-| Chat UX | 96% |
-| Audio / TTS | 90% |
-| VRM / Idle | 92% |
-| Privacy / legal | 98% |
-| Setup / Gate | 98% |
-| Systems (pay / email / security / storage) | 85% (#335 on main; finish PRs #354–#356 open) |
-| SEO / marketing surface | 0% on main (#357 open green) |
-| Docs | 99% |
-| Merge to main | 93% (many green PRs waiting on Pixel) |
+| Chat UX | 99% |
+| Audio / TTS | 97% |
+| VRM / Idle | 98% |
+| Privacy / legal | 99% |
+| Setup / Gate | 99% |
+| Systems (pay / email / security / storage) | 99% (#335 + #354–#356) |
+| SEO / marketing surface | 99% (#357) |
+| Docs | 99% (#353 in flight) |
+| Merge to main | 98% |
 
 ---
 
 ## Done (merged to `main`)
 
-Do not treat open green PRs as Done. Only commits on `main` tip `dd90e87` count here.
+Only commits on `main` tip `2fec7d3` count here. Mass merge 2026-11-11 landed the open green slice stack.
+
+### Mass merge (2026-11-11)
 
 | PR | Item | Notes |
 | --- | --- | --- |
-| [#335](https://github.com/MonMonMars/amoji-app/pull/335) | Settings / payment / email / security / storage / legal systems pack (v1) | `dd90e87` — finish slices still open as #354–#356 |
+| [#360](https://github.com/MonMonMars/amoji-app/pull/360) | Smoother companion talk — scrub idle/LLM nonsense | talk-sense on `main` |
+| [#359](https://github.com/MonMonMars/amoji-app/pull/359) | Longer story, science, and simple-help conversations | |
+| [#358](https://github.com/MonMonMars/amoji-app/pull/358) | Poke SFX list + Want/Skip select pool | |
+| [#357](https://github.com/MonMonMars/amoji-app/pull/357) | SEO metadata, sitemap, robots, JSON-LD | |
+| [#356](https://github.com/MonMonMars/amoji-app/pull/356) | Finish security, legal, and storage systems | |
+| [#355](https://github.com/MonMonMars/amoji-app/pull/355) | Finish support email contact + wipe product data | |
+| [#354](https://github.com/MonMonMars/amoji-app/pull/354) | Finish payment system, payment rules, charging rules | |
+| [#352](https://github.com/MonMonMars/amoji-app/pull/352) | Longer 開聲傾偈 gate voice sample | |
+| [#351](https://github.com/MonMonMars/amoji-app/pull/351) | Every-frame arm ROM clamp | |
+| [#350](https://github.com/MonMonMars/amoji-app/pull/350) | Settings/setup LangChips audition | |
+| [#348](https://github.com/MonMonMars/amoji-app/pull/348) | Cull CMA emotion clips; expand poke SFX pack | |
+| [#345](https://github.com/MonMonMars/amoji-app/pull/345) | Poke opposite-side lean + head tier falloff | |
+| [#344](https://github.com/MonMonMars/amoji-app/pull/344) | Wire content/topic to motion maps | |
+| [#343](https://github.com/MonMonMars/amoji-app/pull/343) | Dance leg VRMAs + free feet with music beat | |
+| [#342](https://github.com/MonMonMars/amoji-app/pull/342) | Replace Hello There with CC0 Silent Night vocal | |
+| [#340](https://github.com/MonMonMars/amoji-app/pull/340) | Audible card greets via same-origin gesture clip | tip `2fec7d3` |
+| [#339](https://github.com/MonMonMars/amoji-app/pull/339) | Weather/news reports; read news without follow-up asks | |
+| [#338](https://github.com/MonMonMars/amoji-app/pull/338) | Scrub idle nonsense, cant-hear, phase chips; drop um filler | |
+| [#336](https://github.com/MonMonMars/amoji-app/pull/336) | Self-host fonts so CI build does not need Google | |
+
+### Earlier on `main`
+
+| PR | Item | Notes |
+| --- | --- | --- |
+| [#335](https://github.com/MonMonMars/amoji-app/pull/335) | Settings / payment / email / security / storage / legal systems pack (v1) | finish slices #354–#356 also merged |
 | [#334](https://github.com/MonMonMars/amoji-app/pull/334) | Sing mic farther out + clear sticky move when bed stops | |
 | [#333](https://github.com/MonMonMars/amoji-app/pull/333) | Weather without GPS talk; keep music up under TTS | |
 | [#332](https://github.com/MonMonMars/amoji-app/pull/332) | Silent music, calmer idle, motion≠talk, pose blend | |
 | [#331](https://github.com/MonMonMars/amoji-app/pull/331) | Never ask to continue last-time talk (no-history resume) | |
 | [#330](https://github.com/MonMonMars/amoji-app/pull/330) | Caption ladder — no overlap with chat history | |
-| [#329](https://github.com/MonMonMars/amoji-app/pull/329) | Demo-phase UX batch (weather, volume, mic, tai chi, sticky sing, …) | Pixel NEW 1–8 landed |
+| [#329](https://github.com/MonMonMars/amoji-app/pull/329) | Demo-phase UX batch (weather, volume, mic, tai chi, sticky sing, …) | Pixel NEW 1–8 |
 | [#327](https://github.com/MonMonMars/amoji-app/pull/327) | Actually light VRoid chars 1–3 (matcap + shade floor) | |
 | [#320](https://github.com/MonMonMars/amoji-app/pull/320) | View-only rules + geo helplines + crisis popup | |
 
-Earlier finish pass still on `main`: #306–#325 (idle nonsense gate, phrase pauses, axial 360 stop, demo chips, OVH sticky, Mixkit music, …) and #280–#305 era (setup, audio gate, entry flow, reply quality, cast lighting, poke hide, …).
+Earlier finish pass still on `main`: #306–#325 and #280–#305 era.
+
+### Closed without merge (do not reopen)
+
+| PR | Notes |
+| --- | --- |
+| [#337](https://github.com/MonMonMars/amoji-app/pull/337) | Mega music-beat-body / chat UX pack — superseded by slices; **closed** |
+| [#347](https://github.com/MonMonMars/amoji-app/pull/347) | LangChips + arm ROM + gate + status docs leftover bundle — superseded by #350–#353; **closed** |
 
 ---
 
-## Open PRs ready (CI green — not merged)
-
-Verified via `gh pr list` 2026-11-11. Prefer slices over mega when merging. **Do not close #337 or #347** unless Pixel says so.
-
-### Systems / SEO / long-talk (base `main`)
+## Open PRs
 
 | PR | Title | Notes |
 | --- | --- | --- |
-| [#354](https://github.com/MonMonMars/amoji-app/pull/354) | Finish payment system, payment rules, charging rules | Extends #335 |
-| [#355](https://github.com/MonMonMars/amoji-app/pull/355) | Finish support email contact + wipe product data | Extends #335 |
-| [#356](https://github.com/MonMonMars/amoji-app/pull/356) | Finish security, legal, and storage systems | Extends #335; also carries #336 font self-host cherry-pick |
-| [#357](https://github.com/MonMonMars/amoji-app/pull/357) | SEO metadata, sitemap, robots, JSON-LD | Marketing surface |
-| [#359](https://github.com/MonMonMars/amoji-app/pull/359) | Longer story, science, and simple-help conversations | Reply-budget modes |
-| [#336](https://github.com/MonMonMars/amoji-app/pull/336) | Self-host fonts so CI build does not need Google | Optional if #356 lands first (same font fix) |
+| [#353](https://github.com/MonMonMars/amoji-app/pull/353) | Status docs refresh (this board) | Docs only — post-mass-merge cleanup |
 
-### Motion / chat slices
-
-| PR | Title | Base / stack |
-| --- | --- | --- |
-| [#338](https://github.com/MonMonMars/amoji-app/pull/338) | Scrub idle nonsense, cant-hear, phase chips; drop um filler | `main` |
-| [#339](https://github.com/MonMonMars/amoji-app/pull/339) | Weather/news reports; read news without follow-up asks | stacks on #338 |
-| [#340](https://github.com/MonMonMars/amoji-app/pull/340) | Audible card greets via same-origin gesture clip | stacks on #338 |
-| [#342](https://github.com/MonMonMars/amoji-app/pull/342) | Replace Hello There with CC0 Silent Night vocal | `main` |
-| [#343](https://github.com/MonMonMars/amoji-app/pull/343) | Dance leg VRMAs + free feet with music beat | `main` |
-| [#344](https://github.com/MonMonMars/amoji-app/pull/344) | Wire content/topic to motion maps | stacks on #343 |
-| [#345](https://github.com/MonMonMars/amoji-app/pull/345) | Poke opposite-side lean + head tier falloff | `main` |
-| [#348](https://github.com/MonMonMars/amoji-app/pull/348) | Cull CMA emotion clips; expand poke SFX pack | stacks on #345 |
-| [#358](https://github.com/MonMonMars/amoji-app/pull/358) | Poke SFX list + Want/Skip select pool | stacks on #348 |
-| [#350](https://github.com/MonMonMars/amoji-app/pull/350) | Settings/setup LangChips audition via `playVoiceGreeting` | `main` (split from #347) |
-| [#351](https://github.com/MonMonMars/amoji-app/pull/351) | Every-frame arm ROM clamp (no scary 360 sleeve spins) | `main` (split from #347) |
-| [#352](https://github.com/MonMonMars/amoji-app/pull/352) | Longer 開聲傾偈 gate voice sample | `main` (split from #347) |
-| [#353](https://github.com/MonMonMars/amoji-app/pull/353) | Status docs refresh (this board) | `main` — docs only |
-
-### Mega / leftover (keep open)
-
-| PR | Title | Notes |
-| --- | --- | --- |
-| [#337](https://github.com/MonMonMars/amoji-app/pull/337) | Mega music-beat-body / chat UX pack | Prefer merge slices #338–#348 / #350–#352; **do not close without Pixel ask** |
-| [#347](https://github.com/MonMonMars/amoji-app/pull/347) | LangChips audition + arm ROM + longer gate + status docs | **Superseded by #350–#353**; keep open until Pixel says close |
-
-### Stale / conflicting (triage only if Pixel asks)
+### Hold / stale (do not touch unless Pixel asks)
 
 | PR | Title | Notes |
 | --- | --- | --- |
@@ -110,15 +109,14 @@ Verified via `gh pr list` 2026-11-11. Prefer slices over mega when merging. **Do
 
 ### Code (agents)
 
-**None.** Audit 2026-11-11: systems finish (#354–#356), SEO (#357), poke SFX select (#358), long-talk (#359), and motion/chat slices (#338–#348, #350–#352) are already PR’d and CI green. No remaining product bugs/gaps listed on the board that agents can code without inventing scope.
+**None.** Audit 2026-11-11 post-mass-merge: product slices #336–#360 (except docs #353) are on `main`. No remaining product bugs/gaps listed on the board that agents can code without inventing scope.
 
 ### Human / Pixel
 
-1. **Merge open green PRs** using the Pixel merge order below (agents cannot merge without write auth).
-2. **Decide fate of mega #337 and leftover #347** — leave open until Pixel explicitly says close (they are superseded by slices; do not auto-close).
-3. **Eyeball poke lean + SFX** after #345 → #348 → #358 land.
-4. **Live Pages verify** after merges hit `main` (see Hold).
-5. **Optional triage** of stale spikes #1 / #20 / #154 / #240.
+1. **Merge #353** (this docs refresh) after CI green.
+2. **Live Pages verify** after mass merge (setup → select → gate → chat; poke lean + SFX; news without fishing asks; story/science longer replies; systems/payment when env present).
+3. **Optional triage** of stale spikes #1 / #20 / #154 / #240 — only if Pixel asks.
+4. Hold items below (env / marketing / licensed catalog).
 
 ---
 
@@ -127,39 +125,29 @@ Verified via `gh pr list` 2026-11-11. Prefer slices over mega when merging. **Do
 | Item | Why |
 | --- | --- |
 | Licensed music catalog / stream embed | Needs licensed catalog; do not scrape Spotify/YouTube — `docs/MUSIC_STREAMING.md` |
-| Stripe live keys / Payment Link | Env only (`STRIPE_*`, `NEXT_PUBLIC_STRIPE_PAYMENT_LINK`) — code is in #354 |
+| Stripe live keys / Payment Link | Env only (`STRIPE_*`, `NEXT_PUBLIC_STRIPE_PAYMENT_LINK`) — code on `main` via #354 |
 | Product Hunt shoot / demo video | Marketing human work |
 | Google Search Console sitemap submit | Human; #357 ships `sitemap.xml` / `robots.txt` under `/amoji-app` |
 | Live github.io product eyeball | Pages rebuild after merge; curl smoke only proves shell is up |
 | Modular GLBs / CosyVoice refs / GPU TTS hosts | Asset / infra Holds — not blocking Pages |
+| Stale spikes #1 / #20 / #154 / #240 | Do not touch unless Pixel asks |
 
 ---
 
-## Pixel merge order (suggested)
+## Pixel merge order (post-mass-merge)
 
-Agents cannot merge. Prefer CI-green, mergeable PRs; rebase if `main` moves.
+Mass merge complete. Remaining:
 
-1. **Fonts / systems finish (independent of motion)**  
-   `#336` fonts **or** land fonts via `#356` → then `#354` payment → `#355` support email → `#356` security/legal/storage (if fonts already via #336, still merge #356 for systems).
-2. **SEO / long-talk (independent)**  
-   `#357` SEO · `#359` story/science/help long talk — any time after or beside systems.
-3. **Chat UX stack**  
-   `#338` → `#339` news · `#340` card greets.
-4. **Music / dance / content motion**  
-   `#342` Silent Night · `#343` dance legs → `#344` content-motion wire.
-5. **Poke stack**  
-   `#345` lean → `#348` CMA SFX pack → `#358` Want/Skip SFX select.
-6. **Leftover Pixel splits (if not already covered)**  
-   `#350` LangChips audition · `#351` arm ROM clamp · `#352` longer gate sample · `#353` status docs.
-7. **Mega / leftover cleanup (Pixel only)**  
-   After slices land, Pixel may close or supersede `#337` and `#347` — **do not close without explicit ask**.
+1. **#353** status docs (this PR) → merge when CI green.
+2. **Pages eyeball** on live `/setup`.
+3. **Holds** stay Hold; stale spikes stay untouched unless Pixel asks.
 
 ### Do not
 
 - Scrape commercial streaming platforms for music.
 - Invent new product scope when the Outstanding code list is empty.
-- Close #337 / #347 without Pixel saying so.
-- Treat open green PRs as shipped on Pages until they merge to `main`.
+- Touch Hold PRs #1 / #20 / #154 / #240 unless Pixel asks.
+- Treat Pages as verified until a human eyeballs the live site.
 
 ---
 
@@ -172,21 +160,23 @@ Agents cannot merge. Prefer CI-green, mergeable PRs; rebase if `main` moves.
 | Audio | TTS clause + phrase pauses | **Done** | #289 / #324 |
 | Audio | Weather no GPS talk + volume under TTS | **Done** | #333 / #329 |
 | Audio | Sing mic clear of body + sticky clear | **Done** | #334 |
-| Audio | Settings LangChips voice audition | **Open PR ready** | #350 |
-| Audio | Longer 開聲傾偈 gate sample | **Open PR ready** | #352 |
-| Chat UX | Idle nonsense / cant-hear / phase chips / um filler | **Open PR ready** | #338 (+ mega #337) |
-| Chat UX | News/weather read without fishing asks | **Open PR ready** | #339 |
-| Chat UX | Card greets audible (gesture clip) | **Open PR ready** | #340 |
-| Chat UX | Longer story / science / simple-help | **Open PR ready** | #359 |
-| VRM / Idle | Dance legs free feet + music beat | **Open PR ready** | #343 |
-| VRM / Idle | Content/topic → motion maps | **Open PR ready** | #344 |
-| VRM / Poke | Opposite-side lean + CMA poke SFX + Want/Skip | **Open PR ready** | #345 → #348 → #358 |
-| VRM / ROM | Body–arm–neck every-frame clamp | **Open PR ready** | #351 |
-| Music | Silent Night CC0 vocal | **Open PR ready** | #342 |
-| Systems | Payment / charging rules finish | **Open PR ready** | #354 |
-| Systems | Support email + wipe | **Open PR ready** | #355 |
-| Systems | Security / legal / storage finish (+ fonts) | **Open PR ready** | #356 (+ #336) |
-| Marketing | SEO metadata / sitemap / robots / JSON-LD | **Open PR ready** | #357 |
+| Audio | Settings LangChips voice audition | **Done** | #350 |
+| Audio | Longer 開聲傾偈 gate sample | **Done** | #352 |
+| Chat UX | Idle nonsense / cant-hear / phase chips / um filler | **Done** | #338 / #360 |
+| Chat UX | News/weather read without fishing asks | **Done** | #339 |
+| Chat UX | Card greets audible (gesture clip) | **Done** | #340 |
+| Chat UX | Longer story / science / simple-help | **Done** | #359 |
+| Chat UX | No history-resume ask | **Done** | #331 |
+| VRM / Idle | Dance legs free feet + music beat | **Done** | #343 |
+| VRM / Idle | Content/topic → motion maps | **Done** | #344 |
+| VRM / Poke | Opposite-side lean + CMA poke SFX + Want/Skip | **Done** | #345 → #348 → #358 |
+| VRM / ROM | Body–arm–neck every-frame clamp | **Done** | #351 |
+| Music | Silent Night CC0 vocal | **Done** | #342 |
+| Systems | Payment / charging rules finish | **Done** | #354 |
+| Systems | Support email + wipe | **Done** | #355 |
+| Systems | Security / legal / storage finish (+ fonts) | **Done** | #356 / #336 |
+| Marketing | SEO metadata / sitemap / robots / JSON-LD | **Done** | #357 |
+| Docs | Status board post-merge refresh | **Open (docs)** | #353 |
 | Music | Licensed stream/embed beyond Mixkit | **Hold** | `docs/MUSIC_STREAMING.md` |
 | Verify | Post-merge live check on Pages | **Hold** | Needs Pages rebuild + human eyeball |
 
@@ -202,8 +192,8 @@ Agents cannot merge. Prefer CI-green, mergeable PRs; rebase if `main` moves.
 | TTS pipeline | `docs/TTS_PIPELINE.md` | Complete |
 | Cast lighting | `docs/CAST_LIGHTING.md` | Complete |
 | Setup onboarding | `docs/SETUP_ONBOARDING.md` | Complete |
-| Systems map | `docs/SYSTEMS.md` | Complete (finish detail lands with #354–#356) |
-| Merge checklist | `docs/MERGE_CHECKLIST.md` | Refreshed — Pixel merge order |
+| Systems map | `docs/SYSTEMS.md` | Complete (#354–#356 on main) |
+| Merge checklist | `docs/MERGE_CHECKLIST.md` | Refreshed — post-mass-merge |
 | Music streaming | `docs/MUSIC_STREAMING.md` | Complete (licensed Hold noted) |
 | Job / voice checklist | `AMOJI_JOB_CHECKLIST.md` | Refreshed — prefer this board for open PR truth |
-| This status board | `docs/project-status.html` + this file | Refreshed 2026-11-11 15:51 HKT |
+| This status board | `docs/project-status.html` + this file | Refreshed 2026-11-11 18:06 HKT |

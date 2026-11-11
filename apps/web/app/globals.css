@@ -182,6 +182,15 @@ button:not(:disabled):active,
   82%, 100% { transform: translateX(130%); }
 }
 
+/* Chat wait: indeterminate thinking bar (no fake percentage). */
+.ui-thinking-bar-fill {
+  animation: fx-thinking-bar 1.15s ease-in-out infinite;
+}
+@keyframes fx-thinking-bar {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
+
 /* ---- selection cards: hover lift + press ---- */
 .ui-card {
   transition:

@@ -8,9 +8,11 @@
  * added. Existing users hold a v1 record, so they are re-prompted.
  * v3 — cookies policy, free-host / file-location inventory, optional
  * production API payment + transactional email facts.
+ * v4 — Settings product-data export/wipe; fuller client-storage inventory
+ * (BYOK keys, mute, place) named in cookies/privacy.
  */
 
-export const LEGAL_ACCEPT_VERSION = 3;
+export const LEGAL_ACCEPT_VERSION = 4;
 export const LEGAL_ACCEPT_KEY = 'amoji.legalAccept.v1';
 const EVENT = 'amoji:legal-accept';
 

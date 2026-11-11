@@ -81,7 +81,13 @@ import { preferLiveReply, worldBlock } from './live-tools';
 import { replyLooksNonsense, STRICT_REPLY_APPENDIX } from './reply-sanity';
 import { shapeCompanionReply } from './reply-shape';
 import { wantsLongCompanionReply } from './topic-suggestions';
-import { maxTokensForStoryTurn, storySystemBlock, wantsStoryTurn } from './story-reply';
+import { wantsStoryTurn } from './story-reply';
+import {
+  detectLongTalkKind,
+  longTalkSystemBlock,
+  maxTokensForLongTalk,
+  type LongTalkKind,
+} from './long-talk';
 import { mustStayOneTopic, stripOffTopicAbilityTacks } from './topic-mixture';
 
 export interface ClientChatResult { reply: string; emotionHints: Record<string, number> }
@@ -670,27 +676,27 @@ function noteSlowLane(lang?: string): void {
   }
 }
 
-/** The instant local lane: warm, her own language, always ends with a question. */
+/** The instant local lane: caring ack + concrete offer — never "on your mind" / presence nags / opaque jargon. */
 const FALLBACK_BANKS: Record<string, string[]> = {
   yue: [
-    '我喺度㗎，慢慢嚟——你最想講邊樣先？',
-    '聽到喇，我陪住你。不如講下你而家最掛住嘅嘢？',
-    '唔使急，我有的是時間——話俾我聽多啲吖？',
+    '我喺度聽緊你㗎，慢慢嚟——想講天氣、小事，定係聽個冷知識？',
+    '聽到喇，唔緊要。不如講下今日一件細細嘅事，或者我講個短故事你聽？',
+    '唔使急，我陪住你。想聽首歌、伸展一下，定係繼續傾你頭先嗰樣？',
   ],
   zh: [
-    '我在呀，慢慢来——你最想先聊哪件事？',
-    '听到了，我陪着你。聊聊你现在最惦记的事？',
-    '不着急，我有的是时间——再多跟我说一点？',
+    '我在听着你，慢慢来——想聊天气、小事，还是听个冷知识？',
+    '听到了，没事。不如说说今天一件小事，或者我讲个短故事给你听？',
+    '不着急，我陪着你。想听首歌、伸展一下，还是继续你刚才那件事？',
   ],
   ja: [
-    'ここにいるよ、ゆっくりでいい——何から話したい？',
-    '聞こえてる、付き合うよ。いま一番気になってること、教えて？',
-    '急がなくていいから、もっと聞かせて？',
+    'ちゃんと聞いてるよ、ゆっくりでいい——天気、小さなこと、それとも豆知識？',
+    '聞こえてる、大丈夫。今日の小さな話でもいいし、短いお話でもいいよ。',
+    '急がなくていい、そばにいるよ。歌、ストレッチ、それともさっきの続き？',
   ],
   en: [
-    "I'm right here, take your time — what do you want to talk about first?",
-    'I hear you, and I\'m with you. What\'s on your mind the most right now?',
-    'No rush at all — tell me a little more?',
+    "I'm listening — weather, a tiny story, or a fun fact, whichever you want.",
+    'I hear you; no pressure. We can talk about one small thing from today, or I can tell a short story.',
+    "I'm with you — a song, a stretch, or we stay with what you just said.",
   ],
 };
 
@@ -1120,7 +1126,10 @@ function packageReply(
   // Ability/showcase invites stay idle-only — strip offtopic tack-ons even on
   // rich/long paths (exception never authorizes dance-on-Jupiter).
   const cleaned = stripOffTopicAbilityTacks(done.reply, ctx.lastUser) || done.reply;
-  const spoken = ctx.story ? cleaned : withQuestion(cleaned, ctx.language);
+  const factsTurn = Boolean(ctx.worldSpoken?.trim()) || /\b(?:Weather|Light news|Recent news)\s*:/i.test(ctx.world ?? '');
+  const spoken = ctx.story || factsTurn
+    ? cleaned
+    : withQuestion(cleaned, ctx.language);
   const reply = preferLiveReply(spoken, ctx.world, ctx.worldSpoken, ctx.language);
   return { ...done, reply };
 }
@@ -1138,14 +1147,30 @@ export function wantsDetail(world?: string, userText?: string): boolean {
   return userText ? wantsLongCompanionReply(userText) : false;
 }
 
+/** Resolve story / science / help mode for budgets + system addenda. */
+export function resolveLongTalkKind(
+  lastUser: string,
+  opts?: Pick<ClientChatOptions, 'persona' | 'storySession'>,
+): LongTalkKind | null {
+  return detectLongTalkKind(lastUser, {
+    persona: opts?.persona,
+    storySession: opts?.storySession,
+  });
+}
+
 export async function clientChat(
   messages: ChatMessage[],
   opts?: ClientChatOptions,
 ): Promise<ClientChatResult> {
   const recent = trimHistoryForPrompt(messages);
   const lastUser = recent[recent.length - 1]?.content ?? '';
-  const story = wantsStoryTurn(lastUser, { persona: opts?.persona, storySession: opts?.storySession });
-  const detailed = wantsDetail(opts?.world, lastUser) || story;
+  const longKind = resolveLongTalkKind(lastUser, opts);
+  const story = longKind === 'story' || wantsStoryTurn(lastUser, {
+    persona: opts?.persona,
+    storySession: opts?.storySession,
+  });
+  const recipeDetail = wantsDetail(opts?.world, lastUser);
+  const detailed = recipeDetail || longKind != null || story;
   const raceOpts: RaceFreeLanesOpts = {
     characterId: opts?.characterId,
     conversationKey: conversationBrainKey(opts?.characterId),
@@ -1156,8 +1181,9 @@ export async function clientChat(
   const oneTopicAppendix = mustStayOneTopic({ story, detailed, keyedBrain })
     ? '\nTOPIC MIXTURE: Stay on ONE topic this turn. Never bolt dance/sing/music/weather/news/story invites onto an unrelated answer. Ability invites are idle-only.'
     : '';
-  const system = `${BASE_SYSTEM}${oneTopicAppendix}\nReply in speakable sentences only. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${story ? `\n${storySystemBlock(opts?.language)}` : ''}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
-  const maxTokens = maxTokensForStoryTurn(story, wantsDetail(opts?.world, lastUser));
+  const longBlock = longKind ? `\n${longTalkSystemBlock(longKind, opts?.language)}` : '';
+  const system = `${BASE_SYSTEM}${oneTopicAppendix}\nReply in speakable sentences only. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${longBlock}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
+  const maxTokens = maxTokensForLongTalk(longKind, recipeDetail && longKind == null);
   const onPartial = opts?.onPartial
     ? (partial: string) => {
         opts.onPartial?.(shapeCompanionReply(partial, {
@@ -1171,7 +1197,8 @@ export async function clientChat(
   const factsReply = (): ClientChatResult | null => {
     const spoken = opts?.worldSpoken?.trim();
     if (!spoken) return null;
-    return { reply: withQuestion(spoken, opts?.language), emotionHints: analyzeText(spoken) as Record<string, number> };
+    // Live weather/news already spoken — never append a follow-up question.
+    return { reply: spoken, emotionHints: analyzeText(spoken) as Record<string, number> };
   };
   const first = pickBrain();
   const sanityCtx: SanityContext = {

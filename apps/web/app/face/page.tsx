@@ -32,7 +32,7 @@ import { readHelplineLocationHints } from '../../lib/crisis-location';
 import { clientLiveContext } from '../../lib/live-tools';
 import type { ChatMessage } from '../../lib/llm';
 import { notifySpeaking, isSpeaking, sampleSpeech } from '../../lib/speech';
-import { speak, stopSpeaking, speakThinkingFiller } from '../../lib/voice';
+import { speak, stopSpeaking } from '../../lib/voice';
 import { stopThinkingSound } from '../../lib/thinking-sound';
 import { listenOnce, listenSupported } from '../../lib/listen';
 import type { Lang } from '../../lib/prefs';
@@ -209,7 +209,8 @@ export default function FacePage() {
       }
 
       emit('thinking');
-      speakThinkingFiller(optsRef.current.character, optsRef.current.lang, undefined, text);
+      // Pixel: no spoken "um…" loading filler (voice mismatch with reply TTS).
+      stopThinkingSound();
       const users = historyRef.current.filter((m) => m.role === 'user');
       const prior = users.length > 1 ? users[users.length - 2]?.content : undefined;
       const live = await clientLiveContext(text, optsRef.current.lang, prior);

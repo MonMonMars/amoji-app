@@ -28,12 +28,13 @@ export function performanceIntroLine(
   if (L === 'yue') {
     return isSong
       ? `好！呢首叫「${name}」——我而家唱俾你聽。`
-      : `好！呢段音樂叫「${name}」——起！`;
+      // Pixel: say "let's start" — never 「起！」 (that means "rise").
+      : `好！呢段音樂叫「${name}」——我哋開始！`;
   }
   if (L === 'zh') {
     return isSong
       ? `好！这首叫「${name}」——我现在唱给你听。`
-      : `好！这段音乐叫「${name}」——起！`;
+      : `好！这段音乐叫「${name}」——我们开始！`;
   }
   if (L === 'ja') {
     return isSong
@@ -42,5 +43,5 @@ export function performanceIntroLine(
   }
   return isSong
     ? `Okay — this song is called "${name}." Listen up.`
-    : `Alright — this track is "${name}." Here we go!`;
+    : `Alright — this track is "${name}." Let's start!`;
 }

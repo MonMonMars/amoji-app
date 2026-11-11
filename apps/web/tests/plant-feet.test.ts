@@ -4,19 +4,26 @@ import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin } from '@pixiv/three-vrm';
-import { clipFreesFeet, pinPlantedClipTracks, sharedGroundY, FootPlanter } from '../lib/vrm/plant-feet';
+import { clipFreesFeet, clipDrivesDanceLegs, pinPlantedClipTracks, sharedGroundY, FootPlanter } from '../lib/vrm/plant-feet';
 import { createV1Avatar } from '../lib/vrm/avatar';
 import { pokeBodyReaction } from '../lib/poke-hit';
 
 describe('clipFreesFeet', () => {
-  it('lets walk and jump lift the feet and plants everything else', () => {
+  it('lets walk/jump and dance-with-music clips drive the legs', () => {
     expect(clipFreesFeet('Jump')).toBe(true);
     expect(clipFreesFeet('Walk')).toBe(true);
     expect(clipFreesFeet('Jog')).toBe(true);
     expect(clipFreesFeet('Run')).toBe(true);
     expect(clipFreesFeet('IdleNeutral')).toBe(false);
     expect(clipFreesFeet('IdleBreathCalm')).toBe(false);
-    expect(clipFreesFeet('Dance')).toBe(false);
+    // Dance / music performances keep authored hip+leg keys for the beat.
+    expect(clipFreesFeet('Dance')).toBe(true);
+    expect(clipFreesFeet('lib_C61')).toBe(true);
+    expect(clipFreesFeet('lib_C03')).toBe(true);
+    expect(clipFreesFeet('lib_C112')).toBe(true);
+    expect(clipFreesFeet('lib_C125')).toBe(true);
+    expect(clipDrivesDanceLegs('lib_C61')).toBe(true);
+    expect(clipDrivesDanceLegs('Jump')).toBe(false);
     expect(clipFreesFeet(null)).toBe(false);
   });
 });

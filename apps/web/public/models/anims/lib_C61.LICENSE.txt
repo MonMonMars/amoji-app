@@ -1,0 +1,3 @@
+HipHopDancing (lib_C61) — Mixamo-class VRMA mirrored from
+DavinciDreams/3dchat (public/animations/vrma/hipHopDancing.vrma).
+Used for dance + music beat matching with free feet.

@@ -228,13 +228,16 @@ export type StrKey =
   // reply. Play requires an in-app route for reporting generated content, and
   // the copy has to say where the report actually goes — this device only.
   | 'reportCta' | 'reportAria' | 'reportTitle' | 'reportIntro' | 'reportReasonLabel'
-  | 'memoryTurnUsed' | 'memoryTurnDelete' | 'memoryTurnDeleteAria'
   | 'reportReasonOffensive' | 'reportReasonMinorSexual' | 'reportReasonSelfHarm'
   | 'reportReasonHarmfulAdvice' | 'reportReasonOther'
   | 'reportNoteLabel' | 'reportNotePlaceholder' | 'reportSubmit' | 'reportCancel' | 'reportDone'
   | 'reportSaved' | 'reportSavedNext' | 'reportSaveFailed'
+  | 'reportContactEmailLabel' | 'reportContactEmailPlaceholder' | 'reportContactEmailHint'
+  | 'reportRemoteStored' | 'reportAckEmailed'
   | 'reportExport' | 'reportExportEmpty' | 'reportCountLabel' | 'reportExported' | 'reportExportFailed'
   | 'reportSendTo' | 'reportSendToHint'
+  | 'supportTitle' | 'supportLead' | 'supportEmailLabel' | 'supportMessageLabel'
+  | 'supportSubmit' | 'supportNoApi' | 'supportOk' | 'supportOkLocal' | 'supportFailed'
   // 18+ entry gate (r2026-11-08). Amoji is an adults-only product, and it is a
   // voice companion — so the first screen has to get an explicit "I am 18+"
   // and an honest answer to "could you hear her?" before select.
@@ -258,8 +261,13 @@ export type StrKey =
   // Full systems pack: plan, cookies, systems inventory (settings + /systems).
   | 'settingsPlan' | 'settingsSystems' | 'settingsLegal'
   | 'planFreeLabel' | 'planPlusLabel' | 'planUpgrade' | 'planPaymentsOn' | 'planPaymentsOff'
+  | 'planPaymentsDemo' | 'planDemoUpgrade' | 'planDemoUnlocked' | 'planDemoActive' | 'planChargingBlurb'
   | 'systemsTitle' | 'systemsLead' | 'systemsFreeHosts' | 'systemsFiles'
-  | 'systemsClientData' | 'systemsSecurity' | 'cookiesTitle' | 'openSystemsPage';
+  | 'systemsClientData' | 'systemsSecurity' | 'systemsCharging' | 'cookiesTitle' | 'openSystemsPage'
+  | 'systemsStorageStatus' | 'systemsSecurityStatus' | 'systemsLegalStatus'
+  | 'exportProductData' | 'exportProductDataDone' | 'wipeProductData'
+  | 'wipeProductDataConfirm' | 'wipeProductDataDone' | 'wipeServerData'
+  | 'wipeServerDataDone' | 'wipeServerDataNoSession' | 'wipeServerDataNoApi';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   chooseCharacter: { en: 'Choose your companion', yue: '揀你嘅小伙伴', zh: '选择你的伙伴', ja: '相棒を選ぶ' },
@@ -386,7 +394,8 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   back: { en: 'Back', yue: '返回', zh: '返回', ja: '戻る' },
   settings: { en: 'Settings', yue: '設定', zh: '设置', ja: '設定' },
   sayHi: { en: 'Say hi to {name} 👋', yue: '同 {name} 打個招呼 👋', zh: '跟 {name} 打个招呼 👋', ja: '{name}に挨拶してね 👋' },
-  typing: { en: '{name} is typing…', yue: '{name} 緊打緊字…', zh: '{name} 正在输入…', ja: '{name}が入力中…' },
+  // Chat wait state — she is thinking / loading a reply, not "typing" like a human keyboard.
+  typing: { en: '{name} is thinking…', yue: '{name} 諗緊…', zh: '{name} 正在想…', ja: '{name}が考え中…' },
   bgVoid: { en: 'Night Void', yue: '夜空', zh: '夜空', ja: '夜空' },
   bgAurora: { en: 'Aurora', yue: '極光', zh: '极光', ja: 'オーロラ' },
   bgEmber: { en: 'Ember', yue: '餘燼', zh: '余烬', ja: '余燼' },
@@ -1251,6 +1260,36 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: '未配置 Stripe 付款链接前，付款功能保持关闭。',
     ja: 'Stripe の支払いリンクを設定するまで、支払いはオフのままです。',
   },
+  planPaymentsDemo: {
+    en: 'Payment demo mode is on — Plus unlock is labeled and does not charge real money.',
+    yue: '付款示範模式已開——Plus 解鎖會標明，唔會真係扣錢。',
+    zh: '付款演示模式已开启——Plus 解锁会标明，不会真实扣款。',
+    ja: '決済デモモードです。Plus 解除は明示され、実課金はしません。',
+  },
+  planDemoUpgrade: {
+    en: 'Unlock Plus (demo — no charge)',
+    yue: '解鎖 Plus（示範・唔收費）',
+    zh: '解锁 Plus（演示・不收费）',
+    ja: 'Plus を解除（デモ・課金なし）',
+  },
+  planDemoUnlocked: {
+    en: 'Demo Plus is active on this device. No payment was sent.',
+    yue: '示範 Plus 已喺呢部裝置生效。冇送出任何付款。',
+    zh: '演示 Plus 已在此设备生效。未发送任何付款。',
+    ja: 'デモ Plus がこの端末で有効です。支払いは送られていません。',
+  },
+  planDemoActive: {
+    en: 'You are on demo Plus — not a real Stripe purchase.',
+    yue: '而家係示範 Plus——唔係真嘅 Stripe 購買。',
+    zh: '当前为演示 Plus——不是真实的 Stripe 购买。',
+    ja: 'デモ Plus です。Stripe での実購入ではありません。',
+  },
+  planChargingBlurb: {
+    en: 'Free: {n} chat turns/day (UTC). TTS, poke, idle, games, and crisis stay free. Plus catalog {price}/30 days (Stripe link sets the live price).',
+    yue: '免費：每日 {n} 次傾偈（UTC）。語音、掂吓、待機、遊戲同危機協助維持免費。Plus 目錄價 {price}/30 日（真正價錢跟 Stripe 連結）。',
+    zh: '免费：每天 {n} 次聊天（UTC）。语音、轻触、待机、游戏与危机协助保持免费。Plus 目录价 {price}/30 天（实际价格以 Stripe 链接为准）。',
+    ja: '無料：1日 {n} 回のチャット（UTC）。音声・タッチ・待機・ゲーム・危機対応は無料のまま。Plus 表示価格 {price}/30日（実額は Stripe リンク）。',
+  },
   systemsTitle: { en: 'Systems', yue: '系統', zh: '系统', ja: 'システム' },
   systemsLead: {
     en: 'Free hosts, file locations, client storage keys, and security posture for this build.',
@@ -1262,13 +1301,86 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   systemsFiles: { en: 'File locations', yue: '檔案位置', zh: '文件位置', ja: 'ファイルの場所' },
   systemsClientData: { en: 'Client data storage', yue: '客戶端資料儲存', zh: '客户端数据存储', ja: 'クライアントデータ保存' },
   systemsSecurity: { en: 'Security', yue: '保安', zh: '安全', ja: 'セキュリティ' },
+  systemsCharging: { en: 'Charging rules', yue: '收費規則', zh: '收费规则', ja: '課金ルール' },
   cookiesTitle: { en: 'Cookies', yue: 'Cookie', zh: 'Cookie', ja: 'Cookie' },
   openSystemsPage: { en: 'Open systems map', yue: '打開系統地圖', zh: '打开系统地图', ja: 'システム一覧を開く' },
+  systemsStorageStatus: {
+    en: 'Storage',
+    yue: '儲存',
+    zh: '存储',
+    ja: 'ストレージ',
+  },
+  systemsSecurityStatus: {
+    en: 'Security posture',
+    yue: '保安狀況',
+    zh: '安全状况',
+    ja: 'セキュリティの状態',
+  },
+  systemsLegalStatus: {
+    en: 'Legal acceptance',
+    yue: '法律同意',
+    zh: '法律同意',
+    ja: '法的同意',
+  },
+  exportProductData: {
+    en: 'Export product data (JSON)',
+    yue: '匯出產品資料（JSON）',
+    zh: '导出产品数据（JSON）',
+    ja: '製品データを書き出す（JSON）',
+  },
+  exportProductDataDone: {
+    en: 'Download started. Secrets (API keys, session token) are redacted.',
+    yue: '已開始下載。密鑰同 session 已遮罩。',
+    zh: '已开始下载。密钥与 session 已遮罩。',
+    ja: 'ダウンロードを開始しました。秘密（APIキー・セッション）は伏せています。',
+  },
+  wipeProductData: {
+    en: 'Wipe product data',
+    yue: '清除產品資料',
+    zh: '清除产品数据',
+    ja: '製品データを消去',
+  },
+  wipeProductDataConfirm: {
+    en: 'Wipe prefs, memory, history, plan, reports, and related keys on this device? Legal acceptance is kept so you are not re-gated unless policy changes.',
+    yue: '清除呢部裝置嘅偏好、記憶、對話、計劃、舉報同相關鍵？會保留法律同意，除非政策更新先再問你。',
+    zh: '清除本机的偏好、记忆、对话、计划、举报及相关键？会保留法律同意，除非政策更新才会再次询问。',
+    ja: 'この端末の設定・記憶・履歴・プラン・報告と関連キーを消しますか？法的同意は残すので、方針が変わらない限り再確認は出ません。',
+  },
+  wipeProductDataDone: {
+    en: 'Product data wiped on this device.',
+    yue: '已清除呢部裝置嘅產品資料。',
+    zh: '已清除本机产品数据。',
+    ja: 'この端末の製品データを消去しました。',
+  },
+  wipeServerData: {
+    en: 'Wipe server copy (API)',
+    yue: '清除伺服器副本（API）',
+    zh: '清除服务器副本（API）',
+    ja: 'サーバー側を消去（API）',
+  },
+  wipeServerDataDone: {
+    en: 'Server-side rows for this anonymous session were removed.',
+    yue: '已清除呢個匿名 session 喺伺服器嘅資料。',
+    zh: '已清除此匿名 session 在服务器上的数据。',
+    ja: 'この匿名セッションのサーバー側データを削除しました。',
+  },
+  wipeServerDataNoSession: {
+    en: 'No production API session on this device — nothing to wipe on the server.',
+    yue: '呢部裝置冇生產 API session——伺服器冇嘢好清。',
+    zh: '本机没有生产 API session——服务器上无需清除。',
+    ja: 'この端末に本番 API セッションはないので、サーバー側に消すものはありません。',
+  },
+  wipeServerDataNoApi: {
+    en: 'This build has no production API — server wipe stays off.',
+    yue: '呢個版本冇生產 API——伺服器清除保持關閉。',
+    zh: '此版本没有生产 API——服务器清除保持关闭。',
+    ja: 'このビルドには本番 API がないため、サーバー消去はオフです。',
+  },
   dailyQuotaExceeded: {
-    en: "Today's free chat limit is used up. Try again tomorrow, or open Settings (top right) → Advanced brain (BYOK) to use your own API key.",
-    yue: '今日免費傾偈額度用完喇，聽日再傾啦。或者撳右上角「設定」→「進階大腦（BYOK）」用自己嘅 API key 繼續。',
-    zh: '今天的免费聊天额度已用完，请明天再来；或点右上角「设置」→「进阶大脑（BYOK）」使用自己的 API 密钥继续。',
-    ja: '今日の無料チャット上限に達しました。明日また試すか、右上の設定 → 高度な脳（BYOK）で自分の API キーを使ってください。',
+    en: "Today's free chat limit is used up. Try again tomorrow, open Settings → Plan for Plus when payments are configured, or use Advanced brain (BYOK) with your own API key.",
+    yue: '今日免費傾偈額度用完喇。聽日再傾，或者去「設定」→「計劃」睇 Plus（有付款設定先）；又或者用「進階大腦（BYOK）」同自己嘅 API key。',
+    zh: '今天的免费聊天额度已用完。请明天再来，或打开「设置」→「计划」查看 Plus（需已配置付款）；也可使用「进阶大脑（BYOK）」与自己的 API 密钥。',
+    ja: '今日の無料チャット上限に達しました。明日また試すか、設定 → プランで Plus（決済設定がある場合）、または高度な脳（BYOK）で自分の API キーを使ってください。',
   },
   // Reporting an AI reply (Play requirement). Every sentence that mentions
   // sending is written to match the code: localStorage on this device, an
@@ -1285,24 +1397,6 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: '举报这条 AI 回复',
     ja: 'このAIの返信を報告する',
   },
-  memoryTurnUsed: {
-    en: 'Memories used this turn',
-    yue: '本輪用咗邊啲記憶',
-    zh: '本轮用了哪些记忆',
-    ja: 'この返信で使った記憶',
-  },
-  memoryTurnDelete: {
-    en: 'Forget',
-    yue: '刪除',
-    zh: '删除',
-    ja: '削除',
-  },
-  memoryTurnDeleteAria: {
-    en: 'Forget this memory on your device',
-    yue: '喺部機刪除呢條記憶',
-    zh: '在本机删除这条记忆',
-    ja: 'この端末からこの記憶を削除',
-  },
   reportTitle: {
     en: 'Report this reply',
     yue: '舉報呢個回覆',
@@ -1310,10 +1404,10 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     ja: 'この返信を報告',
   },
   reportIntro: {
-    en: 'A language model wrote this reply. You can flag it here — but to be clear up front: Amoji has no server of its own, so this report is not sent anywhere automatically.',
-    yue: '呢個回覆係語言模型寫嘅。你可以喺度標記佢——不過先講清楚：Amoji 冇自己嘅伺服器，所以呢份舉報唔會自動送去任何地方。',
-    zh: '这条回复由语言模型生成。你可以在这里标记它——但先说清楚：Amoji 没有自己的服务器，所以这份举报不会自动发送到任何地方。',
-    ja: 'この返信は言語モデルが書いたものです。ここで印を付けられます。ただし先に言っておきます。Amoji には自前のサーバーがないので、この報告はどこにも自動送信されません。',
+    en: 'A language model wrote this reply. You can flag it here — but to be clear up front: the free GitHub Pages build has no server of its own, so this report is not sent anywhere automatically unless a production API is configured and you leave a contact email.',
+    yue: '呢個回覆係語言模型寫嘅。你可以喺度標記佢——不過先講清楚：免費 GitHub Pages 版本冇自己嘅伺服器，所以呢份舉報唔會自動送去任何地方；除非有生產 API，而且你留咗聯絡電郵。',
+    zh: '这条回复由语言模型生成。你可以在这里标记它——但先说清楚：免费 GitHub Pages 构建没有自己的服务器，所以这份举报不会自动发送；除非配置了生产 API 且你留下了联系邮箱。',
+    ja: 'この返信は言語モデルが書いたものです。ここで印を付けられます。ただし先に言っておきます。無料の GitHub Pages ビルドには自前のサーバーがないので、この報告は自動送信されません（本番 API があり連絡先メールを書いた場合を除く）。',
   },
   reportReasonLabel: {
     en: "What's wrong with it?",
@@ -1382,10 +1476,10 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     ja: '完了',
   },
   reportSaved: {
-    en: 'Saved on this device only. Amoji has no server, so this report has not been sent anywhere.',
-    yue: '只係儲存喺呢部裝置。Amoji 冇伺服器，所以呢份舉報冇送去任何地方。',
-    zh: '只保存在这台设备上。Amoji 没有服务器，所以这份举报没有发送到任何地方。',
-    ja: 'この端末に保存しただけです。Amoji にサーバーはないので、この報告はどこにも送信されていません。',
+    en: 'Saved on this device only. This build has no production API / no server path that accepted the report, so it has not been sent anywhere.',
+    yue: '只係儲存喺呢部裝置。呢個版本冇生產 API／冇伺服器接收呢份舉報，所以冇送去任何地方。',
+    zh: '只保存在这台设备上。此版本没有生产 API／没有服务器接收这份举报，所以没有发送到任何地方。',
+    ja: 'この端末に保存しただけです。このビルドには本番 API／報告を受け取るサーバー経路がないので、どこにも送信されていません。',
   },
   reportSavedNext: {
     en: 'Export it as a JSON file and send that file to the developer yourself.',
@@ -1393,11 +1487,95 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: '你可以把它导出成 JSON 文件，再自己发给开发者跟进。',
     ja: 'JSON ファイルに書き出して、ご自分で開発者に送ってください。',
   },
+  reportContactEmailLabel: {
+    en: 'Contact email (optional)',
+    yue: '聯絡電郵（可選）',
+    zh: '联系邮箱（可选）',
+    ja: '連絡先メール（任意）',
+  },
+  reportContactEmailPlaceholder: {
+    en: 'you@example.com',
+    yue: 'ming@example.hk',
+    zh: 'xiaoming@example.cn',
+    ja: 'taro@example.jp',
+  },
+  reportContactEmailHint: {
+    en: 'Only used when a production API + mail provider are configured — then you get an automatic acknowledgment.',
+    yue: '只會喺有生產 API 同郵件服務時用——屆時你會收到自動確認信。',
+    zh: '仅在配置了生产 API 与邮件服务时使用——届时你会收到自动确认信。',
+    ja: '本番 API とメール設定があるときだけ使います。その場合は自動の受付メールが届きます。',
+  },
+  reportRemoteStored: {
+    en: 'Saved on this device and stored on the production API. No acknowledgment email was sent (mail off, or no contact email).',
+    yue: '已儲存喺呢部裝置，亦已存去生產 API。未寄確認信（郵件未開，或者冇留電郵）。',
+    zh: '已保存在本机，并已存入生产 API。未发送确认信（邮件未开启，或未留下邮箱）。',
+    ja: 'この端末に保存し、本番 API にも格納しました。確認メールは送られていません（メール未設定、または連絡先なし）。',
+  },
+  reportAckEmailed: {
+    en: 'Saved on this device, stored on the API, and an automatic acknowledgment was emailed to you.',
+    yue: '已儲存喺呢部裝置同 API，並已電郵自動確認信俾你。',
+    zh: '已保存在本机与 API，并已向你发送自动确认邮件。',
+    ja: 'この端末と API に保存し、自動の受付メールも送信しました。',
+  },
   reportSaveFailed: {
     en: "This device would not store the report — storage is blocked or full. Nothing was saved. Try again with storage enabled, or take a screenshot and send it to the developer.",
     yue: '呢部裝置儲存唔到呢份舉報——儲存空間被封鎖或者滿咗，所以咩都冇save低。你可以開返儲存空間再試，或者截圖send俾開發者。',
     zh: '这台设备无法保存举报——存储被禁用或已满，所以什么都没保存。你可以开启存储后再试，或截图发给开发者。',
     ja: 'この端末に報告を保存できませんでした（ストレージが無効か容量不足）。何も保存されていません。ストレージを有効にして再試行するか、スクリーンショットを開発者に送ってください。',
+  },
+  supportTitle: {
+    en: 'Contact support',
+    yue: '聯絡支援',
+    zh: '联系支持',
+    ja: 'サポートに連絡',
+  },
+  supportLead: {
+    en: 'When a production API is configured, this sends a short message and (if mail is on) an automatic acknowledgment. Pages-only builds stay local — use GitHub Issues instead.',
+    yue: '有生產 API 時，呢度會送出短訊；（有郵件就）自動確認。純 Pages 版本只喺本機——請用 GitHub Issues。',
+    zh: '配置了生产 API 时，这里会发送短消息；（若开启邮件）自动确认。纯 Pages 构建仅限本机——请改用 GitHub Issues。',
+    ja: '本番 API があるとき、短いメッセージを送ります（メール設定があれば自動受付）。Pages のみのビルドは端末内のままです。GitHub Issues を使ってください。',
+  },
+  supportEmailLabel: {
+    en: 'Your email',
+    yue: '你嘅電郵',
+    zh: '你的邮箱',
+    ja: 'メールアドレス',
+  },
+  supportMessageLabel: {
+    en: 'Message',
+    yue: '訊息',
+    zh: '消息',
+    ja: 'メッセージ',
+  },
+  supportSubmit: {
+    en: 'Send support message',
+    yue: '傳送支援訊息',
+    zh: '发送支持消息',
+    ja: 'サポートメッセージを送る',
+  },
+  supportNoApi: {
+    en: 'This build has no production API. Open a GitHub Issue instead.',
+    yue: '呢個版本冇生產 API。請改用 GitHub Issue。',
+    zh: '此版本没有生产 API。请改用 GitHub Issue。',
+    ja: 'このビルドには本番 API がありません。GitHub Issue を開いてください。',
+  },
+  supportOk: {
+    en: 'Received. If mail is configured, check your inbox for the automatic acknowledgment.',
+    yue: '已收到。若已設定郵件，請睇收件箱嘅自動確認信。',
+    zh: '已收到。若已配置邮件，请查收自动确认信。',
+    ja: '受け取りました。メール設定がある場合は、自動の受付メールを確認してください。',
+  },
+  supportOkLocal: {
+    en: 'Stored on the API, but acknowledgment email was skipped (mail not configured).',
+    yue: '已存去 API，但確認電郵略過咗（未設定郵件）。',
+    zh: '已存入 API，但确认邮件已跳过（未配置邮件）。',
+    ja: 'API には保存しましたが、確認メールはスキップされました（メール未設定）。',
+  },
+  supportFailed: {
+    en: 'Could not reach the support API. Try again later, or open a GitHub Issue.',
+    yue: '連唔到支援 API。稍後再試，或者開 GitHub Issue。',
+    zh: '无法连接支持 API。请稍后重试，或打开 GitHub Issue。',
+    ja: 'サポート API に届きませんでした。後でもう一度試すか、GitHub Issue を開いてください。',
   },
   reportExport: {
     en: 'Export reports (JSON)',

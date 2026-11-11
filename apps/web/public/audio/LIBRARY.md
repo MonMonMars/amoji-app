@@ -13,7 +13,7 @@ Short clips that only repeated a track already here were skipped. Alternate take
 Asking to **sing** plays `sing-female/` or `sing-male/` at dialogue volume, matched to the companion.
 Asking to **dance** plays `dance/` or `song-bed/` at BGM volume.
 
-**Demo rotation preference:** classic / lullaby-feel vocals (Twinkle Twinkle, Hello There, Joy to the World, Shenandoah, Happy Birthday) and warm beds (Lullaby, Flowerbed, Napping, Music Box) are soft-weighted first. Overtone drones, 1s SFX (`sing-f-citation`), and sparse chant beds stay in the pack for completeness but are deprioritized — see `PREFERRED_DEMO_CLIPS` / `AVOID_DEMO_CLIPS` in `performance-clips.ts`.
+**Demo rotation preference:** classic / lullaby-feel vocals (Twinkle Twinkle, Silent Night, Joy to the World, Shenandoah, Happy Birthday) and warm beds (Lullaby, Flowerbed, Napping, Music Box) are soft-weighted first. Overtone drones, 1s SFX (`sing-f-citation`), and sparse chant beds stay in the pack for completeness but are deprioritized — see `PREFERRED_DEMO_CLIPS` / `AVOID_DEMO_CLIPS` in `performance-clips.ts`.
 
 | file | title | voice | credit | source |
 |---|---|---|---|---|
@@ -60,7 +60,7 @@ Asking to **dance** plays `dance/` or `song-bed/` at BGM volume.
 | `song-bed/bed-space.mp3` | Space | — | unknown | https://opengameart.org/content/space-background-music |
 | `song-bed/bed-menu.mp3` | Menu Title | — | unknown | https://opengameart.org/content/menu-theme |
 | `song-bed/bed-caketown.mp3` | Caketown | — | unknown | https://opengameart.org/content/caketown |
-| `sing-female/sing-f-hello.mp3` | Hello There | female | Pro Sensory (Alex McCulloch) | https://opengameart.org/content/hello-there-singing |
+| `sing-female/sing-f-silent-night.mp3` | Silent Night | female | Catharine Eastman (trad. Mohr / Gruber) | https://commons.wikimedia.org/wiki/File:Silent_Night_Librivox_2009.ogg |
 | `sing-female/sing-f-twinkle.mp3` | Twinkle Twinkle | female | Derrick Coetzee | https://commons.wikimedia.org/wiki/File:Twinkle_Twinkle_Little_Star_-_sung_with_full_lyrics.ogg |
 | `sing-female/sing-f-joy.mp3` | Joy to the World | female | Kim Butler, Alan Davis-Drake, Diyan, Claire Goget, Karen Savage, SKVE, Kara Shallenberg, Kristin Hughes | https://commons.wikimedia.org/wiki/File:Joy-to-the-World_KB.ogg |
 | `sing-female/sing-f-choir.mp3` | Choir | female | cynicmusic | https://opengameart.org/content/epic-endgame-cinematic |

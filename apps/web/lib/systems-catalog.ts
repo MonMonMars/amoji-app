@@ -73,7 +73,9 @@ export const FILE_LOCATIONS: FileLocationEntry[] = [
   { id: 'memory', kind: 'Long-term memory', location: 'localStorage amoji.memory.v2' },
   { id: 'history', kind: 'Chat history', location: 'localStorage amoji.history.v1' },
   { id: 'reports', kind: 'Content reports', location: 'localStorage amoji.reports.v1 (+ optional API)' },
+  { id: 'byok', kind: 'BYOK keys', location: 'localStorage amoji.brain.key.* / amoji.openai.key (never uploaded by Pages)' },
   { id: 'companion-file', kind: 'Portable companion card', location: 'User-downloaded .aigf file' },
+  { id: 'product-export', kind: 'Product data export', location: 'User-downloaded JSON from Settings (secrets redacted)' },
   { id: 'sqlite', kind: 'Production DB', location: 'AMOJI_DB on the Node host (default data/amoji.sqlite)' },
   { id: 'legal', kind: 'Legal copy source', location: 'apps/web/lib/legal-copy.ts' },
 ];
@@ -92,5 +94,8 @@ export function systemsSnapshot() {
     fileLocations: FILE_LOCATIONS,
     productionApi: productionApiConfigured(),
     stripePaymentLink: stripePaymentLinkConfigured(),
+    paymentDemo:
+      typeof process !== 'undefined'
+      && ['1', 'true', 'yes'].includes((process.env.NEXT_PUBLIC_AMOJI_PAYMENT_DEMO ?? '').trim().toLowerCase()),
   };
 }

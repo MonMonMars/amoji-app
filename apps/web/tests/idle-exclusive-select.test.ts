@@ -12,9 +12,10 @@ describe("idle/pose exclusive single-select", () => {
     expect(rails).toContain("ring-1 ring-white/50");
   });
 
-  it("emotion/pose row keeps one playing selection", () => {
-    expect(row).toContain("Exclusive single-select");
-    expect(row).toContain("const selected = playing === clip.code");
+  it("emotion/pose row multi-Wants poke SFX (Want/Skip cycle)", () => {
+    expect(row).toContain("Want → Skip");
+    expect(row).toContain("setCmaReactionVerdict");
+    expect(row).toContain("aria-pressed={wanted}");
     expect(row).toContain("CMA_REACTION_GALLERY");
     expect(row).not.toContain("CLIP_LIBRARY");
   });

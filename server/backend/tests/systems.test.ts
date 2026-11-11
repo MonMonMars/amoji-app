@@ -1,12 +1,44 @@
 import { describe, expect, it } from 'vitest';
 import { createHmac } from 'node:crypto';
 import { openDb } from '../src/db.js';
-import { verifyStripeSignature, upsertPlus, readEntitlement } from '../src/billing.js';
+import {
+  verifyStripeSignature,
+  upsertPlus,
+  readEntitlement,
+  startCheckout,
+  buildPaymentLinkUrl,
+  billingRulesPayload,
+} from '../src/billing.js';
+import { CHARGING_RULES, freeDailyChatTurnLimit } from '../src/charging-rules.js';
 import { autoReply } from '../src/auto-reply.js';
 import { mailConfigured } from '../src/email.js';
 import { corsHeaders, rateLimit, _resetRateLimitsForTests } from '../src/security.js';
+import { RATE_LIMIT_RULES, rateLimitRule } from '../src/security-rules.js';
+import { wipeUserProductData } from '../src/storage-wipe.js';
 
 describe('backend systems helpers', () => {
+  it('publishes named rate-limit budgets', () => {
+    expect(rateLimitRule('global').limit).toBe(240);
+    expect(RATE_LIMIT_RULES.map((r) => r.id)).toEqual(
+      expect.arrayContaining(['auth', 'chat', 'report', 'support', 'stripe']),
+    );
+  });
+
+  it('wipes user-scoped sqlite tables', () => {
+    const db = openDb(':memory:');
+    const now = 1_700_000_000_000;
+    db.prepare('INSERT INTO users (id, created_at) VALUES (?, ?)').run('u1', now);
+    db.prepare(
+      'INSERT INTO character_state (user_id, character_id, background_id, lang, kid_mode, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+    ).run('u1', 'a01', 'bed', 'en', 0, now);
+    db.prepare(
+      'INSERT INTO chat_turns (user_id, role, content, created_at) VALUES (?, ?, ?, ?)',
+    ).run('u1', 'user', 'hi', now);
+    const removed = wipeUserProductData(db, 'u1');
+    expect(removed).toEqual(expect.arrayContaining(['character_state', 'chat_turns']));
+    db.close();
+  });
+
   it('locks CORS when AMOJI_CORS_ORIGIN is set', () => {
     const prev = process.env.AMOJI_CORS_ORIGIN;
     process.env.AMOJI_CORS_ORIGIN = 'https://example.com,https://other.test';
@@ -48,5 +80,34 @@ describe('backend systems helpers', () => {
   it('ships auto-reply templates and leaves mail off by default', () => {
     expect(autoReply('reportAck').subject).toMatch(/report/i);
     expect(mailConfigured()).toBe(false);
+  });
+
+  it('publishes charging rules aligned with the free daily turn budget', () => {
+    expect(freeDailyChatTurnLimit()).toBe(40);
+    expect(CHARGING_RULES.gatedFeatures).toContain('chat_llm_turn');
+    expect(billingRulesPayload(1_700_000_000_000).charging.version).toBe(1);
+  });
+
+  it('appends client_reference_id on payment links', () => {
+    expect(buildPaymentLinkUrl('https://buy.stripe.com/x', 'u1')).toContain('client_reference_id=u1');
+  });
+
+  it('demo checkout grants Plus without Stripe secrets', async () => {
+    const prev = process.env.AMOJI_BILLING_DEMO;
+    process.env.AMOJI_BILLING_DEMO = '1';
+    delete process.env.STRIPE_SECRET_KEY;
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+    delete process.env.STRIPE_PAYMENT_LINK;
+    delete process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK;
+    const db = openDb(':memory:');
+    const now = 1_700_000_000_000;
+    const result = await startCheckout(db, 'user-demo', now);
+    expect(result.ok).toBe(true);
+    expect(result.mode).toBe('demo');
+    expect(result.chargesRealMoney).toBe(false);
+    expect(readEntitlement(db, 'user-demo', now).plan).toBe('plus');
+    db.close();
+    if (prev === undefined) delete process.env.AMOJI_BILLING_DEMO;
+    else process.env.AMOJI_BILLING_DEMO = prev;
   });
 });

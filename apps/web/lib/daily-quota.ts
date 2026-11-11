@@ -2,10 +2,13 @@
 // Device-local daily chat turn budget (DimDik Phase 0: 40 user turns/day).
 // Idle, poke, games, and crisis turns do not touch this counter — only the
 // normal LLM chat path in ChatPanel calls consumeChatTurn().
+// Limit comes from charging-rules.ts so payment + quota stay one source of truth.
 
+import { freeDailyChatTurnLimit } from './charging-rules';
 import { t, type Lang } from './prefs';
 
 export const DAILY_QUOTA_STORAGE_KEY = 'amoji.dailyTurns.v1';
+/** @deprecated Prefer freeDailyChatTurnLimit() — kept for existing tests. */
 export const DAILY_TURNS_DEFAULT = 40;
 
 export const DAILY_QUOTA_EVENT = 'amoji:daily-quota';
@@ -40,7 +43,8 @@ function writeRecord(rec: DailyTurnRecord): void {
 }
 
 export function dailyTurnLimit(): number {
-  return DAILY_TURNS_DEFAULT;
+  const fromRules = freeDailyChatTurnLimit();
+  return Number.isFinite(fromRules) && fromRules > 0 ? fromRules : DAILY_TURNS_DEFAULT;
 }
 
 /** Turns already used today (resets at UTC midnight). */

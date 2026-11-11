@@ -29,12 +29,12 @@ describe('trimHistoryForPrompt', () => {
 });
 
 describe('localFallbackReply', () => {
-  it('answers in every language, always ending with a question (continuity)', () => {
+  it('answers in every language with a concrete caring offer (no forced fishing question)', () => {
     for (const lang of ['yue', 'zh', 'ja', 'en']) {
       const r = localFallbackReply('今日好開心呀', lang);
       expect(r.reply.length, lang).toBeGreaterThan(4);
-      const tail = r.reply.trim();
-      expect(tail.endsWith('？') || tail.endsWith('?'), `${lang}: ${r.reply}`).toBe(true);
+      // Continuity = warm grounded offer / listen cue, not a trailing "?" on every line.
+      expect(r.reply, lang).toMatch(/listen|hear|here|with you|天氣|天气|天気|story|故事|話|歌|stretch|伸展|ストレッチ|weather|fact|小事|豆知識|冷知識|聽|听|聞/i);
     }
   });
 

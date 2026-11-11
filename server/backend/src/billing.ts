@@ -2,6 +2,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { autoReply } from './auto-reply.js';
 import { sendMail } from './email.js';
+import { CHARGING_RULES, plusDurationMs } from './charging-rules.js';
 
 export interface Entitlement {
   userId: string;
@@ -12,6 +13,142 @@ export interface Entitlement {
 
 export function stripeConfigured(): boolean {
   return !!(process.env.STRIPE_SECRET_KEY?.trim() && process.env.STRIPE_WEBHOOK_SECRET?.trim());
+}
+
+export function billingDemoMode(): boolean {
+  const v = (process.env.AMOJI_BILLING_DEMO ?? '').trim().toLowerCase();
+  return v === '1' || v === 'true' || v === 'yes';
+}
+
+export function publicPaymentLink(): string {
+  return (process.env.STRIPE_PAYMENT_LINK ?? process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK ?? '').trim();
+}
+
+export function buildPaymentLinkUrl(base: string, clientReferenceId: string): string {
+  const trimmed = base.trim();
+  if (!trimmed) return '';
+  try {
+    const u = new URL(trimmed);
+    u.searchParams.set('client_reference_id', clientReferenceId);
+    return u.toString();
+  } catch {
+    const join = trimmed.includes('?') ? '&' : '?';
+    return `${trimmed}${join}client_reference_id=${encodeURIComponent(clientReferenceId)}`;
+  }
+}
+
+export interface CheckoutResult {
+  ok: boolean;
+  status: number;
+  mode?: 'link' | 'session' | 'demo' | 'none';
+  url?: string;
+  plan?: 'free' | 'plus';
+  expiresAt?: number | null;
+  error?: string;
+  chargesRealMoney?: boolean;
+}
+
+/**
+ * Start Plus checkout for an authenticated user.
+ * - Demo: grants Plus locally in SQLite without Stripe (AMOJI_BILLING_DEMO=1).
+ * - Stripe Checkout Session when STRIPE_SECRET_KEY + STRIPE_PRICE_ID are set.
+ * - Otherwise Payment Link with client_reference_id=userId.
+ */
+export async function startCheckout(
+  db: DatabaseSync,
+  userId: string,
+  now: number,
+  opts?: { returnOrigin?: string; clientId?: string },
+): Promise<CheckoutResult> {
+  const ref = userId || opts?.clientId || '';
+  if (billingDemoMode() && !stripeConfigured() && !publicPaymentLink()) {
+    const expires = now + plusDurationMs();
+    upsertPlus(db, userId, now, expires);
+    return {
+      ok: true,
+      status: 200,
+      mode: 'demo',
+      plan: 'plus',
+      expiresAt: expires,
+      chargesRealMoney: false,
+    };
+  }
+
+  const secret = process.env.STRIPE_SECRET_KEY?.trim() ?? '';
+  const priceId = process.env.STRIPE_PRICE_ID?.trim() ?? '';
+  const origin = (opts?.returnOrigin ?? process.env.AMOJI_PUBLIC_ORIGIN ?? '').trim().replace(/\/$/, '');
+
+  if (secret && priceId) {
+    try {
+      const params = new URLSearchParams();
+      params.set('mode', 'payment');
+      params.set('success_url', `${origin || 'http://127.0.0.1:3000'}?amoji_pay=success`);
+      params.set('cancel_url', `${origin || 'http://127.0.0.1:3000'}?amoji_pay=cancel`);
+      params.set('client_reference_id', ref);
+      params.set('metadata[userId]', userId);
+      params.set('line_items[0][price]', priceId);
+      params.set('line_items[0][quantity]', '1');
+      const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${secret}`,
+          'content-type': 'application/x-www-form-urlencoded',
+        },
+        body: params.toString(),
+      });
+      if (!res.ok) {
+        const detail = await res.text().catch(() => '');
+        return { ok: false, status: 502, error: `stripe session failed: ${detail.slice(0, 200)}` };
+      }
+      const body = await res.json() as { url?: unknown };
+      if (typeof body.url !== 'string' || !body.url) {
+        return { ok: false, status: 502, error: 'stripe session missing url' };
+      }
+      return { ok: true, status: 200, mode: 'session', url: body.url, chargesRealMoney: true };
+    } catch (err) {
+      return { ok: false, status: 502, error: err instanceof Error ? err.message : 'stripe error' };
+    }
+  }
+
+  const link = publicPaymentLink();
+  if (link) {
+    return {
+      ok: true,
+      status: 200,
+      mode: 'link',
+      url: buildPaymentLinkUrl(link, ref),
+      chargesRealMoney: true,
+    };
+  }
+
+  if (billingDemoMode()) {
+    const expires = now + plusDurationMs();
+    upsertPlus(db, userId, now, expires);
+    return {
+      ok: true,
+      status: 200,
+      mode: 'demo',
+      plan: 'plus',
+      expiresAt: expires,
+      chargesRealMoney: false,
+    };
+  }
+
+  return { ok: false, status: 503, mode: 'none', error: 'billing not configured', chargesRealMoney: false };
+}
+
+export function billingRulesPayload(now: number) {
+  return {
+    charging: CHARGING_RULES,
+    payment: {
+      stripeConfigured: stripeConfigured(),
+      paymentLinkConfigured: !!publicPaymentLink(),
+      demoMode: billingDemoMode(),
+      plusDurationDays: CHARGING_RULES.plans.plus.durationDays,
+      plusDisplayPriceCents: CHARGING_RULES.plans.plus.displayPriceCents,
+      now,
+    },
+  };
 }
 
 export function readEntitlement(db: DatabaseSync, userId: string, now: number): Entitlement {
@@ -100,8 +237,8 @@ export async function handleStripeWebhook(
       : null;
   if (event.type === 'checkout.session.completed' && userId) {
     const customer = typeof obj.customer === 'string' ? obj.customer : undefined;
-    // Default Plus window: 30 days from webhook time when no subscription period is present.
-    const expires = now + 30 * 24 * 60 * 60 * 1000;
+    // Default Plus window from charging-rules when no subscription period is present.
+    const expires = now + plusDurationMs();
     upsertPlus(db, userId, now, expires, customer);
     const email = typeof obj.customer_details === 'object' && obj.customer_details
       && typeof (obj.customer_details as { email?: unknown }).email === 'string'

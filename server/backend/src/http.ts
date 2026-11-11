@@ -6,9 +6,17 @@ import { offlineComplete, parseChatBody, runChat, type ChatComplete } from './ch
 import { readState, writeState, type StatePatch } from './state.js';
 import { buildEdgeSsml, parseTtsBody, resolveEdgeVoice, synthesizeEdge } from './tts.js';
 import { clientKey, corsHeaders, rateLimit } from './security.js';
-import { handleStripeWebhook, readEntitlement, stripeConfigured } from './billing.js';
+import { RATE_LIMIT_RULES, SECURITY_RULES_VERSION, rateLimitRule } from './security-rules.js';
+import {
+  billingRulesPayload,
+  handleStripeWebhook,
+  readEntitlement,
+  startCheckout,
+  stripeConfigured,
+} from './billing.js';
 import { autoReply } from './auto-reply.js';
 import { mailConfigured, sendMail } from './email.js';
+import { wipeUserProductData } from './storage-wipe.js';
 
 export interface Backend {
   handle(req: Request): Promise<Response>;
@@ -98,7 +106,8 @@ export function createBackend(opts: BackendOptions): Backend {
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers });
 
     const ip = clientKey(req);
-    if (!rateLimit(`all:${ip}`, 240, 60_000, now())) {
+    const globalLimit = rateLimitRule('global');
+    if (!rateLimit(`${globalLimit.bucket}:${ip}`, globalLimit.limit, globalLimit.windowMs, now())) {
       return json({ error: 'rate limited' }, 429, req);
     }
 
@@ -114,6 +123,7 @@ export function createBackend(opts: BackendOptions): Backend {
       }
 
       if (url.pathname === '/api/systems' && req.method === 'GET') {
+        const corsRaw = (process.env.AMOJI_CORS_ORIGIN ?? '*').trim() || '*';
         return json({
           freeServers: [
             { id: 'pages', role: 'Companion UI', host: 'GitHub Pages' },
@@ -125,12 +135,24 @@ export function createBackend(opts: BackendOptions): Backend {
           ],
           mail: mailConfigured(),
           billing: stripeConfigured(),
-          cors: (process.env.AMOJI_CORS_ORIGIN ?? '*').trim() || '*',
+          cors: corsRaw,
+          corsLocked: corsRaw !== '*',
+          securityRulesVersion: SECURITY_RULES_VERSION,
+          rateLimits: RATE_LIMIT_RULES,
         }, 200, req);
       }
 
+      if (url.pathname === '/api/storage/me' && req.method === 'DELETE') {
+        const token = bearer(req);
+        const session = token ? readSession(opts.db, token, now()) : undefined;
+        if (!session) return json({ error: 'unauthorized' }, 401, req);
+        const removed = wipeUserProductData(opts.db, session.userId);
+        return json({ ok: true, removed }, 200, req);
+      }
+
       if (url.pathname === '/api/billing/webhook' && req.method === 'POST') {
-        if (!rateLimit(`stripe:${ip}`, 60, 60_000, now())) {
+        const stripeLim = rateLimitRule('stripe');
+        if (!rateLimit(`${stripeLim.bucket}:${ip}`, stripeLim.limit, stripeLim.windowMs, now())) {
           return json({ error: 'rate limited' }, 429, req);
         }
         const raw = await req.text();
@@ -143,8 +165,13 @@ export function createBackend(opts: BackendOptions): Backend {
         return json(result.ok ? { received: true } : { error: result.error }, result.status, req);
       }
 
+      if (url.pathname === '/api/billing/rules' && req.method === 'GET') {
+        return json(billingRulesPayload(now()), 200, req);
+      }
+
       if (url.pathname === '/api/auth/session' && req.method === 'POST') {
-        if (!rateLimit(`auth:${ip}`, 30, 60_000, now())) {
+        const authLim = rateLimitRule('auth');
+        if (!rateLimit(`${authLim.bucket}:${ip}`, authLim.limit, authLim.windowMs, now())) {
           return json({ error: 'rate limited' }, 429, req);
         }
         const body = await readJson(req) as { token?: unknown };
@@ -170,7 +197,8 @@ export function createBackend(opts: BackendOptions): Backend {
       // Report intake can be anonymous (Pages may not have a session yet) but
       // still rate-limited. When a session exists we attach the user id.
       if (url.pathname === '/api/reports' && req.method === 'POST') {
-        if (!rateLimit(`report:${ip}`, 10, 60_000, now())) {
+        const reportLim = rateLimitRule('report');
+        if (!rateLimit(`${reportLim.bucket}:${ip}`, reportLim.limit, reportLim.windowMs, now())) {
           return json({ error: 'rate limited' }, 429, req);
         }
         const body = await readJson(req) as {
@@ -201,6 +229,57 @@ export function createBackend(opts: BackendOptions): Backend {
         return json({ id, stored: true, emailed: mailed, mailConfigured: mailConfigured() }, 200, req);
       }
 
+      // Support contact is anonymous (like reports) so Pages clients can open a
+      // session-less POST when NEXT_PUBLIC_AMOJI_API points at this host.
+      if (url.pathname === '/api/support' && req.method === 'POST') {
+        const supportLim = rateLimitRule('support');
+        if (!rateLimit(`${supportLim.bucket}:${ip}`, supportLim.limit, supportLim.windowMs, now())) {
+          return json({ error: 'rate limited' }, 429, req);
+        }
+        const body = await readJson(req) as { email?: unknown; message?: unknown };
+        const email = typeof body.email === 'string' ? body.email.trim().slice(0, 200) : '';
+        const message = typeof body.message === 'string' ? body.message.trim().slice(0, 2000) : '';
+        if (!email || !email.includes('@') || !message) {
+          return json({ error: 'email and message required' }, 400, req);
+        }
+        const supportToken = bearer(req);
+        const supportSession = supportToken ? readSession(opts.db, supportToken, now()) : undefined;
+        const id = randomBytes(16).toString('hex');
+        opts.db.prepare(
+          'INSERT INTO support_messages (id, user_id, email, message, created_at) VALUES (?, ?, ?, ?, ?)',
+        ).run(id, supportSession?.userId ?? null, email, message, now());
+
+        const tpl = autoReply('supportAck');
+        const result = await sendMail({
+          to: email,
+          subject: tpl.subject,
+          text: `${tpl.body}\n\n—\nYour message:\n${message}`,
+        });
+        logMail(opts.db, 'supportAck', email, result.ok, result.error ?? result.id ?? '', now());
+
+        let opsNotified = false;
+        const inbox = (process.env.AMOJI_SUPPORT_INBOX ?? '').trim();
+        if (inbox && inbox.includes('@') && mailConfigured()) {
+          const ops = await sendMail({
+            to: inbox,
+            subject: `Amoji support message (${id.slice(0, 8)})`,
+            text: `From: ${email}\nId: ${id}\n\n${message}`,
+          });
+          logMail(opts.db, 'supportOps', inbox, ops.ok, ops.error ?? ops.id ?? '', now());
+          opsNotified = ops.ok;
+        }
+
+        return json({
+          id,
+          ok: true,
+          stored: true,
+          emailed: result.ok,
+          skipped: !!result.skipped,
+          opsNotified,
+          mailConfigured: mailConfigured(),
+        }, 200, req);
+      }
+
       const token = bearer(req);
       const session = token ? readSession(opts.db, token, now()) : undefined;
       if (!session) return json({ error: 'unauthorized' }, 401, req);
@@ -209,18 +288,28 @@ export function createBackend(opts: BackendOptions): Backend {
         return json(readEntitlement(opts.db, session.userId, now()), 200, req);
       }
 
-      if (url.pathname === '/api/support' && req.method === 'POST') {
-        if (!rateLimit(`support:${ip}`, 10, 60_000, now())) {
+      if (url.pathname === '/api/billing/checkout' && req.method === 'POST') {
+        if (!rateLimit(`checkout:${ip}`, 10, 60_000, now())) {
           return json({ error: 'rate limited' }, 429, req);
         }
-        const body = await readJson(req) as { email?: unknown; message?: unknown };
-        const email = typeof body.email === 'string' ? body.email.trim().slice(0, 200) : '';
-        const message = typeof body.message === 'string' ? body.message.trim().slice(0, 2000) : '';
-        if (!email || !message) return json({ error: 'email and message required' }, 400, req);
-        const tpl = autoReply('supportAck');
-        const result = await sendMail({ to: email, subject: tpl.subject, text: `${tpl.body}\n\n—\nYour message:\n${message}` });
-        logMail(opts.db, 'supportAck', email, result.ok, result.error ?? result.id ?? '', now());
-        return json({ ok: true, emailed: result.ok, skipped: !!result.skipped, mailConfigured: mailConfigured() }, 200, req);
+        const body = await readJson(req) as { returnOrigin?: unknown; clientId?: unknown };
+        const checkoutOpts: { returnOrigin?: string; clientId?: string } = {};
+        if (typeof body.returnOrigin === 'string') checkoutOpts.returnOrigin = body.returnOrigin;
+        if (typeof body.clientId === 'string') checkoutOpts.clientId = body.clientId;
+        const result = await startCheckout(opts.db, session.userId, now(), checkoutOpts);
+        return json(
+          result.ok
+            ? {
+                mode: result.mode,
+                url: result.url,
+                plan: result.plan,
+                expiresAt: result.expiresAt,
+                chargesRealMoney: result.chargesRealMoney,
+              }
+            : { error: result.error, mode: result.mode },
+          result.status,
+          req,
+        );
       }
 
       if (url.pathname === '/api/state' && req.method === 'GET') {
@@ -233,7 +322,8 @@ export function createBackend(opts: BackendOptions): Backend {
         return json(saved, 200, req);
       }
       if (url.pathname === '/api/chat' && req.method === 'POST') {
-        if (!rateLimit(`chat:${ip}`, 60, 60_000, now())) {
+        const chatLim = rateLimitRule('chat');
+        if (!rateLimit(`${chatLim.bucket}:${ip}`, chatLim.limit, chatLim.windowMs, now())) {
           return json({ error: 'rate limited' }, 429, req);
         }
         const parsed = parseChatBody(await readJson(req));
@@ -255,7 +345,8 @@ export function createBackend(opts: BackendOptions): Backend {
         return json(result, 200, req);
       }
       if (url.pathname === '/api/tts' && req.method === 'POST') {
-        if (!rateLimit(`tts:${ip}`, 60, 60_000, now())) {
+        const ttsLim = rateLimitRule('tts');
+        if (!rateLimit(`${ttsLim.bucket}:${ip}`, ttsLim.limit, ttsLim.windowMs, now())) {
           return json({ error: 'rate limited' }, 429, req);
         }
         const parsed = parseTtsBody(await readJson(req));

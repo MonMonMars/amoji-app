@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { usePrefs, t, savePrefs, type Prefs } from '../lib/prefs';
 import { primeChatStartGesture } from '../lib/chat-start-gesture';
 import { primeLocationForChatEnter } from '../lib/live-tools';
+import { playVoiceGreeting } from '../lib/voice';
+import { activeVoiceChoice } from '../lib/voice-picks';
 import { CharacterGrid, BackgroundGrid, LangChips } from './selectors';
 
 const STEPS = ['character', 'background', 'language'] as const;
@@ -54,7 +56,15 @@ export default function SetupFlow() {
       <div className="w-full">
         {step === 0 && <CharacterGrid lang={lang} value={prefs.character} onChange={(id) => patch({ character: id })} />}
         {step === 1 && <BackgroundGrid lang={lang} value={prefs.background} onChange={(id) => patch({ background: id })} />}
-        {step === 2 && <LangChips value={prefs.lang} onChange={(l) => patch({ lang: l })} />}
+        {step === 2 && (
+          <LangChips
+            value={prefs.lang}
+            onChange={(l) => {
+              patch({ lang: l });
+              playVoiceGreeting(prefs.character, l, activeVoiceChoice(l).id);
+            }}
+          />
+        )}
       </div>
 
       <div className="flex items-center gap-3">

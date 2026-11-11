@@ -99,7 +99,7 @@ import { loadingFillerKind, recordedFillerClip, recordedLaughClip, recordedPokeC
 import { LineQueue, speechRemainder } from './speech-queue';
 import { emotionClipPath } from './emotion-clip-picks';
 import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText, nextCardGreetPhrase, nextGreetingKind, type BurstClipKind, type ClipFolder, type VoiceClipGender } from './voice-clips';
-import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
+import { playGestureClipSync, playVoiceClip, stopVoiceClip } from './play-voice-clip';
 export { speechRemainder };
 import { edgeCastVoice } from './edge-cast';
 import { pauseEdgeForTabHide, speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead } from './edge-tts';
@@ -111,7 +111,7 @@ import { resolveOsPin, resolvePinnedVoice } from './os-voice-resolve';
 import { deliveryGenderForChoice, isVoiceLocale, tlForChoice } from './voice-capability';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
 import { formatVoiceChain, freeVoiceHops } from './tts-chain';
-import { startThinkingSound, stopThinkingSound } from './thinking-sound';
+import { stopThinkingSound } from './thinking-sound';
 import { runEarlyAudioPreload } from './early-audio-preload';
 // r2026-10-05.112: tier 0 — OpenAI gpt-4o-mini-tts (ChatGPT-style emotional
 // voice via natural-language instructions). Sits AHEAD of the free chain;
@@ -1337,34 +1337,17 @@ export function stopSpeaking(): void {
 }
 
 /**
- * Short "um……" while the reply is still generating. The mouth moves with the
- * stub. The reply waits until this utterance finishes.
- * r2026-10-03.24: an optional felt mood tints the filler text itself (the
- * face/orb already wear the mood via applyContentMood in the caller).
- * t790: the wait is now two beats starting at 2s, and every beat is spoken by
- * HER OWN TTS chain — the same voice and pitch as a reply — instead of a
- * recorded CLIP_LIBRARY um, which was a different person talking.
- * `onBeat` lets the caller paint the same line in the placeholder bubble, so
- * screen and speaker never disagree.
+ * Loading filler — disabled (Pixel: um… voice did not match reply TTS).
+ * Kept as a no-op so ChatPanel / face callers do not need a parallel cut.
  */
 export function speakThinkingFiller(
-  characterId: string,
-  lang: Lang,
-  mood?: string,
-  userText?: string,
-  onBeat?: (text: string) => void,
+  _characterId: string,
+  _lang: Lang,
+  _mood?: string,
+  _userText?: string,
+  _onBeat?: (text: string) => void,
 ): void {
-  if (!voiceOutputAllowed()) return;
-  startThinkingSound({
-    lang,
-    characterId,
-    mood,
-    userText,
-    say: (text) => {
-      enqueueThinkingFiller(text, characterId, lang);
-      onBeat?.(text);
-    },
-  });
+  stopThinkingSound();
 }
 
 /**
@@ -1879,6 +1862,14 @@ export function playVoiceGreeting(
   const gender = characterVoiceGender(characterId);
   const tl = tlForChoice(lang, choiceId);
   const delivery = deliveryGenderForChoice(lang, choiceId, gender);
+  // Same-origin greeting clip INSIDE the tap — audible even when Google TTS
+  // is offline/blocked or play() would otherwise run after the gesture dies.
+  const insuranceKind = nextGreetingKind();
+  playGestureClipSync(
+    clipFile(lang, gender, insuranceKind),
+    greetingText(lang, insuranceKind),
+    () => { markVoiceStarted(); },
+  );
   let session = 0;
   /** Set by whichever tier actually starts, so the loser can bail out. */
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
@@ -1927,6 +1918,8 @@ export function playVoiceGreeting(
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
       try { haltBrowserSynth(); } catch { /* ignore */ }
+      // Stop the local insurance clip so only the chosen voice speaks.
+      try { stopVoiceClip(); } catch { /* ignore */ }
       if (!spokenBy) onStart('gtts');
     },
   }).then(() => {
@@ -1936,6 +1929,7 @@ export function playVoiceGreeting(
     markGttsDone();
     if ((e as Error | undefined)?.message === 'canceled') return;
     reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'greeting gtts failed');
+    // Insurance clip may already be audible — only synth if nothing started.
     runSynthAudition('greeting fallback');
   });
   /**
@@ -1972,6 +1966,7 @@ export function playVoiceGreeting(
     onPlaying: () => {
       if (spokenBy === 'gtts') return; // MP3 tier already got there first
       try { haltSynthQueue(); } catch { /* ignore */ }
+      try { stopVoiceClip(); } catch { /* ignore */ }
       if (!spokenBy) onStart('edge');
     },
   }).then(() => {
@@ -2111,9 +2106,13 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
   });
 }
 
-/** Poke hit: a recorded gasp, not the synthetic tap and not an Edge crop. */
+/**
+ * Poke hit: a recorded gasp, not the synthetic tap and not an Edge crop.
+ * Clip-only — never falls through to gTTS / Edge / speechSynthesis. Lips and
+ * the speaking indicator follow the MP3 via playVoiceClip → noteSpeechStarted.
+ */
 export function playPokeBurst(characterId: string, zone?: string): void {
-  unlockAudio(); // t786: poke is a user gesture �X re-prime before clip
+  unlockAudio(); // t786: poke is a user gesture — re-prime before clip
   const file = recordedPokeClip(characterVoiceGender(characterId), zone);
   void playVoiceClip(file, 'oh', () => markVoiceStarted()).catch(() => { /* a missing file stays quiet */ });
 }
@@ -2157,6 +2156,13 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const previewGender = deliveryGenderForChoice(locale, choiceId, 'female');
   // Same rotating short greet as select-board voice cards.
   const text = nextCardGreetPhrase(locale);
+  // Local insurance clip inside the tap (same-origin) — always audible offline.
+  const insuranceKind = nextGreetingKind();
+  playGestureClipSync(
+    clipFile(locale, previewGender, insuranceKind),
+    greetingText(locale, insuranceKind),
+    () => { markVoiceStarted(); },
+  );
   /** Set by whichever tier actually starts, so the loser can bail out. */
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
   const runSynthAudition = (tag: string) => {
@@ -2183,6 +2189,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
       try { haltBrowserSynth(); } catch { /* ignore */ }
+      try { stopVoiceClip(); } catch { /* ignore */ }
       if (!spokenBy) {
         spokenBy = 'gtts';
         markVoiceStarted();
@@ -2207,6 +2214,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
     onPlaying: () => {
       if (spokenBy === 'gtts') return; // MP3 tier already got there first
       try { haltSynthQueue(); } catch { /* ignore */ }
+      try { stopVoiceClip(); } catch { /* ignore */ }
       if (!spokenBy) {
         spokenBy = 'edge';
         markVoiceStarted();
@@ -2289,6 +2297,14 @@ const TEST_LINES: Record<Lang, string> = {
   en: "Hey, can you hear me? I'm so happy to see you!",
 };
 
+/** Longer special sample for 開聲傾偈 / pre-chat hear-check — not the short settings beep. */
+export const GATE_TEST_LINES: Record<Lang, string> = {
+  yue: '喂！聽唔聽到我呀？我係你嘅 Amoji 夥伴，而家同你開聲傾偈。如果你聽到呢段說話，就撳下面「聽到」——我哋就可以一齊傾、一齊玩啦！',
+  zh: '喂！你能听到我吗？我是你的 Amoji 伙伴，现在和你开启语音聊天。如果你听到了这段话，就点下面的「听到了」——我们就可以一起聊、一起玩了！',
+  ja: 'ねえ、聞こえる？私はあなたの Amoji の相棒。これからボイスチャットを始めるよ。この声が聞こえたら、下の「聞こえた」を押してね。一緒に話して遊ぼう！',
+  en: "Hey — can you hear me clearly? I'm your Amoji companion, and this is your voice-chat check. If you heard this whole greeting, tap Yes below — then we can talk and play together!",
+};
+
 /**
  * r2026-10-04.75 — one-tap voice self-test from the Settings sheet: forces
  * the iOS gesture unlock and speaks a short line in the current language with
@@ -2369,7 +2385,11 @@ function probeSynth(text: string, characterId: string, lang: Lang): Promise<bool
  * canto-tts-nano for Yue when that runtime is bundled) and returns every
  * tier it actually tried. Stops at the first tier that speaks.
  */
-export async function testVoiceChain(characterId: string, lang: Lang): Promise<VoiceTierResult[]> {
+export async function testVoiceChain(
+  characterId: string,
+  lang: Lang,
+  lineOverride?: string,
+): Promise<VoiceTierResult[]> {
   if (isMasterMuted()) {
     return [{ tier: 'edge', ok: false, detail: 'muted' }];
   }
@@ -2379,7 +2399,7 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
     try { localStorage.setItem(MUTE_KEY, 'on'); } catch { /* ignore */ }
   }
   const results: VoiceTierResult[] = [];
-  const line = TEST_LINES[lang] ?? TEST_LINES.en;
+  const line = (lineOverride?.trim() || TEST_LINES[lang] || TEST_LINES.en);
   const push = (tier: VoiceTier, ok: boolean, detail: string) => {
     results.push({ tier, ok, detail });
     reportVoiceStatus(tier, ok, detail);

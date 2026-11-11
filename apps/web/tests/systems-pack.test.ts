@@ -19,9 +19,19 @@ function mockLocalStorage() {
     setItem: vi.fn((k: string, v: string) => { store.set(k, v); }),
     removeItem: vi.fn((k: string) => { store.delete(k); }),
     clear: vi.fn(() => { store.clear(); }),
+    key: vi.fn((i: number) => [...store.keys()][i] ?? null),
+    get length() { return store.size; },
     store,
   };
   vi.stubGlobal('localStorage', ls);
+  vi.stubGlobal('sessionStorage', {
+    getItem: vi.fn(() => null),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
+    key: vi.fn(() => null),
+    length: 0,
+  });
   vi.stubGlobal('window', { dispatchEvent: vi.fn(), localStorage: ls });
   return ls;
 }
@@ -69,7 +79,7 @@ describe('systems pack', () => {
   });
 
   it('bumped legal accept for systems/legal refresh', () => {
-    expect(LEGAL_ACCEPT_VERSION).toBe(3);
+    expect(LEGAL_ACCEPT_VERSION).toBe(4);
   });
 
   it('Plus plan bypasses the free chat gate', () => {
@@ -85,7 +95,7 @@ describe('systems pack', () => {
     expect(paymentsConfigured()).toBe(false);
   });
 
-  it('Settings sheet links plan, systems, and legal', () => {
+  it('Settings sheet links plan, systems, charging, support, and wipe', () => {
     const src = readFileSync(join(web, 'components/SettingsSheet.tsx'), 'utf8');
     expect(src).toContain('settingsPlan');
     expect(src).toContain('settingsSystems');
@@ -93,6 +103,12 @@ describe('systems pack', () => {
     expect(src).toContain('href="/cookies"');
     expect(src).toContain('href="/systems"');
     expect(src).toContain('syncEntitlementFromApi');
+    expect(src).toContain('startCheckout');
+    expect(src).toContain('planChargingBlurb');
+    expect(src).toContain('submitSupportMessage');
+    expect(src).toContain('wipeClientProductData');
+    expect(src).toContain('supportTitle');
+    expect(src).toContain('downloadProductDataExport');
   });
 
   it('cookies and systems pages expose a localized back control', () => {
@@ -102,21 +118,25 @@ describe('systems pack', () => {
     }
   });
 
-  it('ReportDialog best-effort posts to the production API', () => {
+  it('ReportDialog best-effort posts to the production API with optional email', () => {
     const src = readFileSync(join(web, 'components/ReportDialog.tsx'), 'utf8');
     expect(src).toContain('submitReportRemote');
+    expect(src).toContain('contactEmail');
+    expect(src).toContain('reportContactEmailLabel');
   });
 
   it('docs SYSTEMS map is present', () => {
     const doc = readFileSync(join(web, '../../docs/SYSTEMS.md'), 'utf8');
     expect(doc).toContain('Payment');
+    expect(doc).toContain('Charging rules');
     expect(doc).toContain('Email');
+    expect(doc).toContain('/api/support');
     expect(doc).toContain('GitHub Pages');
   });
 
   it('wipe helper can keep legal acceptance', () => {
     localStorage.setItem('amoji.prefs.v1', '{}');
-    localStorage.setItem('amoji.legalAccept.v1', '{"version":3,"acceptedAt":"2026-01-01T00:00:00.000Z"}');
+    localStorage.setItem('amoji.legalAccept.v1', '{"version":4,"acceptedAt":"2026-01-01T00:00:00.000Z"}');
     const removed = wipeClientProductData({ keepLegal: true });
     expect(removed).toContain('amoji.prefs.v1');
     expect(localStorage.getItem('amoji.legalAccept.v1')).toBeTruthy();

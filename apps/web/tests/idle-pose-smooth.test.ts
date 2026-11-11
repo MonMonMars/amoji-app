@@ -42,6 +42,15 @@ describe('idle pose smooth + catalog trim', () => {
     expect(canvas).toContain('shortestEulerYXZSlerp');
   });
 
+  it('does not manually blend hips/legs during idle swap (mixer-only — no shake)', async () => {
+    const { IDLE_SWAP_BLEND_BONES } = await import('../lib/idle-crossfade');
+    const lower = IDLE_SWAP_BLEND_BONES.filter((b) => /hip|leg|foot/i.test(b));
+    expect(lower).toEqual([]);
+    const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
+    // plantFeet still deferred while mixer owns the legs
+    expect(canvas).toMatch(/!feetFree && !idleLegGlide/);
+  });
+
   it('retired nums are absent from curated rail but kept in library', () => {
     for (const n of RETIRED_IDLE_NUMS) {
       expect(IDLE_CLIP_OPTIONS.some((o) => o.libNum === n)).toBe(false);

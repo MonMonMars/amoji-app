@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { SITE_DESCRIPTION, SITE_OG_IMAGE } from "../lib/site";
 
 // r2026-10-04.71 — installable app: "Add to Home Screen" launches Amoji
 // fullscreen like a native app (no browser chrome). All URLs are relative to
@@ -15,7 +16,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Amoji",
     short_name: "Amoji",
-    description: "An emotional AI companion who laughs, sulks, and stays with you.",
+    description: SITE_DESCRIPTION,
     start_url: ".",
     scope: ".",
     display: "standalone",
@@ -24,7 +25,7 @@ export default function manifest(): MetadataRoute.Manifest {
     icons: [
       { src: "./icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
       {
-        src: "https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a01-shino.png",
+        src: SITE_OG_IMAGE,
         sizes: "512x512",
         type: "image/png",
         purpose: "any",

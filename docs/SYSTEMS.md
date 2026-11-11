@@ -22,6 +22,7 @@ Unset `NEXT_PUBLIC_AMOJI_API` keeps the static Pages build fully on-device.
 | --- | --- |
 | Static models, audio, SFX | `apps/web/public/` |
 | Companion export (`.aigf`) | Downloaded by the user; never uploaded by Pages |
+| Product data export (JSON) | Settings → Systems; secrets redacted |
 | Content reports | `localStorage` key `amoji.reports.v1` (+ optional `POST /api/reports`) |
 | Production DB | `$AMOJI_DB` (SQLite) |
 | Legal copy source | `apps/web/lib/legal-copy.ts` |
@@ -32,25 +33,57 @@ There is no S3 / R2 / Blob upload path in the product today.
 ## Client data storage
 
 All primary companion state is **browser `localStorage`** (see
-`apps/web/lib/client-storage.ts` for the keyed inventory). Optional
+`apps/web/lib/client-storage.ts` for the keyed inventory + prefixes). Optional
 `sessionStorage` holds short-lived UI state. Optional production API holds an
 anonymous session token + companion/chat rows in SQLite when configured.
+
+| Action | Behavior |
+| --- | --- |
+| Export | Settings downloads JSON; `amoji.backend.session` and BYOK keys are `[redacted]` |
+| Wipe (device) | Removes wipeable local keys; keeps `amoji.legalAccept.v1` by default |
+| Wipe (API) | `DELETE /api/storage/me` with bearer — clears chat/state/wardrobe/entitlement/sessions for that user. Pages-only builds show this as unavailable |
 
 ## Settings
 
 `SettingsSheet` is the single in-app settings surface: language, volumes,
-voice/TTS, location, memory/data, companion file, profile, Advanced brain
-keys, plan/quota, systems & legal links.
+voice/TTS, location, memory/data (including export/wipe product data), companion
+file, profile, Advanced brain keys, plan/quota, systems (security/storage
+posture + charging) & legal links + accept status, and Help (tutorial +
+support contact).
 
 ## Payment
 
-Device-local daily chat quota (`lib/daily-quota.ts`, default 40 turns/UTC day)
-is the free plan. Paid unlocks require:
+Device-local daily chat quota (`lib/daily-quota.ts`, limit from
+`lib/charging-rules.ts`, default **40 turns/UTC day**) is the free plan.
+Plus unlocks unlimited chat turns for **30 days** after a verified Stripe
+webhook (or a labeled **demo** unlock — see below).
 
-- `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` on the Node API, and
-- `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` (or API-returned checkout URL) on the web build.
+### Payment rules (`lib/payment-rules.ts` + `lib/billing.ts`)
 
-Without those env vars, the UI shows the free quota only — no fake checkout.
+| Rule | Behavior |
+| --- | --- |
+| When payment is required | Free plan + daily LLM chat quota exhausted. TTS / poke / idle / games / crisis / setup never require payment. |
+| Upgrade offered | `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` set, **or** `NEXT_PUBLIC_AMOJI_PAYMENT_DEMO=1`. |
+| Checkout | Prefer `POST /api/billing/checkout` (attaches session `userId`). Else open Payment Link with `client_reference_id`. |
+| Success return | `?amoji_pay=success` → sync entitlement from API; strip query. |
+| Cancel return | `?amoji_pay=cancel` → no charge; free limits stay. |
+| Demo | `NEXT_PUBLIC_AMOJI_PAYMENT_DEMO=1` (web) / `AMOJI_BILLING_DEMO=1` (API) unlocks Plus **without charging** and labels it in Settings. |
+
+Live money requires:
+
+- `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` on the Node API (webhook → SQLite entitlement), and
+- `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` and/or `STRIPE_PRICE_ID` (+ optional `AMOJI_PUBLIC_ORIGIN` for Checkout Session success/cancel URLs).
+
+Without those secrets, the UI shows free quota only (or labeled demo) — no silent fake charge.
+
+### Charging rules (`lib/charging-rules.ts`)
+
+Only **`chat_llm_turn`** costs 1 free daily turn. Everything else in the table
+(`tts_free`, poke, idle, game, crisis, local music/sing/dance, setup, BYOK)
+costs **0** and is not gated. Catalog Plus display price is **$4.99 / 30 days**;
+the live Stripe link or `STRIPE_PRICE_ID` owns the real charge amount.
+
+`GET /api/billing/rules` publishes the same numbers for operators.
 
 ## Email
 
@@ -58,21 +91,39 @@ Transactional mail (report receipt + support auto-ack) runs only when
 `RESEND_API_KEY` and `AMOJI_MAIL_FROM` are set on the Node API. Pages builds
 keep reports local and exportable.
 
+| Surface | Behavior |
+| --- | --- |
+| Report dialog | Optional contact email → `POST /api/reports` (anonymous). Ack mail when configured. |
+| Settings → Help | Support form → `POST /api/support` (anonymous). Stores in SQLite; auto-acks the user; optional `AMOJI_SUPPORT_INBOX` gets an ops copy. |
+| Pages-only | No `NEXT_PUBLIC_AMOJI_API` → form tells the user to open a GitHub Issue; reports stay on-device + JSON export. |
+
 ## Auto-reply
 
 1. **Crisis** — on-device keyword guard (`lib/crisis.ts`); never emailed; no LLM.
 2. **Ops / support** — fixed templates (`lib/auto-reply.ts` + server twin) for
-   report acknowledgment when email is configured.
+   report acknowledgment and support auto-ack when email is configured.
 
 ## Security
 
-Anonymous bearer sessions on the Node API; CORS origin lock via
-`AMOJI_CORS_ORIGIN`; per-IP rate limits; security headers on API responses;
-crisis fail-closed before the model; BYOK keys stay in the browser. See
-`lib/security-policy.ts` and `server/backend/src/security.ts`.
+Rules live in `lib/security-rules.ts` (client) and
+`server/backend/src/security-rules.ts` (rate-limit budgets). Enforcement:
+
+| Control | Env / surface |
+| --- | --- |
+| Anonymous bearer sessions | `POST /api/auth/session` — random hex token in `amoji.backend.session` |
+| CORS origin lock | `AMOJI_CORS_ORIGIN` (comma-separated). Unset/`*` = any origin (dev) |
+| Per-IP rate limits | global 240/min; auth 30; chat/tts/stripe 60; report/support 10 |
+| Security headers | `nosniff`, `DENY` frame, `no-referrer`, permissions-policy on API responses |
+| Crisis fail-closed | On-device before any model call |
+| BYOK keys | Browser-only; never required for Pages |
+
+`GET /api/systems` returns `cors`, `corsLocked`, `securityRulesVersion`, and
+`rateLimits` — never secret values. Pages builds with no API URL report an
+on-device posture and do not claim “connected”.
 
 ## Legal
 
 Privacy, Terms, Safety, Cookies, and Credits. First-run gate uses
-`LEGAL_ACCEPT_VERSION` in `lib/legal-accept.ts` — bump it when policy facts
-change so returning users re-consent.
+`LEGAL_ACCEPT_VERSION` in `lib/legal-accept.ts` (currently **4**) — bump it when
+policy facts change so returning users re-consent. Doc routes and accept status
+are catalogued in `lib/legal-rules.ts`.
