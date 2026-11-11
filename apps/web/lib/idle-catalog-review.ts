@@ -5,6 +5,7 @@ import { CHAT_IDLE_CURATED } from './idle-curated-rail';
 import { IDLE_LIBRARY, idleByNum } from './idle-library';
 import {
   IDLE_PIN_FALLBACK_CLIP_ID,
+  PIXEL_CALM_IDLE_NUMS,
   PIXEL_OK_IDLE_NUMS,
   RETIRED_IDLE_CLIP_IDS,
   RETIRED_IDLE_NUMS,
@@ -15,13 +16,19 @@ import {
 
 export {
   IDLE_PIN_FALLBACK_CLIP_ID,
+  PIXEL_CALM_IDLE_NUMS,
   PIXEL_OK_IDLE_NUMS,
+  PIXEL_PERF_OK_NUMS,
   RETIRED_IDLE_CLIP_IDS,
   RETIRED_IDLE_NUMS,
+  isPixelCalmIdleClip,
+  isPixelCalmIdleNum,
   isPixelOkIdleClip,
   isPixelOkIdleNum,
+  isPixelPerfOkClip,
   isRetiredIdleClip,
   isRetiredIdleNum,
+  resolveCalmIdleClipId,
   resolveIdleClipId,
 } from './idle-retired';
 
@@ -173,8 +180,8 @@ function verdictForLibNum(libNum: number, entry: (typeof IDLE_LIBRARY)[number]):
     if ([55, 56, 57, 58, 59, 96, 97, 98, 99, 100, 105, 106, 107].includes(libNum)) return 'grey';
     return 'blend-bad';
   }
-  if (PIXEL_OK_IDLE_NUMS.has(libNum) || CURATED_LEGACY_LIB_NUMS.has(libNum)) return 'keep-curated';
-  if (PIXEL_IDLE_REVIEW_KEEPS[libNum]) return 'keep-library';
+  if (PIXEL_CALM_IDLE_NUMS.has(libNum) || CURATED_LEGACY_LIB_NUMS.has(libNum)) return 'keep-curated';
+  if (PIXEL_OK_IDLE_NUMS.has(libNum) || PIXEL_IDLE_REVIEW_KEEPS[libNum]) return 'keep-library';
   if (!entry.playable || !entry.vrmaUrl) return 'grey';
   return 'keep-library';
 }

@@ -2,14 +2,14 @@
 // Default rotation is Pixel-OK IdleRpmFStanding001 + LookAround.
 // Saved non-OK / retired pins are cleared on load.
 
-import { isPixelOkIdleClip, isRetiredIdleClip, resolveIdleClipId } from './idle-retired';
+import { isPixelCalmIdleClip, isRetiredIdleClip, resolveCalmIdleClipId } from './idle-retired';
 import { idleClipById } from './idle-clips';
 
 export const IDLE_PICK_KEY = 'amoji.idlePick.v1';
 const KEY = IDLE_PICK_KEY;
 
-/** Default rotation / safe persisted pins — Pixel OK only. */
-export const DEFAULT_IDLE_IDS = ['IdleRpmFStanding001', 'LookAround'] as const;
+/** Default rotation / safe persisted pins — Pixel calm idle only. */
+export const DEFAULT_IDLE_IDS = ['IdleRpmFStanding001', 'IdleSassy'] as const;
 
 /** Legacy pins that must not stick after Pixel-OK-only change. */
 const BAD_SAVED_IDLE_IDS = new Set([
@@ -45,7 +45,7 @@ function hydrate(): PickMap {
         changed = true;
         continue;
       }
-      if (BAD_SAVED_IDLE_IDS.has(clip) || !isPixelOkIdleClip(clip)) {
+      if (BAD_SAVED_IDLE_IDS.has(clip) || !isPixelCalmIdleClip(clip)) {
         changed = true;
         continue;
       }
@@ -71,15 +71,15 @@ function persist(next: PickMap): void {
 export function idlePickFor(characterId: string): string | null {
   const raw = hydrate()[characterId];
   if (!raw) return null;
-  const resolved = resolveIdleClipId(raw);
-  return isPixelOkIdleClip(resolved) && idleClipById(resolved) ? resolved : null;
+  const resolved = resolveCalmIdleClipId(raw);
+  return isPixelCalmIdleClip(resolved) && idleClipById(resolved) ? resolved : null;
 }
 
 export function saveIdlePick(characterId: string, clipId: string): string | null {
   if (
     !characterId
     || isRetiredIdleClip(clipId)
-    || !isPixelOkIdleClip(clipId)
+    || !isPixelCalmIdleClip(clipId)
     || !idleClipById(clipId)
   ) {
     return idlePickFor(characterId);
