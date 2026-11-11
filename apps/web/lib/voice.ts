@@ -1,5 +1,5 @@
 'use client';
-import { getPlaybackVolume } from './playback-volume';
+import { forcePlaybackVolume, getPlaybackVolume } from './playback-volume';
 // Emotional voice — ChatGPT-style prosody. Wire-now free chain (tts-chain.ts):
 // gtts → synth → edge — Google Translate MP3 first (plain HTTPS; survives blocked
 // sockets and the iOS silent switch), then speechSynthesis with matched platform
@@ -2258,13 +2258,19 @@ export function previewOsVoice(
   });
 }
 
-/** one short happy line per language for the settings self-test (r2026-10-04.75) */
-const TEST_LINES: Record<Lang, string> = {
-  yue: '喂，聽唔聽到我呀？我而家好開心見到你！',
-  zh: '喂，你能听到我吗？我现在好开心见到你！',
-  ja: 'ねえ、聞こえる？会えて嬉しいな！',
-  en: "Hey, can you hear me? I'm so happy to see you!",
+/**
+ * Loud, clear, multi-sentence sample for gate “Test my sound” and Settings
+ * voice self-test. Short one-liners were easy to miss (quiet + too brief).
+ */
+export const GATE_TEST_LINES: Record<Lang, string> = {
+  yue: '喂，聽唔聽到我呀？而家係喇叭同語音測試，我會講多幾句，方便你聽清楚音量同音色。如果聽到呢段說話，就表示喇叭正常，咪高峰同位置可以之後再確認。之後我哋就可以入去傾偈啦，慢慢嚟，唔使急，聽到就撳得聽到我。',
+  zh: '喂，你能听到我吗？现在是扬声器和语音测试，我会多说几句，方便你听清楚音量和音色。如果你听得到这段话，就表示喇叭正常，麦克风和位置可以稍后再确认。之后我们就可以进去聊天了，慢慢来，不用着急，听到了就点“我听得到”。',
+  ja: 'ねえ、聞こえる？いまはスピーカーと声のテストだよ。音量と声の感じが分かるように、もう少し長めに話すね。この声が聞こえたらスピーカーは大丈夫。マイクや位置情報はあとで確認していいよ。このあとチャットに入れるよ。焦らなくていいからね。聞こえたら「聞こえた」を押してね。',
+  en: "Hey, can you hear me? This is a speaker and voice test — I'll keep talking for a few more sentences so you can clearly check the volume and tone. If you hear this whole line, your speakers are working; mic and location can wait until after. Then we can head into chat — no rush, take your time. Tap “I can hear” when this is clear.",
 };
+
+/** @deprecated alias — same long sample as the gate */
+const TEST_LINES = GATE_TEST_LINES;
 
 /**
  * r2026-10-04.75 — one-tap voice self-test from the Settings sheet: forces
@@ -2321,6 +2327,8 @@ function probeSynth(text: string, characterId: string, lang: Lang): Promise<bool
     bindSynthVoice(u, voice, speechLocale(lang));
     u.pitch = shaped.pitch;
     u.rate = shaped.rate;
+    // Self-test must be audible — never inherit a quiet prefs step.
+    u.volume = Math.max(0.95, getPlaybackVolume());
     let started = false;
     let done = false;
     const finish = (ok: boolean) => {
@@ -2332,7 +2340,8 @@ function probeSynth(text: string, characterId: string, lang: Lang): Promise<bool
       resolve(ok);
     };
     const nudge = setInterval(() => { try { speechSynthesis.resume(); } catch { /* ignore */ } }, 400);
-    const giveUp = setTimeout(() => finish(started), 6_000);
+    // Long gate sample needs more than the old 6s give-up.
+    const giveUp = setTimeout(() => finish(started), 28_000);
     u.onstart = () => { started = true; };
     u.onend = () => finish(true);
     u.onerror = () => finish(false);
@@ -2351,18 +2360,22 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
     return [{ tier: 'edge', ok: false, detail: 'muted' }];
   }
   unlockAudio();
+  // Mic / play-and-record ducks speakers on many phones — force playback route.
+  duckExternalAudioForCompanion();
+  // Gate hear-check must be unmistakable: full element volume for this probe only.
+  forcePlaybackVolume(1);
   const wasOn = voiceEnabled();
   if (!wasOn) {
     try { localStorage.setItem(MUTE_KEY, 'on'); } catch { /* ignore */ }
   }
   const results: VoiceTierResult[] = [];
-  const line = TEST_LINES[lang] ?? TEST_LINES.en;
+  const line = GATE_TEST_LINES[lang] ?? GATE_TEST_LINES.en;
   const push = (tier: VoiceTier, ok: boolean, detail: string) => {
     results.push({ tier, ok, detail });
     reportVoiceStatus(tier, ok, detail);
   };
   try {
-    // r112: tier 0 — OpenAI ChatGPT-style voice (10s cap), tried first when
+    // r112: tier 0 — OpenAI ChatGPT-style voice, tried first when
     // a key is configured. A CORS/network failure reports ✗ and the probe
     // simply continues down the free chain.
     if (openAiVoiceReady()) {
@@ -2371,7 +2384,7 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
           lang,
           gender: characterVoiceGender(characterId),
           character: characterId,
-        }), 10_000, 'openai-tts timeout');
+        }), 28_000, 'openai-tts timeout');
         push('openai', true, 'chatgpt voice played');
       } catch (err) {
         if ((err as Error | undefined)?.message !== 'canceled') {
@@ -2392,7 +2405,9 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
             lang,
             gender: characterVoiceGender(characterId),
             character: characterId,
-          }), 7_000, 'edge-tts timeout');
+            // Boost SSML volume for the hear-check (neutral chat uses smaller deltas).
+            volumeDelta: 0.45,
+          }), 28_000, 'edge-tts timeout');
           push('edge', true, 'neural voice played');
         } catch (err) {
           if ((err as Error | undefined)?.message !== 'canceled') {
@@ -2411,7 +2426,7 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
               pitchBias: gttsPitchForLang(lang, characterId, characterVoiceGender(characterId)),
               onPlaying: () => push('gtts', true, 'google-tts playing'),
             }),
-            15_000,
+            32_000,
             'google-tts timeout',
           );
           push('gtts', true, 'google-tts played');
@@ -2425,7 +2440,7 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
       }
       if (hop === 'canto-nano') {
         try {
-          await withTimeout(speakCantoNano(stripVoicedGlyphs(line)), 10_000, 'canto-tts-nano timeout');
+          await withTimeout(speakCantoNano(stripVoicedGlyphs(line)), 28_000, 'canto-tts-nano timeout');
           push('canto-nano', true, 'canto-tts-nano played');
         } catch (err) {
           if ((err as Error | undefined)?.message !== 'canceled') {
@@ -2438,6 +2453,7 @@ export async function testVoiceChain(characterId: string, lang: Lang): Promise<V
       push('synth', ok, ok ? 'utterance started' : 'never started');
     }
   } finally {
+    forcePlaybackVolume(null);
     if (!wasOn) {
       try { localStorage.setItem(MUTE_KEY, 'off'); } catch { /* ignore */ }
     }

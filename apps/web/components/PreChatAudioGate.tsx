@@ -10,6 +10,7 @@ import { requestMic } from '../lib/mic-preflight';
 import { passEntryGate, setMicPreflightSession, type MicOutcome } from '../lib/entry-gate';
 import { markChatAudioReady, stashPriorMasterMuteForChat } from '../lib/pre-chat-audio';
 import { primeChatStartGesture } from '../lib/chat-start-gesture';
+import { companionPlaybackSession } from '../lib/voice-chat-focus';
 import EarlyAudioUnlock from './EarlyAudioUnlock';
 
 /** Soft sound-check step after the sample finishes (or is replayed). */
@@ -49,9 +50,12 @@ export default function PreChatAudioGate({
     try { if (isMasterMuted()) setMasterMuted(false); } catch { /* ignore */ }
     try { if (!voiceEnabled()) setVoiceEnabled(true); } catch { /* ignore */ }
     try { primeChatStartGesture(); } catch { /* ignore */ }
+    // Leave mic-ducked play-and-record so the long loud sample hits the speakers.
+    try { companionPlaybackSession(); } catch { /* ignore */ }
     let characterId = 'a01-shino';
     try { characterId = loadPrefs().character; } catch { /* default */ }
     try {
+      // Long GATE_TEST_LINES + forcePlaybackVolume(1) inside testVoiceChain.
       await testVoiceChain(characterId, lang);
     } catch {
       /* retryable — never blocks Continue */
