@@ -167,7 +167,7 @@ export function isDetailedReply(text: string): boolean {
   if (/\b(?:Recipe|Learn)\s*:/.test(text)) return true;
   const markers = text.match(/(?:^|[\s。！？.!?:：])\s*(?:\d{1,2}[.)、]|[-•·])\s+\p{L}/gu);
   if ((markers?.length ?? 0) >= 2) return true;
-  return /(?:\bstory\b|tell\s+me\s+a\s+story|fun\s+fact|fun\s+science)|講個?故|故事|冷知識|豆知識|讲个故|物語/i.test(text);
+  return /(?:\bstory\b|tell\s+me\s+a\s+story|fun\s+fact|fun\s+science|science\s+fact|how\s+to\s+fix|step\s+[123])|講個?故|故事|冷知識|豆知識|讲个故|物語|科學趣|点样整|怎麼辦/i.test(text);
 }
 
 /**

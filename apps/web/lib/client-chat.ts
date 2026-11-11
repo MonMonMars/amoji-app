@@ -81,7 +81,13 @@ import { preferLiveReply, worldBlock } from './live-tools';
 import { replyLooksNonsense, STRICT_REPLY_APPENDIX } from './reply-sanity';
 import { shapeCompanionReply } from './reply-shape';
 import { wantsLongCompanionReply } from './topic-suggestions';
-import { maxTokensForStoryTurn, storySystemBlock, wantsStoryTurn } from './story-reply';
+import { wantsStoryTurn } from './story-reply';
+import {
+  detectLongTalkKind,
+  longTalkSystemBlock,
+  maxTokensForLongTalk,
+  type LongTalkKind,
+} from './long-talk';
 import { mustStayOneTopic, stripOffTopicAbilityTacks } from './topic-mixture';
 
 export interface ClientChatResult { reply: string; emotionHints: Record<string, number> }
@@ -1138,14 +1144,30 @@ export function wantsDetail(world?: string, userText?: string): boolean {
   return userText ? wantsLongCompanionReply(userText) : false;
 }
 
+/** Resolve story / science / help mode for budgets + system addenda. */
+export function resolveLongTalkKind(
+  lastUser: string,
+  opts?: Pick<ClientChatOptions, 'persona' | 'storySession'>,
+): LongTalkKind | null {
+  return detectLongTalkKind(lastUser, {
+    persona: opts?.persona,
+    storySession: opts?.storySession,
+  });
+}
+
 export async function clientChat(
   messages: ChatMessage[],
   opts?: ClientChatOptions,
 ): Promise<ClientChatResult> {
   const recent = trimHistoryForPrompt(messages);
   const lastUser = recent[recent.length - 1]?.content ?? '';
-  const story = wantsStoryTurn(lastUser, { persona: opts?.persona, storySession: opts?.storySession });
-  const detailed = wantsDetail(opts?.world, lastUser) || story;
+  const longKind = resolveLongTalkKind(lastUser, opts);
+  const story = longKind === 'story' || wantsStoryTurn(lastUser, {
+    persona: opts?.persona,
+    storySession: opts?.storySession,
+  });
+  const recipeDetail = wantsDetail(opts?.world, lastUser);
+  const detailed = recipeDetail || longKind != null || story;
   const raceOpts: RaceFreeLanesOpts = {
     characterId: opts?.characterId,
     conversationKey: conversationBrainKey(opts?.characterId),
@@ -1156,8 +1178,9 @@ export async function clientChat(
   const oneTopicAppendix = mustStayOneTopic({ story, detailed, keyedBrain })
     ? '\nTOPIC MIXTURE: Stay on ONE topic this turn. Never bolt dance/sing/music/weather/news/story invites onto an unrelated answer. Ability invites are idle-only.'
     : '';
-  const system = `${BASE_SYSTEM}${oneTopicAppendix}\nReply in speakable sentences only. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${story ? `\n${storySystemBlock(opts?.language)}` : ''}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
-  const maxTokens = maxTokensForStoryTurn(story, wantsDetail(opts?.world, lastUser));
+  const longBlock = longKind ? `\n${longTalkSystemBlock(longKind, opts?.language)}` : '';
+  const system = `${BASE_SYSTEM}${oneTopicAppendix}\nReply in speakable sentences only. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${longBlock}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
+  const maxTokens = maxTokensForLongTalk(longKind, recipeDetail && longKind == null);
   const onPartial = opts?.onPartial
     ? (partial: string) => {
         opts.onPartial?.(shapeCompanionReply(partial, {
