@@ -258,20 +258,25 @@ describe('poke SFX inventory + selection → playback pool', () => {
     expect(path).toMatch(/CMA0036[36]/);
   });
 
-  it('recordedPokeClip prefers zone clip when still enabled; Wanted-only otherwise', () => {
+  it('recordedPokeClip stays zone-stable; Want does not rotate; Skip falls back', () => {
     mockStorage();
     forgetCmaReactionPickCache();
     resetWantedCmaReactionRotation();
 
     expect(recordedPokeClip('female', 'belly')).toContain('CMA00363');
     expect(recordedPokeClip('female', 'torso')).toContain('CMA00350');
+    expect(recordedPokeClip('female', 'head')).toContain('CMA00354');
     expect(recordedPokeClip('male', 'chest')).toContain('CMA00318');
 
+    // Wanting other clips must not steal another location's sound.
     setCmaReactionVerdict('CMA00363', 'want');
+    setCmaReactionVerdict('CMA00366', 'want');
     expect(recordedPokeClip('female', 'belly')).toContain('CMA00363');
-    expect(recordedPokeClip('female', 'head')).toContain('CMA00363');
-
-    setCmaReactionVerdict('CMA00354', 'want');
     expect(recordedPokeClip('female', 'head')).toContain('CMA00354');
+    expect(recordedPokeClip('female', 'head')).toBe(recordedPokeClip('female', 'head'));
+
+    // Skip this zone's clip → gender default, not a rotating Wanted pick.
+    setCmaReactionVerdict('CMA00354', 'skip');
+    expect(recordedPokeClip('female', 'head')).toContain('CMA00351');
   });
 });

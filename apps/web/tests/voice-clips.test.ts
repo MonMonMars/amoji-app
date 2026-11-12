@@ -383,22 +383,25 @@ describe('Wanted CMA reaction SFX wire', () => {
     expect(afterSkipOnly.includes('/cma-reaction/')).toBe(false);
   });
 
-  it('Wanted poke enters recordedPokeClip; Skip excluded; empty Wanted uses zone table', () => {
+  it('poke stays on the zone map; Want does not rotate; Skip falls back to default', () => {
     mockStorage();
     forgetCmaReactionPickCache();
     resetWantedCmaReactionRotation();
 
     expect(recordedPokeClip('female', 'head')).toContain('CMA00354');
+    expect(recordedPokeClip('female', 'torso')).toContain('CMA00350');
+    expect(recordedPokeClip('female', 'belly')).toContain('CMA00363');
 
-    setCmaReactionVerdict('CMA00350', 'want'); // female punch HA (#3)
-    setCmaReactionVerdict('CMA00318', 'skip'); // male effort skip must never play for female either
-    resetWantedCmaReactionRotation();
-    const poke = recordedPokeClip('female', 'head');
-    expect(poke).toContain('/voice-clips/cma-reaction/');
-    expect(poke).toContain('CMA00350');
-    expect(poke).not.toContain('CMA00318');
+    setCmaReactionVerdict('CMA00350', 'want');
+    setCmaReactionVerdict('CMA00366', 'want');
+    // Same location keeps its mapped clip even when other clips are Wanted.
+    expect(recordedPokeClip('female', 'head')).toContain('CMA00354');
+    expect(recordedPokeClip('female', 'head')).toBe(recordedPokeClip('female', 'head'));
+    expect(recordedPokeClip('female', 'torso')).toContain('CMA00350');
 
-    // Male with no Wanted poke -> zone table (CMA gallery only)
+    setCmaReactionVerdict('CMA00354', 'skip');
+    expect(recordedPokeClip('female', 'head')).toContain('CMA00351');
+
     expect(recordedPokeClip('male', 'head')).toContain('CMA00318');
   });
 });
