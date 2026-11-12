@@ -134,6 +134,17 @@ describe('poke SFX answers the zone that was hit', () => {
     }
   });
 
+  it('plays the same clip every time the same zone is poked', () => {
+    for (const zone of ['head', 'chest', 'belly', 'torso', 'side', 'back'] as const) {
+      const first = recordedPokeClip('female', zone);
+      for (let i = 0; i < 8; i++) {
+        expect(recordedPokeClip('female', zone), `female ${zone} tap ${i}`).toBe(first);
+      }
+    }
+    expect(recordedPokeClip('female', 'head')).not.toBe(recordedPokeClip('female', 'belly'));
+    expect(recordedPokeClip('female', 'torso')).not.toBe(recordedPokeClip('female', 'chest'));
+  });
+
   it('wraps soft-vs-hard female poke zones from the CMA ship-set', () => {
     // Owner #1–23: smile head, soft chest, fast soft belly, punch torso.
     expect(RECORDED_POKE_ZONE.female.chest).toContain('CMA00351');

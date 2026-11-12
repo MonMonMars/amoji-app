@@ -71,6 +71,7 @@
 | Spin-to-back code fix | hips clamp + idle t≈0 + IdleHug retired |
 | Character / voice card tap greets (code) | gesture clip `b7848bc` on PR #366 · merged |
 | CMA poke SFX #1–23 Want / archive / delete + zone wire | 13 keepers (10 active + 3 archive); male → CMA00318; deleted 10 reject mp3s |
+| Poke SFX zone-stable (same location = same sound) | `recordedPokeClip` pinned to RECORDED_POKE_ZONE; no Wanted rotation |
 
 ---
 
@@ -83,7 +84,7 @@
 | Confirm spin-to-back / cloudsea / topic-asks gone on **live Pages** | #366 merged — eyeball Pages |
 | Confirm character/voice card tap speaks on live Pages | Eyeball Pages |
 | Broader SCENE_LINES pass (other backdrops still ask a lot) | Optional cleanup |
-| Confirm poke SFX zone map (#3/#4/#7/#9–15) feels right on device | After Pages deploy |
+| Confirm poke SFX zone map feels right on device (stable per location) | After this merge + Pages |
 
 ---
 
@@ -91,6 +92,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-12 evening | Pin poke SFX to zone map — same location always same clip |
 | 2026-11-12 morning | SFX #1–23 wired: keep/archive/delete + RECORDED_POKE_ZONE; push/merge poke-sfx |
 | 2026-11-12 late night | Harden leftover 想傾/想聊 banks; owner re-reported cloudsea/asks/spin — still not on live Pages until PR #366 merges |
 | 2026-11-12 late night | Card-greet gesture clip `b7848bc`; fonts CI flake cherry-pick |

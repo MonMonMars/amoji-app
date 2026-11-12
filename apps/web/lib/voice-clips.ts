@@ -10,7 +10,11 @@
 // universal/ folder. Chat leads still use the seven canonical names.
 
 import { stripBasePath } from './asset';
-import { pickEnabledPokeReactionPath, pickWantedCmaReactionPath } from './cma-reaction-gallery';
+import {
+  cmaCodeFromPath,
+  pickWantedCmaReactionPath,
+  skippedCmaReactionCodes,
+} from './cma-reaction-gallery';
 
 export const VOICE_CLIP_LANGS = ['yue', 'zh', 'ja', 'en'] as const;
 export type VoiceClipLang = (typeof VOICE_CLIP_LANGS)[number];
@@ -430,18 +434,31 @@ const POKE_ZONE_ALIASES: Record<string, string> = {
   tummy: 'belly',
 };
 
+function pokePathAllowed(path: string): boolean {
+  const code = cmaCodeFromPath(path);
+  if (!code) return true;
+  return !skippedCmaReactionCodes().includes(code);
+}
+
 export function recordedPokeClip(gender: VoiceClipGender, zone?: string): string {
-  // Resolve zone-table preference first (zone-accurate when still in the enabled set).
+  // Same body location → same clip every tap. Different locations use the
+  // owner #1–23 zone map in RECORDED_POKE_ZONE. Want/Skip gallery picks must
+  // not rotate poke SFX across taps (that made every press sound random).
   const table = RECORDED_POKE_ZONE[gender];
   let key = (zone || 'default').toLowerCase();
   key = POKE_ZONE_ALIASES[key] ?? key;
   if (key === 'arml' || key === 'armr') key = 'arm';
   if (key === 'legl' || key === 'legr') key = 'legs';
   const zonePath = table[key] ?? table.default ?? table.torso!;
-  // User-selected poke pool (Wanted, else full poke list minus Skip). Never play
-  // outside that set when the pool is non-empty. Prefer the zone clip when it is enabled.
-  const enabled = pickEnabledPokeReactionPath({ gender, preferPath: zonePath });
-  if (enabled) return enabled;
+  if (pokePathAllowed(zonePath)) return zonePath;
+
+  const fallback = table.default ?? table.torso!;
+  if (fallback !== zonePath && pokePathAllowed(fallback)) return fallback;
+
+  // Every mapped path Skipped → first remaining zone row (stable key order).
+  for (const path of Object.values(table)) {
+    if (pokePathAllowed(path)) return path;
+  }
   return zonePath;
 }
 
