@@ -61,6 +61,122 @@ export function asksToResumeHistory(line: string): boolean {
   return BANNED_HISTORY_RESUME_ASK.test(t);
 }
 
+/** Rough count of spoken questions (ASCII ? + full-width ？). */
+export function countSpokenQuestions(text: string): number {
+  const t = (text ?? '').trim();
+  if (!t) return 0;
+  return (t.match(/[?？]/g) ?? []).length;
+}
+
+/**
+ * “What should we talk about?” interview lines — banned even as the single
+ * soft check-in. Owner sample: 我哋傾咩好呀？ + 今日想傾咩呀？
+ */
+export function isTopicMenuAsk(s: string): boolean {
+  const c = (s ?? '').trim();
+  if (!c) return false;
+  return /我哋傾咩好|今日想傾咩|想傾咩呀|傾咩好呀|你想傾嗎|你想傾吗|想傾嗎|想傾吗|你想聊吗|你想聊嗎|想聊吗|想聊嗎|想傾偈嘅話.*[?？]|今天想聊[点點什什麼]+|聊[点點]什么好|聊[点點]什麼好|何を話したい|何を話そう|what should we talk about|what do you want to talk about|what shall we (?:talk|chat) about|do you want to talk\b|shall we talk\b/i.test(
+    c,
+  );
+}
+
+function sentenceLooksLikeQuestion(s: string): boolean {
+  const c = (s ?? '').trim();
+  if (!c) return false;
+  if (isTopicMenuAsk(c)) return true;
+  if (/[?？]$/.test(c)) return true;
+  if (/(?:吗|嗎)\s*[？?]?\s*$/.test(c)) return true;
+  if (/(?:想|要).*(?:傾|聊|讲|說|话|話).*(?:呀|吗|嗎)\s*$/u.test(c)) return true;
+  if (/^(?:what|want to|shall we|how are you|would you|do you)\b/i.test(c)) return true;
+  return false;
+}
+
+/**
+ * Open greet should output presence, not interview the user. Drop trailing
+ * question sentences so a legacy bank line cannot stack asks.
+ */
+export function stripQuestionSentences(text: string): string {
+  const t = (text ?? '').trim();
+  if (!t) return '';
+  const chunks = t
+    .split(/(?<=[。．.！!？?])\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (chunks.length <= 1) {
+    return sentenceLooksLikeQuestion(t) ? '' : t;
+  }
+  const kept = chunks.filter((c) => !sentenceLooksLikeQuestion(c));
+  const joined = kept.join(' ').trim();
+  return joined || chunks.find((c) => !sentenceLooksLikeQuestion(c))?.trim() || '';
+}
+
+/** True when an enter-chat line piles on multiple user-directed asks. */
+export function openGreetTooManyQuestions(line: string, maxQuestions = 0): boolean {
+  return countSpokenQuestions(line) > maxQuestions;
+}
+
+function splitSpokenSentences(text: string): string[] {
+  return text
+    .split(/(?<=[。．.！!？?])\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/** True when the user's message is asking the companion something. */
+export function userMessageLooksLikeQuestion(text: string): boolean {
+  const t = (text ?? '').trim();
+  if (!t) return false;
+  if (/[?？]\s*$/.test(t)) return true;
+  if (/^(?:what|why|how|when|where|who|which|can you|could you|would you|do you|does|did|is |are |was |were |tell me)\b/i.test(t)) {
+    return true;
+  }
+  if (/(?:吗|嗎)\s*[？?]?\s*$/u.test(t)) return true;
+  if (/^(?:什麼|什么|為什麼|为什么|怎麼|怎么|幾時|几时|邊度|边度|點解|点解|幾多|几多|係咪|系咪|是不是)/u.test(t)) {
+    return true;
+  }
+  if (/^(?:何|なに|なんで|どう|どこ|いつ|誰|誰が|教えて|教えてください)/u.test(t)) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Cap how many question sentences survive in a companion reply. Answer
+ * sentences are always kept; extra asks are dropped (prefer zero when the
+ * user just asked something).
+ */
+export function capSpokenQuestions(text: string, maxQuestions = 1): string {
+  const t = (text ?? '').trim();
+  if (!t || maxQuestions < 0) return t;
+  const chunks = splitSpokenSentences(t);
+  if (chunks.length <= 1) {
+    // Topic-menu asks never survive, even when maxQuestions allows one soft ask.
+    if (isTopicMenuAsk(t)) return '';
+    if (maxQuestions === 0 && sentenceLooksLikeQuestion(t)) return '';
+    return t;
+  }
+  const answers = chunks.filter((c) => !sentenceLooksLikeQuestion(c));
+  const asks = chunks.filter((c) => sentenceLooksLikeQuestion(c) && !isTopicMenuAsk(c));
+  const keptAsks = maxQuestions > 0 ? asks.slice(-maxQuestions) : [];
+  const merged = [...answers, ...keptAsks];
+  const joined = merged.join(' ').trim();
+  if (joined) return joined;
+  if (answers.length) return answers.join(' ').trim();
+  if (maxQuestions > 0 && asks[0]) return asks[0]!;
+  return '';
+}
+
+/** Post-process model chat replies — no stacked asks after a user question. */
+export function capCompanionReplyQuestions(text: string, lastUserMessage?: string): string {
+  const max = userMessageLooksLikeQuestion(lastUserMessage ?? '') ? 0 : 1;
+  return capSpokenQuestions(text, max);
+}
+
+/** Open cheer / idle: zero topic-menu interviews. */
+export function scrubTopicMenuAsks(text: string): string {
+  return capSpokenQuestions(stripQuestionSentences(text), 0);
+}
+
 /**
  * Presence nags that sound like "are you still there?" after silence.
  * Idle / reengage should offer a concrete topic instead.
@@ -137,6 +253,8 @@ export function spokenLineLooksBroken(text: string, opts?: SpokenGateOpts): bool
   if ((opts?.mode ?? 'local') === 'idle' && asksPresenceNag(t)) return true;
   // Local + idle: never volunteer “continue last time” — history is quiet.
   if (asksToResumeHistory(t)) return true;
+  // Never speak pure “what should we talk about?” interview lines.
+  if (isTopicMenuAsk(t) && countSpokenQuestions(t) > 0 && !/[。．.！!]/.test(t)) return true;
   return false;
 }
 
@@ -157,7 +275,14 @@ export function gateSpokenLine(
   if (!spokenLineLooksBroken(candidate, { ...opts, mode })) return candidate;
 
   const fb = (opts?.fallback ?? (mode === 'idle' ? safeIdleFallback(opts?.lang, opts?.n ?? 0) : '')).trim();
-  if (fb && !spokenLineLooksBroken(fb, { mode: 'local', lang: opts?.lang })) return fb;
+  if (
+    fb &&
+    !spokenLineLooksBroken(fb, {
+      mode: 'local',
+      ...(opts?.lang !== undefined ? { lang: opts.lang } : {}),
+    })
+  )
+    return fb;
   if (mode === 'idle') {
     const en = SAFE_IDLE_FALLBACK.en[0]!;
     return spokenLineLooksBroken(en, { mode: 'local' }) ? undefined : en;

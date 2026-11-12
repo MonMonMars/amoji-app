@@ -22,7 +22,7 @@ describe('開聲傾偈 longer gate voice sample', () => {
   it('testVoiceChain accepts an optional line override', () => {
     const voice = read('lib/voice.ts');
     const start = voice.indexOf('export async function testVoiceChain');
-    const slice = voice.slice(start, start + 500);
+    const slice = voice.slice(start, start + 900);
     expect(slice).toContain('lineOverride?: string');
     expect(slice).toContain('lineOverride?.trim()');
   });

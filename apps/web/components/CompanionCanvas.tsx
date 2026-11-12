@@ -23,6 +23,7 @@ import { dancePerfClipSources } from '../lib/dance-clip-sources';
 import { timeScaleForProfile } from '../lib/performance-motion';
 import { playableIdles } from '../lib/idle-library';
 import { listEnabledIdleClipIds } from '../lib/idle-enabled';
+import { isRetiredIdleClip, resolveIdleClipId } from '../lib/idle-retired';
 import { IDLE_JOINT_REFRESH_FADE_S, IDLE_JOINT_REFRESH_MS, nextIdleRefreshAt, shouldRefreshIdleJoints } from '../lib/idle-refresh';
 import {
   IDLE_PIN_CROSSFADE_S,
@@ -768,7 +769,15 @@ export default function CompanionCanvas({
 
     const playClipAsIdle = (clip: THREE.AnimationClip, id: string, fade: number) => {
       if (!mixer) return;
-      const swapping = !!idleAction && idleClipId !== id;
+      // Never play Pixel blend-bad / retired clips (lean-wall, IdleHug, etc.).
+      const safeId = resolveIdleClipId(id);
+      if (safeId !== id) {
+        const safeClip = clips.get(safeId);
+        if (safeClip) return playClipAsIdle(safeClip, safeId, fade);
+        return;
+      }
+      if (isRetiredIdleClip(safeId)) return;
+      const swapping = !!idleAction && idleClipId !== safeId;
       const blendS = swapping
         ? Math.max(fade, IDLE_SWAP_LEG_BLEND_S)
         : 0.7;
@@ -782,14 +791,10 @@ export default function CompanionCanvas({
       // never parked anywhere.
       action.setLoop(THREE.LoopRepeat, Infinity);
       action.reset();
-      if (swapping && idleAction) {
-        action.time = idleAction.time % clip.duration;
-      } else {
-        // start mid-clip at a random offset: the entry frame is never the
-        // clip's neutral first frame, and two consecutive idles blend
-        // motion-into-motion instead of neutral-into-neutral
-        action.time = Math.random() * clip.duration;
-      }
+      // Never sync absolute time across *different* clips — that blended
+      // mismatched mid-poses and looked like a sudden spin "to the back".
+      // Always enter the new idle near its start; crossfade owns the A→B glide.
+      action.time = Math.min(0.08, Math.max(0, clip.duration * 0.02));
       if (idleAction && idleAction !== action) {
         // blend from wherever the body currently is into this clip
         idleAction.crossFadeTo(action, fade, false);
@@ -803,7 +808,7 @@ export default function CompanionCanvas({
         action.play();
       }
       idleAction = action;
-      idleClipId = id;
+      idleClipId = safeId;
       // hold this idle for 1–2 of its own beats, then hand over mid-motion
       const holdMs = Math.min(14000, Math.max(5000, clip.duration * 1000 * (1 + Math.random())));
       idleHoldUntil = performance.now() + holdMs;
@@ -812,17 +817,21 @@ export default function CompanionCanvas({
 
     const nextIdle = (fade: number) => {
       if (!mixer || !idleOrder.length) return;
-      const id = idleOrder[idleIdx % idleOrder.length]!;
+      const raw = idleOrder[idleIdx % idleOrder.length]!;
       idleIdx++;
+      const id = resolveIdleClipId(raw);
+      if (isRetiredIdleClip(id)) return;
       const clip = clips.get(id);
       if (!clip) return;
       playClipAsIdle(clip, id, fade);
     };
 
     const playNamedIdle = (id: string, fade: number): boolean => {
-      const clip = clips.get(id);
+      const safeId = resolveIdleClipId(id);
+      if (isRetiredIdleClip(safeId)) return false;
+      const clip = clips.get(safeId);
       if (!clip) return false;
-      playClipAsIdle(clip, id, fade);
+      playClipAsIdle(clip, safeId, fade);
       return true;
     };
 
@@ -888,9 +897,15 @@ export default function CompanionCanvas({
       // can play even when they are not rail-default-enabled.
       const loadedIdleIds = [...IDLE_SOURCES, ...IDLE_PICKS]
         .map((s) => s.id)
-        .filter((id) => clips.has(id));
+        .filter((id) => clips.has(id) && !isRetiredIdleClip(resolveIdleClipId(id)));
       idleOrder = orderIdleClips(loadedIdleIds, seedKey ?? '', gender);
-      if (!idleOrder.length) idleOrder = orderIdleClips([...clips.keys()], seedKey ?? '', gender);
+      if (!idleOrder.length) {
+        idleOrder = orderIdleClips(
+          [...clips.keys()].filter((id) => !isRetiredIdleClip(resolveIdleClipId(id))),
+          seedKey ?? '',
+          gender,
+        );
+      }
       idleIdx = 0;
       mixerActive = true;
       if (avatar) avatar.clipDrivesBody = true;
@@ -1987,9 +2002,10 @@ export default function CompanionCanvas({
             if (idleClipId !== pinnedIdle) playNamedIdle(pinnedIdle, IDLE_PIN_CROSSFADE_S);
             idleHoldUntil = Infinity;
           } else if (thinkingPoseActive()) {
-            // Hold the primary standing idle while a reply generates.
-            if (idleClipId !== 'IdleBreathCalm' && !thinkMiss) {
-              if (!playNamedIdle('IdleBreathCalm', FADE.idleRotate)) thinkMiss = true;
+            // Visual wait cue: Thinking pose (C56), calm breath if VRMA missing.
+            const thinkClip = clips.has('Thinking') ? 'Thinking' : 'IdleBreathCalm';
+            if (idleClipId !== thinkClip && !thinkMiss) {
+              if (!playNamedIdle(thinkClip, FADE.idleRotate)) thinkMiss = true;
               else idleHoldUntil = performance.now() + 20000;
             }
           } else {

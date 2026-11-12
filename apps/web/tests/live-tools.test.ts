@@ -3,20 +3,24 @@ import {
   clearLiveCache,
   clientLiveContext,
   gatherLiveContext,
+  invalidateNewsFeedCache,
+  isNewsFeedCacheKey,
+  isLiveFactsOnlyTurn,
+  isHeavyHeadline,
   liveToolsEnabled,
   newsRegionFromPlace,
+  NEWS_LAST_KEY,
   parseRssItems,
   pickDefaultHeadlines,
   pickLightHeadlines,
   placeLabel,
   planTools,
-  isLiveFactsOnlyTurn,
   preferLiveReply,
   weatherAccuracyLeak,
   regionalLightNewsFeedUrls,
   regionalNewsFeedUrls,
-  isHeavyHeadline,
   resolveDevicePlace,
+  selectNewsLead,
   worldBlock,
   type GeoLike,
   type Place,
@@ -71,12 +75,12 @@ describe('planTools', () => {
     }
   });
 
-  it('isLiveFactsOnlyTurn gates weather/news TTS bypass', () => {
+  it('isLiveFactsOnlyTurn gates weather TTS bypass but sends news through the model', () => {
     const weather = planTools("what's the weather here?");
     expect(isLiveFactsOnlyTurn(weather, 'It is 22° in Berlin.')).toBe(true);
     expect(isLiveFactsOnlyTurn(weather, '')).toBe(false);
     const news = planTools('what is the latest news?');
-    expect(isLiveFactsOnlyTurn(news, 'Light headline from Wikipedia.')).toBe(true);
+    expect(isLiveFactsOnlyTurn(news, 'Light headline from Wikipedia.')).toBe(false);
     const cafe = planTools('cafes near me');
     expect(isLiveFactsOnlyTurn(cafe, 'Two spots nearby.')).toBe(false);
     const learn = planTools('search how photosynthesis works');
@@ -114,8 +118,92 @@ describe('planTools', () => {
     expect(plan.needsDevice).toBe(false);
     expect(plan.searchQuery).toBeUndefined();
     expect(planTools('news near me').recent).toBe(false);
-    expect(planTools('新聞').recent).toBe(false);
+    expect(planTools('news near me').needsDevice).toBe(true);
+    // Plain news asks (no near-me) use the recent/world path — never GPS/city ask.
+    expect(planTools('新聞').recent).toBe(true);
+    expect(planTools('新聞').needsDevice).toBe(false);
+    expect(planTools('tell me news').recent).toBe(true);
+    expect(planTools('tell me news').needsDevice).toBe(false);
+    expect(planTools('讀新聞').recent).toBe(true);
+    expect(planTools('讀新聞').needsDevice).toBe(false);
+    expect(planTools('any news?').recent).toBe(true);
+    expect(planTools('any news?').needsDevice).toBe(false);
     expect(planTools('最近新聞').recent).toBe(true);
+    // Demo-phase CJK prompts must not demand GPS just to read headlines.
+    expect(planTools('今日有咩新聞？').recent).toBe(true);
+    expect(planTools('今日有咩新聞？').needsDevice).toBe(false);
+    expect(planTools('今天有什么新闻？').recent).toBe(true);
+    expect(planTools('今天有什么新闻？').needsDevice).toBe(false);
+  });
+
+
+  it('reads a news fact line with no trailing question', async () => {
+    const live = await gatherLiveContext("what's the latest news?", {
+      lang: 'en',
+      fetch: async (input) => {
+        const url = String(input);
+        if (url.includes('news.google.com')) throw new Error('cors');
+        if (url.includes('rss2json.com')) return new Response('<html>blocked', { status: 403 });
+        if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
+          return jsonRes({
+            news: [{ story: '<!--x-->Scientists find a quirky deep-sea fish near the reef.' }],
+          });
+        }
+        return jsonRes({}, 404);
+      },
+      cache: new Map(),
+      locate: async () => null,
+    });
+    expect(live.spoken.trim().length).toBeGreaterThan(0);
+    expect(live.spoken).toContain('quirky deep-sea fish');
+    expect(live.spoken).not.toMatch(/[?？]/);
+    expect(live.spoken.toLowerCase()).not.toContain('which city');
+    expect(live.spoken.toLowerCase()).not.toContain('which topic');
+    expect(preferLiveReply("I don't have live news. Which city?", live.prompt, live.spoken, 'en')).toBe(live.spoken);
+    expect(preferLiveReply("I don't have live news. Which city?", live.prompt, live.spoken, 'en')).not.toMatch(/[?？]/);
+  });
+
+  it('falls back to recent news for plain tell-me-news without asking city', async () => {
+    let located = false;
+    const live = await gatherLiveContext('tell me news', {
+      lang: 'en',
+      fetch: async (input) => {
+        const url = String(input);
+        if (url.includes('news.google.com')) throw new Error('cors');
+        if (url.includes('rss2json.com')) return new Response('<html>blocked', { status: 403 });
+        if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
+          return jsonRes({
+            news: [{ story: 'Museum cat parade draws a cheerful crowd downtown.' }],
+          });
+        }
+        return jsonRes({}, 404);
+      },
+      cache: new Map(),
+      locate: async () => { located = true; return null; },
+    });
+    expect(planTools('tell me news').needsDevice).toBe(false);
+    expect(located).toBe(false);
+    expect(live.spoken.toLowerCase()).not.toContain('which city');
+    expect(live.spoken).not.toMatch(/[?？]/);
+    expect(live.spoken.toLowerCase()).toMatch(/museum|cat|parade|crowd|news/i);
+  });
+
+  it('does not treat Japanese “today” as a weather city', () => {
+    const plan = planTools('今日の天気は？');
+    expect(plan.weather).toBe(true);
+    expect(plan.placeQuery).toBeUndefined();
+    expect(plan.needsDevice).toBe(true);
+  });
+
+  it('asks for a city when a bad place name fails to geocode, instead of “couldn’t check”', async () => {
+    const live = await gatherLiveContext('weather in Nowhereville Zedland', {
+      lang: 'en',
+      fetch: async () => jsonRes({ results: [] }),
+      cache: new Map(),
+      locate: async () => null,
+    });
+    expect(live.spoken.toLowerCase()).toContain('which city');
+    expect(live.spoken.toLowerCase()).not.toContain("couldn't check the weather");
   });
 
   it('plans local news, topical news, and a web lookup separately', () => {
@@ -159,6 +247,9 @@ describe('planTools', () => {
 
     expect(planTools('how do I make friends?').recipeQuery).toBeUndefined();
     expect(planTools('I like pizza').places).toBe(false);
+
+    expect(planTools('咕嚕肉食譜').recipeQuery).toBe('咕嚕肉');
+    expect(planTools('咕嚕肉點煮').recipeQuery).toBe('咕嚕肉');
   });
 
   it('keeps the previous tools on a short follow-up', () => {
@@ -312,7 +403,10 @@ describe('gatherLiveContext', () => {
       locate: async () => HK,
     });
     expect(live.spoken).toContain('Funny night market');
-    expect(live.spoken).toContain('轻松');
+    // Plain 「新聞」 uses the recent/world path (finished statement, no local framing / city ask).
+    expect(live.spoken).toMatch(/最近有条新闻/);
+    expect(live.spoken).not.toMatch(/[?？]/);
+    expect(live.spoken).not.toContain('哪个城市');
   });
 
   it('answers a general lookup from Wikipedia and DuckDuckGo', async () => {
@@ -398,6 +492,8 @@ describe('gatherLiveContext', () => {
     expect(live.prompt).toContain('2. Stir in a pinch of salt');
     expect(live.spoken).toContain('Tomato Soup');
     expect(live.spoken).toContain('Simmer the tomatoes');
+    expect(live.spoken).toMatch(/Step 1:|第1步/);
+    expect(live.spoken).not.toMatch(/Ready for the next step|準備好下一步/);
   });
 
   it('looks up a hobby lesson on Wikipedia', async () => {
@@ -492,6 +588,7 @@ describe('tool switch and prompt wiring', () => {
     expect(worldBlock('')).toBe('');
     expect(worldBlock('Weather: 29°C, drizzling.')).toContain('29°C');
     expect(worldBlock('Weather: 29°C.')).toContain('Do not invent');
+    expect(worldBlock('Light news: “Cat parade”')).toMatch(/SIMPLY READ|finished spoken statements|Never ask which topic/i);
     expect(worldBlock('Recipe: soup.')).toContain('cook-along');
     const weatherGuide = worldBlock('Weather: 29°C.');
     expect(weatherGuide).toMatch(/take care/i);
@@ -661,5 +758,68 @@ describe('t780 light default news topics', () => {
     expect(us.some((u) => u.includes('science') || u.includes('1007'))).toBe(true);
     expect(us.some((u) => u.includes('health') || u.includes('1128') || u.includes('entertainment'))).toBe(true);
     expect(regionalLightNewsFeedUrls('UK').some((u) => u.includes('science_and_environment'))).toBe(true);
+  });
+});
+
+describe('news cache bust + headline rotation', () => {
+  const memKv = () => {
+    const m = new Map<string, string>();
+    return {
+      getItem: (k: string) => m.get(k) ?? null,
+      setItem: (k: string, v: string) => { m.set(k, v); },
+      removeItem: (k: string) => { m.delete(k); },
+    };
+  };
+
+  it('classifies headline feed URLs for cache invalidation', () => {
+    expect(isNewsFeedCacheKey('https://news.google.com/rss?hl=en')).toBe(true);
+    expect(isNewsFeedCacheKey('https://en.wikipedia.org/api/rest_v1/feed/featured/2026/11/11')).toBe(true);
+    expect(isNewsFeedCacheKey('https://api.open-meteo.com/v1/forecast')).toBe(false);
+    expect(isNewsFeedCacheKey('https://en.wikipedia.org/w/api.php?action=query')).toBe(false);
+  });
+
+  it('invalidateNewsFeedCache drops feeds but keeps weather entries', () => {
+    const cache = new Map<string, { at: number; body: string }>();
+    const now = Date.now();
+    cache.set('https://news.google.com/rss', { at: now, body: '<rss/>' });
+    cache.set('https://api.open-meteo.com/v1/forecast', { at: now, body: '{}' });
+    invalidateNewsFeedCache(cache);
+    expect(cache.has('https://news.google.com/rss')).toBe(false);
+    expect(cache.has('https://api.open-meteo.com/v1/forecast')).toBe(true);
+  });
+
+  it('selectNewsLead rotates and remembers the last spoken title', () => {
+    const items = [
+      { title: 'Alpha story' },
+      { title: 'Beta story' },
+      { title: 'Gamma story' },
+    ];
+    const kv = memKv();
+    expect(selectNewsLead(items, kv)?.title).toBe('Alpha story');
+    kv.setItem(NEWS_LAST_KEY, 'Alpha story');
+    expect(selectNewsLead(items, kv)?.title).toBe('Beta story');
+    expect(selectNewsLead(items, kv)?.title).toBe('Gamma story');
+    expect(selectNewsLead(items, kv)?.title).toBe('Alpha story');
+  });
+
+  it('refetches Google News on each user news tap instead of reusing cache', async () => {
+    let rssHits = 0;
+    const rss = '<rss><channel><item><title>Orbit gnome wins science fair - Sci</title></item><item><title>Moon bakery opens at night - Local</title></item></channel></rss>';
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('news.google.com')) {
+        rssHits += 1;
+        return new Response(rss, { status: 200 });
+      }
+      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
+        return jsonRes({ news: [] });
+      }
+      return jsonRes({}, 404);
+    };
+    const cache = new Map<string, { at: number; body: string }>();
+    const opts = { lang: 'en' as const, fetch: fetchImpl, cache, locate: async () => null };
+    await gatherLiveContext('what is the latest news?', opts);
+    await gatherLiveContext('what is the latest news?', opts);
+    expect(rssHits).toBeGreaterThanOrEqual(2);
   });
 });

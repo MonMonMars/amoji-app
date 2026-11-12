@@ -21,6 +21,7 @@ import {
 } from './vrm/cast-lighting';
 import { characterIdFromModelRef } from './vrm/cast-lighting-profile';
 import { dampenCastMatcap, floorCastShadeColors } from './vrm/cast-materials';
+import { disableVrmAutoLookAt, stabilizeEyeMaterials } from './vrm/eyes';
 
 interface ThumbEnv {
   renderer: THREE.WebGLRenderer;
@@ -147,6 +148,8 @@ export function requestModelThumb(url: string): Promise<string | null> {
       vrm = loaded.vrm;
       floorCastShadeColors(root);
       if (characterId) dampenCastMatcap(root, characterId);
+      stabilizeEyeMaterials(root);
+      if (vrm) disableVrmAutoLookAt(vrm);
       scene.add(root);
       // frame the face exactly like ModelPreview does — head height from the
       // bounding box so every cast member fills the chip the same way

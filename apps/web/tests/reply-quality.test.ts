@@ -78,6 +78,7 @@ describe('reply length budget', () => {
 
   it('lets a turn that asked for facts run long, but not plain chatter', () => {
     expect(mayRunLong('anything', 'Place: Hong Kong (browser location).\nWeather: 29°C')).toBe(true);
+    expect(mayRunLong('anything', 'Recipe: Sweet and sour pork. Steps: 1. Fry. 2. Toss.')).toBe(true);
     expect(mayRunLong('anything', 'Light news (Hong Kong): “Ferry back in service”')).toBe(true);
     expect(mayRunLong('anything', 'Places near you: “Tim Ho Wan”')).toBe(true);
     expect(mayRunLong('anything', '')).toBe(false);
@@ -208,6 +209,8 @@ describe('system prompt states the reply rules', () => {
     expect(BASE_SYSTEM).toMatch(/NO NONSENSE/);
     expect(BASE_SYSTEM).toMatch(/BE PRECISE/);
     expect(BASE_SYSTEM).toMatch(/do not fish for more chat/i);
+    expect(BASE_SYSTEM).toMatch(/ZERO questions back/i);
+    expect(BASE_SYSTEM).toMatch(/at most ONE short/i);
     expect(BASE_SYSTEM).not.toMatch(/END WITH A QUESTION/);
   });
 

@@ -3,7 +3,7 @@ import * as THREE from 'three';
 /**
  * Human-feasible local Euler (YXZ) limits for bones we blend or cast-correct.
  * Radians; applied after mixer / crossfade writes so library clips keep freedom upstream
- * except for every-frame no-flip bones (spine / chest / neck / head / arms) which are
+ * except for every-frame no-flip bones (hips / spine / chest / neck / head / arms) which are
  * always clamped so library clips cannot spin a limb a full turn.
  */
 export type EulerLimit = readonly [min: number, max: number];
@@ -21,7 +21,8 @@ export const BONE_BLEND_LIMITS: Readonly<Record<string, BoneEulerLimitsYXZ>> = {
   spine: { x: [-0.45, 0.4], y: [-0.55, 0.55], z: [-0.35, 0.35] },
   chest: { x: [-0.35, 0.3], y: [-0.45, 0.45], z: [-0.4, 0.4] },
   upperChest: { x: [-0.3, 0.28], y: [-0.4, 0.4], z: [-0.35, 0.35] },
-  hips: { x: [-0.35, 0.35], y: [-0.45, 0.45], z: [-0.28, 0.28] },
+  // Hips yaw must stay tight — idle A→B used to spin the whole body "to the back".
+  hips: { x: [-0.35, 0.35], y: [-0.45, 0.45], z: [-0.25, 0.25] },
   // Upper-arm Z tightened from ±2.9 (~166°) so every-frame clamps stop scary
   // near-360 swings while still allowing dance / raise gestures (~115°).
   leftUpperArm: { x: [-1.9, 1.9], y: [-0.75, 0.75], z: [-2.0, 1.4] },
@@ -36,12 +37,15 @@ export const BONE_BLEND_LIMITS: Readonly<Record<string, BoneEulerLimitsYXZ>> = {
 } as const;
 
 /**
- * Body / neck / arms — never allow a full turn. Clamped every frame after
- * mixer + poke/dance overlays, even when a library clip keys the bone.
+ * Hips / spine / back / neck / head / arms — never allow a full turn. Clamped every
+ * frame after mixer + poke/dance overlays, even when a library clip keys the bone.
  * Arms were blend-only before; scary 360° sleeve spins came from mixer keys
  * that never hit clampBoneByName outside idle crossfade.
  */
 export const AXIAL_NO_FLIP_BONES = [
+  // Hips yaw must clamp too — mixer keys used to spin the whole body "to the
+  // back" (±π) during idle A→B even when spine/neck were capped.
+  'hips',
   'spine',
   'chest',
   'upperChest',

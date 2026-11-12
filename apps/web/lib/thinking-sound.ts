@@ -15,9 +15,14 @@ export const THINKING_SOUND_MAX_BEATS = WARMUP_MAX_LINES;
 
 /**
  * Pixel: the loading "um…" voice never matched the reply TTS and sounded odd.
- * Keep the wait silent — visual "…" / thinking pose only; no spoken filler.
+ * Keep the wait silent — thinking bar + Thinking pose only; no spoken filler.
  */
 export function thinkingFillerAllowed(): boolean {
+  return false;
+}
+
+/** Recorded long-UM / think / search clips must not play during waits either. */
+export function loadingUmSfxAllowed(): boolean {
   return false;
 }
 

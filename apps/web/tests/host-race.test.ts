@@ -410,12 +410,12 @@ describe('clientChat keeps its old last resort when every slot fails', () => {
   beforeEach(() => { resetRacerCooldowns(); });
   afterEach(() => { vi.unstubAllGlobals(); resetRacerCooldowns(); });
 
-  it('answers from the local lane, in her language, ending with a question', async () => {
+  it('answers from the local lane, in her language, statement-first (no trailing ask)', async () => {
     // exactly the pre-change behaviour: no key stored, every free lane dead
     vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('offline'); }));
     const r = await clientChat([{ role: 'user', content: '今日好開心呀' }], { language: 'yue' });
     expect(r.reply.length).toBeGreaterThan(4);
-    expect(r.reply.trim().endsWith('？') || r.reply.trim().endsWith('?')).toBe(true);
+    expect(r.reply.trim().endsWith('？') || r.reply.trim().endsWith('?')).toBe(false);
     expect(r.emotionHints).toBeDefined();
   });
 

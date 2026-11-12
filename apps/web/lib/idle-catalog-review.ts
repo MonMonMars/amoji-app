@@ -103,7 +103,7 @@ const PIXEL_NOTES_1_93: Readonly<Partial<Record<number, string>>> = {
   33: 'Neutral breathe — curated; not default rotation.',
   34: 'Sassy think pose — curated think.',
   35: 'Chin hand — old bad default pin; library only.',
-  36: 'Hug slow — curated sing/slow.',
+  36: 'DELETE — IdleHug lean/blend-bad (spins torso through the back); retired.',
   37: 'Kaykit A — grey convert; retired.',
   38: 'Kaykit B — grey convert; retired.',
   39: 'Quaternius human — casual breathe; curated.',
@@ -165,7 +165,7 @@ const PIXEL_NOTES_1_93: Readonly<Partial<Record<number, string>>> = {
 
 function verdictForLibNum(libNum: number, entry: (typeof IDLE_LIBRARY)[number]): PixelIdleVerdict {
   if (RETIRED_IDLE_NUMS.has(libNum) || entry.retired) {
-    if ([14, 24, 25, 47, 48, 54].includes(libNum)) return 'delete';
+    if ([14, 24, 25, 36, 47, 48, 54].includes(libNum)) return 'delete';
     if ([55, 56, 57, 58, 59, 96, 97, 98, 99, 100, 105, 106, 107].includes(libNum)) return 'grey';
     return 'blend-bad';
   }

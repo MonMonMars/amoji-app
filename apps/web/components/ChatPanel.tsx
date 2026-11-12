@@ -145,7 +145,7 @@ import { pickLine } from '../lib/chatter';
 import { pickIdleLine } from '../lib/persona-chatter';
 import { pickIdleCompanionLine } from '../lib/idle-talk';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
-import { gateSpokenLine, safeIdleFallback } from '../lib/spoken-line-sanity';
+import { gateSpokenLine, safeIdleFallback, scrubTopicMenuAsks } from '../lib/spoken-line-sanity';
 import { pickCharacterInteraction } from '../lib/interaction-lines';
 import { personalityProfile, personalityPrompt } from '../lib/personality';
 import { voiceOpening, type VoiceId } from '../lib/personality-voice';
@@ -161,7 +161,6 @@ import {
 } from '../lib/daily-quota';
 import { planStatus } from '../lib/billing';
 import { clientLiveContext, isLiveFactsOnlyTurn, planTools } from '../lib/live-tools';
-import { withQuestion } from '../lib/follow-up';
 import {
   OPEN_CHEER_MS,
   OPEN_IDLE_BRIEF_MS,
@@ -173,8 +172,6 @@ import {
   openIdleBriefAlreadyDone,
   markOpenCheerDone,
   openCheerAlreadyDone,
-  openPhaseTopicAsk,
-  shouldPlayOpenCheer,
 } from '../lib/open-phase';
 import {
   undecidedTopicReply,
@@ -204,6 +201,16 @@ import {
   shouldSuppressSkillOffer,
   stripOfftopicAbilityTack,
 } from '../lib/skill-offer-guard';
+import {
+  contentStopAck,
+  extractContentTopic,
+  resolveContentContinuationOnSend,
+} from '../lib/content-continuation';
+import {
+  clearContentContinuationSession,
+  loadContentContinuationSession,
+  saveContentContinuationSession,
+} from '../lib/content-continuation-session';
 import { recentUserMood } from '../lib/talk-history';
 import { detectGame, startGame, playTurn, gameFarewellLine, type GameState } from '../lib/games';
 import { detectActionGame, setMiniGameChromeHidden, subscribeMiniGameOpen, type ActionGame } from '../lib/minigames';
@@ -215,8 +222,8 @@ import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodb
 import { detectExercise, startExercise, advanceExercise, exerciseFarewellLine, type ExerciseState } from '../lib/exercises';
 import {
   buildDailyGreeting, buildEnterNameGreeting, buildMemoryBlock, ensureUserNameFromProfile, feltMood,
-  forgetInjectedMemory, greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange,
-  rememberTurn, type TurnMemoryUsed,
+  greetingHints, memorySummaryCount, moodToHints, recordVisit, rememberExchange,
+  rememberTurn,
 } from '../lib/memory';
 import { listenContinuous, listenSupported } from '../lib/listen';
 import { getEntryGateRecord, micPreflightGrantedThisSession } from '../lib/entry-gate';
@@ -237,7 +244,7 @@ import type { ChatStatus } from '../lib/status';
 import EmotionOrb from './EmotionOrb';
 import DemoPhaseRail from './DemoPhaseRail';
 
-interface Msg { role: 'user' | 'assistant'; content: string; memoryUsed?: TurnMemoryUsed[] }
+interface Msg { role: 'user' | 'assistant'; content: string }
 
 export interface ChatPanelProps {
   characterName?: string;
@@ -401,6 +408,8 @@ export default function ChatPanel({
   const vadStopRef = useRef<{ stop(): void } | null>(null);
   const vadGraceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const micAutoArmedRef = useRef(false);
+  /** True once auto-open (or user) successfully entered voice mode this mount. */
+  const micOpenedThisMountRef = useRef(false);
   const laughCountRef = useRef(0);
   // r.47 — the last assistant bubble is a TRANSIENT placeholder while she
   // waits for her brain: warm-up lines and stream tokens paint it, and the
@@ -536,8 +545,9 @@ export default function ChatPanel({
     opts?: { idle?: boolean; n?: number },
   ) => {
     // Durable spoken-line gate: reject unfinished templates / fragments /
-    // banned idle interrogations before TTS + history.
-    const gated = gateSpokenLine(text, {
+    // banned idle interrogations / topic-menu interviews before TTS + history.
+    const scrubbed = scrubTopicMenuAsks(text) || text;
+    const gated = gateSpokenLine(scrubbed, {
       mode: opts?.idle ? 'idle' : 'local',
       lang,
       n: opts?.n ?? chatterCountRef.current,
@@ -789,7 +799,6 @@ export default function ChatPanel({
       buildOpenCheerLine(lang, {
         nameHello: namedHello,
         personaIntro,
-        topicAsk: openPhaseTopicAsk(lang),
       })
       || shortDaily
       || pickLine('startup', lang, 1, startupVars);
@@ -977,14 +986,6 @@ export default function ChatPanel({
     reengageStageRef.current = 0;
     // Any real send cancels the open-phase ability brief.
     userHasSpokenRef.current = true;
-    // Topical/demo content: mute skill offers and consume the "first idle
-    // reminder" slot so a fun-fact never ends with a dance invite.
-    if (isTopicalContentTurn(text)) {
-      lastTopicalContentAtRef.current = Date.now();
-      idleAutoAfterUserRef.current = true;
-    } else {
-      idleAutoAfterUserRef.current = false;
-    }
     nearBottomRef.current = true;
     setHistory((h) => [...h, { role: 'user', content: text }]);
     feedUtterance(text);
@@ -1018,6 +1019,31 @@ export default function ChatPanel({
     }
     setCrisisCard(false);
     setCrisisPopup(null);
+    let contentContinuation = loadContentContinuationSession();
+    const contTurn = resolveContentContinuationOnSend(text, contentContinuation);
+    if (contTurn.stopped) {
+      clearContentContinuationSession();
+      contentContinuation = null;
+      const line = stripOfftopicAbilityTack(contentStopAck(lang), text);
+      rememberTurn(text, line);
+      sayLocal(line, { neutral: 0.55 });
+      setHistory((h) => [...h, { role: 'assistant', content: line }]);
+      done();
+      return;
+    }
+    if (contTurn.session) {
+      contentContinuation = contTurn.session;
+      saveContentContinuationSession(contentContinuation);
+    } else if (contentContinuation) {
+      clearContentContinuationSession();
+      contentContinuation = null;
+    }
+    if (isTopicalContentTurn(text) || contTurn.continuing) {
+      lastTopicalContentAtRef.current = Date.now();
+      idleAutoAfterUserRef.current = true;
+    } else {
+      idleAutoAfterUserRef.current = false;
+    }
     // Can't-hear / no-sound — local fix only. LLM used to invent nonsense story
     // beats ("軍艦開到極光") instead of acknowledging the audio problem.
     if (isCantHearComplaint(text)) {
@@ -1162,13 +1188,17 @@ export default function ChatPanel({
       pendingOfferRef.current = null;
       perfCountRef.current += 1;
       applyContentMood({ joy: 0.85 });
-      if (kind === 'news' || kind === 'weather') {
-        const ask = kind === 'weather'
-          ? (lang === 'ja' ? '今日の天気は？' : lang === 'zh' ? '今天天气怎么样？' : lang === 'yue' ? '今日天氣點呀？' : "what's the weather here?")
-          : (lang === 'ja' ? '最新ニュースは？' : lang === 'zh' ? '今天有什么新闻？' : lang === 'yue' ? '今日有咩新聞？' : "what's the latest news?");
+      if (kind === 'weather') {
+        const ask = lang === 'ja' ? '今日の天気は？' : lang === 'zh' ? '今天天气怎么样？' : lang === 'yue' ? '今日天氣點呀？' : "what's the weather here?";
         void clientLiveContext(ask, lang).then((live) => {
-          sayLocal(live.spoken || SHOWCASE_START[lang][kind]);
+          sayLocal(live.spoken || SHOWCASE_START[lang].weather);
         });
+        done();
+        return;
+      }
+      if (kind === 'news') {
+        const ask = lang === 'ja' ? '最新ニュースは？' : lang === 'zh' ? '今天有什么新闻？' : lang === 'yue' ? '今日有咩新聞？' : "what's the latest news?";
+        void send(ask);
         done();
         return;
       }
@@ -1231,7 +1261,7 @@ export default function ChatPanel({
     setThinkingPose(true);
     pushAutoIdle('', undefined, true);
     // Pixel: no spoken "um…" loading filler — it never matched reply TTS.
-    // Wait is visual only (thinking pose + "…" bubble) until the reply lands.
+    // Wait is visual only (thinking pose, bubble "…", indeterminate bar).
     stopThinkingSound();
     // r.47 — ONE transient placeholder bubble carries the whole wait. It
     // starts as '…'. The first stream token takes the bubble over, and the
@@ -1243,7 +1273,6 @@ export default function ChatPanel({
     // r125 — pass the user's words so OLD on-topic memories surface too
     const memoryBuilt = buildMemoryBlock(lang, undefined, text);
     const memory = memoryBuilt?.block;
-    const turnMemoryUsed = memoryBuilt?.used ?? [];
     // one exit path for every outcome: the final reply (or the failure note)
     // takes the placeholder's place instead of stacking a second bubble
     const commitReply = (content: string) => {
@@ -1253,13 +1282,13 @@ export default function ChatPanel({
       const replace = transientRef.current;
       transientRef.current = false;
       setStreamDraft('');
-      const memStrip = turnMemoryUsed.length > 0 ? turnMemoryUsed : undefined;
+      // History shows talking only — no per-turn "memories used" strip.
       setHistory((h) => {
         const tail = h[h.length - 1];
         if (replace && tail?.role === 'assistant') {
-          return [...h.slice(0, -1), { role: 'assistant', content, memoryUsed: memStrip }];
+          return [...h.slice(0, -1), { role: 'assistant', content }];
         }
-        return [...h, { role: 'assistant', content, memoryUsed: memStrip }];
+        return [...h, { role: 'assistant', content }];
       });
     };
     // r70 — persona + adaptive block (scene + warmth calibration)
@@ -1275,10 +1304,18 @@ export default function ChatPanel({
       const live = await clientLiveContext(text, lang, priorUser);
       world = live.prompt;
       worldSpoken = live.spoken;
+      if (contentContinuation && (contTurn.started || contTurn.continuing)) {
+        const refined = extractContentTopic(text, world);
+        if (refined && refined !== 'this topic') {
+          contentContinuation = { ...contentContinuation, topic: refined };
+          saveContentContinuationSession(contentContinuation);
+        }
+      }
       const livePlan = planTools(text, priorUser);
       if (isLiveFactsOnlyTurn(livePlan, worldSpoken)) {
         stopThinkingSound();
-        const line = stripOfftopicAbilityTack(withQuestion(worldSpoken, lang), text);
+        // Weather/news fact reads stay finished statements — no withQuestion fishing.
+        const line = stripOfftopicAbilityTack(worldSpoken, text);
         rememberTurn(text, line);
         onMemCountRef.current?.(memorySummaryCount());
         feedUtterance(line);
@@ -1311,6 +1348,7 @@ export default function ChatPanel({
           world,
           worldSpoken,
           storySession: !!loadStorySession(),
+          contentContinuation,
           characterId,
           onPartial: (partial) => {
             // r.47 — the real stream is painting now: the wait cue stands down
@@ -1463,6 +1501,7 @@ export default function ChatPanel({
     enterVoiceChatAudioSession();
     duckExternalAudioForCompanion();
     micModeRef.current = true;
+    micOpenedThisMountRef.current = true;
     listeningRef.current = true;
     setListening(true);
     setMicDismissed(false);
@@ -1558,7 +1597,8 @@ export default function ChatPanel({
     else beginVoiceMode();
   };
 
-  // Grok-style: mic opens as soon as you enter chat; OS / Audio Session ducks other apps.
+  // Grok-style: mic opens as soon as you enter chat (default ON). Do not wait
+  // for the open cheer — cutCompanion:false keeps her greeting while listening.
   useEffect(() => {
     enterVoiceChatAudioSession();
     pauseForeignPageMedia();
@@ -1570,15 +1610,22 @@ export default function ChatPanel({
       if (rec?.mic === 'denied' || rec?.mic === 'unsupported') return;
     }
     micAutoArmedRef.current = true;
-    const micDelay = preflight
-      ? 0
-      : shouldPlayOpenCheer(characterId)
-        ? OPEN_CHEER_MS + 300
-        : 400;
+    // Preflight → immediate. Otherwise a short tick so the panel paints first.
+    // Never stall behind OPEN_CHEER_MS — that felt like “mic not open at start”.
+    const micDelay = preflight ? 0 : 120;
     const t0 = window.setTimeout(() => {
       if (!micModeRef.current) beginVoiceMode({ cutCompanion: false });
     }, micDelay);
-    return () => clearTimeout(t0);
+    // One retry if listen never stuck (permission race after gate Allow).
+    const t1 = window.setTimeout(() => {
+      if (!micOpenedThisMountRef.current && !micModeRef.current) {
+        beginVoiceMode({ cutCompanion: false });
+      }
+    }, micDelay + 700);
+    return () => {
+      clearTimeout(t0);
+      clearTimeout(t1);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang, characterId]);
 
@@ -1648,19 +1695,6 @@ export default function ChatPanel({
               lang={lang}
               accent={accent}
               label={m.role === 'assistant' && i === history.length - 1 ? characterName : undefined}
-              memoryUsed={m.memoryUsed}
-              onForgetMemory={(id) => {
-                forgetInjectedMemory(id);
-                onMemCountRef.current?.(memorySummaryCount());
-                setHistory((prev) => prev.map((row, idx) => (
-                  idx === i && row.memoryUsed
-                    ? {
-                      ...row,
-                      memoryUsed: row.memoryUsed.filter((u) => u.id !== id),
-                    }
-                    : row
-                )));
-              }}
               onReport={(reply) => setReportFor(reply)}
             />
           );

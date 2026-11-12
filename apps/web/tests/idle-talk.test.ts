@@ -199,6 +199,7 @@ describe('idle-talk', () => {
       for (const voice of VOICE_IDS) {
         const open = voiceOpening(voice, 'maps', 0, lang, 'Amoji');
         expect(asksUserInnerThoughts(open), `open/${voice}/${lang}: ${open}`).toBe(false);
+        expect(open, `open/${voice}/${lang}: ${open}`).not.toMatch(/[?？]/);
         for (const re of FORBIDDEN_THOUGHT_ASK) {
           expect(open, `open/${voice}/${lang}: ${open}`).not.toMatch(re);
         }

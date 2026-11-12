@@ -12,11 +12,23 @@ describe('adaptive scene lines', () => {
       }
     }
   });
-  it('ends every line with a question or invitation (continuity)', () => {
+  it('keeps cloudsea grounded — no sit-on-a-cloud nonsense', () => {
+    for (const lang of ['en', 'yue', 'zh', 'ja'] as const) {
+      const lines = SCENE_LINES.cloudsea[lang];
+      expect(lines.join('\n')).not.toMatch(/揀朵雲|挑一朵云|雲に乗|pick a cloud|bounce/i);
+      for (const line of lines) {
+        expect(line.trim().length).toBeGreaterThan(8);
+      }
+    }
+  });
+
+  it('every scene line is a finished spoken sentence', () => {
     for (const banks of Object.values(SCENE_LINES)) {
       for (const lines of Object.values(banks)) {
         for (const line of lines) {
-          expect(/[?？~〜…]$/.test(line.trim()), line).toBe(true);
+          expect(line.trim().length, line).toBeGreaterThan(6);
+          // Allow statements or soft invites; ban empty scraps.
+          expect(line).not.toMatch(/\{[a-zA-Z_]+\}/);
         }
       }
     }

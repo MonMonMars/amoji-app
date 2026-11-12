@@ -4,7 +4,7 @@ Canonical short note for Pixel’s enter-chat talking order. Implementation land
 
 ## Enter chat
 
-1. Short delay (`OPEN_CHEER_MS`), then one TTS line: optional name hello + persona self-intro (`voiceOpening`) + “what should we talk about?” (`openPhaseTopicAsk`).
+1. Short delay (`OPEN_CHEER_MS`), then one TTS line: optional name hello + statement-only persona self-intro (`voiceOpening`) — no stacked topic ask.
 2. If the user stays silent past `OPEN_IDLE_BRIEF_MS`, she lists **2–3 localized topic suggestions** — not auto weather or news.
 3. Idle motion on open is chit-chat / look-around style; **HelloWave is farewell-only** (PR #298).
 

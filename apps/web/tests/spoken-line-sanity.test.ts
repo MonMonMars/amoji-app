@@ -6,10 +6,19 @@ import {
   asksPresenceNag,
   asksToResumeHistory,
   asksUserInnerThoughts,
+  capCompanionReplyQuestions,
+  capSpokenQuestions,
+  countSpokenQuestions,
   gateSpokenLine,
+  isTopicMenuAsk,
+  openGreetTooManyQuestions,
   safeIdleFallback,
+  scrubTopicMenuAsks,
   spokenLineLooksBroken,
+  stripQuestionSentences,
+  userMessageLooksLikeQuestion,
 } from '../lib/spoken-line-sanity';
+import { buildOpenCheerLine } from '../lib/open-phase';
 import { LAST_THREAD_RESUME_BANNED } from '../lib/memory';
 import {
   MOTIFS,
@@ -121,6 +130,73 @@ describe('gateSpokenLine', () => {
   });
 });
 
+describe('companion reply question cap', () => {
+  it('detects user questions across languages', () => {
+    expect(userMessageLooksLikeQuestion('What is the weather?')).toBe(true);
+    expect(userMessageLooksLikeQuestion('今日天氣點呀？')).toBe(true);
+    expect(userMessageLooksLikeQuestion('今天天气怎么样？')).toBe(true);
+    expect(userMessageLooksLikeQuestion('今日の天気は？')).toBe(true);
+    expect(userMessageLooksLikeQuestion('今日好攰呀。')).toBe(false);
+  });
+
+  it('strips all asks when the user asked something', () => {
+    const out = capCompanionReplyQuestions(
+      'Today is sunny and mild. Want to go for a walk? How about you?',
+      'What is the weather?',
+    );
+    expect(countSpokenQuestions(out)).toBe(0);
+    expect(out).toContain('sunny');
+  });
+
+  it('allows at most one check-in when the user did not ask', () => {
+    const out = capCompanionReplyQuestions(
+      'That sounds exhausting. Rest if you can. Want to vent more? How are you holding up?',
+      'I am so tired after work.',
+    );
+    expect(countSpokenQuestions(out)).toBe(1);
+    expect(out).toContain('exhausting');
+  });
+
+  it('capSpokenQuestions keeps answer sentences first', () => {
+    expect(capSpokenQuestions('A. B? C?', 1)).toBe('A. C?');
+  });
+});
+
+describe('open greet question cap', () => {
+  it('stripQuestionSentences removes trailing asks', () => {
+    expect(stripQuestionSentences('Hello. Want to chat?')).toBe('Hello.');
+    expect(stripQuestionSentences('你好，我鍾意茶。想傾咩呀？')).toBe('你好，我鍾意茶。');
+  });
+
+  it('never keeps stacked topic-menu asks like 我哋傾咩好呀 / 今日想傾咩呀', () => {
+    expect(isTopicMenuAsk('我哋傾咩好呀？')).toBe(true);
+    expect(isTopicMenuAsk('今日想傾咩呀？')).toBe(true);
+    expect(isTopicMenuAsk('你想傾嗎？')).toBe(true);
+    expect(isTopicMenuAsk('Do you want to talk?')).toBe(true);
+    expect(scrubTopicMenuAsks('我哋傾咩好呀？ 今日想傾咩呀？')).toBe('');
+    expect(capSpokenQuestions('你好。我哋傾咩好呀？ 今日想傾咩呀？', 1)).toBe('你好。');
+    expect(capSpokenQuestions('我哋傾咩好呀？ 今日想傾咩呀？', 1)).toBe('');
+  });
+
+  it('buildOpenCheerLine has zero questions', () => {
+    const line = buildOpenCheerLine('en', {
+      nameHello: 'Hi, Sam',
+      personaIntro: "I'm here — what should we talk about?",
+    });
+    expect(countSpokenQuestions(line)).toBe(0);
+    expect(openGreetTooManyQuestions(line)).toBe(false);
+  });
+
+  it('voiceOpening banks are question-free in every language', () => {
+    for (const voice of VOICE_IDS) {
+      for (const lang of LANGS) {
+        const open = voiceOpening(voice, 'maps', 0, lang, 'Test');
+        expect(countSpokenQuestions(open), `${voice}/${lang}`).toBe(0);
+      }
+    }
+  });
+});
+
 describe('source banks never emit known nonsense', () => {
   it('voiceIdleLines pass the gate across voices/motifs/langs', () => {
     for (const voice of VOICE_IDS) {
@@ -136,10 +212,11 @@ describe('source banks never emit known nonsense', () => {
     }
   });
 
-  it('steady openings no longer ask what you are thinking', () => {
+  it('steady openings are statement-only presence lines', () => {
     const open = voiceOpening('steady', 'maps', 0, 'en', 'Ada');
     expect(open.toLowerCase()).not.toMatch(/on your mind|what are you thinking|quiet thought/);
-    expect(open.toLowerCase()).toContain('talk about');
+    expect(open).not.toMatch(/\?/);
+    expect(open.toLowerCase()).toMatch(/calm|company|one line/);
   });
 
   it('persona idle banks no longer ask thinking interrogations', () => {

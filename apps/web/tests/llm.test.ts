@@ -130,6 +130,8 @@ describe('companion coherence', () => {
     expect(prompt).toMatch(/care|respect|caring/i);
     expect(prompt).not.toMatch(/Catchphrase:/);
     expect(prompt).not.toMatch(/sunshine!/);
+    expect(prompt).toMatch(/Answer directly first/);
+    expect(prompt).not.toMatch(/End with one short question/i);
   });
 });
 

@@ -20,13 +20,15 @@ describe('topic mixture — one turn, one topic', () => {
     expect(BASE_SYSTEM).toMatch(/One topic per reply/i);
     expect(BASE_SYSTEM).toMatch(/Never bolt a second topic or ability invite/i);
     expect(BASE_SYSTEM).toMatch(/dance\s*\/\s*sing\s*\/\s*music/i);
-    expect(BASE_SYSTEM).toMatch(/soft check-in/i);
+    expect(BASE_SYSTEM).toMatch(/on-topic check-in/i);
     expect(BASE_SYSTEM).toMatch(/MULTI-BEAT EXCEPTION/i);
     expect(BASE_SYSTEM).toMatch(/keyed BYOK/i);
     expect(BASE_SYSTEM).toMatch(/story mode/i);
     expect(personalityPrompt('a01-shino', 'female')).toMatch(/one spoken turn, one topic/i);
     expect(personalityPrompt('a01-shino', 'female')).toMatch(/Never bolt dance/i);
     expect(personalityPrompt('a01-shino', 'female')).toMatch(/keyed BYOK/i);
+    expect(personalityPrompt('a01-shino', 'female')).toMatch(/zero questions back/i);
+    expect(personalityPrompt('a01-shino', 'male')).toMatch(/zero questions back/i);
   });
 
   it('exception gating: free short stays one-topic; story / keyed detailed may multi-beat', () => {

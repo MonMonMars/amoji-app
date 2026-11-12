@@ -1,5 +1,5 @@
 'use client';
-import { getPlaybackVolume } from './playback-volume';
+import { forcePlaybackVolume, getPlaybackVolume } from './playback-volume';
 // Emotional voice — ChatGPT-style prosody. Wire-now free chain (tts-chain.ts):
 // gtts → synth → edge — Google Translate MP3 first (plain HTTPS; survives blocked
 // sockets and the iOS silent switch), then speechSynthesis with matched platform
@@ -95,11 +95,11 @@ import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableTex
 import { analyzeText } from '@amoji/emotion-core';
 import { applyContentMood } from './companion';
 import { browserVoicesForLang, isMaleNeuralVoice, selectBrowserVoice, synthNameList } from './voice-catalog';
-import { loadingFillerKind, recordedFillerClip, recordedLaughClip, recordedPokeClip } from './voice-clips';
+import { loadingFillerKind, recordedLaughClip, recordedPokeClip } from './voice-clips';
 import { LineQueue, speechRemainder } from './speech-queue';
 import { emotionClipPath } from './emotion-clip-picks';
 import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText, nextCardGreetPhrase, nextGreetingKind, type BurstClipKind, type ClipFolder, type VoiceClipGender } from './voice-clips';
-import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
+import { playGestureClipSync, playVoiceClip, stopVoiceClip } from './play-voice-clip';
 export { speechRemainder };
 import { edgeCastVoice } from './edge-cast';
 import { pauseEdgeForTabHide, speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead } from './edge-tts';
@@ -1113,7 +1113,8 @@ function pickVoice(characterId: string, lang: Lang, genderOverride?: 'female' | 
   const pool = byLang.length ? byLang : cached;
   // Same pitch/pace as the Edge slot, so the browser fallback stays personal.
   const pitch = (gender === 'male' ? 0.94 : 1.06) + (color?.pitch ?? 0);
-  const rate = (gender === 'male' ? 0.98 : 1.02) + (color?.rate ?? 0);
+  const rateBase = gender === 'male' && lang === 'yue' ? 1.04 : gender === 'male' ? 0.98 : 1.02;
+  const rate = rateBase + (color?.rate ?? 0);
   // A pinned OS voice beats the matrix. The user chose that exact speaker in
   // Settings, so it must be what chat plays — otherwise the picker promises a
   // difference the chat does not have. A pin whose voice is gone (device swap,
@@ -1351,15 +1352,15 @@ export function speakThinkingFiller(
 }
 
 /**
- * Queue one filler beat. It is a sentence in her voice, not a reaction SFX, so
- * it runs through the normal speak chain and inherits the reply's gender,
- * locale and pitch.
+ * Queue one filler beat — disabled with spoken loading um (Pixel).
+ * Kept so a stray call cannot reintroduce filler TTS.
  */
-function enqueueThinkingFiller(text: string, characterId: string, lang: Lang): void {
-  const line = text.trim();
-  if (!line) return;
-  lineQueue.enqueue({ kind: 'speak', text: line, characterId, lang, intensity: 1, filler: true });
-  drainSpeech();
+function enqueueThinkingFiller(
+  _text: string,
+  _characterId: string,
+  _lang: Lang,
+): void {
+  stopThinkingSound();
 }
 
 /**
@@ -1751,18 +1752,11 @@ function performSpeak(
   runFreeChain();
   };
 
-  // Recorded um / ha / think / search. A 404 on Pages must not end the line:
-  // Edge (then the browser voice) still speaks.
-  // Filler jobs are the exception: a recorded CLIP_LIBRARY um is a different
-  // person from the reply's TTS, which is the mismatch Mon reported, so every
-  // filler beat takes the live chain below instead.
-  const fillerKind = loadingFillerKind(text);
-  if (fillerKind && !filler) {
-    const file = recordedFillerClip(characterVoiceGender(characterId), fillerKind, lang);
-    void playVoiceClip(file, text, () => markVoiceStarted()).then(() => settle()).catch((err: unknown) => {
-      if (!speechAlive() || (err as Error | undefined)?.message === 'canceled') { settle(); return; }
-      beginTts();
-    });
+  // Loading um / ha / think / search stubs: never play recorded long-UM or TTS.
+  // Pixel: the filler voice never matched reply TTS. Wait feedback is visual
+  // only (thinking bar + Thinking pose). Real replies fall through below.
+  if (loadingFillerKind(text)) {
+    settle();
     return;
   }
 
@@ -1862,6 +1856,14 @@ export function playVoiceGreeting(
   const gender = characterVoiceGender(characterId);
   const tl = tlForChoice(lang, choiceId);
   const delivery = deliveryGenderForChoice(lang, choiceId, gender);
+  // Same-origin greeting clip INSIDE the tap — audible even when Google TTS
+  // is offline/blocked or play() would otherwise run after the gesture dies.
+  const insuranceKind = nextGreetingKind();
+  playGestureClipSync(
+    clipFile(lang, gender, insuranceKind),
+    greetingText(lang, insuranceKind),
+    () => { markVoiceStarted(); },
+  );
   let session = 0;
   /** Set by whichever tier actually starts, so the loser can bail out. */
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
@@ -1910,6 +1912,8 @@ export function playVoiceGreeting(
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
       try { haltBrowserSynth(); } catch { /* ignore */ }
+      // Stop the local insurance clip so only the chosen voice speaks.
+      try { stopVoiceClip(); } catch { /* ignore */ }
       if (!spokenBy) onStart('gtts');
     },
   }).then(() => {
@@ -1919,6 +1923,7 @@ export function playVoiceGreeting(
     markGttsDone();
     if ((e as Error | undefined)?.message === 'canceled') return;
     reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'greeting gtts failed');
+    // Insurance clip may already be audible — only synth if nothing started.
     runSynthAudition('greeting fallback');
   });
   /**
@@ -1955,6 +1960,7 @@ export function playVoiceGreeting(
     onPlaying: () => {
       if (spokenBy === 'gtts') return; // MP3 tier already got there first
       try { haltSynthQueue(); } catch { /* ignore */ }
+      try { stopVoiceClip(); } catch { /* ignore */ }
       if (!spokenBy) onStart('edge');
     },
   }).then(() => {
@@ -2144,6 +2150,13 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const previewGender = deliveryGenderForChoice(locale, choiceId, 'female');
   // Same rotating short greet as select-board voice cards.
   const text = nextCardGreetPhrase(locale);
+  // Local insurance clip inside the tap (same-origin) — always audible offline.
+  const insuranceKind = nextGreetingKind();
+  playGestureClipSync(
+    clipFile(locale, previewGender, insuranceKind),
+    greetingText(locale, insuranceKind),
+    () => { markVoiceStarted(); },
+  );
   /** Set by whichever tier actually starts, so the loser can bail out. */
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
   const runSynthAudition = (tag: string) => {
@@ -2170,6 +2183,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
       try { haltBrowserSynth(); } catch { /* ignore */ }
+      try { stopVoiceClip(); } catch { /* ignore */ }
       if (!spokenBy) {
         spokenBy = 'gtts';
         markVoiceStarted();
@@ -2194,6 +2208,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
     onPlaying: () => {
       if (spokenBy === 'gtts') return; // MP3 tier already got there first
       try { haltSynthQueue(); } catch { /* ignore */ }
+      try { stopVoiceClip(); } catch { /* ignore */ }
       if (!spokenBy) {
         spokenBy = 'edge';
         markVoiceStarted();
@@ -2268,20 +2283,23 @@ export function previewOsVoice(
   });
 }
 
+/**
+ * Loud, clear, multi-sentence sample for gate “Test my sound” / 開聲傾偈.
+ * Short one-liners were easy to miss (quiet + too brief).
+ */
+export const GATE_TEST_LINES: Record<Lang, string> = {
+  yue: '喂，聽唔聽到我呀？而家係「開聲傾偈」喇叭同語音測試，我會講多幾句，方便你聽清楚音量同音色。如果聽到呢段說話，就表示喇叭正常，咪高峰同位置可以之後再確認。之後我哋就可以入去傾偈啦，慢慢嚟，唔使急，聽到就撳得聽到我。',
+  zh: '喂，你能听到我吗？现在是扬声器和语音测试，我会多说几句，方便你听清楚音量和音色。如果你听得到这段话，就表示喇叭正常，麦克风和位置可以稍后再确认。之后我们就可以进去聊天了，慢慢来，不用着急，听到了就点“我听得到”。',
+  ja: 'ねえ、聞こえる？いまはスピーカーと声のテストだよ。音量と声の感じが分かるように、もう少し長めに話すね。この声が聞こえたらスピーカーは大丈夫。マイクや位置情報はあとで確認していいよ。このあとチャットに入れるよ。焦らなくていいからね。聞こえたら「聞こえた」を押してね。',
+  en: "Hey, can you hear me? This is a speaker and voice-chat test — I'll keep talking for a few more sentences so you can clearly check the volume and tone. If you hear this whole line, your speakers are working; mic and location can wait until after. Then we can head into chat — no rush, take your time. Tap “I can hear” when this is clear.",
+};
+
 /** one short happy line per language for the settings self-test (r2026-10-04.75) */
 const TEST_LINES: Record<Lang, string> = {
   yue: '喂，聽唔聽到我呀？我而家好開心見到你！',
   zh: '喂，你能听到我吗？我现在好开心见到你！',
   ja: 'ねえ、聞こえる？会えて嬉しいな！',
   en: "Hey, can you hear me? I'm so happy to see you!",
-};
-
-/** Longer special sample for 開聲傾偈 / pre-chat hear-check — not the short settings beep. */
-export const GATE_TEST_LINES: Record<Lang, string> = {
-  yue: '喂！聽唔聽到我呀？我係你嘅 Amoji 夥伴，而家同你開聲傾偈。如果你聽到呢段說話，就撳下面「聽到」——我哋就可以一齊傾、一齊玩啦！',
-  zh: '喂！你能听到我吗？我是你的 Amoji 伙伴，现在和你开启语音聊天。如果你听到了这段话，就点下面的「听到了」——我们就可以一起聊、一起玩了！',
-  ja: 'ねえ、聞こえる？私はあなたの Amoji の相棒。これからボイスチャットを始めるよ。この声が聞こえたら、下の「聞こえた」を押してね。一緒に話して遊ぼう！',
-  en: "Hey — can you hear me clearly? I'm your Amoji companion, and this is your voice-chat check. If you heard this whole greeting, tap Yes below — then we can talk and play together!",
 };
 
 /**
@@ -2339,6 +2357,8 @@ function probeSynth(text: string, characterId: string, lang: Lang): Promise<bool
     bindSynthVoice(u, voice, speechLocale(lang));
     u.pitch = shaped.pitch;
     u.rate = shaped.rate;
+    // Self-test must be audible — never inherit a quiet prefs step.
+    u.volume = Math.max(0.95, getPlaybackVolume());
     let started = false;
     let done = false;
     const finish = (ok: boolean) => {
@@ -2350,7 +2370,8 @@ function probeSynth(text: string, characterId: string, lang: Lang): Promise<bool
       resolve(ok);
     };
     const nudge = setInterval(() => { try { speechSynthesis.resume(); } catch { /* ignore */ } }, 400);
-    const giveUp = setTimeout(() => finish(started), 6_000);
+    // Long gate sample needs more than the old 6s give-up.
+    const giveUp = setTimeout(() => finish(started), 28_000);
     u.onstart = () => { started = true; };
     u.onend = () => finish(true);
     u.onerror = () => finish(false);
@@ -2373,18 +2394,23 @@ export async function testVoiceChain(
     return [{ tier: 'edge', ok: false, detail: 'muted' }];
   }
   unlockAudio();
+  // Mic / play-and-record ducks speakers on many phones — force playback route.
+  duckExternalAudioForCompanion();
+  // Gate hear-check must be unmistakable: full element volume for this probe only.
+  forcePlaybackVolume(1);
   const wasOn = voiceEnabled();
   if (!wasOn) {
     try { localStorage.setItem(MUTE_KEY, 'on'); } catch { /* ignore */ }
   }
   const results: VoiceTierResult[] = [];
-  const line = (lineOverride?.trim() || TEST_LINES[lang] || TEST_LINES.en);
+  // Gate/default: long GATE_TEST_LINES; callers may override; settings uses TEST_LINES via testVoice.
+  const line = (lineOverride?.trim() || GATE_TEST_LINES[lang] || GATE_TEST_LINES.en);
   const push = (tier: VoiceTier, ok: boolean, detail: string) => {
     results.push({ tier, ok, detail });
     reportVoiceStatus(tier, ok, detail);
   };
   try {
-    // r112: tier 0 — OpenAI ChatGPT-style voice (10s cap), tried first when
+    // r112: tier 0 — OpenAI ChatGPT-style voice, tried first when
     // a key is configured. A CORS/network failure reports ✗ and the probe
     // simply continues down the free chain.
     if (openAiVoiceReady()) {
@@ -2393,7 +2419,7 @@ export async function testVoiceChain(
           lang,
           gender: characterVoiceGender(characterId),
           character: characterId,
-        }), 10_000, 'openai-tts timeout');
+        }), 28_000, 'openai-tts timeout');
         push('openai', true, 'chatgpt voice played');
       } catch (err) {
         if ((err as Error | undefined)?.message !== 'canceled') {
@@ -2414,7 +2440,9 @@ export async function testVoiceChain(
             lang,
             gender: characterVoiceGender(characterId),
             character: characterId,
-          }), 7_000, 'edge-tts timeout');
+            // Boost SSML volume for the hear-check (neutral chat uses smaller deltas).
+            volumeDelta: 0.45,
+          }), 28_000, 'edge-tts timeout');
           push('edge', true, 'neural voice played');
         } catch (err) {
           if ((err as Error | undefined)?.message !== 'canceled') {
@@ -2433,7 +2461,7 @@ export async function testVoiceChain(
               pitchBias: gttsPitchForLang(lang, characterId, characterVoiceGender(characterId)),
               onPlaying: () => push('gtts', true, 'google-tts playing'),
             }),
-            15_000,
+            32_000,
             'google-tts timeout',
           );
           push('gtts', true, 'google-tts played');
@@ -2447,7 +2475,7 @@ export async function testVoiceChain(
       }
       if (hop === 'canto-nano') {
         try {
-          await withTimeout(speakCantoNano(stripVoicedGlyphs(line)), 10_000, 'canto-tts-nano timeout');
+          await withTimeout(speakCantoNano(stripVoicedGlyphs(line)), 28_000, 'canto-tts-nano timeout');
           push('canto-nano', true, 'canto-tts-nano played');
         } catch (err) {
           if ((err as Error | undefined)?.message !== 'canceled') {
@@ -2460,6 +2488,7 @@ export async function testVoiceChain(
       push('synth', ok, ok ? 'utterance started' : 'never started');
     }
   } finally {
+    forcePlaybackVolume(null);
     if (!wasOn) {
       try { localStorage.setItem(MUTE_KEY, 'off'); } catch { /* ignore */ }
     }

@@ -52,6 +52,17 @@ const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi 
  */
 export const PITCH_BIAS_MALE = 0.88;
 export const PITCH_BIAS_FEMALE = 1.04;
+/** Floor for male Cantonese gTTS: pitchBias slows tempo; keep near female pace. */
+export const GTTS_YUE_MALE_PACE_FLOOR = 1.04;
+
+/** Effective <audio> playbackRate after emotion rate and gender pitch bias. */
+export function gttsPlaybackRate(rate: number, pitchBias: number, tl: string): number {
+  let r = rate * pitchBias;
+  if (tl === 'yue' && pitchBias < 1) {
+    r = Math.max(r, rate * GTTS_YUE_MALE_PACE_FLOOR);
+  }
+  return Math.min(1.25, Math.max(0.8, r));
+}
 
 /**
  * Split a line into one request per clause (the service caps near 200 chars;
@@ -292,7 +303,7 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
         try {
           const el = audio as HTMLAudioElement & { preservesPitch?: boolean };
           el.preservesPitch = false;
-          el.playbackRate = Math.min(1.25, Math.max(0.8, rate * pitchBias));
+          el.playbackRate = gttsPlaybackRate(rate, pitchBias, lang);
         } catch { /* ignore */ }
       }
       // r99: a stalled Safari media request used to wedge this chain forever
@@ -341,14 +352,19 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
         // Later chunks keep the mouth open; only the last one may close it.
         followAudioElement(audio, last);
       };
-      void pinDefaultOutputAsync(audio)
-        .then(() => audio.play())
-        .catch((e: unknown) => {
-          settle(() => {
-            if (currentAudio === audio) currentAudio = null;
-            failLine(e instanceof Error ? e : new Error(String(e)));
+      // Play in this turn — awaiting setSinkId first drops the user gesture on
+      // Chrome/Windows and leaves select-card greets silent when network is slow.
+      void audio.play().catch((e: unknown) => {
+        void pinDefaultOutputAsync(audio)
+          .then(() => audio.play())
+          .catch((err: unknown) => {
+            settle(() => {
+              if (currentAudio === audio) currentAudio = null;
+              failLine(err instanceof Error ? err : e instanceof Error ? e : new Error(String(err)));
+            });
           });
-        });
+      });
+      void pinDefaultOutputAsync(audio).catch(() => { /* sink pin is best-effort */ });
     };
     playNext();
   });
