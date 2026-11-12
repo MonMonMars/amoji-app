@@ -1791,10 +1791,15 @@ export default function ChatPanel({
         <DemoPhaseRail
           lang={lang}
           disabled={busy}
-          onPick={(prompt) => {
+          onPick={(prompt, id) => {
             // Demo chips are one-topic tutorials — never carry a pending
             // showcase/tutorial offer into the same beat as the chip reply.
             pendingOfferRef.current = null;
+            // Advance library rotation so repeat music/dance/sing taps
+            // keep changing beds even when a facet wraps around.
+            if (id === 'music' || id === 'dance' || id === 'sing') {
+              laughCountRef.current += 1;
+            }
             if (isTopicalContentTurn(prompt)) {
               lastTopicalContentAtRef.current = Date.now();
               idleAutoAfterUserRef.current = true;

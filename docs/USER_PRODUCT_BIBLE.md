@@ -85,7 +85,11 @@
 |------|--------|
 | Eyeball live Pages after this pack deploys | mic / card greet / poke zones / idle next / ambient |
 | Location is Start-only today (not gate+Start) | One popup — confirm no double ask on device |
-| Broader optional product PRs (#362–#364 dance/music/voice) | Separate scope — not blocking this pack |
+| Dance starts too soon — gate on audible music | Open `#362` (needs re-port onto current main) |
+| Demo-phase chip pack (rotate + AI news / personal / secret / …) | **PR #373** — CI green; awaiting merge |
+| gTTS bright/mid/deep character pitch tiers | **PR #374** — CI green; awaiting merge |
+| Dual card-greet voices | Insurance clip may overlap gTTS |
+| Broader optional product PRs (#361–#364 um/music/voice) | Separate scope |
 
 ---
 
@@ -93,6 +97,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-12 23:29 | Demo-phase adds AI news / personal / secret / joke / poem / tip (+ rotate facets) · #373 |
 | 2026-11-12 evening | Outstanding pack: statement SCENE_LINES + Start mic preflight + merge #371 |
 | 2026-11-12 evening | Freeze hang/soften/shoulder mid idle A→B; skip same-clip t≈0 refresh snap |
 | 2026-11-12 evening | Harden card-greet insurance clip (no pre-play sink pin; hold until gTTS sticks) |
