@@ -2,8 +2,9 @@
 export const IDLE_PIN_CROSSFADE_S = 0.85;
 
 /**
- * How long to defer foot-plant IK after an idle A→B mixer crossfade starts.
- * Must cover the mixer fade so plantFeet / thigh-unblend do not fight it.
+ * How long to defer foot-plant IK and procedural arm writers after an idle
+ * A→B mixer crossfade starts. Must cover the mixer fade so plantFeet /
+ * thigh-unblend / hang / soften / shoulder ROM do not fight it.
  */
 export const IDLE_SWAP_LEG_BLEND_S = 0.85;
 
