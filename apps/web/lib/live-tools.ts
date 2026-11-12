@@ -278,8 +278,15 @@ function extractPlace(text: string): string | undefined {
 }
 
 function extractNewsTopic(text: string): string | undefined {
+  // "AI news" / 「AI新聞」 — topic before the word news (demo-phase chip).
+  if (/\b(?:latest\s+)?(?:AI|A\.I\.)\s+(?:news|headlines)\b/i.test(text)
+    || /(?:AI|人工智能|人工智慧)\s*(?:新聞|新闻|ニュース)/.test(text)
+    || /\bAI\s*ニュース\b/i.test(text)) {
+    return 'artificial intelligence';
+  }
   const m = text.match(/\b(?:news|headlines)\s+(?:about|on|regarding)\s+(.{2,80})/i)
-    ?? text.match(/(?:新聞|新闻)(?:關於|关于)\s*(.{2,40})/);
+    ?? text.match(/(?:新聞|新闻)(?:關於|关于)\s*(.{2,40})/)
+    ?? text.match(/(?:ニュース)\s*(?:について|の)\s*(.{2,40})/);
   return cleanQuery(m?.[1] ?? '');
 }
 

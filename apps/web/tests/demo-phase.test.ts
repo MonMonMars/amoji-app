@@ -17,6 +17,7 @@ import { detectActionGame } from '../lib/minigames';
 import { wantsLongCompanionReply } from '../lib/topic-suggestions';
 import { detectMusicStyle } from '../lib/music-catalog';
 import { detectWeatherFocus, planTools } from '../lib/live-tools';
+import { isTopicalContentTurn } from '../lib/skill-offer-guard';
 
 const PANEL = fs.readFileSync(
   path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../components/ChatPanel.tsx'),
@@ -30,6 +31,12 @@ describe('demo-phase buttons', () => {
       expect.arrayContaining([
         'weather',
         'news',
+        'aiNews',
+        'personalTalk',
+        'secretTalk',
+        'joke',
+        'poem',
+        'tip',
         'story',
         'music',
         'dance',
@@ -46,6 +53,17 @@ describe('demo-phase buttons', () => {
         'tag',
       ]),
     );
+  });
+
+  it('AI news / personal / secret chips plan and mute like content turns', () => {
+    const ai = demoPhasePrompt('aiNews', 'en', 0);
+    expect(planTools(ai).news).toBe(true);
+    expect(planTools(ai).newsQuery?.toLowerCase()).toMatch(/artificial intelligence|ai/);
+    expect(isTopicalContentTurn(ai)).toBe(true);
+    expect(isTopicalContentTurn(demoPhasePrompt('personalTalk', 'en'))).toBe(true);
+    expect(isTopicalContentTurn(demoPhasePrompt('secretTalk', 'en'))).toBe(true);
+    expect(isTopicalContentTurn(demoPhasePrompt('joke', 'en'))).toBe(true);
+    expect(demoPhasePrompt('aiNews', 'en', 0)).not.toBe(demoPhasePrompt('aiNews', 'en', 1));
   });
 
   it('keeps chip labels tiny in every language', () => {

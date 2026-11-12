@@ -213,6 +213,9 @@ describe('planTools', () => {
     expect(local.needsDevice).toBe(true);
     expect(local.newsQuery).toBeUndefined();
 
+    expect(planTools("what's the latest AI news?").news).toBe(true);
+    expect(planTools("what's the latest AI news?").newsQuery?.toLowerCase()).toMatch(/artificial intelligence/);
+    expect(planTools('最新有咩 AI 新聞？').newsQuery?.toLowerCase()).toMatch(/artificial intelligence/);
     const topic = planTools('news about Mars rovers');
     expect(topic.news).toBe(true);
     expect(topic.needsDevice).toBe(false);

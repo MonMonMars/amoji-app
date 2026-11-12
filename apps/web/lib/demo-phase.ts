@@ -10,6 +10,12 @@ import { showcaseStoryAsk } from './showcase';
 export type DemoPhaseId =
   | 'weather'
   | 'news'
+  | 'aiNews'
+  | 'personalTalk'
+  | 'secretTalk'
+  | 'joke'
+  | 'poem'
+  | 'tip'
   | 'story'
   | 'music'
   | 'dance'
@@ -105,6 +111,186 @@ export const DEMO_PHASE_BUTTONS: readonly DemoPhaseButton[] = [
         '明るいニュースある？',
         '世界で今なにが起きてる？',
         '地元の軽いニュースある？',
+      ],
+    },
+  },
+  {
+    id: 'aiNews',
+    label: { en: 'AI news', yue: 'AI新聞', zh: 'AI新闻', ja: 'AIニュース' },
+    prompts: {
+      en: [
+        "what's the latest AI news?",
+        'news about artificial intelligence',
+        'any cheerful AI news today?',
+        'AI headlines please',
+      ],
+      yue: [
+        '最新有咩 AI 新聞？',
+        '講吓人工智能相關新聞',
+        '有冇開心啲嘅 AI 新聞？',
+        '讀幾條 AI 頭條俾我聽',
+      ],
+      zh: [
+        '最新有什么 AI 新闻？',
+        '讲讲人工智能相关新闻',
+        '有没有开心一点的 AI 新闻？',
+        '读几条 AI 头条给我听',
+      ],
+      ja: [
+        '最新のAIニュースは？',
+        '人工知能のニュースを教えて',
+        '明るいAIニュースある？',
+        'AIの見出しを読んで',
+      ],
+    },
+  },
+  {
+    id: 'personalTalk',
+    label: { en: 'Personal', yue: '傾心', zh: '心里话', ja: '本音' },
+    prompts: {
+      en: [
+        'share something personal with me',
+        'tell me a warm personal thought from your day',
+        'talk to me personally — something heartfelt',
+        'share a personal feeling in a few sentences',
+      ],
+      yue: [
+        '同我講啲心裡話',
+        '分享吓你今日溫暖嘅心事',
+        '傾吓真心話俾我聽',
+        '用幾句講吓你嘅感受',
+      ],
+      zh: [
+        '跟我说说心里话',
+        '分享一下你今天温暖的心事',
+        '讲点真心话给我听',
+        '用几句话分享你的感受',
+      ],
+      ja: [
+        '本音を少し話して',
+        '今日のあたたかい気持ちを聞かせて',
+        '心のこもった話をして',
+        'いまの気持ちを短く教えて',
+      ],
+    },
+  },
+  {
+    id: 'secretTalk',
+    label: { en: 'Secret', yue: '悄悄話', zh: '悄悄话', ja: '秘密' },
+    prompts: {
+      en: [
+        'tell me a little secret',
+        'whisper a fun secret to me',
+        'share a cozy secret with me',
+        'tell me a soft secret — just between us',
+      ],
+      yue: [
+        '同我講個小秘密',
+        '咬耳仔講個好玩秘密',
+        '分享個溫馨小秘密',
+        '講個悄悄話——得我哋知',
+      ],
+      zh: [
+        '跟我讲个小秘密',
+        '悄悄说个好玩的秘密',
+        '分享一个温馨小秘密',
+        '讲句悄悄话——只有我们知道',
+      ],
+      ja: [
+        '小さな秘密をひとつ教えて',
+        '楽しい秘密をささやいて',
+        'あたたかい秘密をシェアして',
+        '二人だけの秘密を話して',
+      ],
+    },
+  },
+  {
+    id: 'joke',
+    label: { en: 'Joke', yue: '笑話', zh: '笑话', ja: 'ジョーク' },
+    prompts: {
+      en: [
+        'tell me a clean joke',
+        'tell me a short silly joke',
+        'make me laugh with a light joke',
+        'tell me a wholesome dad joke',
+      ],
+      yue: [
+        '講個乾淨笑話俾我聽',
+        '講個短短嘅搞笑笑話',
+        '講個輕鬆笑話逗我笑',
+        '講個溫馨冷笑話',
+      ],
+      zh: [
+        '讲个干净笑话给我听',
+        '讲个短短的搞笑笑话',
+        '讲个轻松笑话逗我笑',
+        '讲个温馨冷笑话',
+      ],
+      ja: [
+        'きれいなジョークをひとつ',
+        '短いおかしなジョークを',
+        'やさしいジョークで笑わせて',
+        'ほのぼのダジャレをひとつ',
+      ],
+    },
+  },
+  {
+    id: 'poem',
+    label: { en: 'Poem', yue: '小詩', zh: '小诗', ja: '詩' },
+    prompts: {
+      en: [
+        'write me a short poem',
+        'say a cozy four-line poem',
+        'recite a tiny poem about today',
+        'give me a gentle poem about friendship',
+      ],
+      yue: [
+        '寫首短詩俾我',
+        '講四句溫馨小詩',
+        '為今日念一首小小詩',
+        '講首關於友情嘅溫柔詩',
+      ],
+      zh: [
+        '写首短诗给我',
+        '念四句温馨小诗',
+        '为今天念一首小小诗',
+        '念首关于友情的温柔诗',
+      ],
+      ja: [
+        '短い詩をひとつ書いて',
+        'あたたかい四行詩を',
+        '今日の小さな詩を読んで',
+        '友情のやさしい詩を',
+      ],
+    },
+  },
+  {
+    id: 'tip',
+    label: { en: 'Tip', yue: '小貼士', zh: '小贴士', ja: 'ヒント' },
+    prompts: {
+      en: [
+        'give me a useful life tip',
+        'share a small self-care tip',
+        'give me a tiny productivity tip',
+        'share a kind everyday tip',
+      ],
+      yue: [
+        '俾我一個實用生活小貼士',
+        '分享個自我照顧小貼士',
+        '俾我一個小小效率貼士',
+        '分享個溫柔日常貼士',
+      ],
+      zh: [
+        '给我一个实用生活小贴士',
+        '分享一个自我照顾小贴士',
+        '给我一个小小效率贴士',
+        '分享一个温柔日常贴士',
+      ],
+      ja: [
+        '役立つ生活ヒントをひとつ',
+        'セルフケアの小さなヒントを',
+        '小さな生産性ヒントを',
+        'やさしい日常ヒントを',
       ],
     },
   },
