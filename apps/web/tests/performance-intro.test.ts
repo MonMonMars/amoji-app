@@ -48,6 +48,9 @@ describe('performance intro (name before play)', () => {
     expect(panel).toContain('clipTitle');
     expect(panel).toContain('whenSpeechIdle');
     expect(panel).toContain('startLibraryPerformance(query)');
+    // Dance/sing body waits for audio playing — not the intro line.
+    expect(panel).toContain('armPerfDance');
+    expect(panel).toContain('shouldStartDanceOnAudioPlaying');
     // History must stay copyable for Pixel nonsense reports.
     expect(panel).toContain('select-text');
     expect(panel).not.toMatch(/scrollRef[\s\S]{0,400}select-none/);
