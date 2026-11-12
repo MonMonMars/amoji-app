@@ -451,6 +451,18 @@ function armPerformance(ms: number): void {
   perfTimer = setTimeout(() => endPerformanceMusic(), ms);
 }
 
+/** Notify UI that a library bed is audible — dance/sing body gates on this. */
+function emitLibraryClipPlaying(id: string | null = clipId): void {
+  if (typeof window === 'undefined' || !id) return;
+  window.dispatchEvent(new CustomEvent('amoji:library-clip', { detail: { state: 'playing', id } }));
+}
+
+/** Procedural band when a file/stream bed cannot start — still emit playing. */
+function startLibraryBandFallback(characterId: string): void {
+  startMusic(characterId);
+  emitLibraryClipPlaying(clipId);
+}
+
 /** Drop the premade clip only. Does not touch the preserve flag or the band. */
 function haltClip(): void {
   loadToken += 1;
@@ -505,14 +517,31 @@ function playClipElement(url: string, token: number, characterId: string): boole
     audio.loop = true;
     clipEl = audio;
     applyActiveClipGain();
+    // Gate dance on real playback (playing / first audible samples), not play() alone.
+    let emitted = false;
+    const emitOnce = () => {
+      if (emitted || token !== loadToken) return;
+      emitted = true;
+      audio.removeEventListener('playing', emitOnce);
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      emitLibraryClipPlaying(clipId);
+    };
+    const onTimeUpdate = () => {
+      if (audio.currentTime > 0) emitOnce();
+    };
+    audio.addEventListener('playing', emitOnce);
+    audio.addEventListener('timeupdate', onTimeUpdate);
     void pinDefaultOutputAsync(audio).then(() => audio.play()).then(() => {
       if (token !== loadToken) return;
-      window.dispatchEvent(new CustomEvent('amoji:library-clip', { detail: { state: 'playing', id: clipId } }));
+      // Some engines resolve play() before `playing`; currentTime>0 still counts.
+      if (!audio.paused && audio.currentTime > 0) emitOnce();
     }, () => {
       if (token !== loadToken) return;
+      audio.removeEventListener('playing', emitOnce);
+      audio.removeEventListener('timeupdate', onTimeUpdate);
       audio.pause();
       if (clipEl === audio) clipEl = null;
-      startMusic(characterId);
+      startLibraryBandFallback(characterId);
     });
     return true;
   } catch {
@@ -526,7 +555,7 @@ async function playClip(clip: PerformanceClip, token: number, characterId: strin
   const ac = createDefaultAudioContext();
   if (!ac) {
     if (token !== loadToken) return;
-    if (!playClipElement(url, token, characterId)) startMusic(characterId);
+    if (!playClipElement(url, token, characterId)) startLibraryBandFallback(characterId);
     return;
   }
   try {
@@ -534,7 +563,7 @@ async function playClip(clip: PerformanceClip, token: number, characterId: strin
     // Suspended context → HTMLAudioElement (gesture-unlocked media path).
     if (ac.state !== 'running') {
       if (token !== loadToken) return;
-      if (!playClipElement(url, token, characterId)) startMusic(characterId);
+      if (!playClipElement(url, token, characterId)) startLibraryBandFallback(characterId);
       return;
     }
     const res = await fetch(url);
@@ -561,13 +590,14 @@ async function playClip(clip: PerformanceClip, token: number, characterId: strin
     } else {
       src.connect(gain);
     }
+    // BufferSource starts samples immediately — emit playing only after start().
     src.start();
     clipSrc = src;
-    window.dispatchEvent(new CustomEvent('amoji:library-clip', { detail: { state: 'playing', id: clip.id } }));
+    emitLibraryClipPlaying(clip.id);
   } catch {
     if (token !== loadToken) return;
     if (clipCtx === ac) clipCtx = null;
-    if (!playClipElement(url, token, characterId)) startMusic(characterId);
+    if (!playClipElement(url, token, characterId)) startLibraryBandFallback(characterId);
   }
 }
 
@@ -620,6 +650,8 @@ export function startLibraryPerformance(
     if (isMasterMuted() || typeof window === 'undefined') return synthetic;
     if (clipId === synthetic.id && perfPreserve) {
       armPerformance(holdMs);
+      // Already audible — re-emit so body dance can re-sync / extend hold.
+      emitLibraryClipPlaying(synthetic.id);
       return synthetic;
     }
     endPerformanceMusic();
@@ -633,7 +665,7 @@ export function startLibraryPerformance(
     armPerformance(holdMs);
     const token = ++loadToken;
     if (!playClipElement(stream.url, token, clipCharacter)) {
-      startMusic(clipCharacter);
+      startLibraryBandFallback(clipCharacter);
     }
     return synthetic;
   }
@@ -642,6 +674,7 @@ export function startLibraryPerformance(
   if (isMasterMuted() || typeof window === 'undefined') return clip;
   if (clipId === clip.id && perfPreserve) {
     armPerformance(holdMs);
+    emitLibraryClipPlaying(clip.id);
     return clip;
   }
   endPerformanceMusic();

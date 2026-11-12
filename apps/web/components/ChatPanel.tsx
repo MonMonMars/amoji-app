@@ -184,6 +184,13 @@ import { stopThinkingSound } from '../lib/thinking-sound';
 import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
 import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerformance, resolveLibraryPerformance, detectMusicStyle } from '../lib/music';
 import { clipTitle, performanceIntroLine } from '../lib/performance-intro';
+import {
+  armPerfDance,
+  refreshPendingPerfDance,
+  shouldStartDanceOnAudioPlaying,
+  type PendingPerfDance,
+} from '../lib/dance-audio-gate';
+import { isMasterMuted } from '../lib/master-mute';
 import { nextPassiveIdleClip, PASSIVE_IDLE_LOOP_TEMPLATE } from '../lib/idle-passive-loop';
 import { resolveContentMotion } from '../lib/content-motion';
 import { clipLabel, PERFORMANCE_CLIPS, type PerformanceClip } from '../lib/performance-clips';
@@ -337,16 +344,37 @@ export default function ChatPanel({
   const actionGameRef = useRef(false);
   const [clipState, setClipState] = useState<'starting' | 'playing' | null>(null);
   const trackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Song/dance body waits for library-clip `playing` — not intro TTS / decode. */
+  const pendingShowDanceRef = useRef<PendingPerfDance | null>(null);
+  const pendingShowClipRef = useRef<PerformanceClip | null>(null);
   useEffect(() => {
     const onClip = (e: Event) => {
       const detail = (e as CustomEvent<{ state?: string; id?: string }>).detail;
       if (detail?.state === 'playing' && detail.id) {
-        const clip = PERFORMANCE_CLIPS.find((c) => c.id === detail.id);
+        const clip = PERFORMANCE_CLIPS.find((c) => c.id === detail.id)
+          ?? (pendingShowClipRef.current?.id === detail.id ? pendingShowClipRef.current : null);
         if (clip) setNowPlaying(clipLabel(clip, lang));
         setClipState('playing');
+        // Start dance/sing only when the bed is actually audible.
+        const pending = pendingShowDanceRef.current;
+        if (shouldStartDanceOnAudioPlaying(pending, detail.id)) {
+          const motionClip = clip ?? pendingShowClipRef.current;
+          if (motionClip) {
+            setPerfMotionProfile(resolvePerfMotion({
+              id: motionClip.id,
+              kind: motionClip.kind,
+              style: motionClip.style,
+            }));
+          }
+          triggerMove(pending.bodyMove);
+          holdMove(pending.holdMs);
+          pendingShowDanceRef.current = null;
+        }
       } else if (detail?.state === 'stopped') {
         setClipState(null);
         setNowPlaying(null);
+        pendingShowDanceRef.current = null;
+        pendingShowClipRef.current = null;
         // Show over — drop sticky sing/dance body + beat profile so talk idle returns.
         clearMove();
         clearPerfMotionProfile();
@@ -622,6 +650,7 @@ export default function ChatPanel({
 
   /**
    * Resolve the clip, speak its name, THEN start audio when speech is idle.
+   * Body dance/sing waits for `amoji:library-clip` playing (not intro TTS).
    * Pixel: always introduce the song / music title before playback.
    */
   const beginShow = (
@@ -649,24 +678,32 @@ export default function ChatPanel({
     const title = clipTitle(clip, lang);
     const intro = performanceIntroLine(kind === 'song' ? 'song' : 'music', title, lang);
     const hold = Math.max(clip.durationMs + 600, ms);
-    // Body move for the whole show: music beds used to set a beat profile only
-    // and never triggerMove, so she stayed on calm idle with no beat motion.
     const bodyMove = kind === 'song' ? 'sing' : 'dance';
-    triggerMove(bodyMove);
+    // Arm only — stay calm through intro TTS and fetch/decode.
+    pendingShowDanceRef.current = armPerfDance(bodyMove, hold, clip.id);
+    pendingShowClipRef.current = clip;
     // Name on the now-playing chip immediately; audio waits for the intro.
     showTrack(clip, hold);
     sayLocal(intro, { joy: kind === 'song' ? 0.82 : 0.7 });
     whenSpeechIdle(() => {
-      // t718: music.ts arms to max(ms, clip.durationMs+600); hold body for the bed.
+      // t718: music.ts arms to max(ms, clip.durationMs+600).
       // Style (jazz/pop/lofi…) prefers Mixkit royalty-free streams for dance beds.
       const playing = startLibraryPerformance(query);
-      // t725–729: song/style → body tag + beat-matched timeScale for CompanionCanvas.
-      setPerfMotionProfile(resolvePerfMotion({ id: playing.id, kind: playing.kind, style: playing.style }));
-      // Re-arm on bed start so the rising-edge playPerf syncs with audio, and
-      // hold past the default 9s move so dance/music beds keep moving to the beat.
-      triggerMove(bodyMove);
-      holdMove(hold);
-      showTrack(playing, hold);
+      const nextHold = Math.max(playing.durationMs + 600, ms);
+      pendingShowClipRef.current = playing;
+      // Keep pending armed through async decode; sync re-arm may already
+      // have consumed it via library-clip playing — then just extend hold.
+      const refreshed = refreshPendingPerfDance(pendingShowDanceRef.current, playing.id, nextHold);
+      if (refreshed) {
+        pendingShowDanceRef.current = refreshed;
+      } else {
+        holdMove(nextHold);
+      }
+      // Muted / no window: no playing event — do not leave a dangling arm.
+      if (isMasterMuted() || typeof window === 'undefined') {
+        pendingShowDanceRef.current = null;
+      }
+      showTrack(playing, nextHold);
       afterStart?.();
     });
     return clip;
@@ -687,7 +724,7 @@ export default function ChatPanel({
       && (speechStillQueued(alreadySpoken.text) || voiceStartedSince(alreadySpoken.since));
     if (firstLive && alreadySpoken) {
       if (mv === 'dance') {
-        triggerMove('dance');
+        // Dance body starts on library-clip playing (beginShow), not here.
         beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
           const rest = speechRemainder(reply, alreadySpoken.text);
           if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity);
@@ -702,9 +739,9 @@ export default function ChatPanel({
     }
     // Singing plays a premade clip in her gender's voice. The lyric still
     // lands in the bubble; TTS does not sing over the clip. She names the
-    // track first (beginShow), then the bed starts when speech is idle.
+    // track first (beginShow), then the bed starts when speech is idle;
+    // body sing waits for library-clip playing.
     if (mv === 'sing') {
-      triggerMove('sing');
       const style = detectMusicStyle(userText);
       beginShow('song', 9300, mood, laughCountRef.current, false, style);
       const compact = reply.replace(/\s/g, '');
@@ -715,7 +752,6 @@ export default function ChatPanel({
       return song;
     }
     if (mv === 'dance') {
-      triggerMove('dance');
       beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
         speak(reply, characterId, lang, contentHints, undefined, intensity);
       });
