@@ -1912,9 +1912,13 @@ export function playVoiceGreeting(
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
       try { haltBrowserSynth(); } catch { /* ignore */ }
-      // Stop the local insurance clip so only the chosen voice speaks.
-      try { stopVoiceClip(); } catch { /* ignore */ }
-      if (!spokenBy) onStart('gtts');
+      // Keep the local insurance clip until gTTS has real progress — onplay can
+      // fire then die (network/CORS), and stopping insurance early left silence.
+      window.setTimeout(() => {
+        if (spokenBy && spokenBy !== 'gtts') return;
+        try { stopVoiceClip(); } catch { /* ignore */ }
+        if (!spokenBy) onStart('gtts');
+      }, 180);
     },
   }).then(() => {
     markGttsDone();
@@ -1923,6 +1927,8 @@ export function playVoiceGreeting(
     markGttsDone();
     if ((e as Error | undefined)?.message === 'canceled') return;
     reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'greeting gtts failed');
+    // gTTS may have claimed the line then died — clear so synth/insurance can save.
+    if (spokenBy === 'gtts') spokenBy = null;
     // Insurance clip may already be audible — only synth if nothing started.
     runSynthAudition('greeting fallback');
   });
@@ -2183,16 +2189,21 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
       try { haltBrowserSynth(); } catch { /* ignore */ }
-      try { stopVoiceClip(); } catch { /* ignore */ }
-      if (!spokenBy) {
-        spokenBy = 'gtts';
-        markVoiceStarted();
-        reportVoiceStatus('gtts', true, `preview gtts ${choiceId}`);
-      }
+      // Delay killing insurance until gTTS has held the line briefly.
+      window.setTimeout(() => {
+        if (spokenBy && spokenBy !== 'gtts') return;
+        try { stopVoiceClip(); } catch { /* ignore */ }
+        if (!spokenBy) {
+          spokenBy = 'gtts';
+          markVoiceStarted();
+          reportVoiceStatus('gtts', true, `preview gtts ${choiceId}`);
+        }
+      }, 180);
     },
   }).catch((e: unknown) => {
     if ((e as Error | undefined)?.message === 'canceled') return;
     reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'preview gtts failed');
+    if (spokenBy === 'gtts') spokenBy = null;
     return runSynthAudition('preview fallback');
   });
 
