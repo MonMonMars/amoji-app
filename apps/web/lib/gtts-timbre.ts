@@ -14,19 +14,42 @@
 //   chain would make the free tier go quiet — the exact failure we are fixing.
 //
 // What we DO ship: HTMLAudioElement.playbackRate with preservesPitch=false
-// (already iOS-safe in gtts.ts). Gender sets the base; a stable hash of the
-// character id spreads companions of the SAME gender so two females (or two
-// males) are still audibly different. Bounds stay inside the gtts clamp so
-// the line does not turn into chipmunk / slurry audio.
+// (already iOS-safe in gtts.ts). Gender sets the base; curated bright / mid /
+// deep tiers spread companions of the SAME gender so two females (or two
+// males) stay audibly different. A tiny hash micro-jitter separates ids that
+// land on the same tier. Bounds stay inside the gtts clamp so the line does
+// not turn into chipmunk / slurry audio.
 
 import type { Lang } from './prefs';
+import { CHARACTERS_WANT } from './characters-want';
 import { PITCH_BIAS_FEMALE, PITCH_BIAS_MALE } from './gtts';
 
-/** Half-width of the per-character spread around the gender base. */
-export const CHAR_PITCH_SPREAD = 0.045;
+/** Audible high / mid / low colour within a gender band. */
+export type GttsPitchTier = 'bright' | 'mid' | 'deep';
+
+/**
+ * Half-width of the residual per-id micro-jitter around a curated tier.
+ * Kept small — tiers carry the real separation.
+ */
+export const CHAR_PITCH_SPREAD = 0.015;
+
+/** How far bright / deep sit from the gender mid (asymmetric so M/F stay apart). */
+export const FEMALE_TIER_OFFSET: Record<GttsPitchTier, number> = {
+  deep: -0.055,
+  mid: 0,
+  bright: 0.085,
+};
+
+export const MALE_TIER_OFFSET: Record<GttsPitchTier, number> = {
+  deep: -0.075,
+  mid: 0,
+  bright: 0.045,
+};
 
 /** Google ja-JP reads bright; male delivery needs extra depth (still inside gtts clamp). */
 export const GTTS_MALE_BIAS_JA = 0.82;
+
+const TIER_CYCLE: readonly GttsPitchTier[] = ['deep', 'mid', 'bright'];
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
@@ -49,6 +72,36 @@ export function characterPitchUnit(characterId: string): number {
   return u * 2 - 1;
 }
 
+/** Build stable deep→mid→bright assignment within each gender (sorted ids). */
+function buildCuratedTierMap(): Map<string, GttsPitchTier> {
+  const map = new Map<string, GttsPitchTier>();
+  for (const gender of ['female', 'male'] as const) {
+    const ids = CHARACTERS_WANT
+      .filter((c) => c.gender === gender)
+      .map((c) => c.id)
+      .sort();
+    ids.forEach((id, i) => {
+      map.set(id, TIER_CYCLE[i % TIER_CYCLE.length]!);
+    });
+  }
+  return map;
+}
+
+const CURATED_TIERS = buildCuratedTierMap();
+
+/** Hash fallback when the id is not on the want roster. */
+function hashTier(characterId: string): GttsPitchTier {
+  const u = characterPitchUnit(characterId);
+  if (u < -1 / 3) return 'deep';
+  if (u < 1 / 3) return 'mid';
+  return 'bright';
+}
+
+/** Curated (or hashed) pitch colour for a companion. */
+export function gttsPitchTierFor(characterId: string): GttsPitchTier {
+  return CURATED_TIERS.get(characterId) ?? hashTier(characterId);
+}
+
 /**
  * Pitch multiplier for the free MP3 tier. Same gender → nearby but different
  * numbers; different genders stay on opposite sides of 1.0.
@@ -61,9 +114,11 @@ export function gttsCharacterPitchBias(
   let base = gender === 'male' ? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE;
   if (gender === 'male' && lang === 'ja') base = GTTS_MALE_BIAS_JA;
   if (!characterId) return base;
+  const tier = gttsPitchTierFor(characterId);
+  const offset = (gender === 'male' ? MALE_TIER_OFFSET : FEMALE_TIER_OFFSET)[tier];
   const jitter = characterPitchUnit(characterId) * CHAR_PITCH_SPREAD;
   // Keep inside the same clamp gtts.ts applies to pitchBias.
-  return clamp(base + jitter, 0.82, 1.2);
+  return clamp(base + offset + jitter, 0.82, 1.2);
 }
 
 /** True when two character ids resolve to different biases (any measurable delta). */
