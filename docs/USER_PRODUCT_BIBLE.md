@@ -47,11 +47,17 @@
 
 ---
 
-## Done (as of 2026-11-12 late night HKT)
+## Done (as of 2026-11-13 early morning HKT)
 
 | Item | Notes / evidence |
 |------|------------------|
-| Calm vs perf pose gating + retire bad poses | PR #365 / related pose commits |
+| gTTS bright/mid/deep pitch tiers per character | #374 |
+| One voice on card greets (stop insurance when gTTS starts) | #375 |
+| Demo-phase rotate + AI news / personal / secret / joke / poem / tip | #373 |
+| Dance starts only when music bed is playing | #362 |
+| Male/female voices per lang + Add test pool | #363 |
+| Music ask: random play; select chips only when asked | #364 |
+| Calm vs perf pose gating + retire bad poses | on main (superseded open #365 closed) |
 | Hips / idle A→B no spin-to-back (code) | Re-ported onto this branch `afe36c0` |
 | Talk calm clips only while speaking | chat-auto-idle / CompanionCanvas |
 | Gate: mic + location one page (code) | entry gate v2 / PreChatAudioGate |
@@ -83,13 +89,9 @@
 
 | Item | Status |
 |------|--------|
-| Eyeball live Pages after this pack deploys | mic / card greet / poke zones / idle next / ambient |
+| Eyeball live Pages after this merge wave deploys | dance sync, phase chips, pitch tiers, one-voice card, music ask, voice gender |
 | Location is Start-only today (not gate+Start) | One popup — confirm no double ask on device |
-| Dance starts too soon — gate on audible music | Open `#362` (needs re-port onto current main) |
-| Demo-phase chip pack (rotate + AI news / personal / secret / …) | **PR #373** — CI green; awaiting merge |
-| gTTS bright/mid/deep character pitch tiers | **PR #374** — CI green; awaiting merge |
-| Dual card-greet voices | Insurance clip may overlap gTTS |
-| Broader optional product PRs (#361–#364 um/music/voice) | Separate scope |
+| White pupil image loop | Awaiting owner advice |
 
 ---
 
@@ -97,6 +99,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-13 ~05:50 | Merged #374 pitch tiers, #375 one-voice card, #373 phase chips, #362 dance gate, #363 voice gender, #364 music ask; closed superseded #361/#365 |
 | 2026-11-12 23:29 | Demo-phase adds AI news / personal / secret / joke / poem / tip (+ rotate facets) · #373 |
 | 2026-11-12 evening | Outstanding pack: statement SCENE_LINES + Start mic preflight + merge #371 |
 | 2026-11-12 evening | Freeze hang/soften/shoulder mid idle A→B; skip same-clip t≈0 refresh snap |
