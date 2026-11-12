@@ -204,7 +204,7 @@ describe('TTS button registry', () => {
     const buttons = selectTtsButtons();
     // 58 Edge names collapsed to one sound; the registry is gated voices with
     // female + male delivery per `tl` where Google only exposes one speaker.
-    expect(buttons).toHaveLength(11);
+    expect(buttons).toHaveLength(18);
     expect(buttons.every((b) => b.engine === 'gtts' && b.shipping)).toBe(true);
     expect(new Set(buttons.map(ttsButtonKey)).size).toBe(buttons.length);
     expect(new Set(buttons.map((b) => b.id)).size).toBe(buttons.length);
@@ -213,11 +213,13 @@ describe('TTS button registry', () => {
     expect(selectTtsButtons('ja')).toHaveLength(TIER_A_COUNTS.ja);
     expect(selectTtsButtons('en')).toHaveLength(TIER_A_COUNTS.en);
     expect(selectTtsButtons('yue').map((b) => b.tl)).toEqual(['yue', 'yue']);
-    expect(selectTtsButtons('zh').map((b) => b.tl)).toEqual(['zh-CN', 'zh-CN']);
+    expect(selectTtsButtons('zh').map((b) => b.tl)).toEqual(['zh-CN', 'zh-CN', 'zh-TW', 'zh-TW']);
     expect(selectTtsButtons('ja').map((b) => b.tl)).toEqual(['ja', 'ja']);
     const enTls = selectTtsButtons('en').map((b) => b.tl);
-    expect(enTls).toEqual(['en-US', 'en-US', 'en-GB', 'en-AU', 'en-IN']);
-    expect(new Set(enTls).size).toBe(4);
+    expect(enTls).toEqual([
+      'en-US', 'en-US', 'en-GB', 'en-GB', 'en-AU', 'en-AU', 'en-IN', 'en-IN', 'en-NG', 'en-NG',
+    ]);
+    expect(new Set(enTls).size).toBe(5);
   });
 
   it('never surfaces an engine the audit classifies as not playable', () => {

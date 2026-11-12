@@ -9,9 +9,9 @@
 //
 // Now the row is driven by tts-button-registry, which is gated on the engine
 // audit: a dead or unbundled engine cannot appear here. Some languages end up
-// with a single button — Japanese is one voice for the whole language — and
-// when that happens the row says so plainly instead of leaving the user
-// wondering where the rest went.
+// with a short pair — Japanese is one Google speaker × female/male delivery —
+// and when that happens the row says so plainly. An Add button pulls optional
+// test-pool voices for the current language.
 
 import { useEffect, useState } from 'react';
 import {
@@ -20,6 +20,7 @@ import {
   ttsButtonKey,
   type TtsButtonVoice,
 } from '../lib/tts-button-registry';
+import { addVoiceOption, voiceAddRemaining } from '../lib/voice-capability';
 import { playVoiceGreeting } from '../lib/voice';
 import { saveVoicePick, voicePickFor, activeVoiceChoice } from '../lib/voice-picks';
 import { isDevMode, devMark } from '../lib/dev-mode';
@@ -33,7 +34,7 @@ export default function TtsVoiceRow({
 }: {
   lang: Lang;
   characterId: string;
-  /** Kept for call-site compatibility; the live voices are not gendered. */
+  /** Kept for call-site compatibility; free delivery gender is per button. */
   companionGender?: 'female' | 'male';
   accent: string;
   onLang: (lang: Lang) => void;
@@ -41,20 +42,32 @@ export default function TtsVoiceRow({
   const [rev, setRev] = useState(0);
   const [showAll, setShowAll] = useState(false);
   const [showDev, setShowDev] = useState(false);
+  const [addNote, setAddNote] = useState<string | null>(null);
   useEffect(() => { setShowDev(isDevMode()); }, []);
 
   const buttons = showAll ? selectTtsButtons() : selectTtsButtons(lang);
   const pinnedId = voicePickFor(lang);
   const activeId = pinnedId ?? activeVoiceChoice(lang).id;
-  // A language with one voice has nothing to compare, so the button is shown
-  // together with a plain explanation of why the list is that short.
   const single = !showAll && isSingleVoiceLocale(lang);
+  const canAdd = voiceAddRemaining(lang) > 0;
 
   const onTap = (button: TtsButtonVoice) => {
     saveVoicePick(button.locale, button.id);
     setRev((n) => n + 1);
     if (button.locale !== lang) onLang(button.locale);
     playVoiceGreeting(characterId, button.locale, button.id);
+  };
+
+  const onAdd = () => {
+    const added = addVoiceOption(lang);
+    if (!added) {
+      setAddNote(t(lang, 'voiceAddNone'));
+      return;
+    }
+    setAddNote(null);
+    saveVoicePick(lang, added.id);
+    setRev((n) => n + 1);
+    playVoiceGreeting(characterId, lang, added.id);
   };
 
   return (
@@ -73,8 +86,22 @@ export default function TtsVoiceRow({
         >
           {showAll ? t(lang, 'voiceThisLanguage') : t(lang, 'voiceShowAll')}
         </button>
+        <button
+          type="button"
+          data-testid="tts-voice-add"
+          aria-label={t(lang, 'voiceAdd')}
+          title={t(lang, 'voiceAddHint')}
+          disabled={!canAdd}
+          onClick={onAdd}
+          className={`fx-press relative rounded-full border px-2 py-0.5 text-[10px] ${
+            canAdd
+              ? 'border-white/25 bg-black/30 text-white/80'
+              : 'cursor-not-allowed border-white/10 bg-transparent text-white/30'
+          }`}
+        >
+          {t(lang, 'voiceAdd')}
+        </button>
       </div>
-      {/* No nested scroller: the select board owns the only vertical one. */}
       <div className="w-full" data-testid="tts-voice-grid">
         <div className="grid w-full grid-cols-2 gap-1 min-[420px]:grid-cols-3 sm:grid-cols-4">
           {buttons.map((button) => {
@@ -105,6 +132,11 @@ export default function TtsVoiceRow({
             );
           })}
         </div>
+        {addNote && (
+          <p role="status" className="mt-1 px-1 text-center text-[10px] leading-relaxed text-white/45" data-testid="tts-voice-add-note">
+            {addNote}
+          </p>
+        )}
         {single && (
           <p
             role="status"

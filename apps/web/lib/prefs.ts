@@ -194,7 +194,10 @@ export type StrKey =
   | 'ttsLabStatusGated' | 'ttsLabStatusDemo' | 'ttsLabStatusMissing'
   | 'voiceRegionCantonese' | 'voiceRegionMandarin' | 'voiceRegionTaiwan' | 'voiceRegionJapanese'
   | 'voiceRegionUs' | 'voiceRegionUk' | 'voiceRegionAu' | 'voiceRegionIn' | 'voiceRegionNg'
+  | 'voiceRegionIe' | 'voiceRegionZa' | 'voiceRegionNz' | 'voiceRegionHkEn' | 'voiceRegionCa'
+  | 'voiceRegionSg' | 'voiceRegionHkZh'
   | 'voiceFreeFemale' | 'voiceFreeMale'
+  | 'voiceAdd' | 'voiceAddHint' | 'voiceAddNone'
   // OS-provided voices (speechSynthesis). These exist because the OS genuinely
   // ships several real voices per language on desktop — the picker must be able
   // to show them as an extra source, and must be equally able to say when the
@@ -321,8 +324,28 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   voiceRegionAu: { en: 'Australian English', yue: '澳洲英文', zh: '澳洲英语', ja: 'オーストラリア英語' },
   voiceRegionIn: { en: 'Indian English', yue: '印度英文', zh: '印度英语', ja: 'インド英語' },
   voiceRegionNg: { en: 'Nigerian English', yue: '尼日利亞英文', zh: '尼日利亚英语', ja: 'ナイジェリア英語' },
+  voiceRegionIe: { en: 'Irish English', yue: '愛爾蘭英文', zh: '爱尔兰英语', ja: 'アイルランド英語' },
+  voiceRegionZa: { en: 'South African English', yue: '南非英文', zh: '南非英语', ja: '南アフリカ英語' },
+  voiceRegionNz: { en: 'New Zealand English', yue: '紐西蘭英文', zh: '新西兰英语', ja: 'ニュージーランド英語' },
+  voiceRegionHkEn: { en: 'Hong Kong English', yue: '香港英文', zh: '香港英语', ja: '香港英語' },
+  voiceRegionCa: { en: 'Canadian English', yue: '加拿大英文', zh: '加拿大英语', ja: 'カナダ英語' },
+  voiceRegionSg: { en: 'Singapore English', yue: '新加坡英文', zh: '新加坡英语', ja: 'シンガポール英語' },
+  voiceRegionHkZh: { en: 'Hong Kong Mandarin', yue: '香港普通話', zh: '香港普通话', ja: '香港普通話' },
   voiceFreeFemale: { en: 'Female', yue: '女聲', zh: '女声', ja: '女性' },
   voiceFreeMale: { en: 'Male', yue: '男聲', zh: '男声', ja: '男性' },
+  voiceAdd: { en: 'Add', yue: '加入', zh: '添加', ja: '追加' },
+  voiceAddHint: {
+    en: 'Add another free Google voice to test for this language.',
+    yue: '為呢種語言再加入一把免費 Google 聲線嚟試。',
+    zh: '为这个语言再添加一把免费 Google 声音来试听。',
+    ja: 'この言語にもう一つの無料 Google の声を追加して試します。',
+  },
+  voiceAddNone: {
+    en: 'No more free voices left to add for this language.',
+    yue: '呢種語言冇更多免費聲線可以加入。',
+    zh: '这个语言没有更多免费声音可添加。',
+    ja: 'この言語に追加できる無料の声はもうありません。',
+  },
   // ---- OS-provided voices (speechSynthesis) -------------------------------
   // The OS genuinely ships several real voices per language on desktop, so the
   // picker can offer them as an extra source; it must also be able to say when

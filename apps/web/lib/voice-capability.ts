@@ -18,6 +18,12 @@
 
 import type { StrKey } from './prefs';
 import type { VoiceLocale } from './voice-catalog';
+import {
+  addNextVoiceExtra,
+  extraVoiceById,
+  loadVoiceExtras,
+  remainingVoiceAddCount,
+} from './voice-extras';
 
 export type EngineStatus =
   /** Reachable now and produces its own voice. */
@@ -189,9 +195,9 @@ export interface VoiceChoice {
  *   ja  → {ja, ja-JP}
  *   yue → {yue} and the Mandarin buckets, which mispronounce Cantonese
  *
- * Each language ships at least one female + one male free delivery on the
- * default `tl` (pitch reshaped). Extra English/Mandarin regional `tl` codes are
- * distinct speakers from the byte-length bake-off — kept as accent options.
+ * Each language ships at least one female + one male free delivery on every
+ * distinct `tl` (pitch reshaped). Extra same-bucket regional codes live in
+ * `voice-extras.ts` and only appear after the user taps Add.
  */
 export const VOICE_CHOICES: readonly VoiceChoice[] = [
   { id: 'gtts:yue:f', locale: 'yue', engine: 'gtts', tl: 'yue', deliveryGender: 'female', labelKey: 'voiceRegionCantonese', n: 1 },
@@ -199,6 +205,8 @@ export const VOICE_CHOICES: readonly VoiceChoice[] = [
 
   { id: 'gtts:zh-CN:f', locale: 'zh', engine: 'gtts', tl: 'zh-CN', deliveryGender: 'female', labelKey: 'voiceRegionMandarin', n: 1 },
   { id: 'gtts:zh-CN:m', locale: 'zh', engine: 'gtts', tl: 'zh-CN', deliveryGender: 'male', labelKey: 'voiceRegionMandarin', n: 2 },
+  { id: 'gtts:zh-TW:f', locale: 'zh', engine: 'gtts', tl: 'zh-TW', deliveryGender: 'female', labelKey: 'voiceRegionTaiwan', n: 3 },
+  { id: 'gtts:zh-TW:m', locale: 'zh', engine: 'gtts', tl: 'zh-TW', deliveryGender: 'male', labelKey: 'voiceRegionTaiwan', n: 4 },
 
   { id: 'gtts:ja:f', locale: 'ja', engine: 'gtts', tl: 'ja', deliveryGender: 'female', labelKey: 'voiceRegionJapanese', n: 1 },
   { id: 'gtts:ja:m', locale: 'ja', engine: 'gtts', tl: 'ja', deliveryGender: 'male', labelKey: 'voiceRegionJapanese', n: 2 },
@@ -206,8 +214,13 @@ export const VOICE_CHOICES: readonly VoiceChoice[] = [
   { id: 'gtts:en-US:f', locale: 'en', engine: 'gtts', tl: 'en-US', deliveryGender: 'female', labelKey: 'voiceRegionUs', n: 1 },
   { id: 'gtts:en-US:m', locale: 'en', engine: 'gtts', tl: 'en-US', deliveryGender: 'male', labelKey: 'voiceRegionUs', n: 2 },
   { id: 'gtts:en-GB:f', locale: 'en', engine: 'gtts', tl: 'en-GB', deliveryGender: 'female', labelKey: 'voiceRegionUk', n: 3 },
-  { id: 'gtts:en-AU:f', locale: 'en', engine: 'gtts', tl: 'en-AU', deliveryGender: 'female', labelKey: 'voiceRegionAu', n: 4 },
-  { id: 'gtts:en-IN:f', locale: 'en', engine: 'gtts', tl: 'en-IN', deliveryGender: 'female', labelKey: 'voiceRegionIn', n: 5 },
+  { id: 'gtts:en-GB:m', locale: 'en', engine: 'gtts', tl: 'en-GB', deliveryGender: 'male', labelKey: 'voiceRegionUk', n: 4 },
+  { id: 'gtts:en-AU:f', locale: 'en', engine: 'gtts', tl: 'en-AU', deliveryGender: 'female', labelKey: 'voiceRegionAu', n: 5 },
+  { id: 'gtts:en-AU:m', locale: 'en', engine: 'gtts', tl: 'en-AU', deliveryGender: 'male', labelKey: 'voiceRegionAu', n: 6 },
+  { id: 'gtts:en-IN:f', locale: 'en', engine: 'gtts', tl: 'en-IN', deliveryGender: 'female', labelKey: 'voiceRegionIn', n: 7 },
+  { id: 'gtts:en-IN:m', locale: 'en', engine: 'gtts', tl: 'en-IN', deliveryGender: 'male', labelKey: 'voiceRegionIn', n: 8 },
+  { id: 'gtts:en-NG:f', locale: 'en', engine: 'gtts', tl: 'en-NG', deliveryGender: 'female', labelKey: 'voiceRegionNg', n: 9 },
+  { id: 'gtts:en-NG:m', locale: 'en', engine: 'gtts', tl: 'en-NG', deliveryGender: 'male', labelKey: 'voiceRegionNg', n: 10 },
 ];
 
 /** Maps pre-gender ids saved in localStorage to the new choice ids. */
@@ -215,13 +228,12 @@ export const LEGACY_VOICE_CHOICE_IDS: Readonly<Record<string, string>> = {
   'gtts:yue': 'gtts:yue:f',
   'gtts:ja': 'gtts:ja:f',
   'gtts:zh-CN': 'gtts:zh-CN:f',
-  'gtts:zh-TW': 'gtts:zh-CN:f',
-  'gtts:zh-TW:f': 'gtts:zh-CN:f',
+  'gtts:zh-TW': 'gtts:zh-TW:f',
   'gtts:en-US': 'gtts:en-US:f',
   'gtts:en-GB': 'gtts:en-GB:f',
   'gtts:en-AU': 'gtts:en-AU:f',
   'gtts:en-IN': 'gtts:en-IN:f',
-  'gtts:en-NG': 'gtts:en-IN:f',
+  'gtts:en-NG': 'gtts:en-NG:f',
 };
 
 /** Fallback `tl` per language when nothing is pinned. */
@@ -236,11 +248,19 @@ export function isVoiceLocale(v: string): v is VoiceLocale {
   return v === 'yue' || v === 'zh' || v === 'ja' || v === 'en';
 }
 
+/** Ids that always ship — extras must not collide with these. */
+export const SHIPPING_VOICE_IDS: ReadonlySet<string> = new Set(VOICE_CHOICES.map((c) => c.id));
+
 export function allVoiceChoices(): readonly VoiceChoice[] {
-  return VOICE_CHOICES;
+  return [...VOICE_CHOICES, ...loadVoiceExtras(SHIPPING_VOICE_IDS)];
 }
 
 export function voiceChoicesFor(locale: VoiceLocale): readonly VoiceChoice[] {
+  return allVoiceChoices().filter((c) => c.locale === locale);
+}
+
+/** Shipping-only choices (no user-added extras). */
+export function shippingVoiceChoicesFor(locale: VoiceLocale): readonly VoiceChoice[] {
   return VOICE_CHOICES.filter((c) => c.locale === locale);
 }
 
@@ -252,7 +272,18 @@ export function resolveVoiceChoiceId(id: string | null | undefined): string | un
 export function voiceChoiceById(id: string | null | undefined): VoiceChoice | undefined {
   const resolved = resolveVoiceChoiceId(id);
   if (!resolved) return undefined;
-  return VOICE_CHOICES.find((c) => c.id === resolved);
+  return VOICE_CHOICES.find((c) => c.id === resolved)
+    ?? extraVoiceById(resolved, SHIPPING_VOICE_IDS);
+}
+
+/** How many Add-pool voices are still available for this language. */
+export function voiceAddRemaining(locale: VoiceLocale): number {
+  return remainingVoiceAddCount(locale, SHIPPING_VOICE_IDS);
+}
+
+/** Append the next test voice from the Add pool. Null when exhausted. */
+export function addVoiceOption(locale: VoiceLocale): VoiceChoice | null {
+  return addNextVoiceExtra(locale, SHIPPING_VOICE_IDS, shippingVoiceChoicesFor(locale).length);
 }
 
 /** Pitch gender for the free HTTP tier: pinned delivery, else companion gender. */
@@ -282,9 +313,9 @@ export function tlForChoice(locale: VoiceLocale, id?: string | null): string {
   return DEFAULT_TL[locale];
 }
 
-/** How many genuinely different sounds this language can produce. */
+/** How many shipping free voices this language lists (excludes user Add extras). */
 export function distinctVoiceCount(locale: VoiceLocale): number {
-  return voiceChoicesFor(locale).length;
+  return shippingVoiceChoicesFor(locale).length;
 }
 
 // ---------------------------------------------------------------------------
