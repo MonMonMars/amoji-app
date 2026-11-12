@@ -2,8 +2,8 @@
 
 **Purpose:** Living checklist of product rules from the product owner. Agents must read this before chat/voice/pose/permission work and update it when rules change.
 
-**Last reviewed:** 2026-11-12 (Asia/Hong_Kong) — late night  
-**Branch for current pack:** `cursor/no-history-resume-ask-0340` · PR [#366](https://github.com/MonMonMars/amoji-app/pull/366)  
+**Last reviewed:** 2026-11-13 05:55 (Asia/Hong_Kong)  
+**main tip:** `4b25a12` · merge wave #362–#364 / #373–#375 · docs #376  
 **Agent copy:** `/cursor/stores/self/USER_PRODUCT_BIBLE.md`  
 **Request log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn.
 
