@@ -40,7 +40,7 @@ const STYLE_PATTERNS: { id: MusicStyleId; re: RegExp }[] = [
   { id: 'ballad', re: /\bballad\b|抒情|慢歌|バラード|love\s*song/i },
   { id: 'rock', re: /\brock\b|搖滾|ロック|金屬|\bmetal\b/i },
   { id: 'dance', re: /\bdance\b|disco|派對|クラブ|跳舞音樂|舞曲/i },
-  { id: 'chill', re: /\bchill\b|冷靜|放鬆|ambient|アンビエント|輕鬆/i },
+  { id: 'chill', re: /\bchill\b|\bcalm\b|\brelax(?:ing|ed)?\b|冷靜|放鬆|放松|ambient|アンビエント|輕鬆|轻松|穏やか/i },
   { id: 'cute', re: /\bcute\b|可愛|萌|きゅん|甜蜜|甜蜜歌/i },
   { id: 'pop', re: /\bpop\b|流行|ポップ|流行曲|流行歌|K-?pop|ポップス/i },
 ];
@@ -297,4 +297,10 @@ export function pickStreamTrack(style: MusicStyleId | undefined, n = 0): StreamT
   const pool = tracksForStyle(style ?? 'default');
   if (!pool.length) return null;
   return pool[Math.abs(n) % pool.length]!;
+}
+
+/** Exact Mixkit/PD track when the user picked from a select offer. */
+export function streamTrackById(id: string | undefined | null): StreamTrack | null {
+  if (!id) return null;
+  return STREAM_TRACKS.find((t) => t.id === id) ?? null;
 }

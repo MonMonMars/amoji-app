@@ -703,6 +703,8 @@ export interface ClipQuery {
   bed?: boolean;
   /** User-requested genre (pop / jazz / lofi…); soft-weights matching styles. */
   style?: string;
+  /** Exact library clip when the user picked from a select offer. */
+  clipId?: string;
 }
 
 /**
@@ -753,6 +755,10 @@ export const AVOID_DEMO_CLIPS = new Set([
  * unless only one clip matches the mood and voice.
  */
 export function pickPerformanceClip(q: ClipQuery): PerformanceClip {
+  if (q.clipId) {
+    const exact = PERFORMANCE_CLIPS.find((c) => c.id === q.clipId);
+    if (exact) return exact;
+  }
   const bank = PERFORMANCE_CLIPS.filter((c) => c.kind === q.kind);
   const moodHits = q.mood ? bank.filter((c) => c.moods.includes(q.mood!)) : [];
   let pool = moodHits.length ? moodHits : bank;

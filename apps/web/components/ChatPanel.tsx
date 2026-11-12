@@ -191,6 +191,14 @@ import {
   type PendingPerfDance,
 } from '../lib/dance-audio-gate';
 import { isMasterMuted } from '../lib/master-mute';
+import {
+  listMusicPickOptions,
+  musicAskShowKind,
+  musicSelectOfferLine,
+  randomMusicSeed,
+  resolveMusicAsk,
+  type MusicPickOption,
+} from '../lib/music-ask';
 import { nextPassiveIdleClip, PASSIVE_IDLE_LOOP_TEMPLATE } from '../lib/idle-passive-loop';
 import { resolveContentMotion } from '../lib/content-motion';
 import { clipLabel, PERFORMANCE_CLIPS, type PerformanceClip } from '../lib/performance-clips';
@@ -334,6 +342,8 @@ export default function ChatPanel({
   const [replayHint, setReplayHint] = useState(false);
   // premade sing/dance clip currently on stage — the name is the visible pick
   const [nowPlaying, setNowPlaying] = useState<string | null>(null);
+  /** Song/genre chips — only when user explicitly asks to choose. */
+  const [musicPicks, setMusicPicks] = useState<MusicPickOption[] | null>(null);
   // the last turn was caught by the crisis guard — show the /rules card
   const [crisisCard, setCrisisCard] = useState(false);
   // warning popup with location-aware 「即刻搵人傾」 numbers (alongside the card)
@@ -661,6 +671,7 @@ export default function ChatPanel({
     bed = false,
     styleHint?: string,
     afterStart?: () => void,
+    pick?: { clipId?: string; streamId?: string; genre?: string },
   ) => {
     const query = {
       kind,
@@ -672,11 +683,14 @@ export default function ChatPanel({
       ms,
       bed,
       style: styleHint,
+      clipId: pick?.clipId,
+      streamId: pick?.streamId,
     };
     // Same pick for announce + play so the spoken title matches the bed.
     const clip = resolveLibraryPerformance(query);
     const title = clipTitle(clip, lang);
-    const intro = performanceIntroLine(kind === 'song' ? 'song' : 'music', title, lang);
+    const genre = pick?.genre || styleHint || clip.style;
+    const intro = performanceIntroLine(kind === 'song' ? 'song' : 'music', title, lang, genre);
     const hold = Math.max(clip.durationMs + 600, ms);
     const bodyMove = kind === 'song' ? 'sing' : 'dance';
     // Arm only — stay calm through intro TTS and fetch/decode.
@@ -708,6 +722,26 @@ export default function ChatPanel({
     });
     return clip;
   };
+
+  const playMusicPick = (option: MusicPickOption) => {
+    setMusicPicks(null);
+    perfCountRef.current += 1;
+    beginShow(
+      option.kind,
+      18_000,
+      undefined,
+      randomMusicSeed(),
+      option.source === 'stream',
+      typeof option.styleHint === 'string' ? option.styleHint : undefined,
+      undefined,
+      {
+        clipId: option.clipId,
+        streamId: option.streamId,
+        genre: option.genre,
+      },
+    );
+  };
+
   const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string, alreadySpoken?: { text: string; since: number }): string => {
     // Content director owns move + face mood — LLM emotion tags are ignored here.
     const plan = resolveContentMotion({ userText, assistantText: reply });
@@ -1004,6 +1038,8 @@ export default function ChatPanel({
     const text = (override ?? input).trim();
     if (!text || busy) return;
     setInput('');
+    // A typed/spoken turn replaces any pending music pick sheet.
+    setMusicPicks(null);
     if (userUndecided(text)) {
       lastActivityRef.current = Date.now();
       lastUserRef.current = Date.now();
@@ -1208,17 +1244,37 @@ export default function ChatPanel({
       done();
       return;
     }
+    // Music ask UX: generic play → random autoplay + name/genre intro.
+    // Selection chips only when the user explicitly asks to choose / list.
+    {
+      const ask = resolveMusicAsk(text);
+      if (ask.mode === 'select') {
+        const options = listMusicPickOptions({
+          kind: ask.kind,
+          style: ask.style,
+          gender: characterGender,
+          seed: randomMusicSeed(),
+          count: 3,
+        });
+        setMusicPicks(options);
+        const line = musicSelectOfferLine(lang, options);
+        // sayLocal appends the assistant bubble + speaks the menu.
+        sayLocal(line, { joy: 0.62 });
+        done();
+        return;
+      }
+      if (ask.mode === 'random' && ask.kind === 'music') {
+        setMusicPicks(null);
+        perfCountRef.current += 1;
+        beginShow('dance', 18_000, undefined, randomMusicSeed(), true, ask.style);
+        done();
+        return;
+      }
+    }
     // r.48 — she offered you a performance a moment ago and you said yes:
     // the show starts RIGHT NOW, no brain needed — her signature song sung
     // live on the melodic contour, or a full dance number, both over an
     // original WebAudio theme composed for her personality
-    if (/\b(play (?:some )?music|put on (?:some )?music)\b|播音樂|播音乐|放音樂|放音乐|音楽をかけ/.test(text)) {
-      perfCountRef.current += 1;
-      // beginShow speaks the track name, then starts the bed.
-      beginShow('dance', 18_000, undefined, perfCountRef.current, true);
-      done();
-      return;
-    }
     if (pendingOfferRef.current && SHOWCASE_YES_RE.test(text)) {
       const kind = pendingOfferRef.current;
       pendingOfferRef.current = null;
@@ -1287,12 +1343,22 @@ export default function ChatPanel({
     // the track is audible and named while she thinks. A sing request skips
     // the thinking filler — the clip is the vocal.
     const requested = detectMove(text);
-    // Sing/dance: local CC0 clips + Mixkit style streams when the user names a genre.
+    // Sing/dance random autoplay (select already returned above).
+    // Local CC0 clips + Mixkit style streams when the user names a genre.
     if (requested === 'sing' || requested === 'dance') {
+      setMusicPicks(null);
       triggerMove(requested);
       applyContentMood({ joy: requested === 'sing' ? 0.88 : 0.72 });
-      const style = detectMusicStyle(text);
-      beginShow(requested === 'sing' ? 'song' : 'dance', 18_000, felt?.mood, laughCountRef.current, false, style);
+      const ask = resolveMusicAsk(text);
+      const style = ask.style ?? detectMusicStyle(text);
+      beginShow(
+        requested === 'sing' ? 'song' : 'dance',
+        18_000,
+        felt?.mood,
+        randomMusicSeed(),
+        false,
+        style,
+      );
     }
     setThinkingPose(true);
     pushAutoIdle('', undefined, true);
@@ -1818,6 +1884,29 @@ export default function ChatPanel({
         >
           <span aria-hidden>♪</span>
           <span>{nowPlaying.replace(/^♪\s*/, '')}</span>
+        </div>
+      )}
+      {musicPicks && musicPicks.length > 0 && (
+        <div
+          data-testid="music-pick-rail"
+          role="list"
+          aria-label="Song picks"
+          className="relative z-20 flex w-full min-w-0 gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5 [scrollbar-width:none] [touch-action:pan-x] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden"
+        >
+          {musicPicks.map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              role="listitem"
+              data-music-pick={opt.id}
+              disabled={busy}
+              onClick={() => playMusicPick(opt)}
+              className="shrink-0 rounded-full border border-white/25 bg-black/70 px-3 py-1.5 text-left text-xs font-medium text-white/95 shadow-[0_6px_18px_-10px_rgba(0,0,0,0.85)] transition active:scale-95 disabled:opacity-40"
+            >
+              <span className="block max-w-[10rem] truncate">{opt.title}</span>
+              <span className="block text-[10px] font-normal text-white/55">{opt.genre}</span>
+            </button>
+          ))}
         </div>
       )}
       {/* Demo-phase chips: one-tap tutorials (weather / dance / sing…) for

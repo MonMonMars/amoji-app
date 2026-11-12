@@ -28,10 +28,17 @@ import {
 } from './performance-clips';
 import {
   pickStreamTrack,
+  streamTrackById,
   STYLE_THEME_ID,
   type MusicStyleId,
 } from './music-catalog';
-export { detectMusicStyle, resolveStreamPlaylist, pickStreamTrack, STREAM_TRACKS } from './music-catalog';
+export {
+  detectMusicStyle,
+  resolveStreamPlaylist,
+  pickStreamTrack,
+  streamTrackById,
+  STREAM_TRACKS,
+} from './music-catalog';
 export type { MusicStyleId, StreamTrack } from './music-catalog';
 
 export interface MusicTheme {
@@ -621,15 +628,27 @@ function streamDanceClip(
   };
 }
 
+type LibraryPerfQuery = ClipQuery & {
+  ms?: number;
+  style?: MusicStyleId | string;
+  /** Exact Mixkit/PD track from a select offer. */
+  streamId?: string;
+};
+
+function resolveStreamForQuery(q: LibraryPerfQuery) {
+  const exact = streamTrackById(q.streamId);
+  if (exact) return exact;
+  const styleId = q.style as MusicStyleId | undefined;
+  return styleId ? pickStreamTrack(styleId, q.n ?? 0) : null;
+}
+
 /**
  * Resolve which library / stream clip would play — no audio side effects.
  * Same inputs as {@link startLibraryPerformance} so announce-then-play stays stable.
  */
-export function resolveLibraryPerformance(
-  q: ClipQuery & { ms?: number; style?: MusicStyleId | string },
-): PerformanceClip {
-  const styleId = q.style as MusicStyleId | undefined;
-  const stream = styleId ? pickStreamTrack(styleId, q.n ?? 0) : null;
+export function resolveLibraryPerformance(q: LibraryPerfQuery): PerformanceClip {
+  if (q.clipId) return pickPerformanceClip(q);
+  const stream = resolveStreamForQuery(q);
   if (stream && q.kind === 'dance') return streamDanceClip(stream);
   return pickPerformanceClip(q);
 }
@@ -640,10 +659,12 @@ export function resolveLibraryPerformance(
  * otherwise local CC0 clips, then procedural band.
  */
 export function startLibraryPerformance(
-  q: ClipQuery & { ms: number; style?: MusicStyleId | string },
+  q: ClipQuery & { ms: number; style?: MusicStyleId | string; streamId?: string },
 ): PerformanceClip {
+  // Exact clip picks skip the stream bed path.
+  if (!q.clipId) {
   const styleId = q.style as MusicStyleId | undefined;
-  const stream = styleId ? pickStreamTrack(styleId, q.n ?? 0) : null;
+  const stream = resolveStreamForQuery(q);
   if (stream && q.kind === 'dance') {
     const synthetic = streamDanceClip(stream);
     const holdMs = Math.max(q.ms, stream.durationMs + 600);
@@ -669,6 +690,7 @@ export function startLibraryPerformance(
     }
     return synthetic;
   }
+  } // end !clipId stream path
   const clip = pickPerformanceClip(q);
   const holdMs = Math.max(q.ms, (clip.durationMs || 0) + 600);
   if (isMasterMuted() || typeof window === 'undefined') return clip;
