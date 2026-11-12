@@ -72,6 +72,7 @@
 | Character / voice card tap greets (code) | gesture clip `b7848bc` on PR #366 · merged |
 | CMA poke SFX #1–23 Want / archive / delete + zone wire | 13 keepers (10 active + 3 archive); male → CMA00318; deleted 10 reject mp3s |
 | Poke SFX zone-stable (same location = same sound) | `recordedPokeClip` pinned to RECORDED_POKE_ZONE; no Wanted rotation |
+| Card greet audible (sink-race + insurance hold) | `playGestureClipSync` pin-after-play + retry; delay stop for gTTS |
 
 ---
 
@@ -82,9 +83,10 @@
 | Confirm mic stays open on real device after gate → select → chat | Verify on live Pages |
 | Location still asked only on gate (no second popup at Start) | Confirm on device |
 | Confirm spin-to-back / cloudsea / topic-asks gone on **live Pages** | #366 merged — eyeball Pages |
-| Confirm character/voice card tap speaks on live Pages | Eyeball Pages |
+| Confirm character/voice card tap speaks on live Pages | After card-greet fix merge |
 | Broader SCENE_LINES pass (other backdrops still ask a lot) | Optional cleanup |
-| Confirm poke SFX zone map feels right on device (stable per location) | After this merge + Pages |
+| Confirm poke SFX zone map feels right on device (stable per location) | #369 merged — eyeball Pages |
+| Body/arms blend to strange locations | Queued owner report — next |
 
 ---
 
@@ -92,6 +94,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-12 evening | Harden card-greet insurance clip (no pre-play sink pin; hold until gTTS sticks) |
 | 2026-11-12 evening | Pin poke SFX to zone map — same location always same clip |
 | 2026-11-12 morning | SFX #1–23 wired: keep/archive/delete + RECORDED_POKE_ZONE; push/merge poke-sfx |
 | 2026-11-12 late night | Harden leftover 想傾/想聊 banks; owner re-reported cloudsea/asks/spin — still not on live Pages until PR #366 merges |

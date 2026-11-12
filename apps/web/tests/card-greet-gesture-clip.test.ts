@@ -20,10 +20,16 @@ describe('card greet gesture insurance clip', () => {
   it('exposes playGestureClipSync that plays before awaiting sink pin', () => {
     expect(clip).toContain('export function playGestureClipSync');
     expect(clip).toMatch(/void audio\.play\(\)/);
-    // Must not gate the first play on pinDefaultOutputAsync.
     const sync = clip.slice(clip.indexOf('export function playGestureClipSync'));
     const body = sync.slice(0, sync.indexOf('export function playVoiceClip'));
-    expect(body).not.toMatch(/pinDefaultOutputAsync\(audio\)\s*\.then\(\s*\(\)\s*=>\s*audio\.play/);
+    // First play must be sync in the gesture — no await pin-then-play for start.
+    expect(body).not.toMatch(/await pinDefaultOutputAsync/);
+    expect(body.indexOf('void audio.play()')).toBeLessThan(body.indexOf('pinDefaultOutputAsync'));
+    // Must retry after pin when the gesture play rejects (Chrome sink race).
+    expect(body).toMatch(/pinDefaultOutputAsync\(audio\)[\s\S]*audio\.play\(\)/);
+    // Sink pin only after play starts (onplay) — never right after `current = audio`.
+    expect(body).toMatch(/audio\.onplay = \(\) => \{[\s\S]*?pinDefaultOutput\(audio\)/);
+    expect(body).not.toMatch(/current = audio;\s*\n\s*pinDefaultOutput\(audio\)/);
   });
 
   it('playVoiceGreeting starts the local clip before speakGtts', () => {
@@ -32,12 +38,15 @@ describe('card greet gesture insurance clip', () => {
     expect(body).toContain('clipFile(lang, gender, insuranceKind)');
     expect(body.indexOf('playGestureClipSync')).toBeLessThan(body.indexOf('speakGtts('));
     expect(body).toContain('stopVoiceClip()');
+    // gTTS must not kill insurance instantly on onplay.
+    expect(body).toMatch(/setTimeout\(\(\) => \{[\s\S]*stopVoiceClip\(\)/);
   });
 
   it('previewVoiceChoice also starts the local insurance clip', () => {
     const body = fnBody('previewVoiceChoice', 'export function previewOsVoice');
     expect(body).toContain('playGestureClipSync');
     expect(body.indexOf('playGestureClipSync')).toBeLessThan(body.indexOf('speakGtts('));
+    expect(body).toMatch(/setTimeout\(\(\) => \{[\s\S]*stopVoiceClip\(\)/);
   });
 
   it('gtts plays without awaiting setSinkId first', () => {
@@ -45,7 +54,6 @@ describe('card greet gesture insurance clip', () => {
     expect(marker).toBeGreaterThan(-1);
     const window = gtts.slice(marker, marker + 200);
     expect(window).toContain('void audio.play()');
-    // Immediate play comes before any sink-pin-then-play chain in this window.
     expect(window.indexOf('void audio.play()')).toBeLessThan(
       window.includes('pinDefaultOutputAsync(audio)')
         ? window.indexOf('pinDefaultOutputAsync(audio)')
