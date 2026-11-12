@@ -6,13 +6,17 @@ import {
   DEMO_PHASE_BUTTONS,
   asDemoLang,
   demoPhaseLabel,
+  demoPhasePrimaryPrompt,
   demoPhasePrompt,
+  demoPhasePromptCount,
 } from '../lib/demo-phase';
 import { detectMove } from '../lib/moves';
 import { detectExercise } from '../lib/exercises';
 import { DUET_TRIGGER, MEAL_TOGETHER_TRIGGER } from '../lib/activities';
 import { detectActionGame } from '../lib/minigames';
 import { wantsLongCompanionReply } from '../lib/topic-suggestions';
+import { detectMusicStyle } from '../lib/music-catalog';
+import { detectWeatherFocus, planTools } from '../lib/live-tools';
 
 const PANEL = fs.readFileSync(
   path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../components/ChatPanel.tsx'),
@@ -48,9 +52,32 @@ describe('demo-phase buttons', () => {
     for (const btn of DEMO_PHASE_BUTTONS) {
       for (const lang of ['en', 'yue', 'zh', 'ja'] as const) {
         expect(btn.label[lang].length).toBeLessThanOrEqual(12);
-        expect(btn.prompt[lang].trim().length).toBeGreaterThan(0);
+        expect(btn.prompts[lang].length).toBeGreaterThanOrEqual(2);
+        for (const line of btn.prompts[lang]) {
+          expect(line.trim().length).toBeGreaterThan(0);
+        }
       }
     }
+  });
+
+  it('rotates prompt facets on repeated taps of the same chip', () => {
+    const a = demoPhasePrompt('weather', 'en', 0);
+    const b = demoPhasePrompt('weather', 'en', 1);
+    const c = demoPhasePrompt('weather', 'en', 2);
+    expect(a).not.toBe(b);
+    expect(b).not.toBe(c);
+    expect(demoPhasePrompt('weather', 'en', demoPhasePromptCount('weather', 'en'))).toBe(a);
+    expect(detectWeatherFocus(a)).toBe('now');
+    expect(detectWeatherFocus(b)).toBe('temp');
+    expect(detectWeatherFocus(c)).toBe('forecast');
+    expect(detectWeatherFocus(demoPhasePrompt('weather', 'en', 3))).toBe('wind');
+    expect(planTools(c).weather).toBe(true);
+    expect(planTools(demoPhasePrompt('weather', 'en', 3)).weather).toBe(true);
+
+    const m0 = demoPhasePrompt('music', 'en', 0);
+    const m1 = demoPhasePrompt('music', 'en', 1);
+    expect(m0).not.toBe(m1);
+    expect(detectMusicStyle(m1)).toBe('jazz');
   });
 
   it('dance / sing / yoga prompts hit the move detector', () => {
@@ -106,5 +133,6 @@ describe('demo-phase buttons', () => {
     expect(asDemoLang('nope')).toBe('yue');
     expect(demoPhaseLabel('weather', 'en')).toBe('Weather');
     expect(demoPhasePrompt('weather', 'en')).toMatch(/weather/i);
+    expect(demoPhasePrimaryPrompt(DEMO_PHASE_BUTTONS[0]!, 'en')).toMatch(/weather/i);
   });
 });

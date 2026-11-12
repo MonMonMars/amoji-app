@@ -29,6 +29,12 @@ describe('DemoPhaseRail scroll (iPhone + drag)', () => {
     expect(src).toMatch(/onPointerDown[\s\S]*Do NOT capture yet/);
   });
 
+  it('rotates prompts via demoPhasePrompt + per-chip tap count', () => {
+    const src = read('components/DemoPhaseRail.tsx');
+    expect(src).toContain('demoPhasePrompt');
+    expect(src).toContain('tapCountRef');
+  });
+
   it('ChatPanel wires DemoPhaseRail onPick into send()', () => {
     const panel = read('components/ChatPanel.tsx');
     expect(panel).toContain('<DemoPhaseRail');

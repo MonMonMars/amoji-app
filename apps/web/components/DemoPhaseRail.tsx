@@ -8,7 +8,12 @@
 // Chrome then drops the click — every phase chip looked dead.
 
 import { useRef } from 'react';
-import { DEMO_PHASE_BUTTONS, asDemoLang, type DemoPhaseId } from '../lib/demo-phase';
+import {
+  DEMO_PHASE_BUTTONS,
+  asDemoLang,
+  demoPhasePrompt,
+  type DemoPhaseId,
+} from '../lib/demo-phase';
 
 const RAIL_ARIA: Record<string, string> = {
   en: 'Try what she can do',
@@ -31,6 +36,8 @@ export default function DemoPhaseRail({
 }) {
   const L = asDemoLang(lang);
   const railRef = useRef<HTMLDivElement>(null);
+  /** Per-chip tap count so repeat presses rotate prompt facets. */
+  const tapCountRef = useRef<Partial<Record<DemoPhaseId, number>>>({});
   const dragRef = useRef<{
     pointerId: number;
     startX: number;
@@ -117,7 +124,9 @@ export default function DemoPhaseRail({
               skipClickRef.current = false;
               return;
             }
-            onPick(btn.prompt[L], btn.id);
+            const n = tapCountRef.current[btn.id] ?? 0;
+            tapCountRef.current[btn.id] = n + 1;
+            onPick(demoPhasePrompt(btn.id, L, n), btn.id);
           }}
           className="pointer-events-auto relative z-20 shrink-0 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-[11px] font-medium leading-none text-white/85 transition active:scale-95 enabled:hover:border-white/30 enabled:hover:bg-black/60 disabled:opacity-40"
         >

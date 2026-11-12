@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   clearLiveCache,
   clientLiveContext,
+  detectWeatherFocus,
   gatherLiveContext,
   invalidateNewsFeedCache,
   isNewsFeedCacheKey,
@@ -293,6 +294,44 @@ describe('gatherLiveContext', () => {
     expect(live.spoken).not.toContain('香港'); // no city name in spoken weather
     expect(live.spoken).toContain('落毛毛雨');
     expect(urls.some((u) => u.includes('geojs'))).toBe(false);
+    expect(urls.some((u) => u.includes('forecast_days=4'))).toBe(true);
+  });
+
+  it('rotates spoken weather facets (temp / wind / forecast)', async () => {
+    expect(detectWeatherFocus("what's the temperature right now?")).toBe('temp');
+    expect(detectWeatherFocus("how's the wind today?")).toBe('wind');
+    expect(detectWeatherFocus("what's the forecast for the next few days?")).toBe('forecast');
+
+    const multiDay = {
+      ...weatherBody,
+      daily: {
+        temperature_2m_max: [29.1, 30.2, 28.0],
+        temperature_2m_min: [25.2, 26.0, 24.5],
+        precipitation_probability_max: [43, 20, 55],
+      },
+    };
+    const fetchImpl: typeof fetch = async (input) => {
+      if (String(input).includes('api.open-meteo.com')) return jsonRes(multiDay);
+      return jsonRes({}, 404);
+    };
+    const wind = await gatherLiveContext("how's the wind today?", {
+      lang: 'en',
+      fetch: fetchImpl,
+      cache: new Map(),
+      locate: async () => HK,
+    });
+    expect(wind.spoken.toLowerCase()).toMatch(/wind|km\/h/);
+    expect(wind.spoken).toMatch(/21/);
+    expect(wind.prompt).toMatch(/wind 21 km\/h/);
+
+    const forecast = await gatherLiveContext("what's the forecast for the next few days?", {
+      lang: 'en',
+      fetch: fetchImpl,
+      cache: new Map(),
+      locate: async () => HK,
+    });
+    expect(forecast.prompt).toMatch(/Outlook:/);
+    expect(forecast.spoken.toLowerCase()).toMatch(/today|next|day/i);
   });
 
   it('keeps GPS / accuracy talk out of both weather prompt and spoken line', async () => {
