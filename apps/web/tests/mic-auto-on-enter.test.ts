@@ -13,8 +13,10 @@ describe('chat mic auto-on + external audio duck', () => {
     expect(chat).toContain('cutCompanion: false');
     expect(chat).toContain('micPreflightGrantedThisSession');
     expect(chat).toMatch(/micDelay[\s\S]*?beginVoiceMode\(\{ cutCompanion: false \}\)/);
-    expect(chat).toMatch(/preflight[\s\S]*?\? 0/);
-    expect(chat).toContain("rec?.mic === 'denied'");
+    expect(chat).toContain('const micDelay = 0');
+    // Stale denied must not hard-block; only unsupported skips auto-open.
+    expect(chat).toContain("rec?.mic === 'unsupported'");
+    expect(chat).not.toContain("rec?.mic === 'denied'");
     // Must not wait for open cheer before arming the mic.
     expect(chat).not.toMatch(/micDelay[\s\S]*?OPEN_CHEER_MS/);
     expect(chat).toContain('micOpenedThisMountRef');
@@ -29,6 +31,12 @@ describe('chat mic auto-on + external audio duck', () => {
     const enterBlock = gate.slice(enterIdx, enterIdx + 1200);
     expect(enterBlock).toContain('await requestMic()');
     expect(enterBlock).toContain('setMicPreflightSession(true)');
+  });
+
+  it('Start / ENTER STORY also re-probes mic in the same gesture', () => {
+    expect(read('components/SelectionBoard.tsx')).toContain('beginMicPreflightFromGesture');
+    expect(read('components/SetupFlow.tsx')).toContain('beginMicPreflightFromGesture');
+    expect(read('components/StorySetupPanel.tsx')).toContain('beginMicPreflightFromGesture');
   });
 
   it('routes companion TTS through playback while mic keeps play-and-record', () => {

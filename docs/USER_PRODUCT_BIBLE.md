@@ -73,7 +73,9 @@
 | CMA poke SFX #1–23 Want / archive / delete + zone wire | 13 keepers (10 active + 3 archive); male → CMA00318; deleted 10 reject mp3s |
 | Poke SFX zone-stable (same location = same sound) | `recordedPokeClip` pinned to RECORDED_POKE_ZONE; no Wanted rotation |
 | Card greet audible (sink-race + insurance hold) | `playGestureClipSync` pin-after-play + retry; delay stop for gTTS · #370 |
-| Idle A→B body/arms freeze procedural writers | Soften/hang/shoulder ROM + cast clavicle gated during glide; no same-clip t≈0 snap |
+| Idle A→B body/arms freeze procedural writers | Soften/hang/shoulder ROM + cast clavicle gated during glide; no same-clip t≈0 snap · #371 |
+| All SCENE_LINES statement-only (no soft invites) | Every backdrop bank rewritten; tests ban `?` / 想傾 |
+| Start re-probes mic; chat ignores stale denied | `beginMicPreflightFromGesture` on Start; micDelay 0 |
 
 ---
 
@@ -81,13 +83,9 @@
 
 | Item | Status |
 |------|--------|
-| Confirm mic stays open on real device after gate → select → chat | Verify on live Pages |
-| Location still asked only on gate (no second popup at Start) | Confirm on device |
-| Confirm spin-to-back / cloudsea / topic-asks gone on **live Pages** | Code merged — eyeball Pages |
-| Confirm character/voice card tap speaks on live Pages | #370 merged — eyeball Pages |
-| Broader SCENE_LINES pass (other backdrops still ask a lot) | Optional cleanup |
-| Confirm poke SFX + zone-stable on device | #368/#369 merged — eyeball Pages |
-| Confirm body/arms no longer snap mid next/idle | After this blend freeze merge |
+| Eyeball live Pages after this pack deploys | mic / card greet / poke zones / idle next / ambient |
+| Location is Start-only today (not gate+Start) | One popup — confirm no double ask on device |
+| Broader optional product PRs (#362–#364 dance/music/voice) | Separate scope — not blocking this pack |
 
 ---
 
@@ -95,6 +93,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-12 evening | Outstanding pack: statement SCENE_LINES + Start mic preflight + merge #371 |
 | 2026-11-12 evening | Freeze hang/soften/shoulder mid idle A→B; skip same-clip t≈0 refresh snap |
 | 2026-11-12 evening | Harden card-greet insurance clip (no pre-play sink pin; hold until gTTS sticks) |
 | 2026-11-12 evening | Pin poke SFX to zone map — same location always same clip |

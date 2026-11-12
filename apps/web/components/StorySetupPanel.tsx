@@ -13,7 +13,7 @@ import {
 } from '../lib/prefs';
 import { STORY_SCENES, rollStory, type StoryScene } from '../lib/stories';
 import { saveStorySession } from '../lib/story-session';
-import { primeChatStartGesture } from '../lib/chat-start-gesture';
+import { beginMicPreflightFromGesture, primeChatStartGesture } from '../lib/chat-start-gesture';
 import { primeLocationForChatEnter } from '../lib/live-tools';
 
 const LABEL: Record<
@@ -81,8 +81,9 @@ export default function StorySetupPanel() {
   const packLocked = packId != null;
 
   const enter = () => {
-    // t767/t777: ENTER STORY primes voice + location in this gesture.
+    // t767/t777: ENTER STORY primes voice + mic + location in this gesture.
     primeChatStartGesture();
+    try { beginMicPreflightFromGesture(); } catch { /* ignore */ }
     primeLocationForChatEnter();
     saveStorySession({
       sceneId: scene.id,
