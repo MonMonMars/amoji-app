@@ -89,7 +89,7 @@
 
 | Item | Status |
 |------|--------|
-| Eyeball live Pages after this merge wave deploys | dance sync, phase chips, pitch tiers, one-voice card, music ask, voice gender |
+| Device eyeball on live Pages | Bundle OK for phase chips + dance gate + pitch (`/chat` chunk); still need human/device check for dance timing, one-voice card, music ask |
 | Location is Start-only today (not gate+Start) | One popup — confirm no double ask on device |
 | White pupil image loop | Awaiting owner advice |
 
