@@ -1,20 +1,25 @@
 # CMA Reaction SFX gallery (wired)
 
 - **URL (after Pages deploy):** /sfx-gallery
-- **Range:** CMA00304–CMA00366 (**23** ship clips)
-- **Original EmotionClipRow keepers (female-view #):**
-  - `#12` `CMA00320` female giggle
-  - `#18` `CMA00335` female poke ouch (painful, fast)
-  - `#23` `CMA00318` male hard-breath / effort (full take; poke uses crop `CMA00357`)
-  - `#27` `CMA00327` male gasp (poke)
-  - `#30` `CMA00330` male yawn (stretching)
-  - `#36` `CMA00339` male ouch / heavy-sword swing
-- **Deleted:** every other CMA00304–349 code (`CMA_REACTION_DROPPED_CODES`, 40 entries)
-- **New poke pack:** `CMA00350`–`CMA00362` (short ouch/gasp/effort wired into `RECORDED_POKE_ZONE`)
-- **Legacy main poke CLIP rows:** `CMA00363`–`CMA00366` (um / giggle / ha / wow — were played on main but missing from the selectable list)
+- **Range:** CMA00304–CMA00366 (**13** ship clips after owner #1–23 review)
+- **Active (zone / poke defaults):**
+  - `#3` `CMA00350` female HA punch/hit → torso/foot
+  - `#4` `CMA00351` slow soft press → chest/breast/default
+  - `#7` `CMA00354` young pretty smile → head/arms
+  - `#9` `CMA00359` old-woman scare (gasp)
+  - `#10` `CMA00360` age-35 small scare → back
+  - `#11` `CMA00363` fast soft press → belly
+  - `#12` `CMA00364` slow soft press → hands
+  - `#13` `CMA00365` scary surprise → side
+  - `#14` `CMA00366` sensitive poke → butt/legs
+  - `#15` `CMA00318` male effort (only surviving male)
+- **Archive (gallery for future Want; not zone defaults):**
+  - `#1` `CMA00320` giggle too long
+  - `#2` `CMA00335` kid-boy ouch
+  - `#6` `CMA00353` evil-lady giggle
+- **Deleted:** `#5` name (`CMA00352`), `#8` no voice (`CMA00358`), `#16` dog bark (`CMA00327`), `#17–23` (`CMA00330/339/355–357/361/362`) plus prior CMA00304–349 cull
 - **Assets:** `public/voice-clips/cma-reaction/`
 - **Catalog + picks:** `lib/cma-reaction-gallery.ts`
 - **localStorage key:** `amoji.cmaReactionSfx.picks.v1`
 - **Select UI:** EmotionClipRow tap cycles Want → Skip → clear (same picks as /sfx-gallery).
-- **Play wire:** Wanted poke codes feed `recordedPokeClip` (zone clip preferred when still Wanted/enabled). Empty Want → full poke-role list minus Skip (default = full updated list). Skip never enters the pool. Zone-table paths are always CMA gallery members.
-- **Untouched:** Edge TTS, Yue/ja speech, EN+Cantonese combine. Gallery Want/Skip UI still at /sfx-gallery.
+- **Play wire:** Wanted poke codes feed `recordedPokeClip` (zone clip preferred when still Wanted/enabled). Empty Want → active poke-role list minus Skip. Archive never enters the default poke pool. Skip never enters the pool.

@@ -76,19 +76,21 @@ describe('poke SFX answers the zone that was hit', () => {
   });
 
   it('uses distinct clips for distinct zones, so a tap is not answered generically', () => {
-    for (const gender of GENDERS) {
-      const table = RECORDED_POKE_ZONE[gender];
-      // Zones that must never share a sound with each other.
-      const pairs: [string, string][] = [
-        ['torso', 'chest'],
-        ['head', 'legs'],
-        ['belly', 'butt'],
-      ];
-      for (const [a, b] of pairs) {
-        expect(table[a], `${gender} ${a} vs ${b}`).not.toBe(table[b]);
-      }
-      expect(pokeZoneClipPaths(gender).length).toBeGreaterThan(4);
+    // Female keeps soft-vs-hard contrast across zones.
+    const female = RECORDED_POKE_ZONE.female;
+    const pairs: [string, string][] = [
+      ['torso', 'chest'],
+      ['head', 'legs'],
+      ['belly', 'butt'],
+    ];
+    for (const [a, b] of pairs) {
+      expect(female[a], `female ${a} vs ${b}`).not.toBe(female[b]);
     }
+    expect(pokeZoneClipPaths('female').length).toBeGreaterThan(4);
+    // Male ship-set is a single keeper (CMA00318) after owner #1–23 deletes.
+    expect(pokeZoneClipPaths('male')).toEqual([
+      '/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3',
+    ]);
   });
 
   it('finishes inside the poke reaction window, so sound and body settle together', () => {
@@ -133,15 +135,16 @@ describe('poke SFX answers the zone that was hit', () => {
   });
 
   it('wraps soft-vs-hard female poke zones from the CMA ship-set', () => {
-    // Soft head (hehe→CMA00352) stays distinct from chest oh and hard belly ouch (#18).
+    // Owner #1–23: smile head, soft chest, fast soft belly, punch torso.
     expect(RECORDED_POKE_ZONE.female.chest).toContain('CMA00351');
     expect(RECORDED_POKE_ZONE.female.breast).toBe(RECORDED_POKE_ZONE.female.chest);
+    expect(RECORDED_POKE_ZONE.female.head).toContain('CMA00354');
     expect(RECORDED_POKE_ZONE.female.head).not.toBe(RECORDED_POKE_ZONE.female.chest);
-    expect(RECORDED_POKE_ZONE.female.belly).toContain('CMA00335');
-    expect(RECORDED_POKE_ZONE.male.default).toContain('CMA00339');
-    expect(RECORDED_POKE_ZONE.male.torso).not.toBe(RECORDED_POKE_ZONE.male.chest);
-    // Runtime poke paths must come from the EmotionClipRow / CMA ship-set
-    // (keepers + CMA00350–366) — never orphaned universal CLIP_LIBRARY rows.
+    expect(RECORDED_POKE_ZONE.female.belly).toContain('CMA00363');
+    expect(RECORDED_POKE_ZONE.female.torso).toContain('CMA00350');
+    expect(RECORDED_POKE_ZONE.male.default).toContain('CMA00318');
+    expect(RECORDED_POKE_ZONE.male.torso).toBe(RECORDED_POKE_ZONE.male.chest);
+    // Runtime poke paths must come from the EmotionClipRow / CMA ship-set.
     for (const gender of GENDERS) {
       for (const rel of Object.values(RECORDED_POKE_ZONE[gender])) {
         expect(rel.startsWith('/voice-clips/cma-reaction/'), rel).toBe(true);
