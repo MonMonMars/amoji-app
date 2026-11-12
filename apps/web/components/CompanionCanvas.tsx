@@ -777,6 +777,7 @@ export default function CompanionCanvas({
         return;
       }
       if (isRetiredIdleClip(safeId)) return;
+      const sameClip = !!idleAction && idleClipId === safeId;
       const swapping = !!idleAction && idleClipId !== safeId;
       const blendS = swapping
         ? Math.max(fade, IDLE_SWAP_LEG_BLEND_S)
@@ -790,22 +791,30 @@ export default function CompanionCanvas({
       // in: the "zombie pose between idle movements". A looping body is
       // never parked anywhere.
       action.setLoop(THREE.LoopRepeat, Infinity);
-      action.reset();
-      // Never sync absolute time across *different* clips — that blended
-      // mismatched mid-poses and looked like a sudden spin "to the back".
-      // Always enter the new idle near its start; crossfade owns the A→B glide.
-      action.time = Math.min(0.08, Math.max(0, clip.duration * 0.02));
-      if (idleAction && idleAction !== action) {
-        // blend from wherever the body currently is into this clip
-        idleAction.crossFadeTo(action, fade, false);
-        action.play();
-      } else {
-        // First idle entry: no mixer fadeIn. fadeIn starts weight near 0 so
-        // the body sits on bind/T-pose while normalized tracks ramp in —
-        // that + raw-bone blend collapsed shoulders (Mon t265u). Full weight
-        // + beginBoneBlend crossfades the current humanoid pose into the clip.
+      if (sameClip) {
+        // Joint refresh of the *same* clip: do NOT reset to t≈0 — that was a
+        // sudden body/arm snap every ~28s. Keep time and weight; bone blend
+        // alone re-asserts the current pose gently.
         action.setEffectiveWeight(1);
         action.play();
+      } else {
+        action.reset();
+        // Never sync absolute time across *different* clips — that blended
+        // mismatched mid-poses and looked like a sudden spin "to the back".
+        // Always enter the new idle near its start; crossfade owns the A→B glide.
+        action.time = Math.min(0.08, Math.max(0, clip.duration * 0.02));
+        if (idleAction && idleAction !== action) {
+          // blend from wherever the body currently is into this clip
+          idleAction.crossFadeTo(action, fade, false);
+          action.play();
+        } else {
+          // First idle entry: no mixer fadeIn. fadeIn starts weight near 0 so
+          // the body sits on bind/T-pose while normalized tracks ramp in —
+          // that + raw-bone blend collapsed shoulders (Mon t265u). Full weight
+          // + beginBoneBlend crossfades the current humanoid pose into the clip.
+          action.setEffectiveWeight(1);
+          action.play();
+        }
       }
       idleAction = action;
       idleClipId = safeId;
@@ -2030,11 +2039,15 @@ export default function CompanionCanvas({
         // because the poke recoil and head life arrive through its additive
         // channels (spine/chest pitch, arm flinch), which compose on top of
         // whatever the mixer wrote this frame.
+        // Idle A→B glide window — same gate for feet AND arm writers so hang /
+        // soften / shoulder ROM do not yank limbs to a "strange" pose mid-fade.
+        const idleLegGlide = idleSwapBlendActive(now, swapBlendUntil);
+
         if (gameView) playGameBody(gameView.anim);
         if (avatar.clipDrivesBody) {
           mixer?.update(dt / 1000);
-          // Idle-only arm soften — skip sing/poke/hand-drag so performances keep clip freedom.
-          if (!perfAction && boost === 0 && !gameView && !handDrag) {
+          // Idle-only arm soften — skip during swap glide (fights mixer A→B).
+          if (!perfAction && boost === 0 && !gameView && !handDrag && !idleLegGlide) {
             applyIdleClipSoftening((name) => avatar!.getBoneNode(name), idleClipId);
           }
           avatar.applyPose(poseTargets);
@@ -2050,10 +2063,12 @@ export default function CompanionCanvas({
           && (idleClipId === 'IdleBreathCalm' || idleClipId === 'StandardIdle');
         avatar.applyRelaxedHands(calmIdle);
         avatar.smoothFingers(dt / 1000, calmIdle);
-        avatar.clampShoulderROM();
-        // Straight-down idle hangs read as slumped shoulders. Skip during a
-        // punch, a performance, a mini-game, or a hand grab.
-        if (!perfAction && boost === 0 && !gameView && !handDrag) avatar.easeIdleHang();
+        // Shoulder ROM + hang rewrite mid-crossfade yanked arms to hang/open
+        // walls — owner: body/arms suddenly blend to a strange location.
+        if (!idleLegGlide) avatar.clampShoulderROM();
+        if (!perfAction && boost === 0 && !gameView && !handDrag && !idleLegGlide) {
+          avatar.easeIdleHang();
+        }
 
         // r115: hand-drag override ??after everything else wrote the
         // skeleton, pull the grabbed arm's two bones toward the pointer.
@@ -2108,7 +2123,6 @@ export default function CompanionCanvas({
         const feetFree = clipFreesFeet(perfClipId);
         // During idle A→B mixer crossfade, skip plantFeet + thigh unblend so
         // IK does not tug legs against the mixer (was a visible shake).
-        const idleLegGlide = idleSwapBlendActive(now, swapBlendUntil);
         if (!feetFree && !idleLegGlide) {
           avatar.plantFeet(true, {
             pitch: skHip,
@@ -2119,7 +2133,7 @@ export default function CompanionCanvas({
         } else if (feetFree) {
           avatar.plantFeet(false);
         }
-        avatar.applyCastFixes();
+        avatar.applyCastFixes({ skipShoulders: idleLegGlide });
         // Final axial ROM — after mixer / poke / dance sway / idle crossfade /
         // cast leveling. Fixes Normalized_J_Bip_* clamps that used to miss
         // BONE_BLEND_LIMITS and let spine/back/head travel a full turn.

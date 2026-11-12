@@ -231,7 +231,7 @@ export interface Avatar {
   /** Capture head / upper-body / shoulder corrections for this cast id. */
   armCastFixes(characterId: string): void;
   /** Re-apply those corrections after the mixer. Idempotent within a frame. */
-  applyCastFixes(): void;
+  applyCastFixes(opts?: { skipShoulders?: boolean }): void;
   /**
    * Hard ROM clamp on spine/chest/upperChest/neck/head so idle/poke/dance
    * overlays and library clips cannot spin those bones a full turn.
@@ -1015,8 +1015,8 @@ class V1Avatar implements Avatar {
     this.castFix = captureCastFix(characterId, (name) => this.getBoneNode(name));
   }
 
-  applyCastFixes(): void {
-    if (this.castFix) applyCastFix(this.castFix);
+  applyCastFixes(opts?: { skipShoulders?: boolean }): void {
+    if (this.castFix) applyCastFix(this.castFix, opts);
     this.acknowledgeHeadPose();
   }
 
@@ -1366,8 +1366,8 @@ class GenericAvatar implements Avatar {
     this.castFix = captureCastFix(characterId, (name) => this.getBoneNode(name));
   }
 
-  applyCastFixes(): void {
-    if (this.castFix) applyCastFix(this.castFix);
+  applyCastFixes(opts?: { skipShoulders?: boolean }): void {
+    if (this.castFix) applyCastFix(this.castFix, opts);
   }
 
   clampAxialNoFlip(): void {

@@ -188,7 +188,10 @@ function clampCastBone(bone: THREE.Object3D): void {
   clampBoneByName(bone.quaternion, bone.name);
 }
 
-export function applyCastFix(state: CastFixState): void {
+export function applyCastFix(
+  state: CastFixState,
+  opts?: { skipShoulders?: boolean },
+): void {
   for (const entry of state.levels) {
     const q = entry.bone.quaternion;
     if (entry.correction) {
@@ -203,6 +206,8 @@ export function applyCastFix(state: CastFixState): void {
     }
     clampCastBone(entry.bone);
   }
+  // Sticky clavicle paste mid idle A→B snaps shoulders into a strange pose.
+  if (opts?.skipShoulders) return;
   for (const entry of state.shoulders) {
     const sticky = entry.shoulder.quaternion.equals(entry.lifted);
     if (!sticky && !armHanging(entry.upper, entry.lower)) continue;
