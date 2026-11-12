@@ -38,15 +38,22 @@ describe('card greet gesture insurance clip', () => {
     expect(body).toContain('clipFile(lang, gender, insuranceKind)');
     expect(body.indexOf('playGestureClipSync')).toBeLessThan(body.indexOf('speakGtts('));
     expect(body).toContain('stopVoiceClip()');
-    // gTTS must not kill insurance instantly on onplay.
-    expect(body).toMatch(/setTimeout\(\(\) => \{[\s\S]*stopVoiceClip\(\)/);
+    // When gTTS starts, kill insurance immediately — delayed hold caused dual voice.
+    const gttsCall = body.slice(body.indexOf('void speakGtts'), body.indexOf('}).then(() => {', body.indexOf('void speakGtts')));
+    expect(gttsCall).toContain('onPlaying:');
+    expect(gttsCall).toContain('stopVoiceClip()');
+    expect(gttsCall).toContain("onStart('gtts')");
+    expect(gttsCall).not.toMatch(/setTimeout\(/);
+    expect(gttsCall.indexOf('stopVoiceClip()')).toBeLessThan(gttsCall.indexOf("onStart('gtts')"));
   });
 
   it('previewVoiceChoice also starts the local insurance clip', () => {
     const body = fnBody('previewVoiceChoice', 'export function previewOsVoice');
     expect(body).toContain('playGestureClipSync');
     expect(body.indexOf('playGestureClipSync')).toBeLessThan(body.indexOf('speakGtts('));
-    expect(body).toMatch(/setTimeout\(\(\) => \{[\s\S]*stopVoiceClip\(\)/);
+    const gttsCall = body.slice(body.indexOf('const gtts = speakGtts'), body.indexOf('}).catch(', body.indexOf('const gtts = speakGtts')));
+    expect(gttsCall).toContain('stopVoiceClip()');
+    expect(gttsCall).not.toMatch(/setTimeout\(/);
   });
 
   it('gtts plays without awaiting setSinkId first', () => {

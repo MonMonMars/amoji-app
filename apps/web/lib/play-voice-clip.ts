@@ -25,6 +25,13 @@ export function stopVoiceClip(): void {
   if (reject) reject(new Error('canceled'));
 }
 
+/** True while a gesture/insurance clip is the active element. */
+export function isVoiceClipPlaying(): boolean {
+  const audio = current;
+  if (!audio) return false;
+  return !audio.paused && !audio.ended && audio.currentTime > 0;
+}
+
 /**
  * Same-origin clip started INSIDE a user gesture.
  * Must call `audio.play()` in the same turn as the tap — awaiting

@@ -99,7 +99,7 @@ import { loadingFillerKind, recordedLaughClip, recordedPokeClip } from './voice-
 import { LineQueue, speechRemainder } from './speech-queue';
 import { emotionClipPath } from './emotion-clip-picks';
 import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText, nextCardGreetPhrase, nextGreetingKind, type BurstClipKind, type ClipFolder, type VoiceClipGender } from './voice-clips';
-import { playGestureClipSync, playVoiceClip, stopVoiceClip } from './play-voice-clip';
+import { isVoiceClipPlaying, playGestureClipSync, playVoiceClip, stopVoiceClip } from './play-voice-clip';
 export { speechRemainder };
 import { edgeCastVoice } from './edge-cast';
 import { pauseEdgeForTabHide, speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead } from './edge-tts';
@@ -1912,13 +1912,16 @@ export function playVoiceGreeting(
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
       try { haltBrowserSynth(); } catch { /* ignore */ }
-      // Keep the local insurance clip until gTTS has real progress — onplay can
-      // fire then die (network/CORS), and stopping insurance early left silence.
-      window.setTimeout(() => {
-        if (spokenBy && spokenBy !== 'gtts') return;
+      // Stop insurance immediately — a delayed hold stacked local clip + gTTS
+      // (two different phrases) on every card tap.
+      try { stopVoiceClip(); } catch { /* ignore */ }
+      if (!spokenBy) onStart('gtts');
+    },
+    onProgress: (n) => {
+      // Confirm the MP3 tier is really speaking (onplay can fire then die).
+      if (n > 0 && spokenBy === 'gtts') {
         try { stopVoiceClip(); } catch { /* ignore */ }
-        if (!spokenBy) onStart('gtts');
-      }, 180);
+      }
     },
   }).then(() => {
     markGttsDone();
@@ -1929,7 +1932,9 @@ export function playVoiceGreeting(
     reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'greeting gtts failed');
     // gTTS may have claimed the line then died — clear so synth/insurance can save.
     if (spokenBy === 'gtts') spokenBy = null;
-    // Insurance clip may already be audible — only synth if nothing started.
+    // If the gesture insurance clip is still audible, let it finish — do not
+    // stack a second synth voice on top.
+    if (isVoiceClipPlaying()) return;
     runSynthAudition('greeting fallback');
   });
   /**
@@ -1943,6 +1948,7 @@ export function playVoiceGreeting(
     // Edge 403s instantly while the MP3 tier may still be fetching — synth here
     // calls haltSynthQueue() and cancels gTTS, which is silence on iOS.
     if (gttsPending) return;
+    if (isVoiceClipPlaying()) return;
     reportVoiceStatus('edge', false, why);
     runSynthAudition('greeting fallback');
   };
@@ -1950,7 +1956,8 @@ export function playVoiceGreeting(
   // 403s immediately, so without this the synth fallback fires on virtually
   // every greeting, overlapping the MP3 tier.
   edgeGrace = setTimeout(() => {
-    if (!spokenBy && !gttsPending) runSynthAudition('greeting fallback (no tier started)');
+    if (spokenBy || gttsPending || isVoiceClipPlaying()) return;
+    runSynthAudition('greeting fallback (no tier started)');
   }, 1500);
   // Edge still wins if it ever answers again: onPlaying halts the other tiers.
   // It is not a button and not a promise — just a free upside if Microsoft
@@ -2189,16 +2196,13 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
       try { haltBrowserSynth(); } catch { /* ignore */ }
-      // Delay killing insurance until gTTS has held the line briefly.
-      window.setTimeout(() => {
-        if (spokenBy && spokenBy !== 'gtts') return;
-        try { stopVoiceClip(); } catch { /* ignore */ }
-        if (!spokenBy) {
-          spokenBy = 'gtts';
-          markVoiceStarted();
-          reportVoiceStatus('gtts', true, `preview gtts ${choiceId}`);
-        }
-      }, 180);
+      // Immediate stop — preview must not stack local clip + gTTS.
+      try { stopVoiceClip(); } catch { /* ignore */ }
+      if (!spokenBy) {
+        spokenBy = 'gtts';
+        markVoiceStarted();
+        reportVoiceStatus('gtts', true, `preview gtts ${choiceId}`);
+      }
     },
   }).catch((e: unknown) => {
     if ((e as Error | undefined)?.message === 'canceled') return;
