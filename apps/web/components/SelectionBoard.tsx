@@ -21,7 +21,7 @@ import { LangCardFace } from './selectors';
 import { assetUrl } from '../lib/asset';
 import { bigheadPath } from '../lib/bighead';
 import { playVoiceGreeting } from '../lib/voice';
-import { primeChatStartGesture } from '../lib/chat-start-gesture';
+import { beginMicPreflightFromGesture, primeChatStartGesture } from '../lib/chat-start-gesture';
 import { primeLocationForChatEnter } from '../lib/live-tools';
 import { activeVoiceChoice } from '../lib/voice-picks';
 import {
@@ -110,6 +110,8 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
     // t786: unlock audio FIRST; defer geo so iOS silent-<audio> prime is not raced by the
     // permission dialog (which can drop the gesture unlock on iPhone).
     primeChatStartGesture();
+    // Same Start gesture: re-probe mic so chat can default-open (iOS needs this).
+    try { beginMicPreflightFromGesture(); } catch { /* ignore */ }
     window.setTimeout(() => { try { primeLocationForChatEnter(); } catch { /* ignore */ } }, 120);
     // Audio soft-gate already ran after rules; select goes straight to chat.
     const go = () => {

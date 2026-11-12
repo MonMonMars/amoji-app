@@ -22,13 +22,14 @@ describe('adaptive scene lines', () => {
     }
   });
 
-  it('every scene line is a finished spoken sentence', () => {
-    for (const banks of Object.values(SCENE_LINES)) {
-      for (const lines of Object.values(banks)) {
+  it('every scene line is a statement — no topic-menu / soft-invite asks', () => {
+    for (const [scene, banks] of Object.entries(SCENE_LINES)) {
+      for (const [lang, lines] of Object.entries(banks)) {
         for (const line of lines) {
-          expect(line.trim().length, line).toBeGreaterThan(6);
-          // Allow statements or soft invites; ban empty scraps.
-          expect(line).not.toMatch(/\{[a-zA-Z_]+\}/);
+          expect(line.trim().length, `${scene}.${lang}`).toBeGreaterThan(6);
+          expect(line, `${scene}.${lang}: ${line}`).not.toMatch(/\{[a-zA-Z_]+\}/);
+          expect(line, `${scene}.${lang}: ${line}`).not.toMatch(/[?？]/);
+          expect(line, `${scene}.${lang}: ${line}`).not.toMatch(/好唔好|想做啲咩|想傾|想聊|shall we|want to|do you|what should/i);
         }
       }
     }

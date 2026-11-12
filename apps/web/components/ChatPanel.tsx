@@ -1607,12 +1607,14 @@ export default function ChatPanel({
     const preflight = micPreflightGrantedThisSession();
     if (!preflight) {
       const rec = getEntryGateRecord();
-      if (rec?.mic === 'denied' || rec?.mic === 'unsupported') return;
+      // Stale "denied" must not permanently block default-open — Start re-probes
+      // mic in-gesture; only skip when the device has no speech recognition.
+      if (rec?.mic === 'unsupported') return;
     }
     micAutoArmedRef.current = true;
-    // Preflight → immediate. Otherwise a short tick so the panel paints first.
-    // Never stall behind OPEN_CHEER_MS — that felt like “mic not open at start”.
-    const micDelay = preflight ? 0 : 120;
+    // Always open immediately once listen is supported. Never stall behind
+    // OPEN_CHEER_MS — that felt like “mic not open at start”.
+    const micDelay = 0;
     const t0 = window.setTimeout(() => {
       if (!micModeRef.current) beginVoiceMode({ cutCompanion: false });
     }, micDelay);
