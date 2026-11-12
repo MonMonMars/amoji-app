@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+  CMA_REACTION_ARCHIVE_CODES,
   CMA_REACTION_DROPPED_CODES,
   CMA_REACTION_GALLERY,
   CMA_REACTION_GALLERY_KEY,
   CMA_REACTION_KEEP_CODES,
+  CMA_REACTION_OWNER_DELETE_CODES,
   CMA_REACTION_RANGE,
   clearSkippedCmaReactionPicks,
   countCmaReactionPicks,
@@ -50,29 +52,24 @@ afterEach(() => {
 });
 
 describe('CMA reaction gallery catalog', () => {
-  it('ships Mon keepers + poke CMA00350–362 + legacy CLIP CMA00363–366', () => {
+  it('ships owner #1–23 keepers (13) and drops deleted codes', () => {
     expect(CMA_REACTION_RANGE).toEqual({ from: 304, to: 366 });
-    expect(CMA_REACTION_KEEP_CODES).toEqual([
-      'CMA00320', 'CMA00335', 'CMA00318', 'CMA00327', 'CMA00330', 'CMA00339',
-    ]);
-    expect(CMA_REACTION_DROPPED_CODES).toHaveLength(40);
-    expect(CMA_REACTION_GALLERY).toHaveLength(23);
+    expect(CMA_REACTION_KEEP_CODES).toHaveLength(13);
+    expect(CMA_REACTION_ARCHIVE_CODES).toEqual(['CMA00320', 'CMA00335', 'CMA00353']);
+    expect(CMA_REACTION_OWNER_DELETE_CODES).toContain('CMA00352');
+    expect(CMA_REACTION_OWNER_DELETE_CODES).toContain('CMA00358');
+    expect(CMA_REACTION_DROPPED_CODES.length).toBeGreaterThanOrEqual(50);
+    expect(CMA_REACTION_GALLERY).toHaveLength(13);
     expect(missingCmaReactionCodes()).toEqual([]);
     expect(listCmaReactionCodes()).toEqual(expectedCmaReactionCodes());
     expect(cmaReactionByCode('CMA00304')).toBeNull();
-    // Original female-view EmotionClipRow keepers
-    expect(cmaReactionByCode('CMA00320')?.burst).toBe('giggle'); // #12
-    expect(cmaReactionByCode('CMA00335')?.burst).toBe('ouch'); // #18
-    expect(cmaReactionByCode('CMA00318')?.burst).toBe('effort'); // #23
-    expect(cmaReactionByCode('CMA00327')?.burst).toBe('gasp'); // #27
-    expect(cmaReactionByCode('CMA00327')?.use).toBe('poke');
-    expect(cmaReactionByCode('CMA00330')?.burst).toBe('yawn'); // #30
-    expect(cmaReactionByCode('CMA00339')?.burst).toBe('ouch'); // #36
+    expect(cmaReactionByCode('CMA00327')).toBeNull();
+    expect(cmaReactionByCode('CMA00352')).toBeNull();
     expect(cmaReactionByCode('CMA00350')?.use).toBe('poke');
-    expect(cmaReactionByCode('CMA00362')?.use).toBe('poke');
+    expect(cmaReactionByCode('CMA00354')?.burst).toBe('smile');
     expect(cmaReactionByCode('CMA00363')?.use).toBe('poke');
     expect(cmaReactionByCode('CMA00366')?.use).toBe('poke');
-    expect(cmaReactionByCode('CMA00349')).toBeNull();
+    expect(cmaReactionByCode('CMA00318')?.use).toBe('poke');
   });
 
   it('builds public paths under /voice-clips/cma-reaction/', () => {
@@ -104,13 +101,13 @@ describe('CMA reaction Want/Skip picks', () => {
     forgetCmaReactionPickCache();
     expect(cmaReactionVerdict('CMA00320')).toBe('undecided');
     expect(setCmaReactionVerdict('CMA00320', 'want')).toBe('want');
-    expect(setCmaReactionVerdict('CMA00339', 'skip')).toBe('skip');
+    expect(setCmaReactionVerdict('CMA00350', 'skip')).toBe('skip');
     expect(setCmaReactionVerdict('CMA00999', 'want')).toBeNull();
     expect(setCmaReactionVerdict('CMA00304', 'want')).toBeNull();
     expect(wantedCmaReactionCodes()).toEqual(['CMA00320']);
-    expect(skippedCmaReactionCodes()).toEqual(['CMA00339']);
+    expect(skippedCmaReactionCodes()).toEqual(['CMA00350']);
     const raw = store.get(CMA_REACTION_GALLERY_KEY);
-    expect(JSON.parse(raw!)).toMatchObject({ CMA00320: 'want', CMA00339: 'skip' });
+    expect(JSON.parse(raw!)).toMatchObject({ CMA00320: 'want', CMA00350: 'skip' });
     setCmaReactionVerdict('CMA00320', 'undecided');
     expect(wantedCmaReactionCodes()).toEqual([]);
   });
@@ -132,21 +129,20 @@ describe('CMA Wanted play pool (wired)', () => {
     forgetCmaReactionPickCache();
     resetWantedCmaReactionRotation();
     setCmaReactionVerdict('CMA00320', 'want');
-    setCmaReactionVerdict('CMA00335', 'want');
-    setCmaReactionVerdict('CMA00339', 'skip');
-    setCmaReactionVerdict('CMA00355', 'want');
+    setCmaReactionVerdict('CMA00350', 'want');
+    setCmaReactionVerdict('CMA00351', 'skip');
+    setCmaReactionVerdict('CMA00318', 'want');
 
-    expect(wantedCmaReactionCodes()).toEqual(['CMA00320', 'CMA00335', 'CMA00355']);
+    expect(wantedCmaReactionCodes()).toEqual(['CMA00318', 'CMA00320', 'CMA00350']);
 
     const laughPool = wantedCmaReactionClips({ gender: 'female', role: 'laugh' }).map((c) => c.code);
     expect(laughPool).toEqual(['CMA00320']);
 
     const pokePool = wantedCmaReactionClips({ gender: 'female', role: 'poke' }).map((c) => c.code);
-    expect(pokePool).toEqual(['CMA00335']);
+    expect(pokePool).toEqual(['CMA00350']);
 
     const malePoke = wantedCmaReactionClips({ gender: 'male', role: 'poke' }).map((c) => c.code);
-    expect(malePoke).toEqual(['CMA00355']);
-    expect(malePoke).not.toContain('CMA00339');
+    expect(malePoke).toEqual(['CMA00318']);
 
     const path = pickWantedCmaReactionPath({ gender: 'female', role: 'laugh' });
     expect(path).toBe(cmaReactionPath(cmaReactionByCode('CMA00320')!.file));
@@ -166,9 +162,9 @@ describe('CMA pick harden + Clear Skipped', () => {
   it('fail-closed on corrupt / wrong-shaped localStorage JSON', () => {
     expect(parseCmaReactionPicksJson(null)).toEqual({});
     expect(parseCmaReactionPicksJson('{"CMA00320":"WANT"}')).toEqual({});
-    expect(parseCmaReactionPicksJson('{"CMA00304":"want","CMA00320":"want","CMA00339":"skip"}')).toEqual({
+    expect(parseCmaReactionPicksJson('{"CMA00304":"want","CMA00320":"want","CMA00350":"skip"}')).toEqual({
       CMA00320: 'want',
-      CMA00339: 'skip',
+      CMA00350: 'skip',
     });
 
     const store = mockStorage();
@@ -181,8 +177,8 @@ describe('CMA pick harden + Clear Skipped', () => {
     mockStorage();
     forgetCmaReactionPickCache();
     resetWantedCmaReactionRotation();
-    setCmaReactionVerdict('CMA00339', 'skip');
-    setCmaReactionVerdict('CMA00355', 'skip');
+    setCmaReactionVerdict('CMA00350', 'skip');
+    setCmaReactionVerdict('CMA00318', 'skip');
     expect(pickWantedCmaReactionPath({ gender: 'male', role: 'poke' })).toBeNull();
     expect(countCmaReactionPicks().skipped).toBe(2);
 
@@ -228,29 +224,27 @@ describe('poke SFX inventory + selection → playback pool', () => {
       expect(cmaCodeFromPath(path)).toBeTruthy();
       expect(cmaReactionByCode(cmaCodeFromPath(path)!)).toBeTruthy();
     }
-    // Legacy main poke CLIP rows are listed even when not on the zone table.
-    for (const code of ['CMA00363', 'CMA00364', 'CMA00365', 'CMA00366'] as const) {
-      const row = inv.find((r) => r.code === code);
-      expect(row, code).toBeTruthy();
-      expect(row!.inList).toBe(true);
-      expect(row!.selectable).toBe(true);
-      expect(row!.source).toBe('legacy-main');
+    // Archive keepers are in gallery but not default pokeRoleClips.
+    for (const code of CMA_REACTION_ARCHIVE_CODES) {
+      expect(pokeRoleClips().some((c) => c.code === code)).toBe(false);
+      expect(cmaReactionByCode(code)).toBeTruthy();
     }
-    expect(pokeRoleClips().length).toBeGreaterThanOrEqual(zonePaths.length);
+    expect(pokeRoleClips().length).toBeGreaterThan(0);
   });
 
-  it('default enabled poke pool = full poke-role list; Want narrows; Skip drops', () => {
+  it('default enabled poke pool excludes archive; Want narrows; Skip drops', () => {
     mockStorage();
     forgetCmaReactionPickCache();
     resetWantedCmaReactionRotation();
 
     const femaleAll = enabledPokeReactionClips({ gender: 'female' }).map((c) => c.code);
     expect(femaleAll).toEqual(pokeRoleClips({ gender: 'female' }).map((c) => c.code));
-    expect(femaleAll).toContain('CMA00335');
+    expect(femaleAll).not.toContain('CMA00335');
     expect(femaleAll).toContain('CMA00363');
+    expect(femaleAll).toContain('CMA00350');
 
-    setCmaReactionVerdict('CMA00335', 'skip');
-    expect(enabledPokeReactionClips({ gender: 'female' }).map((c) => c.code)).not.toContain('CMA00335');
+    setCmaReactionVerdict('CMA00350', 'skip');
+    expect(enabledPokeReactionClips({ gender: 'female' }).map((c) => c.code)).not.toContain('CMA00350');
     expect(enabledPokeReactionClips({ gender: 'female' }).map((c) => c.code)).toContain('CMA00363');
 
     setCmaReactionVerdict('CMA00363', 'want');
@@ -269,16 +263,15 @@ describe('poke SFX inventory + selection → playback pool', () => {
     forgetCmaReactionPickCache();
     resetWantedCmaReactionRotation();
 
-    // Default: zone belly stays CMA00335.
-    expect(recordedPokeClip('female', 'belly')).toContain('CMA00335');
+    expect(recordedPokeClip('female', 'belly')).toContain('CMA00363');
+    expect(recordedPokeClip('female', 'torso')).toContain('CMA00350');
+    expect(recordedPokeClip('male', 'chest')).toContain('CMA00318');
 
-    // Want only legacy um → every poke uses that pool (not outside it).
     setCmaReactionVerdict('CMA00363', 'want');
     expect(recordedPokeClip('female', 'belly')).toContain('CMA00363');
     expect(recordedPokeClip('female', 'head')).toContain('CMA00363');
 
-    // Want zone belly clip → belly prefers it.
-    setCmaReactionVerdict('CMA00335', 'want');
-    expect(recordedPokeClip('female', 'belly')).toContain('CMA00335');
+    setCmaReactionVerdict('CMA00354', 'want');
+    expect(recordedPokeClip('female', 'head')).toContain('CMA00354');
   });
 });

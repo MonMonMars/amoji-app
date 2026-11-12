@@ -359,49 +359,48 @@ export function recordedFillerClip(
  * Exported so those two rules can be asserted instead of trusted.
  */
 export const RECORDED_POKE_ZONE: Record<VoiceClipGender, Record<string, string>> = {
-  // Zone table = EmotionClipRow / CMA gallery ship-set only (Mon keepers + new poke).
-  // Every path is ≤ POKE_REACTION_MS and language-neutral under /voice-clips/cma-reaction/.
+  // Owner #1–23 review: only active ship clips. Archive (#1/#2/#6) stay in gallery
+  // for future Want but are not zone defaults. Deleted #5/#8/#16–23 are gone.
   female: {
-    // Soft tease on the head (kept hehe→CMA00352); hard ouch (CMA00335 #18) on torso/belly.
-    head: '/voice-clips/cma-reaction/CMA00352_universal_female_ouch_hehe.mp3',
-    chest: '/voice-clips/cma-reaction/CMA00351_universal_female_ouch_oh.mp3',
+    head: '/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3', // #7 smile USE
+    chest: '/voice-clips/cma-reaction/CMA00351_universal_female_ouch_oh.mp3', // #4 slow soft
     breast: '/voice-clips/cma-reaction/CMA00351_universal_female_ouch_oh.mp3',
-    belly: '/voice-clips/cma-reaction/CMA00335_universal_female_ouch_ah.mp3',
-    butt: '/voice-clips/cma-reaction/CMA00353_universal_female_ouch_giggle.mp3',
-    hand: '/voice-clips/cma-reaction/CMA00358_universal_female_ouch_giggle_short.mp3',
-    hands: '/voice-clips/cma-reaction/CMA00358_universal_female_ouch_giggle_short.mp3',
+    belly: '/voice-clips/cma-reaction/CMA00363_universal_female_ouch_um.mp3', // #11 fast soft
+    butt: '/voice-clips/cma-reaction/CMA00366_universal_female_ouch_wow.mp3', // #14 sensitive
+    hand: '/voice-clips/cma-reaction/CMA00364_universal_female_ouch_giggle_full.mp3', // #12 slow soft
+    hands: '/voice-clips/cma-reaction/CMA00364_universal_female_ouch_giggle_full.mp3',
     arm: '/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3',
     armL: '/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3',
     armR: '/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3',
-    legs: '/voice-clips/cma-reaction/CMA00353_universal_female_ouch_giggle.mp3',
-    legL: '/voice-clips/cma-reaction/CMA00353_universal_female_ouch_giggle.mp3',
-    legR: '/voice-clips/cma-reaction/CMA00353_universal_female_ouch_giggle.mp3',
-    foot: '/voice-clips/cma-reaction/CMA00350_universal_female_ouch_ha.mp3',
-    torso: '/voice-clips/cma-reaction/CMA00335_universal_female_ouch_ah.mp3',
-    side: '/voice-clips/cma-reaction/CMA00359_universal_female_gasp_reitanna.mp3',
-    back: '/voice-clips/cma-reaction/CMA00360_universal_female_gasp_woven.mp3',
-    default: '/voice-clips/cma-reaction/CMA00335_universal_female_ouch_ah.mp3',
+    legs: '/voice-clips/cma-reaction/CMA00366_universal_female_ouch_wow.mp3',
+    legL: '/voice-clips/cma-reaction/CMA00366_universal_female_ouch_wow.mp3',
+    legR: '/voice-clips/cma-reaction/CMA00366_universal_female_ouch_wow.mp3',
+    foot: '/voice-clips/cma-reaction/CMA00350_universal_female_ouch_ha.mp3', // #3 punch HA
+    torso: '/voice-clips/cma-reaction/CMA00350_universal_female_ouch_ha.mp3', // #3 punch/hit
+    side: '/voice-clips/cma-reaction/CMA00365_universal_female_ouch_ha_full.mp3', // #13 scary
+    back: '/voice-clips/cma-reaction/CMA00360_universal_female_gasp_woven.mp3', // #10 scare
+    default: '/voice-clips/cma-reaction/CMA00351_universal_female_ouch_oh.mp3',
   },
   male: {
-    // #36 sword-ouch (CMA00339) is the impact default; short effort/gasp for variety.
-    head: '/voice-clips/cma-reaction/CMA00356_universal_male_ouch_wow.mp3',
-    chest: '/voice-clips/cma-reaction/CMA00339_universal_male_ouch.mp3',
-    breast: '/voice-clips/cma-reaction/CMA00339_universal_male_ouch.mp3',
-    belly: '/voice-clips/cma-reaction/CMA00355_universal_male_ouch_effort.mp3',
-    butt: '/voice-clips/cma-reaction/CMA00339_universal_male_ouch.mp3',
-    hand: '/voice-clips/cma-reaction/CMA00357_universal_male_ouch_effort_short.mp3',
-    hands: '/voice-clips/cma-reaction/CMA00357_universal_male_ouch_effort_short.mp3',
-    arm: '/voice-clips/cma-reaction/CMA00327_universal_male_gasp_astonished.mp3',
-    armL: '/voice-clips/cma-reaction/CMA00327_universal_male_gasp_astonished.mp3',
-    armR: '/voice-clips/cma-reaction/CMA00327_universal_male_gasp_astonished.mp3',
-    legs: '/voice-clips/cma-reaction/CMA00339_universal_male_ouch.mp3',
-    legL: '/voice-clips/cma-reaction/CMA00339_universal_male_ouch.mp3',
-    legR: '/voice-clips/cma-reaction/CMA00339_universal_male_ouch.mp3',
-    foot: '/voice-clips/cma-reaction/CMA00355_universal_male_ouch_effort.mp3',
-    torso: '/voice-clips/cma-reaction/CMA00362_universal_male_ouch_mixkit.mp3',
-    side: '/voice-clips/cma-reaction/CMA00327_universal_male_gasp_astonished.mp3',
-    back: '/voice-clips/cma-reaction/CMA00361_universal_male_gasp_woven.mp3',
-    default: '/voice-clips/cma-reaction/CMA00339_universal_male_ouch.mp3',
+    // Only #15 CMA00318 effort survived the owner delete pass.
+    head: '/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3',
+    chest: '/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3',
+    breast: '/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3',
+    belly: '/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3',
+    butt: '/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3',
+    hand: '/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3',
+    hands: '/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3',
+    arm: '/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3',
+    armL: '/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3',
+    armR: '/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3',
+    legs: '/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3',
+    legL: '/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3',
+    legR: '/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3',
+    foot: '/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3',
+    torso: '/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3',
+    side: '/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3',
+    back: '/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3',
+    default: '/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3',
   },
 };
 

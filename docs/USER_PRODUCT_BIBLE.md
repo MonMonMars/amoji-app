@@ -69,7 +69,8 @@
 | Cloudsea ambient grounded | SCENE_LINES — no “sit on a cloud” |
 | Topic-menu ask scrub + bank harden | scrubTopicMenuAsks + statement-only residual banks |
 | Spin-to-back code fix | hips clamp + idle t≈0 + IdleHug retired |
-| Character / voice card tap greets (code) | gesture clip `b7848bc` on PR #366 |
+| Character / voice card tap greets (code) | gesture clip `b7848bc` on PR #366 · merged |
+| CMA poke SFX #1–23 Want / archive / delete + zone wire | 13 keepers (10 active + 3 archive); male → CMA00318; deleted 10 reject mp3s |
 
 ---
 
@@ -77,13 +78,12 @@
 
 | Item | Status |
 |------|--------|
-| **CMA poke SFX #1–23** Want / archive / delete / wire punch+soft+smile | Open — map ready; not wired yet |
-| Confirm mic stays open on real device after gate → select → chat | **Verify after Pages gets PR #366** |
+| Confirm mic stays open on real device after gate → select → chat | Verify on live Pages |
 | Location still asked only on gate (no second popup at Start) | Confirm on device |
-| Confirm spin-to-back / cloudsea / topic-asks gone on **live Pages** | **Needs merge of PR #366 to main** — code already on branch |
-| Confirm character/voice card tap speaks on live Pages | Verify after merge |
+| Confirm spin-to-back / cloudsea / topic-asks gone on **live Pages** | #366 merged — eyeball Pages |
+| Confirm character/voice card tap speaks on live Pages | Eyeball Pages |
 | Broader SCENE_LINES pass (other backdrops still ask a lot) | Optional cleanup |
-| Production Pages update after merge to `main` | **Waiting merge** |
+| Confirm poke SFX zone map (#3/#4/#7/#9–15) feels right on device | After Pages deploy |
 
 ---
 
@@ -91,6 +91,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-12 morning | SFX #1–23 wired: keep/archive/delete + RECORDED_POKE_ZONE; push/merge poke-sfx |
 | 2026-11-12 late night | Harden leftover 想傾/想聊 banks; owner re-reported cloudsea/asks/spin — still not on live Pages until PR #366 merges |
 | 2026-11-12 late night | Card-greet gesture clip `b7848bc`; fonts CI flake cherry-pick |
 | 2026-11-12 night | Re-port spin-to-back fix; SFX #1–23 notes received (still Outstanding) |

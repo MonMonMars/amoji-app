@@ -253,30 +253,28 @@ describe('TTS button registry', () => {
 });
 
 describe('zone poke clips (SFX only)', () => {
-  it('remaps head←hehe, breast/chest←um, belly←oh (Mon t761/t294)', () => {
-    // Female: head=hehe (former breast), chest/breast=um (former head), belly=oh
-    expect(recordedPokeClip('female', 'head')).toContain('CMA00352');
+  it('remaps head←smile, breast/chest←soft, belly←fast soft (owner #1–23)', () => {
+    expect(recordedPokeClip('female', 'head')).toContain('CMA00354');
     expect(recordedPokeClip('female', 'chest')).toContain('CMA00351');
     expect(recordedPokeClip('female', 'breast')).toBe(recordedPokeClip('female', 'chest'));
-    expect(recordedPokeClip('female', 'belly')).toContain('CMA00335');
+    expect(recordedPokeClip('female', 'belly')).toContain('CMA00363');
+    expect(recordedPokeClip('female', 'torso')).toContain('CMA00350');
     expect(recordedPokeClip('female', 'head')).not.toBe(recordedPokeClip('female', 'belly'));
     expect(recordedPokeClip('female', 'chest')).not.toBe(recordedPokeClip('female', 'belly'));
-    // Male used to be `ja/male/*` for every zone — a Japanese yelp whatever
-    // language the companion speaks — and the torso row played a laugh. The
-    // table is language-neutral now; head stays a wonder, chest an ouch,
-    // belly a yelp. Exact rows are pinned in poke-voice-motion-sync.test.ts.
-    expect(recordedPokeClip('male', 'head')).toContain('CMA00356');
-    expect(recordedPokeClip('male', 'chest')).toContain('CMA00339');
-    expect(recordedPokeClip('male', 'belly')).toContain('CMA00355');
+    // Male ship-set is the single surviving keeper after owner deletes.
+    expect(recordedPokeClip('male', 'head')).toContain('CMA00318');
+    expect(recordedPokeClip('male', 'chest')).toContain('CMA00318');
+    expect(recordedPokeClip('male', 'belly')).toContain('CMA00318');
     expect(recordedPokeClip('male', 'head')).not.toMatch(/\/ja\//);
     expect(recordedPokeClip('male', 'torso')).not.toContain('laugh');
   });
 
-  it('returns distinct gender-matched paths per zone and files exist', () => {
+  it('returns gender-matched paths per zone and files exist', () => {
     const zones = ['head', 'chest', 'breast', 'torso', 'belly', 'butt', 'hand', 'hands', 'arm', 'armL', 'legs', 'legL', 'foot', 'side', 'back'];
     for (const gender of VOICE_CLIP_GENDERS) {
       const paths = new Set(zones.map((z) => recordedPokeClip(gender, z)));
-      expect(paths.size).toBeGreaterThan(1);
+      if (gender === 'female') expect(paths.size).toBeGreaterThan(1);
+      else expect(paths.size).toBe(1); // only CMA00318 survived
       for (const z of zones) {
         const rel = recordedPokeClip(gender, z);
         const file = path.resolve(here, '../public', rel.slice(1));
@@ -390,17 +388,17 @@ describe('Wanted CMA reaction SFX wire', () => {
     forgetCmaReactionPickCache();
     resetWantedCmaReactionRotation();
 
-    expect(recordedPokeClip('female', 'head')).toContain('CMA00352');
+    expect(recordedPokeClip('female', 'head')).toContain('CMA00354');
 
-    setCmaReactionVerdict('CMA00335', 'want'); // female ouch poke (#18)
-    setCmaReactionVerdict('CMA00339', 'skip'); // male poke skip must never play for female either
+    setCmaReactionVerdict('CMA00350', 'want'); // female punch HA (#3)
+    setCmaReactionVerdict('CMA00318', 'skip'); // male effort skip must never play for female either
     resetWantedCmaReactionRotation();
     const poke = recordedPokeClip('female', 'head');
     expect(poke).toContain('/voice-clips/cma-reaction/');
-    expect(poke).toContain('CMA00335');
-    expect(poke).not.toContain('CMA00339');
+    expect(poke).toContain('CMA00350');
+    expect(poke).not.toContain('CMA00318');
 
     // Male with no Wanted poke -> zone table (CMA gallery only)
-    expect(recordedPokeClip('male', 'head')).toContain('CMA00356');
+    expect(recordedPokeClip('male', 'head')).toContain('CMA00318');
   });
 });

@@ -37,8 +37,8 @@ describe('recorded fillers and poke', () => {
     expect(recordedFillerClip('male', 'think', 'ja')).not.toContain('think.mp3');
     // Female/male poke defaults are CMA gallery ouches (EmotionClipRow ship-set).
     // See poke-voice-motion-sync.test.ts.
-    expect(recordedPokeClip('female')).toBe('/voice-clips/cma-reaction/CMA00335_universal_female_ouch_ah.mp3');
-    expect(recordedPokeClip('male')).toBe('/voice-clips/cma-reaction/CMA00339_universal_male_ouch.mp3');
+    expect(recordedPokeClip('female')).toBe('/voice-clips/cma-reaction/CMA00351_universal_female_ouch_oh.mp3');
+    expect(recordedPokeClip('male')).toBe('/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3');
     expect(loadingFillerKind('um……')).toBe('um');
     expect(loadingFillerKind('ha……')).toBe('um');
     expect(loadingFillerKind('um…… let me think.')).toBe('think');
