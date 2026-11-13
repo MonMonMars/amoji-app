@@ -11,7 +11,10 @@ import { passEntryGate, setMicPreflightSession, type MicOutcome } from '../lib/e
 import { markChatAudioReady, stashPriorMasterMuteForChat } from '../lib/pre-chat-audio';
 import { primeChatStartGesture } from '../lib/chat-start-gesture';
 import { companionPlaybackSession } from '../lib/voice-chat-focus';
+import { primeLocationForChatEnter } from '../lib/live-tools';
 import EarlyAudioUnlock from './EarlyAudioUnlock';
+
+export type LocationGateUi = 'idle' | 'asked' | 'ready' | 'denied' | 'unsupported';
 
 /** Soft sound-check step after the sample finishes (or is replayed). */
 export type SoundCheckUi = 'idle' | 'asked' | 'ok' | 'help';
@@ -33,6 +36,8 @@ export default function PreChatAudioGate({
   const [playing, setPlaying] = useState(false);
   const [mic, setMic] = useState<MicOutcome | 'pending'>('pending');
   const [micBusy, setMicBusy] = useState(false);
+  const [locationUi, setLocationUi] = useState<LocationGateUi>('idle');
+  const [locationBusy, setLocationBusy] = useState(false);
   const autoStarted = useRef(false);
 
   useEffect(() => {
@@ -79,6 +84,24 @@ export default function PreChatAudioGate({
     }
   }, []);
 
+  const allowLocation = useCallback(() => {
+    // Same-gesture prime as mic — browser may show the geo popup once.
+    setLocationBusy(true);
+    setLocationUi('asked');
+    try {
+      if (typeof navigator === 'undefined' || !navigator.geolocation) {
+        setLocationUi('unsupported');
+        return;
+      }
+      primeLocationForChatEnter();
+      setLocationUi('ready');
+    } catch {
+      setLocationUi('denied');
+    } finally {
+      setLocationBusy(false);
+    }
+  }, []);
+
   // Best-effort auto prompt on mount: unmute + warm AudioContext + mic.
   // iOS may refuse without a gesture — that is fine; Allow stays available.
   useEffect(() => {
@@ -107,7 +130,8 @@ export default function PreChatAudioGate({
   const micOk = mic === 'granted' || mic === 'unsupported';
 
   const enter = useCallback(() => {
-    // Enter is a real user gesture — re-probe mic here so chat can default-open.
+    // Enter is a real user gesture — re-probe mic + prime location so Start
+    // does not surprise-ask geo later (standing rule: all-in-one gate page).
     void (async () => {
       primeChatStartGesture();
       let micOutcome: MicOutcome = mic === 'pending' ? 'skipped' : mic;
@@ -122,6 +146,14 @@ export default function PreChatAudioGate({
         }
       }
       if (micOutcome === 'granted') setMicPreflightSession(true);
+      try {
+        if (typeof navigator !== 'undefined' && navigator.geolocation) {
+          primeLocationForChatEnter();
+          setLocationUi((prev) => (prev === 'idle' ? 'asked' : prev));
+        } else {
+          setLocationUi('unsupported');
+        }
+      } catch { /* chat enter must not block on geo */ }
       const audioHeard =
         heard === 'yes' || heard === 'no'
           ? heard
@@ -269,6 +301,41 @@ export default function PreChatAudioGate({
               {t(lang, 'gateMicAllow')}
             </button>
           )}
+        </section>
+
+        {/* Location on the same confirm page — Start must not surprise-ask later. */}
+        <section data-testid="pre-chat-location-section" aria-labelledby="pre-chat-location-heading" className="mt-5 space-y-3">
+          <div className="space-y-2">
+            <h2 id="pre-chat-location-heading" className="text-sm font-semibold text-white/90">
+              {t(lang, 'gateLocationTitle')}
+            </h2>
+            <p className="text-xs text-white/55">{t(lang, 'gateLocationBody')}</p>
+          </div>
+
+          {locationUi !== 'idle' && (
+            <p
+              role="status"
+              data-testid="pre-chat-location-result"
+              data-outcome={locationUi}
+              className="text-sm text-white/75"
+            >
+              {locationUi === 'ready' || locationUi === 'asked'
+                ? t(lang, 'gateLocationReady')
+                : locationUi === 'unsupported'
+                  ? t(lang, 'gateLocationUnsupported')
+                  : t(lang, 'gateLocationDenied')}
+            </p>
+          )}
+
+          <button
+            type="button"
+            data-testid="pre-chat-location-allow"
+            disabled={locationBusy}
+            onClick={allowLocation}
+            className="ui-btn h-11 w-full rounded-full bg-white font-semibold text-black"
+          >
+            {t(lang, 'gateLocationAllow')}
+          </button>
         </section>
 
         {!speakerOk || !micOk ? (

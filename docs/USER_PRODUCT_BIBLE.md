@@ -2,8 +2,9 @@
 
 **Purpose:** Living checklist of product rules from the product owner. Agents must read this before chat/voice/pose/permission work and update it when rules change.
 
-**Last reviewed:** 2026-11-13 05:55 (Asia/Hong_Kong)  
-**main tip:** `4b25a12` · merge wave #362–#364 / #373–#375 · docs #376  
+**Last reviewed:** 2026-11-13 08:35 (Asia/Hong_Kong)  
+**Branch for current pack:** `cursor/gate-location-all-in-one-0340-0eac`  
+
 **Agent copy:** `/cursor/stores/self/USER_PRODUCT_BIBLE.md`  
 **Request log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn.
 
@@ -60,7 +61,7 @@
 | Calm vs perf pose gating + retire bad poses | on main (superseded open #365 closed) |
 | Hips / idle A→B no spin-to-back (code) | Re-ported onto this branch `afe36c0` |
 | Talk calm clips only while speaking | chat-auto-idle / CompanionCanvas |
-| Gate: mic + location one page (code) | entry gate v2 / PreChatAudioGate |
+| Gate: mic + location one page (code) | PreChatAudioGate location section + Enter prime · this branch |
 | Male Yue TTS speed-up | gTTS floor, Edge offsets, synth base |
 | Statement-only enter greet | personality-voice / open-phase |
 | Answer-first + question cap | prompts + `capSpokenQuestions` |
@@ -89,8 +90,8 @@
 
 | Item | Status |
 |------|--------|
-| Device eyeball on live Pages | Bundle OK for phase chips + dance gate + pitch (`/chat` chunk); still need human/device check for dance timing, one-voice card, music ask |
-| Location is Start-only today (not gate+Start) | One popup — confirm no double ask on device |
+| Device eyeball on live Pages | Bundle OK for phase chips + dance gate + pitch; still need human listen for dance / one-voice / music |
+| Gate location on device | Code: location Allow + Enter prime on PreChatAudioGate; Start no-ops after `amoji.geo.primed` — confirm one popup on phone |
 | White pupil image loop | Awaiting owner advice |
 
 ---
@@ -99,6 +100,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-13 ~08:35 | Location Allow on PreChatAudioGate + once-per-tab prime (`amoji.geo.primed`); Start skips after gate |
 | 2026-11-13 ~05:50 | Merged #374 pitch tiers, #375 one-voice card, #373 phase chips, #362 dance gate, #363 voice gender, #364 music ask; closed superseded #361/#365 |
 | 2026-11-12 23:29 | Demo-phase adds AI news / personal / secret / joke / poem / tip (+ rotate facets) · #373 |
 | 2026-11-12 evening | Outstanding pack: statement SCENE_LINES + Start mic preflight + merge #371 |

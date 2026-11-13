@@ -124,6 +124,8 @@ export interface GatherOpts {
 const PLACE_KEY = 'amoji.place.v1';
 const MANUAL_KEY = 'amoji.place.manual.v1';
 const DENY_KEY = 'amoji.geo.denied';
+/** Session flag: we already fired one browser geo prompt (gate or Start). */
+const PRIMED_KEY = 'amoji.geo.primed';
 export const NEWS_LAST_KEY = 'amoji.news.last.v1';
 const PLACE_TTL_MS = 30 * 60 * 1000;
 const FETCH_TTL_MS = 10 * 60 * 1000;
@@ -1757,19 +1759,40 @@ function browserGeo(): GeoLike | null {
 }
 
 /**
- * t777: call from the same Start / ENTER STORY gesture as primeAudioForChatEnter.
- * Requests browser GPS once and caches the place (or marks deny). Mute All untouched.
- * If the user denies, chat still opens; weather/news will ask for a city later.
+ * True when this tab already asked for (or settled) browser geolocation —
+ * deny flag, browser place cache, or a prior prime attempt.
+ */
+export function locationPermissionSettled(
+  storage?: Kv | null,
+  session?: Kv | null,
+  now = Date.now(),
+): boolean {
+  try {
+    if (session?.getItem(DENY_KEY) === '1') return true;
+    if (session?.getItem(PRIMED_KEY) === '1') return true;
+  } catch { /* private mode */ }
+  const cached = readCachedPlace(storage, now);
+  return cached?.source === 'browser';
+}
+
+/**
+ * Call from the gate Allow/Enter gesture (preferred) or Start / ENTER STORY.
+ * Requests browser GPS at most once per tab, caches the place (or marks deny).
+ * Mute All untouched. If the user denies, chat still opens; weather may ask city later.
  */
 export function primeLocationForChatEnter(): void {
   try {
+    const storage = safeStorage('local');
+    const session = safeStorage('session');
+    if (locationPermissionSettled(storage, session)) return;
     const geo = browserGeo();
     if (!geo) return;
+    try { session?.setItem(PRIMED_KEY, '1'); } catch { /* ignore */ }
     void resolveDevicePlace({
       fetch: globalThis.fetch.bind(globalThis),
       geolocation: geo,
-      storage: safeStorage('local'),
-      session: safeStorage('session'),
+      storage,
+      session,
     });
   } catch {
     /* ignore — chat entry must not block on geo errors */

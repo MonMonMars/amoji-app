@@ -54,13 +54,29 @@ describe('pre-chat audio gate', () => {
     expect(gate).not.toMatch(/contentEditable/);
     const micSection = gate.slice(
       gate.indexOf('data-testid="pre-chat-mic-section"'),
-      gate.indexOf('data-testid="pre-chat-enter-chat"'),
+      gate.indexOf('data-testid="pre-chat-location-section"'),
     );
     expect(micSection).not.toMatch(/<textarea\b|<input\b/);
     expect(micSection).toContain('role="status"');
     // Allow stays available after grant so re-click re-triggers the popup.
     expect(gate).toContain("mic !== 'unsupported'");
     expect(gate).not.toContain("mic !== 'granted' && mic !== 'unsupported'");
+  });
+
+  it('asks location on the same gate page and primes before chat Start', () => {
+    const gate = read('components/PreChatAudioGate.tsx');
+    expect(gate).toContain('data-testid="pre-chat-location-section"');
+    expect(gate).toContain('data-testid="pre-chat-location-allow"');
+    expect(gate).toContain('primeLocationForChatEnter');
+    expect(gate).toContain("t(lang, 'gateLocationAllow')");
+    expect(gate).toContain("t(lang, 'gateLocationTitle')");
+    // Enter gesture also primes so Start does not surprise-ask.
+    const enterIdx = gate.indexOf('const enter = useCallback');
+    const enterBlock = gate.slice(enterIdx, gate.indexOf('}, [heard, mic, nextHref'));
+    expect(enterBlock).toContain('primeLocationForChatEnter');
+    const tools = read('lib/live-tools.ts');
+    expect(tools).toContain('locationPermissionSettled');
+    expect(tools).toContain('amoji.geo.primed');
   });
 
   it('NEXT / enter stays always clickable', () => {
@@ -84,6 +100,12 @@ describe('pre-chat audio gate', () => {
       'gateHelpTitle',
       'gateHelpRetry',
       'gateMicAllow',
+      'gateLocationTitle',
+      'gateLocationBody',
+      'gateLocationAllow',
+      'gateLocationReady',
+      'gateLocationDenied',
+      'gateLocationUnsupported',
     ];
     for (const key of keys) {
       for (const { id } of LANGS) {
