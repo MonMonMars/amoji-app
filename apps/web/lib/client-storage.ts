@@ -51,6 +51,7 @@ export const CLIENT_STORAGE_KEYS: ClientStorageKey[] = [
   { key: 'amoji.ovhSticky.v1', kind: 'session', purpose: 'Sticky OVH model lane (tab-scoped)' },
   { key: 'amoji.noApiRoute', kind: 'session', purpose: 'Remember failed API route (tab-scoped)' },
   { key: 'amoji.geo.denied', kind: 'session', purpose: 'Geolocation denied this tab' },
+  { key: 'amoji.geo.primed', kind: 'session', purpose: 'Browser geo prompt already fired this tab' },
   { key: 'amoji.navReturn', kind: 'session', purpose: 'Back-nav return path' },
   { key: 'amoji.selectReturn', kind: 'session', purpose: 'Select-page return path' },
 ];

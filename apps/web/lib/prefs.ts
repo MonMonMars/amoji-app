@@ -251,6 +251,8 @@ export type StrKey =
   | 'gateHelpTabMuted' | 'gateHelpRetry' | 'gateHelpContinue' | 'gateHelpNote'
   | 'gateMicTitle' | 'gateMicBody' | 'gateMicAllow' | 'gateMicSkip'
   | 'gateMicGranted' | 'gateMicDenied' | 'gateMicUnsupported' | 'gateEnter'
+  | 'gateLocationTitle' | 'gateLocationBody' | 'gateLocationAllow'
+  | 'gateLocationReady' | 'gateLocationDenied' | 'gateLocationUnsupported'
   | 'preChatGateTitle' | 'preChatGateLead' | 'preChatEnterChat' | 'preChatUnmuteHint'
   | 'preChatHeardOk'
   // adult-only replacement for the old Kid Mode row in Settings
@@ -1117,12 +1119,48 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: '进入 Amoji',
     ja: 'Amoji をはじめる',
   },
+  gateLocationTitle: {
+    en: 'Location (optional)',
+    yue: '位置（可選）',
+    zh: '位置（可选）',
+    ja: '位置情報（任意）',
+  },
+  gateLocationBody: {
+    en: 'Ask once here for local weather and nearby facts. We will not ask again when chat starts.',
+    yue: '而家一次過問，之後天氣同附近資訊先準。入傾偈房唔會再彈一次。',
+    zh: '在这里问一次，本地天气和附近资讯才准。进入聊天室不会再弹一次。',
+    ja: 'ここで一度だけ許可すると、天気や近くの情報が正確になります。チャット開始時には再確認しません。',
+  },
+  gateLocationAllow: {
+    en: 'Allow location',
+    yue: '允許用位置',
+    zh: '允许使用位置',
+    ja: '位置情報を許可',
+  },
+  gateLocationReady: {
+    en: 'Location request sent — you can continue even if you dismiss the browser prompt.',
+    yue: '已送出位置請求——就算你關閉瀏覽器提示都可以繼續。',
+    zh: '已发出位置请求——即使关闭浏览器提示也可以继续。',
+    ja: '位置情報のリクエストを送りました——ブラウザの確認を閉じても進めます。',
+  },
+  gateLocationDenied: {
+    en: 'Location stayed off — chat still works; weather may ask for a city later.',
+    yue: '位置未開——傾偈一樣得；之後天氣可能會問你城市。',
+    zh: '位置未开——聊天照常；之后天气可能会问你城市。',
+    ja: '位置情報はオフのまま——チャットは使えます。天気は後で都市を聞くことがあります。',
+  },
+  gateLocationUnsupported: {
+    en: 'This browser cannot share location — typing a city later still works.',
+    yue: '呢個瀏覽器分享唔到位置——之後打城市一樣得。',
+    zh: '这个浏览器无法分享位置——之后输入城市一样可以。',
+    ja: 'このブラウザは位置情報に対応していません——後で都市名を入力できます。',
+  },
   preChatGateTitle: { en: 'Turn on voice chat', yue: '開聲傾偈', zh: '开启语音聊天', ja: 'ボイスチャットをオンに' },
   preChatGateLead: {
-    en: 'Before you meet her, turn on sound and the microphone. This is a voice companion — typing alone will feel broken.',
-    yue: '見佢之前，先開聲同咪高峰。Amoji 係語音伙伴——淨係打字會好似壞咗咁。',
-    zh: '见她之前，请先打开声音和麦克风。Amoji 是语音伙伴——只打字会像坏了一样。',
-    ja: '会う前に、スピーカーとマイクをオンに。音声コンパニオンなので、入力だけだと壊れたように感じます。',
+    en: 'Before you meet her, confirm sound, microphone, and location on this page. This is a voice companion — typing alone will feel broken.',
+    yue: '見佢之前，喺呢一頁一次過確認聲、咪高峰同位置。Amoji 係語音伙伴——淨係打字會好似壞咗咁。',
+    zh: '见她之前，请在这一页一次确认声音、麦克风和位置。Amoji 是语音伙伴——只打字会像坏了一样。',
+    ja: '会う前に、このページでスピーカー・マイク・位置情報をまとめて確認。音声コンパニオンなので、入力だけだと壊れたように感じます。',
   },
   preChatEnterChat: { en: 'Enter chat room', yue: '入傾偈房', zh: '进入聊天室', ja: 'チャットに入る' },
   preChatUnmuteHint: {

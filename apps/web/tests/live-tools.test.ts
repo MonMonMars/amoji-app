@@ -20,6 +20,7 @@ import {
   weatherAccuracyLeak,
   regionalLightNewsFeedUrls,
   regionalNewsFeedUrls,
+  locationPermissionSettled,
   resolveDevicePlace,
   selectNewsLead,
   worldBlock,
@@ -615,6 +616,24 @@ describe('resolveDevicePlace', () => {
     expect(place?.source).toBe('ip');
     expect(place?.city).toBe('Ashburn');
     expect(session.getItem('amoji.geo.denied')).toBe('1');
+  });
+});
+
+describe('locationPermissionSettled', () => {
+  it('treats deny, primed session, or browser cache as settled', () => {
+    expect(locationPermissionSettled(kv(), kv())).toBe(false);
+    const denied = kv();
+    denied.setItem('amoji.geo.denied', '1');
+    expect(locationPermissionSettled(kv(), denied)).toBe(true);
+    const primed = kv();
+    primed.setItem('amoji.geo.primed', '1');
+    expect(locationPermissionSettled(kv(), primed)).toBe(true);
+    const storage = kv();
+    storage.setItem(
+      'amoji.place.v1',
+      JSON.stringify({ ...HK, at: Date.now() }),
+    );
+    expect(locationPermissionSettled(storage, kv())).toBe(true);
   });
 });
 
