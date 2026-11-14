@@ -21,12 +21,33 @@ export const RETIRED_IDLE_CLIP_IDS = new Set(
 
 export const IDLE_PIN_FALLBACK_CLIP_ID = 'IdleBreathCalm';
 
+/**
+ * Pixel-OK calm stands used for chat idle / relaxed hands (not sing/dance/react).
+ * Keep in sync with `chat-auto-idle` neutral/talk calm banks.
+ */
+export const PIXEL_CALM_IDLE_CLIP_IDS = new Set<string>([
+  'IdleBreathCalm',
+  'StandardIdle',
+  'IdleRpmFStanding001',
+  'IdleSassy',
+  'IdleRpmMVar001',
+  'IdleRpmMVar002',
+  'Thinking',
+]);
+
 export function isRetiredIdleNum(num: number): boolean {
   return RETIRED_IDLE_NUMS.has(num);
 }
 
 export function isRetiredIdleClip(clipId: string): boolean {
   return RETIRED_IDLE_CLIP_IDS.has(clipId);
+}
+
+/** True for standing/talk calm idles — relaxed hands + torso upright gate. */
+export function isPixelCalmIdleClip(clipId: string | null | undefined): boolean {
+  if (!clipId) return false;
+  if (isRetiredIdleClip(clipId) || isFarewellOnlyIdleClip(clipId)) return false;
+  return PIXEL_CALM_IDLE_CLIP_IDS.has(clipId);
 }
 
 export function resolveIdleClipId(clipId: string): string {

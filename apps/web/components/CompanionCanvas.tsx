@@ -23,7 +23,7 @@ import { dancePerfClipSources } from '../lib/dance-clip-sources';
 import { timeScaleForProfile } from '../lib/performance-motion';
 import { playableIdles } from '../lib/idle-library';
 import { listEnabledIdleClipIds } from '../lib/idle-enabled';
-import { isRetiredIdleClip, resolveIdleClipId } from '../lib/idle-retired';
+import { isPixelCalmIdleClip, isRetiredIdleClip, resolveIdleClipId } from '../lib/idle-retired';
 import { IDLE_JOINT_REFRESH_FADE_S, IDLE_JOINT_REFRESH_MS, nextIdleRefreshAt, shouldRefreshIdleJoints } from '../lib/idle-refresh';
 import {
   IDLE_PIN_CROSSFADE_S,
@@ -2059,8 +2059,9 @@ export default function CompanionCanvas({
         // both are idempotent absolute writes (base繚delta / minimal-rotation
         // fix), and both skip whatever a clip actively animates, so they
         // compose cleanly with every driving mode (clip, procedural, recoil).
+        // Pixel-OK calm stands (not only legacy BreathCalm / StandardIdle).
         const calmIdle = !perfAction && boost === 0 && !gameView && !handDrag
-          && (idleClipId === 'IdleBreathCalm' || idleClipId === 'StandardIdle');
+          && isPixelCalmIdleClip(idleClipId);
         avatar.applyRelaxedHands(calmIdle);
         avatar.smoothFingers(dt / 1000, calmIdle);
         // Shoulder ROM + hang rewrite mid-crossfade yanked arms to hang/open
