@@ -240,7 +240,11 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                     // Short rotating greet in this character's pitch + the
                     // language's real speaker. Non-blocking; selection already
                     // applied above.
-                    playVoiceGreeting(chosen.id, lang, activeVoiceChoice(lang).id);
+                    playVoiceGreeting(
+                      chosen.id,
+                      lang,
+                      activeVoiceChoice(lang, chosen.gender).id,
+                    );
                   }}
                   label={(c) => c.name}
                 >
@@ -331,7 +335,11 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                   pick({ lang: id });
                   // Greet with the speaker this language will actually use, so
                   // tapping a language auditions the voice chat will speak in.
-                  playVoiceGreeting(character.id, id, activeVoiceChoice(id).id);
+                  playVoiceGreeting(
+                    character.id,
+                    id,
+                    activeVoiceChoice(id, character.gender).id,
+                  );
                 }}
                 label={(l) => l.native}
               >

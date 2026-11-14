@@ -27,10 +27,12 @@ import {
   ENGINE_VERDICTS,
   VOICE_CHOICES,
   addVoiceOption,
+  deliveryGenderForChoice,
   distinctVoiceCount,
   engineIsOffered,
   engineStatus,
   hiddenEngines,
+  preferredVoiceChoiceForGender,
   tlForChoice,
   voiceAddRemaining,
   voiceChoicesFor,
@@ -250,6 +252,20 @@ describe('pin storage names a real voice', () => {
       const choice = activeVoiceChoice(locale);
       expect(choice.locale).toBe(locale);
       expect(tlForChoice(locale, null)).toBe(choice.tl);
+    }
+  });
+
+  it('unpinned delivery gender follows the companion, not the first female button', () => {
+    for (const locale of ['yue', 'zh', 'ja', 'en'] as const) {
+      expect(deliveryGenderForChoice(locale, null, 'male')).toBe('male');
+      expect(deliveryGenderForChoice(locale, null, 'female')).toBe('female');
+      expect(preferredVoiceChoiceForGender(locale, 'male').deliveryGender).toBe('male');
+      expect(preferredVoiceChoiceForGender(locale, 'female').deliveryGender).toBe('female');
+      expect(activeVoiceChoice(locale, 'male').deliveryGender).toBe('male');
+      expect(activeVoiceChoice(locale, 'female').deliveryGender).toBe('female');
+      // Every shipping lang has a working Google tl for both genders.
+      expect(tlForChoice(locale, preferredVoiceChoiceForGender(locale, 'male').id).length).toBeGreaterThan(1);
+      expect(tlForChoice(locale, preferredVoiceChoiceForGender(locale, 'female').id).length).toBeGreaterThan(1);
     }
   });
 });

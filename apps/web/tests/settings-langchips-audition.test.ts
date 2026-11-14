@@ -9,14 +9,15 @@ describe('Settings / setup LangChips audition', () => {
     const sheet = read('components/SettingsSheet.tsx');
     expect(sheet).toContain('playVoiceGreeting');
     expect(sheet).toContain('activeVoiceChoice');
-    expect(sheet).toMatch(/LangChips[\s\S]*playVoiceGreeting\(me\.id,\s*l,\s*activeVoiceChoice\(l\)\.id\)/);
+    expect(sheet).toMatch(
+      /LangChips[\s\S]*playVoiceGreeting\(me\.id,\s*l,\s*activeVoiceChoice\(l,\s*me\.gender\)\.id\)/,
+    );
   });
 
   it('SetupFlow language step also auditions the active voice', () => {
     const setup = read('components/SetupFlow.tsx');
     expect(setup).toContain('playVoiceGreeting');
-    expect(setup).toMatch(
-      /LangChips[\s\S]*playVoiceGreeting\(prefs\.character,\s*l,\s*activeVoiceChoice\(l\)\.id\)/,
-    );
+    expect(setup).toContain('characterById(prefs.character).gender');
+    expect(setup).toContain('activeVoiceChoice(l, characterById(prefs.character).gender)');
   });
 });

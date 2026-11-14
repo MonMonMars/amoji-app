@@ -35,6 +35,7 @@ const LANGUAGE_LABEL: Record<VoiceLocale, string> = {
 export default function VoicePicker({
   lang,
   characterId: _characterId,
+  companionGender,
   accent,
   onLang,
 }: {
@@ -102,7 +103,7 @@ export default function VoicePicker({
       </div>
       {LOCALES.map((locale) => {
         const rows = selectTtsButtons(locale);
-        const activeId = picks[locale] ?? activeVoiceChoice(locale).id;
+        const activeId = picks[locale] ?? activeVoiceChoice(locale, companionGender).id;
         const os = osUsable[locale];
         const osVoiceCount = os ? os.female + os.male : 0;
         const hostedOnly = isSingleVoiceLocale(locale) && osVoiceCount === 0;

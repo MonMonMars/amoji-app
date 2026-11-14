@@ -29,6 +29,7 @@ import { t, type Lang } from '../lib/prefs';
 export default function TtsVoiceRow({
   lang,
   characterId,
+  companionGender,
   accent,
   onLang,
 }: {
@@ -47,7 +48,10 @@ export default function TtsVoiceRow({
 
   const buttons = showAll ? selectTtsButtons() : selectTtsButtons(lang);
   const pinnedId = voicePickFor(lang);
-  const activeId = pinnedId ?? activeVoiceChoice(lang).id;
+  // Prefer companion gender when nothing is pinned — male chars must not
+  // collapse to the first (female) button, which felt like "only Yue ♀ works".
+  const activeId = pinnedId
+    ?? activeVoiceChoice(lang, companionGender).id;
   const single = !showAll && isSingleVoiceLocale(lang);
   const canAdd = voiceAddRemaining(lang) > 0;
 
