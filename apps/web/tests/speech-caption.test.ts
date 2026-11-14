@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { rollingCaptionFromText } from '../lib/speech-caption';
+import {
+  captionsCoverReply,
+  commitCaptionLines,
+  rollingCaptionFromText,
+  stepCaptionLadder,
+} from '../lib/speech-caption';
 import { pauseAfterClause } from '../lib/gtts';
 
 describe('speech caption helpers', () => {
@@ -26,5 +31,14 @@ describe('speech caption helpers', () => {
     expect(src).toContain('pauseAfterClause(raw)');
     expect(src).toContain('splitChunks(spoken)');
     expect(pauseAfterClause('第一段完。\n\n')).toBeGreaterThan(pauseAfterClause('第一段完。'));
+  });
+
+  it('seals caption clauses for history without replaying the whole phase', () => {
+    const mid = stepCaptionLadder([], '', '第一句。');
+    const next = stepCaptionLadder(mid.ladder, mid.current, '第二句。');
+    const sealed = commitCaptionLines(next.ladder, next.current);
+    expect(sealed).toEqual(['第一句。', '第二句。']);
+    expect(captionsCoverReply(sealed, '第一句。第二句。')).toBe(true);
+    expect(commitCaptionLines(sealed, '')).toEqual(sealed);
   });
 });

@@ -4,7 +4,12 @@ import type { EmotionConfig } from '@amoji/emotion-core';
 const HISTORY_KEY = 'amoji.history.v1';
 const CONFIG_KEY = 'amoji.config.v1';
 
-export interface StoredMessage { role: 'user' | 'assistant'; content: string }
+export interface StoredMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  /** Optional sealed caption clauses (UI de-dupe; safe to omit). */
+  captionLines?: string[];
+}
 
 export function loadHistory(): StoredMessage[] {
   try {
@@ -12,12 +17,20 @@ export function loadHistory(): StoredMessage[] {
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (m): m is StoredMessage =>
-        m !== null && typeof m === 'object' &&
-        (m as StoredMessage).role !== undefined && ['user', 'assistant'].includes((m as StoredMessage).role) &&
-        typeof (m as StoredMessage).content === 'string',
-    );
+    return parsed.flatMap((m): StoredMessage[] => {
+      if (m === null || typeof m !== 'object') return [];
+      const row = m as StoredMessage;
+      if (!row.role || !['user', 'assistant'].includes(row.role)) return [];
+      if (typeof row.content !== 'string') return [];
+      const lines = Array.isArray(row.captionLines)
+        ? row.captionLines.filter((s): s is string => typeof s === 'string' && s.trim() !== '')
+        : undefined;
+      return [{
+        role: row.role,
+        content: row.content,
+        ...(lines?.length ? { captionLines: lines } : {}),
+      }];
+    });
   } catch { /* private mode */ return []; }
 }
 
