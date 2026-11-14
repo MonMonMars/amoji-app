@@ -6,9 +6,9 @@ import { playableIdles } from '../lib/idle-library';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const CHITCHAT = ['lib_C25', 'LookAround', 'Thinking', 'IdleInnersceneSam'] as const;
-const NEUTRAL = ['IdleBreathCalm', 'StandardIdle', 'IdleMixamoBreathing', 'LookAround', 'Thinking', 'IdleNeutral'];
-const TALK = ['LookAround', 'IdleBreathCalm', 'StandardIdle', 'IdleMixamoBreathing', 'IdleNeutral', 'Thinking'];
+const CHITCHAT = ['IdleRpmFStanding001', 'IdleSassy', 'IdleRpmMVar001', 'Thinking'] as const;
+const NEUTRAL = ['IdleRpmFStanding001', 'IdleSassy', 'IdleRpmMVar001', 'IdleRpmMVar002', 'Thinking'];
+const TALK = ['IdleRpmFStanding001', 'IdleSassy', 'IdleRpmMVar001', 'IdleRpmMVar002', 'Thinking'];
 
 describe('chat auto idle resolver', () => {
   it('maps greet keywords to chit-chat idles, not HelloWave', () => {

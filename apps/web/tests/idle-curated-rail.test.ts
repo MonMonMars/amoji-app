@@ -44,9 +44,14 @@ describe('curated idle chat rail', () => {
     }
   });
 
-  it('defaults to curated rail #1+#2 clip ids', () => {
-    expect(defaultCuratedRailNums()).toEqual([1, 2]);
-    expect(listEnabledIdleClipIds()).toEqual(['IdleBreathCalm', 'StandardIdle']);
+  it('defaults to Pixel-OK calm stands (rail #5+#18+#16)', () => {
+    expect(defaultCuratedRailNums()).toEqual([5, 18, 16]);
+    // listEnabledIdleClipIds sorts by rail # → 5, 16, 18
+    expect(listEnabledIdleClipIds()).toEqual([
+      'IdleRpmFStanding001',
+      'IdleRpmMVar001',
+      'IdleSassy',
+    ]);
   });
 
   it('migrates stored legacy library enable nums to rail nums', () => {
@@ -59,13 +64,14 @@ describe('curated idle chat rail', () => {
       key: () => null,
       length: 0,
     };
-    store.set('amoji.idleEnabled.v1', JSON.stringify([3, 40, 101]));
-    forgetIdleEnabledCache();
     const lookRail = CHAT_IDLE_CURATED.find((r) => r.legacyLibNum === 3)!.railNum;
     const robotRail = CHAT_IDLE_CURATED.find((r) => r.legacyLibNum === 101)!.railNum;
     expect(migrateEnabledNumsToRail([3, 40, 101]).sort()).toEqual(
       [3, lookRail, robotRail].sort(),
     );
+    // v2 key stores rail nums already (or migrates on read)
+    store.set('amoji.idleEnabled.v2', JSON.stringify([3, 40, 101]));
+    forgetIdleEnabledCache();
     const enabled = listEnabledNums();
     expect(enabled).toContain(lookRail);
     expect(enabled).toContain(robotRail);

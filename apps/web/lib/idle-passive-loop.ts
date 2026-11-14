@@ -4,25 +4,30 @@
 
 import { idleClipById } from './idle-clips';
 
-/** Preferred clip ids for each beat of the loop. */
-export const PASSIVE_RELAX_CLIPS = ['IdleBreathCalm', 'StandardIdle'] as const;
+/** Preferred clip ids for each beat of the loop — Pixel-OK calm stands. */
+export const PASSIVE_RELAX_CLIPS = [
+  'IdleRpmFStanding001',
+  'IdleSassy',
+  'IdleRpmMVar001',
+] as const;
 /** Mild stretch only — IdleMixamoArmStretch raised arms repeatedly and felt like a show. */
-export const PASSIVE_STRETCH_CLIPS = ['Relax'] as const;
-export const PASSIVE_LOOK_CLIPS = ['LookAround'] as const;
+export const PASSIVE_STRETCH_CLIPS = ['IdleRpmMVar002', 'Relax'] as const;
+/** Soft look variant from Pixel-OK set (not LookAround mid-pose thrash). */
+export const PASSIVE_LOOK_CLIPS = ['IdleRpmMVar001', 'IdleSassy'] as const;
 
 /**
  * Canonical playlist: calm-heavy with one look and one mild stretch per cycle.
  * Stretch sits last so arm motion is at most once per full rotation.
  */
 export const PASSIVE_IDLE_LOOP_TEMPLATE = [
-  'IdleBreathCalm',
-  'IdleBreathCalm',
-  'StandardIdle',
-  'IdleBreathCalm',
-  'LookAround',
-  'IdleBreathCalm',
-  'IdleBreathCalm',
-  'Relax',
+  'IdleRpmFStanding001',
+  'IdleRpmFStanding001',
+  'IdleSassy',
+  'IdleRpmFStanding001',
+  'IdleRpmMVar001',
+  'IdleRpmFStanding001',
+  'IdleSassy',
+  'IdleRpmMVar002',
 ] as const;
 
 function firstAvailable(candidates: readonly string[], available: ReadonlySet<string>): string | null {
@@ -68,7 +73,7 @@ export function orderPassiveIdleClips(availableIds: readonly string[]): string[]
 /** Next clip in the loop (for ChatPanel silence cycling). */
 export function nextPassiveIdleClip(availableIds: readonly string[], step: number): string {
   const order = orderPassiveIdleClips(availableIds);
-  if (!order.length) return 'IdleBreathCalm';
+  if (!order.length) return 'IdleRpmFStanding001';
   return order[((step % order.length) + order.length) % order.length]!;
 }
 

@@ -9,28 +9,36 @@ import { FAREWELL_WAVE_CLIP_ID, isFarewellText } from './idle-farewell';
 import { detectMusicStyle, STYLE_CLIP_HINTS } from './music-catalog';
 import { resolvePerfMotion } from './performance-motion';
 
-const BREATHING_CLIPS = ['IdleBreathCalm', 'StandardIdle', 'IdleMixamoBreathing'] as const;
-
-/** Opening greet / light chit-chat — never the wave gesture. */
-const CHITCHAT_CLIPS = ['lib_C25', 'LookAround', 'Thinking', 'IdleInnersceneSam'] as const;
-
-/** Calm defaults for ordinary Q&A — no dance fallthrough. */
-const NEUTRAL_CHAT_CLIPS = [
-  'IdleBreathCalm',
-  'StandardIdle',
-  'IdleMixamoBreathing',
-  'LookAround',
-  'Thinking',
-  'IdleNeutral',
+const BREATHING_CLIPS = [
+  'IdleRpmFStanding001',
+  'IdleSassy',
+  'IdleRpmMVar001',
+  'IdleRpmMVar002',
 ] as const;
 
-/** Weather / news / story / fun-fact talk — look + breathe only. */
+/** Opening greet / light chit-chat — never the wave gesture. */
+const CHITCHAT_CLIPS = [
+  'IdleRpmFStanding001',
+  'IdleSassy',
+  'IdleRpmMVar001',
+  'Thinking',
+] as const;
+
+/** Calm defaults for ordinary Q&A — Pixel-OK stands only (no LookAround thrash). */
+const NEUTRAL_CHAT_CLIPS = [
+  'IdleRpmFStanding001',
+  'IdleSassy',
+  'IdleRpmMVar001',
+  'IdleRpmMVar002',
+  'Thinking',
+] as const;
+
+/** Weather / news / story / fun-fact talk — calm stands only. */
 const TALK_CALM_CLIPS = [
-  'LookAround',
-  'IdleBreathCalm',
-  'StandardIdle',
-  'IdleMixamoBreathing',
-  'IdleNeutral',
+  'IdleRpmFStanding001',
+  'IdleSassy',
+  'IdleRpmMVar001',
+  'IdleRpmMVar002',
   'Thinking',
 ] as const;
 
@@ -155,7 +163,7 @@ function pickFromPool(seed: string, pool: readonly string[]): string {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
   const playable = pool.filter((id) => idleClipById(id));
-  if (!playable.length) return 'IdleBreathCalm';
+  if (!playable.length) return 'IdleRpmFStanding001';
   const idx = Math.abs(h) % playable.length;
   return playable[idx]!;
 }
