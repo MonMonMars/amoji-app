@@ -77,12 +77,13 @@ describe('planTools', () => {
     }
   });
 
-  it('isLiveFactsOnlyTurn gates weather TTS bypass but sends news through the model', () => {
+  it('isLiveFactsOnlyTurn speaks weather and news headlines without a second LLM pass', () => {
     const weather = planTools("what's the weather here?");
     expect(isLiveFactsOnlyTurn(weather, 'It is 22° in Berlin.')).toBe(true);
     expect(isLiveFactsOnlyTurn(weather, '')).toBe(false);
     const news = planTools('what is the latest news?');
-    expect(isLiveFactsOnlyTurn(news, 'Light headline from Wikipedia.')).toBe(false);
+    expect(isLiveFactsOnlyTurn(news, 'From the news: Light headline from Wikipedia.')).toBe(true);
+    expect(isLiveFactsOnlyTurn(news, "I couldn't find a headline just now.")).toBe(false);
     const cafe = planTools('cafes near me');
     expect(isLiveFactsOnlyTurn(cafe, 'Two spots nearby.')).toBe(false);
     const learn = planTools('search how photosynthesis works');

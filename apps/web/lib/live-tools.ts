@@ -336,12 +336,14 @@ function planHasWork(plan: ToolPlan): boolean {
   return plan.weather || plan.news || plan.where || plan.places || Boolean(plan.searchQuery) || Boolean(plan.recipeQuery);
 }
 
-/** Weather / where-only turns with fetched spoken facts — answer by TTS without
- *  waiting on the LLM. News goes through the model so she can summarize and
- *  react in character from the live headline sheet. */
+/** Weather / where / news turns with fetched spoken facts — answer by TTS
+ *  without waiting on the LLM. Free models often shrug or invent a second
+ *  line; speaking the live facts once prevents double answers. */
 export function isLiveFactsOnlyTurn(plan: ToolPlan, spoken: string): boolean {
   if (!spoken.trim()) return false;
-  if (plan.news) return false;
+  if (plan.news) {
+    return !/which city|哪个城市|邊個城市|どの都市|couldn't find a headline|搵唔到新聞|找不到新闻|ニュースが見つから/i.test(spoken);
+  }
   return (plan.weather || plan.where)
     && !plan.places
     && !plan.searchQuery

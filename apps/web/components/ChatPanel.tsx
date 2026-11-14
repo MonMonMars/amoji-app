@@ -177,7 +177,7 @@ import {
   undecidedTopicReply,
   userUndecided,
 } from '../lib/topic-suggestions';
-import { speak, stopSpeaking, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechRemainder, whenSpeechIdle } from '../lib/voice';
+import { speak, stopSpeaking, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechLeadDiverged, speechRemainder, whenSpeechIdle } from '../lib/voice';
 import { cantHearReply, isCantHearComplaint } from '../lib/cant-hear';
 import { productionChat } from '../lib/backend-client';
 import { stopThinkingSound } from '../lib/thinking-sound';
@@ -756,7 +756,11 @@ export default function ChatPanel({
     const firstLive = !!alreadySpoken
       && mv !== 'sing'
       && (speechStillQueued(alreadySpoken.text) || voiceStartedSince(alreadySpoken.since));
-    if (firstLive && alreadySpoken) {
+    // Streamed lead + final reply often diverge (preferLive / scrub). Never
+    // stack a second full answer on top — cut the lead and speak once.
+    if (firstLive && alreadySpoken && speechLeadDiverged(reply, alreadySpoken.text)) {
+      stopSpeaking();
+    } else if (firstLive && alreadySpoken) {
       if (mv === 'dance') {
         // Dance body starts on library-clip playing (beginShow), not here.
         beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
@@ -1464,7 +1468,10 @@ export default function ChatPanel({
             // long replies). The final speakReply skips the re-speak when
             // the reply turns out to be exactly this sentence — r100: and
             // only when this attempt's audio actually STARTED.
-            if (!firstSentence && requested !== 'sing') {
+            // Skip when live facts will replace the LLM line (preferLive /
+            // news·weather sheet) — otherwise she says the model lead, then
+            // the facts line: two answers for one turn.
+            if (!firstSentence && requested !== 'sing' && !worldSpoken.trim()) {
               const m = /^[^。！？.!?\n]+[。！？.!?]/.exec(clean);
               if (m) {
                 firstSentence = m[0];
