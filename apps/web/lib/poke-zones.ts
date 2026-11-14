@@ -195,7 +195,7 @@ function scaleBody(body: PokeBody, scale: typeof TIER_BAND_SCALE.head): PokeBody
 }
 
 /**
- * Tier-aware punch recoil: opposite-side lean with tier falloff; tier 6 = no motion.
+ * Tier-aware punch recoil: toward-poked-side lean with tier falloff; tier 6 = no motion.
  *
  * Head tier keeps full head amplitude from the head recipe, then layers a
  * soft torso follow (Pixel: head poke moves upper body less, not zero).
@@ -228,7 +228,7 @@ export function pokeSectionBodyReaction(opts: {
       zone: 'head',
       softChest: false,
     });
-    // Soft opposite-side follow through the torso — same fall vector, low band scale.
+    // Soft same-side follow through the torso — same fall vector, low band scale.
     const follow = scaleBody(
       pokeBodyReaction({
         ...common,

@@ -90,26 +90,26 @@ describe('pokeSectionBodyReaction', () => {
     expect(Math.abs(hit.spinePitch)).toBeLessThan(0.2);
   });
 
-  it('left lateral poke leans right (opposite-side) with chest roll', () => {
+  it('left lateral poke leans left (toward poked side) with chest roll', () => {
     const section = resolvePokeSection('side', 'left');
     const hit = pokeSectionBodyReaction({
       t: 0.12,
       section,
       hitZone: 'side',
-      // Canvas lateral path: fall = cameraRight * (-camSide); left poke → +X.
-      fallX: 1,
+      // Canvas lateral path: fall = cameraRight * camSide; left poke → −X.
+      fallX: -1,
       fallZ: 0,
       sideSign: -1,
       softChest: false,
       twist: 0,
     });
-    expect(hit.chestRoll).toBeLessThan(0);
+    expect(hit.chestRoll).toBeGreaterThan(0);
     expect(Math.abs(hit.lArmX)).toBeGreaterThan(Math.abs(hit.rArmX));
   });
 
-  it('CompanionCanvas lateral fall uses -camSide (opposite-side lean)', () => {
+  it('CompanionCanvas lateral fall uses +camSide (toward poked side)', () => {
     const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
-    expect(canvas).toMatch(/multiplyScalar\(\s*-camSide\s*\)/);
-    expect(canvas).not.toMatch(/multiplyScalar\(\s*camSide\s*\)/);
+    expect(canvas).toMatch(/multiplyScalar\(\s*camSide\s*\)/);
+    expect(canvas).not.toMatch(/multiplyScalar\(\s*-camSide\s*\)/);
   });
 });
