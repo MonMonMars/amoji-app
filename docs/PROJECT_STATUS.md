@@ -13,7 +13,7 @@
 | **Done** — merged to `main` | 80+ stack · Nov 13 wave #362–#364 / #373–#375 / #379 |
 | **Open product PRs** | **0** (Hold spikes only: #1 / #20 / #154 / #240) |
 | **Outstanding** — actionable code left for agents | **0** |
-| **Outstanding** — Pixel / human actions | Device listen (dance/one-voice/music) · gate location one-popup confirm · white-pupil image advice |
+| **Outstanding** — Pixel / human actions | Device listen (dance/one-voice/music) · optional gate location one-popup confirm |
 | **Hold** | licensed music · Stripe live keys · Product Hunt · Search Console · stale spikes #1 / #20 / #154 / #240 |
 | Docs missing | 0 |
 
