@@ -26,6 +26,8 @@ describe('idle pose smooth + catalog trim', () => {
     const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
     expect(canvas).toContain('applyIdleClipSoftening');
     expect(canvas).toMatch(/!perfAction[\s\S]*applyIdleClipSoftening/);
+    // Calm relaxed-hands gate follows Pixel calm idle set (not only legacy BreathCalm).
+    expect(canvas).toContain('isPixelCalmIdleClip(idleClipId)');
   });
 
   it('pins longer crossfade (~0.85s) and defers foot IK during leg blend window', () => {

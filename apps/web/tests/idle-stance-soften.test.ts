@@ -3,8 +3,10 @@ import * as THREE from 'three';
 import {
   IDLE_ELBOW_FLOOR_X,
   IDLE_STIFF_CLIP_GAIN,
+  IDLE_TORSO_PITCH_MAX,
   applyIdleClipSoftening,
   idleStiffClipGain,
+  pullIdleTorsoUpright,
 } from '../lib/idle-stance-soften';
 
 describe('idle stance soften', () => {
@@ -12,6 +14,29 @@ describe('idle stance soften', () => {
     expect(idleStiffClipGain('IdleBreathCalm')).toBe(1);
     expect(idleStiffClipGain('IdleMixamoExcited')).toBe(IDLE_STIFF_CLIP_GAIN);
     expect(idleStiffClipGain('IdleRpmMArmStanding001')).toBe(IDLE_STIFF_CLIP_GAIN);
+  });
+
+  it('pulls torso pitch back from a forward lean (no weird lean-forward)', () => {
+    const spine = new THREE.Bone();
+    spine.name = 'spine';
+    spine.quaternion.setFromEuler(new THREE.Euler(0.35, 0, 0, 'YXZ'));
+    pullIdleTorsoUpright((n) => (n === 'spine' ? spine : null));
+    const e = new THREE.Euler().setFromQuaternion(spine.quaternion, 'YXZ');
+    expect(e.x).toBeLessThanOrEqual(IDLE_TORSO_PITCH_MAX + 1e-5);
+    expect(e.x).toBeGreaterThanOrEqual(-IDLE_TORSO_PITCH_MAX - 1e-5);
+  });
+
+  it('never adds spine/neck forward-lean rules on calm idles', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const src = fs.readFileSync(
+      path.join(import.meta.dirname, '../lib/idle-stance-soften.ts'),
+      'utf8',
+    );
+    expect(src).not.toMatch(/IdleBreathCalm:[\s\S]*?\{ bone: 'spine', x:/);
+    expect(src).not.toMatch(/StandardIdle:[\s\S]*?\{ bone: 'spine', x:/);
+    expect(src).not.toMatch(/\{ bone: 'neck', x: 0\.0[3-9]/);
+    expect(src).toContain('pullIdleTorsoUpright');
   });
 
   it('raises elbow flex floor on a straight hanging forearm', () => {
