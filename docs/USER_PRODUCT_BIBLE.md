@@ -2,8 +2,8 @@
 
 **Purpose:** Living checklist of product rules from the product owner. Agents must read this before chat/voice/pose/permission work and update it when rules change.
 
-**Last reviewed:** 2026-11-13 08:35 (Asia/Hong_Kong)  
-**Branch for current pack:** `cursor/gate-location-all-in-one-0340-0eac`  
+**Last reviewed:** 2026-11-14 14:30 (Asia/Hong_Kong)  
+**main tip:** `082f693` (#379 gate location live on Pages)  
 
 **Agent copy:** `/cursor/stores/self/USER_PRODUCT_BIBLE.md`  
 **Request log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn.
@@ -90,9 +90,9 @@
 
 | Item | Status |
 |------|--------|
-| Device eyeball on live Pages | Bundle OK for phase chips + dance gate + pitch; still need human listen for dance / one-voice / music |
-| Gate location on device | Code: location Allow + Enter prime on PreChatAudioGate; Start no-ops after `amoji.geo.primed` — confirm one popup on phone |
-| White pupil image loop | Awaiting owner advice |
+| Device eyeball on live Pages | Bundle OK; need human listen for dance / one-voice / music |
+| Gate location on device | **Pages live** (`Allow location` / `amoji.geo.primed` on `/gate/audio`) — confirm one popup on phone |
+| White pupil image loop | Image v1 shown again — **awaiting one owner note** (darker? smaller catchlight? different character?) |
 
 ---
 
@@ -100,7 +100,8 @@
 
 | Date (HKT) | Change |
 |------------|--------|
-| 2026-11-13 ~08:35 | Location Allow on PreChatAudioGate + once-per-tab prime (`amoji.geo.primed`); Start skips after gate |
+| 2026-11-14 ~14:30 | Pages verify #379 gate location strings live; white-pupil v1 re-surfaced for owner advice |
+| 2026-11-13 ~08:35 | Location Allow on PreChatAudioGate + once-per-tab prime (`amoji.geo.primed`); Start skips after gate · #379 |
 | 2026-11-13 ~05:50 | Merged #374 pitch tiers, #375 one-voice card, #373 phase chips, #362 dance gate, #363 voice gender, #364 music ask; closed superseded #361/#365 |
 | 2026-11-12 23:29 | Demo-phase adds AI news / personal / secret / joke / poem / tip (+ rotate facets) · #373 |
 | 2026-11-12 evening | Outstanding pack: statement SCENE_LINES + Start mic preflight + merge #371 |
