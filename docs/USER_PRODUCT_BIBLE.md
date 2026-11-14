@@ -2,8 +2,9 @@
 
 **Purpose:** Living checklist of product rules from the product owner. Agents must read this before chat/voice/pose/permission work and update it when rules change.
 
-**Last reviewed:** 2026-11-14 22:15 (Asia/Hong_Kong)  
-**main tip:** `2266df8` · **agent-actionable code: 0** · phone list: [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
+**Last reviewed:** 2026-11-14 22:50 (Asia/Hong_Kong)  
+**Branch:** `cursor/dance-gate-chip-path-0340-0eac` · phone list: [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
+
 
 
 
@@ -60,7 +61,7 @@
 | gTTS bright/mid/deep pitch tiers per character | #374 |
 | One voice on card greets (stop insurance when gTTS starts) | #375 |
 | Demo-phase rotate + AI news / personal / secret / joke / poem / tip | #373 |
-| Dance starts only when music bed is playing | #362 |
+| Dance starts only when music bed is playing | #362 + chip/typed/showcase path fix (this branch) |
 | Male/female voices per lang + Add test pool | #363 |
 | Music ask: random play; select chips only when asked | #364 |
 | Calm vs perf pose gating + retire bad poses | on main (superseded open #365 closed) |
@@ -105,6 +106,7 @@ Agent-actionable product code: **none**. Closed superseded polish #154/#240. Spi
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-14 ~22:50 | Fix dance-too-soon on typed/chip/showcase paths; preview synth no-stack over insurance clip |
 | 2026-11-14 ~22:15 | Live Pages smoke OK; closed superseded #154/#240; added `PHONE_SMOKE.md` |
 | 2026-11-14 ~17:55 | Continue audit: regression Vitest 46 pass (dance/music/gate/card/pitch); no new code scope |
 | 2026-11-14 ~14:57 | Owner approved white-pupil image v1 — loop Done |

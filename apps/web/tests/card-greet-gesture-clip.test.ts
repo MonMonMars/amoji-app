@@ -47,6 +47,12 @@ describe('card greet gesture insurance clip', () => {
     expect(gttsCall.indexOf('stopVoiceClip()')).toBeLessThan(gttsCall.indexOf("onStart('gtts')"));
   });
 
+  it('previewVoiceChoice does not stack synth over a still-playing insurance clip', () => {
+    const body = fnBody('previewVoiceChoice', 'export function previewOsVoice');
+    expect(body).toContain('isVoiceClipPlaying()');
+    expect(body).toMatch(/isVoiceClipPlaying\(\)[\s\S]*runSynthAudition\('preview fallback'\)/);
+  });
+
   it('previewVoiceChoice also starts the local insurance clip', () => {
     const body = fnBody('previewVoiceChoice', 'export function previewOsVoice');
     expect(body).toContain('playGestureClipSync');

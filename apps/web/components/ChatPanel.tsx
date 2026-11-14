@@ -1308,7 +1308,7 @@ export default function ChatPanel({
         done();
         return;
       }
-      triggerMove(kind === 'song' ? 'sing' : 'dance');
+      // Body waits for library-clip playing via beginShow — do not triggerMove here.
       // Intro names the piece; skip generic SHOWCASE_START so we don't double-talk.
       beginShow(kind === 'song' ? 'song' : 'dance', 12_000, undefined, perfCountRef.current);
       if (kind === 'song') {
@@ -1339,15 +1339,14 @@ export default function ChatPanel({
       return;
     }
     if (plan.plan === 'free') consumeChatTurn();
-    // Sing / dance start the premade clip NOW, before the reply arrives, so
-    // the track is audible and named while she thinks. A sing request skips
-    // the thinking filler — the clip is the vocal.
+    // Sing / dance: name + arm the bed while she thinks; body waits for
+    // library-clip `playing` (beginShow → pendingShowDanceRef). Do not
+    // triggerMove on press — that was dance-too-soon on typed/chip asks.
     const requested = detectMove(text);
     // Sing/dance random autoplay (select already returned above).
     // Local CC0 clips + Mixkit style streams when the user names a genre.
     if (requested === 'sing' || requested === 'dance') {
       setMusicPicks(null);
-      triggerMove(requested);
       applyContentMood({ joy: requested === 'sing' ? 0.88 : 0.72 });
       const ask = resolveMusicAsk(text);
       const style = ask.style ?? detectMusicStyle(text);
