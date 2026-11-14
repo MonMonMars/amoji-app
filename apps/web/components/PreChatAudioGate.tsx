@@ -3,7 +3,14 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadPrefs, t, type Lang } from '../lib/prefs';
-import { testVoiceChain, setVoiceEnabled, voiceEnabled, GATE_TEST_LINES } from '../lib/voice';
+import {
+  testVoiceChain,
+  setVoiceEnabled,
+  voiceEnabled,
+  GATE_TEST_LINES,
+  primeAudioForChatEnter,
+  stopSpeaking,
+} from '../lib/voice';
 import { isMasterMuted, setMasterMuted } from '../lib/master-mute';
 import { listenSupported } from '../lib/listen';
 import { requestMic } from '../lib/mic-preflight';
@@ -38,7 +45,7 @@ export default function PreChatAudioGate({
   const [micBusy, setMicBusy] = useState(false);
   const [locationUi, setLocationUi] = useState<LocationGateUi>('idle');
   const [locationBusy, setLocationBusy] = useState(false);
-  const autoStarted = useRef(false);
+  const primedExtras = useRef(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -46,30 +53,6 @@ export default function PreChatAudioGate({
     stashPriorMasterMuteForChat();
     if (!listenSupported()) setMic('unsupported');
   }, []);
-
-  const playSample = useCallback(async () => {
-    // Re-click always restarts the hear/not-hear choice after playback.
-    setHeard(null);
-    setSoundUi('idle');
-    setPlaying(true);
-    try { if (isMasterMuted()) setMasterMuted(false); } catch { /* ignore */ }
-    try { if (!voiceEnabled()) setVoiceEnabled(true); } catch { /* ignore */ }
-    try { primeChatStartGesture(); } catch { /* ignore */ }
-    // Leave mic-ducked play-and-record so the long loud sample hits the speakers.
-    try { companionPlaybackSession(); } catch { /* ignore */ }
-    let characterId = 'a01-shino';
-    try { characterId = loadPrefs().character; } catch { /* default */ }
-    try {
-      // Long GATE_TEST_LINES + forcePlaybackVolume(1) inside testVoiceChain.
-      await testVoiceChain(characterId, lang, GATE_TEST_LINES[lang] ?? GATE_TEST_LINES.en);
-    } catch {
-      /* retryable — never blocks Continue */
-    } finally {
-      setPlaying(false);
-      setSoundTested(true);
-      setSoundUi('asked');
-    }
-  }, [lang]);
 
   const allowMic = useCallback(async () => {
     // Re-click re-triggers the browser/iOS permission prompt.
@@ -79,6 +62,7 @@ export default function PreChatAudioGate({
       setMic(outcome);
       if (outcome === 'granted') setMicPreflightSession(true);
       else setMicPreflightSession(false);
+      return outcome;
     } finally {
       setMicBusy(false);
     }
@@ -102,29 +86,47 @@ export default function PreChatAudioGate({
     }
   }, []);
 
-  // Best-effort auto prompt on mount: unmute + warm AudioContext + mic.
-  // iOS may refuse without a gesture — that is fine; Allow stays available.
-  useEffect(() => {
-    if (autoStarted.current) return;
-    autoStarted.current = true;
-    let cancelled = false;
-    void (async () => {
-      try { if (isMasterMuted()) setMasterMuted(false); } catch { /* ignore */ }
-      try { if (!voiceEnabled()) setVoiceEnabled(true); } catch { /* ignore */ }
-      try { primeChatStartGesture(); } catch { /* ignore */ }
-      if (!listenSupported()) {
-        if (!cancelled) setMic('unsupported');
-        return;
+  /**
+   * Sync unlock + kick mic/location from the same tap as the sample.
+   * Do not await getUserMedia before TTS — the permission sheet would drop
+   * the user-gesture audio unlock and the sample stays silent.
+   */
+  const preOpenExtras = useCallback(() => {
+    try { primeChatStartGesture(); } catch { /* ignore */ }
+    try { primeAudioForChatEnter(); } catch { /* ignore */ }
+    try { companionPlaybackSession(); } catch { /* ignore */ }
+    try { if (isMasterMuted()) setMasterMuted(false); } catch { /* ignore */ }
+    try { if (!voiceEnabled()) setVoiceEnabled(true); } catch { /* ignore */ }
+    if (!primedExtras.current) {
+      primedExtras.current = true;
+      if (listenSupported()) {
+        void allowMic().catch(() => { /* Allow button remains */ });
       }
-      const outcome = await requestMic();
-      if (!cancelled) {
-        setMic(outcome);
-        // Same-session chat enter can open the mic with no delay when granted here.
-        if (outcome === 'granted') setMicPreflightSession(true);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
+      try { allowLocation(); } catch { /* Allow button remains */ }
+    }
+  }, [allowLocation, allowMic]);
+
+  const playSample = useCallback(async () => {
+    // Keep button / section labels fixed while playing — no layout flip.
+    // Re-click restarts the sample and clears the prior hear answer in place.
+    setHeard(null);
+    setSoundUi('asked');
+    setPlaying(true);
+    try {
+      preOpenExtras();
+      try { stopSpeaking(); } catch { /* ignore */ }
+      let characterId = 'a01-shino';
+      try { characterId = loadPrefs().character; } catch { /* default */ }
+      // Long GATE_TEST_LINES + forcePlaybackVolume(1) inside testVoiceChain.
+      await testVoiceChain(characterId, lang, GATE_TEST_LINES[lang] ?? GATE_TEST_LINES.en);
+    } catch {
+      /* retryable — never blocks Continue */
+    } finally {
+      setPlaying(false);
+      setSoundTested(true);
+      setSoundUi('asked');
+    }
+  }, [lang, preOpenExtras]);
 
   const speakerOk = soundTested && !isMasterMuted() && voiceEnabled();
   const micOk = mic === 'granted' || mic === 'unsupported';
@@ -134,6 +136,8 @@ export default function PreChatAudioGate({
     // does not surprise-ask geo later (standing rule: all-in-one gate page).
     void (async () => {
       primeChatStartGesture();
+      try { primeAudioForChatEnter(); } catch { /* ignore */ }
+      try { companionPlaybackSession(); } catch { /* ignore */ }
       let micOutcome: MicOutcome = mic === 'pending' ? 'skipped' : mic;
       if (listenSupported() && micOutcome !== 'unsupported') {
         try {
@@ -175,6 +179,24 @@ export default function PreChatAudioGate({
       ? t(lang, 'preChatEnterChat')
       : t(lang, 'next');
 
+  const hearReady = soundTested && !playing;
+  const micStatus =
+    mic === 'pending'
+      ? '\u00a0'
+      : mic === 'granted'
+        ? t(lang, 'gateMicGranted')
+        : mic === 'unsupported'
+          ? t(lang, 'gateMicUnsupported')
+          : t(lang, 'gateMicDenied');
+  const locationStatus =
+    locationUi === 'idle'
+      ? '\u00a0'
+      : locationUi === 'ready' || locationUi === 'asked'
+        ? t(lang, 'gateLocationReady')
+        : locationUi === 'unsupported'
+          ? t(lang, 'gateLocationUnsupported')
+          : t(lang, 'gateLocationDenied');
+
   return (
     <main data-testid="pre-chat-audio-gate" className="fx-page flex min-h-dvh items-center justify-center bg-neutral-950 px-5 py-8 text-white">
       <EarlyAudioUnlock />
@@ -188,83 +210,100 @@ export default function PreChatAudioGate({
         <p className="mt-2 text-sm text-white/70">{t(lang, 'preChatGateLead')}</p>
         <p className="mt-4 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3 text-sm text-amber-100">{t(lang, 'gateAudioIosHint')}</p>
 
+        {/* Fixed label — never swap to “Playing…” (that flipped the whole card). */}
         <button
           type="button"
           data-testid="pre-chat-test-sound"
+          data-playing={playing ? '1' : '0'}
+          aria-busy={playing}
           disabled={playing}
           onClick={() => void playSample()}
-          className="ui-btn mt-3 h-12 w-full rounded-full bg-white font-semibold text-black"
+          className="ui-btn mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-white font-semibold text-black disabled:opacity-100"
         >
-          {playing ? t(lang, 'gateAudioPlaying') : t(lang, 'gateAudioTest')}
+          <span>{t(lang, 'gateAudioTest')}</span>
+          <span
+            aria-hidden
+            className={`inline-block h-2 w-2 shrink-0 rounded-full bg-black/45 transition-opacity ${playing ? 'animate-pulse opacity-100' : 'opacity-0'}`}
+          />
         </button>
 
-        {isMasterMuted() && soundTested && (
-          <p className="mt-2 text-xs text-amber-100/90">{t(lang, 'preChatUnmuteHint')}</p>
-        )}
+        <p className="mt-2 min-h-4 text-xs text-amber-100/90">
+          {isMasterMuted() && soundTested ? t(lang, 'preChatUnmuteHint') : '\u00a0'}
+        </p>
 
-        {soundUi === 'asked' && (
-          <div data-testid="pre-chat-hear-ask" className="mt-4 space-y-3">
-            <p className="text-sm text-white/80">{t(lang, 'gateAudioQuestion')}</p>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <button
-                type="button"
-                data-testid="pre-chat-hear-yes"
-                onClick={() => {
-                  setHeard('yes');
-                  setSoundUi('ok');
-                }}
-                className="ui-btn h-11 flex-1 rounded-full bg-emerald-400/90 font-semibold text-neutral-950"
-              >
-                {t(lang, 'gateAudioYes')}
-              </button>
-              <button
-                type="button"
-                data-testid="pre-chat-hear-no"
-                onClick={() => {
-                  setHeard('no');
-                  setSoundUi('help');
-                }}
-                className="ui-btn h-11 flex-1 rounded-full border border-white/25 bg-white/10 font-semibold text-white"
-              >
-                {t(lang, 'gateAudioNo')}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {soundUi === 'ok' && (
-          <p
-            data-testid="pre-chat-hear-ok"
-            className="mt-4 rounded-2xl border border-emerald-300/35 bg-emerald-400/10 p-3 text-sm text-emerald-50"
-          >
-            {t(lang, 'preChatHeardOk')}
+        {/* Hear ask always mounted so yes/no does not shove the page on first play. */}
+        <div data-testid="pre-chat-hear-ask" className="mt-2 space-y-3">
+          <p className={`text-sm ${hearReady ? 'text-white/80' : 'text-white/35'}`}>
+            {t(lang, 'gateAudioQuestion')}
           </p>
-        )}
-
-        {soundUi === 'help' && (
-          <div
-            data-testid="pre-chat-hear-help"
-            className="mt-4 space-y-3 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3 text-sm text-amber-50"
-          >
-            <p className="font-semibold">{t(lang, 'gateHelpTitle')}</p>
-            <ul className="list-disc space-y-2 pl-5 text-amber-50/90">
-              <li>{t(lang, 'gateHelpSwitch')}</li>
-              <li>{t(lang, 'gateHelpVolume')}</li>
-              <li>{t(lang, 'gateHelpBluetooth')}</li>
-              <li>{t(lang, 'gateHelpTabMuted')}</li>
-            </ul>
-            <p className="text-xs text-amber-100/80">{t(lang, 'gateHelpNote')}</p>
+          <div className="flex flex-col gap-2 sm:flex-row">
             <button
               type="button"
-              data-testid="pre-chat-hear-retry"
-              disabled={playing}
-              onClick={() => void playSample()}
-              className="ui-btn h-10 w-full rounded-full bg-white font-semibold text-black"
+              data-testid="pre-chat-hear-yes"
+              disabled={!hearReady}
+              onClick={() => {
+                setHeard('yes');
+                setSoundUi('ok');
+              }}
+              className="ui-btn h-11 flex-1 rounded-full bg-emerald-400/90 font-semibold text-neutral-950 disabled:cursor-not-allowed disabled:opacity-45"
             >
-              {t(lang, 'gateHelpRetry')}
+              {t(lang, 'gateAudioYes')}
+            </button>
+            <button
+              type="button"
+              data-testid="pre-chat-hear-no"
+              disabled={!hearReady}
+              onClick={() => {
+                setHeard('no');
+                setSoundUi('help');
+              }}
+              className="ui-btn h-11 flex-1 rounded-full border border-white/25 bg-white/10 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              {t(lang, 'gateAudioNo')}
             </button>
           </div>
-        )}
+        </div>
+
+        {/* Reserved feedback slot — ok / help swap inside fixed min-height. */}
+        <div className="mt-4 min-h-[9.5rem]">
+          {soundUi === 'ok' && (
+            <p
+              data-testid="pre-chat-hear-ok"
+              className="rounded-2xl border border-emerald-300/35 bg-emerald-400/10 p-3 text-sm text-emerald-50"
+            >
+              {t(lang, 'preChatHeardOk')}
+            </p>
+          )}
+          {soundUi === 'help' && (
+            <div
+              data-testid="pre-chat-hear-help"
+              className="space-y-3 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3 text-sm text-amber-50"
+            >
+              <p className="font-semibold">{t(lang, 'gateHelpTitle')}</p>
+              <ul className="list-disc space-y-2 pl-5 text-amber-50/90">
+                <li>{t(lang, 'gateHelpSwitch')}</li>
+                <li>{t(lang, 'gateHelpVolume')}</li>
+                <li>{t(lang, 'gateHelpBluetooth')}</li>
+                <li>{t(lang, 'gateHelpTabMuted')}</li>
+              </ul>
+              <p className="text-xs text-amber-100/80">{t(lang, 'gateHelpNote')}</p>
+              <button
+                type="button"
+                data-testid="pre-chat-hear-retry"
+                data-playing={playing ? '1' : '0'}
+                disabled={playing}
+                onClick={() => void playSample()}
+                className="ui-btn flex h-10 w-full items-center justify-center gap-2 rounded-full bg-white font-semibold text-black disabled:opacity-100"
+              >
+                <span>{t(lang, 'gateHelpRetry')}</span>
+                <span
+                  aria-hidden
+                  className={`inline-block h-2 w-2 shrink-0 rounded-full bg-black/45 transition-opacity ${playing ? 'animate-pulse opacity-100' : 'opacity-0'}`}
+                />
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Mic optional: permission button only — no composer / typing field. */}
         <section data-testid="pre-chat-mic-section" aria-labelledby="pre-chat-mic-heading" className="mt-5 space-y-3">
@@ -275,19 +314,14 @@ export default function PreChatAudioGate({
             <p className="text-xs text-white/55">{t(lang, 'gateMicBody')}</p>
           </div>
 
-          {mic !== 'pending' && (
-            <p
-              role="status"
-              data-testid="pre-chat-mic-result"
-              data-outcome={mic}
-              className="text-sm text-white/75"
-            >
-              {mic === 'granted' && t(lang, 'gateMicGranted')}
-              {mic === 'denied' && t(lang, 'gateMicDenied')}
-              {mic === 'unsupported' && t(lang, 'gateMicUnsupported')}
-              {mic === 'skipped' && t(lang, 'gateMicDenied')}
-            </p>
-          )}
+          <p
+            role="status"
+            data-testid="pre-chat-mic-result"
+            data-outcome={mic}
+            className="min-h-5 text-sm text-white/75"
+          >
+            {micStatus}
+          </p>
 
           {/* Allow stays clickable so re-click re-triggers the iPhone/browser popup. */}
           {listenSupported() && mic !== 'unsupported' && (
@@ -312,20 +346,14 @@ export default function PreChatAudioGate({
             <p className="text-xs text-white/55">{t(lang, 'gateLocationBody')}</p>
           </div>
 
-          {locationUi !== 'idle' && (
-            <p
-              role="status"
-              data-testid="pre-chat-location-result"
-              data-outcome={locationUi}
-              className="text-sm text-white/75"
-            >
-              {locationUi === 'ready' || locationUi === 'asked'
-                ? t(lang, 'gateLocationReady')
-                : locationUi === 'unsupported'
-                  ? t(lang, 'gateLocationUnsupported')
-                  : t(lang, 'gateLocationDenied')}
-            </p>
-          )}
+          <p
+            role="status"
+            data-testid="pre-chat-location-result"
+            data-outcome={locationUi}
+            className="min-h-5 text-sm text-white/75"
+          >
+            {locationStatus}
+          </p>
 
           <button
             type="button"
@@ -338,9 +366,9 @@ export default function PreChatAudioGate({
           </button>
         </section>
 
-        {!speakerOk || !micOk ? (
-          <p className="mt-4 text-xs text-white/45">{t(lang, 'setupSoundFailLead')}</p>
-        ) : null}
+        <p className="mt-4 min-h-4 text-xs text-white/45">
+          {!speakerOk || !micOk ? t(lang, 'setupSoundFailLead') : '\u00a0'}
+        </p>
 
         {/* Next always stays enabled — soft gate never traps the user. */}
         <button
