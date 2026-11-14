@@ -717,8 +717,8 @@ export const PREFERRED_DEMO_CLIPS = new Set([
   'sing-f-silent-night',
   'sing-f-joy',
   'sing-f-adele',
-  'sing-f-soave',
-  'sing-f-una-voce',
+  // Opera packs (Soave / Una Voce) stay licensed but are not preferred demos —
+  // announcing "Soave · soft ballad" on a plain 唱首歌 ask read as nonsense.
   'sing-m-happy-birthday',
   'sing-m-shenandoah',
   'sing-m-brindisi',
@@ -737,6 +737,8 @@ export const PREFERRED_DEMO_CLIPS = new Set([
 export const AVOID_DEMO_CLIPS = new Set([
   'sing-f-citation',
   'sing-f-choir',
+  'sing-f-soave',
+  'sing-f-una-voce',
   'sing-m-overtone-e',
   'sing-m-overtone-c',
   'sing-m-overtone-a',

@@ -143,4 +143,14 @@ describe('ChatPanel gates picker behind select intent', () => {
     const demo = fs.readFileSync(path.join(ROOT, 'lib/demo-phase.ts'), 'utf8');
     expect(demo).toContain("'play some music'");
   });
+
+  it('random sing / dance short-circuit like music — no LLM ditty stack', () => {
+    const panel = fs.readFileSync(path.join(ROOT, 'components/ChatPanel.tsx'), 'utf8');
+    // 唱首歌 must beginShow + done without falling through to pickSong / LLM.
+    expect(panel).toMatch(/ask\.kind === 'music' \|\| ask\.kind === 'song' \|\| ask\.kind === 'dance'/);
+    expect(panel).toContain("ask.kind === 'song' ? 'song' : 'dance'");
+    // speakReply sing must not paste bank lyrics under the clip title.
+    expect(panel).toMatch(/if \(mv === 'sing'\)/);
+    expect(panel).not.toContain('pickSong');
+  });
 });

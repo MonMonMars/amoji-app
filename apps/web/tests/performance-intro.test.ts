@@ -34,6 +34,16 @@ describe('performance intro (name before play)', () => {
     expect(performanceIntroLine('music', title, 'zh')).not.toMatch(/——起！/);
     expect(performanceIntroLine('music', title, 'en')).toMatch(/let'?s start/i);
     expect(performanceIntroLine('music', title, 'en')).not.toMatch(/Here we go/i);
+    // Genre only when supplied — never invent "Title · soft ballad".
+    expect(performanceIntroLine('song', 'Soave', 'yue')).toBe('好！呢首叫「Soave」——我而家唱俾你聽。');
+    expect(performanceIntroLine('song', 'Soave', 'yue', 'soft ballad')).toContain('Soave · soft ballad');
+  });
+
+  it('ChatPanel intro genre is user/pick style only (not clip.style)', () => {
+    const panel = fs.readFileSync(path.join(ROOT, 'components/ChatPanel.tsx'), 'utf8');
+    const begin = panel.slice(panel.indexOf('const beginShow ='), panel.indexOf('const playMusicPick'));
+    expect(begin).toMatch(/const genre = pick\?\.genre \|\| styleHint/);
+    expect(begin).not.toMatch(/clip\.style/);
   });
 
   it('resolveLibraryPerformance matches startLibraryPerformance pick (stable announce)', () => {

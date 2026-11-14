@@ -181,7 +181,7 @@ import { speak, stopSpeaking, sing, playPokeBurst, playLaughBurst, voiceStartedS
 import { cantHearReply, isCantHearComplaint } from '../lib/cant-hear';
 import { productionChat } from '../lib/backend-client';
 import { stopThinkingSound } from '../lib/thinking-sound';
-import { pickSong, pickDuet, pickCharacterSong } from '../lib/songs';
+import { pickDuet } from '../lib/songs';
 import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerformance, resolveLibraryPerformance, detectMusicStyle } from '../lib/music';
 import { clipTitle, performanceIntroLine } from '../lib/performance-intro';
 import {
@@ -689,7 +689,9 @@ export default function ChatPanel({
     // Same pick for announce + play so the spoken title matches the bed.
     const clip = resolveLibraryPerformance(query);
     const title = clipTitle(clip, lang);
-    const genre = pick?.genre || styleHint || clip.style;
+    // Only name a genre the user asked for (or a pick chip). Do not append
+    // the clip's internal style tag — that made "Soave · soft ballad".
+    const genre = pick?.genre || styleHint;
     const intro = performanceIntroLine(kind === 'song' ? 'song' : 'music', title, lang, genre);
     const hold = Math.max(clip.durationMs + 600, ms);
     const bodyMove = kind === 'song' ? 'sing' : 'dance';
@@ -775,19 +777,13 @@ export default function ChatPanel({
       }
       return reply;
     }
-    // Singing plays a premade clip in her gender's voice. The lyric still
-    // lands in the bubble; TTS does not sing over the clip. She names the
-    // track first (beginShow), then the bed starts when speech is idle;
-    // body sing waits for library-clip playing.
+    // Singing plays a premade clip. Intro TTS already named it (beginShow);
+    // never paste a bank ditty (月光光…) into the bubble — that mismatched
+    // the clip and read as nonsense. TTS does not sing over the clip.
     if (mv === 'sing') {
       const style = detectMusicStyle(userText);
       beginShow('song', 9300, mood, laughCountRef.current, false, style);
-      const compact = reply.replace(/\s/g, '');
-      const song = compact.length > 0 && compact.length <= 48
-        ? reply
-        : pickSong(lang, laughCountRef.current).join(' ');
-      notifySpeaking(song);
-      return song;
+      return '';
     }
     if (mv === 'dance') {
       beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
@@ -1267,10 +1263,21 @@ export default function ChatPanel({
         done();
         return;
       }
-      if (ask.mode === 'random' && ask.kind === 'music') {
+      // Random music / sing / dance: name + play the library clip once.
+      // Never fall through to the LLM (that stacked "Soave · soft ballad"
+      // with a 月光光 bank ditty on 唱首歌俾我聽).
+      if (ask.mode === 'random' && (ask.kind === 'music' || ask.kind === 'song' || ask.kind === 'dance')) {
         setMusicPicks(null);
         perfCountRef.current += 1;
-        beginShow('dance', 18_000, undefined, randomMusicSeed(), true, ask.style);
+        const showKind = ask.kind === 'song' ? 'song' : 'dance';
+        beginShow(
+          showKind,
+          18_000,
+          undefined,
+          randomMusicSeed(),
+          ask.kind === 'music',
+          ask.style,
+        );
         done();
         return;
       }
@@ -1313,13 +1320,9 @@ export default function ChatPanel({
         return;
       }
       // Body waits for library-clip playing via beginShow — do not triggerMove here.
-      // Intro names the piece; skip generic SHOWCASE_START so we don't double-talk.
+      // Intro names the piece; skip generic SHOWCASE_START / bank ditties so
+      // we don't double-talk or paste 月光光 under a different clip title.
       beginShow(kind === 'song' ? 'song' : 'dance', 12_000, undefined, perfCountRef.current);
-      if (kind === 'song') {
-        const song = pickCharacterSong(characterId, lang, perfCountRef.current).join(' ');
-        notifySpeaking(song);
-        setHistory((h) => [...h, { role: 'assistant', content: song }]);
-      }
       done();
       return;
     }

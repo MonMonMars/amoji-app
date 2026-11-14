@@ -49,13 +49,9 @@ describe('dance-audio-gate', () => {
     );
     expect(showcase).toContain('beginShow(kind === \'song\' ? \'song\' : \'dance\'');
     expect(showcase).not.toMatch(/triggerMove\(kind === 'song'/);
-    // detectMove sing/dance path: beginShow only.
-    const detect = panel.slice(
-      panel.indexOf('const requested = detectMove(text);'),
-      panel.indexOf('setThinkingPose(true);'),
-    );
-    expect(detect).toContain('beginShow(');
-    expect(detect).not.toMatch(/triggerMove\(requested\)/);
+    // Random sing/dance short-circuit beginShow (no LLM / no early triggerMove).
+    expect(panel).toMatch(/ask\.kind === 'music' \|\| ask\.kind === 'song' \|\| ask\.kind === 'dance'/);
+    expect(panel).not.toMatch(/triggerMove\(requested\)/);
   });
 
   it('music.ts emits playing after audible start (not fetch alone)', () => {
