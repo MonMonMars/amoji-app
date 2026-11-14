@@ -2,114 +2,63 @@
 
 **Purpose:** Living checklist of product rules from the product owner. Agents must read this before chat/voice/pose/permission work and update it when rules change.
 
-**Last reviewed:** 2026-11-14 22:50 (Asia/Hong_Kong)  
-**Branch:** `cursor/dance-gate-chip-path-0340-0eac` · phone list: [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
+**Last reviewed:** 2026-11-15 01:56 (Asia/Hong_Kong)  
+**Demo:** https://monmonmars.github.io/amoji-app/  
+**Request log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn. Overlapping messages still count; never drop one.
 
-
-
-
-
-**Agent copy:** `/cursor/stores/self/USER_PRODUCT_BIBLE.md`  
-**Request log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn.
+**Standing:** Merged ≠ Done on live Pages until owner phone-smoke OK. Owner asked: push + merge without waiting for approval.
 
 ---
 
-## Standing rules (do not regress)
+## Standing rules (always)
 
-### Permissions & entrance
-1. **All-in-one confirm page** — Mic, location, and sound check belong on the beginning confirm page (`/gate/audio` / PreChatAudioGate), not surprise prompts mid-chat.
-2. **Mic default OPEN at chat start** — After enter, voice mode must arm immediately (Grok-style). Do not wait for open cheer. Gate Enter must re-probe mic in the same gesture and set session preflight when granted.
-3. **Speaker test must be hearable** — “Test my sound” must be **loud, clear, and long** (full volume force, playback session, multi-sentence `GATE_TEST_LINES`).
-
-### Talking style
-4. **Answer first** — When the user asks something, answer with information first. Do **not** interview them. Zero questions back when they asked; otherwise at most one soft check-in; never stack questions.
-5. **Startup greet = statements** — Enter-chat cheer must not pile questions (“what should we talk about?”). Warm info / presence only.
-6. **Never stack topic-menu asks** — Ban lines like「我哋傾咩好呀？」「今日想傾咩呀？」(even once). Scrub in TTS + LLM post-process.
-7. **Deliver, don’t tease** — Recipes, how-tos, explanations: give the content in that turn. Never stop at “I can tell you… want it?”
-8. **Continue the topic until stop** — Keep talking / elaborating on the same topic until the user says stop / 停 / 夠喇 / enough (etc.).
-9. **Prefer output over input** — She should give information; extracting answers from the user is secondary.
-10. **Ambient lines stay sensible** — Scene/idle flavour can be poetic, not silly/stupid (“pick a cloud to sit on”, bounce-on-mist). Grounded atmosphere only.
-
-### News & live facts
-11. **News button = fresh online** — Each news tap fetches latest feeds (cache bust), rotates headlines, analyzes via model, reads aloud. No stuck same-old headline.
-
-### Voice / TTS
-12. **Male Cantonese must not crawl** — Male Yue pace floor / Edge offsets stay at conversational speed (not slowed by pitch bias alone).
-13. **No loading “UM” sound** — Thinking wait uses a **loading bar / status UI**, not spoken um filler or thinking.wav.
-14. **Character / voice card tap speaks** — Select board auditions must be audible inside the tap (same-origin gesture clip + play before setSinkId).
-
-### Character / body
-15. **Only Pixel-OK poses** — Calm idle/talk: `#3 #34 #42 #53 #94 #95`. Perf moves only when asked: `#20 #22 #41 #101–103 #108 #109 #113 #114`. Retired / “not OK” poses stay unreachable.
-16. **No blend-to-the-back** — Idle A→B must not axial-spin; hips yaw clamped; new idle starts near `t≈0`.
-17. **Talking body stays calm** — While speaking: calm stands only (e.g. IdleRpmFStanding001 / IdleSassy). No LookAround mid-sentence; no arguing/chatting gesture clips.
-18. **Pupils stay visible** — No off-center / vanished / white-empty pupils (look-at pin + eye material stabilize). Image look fixes use the image loop below.
-
-### Product hygiene
-19. **Demo** — Production demo is GitHub Pages `main`: https://monmonmars.github.io/amoji-app/ (no per-PR preview unless added later).
-20. **Update Done + Outstanding every turn** — When the owner speaks a new ask, or work ships / stalls: refresh **Done** and **Outstanding** the same turn. Never leave the lists stale.
-21. **Log every owner request** — Same turn, append `/cursor/stores/self/OWNER_REQUEST_LOG.md`. Never drop an ask.
-22. **Image / pupil look loop** — Owner states image problem → change prompt → generate → show image here → ask one new advice. **No busy tests** unless asked.
+1. Record every owner message in `OWNER_REQUEST_LOG.md` the same turn.  
+2. Refresh **Done** + **Outstanding** every turn.  
+3. Do not mark Pages Done without owner OK.  
+4. Prefer fixing old outstanding before new polish.
 
 ---
 
-## Done (as of 2026-11-14 afternoon HKT)
+## Done (on `main` — verify on Pages)
 
-| Item | Notes / evidence |
-|------|------------------|
-| White pupil image loop (prompt → show → owner OK) | Image v1 approved by owner 2026-11-14 (`white-pupil-v1.jpg`) |
-| Gate location on confirm page (code + Pages) | #379 live on `/gate/audio` |
-| gTTS bright/mid/deep pitch tiers per character | #374 |
-| One voice on card greets (stop insurance when gTTS starts) | #375 |
-| Demo-phase rotate + AI news / personal / secret / joke / poem / tip | #373 |
-| Dance starts only when music bed is playing | #362 + chip/typed/showcase path fix (this branch) |
-| Male/female voices per lang + Add test pool | #363 |
-| Music ask: random play; select chips only when asked | #364 |
-| Calm vs perf pose gating + retire bad poses | on main (superseded open #365 closed) |
-| Hips / idle A→B no spin-to-back (code) | Re-ported onto this branch `afe36c0` |
-| Talk calm clips only while speaking | chat-auto-idle / CompanionCanvas |
-| Gate: mic + location one page (code) | PreChatAudioGate location section + Enter prime · this branch |
-| Male Yue TTS speed-up | gTTS floor, Edge offsets, synth base |
-| Statement-only enter greet | personality-voice / open-phase |
-| Answer-first + question cap | prompts + `capSpokenQuestions` |
-| Fresh news fetch + rotate + LLM read | invalidateNewsFeedCache / selectNewsLead |
-| Recipe deliver (咕嚕肉 etc.) | recipe planning + anti-teaser |
-| Topic continue until stop | content-continuation session |
-| Remove loading UM; thinking bar UI | no-loading-um / thinking-status |
-| Pupil / look-at stabilize (app code) | vrm/eyes pin + materials `9a60c69` |
-| Gate speaker test loud/long | `GATE_TEST_LINES` + `forcePlaybackVolume(1)` |
-| Mic default-open at chat start (code) | gate Enter re-probe + chat micDelay 0/120 + retry |
-| Ban topic-menu double asks | scrubTopicMenuAsks + bank scrub |
-| Cloudsea ambient grounded | SCENE_LINES — no “sit on a cloud” |
-| Topic-menu ask scrub + bank harden | scrubTopicMenuAsks + statement-only residual banks |
-| Spin-to-back code fix | hips clamp + idle t≈0 + IdleHug retired |
-| Character / voice card tap greets (code) | gesture clip `b7848bc` on PR #366 · merged |
-| CMA poke SFX #1–23 Want / archive / delete + zone wire | 13 keepers (10 active + 3 archive); male → CMA00318; deleted 10 reject mp3s |
-| Poke SFX zone-stable (same location = same sound) | `recordedPokeClip` pinned to RECORDED_POKE_ZONE; no Wanted rotation |
-| Card greet audible (sink-race + insurance hold) | `playGestureClipSync` pin-after-play + retry; delay stop for gTTS · #370 |
-| Idle A→B body/arms freeze procedural writers | Soften/hang/shoulder ROM + cast clavicle gated during glide; no same-clip t≈0 snap · #371 |
-| All SCENE_LINES statement-only (no soft invites) | Every backdrop bank rewritten; tests ban `?` / 想傾 |
-| Start re-probes mic; chat ignores stale denied | `beginMicPreflightFromGesture` on Start; micDelay 0 |
+| Item | Evidence |
+|------|----------|
+| Dance wait for music (not too soon) | #384 |
+| Phase chips rotate + AI news / personal / secret / … | #373 |
+| Per-character TTS pitch tiers | #374 |
+| Gate location Allow + Enter prime | #379 |
+| White-pupil image loop | owner OK |
+| Card greet audible (code) | #370 |
+| One-voice card greet (code) | #375 |
+| CMA poke SFX + zone-stable SFX | #348+ |
+| No spoken UM; thinking bar | on `main` |
+| Music ask random vs select | #364 |
+| Voice gender options (code) | #363 |
+| Statement SCENE_LINES / topic-ask scrub | on `main` |
+| Mic Start re-probe / default-open (code) | on `main` |
+| Stop double-speak / news once (code) | #386 |
+| News tell when feeds/LLM fail (code) | #385 |
+| Gate voice test stable + audible (code) | #387 |
+| Story Mode distinct from chat (code) | #388 |
+| Poke lean toward poked side (code) | #390 |
+| Sing ask no Soave+月光光 nonsense (code) | #391 |
+| Idle pose Pixel-OK calm stands (code) | #392 |
 
 ---
 
 ## Outstanding
 
-| Item | Status |
+| Item | Notes |
 |------|--------|
-| Gate voice test silent / page flips on press | **Merged #387** — not on live Pages until Pages rebuild |
-| News / AI news reads same story twice | **Merged #386** — Pages rebuild Outstanding |
-| News empty / cannot tell on Pages | **Merged #385** — Pages rebuild Outstanding |
-| Story Mode feels like chat / cast too small | **Code in PR #388** — merging |
-| Idle pose bad | **Code in PR #392** — CI green |
-| Caption history de-dupe | Outstanding |
-| No-back-blend / lean forward | Outstanding |
-| Voice all langs (not only Yue female) | Outstanding |
-| Poke lean opposite side | WIP stash (same-side flip) — not shipped |
-| Idle pose bad | WIP stash idle-pose-swap — not shipped |
-| 唱首歌 nonsense / Soave+月光光 | WIP stash sing-no-nonsense — not shipped |
-| Phone smoke on live Pages | **Human only** — checklist [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
+| Caption then whole phase again in history | de-dupe |
+| Blend to back / lean forward weird | hips/idle |
+| Only Cantonese female voice works | all langs/genders |
+| Pages rebuild + phone smoke on live demo | **Human** — checklist [`PHONE_SMOKE.md`](./PHONE_SMOKE.md); merged ≠ live until rebuild + owner OK |
 
-Agent-actionable product code: open PRs above. Spikes #1/#20 stay Hold unless you ask.
+### Hold
+
+| Spike #1 Voice bake-off | Hold |
+| Spike #20 CosyVoice | Hold |
 
 ---
 
@@ -117,8 +66,10 @@ Agent-actionable product code: open PRs above. Spikes #1/#20 stay Hold unless yo
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-15 ~01:56 | Status board: #385/#386/#387/#388/#390/#391/#392 → Done; Outstanding = caption de-dupe / blend-back / Yue-only voice / Pages+phone smoke |
 | 2026-11-15 ~01:43 | Merged #387 gate; #390 poke; #391 sing; #388/#392 next |
 | 2026-11-15 ~01:32 | Rebase #385/#387/#388 onto main after #386; keep combined Outstanding board |
+| 2026-11-15 ~01:30 | Full ask board; #386 merged; merge #385/#387/#388; ship poke/sing/idle |
 | 2026-11-15 ~00:42 | Story select: large cast + small scene inset; story room badge + opening line (not chat hello) |
 | 2026-11-15 ~00:38 | Gate Test my sound: no label flip; reserve hear/mic/geo; same-tap pre-open speakers+mic+location |
 | 2026-11-15 ~00:32 | News one-speak harden merged #386 (facts-only + one headline sheet) |
