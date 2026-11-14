@@ -2,8 +2,9 @@
 
 **Purpose:** Living checklist of product rules from the product owner. Agents must read this before chat/voice/pose/permission work and update it when rules change.
 
-**Last reviewed:** 2026-11-14 14:57 (Asia/Hong_Kong)  
-**main tip:** `5aa2598`  
+**Last reviewed:** 2026-11-14 17:55 (Asia/Hong_Kong)  
+**main tip:** `76112ff` · **agent-actionable code: 0**  
+
 
 
 **Agent copy:** `/cursor/stores/self/USER_PRODUCT_BIBLE.md`  
@@ -93,8 +94,10 @@
 
 | Item | Status |
 |------|--------|
-| Device eyeball on live Pages | Bundle OK; need human listen for dance / one-voice / music |
-| Gate location on device | Pages live — optional phone confirm one popup only |
+| Device eyeball on live Pages | **Human only** — dance / one-voice card / music ask listen on phone |
+| Gate location on device | **Human only (optional)** — one geo popup on `/gate/audio`, not at Start |
+
+Agent-actionable product code: **none** (Hold spikes #1/#20/#154/#240 stay Hold unless you ask).
 
 ---
 
@@ -102,6 +105,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-14 ~17:55 | Continue audit: regression Vitest 46 pass (dance/music/gate/card/pitch); no new code scope |
 | 2026-11-14 ~14:57 | Owner approved white-pupil image v1 — loop Done |
 | 2026-11-14 ~14:30 | Pages verify #379 gate location strings live; white-pupil v1 re-surfaced for owner advice |
 | 2026-11-13 ~08:35 | Location Allow on PreChatAudioGate + once-per-tab prime (`amoji.geo.primed`); Start skips after gate · #379 |
