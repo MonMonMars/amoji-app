@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
 import ChatMessage from '../components/ChatMessage';
-import { stepCaptionLadder } from '../lib/speech-caption';
+import {
+  captionsCoverReply,
+  commitCaptionLines,
+  stepCaptionLadder,
+} from '../lib/speech-caption';
 
 const web = join(__dirname, '..');
 const read = (rel: string) => readFileSync(join(web, rel), 'utf8');
@@ -13,6 +17,8 @@ describe('unified speech caption in chat history', () => {
     const panel = read('components/ChatPanel.tsx');
     expect(panel).toContain('SPEECH_CAPTION_EVENT');
     expect(panel).toContain('stepCaptionLadder');
+    expect(panel).toContain('commitCaptionLines');
+    expect(panel).toContain('captionLines');
     expect(panel).toContain('captionLadder');
     expect(panel).toContain('data-testid="speech-caption"');
     expect(panel).toContain('data-testid="speech-caption-settled"');
@@ -50,6 +56,24 @@ describe('unified speech caption in chat history', () => {
     expect(html).toContain('Full reply stays for reporting.');
   });
 
+  it('sealed caption lines replace the full-phase history replay', () => {
+    const html = renderToStaticMarkup(
+      <ChatMessage
+        role="assistant"
+        content="Sunny and mild. Bring a light jacket."
+        captionLines={['Sunny and mild.', 'Bring a light jacket.']}
+        lang="en"
+        accent="#f9a8d4"
+        onReport={() => {}}
+      />,
+    );
+    expect(html).toContain('data-testid="speech-caption-history"');
+    expect(html).toContain('Sunny and mild.');
+    expect(html).toContain('Bring a light jacket.');
+    // Must not paint the joined full phrase as a second copy.
+    expect(html).not.toContain('Sunny and mild. Bring a light jacket.');
+  });
+
   it('user bubbles stay right-aligned in ChatMessage', () => {
     const html = renderToStaticMarkup(
       <ChatMessage
@@ -72,6 +96,17 @@ describe('unified speech caption in chat history', () => {
     expect(second.current).toBe('Bring a light jacket.');
     const done = stepCaptionLadder(second.ladder, second.current, '');
     expect(done).toEqual({ ladder: [], current: '' });
+  });
+
+  it('commitCaptionLines seals live clauses so history does not replay the full phrase', () => {
+    const sealed = commitCaptionLines(['Sunny and mild.'], 'Bring a light jacket.');
+    expect(sealed).toEqual(['Sunny and mild.', 'Bring a light jacket.']);
+    expect(captionsCoverReply(sealed, 'Sunny and mild. Bring a light jacket.')).toBe(true);
+    expect(captionsCoverReply(sealed, 'Totally different reply')).toBe(false);
+    // Clearing the live ladder must not drop the sealed history lines.
+    const cleared = stepCaptionLadder(sealed, 'Bring a light jacket.', '');
+    expect(cleared).toEqual({ ladder: [], current: '' });
+    expect(commitCaptionLines(['Sunny and mild.'], 'Bring a light jacket.')).toEqual(sealed);
   });
 });
 

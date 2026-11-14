@@ -17,20 +17,31 @@ export interface ChatMessageProps {
   liveClause?: string;
   /** Tail assistant line is in flux (stream or speak) — hide full text until done */
   tailStreaming?: boolean;
+  /**
+   * Spoken clauses sealed from the live caption ladder. When present, show
+   * these instead of the full `content` blob so caption → history is not a
+   * second full-phase replay.
+   */
+  captionLines?: string[];
   /** opens the report sheet for this reply */
   onReport: (reply: string) => void;
 }
 
 export default function ChatMessage({
-  role, content, lang, accent, label, liveClause, tailStreaming, onReport,
+  role, content, lang, accent, label, liveClause, tailStreaming, captionLines, onReport,
 }: ChatMessageProps) {
   const isUser = role === 'user';
   const clause = liveClause?.trim() ?? '';
+  const sealed = (!isUser && captionLines?.length)
+    ? captionLines.map((s) => s.trim()).filter(Boolean)
+    : [];
   // While the caption ladder owns the spoken line (tailStreaming, no clause),
   // hide the bubble body so history and the live subtitle never overlap.
+  // After speak, sealed caption lines stay as the history body — never dump
+  // the whole phrase again under the clauses the user already read.
   const visible = isUser
     ? content
-    : clause || (tailStreaming ? '' : content);
+    : clause || (tailStreaming ? '' : (sealed.length ? '' : content));
   // The "…" wait bubble is a transient placeholder, not generated text —
   // there is nothing there to report.
   const reportable = !isUser && !tailStreaming && content.trim() !== '' && content.trim() !== '…';
@@ -40,6 +51,15 @@ export default function ChatMessage({
         <p className="mb-0.5 pl-1 text-[10px] font-medium uppercase tracking-widest" style={{ color: `${accent}b0` }}>
           {label}
         </p>
+      )}
+      {sealed.length > 0 && !clause && !tailStreaming && (
+        <div className="space-y-2.5" data-testid="speech-caption-history">
+          {sealed.map((line, i) => (
+            <p key={`cap-hist-${i}-${line.slice(0, 12)}`} className="text-white/95">
+              {line}
+            </p>
+          ))}
+        </div>
       )}
       {visible !== '' && (
         <p

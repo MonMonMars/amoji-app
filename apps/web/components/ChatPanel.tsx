@@ -253,13 +253,24 @@ import { startVad } from '../lib/vad';
 import { ambientStart, ambientStop } from '../lib/sfx';
 import { t, backgroundById, type Lang, type StrKey } from '../lib/prefs';
 import { adaptiveBlock, pickSceneLine } from '../lib/adaptive';
-import { SPEECH_CAPTION_EVENT, rollingCaptionFromText, stepCaptionLadder } from '../lib/speech-caption';
+import {
+  SPEECH_CAPTION_EVENT,
+  captionsCoverReply,
+  commitCaptionLines,
+  rollingCaptionFromText,
+  stepCaptionLadder,
+} from '../lib/speech-caption';
 import { loadProfile, type Gender } from '../lib/profile';
 import type { ChatStatus } from '../lib/status';
 import EmotionOrb from './EmotionOrb';
 import DemoPhaseRail from './DemoPhaseRail';
 
-interface Msg { role: 'user' | 'assistant'; content: string }
+interface Msg {
+  role: 'user' | 'assistant';
+  content: string;
+  /** Sealed spoken clauses — prefer over replaying full `content` in the UI. */
+  captionLines?: string[];
+}
 
 export interface ChatPanelProps {
   characterName?: string;
@@ -402,6 +413,38 @@ export default function ChatPanel({
     const onCap = (e: Event) => {
       const line = (e as CustomEvent<{ line?: string }>).detail?.line ?? '';
       setSpeechCaption((prev) => {
+        // Speech ended — seal live clauses onto the last assistant turn so
+        // history keeps the caption lines instead of dumping the full phase.
+        if (!line.trim()) {
+          const sealed = commitCaptionLines(captionLadderRef.current, prev);
+          captionLadderRef.current = [];
+          setCaptionLadder([]);
+          if (sealed.length) {
+            setHistory((h) => {
+              for (let i = h.length - 1; i >= 0; i--) {
+                const row = h[i]!;
+                if (row.role !== 'assistant' || !row.content.trim() || row.content.trim() === '…') {
+                  continue;
+                }
+                // Already sealed this turn (e.g. double clear event).
+                if (row.captionLines?.length) return h;
+                // Prefer spoken clauses whenever they cover (or nearly cover)
+                // the reply — otherwise keep the full blob for truncated TTS.
+                if (
+                  !captionsCoverReply(sealed, row.content)
+                  && sealed.join('').length < Math.min(24, row.content.trim().length / 2)
+                ) {
+                  return h;
+                }
+                const next = h.slice();
+                next[i] = { ...row, captionLines: sealed };
+                return next;
+              }
+              return h;
+            });
+          }
+          return '';
+        }
         const stepped = stepCaptionLadder(captionLadderRef.current, prev, line);
         captionLadderRef.current = stepped.ladder;
         setCaptionLadder(stepped.ladder);
@@ -1816,6 +1859,7 @@ export default function ChatPanel({
               key={i}
               role={m.role}
               content={m.content}
+              captionLines={m.captionLines}
               tailStreaming={streamingTail}
               lang={lang}
               accent={accent}

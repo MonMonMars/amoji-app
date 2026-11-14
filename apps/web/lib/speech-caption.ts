@@ -69,6 +69,10 @@ export function rollingCaptionFromText(text: string, maxClauses = 1): string {
  * Caption ladder: the live front line stays alone at the bottom. When a new
  * clause arrives, the previous front line moves up into settled history so
  * captions never stack on top of each other in one row.
+ *
+ * Empty `next` clears the *live* front/ladder for the caller. Use
+ * `commitCaptionLines` first so spoken clauses become the durable history
+ * body — never wipe captions and then dump the full phrase again.
  */
 export function stepCaptionLadder(
   ladder: string[],
@@ -84,4 +88,31 @@ export function stepCaptionLadder(
     return { ladder: promoted, current: n };
   }
   return { ladder, current: n || c };
+}
+
+/**
+ * Freeze live captions into durable clause lines for the assistant turn.
+ * Prefer these lines in history instead of replaying the full reply blob
+ * after the user already read each clause as a caption.
+ */
+export function commitCaptionLines(ladder: string[], current: string): string[] {
+  const c = current.trim();
+  const base = ladder.map((s) => s.trim()).filter(Boolean);
+  if (!c) return base;
+  if (base.length && base[base.length - 1] === c) return base;
+  return [...base, c];
+}
+
+/**
+ * True when sealed caption lines already cover the assistant reply text
+ * (whitespace/punct differences ignored). Used to hide the full-phrase
+ * history replay after realtime captions.
+ */
+export function captionsCoverReply(lines: string[], content: string): boolean {
+  if (!lines.length) return false;
+  const norm = (s: string) => s.replace(/\s+/g, '').trim();
+  const joined = norm(lines.join(''));
+  const full = norm(content);
+  if (!joined || !full) return false;
+  return joined === full || full.includes(joined) || joined.includes(full);
 }
