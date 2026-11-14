@@ -84,6 +84,7 @@ describe('planTools', () => {
     const news = planTools('what is the latest news?');
     expect(isLiveFactsOnlyTurn(news, 'From the news: Light headline from Wikipedia.')).toBe(true);
     expect(isLiveFactsOnlyTurn(news, "I couldn't find a headline just now.")).toBe(false);
+    expect(isLiveFactsOnlyTurn(news, 'Which city or country should I pull the news for?')).toBe(false);
     const cafe = planTools('cafes near me');
     expect(isLiveFactsOnlyTurn(cafe, 'Two spots nearby.')).toBe(false);
     const learn = planTools('search how photosynthesis works');
@@ -214,6 +215,13 @@ describe('planTools', () => {
     expect(local.news).toBe(true);
     expect(local.needsDevice).toBe(true);
     expect(local.newsQuery).toBeUndefined();
+
+    // Soft "local" wording (demo chip) must not force a city ask — serve recent/world.
+    const softLocal = planTools('any light local news?');
+    expect(softLocal.news).toBe(true);
+    expect(softLocal.needsDevice).toBe(false);
+    expect(softLocal.recent).toBe(true);
+    expect(planTools('any light fun news?').needsDevice).toBe(false);
 
     expect(planTools("what's the latest AI news?").news).toBe(true);
     expect(planTools("what's the latest AI news?").newsQuery?.toLowerCase()).toMatch(/artificial intelligence/);
@@ -458,6 +466,65 @@ describe('gatherLiveContext', () => {
     const quoted = [...live.prompt.matchAll(/[“"]([^”"]+)[”"]/g)].map((m) => m[1]);
     expect(quoted.length).toBe(1);
     expect(live.spoken).toMatch(/bakery|Scientists|puppy/i);
+  });
+
+  it('tells topical AI news via Wikipedia when Google is blocked in the browser', async () => {
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('news.google.com')) throw new Error('cors');
+      if (url.includes('rss2json.com')) return new Response('<html>blocked', { status: 403 });
+      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
+        return jsonRes({
+          news: [
+            { story: '<a href="./AI">New artificial intelligence tools</a> help artists paint faster.' },
+            { story: 'A cat wins a funny contest in town.' },
+          ],
+        });
+      }
+      if (url.includes('wikipedia.org') && url.includes('api.php')) {
+        return jsonRes({
+          query: {
+            pages: {
+              '1': {
+                index: 1,
+                title: 'Artificial intelligence',
+                extract: 'Artificial intelligence is intelligence demonstrated by machines.',
+              },
+            },
+          },
+        });
+      }
+      return jsonRes({}, 404);
+    };
+    const live = await gatherLiveContext("what's the latest AI news?", {
+      lang: 'en',
+      fetch: fetchImpl,
+      cache: new Map(),
+    });
+    expect(live.spoken.toLowerCase()).not.toContain("couldn't find");
+    expect(live.spoken).toMatch(/artificial intelligence|artists paint|From the news/i);
+    expect(live.spoken).not.toContain('<');
+    expect(isLiveFactsOnlyTurn(planTools("what's the latest AI news?"), live.spoken)).toBe(true);
+  });
+
+  it('speaks light fun news without asking for a city', async () => {
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('news.google.com')) throw new Error('cors');
+      if (url.includes('rss2json.com')) return new Response('nope', { status: 403 });
+      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
+        return jsonRes({ news: [{ story: 'A bakery opens a cheerful night market stall.' }] });
+      }
+      return jsonRes({}, 404);
+    };
+    const live = await gatherLiveContext('any light fun news?', {
+      lang: 'en',
+      fetch: fetchImpl,
+      cache: new Map(),
+      locate: async () => { throw new Error('should not locate'); },
+    });
+    expect(live.spoken.toLowerCase()).not.toContain('which city');
+    expect(live.spoken).toContain('bakery');
   });
 
   it('falls back to rss2json when Google News blocks the browser', async () => {

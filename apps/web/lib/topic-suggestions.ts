@@ -33,10 +33,10 @@ export const TOPIC_LABEL: Record<TopicId, Record<Lang, string>> = {
     ja: 'そちらの天気',
   },
   news: {
-    en: 'light local news',
-    yue: '輕鬆本地新聞',
-    zh: '轻松本地新闻',
-    ja: 'ほっこり地元ニュース',
+    en: 'light fun news',
+    yue: '輕鬆好玩新聞',
+    zh: '轻松好玩的新闻',
+    ja: '軽い楽しいニュース',
   },
   story: {
     en: 'a little story',

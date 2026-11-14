@@ -253,7 +253,9 @@ function cleanQuery(raw: string): string | undefined {
 
 const WEATHER_RE = /\b(weather|forecast|temperature|degrees?|wind|breez(?:y|e)?|humid(?:ity)?|raining|rain|snow|umbrella|outlook)\b|天氣|天气|落雨|下雨|幾多度|多少度|氣溫|气温|預報|预报|熱唔熱|热不热|冷唔冷|冷不冷|帶遮|带伞|帶傘|風速|风力|風大|风大|濕度|湿度|未來幾日|未来几天|天気|気温|予報|雨降|傘|風|湿度/i;
 const NEWS_RE = /\b(news|headlines|what's happening|what is happening|anything going on)\b|新聞|新闻|頭條|头条|有咩事|有什么新闻|有什麼新聞|最近發生|最近发生|ニュース|見出し|讀新聞|读新闻/i;
-const LOCAL_NEWS_RE = /\b(?:near me|around here|local(?: news)?|in my (?:area|city))\b|附近|本地|我呢度|我这边|この辺|地元/i;
+// Near-me / here only. Bare "local" / 「本地」 / 「地元」 match demo lines like
+// "any light local news?" and wrongly force a city ask before any headline.
+const LOCAL_NEWS_RE = /\b(?:near me|around here|in my (?:area|city))\b|附近|我呢度|我这边|この辺/i;
 const HEAVY_ASK_RE = /\b(?:politic|politics|election|congress|parliament|war|warfare|missile|bombing|invasion|coup|terror|terrorism|genocide|massacre|atrocity|tragedy|tragedies|serious news|hard news|world affairs)\b|政治|選舉|选举|戰爭|战争|導彈|导弹|恐襲|恐袭|悲劇|悲剧|時事政治/i;
 const WHERE_RE = /\b(where am i|my location|what city am i in)\b|我喺邊|我在哪|我喺邊度|我在哪里|我在哪裡|我而家喺|どこにいる|今どこ|現在地/i;
 const EXPLICIT_SEARCH_RE = /\b(?:search(?:\s+for)?|look up|google)\b|(?:搜尋|搜索|搜下|查下|查一查|上網查|上网查|調べて|検索して?)/i;
@@ -342,6 +344,7 @@ function planHasWork(plan: ToolPlan): boolean {
 export function isLiveFactsOnlyTurn(plan: ToolPlan, spoken: string): boolean {
   if (!spoken.trim()) return false;
   if (plan.news) {
+    // Ask-city / empty-miss lines still go through the model path; real headlines speak now.
     return !/which city|哪个城市|邊個城市|どの都市|couldn't find a headline|搵唔到新聞|找不到新闻|ニュースが見つから/i.test(spoken);
   }
   return (plan.weather || plan.where)
@@ -1169,7 +1172,13 @@ async function fetchNews(
 const RECENT_MARK = '__recent__';
 
 function stripWikiStory(raw: string): string {
-  return decodeXml(raw).replace(/\s+/g, ' ').trim();
+  // Featured feed stories are HTML fragments; decodeXml already strips tags.
+  // Drop leftover markup/comments that survive odd entity orderings.
+  return decodeXml(raw)
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function wikiNewsHosts(lang: Lang4): string[] {
@@ -1324,7 +1333,25 @@ async function fetchAreaNews(
     const filtered = allowHeavy
       ? raw.filter((h) => !GRIM_RE.test(h.title)).slice(0, 3)
       : pickDefaultHeadlines(raw, { allowHeavy: false });
-    return { headlines: filtered.length ? filtered : raw.filter((h) => !isHeavyHeadline(h.title)).slice(0, 3), recent: false };
+    const fromGoogle = filtered.length ? filtered : raw.filter((h) => !isHeavyHeadline(h.title)).slice(0, 3);
+    if (fromGoogle.length) return { headlines: fromGoogle, recent: false };
+
+    // Browser CORS blanks Google + rss2json on Pages — fall back so AI/topic
+    // chips still get something she can tell.
+    const wiki = await fetchWikipediaNews(fetchImpl, lang, cache);
+    const bits = topical.toLowerCase().split(/[^a-z0-9\u3400-\u9fff]+/).filter((w) => w.length > 2);
+    const topicalWiki = wiki.filter((h) => bits.some((t) => h.title.toLowerCase().includes(t)));
+    if (topicalWiki.length) return { headlines: topicalWiki.slice(0, 3), recent: false };
+
+    const snips = await searchWikipedia(fetchImpl, topical, lang, cache);
+    const fromSearch = snips
+      .slice(0, 2)
+      .map((s) => ({ title: clip(spokenHeadline(s), 180), source: 'Wikipedia' }))
+      .filter((h) => h.title && !GRIM_RE.test(h.title));
+    if (fromSearch.length) return { headlines: fromSearch, recent: false };
+
+    const soft = await fetchRecentHeadlines(fetchImpl, lang, rssKey, cache, place, allowHeavy);
+    return { headlines: soft, recent: true };
   }
   if (place) {
     const region = newsRegionFromPlace(place, lang);
