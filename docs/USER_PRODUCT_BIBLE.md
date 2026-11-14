@@ -96,10 +96,14 @@
 
 | Item | Status |
 |------|--------|
-| Gate voice test silent / page flips on press | **Code in PR #387** — not on Pages until merge |
-| News / AI news reads same story twice | **Merged #386** — not on live Pages until Pages rebuild |
-| News empty / cannot tell on Pages | **Code in PR #385** — CI after rebase |
-| Story Mode feels like chat / cast too small | **Code in PR #388** — not merged |
+| Gate voice test silent / page flips on press | **Merged #387** — not on live Pages until Pages rebuild |
+| News / AI news reads same story twice | **Merged #386** — Pages rebuild Outstanding |
+| News empty / cannot tell on Pages | **Merged #385** — Pages rebuild Outstanding |
+| Story Mode feels like chat / cast too small | **Code in PR #388** — merging |
+| Idle pose bad | **Code in PR #392** — CI green |
+| Caption history de-dupe | Outstanding |
+| No-back-blend / lean forward | Outstanding |
+| Voice all langs (not only Yue female) | Outstanding |
 | Poke lean opposite side | WIP stash (same-side flip) — not shipped |
 | Idle pose bad | WIP stash idle-pose-swap — not shipped |
 | 唱首歌 nonsense / Soave+月光光 | WIP stash sing-no-nonsense — not shipped |
@@ -113,7 +117,9 @@ Agent-actionable product code: open PRs above. Spikes #1/#20 stay Hold unless yo
 
 | Date (HKT) | Change |
 |------------|--------|
-| 2026-11-15 ~01:31 | Rebase #385 onto main (keep facts-only + wiki/CORS news); gate #387 Outstanding |
+| 2026-11-15 ~01:43 | Merged #387 gate; #390 poke; #391 sing; #388/#392 next |
+| 2026-11-15 ~01:32 | Rebase #385/#387/#388 onto main after #386; keep combined Outstanding board |
+| 2026-11-15 ~00:42 | Story select: large cast + small scene inset; story room badge + opening line (not chat hello) |
 | 2026-11-15 ~00:38 | Gate Test my sound: no label flip; reserve hear/mic/geo; same-tap pre-open speakers+mic+location |
 | 2026-11-15 ~00:32 | News one-speak harden merged #386 (facts-only + one headline sheet) |
 | 2026-11-14 ~22:50 | Fix dance-too-soon on typed/chip/showcase paths; preview synth no-stack over insurance clip |

@@ -152,7 +152,7 @@ import { voiceOpening, type VoiceId } from '../lib/personality-voice';
 import { laughStyleFor, LAUGH_RE } from '../lib/laugh';
 import { assetUrl } from '../lib/asset';
 import { clientChat, markNoApiRoute, shouldSkipServerProbe, warmLane } from '../lib/client-chat';
-import { loadStorySession } from '../lib/story-session';
+import { loadStorySession, storyOpeningLine } from '../lib/story-session';
 import { guardCompanionTurn, type HelplineRegion } from '../lib/crisis';
 import { readHelplineLocationHints } from '../lib/crisis-location';
 import {
@@ -832,17 +832,19 @@ export default function ChatPanel({
   // t794/t796 + Pixel entry: hi + persona intro + topic ask; silent stretch
   // offers ONE ability reminder (music/dance/story/…). Session gap = fresh
   // open — clear history and skip lastThread resume. Keep #58 filler bans.
+  // Story Mode: opening scene line instead of chat hello / skill showcase.
   useEffect(() => {
     if (greetedRef.current) return;
     greetedRef.current = true;
     const fresh = isFreshOpenPhase();
+    const inStory = !!loadStorySession();
     // Latch check BEFORE markChatRoomOpened so Strict Mode remount still sees
     // the prior openCheerAt >= lastOpenedAt (name greet once per stretch).
-    const skipCheer = !fresh && openCheerAlreadyDone(characterId);
+    const skipCheer = !fresh && !inStory && openCheerAlreadyDone(characterId);
     markChatRoomOpened();
     const prior = loadHistory();
     const hadUser = prior.some((m) => m.role === 'user');
-    if (fresh) {
+    if (fresh || inStory) {
       saveHistory([]);
       setHistory([]);
       userHasSpokenRef.current = false;
@@ -854,7 +856,7 @@ export default function ChatPanel({
     const namedHello = buildEnterNameGreeting(lang, userName ?? visit.userName);
     const startupVars = { name: characterName };
     const shortDaily =
-      !fresh && visit.isNewDay
+      !fresh && !inStory && visit.isNewDay
         ? buildDailyGreeting(lang, visit, { skipThread: true, privacyOnly: true })
         : undefined;
     const profile = personalityProfile(characterId, characterGender);
@@ -865,8 +867,10 @@ export default function ChatPanel({
       lang,
       characterName ?? 'friend',
     );
+    const storyOpen = inStory ? storyOpeningLine(lang) : null;
     const openLine =
-      buildOpenCheerLine(lang, {
+      storyOpen
+      || buildOpenCheerLine(lang, {
         nameHello: namedHello,
         personaIntro,
       })
@@ -875,16 +879,24 @@ export default function ChatPanel({
     if (skipCheer) {
       return () => { markChatRoomClosed(); };
     }
-    const openHints = shortDaily ? greetingHints(visit) : namedHello ? { joy: 0.55 } : { joy: 0.58 };
+    const openHints = storyOpen
+      ? { joy: 0.48, neutral: 0.35 }
+      : shortDaily
+        ? greetingHints(visit)
+        : namedHello
+          ? { joy: 0.55 }
+          : { joy: 0.58 };
     // One short welcome line; latch when it actually speaks (per-character).
     const t1 = setTimeout(() => {
       markOpenCheerDone(Date.now(), characterId);
       sayLocal(openLine, openHints);
+      if (inStory) pushAutoIdle(openLine, openHints, undefined, { openGreet: true });
     }, OPEN_CHEER_MS);
     const skipBrief =
-      OPEN_IDLE_BRIEF_MS <= 0 ||
-      userHasSpokenRef.current ||
-      openIdleBriefAlreadyDone(characterId);
+      inStory
+      || OPEN_IDLE_BRIEF_MS <= 0
+      || userHasSpokenRef.current
+      || openIdleBriefAlreadyDone(characterId);
     const t3 = skipBrief
       ? null
       : setTimeout(() => {

@@ -1,6 +1,7 @@
 'use client';
 // Story Mode setup panel — embedded under SelectTopBars on /select (in-place).
-// Pack picker + roll cast + ENTER STORY. No route change for mode chips.
+// Pack picker + roll cast + ENTER STORY. Character-dominant hero (large cast,
+// small scene inset) — not the chat-select board layout.
 import { useMemo, useState } from 'react';
 import { assetUrl } from '../lib/asset';
 import { useRouter } from 'next/navigation';
@@ -17,7 +18,7 @@ import { beginMicPreflightFromGesture, primeChatStartGesture } from '../lib/chat
 import { primeLocationForChatEnter } from '../lib/live-tools';
 
 const LABEL: Record<
-  'mode' | 'reroll' | 'start' | 'scene' | 'packs' | 'surprise' | 'castAgain',
+  'mode' | 'reroll' | 'start' | 'scene' | 'packs' | 'surprise' | 'castAgain' | 'withYou',
   Record<Lang, string>
 > = {
   mode: {
@@ -61,6 +62,12 @@ const LABEL: Record<
     yue: '隨機',
     zh: '随机',
     ja: 'おまかせ',
+  },
+  withYou: {
+    en: 'She leads — you steer the story together',
+    yue: '佢帶你入去，你哋一齊推故事',
+    zh: '她带你进入，一起推动故事',
+    ja: '彼女が導き、一緒に物語を進める',
   },
 };
 
@@ -113,18 +120,22 @@ export default function StorySetupPanel() {
 
   return (
     <main
+      data-testid="story-setup-panel"
       className={`relative z-20 flex min-h-0 w-full flex-1 flex-col items-center justify-center overflow-x-hidden px-4 py-4 text-white ${prefsReady ? '' : 'opacity-0'}`}
       aria-busy={!prefsReady}
       aria-labelledby="amoji-story-setup-title"
     >
+      {/* Soft scene wash only — not a full chat-select backdrop takeover. */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-40"
+        className="pointer-events-none absolute inset-0 opacity-25"
         style={{ background: background.css }}
+        aria-hidden
       />
-      <div className="relative z-10 flex w-full max-w-[min(100%,24rem)] flex-col items-center gap-4">
+      <div className="relative z-10 flex w-full max-w-[min(100%,22rem)] flex-col items-center gap-3 sm:max-w-[24rem]">
         <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-fuchsia-200/80">
           {LABEL.mode[lang]}
         </p>
+        <p className="text-center text-xs text-white/65">{LABEL.withYou[lang]}</p>
 
         <div className="w-full">
           <p className="mb-2 text-[10px] uppercase tracking-widest text-white/55">
@@ -168,36 +179,52 @@ export default function StorySetupPanel() {
           </div>
         </div>
 
-        <div className="relative aspect-square w-full max-w-full overflow-hidden rounded-3xl border border-white/15 bg-black/45 shadow-2xl backdrop-blur-md">
-          {background.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={assetUrl(background.image)}
-              alt={scene.title[lang]}
-              className="h-full w-full object-cover opacity-80"
-            />
-          ) : (
-            <div className="h-full w-full" style={{ background: background.css }} />
-          )}
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 pt-16">
-            <p className="text-[10px] uppercase tracking-widest text-white/55">{LABEL.scene[lang]}</p>
-            <h1 id="amoji-story-setup-title" className="text-xl font-bold leading-tight">{scene.title[lang]}</h1>
-            <p className="mt-1 text-sm text-white/75">{scene.blurb[lang]}</p>
-          </div>
-        </div>
-
-        <div className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-black/40 px-3 py-2 backdrop-blur-md">
+        {/* Character-dominant hero + small scene inset (not a background-first card). */}
+        <div
+          data-testid="story-hero"
+          className="relative aspect-[3/4] w-full max-w-full overflow-hidden rounded-3xl border border-white/15 bg-black/55 shadow-2xl"
+        >
           {character.image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={assetUrl(character.image)} alt={character.name} className="h-14 w-14 rounded-xl object-cover" />
+            <img
+              src={assetUrl(character.image)}
+              alt={character.name}
+              className="absolute inset-0 h-full w-full object-cover object-[center_18%]"
+            />
           ) : (
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/10 text-lg font-bold">
+            <div className="absolute inset-0 flex items-center justify-center bg-white/10 text-5xl font-bold">
               {character.name.slice(0, 1)}
             </div>
           )}
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold">{character.name}</p>
-            <p className="truncate text-xs text-white/60">{character.tagline[lang]}</p>
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-black/10" />
+
+          {/* Tiny scene backdrop chip — combination of cast + place. */}
+          <div
+            data-testid="story-scene-inset"
+            className="absolute right-3 top-3 h-[4.25rem] w-[5.75rem] overflow-hidden rounded-xl border border-white/35 shadow-lg ring-1 ring-black/40"
+          >
+            {background.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={assetUrl(background.image)}
+                alt={scene.title[lang]}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="h-full w-full" style={{ background: background.css }} title={scene.title[lang]} />
+            )}
+            <span className="absolute inset-x-0 bottom-0 bg-black/55 px-1 py-0.5 text-center text-[8px] font-semibold uppercase tracking-wide text-white/90">
+              {LABEL.scene[lang]}
+            </span>
+          </div>
+
+          <div className="absolute inset-x-0 bottom-0 p-4 pt-20">
+            <p className="text-[10px] uppercase tracking-widest text-fuchsia-100/70">{LABEL.mode[lang]}</p>
+            <h1 id="amoji-story-setup-title" className="text-xl font-bold leading-tight drop-shadow">
+              {scene.title[lang]}
+            </h1>
+            <p className="mt-1 text-sm font-semibold text-white drop-shadow">{character.name}</p>
+            <p className="mt-1 text-sm text-white/80">{scene.blurb[lang]}</p>
           </div>
         </div>
 
@@ -221,7 +248,7 @@ export default function StorySetupPanel() {
             {LABEL.start[lang]}
           </button>
         </div>
-</div>
+      </div>
     </main>
   );
 }
