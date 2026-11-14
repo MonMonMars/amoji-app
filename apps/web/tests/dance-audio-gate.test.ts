@@ -40,6 +40,24 @@ describe('dance-audio-gate', () => {
     expect(panel).toMatch(/shouldStartDanceOnAudioPlaying[\s\S]*triggerMove\(pending\.bodyMove\)/);
   });
 
+  it('typed / chip / showcase song-dance do not triggerMove before beginShow', () => {
+    const panel = fs.readFileSync(path.join(ROOT, 'components/ChatPanel.tsx'), 'utf8');
+    // Showcase yes → song/dance: beginShow only (no pre-arm triggerMove).
+    const showcase = panel.slice(
+      panel.indexOf("if (kind === 'music')"),
+      panel.indexOf('pendingOfferRef.current = null; // any other answer'),
+    );
+    expect(showcase).toContain('beginShow(kind === \'song\' ? \'song\' : \'dance\'');
+    expect(showcase).not.toMatch(/triggerMove\(kind === 'song'/);
+    // detectMove sing/dance path: beginShow only.
+    const detect = panel.slice(
+      panel.indexOf('const requested = detectMove(text);'),
+      panel.indexOf('setThinkingPose(true);'),
+    );
+    expect(detect).toContain('beginShow(');
+    expect(detect).not.toMatch(/triggerMove\(requested\)/);
+  });
+
   it('music.ts emits playing after audible start (not fetch alone)', () => {
     const music = fs.readFileSync(path.join(ROOT, 'lib/music.ts'), 'utf8');
     expect(music).toContain('emitLibraryClipPlaying');

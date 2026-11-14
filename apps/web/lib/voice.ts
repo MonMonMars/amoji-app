@@ -2208,6 +2208,8 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
     if ((e as Error | undefined)?.message === 'canceled') return;
     reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'preview gtts failed');
     if (spokenBy === 'gtts') spokenBy = null;
+    // Match playVoiceGreeting: do not stack synth over a still-playing insurance clip.
+    if (isVoiceClipPlaying()) return;
     return runSynthAudition('preview fallback');
   });
 

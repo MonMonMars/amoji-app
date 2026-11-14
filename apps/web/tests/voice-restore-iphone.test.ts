@@ -52,6 +52,7 @@ describe('voice restore — one tier speaks, never two', () => {
     expect(preview).toContain('speakEdge(');
     expect(preview).toContain('spokenBy');
     expect(preview).toMatch(/if \(spokenBy === 'gtts'\) return/);
+    expect(preview).toContain('isVoiceClipPlaying()');
     expect(preview).toContain("runSynthAudition('preview fallback')");
   });
 
