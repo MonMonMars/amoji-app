@@ -1,25 +1,29 @@
 // Per-companion idle pin. Same localStorage shape as the other chat prefs.
-// Default rotation is only b01 IdleBreathCalm + b02 StandardIdle.
-// Saved a01–a04 pins (old bad defaults) are cleared on load. b03/b04 stay
-// optional side-rail picks. Clear the whole key with resetIdlePicks() or
-// `localStorage.removeItem('amoji.idlePick.v1')`.
+// Default rotation = Pixel-OK calm stands (IdleRpmFStanding001 / IdleSassy /
+// IdleRpmMVar001). Old BreathCalm / StandardIdle / hug pins are cleared on load.
 
 import { resolveIdleClipId, isRetiredIdleClip } from './idle-retired';
 import { idleClipById } from './idle-clips';
 
-export const IDLE_PICK_KEY = 'amoji.idlePick.v1';
+export const IDLE_PICK_KEY = 'amoji.idlePick.v2';
 const KEY = IDLE_PICK_KEY;
 
-/** Default rotation / safe persisted pins. */
-export const DEFAULT_IDLE_IDS = ['IdleBreathCalm', 'StandardIdle'] as const;
-
-/** Old rail defaults that must not stick after the calm-only change. */
-const BAD_SAVED_IDLE_IDS = new Set([
-  'IdleNeutral',
+/** Default rotation / safe persisted pins — Pixel bible calm stands. */
+export const DEFAULT_IDLE_IDS = [
+  'IdleRpmFStanding001',
   'IdleSassy',
+  'IdleRpmMVar001',
+] as const;
+
+/** Old defaults / gesture pins that must not stick after the calm swap. */
+const BAD_SAVED_IDLE_IDS = new Set([
+  'IdleBreathCalm',
+  'StandardIdle',
+  'IdleNeutral',
   'IdleChinHand',
   'IdleHug',
   'HelloWave',
+  'LookAround',
 ]);
 
 type PickMap = Record<string, string>;

@@ -91,21 +91,29 @@ describe('idle enable + pick', () => {
       length: 0,
     };
     forgetIdleEnabledCache();
-    expect(isIdleEnabled(1)).toBe(true);
-    const lookRail = IDLE_CLIP_OPTIONS.find((c) => c.id === 'LookAround')!.num;
-    setIdleEnabled(lookRail, true);
-    expect(isIdleEnabled(lookRail)).toBe(true);
-    expect(listEnabledIdleClipIds()).toContain('LookAround');
-    setIdleEnabled(1, false);
-    setIdleEnabled(2, false);
-    setIdleEnabled(lookRail, false);
-    expect(listEnabledIdleClipIds()).toEqual(['IdleBreathCalm', 'StandardIdle']);
+    expect(isIdleEnabled(5)).toBe(true);
+    expect(isIdleEnabled(18)).toBe(true);
+    expect(isIdleEnabled(16)).toBe(true);
+    const thinkRail = IDLE_CLIP_OPTIONS.find((c) => c.id === 'Thinking')!.num;
+    setIdleEnabled(thinkRail, true);
+    expect(isIdleEnabled(thinkRail)).toBe(true);
+    expect(listEnabledIdleClipIds()).toContain('Thinking');
+    setIdleEnabled(5, false);
+    setIdleEnabled(18, false);
+    setIdleEnabled(16, false);
+    setIdleEnabled(thinkRail, false);
+    // Sorted by rail # → 5, 16, 18
+    expect(listEnabledIdleClipIds()).toEqual([
+      'IdleRpmFStanding001',
+      'IdleRpmMVar001',
+      'IdleSassy',
+    ]);
   });
 
   it('saves a pin per companion by clip id', () => {
-    expect(saveIdlePick('a01-shino', 'IdleBreathCalm')).toBe('IdleBreathCalm');
-    expect(idlePickFor('a01-shino')).toBe('IdleBreathCalm');
-    expect(saveIdlePick('a01-shino', 'not-a-clip')).toBe('IdleBreathCalm');
+    expect(saveIdlePick('a01-shino', 'IdleRpmFStanding001')).toBe('IdleRpmFStanding001');
+    expect(idlePickFor('a01-shino')).toBe('IdleRpmFStanding001');
+    expect(saveIdlePick('a01-shino', 'not-a-clip')).toBe('IdleRpmFStanding001');
   });
 
   it('drops HelloWave pins — farewell wave is not a saved idle', () => {
@@ -118,12 +126,12 @@ describe('idle enable + pick', () => {
       key: () => null,
       length: 0,
     };
-    store.set('amoji.idlePick.v1', JSON.stringify({ 'a01-shino': 'HelloWave' }));
+    store.set('amoji.idlePick.v2', JSON.stringify({ 'a01-shino': 'HelloWave' }));
     forgetIdlePickCache();
     expect(idlePickFor('a01-shino')).toBeNull();
   });
 
-  it('clears legacy a01-a04 pins so calm defaults return', () => {
+  it('clears legacy bad pins so Pixel-OK calm defaults return', () => {
     const store = new Map<string, string>();
     (globalThis as { localStorage: Storage }).localStorage = {
       getItem: (k: string) => store.get(k) ?? null,
@@ -133,15 +141,17 @@ describe('idle enable + pick', () => {
       key: () => null,
       length: 0,
     };
-    store.set('amoji.idlePick.v1', JSON.stringify({
+    store.set('amoji.idlePick.v2', JSON.stringify({
       'a01-shino': 'IdleHug',
       'a02-shibu': 'StandardIdle',
       'a03-fumiriya': 'LookAround',
+      'a04-ok': 'IdleRpmFStanding001',
     }));
     forgetIdlePickCache();
     expect(idlePickFor('a01-shino')).toBeNull();
-    expect(idlePickFor('a02-shibu')).toBe('StandardIdle');
-    expect(idlePickFor('a03-fumiriya')).toBe('LookAround');
+    expect(idlePickFor('a02-shibu')).toBeNull();
+    expect(idlePickFor('a03-fumiriya')).toBeNull();
+    expect(idlePickFor('a04-ok')).toBe('IdleRpmFStanding001');
   });
 });
 

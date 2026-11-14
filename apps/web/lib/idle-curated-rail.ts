@@ -93,9 +93,13 @@ export function curatedRailByLegacyLibNum(libNum: number): IdleCuratedRailEntry 
   return BY_LEGACY.get(libNum);
 }
 
-/** Default ON rotation: curated #1+#2 (calm pair). */
+/**
+ * Default ON rotation — Pixel-OK calm stands only:
+ * library #42 IdleRpmFStanding001, #34 IdleSassy, #94 IdleRpmMVar001.
+ * (Not BreathCalm / StandardIdle — owner: those idles look bad.)
+ */
 export function defaultCuratedRailNums(): number[] {
-  return [1, 2];
+  return [5, 18, 16];
 }
 
 /** Map stored enable list (legacy library # or rail #) → curated rail #. */
