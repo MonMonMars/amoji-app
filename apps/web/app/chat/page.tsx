@@ -103,6 +103,7 @@ function ChatRoom() {
   }, [leaving]);
   const background = backgroundById(prefs.background);
   const storyScene = activeStoryScene();
+  const inStory = !!storyScene;
   const sceneGlbUrl = storyScene ? resolveStorySceneGlb(storyScene) : undefined;
   const storedWardrobe = useModularSelection();
   const wardrobe = activeWardrobe(character.id, storedWardrobe);
@@ -113,16 +114,21 @@ function ChatRoom() {
     setPickerOpen(false);
     requestOpenMiniGame(kind);
   };
+  const storyTitle = storyScene
+    ? (storyScene.title[prefs.lang] || storyScene.title.en)
+    : '';
 
   return (
     <main
+      data-testid={inStory ? 'story-mode-room' : 'chat-mode-room'}
+      data-story-mode={inStory ? '1' : '0'}
       className={`${leaving ? 'fx-select-out' : 'fx-select-in'} relative h-dvh w-screen overflow-hidden text-white`}
       style={{ background: bootReady ? background.css : '#0a0a0f' }}
       aria-busy={!bootReady}
       aria-labelledby="amoji-chat-title"
     >
       <h1 id="amoji-chat-title" className="sr-only">
-        {character.name}
+        {inStory ? `${storyTitle} — ${character.name}` : character.name}
       </h1>
       <div
         aria-hidden
@@ -153,7 +159,7 @@ function ChatRoom() {
           Hidden for the whole title → play session so the HUD does not overlap it. */}
       {!gameChromeHidden && (
         <div className={`pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-3 ${bootReady ? '' : 'opacity-0'}`}>
-          <div className="pointer-events-auto min-w-0">
+          <div className="pointer-events-auto min-w-0 space-y-2">
             <StatusPlate
               name={character.name}
               accent={character.accent}
@@ -163,15 +169,28 @@ function ChatRoom() {
               memCount={memCount}
               onOpenSelect={openSelect}
             />
+            {inStory && (
+              <p
+                data-testid="story-mode-badge"
+                className="max-w-[min(100%,16rem)] rounded-full border border-fuchsia-300/40 bg-fuchsia-500/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-fuchsia-50 shadow-sm backdrop-blur-md"
+              >
+                {prefs.lang === 'yue' ? '故事' : prefs.lang === 'zh' ? '故事' : prefs.lang === 'ja' ? 'ストーリー' : 'Story'}
+                <span className="ml-2 font-semibold normal-case tracking-normal text-white/90">
+                  {storyTitle}
+                </span>
+              </p>
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {/* Hold until bootReady so MuteButton aria/title lang is not DEFAULT_PREFS (select prefsReady parity). */}
             {bootReady && <MuteButton lang={prefs.lang} compact />}
-            <WardrobeSwap
-              lang={prefs.lang}
-              characterId={character.id}
-              onCharacter={(id) => setPrefs({ character: id })}
-            />
+            {!inStory && (
+              <WardrobeSwap
+                lang={prefs.lang}
+                characterId={character.id}
+                onCharacter={(id) => setPrefs({ character: id })}
+              />
+            )}
             <button
               type="button"
               onClick={() => setSheetOpen(true)}
@@ -182,7 +201,9 @@ function ChatRoom() {
             >
               ⚙️
             </button>
-            <MiniGameMenuButton lang={prefs.lang} onClick={() => setPickerOpen(true)} />
+            {!inStory && (
+              <MiniGameMenuButton lang={prefs.lang} onClick={() => setPickerOpen(true)} />
+            )}
           </div>
         </div>
       )}

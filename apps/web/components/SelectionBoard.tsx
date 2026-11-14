@@ -156,10 +156,18 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
           ← {t(lang, 'back')}
         </button>
       )}
-      {prefsReady && (
+      {/* Chat select keeps the full scene hero; Story Mode uses its own cast-led card. */}
+      {prefsReady && boardMode !== 'story' && (
         <div data-testid="selection-hero" className="pointer-events-none absolute inset-0">
           <SceneBackdrop background={background} />
         </div>
+      )}
+      {prefsReady && boardMode === 'story' && (
+        <div
+          data-testid="selection-hero-story"
+          className="pointer-events-none absolute inset-0 bg-neutral-950"
+          aria-hidden
+        />
       )}
 
       {/* Master mute - top-right. Hold until prefsReady so aria/title lang is not DEFAULT_PREFS. */}
