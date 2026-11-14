@@ -29,6 +29,7 @@ import { t, type Lang } from '../lib/prefs';
 export default function TtsVoiceRow({
   lang,
   characterId,
+  companionGender,
   accent,
   onLang,
 }: {
