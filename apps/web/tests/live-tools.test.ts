@@ -431,6 +431,35 @@ describe('gatherLiveContext', () => {
     expect(live.spoken).not.toContain('<');
   });
 
+  it('hands the model only one headline even when several soft stories exist', async () => {
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('news.google.com')) throw new Error('cors');
+      if (url.includes('rss2json.com')) return new Response('nope', { status: 403 });
+      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
+        return jsonRes({
+          news: [
+            { story: 'A bakery opens a cheerful night market stall.' },
+            { story: 'Scientists share a quirky AI drawing tip.' },
+            { story: 'A puppy parade fills the park with smiles.' },
+          ],
+        });
+      }
+      return jsonRes({}, 404);
+    };
+    const live = await gatherLiveContext('what is the latest news?', {
+      lang: 'en',
+      fetch: fetchImpl,
+      cache: new Map(),
+      locate: async () => HK,
+    });
+    expect(live.prompt).toMatch(/Light news[^:\n]*:\s*[“"]/);
+    expect(live.prompt).not.toContain(';');
+    const quoted = [...live.prompt.matchAll(/[“"]([^”"]+)[”"]/g)].map((m) => m[1]);
+    expect(quoted.length).toBe(1);
+    expect(live.spoken).toMatch(/bakery|Scientists|puppy/i);
+  });
+
   it('falls back to rss2json when Google News blocks the browser', async () => {
     const fetchImpl: typeof fetch = async (input) => {
       const host = new URL(String(input)).hostname;
@@ -650,7 +679,7 @@ describe('tool switch and prompt wiring', () => {
     expect(worldBlock('')).toBe('');
     expect(worldBlock('Weather: 29°C, drizzling.')).toContain('29°C');
     expect(worldBlock('Weather: 29°C.')).toContain('Do not invent');
-    expect(worldBlock('Light news: “Cat parade”')).toMatch(/SIMPLY READ|finished spoken statements|Never ask which topic/i);
+    expect(worldBlock('Light news: “Cat parade”')).toMatch(/SIMPLY READ|ONE headline|Never ask which topic/i);
     expect(worldBlock('Recipe: soup.')).toContain('cook-along');
     const weatherGuide = worldBlock('Weather: 29°C.');
     expect(weatherGuide).toMatch(/take care/i);

@@ -96,9 +96,13 @@
 
 | Item | Status |
 |------|--------|
+| News / AI news reads same story twice | **Code in PR #386** — not on live Pages until merge |
+| News empty / cannot tell on Pages | **Code in PR #385** — not merged |
+| Poke lean opposite side | WIP branch (same-side flip) — not shipped |
+| Idle pose bad | WIP idle-pose-swap — not shipped |
 | Phone smoke on live Pages | **Human only** — checklist [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
 
-Agent-actionable product code: **none**. Closed superseded polish #154/#240. Spikes #1/#20 stay Hold unless you ask.
+Agent-actionable product code: open PRs above. Spikes #1/#20 stay Hold unless you ask.
 
 ---
 
@@ -106,6 +110,7 @@ Agent-actionable product code: **none**. Closed superseded polish #154/#240. Spi
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-15 ~00:32 | News one-speak harden on #386 (facts-only + one headline sheet); owner: same news twice |
 | 2026-11-14 ~22:50 | Fix dance-too-soon on typed/chip/showcase paths; preview synth no-stack over insurance clip |
 | 2026-11-14 ~22:15 | Live Pages smoke OK; closed superseded #154/#240; added `PHONE_SMOKE.md` |
 | 2026-11-14 ~17:55 | Continue audit: regression Vitest 46 pass (dance/music/gate/card/pitch); no new code scope |
