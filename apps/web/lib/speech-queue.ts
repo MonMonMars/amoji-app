@@ -65,6 +65,14 @@ export class LineQueue<T> {
   }
 }
 
+/** True when the final reply no longer starts with the streamed first sentence. */
+export function speechLeadDiverged(full: string, already: string): boolean {
+  const t = full.trim();
+  const f = already.trim();
+  if (!f || !t) return false;
+  return t !== f && !t.startsWith(f);
+}
+
 /** Text still to say after `already` was queued as the first sentence. */
 export function speechRemainder(full: string, already: string): string {
   const t = full.trim();
@@ -72,5 +80,8 @@ export function speechRemainder(full: string, already: string): string {
   if (!f) return t;
   if (t === f) return '';
   if (t.startsWith(f)) return t.slice(f.length).trim();
-  return t;
+  // Final reply diverged (scrub / preferLive swapped the line). Returning the
+  // full string here stacked a second answer on top of the streamed lead —
+  // "two LLM replies" / repeated content. Caller should stop + speak once.
+  return '';
 }

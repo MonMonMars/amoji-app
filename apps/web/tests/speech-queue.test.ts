@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LineQueue, speechRemainder } from '../lib/speech-queue';
+import { LineQueue, speechLeadDiverged, speechRemainder } from '../lib/speech-queue';
 
 describe('LineQueue', () => {
   it('plays one line at a time and keeps the rest', () => {
@@ -39,7 +39,10 @@ describe('speechRemainder', () => {
   it('returns only the text after a leading first sentence', () => {
     expect(speechRemainder('Hello there. How are you?', 'Hello there.')).toBe('How are you?');
     expect(speechRemainder('Hello there.', 'Hello there.')).toBe('');
-    expect(speechRemainder('A different reply.', 'Hello there.')).toBe('A different reply.');
+    // Diverged final reply must NOT replay as a second full answer.
+    expect(speechRemainder('A different reply.', 'Hello there.')).toBe('');
+    expect(speechLeadDiverged('A different reply.', 'Hello there.')).toBe(true);
+    expect(speechLeadDiverged('Hello there. How are you?', 'Hello there.')).toBe(false);
     expect(speechRemainder('  Hello.  ', '')).toBe('Hello.');
   });
 });
