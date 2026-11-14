@@ -1690,9 +1690,9 @@ export default function CompanionCanvas({
               hipsW,
               { x: sV3.x, z: sV3.z },
             );
-            // Lateral fall: lean toward the OPPOSITE screen side (Pixel).
-            // Finger on screen-left → body tips right; right poke → tips left.
-            // Wired as −camSide so lean goes away from the poked screen side.
+            // Lateral fall: lean TOWARD the poked screen side (Pixel).
+            // Opposite-side lean felt wrong; finger on screen-left → tips left.
+            // Wired as +camSide so lean goes with the poked side, not away.
             // Keep classifyPoke impulse for front/back/chest so those leans stay axial.
             if (
               pokeZone === 'side' || pokeZone === 'armL' || pokeZone === 'armR' || pokeZone === 'hand'
@@ -1700,7 +1700,7 @@ export default function CompanionCanvas({
               sV3.y = 0;
               if (sV3.lengthSq() > 1e-8) {
                 sV3.normalize();
-                pokeFallDir.copy(sV3).multiplyScalar(-camSide);
+                pokeFallDir.copy(sV3).multiplyScalar(camSide);
               }
             }
             const hsL = handScreen('left');
