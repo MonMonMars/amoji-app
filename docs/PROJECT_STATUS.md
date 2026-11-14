@@ -1,23 +1,23 @@
 # Amoji project status board
 
-**Generated:** 2026-11-11 18:06 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-14 14:30 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
-**Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/setup)  
+**Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
 **Visual board:** open [`project-status.html`](./project-status.html) in a browser.  
-**`main` tip:** `2fec7d3` (mass merge landed — systems / SEO / long-talk / talk-sense / motion / poke / chat UX)
+**`main` tip:** `082f693` (#379 gate location · prior wave #362–#364 / #373–#375)
 
 ## Snapshot
 
 | Bucket | Count |
 | --- | ---: |
-| **Done** — merged to `main` (Pixel NEW + systems finish + motion/chat/poke mass merge) | 60+ recent · 80+ stack |
-| **Open product PRs** | **1** — #353 (this status board) |
+| **Done** — merged to `main` | 80+ stack · Nov 13 wave #362–#364 / #373–#375 / #379 |
+| **Open product PRs** | **0** (Hold spikes only: #1 / #20 / #154 / #240) |
 | **Outstanding** — actionable code left for agents | **0** |
-| **Outstanding** — Pixel / human actions | Pages eyeball · env · Hold items |
-| **Hold** | licensed music · Stripe live keys · Product Hunt · Search Console · Pages eyeball · stale spikes #1 / #20 / #154 / #240 |
+| **Outstanding** — Pixel / human actions | Device listen (dance/one-voice/music) · gate location one-popup confirm · white-pupil image advice |
+| **Hold** | licensed music · Stripe live keys · Product Hunt · Search Console · stale spikes #1 / #20 / #154 / #240 |
 | Docs missing | 0 |
 
-**Overall feature stack (approx.):** ~98% merged to `main` · ~0% open product PRs (docs only) · ~2% Hold / human
+**Overall feature stack (approx.):** ~99% merged to `main` · ~0% open product PRs · ~1% Hold / human eyeball
 
 ### Progress by category (% merged to `main`)
 
@@ -37,7 +37,19 @@
 
 ## Done (merged to `main`)
 
-Only commits on `main` tip `2fec7d3` count here. Mass merge 2026-11-11 landed the open green slice stack.
+Living tip: `082f693`. Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
+
+### Nov 13–14 wave
+
+| PR | Item | Notes |
+| --- | --- | --- |
+| [#379](https://github.com/MonMonMars/amoji-app/pull/379) | Location Allow on gate page; once-per-tab geo prime | Pages live `/gate/audio` |
+| [#375](https://github.com/MonMonMars/amoji-app/pull/375) | One voice on character card greets | |
+| [#374](https://github.com/MonMonMars/amoji-app/pull/374) | gTTS bright/mid/deep pitch tiers | |
+| [#373](https://github.com/MonMonMars/amoji-app/pull/373) | Phase rotate + AI news / personal / secret chips | |
+| [#364](https://github.com/MonMonMars/amoji-app/pull/364) | Music ask: random play; select only when asked | |
+| [#363](https://github.com/MonMonMars/amoji-app/pull/363) | Male/female voices per lang + Add pool | |
+| [#362](https://github.com/MonMonMars/amoji-app/pull/362) | Dance starts only when music bed plays | |
 
 ### Mass merge (2026-11-11)
 
