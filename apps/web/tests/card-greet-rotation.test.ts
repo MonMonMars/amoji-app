@@ -64,7 +64,7 @@ describe('card press greet rotation', () => {
   it('character and voice cards call playVoiceGreeting without a fixed line', () => {
     const board = readFileSync(join(__dirname, '../components/SelectionBoard.tsx'), 'utf8');
     const row = readFileSync(join(__dirname, '../components/TtsVoiceRow.tsx'), 'utf8');
-    expect(board).toContain('playVoiceGreeting(chosen.id, lang, activeVoiceChoice(lang).id)');
+    expect(board).toContain('activeVoiceChoice(lang, chosen.gender)');
     expect(board).not.toContain('introText(');
     expect(row).toContain('playVoiceGreeting(characterId, button.locale, button.id)');
   });

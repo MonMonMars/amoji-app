@@ -67,8 +67,8 @@ describe('Settings VoicePicker parity with select TtsVoiceRow', () => {
     expect(row).toContain('isSingleVoiceLocale');
     expect(picker).toContain("t(lang, 'voiceOnlyOneAvailable')");
     expect(row).toContain("t(lang, 'voiceOnlyOneAvailable')");
-    expect(picker).toContain('activeVoiceChoice(locale)');
-    expect(row).toContain('activeVoiceChoice(lang)');
+    expect(picker).toContain('activeVoiceChoice(locale, companionGender)');
+    expect(row).toContain('activeVoiceChoice(lang, companionGender)');
     expect(isSingleVoiceLocale('ja')).toBe(true);
     expect(isSingleVoiceLocale('yue')).toBe(true);
     expect(isSingleVoiceLocale('zh')).toBe(false);

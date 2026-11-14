@@ -286,7 +286,12 @@ export function addVoiceOption(locale: VoiceLocale): VoiceChoice | null {
   return addNextVoiceExtra(locale, SHIPPING_VOICE_IDS, shippingVoiceChoicesFor(locale).length);
 }
 
-/** Pitch gender for the free HTTP tier: pinned delivery, else companion gender. */
+/**
+ * Pitch gender for the free HTTP tier.
+ * An explicit pinned/tapped choice wins; otherwise use the companion gender
+ * fallback — never the catalog's first (female) button, which made every
+ * male companion and unpinned lang sound (or fail) like Yue female only.
+ */
 export function deliveryGenderForChoice(
   locale: VoiceLocale,
   choiceId?: string | null,
@@ -294,8 +299,16 @@ export function deliveryGenderForChoice(
 ): 'female' | 'male' {
   const pinned = voiceChoiceById(choiceId);
   if (pinned && pinned.locale === locale) return pinned.deliveryGender;
-  const active = voiceChoicesFor(locale).find((c) => c.locale === locale);
-  return active?.deliveryGender ?? fallback;
+  return fallback === 'male' || fallback === 'female' ? fallback : 'female';
+}
+
+/** Prefer a shipping voice whose delivery gender matches the companion. */
+export function preferredVoiceChoiceForGender(
+  locale: VoiceLocale,
+  gender: 'female' | 'male',
+): VoiceChoice {
+  const choices = voiceChoicesFor(locale);
+  return choices.find((c) => c.deliveryGender === gender) ?? choices[0] ?? VOICE_CHOICES[0]!;
 }
 
 /** The default button for a language (the first, in catalog order). */

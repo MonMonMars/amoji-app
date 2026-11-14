@@ -536,7 +536,7 @@ export default function SettingsSheet({
                 onChange({ lang: l });
                 // Same audition path as select ArcFan language cards (#340 lineage):
                 // tapping a language card must play a greeting, not only flip prefs.
-                playVoiceGreeting(me.id, l, activeVoiceChoice(l).id);
+                playVoiceGreeting(me.id, l, activeVoiceChoice(l, me.gender).id);
               }}
             />
           </Section>

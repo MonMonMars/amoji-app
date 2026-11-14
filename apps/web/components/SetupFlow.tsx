@@ -2,7 +2,7 @@
 // Grok-ani style 3-step setup: character → scene → language → start.
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { usePrefs, t, savePrefs, type Prefs } from '../lib/prefs';
+import { usePrefs, t, savePrefs, characterById, type Prefs } from '../lib/prefs';
 import { beginMicPreflightFromGesture, primeChatStartGesture } from '../lib/chat-start-gesture';
 import { primeLocationForChatEnter } from '../lib/live-tools';
 import { playVoiceGreeting } from '../lib/voice';
@@ -62,7 +62,11 @@ export default function SetupFlow() {
             value={prefs.lang}
             onChange={(l) => {
               patch({ lang: l });
-              playVoiceGreeting(prefs.character, l, activeVoiceChoice(l).id);
+              playVoiceGreeting(
+                prefs.character,
+                l,
+                activeVoiceChoice(l, characterById(prefs.character).gender).id,
+              );
             }}
           />
         )}

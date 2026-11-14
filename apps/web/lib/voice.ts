@@ -108,7 +108,12 @@ import { gttsCharacterPitchBias } from './gtts-timbre';
 import { voicePickFor } from './voice-picks';
 import { osVoicePinFor, saveOsVoicePin } from './os-voice-picks';
 import { resolveOsPin, resolvePinnedVoice } from './os-voice-resolve';
-import { deliveryGenderForChoice, isVoiceLocale, tlForChoice } from './voice-capability';
+import {
+  deliveryGenderForChoice,
+  isVoiceLocale,
+  preferredVoiceChoiceForGender,
+  tlForChoice,
+} from './voice-capability';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
 import { formatVoiceChain, freeVoiceHops } from './tts-chain';
 import { stopThinkingSound } from './thinking-sound';
@@ -1550,7 +1555,12 @@ function performSpeak(
     : characterVoiceGender(characterId);
   // The live free tier's speaker is chosen by Google `tl` alone. Read it once
   // per line so a resume/tail and the chat line stay the same speaker.
-  const voicePin = voicePickFor(lang);
+  // Prefer an explicit pin; otherwise gender-matched shipping choice so male /
+  // non-Yue companions do not inherit a stale Yue-female-only pin feel.
+  const voicePin = voicePickFor(lang)
+    ?? (isVoiceLocale(lang)
+      ? preferredVoiceChoiceForGender(lang, spokenGender).id
+      : null);
   const ttsTl = tlForChoice(lang, voicePin);
   const runSynth = (onDone: () => void): boolean => {
     if (typeof speechSynthesis === 'undefined') return false;

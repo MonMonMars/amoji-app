@@ -17,6 +17,7 @@
 
 import {
   isVoiceLocale,
+  preferredVoiceChoiceForGender,
   resolveVoiceChoiceId,
   voiceChoiceById,
   voiceChoicesFor,
@@ -76,10 +77,18 @@ export function voicePickFor(locale: string): string | null {
   return hydrate()[locale] ?? null;
 }
 
-/** The choice to highlight for this language. Never null. */
-export function activeVoiceChoice(locale: VoiceLocale): VoiceChoice {
+/**
+ * The choice to highlight for this language. Never null.
+ * Pass `preferGender` (companion gender) so unpinned langs/genders do not
+ * collapse to the catalog's first female button (Yue-female-only feel).
+ */
+export function activeVoiceChoice(
+  locale: VoiceLocale,
+  preferGender?: 'female' | 'male',
+): VoiceChoice {
   const pinned = voiceChoiceById(voicePickFor(locale));
   if (pinned && pinned.locale === locale) return pinned;
+  if (preferGender) return preferredVoiceChoiceForGender(locale, preferGender);
   return voiceChoicesFor(locale)[0] ?? voiceChoiceById('gtts:en-US:f')!;
 }
 
