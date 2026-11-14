@@ -2,8 +2,9 @@
 
 **Purpose:** Living checklist of product rules from the product owner. Agents must read this before chat/voice/pose/permission work and update it when rules change.
 
-**Last reviewed:** 2026-11-14 17:55 (Asia/Hong_Kong)  
-**main tip:** `76112ff` · **agent-actionable code: 0**  
+**Last reviewed:** 2026-11-14 22:15 (Asia/Hong_Kong)  
+**main tip:** `2266df8` · **agent-actionable code: 0** · phone list: [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
+
 
 
 
@@ -94,10 +95,9 @@
 
 | Item | Status |
 |------|--------|
-| Device eyeball on live Pages | **Human only** — dance / one-voice card / music ask listen on phone |
-| Gate location on device | **Human only (optional)** — one geo popup on `/gate/audio`, not at Start |
+| Phone smoke on live Pages | **Human only** — checklist [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
 
-Agent-actionable product code: **none** (Hold spikes #1/#20/#154/#240 stay Hold unless you ask).
+Agent-actionable product code: **none**. Closed superseded polish #154/#240. Spikes #1/#20 stay Hold unless you ask.
 
 ---
 
@@ -105,6 +105,7 @@ Agent-actionable product code: **none** (Hold spikes #1/#20/#154/#240 stay Hold 
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-14 ~22:15 | Live Pages smoke OK; closed superseded #154/#240; added `PHONE_SMOKE.md` |
 | 2026-11-14 ~17:55 | Continue audit: regression Vitest 46 pass (dance/music/gate/card/pitch); no new code scope |
 | 2026-11-14 ~14:57 | Owner approved white-pupil image v1 — loop Done |
 | 2026-11-14 ~14:30 | Pages verify #379 gate location strings live; white-pupil v1 re-surfaced for owner advice |

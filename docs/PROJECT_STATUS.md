@@ -1,20 +1,21 @@
 # Amoji project status board
 
-**Generated:** 2026-11-14 14:30 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-14 22:15 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
+**Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** open [`project-status.html`](./project-status.html) in a browser.  
-**`main` tip:** `082f693` (#379 gate location · prior wave #362–#364 / #373–#375)
+**`main` tip:** `2266df8` (#382 docs · product tip `#379` gate location)
 
 ## Snapshot
 
 | Bucket | Count |
 | --- | ---: |
-| **Done** — merged to `main` | 80+ stack · Nov 13 wave #362–#364 / #373–#375 / #379 |
-| **Open product PRs** | **0** (Hold spikes only: #1 / #20 / #154 / #240) |
+| **Done** — merged to `main` | 80+ stack · Nov 13–14 wave #362–#364 / #373–#375 / #379 |
+| **Open product PRs** | **0** (remaining spikes: draft #20 · #1) |
 | **Outstanding** — actionable code left for agents | **0** |
-| **Outstanding** — Pixel / human actions | Device listen (dance/one-voice/music) · optional gate location one-popup confirm |
-| **Hold** | licensed music · Stripe live keys · Product Hunt · Search Console · stale spikes #1 / #20 / #154 / #240 |
+| **Outstanding** — Pixel / human actions | [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
+| **Hold** | licensed music · Stripe live keys · Product Hunt · Search Console · spikes #1 / #20 |
 | Docs missing | 0 |
 
 **Overall feature stack (approx.):** ~99% merged to `main` · ~0% open product PRs · ~1% Hold / human eyeball
@@ -110,10 +111,10 @@ Earlier finish pass still on `main`: #306–#325 and #280–#305 era.
 
 | PR | Title | Notes |
 | --- | --- | --- |
-| [#240](https://github.com/MonMonMars/amoji-app/pull/240) | SettingsSheet memory-add + yourName a11y | CONFLICTING — mostly folded into #335 |
-| [#154](https://github.com/MonMonMars/amoji-app/pull/154) | robot-demo speak field aria-label | CONFLICTING polish leftover |
-| [#20](https://github.com/MonMonMars/amoji-app/pull/20) | CosyVoice TTS spike | Draft spike |
-| [#1](https://github.com/MonMonMars/amoji-app/pull/1) | Voice bake-off UI | Old spike |
+| [#240](https://github.com/MonMonMars/amoji-app/pull/240) | SettingsSheet memory-add + yourName a11y | **Closed 2026-11-14** — already on main |
+| [#154](https://github.com/MonMonMars/amoji-app/pull/154) | robot-demo speak field aria-label | **Closed 2026-11-14** — already on main |
+| [#20](https://github.com/MonMonMars/amoji-app/pull/20) | CosyVoice TTS spike | Draft spike — Hold |
+| [#1](https://github.com/MonMonMars/amoji-app/pull/1) | Voice bake-off UI | Old spike — Hold |
 
 ---
 
@@ -142,7 +143,7 @@ Earlier finish pass still on `main`: #306–#325 and #280–#305 era.
 | Google Search Console sitemap submit | Human; #357 ships `sitemap.xml` / `robots.txt` under `/amoji-app` |
 | Live github.io product eyeball | Pages rebuild after merge; curl smoke only proves shell is up |
 | Modular GLBs / CosyVoice refs / GPU TTS hosts | Asset / infra Holds — not blocking Pages |
-| Stale spikes #1 / #20 / #154 / #240 | Do not touch unless Pixel asks |
+| Spikes #1 / #20 | Do not touch unless Pixel asks (#154/#240 closed superseded) |
 
 ---
 
