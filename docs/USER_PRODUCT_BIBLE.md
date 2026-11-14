@@ -96,10 +96,13 @@
 
 | Item | Status |
 |------|--------|
-| News / AI news reads same story twice | **Code in PR #386** — not on live Pages until merge |
-| News empty / cannot tell on Pages | **Code in PR #385** — not merged |
-| Poke lean opposite side | WIP branch (same-side flip) — not shipped |
-| Idle pose bad | WIP idle-pose-swap — not shipped |
+| Gate voice test silent / page flips on press | **Code in PR #387** — not on Pages until merge |
+| News / AI news reads same story twice | **Merged #386** — not on live Pages until Pages rebuild |
+| News empty / cannot tell on Pages | **Code in PR #385** — CI after rebase |
+| Story Mode feels like chat / cast too small | **Code in PR #388** — not merged |
+| Poke lean opposite side | WIP stash (same-side flip) — not shipped |
+| Idle pose bad | WIP stash idle-pose-swap — not shipped |
+| 唱首歌 nonsense / Soave+月光光 | WIP stash sing-no-nonsense — not shipped |
 | Phone smoke on live Pages | **Human only** — checklist [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
 
 Agent-actionable product code: open PRs above. Spikes #1/#20 stay Hold unless you ask.
@@ -110,7 +113,9 @@ Agent-actionable product code: open PRs above. Spikes #1/#20 stay Hold unless yo
 
 | Date (HKT) | Change |
 |------------|--------|
-| 2026-11-15 ~00:32 | News one-speak harden on #386 (facts-only + one headline sheet); owner: same news twice |
+| 2026-11-15 ~01:31 | Rebase #385 onto main (keep facts-only + wiki/CORS news); gate #387 Outstanding |
+| 2026-11-15 ~00:38 | Gate Test my sound: no label flip; reserve hear/mic/geo; same-tap pre-open speakers+mic+location |
+| 2026-11-15 ~00:32 | News one-speak harden merged #386 (facts-only + one headline sheet) |
 | 2026-11-14 ~22:50 | Fix dance-too-soon on typed/chip/showcase paths; preview synth no-stack over insurance clip |
 | 2026-11-14 ~22:15 | Live Pages smoke OK; closed superseded #154/#240; added `PHONE_SMOKE.md` |
 | 2026-11-14 ~17:55 | Continue audit: regression Vitest 46 pass (dance/music/gate/card/pitch); no new code scope |

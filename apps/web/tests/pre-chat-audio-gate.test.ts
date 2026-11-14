@@ -42,6 +42,25 @@ describe('pre-chat audio gate', () => {
     expect(gate).toContain('setHeard(null)');
   });
 
+  it('keeps gate layout stable while Test my sound plays (no word flip)', () => {
+    const gate = read('components/PreChatAudioGate.tsx');
+    // Button keeps gateAudioTest label — never swaps to gateAudioPlaying text.
+    const testBtn = gate.slice(
+      gate.indexOf('data-testid="pre-chat-test-sound"'),
+      gate.indexOf('data-testid="pre-chat-hear-ask"'),
+    );
+    expect(testBtn).toContain("t(lang, 'gateAudioTest')");
+    expect(testBtn).not.toContain('gateAudioPlaying');
+    // Hear yes/no stay mounted; feedback uses a reserved min-height slot.
+    expect(gate).toContain('min-h-[9.5rem]');
+    expect(gate).toContain("data-testid=\"pre-chat-hear-ask\"");
+    // Same tap pre-opens speakers + mic + location (iOS gesture).
+    expect(gate).toContain('primeAudioForChatEnter');
+    expect(gate).toContain('preOpenExtras');
+    expect(gate).toContain('allowMic');
+    expect(gate).toContain('allowLocation');
+  });
+
   it('keeps mic allow simple and re-clickable without a typing field', () => {
     const gate = read('components/PreChatAudioGate.tsx');
     expect(gate).toContain('data-testid="pre-chat-mic-section"');
