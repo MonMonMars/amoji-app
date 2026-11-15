@@ -12,7 +12,7 @@
 //   weather     → short · caring calm · tool_spoken_facts
 //   news        → long · warm interest · tool_spoken_facts (headline+lede+details)
 //   help/recipe → medium–long · calm encouragement · talk_only
-//   story       → long · wonder/excitement · talk_only
+//   story       → super_long · love/wonder (warm, unhurried) · talk_only
 //   science     → super_long · curious pride · talk_only
 //   music       → very_short talk + long clip · joy/excitement · short_talk_long_music
 
@@ -145,10 +145,11 @@ export const REPLY_MODE_CHART: Readonly<Record<ReplyModeId, ReplyModeBudget>> = 
   },
   story: {
     id: 'story',
-    targetLength: 'long',
-    emotion: 'excitement + wonder',
+    targetLength: 'super_long',
+    emotion: 'love + wonder + contentment',
     talkVsMusic: 'talk_only',
-    sentenceGuide: '6–14 sentences across 2–3 short paragraphs',
+    sentenceGuide:
+      '12–22 sentences across 3–5 paragraphs — full emotional arc with dialogue and sensory detail, not a short summary',
     maxTokens: STORY_MAX_TOKENS,
     detailed: true,
     longTalkKind: 'story',

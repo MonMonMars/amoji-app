@@ -219,6 +219,11 @@ import {
   warmClassicFairyTaleCache,
 } from '../lib/classic-fairy-tales-warm';
 import {
+  STORY_SPEECH_HINTS,
+  STORY_SPEECH_RATE_BIAS,
+  wantsStoryTurn,
+} from '../lib/story-reply';
+import {
   isTopicalContentTurn,
   shouldSuppressSkillOffer,
   stripOfftopicAbilityTack,
@@ -671,7 +676,7 @@ export default function ChatPanel({
     text: string,
     hints?: Record<string, number>,
     lead?: { text: string; pitch: number; rate: number },
-    opts?: { idle?: boolean; n?: number },
+    opts?: { idle?: boolean; n?: number; rateBias?: number },
   ) => {
     // Durable spoken-line gate: reject unfinished templates / fragments /
     // banned idle interrogations / topic-menu interviews / history-resume
@@ -690,7 +695,7 @@ export default function ChatPanel({
     const voiced = remembered
       ? { ...(hints ?? {}), [remembered]: Math.max(hints?.[remembered] ?? 0, 0.45) }
       : hints;
-    speak(gated, characterId, lang, voiced, lead);
+    speak(gated, characterId, lang, voiced, lead, 1, opts?.rateBias ?? 0);
     if (voiced) applyContentMood(voiced);
     // Never stack the same assistant line twice (callers sometimes also
     // setHistory — that painted "same line twice" in chat history).
@@ -848,7 +853,12 @@ export default function ChatPanel({
     const mv = plan.move;
     if (plan.moodHints) applyContentMood(plan.moodHints);
     // Prefer content director; never fall back to LLM emotion tags.
-    const contentHints = plan.moodHints;
+    // Story turns: warm soft hints + slightly slower TTS (casual talk untouched).
+    const storyVoice = wantsStoryTurn(userText, { storySession: !!loadStorySession() });
+    const contentHints = storyVoice
+      ? { ...(plan.moodHints ?? {}), ...STORY_SPEECH_HINTS }
+      : plan.moodHints;
+    const storyRate = storyVoice ? STORY_SPEECH_RATE_BIAS : 0;
     // The first closed sentence already went out over the stream. If it is
     // still queued or its audio started, say only the rest — never replay
     // that sentence, and never cut it. If it never started and is gone from
@@ -865,13 +875,13 @@ export default function ChatPanel({
         // Dance body starts on library-clip playing (beginShow), not here.
         beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
           const rest = speechRemainder(reply, alreadySpoken.text);
-          if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity);
+          if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity, storyRate);
         });
       } else if (mv) triggerMove(mv);
       notifySpeaking(reply);
       if (mv !== 'dance') {
         const rest = speechRemainder(reply, alreadySpoken.text);
-        if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity);
+        if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity, storyRate);
       }
       return reply;
     }
@@ -885,7 +895,7 @@ export default function ChatPanel({
     }
     if (mv === 'dance') {
       beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
-        speak(reply, characterId, lang, contentHints, undefined, intensity);
+        speak(reply, characterId, lang, contentHints, undefined, intensity, storyRate);
       });
       notifySpeaking(reply);
       return reply;
@@ -897,7 +907,7 @@ export default function ChatPanel({
       triggerMove('piano');
       startPerformanceMusic('piano', characterId, 6300);
       notifySpeaking(reply);
-      speak(reply, characterId, lang, contentHints, undefined, intensity);
+      speak(reply, characterId, lang, contentHints, undefined, intensity, storyRate);
       return reply;
     }
     if (mv) triggerMove(mv);
@@ -913,6 +923,7 @@ export default function ChatPanel({
         contentHints,
         meal ? { text: pickMealToast(lang, laughCountRef.current), pitch: 0.12, rate: 0 } : undefined,
         intensity,
+        storyRate,
       );
       return reply;
     }
@@ -923,7 +934,7 @@ export default function ChatPanel({
     applyContentMood({ ...(contentHints ?? {}), joy: style.joy });
     laughCountRef.current++;
     notifySpeaking(reply);
-    speak(reply, characterId, lang, { ...(contentHints ?? {}), joy: style.joy }, undefined, intensity);
+    speak(reply, characterId, lang, { ...(contentHints ?? {}), joy: style.joy }, undefined, intensity, storyRate);
     return reply;
   };
 
@@ -987,7 +998,7 @@ export default function ChatPanel({
       return () => { markChatRoomClosed(); };
     }
     const openHints = inStory
-      ? { joy: 0.48, neutral: 0.35 }
+      ? { ...STORY_SPEECH_HINTS }
       : shortDaily
         ? greetingHints(visit)
         : namedHello
@@ -996,7 +1007,12 @@ export default function ChatPanel({
     // One short welcome line; latch when it actually speaks (per-character).
     const t1 = setTimeout(() => {
       markOpenCheerDone(Date.now(), characterId);
-      sayLocal(openLine, openHints);
+      sayLocal(
+        openLine,
+        openHints,
+        undefined,
+        inStory ? { rateBias: STORY_SPEECH_RATE_BIAS } : undefined,
+      );
       if (inStory) pushAutoIdle(openLine, openHints, undefined, { openGreet: true });
     }, OPEN_CHEER_MS);
     const skipBrief =
@@ -1433,7 +1449,12 @@ export default function ChatPanel({
         void warmClassicFairyTaleCache();
         const n = storyTellCountRef.current++;
         const tale = pickClassicFairyTale(lang, n, resolvedClassicFairyTales());
-        sayLocal(formatTaleForSpeech(tale, lang), { joy: 0.55 });
+        sayLocal(
+          formatTaleForSpeech(tale, lang),
+          { ...STORY_SPEECH_HINTS },
+          undefined,
+          { rateBias: STORY_SPEECH_RATE_BIAS },
+        );
         done();
         return;
       }
@@ -1604,7 +1625,16 @@ export default function ChatPanel({
                 firstSentence = m[0];
                 sentenceStamp = Date.now();
                 notifySpeaking(firstSentence);
-                speak(firstSentence, characterId, lang, feltHints ?? { joy: 0.4, neutral: 0.3 }, undefined, felt?.intensity);
+                const storyLead = wantsStoryTurn(text, { storySession: !!loadStorySession() });
+                speak(
+                  firstSentence,
+                  characterId,
+                  lang,
+                  storyLead ? { ...STORY_SPEECH_HINTS } : (feltHints ?? { joy: 0.4, neutral: 0.3 }),
+                  undefined,
+                  felt?.intensity,
+                  storyLead ? STORY_SPEECH_RATE_BIAS : 0,
+                );
               }
             }
             setStreamDraft(clean || '');
@@ -2139,7 +2169,12 @@ export default function ChatPanel({
                 feedUtterance(prompt);
                 const n = storyTellCountRef.current++;
                 const tale = pickClassicFairyTale(lang, n, resolvedClassicFairyTales());
-                sayLocal(formatTaleForSpeech(tale, lang), { joy: 0.55 });
+                sayLocal(
+                  formatTaleForSpeech(tale, lang),
+                  { ...STORY_SPEECH_HINTS },
+                  undefined,
+                  { rateBias: STORY_SPEECH_RATE_BIAS },
+                );
                 return;
               }
               if (isTopicalContentTurn(prompt)) {

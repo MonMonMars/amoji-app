@@ -90,7 +90,7 @@ describe('long-talk budgets and system blocks', () => {
     expect(scienceSystemBlock('yue')).toMatch(/唔使跟住/);
     expect(helpSystemBlock('en')).toMatch(/2–5 clear steps/);
     expect(helpSystemBlock('yue')).toMatch(/2–5 個短步驟/);
-    expect(longTalkSystemBlock('story', 'en')).toMatch(/6–14 sentences/);
+    expect(longTalkSystemBlock('story', 'en')).toMatch(/12–22 sentences/);
     expect(longTalkSystemBlock('science', 'en')).toMatch(/SCIENCE/);
     expect(longTalkSystemBlock('help', 'en')).toMatch(/PROBLEM-HELP/);
   });

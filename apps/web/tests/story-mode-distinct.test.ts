@@ -69,6 +69,7 @@ describe('story mode distinct from chat', () => {
     expect(storyPersonaSuffix('en')).toMatch(/STORY MODE|train/i);
     expect(storyPersonaSuffix('en')).toMatch(/not ordinary chat|steer with you|in-character/i);
     expect(storyPersonaSuffix('en')).toMatch(/Never bolt dance|skill brief/i);
+    expect(storyPersonaSuffix('en')).toMatch(/emotional arc|unhurried|never a flat short summary/i);
     saveStorySession({
       sceneId: 'rainy-cafe-window',
       characterId: 'a01-shino',

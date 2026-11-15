@@ -73,12 +73,22 @@ describe('classic fairy-tale catalog', () => {
     }
   });
 
-  it('rotates length tiers on repeat picks', () => {
+  it('rotates medium+ length tiers on repeat picks (never lead with flat short)', () => {
     const lengths = [0, 1, 2, 3, 4].map((n) => pickClassicFairyTale('en', n).length);
-    expect(lengths.slice(0, 4)).toEqual(['short', 'medium', 'long', 'veryLong']);
-    expect(lengths[4]).toBe('short');
+    expect(lengths.slice(0, 4)).toEqual(['medium', 'long', 'veryLong', 'long']);
+    expect(lengths[4]).toBe('medium');
     expect(pickClassicFairyTale('yue', 0).text.yue.trim().length).toBeGreaterThan(20);
     expect(pickClassicFairyTale('ja', 2).text.ja.trim().length).toBeGreaterThan(20);
+  });
+
+  it('EN spoken tales are longer emotional retellings, not tiny summaries', () => {
+    expect(TALE_LENGTH_BANDS.short.min).toBeGreaterThanOrEqual(400);
+    expect(TALE_LENGTH_BANDS.veryLong.min).toBeGreaterThanOrEqual(1500);
+    for (const tale of CLASSIC_FAIRY_TALES) {
+      const body = tale.text.en;
+      expect(body).toMatch(/"|'|“|‘|「/); // dialogue / spoken beat
+      expect(spokenCharCount(formatTaleForSpeech(tale, 'en'))).toBeGreaterThan(400);
+    }
   });
 
   it('mirrors the catalog in public JSON for predownload', () => {
@@ -157,7 +167,9 @@ describe('demo talking-phase Story wiring', () => {
     expect(PANEL).toContain('formatTaleForSpeech');
     expect(PANEL).toContain("id === 'story'");
     expect(PANEL).toContain('storyTellCountRef');
-    // Showcase yes no longer routes story through a thin LLM ask.
+    expect(PANEL).toContain('STORY_SPEECH_HINTS');
+    expect(PANEL).toContain('STORY_SPEECH_RATE_BIAS');
+    // Showcase yes no longer routes story through a thin LLM stub.
     expect(PANEL).not.toContain('showcaseStoryAsk');
   });
 
