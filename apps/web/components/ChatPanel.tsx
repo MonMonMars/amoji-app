@@ -505,6 +505,8 @@ export default function ChatPanel({
   // r.48 — performance theatre: she offers private shows unprompted and
   // remembers the offer until you answer; a counter spaces the theatre out
   const pendingOfferRef = useRef<ShowcaseKind | null>(null);
+  /** Demo-phase chip id for the next send — seeds reply-mode length/emotion. */
+  const pendingDemoPhaseRef = useRef<string | null>(null);
   const lastOfferKindRef = useRef<ShowcaseKind | null>(null);
   const lastOfferAtRef = useRef(0);
   const perfCountRef = useRef(0);
@@ -1098,6 +1100,8 @@ export default function ChatPanel({
   const send = async (override?: string) => {
     const text = (override ?? input).trim();
     if (!text || busy) return;
+    const demoPhaseId = pendingDemoPhaseRef.current;
+    pendingDemoPhaseRef.current = null;
     setInput('');
     // A typed/spoken turn replaces any pending music pick sheet.
     setMusicPicks(null);
@@ -1519,6 +1523,7 @@ export default function ChatPanel({
           storySession: !!loadStorySession(),
           contentContinuation,
           characterId,
+          demoPhaseId: demoPhaseId ?? undefined,
           onPartial: (partial) => {
             // r.47 — the real stream is painting now: the wait cue stands down
             stopThinkingSound();
@@ -1991,6 +1996,7 @@ export default function ChatPanel({
             // Demo chips are one-topic tutorials — never carry a pending
             // showcase/tutorial offer into the same beat as the chip reply.
             pendingOfferRef.current = null;
+            pendingDemoPhaseRef.current = id;
             // Advance library rotation so repeat music/dance/sing taps
             // keep changing beds even when a facet wraps around.
             if (id === 'music' || id === 'dance' || id === 'sing') {
