@@ -2,7 +2,7 @@
 
 **Purpose:** Living checklist of product rules from the product owner. Agents must read this before chat/voice/pose/permission work and update it when rules change.
 
-**Last reviewed:** 2026-11-15 16:52 (Asia/Hong_Kong)  
+**Last reviewed:** 2026-11-15 17:02 (Asia/Hong_Kong)  
 **Demo:** https://monmonmars.github.io/amoji-app/  
 **Request log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn. Overlapping messages still count; never drop one.
 
@@ -53,6 +53,8 @@
 | Story Mode quality + UX polish | #403 |
 | Docs board #393–#395 Done / Outstanding honesty | #396 |
 | Docs tip + Pages honesty after #396; agent scrub green | #397 |
+| Docs tip after #397; Outstanding stays human-only | #398 |
+| Docs tip after #399–#403 product ship | #404 |
 | No history-resume ask (code) | #331 / #366 |
 
 ---
@@ -63,7 +65,7 @@
 |------|--------|
 | Talking nonsense / silly LLM | **Owner live OK** still required — code scrub on `main` (#360); agent Vitest scrub suites **78/78 pass**; no agent-fixable bug found this turn |
 | Phone smoke on live demo | **Human** — checklist [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) — do **not** mark Done without owner |
-| Pages rebuild | **Live** after #397 push (`last-modified` 2026-11-15 07:29 UTC · `pages.yml` `43689990439` success on `a50695b`). Agent `workflow_dispatch` is 403. |
+| Pages rebuild | **Live** after #404 push (`last-modified` 2026-11-15 08:58 UTC · `pages.yml` `43696764165` success on `1417198` · includes #399–#404). Agent `workflow_dispatch` is 403. |
 
 ### Hold
 
@@ -76,7 +78,9 @@
 
 | Date (HKT) | Change |
 |------------|--------|
-| 2026-11-15 ~16:40 | Owner ask: lang F+M = Yes (#363/#395); pitch buttons were Partial (#374 auto-only) → shipping selectable deep/mid/bright on `cursor/voice-lang-gender-pitch-0340-0eac` |
+| 2026-11-15 ~17:02 | Continue audit: tip `1417198` (#399–#404 on main); Pages live (`last-modified` 08:58 UTC · run `43696764165`); board was stale at `a50695b` — docs honesty refresh; Outstanding still human-only |
+| 2026-11-15 ~16:52 | #403 Story quality on main; bible tip after product ship (#404) |
+| 2026-11-15 ~16:40 | Owner ask: lang F+M = Yes (#363/#395); pitch buttons were Partial (#374 auto-only) → shipped selectable deep/mid/bright as #400 |
 | 2026-11-15 ~15:52 | Post-#397: Pages confirmed live (`last-modified` 07:29 UTC · run `43689990439`); tip `a50695b`; resume/history/nonsense themes already shipped — Outstanding still human-only |
 | 2026-11-15 ~15:21 | Post-#396: Pages confirmed live (`last-modified` 05:04 UTC); agent nonsense Vitest 78/78; Outstanding stays human-only (phone smoke + owner nonsense OK); board tip → `e52ff02` |
 | 2026-11-15 ~12:53 | #393/#394/#395 → Done on main; Pages already rebuilt from #395; Outstanding = nonsense verify + phone smoke; no-history-resume already shipped (#331/#366) |
