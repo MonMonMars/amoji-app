@@ -20,11 +20,16 @@ describe('unified speech caption in chat history', () => {
     expect(panel).toContain('commitCaptionLines');
     expect(panel).toContain('captionLines');
     expect(panel).toContain('captionLadder');
+    expect(panel).toContain('captionSealAccRef');
+    expect(panel).toContain('whenSpeechIdle');
+    expect(panel).toContain('speechPending()');
     expect(panel).toContain('data-testid="speech-caption"');
     expect(panel).toContain('data-testid="speech-caption-settled"');
     expect(panel).toContain('data-testid="speech-caption-front"');
     // Live clause no longer painted inside the last history bubble.
     expect(panel).not.toMatch(/liveClause=\{liveClause/);
+    // Must not lock the first clear forever — lead→remainder needs a replace.
+    expect(panel).not.toMatch(/if \(row\.captionLines\?\.length\) return h;/);
   });
 
   it('assistant streaming tail hides the full bubble so captions cannot overlap it', () => {

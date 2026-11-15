@@ -264,6 +264,7 @@ import {
   SPEECH_CAPTION_EVENT,
   captionsCoverReply,
   commitCaptionLines,
+  dedupeConsecutiveCaptions,
   rollingCaptionFromText,
   stepCaptionLadder,
 } from '../lib/speech-caption';
@@ -346,6 +347,12 @@ export default function ChatPanel({
   /** Finished captions promoted above the live front row (no overlap). */
   const [captionLadder, setCaptionLadder] = useState<string[]>([]);
   const captionLadderRef = useRef<string[]>([]);
+  /**
+   * Accumulates sealed clauses across lead→remainder TTS jobs. Each job calls
+   * clearSpeechCaption when it settles; sealing into history only on the first
+   * clear locked a partial line and hid the rest of the reply (#393 gap).
+   */
+  const captionSealAccRef = useRef<string[]>([]);
   /** Streamed reply draft — not painted full-width in history while speaking. */
   const [streamDraft, setStreamDraft] = useState('');
   const [pinnedBottom, setPinnedBottom] = useState(true);
@@ -417,38 +424,55 @@ export default function ChatPanel({
     return () => window.removeEventListener('amoji:voice-replay-hint', onHint);
   }, []);
   useEffect(() => {
+    const flushCaptionSeal = () => {
+      const final = dedupeConsecutiveCaptions(captionSealAccRef.current);
+      captionSealAccRef.current = [];
+      if (!final.length) return;
+      setHistory((h) => {
+        for (let i = h.length - 1; i >= 0; i--) {
+          const row = h[i]!;
+          if (row.role !== 'assistant' || !row.content.trim() || row.content.trim() === '…') {
+            continue;
+          }
+          // Prefer spoken clauses whenever they cover (or nearly cover)
+          // the reply — otherwise keep the full blob for truncated TTS.
+          if (
+            !captionsCoverReply(final, row.content)
+            && final.join('').length < Math.min(24, row.content.trim().length / 2)
+          ) {
+            return h;
+          }
+          // Replace any partial seal from an earlier job in this turn
+          // (streamed lead finished before the remainder).
+          const next = h.slice();
+          next[i] = { ...row, captionLines: final };
+          return next;
+        }
+        return h;
+      });
+    };
     const onCap = (e: Event) => {
       const line = (e as CustomEvent<{ line?: string }>).detail?.line ?? '';
       setSpeechCaption((prev) => {
-        // Speech ended — seal live clauses onto the last assistant turn so
-        // history keeps the caption lines instead of dumping the full phase.
+        // Live caption cleared — fold clauses into the accumulator. Flush into
+        // history only when the speech queue is idle so lead+remainder become
+        // one sealed body (no partial lock / duplicate full-phase replay).
         if (!line.trim()) {
           const sealed = commitCaptionLines(captionLadderRef.current, prev);
           captionLadderRef.current = [];
           setCaptionLadder([]);
           if (sealed.length) {
-            setHistory((h) => {
-              for (let i = h.length - 1; i >= 0; i--) {
-                const row = h[i]!;
-                if (row.role !== 'assistant' || !row.content.trim() || row.content.trim() === '…') {
-                  continue;
-                }
-                // Already sealed this turn (e.g. double clear event).
-                if (row.captionLines?.length) return h;
-                // Prefer spoken clauses whenever they cover (or nearly cover)
-                // the reply — otherwise keep the full blob for truncated TTS.
-                if (
-                  !captionsCoverReply(sealed, row.content)
-                  && sealed.join('').length < Math.min(24, row.content.trim().length / 2)
-                ) {
-                  return h;
-                }
-                const next = h.slice();
-                next[i] = { ...row, captionLines: sealed };
-                return next;
-              }
-              return h;
-            });
+            captionSealAccRef.current = dedupeConsecutiveCaptions([
+              ...captionSealAccRef.current,
+              ...sealed,
+            ]);
+          }
+          if (captionSealAccRef.current.length) {
+            if (speechPending()) {
+              whenSpeechIdle(flushCaptionSeal);
+            } else {
+              flushCaptionSeal();
+            }
           }
           return '';
         }
@@ -1898,9 +1922,12 @@ export default function ChatPanel({
             speechCaption.trim().length > 0
             || captionLadder.length > 0
             || (busy && streamDraft.trim().length > 0 && speakingNow);
+          // Keep the bubble body hidden across lead→remainder queue gaps so
+          // the full reply cannot flash beside captions mid-turn.
           const streamingTail =
             tailAssistant &&
             (speakingNow
+              || speechPending()
               || (busy && streamDraft.trim().length > 0)
               || captionActive) &&
             m.content.trim() !== '';

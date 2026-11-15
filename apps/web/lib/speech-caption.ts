@@ -65,6 +65,18 @@ export function rollingCaptionFromText(text: string, maxClauses = 1): string {
   return parts.slice(-maxClauses).join(' ');
 }
 
+/** Drop consecutive identical clauses (TTS lead→remainder can re-dispatch). */
+export function dedupeConsecutiveCaptions(lines: string[]): string[] {
+  const out: string[] = [];
+  for (const raw of lines) {
+    const s = raw.trim();
+    if (!s) continue;
+    if (out.length && out[out.length - 1] === s) continue;
+    out.push(s);
+  }
+  return out;
+}
+
 /**
  * Caption ladder: the live front line stays alone at the bottom. When a new
  * clause arrives, the previous front line moves up into settled history so
@@ -84,8 +96,11 @@ export function stepCaptionLadder(
   const c = current.trim();
   if (!n) return { ladder: [], current: '' };
   if (c && c !== n) {
-    const promoted = [...ladder, c].slice(-Math.max(1, maxSettled));
-    return { ladder: promoted, current: n };
+    // Skip promoting a line that is already the settled tail (re-dispatch).
+    const promoted = (ladder.length && ladder[ladder.length - 1] === c)
+      ? ladder
+      : [...ladder, c];
+    return { ladder: promoted.slice(-Math.max(1, maxSettled)), current: n };
   }
   return { ladder, current: n || c };
 }
@@ -97,10 +112,10 @@ export function stepCaptionLadder(
  */
 export function commitCaptionLines(ladder: string[], current: string): string[] {
   const c = current.trim();
-  const base = ladder.map((s) => s.trim()).filter(Boolean);
+  const base = dedupeConsecutiveCaptions(ladder);
   if (!c) return base;
   if (base.length && base[base.length - 1] === c) return base;
-  return [...base, c];
+  return dedupeConsecutiveCaptions([...base, c]);
 }
 
 /**
