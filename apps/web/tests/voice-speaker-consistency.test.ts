@@ -111,9 +111,10 @@ describe('voice does not switch speaker mid-line or between characters', () => {
     expect(audioOut).not.toMatch(/sharedCtx[\s\S]{0,80}\.sinkId/);
     expect(audioOut).toMatch(/cachedDefaultSink = ''|cachedDefaultSink = 'default'/);
     for (const src of [gtts, edge, clips, openai]) {
-      expect(src).toContain('pinDefaultOutput');
-      // Play first; pin on onplay / reject-retry — never await setSinkId first.
+      // #424: pin only via pinDefaultOutputAsync on play() reject-retry — never onplay.
+      expect(src).toContain('pinDefaultOutputAsync');
       expect(src).toMatch(/void audio\.play\(\)/);
+      expect(src).not.toMatch(/audio\.onplay = \(\) => \{[\s\S]*?pinDefaultOutput\(audio\)/);
     }
     expect(gtts).toContain('ensureCompanionPlaybackRoute');
     expect(edge).toContain('ensureCompanionPlaybackRoute');
