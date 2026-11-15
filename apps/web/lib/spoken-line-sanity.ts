@@ -51,9 +51,10 @@ export function asksUserInnerThoughts(line: string): boolean {
 /**
  * Pixel: never ask to “continue last time / pick up where we left off”.
  * History is kept silently; only the user may bring it up.
+ * Also catches common LLM paraphrases that still fish for a resume.
  */
 const BANNED_HISTORY_RESUME_ASK =
-  /\blast\s+time\s+we\s+(?:were\s+)?talking\b|\bpick\s+(?:it\s+)?(?:back\s+)?up\b.*\b(?:left\s+off|where)\b|\bpick\s+up\s+where\s+we\s+left\s+off\b|\bcontinue\s+(?:our\s+)?(?:talk|chat|conversation|thread)\b|\bcontinue\s+(?:the\s+)?(?:previous|last|earlier)\b|\bwhere\s+we\s+left\s+off\b|\bwant\s+to\s+pick\s+it\s+back\s+up\b|上次傾開|繼續嗰個話題|继续那个话题|继续刚才的话题|繼續之前個話題|我們繼續聊好嗎|我们继续聊好吗|我哋繼續傾好嗎|続きをし|さっきの話、続き|前回は「|続き、話す|Shall we continue the chat/i;
+  /\blast\s+time\s+we\s+(?:were\s+)?talking\b|\bpick\s+(?:it\s+)?(?:back\s+)?up\b.*\b(?:left\s+off|where)\b|\bpick\s+up\s+where\s+we\s+left\s+off\b|\bcontinue\s+(?:our\s+)?(?:talk|chat|conversation|thread)\b|\bcontinue\s+(?:the\s+)?(?:previous|last|earlier)\b|\bwhere\s+we\s+left\s+off\b|\bwant\s+to\s+pick\s+it\s+back\s+up\b|\b(?:shall|should)\s+we\s+continue\s+(?:the\s+)?(?:chat|talk|conversation)\b|\b(?:want|wanna|care)\s+to\s+(?:continue|resume)\b.*\b(?:chat|talk|conversation|thread|earlier|before|last)\b|\bresume\s+(?:our|the|where|from)\b|\bpick\s+up\s+(?:our|the|that|this)\s+(?:earlier|previous|last|old)\b|\bfrom\s+where\s+we\s+(?:stopped|paused|left)\b|上次傾開|繼續嗰個話題|继续那个话题|继续刚才的话题|繼續之前個話題|我們繼續聊好嗎|我们继续聊好吗|我哋繼續傾好嗎|想唔想繼續(?:嗰個|之前|剛才|刚才)?(?:話題|话题|傾|聊)|要不要继续(?:那个|刚才|之前)?(?:话题|聊)|接着(?:聊|说)吗|接著(?:聊|說)嗎|続きをし|さっきの話、続き|前回は「|続き、話す|続きから(?:話|しゃべ)|Shall we continue the chat/i;
 
 export function asksToResumeHistory(line: string): boolean {
   const t = (line ?? '').trim();
@@ -120,6 +121,25 @@ function splitSpokenSentences(text: string): string[] {
     .split(/(?<=[。．.！!？?])\s*/)
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+/**
+ * Drop sentences that volunteer a history-resume ask. Keeps the rest of the
+ * reply so a mixed “hi + want to continue last time?” line still greets.
+ * Whole-line resume asks scrub to empty (caller may fall back or stay silent).
+ */
+export function scrubHistoryResumeAsks(text: string): string {
+  const t = (text ?? '').trim();
+  if (!t) return '';
+  if (!asksToResumeHistory(t)) return t;
+  // "..." must not invent empty sentence crumbs before the resume ask.
+  const normalized = t.replace(/\.{2,}/g, '…');
+  const chunks = splitSpokenSentences(normalized);
+  if (chunks.length <= 1) return '';
+  return chunks
+    .filter((c) => !asksToResumeHistory(c) && c.replace(/[.…\s]/g, '').length > 0)
+    .join(' ')
+    .trim();
 }
 
 /** True when the user's message is asking the companion something. */
