@@ -56,6 +56,18 @@ describe('no loading um SFX', () => {
     }
   });
 
+  it('soft Japanese mood tics stay TTS — not ha/smile burst clips', () => {
+    for (const emotion of ['love', 'contentment', 'relief', 'pride'] as const) {
+      const text = INTERJECTIONS[emotion]?.ja?.text ?? '';
+      expect(text.length).toBeGreaterThan(0);
+      const kind = emotionClipKind(text, 'lead');
+      expect(
+        kind === 'ha' || kind === 'smile' || kind === 'giggle' || kind === 'laugh',
+        `${emotion}/ja → ${text} → ${kind}`,
+      ).toBe(false);
+    }
+  });
+
   it('does not ship thinking.wav hum', () => {
     expect(fs.existsSync(path.join(ROOT, 'public/sfx/thinking.wav'))).toBe(false);
   });

@@ -371,7 +371,9 @@
 // ja male base so deep does not floor into mid.
 // r2026-11-15.158: R12 — unifyCastMToon + matcap dampen on preview/thumbs/bake
 // (was chat-only); never gate shared shader path on characterId/seedKey.
-export const APP_REVISION = 'r2026-11-15.158';
+// r2026-11-15.159: stop ja soft mood tics (はい / ふぅ / ふう / ふん) mis-firing
+// ha/smile burst clips — lead classifiers were /^は/ and /^ふ/ catch-alls.
+export const APP_REVISION = 'r2026-11-15.159';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

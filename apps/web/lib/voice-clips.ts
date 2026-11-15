@@ -542,7 +542,13 @@ export function emotionClipKind(text: string, role: 'lead' | 'line'): EmotionCli
   if (/wow|ooh|哇|わあ|わー/.test(s)) return 'wow';
   if (/\bum+\b|\buh+\b|\bhmm+\b|嗯|えっと|うん|あの/.test(s)) return 'um';
   if (/\boh\b|oh gosh|\baww+\b|哎呀|あら|えっ|咦|诶/.test(s)) return 'oh';
-  if (/^哈/.test(raw) || /^は/.test(raw)) return 'ha';
-  if (/^ふ/.test(raw)) return 'smile';
+  // Ha burst: はあ / はぁ / はっ / は…… — never はい (yes / contentment tic).
+  if (
+    /^哈/.test(raw)
+    || /^(?:はあ|はぁ|はっ)/.test(raw)
+    || /^は[…。.！!～~]/.test(raw)
+  ) return 'ha';
+  // Smile burst: ふふ / ふっ / ふ…… — not soft ふぅ / ふう / ふん mood TTS tics.
+  if (/^(?:ふふ|ふっ)/.test(raw) || /^ふ[…。.！!～~]/.test(raw)) return 'smile';
   return null;
 }
