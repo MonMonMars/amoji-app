@@ -21,11 +21,12 @@ Tick on a real phone (prefer iPhone Safari). Hard refresh / clear site data once
 - [ ] Tapping news again rotates / does **not** loop the same old line forever
 - [ ] Longer tell feels fresh (widen on exhaust)
 
-### R11 idle (#415 v4 / #419 wipe / #422 v5 / #430 v6 / #432 honor picks)
+### R11 idle (#415 v4 / #419 wipe / #422 v5 / #430 v6 / #432 honor picks + owner-picks-win)
 
-- [ ] Idle is **`IdleQuaterniusHuman`** (near-still) — visibly different from old RPM F stand / Sassy / sky-look
-- [ ] After hard refresh + clear site data, prefs keys are `amoji.idle*.v6` (no stuck v5 RPM pin)
-- [ ] Owner prior idle pin + poke Want picks still stick after refresh (#432)
+- [ ] Fresh install / cleared site data → idle is **`IdleQuaterniusHuman`** (near-still)
+- [ ] If you previously Want-enabled / pinned RPM F/M (or other honorable stands), those **still play** after refresh — Quaternius must not remap them away
+- [ ] Prefs stay on `amoji.idle*.v6` (no wipe churn to a new version)
+- [ ] Poke SFX Want list from `docs/SFX_WANT_LIST.md` still drives reactions
 - [ ] After a chat turn ends, idle returns upright (no stuck lean / weird blend)
 
 ### R10 voice (#406 + #410 + #413 + #424 unmute + #425 real-male + #437 huge-gap + #429 chat-mic)

@@ -1,6 +1,6 @@
 // Per-companion idle pin. Same localStorage shape as the other chat prefs.
-// Default fallback = IdleRpmFStanding001 (last known good after #415/#422).
-// v6 migrates v1–v5 pins forward; only known-bad clips are scrubbed.
+// Fresh auto default = IdleQuaterniusHuman (#430). Owner pins (incl. RPM F/M)
+// migrate forward and win (#432). v6 migrates v1–v5; only known-bad scrubbed.
 
 import { idleClipById } from './idle-clips';
 import {

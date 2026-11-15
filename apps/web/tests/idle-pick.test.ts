@@ -96,7 +96,8 @@ describe('idle enable + pick', () => {
   it('persists enable toggles and keeps a non-empty pool', () => {
     mockStorage();
     forgetIdleEnabledCache();
-    expect(isIdleEnabled(5)).toBe(true);
+    expect(isIdleEnabled(6)).toBe(true); // Quaternius fresh default
+    expect(isIdleEnabled(5)).toBe(false);
     expect(isIdleEnabled(11)).toBe(false);
     expect(isIdleEnabled(8)).toBe(false);
     expect(isIdleEnabled(3)).toBe(false);
@@ -105,11 +106,11 @@ describe('idle enable + pick', () => {
     setIdleEnabled(thinkRail, true);
     expect(isIdleEnabled(thinkRail)).toBe(true);
     expect(listEnabledIdleClipIds()).toContain('Thinking');
-    setIdleEnabled(5, false);
+    setIdleEnabled(6, false);
     setIdleEnabled(thinkRail, false);
-    // Empty enable → reset to single upright stand (rail #5)
+    // Empty enable → reset to Quaternius (rail #6)
     expect(listEnabledIdleClipIds()).toEqual([
-      'IdleRpmFStanding001',
+      'IdleQuaterniusHuman',
     ]);
   });
 

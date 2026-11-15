@@ -10,9 +10,14 @@
 
 import { isRetiredIdleClip } from './idle-retired';
 
-/** Current prefs generation — migrate from every prior key, do not wipe. */
-export const IDLE_ENABLED_KEY = 'amoji.idleEnabled.v6';
-export const IDLE_PICK_KEY = 'amoji.idlePick.v6';
+/**
+ * Current prefs generation — migrate from every prior key, do not wipe.
+ * FREEZE: do not bump to v7+ without a migrate-forward path. Pref-version
+ * churn (v3→v4→v5 wipe) discarded owner selections — that is the bug.
+ */
+export const IDLE_PREFS_GENERATION = 6 as const;
+export const IDLE_ENABLED_KEY = `amoji.idleEnabled.v${IDLE_PREFS_GENERATION}`;
+export const IDLE_PICK_KEY = `amoji.idlePick.v${IDLE_PREFS_GENERATION}`;
 
 /** All prior idle enable keys (newest first for migrate preference). */
 export const LEGACY_IDLE_ENABLED_KEYS = [

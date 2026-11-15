@@ -1,41 +1,31 @@
-// Aggressive idle prefs scrub — every prior `amoji.idle*` row can stick a
-// bad pose across hard refreshes. On hydrate of the current prefs generation,
-// drop ALL idle keys except the live vN pair so defaults always win.
+// Idle prefs hygiene — NEVER wipe owner picks.
+//
+// History: agents bumped amoji.idle*.vN and called scrub-all to force new
+// defaults, discarding intentional pins/enables. That churn is banned.
+// Live path is idle-owner-migrate (readMigratingPrefJson) — migrate forward,
+// scrub only known-bad clips, keep honorable stands.
 
-export const IDLE_ENABLED_KEY = 'amoji.idleEnabled.v6';
-export const IDLE_PICK_KEY = 'amoji.idlePick.v6';
-
-const KEEP = new Set<string>([IDLE_ENABLED_KEY, IDLE_PICK_KEY]);
-
-let scrubbed = false;
+export {
+  IDLE_ENABLED_KEY,
+  IDLE_PICK_KEY,
+  IDLE_PREFS_GENERATION,
+  LEGACY_IDLE_ENABLED_KEYS,
+  LEGACY_IDLE_PICK_KEYS,
+  dropLegacyPrefKeys,
+  readMigratingPrefJson,
+} from './idle-owner-migrate';
 
 /**
- * Remove every localStorage key starting with `amoji.idle` except the current
- * v6 enabled/pick pair. Returns removed key names (empty when already scrubbed
- * this JS session or storage unavailable).
+ * No-op (kept for import stability). Previously wiped every `amoji.idle*`
+ * key except the live pair — that discarded owner selections before migrate
+ * could run. Prefer readMigratingPrefJson / dropLegacyPrefKeys after a
+ * successful migrate.
  */
 export function scrubAllAmojiIdleKeys(): string[] {
-  if (scrubbed) return [];
-  scrubbed = true;
-  const removed: string[] = [];
-  try {
-    if (typeof localStorage === 'undefined') return removed;
-    const keys: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k) keys.push(k);
-    }
-    for (const k of keys) {
-      if (!k.startsWith('amoji.idle')) continue;
-      if (KEEP.has(k)) continue;
-      localStorage.removeItem(k);
-      removed.push(k);
-    }
-  } catch { /* private mode */ }
-  return removed;
+  return [];
 }
 
-/** Test helper — allow re-scrub after forging legacy keys. */
+/** Test helper — scrub is a permanent no-op; nothing to forget. */
 export function forgetIdlePrefsScrub(): void {
-  scrubbed = false;
+  /* no-op */
 }

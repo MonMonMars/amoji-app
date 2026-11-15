@@ -94,15 +94,14 @@ export function curatedRailByLegacyLibNum(libNum: number): IdleCuratedRailEntry 
 }
 
 /**
- * Default ON rotation — single calm upright planted stand (v5):
- * #42 IdleRpmFStanding001 only (rail #5).
- * Dropped dual F/M A→B from v4 (rail #11). Still out / banned from auto:
- * BreathCalm / StandardIdle / Sassy / MVar001 / look / stretch / hug / wave.
- * When owner pins exist, migrate forward (idle-owner-migrate) — do not wipe
- * for Quaternius default churn (#430).
+ * Default ON rotation (fresh install / empty prefs) — Quaternius rail #6
+ * (#430). Owner-migrated enables (e.g. rail #5 IdleRpmFStanding001) win via
+ * idle-owner-migrate — do not wipe for Quaternius default churn (#432).
+ * Still out / banned from auto: BreathCalm / StandardIdle / Sassy / MVar001 /
+ * look / stretch / hug / wave.
  */
 export function defaultCuratedRailNums(): number[] {
-  return [5];
+  return [6];
 }
 
 /**

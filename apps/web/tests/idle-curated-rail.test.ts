@@ -44,10 +44,10 @@ describe('curated idle chat rail', () => {
     }
   });
 
-  it('defaults to a single calm upright stand (rail #5)', () => {
-    expect(defaultCuratedRailNums()).toEqual([5]);
+  it('defaults to Quaternius (rail #6); owner enables migrate separately', () => {
+    expect(defaultCuratedRailNums()).toEqual([6]);
     expect(listEnabledIdleClipIds()).toEqual([
-      'IdleRpmFStanding001',
+      'IdleQuaterniusHuman',
     ]);
   });
 

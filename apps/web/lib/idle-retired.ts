@@ -29,18 +29,33 @@ export const DEFAULT_IDLE_CLIP_ID = 'IdleQuaterniusHuman';
 export const IDLE_PIN_FALLBACK_CLIP_ID = DEFAULT_IDLE_CLIP_ID;
 
 /**
- * Clips that must never return via defaults, auto-idle, or pin remap.
- * Still may exist as manual rail rows until a catalog scrub, but resolve /
- * auto paths remap away from them.
+ * Truly toxic — always remap away (sky-look / BreathCalm / Sassy / etc.).
+ * Never play these even when somehow stored.
  */
-export const BANNED_AUTO_IDLE_CLIP_IDS = new Set<string>([
+export const TOXIC_IDLE_CLIP_IDS = new Set<string>([
   'IdleBreathCalm',
   'IdleSassy',
   'StandardIdle',
   'IdleRpmMVar001', // sudden sky-look
-  // v5 "calm" RPM stands still read as the same bad pose to owner — ban from auto.
+]);
+
+/**
+ * Banned from *auto* default pools (fresh install → Quaternius), but
+ * still playable when the owner pinned/enabled them (#432 / #430 conflict).
+ * resolveIdleClipId must NOT remap these to Quaternius.
+ */
+export const OWNER_HONORABLE_STAND_CLIP_IDS = new Set<string>([
   'IdleRpmFStanding001',
   'IdleRpmMStanding001',
+]);
+
+/**
+ * Union used by isBannedAutoIdleClip / isPixelCalmIdleClip.
+ * Auto banks skip these; owner pin/enable paths still play honorable stands.
+ */
+export const BANNED_AUTO_IDLE_CLIP_IDS = new Set<string>([
+  ...TOXIC_IDLE_CLIP_IDS,
+  ...OWNER_HONORABLE_STAND_CLIP_IDS,
 ]);
 
 /**
@@ -80,27 +95,33 @@ export function isBannedAutoIdleClip(clipId: string | null | undefined): boolean
   return BANNED_AUTO_IDLE_CLIP_IDS.has(clipId);
 }
 
-/**
- * Banned from auto rotation / fallback, but still playable when the owner
- * explicitly pinned them (#432). Soften/hang must not frankenstein these
- * into Quaternius mid-blend — play the pin as authored.
- */
-export const OWNER_HONORABLE_BANNED_AUTO = new Set<string>([
-  'IdleRpmFStanding001',
-  'IdleRpmMStanding001',
-]);
-
-export function isOwnerHonorableBannedAuto(clipId: string | null | undefined): boolean {
+export function isToxicIdleClip(clipId: string | null | undefined): boolean {
   if (!clipId) return false;
-  return OWNER_HONORABLE_BANNED_AUTO.has(clipId);
+  return TOXIC_IDLE_CLIP_IDS.has(clipId);
 }
 
-/** Auto / rotation / remap path — banned-auto → Quaternius fallback. */
+export function isOwnerHonorableStand(clipId: string | null | undefined): boolean {
+  if (!clipId) return false;
+  return OWNER_HONORABLE_STAND_CLIP_IDS.has(clipId);
+}
+
+/** @deprecated alias — pose-blend callers */
+export const OWNER_HONORABLE_BANNED_AUTO = OWNER_HONORABLE_STAND_CLIP_IDS;
+
+export function isOwnerHonorableBannedAuto(clipId: string | null | undefined): boolean {
+  return isOwnerHonorableStand(clipId);
+}
+
+/**
+ * Remap toxic / retired / farewell → Quaternius.
+ * Owner-honorable RPM stands stay as-is so #430 Quaternius default cannot
+ * override migrated pins/enables (#432 strengthen).
+ */
 export function resolveIdleClipId(clipId: string): string {
   if (
     isRetiredIdleClip(clipId)
     || isFarewellOnlyIdleClip(clipId)
-    || isBannedAutoIdleClip(clipId)
+    || isToxicIdleClip(clipId)
   ) {
     return IDLE_PIN_FALLBACK_CLIP_ID;
   }
@@ -108,20 +129,12 @@ export function resolveIdleClipId(clipId: string): string {
 }
 
 /**
- * Mixer play path. When `honorOwnerPin`, keep owner-selected RPM stands
- * instead of remapping them to Quaternius (which + hang/soften looked like
- * a Quaternius+RPM frankenstein blend).
+ * Mixer play path. Owner-honorable stands always keep (same as resolveIdleClipId).
+ * `honorOwnerPin` retained for pose-blend call sites; toxic still remaps.
  */
 export function resolveIdleClipForPlay(
   clipId: string,
-  opts?: { honorOwnerPin?: boolean },
+  _opts?: { honorOwnerPin?: boolean },
 ): string {
-  if (isRetiredIdleClip(clipId) || isFarewellOnlyIdleClip(clipId)) {
-    return IDLE_PIN_FALLBACK_CLIP_ID;
-  }
-  if (isBannedAutoIdleClip(clipId)) {
-    if (opts?.honorOwnerPin && isOwnerHonorableBannedAuto(clipId)) return clipId;
-    return IDLE_PIN_FALLBACK_CLIP_ID;
-  }
-  return clipId;
+  return resolveIdleClipId(clipId);
 }
