@@ -110,26 +110,29 @@ const TAG_CLIP_BPM: Partial<Record<MotionTag, number>> = {
 };
 
 const PREFERRED: Partial<Record<MotionTag, readonly string[]>> = {
-  C112: ['lib_C112'],
+  C112: ['lib_C112', 'Sing'],
   // Prefer clips that carry real hip+leg keys so feet free with the beat.
-  C113: ['lib_C61', 'lib_C03', 'lib_C113'],
-  C114: ['lib_C03', 'lib_C61', 'lib_C114', 'lib_C118'],
-  C110: ['lib_C110'],
-  C118: ['lib_C118', 'lib_C114', 'lib_C03'],
-  C117: ['lib_C117', 'lib_C128', 'lib_C116'],
-  C128: ['lib_C128', 'lib_C117', 'lib_C116'],
-  C116: ['lib_C116', 'lib_C117', 'lib_C128'],
-  C111: ['lib_C111'],
-  C03: ['lib_C03', 'lib_C61', 'lib_C113'],
-  C60: ['lib_C60'],
-  C61: ['lib_C61', 'lib_C03', 'lib_C125'],
-  C62: ['lib_C62', 'lib_C127'],
-  C09: ['lib_C09'],
-  C119: ['lib_C119', 'lib_C118'],
-  C124: ['lib_C124', 'lib_C118'],
-  C125: ['lib_C125', 'lib_C61'],
-  C126: ['lib_C126', 'lib_C125'],
-  C127: ['lib_C127', 'lib_C62'],
+  C113: ['lib_C61', 'lib_C03', 'lib_C113', 'Dance'],
+  C114: ['lib_C03', 'lib_C61', 'lib_C114', 'lib_C118', 'Dance'],
+  C110: ['lib_C110', 'Dance'],
+  C118: ['lib_C118', 'lib_C114', 'lib_C03', 'Dance'],
+  C117: ['lib_C117', 'lib_C128', 'lib_C116', 'Sing'],
+  C128: ['lib_C128', 'lib_C117', 'lib_C116', 'Sing'],
+  C116: ['lib_C116', 'lib_C117', 'lib_C128', 'Sing'],
+  C111: ['lib_C111', 'Dance'],
+  C03: ['lib_C03', 'lib_C61', 'lib_C113', 'Dance'],
+  C60: ['lib_C60', 'Dance'],
+  C61: ['lib_C61', 'lib_C03', 'lib_C125', 'Dance'],
+  C62: ['lib_C62', 'lib_C127', 'Dance'],
+  C09: ['lib_C09', 'Dance'],
+  C119: ['lib_C119', 'lib_C118', 'Dance'],
+  C124: ['lib_C124', 'lib_C118', 'Dance'],
+  C125: ['lib_C125', 'lib_C61', 'Dance'],
+  C126: ['lib_C126', 'lib_C125', 'Dance'],
+  C127: ['lib_C127', 'lib_C62', 'Dance'],
+  // Always have a real singing / dancing body clip in the preferred chain.
+  'generic-sing': ['Sing', 'lib_C116', 'lib_C112', 'lib_C117'],
+  'generic-dance': ['Dance', 'lib_C61', 'lib_C03', 'lib_C113'],
 };
 
 export function estimateBpm(style: string, _clipId?: string): number {
@@ -218,7 +221,11 @@ export function resolvePerfMotion(clip: {
   const preferredClipBpm = clipBpmForTag(tag);
   const timeScale = timeScaleForBpm(bpm, clipBpm);
   const preferredClipIds = PREFERRED[tag] ?? (tag.startsWith('C') ? [`lib_${tag}`] : []);
-  const fallbackClipIds: readonly string[] = clip.kind === 'song' ? ['Sing'] : ['Dance'];
+  // Fallbacks always include the classic Sing/Dance VRMAs plus a leggy lib_C*
+  // so a missing preferred file never leaves the body in idle/T-pose.
+  const fallbackClipIds: readonly string[] = clip.kind === 'song'
+    ? ['Sing', 'lib_C116', 'lib_C112', 'Dance']
+    : ['Dance', 'lib_C61', 'lib_C03', 'lib_C113'];
   return {
     tag,
     label: TAG_LABEL[tag] ?? tag,

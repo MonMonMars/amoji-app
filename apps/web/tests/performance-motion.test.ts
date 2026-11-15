@@ -38,7 +38,8 @@ describe('performance-motion (t725-729 + measured BPM)', () => {
     expect(p.preferredClipBpm).toBe(72);
     expect(p.timeScale).toBeLessThan(1);
     expect(p.preferredClipIds[0]).toBe('lib_C112');
-    expect(p.fallbackClipIds).toEqual(['Sing']);
+    expect(p.fallbackClipIds[0]).toBe('Sing');
+    expect(p.fallbackClipIds).toContain('lib_C116');
   });
 
   it('upbeat dance uses measured BPM when available', () => {
@@ -47,7 +48,18 @@ describe('performance-motion (t725-729 + measured BPM)', () => {
     expect(p.bpmMeasured).toBe(true);
     expect(p.bpm).toBe(measuredBpm('dance-silent-dance-floor'));
     expect(p.clipBpm).toBe(100);
-    expect(p.fallbackClipIds).toEqual(['Dance']);
+    expect(p.fallbackClipIds[0]).toBe('Dance');
+    expect(p.fallbackClipIds).toContain('lib_C61');
+  });
+
+  it('generic song prefers Sing; default dance prefers legs then Dance', () => {
+    const song = resolvePerfMotion({ id: 'sing-f-twinkle', kind: 'song', style: 'mystery groove' });
+    expect(song.tag).toBe('generic-sing');
+    expect(song.preferredClipIds[0]).toBe('Sing');
+    const dance = resolvePerfMotion({ id: 'dance-happy-loop', kind: 'dance', style: 'mystery groove' });
+    expect(dance.tag).toBe('C61');
+    expect(dance.preferredClipIds[0]).toBe('lib_C61');
+    expect(dance.preferredClipIds).toContain('Dance');
   });
 
   it('disco / dj clip ids prefer DJ/HypeMan tags', () => {
