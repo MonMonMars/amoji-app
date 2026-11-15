@@ -85,7 +85,9 @@ describe('curated idle chat rail', () => {
 
   it('resolveLegacyLibPin maps library # or clip id', () => {
     expect(resolveLegacyLibPin('3')).toBe('LookAround');
-    expect(resolveLegacyLibPin('96')).toBe('IdleRpmFStanding001');
+    // Retired #96 remaps to idle-retired DEFAULT (Quaternius after #430).
+    // Owner IdleRpmFStanding001 pins still migrate via idle-owner-migrate.
+    expect(resolveLegacyLibPin('96')).toBe('IdleQuaterniusHuman');
     expect(resolveLegacyLibPin('LookAround')).toBe('LookAround');
     expect(idleByNum(96)?.retired).toBe(true);
     expect(idleClipById('LookAround')?.num).toBe(
