@@ -1,20 +1,20 @@
 # Amoji project status board
 
-**Generated:** 2026-11-14 22:15 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-15 12:53 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** open [`project-status.html`](./project-status.html) in a browser.  
-**`main` tip:** `2266df8` (#382 docs · product tip `#379` gate location)
+**`main` tip:** `3ade506` (#395 all-langs voice · includes #385–#394)
 
 ## Snapshot
 
 | Bucket | Count |
 | --- | ---: |
-| **Done** — merged to `main` | 80+ stack · Nov 13–14 wave #362–#364 / #373–#375 / #379 |
+| **Done** — merged to `main` | 80+ stack · Nov 15 wave #385–#395 |
 | **Open product PRs** | **0** (remaining spikes: draft #20 · #1) |
 | **Outstanding** — actionable code left for agents | **0** |
-| **Outstanding** — Pixel / human actions | [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
+| **Outstanding** — Pixel / human actions | [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) · talking-nonsense live verify |
 | **Hold** | licensed music · Stripe live keys · Product Hunt · Search Console · spikes #1 / #20 |
 | Docs missing | 0 |
 
@@ -38,7 +38,23 @@
 
 ## Done (merged to `main`)
 
-Living tip: `082f693`. Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
+Living tip: `3ade506`. Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
+
+### Nov 15 wave (#385–#395)
+
+| PR | Item | Notes |
+| --- | --- | --- |
+| [#395](https://github.com/MonMonMars/amoji-app/pull/395) | All langs/genders speak | Pages rebuilt from this push |
+| [#394](https://github.com/MonMonMars/amoji-app/pull/394) | Stop idle forward lean / hips blend yaw | |
+| [#393](https://github.com/MonMonMars/amoji-app/pull/393) | Caption history de-dupe (no full-phase replay) | |
+| [#392](https://github.com/MonMonMars/amoji-app/pull/392) | Idle pose → Pixel-OK calm stands | |
+| [#391](https://github.com/MonMonMars/amoji-app/pull/391) | Sing ask no Soave+月光光 | |
+| [#390](https://github.com/MonMonMars/amoji-app/pull/390) | Poke lean toward poked side | |
+| [#389](https://github.com/MonMonMars/amoji-app/pull/389) | Docs Done/Outstanding board | |
+| [#388](https://github.com/MonMonMars/amoji-app/pull/388) | Story Mode ≠ chat | |
+| [#387](https://github.com/MonMonMars/amoji-app/pull/387) | Gate voice stable + audible | |
+| [#386](https://github.com/MonMonMars/amoji-app/pull/386) | Stop double-speak | |
+| [#385](https://github.com/MonMonMars/amoji-app/pull/385) | News tell when feeds/LLM fail | |
 
 ### Nov 13–14 wave
 
@@ -126,9 +142,9 @@ Earlier finish pass still on `main`: #306–#325 and #280–#305 era.
 
 ### Human / Pixel
 
-1. **Merge #353** (this docs refresh) after CI green.
-2. **Live Pages verify** after mass merge (setup → select → gate → chat; poke lean + SFX; news without fishing asks; story/science longer replies; systems/payment when env present).
-3. **Optional triage** of stale spikes #1 / #20 / #154 / #240 — only if Pixel asks.
+1. **Phone smoke** on live Pages — [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) (setup → select → gate → chat; poke lean + SFX; news; story; multi-lang voice; caption history; lean/blend).
+2. **Talking-nonsense verify** on live — code scrub on `main` (#360); still needs owner OK.
+3. **Optional triage** of Hold spikes #1 / #20 — only if Pixel asks.
 4. Hold items below (env / marketing / licensed catalog).
 
 ---
@@ -141,7 +157,7 @@ Earlier finish pass still on `main`: #306–#325 and #280–#305 era.
 | Stripe live keys / Payment Link | Env only (`STRIPE_*`, `NEXT_PUBLIC_STRIPE_PAYMENT_LINK`) — code on `main` via #354 |
 | Product Hunt shoot / demo video | Marketing human work |
 | Google Search Console sitemap submit | Human; #357 ships `sitemap.xml` / `robots.txt` under `/amoji-app` |
-| Live github.io product eyeball | Pages rebuild after merge; curl smoke only proves shell is up |
+| Live github.io product eyeball | Pages already rebuilt from #395; curl proves shell; owner phone smoke still required |
 | Modular GLBs / CosyVoice refs / GPU TTS hosts | Asset / infra Holds — not blocking Pages |
 | Spikes #1 / #20 | Do not touch unless Pixel asks (#154/#240 closed superseded) |
 
@@ -149,11 +165,10 @@ Earlier finish pass still on `main`: #306–#325 and #280–#305 era.
 
 ## Pixel merge order (post-mass-merge)
 
-Mass merge complete. Remaining:
+Mass merge complete through #395. Remaining:
 
-1. **#353** status docs (this PR) → merge when CI green.
-2. **Pages eyeball** on live `/setup`.
-3. **Holds** stay Hold; stale spikes stay untouched unless Pixel asks.
+1. **Phone smoke** on live demo (Pages already serving #395 tip).
+2. **Holds** stay Hold; spikes #1 / #20 untouched unless Pixel asks.
 
 ### Do not
 
@@ -189,9 +204,12 @@ Mass merge complete. Remaining:
 | Systems | Support email + wipe | **Done** | #355 |
 | Systems | Security / legal / storage finish (+ fonts) | **Done** | #356 / #336 |
 | Marketing | SEO metadata / sitemap / robots / JSON-LD | **Done** | #357 |
-| Docs | Status board post-merge refresh | **Open (docs)** | #353 |
+| Docs | Status board post-#395 refresh | **Done** | this PR |
+| Chat UX | Caption history de-dupe | **Done** | #393 |
+| VRM / Idle | No lean-forward / blend yaw weird | **Done** | #394 |
+| Audio | All langs/genders speak | **Done** | #395 |
 | Music | Licensed stream/embed beyond Mixkit | **Hold** | `docs/MUSIC_STREAMING.md` |
-| Verify | Post-merge live check on Pages | **Hold** | Needs Pages rebuild + human eyeball |
+| Verify | Post-merge live check on Pages | **Human** | Pages live; phone smoke pending |
 
 ---
 
@@ -209,4 +227,4 @@ Mass merge complete. Remaining:
 | Merge checklist | `docs/MERGE_CHECKLIST.md` | Refreshed — post-mass-merge |
 | Music streaming | `docs/MUSIC_STREAMING.md` | Complete (licensed Hold noted) |
 | Job / voice checklist | `AMOJI_JOB_CHECKLIST.md` | Refreshed — prefer this board for open PR truth |
-| This status board | `docs/project-status.html` + this file | Refreshed 2026-11-11 18:06 HKT |
+| This status board | `docs/project-status.html` + this file | Refreshed 2026-11-15 12:53 HKT |
