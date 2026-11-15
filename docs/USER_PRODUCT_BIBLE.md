@@ -2,11 +2,12 @@
 
 **Purpose:** Living checklist of product rules from the product owner. Agents must read this before chat/voice/pose/permission work and update it when rules change.
 
-**Last reviewed:** 2026-11-15 17:02 (Asia/Hong_Kong)  
+**Last reviewed:** 2026-11-15 18:30 (Asia/Hong_Kong)  
 **Demo:** https://monmonmars.github.io/amoji-app/  
+**`main` tip:** `5e5bb8b` (#409) · Pages `last-modified` 2026-11-15 10:10 UTC includes #406–#409  
 **Request log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn. Overlapping messages still count; never drop one.
 
-**Standing:** Merged ≠ Done on live Pages until owner phone-smoke OK. Owner asked: push + merge without waiting for approval.
+**Standing:** Merged ≠ Done on live Pages until owner phone-smoke OK. Owner asked: push + merge without waiting for approval. Do **not** claim Done without code on `main` + honest smoke gaps.
 
 ---
 
@@ -41,12 +42,14 @@
 | News tell when feeds/LLM fail (code) | #385 |
 | Gate voice test stable + audible (code) | #387 |
 | Story Mode distinct from chat (code) | #388 |
-| Poke lean toward poked side (code) | #390 |
+| Poke lean toward poked side (code) | #390 + #409 (finger vs hips) — **phone Outstanding** |
 | Sing ask no Soave+月光光 nonsense (code) | #391 |
-| Idle pose Pixel-OK calm stands (code) | #392 |
+| Idle pose upright planted calm stands v3 (code) | #392 + #407 — **phone Outstanding** |
 | Caption then whole phase again in history (code) | #393 |
-| Blend-to-back / lean forward weird (code) | #394 |
+| Blend-to-back / idle forward lean (code) | #394 |
 | All langs/genders speak — not Yue-female-only (code) | #395 |
+| Audible pitch tiers + male delivery + sink route (code) | #406 — **phone Outstanding** (R10) |
+| Unify cast lighting / MToon path (code) | #408 — **phone Outstanding** |
 | Talk leftover repeats / history dup | #399 |
 | Reply-mode length + emotion chart | #401 |
 | Classic fairy tales + Story chip predownload | #402 |
@@ -55,6 +58,7 @@
 | Docs tip + Pages honesty after #396; agent scrub green | #397 |
 | Docs tip after #397; Outstanding stays human-only | #398 |
 | Docs tip after #399–#403 product ship | #404 |
+| Docs tip / Pages after #399–#404 | #405 |
 | No history-resume ask (code) | #331 / #366 |
 
 ---
@@ -63,10 +67,14 @@
 
 | Item | Notes |
 |------|--------|
-| Voice pitch/male/sink (R10) | **In PR** `cursor/voice-pitch-male-output-0340-0eac` — deep≠bright audible; male buttons male; sink = gate speakers. Device verify after merge. |
-| Talking nonsense / silly LLM | **Owner live OK** still required — code scrub on `main` (#360); agent Vitest scrub suites **78/78 pass**; no agent-fixable bug found this turn |
+| Voice pitch/male/sink (R10) | #406 on `main`; follow-up **`cursor/voice-male-pitch-v2-0340-0eac`** widens gaps further. gTTS still one speaker/tl — male timbre limited. **Phone after merge.** |
+| Idle pose still bad (R11) | #407 v3 on `main` — **phone smoke**; no further clip swap without owner note |
+| Lighting unify (R12) | #408 on `main` — **phone smoke** |
+| Poke lean direction (R13) | #409 on `main` — **phone verify**; do not flip ±leanSide without device evidence |
+| Talking nonsense / silly LLM | **Owner live OK** still required — code scrub on `main` (#360) |
 | Phone smoke on live demo | **Human** — checklist [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) — do **not** mark Done without owner |
-| Pages rebuild | **Live** after #404 push (`last-modified` 2026-11-15 08:58 UTC · `pages.yml` `43696764165` success on `1417198` · includes #399–#404). Agent `workflow_dispatch` is 403. |
+| SFX #1–23 Want/archive/delete (R1/R2) | Owner map still open |
+| Pages rebuild | **Live** after #409 (`last-modified` 2026-11-15 10:10 UTC · `pages.yml` on `5e5bb8b`). Agent `workflow_dispatch` is 403. |
 
 ### Hold
 
@@ -79,7 +87,12 @@
 
 | Date (HKT) | Change |
 |------------|--------|
-| 2026-11-15 ~17:36 | Owner R10: pitch variants inaudible + only Yue-F works / wrong speakers + male sounds female → branch `cursor/voice-pitch-male-output-0340-0eac` |
+| 2026-11-15 ~18:30 | Honest audit: #406–#409 on main + Pages; R10–R13 stay Outstanding (phone). Voice v2 branch widens pitch/male further. Stale “In PR” boards cleared. |
+| 2026-11-15 ~18:08 | #409 poke lean finger-vs-hips merged |
+| 2026-11-15 ~18:03 | #408 unify cast lighting merged |
+| 2026-11-15 ~17:55 | #407 idle upright planted v3 merged |
+| 2026-11-15 ~17:44 | #406 audible pitch/male/sink merged (R10 phone still open) |
+| 2026-11-15 ~17:36 | Owner R10: pitch variants inaudible + only Yue-F works / wrong speakers + male sounds female → shipped as #406 |
 | 2026-11-15 ~17:02 | Continue audit: tip `1417198` (#399–#404 on main); Pages live (`last-modified` 08:58 UTC · run `43696764165`); board was stale at `a50695b` — docs honesty refresh; Outstanding still human-only |
 | 2026-11-15 ~16:52 | #403 Story quality on main; bible tip after product ship (#404) |
 | 2026-11-15 ~16:40 | Owner ask: lang F+M = Yes (#363/#395); pitch buttons were Partial (#374 auto-only) → shipped selectable deep/mid/bright as #400 |
