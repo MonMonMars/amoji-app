@@ -24,7 +24,8 @@ export const IDLE_PIN_FALLBACK_CLIP_ID = 'IdleBreathCalm';
 /**
  * Calm stands used for chat idle / relaxed hands (not sing/dance/react).
  * Keep in sync with `chat-auto-idle` neutral/talk calm banks.
- * Prefer upright planted RPM / Mixamo / Innerscene; BreathCalm stays pin-fallback only.
+ * v4 defaults are RPM F/M standing only; BreathCalm stays pin-fallback only.
+ * Extra calm ids remain eligible for hands gate when user-picked.
  */
 export const PIXEL_CALM_IDLE_CLIP_IDS = new Set<string>([
   'IdleBreathCalm',

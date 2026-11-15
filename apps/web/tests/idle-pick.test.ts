@@ -93,25 +93,19 @@ describe('idle enable + pick', () => {
     forgetIdleEnabledCache();
     expect(isIdleEnabled(5)).toBe(true);
     expect(isIdleEnabled(11)).toBe(true);
-    expect(isIdleEnabled(8)).toBe(true);
-    expect(isIdleEnabled(3)).toBe(true);
-    expect(isIdleEnabled(10)).toBe(true);
+    expect(isIdleEnabled(8)).toBe(false);
+    expect(isIdleEnabled(3)).toBe(false);
+    expect(isIdleEnabled(10)).toBe(false);
     const thinkRail = IDLE_CLIP_OPTIONS.find((c) => c.id === 'Thinking')!.num;
     setIdleEnabled(thinkRail, true);
     expect(isIdleEnabled(thinkRail)).toBe(true);
     expect(listEnabledIdleClipIds()).toContain('Thinking');
     setIdleEnabled(5, false);
     setIdleEnabled(11, false);
-    setIdleEnabled(8, false);
-    setIdleEnabled(3, false);
-    setIdleEnabled(10, false);
     setIdleEnabled(thinkRail, false);
-    // Empty enable → reset to defaults; sorted by rail # → 3, 5, 8, 10, 11
+    // Empty enable → reset to upright-only defaults; sorted by rail # → 5, 11
     expect(listEnabledIdleClipIds()).toEqual([
-      'IdleMixamoBreathing',
       'IdleRpmFStanding001',
-      'IdleRpmFVar001',
-      'IdleInnersceneSam',
       'IdleRpmMStanding001',
     ]);
   });
@@ -132,12 +126,12 @@ describe('idle enable + pick', () => {
       key: () => null,
       length: 0,
     };
-    store.set('amoji.idlePick.v3', JSON.stringify({ 'a01-shino': 'HelloWave' }));
+    store.set('amoji.idlePick.v4', JSON.stringify({ 'a01-shino': 'HelloWave' }));
     forgetIdlePickCache();
     expect(idlePickFor('a01-shino')).toBeNull();
   });
 
-  it('clears legacy bad pins so upright planted calm defaults return', () => {
+  it('clears legacy bad + weak v3 pins so upright planted defaults return', () => {
     const store = new Map<string, string>();
     (globalThis as { localStorage: Storage }).localStorage = {
       getItem: (k: string) => store.get(k) ?? null,
@@ -147,13 +141,16 @@ describe('idle enable + pick', () => {
       key: () => null,
       length: 0,
     };
-    store.set('amoji.idlePick.v3', JSON.stringify({
+    store.set('amoji.idlePick.v4', JSON.stringify({
       'a01-shino': 'IdleHug',
       'a02-shibu': 'StandardIdle',
       'a03-fumiriya': 'LookAround',
       'a04-sassy': 'IdleSassy',
       'a05-mvar': 'IdleRpmMVar001',
-      'a06-ok': 'IdleRpmFStanding001',
+      'a06-weak': 'IdleMixamoBreathing',
+      'a07-sam': 'IdleInnersceneSam',
+      'a08-fvar': 'IdleRpmFVar001',
+      'a09-ok': 'IdleRpmFStanding001',
     }));
     forgetIdlePickCache();
     expect(idlePickFor('a01-shino')).toBeNull();
@@ -161,7 +158,10 @@ describe('idle enable + pick', () => {
     expect(idlePickFor('a03-fumiriya')).toBeNull();
     expect(idlePickFor('a04-sassy')).toBeNull();
     expect(idlePickFor('a05-mvar')).toBeNull();
-    expect(idlePickFor('a06-ok')).toBe('IdleRpmFStanding001');
+    expect(idlePickFor('a06-weak')).toBeNull();
+    expect(idlePickFor('a07-sam')).toBeNull();
+    expect(idlePickFor('a08-fvar')).toBeNull();
+    expect(idlePickFor('a09-ok')).toBe('IdleRpmFStanding001');
   });
 });
 

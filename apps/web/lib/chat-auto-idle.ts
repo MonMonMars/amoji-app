@@ -12,16 +12,12 @@ import { resolvePerfMotion } from './performance-motion';
 const BREATHING_CLIPS = [
   'IdleRpmFStanding001',
   'IdleRpmMStanding001',
-  'IdleRpmFVar001',
-  'IdleMixamoBreathing',
-  'IdleInnersceneSam',
 ] as const;
 
 /** Opening greet / light chit-chat — never the wave gesture. */
 const CHITCHAT_CLIPS = [
   'IdleRpmFStanding001',
   'IdleRpmMStanding001',
-  'IdleRpmFVar001',
   'Thinking',
 ] as const;
 
@@ -29,9 +25,6 @@ const CHITCHAT_CLIPS = [
 const NEUTRAL_CHAT_CLIPS = [
   'IdleRpmFStanding001',
   'IdleRpmMStanding001',
-  'IdleRpmFVar001',
-  'IdleMixamoBreathing',
-  'IdleInnersceneSam',
   'Thinking',
 ] as const;
 
@@ -39,9 +32,6 @@ const NEUTRAL_CHAT_CLIPS = [
 const TALK_CALM_CLIPS = [
   'IdleRpmFStanding001',
   'IdleRpmMStanding001',
-  'IdleRpmFVar001',
-  'IdleMixamoBreathing',
-  'IdleInnersceneSam',
   'Thinking',
 ] as const;
 

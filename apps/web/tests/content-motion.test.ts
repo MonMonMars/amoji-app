@@ -42,9 +42,6 @@ describe('content-driven motion director (not LLM)', () => {
     const calm = [
       'IdleRpmFStanding001',
       'IdleRpmMStanding001',
-      'IdleRpmFVar001',
-      'IdleMixamoBreathing',
-      'IdleInnersceneSam',
       'Thinking',
     ];
     const weather = resolveContentMotion({
