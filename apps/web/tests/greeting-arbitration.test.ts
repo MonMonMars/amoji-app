@@ -36,8 +36,9 @@ describe('greeting tier arbitration (one voice per tap)', () => {
     expect((body.match(/spokenBy = tier/g) ?? []).length).toBe(1);
   });
 
-  it('the synth fallback refuses to fire once any tier has started', () => {
+  it('the neural-retry fallback refuses to fire once any tier has started', () => {
     expect(body).toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?if \(spokenBy \|\| gttsPending\) return;/);
+    expect(body).toContain('greeting neural retry');
     expect(body).toContain('greeting skip synth robot');
     expect(body).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?synthSpeak\(/);
   });
@@ -46,6 +47,7 @@ describe('greeting tier arbitration (one voice per tap)', () => {
     // Edge 403s for everyone now, so its catch runs on nearly every greeting.
     // Guarding on spokenBy is what stops the second voice.
     expect(body).toContain('const onEdgeFail');
+    expect(body).toMatch(/if \(spokenBy === 'edge'\) spokenBy = null/);
     expect(body).toMatch(/if \(spokenBy\) return; \/\/ gtts owns the line/);
   });
 

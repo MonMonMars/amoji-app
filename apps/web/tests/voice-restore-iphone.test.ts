@@ -30,6 +30,7 @@ describe('voice restore — one tier speaks, never two', () => {
     expect(greet).toContain('unlockAudio(true)');
     expect(greet).toContain('stopSpeaking()');
     expect(greet).toContain("runSynthAudition('greeting fallback')");
+    expect(greet).toContain('greeting neural retry');
     expect(greet).toContain('greeting skip synth robot');
     expect(greet).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?synthSpeak\(/);
   });

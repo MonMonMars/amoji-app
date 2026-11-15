@@ -66,7 +66,9 @@ describe('the HTTP MP3 voice tier is actually reachable', () => {
     // The preview must send the chosen speaker, or it auditions the default and
     // every button still sounds the same.
     expect(block).toContain('tlForChoice(locale, choiceId)');
-    expect(block).toMatch(/speakGtts\(text, \{\s*lang: locale,\s*tl,/);
+    // Opts helper (neural retry) still pins locale + tl for the chosen speaker.
+    expect(block).toMatch(/previewGttsOpts = \(\) => \(\{[\s\S]*?lang:\s*locale[\s\S]*?\btl,/);
+    expect(block).toMatch(/speakGtts\(text,\s*previewGttsOpts\(\)\)/);
   });
 
   it('the settings self-test exercises the gtts tier so a silent phone is diagnosable', () => {

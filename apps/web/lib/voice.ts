@@ -110,7 +110,7 @@ import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText
 import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
 export { speechLeadDiverged, speechRemainder };
 import { edgeCastVoice } from './edge-cast';
-import { pauseEdgeForTabHide, speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead } from './edge-tts';
+import { pauseEdgeForTabHide, speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead, resetEdgeHealth } from './edge-tts';
 import { pauseAfterClause, pauseGttsForTabHide, splitClauses, stopGtts, speakGtts } from './gtts';
 import { gttsCharacterPitchBias } from './gtts-timbre';
 import { voicePickFor } from './voice-picks';
@@ -2005,21 +2005,16 @@ export function playVoiceGreeting(
     reportVoiceStatus(tier, true, `greeting ${choiceId}`);
   };
   /**
-   * Last-resort OS synth ONLY after gTTS has failed / timed out.
-   * Never arm while neural/gTTS may still speak — that is the "robot" path.
+   * After gTTS/Edge fail: ONE neural retry (gTTS → Edge). Never OS
+   * speechSynthesis ("robot") and never audible insurance clips (#431).
+   * Silent unlock stays OK; cards must not go fully mute when the first
+   * neural hop flakes.
    */
-  // Card greets: never fall through to OS speechSynthesis ("robot"). After
-  // Google rate-limits, synth became the only audible path for every card.
-  // Prefer silence over poisoning the select board with robot voice.
-  const runSynthAudition = (tag: string) => {
-    if (spokenBy || gttsPending) return;
-    reportVoiceStatus('synth', false, `greeting skip synth robot (${tag}) ${choiceId}`);
-  };
-  // Start the HTTP tier first and synchronously inside the gesture. It fetches
-  // over plain HTTPS, so it does not need the gesture itself, but starting here
-  // means the greeting begins immediately instead of after a dead Edge attempt.
+  let neuralRetryUsed = false;
   const markGttsDone = () => { gttsPending = false; };
-  void speakGtts(text, {
+  const greetTier = pitchTierForChoice(choiceId);
+  const greetEdgeProsody = edgeProsodyForTier(greetTier);
+  const greetGttsOpts = () => ({
     lang,
     tl,
     // Male pin: slower pace + deep pitchBias (male delivery, not female mid).
@@ -2033,14 +2028,63 @@ export function playVoiceGreeting(
       try { haltBrowserSynth(); } catch { /* ignore */ }
       if (!spokenBy) onStart('gtts');
     },
-  }).then(() => {
+  });
+  const greetEdgeOpts = () => ({
+    lang,
+    gender: delivery,
+    character: characterId,
+    // Real Edge male/female neural id for this pitch button (not character cast alone).
+    voiceId: edgeVoiceIdForTier(lang, delivery, greetTier),
+    forcePlain: true,
+    expressiveness: 1.15,
+    rateDelta: 0.04 + greetEdgeProsody.rate,
+    pitchDelta: 0.06 + greetEdgeProsody.pitch,
+    onPlaying: () => {
+      if (spokenBy === 'gtts') return; // MP3 tier already got there first
+      try { haltSynthQueue(); } catch { /* ignore */ }
+      if (!spokenBy) onStart('edge');
+    },
+  });
+  const runSynthAudition = (tag: string) => {
+    if (spokenBy || gttsPending) return;
+    if (neuralRetryUsed) {
+      reportVoiceStatus('synth', false, `greeting skip synth robot (${tag}) ${choiceId}`);
+      return;
+    }
+    neuralRetryUsed = true;
+    reportVoiceStatus('gtts', false, `greeting neural retry (${tag}) ${choiceId}`);
+    gttsPending = true;
+    void speakGtts(text, greetGttsOpts()).then(() => {
+      markGttsDone();
+      if (session) finishLipSync(session);
+    }).catch((e: unknown) => {
+      markGttsDone();
+      if ((e as Error | undefined)?.message === 'canceled') return;
+      reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'greeting gtts retry failed');
+      if (spokenBy === 'gtts') spokenBy = null;
+      if (spokenBy) return;
+      // Ignore open breaker for this one card-greet salvage hop.
+      try { resetEdgeHealth(); } catch { /* ignore */ }
+      void speakEdge(text, greetEdgeOpts()).then(() => {
+        if (session) finishLipSync(session);
+      }).catch((err: unknown) => {
+        if ((err as Error | undefined)?.message === 'canceled') return;
+        reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'greeting edge retry failed');
+        reportVoiceStatus('synth', false, `greeting skip synth robot (${tag}) ${choiceId}`);
+      });
+    });
+  };
+  // Start the HTTP tier first and synchronously inside the gesture. It fetches
+  // over plain HTTPS, so it does not need the gesture itself, but starting here
+  // means the greeting begins immediately instead of after a dead Edge attempt.
+  void speakGtts(text, greetGttsOpts()).then(() => {
     markGttsDone();
     if (session) finishLipSync(session);
   }).catch((e: unknown) => {
     markGttsDone();
     if ((e as Error | undefined)?.message === 'canceled') return;
     reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'greeting gtts failed');
-    // gTTS may have claimed the line then died — clear so last-resort synth can save.
+    // gTTS may have claimed the line then died — clear so neural retry can save.
     if (spokenBy === 'gtts') spokenBy = null;
     if (spokenBy) return;
     runSynthAudition('greeting fallback');
@@ -2052,6 +2096,8 @@ export function playVoiceGreeting(
    * first. Only fall through when nothing has spoken at all.
    */
   const onEdgeFail = (why: string) => {
+    // Edge onPlaying haltSynthQueue() can kill gTTS then die itself → silence.
+    if (spokenBy === 'edge') spokenBy = null;
     if (spokenBy) return; // gtts owns the line
     // Edge 403s instantly while the MP3 tier may still be fetching — synth here
     // calls haltSynthQueue() and cancels gTTS, which is silence on iOS.
@@ -2070,24 +2116,7 @@ export function playVoiceGreeting(
   // Skip while the breaker is open — a rejected Edge path used to help shove
   // greetings onto OS synth after gTTS had already failed once.
   if (edgeEndpointsDead()) return;
-  const greetTier = pitchTierForChoice(choiceId);
-  const greetEdgeProsody = edgeProsodyForTier(greetTier);
-  void speakEdge(text, {
-    lang,
-    gender: delivery,
-    character: characterId,
-    // Real Edge male/female neural id for this pitch button (not character cast alone).
-    voiceId: edgeVoiceIdForTier(lang, delivery, greetTier),
-    forcePlain: true,
-    expressiveness: 1.15,
-    rateDelta: 0.04 + greetEdgeProsody.rate,
-    pitchDelta: 0.06 + greetEdgeProsody.pitch,
-    onPlaying: () => {
-      if (spokenBy === 'gtts') return; // MP3 tier already got there first
-      try { haltSynthQueue(); } catch { /* ignore */ }
-      if (!spokenBy) onStart('edge');
-    },
-  }).then(() => {
+  void speakEdge(text, greetEdgeOpts()).then(() => {
     clearTimeout(edgeGrace);
     if (session) finishLipSync(session);
   }).catch((err: unknown) => {
@@ -2279,17 +2308,11 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const text = nextCardGreetPhrase(locale);
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
   let gttsPending = true;
+  let neuralRetryUsed = false;
   const markGttsDone = () => { gttsPending = false; };
-  // Same as playVoiceGreeting: never leave voice cards on OS synth robot.
-  const runSynthAudition = (tag: string) => {
-    if (spokenBy || gttsPending) return Promise.resolve();
-    reportVoiceStatus('synth', false, `preview skip synth robot (${tag}) ${choiceId}`);
-    return Promise.resolve();
-  };
-  // HTTP MP3 tier first, started inside the gesture so preview is immediate.
-  // Exactly one tier speaks: whoever starts first halts the others.
-  // Pitch comes from the tapped button (deep/mid/bright), not a character hash.
-  const gtts = speakGtts(text, {
+  const previewTier = pitchTierForChoice(choiceId);
+  const previewEdgeProsody = edgeProsodyForTier(previewTier);
+  const previewGttsOpts = () => ({
     lang: locale,
     tl,
     rate: previewGender === 'male' ? 0.90 : 1,
@@ -2304,22 +2327,8 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
         reportVoiceStatus('gtts', true, `preview gtts ${choiceId}`);
       }
     },
-  }).then(() => {
-    markGttsDone();
-  }).catch((e: unknown) => {
-    markGttsDone();
-    if ((e as Error | undefined)?.message === 'canceled') return;
-    reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'preview gtts failed');
-    if (spokenBy === 'gtts') spokenBy = null;
-    if (spokenBy) return;
-    return runSynthAudition('preview fallback');
   });
-
-  // Free upside only: if Microsoft ever re-opens read-aloud, the sample can be
-  // auditioned on a neural voice. Nothing waits on it and nothing depends on it.
-  const previewTier = pitchTierForChoice(choiceId);
-  const previewEdgeProsody = edgeProsodyForTier(previewTier);
-  return speakEdge(text, {
+  const previewEdgeOpts = () => ({
     lang: locale,
     gender: previewGender,
     voiceId: edgeVoiceIdForTier(locale, previewGender, previewTier),
@@ -2336,9 +2345,53 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
         reportVoiceStatus('edge', true, `preview ${choiceId}`);
       }
     },
-  }).then(() => gtts).catch((err: unknown) => {
+  });
+  // Same as playVoiceGreeting: retry gTTS→Edge once; never OS synth robot.
+  const runSynthAudition = (tag: string): Promise<void> => {
+    if (spokenBy || gttsPending) return Promise.resolve();
+    if (neuralRetryUsed) {
+      reportVoiceStatus('synth', false, `preview skip synth robot (${tag}) ${choiceId}`);
+      return Promise.resolve();
+    }
+    neuralRetryUsed = true;
+    reportVoiceStatus('gtts', false, `preview neural retry (${tag}) ${choiceId}`);
+    gttsPending = true;
+    return speakGtts(text, previewGttsOpts()).then(() => {
+      markGttsDone();
+    }).catch((e: unknown) => {
+      markGttsDone();
+      if ((e as Error | undefined)?.message === 'canceled') return;
+      reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'preview gtts retry failed');
+      if (spokenBy === 'gtts') spokenBy = null;
+      if (spokenBy) return;
+      try { resetEdgeHealth(); } catch { /* ignore */ }
+      return speakEdge(text, previewEdgeOpts()).then(() => undefined).catch((err: unknown) => {
+        if ((err as Error | undefined)?.message === 'canceled') return;
+        reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'preview edge retry failed');
+        reportVoiceStatus('synth', false, `preview skip synth robot (${tag}) ${choiceId}`);
+      });
+    });
+  };
+  // HTTP MP3 tier first, started inside the gesture so preview is immediate.
+  // Exactly one tier speaks: whoever starts first halts the others.
+  // Pitch comes from the tapped button (deep/mid/bright), not a character hash.
+  const gtts = speakGtts(text, previewGttsOpts()).then(() => {
+    markGttsDone();
+  }).catch((e: unknown) => {
+    markGttsDone();
+    if ((e as Error | undefined)?.message === 'canceled') return;
+    reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'preview gtts failed');
+    if (spokenBy === 'gtts') spokenBy = null;
+    if (spokenBy) return;
+    return runSynthAudition('preview fallback');
+  });
+
+  // Free upside only: if Microsoft ever re-opens read-aloud, the sample can be
+  // auditioned on a neural voice. Nothing waits on it and nothing depends on it.
+  return speakEdge(text, previewEdgeOpts()).then(() => gtts).catch((err: unknown) => {
     if ((err as Error | undefined)?.message === 'canceled') return gtts;
-    if (spokenBy === 'edge') return gtts;
+    // Edge claimed then died — clear so gTTS catch / neural retry can save.
+    if (spokenBy === 'edge') spokenBy = null;
     reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'preview edge failed');
     return gtts;
   });
