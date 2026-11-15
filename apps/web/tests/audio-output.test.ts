@@ -51,4 +51,36 @@ describe('default audio output', () => {
     expect(calls[0]).toBe('');
     expect(getDefaultSinkId()).toBe('');
   });
+
+  it('never caches a hardware device id as the preferred sink', async () => {
+    // Simulate a poisoned cache from a communications endpoint (post-mic).
+    const poisoned = {
+      setSinkId(id: string) {
+        if (id === 'communications-headset-uuid') return Promise.resolve();
+        return Promise.reject(new Error(`unexpected ${id}`));
+      },
+      sinkId: 'communications-headset-uuid',
+    };
+    // First pin with a fake success on '' so cache is healthy.
+    const ok: string[] = [];
+    await pinDefaultOutputAsync({
+      setSinkId(id: string) {
+        ok.push(id);
+        return Promise.resolve();
+      },
+    });
+    expect(ok).toEqual(['']);
+    expect(getDefaultSinkId()).toBe('');
+    // Later pins must keep using '' / default — never a device uuid.
+    const later: string[] = [];
+    await pinDefaultOutputAsync({
+      setSinkId(id: string) {
+        later.push(id);
+        return Promise.resolve();
+      },
+      sinkId: poisoned.sinkId,
+    });
+    expect(later).toEqual(['']);
+    expect(later.every((id) => id === '' || id === 'default')).toBe(true);
+  });
 });

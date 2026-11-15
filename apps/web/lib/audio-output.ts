@@ -54,17 +54,28 @@ export function ensureCompanionPlaybackRoute(): void {
   } catch { /* ignore */ }
 }
 
-/** Prefer the shared AudioContext sink so every TTS element matches the gate. */
+/**
+ * Only '' or 'default' are the user-agent default speakers.
+ * Never copy AudioContext.sinkId — after mic play-and-record that id can be a
+ * communications / headset endpoint. Caching it (#406 preferredSinkId) routed
+ * every later HTMLAudio greet onto a silent/wrong device.
+ */
+function isDefaultSinkId(id: string): boolean {
+  return id === '' || id === 'default';
+}
+
+/** Cached default sink only — never a hardware device id. */
 function preferredSinkId(): string {
-  if (cachedDefaultSink !== undefined) return cachedDefaultSink;
-  if (sharedCtx && typeof (sharedCtx as unknown as SinkTarget).sinkId === 'string') {
-    return (sharedCtx as unknown as SinkTarget).sinkId ?? '';
+  if (cachedDefaultSink !== undefined && isDefaultSinkId(cachedDefaultSink)) {
+    return cachedDefaultSink;
   }
   return '';
 }
 
 async function resolveDefaultSinkId(setSink: (id: string) => Promise<void>): Promise<string> {
-  if (cachedDefaultSink !== undefined) return cachedDefaultSink;
+  if (cachedDefaultSink !== undefined && isDefaultSinkId(cachedDefaultSink)) {
+    return cachedDefaultSink;
+  }
   try {
     await setSink('');
     cachedDefaultSink = '';
@@ -90,14 +101,14 @@ export async function pinDefaultOutputAsync(
   if (typeof setSink !== 'function') return;
   const bound = setSink.bind(node);
   const preferred = preferredSinkId();
-  if (cachedDefaultSink !== undefined || preferred !== '') {
+  if (cachedDefaultSink !== undefined) {
     try {
       await bound(preferred);
-      if (cachedDefaultSink === undefined) cachedDefaultSink = preferred;
+      return;
     } catch {
       /* fall through to resolve */
+      cachedDefaultSink = undefined;
     }
-    if (cachedDefaultSink !== undefined) return;
   }
   await resolveDefaultSinkId(bound);
 }

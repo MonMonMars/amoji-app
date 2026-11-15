@@ -308,7 +308,9 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
         `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=${q}`,
       );
       try { audio.dataset.amojiAudio = '1'; } catch { /* non-DOM Audio stubs */ }
-      pinDefaultOutput(audio);
+      // Do NOT pinDefaultOutput before the first play(): setSinkId races the
+      // gesture-bound play() on Chrome/Windows and left character-card greets
+      // silent after #406/#413 sink routing. Pin on onplay / play() reject retry.
       applyPlaybackVolume(audio);
       audio.preload = 'auto';
       currentAudio = audio;
@@ -374,8 +376,8 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
         // Later chunks keep the mouth open; only the last one may close it.
         followAudioElement(audio, last);
       };
-      // Play in this turn — awaiting setSinkId first drops the user gesture on
-      // Chrome/Windows and leaves select-card greets silent when network is slow.
+      // Play in this turn — never await / race setSinkId before the first play().
+      // Parallel pinDefaultOutputAsync during start also interrupted gesture play.
       void audio.play().catch((e: unknown) => {
         void pinDefaultOutputAsync(audio)
           .then(() => audio.play())
@@ -386,7 +388,6 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
             });
           });
       });
-      void pinDefaultOutputAsync(audio).catch(() => { /* sink pin is best-effort */ });
     };
     playNext();
   });

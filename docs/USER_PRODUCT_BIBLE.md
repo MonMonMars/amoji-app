@@ -30,8 +30,8 @@
 | Selectable pitch buttons (same voice → deep/mid/bright) | #400 |
 | Gate location Allow + Enter prime | #379 |
 | White-pupil image loop | owner OK |
-| Card greet audible (code) | #370 — **Outstanding phone** (owner: no sound) |
-| One-voice card greet (code) | #375 — **Outstanding phone** (owner: no sound) |
+| Card greet audible (code) | #370 + card-greet-sound-fix (sink race) — **Outstanding phone** until hear |
+| One-voice card greet (code) | #375 — hold insurance ~220ms so silence does not return |
 | CMA poke SFX + zone-stable SFX | #348+ |
 | No spoken UM; thinking bar | on `main` |
 | Music ask random vs select | #364 |
@@ -97,6 +97,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-15 ~22:34 | URGENT card greet silence: fix gTTS/Edge play-before-pin + default-only sink cache + insurance hold (`card-greet-sound-fix`) |
 | 2026-11-15 ~22:31 | Owner “getting worst”: keep card no-sound + news repeat + R10–R13 Outstanding; ship idle v3 legacy wipe/scrub; tip `34ed7e0` (#418) |
 | 2026-11-15 ~20:48 | Honesty tip `a9f7436` (#417): #415 idle v4 + #416 nonsense scrub Done on main; Outstanding = phone-only R10–R13 + nonsense + captions |
 | 2026-11-15 ~20:10 | After #410–#414: document SFX Want list; idle v4 + nonsense scrub harden shipping; R10–R13 stay phone Outstanding |
