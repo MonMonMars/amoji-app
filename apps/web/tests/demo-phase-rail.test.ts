@@ -35,10 +35,11 @@ describe('DemoPhaseRail scroll (iPhone + drag)', () => {
     expect(src).toContain('tapCountRef');
   });
 
-  it('ChatPanel wires DemoPhaseRail onPick into send()', () => {
+  it('ChatPanel wires DemoPhaseRail onPick into send() (hidden in Story Mode)', () => {
     const panel = read('components/ChatPanel.tsx');
     expect(panel).toContain('<DemoPhaseRail');
     expect(panel).toContain('void send(prompt)');
     expect(panel).toContain('disabled={busy}');
+    expect(panel).toMatch(/!loadStorySession\(\) && \([\s\S]*<DemoPhaseRail/);
   });
 });

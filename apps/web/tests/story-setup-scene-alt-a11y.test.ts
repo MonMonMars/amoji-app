@@ -15,9 +15,10 @@ describe('StorySetupPanel scene-background alt a11y', () => {
   it('keeps the scene backdrop as a small labeled inset', () => {
     expect(src).toContain('data-testid="story-scene-inset"');
     expect(src).toContain('src={assetUrl(background.image)}');
-    expect(src).toContain('alt={scene.title[lang]}');
     expect(src).toContain('h-[4.25rem] w-[5.75rem]');
-    expect(src).not.toMatch(/src=\{assetUrl\(background\.image\)\}[\s\S]{0,60}alt=""/);
+    expect(src).toContain('role="img"');
+    expect(src).toContain('aria-label={`${LABEL.scene[lang]}: ${scene.title[lang]}`}');
+    expect(src).toMatch(/alt=""/);
   });
 
   it('keeps main landmark from #198', () => {
