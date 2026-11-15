@@ -450,7 +450,7 @@ export function pokeBodyReaction(opts: {
  * Which screen side the hit sits on, relative to the camera.
  * cameraRightXZ = camera world +X column flattened to XZ (orbit-safe).
  * +1 = toward camera-right (screen right), -1 = screen left.
- * Use this for lateral poke emphasis so orbit does not mirror L/R.
+ * Use this for lateral poke lean so orbit does not mirror L/R.
  */
 export function screenSideSign(
   hit: Vec3,
@@ -463,6 +463,32 @@ export function screenSideSign(
   const nz = cameraRightXZ.z / len;
   const s = (hit.x - hips.x) * nx + (hit.z - hips.z) * nz;
   return s >= 0 ? 1 : -1;
+}
+
+/**
+ * Finger side vs projected hips on the screen (Pixel lean rule).
+ * +1 = finger right of hips (screen right), -1 = screen left.
+ * Prefer this over mesh-hit screenSideSign when the ray grazes a round limb
+ * and the contact point drifts across the midline.
+ */
+export function screenPointerSideSign(pointerX: number, hipsScreenX: number): number {
+  return pointerX >= hipsScreenX ? 1 : -1;
+}
+
+/**
+ * Lateral fall vector for same-side lean: cameraRight * leanSide.
+ * leanSide from screen (+1 right / −1 left). Verified on seed-san VRM:
+ * leanSide −1 → fallX −1 (face-on) → chestRoll > 0 → head tips screen-left.
+ * Do not flip to −leanSide — that restores opposite-side tip (#345 / pre-#390).
+ */
+export function lateralFallTowardScreenSide(
+  cameraRightXZ: { x: number; z: number },
+  leanSide: number,
+): { x: number; z: number } {
+  const len = Math.hypot(cameraRightXZ.x, cameraRightXZ.z);
+  if (len < 1e-6) return { x: leanSide >= 0 ? 1 : -1, z: 0 };
+  const side = leanSide >= 0 ? 1 : -1;
+  return { x: (cameraRightXZ.x / len) * side, z: (cameraRightXZ.z / len) * side };
 }
 
 /**

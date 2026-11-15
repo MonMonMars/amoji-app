@@ -195,7 +195,7 @@ function scaleBody(body: PokeBody, scale: typeof TIER_BAND_SCALE.head): PokeBody
 }
 
 /**
- * Tier-aware punch recoil: toward-poked-side lean with tier falloff; tier 6 = no motion.
+ * Tier-aware punch recoil: same-side lean (finger left → tip left) with tier falloff; tier 6 = no motion.
  *
  * Head tier keeps full head amplitude from the head recipe, then layers a
  * soft torso follow (Pixel: head poke moves upper body less, not zero).
