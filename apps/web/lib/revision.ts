@@ -349,7 +349,10 @@
 // r2026-11-10.146: payment + charging rules (data-driven), checkout client_reference_id, demo mode, return handler.
 // r2026-11-10.147: support contact UI + anonymous /api/support, report contact email, wipe product data.
 // r2026-11-10.148: finish security/legal/storage rules — export/wipe, LEGAL_ACCEPT v4, rate-limit contracts.
-export const APP_REVISION = 'r2026-11-10.148';
+// r2026-11-15.149: poke move refresh — owner same-side lean (finger vs hips;
+// off-center chest/head blend +leanSide; stronger tip/arm flinch). Keep CMA
+// Want/Skip picks v1 (do not wipe owner SFX). Feet stay voice-only.
+export const APP_REVISION = 'r2026-11-15.149';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

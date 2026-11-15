@@ -104,15 +104,39 @@ describe('pokeSectionBodyReaction', () => {
       softChest: false,
       twist: 0,
     });
-    expect(hit.chestRoll).toBeGreaterThan(0);
+    expect(hit.chestRoll).toBeGreaterThan(0.35);
     expect(Math.abs(hit.rArmX)).toBeGreaterThan(Math.abs(hit.lArmX));
+    expect(Math.abs(hit.rArmX)).toBeGreaterThan(0.45);
   });
 
-  it('CompanionCanvas lateral fall uses +leanSide (toward poked screen side)', () => {
+  it('CompanionCanvas encodes owner same-side lean (finger vs hips; no opposite)', () => {
     const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
-    expect(canvas).toMatch(/lateralFallTowardScreenSide\s*\(/);
+    // Owner: poke left → tip screen-left; poke right → tip screen-right.
+    expect(canvas).toMatch(/poke left → tip screen-left/);
     expect(canvas).toMatch(/screenPointerSideSign\s*\(/);
+    expect(canvas).toMatch(/lateralFallTowardScreenSide\s*\(/);
+    // #409: keep +leanSide; blend axial+lateral for off-center non-side zones.
+    expect(canvas).toMatch(/fall\.x \* 0\.95/);
+    expect(canvas).toMatch(/fingerOffCenter/);
+    expect(canvas).toMatch(/Do NOT use opposite lean/);
     expect(canvas).not.toMatch(/multiplyScalar\(\s*-camSide\s*\)/);
     expect(canvas).not.toMatch(/multiplyScalar\(\s*-leanSide\s*\)/);
+  });
+
+  it('off-center chest poke with same-side fall tips left (not opposite recoil)', () => {
+    const section = resolvePokeSection('chest', 'left');
+    // Blended canvas fall for finger-left on chest: mostly −X same-side.
+    const hit = pokeSectionBodyReaction({
+      t: 0.12,
+      section,
+      hitZone: 'chest',
+      fallX: -0.9,
+      fallZ: -0.35,
+      sideSign: 1,
+      softChest: false,
+      twist: 0,
+    });
+    expect(hit.chestRoll).toBeGreaterThan(0.2);
+    expect(Math.abs(hit.rArmX)).toBeGreaterThan(Math.abs(hit.lArmX));
   });
 });
