@@ -38,14 +38,15 @@ export const CLIENT_STORAGE_KEYS: ClientStorageKey[] = [
   { key: 'amoji.place.manual.v1', kind: 'local', purpose: 'User-entered city', wipeable: true },
   { key: 'amoji.idleEnabled.v1', kind: 'local', purpose: 'Idle clip rotation enable map (legacy)', wipeable: true },
   { key: 'amoji.idleEnabled.v2', kind: 'local', purpose: 'Idle clip rotation enable map (legacy v2)', wipeable: true },
-  // #407 wrote v3; #415 replaced the inventory row with v4 and left phones
-  // unable to wipe/export stuck v3 keys — keep v3 as wipeable legacy.
+  // Keep every prior idle prefs key wipeable — phones must clear stuck v3/v4.
   { key: 'amoji.idleEnabled.v3', kind: 'local', purpose: 'Idle clip rotation enable map (legacy v3)', wipeable: true },
-  { key: 'amoji.idleEnabled.v4', kind: 'local', purpose: 'Idle clip rotation enable map', wipeable: true },
+  { key: 'amoji.idleEnabled.v4', kind: 'local', purpose: 'Idle clip rotation enable map (legacy v4)', wipeable: true },
+  { key: 'amoji.idleEnabled.v5', kind: 'local', purpose: 'Idle clip rotation enable map', wipeable: true },
   { key: 'amoji.idlePick.v1', kind: 'local', purpose: 'Per-character idle pick (legacy)', wipeable: true },
   { key: 'amoji.idlePick.v2', kind: 'local', purpose: 'Per-character idle pick (legacy v2)', wipeable: true },
   { key: 'amoji.idlePick.v3', kind: 'local', purpose: 'Per-character idle pick (legacy v3)', wipeable: true },
-  { key: 'amoji.idlePick.v4', kind: 'local', purpose: 'Per-character idle pick', wipeable: true },
+  { key: 'amoji.idlePick.v4', kind: 'local', purpose: 'Per-character idle pick (legacy v4)', wipeable: true },
+  { key: 'amoji.idlePick.v5', kind: 'local', purpose: 'Per-character idle pick', wipeable: true },
   { key: 'amoji.cmaReactionSfx.picks.v1', kind: 'local', purpose: 'CMA reaction SFX gallery picks', wipeable: true },
   { key: 'amoji.emotionClips.v1', kind: 'local', purpose: 'Emotion clip picks', wipeable: true },
   { key: 'amoji.osVoice.v1', kind: 'local', purpose: 'OS voice picks', wipeable: true },

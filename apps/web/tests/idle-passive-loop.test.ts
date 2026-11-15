@@ -9,10 +9,11 @@ import {
 } from '../lib/idle-passive-loop';
 import { orderIdleClips } from '../lib/personality';
 
-describe('passive idle loop (upright stands only v4)', () => {
-  it('orders upright RPM stands only — no look / stretch beats', () => {
+describe('passive idle loop (single static calm stand v5)', () => {
+  it('orders one upright RPM stand only — no F/M A→B, look, or stretch', () => {
     const order = orderPassiveIdleClips([
       ...PASSIVE_IDLE_LOOP_TEMPLATE,
+      'IdleRpmMStanding001',
       'Jump',
       'Dance',
       'IdleMixamoArmStretch',
@@ -22,21 +23,11 @@ describe('passive idle loop (upright stands only v4)', () => {
       'IdleInnersceneSam',
       'IdleRpmFVar001',
     ]);
-    expect(order[0]).toBe('IdleRpmFStanding001');
-    expect(order).toContain('IdleRpmMStanding001');
-    expect(order.every((id) => id === 'IdleRpmFStanding001' || id === 'IdleRpmMStanding001')).toBe(true);
-    expect(order).not.toContain('IdleRpmFVar003');
-    expect(order).not.toContain('IdleRpmMVar002');
-    expect(order).not.toContain('IdleMixamoArmStretch');
-    expect(order).not.toContain('Dance');
-    expect(order).not.toContain('Jump');
+    expect(order).toEqual(['IdleRpmFStanding001']);
+    expect(order).not.toContain('IdleRpmMStanding001');
     expect(order).not.toContain('IdleSassy');
-    expect(order).not.toContain('IdleRpmMVar001');
-    expect(order).not.toContain('IdleMixamoBreathing');
-    expect(order).not.toContain('IdleInnersceneSam');
-    expect(order).not.toContain('IdleRpmFVar001');
-    expect(order.filter((id) => id === 'IdleRpmFStanding001' || id === 'IdleRpmMStanding001').length)
-      .toBeGreaterThanOrEqual(4);
+    expect(order).not.toContain('IdleBreathCalm');
+    expect(order).not.toContain('Dance');
   });
 
   it('keeps stretch / look candidate lists empty for upright-only defaults', () => {
@@ -44,54 +35,32 @@ describe('passive idle loop (upright stands only v4)', () => {
     expect(PASSIVE_LOOK_CLIPS).toEqual([]);
   });
 
-  it('still builds a short loop from available upright stands', () => {
-    const calmOnly = orderPassiveIdleClips(['IdleRpmFStanding001', 'IdleRpmMStanding001']);
-    expect(calmOnly[0]).toBe('IdleRpmFStanding001');
-    expect(calmOnly).toContain('IdleRpmMStanding001');
-    const oneStand = orderPassiveIdleClips(['IdleRpmFStanding001', 'IdleRpmFVar003']);
-    expect(oneStand[0]).toBe('IdleRpmFStanding001');
-    expect(oneStand.every((id) => id === 'IdleRpmFStanding001')).toBe(true);
+  it('still builds a single-clip loop from available upright stand', () => {
+    expect(orderPassiveIdleClips(['IdleRpmFStanding001', 'IdleRpmMStanding001']))
+      .toEqual(['IdleRpmFStanding001']);
   });
 
-  it('cycles forever via nextPassiveIdleClip', () => {
-    const order = orderPassiveIdleClips([...PASSIVE_IDLE_LOOP_TEMPLATE]);
-    expect(order.length).toBeGreaterThanOrEqual(2);
-    const samples = [0, 1, order.length, order.length + 1].map((n) =>
+  it('cycles forever via nextPassiveIdleClip on the same stand', () => {
+    const samples = [0, 1, 8, 9].map((n) =>
       nextPassiveIdleClip([...PASSIVE_IDLE_LOOP_TEMPLATE], n),
     );
-    expect(samples[0]).toBe(order[0]);
-    expect(samples[1]).toBe(order[1]);
-    expect(samples[2]).toBe(order[0]);
-    expect(samples[3]).toBe(order[1]);
-    expect(samples.every((id) => id === 'IdleRpmFStanding001' || id === 'IdleRpmMStanding001')).toBe(true);
+    expect(samples.every((id) => id === 'IdleRpmFStanding001')).toBe(true);
   });
 
-  it('marks only passive upright clips', () => {
+  it('marks only the single passive upright clip', () => {
     expect(isPassiveIdleClip('IdleRpmFStanding001')).toBe(true);
-    expect(isPassiveIdleClip('IdleRpmMStanding001')).toBe(true);
-    expect(isPassiveIdleClip('IdleRpmMVar002')).toBe(false);
-    expect(isPassiveIdleClip('IdleRpmFVar003')).toBe(false);
+    expect(isPassiveIdleClip('IdleRpmMStanding001')).toBe(false);
     expect(isPassiveIdleClip('IdleSassy')).toBe(false);
-    expect(isPassiveIdleClip('HelloWave')).toBe(false);
-    expect(isPassiveIdleClip('lib_C113')).toBe(false);
+    expect(isPassiveIdleClip('IdleBreathCalm')).toBe(false);
   });
 
   it('orderIdleClips no longer dumps the whole library after calm clips', () => {
-    const available = [
+    const order = orderIdleClips([
       'IdleRpmFStanding001',
       'IdleRpmMStanding001',
-      'IdleRpmFVar001',
-      'IdleMixamoBreathing',
-      'IdleRpmMVar002',
       'Dance',
-      'IdleMixamoHappy',
       'lib_C113',
-    ];
-    const order = orderIdleClips(available, 'any-character', 'female');
-    expect(order[0]).toBe('IdleRpmFStanding001');
-    expect(order.every((id) => id === 'IdleRpmFStanding001' || id === 'IdleRpmMStanding001')).toBe(true);
-    expect(order).not.toContain('Dance');
-    expect(order).not.toContain('lib_C113');
-    expect(order).not.toContain('IdleRpmMVar002');
+    ], 'any-character', 'female');
+    expect(order).toEqual(['IdleRpmFStanding001']);
   });
 });

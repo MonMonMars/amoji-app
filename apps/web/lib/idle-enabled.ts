@@ -1,8 +1,8 @@
 ﻿// Which curated idle rail #s are ON for rotation. Persists like mute prefs.
-// Default = cleaner upright planted stands only (#42 / #93).
-// v4 drops weak v3 clips (FVar001 / MixamoBreathing / InnersceneSam) from defaults.
+// Default = single calm upright planted stand (#42 / rail #5).
+// v5 drops dual-stand A→B (rail #11) and scrubs BreathCalm/Sassy forever.
 
-import { isRetiredIdleNum } from './idle-retired';
+import { isBannedAutoIdleClip, isRetiredIdleNum } from './idle-retired';
 import {
   CHAT_IDLE_CURATED,
   curatedRailByNum,
@@ -15,14 +15,15 @@ import {
   type IdleLibraryEntry,
 } from './idle-library';
 
-export const IDLE_ENABLED_KEY = 'amoji.idleEnabled.v4';
+export const IDLE_ENABLED_KEY = 'amoji.idleEnabled.v5';
 const KEY = IDLE_ENABLED_KEY;
 
-/** Prefs keys from #392 / #407 — never migrate weak clips into v4. */
+/** Prefs keys from #392 / #407 / #415 — never migrate weak clips into v5. */
 const LEGACY_ENABLED_KEYS = [
   'amoji.idleEnabled.v1',
   'amoji.idleEnabled.v2',
   'amoji.idleEnabled.v3',
+  'amoji.idleEnabled.v4',
 ] as const;
 
 let memory: number[] | null = null;
@@ -37,6 +38,16 @@ function dropLegacyEnabledKeys(): void {
   } catch { /* private mode */ }
 }
 
+function scrubBannedRails(nums: number[]): number[] {
+  const next = nums.filter((n) => {
+    const row = curatedRailByNum(n);
+    if (!row) return false;
+    if (isBannedAutoIdleClip(row.clipId)) return false;
+    return true;
+  });
+  return next.length ? next : defaultCuratedRailNums();
+}
+
 function hydrate(): number[] {
   if (loaded && memory) return memory;
   loaded = true;
@@ -45,7 +56,6 @@ function hydrate(): number[] {
       memory = defaultCuratedRailNums();
       return memory;
     }
-    // Always scrub pre-v4 keys so Settings wipe + first v4 load stay clean.
     dropLegacyEnabledKeys();
     const raw = localStorage.getItem(KEY);
     if (!raw) {
@@ -59,7 +69,7 @@ function hydrate(): number[] {
     }
     const nums = parsed
       .filter((n): n is number => typeof n === 'number' && Number.isInteger(n));
-    const migrated = migrateEnabledNumsToRail(nums);
+    const migrated = scrubBannedRails(migrateEnabledNumsToRail(nums));
     memory = migrated;
     if (JSON.stringify(migrated) !== JSON.stringify(nums)) {
       try { localStorage.setItem(KEY, JSON.stringify(migrated)); } catch { /* private mode */ }
@@ -72,7 +82,7 @@ function hydrate(): number[] {
 }
 
 function persist(next: number[]): void {
-  memory = [...new Set(next)].sort((a, b) => a - b);
+  memory = [...new Set(scrubBannedRails(next))].sort((a, b) => a - b);
   loaded = true;
   try {
     if (typeof localStorage === 'undefined') return;
@@ -89,7 +99,8 @@ export function isIdleEnabled(railNum: number): boolean {
 }
 
 export function setIdleEnabled(railNum: number, on: boolean): number[] {
-  if (!curatedRailByNum(railNum)) return listEnabledNums();
+  const row = curatedRailByNum(railNum);
+  if (!row || isBannedAutoIdleClip(row.clipId)) return listEnabledNums();
   const cur = new Set(hydrate());
   if (on) cur.add(railNum);
   else cur.delete(railNum);
@@ -109,6 +120,7 @@ export function listEnabledIdleClipIds(): string[] {
   const seen = new Set<string>();
   for (const row of CHAT_IDLE_CURATED) {
     if (!enabled.has(row.railNum) || seen.has(row.clipId)) continue;
+    if (isBannedAutoIdleClip(row.clipId)) continue;
     const lib = idleByNum(row.legacyLibNum);
     if (!lib?.playable || lib.retired || isRetiredIdleNum(row.legacyLibNum)) continue;
     seen.add(row.clipId);
@@ -117,7 +129,7 @@ export function listEnabledIdleClipIds(): string[] {
   if (!ids.length) {
     return defaultCuratedRailNums()
       .map((n) => curatedRailByNum(n)?.clipId)
-      .filter((id): id is string => !!id);
+      .filter((id): id is string => !!id && !isBannedAutoIdleClip(id));
   }
   return ids;
 }

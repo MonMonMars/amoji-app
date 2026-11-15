@@ -42,6 +42,11 @@ import {
   idleSwapBlendActive,
 } from '../lib/idle-crossfade';
 import {
+  calmIdleHeadPitch,
+  dampenIdleClipAmplitude,
+  idlePlaybackTimeScale,
+} from '../lib/idle-amplitude';
+import {
   shortestEulerYXZSlerp,
   shortestQuatSlerp,
   shortestQuatSlerpClamped,
@@ -654,9 +659,9 @@ export default function CompanionCanvas({
       : [ownModel, 'seed-san.vrm'].filter((m): m is string => !!m);
 
     // -- clip library ---------------------------------------------------------
-    // Standing idle rotation. Defaults are cleaner upright planted stands
-    // (IdleRpmFStanding001 / IdleRpmMStanding001 only — idle v4).
-    // LookAround / Sassy / hug / wave / FVar / MixamoBreathing stay out of defaults.
+    // Standing idle. Default is a single calm upright stand
+    // (IdleRpmFStanding001 only — idle v5). Amplitude damp kills thrash /
+    // sky-look. LookAround / Sassy / BreathCalm / hug / wave stay out.
     // rebaseClipHips pins feet and yaw-only hips on every idle in this list.
     const ANIM_MIRROR = `${ASSET_BASE}/models/anims`;
     const CHAT_HOST = 'https://raw.githubusercontent.com/DavinciDreams/3dchat/main/public/animations/vrma';
@@ -665,9 +670,9 @@ export default function CompanionCanvas({
 
     interface ClipSource { id: string; urls: string[] }
     // Idle # SoT: apps/web/lib/idle-library.ts (free-library Cxx map).
-    // Default rotation = enabled playable nums (localStorage amoji.idleEnabled.v4),
-    // falling back to RPM F/M standing. Every idle gets
-    // rebaseClipHips + pinPlantedClipTracks (no floating feet).
+    // Default rotation = enabled playable nums (localStorage amoji.idleEnabled.v5),
+    // falling back to IdleRpmFStanding001. Every idle gets
+    // rebaseClipHips + amplitude damp + pinPlantedClipTracks (no floating feet).
     const libPlayable = playableIdles();
     const enabledIds = new Set(listEnabledIdleClipIds());
     let IDLE_SOURCES: ClipSource[] = libPlayable
@@ -676,7 +681,6 @@ export default function CompanionCanvas({
     if (!IDLE_SOURCES.length) {
       IDLE_SOURCES.push(
         { id: 'IdleRpmFStanding001', urls: [`${ANIM_MIRROR}/IdleRpmFStanding001.vrma`] },
-        { id: 'IdleRpmMStanding001', urls: [`${ANIM_MIRROR}/IdleRpmMStanding001.vrma`] },
       );
     }
     // All other playable library idles (side picks / Mon # tap).
@@ -793,7 +797,9 @@ export default function CompanionCanvas({
       if (swapping) beginIdleSwapBlend(blendS);
       else beginBoneBlend(0.7);
       const action = mixer.clipAction(clip);
-      action.timeScale = personalityMotion(seedKey ?? '', gender).timeScale;
+      action.timeScale = idlePlaybackTimeScale(
+        personalityMotion(seedKey ?? '', gender).timeScale,
+      );
       // r93: idles LOOP — the old LoopOnce + clampWhenFinished parked her on
       // the clip's end frame (a straight stand) while the next clip faded
       // in: the "zombie pose between idle movements". A looping body is
@@ -1146,6 +1152,8 @@ export default function CompanionCanvas({
               // r94: idle loops pin the hips height (no floating);
               // r98: performances normalize their root-Y onto our rest too
               rebaseClipHips(clip, IDLE_IDS.has(src.id));
+              // Idle-only: crush VRMA thrash + baked sky-look before mixer play.
+              if (IDLE_IDS.has(src.id)) dampenIdleClipAmplitude(clip);
               if (!clipFreesFeet(src.id)) pinPlantedClipTracks(clip, plantRest);
               if (clip.tracks.length) clips.set(src.id, clip);
               // r103: record which bones this clip drives, so the avatar can
@@ -1986,10 +1994,14 @@ export default function CompanionCanvas({
         }
 
         const b = targets.bones;
+        const calmClipNow = isPixelCalmIdleClip(idleClipId);
         const poseTargets: AvatarPose = {
-          headX: b.headPitch,
-          headY: b.headYaw,
-          headZ: b.headRoll,
+          // Calm idle: kill engine look-at-sky; poke/laugh still use headPitchAdd.
+          headX: calmClipNow && !perfAction && boost === 0
+            ? calmIdleHeadPitch(b.headPitch)
+            : b.headPitch,
+          headY: calmClipNow && !perfAction && boost === 0 ? b.headYaw * 0.2 : b.headYaw,
+          headZ: calmClipNow && !perfAction && boost === 0 ? b.headRoll * 0.25 : b.headRoll,
           headPitchAdd: skHeadX,
           headRollAdd: skHeadZ,
           spineX: b.spinePitch, chestX: b.chestPitch,
@@ -2029,8 +2041,8 @@ export default function CompanionCanvas({
             if (idleClipId !== pinnedIdle) playNamedIdle(pinnedIdle, IDLE_PIN_CROSSFADE_S);
             idleHoldUntil = Infinity;
           } else if (thinkingPoseActive()) {
-            // Visual wait cue: Thinking pose (C56), calm breath if VRMA missing.
-            const thinkClip = clips.has('Thinking') ? 'Thinking' : 'IdleBreathCalm';
+            // Visual wait cue: Thinking pose (C56), upright stand if VRMA missing.
+            const thinkClip = clips.has('Thinking') ? 'Thinking' : 'IdleRpmFStanding001';
             if (idleClipId !== thinkClip && !thinkMiss) {
               if (!playNamedIdle(thinkClip, FADE.idleRotate)) thinkMiss = true;
               else idleHoldUntil = performance.now() + 20000;

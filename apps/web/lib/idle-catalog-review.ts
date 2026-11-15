@@ -198,7 +198,8 @@ export function resolveLegacyLibPin(stored: string): string {
   if (!row) return IDLE_PIN_FALLBACK_CLIP_ID;
   if (isRetiredIdleNum(n) || row.retired) return IDLE_PIN_FALLBACK_CLIP_ID;
   const curated = CHAT_IDLE_CURATED.find((r) => r.legacyLibNum === n);
-  if (curated) return curated.clipId;
+  // Remap banned BreathCalm / Sassy / sky-look even if still on the rail.
+  if (curated) return resolveIdleClipId(curated.clipId);
   return resolveIdleClipId(row.clipId);
 }
 

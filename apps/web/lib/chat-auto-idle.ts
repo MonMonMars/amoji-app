@@ -131,11 +131,11 @@ const CATEGORY_CLIP: Record<BucketCategory | 'breathe' | 'look' | 'stretch' | 's
   martial: 'lib_C121',
   scared: 'lib_C146',
   react: 'Cheer',
-  breathe: 'IdleBreathCalm',
-  look: 'LookAround',
+  breathe: 'IdleRpmFStanding001',
+  look: 'IdleRpmFStanding001',
   stretch: 'Relax',
   sing: 'IdleMixamoHappy',
-  talk: 'LookAround',
+  talk: 'IdleRpmFStanding001',
 };
 
 /** Music / concert talk without a full dance ask — sway + legs with the beat. */
@@ -337,7 +337,7 @@ export function resolveChatAutoIdle(input: ChatAutoIdleInput): string | null {
     return resolveFarewellWave() ?? pickBreathingDefault('bye');
   }
   if (input.thinking) {
-    return idleClipById('Thinking') ? 'Thinking' : 'IdleBreathCalm';
+    return idleClipById('Thinking') ? 'Thinking' : 'IdleRpmFStanding001';
   }
   const assistantText = input.assistantText.trim();
   const userText = (input.userText ?? '').trim();
@@ -356,7 +356,7 @@ export function resolveChatAutoIdle(input: ChatAutoIdleInput): string | null {
   const emo = topEmotionCategory(input.emotionHints, corpus);
   if (emo) return clipForCategory(emo, seed, corpus);
   const clip = pickNeutralChatIdle(seed);
-  return idleClipById(clip) ? clip : 'IdleBreathCalm';
+  return idleClipById(clip) ? clip : 'IdleRpmFStanding001';
 }
 
 /** Test / director helper: true when text is weather/news/story talk. */

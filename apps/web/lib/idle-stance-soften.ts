@@ -22,14 +22,15 @@ interface SoftRule {
 /** Minimum local YXZ elbow flex (x) when the forearm hangs — avoids locked straight arms. */
 export const IDLE_ELBOW_FLOOR_X = 0.14;
 
-/** Extra scale for clip-specific rules on military / T-pose leaning idles. */
-export const IDLE_STIFF_CLIP_GAIN = 1.55;
+/** Extra scale for clip-specific rules on military / T-pose leaning idles.
+ *  Kept near 1 — heavy gain + VRMA + hang rewrites ruined even good stands. */
+export const IDLE_STIFF_CLIP_GAIN = 1.08;
 
 /**
  * Max |spine/chest X| kept during calm idle. Positive X = lean forward;
  * Pixel: "lean forward weird" came from soften nudges + stiff clip gain.
  */
-export const IDLE_TORSO_PITCH_MAX = 0.06;
+export const IDLE_TORSO_PITCH_MAX = 0.035;
 
 const STIFF_IDLE_CLIPS = new Set<string>([
   'IdleMixamoExcited',
