@@ -2,7 +2,7 @@
 
 **Purpose:** Living checklist of product rules from the product owner. Agents must read this before chat/voice/pose/permission work and update it when rules change.
 
-**Last reviewed:** 2026-11-15 15:21 (Asia/Hong_Kong)  
+**Last reviewed:** 2026-11-15 15:52 (Asia/Hong_Kong)  
 **Demo:** https://monmonmars.github.io/amoji-app/  
 **Request log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn. Overlapping messages still count; never drop one.
 
@@ -47,6 +47,7 @@
 | Blend-to-back / lean forward weird (code) | #394 |
 | All langs/genders speak — not Yue-female-only (code) | #395 |
 | Docs board #393–#395 Done / Outstanding honesty | #396 |
+| Docs tip + Pages honesty after #396; agent scrub green | #397 |
 | No history-resume ask (code) | #331 / #366 |
 
 ---
@@ -57,7 +58,7 @@
 |------|--------|
 | Talking nonsense / silly LLM | **Owner live OK** still required — code scrub on `main` (#360); agent Vitest scrub suites **78/78 pass**; no agent-fixable bug found this turn |
 | Phone smoke on live demo | **Human** — checklist [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) — do **not** mark Done without owner |
-| Pages rebuild | **Live** after #396 push (`last-modified` 2026-11-15 05:04 UTC · `pages.yml` run success on `e52ff02`). Agent `workflow_dispatch` is 403. |
+| Pages rebuild | **Live** after #397 push (`last-modified` 2026-11-15 07:29 UTC · `pages.yml` `43689990439` success on `a50695b`). Agent `workflow_dispatch` is 403. |
 
 ### Hold
 
@@ -70,6 +71,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-15 ~15:52 | Post-#397: Pages confirmed live (`last-modified` 07:29 UTC · run `43689990439`); tip `a50695b`; resume/history/nonsense themes already shipped — Outstanding still human-only |
 | 2026-11-15 ~15:21 | Post-#396: Pages confirmed live (`last-modified` 05:04 UTC); agent nonsense Vitest 78/78; Outstanding stays human-only (phone smoke + owner nonsense OK); board tip → `e52ff02` |
 | 2026-11-15 ~12:53 | #393/#394/#395 → Done on main; Pages already rebuilt from #395; Outstanding = nonsense verify + phone smoke; no-history-resume already shipped (#331/#366) |
 | 2026-11-15 ~01:56 | Status board: #385/#386/#387/#388/#390/#391/#392 → Done; Outstanding = caption de-dupe / blend-back / Yue-only voice / Pages+phone smoke |
