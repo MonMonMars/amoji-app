@@ -4,7 +4,9 @@ import { castLightingMultipliers } from './cast-lighting-profile';
 /**
  * ONE neutral daylight rig for every cast surface (chat, select preview,
  * runtime thumbs, thumb-bake). Intensities are intentional magic numbers
- * from r108 CompanionCanvas — keep them locked so models share one look.
+ * from r108 CompanionCanvas — locked so every model shares one look.
+ * characterId args are accepted for call-site compatibility but never change
+ * the rig (see castLightingMultipliers → unit only).
  */
 export const CAST_TONE_MAPPING = THREE.ACESFilmicToneMapping;
 /** Midtones stay neutral under ACES; do not raise without checking warm backdrops. */
@@ -26,7 +28,10 @@ export const CAST_AMBIENT_COLOR = '#ffffff';
 /** Whisper floor so broken toon shade never renders pure black. */
 export const CAST_AMBIENT_INTENSITY = 0.14;
 
-/** Soft frontal key for VRoid ref faces (Sendagaya #1–3 / grazing #13). */
+/**
+ * Soft frontal face key — kept in the rig for dispose/retune shape, but
+ * intensity stays 0 for every character (shared look = no face boost).
+ */
 export const CAST_FACE_COLOR = '#fff4ec';
 export const CAST_FACE_INTENSITY = 0.42;
 export const CAST_FACE_POSITION = [0.2, 1.55, 2.6] as const;
@@ -48,7 +53,7 @@ export function applyCastToneMapping(renderer: THREE.WebGLRenderer, characterId?
   renderer.toneMappingExposure = castToneMappingExposure(characterId);
 }
 
-/** Apply roster-specific multipliers to an existing rig (thumb bake loop, shared thumb env). */
+/** Reset an existing rig to the shared unit intensities (thumb bake loop). */
 export function retuneCastDaylightRig(rig: CastDaylightRig, characterId?: string): void {
   const m = castLightingMultipliers(characterId);
   rig.hemi.intensity = CAST_HEMI_INTENSITY * m.hemi;
@@ -59,7 +64,7 @@ export function retuneCastDaylightRig(rig: CastDaylightRig, characterId?: string
   rig.face.visible = m.face > 0;
 }
 
-/** Adds the shared hemi + key + fill + ambient (+ optional face). Returns handles for dispose / retune. */
+/** Adds the shared hemi + key + fill + ambient (+ dormant face). Returns handles for dispose / retune. */
 export function addCastDaylight(scene: THREE.Scene, characterId?: string): CastDaylightRig {
   const m = castLightingMultipliers(characterId);
   const hemi = new THREE.HemisphereLight(CAST_HEMI_SKY, CAST_HEMI_GROUND, CAST_HEMI_INTENSITY * m.hemi);

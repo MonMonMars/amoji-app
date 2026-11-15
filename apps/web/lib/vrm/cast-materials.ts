@@ -1,12 +1,10 @@
-// Post-load material and texture passes. Reference-family characters are not
-// retuned. MToon stays MToon — only the converted outline/toon factors move.
+// Post-load material and texture passes. Every character shares the same
+// MToon/matcap/shade path — only wardrobe texture patches stay per-id.
 
 import * as THREE from 'three';
-import { needsMToonUnify } from '../cast-adjust';
 import {
   CAST_MATCAP_COLOR_SCALE,
   CAST_RIM_MIX_SCALE,
-  needsCastMatcapDampen,
 } from './cast-lighting-profile';
 import {
   addMissingEyeHighlight,
@@ -36,9 +34,11 @@ interface MToonLike {
   needsUpdate?: boolean;
 }
 
-/** Body/cloth/hair of characters 4–6 only. Eyes and outline-off materials stay. */
-export function unifyCastMToon(root: THREE.Object3D, characterId: string): number {
-  if (!needsMToonUnify(characterId)) return 0;
+/**
+ * Soft-fix thick outline / hard cel toward the shared ref MToon body setup.
+ * Runs for every characterId (ref look is already near target → usually no-op).
+ */
+export function unifyCastMToon(root: THREE.Object3D, _characterId?: string): number {
   let n = 0;
   root.traverse((node) => {
     const mesh = node as THREE.Mesh;
@@ -60,12 +60,11 @@ export function unifyCastMToon(root: THREE.Object3D, characterId: string): numbe
 }
 
 /**
- * VRoid ref mats (#1–3): pull matcap/rim down so hair/face do not blow out
- * under key 1.75. three-vrm exposes matcapFactor as a Color (vec3), NOT a
- * float — treating it as a number was a silent no-op in PR #299.
+ * Universal matcap/rim temper so hair/face do not blow out under key 1.75.
+ * three-vrm exposes matcapFactor as a Color (vec3), NOT a float — treating it
+ * as a number was a silent no-op in PR #299.
  */
-export function dampenCastMatcap(root: THREE.Object3D, characterId: string): number {
-  if (!needsCastMatcapDampen(characterId)) return 0;
+export function dampenCastMatcap(root: THREE.Object3D, _characterId?: string): number {
   let n = 0;
   root.traverse((node) => {
     const mesh = node as THREE.Mesh;

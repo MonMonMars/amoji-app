@@ -91,9 +91,10 @@ describe('MToon unify', () => {
       'a05-avatarsample-c',
       'a10-agahomei-normal',
     ]);
-    expect(needsMToonUnify('a01-shino')).toBe(false);
-    expect(needsMToonUnify('a14-vivi')).toBe(false);
-    expect(needsMToonUnify('a63-hinoame-satuki-mei-sirayuki')).toBe(false);
+    // Shared shader path — every roster id goes through MToon soft-fix.
+    expect(needsMToonUnify('a01-shino')).toBe(true);
+    expect(needsMToonUnify('a14-vivi')).toBe(true);
+    expect(needsMToonUnify('a63-hinoame-satuki-mei-sirayuki')).toBe(true);
     expect(needsMToonUnify('a04-avatarsample-a')).toBe(true);
     expect(needsMToonUnify('a94-rita')).toBe(true);
   });
