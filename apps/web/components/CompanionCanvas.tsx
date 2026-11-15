@@ -1730,20 +1730,21 @@ export default function CompanionCanvas({
                 hipsW,
                 camRightXZ,
               );
-            // Lateral fall: lean TOWARD the poked screen side (Pixel / r120 / #409).
-            // Finger left → tips left. fall = cameraRight * leanSide (+leanSide).
-            // VRM check: leanSide −1 → fallX −1 face-on → head world X drops (screen-left).
-            // −leanSide was opposite tip (#345); #390 flipped to +; keep +.
-            // Pure lateral zones take the screen fall alone. Chest/torso/belly/…
-            // blend axial impulse with the same-side lean so a left-chest tap
-            // still tips left (axial-only used to look like the old twitch).
+            // Owner poke-move rule (#390/#409 / Pixel):
+            //   poke left → tip screen-left; poke right → tip screen-right (same side).
+            //   Lean from finger vs hips on screen. Arm flinch = character-side.
+            //   Do NOT use opposite lean (−leanSide / −camSide).
+            // fall = cameraRight * leanSide (+). VRM: leanSide −1 → fallX −1 → tip left.
+            // Lateral zones: screen fall alone. Off-center chest/head/belly/…: blend
+            // axial impulse with same-side lean (centered front/back stay axial).
             {
               const fall = lateralFallTowardScreenSide(camRightXZ, leanSide);
               const lateralOnly =
                 pokeZone === 'side' || pokeZone === 'armL' || pokeZone === 'armR' || pokeZone === 'hand';
+              const fingerOffCenter = hipsOnScreen && Math.abs(e.clientX - hipsSx) > 14;
               if (lateralOnly) {
                 pokeFallDir.set(fall.x, 0, fall.z);
-              } else if (pokeZone !== 'foot') {
+              } else if (pokeZone !== 'foot' && fingerOffCenter) {
                 pokeFallDir.set(
                   cls.impulse.x * 0.42 + fall.x * 0.95,
                   0,
@@ -1767,8 +1768,20 @@ export default function CompanionCanvas({
             // (+1 right arm / −1 left). leanSide drives fall + voice direction.
             if (pokeZone === 'armR') pokeSideSign = 1;
             else if (pokeZone === 'armL') pokeSideSign = -1;
-            else if (pokeZone === 'side' || pokeZone === 'hand') pokeSideSign = cls.sideSign;
-            if (pokeZone === 'side' || pokeZone === 'armL' || pokeZone === 'armR' || pokeZone === 'hand') {
+            else if (
+              pokeZone === 'side'
+              || pokeZone === 'hand'
+              || (hipsOnScreen && Math.abs(e.clientX - hipsSx) > 14)
+            ) {
+              pokeSideSign = cls.sideSign;
+            }
+            if (
+              pokeZone === 'side'
+              || pokeZone === 'armL'
+              || pokeZone === 'armR'
+              || pokeZone === 'hand'
+              || (hipsOnScreen && Math.abs(e.clientX - hipsSx) > 14 && pokeZone !== 'foot')
+            ) {
               pokeDirection = leanSide >= 0 ? 'right' : 'left';
             }
             pokeSection = resolvePokeSection(pokeZone, pokeDirection);

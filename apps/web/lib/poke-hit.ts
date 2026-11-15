@@ -322,11 +322,12 @@ function clamp(v: number, m: number): number {
 }
 
 /**
- * Punch recoil for one sample of the reaction.
+ * Punch reaction for one sample.
  * t is 0 at the hit and 1 at the end of the window.
- * fallX/fallZ are the horizontal recoil (away from the poke).
- * A head poke tips only the head. Every other part bends hips, spine,
- * shoulders and arms together. Nothing here translates the scene root.
+ * fallX/fallZ: Canvas same-side lean for lateral (#390/#409: finger left →
+ * tip left via +leanSide). Axial front/back keep tip-away impulse on Z.
+ * A head poke tips the head (plus soft torso follow in poke-zones).
+ * Nothing here translates the scene root.
  */
 /** Incomplete cover raise for a soft breast poke (Mon t765): rise, hold mid-way, ease. */
 export function breastCoverEnvelope(t: number): number {
