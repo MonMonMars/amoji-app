@@ -47,7 +47,8 @@
 | Idle pose upright planted calm stands (code) | #392 + #407 v3 + #415 v4 (RPM F/M stands only) — **phone Outstanding** (R11) |
 | Caption then whole phase again in history (code) | #393 |
 | Blend-to-back / idle forward lean (code) | #394 |
-| All langs/genders speak — not Yue-female-only (code) | #395 + voice-unmute-all-langs (onplay setSinkId kill) — **Outstanding phone** until hear |
+| All langs/genders speak — not Yue-female-only (code) | #395 + #424 + chat-mic-unmute (chat pin-before-play) — **Outstanding phone** until hear |
+| Chat mic off→on + non-Yue chat TTS (code) | chat-mic-unmute — reacquire getUserMedia + leave session on off; chat `pinSinkBeforePlay` — **Outstanding phone** |
 | Audible pitch tiers + male delivery + sink route (code) | #406 + #410 + #413 + unmute — **phone Outstanding** (R10) |
 | Unify cast lighting / MToon path (code) | #408 — **phone Outstanding** |
 | Scrub history-resume asks from chat replies (code) | #412 |
@@ -75,7 +76,8 @@
 |------|--------|
 | Card greet — no sound | #370/#375 on `main`; owner re-reports silence. Parallel agent owns fix. **Not Done.** |
 | News same-old / repeat | #385/#386 on `main`; owner re-reports same headlines. Parallel agent owns fix. **Not Done.** |
-| Voice pitch/male/sink (R10) | #406+#410+#413 on `main` + follow-up (delivery gender wins on Edge; male hops edge→synth→gtts; tier Edge voice ids; wider gTTS gaps; #420 play-first default sink). **Still Outstanding until phone** — Edge may 403 without proxy. **Not Done.** |
+| Voice pitch/male/sink (R10) | #406+#410+#413+#424+#425 + chat-mic-unmute (chat pin-before-play; mic off→on reacquire). **Still Outstanding until phone** — Edge may 403 without proxy. **Not Done.** |
+| Chat mic toggle / unmute | Default Yue mic on then off stuck; non-Yue chat mute after play-and-record. Code in chat-mic-unmute. **Outstanding until phone OK.** |
 | Idle pose still bad (R11) | #415 idle v4 on `main` (RPM F/M stands only; prefs v4) — **phone smoke**. Idle v3 legacy wipe/scrub shipping separately. **Not Done.** |
 | Lighting unify (R12) | #408 on `main` — **phone smoke**. **Not Done.** |
 | Poke lean direction (R13) | #409 on `main` — **phone verify**; do not flip ±leanSide without device evidence. **Not Done.** |
@@ -97,6 +99,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-15 ~23:50 | CRITICAL chat: mic off→on stuck + non-Yue chat mute — reacquire mic + chat pin-before-play (no onplay setSinkId) — **Outstanding until phone OK** |
 | 2026-11-15 ~23:00 | R10 #425 rebase onto #424: keep no-onplay setSinkId + real male Edge/synth hops / tier voices — **R10 still Outstanding phone** |
 | 2026-11-15 ~22:45 | CRITICAL: only Yue-F audible — stop onplay `setSinkId` kill; keep #420 play-first; all lang×gender×pitch (`voice-unmute-all-langs`) — **Outstanding phone** |
 | 2026-11-15 ~22:34 | URGENT card greet silence: fix gTTS/Edge play-before-pin + default-only sink cache + insurance hold (`card-greet-sound-fix`) |

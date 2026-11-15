@@ -117,6 +117,7 @@ function boot() {
           ensureCompanionPlaybackRoute: () => {},
           pinDefaultOutput: () => {},
           pinDefaultOutputAsync: () => Promise.resolve(),
+          startHtmlAudioOnDefaultSpeakers: (audio: { play: () => Promise<void> }) => audio.play(),
         };
       }
       if (id.includes('playback-volume')) return { applyPlaybackVolume: () => {} };

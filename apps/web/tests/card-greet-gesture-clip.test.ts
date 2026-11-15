@@ -63,29 +63,21 @@ describe('card greet gesture insurance clip', () => {
     expect(gttsCall).toMatch(/setTimeout\([\s\S]*?stopVoiceClip\(\)[\s\S]*?,\s*220\)/);
   });
 
-  it('gtts plays without awaiting setSinkId first', () => {
-    const marker = gtts.indexOf('Play in this turn');
-    expect(marker).toBeGreaterThan(-1);
-    const window = gtts.slice(marker, marker + 280);
-    expect(window).toContain('void audio.play()');
-    // No parallel pin during start — only reject-retry may pin then play.
-    expect(window).not.toMatch(/void audio\.play\(\)[\s\S]*void pinDefaultOutputAsync\(audio\)\.catch/);
+  it('gtts defaults to gesture-safe start; chat may opt into pin-before-play', () => {
+    expect(gtts).toContain('startHtmlAudioOnDefaultSpeakers');
+    expect(gtts).toContain('pinSinkBeforePlay');
+    expect(gtts).toMatch(/opts\.pinSinkBeforePlay \? 'pin-before-play' : 'gesture-safe'/);
   });
 
-  it('gtts does not pinDefaultOutput before play or inside onplay', () => {
+  it('gtts does not pinDefaultOutput inside onplay', () => {
     const playNext = gtts.slice(gtts.indexOf('const playNext = () => {'), gtts.indexOf('playNext();\n  });'));
     const create = playNext.indexOf('const audio = new Audio');
     const onplay = playNext.indexOf('audio.onplay = () => {', create);
-    const firstPlay = playNext.indexOf('void audio.play()', onplay);
     expect(create).toBeGreaterThan(-1);
     expect(onplay).toBeGreaterThan(create);
-    expect(firstPlay).toBeGreaterThan(onplay);
-    // Setup between new Audio and first play must not kick setSinkId at all.
-    expect(playNext.slice(create, firstPlay)).not.toMatch(/pinDefaultOutput\(audio\)/);
-    // onplay body must not call pin — only the reject-retry path may.
     const onplayEnd = playNext.indexOf('};', onplay);
     expect(playNext.slice(onplay, onplayEnd)).not.toMatch(/pinDefaultOutput\(/);
     expect(playNext.slice(onplay, onplayEnd)).not.toMatch(/pinDefaultOutputAsync\(/);
-    expect(playNext.slice(firstPlay)).toMatch(/pinDefaultOutputAsync\(audio\)/);
+    expect(playNext).toContain('startHtmlAudioOnDefaultSpeakers');
   });
 });

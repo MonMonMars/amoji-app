@@ -253,3 +253,48 @@ export async function primeDefaultSpeakerBeforeSynth(): Promise<void> {
     /* ignore */
   }
 }
+
+/**
+ * Start an HTMLAudioElement on the default speakers.
+ *
+ * - `gesture-safe` (card greet / voice preview): play() first in the same turn
+ *   as the tap; pin only on reject-retry. Never setSinkId in onplay (#424).
+ * - `pin-before-play` (chat reply TTS after mic opened play-and-record): await
+ *   the default sink pin, then play. Under play-and-record, play() often
+ *   succeeds while routing to a silent communications device — reject-only pin
+ *   never runs, so non-Yue / male chat lines stay mute on the default speakers.
+ */
+export async function startHtmlAudioOnDefaultSpeakers(
+  audio: HTMLAudioElement,
+  mode: 'gesture-safe' | 'pin-before-play' = 'gesture-safe',
+): Promise<void> {
+  ensureCompanionPlaybackRoute();
+  const playOrPinRetry = async (firstErr?: unknown): Promise<void> => {
+    try {
+      await audio.play();
+    } catch (err) {
+      await pinDefaultOutputAsync(audio);
+      try {
+        await audio.play();
+      } catch (retryErr) {
+        throw retryErr instanceof Error
+          ? retryErr
+          : err instanceof Error
+            ? err
+            : firstErr instanceof Error
+              ? firstErr
+              : new Error(String(retryErr));
+      }
+    }
+  };
+  if (mode === 'pin-before-play') {
+    try {
+      await pinDefaultOutputAsync(audio);
+    } catch {
+      /* still attempt play */
+    }
+    await playOrPinRetry();
+    return;
+  }
+  await playOrPinRetry();
+}

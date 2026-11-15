@@ -249,6 +249,7 @@ import {
 } from '../lib/memory';
 import { listenContinuous, listenSupported } from '../lib/listen';
 import { getEntryGateRecord, micPreflightGrantedThisSession } from '../lib/entry-gate';
+import { reacquireMicForVoiceMode } from '../lib/mic-preflight';
 import {
   bindVoiceChatFocusLifecycle,
   duckExternalAudioForCompanion,
@@ -511,6 +512,8 @@ export default function ChatPanel({
   const lastTopicalContentAtRef = useRef(0);
   const listeningRef = useRef(false);
   const micModeRef = useRef(false);
+  /** Bumps on each begin/end so stale VAD/onEnd cannot dismiss a newer session. */
+  const micSessionGenRef = useRef(0);
   const micStopRef = useRef<{ stop(): void; flush(): void } | null>(null);
   // r87 — Silero VAD alongside the mic: its own stop handle, the grace timer
   // between "speech ended" and "flush the words", wired per mic session.
@@ -1718,6 +1721,7 @@ export default function ChatPanel({
   // the VAD can't load, everything falls back to the r86 behaviour exactly.
   const endVoiceMode = () => {
     if (!micModeRef.current) return;
+    micSessionGenRef.current += 1;
     micModeRef.current = false;
     micStopRef.current?.stop();
     micStopRef.current = null;
@@ -1729,6 +1733,8 @@ export default function ChatPanel({
     setListening(false);
     setMicDismissed(true);
     setLiveText('');
+    // Leave play-and-record so the next on can re-open a clean session.
+    leaveVoiceChatAudioSession();
     lastActivityRef.current = Date.now();
     lastUserRef.current = Date.now();
     reengageStageRef.current = 0;
@@ -1740,6 +1746,7 @@ export default function ChatPanel({
       window.alert(t(lang, 'micUnsupported'));
       return;
     }
+    const sessionGen = ++micSessionGenRef.current;
     enterVoiceChatAudioSession();
     duckExternalAudioForCompanion();
     micModeRef.current = true;
@@ -1754,6 +1761,7 @@ export default function ChatPanel({
       // r87 — the VAD owns endpointing now; its onPartial flushes via handle
       externalEndpoint: true,
       onSpeechStart: () => {
+        if (sessionGen !== micSessionGenRef.current) return;
         if (!bargeInArmed) return;
         bargeInArmed = false;
         stopSpeaking(); // the user is really talking — cut her voice NOW
@@ -1765,6 +1773,7 @@ export default function ChatPanel({
       // words only while you're already at the bottom (never yanks you
       // out of a history scroll).
       onInterim: (partial) => {
+        if (sessionGen !== micSessionGenRef.current) return;
         setLiveText(partial);
         if (partial) {
           lastActivityRef.current = Date.now();
@@ -1774,6 +1783,7 @@ export default function ChatPanel({
         }
       },
       onFinal: (said) => {
+        if (sessionGen !== micSessionGenRef.current) return;
         bargeInArmed = true;
         setLiveText(''); // the committed message takes the bubble's place
         lastActivityRef.current = Date.now();
@@ -1785,6 +1795,8 @@ export default function ChatPanel({
         else void send(said);
       },
       onEnd: () => {
+        // Stale session (user already toggled off/on) must not dismiss the new one.
+        if (sessionGen !== micSessionGenRef.current) return;
         // mic error / permission denied — drop out of voice mode
         micModeRef.current = false;
         micStopRef.current = null;
@@ -1796,6 +1808,7 @@ export default function ChatPanel({
         setListening(false);
         setMicDismissed(true);
         setLiveText('');
+        leaveVoiceChatAudioSession();
       },
     });
     micStopRef.current = micHandle;
@@ -1805,6 +1818,7 @@ export default function ChatPanel({
     // simply never arriving leaves voice mode exactly as it was in r86.
     void startVad({
       onSpeechStart: () => {
+        if (sessionGen !== micSessionGenRef.current) return;
         setUserSpeaking(true);
         if (vadGraceRef.current) { clearTimeout(vadGraceRef.current); vadGraceRef.current = null; }
         // Silero hears raw mic frames — her own TTS from the speakers trips
@@ -1820,23 +1834,48 @@ export default function ChatPanel({
         reengageStageRef.current = 0;
       },
       onSpeechEnd: () => {
+        if (sessionGen !== micSessionGenRef.current) return;
         setUserSpeaking(false);
         // ~0.7s grace: a genuinely finished sentence flushes its pending
         // words into the chat; a mid-thought pause just keeps listening
         if (vadGraceRef.current) clearTimeout(vadGraceRef.current);
-        vadGraceRef.current = setTimeout(() => micHandle.flush(), 700);
+        vadGraceRef.current = setTimeout(() => {
+          if (sessionGen === micSessionGenRef.current) micHandle.flush();
+        }, 700);
       },
     }).then((vadHandle) => {
       // r87b: .then() receives the VadHandle ({stop()}) or null — store it
       // as-is and call .stop() everywhere; a bare function call was TS2349.
-      if (micModeRef.current) vadStopRef.current = vadHandle;
-      else vadHandle?.stop();
+      if (sessionGen === micSessionGenRef.current && micModeRef.current) {
+        vadStopRef.current = vadHandle;
+      } else {
+        vadHandle?.stop();
+      }
     });
   };
 
   const mic = () => {
-    if (micModeRef.current) endVoiceMode();
-    else beginVoiceMode();
+    if (micModeRef.current) {
+      endVoiceMode();
+      return;
+    }
+    // Manual on must re-probe getUserMedia in THIS click — the gate gesture is
+    // gone, and off left stopped tracks / play-and-record that block a bare start.
+    void (async () => {
+      const outcome = await reacquireMicForVoiceMode();
+      if (outcome === 'unsupported') {
+        window.alert(t(lang, 'micUnsupported'));
+        setMicDismissed(true);
+        return;
+      }
+      if (outcome === 'denied') {
+        setMicDismissed(true);
+        listeningRef.current = false;
+        setListening(false);
+        return;
+      }
+      if (!micModeRef.current) beginVoiceMode();
+    })();
   };
 
   // Grok-style: mic opens as soon as you enter chat (default ON). Do not wait

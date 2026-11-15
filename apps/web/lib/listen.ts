@@ -201,7 +201,12 @@ export function listenContinuous(lang: string, opts: ContinuousListenOptions): C
     stop: () => {
       active = false;
       if (restartTimer) clearTimeout(restartTimer);
-      try { rec?.stop(); } catch { /* already stopped */ }
+      // abort() releases the mic faster than stop() so off→on can re-acquire
+      // (Chrome/Safari often keep the stream briefly after stop()).
+      try { rec?.abort(); } catch {
+        try { rec?.stop(); } catch { /* already stopped */ }
+      }
+      rec = null;
     },
     // r87 — force the browser to deliver whatever words are pending as a
     // FINAL result immediately; onend restarts the session fresh after it

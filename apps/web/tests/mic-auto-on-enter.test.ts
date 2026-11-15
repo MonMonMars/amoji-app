@@ -22,6 +22,23 @@ describe('chat mic auto-on + external audio duck', () => {
     expect(chat).toContain('micOpenedThisMountRef');
   });
 
+  it('manual mic on re-acquires getUserMedia and leaves session clean on off', () => {
+    const chat = read('components/ChatPanel.tsx');
+    const micPre = read('lib/mic-preflight.ts');
+    const listen = read('lib/listen.ts');
+    const vad = read('lib/vad.ts');
+    expect(chat).toContain('reacquireMicForVoiceMode');
+    expect(chat).toContain('leaveVoiceChatAudioSession()');
+    expect(chat).toContain('micSessionGenRef');
+    expect(chat).toMatch(/endVoiceMode[\s\S]*?leaveVoiceChatAudioSession\(\)/);
+    expect(chat).toMatch(/const mic = \(\) => \{[\s\S]*?reacquireMicForVoiceMode\(\)/);
+    expect(micPre).toContain('export async function reacquireMicForVoiceMode');
+    expect(micPre).toContain('getUserMedia');
+    expect(listen).toMatch(/stop: \(\) => \{[\s\S]*?rec\?\.abort\(\)/);
+    expect(vad).toContain('destroyActiveVad');
+    expect(vad).toContain('await destroyActiveVad()');
+  });
+
   it('gate Enter re-probes mic in the same gesture for default-open chat', () => {
     const gate = read('components/PreChatAudioGate.tsx');
     expect(gate).toContain('requestMic');

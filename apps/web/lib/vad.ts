@@ -44,6 +44,9 @@ const ASSET_BASE = 'https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.29/dist/
 const WASM_BASE = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/';
 
 let loadPromise: Promise<boolean> | null = null;
+/** Serialize destroy → getUserMedia so off→on does not hit DeviceInUse. */
+let vadLifecycle: Promise<void> = Promise.resolve();
+let activeMicVad: { destroy(): void } | null = null;
 
 function injectScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -80,13 +83,29 @@ export function preloadVadRuntime(): Promise<boolean> {
   return loadRuntime();
 }
 
+function destroyActiveVad(): Promise<void> {
+  vadLifecycle = vadLifecycle.then(async () => {
+    const prev = activeMicVad;
+    activeMicVad = null;
+    if (!prev) return;
+    try { prev.destroy(); } catch { /* already gone */ }
+    // Let the browser release the MediaStream track before the next getUserMedia.
+    await new Promise<void>((r) => setTimeout(r, 80));
+  }).catch(() => undefined);
+  return vadLifecycle;
+}
+
 /**
  * Start voice-activity detection. Resolves a handle with stop(), or null
  * when the runtime could not load (offline / CDN blocked / unsupported) —
  * callers MUST treat null as "keep the previous behaviour", never an error.
+ *
+ * Off→on must wait for the previous MicVAD destroy: overlapping getUserMedia
+ * left the chat mic stuck after the user toggled it off (owner CRITICAL).
  */
 export async function startVad(hooks: VadHooks): Promise<VadHandle | null> {
   if (typeof window === 'undefined') return null;
+  await destroyActiveVad();
   if (!(await loadRuntime())) return null;
   const w = window as unknown as {
     vad?: { MicVAD?: { 'new': (options: Record<string, unknown>) => Promise<unknown> } };
@@ -94,6 +113,7 @@ export async function startVad(hooks: VadHooks): Promise<VadHandle | null> {
   const micVadStatic = w.vad?.MicVAD;
   if (!micVadStatic) return null;
   try {
+    await vadLifecycle;
     const micVad = (await micVadStatic['new']({
       baseAssetPath: ASSET_BASE,
       onnxWASMBasePath: WASM_BASE,
@@ -109,7 +129,12 @@ export async function startVad(hooks: VadHooks): Promise<VadHandle | null> {
       onSpeechStart: () => hooks.onSpeechStart(),
       onSpeechEnd: () => hooks.onSpeechEnd(),
     })) as { destroy(): void };
-    return { stop: () => { try { micVad.destroy(); } catch { /* already gone */ } } };
+    activeMicVad = micVad;
+    return {
+      stop: () => {
+        void destroyActiveVad();
+      },
+    };
   } catch {
     return null;
   }
