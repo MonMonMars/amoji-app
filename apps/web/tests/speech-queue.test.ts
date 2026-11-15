@@ -45,4 +45,12 @@ describe('speechRemainder', () => {
     expect(speechLeadDiverged('Hello there. How are you?', 'Hello there.')).toBe(false);
     expect(speechRemainder('  Hello.  ', '')).toBe('Hello.');
   });
+
+  it('ignores trailing sentence punctuation when matching the streamed lead', () => {
+    // Stream closed on "." while the scrubbed final uses "!" — still one lead.
+    expect(speechLeadDiverged('Sunny and mild! Bring a jacket.', 'Sunny and mild.')).toBe(false);
+    expect(speechRemainder('Sunny and mild! Bring a jacket.', 'Sunny and mild.')).toBe('Bring a jacket.');
+    expect(speechLeadDiverged('今日好熱！記得帶水。', '今日好熱。')).toBe(false);
+    expect(speechRemainder('今日好熱！記得帶水。', '今日好熱。')).toBe('記得帶水。');
+  });
 });
