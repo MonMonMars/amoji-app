@@ -4,7 +4,11 @@
 // the user interrupts.
 
 import { assetUrl } from './asset';
-import { pinDefaultOutput, pinDefaultOutputAsync } from './audio-output';
+import {
+  ensureCompanionPlaybackRoute,
+  pinDefaultOutput,
+  pinDefaultOutputAsync,
+} from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 import { followAudioElement, noteSpeechStarted } from './speech';
 
@@ -45,6 +49,7 @@ export function isVoiceClipPlaying(): boolean {
 export function playGestureClipSync(file: string, caption: string, onPlay?: () => void): void {
   stopVoiceClip();
   if (typeof Audio === 'undefined') return;
+  ensureCompanionPlaybackRoute();
   const audio = new Audio(assetUrl(file));
   current = audio;
   applyPlaybackVolume(audio);
@@ -81,6 +86,7 @@ export function playVoiceClip(file: string, caption: string, onPlay?: () => void
       reject(new Error('no audio'));
       return;
     }
+    ensureCompanionPlaybackRoute();
     const audio = new Audio(assetUrl(file));
     current = audio;
     applyPlaybackVolume(audio);

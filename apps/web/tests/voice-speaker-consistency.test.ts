@@ -99,4 +99,22 @@ describe('voice does not switch speaker mid-line or between characters', () => {
     expect(focus).toContain('ensureCompanionPlaybackRoute');
     expect(focus).toMatch(/duckExternalAudioForCompanion[\s\S]*companionPlaybackSession/);
   });
+
+  it('all companion HTMLAudio paths force default speakers only (not mic/comms sink)', () => {
+    // Owner: Yue female audible on expected speakers; other lang/gender TTS
+    // routed to another device — setSinkId / play-and-record latch, not mute.
+    const audioOut = readFileSync(join(web, 'lib/audio-output.ts'), 'utf8');
+    const edge = readFileSync(join(web, 'lib/edge-tts.ts'), 'utf8');
+    const clips = readFileSync(join(web, 'lib/play-voice-clip.ts'), 'utf8');
+    const openai = readFileSync(join(web, 'lib/openai-tts.ts'), 'utf8');
+    expect(audioOut).toContain('isDefaultSinkId');
+    expect(audioOut).not.toMatch(/sharedCtx[\s\S]{0,80}\.sinkId/);
+    expect(audioOut).toMatch(/cachedDefaultSink = ''|cachedDefaultSink = 'default'/);
+    for (const src of [gtts, edge, clips, openai]) {
+      expect(src).toContain('ensureCompanionPlaybackRoute');
+      expect(src).toContain('pinDefaultOutput');
+      // Play first; pin on onplay / reject-retry — never await setSinkId first.
+      expect(src).toMatch(/void audio\.play\(\)/);
+    }
+  });
 });

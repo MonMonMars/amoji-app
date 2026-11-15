@@ -12,6 +12,9 @@
 //
 // Also call ensureCompanionPlaybackRoute() before every HTMLAudio TTS start so
 // non-Yue / male pins do not stay on the mic communications sink after gate.
+//
+// Owner clarification: Yue female on expected speakers + other lang/gender on
+// another device is NOT mute — wrong setSinkId / communications latch.
 
 type SinkTarget = { setSinkId?: (sinkId: string) => Promise<void>; sinkId?: string };
 type AudioSessionNav = Navigator & { audioSession?: { type: string } };
@@ -64,15 +67,29 @@ function isDefaultSinkId(id: string): boolean {
   return id === '' || id === 'default';
 }
 
+/** Drop any non-default cache entry (defensive — only '' / 'default' may stick). */
+function scrubNonDefaultSinkCache(): void {
+  if (cachedDefaultSink !== undefined && !isDefaultSinkId(cachedDefaultSink)) {
+    cachedDefaultSink = undefined;
+  }
+}
+
 /** Cached default sink only — never a hardware device id. */
 function preferredSinkId(): string {
+  scrubNonDefaultSinkCache();
   if (cachedDefaultSink !== undefined && isDefaultSinkId(cachedDefaultSink)) {
     return cachedDefaultSink;
   }
   return '';
 }
 
+/**
+ * Pin only to '' or 'default'. Never pass node.sinkId / AudioContext.sinkId —
+ * those can be communications UUIDs after mic play-and-record (owner: Yue
+ * female on default speakers, other lang/gender TTS on another device).
+ */
 async function resolveDefaultSinkId(setSink: (id: string) => Promise<void>): Promise<string> {
+  scrubNonDefaultSinkCache();
   if (cachedDefaultSink !== undefined && isDefaultSinkId(cachedDefaultSink)) {
     return cachedDefaultSink;
   }
@@ -92,18 +109,28 @@ async function resolveDefaultSinkId(setSink: (id: string) => Promise<void>): Pro
   }
 }
 
-/** Await sink pin before play() — avoids racing default routing on Windows. */
+/** Await sink pin — callers should still play() first on gesture-bound media. */
 export async function pinDefaultOutputAsync(
   node: SinkTarget | null | undefined,
 ): Promise<void> {
   ensureCompanionPlaybackRoute();
+  scrubNonDefaultSinkCache();
   const setSink = node?.setSinkId;
   if (typeof setSink !== 'function') return;
   const bound = setSink.bind(node);
+  // If the element already latched onto a communications / headset id, force
+  // default speakers. Never reuse that id as preferredSinkId.
+  const current = typeof node.sinkId === 'string' ? node.sinkId : '';
+  if (current && !isDefaultSinkId(current)) {
+    cachedDefaultSink = undefined;
+  }
   const preferred = preferredSinkId();
-  if (cachedDefaultSink !== undefined) {
+  if (!isDefaultSinkId(preferred)) {
+    cachedDefaultSink = undefined;
+  }
+  if (cachedDefaultSink !== undefined && isDefaultSinkId(cachedDefaultSink)) {
     try {
-      await bound(preferred);
+      await bound(cachedDefaultSink);
       return;
     } catch {
       /* fall through to resolve */
@@ -115,6 +142,7 @@ export async function pinDefaultOutputAsync(
 
 export function pinDefaultOutput(node: SinkTarget | null | undefined): void {
   ensureCompanionPlaybackRoute();
+  scrubNonDefaultSinkCache();
   const setSink = node?.setSinkId;
   if (typeof setSink !== 'function') return;
   void pinDefaultOutputAsync(node).catch(() => {

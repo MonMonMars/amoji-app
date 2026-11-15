@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   ensureCompanionPlaybackRoute,
@@ -82,5 +84,28 @@ describe('default audio output', () => {
     });
     expect(later).toEqual(['']);
     expect(later.every((id) => id === '' || id === 'default')).toBe(true);
+  });
+
+  it('re-pins to default when the element already latched a communications sink', async () => {
+    const calls: string[] = [];
+    await pinDefaultOutputAsync({
+      sinkId: 'communications-headset-uuid',
+      setSinkId(id: string) {
+        calls.push(id);
+        return Promise.resolve();
+      },
+    });
+    expect(calls).toEqual(['']);
+    expect(getDefaultSinkId()).toBe('');
+  });
+
+  it('source never copies AudioContext.sinkId into preferredSinkId', () => {
+    // #406 preferredSinkId read sharedCtx.sinkId — after mic that was a
+    // communications UUID, so non-Yue / male TTS left the default speakers
+    // while Yue female (gate sample) stayed on the expected device.
+    const src = readFileSync(join(__dirname, '../lib/audio-output.ts'), 'utf8');
+    expect(src).not.toMatch(/sharedCtx[\s\S]{0,80}\.sinkId/);
+    expect(src).toContain("id === '' || id === 'default'");
+    expect(src).toContain('Never copy AudioContext.sinkId');
   });
 });
