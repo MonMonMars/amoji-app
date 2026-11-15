@@ -26,9 +26,9 @@ Tick on a real phone (prefer iPhone Safari). Hard refresh / clear site data once
 - [ ] After hard refresh + clear site data, prefs keys are `amoji.idle*.v6` (no stuck v5 RPM pin)
 - [ ] After a chat turn ends, idle returns upright (no stuck lean / weird blend)
 
-### R10 voice (#406 + #410 + #413 + #424 unmute + real-male + chat-mic-unmute)
+### R10 voice (#406 + #410 + #413 + #424 unmute + #425 real-male + huge-gap + chat-mic-unmute)
 
-- [ ] deep / mid / bright buttons are **obviously** different (same lang)
+- [ ] deep / mid / bright buttons are **VERY** different (same lang — not subtle)
 - [ ] Male button sounds male (not female pitched down slightly)
 - [ ] Non-Yue (en / zh / ja) plays on **same speakers** as gate sample
 - [ ] Female Cantonese still works after male / other-lang tries

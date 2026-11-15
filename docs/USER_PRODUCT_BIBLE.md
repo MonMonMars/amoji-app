@@ -76,8 +76,7 @@
 |------|--------|
 | Card greet — no sound | #370/#375 on `main`; owner re-reports silence. Parallel agent owns fix. **Not Done.** |
 | News same-old / repeat | #385/#386 on `main`; owner re-reports same headlines. Parallel agent owns fix. **Not Done.** |
-| Voice pitch/male/sink (R10) | #406+#410+#413+#424+#425 + chat-mic-unmute (chat pin-before-play; mic off→on reacquire). **Still Outstanding until phone** — Edge may 403 without proxy. **Not Done.** |
-| Chat mic toggle / unmute | Default Yue mic on then off stuck; non-Yue chat mute after play-and-record. Code in chat-mic-unmute. **Outstanding until phone OK.** |
+| Voice pitch/male/sink (R10) | #406+#410+#413+#424+#425 + huge-gap (distinct Edge ids/tier; SSML uncrush; gTTS ≥0.85) + chat-mic-unmute. **Still Outstanding until phone** — Edge may 403 without proxy. **Not Done.** |
 | Idle pose still bad (R11) | #415 idle v4 on `main` (RPM F/M stands only; prefs v4) — **phone smoke**. Idle v3 legacy wipe/scrub shipping separately. **Not Done.** |
 | Lighting unify (R12) | #408 on `main` — **phone smoke**. **Not Done.** |
 | Poke lean direction (R13) | #409 on `main` — **phone verify**; do not flip ±leanSide without device evidence. **Not Done.** |

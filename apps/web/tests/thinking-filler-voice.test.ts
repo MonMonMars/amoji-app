@@ -15,9 +15,9 @@ const clipCalls: string[] = [];
 vi.mock('../lib/gtts', () => ({
   PITCH_BIAS_MALE: 0.64,
   PITCH_BIAS_FEMALE: 1.30,
-  GTTS_PITCH_BIAS_MIN: 0.42,
-  GTTS_PITCH_BIAS_MAX: 1.64,
-  GTTS_YUE_MALE_PACE_FLOOR: 0.42,
+  GTTS_PITCH_BIAS_MIN: 0.38,
+  GTTS_PITCH_BIAS_MAX: 1.72,
+  GTTS_YUE_MALE_PACE_FLOOR: 0.38,
   stopGtts: () => {},
   speakGtts: (text: string, opts: Record<string, unknown>) => {
     calls.push({ text, opts });

@@ -451,12 +451,11 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
         const breakAfter = ssmlBreakAfterClause(part, isTail);
         return prosodyClause(part, pitch, rate, baseVol, breakAfter);
       }
-      // Sing-song stays inside what neural prosody can do without artifacts.
-      // Past about ±20% pitch the free voices distort — a poke "haha!" at the
-      // old +50% ceiling was the squeak.
-      // Additive wave (not base*contour): greetings/previews pass ~0 deltas, and
-      // the old multiply erased the ChatGPT-style warble on style-less voices
-      // (WanLung / Keita / Jenny) and every forcePlain select tap.
+      // Intentional rateDelta/pitchDelta (deep/mid/bright buttons) MUST survive.
+      // The old ±14%/±18% clamps crushed #425 tier prosody so deep≈bright on
+      // device. Decorative sing-song wave stays small; absolute ceiling is wide
+      // enough for huge tier gaps but under the ±50% Edge distort zone.
+      // Lead tics still go through clampLeadProsody (poke squeak safety).
       const wave = parts.length > 1
         ? 0.07 * expr * Math.sin((i / (parts.length - 1)) * Math.PI * (rising ? 1 : 0.7))
         : 0;
@@ -465,8 +464,10 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
       const trail = /[…\.{3}—–]/.test(part);
       const swellP = bang ? 0.04 : trail ? -0.04 : 0;
       const swellR = bang ? 0.025 : trail ? -0.03 : 0;
-      const rate = clamp(baseRate + wave * 0.45 + swellR + (isTail ? -0.02 : 0), -0.14, 0.14);
-      const pitch = clamp(basePitch + wave + tailLift + swellP + (bang ? 0.02 * expr : 0), -0.18, 0.18);
+      const rateOrnament = clamp(wave * 0.45 + swellR + (isTail ? -0.02 : 0), -0.05, 0.05);
+      const pitchOrnament = clamp(wave + tailLift + swellP + (bang ? 0.02 * expr : 0), -0.06, 0.06);
+      const rate = clamp(baseRate + rateOrnament, -0.42, 0.42);
+      const pitch = clamp(basePitch + pitchOrnament, -0.48, 0.48);
       // breath pauses: shared table — sentence ~480ms, paragraph ~750ms, comma ~300ms
       const breakAfter = ssmlBreakAfterClause(part, isTail);
       return prosodyClause(part, pitch, rate, baseVol, breakAfter);

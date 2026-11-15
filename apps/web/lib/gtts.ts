@@ -62,11 +62,15 @@ export const PITCH_BIAS_FEMALE = 1.30;
  * Leftover after #406/#410/#413: floor sat at male mid and Math.max()
  * lifted deep male into mid — deep≈mid on yue. Keep at GTTS_PITCH_BIAS_MIN.
  */
-export const GTTS_YUE_MALE_PACE_FLOOR = 0.42;
+export const GTTS_YUE_MALE_PACE_FLOOR = 0.38;
 
-/** pitchBias clamp shared by speakGtts + gtts-timbre (wide enough for deep≠bright). */
-export const GTTS_PITCH_BIAS_MIN = 0.42;
-export const GTTS_PITCH_BIAS_MAX = 1.64;
+/**
+ * pitchBias clamp shared by speakGtts + gtts-timbre.
+ * After #425 owner still heard deep≈bright — widen the usable band so
+ * selectable tiers can sit near the extremes without chipmunk/slurry audio.
+ */
+export const GTTS_PITCH_BIAS_MIN = 0.38;
+export const GTTS_PITCH_BIAS_MAX = 1.72;
 
 /** Effective <audio> playbackRate after emotion rate and gender pitch bias. */
 export function gttsPlaybackRate(rate: number, pitchBias: number, tl: string): number {
