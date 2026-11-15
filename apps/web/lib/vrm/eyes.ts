@@ -1,16 +1,29 @@
-// Eye readability. VRoid faces put the iris and the eye-white on coplanar
-// meshes (same vertices, different materials). Without a depth bias the white
-// wins the z-test on some frames and the pupil disappears. Expressions that
-// drive the eyelid (blink, happy) can also cover the iris completely; those
-// weights stay below a full seal so a dark pupil remains readable.
+// Eye readability + size stability. VRoid faces put the iris and the eye-white
+// on coplanar meshes (same vertices, different materials). Without a depth bias
+// the white wins the z-test on some frames and the pupil disappears. Expressions
+// that drive the eyelid (blink, happy) can also cover the iris completely;
+// those weights stay below a full seal so a dark pupil remains readable.
 //
 // VRM look-at (bone or lookLeft/lookRight expression morphs) can park the
 // iris off-center or slide it out of the socket when a stale target or clip
 // competes with our head-driven gaze — we pin look-at off and zero those morphs
 // every frame on VRM 1.0 avatars.
+//
+// Eye SIZE: several emotion presets share one eye atlas (textureTransformBinds)
+// and/or widen morphs (Surprised). Stacking them lerps UV offsets mid-cell and
+// inflates the socket — eyes flicker big↔small. Shared cast caps + one dominant
+// atlas expression keep size stable for every cast member.
 
 import * as THREE from 'three';
 import type { VRM } from '@pixiv/three-vrm';
+import {
+  CAST_EYE_ATLAS_EXPR,
+  CAST_EYE_ATLAS_FLOOR,
+  CAST_EYE_BLINK_CAP,
+  CAST_EYE_SQUINT_CAP,
+  CAST_EYE_WIDE_CAP,
+  type CastEyeAtlasExpr,
+} from './cast-eye-profile';
 
 const LOOK_EXPR = ['lookLeft', 'lookRight', 'lookUp', 'lookDown'] as const;
 
@@ -25,28 +38,93 @@ type LookAtLike = {
 
 export type EyeKind = 'white' | 'iris' | 'highlight' | 'line';
 
-const EYE_CLOSE_CAP: Record<string, number> = {
-  blink: 0.34,
-  blinkleft: 0.34,
-  blinkright: 0.34,
-  blink_l: 0.34,
-  blink_r: 0.34,
-  happy: 0.58,
-  fun: 0.58,
-  joy: 0.58,
-  relaxed: 0.5,
+export type EyeScalePin = {
+  obj: THREE.Object3D;
+  x: number;
+  y: number;
+  z: number;
+};
+
+const EYE_EXPR_CAP: Record<string, number> = {
+  blink: CAST_EYE_BLINK_CAP,
+  blinkleft: CAST_EYE_BLINK_CAP,
+  blinkright: CAST_EYE_BLINK_CAP,
+  blink_l: CAST_EYE_BLINK_CAP,
+  blink_r: CAST_EYE_BLINK_CAP,
+  happy: CAST_EYE_SQUINT_CAP,
+  fun: CAST_EYE_SQUINT_CAP,
+  joy: CAST_EYE_SQUINT_CAP,
+  relaxed: CAST_EYE_SQUINT_CAP,
+  // Wide morphs / atlas cells — never full weight (mega-eyes / stuck open).
+  surprised: CAST_EYE_WIDE_CAP,
+  surprise: CAST_EYE_WIDE_CAP,
   lookleft: 0,
   lookright: 0,
   lookup: 0,
   lookdown: 0,
 };
 
-/** Keep eyelid morphs from sealing the iris. Other expressions pass through. */
+const ATLAS_SET = new Set<string>(CAST_EYE_ATLAS_EXPR.map((n) => n.toLowerCase()));
+
+/** Cap eyelid / wide morphs so blink closes lids without sealing or mega-eyes. */
 export function capEyeExpression(name: string, value: number): number {
   if (!Number.isFinite(value)) return 0;
-  const cap = EYE_CLOSE_CAP[name.toLowerCase()];
+  const cap = EYE_EXPR_CAP[name.toLowerCase()];
   const v = value < 0 ? 0 : value;
   return cap === undefined || v < cap ? v : cap;
+}
+
+/**
+ * Keep a single dominant face preset for eye-atlas / eye-size morphs.
+ * Blink and visemes stay independent. Winner is chosen from raw intent
+ * (before caps) so a strong surprised poke is not beaten by a capped happy
+ * squint. Losers clear so UV offsets do not lerp between atlas cells
+ * (big↔small flicker) and wide morphs do not stick.
+ */
+export function dominateEyeExpressions(
+  weights: Readonly<Record<string, number>>,
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [k, raw] of Object.entries(weights)) {
+    out[k] = Number.isFinite(raw) ? Math.max(0, raw) : 0;
+  }
+
+  let best: string | null = null;
+  let bestRaw = CAST_EYE_ATLAS_FLOOR;
+  for (const name of CAST_EYE_ATLAS_EXPR) {
+    const v = out[name] ?? out[name.toLowerCase()] ?? 0;
+    if (v > bestRaw) {
+      bestRaw = v;
+      best = name;
+    }
+  }
+
+  for (const name of CAST_EYE_ATLAS_EXPR) {
+    const key = name in out ? name : name.toLowerCase() in out ? name.toLowerCase() : name;
+    if (best && name === best) {
+      out[key] = capEyeExpression(name, bestRaw);
+    } else {
+      out[key] = 0;
+    }
+  }
+
+  // Non-atlas channels (blink, visemes, …) still get their own caps.
+  for (const [k, raw] of Object.entries(out)) {
+    if (ATLAS_SET.has(k.toLowerCase())) continue;
+    out[k] = capEyeExpression(k, raw);
+  }
+  return out;
+}
+
+/** Apply dominateEyeExpressions then set each weight through the avatar. */
+export function applyDominatedEyeExpressions(
+  setEm: (name: string, value: number) => void,
+  weights: Readonly<Record<string, number>>,
+): void {
+  const dominated = dominateEyeExpressions(weights);
+  for (const [name, value] of Object.entries(dominated)) {
+    setEm(name, value);
+  }
 }
 
 export function eyeMaterialKind(materialName: string, meshName = ''): EyeKind | null {
@@ -56,6 +134,34 @@ export function eyeMaterialKind(materialName: string, meshName = ''): EyeKind | 
   if (/highlight|catchlight|ハイライト|eyeextra|eye_extra/.test(n)) return 'highlight';
   if (/eyeline|eyelash|まつ|まぶた/.test(n)) return 'line';
   return null;
+}
+
+function isEyeMesh(mesh: THREE.Mesh): boolean {
+  const mats = Array.isArray(mesh.material) ? mesh.material : mesh.material ? [mesh.material] : [];
+  if (mats.some((m) => eyeMaterialKind(m.name || '', mesh.name || '') !== null)) return true;
+  return /eye|iris|pupil|sclera|highlight|瞳|白目/i.test(mesh.name || '');
+}
+
+/** Snapshot local scales of eye meshes so later frames can pin them. */
+export function captureEyeRestScales(root: THREE.Object3D): EyeScalePin[] {
+  const pins: EyeScalePin[] = [];
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (!mesh.isMesh || !isEyeMesh(mesh)) return;
+    const s = mesh.scale;
+    // Collapse near-zero authored scales to unit so the iris is drawable.
+    if (s.x * s.x + s.y * s.y + s.z * s.z < 1e-8) s.set(1, 1, 1);
+    pins.push({ obj: mesh, x: s.x, y: s.y, z: s.z });
+  });
+  return pins;
+}
+
+/** Restore captured eye mesh scales — blink/expr must not leave meshes resized. */
+export function pinEyeRestScales(pins: readonly EyeScalePin[]): void {
+  for (const p of pins) {
+    const s = p.obj.scale;
+    if (s.x !== p.x || s.y !== p.y || s.z !== p.z) s.set(p.x, p.y, p.z);
+  }
 }
 
 /** Turn off VRM look-at tracking; gaze is driven by head pose only. */
@@ -171,3 +277,5 @@ export function stabilizeEyeMaterials(root: THREE.Object3D): void {
 export function isEyeMaterial(materialName: string, meshName = ''): boolean {
   return eyeMaterialKind(materialName, meshName) !== null;
 }
+
+export type { CastEyeAtlasExpr };
