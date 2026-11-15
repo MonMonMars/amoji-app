@@ -2,9 +2,9 @@
 
 **Purpose:** Living checklist of product rules from the product owner. Agents must read this before chat/voice/pose/permission work and update it when rules change.
 
-**Last reviewed:** 2026-11-15 22:31 (Asia/Hong_Kong)  
+**Last reviewed:** 2026-11-16 01:12 (Asia/Hong_Kong)  
 **Demo:** https://monmonmars.github.io/amoji-app/  
-**`main` tip:** `34ed7e0` (#418) · Pages `last-modified` 2026-11-15 12:58 UTC includes #406–#418  
+**`main` tip:** `9292e81` (#432) · Pages `last-modified` 2026-11-15 16:19 UTC includes #419–#437  
 **Request log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn. Overlapping messages still count; never drop one.
 
 **Standing:** Merged ≠ Done on live Pages until owner phone-smoke OK. Owner: “getting worst” / errors still the same — **do not mark R10–R13 Done.** Push + merge without waiting for approval when CI green.
@@ -30,33 +30,41 @@
 | Selectable pitch buttons (same voice → deep/mid/bright) | #400 |
 | Gate location Allow + Enter prime | #379 |
 | White-pupil image loop | owner OK |
-| Card greet audible (code) | #370 + card-greet-sound-fix (sink race) — **Outstanding phone** until hear |
-| One-voice card greet (code) | #375 + card-greet-no-robot-double (no insurance; no synth robot) — **Outstanding phone** |
+| Card greet audible (code) | #370 + #420 card-greet-sound-fix (sink race) — **Outstanding phone** until hear |
+| One-voice card greet (code) | #375 + #431 no-robot-double (no insurance; no synth robot) — **Outstanding phone** |
 | CMA poke SFX + zone-stable SFX | #348+ |
 | No spoken UM; thinking bar | on `main` |
 | Music ask random vs select | #364 |
 | Voice gender options (code) | #363 |
 | Statement SCENE_LINES / topic-ask scrub | on `main` |
 | Mic Start re-probe / default-open (code) | on `main` |
-| Stop double-speak / news once (code) | #386 — **Outstanding phone** (news repeat) |
-| News tell when feeds/LLM fail (code) | #385 — **Outstanding phone** (same-old / repeat) |
+| Stop double-speak / news once (code) | #386 + #421 freshness — **Outstanding phone** (news repeat) |
+| News tell when feeds/LLM fail (code) | #385 + #428 always-fresh longer — **Outstanding phone** (same-old / repeat) |
 | Gate voice test stable + audible (code) | #387 |
 | Story Mode distinct from chat (code) | #388 |
-| Poke lean toward poked side (code) | #390 + #409 (finger vs hips) — **phone Outstanding** |
+| Poke lean toward poked side (code) | #390 + #409 + #434 same-side (finger vs hips) — **phone Outstanding** |
 | Sing ask no Soave+月光光 nonsense (code) | #391 |
-| Idle pose upright planted calm stands (code) | #392 + #407 v3 + #415 v4 (RPM F/M stands only) — **phone Outstanding** (R11) |
+| Idle pose upright planted calm stands (code) | #392 + #407 v3 + #415 v4 + #430 v6 Quaternius + #432 honor picks — **phone Outstanding** (R11) |
 | Caption then whole phase again in history (code) | #393 |
 | Blend-to-back / idle forward lean (code) | #394 |
-| All langs/genders speak — not Yue-female-only (code) | #395 + #424 + chat-mic-unmute (chat pin-before-play) — **Outstanding phone** until hear |
-| Chat mic off→on + non-Yue chat TTS (code) | chat-mic-unmute — reacquire getUserMedia + leave session on off; chat `pinSinkBeforePlay` — **Outstanding phone** |
-| Audible pitch tiers + male delivery + sink route (code) | #406 + #410 + #413 + unmute — **phone Outstanding** (R10) |
+| All langs/genders speak — not Yue-female-only (code) | #395 + #424 + #429 chat-mic-unmute — **Outstanding phone** until hear |
+| Chat mic off→on + non-Yue chat TTS (code) | #429 — reacquire getUserMedia + leave session on off; chat `pinSinkBeforePlay` — **Outstanding phone** |
+| Audible pitch tiers + male delivery + sink route (code) | #406 + #410 + #413 + #424 + #425 + #437 huge-gap — **phone Outstanding** (R10) |
 | Unify cast lighting / MToon path (code) | #408 — **phone Outstanding** |
 | Scrub history-resume asks from chat replies (code) | #412 |
 | Harden spoken nonsense scrub (code) | #416 — **owner live OK** still required |
+| Hard-delete spoken loading UM / thinking filler | #426 |
 | Seal captions after speech idle (code) | #414 |
+| Always scroll chat to live caption | #427 |
+| Stabilize cast eye size | #433 |
+| Sing/dance moves gated on audible bed | #435 |
+| Longer emotional story + slower story TTS | #436 |
+| Honor owner idle pins + poke Want across pref bumps | #432 |
+| Idle v3 wipe + v5 calm + v6 Quaternius force | #419 + #422 + #430 |
 | Docs honesty after #406–#409 (code) | #411 |
 | SFX Want list + outstanding tip after #410–#414 | #417 |
-| Docs tip honesty through #417 | this refresh |
+| Docs tip honesty through #417 | #418 |
+| Docs tip honesty through #437 / tip `9292e81` | this refresh |
 | Talk leftover repeats / history dup | #399 |
 | Reply-mode length + emotion chart | #401 |
 | Classic fairy tales + Story chip predownload | #402 |
@@ -66,7 +74,7 @@
 | Docs tip after #397; Outstanding stays human-only | #398 |
 | Docs tip after #399–#403 product ship | #404 |
 | Docs tip / Pages after #399–#404 | #405 |
-| No history-resume ask (code) | #331 / #366 |
+| No history-resume ask (code) | #331 / #366 / #412 |
 
 ---
 
@@ -74,18 +82,18 @@
 
 | Item | Notes |
 |------|--------|
-| Card greet — no sound | #370/#375 on `main`; owner re-reports silence. Parallel agent owns fix. **Not Done.** |
-| News same-old / repeat | #385/#386 on `main`; owner re-reports same headlines. Parallel agent owns fix. **Not Done.** |
-| Voice pitch/male/sink (R10) | #406+#410+#413+#424+#425 + huge-gap (distinct Edge ids/tier; SSML uncrush; gTTS ≥0.85) + chat-mic-unmute. **Still Outstanding until phone** — Edge may 403 without proxy. **Not Done.** |
-| Idle pose still bad (R11) | #415 idle v4 on `main` (RPM F/M stands only; prefs v4) — **phone smoke**. Idle v3 legacy wipe/scrub shipping separately. **Not Done.** |
+| Card greet — no sound / robot | #420+#431 on `main`; **phone** until audible one neural voice (no insurance reintroduce). **Not Done.** |
+| News same-old / repeat | #421+#428 on `main`; **phone** until rotates / fresh longer tell. **Not Done.** |
+| Voice pitch/male/sink (R10) | #406+#410+#413+#424+#425+#437+#429. **Still Outstanding until phone** — Edge may 403 without proxy. **Not Done.** |
+| Idle pose still bad (R11) | #415+#419+#422+#430+#432 on `main` (v6 Quaternius + honor picks) — **phone smoke**. **Not Done.** |
 | Lighting unify (R12) | #408 on `main` — **phone smoke**. **Not Done.** |
-| Poke lean direction (R13) | #409 on `main` — **phone verify**; do not flip ±leanSide without device evidence. **Not Done.** |
-| Talking nonsense / silly LLM | #360+#412+#416 on `main` — **owner live OK** still required |
-| Captions race / history lock | #393+#414 on `main` — **phone** (no partial seal / full-phase replay) |
+| Poke lean direction (R13) | #409+#434 on `main` — **phone verify**; do not flip ±leanSide without device evidence. **Not Done.** |
+| Talking nonsense / silly LLM | #360+#412+#416+#426 on `main` — **owner live OK** still required |
+| Captions race / history lock | #393+#414+#427 on `main` — **phone** (seal + scroll-follow) |
 | Talk repeats / double-speak residual | #399 / #386 — **phone** |
 | Phone smoke on live demo | **Human** — checklist [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) — do **not** mark Done without owner |
 | SFX #1–23 Want/archive/delete (R1/R2) | Map documented in [`SFX_WANT_LIST.md`](./SFX_WANT_LIST.md) — no new deletes without owner map |
-| Pages rebuild | Tip includes #418 (`34ed7e0`). Product Pages live 12:58 UTC. Agent `workflow_dispatch` is 403. |
+| Pages rebuild | Tip `9292e81` (#432) · Pages live 16:19 UTC == tip. Agent `workflow_dispatch` is 403. |
 
 ### Hold
 
@@ -98,6 +106,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-16 ~01:12 | Continue audit: tip `9292e81` (#432) · product #426–#437 on main · Pages == tip (16:19 UTC); agent code Outstanding = 0; phone Outstanding unchanged (card · news · R10–R13 · nonsense · captions) |
 | 2026-11-15 ~23:50 | CRITICAL chat: mic off→on stuck + non-Yue chat mute — reacquire mic + chat pin-before-play (no onplay setSinkId) — **Outstanding until phone OK** |
 | 2026-11-15 ~23:00 | R10 #425 rebase onto #424: keep no-onplay setSinkId + real male Edge/synth hops / tier voices — **R10 still Outstanding phone** |
 | 2026-11-15 ~22:45 | CRITICAL: only Yue-F audible — stop onplay `setSinkId` kill; keep #420 play-first; all lang×gender×pitch (`voice-unmute-all-langs`) — **Outstanding phone** |

@@ -1,25 +1,25 @@
 # Amoji project status board
 
-**Generated:** 2026-11-15 22:31 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-16 01:12 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** open [`project-status.html`](./project-status.html) in a browser (repo file — not a Pages route).  
-**`main` tip:** `34ed7e0` (#418 · product through #406–#418)
+**`main` tip:** `9292e81` (#432 · product through #426–#437)
 
 ## Snapshot
 
 | Bucket | Count |
 | --- | ---: |
-| **Done** — merged to `main` | 80+ stack · Nov 15 wave #385–#418 |
-| **Open product PRs** | Hold spikes #1 / #20 · idle v3 legacy wipe shipping |
-| **Outstanding** — actionable code | Card no-sound + news repeat (parallel) · idle prefs scrub (this branch) |
+| **Done** — merged to `main` | 90+ stack · Nov 15 wave #385–#437 |
+| **Open product PRs** | Hold spikes #1 / #20 only |
+| **Outstanding** — actionable code | **0** |
 | **Outstanding** — Pixel / human | **R10–R13 not Done** · card sound · news repeat · nonsense · captions · SFX Want · [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
 | **Hold** | licensed music · Stripe live keys · Product Hunt · Search Console · spikes #1 / #20 |
 | Docs missing | 0 |
 
 **Honesty:** Merged ≠ owner Done. Owner: “getting worst” / errors still the same — **do not mark R10–R13 Done.**  
-**Pages:** product app live · `last-modified` 2026-11-15 12:58 UTC on tip `34ed7e0`.
+**Pages:** product app live · `last-modified` 2026-11-15 16:19 UTC on tip `9292e81` (Pages == main tip).
 
 ### Progress by category (% merged to `main`)
 
@@ -27,25 +27,49 @@
 | --- | ---: |
 | Chat UX | 99% |
 | Audio / TTS | 99% |
-| VRM / Idle | 99% (#415 idle v4) |
+| VRM / Idle | 99% (#430 idle v6 + #432 honor picks) |
 | Privacy / legal | 99% |
 | Setup / Gate | 99% |
 | Systems (pay / email / security / storage) | 99% (#335 + #354–#356) |
 | SEO / marketing surface | 99% (#357) |
-| Docs | 99% (#389 / #396 / #397 / #404 / #411 / #417 + this tip) |
+| Docs | 99% (#389 / #396–#398 / #404 / #411 / #417 / #418 + this tip) |
 | Merge to main | 99% |
 
 ---
 
 ## Done (merged to `main`)
 
-Living tip: `34ed7e0`. Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
+Living tip: `9292e81`. Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
 
-### Nov 15 wave (#385–#417)
+### Nov 15 late wave (#419–#437)
 
 | PR | Item | Notes |
 | --- | --- | --- |
-| [#417](https://github.com/MonMonMars/amoji-app/pull/417) | SFX Want list + outstanding after #410–#414 | Docs; tip superseded by this refresh |
+| [#437](https://github.com/MonMonMars/amoji-app/pull/437) | Pitch tiers VERY different (huge gaps) | **Phone Outstanding** (R10) |
+| [#436](https://github.com/MonMonMars/amoji-app/pull/436) | Longer emotional story + slower story TTS | Phone |
+| [#435](https://github.com/MonMonMars/amoji-app/pull/435) | Sing/dance moves gated on audible bed | Phone |
+| [#434](https://github.com/MonMonMars/amoji-app/pull/434) | Exact owner poke-move same-side lean | **Phone Outstanding** (R13) — do not re-flip |
+| [#433](https://github.com/MonMonMars/amoji-app/pull/433) | Stabilize cast eye size | Phone |
+| [#432](https://github.com/MonMonMars/amoji-app/pull/432) | Honor owner idle pins + poke Want | **Phone Outstanding** (R11) |
+| [#431](https://github.com/MonMonMars/amoji-app/pull/431) | Card-greet no robot+female double / no robot-only | **Phone Outstanding** (card) |
+| [#430](https://github.com/MonMonMars/amoji-app/pull/430) | Idle v6 — Quaternius default + near-still | **Phone Outstanding** (R11) |
+| [#429](https://github.com/MonMonMars/amoji-app/pull/429) | Chat mic off→on + non-Yue speak unmute | **Phone Outstanding** (R10) |
+| [#428](https://github.com/MonMonMars/amoji-app/pull/428) | Always-fresh longer news tells | **Phone Outstanding** (news) |
+| [#427](https://github.com/MonMonMars/amoji-app/pull/427) | Always scroll chat to live caption | Phone |
+| [#426](https://github.com/MonMonMars/amoji-app/pull/426) | Hard-delete spoken loading UM / thinking filler | Phone / nonsense |
+| [#425](https://github.com/MonMonMars/amoji-app/pull/425) | Real male Edge delivery + obvious pitch tiers | **Phone Outstanding** (R10) |
+| [#424](https://github.com/MonMonMars/amoji-app/pull/424) | Unmute all lang×gender×pitch — stop onplay setSinkId | **Phone Outstanding** (R10) |
+| [#422](https://github.com/MonMonMars/amoji-app/pull/422) | Idle v5 — single static calm stand | Superseded defaults by #430 |
+| [#421](https://github.com/MonMonMars/amoji-app/pull/421) | News freshness — ban recently told headlines | **Phone Outstanding** (news) |
+| [#420](https://github.com/MonMonMars/amoji-app/pull/420) | Restore audible character-card greets after sink race | **Phone Outstanding** (card) |
+| [#419](https://github.com/MonMonMars/amoji-app/pull/419) | Idle v3 wipe + scrub legacy prefs on v4 load | Prefs hygiene |
+
+### Nov 15 wave (#385–#418)
+
+| PR | Item | Notes |
+| --- | --- | --- |
+| [#418](https://github.com/MonMonMars/amoji-app/pull/418) | Docs honesty tip through #417 | Docs; tip superseded by this refresh |
+| [#417](https://github.com/MonMonMars/amoji-app/pull/417) | SFX Want list + outstanding after #410–#414 | Docs |
 | [#416](https://github.com/MonMonMars/amoji-app/pull/416) | Harden spoken nonsense scrub beyond history-resume | **Phone / owner live OK** |
 | [#415](https://github.com/MonMonMars/amoji-app/pull/415) | Idle defaults v4 — upright RPM stands only | **Phone Outstanding** (R11) |
 | [#414](https://github.com/MonMonMars/amoji-app/pull/414) | Seal captions after speech idle | Phone |
@@ -159,29 +183,28 @@ Earlier finish pass still on `main`: #306–#325 and #280–#305 era.
 
 ### Code (agents)
 
-Owner still reports pain. Merged ≠ Done. Shipping now:
-
-1. **Idle prefs v3 legacy wipe/scrub** — #415 dropped wipeable `amoji.idle*.v3` rows; branch `cursor/idle-v3-legacy-wipe-0340-0eac`
-2. **Card greet no sound** — parallel agent (do not steal files)
-3. **News same-old / repeat** — parallel agent (do not steal files)
+**0.** All known code fixes for owner pain are on `main` tip `9292e81` (#419–#437). CI green. Pages == tip. This turn ships **docs honesty tip only**.
 
 Do **not**:
 
 - Re-flip poke lean (±) without device evidence
-- Churn R10 voice without a proven bug (delivery-gender ignore / hop order is the current fix)
+- Reintroduce audible card-greet insurance / OS synth fallback
+- Wipe owner idle pins / poke Want picks
+- Churn R10 voice without a proven bug
 - Invent SFX deletes (Want list is documented)
 - Mark R10–R13 Done
+- Merge Hold spikes #1 / #20
 
 ### Phone / human (not agent Done)
 
-1. **Card greet — no sound** — #370/#375 — owner re-reports
-2. **News same-old / repeat** — #385/#386 — owner re-reports
-3. **R11 idle** — #415 v4 upright RPM F/M stands — phone (**not Done**)
-4. **R10 voice** — #406+#410+#413+#425 + huge-gap follow-up (distinct Edge ids/tier, SSML uncrush, gTTS ≥0.85) — phone (deep≪bright; male≠female; non-Yue sink) (**not Done**)
-5. **R13 poke lean** — #409 — phone verify same-side tip (**not Done**)
+1. **Card greet — no sound / robot** — #420+#431 — phone
+2. **News same-old / repeat** — #421+#428 — phone
+3. **R11 idle** — #430 v6 + #432 honor picks — phone (**not Done**)
+4. **R10 voice** — #406+#410+#413+#424+#425+#437+#429 — phone (deep≪bright; male≠female; non-Yue sink) (**not Done**)
+5. **R13 poke lean** — #409+#434 — phone verify same-side tip (**not Done**)
 6. **R12 lighting** — #408 — phone (all cast same shader style) (**not Done**)
-7. **Nonsense** — #360+#412+#416 — owner live OK still required
-8. **Captions** — #393+#414 — no partial history lock / full-phase replay
+7. **Nonsense** — #360+#412+#416+#426 — owner live OK still required
+8. **Captions** — #393+#414+#427 — seal + scroll-follow
 9. **Talk repeats / double-speak residual** — #399 / #386 — phone
 10. **SFX #1–23** — map in [`SFX_WANT_LIST.md`](./SFX_WANT_LIST.md); no new deletes
 11. Full [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)
@@ -189,7 +212,7 @@ Do **not**:
 ### Human / Pixel
 
 1. **Phone smoke** on live Pages — card sound · news rotate · R10–R13 · nonsense · captions.
-2. **Talking-nonsense verify** after #416 — still needs **owner** OK.
+2. **Talking-nonsense verify** after #416/#426 — still needs **owner** OK.
 3. **Optional triage** of Hold spikes #1 / #20 — only if Pixel asks.
 4. Hold items below (env / marketing / licensed catalog).
 
@@ -203,7 +226,7 @@ Do **not**:
 | Stripe live keys / Payment Link | Env only (`STRIPE_*`, `NEXT_PUBLIC_STRIPE_PAYMENT_LINK`) — code on `main` via #354 |
 | Product Hunt shoot / demo video | Marketing human work |
 | Google Search Console sitemap submit | Human; #357 ships `sitemap.xml` / `robots.txt` under `/amoji-app` |
-| Live github.io product eyeball | Pages rebuilt from tip `34ed7e0` (`last-modified` 2026-11-15 12:58 UTC); owner phone smoke still required |
+| Live github.io product eyeball | Pages == tip `9292e81` (`last-modified` 2026-11-15 16:19 UTC); owner phone smoke still required |
 | Modular GLBs / CosyVoice refs / GPU TTS hosts | Asset / infra Holds — not blocking Pages |
 | Spikes #1 / #20 | Do not touch unless Pixel asks (#154/#240 closed superseded) |
 
@@ -211,12 +234,11 @@ Do **not**:
 
 ## Pixel merge order (post-mass-merge)
 
-Mass merge complete through #418. Remaining:
+Mass merge complete through #437. Remaining:
 
-1. **Phone smoke** on live demo (Pages serving tip `34ed7e0`) — card · news · R10–R13.
+1. **Phone smoke** on live demo (Pages serving tip `9292e81`) — card · news · R10–R13.
 2. **Owner nonsense OK** after live listen (agent Vitest already green).
-3. Merge idle v3 legacy wipe when CI green; card/news parallel PRs when ready.
-4. **Holds** stay Hold; spikes #1 / #20 untouched unless Pixel asks.
+3. **Holds** stay Hold; spikes #1 / #20 untouched unless Pixel asks.
 
 ### Do not
 
@@ -224,7 +246,7 @@ Mass merge complete through #418. Remaining:
 - Claim R10–R13 / card / news Done without owner OK.
 - Touch Hold PRs #1 / #20 / #154 / #240 unless Pixel asks.
 - Treat Pages as verified until a human eyeballs the live site.
-- Re-flip poke lean or re-churn voice without new evidence.
+- Re-flip poke lean, reintroduce card insurance, or wipe owner idle/poke picks.
 
 ---
 
@@ -246,27 +268,29 @@ Mass merge complete through #418. Remaining:
 | Chat UX | No history-resume ask | **Done** | #331 / #412 |
 | VRM / Idle | Dance legs free feet + music beat | **Done** | #343 |
 | VRM / Idle | Content/topic → motion maps | **Done** | #344 |
-| VRM / Idle | Idle defaults v4 upright RPM stands | **Done** (code) | #415 — **phone** R11 |
-| VRM / Poke | Opposite-side lean + CMA poke SFX + Want/Skip | **Done** | #345 → #348 → #358 → #409 |
+| VRM / Idle | Idle defaults v4→v6 upright / Quaternius + honor picks | **Done** (code) | #415 / #419 / #422 / #430 / #432 — **phone** R11 |
+| VRM / Poke | Same-side lean + CMA poke SFX + Want/Skip | **Done** (code) | #345 → #348 → #358 → #409 → #434 — **phone** R13 |
 | VRM / ROM | Body–arm–neck every-frame clamp | **Done** | #351 |
 | Music | Silent Night CC0 vocal | **Done** | #342 |
 | Systems | Payment / charging rules finish | **Done** | #354 |
 | Systems | Support email + wipe | **Done** | #355 |
 | Systems | Security / legal / storage finish (+ fonts) | **Done** | #356 / #336 |
 | Marketing | SEO metadata / sitemap / robots / JSON-LD | **Done** | #357 |
-| Docs | Status board through #417 tip | **Done** | #389 / #396 / #397 / #404 / #411 / #417 |
-| Chat UX | Caption history de-dupe + seal after idle | **Done** (code) | #393 / #414 — **phone** |
+| Docs | Status board through #437 tip | **Done** | #389 / #396–#398 / #404 / #411 / #417 / #418 + this tip |
+| Chat UX | Caption history de-dupe + seal + scroll-follow | **Done** (code) | #393 / #414 / #427 — **phone** |
 | VRM / Idle | No lean-forward / blend yaw weird | **Done** | #394 |
-| Audio | All langs/genders speak | **Done** | #395 |
+| Audio | All langs/genders speak | **Done** (code) | #395 / #424 / #429 — **phone** R10 |
 | Audio | Lang F+M catalog | **Done** | #363 (+ #395 speak) |
-| Audio | Selectable pitch personas (deep/mid/bright buttons) | **Done** | #400 (was #374 character-only) |
+| Audio | Selectable pitch personas (deep/mid/bright buttons) | **Done** (code) | #400 / #406 / #410 / #413 / #425 / #437 — **phone** R10 |
 | Chat UX | Talk leftover / history dup | **Done** | #399 |
 | Chat UX | Reply-mode length + emotion chart | **Done** | #401 |
 | Chat UX | Classic fairy tales + Story predownload | **Done** | #402 |
-| Chat UX | Story Mode quality + UX polish | **Done** | #403 |
-| Chat UX | Idle nonsense scrub (code) | **Done** | #338 / #360 / #416 · agent Vitest green |
+| Chat UX | Story Mode quality + longer/slower tell | **Done** (code) | #403 / #436 — **phone** |
+| Chat UX | Idle nonsense scrub + delete UM (code) | **Done** (code) | #338 / #360 / #416 / #426 · agent Vitest green |
+| Chat UX | Card greet audible / one neural voice | **Done** (code) | #420 / #431 — **phone** |
+| Chat UX | News freshness / longer tell | **Done** (code) | #421 / #428 — **phone** |
 | Music | Licensed stream/embed beyond Mixkit | **Hold** | `docs/MUSIC_STREAMING.md` |
-| Verify | Post-merge live check on Pages | **Human** | Pages live from tip `34ed7e0`; phone smoke + owner nonsense OK pending |
+| Verify | Post-merge live check on Pages | **Human** | Pages live from tip `9292e81`; phone smoke + owner nonsense OK pending |
 
 ---
 
