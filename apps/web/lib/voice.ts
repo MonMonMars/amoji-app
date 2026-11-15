@@ -1926,12 +1926,12 @@ export function playVoiceGreeting(
   choiceId: string,
   line?: string,
 ): void {
-  // DO NOT reintroduce audible insurance / gesture "robot" clips for card
-  // greets — owner regression many times (robot+female double, then robot-only).
-  // Prefer silence until real gTTS/Edge TTS over any local hello/hihi insurance.
   if (!selectAuditionAllowed()) return;
   unlockAudio(true);
   stopSpeaking();
+  // DO NOT reintroduce audible insurance / gesture "robot" clips for card
+  // greets — owner regression many times (robot+female double, then robot-only).
+  // Prefer silence until real gTTS/Edge TTS over any local hello/hihi insurance.
   // All langs: pin speakers before any tier (gate sample device, not mic sink).
   ensureCompanionPlaybackRoute();
   // force: stopSpeaking cancelled any window-level prime and cleared the latch.
@@ -2222,11 +2222,11 @@ export function playLaughBurst(characterId: string, lang: Lang): void {
  * tap plays is what chat will sound like.
  */
 export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void> {
-  // DO NOT reintroduce audible insurance / gesture "robot" clips for voice
-  // previews — same owner regression as playVoiceGreeting (robot+neural double).
   if (!selectAuditionAllowed()) return Promise.resolve();
   unlockAudio(true);
   stopSpeaking();
+  // DO NOT reintroduce audible insurance / gesture "robot" clips for voice
+  // previews — same owner regression as playVoiceGreeting (robot+neural double).
   // All langs: same default speakers as gate (not mic communications).
   ensureCompanionPlaybackRoute();
   primeSynthInGesture(true);
