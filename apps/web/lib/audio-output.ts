@@ -118,7 +118,8 @@ export async function pinDefaultOutputAsync(
   const bound = setSink.bind(node);
   // Element already on a communications / headset id → force default; never
   // reuse that UUID as preferredSinkId.
-  const current = typeof node.sinkId === 'string' ? node.sinkId : '';
+  const currentId = node?.sinkId;
+  const current = typeof currentId === 'string' ? currentId : '';
   if (current && !isDefaultSinkId(current)) {
     cachedDefaultSink = undefined;
   }
