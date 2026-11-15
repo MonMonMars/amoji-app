@@ -36,7 +36,7 @@ describe('chat thinking status (not typing)', () => {
   it('CompanionCanvas prefers Thinking pose while waiting', () => {
     const canvas = fs.readFileSync(path.join(ROOT, 'components/CompanionCanvas.tsx'), 'utf8');
     expect(canvas).toContain('thinkingPoseActive()');
-    expect(canvas).toMatch(/clips\.has\('Thinking'\)\s*\?\s*'Thinking'\s*:\s*'IdleBreathCalm'/);
+    expect(canvas).toMatch(/clips\.has\('Thinking'\)\s*\?\s*'Thinking'\s*:\s*'IdleRpmFStanding001'/);
   });
 
   it('globals define the thinking-bar motion', () => {

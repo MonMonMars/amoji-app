@@ -1,24 +1,24 @@
 // Per-companion idle pin. Same localStorage shape as the other chat prefs.
-// Default rotation = cleaner upright planted stands only (IdleRpmFStanding001 /
-// IdleRpmMStanding001). Weak v3 clips + old gesture pins clear on load (v4 key).
+// Default = single calm upright stand (IdleRpmFStanding001).
+// v5 clears v4 pins + banned BreathCalm/Sassy/sky-look forever.
 
-import { resolveIdleClipId, isRetiredIdleClip } from './idle-retired';
+import { isBannedAutoIdleClip, resolveIdleClipId, isRetiredIdleClip } from './idle-retired';
 import { idleClipById } from './idle-clips';
 
-export const IDLE_PICK_KEY = 'amoji.idlePick.v4';
+export const IDLE_PICK_KEY = 'amoji.idlePick.v5';
 const KEY = IDLE_PICK_KEY;
 
-/** Prefs keys from #392 / #407 — never carry weak pins into v4. */
+/** Prefs keys from #392 / #407 / #415 — never carry weak pins into v5. */
 const LEGACY_PICK_KEYS = [
   'amoji.idlePick.v1',
   'amoji.idlePick.v2',
   'amoji.idlePick.v3',
+  'amoji.idlePick.v4',
 ] as const;
 
-/** Default rotation / safe persisted pins — cleaner upright stands only. */
+/** Default rotation / safe persisted pins — one static upright stand. */
 export const DEFAULT_IDLE_IDS = [
   'IdleRpmFStanding001',
-  'IdleRpmMStanding001',
 ] as const;
 
 /** Old defaults / gesture pins that must not stick after the calm swap. */
@@ -32,13 +32,13 @@ const BAD_SAVED_IDLE_IDS = new Set([
   'LookAround',
   'IdleSassy',
   'IdleRpmMVar001',
-  // v3 defaults that still looked weak — clear so v4 upright stands return.
   'IdleRpmFVar001',
   'IdleMixamoBreathing',
   'IdleInnersceneSam',
   'IdleRpmMVar002',
   'IdleRpmFVar003',
   'IdleRpmFVar004',
+  'IdleRpmMStanding001', // v4 dual-stand A→B — v5 is single static
 ]);
 
 type PickMap = Record<string, string>;
@@ -60,7 +60,6 @@ function hydrate(): PickMap {
   loaded = true;
   try {
     if (typeof localStorage === 'undefined') return memory;
-    // Always scrub pre-v4 pins so weak v3 clips cannot linger beside v4.
     dropLegacyPickKeys();
     const raw = localStorage.getItem(KEY);
     if (!raw) return memory;
@@ -69,11 +68,15 @@ function hydrate(): PickMap {
     const next: PickMap = {};
     let changed = false;
     for (const [id, clip] of Object.entries(parsed as Record<string, unknown>)) {
-      if (typeof clip !== 'string' || isRetiredIdleClip(clip) || !idleClipById(clip)) {
+      if (
+        typeof clip !== 'string'
+        || isRetiredIdleClip(clip)
+        || isBannedAutoIdleClip(clip)
+        || !idleClipById(clip)
+      ) {
         changed = true;
         continue;
       }
-      // Drop legacy bad pins so the upright planted rotation returns.
       if (BAD_SAVED_IDLE_IDS.has(clip)) {
         changed = true;
         continue;
@@ -101,11 +104,19 @@ export function idlePickFor(characterId: string): string | null {
   const raw = hydrate()[characterId];
   if (!raw) return null;
   const resolved = resolveIdleClipId(raw);
+  if (isBannedAutoIdleClip(resolved) || BAD_SAVED_IDLE_IDS.has(resolved)) return null;
   return idleClipById(resolved) ? resolved : null;
 }
 
 export function saveIdlePick(characterId: string, clipId: string): string | null {
-  if (!characterId || isRetiredIdleClip(clipId) || !idleClipById(clipId)) return idlePickFor(characterId);
+  if (
+    !characterId
+    || isRetiredIdleClip(clipId)
+    || isBannedAutoIdleClip(clipId)
+    || !idleClipById(clipId)
+  ) {
+    return idlePickFor(characterId);
+  }
   const next = { ...hydrate(), [characterId]: clipId };
   persist(next);
   return clipId;

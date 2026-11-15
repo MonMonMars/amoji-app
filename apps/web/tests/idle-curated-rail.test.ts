@@ -44,12 +44,10 @@ describe('curated idle chat rail', () => {
     }
   });
 
-  it('defaults to cleaner upright stands only (rail #5+#11)', () => {
-    expect(defaultCuratedRailNums()).toEqual([5, 11]);
-    // listEnabledIdleClipIds sorts by rail # → 5, 11
+  it('defaults to a single calm upright stand (rail #5)', () => {
+    expect(defaultCuratedRailNums()).toEqual([5]);
     expect(listEnabledIdleClipIds()).toEqual([
       'IdleRpmFStanding001',
-      'IdleRpmMStanding001',
     ]);
   });
 
@@ -68,8 +66,8 @@ describe('curated idle chat rail', () => {
     expect(migrateEnabledNumsToRail([3, 40, 101]).sort()).toEqual(
       [3, lookRail, robotRail].sort(),
     );
-    // v4 key stores rail nums already (or migrates on read)
-    store.set('amoji.idleEnabled.v4', JSON.stringify([3, 40, 101]));
+    // v5 key stores rail nums already (or migrates on read)
+    store.set('amoji.idleEnabled.v5', JSON.stringify([3, 40, 101]));
     forgetIdleEnabledCache();
     const enabled = listEnabledNums();
     expect(enabled).toContain(lookRail);
@@ -80,7 +78,7 @@ describe('curated idle chat rail', () => {
 
   it('resolveLegacyLibPin maps library # or clip id', () => {
     expect(resolveLegacyLibPin('3')).toBe('LookAround');
-    expect(resolveLegacyLibPin('96')).toBe('IdleBreathCalm');
+    expect(resolveLegacyLibPin('96')).toBe('IdleRpmFStanding001');
     expect(resolveLegacyLibPin('LookAround')).toBe('LookAround');
     expect(idleByNum(96)?.retired).toBe(true);
     expect(idleClipById('LookAround')?.num).toBe(

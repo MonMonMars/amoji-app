@@ -92,7 +92,7 @@ describe('idle enable + pick', () => {
     };
     forgetIdleEnabledCache();
     expect(isIdleEnabled(5)).toBe(true);
-    expect(isIdleEnabled(11)).toBe(true);
+    expect(isIdleEnabled(11)).toBe(false);
     expect(isIdleEnabled(8)).toBe(false);
     expect(isIdleEnabled(3)).toBe(false);
     expect(isIdleEnabled(10)).toBe(false);
@@ -101,12 +101,10 @@ describe('idle enable + pick', () => {
     expect(isIdleEnabled(thinkRail)).toBe(true);
     expect(listEnabledIdleClipIds()).toContain('Thinking');
     setIdleEnabled(5, false);
-    setIdleEnabled(11, false);
     setIdleEnabled(thinkRail, false);
-    // Empty enable → reset to upright-only defaults; sorted by rail # → 5, 11
+    // Empty enable → reset to single upright stand (rail #5)
     expect(listEnabledIdleClipIds()).toEqual([
       'IdleRpmFStanding001',
-      'IdleRpmMStanding001',
     ]);
   });
 
@@ -126,12 +124,12 @@ describe('idle enable + pick', () => {
       key: () => null,
       length: 0,
     };
-    store.set('amoji.idlePick.v4', JSON.stringify({ 'a01-shino': 'HelloWave' }));
+    store.set('amoji.idlePick.v5', JSON.stringify({ 'a01-shino': 'HelloWave' }));
     forgetIdlePickCache();
     expect(idlePickFor('a01-shino')).toBeNull();
   });
 
-  it('clears legacy bad + weak v3 pins so upright planted defaults return', () => {
+  it('clears legacy bad + weak pins so single upright stand returns', () => {
     const store = new Map<string, string>();
     (globalThis as { localStorage: Storage }).localStorage = {
       getItem: (k: string) => store.get(k) ?? null,
@@ -141,7 +139,7 @@ describe('idle enable + pick', () => {
       key: () => null,
       length: 0,
     };
-    store.set('amoji.idlePick.v4', JSON.stringify({
+    store.set('amoji.idlePick.v5', JSON.stringify({
       'a01-shino': 'IdleHug',
       'a02-shibu': 'StandardIdle',
       'a03-fumiriya': 'LookAround',
@@ -150,7 +148,9 @@ describe('idle enable + pick', () => {
       'a06-weak': 'IdleMixamoBreathing',
       'a07-sam': 'IdleInnersceneSam',
       'a08-fvar': 'IdleRpmFVar001',
-      'a09-ok': 'IdleRpmFStanding001',
+      'a09-mstand': 'IdleRpmMStanding001',
+      'a10-breath': 'IdleBreathCalm',
+      'a11-ok': 'IdleRpmFStanding001',
     }));
     forgetIdlePickCache();
     expect(idlePickFor('a01-shino')).toBeNull();
@@ -161,10 +161,12 @@ describe('idle enable + pick', () => {
     expect(idlePickFor('a06-weak')).toBeNull();
     expect(idlePickFor('a07-sam')).toBeNull();
     expect(idlePickFor('a08-fvar')).toBeNull();
-    expect(idlePickFor('a09-ok')).toBe('IdleRpmFStanding001');
+    expect(idlePickFor('a09-mstand')).toBeNull();
+    expect(idlePickFor('a10-breath')).toBeNull();
+    expect(idlePickFor('a11-ok')).toBe('IdleRpmFStanding001');
   });
 
-  it('drops pre-v4 idle pick + enable keys on hydrate (no weak-clip migrate)', () => {
+  it('drops pre-v5 idle pick + enable keys on hydrate (no weak-clip migrate)', () => {
     const store = new Map<string, string>();
     (globalThis as { localStorage: Storage }).localStorage = {
       getItem: (k: string) => store.get(k) ?? null,
@@ -179,16 +181,27 @@ describe('idle enable + pick', () => {
       'a02-shibu': 'IdleInnersceneSam',
     }));
     store.set('amoji.idleEnabled.v3', JSON.stringify([40, 43, 90]));
+    store.set('amoji.idlePick.v4', JSON.stringify({
+      'a01-shino': 'IdleRpmMStanding001',
+    }));
+    store.set('amoji.idleEnabled.v4', JSON.stringify([5, 11]));
     forgetIdlePickCache();
     forgetIdleEnabledCache();
     expect(idlePickFor('a01-shino')).toBeNull();
     expect(listEnabledIdleClipIds()).toEqual([
       'IdleRpmFStanding001',
-      'IdleRpmMStanding001',
     ]);
     expect(store.has('amoji.idlePick.v3')).toBe(false);
     expect(store.has('amoji.idleEnabled.v3')).toBe(false);
     expect(store.has('amoji.idlePick.v4')).toBe(false);
+    expect(store.has('amoji.idleEnabled.v4')).toBe(false);
+    expect(store.has('amoji.idlePick.v5')).toBe(false);
+  });
+
+  it('refuses to save BreathCalm / Sassy pins', () => {
+    expect(saveIdlePick('a01-shino', 'IdleBreathCalm')).toBeNull();
+    expect(saveIdlePick('a01-shino', 'IdleSassy')).toBeNull();
+    expect(saveIdlePick('a01-shino', 'IdleRpmFStanding001')).toBe('IdleRpmFStanding001');
   });
 });
 
