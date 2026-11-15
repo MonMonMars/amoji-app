@@ -37,7 +37,9 @@ describe('greeting tier arbitration (one voice per tap)', () => {
   });
 
   it('the synth fallback refuses to fire once any tier has started', () => {
-    expect(body).toMatch(/const runSynthAudition = \(tag: string\) => \{\s*if \(spokenBy \|\| gttsPending\) return;/);
+    expect(body).toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?if \(spokenBy \|\| gttsPending\) return;/);
+    expect(body).toContain('greeting skip synth robot');
+    expect(body).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?synthSpeak\(/);
   });
 
   it('an Edge failure does not start synth while gtts owns the line', () => {

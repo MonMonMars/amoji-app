@@ -1966,18 +1966,12 @@ export function playVoiceGreeting(
    * Last-resort OS synth ONLY after gTTS has failed / timed out.
    * Never arm while neural/gTTS may still speak — that is the "robot" path.
    */
+  // Card greets: never fall through to OS speechSynthesis ("robot"). After
+  // Google rate-limits, synth became the only audible path for every card.
+  // Prefer silence over poisoning the select board with robot voice.
   const runSynthAudition = (tag: string) => {
     if (spokenBy || gttsPending) return;
-    try {
-      // syncGesture: must speak in this tap — deferred speak stays silent on iOS.
-      synthSpeak(text, characterId, lang, 'joy', 1.1, undefined, 1, undefined, () => {
-        if (session) finishLipSync(session);
-      }, delivery, 0.7, true);
-      onStart('synth');
-      reportVoiceStatus('synth', true, `${tag} ${choiceId}`);
-    } catch (e) {
-      reportVoiceStatus('synth', false, (e as Error | undefined)?.message ?? 'greeting synth failed');
-    }
+    reportVoiceStatus('synth', false, `greeting skip synth robot (${tag}) ${choiceId}`);
   };
   // Start the HTTP tier first and synchronously inside the gesture. It fetches
   // over plain HTTPS, so it does not need the gesture itself, but starting here
@@ -2244,22 +2238,11 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
   let gttsPending = true;
   const markGttsDone = () => { gttsPending = false; };
+  // Same as playVoiceGreeting: never leave voice cards on OS synth robot.
   const runSynthAudition = (tag: string) => {
-    // Synth only after gTTS settled failed — never while neural/gTTS available.
     if (spokenBy || gttsPending) return Promise.resolve();
-    return new Promise<void>((resolve) => {
-      try {
-        synthSpeak(text, 'preview', locale, 'joy', 1.1, undefined, 1, undefined, () => {
-          resolve();
-        }, previewGender, 0.7, true);
-        spokenBy = 'synth';
-        markVoiceStarted();
-        reportVoiceStatus('synth', true, `${tag} ${choiceId}`);
-      } catch (e) {
-        reportVoiceStatus('synth', false, (e as Error | undefined)?.message ?? 'preview synth failed');
-        resolve();
-      }
-    });
+    reportVoiceStatus('synth', false, `preview skip synth robot (${tag}) ${choiceId}`);
+    return Promise.resolve();
   };
   // HTTP MP3 tier first, started inside the gesture so preview is immediate.
   // Exactly one tier speaks: whoever starts first halts the others.

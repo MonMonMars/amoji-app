@@ -41,6 +41,8 @@ describe('card greet — no audible insurance (permanent)', () => {
     expect(body).not.toContain('startInsurance');
     expect(body).not.toContain('saveWithInsuranceThenMaybeSynth');
     expect(body).not.toContain('CARD_GREET_INSURANCE');
+    expect(body).toContain('greeting skip synth robot');
+    expect(body).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?synthSpeak\(/);
     expect(body).not.toMatch(/clipFile\s*\(\s*lang\s*,/);
     expect(body).not.toContain('nextGreetingKind()');
     expect(body).not.toContain('greetingText(');
@@ -51,7 +53,9 @@ describe('card greet — no audible insurance (permanent)', () => {
     const body = fnBody('playVoiceGreeting', 'export function previewLibraryClip');
     expect(body).toContain('speakGtts(');
     // Helper may be declared before speakGtts; calls must still refuse while pending.
-    expect(body).toMatch(/const runSynthAudition = \(tag: string\) => \{\s*if \(spokenBy \|\| gttsPending\) return;/);
+    expect(body).toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?if \(spokenBy \|\| gttsPending\) return;/);
+    expect(body).toContain('greeting skip synth robot');
+    expect(body).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?synthSpeak\(/);
     expect(body).toMatch(/if \(gttsPending\) return;/);
     expect(body).toMatch(/edgeGrace = setTimeout\([\s\S]*?if \(spokenBy \|\| gttsPending\) return;[\s\S]*?runSynthAudition/);
     expect(body).toMatch(/greeting gtts failed[\s\S]*runSynthAudition\('greeting fallback'\)/);
@@ -66,6 +70,8 @@ describe('card greet — no audible insurance (permanent)', () => {
     expect(body).not.toContain('startInsurance');
     expect(body).not.toContain('saveWithInsuranceThenMaybeSynth');
     expect(body).not.toContain('CARD_GREET_INSURANCE');
+    expect(body).toContain('preview skip synth robot');
+    expect(body).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?synthSpeak\(/);
     expect(body).not.toMatch(/clipFile\s*\(\s*locale\s*,/);
     expect(body).not.toContain('nextGreetingKind()');
     expect(body).not.toMatch(/setTimeout\([\s\S]*?stopVoiceClip\(\)[\s\S]*?,\s*220\)/);
