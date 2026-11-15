@@ -2,12 +2,12 @@
 
 For Pixel / maintainers. Agents cannot merge without GitHub write auth.
 
-> **Note (2026-11-11 18:06 HKT):** Mass merge landed on `main` tip `2fec7d3`. Product slices #336–#360 (systems / SEO / long-talk / talk-sense / motion / poke / chat UX) are **Done**. Remaining open product work is docs #353. Prefer [`PROJECT_STATUS.md`](./PROJECT_STATUS.md) for the live board.
+> **Note (2026-11-15 15:21 HKT):** Product through #385–#395 and docs through #396 are on `main` tip `e52ff02`. Open product PRs: **0**. Hold spikes #1 / #20 only. Prefer [`PROJECT_STATUS.md`](./PROJECT_STATUS.md) for the live board.
 
-## Remaining merge
+## Remaining (human — not merge queue)
 
-1. **#353** — status docs refresh (post-mass-merge board) → merge when CI green.
-2. **Pages eyeball** after deploy — https://monmonmars.github.io/amoji-app/setup
+1. **Phone smoke** — https://monmonmars.github.io/amoji-app/ + [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) — owner only.
+2. **Talking-nonsense owner OK** — agent Vitest scrub green; still needs live listen.
 3. **Hold / stale** — do not touch #1 / #20 / #154 / #240 unless Pixel asks.
 
 ### Historical mass merge (already on `main` — archaeology)
