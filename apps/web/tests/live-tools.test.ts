@@ -26,6 +26,8 @@ import {
   locationPermissionSettled,
   resolveDevicePlace,
   selectNewsLead,
+  newsDetailsFromText,
+  toldNewsTitles,
   worldBlock,
   type GeoLike,
   type Place,
@@ -857,6 +859,18 @@ describe('parseRssItems', () => {
     const xml = '<rss><channel><title>Google News</title><item><title>Harbour lights &amp; rain - Daily</title></item></channel></rss>';
     expect(parseRssItems(xml)).toEqual([{ title: 'Harbour lights & rain', source: 'Daily' }]);
   });
+
+  it('keeps description as summary and detail beats', () => {
+    const xml = `<rss><channel><item>
+      <title>Harbour lights &amp; rain - Daily</title>
+      <description>Ferries paused for an hour after spray soaked the pier. Crews cleared drains before evening rush.</description>
+    </item></channel></rss>`;
+    const [row] = parseRssItems(xml);
+    expect(row?.title).toBe('Harbour lights & rain');
+    expect(row?.source).toBe('Daily');
+    expect(row?.summary).toMatch(/Ferries paused|spray soaked/i);
+    expect((row?.details?.length ?? 0) + (row?.summary ? 1 : 0)).toBeGreaterThan(0);
+  });
 });
 
 describe('t775 regional news feeds', () => {
@@ -1002,6 +1016,10 @@ describe('news cache bust + headline rotation', () => {
     expect(second.spoken.toLowerCase()).toMatch(/couldn't find a headline|搵唔到新聞|找不到新闻|ニュースが見つから/);
     expect(second.spoken.toLowerCase()).not.toContain('bakery');
     expect(second.prompt).toMatch(/no fresh headline|unavailable/i);
+    // LLM history re-tell must not win over the honest miss.
+    expect(
+      preferLiveReply('From the news: A bakery opens a cheerful night market stall.', second.prompt, second.spoken, 'en'),
+    ).toBe(second.spoken);
   });
 
   it('rotates across distinct headlines before missing', async () => {
@@ -1039,6 +1057,89 @@ describe('news cache bust + headline rotation', () => {
     expect(heard.size).toBe(3);
     const fourth = await gatherLiveContext('what is the latest news?', opts);
     expect(fourth.spoken.toLowerCase()).toMatch(/couldn't find a headline/);
+    expect(toldNewsTitles(kv)).toHaveLength(3);
+  });
+
+  it('widens and picks a fresh headline after the first pool is exhausted', async () => {
+    const kv = memKv();
+    let featuredHits = 0;
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('news.google.com')) throw new Error('cors');
+      if (url.includes('rss2json.com')) return new Response('nope', { status: 403 });
+      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
+        featuredHits += 1;
+        // First pass (and early days): only Alpha. Widen pass walks more days → Beta on day 6+.
+        const day = url.match(/\/(\d{4}\/\d{2}\/\d{2})$/)?.[1] ?? '';
+        if (day.endsWith('/09') || day.endsWith('/08') || day.endsWith('/07') || day.endsWith('/06') || day.endsWith('/05')) {
+          return jsonRes({
+            news: [{
+              story: 'Orbit gardeners grow glowing tomatoes on a night ship. Crews say the fruit tastes like summer and lights the galley.',
+            }],
+          });
+        }
+        return jsonRes({
+          news: [{
+            story: 'A bakery opens a cheerful night market stall. Locals line up for warm cinnamon buns and soft jazz.',
+          }],
+        });
+      }
+      return jsonRes({}, 404);
+    };
+    const opts = {
+      lang: 'en' as const,
+      fetch: fetchImpl,
+      cache: new Map<string, { at: number; body: string }>(),
+      storage: kv,
+      locate: async () => null,
+      now: Date.UTC(2026, 10, 15, 12, 0, 0),
+    };
+    const first = await gatherLiveContext('what is the latest news?', opts);
+    expect(first.spoken.toLowerCase()).toMatch(/bakery|cinnamon/);
+    expect(first.spoken.toLowerCase()).not.toMatch(/couldn't find/);
+    const second = await gatherLiveContext('what is the latest news?', opts);
+    expect(second.spoken.toLowerCase()).toMatch(/orbit|tomato|galley|glowing/);
+    expect(second.spoken.toLowerCase()).not.toContain('bakery');
+    expect(second.spoken.toLowerCase()).not.toMatch(/couldn't find/);
+    expect(featuredHits).toBeGreaterThan(5);
+  });
+
+  it('packs summary and key details so news tells are longer than a title', async () => {
+    const rss = `<rss><channel>
+      <item>
+        <title>Orbit gnome wins science fair - SciDaily</title>
+        <description>Judges praised a tiny greenhouse that grows salad greens in zero-g. The team will share open plans next month. Schools can build a classroom kit with recycled parts.</description>
+      </item>
+    </channel></rss>`;
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('news.google.com')) return new Response(rss, { status: 200 });
+      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) return jsonRes({ news: [] });
+      return jsonRes({}, 404);
+    };
+    const live = await gatherLiveContext('what is the latest news?', {
+      lang: 'en',
+      fetch: fetchImpl,
+      cache: new Map(),
+      storage: memKv(),
+      locate: async () => null,
+    });
+    expect(live.spoken.toLowerCase()).toMatch(/orbit gnome|science fair/);
+    expect(live.spoken.toLowerCase()).toMatch(/greenhouse|salad|zero-g|open plans|classroom/);
+    expect(live.spoken.length).toBeGreaterThan(120);
+    expect(live.prompt).toMatch(/Summary:|Key details:/i);
+    expect(newsDetailsFromText(
+      'Judges praised a tiny greenhouse that grows salad greens in zero-g. The team will share open plans next month.',
+      'Orbit gnome wins science fair',
+    ).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('preferLiveReply always speaks the live news line, never a history re-tell', () => {
+    const world = 'Light news (US): “Puppy parade fills the park” (Wire). Summary: Crowds cheered as rescue dogs strutted in hats.';
+    const spoken = 'From the news: Puppy parade fills the park. Crowds cheered as rescue dogs strutted in hats.';
+    const historyRetell = 'From the news: A bakery opens a cheerful night market stall.';
+    expect(preferLiveReply(historyRetell, world, spoken, 'en')).toBe(spoken);
+    expect(worldBlock(world)).toMatch(/READ that ONE story fully|Key details|Summary/i);
   });
 
   it('refetches Google News on each user news tap instead of reusing cache', async () => {

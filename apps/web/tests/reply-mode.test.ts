@@ -36,7 +36,7 @@ describe('REPLY_MODE_CHART mapping table', () => {
     }
   });
 
-  it('matches owner length intent: story long, casual short, science super-long, music short talk', () => {
+  it('matches owner length intent: story long, casual short, science super-long, music short talk, news long', () => {
     expect(REPLY_MODE_CHART.casual.targetLength).toBe('very_short');
     expect(REPLY_MODE_CHART.story.targetLength).toBe('long');
     expect(REPLY_MODE_CHART.science.targetLength).toBe('super_long');
@@ -44,6 +44,9 @@ describe('REPLY_MODE_CHART mapping table', () => {
     expect(REPLY_MODE_CHART.music.talkVsMusic).toBe('short_talk_long_music');
     expect(REPLY_MODE_CHART.weather.talkVsMusic).toBe('tool_spoken_facts');
     expect(REPLY_MODE_CHART.news.talkVsMusic).toBe('tool_spoken_facts');
+    expect(REPLY_MODE_CHART.news.targetLength).toBe('long');
+    expect(REPLY_MODE_CHART.news.maxTokens).toBe(HELP_MAX_TOKENS);
+    expect(REPLY_MODE_CHART.news.sentenceGuide).toMatch(/lede|details/i);
     expect(REPLY_MODE_CHART.story.maxTokens).toBe(STORY_MAX_TOKENS);
     expect(REPLY_MODE_CHART.science.maxTokens).toBe(SCIENCE_MAX_TOKENS);
     expect(REPLY_MODE_CHART.help.maxTokens).toBe(HELP_MAX_TOKENS);
@@ -143,5 +146,12 @@ describe('replyModeSystemBlock prompt directives', () => {
   it('weather/news stay statement-only', () => {
     expect(replyModeSystemBlock(REPLY_MODE_CHART.weather, 'en')).toMatch(/statement-only/i);
     expect(replyModeSystemBlock(REPLY_MODE_CHART.news, 'en')).toMatch(/statement-only/i);
+  });
+
+  it('news mode asks for headline + lede + key details', () => {
+    const block = replyModeSystemBlock(REPLY_MODE_CHART.news, 'en');
+    expect(block).toMatch(/LONG/i);
+    expect(block).toMatch(/lede|details/i);
+    expect(block).toMatch(/never invent|one-liner/i);
   });
 });
