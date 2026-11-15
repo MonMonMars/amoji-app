@@ -6,7 +6,10 @@ import {
   breastCoverEnvelope,
   screenSideSign,
   screenPointerSideSign,
+  lateralFallAwayFromScreenSide,
   lateralFallTowardScreenSide,
+  clientPointInElementLocal,
+  ndcPointInElementLocal,
   armZoneFromScreen,
 } from '../lib/poke-hit';
 
@@ -259,23 +262,44 @@ describe('screenSideSign', () => {
   });
 });
 
-describe('screenPointerSideSign + lateralFallTowardScreenSide', () => {
+describe('screenPointerSideSign + lateralFallAwayFromScreenSide', () => {
   it('signs the finger relative to hips on screen', () => {
     expect(screenPointerSideSign(100, 200)).toBe(-1);
     expect(screenPointerSideSign(250, 200)).toBe(1);
     expect(screenPointerSideSign(200, 200)).toBe(1);
   });
 
-  it('builds same-side fall: left lean → −X face-on (not opposite)', () => {
-    const left = lateralFallTowardScreenSide({ x: 1, z: 0 }, -1);
-    expect(left.x).toBeCloseTo(-1);
-    expect(left.z).toBeCloseTo(0);
-    const right = lateralFallTowardScreenSide({ x: 1, z: 0 }, 1);
-    expect(right.x).toBeCloseTo(1);
-    // Orbit: lean follows camera right, not world X alone.
-    const orbitLeft = lateralFallTowardScreenSide({ x: 0, z: -1 }, -1);
-    expect(orbitLeft.x).toBeCloseTo(0);
-    expect(orbitLeft.z).toBeCloseTo(1);
+  it('builds opposite-of-push fall: left push → +X face-on', () => {
+    const leftPush = lateralFallAwayFromScreenSide({ x: 1, z: 0 }, -1);
+    expect(leftPush.x).toBeCloseTo(1);
+    expect(leftPush.z).toBeCloseTo(0);
+    const rightPush = lateralFallAwayFromScreenSide({ x: 1, z: 0 }, 1);
+    expect(rightPush.x).toBeCloseTo(-1);
+    // Orbit: recoil follows −cameraRight * pushSide.
+    const orbitLeftPush = lateralFallAwayFromScreenSide({ x: 0, z: -1 }, -1);
+    expect(orbitLeftPush.x).toBeCloseTo(0);
+    expect(orbitLeftPush.z).toBeCloseTo(-1);
+  });
+
+  it('keeps toward-side helper as the negated away form', () => {
+    const toward = lateralFallTowardScreenSide({ x: 1, z: 0 }, -1);
+    const away = lateralFallAwayFromScreenSide({ x: 1, z: 0 }, -1);
+    expect(toward.x).toBeCloseTo(-away.x);
+    expect(toward.z).toBeCloseTo(-away.z);
+  });
+
+  it('maps pointer + NDC into the same layout-local box after aspect change', () => {
+    // Landscape-ish layout vs a taller visual AABB (orientation mismatch case).
+    const rect = { left: 10, top: 20, width: 400, height: 200 };
+    const layoutW = 800;
+    const layoutH = 400;
+    const ptr = clientPointInElementLocal(10 + 100, 20 + 50, layoutW, layoutH, rect);
+    expect(ptr.x).toBeCloseTo((100 / 400) * 800);
+    expect(ptr.y).toBeCloseTo((50 / 200) * 400);
+    // Hips at NDC (−0.5, 0) → left of center in the same layout box.
+    const hips = ndcPointInElementLocal(-0.5, 0, layoutW, layoutH);
+    expect(hips.x).toBeCloseTo(200);
+    expect(screenPointerSideSign(ptr.x, hips.x)).toBe(1);
   });
 });
 

@@ -355,7 +355,10 @@
 // r2026-11-15.150: owner picks win — Quaternius default must not remap/override
 // migrated idle pins/enables; freeze idle prefs at v6 (no wipe scrub); calm
 // chat/content idle honors pin + non-default enables; poke Want seed stays.
-export const APP_REVISION = 'r2026-11-15.150';
+// r2026-11-15.151: poke opposite-of-push recoil (push left → tip right) + layout-
+// local pointer/hips after orientation; supersedes same-side tip. Feet voice-
+// only; arm flinch character-side; reset fall after poke window; CMA picks intact.
+export const APP_REVISION = 'r2026-11-15.151';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
