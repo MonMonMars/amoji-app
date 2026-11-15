@@ -37,16 +37,22 @@ describe('audible deep vs bright pitch gap', () => {
     const brightF = gttsCharacterPitchBias('female', undefined, 'en', 'bright');
     const deepM = gttsCharacterPitchBias('male', undefined, 'yue', 'deep');
     const brightM = gttsCharacterPitchBias('male', undefined, 'yue', 'bright');
-    expect(brightF - deepF).toBeGreaterThanOrEqual(0.25);
-    expect(brightM - deepM).toBeGreaterThanOrEqual(0.2);
-    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.25);
-    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.2);
+    expect(brightF - deepF).toBeGreaterThanOrEqual(0.32);
+    expect(brightM - deepM).toBeGreaterThanOrEqual(0.26);
+    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.32);
+    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.26);
   });
 
   it('male mid stays clearly below female mid', () => {
-    expect(PITCH_BIAS_MALE).toBeLessThan(0.9);
-    expect(PITCH_BIAS_FEMALE).toBeGreaterThan(1.05);
-    expect(PITCH_BIAS_FEMALE - PITCH_BIAS_MALE).toBeGreaterThanOrEqual(0.2);
+    expect(PITCH_BIAS_MALE).toBeLessThanOrEqual(0.82);
+    expect(PITCH_BIAS_FEMALE).toBeGreaterThan(1.12);
+    expect(PITCH_BIAS_FEMALE - PITCH_BIAS_MALE).toBeGreaterThanOrEqual(0.35);
+  });
+
+  it('synth male pitch/rate sit clearly below female (browser fallback)', () => {
+    const voice = readFileSync(join(web, 'lib/voice.ts'), 'utf8');
+    expect(voice).toMatch(/gender === 'male' \? 0\.72 : 1\.14/);
+    expect(voice).toMatch(/gender === 'male' && lang === 'yue' \? 0\.90/);
   });
 });
 

@@ -40,22 +40,23 @@ export const CHAR_PITCH_SPREAD = 0.015;
 
 /**
  * How far bright / deep sit from the gender mid.
- * Owner: deep vs bright must be obviously different — old ±0.05–0.08 was inaudible.
+ * Owner after #406: still too similar — push gaps harder (playbackRate is the
+ * only free-tier colour; formants stay the same Google speaker).
  */
 export const FEMALE_TIER_OFFSET: Record<GttsPitchTier, number> = {
-  deep: -0.10,
+  deep: -0.14,
   mid: 0,
-  bright: 0.18,
+  bright: 0.22,
 };
 
 export const MALE_TIER_OFFSET: Record<GttsPitchTier, number> = {
-  deep: -0.12,
+  deep: -0.14,
   mid: 0,
-  bright: 0.10,
+  bright: 0.14,
 };
 
 /** Google ja-JP reads bright; male delivery needs extra depth (still inside gtts clamp). */
-export const GTTS_MALE_BIAS_JA = 0.78;
+export const GTTS_MALE_BIAS_JA = 0.70;
 
 const TIER_CYCLE: readonly GttsPitchTier[] = ['deep', 'mid', 'bright'];
 

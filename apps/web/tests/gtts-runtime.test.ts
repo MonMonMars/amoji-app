@@ -220,20 +220,21 @@ describe.skipIf(!esbuildAvailable)('speakGtts real behaviour (esbuild + vm)', ()
     expect(created[0]!.src).not.toContain('tl=zh-HK');
   });
 
-  it('bounds playbackRate so a sad line never drags below 0.88', async () => {
+  it('bounds playbackRate when pitchBias reshapes (deep male stays above clamp min)', async () => {
     const { api, created } = boot();
-    void api.speakGtts('慢啲講。', { lang: 'yue', rate: 0.4 }).catch(() => {});
+    void api.speakGtts('慢啲講。', { lang: 'yue', rate: 1, pitchBias: 0.5 }).catch(() => {});
     await new Promise((r) => setTimeout(r, 20));
-    expect(created[0]!.playbackRate).toBeGreaterThanOrEqual(0.88);
+    expect(created[0]!.playbackRate).toBeGreaterThanOrEqual(0.66);
+    expect(created[0]!.playbackRate).toBeLessThanOrEqual(1.4);
   });
 
   it('keeps male Cantonese deeper than female (pace floor must not erase pitch)', async () => {
     const { api, created } = boot();
-    void api.speakGtts('你好呀。', { lang: 'yue', pitchBias: 0.84 }).catch(() => {});
+    void api.speakGtts('你好呀。', { lang: 'yue', pitchBias: 0.80 }).catch(() => {});
     await new Promise((r) => setTimeout(r, 20));
-    // Soft floor 0.88 — male stays below female mid (~1.08), never lifted to 1.04.
-    expect(created[0]!.playbackRate).toBeGreaterThanOrEqual(0.84);
-    expect(created[0]!.playbackRate).toBeLessThan(1);
+    // Soft floor 0.80 — male stays well below female mid (~1.18).
+    expect(created[0]!.playbackRate).toBeGreaterThanOrEqual(0.80);
+    expect(created[0]!.playbackRate).toBeLessThan(0.90);
     expect(created[0]!.playbackRate).toBeLessThanOrEqual(1.4);
   });
 
