@@ -110,6 +110,18 @@ describe('emotion clips', () => {
     expect(emotionClipKind('oh!', 'lead')).toBe('oh');
     expect(emotionClipKind('嗯……', 'line')).toBe('um');
     expect(emotionClipKind('ha……', 'line')).toBe('ha');
+    expect(emotionClipKind('はあ', 'lead')).toBe('ha');
+    expect(emotionClipKind('ふふ', 'lead')).toBe('giggle');
+    expect(emotionClipKind('ふっ', 'lead')).toBe('smile');
+    // Soft Japanese mood TTS tics must NOT become ha/smile bursts.
+    expect(emotionClipKind('はい。', 'lead')).toBeNull();
+    expect(emotionClipKind('ふぅ……', 'lead')).toBeNull();
+    expect(emotionClipKind('ふう……', 'lead')).toBeNull();
+    expect(emotionClipKind('ふん！', 'lead')).toBeNull();
+    expect(emotionClipKind(INTERJECTIONS.contentment?.ja?.text ?? '', 'lead')).toBeNull();
+    expect(emotionClipKind(INTERJECTIONS.love?.ja?.text ?? '', 'lead')).toBeNull();
+    expect(emotionClipKind(INTERJECTIONS.relief?.ja?.text ?? '', 'lead')).toBeNull();
+    expect(emotionClipKind(INTERJECTIONS.pride?.ja?.text ?? '', 'lead')).toBeNull();
     expect(emotionClipKind(INTERJECTIONS.joy?.en?.text ?? '', 'lead')).toBeNull(); // t771: joy tic is ah, not hehe/um
     expect(emotionClipKind(INTERJECTIONS.excitement?.zh?.text ?? '', 'lead')).toBe('wow');
     expect(emotionClipKind('Cheers!', 'lead')).toBeNull();
