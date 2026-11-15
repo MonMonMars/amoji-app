@@ -1,24 +1,24 @@
 // Per-companion idle pin. Same localStorage shape as the other chat prefs.
-// Default = single calm upright stand (IdleRpmFStanding001).
-// v5 clears v4 pins + banned BreathCalm/Sassy/sky-look forever.
+// Default = IdleQuaterniusHuman (v6) — visibly different from RPM F stand.
+// Aggressive scrub drops every prior amoji.idle* key on hydrate.
 
-import { isBannedAutoIdleClip, resolveIdleClipId, isRetiredIdleClip } from './idle-retired';
+import {
+  DEFAULT_IDLE_CLIP_ID,
+  isBannedAutoIdleClip,
+  resolveIdleClipId,
+  isRetiredIdleClip,
+} from './idle-retired';
 import { idleClipById } from './idle-clips';
+import { IDLE_PICK_KEY, scrubAllAmojiIdleKeys } from './idle-prefs-scrub';
 
-export const IDLE_PICK_KEY = 'amoji.idlePick.v5';
+export { IDLE_PICK_KEY };
+export { DEFAULT_IDLE_CLIP_ID };
+
 const KEY = IDLE_PICK_KEY;
 
-/** Prefs keys from #392 / #407 / #415 — never carry weak pins into v5. */
-const LEGACY_PICK_KEYS = [
-  'amoji.idlePick.v1',
-  'amoji.idlePick.v2',
-  'amoji.idlePick.v3',
-  'amoji.idlePick.v4',
-] as const;
-
-/** Default rotation / safe persisted pins — one static upright stand. */
+/** Default rotation / safe persisted pins — one near-still upright stand. */
 export const DEFAULT_IDLE_IDS = [
-  'IdleRpmFStanding001',
+  DEFAULT_IDLE_CLIP_ID,
 ] as const;
 
 /** Old defaults / gesture pins that must not stick after the calm swap. */
@@ -38,7 +38,8 @@ const BAD_SAVED_IDLE_IDS = new Set([
   'IdleRpmMVar002',
   'IdleRpmFVar003',
   'IdleRpmFVar004',
-  'IdleRpmMStanding001', // v4 dual-stand A→B — v5 is single static
+  'IdleRpmMStanding001',
+  'IdleRpmFStanding001', // v5 default — still looked same-bad to owner
 ]);
 
 type PickMap = Record<string, string>;
@@ -46,21 +47,12 @@ type PickMap = Record<string, string>;
 let memory: PickMap = {};
 let loaded = false;
 
-function dropLegacyPickKeys(): void {
-  try {
-    if (typeof localStorage === 'undefined') return;
-    for (const k of LEGACY_PICK_KEYS) {
-      if (localStorage.getItem(k) != null) localStorage.removeItem(k);
-    }
-  } catch { /* private mode */ }
-}
-
 function hydrate(): PickMap {
   if (loaded) return memory;
   loaded = true;
   try {
     if (typeof localStorage === 'undefined') return memory;
-    dropLegacyPickKeys();
+    scrubAllAmojiIdleKeys();
     const raw = localStorage.getItem(KEY);
     if (!raw) return memory;
     const parsed = JSON.parse(raw) as unknown;

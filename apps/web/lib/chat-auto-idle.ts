@@ -6,32 +6,29 @@
 import { idleClipById } from './idle-clips';
 import type { IdleCuratedCategory } from './idle-curated-rail';
 import { FAREWELL_WAVE_CLIP_ID, isFarewellText } from './idle-farewell';
+import { DEFAULT_IDLE_CLIP_ID } from './idle-retired';
 import { detectMusicStyle, STYLE_CLIP_HINTS } from './music-catalog';
 import { resolvePerfMotion } from './performance-motion';
 
 const BREATHING_CLIPS = [
-  'IdleRpmFStanding001',
-  'IdleRpmMStanding001',
+  DEFAULT_IDLE_CLIP_ID,
 ] as const;
 
 /** Opening greet / light chit-chat — never the wave gesture. */
 const CHITCHAT_CLIPS = [
-  'IdleRpmFStanding001',
-  'IdleRpmMStanding001',
+  DEFAULT_IDLE_CLIP_ID,
   'Thinking',
 ] as const;
 
 /** Calm defaults for ordinary Q&A — upright planted stands only (no LookAround thrash). */
 const NEUTRAL_CHAT_CLIPS = [
-  'IdleRpmFStanding001',
-  'IdleRpmMStanding001',
+  DEFAULT_IDLE_CLIP_ID,
   'Thinking',
 ] as const;
 
 /** Weather / news / story / fun-fact talk — calm stands only. */
 const TALK_CALM_CLIPS = [
-  'IdleRpmFStanding001',
-  'IdleRpmMStanding001',
+  DEFAULT_IDLE_CLIP_ID,
   'Thinking',
 ] as const;
 
@@ -131,11 +128,11 @@ const CATEGORY_CLIP: Record<BucketCategory | 'breathe' | 'look' | 'stretch' | 's
   martial: 'lib_C121',
   scared: 'lib_C146',
   react: 'Cheer',
-  breathe: 'IdleRpmFStanding001',
-  look: 'IdleRpmFStanding001',
+  breathe: DEFAULT_IDLE_CLIP_ID,
+  look: DEFAULT_IDLE_CLIP_ID,
   stretch: 'Relax',
   sing: 'IdleMixamoHappy',
-  talk: 'IdleRpmFStanding001',
+  talk: DEFAULT_IDLE_CLIP_ID,
 };
 
 /** Music / concert talk without a full dance ask — sway + legs with the beat. */
@@ -156,7 +153,7 @@ function pickFromPool(seed: string, pool: readonly string[]): string {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
   const playable = pool.filter((id) => idleClipById(id));
-  if (!playable.length) return 'IdleRpmFStanding001';
+  if (!playable.length) return DEFAULT_IDLE_CLIP_ID;
   const idx = Math.abs(h) % playable.length;
   return playable[idx]!;
 }
@@ -337,7 +334,7 @@ export function resolveChatAutoIdle(input: ChatAutoIdleInput): string | null {
     return resolveFarewellWave() ?? pickBreathingDefault('bye');
   }
   if (input.thinking) {
-    return idleClipById('Thinking') ? 'Thinking' : 'IdleRpmFStanding001';
+    return idleClipById('Thinking') ? 'Thinking' : DEFAULT_IDLE_CLIP_ID;
   }
   const assistantText = input.assistantText.trim();
   const userText = (input.userText ?? '').trim();
@@ -356,7 +353,7 @@ export function resolveChatAutoIdle(input: ChatAutoIdleInput): string | null {
   const emo = topEmotionCategory(input.emotionHints, corpus);
   if (emo) return clipForCategory(emo, seed, corpus);
   const clip = pickNeutralChatIdle(seed);
-  return idleClipById(clip) ? clip : 'IdleRpmFStanding001';
+  return idleClipById(clip) ? clip : DEFAULT_IDLE_CLIP_ID;
 }
 
 /** Test / director helper: true when text is weather/news/story talk. */

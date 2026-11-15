@@ -35,6 +35,7 @@ export const IDLE_TORSO_PITCH_MAX = 0.035;
 const STIFF_IDLE_CLIPS = new Set<string>([
   'IdleMixamoExcited',
   'IdleMixamoStanding',
+  'IdleQuaterniusHuman',
   'IdleRpmMArmStanding001',
   'IdleRpmMStanding001',
   'IdleRpmFStanding001',

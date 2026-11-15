@@ -659,9 +659,9 @@ export default function CompanionCanvas({
       : [ownModel, 'seed-san.vrm'].filter((m): m is string => !!m);
 
     // -- clip library ---------------------------------------------------------
-    // Standing idle. Default is a single calm upright stand
-    // (IdleRpmFStanding001 only — idle v5). Amplitude damp kills thrash /
-    // sky-look. LookAround / Sassy / BreathCalm / hug / wave stay out.
+    // Standing idle. Default is IdleQuaterniusHuman only (idle v6) — visibly
+    // different from RPM F stand. Near-zero amplitude = almost still.
+    // LookAround / Sassy / BreathCalm / RPM stands / hug / wave stay out.
     // rebaseClipHips pins feet and yaw-only hips on every idle in this list.
     const ANIM_MIRROR = `${ASSET_BASE}/models/anims`;
     const CHAT_HOST = 'https://raw.githubusercontent.com/DavinciDreams/3dchat/main/public/animations/vrma';
@@ -670,8 +670,8 @@ export default function CompanionCanvas({
 
     interface ClipSource { id: string; urls: string[] }
     // Idle # SoT: apps/web/lib/idle-library.ts (free-library Cxx map).
-    // Default rotation = enabled playable nums (localStorage amoji.idleEnabled.v5),
-    // falling back to IdleRpmFStanding001. Every idle gets
+    // Default rotation = enabled playable nums (localStorage amoji.idleEnabled.v6),
+    // falling back to IdleQuaterniusHuman. Every idle gets
     // rebaseClipHips + amplitude damp + pinPlantedClipTracks (no floating feet).
     const libPlayable = playableIdles();
     const enabledIds = new Set(listEnabledIdleClipIds());
@@ -680,7 +680,7 @@ export default function CompanionCanvas({
       .map((e) => ({ id: e.clipId, urls: [`${ANIM_MIRROR}/${e.clipId}.vrma`] }));
     if (!IDLE_SOURCES.length) {
       IDLE_SOURCES.push(
-        { id: 'IdleRpmFStanding001', urls: [`${ANIM_MIRROR}/IdleRpmFStanding001.vrma`] },
+        { id: 'IdleQuaterniusHuman', urls: [`${ANIM_MIRROR}/IdleQuaterniusHuman.vrma`] },
       );
     }
     // All other playable library idles (side picks / Mon # tap).
@@ -2042,7 +2042,7 @@ export default function CompanionCanvas({
             idleHoldUntil = Infinity;
           } else if (thinkingPoseActive()) {
             // Visual wait cue: Thinking pose (C56), upright stand if VRMA missing.
-            const thinkClip = clips.has('Thinking') ? 'Thinking' : 'IdleRpmFStanding001';
+            const thinkClip = clips.has('Thinking') ? 'Thinking' : 'IdleQuaterniusHuman';
             if (idleClipId !== thinkClip && !thinkMiss) {
               if (!playNamedIdle(thinkClip, FADE.idleRotate)) thinkMiss = true;
               else idleHoldUntil = performance.now() + 20000;
