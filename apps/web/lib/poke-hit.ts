@@ -258,7 +258,7 @@ function gainsFor(zone: TalkZone, direction: PokeDirection): Gains {
       return { spine: 0, chest: 0, head: 0.95, hip: 0, hipRoll: 0, roll: 0, yaw: 0, arm: 0, elbow: 0, armUp: 0, shift: 0, kind: 'head', elbowBias: 0, armUpBias: 0 };
     case 'chest':
       if (side) {
-        return { spine: 0.36, chest: 0.42, head: 0.16, hip: 0.24, hipRoll: 0.28, roll: 0.4, yaw: 0.05, arm: 0.58, elbow: 0.32, armUp: 0.14, shift: 0.03, kind: 'chest', elbowBias: 0.08, armUpBias: -0.04 };
+        return { spine: 0.44, chest: 0.55, head: 0.22, hip: 0.32, hipRoll: 0.4, roll: 0.62, yaw: 0.07, arm: 0.78, elbow: 0.42, armUp: 0.22, shift: 0.04, kind: 'chest', elbowBias: 0.1, armUpBias: -0.05 };
       }
       if (fromBack) {
         return { spine: 0.64, chest: 0.34, head: 0.18, hip: 0.36, hipRoll: 0.08, roll: 0.1, yaw: 0.03, arm: 0.34, elbow: 0.22, armUp: 0.2, shift: 0.036, kind: 'chest', elbowBias: 0.04, armUpBias: 0.08 };
@@ -283,7 +283,8 @@ function gainsFor(zone: TalkZone, direction: PokeDirection): Gains {
     case 'legR':
       return { spine: 0.22, chest: 0.12, head: 0.06, hip: 0.46, hipRoll: 0.38, roll: 0.2, yaw: 0.025, arm: 0.12, elbow: 0.08, armUp: 0.09, shift: 0.046, kind: 'heavy', elbowBias: -0.05, armUpBias: 0.06 };
     case 'side':
-      return { spine: 0.34, chest: 0.26, head: 0.14, hip: 0.32, hipRoll: 0.36, roll: 0.48, yaw: 0.06, arm: 0.72, elbow: 0.42, armUp: 0.22, shift: 0.036, kind: 'body', elbowBias: 0.08, armUpBias: 0.06 };
+      // Stronger same-side lean + near-arm flinch so the tip reads clearly on phone.
+      return { spine: 0.42, chest: 0.38, head: 0.22, hip: 0.4, hipRoll: 0.48, roll: 0.68, yaw: 0.08, arm: 0.98, elbow: 0.55, armUp: 0.32, shift: 0.048, kind: 'body', elbowBias: 0.1, armUpBias: 0.08 };
     case 'back':
       return { spine: 0.72, chest: 0.4, head: 0.16, hip: 0.42, hipRoll: 0.08, roll: 0.1, yaw: 0.03, arm: 0.38, elbow: 0.24, armUp: 0.18, shift: 0.042, kind: 'body', elbowBias: 0.03, armUpBias: 0.09 };
     default: {
@@ -299,18 +300,22 @@ function gainsFor(zone: TalkZone, direction: PokeDirection): Gains {
 }
 
 const CAP = {
-  spine: 0.82,
-  chest: 0.62,
-  head: 0.9,
-  hip: 0.5,
-  hipRoll: 0.38,
-  yaw: 0.14,
-  roll: 0.46,
-  arm: 1.05,
-  elbow: 0.58,
-  armUp: 0.48,
-  shift: 0.055,
+  spine: 0.95,
+  chest: 0.78,
+  head: 1.05,
+  hip: 0.62,
+  hipRoll: 0.58,
+  yaw: 0.18,
+  /** Lateral tip must clear phone noise — was 0.46 and read as a twitch. */
+  roll: 0.78,
+  arm: 1.28,
+  elbow: 0.72,
+  armUp: 0.58,
+  shift: 0.07,
 } as const;
+
+/** Extra same-side lean amp for lateral taps (keep sign from fallX — do not flip). */
+const LATERAL_LEAN_AMP = 1.38;
 
 function clamp(v: number, m: number): number {
   return v < -m ? -m : v > m ? m : v;
@@ -425,24 +430,28 @@ export function pokeBodyReaction(opts: {
     spinePitch = clamp(opts.fallZ * g.spine * punch, CAP.spine);
   }
   const shiftGain = (localButt || localBelly || opts.zone === 'foot' || opts.zone === 'hand') ? 0 : g.shift;
+  const leanAmp = fromSide ? LATERAL_LEAN_AMP : 1;
+  const fx = opts.fallX * leanAmp;
+  const armPunch = fromSide ? punch * 1.18 : punch;
   return {
     ...STILL,
     spinePitch,
     chestPitch: clamp(opts.fallZ * g.chest * punch, CAP.chest),
-    spineYaw: clamp(opts.fallX * g.yaw * punch, CAP.yaw),
-    chestRoll: clamp(-opts.fallX * g.roll * punch, CAP.roll),
+    spineYaw: clamp(fx * g.yaw * punch, CAP.yaw),
+    // Same-side tip: −fallX → positive chestRoll tips screen-left when fallX < 0.
+    chestRoll: clamp(-fx * g.roll * punch, CAP.roll),
     headX: clamp(opts.fallZ * g.head * punch, CAP.head),
-    headZ: clamp(-opts.fallX * g.head * 0.7 * punch + opts.twist * 0.04 * punch, CAP.head),
+    headZ: clamp(-fx * g.head * 0.78 * punch + opts.twist * 0.04 * punch, CAP.head),
     hipPitch,
-    hipRoll: clamp(-opts.fallX * g.hipRoll * punch, CAP.hipRoll),
-    hipShiftX: clamp(opts.fallX * shiftGain * punch, CAP.shift),
+    hipRoll: clamp(-fx * g.hipRoll * punch, CAP.hipRoll),
+    hipShiftX: clamp(fx * shiftGain * punch, CAP.shift),
     hipShiftZ: clamp(opts.fallZ * shiftGain * punch, CAP.shift),
-    lArmX: clamp(armDir * armL * punch, CAP.arm),
-    rArmX: clamp(armDir * armR * 0.94 * punch, CAP.arm),
-    lElbowZ: clamp((g.elbow + g.elbowBias) * punch, CAP.elbow),
-    rElbowZ: clamp((g.elbow - g.elbowBias * 0.55) * punch, CAP.elbow),
-    lArmUp: clamp(-Math.abs(opts.fallX) * (g.armUp + g.armUpBias) * punch, CAP.armUp),
-    rArmUp: clamp(-Math.abs(opts.fallX) * (g.armUp - g.armUpBias * 0.5) * punch, CAP.armUp),
+    lArmX: clamp(armDir * armL * armPunch, CAP.arm),
+    rArmX: clamp(armDir * armR * 0.94 * armPunch, CAP.arm),
+    lElbowZ: clamp((g.elbow + g.elbowBias) * armPunch, CAP.elbow),
+    rElbowZ: clamp((g.elbow - g.elbowBias * 0.55) * armPunch, CAP.elbow),
+    lArmUp: clamp(-Math.abs(fx) * (g.armUp + g.armUpBias) * armPunch, CAP.armUp),
+    rArmUp: clamp(-Math.abs(fx) * (g.armUp - g.armUpBias * 0.5) * armPunch, CAP.armUp),
   };
 }
 

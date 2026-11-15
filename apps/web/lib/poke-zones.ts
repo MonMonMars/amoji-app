@@ -132,11 +132,12 @@ const TIER_BAND_SCALE: Record<
   PokeTierId,
   { head: number; chest: number; spine: number; hip: number; arm: number; shift: number }
 > = {
-  head: { head: 1, chest: 0.28, spine: 0.14, hip: 0.06, arm: 0.1, shift: 0.02 },
-  shoulder_chest: { head: 0.22, chest: 1, spine: 0.62, hip: 0.28, arm: 0.85, shift: 0.05 },
-  belly: { head: 0.1, chest: 0.42, spine: 1, hip: 0.52, arm: 0.22, shift: 0 },
-  hip: { head: 0.06, chest: 0.22, spine: 0.48, hip: 1, arm: 0.14, shift: 0 },
-  thigh: { head: 0.04, chest: 0.1, spine: 0.22, hip: 0.68, arm: 0.08, shift: 0.03 },
+  head: { head: 1, chest: 0.34, spine: 0.18, hip: 0.08, arm: 0.16, shift: 0.03 },
+  // Stronger chest/arm band so same-side tip + flinch read on phone.
+  shoulder_chest: { head: 0.28, chest: 1.18, spine: 0.78, hip: 0.36, arm: 1.12, shift: 0.06 },
+  belly: { head: 0.12, chest: 0.48, spine: 1.08, hip: 0.58, arm: 0.28, shift: 0 },
+  hip: { head: 0.08, chest: 0.26, spine: 0.55, hip: 1.08, arm: 0.18, shift: 0 },
+  thigh: { head: 0.05, chest: 0.12, spine: 0.26, hip: 0.78, arm: 0.1, shift: 0.036 },
   calf_foot: { head: 0, chest: 0, spine: 0, hip: 0, arm: 0, shift: 0 },
 };
 

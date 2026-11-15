@@ -1730,16 +1730,28 @@ export default function CompanionCanvas({
                 hipsW,
                 camRightXZ,
               );
-            // Lateral fall: lean TOWARD the poked screen side (Pixel / r120).
+            // Lateral fall: lean TOWARD the poked screen side (Pixel / r120 / #409).
             // Finger left → tips left. fall = cameraRight * leanSide (+leanSide).
             // VRM check: leanSide −1 → fallX −1 face-on → head world X drops (screen-left).
             // −leanSide was opposite tip (#345); #390 flipped to +; keep +.
-            // Keep classifyPoke impulse for front/back/chest so those leans stay axial.
-            if (
-              pokeZone === 'side' || pokeZone === 'armL' || pokeZone === 'armR' || pokeZone === 'hand'
-            ) {
+            // Pure lateral zones take the screen fall alone. Chest/torso/belly/…
+            // blend axial impulse with the same-side lean so a left-chest tap
+            // still tips left (axial-only used to look like the old twitch).
+            {
               const fall = lateralFallTowardScreenSide(camRightXZ, leanSide);
-              pokeFallDir.set(fall.x, 0, fall.z);
+              const lateralOnly =
+                pokeZone === 'side' || pokeZone === 'armL' || pokeZone === 'armR' || pokeZone === 'hand';
+              if (lateralOnly) {
+                pokeFallDir.set(fall.x, 0, fall.z);
+              } else if (pokeZone !== 'foot') {
+                pokeFallDir.set(
+                  cls.impulse.x * 0.42 + fall.x * 0.95,
+                  0,
+                  cls.impulse.z * 0.55 + fall.z * 0.4,
+                );
+                const len = Math.hypot(pokeFallDir.x, pokeFallDir.z);
+                if (len > 1e-6) pokeFallDir.multiplyScalar(1 / len);
+              }
             }
             const hsL = handScreen('left');
             const hsR = handScreen('right');

@@ -104,14 +104,17 @@ describe('pokeSectionBodyReaction', () => {
       softChest: false,
       twist: 0,
     });
-    expect(hit.chestRoll).toBeGreaterThan(0);
+    expect(hit.chestRoll).toBeGreaterThan(0.35);
     expect(Math.abs(hit.rArmX)).toBeGreaterThan(Math.abs(hit.lArmX));
+    expect(Math.abs(hit.rArmX)).toBeGreaterThan(0.45);
   });
 
   it('CompanionCanvas lateral fall uses +leanSide (toward poked screen side)', () => {
     const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
     expect(canvas).toMatch(/lateralFallTowardScreenSide\s*\(/);
     expect(canvas).toMatch(/screenPointerSideSign\s*\(/);
+    // #409: keep +leanSide; blend axial+lateral for non-side zones — never −leanSide.
+    expect(canvas).toMatch(/fall\.x \* 0\.95/);
     expect(canvas).not.toMatch(/multiplyScalar\(\s*-camSide\s*\)/);
     expect(canvas).not.toMatch(/multiplyScalar\(\s*-leanSide\s*\)/);
   });
