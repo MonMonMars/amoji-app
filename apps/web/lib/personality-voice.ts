@@ -126,10 +126,11 @@ const CATCH: Record<VoiceId, Record<Lang, readonly string[]>> = {
     ja: ['{noun}サンシャイン！', '明るい{noun}チェック！', 'ハッピー{noun}！', '{noun}チア！'],
   },
   shy: {
-    en: ['um, {noun}…', 'soft {noun} hello…', 'little {noun} wave…', '{noun}, quietly…'],
-    yue: ['嗯，{noun}……', '輕輕{noun}打招呼……', '小小{noun}揮手……', '{noun}，細聲……'],
-    zh: ['嗯，{noun}……', '轻轻{noun}打招呼……', '小小{noun}挥手……', '{noun}，小声……'],
-    ja: ['えっと、{noun}……', 'そっと{noun}……', '小さな{noun}の合図……', '{noun}、小さく……'],
+    // Never um/嗯/えっと leads — spoken loading filler (Pixel).
+    en: ['softly, {noun}…', 'soft {noun} hello…', 'little {noun} wave…', '{noun}, quietly…'],
+    yue: ['輕輕，{noun}……', '輕輕{noun}打招呼……', '小小{noun}揮手……', '{noun}，細聲……'],
+    zh: ['轻轻，{noun}……', '轻轻{noun}打招呼……', '小小{noun}挥手……', '{noun}，小声……'],
+    ja: ['そっと、{noun}……', 'そっと{noun}……', '小さな{noun}の合図……', '{noun}、小さく……'],
   },
   playful: {
     en: ['hehe, {noun}!', '{noun} plot twist!', 'teehee, {noun}!', 'silly {noun} game!'],
@@ -174,9 +175,10 @@ const CATCH: Record<VoiceId, Record<Lang, readonly string[]>> = {
     ja: ['やあ、{noun}相棒。', 'あったかい{noun}の挨拶。', '友達の{noun}。', '相棒{noun}チェック。'],
   },
   quiet: {
-    en: ['hm, {noun}.', 'quiet {noun}.', '{noun}… a thought.', 'soft {noun} note.'],
-    yue: ['嗯，{noun}。', '靜靜{noun}。', '{noun}……一個念頭。', '輕{noun}字條。'],
-    zh: ['嗯，{noun}。', '静静{noun}。', '{noun}……一个念头。', '轻{noun}字条。'],
+    // No 嗯/um loading-filler leads (Pixel).
+    en: ['softly, {noun}.', 'quiet {noun}.', '{noun}… a thought.', 'soft {noun} note.'],
+    yue: ['靜靜，{noun}。', '靜靜{noun}。', '{noun}……一個念頭。', '輕{noun}字條。'],
+    zh: ['静静，{noun}。', '静静{noun}。', '{noun}……一个念头。', '轻{noun}字条。'],
     ja: ['ふむ、{noun}。', '静かな{noun}。', '{noun}……ひとつの考え。', '小さな{noun}メモ。'],
   },
   sporty: {
@@ -201,10 +203,11 @@ const WRAP: Record<VoiceId, Record<Lang, readonly string[]>> = {
     ja: ['{body}', 'そうそう——{body}', '大きな笑顔！{body}', '応援タイム！{body}'],
   },
   shy: {
-    en: ['{body}', 'Um… {body}', 'If it is okay… {body}', 'Little voice. {body}'],
-    yue: ['{body}', '嗯……{body}', '如果得嘅話……{body}', '細聲。{body}'],
-    zh: ['{body}', '嗯……{body}', '如果可以的话……{body}', '小声。{body}'],
-    ja: ['{body}', 'あの……{body}', 'よかったら……{body}', '小さな声。{body}'],
+    // Never Um/嗯……/あの…… — those map to spoken loading filler (Pixel).
+    en: ['{body}', 'Softly… {body}', 'If it is okay… {body}', 'Little voice. {body}'],
+    yue: ['{body}', '細細聲……{body}', '如果得嘅話……{body}', '細聲。{body}'],
+    zh: ['{body}', '轻轻……{body}', '如果可以的话……{body}', '小声。{body}'],
+    ja: ['{body}', 'すこし……{body}', 'よかったら……{body}', '小さな声。{body}'],
   },
   playful: {
     en: ['{body}', 'Psst — {body}', 'Plot incoming! {body}', 'Hehe wait. {body}'],
@@ -249,10 +252,11 @@ const WRAP: Record<VoiceId, Record<Lang, readonly string[]>> = {
     ja: ['{body}', '座って。{body}', 'やあ相棒。{body}', '来てくれてよかった。{body}'],
   },
   quiet: {
-    en: ['{body}', 'Hm. {body}', 'Quietly. {body}', 'Just this. {body}'],
-    yue: ['{body}', '嗯。{body}', '靜靜哋。{body}', '就呢句。{body}'],
-    zh: ['{body}', '嗯。{body}', '静静地。{body}', '就这句。{body}'],
-    ja: ['{body}', 'ふむ。{body}', '静かに。{body}', 'これだけ。{body}'],
+    // No Hm/嗯 loading-filler leads (Pixel).
+    en: ['{body}', 'Softly. {body}', 'Quietly. {body}', 'Just this. {body}'],
+    yue: ['{body}', '靜靜。{body}', '靜靜哋。{body}', '就呢句。{body}'],
+    zh: ['{body}', '静静。{body}', '静静地。{body}', '就这句。{body}'],
+    ja: ['{body}', 'そっと。{body}', '静かに。{body}', 'これだけ。{body}'],
   },
   sporty: {
     en: ['{body}', 'On your mark. {body}', 'Team huddle! {body}', 'Water break over. {body}'],
@@ -326,7 +330,7 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
       'Having {noun} nearby feels like enough company right now.',
       'I may {verb} while we sit — slow and small.',
       'I saved {thing}, just in case it helps the calm.',
-      'Um, talking about {noun} makes me a little shy, and that is okay.',
+      'Softly — talking about {noun} makes me a little shy, and that is okay.',
       'I almost hid {thing}, then decided to keep it near.',
       'If you have a minute, we could {verb} at an easy pace.',
       'I keep {thing} here quietly, like this soft hello.',
@@ -338,7 +342,7 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
       '身邊有少少{noun}，而家已經夠陪。',
       '我可能會一邊坐一邊{verb}——慢慢細細。',
       '我留低{thing}，以防萬一幫到手靜。',
-      '嗯，講起{noun}令我有啲害羞，都唔緊要。',
+      '講起{noun}令我有啲害羞，都唔緊要。',
       '我差啲收埋{thing}，之後決定放近啲。',
       '你有一分鐘嘅話，我哋可以慢慢{verb}。',
       '我將{thing}靜靜放喺度，好似呢聲輕輕嘅你好。',
@@ -350,7 +354,7 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
       '身边有一点点{noun}，现在就够陪着了。',
       '我可能会一边坐一边{verb}——慢慢小小的。',
       '我留着{thing}，以防万一能帮上这份静。',
-      '嗯，说起{noun}让我有点害羞，也没关系。',
+      '说起{noun}让我有点害羞，也没关系。',
       '我差点藏起{thing}，后来决定放近一点。',
       '你有一分钟的话，我们可以慢慢{verb}。',
       '我把{thing}安静地放在这里，像这声轻轻的你好。',
@@ -362,7 +366,7 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
       'そばに{noun}があるだけで、今は十分なお供。',
       '座りながら{verb}するかも——ゆっくり小さく。',
       '万一のために{thing}を取ってある。落ち着きの助けに。',
-      'えっと、{noun}の話は少し照れる。それでも大丈夫。',
+      '{noun}の話は少し照れる。それでも大丈夫。',
       '{thing}を隠しそうになって、近くに置くことにした。',
       '一分あれば、ゆっくり{verb}できるよ。',
       '{thing}を静かに置いてある。このやさしい挨拶みたい。',
