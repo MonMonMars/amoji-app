@@ -31,7 +31,7 @@
 | Gate location Allow + Enter prime | #379 |
 | White-pupil image loop | owner OK |
 | Card greet audible (code) | #370 + card-greet-sound-fix (sink race) — **Outstanding phone** until hear |
-| One-voice card greet (code) | #375 — hold insurance ~220ms so silence does not return |
+| One-voice card greet (code) | #375 + card-greet-no-robot-double (no insurance; no synth robot) — **Outstanding phone** |
 | CMA poke SFX + zone-stable SFX | #348+ |
 | No spoken UM; thinking bar | on `main` |
 | Music ask random vs select | #364 |
