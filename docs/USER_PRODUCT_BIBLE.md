@@ -2,7 +2,7 @@
 
 **Purpose:** Living checklist of product rules from the product owner. Agents must read this before chat/voice/pose/permission work and update it when rules change.
 
-**Last reviewed:** 2026-11-15 01:56 (Asia/Hong_Kong)  
+**Last reviewed:** 2026-11-15 12:53 (Asia/Hong_Kong)  
 **Demo:** https://monmonmars.github.io/amoji-app/  
 **Request log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn. Overlapping messages still count; never drop one.
 
@@ -43,6 +43,10 @@
 | Poke lean toward poked side (code) | #390 |
 | Sing ask no Soave+月光光 nonsense (code) | #391 |
 | Idle pose Pixel-OK calm stands (code) | #392 |
+| Caption then whole phase again in history (code) | #393 |
+| Blend-to-back / lean forward weird (code) | #394 |
+| All langs/genders speak — not Yue-female-only (code) | #395 |
+| No history-resume ask (code) | #331 / #366 |
 
 ---
 
@@ -50,10 +54,9 @@
 
 | Item | Notes |
 |------|--------|
-| Caption then whole phase again in history | de-dupe |
-| Blend to back / lean forward weird | hips/idle |
-| Only Cantonese female voice works | all langs/genders |
-| Pages rebuild + phone smoke on live demo | **Human** — checklist [`PHONE_SMOKE.md`](./PHONE_SMOKE.md); merged ≠ live until rebuild + owner OK |
+| Talking nonsense / silly LLM | **Verify on live** after Pages — code scrub already on `main` (#360); owner OK still required |
+| Phone smoke on live demo | **Human** — checklist [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
+| Pages rebuild | **Live** after #395 push (`last-modified` 2026-11-14 18:25 UTC). Agent `workflow_dispatch` is 403; next `main` push rebuilds. Owner can also Actions → pages → Run workflow. |
 
 ### Hold
 
@@ -66,6 +69,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-15 ~12:53 | #393/#394/#395 → Done on main; Pages already rebuilt from #395; Outstanding = nonsense verify + phone smoke; no-history-resume already shipped (#331/#366) |
 | 2026-11-15 ~01:56 | Status board: #385/#386/#387/#388/#390/#391/#392 → Done; Outstanding = caption de-dupe / blend-back / Yue-only voice / Pages+phone smoke |
 | 2026-11-15 ~01:43 | Merged #387 gate; #390 poke; #391 sing; #388/#392 next |
 | 2026-11-15 ~01:32 | Rebase #385/#387/#388 onto main after #386; keep combined Outstanding board |
