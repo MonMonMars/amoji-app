@@ -29,12 +29,13 @@ export const MOOD_FILLERS: Record<string, Record<LangCode, readonly string[]>> =
  * applied to the tic itself (giggles pop up, sighs sink down).
  */
 export const INTERJECTIONS: Record<string, Partial<Record<LangCode, { text: string; pitch: number; rate: number }>>> = {
-  // t771: joy tic is a soft mm — never TTS hehe/haha (laugh = SFX only).
+  // t771: joy tic is soft — never TTS hehe/haha (laugh = SFX only).
+  // Never 嗯/um/うん — those map to the loading um clip (Pixel: no thinking filler).
   joy: {
-    yue: { text: '嗯！', pitch: 0.08, rate: 0.06 },
-    zh: { text: '嗯！', pitch: 0.08, rate: 0.06 },
-    ja: { text: 'うん！', pitch: 0.08, rate: 0.06 },
-    en: { text: 'mm!', pitch: 0.08, rate: 0.06 },
+    yue: { text: '呀！', pitch: 0.08, rate: 0.06 },
+    zh: { text: '呀！', pitch: 0.08, rate: 0.06 },
+    ja: { text: 'やった！', pitch: 0.08, rate: 0.06 },
+    en: { text: 'ah!', pitch: 0.08, rate: 0.06 },
   },
   excitement: {
     yue: { text: '哇！', pitch: 0.2, rate: 0.16 },
@@ -69,21 +70,23 @@ export const INTERJECTIONS: Record<string, Partial<Record<LangCode, { text: stri
   confusion: {
     yue: { text: '咦？', pitch: 0.12, rate: -0.06 },
     zh: { text: '诶？', pitch: 0.12, rate: -0.06 },
-    ja: { text: 'えっと……', pitch: 0.1, rate: -0.08 },
+    // Not えっと — that maps to the loading um clip (Pixel).
+    ja: { text: 'あれ？', pitch: 0.1, rate: -0.08 },
     en: { text: 'huh?', pitch: 0.12, rate: -0.06 },
   },
-  // Soft moods: breathy/warm tics — never typed laughs (SFX owns giggles).
+  // Soft moods: breathy/warm tics — never typed laughs (SFX owns giggles),
+  // and never 嗯/um/うん loading-filler leads (Pixel).
   love: {
-    yue: { text: '嗯……', pitch: 0.05, rate: -0.08 },
-    zh: { text: '嗯……', pitch: 0.05, rate: -0.08 },
+    yue: { text: '呀……', pitch: 0.05, rate: -0.08 },
+    zh: { text: '呀……', pitch: 0.05, rate: -0.08 },
     ja: { text: 'ふぅ……', pitch: 0.04, rate: -0.08 },
-    en: { text: 'mm…', pitch: 0.04, rate: -0.08 },
+    en: { text: 'aw…', pitch: 0.04, rate: -0.08 },
   },
   contentment: {
-    yue: { text: '嗯。', pitch: 0.02, rate: -0.1 },
-    zh: { text: '嗯。', pitch: 0.02, rate: -0.1 },
-    ja: { text: 'うん。', pitch: 0.02, rate: -0.1 },
-    en: { text: 'mm.', pitch: 0.02, rate: -0.1 },
+    yue: { text: '好。', pitch: 0.02, rate: -0.1 },
+    zh: { text: '好。', pitch: 0.02, rate: -0.1 },
+    ja: { text: 'はい。', pitch: 0.02, rate: -0.1 },
+    en: { text: 'okay.', pitch: 0.02, rate: -0.1 },
   },
   relief: {
     yue: { text: '呼……', pitch: -0.02, rate: -0.1 },
@@ -92,10 +95,10 @@ export const INTERJECTIONS: Record<string, Partial<Record<LangCode, { text: stri
     en: { text: 'phew…', pitch: -0.02, rate: -0.1 },
   },
   pride: {
-    yue: { text: '嗯！', pitch: 0.08, rate: 0.02 },
-    zh: { text: '嗯！', pitch: 0.08, rate: 0.02 },
+    yue: { text: '得！', pitch: 0.08, rate: 0.02 },
+    zh: { text: '好！', pitch: 0.08, rate: 0.02 },
     ja: { text: 'ふん！', pitch: 0.08, rate: 0.02 },
-    en: { text: 'hm!', pitch: 0.08, rate: 0.02 },
+    en: { text: 'yes!', pitch: 0.08, rate: 0.02 },
   },
 
 };

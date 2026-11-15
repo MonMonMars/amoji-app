@@ -39,19 +39,16 @@ describe('loading um filler disabled (Pixel)', () => {
   });
 });
 
-describe('wait filler line banks (still substantial if re-enabled)', () => {
-  it('plans whole sentences, not bare um', () => {
-    const plan = planThinkingSound({ lang: 'en', characterId: 'a01-shino', userText: 'hello' });
-    expect(plan.length).toBe(THINKING_SOUND_MAX_BEATS);
-    for (const beat of plan) {
-      expect(isSubstantialStub(beat.text)).toBe(true);
-      expect(beat.text.replace(/\s/g, '').length).toBeGreaterThanOrEqual(SUBSTANTIAL_STUB_CHARS);
-    }
+describe('wait filler line banks (kept but not planned while disabled)', () => {
+  it('planThinkingSound returns no beats while filler is off', () => {
+    expect(planThinkingSound({ lang: 'en', characterId: 'a01-shino', userText: 'hello' })).toEqual([]);
   });
 
-  it('bank still contains full think/search sentences', () => {
+  it('bank still contains full think/search sentences if ever re-enabled', () => {
     for (const lang of ['en', 'yue', 'zh', 'ja'] as const) {
       expect(LOADING_STUBS[lang].some((line) => isSubstantialStub(line))).toBe(true);
+      expect(LOADING_STUBS[lang].some((line) => line.replace(/\s/g, '').length >= SUBSTANTIAL_STUB_CHARS)).toBe(true);
     }
+    expect(THINKING_SOUND_MAX_BEATS).toBe(WARMUP_MAX_LINES);
   });
 });

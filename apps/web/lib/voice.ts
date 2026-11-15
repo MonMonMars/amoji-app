@@ -1489,23 +1489,23 @@ function performSpeak(
   // Reply TTS takes the speaker. The wait cue must not play under it.
   // A filler beat is the cue itself, so it must not cancel its own later beat.
   if (!filler) stopThinkingSound();
+  // Pixel: spoken loading um is hard-off — filler flag never reaches TTS/clips.
+  if (filler) { settle(); return; }
   // Spoken string only. cleanForSpeech may drop punctuation-mark names and
   // rewrite dashes. Chat bubbles stay on cleanForDisplay — do not write this
   // string back into history.
   text = cleanForSpeech(text);
   if (!text || !voiceOutputAllowed()) { settle(); return; }
+  // Bare um / think / search stubs (and laugh stubs remapped to um) stay silent.
+  if (loadingFillerKind(text)) { settle(); return; }
   // r111: remember the line for gesture-gate replay
   const attemptAt = Date.now();
-  // A filler is disposable: it must not become the line a gesture-gate tap
-  // replays, and it must not raise the "no voice" chip.
-  if (!filler) {
-    lastSpeak = { text, characterId, lang, emotionHints, leadOverride, intensity, at: attemptAt };
-    // r119: a fresh attempt retires any previous replay hint, and the watchdog
-    // re-arms for THIS line — if no tier's audio starts within 8s the visible
-    // tap-to-replay chip appears (catches silent failures that throw no error)
-    dismissReplayHint();
-    armNoAudioWatchdog(attemptAt);
-  }
+  lastSpeak = { text, characterId, lang, emotionHints, leadOverride, intensity, at: attemptAt };
+  // r119: a fresh attempt retires any previous replay hint, and the watchdog
+  // re-arms for THIS line — if no tier's audio starts within 8s the visible
+  // tap-to-replay chip appears (catches silent failures that throw no error)
+  dismissReplayHint();
+  armNoAudioWatchdog(attemptAt);
   // r97: a reply can be the very first sound after page load — unlockAudio()
   // used to run only on window gestures, so a session where the user typed
   // before ever tapping fetched every voice tier and stayed silent (autoplay
@@ -1566,12 +1566,21 @@ function performSpeak(
   const amp = 1 + 0.5 * Math.max(0, intensity - 1);
   // strong feelings get an audible tic (giggle/sigh/gasp) before the words —
   // unless the caller supplies its own lead (e.g. a guaranteed poke ouch).
-  // A filler is a neutral "let me think", never a reaction, so it takes no tic.
-  let tic = filler
-    ? undefined
-    : leadOverride
-      ? prepareSpokenLead(leadOverride)
-      : prepareSpokenLead(pickInterjection(emotion, value, lang));
+  // Never a thinking/um lead — that was the spoken loading filler (Pixel).
+  let tic = leadOverride
+    ? prepareSpokenLead(leadOverride)
+    : prepareSpokenLead(pickInterjection(emotion, value, lang));
+  if (tic) {
+    const peek = emotionClipKind(tic.text, 'lead');
+    if (
+      loadingFillerKind(tic.text)
+      || peek === 'um'
+      || peek === 'think'
+      || peek === 'search'
+    ) {
+      tic = undefined;
+    }
+  }
   const speechEpoch = lineQueue.epochNow();
   const speechAlive = () => lineQueue.epochNow() === speechEpoch;
   const onHeard = () => { noteSpeechStarted(tic ? `${tic.text} ${text}` : text); };
@@ -1815,18 +1824,20 @@ function performSpeak(
   runFreeChain();
   };
 
-  // Loading um / ha / think / search stubs: never play recorded long-UM or TTS.
-  // Pixel: the filler voice never matched reply TTS. Wait feedback is visual
-  // only (thinking bar + Thinking pose). Real replies fall through below.
-  if (loadingFillerKind(text)) {
+  // Loading um / ha / think / search body stubs already settled above.
+  // Lead um/think/search tics were stripped earlier — never play um.mp3 here.
+  let leadKind = tic ? emotionClipKind(tic.text, 'lead') : null;
+  if (leadKind === 'um' || leadKind === 'think' || leadKind === 'search') {
+    tic = undefined;
+    leadKind = null;
+  }
+  const lineKind = leadKind ? null : emotionClipKind(text, 'line');
+  if (lineKind === 'um' || lineKind === 'think' || lineKind === 'search') {
     settle();
     return;
   }
-
-  const leadKind = tic ? emotionClipKind(tic.text, 'lead') : null;
-  const lineKind = leadKind ? null : emotionClipKind(text, 'line');
   const clipKind = leadKind ?? lineKind;
-  if (clipKind && !filler) {
+  if (clipKind) {
     const gender = characterVoiceGender(characterId);
     const caption = leadKind && tic ? tic.text : text;
     const bodyIsBurst = () => burstSkipsTts(emotionClipKind(text, 'line'));
@@ -1840,11 +1851,10 @@ function performSpeak(
     }).catch((err: unknown) => {
       if (!speechAlive() || (err as Error | undefined)?.message === 'canceled') { settle(); return; }
       if (leadKind) tic = undefined;
-      // A laugh / giggle / wow stays a clip. A missing um / ha / think / search
-      // file must not swallow the sentence — Edge still speaks.
+      // A laugh / giggle / wow stays a clip. Missing burst file: speak the body
+      // when there is one; otherwise stay quiet (never fall through to um TTS).
       if (burstSkipsTts(leadKind) || burstSkipsTts(lineKind) || bodyIsBurst()) {
-        const fillerMiss = loadingFillerKind(text) !== null || (tic ? loadingFillerKind(tic.text) !== null : false);
-        if ((leadKind && text.trim() && !bodyIsBurst()) || fillerMiss) beginTts();
+        if (leadKind && text.trim() && !bodyIsBurst()) beginTts();
         else settle();
         return;
       }
