@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import {
   captionsCoverReply,
   commitCaptionLines,
+  dedupeConsecutiveCaptions,
   rollingCaptionFromText,
   stepCaptionLadder,
 } from '../lib/speech-caption';
@@ -40,5 +41,16 @@ describe('speech caption helpers', () => {
     expect(sealed).toEqual(['第一句。', '第二句。']);
     expect(captionsCoverReply(sealed, '第一句。第二句。')).toBe(true);
     expect(commitCaptionLines(sealed, '')).toEqual(sealed);
+  });
+
+  it('dedupes consecutive identical caption lines (lead re-dispatch)', () => {
+    expect(dedupeConsecutiveCaptions(['Hello.', 'Hello.', 'How are you?'])).toEqual([
+      'Hello.',
+      'How are you?',
+    ]);
+    expect(commitCaptionLines(['Hello.', 'Hello.'], 'Hello.')).toEqual(['Hello.']);
+    const bounce = stepCaptionLadder(['Hello.'], 'Hello.', 'How are you?');
+    expect(bounce.ladder).toEqual(['Hello.']);
+    expect(bounce.current).toBe('How are you?');
   });
 });

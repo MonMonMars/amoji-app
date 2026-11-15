@@ -55,6 +55,14 @@ describe('no double speak on one turn', () => {
     expect(quotaBlock).not.toMatch(/setHistory\(\(h\) => \[\.\.\.h, \{ role: 'assistant'/);
   });
 
+  it('caption seal waits for speech idle so lead+remainder do not lock a partial history body', () => {
+    expect(panel).toContain('captionSealAccRef');
+    expect(panel).toContain('whenSpeechIdle(flushCaptionSeal)');
+    expect(panel).toContain('dedupeConsecutiveCaptions');
+    // Streaming tail stays hidden while the queue still has the remainder.
+    expect(panel).toMatch(/speechPending\(\)/);
+  });
+
   it('treats closer-only punctuation drift as the same lead (no re-speak of sentence one)', () => {
     expect(speechLeadDiverged('Hello there! How are you?', 'Hello there.')).toBe(false);
     expect(speechRemainder('Hello there! How are you?', 'Hello there.')).toBe('How are you?');
