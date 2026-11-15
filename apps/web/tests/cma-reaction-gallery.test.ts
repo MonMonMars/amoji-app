@@ -96,8 +96,21 @@ describe('CMA reaction gallery catalog', () => {
 });
 
 describe('CMA reaction Want/Skip picks', () => {
+  it('seeds owner Want list on first visit (missing localStorage key)', () => {
+    const store = mockStorage();
+    forgetCmaReactionPickCache();
+    const wanted = wantedCmaReactionCodes();
+    expect(wanted).toContain('CMA00350');
+    expect(wanted).toContain('CMA00318');
+    expect(wanted).toContain('CMA00366');
+    expect(wanted).not.toContain('CMA00320'); // archive stays undecided
+    expect(wanted).not.toContain('CMA00353');
+    expect(JSON.parse(store.get(CMA_REACTION_GALLERY_KEY)!).CMA00350).toBe('want');
+  });
+
   it('persists Want and Skip separately and exports lists', () => {
     const store = mockStorage();
+    store.set(CMA_REACTION_GALLERY_KEY, '{}'); // blank slate — skip first-visit seed
     forgetCmaReactionPickCache();
     expect(cmaReactionVerdict('CMA00320')).toBe('undecided');
     expect(setCmaReactionVerdict('CMA00320', 'want')).toBe('want');
@@ -113,19 +126,23 @@ describe('CMA reaction Want/Skip picks', () => {
   });
 
   it('rehydrates from localStorage after cache forget', () => {
-    mockStorage();
+    const store = mockStorage();
+    store.set(CMA_REACTION_GALLERY_KEY, '{}');
     forgetCmaReactionPickCache();
     setCmaReactionVerdict('CMA00320', 'want');
     forgetCmaReactionPickCache();
     expect(cmaReactionVerdict('CMA00320')).toBe('want');
     resetCmaReactionPicks();
     expect(cmaReactionVerdict('CMA00320')).toBe('undecided');
+    // Explicit reset writes "{}" — does not re-seed Want.
+    expect(wantedCmaReactionCodes()).toEqual([]);
   });
 });
 
 describe('CMA Wanted play pool (wired)', () => {
   it('Wanted codes enter the play pool; Skip and undecided stay out', () => {
-    mockStorage();
+    const store = mockStorage();
+    store.set(CMA_REACTION_GALLERY_KEY, '{}');
     forgetCmaReactionPickCache();
     resetWantedCmaReactionRotation();
     setCmaReactionVerdict('CMA00320', 'want');
@@ -149,7 +166,8 @@ describe('CMA Wanted play pool (wired)', () => {
   });
 
   it('empty Wanted returns null so callers fall back to legacy clips', () => {
-    mockStorage();
+    const store = mockStorage();
+    store.set(CMA_REACTION_GALLERY_KEY, '{}');
     forgetCmaReactionPickCache();
     resetWantedCmaReactionRotation();
     expect(wantedCmaReactionCodes()).toEqual([]);
@@ -168,13 +186,14 @@ describe('CMA pick harden + Clear Skipped', () => {
     });
 
     const store = mockStorage();
-    forgetCmaReactionPickCache();
     store.set(CMA_REACTION_GALLERY_KEY, '{bad');
+    forgetCmaReactionPickCache();
     expect(listCmaReactionPicks()).toEqual({});
   });
 
   it('Skip-only (no Wanted) returns null; Clear Skipped keeps Wanted', () => {
-    mockStorage();
+    const store = mockStorage();
+    store.set(CMA_REACTION_GALLERY_KEY, '{}');
     forgetCmaReactionPickCache();
     resetWantedCmaReactionRotation();
     setCmaReactionVerdict('CMA00350', 'skip');
@@ -188,7 +207,8 @@ describe('CMA pick harden + Clear Skipped', () => {
   });
 
   it('skips Wanted ids whose files are unplayable and falls back to null/legacy', () => {
-    mockStorage();
+    const store = mockStorage();
+    store.set(CMA_REACTION_GALLERY_KEY, '{}');
     forgetCmaReactionPickCache();
     resetWantedCmaReactionRotation();
     setCmaReactionVerdict('CMA00320', 'want');
@@ -233,7 +253,8 @@ describe('poke SFX inventory + selection → playback pool', () => {
   });
 
   it('default enabled poke pool excludes archive; Want narrows; Skip drops', () => {
-    mockStorage();
+    const store = mockStorage();
+    store.set(CMA_REACTION_GALLERY_KEY, '{}');
     forgetCmaReactionPickCache();
     resetWantedCmaReactionRotation();
 
@@ -259,7 +280,8 @@ describe('poke SFX inventory + selection → playback pool', () => {
   });
 
   it('recordedPokeClip stays zone-stable; Want does not rotate; Skip falls back', () => {
-    mockStorage();
+    const store = mockStorage();
+    store.set(CMA_REACTION_GALLERY_KEY, '{}');
     forgetCmaReactionPickCache();
     resetWantedCmaReactionRotation();
 
