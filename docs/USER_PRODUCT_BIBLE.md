@@ -44,12 +44,15 @@
 | Story Mode distinct from chat (code) | #388 |
 | Poke lean toward poked side (code) | #390 + #409 (finger vs hips) — **phone Outstanding** |
 | Sing ask no Soave+月光光 nonsense (code) | #391 |
-| Idle pose upright planted calm stands v3 (code) | #392 + #407 — **phone Outstanding** |
+| Idle pose upright planted calm stands v3 (code) | #392 + #407 — **phone Outstanding**; idle v4 follow-up shipping |
 | Caption then whole phase again in history (code) | #393 |
 | Blend-to-back / idle forward lean (code) | #394 |
 | All langs/genders speak — not Yue-female-only (code) | #395 |
-| Audible pitch tiers + male delivery + sink route (code) | #406 — **phone Outstanding** (R10) |
+| Audible pitch tiers + male delivery + sink route (code) | #406 + #410 + #413 — **phone Outstanding** (R10) |
 | Unify cast lighting / MToon path (code) | #408 — **phone Outstanding** |
+| Scrub history-resume asks from chat replies (code) | #412 |
+| Seal captions after speech idle (code) | #414 |
+| Docs honesty after #406–#409 (code) | #411 |
 | Talk leftover repeats / history dup | #399 |
 | Reply-mode length + emotion chart | #401 |
 | Classic fairy tales + Story chip predownload | #402 |
@@ -67,14 +70,14 @@
 
 | Item | Notes |
 |------|--------|
-| Voice pitch/male/sink (R10) | #406 on `main`; follow-up **`cursor/voice-male-pitch-v2-0340-0eac`** widens gaps further. gTTS still one speaker/tl — male timbre limited. **Phone after merge.** |
-| Idle pose still bad (R11) | #407 v3 on `main` — **phone smoke**; no further clip swap without owner note |
+| Voice pitch/male/sink (R10) | #406+#410+#413 on `main`. gTTS still one speaker/tl — male timbre limited. **Phone** — no further code without test/floor bug. |
+| Idle pose still bad (R11) | #407 v3 on `main`; **idle v4** (RPM F/M stands only) shipping this run — **phone smoke** after merge |
 | Lighting unify (R12) | #408 on `main` — **phone smoke** |
 | Poke lean direction (R13) | #409 on `main` — **phone verify**; do not flip ±leanSide without device evidence |
-| Talking nonsense / silly LLM | **Owner live OK** still required — code scrub on `main` (#360) |
+| Talking nonsense / silly LLM | #360+#412 on `main`; **nonsense scrub harden** shipping this run — **owner live OK** still required |
 | Phone smoke on live demo | **Human** — checklist [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) — do **not** mark Done without owner |
-| SFX #1–23 Want/archive/delete (R1/R2) | Owner map still open |
-| Pages rebuild | **Live** after #409 (`last-modified` 2026-11-15 10:10 UTC · `pages.yml` on `5e5bb8b`). Agent `workflow_dispatch` is 403. |
+| SFX #1–23 Want/archive/delete (R1/R2) | Map documented in [`SFX_WANT_LIST.md`](./SFX_WANT_LIST.md) — no new deletes without owner map |
+| Pages rebuild | Tip includes #414 (`34fe949`). Agent `workflow_dispatch` is 403. |
 
 ### Hold
 
@@ -87,6 +90,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-15 ~20:10 | After #410–#414: document SFX Want list; idle v4 + nonsense scrub harden shipping; R10–R13 stay phone Outstanding |
 | 2026-11-15 ~18:30 | Honest audit: #406–#409 on main + Pages; R10–R13 stay Outstanding (phone). Voice v2 branch widens pitch/male further. Stale “In PR” boards cleared. |
 | 2026-11-15 ~18:08 | #409 poke lean finger-vs-hips merged |
 | 2026-11-15 ~18:03 | #408 unify cast lighting merged |

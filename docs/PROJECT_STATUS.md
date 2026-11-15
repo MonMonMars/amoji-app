@@ -1,20 +1,20 @@
 # Amoji project status board
 
-**Generated:** 2026-11-15 18:30 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-15 20:10 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** open [`project-status.html`](./project-status.html) in a browser.  
-**`main` tip:** `5e5bb8b` (#409 · product through #406–#409 · docs #405)
+**`main` tip:** `34fe949` (#414 · product through #406–#414)
 
 ## Snapshot
 
 | Bucket | Count |
 | --- | ---: |
-| **Done** — merged to `main` | 80+ stack · Nov 15 wave #385–#409 |
-| **Open product PRs** | voice v2 + docs honesty (this run) · Hold spikes #1 / #20 |
-| **Outstanding** — actionable code | **1** — voice pitch/male v2 (`cursor/voice-male-pitch-v2-0340-0eac`) after #406 still not owner-OK |
-| **Outstanding** — Pixel / human | R10–R13 phone smoke · nonsense owner OK · SFX map R1/R2 · [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
+| **Done** — merged to `main` | 80+ stack · Nov 15 wave #385–#414 |
+| **Open product PRs** | idle v4 + nonsense scrub harden + this docs refresh · Hold spikes #1 / #20 |
+| **Outstanding** — actionable code | idle v4 (if not yet merged) · nonsense scrub harden (if not yet merged) |
+| **Outstanding** — Pixel / human | R10–R13 phone smoke · nonsense owner OK · SFX Want list documented · [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
 | **Hold** | licensed music · Stripe live keys · Product Hunt · Search Console · spikes #1 / #20 |
 | Docs missing | 0 |
 
@@ -40,14 +40,19 @@
 
 Living tip: `1417198`. Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
 
-### Nov 15 wave (#385–#409)
+### Nov 15 wave (#385–#414)
 
 | PR | Item | Notes |
 | --- | --- | --- |
+| [#414](https://github.com/MonMonMars/amoji-app/pull/414) | Seal captions after speech idle | Phone |
+| [#413](https://github.com/MonMonMars/amoji-app/pull/413) | Male pitch/pace + all-lang sink v2 | **Phone Outstanding** (R10) |
+| [#412](https://github.com/MonMonMars/amoji-app/pull/412) | Scrub LLM history-resume asks | Phone / nonsense follow-up |
+| [#411](https://github.com/MonMonMars/amoji-app/pull/411) | Docs honesty after #406–#409 | |
+| [#410](https://github.com/MonMonMars/amoji-app/pull/410) | Widen pitch tiers + deepen male (v2) | **Phone Outstanding** (R10) |
 | [#409](https://github.com/MonMonMars/amoji-app/pull/409) | Poke lean finger-vs-hips + arm sign split | **Phone Outstanding** (R13) |
 | [#408](https://github.com/MonMonMars/amoji-app/pull/408) | Unify cast lighting / MToon for all | **Phone Outstanding** (R12) |
-| [#407](https://github.com/MonMonMars/amoji-app/pull/407) | Idle upright planted calm stands v3 | **Phone Outstanding** (R11) |
-| [#406](https://github.com/MonMonMars/amoji-app/pull/406) | Audible pitch tiers, male delivery, sink | **Phone Outstanding** (R10) · voice v2 follow-up |
+| [#407](https://github.com/MonMonMars/amoji-app/pull/407) | Idle upright planted calm stands v3 | **Phone Outstanding** (R11) · idle v4 follow-up |
+| [#406](https://github.com/MonMonMars/amoji-app/pull/406) | Audible pitch tiers, male delivery, sink | **Phone Outstanding** (R10) |
 | [#405](https://github.com/MonMonMars/amoji-app/pull/405) | Docs tip 1417198 / Pages after #399–#404 | Superseded tip by #409 Pages |
 | [#404](https://github.com/MonMonMars/amoji-app/pull/404) | Docs: #403 Done on bible; tip after product ship | Prior Pages (`last-modified` 08:58 UTC · `1417198`) |
 | [#403](https://github.com/MonMonMars/amoji-app/pull/403) | Story Mode quality + distinct UX | |
@@ -150,21 +155,23 @@ Earlier finish pass still on `main`: #306–#325 and #280–#305 era.
 
 ### Code (agents)
 
-1. **Voice pitch / male (R10) v2** — branch `cursor/voice-male-pitch-v2-0340-0eac`: #406 already on main (sink + first widen); owner still reports same pitch / female male. This branch widens gaps again + deepens synth male. Device verify after merge. **gTTS cannot invent a real male speaker** — Edge remains 403.
+1. **Idle v4** — `cursor/idle-v4-upright-0340-0eac`: cleaner upright RPM F/M stands only; prefs v4. Phone after merge (R11).
+2. **Nonsense scrub harden** — `cursor/nonsense-scrub-harden-0340-0eac`: sentence-level filler/surreal scrub beyond #360/#412. Owner live OK still required.
+3. **R10 voice** — #406+#410+#413 on `main`. No further code without floor/clamp test failure. **Phone.**
 
 ### Phone / human (not agent Done)
 
-1. R10 voice · R11 idle · R12 lighting · R13 poke — all have code on `main` (+ R10 v2 pending); need owner phone.
-2. Talking nonsense — owner live OK.
-3. SFX #1–23 Want/archive/delete map (R1/R2).
+1. R10 voice · R11 idle · R12 lighting · R13 poke — code on `main` (idle v4 pending); need owner phone.
+2. Talking nonsense — owner live OK after scrub harden merges.
+3. SFX #1–23 — Want/archive/delete map documented in [`SFX_WANT_LIST.md`](./SFX_WANT_LIST.md); no new deletes without owner map.
 4. Full [`PHONE_SMOKE.md`](./PHONE_SMOKE.md).
 
-Product through #385–#409 on `main`. Pages live on `5e5bb8b`.
+Product through #385–#414 on `main` (`34fe949`).
 
 ### Human / Pixel
 
 1. **Phone smoke** on live Pages — [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) (setup → select → gate → chat; poke lean + SFX; news; story; multi-lang voice; caption history; lean/blend). **Not Done** until owner OK.
-2. **Talking-nonsense verify** on live — code scrub on `main` (#360); agent regression green; still needs **owner** OK on phone/Pages.
+2. **Talking-nonsense verify** on live — scrub on `main` (#360+#412) + harden PR; still needs **owner** OK on phone/Pages.
 3. **Optional triage** of Hold spikes #1 / #20 — only if Pixel asks.
 4. Hold items below (env / marketing / licensed catalog).
 
