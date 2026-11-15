@@ -221,6 +221,10 @@ export interface Avatar {
    * the soles stay on the captured contact.
    */
   plantFeet(plant: boolean, lean?: PlantLean): void;
+  /**
+   * Drop residual poke hip lean without foot IK (safe mid idle A→B glide).
+   */
+  clearPlantLean(): void;
   /** Soft secondary spring on bust bones. 0 restores them. Does not move the hips or feet. */
   applyChestBounce(pitch: number): void;
   /**
@@ -622,8 +626,9 @@ function clampUpperArmAdduction(
   upperArm.quaternion.copy(parentW.invert()).multiply(_shQF).multiply(world);
 }
 
-/** Radians out from straight down for a calm idle arm. ~24°, clear of the ribs. */
-export const IDLE_ARM_ABDUCT = 0.42;
+/** Radians out from straight down for a calm idle arm. ~16° — wider hang
+ *  fought near-still VRMA and read as a blended frankenstein pose. */
+export const IDLE_ARM_ABDUCT = 0.28;
 
 /**
  * Direction a hanging arm should take so the shoulder stays open.
@@ -987,6 +992,10 @@ class V1Avatar implements Avatar {
     if (plant) this.planter.apply(lean);
   }
 
+  clearPlantLean(): void {
+    this.planter.clearLean();
+  }
+
   applyChestBounce(pitch: number): void {
     const joints = this.vrm.springBoneManager?.joints;
     this.chestBounce.apply(this.vrm.scene, pitch, joints);
@@ -1344,6 +1353,10 @@ class GenericAvatar implements Avatar {
 
   plantFeet(plant: boolean, lean?: PlantLean): void {
     if (plant) this.planter.apply(lean);
+  }
+
+  clearPlantLean(): void {
+    this.planter.clearLean();
   }
 
   applyChestBounce(pitch: number): void {
