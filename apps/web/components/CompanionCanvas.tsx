@@ -1275,12 +1275,14 @@ export default function CompanionCanvas({
         }
       });
       // r109/r144: floor MToon shadeColorFactor (not the missing shadeColor alias).
+      // Shared cast shader path always runs — do not gate on seedKey (preview/
+      // thumbs used to skip unify and diverge from chat lighting).
       floorCastShadeColors(a.root);
+      unifyCastMToon(a.root, seedKey);
+      dampenCastMatcap(a.root, seedKey);
       stabilizeEyeMaterials(a.root);
       if (seedKey) {
         a.armCastFixes(seedKey);
-        unifyCastMToon(a.root, seedKey);
-        dampenCastMatcap(a.root, seedKey);
         patchCastTextures(a.root, seedKey);
         stabilizeCastEyes(a.root, seedKey);
       }

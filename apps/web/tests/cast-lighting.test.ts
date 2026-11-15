@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import {
@@ -123,6 +125,29 @@ describe('cast material lighting passes (three-vrm MToon truth)', () => {
     root2.add(mesh2);
     expect(dampenCastMatcap(root2, 'a01-shino')).toBe(1);
     expect(mat2.matcapFactor.r).toBeCloseTo(CAST_MATCAP_COLOR_SCALE, 5);
+  });
+
+  it('wires unifyCastMToon + dampen on chat, preview, thumbs, and bake', () => {
+    const root = join(__dirname, '..');
+    const canvas = readFileSync(join(root, 'components/CompanionCanvas.tsx'), 'utf8');
+    const preview = readFileSync(join(root, 'components/ModelPreview.tsx'), 'utf8');
+    const thumb = readFileSync(join(root, 'lib/modelThumb.ts'), 'utf8');
+    const bake = readFileSync(join(root, 'app/thumb-bake/page.tsx'), 'utf8');
+    for (const [label, src] of [
+      ['CompanionCanvas', canvas],
+      ['ModelPreview', preview],
+      ['modelThumb', thumb],
+      ['thumb-bake', bake],
+    ] as const) {
+      expect(src, label).toContain('unifyCastMToon');
+      expect(src, label).toContain('dampenCastMatcap');
+      expect(src, label).toContain('floorCastShadeColors');
+      // Must not gate the shared shader path on a truthy character id.
+      expect(src, label).not.toMatch(/if\s*\(\s*characterId\s*\)\s*dampenCastMatcap/);
+    }
+    // Chat material unify must run even when seedKey is missing.
+    expect(canvas).toMatch(/unifyCastMToon\(a\.root,\s*seedKey\)/);
+    expect(canvas).toMatch(/dampenCastMatcap\(a\.root,\s*seedKey\)/);
   });
 
   it('floors near-black shadeColorFactor (not the missing shadeColor alias)', () => {

@@ -369,7 +369,9 @@
 // r2026-11-15.157: R10 within-gender — stop Edge pitchDelta ±0.30 crush of
 // deep (−0.36); widen gTTS deep≪mid≪bright inside male<1<female bands; raise
 // ja male base so deep does not floor into mid.
-export const APP_REVISION = 'r2026-11-15.157';
+// r2026-11-15.158: R12 — unifyCastMToon + matcap dampen on preview/thumbs/bake
+// (was chat-only); never gate shared shader path on characterId/seedKey.
+export const APP_REVISION = 'r2026-11-15.158';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
