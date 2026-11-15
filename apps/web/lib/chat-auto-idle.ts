@@ -5,7 +5,10 @@
 
 import { idleClipById } from './idle-clips';
 import type { IdleCuratedCategory } from './idle-curated-rail';
+import { listEnabledIdleClipIds } from './idle-enabled';
 import { FAREWELL_WAVE_CLIP_ID, isFarewellText } from './idle-farewell';
+import { isHonorableIdleClip } from './idle-owner-migrate';
+import { idlePickFor } from './idle-pick';
 import { DEFAULT_IDLE_CLIP_ID } from './idle-retired';
 import { detectMusicStyle, STYLE_CLIP_HINTS } from './music-catalog';
 import { resolvePerfMotion } from './performance-motion';
@@ -158,20 +161,40 @@ function pickFromPool(seed: string, pool: readonly string[]): string {
   return playable[idx]!;
 }
 
-function pickBreathingDefault(seed: string): string {
-  return pickFromPool(seed, BREATHING_CLIPS);
+/**
+ * Owner pin → first non-default enabled rail clip → null.
+ * Fresh Quaternius-only enable list returns null so chat-auto pools can still
+ * vary (Quaternius / Thinking). Migrated owner enables (e.g. IdleRpmFStanding001)
+ * win over #430 Quaternius default.
+ */
+export function ownerCalmIdleClip(characterId?: string | null): string | null {
+  if (characterId) {
+    const pin = idlePickFor(characterId);
+    if (pin && idleClipById(pin) && isHonorableIdleClip(pin)) return pin;
+  }
+  const enabled = listEnabledIdleClipIds().filter(
+    (id) => idleClipById(id) && isHonorableIdleClip(id),
+  );
+  if (!enabled.length) return null;
+  // Stock fresh default alone — do not collapse chit-chat/neutral pools.
+  if (enabled.length === 1 && enabled[0] === DEFAULT_IDLE_CLIP_ID) return null;
+  return enabled[0]!;
 }
 
-function pickChitchatDefault(seed: string): string {
-  return pickFromPool(seed, CHITCHAT_CLIPS);
+function pickBreathingDefault(seed: string, characterId?: string | null): string {
+  return ownerCalmIdleClip(characterId) ?? pickFromPool(seed, BREATHING_CLIPS);
 }
 
-function pickNeutralChatIdle(seed: string): string {
-  return pickFromPool(seed, NEUTRAL_CHAT_CLIPS);
+function pickChitchatDefault(seed: string, characterId?: string | null): string {
+  return ownerCalmIdleClip(characterId) ?? pickFromPool(seed, CHITCHAT_CLIPS);
 }
 
-function pickTalkCalmIdle(seed: string): string {
-  return pickFromPool(seed, TALK_CALM_CLIPS);
+function pickNeutralChatIdle(seed: string, characterId?: string | null): string {
+  return ownerCalmIdleClip(characterId) ?? pickFromPool(seed, NEUTRAL_CHAT_CLIPS);
+}
+
+function pickTalkCalmIdle(seed: string, characterId?: string | null): string {
+  return ownerCalmIdleClip(characterId) ?? pickFromPool(seed, TALK_CALM_CLIPS);
 }
 
 function firstPlayable(ids: readonly string[]): string | null {
@@ -300,18 +323,23 @@ function resolveBucket(userText: string, assistantText: string): BucketCategory 
   return null;
 }
 
-function clipForCategory(cat: BucketCategory | IdleCuratedCategory, seed: string, corpus: string): string {
-  if (cat === 'breathe') return pickBreathingDefault(seed);
-  if (cat === 'talk' || cat === 'look') return pickTalkCalmIdle(seed);
-  if (cat === 'greet') return pickChitchatDefault(seed);
+function clipForCategory(
+  cat: BucketCategory | IdleCuratedCategory,
+  seed: string,
+  corpus: string,
+  characterId?: string | null,
+): string {
+  if (cat === 'breathe') return pickBreathingDefault(seed, characterId);
+  if (cat === 'talk' || cat === 'look') return pickTalkCalmIdle(seed, characterId);
+  if (cat === 'greet') return pickChitchatDefault(seed, characterId);
   if (cat === 'dance') return pickDanceClip(corpus);
   if (cat === 'music') return pickMusicClip(corpus);
   if (cat === 'sing') return pickSingClip(corpus);
   const id = CATEGORY_CLIP[cat as BucketCategory];
   if (id && idleClipById(id)) return id;
-  if (cat === 'think') return idleClipById('Thinking') ? 'Thinking' : pickBreathingDefault(seed);
-  if (cat === 'react') return idleClipById('Cheer') ? 'Cheer' : pickBreathingDefault(seed);
-  return pickNeutralChatIdle(seed);
+  if (cat === 'think') return idleClipById('Thinking') ? 'Thinking' : pickBreathingDefault(seed, characterId);
+  if (cat === 'react') return idleClipById('Cheer') ? 'Cheer' : pickBreathingDefault(seed, characterId);
+  return pickNeutralChatIdle(seed, characterId);
 }
 
 function resolveFarewellWave(): string | null {
@@ -326,12 +354,15 @@ export interface ChatAutoIdleInput {
   thinking?: boolean;
   openGreet?: boolean;
   sessionFarewell?: boolean;
+  /** When set, calm paths honor idlePickFor + enabled rails over Quaternius. */
+  characterId?: string | null;
 }
 
 /** Resolve a playable idle clip id, or null when nothing fits. */
 export function resolveChatAutoIdle(input: ChatAutoIdleInput): string | null {
+  const characterId = input.characterId;
   if (input.sessionFarewell) {
-    return resolveFarewellWave() ?? pickBreathingDefault('bye');
+    return resolveFarewellWave() ?? pickBreathingDefault('bye', characterId);
   }
   if (input.thinking) {
     return idleClipById('Thinking') ? 'Thinking' : DEFAULT_IDLE_CLIP_ID;
@@ -342,17 +373,17 @@ export function resolveChatAutoIdle(input: ChatAutoIdleInput): string | null {
   const seed = assistantText || userText || 'idle';
 
   if (isFarewellText(assistantText)) {
-    return resolveFarewellWave() ?? pickBreathingDefault(seed);
+    return resolveFarewellWave() ?? pickBreathingDefault(seed, characterId);
   }
   if (input.openGreet) {
-    return pickChitchatDefault(seed);
+    return pickChitchatDefault(seed, characterId);
   }
 
   const bucket = resolveBucket(userText, assistantText);
-  if (bucket) return clipForCategory(bucket, seed, corpus);
+  if (bucket) return clipForCategory(bucket, seed, corpus, characterId);
   const emo = topEmotionCategory(input.emotionHints, corpus);
-  if (emo) return clipForCategory(emo, seed, corpus);
-  const clip = pickNeutralChatIdle(seed);
+  if (emo) return clipForCategory(emo, seed, corpus, characterId);
+  const clip = pickNeutralChatIdle(seed, characterId);
   return idleClipById(clip) ? clip : DEFAULT_IDLE_CLIP_ID;
 }
 

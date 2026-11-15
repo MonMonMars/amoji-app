@@ -94,13 +94,21 @@ function ChatRoom() {
 
   const character = characterById(prefs.character);
   useEffect(() => {
-    setIdleClip(resolveChatAutoIdle({ assistantText: '', openGreet: true }));
+    setIdleClip(resolveChatAutoIdle({
+      assistantText: '',
+      openGreet: true,
+      characterId: character.id,
+    }));
   }, [character.id]);
 
   useEffect(() => {
     if (!leaving) return;
-    setIdleClip(resolveChatAutoIdle({ assistantText: '', sessionFarewell: true }) ?? FAREWELL_WAVE_CLIP_ID);
-  }, [leaving]);
+    setIdleClip(resolveChatAutoIdle({
+      assistantText: '',
+      sessionFarewell: true,
+      characterId: character.id,
+    }) ?? FAREWELL_WAVE_CLIP_ID);
+  }, [leaving, character.id]);
   const background = backgroundById(prefs.background);
   const storyScene = activeStoryScene();
   const inStory = !!storyScene;

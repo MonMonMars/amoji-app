@@ -29,6 +29,8 @@ export interface ContentMotionInput {
   thinking?: boolean;
   openGreet?: boolean;
   sessionFarewell?: boolean;
+  /** Honor idlePickFor + enabled rails for calm paths. */
+  characterId?: string | null;
 }
 
 export interface ContentMotionPlan {
@@ -136,20 +138,27 @@ export function resolveContentMotion(input: ContentMotionInput): ContentMotionPl
   const feltHints = felt ? moodToHints(felt.mood, felt.intensity) : undefined;
   const moodHints = mergeHints(feltHints, moodHintsFromText(moodCorpus));
 
+  const characterId = input.characterId;
+
   if (input.sessionFarewell) {
     const idleClip = resolveChatAutoIdle({
       assistantText: assistant || user,
       userText: user,
       sessionFarewell: true,
+      characterId,
     });
     return { move: 'goodbye', idleClip, moodHints, passive: false };
   }
   if (input.thinking) {
-    const idleClip = resolveChatAutoIdle({ assistantText: '', thinking: true });
+    const idleClip = resolveChatAutoIdle({ assistantText: '', thinking: true, characterId });
     return { idleClip, moodHints, passive: false };
   }
   if (input.openGreet) {
-    const idleClip = resolveChatAutoIdle({ assistantText: assistant, openGreet: true });
+    const idleClip = resolveChatAutoIdle({
+      assistantText: assistant,
+      openGreet: true,
+      characterId,
+    });
     return { idleClip, moodHints, passive: true };
   }
 
@@ -160,6 +169,7 @@ export function resolveContentMotion(input: ContentMotionInput): ContentMotionPl
     assistantText: assistant,
     userText: user,
     emotionHints: moodHints,
+    characterId,
   });
 
   // Dance / sing → prefer performance-motion shortlist clips for the body idle.

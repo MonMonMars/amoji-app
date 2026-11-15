@@ -352,7 +352,10 @@
 // r2026-11-15.149: poke move refresh — owner same-side lean (finger vs hips;
 // off-center chest/head blend +leanSide; stronger tip/arm flinch). Keep CMA
 // Want/Skip picks v1 (do not wipe owner SFX). Feet stay voice-only.
-export const APP_REVISION = 'r2026-11-15.149';
+// r2026-11-15.150: owner picks win — Quaternius default must not remap/override
+// migrated idle pins/enables; freeze idle prefs at v6 (no wipe scrub); calm
+// chat/content idle honors pin + non-default enables; poke Want seed stays.
+export const APP_REVISION = 'r2026-11-15.150';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

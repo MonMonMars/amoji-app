@@ -582,6 +582,7 @@ export default function ChatPanel({
       thinking,
       openGreet: opts.openGreet,
       sessionFarewell: opts.sessionFarewell,
+      characterId,
     });
     if (plan.moodHints) applyContentMood(plan.moodHints);
     onAutoIdleRef.current?.(plan.idleClip);
@@ -849,7 +850,7 @@ export default function ChatPanel({
 
   const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string, alreadySpoken?: { text: string; since: number }): string => {
     // Content director owns move + face mood — LLM emotion tags are ignored here.
-    const plan = resolveContentMotion({ userText, assistantText: reply });
+    const plan = resolveContentMotion({ userText, assistantText: reply, characterId });
     const mv = plan.move;
     if (plan.moodHints) applyContentMood(plan.moodHints);
     // Prefer content director; never fall back to LLM emotion tags.
@@ -1652,7 +1653,11 @@ export default function ChatPanel({
           answered = true;
           return;
         }
-        const contentPlan = resolveContentMotion({ userText: text, assistantText: cleanedReply });
+        const contentPlan = resolveContentMotion({
+          userText: text,
+          assistantText: cleanedReply,
+          characterId,
+        });
         if (contentPlan.moodHints) applyContentMood(contentPlan.moodHints);
         // r.30 — the streaming path remembers the turn too (both paths learn)
         rememberTurn(text, cleanedReply);
@@ -1692,7 +1697,7 @@ export default function ChatPanel({
         answered = true;
         return;
       }
-      const contentPlan = resolveContentMotion({ userText: text, assistantText: reply });
+      const contentPlan = resolveContentMotion({ userText: text, assistantText: reply, characterId });
       if (contentPlan.moodHints) applyContentMood(contentPlan.moodHints);
       // r.30 — remember the completed turn (thread stored quietly; never volunteer resume)
       rememberTurn(text, reply);

@@ -669,10 +669,10 @@ export default function CompanionCanvas({
       : [ownModel, 'seed-san.vrm'].filter((m): m is string => !!m);
 
     // -- clip library ---------------------------------------------------------
-    // Standing idle. Default is a single calm upright stand
-    // (IdleRpmFStanding001 only — idle v5). Amplitude damp kills thrash /
-    // sky-look. LookAround / Sassy / BreathCalm / hug / wave stay out.
-    // Owner pins migrate forward — do not wipe for Quaternius default churn.
+    // Standing idle. Fresh default = IdleQuaterniusHuman (v6). Owner-enabled
+    // rails / pins migrate forward and win over Quaternius (#432). Amplitude
+    // damp kills thrash / sky-look. LookAround / Sassy / BreathCalm / hug /
+    // wave stay out.
     // rebaseClipHips pins feet and yaw-only hips on every idle in this list.
     const ANIM_MIRROR = `${ASSET_BASE}/models/anims`;
     const CHAT_HOST = 'https://raw.githubusercontent.com/DavinciDreams/3dchat/main/public/animations/vrma';
@@ -682,7 +682,7 @@ export default function CompanionCanvas({
     interface ClipSource { id: string; urls: string[] }
     // Idle # SoT: apps/web/lib/idle-library.ts (free-library Cxx map).
     // Default rotation = enabled playable nums (localStorage amoji.idleEnabled.v6),
-    // falling back to IdleRpmFStanding001. Every idle gets
+    // falling back to IdleQuaterniusHuman. Every idle gets
     // rebaseClipHips + amplitude damp + pinPlantedClipTracks (no floating feet).
     const libPlayable = playableIdles();
     const enabledIds = new Set(listEnabledIdleClipIds());
@@ -953,19 +953,27 @@ export default function CompanionCanvas({
         // over mid-motion, so there is no clamped end-frame freeze to
         // recover from and no neutral stand between idle movements
       });
-      // Passiveive loop only: relax → stretch → relax → look around (repeat).
-      // Use every loaded idle id (enabled + side picks) so Relax / LookAround
-      // can play even when they are not rail-default-enabled.
-      const loadedIdleIds = [...IDLE_SOURCES, ...IDLE_PICKS]
+      // Owner-enabled clips win the playlist. Do NOT fold IDLE_PICKS into
+      // orderPassiveIdleClips — that always preferred Quaternius and overrode
+      // migrated rail enables (#430 vs #432). Side picks stay loadable for
+      // content-driven playNamedIdle; rotation uses owner enables only.
+      const enabledLoaded = IDLE_SOURCES
         .map((s) => s.id)
         .filter((id) => clips.has(id) && !isRetiredIdleClip(resolveIdleClipId(id)));
-      idleOrder = orderIdleClips(loadedIdleIds, seedKey ?? '', gender);
-      if (!idleOrder.length) {
-        idleOrder = orderIdleClips(
-          [...clips.keys()].filter((id) => !isRetiredIdleClip(resolveIdleClipId(id))),
-          seedKey ?? '',
-          gender,
-        );
+      if (enabledLoaded.length) {
+        idleOrder = enabledLoaded;
+      } else {
+        const loadedIdleIds = [...IDLE_SOURCES, ...IDLE_PICKS]
+          .map((s) => s.id)
+          .filter((id) => clips.has(id) && !isRetiredIdleClip(resolveIdleClipId(id)));
+        idleOrder = orderIdleClips(loadedIdleIds, seedKey ?? '', gender);
+        if (!idleOrder.length) {
+          idleOrder = orderIdleClips(
+            [...clips.keys()].filter((id) => !isRetiredIdleClip(resolveIdleClipId(id))),
+            seedKey ?? '',
+            gender,
+          );
+        }
       }
       idleIdx = 0;
       mixerActive = true;

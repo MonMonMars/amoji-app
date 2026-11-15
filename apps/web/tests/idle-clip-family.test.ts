@@ -25,10 +25,11 @@ describe('idle clip family + unstrange pose blend', () => {
   });
 
   it('honors owner RPM pin on play without remapping to Quaternius', () => {
-    expect(resolveIdleClipId('IdleRpmFStanding001')).toBe('IdleQuaterniusHuman');
+    // Owner-picks-win: honorable stands never remap (even without honorOwnerPin).
+    expect(resolveIdleClipId('IdleRpmFStanding001')).toBe('IdleRpmFStanding001');
     expect(resolveIdleClipForPlay('IdleRpmFStanding001', { honorOwnerPin: true }))
       .toBe('IdleRpmFStanding001');
-    expect(resolveIdleClipForPlay('IdleRpmFStanding001')).toBe('IdleQuaterniusHuman');
+    expect(resolveIdleClipForPlay('IdleRpmFStanding001')).toBe('IdleRpmFStanding001');
     expect(resolveIdleClipForPlay('IdleBreathCalm', { honorOwnerPin: true }))
       .toBe('IdleQuaterniusHuman');
   });

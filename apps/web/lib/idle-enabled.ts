@@ -1,7 +1,8 @@
 ﻿// Which curated idle rail #s are ON for rotation. Persists like mute prefs.
-// Default = single calm upright planted stand (#42 / rail #5) — last known
-// good after #415/#422 when no owner enable list exists.
+// Fresh default = Quaternius (rail #6). Owner-migrated enables (e.g. rail #5
+// IdleRpmFStanding001) win over that default (#432).
 // v6 migrates v1–v5 enables forward; only known-bad rails are scrubbed.
+// FREEZE prefs generation at v6 — do not bump keys and wipe.
 
 import {
   IDLE_ENABLED_KEY,
