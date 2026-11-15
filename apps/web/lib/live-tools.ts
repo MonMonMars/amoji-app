@@ -119,7 +119,7 @@ export interface GatherOpts {
   brief?: boolean;
   /** User-initiated news: drop cached RSS/Wikipedia feeds and rotate headlines. */
   freshNews?: boolean;
-  /** Persist recently-spoken headline titles (sessionStorage in the browser). */
+  /** Persist recently-spoken headline titles (localStorage in the browser). */
   storage?: Kv | null;
   /** Clock override for tests (told-title TTL / feed rotation). */
   now?: number;
@@ -134,8 +134,10 @@ const PRIMED_KEY = 'amoji.geo.primed';
 export const NEWS_LAST_KEY = 'amoji.news.last.v1';
 /** Ring of recently spoken headline titles (JSON `{t,at}[]`) — anti-repeat. */
 export const NEWS_TOLD_KEY = 'amoji.news.told.v1';
-const NEWS_TOLD_MAX = 24;
-const NEWS_TOLD_TTL_MS = 6 * 60 * 60 * 1000;
+/** Legacy session-scoped ring — migrate into localStorage so tab close ≠ same-old. */
+export const NEWS_TOLD_SESSION_KEY = 'amoji.news.told.session.v1';
+const NEWS_TOLD_MAX = 36;
+const NEWS_TOLD_TTL_MS = 12 * 60 * 60 * 1000;
 const NEWS_POOL_MAX = 20;
 /** Widened pool when every candidate was already told — fetch more before missing. */
 const NEWS_POOL_WIDE = 36;
@@ -144,8 +146,9 @@ const FETCH_TTL_MS = 10 * 60 * 1000;
 /** Headline feeds go stale fast; keep a short TTL even when not cache-busted. */
 const NEWS_FETCH_TTL_MS = 90 * 1000;
 const sharedCache = new Map<string, { at: number; body: string }>();
-/** Process-local told titles when sessionStorage is unavailable (Node / private). */
+/** Process-local told titles when localStorage is unavailable (Node / private). */
 let memoryTold: Array<{ t: string; at: number }> = [];
+let migratedSessionTold = false;
 
 const DEICTIC = /^(here|there|nearby|near me|around here|my area|my city|this area|locally|home|me|us|my place|呢度|呢邊|呢到|附近|本地|我呢度|我度|这里|这儿|这边|我家|ここ|この辺|近く|付近|地元)$/i;
 const PLACE_STOP = new Set(['the', 'a', 'an', 'my', 'our', 'your', 'local', 'current', 'today', 'what', 'whats', "what's", 'how', 'please', 'some', 'any', 'this', 'that']);
@@ -698,31 +701,87 @@ export function normalizeNewsTitle(title: string): string {
     .trim();
 }
 
+function parseToldPayload(raw: string | null | undefined, now: number): Array<{ t: string; at: number }> {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((row) => {
+        if (typeof row === 'string') return { t: normalizeNewsTitle(row), at: now };
+        if (row && typeof row === 'object' && typeof (row as { t?: unknown }).t === 'string') {
+          const at = Number((row as { at?: unknown }).at);
+          return { t: normalizeNewsTitle((row as { t: string }).t), at: Number.isFinite(at) ? at : now };
+        }
+        return null;
+      })
+      .filter((r): r is { t: string; at: number } => Boolean(r?.t));
+  } catch {
+    return [];
+  }
+}
+
+function mergeToldRows(
+  ...groups: Array<Array<{ t: string; at: number }>>
+): Array<{ t: string; at: number }> {
+  const byTitle = new Map<string, { t: string; at: number }>();
+  for (const group of groups) {
+    for (const row of group) {
+      const prev = byTitle.get(row.t);
+      if (!prev || row.at >= prev.at) byTitle.set(row.t, row);
+    }
+  }
+  return [...byTitle.values()].sort((a, b) => a.at - b.at);
+}
+
+/** Pull legacy session ring once into localStorage so a tab refresh keeps bans. */
+function migrateSessionToldInto(storage: Kv | null | undefined, now: number): Array<{ t: string; at: number }> {
+  if (migratedSessionTold) return [];
+  migratedSessionTold = true;
+  const session = safeStorage('session');
+  if (!session) return [];
+  try {
+    const fromSession = parseToldPayload(session.getItem(NEWS_TOLD_KEY), now);
+    const legacySession = session.getItem(NEWS_LAST_KEY)?.trim();
+    const rows = mergeToldRows(
+      fromSession,
+      legacySession ? [{ t: normalizeNewsTitle(legacySession), at: now }] : [],
+    );
+    if (!rows.length) return [];
+    // Keep a one-shot copy under the session alias for diagnostics, then clear.
+    try { session.setItem(NEWS_TOLD_SESSION_KEY, JSON.stringify(rows)); } catch { /* ignore */ }
+    try {
+      session.removeItem(NEWS_TOLD_KEY);
+      session.removeItem(NEWS_LAST_KEY);
+    } catch { /* ignore */ }
+    if (storage) {
+      const merged = mergeToldRows(parseToldPayload(storage.getItem(NEWS_TOLD_KEY), now), rows);
+      writeToldEntries(storage, merged);
+      return merged;
+    }
+    return rows;
+  } catch {
+    return [];
+  }
+}
+
 function readToldEntries(storage?: Kv | null, now = Date.now()): Array<{ t: string; at: number }> {
   const fresh = (rows: Array<{ t: string; at: number }>) =>
     rows.filter((r) => r.t && now - r.at < NEWS_TOLD_TTL_MS).slice(-NEWS_TOLD_MAX);
 
   try {
+    const migrated = migrateSessionToldInto(storage, now);
     const raw = storage?.getItem(NEWS_TOLD_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw) as unknown;
-      if (Array.isArray(parsed)) {
-        const rows = parsed
-          .map((row) => {
-            if (typeof row === 'string') return { t: normalizeNewsTitle(row), at: now };
-            if (row && typeof row === 'object' && typeof (row as { t?: unknown }).t === 'string') {
-              const at = Number((row as { at?: unknown }).at);
-              return { t: normalizeNewsTitle((row as { t: string }).t), at: Number.isFinite(at) ? at : now };
-            }
-            return null;
-          })
-          .filter((r): r is { t: string; at: number } => Boolean(r?.t));
-        return fresh(rows);
-      }
+      const rows = parseToldPayload(raw, now);
+      if (rows.length) return fresh(mergeToldRows(rows, migrated));
     }
     // Migrate legacy single-title key into the ring.
     const legacy = storage?.getItem(NEWS_LAST_KEY);
-    if (legacy?.trim()) return fresh([{ t: normalizeNewsTitle(legacy), at: now }]);
+    if (legacy?.trim()) {
+      return fresh(mergeToldRows([{ t: normalizeNewsTitle(legacy), at: now }], migrated));
+    }
+    if (migrated.length) return fresh(migrated);
   } catch { /* private mode / bad JSON */ }
 
   return fresh(memoryTold);
@@ -741,9 +800,17 @@ function writeToldEntries(storage: Kv | null | undefined, rows: Array<{ t: strin
 /** Clear process-local + optional storage told ring (tests). */
 export function clearNewsTold(storage?: Kv | null): void {
   memoryTold = [];
+  migratedSessionTold = false;
   try {
     storage?.removeItem?.(NEWS_TOLD_KEY);
     storage?.removeItem?.(NEWS_LAST_KEY);
+    storage?.removeItem?.(NEWS_TOLD_SESSION_KEY);
+  } catch { /* ignore */ }
+  try {
+    const session = safeStorage('session');
+    session?.removeItem?.(NEWS_TOLD_KEY);
+    session?.removeItem?.(NEWS_LAST_KEY);
+    session?.removeItem?.(NEWS_TOLD_SESSION_KEY);
   } catch { /* ignore */ }
 }
 
@@ -1949,7 +2016,8 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
   const cache = opts.cache ?? sharedCache;
   const lang = asLang(opts.lang);
   const now = opts.now ?? Date.now();
-  const newsStorage = opts.storage === undefined ? safeStorage('session') : opts.storage;
+  // localStorage so tab close / refresh does not re-tell the same headlines.
+  const newsStorage = opts.storage === undefined ? safeStorage('local') : opts.storage;
   const freshNews = Boolean(plan.news && opts.freshNews !== false && !opts.brief);
   if (freshNews) invalidateNewsFeedCache(cache);
 
@@ -2049,8 +2117,10 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
       lead = selectNewsLead(activePack.headlines, newsStorage, now);
     }
     if (lead) {
-      // Enrich thin titles with a Wikipedia lede when the feed had no description.
-      if (!lead.summary?.trim() && (activePack.recent || plan.recent || plan.newsQuery)) {
+      // Enrich thin titles with a Wikipedia lede whenever the feed had no
+      // description — including plain "any news?" light asks (#421/#428 residual:
+      // title-only tells felt short / same-old).
+      if (!lead.summary?.trim()) {
         const topic = lead.title.replace(/\s+[-–|]\s+.*$/, '').trim() || lead.title;
         const wiki = await searchWikipedia(fetchImpl, topic, lang, cache);
         if (wiki[0]) {
@@ -2163,7 +2233,7 @@ export function clientLiveContext(text: string, lang?: string, priorUser?: strin
     fetch: fetchImpl,
     braveKey: process.env.NEXT_PUBLIC_BRAVE_SEARCH_API_KEY || undefined,
     rssKey: process.env.NEXT_PUBLIC_RSS2JSON_API_KEY || undefined,
-    storage: safeStorage('session'),
+    storage: safeStorage('local'),
     ...(opts?.brief ? { brief: true } : {}),
     ...(plan.news && !opts?.brief ? { freshNews: true } : {}),
     locate: () => resolveDevicePlace({

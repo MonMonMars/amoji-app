@@ -358,7 +358,9 @@
 // r2026-11-15.151: poke opposite-of-push recoil (push left → tip right) + layout-
 // local pointer/hips after orientation; supersedes same-side tip. Feet voice-
 // only; arm flinch character-side; reset fall after poke window; CMA picks intact.
-export const APP_REVISION = 'r2026-11-15.151';
+// r2026-11-15.152: news told ring → localStorage (survive tab close) + always
+// wiki-enrich thin title-only headlines so every ask gets a longer fresh tell.
+export const APP_REVISION = 'r2026-11-15.152';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
