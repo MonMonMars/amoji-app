@@ -268,6 +268,10 @@ import {
   rollingCaptionFromText,
   stepCaptionLadder,
 } from '../lib/speech-caption';
+import {
+  scrollChatHistoryToLatest,
+  shouldFollowLiveChat,
+} from '../lib/chat-scroll-follow';
 import { loadProfile, type Gender } from '../lib/profile';
 import type { ChatStatus } from '../lib/status';
 import EmotionOrb from './EmotionOrb';
@@ -623,14 +627,20 @@ export default function ChatPanel({
     leaveVoiceChatAudioSession();
   }, []);
   useEffect(() => {
-    if (nearBottomRef.current) {
-      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+    // Follow-live: new history lines always jump to the newest row.
+    if (shouldFollowLiveChat(!nearBottomRef.current)) {
+      nearBottomRef.current = true;
+      setPinnedBottom(true);
+      scrollChatHistoryToLatest(scrollRef.current);
     }
     saveHistory(history);
   }, [history]);
   useEffect(() => {
-    if (nearBottomRef.current) {
-      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+    // Live captions must stay on-screen even after the user scrolled up.
+    if (shouldFollowLiveChat(!nearBottomRef.current)) {
+      nearBottomRef.current = true;
+      setPinnedBottom(true);
+      scrollChatHistoryToLatest(scrollRef.current);
     }
   }, [speechCaption, captionLadder]);
 
@@ -1761,16 +1771,19 @@ export default function ChatPanel({
         showTrack(null);
       },
       // r81 — the half-heard words paint a live italic bubble, ChatGPT-style.
-      // Talking counts as user activity, and the view chases the newest
-      // words only while you're already at the bottom (never yanks you
-      // out of a history scroll).
+      // Talking counts as user activity; follow-live always jumps to the
+      // newest line so realtime captions stay visible.
       onInterim: (partial) => {
         setLiveText(partial);
         if (partial) {
           lastActivityRef.current = Date.now();
           lastUserRef.current = Date.now();
           reengageStageRef.current = 0;
-          if (nearBottomRef.current) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+          if (shouldFollowLiveChat(!nearBottomRef.current)) {
+            nearBottomRef.current = true;
+            setPinnedBottom(true);
+            scrollChatHistoryToLatest(scrollRef.current);
+          }
         }
       },
       onFinal: (said) => {
