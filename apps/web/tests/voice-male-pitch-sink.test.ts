@@ -129,6 +129,7 @@ describe('non-yue speak path + sink routing', () => {
     const onplayEnd = gtts.indexOf('};', onplay);
     expect(gtts.slice(onplay, onplayEnd)).not.toMatch(/pinDefaultOutput\(/);
     expect(gtts.slice(onplay, onplayEnd)).not.toMatch(/pinDefaultOutputAsync\(/);
-    expect(gtts).toMatch(/void audio\.play\(\)\.catch[\s\S]*?pinDefaultOutputAsync\(audio\)/);
+    expect(gtts).toContain('startHtmlAudioOnDefaultSpeakers');
+    expect(gtts).toContain('pinSinkBeforePlay');
   });
 });

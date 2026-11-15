@@ -1666,6 +1666,7 @@ function performSpeak(
         // Keep the character's pitch on a resumed tail, or the second half of
         // the sentence would come back in a different voice.
         pitchBias: gttsPitchForLang(lang, characterId, spokenGender, voicePin),
+        pinSinkBeforePlay: true,
         onPlaying: () => { onHeard(); markVoiceStarted(); reportVoiceStatus('gtts', true, 'google-tts resuming'); },
       }).then(() => {
         reportVoiceStatus('gtts', true, 'google-tts resume finished');
@@ -1703,6 +1704,9 @@ function performSpeak(
             // slightly brighter one, and a per-id jitter keeps same-gender cast
             // members from sounding identical.
             pitchBias: gttsPitchForLang(lang, characterId, spokenGender, voicePin),
+            // Chat is async (no gesture): pin default sink before play so mic
+            // play-and-record does not leave non-Yue / male mute on speakers.
+            pinSinkBeforePlay: true,
             onPlaying: () => {
               onHeard();
               markVoiceStarted();
@@ -1762,6 +1766,7 @@ function performSpeak(
           rateDelta: clamp(np.rate * exprScale * amp + edgeTierProsody.rate, -0.4, 0.5),
           pitchDelta: clamp(np.pitch * exprScale * amp + edgeTierProsody.pitch, -0.3, 0.4),
           volumeDelta: clamp(np.vol * exprScale * amp, -0.5, 0.5),
+          pinSinkBeforePlay: true,
           onPlaying: () => {
             onHeard();
             markVoiceStarted();
@@ -1798,6 +1803,7 @@ function performSpeak(
         character: characterId,
         emotion,
         expressiveness: expr,
+        pinSinkBeforePlay: true,
         onPlaying: () => {
           onHeard();
           markVoiceStarted();

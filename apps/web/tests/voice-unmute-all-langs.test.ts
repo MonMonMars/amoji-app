@@ -97,24 +97,24 @@ describe('every lang × gender × pitch is an audible free-tier choice', () => {
 });
 
 describe('TTS play path never mutes non-Yue via setSinkId', () => {
-  it('gtts/edge/gesture clips play first; pin only on reject-retry', () => {
+  it('gtts/edge/gesture clips never pin inside onplay; helper owns play+pin modes', () => {
     const gtts = readFileSync(join(web, 'lib/gtts.ts'), 'utf8');
     const edge = readFileSync(join(web, 'lib/edge-tts.ts'), 'utf8');
     const clip = readFileSync(join(web, 'lib/play-voice-clip.ts'), 'utf8');
     const audio = readFileSync(join(web, 'lib/audio-output.ts'), 'utf8');
 
     expect(gtts).toContain('ensureCompanionPlaybackRoute()');
+    expect(gtts).toContain('startHtmlAudioOnDefaultSpeakers');
+    expect(gtts).toContain('pinSinkBeforePlay');
     expect(gtts).not.toMatch(/audio\.onplay = \(\) => \{[\s\S]*?pinDefaultOutput\(audio\)/);
-    expect(gtts).toMatch(/void audio\.play\(\)\.catch[\s\S]*pinDefaultOutputAsync\(audio\)/);
-    expect(gtts).not.toMatch(/void audio\.play\(\)[\s\S]*void pinDefaultOutputAsync\(audio\)\.catch/);
+    expect(gtts).not.toMatch(/audio\.onplay = \(\) => \{[\s\S]*?pinDefaultOutputAsync\(/);
 
     expect(edge).toContain('ensureCompanionPlaybackRoute()');
-    // Narrow window: onplay handler body must not call pin* (reject-retry may).
+    expect(edge).toContain('startHtmlAudioOnDefaultSpeakers');
     const edgeOnplay = edge.indexOf('audio.onplay = () => {');
     const edgeOnplayEnd = edge.indexOf('};', edgeOnplay);
     expect(edge.slice(edgeOnplay, edgeOnplayEnd)).not.toMatch(/pinDefaultOutput\(/);
     expect(edge.slice(edgeOnplay, edgeOnplayEnd)).not.toMatch(/pinDefaultOutputAsync\(/);
-    expect(edge).toMatch(/void audio\.play\(\)\.catch[\s\S]*pinDefaultOutputAsync\(audio\)/);
 
     const gesture = clip.slice(
       clip.indexOf('export function playGestureClipSync'),
@@ -122,9 +122,12 @@ describe('TTS play path never mutes non-Yue via setSinkId', () => {
     );
     expect(gesture).not.toMatch(/pinDefaultOutput\(audio\)/);
     expect(gesture).toMatch(/pinDefaultOutputAsync\(audio\)[\s\S]*audio\.play\(\)/);
+    expect(gesture).not.toMatch(/await pinDefaultOutputAsync/);
 
     expect(audio).toContain('Never copy AudioContext.sinkId');
     expect(audio).not.toMatch(/sharedCtx[\s\S]{0,80}\.sinkId/);
+    expect(audio).toContain("mode: 'gesture-safe' | 'pin-before-play'");
+    expect(audio).toContain('startHtmlAudioOnDefaultSpeakers');
   });
 
   it('beginTts / greeting / preview force playback session for every lang', () => {
@@ -132,7 +135,7 @@ describe('TTS play path never mutes non-Yue via setSinkId', () => {
     expect(voice).toMatch(/const beginTts = \(\) => \{[\s\S]*?ensureCompanionPlaybackRoute\(\)/);
     expect(voice).toMatch(/playVoiceGreeting\([\s\S]*?ensureCompanionPlaybackRoute\(\)/);
     expect(voice).toMatch(/previewVoiceChoice\([\s\S]*?ensureCompanionPlaybackRoute\(\)/);
-    // Insurance clip before gTTS so offline / killed gTTS still auditions.
+    expect(voice).toMatch(/pinSinkBeforePlay:\s*true/);
     expect(voice).toContain('clipFile(lang, delivery, insuranceKind)');
     expect(voice).toContain('clipFile(locale, previewGender, insuranceKind)');
   });

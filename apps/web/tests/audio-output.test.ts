@@ -8,6 +8,7 @@ import {
   pinDefaultOutput,
   pinDefaultOutputAsync,
   resetDefaultSinkCacheForTests,
+  startHtmlAudioOnDefaultSpeakers,
 } from '../lib/audio-output';
 
 describe('default audio output', () => {
@@ -56,7 +57,6 @@ describe('default audio output', () => {
   });
 
   it('never caches a hardware device id as the preferred sink', async () => {
-    // Simulate a poisoned cache from a communications endpoint (post-mic).
     const poisoned = {
       setSinkId(id: string) {
         if (id === 'communications-headset-uuid') return Promise.resolve();
@@ -64,7 +64,6 @@ describe('default audio output', () => {
       },
       sinkId: 'communications-headset-uuid',
     };
-    // First pin with a fake success on '' so cache is healthy.
     const ok: string[] = [];
     await pinDefaultOutputAsync({
       setSinkId(id: string) {
@@ -74,7 +73,6 @@ describe('default audio output', () => {
     });
     expect(ok).toEqual(['']);
     expect(getDefaultSinkId()).toBe('');
-    // Later pins must keep using '' / default — never a device uuid.
     const later: string[] = [];
     await pinDefaultOutputAsync({
       setSinkId(id: string) {
@@ -102,12 +100,49 @@ describe('default audio output', () => {
   });
 
   it('source never copies AudioContext.sinkId into preferredSinkId', () => {
-    // #406 preferredSinkId read sharedCtx.sinkId — after mic that was a
-    // communications UUID, so non-Yue / male TTS left the default speakers
-    // while Yue female (gate sample) stayed on the expected device.
     const src = readFileSync(join(__dirname, '../lib/audio-output.ts'), 'utf8');
     expect(src).not.toMatch(/sharedCtx[\s\S]{0,80}\.sinkId/);
     expect(src).toContain("id === '' || id === 'default'");
     expect(src).toContain('Never copy AudioContext.sinkId');
+  });
+
+  it('pin-before-play awaits default sink before play (chat mic route)', async () => {
+    const order: string[] = [];
+    const audio = {
+      setSinkId(id: string) {
+        order.push(`sink:${id}`);
+        return Promise.resolve();
+      },
+      play() {
+        order.push('play');
+        return Promise.resolve();
+      },
+    } as unknown as HTMLAudioElement;
+    await startHtmlAudioOnDefaultSpeakers(audio, 'pin-before-play');
+    expect(order[0]).toBe('sink:');
+    expect(order).toContain('play');
+    expect(order.indexOf('sink:')).toBeLessThan(order.indexOf('play'));
+  });
+
+  it('gesture-safe plays first and only pins on reject-retry', async () => {
+    const order: string[] = [];
+    let attempts = 0;
+    const audio = {
+      setSinkId(id: string) {
+        order.push(`sink:${id}`);
+        return Promise.resolve();
+      },
+      play() {
+        attempts += 1;
+        order.push(`play:${attempts}`);
+        if (attempts === 1) return Promise.reject(new Error('NotAllowedError'));
+        return Promise.resolve();
+      },
+    } as unknown as HTMLAudioElement;
+    await startHtmlAudioOnDefaultSpeakers(audio, 'gesture-safe');
+    expect(order[0]).toBe('play:1');
+    expect(order).toContain('sink:');
+    expect(order).toContain('play:2');
+    expect(order.indexOf('play:1')).toBeLessThan(order.indexOf('sink:'));
   });
 });

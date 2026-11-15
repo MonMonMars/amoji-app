@@ -1,7 +1,7 @@
 'use client';
 import {
   ensureCompanionPlaybackRoute,
-  pinDefaultOutputAsync,
+  startHtmlAudioOnDefaultSpeakers,
 } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 // First hop on the free wire-now chain (gtts → synth → edge; tts-chain.ts).
@@ -225,6 +225,12 @@ export interface GttsOpts {
    * decodeAudioData would silence the free tier on Chrome and iOS Safari.
    */
   pitchBias?: number;
+  /**
+   * Chat/async TTS: pin default sink before play so mic play-and-record does
+   * not leave a silent communications route. Card greet / gesture paths omit
+   * this and keep play-first (#424).
+   */
+  pinSinkBeforePlay?: boolean;
 }
 
 /**
@@ -375,17 +381,17 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
         // Later chunks keep the mouth open; only the last one may close it.
         followAudioElement(audio, last);
       };
-      // Play in this turn — never await / race setSinkId before the first play().
-      // Pin only on reject-retry (not parallel during start, not on onplay).
-      void audio.play().catch((e: unknown) => {
-        void pinDefaultOutputAsync(audio)
-          .then(() => audio.play())
-          .catch((err: unknown) => {
-            settle(() => {
-              if (currentAudio === audio) currentAudio = null;
-              failLine(err instanceof Error ? err : e instanceof Error ? e : new Error(String(err)));
-            });
-          });
+      // Gesture/card: play-first + pin on reject only (#424).
+      // Chat (pinSinkBeforePlay): pin default sink first — play() succeeds under
+      // play-and-record while routing to a mute communications device.
+      void startHtmlAudioOnDefaultSpeakers(
+        audio,
+        opts.pinSinkBeforePlay ? 'pin-before-play' : 'gesture-safe',
+      ).catch((err: unknown) => {
+        settle(() => {
+          if (currentAudio === audio) currentAudio = null;
+          failLine(err instanceof Error ? err : new Error(String(err)));
+        });
       });
     };
     playNext();

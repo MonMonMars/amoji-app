@@ -91,7 +91,8 @@ describe('voice does not switch speaker mid-line or between characters', () => {
   });
 
   it('pins sinks before HTML audio play and primes synth against wrong Windows route', () => {
-    expect(gtts).toContain('pinDefaultOutputAsync');
+    expect(gtts).toContain('startHtmlAudioOnDefaultSpeakers');
+    expect(voice).toMatch(/pinSinkBeforePlay:\s*true/);
     expect(gtts).toContain('ensureCompanionPlaybackRoute');
     expect(voice).toContain('primeDefaultSpeakerBeforeSynth');
     const focus = readFileSync(join(web, 'lib/voice-chat-focus.ts'), 'utf8');
@@ -110,12 +111,16 @@ describe('voice does not switch speaker mid-line or between characters', () => {
     expect(audioOut).toContain('isDefaultSinkId');
     expect(audioOut).not.toMatch(/sharedCtx[\s\S]{0,80}\.sinkId/);
     expect(audioOut).toMatch(/cachedDefaultSink = ''|cachedDefaultSink = 'default'/);
-    for (const src of [gtts, edge, clips, openai]) {
-      // #424: pin only via pinDefaultOutputAsync on play() reject-retry — never onplay.
-      expect(src).toContain('pinDefaultOutputAsync');
-      expect(src).toMatch(/void audio\.play\(\)/);
+    expect(audioOut).toContain('startHtmlAudioOnDefaultSpeakers');
+    expect(audioOut).toContain('pin-before-play');
+    for (const src of [gtts, edge, openai]) {
+      expect(src).toContain('startHtmlAudioOnDefaultSpeakers');
       expect(src).not.toMatch(/audio\.onplay = \(\) => \{[\s\S]*?pinDefaultOutput\(audio\)/);
     }
+    // Gesture clips stay play-first + reject-retry pin (#424).
+    expect(clips).toContain('pinDefaultOutputAsync');
+    expect(clips).toMatch(/void audio\.play\(\)/);
+    expect(clips).not.toMatch(/audio\.onplay = \(\) => \{[\s\S]*?pinDefaultOutput\(audio\)/);
     expect(gtts).toContain('ensureCompanionPlaybackRoute');
     expect(edge).toContain('ensureCompanionPlaybackRoute');
     expect(openai).toContain('ensureCompanionPlaybackRoute');

@@ -1,7 +1,7 @@
 'use client';
 import {
   ensureCompanionPlaybackRoute,
-  pinDefaultOutputAsync,
+  startHtmlAudioOnDefaultSpeakers,
 } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 import { stripVoicedSymbols } from './speak-text';
@@ -48,6 +48,8 @@ export interface OpenAiVoiceOpts {
   expressiveness?: number;
   /** fired once the audio element actually starts playing (media gate open) */
   onPlaying?: () => void;
+  /** Chat/async: pin default sink before play (see gTTS pinSinkBeforePlay). */
+  pinSinkBeforePlay?: boolean;
 }
 
 const KEY_KEY = 'amoji.openai.key';
@@ -258,7 +260,7 @@ export function speakOpenAi(text: string, opts: OpenAiVoiceOpts): Promise<void> 
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
       ensureCompanionPlaybackRoute();
-      // Play first; pin only on play() reject-retry (#424 — never onplay setSinkId).
+      // Never setSinkId in onplay (#424). Chat may pin-before-play.
       applyPlaybackVolume(audio);
       currentAudio = audio;
       currentUrl = url;
@@ -276,14 +278,13 @@ export function speakOpenAi(text: string, opts: OpenAiVoiceOpts): Promise<void> 
         URL.revokeObjectURL(url);
         reject(new Error('openai-tts playback failed'));
       };
-      void audio.play().catch((e: unknown) => {
-        void pinDefaultOutputAsync(audio)
-          .then(() => audio.play())
-          .catch((err: unknown) => {
-            if (currentAudio === audio) { currentAudio = null; currentUrl = null; }
-            URL.revokeObjectURL(url);
-            reject(err instanceof Error ? err : e instanceof Error ? e : new Error(String(err)));
-          });
+      void startHtmlAudioOnDefaultSpeakers(
+        audio,
+        opts.pinSinkBeforePlay ? 'pin-before-play' : 'gesture-safe',
+      ).catch((err: unknown) => {
+        if (currentAudio === audio) { currentAudio = null; currentUrl = null; }
+        URL.revokeObjectURL(url);
+        reject(err instanceof Error ? err : new Error(String(err)));
       });
     }).catch((err: unknown) => {
       if (settled) return;

@@ -24,7 +24,7 @@
 import { edgeAudioPayload, edgeReadAloudUrl } from '../../../server/amoji-proxy/edge-gec.js';
 import {
   ensureCompanionPlaybackRoute,
-  pinDefaultOutputAsync,
+  startHtmlAudioOnDefaultSpeakers,
 } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 import { characterVoiceGender } from './voice-gender';
@@ -95,6 +95,11 @@ export interface EdgeVoiceOpts {
    * and comma pauses are skipped so the tune comes through.
    */
   melody?: number[];
+  /**
+   * Chat/async TTS: pin default sink before play (mic play-and-record silent
+   * success). Gesture/card paths omit this — keep play-first (#424).
+   */
+  pinSinkBeforePlay?: boolean;
 }
 
 // Public read-aloud client token from the edge-tts project. Not an API key.
@@ -571,9 +576,8 @@ function playMp3Blob(blob: Blob, opts: EdgeVoiceOpts, resolve: () => void, rejec
     return;
   }
   ensureCompanionPlaybackRoute();
-  // Do NOT pin before first play or inside onplay — setSinkId races gesture
-  // activation and interrupts live HTMLAudio (card greet / non-Yue mute).
-  // A read-only volume setter on iOS must not skip play().
+  // Do NOT pin inside onplay — setSinkId interrupts live HTMLAudio (#424).
+  // Gesture/card: play-first. Chat pinSinkBeforePlay: pin then play (mic route).
   try { applyPlaybackVolume(audio); } catch { /* playback still starts */ }
   currentAudio = audio;
   // r99: the caller learns the instant media playback actually begins —
@@ -593,16 +597,13 @@ function playMp3Blob(blob: Blob, opts: EdgeVoiceOpts, resolve: () => void, rejec
     URL.revokeObjectURL(url);
     reject(new Error('edge-tts playback failed'));
   };
-  // Same gesture-safe order as gTTS / playGestureClipSync: play first; pin
-  // only before a reject retry — never in parallel during start or on onplay.
-  void audio.play().catch((e: unknown) => {
-    void pinDefaultOutputAsync(audio)
-      .then(() => audio.play())
-      .catch((err: unknown) => {
-        if (currentAudio === audio) currentAudio = null;
-        URL.revokeObjectURL(url);
-        reject(err instanceof Error ? err : e instanceof Error ? e : new Error(String(err)));
-      });
+  void startHtmlAudioOnDefaultSpeakers(
+    audio,
+    opts.pinSinkBeforePlay ? 'pin-before-play' : 'gesture-safe',
+  ).catch((err: unknown) => {
+    if (currentAudio === audio) currentAudio = null;
+    URL.revokeObjectURL(url);
+    reject(err instanceof Error ? err : new Error(String(err)));
   });
 }
 
