@@ -2,7 +2,7 @@
 
 For Pixel / maintainers. Agents cannot merge without GitHub write auth.
 
-> **Note (2026-11-15 15:21 HKT):** Product through #385–#395 and docs through #396 are on `main` tip `e52ff02`. Open product PRs: **0**. Hold spikes #1 / #20 only. Prefer [`PROJECT_STATUS.md`](./PROJECT_STATUS.md) for the live board.
+> **Note (2026-11-15 15:52 HKT):** Product through #385–#395 and docs through #397 are on `main` tip `a50695b`. Open product PRs: **0**. Hold spikes #1 / #20 only. Prefer [`PROJECT_STATUS.md`](./PROJECT_STATUS.md) for the live board.
 
 ## Remaining (human — not merge queue)
 

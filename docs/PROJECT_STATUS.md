@@ -1,17 +1,17 @@
 # Amoji project status board
 
-**Generated:** 2026-11-15 15:21 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-15 15:52 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** open [`project-status.html`](./project-status.html) in a browser.  
-**`main` tip:** `e52ff02` (#396 docs board · product through #385–#395)
+**`main` tip:** `a50695b` (#397 docs honesty · product through #385–#395 · docs #396/#397)
 
 ## Snapshot
 
 | Bucket | Count |
 | --- | ---: |
-| **Done** — merged to `main` | 80+ stack · Nov 15 wave #385–#396 |
+| **Done** — merged to `main` | 80+ stack · Nov 15 wave #385–#397 |
 | **Open product PRs** | **0** (Hold spikes only: #1 · draft #20) |
 | **Outstanding** — actionable code left for agents | **0** |
 | **Outstanding** — Pixel / human actions | [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) · talking-nonsense **owner** live OK |
@@ -31,20 +31,21 @@
 | Setup / Gate | 99% |
 | Systems (pay / email / security / storage) | 99% (#335 + #354–#356) |
 | SEO / marketing surface | 99% (#357) |
-| Docs | 99% (#389 / #396 on main) |
+| Docs | 99% (#389 / #396 / #397 on main) |
 | Merge to main | 99% |
 
 ---
 
 ## Done (merged to `main`)
 
-Living tip: `e52ff02`. Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
+Living tip: `a50695b`. Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
 
-### Nov 15 wave (#385–#396)
+### Nov 15 wave (#385–#397)
 
 | PR | Item | Notes |
 | --- | --- | --- |
-| [#396](https://github.com/MonMonMars/amoji-app/pull/396) | Docs board: #393–#395 Done; Outstanding = smoke + nonsense | Pages rebuilt from this push (`last-modified` 2026-11-15 05:04 UTC) |
+| [#397](https://github.com/MonMonMars/amoji-app/pull/397) | Docs tip/`#353` honesty after #396; agent scrub green | Pages rebuilt (`last-modified` 2026-11-15 07:29 UTC · `pages.yml` `43689990439`) |
+| [#396](https://github.com/MonMonMars/amoji-app/pull/396) | Docs board: #393–#395 Done; Outstanding = smoke + nonsense | Prior Pages rebuild (`last-modified` 2026-11-15 05:04 UTC) |
 | [#395](https://github.com/MonMonMars/amoji-app/pull/395) | All langs/genders speak | |
 | [#394](https://github.com/MonMonMars/amoji-app/pull/394) | Stop idle forward lean / hips blend yaw | |
 | [#393](https://github.com/MonMonMars/amoji-app/pull/393) | Caption history de-dupe (no full-phase replay) | |
@@ -120,7 +121,7 @@ Earlier finish pass still on `main`: #306–#325 and #280–#305 era.
 
 ## Open PRs
 
-**None product.** Open list is Hold spikes only (#1 · #20). Docs #353 / #389 / #396 already merged (or superseded).
+**None product.** Open list is Hold spikes only (#1 · #20). Docs #353 / #389 / #396 / #397 already merged (or superseded).
 
 ### Hold / stale (do not touch unless Pixel asks)
 
@@ -137,7 +138,7 @@ Earlier finish pass still on `main`: #306–#325 and #280–#305 era.
 
 ### Code (agents)
 
-**None.** Product through #385–#395 and docs through #396 are on `main`. Agent Vitest scrub suites (adaptive / idle-talk / reply-quality / spoken-line-sanity / reply-sanity) **78/78 pass** on tip — no remaining agent-fixable nonsense bug found. Do not invent scope.
+**None.** Product through #385–#395 and docs through #397 are on `main`. Agent Vitest scrub suites (adaptive / idle-talk / reply-quality / spoken-line-sanity / reply-sanity) **78/78 pass** on tip — no remaining agent-fixable nonsense / resume-ask / history bug found. Do not invent scope.
 
 ### Human / Pixel
 
@@ -156,7 +157,7 @@ Earlier finish pass still on `main`: #306–#325 and #280–#305 era.
 | Stripe live keys / Payment Link | Env only (`STRIPE_*`, `NEXT_PUBLIC_STRIPE_PAYMENT_LINK`) — code on `main` via #354 |
 | Product Hunt shoot / demo video | Marketing human work |
 | Google Search Console sitemap submit | Human; #357 ships `sitemap.xml` / `robots.txt` under `/amoji-app` |
-| Live github.io product eyeball | Pages rebuilt from #396 (`pages.yml` success · `last-modified` 2026-11-15 05:04 UTC); owner phone smoke still required |
+| Live github.io product eyeball | Pages rebuilt from #397 (`pages.yml` `43689990439` success · `last-modified` 2026-11-15 07:29 UTC); owner phone smoke still required |
 | Modular GLBs / CosyVoice refs / GPU TTS hosts | Asset / infra Holds — not blocking Pages |
 | Spikes #1 / #20 | Do not touch unless Pixel asks (#154/#240 closed superseded) |
 
@@ -164,9 +165,9 @@ Earlier finish pass still on `main`: #306–#325 and #280–#305 era.
 
 ## Pixel merge order (post-mass-merge)
 
-Mass merge complete through #396. Remaining:
+Mass merge complete through #397. Remaining:
 
-1. **Phone smoke** on live demo (Pages serving tip `e52ff02`).
+1. **Phone smoke** on live demo (Pages serving tip `a50695b`).
 2. **Owner nonsense OK** after live listen (agent Vitest already green).
 3. **Holds** stay Hold; spikes #1 / #20 untouched unless Pixel asks.
 
@@ -204,13 +205,13 @@ Mass merge complete through #396. Remaining:
 | Systems | Support email + wipe | **Done** | #355 |
 | Systems | Security / legal / storage finish (+ fonts) | **Done** | #356 / #336 |
 | Marketing | SEO metadata / sitemap / robots / JSON-LD | **Done** | #357 |
-| Docs | Status board through #396 | **Done** | #389 / #396 |
+| Docs | Status board through #397 | **Done** | #389 / #396 / #397 |
 | Chat UX | Caption history de-dupe | **Done** | #393 |
 | VRM / Idle | No lean-forward / blend yaw weird | **Done** | #394 |
 | Audio | All langs/genders speak | **Done** | #395 |
 | Chat UX | Idle nonsense scrub (code) | **Done** | #338 / #360 · agent Vitest 78/78 |
 | Music | Licensed stream/embed beyond Mixkit | **Hold** | `docs/MUSIC_STREAMING.md` |
-| Verify | Post-merge live check on Pages | **Human** | Pages live from #396; phone smoke + owner nonsense OK pending |
+| Verify | Post-merge live check on Pages | **Human** | Pages live from #397; phone smoke + owner nonsense OK pending |
 
 ---
 
@@ -228,4 +229,4 @@ Mass merge complete through #396. Remaining:
 | Merge checklist | `docs/MERGE_CHECKLIST.md` | Refreshed — post-mass-merge |
 | Music streaming | `docs/MUSIC_STREAMING.md` | Complete (licensed Hold noted) |
 | Job / voice checklist | `AMOJI_JOB_CHECKLIST.md` | Refreshed — prefer this board for open PR truth |
-| This status board | `docs/project-status.html` + this file | Refreshed 2026-11-15 15:21 HKT |
+| This status board | `docs/project-status.html` + this file | Refreshed 2026-11-15 15:52 HKT |
