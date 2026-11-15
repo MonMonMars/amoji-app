@@ -74,8 +74,9 @@ describe('voice does not switch speaker mid-line or between characters', () => {
 
   it('the pitch shift stays bounded so the line is not garbled', () => {
     // preservesPitch=false changes tempo too; a big bias sounds sped up, not
-    // like a different person. Widen clamp so deep≠bright stays audible.
-    expect(gtts).toMatch(/Math\.min\(1\.4, Math\.max\(0\.7,/);
+    // like a different person. Clamp tracks GTTS_PITCH_BIAS_* so deep male
+    // is not erased by a hard 0.7 floor (#406 follow-up).
+    expect(gtts).toMatch(/Math\.min\(GTTS_PITCH_BIAS_MAX, Math\.max\(GTTS_PITCH_BIAS_MIN,/);
     expect(gtts).toMatch(/clamp\(opts\.pitchBias \?\? 1, GTTS_PITCH_BIAS_MIN, GTTS_PITCH_BIAS_MAX\)/);
   });
 

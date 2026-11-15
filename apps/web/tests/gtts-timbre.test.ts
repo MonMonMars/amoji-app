@@ -101,12 +101,12 @@ describe('free-chain character pitch fingerprint', () => {
     const brightF = gttsCharacterPitchBias('female', undefined, 'en', 'bright');
     const deepM = gttsCharacterPitchBias('male', undefined, 'en', 'deep');
     const brightM = gttsCharacterPitchBias('male', undefined, 'en', 'bright');
-    // Was ~0.14 female / ~0.10 male — require a large audible gap.
-    expect(brightF - deepF).toBeGreaterThanOrEqual(0.25);
-    expect(brightM - deepM).toBeGreaterThanOrEqual(0.2);
+    // After #406 owner still heard similar — require a larger audible gap.
+    expect(brightF - deepF).toBeGreaterThanOrEqual(0.32);
+    expect(brightM - deepM).toBeGreaterThanOrEqual(0.26);
     expect(deepM).toBeLessThan(deepF);
-    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.25);
-    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.2);
+    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.32);
+    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.26);
   });
 
   it('voice.ts re-exports the same helper so every speak path stays in sync', () => {

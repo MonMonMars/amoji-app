@@ -1117,9 +1117,10 @@ function pickVoice(characterId: string, lang: Lang, genderOverride?: 'female' | 
   const color = edgeCastVoice(characterId, lang);
   const byLang = browserVoicesForLang(cached, lang);
   const pool = byLang.length ? byLang : cached;
-  // Same pitch/pace as the Edge slot, so the browser fallback stays personal.
-  const pitch = (gender === 'male' ? 0.94 : 1.06) + (color?.pitch ?? 0);
-  const rateBase = gender === 'male' && lang === 'yue' ? 1.04 : gender === 'male' ? 0.98 : 1.02;
+  // Browser synth: male must sit clearly below female (owner: male still female).
+  // Yue male was 1.04 rate (sped up → brighter) — slow him instead.
+  const pitch = (gender === 'male' ? 0.72 : 1.14) + (color?.pitch ?? 0);
+  const rateBase = gender === 'male' && lang === 'yue' ? 0.90 : gender === 'male' ? 0.92 : 1.02;
   const rate = rateBase + (color?.rate ?? 0);
   // A pinned OS voice beats the matrix. The user chose that exact speaker in
   // Settings, so it must be what chat plays — otherwise the picker promises a

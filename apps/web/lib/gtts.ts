@@ -54,20 +54,19 @@ const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi 
  * a female one slightly brighter. Bounded tightly — this is resampling, so a
  * large value makes her sound sped up rather than like a different person.
  */
-/** Male base — deeper than female. Was 0.88; keep clear of female band. */
-export const PITCH_BIAS_MALE = 0.84;
-/** Female base — brighter. Was 1.04. */
-export const PITCH_BIAS_FEMALE = 1.12;
+/** Male base — deeper than female. Was 0.84 after #406; owner still heard female. */
+export const PITCH_BIAS_MALE = 0.80;
+/** Female base — brighter. Was 1.12 after #406. */
+export const PITCH_BIAS_FEMALE = 1.18;
 /**
- * Soft floor for male Cantonese only. Previous floor was 1.04 (female mid),
- * which erased male pitch entirely. Cap the slowdown without lifting male
- * playback into the female band.
+ * Soft floor for male Cantonese only. Previous floors (1.04 → 0.88) still
+ * lifted deep male toward mid. Cap drag without erasing the male band.
  */
-export const GTTS_YUE_MALE_PACE_FLOOR = 0.88;
+export const GTTS_YUE_MALE_PACE_FLOOR = 0.80;
 
 /** pitchBias clamp shared by speakGtts + gtts-timbre (wide enough for deep≠bright). */
-export const GTTS_PITCH_BIAS_MIN = 0.72;
-export const GTTS_PITCH_BIAS_MAX = 1.32;
+export const GTTS_PITCH_BIAS_MIN = 0.66;
+export const GTTS_PITCH_BIAS_MAX = 1.40;
 
 /** Effective <audio> playbackRate after emotion rate and gender pitch bias. */
 export function gttsPlaybackRate(rate: number, pitchBias: number, tl: string): number {
@@ -76,7 +75,8 @@ export function gttsPlaybackRate(rate: number, pitchBias: number, tl: string): n
   if (tl === 'yue' && pitchBias < 1) {
     r = Math.max(r, rate * GTTS_YUE_MALE_PACE_FLOOR);
   }
-  return Math.min(1.4, Math.max(0.7, r));
+  // Floor/ceiling track pitchBias clamp so deep male is not erased at 0.7.
+  return Math.min(GTTS_PITCH_BIAS_MAX, Math.max(GTTS_PITCH_BIAS_MIN, r));
 }
 
 /**
