@@ -56,7 +56,7 @@ import { applyIdleClipSoftening } from '../lib/idle-stance-soften';
 import { chestPokeBounce, CHEST_BOUNCE_SEC, SOFT_CHEST_BOUNCE_SEC } from '../lib/vrm/chest-bounce';
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
-import { isEyeMaterial, stabilizeEyeMaterials } from '../lib/vrm/eyes';
+import { applyDominatedEyeExpressions, isEyeMaterial, stabilizeEyeMaterials } from '../lib/vrm/eyes';
 import {
   dampenCastMatcap,
   floorCastShadeColors,
@@ -1959,13 +1959,35 @@ export default function CompanionCanvas({
         const laughBoost = 0.85 * laugh; // full smile while the giggles play
         const setEm = (name: string, val: number) => avatar!.setExpression(name, val);
         const performBoost = mv?.kind === 'sing' ? 0.55 : mv?.kind === 'dance' ? 0.4 : 0;
-        setEm('happy', clamp(v(Math.max(targets.blendShape.joy, targets.blendShape.fun)) + (poke.face === 'happy' ? pokeBoost : 0) + laughBoost + performBoost, 0, 1));
-        setEm('angry', v(targets.blendShape.angry) + (poke.face === 'angry' ? pokeBoost : 0));
-        setEm('sad', v(targets.blendShape.sorrow));
-        setEm('surprised', poke.face === 'surprised'
-          ? clamp(v(targets.blendShape.surprise) + pokeBoost, 0, 1)
-          : v(targets.blendShape.surprise));
-        setEm('relaxed', v(targets.blendShape.relaxed) + (poke.face === 'relaxed' ? pokeBoost : 0));
+        // One dominant face preset for eye atlas / size morphs — stacking
+        // happy+surprised+relaxed lerps UV cells and flickers big↔small eyes.
+        if (gameView) {
+          const expr = gameView.expr;
+          applyDominatedEyeExpressions(setEm, {
+            happy: expr.happy ?? 0,
+            angry: expr.angry ?? 0,
+            sad: expr.sad ?? 0,
+            surprised: expr.surprised ?? 0,
+            relaxed: expr.relaxed ?? 0,
+            blink: expr.blink ?? 0,
+            blinkLeft: expr.blinkLeft ?? 0,
+            blinkRight: 0,
+          });
+        } else {
+          applyDominatedEyeExpressions(setEm, {
+            happy: clamp(v(Math.max(targets.blendShape.joy, targets.blendShape.fun)) + (poke.face === 'happy' ? pokeBoost : 0) + laughBoost + performBoost, 0, 1),
+            angry: v(targets.blendShape.angry) + (poke.face === 'angry' ? pokeBoost : 0),
+            sad: v(targets.blendShape.sorrow),
+            surprised: poke.face === 'surprised'
+              ? clamp(v(targets.blendShape.surprise) + pokeBoost, 0, 1)
+              : v(targets.blendShape.surprise),
+            relaxed: v(targets.blendShape.relaxed) + (poke.face === 'relaxed' ? pokeBoost : 0),
+            // Clear game blink leftovers; GenericAvatar re-applies blink in update().
+            blink: 0,
+            blinkLeft: 0,
+            blinkRight: 0,
+          });
+        }
         if (sp) {
           const mouth = sp.mouth;
           const on = (want: string) => (sp.vowel === want ? 1 : 0.12);
@@ -1977,20 +1999,6 @@ export default function CompanionCanvas({
         } else {
           setEm('aa', 0); setEm('ih', 0); setEm('ou', 0);
           setEm('ee', 0); setEm('oh', 0);
-        }
-        if (gameView) {
-          const expr = gameView.expr;
-          setEm('happy', expr.happy ?? 0);
-          setEm('angry', expr.angry ?? 0);
-          setEm('sad', expr.sad ?? 0);
-          setEm('surprised', expr.surprised ?? 0);
-          setEm('relaxed', expr.relaxed ?? 0);
-          setEm('blink', expr.blink ?? 0);
-          setEm('blinkLeft', expr.blinkLeft ?? 0);
-          setEm('blinkRight', 0);
-        } else {
-          setEm('blinkLeft', 0);
-          setEm('blinkRight', 0);
         }
 
         const b = targets.bones;

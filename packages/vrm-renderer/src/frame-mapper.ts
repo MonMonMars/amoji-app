@@ -34,7 +34,9 @@ export function mapFrameToVrm(frame: EmotionFrame, intensity = 1, pose?: IdlePos
   const funW = clamp01(f.cheekRaise * 0.5 + f.mouthSmile * 0.5 + f.jawDrop * 0.2);
   const sorrowW = clamp01(f.mouthFrown * 0.7 + f.browInnerUp * 0.3 + f.lidClosure * 0.2);
   const angryW = clamp01(f.browDown * 0.7 + f.lipPress * 0.2 + f.noseWrinkle * 0.2);
-  const surpriseW = clamp01(f.eyeWide * 0.7 + f.browOuterUp * 0.3 + f.jawDrop * 0.3);
+  // Eye-wide + brows only — jawDrop used to hitch surprise to mouth open and
+  // flicker eye size whenever the face talked or dropped the jaw.
+  const surpriseW = clamp01(f.eyeWide * 0.75 + f.browOuterUp * 0.25);
   const relaxedW = clamp01(f.lidClosure * 0.4 + f.mouthPucker * 0.3 + (1 - f.mouthOpen) * 0.2);
 
   // ---- body: T-pose fix + idle life (breath, sway, lean) + idle pose ----

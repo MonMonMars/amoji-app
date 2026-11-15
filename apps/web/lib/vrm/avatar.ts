@@ -76,7 +76,14 @@ import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
 import { ARM_DOWN_BASE } from '@amoji/vrm-renderer';
 import { FootPlanter, applyThighUnblend, type PlantLean } from './plant-feet';
 import { ChestBounce } from './chest-bounce';
-import { capEyeExpression, disableVrmAutoLookAt, pinVrmEyeGaze } from './eyes';
+import {
+  capEyeExpression,
+  captureEyeRestScales,
+  disableVrmAutoLookAt,
+  pinEyeRestScales,
+  pinVrmEyeGaze,
+  type EyeScalePin,
+} from './eyes';
 import { applyCastFix, captureCastFix, type CastFixState } from './cast-pose';
 import { needsFullUpright } from '../cast-adjust';
 import { shortestQuatSlerp } from './quat-blend';
@@ -784,6 +791,7 @@ class V1Avatar implements Avatar {
   private readonly addEuler = new THREE.Euler(0, 0, 0, 'XYZ');
   private readonly addDelta = new THREE.Quaternion();
   private castFix: CastFixState | null = null;
+  private eyeScalePins: EyeScalePin[] = [];
 
   constructor(vrm: VRM, clipAnimatedBones: ReadonlySet<string> = new Set()) {
     this.vrm = vrm;
@@ -827,6 +835,7 @@ class V1Avatar implements Avatar {
     this.planter.capture(vrm.scene, (name) => this.getBoneNode(name));
     // Stray look-at (target or lookLeft morphs) rolls the iris out of the socket.
     disableVrmAutoLookAt(vrm);
+    this.eyeScalePins = captureEyeRestScales(vrm.scene);
   }
 
   setExpression(name: string, value: number): void {
@@ -1037,6 +1046,7 @@ class V1Avatar implements Avatar {
   update(dt: number): void {
     this.vrm.update(dt);
     pinVrmEyeGaze(this.vrm);
+    pinEyeRestScales(this.eyeScalePins);
   }
 }
 
@@ -1075,6 +1085,7 @@ class GenericAvatar implements Avatar {
   private planter = new FootPlanter();
   private chestBounce = new ChestBounce();
   private castFix: CastFixState | null = null;
+  private eyeScalePins: EyeScalePin[] = [];
 
   constructor(gltf: GLTF, clipAnimatedBones: ReadonlySet<string> = new Set()) {
     // r2026-10-04.76: same wrapper split as V1Avatar — canvas overlays own
@@ -1094,6 +1105,7 @@ class GenericAvatar implements Avatar {
     this.root.updateMatrixWorld(true);
     this.shoulderRest = captureShoulderRest((name) => this.getBoneNode(name));
     this.planter.capture(this.inner, (name) => this.getBoneNode(name));
+    this.eyeScalePins = captureEyeRestScales(this.inner);
   }
 
   // -- skeleton / face resolution ------------------------------------------
@@ -1381,7 +1393,8 @@ class GenericAvatar implements Avatar {
   acknowledgeHeadPose(): void { /* procedural head has no additive layer */ }
 
   update(dt: number): void {
-    // gentle periodic blink so legacy models feel alive
+    // gentle periodic blink so legacy models feel alive — lids only (capped);
+    // eye mesh scale is pinned after so blink morphs cannot resize the socket.
     if (this.blinkPhase >= 0) {
       this.blinkPhase += dt;
       const k = this.blinkPhase / 0.16;
@@ -1395,6 +1408,7 @@ class GenericAvatar implements Avatar {
         this.blinkPhase = 0;
       }
     }
+    pinEyeRestScales(this.eyeScalePins);
   }
 }
 

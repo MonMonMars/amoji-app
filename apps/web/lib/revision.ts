@@ -313,6 +313,9 @@
 // white, eyelid morphs stop short of a full seal).
 // r2026-11-11.144: VRM look-at disabled and lookLeft/Right morphs pinned so
 // pupils stay centered; eye meshes no longer frustum-cull or lose to ribbons.
+// r2026-11-15.145: eye size stable — one dominant face preset for eye-atlas
+// UV / widen morphs (shared cast caps), blink lids without resizing eye
+// meshes, surprise no longer rides jawDrop.
 // Idle hang opens a
 // straight-down arm so shoulders are not slumped, finger curl no longer
 // splays ring/little into the palm, and idle talk is a short tutor tip

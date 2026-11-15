@@ -1,17 +1,59 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { IDLE_ARM_ABDUCT, calibrateRelaxedHands, clavicleRestoreFromArmDir, idleHangDirection } from '../lib/vrm/avatar';
-import { capEyeExpression, eyeMaterialKind, stabilizeEyeMaterials } from '../lib/vrm/eyes';
+import {
+  CAST_EYE_BLINK_CAP,
+  CAST_EYE_SQUINT_CAP,
+  CAST_EYE_WIDE_CAP,
+} from '../lib/vrm/cast-eye-profile';
+import {
+  capEyeExpression,
+  captureEyeRestScales,
+  dominateEyeExpressions,
+  eyeMaterialKind,
+  pinEyeRestScales,
+  stabilizeEyeMaterials,
+} from '../lib/vrm/eyes';
 
 describe('eye readability', () => {
-  it('caps eyelid morphs and leaves other expressions alone', () => {
-    expect(capEyeExpression('blink', 1)).toBeLessThan(0.5);
-    expect(capEyeExpression('happy', 1)).toBeLessThan(0.7);
+  it('caps eyelid and wide morphs from shared cast constants', () => {
+    expect(capEyeExpression('blink', 1)).toBe(CAST_EYE_BLINK_CAP);
+    expect(capEyeExpression('happy', 1)).toBe(CAST_EYE_SQUINT_CAP);
     expect(capEyeExpression('blinkLeft', 0.2)).toBe(0.2);
-    expect(capEyeExpression('surprised', 0.9)).toBe(0.9);
+    expect(capEyeExpression('surprised', 0.9)).toBe(CAST_EYE_WIDE_CAP);
     expect(capEyeExpression('aa', 1)).toBe(1);
     expect(capEyeExpression('lookLeft', 0.9)).toBe(0);
     expect(capEyeExpression('lookUp', 0.5)).toBe(0);
+  });
+
+  it('keeps one dominant atlas expression so eye size does not flicker', () => {
+    const out = dominateEyeExpressions({
+      happy: 0.8,
+      surprised: 0.9,
+      relaxed: 0.5,
+      angry: 0.2,
+      blink: 1,
+    });
+    expect(out.surprised).toBe(CAST_EYE_WIDE_CAP);
+    expect(out.happy).toBe(0);
+    expect(out.relaxed).toBe(0);
+    expect(out.angry).toBe(0);
+    expect(out.blink).toBe(CAST_EYE_BLINK_CAP);
+  });
+
+  it('pins eye mesh scales back to rest after a wild resize', () => {
+    const iris = new THREE.MeshBasicMaterial({ name: 'F00_EyeIris_00_EYE' });
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(), iris);
+    mesh.name = 'FaceEye';
+    const root = new THREE.Group();
+    root.add(mesh);
+    const pins = captureEyeRestScales(root);
+    expect(pins.length).toBeGreaterThan(0);
+    mesh.scale.set(2.4, 0.3, 2.4);
+    pinEyeRestScales(pins);
+    expect(mesh.scale.x).toBe(1);
+    expect(mesh.scale.y).toBe(1);
+    expect(mesh.scale.z).toBe(1);
   });
 
   it('classifies pupil and VRoid iris/white materials', () => {
