@@ -6,6 +6,8 @@
  * pause any stray <audio>/<video> on this page (not marked amoji-owned).
  */
 
+import { ensureCompanionPlaybackRoute } from './audio-output';
+
 const PAUSED_MARK = 'data-amoji-paused-foreign';
 
 type AudioSessionNav = Navigator & {
@@ -21,11 +23,7 @@ export function enterVoiceChatAudioSession(): void {
 }
 
 export function leaveVoiceChatAudioSession(): void {
-  if (typeof navigator === 'undefined') return;
-  try {
-    const nav = navigator as AudioSessionNav;
-    if (nav.audioSession) nav.audioSession.type = 'playback';
-  } catch { /* ignore */ }
+  ensureCompanionPlaybackRoute();
 }
 
 function isAmojiMedia(el: HTMLMediaElement): boolean {
@@ -51,11 +49,7 @@ export function pauseForeignPageMedia(): void {
  * enterVoiceChatAudioSession() when recording actually starts.
  */
 export function companionPlaybackSession(): void {
-  if (typeof navigator === 'undefined') return;
-  try {
-    const nav = navigator as AudioSessionNav;
-    if (nav.audioSession) nav.audioSession.type = 'playback';
-  } catch { /* ignore */ }
+  ensureCompanionPlaybackRoute();
 }
 
 /** Called when companion TTS starts — duck in-page media; route playback to default. */

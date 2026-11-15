@@ -9,8 +9,12 @@
 // the communications endpoint while a pinned <audio> (gTTS) stays on default.
 // Call primeDefaultSpeakerBeforeSynth() before synth tiers and route companion
 // playback through companionPlaybackSession() in voice-chat-focus.
+//
+// Also call ensureCompanionPlaybackRoute() before every HTMLAudio TTS start so
+// non-Yue / male pins do not stay on the mic communications sink after gate.
 
-type SinkTarget = { setSinkId?: (sinkId: string) => Promise<void> };
+type SinkTarget = { setSinkId?: (sinkId: string) => Promise<void>; sinkId?: string };
+type AudioSessionNav = Navigator & { audioSession?: { type: string } };
 
 /** Hard cap so resume/unlock never stacks above a comfortable level. */
 export const MASTER_OUTPUT_CAP = 0.85;
@@ -36,6 +40,29 @@ export function getDefaultSinkId(): string {
   return cachedDefaultSink ?? '';
 }
 
+/**
+ * Force the OS audio session back to speakers before TTS.
+ * Chat mic opens `play-and-record`, which on Windows routes unmarked media
+ * (and synth) to the communications device — the "voice on other speakers"
+ * report for non-Yue / male buttons after a Yue-female gate sample worked.
+ */
+export function ensureCompanionPlaybackRoute(): void {
+  if (typeof navigator === 'undefined') return;
+  try {
+    const nav = navigator as AudioSessionNav;
+    if (nav.audioSession) nav.audioSession.type = 'playback';
+  } catch { /* ignore */ }
+}
+
+/** Prefer the shared AudioContext sink so every TTS element matches the gate. */
+function preferredSinkId(): string {
+  if (cachedDefaultSink !== undefined) return cachedDefaultSink;
+  if (sharedCtx && typeof (sharedCtx as unknown as SinkTarget).sinkId === 'string') {
+    return (sharedCtx as unknown as SinkTarget).sinkId ?? '';
+  }
+  return '';
+}
+
 async function resolveDefaultSinkId(setSink: (id: string) => Promise<void>): Promise<string> {
   if (cachedDefaultSink !== undefined) return cachedDefaultSink;
   try {
@@ -58,21 +85,25 @@ async function resolveDefaultSinkId(setSink: (id: string) => Promise<void>): Pro
 export async function pinDefaultOutputAsync(
   node: SinkTarget | null | undefined,
 ): Promise<void> {
+  ensureCompanionPlaybackRoute();
   const setSink = node?.setSinkId;
   if (typeof setSink !== 'function') return;
   const bound = setSink.bind(node);
-  if (cachedDefaultSink !== undefined) {
+  const preferred = preferredSinkId();
+  if (cachedDefaultSink !== undefined || preferred !== '') {
     try {
-      await bound(cachedDefaultSink);
+      await bound(preferred);
+      if (cachedDefaultSink === undefined) cachedDefaultSink = preferred;
     } catch {
-      /* best-effort */
+      /* fall through to resolve */
     }
-    return;
+    if (cachedDefaultSink !== undefined) return;
   }
   await resolveDefaultSinkId(bound);
 }
 
 export function pinDefaultOutput(node: SinkTarget | null | undefined): void {
+  ensureCompanionPlaybackRoute();
   const setSink = node?.setSinkId;
   if (typeof setSink !== 'function') return;
   void pinDefaultOutputAsync(node).catch(() => {
@@ -167,9 +198,11 @@ let synthPrimeEl: HTMLAudioElement | null = null;
  */
 export async function primeDefaultSpeakerBeforeSynth(): Promise<void> {
   if (typeof window === 'undefined') return;
+  ensureCompanionPlaybackRoute();
   try {
     const ctx = createDefaultAudioContext();
     if (ctx?.state === 'suspended') await ctx.resume().catch(() => undefined);
+    pinDefaultOutput(ctx as unknown as SinkTarget);
   } catch {
     /* ignore */
   }
@@ -177,6 +210,7 @@ export async function primeDefaultSpeakerBeforeSynth(): Promise<void> {
     if (!synthPrimeEl) {
       synthPrimeEl = new Audio();
       synthPrimeEl.volume = 0.001;
+      try { synthPrimeEl.dataset.amojiAudio = '1'; } catch { /* ignore */ }
     }
     await pinDefaultOutputAsync(synthPrimeEl);
     await synthPrimeEl.play().catch(() => undefined);

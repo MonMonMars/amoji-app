@@ -1,5 +1,9 @@
 'use client';
-import { pinDefaultOutput, pinDefaultOutputAsync } from './audio-output';
+import {
+  ensureCompanionPlaybackRoute,
+  pinDefaultOutput,
+  pinDefaultOutputAsync,
+} from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 // First hop on the free wire-now chain (gtts → synth → edge; tts-chain.ts).
 // Unofficial Google Translate MP3 client over plain HTTPS. Edge read-aloud is
@@ -50,18 +54,29 @@ const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi 
  * a female one slightly brighter. Bounded tightly — this is resampling, so a
  * large value makes her sound sped up rather than like a different person.
  */
-export const PITCH_BIAS_MALE = 0.88;
-export const PITCH_BIAS_FEMALE = 1.04;
-/** Floor for male Cantonese gTTS: pitchBias slows tempo; keep near female pace. */
-export const GTTS_YUE_MALE_PACE_FLOOR = 1.04;
+/** Male base — deeper than female. Was 0.88; keep clear of female band. */
+export const PITCH_BIAS_MALE = 0.84;
+/** Female base — brighter. Was 1.04. */
+export const PITCH_BIAS_FEMALE = 1.12;
+/**
+ * Soft floor for male Cantonese only. Previous floor was 1.04 (female mid),
+ * which erased male pitch entirely. Cap the slowdown without lifting male
+ * playback into the female band.
+ */
+export const GTTS_YUE_MALE_PACE_FLOOR = 0.88;
+
+/** pitchBias clamp shared by speakGtts + gtts-timbre (wide enough for deep≠bright). */
+export const GTTS_PITCH_BIAS_MIN = 0.72;
+export const GTTS_PITCH_BIAS_MAX = 1.32;
 
 /** Effective <audio> playbackRate after emotion rate and gender pitch bias. */
 export function gttsPlaybackRate(rate: number, pitchBias: number, tl: string): number {
   let r = rate * pitchBias;
+  // Soften extreme male-yue drag only — never lift into female territory.
   if (tl === 'yue' && pitchBias < 1) {
     r = Math.max(r, rate * GTTS_YUE_MALE_PACE_FLOOR);
   }
-  return Math.min(1.25, Math.max(0.8, r));
+  return Math.min(1.4, Math.max(0.7, r));
 }
 
 /**
@@ -244,10 +259,13 @@ export function ssmlBreakAfterClause(chunk: string, isTail = false): string {
 
 export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
   stopGtts();
+  // Mic may have left the session in play-and-record — force speakers first so
+  // non-Yue / male pins match the gate sample device (not communications).
+  ensureCompanionPlaybackRoute();
   const gen = generation;
   const lang = opts.tl ?? LANG_MAP[opts.lang] ?? 'en-US';
   const rate = clamp(opts.rate ?? 1, 0.88, 1.15);
-  const pitchBias = clamp(opts.pitchBias ?? 1, 0.82, 1.2);
+  const pitchBias = clamp(opts.pitchBias ?? 1, GTTS_PITCH_BIAS_MIN, GTTS_PITCH_BIAS_MAX);
   // Lead (poke laugh / ouch) is its own chunk. It is not glued on with a
   // comma, and every chunk sets playbackRate itself so the laugh cannot
   // leave the following line fast or pitched.
@@ -343,6 +361,9 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
         });
       };
       audio.onplay = () => {
+        // Re-assert sink once media is live — Windows sometimes latches the
+        // first play() onto the mic communications device before setSinkId.
+        pinDefaultOutput(audio);
         const last = i >= pieces.length;
         try { dispatchSpeechCaption(piece.text); } catch { /* ignore */ }
         if (!reportedPlaying) {

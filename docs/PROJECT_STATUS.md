@@ -13,8 +13,8 @@
 | --- | ---: |
 | **Done** — merged to `main` | 80+ stack · Nov 15 wave #385–#404 |
 | **Open product PRs** | **0** (Hold spikes only: #1 · draft #20) |
-| **Outstanding** — actionable code left for agents | **0** |
-| **Outstanding** — Pixel / human actions | [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) · talking-nonsense **owner** live OK |
+| **Outstanding** — actionable code left for agents | **1** — voice pitch/male/sink (`cursor/voice-pitch-male-output-0340-0eac`) |
+| **Outstanding** — Pixel / human actions | [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) · talking-nonsense **owner** live OK · verify R10 after merge |
 | **Hold** | licensed music · Stripe live keys · Product Hunt · Search Console · spikes #1 / #20 |
 | Docs missing | 0 |
 
@@ -145,7 +145,9 @@ Earlier finish pass still on `main`: #306–#325 and #280–#305 era.
 
 ### Code (agents)
 
-**None.** Product through #385–#403 and docs through #404 are on `main`. Agent Vitest scrub suites (adaptive / idle-talk / reply-quality / spoken-line-sanity / reply-sanity) **78/78 pass** on tip — no remaining agent-fixable nonsense / resume-ask / history bug found. Do not invent scope.
+1. **Voice pitch / male / sink (R10)** — branch `cursor/voice-pitch-male-output-0340-0eac`: widen deep≠bright; male pin → male delivery; `ensureCompanionPlaybackRoute` so non-Yue TTS matches gate speakers. Merge when CI green; device verify after deploy.
+
+Product through #385–#403 and docs through #404 are otherwise on `main`. Nonsense scrub Vitest **78/78** on tip — separate from R10.
 
 ### Human / Pixel
 
