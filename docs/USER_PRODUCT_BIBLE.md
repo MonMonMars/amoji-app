@@ -2,9 +2,9 @@
 
 **Purpose:** Living checklist of product rules from the product owner. Agents must read this before chat/voice/pose/permission work and update it when rules change.
 
-**Last reviewed:** 2026-11-15 18:30 (Asia/Hong_Kong)  
+**Last reviewed:** 2026-11-15 20:48 (Asia/Hong_Kong)  
 **Demo:** https://monmonmars.github.io/amoji-app/  
-**`main` tip:** `5e5bb8b` (#409) · Pages `last-modified` 2026-11-15 10:10 UTC includes #406–#409  
+**`main` tip:** `a9f7436` (#417) · Pages `last-modified` 2026-11-15 12:21 UTC includes #406–#417  
 **Request log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn. Overlapping messages still count; never drop one.
 
 **Standing:** Merged ≠ Done on live Pages until owner phone-smoke OK. Owner asked: push + merge without waiting for approval. Do **not** claim Done without code on `main` + honest smoke gaps.
@@ -44,15 +44,18 @@
 | Story Mode distinct from chat (code) | #388 |
 | Poke lean toward poked side (code) | #390 + #409 (finger vs hips) — **phone Outstanding** |
 | Sing ask no Soave+月光光 nonsense (code) | #391 |
-| Idle pose upright planted calm stands v3 (code) | #392 + #407 — **phone Outstanding**; idle v4 follow-up shipping |
+| Idle pose upright planted calm stands (code) | #392 + #407 v3 + #415 v4 (RPM F/M stands only) — **phone Outstanding** (R11) |
 | Caption then whole phase again in history (code) | #393 |
 | Blend-to-back / idle forward lean (code) | #394 |
 | All langs/genders speak — not Yue-female-only (code) | #395 |
 | Audible pitch tiers + male delivery + sink route (code) | #406 + #410 + #413 — **phone Outstanding** (R10) |
 | Unify cast lighting / MToon path (code) | #408 — **phone Outstanding** |
 | Scrub history-resume asks from chat replies (code) | #412 |
+| Harden spoken nonsense scrub (code) | #416 — **owner live OK** still required |
 | Seal captions after speech idle (code) | #414 |
 | Docs honesty after #406–#409 (code) | #411 |
+| SFX Want list + outstanding tip after #410–#414 | #417 |
+| Docs tip honesty through #417 | this refresh |
 | Talk leftover repeats / history dup | #399 |
 | Reply-mode length + emotion chart | #401 |
 | Classic fairy tales + Story chip predownload | #402 |
@@ -71,13 +74,14 @@
 | Item | Notes |
 |------|--------|
 | Voice pitch/male/sink (R10) | #406+#410+#413 on `main`. gTTS still one speaker/tl — male timbre limited. **Phone** — no further code without test/floor bug. |
-| Idle pose still bad (R11) | #407 v3 on `main`; **idle v4** (RPM F/M stands only) shipping this run — **phone smoke** after merge |
+| Idle pose still bad (R11) | #415 idle v4 on `main` (RPM F/M stands only; prefs v4) — **phone smoke** |
 | Lighting unify (R12) | #408 on `main` — **phone smoke** |
 | Poke lean direction (R13) | #409 on `main` — **phone verify**; do not flip ±leanSide without device evidence |
-| Talking nonsense / silly LLM | #360+#412 on `main`; **nonsense scrub harden** shipping this run — **owner live OK** still required |
+| Talking nonsense / silly LLM | #360+#412+#416 on `main` — **owner live OK** still required |
+| Captions race / history lock | #393+#414 on `main` — **phone** (no partial seal / full-phase replay) |
 | Phone smoke on live demo | **Human** — checklist [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) — do **not** mark Done without owner |
 | SFX #1–23 Want/archive/delete (R1/R2) | Map documented in [`SFX_WANT_LIST.md`](./SFX_WANT_LIST.md) — no new deletes without owner map |
-| Pages rebuild | Tip includes #414 (`34fe949`). Agent `workflow_dispatch` is 403. |
+| Pages rebuild | Tip includes #417 (`a9f7436`). Product Pages live 12:21 UTC. Agent `workflow_dispatch` is 403. |
 
 ### Hold
 
@@ -90,6 +94,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-15 ~20:48 | Honesty tip `a9f7436` (#417): #415 idle v4 + #416 nonsense scrub Done on main; Outstanding = phone-only R10–R13 + nonsense + captions |
 | 2026-11-15 ~20:10 | After #410–#414: document SFX Want list; idle v4 + nonsense scrub harden shipping; R10–R13 stay phone Outstanding |
 | 2026-11-15 ~18:30 | Honest audit: #406–#409 on main + Pages; R10–R13 stay Outstanding (phone). Voice v2 branch widens pitch/male further. Stale “In PR” boards cleared. |
 | 2026-11-15 ~18:08 | #409 poke lean finger-vs-hips merged |
