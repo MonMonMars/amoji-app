@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  ensureCompanionPlaybackRoute,
   getDefaultSinkId,
   pinDefaultOutput,
   pinDefaultOutputAsync,
@@ -9,6 +10,16 @@ import {
 describe('default audio output', () => {
   beforeEach(() => {
     resetDefaultSinkCacheForTests();
+  });
+
+  it('forces playback session so mic communications sink does not steal TTS', () => {
+    const nav = globalThis.navigator as Navigator & { audioSession?: { type: string } };
+    const prev = nav.audioSession;
+    nav.audioSession = { type: 'play-and-record' };
+    ensureCompanionPlaybackRoute();
+    expect(nav.audioSession.type).toBe('playback');
+    if (prev) nav.audioSession = prev;
+    else delete (nav as { audioSession?: { type: string } }).audioSession;
   });
 
   it('asks for the empty sink, then the default id', async () => {

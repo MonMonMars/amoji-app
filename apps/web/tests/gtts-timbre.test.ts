@@ -1,7 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { PITCH_BIAS_FEMALE, PITCH_BIAS_MALE } from '../lib/gtts';
+import {
+  GTTS_PITCH_BIAS_MAX,
+  GTTS_PITCH_BIAS_MIN,
+  PITCH_BIAS_FEMALE,
+  PITCH_BIAS_MALE,
+} from '../lib/gtts';
 import {
   CHAR_PITCH_SPREAD,
   characterPitchUnit,
@@ -23,7 +28,8 @@ describe('free-chain character pitch fingerprint', () => {
     const male = Math.max(...MALE_IDS.map((id) => gttsCharacterPitchBias('male', id)));
     const female = Math.min(...FEMALE_IDS.map((id) => gttsCharacterPitchBias('female', id)));
     expect(male).toBeLessThan(1);
-    expect(female).toBeGreaterThan(0.95);
+    // Deep female can sit near ~0.94 with the widened tier offsets.
+    expect(female).toBeGreaterThan(0.9);
     expect(male).toBeLessThan(female);
   });
 
@@ -76,18 +82,31 @@ describe('free-chain character pitch fingerprint', () => {
     const jaFemale = gttsCharacterPitchBias('female', 'a01-shino', 'ja');
     expect(GTTS_MALE_BIAS_JA).toBeLessThan(PITCH_BIAS_MALE);
     expect(jaMale).toBeLessThan(jaFemale);
-    expect(jaMale).toBeGreaterThanOrEqual(0.82);
+    expect(jaMale).toBeGreaterThanOrEqual(GTTS_PITCH_BIAS_MIN);
   });
 
   it('stays inside the gtts playbackRate-safe clamp', () => {
     for (const id of [...FEMALE_IDS, ...MALE_IDS]) {
       const f = gttsCharacterPitchBias('female', id);
       const m = gttsCharacterPitchBias('male', id);
-      expect(f).toBeGreaterThanOrEqual(0.82);
-      expect(f).toBeLessThanOrEqual(1.2);
-      expect(m).toBeGreaterThanOrEqual(0.82);
-      expect(m).toBeLessThanOrEqual(1.2);
+      expect(f).toBeGreaterThanOrEqual(GTTS_PITCH_BIAS_MIN);
+      expect(f).toBeLessThanOrEqual(GTTS_PITCH_BIAS_MAX);
+      expect(m).toBeGreaterThanOrEqual(GTTS_PITCH_BIAS_MIN);
+      expect(m).toBeLessThanOrEqual(GTTS_PITCH_BIAS_MAX);
     }
+  });
+
+  it('makes selectable deep vs bright obviously different (owner #400 follow-up)', () => {
+    const deepF = gttsCharacterPitchBias('female', undefined, 'en', 'deep');
+    const brightF = gttsCharacterPitchBias('female', undefined, 'en', 'bright');
+    const deepM = gttsCharacterPitchBias('male', undefined, 'en', 'deep');
+    const brightM = gttsCharacterPitchBias('male', undefined, 'en', 'bright');
+    // Was ~0.14 female / ~0.10 male — require a large audible gap.
+    expect(brightF - deepF).toBeGreaterThanOrEqual(0.25);
+    expect(brightM - deepM).toBeGreaterThanOrEqual(0.2);
+    expect(deepM).toBeLessThan(deepF);
+    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.25);
+    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.2);
   });
 
   it('voice.ts re-exports the same helper so every speak path stays in sync', () => {

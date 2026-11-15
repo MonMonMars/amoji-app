@@ -63,6 +63,7 @@
 
 | Item | Notes |
 |------|--------|
+| Voice pitch/male/sink (R10) | **In PR** `cursor/voice-pitch-male-output-0340-0eac` — deep≠bright audible; male buttons male; sink = gate speakers. Device verify after merge. |
 | Talking nonsense / silly LLM | **Owner live OK** still required — code scrub on `main` (#360); agent Vitest scrub suites **78/78 pass**; no agent-fixable bug found this turn |
 | Phone smoke on live demo | **Human** — checklist [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) — do **not** mark Done without owner |
 | Pages rebuild | **Live** after #404 push (`last-modified` 2026-11-15 08:58 UTC · `pages.yml` `43696764165` success on `1417198` · includes #399–#404). Agent `workflow_dispatch` is 403. |
@@ -78,6 +79,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-15 ~17:36 | Owner R10: pitch variants inaudible + only Yue-F works / wrong speakers + male sounds female → branch `cursor/voice-pitch-male-output-0340-0eac` |
 | 2026-11-15 ~17:02 | Continue audit: tip `1417198` (#399–#404 on main); Pages live (`last-modified` 08:58 UTC · run `43696764165`); board was stale at `a50695b` — docs honesty refresh; Outstanding still human-only |
 | 2026-11-15 ~16:52 | #403 Story quality on main; bible tip after product ship (#404) |
 | 2026-11-15 ~16:40 | Owner ask: lang F+M = Yes (#363/#395); pitch buttons were Partial (#374 auto-only) → shipped selectable deep/mid/bright as #400 |

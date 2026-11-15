@@ -74,9 +74,9 @@ describe('voice does not switch speaker mid-line or between characters', () => {
 
   it('the pitch shift stays bounded so the line is not garbled', () => {
     // preservesPitch=false changes tempo too; a big bias sounds sped up, not
-    // like a different person.
-    expect(gtts).toMatch(/Math\.min\(1\.25, Math\.max\(0\.8,/);
-    expect(gtts).toMatch(/clamp\(opts\.pitchBias \?\? 1, 0\.82, 1\.2\)/);
+    // like a different person. Widen clamp so deep≠bright stays audible.
+    expect(gtts).toMatch(/Math\.min\(1\.4, Math\.max\(0\.7,/);
+    expect(gtts).toMatch(/clamp\(opts\.pitchBias \?\? 1, GTTS_PITCH_BIAS_MIN, GTTS_PITCH_BIAS_MAX\)/);
   });
 
   it('a canceled tier still settles immediately rather than falling through', () => {
@@ -86,9 +86,11 @@ describe('voice does not switch speaker mid-line or between characters', () => {
 
   it('pins sinks before HTML audio play and primes synth against wrong Windows route', () => {
     expect(gtts).toContain('pinDefaultOutputAsync');
+    expect(gtts).toContain('ensureCompanionPlaybackRoute');
     expect(voice).toContain('primeDefaultSpeakerBeforeSynth');
     const focus = readFileSync(join(web, 'lib/voice-chat-focus.ts'), 'utf8');
     expect(focus).toContain('companionPlaybackSession');
+    expect(focus).toContain('ensureCompanionPlaybackRoute');
     expect(focus).toMatch(/duckExternalAudioForCompanion[\s\S]*companionPlaybackSession/);
   });
 });

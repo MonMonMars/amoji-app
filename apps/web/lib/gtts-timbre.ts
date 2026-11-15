@@ -22,7 +22,12 @@
 
 import type { Lang } from './prefs';
 import { CHARACTERS_WANT } from './characters-want';
-import { PITCH_BIAS_FEMALE, PITCH_BIAS_MALE } from './gtts';
+import {
+  GTTS_PITCH_BIAS_MAX,
+  GTTS_PITCH_BIAS_MIN,
+  PITCH_BIAS_FEMALE,
+  PITCH_BIAS_MALE,
+} from './gtts';
 
 /** Audible high / mid / low colour within a gender band. */
 export type GttsPitchTier = 'bright' | 'mid' | 'deep';
@@ -33,21 +38,24 @@ export type GttsPitchTier = 'bright' | 'mid' | 'deep';
  */
 export const CHAR_PITCH_SPREAD = 0.015;
 
-/** How far bright / deep sit from the gender mid (asymmetric so M/F stay apart). */
+/**
+ * How far bright / deep sit from the gender mid.
+ * Owner: deep vs bright must be obviously different — old ±0.05–0.08 was inaudible.
+ */
 export const FEMALE_TIER_OFFSET: Record<GttsPitchTier, number> = {
-  deep: -0.055,
+  deep: -0.10,
   mid: 0,
-  bright: 0.085,
+  bright: 0.18,
 };
 
 export const MALE_TIER_OFFSET: Record<GttsPitchTier, number> = {
-  deep: -0.075,
+  deep: -0.12,
   mid: 0,
-  bright: 0.045,
+  bright: 0.10,
 };
 
 /** Google ja-JP reads bright; male delivery needs extra depth (still inside gtts clamp). */
-export const GTTS_MALE_BIAS_JA = 0.82;
+export const GTTS_MALE_BIAS_JA = 0.78;
 
 const TIER_CYCLE: readonly GttsPitchTier[] = ['deep', 'mid', 'bright'];
 
@@ -122,7 +130,7 @@ export function gttsCharacterPitchBias(
   const offset = (gender === 'male' ? MALE_TIER_OFFSET : FEMALE_TIER_OFFSET)[tier];
   const jitter = characterId ? characterPitchUnit(characterId) * CHAR_PITCH_SPREAD : 0;
   // Keep inside the same clamp gtts.ts applies to pitchBias.
-  return clamp(base + offset + jitter, 0.82, 1.2);
+  return clamp(base + offset + jitter, GTTS_PITCH_BIAS_MIN, GTTS_PITCH_BIAS_MAX);
 }
 
 /** True when two character ids resolve to different biases (any measurable delta). */

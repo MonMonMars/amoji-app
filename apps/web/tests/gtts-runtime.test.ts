@@ -114,6 +114,7 @@ function boot() {
     require: (id: string) => {
       if (id.includes('audio-output')) {
         return {
+          ensureCompanionPlaybackRoute: () => {},
           pinDefaultOutput: () => {},
           pinDefaultOutputAsync: () => Promise.resolve(),
         };
@@ -226,12 +227,14 @@ describe.skipIf(!esbuildAvailable)('speakGtts real behaviour (esbuild + vm)', ()
     expect(created[0]!.playbackRate).toBeGreaterThanOrEqual(0.88);
   });
 
-  it('keeps male Cantonese gTTS near conversational pace despite pitch bias', async () => {
+  it('keeps male Cantonese deeper than female (pace floor must not erase pitch)', async () => {
     const { api, created } = boot();
-    void api.speakGtts('你好呀。', { lang: 'yue', pitchBias: 0.88 }).catch(() => {});
+    void api.speakGtts('你好呀。', { lang: 'yue', pitchBias: 0.84 }).catch(() => {});
     await new Promise((r) => setTimeout(r, 20));
-    expect(created[0]!.playbackRate).toBeGreaterThanOrEqual(1.04);
-    expect(created[0]!.playbackRate).toBeLessThanOrEqual(1.25);
+    // Soft floor 0.88 — male stays below female mid (~1.08), never lifted to 1.04.
+    expect(created[0]!.playbackRate).toBeGreaterThanOrEqual(0.84);
+    expect(created[0]!.playbackRate).toBeLessThan(1);
+    expect(created[0]!.playbackRate).toBeLessThanOrEqual(1.4);
   });
 
   it('splits a long line into several capped requests, played in order', async () => {

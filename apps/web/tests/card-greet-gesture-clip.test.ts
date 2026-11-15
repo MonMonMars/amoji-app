@@ -35,7 +35,7 @@ describe('card greet gesture insurance clip', () => {
   it('playVoiceGreeting starts the local clip before speakGtts', () => {
     const body = fnBody('playVoiceGreeting', 'export function previewLibraryClip');
     expect(body).toContain('playGestureClipSync');
-    expect(body).toContain('clipFile(lang, gender, insuranceKind)');
+    expect(body).toContain('clipFile(lang, delivery, insuranceKind)');
     expect(body.indexOf('playGestureClipSync')).toBeLessThan(body.indexOf('speakGtts('));
     expect(body).toContain('stopVoiceClip()');
     // When gTTS starts, kill insurance immediately — delayed hold caused dual voice.

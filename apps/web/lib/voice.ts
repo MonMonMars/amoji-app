@@ -1864,16 +1864,16 @@ export function playVoiceGreeting(
   primeSynthInGesture(true);
   // Rotate a short phrase bank so re-taps do not always say the same Hello.
   const text = line?.trim() ? line.trim() : nextCardGreetPhrase(lang);
-  // Gender comes from the CHARACTER, not from the voice id. The live voices are
-  // not gendered, so reading a gender out of a region code would be fiction —
-  // and it used to default every greeting to the female pitch.
-  const gender = characterVoiceGender(characterId);
+  // Companion gender is the fallback; a tapped male/female button wins so the
+  // insurance clip and pitchBias match the shipping voice the user selected.
+  const companionGender = characterVoiceGender(characterId);
+  const delivery = deliveryGenderForChoice(lang, choiceId, companionGender);
   const tl = tlForChoice(lang, choiceId);
   // Same-origin greeting clip INSIDE the tap — audible even when Google TTS
   // is offline/blocked or play() would otherwise run after the gesture dies.
   const insuranceKind = nextGreetingKind();
   playGestureClipSync(
-    clipFile(lang, gender, insuranceKind),
+    clipFile(lang, delivery, insuranceKind),
     greetingText(lang, insuranceKind),
     () => { markVoiceStarted(); },
   );
@@ -1903,7 +1903,7 @@ export function playVoiceGreeting(
       // syncGesture: must speak in this tap — deferred speak stays silent on iOS.
       synthSpeak(text, characterId, lang, 'joy', 1.1, undefined, 1, undefined, () => {
         if (session) finishLipSync(session);
-      }, gender, 0.7, true);
+      }, delivery, 0.7, true);
       onStart('synth');
       reportVoiceStatus('synth', true, `${tag} ${choiceId}`);
     } catch (e) {
@@ -1919,7 +1919,7 @@ export function playVoiceGreeting(
     tl,
     // Pinned pitch button wins; otherwise the curated per-character tier.
     // Greeting and chat must share this number or the voice "jumps".
-    pitchBias: gttsPitchForLang(lang, characterId, gender, choiceId),
+    pitchBias: gttsPitchForLang(lang, characterId, companionGender, choiceId),
     onPlaying: () => {
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
@@ -1976,7 +1976,7 @@ export function playVoiceGreeting(
   // re-opens the endpoint, which would also restore real per-voice identities.
   void speakEdge(text, {
     lang,
-    gender,
+    gender: delivery,
     character: characterId,
     forcePlain: true,
     expressiveness: 1.15,
@@ -2230,7 +2230,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   // auditioned on a neural voice. Nothing waits on it and nothing depends on it.
   return speakEdge(text, {
     lang: locale,
-    gender: 'female',
+    gender: previewGender,
     forcePlain: true,
     expressiveness: 1.15,
     rateDelta: 0.04,

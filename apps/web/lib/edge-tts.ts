@@ -22,7 +22,11 @@
 // token / blocked network) the browser-voice fallback now takes over in half
 // the time, so a dead endpoint reads as a voice switch, not a long silence.
 import { edgeAudioPayload, edgeReadAloudUrl } from '../../../server/amoji-proxy/edge-gec.js';
-import { pinDefaultOutput, pinDefaultOutputAsync } from './audio-output';
+import {
+  ensureCompanionPlaybackRoute,
+  pinDefaultOutput,
+  pinDefaultOutputAsync,
+} from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 import { characterVoiceGender } from './voice-gender';
 import { edgeVoiceId, isFemaleNeuralVoice, isMaleNeuralVoice, isShippingEdgeVoice, ssmlLangForEdgeId } from './voice-catalog';
@@ -558,6 +562,7 @@ function playMp3Blob(blob: Blob, opts: EdgeVoiceOpts, resolve: () => void, rejec
     reject(err instanceof Error ? err : new Error(String(err)));
     return;
   }
+  ensureCompanionPlaybackRoute();
   try { pinDefaultOutput(audio); } catch { /* sink pin is best-effort */ }
   // A read-only volume setter on iOS must not skip play().
   try { applyPlaybackVolume(audio); } catch { /* playback still starts */ }
@@ -565,6 +570,7 @@ function playMp3Blob(blob: Blob, opts: EdgeVoiceOpts, resolve: () => void, rejec
   // r99: the caller learns the instant media playback actually begins —
   // that is the moment the iOS media gate is provably open.
   audio.onplay = () => {
+    pinDefaultOutput(audio);
     try { opts.onPlaying?.(); } catch { /* ignore */ }
     // One mp3 is the whole sentence. Track its duration through the last word.
     followAudioElement(audio, true);
@@ -579,13 +585,17 @@ function playMp3Blob(blob: Blob, opts: EdgeVoiceOpts, resolve: () => void, rejec
     URL.revokeObjectURL(url);
     reject(new Error('edge-tts playback failed'));
   };
-  void pinDefaultOutputAsync(audio)
-    .then(() => audio.play())
-    .catch((e: unknown) => {
-      if (currentAudio === audio) currentAudio = null;
-      URL.revokeObjectURL(url);
-      reject(e instanceof Error ? e : new Error(String(e)));
-    });
+  // Same gesture-safe order as gTTS: play first, pin async; retry after pin.
+  void audio.play().catch((e: unknown) => {
+    void pinDefaultOutputAsync(audio)
+      .then(() => audio.play())
+      .catch((err: unknown) => {
+        if (currentAudio === audio) currentAudio = null;
+        URL.revokeObjectURL(url);
+        reject(err instanceof Error ? err : e instanceof Error ? e : new Error(String(err)));
+      });
+  });
+  void pinDefaultOutputAsync(audio).catch(() => { /* sink pin is best-effort */ });
 }
 
 /**

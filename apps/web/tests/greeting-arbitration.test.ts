@@ -64,7 +64,7 @@ describe('greeting tier arbitration (one voice per tap)', () => {
   it('every tier carries the same pitch resolver (pin or character)', () => {
     // The SAME character must not sound different on select than in chat.
     // Greeting uses gttsPitchForLang so a pinned pitch button stays consistent.
-    expect(body).toContain('pitchBias: gttsPitchForLang(lang, characterId, gender, choiceId)');
+    expect(body).toContain('pitchBias: gttsPitchForLang(lang, characterId, companionGender, choiceId)');
     expect(body).not.toMatch(/pitchBias: gender === 'male'/);
   });
 
