@@ -1,11 +1,14 @@
 /**
  * PERMANENT LOCK — card greet / voice preview must NEVER play audible
  * insurance / gesture "robot" clips. Owner regression many times
- * (robot+female double, then robot-only forever). Prefer silence until
- * real gTTS/Edge over any local hello/hihi insurance.
+ * (robot+female double, then robot-only forever).
  *
- * CI MUST FAIL if audible insurance is reintroduced or if synth-robot
- * is armed while neural/gTTS is still available.
+ * After #431 removed insurance + OS synth, cards went fully silent when
+ * gTTS/Edge failed. Restore path: retry Edge/gTTS once — never OS robot
+ * synth as primary, never insurance double.
+ *
+ * CI MUST FAIL if audible insurance or synthSpeak is reintroduced on
+ * card greet / preview paths.
  */
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -49,16 +52,20 @@ describe('card greet — no audible insurance (permanent)', () => {
     expect(body).not.toMatch(/setTimeout\([\s\S]*?stopVoiceClip\(\)[\s\S]*?,\s*220\)/);
   });
 
-  it('playVoiceGreeting prefers gTTS/Edge; synth only after gTTS is done failing', () => {
+  it('playVoiceGreeting prefers gTTS/Edge; retries neural — never OS synthSpeak', () => {
     const body = fnBody('playVoiceGreeting', 'export function previewLibraryClip');
     expect(body).toContain('speakGtts(');
     // Helper may be declared before speakGtts; calls must still refuse while pending.
     expect(body).toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?if \(spokenBy \|\| gttsPending\) return;/);
+    expect(body).toContain('greeting neural retry');
     expect(body).toContain('greeting skip synth robot');
+    expect(body).toContain('resetEdgeHealth');
     expect(body).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?synthSpeak\(/);
     expect(body).toMatch(/if \(gttsPending\) return;/);
     expect(body).toMatch(/edgeGrace = setTimeout\([\s\S]*?if \(spokenBy \|\| gttsPending\) return;[\s\S]*?runSynthAudition/);
     expect(body).toMatch(/greeting gtts failed[\s\S]*runSynthAudition\('greeting fallback'\)/);
+    // Edge claimed-then-died must clear so neural retry can restore audio.
+    expect(body).toMatch(/if \(spokenBy === 'edge'\) spokenBy = null/);
   });
 
   it('previewVoiceChoice never arms insurance / playGestureClipSync', () => {
@@ -70,12 +77,14 @@ describe('card greet — no audible insurance (permanent)', () => {
     expect(body).not.toContain('startInsurance');
     expect(body).not.toContain('saveWithInsuranceThenMaybeSynth');
     expect(body).not.toContain('CARD_GREET_INSURANCE');
+    expect(body).toContain('preview neural retry');
     expect(body).toContain('preview skip synth robot');
     expect(body).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?synthSpeak\(/);
     expect(body).not.toMatch(/clipFile\s*\(\s*locale\s*,/);
     expect(body).not.toContain('nextGreetingKind()');
     expect(body).not.toMatch(/setTimeout\([\s\S]*?stopVoiceClip\(\)[\s\S]*?,\s*220\)/);
     expect(body).toMatch(/if \(spokenBy \|\| gttsPending\) return/);
+    expect(body).toContain('resetEdgeHealth');
   });
 
   it('voice.ts does not import playGestureClipSync (hard-disabled for greets)', () => {
