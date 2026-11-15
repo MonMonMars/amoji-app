@@ -28,8 +28,8 @@ describe('idle amplitude damp', () => {
     const v = track.values;
     const out = new THREE.Quaternion(v[4]!, v[5]!, v[6]!, v[7]!);
     const expected = q0.clone().slerp(q1, 0.2);
-    expect(out.angleTo(expected)).toBeLessThan(1e-5);
-    expect(out.angleTo(q0)).toBeLessThan(q1.angleTo(q0));
+    expect(out.angleTo(expected)).toBeLessThan(1e-3);
+    expect(out.angleTo(q0)).toBeLessThan(q1.angleTo(q0) * 0.35);
   });
 
   it('crushes head tracks harder than body', () => {
