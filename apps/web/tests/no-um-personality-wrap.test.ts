@@ -49,11 +49,14 @@ describe('personality — no loading UM leads', () => {
     expect(catchBlock).not.toMatch(/['`]hm\b/i);
   });
 
-  it('shy idle bank has no Um/嗯，/えっと openers', () => {
-    expect(src()).not.toMatch(/Um, talking about/);
-    expect(src()).not.toMatch(/嗯，講起/);
-    expect(src()).not.toMatch(/嗯，说起/);
-    expect(src()).not.toMatch(/えっと、\{noun\}の話/);
+  it('shy/quiet spoken banks have no Um/嗯/えっと/Hm filler tokens', () => {
+    const spoken = codeOnly(src());
+    expect(spoken).not.toMatch(/Um, talking about/);
+    expect(spoken).not.toMatch(/Um, you found/);
+    expect(spoken).not.toMatch(/['`]Hm\b/);
+    expect(spoken).not.toMatch(/嗯/);
+    expect(spoken).not.toMatch(/えっと/);
+    expect(spoken).not.toMatch(/['`]うん[、。]/);
   });
 
   it('replacement shy leads are not loading-filler kinds', () => {
