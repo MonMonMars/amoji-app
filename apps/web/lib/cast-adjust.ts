@@ -77,9 +77,8 @@ export const FULL_UPRIGHT_IDS: readonly string[] = [
 ];
 
 /**
- * Reference look (castNo 1-3, 7-10, 12, 13) — do not retune materials.
- * Everyone else gets the conservative MToon outlier pass (thick outline /
- * hard cel only) so shade/brightness stays closer across the cast.
+ * Historic reference-look roster (castNo 1-3, 7-10, 12, 13). Kept for docs /
+ * selection notes. MToon unify now runs for every character (shared shader path).
  */
 export const REF_LOOK_IDS: readonly string[] = [
   'a01-shino', // 1
@@ -128,7 +127,6 @@ const HEAD = new Set(HEAD_TILT_IDS);
 const SHOULDER = new Set(SHOULDER_LIFT_IDS);
 const UPPER = new Set(UPPER_BODY_IDS);
 const UPRIGHT = new Set(FULL_UPRIGHT_IDS);
-const REF_LOOK = new Set(REF_LOOK_IDS);
 
 export function isHiddenCast(id: string): boolean {
   return HIDDEN.has(id);
@@ -154,9 +152,9 @@ export function needsFullUpright(id: string): boolean {
   return UPRIGHT.has(id);
 }
 
-export function needsMToonUnify(id: string): boolean {
-  // Skip the reviewed reference look; soft-fix hard cel / thick outline elsewhere.
-  return !REF_LOOK.has(id);
+/** Always true — shared MToon soft-fix for every roster id. */
+export function needsMToonUnify(_id: string): boolean {
+  return true;
 }
 
 export interface MToonUnifyInput {
