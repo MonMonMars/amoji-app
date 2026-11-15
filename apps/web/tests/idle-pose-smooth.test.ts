@@ -60,7 +60,8 @@ describe('idle pose smooth + catalog trim', () => {
     expect(canvas).toMatch(/!idleLegGlide && !handDrag && !idleLegGlide|!handDrag && !idleLegGlide\) \{\s*\n\s*applyIdleClipSoftening/);
     expect(canvas).toMatch(/!gameView && !handDrag && !idleLegGlide\) \{\s*\n\s*applyIdleClipSoftening/);
     expect(canvas).toMatch(/if \(!idleLegGlide\) avatar\.clampShoulderROM/);
-    expect(canvas).toMatch(/!handDrag && !idleLegGlide\) \{\s*\n\s*avatar\.easeIdleHang/);
+    // Hang only when arm rewrite allowed (calm upright skips hang frankenstein).
+    expect(canvas).toMatch(/allowArmRewrite[\s\S]*easeIdleHang/);
     expect(canvas).toContain('applyCastFixes({ skipShoulders: idleLegGlide })');
     // Same-clip refresh must not hard-reset time (sudden body/arm snap).
     expect(canvas).toContain('const sameClip = !!idleAction && idleClipId === safeId');

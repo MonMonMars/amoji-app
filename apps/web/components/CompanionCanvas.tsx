@@ -32,7 +32,13 @@ import { dancePerfClipSources } from '../lib/dance-clip-sources';
 import { timeScaleForProfile } from '../lib/performance-motion';
 import { playableIdles } from '../lib/idle-library';
 import { listEnabledIdleClipIds } from '../lib/idle-enabled';
-import { isPixelCalmIdleClip, isRetiredIdleClip, resolveIdleClipId } from '../lib/idle-retired';
+import {
+  DEFAULT_IDLE_CLIP_ID,
+  isPixelCalmIdleClip,
+  isRetiredIdleClip,
+  resolveIdleClipForPlay,
+  resolveIdleClipId,
+} from '../lib/idle-retired';
 import { IDLE_JOINT_REFRESH_FADE_S, IDLE_JOINT_REFRESH_MS, nextIdleRefreshAt, shouldRefreshIdleJoints } from '../lib/idle-refresh';
 import {
   IDLE_PIN_CROSSFADE_S,
@@ -41,6 +47,10 @@ import {
   idleCrossfadeAdditiveScale,
   idleSwapBlendActive,
 } from '../lib/idle-crossfade';
+import {
+  IDLE_INCOMPAT_CROSSFADE_S,
+  idleCrossfadeCompatible,
+} from '../lib/idle-clip-family';
 import {
   calmIdleHeadPitch,
   dampenIdleClipAmplitude,
@@ -52,7 +62,7 @@ import {
   shortestQuatSlerpClamped,
 } from '../lib/vrm/quat-blend';
 import { clampBoneByName } from '../lib/vrm/bone-joint-limits';
-import { applyIdleClipSoftening } from '../lib/idle-stance-soften';
+import { applyIdleClipSoftening, idleArmRewriteAllowed } from '../lib/idle-stance-soften';
 import { chestPokeBounce, CHEST_BOUNCE_SEC, SOFT_CHEST_BOUNCE_SEC } from '../lib/vrm/chest-bounce';
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
@@ -681,7 +691,7 @@ export default function CompanionCanvas({
       .map((e) => ({ id: e.clipId, urls: [`${ANIM_MIRROR}/${e.clipId}.vrma`] }));
     if (!IDLE_SOURCES.length) {
       IDLE_SOURCES.push(
-        { id: 'IdleRpmFStanding001', urls: [`${ANIM_MIRROR}/IdleRpmFStanding001.vrma`] },
+        { id: DEFAULT_IDLE_CLIP_ID, urls: [`${ANIM_MIRROR}/${DEFAULT_IDLE_CLIP_ID}.vrma`] },
       );
     }
     // All other playable library idles (side picks / Mon # tap).
