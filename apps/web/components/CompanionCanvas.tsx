@@ -2459,8 +2459,8 @@ export default function CompanionCanvas({
       showLibraryRef.current = () => {};
       publishModularView('idle');
       cancelAnimationFrame(raf);
-      clearTimeout(loadWatchdog);
       window.clearTimeout(orientResizeTimer);
+      clearTimeout(loadWatchdog);
       // Match the r91 comment: retire the StatusPlate spinner on unmount so a
       // mid-load leave/chat remount never flashes a stale % or "preparing…".
       setLoadProgress(null);
