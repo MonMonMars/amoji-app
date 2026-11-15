@@ -32,4 +32,13 @@ export const CAST_EYE_ATLAS_EXPR = [
   'sorrow',
 ] as const;
 
+/**
+ * Alias → canonical atlas name. VRM / emotion-core use `surprise` while the
+ * dominate path keys on `surprised`; folding prevents both cells fighting.
+ */
+export const CAST_EYE_ATLAS_ALIASES: Readonly<Record<string, string>> = {
+  surprise: 'surprised',
+  sorrow: 'sad',
+};
+
 export type CastEyeAtlasExpr = (typeof CAST_EYE_ATLAS_EXPR)[number];

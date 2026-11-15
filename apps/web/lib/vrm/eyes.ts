@@ -17,6 +17,7 @@
 import * as THREE from 'three';
 import type { VRM } from '@pixiv/three-vrm';
 import {
+  CAST_EYE_ATLAS_ALIASES,
   CAST_EYE_ATLAS_EXPR,
   CAST_EYE_ATLAS_FLOOR,
   CAST_EYE_BLINK_CAP,
@@ -84,15 +85,22 @@ export function capEyeExpression(name: string, value: number): number {
 export function dominateEyeExpressions(
   weights: Readonly<Record<string, number>>,
 ): Record<string, number> {
-  const out: Record<string, number> = {};
+  // Lowercase + fold aliases (surprise→surprised) so PascalCase / dual keys
+  // cannot leave a second atlas cell lit (#433 residual).
+  const folded: Record<string, number> = {};
   for (const [k, raw] of Object.entries(weights)) {
-    out[k] = Number.isFinite(raw) ? Math.max(0, raw) : 0;
+    const lower = k.toLowerCase();
+    const canon = CAST_EYE_ATLAS_ALIASES[lower] ?? lower;
+    const v = Number.isFinite(raw) ? Math.max(0, raw) : 0;
+    folded[canon] = Math.max(folded[canon] ?? 0, v);
   }
+
+  const out: Record<string, number> = { ...folded };
 
   let best: string | null = null;
   let bestRaw = CAST_EYE_ATLAS_FLOOR;
   for (const name of CAST_EYE_ATLAS_EXPR) {
-    const v = out[name] ?? out[name.toLowerCase()] ?? 0;
+    const v = out[name] ?? 0;
     if (v > bestRaw) {
       bestRaw = v;
       best = name;
@@ -100,17 +108,17 @@ export function dominateEyeExpressions(
   }
 
   for (const name of CAST_EYE_ATLAS_EXPR) {
-    const key = name in out ? name : name.toLowerCase() in out ? name.toLowerCase() : name;
-    if (best && name === best) {
-      out[key] = capEyeExpression(name, bestRaw);
-    } else {
-      out[key] = 0;
-    }
+    out[name] = best && name === best ? capEyeExpression(name, bestRaw) : 0;
+  }
+  // Clear alias keys so leftover `surprise` cannot fight `surprised`.
+  for (const alias of Object.keys(CAST_EYE_ATLAS_ALIASES)) {
+    out[alias] = 0;
   }
 
   // Non-atlas channels (blink, visemes, …) still get their own caps.
   for (const [k, raw] of Object.entries(out)) {
     if (ATLAS_SET.has(k.toLowerCase())) continue;
+    if (k.toLowerCase() in CAST_EYE_ATLAS_ALIASES) continue;
     out[k] = capEyeExpression(k, raw);
   }
   return out;

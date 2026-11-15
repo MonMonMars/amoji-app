@@ -360,7 +360,9 @@
 // only; arm flinch character-side; reset fall after poke window; CMA picks intact.
 // r2026-11-15.153: news told ring → localStorage (survive tab close) + always
 // wiki-enrich thin title-only headlines so every ask gets a longer fresh tell.
-export const APP_REVISION = 'r2026-11-15.153';
+// r2026-11-15.154: eye size — fold surprise→surprised in dominate; mood orb
+// no longer hitch-widens "surprised" from jawDrop while talking.
+export const APP_REVISION = 'r2026-11-15.154';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

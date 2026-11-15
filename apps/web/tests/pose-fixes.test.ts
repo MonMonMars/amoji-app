@@ -41,6 +41,19 @@ describe('eye readability', () => {
     expect(out.blink).toBe(CAST_EYE_BLINK_CAP);
   });
 
+  it('folds surprise→surprised and clears PascalCase leftovers', () => {
+    const out = dominateEyeExpressions({
+      Happy: 0.7,
+      surprise: 0.95,
+      Surprised: 0.2,
+      blink: 0.4,
+    });
+    expect(out.surprised).toBe(CAST_EYE_WIDE_CAP);
+    expect(out.happy).toBe(0);
+    expect(out.surprise).toBe(0);
+    expect(out.blink).toBe(0.4);
+  });
+
   it('pins eye mesh scales back to rest after a wild resize', () => {
     const iris = new THREE.MeshBasicMaterial({ name: 'F00_EyeIris_00_EYE' });
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(), iris);
