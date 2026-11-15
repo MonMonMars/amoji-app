@@ -69,24 +69,25 @@ describe('auto personality', () => {
     const stored: Record<string, string> = {};
     for (const tag of [...female, ...male]) stored[`p-${tag}`] = tag;
     g.localStorage.setItem('amoji.personality.v1', JSON.stringify(stored));
-    // Calm-heavy: stretch once at end; no arm-raise / wave / dance fillers.
+    // Upright stands only (v4) — no look / stretch / arm-raise / wave / dance.
     const loop = [...PASSIVE_IDLE_LOOP_TEMPLATE];
     const dropped = [
       'IdleNeutral', 'Thinking', 'IdleChinHand', 'IdleHug',
       'Impatient', 'WeightShift', 'HelloWave', 'IdleMixamoArmStretch', 'LookAround',
+      'IdleRpmMVar002', 'IdleRpmFVar003', 'IdleMixamoBreathing', 'IdleInnersceneSam',
     ];
     for (const tag of female) {
       const clips = personalityMotion(`p-${tag}`, 'female').idleClips;
       expect(clips[0]).toBe('IdleRpmFStanding001');
       expect(clips).toEqual(loop);
-      expect(clips[clips.length - 1]).toBe('IdleRpmMVar002');
+      expect(clips.every((id) => id === 'IdleRpmFStanding001' || id === 'IdleRpmMStanding001')).toBe(true);
       for (const id of dropped) expect(clips).not.toContain(id);
     }
     for (const tag of male) {
       const clips = personalityMotion(`p-${tag}`, 'male').idleClips;
       expect(clips[0]).toBe('IdleRpmFStanding001');
       expect(clips).toEqual(loop);
-      expect(clips[clips.length - 1]).toBe('IdleRpmMVar002');
+      expect(clips.every((id) => id === 'IdleRpmFStanding001' || id === 'IdleRpmMStanding001')).toBe(true);
       for (const id of dropped) expect(clips).not.toContain(id);
     }
     expect(personalityMotion('p-cool', 'male').idleClips).toEqual(loop);

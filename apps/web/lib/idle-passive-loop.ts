@@ -1,35 +1,32 @@
 // Passive idle body rotation while the user is quiet:
-//   mostly calm breath/stand → occasional look → rare mild stretch
-// Never HelloWave / dance / big arm-raise here — those stay farewell / explicit-intent only.
+//   upright planted RPM stands only (v4).
+// Never HelloWave / dance / look / stretch / big arm-raise here —
+// those stay farewell / explicit-intent / manual rail picks only.
 
 import { idleClipById } from './idle-clips';
 
-/** Preferred clip ids for each beat of the loop — upright planted calm stands. */
+/** Preferred clip ids for each beat of the loop — cleaner upright stands only. */
 export const PASSIVE_RELAX_CLIPS = [
   'IdleRpmFStanding001',
   'IdleRpmMStanding001',
-  'IdleRpmFVar001',
-  'IdleMixamoBreathing',
-  'IdleInnersceneSam',
 ] as const;
-/** Mild stretch only — IdleMixamoArmStretch raised arms repeatedly and felt like a show. */
-export const PASSIVE_STRETCH_CLIPS = ['IdleRpmMVar002', 'Relax'] as const;
-/** Soft look variant (not LookAround mid-pose thrash, not MVar001 sky-snap). */
-export const PASSIVE_LOOK_CLIPS = ['IdleRpmFVar003', 'IdleRpmFVar004'] as const;
+/** Stretch stays out of the default passive loop (v4 upright-only). */
+export const PASSIVE_STRETCH_CLIPS = [] as const;
+/** Look variants stay out of the default passive loop (v4 upright-only). */
+export const PASSIVE_LOOK_CLIPS = [] as const;
 
 /**
- * Canonical playlist: calm-heavy with one look and one mild stretch per cycle.
- * Stretch sits last so arm motion is at most once per full rotation.
+ * Canonical playlist: upright stands only — no look / stretch beats.
  */
 export const PASSIVE_IDLE_LOOP_TEMPLATE = [
   'IdleRpmFStanding001',
   'IdleRpmFStanding001',
   'IdleRpmMStanding001',
   'IdleRpmFStanding001',
-  'IdleRpmFVar001',
+  'IdleRpmMStanding001',
   'IdleRpmFStanding001',
-  'IdleMixamoBreathing',
-  'IdleRpmMVar002',
+  'IdleRpmMStanding001',
+  'IdleRpmFStanding001',
 ] as const;
 
 function firstAvailable(candidates: readonly string[], available: ReadonlySet<string>): string | null {

@@ -1,21 +1,17 @@
 // Per-companion idle pin. Same localStorage shape as the other chat prefs.
-// Default rotation = upright planted calm stands (IdleRpmFStanding001 /
-// IdleRpmMStanding001 / IdleRpmFVar001 / IdleMixamoBreathing / IdleInnersceneSam).
-// Old BreathCalm / Sassy / MVar001 / hug pins are cleared on load (v3 key).
+// Default rotation = cleaner upright planted stands only (IdleRpmFStanding001 /
+// IdleRpmMStanding001). Weak v3 clips + old gesture pins clear on load (v4 key).
 
 import { resolveIdleClipId, isRetiredIdleClip } from './idle-retired';
 import { idleClipById } from './idle-clips';
 
-export const IDLE_PICK_KEY = 'amoji.idlePick.v3';
+export const IDLE_PICK_KEY = 'amoji.idlePick.v4';
 const KEY = IDLE_PICK_KEY;
 
-/** Default rotation / safe persisted pins — upright planted calm stands. */
+/** Default rotation / safe persisted pins — cleaner upright stands only. */
 export const DEFAULT_IDLE_IDS = [
   'IdleRpmFStanding001',
   'IdleRpmMStanding001',
-  'IdleRpmFVar001',
-  'IdleMixamoBreathing',
-  'IdleInnersceneSam',
 ] as const;
 
 /** Old defaults / gesture pins that must not stick after the calm swap. */
@@ -29,6 +25,13 @@ const BAD_SAVED_IDLE_IDS = new Set([
   'LookAround',
   'IdleSassy',
   'IdleRpmMVar001',
+  // v3 defaults that still looked weak — clear so v4 upright stands return.
+  'IdleRpmFVar001',
+  'IdleMixamoBreathing',
+  'IdleInnersceneSam',
+  'IdleRpmMVar002',
+  'IdleRpmFVar003',
+  'IdleRpmFVar004',
 ]);
 
 type PickMap = Record<string, string>;

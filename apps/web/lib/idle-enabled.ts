@@ -1,6 +1,6 @@
 ﻿// Which curated idle rail #s are ON for rotation. Persists like mute prefs.
-// Default = upright planted calm stands (#42 / #93 / #43 / #40 / #90).
-// v3 drops stale BreathCalm / Sassy / MVar001 pins from v1–v2.
+// Default = cleaner upright planted stands only (#42 / #93).
+// v4 drops weak v3 clips (FVar001 / MixamoBreathing / InnersceneSam) from defaults.
 
 import { isRetiredIdleNum } from './idle-retired';
 import {
@@ -15,7 +15,7 @@ import {
   type IdleLibraryEntry,
 } from './idle-library';
 
-export const IDLE_ENABLED_KEY = 'amoji.idleEnabled.v3';
+export const IDLE_ENABLED_KEY = 'amoji.idleEnabled.v4';
 const KEY = IDLE_ENABLED_KEY;
 
 let memory: number[] | null = null;

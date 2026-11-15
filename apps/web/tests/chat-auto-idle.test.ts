@@ -6,21 +6,15 @@ import { playableIdles } from '../lib/idle-library';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const CHITCHAT = ['IdleRpmFStanding001', 'IdleRpmMStanding001', 'IdleRpmFVar001', 'Thinking'] as const;
+const CHITCHAT = ['IdleRpmFStanding001', 'IdleRpmMStanding001', 'Thinking'] as const;
 const NEUTRAL = [
   'IdleRpmFStanding001',
   'IdleRpmMStanding001',
-  'IdleRpmFVar001',
-  'IdleMixamoBreathing',
-  'IdleInnersceneSam',
   'Thinking',
 ];
 const TALK = [
   'IdleRpmFStanding001',
   'IdleRpmMStanding001',
-  'IdleRpmFVar001',
-  'IdleMixamoBreathing',
-  'IdleInnersceneSam',
   'Thinking',
 ];
 

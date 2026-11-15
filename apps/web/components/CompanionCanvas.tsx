@@ -654,9 +654,9 @@ export default function CompanionCanvas({
       : [ownModel, 'seed-san.vrm'].filter((m): m is string => !!m);
 
     // -- clip library ---------------------------------------------------------
-    // Standing idle rotation. Defaults are upright planted calm stands
-    // (IdleRpmFStanding001 / IdleRpmMStanding001 / IdleRpmFVar001 / …).
-    // LookAround / Sassy / hug / wave stay out of the default enable set.
+    // Standing idle rotation. Defaults are cleaner upright planted stands
+    // (IdleRpmFStanding001 / IdleRpmMStanding001 only — idle v4).
+    // LookAround / Sassy / hug / wave / FVar / MixamoBreathing stay out of defaults.
     // rebaseClipHips pins feet and yaw-only hips on every idle in this list.
     const ANIM_MIRROR = `${ASSET_BASE}/models/anims`;
     const CHAT_HOST = 'https://raw.githubusercontent.com/DavinciDreams/3dchat/main/public/animations/vrma';
@@ -665,7 +665,7 @@ export default function CompanionCanvas({
 
     interface ClipSource { id: string; urls: string[] }
     // Idle # SoT: apps/web/lib/idle-library.ts (free-library Cxx map).
-    // Default rotation = enabled playable nums (localStorage amoji.idleEnabled.v3),
+    // Default rotation = enabled playable nums (localStorage amoji.idleEnabled.v4),
     // falling back to RPM F/M standing. Every idle gets
     // rebaseClipHips + pinPlantedClipTracks (no floating feet).
     const libPlayable = playableIdles();

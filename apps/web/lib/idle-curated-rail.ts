@@ -94,14 +94,14 @@ export function curatedRailByLegacyLibNum(libNum: number): IdleCuratedRailEntry 
 }
 
 /**
- * Default ON rotation — upright planted calm stands only:
- * #42 IdleRpmFStanding001, #93 IdleRpmMStanding001, #43 IdleRpmFVar001,
- * #40 IdleMixamoBreathing, #90 IdleInnersceneSam.
- * Dropped: BreathCalm/StandardIdle (owner: bad), IdleSassy (arms-into-torso),
- * IdleRpmMVar001 (sudden sky look), LookAround thrash / hug / wave / dance.
+ * Default ON rotation — cleaner upright planted stands only (v4):
+ * #42 IdleRpmFStanding001, #93 IdleRpmMStanding001.
+ * Dropped from v3 defaults: IdleRpmFVar001 / IdleMixamoBreathing /
+ * IdleInnersceneSam (still pickable on the rail). Still out: BreathCalm /
+ * StandardIdle / Sassy / MVar001 / look / stretch / hug / wave / dance.
  */
 export function defaultCuratedRailNums(): number[] {
-  return [5, 11, 8, 3, 10];
+  return [5, 11];
 }
 
 /** Map stored enable list (legacy library # or rail #) → curated rail #. */
