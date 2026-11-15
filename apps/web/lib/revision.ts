@@ -362,7 +362,9 @@
 // wiki-enrich thin title-only headlines so every ask gets a longer fresh tell.
 // r2026-11-15.154: eye size — fold surprise→surprised in dominate; mood orb
 // no longer hitch-widens "surprised" from jawDrop while talking.
-export const APP_REVISION = 'r2026-11-15.154';
+// r2026-11-15.155: R10 — keep gTTS male band < 1.0 and female band > 1.0 so
+// bright male is never pitched into female territory (#437 overlap fix).
+export const APP_REVISION = 'r2026-11-15.155';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

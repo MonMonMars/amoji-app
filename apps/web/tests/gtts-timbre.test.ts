@@ -24,17 +24,21 @@ const FEMALE_IDS = CHARACTERS_WANT.filter((c) => c.gender === 'female').map((c) 
 const MALE_IDS = CHARACTERS_WANT.filter((c) => c.gender === 'male').map((c) => c.id);
 
 describe('free-chain character pitch fingerprint', () => {
-  it('keeps male deeper than female on the same pitch tier', () => {
-    // Male bright may sit above 1.0 for a huge deep↔bright gap — compare same tier.
+  it('keeps the whole male band below 1.0 and below every female tier', () => {
+    // #437 bright male (1.26) crossed female deep (0.75) — owner heard pitched-female.
     expect(PITCH_BIAS_MALE).toBeLessThan(1);
     expect(PITCH_BIAS_MALE).toBeLessThan(PITCH_BIAS_FEMALE);
     for (const tier of ['deep', 'mid', 'bright'] as const) {
       const male = Math.max(...MALE_IDS.map((id) => gttsCharacterPitchBias('male', id, undefined, tier)));
       const female = Math.min(...FEMALE_IDS.map((id) => gttsCharacterPitchBias('female', id, undefined, tier)));
-      expect(male, `male ${tier}`).toBeLessThan(female);
+      expect(male, `male ${tier}`).toBeLessThan(1);
+      expect(female, `female ${tier}`).toBeGreaterThan(1);
+      expect(male, `male ${tier} vs female ${tier}`).toBeLessThan(female);
     }
+    const brightM = Math.max(...MALE_IDS.map((id) => gttsCharacterPitchBias('male', id, undefined, 'bright')));
     const deepF = Math.min(...FEMALE_IDS.map((id) => gttsCharacterPitchBias('female', id, undefined, 'deep')));
-    expect(deepF).toBeGreaterThan(0.70);
+    expect(brightM).toBeLessThan(deepF);
+    expect(deepF).toBeGreaterThan(1);
   });
 
   it('assigns curated bright / mid / deep tiers across the cast', () => {
@@ -102,17 +106,21 @@ describe('free-chain character pitch fingerprint', () => {
     }
   });
 
-  it('makes selectable deep vs bright obviously different (owner #400 follow-up)', () => {
+  it('makes selectable deep vs bright obviously different without gender cross', () => {
     const deepF = gttsCharacterPitchBias('female', undefined, 'en', 'deep');
     const brightF = gttsCharacterPitchBias('female', undefined, 'en', 'bright');
     const deepM = gttsCharacterPitchBias('male', undefined, 'en', 'deep');
     const brightM = gttsCharacterPitchBias('male', undefined, 'en', 'bright');
-    // After #425 owner still heard similar — require VERY large audible gaps.
-    expect(brightF - deepF).toBeGreaterThanOrEqual(0.90);
-    expect(brightM - deepM).toBeGreaterThanOrEqual(0.85);
-    expect(deepM).toBeLessThan(deepF);
-    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.90);
-    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.85);
+    // Within-band gaps as wide as the clamp allows once male stays < 1 < female.
+    expect(brightF - deepF).toBeGreaterThanOrEqual(0.55);
+    expect(brightM - deepM).toBeGreaterThanOrEqual(0.50);
+    expect(deepM).toBeLessThan(1);
+    expect(brightM).toBeLessThan(1);
+    expect(deepF).toBeGreaterThan(1);
+    expect(brightF).toBeGreaterThan(1);
+    expect(brightM).toBeLessThan(deepF);
+    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.55);
+    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.50);
   });
 
   it('voice.ts re-exports the same helper so every speak path stays in sync', () => {

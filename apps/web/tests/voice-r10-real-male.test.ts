@@ -103,26 +103,29 @@ describe('R10 male hop order + gTTS fallback gaps', () => {
     expect(freeVoiceHops('en', { preferMale: true })).toEqual(['edge', 'synth', 'gtts']);
   });
 
-  it('gTTS deep≪mid≪bright gaps are VERY wide for both genders', () => {
+  it('gTTS deep≪mid≪bright gaps stay wide without male crossing female', () => {
     const deepF = gttsCharacterPitchBias('female', undefined, 'en', 'deep');
     const midF = gttsCharacterPitchBias('female', undefined, 'en', 'mid');
     const brightF = gttsCharacterPitchBias('female', undefined, 'en', 'bright');
     const deepM = gttsCharacterPitchBias('male', undefined, 'en', 'deep');
     const midM = gttsCharacterPitchBias('male', undefined, 'en', 'mid');
     const brightM = gttsCharacterPitchBias('male', undefined, 'en', 'bright');
-    // Old #425 floor was 0.50 — still too similar on phone. Require huge gaps.
-    expect(brightF - deepF).toBeGreaterThanOrEqual(0.90);
-    expect(brightM - deepM).toBeGreaterThanOrEqual(0.85);
-    expect(midF - deepF).toBeGreaterThanOrEqual(0.40);
+    // #437 male bright sat at 1.26 (female territory). Cap male < 1 < female.
+    expect(brightM).toBeLessThan(1);
+    expect(deepF).toBeGreaterThan(1);
+    expect(brightM).toBeLessThan(deepF);
+    expect(brightF - deepF).toBeGreaterThanOrEqual(0.55);
+    expect(brightM - deepM).toBeGreaterThanOrEqual(0.50);
+    expect(midF - deepF).toBeGreaterThanOrEqual(0.15);
     expect(brightF - midF).toBeGreaterThanOrEqual(0.35);
     expect(midM - deepM).toBeGreaterThanOrEqual(0.20);
-    expect(brightM - midM).toBeGreaterThanOrEqual(0.50);
+    expect(brightM - midM).toBeGreaterThanOrEqual(0.20);
     expect(deepF).toBeLessThan(midF);
     expect(midF).toBeLessThan(brightF);
     expect(deepM).toBeLessThan(midM);
     expect(midM).toBeLessThan(brightM);
-    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.90);
-    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.85);
+    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.55);
+    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.50);
     expect(PITCH_BIAS_MALE).toBeLessThanOrEqual(0.66);
     expect(PITCH_BIAS_FEMALE - PITCH_BIAS_MALE).toBeGreaterThanOrEqual(0.60);
   });

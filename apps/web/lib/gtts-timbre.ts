@@ -40,22 +40,24 @@ export const CHAR_PITCH_SPREAD = 0.015;
 
 /**
  * How far bright / deep sit from the gender mid.
- * After #400/#406/#410/#413/#425 owner still heard "all the same" — make the
- * free-tier gaps VERY large (playbackRate is the only gTTS colour). Prefer
- * distinct Edge neural ids when that hop runs; these offsets are the fallback.
+ * After #437 male bright (1.26) crossed above 1.0 and above female deep (0.75),
+ * so "bright male" sounded pitched-female on gTTS. Keep the whole male band
+ * strictly below 1.0 and the whole female band strictly above 1.0, while still
+ * spreading deep≪mid≪bright as wide as the clamp allows. Prefer distinct Edge
+ * neural ids when that hop runs; these offsets are the gTTS fallback.
  */
 export const FEMALE_TIER_OFFSET: Record<GttsPitchTier, number> = {
-  // 1.30−0.55 → 0.75; 1.30+0.42 → 1.72 — bright−deep ≥ 0.95
-  deep: -0.55,
+  // 1.30−0.18 → 1.12; 1.30+0.42 → 1.72 — all > 1.0; bright−deep ≥ 0.60
+  deep: -0.18,
   mid: 0,
   bright: 0.42,
 };
 
 export const MALE_TIER_OFFSET: Record<GttsPitchTier, number> = {
-  // 0.64−0.26 → 0.38 (floor); 0.64+0.62 → 1.26 — bright−deep ≥ 0.85
+  // 0.64−0.26 → 0.38 (floor); 0.64+0.26 → 0.90 — all < 1.0; bright−deep ≥ 0.50
   deep: -0.26,
   mid: 0,
-  bright: 0.62,
+  bright: 0.26,
 };
 
 /** Google ja-JP reads bright; male delivery needs extra depth (still inside gtts clamp). */
@@ -116,7 +118,8 @@ export function gttsPitchTierFor(characterId: string): GttsPitchTier {
 
 /**
  * Pitch multiplier for the free MP3 tier. Same gender → nearby but different
- * numbers; different genders stay on opposite sides of 1.0.
+ * numbers; every male tier stays below 1.0 and every female tier stays above
+ * 1.0 (male bright must never cross into female deep).
  *
  * `tierOverride` comes from a pinned voice button (selectable deep/mid/bright).
  * When omitted, companions keep the curated per-character tier from #374.
