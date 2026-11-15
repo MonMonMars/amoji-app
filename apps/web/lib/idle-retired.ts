@@ -22,15 +22,19 @@ export const RETIRED_IDLE_CLIP_IDS = new Set(
 export const IDLE_PIN_FALLBACK_CLIP_ID = 'IdleBreathCalm';
 
 /**
- * Pixel-OK calm stands used for chat idle / relaxed hands (not sing/dance/react).
+ * Calm stands used for chat idle / relaxed hands (not sing/dance/react).
  * Keep in sync with `chat-auto-idle` neutral/talk calm banks.
+ * Prefer upright planted RPM / Mixamo / Innerscene; BreathCalm stays pin-fallback only.
  */
 export const PIXEL_CALM_IDLE_CLIP_IDS = new Set<string>([
   'IdleBreathCalm',
-  'StandardIdle',
   'IdleRpmFStanding001',
-  'IdleSassy',
-  'IdleRpmMVar001',
+  'IdleRpmMStanding001',
+  'IdleRpmFVar001',
+  'IdleMixamoBreathing',
+  'IdleInnersceneSam',
+  'IdleRpmFVar003',
+  'IdleRpmFVar004',
   'IdleRpmMVar002',
   'Thinking',
 ]);
