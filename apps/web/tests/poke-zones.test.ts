@@ -115,28 +115,63 @@ describe('pokeSectionBodyReaction', () => {
     expect(canvas).toMatch(/poke left → tip screen-left/);
     expect(canvas).toMatch(/screenPointerSideSign\s*\(/);
     expect(canvas).toMatch(/lateralFallTowardScreenSide\s*\(/);
-    // #409: keep +leanSide; blend axial+lateral for off-center non-side zones.
-    expect(canvas).toMatch(/fall\.x \* 0\.95/);
+    // Same-side dominates off-center; never −leanSide; no idle-damp frankenstein.
+    expect(canvas).toMatch(/fall\.x \* 1\.0/);
     expect(canvas).toMatch(/fingerOffCenter/);
     expect(canvas).toMatch(/Do NOT use opposite lean/);
+    expect(canvas).toMatch(/pokeSettleGrace/);
+    expect(canvas).not.toMatch(/boost = pokeRaw \* pokeDamp/);
     expect(canvas).not.toMatch(/multiplyScalar\(\s*-camSide\s*\)/);
     expect(canvas).not.toMatch(/multiplyScalar\(\s*-leanSide\s*\)/);
   });
 
   it('off-center chest poke with same-side fall tips left (not opposite recoil)', () => {
     const section = resolvePokeSection('chest', 'left');
-    // Blended canvas fall for finger-left on chest: mostly −X same-side.
+    // Canvas fall for finger-left on chest: same-side X dominates.
     const hit = pokeSectionBodyReaction({
       t: 0.12,
       section,
       hitZone: 'chest',
-      fallX: -0.9,
-      fallZ: -0.35,
+      fallX: -0.98,
+      fallZ: -0.2,
       sideSign: 1,
       softChest: false,
       twist: 0,
     });
-    expect(hit.chestRoll).toBeGreaterThan(0.2);
+    expect(hit.chestRoll).toBeGreaterThan(0.35);
     expect(Math.abs(hit.rArmX)).toBeGreaterThan(Math.abs(hit.lArmX));
+  });
+
+  it('lateral chest tip ignores softBreast cover (same-side still reads)', () => {
+    const section = resolvePokeSection('chest', 'left');
+    const tip = pokeSectionBodyReaction({
+      t: 0.12,
+      section,
+      hitZone: 'chest',
+      fallX: -1,
+      fallZ: 0,
+      sideSign: 1,
+      softChest: true,
+      twist: 0,
+    });
+    expect(tip.chestRoll).toBeGreaterThan(0.35);
+    // Soft front cover path would cap roll ~0.08 — must not take that path.
+    expect(Math.abs(tip.lArmX)).toBeLessThan(0.2);
+  });
+
+  it('left lateral tip stays same-side through mid window (no rebound flip)', () => {
+    const section = resolvePokeSection('side', 'left');
+    const mid = pokeSectionBodyReaction({
+      t: 0.55,
+      section,
+      hitZone: 'side',
+      fallX: -1,
+      fallZ: 0,
+      sideSign: 1,
+      softChest: false,
+      twist: 0,
+    });
+    // One-way envelope: tip may be small but never opposite (negative roll).
+    expect(mid.chestRoll).toBeGreaterThanOrEqual(0);
   });
 });

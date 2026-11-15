@@ -58,9 +58,9 @@ describe('idle pose smooth + catalog trim', () => {
   it('freezes hang/soften/shoulder writers during idle A→B glide', () => {
     const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
     expect(canvas).toMatch(/!idleLegGlide && !handDrag && !idleLegGlide|!handDrag && !idleLegGlide\) \{\s*\n\s*applyIdleClipSoftening/);
-    expect(canvas).toMatch(/!gameView && !handDrag && !idleLegGlide\) \{\s*\n\s*applyIdleClipSoftening/);
+    expect(canvas).toMatch(/!pokeSettleGrace && !gameView && !handDrag && !idleLegGlide\) \{\s*\n\s*applyIdleClipSoftening/);
     expect(canvas).toMatch(/if \(!idleLegGlide\) avatar\.clampShoulderROM/);
-    expect(canvas).toMatch(/!handDrag && !idleLegGlide\) \{\s*\n\s*avatar\.easeIdleHang/);
+    expect(canvas).toMatch(/!pokeSettleGrace && !gameView && !handDrag && !idleLegGlide\) \{\s*\n\s*avatar\.easeIdleHang/);
     expect(canvas).toContain('applyCastFixes({ skipShoulders: idleLegGlide })');
     // Same-clip refresh must not hard-reset time (sudden body/arm snap).
     expect(canvas).toContain('const sameClip = !!idleAction && idleClipId === safeId');

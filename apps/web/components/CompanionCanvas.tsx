@@ -38,7 +38,6 @@ import {
   IDLE_PIN_CROSSFADE_S,
   IDLE_SWAP_BLEND_BONES,
   IDLE_SWAP_LEG_BLEND_S,
-  idleCrossfadeAdditiveScale,
   idleSwapBlendActive,
 } from '../lib/idle-crossfade';
 import {
@@ -1736,8 +1735,9 @@ export default function CompanionCanvas({
             //   Lean from finger vs hips on screen. Arm flinch = character-side.
             //   Do NOT use opposite lean (−leanSide / −camSide).
             // fall = cameraRight * leanSide (+). VRM: leanSide −1 → fallX −1 → tip left.
-            // Lateral zones: screen fall alone. Off-center chest/head/belly/…: blend
-            // axial impulse with same-side lean (centered front/back stay axial).
+            // Lateral zones: screen fall alone. Off-center chest/head/belly/…: same-side
+            // dominates (axial "away" was fighting the tip on phone after #434).
+            // Centered front/back stay axial.
             {
               const fall = lateralFallTowardScreenSide(camRightXZ, leanSide);
               const lateralOnly =
@@ -1747,9 +1747,9 @@ export default function CompanionCanvas({
                 pokeFallDir.set(fall.x, 0, fall.z);
               } else if (pokeZone !== 'foot' && fingerOffCenter) {
                 pokeFallDir.set(
-                  cls.impulse.x * 0.42 + fall.x * 0.95,
+                  fall.x * 1.0 + cls.impulse.x * 0.12,
                   0,
-                  cls.impulse.z * 0.55 + fall.z * 0.4,
+                  fall.z * 0.28 + cls.impulse.z * 0.22,
                 );
                 const len = Math.hypot(pokeFallDir.x, pokeFallDir.z);
                 if (len > 1e-6) pokeFallDir.multiplyScalar(1 / len);
@@ -1915,9 +1915,13 @@ export default function CompanionCanvas({
         // Poke and laugh stay on the upper body. The root never translates,
         // scales, or tips ??that used to slide and lift both feet.
         const pokeAge = now - pokeAt;
+        // Full poke window — do NOT multiply by idleCrossfadeAdditiveScale.
+        // That damp warped punch `t` (frankenstein tip + idle A→B) and left
+        // a half-settled lean when soften/hang resumed.
         const pokeRaw = pokeAge < POKE_MS ? 1 - pokeAge / POKE_MS : 0;
-        const pokeDamp = idleCrossfadeAdditiveScale(now, swapBlendUntil);
-        const boost = pokeRaw * pokeDamp;
+        const boost = pokeRaw;
+        // Brief grace after poke so idle soften/hang do not yank residual tip.
+        const pokeSettleGrace = pokeAge >= 0 && pokeAge < POKE_MS + 240;
         const laughAge = now - lastLaughAt();
         const laugh = laughAge >= 0 && laughAge < 1600 ? 1 - laughAge / 1600 : 0;
         let skSpine = 0, skChest = 0, skHeadX = 0, skHeadZ = 0;
@@ -1925,14 +1929,22 @@ export default function CompanionCanvas({
         let skLArm = 0, skRArm = 0, skLElb = 0, skRElb = 0, skLUp = 0, skRUp = 0;
         let skHip = 0, skHipRoll = 0, skHipX = 0, skHipZ = 0;
         if (boost > 0) {
+          const lateralTip =
+            pokeDirection === 'left'
+            || pokeDirection === 'right'
+            || pokeZone === 'side'
+            || pokeZone === 'armL'
+            || pokeZone === 'armR'
+            || pokeZone === 'hand';
           const hit = pokeSectionBodyReaction({
-            t: 1 - boost,
+            t: pokeAge / POKE_MS,
             section: pokeSection,
             hitZone: pokeZone,
             fallX: pokeFallDir.x,
             fallZ: pokeFallDir.z,
             sideSign: pokeSideSign,
-            softChest: pokeZone === 'chest' && gender === 'female',
+            // Soft breast cover is front-only — never kill same-side tip.
+            softChest: pokeZone === 'chest' && gender === 'female' && !lateralTip,
             twist: TWIST_AMOUNT[poke.twist] ?? 0.05,
           });
           skSpine = hit.spinePitch;
@@ -2137,8 +2149,9 @@ export default function CompanionCanvas({
         if (gameView) playGameBody(gameView.anim);
         if (avatar.clipDrivesBody) {
           mixer?.update(dt / 1000);
-          // Idle-only arm soften — skip during swap glide (fights mixer A→B).
-          if (!perfAction && boost === 0 && !gameView && !handDrag && !idleLegGlide) {
+          // Idle-only arm soften — skip during swap glide (fights mixer A→B)
+          // and during/just-after poke so soften does not frankenstein the tip.
+          if (!perfAction && boost === 0 && !pokeSettleGrace && !gameView && !handDrag && !idleLegGlide) {
             applyIdleClipSoftening((name) => avatar!.getBoneNode(name), idleClipId);
           }
           avatar.applyPose(poseTargets);
@@ -2158,7 +2171,7 @@ export default function CompanionCanvas({
         // Shoulder ROM + hang rewrite mid-crossfade yanked arms to hang/open
         // walls — owner: body/arms suddenly blend to a strange location.
         if (!idleLegGlide) avatar.clampShoulderROM();
-        if (!perfAction && boost === 0 && !gameView && !handDrag && !idleLegGlide) {
+        if (!perfAction && boost === 0 && !pokeSettleGrace && !gameView && !handDrag && !idleLegGlide) {
           avatar.easeIdleHang();
         }
 

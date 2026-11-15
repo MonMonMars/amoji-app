@@ -3,6 +3,7 @@ import {
   classifyPoke,
   pokeBodyReaction,
   pokePunch,
+  pokePunchSameSide,
   breastCoverEnvelope,
   screenSideSign,
   screenPointerSideSign,
@@ -139,6 +140,10 @@ describe('pokeBodyReaction', () => {
     expect(pokePunch(0.1, 'body')).toBeGreaterThan(0.7);
     expect(pokePunch(0.55, 'body')).toBeLessThan(0);
     expect(Math.abs(pokePunch(1, 'body'))).toBeLessThan(0.12);
+    // Lateral same-side tip never takes the opposite rebound.
+    expect(pokePunchSameSide(0.1, 'body')).toBeGreaterThan(0.7);
+    expect(pokePunchSameSide(0.55, 'body')).toBe(0);
+    expect(pokePunchSameSide(1, 'body')).toBe(0);
     const impact = pokeBodyReaction({ t: 0.1, zone: 'torso', fallX: 0, fallZ: -1, sideSign: 1, softChest: false, twist: 0, direction: 'front' });
     expect(impact.spinePitch).toBeLessThan(-0.45);
     expect(Math.abs(impact.hipPitch)).toBeGreaterThan(0.25);
@@ -182,6 +187,18 @@ describe('pokeBodyReaction', () => {
     expect(Math.abs(side.chestRoll)).toBeGreaterThan(Math.abs(front.chestRoll));
   });
 
+
+  it('soft breast cover is front-only — left/right chest keeps same-side tip', () => {
+    const softFront = pokeBodyReaction({
+      t: 0.12, zone: 'chest', fallX: 0, fallZ: -1, sideSign: 1, softChest: true, twist: 0, direction: 'front',
+    });
+    const tipLeft = pokeBodyReaction({
+      t: 0.12, zone: 'chest', fallX: -1, fallZ: 0, sideSign: 1, softChest: true, twist: 0, direction: 'left',
+    });
+    expect(Math.abs(softFront.chestRoll)).toBeLessThan(0.1);
+    expect(tipLeft.chestRoll).toBeGreaterThan(0.35);
+    expect(Math.abs(tipLeft.rArmX)).toBeGreaterThan(Math.abs(tipLeft.lArmX));
+  });
 
   it('soft breast poke: tiny body recoil, incomplete cover arms, feet planted (Mon t765)', () => {
     expect(breastCoverEnvelope(0)).toBe(0);

@@ -315,7 +315,19 @@ const CAP = {
 } as const;
 
 /** Extra same-side lean amp for lateral taps (keep sign from fallX — do not flip). */
-const LATERAL_LEAN_AMP = 1.38;
+const LATERAL_LEAN_AMP = 1.55;
+
+/**
+ * Lateral tip envelope: attack + decay only — no cos rebound.
+ * Rebound inverted the tip mid-window (same-side → opposite) and left a
+ * strange pose when poke ended into idle soften.
+ */
+export function pokePunchSameSide(
+  t: number,
+  kind: 'head' | 'chest' | 'body' | 'arm' | 'heavy' = 'body',
+): number {
+  return Math.max(0, pokePunch(t, kind));
+}
 
 function clamp(v: number, m: number): number {
   return v < -m ? -m : v > m ? m : v;
@@ -352,16 +364,19 @@ export function pokeBodyReaction(opts: {
   const t = Math.min(1.2, Math.max(0, opts.t));
   const direction = opts.direction ?? inferPokeDirection(opts.fallX, opts.fallZ);
   const g = gainsFor(opts.zone, direction);
-  const punch = pokePunch(t, g.kind);
+  const fromSide = direction === 'left' || direction === 'right';
+  // Lateral: one-way punch so tip never flips opposite mid-reaction.
+  const punch = fromSide ? pokePunchSameSide(t, g.kind) : pokePunch(t, g.kind);
   if (opts.zone === 'head') {
     const amp = g.head * punch;
+    const hx = fromSide ? opts.fallX * LATERAL_LEAN_AMP : opts.fallX;
     return {
       ...STILL,
       headX: clamp(opts.fallZ * amp, CAP.head),
-      headZ: clamp(-opts.fallX * amp * 0.8 + opts.twist * 0.04 * punch, CAP.head),
+      headZ: clamp(-hx * amp * 0.8 + opts.twist * 0.04 * punch, CAP.head),
     };
   }
-  const lateral = direction === 'left' || direction === 'right' || opts.zone === 'side' || opts.zone === 'armL' || opts.zone === 'armR' || opts.zone === 'hand';
+  const lateral = fromSide || opts.zone === 'side' || opts.zone === 'armL' || opts.zone === 'armR' || opts.zone === 'hand';
   let armL = g.arm;
   let armR = g.arm;
   if (opts.zone === 'armL') {
@@ -385,7 +400,6 @@ export function pokeBodyReaction(opts: {
   // orbit angle and the same tap swung her arms backwards at one angle and
   // forwards at another. Side taps take their swing from the camera-aware
   // sideSign the classifier already computed; front/back taps are untouched.
-  const fromSide = direction === 'left' || direction === 'right';
   const armDir = fromSide
     ? -opts.sideSign
     : (opts.fallZ !== 0 ? opts.fallZ : (opts.fallX !== 0 ? -Math.sign(opts.fallX) : -0.35));
@@ -394,7 +408,8 @@ export function pokeBodyReaction(opts: {
   const localButt = opts.zone === 'butt';
   const localBelly = opts.zone === 'belly';
   // Mon t765: soft breast poke — tiny body recoil; bounce is secondary; cover arms mid-raise.
-  const softBreast = opts.softChest && opts.zone === 'chest';
+  // Never take this path for left/right same-side tip — soft cover killed phone lean.
+  const softBreast = opts.softChest && opts.zone === 'chest' && !fromSide;
   if (softBreast) {
     const cover = breastCoverEnvelope(t);
     const tiny = punch * 0.22; // very little hit-back

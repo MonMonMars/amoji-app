@@ -352,7 +352,10 @@
 // r2026-11-15.149: poke move refresh — owner same-side lean (finger vs hips;
 // off-center chest/head blend +leanSide; stronger tip/arm flinch). Keep CMA
 // Want/Skip picks v1 (do not wipe owner SFX). Feet stay voice-only.
-export const APP_REVISION = 'r2026-11-15.149';
+// r2026-11-15.150: poke move still bad — one-way lateral tip (no rebound flip),
+// softBreast front-only, same-side fall dominates off-center, no idle-damp on
+// poke clock, post-poke soften grace. Keep CMA Want/Skip picks v1.
+export const APP_REVISION = 'r2026-11-15.150';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
