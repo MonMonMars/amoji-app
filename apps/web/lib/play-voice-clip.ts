@@ -36,11 +36,13 @@ export function isVoiceClipPlaying(): boolean {
  * Same-origin clip started INSIDE a user gesture.
  * Must call `audio.play()` in the same turn as the tap — awaiting
  * `setSinkId` / `pinDefaultOutputAsync` first drops activation on Chrome and
- * leaves card greets silent when hosted gTTS is blocked.
- *
  * Do NOT call `pinDefaultOutput` before the first play or inside onplay:
  * setSinkId races gesture play and interrupts live HTMLAudio (non-Yue mute).
  * Pin only before a reject retry.
+ *
+ * DO NOT reintroduce audible insurance — owner regression many times.
+ * Card greets / voice previews must NOT call this (robot+neural double-voice).
+ * Prefer silence until real gTTS/Edge. Kept for non-greet gesture clips only.
  */
 export function playGestureClipSync(file: string, caption: string, onPlay?: () => void): void {
   stopVoiceClip();

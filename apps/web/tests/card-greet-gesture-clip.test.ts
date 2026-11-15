@@ -1,6 +1,11 @@
 /**
- * Card taps must start a same-origin greeting clip inside the gesture so
- * offline / blocked gTTS / post-gesture play() never leave the select board silent.
+ * PERMANENT LOCK — card greet / voice preview must NEVER play audible
+ * insurance / gesture "robot" clips. Owner regression many times
+ * (robot+female double, then robot-only forever). Prefer silence until
+ * real gTTS/Edge over any local hello/hihi insurance.
+ *
+ * CI MUST FAIL if audible insurance is reintroduced or if synth-robot
+ * is armed while neural/gTTS is still available.
  */
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -16,51 +21,75 @@ function fnBody(name: string, nextName: string): string {
   return voice.slice(start, end === -1 ? undefined : end);
 }
 
-describe('card greet gesture insurance clip', () => {
-  it('exposes playGestureClipSync that plays before awaiting sink pin', () => {
-    expect(clip).toContain('export function playGestureClipSync');
-    expect(clip).toMatch(/void audio\.play\(\)/);
-    const sync = clip.slice(clip.indexOf('export function playGestureClipSync'));
-    const body = sync.slice(0, sync.indexOf('export function playVoiceClip'));
-    // First play must be sync in the gesture — no await pin-then-play for start.
-    expect(body).not.toMatch(/await pinDefaultOutputAsync/);
-    expect(body.indexOf('void audio.play()')).toBeLessThan(body.indexOf('pinDefaultOutputAsync'));
-    // Must retry after pin when the gesture play rejects (Chrome sink race).
-    expect(body).toMatch(/pinDefaultOutputAsync\(audio\)[\s\S]*audio\.play\(\)/);
-    // Never pin inside onplay — setSinkId mid-stream mutes non-Yue TTS.
-    expect(body).not.toMatch(/audio\.onplay = \(\) => \{[\s\S]*?pinDefaultOutput\(/);
-    expect(body).not.toMatch(/current = audio;\s*\n\s*pinDefaultOutput\(audio\)/);
+describe('card greet — no audible insurance (permanent)', () => {
+  it('playSilentUnblock is volume 0 (never a voiced robot unlock clip)', () => {
+    const start = voice.indexOf('function playSilentUnblock');
+    const body = voice.slice(start, voice.indexOf('function unlockAudio', start));
+    expect(body).toMatch(/a\.volume\s*=\s*0\s*;/);
+    expect(body).not.toMatch(/a\.volume\s*=\s*0\.[1-9]/);
+    expect(body).not.toMatch(/a\.volume\s*=\s*[1-9]/);
+    expect(body).toMatch(/DO NOT reintroduce audible insurance/);
   });
 
-  it('playVoiceGreeting starts the local clip before speakGtts', () => {
+  it('playVoiceGreeting never arms insurance / playGestureClipSync / greeting clipFile', () => {
     const body = fnBody('playVoiceGreeting', 'export function previewLibraryClip');
-    expect(body).toContain('playGestureClipSync');
-    expect(body).toContain('clipFile(lang, delivery, insuranceKind)');
-    expect(body.indexOf('playGestureClipSync')).toBeLessThan(body.indexOf('speakGtts('));
-    expect(body).toContain('stopVoiceClip()');
-    // Hold insurance briefly after onPlaying — immediate stop left cards silent
-    // when gTTS onplay fired then died after sink re-pin (#406/#413).
-    const gttsCall = body.slice(body.indexOf('void speakGtts'), body.indexOf('}).then(() => {', body.indexOf('void speakGtts')));
-    expect(gttsCall).toContain('onPlaying:');
-    expect(gttsCall).toContain('stopVoiceClip()');
-    expect(gttsCall).toContain("onStart('gtts')");
-    expect(gttsCall).toMatch(/setTimeout\([\s\S]*?stopVoiceClip\(\)[\s\S]*?,\s*220\)/);
-    expect(gttsCall.indexOf("onStart('gtts')")).toBeLessThan(gttsCall.indexOf('setTimeout('));
+    expect(body).toMatch(/DO NOT reintroduce audible insurance/);
+    expect(body).not.toContain('playGestureClipSync');
+    expect(body).not.toContain('insuranceKind');
+    expect(body).not.toContain('insuranceFile');
+    expect(body).not.toContain('insuranceArmed');
+    expect(body).not.toContain('startInsurance');
+    expect(body).not.toContain('saveWithInsuranceThenMaybeSynth');
+    expect(body).not.toContain('CARD_GREET_INSURANCE');
+    expect(body).toContain('greeting skip synth robot');
+    expect(body).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?synthSpeak\(/);
+    expect(body).not.toMatch(/clipFile\s*\(\s*lang\s*,/);
+    expect(body).not.toContain('nextGreetingKind()');
+    expect(body).not.toContain('greetingText(');
+    expect(body).not.toMatch(/setTimeout\([\s\S]*?stopVoiceClip\(\)[\s\S]*?,\s*220\)/);
   });
 
-  it('previewVoiceChoice does not stack synth over a still-playing insurance clip', () => {
-    const body = fnBody('previewVoiceChoice', 'export function previewOsVoice');
-    expect(body).toContain('isVoiceClipPlaying()');
-    expect(body).toMatch(/isVoiceClipPlaying\(\)[\s\S]*runSynthAudition\('preview fallback'\)/);
+  it('playVoiceGreeting prefers gTTS/Edge; synth only after gTTS is done failing', () => {
+    const body = fnBody('playVoiceGreeting', 'export function previewLibraryClip');
+    expect(body).toContain('speakGtts(');
+    // Helper may be declared before speakGtts; calls must still refuse while pending.
+    expect(body).toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?if \(spokenBy \|\| gttsPending\) return;/);
+    expect(body).toContain('greeting skip synth robot');
+    expect(body).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?synthSpeak\(/);
+    expect(body).toMatch(/if \(gttsPending\) return;/);
+    expect(body).toMatch(/edgeGrace = setTimeout\([\s\S]*?if \(spokenBy \|\| gttsPending\) return;[\s\S]*?runSynthAudition/);
+    expect(body).toMatch(/greeting gtts failed[\s\S]*runSynthAudition\('greeting fallback'\)/);
   });
 
-  it('previewVoiceChoice also starts the local insurance clip', () => {
+  it('previewVoiceChoice never arms insurance / playGestureClipSync', () => {
     const body = fnBody('previewVoiceChoice', 'export function previewOsVoice');
-    expect(body).toContain('playGestureClipSync');
-    expect(body.indexOf('playGestureClipSync')).toBeLessThan(body.indexOf('speakGtts('));
-    const gttsCall = body.slice(body.indexOf('const gtts = speakGtts'), body.indexOf('}).catch(', body.indexOf('const gtts = speakGtts')));
-    expect(gttsCall).toContain('stopVoiceClip()');
-    expect(gttsCall).toMatch(/setTimeout\([\s\S]*?stopVoiceClip\(\)[\s\S]*?,\s*220\)/);
+    expect(body).toMatch(/DO NOT reintroduce audible insurance/);
+    expect(body).not.toContain('playGestureClipSync');
+    expect(body).not.toContain('insuranceKind');
+    expect(body).not.toContain('insuranceFile');
+    expect(body).not.toContain('startInsurance');
+    expect(body).not.toContain('saveWithInsuranceThenMaybeSynth');
+    expect(body).not.toContain('CARD_GREET_INSURANCE');
+    expect(body).toContain('preview skip synth robot');
+    expect(body).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?synthSpeak\(/);
+    expect(body).not.toMatch(/clipFile\s*\(\s*locale\s*,/);
+    expect(body).not.toContain('nextGreetingKind()');
+    expect(body).not.toMatch(/setTimeout\([\s\S]*?stopVoiceClip\(\)[\s\S]*?,\s*220\)/);
+    expect(body).toMatch(/if \(spokenBy \|\| gttsPending\) return/);
+  });
+
+  it('voice.ts does not import playGestureClipSync (hard-disabled for greets)', () => {
+    expect(voice).not.toMatch(/import\s*\{[^}]*playGestureClipSync[^}]*\}\s*from\s*['\"]\.\/play-voice-clip['\"]/);
+    expect(voice).not.toContain('playGestureClipSync(');
+  });
+
+  it('play-voice-clip documents the permanent ban', () => {
+    expect(clip).toContain('DO NOT reintroduce audible insurance');
+    expect(clip).toContain('export function playGestureClipSync');
+  });
+
+  it('gtts neural path remains available for greets', () => {
+    expect(gtts).toMatch(/export function speakGtts/);
   });
 
   it('gtts defaults to gesture-safe start; chat may opt into pin-before-play', () => {

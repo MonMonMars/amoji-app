@@ -95,8 +95,9 @@ describe('select voice preview cut-through', () => {
     const voice = read('../lib/voice.ts');
     const greet = voice.indexOf('export function playVoiceGreeting');
     const preview = voice.indexOf('export function previewVoiceChoice');
-    const greetSlice = voice.slice(greet, greet + 420);
-    const previewSlice = voice.slice(preview, preview + 420);
+    // Slice to next export — permanent DO NOT comments must not shrink a fixed window past stopSpeaking().
+    const greetSlice = voice.slice(greet, voice.indexOf('export function previewLibraryClip', greet));
+    const previewSlice = voice.slice(preview, voice.indexOf('export function previewOsVoice', preview));
     expect(greetSlice).toContain('stopSpeaking()');
     expect(greetSlice).toContain('selectAuditionAllowed()');
     expect(previewSlice).toContain('selectAuditionAllowed()');

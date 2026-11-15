@@ -25,11 +25,13 @@ describe('voice restore — one tier speaks, never two', () => {
     expect(greet).toContain("onStart('edge')");
   });
 
-  it('the greeting still primes synth in the tap as the last resort', () => {
+  it('the greeting still primes audio in the tap (synth speak is not used)', () => {
     expect(greet).toContain('primeSynthInGesture(true)');
     expect(greet).toContain('unlockAudio(true)');
     expect(greet).toContain('stopSpeaking()');
     expect(greet).toContain("runSynthAudition('greeting fallback')");
+    expect(greet).toContain('greeting skip synth robot');
+    expect(greet).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?synthSpeak\(/);
   });
 
   it('the greeting tracks the winner so only one tier speaks', () => {
@@ -43,8 +45,10 @@ describe('voice restore — one tier speaks, never two', () => {
   it('does not start synth while the MP3 tier is still in flight', () => {
     expect(greet).toContain('gttsPending');
     expect(greet).toMatch(/if \(gttsPending\) return/);
-    // Grace timer skips synth while gTTS is pending or insurance is still playing.
-    expect(greet).toMatch(/gttsPending\s*\|\|/);
+    // Grace timer skips synth while gTTS is pending (no insurance clip path).
+    expect(greet).toMatch(/spokenBy \|\| gttsPending/);
+    expect(greet).not.toContain('playGestureClipSync');
+    expect(greet).not.toContain('startInsurance');
   });
 
   it('the preview path uses the same one-winner structure', () => {
@@ -52,7 +56,8 @@ describe('voice restore — one tier speaks, never two', () => {
     expect(preview).toContain('speakEdge(');
     expect(preview).toContain('spokenBy');
     expect(preview).toMatch(/if \(spokenBy === 'gtts'\) return/);
-    expect(preview).toContain('isVoiceClipPlaying()');
+    expect(preview).not.toContain('playGestureClipSync');
+    expect(preview).not.toContain('startInsurance');
     expect(preview).toContain("runSynthAudition('preview fallback')");
   });
 

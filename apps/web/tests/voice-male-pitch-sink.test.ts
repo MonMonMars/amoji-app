@@ -88,9 +88,9 @@ describe('male pin → male voice id / gender / pitch', () => {
     expect(gttsPlaybackRate(1, maleMid, 'yue')).toBeGreaterThanOrEqual(GTTS_PITCH_BIAS_MIN);
   });
 
-  it('voice greeting/preview pass delivery gender + male pace into gTTS/Edge/clips', () => {
+  it('voice greeting/preview pass delivery gender + male pace into gTTS/Edge', () => {
     const voice = readFileSync(join(web, 'lib/voice.ts'), 'utf8');
-    expect(voice).toContain('clipFile(lang, delivery, insuranceKind)');
+    expect(voice).not.toContain('clipFile(lang, delivery, insuranceKind)');
     expect(voice).toContain('gender: delivery');
     expect(voice).toContain('gender: previewGender');
     expect(voice).toContain("rate: delivery === 'male' ? 0.90 : 1");

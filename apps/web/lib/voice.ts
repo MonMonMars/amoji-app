@@ -107,7 +107,7 @@ import { loadingFillerKind, recordedLaughClip, recordedPokeClip } from './voice-
 import { LineQueue, speechLeadDiverged, speechRemainder } from './speech-queue';
 import { emotionClipPath } from './emotion-clip-picks';
 import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText, nextCardGreetPhrase, nextGreetingKind, type BurstClipKind, type ClipFolder, type VoiceClipGender } from './voice-clips';
-import { isVoiceClipPlaying, playGestureClipSync, playVoiceClip, stopVoiceClip } from './play-voice-clip';
+import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
 export { speechLeadDiverged, speechRemainder };
 import { edgeCastVoice } from './edge-cast';
 import { pauseEdgeForTabHide, speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead } from './edge-tts';
@@ -280,7 +280,10 @@ function playSilentUnblock(): void {
   v.setUint32(40, frames * 2, true);
   const url = URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
   const a = new Audio(url);
-  a.volume = 0.06;
+  // DO NOT reintroduce audible insurance / robot unlock clips — owner
+  // regression many times (card greet double-voice). Autoplay unlock must be
+  // silent: volume 0 + empty PCM buffer only. Never a voiced gesture clip.
+  a.volume = 0;
   const cleanup = () => URL.revokeObjectURL(url);
   a.onended = cleanup;
   a.onerror = cleanup;
@@ -1907,6 +1910,7 @@ function performClip(job: SpeechJob): Promise<void> {
  * hardware silent switch — and let Edge interrupt it if Edge ever works again.
  * Exactly one tier speaks: whoever starts first halts the other.
  */
+
 /**
  * Select-page greeting. Pass `line` to speak a specific sentence instead of the
  * rotating card-greet bank. Character / voice / language taps leave `line`
@@ -1925,25 +1929,20 @@ export function playVoiceGreeting(
   if (!selectAuditionAllowed()) return;
   unlockAudio(true);
   stopSpeaking();
+  // DO NOT reintroduce audible insurance / gesture "robot" clips for card
+  // greets — owner regression many times (robot+female double, then robot-only).
+  // Prefer silence until real gTTS/Edge TTS over any local hello/hihi insurance.
   // All langs: pin speakers before any tier (gate sample device, not mic sink).
   ensureCompanionPlaybackRoute();
   // force: stopSpeaking cancelled any window-level prime and cleared the latch.
   primeSynthInGesture(true);
   // Rotate a short phrase bank so re-taps do not always say the same Hello.
   const text = line?.trim() ? line.trim() : nextCardGreetPhrase(lang);
-  // Companion gender is the fallback; a tapped male/female button wins so the
-  // insurance clip and pitchBias match the shipping voice the user selected.
+  // Companion gender is the fallback; a tapped male/female button wins so
+  // pitchBias matches the shipping voice the user selected.
   const companionGender = characterVoiceGender(characterId);
   const delivery = deliveryGenderForChoice(lang, choiceId, companionGender);
   const tl = tlForChoice(lang, choiceId);
-  // Same-origin greeting clip INSIDE the tap — audible even when Google TTS
-  // is offline/blocked or play() would otherwise run after the gesture dies.
-  const insuranceKind = nextGreetingKind();
-  playGestureClipSync(
-    clipFile(lang, delivery, insuranceKind),
-    greetingText(lang, insuranceKind),
-    () => { markVoiceStarted(); },
-  );
   let session = 0;
   /** Set by whichever tier actually starts, so the loser can bail out. */
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
@@ -1963,19 +1962,16 @@ export function playVoiceGreeting(
     markVoiceStarted();
     reportVoiceStatus(tier, true, `greeting ${choiceId}`);
   };
-  /** Last-resort tier for a device where even the HTTP MP3 cannot play. */
+  /**
+   * Last-resort OS synth ONLY after gTTS has failed / timed out.
+   * Never arm while neural/gTTS may still speak — that is the "robot" path.
+   */
+  // Card greets: never fall through to OS speechSynthesis ("robot"). After
+  // Google rate-limits, synth became the only audible path for every card.
+  // Prefer silence over poisoning the select board with robot voice.
   const runSynthAudition = (tag: string) => {
-    if (spokenBy) return;
-    try {
-      // syncGesture: must speak in this tap — deferred speak stays silent on iOS.
-      synthSpeak(text, characterId, lang, 'joy', 1.1, undefined, 1, undefined, () => {
-        if (session) finishLipSync(session);
-      }, delivery, 0.7, true);
-      onStart('synth');
-      reportVoiceStatus('synth', true, `${tag} ${choiceId}`);
-    } catch (e) {
-      reportVoiceStatus('synth', false, (e as Error | undefined)?.message ?? 'greeting synth failed');
-    }
+    if (spokenBy || gttsPending) return;
+    reportVoiceStatus('synth', false, `greeting skip synth robot (${tag}) ${choiceId}`);
   };
   // Start the HTTP tier first and synchronously inside the gesture. It fetches
   // over plain HTTPS, so it does not need the gesture itself, but starting here
@@ -1994,18 +1990,6 @@ export function playVoiceGreeting(
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
       try { haltBrowserSynth(); } catch { /* ignore */ }
       if (!spokenBy) onStart('gtts');
-      // Hold insurance briefly — gTTS onplay can fire then die after sink re-pin
-      // (#406/#413). Stopping the clip immediately left character cards silent.
-      window.setTimeout(() => {
-        if (spokenBy && spokenBy !== 'gtts') return;
-        try { stopVoiceClip(); } catch { /* ignore */ }
-      }, 220);
-    },
-    onProgress: (n) => {
-      // Confirm the MP3 tier is really speaking (onplay can fire then die).
-      if (n > 0 && spokenBy === 'gtts') {
-        try { stopVoiceClip(); } catch { /* ignore */ }
-      }
     },
   }).then(() => {
     markGttsDone();
@@ -2014,11 +1998,9 @@ export function playVoiceGreeting(
     markGttsDone();
     if ((e as Error | undefined)?.message === 'canceled') return;
     reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'greeting gtts failed');
-    // gTTS may have claimed the line then died — clear so synth/insurance can save.
+    // gTTS may have claimed the line then died — clear so last-resort synth can save.
     if (spokenBy === 'gtts') spokenBy = null;
-    // If the gesture insurance clip is still audible, let it finish — do not
-    // stack a second synth voice on top.
-    if (isVoiceClipPlaying()) return;
+    if (spokenBy) return;
     runSynthAudition('greeting fallback');
   });
   /**
@@ -2032,7 +2014,6 @@ export function playVoiceGreeting(
     // Edge 403s instantly while the MP3 tier may still be fetching — synth here
     // calls haltSynthQueue() and cancels gTTS, which is silence on iOS.
     if (gttsPending) return;
-    if (isVoiceClipPlaying()) return;
     reportVoiceStatus('edge', false, why);
     runSynthAudition('greeting fallback');
   };
@@ -2040,12 +2021,13 @@ export function playVoiceGreeting(
   // 403s immediately, so without this the synth fallback fires on virtually
   // every greeting, overlapping the MP3 tier.
   edgeGrace = setTimeout(() => {
-    if (spokenBy || gttsPending || isVoiceClipPlaying()) return;
+    if (spokenBy || gttsPending) return;
     runSynthAudition('greeting fallback (no tier started)');
   }, 1500);
   // Edge still wins if it ever answers again: onPlaying halts the other tiers.
-  // It is not a button and not a promise — just a free upside if Microsoft
-  // re-opens the endpoint, which would also restore real per-voice identities.
+  // Skip while the breaker is open — a rejected Edge path used to help shove
+  // greetings onto OS synth after gTTS had already failed once.
+  if (edgeEndpointsDead()) return;
   const greetTier = pitchTierForChoice(choiceId);
   const greetEdgeProsody = edgeProsodyForTier(greetTier);
   void speakEdge(text, {
@@ -2061,7 +2043,6 @@ export function playVoiceGreeting(
     onPlaying: () => {
       if (spokenBy === 'gtts') return; // MP3 tier already got there first
       try { haltSynthQueue(); } catch { /* ignore */ }
-      try { stopVoiceClip(); } catch { /* ignore */ }
       if (!spokenBy) onStart('edge');
     },
   }).then(() => {
@@ -2244,36 +2225,24 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   if (!selectAuditionAllowed()) return Promise.resolve();
   unlockAudio(true);
   stopSpeaking();
+  // DO NOT reintroduce audible insurance / gesture "robot" clips for voice
+  // previews — same owner regression as playVoiceGreeting (robot+neural double).
   // All langs: same default speakers as gate (not mic communications).
   ensureCompanionPlaybackRoute();
   primeSynthInGesture(true);
-  // Delivery gender from the tapped button (male pin → male pace/pitch/clips).
+  // Delivery gender from the tapped button (male pin → male pace/pitch).
   const tl = tlForChoice(locale, choiceId);
   const previewGender = deliveryGenderForChoice(locale, choiceId, 'female');
   // Same rotating short greet as select-board voice cards.
   const text = nextCardGreetPhrase(locale);
-  // Local insurance clip inside the tap (same-origin) — always audible offline.
-  const insuranceKind = nextGreetingKind();
-  playGestureClipSync(
-    clipFile(locale, previewGender, insuranceKind),
-    greetingText(locale, insuranceKind),
-    () => { markVoiceStarted(); },
-  );
-  /** Set by whichever tier actually starts, so the loser can bail out. */
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
+  let gttsPending = true;
+  const markGttsDone = () => { gttsPending = false; };
+  // Same as playVoiceGreeting: never leave voice cards on OS synth robot.
   const runSynthAudition = (tag: string) => {
-    if (spokenBy) return Promise.resolve();
-    return new Promise<void>((resolve) => {
-      try {
-        synthSpeak(text, 'preview', locale, 'joy', 1.1, undefined, 1, undefined, () => resolve(), previewGender, 0.7, true);
-        spokenBy = 'synth';
-        markVoiceStarted();
-        reportVoiceStatus('synth', true, `${tag} ${choiceId}`);
-      } catch (e) {
-        reportVoiceStatus('synth', false, (e as Error | undefined)?.message ?? 'preview synth failed');
-        resolve();
-      }
-    });
+    if (spokenBy || gttsPending) return Promise.resolve();
+    reportVoiceStatus('synth', false, `preview skip synth robot (${tag}) ${choiceId}`);
+    return Promise.resolve();
   };
   // HTTP MP3 tier first, started inside the gesture so preview is immediate.
   // Exactly one tier speaks: whoever starts first halts the others.
@@ -2292,18 +2261,15 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
         markVoiceStarted();
         reportVoiceStatus('gtts', true, `preview gtts ${choiceId}`);
       }
-      // Same hold as playVoiceGreeting — onplay≠audible after sink re-pin.
-      window.setTimeout(() => {
-        if (spokenBy && spokenBy !== 'gtts') return;
-        try { stopVoiceClip(); } catch { /* ignore */ }
-      }, 220);
     },
+  }).then(() => {
+    markGttsDone();
   }).catch((e: unknown) => {
+    markGttsDone();
     if ((e as Error | undefined)?.message === 'canceled') return;
     reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'preview gtts failed');
     if (spokenBy === 'gtts') spokenBy = null;
-    // Match playVoiceGreeting: do not stack synth over a still-playing insurance clip.
-    if (isVoiceClipPlaying()) return;
+    if (spokenBy) return;
     return runSynthAudition('preview fallback');
   });
 
@@ -2322,7 +2288,6 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
     onPlaying: () => {
       if (spokenBy === 'gtts') return; // MP3 tier already got there first
       try { haltSynthQueue(); } catch { /* ignore */ }
-      try { stopVoiceClip(); } catch { /* ignore */ }
       if (!spokenBy) {
         spokenBy = 'edge';
         markVoiceStarted();
@@ -2337,18 +2302,6 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   });
 }
 
-/**
- * Audition ONE OS voice by name.
- *
- * speechSynthesis is the only tier that can address a specific installed
- * speaker, so a preview bypasses the Edge/Google chain entirely: those tiers
- * either refuse this app or ignore a voice id, and routing a preview through
- * them would play a DIFFERENT speaker than the button the user tapped.
- *
- * On success the choice is pinned so chat honours it afterwards. A failed
- * utterance is reported and NOT pinned, so a device that lists a voice it
- * cannot synthesize never leaves a dead pin behind.
- */
 export function previewOsVoice(
   locale: Lang,
   voiceName: string,
