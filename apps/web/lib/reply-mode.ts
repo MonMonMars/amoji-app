@@ -10,7 +10,7 @@
 //   joke/poem   → short/medium · playful joy · talk_only
 //   personal    → short · tender warmth · talk_only
 //   weather     → short · caring calm · tool_spoken_facts
-//   news        → medium · warm interest · tool_spoken_facts
+//   news        → long · warm interest · tool_spoken_facts (headline+lede+details)
 //   help/recipe → medium–long · calm encouragement · talk_only
 //   story       → long · wonder/excitement · talk_only
 //   science     → super_long · curious pride · talk_only
@@ -117,11 +117,11 @@ export const REPLY_MODE_CHART: Readonly<Record<ReplyModeId, ReplyModeBudget>> = 
   },
   news: {
     id: 'news',
-    targetLength: 'medium',
+    targetLength: 'long',
     emotion: 'interest + warmth',
     talkVsMusic: 'tool_spoken_facts',
-    sentenceGuide: '1–3 finished news statements — no fishing questions',
-    maxTokens: 360,
+    sentenceGuide: 'headline + short lede + 2–4 key details as finished statements — no fishing questions, no inventing',
+    maxTokens: HELP_MAX_TOKENS,
     detailed: true,
   },
   help: {
@@ -334,6 +334,13 @@ export function replyModeSystemBlock(mode: ReplyModeBudget, language?: string): 
       yue
         ? '- 仍然遵守：只陳述、唔軟邀請、唔追問下一題。'
         : '- Still policy: statement-only — no soft invites, no follow-up interviews.',
+    );
+  }
+  if (mode.id === 'news') {
+    lines.push(
+      yue
+        ? '- 新聞：讀標題 + 摘要／導語 + 2–4 個重點；唔好只讀一行標題，亦唔好發明事實或重讀舊聞。'
+        : '- News: read the headline, then the summary/lede, then 2–4 key details. Never a one-liner title alone; never invent facts or re-read an older story.',
     );
   }
   let block = lines.join('\n');
