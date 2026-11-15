@@ -65,12 +65,29 @@ export class LineQueue<T> {
   }
 }
 
-/** True when the final reply no longer starts with the streamed first sentence. */
+/** Drop trailing sentence closers so "." vs "!" still counts as one lead. */
+function speechLeadBody(text: string): string {
+  return text.trim().replace(/[\s。.！!？?]+$/u, '');
+}
+
+/**
+ * True when the final reply no longer continues the streamed first sentence.
+ * Closer-only punctuation drift ("Hello." → "Hello!") is NOT a divergence —
+ * treating it as one used to cut + re-speak sentence one.
+ */
 export function speechLeadDiverged(full: string, already: string): boolean {
   const t = full.trim();
   const f = already.trim();
   if (!f || !t) return false;
-  return t !== f && !t.startsWith(f);
+  if (t === f || t.startsWith(f)) return false;
+  const body = speechLeadBody(f);
+  if (!body) return true;
+  if (t === body || t.startsWith(body)) {
+    const after = t.slice(body.length);
+    // Same lead body only when the next char is end / space / another closer.
+    if (!after || /^[\s。.！!？?]/.test(after)) return false;
+  }
+  return true;
 }
 
 /** Text still to say after `already` was queued as the first sentence. */
@@ -80,6 +97,14 @@ export function speechRemainder(full: string, already: string): string {
   if (!f) return t;
   if (t === f) return '';
   if (t.startsWith(f)) return t.slice(f.length).trim();
+  const body = speechLeadBody(f);
+  if (body && (t === body || t.startsWith(body))) {
+    const after = t.slice(body.length);
+    if (!after) return '';
+    if (/^[\s。.！!？?]/.test(after)) {
+      return after.replace(/^[\s。.！!？?]+/u, '').trim();
+    }
+  }
   // Final reply diverged (scrub / preferLive swapped the line). Returning the
   // full string here stacked a second answer on top of the streamed lead —
   // "two LLM replies" / repeated content. Caller should stop + speak once.

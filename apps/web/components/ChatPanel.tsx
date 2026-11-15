@@ -643,7 +643,13 @@ export default function ChatPanel({
       : hints;
     speak(gated, characterId, lang, voiced, lead);
     if (voiced) applyContentMood(voiced);
-    setHistory((h) => [...h, { role: 'assistant', content: gated }]);
+    // Never stack the same assistant line twice (callers sometimes also
+    // setHistory — that painted "same line twice" in chat history).
+    setHistory((h) => {
+      const tail = h[h.length - 1];
+      if (tail?.role === 'assistant' && tail.content.trim() === gated.trim()) return h;
+      return [...h, { role: 'assistant', content: gated }];
+    });
   };
 
   // speak a just-arrived reply; if the exchange was funny, giggle first and
@@ -1153,8 +1159,8 @@ export default function ChatPanel({
       contentContinuation = null;
       const line = stripOfftopicAbilityTack(contentStopAck(lang), text);
       rememberTurn(text, line);
+      // sayLocal already appends history — do not setHistory again.
       sayLocal(line, { neutral: 0.55 });
-      setHistory((h) => [...h, { role: 'assistant', content: line }]);
       done();
       return;
     }
@@ -1395,7 +1401,7 @@ export default function ChatPanel({
     const plan = planStatus();
     if (!plan.chatAllowed) {
       const line = quotaExceededCopy(lang);
-      setHistory((h) => [...h, { role: 'assistant', content: line }]);
+      // sayLocal already appends history — do not setHistory again.
       sayLocal(line, { sadness: 0.2 });
       done();
       return;
