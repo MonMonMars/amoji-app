@@ -38,16 +38,16 @@ describe('audible deep vs bright pitch gap', () => {
     const brightF = gttsCharacterPitchBias('female', undefined, 'en', 'bright');
     const deepM = gttsCharacterPitchBias('male', undefined, 'yue', 'deep');
     const brightM = gttsCharacterPitchBias('male', undefined, 'yue', 'bright');
-    expect(brightF - deepF).toBeGreaterThanOrEqual(0.40);
-    expect(brightM - deepM).toBeGreaterThanOrEqual(0.30);
-    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.40);
-    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.36);
+    expect(brightF - deepF).toBeGreaterThanOrEqual(0.50);
+    expect(brightM - deepM).toBeGreaterThanOrEqual(0.50);
+    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.50);
+    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.50);
   });
 
   it('male mid stays clearly below female mid', () => {
-    expect(PITCH_BIAS_MALE).toBeLessThanOrEqual(0.78);
-    expect(PITCH_BIAS_FEMALE).toBeGreaterThanOrEqual(1.20);
-    expect(PITCH_BIAS_FEMALE - PITCH_BIAS_MALE).toBeGreaterThanOrEqual(0.40);
+    expect(PITCH_BIAS_MALE).toBeLessThanOrEqual(0.66);
+    expect(PITCH_BIAS_FEMALE).toBeGreaterThanOrEqual(1.28);
+    expect(PITCH_BIAS_FEMALE - PITCH_BIAS_MALE).toBeGreaterThanOrEqual(0.60);
   });
 
   it('yue male pace floor does not collapse deep into mid', () => {
@@ -97,6 +97,8 @@ describe('male pin → male voice id / gender / pitch', () => {
     expect(voice).toContain("rate: previewGender === 'male' ? 0.90 : 1");
     expect(voice).toContain('gttsRateFor');
     expect(voice).toContain('deliveryGenderForChoice(lang, voicePin, companionGender)');
+    expect(voice).toContain('preferMale: spokenGender === \'male\'');
+    expect(voice).toContain('edgeVoiceIdForTier');
     expect(voice).not.toMatch(/speakEdge\(text, \{\s*lang: locale,\s*gender: 'female'/);
   });
 });

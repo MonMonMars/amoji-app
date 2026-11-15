@@ -168,7 +168,7 @@ Owner still reports pain. Merged ≠ Done. Shipping now:
 Do **not**:
 
 - Re-flip poke lean (±) without device evidence
-- Churn R10 voice without a proven floor/clamp bug
+- Churn R10 voice without a proven bug (delivery-gender ignore / hop order is the current fix)
 - Invent SFX deletes (Want list is documented)
 - Mark R10–R13 Done
 
@@ -177,7 +177,7 @@ Do **not**:
 1. **Card greet — no sound** — #370/#375 — owner re-reports
 2. **News same-old / repeat** — #385/#386 — owner re-reports
 3. **R11 idle** — #415 v4 upright RPM F/M stands — phone (**not Done**)
-4. **R10 voice** — #406+#410+#413 — phone (deep≠bright; male≠female; non-Yue sink) (**not Done**)
+4. **R10 voice** — #406+#410+#413 + real-male follow-up (Edge delivery gender, male hops, tier voice ids) — phone (deep≠bright; male≠female; non-Yue sink) (**not Done**)
 5. **R13 poke lean** — #409 — phone verify same-side tip (**not Done**)
 6. **R12 lighting** — #408 — phone (all cast same shader style) (**not Done**)
 7. **Nonsense** — #360+#412+#416 — owner live OK still required

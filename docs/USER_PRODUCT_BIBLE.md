@@ -75,7 +75,7 @@
 |------|--------|
 | Card greet — no sound | #370/#375 on `main`; owner re-reports silence. Parallel agent owns fix. **Not Done.** |
 | News same-old / repeat | #385/#386 on `main`; owner re-reports same headlines. Parallel agent owns fix. **Not Done.** |
-| Voice pitch/male/sink (R10) | #406+#410+#413 on `main`. gTTS still one speaker/tl — male timbre limited. **Phone** — no further code without test/floor bug. **Not Done.** |
+| Voice pitch/male/sink (R10) | #406+#410+#413 on `main` + follow-up (delivery gender wins on Edge; male hops edge→synth→gtts; tier Edge voice ids; wider gTTS gaps; #420 play-first default sink). **Still Outstanding until phone** — Edge may 403 without proxy. **Not Done.** |
 | Idle pose still bad (R11) | #415 idle v4 on `main` (RPM F/M stands only; prefs v4) — **phone smoke**. Idle v3 legacy wipe/scrub shipping separately. **Not Done.** |
 | Lighting unify (R12) | #408 on `main` — **phone smoke**. **Not Done.** |
 | Poke lean direction (R13) | #409 on `main` — **phone verify**; do not flip ±leanSide without device evidence. **Not Done.** |
@@ -97,6 +97,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-15 ~23:00 | R10 #425 rebase onto #424: keep no-onplay setSinkId + real male Edge/synth hops / tier voices — **R10 still Outstanding phone** |
 | 2026-11-15 ~22:45 | CRITICAL: only Yue-F audible — stop onplay `setSinkId` kill; keep #420 play-first; all lang×gender×pitch (`voice-unmute-all-langs`) — **Outstanding phone** |
 | 2026-11-15 ~22:34 | URGENT card greet silence: fix gTTS/Edge play-before-pin + default-only sink cache + insurance hold (`card-greet-sound-fix`) |
 | 2026-11-15 ~22:31 | Owner “getting worst”: keep card no-sound + news repeat + R10–R13 Outstanding; ship idle v3 legacy wipe/scrub; tip `34ed7e0` (#418) |

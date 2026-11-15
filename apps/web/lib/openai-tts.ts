@@ -1,5 +1,8 @@
 'use client';
-import { pinDefaultOutput, pinDefaultOutputAsync } from './audio-output';
+import {
+  ensureCompanionPlaybackRoute,
+  pinDefaultOutputAsync,
+} from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 import { stripVoicedSymbols } from './speak-text';
 import { followAudioElement } from './speech';
@@ -256,7 +259,8 @@ export function speakOpenAi(text: string, opts: OpenAiVoiceOpts): Promise<void> 
       pendingReject = null;
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
-      pinDefaultOutput(audio);
+      ensureCompanionPlaybackRoute();
+      // Play first; pin only on play() reject-retry (#424 — never onplay setSinkId).
       applyPlaybackVolume(audio);
       currentAudio = audio;
       currentUrl = url;
@@ -274,13 +278,15 @@ export function speakOpenAi(text: string, opts: OpenAiVoiceOpts): Promise<void> 
         URL.revokeObjectURL(url);
         reject(new Error('openai-tts playback failed'));
       };
-      void pinDefaultOutputAsync(audio)
-        .then(() => audio.play())
-        .catch((e: unknown) => {
-          if (currentAudio === audio) { currentAudio = null; currentUrl = null; }
-          URL.revokeObjectURL(url);
-          reject(e instanceof Error ? e : new Error(String(e)));
-        });
+      void audio.play().catch((e: unknown) => {
+        void pinDefaultOutputAsync(audio)
+          .then(() => audio.play())
+          .catch((err: unknown) => {
+            if (currentAudio === audio) { currentAudio = null; currentUrl = null; }
+            URL.revokeObjectURL(url);
+            reject(err instanceof Error ? err : e instanceof Error ? e : new Error(String(err)));
+          });
+      });
     }).catch((err: unknown) => {
       if (settled) return;
       // fetch rejection: AbortError (timeout) or TypeError (network/CORS block)

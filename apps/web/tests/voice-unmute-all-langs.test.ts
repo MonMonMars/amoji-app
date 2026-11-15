@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+  GTTS_PITCH_BIAS_MAX,
   GTTS_PITCH_BIAS_MIN,
   gttsPlaybackRate,
 } from '../lib/gtts';
@@ -73,7 +74,7 @@ describe('every lang × gender × pitch is an audible free-tier choice', () => {
           expect(bias).toBeGreaterThanOrEqual(GTTS_PITCH_BIAS_MIN);
           const rate = gttsPlaybackRate(gender === 'male' ? 0.90 : 1, bias, choice.tl);
           expect(rate).toBeGreaterThanOrEqual(GTTS_PITCH_BIAS_MIN);
-          expect(rate).toBeLessThanOrEqual(1.48);
+          expect(rate).toBeLessThanOrEqual(GTTS_PITCH_BIAS_MAX);
           expect(pitchTierForChoice(choice.id)).toBe(tier);
           expect(voiceChoiceById(choice.id)?.locale).toBe(locale);
         }

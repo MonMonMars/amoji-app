@@ -241,6 +241,91 @@ export function edgeVoiceId(locale: string, gender: VoiceGender): string {
   return hit?.id ?? (gender === 'male' ? 'en-US-GuyNeural' : 'en-US-JennyNeural');
 }
 
+/** Selectable deep / mid / bright personas — same ids the gTTS pitch buttons use. */
+export type EdgePitchTier = 'deep' | 'mid' | 'bright';
+
+/**
+ * Distinct Edge neural voice ids per locale × gender × pitch tier.
+ * gTTS cannot do this (one speaker per `tl`); Edge can. Same-id locales (yue
+ * male / ja) still get audible separation via {@link edgeProsodyForTier}.
+ */
+const EDGE_TIER_VOICE: Record<
+  VoiceLocale,
+  Record<VoiceGender, Record<EdgePitchTier, string>>
+> = {
+  yue: {
+    female: {
+      deep: 'zh-HK-HiuMaanNeural',
+      mid: 'zh-HK-HiuMaanNeural',
+      bright: 'zh-HK-HiuGaaiNeural',
+    },
+    male: {
+      deep: 'zh-HK-WanLungNeural',
+      mid: 'zh-HK-WanLungNeural',
+      bright: 'zh-HK-WanLungNeural',
+    },
+  },
+  zh: {
+    female: {
+      deep: 'zh-CN-XiaoxiaoNeural',
+      mid: 'zh-CN-XiaoxiaoNeural',
+      bright: 'zh-CN-XiaoyiNeural',
+    },
+    male: {
+      deep: 'zh-CN-YunyangNeural',
+      mid: 'zh-CN-YunjianNeural',
+      bright: 'zh-CN-YunxiNeural',
+    },
+  },
+  ja: {
+    female: {
+      deep: 'ja-JP-NanamiNeural',
+      mid: 'ja-JP-NanamiNeural',
+      bright: 'ja-JP-NanamiNeural',
+    },
+    male: {
+      deep: 'ja-JP-KeitaNeural',
+      mid: 'ja-JP-KeitaNeural',
+      bright: 'ja-JP-KeitaNeural',
+    },
+  },
+  en: {
+    female: {
+      deep: 'en-US-AriaNeural',
+      mid: 'en-US-JennyNeural',
+      bright: 'en-US-AnaNeural',
+    },
+    male: {
+      deep: 'en-US-ChristopherNeural',
+      mid: 'en-US-GuyNeural',
+      bright: 'en-US-BrianNeural',
+    },
+  },
+};
+
+/** Edge short name for a delivery gender + pitch button (falls back to mid). */
+export function edgeVoiceIdForTier(
+  locale: string,
+  gender: VoiceGender,
+  tier: EdgePitchTier | null | undefined = 'mid',
+): string {
+  const lang = (locale === 'yue' || locale === 'zh' || locale === 'ja' || locale === 'en'
+    ? locale
+    : 'en') as VoiceLocale;
+  const t: EdgePitchTier = tier === 'deep' || tier === 'bright' ? tier : 'mid';
+  return EDGE_TIER_VOICE[lang][gender][t];
+}
+
+/** Extra SSML prosody when a locale has only one neural speaker for that gender. */
+export function edgeProsodyForTier(tier: EdgePitchTier | null | undefined): {
+  pitch: number;
+  rate: number;
+} {
+  if (tier === 'deep') return { pitch: -0.16, rate: -0.12 };
+  if (tier === 'bright') return { pitch: 0.16, rate: 0.12 };
+  return { pitch: 0, rate: 0 };
+}
+
 /** BCP-47 prefixes for a companion language. No OS voice names. */
 export function browserLangPrefixes(locale: string): readonly string[] {
   if (locale === 'yue') return ['zh-hk', 'yue'];

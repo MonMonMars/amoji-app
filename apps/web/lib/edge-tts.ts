@@ -178,21 +178,30 @@ function pinnedEdgeVoice(id: string): ResolvedEdgeVoice {
   return { name: id, ssmlLang: ssmlLangForEdgeId(id), pitch: 0, rate: 0 };
 }
 
-/** Character + locale → one Edge voice. Gender is the floor, not the whole map. */
+/**
+ * Character + locale → one Edge voice.
+ * `opts.gender` is delivery (pinned male/female button) and MUST win over the
+ * companion's cast gender — #406/#410/#413 still ignored it whenever
+ * `character` was set, so male pins kept resolving female neural ids.
+ */
 export function resolveEdgeVoice(opts: EdgeVoiceOpts): ResolvedEdgeVoice {
   const v = VOICES[opts.lang] ?? VOICES.en!;
-  const gender = opts.character ? characterVoiceGender(opts.character) : opts.gender;
+  const characterGender = opts.character ? characterVoiceGender(opts.character) : opts.gender;
+  const gender = opts.gender ?? characterGender;
   // An explicit Edge short name still wins when a caller has one (the cast
-  // table, a probe, or a future re-enable). The saved user pin no longer
-  // participates: pins name a Google Translate `tl` region now, which cannot
-  // address an Edge voice, and Edge refuses this app anyway.
+  // table, a probe, a pitch-tier voice id, or a future re-enable).
   if (opts.voiceId && isShippingEdgeVoice(opts.voiceId)) return pinnedEdgeVoice(opts.voiceId);
-  const personal = opts.character ? edgeCastVoice(opts.character, opts.lang) : null;
+  // Personal cast only when delivery gender matches the companion — otherwise
+  // a female cast id would fight the male floor below and still sound wrong.
+  const personal =
+    opts.character && characterGender === gender
+      ? edgeCastVoice(opts.character, opts.lang)
+      : null;
   let name = personal?.id ?? edgeVoiceId(opts.lang, gender);
   let ssmlLang = personal?.ssmlLang ?? v.ssmlLang;
   let pitch = personal?.pitch ?? 0;
   let rate = personal?.rate ?? 0;
-  if (!personal && opts.character) {
+  if (!personal && opts.character && characterGender === gender) {
     const casted = CAST[opts.character]?.[opts.lang];
     // Legacy ids (not on the want-list) keep their old matrix when it matches gender.
     if (casted) name = casted;

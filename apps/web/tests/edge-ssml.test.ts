@@ -15,7 +15,8 @@ describe('edgeStyleFor — voice × emotion style resolution (r131)', () => {
     const female = buildEdgeSsml('你好呀', { lang: 'yue', gender: 'female', character: 'a01-shino' });
     expect(female).toContain("voice name='zh-HK-HiuGaaiNeural'");
     expect(female).toContain("xml:lang='zh-HK'");
-    const male = buildEdgeSsml('你好呀', { lang: 'yue', gender: 'female', character: 'a98-ethan' });
+    // Delivery gender must match — opts.gender wins (male pin → WanLung).
+    const male = buildEdgeSsml('你好呀', { lang: 'yue', gender: 'male', character: 'a98-ethan' });
     expect(male).toContain("voice name='zh-HK-WanLungNeural'");
     expect(male).not.toContain('HiuMaan');
     expect(male).not.toContain('HiuGaai');
@@ -187,14 +188,18 @@ describe('per-character Edge voices', () => {
     expect(resolveEdgeVoice({ lang: 'zh', gender: 'female', character: 'a01-shino' }).name).toBe('zh-CN-XiaoxiaoNeural');
     expect(resolveEdgeVoice({ lang: 'zh', gender: 'female', character: 'a02-shibu' }).name).toBe('zh-CN-XiaoyiNeural');
     expect(resolveEdgeVoice({ lang: 'yue', gender: 'female', character: 'a02-shibu' }).name).toBe('zh-HK-HiuMaanNeural');
-    expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a24-hairsample-male' }).name)).toBe(true);
+    expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a24-hairsample-male' }).name)).toBe(true);
     expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a107-dm-office-casual' }).name)).toBe(true);
     expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a94-rita' }).name)).toBe(true);
-    expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a94-rita' }).name)).toBe(true);
+    // Delivery gender wins over companion cast — female pin on a male id → female neural.
+    expect(isFemaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a94-rita' }).name)).toBe(true);
     expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a77-sasha' }).name)).toBe(true);
     expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a98-ethan' }).name)).toBe(true);
     expect(isFemaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a75-sorano' }).name)).toBe(true);
     expect(resolveEdgeVoice({ lang: 'en', gender: 'female' }).name).toBe('en-US-JennyNeural');
+    // Male pin on a female companion must resolve a male Edge voice (R10 root cause).
+    expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a01-shino' }).name)).toBe(true);
+    expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'yue', gender: 'male', character: 'a01-shino' }).name)).toBe(true);
   });
 
   it('speaks male companions with a male Edge voice and never styles WanLung', () => {
