@@ -54,8 +54,12 @@ export const VOICE_CATALOG: readonly VoiceOption[] = [
   { locale: 'zh', engine: 'kokoro', gender: 'male', id: 'zm_yunxi', shipping: false, license: 'Apache-2.0', latency: 'low', notes: 'Kokoro Mandarin male. Not bundled.' },
   { locale: 'zh', engine: 'piper', gender: 'female', id: 'zh_CN-huayan-medium', shipping: false, license: 'MIT', latency: 'low', notes: 'Piper zh_CN. Not bundled.' },
 
-  { locale: 'ja', engine: 'edge', gender: 'female', id: 'ja-JP-NanamiNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Default Japanese female.' },
-  { locale: 'ja', engine: 'edge', gender: 'male', id: 'ja-JP-KeitaNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Default Japanese male.' },
+  { locale: 'ja', engine: 'edge', gender: 'female', id: 'ja-JP-NanamiNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Default Japanese female (mid pitch button).' },
+  { locale: 'ja', engine: 'edge', gender: 'female', id: 'ja-JP-MayuNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Deeper Japanese female for deep pitch button.' },
+  { locale: 'ja', engine: 'edge', gender: 'female', id: 'ja-JP-AoiNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Brighter Japanese female for bright pitch button.' },
+  { locale: 'ja', engine: 'edge', gender: 'male', id: 'ja-JP-KeitaNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Default Japanese male (mid pitch button).' },
+  { locale: 'ja', engine: 'edge', gender: 'male', id: 'ja-JP-DaichiNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Deeper Japanese male for deep pitch button.' },
+  { locale: 'ja', engine: 'edge', gender: 'male', id: 'ja-JP-NaokiNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Brighter Japanese male for bright pitch button.' },
   { locale: 'ja', engine: 'speech', gender: 'female', id: 'Nanami', shipping: true, license: 'browser', latency: 'low', notes: 'ja-JP female.' },
   { locale: 'ja', engine: 'speech', gender: 'female', id: 'Kyoko', shipping: true, license: 'browser', latency: 'low', notes: 'Apple Kyoko.' },
   { locale: 'ja', engine: 'speech', gender: 'male', id: 'Keita', shipping: true, license: 'browser', latency: 'low', notes: 'ja-JP male.' },
@@ -216,13 +220,15 @@ function voicePersonalName(id: string): string {
 /** Exact personal names. Substring checks treated Ryan as Yan. */
 const MALE_NAMES = new Set([
   'wanlung', 'yunxi', 'yunjian', 'yunyang', 'yunxia', 'yunjhe', 'keita',
+  'daichi', 'naoki',
   'guy', 'christopher', 'eric', 'sam', 'otoya', 'ryan', 'andrew', 'brian',
   'steffan', 'roger', 'william', 'connor', 'prabhat', 'liam', 'mitchell',
   'wayne', 'luke', 'james', 'chilemba', 'abeo', 'elimu', 'thomas',
 ]);
 const FEMALE_NAMES = new Set([
   'hiumaan', 'hiugaai', 'xiaoxiao', 'xiaoyi', 'xiaohan', 'xiaomo', 'xiaorui',
-  'xiaobei', 'xiaoni', 'hsiaochen', 'hsiaoyu', 'nanami', 'jenny', 'aria',
+  'xiaobei', 'xiaoni', 'hsiaochen', 'hsiaoyu', 'nanami', 'mayu', 'aoi',
+  'jenny', 'aria',
   'ana', 'michelle', 'sara', 'yan', 'kyoko', 'sonia', 'libby', 'natasha',
   'neerja', 'emma', 'emily', 'ava', 'molly', 'clara', 'luna', 'leah',
   'rosa', 'maisie', 'asilia', 'ezinne', 'imani',
@@ -246,8 +252,10 @@ export type EdgePitchTier = 'deep' | 'mid' | 'bright';
 
 /**
  * Distinct Edge neural voice ids per locale × gender × pitch tier.
- * gTTS cannot do this (one speaker per `tl`); Edge can. Same-id locales (yue
- * male / ja) still get audible separation via {@link edgeProsodyForTier}.
+ * gTTS cannot do this (one speaker per `tl`); Edge can. Prefer a different
+ * speaker per tier whenever the catalog has one — prosody alone was still
+ * too similar after #425. Yue male is the only single-id band (WanLung only);
+ * that path leans on {@link edgeProsodyForTier} extremes.
  */
 const EDGE_TIER_VOICE: Record<
   VoiceLocale,
@@ -267,31 +275,34 @@ const EDGE_TIER_VOICE: Record<
   },
   zh: {
     female: {
-      deep: 'zh-CN-XiaoxiaoNeural',
+      // Three different Mandarin females — deep regional, mid default, bright peer.
+      deep: 'zh-CN-liaoning-XiaobeiNeural',
       mid: 'zh-CN-XiaoxiaoNeural',
       bright: 'zh-CN-XiaoyiNeural',
     },
     male: {
       deep: 'zh-CN-YunyangNeural',
       mid: 'zh-CN-YunjianNeural',
-      bright: 'zh-CN-YunxiNeural',
+      // Yunxia = cartoon/cute → obvious bright vs news-desk Yunyang.
+      bright: 'zh-CN-YunxiaNeural',
     },
   },
   ja: {
     female: {
-      deep: 'ja-JP-NanamiNeural',
+      deep: 'ja-JP-MayuNeural',
       mid: 'ja-JP-NanamiNeural',
-      bright: 'ja-JP-NanamiNeural',
+      bright: 'ja-JP-AoiNeural',
     },
     male: {
-      deep: 'ja-JP-KeitaNeural',
+      deep: 'ja-JP-DaichiNeural',
       mid: 'ja-JP-KeitaNeural',
-      bright: 'ja-JP-KeitaNeural',
+      bright: 'ja-JP-NaokiNeural',
     },
   },
   en: {
     female: {
-      deep: 'en-US-AriaNeural',
+      // Michelle (mature) → Jenny → Ana (child-like) — maximum persona gap.
+      deep: 'en-US-MichelleNeural',
       mid: 'en-US-JennyNeural',
       bright: 'en-US-AnaNeural',
     },
@@ -316,13 +327,18 @@ export function edgeVoiceIdForTier(
   return EDGE_TIER_VOICE[lang][gender][t];
 }
 
-/** Extra SSML prosody when a locale has only one neural speaker for that gender. */
+/**
+ * Extra SSML prosody on top of the tier voice id.
+ * After #425 ±0.16/±0.12 was still too subtle (and buildEdgeSsml crushed it
+ * further). These deltas are intentionally huge so deep≪mid≪bright is obvious
+ * even on single-id locales (yue male).
+ */
 export function edgeProsodyForTier(tier: EdgePitchTier | null | undefined): {
   pitch: number;
   rate: number;
 } {
-  if (tier === 'deep') return { pitch: -0.16, rate: -0.12 };
-  if (tier === 'bright') return { pitch: 0.16, rate: 0.12 };
+  if (tier === 'deep') return { pitch: -0.36, rate: -0.28 };
+  if (tier === 'bright') return { pitch: 0.40, rate: 0.30 };
   return { pitch: 0, rate: 0 };
 }
 

@@ -225,8 +225,8 @@ describe.skipIf(!esbuildAvailable)('speakGtts real behaviour (esbuild + vm)', ()
     const { api, created } = boot();
     void api.speakGtts('慢啲講。', { lang: 'yue', rate: 1, pitchBias: 0.5 }).catch(() => {});
     await new Promise((r) => setTimeout(r, 20));
-    expect(created[0]!.playbackRate).toBeGreaterThanOrEqual(0.42);
-    expect(created[0]!.playbackRate).toBeLessThanOrEqual(1.64);
+    expect(created[0]!.playbackRate).toBeGreaterThanOrEqual(0.38);
+    expect(created[0]!.playbackRate).toBeLessThanOrEqual(1.72);
   });
 
   it('keeps male Cantonese deeper than female (pace floor must not erase pitch)', async () => {
@@ -236,7 +236,7 @@ describe.skipIf(!esbuildAvailable)('speakGtts real behaviour (esbuild + vm)', ()
     // Absolute floor 0.60 — male mid stays 0.76; deep is not lifted into mid.
     expect(created[0]!.playbackRate).toBeGreaterThanOrEqual(0.64);
     expect(created[0]!.playbackRate).toBeLessThan(0.90);
-    expect(created[0]!.playbackRate).toBeLessThanOrEqual(1.64);
+    expect(created[0]!.playbackRate).toBeLessThanOrEqual(1.72);
   });
 
   it('deep male yue stays below mid (floor must not collapse tiers)', async () => {

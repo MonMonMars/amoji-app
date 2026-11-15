@@ -155,7 +155,7 @@ describe('buildEdgeSsml — the SSML the socket receives (r131)', () => {
     expect(ssml).not.toContain("pitch='+50%'");
   });
 
-  it('an English poke cheer is not spelled as punctuation and stays under a squeak', () => {
+  it('an English poke cheer is not spelled as punctuation; lead stays under a squeak', () => {
     const ssml = buildEdgeSsml('Haha, you got my head. I nearly sat down laughing — still playing?', {
       lang: 'en', gender: 'female', character: 'juno', emotion: 'joy',
       rateDelta: 0.15, pitchDelta: 0.3,
@@ -163,9 +163,31 @@ describe('buildEdgeSsml — the SSML the socket receives (r131)', () => {
     });
     expect(ssml).not.toMatch(/[~～—，]/);
     expect(ssml).not.toMatch(/tilde|ellipsis|exclamation/i);
+    // Lead tic is clampLeadProsody-capped; body may carry intentional tier
+    // pitchDelta (deep/bright) up to the widened ±48% speech ceiling.
+    expect(ssml).not.toContain("pitch='+50%'");
     const pitches = [...ssml.matchAll(/pitch='([+-]?\d+)%'/g)].map((m) => Math.abs(Number(m[1])));
     expect(pitches.length).toBeGreaterThan(0);
-    for (const p of pitches) expect(p).toBeLessThanOrEqual(18);
+    for (const p of pitches) expect(p).toBeLessThanOrEqual(48);
+  });
+
+  it('pitch-tier deltas survive SSML (deep≪bright — not crushed to ±18%)', () => {
+    const deep = buildEdgeSsml('Hello there.', {
+      lang: 'en', gender: 'male', voiceId: 'en-US-GuyNeural', forcePlain: true,
+      pitchDelta: -0.36, rateDelta: -0.28,
+    });
+    const bright = buildEdgeSsml('Hello there.', {
+      lang: 'en', gender: 'male', voiceId: 'en-US-GuyNeural', forcePlain: true,
+      pitchDelta: 0.40, rateDelta: 0.30,
+    });
+    const deepPitch = Number(deep.match(/pitch='([+-]?\d+)%'/)![1]);
+    const brightPitch = Number(bright.match(/pitch='([+-]?\d+)%'/)![1]);
+    const deepRate = Number(deep.match(/rate='([+-]?\d+)%'/)![1]);
+    const brightRate = Number(bright.match(/rate='([+-]?\d+)%'/)![1]);
+    expect(brightPitch - deepPitch).toBeGreaterThanOrEqual(60);
+    expect(brightRate - deepRate).toBeGreaterThanOrEqual(45);
+    expect(deepPitch).toBeLessThanOrEqual(-30);
+    expect(brightPitch).toBeGreaterThanOrEqual(30);
   });
 
   it('expressiveness scales styledegree within 1.00–2.00', () => {

@@ -1,11 +1,10 @@
 /**
- * R10 after #406/#410/#413: male still female because (1) resolveEdgeVoice
- * ignored delivery gender whenever character was set, and (2) free chain ran
- * gTTS (one speaker/tl) before Edge/synth. Pitch buttons also need distinct
- * Edge voice ids where the catalog has them.
+ * R10 after #406/#410/#413/#425: male still female / pitch still similar.
+ * This suite locks delivery-gender wins, distinct Edge tier voice ids, and
+ * VERY large deep≪mid≪bright gaps (gTTS + Edge prosody).
  */
 import { describe, expect, it } from 'vitest';
-import { resolveEdgeVoice } from '../lib/edge-tts';
+import { buildEdgeSsml, resolveEdgeVoice } from '../lib/edge-tts';
 import {
   edgeProsodyForTier,
   edgeVoiceIdForTier,
@@ -36,27 +35,66 @@ describe('R10 delivery gender wins on Edge', () => {
   });
 });
 
-describe('R10 Edge pitch-tier voice ids', () => {
-  it('en/zh male deep/mid/bright use distinct neural speakers', () => {
+describe('R10 Edge pitch-tier voice ids — huge persona gaps', () => {
+  it('en/zh/ja male+female deep/mid/bright use distinct neural speakers where available', () => {
     expect(edgeVoiceIdForTier('en', 'male', 'deep')).toBe('en-US-ChristopherNeural');
     expect(edgeVoiceIdForTier('en', 'male', 'mid')).toBe('en-US-GuyNeural');
     expect(edgeVoiceIdForTier('en', 'male', 'bright')).toBe('en-US-BrianNeural');
+    expect(edgeVoiceIdForTier('en', 'female', 'deep')).toBe('en-US-MichelleNeural');
+    expect(edgeVoiceIdForTier('en', 'female', 'mid')).toBe('en-US-JennyNeural');
+    expect(edgeVoiceIdForTier('en', 'female', 'bright')).toBe('en-US-AnaNeural');
     expect(edgeVoiceIdForTier('zh', 'male', 'deep')).toBe('zh-CN-YunyangNeural');
     expect(edgeVoiceIdForTier('zh', 'male', 'mid')).toBe('zh-CN-YunjianNeural');
-    expect(edgeVoiceIdForTier('zh', 'male', 'bright')).toBe('zh-CN-YunxiNeural');
-    expect(new Set([
-      edgeVoiceIdForTier('en', 'male', 'deep'),
-      edgeVoiceIdForTier('en', 'male', 'mid'),
-      edgeVoiceIdForTier('en', 'male', 'bright'),
-    ]).size).toBe(3);
+    expect(edgeVoiceIdForTier('zh', 'male', 'bright')).toBe('zh-CN-YunxiaNeural');
+    expect(edgeVoiceIdForTier('zh', 'female', 'deep')).toBe('zh-CN-liaoning-XiaobeiNeural');
+    expect(edgeVoiceIdForTier('zh', 'female', 'mid')).toBe('zh-CN-XiaoxiaoNeural');
+    expect(edgeVoiceIdForTier('zh', 'female', 'bright')).toBe('zh-CN-XiaoyiNeural');
+    expect(edgeVoiceIdForTier('ja', 'female', 'deep')).toBe('ja-JP-MayuNeural');
+    expect(edgeVoiceIdForTier('ja', 'female', 'mid')).toBe('ja-JP-NanamiNeural');
+    expect(edgeVoiceIdForTier('ja', 'female', 'bright')).toBe('ja-JP-AoiNeural');
+    expect(edgeVoiceIdForTier('ja', 'male', 'deep')).toBe('ja-JP-DaichiNeural');
+    expect(edgeVoiceIdForTier('ja', 'male', 'mid')).toBe('ja-JP-KeitaNeural');
+    expect(edgeVoiceIdForTier('ja', 'male', 'bright')).toBe('ja-JP-NaokiNeural');
+    for (const lang of ['en', 'zh', 'ja'] as const) {
+      for (const gender of ['male', 'female'] as const) {
+        const ids = [
+          edgeVoiceIdForTier(lang, gender, 'deep'),
+          edgeVoiceIdForTier(lang, gender, 'mid'),
+          edgeVoiceIdForTier(lang, gender, 'bright'),
+        ];
+        expect(new Set(ids).size, `${lang} ${gender}`).toBe(3);
+      }
+    }
   });
 
-  it('yue/ja male tiers share WanLung/Keita but get audible prosody deltas', () => {
+  it('yue male shares WanLung but gets extreme prosody; yue female deep≠bright id', () => {
     expect(edgeVoiceIdForTier('yue', 'male', 'deep')).toBe('zh-HK-WanLungNeural');
-    expect(edgeVoiceIdForTier('ja', 'male', 'bright')).toBe('ja-JP-KeitaNeural');
+    expect(edgeVoiceIdForTier('yue', 'male', 'bright')).toBe('zh-HK-WanLungNeural');
+    expect(edgeVoiceIdForTier('yue', 'female', 'deep')).toBe('zh-HK-HiuMaanNeural');
+    expect(edgeVoiceIdForTier('yue', 'female', 'bright')).toBe('zh-HK-HiuGaaiNeural');
+    expect(edgeProsodyForTier('deep').pitch).toBeLessThanOrEqual(-0.34);
+    expect(edgeProsodyForTier('bright').pitch).toBeGreaterThanOrEqual(0.38);
+    expect(edgeProsodyForTier('bright').pitch - edgeProsodyForTier('deep').pitch).toBeGreaterThanOrEqual(0.70);
+    expect(edgeProsodyForTier('bright').rate - edgeProsodyForTier('deep').rate).toBeGreaterThanOrEqual(0.50);
+    expect(edgeProsodyForTier('mid').pitch).toBe(0);
     expect(edgeProsodyForTier('deep').pitch).toBeLessThan(edgeProsodyForTier('mid').pitch);
     expect(edgeProsodyForTier('bright').pitch).toBeGreaterThan(edgeProsodyForTier('mid').pitch);
-    expect(edgeProsodyForTier('bright').rate - edgeProsodyForTier('deep').rate).toBeGreaterThanOrEqual(0.20);
+  });
+
+  it('SSML emits the huge deep vs bright gap (not crushed)', () => {
+    const deep = buildEdgeSsml('今日天氣幾好。', {
+      lang: 'yue', gender: 'male', voiceId: 'zh-HK-WanLungNeural', forcePlain: true,
+      pitchDelta: edgeProsodyForTier('deep').pitch,
+      rateDelta: edgeProsodyForTier('deep').rate,
+    });
+    const bright = buildEdgeSsml('今日天氣幾好。', {
+      lang: 'yue', gender: 'male', voiceId: 'zh-HK-WanLungNeural', forcePlain: true,
+      pitchDelta: edgeProsodyForTier('bright').pitch,
+      rateDelta: edgeProsodyForTier('bright').rate,
+    });
+    const dp = Number(deep.match(/pitch='([+-]?\d+)%'/)![1]);
+    const bp = Number(bright.match(/pitch='([+-]?\d+)%'/)![1]);
+    expect(bp - dp).toBeGreaterThanOrEqual(60);
   });
 });
 
@@ -65,15 +103,26 @@ describe('R10 male hop order + gTTS fallback gaps', () => {
     expect(freeVoiceHops('en', { preferMale: true })).toEqual(['edge', 'synth', 'gtts']);
   });
 
-  it('gTTS deep vs bright gap is obviously wide for both genders', () => {
+  it('gTTS deep≪mid≪bright gaps are VERY wide for both genders', () => {
     const deepF = gttsCharacterPitchBias('female', undefined, 'en', 'deep');
+    const midF = gttsCharacterPitchBias('female', undefined, 'en', 'mid');
     const brightF = gttsCharacterPitchBias('female', undefined, 'en', 'bright');
     const deepM = gttsCharacterPitchBias('male', undefined, 'en', 'deep');
+    const midM = gttsCharacterPitchBias('male', undefined, 'en', 'mid');
     const brightM = gttsCharacterPitchBias('male', undefined, 'en', 'bright');
-    expect(brightF - deepF).toBeGreaterThanOrEqual(0.50);
-    expect(brightM - deepM).toBeGreaterThanOrEqual(0.50);
-    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.50);
-    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.50);
+    // Old #425 floor was 0.50 — still too similar on phone. Require huge gaps.
+    expect(brightF - deepF).toBeGreaterThanOrEqual(0.90);
+    expect(brightM - deepM).toBeGreaterThanOrEqual(0.85);
+    expect(midF - deepF).toBeGreaterThanOrEqual(0.40);
+    expect(brightF - midF).toBeGreaterThanOrEqual(0.35);
+    expect(midM - deepM).toBeGreaterThanOrEqual(0.20);
+    expect(brightM - midM).toBeGreaterThanOrEqual(0.50);
+    expect(deepF).toBeLessThan(midF);
+    expect(midF).toBeLessThan(brightF);
+    expect(deepM).toBeLessThan(midM);
+    expect(midM).toBeLessThan(brightM);
+    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.90);
+    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.85);
     expect(PITCH_BIAS_MALE).toBeLessThanOrEqual(0.66);
     expect(PITCH_BIAS_FEMALE - PITCH_BIAS_MALE).toBeGreaterThanOrEqual(0.60);
   });

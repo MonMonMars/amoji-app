@@ -24,13 +24,17 @@ const FEMALE_IDS = CHARACTERS_WANT.filter((c) => c.gender === 'female').map((c) 
 const MALE_IDS = CHARACTERS_WANT.filter((c) => c.gender === 'male').map((c) => c.id);
 
 describe('free-chain character pitch fingerprint', () => {
-  it('keeps male deeper than female even with tiers', () => {
-    const male = Math.max(...MALE_IDS.map((id) => gttsCharacterPitchBias('male', id)));
-    const female = Math.min(...FEMALE_IDS.map((id) => gttsCharacterPitchBias('female', id)));
-    expect(male).toBeLessThan(1);
-    // Deep female can sit near ~1.02 with the widened tier offsets.
-    expect(female).toBeGreaterThan(0.95);
-    expect(male).toBeLessThan(female);
+  it('keeps male deeper than female on the same pitch tier', () => {
+    // Male bright may sit above 1.0 for a huge deep↔bright gap — compare same tier.
+    expect(PITCH_BIAS_MALE).toBeLessThan(1);
+    expect(PITCH_BIAS_MALE).toBeLessThan(PITCH_BIAS_FEMALE);
+    for (const tier of ['deep', 'mid', 'bright'] as const) {
+      const male = Math.max(...MALE_IDS.map((id) => gttsCharacterPitchBias('male', id, undefined, tier)));
+      const female = Math.min(...FEMALE_IDS.map((id) => gttsCharacterPitchBias('female', id, undefined, tier)));
+      expect(male, `male ${tier}`).toBeLessThan(female);
+    }
+    const deepF = Math.min(...FEMALE_IDS.map((id) => gttsCharacterPitchBias('female', id, undefined, 'deep')));
+    expect(deepF).toBeGreaterThan(0.70);
   });
 
   it('assigns curated bright / mid / deep tiers across the cast', () => {
@@ -103,12 +107,12 @@ describe('free-chain character pitch fingerprint', () => {
     const brightF = gttsCharacterPitchBias('female', undefined, 'en', 'bright');
     const deepM = gttsCharacterPitchBias('male', undefined, 'en', 'deep');
     const brightM = gttsCharacterPitchBias('male', undefined, 'en', 'bright');
-    // After #406/#410 owner still heard similar — require a larger audible gap.
-    expect(brightF - deepF).toBeGreaterThanOrEqual(0.50);
-    expect(brightM - deepM).toBeGreaterThanOrEqual(0.50);
+    // After #425 owner still heard similar — require VERY large audible gaps.
+    expect(brightF - deepF).toBeGreaterThanOrEqual(0.90);
+    expect(brightM - deepM).toBeGreaterThanOrEqual(0.85);
     expect(deepM).toBeLessThan(deepF);
-    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.50);
-    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.50);
+    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.90);
+    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.85);
   });
 
   it('voice.ts re-exports the same helper so every speak path stays in sync', () => {
