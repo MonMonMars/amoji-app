@@ -43,8 +43,9 @@ describe('voice restore — one tier speaks, never two', () => {
   it('does not start synth while the MP3 tier is still in flight', () => {
     expect(greet).toContain('gttsPending');
     expect(greet).toMatch(/if \(gttsPending\) return/);
-    // Grace timer skips synth while gTTS is pending or insurance is still playing.
-    expect(greet).toMatch(/gttsPending\s*\|\|/);
+    // Grace timer skips synth while gTTS is pending (no insurance clip path).
+    expect(greet).toMatch(/spokenBy \|\| gttsPending/);
+    expect(greet).not.toContain('playGestureClipSync');
   });
 
   it('the preview path uses the same one-winner structure', () => {
@@ -52,7 +53,7 @@ describe('voice restore — one tier speaks, never two', () => {
     expect(preview).toContain('speakEdge(');
     expect(preview).toContain('spokenBy');
     expect(preview).toMatch(/if \(spokenBy === 'gtts'\) return/);
-    expect(preview).toContain('isVoiceClipPlaying()');
+    expect(preview).not.toContain('playGestureClipSync');
     expect(preview).toContain("runSynthAudition('preview fallback')");
   });
 

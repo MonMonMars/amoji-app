@@ -37,7 +37,7 @@ describe('greeting tier arbitration (one voice per tap)', () => {
   });
 
   it('the synth fallback refuses to fire once any tier has started', () => {
-    expect(body).toMatch(/const runSynthAudition = \(tag: string\) => \{\s*if \(spokenBy\) return;/);
+    expect(body).toMatch(/const runSynthAudition = \(tag: string\) => \{\s*if \(spokenBy \|\| gttsPending\) return;/);
   });
 
   it('an Edge failure does not start synth while gtts owns the line', () => {
@@ -51,8 +51,10 @@ describe('greeting tier arbitration (one voice per tap)', () => {
     // Without this the dead-Edge catch fired synth instantly, over the MP3 tier.
     expect(body).toContain('edgeGrace');
     expect(body).toMatch(/edgeGrace = setTimeout\([\s\S]*?1500\)/);
-    // Also skip synth while insurance clip is still the audible line.
-    expect(body).toContain('isVoiceClipPlaying()');
+    // No audible insurance — synth only after gTTS is no longer pending.
+    expect(body).not.toContain('playGestureClipSync');
+    expect(body).not.toContain('insuranceKind');
+    expect(body).toMatch(/if \(spokenBy \|\| gttsPending\) return/);
   });
 
   it('the grace timer is cancelled as soon as a tier starts', () => {

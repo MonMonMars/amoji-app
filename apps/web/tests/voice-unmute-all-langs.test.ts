@@ -136,7 +136,9 @@ describe('TTS play path never mutes non-Yue via setSinkId', () => {
     expect(voice).toMatch(/playVoiceGreeting\([\s\S]*?ensureCompanionPlaybackRoute\(\)/);
     expect(voice).toMatch(/previewVoiceChoice\([\s\S]*?ensureCompanionPlaybackRoute\(\)/);
     expect(voice).toMatch(/pinSinkBeforePlay:\s*true/);
-    expect(voice).toContain('clipFile(lang, delivery, insuranceKind)');
-    expect(voice).toContain('clipFile(locale, previewGender, insuranceKind)');
+    // Permanent: no audible insurance on card greet / preview.
+    expect(voice).not.toContain('clipFile(lang, delivery, insuranceKind)');
+    expect(voice).not.toContain('clipFile(locale, previewGender, insuranceKind)');
+    expect(voice).not.toContain('playGestureClipSync(');
   });
 });
