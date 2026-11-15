@@ -208,9 +208,16 @@ import {
   SHOWCASE_YES_RE,
   nextSkillOffer,
   pickShowcaseOffer,
-  showcaseStoryAsk,
   type ShowcaseKind,
 } from '../lib/showcase';
+import {
+  formatTaleForSpeech,
+  pickClassicFairyTale,
+} from '../lib/classic-fairy-tales';
+import {
+  resolvedClassicFairyTales,
+  warmClassicFairyTaleCache,
+} from '../lib/classic-fairy-tales-warm';
 import {
   isTopicalContentTurn,
   shouldSuppressSkillOffer,
@@ -510,6 +517,8 @@ export default function ChatPanel({
   const lastOfferKindRef = useRef<ShowcaseKind | null>(null);
   const lastOfferAtRef = useRef(0);
   const perfCountRef = useRef(0);
+  /** Rotates classic fairy-tale length tiers on demo / showcase Story taps. */
+  const storyTellCountRef = useRef(0);
   const lastFeltRef = useRef<string | undefined>(undefined);
   const onStatusRef = useRef(onStatus);
   onStatusRef.current = onStatus;
@@ -883,6 +892,12 @@ export default function ChatPanel({
   // t794/t796 + Pixel entry: hi + persona intro + topic ask; silent stretch
   // offers ONE ability reminder (music/dance/story/…). Session gap = fresh
   // open — clear history and skip lastThread resume. Keep #58 filler bans.
+  // Predownload classic fairy tales when entering the demo talking phase so
+  // the Story chip speaks from a warm cache (bundled + public JSON mirror).
+  useEffect(() => {
+    void warmClassicFairyTaleCache();
+  }, []);
+
   // Story Mode: opening scene line instead of chat hello / skill showcase.
   useEffect(() => {
     if (greetedRef.current) return;
@@ -1371,12 +1386,12 @@ export default function ChatPanel({
         return;
       }
       if (kind === 'story') {
-        sayLocal(SHOWCASE_START[lang].story);
+        // Local classic fairy-tale bank — no LLM wait / empty network.
+        void warmClassicFairyTaleCache();
+        const n = storyTellCountRef.current++;
+        const tale = pickClassicFairyTale(lang, n, resolvedClassicFairyTales());
+        sayLocal(formatTaleForSpeech(tale, lang), { joy: 0.55 });
         done();
-        // Feed a canned story ask through the normal chat path (content-driven story mode).
-        window.setTimeout(() => {
-          void send(showcaseStoryAsk(lang));
-        }, 500);
         return;
       }
       if (kind === 'music') {
@@ -1992,6 +2007,9 @@ export default function ChatPanel({
         <DemoPhaseRail
           lang={lang}
           disabled={busy}
+          onWarmStory={() => {
+            void warmClassicFairyTaleCache();
+          }}
           onPick={(prompt, id) => {
             // Demo chips are one-topic tutorials — never carry a pending
             // showcase/tutorial offer into the same beat as the chip reply.
@@ -2001,6 +2019,22 @@ export default function ChatPanel({
             // keep changing beds even when a facet wraps around.
             if (id === 'music' || id === 'dance' || id === 'sing') {
               laughCountRef.current += 1;
+            }
+            if (id === 'story') {
+              // Classic public-domain bank — vary length; skip thin LLM stub.
+              void warmClassicFairyTaleCache();
+              lastActivityRef.current = Date.now();
+              lastUserRef.current = Date.now();
+              userHasSpokenRef.current = true;
+              reengageStageRef.current = 0;
+              lastTopicalContentAtRef.current = Date.now();
+              idleAutoAfterUserRef.current = true;
+              setHistory((h) => [...h, { role: 'user', content: prompt }]);
+              feedUtterance(prompt);
+              const n = storyTellCountRef.current++;
+              const tale = pickClassicFairyTale(lang, n, resolvedClassicFairyTales());
+              sayLocal(formatTaleForSpeech(tale, lang), { joy: 0.55 });
+              return;
             }
             if (isTopicalContentTurn(prompt)) {
               lastTopicalContentAtRef.current = Date.now();

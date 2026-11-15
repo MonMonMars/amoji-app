@@ -29,10 +29,13 @@ export default function DemoPhaseRail({
   lang,
   disabled,
   onPick,
+  onWarmStory,
 }: {
   lang: string;
   disabled?: boolean;
   onPick: (prompt: string, id: DemoPhaseId) => void;
+  /** Predownload classic fairy tales on Story chip hover / focus. */
+  onWarmStory?: () => void;
 }) {
   const L = asDemoLang(lang);
   const railRef = useRef<HTMLDivElement>(null);
@@ -118,12 +121,19 @@ export default function DemoPhaseRail({
           role="listitem"
           data-demo-phase={btn.id}
           disabled={disabled}
+          onPointerEnter={() => {
+            if (btn.id === 'story') onWarmStory?.();
+          }}
+          onFocus={() => {
+            if (btn.id === 'story') onWarmStory?.();
+          }}
           onClick={() => {
             // A drag-scroll must not fire the chip under the pointer.
             if (skipClickRef.current) {
               skipClickRef.current = false;
               return;
             }
+            if (btn.id === 'story') onWarmStory?.();
             const n = tapCountRef.current[btn.id] ?? 0;
             tapCountRef.current[btn.id] = n + 1;
             onPick(demoPhasePrompt(btn.id, L, n), btn.id);
