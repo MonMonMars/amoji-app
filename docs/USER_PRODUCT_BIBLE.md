@@ -2,7 +2,7 @@
 
 **Purpose:** Living checklist of product rules from the product owner. Agents must read this before chat/voice/pose/permission work and update it when rules change.
 
-**Last reviewed:** 2026-11-15 16:50 (Asia/Hong_Kong)  
+**Last reviewed:** 2026-11-15 16:52 (Asia/Hong_Kong)  
 **Demo:** https://monmonmars.github.io/amoji-app/  
 **Request log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn. Overlapping messages still count; never drop one.
 
@@ -50,7 +50,7 @@
 | Talk leftover repeats / history dup | #399 |
 | Reply-mode length + emotion chart | #401 |
 | Classic fairy tales + Story chip predownload | #402 |
-| Story Mode quality + UX polish | branch `cursor/story-quality-ux-9684` (awaiting PR) |
+| Story Mode quality + UX polish | #403 |
 | Docs board #393–#395 Done / Outstanding honesty | #396 |
 | Docs tip + Pages honesty after #396; agent scrub green | #397 |
 | No history-resume ask (code) | #331 / #366 |
