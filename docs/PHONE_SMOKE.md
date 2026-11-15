@@ -24,9 +24,19 @@ Tick on a real phone (prefer iPhone Safari).
 - [ ] “Play music” without picking a song → random bed plays
 - [ ] Ask to **choose** / select a song → selection chips appear
 
-## Pitch / voice
+## Pitch / voice (R10 — after #406 + voice v2)
 
-- [ ] Different characters feel bright / mid / deep (not all same pitch)
+- [ ] deep / mid / bright buttons are **obviously** different (same lang)
+- [ ] Male button sounds male (not female pitched down slightly)
+- [ ] Non-Yue (en / zh / ja) plays on **same speakers** as gate sample
+- [ ] Female Cantonese still works after male / other-lang tries
+
+## Idle / poke / lighting (R11–R13 — after #407–#409)
+
+- [ ] Idle looks upright planted calm (not Sassy / sky-look / arms-into-torso)
+- [ ] Poke left side of body → character tips **screen-left** (same side)
+- [ ] Poke right → tips screen-right
+- [ ] All cast members look like the **same lighting / shader style**
 
 ## Agent pre-checks (2026-11-14)
 

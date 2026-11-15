@@ -1,24 +1,24 @@
 # Amoji project status board
 
-**Generated:** 2026-11-15 17:02 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-15 18:30 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** open [`project-status.html`](./project-status.html) in a browser.  
-**`main` tip:** `1417198` (#404 docs tip · product #399–#403 · earlier through #397)
+**`main` tip:** `5e5bb8b` (#409 · product through #406–#409 · docs #405)
 
 ## Snapshot
 
 | Bucket | Count |
 | --- | ---: |
-| **Done** — merged to `main` | 80+ stack · Nov 15 wave #385–#404 |
-| **Open product PRs** | **0** (Hold spikes only: #1 · draft #20) |
-| **Outstanding** — actionable code left for agents | **1** — voice pitch/male/sink (`cursor/voice-pitch-male-output-0340-0eac`) |
-| **Outstanding** — Pixel / human actions | [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) · talking-nonsense **owner** live OK · verify R10 after merge |
+| **Done** — merged to `main` | 80+ stack · Nov 15 wave #385–#409 |
+| **Open product PRs** | voice v2 + docs honesty (this run) · Hold spikes #1 / #20 |
+| **Outstanding** — actionable code | **1** — voice pitch/male v2 (`cursor/voice-male-pitch-v2-0340-0eac`) after #406 still not owner-OK |
+| **Outstanding** — Pixel / human | R10–R13 phone smoke · nonsense owner OK · SFX map R1/R2 · [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
 | **Hold** | licensed music · Stripe live keys · Product Hunt · Search Console · spikes #1 / #20 |
 | Docs missing | 0 |
 
-**Overall feature stack (approx.):** ~99% merged to `main` · ~0% open product PRs · ~1% Hold / human eyeball
+**Honesty:** ~99% merged to `main` ≠ owner Done. R10–R13 stay Outstanding until phone OK.
 
 ### Progress by category (% merged to `main`)
 
@@ -40,11 +40,16 @@
 
 Living tip: `1417198`. Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
 
-### Nov 15 wave (#385–#404)
+### Nov 15 wave (#385–#409)
 
 | PR | Item | Notes |
 | --- | --- | --- |
-| [#404](https://github.com/MonMonMars/amoji-app/pull/404) | Docs: #403 Done on bible; tip after product ship | Pages rebuilt (`last-modified` 2026-11-15 08:58 UTC · `pages.yml` `43696764165` on `1417198`) |
+| [#409](https://github.com/MonMonMars/amoji-app/pull/409) | Poke lean finger-vs-hips + arm sign split | **Phone Outstanding** (R13) |
+| [#408](https://github.com/MonMonMars/amoji-app/pull/408) | Unify cast lighting / MToon for all | **Phone Outstanding** (R12) |
+| [#407](https://github.com/MonMonMars/amoji-app/pull/407) | Idle upright planted calm stands v3 | **Phone Outstanding** (R11) |
+| [#406](https://github.com/MonMonMars/amoji-app/pull/406) | Audible pitch tiers, male delivery, sink | **Phone Outstanding** (R10) · voice v2 follow-up |
+| [#405](https://github.com/MonMonMars/amoji-app/pull/405) | Docs tip 1417198 / Pages after #399–#404 | Superseded tip by #409 Pages |
+| [#404](https://github.com/MonMonMars/amoji-app/pull/404) | Docs: #403 Done on bible; tip after product ship | Prior Pages (`last-modified` 08:58 UTC · `1417198`) |
 | [#403](https://github.com/MonMonMars/amoji-app/pull/403) | Story Mode quality + distinct UX | |
 | [#402](https://github.com/MonMonMars/amoji-app/pull/402) | Classic fairy-tale library + Story chip predownload | |
 | [#401](https://github.com/MonMonMars/amoji-app/pull/401) | Reply-mode chart for length + emotion by turn | |
@@ -145,9 +150,16 @@ Earlier finish pass still on `main`: #306–#325 and #280–#305 era.
 
 ### Code (agents)
 
-1. **Voice pitch / male / sink (R10)** — branch `cursor/voice-pitch-male-output-0340-0eac`: widen deep≠bright; male pin → male delivery; `ensureCompanionPlaybackRoute` so non-Yue TTS matches gate speakers. Merge when CI green; device verify after deploy.
+1. **Voice pitch / male (R10) v2** — branch `cursor/voice-male-pitch-v2-0340-0eac`: #406 already on main (sink + first widen); owner still reports same pitch / female male. This branch widens gaps again + deepens synth male. Device verify after merge. **gTTS cannot invent a real male speaker** — Edge remains 403.
 
-Product through #385–#403 and docs through #404 are otherwise on `main`. Nonsense scrub Vitest **78/78** on tip — separate from R10.
+### Phone / human (not agent Done)
+
+1. R10 voice · R11 idle · R12 lighting · R13 poke — all have code on `main` (+ R10 v2 pending); need owner phone.
+2. Talking nonsense — owner live OK.
+3. SFX #1–23 Want/archive/delete map (R1/R2).
+4. Full [`PHONE_SMOKE.md`](./PHONE_SMOKE.md).
+
+Product through #385–#409 on `main`. Pages live on `5e5bb8b`.
 
 ### Human / Pixel
 
