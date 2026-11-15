@@ -18,8 +18,24 @@ import {
 export const IDLE_ENABLED_KEY = 'amoji.idleEnabled.v4';
 const KEY = IDLE_ENABLED_KEY;
 
+/** Prefs keys from #392 / #407 — never migrate weak clips into v4. */
+const LEGACY_ENABLED_KEYS = [
+  'amoji.idleEnabled.v1',
+  'amoji.idleEnabled.v2',
+  'amoji.idleEnabled.v3',
+] as const;
+
 let memory: number[] | null = null;
 let loaded = false;
+
+function dropLegacyEnabledKeys(): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    for (const k of LEGACY_ENABLED_KEYS) {
+      if (localStorage.getItem(k) != null) localStorage.removeItem(k);
+    }
+  } catch { /* private mode */ }
+}
 
 function hydrate(): number[] {
   if (loaded && memory) return memory;
@@ -29,6 +45,8 @@ function hydrate(): number[] {
       memory = defaultCuratedRailNums();
       return memory;
     }
+    // Always scrub pre-v4 keys so Settings wipe + first v4 load stay clean.
+    dropLegacyEnabledKeys();
     const raw = localStorage.getItem(KEY);
     if (!raw) {
       memory = defaultCuratedRailNums();
