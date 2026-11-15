@@ -13,8 +13,11 @@ import {
   isTopicMenuAsk,
   openGreetTooManyQuestions,
   safeIdleFallback,
+  scrubCompanionSpoken,
   scrubHistoryResumeAsks,
+  scrubSpokenNonsense,
   scrubTopicMenuAsks,
+  sentenceLooksLikeNonsense,
   spokenLineLooksBroken,
   stripQuestionSentences,
   userMessageLooksLikeQuestion,
@@ -285,7 +288,24 @@ describe('source banks never emit known nonsense', () => {
     const here = path.dirname(fileURLToPath(import.meta.url));
     const chat = fs.readFileSync(path.resolve(here, '../components/ChatPanel.tsx'), 'utf8');
     const client = fs.readFileSync(path.resolve(here, '../lib/client-chat.ts'), 'utf8');
-    expect(chat).toContain('scrubHistoryResumeAsks');
-    expect(client).toContain('scrubHistoryResumeAsks');
+    expect(chat).toContain('scrubCompanionSpoken');
+    expect(client).toContain('scrubCompanionSpoken');
+  });
+
+  it('scrubs filler / surreal / opaque nonsense sentences from mixed replies', () => {
+    expect(sentenceLooksLikeNonsense("I'm always here for you.")).toBe(true);
+    expect(sentenceLooksLikeNonsense('Your quantum vibes are aligning today.')).toBe(true);
+    expect(sentenceLooksLikeNonsense('Let me know if you need anything.')).toBe(true);
+    expect(sentenceLooksLikeNonsense('聽落你今日好攰喎。')).toBe(false);
+    expect(
+      scrubSpokenNonsense("I'm always here for you. Your exam sounded brutal — rest a bit tonight."),
+    ).toMatch(/exam|rest/i);
+    expect(scrubSpokenNonsense("I'm always here for you.")).toBe('');
+    expect(
+      scrubCompanionSpoken('Good morning. Want to pick up where we left off? Soft moment with you.'),
+    ).toBe('Good morning.');
+    expect(
+      scrubCompanionSpoken('一個小謎語充滿電。聽落你今日好攰喎。'),
+    ).toContain('好攰');
   });
 });

@@ -5,7 +5,7 @@
 const CJK = /[\u3400-\u9fff]/g;
 
 const FILLER_EN =
-  /(?:^|[\s,.!])((?:i'?m\s+)?always\s+here|everything\s+happens\s+for\s+a\s+reason|hope\s+this\s+helps|as\s+an?\s+ai\b[^.]{0,40}|you'?ve\s+gone\s+quiet|are\s+you\s+still\s+there|still\s+there\s*\?|holding\s+the\s+same\s+topic|still\s+on\s+that\s+thread|holding\s+this\s+soft\s+moment|same\s+page\s+as\s+you)/i;
+  /(?:^|[\s,.!])((?:i'?m\s+)?always\s+here|everything\s+happens\s+for\s+a\s+reason|hope\s+this\s+helps|as\s+an?\s+ai\b[^.]{0,40}|let\s+me\s+know\s+if\s+you\s+need\s+anything|here\s+if\s+you\s+need\s+me|you'?ve\s+gone\s+quiet|are\s+you\s+still\s+there|still\s+there\s*\?|holding\s+the\s+same\s+topic|still\s+on\s+that\s+thread|holding\s+this\s+soft\s+moment|same\s+page\s+as\s+you|the\s+universe\s+winks|destiny\s+threads?)/i;
 const FILLER_ZH =
   /一切都会好|我一直都在|作为\s*AI|希望帮到你|希望幫到你|祝您|加油[，,！!]|你靜咗喎|好耐冇聲|你安静下来了|好一会儿没声音|仲喺你呢條話題|还在你这条话题|轻轻留着同一个主题|輕輕留住同一個主題|輕輕留住呢個柔軟時刻|轻轻留着这个柔软时刻|同你同一頁|和你同一页/;
 

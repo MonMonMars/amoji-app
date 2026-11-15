@@ -7,6 +7,8 @@ describe('replyLooksNonsense', () => {
   it('rejects empty and template filler', () => {
     expect(replyLooksNonsense('…')).toBe(true);
     expect(replyLooksNonsense("I'm always here for you.")).toBe(true);
+    expect(replyLooksNonsense('Let me know if you need anything.')).toBe(true);
+    expect(replyLooksNonsense('The universe winks at your destiny threads.')).toBe(true);
     expect(replyLooksNonsense('一切都会好起来的，加油！')).toBe(true);
     expect(replyLooksNonsense('希望幫到你呀。')).toBe(true);
   });

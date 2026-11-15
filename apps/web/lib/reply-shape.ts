@@ -74,6 +74,7 @@ function isVagueSludge(sentence: string): boolean {
   if (/^(?:我一直都在|一切都会好|希望帮到你|希望幫到你)/.test(s)) return true;
   if (/你靜咗喎|好耐冇聲喎|你安静下来了|静かになっちゃった/.test(s)) return true;
   if (/仲喺你呢條話題|还在你这条话题|輕輕留住同一個主題|轻轻留着同一个主题|輕輕留住呢個柔軟時刻|轻轻留着这个柔软时刻|同你同一頁|和你同一页|同じページにいる/.test(s)) return true;
+  if (/let\s+me\s+know\s+if\s+you\s+need\s+anything|here\s+if\s+you\s+need\s+me\b|the\s+universe\s+winks\b|destiny\s+threads?\b|宇宙在对你眨眼|命運的線|軍艦.{0,6}極光/i.test(s)) return true;
   return false;
 }
 
