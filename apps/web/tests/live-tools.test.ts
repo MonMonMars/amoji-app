@@ -1134,6 +1134,58 @@ describe('news cache bust + headline rotation', () => {
     ).length).toBeGreaterThanOrEqual(1);
   });
 
+  it('wiki-enriches title-only light news so plain any-news asks stay long', async () => {
+    const rss = `<rss><channel>
+      <item><title>Orbit gnome wins science fair - SciDaily</title></item>
+    </channel></rss>`;
+    let wikiApiHits = 0;
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('news.google.com')) return new Response(rss, { status: 200 });
+      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) return jsonRes({ news: [] });
+      if (url.includes('wikipedia.org') && url.includes('api.php')) {
+        wikiApiHits += 1;
+        return jsonRes({
+          query: {
+            pages: {
+              '1': {
+                index: 1,
+                title: 'Orbit gnome',
+                extract: 'Judges praised a tiny greenhouse that grows salad greens in zero-g. The team will share open plans next month.',
+              },
+            },
+          },
+        });
+      }
+      return jsonRes({}, 404);
+    };
+    const live = await gatherLiveContext('any news?', {
+      lang: 'en',
+      fetch: fetchImpl,
+      cache: new Map(),
+      storage: memKv(),
+      locate: async () => null,
+    });
+    expect(wikiApiHits).toBeGreaterThan(0);
+    expect(live.spoken.toLowerCase()).toMatch(/orbit gnome|science fair/);
+    expect(live.spoken.toLowerCase()).toMatch(/greenhouse|salad|zero-g|open plans/);
+    expect(live.spoken.length).toBeGreaterThan(100);
+    expect(live.prompt).toMatch(/Summary:|Key details:/i);
+  });
+
+  it('clientLiveContext persists told titles in localStorage across gather calls', async () => {
+    const src = await import('node:fs').then((fs) =>
+      fs.readFileSync(new URL('../lib/live-tools.ts', import.meta.url), 'utf8'),
+    );
+    expect(src).toMatch(/storage:\s*safeStorage\('local'\)/);
+    expect(src).toMatch(/safeStorage\('local'\)/);
+    expect(src).toContain('NEWS_TOLD_SESSION_KEY');
+    // Default gather path must not prefer session-only bans (tab close = same-old).
+    expect(src).toMatch(
+      /newsStorage = opts\.storage === undefined \? safeStorage\('local'\) : opts\.storage/,
+    );
+  });
+
   it('preferLiveReply always speaks the live news line, never a history re-tell', () => {
     const world = 'Light news (US): “Puppy parade fills the park” (Wire). Summary: Crowds cheered as rescue dogs strutted in hats.';
     const spoken = 'From the news: Puppy parade fills the park. Crowds cheered as rescue dogs strutted in hats.';

@@ -90,6 +90,8 @@ describe('security / legal / storage finish', () => {
     expect(CLIENT_STORAGE_KEYS.some((k) => k.key === 'amoji.idlePick.v5' && k.wipeable)).toBe(true);
     expect(CLIENT_STORAGE_KEYS.some((k) => k.key === 'amoji.idleEnabled.v6' && k.wipeable)).toBe(true);
     expect(CLIENT_STORAGE_KEYS.some((k) => k.key === 'amoji.idlePick.v6' && k.wipeable)).toBe(true);
+    expect(CLIENT_STORAGE_KEYS.some((k) => k.key === 'amoji.news.told.v1' && k.wipeable && k.kind === 'local')).toBe(true);
+    expect(CLIENT_STORAGE_KEYS.some((k) => k.key === 'amoji.news.last.v1' && k.wipeable && k.kind === 'local')).toBe(true);
   });
 
   it('exports redacted secrets and can wipe while keeping legal', () => {

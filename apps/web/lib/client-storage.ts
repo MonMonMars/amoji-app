@@ -36,6 +36,8 @@ export const CLIENT_STORAGE_KEYS: ClientStorageKey[] = [
   { key: 'amoji.mute.v1', kind: 'local', purpose: 'Master mute', wipeable: true },
   { key: 'amoji.place.v1', kind: 'local', purpose: 'Cached place / weather locale', wipeable: true },
   { key: 'amoji.place.manual.v1', kind: 'local', purpose: 'User-entered city', wipeable: true },
+  { key: 'amoji.news.told.v1', kind: 'local', purpose: 'Recently told news titles (anti-repeat)', wipeable: true },
+  { key: 'amoji.news.last.v1', kind: 'local', purpose: 'Legacy last told news title', wipeable: true },
   { key: 'amoji.idleEnabled.v1', kind: 'local', purpose: 'Idle clip rotation enable map (legacy)', wipeable: true },
   { key: 'amoji.idleEnabled.v2', kind: 'local', purpose: 'Idle clip rotation enable map (legacy v2)', wipeable: true },
   // Keep every prior idle prefs key wipeable — phones must clear stuck v3/v4.
