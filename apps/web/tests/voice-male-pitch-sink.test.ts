@@ -41,10 +41,10 @@ describe('audible deep vs bright pitch gap', () => {
     expect(brightM).toBeLessThan(1);
     expect(deepF).toBeGreaterThan(1);
     expect(brightM).toBeLessThan(deepF);
-    expect(brightF - deepF).toBeGreaterThanOrEqual(0.55);
-    expect(brightM - deepM).toBeGreaterThanOrEqual(0.50);
-    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.55);
-    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.50);
+    expect(brightF - deepF).toBeGreaterThanOrEqual(0.68);
+    expect(brightM - deepM).toBeGreaterThanOrEqual(0.58);
+    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.68);
+    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.58);
   });
 
   it('male mid stays clearly below female mid', () => {

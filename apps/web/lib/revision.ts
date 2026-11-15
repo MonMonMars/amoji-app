@@ -366,7 +366,10 @@
 // bright male is never pitched into female territory (#437 overlap fix).
 // r2026-11-15.156: hard-delete shy personality Um/嗯……/あの…… wraps that
 // prepended spoken loading filler onto poke / renderPool lines.
-export const APP_REVISION = 'r2026-11-15.156';
+// r2026-11-15.157: R10 within-gender — stop Edge pitchDelta ±0.30 crush of
+// deep (−0.36); widen gTTS deep≪mid≪bright inside male<1<female bands; raise
+// ja male base so deep does not floor into mid.
+export const APP_REVISION = 'r2026-11-15.157';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

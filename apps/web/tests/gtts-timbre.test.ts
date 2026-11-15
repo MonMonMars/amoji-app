@@ -108,19 +108,36 @@ describe('free-chain character pitch fingerprint', () => {
 
   it('makes selectable deep vs bright obviously different without gender cross', () => {
     const deepF = gttsCharacterPitchBias('female', undefined, 'en', 'deep');
+    const midF = gttsCharacterPitchBias('female', undefined, 'en', 'mid');
     const brightF = gttsCharacterPitchBias('female', undefined, 'en', 'bright');
     const deepM = gttsCharacterPitchBias('male', undefined, 'en', 'deep');
+    const midM = gttsCharacterPitchBias('male', undefined, 'en', 'mid');
     const brightM = gttsCharacterPitchBias('male', undefined, 'en', 'bright');
     // Within-band gaps as wide as the clamp allows once male stays < 1 < female.
-    expect(brightF - deepF).toBeGreaterThanOrEqual(0.55);
-    expect(brightM - deepM).toBeGreaterThanOrEqual(0.50);
+    expect(brightF - deepF).toBeGreaterThanOrEqual(0.68);
+    expect(brightM - deepM).toBeGreaterThanOrEqual(0.58);
+    expect(midF - deepF).toBeGreaterThanOrEqual(0.25);
+    expect(brightF - midF).toBeGreaterThanOrEqual(0.40);
+    expect(midM - deepM).toBeGreaterThanOrEqual(0.24);
+    expect(brightM - midM).toBeGreaterThanOrEqual(0.30);
     expect(deepM).toBeLessThan(1);
     expect(brightM).toBeLessThan(1);
     expect(deepF).toBeGreaterThan(1);
     expect(brightF).toBeGreaterThan(1);
     expect(brightM).toBeLessThan(deepF);
-    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.55);
-    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.50);
+    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.68);
+    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.58);
+  });
+
+  it('keeps ja male deep≪mid≪bright (deep must not floor into mid)', () => {
+    const deep = gttsCharacterPitchBias('male', undefined, 'ja', 'deep');
+    const mid = gttsCharacterPitchBias('male', undefined, 'ja', 'mid');
+    const bright = gttsCharacterPitchBias('male', undefined, 'ja', 'bright');
+    expect(GTTS_MALE_BIAS_JA).toBeGreaterThanOrEqual(0.60);
+    expect(mid - deep).toBeGreaterThanOrEqual(0.20);
+    expect(bright - mid).toBeGreaterThanOrEqual(0.30);
+    expect(bright).toBeLessThan(1);
+    expect(deep).toBeGreaterThanOrEqual(GTTS_PITCH_BIAS_MIN);
   });
 
   it('voice.ts re-exports the same helper so every speak path stays in sync', () => {

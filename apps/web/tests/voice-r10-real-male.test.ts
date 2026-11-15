@@ -3,6 +3,8 @@
  * This suite locks delivery-gender wins, distinct Edge tier voice ids, and
  * VERY large deep≪mid≪bright gaps (gTTS + Edge prosody).
  */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildEdgeSsml, resolveEdgeVoice } from '../lib/edge-tts';
 import {
@@ -114,19 +116,27 @@ describe('R10 male hop order + gTTS fallback gaps', () => {
     expect(brightM).toBeLessThan(1);
     expect(deepF).toBeGreaterThan(1);
     expect(brightM).toBeLessThan(deepF);
-    expect(brightF - deepF).toBeGreaterThanOrEqual(0.55);
-    expect(brightM - deepM).toBeGreaterThanOrEqual(0.50);
-    expect(midF - deepF).toBeGreaterThanOrEqual(0.15);
-    expect(brightF - midF).toBeGreaterThanOrEqual(0.35);
-    expect(midM - deepM).toBeGreaterThanOrEqual(0.20);
-    expect(brightM - midM).toBeGreaterThanOrEqual(0.20);
+    expect(brightF - deepF).toBeGreaterThanOrEqual(0.68);
+    expect(brightM - deepM).toBeGreaterThanOrEqual(0.58);
+    expect(midF - deepF).toBeGreaterThanOrEqual(0.25);
+    expect(brightF - midF).toBeGreaterThanOrEqual(0.40);
+    expect(midM - deepM).toBeGreaterThanOrEqual(0.24);
+    expect(brightM - midM).toBeGreaterThanOrEqual(0.30);
     expect(deepF).toBeLessThan(midF);
     expect(midF).toBeLessThan(brightF);
     expect(deepM).toBeLessThan(midM);
     expect(midM).toBeLessThan(brightM);
-    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.55);
-    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.50);
+    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.68);
+    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.58);
     expect(PITCH_BIAS_MALE).toBeLessThanOrEqual(0.66);
     expect(PITCH_BIAS_FEMALE - PITCH_BIAS_MALE).toBeGreaterThanOrEqual(0.60);
+  });
+
+  it('speak() Edge path does not crush deep/bright tier prosody before SSML', () => {
+    const voice = readFileSync(join(__dirname, '../lib/voice.ts'), 'utf8');
+    // Old ±0.30 pitch clamp turned deep −0.36 into −0.30 (deep≈mid on device).
+    expect(voice).toMatch(/pitchDelta:\s*clamp\([^,]+,\s*-0\.48,\s*0\.48\)/);
+    expect(voice).toMatch(/rateDelta:\s*clamp\([^,]+,\s*-0\.42,\s*0\.42\)/);
+    expect(voice).not.toMatch(/pitchDelta:\s*clamp\([^,]+,\s*-0\.3,\s*0\.4\)/);
   });
 });
