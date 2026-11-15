@@ -110,7 +110,7 @@ describe('emotion clips', () => {
     expect(emotionClipKind('oh!', 'lead')).toBe('oh');
     expect(emotionClipKind('嗯……', 'line')).toBe('um');
     expect(emotionClipKind('ha……', 'line')).toBe('ha');
-    expect(emotionClipKind(INTERJECTIONS.joy?.en?.text ?? '', 'lead')).toBeNull(); // t771: joy tic is mm, not hehe
+    expect(emotionClipKind(INTERJECTIONS.joy?.en?.text ?? '', 'lead')).toBeNull(); // t771: joy tic is ah, not hehe/um
     expect(emotionClipKind(INTERJECTIONS.excitement?.zh?.text ?? '', 'lead')).toBe('wow');
     expect(emotionClipKind('Cheers!', 'lead')).toBeNull();
     expect(emotionClipKind('So good, right?', 'lead')).toBeNull();

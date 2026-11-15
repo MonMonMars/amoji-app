@@ -123,7 +123,7 @@ function buildInstructions(opts: OpenAiVoiceOpts, text: string): string {
             : e === 'surprise' || e === 'fear'
               ? 'A close friend gasping with delight — quick pitch jump, almost breathless, then warm recovery.'
               : e === 'confusion' || e === 'boredom'
-                ? 'A close friend thinking out loud. Curious hums, breath before ideas, pitch that rises when a thought lands.'
+                ? 'A close friend puzzling something out — curious, lightly unsure, pitch that rises when a thought lands. No thinking-hum or um filler.'
                 : 'ChatGPT Advanced Voice: a warm close friend on a video call. Emotionally alive on every syllable — never GPS, never newsreader.';
   const eff = ex >= 1.25
     ? (isEnglish ? 'Extra animated and bubbly — let feelings overflow a little.' : '特別生動活潑——俾啲情感流露晒出嚟。')
@@ -140,15 +140,13 @@ function buildInstructions(opts: OpenAiVoiceOpts, text: string): string {
         ? 'Speak in Japanese (日本語) — natural, friendly conversational tone.'
         : 'Speak in English — natural, friendly conversational tone.';
 
-  // punctuation & laugh colour
+  // punctuation & laugh colour — never coach a thinking-hum / um filler (Pixel).
   const laughs =
     /哈哈|呵呵|嘻嘻|haha|hehe/i.test(text)
       ? (isEnglish ? 'Play any laugh as a real chuckle, never spell "haha" as a word.' : '笑要真係笑出嚟，唔好將「哈哈」當字讀出嚟。')
       : /哇|嘩|wow/i.test(text)
         ? (isEnglish ? 'Let any "wow" land with a pitch jump.' : '「哇」要有驚喜嘅音調跳動。')
-        : /嗯|唔|um+|hmm|呣/i.test(text)
-          ? (isEnglish ? 'Natural thinking hum before the sentence — soft filler, not a word.' : '諗嘢嘅「嗯」要自然，似語氣唔似讀字。')
-          : '';
+        : '';
   const pauses = /[…\.]{3,}/.test(text)
     ? (isEnglish ? 'Meaningful pause around ellipses.' : '省略號位要停一停，有意味。')
     : (isEnglish ? 'Light comma pauses. Tiny beat after ! or ? then continue. Do not rush.' : '逗號位輕輕停，感嘆號問號之後停一拍先繼續，唔好趕。');

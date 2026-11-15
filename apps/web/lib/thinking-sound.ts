@@ -43,10 +43,11 @@ export interface ThinkingSoundPlanOpts {
 }
 
 /**
- * The whole cue for one wait — kept for unit coverage of line picking.
- * startThinkingSound no longer schedules these.
+ * The whole cue for one wait — empty while spoken filler is off.
+ * pickWaitLine banks remain for tests; nothing schedules these beats.
  */
 export function planThinkingSound(opts: ThinkingSoundPlanOpts): ThinkingSoundBeat[] {
+  if (!thinkingFillerAllowed()) return [];
   const beats: ThinkingSoundBeat[] = [];
   let atMs = THINKING_SOUND_DELAY_MS;
   let previous: string | undefined;
