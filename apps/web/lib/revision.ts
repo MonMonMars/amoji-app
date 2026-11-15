@@ -364,7 +364,9 @@
 // no longer hitch-widens "surprised" from jawDrop while talking.
 // r2026-11-15.155: R10 — keep gTTS male band < 1.0 and female band > 1.0 so
 // bright male is never pitched into female territory (#437 overlap fix).
-export const APP_REVISION = 'r2026-11-15.155';
+// r2026-11-15.156: hard-delete shy personality Um/嗯……/あの…… wraps that
+// prepended spoken loading filler onto poke / renderPool lines.
+export const APP_REVISION = 'r2026-11-15.156';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
