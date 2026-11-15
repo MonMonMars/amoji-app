@@ -117,7 +117,9 @@ export function dominantMood(f: EmotionFrame | null): MoodId {
     joy: face.mouthSmile * 0.7 + face.cheekRaise * 0.3,
     angry: face.browDown * 0.7 + face.lipPress * 0.3,
     sad: face.mouthFrown * 0.7 + face.browInnerUp * 0.3,
-    surprised: face.eyeWide * 0.7 + face.browOuterUp * 0.3 + face.jawDrop * 0.3,
+    // Eye-wide + brows only — jawDrop hitch made talking look "surprised"
+    // and fought the eye-size dominate path (#433 residual).
+    surprised: face.eyeWide * 0.75 + face.browOuterUp * 0.25,
     relaxed: face.lidClosure * 0.5 + face.mouthPucker * 0.3,
   };
   let best: MoodId = 'neutral';
