@@ -51,7 +51,7 @@ describe('selectable pitch buttons for the same voice', () => {
     expect(brightBias).toBe(
       Math.min(GTTS_PITCH_BIAS_MAX, PITCH_BIAS_FEMALE + FEMALE_TIER_OFFSET.bright),
     );
-    expect(brightBias - deepBias).toBeGreaterThanOrEqual(0.55);
+    expect(brightBias - deepBias).toBeGreaterThanOrEqual(0.68);
     const maleDeep = gttsCharacterPitchBias('male', undefined, 'en', 'deep');
     const maleBright = gttsCharacterPitchBias('male', undefined, 'en', 'bright');
     // Male deep may hit the widened clamp floor when raw base+offset undershoots.
@@ -60,7 +60,7 @@ describe('selectable pitch buttons for the same voice', () => {
     expect(maleBright).toBeLessThan(1);
     expect(deepBias).toBeGreaterThan(1);
     expect(maleBright).toBeLessThan(deepBias);
-    expect(maleBright - maleDeep).toBeGreaterThanOrEqual(0.50);
+    expect(maleBright - maleDeep).toBeGreaterThanOrEqual(0.58);
     expect(maleDeep).toBeLessThan(deepBias);
   });
 

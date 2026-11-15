@@ -1808,8 +1808,11 @@ function performSpeak(
           // Pitch-tier neural id (Guy/Christopher/WanLung/…) — real male speakers,
           // not a female Google MP3 slowed down. Explicit id also covers female tiers.
           voiceId: edgeTierVoice,
-          rateDelta: clamp(np.rate * exprScale * amp + edgeTierProsody.rate + rateBias, -0.4, 0.5),
-          pitchDelta: clamp(np.pitch * exprScale * amp + edgeTierProsody.pitch, -0.3, 0.4),
+          // Match buildEdgeSsml ceilings (±0.42 rate / ±0.48 pitch). The old
+          // ±0.30 pitch clamp crushed deep tier (−0.36 → −0.30) so deep≈mid
+          // on device even after edgeProsodyForTier widened the gaps.
+          rateDelta: clamp(np.rate * exprScale * amp + edgeTierProsody.rate + rateBias, -0.42, 0.42),
+          pitchDelta: clamp(np.pitch * exprScale * amp + edgeTierProsody.pitch, -0.48, 0.48),
           volumeDelta: clamp(np.vol * exprScale * amp, -0.5, 0.5),
           pinSinkBeforePlay: true,
           onPlaying: () => {

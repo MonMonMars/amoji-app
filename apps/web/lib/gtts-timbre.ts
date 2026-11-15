@@ -40,28 +40,32 @@ export const CHAR_PITCH_SPREAD = 0.015;
 
 /**
  * How far bright / deep sit from the gender mid.
- * After #437 male bright (1.26) crossed above 1.0 and above female deep (0.75),
- * so "bright male" sounded pitched-female on gTTS. Keep the whole male band
- * strictly below 1.0 and the whole female band strictly above 1.0, while still
- * spreading deep≪mid≪bright as wide as the clamp allows. Prefer distinct Edge
- * neural ids when that hop runs; these offsets are the gTTS fallback.
+ * #446 kept male < 1.0 < female (no pitched-female bright male) but left
+ * within-gender gaps too tight — female deep→mid was only 0.18. Use the full
+ * gender band the clamp still allows (jitter ±CHAR_PITCH_SPREAD must not cross
+ * 1.0). Prefer distinct Edge neural ids when that hop runs; these offsets are
+ * the gTTS fallback.
  */
 export const FEMALE_TIER_OFFSET: Record<GttsPitchTier, number> = {
-  // 1.30−0.18 → 1.12; 1.30+0.42 → 1.72 — all > 1.0; bright−deep ≥ 0.60
-  deep: -0.18,
+  // 1.30−0.28 → 1.02; 1.30+0.42 → 1.72 — all > 1.0; bright−deep ≥ 0.70
+  deep: -0.28,
   mid: 0,
   bright: 0.42,
 };
 
 export const MALE_TIER_OFFSET: Record<GttsPitchTier, number> = {
-  // 0.64−0.26 → 0.38 (floor); 0.64+0.26 → 0.90 — all < 1.0; bright−deep ≥ 0.50
+  // 0.64−0.26 → 0.38 (floor); 0.64+0.34 → 0.98 — all < 1.0; bright−deep ≥ 0.60
   deep: -0.26,
   mid: 0,
-  bright: 0.26,
+  bright: 0.34,
 };
 
-/** Google ja-JP reads bright; male delivery needs extra depth (still inside gtts clamp). */
-export const GTTS_MALE_BIAS_JA = 0.42;
+/**
+ * Google ja-JP reads bright; keep male below the shared mid, but not so low
+ * that deep hits GTTS_PITCH_BIAS_MIN and collapses into mid (0.42−0.26 → floor
+ * made deep≈mid after #446). 0.62 keeps deep≪mid≪bright audible on ja.
+ */
+export const GTTS_MALE_BIAS_JA = 0.62;
 
 const TIER_CYCLE: readonly GttsPitchTier[] = ['deep', 'mid', 'bright'];
 
