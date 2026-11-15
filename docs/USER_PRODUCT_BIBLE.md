@@ -2,7 +2,7 @@
 
 **Purpose:** Living checklist of product rules from the product owner. Agents must read this before chat/voice/pose/permission work and update it when rules change.
 
-**Last reviewed:** 2026-11-15 15:52 (Asia/Hong_Kong)  
+**Last reviewed:** 2026-11-15 16:50 (Asia/Hong_Kong)  
 **Demo:** https://monmonmars.github.io/amoji-app/  
 **Request log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn. Overlapping messages still count; never drop one.
 
@@ -26,7 +26,7 @@
 | Dance wait for music (not too soon) | #384 |
 | Phase chips rotate + AI news / personal / secret / … | #373 |
 | Per-character TTS pitch tiers (auto, not buttons) | #374 |
-| Selectable pitch buttons (same voice → deep/mid/bright) | branch `cursor/voice-pitch-buttons-0340-0eac` (not on main yet) |
+| Selectable pitch buttons (same voice → deep/mid/bright) | #400 |
 | Gate location Allow + Enter prime | #379 |
 | White-pupil image loop | owner OK |
 | Card greet audible (code) | #370 |
@@ -47,6 +47,10 @@
 | Caption then whole phase again in history (code) | #393 |
 | Blend-to-back / lean forward weird (code) | #394 |
 | All langs/genders speak — not Yue-female-only (code) | #395 |
+| Talk leftover repeats / history dup | #399 |
+| Reply-mode length + emotion chart | #401 |
+| Classic fairy tales + Story chip predownload | #402 |
+| Story Mode quality + UX polish | branch `cursor/story-quality-ux-9684` (awaiting PR) |
 | Docs board #393–#395 Done / Outstanding honesty | #396 |
 | Docs tip + Pages honesty after #396; agent scrub green | #397 |
 | No history-resume ask (code) | #331 / #366 |
