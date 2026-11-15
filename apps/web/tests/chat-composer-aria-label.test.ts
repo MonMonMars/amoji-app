@@ -9,8 +9,11 @@ describe("ChatPanel composer field a11y", () => {
     expect(chat).toContain('id="amoji-chat-composer"');
     expect(chat).toContain('name="message"');
     expect(chat).toContain('autoComplete="off"');
-    expect(chat).toContain("aria-label={t(lang, 'sayHi', { name: characterName })}");
-    expect(chat).toContain("placeholder={t(lang, 'sayHi', { name: characterName })}");
+    // Chat uses sayHi; Story Mode switches to storyContinue.
+    expect(chat).toContain("t(lang, 'sayHi', { name: characterName })");
+    expect(chat).toContain("t(lang, 'storyContinue')");
+    expect(chat).toMatch(/aria-label=\{[\s\S]*loadStorySession\(\)[\s\S]*storyContinue[\s\S]*sayHi/);
+    expect(chat).toMatch(/placeholder=\{[\s\S]*loadStorySession\(\)[\s\S]*storyContinue[\s\S]*sayHi/);
   });
 
   it("keeps mic + send controls labeled", () => {

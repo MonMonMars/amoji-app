@@ -933,19 +933,22 @@ export default function ChatPanel({
       lang,
       characterName ?? 'friend',
     );
+    // Story open must never fall through to chat hello / persona intro.
     const storyOpen = inStory ? storyOpeningLine(lang) : null;
-    const openLine =
-      storyOpen
-      || buildOpenCheerLine(lang, {
-        nameHello: namedHello,
-        personaIntro,
-      })
-      || shortDaily
-      || pickLine('startup', lang, 1, startupVars);
+    const openLine = inStory
+      ? (storyOpen || pickLine('startup', lang, 1, startupVars))
+      : (
+        buildOpenCheerLine(lang, {
+          nameHello: namedHello,
+          personaIntro,
+        })
+        || shortDaily
+        || pickLine('startup', lang, 1, startupVars)
+      );
     if (skipCheer) {
       return () => { markChatRoomClosed(); };
     }
-    const openHints = storyOpen
+    const openHints = inStory
       ? { joy: 0.48, neutral: 0.35 }
       : shortDaily
         ? greetingHints(visit)
@@ -1066,7 +1069,9 @@ export default function ChatPanel({
       // One ability at a time when quiet — music / dance / song / weather / story / news.
       // Alternate with soft companion chatter so it does not nag every beat.
       // Skip after topical/demo content (fun fact → never "want to see me dance?").
-      const offerMuted = shouldSuppressSkillOffer(lastTopicalContentAtRef.current);
+      // Story Mode stays in-scene — never bolt showcase skill invites onto the tale.
+      const inStoryIdle = !!loadStorySession();
+      const offerMuted = inStoryIdle || shouldSuppressSkillOffer(lastTopicalContentAtRef.current);
       if (
         !offerMuted
         && Date.now() - lastOfferAtRef.current > 45_000
@@ -2002,47 +2007,49 @@ export default function ChatPanel({
       )}
       {/* Demo-phase chips: one-tap tutorials (weather / dance / sing…) for
           users who would rather not talk or type — especially on iPhone.
-          One small horizontal row; swipe for more. */}
+          Hidden in Story Mode so the room does not feel like chat skill chrome. */}
       <div className="relative z-10 flex w-full flex-col gap-1.5">
-        <DemoPhaseRail
-          lang={lang}
-          disabled={busy}
-          onWarmStory={() => {
-            void warmClassicFairyTaleCache();
-          }}
-          onPick={(prompt, id) => {
-            // Demo chips are one-topic tutorials — never carry a pending
-            // showcase/tutorial offer into the same beat as the chip reply.
-            pendingOfferRef.current = null;
-            pendingDemoPhaseRef.current = id;
-            // Advance library rotation so repeat music/dance/sing taps
-            // keep changing beds even when a facet wraps around.
-            if (id === 'music' || id === 'dance' || id === 'sing') {
-              laughCountRef.current += 1;
-            }
-            if (id === 'story') {
-              // Classic public-domain bank — vary length; skip thin LLM stub.
+        {!loadStorySession() && (
+          <DemoPhaseRail
+            lang={lang}
+            disabled={busy}
+            onWarmStory={() => {
               void warmClassicFairyTaleCache();
-              lastActivityRef.current = Date.now();
-              lastUserRef.current = Date.now();
-              userHasSpokenRef.current = true;
-              reengageStageRef.current = 0;
-              lastTopicalContentAtRef.current = Date.now();
-              idleAutoAfterUserRef.current = true;
-              setHistory((h) => [...h, { role: 'user', content: prompt }]);
-              feedUtterance(prompt);
-              const n = storyTellCountRef.current++;
-              const tale = pickClassicFairyTale(lang, n, resolvedClassicFairyTales());
-              sayLocal(formatTaleForSpeech(tale, lang), { joy: 0.55 });
-              return;
-            }
-            if (isTopicalContentTurn(prompt)) {
-              lastTopicalContentAtRef.current = Date.now();
-              idleAutoAfterUserRef.current = true;
-            }
-            void send(prompt);
-          }}
-        />
+            }}
+            onPick={(prompt, id) => {
+              // Demo chips are one-topic tutorials — never carry a pending
+              // showcase/tutorial offer into the same beat as the chip reply.
+              pendingOfferRef.current = null;
+              pendingDemoPhaseRef.current = id;
+              // Advance library rotation so repeat music/dance/sing taps
+              // keep changing beds even when a facet wraps around.
+              if (id === 'music' || id === 'dance' || id === 'sing') {
+                laughCountRef.current += 1;
+              }
+              if (id === 'story') {
+                // Classic public-domain bank — vary length; skip thin LLM stub.
+                void warmClassicFairyTaleCache();
+                lastActivityRef.current = Date.now();
+                lastUserRef.current = Date.now();
+                userHasSpokenRef.current = true;
+                reengageStageRef.current = 0;
+                lastTopicalContentAtRef.current = Date.now();
+                idleAutoAfterUserRef.current = true;
+                setHistory((h) => [...h, { role: 'user', content: prompt }]);
+                feedUtterance(prompt);
+                const n = storyTellCountRef.current++;
+                const tale = pickClassicFairyTale(lang, n, resolvedClassicFairyTales());
+                sayLocal(formatTaleForSpeech(tale, lang), { joy: 0.55 });
+                return;
+              }
+              if (isTopicalContentTurn(prompt)) {
+                lastTopicalContentAtRef.current = Date.now();
+                idleAutoAfterUserRef.current = true;
+              }
+              void send(prompt);
+            }}
+          />
+        )}
       <div className="relative flex w-full items-center gap-2.5">
         {/* r119: the voice watchdog armed a replay — a silent line is waiting
             for ANY tap to be re-spoken. Floating chip above the mic;
@@ -2136,11 +2143,19 @@ export default function ChatPanel({
           id="amoji-chat-composer"
           name="message"
           autoComplete="off"
-          aria-label={t(lang, 'sayHi', { name: characterName })}
+          aria-label={
+            loadStorySession()
+              ? t(lang, 'storyContinue')
+              : t(lang, 'sayHi', { name: characterName })
+          }
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && void send()}
-          placeholder={t(lang, 'sayHi', { name: characterName })}
+          placeholder={
+            loadStorySession()
+              ? t(lang, 'storyContinue')
+              : t(lang, 'sayHi', { name: characterName })
+          }
           className="h-11 flex-1 overflow-hidden rounded-full border border-white/10 bg-black/30 px-4 text-[15px] text-white placeholder-white/30 outline-none backdrop-blur-md focus:border-white/40"
         />
         <button

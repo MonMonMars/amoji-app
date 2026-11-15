@@ -123,7 +123,7 @@ export const LANGS: LangDef[] = [
 export type StrKey =
   | 'chooseCharacter' | 'chooseBackground' | 'chooseLanguage' | 'chooseVoice'
   | 'voiceShowAll' | 'voiceThisLanguage' | 'previewReactions' | 'previewUniversal'
-  | 'startChat' | 'back' | 'settings' | 'sayHi' | 'typing'
+  | 'startChat' | 'back' | 'settings' | 'sayHi' | 'storyContinue' | 'typing'
   | 'bgVoid' | 'bgAurora' | 'bgEmber' | 'bgSakura' | 'bgAbyss' | 'bgRain' | 'bgSunset' | 'bgMeadow'
   | 'bgCloudsea' | 'bgNeon' | 'bgSnowmoon' | 'bgGalaxy'
   // v0.9.3 flow: splash → login → select → chat
@@ -423,6 +423,12 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   back: { en: 'Back', yue: '返回', zh: '返回', ja: '戻る' },
   settings: { en: 'Settings', yue: '設定', zh: '设置', ja: '設定' },
   sayHi: { en: 'Say hi to {name} 👋', yue: '同 {name} 打個招呼 👋', zh: '跟 {name} 打个招呼 👋', ja: '{name}に挨拶してね 👋' },
+  storyContinue: {
+    en: 'Answer in the story…',
+    yue: '喺故事入面答…',
+    zh: '在故事里回应…',
+    ja: '物語の中で返す…',
+  },
   // Chat wait state — she is thinking / loading a reply, not "typing" like a human keyboard.
   typing: { en: '{name} is thinking…', yue: '{name} 諗緊…', zh: '{name} 正在想…', ja: '{name}が考え中…' },
   bgVoid: { en: 'Night Void', yue: '夜空', zh: '夜空', ja: '夜空' },

@@ -64,10 +64,10 @@ const LABEL: Record<
     ja: 'おまかせ',
   },
   withYou: {
-    en: 'She leads — you steer the story together',
+    en: 'They lead — you steer the tale together',
     yue: '佢帶你入去，你哋一齊推故事',
-    zh: '她带你进入，一起推动故事',
-    ja: '彼女が導き、一緒に物語を進める',
+    zh: '对方带你进入，一起推动故事',
+    ja: '相手が導き、一緒に物語を進める',
   },
 };
 
@@ -132,16 +132,25 @@ export default function StorySetupPanel() {
         aria-hidden
       />
       <div className="relative z-10 flex w-full max-w-[min(100%,22rem)] flex-col items-center gap-3 sm:max-w-[24rem]">
-        <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-fuchsia-200/80">
-          {LABEL.mode[lang]}
-        </p>
-        <p className="text-center text-xs text-white/65">{LABEL.withYou[lang]}</p>
+        <header className="flex w-full flex-col items-center gap-1.5 text-center">
+          <p
+            data-testid="story-setup-eyebrow"
+            className="text-[10px] font-bold uppercase tracking-[0.35em] text-amber-200/85"
+          >
+            {LABEL.mode[lang]}
+          </p>
+          <p className="max-w-[20rem] text-sm leading-snug text-white/70">{LABEL.withYou[lang]}</p>
+        </header>
 
         <div className="w-full">
           <p className="mb-2 text-[10px] uppercase tracking-widest text-white/55">
             {LABEL.packs[lang]}
           </p>
-          <div role="group" aria-label={LABEL.packs[lang]} className="flex max-w-full flex-wrap gap-2">
+          <div
+            role="group"
+            aria-label={LABEL.packs[lang]}
+            className="-mx-1 flex max-w-full gap-2 overflow-x-auto overscroll-x-contain px-1 pb-1 [scrollbar-width:none] [touch-action:pan-x] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:overflow-visible"
+          >
             {STORY_SCENES.map((s) => {
               const active = packId === s.id;
               return (
@@ -152,9 +161,9 @@ export default function StorySetupPanel() {
                   aria-label={s.title[lang]}
                   aria-pressed={active}
                   onClick={() => pickPack(s.id)}
-                  className={`ui-btn max-w-full rounded-full border px-3 py-1.5 text-left text-xs backdrop-blur-md ${
+                  className={`ui-btn shrink-0 rounded-full border px-3.5 py-2.5 text-left text-xs backdrop-blur-md sm:max-w-full ${
                     active
-                      ? 'border-fuchsia-300/60 bg-fuchsia-500/25 text-white'
+                      ? 'border-amber-300/55 bg-amber-500/20 text-white'
                       : 'border-white/15 bg-black/40 text-white/80 hover:border-white/30'
                   }`}
                 >
@@ -168,9 +177,9 @@ export default function StorySetupPanel() {
               aria-label={LABEL.surprise[lang]}
               aria-pressed={!packLocked}
               onClick={surprise}
-              className={`ui-btn rounded-full border px-3 py-1.5 text-xs backdrop-blur-md ${
+              className={`ui-btn shrink-0 rounded-full border px-3.5 py-2.5 text-xs backdrop-blur-md ${
                 !packLocked
-                  ? 'border-fuchsia-300/60 bg-fuchsia-500/25 text-white'
+                  ? 'border-amber-300/55 bg-amber-500/20 text-white'
                   : 'border-white/15 bg-black/40 text-white/80 hover:border-white/30'
               }`}
             >
@@ -201,17 +210,19 @@ export default function StorySetupPanel() {
           {/* Tiny scene backdrop chip — combination of cast + place. */}
           <div
             data-testid="story-scene-inset"
+            role="img"
+            aria-label={`${LABEL.scene[lang]}: ${scene.title[lang]}`}
             className="absolute right-3 top-3 h-[4.25rem] w-[5.75rem] overflow-hidden rounded-xl border border-white/35 shadow-lg ring-1 ring-black/40"
           >
             {background.image ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={assetUrl(background.image)}
-                alt={scene.title[lang]}
+                alt=""
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="h-full w-full" style={{ background: background.css }} title={scene.title[lang]} />
+              <div className="h-full w-full" style={{ background: background.css }} />
             )}
             <span className="absolute inset-x-0 bottom-0 bg-black/55 px-1 py-0.5 text-center text-[8px] font-semibold uppercase tracking-wide text-white/90">
               {LABEL.scene[lang]}
@@ -219,12 +230,11 @@ export default function StorySetupPanel() {
           </div>
 
           <div className="absolute inset-x-0 bottom-0 p-4 pt-20">
-            <p className="text-[10px] uppercase tracking-widest text-fuchsia-100/70">{LABEL.mode[lang]}</p>
-            <h1 id="amoji-story-setup-title" className="text-xl font-bold leading-tight drop-shadow">
+            <h1 id="amoji-story-setup-title" className="text-xl font-bold leading-tight drop-shadow sm:text-2xl">
               {scene.title[lang]}
             </h1>
             <p className="mt-1 text-sm font-semibold text-white drop-shadow">{character.name}</p>
-            <p className="mt-1 text-sm text-white/80">{scene.blurb[lang]}</p>
+            <p className="mt-1.5 text-sm leading-snug text-white/80">{scene.blurb[lang]}</p>
           </div>
         </div>
 
@@ -234,7 +244,7 @@ export default function StorySetupPanel() {
             data-testid="story-reroll"
             aria-label={packLocked ? LABEL.castAgain[lang] : LABEL.reroll[lang]}
             onClick={() => setSeed((s) => s + 1 + (STORY_SCENES.length > 1 ? 1 : 0))}
-            className="ui-btn flex-1 rounded-full border border-white/20 bg-black/45 px-4 py-3 text-sm backdrop-blur-md"
+            className="ui-btn min-h-12 flex-1 rounded-full border border-white/20 bg-black/45 px-4 py-3 text-sm backdrop-blur-md"
           >
             {packLocked ? LABEL.castAgain[lang] : LABEL.reroll[lang]}
           </button>
@@ -243,7 +253,7 @@ export default function StorySetupPanel() {
             data-testid="story-start"
             aria-label={LABEL.start[lang]}
             onClick={enter}
-            className="fx-start flex-[1.4] rounded-full bg-white px-4 py-3 text-sm font-bold tracking-wide text-black"
+            className="fx-start min-h-12 flex-[1.4] rounded-full bg-white px-4 py-3 text-sm font-bold tracking-wide text-black"
           >
             {LABEL.start[lang]}
           </button>

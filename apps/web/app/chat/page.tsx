@@ -170,15 +170,24 @@ function ChatRoom() {
               onOpenSelect={openSelect}
             />
             {inStory && (
-              <p
+              <div
                 data-testid="story-mode-badge"
-                className="max-w-[min(100%,16rem)] rounded-full border border-fuchsia-300/40 bg-fuchsia-500/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-fuchsia-50 shadow-sm backdrop-blur-md"
+                role="status"
+                aria-label={
+                  prefs.lang === 'yue' ? `故事：${storyTitle}`
+                    : prefs.lang === 'zh' ? `故事：${storyTitle}`
+                      : prefs.lang === 'ja' ? `ストーリー：${storyTitle}`
+                        : `Story: ${storyTitle}`
+                }
+                className="max-w-[min(100%,18rem)] rounded-2xl border border-amber-300/35 bg-black/55 px-3.5 py-2 shadow-sm backdrop-blur-md"
               >
-                {prefs.lang === 'yue' ? '故事' : prefs.lang === 'zh' ? '故事' : prefs.lang === 'ja' ? 'ストーリー' : 'Story'}
-                <span className="ml-2 font-semibold normal-case tracking-normal text-white/90">
+                <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-amber-100/85">
+                  {prefs.lang === 'yue' ? '故事進行中' : prefs.lang === 'zh' ? '故事进行中' : prefs.lang === 'ja' ? '物語進行中' : 'In story'}
+                </p>
+                <p className="mt-0.5 text-sm font-semibold leading-snug text-white">
                   {storyTitle}
-                </span>
-              </p>
+                </p>
+              </div>
             )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
