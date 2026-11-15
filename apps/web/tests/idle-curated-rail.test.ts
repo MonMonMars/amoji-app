@@ -18,14 +18,11 @@ import {
   resetIdleEnabled,
   setIdleEnabled,
 } from '../lib/idle-enabled';
-import { DEFAULT_IDLE_CLIP_ID } from '../lib/idle-retired';
-import { forgetIdlePrefsScrub } from '../lib/idle-prefs-scrub';
 import { idleByNum } from '../lib/idle-library';
 
 afterEach(() => {
   resetIdleEnabled();
   forgetIdleEnabledCache();
-  forgetIdlePrefsScrub();
 });
 
 describe('curated idle chat rail', () => {
@@ -47,12 +44,11 @@ describe('curated idle chat rail', () => {
     }
   });
 
-  it('defaults to a single Quaternius stand (rail #6)', () => {
-    expect(defaultCuratedRailNums()).toEqual([6]);
+  it('defaults to a single calm upright stand (rail #5)', () => {
+    expect(defaultCuratedRailNums()).toEqual([5]);
     expect(listEnabledIdleClipIds()).toEqual([
-      DEFAULT_IDLE_CLIP_ID,
+      'IdleRpmFStanding001',
     ]);
-    expect(DEFAULT_IDLE_CLIP_ID).toBe('IdleQuaterniusHuman');
   });
 
   it('migrates stored legacy library enable nums to rail nums', () => {
@@ -62,28 +58,36 @@ describe('curated idle chat rail', () => {
       setItem: (k: string, v: string) => { store.set(k, v); },
       removeItem: (k: string) => { store.delete(k); },
       clear: () => store.clear(),
-      key: (i: number) => [...store.keys()][i] ?? null,
-      get length() { return store.size; },
+      key: () => null,
+      length: 0,
     };
     const lookRail = CHAT_IDLE_CURATED.find((r) => r.legacyLibNum === 3)!.railNum;
     const robotRail = CHAT_IDLE_CURATED.find((r) => r.legacyLibNum === 101)!.railNum;
-    expect(migrateEnabledNumsToRail([3, 40, 101]).sort()).toEqual(
-      [3, lookRail, robotRail].sort(),
+    expect(migrateEnabledNumsToRail([3, 40, 101], 'library').sort()).toEqual(
+      [lookRail, 3, robotRail].sort(), // legacy 40 → Mixamo rail 3
     );
-    // v6 key stores rail nums already (or migrates on read)
-    store.set('amoji.idleEnabled.v6', JSON.stringify([3, 40, 101]));
-    forgetIdlePrefsScrub();
+    // Rail-kind must not remap #5 (IdleRpmFStanding001) via library #5 (KayKit).
+    expect(migrateEnabledNumsToRail([5, 11], 'rail')).toEqual([5, 11]);
+    // v1 library # → rail; LookAround (legacy #3 / sky-look) is scrubbed.
+    store.set('amoji.idleEnabled.v1', JSON.stringify([3, 40, 101]));
     forgetIdleEnabledCache();
     const enabled = listEnabledNums();
-    expect(enabled).toContain(lookRail);
+    expect(enabled).not.toContain(lookRail);
     expect(enabled).toContain(robotRail);
-    setIdleEnabled(CHAT_IDLE_CURATED.find((r) => r.legacyLibNum === 3)!.railNum, true);
-    expect(listEnabledIdleClipIds()).toContain('LookAround');
+    expect(enabled).toContain(3); // Mixamo breathing (legacy 40)
+    const thinkRail = CHAT_IDLE_CURATED.find((r) => r.clipId === 'Thinking')!.railNum;
+    setIdleEnabled(thinkRail, true);
+    expect(listEnabledIdleClipIds()).toContain('Thinking');
+    // Known-bad sky-look cannot be re-enabled.
+    setIdleEnabled(lookRail, true);
+    expect(listEnabledIdleClipIds()).not.toContain('LookAround');
   });
 
   it('resolveLegacyLibPin maps library # or clip id', () => {
     expect(resolveLegacyLibPin('3')).toBe('LookAround');
-    expect(resolveLegacyLibPin('96')).toBe(DEFAULT_IDLE_CLIP_ID);
+    // Retired #96 remaps to idle-retired DEFAULT (Quaternius after #430).
+    // Owner IdleRpmFStanding001 pins still migrate via idle-owner-migrate.
+    expect(resolveLegacyLibPin('96')).toBe('IdleQuaterniusHuman');
     expect(resolveLegacyLibPin('LookAround')).toBe('LookAround');
     expect(idleByNum(96)?.retired).toBe(true);
     expect(idleClipById('LookAround')?.num).toBe(

@@ -33,6 +33,24 @@ export const CMA_REACTION_ARCHIVE_CODES = [
   'CMA00353', // #6 evil lady giggle
 ] as const;
 
+/**
+ * Owner Want list (docs/SFX_WANT_LIST.md) — active zone defaults.
+ * Seeded into localStorage on first visit so gallery picks match the map
+ * even before the owner re-taps Want on /sfx-gallery.
+ */
+export const CMA_REACTION_OWNER_WANT_CODES = [
+  'CMA00350', // #3
+  'CMA00351', // #4
+  'CMA00354', // #7
+  'CMA00359', // #9
+  'CMA00360', // #10
+  'CMA00363', // #11
+  'CMA00364', // #12
+  'CMA00365', // #13
+  'CMA00366', // #14
+  'CMA00318', // #15 male
+] as const;
+
 /** Owner delete from #1–23 review (+ prior pack cull still listed in DROPPED). */
 export const CMA_REACTION_OWNER_DELETE_CODES = [
   'CMA00327', // #16 dog bark
@@ -314,12 +332,31 @@ export function parseCmaReactionPicksJson(raw: string | null | undefined): PickM
   }
 }
 
+function ownerWantSeedMap(): PickMap {
+  const next: PickMap = {};
+  for (const code of CMA_REACTION_OWNER_WANT_CODES) {
+    if (cmaReactionByCode(code)) next[code] = 'want';
+  }
+  return next;
+}
+
 function hydrate(): PickMap {
   if (loaded) return memory;
   loaded = true;
   try {
+    // No browser storage (SSR / unit tests) — leave empty; zone table still
+    // covers playback. Seed only when localStorage exists and the key is new.
     if (typeof localStorage === 'undefined') return memory;
     const raw = localStorage.getItem(CMA_REACTION_GALLERY_KEY);
+    if (raw == null) {
+      // First visit / wiped prefs: seed owner Want list so picks are not empty.
+      memory = ownerWantSeedMap();
+      try {
+        localStorage.setItem(CMA_REACTION_GALLERY_KEY, JSON.stringify(memory));
+      } catch { /* private mode */ }
+      return memory;
+    }
+    // Key present (including "{}") — honor whatever the owner left, even empty.
     memory = parseCmaReactionPicksJson(raw);
   } catch { /* ignore */ }
   return memory;
@@ -360,10 +397,12 @@ export function skippedCmaReactionCodes(): string[] {
 }
 
 export function resetCmaReactionPicks(): void {
+  // Persist "{}" so a deliberate clear is not re-seeded as owner Want on next hydrate.
   memory = {};
   loaded = true;
   try {
-    if (typeof localStorage !== 'undefined') localStorage.removeItem(CMA_REACTION_GALLERY_KEY);
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(CMA_REACTION_GALLERY_KEY, '{}');
   } catch { /* ignore */ }
 }
 

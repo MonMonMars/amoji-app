@@ -1,83 +1,58 @@
 // Per-companion idle pin. Same localStorage shape as the other chat prefs.
-// Default = IdleQuaterniusHuman (v6) — visibly different from RPM F stand.
-// Aggressive scrub drops every prior amoji.idle* key on hydrate.
+// Default fallback = IdleRpmFStanding001 (last known good after #415/#422).
+// v6 migrates v1–v5 pins forward; only known-bad clips are scrubbed.
 
-import {
-  DEFAULT_IDLE_CLIP_ID,
-  isBannedAutoIdleClip,
-  resolveIdleClipId,
-  isRetiredIdleClip,
-} from './idle-retired';
 import { idleClipById } from './idle-clips';
-import { IDLE_PICK_KEY, scrubAllAmojiIdleKeys } from './idle-prefs-scrub';
+import {
+  IDLE_PICK_KEY,
+  LEGACY_IDLE_PICK_KEYS,
+  dropLegacyPrefKeys,
+  isHonorableIdleClip,
+  isKnownBadIdleClip,
+  readMigratingPrefJson,
+} from './idle-owner-migrate';
+import { resolveIdleClipId, isRetiredIdleClip } from './idle-retired';
 
 export { IDLE_PICK_KEY };
-export { DEFAULT_IDLE_CLIP_ID };
-
 const KEY = IDLE_PICK_KEY;
 
-/** Default rotation / safe persisted pins — one near-still upright stand. */
+/** Default rotation / safe persisted pins — last known owner-good upright stand. */
 export const DEFAULT_IDLE_IDS = [
-  DEFAULT_IDLE_CLIP_ID,
+  'IdleRpmFStanding001',
 ] as const;
-
-/** Old defaults / gesture pins that must not stick after the calm swap. */
-const BAD_SAVED_IDLE_IDS = new Set([
-  'IdleBreathCalm',
-  'StandardIdle',
-  'IdleNeutral',
-  'IdleChinHand',
-  'IdleHug',
-  'HelloWave',
-  'LookAround',
-  'IdleSassy',
-  'IdleRpmMVar001',
-  'IdleRpmFVar001',
-  'IdleMixamoBreathing',
-  'IdleInnersceneSam',
-  'IdleRpmMVar002',
-  'IdleRpmFVar003',
-  'IdleRpmFVar004',
-  'IdleRpmMStanding001',
-  'IdleRpmFStanding001', // v5 default — still looked same-bad to owner
-]);
 
 type PickMap = Record<string, string>;
 
 let memory: PickMap = {};
 let loaded = false;
 
+function scrubPickMap(parsed: Record<string, unknown>): { next: PickMap; changed: boolean } {
+  const next: PickMap = {};
+  let changed = false;
+  for (const [id, clip] of Object.entries(parsed)) {
+    if (typeof clip !== 'string' || !idleClipById(clip) || !isHonorableIdleClip(clip)) {
+      changed = true;
+      continue;
+    }
+    next[id] = clip;
+  }
+  return { next, changed };
+}
+
 function hydrate(): PickMap {
   if (loaded) return memory;
   loaded = true;
   try {
     if (typeof localStorage === 'undefined') return memory;
-    scrubAllAmojiIdleKeys();
-    const raw = localStorage.getItem(KEY);
+    const { raw, migratedFrom } = readMigratingPrefJson(KEY, LEGACY_IDLE_PICK_KEYS);
     if (!raw) return memory;
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== 'object') return memory;
-    const next: PickMap = {};
-    let changed = false;
-    for (const [id, clip] of Object.entries(parsed as Record<string, unknown>)) {
-      if (
-        typeof clip !== 'string'
-        || isRetiredIdleClip(clip)
-        || isBannedAutoIdleClip(clip)
-        || !idleClipById(clip)
-      ) {
-        changed = true;
-        continue;
-      }
-      if (BAD_SAVED_IDLE_IDS.has(clip)) {
-        changed = true;
-        continue;
-      }
-      next[id] = clip;
-    }
+    const { next, changed } = scrubPickMap(parsed as Record<string, unknown>);
     memory = next;
-    if (changed) {
+    if (changed || migratedFrom) {
       try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* private mode */ }
+      dropLegacyPrefKeys(LEGACY_IDLE_PICK_KEYS);
     }
   } catch { /* ignore */ }
   return memory;
@@ -89,22 +64,28 @@ function persist(next: PickMap): void {
   try {
     if (typeof localStorage === 'undefined') return;
     localStorage.setItem(KEY, JSON.stringify(next));
+    dropLegacyPrefKeys(LEGACY_IDLE_PICK_KEYS);
   } catch { /* private mode */ }
 }
 
 export function idlePickFor(characterId: string): string | null {
   const raw = hydrate()[characterId];
   if (!raw) return null;
+  // Owner pins win: do not drop honorable pins when auto-idle bans grow.
+  if (isKnownBadIdleClip(raw) || isRetiredIdleClip(raw) || !idleClipById(raw)) return null;
   const resolved = resolveIdleClipId(raw);
-  if (isBannedAutoIdleClip(resolved) || BAD_SAVED_IDLE_IDS.has(resolved)) return null;
-  return idleClipById(resolved) ? resolved : null;
+  if (resolved !== raw && isHonorableIdleClip(raw) && idleClipById(raw)) {
+    return raw;
+  }
+  if (isKnownBadIdleClip(resolved) || !idleClipById(resolved)) return null;
+  return resolved;
 }
 
 export function saveIdlePick(characterId: string, clipId: string): string | null {
   if (
     !characterId
     || isRetiredIdleClip(clipId)
-    || isBannedAutoIdleClip(clipId)
+    || isKnownBadIdleClip(clipId)
     || !idleClipById(clipId)
   ) {
     return idlePickFor(characterId);

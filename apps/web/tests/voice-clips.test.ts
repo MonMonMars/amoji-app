@@ -355,6 +355,7 @@ describe('Wanted CMA reaction SFX wire', () => {
       key: () => null,
       get length() { return store.size; },
     };
+    return store;
   }
 
   afterEach(() => {
@@ -365,7 +366,8 @@ describe('Wanted CMA reaction SFX wire', () => {
   });
 
   it('Wanted laugh enters recordedLaughClip; Skip excluded; empty Wanted uses CLIP_LIBRARY', () => {
-    mockStorage();
+    const store = mockStorage();
+    store.set('amoji.cmaReactionSfx.picks.v1', '{}'); // blank — skip first-visit Want seed
     forgetCmaReactionPickCache();
     resetWantedCmaReactionRotation();
     resetLaughClipRotation();
@@ -393,7 +395,8 @@ describe('Wanted CMA reaction SFX wire', () => {
   });
 
   it('poke stays on the zone map; Want does not rotate; Skip falls back to default', () => {
-    mockStorage();
+    const store = mockStorage();
+    store.set('amoji.cmaReactionSfx.picks.v1', '{}');
     forgetCmaReactionPickCache();
     resetWantedCmaReactionRotation();
 

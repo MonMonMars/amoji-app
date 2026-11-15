@@ -94,23 +94,35 @@ export function curatedRailByLegacyLibNum(libNum: number): IdleCuratedRailEntry 
 }
 
 /**
- * Default ON rotation — single near-still upright stand (v6):
- * #39 IdleQuaterniusHuman only (rail #6).
- * Visibly different from v5 IdleRpmFStanding001 (rail #5) which still looked
- * like "the same bad pose" to owner. RPM F/M stands banned from auto.
- * Still out / banned: BreathCalm / StandardIdle / Sassy / MVar001 / RPM stands.
+ * Default ON rotation — single calm upright planted stand (v5):
+ * #42 IdleRpmFStanding001 only (rail #5).
+ * Dropped dual F/M A→B from v4 (rail #11). Still out / banned from auto:
+ * BreathCalm / StandardIdle / Sassy / MVar001 / look / stretch / hug / wave.
+ * When owner pins exist, migrate forward (idle-owner-migrate) — do not wipe
+ * for Quaternius default churn (#430).
  */
 export function defaultCuratedRailNums(): number[] {
-  return [6];
+  return [5];
 }
 
-/** Map stored enable list (legacy library # or rail #) → curated rail #. */
-export function migrateEnabledNumsToRail(stored: number[]): number[] {
+/**
+ * Map stored enable list → curated rail #.
+ * - `library` (v1): numbers are idle-library # (can collide with rail #).
+ * - `rail` (v2+ / default): numbers are already rail # — do not remap via legacy.
+ */
+export function migrateEnabledNumsToRail(
+  stored: number[],
+  kind: 'rail' | 'library' = 'rail',
+): number[] {
   const out = new Set<number>();
   for (const n of stored) {
-    const fromLegacy = curatedRailByLegacyLibNum(n);
-    if (fromLegacy) {
-      out.add(fromLegacy.railNum);
+    if (kind === 'library') {
+      const fromLegacy = curatedRailByLegacyLibNum(n);
+      if (fromLegacy) {
+        out.add(fromLegacy.railNum);
+        continue;
+      }
+      // Unknown library # — ignore (do not treat as rail; avoids false keeps).
       continue;
     }
     if (curatedRailByNum(n)) out.add(n);

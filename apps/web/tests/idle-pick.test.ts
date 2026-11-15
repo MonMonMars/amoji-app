@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+﻿import { afterEach, describe, expect, it } from 'vitest';
 import { IDLE_CLIP_OPTIONS } from '../lib/idle-clips';
 import {
   IDLE_LIBRARY,
@@ -20,16 +20,26 @@ import {
   resetIdlePicks,
   saveIdlePick,
 } from '../lib/idle-pick';
-import { DEFAULT_IDLE_CLIP_ID } from '../lib/idle-retired';
-import { forgetIdlePrefsScrub } from '../lib/idle-prefs-scrub';
 
 afterEach(() => {
   resetIdlePicks();
   resetIdleEnabled();
   forgetIdleEnabledCache();
   forgetIdlePickCache();
-  forgetIdlePrefsScrub();
 });
+
+function mockStorage() {
+  const store = new Map<string, string>();
+  (globalThis as { localStorage: Storage }).localStorage = {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => { store.set(k, v); },
+    removeItem: (k: string) => { store.delete(k); },
+    clear: () => store.clear(),
+    key: () => null,
+    length: 0,
+  };
+  return store;
+}
 
 describe('idle library numbers', () => {
   it('uses contiguous # starting at 1 for standing idles', () => {
@@ -42,6 +52,7 @@ describe('idle library numbers', () => {
   it('defaults #1+#2 to IdleBreathCalm and StandardIdle', () => {
     expect(idleByNum(1)?.clipId).toBe('IdleBreathCalm');
     expect(idleByNum(2)?.clipId).toBe('StandardIdle');
+    // Passiveive loop also enables LookAround (#3) + Relax (#32) by default.
     expect(defaultEnabledNums()).toEqual([1, 2, 3, 32]);
   });
 
@@ -81,26 +92,11 @@ describe('idle library numbers', () => {
   });
 });
 
-function mockStore() {
-  const store = new Map<string, string>();
-  (globalThis as { localStorage: Storage }).localStorage = {
-    getItem: (k: string) => store.get(k) ?? null,
-    setItem: (k: string, v: string) => { store.set(k, v); },
-    removeItem: (k: string) => { store.delete(k); },
-    clear: () => store.clear(),
-    key: (i: number) => [...store.keys()][i] ?? null,
-    get length() { return store.size; },
-  };
-  return store;
-}
-
 describe('idle enable + pick', () => {
   it('persists enable toggles and keeps a non-empty pool', () => {
-    mockStore();
-    forgetIdlePrefsScrub();
+    mockStorage();
     forgetIdleEnabledCache();
-    expect(isIdleEnabled(6)).toBe(true);
-    expect(isIdleEnabled(5)).toBe(false);
+    expect(isIdleEnabled(5)).toBe(true);
     expect(isIdleEnabled(11)).toBe(false);
     expect(isIdleEnabled(8)).toBe(false);
     expect(isIdleEnabled(3)).toBe(false);
@@ -109,76 +105,115 @@ describe('idle enable + pick', () => {
     setIdleEnabled(thinkRail, true);
     expect(isIdleEnabled(thinkRail)).toBe(true);
     expect(listEnabledIdleClipIds()).toContain('Thinking');
-    setIdleEnabled(6, false);
+    setIdleEnabled(5, false);
     setIdleEnabled(thinkRail, false);
-    expect(listEnabledIdleClipIds()).toEqual([DEFAULT_IDLE_CLIP_ID]);
+    // Empty enable → reset to single upright stand (rail #5)
+    expect(listEnabledIdleClipIds()).toEqual([
+      'IdleRpmFStanding001',
+    ]);
   });
 
   it('saves a pin per companion by clip id', () => {
-    expect(saveIdlePick('a01-shino', DEFAULT_IDLE_CLIP_ID)).toBe(DEFAULT_IDLE_CLIP_ID);
-    expect(idlePickFor('a01-shino')).toBe(DEFAULT_IDLE_CLIP_ID);
-    expect(saveIdlePick('a01-shino', 'not-a-clip')).toBe(DEFAULT_IDLE_CLIP_ID);
+    expect(saveIdlePick('a01-shino', 'IdleRpmFStanding001')).toBe('IdleRpmFStanding001');
+    expect(idlePickFor('a01-shino')).toBe('IdleRpmFStanding001');
+    expect(saveIdlePick('a01-shino', 'not-a-clip')).toBe('IdleRpmFStanding001');
   });
 
   it('drops HelloWave pins — farewell wave is not a saved idle', () => {
-    const store = mockStore();
+    const store = mockStorage();
     store.set('amoji.idlePick.v6', JSON.stringify({ 'a01-shino': 'HelloWave' }));
-    forgetIdlePrefsScrub();
     forgetIdlePickCache();
     expect(idlePickFor('a01-shino')).toBeNull();
   });
 
-  it('clears legacy bad + weak pins so Quaternius stand returns', () => {
-    const store = mockStore();
+  it('scrubs known-bad pins but keeps owner-selected good stands', () => {
+    const store = mockStorage();
     store.set('amoji.idlePick.v6', JSON.stringify({
       'a01-shino': 'IdleHug',
       'a02-shibu': 'StandardIdle',
       'a03-fumiriya': 'LookAround',
       'a04-sassy': 'IdleSassy',
       'a05-mvar': 'IdleRpmMVar001',
-      'a06-weak': 'IdleMixamoBreathing',
-      'a07-sam': 'IdleInnersceneSam',
-      'a08-fvar': 'IdleRpmFVar001',
-      'a09-mstand': 'IdleRpmMStanding001',
-      'a10-breath': 'IdleBreathCalm',
-      'a11-rpm': 'IdleRpmFStanding001',
-      'a12-ok': DEFAULT_IDLE_CLIP_ID,
+      'a06-breath': 'IdleBreathCalm',
+      'a07-ok': 'IdleRpmFStanding001',
+      'a08-mstand': 'IdleRpmMStanding001',
+      'a09-mixamo': 'IdleMixamoBreathing',
+      'a10-sam': 'IdleInnersceneSam',
+      'a11-fvar': 'IdleRpmFVar001',
     }));
-    forgetIdlePrefsScrub();
     forgetIdlePickCache();
-    for (const id of ['a01-shino','a02-shibu','a03-fumiriya','a04-sassy','a05-mvar','a06-weak','a07-sam','a08-fvar','a09-mstand','a10-breath','a11-rpm']) {
-      expect(idlePickFor(id)).toBeNull();
-    }
-    expect(idlePickFor('a12-ok')).toBe(DEFAULT_IDLE_CLIP_ID);
+    expect(idlePickFor('a01-shino')).toBeNull();
+    expect(idlePickFor('a02-shibu')).toBeNull();
+    expect(idlePickFor('a03-fumiriya')).toBeNull();
+    expect(idlePickFor('a04-sassy')).toBeNull();
+    expect(idlePickFor('a05-mvar')).toBeNull();
+    expect(idlePickFor('a06-breath')).toBeNull();
+    // Owner good picks survive — do not wipe on scrub.
+    expect(idlePickFor('a07-ok')).toBe('IdleRpmFStanding001');
+    expect(idlePickFor('a08-mstand')).toBe('IdleRpmMStanding001');
+    expect(idlePickFor('a09-mixamo')).toBe('IdleMixamoBreathing');
+    expect(idlePickFor('a10-sam')).toBe('IdleInnersceneSam');
+    expect(idlePickFor('a11-fvar')).toBe('IdleRpmFVar001');
   });
 
-  it('aggressively scrubs ALL prior amoji.idle* keys on hydrate (v6)', () => {
-    const store = mockStore();
-    store.set('amoji.idlePick.v3', JSON.stringify({ 'a01-shino': 'IdleMixamoBreathing' }));
+  it('migrates v3/v4/v5 owner picks forward into v6 (no wipe of good pins)', () => {
+    const store = mockStorage();
+    store.set('amoji.idlePick.v3', JSON.stringify({
+      'a01-shino': 'IdleMixamoBreathing',
+      'a02-shibu': 'IdleInnersceneSam',
+      'a03-bad': 'IdleBreathCalm',
+    }));
     store.set('amoji.idleEnabled.v3', JSON.stringify([40, 43, 90]));
-    store.set('amoji.idlePick.v4', JSON.stringify({ 'a01-shino': 'IdleRpmMStanding001' }));
+    store.set('amoji.idlePick.v4', JSON.stringify({
+      'a01-shino': 'IdleRpmMStanding001',
+    }));
     store.set('amoji.idleEnabled.v4', JSON.stringify([5, 11]));
-    store.set('amoji.idlePick.v5', JSON.stringify({ 'a01-shino': 'IdleRpmFStanding001' }));
-    store.set('amoji.idleEnabled.v5', JSON.stringify([5]));
-    store.set('amoji.idleEnabled.v1.extra', 'stale');
-    forgetIdlePrefsScrub();
+    store.set('amoji.idlePick.v5', JSON.stringify({
+      'a04-v5': 'IdleRpmFVar001',
+    }));
+    store.set('amoji.idleEnabled.v5', JSON.stringify([5, 8, 11]));
     forgetIdlePickCache();
     forgetIdleEnabledCache();
-    expect(idlePickFor('a01-shino')).toBeNull();
-    expect(listEnabledIdleClipIds()).toEqual([DEFAULT_IDLE_CLIP_ID]);
-    for (const k of ['amoji.idlePick.v3','amoji.idleEnabled.v3','amoji.idlePick.v4','amoji.idleEnabled.v4','amoji.idlePick.v5','amoji.idleEnabled.v5','amoji.idleEnabled.v1.extra']) {
-      expect(store.has(k)).toBe(false);
-    }
+    // Newest legacy (v5) wins for pick migrate when v6 empty.
+    expect(idlePickFor('a04-v5')).toBe('IdleRpmFVar001');
+    // v5 enable [5,8,11] → IdleRpmFStanding001 + IdleRpmFVar001 + IdleRpmMStanding001
+    expect(listEnabledIdleClipIds()).toEqual([
+      'IdleRpmFStanding001',
+      'IdleRpmFVar001',
+      'IdleRpmMStanding001',
+    ]);
+    expect(store.has('amoji.idlePick.v3')).toBe(false);
+    expect(store.has('amoji.idleEnabled.v3')).toBe(false);
+    expect(store.has('amoji.idlePick.v4')).toBe(false);
+    expect(store.has('amoji.idleEnabled.v4')).toBe(false);
+    expect(store.has('amoji.idlePick.v5')).toBe(false);
+    expect(store.has('amoji.idleEnabled.v5')).toBe(false);
+    expect(store.has('amoji.idlePick.v6')).toBe(true);
+    expect(store.has('amoji.idleEnabled.v6')).toBe(true);
   });
 
-  it('refuses to save BreathCalm / Sassy / RPM stand pins', () => {
+  it('migrates v4 dual-stand enables when no newer key exists', () => {
+    const store = mockStorage();
+    store.set('amoji.idleEnabled.v4', JSON.stringify([5, 11]));
+    store.set('amoji.idlePick.v4', JSON.stringify({
+      'a01-shino': 'IdleRpmMStanding001',
+      'a02-bad': 'IdleSassy',
+    }));
+    forgetIdlePickCache();
+    forgetIdleEnabledCache();
+    expect(idlePickFor('a01-shino')).toBe('IdleRpmMStanding001');
+    expect(idlePickFor('a02-bad')).toBeNull();
+    expect(listEnabledIdleClipIds()).toEqual([
+      'IdleRpmFStanding001',
+      'IdleRpmMStanding001',
+    ]);
+    expect(store.get('amoji.idleEnabled.v6')).toBe(JSON.stringify([5, 11]));
+  });
+
+  it('refuses to save BreathCalm / Sassy / sky-look pins', () => {
     expect(saveIdlePick('a01-shino', 'IdleBreathCalm')).toBeNull();
     expect(saveIdlePick('a01-shino', 'IdleSassy')).toBeNull();
-    expect(saveIdlePick('a01-shino', 'IdleRpmFStanding001')).toBeNull();
-    expect(saveIdlePick('a01-shino', DEFAULT_IDLE_CLIP_ID)).toBe(DEFAULT_IDLE_CLIP_ID);
-  });
-
-  it('documents DEFAULT_IDLE_CLIP_ID for owner verify', () => {
-    expect(DEFAULT_IDLE_CLIP_ID).toBe('IdleQuaterniusHuman');
+    expect(saveIdlePick('a01-shino', 'LookAround')).toBeNull();
+    expect(saveIdlePick('a01-shino', 'IdleRpmFStanding001')).toBe('IdleRpmFStanding001');
   });
 });

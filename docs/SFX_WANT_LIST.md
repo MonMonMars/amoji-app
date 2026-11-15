@@ -3,7 +3,8 @@
 **Status:** Owner map already applied in code (#348 / #358). This doc is the clear Want list so agents do **not** invent further destructive deletes without a new owner map.
 
 **SoT in code:** `apps/web/lib/voice-clips.ts` (`RECORDED_POKE_ZONE`) · `apps/web/lib/cma-reaction-gallery.ts` · gallery notes `apps/web/docs/cma-reaction-sfx-gallery.md`  
-**UI:** `/sfx-gallery` + EmotionClipRow Want → Skip → clear (`amoji.cmaReactionSfx.picks.v1`)
+**UI:** `/sfx-gallery` + EmotionClipRow Want → Skip → clear (`amoji.cmaReactionSfx.picks.v1`)  
+**First visit:** missing picks key is seeded with the Want table below (`CMA_REACTION_OWNER_WANT_CODES`) so gallery/enabled set matches this map without re-tapping.
 
 ## Want (active zone defaults — keep)
 
