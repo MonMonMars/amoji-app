@@ -65,7 +65,13 @@ describe('idle amplitude damp', () => {
   it('scales playback and kills look-up head pitch', () => {
     expect(idlePlaybackTimeScale(1)).toBeCloseTo(IDLE_PLAYBACK_TIME_SCALE, 5);
     expect(idlePlaybackTimeScale(0.8)).toBeLessThan(0.8);
-    expect(Math.abs(calmIdleHeadPitch(-0.3))).toBeLessThan(0.03);
-    expect(calmIdleHeadPitch(0.2)).toBeLessThan(0.05);
+    expect(Math.abs(calmIdleHeadPitch(-0.3))).toBeLessThan(0.02);
+    expect(calmIdleHeadPitch(0.2)).toBeLessThan(0.02);
+  });
+
+  it('v6 near-zero amp is almost still', () => {
+    expect(IDLE_BODY_AMPLITUDE).toBeLessThanOrEqual(0.05);
+    expect(IDLE_HEAD_AMPLITUDE).toBe(0);
+    expect(IDLE_PLAYBACK_TIME_SCALE).toBeLessThanOrEqual(0.4);
   });
 });

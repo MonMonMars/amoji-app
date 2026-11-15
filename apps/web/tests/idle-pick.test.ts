@@ -1,4 +1,4 @@
-﻿import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { IDLE_CLIP_OPTIONS } from '../lib/idle-clips';
 import {
   IDLE_LIBRARY,
@@ -20,11 +20,15 @@ import {
   resetIdlePicks,
   saveIdlePick,
 } from '../lib/idle-pick';
+import { DEFAULT_IDLE_CLIP_ID } from '../lib/idle-retired';
+import { forgetIdlePrefsScrub } from '../lib/idle-prefs-scrub';
 
 afterEach(() => {
   resetIdlePicks();
   resetIdleEnabled();
   forgetIdleEnabledCache();
+  forgetIdlePickCache();
+  forgetIdlePrefsScrub();
 });
 
 describe('idle library numbers', () => {
@@ -38,7 +42,6 @@ describe('idle library numbers', () => {
   it('defaults #1+#2 to IdleBreathCalm and StandardIdle', () => {
     expect(idleByNum(1)?.clipId).toBe('IdleBreathCalm');
     expect(idleByNum(2)?.clipId).toBe('StandardIdle');
-    // Passiveive loop also enables LookAround (#3) + Relax (#32) by default.
     expect(defaultEnabledNums()).toEqual([1, 2, 3, 32]);
   });
 
@@ -67,7 +70,6 @@ describe('idle library numbers', () => {
     expect(IDLE_CLIP_OPTIONS.find((c) => c.id === 'IdleBreathCalm')?.num).toBe(1);
     expect(new Set(IDLE_CLIP_OPTIONS.map((c) => c.num)).size).toBe(IDLE_CLIP_OPTIONS.length);
     expect(IDLE_CLIP_OPTIONS.length).toBeLessThan(playableIdles().length);
-    // Curated chat rail stays planted; dance shortlist is playable with free feet.
     expect(playableIdles().every((e) => e.playable)).toBe(true);
     expect(playableIdles().filter((e) => !e.planted).length).toBeGreaterThan(0);
     expect(
@@ -79,19 +81,26 @@ describe('idle library numbers', () => {
   });
 });
 
+function mockStore() {
+  const store = new Map<string, string>();
+  (globalThis as { localStorage: Storage }).localStorage = {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => { store.set(k, v); },
+    removeItem: (k: string) => { store.delete(k); },
+    clear: () => store.clear(),
+    key: (i: number) => [...store.keys()][i] ?? null,
+    get length() { return store.size; },
+  };
+  return store;
+}
+
 describe('idle enable + pick', () => {
   it('persists enable toggles and keeps a non-empty pool', () => {
-    const store = new Map<string, string>();
-    (globalThis as { localStorage: Storage }).localStorage = {
-      getItem: (k: string) => store.get(k) ?? null,
-      setItem: (k: string, v: string) => { store.set(k, v); },
-      removeItem: (k: string) => { store.delete(k); },
-      clear: () => store.clear(),
-      key: () => null,
-      length: 0,
-    };
+    mockStore();
+    forgetIdlePrefsScrub();
     forgetIdleEnabledCache();
-    expect(isIdleEnabled(5)).toBe(true);
+    expect(isIdleEnabled(6)).toBe(true);
+    expect(isIdleEnabled(5)).toBe(false);
     expect(isIdleEnabled(11)).toBe(false);
     expect(isIdleEnabled(8)).toBe(false);
     expect(isIdleEnabled(3)).toBe(false);
@@ -100,46 +109,28 @@ describe('idle enable + pick', () => {
     setIdleEnabled(thinkRail, true);
     expect(isIdleEnabled(thinkRail)).toBe(true);
     expect(listEnabledIdleClipIds()).toContain('Thinking');
-    setIdleEnabled(5, false);
+    setIdleEnabled(6, false);
     setIdleEnabled(thinkRail, false);
-    // Empty enable → reset to single upright stand (rail #5)
-    expect(listEnabledIdleClipIds()).toEqual([
-      'IdleRpmFStanding001',
-    ]);
+    expect(listEnabledIdleClipIds()).toEqual([DEFAULT_IDLE_CLIP_ID]);
   });
 
   it('saves a pin per companion by clip id', () => {
-    expect(saveIdlePick('a01-shino', 'IdleRpmFStanding001')).toBe('IdleRpmFStanding001');
-    expect(idlePickFor('a01-shino')).toBe('IdleRpmFStanding001');
-    expect(saveIdlePick('a01-shino', 'not-a-clip')).toBe('IdleRpmFStanding001');
+    expect(saveIdlePick('a01-shino', DEFAULT_IDLE_CLIP_ID)).toBe(DEFAULT_IDLE_CLIP_ID);
+    expect(idlePickFor('a01-shino')).toBe(DEFAULT_IDLE_CLIP_ID);
+    expect(saveIdlePick('a01-shino', 'not-a-clip')).toBe(DEFAULT_IDLE_CLIP_ID);
   });
 
   it('drops HelloWave pins — farewell wave is not a saved idle', () => {
-    const store = new Map<string, string>();
-    (globalThis as { localStorage: Storage }).localStorage = {
-      getItem: (k: string) => store.get(k) ?? null,
-      setItem: (k: string, v: string) => { store.set(k, v); },
-      removeItem: (k: string) => { store.delete(k); },
-      clear: () => store.clear(),
-      key: () => null,
-      length: 0,
-    };
-    store.set('amoji.idlePick.v5', JSON.stringify({ 'a01-shino': 'HelloWave' }));
+    const store = mockStore();
+    store.set('amoji.idlePick.v6', JSON.stringify({ 'a01-shino': 'HelloWave' }));
+    forgetIdlePrefsScrub();
     forgetIdlePickCache();
     expect(idlePickFor('a01-shino')).toBeNull();
   });
 
-  it('clears legacy bad + weak pins so single upright stand returns', () => {
-    const store = new Map<string, string>();
-    (globalThis as { localStorage: Storage }).localStorage = {
-      getItem: (k: string) => store.get(k) ?? null,
-      setItem: (k: string, v: string) => { store.set(k, v); },
-      removeItem: (k: string) => { store.delete(k); },
-      clear: () => store.clear(),
-      key: () => null,
-      length: 0,
-    };
-    store.set('amoji.idlePick.v5', JSON.stringify({
+  it('clears legacy bad + weak pins so Quaternius stand returns', () => {
+    const store = mockStore();
+    store.set('amoji.idlePick.v6', JSON.stringify({
       'a01-shino': 'IdleHug',
       'a02-shibu': 'StandardIdle',
       'a03-fumiriya': 'LookAround',
@@ -150,58 +141,44 @@ describe('idle enable + pick', () => {
       'a08-fvar': 'IdleRpmFVar001',
       'a09-mstand': 'IdleRpmMStanding001',
       'a10-breath': 'IdleBreathCalm',
-      'a11-ok': 'IdleRpmFStanding001',
+      'a11-rpm': 'IdleRpmFStanding001',
+      'a12-ok': DEFAULT_IDLE_CLIP_ID,
     }));
+    forgetIdlePrefsScrub();
     forgetIdlePickCache();
-    expect(idlePickFor('a01-shino')).toBeNull();
-    expect(idlePickFor('a02-shibu')).toBeNull();
-    expect(idlePickFor('a03-fumiriya')).toBeNull();
-    expect(idlePickFor('a04-sassy')).toBeNull();
-    expect(idlePickFor('a05-mvar')).toBeNull();
-    expect(idlePickFor('a06-weak')).toBeNull();
-    expect(idlePickFor('a07-sam')).toBeNull();
-    expect(idlePickFor('a08-fvar')).toBeNull();
-    expect(idlePickFor('a09-mstand')).toBeNull();
-    expect(idlePickFor('a10-breath')).toBeNull();
-    expect(idlePickFor('a11-ok')).toBe('IdleRpmFStanding001');
+    for (const id of ['a01-shino','a02-shibu','a03-fumiriya','a04-sassy','a05-mvar','a06-weak','a07-sam','a08-fvar','a09-mstand','a10-breath','a11-rpm']) {
+      expect(idlePickFor(id)).toBeNull();
+    }
+    expect(idlePickFor('a12-ok')).toBe(DEFAULT_IDLE_CLIP_ID);
   });
 
-  it('drops pre-v5 idle pick + enable keys on hydrate (no weak-clip migrate)', () => {
-    const store = new Map<string, string>();
-    (globalThis as { localStorage: Storage }).localStorage = {
-      getItem: (k: string) => store.get(k) ?? null,
-      setItem: (k: string, v: string) => { store.set(k, v); },
-      removeItem: (k: string) => { store.delete(k); },
-      clear: () => store.clear(),
-      key: () => null,
-      length: 0,
-    };
-    store.set('amoji.idlePick.v3', JSON.stringify({
-      'a01-shino': 'IdleMixamoBreathing',
-      'a02-shibu': 'IdleInnersceneSam',
-    }));
+  it('aggressively scrubs ALL prior amoji.idle* keys on hydrate (v6)', () => {
+    const store = mockStore();
+    store.set('amoji.idlePick.v3', JSON.stringify({ 'a01-shino': 'IdleMixamoBreathing' }));
     store.set('amoji.idleEnabled.v3', JSON.stringify([40, 43, 90]));
-    store.set('amoji.idlePick.v4', JSON.stringify({
-      'a01-shino': 'IdleRpmMStanding001',
-    }));
+    store.set('amoji.idlePick.v4', JSON.stringify({ 'a01-shino': 'IdleRpmMStanding001' }));
     store.set('amoji.idleEnabled.v4', JSON.stringify([5, 11]));
+    store.set('amoji.idlePick.v5', JSON.stringify({ 'a01-shino': 'IdleRpmFStanding001' }));
+    store.set('amoji.idleEnabled.v5', JSON.stringify([5]));
+    store.set('amoji.idleEnabled.v1.extra', 'stale');
+    forgetIdlePrefsScrub();
     forgetIdlePickCache();
     forgetIdleEnabledCache();
     expect(idlePickFor('a01-shino')).toBeNull();
-    expect(listEnabledIdleClipIds()).toEqual([
-      'IdleRpmFStanding001',
-    ]);
-    expect(store.has('amoji.idlePick.v3')).toBe(false);
-    expect(store.has('amoji.idleEnabled.v3')).toBe(false);
-    expect(store.has('amoji.idlePick.v4')).toBe(false);
-    expect(store.has('amoji.idleEnabled.v4')).toBe(false);
-    expect(store.has('amoji.idlePick.v5')).toBe(false);
+    expect(listEnabledIdleClipIds()).toEqual([DEFAULT_IDLE_CLIP_ID]);
+    for (const k of ['amoji.idlePick.v3','amoji.idleEnabled.v3','amoji.idlePick.v4','amoji.idleEnabled.v4','amoji.idlePick.v5','amoji.idleEnabled.v5','amoji.idleEnabled.v1.extra']) {
+      expect(store.has(k)).toBe(false);
+    }
   });
 
-  it('refuses to save BreathCalm / Sassy pins', () => {
+  it('refuses to save BreathCalm / Sassy / RPM stand pins', () => {
     expect(saveIdlePick('a01-shino', 'IdleBreathCalm')).toBeNull();
     expect(saveIdlePick('a01-shino', 'IdleSassy')).toBeNull();
-    expect(saveIdlePick('a01-shino', 'IdleRpmFStanding001')).toBe('IdleRpmFStanding001');
+    expect(saveIdlePick('a01-shino', 'IdleRpmFStanding001')).toBeNull();
+    expect(saveIdlePick('a01-shino', DEFAULT_IDLE_CLIP_ID)).toBe(DEFAULT_IDLE_CLIP_ID);
+  });
+
+  it('documents DEFAULT_IDLE_CLIP_ID for owner verify', () => {
+    expect(DEFAULT_IDLE_CLIP_ID).toBe('IdleQuaterniusHuman');
   });
 });
-

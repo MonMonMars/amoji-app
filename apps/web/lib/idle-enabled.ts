@@ -1,6 +1,6 @@
-﻿// Which curated idle rail #s are ON for rotation. Persists like mute prefs.
-// Default = single calm upright planted stand (#42 / rail #5).
-// v5 drops dual-stand A→B (rail #11) and scrubs BreathCalm/Sassy forever.
+// Which curated idle rail #s are ON for rotation. Persists like mute prefs.
+// Default = IdleQuaterniusHuman (#39 / rail #6) — visibly different from RPM F.
+// v6 aggressively scrubs every prior amoji.idle* key on hydrate.
 
 import { isBannedAutoIdleClip, isRetiredIdleNum } from './idle-retired';
 import {
@@ -14,29 +14,14 @@ import {
   playableIdles,
   type IdleLibraryEntry,
 } from './idle-library';
+import { IDLE_ENABLED_KEY, scrubAllAmojiIdleKeys } from './idle-prefs-scrub';
 
-export const IDLE_ENABLED_KEY = 'amoji.idleEnabled.v5';
+export { IDLE_ENABLED_KEY };
+
 const KEY = IDLE_ENABLED_KEY;
-
-/** Prefs keys from #392 / #407 / #415 — never migrate weak clips into v5. */
-const LEGACY_ENABLED_KEYS = [
-  'amoji.idleEnabled.v1',
-  'amoji.idleEnabled.v2',
-  'amoji.idleEnabled.v3',
-  'amoji.idleEnabled.v4',
-] as const;
 
 let memory: number[] | null = null;
 let loaded = false;
-
-function dropLegacyEnabledKeys(): void {
-  try {
-    if (typeof localStorage === 'undefined') return;
-    for (const k of LEGACY_ENABLED_KEYS) {
-      if (localStorage.getItem(k) != null) localStorage.removeItem(k);
-    }
-  } catch { /* private mode */ }
-}
 
 function scrubBannedRails(nums: number[]): number[] {
   const next = nums.filter((n) => {
@@ -56,7 +41,7 @@ function hydrate(): number[] {
       memory = defaultCuratedRailNums();
       return memory;
     }
-    dropLegacyEnabledKeys();
+    scrubAllAmojiIdleKeys();
     const raw = localStorage.getItem(KEY);
     if (!raw) {
       memory = defaultCuratedRailNums();

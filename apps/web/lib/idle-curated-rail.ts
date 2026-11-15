@@ -94,13 +94,14 @@ export function curatedRailByLegacyLibNum(libNum: number): IdleCuratedRailEntry 
 }
 
 /**
- * Default ON rotation — single calm upright planted stand (v5):
- * #42 IdleRpmFStanding001 only (rail #5).
- * Dropped dual F/M A→B from v4 (rail #11). Still out / banned from auto:
- * BreathCalm / StandardIdle / Sassy / MVar001 / look / stretch / hug / wave.
+ * Default ON rotation — single near-still upright stand (v6):
+ * #39 IdleQuaterniusHuman only (rail #6).
+ * Visibly different from v5 IdleRpmFStanding001 (rail #5) which still looked
+ * like "the same bad pose" to owner. RPM F/M stands banned from auto.
+ * Still out / banned: BreathCalm / StandardIdle / Sassy / MVar001 / RPM stands.
  */
 export function defaultCuratedRailNums(): number[] {
-  return [5];
+  return [6];
 }
 
 /** Map stored enable list (legacy library # or rail #) → curated rail #. */

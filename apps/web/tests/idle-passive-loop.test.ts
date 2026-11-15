@@ -7,12 +7,14 @@ import {
   PASSIVE_LOOK_CLIPS,
   PASSIVE_STRETCH_CLIPS,
 } from '../lib/idle-passive-loop';
+import { DEFAULT_IDLE_CLIP_ID } from '../lib/idle-retired';
 import { orderIdleClips } from '../lib/personality';
 
-describe('passive idle loop (single static calm stand v5)', () => {
-  it('orders one upright RPM stand only — no F/M A→B, look, or stretch', () => {
+describe('passive idle loop (single near-still stand v6)', () => {
+  it('orders one Quaternius stand only — no RPM F/M, look, or stretch', () => {
     const order = orderPassiveIdleClips([
       ...PASSIVE_IDLE_LOOP_TEMPLATE,
+      'IdleRpmFStanding001',
       'IdleRpmMStanding001',
       'Jump',
       'Dance',
@@ -23,7 +25,8 @@ describe('passive idle loop (single static calm stand v5)', () => {
       'IdleInnersceneSam',
       'IdleRpmFVar001',
     ]);
-    expect(order).toEqual(['IdleRpmFStanding001']);
+    expect(order).toEqual([DEFAULT_IDLE_CLIP_ID]);
+    expect(order).not.toContain('IdleRpmFStanding001');
     expect(order).not.toContain('IdleRpmMStanding001');
     expect(order).not.toContain('IdleSassy');
     expect(order).not.toContain('IdleBreathCalm');
@@ -35,20 +38,21 @@ describe('passive idle loop (single static calm stand v5)', () => {
     expect(PASSIVE_LOOK_CLIPS).toEqual([]);
   });
 
-  it('still builds a single-clip loop from available upright stand', () => {
-    expect(orderPassiveIdleClips(['IdleRpmFStanding001', 'IdleRpmMStanding001']))
-      .toEqual(['IdleRpmFStanding001']);
+  it('still builds a single-clip loop from available Quaternius stand', () => {
+    expect(orderPassiveIdleClips([DEFAULT_IDLE_CLIP_ID, 'IdleRpmFStanding001']))
+      .toEqual([DEFAULT_IDLE_CLIP_ID]);
   });
 
   it('cycles forever via nextPassiveIdleClip on the same stand', () => {
     const samples = [0, 1, 8, 9].map((n) =>
       nextPassiveIdleClip([...PASSIVE_IDLE_LOOP_TEMPLATE], n),
     );
-    expect(samples.every((id) => id === 'IdleRpmFStanding001')).toBe(true);
+    expect(samples.every((id) => id === DEFAULT_IDLE_CLIP_ID)).toBe(true);
   });
 
   it('marks only the single passive upright clip', () => {
-    expect(isPassiveIdleClip('IdleRpmFStanding001')).toBe(true);
+    expect(isPassiveIdleClip(DEFAULT_IDLE_CLIP_ID)).toBe(true);
+    expect(isPassiveIdleClip('IdleRpmFStanding001')).toBe(false);
     expect(isPassiveIdleClip('IdleRpmMStanding001')).toBe(false);
     expect(isPassiveIdleClip('IdleSassy')).toBe(false);
     expect(isPassiveIdleClip('IdleBreathCalm')).toBe(false);
@@ -56,11 +60,11 @@ describe('passive idle loop (single static calm stand v5)', () => {
 
   it('orderIdleClips no longer dumps the whole library after calm clips', () => {
     const order = orderIdleClips([
+      DEFAULT_IDLE_CLIP_ID,
       'IdleRpmFStanding001',
-      'IdleRpmMStanding001',
       'Dance',
       'lib_C113',
     ], 'any-character', 'female');
-    expect(order).toEqual(['IdleRpmFStanding001']);
+    expect(order).toEqual([DEFAULT_IDLE_CLIP_ID]);
   });
 });

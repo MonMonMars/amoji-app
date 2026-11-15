@@ -5,7 +5,7 @@
 **Purpose:** Human-only checks after #406–#418. Agent Vitest already green. **Merged ≠ Done.**  
 Owner: “getting worst” — **do not mark R10–R13 Done.**
 
-Tick on a real phone (prefer iPhone Safari). Hard refresh / clear site data once so idle prefs v4 (and idle v3 scrub when merged) and voice sink land.
+Tick on a real phone (prefer iPhone Safari). Hard refresh / clear site data once so idle prefs **v6** (`IdleQuaterniusHuman` default — not RPM F) and voice sink land.
 
 ## Priority now — card · news · R10–R13 · nonsense · captions
 
@@ -20,9 +20,10 @@ Tick on a real phone (prefer iPhone Safari). Hard refresh / clear site data once
 - [ ] News chip speaks a headline when feeds work (or honest tell when feeds fail)
 - [ ] Tapping news again rotates / does **not** loop the same old line forever
 
-### R11 idle (#415 v4)
+### R11 idle (#415 v4 / #422 v5 / idle v6)
 
-- [ ] Idle looks **upright planted calm** (RPM F/M stands — not Sassy / sky-look / arms-into-torso)
+- [ ] Idle is **`IdleQuaterniusHuman`** (near-still) — visibly different from old RPM F stand / Sassy / sky-look
+- [ ] After hard refresh + clear site data, prefs keys are `amoji.idle*.v6` (no stuck v5 RPM pin)
 - [ ] After a chat turn ends, idle returns upright (no stuck lean / weird blend)
 
 ### R10 voice (#406 + #410 + #413 + #424 unmute + real-male)

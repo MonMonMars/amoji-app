@@ -18,11 +18,14 @@ import {
   resetIdleEnabled,
   setIdleEnabled,
 } from '../lib/idle-enabled';
+import { DEFAULT_IDLE_CLIP_ID } from '../lib/idle-retired';
+import { forgetIdlePrefsScrub } from '../lib/idle-prefs-scrub';
 import { idleByNum } from '../lib/idle-library';
 
 afterEach(() => {
   resetIdleEnabled();
   forgetIdleEnabledCache();
+  forgetIdlePrefsScrub();
 });
 
 describe('curated idle chat rail', () => {
@@ -44,11 +47,12 @@ describe('curated idle chat rail', () => {
     }
   });
 
-  it('defaults to a single calm upright stand (rail #5)', () => {
-    expect(defaultCuratedRailNums()).toEqual([5]);
+  it('defaults to a single Quaternius stand (rail #6)', () => {
+    expect(defaultCuratedRailNums()).toEqual([6]);
     expect(listEnabledIdleClipIds()).toEqual([
-      'IdleRpmFStanding001',
+      DEFAULT_IDLE_CLIP_ID,
     ]);
+    expect(DEFAULT_IDLE_CLIP_ID).toBe('IdleQuaterniusHuman');
   });
 
   it('migrates stored legacy library enable nums to rail nums', () => {
@@ -58,16 +62,17 @@ describe('curated idle chat rail', () => {
       setItem: (k: string, v: string) => { store.set(k, v); },
       removeItem: (k: string) => { store.delete(k); },
       clear: () => store.clear(),
-      key: () => null,
-      length: 0,
+      key: (i: number) => [...store.keys()][i] ?? null,
+      get length() { return store.size; },
     };
     const lookRail = CHAT_IDLE_CURATED.find((r) => r.legacyLibNum === 3)!.railNum;
     const robotRail = CHAT_IDLE_CURATED.find((r) => r.legacyLibNum === 101)!.railNum;
     expect(migrateEnabledNumsToRail([3, 40, 101]).sort()).toEqual(
       [3, lookRail, robotRail].sort(),
     );
-    // v5 key stores rail nums already (or migrates on read)
-    store.set('amoji.idleEnabled.v5', JSON.stringify([3, 40, 101]));
+    // v6 key stores rail nums already (or migrates on read)
+    store.set('amoji.idleEnabled.v6', JSON.stringify([3, 40, 101]));
+    forgetIdlePrefsScrub();
     forgetIdleEnabledCache();
     const enabled = listEnabledNums();
     expect(enabled).toContain(lookRail);
@@ -78,7 +83,7 @@ describe('curated idle chat rail', () => {
 
   it('resolveLegacyLibPin maps library # or clip id', () => {
     expect(resolveLegacyLibPin('3')).toBe('LookAround');
-    expect(resolveLegacyLibPin('96')).toBe('IdleRpmFStanding001');
+    expect(resolveLegacyLibPin('96')).toBe(DEFAULT_IDLE_CLIP_ID);
     expect(resolveLegacyLibPin('LookAround')).toBe('LookAround');
     expect(idleByNum(96)?.retired).toBe(true);
     expect(idleClipById('LookAround')?.num).toBe(

@@ -6,15 +6,13 @@ import { playableIdles } from '../lib/idle-library';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const CHITCHAT = ['IdleRpmFStanding001', 'IdleRpmMStanding001', 'Thinking'] as const;
+const CHITCHAT = ['IdleQuaterniusHuman', 'Thinking'] as const;
 const NEUTRAL = [
-  'IdleRpmFStanding001',
-  'IdleRpmMStanding001',
+  'IdleQuaterniusHuman',
   'Thinking',
 ];
 const TALK = [
-  'IdleRpmFStanding001',
-  'IdleRpmMStanding001',
+  'IdleQuaterniusHuman',
   'Thinking',
 ];
 
@@ -112,11 +110,18 @@ describe('chat auto idle resolver', () => {
   });
 
   it('varies neutral idles across different reply text', () => {
-    const a = resolveChatAutoIdle({ assistantText: 'First neutral reply.' });
-    const b = resolveChatAutoIdle({ assistantText: 'A totally different answer about cats.' });
-    expect(NEUTRAL).toContain(a);
-    expect(NEUTRAL).toContain(b);
-    expect(a).not.toBe(b);
+    const samples = [
+      'First neutral reply.',
+      'A totally different answer about cats.',
+      'Third ordinary line.',
+      'Fourth chat answer here.',
+      'Fifth mundane sentence.',
+      'Sixth plain response text.',
+      'Seventh calm reply line.',
+      'Eighth normal answer.',
+    ].map((assistantText) => resolveChatAutoIdle({ assistantText }));
+    for (const clip of samples) expect(NEUTRAL).toContain(clip);
+    expect(new Set(samples).size).toBeGreaterThan(1);
   });
 
   it('does not match loose party wording without dance', () => {

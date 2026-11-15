@@ -73,7 +73,7 @@ describe('idle pose smooth + catalog trim', () => {
       expect(CHAT_IDLE_CURATED.some((r) => r.legacyLibNum === n)).toBe(false);
       expect(idleByNum(n)?.retired).toBe(true);
     }
-    expect(resolveIdleClipId('lib_C65')).toBe('IdleRpmFStanding001');
+    expect(resolveIdleClipId('lib_C65')).toBe('IdleQuaterniusHuman');
     expect(RETIRED_IDLE_CLIP_IDS.size).toBe(RETIRED_IDLE_NUMS.size);
   });
 
@@ -88,9 +88,9 @@ describe('idle pose smooth + catalog trim', () => {
     }
     expect(RETIRED_IDLE_NUMS.has(36)).toBe(true);
     expect(idleByNum(36)?.retired).toBe(true);
-    expect(resolveIdleClipId('IdleHug')).toBe('IdleRpmFStanding001');
-    expect(resolveIdleClipId('IdleBreathCalm')).toBe('IdleRpmFStanding001');
-    expect(resolveIdleClipId('IdleSassy')).toBe('IdleRpmFStanding001');
+    expect(resolveIdleClipId('IdleHug')).toBe('IdleQuaterniusHuman');
+    expect(resolveIdleClipId('IdleBreathCalm')).toBe('IdleQuaterniusHuman');
+    expect(resolveIdleClipId('IdleSassy')).toBe('IdleQuaterniusHuman');
     expect(CHAT_IDLE_CURATED.some((r) => r.clipId === 'IdleHug')).toBe(false);
     expect(playableIdles().length).toBeGreaterThan(80);
     expect(IDLE_CLIP_OPTIONS.length).toBeLessThan(playableIdles().length);
@@ -110,8 +110,8 @@ describe('idle pose smooth + catalog trim', () => {
       expect(IDLE_CLIP_OPTIONS.some((o) => o.libNum === n)).toBe(false);
       expect(playableIdles().some((e) => e.num === n)).toBe(false);
     }
-    expect(resolveIdleClipId('lib_C60')).toBe('IdleRpmFStanding001');
-    expect(resolveIdleClipId('lib_C124')).toBe('IdleRpmFStanding001');
+    expect(resolveIdleClipId('lib_C60')).toBe('IdleQuaterniusHuman');
+    expect(resolveIdleClipId('lib_C124')).toBe('IdleQuaterniusHuman');
 
     const keepNums = [
       94, 95, 101, 102, 103, 104, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118,

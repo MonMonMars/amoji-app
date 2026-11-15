@@ -19,8 +19,14 @@ export const RETIRED_IDLE_CLIP_IDS = new Set(
     .filter((id): id is string => !!id),
 );
 
-/** Never fall back to BreathCalm / Sassy — those are owner-bad forever. */
-export const IDLE_PIN_FALLBACK_CLIP_ID = 'IdleRpmFStanding001';
+/**
+ * Idle v6 default clip id — owner-verify after hard refresh + clear site data.
+ * Visibly different from RPM F/M stands (#415/#422) that still looked "the same".
+ */
+export const DEFAULT_IDLE_CLIP_ID = 'IdleQuaterniusHuman';
+
+/** Never fall back to BreathCalm / Sassy / RPM stands — those are owner-bad forever. */
+export const IDLE_PIN_FALLBACK_CLIP_ID = DEFAULT_IDLE_CLIP_ID;
 
 /**
  * Clips that must never return via defaults, auto-idle, or pin remap.
@@ -32,19 +38,21 @@ export const BANNED_AUTO_IDLE_CLIP_IDS = new Set<string>([
   'IdleSassy',
   'StandardIdle',
   'IdleRpmMVar001', // sudden sky-look
+  // v5 "calm" RPM stands still read as the same bad pose to owner — ban from auto.
+  'IdleRpmFStanding001',
+  'IdleRpmMStanding001',
 ]);
 
 /**
  * Calm stands used for chat idle / relaxed hands (not sing/dance/react).
  * Keep in sync with `chat-auto-idle` neutral/talk calm banks.
- * v5 default is a single upright RPM stand; BreathCalm/Sassy stay banned.
+ * v6 default is Quaternius human stand (near-still amp); RPM stands banned from auto.
  */
 export const PIXEL_CALM_IDLE_CLIP_IDS = new Set<string>([
-  'IdleRpmFStanding001',
-  'IdleRpmMStanding001',
-  'IdleRpmFVar001',
+  'IdleQuaterniusHuman',
   'IdleMixamoBreathing',
   'IdleInnersceneSam',
+  'IdleRpmFVar001',
   'IdleRpmFVar003',
   'IdleRpmFVar004',
   'IdleRpmMVar002',
