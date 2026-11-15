@@ -116,7 +116,7 @@ export async function pinDefaultOutputAsync(
   ensureCompanionPlaybackRoute();
   scrubNonDefaultSinkCache();
   const setSink = node?.setSinkId;
-  if (typeof setSink !== 'function') return;
+  if (typeof setSink !== 'function' || !node) return;
   const bound = setSink.bind(node);
   // If the element already latched onto a communications / headset id, force
   // default speakers. Never reuse that id as preferredSinkId.
