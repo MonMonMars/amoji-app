@@ -87,7 +87,9 @@ export function warmClassicFairyTaleCache(): Promise<ClassicFairyTaleWarmResult>
   if (warmPromise) return warmPromise;
   warmPromise = (async (): Promise<ClassicFairyTaleWarmResult> => {
     const bundled = CLASSIC_FAIRY_TALES.length;
-    if (typeof window === 'undefined' || typeof fetch !== 'function') {
+    // Prefer fetch whenever available (browser + vitest stubs). Without fetch
+    // we still mark warm from the bundled catalog so Story never blocks.
+    if (typeof fetch !== 'function') {
       warmDone = true;
       lastResult = { ok: true, bundled, fetched: 0, fromCache: true };
       return lastResult;
@@ -98,7 +100,7 @@ export function warmClassicFairyTaleCache(): Promise<ClassicFairyTaleWarmResult>
         cache: 'force-cache',
         mode: 'cors',
         credentials: 'same-origin',
-      });
+      } as RequestInit);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as { tales?: unknown };
       const parsed: ClassicFairyTale[] = [];
