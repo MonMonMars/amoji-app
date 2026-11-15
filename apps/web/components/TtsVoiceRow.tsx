@@ -20,7 +20,7 @@ import {
   ttsButtonKey,
   type TtsButtonVoice,
 } from '../lib/tts-button-registry';
-import { addVoiceOption, voiceAddRemaining } from '../lib/voice-capability';
+import { addVoiceOption, pitchTierLabelKey, voiceAddRemaining } from '../lib/voice-capability';
 import { playVoiceGreeting } from '../lib/voice';
 import { saveVoicePick, voicePickFor, activeVoiceChoice } from '../lib/voice-picks';
 import { isDevMode, devMark } from '../lib/dev-mode';
@@ -114,7 +114,8 @@ export default function TtsVoiceRow({
             const genderLabel = button.deliveryGender === 'male'
               ? t(lang, 'voiceFreeMale')
               : t(lang, 'voiceFreeFemale');
-            const numLabel = `#${button.n} ${t(lang, button.labelKey)} · ${genderLabel}`;
+            const pitchLabel = t(lang, pitchTierLabelKey(button.pitchTier));
+            const numLabel = `#${button.n} ${t(lang, button.labelKey)} · ${genderLabel} · ${pitchLabel}`;
             return (
               <button
                 key={ttsButtonKey(button)}

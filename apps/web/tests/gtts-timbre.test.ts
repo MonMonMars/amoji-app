@@ -94,6 +94,6 @@ describe('free-chain character pitch fingerprint', () => {
     const voice = readFileSync(join(__dirname, '../lib/voice.ts'), 'utf8');
     expect(voice).toContain("import { gttsCharacterPitchBias } from './gtts-timbre'");
     expect(voice).toMatch(/export function gttsPitchBias\(/);
-    expect(voice).toContain('gttsCharacterPitchBias(gender, characterId, lang)');
+    expect(voice).toMatch(/gttsCharacterPitchBias\(gender, characterId, lang(?:, tier)?\)/);
   });
 });

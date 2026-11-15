@@ -55,13 +55,14 @@ describe('voice does not switch speaker mid-line or between characters', () => {
     // silently forgets it, so voice.ts owns a single resolver and every tier
     // (reply, resumed tail, greeting, sing, preview, filler) calls it.
     expect(voice).toMatch(/export function gttsPitchBias\(/);
-    expect(voice).toMatch(/pitchBias: gttsPitchBias\(/);
+    expect(voice).toMatch(/pitchBias: gttsPitch(?:Bias|ForLang)\(/);
     const ternaries = voice.match(/pitchBias: [a-zA-Z]+ === 'male' \?/g) ?? [];
     expect(ternaries).toEqual([]);
-    // Gender base + per-character jitter live in gtts-timbre; voice.ts only
-    // re-exports so every call site stays on one name.
+    // Gender base + per-character / pinned-button tier live in gtts-timbre;
+    // voice.ts re-exports and routes pins through gttsPitchForLang.
     expect(voice).toContain('gttsCharacterPitchBias');
-    expect(voice).toMatch(/return gttsCharacterPitchBias\(gender, characterId, lang\)/);
+    expect(voice).toMatch(/return gttsCharacterPitchBias\(gender, characterId, lang(?:, tier)?\)/);
+    expect(voice).toMatch(/gttsCharacterPitchBias\(delivery, characterId, lang, tier\)/);
   });
 
   it('passes characterId into the pitch helper on live speak paths', () => {

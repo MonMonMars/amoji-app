@@ -89,7 +89,7 @@ export function activeVoiceChoice(
   const pinned = voiceChoiceById(voicePickFor(locale));
   if (pinned && pinned.locale === locale) return pinned;
   if (preferGender) return preferredVoiceChoiceForGender(locale, preferGender);
-  return voiceChoicesFor(locale)[0] ?? voiceChoiceById('gtts:en-US:f')!;
+  return voiceChoicesFor(locale)[0] ?? voiceChoiceById('gtts:en-US:f:mid')!;
 }
 
 /**

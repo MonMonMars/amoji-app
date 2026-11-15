@@ -209,6 +209,8 @@ Mass merge complete through #397. Remaining:
 | Chat UX | Caption history de-dupe | **Done** | #393 |
 | VRM / Idle | No lean-forward / blend yaw weird | **Done** | #394 |
 | Audio | All langs/genders speak | **Done** | #395 |
+| Audio | Lang F+M catalog | **Done** | #363 (+ #395 speak) |
+| Audio | Selectable pitch personas (deep/mid/bright buttons) | **PR** | `cursor/voice-lang-gender-pitch-0340-0eac` (was #374 character-only) |
 | Chat UX | Idle nonsense scrub (code) | **Done** | #338 / #360 · agent Vitest 78/78 |
 | Music | Licensed stream/embed beyond Mixkit | **Hold** | `docs/MUSIC_STREAMING.md` |
 | Verify | Post-merge live check on Pages | **Human** | Pages live from #397; phone smoke + owner nonsense OK pending |

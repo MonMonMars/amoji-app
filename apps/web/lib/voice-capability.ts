@@ -18,12 +18,24 @@
 
 import type { StrKey } from './prefs';
 import type { VoiceLocale } from './voice-catalog';
+import type { GttsPitchTier } from './gtts-timbre';
 import {
   addNextVoiceExtra,
   extraVoiceById,
   loadVoiceExtras,
   remainingVoiceAddCount,
 } from './voice-extras';
+
+/** Selectable pitch personas for one Google speaker × gender. */
+export const VOICE_PITCH_TIERS: readonly GttsPitchTier[] = ['deep', 'mid', 'bright'];
+
+export function voiceChoiceId(
+  tl: string,
+  gender: 'female' | 'male',
+  pitchTier: GttsPitchTier,
+): string {
+  return `gtts:${tl}:${gender === 'male' ? 'm' : 'f'}:${pitchTier}`;
+}
 
 export type EngineStatus =
   /** Reachable now and produces its own voice. */
@@ -163,7 +175,7 @@ export function hiddenEngines(): readonly EngineVerdict[] {
 // ---------------------------------------------------------------------------
 
 export interface VoiceChoice {
-  /** Stable pin/picker id. */
+  /** Stable pin/picker id (`gtts:<tl>:<f|m>:<deep|mid|bright>`). */
   id: string;
   locale: VoiceLocale;
   engine: 'gtts';
@@ -178,16 +190,27 @@ export interface VoiceChoice {
    * delivery). Real OS voices in Settings stay a separate source.
    */
   deliveryGender: 'female' | 'male';
+  /**
+   * Selectable pitch persona for this same Google speaker. One base voice
+   * ships as three buttons (deep / mid / bright) so characters can pick
+   * distinct colour without a different `tl`.
+   */
+  pitchTier: GttsPitchTier;
   /** Localized region label, e.g. "UK English". */
   labelKey: StrKey;
   /** 1-based position inside the language. */
   n: number;
 }
 
+interface VoiceSeed {
+  locale: VoiceLocale;
+  tl: string;
+  deliveryGender: 'female' | 'male';
+  labelKey: StrKey;
+}
+
 /**
- * Grouped by measuring the response for four fixed sentences per `tl` and
- * bucketing codes whose byte lengths matched on ALL four. Codes in the same
- * bucket are the same speaker:
+ * Distinct Google `tl` speakers × female/male, measured with four sentences:
  *
  *   en  → {en-US, en-PH, en-CA} {en-GB, en-IE, en-ZA, en-SG, en-HK,
  *          en-KE, en-TZ} {en-AU, en-NZ} {en-IN} {en-NG}
@@ -195,46 +218,73 @@ export interface VoiceChoice {
  *   ja  → {ja, ja-JP}
  *   yue → {yue} and the Mandarin buckets, which mispronounce Cantonese
  *
- * Each language ships at least one female + one male free delivery on every
- * distinct `tl` (pitch reshaped). Extra same-bucket regional codes live in
- * `voice-extras.ts` and only appear after the user taps Add.
+ * Each seed expands to deep/mid/bright pitch buttons (same `tl`, different
+ * playbackRate). Extra same-bucket regional codes live in `voice-extras.ts`
+ * and only appear after the user taps Add.
  */
-export const VOICE_CHOICES: readonly VoiceChoice[] = [
-  { id: 'gtts:yue:f', locale: 'yue', engine: 'gtts', tl: 'yue', deliveryGender: 'female', labelKey: 'voiceRegionCantonese', n: 1 },
-  { id: 'gtts:yue:m', locale: 'yue', engine: 'gtts', tl: 'yue', deliveryGender: 'male', labelKey: 'voiceRegionCantonese', n: 2 },
+const VOICE_SEEDS: readonly VoiceSeed[] = [
+  { locale: 'yue', tl: 'yue', deliveryGender: 'female', labelKey: 'voiceRegionCantonese' },
+  { locale: 'yue', tl: 'yue', deliveryGender: 'male', labelKey: 'voiceRegionCantonese' },
 
-  { id: 'gtts:zh-CN:f', locale: 'zh', engine: 'gtts', tl: 'zh-CN', deliveryGender: 'female', labelKey: 'voiceRegionMandarin', n: 1 },
-  { id: 'gtts:zh-CN:m', locale: 'zh', engine: 'gtts', tl: 'zh-CN', deliveryGender: 'male', labelKey: 'voiceRegionMandarin', n: 2 },
-  { id: 'gtts:zh-TW:f', locale: 'zh', engine: 'gtts', tl: 'zh-TW', deliveryGender: 'female', labelKey: 'voiceRegionTaiwan', n: 3 },
-  { id: 'gtts:zh-TW:m', locale: 'zh', engine: 'gtts', tl: 'zh-TW', deliveryGender: 'male', labelKey: 'voiceRegionTaiwan', n: 4 },
+  { locale: 'zh', tl: 'zh-CN', deliveryGender: 'female', labelKey: 'voiceRegionMandarin' },
+  { locale: 'zh', tl: 'zh-CN', deliveryGender: 'male', labelKey: 'voiceRegionMandarin' },
+  { locale: 'zh', tl: 'zh-TW', deliveryGender: 'female', labelKey: 'voiceRegionTaiwan' },
+  { locale: 'zh', tl: 'zh-TW', deliveryGender: 'male', labelKey: 'voiceRegionTaiwan' },
 
-  { id: 'gtts:ja:f', locale: 'ja', engine: 'gtts', tl: 'ja', deliveryGender: 'female', labelKey: 'voiceRegionJapanese', n: 1 },
-  { id: 'gtts:ja:m', locale: 'ja', engine: 'gtts', tl: 'ja', deliveryGender: 'male', labelKey: 'voiceRegionJapanese', n: 2 },
+  { locale: 'ja', tl: 'ja', deliveryGender: 'female', labelKey: 'voiceRegionJapanese' },
+  { locale: 'ja', tl: 'ja', deliveryGender: 'male', labelKey: 'voiceRegionJapanese' },
 
-  { id: 'gtts:en-US:f', locale: 'en', engine: 'gtts', tl: 'en-US', deliveryGender: 'female', labelKey: 'voiceRegionUs', n: 1 },
-  { id: 'gtts:en-US:m', locale: 'en', engine: 'gtts', tl: 'en-US', deliveryGender: 'male', labelKey: 'voiceRegionUs', n: 2 },
-  { id: 'gtts:en-GB:f', locale: 'en', engine: 'gtts', tl: 'en-GB', deliveryGender: 'female', labelKey: 'voiceRegionUk', n: 3 },
-  { id: 'gtts:en-GB:m', locale: 'en', engine: 'gtts', tl: 'en-GB', deliveryGender: 'male', labelKey: 'voiceRegionUk', n: 4 },
-  { id: 'gtts:en-AU:f', locale: 'en', engine: 'gtts', tl: 'en-AU', deliveryGender: 'female', labelKey: 'voiceRegionAu', n: 5 },
-  { id: 'gtts:en-AU:m', locale: 'en', engine: 'gtts', tl: 'en-AU', deliveryGender: 'male', labelKey: 'voiceRegionAu', n: 6 },
-  { id: 'gtts:en-IN:f', locale: 'en', engine: 'gtts', tl: 'en-IN', deliveryGender: 'female', labelKey: 'voiceRegionIn', n: 7 },
-  { id: 'gtts:en-IN:m', locale: 'en', engine: 'gtts', tl: 'en-IN', deliveryGender: 'male', labelKey: 'voiceRegionIn', n: 8 },
-  { id: 'gtts:en-NG:f', locale: 'en', engine: 'gtts', tl: 'en-NG', deliveryGender: 'female', labelKey: 'voiceRegionNg', n: 9 },
-  { id: 'gtts:en-NG:m', locale: 'en', engine: 'gtts', tl: 'en-NG', deliveryGender: 'male', labelKey: 'voiceRegionNg', n: 10 },
+  { locale: 'en', tl: 'en-US', deliveryGender: 'female', labelKey: 'voiceRegionUs' },
+  { locale: 'en', tl: 'en-US', deliveryGender: 'male', labelKey: 'voiceRegionUs' },
+  { locale: 'en', tl: 'en-GB', deliveryGender: 'female', labelKey: 'voiceRegionUk' },
+  { locale: 'en', tl: 'en-GB', deliveryGender: 'male', labelKey: 'voiceRegionUk' },
+  { locale: 'en', tl: 'en-AU', deliveryGender: 'female', labelKey: 'voiceRegionAu' },
+  { locale: 'en', tl: 'en-AU', deliveryGender: 'male', labelKey: 'voiceRegionAu' },
+  { locale: 'en', tl: 'en-IN', deliveryGender: 'female', labelKey: 'voiceRegionIn' },
+  { locale: 'en', tl: 'en-IN', deliveryGender: 'male', labelKey: 'voiceRegionIn' },
+  { locale: 'en', tl: 'en-NG', deliveryGender: 'female', labelKey: 'voiceRegionNg' },
+  { locale: 'en', tl: 'en-NG', deliveryGender: 'male', labelKey: 'voiceRegionNg' },
 ];
 
-/** Maps pre-gender ids saved in localStorage to the new choice ids. */
-export const LEGACY_VOICE_CHOICE_IDS: Readonly<Record<string, string>> = {
-  'gtts:yue': 'gtts:yue:f',
-  'gtts:ja': 'gtts:ja:f',
-  'gtts:zh-CN': 'gtts:zh-CN:f',
-  'gtts:zh-TW': 'gtts:zh-TW:f',
-  'gtts:en-US': 'gtts:en-US:f',
-  'gtts:en-GB': 'gtts:en-GB:f',
-  'gtts:en-AU': 'gtts:en-AU:f',
-  'gtts:en-IN': 'gtts:en-IN:f',
-  'gtts:en-NG': 'gtts:en-NG:f',
-};
+function expandSeeds(seeds: readonly VoiceSeed[]): VoiceChoice[] {
+  const counts: Partial<Record<VoiceLocale, number>> = {};
+  const out: VoiceChoice[] = [];
+  for (const seed of seeds) {
+    for (const pitchTier of VOICE_PITCH_TIERS) {
+      const n = (counts[seed.locale] ?? 0) + 1;
+      counts[seed.locale] = n;
+      out.push({
+        id: voiceChoiceId(seed.tl, seed.deliveryGender, pitchTier),
+        locale: seed.locale,
+        engine: 'gtts',
+        tl: seed.tl,
+        deliveryGender: seed.deliveryGender,
+        pitchTier,
+        labelKey: seed.labelKey,
+        n,
+      });
+    }
+  }
+  return out;
+}
+
+export const VOICE_CHOICES: readonly VoiceChoice[] = expandSeeds(VOICE_SEEDS);
+
+/** Maps older pins (no gender and/or no pitch suffix) onto mid-tier ids. */
+function buildLegacyVoiceChoiceIds(): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const seed of VOICE_SEEDS) {
+    const mid = voiceChoiceId(seed.tl, seed.deliveryGender, 'mid');
+    const genderOnly = `gtts:${seed.tl}:${seed.deliveryGender === 'male' ? 'm' : 'f'}`;
+    map[genderOnly] = mid;
+    if (seed.deliveryGender === 'female') {
+      map[`gtts:${seed.tl}`] = mid;
+    }
+  }
+  return map;
+}
+
+export const LEGACY_VOICE_CHOICE_IDS: Readonly<Record<string, string>> = buildLegacyVoiceChoiceIds();
 
 /** Fallback `tl` per language when nothing is pinned. */
 const DEFAULT_TL: Record<VoiceLocale, string> = {
@@ -302,18 +352,33 @@ export function deliveryGenderForChoice(
   return fallback === 'male' || fallback === 'female' ? fallback : 'female';
 }
 
-/** Prefer a shipping voice whose delivery gender matches the companion. */
+/** Prefer mid-tier shipping voice matching the companion gender. */
 export function preferredVoiceChoiceForGender(
   locale: VoiceLocale,
   gender: 'female' | 'male',
 ): VoiceChoice {
   const choices = voiceChoicesFor(locale);
-  return choices.find((c) => c.deliveryGender === gender) ?? choices[0] ?? VOICE_CHOICES[0]!;
+  return choices.find((c) => c.deliveryGender === gender && c.pitchTier === 'mid')
+    ?? choices.find((c) => c.deliveryGender === gender)
+    ?? choices[0]
+    ?? VOICE_CHOICES[0]!;
 }
 
-/** The default button for a language (the first, in catalog order). */
+/** The default button for a language (first female mid when present). */
 export function defaultVoiceChoice(locale: VoiceLocale): VoiceChoice {
-  return voiceChoicesFor(locale)[0] ?? VOICE_CHOICES[0]!;
+  return preferredVoiceChoiceForGender(locale, 'female');
+}
+
+/** Pitch persona on a pinned/tapped voice button, if any. */
+export function pitchTierForChoice(id?: string | null): GttsPitchTier | undefined {
+  return voiceChoiceById(id)?.pitchTier;
+}
+
+/** Localized label key for a pitch persona button. */
+export function pitchTierLabelKey(tier: GttsPitchTier): StrKey {
+  if (tier === 'deep') return 'voicePitchDeep';
+  if (tier === 'bright') return 'voicePitchBright';
+  return 'voicePitchMid';
 }
 
 /**
@@ -329,6 +394,11 @@ export function tlForChoice(locale: VoiceLocale, id?: string | null): string {
 /** How many shipping free voices this language lists (excludes user Add extras). */
 export function distinctVoiceCount(locale: VoiceLocale): number {
   return shippingVoiceChoicesFor(locale).length;
+}
+
+/** How many distinct Google `tl` speakers this language ships (ignores pitch). */
+export function distinctSpeakerCount(locale: VoiceLocale): number {
+  return new Set(shippingVoiceChoicesFor(locale).map((c) => c.tl)).size;
 }
 
 // ---------------------------------------------------------------------------

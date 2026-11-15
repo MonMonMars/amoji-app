@@ -26,6 +26,7 @@
 | Dance wait for music (not too soon) | #384 |
 | Phase chips rotate + AI news / personal / secret / … | #373 |
 | Per-character TTS pitch tiers | #374 |
+| Selectable pitch buttons (same voice → deep/mid/bright) | PR `cursor/voice-lang-gender-pitch-0340-0eac` (not on main yet) |
 | Gate location Allow + Enter prime | #379 |
 | White-pupil image loop | owner OK |
 | Card greet audible (code) | #370 |
@@ -71,6 +72,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-15 ~16:40 | Owner ask: lang F+M = Yes (#363/#395); pitch buttons were Partial (#374 auto-only) → shipping selectable deep/mid/bright on `cursor/voice-lang-gender-pitch-0340-0eac` |
 | 2026-11-15 ~15:52 | Post-#397: Pages confirmed live (`last-modified` 07:29 UTC · run `43689990439`); tip `a50695b`; resume/history/nonsense themes already shipped — Outstanding still human-only |
 | 2026-11-15 ~15:21 | Post-#396: Pages confirmed live (`last-modified` 05:04 UTC); agent nonsense Vitest 78/78; Outstanding stays human-only (phone smoke + owner nonsense OK); board tip → `e52ff02` |
 | 2026-11-15 ~12:53 | #393/#394/#395 → Done on main; Pages already rebuilt from #395; Outstanding = nonsense verify + phone smoke; no-history-resume already shipped (#331/#366) |

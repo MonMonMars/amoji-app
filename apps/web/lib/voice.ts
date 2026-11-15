@@ -111,6 +111,7 @@ import { resolveOsPin, resolvePinnedVoice } from './os-voice-resolve';
 import {
   deliveryGenderForChoice,
   isVoiceLocale,
+  pitchTierForChoice,
   preferredVoiceChoiceForGender,
   tlForChoice,
 } from './voice-capability';
@@ -1395,19 +1396,22 @@ export function gttsPitchBias(
   gender: 'female' | 'male',
   characterId?: string,
   lang?: Lang,
+  tier?: import('./gtts-timbre').GttsPitchTier | null,
 ): number {
-  return gttsCharacterPitchBias(gender, characterId, lang);
+  return gttsCharacterPitchBias(gender, characterId, lang, tier);
 }
 
-/** Free-tier pitch: pinned voice delivery gender, else companion gender. */
+/** Free-tier pitch: pinned voice delivery gender + pitch button, else companion. */
 function gttsPitchForLang(
   lang: Lang,
   characterId: string,
   companionGender: 'female' | 'male',
   choiceId?: string | null,
 ): number {
-  const delivery = deliveryGenderForChoice(lang, choiceId ?? voicePickFor(lang), companionGender);
-  return gttsPitchBias(delivery, characterId, lang);
+  const pin = choiceId ?? voicePickFor(lang);
+  const delivery = deliveryGenderForChoice(lang, pin, companionGender);
+  const tier = pitchTierForChoice(pin);
+  return gttsCharacterPitchBias(delivery, characterId, lang, tier);
 }
 
 /** A leading vocal tic (text + relative pitch/rate lift). */
@@ -1865,7 +1869,6 @@ export function playVoiceGreeting(
   // and it used to default every greeting to the female pitch.
   const gender = characterVoiceGender(characterId);
   const tl = tlForChoice(lang, choiceId);
-  const delivery = deliveryGenderForChoice(lang, choiceId, gender);
   // Same-origin greeting clip INSIDE the tap — audible even when Google TTS
   // is offline/blocked or play() would otherwise run after the gesture dies.
   const insuranceKind = nextGreetingKind();
@@ -1914,10 +1917,9 @@ export function playVoiceGreeting(
   void speakGtts(text, {
     lang,
     tl,
-    // Same per-character pitch as chat. Without it the SAME character sounded
-    // different on select than in the chat room, which reads as "her voice
-    // jumped to someone else".
-    pitchBias: gttsPitchBias(delivery, characterId, lang),
+    // Pinned pitch button wins; otherwise the curated per-character tier.
+    // Greeting and chat must share this number or the voice "jumps".
+    pitchBias: gttsPitchForLang(lang, characterId, gender, choiceId),
     onPlaying: () => {
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
@@ -2198,10 +2200,11 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   };
   // HTTP MP3 tier first, started inside the gesture so preview is immediate.
   // Exactly one tier speaks: whoever starts first halts the others.
+  // Pitch comes from the tapped button (deep/mid/bright), not a character hash.
   const gtts = speakGtts(text, {
     lang: locale,
     tl,
-    pitchBias: gttsPitchBias(previewGender, 'preview', locale),
+    pitchBias: gttsPitchForLang(locale, 'preview', previewGender, choiceId),
     onPlaying: () => {
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.

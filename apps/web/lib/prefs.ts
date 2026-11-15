@@ -197,6 +197,7 @@ export type StrKey =
   | 'voiceRegionIe' | 'voiceRegionZa' | 'voiceRegionNz' | 'voiceRegionHkEn' | 'voiceRegionCa'
   | 'voiceRegionSg' | 'voiceRegionHkZh'
   | 'voiceFreeFemale' | 'voiceFreeMale'
+  | 'voicePitchBright' | 'voicePitchMid' | 'voicePitchDeep'
   | 'voiceAdd' | 'voiceAddHint' | 'voiceAddNone'
   // OS-provided voices (speechSynthesis). These exist because the OS genuinely
   // ships several real voices per language on desktop — the picker must be able
@@ -284,10 +285,10 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   // Says why a language has only a button or two, instead of leaving the user
   // to wonder where the rest went.
   voiceOnlyOneAvailable: {
-    en: 'This language has one available voice right now.',
-    yue: '呢種語言而家得一把聲可以用。',
-    zh: '这个语言目前只有一把声音可用。',
-    ja: 'この言語で使える声は今ひとつだけです。',
+    en: 'This language has one Google speaker — pick female/male and deep/mid/bright pitch.',
+    yue: '呢種語言得一個 Google 聲線 — 可以揀男女同低/中/高音階。',
+    zh: '这个语言只有一个 Google 声线 — 可选男女与低/中/高音阶。',
+    ja: 'この言語の Google 話者は一人です。男女と低／中／高のピッチを選べます。',
   },
   // One line for every engine that cannot play, so the short list is explained.
   voiceEnginesUnavailable: {
@@ -335,6 +336,9 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   voiceRegionHkZh: { en: 'Hong Kong Mandarin', yue: '香港普通話', zh: '香港普通话', ja: '香港普通話' },
   voiceFreeFemale: { en: 'Female', yue: '女聲', zh: '女声', ja: '女性' },
   voiceFreeMale: { en: 'Male', yue: '男聲', zh: '男声', ja: '男性' },
+  voicePitchDeep: { en: 'Deep', yue: '低沉', zh: '低沉', ja: '低め' },
+  voicePitchMid: { en: 'Mid', yue: '中音', zh: '中音', ja: '中間' },
+  voicePitchBright: { en: 'Bright', yue: '明亮', zh: '明亮', ja: '高め' },
   voiceAdd: { en: 'Add', yue: '加入', zh: '添加', ja: '追加' },
   voiceAddHint: {
     en: 'Add another free Google voice to test for this language.',
@@ -534,10 +538,10 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   neuralVoice: { en: 'Neural voice (online)', yue: '神經語音（在線）', zh: '神经语音（在线）', ja: 'ニューラル音声（オンライン）' },
   voicePickerTitle: { en: 'Available voices', yue: '可用嘅聲線', zh: '可用的声音', ja: '使える声' },
   voicePickerHint: {
-    en: 'Tap a voice to hear it and keep it. Each language lists only the voices that actually sound different on this device.',
-    yue: '撳一把聲嚟試聽同記住。每種語言只會列出真係聽得出分別嘅聲。',
-    zh: '点一个声音试听并记住。每种语言只列出真的听得出分别的声音。',
-    ja: '声をタップして試聴し、その声を保存します。言語ごとに、実際に違って聞こえる声だけを並べています。',
+    en: 'Tap a voice to hear it and keep it. Same speaker × Deep / Mid / Bright pitch buttons — pick the colour that fits the persona.',
+    yue: '撳一把聲嚟試聽同記住。同一把聲有低／中／高音掣，揀啱角色嘅音色。',
+    zh: '点一个声音试听并记住。同一说话人有低／中／高音按钮，选适合角色的音色。',
+    ja: '声をタップして試聴し保存します。同じ話者に低／中／高のピッチボタンがあり、キャラに合う色を選べます。',
   },
   memoryTitle: { en: 'Memory', yue: '記憶', zh: '记忆', ja: '記憶' },
   forgetBtn: { en: 'Forget everything', yue: '全部忘記', zh: '全部忘记', ja: 'すべて忘れる' },

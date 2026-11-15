@@ -11,9 +11,11 @@
 // not 'works' cannot become a button at all. That gate, not a comment, is what
 // keeps a dead engine from reappearing here.
 
+import type { GttsPitchTier } from './gtts-timbre';
 import type { VoiceLocale } from './voice-catalog';
 import {
   VOICE_CHOICES,
+  distinctSpeakerCount,
   distinctVoiceCount,
   engineIsOffered,
   voiceChoicesFor,
@@ -23,13 +25,15 @@ import {
 export type TtsEngineId = 'gtts';
 
 export interface TtsButtonVoice {
-  /** Choice id, e.g. 'gtts:en-GB:f'. */
+  /** Choice id, e.g. 'gtts:en-GB:f:bright'. */
   id: string;
   engine: TtsEngineId;
   locale: VoiceLocale;
   /** Google Translate `tl` — the actual speaker selector. */
   tl: string;
   deliveryGender: 'female' | 'male';
+  /** Selectable pitch persona for this same Google speaker. */
+  pitchTier: GttsPitchTier;
   /** Localized region label key, e.g. voiceRegionUk. */
   labelKey: VoiceChoice['labelKey'];
   /** Per-language index, 1-based. */
@@ -44,6 +48,7 @@ function toButton(choice: VoiceChoice): TtsButtonVoice {
     locale: choice.locale,
     tl: choice.tl,
     deliveryGender: choice.deliveryGender,
+    pitchTier: choice.pitchTier,
     labelKey: choice.labelKey,
     n: choice.n,
     shipping: true as const,
@@ -55,7 +60,7 @@ export const TTS_BUTTON_REGISTRY: readonly TtsButtonVoice[] = VOICE_CHOICES.filt
   engineIsOffered(choice.engine),
 ).map(toButton);
 
-/** How many shipping free voices each language offers. */
+/** How many shipping free voices each language offers (includes pitch tiers). */
 export const TIER_A_COUNTS: Record<VoiceLocale, number> = {
   yue: distinctVoiceCount('yue'),
   zh: distinctVoiceCount('zh'),
@@ -66,9 +71,10 @@ export const TIER_A_COUNTS: Record<VoiceLocale, number> = {
 /**
  * Buttons for a language (or every language when omitted).
  *
- * Female + male delivery are separate buttons on the same `tl` where Google
- * only exposes one speaker — pitch reshaping is documented in voice-capability.
- * User-added extras from the Add pool are included after shipping voices.
+ * Female + male delivery × deep/mid/bright pitch are separate buttons on the
+ * same `tl` where Google only exposes one speaker — pitch reshaping is
+ * documented in voice-capability / gtts-timbre. User-added extras from the
+ * Add pool are included after shipping voices.
  */
 export function selectTtsButtons(locale?: VoiceLocale): readonly TtsButtonVoice[] {
   const choices = locale ? voiceChoicesFor(locale) : [
@@ -90,10 +96,9 @@ export function ttsButtonKey(voice: TtsButtonVoice): string {
 }
 
 /**
- * True when this language's shipping grid is only the default female+male pair
- * (one Google speaker). Used to explain a short list — extras from Add are
- * still shown when present.
+ * True when this language ships only one Google `tl` speaker (yue/ja). Used to
+ * explain a short speaker list — pitch personas and Add extras still show.
  */
 export function isSingleVoiceLocale(locale: VoiceLocale): boolean {
-  return distinctVoiceCount(locale) <= 2;
+  return distinctSpeakerCount(locale) <= 1;
 }
