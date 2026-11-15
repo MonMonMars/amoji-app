@@ -63,5 +63,24 @@ describe('dance-audio-gate', () => {
     // BufferSource emits only after src.start().
     const playClip = music.slice(music.indexOf('async function playClip'), music.indexOf('function streamDanceClip'));
     expect(playClip.indexOf('src.start()')).toBeLessThan(playClip.indexOf('emitLibraryClipPlaying(clip.id)'));
+    // Song mouth starts only after audible start — never during intro wait.
+    expect(playClip.indexOf('src.start()')).toBeLessThan(playClip.indexOf('startSongMouth'));
+    expect(music).toContain('armSongMouthFromElement');
+    expect(music).toMatch(/clipKind === 'song'[\s\S]*armSongMouthFromElement/);
+  });
+
+  it('CompanionCanvas retries sing/dance playPerf until VRMA loads', () => {
+    const canvas = fs.readFileSync(path.join(ROOT, 'components/CompanionCanvas.tsx'), 'utf8');
+    expect(canvas).toContain('if (playPerf(clipName)) mvHandled = mv.kind');
+    expect(canvas).toContain('Hard fallbacks so song/dance still move');
+    // Local Sing/Dance before remote 3dchat URLs.
+    const singLocal = canvas.indexOf('`${ANIM_MIRROR}/Sing.vrma`');
+    const singRemote = canvas.indexOf('singing.vrma');
+    expect(singLocal).toBeGreaterThan(0);
+    expect(singLocal).toBeLessThan(singRemote);
+    const danceLocal = canvas.indexOf('`${ANIM_MIRROR}/Dance.vrma`');
+    const danceRemote = canvas.indexOf('hipHopDancing.vrma');
+    expect(danceLocal).toBeGreaterThan(0);
+    expect(danceLocal).toBeLessThan(danceRemote);
   });
 });

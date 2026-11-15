@@ -410,9 +410,11 @@ let clipCtx: AudioContext | null = null;
 let clipSrc: AudioBufferSourceNode | null = null;
 let clipAnalyser: AnalyserNode | null = null;
 let clipEl: HTMLAudioElement | null = null;
+let clipMediaSource: MediaElementAudioSourceNode | null = null;
 let clipVolumeKey: VolumeKey = 'bgmVol';
 let clipBase = CLIP_BASE_GAIN.dance;
 let clipId: string | null = null;
+let clipKind: 'song' | 'dance' | null = null;
 let clipCharacter = 'default';
 let loadToken = 0;
 let mouthTimer: ReturnType<typeof setInterval> | null = null;
@@ -481,14 +483,18 @@ function haltClip(): void {
   duck = 1;
   const src = clipSrc;
   const el = clipEl;
+  const media = clipMediaSource;
   const stale = clipCtx;
   const gain = clipGain;
+  const an = clipAnalyser;
   clipSrc = null;
   clipEl = null;
+  clipMediaSource = null;
   clipGain = null;
   clipAnalyser = null;
   clipCtx = null;
   clipId = null;
+  clipKind = null;
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('amoji:library-clip', { detail: { state: 'stopped' } }));
   }
@@ -498,6 +504,12 @@ function haltClip(): void {
   if (el) {
     el.pause();
     el.src = '';
+  }
+  if (media) {
+    try { media.disconnect(); } catch { /* ignore */ }
+  }
+  if (an) {
+    try { an.disconnect(); } catch { /* ignore */ }
   }
   if (gain && stale) {
     try {
@@ -513,6 +525,35 @@ function haltClip(): void {
   }
 }
 
+/** Wire song lips only after the HTMLAudio bed is actually audible. */
+function armSongMouthFromElement(audio: HTMLAudioElement): void {
+  if (clipKind !== 'song') return;
+  stopSongMouth();
+  primeSharedAudioContext();
+  const ac = createDefaultAudioContext();
+  if (!ac) return;
+  try { void ac.resume(); } catch { /* ignore */ }
+  try {
+    // MediaElementSource can only be created once per element.
+    const media = ac.createMediaElementSource(audio);
+    const an = ac.createAnalyser();
+    an.fftSize = 256;
+    const gain = ac.createGain();
+    clipMediaSource = media;
+    clipAnalyser = an;
+    clipGain = gain;
+    clipCtx = ac;
+    applyActiveClipGain();
+    // Route through WebAudio so analyser sees samples; element volume stays.
+    media.connect(an);
+    an.connect(gain);
+    gain.connect(ac.destination);
+    startSongMouth(an);
+  } catch {
+    // Already wired or unsupported — mouth stays quiet rather than pre-flapping.
+  }
+}
+
 function playClipElement(url: string, token: number, characterId: string): boolean {
   if (typeof Audio === 'undefined') return false;
   try {
@@ -524,13 +565,15 @@ function playClipElement(url: string, token: number, characterId: string): boole
     audio.loop = true;
     clipEl = audio;
     applyActiveClipGain();
-    // Gate dance on real playback (playing / first audible samples), not play() alone.
+    // Gate dance + song mouth on real playback (playing / first audible samples).
     let emitted = false;
     const emitOnce = () => {
       if (emitted || token !== loadToken) return;
       emitted = true;
       audio.removeEventListener('playing', emitOnce);
       audio.removeEventListener('timeupdate', onTimeUpdate);
+      // Mouth only when the song bed is audible — never during intro wait.
+      if (clipKind === 'song') armSongMouthFromElement(audio);
       emitLibraryClipPlaying(clipId);
     };
     const onTimeUpdate = () => {
@@ -593,13 +636,14 @@ async function playClip(clip: PerformanceClip, token: number, characterId: strin
       src.connect(an);
       an.connect(gain);
       clipAnalyser = an;
-      startSongMouth(an);
     } else {
       src.connect(gain);
     }
     // BufferSource starts samples immediately — emit playing only after start().
+    // Mouth follows the same gate: never flap before audible samples.
     src.start();
     clipSrc = src;
+    if (clip.kind === 'song' && clipAnalyser) startSongMouth(clipAnalyser);
     emitLibraryClipPlaying(clip.id);
   } catch {
     if (token !== loadToken) return;
@@ -680,6 +724,7 @@ export function startLibraryPerformance(
     perfPreserve = true;
     duck = 1;
     clipId = synthetic.id;
+    clipKind = 'dance';
     clipVolumeKey = 'bgmVol';
     clipBase = CLIP_BASE_GAIN.dance;
     clipCharacter = q.characterId ?? STYLE_THEME_ID[styleId ?? 'default'] ?? 'default';
@@ -704,6 +749,7 @@ export function startLibraryPerformance(
   perfPreserve = true;
   duck = 1;
   clipId = clip.id;
+  clipKind = clip.kind === 'song' ? 'song' : 'dance';
   clipVolumeKey = clip.volume;
   clipBase = CLIP_BASE_GAIN[clip.kind];
   clipCharacter = q.characterId ?? 'default';

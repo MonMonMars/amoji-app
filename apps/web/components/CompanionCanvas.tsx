@@ -703,8 +703,10 @@ export default function CompanionCanvas({
       { id: 'Jump', urls: [`${ANIM_MIRROR}/Jump.vrma`] },
       { id: 'Bow', urls: [`${ALT_HOST}/quick_formal_bow.vrma`, `${ANIM_MIRROR}/Bow.vrma`] },
       { id: 'Hello', urls: [`${ST_HOST}/hello.vrma`, `${ANIM_MIRROR}/Hello.vrma`] },
-      { id: 'Dance', urls: [`${CHAT_HOST}/hipHopDancing.vrma`, `${ANIM_MIRROR}/Dance.vrma`] },
-      { id: 'Sing', urls: [`${CHAT_HOST}/singing.vrma`, `${ANIM_MIRROR}/Sing.vrma`] },
+      // Local first — remote-first left Sing unloaded when mirror lagged, so
+      // playPerf failed once and mvHandled never retried (T-pose / idle).
+      { id: 'Dance', urls: [`${ANIM_MIRROR}/Dance.vrma`, `${CHAT_HOST}/hipHopDancing.vrma`] },
+      { id: 'Sing', urls: [`${ANIM_MIRROR}/Sing.vrma`, `${CHAT_HOST}/singing.vrma`] },
       { id: 'Punch', urls: [`${CHAT_HOST}/punch.vrma`, `${ANIM_MIRROR}/Punch.vrma`] },
       { id: 'Piano', urls: [`${CHAT_HOST}/pianoPlaying.vrma`, `${ANIM_MIRROR}/Piano.vrma`] },
       { id: 'Violin', urls: [`${CHAT_HOST}/playingTheViolin.vrma`, `${ANIM_MIRROR}/Violin.vrma`] },
@@ -858,8 +860,9 @@ export default function CompanionCanvas({
       return true;
     };
 
-    const playPerf = (name: string) => {
-      if (!mixer) return;
+    /** Start a MOVE_CLIP performance. Returns false when the VRMA is not loaded yet. */
+    const playPerf = (name: string): boolean => {
+      if (!mixer) return false;
       // t725–729: prefer shortlist lib_C* when loaded; else Dance/Sing.
       // Beat match via timeScale = clamp(trackBpm / clipBpm, 0.65, 1.45).
       const profile = getPerfMotionProfile();
@@ -871,7 +874,17 @@ export default function CompanionCanvas({
           if (c) { clipName = id; clip = c; break; }
         }
       }
-      if (!clip) return;
+      // Hard fallbacks so song/dance still move if preferred ids lag.
+      if (!clip && (name === 'Sing' || name === 'Dance')) {
+        const extras = name === 'Sing'
+          ? ['lib_C116', 'lib_C112', 'lib_C117', 'Dance']
+          : ['lib_C61', 'lib_C03', 'lib_C113', 'Sing'];
+        for (const id of extras) {
+          const c = clips.get(id);
+          if (c) { clipName = id; clip = c; break; }
+        }
+      }
+      if (!clip) return false;
       perfClipId = clipName;
       beginBoneBlend(0.7);
       const action = mixer.clipAction(clip);
@@ -899,6 +912,7 @@ export default function CompanionCanvas({
       }
       action.play();
       perfAction = action;
+      return true;
     };
     const startClipEngine = (vrm: VRM) => {
       mixer = new THREE.AnimationMixer(vrm.scene);
@@ -1929,20 +1943,20 @@ export default function CompanionCanvas({
         avatar.root.position.x = clamp(avatar.root.position.x, -0.6, 0.6);
         avatar.root.position.y = clamp(avatar.root.position.y, -0.35, 0.5);
         avatar.root.position.z = clamp(avatar.root.position.z, -0.8, 0.8);
-        // Dance with no library clip loaded yet: a small sway so the body
-        // still answers. The Dance VRMA, when it is playing, is the motion.
-        if (mv?.kind === 'dance' && boost === 0 && laugh === 0) {
-          const danceClip = clips.get('Dance');
-          const clipPlaying = !!(
-            perfAction && danceClip
-            && perfAction.getClip() === danceClip
-            && perfAction.isRunning()
-          );
+        // Dance/sing with no library clip loaded yet: a small sway so the body
+        // still answers. Any running perfAction is the real motion — skip sway.
+        if ((mv?.kind === 'dance' || mv?.kind === 'sing') && boost === 0 && laugh === 0) {
+          const clipPlaying = !!(perfAction && perfAction.isRunning());
           if (!clipPlaying) {
             const sway = Math.sin(now / 170);
-            avatar.root.rotation.y += sway * 0.1;
-            avatar.root.rotation.z += sway * 0.04;
-            avatar.root.position.y = clamp(avatar.root.position.y + Math.abs(Math.sin(now / 85)) * 0.016, -0.35, 0.5);
+            const amp = mv.kind === 'sing' ? 0.06 : 0.1;
+            avatar.root.rotation.y += sway * amp;
+            avatar.root.rotation.z += sway * (amp * 0.4);
+            avatar.root.position.y = clamp(
+              avatar.root.position.y + Math.abs(Math.sin(now / 85)) * (mv.kind === 'sing' ? 0.008 : 0.016),
+              -0.35,
+              0.5,
+            );
           }
         }
         if (gameView) {
@@ -2024,10 +2038,23 @@ export default function CompanionCanvas({
         // dialogue-triggered performance: fire the matching LIBRARY clip once
         // on the rising edge. Clip-less kinds keep the skeleton for the
         // additive choreography above (r86).
-        if (!gameView && mv && mvHandled !== mv.kind) {
-          mvHandled = mv.kind;
+        // Retry while armed if the VRMA has not loaded yet — locking
+        // mvHandled on a failed playPerf left sing/dance as idle/T-pose.
+        if (!gameView && mv) {
           const clipName = MOVE_CLIP[mv.kind];
-          if (clipName) playPerf(clipName);
+          if (mvHandled !== mv.kind) {
+            if (clipName) {
+              if (playPerf(clipName)) mvHandled = mv.kind;
+            } else {
+              mvHandled = mv.kind;
+            }
+          } else if (
+            clipName
+            && (mv.kind === 'sing' || mv.kind === 'dance')
+            && !(perfAction && perfAction.isRunning())
+          ) {
+            playPerf(clipName);
+          }
         } else if (!mv) {
           // Rising edge of move-end: stop sticky LoopRepeat sing/dance so a
           // new talk / demo does not leave her performing forever.
