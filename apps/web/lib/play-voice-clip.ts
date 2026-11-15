@@ -4,7 +4,7 @@
 // the user interrupts.
 
 import { assetUrl } from './asset';
-import { pinDefaultOutput, pinDefaultOutputAsync } from './audio-output';
+import { pinDefaultOutputAsync } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 import { followAudioElement, noteSpeechStarted } from './speech';
 
@@ -38,9 +38,9 @@ export function isVoiceClipPlaying(): boolean {
  * `setSinkId` / `pinDefaultOutputAsync` first drops activation on Chrome and
  * leaves card greets silent when hosted gTTS is blocked.
  *
- * Do NOT call `pinDefaultOutput` before the first play: that kicks off async
- * `setSinkId`, which races and can reject the gesture-bound play() on Chrome.
- * Pin after playback starts (or only before a retry).
+ * Do NOT call `pinDefaultOutput` before the first play or inside onplay:
+ * setSinkId races gesture play and interrupts live HTMLAudio (non-Yue mute).
+ * Pin only before a reject retry.
  */
 export function playGestureClipSync(file: string, caption: string, onPlay?: () => void): void {
   stopVoiceClip();
@@ -59,8 +59,6 @@ export function playGestureClipSync(file: string, caption: string, onPlay?: () =
   audio.onended = () => finish();
   audio.onerror = () => finish();
   audio.onplay = () => {
-    // Pin after play so setSinkId never races the gesture-activated start.
-    pinDefaultOutput(audio);
     try { noteSpeechStarted(caption || file); } catch { /* ignore */ }
     try { followAudioElement(audio, true); } catch { /* ignore */ }
     try { onPlay?.(); } catch { /* ignore */ }
@@ -103,12 +101,11 @@ export function playVoiceClip(file: string, caption: string, onPlay?: () => void
     audio.onerror = () => finish(new Error('clip failed'));
     audio.onplay = () => {
       clearTimeout(stall);
-      pinDefaultOutput(audio);
       try { noteSpeechStarted(caption || file); } catch { /* ignore */ }
       try { followAudioElement(audio, true); } catch { /* ignore */ }
       try { onPlay?.(); } catch { /* ignore */ }
     };
-    // Prefer gesture-safe play first; sink pin only on retry / after start.
+    // Prefer gesture-safe play first; sink pin only on reject-retry.
     void audio.play().catch((err: unknown) => {
       void pinDefaultOutputAsync(audio)
         .then(() => audio.play())

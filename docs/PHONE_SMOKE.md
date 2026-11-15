@@ -25,12 +25,13 @@ Tick on a real phone (prefer iPhone Safari). Hard refresh / clear site data once
 - [ ] Idle looks **upright planted calm** (RPM F/M stands — not Sassy / sky-look / arms-into-torso)
 - [ ] After a chat turn ends, idle returns upright (no stuck lean / weird blend)
 
-### R10 voice (#406 + #410 + #413)
+### R10 voice (#406 + #410 + #413 + unmute)
 
 - [ ] deep / mid / bright buttons are **obviously** different (same lang)
 - [ ] Male button sounds male (not female pitched down slightly)
 - [ ] Non-Yue (en / zh / ja) plays on **same speakers** as gate sample
 - [ ] Female Cantonese still works after male / other-lang tries
+- [ ] **Every** lang × gender × pitch button is audible (not Yue-F-only)
 
 ### R13 poke lean (#409) — do not ask agents to flip ± again
 

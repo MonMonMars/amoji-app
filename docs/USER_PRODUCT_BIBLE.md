@@ -47,8 +47,8 @@
 | Idle pose upright planted calm stands (code) | #392 + #407 v3 + #415 v4 (RPM F/M stands only) — **phone Outstanding** (R11) |
 | Caption then whole phase again in history (code) | #393 |
 | Blend-to-back / idle forward lean (code) | #394 |
-| All langs/genders speak — not Yue-female-only (code) | #395 |
-| Audible pitch tiers + male delivery + sink route (code) | #406 + #410 + #413 — **phone Outstanding** (R10) |
+| All langs/genders speak — not Yue-female-only (code) | #395 + voice-unmute-all-langs (onplay setSinkId kill) — **Outstanding phone** until hear |
+| Audible pitch tiers + male delivery + sink route (code) | #406 + #410 + #413 + unmute — **phone Outstanding** (R10) |
 | Unify cast lighting / MToon path (code) | #408 — **phone Outstanding** |
 | Scrub history-resume asks from chat replies (code) | #412 |
 | Harden spoken nonsense scrub (code) | #416 — **owner live OK** still required |
@@ -97,6 +97,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-15 ~22:45 | CRITICAL: only Yue-F audible — stop onplay `setSinkId` kill; keep #420 play-first; all lang×gender×pitch (`voice-unmute-all-langs`) — **Outstanding phone** |
 | 2026-11-15 ~22:34 | URGENT card greet silence: fix gTTS/Edge play-before-pin + default-only sink cache + insurance hold (`card-greet-sound-fix`) |
 | 2026-11-15 ~22:31 | Owner “getting worst”: keep card no-sound + news repeat + R10–R13 Outstanding; ship idle v3 legacy wipe/scrub; tip `34ed7e0` (#418) |
 | 2026-11-15 ~20:48 | Honesty tip `a9f7436` (#417): #415 idle v4 + #416 nonsense scrub Done on main; Outstanding = phone-only R10–R13 + nonsense + captions |

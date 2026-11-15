@@ -122,6 +122,11 @@ describe('non-yue speak path + sink routing', () => {
     expect(audio).toContain('export function ensureCompanionPlaybackRoute');
     expect(audio).toContain("nav.audioSession.type = 'playback'");
     expect(edge).toContain('ensureCompanionPlaybackRoute()');
-    expect(gtts).toMatch(/audio\.onplay = \(\) => \{[\s\S]*?pinDefaultOutput\(audio\)/);
+    // onplay must NOT pin — setSinkId mid-stream muted non-Yue / male TTS.
+    const onplay = gtts.indexOf('audio.onplay = () => {');
+    const onplayEnd = gtts.indexOf('};', onplay);
+    expect(gtts.slice(onplay, onplayEnd)).not.toMatch(/pinDefaultOutput\(/);
+    expect(gtts.slice(onplay, onplayEnd)).not.toMatch(/pinDefaultOutputAsync\(/);
+    expect(gtts).toMatch(/void audio\.play\(\)\.catch[\s\S]*?pinDefaultOutputAsync\(audio\)/);
   });
 });

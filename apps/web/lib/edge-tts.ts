@@ -24,7 +24,6 @@
 import { edgeAudioPayload, edgeReadAloudUrl } from '../../../server/amoji-proxy/edge-gec.js';
 import {
   ensureCompanionPlaybackRoute,
-  pinDefaultOutput,
   pinDefaultOutputAsync,
 } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
@@ -563,14 +562,14 @@ function playMp3Blob(blob: Blob, opts: EdgeVoiceOpts, resolve: () => void, rejec
     return;
   }
   ensureCompanionPlaybackRoute();
-  // Do NOT pin before first play — setSinkId races gesture activation (card greet).
+  // Do NOT pin before first play or inside onplay — setSinkId races gesture
+  // activation and interrupts live HTMLAudio (card greet / non-Yue mute).
   // A read-only volume setter on iOS must not skip play().
   try { applyPlaybackVolume(audio); } catch { /* playback still starts */ }
   currentAudio = audio;
   // r99: the caller learns the instant media playback actually begins —
   // that is the moment the iOS media gate is provably open.
   audio.onplay = () => {
-    pinDefaultOutput(audio);
     try { opts.onPlaying?.(); } catch { /* ignore */ }
     // One mp3 is the whole sentence. Track its duration through the last word.
     followAudioElement(audio, true);
@@ -585,8 +584,8 @@ function playMp3Blob(blob: Blob, opts: EdgeVoiceOpts, resolve: () => void, rejec
     URL.revokeObjectURL(url);
     reject(new Error('edge-tts playback failed'));
   };
-  // Same gesture-safe order as gTTS / playGestureClipSync: play first; pin on
-  // onplay or only before a reject retry — never in parallel during start.
+  // Same gesture-safe order as gTTS / playGestureClipSync: play first; pin
+  // only before a reject retry — never in parallel during start or on onplay.
   void audio.play().catch((e: unknown) => {
     void pinDefaultOutputAsync(audio)
       .then(() => audio.play())

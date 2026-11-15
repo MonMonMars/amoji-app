@@ -1,7 +1,6 @@
 'use client';
 import {
   ensureCompanionPlaybackRoute,
-  pinDefaultOutput,
   pinDefaultOutputAsync,
 } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
@@ -308,9 +307,10 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
         `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=${q}`,
       );
       try { audio.dataset.amojiAudio = '1'; } catch { /* non-DOM Audio stubs */ }
-      // Do NOT pinDefaultOutput before the first play(): setSinkId races the
-      // gesture-bound play() on Chrome/Windows and left character-card greets
-      // silent after #406/#413 sink routing. Pin on onplay / play() reject retry.
+      // Do NOT pinDefaultOutput before the first play() OR inside onplay:
+      // setSinkId races gesture play and also interrupts live HTMLAudio after
+      // onplay (owner: Yue female ok, every other lang/gender mute). Pin only
+      // on play() reject-retry. Route via ensureCompanionPlaybackRoute above.
       applyPlaybackVolume(audio);
       audio.preload = 'auto';
       currentAudio = audio;
@@ -364,9 +364,8 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
         });
       };
       audio.onplay = () => {
-        // Re-assert sink once media is live — Windows sometimes latches the
-        // first play() onto the mic communications device before setSinkId.
-        pinDefaultOutput(audio);
+        // Do NOT pinDefaultOutput here — setSinkId mid-stream kills gTTS after
+        // onplay on Chrome/Windows (non-Yue / male went silent).
         const last = i >= pieces.length;
         try { dispatchSpeechCaption(piece.text); } catch { /* ignore */ }
         if (!reportedPlaying) {
@@ -377,7 +376,7 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
         followAudioElement(audio, last);
       };
       // Play in this turn — never await / race setSinkId before the first play().
-      // Parallel pinDefaultOutputAsync during start also interrupted gesture play.
+      // Pin only on reject-retry (not parallel during start, not on onplay).
       void audio.play().catch((e: unknown) => {
         void pinDefaultOutputAsync(audio)
           .then(() => audio.play())
