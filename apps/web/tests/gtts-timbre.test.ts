@@ -28,8 +28,8 @@ describe('free-chain character pitch fingerprint', () => {
     const male = Math.max(...MALE_IDS.map((id) => gttsCharacterPitchBias('male', id)));
     const female = Math.min(...FEMALE_IDS.map((id) => gttsCharacterPitchBias('female', id)));
     expect(male).toBeLessThan(1);
-    // Deep female can sit near ~0.94 with the widened tier offsets.
-    expect(female).toBeGreaterThan(0.9);
+    // Deep female can sit near ~1.02 with the widened tier offsets.
+    expect(female).toBeGreaterThan(0.95);
     expect(male).toBeLessThan(female);
   });
 
@@ -104,11 +104,11 @@ describe('free-chain character pitch fingerprint', () => {
     const deepM = gttsCharacterPitchBias('male', undefined, 'en', 'deep');
     const brightM = gttsCharacterPitchBias('male', undefined, 'en', 'bright');
     // After #406/#410 owner still heard similar — require a larger audible gap.
-    expect(brightF - deepF).toBeGreaterThanOrEqual(0.40);
-    expect(brightM - deepM).toBeGreaterThanOrEqual(0.30);
+    expect(brightF - deepF).toBeGreaterThanOrEqual(0.50);
+    expect(brightM - deepM).toBeGreaterThanOrEqual(0.50);
     expect(deepM).toBeLessThan(deepF);
-    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.40);
-    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.36);
+    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.50);
+    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.50);
   });
 
   it('voice.ts re-exports the same helper so every speak path stays in sync', () => {

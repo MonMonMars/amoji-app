@@ -95,7 +95,14 @@ import { isMasterMuted, subscribeMasterMute } from './master-mute';
 import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripLaughTokens, stripVoicedGlyphs } from './speak-text';
 import { analyzeText } from '@amoji/emotion-core';
 import { applyContentMood } from './companion';
-import { browserVoicesForLang, isMaleNeuralVoice, selectBrowserVoice, synthNameList } from './voice-catalog';
+import {
+  browserVoicesForLang,
+  edgeProsodyForTier,
+  edgeVoiceIdForTier,
+  isMaleNeuralVoice,
+  selectBrowserVoice,
+  synthNameList,
+} from './voice-catalog';
 import { loadingFillerKind, recordedLaughClip, recordedPokeClip } from './voice-clips';
 import { LineQueue, speechLeadDiverged, speechRemainder } from './speech-queue';
 import { emotionClipPath } from './emotion-clip-picks';
@@ -1520,8 +1527,21 @@ function performSpeak(
   // Skip the neural tier entirely while its endpoint is known to be refusing
   // us, so a dead socket does not delay every line before the HTTP tier speaks.
   const edgeOn = neuralEnabled() && typeof WebSocket !== 'undefined' && !edgeEndpointsDead();
+  // Delivery gender is resolved again inside beginTts; peek the pin here so
+  // the logged chain matches the hops that actually run for male pins.
+  const chainGenderPeek = (() => {
+    const companionGender = characterVoiceGender(characterId);
+    if (voiceId) return isMaleNeuralVoice(voiceId) ? 'male' : 'female';
+    if (!isVoiceLocale(lang)) return companionGender;
+    const pin = voicePickFor(lang) ?? preferredVoiceChoiceForGender(lang, companionGender).id;
+    return deliveryGenderForChoice(lang, pin, companionGender);
+  })();
   const chain = formatVoiceChain(
-    freeVoiceHops(lang, { cantoNano: cantoNanoAvailable(), edge: edgeOn }),
+    freeVoiceHops(lang, {
+      cantoNano: cantoNanoAvailable(),
+      edge: edgeOn,
+      preferMale: chainGenderPeek === 'male',
+    }),
     useOpenAi ? 'openai' : null,
   );
   try { console.log(`[amoji voice] speak attempt · ${text.length} chars · ${lang} · chain ${chain}`); } catch { /* ignore */ }
@@ -1612,7 +1632,16 @@ function performSpeak(
     }
   };
   const runFreeChain = (): void => {
-    const hops = freeVoiceHops(lang, { cantoNano: cantoNanoAvailable(), edge: edgeOn });
+    const hops = freeVoiceHops(lang, {
+      cantoNano: cantoNanoAvailable(),
+      edge: edgeOn,
+      // Male: Edge neural / OS synth first — gTTS one-speaker pitch still sounds female.
+      preferMale: spokenGender === 'male',
+    });
+    const pitchTier = pitchTierForChoice(voicePin);
+    const edgeTierVoice = voiceId
+      ?? edgeVoiceIdForTier(lang, spokenGender, pitchTier);
+    const edgeTierProsody = edgeProsodyForTier(pitchTier);
     const np = emotionProsody(emotion, value);
     /**
      * Speak the tail of a line this tier already started. Retries the MP3 tier
@@ -1718,9 +1747,11 @@ function performSpeak(
           expressiveness: expr * exprBoost,
           emotion,
           lead: tic,
-          voiceId,
-          rateDelta: clamp(np.rate * exprScale * amp, -0.4, 0.5),
-          pitchDelta: clamp(np.pitch * exprScale * amp, -0.3, 0.4),
+          // Pitch-tier neural id (Guy/Christopher/WanLung/…) — real male speakers,
+          // not a female Google MP3 slowed down. Explicit id also covers female tiers.
+          voiceId: edgeTierVoice,
+          rateDelta: clamp(np.rate * exprScale * amp + edgeTierProsody.rate, -0.4, 0.5),
+          pitchDelta: clamp(np.pitch * exprScale * amp + edgeTierProsody.pitch, -0.3, 0.4),
           volumeDelta: clamp(np.vol * exprScale * amp, -0.5, 0.5),
           onPlaying: () => {
             onHeard();
@@ -1999,14 +2030,18 @@ export function playVoiceGreeting(
   // Edge still wins if it ever answers again: onPlaying halts the other tiers.
   // It is not a button and not a promise — just a free upside if Microsoft
   // re-opens the endpoint, which would also restore real per-voice identities.
+  const greetTier = pitchTierForChoice(choiceId);
+  const greetEdgeProsody = edgeProsodyForTier(greetTier);
   void speakEdge(text, {
     lang,
     gender: delivery,
     character: characterId,
+    // Real Edge male/female neural id for this pitch button (not character cast alone).
+    voiceId: edgeVoiceIdForTier(lang, delivery, greetTier),
     forcePlain: true,
     expressiveness: 1.15,
-    rateDelta: 0.04,
-    pitchDelta: 0.06,
+    rateDelta: 0.04 + greetEdgeProsody.rate,
+    pitchDelta: 0.06 + greetEdgeProsody.pitch,
     onPlaying: () => {
       if (spokenBy === 'gtts') return; // MP3 tier already got there first
       try { haltSynthQueue(); } catch { /* ignore */ }
@@ -2258,13 +2293,16 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
 
   // Free upside only: if Microsoft ever re-opens read-aloud, the sample can be
   // auditioned on a neural voice. Nothing waits on it and nothing depends on it.
+  const previewTier = pitchTierForChoice(choiceId);
+  const previewEdgeProsody = edgeProsodyForTier(previewTier);
   return speakEdge(text, {
     lang: locale,
     gender: previewGender,
+    voiceId: edgeVoiceIdForTier(locale, previewGender, previewTier),
     forcePlain: true,
     expressiveness: 1.15,
-    rateDelta: 0.04,
-    pitchDelta: 0.06,
+    rateDelta: 0.04 + previewEdgeProsody.rate,
+    pitchDelta: 0.06 + previewEdgeProsody.pitch,
     onPlaying: () => {
       if (spokenBy === 'gtts') return; // MP3 tier already got there first
       try { haltSynthQueue(); } catch { /* ignore */ }

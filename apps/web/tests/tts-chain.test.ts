@@ -31,4 +31,15 @@ describe('free TTS chain', () => {
   it('can be told to skip the HTTP tier', () => {
     expect(freeVoiceHops('en', { gtts: false })).toEqual(['synth', 'edge']);
   });
+
+  it('preferMale puts Edge neural + OS synth ahead of gTTS pitch-fallback', () => {
+    expect(freeVoiceHops('en', { preferMale: true })).toEqual(['edge', 'synth', 'gtts']);
+    expect(freeVoiceHops('yue', { preferMale: true, cantoNano: true })).toEqual([
+      'edge',
+      'synth',
+      'gtts',
+      'canto-nano',
+    ]);
+    expect(freeVoiceHops('zh', { preferMale: true, edge: false })).toEqual(['synth', 'gtts']);
+  });
 });

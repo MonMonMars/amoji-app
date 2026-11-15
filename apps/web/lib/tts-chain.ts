@@ -9,12 +9,28 @@ export type FreeVoiceHop = 'edge' | 'gtts' | 'synth' | 'canto-nano';
 
 export function freeVoiceHops(
   locale: string,
-  opts?: { cantoNano?: boolean; edge?: boolean; gtts?: boolean },
+  opts?: {
+    cantoNano?: boolean;
+    edge?: boolean;
+    gtts?: boolean;
+    /**
+     * Male delivery needs a real male speaker (Edge WanLung/Guy/… or OS synth).
+     * gTTS is one speaker per `tl` — pitch-shifting it still sounds female.
+     */
+    preferMale?: boolean;
+  },
 ): FreeVoiceHop[] {
   const hops: FreeVoiceHop[] = [];
-  // Google Translate MP3 is the only keyless hosted tier that still works
-  // (Edge read-aloud 403s). Try it first so chat is not stuck behind a dead
-  // socket; speechSynthesis last (iOS silent switch); Edge only as a rare upside.
+  if (opts?.preferMale) {
+    // Real male neural / OS voice first; gTTS pitch-fallback last.
+    if (opts?.edge !== false) hops.push('edge');
+    hops.push('synth');
+    if (opts?.gtts !== false) hops.push('gtts');
+    if (locale === 'yue' && opts?.cantoNano) hops.push('canto-nano');
+    return hops;
+  }
+  // Female / default: Google Translate MP3 first (Edge read-aloud often 403s).
+  // speechSynthesis after (iOS silent switch); Edge as a rare upside.
   if (opts?.gtts !== false) hops.push('gtts');
   hops.push('synth');
   if (locale === 'yue' && opts?.cantoNano) hops.push('canto-nano');
