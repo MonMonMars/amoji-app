@@ -18,22 +18,22 @@ export const SAFE_IDLE_FALLBACK: Record<Lang, readonly string[]> = {
   en: [
     'I just stretched my shoulders — feels nice.',
     'I am right here with you — take your time.',
-    'We can sit with what you said, or pick a small new thing later.',
+    'We can stay with what you said for a bit.',
   ],
   yue: [
     '我啱啱伸咗下膊頭——舒服咗少少。',
     '我喺度陪住你——唔使急。',
-    '可以繼續你頭先講嗰樣，或者一陣再揀件小事。',
+    '你頭先講嗰樣，我仲喺度聽住。',
   ],
   zh: [
     '我刚伸了伸肩膀——舒服一点了。',
     '我在这里陪着你——不用着急。',
-    '可以继续你刚才说的那件事，或者等会儿再挑件小事。',
+    '你刚才说的那件事，我还听着。',
   ],
   ja: [
     '肩を伸ばしたばかり——ちょっと楽。',
     'ここにいるよ——急がなくていい。',
-    'さっきの話のままでもいいし、あとで小さな話題でもいいよ。',
+    'さっきの話、まだそばで聞いてるよ。',
   ],
 };
 
@@ -140,6 +140,52 @@ export function scrubHistoryResumeAsks(text: string): string {
     .filter((c) => !asksToResumeHistory(c) && c.replace(/[.…\s]/g, '').length > 0)
     .join(' ')
     .trim();
+}
+
+/**
+ * Sentence-level nonsense / filler / surreal / opaque scrub for chat replies.
+ * Keeps grounded sentences; empties a whole-line sludge reply so callers can
+ * fall back or stay silent (beyond history-resume #412).
+ */
+const NONSENSE_SENTENCE =
+  /(?:^|[\s,.!])((?:i'?m\s+)?always\s+here|everything\s+happens\s+for\s+a\s+reason|hope\s+this\s+helps|as\s+an?\s+ai\b|let\s+me\s+know\s+if\s+you\s+need\s+anything|here\s+if\s+you\s+need\s+me)\b|you'?ve\s+gone\s+quiet\b|are\s+you\s+still\s+there\b|still\s+on\s+that\s+thread\b|holding\s+the\s+same\s+topic\b|holding\s+this\s+soft\s+moment\b|same\s+page\s+as\s+you\b|soft\s+moment\b|充滿電|充满电|電壓感覺友善|voltage feels friendly|tiny burst|soul\s+thread|energy\s+field\s+hums|cosmic\s+whisper|nexus\s+of\s+(?:feelings?|vibes?)|wavelength\s+of\s+(?:your\s+)?heart|quantum\s+vibes?|vibe\s+resonance|aura\s+sync|vibes?\s+check|matches\s+your\s+vibe|\bvibing\b|(?:個|的|の)vibe\b|配你vibe|啱你個vibe|オーラ同期|量子バイブス|バイブスチェック|灵魂频率|靈魂頻率|柔軟瞬間|柔软瞬间|柔軟時刻|柔软时刻|一切都会好|我一直都在|希望帮到你|希望幫到你|你靜咗喎|好耐冇聲|你安静下来了|好一会儿没声音|仲喺你呢條話題|还在你这条话题|輕輕留住同一個主題|轻轻留着同一个主题|同你同一頁|和你同一页|同じページにいる|やわらかい(?:時間|瞬間)|軍艦.{0,6}極光|月亮.{0,4}在.{0,6}口袋|the\s+universe\s+winks\b|destiny\s+threads?\b|宇宙在对你眨眼|命運的線/i;
+
+export function sentenceLooksLikeNonsense(sentence: string): boolean {
+  const s = (sentence ?? '').trim();
+  if (!s) return false;
+  if (asksToResumeHistory(s)) return true;
+  if (asksPresenceNag(s)) return true;
+  if (asksUserInnerThoughts(s)) return true;
+  if (isTopicMenuAsk(s)) return true;
+  if (BROKEN_FRAGMENT.test(s)) return true;
+  if (BROKEN_METAPHOR_SLUDGE.test(s)) return true;
+  if (BROKEN_META_TOPIC.test(s)) return true;
+  if (BROKEN_OPAQUE_VOCAB.test(s)) return true;
+  if (NONSENSE_SENTENCE.test(s)) return true;
+  if (/^(?:the\s+user|user\s+(?:asked|wants)|analysis|reasoning|plan)\b/i.test(s)) return true;
+  if (/^(?:分析|推理|用戶想|用户想)/.test(s)) return true;
+  return false;
+}
+
+export function scrubSpokenNonsense(text: string): string {
+  const t = (text ?? '').trim();
+  if (!t) return '';
+  const normalized = t.replace(/\.{2,}/g, '…');
+  const chunks = splitSpokenSentences(normalized);
+  if (chunks.length <= 1) {
+    return sentenceLooksLikeNonsense(t) || spokenLineLooksBroken(t, { mode: 'local' }) ? '' : t;
+  }
+  return chunks
+    .filter((c) => !sentenceLooksLikeNonsense(c) && c.replace(/[.…\s]/g, '').length > 0)
+    .join(' ')
+    .trim();
+}
+
+/** History-resume + topic-menu + nonsense sentence scrub (chat reply path). */
+export function scrubCompanionSpoken(text: string): string {
+  const afterResume = scrubHistoryResumeAsks(text);
+  const afterTopic = scrubTopicMenuAsks(afterResume) || afterResume;
+  return scrubSpokenNonsense(afterTopic);
 }
 
 /** True when the user's message is asking the companion something. */

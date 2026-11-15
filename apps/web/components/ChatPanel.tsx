@@ -145,7 +145,7 @@ import { pickLine } from '../lib/chatter';
 import { pickIdleLine } from '../lib/persona-chatter';
 import { pickIdleCompanionLine } from '../lib/idle-talk';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
-import { gateSpokenLine, safeIdleFallback, scrubHistoryResumeAsks, scrubTopicMenuAsks } from '../lib/spoken-line-sanity';
+import { gateSpokenLine, safeIdleFallback, scrubCompanionSpoken, scrubHistoryResumeAsks, scrubTopicMenuAsks } from '../lib/spoken-line-sanity';
 import { pickCharacterInteraction } from '../lib/interaction-lines';
 import { personalityProfile, personalityPrompt } from '../lib/personality';
 import { voiceOpening, type VoiceId } from '../lib/personality-voice';
@@ -663,7 +663,7 @@ export default function ChatPanel({
     // Durable spoken-line gate: reject unfinished templates / fragments /
     // banned idle interrogations / topic-menu interviews / history-resume
     // asks before TTS + history.
-    const scrubbed = scrubHistoryResumeAsks(scrubTopicMenuAsks(text) || text);
+    const scrubbed = scrubCompanionSpoken(text);
     const gated = gateSpokenLine(scrubbed, {
       mode: opts?.idle ? 'idle' : 'local',
       lang,
@@ -1598,7 +1598,7 @@ export default function ChatPanel({
           },
         });
         // Motion + face from chat content only — ignore LLM emotionHints.
-        const cleanedReply = scrubHistoryResumeAsks(stripOfftopicAbilityTack(r.reply, text));
+        const cleanedReply = scrubCompanionSpoken(stripOfftopicAbilityTack(r.reply, text));
         if (!cleanedReply.trim()) {
           setHistory((h) => {
             const tail = h[h.length - 1];
@@ -1638,7 +1638,7 @@ export default function ChatPanel({
     const commitServer = (data: { reply?: string; emotionHints?: Record<string, number> }) => {
       // Body/face from chat content — server emotionHints are not applied to motion.
       // Never speak a history-resume ask even if the production lane invents one.
-      const reply = scrubHistoryResumeAsks(stripOfftopicAbilityTack(data.reply || '…', text));
+      const reply = scrubCompanionSpoken(stripOfftopicAbilityTack(data.reply || '…', text));
       if (!reply.trim()) {
         setHistory((h) => {
           const tail = h[h.length - 1];

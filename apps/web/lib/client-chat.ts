@@ -80,6 +80,7 @@ import { withQuestion } from './follow-up';
 import {
   capCompanionReplyQuestions,
   capSpokenQuestions,
+  scrubCompanionSpoken,
   scrubHistoryResumeAsks,
   scrubTopicMenuAsks,
 } from './spoken-line-sanity';
@@ -1152,14 +1153,14 @@ function packageReply(
     : ctx.contentContinuing
       ? capSpokenQuestions(cleaned, 0)
       : capCompanionReplyQuestions(cleaned, ctx.lastUser);
-  // Never reintroduce “what should we talk about?” or history-resume asks.
-  const scrubbed = scrubHistoryResumeAsks(scrubTopicMenuAsks(capped) || capped);
+  // Never reintroduce topic-menu / history-resume / filler-nonsense asks.
+  const scrubbed = scrubCompanionSpoken(capped);
   const factsTurn = Boolean(ctx.worldSpoken?.trim()) || /\b(?:Weather|Light news|Recent news)\s*:/i.test(ctx.world ?? '');
   const spoken = ctx.story || ctx.contentContinuing || factsTurn
     ? scrubbed
     : withQuestion(scrubbed, ctx.language);
   let reply = preferLiveReply(spoken, ctx.world, ctx.worldSpoken, ctx.language);
-  reply = scrubHistoryResumeAsks(scrubTopicMenuAsks(reply) || reply);
+  reply = scrubCompanionSpoken(reply);
   if (contentReplyIsTeaser(reply, ctx.lastUser, ctx.world) && ctx.worldSpoken?.trim()) {
     reply = ctx.worldSpoken.trim();
   }
