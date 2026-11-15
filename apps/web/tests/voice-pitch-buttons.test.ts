@@ -13,6 +13,7 @@ import {
   gttsCharacterPitchBias,
 } from '../lib/gtts-timbre';
 import {
+  GTTS_PITCH_BIAS_MAX,
   GTTS_PITCH_BIAS_MIN,
   PITCH_BIAS_FEMALE,
   PITCH_BIAS_MALE,
@@ -44,15 +45,19 @@ describe('selectable pitch buttons for the same voice', () => {
     expect(deep.deliveryGender).toBe(bright.deliveryGender);
     const deepBias = gttsCharacterPitchBias('female', undefined, 'en', deep.pitchTier);
     const brightBias = gttsCharacterPitchBias('female', undefined, 'en', bright.pitchTier);
-    expect(deepBias).toBe(PITCH_BIAS_FEMALE + FEMALE_TIER_OFFSET.deep);
-    expect(brightBias).toBe(PITCH_BIAS_FEMALE + FEMALE_TIER_OFFSET.bright);
-    expect(brightBias - deepBias).toBeGreaterThanOrEqual(0.25);
+    expect(deepBias).toBe(
+      Math.max(GTTS_PITCH_BIAS_MIN, PITCH_BIAS_FEMALE + FEMALE_TIER_OFFSET.deep),
+    );
+    expect(brightBias).toBe(
+      Math.min(GTTS_PITCH_BIAS_MAX, PITCH_BIAS_FEMALE + FEMALE_TIER_OFFSET.bright),
+    );
+    expect(brightBias - deepBias).toBeGreaterThanOrEqual(0.40);
     const maleDeep = gttsCharacterPitchBias('male', undefined, 'en', 'deep');
     const maleBright = gttsCharacterPitchBias('male', undefined, 'en', 'bright');
     // Male deep may hit the widened clamp floor when raw base+offset undershoots.
     expect(maleDeep).toBeGreaterThanOrEqual(GTTS_PITCH_BIAS_MIN);
     expect(maleDeep).toBe(Math.max(GTTS_PITCH_BIAS_MIN, PITCH_BIAS_MALE + MALE_TIER_OFFSET.deep));
-    expect(maleBright - maleDeep).toBeGreaterThanOrEqual(0.2);
+    expect(maleBright - maleDeep).toBeGreaterThanOrEqual(0.30);
     expect(maleDeep).toBeLessThan(deepBias);
   });
 

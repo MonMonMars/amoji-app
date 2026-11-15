@@ -80,6 +80,11 @@ describe('voice does not switch speaker mid-line or between characters', () => {
     expect(gtts).toMatch(/clamp\(opts\.pitchBias \?\? 1, GTTS_PITCH_BIAS_MIN, GTTS_PITCH_BIAS_MAX\)/);
   });
 
+  it('beginTts forces companion playback route before any lang tier', () => {
+    expect(voice).toContain('ensureCompanionPlaybackRoute');
+    expect(voice).toMatch(/const beginTts = \(\) => \{[\s\S]*?ensureCompanionPlaybackRoute\(\)/);
+  });
+
   it('a canceled tier still settles immediately rather than falling through', () => {
     // A user cut must not trigger the resume path.
     expect(voice).toMatch(/message === 'canceled'\)\s*\{\s*settle\(\);\s*return;\s*\}/);

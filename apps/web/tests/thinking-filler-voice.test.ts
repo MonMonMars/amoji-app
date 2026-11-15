@@ -11,11 +11,11 @@ interface GttsCall {
 const calls: GttsCall[] = [];
 
 vi.mock('../lib/gtts', () => ({
-  PITCH_BIAS_MALE: 0.84,
-  PITCH_BIAS_FEMALE: 1.08,
-  GTTS_PITCH_BIAS_MIN: 0.72,
-  GTTS_PITCH_BIAS_MAX: 1.32,
-  GTTS_YUE_MALE_PACE_FLOOR: 0.88,
+  PITCH_BIAS_MALE: 0.76,
+  PITCH_BIAS_FEMALE: 1.22,
+  GTTS_PITCH_BIAS_MIN: 0.60,
+  GTTS_PITCH_BIAS_MAX: 1.48,
+  GTTS_YUE_MALE_PACE_FLOOR: 0.60,
   stopGtts: () => {},
   speakGtts: (text: string, opts: Record<string, unknown>) => {
     calls.push({ text, opts });

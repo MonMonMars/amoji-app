@@ -1,13 +1,14 @@
 /**
- * Owner follow-up after #395/#400: pitch variants must differ audibly, male
- * pins must resolve male delivery, and TTS must leave the mic communications
- * sink for the same default speakers as the gate sample.
+ * Owner follow-up after #406/#410: pitch variants must differ audibly, male
+ * pins must resolve male delivery + male pace (not female pitch-shifted),
+ * and TTS must leave the mic communications sink for all langs.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   GTTS_PITCH_BIAS_MIN,
+  GTTS_YUE_MALE_PACE_FLOOR,
   PITCH_BIAS_FEMALE,
   PITCH_BIAS_MALE,
   gttsPlaybackRate,
@@ -37,22 +38,29 @@ describe('audible deep vs bright pitch gap', () => {
     const brightF = gttsCharacterPitchBias('female', undefined, 'en', 'bright');
     const deepM = gttsCharacterPitchBias('male', undefined, 'yue', 'deep');
     const brightM = gttsCharacterPitchBias('male', undefined, 'yue', 'bright');
-    expect(brightF - deepF).toBeGreaterThanOrEqual(0.32);
-    expect(brightM - deepM).toBeGreaterThanOrEqual(0.26);
-    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.32);
-    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.26);
+    expect(brightF - deepF).toBeGreaterThanOrEqual(0.40);
+    expect(brightM - deepM).toBeGreaterThanOrEqual(0.30);
+    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.40);
+    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.36);
   });
 
   it('male mid stays clearly below female mid', () => {
-    expect(PITCH_BIAS_MALE).toBeLessThanOrEqual(0.82);
-    expect(PITCH_BIAS_FEMALE).toBeGreaterThan(1.12);
-    expect(PITCH_BIAS_FEMALE - PITCH_BIAS_MALE).toBeGreaterThanOrEqual(0.35);
+    expect(PITCH_BIAS_MALE).toBeLessThanOrEqual(0.78);
+    expect(PITCH_BIAS_FEMALE).toBeGreaterThanOrEqual(1.20);
+    expect(PITCH_BIAS_FEMALE - PITCH_BIAS_MALE).toBeGreaterThanOrEqual(0.40);
+  });
+
+  it('yue male pace floor does not collapse deep into mid', () => {
+    expect(GTTS_YUE_MALE_PACE_FLOOR).toBe(GTTS_PITCH_BIAS_MIN);
+    const deep = gttsPlaybackRate(1, gttsCharacterPitchBias('male', undefined, 'yue', 'deep'), 'yue');
+    const mid = gttsPlaybackRate(1, PITCH_BIAS_MALE, 'yue');
+    expect(deep).toBeLessThan(mid);
   });
 
   it('synth male pitch/rate sit clearly below female (browser fallback)', () => {
     const voice = readFileSync(join(web, 'lib/voice.ts'), 'utf8');
-    expect(voice).toMatch(/gender === 'male' \? 0\.72 : 1\.14/);
-    expect(voice).toMatch(/gender === 'male' && lang === 'yue' \? 0\.90/);
+    expect(voice).toMatch(/gender === 'male' \? 0\.68 : 1\.16/);
+    expect(voice).toMatch(/gender === 'male' && lang === 'yue' \? 0\.86/);
   });
 });
 
@@ -71,7 +79,6 @@ describe('male pin → male voice id / gender / pitch', () => {
   });
 
   it('male pin pitchBias is in the male band (not female)', () => {
-    // No characterId → pure gender mid (no micro-jitter).
     const maleMid = gttsCharacterPitchBias('male', undefined, 'en', 'mid');
     const femaleMid = gttsCharacterPitchBias('female', undefined, 'en', 'mid');
     expect(maleMid).toBe(PITCH_BIAS_MALE);
@@ -81,11 +88,15 @@ describe('male pin → male voice id / gender / pitch', () => {
     expect(gttsPlaybackRate(1, maleMid, 'yue')).toBeGreaterThanOrEqual(GTTS_PITCH_BIAS_MIN);
   });
 
-  it('voice greeting/preview pass delivery gender into Edge and clips', () => {
+  it('voice greeting/preview pass delivery gender + male pace into gTTS/Edge/clips', () => {
     const voice = readFileSync(join(web, 'lib/voice.ts'), 'utf8');
     expect(voice).toContain('clipFile(lang, delivery, insuranceKind)');
     expect(voice).toContain('gender: delivery');
     expect(voice).toContain('gender: previewGender');
+    expect(voice).toContain("rate: delivery === 'male' ? 0.90 : 1");
+    expect(voice).toContain("rate: previewGender === 'male' ? 0.90 : 1");
+    expect(voice).toContain('gttsRateFor');
+    expect(voice).toContain('deliveryGenderForChoice(lang, voicePin, companionGender)');
     expect(voice).not.toMatch(/speakEdge\(text, \{\s*lang: locale,\s*gender: 'female'/);
   });
 });
@@ -98,10 +109,15 @@ describe('non-yue speak path + sink routing', () => {
     expect(tlForChoice('yue', preferredVoiceChoiceForGender('yue', 'male').id)).toBe('yue');
   });
 
-  it('gtts and audio-output force companion playback route before HTMLAudio TTS', () => {
+  it('voice.ts pins companion playback route for chat + audition on all langs', () => {
+    const voice = readFileSync(join(web, 'lib/voice.ts'), 'utf8');
     const gtts = readFileSync(join(web, 'lib/gtts.ts'), 'utf8');
     const audio = readFileSync(join(web, 'lib/audio-output.ts'), 'utf8');
     const edge = readFileSync(join(web, 'lib/edge-tts.ts'), 'utf8');
+    expect(voice).toContain('ensureCompanionPlaybackRoute()');
+    expect(voice).toMatch(/const beginTts = \(\) => \{[\s\S]*?ensureCompanionPlaybackRoute\(\)/);
+    expect(voice).toMatch(/playVoiceGreeting\([\s\S]*?ensureCompanionPlaybackRoute\(\)/);
+    expect(voice).toMatch(/previewVoiceChoice\([\s\S]*?ensureCompanionPlaybackRoute\(\)/);
     expect(gtts).toContain('ensureCompanionPlaybackRoute()');
     expect(audio).toContain('export function ensureCompanionPlaybackRoute');
     expect(audio).toContain("nav.audioSession.type = 'playback'");

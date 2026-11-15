@@ -54,24 +54,25 @@ const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi 
  * a female one slightly brighter. Bounded tightly — this is resampling, so a
  * large value makes her sound sped up rather than like a different person.
  */
-/** Male base — deeper than female. Was 0.84 after #406; owner still heard female. */
-export const PITCH_BIAS_MALE = 0.80;
-/** Female base — brighter. Was 1.12 after #406. */
-export const PITCH_BIAS_FEMALE = 1.18;
+/** Male base — deeper than female. Was 0.80 after #410; owner still heard female. */
+export const PITCH_BIAS_MALE = 0.76;
+/** Female base — brighter. Was 1.18 after #410. */
+export const PITCH_BIAS_FEMALE = 1.22;
 /**
- * Soft floor for male Cantonese only. Previous floors (1.04 → 0.88) still
- * lifted deep male toward mid. Cap drag without erasing the male band.
+ * Absolute intelligibility floor for male Cantonese only.
+ * Leftover after #406/#410: floor sat at male mid (0.88/0.80) and Math.max()
+ * lifted deep male into mid — deep≈mid on yue. Keep at GTTS_PITCH_BIAS_MIN.
  */
-export const GTTS_YUE_MALE_PACE_FLOOR = 0.80;
+export const GTTS_YUE_MALE_PACE_FLOOR = 0.60;
 
 /** pitchBias clamp shared by speakGtts + gtts-timbre (wide enough for deep≠bright). */
-export const GTTS_PITCH_BIAS_MIN = 0.66;
-export const GTTS_PITCH_BIAS_MAX = 1.40;
+export const GTTS_PITCH_BIAS_MIN = 0.60;
+export const GTTS_PITCH_BIAS_MAX = 1.48;
 
 /** Effective <audio> playbackRate after emotion rate and gender pitch bias. */
 export function gttsPlaybackRate(rate: number, pitchBias: number, tl: string): number {
   let r = rate * pitchBias;
-  // Soften extreme male-yue drag only — never lift into female territory.
+  // Soften extreme male-yue drag only — floor is absolute min, not mid-band.
   if (tl === 'yue' && pitchBias < 1) {
     r = Math.max(r, rate * GTTS_YUE_MALE_PACE_FLOOR);
   }

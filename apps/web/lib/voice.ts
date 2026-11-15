@@ -82,6 +82,7 @@ import type { Lang } from './prefs';
 import { characterVoiceGender } from './voice-gender';
 import {
   createDefaultAudioContext,
+  ensureCompanionPlaybackRoute,
   pinDefaultOutput,
   primeDefaultSpeakerBeforeSynth,
 } from './audio-output';
@@ -1117,10 +1118,10 @@ function pickVoice(characterId: string, lang: Lang, genderOverride?: 'female' | 
   const color = edgeCastVoice(characterId, lang);
   const byLang = browserVoicesForLang(cached, lang);
   const pool = byLang.length ? byLang : cached;
-  // Browser synth: male must sit clearly below female (owner: male still female).
-  // Yue male was 1.04 rate (sped up → brighter) — slow him instead.
-  const pitch = (gender === 'male' ? 0.72 : 1.14) + (color?.pitch ?? 0);
-  const rateBase = gender === 'male' && lang === 'yue' ? 0.90 : gender === 'male' ? 0.92 : 1.02;
+  // Browser synth: genderOverride selects a real male OS voice; pitch/pace sit
+  // clearly below female — never a female voice only slowed a little.
+  const pitch = (gender === 'male' ? 0.68 : 1.16) + (color?.pitch ?? 0);
+  const rateBase = gender === 'male' && lang === 'yue' ? 0.86 : gender === 'male' ? 0.88 : 1.02;
   const rate = rateBase + (color?.rate ?? 0);
   // A pinned OS voice beats the matrix. The user chose that exact speaker in
   // Settings, so it must be what chat plays — otherwise the picker promises a
@@ -1551,22 +1552,32 @@ function performSpeak(
 
   const beginTts = () => {
   if (!speechAlive()) { settle(); return; }
+  // All langs (not just Yue): leave mic play-and-record so HTMLAudio/synth
+  // land on the same default speakers as the gate sample.
+  ensureCompanionPlaybackRoute();
 
   // Free chain: Edge (locale + gender) → speechSynthesis. Yue adds
   // canto-tts-nano only when that runtime is bundled. OpenAI is opt-in and
   // not the default. A 'canceled' rejection means a newer line took over.
-  const spokenGender: 'female' | 'male' = voiceId
-    ? (isMaleNeuralVoice(voiceId) ? 'male' : 'female')
-    : characterVoiceGender(characterId);
-  // The live free tier's speaker is chosen by Google `tl` alone. Read it once
-  // per line so a resume/tail and the chat line stay the same speaker.
-  // Prefer an explicit pin; otherwise gender-matched shipping choice so male /
-  // non-Yue companions do not inherit a stale Yue-female-only pin feel.
+  // Delivery gender follows the pinned/tapped voice button when present so a
+  // male pin drives male Edge/synth OS voice + male gTTS pace — not a female
+  // base merely pitch-shifted.
+  const companionGender = characterVoiceGender(characterId);
   const voicePin = voicePickFor(lang)
     ?? (isVoiceLocale(lang)
-      ? preferredVoiceChoiceForGender(lang, spokenGender).id
+      ? preferredVoiceChoiceForGender(lang, companionGender).id
       : null);
+  const spokenGender: 'female' | 'male' = voiceId
+    ? (isMaleNeuralVoice(voiceId) ? 'male' : 'female')
+    : (isVoiceLocale(lang)
+      ? deliveryGenderForChoice(lang, voicePin, companionGender)
+      : companionGender);
+  // The live free tier's speaker is chosen by Google `tl` alone. Read it once
+  // per line so a resume/tail and the chat line stay the same speaker.
   const ttsTl = tlForChoice(lang, voicePin);
+  /** Male delivery uses a slower gTTS pace base (male voice + male pace). */
+  const gttsRateFor = (emotionRate: number) =>
+    clamp((1 + emotionRate * 0.12) * (spokenGender === 'male' ? 0.90 : 1), 0.85, 1.15);
   const runSynth = (onDone: () => void): boolean => {
     if (typeof speechSynthesis === 'undefined') return false;
     try {
@@ -1607,7 +1618,7 @@ function performSpeak(
       void speakGtts(rest, {
         lang,
         tl: ttsTl,
-        rate: clamp(1 + np.rate * 0.12, 0.88, 1.15),
+        rate: gttsRateFor(np.rate),
         // Keep the character's pitch on a resumed tail, or the second half of
         // the sentence would come back in a different voice.
         pitchBias: gttsPitchForLang(lang, characterId, spokenGender, voicePin),
@@ -1641,7 +1652,7 @@ function performSpeak(
           tier = speakGtts(text, {
             lang,
             tl: ttsTl,
-            rate: clamp(1 + np.rate * 0.12, 0.88, 1.15),
+            rate: gttsRateFor(np.rate),
             lead: tic?.text,
             // The endpoint has one voice per language, so character identity is
             // carried by pitch: male companions get a deeper read, female ones a
@@ -1861,6 +1872,8 @@ export function playVoiceGreeting(
   if (!selectAuditionAllowed()) return;
   unlockAudio(true);
   stopSpeaking();
+  // All langs: pin speakers before any tier (gate sample device, not mic sink).
+  ensureCompanionPlaybackRoute();
   // force: stopSpeaking cancelled any window-level prime and cleared the latch.
   primeSynthInGesture(true);
   // Rotate a short phrase bank so re-taps do not always say the same Hello.
@@ -1918,6 +1931,8 @@ export function playVoiceGreeting(
   void speakGtts(text, {
     lang,
     tl,
+    // Male pin: slower pace + deep pitchBias (male delivery, not female mid).
+    rate: delivery === 'male' ? 0.90 : 1,
     // Pinned pitch button wins; otherwise the curated per-character tier.
     // Greeting and chat must share this number or the voice "jumps".
     pitchBias: gttsPitchForLang(lang, characterId, companionGender, choiceId),
@@ -2169,9 +2184,10 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   if (!selectAuditionAllowed()) return Promise.resolve();
   unlockAudio(true);
   stopSpeaking();
+  // All langs: same default speakers as gate (not mic communications).
+  ensureCompanionPlaybackRoute();
   primeSynthInGesture(true);
-  // No character here, so keep the neutral female-ish pitch as before. The live
-  // voices are not gendered — this only shapes delivery.
+  // Delivery gender from the tapped button (male pin → male pace/pitch/clips).
   const tl = tlForChoice(locale, choiceId);
   const previewGender = deliveryGenderForChoice(locale, choiceId, 'female');
   // Same rotating short greet as select-board voice cards.
@@ -2205,6 +2221,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const gtts = speakGtts(text, {
     lang: locale,
     tl,
+    rate: previewGender === 'male' ? 0.90 : 1,
     pitchBias: gttsPitchForLang(locale, 'preview', previewGender, choiceId),
     onPlaying: () => {
       if (spokenBy && spokenBy !== 'gtts') return;

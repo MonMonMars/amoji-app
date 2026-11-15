@@ -44,19 +44,20 @@ export const CHAR_PITCH_SPREAD = 0.015;
  * only free-tier colour; formants stay the same Google speaker).
  */
 export const FEMALE_TIER_OFFSET: Record<GttsPitchTier, number> = {
-  deep: -0.14,
+  deep: -0.18,
   mid: 0,
-  bright: 0.22,
+  bright: 0.26,
 };
 
 export const MALE_TIER_OFFSET: Record<GttsPitchTier, number> = {
-  deep: -0.14,
+  deep: -0.16,
   mid: 0,
-  bright: 0.14,
+  // +0.20 so bright−deep stays ≥0.30 after deep near GTTS_PITCH_BIAS_MIN.
+  bright: 0.20,
 };
 
 /** Google ja-JP reads bright; male delivery needs extra depth (still inside gtts clamp). */
-export const GTTS_MALE_BIAS_JA = 0.70;
+export const GTTS_MALE_BIAS_JA = 0.60;
 
 const TIER_CYCLE: readonly GttsPitchTier[] = ['deep', 'mid', 'bright'];
 

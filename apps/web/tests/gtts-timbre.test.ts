@@ -50,16 +50,18 @@ describe('free-chain character pitch fingerprint', () => {
     const span = Math.max(...biases) - Math.min(...biases);
     // Tier offsets (±~0.05–0.08) must beat the old ±0.045 hash-only band.
     expect(span).toBeGreaterThan(CHAR_PITCH_SPREAD * 2 + 0.05);
+    const clampBias = (v: number) =>
+      Math.min(GTTS_PITCH_BIAS_MAX, Math.max(GTTS_PITCH_BIAS_MIN, v));
     for (const id of FEMALE_IDS) {
       const tier = gttsPitchTierFor(id);
-      const expectedBase = PITCH_BIAS_FEMALE + FEMALE_TIER_OFFSET[tier];
+      const expectedBase = clampBias(PITCH_BIAS_FEMALE + FEMALE_TIER_OFFSET[tier]);
       expect(Math.abs(gttsCharacterPitchBias('female', id) - expectedBase)).toBeLessThanOrEqual(
         CHAR_PITCH_SPREAD + 1e-9,
       );
     }
     for (const id of MALE_IDS) {
       const tier = gttsPitchTierFor(id);
-      const expectedBase = PITCH_BIAS_MALE + MALE_TIER_OFFSET[tier];
+      const expectedBase = clampBias(PITCH_BIAS_MALE + MALE_TIER_OFFSET[tier]);
       expect(Math.abs(gttsCharacterPitchBias('male', id) - expectedBase)).toBeLessThanOrEqual(
         CHAR_PITCH_SPREAD + 1e-9,
       );
@@ -101,12 +103,12 @@ describe('free-chain character pitch fingerprint', () => {
     const brightF = gttsCharacterPitchBias('female', undefined, 'en', 'bright');
     const deepM = gttsCharacterPitchBias('male', undefined, 'en', 'deep');
     const brightM = gttsCharacterPitchBias('male', undefined, 'en', 'bright');
-    // After #406 owner still heard similar — require a larger audible gap.
-    expect(brightF - deepF).toBeGreaterThanOrEqual(0.32);
-    expect(brightM - deepM).toBeGreaterThanOrEqual(0.26);
+    // After #406/#410 owner still heard similar — require a larger audible gap.
+    expect(brightF - deepF).toBeGreaterThanOrEqual(0.40);
+    expect(brightM - deepM).toBeGreaterThanOrEqual(0.30);
     expect(deepM).toBeLessThan(deepF);
-    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.32);
-    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.26);
+    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.40);
+    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.36);
   });
 
   it('voice.ts re-exports the same helper so every speak path stays in sync', () => {
