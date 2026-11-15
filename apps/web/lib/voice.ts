@@ -83,7 +83,7 @@ import { characterVoiceGender } from './voice-gender';
 import {
   createDefaultAudioContext,
   ensureCompanionPlaybackRoute,
-  pinDefaultOutput,
+  pinDefaultOutputAsync,
   primeDefaultSpeakerBeforeSynth,
 } from './audio-output';
 import {
@@ -273,14 +273,20 @@ function playSilentUnblock(): void {
   v.setUint32(40, frames * 2, true);
   const url = URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
   const a = new Audio(url);
-  pinDefaultOutput(a);
   a.volume = 0.06;
   const cleanup = () => URL.revokeObjectURL(url);
   a.onended = cleanup;
   a.onerror = cleanup;
   // r99: the prime only counts once playback genuinely began — a rejected
   // play() (no gesture yet) leaves the latch open for the next attempt.
-  void a.play().then(() => { mediaPrimed = true; }).catch(cleanup);
+  // Play first (gesture-safe); pin only on reject-retry — setSinkId before
+  // play raced unlock and left later non-Yue TTS mute.
+  void a.play().then(() => { mediaPrimed = true; }).catch(() => {
+    void pinDefaultOutputAsync(a)
+      .then(() => a.play())
+      .then(() => { mediaPrimed = true; })
+      .catch(cleanup);
+  });
 }
 
 // ---- r2026-10-04.75: iOS audio unlock ---------------------------------------

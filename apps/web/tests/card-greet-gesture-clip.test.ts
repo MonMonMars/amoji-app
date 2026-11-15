@@ -27,8 +27,8 @@ describe('card greet gesture insurance clip', () => {
     expect(body.indexOf('void audio.play()')).toBeLessThan(body.indexOf('pinDefaultOutputAsync'));
     // Must retry after pin when the gesture play rejects (Chrome sink race).
     expect(body).toMatch(/pinDefaultOutputAsync\(audio\)[\s\S]*audio\.play\(\)/);
-    // Sink pin only after play starts (onplay) — never right after `current = audio`.
-    expect(body).toMatch(/audio\.onplay = \(\) => \{[\s\S]*?pinDefaultOutput\(audio\)/);
+    // Never pin inside onplay — setSinkId mid-stream mutes non-Yue TTS.
+    expect(body).not.toMatch(/audio\.onplay = \(\) => \{[\s\S]*?pinDefaultOutput\(/);
     expect(body).not.toMatch(/current = audio;\s*\n\s*pinDefaultOutput\(audio\)/);
   });
 
@@ -72,7 +72,7 @@ describe('card greet gesture insurance clip', () => {
     expect(window).not.toMatch(/void audio\.play\(\)[\s\S]*void pinDefaultOutputAsync\(audio\)\.catch/);
   });
 
-  it('gtts does not pinDefaultOutput before the first play()', () => {
+  it('gtts does not pinDefaultOutput before play or inside onplay', () => {
     const playNext = gtts.slice(gtts.indexOf('const playNext = () => {'), gtts.indexOf('playNext();\n  });'));
     const create = playNext.indexOf('const audio = new Audio');
     const onplay = playNext.indexOf('audio.onplay = () => {', create);
@@ -80,8 +80,12 @@ describe('card greet gesture insurance clip', () => {
     expect(create).toBeGreaterThan(-1);
     expect(onplay).toBeGreaterThan(create);
     expect(firstPlay).toBeGreaterThan(onplay);
-    // Setup between new Audio and onplay must not kick setSinkId.
-    expect(playNext.slice(create, onplay)).not.toMatch(/pinDefaultOutput\(audio\)/);
-    expect(playNext.slice(onplay, firstPlay)).toMatch(/pinDefaultOutput\(audio\)/);
+    // Setup between new Audio and first play must not kick setSinkId at all.
+    expect(playNext.slice(create, firstPlay)).not.toMatch(/pinDefaultOutput\(audio\)/);
+    // onplay body must not call pin — only the reject-retry path may.
+    const onplayEnd = playNext.indexOf('};', onplay);
+    expect(playNext.slice(onplay, onplayEnd)).not.toMatch(/pinDefaultOutput\(/);
+    expect(playNext.slice(onplay, onplayEnd)).not.toMatch(/pinDefaultOutputAsync\(/);
+    expect(playNext.slice(firstPlay)).toMatch(/pinDefaultOutputAsync\(audio\)/);
   });
 });
