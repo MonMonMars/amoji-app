@@ -80,12 +80,47 @@ export function isBannedAutoIdleClip(clipId: string | null | undefined): boolean
   return BANNED_AUTO_IDLE_CLIP_IDS.has(clipId);
 }
 
+/**
+ * Banned from auto rotation / fallback, but still playable when the owner
+ * explicitly pinned them (#432). Soften/hang must not frankenstein these
+ * into Quaternius mid-blend — play the pin as authored.
+ */
+export const OWNER_HONORABLE_BANNED_AUTO = new Set<string>([
+  'IdleRpmFStanding001',
+  'IdleRpmMStanding001',
+]);
+
+export function isOwnerHonorableBannedAuto(clipId: string | null | undefined): boolean {
+  if (!clipId) return false;
+  return OWNER_HONORABLE_BANNED_AUTO.has(clipId);
+}
+
+/** Auto / rotation / remap path — banned-auto → Quaternius fallback. */
 export function resolveIdleClipId(clipId: string): string {
   if (
     isRetiredIdleClip(clipId)
     || isFarewellOnlyIdleClip(clipId)
     || isBannedAutoIdleClip(clipId)
   ) {
+    return IDLE_PIN_FALLBACK_CLIP_ID;
+  }
+  return clipId;
+}
+
+/**
+ * Mixer play path. When `honorOwnerPin`, keep owner-selected RPM stands
+ * instead of remapping them to Quaternius (which + hang/soften looked like
+ * a Quaternius+RPM frankenstein blend).
+ */
+export function resolveIdleClipForPlay(
+  clipId: string,
+  opts?: { honorOwnerPin?: boolean },
+): string {
+  if (isRetiredIdleClip(clipId) || isFarewellOnlyIdleClip(clipId)) {
+    return IDLE_PIN_FALLBACK_CLIP_ID;
+  }
+  if (isBannedAutoIdleClip(clipId)) {
+    if (opts?.honorOwnerPin && isOwnerHonorableBannedAuto(clipId)) return clipId;
     return IDLE_PIN_FALLBACK_CLIP_ID;
   }
   return clipId;

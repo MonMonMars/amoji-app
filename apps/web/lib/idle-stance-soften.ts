@@ -1,8 +1,13 @@
 // Post-mixer euler nudges while a standing idle VRMA drives the body (not performances).
-// Default pass: slight hang/sway on arms; elbow floor when the chain reads straight.
+// Calm upright stands: torso upright only — arm soften + hang stacked on
+// near-still amplitude created Quaternius/RPM frankenstein poses.
 // Never push the torso forward — Pixel reported weird lean-forward / blend-to-back.
 
 import * as THREE from 'three';
+import {
+  isOwnerHonorableBannedAuto,
+  isPixelCalmIdleClip,
+} from './idle-retired';
 
 type GetBone = (name: string) => THREE.Object3D | null;
 
@@ -24,33 +29,42 @@ export const IDLE_ELBOW_FLOOR_X = 0.14;
 
 /** Extra scale for clip-specific rules on military / T-pose leaning idles.
  *  Kept near 1 — heavy gain + VRMA + hang rewrites ruined even good stands. */
-export const IDLE_STIFF_CLIP_GAIN = 1.08;
+export const IDLE_STIFF_CLIP_GAIN = 1.04;
 
 /**
  * Max |spine/chest X| kept during calm idle. Positive X = lean forward;
  * Pixel: "lean forward weird" came from soften nudges + stiff clip gain.
  */
-export const IDLE_TORSO_PITCH_MAX = 0.035;
+export const IDLE_TORSO_PITCH_MAX = 0.028;
 
 const STIFF_IDLE_CLIPS = new Set<string>([
   'IdleMixamoExcited',
   'IdleMixamoStanding',
-  'IdleQuaterniusHuman',
   'IdleRpmMArmStanding001',
-  'IdleRpmMStanding001',
-  'IdleRpmFStanding001',
   'IdleRpmMStanding002',
 ]);
 
-/** Applied to every idle after the mixer; subtle gravity hang + elbow hint. */
+/**
+ * False for calm upright stands — VRMA + near-still amp own the arms.
+ * Soften arm nudges + easeIdleHang on top were the "strange blended pose".
+ */
+export function idleArmRewriteAllowed(clipId: string | null | undefined): boolean {
+  if (!clipId) return false;
+  if (isPixelCalmIdleClip(clipId)) return false;
+  if (isOwnerHonorableBannedAuto(clipId)) return false;
+  if (/Standing|Quaternius|Breathing|Innerscene|Neutral/i.test(clipId)) return false;
+  return true;
+}
+
+/** Applied only when arm rewrite is allowed; subtle gravity hang + elbow hint. */
 const DEFAULT_IDLE_RULES: SoftRule[] = [
   // Arms open slightly — do NOT push upperArm.x forward (reads as body lean).
-  { bone: 'leftUpperArm', z: 0.05 },
-  { bone: 'rightUpperArm', z: -0.05 },
-  { bone: 'leftLowerArm', x: 0.11 },
-  { bone: 'rightLowerArm', x: 0.11 },
-  { bone: 'leftHand', x: 0.035, z: 0.02 },
-  { bone: 'rightHand', x: 0.035, z: -0.02 },
+  { bone: 'leftUpperArm', z: 0.03 },
+  { bone: 'rightUpperArm', z: -0.03 },
+  { bone: 'leftLowerArm', x: 0.08 },
+  { bone: 'rightLowerArm', x: 0.08 },
+  { bone: 'leftHand', x: 0.02, z: 0.015 },
+  { bone: 'rightHand', x: 0.02, z: -0.015 },
 ];
 
 const CLIP_RULES: Record<string, SoftRule[]> = {
@@ -154,11 +168,14 @@ export function idleStiffClipGain(clipId: string | null | undefined): number {
 
 export function applyIdleClipSoftening(getBone: GetBone, clipId: string | null | undefined): void {
   if (!clipId) return;
+  // Always kill residual forward lean (poke / old soften / stiff clips).
+  pullIdleTorsoUpright(getBone);
+  if (!idleArmRewriteAllowed(clipId)) return;
   const gain = idleStiffClipGain(clipId);
   applyRuleList(getBone, DEFAULT_IDLE_RULES, gain);
   const extra = CLIP_RULES[clipId];
   if (extra) applyRuleList(getBone, extra, gain);
-  // After arm soften — kill forward lean the mixer / old rules left behind.
+  // Arm rules can nudge torso — upright again.
   pullIdleTorsoUpright(getBone);
   const floor = IDLE_ELBOW_FLOOR_X * gain;
   if (armHanging(getBone, 'left')) enforceIdleElbowFloor(getBone, 'left', floor);

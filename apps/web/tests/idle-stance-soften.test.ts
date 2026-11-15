@@ -5,6 +5,7 @@ import {
   IDLE_STIFF_CLIP_GAIN,
   IDLE_TORSO_PITCH_MAX,
   applyIdleClipSoftening,
+  idleArmRewriteAllowed,
   idleStiffClipGain,
   pullIdleTorsoUpright,
 } from '../lib/idle-stance-soften';
@@ -14,6 +15,12 @@ describe('idle stance soften', () => {
     expect(idleStiffClipGain('IdleBreathCalm')).toBe(1);
     expect(idleStiffClipGain('IdleMixamoExcited')).toBe(IDLE_STIFF_CLIP_GAIN);
     expect(idleStiffClipGain('IdleRpmMArmStanding001')).toBe(IDLE_STIFF_CLIP_GAIN);
+  });
+
+  it('skips arm rewrite on Quaternius / RPM calm stands (no frankenstein)', () => {
+    expect(idleArmRewriteAllowed('IdleQuaterniusHuman')).toBe(false);
+    expect(idleArmRewriteAllowed('IdleRpmFStanding001')).toBe(false);
+    expect(IDLE_TORSO_PITCH_MAX).toBeLessThanOrEqual(0.035);
   });
 
   it('pulls torso pitch back from a forward lean (no weird lean-forward)', () => {

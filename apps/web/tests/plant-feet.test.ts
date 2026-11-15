@@ -138,6 +138,25 @@ describe('FootPlanter', () => {
     expect(right.z).toBeCloseTo(rightRest.z, 2);
     expect(bones.leftUpperLeg!.quaternion.angleTo(upperRest)).toBeGreaterThan(0.05);
   });
+
+  it('clearLean restores hips without fighting foot IK (stuck poke lean)', () => {
+    const inner = new THREE.Group();
+    const hips = new THREE.Object3D();
+    hips.name = 'hips';
+    hips.position.set(0, 0.9, 0);
+    inner.add(hips);
+    const bones: Record<string, THREE.Object3D> = { hips, ...chain('left', hips, 0), ...chain('right', hips, 0) };
+    inner.updateMatrixWorld(true);
+    const planter = new FootPlanter();
+    planter.capture(inner, (name) => bones[name] ?? null);
+    const restQ = hips.quaternion.clone();
+    planter.apply({ pitch: 0.35, roll: 0.2, shiftX: 0.05, shiftZ: -0.02 });
+    expect(hips.quaternion.angleTo(restQ)).toBeGreaterThan(0.1);
+    planter.clearLean();
+    expect(hips.quaternion.angleTo(restQ)).toBeLessThan(1e-6);
+    expect(hips.position.x).toBeCloseTo(0, 5);
+    expect(hips.position.y).toBeCloseTo(0.9, 5);
+  });
 });
 
 describe('seed VRM planted feet', () => {

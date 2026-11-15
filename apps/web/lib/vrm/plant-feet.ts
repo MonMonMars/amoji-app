@@ -416,6 +416,16 @@ export class FootPlanter {
   }
 
   /**
+   * Restore captured hips pose without foot IK. Use when poke lean must
+   * clear during an idle A→B glide (full plantFeet would fight the mixer).
+   */
+  clearLean(): void {
+    if (!this.ready || !this.hips) return;
+    this.hips.position.copy(this.hipsPos);
+    this.hips.quaternion.copy(this.hipsQuat);
+  }
+
+  /**
    * Put both ankles on the shared ground contact. A punch lean may pitch
    * and slide the hips; the soles stay on the captured point. No-op when
    * not captured.

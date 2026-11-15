@@ -32,7 +32,13 @@ import { dancePerfClipSources } from '../lib/dance-clip-sources';
 import { timeScaleForProfile } from '../lib/performance-motion';
 import { playableIdles } from '../lib/idle-library';
 import { listEnabledIdleClipIds } from '../lib/idle-enabled';
-import { isPixelCalmIdleClip, isRetiredIdleClip, resolveIdleClipId } from '../lib/idle-retired';
+import {
+  DEFAULT_IDLE_CLIP_ID,
+  isPixelCalmIdleClip,
+  isRetiredIdleClip,
+  resolveIdleClipForPlay,
+  resolveIdleClipId,
+} from '../lib/idle-retired';
 import { IDLE_JOINT_REFRESH_FADE_S, IDLE_JOINT_REFRESH_MS, nextIdleRefreshAt, shouldRefreshIdleJoints } from '../lib/idle-refresh';
 import {
   IDLE_PIN_CROSSFADE_S,
@@ -41,6 +47,10 @@ import {
   idleCrossfadeAdditiveScale,
   idleSwapBlendActive,
 } from '../lib/idle-crossfade';
+import {
+  IDLE_INCOMPAT_CROSSFADE_S,
+  idleCrossfadeCompatible,
+} from '../lib/idle-clip-family';
 import {
   calmIdleHeadPitch,
   dampenIdleClipAmplitude,
@@ -52,7 +62,7 @@ import {
   shortestQuatSlerpClamped,
 } from '../lib/vrm/quat-blend';
 import { clampBoneByName } from '../lib/vrm/bone-joint-limits';
-import { applyIdleClipSoftening } from '../lib/idle-stance-soften';
+import { applyIdleClipSoftening, idleArmRewriteAllowed } from '../lib/idle-stance-soften';
 import { chestPokeBounce, CHEST_BOUNCE_SEC, SOFT_CHEST_BOUNCE_SEC } from '../lib/vrm/chest-bounce';
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
@@ -681,7 +691,7 @@ export default function CompanionCanvas({
       .map((e) => ({ id: e.clipId, urls: [`${ANIM_MIRROR}/${e.clipId}.vrma`] }));
     if (!IDLE_SOURCES.length) {
       IDLE_SOURCES.push(
-        { id: 'IdleRpmFStanding001', urls: [`${ANIM_MIRROR}/IdleRpmFStanding001.vrma`] },
+        { id: DEFAULT_IDLE_CLIP_ID, urls: [`${ANIM_MIRROR}/${DEFAULT_IDLE_CLIP_ID}.vrma`] },
       );
     }
     // All other playable library idles (side picks / Mon # tap).
@@ -782,20 +792,33 @@ export default function CompanionCanvas({
       perfEnd: 0.85,   // finished performance ??back to idle
     };
 
-    const playClipAsIdle = (clip: THREE.AnimationClip, id: string, fade: number) => {
+    const playClipAsIdle = (
+      clip: THREE.AnimationClip,
+      id: string,
+      fade: number,
+      honorOwnerPin = false,
+    ) => {
       if (!mixer) return;
       // Never play Pixel blend-bad / retired clips (lean-wall, IdleHug, etc.).
-      const safeId = resolveIdleClipId(id);
+      // Owner pins (#432): keep honorable RPM stands — do not remap to
+      // Quaternius then hang/soften into a frankenstein mid-pose.
+      const safeId = resolveIdleClipForPlay(id, { honorOwnerPin });
       if (safeId !== id) {
         const safeClip = clips.get(safeId);
-        if (safeClip) return playClipAsIdle(safeClip, safeId, fade);
+        if (safeClip) return playClipAsIdle(safeClip, safeId, fade, honorOwnerPin);
         return;
       }
       if (isRetiredIdleClip(safeId)) return;
       const sameClip = !!idleAction && idleClipId === safeId;
       const swapping = !!idleAction && idleClipId !== safeId;
+      const compatible = !swapping || idleCrossfadeCompatible(idleClipId, safeId);
+      // Incompatible family (Quaternius↔RPM↔Mixamo): short cut, not a long
+      // smear through broken intermediate quaternions.
+      const fadeUse = compatible ? fade : Math.min(fade, IDLE_INCOMPAT_CROSSFADE_S);
       const blendS = swapping
-        ? Math.max(fade, IDLE_SWAP_LEG_BLEND_S)
+        ? (compatible
+          ? Math.max(fadeUse, IDLE_SWAP_LEG_BLEND_S)
+          : Math.min(IDLE_INCOMPAT_CROSSFADE_S, IDLE_SWAP_LEG_BLEND_S))
         : 0.7;
       if (swapping) beginIdleSwapBlend(blendS);
       else beginBoneBlend(0.7);
@@ -822,7 +845,7 @@ export default function CompanionCanvas({
         action.time = Math.min(0.08, Math.max(0, clip.duration * 0.02));
         if (idleAction && idleAction !== action) {
           // blend from wherever the body currently is into this clip
-          idleAction.crossFadeTo(action, fade, false);
+          idleAction.crossFadeTo(action, fadeUse, false);
           action.play();
         } else {
           // First idle entry: no mixer fadeIn. fadeIn starts weight near 0 so
@@ -849,15 +872,15 @@ export default function CompanionCanvas({
       if (isRetiredIdleClip(id)) return;
       const clip = clips.get(id);
       if (!clip) return;
-      playClipAsIdle(clip, id, fade);
+      playClipAsIdle(clip, id, fade, false);
     };
 
-    const playNamedIdle = (id: string, fade: number): boolean => {
-      const safeId = resolveIdleClipId(id);
+    const playNamedIdle = (id: string, fade: number, honorOwnerPin = false): boolean => {
+      const safeId = resolveIdleClipForPlay(id, { honorOwnerPin });
       if (isRetiredIdleClip(safeId)) return false;
       const clip = clips.get(safeId);
       if (!clip) return false;
-      playClipAsIdle(clip, safeId, fade);
+      playClipAsIdle(clip, safeId, fade, honorOwnerPin);
       return true;
     };
 
@@ -950,7 +973,7 @@ export default function CompanionCanvas({
       // r59: blend IN from the current (procedural) pose over ~a second ??
       // the very first clip no longer pops in from nowhere
       const pinned = idleClipRef.current;
-      if (!(pinned && playNamedIdle(pinned, FADE.entry))) nextIdle(FADE.entry);
+      if (!(pinned && playNamedIdle(pinned, FADE.entry, true))) nextIdle(FADE.entry);
       if (pinned) idleHoldUntil = Infinity;
       // r124 / r2026-10-12: after the entry crossfade settles, re-measure
       // facing (yaw) and upright (hips?ead pitch/roll) on the inner model.
@@ -2099,11 +2122,11 @@ export default function CompanionCanvas({
         if (mixerActive && !perfAction && !gameView) {
           const pinnedIdle = idleClipRef.current;
           if (pinnedIdle) {
-            if (idleClipId !== pinnedIdle) playNamedIdle(pinnedIdle, IDLE_PIN_CROSSFADE_S);
+            if (idleClipId !== pinnedIdle) playNamedIdle(pinnedIdle, IDLE_PIN_CROSSFADE_S, true);
             idleHoldUntil = Infinity;
           } else if (thinkingPoseActive()) {
             // Visual wait cue: Thinking pose (C56), upright stand if VRMA missing.
-            const thinkClip = clips.has('Thinking') ? 'Thinking' : 'IdleQuaterniusHuman';
+            const thinkClip = clips.has('Thinking') ? 'Thinking' : DEFAULT_IDLE_CLIP_ID;
             if (idleClipId !== thinkClip && !thinkMiss) {
               if (!playNamedIdle(thinkClip, FADE.idleRotate)) thinkMiss = true;
               else idleHoldUntil = performance.now() + 20000;
@@ -2135,9 +2158,12 @@ export default function CompanionCanvas({
         const idleLegGlide = idleSwapBlendActive(now, swapBlendUntil);
 
         if (gameView) playGameBody(gameView.anim);
+        // Calm upright: torso upright only — arm soften + hang on near-still
+        // amp was the Quaternius/RPM frankenstein "strange blended pose".
+        const allowArmRewrite = idleArmRewriteAllowed(idleClipId);
         if (avatar.clipDrivesBody) {
           mixer?.update(dt / 1000);
-          // Idle-only arm soften — skip during swap glide (fights mixer A→B).
+          // Idle soften — skip during swap glide (fights mixer A→B).
           if (!perfAction && boost === 0 && !gameView && !handDrag && !idleLegGlide) {
             applyIdleClipSoftening((name) => avatar!.getBoneNode(name), idleClipId);
           }
@@ -2146,19 +2172,19 @@ export default function CompanionCanvas({
           avatar.applyPose(poseTargets);
         }
         // r103: relaxed fingers + shoulder ROM run AFTER the mixer and
-        // applyPose wrote the skeleton and BEFORE the spring bones react ??
-        // both are idempotent absolute writes (base繚delta / minimal-rotation
-        // fix), and both skip whatever a clip actively animates, so they
-        // compose cleanly with every driving mode (clip, procedural, recoil).
+        // applyPose wrote the skeleton and BEFORE the spring bones react.
         // Pixel-OK calm stands (not only legacy BreathCalm / StandardIdle).
         const calmIdle = !perfAction && boost === 0 && !gameView && !handDrag
           && isPixelCalmIdleClip(idleClipId);
         avatar.applyRelaxedHands(calmIdle);
         avatar.smoothFingers(dt / 1000, calmIdle);
-        // Shoulder ROM + hang rewrite mid-crossfade yanked arms to hang/open
-        // walls — owner: body/arms suddenly blend to a strange location.
+        // Shoulder ROM mid-crossfade yanked arms — skip during glide.
+        // Hang rewrite on calm upright stands fights the VRMA (strange blend).
         if (!idleLegGlide) avatar.clampShoulderROM();
-        if (!perfAction && boost === 0 && !gameView && !handDrag && !idleLegGlide) {
+        if (
+          allowArmRewrite
+          && !perfAction && boost === 0 && !gameView && !handDrag && !idleLegGlide
+        ) {
           avatar.easeIdleHang();
         }
 
@@ -2213,15 +2239,21 @@ export default function CompanionCanvas({
         // blended legs/body read on the distorted cast). Thigh unblend
         // runs last so hanging adducted thighs open off the torso.
         const feetFree = clipFreesFeet(perfClipId);
+        // Kill stuck poke lean after poke ends — even mid idle A→B glide
+        // (full plantFeet fights the mixer; hips-only clear is safe).
+        if (boost === 0) {
+          avatar.clearPlantLean();
+          if (pokeAge >= POKE_MS) pokeFallDir.set(0, 0, -1);
+        }
         // During idle A→B mixer crossfade, skip plantFeet + thigh unblend so
         // IK does not tug legs against the mixer (was a visible shake).
         if (!feetFree && !idleLegGlide) {
-          avatar.plantFeet(true, {
+          avatar.plantFeet(true, boost > 0 ? {
             pitch: skHip,
             roll: skHipRoll,
             shiftX: skHipX,
             shiftZ: skHipZ,
-          });
+          } : undefined);
         } else if (feetFree) {
           avatar.plantFeet(false);
         }
