@@ -8,6 +8,13 @@ import { idleClipById } from './idle-clips';
 export const IDLE_PICK_KEY = 'amoji.idlePick.v4';
 const KEY = IDLE_PICK_KEY;
 
+/** Prefs keys from #392 / #407 — never carry weak pins into v4. */
+const LEGACY_PICK_KEYS = [
+  'amoji.idlePick.v1',
+  'amoji.idlePick.v2',
+  'amoji.idlePick.v3',
+] as const;
+
 /** Default rotation / safe persisted pins — cleaner upright stands only. */
 export const DEFAULT_IDLE_IDS = [
   'IdleRpmFStanding001',
@@ -39,11 +46,22 @@ type PickMap = Record<string, string>;
 let memory: PickMap = {};
 let loaded = false;
 
+function dropLegacyPickKeys(): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    for (const k of LEGACY_PICK_KEYS) {
+      if (localStorage.getItem(k) != null) localStorage.removeItem(k);
+    }
+  } catch { /* private mode */ }
+}
+
 function hydrate(): PickMap {
   if (loaded) return memory;
   loaded = true;
   try {
     if (typeof localStorage === 'undefined') return memory;
+    // Always scrub pre-v4 pins so weak v3 clips cannot linger beside v4.
+    dropLegacyPickKeys();
     const raw = localStorage.getItem(KEY);
     if (!raw) return memory;
     const parsed = JSON.parse(raw) as unknown;

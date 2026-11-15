@@ -2,12 +2,12 @@
 
 **Purpose:** Living checklist of product rules from the product owner. Agents must read this before chat/voice/pose/permission work and update it when rules change.
 
-**Last reviewed:** 2026-11-15 20:48 (Asia/Hong_Kong)  
+**Last reviewed:** 2026-11-15 22:31 (Asia/Hong_Kong)  
 **Demo:** https://monmonmars.github.io/amoji-app/  
-**`main` tip:** `a9f7436` (#417) · Pages `last-modified` 2026-11-15 12:21 UTC includes #406–#417  
+**`main` tip:** `34ed7e0` (#418) · Pages `last-modified` 2026-11-15 12:58 UTC includes #406–#418  
 **Request log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn. Overlapping messages still count; never drop one.
 
-**Standing:** Merged ≠ Done on live Pages until owner phone-smoke OK. Owner asked: push + merge without waiting for approval. Do **not** claim Done without code on `main` + honest smoke gaps.
+**Standing:** Merged ≠ Done on live Pages until owner phone-smoke OK. Owner: “getting worst” / errors still the same — **do not mark R10–R13 Done.** Push + merge without waiting for approval when CI green.
 
 ---
 
@@ -30,16 +30,16 @@
 | Selectable pitch buttons (same voice → deep/mid/bright) | #400 |
 | Gate location Allow + Enter prime | #379 |
 | White-pupil image loop | owner OK |
-| Card greet audible (code) | #370 |
-| One-voice card greet (code) | #375 |
+| Card greet audible (code) | #370 — **Outstanding phone** (owner: no sound) |
+| One-voice card greet (code) | #375 — **Outstanding phone** (owner: no sound) |
 | CMA poke SFX + zone-stable SFX | #348+ |
 | No spoken UM; thinking bar | on `main` |
 | Music ask random vs select | #364 |
 | Voice gender options (code) | #363 |
 | Statement SCENE_LINES / topic-ask scrub | on `main` |
 | Mic Start re-probe / default-open (code) | on `main` |
-| Stop double-speak / news once (code) | #386 |
-| News tell when feeds/LLM fail (code) | #385 |
+| Stop double-speak / news once (code) | #386 — **Outstanding phone** (news repeat) |
+| News tell when feeds/LLM fail (code) | #385 — **Outstanding phone** (same-old / repeat) |
 | Gate voice test stable + audible (code) | #387 |
 | Story Mode distinct from chat (code) | #388 |
 | Poke lean toward poked side (code) | #390 + #409 (finger vs hips) — **phone Outstanding** |
@@ -73,15 +73,18 @@
 
 | Item | Notes |
 |------|--------|
-| Voice pitch/male/sink (R10) | #406+#410+#413 on `main`. gTTS still one speaker/tl — male timbre limited. **Phone** — no further code without test/floor bug. |
-| Idle pose still bad (R11) | #415 idle v4 on `main` (RPM F/M stands only; prefs v4) — **phone smoke** |
-| Lighting unify (R12) | #408 on `main` — **phone smoke** |
-| Poke lean direction (R13) | #409 on `main` — **phone verify**; do not flip ±leanSide without device evidence |
+| Card greet — no sound | #370/#375 on `main`; owner re-reports silence. Parallel agent owns fix. **Not Done.** |
+| News same-old / repeat | #385/#386 on `main`; owner re-reports same headlines. Parallel agent owns fix. **Not Done.** |
+| Voice pitch/male/sink (R10) | #406+#410+#413 on `main`. gTTS still one speaker/tl — male timbre limited. **Phone** — no further code without test/floor bug. **Not Done.** |
+| Idle pose still bad (R11) | #415 idle v4 on `main` (RPM F/M stands only; prefs v4) — **phone smoke**. Idle v3 legacy wipe/scrub shipping separately. **Not Done.** |
+| Lighting unify (R12) | #408 on `main` — **phone smoke**. **Not Done.** |
+| Poke lean direction (R13) | #409 on `main` — **phone verify**; do not flip ±leanSide without device evidence. **Not Done.** |
 | Talking nonsense / silly LLM | #360+#412+#416 on `main` — **owner live OK** still required |
 | Captions race / history lock | #393+#414 on `main` — **phone** (no partial seal / full-phase replay) |
+| Talk repeats / double-speak residual | #399 / #386 — **phone** |
 | Phone smoke on live demo | **Human** — checklist [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) — do **not** mark Done without owner |
 | SFX #1–23 Want/archive/delete (R1/R2) | Map documented in [`SFX_WANT_LIST.md`](./SFX_WANT_LIST.md) — no new deletes without owner map |
-| Pages rebuild | Tip includes #417 (`a9f7436`). Product Pages live 12:21 UTC. Agent `workflow_dispatch` is 403. |
+| Pages rebuild | Tip includes #418 (`34ed7e0`). Product Pages live 12:58 UTC. Agent `workflow_dispatch` is 403. |
 
 ### Hold
 
@@ -94,6 +97,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-15 ~22:31 | Owner “getting worst”: keep card no-sound + news repeat + R10–R13 Outstanding; ship idle v3 legacy wipe/scrub; tip `34ed7e0` (#418) |
 | 2026-11-15 ~20:48 | Honesty tip `a9f7436` (#417): #415 idle v4 + #416 nonsense scrub Done on main; Outstanding = phone-only R10–R13 + nonsense + captions |
 | 2026-11-15 ~20:10 | After #410–#414: document SFX Want list; idle v4 + nonsense scrub harden shipping; R10–R13 stay phone Outstanding |
 | 2026-11-15 ~18:30 | Honest audit: #406–#409 on main + Pages; R10–R13 stay Outstanding (phone). Voice v2 branch widens pitch/male further. Stale “In PR” boards cleared. |

@@ -1,12 +1,23 @@
 # Phone smoke (live Pages)
 
 **Live:** https://monmonmars.github.io/amoji-app/  
-**Tip on main:** `a9f7436` (#417) · Pages `last-modified` 2026-11-15 12:21 UTC  
-**Purpose:** Human-only checks after #406–#417. Agent Vitest already green. Merged ≠ Done.
+**Tip on main:** `34ed7e0` (#418) · Pages `last-modified` 2026-11-15 12:58 UTC  
+**Purpose:** Human-only checks after #406–#418. Agent Vitest already green. **Merged ≠ Done.**  
+Owner: “getting worst” — **do not mark R10–R13 Done.**
 
-Tick on a real phone (prefer iPhone Safari). Hard refresh / clear site data once so idle prefs v4 and voice sink land.
+Tick on a real phone (prefer iPhone Safari). Hard refresh / clear site data once so idle prefs v4 (and idle v3 scrub when merged) and voice sink land.
 
-## Priority now — R10–R13 + nonsense + captions
+## Priority now — card · news · R10–R13 · nonsense · captions
+
+### Card greet (select) — owner: no sound
+
+- [ ] Character / voice card tap speaks **audibly** (one voice, no dual overlap)
+- [ ] Sound comes from the same speakers as gate sample
+
+### News chip — owner: same-old / repeat
+
+- [ ] News chip speaks a headline when feeds work (or honest tell when feeds fail)
+- [ ] Tapping news again rotates / does **not** loop the same old line forever
 
 ### R11 idle (#415 v4)
 
@@ -67,11 +78,12 @@ Tick on a real phone (prefer iPhone Safari). Hard refresh / clear site data once
 - [ ] Poke zone SFX match Want list ([`SFX_WANT_LIST.md`](./SFX_WANT_LIST.md))
 - [ ] Want / Skip in `/sfx-gallery` still works
 
-## Agent pre-checks (2026-11-15)
+## Agent pre-checks (2026-11-15 ~22:31 HKT)
 
 | Check | Result |
 | --- | --- |
-| `main` tip | `a9f7436` (#417) · CI + pages success |
-| Pages product app | HTTP 200 · `last-modified` 12:21 UTC |
-| Open product PRs | 0 (Hold #1 / #20 only) |
-| Outstanding code | **0** — phone-only |
+| `main` tip | `34ed7e0` (#418) · Pages live 12:58 UTC |
+| Outstanding (owner) | Card no sound · news repeat · **R10–R13 not Done** · nonsense · captions |
+| Shipping | Idle v3 legacy wipe/scrub (`cursor/idle-v3-legacy-wipe-0340-0eac`) |
+| Parallel | Card greet + news repeat owned by other agents |
+| Hold spikes | #1 / #20 only |

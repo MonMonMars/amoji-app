@@ -163,5 +163,32 @@ describe('idle enable + pick', () => {
     expect(idlePickFor('a08-fvar')).toBeNull();
     expect(idlePickFor('a09-ok')).toBe('IdleRpmFStanding001');
   });
+
+  it('drops pre-v4 idle pick + enable keys on hydrate (no weak-clip migrate)', () => {
+    const store = new Map<string, string>();
+    (globalThis as { localStorage: Storage }).localStorage = {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => { store.set(k, v); },
+      removeItem: (k: string) => { store.delete(k); },
+      clear: () => store.clear(),
+      key: () => null,
+      length: 0,
+    };
+    store.set('amoji.idlePick.v3', JSON.stringify({
+      'a01-shino': 'IdleMixamoBreathing',
+      'a02-shibu': 'IdleInnersceneSam',
+    }));
+    store.set('amoji.idleEnabled.v3', JSON.stringify([40, 43, 90]));
+    forgetIdlePickCache();
+    forgetIdleEnabledCache();
+    expect(idlePickFor('a01-shino')).toBeNull();
+    expect(listEnabledIdleClipIds()).toEqual([
+      'IdleRpmFStanding001',
+      'IdleRpmMStanding001',
+    ]);
+    expect(store.has('amoji.idlePick.v3')).toBe(false);
+    expect(store.has('amoji.idleEnabled.v3')).toBe(false);
+    expect(store.has('amoji.idlePick.v4')).toBe(false);
+  });
 });
 

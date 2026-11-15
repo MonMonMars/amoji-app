@@ -81,12 +81,19 @@ describe('security / legal / storage finish', () => {
     expect(CLIENT_STORAGE_KEYS.some((k) => k.key === 'amoji.prefs.v1')).toBe(true);
     expect(CLIENT_STORAGE_KEYS.some((k) => k.key === 'amoji.openai.key' && k.sensitive)).toBe(true);
     expect(CLIENT_STORAGE_PREFIXES.some((p) => p.prefix === 'amoji.brain.key.' && p.sensitive)).toBe(true);
+    // #415 must not orphan #407 v3 rows — wipe/export still sees them.
+    expect(CLIENT_STORAGE_KEYS.some((k) => k.key === 'amoji.idleEnabled.v3' && k.wipeable)).toBe(true);
+    expect(CLIENT_STORAGE_KEYS.some((k) => k.key === 'amoji.idlePick.v3' && k.wipeable)).toBe(true);
+    expect(CLIENT_STORAGE_KEYS.some((k) => k.key === 'amoji.idleEnabled.v4' && k.wipeable)).toBe(true);
+    expect(CLIENT_STORAGE_KEYS.some((k) => k.key === 'amoji.idlePick.v4' && k.wipeable)).toBe(true);
   });
 
   it('exports redacted secrets and can wipe while keeping legal', () => {
     localStorage.setItem('amoji.prefs.v1', '{"lang":"en"}');
     localStorage.setItem('amoji.backend.session', 'abc123');
     localStorage.setItem('amoji.brain.key.deepseek', 'sk-test');
+    localStorage.setItem('amoji.idleEnabled.v3', '[40,43]');
+    localStorage.setItem('amoji.idlePick.v3', '{"a01-shino":"IdleMixamoBreathing"}');
     localStorage.setItem(
       'amoji.legalAccept.v1',
       JSON.stringify({ version: 4, acceptedAt: '2026-01-01T00:00:00.000Z' }),
@@ -100,7 +107,11 @@ describe('security / legal / storage finish', () => {
     expect(removed).toContain('amoji.prefs.v1');
     expect(removed).toContain('amoji.backend.session');
     expect(removed).toContain('amoji.brain.key.deepseek');
+    expect(removed).toContain('amoji.idleEnabled.v3');
+    expect(removed).toContain('amoji.idlePick.v3');
     expect(localStorage.getItem('amoji.legalAccept.v1')).toBeTruthy();
+    expect(localStorage.getItem('amoji.idleEnabled.v3')).toBeNull();
+    expect(localStorage.getItem('amoji.idlePick.v3')).toBeNull();
   });
 
   it('Settings and systems pages wire export/wipe and posture', () => {
