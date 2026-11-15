@@ -25,8 +25,8 @@
 |------|----------|
 | Dance wait for music (not too soon) | #384 |
 | Phase chips rotate + AI news / personal / secret / … | #373 |
-| Per-character TTS pitch tiers | #374 |
-| Selectable pitch buttons (same voice → deep/mid/bright) | PR `cursor/voice-lang-gender-pitch-0340-0eac` (not on main yet) |
+| Per-character TTS pitch tiers (auto, not buttons) | #374 |
+| Selectable pitch buttons (same voice → deep/mid/bright) | branch `cursor/voice-pitch-buttons-0340-0eac` (not on main yet) |
 | Gate location Allow + Enter prime | #379 |
 | White-pupil image loop | owner OK |
 | Card greet audible (code) | #370 |

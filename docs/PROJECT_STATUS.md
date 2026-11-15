@@ -64,7 +64,7 @@ Living tip: `a50695b`. Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_B
 | --- | --- | --- |
 | [#379](https://github.com/MonMonMars/amoji-app/pull/379) | Location Allow on gate page; once-per-tab geo prime | Pages live `/gate/audio` |
 | [#375](https://github.com/MonMonMars/amoji-app/pull/375) | One voice on character card greets | |
-| [#374](https://github.com/MonMonMars/amoji-app/pull/374) | gTTS bright/mid/deep pitch tiers | |
+| [#374](https://github.com/MonMonMars/amoji-app/pull/374) | gTTS bright/mid/deep pitch tiers (per-character auto) | Selectable pitch buttons: `cursor/voice-pitch-buttons-0340-0eac` |
 | [#373](https://github.com/MonMonMars/amoji-app/pull/373) | Phase rotate + AI news / personal / secret chips | |
 | [#364](https://github.com/MonMonMars/amoji-app/pull/364) | Music ask: random play; select only when asked | |
 | [#363](https://github.com/MonMonMars/amoji-app/pull/363) | Male/female voices per lang + Add pool | |
