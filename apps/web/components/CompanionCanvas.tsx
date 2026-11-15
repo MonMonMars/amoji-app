@@ -20,7 +20,9 @@ import {
   classifyPoke,
   screenSideSign,
   screenPointerSideSign,
-  lateralFallTowardScreenSide,
+  lateralFallAwayFromScreenSide,
+  clientPointInElementLocal,
+  ndcPointInElementLocal,
   armZoneFromScreen,
   POKE_REACTION_MS,
   type PokeDirection,
@@ -1537,19 +1539,20 @@ export default function CompanionCanvas({
       return hits[0] ?? null;
     };
 
-    // r115: screen-space position + camera depth of a hand bone (for the grab test)
+    // r115: layout-local screen position + camera depth of a hand bone
+    // (grab test + poke arm pick). Same clientWidth space as camera.aspect
+    // so portrait/landscape rotation stays aligned with the pointer.
     const handScreen = (side: 'left' | 'right') => {
       const node = avatar?.getBoneNode(side === 'left' ? 'leftHand' : 'rightHand');
       if (!node) return null;
       const rect = host.getBoundingClientRect();
+      const layoutW = host.clientWidth || rect.width;
+      const layoutH = host.clientHeight || rect.height;
       node.getWorldPosition(sV2);
       const depth = sV2.distanceTo(camera.position);
       sV2.project(camera);
-      return {
-        x: rect.left + ((sV2.x + 1) / 2) * rect.width,
-        y: rect.top + ((-sV2.y + 1) / 2) * rect.height,
-        depth,
-      };
+      const local = ndcPointInElementLocal(sV2.x, sV2.y, layoutW, layoutH);
+      return { x: local.x, y: local.y, depth };
     };
 
     const midpoint = () => {
@@ -1583,9 +1586,16 @@ export default function CompanionCanvas({
         lastMid = midpoint();
       } else if (pointers.size === 1 && avatar && !handDrag) {
         // r115: did the pointer land on a HAND? then it is a grab, not a poke
+        const grabRect = host.getBoundingClientRect();
+        const grabLocal = clientPointInElementLocal(
+          e.clientX, e.clientY,
+          host.clientWidth || grabRect.width,
+          host.clientHeight || grabRect.height,
+          grabRect,
+        );
         for (const side of ['left', 'right'] as const) {
           const hs = handScreen(side);
-          if (hs && Math.hypot(e.clientX - hs.x, e.clientY - hs.y) < GRAB_PX) {
+          if (hs && Math.hypot(grabLocal.x - hs.x, grabLocal.y - hs.y) < GRAB_PX) {
             const node = avatar.getBoneNode(side === 'left' ? 'leftHand' : 'rightHand');
             if (!node) break;
             handDrag = {
@@ -1748,32 +1758,37 @@ export default function CompanionCanvas({
             camera.updateMatrixWorld();
             sV3.setFromMatrixColumn(camera.matrixWorld, 0);
             const camRightXZ = { x: sV3.x, z: sV3.z };
-            // Pixel lean side = FINGER vs hips on screen (not mesh-hit alone).
-            // Hit-point screenSideSign can flip when a round limb contact drifts
-            // across the midline; the finger side is what the owner means.
+            // Push side = FINGER vs hips in layout-local CSS pixels (not mesh-hit
+            // alone, and not raw viewport clientX vs AABB-mapped hips). After
+            // portrait/landscape rotation, clientWidth drives camera.aspect —
+            // map both pointer and projected hips into that same layout box.
             sV4.set(hipsW.x, hipsW.y, hipsW.z).project(camera);
             const rectLean = host.getBoundingClientRect();
+            const layoutW = host.clientWidth || rectLean.width;
+            const layoutH = host.clientHeight || rectLean.height;
             const hipsOnScreen = Number.isFinite(sV4.x) && Math.abs(sV4.x) <= 1.5;
-            const hipsSx = rectLean.left + ((sV4.x + 1) / 2) * rectLean.width;
+            const ptrLocal = clientPointInElementLocal(
+              e.clientX, e.clientY, layoutW, layoutH, rectLean,
+            );
+            const hipsLocal = ndcPointInElementLocal(sV4.x, sV4.y, layoutW, layoutH);
             const leanSide = hipsOnScreen
-              ? screenPointerSideSign(e.clientX, hipsSx)
+              ? screenPointerSideSign(ptrLocal.x, hipsLocal.x)
               : screenSideSign(
                 { x: hit.point.x, y: hit.point.y, z: hit.point.z },
                 hipsW,
                 camRightXZ,
               );
-            // Owner poke-move rule (#390/#409 / Pixel):
-            //   poke left → tip screen-left; poke right → tip screen-right (same side).
-            //   Lean from finger vs hips on screen. Arm flinch = character-side.
-            //   Do NOT use opposite lean (−leanSide / −camSide).
-            // fall = cameraRight * leanSide (+). VRM: leanSide −1 → fallX −1 → tip left.
+            // Owner poke-move physics (supersedes same-side tip):
+            //   finger PUSH → head/body recoils to the OPPOSITE screen side.
+            //   Push left → tip right; push right → tip left.
+            //   fall = cameraRight * (−leanSide). Arm flinch = character-side.
             // Lateral zones: screen fall alone. Off-center chest/head/belly/…: blend
-            // axial impulse with same-side lean (centered front/back stay axial).
+            // axial impulse with opposite-of-push lean (centered front/back stay axial).
             {
-              const fall = lateralFallTowardScreenSide(camRightXZ, leanSide);
+              const fall = lateralFallAwayFromScreenSide(camRightXZ, leanSide);
               const lateralOnly =
                 pokeZone === 'side' || pokeZone === 'armL' || pokeZone === 'armR' || pokeZone === 'hand';
-              const fingerOffCenter = hipsOnScreen && Math.abs(e.clientX - hipsSx) > 14;
+              const fingerOffCenter = hipsOnScreen && Math.abs(ptrLocal.x - hipsLocal.x) > 14;
               if (lateralOnly) {
                 pokeFallDir.set(fall.x, 0, fall.z);
               } else if (pokeZone !== 'foot' && fingerOffCenter) {
@@ -1788,22 +1803,22 @@ export default function CompanionCanvas({
             }
             const hsL = handScreen('left');
             const hsR = handScreen('right');
-            const screenArm = armZoneFromScreen(e.clientX, e.clientY, hsL, hsR);
+            const screenArm = armZoneFromScreen(ptrLocal.x, ptrLocal.y, hsL, hsR);
             if (
               screenArm
               && (pokeZone === 'armL' || pokeZone === 'armR' || pokeZone === 'side' || pokeZone === 'hand')
             ) {
               pokeZone = screenArm;
             }
-            // Split screen lean vs character arm emphasis (face-on they oppose:
+            // Split push-side voice vs character arm emphasis (face-on they oppose:
             // screen-left is character-right). pokeSideSign = CHARACTER arms only
-            // (+1 right arm / −1 left). leanSide drives fall + voice direction.
+            // (+1 right arm / −1 left). leanSide = where the finger pushed (voice).
             if (pokeZone === 'armR') pokeSideSign = 1;
             else if (pokeZone === 'armL') pokeSideSign = -1;
             else if (
               pokeZone === 'side'
               || pokeZone === 'hand'
-              || (hipsOnScreen && Math.abs(e.clientX - hipsSx) > 14)
+              || (hipsOnScreen && Math.abs(ptrLocal.x - hipsLocal.x) > 14)
             ) {
               pokeSideSign = cls.sideSign;
             }
@@ -1812,7 +1827,7 @@ export default function CompanionCanvas({
               || pokeZone === 'armL'
               || pokeZone === 'armR'
               || pokeZone === 'hand'
-              || (hipsOnScreen && Math.abs(e.clientX - hipsSx) > 14 && pokeZone !== 'foot')
+              || (hipsOnScreen && Math.abs(ptrLocal.x - hipsLocal.x) > 14 && pokeZone !== 'foot')
             ) {
               pokeDirection = leanSide >= 0 ? 'right' : 'left';
             }
@@ -2249,9 +2264,14 @@ export default function CompanionCanvas({
         const feetFree = clipFreesFeet(perfClipId);
         // Kill stuck poke lean after poke ends — even mid idle A→B glide
         // (full plantFeet fights the mixer; hips-only clear is safe).
+        // Also zero fall dir + side sign after the reaction window so the
+        // opposite-of-push tip does not linger into the next idle blend.
         if (boost === 0) {
           avatar.clearPlantLean();
-          if (pokeAge >= POKE_MS) pokeFallDir.set(0, 0, -1);
+          if (pokeAge >= POKE_MS) {
+            pokeFallDir.set(0, 0, -1);
+            pokeSideSign = 1;
+          }
         }
         // During idle A→B mixer crossfade, skip plantFeet + thigh unblend so
         // IK does not tug legs against the mixer (was a visible shake).
@@ -2412,11 +2432,26 @@ export default function CompanionCanvas({
     document.addEventListener('visibilitychange', onGameVis);
 
     const onResize = () => {
-      camera.aspect = host.clientWidth / host.clientHeight;
+      const w = host.clientWidth;
+      const h = host.clientHeight;
+      if (!(w > 0) || !(h > 0)) return;
+      camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(host.clientWidth, host.clientHeight);
+      renderer.setSize(w, h);
     };
     window.addEventListener('resize', onResize);
+    // Mobile portrait↔landscape often fires orientationchange before layout
+    // settles; a deferred resize keeps camera.aspect + pointer/hips local space
+    // in sync with the rendered canvas.
+    let orientResizeTimer = 0;
+    const onOrientation = () => {
+      onResize();
+      window.clearTimeout(orientResizeTimer);
+      orientResizeTimer = window.setTimeout(onResize, 180);
+    };
+    window.addEventListener('orientationchange', onOrientation);
+    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+    vv?.addEventListener('resize', onResize);
 
     return () => {
       cancelled = true;
@@ -2425,6 +2460,7 @@ export default function CompanionCanvas({
       publishModularView('idle');
       cancelAnimationFrame(raf);
       clearTimeout(loadWatchdog);
+      window.clearTimeout(orientResizeTimer);
       // Match the r91 comment: retire the StatusPlate spinner on unmount so a
       // mid-load leave/chat remount never flashes a stale % or "preparing…".
       setLoadProgress(null);
@@ -2432,6 +2468,8 @@ export default function CompanionCanvas({
       registerGroundPick(null);
       disposeMiniGameStage(scene);
       window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onOrientation);
+      vv?.removeEventListener('resize', onResize);
       host.removeEventListener('pointerdown', onPointerDown);
       host.removeEventListener('pointermove', onPointerMove);
       host.removeEventListener('pointerup', onPointerUp);

@@ -283,7 +283,7 @@ function gainsFor(zone: TalkZone, direction: PokeDirection): Gains {
     case 'legR':
       return { spine: 0.22, chest: 0.12, head: 0.06, hip: 0.46, hipRoll: 0.38, roll: 0.2, yaw: 0.025, arm: 0.12, elbow: 0.08, armUp: 0.09, shift: 0.046, kind: 'heavy', elbowBias: -0.05, armUpBias: 0.06 };
     case 'side':
-      // Stronger same-side lean + near-arm flinch so the tip reads clearly on phone.
+      // Stronger lateral lean + near-arm flinch so opposite-of-push tip reads on phone.
       return { spine: 0.42, chest: 0.38, head: 0.22, hip: 0.4, hipRoll: 0.48, roll: 0.68, yaw: 0.08, arm: 0.98, elbow: 0.55, armUp: 0.32, shift: 0.048, kind: 'body', elbowBias: 0.1, armUpBias: 0.08 };
     case 'back':
       return { spine: 0.72, chest: 0.4, head: 0.16, hip: 0.42, hipRoll: 0.08, roll: 0.1, yaw: 0.03, arm: 0.38, elbow: 0.24, armUp: 0.18, shift: 0.042, kind: 'body', elbowBias: 0.03, armUpBias: 0.09 };
@@ -314,7 +314,7 @@ const CAP = {
   shift: 0.07,
 } as const;
 
-/** Extra same-side lean amp for lateral taps (keep sign from fallX — do not flip). */
+/** Extra lateral lean amp for side taps (sign comes from fallX = away-from-push). */
 const LATERAL_LEAN_AMP = 1.38;
 
 function clamp(v: number, m: number): number {
@@ -324,8 +324,8 @@ function clamp(v: number, m: number): number {
 /**
  * Punch reaction for one sample.
  * t is 0 at the hit and 1 at the end of the window.
- * fallX/fallZ: Canvas same-side lean for lateral (#390/#409: finger left →
- * tip left via +leanSide). Axial front/back keep tip-away impulse on Z.
+ * fallX/fallZ: Canvas opposite-of-push lean for lateral (finger push left →
+ * fall/tip right via −pushSide). Axial front/back keep tip-away impulse on Z.
  * A head poke tips the head (plus soft torso follow in poke-zones).
  * Nothing here translates the scene root.
  */
@@ -439,7 +439,7 @@ export function pokeBodyReaction(opts: {
     spinePitch,
     chestPitch: clamp(opts.fallZ * g.chest * punch, CAP.chest),
     spineYaw: clamp(fx * g.yaw * punch, CAP.yaw),
-    // Same-side tip: −fallX → positive chestRoll tips screen-left when fallX < 0.
+    // Tip follows fall: −fallX → positive chestRoll tips screen-left when fallX < 0.
     chestRoll: clamp(-fx * g.roll * punch, CAP.roll),
     headX: clamp(opts.fallZ * g.head * punch, CAP.head),
     headZ: clamp(-fx * g.head * 0.78 * punch + opts.twist * 0.04 * punch, CAP.head),
@@ -476,8 +476,10 @@ export function screenSideSign(
 }
 
 /**
- * Finger side vs projected hips on the screen (Pixel lean rule).
- * +1 = finger right of hips (screen right), -1 = screen left.
+ * Finger side vs hips in a shared screen/NDC axis (Pixel lean rule).
+ * +1 = finger right of hips, -1 = left.
+ * Pass both in the SAME space: clientX vs hips client-X, or pointer NDC.x
+ * vs projected hips NDC.x (preferred after orientation / CSS size changes).
  * Prefer this over mesh-hit screenSideSign when the ray grazes a round limb
  * and the contact point drifts across the midline.
  */
@@ -486,19 +488,73 @@ export function screenPointerSideSign(pointerX: number, hipsScreenX: number): nu
 }
 
 /**
- * Lateral fall vector for same-side lean: cameraRight * leanSide.
- * leanSide from screen (+1 right / −1 left). Verified on seed-san VRM:
- * leanSide −1 → fallX −1 (face-on) → chestRoll > 0 → head tips screen-left.
- * Do not flip to −leanSide — that restores opposite-side tip (#345 / pre-#390).
+ * Map a viewport client point into the element's layout-local CSS pixels
+ * (0..clientWidth × 0..clientHeight). Uses getBoundingClientRect for the
+ * visual box, then scales into clientWidth/Height so the result shares the
+ * same aspect as PerspectiveCamera (aspect = clientW/clientH) after
+ * portrait↔landscape rotation — not the raw AABB alone.
+ */
+export function clientPointInElementLocal(
+  clientX: number,
+  clientY: number,
+  layoutW: number,
+  layoutH: number,
+  rect: { left: number; top: number; width: number; height: number },
+): { x: number; y: number } {
+  const w = layoutW > 0 ? layoutW : rect.width || 1;
+  const h = layoutH > 0 ? layoutH : rect.height || 1;
+  const rw = rect.width > 0 ? rect.width : w;
+  const rh = rect.height > 0 ? rect.height : h;
+  return {
+    x: ((clientX - rect.left) / rw) * w,
+    y: ((clientY - rect.top) / rh) * h,
+  };
+}
+
+/**
+ * Projected NDC → same layout-local CSS pixels as {@link clientPointInElementLocal}.
+ * ndcY is Three.js clip Y (+up); local Y grows downward like CSS.
+ */
+export function ndcPointInElementLocal(
+  ndcX: number,
+  ndcY: number,
+  layoutW: number,
+  layoutH: number,
+): { x: number; y: number } {
+  const w = layoutW > 0 ? layoutW : 1;
+  const h = layoutH > 0 ? layoutH : 1;
+  return {
+    x: ((ndcX + 1) / 2) * w,
+    y: ((-ndcY + 1) / 2) * h,
+  };
+}
+
+/**
+ * Lateral fall AWAY from the push (owner physics): finger PUSH → body/head
+ * recoils to the opposite screen side.
+ * pushSide from screen (+1 finger right / −1 left). Face-on: pushSide −1
+ * → fallX +1 → chestRoll < 0 → head tips screen-right (away from push).
+ */
+export function lateralFallAwayFromScreenSide(
+  cameraRightXZ: { x: number; z: number },
+  pushSide: number,
+): { x: number; z: number } {
+  const len = Math.hypot(cameraRightXZ.x, cameraRightXZ.z);
+  const side = pushSide >= 0 ? 1 : -1;
+  // Recoil = −push direction along camera right.
+  if (len < 1e-6) return { x: -side, z: 0 };
+  return { x: (cameraRightXZ.x / len) * -side, z: (cameraRightXZ.z / len) * -side };
+}
+
+/**
+ * @deprecated Owner rule is opposite-of-push recoil — use
+ * {@link lateralFallAwayFromScreenSide}. Kept as the negated form for older tests.
  */
 export function lateralFallTowardScreenSide(
   cameraRightXZ: { x: number; z: number },
   leanSide: number,
 ): { x: number; z: number } {
-  const len = Math.hypot(cameraRightXZ.x, cameraRightXZ.z);
-  if (len < 1e-6) return { x: leanSide >= 0 ? 1 : -1, z: 0 };
-  const side = leanSide >= 0 ? 1 : -1;
-  return { x: (cameraRightXZ.x / len) * side, z: (cameraRightXZ.z / len) * side };
+  return lateralFallAwayFromScreenSide(cameraRightXZ, -leanSide);
 }
 
 /**
