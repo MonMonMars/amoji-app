@@ -33,15 +33,18 @@ afterEach(() => {
 });
 
 describe('audible deep vs bright pitch gap', () => {
-  it('deep pitchBias is much lower than bright for both genders', () => {
+  it('deep pitchBias is much lower than bright; male never enters female band', () => {
     const deepF = gttsCharacterPitchBias('female', undefined, 'en', 'deep');
     const brightF = gttsCharacterPitchBias('female', undefined, 'en', 'bright');
     const deepM = gttsCharacterPitchBias('male', undefined, 'yue', 'deep');
     const brightM = gttsCharacterPitchBias('male', undefined, 'yue', 'bright');
-    expect(brightF - deepF).toBeGreaterThanOrEqual(0.90);
-    expect(brightM - deepM).toBeGreaterThanOrEqual(0.85);
-    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.90);
-    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.85);
+    expect(brightM).toBeLessThan(1);
+    expect(deepF).toBeGreaterThan(1);
+    expect(brightM).toBeLessThan(deepF);
+    expect(brightF - deepF).toBeGreaterThanOrEqual(0.55);
+    expect(brightM - deepM).toBeGreaterThanOrEqual(0.50);
+    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.55);
+    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.50);
   });
 
   it('male mid stays clearly below female mid', () => {
