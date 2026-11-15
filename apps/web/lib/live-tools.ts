@@ -751,8 +751,8 @@ function migrateSessionToldInto(storage: Kv | null | undefined, now: number): Ar
     // Keep a one-shot copy under the session alias for diagnostics, then clear.
     try { session.setItem(NEWS_TOLD_SESSION_KEY, JSON.stringify(rows)); } catch { /* ignore */ }
     try {
-      session.removeItem(NEWS_TOLD_KEY);
-      session.removeItem(NEWS_LAST_KEY);
+      session.removeItem?.(NEWS_TOLD_KEY);
+      session.removeItem?.(NEWS_LAST_KEY);
     } catch { /* ignore */ }
     if (storage) {
       const merged = mergeToldRows(parseToldPayload(storage.getItem(NEWS_TOLD_KEY), now), rows);
