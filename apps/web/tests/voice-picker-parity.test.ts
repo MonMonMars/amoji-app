@@ -25,14 +25,18 @@ describe('Settings VoicePicker parity with select TtsVoiceRow', () => {
     expect(row).not.toContain('EDGE_VOICE_BUTTONS');
   });
 
-  it('both label honest female/male free delivery on each button', () => {
+  it('both label honest female/male and pitch colour on each button', () => {
     expect(picker).toContain('voiceFreeFemale');
     expect(picker).toContain('voiceFreeMale');
+    expect(picker).toContain('pitchTierLabelKey');
+    expect(row).toContain('pitchTierLabelKey');
     expect(row).toContain('deliveryGender');
     for (const locale of ['yue', 'zh', 'ja', 'en'] as const) {
       const buttons = selectTtsButtons(locale);
       expect(buttons.some((b) => b.deliveryGender === 'female')).toBe(true);
       expect(buttons.some((b) => b.deliveryGender === 'male')).toBe(true);
+      expect(buttons.some((b) => b.pitchTier === 'bright')).toBe(true);
+      expect(buttons.some((b) => b.pitchTier === 'deep')).toBe(true);
     }
   });
 
@@ -62,13 +66,14 @@ describe('Settings VoicePicker parity with select TtsVoiceRow', () => {
     expect(row).not.toContain('button.gender');
   });
 
-  it('both explain a single-voice language and highlight the active voice', () => {
+  it('both keep the single-voice note hook and highlight the active voice', () => {
     expect(picker).toContain('isSingleVoiceLocale');
     expect(row).toContain('isSingleVoiceLocale');
     expect(picker).toContain("t(lang, 'voiceOnlyOneAvailable')");
     expect(row).toContain("t(lang, 'voiceOnlyOneAvailable')");
     expect(picker).toContain('activeVoiceChoice(locale, companionGender)');
     expect(row).toContain('activeVoiceChoice(lang, companionGender)');
+    // Note explains one Google speaker (yue/ja); pitch × gender still multiplies buttons.
     expect(isSingleVoiceLocale('ja')).toBe(true);
     expect(isSingleVoiceLocale('yue')).toBe(true);
     expect(isSingleVoiceLocale('zh')).toBe(false);

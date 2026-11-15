@@ -15,7 +15,7 @@ import { useCallback, useState } from 'react';
 import { selectTtsButtons, type TtsButtonVoice } from '../lib/tts-button-registry';
 import { isSingleVoiceLocale } from '../lib/tts-button-registry';
 import { activeVoiceChoice, loadVoicePicks, saveVoicePick, type VoicePickMap } from '../lib/voice-picks';
-import { addVoiceOption, voiceAddRemaining } from '../lib/voice-capability';
+import { addVoiceOption, pitchTierLabelKey, voiceAddRemaining } from '../lib/voice-capability';
 import { previewVoiceChoice, previewOsVoice } from '../lib/voice';
 import { t, type Lang } from '../lib/prefs';
 import type { VoiceLocale } from '../lib/voice-catalog';
@@ -135,7 +135,8 @@ export default function VoicePicker({
                 const genderLabel = button.deliveryGender === 'male'
                   ? t(lang, 'voiceFreeMale')
                   : t(lang, 'voiceFreeFemale');
-                const numLabel = `#${button.n} ${t(lang, button.labelKey)} · ${genderLabel}`;
+                const pitchLabel = t(lang, pitchTierLabelKey(button.pitchTier));
+                const numLabel = `#${button.n} ${t(lang, button.labelKey)} · ${genderLabel} · ${pitchLabel}`;
                 const selected = button.id === activeId;
                 const live = playing === button.id;
                 return (

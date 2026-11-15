@@ -1,18 +1,23 @@
 // Extra free gTTS voices the user can Add from Settings / the select voice row.
 //
-// The shipping catalog (voice-capability.ts) only lists audibly distinct Google
-// `tl` speakers × female/male delivery. Same-bucket regional codes (en-IE ≈
-// en-GB, en-NZ ≈ en-AU, …) are kept here so testers can still audition them
-// without flooding the default grid with near-duplicates.
+// The shipping catalog (voice-capability.ts) lists audibly distinct Google `tl`
+// speakers × female/male × deep/mid/bright pitch. Same-bucket regional codes
+// (en-IE ≈ en-GB, en-NZ ≈ en-AU, …) are kept here so testers can still audition
+// them without flooding the default grid with near-duplicates.
 //
 // Add never invents unpaid licensed voices — every candidate is a real Google
-// Translate `tl` this app already knows how to request.
+// Translate `tl` this app already knows how to request. Tapping Add expands one
+// pool seed into three pitch buttons (deep / mid / bright).
 
 import type { StrKey } from './prefs';
 import type { VoiceLocale } from './voice-catalog';
+import type { GttsPitchTier } from './gtts-timbre';
 import type { VoiceChoice } from './voice-capability';
 
 const KEY = 'amoji.voiceExtras.v1';
+
+/** Same order as shipping pitch buttons — keep local to avoid import cycles. */
+const EXTRA_PITCH_TIERS: readonly GttsPitchTier[] = ['deep', 'mid', 'bright'];
 
 export interface VoiceAddCandidate {
   locale: VoiceLocale;
@@ -23,9 +28,13 @@ export interface VoiceAddCandidate {
   note: string;
 }
 
-/** Stable id for a pool entry — same shape as shipping: gtts:<tl>:<f|m>. */
-export function extraVoiceId(tl: string, gender: 'female' | 'male'): string {
-  return `gtts:${tl}:${gender === 'male' ? 'm' : 'f'}`;
+/** Stable id for a pool entry — same shape as shipping: gtts:<tl>:<f|m>:<pitch>. */
+export function extraVoiceId(
+  tl: string,
+  gender: 'female' | 'male',
+  pitch: GttsPitchTier = 'mid',
+): string {
+  return `gtts:${tl}:${gender === 'male' ? 'm' : 'f'}:${pitch}`;
 }
 
 /**
@@ -56,13 +65,18 @@ export const VOICE_ADD_POOL: readonly VoiceAddCandidate[] = [
 let memory: VoiceChoice[] = [];
 let loaded = false;
 
-function candidateToChoice(c: VoiceAddCandidate, n: number): VoiceChoice {
+function candidateToChoice(
+  c: VoiceAddCandidate,
+  n: number,
+  pitchTier: GttsPitchTier = 'mid',
+): VoiceChoice {
   return {
-    id: extraVoiceId(c.tl, c.deliveryGender),
+    id: extraVoiceId(c.tl, c.deliveryGender, pitchTier),
     locale: c.locale,
     engine: 'gtts',
     tl: c.tl,
     deliveryGender: c.deliveryGender,
+    pitchTier,
     labelKey: c.labelKey,
     n,
   };
@@ -74,28 +88,34 @@ function sanitize(raw: unknown, shippingIds: ReadonlySet<string>): VoiceChoice[]
   const seen = new Set<string>();
   for (const row of raw) {
     if (!row || typeof row !== 'object') continue;
-    const id = (row as { id?: unknown }).id;
     const locale = (row as { locale?: unknown }).locale;
     const tl = (row as { tl?: unknown }).tl;
     const deliveryGender = (row as { deliveryGender?: unknown }).deliveryGender;
+    const pitchRaw = (row as { pitchTier?: unknown }).pitchTier;
     const labelKey = (row as { labelKey?: unknown }).labelKey;
     const n = (row as { n?: unknown }).n;
-    if (typeof id !== 'string' || typeof tl !== 'string') continue;
+    if (typeof tl !== 'string') continue;
     if (locale !== 'yue' && locale !== 'zh' && locale !== 'ja' && locale !== 'en') continue;
     if (deliveryGender !== 'female' && deliveryGender !== 'male') continue;
     if (typeof labelKey !== 'string' || typeof n !== 'number') continue;
-    if (shippingIds.has(id) || seen.has(id)) continue;
+    const pitchTier: GttsPitchTier =
+      pitchRaw === 'bright' || pitchRaw === 'deep' || pitchRaw === 'mid'
+        ? pitchRaw
+        : 'mid';
+    const canonical = extraVoiceId(tl, deliveryGender, pitchTier);
+    if (shippingIds.has(canonical) || seen.has(canonical)) continue;
     const poolHit = VOICE_ADD_POOL.find(
       (c) => c.locale === locale && c.tl === tl && c.deliveryGender === deliveryGender,
     );
     if (!poolHit) continue;
-    seen.add(id);
+    seen.add(canonical);
     out.push({
-      id: extraVoiceId(tl, deliveryGender),
+      id: canonical,
       locale,
       engine: 'gtts',
       tl,
       deliveryGender,
+      pitchTier,
       labelKey: poolHit.labelKey,
       n,
     });
@@ -136,22 +156,36 @@ export function extraVoiceById(
   return hydrate(shippingIds).find((c) => c.id === id);
 }
 
+function seedKey(tl: string, gender: 'female' | 'male'): string {
+  return `${tl}:${gender}`;
+}
+
+function haveSeedKeys(shippingIds: ReadonlySet<string>): Set<string> {
+  const have = new Set<string>();
+  for (const id of shippingIds) {
+    const m = /^gtts:(.+):([fm]):(deep|mid|bright)$/.exec(id);
+    if (m) have.add(seedKey(m[1]!, m[2] === 'm' ? 'male' : 'female'));
+  }
+  for (const c of hydrate(shippingIds)) {
+    have.add(seedKey(c.tl, c.deliveryGender));
+  }
+  return have;
+}
+
 export function remainingVoiceAddCount(
   locale: VoiceLocale,
   shippingIds: ReadonlySet<string>,
 ): number {
-  const have = new Set([
-    ...shippingIds,
-    ...hydrate(shippingIds).map((c) => c.id),
-  ]);
+  const have = haveSeedKeys(shippingIds);
   return VOICE_ADD_POOL.filter(
-    (c) => c.locale === locale && !have.has(extraVoiceId(c.tl, c.deliveryGender)),
+    (c) => c.locale === locale && !have.has(seedKey(c.tl, c.deliveryGender)),
   ).length;
 }
 
 /**
- * Pin the next unused pool entry for this language into the extras list.
- * Returns the new choice, or null when the pool is exhausted.
+ * Pin the next unused pool entry for this language into the extras list as
+ * deep/mid/bright pitch buttons. Returns the mid-tier choice, or null when
+ * the pool is exhausted.
  */
 export function addNextVoiceExtra(
   locale: VoiceLocale,
@@ -159,15 +193,21 @@ export function addNextVoiceExtra(
   shippingCount: number,
 ): VoiceChoice | null {
   const current = [...hydrate(shippingIds)];
-  const have = new Set([...shippingIds, ...current.map((c) => c.id)]);
+  const have = haveSeedKeys(shippingIds);
   const next = VOICE_ADD_POOL.find(
-    (c) => c.locale === locale && !have.has(extraVoiceId(c.tl, c.deliveryGender)),
+    (c) => c.locale === locale && !have.has(seedKey(c.tl, c.deliveryGender)),
   );
   if (!next) return null;
-  const choice = candidateToChoice(next, shippingCount + current.filter((c) => c.locale === locale).length + 1);
-  current.push(choice);
+  let n = shippingCount + current.filter((c) => c.locale === locale).length;
+  let mid: VoiceChoice | null = null;
+  for (const pitch of EXTRA_PITCH_TIERS) {
+    n += 1;
+    const choice = candidateToChoice(next, n, pitch);
+    current.push(choice);
+    if (pitch === 'mid') mid = choice;
+  }
   persist(current);
-  return choice;
+  return mid;
 }
 
 /** Test isolation. */

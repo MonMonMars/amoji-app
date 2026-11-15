@@ -64,7 +64,7 @@ Living tip: `a50695b`. Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_B
 | --- | --- | --- |
 | [#379](https://github.com/MonMonMars/amoji-app/pull/379) | Location Allow on gate page; once-per-tab geo prime | Pages live `/gate/audio` |
 | [#375](https://github.com/MonMonMars/amoji-app/pull/375) | One voice on character card greets | |
-| [#374](https://github.com/MonMonMars/amoji-app/pull/374) | gTTS bright/mid/deep pitch tiers | |
+| [#374](https://github.com/MonMonMars/amoji-app/pull/374) | gTTS bright/mid/deep pitch tiers (per-character auto) | Selectable pitch buttons: `cursor/voice-pitch-buttons-0340-0eac` |
 | [#373](https://github.com/MonMonMars/amoji-app/pull/373) | Phase rotate + AI news / personal / secret chips | |
 | [#364](https://github.com/MonMonMars/amoji-app/pull/364) | Music ask: random play; select only when asked | |
 | [#363](https://github.com/MonMonMars/amoji-app/pull/363) | Male/female voices per lang + Add pool | |
@@ -209,6 +209,8 @@ Mass merge complete through #397. Remaining:
 | Chat UX | Caption history de-dupe | **Done** | #393 |
 | VRM / Idle | No lean-forward / blend yaw weird | **Done** | #394 |
 | Audio | All langs/genders speak | **Done** | #395 |
+| Audio | Lang F+M catalog | **Done** | #363 (+ #395 speak) |
+| Audio | Selectable pitch personas (deep/mid/bright buttons) | **PR** | `cursor/voice-lang-gender-pitch-0340-0eac` (was #374 character-only) |
 | Chat UX | Idle nonsense scrub (code) | **Done** | #338 / #360 · agent Vitest 78/78 |
 | Music | Licensed stream/embed beyond Mixkit | **Hold** | `docs/MUSIC_STREAMING.md` |
 | Verify | Post-merge live check on Pages | **Human** | Pages live from #397; phone smoke + owner nonsense OK pending |

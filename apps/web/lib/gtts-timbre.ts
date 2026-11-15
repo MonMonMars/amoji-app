@@ -105,18 +105,22 @@ export function gttsPitchTierFor(characterId: string): GttsPitchTier {
 /**
  * Pitch multiplier for the free MP3 tier. Same gender → nearby but different
  * numbers; different genders stay on opposite sides of 1.0.
+ *
+ * `tierOverride` comes from a pinned voice button (selectable deep/mid/bright).
+ * When omitted, companions keep the curated per-character tier from #374.
  */
 export function gttsCharacterPitchBias(
   gender: 'female' | 'male',
   characterId?: string,
   lang?: Lang,
+  tierOverride?: GttsPitchTier | null,
 ): number {
   let base = gender === 'male' ? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE;
   if (gender === 'male' && lang === 'ja') base = GTTS_MALE_BIAS_JA;
-  if (!characterId) return base;
-  const tier = gttsPitchTierFor(characterId);
+  if (!characterId && !tierOverride) return base;
+  const tier = tierOverride ?? (characterId ? gttsPitchTierFor(characterId) : 'mid');
   const offset = (gender === 'male' ? MALE_TIER_OFFSET : FEMALE_TIER_OFFSET)[tier];
-  const jitter = characterPitchUnit(characterId) * CHAR_PITCH_SPREAD;
+  const jitter = characterId ? characterPitchUnit(characterId) * CHAR_PITCH_SPREAD : 0;
   // Keep inside the same clamp gtts.ts applies to pitchBias.
   return clamp(base + offset + jitter, 0.82, 1.2);
 }
