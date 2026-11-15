@@ -36,9 +36,9 @@ describe('REPLY_MODE_CHART mapping table', () => {
     }
   });
 
-  it('matches owner length intent: story long, casual short, science super-long, music short talk, news long', () => {
+  it('matches owner length intent: story super-long, casual short, science super-long, music short talk, news long', () => {
     expect(REPLY_MODE_CHART.casual.targetLength).toBe('very_short');
-    expect(REPLY_MODE_CHART.story.targetLength).toBe('long');
+    expect(REPLY_MODE_CHART.story.targetLength).toBe('super_long');
     expect(REPLY_MODE_CHART.science.targetLength).toBe('super_long');
     expect(REPLY_MODE_CHART.music.targetLength).toBe('very_short');
     expect(REPLY_MODE_CHART.music.talkVsMusic).toBe('short_talk_long_music');
@@ -137,7 +137,9 @@ describe('replyModeSystemBlock prompt directives', () => {
   it('story/science embed long-talk structure plus chart emotion', () => {
     const story = replyModeSystemBlock(REPLY_MODE_CHART.story, 'en');
     expect(story).toMatch(/STORY \/ NARRATIVE/);
-    expect(story).toMatch(/excitement/i);
+    expect(story).toMatch(/love/i);
+    expect(story).toMatch(/super_long/i);
+    expect(story).toMatch(/12–22 sentences|emotional arc|not a short summary/i);
     const science = replyModeSystemBlock(REPLY_MODE_CHART.science, 'en');
     expect(science).toMatch(/SCIENCE \/ FUN-FACT/);
     expect(science).toMatch(/super_long/i);

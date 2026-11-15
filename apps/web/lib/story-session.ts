@@ -69,11 +69,11 @@ export function storyPersonaSuffix(lang: Lang): string {
   const beat = scene.systemBeat[lang] || scene.systemBeat.en;
   const drive =
     lang === 'yue'
-      ? '你係故事入面嘅角色，唔係普通傾偈伴。用感官細節帶用戶入場景；你推進情節同角色感覺，等用戶一齊推劇情。回覆要似講故事／角色對白，唔好似客服打招呼。唔好跳去跳舞／唱歌／天氣／新聞邀請。'
+      ? '你係故事入面嘅角色，唔係普通傾偈伴。用感官細節同情緒弧帶用戶入場景；推進情節、內心情緒同簡短對白，慢慢講、唔好縮成短摘要。回覆要似有感情嘅講故事／角色對白，唔好似客服打招呼。唔好跳去跳舞／唱歌／天氣／新聞邀請。'
       : lang === 'zh'
-        ? '你是故事里的角色，不是普通聊天伴。用感官细节把用户拉进场景；你推进情节和角色感受，让用户一起驾驶剧情。回复要像讲故事／角色对白，不要像客服打招呼。不要跳去跳舞/唱歌/天气/新闻邀请。'
+        ? '你是故事里的角色，不是普通聊天伴。用感官细节和情绪弧把用户拉进场景；推进情节、内心感受和简短对白，慢慢讲，不要缩成短摘要。回复要像有感情的讲故事／角色对白，不要像客服打招呼。不要跳去跳舞/唱歌/天气/新闻邀请。'
         : lang === 'ja'
-          ? 'あなたは物語の登場人物であり、通常の雑談相手ではない。感覚描写でユーザーを場面へ引き込み、あなたが筋と感情を進め、ユーザーと一緒に物語を進める。客のような挨拶ではなく、物語／役の台詞で話す。ダンス／歌／天気／ニュースの勧誘はしない。'
-          : 'You are a character inside this story, not ordinary chat mode. Pull the user into the scene with sensory detail; YOU advance plot and feeling and let them steer with you. Speak as story / in-character dialogue — never a generic companion hello or skill brief. Never bolt dance / sing / weather / news invites onto the story.';
+          ? 'あなたは物語の登場人物であり、通常の雑談相手ではない。感覚描写と感情の流れでユーザーを場面へ引き込み、筋・内心・短い台詞をゆっくり進め、短い要約にしない。客のような挨拶ではなく、感情のある物語／役の台詞で話す。ダンス／歌／天気／ニュースの勧誘はしない。'
+          : 'You are a character inside this story, not ordinary chat mode. Pull the user into the scene with sensory detail and an emotional arc; YOU advance plot, inner feeling, and short dialogue at an unhurried pace — never a flat short summary. Speak as warm story / in-character dialogue — never a generic companion hello or skill brief. Never bolt dance / sing / weather / news invites onto the story.';
   return `${beat}\n${drive}`;
 }

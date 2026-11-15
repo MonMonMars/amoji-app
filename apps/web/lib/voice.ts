@@ -177,7 +177,10 @@ let lastSpeak: {
   text: string; characterId: string; lang: Lang;
   emotionHints?: Record<string, number>;
   leadOverride?: VocalLead;
-  intensity: number; at: number;
+  intensity: number;
+  /** Story / fairy-tale only — slightly slower pace. Casual talk stays 0. */
+  rateBias: number;
+  at: number;
 } | null = null;
 let replayArmed = false;
 
@@ -228,7 +231,15 @@ if (typeof window !== 'undefined') {
     dismissReplayHint();
     if (Date.now() - lastSpeak.at > 45_000) return; // stale — let it go
     if (voiceStartedSince(lastSpeak.at)) return;     // r119: already audible — no duplicate
-    speak(lastSpeak.text, lastSpeak.characterId, lastSpeak.lang, lastSpeak.emotionHints, lastSpeak.leadOverride, lastSpeak.intensity);
+    speak(
+      lastSpeak.text,
+      lastSpeak.characterId,
+      lastSpeak.lang,
+      lastSpeak.emotionHints,
+      lastSpeak.leadOverride,
+      lastSpeak.intensity,
+      lastSpeak.rateBias,
+    );
   }, { passive: true });
 }
 
@@ -1240,6 +1251,8 @@ interface SpeechJob {
   emotionHints?: Record<string, number>;
   leadOverride?: VocalLead;
   intensity: number;
+  /** Story / fairy-tale only — slightly slower pace. Casual talk stays 0. */
+  rateBias?: number;
   /** Premade file for kind 'clip'. Played to the end before the next line. */
   clipFile?: string;
   /** Emotion burst or preview. A missing file must not fall through to live TTS. */
@@ -1302,7 +1315,17 @@ function drainSpeech(): void {
     ? performSing(job.text, job.characterId, job.lang)
     : job.kind === 'clip'
       ? performClip(job)
-      : performSpeak(job.text, job.characterId, job.lang, job.emotionHints, job.leadOverride, job.intensity, job.voiceId, job.filler);
+      : performSpeak(
+        job.text,
+        job.characterId,
+        job.lang,
+        job.emotionHints,
+        job.leadOverride,
+        job.intensity,
+        job.voiceId,
+        job.filler,
+        job.rateBias ?? 0,
+      );
   void run.finally(() => {
     lineQueue.finished(next.epoch);
     if (lineQueue.epochNow() === next.epoch) drainSpeech();
@@ -1438,7 +1461,8 @@ export interface VocalLead {
   rate: number;
 }
 
-/** Speak a reply with ChatGPT-style emotional prosody. Caller gates on voiceEnabled(). */
+/** Speak a reply with ChatGPT-style emotional prosody. Caller gates on voiceEnabled().
+ *  `rateBias` is story/fairy-tale only (negative = slightly slower). Casual talk omits it. */
 export function speak(
   text: string,
   characterId: string,
@@ -1446,6 +1470,7 @@ export function speak(
   emotionHints?: Record<string, number>,
   leadOverride?: VocalLead,
   intensity = 1,
+  rateBias = 0,
 ): void {
   // Companion lines wait their turn. stopSpeaking() is the only cut, and
   // only the user's mic or a user turn calls it.
@@ -1462,6 +1487,7 @@ export function speak(
     emotionHints,
     leadOverride,
     intensity,
+    rateBias,
   });
   drainSpeech();
 }
@@ -1476,6 +1502,8 @@ function performSpeak(
   voiceId?: string,
   /** Loading filler: always live TTS in her voice, never a recorded clip. */
   filler = false,
+  /** Story / fairy-tale only — slightly slower pace. */
+  rateBias = 0,
 ): Promise<void> {
   return new Promise((resolve) => {
   let settled = false;
@@ -1500,7 +1528,16 @@ function performSpeak(
   if (loadingFillerKind(text)) { settle(); return; }
   // r111: remember the line for gesture-gate replay
   const attemptAt = Date.now();
-  lastSpeak = { text, characterId, lang, emotionHints, leadOverride, intensity, at: attemptAt };
+    lastSpeak = {
+      text,
+      characterId,
+      lang,
+      emotionHints,
+      leadOverride,
+      intensity,
+      rateBias,
+      at: attemptAt,
+    };
   // r119: a fresh attempt retires any previous replay hint, and the watchdog
   // re-arms for THIS line — if no tier's audio starts within 8s the visible
   // tap-to-replay chip appears (catches silent failures that throw no error)
@@ -1610,13 +1647,18 @@ function performSpeak(
   // The live free tier's speaker is chosen by Google `tl` alone. Read it once
   // per line so a resume/tail and the chat line stay the same speaker.
   const ttsTl = tlForChoice(lang, voicePin);
-  /** Male delivery uses a slower gTTS pace base (male voice + male pace). */
+  /** Male delivery uses a slower gTTS pace base (male voice + male pace).
+   *  Story rateBias (negative) slows fairy-tale / narrative lines only. */
   const gttsRateFor = (emotionRate: number) =>
-    clamp((1 + emotionRate * 0.12) * (spokenGender === 'male' ? 0.90 : 1), 0.85, 1.15);
+    clamp(
+      (1 + emotionRate * 0.12 + rateBias) * (spokenGender === 'male' ? 0.90 : 1),
+      0.85,
+      1.15,
+    );
   const runSynth = (onDone: () => void): boolean => {
     if (typeof speechSynthesis === 'undefined') return false;
     try {
-      synthSpeak(text, characterId, lang, emotion, expr, tic, amp, undefined, onDone, spokenGender, value);
+      synthSpeak(text, characterId, lang, emotion, expr, tic, amp, undefined, onDone, spokenGender, value, false, rateBias);
       reportVoiceStatus('synth', true, 'browser voice queued');
       return true;
     } catch (err3) {
@@ -1632,7 +1674,7 @@ function performSpeak(
   const runSynthTail = (rest: string, onDone: () => void): boolean => {
     if (typeof speechSynthesis === 'undefined') return false;
     try {
-      synthSpeak(rest, characterId, lang, emotion, expr, undefined, amp, undefined, onDone, spokenGender, value);
+      synthSpeak(rest, characterId, lang, emotion, expr, undefined, amp, undefined, onDone, spokenGender, value, false, rateBias);
       reportVoiceStatus('synth', true, 'browser voice queued (tail)');
       return true;
     } catch (err3) {
@@ -1759,7 +1801,7 @@ function performSpeak(
           // Pitch-tier neural id (Guy/Christopher/WanLung/…) — real male speakers,
           // not a female Google MP3 slowed down. Explicit id also covers female tiers.
           voiceId: edgeTierVoice,
-          rateDelta: clamp(np.rate * exprScale * amp + edgeTierProsody.rate, -0.4, 0.5),
+          rateDelta: clamp(np.rate * exprScale * amp + edgeTierProsody.rate + rateBias, -0.4, 0.5),
           pitchDelta: clamp(np.pitch * exprScale * amp + edgeTierProsody.pitch, -0.3, 0.4),
           volumeDelta: clamp(np.vol * exprScale * amp, -0.5, 0.5),
           onPlaying: () => {
@@ -2723,6 +2765,8 @@ function synthSpeak(
   hintValue = 0.7,
   /** When true (select/preview tap): speak in this turn — iOS drops speak() outside the gesture. */
   syncGesture = false,
+  /** Story / fairy-tale only — slightly slower pace. */
+  rateBias = 0,
 ): void {
   let lineDone = false;
   let safety: ReturnType<typeof setTimeout> | undefined;
@@ -2746,7 +2790,8 @@ function synthSpeak(
   const emPitch = 1 + (em.pitch - 1) * moodS * amp;
   const emRate = 1 + (em.rate - 1) * moodS * amp;
   const emVol = 1 + (em.vol - 1) * moodS * amp;
-  const shaped = clampBrowserProsody(basePitch * emPitch, baseRate * emRate);
+  // rateBias slows story/fairy lines only; casual talk passes 0.
+  const shaped = clampBrowserProsody(basePitch * emPitch, baseRate * emRate * (1 + rateBias));
   const pitch = shaped.pitch;
   const rate = shaped.rate;
   const vol = clamp(emVol * getPlaybackVolume(), 0.05, 1);

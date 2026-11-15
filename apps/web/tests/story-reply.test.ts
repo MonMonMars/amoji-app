@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   STORY_MAX_TOKENS,
+  STORY_SPEECH_HINTS,
+  STORY_SPEECH_RATE_BIAS,
   maxTokensForStoryTurn,
   storySystemBlock,
   userWantsStory,
@@ -60,13 +62,26 @@ describe('story token budget and shaping', () => {
     expect(dense(full)).toBeGreaterThan(REPLY_BUDGET.latin);
   });
 
-  it('story system block overrides the short-reply rules', () => {
+  it('story system block overrides the short-reply rules with longer emotional arc', () => {
     expect(storySystemBlock('en')).toMatch(/multiple paragraphs/i);
-    expect(storySystemBlock('en')).toMatch(/6–14 sentences/);
+    expect(storySystemBlock('en')).toMatch(/12–22 sentences/);
+    expect(storySystemBlock('en')).toMatch(/NOT a short summary|not a short summary/i);
+    expect(storySystemBlock('en')).toMatch(/sensory detail|emotional/i);
     expect(storySystemBlock('en')).toMatch(/Stay in character|in-character/i);
     expect(storySystemBlock('en')).toMatch(/never slip into ordinary companion chat/i);
+    expect(storySystemBlock('en')).toMatch(/love \/ contentment \/ wonder/i);
     expect(storySystemBlock('yue')).toMatch(/唔使跟住/);
-    expect(storySystemBlock('yue')).toMatch(/6–14 句/);
+    expect(storySystemBlock('yue')).toMatch(/12–22 句/);
+    expect(storySystemBlock('yue')).toMatch(/唔好縮成短摘要/);
     expect(storySystemBlock('yue')).toMatch(/唔好變返普通傾偈伴/);
+  });
+
+  it('exports warm slower story speech hints (not chirpy joy/excitement)', () => {
+    expect(STORY_MAX_TOKENS).toBeGreaterThanOrEqual(1536);
+    expect(STORY_SPEECH_RATE_BIAS).toBeLessThan(0);
+    expect(STORY_SPEECH_HINTS.love).toBeGreaterThan(0.5);
+    expect(STORY_SPEECH_HINTS.contentment).toBeGreaterThan(0.5);
+    expect(STORY_SPEECH_HINTS.joy).toBeUndefined();
+    expect(STORY_SPEECH_HINTS.excitement).toBeUndefined();
   });
 });
