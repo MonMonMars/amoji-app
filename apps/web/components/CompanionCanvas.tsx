@@ -16,7 +16,16 @@ import { modelUrl } from '../lib/asset';
 import { pokeStyleFor, poseIdsFor, lookFor } from '../lib/persona';
 import { DEFAULT_CAMERA_HOME, upperBodyHome } from '../lib/camera-frame';
 import { orderIdleClips, personalityMotion } from '../lib/personality';
-import { classifyPoke, screenSideSign, armZoneFromScreen, POKE_REACTION_MS, type PokeDirection, type TalkZone } from '../lib/poke-hit';
+import {
+  classifyPoke,
+  screenSideSign,
+  screenPointerSideSign,
+  lateralFallTowardScreenSide,
+  armZoneFromScreen,
+  POKE_REACTION_MS,
+  type PokeDirection,
+  type TalkZone,
+} from '../lib/poke-hit';
 import { pokeSectionBodyReaction, resolvePokeSection, type PokeSection, type PokeSectionId } from '../lib/poke-zones';
 import { clipFreesFeet, collectPlantRest, pinPlantedClipTracks } from '../lib/vrm/plant-feet';
 import { dancePerfClipSources } from '../lib/dance-clip-sources';
@@ -1684,23 +1693,31 @@ export default function CompanionCanvas({
             // under orbit / face-on because shoulder forward and view axes disagree.
             camera.updateMatrixWorld();
             sV3.setFromMatrixColumn(camera.matrixWorld, 0);
-            const camSide = screenSideSign(
-              { x: hit.point.x, y: hit.point.y, z: hit.point.z },
-              hipsW,
-              { x: sV3.x, z: sV3.z },
-            );
-            // Lateral fall: lean TOWARD the poked screen side (Pixel).
-            // Opposite-side lean felt wrong; finger on screen-left → tips left.
-            // Wired as +camSide so lean goes with the poked side, not away.
+            const camRightXZ = { x: sV3.x, z: sV3.z };
+            // Pixel lean side = FINGER vs hips on screen (not mesh-hit alone).
+            // Hit-point screenSideSign can flip when a round limb contact drifts
+            // across the midline; the finger side is what the owner means.
+            sV4.set(hipsW.x, hipsW.y, hipsW.z).project(camera);
+            const rectLean = host.getBoundingClientRect();
+            const hipsOnScreen = Number.isFinite(sV4.x) && Math.abs(sV4.x) <= 1.5;
+            const hipsSx = rectLean.left + ((sV4.x + 1) / 2) * rectLean.width;
+            const leanSide = hipsOnScreen
+              ? screenPointerSideSign(e.clientX, hipsSx)
+              : screenSideSign(
+                { x: hit.point.x, y: hit.point.y, z: hit.point.z },
+                hipsW,
+                camRightXZ,
+              );
+            // Lateral fall: lean TOWARD the poked screen side (Pixel / r120).
+            // Finger left → tips left. fall = cameraRight * leanSide (+leanSide).
+            // VRM check: leanSide −1 → fallX −1 face-on → head world X drops (screen-left).
+            // −leanSide was opposite tip (#345); #390 flipped to +; keep +.
             // Keep classifyPoke impulse for front/back/chest so those leans stay axial.
             if (
               pokeZone === 'side' || pokeZone === 'armL' || pokeZone === 'armR' || pokeZone === 'hand'
             ) {
-              sV3.y = 0;
-              if (sV3.lengthSq() > 1e-8) {
-                sV3.normalize();
-                pokeFallDir.copy(sV3).multiplyScalar(camSide);
-              }
+              const fall = lateralFallTowardScreenSide(camRightXZ, leanSide);
+              pokeFallDir.set(fall.x, 0, fall.z);
             }
             const hsL = handScreen('left');
             const hsR = handScreen('right');
@@ -1711,12 +1728,14 @@ export default function CompanionCanvas({
             ) {
               pokeZone = screenArm;
             }
-            // sideSign drives lateral arm emphasis: +1 => right arm, -1 => left.
+            // Split screen lean vs character arm emphasis (face-on they oppose:
+            // screen-left is character-right). pokeSideSign = CHARACTER arms only
+            // (+1 right arm / −1 left). leanSide drives fall + voice direction.
             if (pokeZone === 'armR') pokeSideSign = 1;
             else if (pokeZone === 'armL') pokeSideSign = -1;
-            else if (pokeZone === 'side' || pokeZone === 'hand') pokeSideSign = camSide;
+            else if (pokeZone === 'side' || pokeZone === 'hand') pokeSideSign = cls.sideSign;
             if (pokeZone === 'side' || pokeZone === 'armL' || pokeZone === 'armR' || pokeZone === 'hand') {
-              pokeDirection = pokeSideSign >= 0 ? 'right' : 'left';
+              pokeDirection = leanSide >= 0 ? 'right' : 'left';
             }
             pokeSection = resolvePokeSection(pokeZone, pokeDirection);
           }

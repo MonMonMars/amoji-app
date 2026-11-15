@@ -188,28 +188,38 @@ describe('poke recoil is the same gesture at every camera angle', () => {
   ];
 
   /** Exactly what CompanionCanvas hands over on its lateral path (toward poked side). */
-  function lateralFall(camRight: { x: number; z: number }, camSide: number) {
+  function lateralFall(camRight: { x: number; z: number }, leanSide: number) {
     const n = Math.hypot(camRight.x, camRight.z);
-    // Pixel: lean toward the poked screen side → cameraRight * camSide.
-    return { fallX: (camRight.x / n) * camSide, fallZ: 0 };
+    // Pixel: lean toward the poked screen side → cameraRight * leanSide (+).
+    return { fallX: (camRight.x / n) * leanSide, fallZ: 0 };
+  }
+
+  /**
+   * Character arm side for a screen lean when she faces the camera:
+   * screen-left (−1) → character-right (+1). Under orbit the canvas uses
+   * classifyPoke / screenArm; face-on tests use this flip.
+   */
+  function characterArmSide(leanSide: number): number {
+    return leanSide >= 0 ? -1 : 1;
   }
 
   it('swings the near-side arm on the poked side, identically across the orbit', () => {
     const seen = new Map<string, { l: number; r: number }>();
     for (const cam of CAMERA_RIGHTS) {
-      for (const camSide of [1, -1] as const) {
-        const { fallX, fallZ } = lateralFall(cam, camSide);
+      for (const leanSide of [1, -1] as const) {
+        const { fallX, fallZ } = lateralFall(cam, leanSide);
+        const armSide = characterArmSide(leanSide);
         const hit = pokeBodyReaction({
           t: 0.12,
           zone: 'side',
           fallX,
           fallZ,
-          sideSign: camSide,
+          sideSign: armSide,
           softChest: false,
           twist: 0,
-          direction: camSide > 0 ? 'right' : 'left',
+          direction: leanSide > 0 ? 'right' : 'left',
         });
-        seen.set(`${cam.label}:${camSide}`, { l: hit.lArmX, r: hit.rArmX });
+        seen.set(`${cam.label}:${leanSide}`, { l: hit.lArmX, r: hit.rArmX });
       }
     }
     const rights = [...seen.entries()].filter(([k]) => k.endsWith(':1')).map(([, v]) => v);
@@ -224,14 +234,16 @@ describe('poke recoil is the same gesture at every camera angle', () => {
 
   it('gives the poked side the full arm swing and the far arm the echo', () => {
     for (const cam of CAMERA_RIGHTS) {
-      for (const camSide of [1, -1] as const) {
-        const { fallX, fallZ } = lateralFall(cam, camSide);
+      for (const leanSide of [1, -1] as const) {
+        const { fallX, fallZ } = lateralFall(cam, leanSide);
+        const armSide = characterArmSide(leanSide);
         const hit = pokeBodyReaction({
-          t: 0.12, zone: 'side', fallX, fallZ, sideSign: camSide,
-          softChest: false, twist: 0, direction: camSide > 0 ? 'right' : 'left',
+          t: 0.12, zone: 'side', fallX, fallZ, sideSign: armSide,
+          softChest: false, twist: 0, direction: leanSide > 0 ? 'right' : 'left',
         });
-        const near = camSide > 0 ? hit.rArmX : hit.lArmX;
-        const far = camSide > 0 ? hit.lArmX : hit.rArmX;
+        // Near arm = character arm on that screen side (screen-left → right arm).
+        const near = armSide > 0 ? hit.rArmX : hit.lArmX;
+        const far = armSide > 0 ? hit.lArmX : hit.rArmX;
         expect(Math.abs(near), cam.label).toBeGreaterThan(Math.abs(far));
       }
     }

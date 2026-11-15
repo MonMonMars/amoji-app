@@ -96,20 +96,23 @@ describe('pokeSectionBodyReaction', () => {
       t: 0.12,
       section,
       hitZone: 'side',
-      // Canvas lateral path: fall = cameraRight * camSide; left poke → −X.
+      // Canvas: fall = lateralFallTowardScreenSide(camRight, leanSide); left → −X face-on.
       fallX: -1,
       fallZ: 0,
-      sideSign: -1,
+      // Character arm emphasis: screen-left faces character-right when face-on.
+      sideSign: 1,
       softChest: false,
       twist: 0,
     });
     expect(hit.chestRoll).toBeGreaterThan(0);
-    expect(Math.abs(hit.lArmX)).toBeGreaterThan(Math.abs(hit.rArmX));
+    expect(Math.abs(hit.rArmX)).toBeGreaterThan(Math.abs(hit.lArmX));
   });
 
-  it('CompanionCanvas lateral fall uses +camSide (toward poked side)', () => {
+  it('CompanionCanvas lateral fall uses +leanSide (toward poked screen side)', () => {
     const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
-    expect(canvas).toMatch(/multiplyScalar\(\s*camSide\s*\)/);
+    expect(canvas).toMatch(/lateralFallTowardScreenSide\s*\(/);
+    expect(canvas).toMatch(/screenPointerSideSign\s*\(/);
     expect(canvas).not.toMatch(/multiplyScalar\(\s*-camSide\s*\)/);
+    expect(canvas).not.toMatch(/multiplyScalar\(\s*-leanSide\s*\)/);
   });
 });

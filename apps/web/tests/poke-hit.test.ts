@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { classifyPoke, pokeBodyReaction, pokePunch, breastCoverEnvelope, screenSideSign, armZoneFromScreen } from '../lib/poke-hit';
+import {
+  classifyPoke,
+  pokeBodyReaction,
+  pokePunch,
+  breastCoverEnvelope,
+  screenSideSign,
+  screenPointerSideSign,
+  lateralFallTowardScreenSide,
+  armZoneFromScreen,
+} from '../lib/poke-hit';
 
 const hips = { x: 0, y: 1, z: 0 };
 const head = { x: 0, y: 1.6, z: 0 };
@@ -247,6 +256,26 @@ describe('screenSideSign', () => {
     expect(screenSideSign({ x: 0, y: 1.2, z: 0.3 }, hips, orbitRight)).toBe(-1);
     // Same world +X hit that was "character right" face-on is neutral on this axis.
     expect(screenSideSign({ x: 0.3, y: 1.2, z: 0 }, hips, orbitRight)).toBe(1);
+  });
+});
+
+describe('screenPointerSideSign + lateralFallTowardScreenSide', () => {
+  it('signs the finger relative to hips on screen', () => {
+    expect(screenPointerSideSign(100, 200)).toBe(-1);
+    expect(screenPointerSideSign(250, 200)).toBe(1);
+    expect(screenPointerSideSign(200, 200)).toBe(1);
+  });
+
+  it('builds same-side fall: left lean → −X face-on (not opposite)', () => {
+    const left = lateralFallTowardScreenSide({ x: 1, z: 0 }, -1);
+    expect(left.x).toBeCloseTo(-1);
+    expect(left.z).toBeCloseTo(0);
+    const right = lateralFallTowardScreenSide({ x: 1, z: 0 }, 1);
+    expect(right.x).toBeCloseTo(1);
+    // Orbit: lean follows camera right, not world X alone.
+    const orbitLeft = lateralFallTowardScreenSide({ x: 0, z: -1 }, -1);
+    expect(orbitLeft.x).toBeCloseTo(0);
+    expect(orbitLeft.z).toBeCloseTo(1);
   });
 });
 
