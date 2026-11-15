@@ -96,10 +96,13 @@ import { wantsLongCompanionReply } from './topic-suggestions';
 import { wantsStoryTurn } from './story-reply';
 import {
   detectLongTalkKind,
-  longTalkSystemBlock,
-  maxTokensForLongTalk,
   type LongTalkKind,
 } from './long-talk';
+import {
+  maxTokensForReplyMode,
+  replyModeSystemBlock,
+  resolveReplyMode,
+} from './reply-mode';
 import { mustStayOneTopic, stripOffTopicAbilityTacks } from './topic-mixture';
 
 export interface ClientChatResult { reply: string; emotionHints: Record<string, number> }
@@ -120,6 +123,8 @@ export interface ClientChatOptions {
   contentContinuation?: ContentContinuationSession | null;
   /** Cast id — picks a home OVH model and keys conversation sticky. */
   characterId?: string;
+  /** Demo-phase chip id — seeds reply-mode chart when the prompt is ambiguous. */
+  demoPhaseId?: string;
 }
 
 /** only the most recent turns go into the prompt — old topics live in memory.
@@ -1192,13 +1197,19 @@ export async function clientChat(
   const recent = trimHistoryForPrompt(messages);
   const lastUser = recent[recent.length - 1]?.content ?? '';
   const longKind = resolveLongTalkKind(lastUser, opts);
-  const story = longKind === 'story' || wantsStoryTurn(lastUser, {
+  const replyMode = resolveReplyMode(lastUser, {
+    persona: opts?.persona,
+    storySession: opts?.storySession,
+    world: opts?.world,
+    demoPhaseId: opts?.demoPhaseId,
+  });
+  const story = longKind === 'story' || replyMode.id === 'story' || wantsStoryTurn(lastUser, {
     persona: opts?.persona,
     storySession: opts?.storySession,
   });
   const contentContinuing = wantsContentContinuationTurn(lastUser, opts?.contentContinuation);
   const recipeDetail = wantsDetail(opts?.world, lastUser);
-  const detailed = recipeDetail || longKind != null || story || contentContinuing;
+  const detailed = recipeDetail || replyMode.detailed || longKind != null || story || contentContinuing;
   const raceOpts: RaceFreeLanesOpts = {
     characterId: opts?.characterId,
     conversationKey: conversationBrainKey(opts?.characterId),
@@ -1212,9 +1223,13 @@ export async function clientChat(
   const continuationBlock = contentContinuing && opts?.contentContinuation
     ? `\n${contentContinuationSystemBlock(opts?.language, opts.contentContinuation)}`
     : '';
-  const longBlock = longKind ? `\n${longTalkSystemBlock(longKind, opts?.language)}` : '';
-  const system = `${BASE_SYSTEM}${oneTopicAppendix}${continuationBlock}\nReply in speakable sentences only. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${longBlock}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
-  const maxTokens = maxTokensForLongTalk(longKind, (recipeDetail || contentContinuing) && longKind == null);
+  // Length + emotion chart (reply-mode); embeds long-talk structure when needed.
+  const modeBlock = `\n${replyModeSystemBlock(replyMode, opts?.language)}`;
+  const system = `${BASE_SYSTEM}${oneTopicAppendix}${continuationBlock}\nReply in speakable sentences only. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${modeBlock}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
+  const maxTokens = maxTokensForReplyMode(
+    replyMode,
+    (recipeDetail || contentContinuing) && replyMode.id === 'casual',
+  );
   const onPartial = opts?.onPartial
     ? (partial: string) => {
         opts.onPartial?.(shapeCompanionReply(partial, {
