@@ -50,10 +50,11 @@ describe('card greet — no audible insurance (permanent)', () => {
   it('playVoiceGreeting prefers gTTS/Edge; synth only after gTTS is done failing', () => {
     const body = fnBody('playVoiceGreeting', 'export function previewLibraryClip');
     expect(body).toContain('speakGtts(');
-    expect(body.indexOf('speakGtts(')).toBeLessThan(body.indexOf('runSynthAudition'));
+    // Helper may be declared before speakGtts; calls must still refuse while pending.
     expect(body).toMatch(/const runSynthAudition = \(tag: string\) => \{\s*if \(spokenBy \|\| gttsPending\) return;/);
     expect(body).toMatch(/if \(gttsPending\) return;/);
     expect(body).toMatch(/edgeGrace = setTimeout\([\s\S]*?if \(spokenBy \|\| gttsPending\) return;[\s\S]*?runSynthAudition/);
+    expect(body).toMatch(/greeting gtts failed[\s\S]*runSynthAudition\('greeting fallback'\)/);
   });
 
   it('previewVoiceChoice never arms insurance / playGestureClipSync', () => {
