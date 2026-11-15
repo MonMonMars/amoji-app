@@ -1,12 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { buildMemoryBlock, type Memory } from '../lib/memory';
-import { userExplicitlyWantsRecall } from '../lib/privacy-recall';
+import { PRIVACY_CONVERSATION_RULES, userExplicitlyWantsRecall } from '../lib/privacy-recall';
+import { BASE_SYSTEM } from '../lib/llm';
 
 describe('userExplicitlyWantsRecall', () => {
   it('detects explicit recall / continue requests', () => {
     expect(userExplicitlyWantsRecall('你記得昨日講咩未？')).toBe(true);
     expect(userExplicitlyWantsRecall('remember what I said about hiking')).toBe(true);
     expect(userExplicitlyWantsRecall('今日好攰呀')).toBe(false);
+  });
+});
+
+describe('privacy prompt bans history-resume asks', () => {
+  it('system rules forbid volunteering resume / continue-last prompts', () => {
+    expect(PRIVACY_CONVERSATION_RULES).toMatch(/Never ask to resume old chat history/i);
+    expect(BASE_SYSTEM).toMatch(/Never ask to resume old chat history/i);
+    expect(BASE_SYSTEM).toContain(PRIVACY_CONVERSATION_RULES);
   });
 });
 

@@ -145,7 +145,7 @@ import { pickLine } from '../lib/chatter';
 import { pickIdleLine } from '../lib/persona-chatter';
 import { pickIdleCompanionLine } from '../lib/idle-talk';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
-import { gateSpokenLine, safeIdleFallback, scrubTopicMenuAsks } from '../lib/spoken-line-sanity';
+import { gateSpokenLine, safeIdleFallback, scrubHistoryResumeAsks, scrubTopicMenuAsks } from '../lib/spoken-line-sanity';
 import { pickCharacterInteraction } from '../lib/interaction-lines';
 import { personalityProfile, personalityPrompt } from '../lib/personality';
 import { voiceOpening, type VoiceId } from '../lib/personality-voice';
@@ -637,8 +637,9 @@ export default function ChatPanel({
     opts?: { idle?: boolean; n?: number },
   ) => {
     // Durable spoken-line gate: reject unfinished templates / fragments /
-    // banned idle interrogations / topic-menu interviews before TTS + history.
-    const scrubbed = scrubTopicMenuAsks(text) || text;
+    // banned idle interrogations / topic-menu interviews / history-resume
+    // asks before TTS + history.
+    const scrubbed = scrubHistoryResumeAsks(scrubTopicMenuAsks(text) || text);
     const gated = gateSpokenLine(scrubbed, {
       mode: opts?.idle ? 'idle' : 'local',
       lang,
@@ -1573,7 +1574,17 @@ export default function ChatPanel({
           },
         });
         // Motion + face from chat content only — ignore LLM emotionHints.
-        const cleanedReply = stripOfftopicAbilityTack(r.reply, text);
+        const cleanedReply = scrubHistoryResumeAsks(stripOfftopicAbilityTack(r.reply, text));
+        if (!cleanedReply.trim()) {
+          setHistory((h) => {
+            const tail = h[h.length - 1];
+            return tail && tail.role === 'assistant' && (tail.content === '…' || !tail.content.trim())
+              ? h.slice(0, -1)
+              : h;
+          });
+          answered = true;
+          return;
+        }
         const contentPlan = resolveContentMotion({ userText: text, assistantText: cleanedReply });
         if (contentPlan.moodHints) applyContentMood(contentPlan.moodHints);
         // r.30 — the streaming path remembers the turn too (both paths learn)
@@ -1602,11 +1613,21 @@ export default function ChatPanel({
 
     const commitServer = (data: { reply?: string; emotionHints?: Record<string, number> }) => {
       // Body/face from chat content — server emotionHints are not applied to motion.
-      const reply = stripOfftopicAbilityTack(data.reply || '…', text);
+      // Never speak a history-resume ask even if the production lane invents one.
+      const reply = scrubHistoryResumeAsks(stripOfftopicAbilityTack(data.reply || '…', text));
+      if (!reply.trim()) {
+        setHistory((h) => {
+          const tail = h[h.length - 1];
+          return tail && tail.role === 'assistant' && (tail.content === '…' || !tail.content.trim())
+            ? h.slice(0, -1)
+            : h;
+        });
+        answered = true;
+        return;
+      }
       const contentPlan = resolveContentMotion({ userText: text, assistantText: reply });
       if (contentPlan.moodHints) applyContentMood(contentPlan.moodHints);
-      // r.30 — remember the completed turn (your words + her reply) so the
-      // next session can pick the conversation thread back up
+      // r.30 — remember the completed turn (thread stored quietly; never volunteer resume)
       rememberTurn(text, reply);
       onMemCountRef.current?.(memorySummaryCount());
       feedUtterance(reply);

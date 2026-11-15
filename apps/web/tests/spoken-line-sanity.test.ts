@@ -13,6 +13,7 @@ import {
   isTopicMenuAsk,
   openGreetTooManyQuestions,
   safeIdleFallback,
+  scrubHistoryResumeAsks,
   scrubTopicMenuAsks,
   spokenLineLooksBroken,
   stripQuestionSentences,
@@ -264,6 +265,27 @@ describe('source banks never emit known nonsense', () => {
       expect(gateSpokenLine(banned, { mode: 'idle', lang })?.toLowerCase() ?? '').not.toMatch(/last time|continue|続き|继续|繼續/);
     }
     expect(asksToResumeHistory("It's been a minute... want to pick up where we left off?")).toBe(true);
+    expect(asksToResumeHistory('Want to resume our earlier chat about hiking?')).toBe(true);
+    expect(asksToResumeHistory('要不要继续刚才的话题？')).toBe(true);
     expect(asksToResumeHistory('Still here with you in this quiet stretch.')).toBe(false);
+  });
+
+  it('scrubs history-resume asks from mixed replies and empties whole-line asks', () => {
+    expect(
+      scrubHistoryResumeAsks('Good morning. Want to pick up where we left off?'),
+    ).toBe('Good morning.');
+    expect(scrubHistoryResumeAsks("It's been a minute... want to pick up where we left off?")).toBe('');
+    expect(scrubHistoryResumeAsks('Still here with you in this quiet stretch.')).toBe(
+      'Still here with you in this quiet stretch.',
+    );
+    expect(scrubHistoryResumeAsks('你好呀。要不要继续刚才的话题？')).toBe('你好呀。');
+  });
+
+  it('ChatPanel and client-chat scrub history-resume asks on reply paths', () => {
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const chat = fs.readFileSync(path.resolve(here, '../components/ChatPanel.tsx'), 'utf8');
+    const client = fs.readFileSync(path.resolve(here, '../lib/client-chat.ts'), 'utf8');
+    expect(chat).toContain('scrubHistoryResumeAsks');
+    expect(client).toContain('scrubHistoryResumeAsks');
   });
 });
