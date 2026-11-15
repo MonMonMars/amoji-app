@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   clearLiveCache,
+  clearNewsTold,
   clientLiveContext,
   detectWeatherFocus,
   gatherLiveContext,
@@ -11,6 +12,8 @@ import {
   liveToolsEnabled,
   newsRegionFromPlace,
   NEWS_LAST_KEY,
+  NEWS_TOLD_KEY,
+  normalizeNewsTitle,
   parseRssItems,
   pickDefaultHeadlines,
   pickLightHeadlines,
@@ -64,6 +67,7 @@ function kv(initial: Record<string, string> = {}) {
 
 afterEach(() => {
   clearLiveCache();
+  clearNewsTold();
   delete process.env.NEXT_PUBLIC_AMOJI_TOOLS;
   delete process.env.AMOJI_TOOLS;
   resetBrainDead();
@@ -83,7 +87,8 @@ describe('planTools', () => {
     expect(isLiveFactsOnlyTurn(weather, '')).toBe(false);
     const news = planTools('what is the latest news?');
     expect(isLiveFactsOnlyTurn(news, 'From the news: Light headline from Wikipedia.')).toBe(true);
-    expect(isLiveFactsOnlyTurn(news, "I couldn't find a headline just now.")).toBe(false);
+    // Exhausted / empty miss must speak as-is — LLM must not invent a headline.
+    expect(isLiveFactsOnlyTurn(news, "I couldn't find a headline just now.")).toBe(true);
     expect(isLiveFactsOnlyTurn(news, 'Which city or country should I pull the news for?')).toBe(false);
     const cafe = planTools('cafes near me');
     expect(isLiveFactsOnlyTurn(cafe, 'Two spots nearby.')).toBe(false);
@@ -946,7 +951,7 @@ describe('news cache bust + headline rotation', () => {
     expect(cache.has('https://api.open-meteo.com/v1/forecast')).toBe(true);
   });
 
-  it('selectNewsLead rotates and remembers the last spoken title', () => {
+  it('selectNewsLead bans recently spoken titles and does not loop', () => {
     const items = [
       { title: 'Alpha story' },
       { title: 'Beta story' },
@@ -954,10 +959,86 @@ describe('news cache bust + headline rotation', () => {
     ];
     const kv = memKv();
     expect(selectNewsLead(items, kv)?.title).toBe('Alpha story');
-    kv.setItem(NEWS_LAST_KEY, 'Alpha story');
     expect(selectNewsLead(items, kv)?.title).toBe('Beta story');
     expect(selectNewsLead(items, kv)?.title).toBe('Gamma story');
-    expect(selectNewsLead(items, kv)?.title).toBe('Alpha story');
+    // Pool exhausted — honest miss, never re-tell Alpha.
+    expect(selectNewsLead(items, kv)).toBeUndefined();
+    const told = JSON.parse(kv.getItem(NEWS_TOLD_KEY) ?? '[]') as Array<{ t: string }>;
+    expect(told.map((r) => r.t)).toEqual([
+      normalizeNewsTitle('Alpha story'),
+      normalizeNewsTitle('Beta story'),
+      normalizeNewsTitle('Gamma story'),
+    ]);
+    expect(kv.getItem(NEWS_LAST_KEY)).toBe(normalizeNewsTitle('Gamma story'));
+  });
+
+  it('selectNewsLead treats near-duplicate titles as already told', () => {
+    const kv = memKv();
+    expect(selectNewsLead([{ title: 'Cat Wins Contest!' }], kv)?.title).toBe('Cat Wins Contest!');
+    expect(selectNewsLead([{ title: 'cat wins contest' }], kv)).toBeUndefined();
+  });
+
+  it('does not re-tell the same single Wikipedia headline on repeat taps', async () => {
+    const kv = memKv();
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('news.google.com')) throw new Error('cors');
+      if (url.includes('rss2json.com')) return new Response('nope', { status: 403 });
+      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
+        return jsonRes({ news: [{ story: 'A bakery opens a cheerful night market stall.' }] });
+      }
+      return jsonRes({}, 404);
+    };
+    const opts = {
+      lang: 'en' as const,
+      fetch: fetchImpl,
+      cache: new Map<string, { at: number; body: string }>(),
+      storage: kv,
+      locate: async () => null,
+    };
+    const first = await gatherLiveContext('what is the latest news?', opts);
+    expect(first.spoken).toContain('bakery');
+    const second = await gatherLiveContext('what is the latest news?', opts);
+    expect(second.spoken.toLowerCase()).toMatch(/couldn't find a headline|搵唔到新聞|找不到新闻|ニュースが見つから/);
+    expect(second.spoken.toLowerCase()).not.toContain('bakery');
+    expect(second.prompt).toMatch(/no fresh headline|unavailable/i);
+  });
+
+  it('rotates across distinct headlines before missing', async () => {
+    const kv = memKv();
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('news.google.com')) throw new Error('cors');
+      if (url.includes('rss2json.com')) return new Response('nope', { status: 403 });
+      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
+        return jsonRes({
+          news: [
+            { story: 'A bakery opens a cheerful night market stall.' },
+            { story: 'Scientists share a quirky AI drawing tip.' },
+            { story: 'A puppy parade fills the park with smiles.' },
+          ],
+        });
+      }
+      return jsonRes({}, 404);
+    };
+    const opts = {
+      lang: 'en' as const,
+      fetch: fetchImpl,
+      cache: new Map<string, { at: number; body: string }>(),
+      storage: kv,
+      locate: async () => null,
+    };
+    const heard = new Set<string>();
+    for (let i = 0; i < 3; i += 1) {
+      const live = await gatherLiveContext('what is the latest news?', opts);
+      expect(live.spoken.toLowerCase()).not.toMatch(/couldn't find/);
+      if (/bakery/i.test(live.spoken)) heard.add('bakery');
+      if (/Scientists|AI drawing/i.test(live.spoken)) heard.add('ai');
+      if (/puppy/i.test(live.spoken)) heard.add('puppy');
+    }
+    expect(heard.size).toBe(3);
+    const fourth = await gatherLiveContext('what is the latest news?', opts);
+    expect(fourth.spoken.toLowerCase()).toMatch(/couldn't find a headline/);
   });
 
   it('refetches Google News on each user news tap instead of reusing cache', async () => {
@@ -975,9 +1056,41 @@ describe('news cache bust + headline rotation', () => {
       return jsonRes({}, 404);
     };
     const cache = new Map<string, { at: number; body: string }>();
-    const opts = { lang: 'en' as const, fetch: fetchImpl, cache, locate: async () => null };
+    const opts = { lang: 'en' as const, fetch: fetchImpl, cache, locate: async () => null, storage: memKv() };
     await gatherLiveContext('what is the latest news?', opts);
     await gatherLiveContext('what is the latest news?', opts);
     expect(rssHits).toBeGreaterThanOrEqual(2);
+  });
+
+  it('walks multiple Wikipedia featured days when Google is blocked', async () => {
+    const seenDays = new Set<string>();
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('news.google.com')) throw new Error('cors');
+      if (url.includes('rss2json.com')) return new Response('nope', { status: 403 });
+      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
+        const day = url.match(/\/(\d{4}\/\d{2}\/\d{2})$/)?.[1] ?? '';
+        seenDays.add(day);
+        if (day.endsWith('/15')) {
+          return jsonRes({ news: [{ story: 'Today: quirky robot wins a science fair.' }] });
+        }
+        if (day.endsWith('/14')) {
+          return jsonRes({ news: [{ story: 'Yesterday: museum cat parade draws smiles.' }] });
+        }
+        return jsonRes({ news: [] });
+      }
+      return jsonRes({}, 404);
+    };
+    const live = await gatherLiveContext('what is the latest news?', {
+      lang: 'en',
+      fetch: fetchImpl,
+      cache: new Map(),
+      storage: memKv(),
+      locate: async () => null,
+      // Fixed clock so utcStamp offsets are deterministic relative to "now".
+      now: Date.UTC(2026, 10, 15, 12, 0, 0),
+    });
+    expect(seenDays.size).toBeGreaterThanOrEqual(3);
+    expect(live.spoken).toMatch(/robot|museum|cat|parade|science/i);
   });
 });

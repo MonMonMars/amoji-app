@@ -119,6 +119,10 @@ export interface GatherOpts {
   brief?: boolean;
   /** User-initiated news: drop cached RSS/Wikipedia feeds and rotate headlines. */
   freshNews?: boolean;
+  /** Persist recently-spoken headline titles (sessionStorage in the browser). */
+  storage?: Kv | null;
+  /** Clock override for tests (told-title TTL / feed rotation). */
+  now?: number;
 }
 
 const PLACE_KEY = 'amoji.place.v1';
@@ -126,10 +130,20 @@ const MANUAL_KEY = 'amoji.place.manual.v1';
 const DENY_KEY = 'amoji.geo.denied';
 /** Session flag: we already fired one browser geo prompt (gate or Start). */
 const PRIMED_KEY = 'amoji.geo.primed';
+/** @deprecated Prefer NEWS_TOLD_KEY ring — kept so old session values still migrate. */
 export const NEWS_LAST_KEY = 'amoji.news.last.v1';
+/** Ring of recently spoken headline titles (JSON `{t,at}[]`) — anti-repeat. */
+export const NEWS_TOLD_KEY = 'amoji.news.told.v1';
+const NEWS_TOLD_MAX = 16;
+const NEWS_TOLD_TTL_MS = 6 * 60 * 60 * 1000;
+const NEWS_POOL_MAX = 12;
 const PLACE_TTL_MS = 30 * 60 * 1000;
 const FETCH_TTL_MS = 10 * 60 * 1000;
+/** Headline feeds go stale fast; keep a short TTL even when not cache-busted. */
+const NEWS_FETCH_TTL_MS = 90 * 1000;
 const sharedCache = new Map<string, { at: number; body: string }>();
+/** Process-local told titles when sessionStorage is unavailable (Node / private). */
+let memoryTold: Array<{ t: string; at: number }> = [];
 
 const DEICTIC = /^(here|there|nearby|near me|around here|my area|my city|this area|locally|home|me|us|my place|呢度|呢邊|呢到|附近|本地|我呢度|我度|这里|这儿|这边|我家|ここ|この辺|近く|付近|地元)$/i;
 const PLACE_STOP = new Set(['the', 'a', 'an', 'my', 'our', 'your', 'local', 'current', 'today', 'what', 'whats', "what's", 'how', 'please', 'some', 'any', 'this', 'that']);
@@ -344,8 +358,10 @@ function planHasWork(plan: ToolPlan): boolean {
 export function isLiveFactsOnlyTurn(plan: ToolPlan, spoken: string): boolean {
   if (!spoken.trim()) return false;
   if (plan.news) {
-    // Ask-city / empty-miss lines still go through the model path; real headlines speak now.
-    return !/which city|哪个城市|邊個城市|どの都市|couldn't find a headline|搵唔到新聞|找不到新闻|ニュースが見つから/i.test(spoken);
+    // City ask still goes through the model path (may rephrase). Real headlines
+    // and honest empty/exhausted misses speak as-is — never invent a story.
+    if (/which city|哪个城市|邊個城市|どの都市/i.test(spoken)) return false;
+    return true;
   }
   return (plan.weather || plan.where)
     && !plan.places
@@ -403,7 +419,8 @@ async function getText(
 ): Promise<string | null> {
   const now = Date.now();
   const hit = cache.get(url);
-  if (hit && now - hit.at < FETCH_TTL_MS) return hit.body;
+  const ttl = isNewsFeedCacheKey(url) ? NEWS_FETCH_TTL_MS : FETCH_TTL_MS;
+  if (hit && now - hit.at < ttl) return hit.body;
   try {
     const res = await fetchImpl(url, { headers, signal: abortAfter(ms) });
     if (!res.ok) return null;
@@ -665,17 +682,87 @@ export function invalidateNewsFeedCache(cache: Map<string, { at: number; body: s
   }
 }
 
-/** Rotate among headline picks so repeat News taps do not replay the same story. */
+/** Normalize titles so near-duplicates ("Cat Wins!" vs "cat wins") share a ban key. */
+export function normalizeNewsTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function readToldEntries(storage?: Kv | null, now = Date.now()): Array<{ t: string; at: number }> {
+  const fresh = (rows: Array<{ t: string; at: number }>) =>
+    rows.filter((r) => r.t && now - r.at < NEWS_TOLD_TTL_MS).slice(-NEWS_TOLD_MAX);
+
+  try {
+    const raw = storage?.getItem(NEWS_TOLD_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed)) {
+        const rows = parsed
+          .map((row) => {
+            if (typeof row === 'string') return { t: normalizeNewsTitle(row), at: now };
+            if (row && typeof row === 'object' && typeof (row as { t?: unknown }).t === 'string') {
+              const at = Number((row as { at?: unknown }).at);
+              return { t: normalizeNewsTitle((row as { t: string }).t), at: Number.isFinite(at) ? at : now };
+            }
+            return null;
+          })
+          .filter((r): r is { t: string; at: number } => Boolean(r?.t));
+        return fresh(rows);
+      }
+    }
+    // Migrate legacy single-title key into the ring.
+    const legacy = storage?.getItem(NEWS_LAST_KEY);
+    if (legacy?.trim()) return fresh([{ t: normalizeNewsTitle(legacy), at: now }]);
+  } catch { /* private mode / bad JSON */ }
+
+  return fresh(memoryTold);
+}
+
+function writeToldEntries(storage: Kv | null | undefined, rows: Array<{ t: string; at: number }>): void {
+  memoryTold = rows.slice(-NEWS_TOLD_MAX);
+  const payload = JSON.stringify(memoryTold);
+  try {
+    storage?.setItem(NEWS_TOLD_KEY, payload);
+    const last = memoryTold[memoryTold.length - 1]?.t ?? '';
+    if (last) storage?.setItem(NEWS_LAST_KEY, last);
+  } catch { /* private mode */ }
+}
+
+/** Clear process-local + optional storage told ring (tests). */
+export function clearNewsTold(storage?: Kv | null): void {
+  memoryTold = [];
+  try {
+    storage?.removeItem?.(NEWS_TOLD_KEY);
+    storage?.removeItem?.(NEWS_LAST_KEY);
+  } catch { /* ignore */ }
+}
+
+/**
+ * Pick the next untold headline. Recently spoken titles stay banned for
+ * NEWS_TOLD_TTL_MS (ring of NEWS_TOLD_MAX). When every candidate was already
+ * told, returns undefined so the caller can speak an honest miss — never loop
+ * one stale story.
+ */
 export function selectNewsLead<T extends { title: string }>(
   headlines: T[],
   storage?: Kv | null,
+  now = Date.now(),
 ): T | undefined {
   if (!headlines.length) return undefined;
-  let last = '';
-  try { last = storage?.getItem(NEWS_LAST_KEY) ?? ''; } catch { /* private mode */ }
-  const idx = headlines.findIndex((h) => h.title === last);
-  const pick = headlines[(idx + 1) % headlines.length] ?? headlines[0];
-  try { storage?.setItem(NEWS_LAST_KEY, pick.title); } catch { /* private mode */ }
+  const told = new Set(readToldEntries(storage, now).map((r) => r.t));
+  const pick = headlines.find((h) => {
+    const key = normalizeNewsTitle(h.title);
+    return key.length > 0 && !told.has(key);
+  });
+  if (!pick) return undefined;
+  const next = [
+    ...readToldEntries(storage, now).filter((r) => r.t !== normalizeNewsTitle(pick.title)),
+    { t: normalizeNewsTitle(pick.title), at: now },
+  ];
+  writeToldEntries(storage, next);
   return pick;
 }
 
@@ -869,7 +956,7 @@ export function pickLightHeadlines(items: Array<{ title: string; source: string 
   ranked.sort((a, b) => b.score - a.score);
   const light = ranked.filter((row) => LIGHT_RE.test(row.h.title));
   const pool = light.length ? light : ranked;
-  return pool.slice(0, 3).map((row) => row.h);
+  return pool.slice(0, NEWS_POOL_MAX).map((row) => row.h);
 }
 
 
@@ -893,9 +980,9 @@ export function pickDefaultHeadlines(
   ranked.sort((a, b) => b.score - a.score);
   if (preferLight) {
     const light = ranked.filter((row) => LIGHT_RE.test(row.h.title));
-    if (light.length) return light.slice(0, 3).map((row) => row.h);
+    if (light.length) return light.slice(0, NEWS_POOL_MAX).map((row) => row.h);
   }
-  return ranked.slice(0, 3).map((row) => row.h);
+  return ranked.slice(0, NEWS_POOL_MAX).map((row) => row.h);
 }
 
 function lightNewsQuery(place: Place, lang: Lang4): string {
@@ -1107,11 +1194,51 @@ export function regionalLightNewsFeedUrls(region: NewsRegion): string[] {
   }
 }
 
-function defaultLightNewsQuery(lang: Lang4): string {
-  if (lang === 'yue') return '(科學 OR 科技 OR AI OR 娛樂 OR 健康 OR 趣聞 OR 好笑)';
-  if (lang === 'zh') return '(科学 OR 科技 OR AI OR 娱乐 OR 健康 OR 趣闻 OR 好笑)';
-  if (lang === 'ja') return '(科学 OR テック OR AI OR エンタメ OR 健康 OR おもしろ)';
-  return '(science OR AI OR entertainment OR health OR funny OR quirky OR discovery)';
+/** Rotate light Google queries hourly so repeat taps diversify the feed. */
+function defaultLightNewsQuery(lang: Lang4, now = Date.now()): string {
+  const slot = Math.floor(now / 3_600_000) % 4;
+  if (lang === 'yue') {
+    const q = [
+      '(科學 OR 科技 OR AI OR 發現)',
+      '(娛樂 OR 趣聞 OR 好笑 OR 溫馨)',
+      '(健康 OR 運動 OR 飲食 OR 養生)',
+      '(太空 OR 動物 OR 博物館 OR 奇趣)',
+    ];
+    return q[slot]!;
+  }
+  if (lang === 'zh') {
+    const q = [
+      '(科学 OR 科技 OR AI OR 发现)',
+      '(娱乐 OR 趣闻 OR 好笑 OR 温馨)',
+      '(健康 OR 运动 OR 饮食 OR 养生)',
+      '(太空 OR 动物 OR 博物馆 OR 奇趣)',
+    ];
+    return q[slot]!;
+  }
+  if (lang === 'ja') {
+    const q = [
+      '(科学 OR テック OR AI OR 発見)',
+      '(エンタメ OR おもしろ OR ほっこり)',
+      '(健康 OR スポーツ OR 食 OR ウェルネス)',
+      '(宇宙 OR 動物 OR 博物館 OR 珍)',
+    ];
+    return q[slot]!;
+  }
+  const q = [
+    '(science OR AI OR discovery OR research OR space)',
+    '(entertainment OR funny OR quirky OR heartwarming OR festival)',
+    '(health OR wellness OR fitness OR nutrition OR mental health)',
+    '(animals OR museum OR bakery OR music OR gaming OR nature)',
+  ];
+  return q[slot]!;
+}
+
+/** Hourly rotate which regional RSS feeds we hit first. */
+function rotateFeedUrls(urls: string[], now = Date.now(), take = 4): string[] {
+  if (!urls.length) return [];
+  const start = Math.floor(now / 3_600_000) % urls.length;
+  const rotated = [...urls.slice(start), ...urls.slice(0, start)];
+  return rotated.slice(0, Math.min(take, rotated.length));
 }
 
 
@@ -1202,7 +1329,7 @@ function headlinesFromWiki(data: unknown): Headline[] {
     const title = stripWikiStory(str(item?.story));
     if (!title || GRIM_RE.test(title)) continue;
     out.push({ title: clip(title, 180), source: 'Wikipedia' });
-    if (out.length >= 3) break;
+    if (out.length >= 6) break;
   }
   return out;
 }
@@ -1218,39 +1345,49 @@ function headlinesFromOnThisDay(data: unknown): Headline[] {
     const year = typeof item?.year === 'number' ? item.year : null;
     const title = year ? clip(`${year}: ${text}`, 180) : clip(text, 180);
     out.push({ title, source: 'Wikipedia' });
-    if (out.length >= 3) break;
+    if (out.length >= 4) break;
   }
   return out;
 }
 
-/** Wikipedia "In the news" — CORS-open, no key, works on GitHub Pages. */
+function pushUniqueHeadlines(out: Headline[], items: Headline[], max = NEWS_POOL_MAX): void {
+  for (const h of items) {
+    if (!h.title || GRIM_RE.test(h.title)) continue;
+    const key = normalizeNewsTitle(h.title);
+    if (!key || out.some((o) => normalizeNewsTitle(o.title) === key)) continue;
+    out.push(h);
+    if (out.length >= max) return;
+  }
+}
+
+/** Wikipedia "In the news" — CORS-open, no key, works on GitHub Pages.
+ *  Walk several featured days so Pages (Google CORS-blocked) still rotates. */
 async function fetchWikipediaNews(
   fetchImpl: typeof fetch,
   lang: Lang4,
   cache: Map<string, { at: number; body: string }>,
 ): Promise<Headline[]> {
-  let onThisDay: Headline[] = [];
+  const newsOut: Headline[] = [];
+  const onThisDay: Headline[] = [];
   for (const host of wikiNewsHosts(lang)) {
-    for (const offset of [0, 1]) {
+    for (const offset of [0, 1, 2, 3, 4]) {
       const url = `https://${host}/api/rest_v1/feed/featured/${utcStamp(offset)}`;
       const data = await getJson(fetchImpl, url, 6_000, cache);
-      const items = headlinesFromWiki(data);
-      if (items.length) return items;
-      if (!onThisDay.length) onThisDay = headlinesFromOnThisDay(data);
+      pushUniqueHeadlines(newsOut, headlinesFromWiki(data));
+      if (onThisDay.length < 4) pushUniqueHeadlines(onThisDay, headlinesFromOnThisDay(data), 4);
+      if (newsOut.length >= NEWS_POOL_MAX) return newsOut;
     }
   }
-  return onThisDay;
+  // Prefer real "In the news" items. Only fall back to soft on-this-day when
+  // featured news is empty — never invent headlines.
+  return newsOut.length ? newsOut : onThisDay;
 }
 
 function mergeHeadlines(groups: Headline[][]): Headline[] {
   const out: Headline[] = [];
   for (const group of groups) {
-    for (const h of group) {
-      if (!h.title || GRIM_RE.test(h.title)) continue;
-      if (out.some((o) => o.title === h.title)) continue;
-      out.push(h);
-      if (out.length >= 3) return out;
-    }
+    pushUniqueHeadlines(out, group, NEWS_POOL_MAX);
+    if (out.length >= NEWS_POOL_MAX) return out;
   }
   return out;
 }
@@ -1289,11 +1426,17 @@ async function fetchRecentHeadlines(
   cache: Map<string, { at: number; body: string }>,
   place?: Place | null,
   allowHeavy = false,
+  now = Date.now(),
 ): Promise<Headline[]> {
   const region = newsRegionFromPlace(place, lang);
   // t780: default = light category feeds + light Google query; heavy opt-in keeps world wires.
-  const extras = (allowHeavy ? regionalNewsFeedUrls(region) : regionalLightNewsFeedUrls(region)).slice(0, 3);
-  const googleQuery = allowHeavy ? '' : defaultLightNewsQuery(lang);
+  // Hourly rotate which regional feeds lead so repeat taps diversify sources.
+  const extras = rotateFeedUrls(
+    allowHeavy ? regionalNewsFeedUrls(region) : regionalLightNewsFeedUrls(region),
+    now,
+    4,
+  );
+  const googleQuery = allowHeavy ? '' : defaultLightNewsQuery(lang, now);
   const top = allowHeavy;
   const [feed, wiki, ...regional] = await Promise.all([
     fetchNews(fetchImpl, googleQuery, lang, rssKey, cache, top, region),
@@ -1308,7 +1451,7 @@ async function fetchRecentHeadlines(
   if (softer.length) return softer;
   // Browser CORS often blanks Google/BBC RSS; keep any non-grim wiki line so
   // "news" never collapses to the empty miss when a soft story exists.
-  return merged.filter((h) => !GRIM_RE.test(h.title)).slice(0, 3);
+  return merged.filter((h) => !GRIM_RE.test(h.title)).slice(0, NEWS_POOL_MAX);
 }
 
 interface NewsPack { headlines: Headline[]; recent: boolean }
@@ -1321,19 +1464,22 @@ async function fetchAreaNews(
   rssKey: string | undefined,
   cache: Map<string, { at: number; body: string }>,
   allowHeavy = false,
+  now = Date.now(),
 ): Promise<NewsPack> {
   if (topical === RECENT_MARK) {
     return {
-      headlines: await fetchRecentHeadlines(fetchImpl, lang, rssKey, cache, place, allowHeavy),
+      headlines: await fetchRecentHeadlines(fetchImpl, lang, rssKey, cache, place, allowHeavy, now),
       recent: true,
     };
   }
   if (topical) {
     const raw = await fetchNews(fetchImpl, topical, lang, rssKey, cache, false, newsRegionFromPlace(place, lang));
     const filtered = allowHeavy
-      ? raw.filter((h) => !GRIM_RE.test(h.title)).slice(0, 3)
+      ? raw.filter((h) => !GRIM_RE.test(h.title)).slice(0, NEWS_POOL_MAX)
       : pickDefaultHeadlines(raw, { allowHeavy: false });
-    const fromGoogle = filtered.length ? filtered : raw.filter((h) => !isHeavyHeadline(h.title)).slice(0, 3);
+    const fromGoogle = filtered.length
+      ? filtered
+      : raw.filter((h) => !isHeavyHeadline(h.title)).slice(0, NEWS_POOL_MAX);
     if (fromGoogle.length) return { headlines: fromGoogle, recent: false };
 
     // Browser CORS blanks Google + rss2json on Pages — fall back so AI/topic
@@ -1341,16 +1487,16 @@ async function fetchAreaNews(
     const wiki = await fetchWikipediaNews(fetchImpl, lang, cache);
     const bits = topical.toLowerCase().split(/[^a-z0-9\u3400-\u9fff]+/).filter((w) => w.length > 2);
     const topicalWiki = wiki.filter((h) => bits.some((t) => h.title.toLowerCase().includes(t)));
-    if (topicalWiki.length) return { headlines: topicalWiki.slice(0, 3), recent: false };
+    if (topicalWiki.length) return { headlines: topicalWiki.slice(0, NEWS_POOL_MAX), recent: false };
 
     const snips = await searchWikipedia(fetchImpl, topical, lang, cache);
     const fromSearch = snips
-      .slice(0, 2)
+      .slice(0, 4)
       .map((s) => ({ title: clip(spokenHeadline(s), 180), source: 'Wikipedia' }))
       .filter((h) => h.title && !GRIM_RE.test(h.title));
     if (fromSearch.length) return { headlines: fromSearch, recent: false };
 
-    const soft = await fetchRecentHeadlines(fetchImpl, lang, rssKey, cache, place, allowHeavy);
+    const soft = await fetchRecentHeadlines(fetchImpl, lang, rssKey, cache, place, allowHeavy, now);
     return { headlines: soft, recent: true };
   }
   if (place) {
@@ -1364,7 +1510,7 @@ async function fetchAreaNews(
     if (picked.length) return { headlines: picked, recent: false };
   }
   return {
-    headlines: await fetchRecentHeadlines(fetchImpl, lang, rssKey, cache, place, allowHeavy),
+    headlines: await fetchRecentHeadlines(fetchImpl, lang, rssKey, cache, place, allowHeavy, now),
     recent: true,
   };
 }
@@ -1652,6 +1798,8 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
   const fetchImpl = opts.fetch ?? globalThis.fetch.bind(globalThis);
   const cache = opts.cache ?? sharedCache;
   const lang = asLang(opts.lang);
+  const now = opts.now ?? Date.now();
+  const newsStorage = opts.storage === undefined ? safeStorage('session') : opts.storage;
   const freshNews = Boolean(plan.news && opts.freshNews !== false && !opts.brief);
   if (freshNews) invalidateNewsFeedCache(cache);
 
@@ -1670,7 +1818,9 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
   const lifePlace = place ? { latitude: place.latitude, longitude: place.longitude, label, coarse } : null;
   const [weather, newsPack, snippets, lifestyle] = await Promise.all([
     plan.weather && place ? fetchWeather(fetchImpl, place, cache) : Promise.resolve(null),
-    plan.news ? fetchAreaNews(fetchImpl, place, topicalNews, lang, opts.rssKey, cache, plan.heavyNews) : Promise.resolve({ headlines: [] as Headline[], recent: false }),
+    plan.news
+      ? fetchAreaNews(fetchImpl, place, topicalNews, lang, opts.rssKey, cache, plan.heavyNews, now)
+      : Promise.resolve({ headlines: [] as Headline[], recent: false }),
     (async () => {
       if (!plan.searchQuery) return [] as string[];
       if (opts.braveKey) {
@@ -1733,7 +1883,8 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
   }
   if (plan.news) {
     const headlines = newsPack.headlines;
-    const lead = selectNewsLead(headlines, safeStorage('session')) ?? headlines[0];
+    // Never fall back to headlines[0] after a ban — that re-told the same stale story.
+    const lead = selectNewsLead(headlines, newsStorage, now);
     if (lead) {
       // One headline per tap — never hand the model a multi-story sheet
       // (that led to reading the same / next story twice on Pages).
@@ -1759,7 +1910,12 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
       promptLines.push('News: need a city or country from the user.');
       spoken.push(sayAskLocation(lang, 'news'));
     } else {
-      promptLines.push('News: unavailable right now.');
+      // Empty feeds OR every candidate already told recently — honest miss, no loop.
+      promptLines.push(
+        headlines.length
+          ? 'News: no fresh headline left (recent ones already told). Do not invent or re-read an old story.'
+          : 'News: unavailable right now.',
+      );
       spoken.push(sayMiss(lang, 'news'));
     }
   }
@@ -1842,6 +1998,7 @@ export function clientLiveContext(text: string, lang?: string, priorUser?: strin
     fetch: fetchImpl,
     braveKey: process.env.NEXT_PUBLIC_BRAVE_SEARCH_API_KEY || undefined,
     rssKey: process.env.NEXT_PUBLIC_RSS2JSON_API_KEY || undefined,
+    storage: safeStorage('session'),
     ...(opts?.brief ? { brief: true } : {}),
     ...(plan.news && !opts?.brief ? { freshNews: true } : {}),
     locate: () => resolveDevicePlace({
