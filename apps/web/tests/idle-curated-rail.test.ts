@@ -44,13 +44,15 @@ describe('curated idle chat rail', () => {
     }
   });
 
-  it('defaults to Pixel-OK calm stands (rail #5+#18+#16)', () => {
-    expect(defaultCuratedRailNums()).toEqual([5, 18, 16]);
-    // listEnabledIdleClipIds sorts by rail # → 5, 16, 18
+  it('defaults to upright planted calm stands (rail #5+#11+#8+#3+#10)', () => {
+    expect(defaultCuratedRailNums()).toEqual([5, 11, 8, 3, 10]);
+    // listEnabledIdleClipIds sorts by rail # → 3, 5, 8, 10, 11
     expect(listEnabledIdleClipIds()).toEqual([
+      'IdleMixamoBreathing',
       'IdleRpmFStanding001',
-      'IdleRpmMVar001',
-      'IdleSassy',
+      'IdleRpmFVar001',
+      'IdleInnersceneSam',
+      'IdleRpmMStanding001',
     ]);
   });
 
@@ -70,7 +72,7 @@ describe('curated idle chat rail', () => {
       [3, lookRail, robotRail].sort(),
     );
     // v2 key stores rail nums already (or migrates on read)
-    store.set('amoji.idleEnabled.v2', JSON.stringify([3, 40, 101]));
+    store.set('amoji.idleEnabled.v3', JSON.stringify([3, 40, 101]));
     forgetIdleEnabledCache();
     const enabled = listEnabledNums();
     expect(enabled).toContain(lookRail);

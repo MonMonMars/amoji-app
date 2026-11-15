@@ -1,18 +1,21 @@
 // Per-companion idle pin. Same localStorage shape as the other chat prefs.
-// Default rotation = Pixel-OK calm stands (IdleRpmFStanding001 / IdleSassy /
-// IdleRpmMVar001). Old BreathCalm / StandardIdle / hug pins are cleared on load.
+// Default rotation = upright planted calm stands (IdleRpmFStanding001 /
+// IdleRpmMStanding001 / IdleRpmFVar001 / IdleMixamoBreathing / IdleInnersceneSam).
+// Old BreathCalm / Sassy / MVar001 / hug pins are cleared on load (v3 key).
 
 import { resolveIdleClipId, isRetiredIdleClip } from './idle-retired';
 import { idleClipById } from './idle-clips';
 
-export const IDLE_PICK_KEY = 'amoji.idlePick.v2';
+export const IDLE_PICK_KEY = 'amoji.idlePick.v3';
 const KEY = IDLE_PICK_KEY;
 
-/** Default rotation / safe persisted pins — Pixel bible calm stands. */
+/** Default rotation / safe persisted pins — upright planted calm stands. */
 export const DEFAULT_IDLE_IDS = [
   'IdleRpmFStanding001',
-  'IdleSassy',
-  'IdleRpmMVar001',
+  'IdleRpmMStanding001',
+  'IdleRpmFVar001',
+  'IdleMixamoBreathing',
+  'IdleInnersceneSam',
 ] as const;
 
 /** Old defaults / gesture pins that must not stick after the calm swap. */
@@ -24,6 +27,8 @@ const BAD_SAVED_IDLE_IDS = new Set([
   'IdleHug',
   'HelloWave',
   'LookAround',
+  'IdleSassy',
+  'IdleRpmMVar001',
 ]);
 
 type PickMap = Record<string, string>;
@@ -47,7 +52,7 @@ function hydrate(): PickMap {
         changed = true;
         continue;
       }
-      // Drop legacy a01–a04 pins so the calm b01/b02 rotation returns.
+      // Drop legacy bad pins so the upright planted rotation returns.
       if (BAD_SAVED_IDLE_IDS.has(clip)) {
         changed = true;
         continue;

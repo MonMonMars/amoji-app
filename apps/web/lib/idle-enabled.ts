@@ -1,5 +1,6 @@
 ﻿// Which curated idle rail #s are ON for rotation. Persists like mute prefs.
-// Default = Pixel-OK calm stands (#42 / #34 / #94). v2 drops stale BreathCalm pins.
+// Default = upright planted calm stands (#42 / #93 / #43 / #40 / #90).
+// v3 drops stale BreathCalm / Sassy / MVar001 pins from v1–v2.
 
 import { isRetiredIdleNum } from './idle-retired';
 import {
@@ -14,7 +15,7 @@ import {
   type IdleLibraryEntry,
 } from './idle-library';
 
-export const IDLE_ENABLED_KEY = 'amoji.idleEnabled.v2';
+export const IDLE_ENABLED_KEY = 'amoji.idleEnabled.v3';
 const KEY = IDLE_ENABLED_KEY;
 
 let memory: number[] | null = null;

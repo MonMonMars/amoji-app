@@ -645,11 +645,10 @@ export default function CompanionCanvas({
       : [ownModel, 'seed-san.vrm'].filter((m): m is string => !!m);
 
     // -- clip library ---------------------------------------------------------
-    // Standing idle rotation. IdleBreathCalm is the primary default (forward
-    // head, arms outside the torso, feet planted). StandardIdle is the local
-    // neutral stand. LookAround is the curious variant. WeightShift stays an
-    // optional remote. Relax is the soft variant. rebaseClipHips pins feet
-    // and yaw-only hips on every idle in this list.
+    // Standing idle rotation. Defaults are upright planted calm stands
+    // (IdleRpmFStanding001 / IdleRpmMStanding001 / IdleRpmFVar001 / …).
+    // LookAround / Sassy / hug / wave stay out of the default enable set.
+    // rebaseClipHips pins feet and yaw-only hips on every idle in this list.
     const ANIM_MIRROR = `${ASSET_BASE}/models/anims`;
     const CHAT_HOST = 'https://raw.githubusercontent.com/DavinciDreams/3dchat/main/public/animations/vrma';
     const ALT_HOST = 'https://raw.githubusercontent.com/hirokazuniimoto/virtual-avatar-sdk/main/assets/animations';
@@ -657,8 +656,8 @@ export default function CompanionCanvas({
 
     interface ClipSource { id: string; urls: string[] }
     // Idle # SoT: apps/web/lib/idle-library.ts (free-library Cxx map).
-    // Default rotation = enabled playable nums (localStorage amoji.idleEnabled.v1),
-    // falling back to #1 IdleBreathCalm + #2 StandardIdle. Every idle gets
+    // Default rotation = enabled playable nums (localStorage amoji.idleEnabled.v3),
+    // falling back to RPM F/M standing. Every idle gets
     // rebaseClipHips + pinPlantedClipTracks (no floating feet).
     const libPlayable = playableIdles();
     const enabledIds = new Set(listEnabledIdleClipIds());
@@ -667,8 +666,8 @@ export default function CompanionCanvas({
       .map((e) => ({ id: e.clipId, urls: [`${ANIM_MIRROR}/${e.clipId}.vrma`] }));
     if (!IDLE_SOURCES.length) {
       IDLE_SOURCES.push(
-        { id: 'IdleBreathCalm', urls: [`${ANIM_MIRROR}/IdleBreathCalm.vrma`] },
-        { id: 'StandardIdle', urls: [`${ANIM_MIRROR}/StandardIdle.vrma`] },
+        { id: 'IdleRpmFStanding001', urls: [`${ANIM_MIRROR}/IdleRpmFStanding001.vrma`] },
+        { id: 'IdleRpmMStanding001', urls: [`${ANIM_MIRROR}/IdleRpmMStanding001.vrma`] },
       );
     }
     // All other playable library idles (side picks / Mon # tap).

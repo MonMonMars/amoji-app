@@ -4,16 +4,18 @@
 
 import { idleClipById } from './idle-clips';
 
-/** Preferred clip ids for each beat of the loop — Pixel-OK calm stands. */
+/** Preferred clip ids for each beat of the loop — upright planted calm stands. */
 export const PASSIVE_RELAX_CLIPS = [
   'IdleRpmFStanding001',
-  'IdleSassy',
-  'IdleRpmMVar001',
+  'IdleRpmMStanding001',
+  'IdleRpmFVar001',
+  'IdleMixamoBreathing',
+  'IdleInnersceneSam',
 ] as const;
 /** Mild stretch only — IdleMixamoArmStretch raised arms repeatedly and felt like a show. */
 export const PASSIVE_STRETCH_CLIPS = ['IdleRpmMVar002', 'Relax'] as const;
-/** Soft look variant from Pixel-OK set (not LookAround mid-pose thrash). */
-export const PASSIVE_LOOK_CLIPS = ['IdleRpmMVar001', 'IdleSassy'] as const;
+/** Soft look variant (not LookAround mid-pose thrash, not MVar001 sky-snap). */
+export const PASSIVE_LOOK_CLIPS = ['IdleRpmFVar003', 'IdleRpmFVar004'] as const;
 
 /**
  * Canonical playlist: calm-heavy with one look and one mild stretch per cycle.
@@ -22,11 +24,11 @@ export const PASSIVE_LOOK_CLIPS = ['IdleRpmMVar001', 'IdleSassy'] as const;
 export const PASSIVE_IDLE_LOOP_TEMPLATE = [
   'IdleRpmFStanding001',
   'IdleRpmFStanding001',
-  'IdleSassy',
+  'IdleRpmMStanding001',
   'IdleRpmFStanding001',
-  'IdleRpmMVar001',
+  'IdleRpmFVar001',
   'IdleRpmFStanding001',
-  'IdleSassy',
+  'IdleMixamoBreathing',
   'IdleRpmMVar002',
 ] as const;
 

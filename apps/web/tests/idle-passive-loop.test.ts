@@ -10,15 +10,18 @@ import { orderIdleClips } from '../lib/personality';
 
 describe('passive idle loop (calm-heavy + rare stretch)', () => {
   it('orders calm beats before look, with stretch once at the end', () => {
-    const order = orderPassiveIdleClips([...PASSIVE_IDLE_LOOP_TEMPLATE, 'Jump', 'Dance', 'IdleMixamoArmStretch']);
+    const order = orderPassiveIdleClips([...PASSIVE_IDLE_LOOP_TEMPLATE, 'Jump', 'Dance', 'IdleMixamoArmStretch', 'IdleRpmFVar003']);
     expect(order[0]).toBe('IdleRpmFStanding001');
-    expect(order).toContain('IdleRpmMVar001');
+    expect(order).toContain('IdleRpmMStanding001');
+    expect(order).toContain('IdleRpmFVar003');
     expect(order[order.length - 1]).toBe('IdleRpmMVar002');
     expect(order.filter((id) => id === 'IdleRpmMVar002')).toHaveLength(1);
     expect(order).not.toContain('IdleMixamoArmStretch');
     expect(order).not.toContain('Dance');
     expect(order).not.toContain('Jump');
-    expect(order.filter((id) => id === 'IdleRpmFStanding001' || id === 'IdleSassy').length)
+    expect(order).not.toContain('IdleSassy');
+    expect(order).not.toContain('IdleRpmMVar001');
+    expect(order.filter((id) => id === 'IdleRpmFStanding001' || id === 'IdleRpmMStanding001').length)
       .toBeGreaterThanOrEqual(4);
   });
 
@@ -27,12 +30,12 @@ describe('passive idle loop (calm-heavy + rare stretch)', () => {
   });
 
   it('still builds a short loop if stretch or look is missing', () => {
-    const calmOnly = orderPassiveIdleClips(['IdleRpmFStanding001', 'IdleSassy']);
+    const calmOnly = orderPassiveIdleClips(['IdleRpmFStanding001', 'IdleRpmMStanding001']);
     expect(calmOnly[0]).toBe('IdleRpmFStanding001');
-    expect(calmOnly).toContain('IdleSassy');
-    const withLook = orderPassiveIdleClips(['IdleRpmFStanding001', 'IdleRpmMVar001']);
+    expect(calmOnly).toContain('IdleRpmMStanding001');
+    const withLook = orderPassiveIdleClips(['IdleRpmFStanding001', 'IdleRpmFVar003']);
     expect(withLook[0]).toBe('IdleRpmFStanding001');
-    expect(withLook).toContain('IdleRpmMVar001');
+    expect(withLook).toContain('IdleRpmFVar003');
   });
 
   it('cycles forever via nextPassiveIdleClip', () => {
@@ -47,8 +50,10 @@ describe('passive idle loop (calm-heavy + rare stretch)', () => {
 
   it('marks only passive clips', () => {
     expect(isPassiveIdleClip('IdleRpmFStanding001')).toBe(true);
+    expect(isPassiveIdleClip('IdleRpmMStanding001')).toBe(true);
     expect(isPassiveIdleClip('IdleRpmMVar002')).toBe(true);
-    expect(isPassiveIdleClip('IdleSassy')).toBe(true);
+    expect(isPassiveIdleClip('IdleRpmFVar003')).toBe(true);
+    expect(isPassiveIdleClip('IdleSassy')).toBe(false);
     expect(isPassiveIdleClip('HelloWave')).toBe(false);
     expect(isPassiveIdleClip('lib_C113')).toBe(false);
   });
@@ -56,8 +61,9 @@ describe('passive idle loop (calm-heavy + rare stretch)', () => {
   it('orderIdleClips no longer dumps the whole library after calm clips', () => {
     const available = [
       'IdleRpmFStanding001',
-      'IdleSassy',
-      'IdleRpmMVar001',
+      'IdleRpmMStanding001',
+      'IdleRpmFVar001',
+      'IdleMixamoBreathing',
       'IdleRpmMVar002',
       'Dance',
       'IdleMixamoHappy',

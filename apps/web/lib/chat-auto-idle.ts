@@ -11,34 +11,37 @@ import { resolvePerfMotion } from './performance-motion';
 
 const BREATHING_CLIPS = [
   'IdleRpmFStanding001',
-  'IdleSassy',
-  'IdleRpmMVar001',
-  'IdleRpmMVar002',
+  'IdleRpmMStanding001',
+  'IdleRpmFVar001',
+  'IdleMixamoBreathing',
+  'IdleInnersceneSam',
 ] as const;
 
 /** Opening greet / light chit-chat — never the wave gesture. */
 const CHITCHAT_CLIPS = [
   'IdleRpmFStanding001',
-  'IdleSassy',
-  'IdleRpmMVar001',
+  'IdleRpmMStanding001',
+  'IdleRpmFVar001',
   'Thinking',
 ] as const;
 
-/** Calm defaults for ordinary Q&A — Pixel-OK stands only (no LookAround thrash). */
+/** Calm defaults for ordinary Q&A — upright planted stands only (no LookAround thrash). */
 const NEUTRAL_CHAT_CLIPS = [
   'IdleRpmFStanding001',
-  'IdleSassy',
-  'IdleRpmMVar001',
-  'IdleRpmMVar002',
+  'IdleRpmMStanding001',
+  'IdleRpmFVar001',
+  'IdleMixamoBreathing',
+  'IdleInnersceneSam',
   'Thinking',
 ] as const;
 
 /** Weather / news / story / fun-fact talk — calm stands only. */
 const TALK_CALM_CLIPS = [
   'IdleRpmFStanding001',
-  'IdleSassy',
-  'IdleRpmMVar001',
-  'IdleRpmMVar002',
+  'IdleRpmMStanding001',
+  'IdleRpmFVar001',
+  'IdleMixamoBreathing',
+  'IdleInnersceneSam',
   'Thinking',
 ] as const;
 
