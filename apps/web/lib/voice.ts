@@ -1940,10 +1940,13 @@ export function playVoiceGreeting(
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
       try { haltBrowserSynth(); } catch { /* ignore */ }
-      // Stop insurance immediately — a delayed hold stacked local clip + gTTS
-      // (two different phrases) on every card tap.
-      try { stopVoiceClip(); } catch { /* ignore */ }
       if (!spokenBy) onStart('gtts');
+      // Hold insurance briefly — gTTS onplay can fire then die after sink re-pin
+      // (#406/#413). Stopping the clip immediately left character cards silent.
+      window.setTimeout(() => {
+        if (spokenBy && spokenBy !== 'gtts') return;
+        try { stopVoiceClip(); } catch { /* ignore */ }
+      }, 220);
     },
     onProgress: (n) => {
       // Confirm the MP3 tier is really speaking (onplay can fire then die).
@@ -2227,13 +2230,16 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
       if (spokenBy && spokenBy !== 'gtts') return;
       // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
       try { haltBrowserSynth(); } catch { /* ignore */ }
-      // Immediate stop — preview must not stack local clip + gTTS.
-      try { stopVoiceClip(); } catch { /* ignore */ }
       if (!spokenBy) {
         spokenBy = 'gtts';
         markVoiceStarted();
         reportVoiceStatus('gtts', true, `preview gtts ${choiceId}`);
       }
+      // Same hold as playVoiceGreeting — onplay≠audible after sink re-pin.
+      window.setTimeout(() => {
+        if (spokenBy && spokenBy !== 'gtts') return;
+        try { stopVoiceClip(); } catch { /* ignore */ }
+      }, 220);
     },
   }).catch((e: unknown) => {
     if ((e as Error | undefined)?.message === 'canceled') return;

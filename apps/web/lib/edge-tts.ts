@@ -563,7 +563,7 @@ function playMp3Blob(blob: Blob, opts: EdgeVoiceOpts, resolve: () => void, rejec
     return;
   }
   ensureCompanionPlaybackRoute();
-  try { pinDefaultOutput(audio); } catch { /* sink pin is best-effort */ }
+  // Do NOT pin before first play — setSinkId races gesture activation (card greet).
   // A read-only volume setter on iOS must not skip play().
   try { applyPlaybackVolume(audio); } catch { /* playback still starts */ }
   currentAudio = audio;
@@ -585,7 +585,8 @@ function playMp3Blob(blob: Blob, opts: EdgeVoiceOpts, resolve: () => void, rejec
     URL.revokeObjectURL(url);
     reject(new Error('edge-tts playback failed'));
   };
-  // Same gesture-safe order as gTTS: play first, pin async; retry after pin.
+  // Same gesture-safe order as gTTS / playGestureClipSync: play first; pin on
+  // onplay or only before a reject retry — never in parallel during start.
   void audio.play().catch((e: unknown) => {
     void pinDefaultOutputAsync(audio)
       .then(() => audio.play())
@@ -595,7 +596,6 @@ function playMp3Blob(blob: Blob, opts: EdgeVoiceOpts, resolve: () => void, rejec
         reject(err instanceof Error ? err : e instanceof Error ? e : new Error(String(err)));
       });
   });
-  void pinDefaultOutputAsync(audio).catch(() => { /* sink pin is best-effort */ });
 }
 
 /**

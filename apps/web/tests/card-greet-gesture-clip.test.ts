@@ -38,13 +38,14 @@ describe('card greet gesture insurance clip', () => {
     expect(body).toContain('clipFile(lang, delivery, insuranceKind)');
     expect(body.indexOf('playGestureClipSync')).toBeLessThan(body.indexOf('speakGtts('));
     expect(body).toContain('stopVoiceClip()');
-    // When gTTS starts, kill insurance immediately — delayed hold caused dual voice.
+    // Hold insurance briefly after onPlaying — immediate stop left cards silent
+    // when gTTS onplay fired then died after sink re-pin (#406/#413).
     const gttsCall = body.slice(body.indexOf('void speakGtts'), body.indexOf('}).then(() => {', body.indexOf('void speakGtts')));
     expect(gttsCall).toContain('onPlaying:');
     expect(gttsCall).toContain('stopVoiceClip()');
     expect(gttsCall).toContain("onStart('gtts')");
-    expect(gttsCall).not.toMatch(/setTimeout\(/);
-    expect(gttsCall.indexOf('stopVoiceClip()')).toBeLessThan(gttsCall.indexOf("onStart('gtts')"));
+    expect(gttsCall).toMatch(/setTimeout\([\s\S]*?stopVoiceClip\(\)[\s\S]*?,\s*220\)/);
+    expect(gttsCall.indexOf("onStart('gtts')")).toBeLessThan(gttsCall.indexOf('setTimeout('));
   });
 
   it('previewVoiceChoice does not stack synth over a still-playing insurance clip', () => {
@@ -59,18 +60,28 @@ describe('card greet gesture insurance clip', () => {
     expect(body.indexOf('playGestureClipSync')).toBeLessThan(body.indexOf('speakGtts('));
     const gttsCall = body.slice(body.indexOf('const gtts = speakGtts'), body.indexOf('}).catch(', body.indexOf('const gtts = speakGtts')));
     expect(gttsCall).toContain('stopVoiceClip()');
-    expect(gttsCall).not.toMatch(/setTimeout\(/);
+    expect(gttsCall).toMatch(/setTimeout\([\s\S]*?stopVoiceClip\(\)[\s\S]*?,\s*220\)/);
   });
 
   it('gtts plays without awaiting setSinkId first', () => {
     const marker = gtts.indexOf('Play in this turn');
     expect(marker).toBeGreaterThan(-1);
-    const window = gtts.slice(marker, marker + 200);
+    const window = gtts.slice(marker, marker + 280);
     expect(window).toContain('void audio.play()');
-    expect(window.indexOf('void audio.play()')).toBeLessThan(
-      window.includes('pinDefaultOutputAsync(audio)')
-        ? window.indexOf('pinDefaultOutputAsync(audio)')
-        : Number.POSITIVE_INFINITY,
-    );
+    // No parallel pin during start — only reject-retry may pin then play.
+    expect(window).not.toMatch(/void audio\.play\(\)[\s\S]*void pinDefaultOutputAsync\(audio\)\.catch/);
+  });
+
+  it('gtts does not pinDefaultOutput before the first play()', () => {
+    const playNext = gtts.slice(gtts.indexOf('const playNext = () => {'), gtts.indexOf('playNext();\n  });'));
+    const create = playNext.indexOf('const audio = new Audio');
+    const onplay = playNext.indexOf('audio.onplay = () => {', create);
+    const firstPlay = playNext.indexOf('void audio.play()', onplay);
+    expect(create).toBeGreaterThan(-1);
+    expect(onplay).toBeGreaterThan(create);
+    expect(firstPlay).toBeGreaterThan(onplay);
+    // Setup between new Audio and onplay must not kick setSinkId.
+    expect(playNext.slice(create, onplay)).not.toMatch(/pinDefaultOutput\(audio\)/);
+    expect(playNext.slice(onplay, firstPlay)).toMatch(/pinDefaultOutput\(audio\)/);
   });
 });

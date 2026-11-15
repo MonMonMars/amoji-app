@@ -9,9 +9,10 @@ Tick on a real phone (prefer iPhone Safari). Hard refresh / clear site data once
 
 ## Priority now — card · news · R10–R13 · nonsense · captions
 
-### Card greet (select) — owner: no sound
+### Card greet (select) — owner: no sound (fix after #406/#413 sink)
 
-- [ ] Character / voice card tap speaks **audibly** (one voice, no dual overlap)
+- [ ] Character / voice card tap speaks **audibly** on first tap (all langs)
+- [ ] One primary voice (brief insurance overlap OK; no lasting dual talk)
 - [ ] Sound comes from the same speakers as gate sample
 
 ### News chip — owner: same-old / repeat
