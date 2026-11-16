@@ -277,13 +277,21 @@ export async function startHtmlAudioOnDefaultSpeakers(
       try {
         await audio.play();
       } catch (retryErr) {
-        throw retryErr instanceof Error
-          ? retryErr
-          : err instanceof Error
-            ? err
-            : firstErr instanceof Error
-              ? firstErr
-              : new Error(String(retryErr));
+        ensureCompanionPlaybackRoute();
+        await new Promise<void>((r) => { setTimeout(r, 0); });
+        try {
+          await audio.play();
+        } catch (thirdErr) {
+          throw thirdErr instanceof Error
+            ? thirdErr
+            : retryErr instanceof Error
+              ? retryErr
+              : err instanceof Error
+                ? err
+                : firstErr instanceof Error
+                  ? firstErr
+                  : new Error(String(thirdErr));
+        }
       }
     }
   };

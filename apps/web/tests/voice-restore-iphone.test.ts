@@ -45,9 +45,10 @@ describe('voice restore — one tier speaks, never two', () => {
 
   it('does not start synth while the MP3 tier is still in flight', () => {
     expect(greet).toContain('gttsPending');
-    expect(greet).toMatch(/if \(gttsPending\) return/);
+    expect(greet).toMatch(/if \(gttsPending\)/);
     // Grace timer skips synth while gTTS is pending (no insurance clip path).
     expect(greet).toMatch(/spokenBy \|\| gttsPending/);
+    expect(greet).toContain('greeting edge claim-then-die');
     expect(greet).not.toContain('playGestureClipSync');
     expect(greet).not.toContain('startInsurance');
   });

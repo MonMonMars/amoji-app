@@ -54,7 +54,7 @@ describe('greeting tier arbitration (one voice per tap)', () => {
   it('a grace window delays the "nothing spoke" fallback', () => {
     // Without this the dead-Edge catch fired synth instantly, over the MP3 tier.
     expect(body).toContain('edgeGrace');
-    expect(body).toMatch(/edgeGrace = setTimeout\([\s\S]*?1500\)/);
+    expect(body).toMatch(/edgeGrace = setTimeout\([\s\S]*?2200\)/);
     // No audible insurance — synth only after gTTS is no longer pending.
     expect(body).not.toContain('playGestureClipSync');
     expect(body).not.toContain('insuranceKind');
