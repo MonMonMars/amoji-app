@@ -2,7 +2,9 @@
 
 **Full log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — append every owner ask the same turn.
 
-**Last updated:** 2026-11-16 (UTC)
+**Last updated:** 2026-11-16 ~17:40 UTC
+
+**2026-11-16 r181 (`cursor/finish-all-outstanding-0340-0eac`):** Poke uses pinned chat voice (gTTS/Edge via `speak` + optional zone SFX); dance body survives library bed swap; weather place-ask copy + `primeLocationForChatEnter` on `needsDevice`; mic/dance/story/search-weather from r180 on `main`. **Phone smoke still required** for R10–R13 / card / news.
 
 ## Standing rules
 

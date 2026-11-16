@@ -1,6 +1,5 @@
-// Poke voice is a premade zone MP3. The speaking indicator must follow that
-// clip — never a parallel feedUtterance / notifySpeaking / speak() of the
-// same poke line (synth / Edge / gTTS double).
+// Poke voice uses the pinned chat voice (speak + voicePickFor). Optional zone
+// SFX queues under Voice replies. No parallel feedUtterance / history.
 
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -13,14 +12,14 @@ function read(rel: string): string {
   return readFileSync(path.join(here, rel), 'utf8');
 }
 
-describe('poke SFX owns voice — no TTS double', () => {
-  it('ChatPanel poke effect only calls playPokeBurst', () => {
+describe('poke pinned voice — no history double', () => {
+  it('ChatPanel poke effect only calls playPokeBurst with lang', () => {
     const panel = read('../components/ChatPanel.tsx');
     const pokeBlock = panel.slice(
       panel.indexOf('const lastPokeRef = useRef(pokeCount)'),
       panel.indexOf('const lastHandRef = useRef(handHoldCount)'),
     );
-    expect(pokeBlock).toContain("playPokeBurst(characterId, pokeZone || 'torso')");
+    expect(pokeBlock).toContain('playPokeBurst(characterId, lang, pokeZone');
     expect(pokeBlock).not.toContain('feedUtterance');
     expect(pokeBlock).not.toContain('notifySpeaking');
     expect(pokeBlock).not.toMatch(/\bspeak\s*\(/);
@@ -29,38 +28,29 @@ describe('poke SFX owns voice — no TTS double', () => {
     expect(pokeBlock).not.toContain('setHistory');
   });
 
-  it('hand-hold uses poke SFX; shy line only after repeated drags', () => {
+  it('hand-hold uses poke burst; shy line only after repeated drags', () => {
     const panel = read('../components/ChatPanel.tsx');
     const handBlock = panel.slice(
       panel.indexOf('const lastHandRef = useRef(handHoldCount)'),
       panel.indexOf('// Body idle loop while quiet'),
     );
-    expect(handBlock).toContain("playPokeBurst(characterId, 'hand')");
+    expect(handBlock).toContain("playPokeBurst(characterId, lang, 'hand'");
     expect(handBlock).toContain('HAND_HOLD_SHY_SPEAK_AFTER');
     expect(handBlock).toContain('handHoldShyLine');
     expect(handBlock).not.toContain('pickCharacterInteraction');
   });
 
-  it('playPokeBurst is clip-only and never queues a TTS tier', () => {
+  it('playPokeBurst speaks with voice pin; SFX is optional under voice', () => {
     const voice = read('../lib/voice.ts');
     const burst = voice.slice(
       voice.indexOf('export function playPokeBurst'),
       voice.indexOf('export function playLaughBurst'),
     );
+    expect(burst).toContain('voiceOutputAllowed');
+    expect(burst).toContain('pokeBurstSpokenLine');
+    expect(burst).toMatch(/\bspeak\s*\(/);
     expect(burst).toContain('recordedPokeClip');
-    expect(burst).toContain('playVoiceClip');
-    expect(burst).not.toMatch(/\bspeak\s*\(/);
-    expect(burst).not.toContain('beginTts');
-    expect(burst).not.toContain('speakGtts');
-    expect(burst).not.toContain('speakEdge');
-    expect(burst).not.toContain('synthSpeak');
-    expect(burst).not.toContain('lineQueue');
-  });
-
-  it('playVoiceClip drives the speaking indicator from the MP3', () => {
-    const clip = read('../lib/play-voice-clip.ts');
-    const body = clip.slice(clip.indexOf('export function playVoiceClip'));
-    expect(body).toContain('noteSpeechStarted');
-    expect(body).toContain('followAudioElement');
+    expect(burst).toContain('sfxOnly');
+    expect(burst).not.toContain('feedUtterance');
   });
 });

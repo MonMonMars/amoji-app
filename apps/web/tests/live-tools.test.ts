@@ -234,7 +234,7 @@ describe('planTools', () => {
       cache: new Map(),
       locate: async () => null,
     });
-    expect(live.spoken.toLowerCase()).toContain('which city');
+    expect(live.spoken.toLowerCase()).toMatch(/settings|location/);
     expect(live.spoken.toLowerCase()).not.toContain("couldn't check the weather");
   });
 
@@ -662,6 +662,17 @@ describe('gatherLiveContext', () => {
     expect(live.prompt).toContain('Learn:');
     expect(live.prompt).toContain('fretted string');
     expect(live.spoken.toLowerCase()).toContain('guitar');
+  });
+
+  it('asks for Settings city or browser location when weather needs a place', async () => {
+    const live = await gatherLiveContext('今天天气怎么样', {
+      lang: 'zh',
+      fetch: async () => jsonRes({}, 404),
+      cache: new Map(),
+      locate: async () => null,
+    });
+    expect(live.spoken).toContain('设置');
+    expect(live.spoken).toMatch(/城市/);
   });
 
   it('says so when the weather service is down, instead of inventing a number', async () => {

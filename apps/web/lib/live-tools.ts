@@ -2263,16 +2263,22 @@ function saySearch(lang: Lang4, snippet: string): string {
 function sayAskLocation(lang: Lang4, kind: 'weather' | 'news'): string {
   if (lang === 'en') {
     return kind === 'weather'
-      ? 'Which city or country should I check the weather for?'
-      : 'Which city or country should I pull the news for?';
+      ? 'I need a place first — allow location in your browser, or open Settings (gear) and set your city, then ask again.'
+      : 'I need a place first — allow location or set your city in Settings (gear), then ask for news again.';
   }
   if (lang === 'zh') {
-    return kind === 'weather' ? '你想查哪个城市或国家的天气？' : '你想看哪个城市或国家的新闻？';
+    return kind === 'weather'
+      ? '我还不知道你在哪 — 请在浏览器允许定位，或在设置（齿轮）里填写城市，然后再问天气。'
+      : '我还不知道地点 — 请允许定位，或在设置（齿轮）里填写城市，然后再问新闻。';
   }
   if (lang === 'ja') {
-    return kind === 'weather' ? 'どの都市や国の天気を見る？' : 'どの都市や国のニュースを見る？';
+    return kind === 'weather'
+      ? '場所がまだ分からないよ。ブラウザで位置情報を許可するか、設定（歯車）で都市を入れてから、もう一度天気を聞いて。'
+      : '場所がまだ分からないよ。位置情報を許可するか、設定（歯車）で都市を入れてから、もう一度ニュースを聞いて。';
   }
-  return kind === 'weather' ? '你想查邊個城市或者國家嘅天氣？' : '你想睇邊個城市或者國家嘅新聞？';
+  return kind === 'weather'
+    ? '我仲未知你喺邊 — 請喺瀏覽器批准定位，或者去設定（齒輪）寫城市，再問天氣。'
+    : '我仲未知地點 — 請批准定位，或者去設定（齒輪）寫城市，再問新聞。';
 }
 
 function sayMiss(lang: Lang4, kind: 'weather' | 'news' | 'search' | 'where'): string {
@@ -2519,6 +2525,9 @@ export function clientLiveContext(text: string, lang?: string, priorUser?: strin
   if (!liveToolsEnabled()) return Promise.resolve(EMPTY_LIVE);
   const fetchImpl = globalThis.fetch.bind(globalThis);
   const plan = planTools(text, priorUser);
+  if (plan.needsDevice) {
+    try { primeLocationForChatEnter(); } catch { /* ignore */ }
+  }
   return gatherLiveContext(text, {
     lang,
     priorUser,

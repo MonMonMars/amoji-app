@@ -399,7 +399,8 @@
 // r2026-11-16.178: light news from Yahoo/MSN + HK01 (Google site); wiki lookup-only for tells.
 // r2026-11-16.179: card greet gesture-safe gTTS; hand-hold SFX+shy; female=shy; Sam stand on open.
 // r2026-11-16.180: mic voice queue; dance short-circuit; story frame; search-weather route.
-export const APP_REVISION = 'r2026-11-16.180';
+// r2026-11-16.181: poke pinned TTS voice; dance body survives bed swap; weather place ask copy.
+export const APP_REVISION = 'r2026-11-16.181';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

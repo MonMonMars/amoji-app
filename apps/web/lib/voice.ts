@@ -95,6 +95,7 @@ import { isMasterMuted, subscribeMasterMute } from './master-mute';
 import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableText, prepareSpokenLead, speechLocale, stripLaughTokens, stripVoicedGlyphs } from './speak-text';
 import { analyzeText } from '@amoji/emotion-core';
 import { applyContentMood } from './companion';
+import { profilePokeLine } from './personality';
 import {
   browserVoicesForLang,
   edgeProsodyForTier,
@@ -2306,14 +2307,43 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
   });
 }
 
+/** One short gasp for poke — uses the same pinned voice stack as speak(). */
+function pokeBurstSpokenLine(characterId: string, lang: Lang, zone: string, pokeN: number): string {
+  const raw = profilePokeLine(characterId, lang, pokeN, zone);
+  const first = raw.split(/[.!?。！？\n]/)[0]?.trim() || raw;
+  if (first.length <= 40) return first;
+  return first.slice(0, 40).trim();
+}
+
 /**
- * Poke hit: a recorded gasp, not the synthetic tap and not an Edge crop.
- * Clip-only — never falls through to gTTS / Edge / speechSynthesis. Lips and
- * the speaking indicator follow the MP3 via playVoiceClip → noteSpeechStarted.
+ * Poke hit: pinned gTTS/Edge reply voice (voicePickFor), optional zone SFX under
+ * Voice replies. Falls back to the zone MP3 when voice output is off.
  */
-export function playPokeBurst(characterId: string, zone?: string): void {
-  unlockAudio(); // t786: poke is a user gesture — re-prime before clip
-  const file = recordedPokeClip(characterVoiceGender(characterId), zone);
+export function playPokeBurst(characterId: string, lang: Lang, zone?: string, pokeN = 0): void {
+  unlockAudio(); // t786: poke is a user gesture — re-prime before audio
+  const gender = characterVoiceGender(characterId);
+  const z = zone || 'torso';
+  if (voiceOutputAllowed()) {
+    const line = pokeBurstSpokenLine(characterId, lang, z, pokeN);
+    speak(line, characterId, lang, { surprise: 0.62 }, undefined, 1.05);
+    if (sfxEnabled() && !isMasterMuted()) {
+      const file = recordedPokeClip(gender, z);
+      lineQueue.enqueue({
+        kind: 'clip',
+        text: 'poke-sfx',
+        characterId,
+        lang,
+        intensity: 1,
+        clipFile: file,
+        clipOnly: true,
+        sfxOnly: true,
+      });
+      drainSpeech();
+    }
+    return;
+  }
+  if (!sfxEnabled() || isMasterMuted()) return;
+  const file = recordedPokeClip(gender, z);
   void playVoiceClip(file, 'oh', () => markVoiceStarted()).catch(() => { /* a missing file stays quiet */ });
 }
 /** Funny-path laugh: queue a CLIP_LIBRARY laugh/giggle/smile before the reply TTS. Never speaks hehe. */
