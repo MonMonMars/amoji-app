@@ -5,7 +5,7 @@
 **Purpose:** Human-only checks after #419–#437 + #458. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
 Owner: “getting worst” / “nothing fixed” — **do not mark R10–R13 Done** until this pass.
 
-Tick on a real phone (prefer iPhone Safari). **Mandatory once:** hard refresh or remove home-screen icon and re-add so the service worker picks up **`amoji-r2026-11-16.163`** (stale `r150` shell hid recent fixes). Then idle prefs **v6** (`IdleQuaterniusHuman` default — not RPM F) and voice sink land.
+Tick on a real phone (prefer iPhone Safari). **Mandatory once:** hard refresh, tap **Refresh** on the “Update ready” chip if shown, or remove home-screen icon and re-add so the service worker picks up the current **`APP_REVISION`** cache (stale shells hid recent fixes). Then idle prefs **v6** (`IdleQuaterniusHuman` default — not RPM F) and voice sink land.
 
 ## Priority now — card · news · R10–R13 · nonsense · captions
 
