@@ -35,6 +35,7 @@ import { dancePerfClipSources } from '../lib/dance-clip-sources';
 import { timeScaleForProfile } from '../lib/performance-motion';
 import { playableIdles } from '../lib/idle-library';
 import { listEnabledIdleClipIds } from '../lib/idle-enabled';
+import { orderPassiveIdleClips } from '../lib/idle-passive-loop';
 import {
   DEFAULT_IDLE_CLIP_ID,
   isPixelCalmIdleClip,
@@ -752,6 +753,8 @@ export default function CompanionCanvas({
     let perfAction: THREE.AnimationAction | null = null;
     let perfClipId: string | null = null;
     let idleOrder: string[] = [];
+    /** One upright stand — no A→B idle crossfade rotation (Pixel blend-bad). */
+    let singleIdleStand = true;
     let idleClipId = '';
     let thinkMiss = false;
     let idleIdx = 0;
@@ -861,9 +864,13 @@ export default function CompanionCanvas({
       }
       idleAction = action;
       idleClipId = safeId;
-      // hold this idle for 1–2 of its own beats, then hand over mid-motion
-      const holdMs = Math.min(14000, Math.max(5000, clip.duration * 1000 * (1 + Math.random())));
-      idleHoldUntil = performance.now() + holdMs;
+      if (singleIdleStand) {
+        idleHoldUntil = Infinity;
+      } else {
+        // hold this idle for 1–2 of its own beats, then hand over mid-motion
+        const holdMs = Math.min(14000, Math.max(5000, clip.duration * 1000 * (1 + Math.random())));
+        idleHoldUntil = performance.now() + holdMs;
+      }
       idleRefreshAt = nextIdleRefreshAt(performance.now(), IDLE_JOINT_REFRESH_MS);
     };
 
@@ -956,15 +963,13 @@ export default function CompanionCanvas({
         // over mid-motion, so there is no clamped end-frame freeze to
         // recover from and no neutral stand between idle movements
       });
-      // Owner-enabled clips win the playlist. Do NOT fold IDLE_PICKS into
-      // orderPassiveIdleClips — that always preferred Quaternius and overrode
-      // migrated rail enables (#430 vs #432). Side picks stay loadable for
-      // content-driven playNamedIdle; rotation uses owner enables only.
+      // Owner-enabled clips → pick ONE upright stand (no blend-bad A→B rotation).
+      // Side picks stay loadable for playNamedIdle; chat idle loops that single clip.
       const enabledLoaded = IDLE_SOURCES
         .map((s) => s.id)
         .filter((id) => clips.has(id) && !isRetiredIdleClip(resolveIdleClipId(id)));
       if (enabledLoaded.length) {
-        idleOrder = enabledLoaded;
+        idleOrder = orderPassiveIdleClips(enabledLoaded);
       } else {
         const loadedIdleIds = [...IDLE_SOURCES, ...IDLE_PICKS]
           .map((s) => s.id)
@@ -978,6 +983,7 @@ export default function CompanionCanvas({
           );
         }
       }
+      singleIdleStand = idleOrder.length <= 1;
       idleIdx = 0;
       mixerActive = true;
       if (avatar) avatar.clipDrivesBody = true;
@@ -2137,7 +2143,7 @@ export default function CompanionCanvas({
             }
           } else {
             thinkMiss = false;
-            if (now >= idleHoldUntil) nextIdle(FADE.idleRotate);
+            if (!singleIdleStand && now >= idleHoldUntil) nextIdle(FADE.idleRotate);
           }
           // Periodic same-clip re-blend (pinned or rotating) — stops slow joint drift.
           const idleBusy = !!perfAction || boost > 0 || !!handDrag || !!gameView;

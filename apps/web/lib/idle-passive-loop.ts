@@ -5,9 +5,13 @@
 import { DEFAULT_IDLE_CLIP_ID } from './idle-retired';
 import { idleClipById } from './idle-clips';
 
-/** Preferred clip ids — one upright planted stand only (no rotation thrash). */
+/** Upright chat stand priority — first match wins (no multi-idle rotation). */
 export const PASSIVE_RELAX_CLIPS = [
+  'IdleInnersceneSam',
   DEFAULT_IDLE_CLIP_ID,
+  'IdleRpmMStanding001',
+  'IdleRpmFStanding001',
+  'IdleMixamoBreathing',
 ] as const;
 /** Stretch stays out of the default passive loop. */
 export const PASSIVE_STRETCH_CLIPS = [] as const;
@@ -18,7 +22,7 @@ export const PASSIVE_LOOK_CLIPS = [] as const;
  * Canonical playlist: one near-still calm stand — Quaternius, not RPM F.
  */
 export const PASSIVE_IDLE_LOOP_TEMPLATE = [
-  DEFAULT_IDLE_CLIP_ID,
+  ...PASSIVE_RELAX_CLIPS,
 ] as const;
 
 function firstAvailable(candidates: readonly string[], available: ReadonlySet<string>): string | null {

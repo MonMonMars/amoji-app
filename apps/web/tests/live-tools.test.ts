@@ -32,6 +32,7 @@ import {
   preferHeadlinesForLang,
   sayNews,
   scrubNewsFeedBody,
+  scrubNewsTitleForSpeech,
   toldNewsTitles,
   worldBlock,
   type GeoLike,
@@ -956,10 +957,17 @@ describe('HK RSS speech chrome', () => {
   const title = '許志安翻唱 愛是懷疑 陳奕迅驚喜捧場';
   const body = `${title}\n20261116\n娛樂\n明報新聞網`;
 
+  it('scrubNewsTitleForSpeech drops 有片丨 prefix and trailing 橙新聞', () => {
+    const raw = '有片丨SpaceX成功 筷子 回收太空船創歷史 橙新聞';
+    expect(scrubNewsTitleForSpeech(raw)).toBe('SpaceX成功 筷子 回收太空船創歷史');
+    expect(scrubNewsTitleForSpeech('有片丨頭條標題', '橙新聞')).toBe('頭條標題');
+  });
+
   it('scrubNewsFeedBody drops dates, sections, and title repeat', () => {
     expect(scrubNewsFeedBody(body, title)).toBe('');
     expect(scrubNewsFeedBody('Judges praised the show.\n20261116\n娛樂', title)).toMatch(/Judges praised/);
     expect(scrubNewsFeedBody('Judges praised the show.\n20261116\n娛樂', title)).not.toMatch(/20261116|娛樂/);
+    expect(scrubNewsFeedBody('⚑ 舉報\n橙新聞', title)).toBe('');
   });
 
   it('parseRssItems keeps headline once in spoken pack', () => {

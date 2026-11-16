@@ -25,7 +25,7 @@ describe('passive idle loop (single near-still stand v6)', () => {
       'IdleInnersceneSam',
       'IdleRpmFVar001',
     ]);
-    expect(order).toEqual([DEFAULT_IDLE_CLIP_ID]);
+    expect(order).toEqual(['IdleInnersceneSam']);
     expect(order).not.toContain('IdleRpmFStanding001');
     expect(order).not.toContain('IdleRpmMStanding001');
     expect(order).not.toContain('IdleSassy');
@@ -38,7 +38,9 @@ describe('passive idle loop (single near-still stand v6)', () => {
     expect(PASSIVE_LOOK_CLIPS).toEqual([]);
   });
 
-  it('still builds a single-clip loop from available Quaternius stand', () => {
+  it('still builds a single-clip loop from best upright stand', () => {
+    expect(orderPassiveIdleClips([DEFAULT_IDLE_CLIP_ID, 'IdleInnersceneSam']))
+      .toEqual(['IdleInnersceneSam']);
     expect(orderPassiveIdleClips([DEFAULT_IDLE_CLIP_ID, 'IdleRpmFStanding001']))
       .toEqual([DEFAULT_IDLE_CLIP_ID]);
   });
@@ -47,13 +49,14 @@ describe('passive idle loop (single near-still stand v6)', () => {
     const samples = [0, 1, 8, 9].map((n) =>
       nextPassiveIdleClip([...PASSIVE_IDLE_LOOP_TEMPLATE], n),
     );
-    expect(samples.every((id) => id === DEFAULT_IDLE_CLIP_ID)).toBe(true);
+    expect(samples.every((id) => id === 'IdleInnersceneSam')).toBe(true);
   });
 
   it('marks only the single passive upright clip', () => {
+    expect(isPassiveIdleClip('IdleInnersceneSam')).toBe(true);
     expect(isPassiveIdleClip(DEFAULT_IDLE_CLIP_ID)).toBe(true);
-    expect(isPassiveIdleClip('IdleRpmFStanding001')).toBe(false);
-    expect(isPassiveIdleClip('IdleRpmMStanding001')).toBe(false);
+    expect(isPassiveIdleClip('IdleRpmFStanding001')).toBe(true);
+    expect(isPassiveIdleClip('IdleRpmMStanding001')).toBe(true);
     expect(isPassiveIdleClip('IdleSassy')).toBe(false);
     expect(isPassiveIdleClip('IdleBreathCalm')).toBe(false);
   });

@@ -392,7 +392,10 @@
 // r2026-11-16.171: showcase news yes → clientLiveContext + sayLocal (no LLM double-speak).
 // r2026-11-16.172: news TTS drops RSS dates/sections; live tells no longer scrubbed silent; chat follow-live scroll.
 // r2026-11-16.173: remove Cantate Domino; fix idle “完美謎題日”; raise mood-tic gate (less 呀/好 spam).
-export const APP_REVISION = 'r2026-11-16.173';
+// r2026-11-16.174: idle = one upright stand (orderPassiveIdleClips); no A→B rotate; default rail #10 Sam.
+// r2026-11-16.175: drop dreamy “信能量嘅星…” idle sludge; gate leftover metaphor lines.
+// r2026-11-16.176: news TTS strips 有片丨/橙新聞; dreamy idle drops “袖珍地圖飄過” sludge.
+export const APP_REVISION = 'r2026-11-16.176';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

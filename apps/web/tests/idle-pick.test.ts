@@ -96,21 +96,21 @@ describe('idle enable + pick', () => {
   it('persists enable toggles and keeps a non-empty pool', () => {
     mockStorage();
     forgetIdleEnabledCache();
-    expect(isIdleEnabled(6)).toBe(true); // Quaternius fresh default
+    expect(isIdleEnabled(10)).toBe(true); // InnersceneSam upright default
+    expect(isIdleEnabled(6)).toBe(false);
     expect(isIdleEnabled(5)).toBe(false);
     expect(isIdleEnabled(11)).toBe(false);
     expect(isIdleEnabled(8)).toBe(false);
     expect(isIdleEnabled(3)).toBe(false);
-    expect(isIdleEnabled(10)).toBe(false);
     const thinkRail = IDLE_CLIP_OPTIONS.find((c) => c.id === 'Thinking')!.num;
     setIdleEnabled(thinkRail, true);
     expect(isIdleEnabled(thinkRail)).toBe(true);
     expect(listEnabledIdleClipIds()).toContain('Thinking');
-    setIdleEnabled(6, false);
+    setIdleEnabled(10, false);
     setIdleEnabled(thinkRail, false);
-    // Empty enable → reset to Quaternius (rail #6)
+    // Empty enable → reset to InnersceneSam (rail #10)
     expect(listEnabledIdleClipIds()).toEqual([
-      'IdleQuaterniusHuman',
+      'IdleInnersceneSam',
     ]);
   });
 

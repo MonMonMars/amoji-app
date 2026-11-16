@@ -101,8 +101,8 @@ describe('owner picks win over Quaternius (#430 vs #432)', () => {
     mockStorage();
     forgetIdleEnabledCache();
     forgetIdlePickCache();
-    // Fresh default enable = Quaternius; pin overrides for that character.
-    expect(listEnabledIdleClipIds()).toEqual(['IdleQuaterniusHuman']);
+    // Fresh default enable = InnersceneSam; pin overrides for that character.
+    expect(listEnabledIdleClipIds()).toEqual(['IdleInnersceneSam']);
     expect(ownerCalmIdleClip('a02-other')).toBeNull(); // stock default → pool varies
     expect(saveIdlePick('a01-shino', 'IdleRpmMStanding001')).toBe('IdleRpmMStanding001');
     expect(idlePickFor('a01-shino')).toBe('IdleRpmMStanding001');
@@ -147,7 +147,7 @@ describe('owner picks win over Quaternius (#430 vs #432)', () => {
       'utf8',
     );
     expect(canvas).toContain('enabledLoaded');
-    expect(canvas).toContain('Owner-enabled clips win the playlist');
+    expect(canvas).toContain('orderPassiveIdleClips');
     expect(canvas).toContain('IdleQuaterniusHuman');
   });
 });

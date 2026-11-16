@@ -847,7 +847,26 @@ export function toldNewsTitles(storage?: Kv | null, now = Date.now()): string[] 
 
 const NEWS_LINE_DATE_ONLY = /^20\d{6}$/;
 const NEWS_CATEGORY_LINE = /^(娛樂|娱乐|財經|财经|體育|体育|港聞|港闻|科技|國際|国际|副刊|金曲|星級專訪|星级专访|文化|地產|地产|時事|时事)(?:\s+[\u3400-\u9fff]{2,12}新聞網)?$/;
-const NEWS_SOURCE_ONLY = /^(?:明報|明报|星島|星岛|頭條|头条|東網|东网|香港01|HK01|商業電台|商业电台)[\u3400-\u9fff]{0,8}新聞網?$/;
+const NEWS_SOURCE_ONLY = /^(?:明報|明报|星島|星岛|頭條|头条|東網|东网|香港01|HK01|橙新聞|on\.cc|商業電台|商业电台|巴士的報|信報|大公報|文匯報|文汇报)[\u3400-\u9fff]{0,8}新聞網?$/;
+const HK_NEWS_VIDEO_PREFIX = /^(?:有片|快訊|圖集|影片|視頻|视频)[丨｜|·]\s*/u;
+const HK_NEWS_TRAILING_SOURCE = /\s+(?:橙新聞|on\.cc|東網|东网|星島|星岛|明報|明报|頭條|头条|香港01|HK01|巴士的報|信報|大公報|文匯報|文汇报|商業電台|商业电台)(?:\s*新聞)?\s*$/u;
+
+/** Strip video tags, pipe separators, trailing publisher names — before TTS. */
+export function scrubNewsTitleForSpeech(title: string, source = ''): string {
+  let s = String(title || '').trim();
+  if (!s) return '';
+  s = s.replace(HK_NEWS_VIDEO_PREFIX, '');
+  s = s.replace(/[丨｜]/g, ' ').replace(/\s+/g, ' ').trim();
+  const src = source.trim();
+  if (src) {
+    const tail = new RegExp(`\\s+${src.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'u');
+    s = s.replace(tail, '').trim();
+  }
+  s = s.replace(HK_NEWS_TRAILING_SOURCE, '').trim();
+  const dup = s.match(/^(.{10,80}?)\s+\1$/u);
+  if (dup?.[1]) s = dup[1].trim();
+  return s;
+}
 
 /**
  * Drop RSS chrome (compact dates, section tags, source labels, title repeat)
@@ -865,7 +884,9 @@ export function scrubNewsFeedBody(text: string, title = ''): string {
     if (!bare || NEWS_LINE_DATE_ONLY.test(bare)) continue;
     if (NEWS_CATEGORY_LINE.test(bare)) continue;
     if (NEWS_SOURCE_ONLY.test(bare)) continue;
-  if (/^[\d\s]+$/.test(bare)) continue;
+    if (/^(?:橙新聞|on\.cc|RTHK|SCMP)$/i.test(bare)) continue;
+    if (/^⚑\s*舉報|^舉報$|^举报$/.test(bare)) continue;
+    if (/^[\d\s]+$/.test(bare)) continue;
     const compact = spokenHeadline(bare);
     if (!compact) continue;
     const key = normalizeNewsTitle(compact);
@@ -1070,8 +1091,9 @@ export function parseRssItems(xml: string, limit = 12): Headline[] {
     const raw = decodeXml(m[1]);
     if (!raw || /^google (news|新聞)$/i.test(raw)) continue;
     const cut = raw.lastIndexOf(' - ');
-    const title = (cut > 0 ? raw.slice(0, cut) : raw).trim();
+    const titleRaw = (cut > 0 ? raw.slice(0, cut) : raw).trim();
     const source = cut > 0 ? raw.slice(cut + 3).trim() : '';
+    const title = spokenHeadline(scrubNewsTitleForSpeech(titleRaw, source));
     const descRaw = item.match(/<(?:description|content:encoded|summary)>([\s\S]*?)<\/(?:description|content:encoded|summary)>/i)?.[1];
     const summary = descRaw
       ? clip(spokenHeadline(scrubNewsFeedBody(decodeXml(descRaw), title)), 420)
@@ -1440,8 +1462,8 @@ function newsRssUrl(query: string, lang: Lang4, top = false, region?: NewsRegion
   return `https://news.google.com/rss/search?${q.toString()}`;
 }
 
-function spokenHeadline(title: string): string {
-  return stripLaughTokens(sanitizeWebForSpeech(title));
+function spokenHeadline(title: string, source = ''): string {
+  return stripLaughTokens(sanitizeWebForSpeech(scrubNewsTitleForSpeech(title, source)));
 }
 
 function withNewsBody(title: string, source: string, summaryRaw?: string): Headline {
@@ -1496,8 +1518,9 @@ async function fetchNews(
     const raw = str(item.title);
     if (!raw) continue;
     const cut = raw.lastIndexOf(' - ');
-    const title = spokenHeadline((cut > 0 ? raw.slice(0, cut) : raw).trim());
+    const titleRaw = (cut > 0 ? raw.slice(0, cut) : raw).trim();
     const source = cut > 0 ? raw.slice(cut + 3).trim() : str(item.author);
+    const title = spokenHeadline(titleRaw, source);
     const summary = str(item.description) || str(item.content) || str(item.contentSnippet);
     out.push(withNewsBody(title, source, summary || undefined));
     if (out.length >= 12) break;

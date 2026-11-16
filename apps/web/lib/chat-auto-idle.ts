@@ -177,7 +177,10 @@ export function ownerCalmIdleClip(characterId?: string | null): string | null {
   );
   if (!enabled.length) return null;
   // Stock fresh default alone — do not collapse chit-chat/neutral pools.
-  if (enabled.length === 1 && enabled[0] === DEFAULT_IDLE_CLIP_ID) return null;
+  const stockOnly =
+    enabled.length === 1
+    && (enabled[0] === DEFAULT_IDLE_CLIP_ID || enabled[0] === 'IdleInnersceneSam');
+  if (stockOnly) return null;
   return enabled[0]!;
 }
 
