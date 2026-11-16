@@ -95,7 +95,7 @@
 | Talk repeats / double-speak residual | #399 / #386 — **phone** |
 | Phone smoke on live demo | **Human** — checklist [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) — do **not** mark Done without owner |
 | SFX #1–23 Want/archive/delete (R1/R2) | Map documented in [`SFX_WANT_LIST.md`](./SFX_WANT_LIST.md) — no new deletes without owner map |
-| Pages rebuild | Tip `9292e81` (#432) · Pages live 16:19 UTC == tip. Agent `workflow_dispatch` is 403. |
+| Pages rebuild | After stabilization pack lands — agent push main; prior tip `9292e81` Pages 16:19 UTC. Agent `workflow_dispatch` is 403. |
 
 ### Hold
 
@@ -108,6 +108,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-16 ~08:35 | **Frozen order pack:** `07dd76e3` card + P1 voice sink pin + P4 R12 cast shader + P3 poke #455 arm + P5 resource/mistake/data libs — **phone Outstanding unchanged** |
 | 2026-11-16 ~01:12 | Continue audit: tip `9292e81` (#432) · product #426–#437 on main · Pages == tip (16:19 UTC); agent code Outstanding = 0; phone Outstanding unchanged (card · news · R10–R13 · nonsense · captions) |
 | 2026-11-15 ~23:50 | CRITICAL chat: mic off→on stuck + non-Yue chat mute — reacquire mic + chat pin-before-play (no onplay setSinkId) — **Outstanding until phone OK** |
 | 2026-11-15 ~23:00 | R10 #425 rebase onto #424: keep no-onplay setSinkId + real male Edge/synth hops / tier voices — **R10 still Outstanding phone** |

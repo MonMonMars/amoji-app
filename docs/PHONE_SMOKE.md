@@ -1,7 +1,7 @@
 # Phone smoke (live Pages)
 
 **Live:** https://monmonmars.github.io/amoji-app/  
-**Tip on main:** `9292e81` (#432) · product through #426–#437 · Pages `last-modified` 2026-11-15 16:19 UTC  
+**Tip on main:** `7653e102` (stabilization pack: card `07dd76e3` + voice sink + R12 + poke #455 + resource libs) · rebuild Pages after owner confirms agent push · prior Pages `9292e81` 16:19 UTC  
 **Purpose:** Human-only checks after #419–#437. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
 Owner: “getting worst” — **do not mark R10–R13 Done.**
 
