@@ -396,7 +396,8 @@
 // r2026-11-16.175: drop dreamy “信能量嘅星…” idle sludge; gate leftover metaphor lines.
 // r2026-11-16.176: news TTS strips 有片丨/橙新聞; dreamy idle drops “袖珍地圖飄過” sludge.
 // r2026-11-16.177: light news drops SARS/outbreak wiki on-this-day; no duplicate historical blurbs.
-export const APP_REVISION = 'r2026-11-16.177';
+// r2026-11-16.178: light news from Yahoo/MSN + HK01 (Google site); wiki lookup-only for tells.
+export const APP_REVISION = 'r2026-11-16.178';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

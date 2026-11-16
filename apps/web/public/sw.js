@@ -18,7 +18,7 @@
  */
 'use strict';
 
-var CACHE = 'amoji-r2026-11-16.177';
+var CACHE = 'amoji-r2026-11-16.178';
 var SHELL = [
   './',
   './chat',

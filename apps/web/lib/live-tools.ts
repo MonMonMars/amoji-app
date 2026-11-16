@@ -12,9 +12,9 @@
 //   location  navigator.geolocation, then get.geojs.io (coarse IP)
 //   places    geocoding-api.open-meteo.com + bigdatacloud reverse geocode
 //   weather   api.open-meteo.com
-//   news      Region-aware general feeds (t775): GPS/country picks Google News
-//             gl + a reputable regional RSS (BBC / NPR / NHK / RTHK / Guardian),
-//             then Wikipedia "In the news" as CORS-open fallback. No paid APIs.
+//   news      Region-aware general feeds (t775): Google News gl + regional RSS
+//             (BBC / NPR / RTHK…) + Yahoo/MSN portal RSS. HK adds HK01 (site feed).
+//             Wikipedia is lookup-only — never spoken as “news”. No paid APIs.
 //             Spoken lines are sanitized summaries (t773) — no hashtags/URLs/chrome.
 //             Default topic mix (t780): funny/casual, science, AI, entertainment, health.
 //             Heavy war/politics/tragedy filtered unless user asks (serious/politics/war…).
@@ -680,6 +680,8 @@ export function isNewsFeedCacheKey(url: string): boolean {
   if (u.includes('duckduckgo.com') || u.includes('api.search.brave.com')) return false;
   if (u.includes('wikipedia.org/w/api.php')) return false;
   if (u.includes('news.google.com') || u.includes('rss2json.com')) return true;
+  if (u.includes('news.yahoo.com') || u.includes('rss.news.yahoo.com')) return true;
+  if (u.includes('rss.msn.com')) return true;
   if (u.includes('/feed/featured/')) return true;
   if (/\/rss|\.rss|feeds\.|feed\./i.test(u)) return true;
   return false;
@@ -849,13 +851,14 @@ const NEWS_LINE_DATE_ONLY = /^20\d{6}$/;
 const NEWS_CATEGORY_LINE = /^(娛樂|娱乐|財經|财经|體育|体育|港聞|港闻|科技|國際|国际|副刊|金曲|星級專訪|星级专访|文化|地產|地产|時事|时事)(?:\s+[\u3400-\u9fff]{2,12}新聞網)?$/;
 const NEWS_SOURCE_ONLY = /^(?:明報|明报|星島|星岛|頭條|头条|東網|东网|香港01|HK01|橙新聞|on\.cc|商業電台|商业电台|巴士的報|信報|大公報|文匯報|文汇报)[\u3400-\u9fff]{0,8}新聞網?$/;
 const HK_NEWS_VIDEO_PREFIX = /^(?:有片|快訊|圖集|影片|視頻|视频)[丨｜|·]\s*/u;
-const HK_NEWS_TRAILING_SOURCE = /\s+(?:橙新聞|on\.cc|東網|东网|星島|星岛|明報|明报|頭條|头条|香港01|HK01|巴士的報|信報|大公報|文匯報|文汇报|商業電台|商业电台)(?:\s*新聞)?\s*$/u;
+const HK_NEWS_TRAILING_SOURCE = /\s+(?:橙新聞|on\.cc|東網|东网|星島|星岛|明報|明报|頭條|头条|香港01|HK01|巴士的報|信報|大公報|文匯報|文汇报|商業電台|商业电台|Yahoo(?:\s*News)?|MSN(?:\s*News)?)(?:\s*新聞)?\s*$/iu;
 
 /** Strip video tags, pipe separators, trailing publisher names — before TTS. */
 export function scrubNewsTitleForSpeech(title: string, source = ''): string {
   let s = String(title || '').trim();
   if (!s) return '';
   s = s.replace(HK_NEWS_VIDEO_PREFIX, '');
+  s = s.replace(/^(?:\d{4})\s*[:：]\s*/, '');
   s = s.replace(/[丨｜]/g, ' ').replace(/\s+/g, ' ').trim();
   const src = source.trim();
   if (src) {
@@ -1363,6 +1366,25 @@ function regionalHeavyNewsFeedsForLang(region: NewsRegion, lang: Lang4): string[
   return local.length ? local : [];
 }
 
+/**
+ * Live news portals — Yahoo / MSN, plus HK01 for Hong Kong (Google site RSS).
+ * Not Wikipedia; those feeds carry current headlines when wire RSS is blocked.
+ */
+export function portalNewsFeedUrls(region: NewsRegion, lang: Lang4): string[] {
+  const yahooTop = 'https://rss.news.yahoo.com/rss/topstories';
+  const yahooHk = 'https://hk.news.yahoo.com/rss';
+  const yahooTw = 'https://tw.news.yahoo.com/rss';
+  const msnHk = 'https://rss.msn.com/zh-hk';
+  const msnTw = 'https://rss.msn.com/zh-tw';
+  const msnEn = 'https://rss.msn.com/en-us';
+  const hk01 = 'https://news.google.com/rss/search?q=site:hk01.com&hl=zh-HK&gl=HK&ceid=HK:zh-Hant';
+  if (region === 'HK') return [hk01, yahooHk, msnHk];
+  if (region === 'TW') return [yahooTw, msnTw];
+  if (lang === 'ja') return [msnEn, yahooTop];
+  if (lang === 'zh' || lang === 'yue') return [hk01, yahooHk, msnHk];
+  return [yahooTop, msnEn];
+}
+
 export function regionalLightNewsFeedUrls(region: NewsRegion): string[] {
   const bbcSci = 'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml';
   const bbcEnt = 'https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml';
@@ -1505,7 +1527,7 @@ async function fetchNews(
   const rss = newsRssUrl(query, lang, top, region);
   // Direct RSS works from Node. Browsers are blocked by Google (no CORS).
   // rss2json is attempted next; many networks get a Cloudflare challenge,
-  // so callers also fall back to Wikipedia in-the-news.
+  // Browser may fall back to Yahoo/MSN/HK01 portal RSS via fetchRecentHeadlines.
   const xml = await getText(fetchImpl, rss, 6_000, { Accept: 'application/rss+xml, application/xml, text/xml, */*' }, cache);
   if (xml && xml.includes('<item')) {
     const parsed = parseRssItems(xml);
@@ -1640,6 +1662,22 @@ function mergeHeadlines(groups: Headline[][], poolMax = NEWS_POOL_MAX): Headline
   return out;
 }
 
+async function fetchPortalNewsHeadlines(
+  fetchImpl: typeof fetch,
+  region: NewsRegion,
+  lang: Lang4,
+  rssKey: string | undefined,
+  cache: Map<string, { at: number; body: string }>,
+  now: number,
+  poolMax: number,
+): Promise<Headline[]> {
+  const urls = rotateFeedUrls(portalNewsFeedUrls(region, lang), now, Math.min(4, portalNewsFeedUrls(region, lang).length));
+  const groups = await Promise.all(
+    urls.map((url) => fetchRssFeedHeadlines(fetchImpl, url, rssKey, cache)),
+  );
+  return mergeHeadlines(groups, poolMax);
+}
+
 async function fetchRssFeedHeadlines(
   fetchImpl: typeof fetch,
   feedUrl: string,
@@ -1659,10 +1697,12 @@ async function fetchRssFeedHeadlines(
   if (!items?.length) return [];
   const out: Headline[] = [];
   for (const item of items) {
-    const raw = spokenHeadline(str(item.title));
+    const titleRaw = str(item.title);
+    const source = str(item.author) || '';
+    const raw = spokenHeadline(titleRaw, source);
     if (!raw) continue;
     const summary = str(item.description) || str(item.content) || str(item.contentSnippet);
-    out.push(withNewsBody(raw, str(item.author) || 'RSS', summary || undefined));
+    out.push(withNewsBody(raw, source || 'RSS', summary || undefined));
     if (out.length >= 10) break;
   }
   return out;
@@ -1702,12 +1742,13 @@ async function fetchRecentHeadlines(
   const extras = rotateFeedUrls(feedBank, now, widen ? Math.min(8, feedBank.length) : 4);
   const googleQuery = allowHeavy ? '' : defaultLightNewsQuery(lang, now);
   const top = allowHeavy;
-  const [feed, wiki, ...regional] = await Promise.all([
+  const portalUrls = rotateFeedUrls(portalNewsFeedUrls(region, lang), now, 3);
+  const [feed, ...regionalAndPortal] = await Promise.all([
     fetchNews(fetchImpl, googleQuery, lang, rssKey, cache, top, region),
-    fetchWikipediaNews(fetchImpl, lang, cache, { days: widen ? 10 : 5, poolMax }),
+    ...portalUrls.map((url) => fetchRssFeedHeadlines(fetchImpl, url, rssKey, cache)),
     ...extras.map((url) => fetchRssFeedHeadlines(fetchImpl, url, rssKey, cache)),
   ]);
-  const merged = preferHeadlinesForLang(lang, mergeHeadlines([feed, ...regional, wiki], poolMax));
+  const merged = preferHeadlinesForLang(lang, mergeHeadlines([feed, ...regionalAndPortal], poolMax));
   if (allowHeavy) return merged;
   if (!widen) {
     const picked = pickDefaultHeadlines(merged, { allowHeavy: false, preferLight: true, lang });
@@ -1715,8 +1756,7 @@ async function fetchRecentHeadlines(
   }
   const softer = pickDefaultHeadlines(merged, { allowHeavy: false, preferLight: false, lang });
   if (softer.length) return softer.slice(0, poolMax);
-  // Browser CORS often blanks Google/BBC RSS; keep any non-grim wiki line so
-  // "news" never collapses to the empty miss when a soft story exists.
+  // Browser CORS often blanks Google/BBC RSS; keep any non-grim portal/regional line.
   return merged.filter((h) => !isHeavyHeadline(h.title, h.summary ?? '')).slice(0, poolMax);
 }
 
@@ -1755,32 +1795,23 @@ async function fetchAreaNews(
       : raw.filter((h) => !isHeavyHeadline(h.title, h.summary ?? '')).slice(0, NEWS_POOL_MAX);
     if (fromGoogle.length) return { headlines: fromGoogle, recent: false };
 
-    // Browser CORS blanks Google + rss2json on Pages — fall back so AI/topic
-    // chips still get something she can tell.
-    const wiki = await fetchWikipediaNews(fetchImpl, lang, cache, {
-      days: opts?.widen ? 10 : 5,
-      poolMax: opts?.widen ? NEWS_POOL_WIDE : NEWS_POOL_MAX,
-    });
+    const portal = await fetchPortalNewsHeadlines(
+      fetchImpl,
+      newsRegionFromPlace(place, lang),
+      lang,
+      rssKey,
+      cache,
+      now,
+      opts?.widen ? NEWS_POOL_WIDE : NEWS_POOL_MAX,
+    );
     const bits = topical.toLowerCase().split(/[^a-z0-9\u3400-\u9fff]+/).filter((w) => w.length > 2);
-    const topicalWiki = wiki.filter((h) => bits.some((t) => h.title.toLowerCase().includes(t)));
-    if (topicalWiki.length) {
+    const topicalPortal = portal.filter((h) => bits.some((t) => h.title.toLowerCase().includes(t)));
+    if (topicalPortal.length) {
       return {
-        headlines: topicalWiki.slice(0, opts?.widen ? NEWS_POOL_WIDE : NEWS_POOL_MAX),
+        headlines: topicalPortal.slice(0, opts?.widen ? NEWS_POOL_WIDE : NEWS_POOL_MAX),
         recent: false,
       };
     }
-
-    const snips = await searchWikipedia(fetchImpl, topical, lang, cache);
-    const fromSearch = snips
-      .slice(0, 4)
-      .map((s) => {
-        const cut = s.indexOf(' — ');
-        const title = clip(spokenHeadline(cut > 0 ? s.slice(0, cut) : s), 180);
-        const summary = cut > 0 ? s.slice(cut + 3) : s;
-        return withNewsBody(title, 'Wikipedia', summary);
-      })
-      .filter((h) => h.title && !isHeavyHeadline(h.title, h.summary ?? ''));
-    if (fromSearch.length) return { headlines: fromSearch, recent: false };
 
     const soft = await fetchRecentHeadlines(fetchImpl, lang, rssKey, cache, place, fetchOpts);
     return { headlines: soft, recent: true };
