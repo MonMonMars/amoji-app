@@ -14,8 +14,9 @@ export const STORY_MAX_TOKENS = 1536;
  * joy/excitement so prosody stays warm and slightly slower (not chirpy).
  */
 export const STORY_SPEECH_HINTS: Readonly<Record<string, number>> = {
-  love: 0.78,
-  contentment: 0.68,
+  // Stay below INTERJECTION_AT (0.72) so fairy tales never open with 呀…… tics.
+  love: 0.68,
+  contentment: 0.66,
   relief: 0.42,
 };
 

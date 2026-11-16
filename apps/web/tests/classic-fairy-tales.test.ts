@@ -81,6 +81,16 @@ describe('classic fairy-tale catalog', () => {
     expect(pickClassicFairyTale('ja', 2).text.ja.trim().length).toBeGreaterThan(20);
   });
 
+  it('formatTaleForSpeech adds title + once-upon-a-time frame without duplicating openers', () => {
+    const tale = CLASSIC_FAIRY_TALES.find((t) => t.slug === 'little-red-riding-hood')!;
+    const en = formatTaleForSpeech(tale, 'en');
+    expect(en).toMatch(/^Little Red Riding Hood\. Once upon a time,/i);
+    const yue = formatTaleForSpeech(tale, 'yue');
+    expect(yue).toContain('小紅帽。');
+    expect(yue).toMatch(/從前/);
+    expect(yue).not.toMatch(/從前，從前/);
+  });
+
   it('EN spoken tales are longer emotional retellings, not tiny summaries', () => {
     expect(TALE_LENGTH_BANDS.short.min).toBeGreaterThanOrEqual(400);
     expect(TALE_LENGTH_BANDS.veryLong.min).toBeGreaterThanOrEqual(1500);

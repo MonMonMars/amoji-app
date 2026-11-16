@@ -34,7 +34,7 @@ export const TALE_LENGTH_BANDS: Record<
   TaleLengthTier,
   { min: number; max: number }
 > = {
-  short: { min: 450, max: 900 },
+  short: { min: 450, max: 920 },
   medium: { min: 800, max: 1400 },
   long: { min: 1200, max: 2000 },
   veryLong: { min: 1600, max: 2800 },
@@ -53,12 +53,30 @@ export function asTaleLang(lang?: string): Lang {
   return 'en';
 }
 
+const TALE_FRAME: Record<Lang, { prefix: string; dup: RegExp; join: string }> = {
+  en: { prefix: 'Once upon a time', dup: /^once upon a time\b/i, join: ', ' },
+  yue: { prefix: '從前', dup: /^從前/, join: '，' },
+  zh: { prefix: '从前', dup: /^从前/, join: '，' },
+  ja: { prefix: 'むかしむかし', dup: /^むかし/, join: '、' },
+};
+
+function frameTaleBody(L: Lang, raw: string): string {
+  const frame = TALE_FRAME[L];
+  if (frame.dup.test(raw)) return raw;
+  if (L === 'en' && /^once,\s*/i.test(raw)) {
+    return `${frame.prefix}, ${raw.replace(/^once,\s*/i, '')}`;
+  }
+  return `${frame.prefix}${frame.join}${raw}`;
+}
+
 /** Collapse whitespace so spoken-line gate (`\\s{2,}`) stays happy. */
 export function formatTaleForSpeech(tale: ClassicFairyTale, lang?: string): string {
   const L = asTaleLang(lang);
   const title = tale.title[L] ?? tale.title.en;
-  const body = (tale.text[L] ?? tale.text.en).trim();
-  return `${title}. ${body}`.replace(/\s+/g, ' ').trim();
+  const rawBody = (tale.text[L] ?? tale.text.en).trim();
+  const body = frameTaleBody(L, rawBody);
+  const titleSep = L === 'en' ? '. ' : '。';
+  return `${title}${titleSep}${body}`.replace(/\s+/g, ' ').trim();
 }
 
 export function spokenCharCount(text: string): number {
