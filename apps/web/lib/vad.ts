@@ -83,6 +83,11 @@ export function preloadVadRuntime(): Promise<boolean> {
   return loadRuntime();
 }
 
+/** Await before getUserMedia / a new listen session — avoids DeviceInUse after off→on. */
+export function waitForVadRelease(): Promise<void> {
+  return vadLifecycle;
+}
+
 function destroyActiveVad(): Promise<void> {
   vadLifecycle = vadLifecycle.then(async () => {
     const prev = activeMicVad;
