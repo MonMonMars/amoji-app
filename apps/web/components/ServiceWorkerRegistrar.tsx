@@ -9,6 +9,7 @@
 //
 // r164: when a new sw.js CACHE lands, nudge refresh — stale shell hid fixes.
 import { useCallback, useEffect, useState } from 'react';
+import { fetchLiveRevision, revisionStale } from '../lib/live-revision';
 import { APP_REVISION } from '../lib/revision';
 
 function watchForSwUpdate(reg: ServiceWorkerRegistration, onReady: () => void): void {
@@ -29,6 +30,7 @@ function watchForSwUpdate(reg: ServiceWorkerRegistration, onReady: () => void): 
 
 export default function ServiceWorkerRegistrar() {
   const [updateReady, setUpdateReady] = useState(false);
+  const [liveRevision, setLiveRevision] = useState<string | null>(null);
 
   const applyUpdate = useCallback(() => {
     window.location.reload();
@@ -42,15 +44,11 @@ export default function ServiceWorkerRegistrar() {
     let removeVis: (() => void) | undefined;
 
     const probeLiveRevision = () => {
-      void fetch(`./revision.txt?probe=${Date.now()}`, { cache: 'no-store' })
-        .then((res) => res.text())
-        .then((t) => {
-          const live = t.trim();
-          if (live && live !== APP_REVISION) setUpdateReady(true);
-        })
-        .catch(() => {
-          /* optional file — never block the app */
-        });
+      void fetchLiveRevision().then((live) => {
+        if (!alive || !live) return;
+        setLiveRevision(live);
+        if (revisionStale(APP_REVISION, live)) setUpdateReady(true);
+      });
     };
 
     void navigator.serviceWorker
@@ -89,7 +87,10 @@ export default function ServiceWorkerRegistrar() {
       aria-live="polite"
       className="pointer-events-auto fixed bottom-3 left-1/2 z-[9999] flex -translate-x-1/2 items-center gap-3 rounded-full border border-white/20 bg-black/85 px-4 py-2 text-sm text-white shadow-lg backdrop-blur"
     >
-      <span>Update ready · {APP_REVISION}</span>
+      <span>
+        Update ready · live {liveRevision ?? '…'}
+        {revisionStale(APP_REVISION, liveRevision) ? ` (yours ${APP_REVISION})` : ''}
+      </span>
       <button
         type="button"
         className="rounded-full bg-white px-3 py-1 text-xs font-medium text-black"
