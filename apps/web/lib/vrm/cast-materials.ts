@@ -13,7 +13,7 @@ import {
   recolorRedToBrown,
   unifyMToonParams,
 } from '../cast-adjust';
-import { eyeMaterialKind, isEyeMaterial } from './eyes';
+import { eyeMaterialKind, isEyeMaterial, stabilizeEyeMaterials } from './eyes';
 
 type Role = 'eye' | 'hair' | 'shoe' | 'cloth' | 'other';
 
@@ -218,4 +218,19 @@ export function stabilizeCastEyes(root: THREE.Object3D, characterId: string): vo
       }
     }
   });
+}
+
+/**
+ * Shared post-load path: shade floor, MToon unify, matcap/rim dampen, eyes.
+ * Wardrobe texture patches run when characterId is set (chat / preview / thumbs / bake).
+ */
+export function applyCastShaderLook(root: THREE.Object3D, characterId?: string): void {
+  floorCastShadeColors(root);
+  unifyCastMToon(root, characterId);
+  dampenCastMatcap(root, characterId);
+  stabilizeEyeMaterials(root);
+  if (characterId) {
+    patchCastTextures(root, characterId);
+    stabilizeCastEyes(root, characterId);
+  }
 }

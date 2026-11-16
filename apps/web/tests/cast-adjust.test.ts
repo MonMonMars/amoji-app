@@ -123,6 +123,16 @@ describe('MToon unify', () => {
       shadingToonyFactor: 0.2,
       shadingShiftFactor: -0.2,
     })).toBeNull();
+    const mid = unifyMToonParams({
+      outlineWidthMode: 'worldCoordinates',
+      outlineWidthFactor: REF_OUTLINE_WIDTH_FACTOR,
+      shadingToonyFactor: 0.55,
+      shadingShiftFactor: 0.1,
+    });
+    expect(mid).toEqual({
+      shadingToonyFactor: REF_SHADING_TOONY,
+      shadingShiftFactor: REF_SHADING_SHIFT,
+    });
   });
 });
 

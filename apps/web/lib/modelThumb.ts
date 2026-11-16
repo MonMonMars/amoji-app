@@ -20,8 +20,8 @@ import {
   type CastDaylightRig,
 } from './vrm/cast-lighting';
 import { characterIdFromModelRef } from './vrm/cast-lighting-profile';
-import { dampenCastMatcap, floorCastShadeColors, unifyCastMToon } from './vrm/cast-materials';
-import { disableVrmAutoLookAt, stabilizeEyeMaterials } from './vrm/eyes';
+import { applyCastShaderLook } from './vrm/cast-materials';
+import { disableVrmAutoLookAt } from './vrm/eyes';
 
 interface ThumbEnv {
   renderer: THREE.WebGLRenderer;
@@ -146,12 +146,7 @@ export function requestModelThumb(url: string): Promise<string | null> {
       const loaded = await withTimeout(loadModel(loader, url), 30_000, 'thumbnail load timed out');
       root = loaded.root;
       vrm = loaded.vrm;
-      // Shared cast shader path (chat / preview / thumbs) — never skip when
-      // characterId is missing; dampen + MToon unify ignore the id anyway.
-      floorCastShadeColors(root);
-      unifyCastMToon(root, characterId);
-      dampenCastMatcap(root, characterId);
-      stabilizeEyeMaterials(root);
+      applyCastShaderLook(root, characterId);
       if (vrm) disableVrmAutoLookAt(vrm);
       scene.add(root);
       // frame the face exactly like ModelPreview does — head height from the

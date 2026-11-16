@@ -19,8 +19,8 @@ import type { VRM } from '@pixiv/three-vrm';
 import { modelUrl } from '../lib/asset';
 import { addCastDaylight, applyCastToneMapping } from '../lib/vrm/cast-lighting';
 import { characterIdFromModelRef } from '../lib/vrm/cast-lighting-profile';
-import { dampenCastMatcap, floorCastShadeColors, unifyCastMToon } from '../lib/vrm/cast-materials';
-import { disableVrmAutoLookAt, isEyeMaterial, pinVrmEyeGaze, stabilizeEyeMaterials } from '../lib/vrm/eyes';
+import { applyCastShaderLook } from '../lib/vrm/cast-materials';
+import { disableVrmAutoLookAt, pinVrmEyeGaze } from '../lib/vrm/eyes';
 
 export default function ModelPreview({
   url,
@@ -69,25 +69,8 @@ export default function ModelPreview({
     loader.load(modelUrl(url) ?? url, (gltf) => {
       if (disposed) { renderer.dispose(); return; }
       const vrm = (gltf as unknown as { userData: { vrm: VRM } }).userData.vrm;
-      // Same material path as CompanionCanvas — every cast id (or missing id)
-      // gets shade floor + MToon unify + matcap dampen so select ≠ chat lighting.
-      floorCastShadeColors(vrm.scene);
-      unifyCastMToon(vrm.scene, characterId);
-      dampenCastMatcap(vrm.scene, characterId);
-      stabilizeEyeMaterials(vrm.scene);
+      applyCastShaderLook(vrm.scene, characterId);
       disableVrmAutoLookAt(vrm);
-      // same identity treatment as the chat room: gentle palette tint + build
-      const tintCol = new THREE.Color(tint);
-      vrm.scene.traverse((node) => {
-        const mesh = node as THREE.Mesh;
-        if (!mesh.isMesh) return;
-        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        for (const m of mats) {
-          const mat = m as THREE.MeshStandardMaterial;
-          if (isEyeMaterial(mat.name || '', mesh.name || '')) continue;
-          if (mat.color) mat.color.multiply(tintCol);
-        }
-      });
       vrm.scene.scale.set(width, height, width);
       scene.add(vrm.scene);
 

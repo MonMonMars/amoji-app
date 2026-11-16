@@ -15,6 +15,7 @@
 // cartoon physics is exactly the look.
 import type { Lang } from './prefs';
 import { personalityMotion } from './personality';
+import { CAST_UNITY_TINT } from './vrm/cast-lighting-profile';
 
 /** pose ids from @amoji/vrm-renderer IDLE_POSES, curated per personality */
 export const CHARACTER_POSES: Record<string, string[]> = {
@@ -210,5 +211,6 @@ export const CHARACTER_LOOKS: Record<string, CharacterLook> = {
 };
 
 export function lookFor(characterId: string): CharacterLook {
-  return CHARACTER_LOOKS[characterId] ?? { tint: '#ffffff', height: 1, width: 1 };
+  const base = CHARACTER_LOOKS[characterId] ?? { tint: CAST_UNITY_TINT, height: 1, width: 1 };
+  return { ...base, tint: CAST_UNITY_TINT };
 }
