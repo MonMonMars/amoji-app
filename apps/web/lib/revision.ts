@@ -390,7 +390,8 @@
 // r2026-11-16.169: chat + gate probe prime default speaker in duckExternalAudioForCompanion.
 // r2026-11-16.170: companionPlaybackSession + mic-off leave prime default speakers.
 // r2026-11-16.171: showcase news yes → clientLiveContext + sayLocal (no LLM double-speak).
-export const APP_REVISION = 'r2026-11-16.171';
+// r2026-11-16.172: news TTS drops RSS dates/sections; live tells no longer scrubbed silent; chat follow-live scroll.
+export const APP_REVISION = 'r2026-11-16.172';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
