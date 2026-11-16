@@ -270,7 +270,7 @@ const BROKEN_IDLE_MOTIF =
   /好似完美嘅.{0,12}日|像完美的.{0,12}日|perfect\s+\w+\s+day\s+already/i;
 
 const BROKEN_METAPHOR_SLUDGE =
-  /充滿電|充满电|電壓感覺友善|电压感觉友善|細爆發|小爆发|短短.{0,8}爆發|短短.{0,8}爆发|is charged and ready|voltage feels friendly|tiny burst|充電済み|電圧は友好|小さなバースト|短い.{0,8}バースト|能量嘅星|能量的星|光暗啲|舒適高啲|low brightness, high comfort|Stars of .{0,24} energy|好似友善念頭|像友善的念头|やさしい考えみたいに流れ|發夢燃料|做梦燃料|Daydream fuel|空想の燃料|soul\s+thread|energy\s+field\s+hums|cosmic\s+whisper|nexus\s+of\s+(?:feelings?|vibes?)|wavelength\s+of\s+(?:your\s+)?heart|quantum\s+vibes?|vibe\s+resonance|aura\s+sync/i;
+  /充滿電|充满电|電壓感覺友善|电压感觉友善|細爆發|小爆发|短短.{0,8}爆發|短短.{0,8}爆发|is charged and ready|voltage feels friendly|tiny burst|充電済み|電圧は友好|小さなバースト|短い.{0,8}バースト|能量嘅星|能量的星|光暗啲|舒適高啲|low brightness, high comfort|Stars of .{0,24} energy|好似友善念頭|像友善的念头|やさしい考えみたいに流れ|發夢燃料|做梦燃料|Daydream fuel|空想の燃料|soul\s+thread|energy\s+field\s+hums|cosmic\s+whisper|nexus\s+of\s+(?:feelings?|vibes?)|wavelength\s+of\s+(?:your\s+)?heart|quantum\s+vibes?|vibe\s+resonance|aura\s+sync|好似呢聲.{0,10}你好|像这声.{0,10}你好|like this soft hello|好似故事夾住書籤|像故事夹着书签|the way stories hold a bookmark|物語がしおりを挟むように/i;
 
 /** Meta topic-narration sludge ("holding this topic / same thread") — not real talk. */
 const BROKEN_META_TOPIC =

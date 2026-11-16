@@ -68,6 +68,11 @@ const FORBIDDEN_IDLE_FRAGMENTS = [
   /Vibes check/i,
   /matches your vibe/i,
   /バイブスチェック/,
+  /好似呢聲.{0,10}你好/,
+  /像这声.{0,10}你好/,
+  /like this soft hello/i,
+  /好似故事夾住書籤/,
+  /像故事夹着书签/,
 ];
 
 /** Pixel: never interrogate private thoughts in idle / open / reengage. */

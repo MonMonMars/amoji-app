@@ -55,6 +55,8 @@ const KNOWN_BAD = [
   "It's been a minute... want to pick up where we left off?",
   '我们上次聊到「爬山」——要不要继续那个话题？',
   '前回は「登山」の話してたね——続き、話す？',
+  '我將一朵新鮮嘅花靜靜放喺度，好似呢聲輕輕嘅你好。',
+  '我把一朵新鲜的花安静地放在这里，像这声轻轻的你好。',
 ];
 
 describe('spokenLineLooksBroken', () => {
@@ -75,6 +77,8 @@ describe('spokenLineLooksBroken', () => {
     expect(spokenLineLooksBroken('個vibe好靚喎。')).toBe(true);
     expect(spokenLineLooksBroken('Vibes check. What are we vibing to?')).toBe(true);
     expect(spokenLineLooksBroken('搵到首歌啱你個vibe。想知歌名嗎？')).toBe(true);
+    expect(spokenLineLooksBroken('我將一朵新鮮嘅花靜靜放喺度，好似呢聲輕輕嘅你好。')).toBe(true);
+    expect(spokenLineLooksBroken('捧着一朵新鲜的花，像故事夹着书签。')).toBe(true);
   });
 
   it('rejects presence nags in idle mode', () => {
