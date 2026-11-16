@@ -62,6 +62,19 @@ export function asksToResumeHistory(line: string): boolean {
   return BANNED_HISTORY_RESUME_ASK.test(t);
 }
 
+/**
+ * Companion lines that volunteer stored memory / past-chat recall without the
+ * user asking (aligns with privacy-recall + buildMemoryBlock gating).
+ */
+const BANNED_VOLUNTARY_MEMORY =
+  /that\s+detail\s+you\s+shared\s+still\s+sits\s+with\s+me\b|i\s+am\s+still\s+(?:right\s+there\s+with\s+it|with\s+what\s+you\s+brought\s+up)\b|those\s+stick\s+with\s+me\b|something\s+kind\s+you\s+noticed\s+lately.*stick\s+with\s+me|你啱啱講嗰啲細節我仲記住|你頭先講嗰樣我仲記住|你刚说的那些细节我还记着|你刚才说的那件事我还记着|近排你留意到嘅.*我會記住|近来你留意到.*那些我会记住|さっきの(?:細かい|一言|話).{0,12}まだ覚えて|そういうの、覚えておくね|我仲記住你(?:啱啱|頭先|剛才)|我还记着你在?(?:刚才|刚)/i;
+
+export function volunteersStoredMemory(line: string): boolean {
+  const t = (line ?? '').trim();
+  if (!t) return false;
+  return BANNED_VOLUNTARY_MEMORY.test(t);
+}
+
 /** Rough count of spoken questions (ASCII ? + full-width ？). */
 export function countSpokenQuestions(text: string): number {
   const t = (text ?? '').trim();
@@ -148,12 +161,13 @@ export function scrubHistoryResumeAsks(text: string): string {
  * fall back or stay silent (beyond history-resume #412).
  */
 const NONSENSE_SENTENCE =
-  /(?:^|[\s,.!])((?:i'?m\s+)?always\s+here|everything\s+happens\s+for\s+a\s+reason|hope\s+this\s+helps|as\s+an?\s+ai\b|let\s+me\s+know\s+if\s+you\s+need\s+anything|here\s+if\s+you\s+need\s+me)\b|you'?ve\s+gone\s+quiet\b|are\s+you\s+still\s+there\b|still\s+on\s+that\s+thread\b|holding\s+the\s+same\s+topic\b|holding\s+this\s+soft\s+moment\b|same\s+page\s+as\s+you\b|soft\s+moment\b|充滿電|充满电|電壓感覺友善|voltage feels friendly|tiny burst|soul\s+thread|energy\s+field\s+hums|cosmic\s+whisper|nexus\s+of\s+(?:feelings?|vibes?)|wavelength\s+of\s+(?:your\s+)?heart|quantum\s+vibes?|vibe\s+resonance|aura\s+sync|vibes?\s+check|matches\s+your\s+vibe|\bvibing\b|(?:個|的|の)vibe\b|配你vibe|啱你個vibe|オーラ同期|量子バイブス|バイブスチェック|灵魂频率|靈魂頻率|柔軟瞬間|柔软瞬间|柔軟時刻|柔软时刻|一切都会好|我一直都在|希望帮到你|希望幫到你|你靜咗喎|好耐冇聲|你安静下来了|好一会儿没声音|仲喺你呢條話題|还在你这条话题|輕輕留住同一個主題|轻轻留着同一个主题|同你同一頁|和你同一页|同じページにいる|やわらかい(?:時間|瞬間)|軍艦.{0,6}極光|月亮.{0,4}在.{0,6}口袋|the\s+universe\s+winks\b|destiny\s+threads?\b|宇宙在对你眨眼|命運的線/i;
+  /(?:^|[\s,.!])((?:i'?m\s+)?always\s+here|everything\s+happens\s+for\s+a\s+reason|hope\s+this\s+helps|as\s+an?\s+ai\b|let\s+me\s+know\s+if\s+you\s+need\s+anything|here\s+if\s+you\s+need\s+me)\b|you'?ve\s+gone\s+quiet\b|are\s+you\s+still\s+there\b|still\s+on\s+that\s+thread\b|holding\s+the\s+same\s+topic\b|holding\s+this\s+soft\s+moment\b|same\s+page\s+as\s+you\b|soft\s+moment\b|充滿電|充满电|電壓感覺友善|voltage feels friendly|tiny burst|soul\s+thread|energy\s+field\s+hums|cosmic\s+whisper|nexus\s+of\s+(?:feelings?|vibes?)|wavelength\s+of\s+(?:your\s+)?heart|quantum\s+vibes?|vibe\s+resonance|aura\s+sync|vibes?\s+check|matches\s+your\s+vibe|\bvibing\b|(?:個|的|の)vibe\b|配你vibe|啱你個vibe|オーラ同期|量子バイブス|バイブスチェック|灵魂频率|靈魂頻率|柔軟瞬間|柔软瞬间|柔軟時刻|柔软时刻|一切都会好|我一直都在|希望帮到你|希望幫到你|你靜咗喎|好耐冇聲|你安静下来了|好一会儿没声音|仲喺你呢條話題|还在你这条话题|輕輕留住同一個主題|轻轻留着同一个主题|同你同一頁|和你同一页|同じページにいる|やわらかい(?:時間|瞬間)|軍艦.{0,6}極光|月亮.{0,4}在.{0,6}口袋|the\s+universe\s+winks\b|destiny\s+threads?\b|宇宙在对你眨眼|命運的線|that\s+detail\s+you\s+shared\s+still\s+sits|those\s+stick\s+with\s+me|你啱啱講嗰啲細節我仲記住|你頭先講嗰樣我仲記住|你刚说的那些细节我还记着|近排你留意到嘅.*我會記住|those\s+stick\s+with\s+me/i;
 
 export function sentenceLooksLikeNonsense(sentence: string): boolean {
   const s = (sentence ?? '').trim();
   if (!s) return false;
   if (asksToResumeHistory(s)) return true;
+  if (volunteersStoredMemory(s)) return true;
   if (asksPresenceNag(s)) return true;
   if (asksUserInnerThoughts(s)) return true;
   if (isTopicMenuAsk(s)) return true;
@@ -325,6 +339,7 @@ export function spokenLineLooksBroken(text: string, opts?: SpokenGateOpts): bool
   if ((opts?.mode ?? 'local') === 'idle' && asksPresenceNag(t)) return true;
   // Local + idle: never volunteer “continue last time” — history is quiet.
   if (asksToResumeHistory(t)) return true;
+  if (volunteersStoredMemory(t)) return true;
   // Never speak pure “what should we talk about?” interview lines.
   if (isTopicMenuAsk(t) && countSpokenQuestions(t) > 0 && !/[。．.！!]/.test(t)) return true;
   return false;
