@@ -260,9 +260,8 @@ import {
   duckExternalAudioForCompanion,
   enterVoiceChatAudioSession,
   leaveVoiceChatAudioSession,
-  pauseForeignPageMedia,
 } from '../lib/voice-chat-focus';
-import { startVad } from '../lib/vad';
+import { startVad, waitForVadRelease } from '../lib/vad';
 import { ambientStart, ambientStop } from '../lib/sfx';
 import { t, backgroundById, type Lang, type StrKey } from '../lib/prefs';
 import { adaptiveBlock, pickSceneLine } from '../lib/adaptive';
@@ -532,6 +531,8 @@ export default function ChatPanel({
   const vadStopRef = useRef<{ stop(): void } | null>(null);
   const vadGraceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const micAutoArmedRef = useRef(false);
+  /** Lang/character key for the last auto-arm — re-open mic when either changes while off. */
+  const micAutoScopeRef = useRef('');
   /** True once auto-open (or user) successfully entered voice mode this mount. */
   const micOpenedThisMountRef = useRef(false);
   const laughCountRef = useRef(0);
@@ -1785,12 +1786,14 @@ export default function ChatPanel({
     reengageStageRef.current = 0;
   };
 
-  const beginVoiceMode = (opts?: { cutCompanion?: boolean }) => {
+  const beginVoiceMode = async (opts?: { cutCompanion?: boolean }) => {
     if (micModeRef.current) return;
     if (!listenSupported()) {
       window.alert(t(lang, 'micUnsupported'));
       return;
     }
+    await waitForVadRelease();
+    if (micModeRef.current) return;
     const sessionGen = ++micSessionGenRef.current;
     enterVoiceChatAudioSession();
     duckExternalAudioForCompanion();
@@ -1922,15 +1925,21 @@ export default function ChatPanel({
         setListening(false);
         return;
       }
-      if (!micModeRef.current) beginVoiceMode();
+      if (!micModeRef.current) await beginVoiceMode();
     })();
   };
 
   // Grok-style: mic opens as soon as you enter chat (default ON). Do not wait
   // for the open cheer — cutCompanion:false keeps her greeting while listening.
   useEffect(() => {
-    enterVoiceChatAudioSession();
-    pauseForeignPageMedia();
+    const scope = `${characterId}:${lang}`;
+    if (micAutoScopeRef.current !== scope) {
+      micAutoScopeRef.current = scope;
+      if (!micModeRef.current) {
+        micAutoArmedRef.current = false;
+        micOpenedThisMountRef.current = false;
+      }
+    }
     if (micAutoArmedRef.current) return;
     if (!listenSupported()) return;
     const preflight = micPreflightGrantedThisSession();
@@ -1945,12 +1954,12 @@ export default function ChatPanel({
     // OPEN_CHEER_MS — that felt like “mic not open at start”.
     const micDelay = 0;
     const t0 = window.setTimeout(() => {
-      if (!micModeRef.current) beginVoiceMode({ cutCompanion: false });
+      if (!micModeRef.current) void beginVoiceMode({ cutCompanion: false });
     }, micDelay);
     // One retry if listen never stuck (permission race after gate Allow).
     const t1 = window.setTimeout(() => {
       if (!micOpenedThisMountRef.current && !micModeRef.current) {
-        beginVoiceMode({ cutCompanion: false });
+        void beginVoiceMode({ cutCompanion: false });
       }
     }, micDelay + 700);
     return () => {

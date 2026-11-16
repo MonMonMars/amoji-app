@@ -1,6 +1,7 @@
 'use client';
 import { listenSupported } from './listen';
 import type { MicOutcome } from './entry-gate';
+import { waitForVadRelease } from './vad';
 
 /** Lightweight getUserMedia probe — stop tracks immediately. Call only from a user gesture. */
 export async function requestMic(): Promise<MicOutcome> {
@@ -29,5 +30,6 @@ export async function requestMic(): Promise<MicOutcome> {
  * again after the user turned it off (stale tracks / play-and-record latch).
  */
 export async function reacquireMicForVoiceMode(): Promise<MicOutcome> {
+  await waitForVadRelease();
   return requestMic();
 }

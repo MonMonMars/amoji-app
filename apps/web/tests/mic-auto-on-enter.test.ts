@@ -37,6 +37,11 @@ describe('chat mic auto-on + external audio duck', () => {
     expect(listen).toMatch(/stop: \(\) => \{[\s\S]*?rec\?\.abort\(\)/);
     expect(vad).toContain('destroyActiveVad');
     expect(vad).toContain('await destroyActiveVad()');
+    expect(vad).toContain('export function waitForVadRelease');
+    expect(micPre).toContain('waitForVadRelease');
+    expect(chat).toContain('await waitForVadRelease()');
+    expect(chat).toContain('micAutoScopeRef');
+    expect(chat).not.toMatch(/micDelay[\s\S]*?enterVoiceChatAudioSession\(\);[\s\S]*?pauseForeignPageMedia/);
   });
 
   it('gate Enter re-probes mic in the same gesture for default-open chat', () => {
