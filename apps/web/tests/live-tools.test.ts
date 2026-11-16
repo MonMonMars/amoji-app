@@ -110,6 +110,16 @@ describe('planTools', () => {
     expect(plan.searchQuery).toBeUndefined();
   });
 
+  it('routes explicit "search weather" to the weather tool, not web search', () => {
+    for (const text of ['search weather', 'search for weather', 'google weather in Tokyo', '搜索天气', '搜尋天氣']) {
+      const plan = planTools(text);
+      expect(plan.weather, text).toBe(true);
+      expect(plan.searchQuery, text).toBeUndefined();
+    }
+    expect(planTools('search weather in London').placeQuery).toBe('London');
+    expect(isLiveFactsOnlyTurn(planTools('search for weather'), '18° and cloudy.')).toBe(true);
+  });
+
   it('geocodes a named place instead of asking for GPS', () => {
     const plan = planTools('weather in New York today');
     expect(plan.weather).toBe(true);

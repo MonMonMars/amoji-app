@@ -336,7 +336,10 @@ function planUtterance(text: string): ToolPlan {
   const newsQuery = extractNewsTopic(text);
   const life = planLifestyle(text);
   let searchQuery = extractSearch(text);
-  if ((weather || news || life.places || life.recipeQuery) && !EXPLICIT_SEARCH_RE.test(text)) searchQuery = undefined;
+  // "search weather" / 「搜索天气」 must hit Open-Meteo, not DuckDuckGo. Earlier
+  // we only cleared searchQuery when the utterance lacked an explicit search
+  // verb — so searchQuery stayed "weather" and live facts + forecast never ran.
+  if (weather || news || life.places || life.recipeQuery) searchQuery = undefined;
   if (life.learnQuery && !searchQuery) searchQuery = life.learnQuery;
   const placeQuery = extractPlace(text) ?? life.placeQuery;
   const heavyNews = news && (
