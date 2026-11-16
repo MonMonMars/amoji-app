@@ -881,7 +881,7 @@ export function scrubNewsFeedBody(text: string, title = ''): string {
   const kept: string[] = [];
   for (const line of lines) {
     const bare = line.trim();
-    if (!bare || NEWS_LINE_DATE_ONLY.test(bare)) continue;
+    if (!bare || NEWS_LINE_DATE_ONLY.test(bare) || /^\d{4}$/.test(bare)) continue;
     if (NEWS_CATEGORY_LINE.test(bare)) continue;
     if (NEWS_SOURCE_ONLY.test(bare)) continue;
     if (/^(?:橙新聞|on\.cc|RTHK|SCMP)$/i.test(bare)) continue;
@@ -1116,6 +1116,9 @@ const DULL_RE = /obituary|closing|closes|temporarily close|layoff|lay off|data c
 const LIGHT_RE = /funny|weird|odd|quirky|adorable|heartwarming|good news|eccentric|cute|laugh|tip|contest|festival|parade|puppy|kitten|\bcats?\b|\bdogs?\b|celebrat|surprise|costume|pumpkin|museum|bakery|science|scientist|space|nasa|astronomy|biology|research|discovery|\bai\b|artificial intelligence|chatgpt|openai|robot|gadget|entertainment|celebrity|movie|film|music|concert|streaming|gaming|esport|health|wellness|fitness|nutrition|yoga|mental health|趣聞|奇趣|好笑|搞笑|溫馨|温馨|科學|科学|娛樂|娱乐|健康|人工智能|おもしろ|ほっこり|ほのぼの|エンタメ/i;
 /** t780: drop war/politics/tragedy on the default path unless user opts in. */
 const HEAVY_RE = /\b(?:war|warfare|battlefield|missile|airstrike|bombing|invasion|occupied|ceasefire|troops|soldier|army|navy|military|politic|politics|election|electoral|congress|senate|parliament|president|prime minister|diplomat|sanction|coup|junta|terror|terrorism|hostage|genocide|massacre|atrocity|refugee crisis|famine|tragedy|fatal crash|mass shooting)\b|戰爭|战争|導彈|导弹|空襲|空袭|入侵|停火|軍隊|军队|政治|選舉|选举|國會|国会|總統|总统|制裁|政變|政变|恐襲|恐袭|屠殺|屠杀|悲劇|悲剧|遇難|遇难/i;
+/** Outbreaks / epidemics — never “good news” or light showcase tells. */
+const UNLIGHT_NEWS_RE =
+  /\b(?:SARS|covid|coronavirus|pandemic|epidemic|outbreak|ebola|mpox|avian flu|swine flu|h5n1|monkeypox)\b|严重急性呼吸道|嚴重急性呼吸道|呼吸道症候|症候群|疫情|疫症|傳染病|传染病|大流行|瘟疫|確診|确诊|病例|逐渐扩散|逐漸擴散|扩散至|擴散至|syndrome\b.*\b(?:spread|cases|outbreak)|の感染|感染拡大/i;
 
 const CJK_IN_HEADLINE = /[\u3000-\u9fff]/;
 const EN_WIRE_FEED = /feeds\.bbci\.co\.uk|feeds\.npr\.org|rss\.dw\.com|france24\.com\/en\/|theguardian\.com|cbc\.ca|abc\.net\.au/i;
@@ -1155,8 +1158,9 @@ export function pickLightHeadlines(items: Array<{ title: string; source: string 
 
 
 /** t780: default ranking — prefer light topics; drop war/politics/tragedy/grim. */
-export function isHeavyHeadline(title: string): boolean {
-  return HEAVY_RE.test(title) || GRIM_RE.test(title);
+export function isHeavyHeadline(title: string, extra = ''): boolean {
+  const blob = `${title}\n${extra}`;
+  return HEAVY_RE.test(blob) || GRIM_RE.test(blob) || UNLIGHT_NEWS_RE.test(blob);
 }
 
 export function pickDefaultHeadlines(
@@ -1560,7 +1564,7 @@ function headlinesFromWiki(data: unknown): Headline[] {
   const out: Headline[] = [];
   for (const item of news) {
     const story = stripWikiStory(str(item?.story));
-    if (!story || GRIM_RE.test(story)) continue;
+    if (!story || isHeavyHeadline(story)) continue;
     // First sentence as title; rest as lede so TTS has substance beyond a one-liner.
     const parts = story.split(/(?<=[.!?。！？])\s+/).map((s) => s.trim()).filter(Boolean);
     const title = clip(parts[0] || story, 180);
@@ -1581,7 +1585,9 @@ function headlinesFromOnThisDay(data: unknown): Headline[] {
     if (!text || GRIM_RE.test(text) || isHeavyHeadline(text)) continue;
     const year = typeof item?.year === 'number' ? item.year : null;
     const title = year ? clip(`${year}: ${text}`, 180) : clip(text, 180);
-    out.push(withNewsBody(title, 'Wikipedia', text));
+    if (isHeavyHeadline(title, text)) continue;
+    // Never attach the full on-this-day blurb as summary — it duplicates the title in TTS.
+    out.push(withNewsBody(title, 'Wikipedia'));
     if (out.length >= 6) break;
   }
   return out;
@@ -1589,7 +1595,7 @@ function headlinesFromOnThisDay(data: unknown): Headline[] {
 
 function pushUniqueHeadlines(out: Headline[], items: Headline[], max = NEWS_POOL_MAX): void {
   for (const h of items) {
-    if (!h.title || GRIM_RE.test(h.title)) continue;
+    if (!h.title || isHeavyHeadline(h.title, h.summary ?? '')) continue;
     const key = normalizeNewsTitle(h.title);
     if (!key || out.some((o) => normalizeNewsTitle(o.title) === key)) continue;
     out.push(h);
@@ -1619,9 +1625,10 @@ async function fetchWikipediaNews(
       if (newsOut.length >= poolMax) return newsOut;
     }
   }
-  // Prefer real "In the news" items. Only fall back to soft on-this-day when
-  // featured news is empty — never invent headlines.
-  return newsOut.length ? newsOut : onThisDay;
+  // Prefer real "In the news" items. Historical on-this-day (old disease years, etc.)
+  // is not light “good news” — do not fall back for spoken tells.
+  void onThisDay;
+  return newsOut.filter((h) => !isHeavyHeadline(h.title, h.summary ?? ''));
 }
 
 function mergeHeadlines(groups: Headline[][], poolMax = NEWS_POOL_MAX): Headline[] {
@@ -1710,7 +1717,7 @@ async function fetchRecentHeadlines(
   if (softer.length) return softer.slice(0, poolMax);
   // Browser CORS often blanks Google/BBC RSS; keep any non-grim wiki line so
   // "news" never collapses to the empty miss when a soft story exists.
-  return merged.filter((h) => !GRIM_RE.test(h.title)).slice(0, poolMax);
+  return merged.filter((h) => !isHeavyHeadline(h.title, h.summary ?? '')).slice(0, poolMax);
 }
 
 interface NewsPack { headlines: Headline[]; recent: boolean }
@@ -1745,7 +1752,7 @@ async function fetchAreaNews(
       : pickDefaultHeadlines(preferHeadlinesForLang(lang, raw), { allowHeavy: false, lang });
     const fromGoogle = filtered.length
       ? filtered
-      : raw.filter((h) => !isHeavyHeadline(h.title)).slice(0, NEWS_POOL_MAX);
+      : raw.filter((h) => !isHeavyHeadline(h.title, h.summary ?? '')).slice(0, NEWS_POOL_MAX);
     if (fromGoogle.length) return { headlines: fromGoogle, recent: false };
 
     // Browser CORS blanks Google + rss2json on Pages — fall back so AI/topic
@@ -1772,7 +1779,7 @@ async function fetchAreaNews(
         const summary = cut > 0 ? s.slice(cut + 3) : s;
         return withNewsBody(title, 'Wikipedia', summary);
       })
-      .filter((h) => h.title && !GRIM_RE.test(h.title));
+      .filter((h) => h.title && !isHeavyHeadline(h.title, h.summary ?? ''));
     if (fromSearch.length) return { headlines: fromSearch, recent: false };
 
     const soft = await fetchRecentHeadlines(fetchImpl, lang, rssKey, cache, place, fetchOpts);

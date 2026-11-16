@@ -1045,6 +1045,17 @@ describe('t780 light default news topics', () => {
     expect(isHeavyHeadline('多地发生悲剧遇难')).toBe(true);
   });
 
+  it('drops SARS / outbreak headlines from light picks', () => {
+    const items = [
+      { title: '2002: 中国广东省诊断出首起严重急性呼吸道症候群病例', source: 'Wikipedia' },
+      { title: 'Celebrity opens a heartwarming bakery', source: 'Ent' },
+    ];
+    const picked = pickDefaultHeadlines(items);
+    expect(picked.map((h) => h.title).join(' ')).toMatch(/bakery/i);
+    expect(picked.map((h) => h.title).join(' ')).not.toMatch(/呼吸道|SARS|2002/i);
+    expect(isHeavyHeadline('随后逐渐扩散至世界各地')).toBe(true);
+  });
+
   it('exposes light category RSS urls', () => {
     const us = regionalLightNewsFeedUrls('US');
     expect(us.some((u) => u.includes('science') || u.includes('1007'))).toBe(true);
