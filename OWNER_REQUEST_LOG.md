@@ -22,7 +22,8 @@
 | Resource / mistake / data docs + manifest | **Merged `main` `193776fca`** (#456) |
 | Card voice `e7e20f55` | **Merged `main` `07dd76e3`** |
 | P0–P6 stabilization pack | **Merged `main`** — see `docs/PROGRAMMING_PLAN.md`, `tasks-list` artifact |
-| Phase A agent work | **Complete** — phone smoke only until owner reports failures |
-| **`main` tip** | **`4071cf5a`** (#460 delivery: SW cache, refresh chip, revision canary) |
+| Phase A + delivery layer | **Complete** (`#458`–`#462`, `r2026-11-16.167`) |
+| Phase B rewrites | **Frozen** until owner names failing `PHONE_SMOKE.md` rows |
+| **`main` tip** | **`4463e647`** · agent check: `cd apps/web && npm run verify:live` |
 
-**`main` tip:** `4071cf5a` · **`r2026-11-16.165`**
+**`main` tip:** `4463e647` · **`r2026-11-16.167`**

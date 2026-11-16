@@ -2,11 +2,12 @@
 
 **Purpose:** Living checklist of product rules from the product owner. Agents must read this before chat/voice/pose/permission work and update it when rules change.
 
-**Last reviewed:** 2026-11-16 01:12 (Asia/Hong_Kong)  
+**Last reviewed:** 2026-11-16 14:05 (Asia/Hong_Kong)  
 **Demo:** https://monmonmars.github.io/amoji-app/  
-**`main` tip:** `9292e81` (#432) · Pages `last-modified` 2026-11-15 16:19 UTC includes #419–#437  
+**`main` tip:** `4463e647` · **`APP_REVISION` `r2026-11-16.167`** · `npm run verify:live` in `apps/web` = OK  
 **Request log:** [`../OWNER_REQUEST_LOG.md`](../OWNER_REQUEST_LOG.md) + `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn.  
-**Resource library:** [`OWNER_RESOURCE_LIBRARY.md`](./OWNER_RESOURCE_LIBRARY.md) + `apps/web/lib/owner-resource-manifest.ts` + [`MISTAKE_LIBRARY.md`](./MISTAKE_LIBRARY.md) + [`DATA_ORGANIZATION.md`](./DATA_ORGANIZATION.md).
+**Resource library:** [`OWNER_RESOURCE_LIBRARY.md`](./OWNER_RESOURCE_LIBRARY.md) + `apps/web/lib/owner-resource-manifest.ts` + [`MISTAKE_LIBRARY.md`](./MISTAKE_LIBRARY.md) + [`DATA_ORGANIZATION.md`](./DATA_ORGANIZATION.md).  
+**Agents:** [`AGENT_SMOKE.md`](./AGENT_SMOKE.md) · [`PROGRAMMING_PLAN.md`](./PROGRAMMING_PLAN.md)
 
 **Standing:** Merged ≠ Done on live Pages until owner phone-smoke OK. Owner: “getting worst” / errors still the same — **do not mark R10–R13 Done.** Push + merge without waiting for approval when CI green.
 
@@ -93,9 +94,9 @@
 | Talking nonsense / silly LLM | #360+#412+#416+#426 on `main` — **owner live OK** still required |
 | Captions race / history lock | #393+#414+#427 on `main` — **phone** (seal + scroll-follow) |
 | Talk repeats / double-speak residual | #399 / #386 — **phone** |
-| Phone smoke on live demo | **Human** — checklist [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) — do **not** mark Done without owner |
+| Phone smoke on live demo | **Human** — [`PHONE_SMOKE.md`](./PHONE_SMOKE.md). Match footer to [`revision.txt`](https://monmonmars.github.io/amoji-app/revision.txt); tap amber **Refresh** if shown. **Not Done** until owner ticks. |
 | SFX #1–23 Want/archive/delete (R1/R2) | Map documented in [`SFX_WANT_LIST.md`](./SFX_WANT_LIST.md) — no new deletes without owner map |
-| Pages rebuild | After stabilization pack lands — agent push main; prior tip `9292e81` Pages 16:19 UTC. Agent `workflow_dispatch` is 403. |
+| Stale “nothing fixed” on phone | Delivery #458–#462 on `main` — owner must refresh once to **`.167`** before judging card/voice/poke code. |
 
 ### Hold
 
@@ -104,10 +105,21 @@
 
 ---
 
+## Delivery layer (merged — product smoke still Outstanding)
+
+| Item | Ref |
+|------|-----|
+| SW cache = revision | #458 |
+| Refresh chip + `revision.txt` canary | #459–#460 |
+| Live revision UI + `verify:live` | #461–#462 |
+
+---
+
 ## Change log
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-16 ~14:05 | Tip `4463e647` / **r167**; delivery #458–#462 live; `verify:live` OK; **Phase B frozen** until owner smoke failures |
 | 2026-11-16 ~08:35 | **Frozen order pack:** `07dd76e3` card + P1 voice sink pin + P4 R12 cast shader + P3 poke #455 arm + P5 resource/mistake/data libs — **phone Outstanding unchanged** |
 | 2026-11-16 ~01:12 | Continue audit: tip `9292e81` (#432) · product #426–#437 on main · Pages == tip (16:19 UTC); agent code Outstanding = 0; phone Outstanding unchanged (card · news · R10–R13 · nonsense · captions) |
 | 2026-11-15 ~23:50 | CRITICAL chat: mic off→on stuck + non-Yue chat mute — reacquire mic + chat pin-before-play (no onplay setSinkId) — **Outstanding until phone OK** |
