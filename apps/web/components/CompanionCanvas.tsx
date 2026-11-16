@@ -23,7 +23,6 @@ import {
   lateralFallAwayFromScreenSide,
   clientPointInElementLocal,
   ndcPointInElementLocal,
-  pokeArmSideFromScreenPush,
   armZoneFromScreen,
   POKE_REACTION_MS,
   type PokeDirection,
@@ -1799,7 +1798,7 @@ export default function CompanionCanvas({
               || pokeZone === 'hand'
               || (hipsOnScreen && Math.abs(ptrLocal.x - hipsLocal.x) > 14)
             ) {
-              pokeSideSign = pokeArmSideFromScreenPush(leanSide);
+              pokeSideSign = cls.sideSign;
             }
             if (
               pokeZone === 'side'
