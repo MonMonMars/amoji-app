@@ -383,7 +383,8 @@
 // r2026-11-16.163: offline CACHE = APP_REVISION (stale SW hid all recent fixes);
 // card/preview gTTS+Edge pin default sink before play (not only chat/mic latch).
 // r2026-11-16.164: SW update banner — Refresh when new cache ships (no silent stale shell).
-export const APP_REVISION = 'r2026-11-16.164';
+// r2026-11-16.165: public/revision.txt network-only canary vs baked APP_REVISION.
+export const APP_REVISION = 'r2026-11-16.165';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

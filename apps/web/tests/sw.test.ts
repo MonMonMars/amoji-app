@@ -33,6 +33,11 @@ describe('offline service worker', () => {
     expect(sw).toContain('self.registration.scope');
   });
 
+  it('fetches revision.txt network-only (not cache-first)', () => {
+    expect(sw).toContain('revision.txt');
+    expect(sw).toContain("cache: 'no-store'");
+  });
+
   it('never touches cross-origin or non-GET requests', () => {
     expect(sw).toContain("request.method !== 'GET'");
     expect(sw).toContain('url.origin !== self.location.origin');

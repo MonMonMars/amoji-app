@@ -13,5 +13,7 @@ describe('ServiceWorkerRegistrar', () => {
     expect(registrar).toContain('visibilitychange');
     expect(registrar).toContain('location.reload');
     expect(registrar).toContain('APP_REVISION');
+    expect(registrar).toContain('revision.txt');
+    expect(registrar).toContain("cache: 'no-store'");
   });
 });

@@ -18,7 +18,7 @@
  */
 'use strict';
 
-var CACHE = 'amoji-r2026-11-16.164';
+var CACHE = 'amoji-r2026-11-16.165';
 var SHELL = [
   './',
   './chat',
@@ -112,6 +112,14 @@ self.addEventListener('fetch', function (event) {
   var url = new URL(request.url);
   if (url.origin !== self.location.origin) return; // LLM / TTS / CDN calls
   if (url.pathname.indexOf('/api/') !== -1) return; // live data stays live
+
+  // Network-only: lets stale tabs compare live stamp vs baked bundle (r165).
+  if (url.pathname.indexOf('revision.txt') !== -1) {
+    event.respondWith(
+      fetch(new Request(request.url, { cache: 'no-store' }))
+    );
+    return;
+  }
 
   if (request.mode === 'navigate') {
     // Pages: try the network, fall back to cache, then to the splash shell.

@@ -41,6 +41,18 @@ export default function ServiceWorkerRegistrar() {
     let alive = true;
     let removeVis: (() => void) | undefined;
 
+    const probeLiveRevision = () => {
+      void fetch(`./revision.txt?probe=${Date.now()}`, { cache: 'no-store' })
+        .then((res) => res.text())
+        .then((t) => {
+          const live = t.trim();
+          if (live && live !== APP_REVISION) setUpdateReady(true);
+        })
+        .catch(() => {
+          /* optional file — never block the app */
+        });
+    };
+
     void navigator.serviceWorker
       .register('./sw.js')
       .then((reg) => {
@@ -49,8 +61,12 @@ export default function ServiceWorkerRegistrar() {
           if (alive) setUpdateReady(true);
         });
         void reg.update();
+        probeLiveRevision();
         const onVis = () => {
-          if (document.visibilityState === 'visible') void reg.update();
+          if (document.visibilityState === 'visible') {
+            void reg.update();
+            probeLiveRevision();
+          }
         };
         document.addEventListener('visibilitychange', onVis);
         removeVis = () => document.removeEventListener('visibilitychange', onVis);
