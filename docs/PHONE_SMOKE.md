@@ -1,11 +1,11 @@
 # Phone smoke (live Pages)
 
 **Live:** https://monmonmars.github.io/amoji-app/  
-**Tip on main:** `7653e102` (stabilization pack: card `07dd76e3` + voice sink + R12 + poke #455 + resource libs) · rebuild Pages after owner confirms agent push · prior Pages `9292e81` 16:19 UTC  
-**Purpose:** Human-only checks after #419–#437. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
-Owner: “getting worst” — **do not mark R10–R13 Done.**
+**Tip on main:** `b8b5f6d7` (#458 · `r2026-11-16.163` — SW `CACHE` synced to `APP_REVISION`; card/preview `pinSinkBeforePlay`) · Pages deployed 2026-11-16 ~09:23 HKT  
+**Purpose:** Human-only checks after #419–#437 + #458. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
+Owner: “getting worst” / “nothing fixed” — **do not mark R10–R13 Done** until this pass.
 
-Tick on a real phone (prefer iPhone Safari). Hard refresh / clear site data once so idle prefs **v6** (`IdleQuaterniusHuman` default — not RPM F) and voice sink land.
+Tick on a real phone (prefer iPhone Safari). **Mandatory once:** hard refresh or remove home-screen icon and re-add so the service worker picks up **`amoji-r2026-11-16.163`** (stale `r150` shell hid recent fixes). Then idle prefs **v6** (`IdleQuaterniusHuman` default — not RPM F) and voice sink land.
 
 ## Priority now — card · news · R10–R13 · nonsense · captions
 
@@ -94,11 +94,11 @@ Tick on a real phone (prefer iPhone Safari). Hard refresh / clear site data once
 - [ ] Poke zone SFX match Want list ([`SFX_WANT_LIST.md`](./SFX_WANT_LIST.md))
 - [ ] Want / Skip in `/sfx-gallery` still works
 
-## Agent pre-checks (2026-11-16 ~01:12 HKT)
+## Agent pre-checks (2026-11-16 ~09:23 HKT)
 
 | Check | Result |
 | --- | --- |
-| `main` tip | `9292e81` (#432) · product #426–#437 · Pages live 16:19 UTC |
+| `main` tip | `b8b5f6d7` (#458) · `r2026-11-16.163` · live `sw.js` CACHE verified on Pages |
 | Outstanding (owner) | Card · news · **R10–R13 not Done** · nonsense · captions · SFX Want |
-| Agent actionable code | **0** — docs honesty tip only this turn |
+| Agent actionable code | **0** until phone feedback on #458 |
 | Hold spikes | #1 / #20 only (do not merge) |
