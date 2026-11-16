@@ -488,6 +488,15 @@ export function screenPointerSideSign(pointerX: number, hipsScreenX: number): nu
 }
 
 /**
+ * Near-arm flinch from where the finger pushed on screen (+1 right / −1 left).
+ * Face-on, screen lateral opposes the character's left/right, so the poked
+ * near arm is the opposite character side — not the mesh-hit classifier sign.
+ */
+export function pokeArmSideFromScreenPush(pushSide: number): number {
+  return pushSide >= 0 ? -1 : 1;
+}
+
+/**
  * Map a viewport client point into the element's layout-local CSS pixels
  * (0..clientWidth × 0..clientHeight). Uses getBoundingClientRect for the
  * visual box, then scales into clientWidth/Height so the result shares the

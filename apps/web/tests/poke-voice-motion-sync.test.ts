@@ -16,7 +16,12 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { mp3DurationSec } from '../lib/clip-duration';
-import { POKE_REACTION_MS, pokeBodyReaction, type TalkZone } from '../lib/poke-hit';
+import {
+  POKE_REACTION_MS,
+  pokeArmSideFromScreenPush,
+  pokeBodyReaction,
+  type TalkZone,
+} from '../lib/poke-hit';
 import {
   POKE_PREFETCH_ZONES,
   RECORDED_POKE_ZONE,
@@ -199,9 +204,7 @@ describe('poke recoil is the same gesture at every camera angle', () => {
    * screen-left (−1) → character-right (+1). Under orbit the canvas uses
    * classifyPoke / screenArm; face-on tests use this flip.
    */
-  function characterArmSide(leanSide: number): number {
-    return leanSide >= 0 ? -1 : 1;
-  }
+  const characterArmSide = pokeArmSideFromScreenPush;
 
   it('swings the near-side arm on the poked side, identically across the orbit', () => {
     const seen = new Map<string, { l: number; r: number }>();

@@ -121,6 +121,7 @@ describe('pokeSectionBodyReaction', () => {
     expect(canvas).toMatch(/fall\.x \* 0\.95/);
     expect(canvas).toMatch(/fingerOffCenter/);
     expect(canvas).toMatch(/Kill stuck poke lean/);
+    expect(canvas).toMatch(/pokeArmSideFromScreenPush\s*\(\s*leanSide\s*\)/);
   });
 
   it('off-center chest poke with opposite fall tips right of a left push', () => {

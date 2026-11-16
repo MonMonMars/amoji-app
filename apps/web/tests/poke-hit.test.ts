@@ -11,6 +11,7 @@ import {
   clientPointInElementLocal,
   ndcPointInElementLocal,
   armZoneFromScreen,
+  pokeArmSideFromScreenPush,
 } from '../lib/poke-hit';
 
 const hips = { x: 0, y: 1, z: 0 };
@@ -259,6 +260,13 @@ describe('screenSideSign', () => {
     expect(screenSideSign({ x: 0, y: 1.2, z: 0.3 }, hips, orbitRight)).toBe(-1);
     // Same world +X hit that was "character right" face-on is neutral on this axis.
     expect(screenSideSign({ x: 0.3, y: 1.2, z: 0 }, hips, orbitRight)).toBe(1);
+  });
+});
+
+describe('pokeArmSideFromScreenPush', () => {
+  it('flips screen push side for character near-arm flinch (face-on)', () => {
+    expect(pokeArmSideFromScreenPush(-1)).toBe(1);
+    expect(pokeArmSideFromScreenPush(1)).toBe(-1);
   });
 });
 
