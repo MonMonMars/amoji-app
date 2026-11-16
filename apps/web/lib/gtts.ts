@@ -236,6 +236,8 @@ export interface GttsOpts {
    * this and keep play-first (#424).
    */
   pinSinkBeforePlay?: boolean;
+  /** Select-board tap: always play() in the gesture turn — never await pin first. */
+  gestureTap?: boolean;
 }
 
 /**
@@ -391,7 +393,7 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
       // play-and-record while routing to a mute communications device.
       void startHtmlAudioOnDefaultSpeakers(
         audio,
-        htmlAudioStartMode(opts.pinSinkBeforePlay),
+        htmlAudioStartMode(opts.pinSinkBeforePlay, opts.gestureTap),
       ).catch((err: unknown) => {
         settle(() => {
           if (currentAudio === audio) currentAudio = null;

@@ -178,4 +178,11 @@ describe('default audio output', () => {
     markMicCommsRoutingLatch(false);
     expect(htmlAudioStartMode(false)).toBe('gesture-safe');
   });
+
+  it('gestureTap on card audition stays play-first even when mic latch is on', () => {
+    markMicCommsRoutingLatch(true);
+    expect(htmlAudioStartMode(false, true)).toBe('gesture-safe');
+    expect(htmlAudioStartMode(true, true)).toBe('gesture-safe');
+    markMicCommsRoutingLatch(false);
+  });
 });

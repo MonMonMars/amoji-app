@@ -1989,11 +1989,10 @@ export function playVoiceGreeting(
   // DO NOT reintroduce audible insurance / gesture "robot" clips for card
   // greets — owner regression many times (robot+female double, then robot-only).
   // Prefer silence until real gTTS/Edge TTS over any local hello/hihi insurance.
-  // All langs: pin speakers before any tier (gate sample device, not mic sink).
+  // Playback session only — do NOT primeDefaultSpeakerBeforeSynth here: its
+  // silent <audio> play races the gesture-bound gTTS element and left every
+  // lang/gender mute except the first lucky tap (often Yue ♀).
   ensureCompanionPlaybackRoute();
-  // Same OS playback path as chat synth / beginTts — avoids wrong endpoint
-  // before pin-before-play gTTS on Windows (non–Yue-F silent card greet).
-  void primeDefaultSpeakerBeforeSynth();
   // force: stopSpeaking cancelled any window-level prime and cleared the latch.
   primeSynthInGesture(true);
   // Rotate a short phrase bank so re-taps do not always say the same Hello.
@@ -2037,6 +2036,7 @@ export function playVoiceGreeting(
     tl,
     // Gesture tap: play-first (#424). pin-before-play muted card greets on many devices.
     pinSinkBeforePlay: false,
+    gestureTap: true,
     // Male pin: slower pace + deep pitchBias (male delivery, not female mid).
     rate: delivery === 'male' ? 0.90 : 1,
     // Pinned pitch button wins; otherwise the curated per-character tier.
@@ -2053,6 +2053,7 @@ export function playVoiceGreeting(
     lang,
     gender: delivery,
     pinSinkBeforePlay: false,
+    gestureTap: true,
     character: characterId,
     // Real Edge male/female neural id for this pitch button (not character cast alone).
     voiceId: edgeVoiceIdForTier(lang, delivery, greetTier),
@@ -2352,9 +2353,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const stale = () => auditionGen !== cardAuditionGeneration;
   // DO NOT reintroduce audible insurance / gesture "robot" clips for voice
   // previews — same owner regression as playVoiceGreeting (robot+neural double).
-  // All langs: same default speakers as gate (not mic communications).
   ensureCompanionPlaybackRoute();
-  void primeDefaultSpeakerBeforeSynth();
   primeSynthInGesture(true);
   // Delivery gender from the tapped button (male pin → male pace/pitch).
   const tl = tlForChoice(locale, choiceId);
@@ -2371,6 +2370,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
     lang: locale,
     tl,
     pinSinkBeforePlay: false,
+    gestureTap: true,
     rate: previewGender === 'male' ? 0.90 : 1,
     pitchBias: gttsPitchForLang(locale, 'preview', previewGender, choiceId),
     onPlaying: () => {
@@ -2388,6 +2388,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
     lang: locale,
     gender: previewGender,
     pinSinkBeforePlay: false,
+    gestureTap: true,
     voiceId: edgeVoiceIdForTier(locale, previewGender, previewTier),
     forcePlain: true,
     expressiveness: 1.15,
