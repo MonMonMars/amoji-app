@@ -31,6 +31,7 @@ import {
   newsPackForRegion,
   preferHeadlinesForLang,
   sayNews,
+  scrubNewsFeedBody,
   toldNewsTitles,
   worldBlock,
   type GeoLike,
@@ -948,6 +949,34 @@ describe('parseRssItems', () => {
     expect(row?.source).toBe('Daily');
     expect(row?.summary).toMatch(/Ferries paused|spray soaked/i);
     expect((row?.details?.length ?? 0) + (row?.summary ? 1 : 0)).toBeGreaterThan(0);
+  });
+});
+
+describe('HK RSS speech chrome', () => {
+  const title = '許志安翻唱 愛是懷疑 陳奕迅驚喜捧場';
+  const body = `${title}\n20261116\n娛樂\n明報新聞網`;
+
+  it('scrubNewsFeedBody drops dates, sections, and title repeat', () => {
+    expect(scrubNewsFeedBody(body, title)).toBe('');
+    expect(scrubNewsFeedBody('Judges praised the show.\n20261116\n娛樂', title)).toMatch(/Judges praised/);
+    expect(scrubNewsFeedBody('Judges praised the show.\n20261116\n娛樂', title)).not.toMatch(/20261116|娛樂/);
+  });
+
+  it('parseRssItems keeps headline once in spoken pack', () => {
+    const xml = `<rss><channel><item>
+      <title>${title} - 明報</title>
+      <description>${body}</description>
+    </item></channel></rss>`;
+    const [row] = parseRssItems(xml);
+    expect(row?.title).toBe(title);
+    expect(row?.summary ?? '').not.toMatch(/20261116/);
+    const spoken = sayNews('yue', 'Central', row!);
+    expect(spoken).toMatch(/新聞/);
+    expect(spoken).toContain(title.slice(0, 8));
+    const hits = (spoken.match(new RegExp(title.slice(0, 8), 'g')) ?? []).length;
+    expect(hits).toBeLessThanOrEqual(1);
+    expect(spoken).not.toMatch(/20261116/);
+    expect(spoken).not.toMatch(/^娛樂|娛樂$/);
   });
 });
 

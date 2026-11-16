@@ -845,9 +845,41 @@ export function toldNewsTitles(storage?: Kv | null, now = Date.now()): string[] 
   return readToldEntries(storage, now).map((r) => r.t);
 }
 
+const NEWS_LINE_DATE_ONLY = /^20\d{6}$/;
+const NEWS_CATEGORY_LINE = /^(娛樂|娱乐|財經|财经|體育|体育|港聞|港闻|科技|國際|国际|副刊|金曲|星級專訪|星级专访|文化|地產|地产|時事|时事)(?:\s+[\u3400-\u9fff]{2,12}新聞網)?$/;
+const NEWS_SOURCE_ONLY = /^(?:明報|明报|星島|星岛|頭條|头条|東網|东网|香港01|HK01|商業電台|商业电台)[\u3400-\u9fff]{0,8}新聞網?$/;
+
+/**
+ * Drop RSS chrome (compact dates, section tags, source labels, title repeat)
+ * before TTS — Hong Kong feeds often pack these on separate lines.
+ */
+export function scrubNewsFeedBody(text: string, title = ''): string {
+  const titleKey = normalizeNewsTitle(title);
+  const lines = String(text || '')
+    .split(/\n+|\s*[|•·]\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const kept: string[] = [];
+  for (const line of lines) {
+    const bare = line.trim();
+    if (!bare || NEWS_LINE_DATE_ONLY.test(bare)) continue;
+    if (NEWS_CATEGORY_LINE.test(bare)) continue;
+    if (NEWS_SOURCE_ONLY.test(bare)) continue;
+  if (/^[\d\s]+$/.test(bare)) continue;
+    const compact = spokenHeadline(bare);
+    if (!compact) continue;
+    const key = normalizeNewsTitle(compact);
+    if (titleKey && key === titleKey) continue;
+    if (titleKey && key.includes(titleKey) && compact.length <= title.length + 12) continue;
+    if (/新聞網$|新闻网$/.test(compact) && compact.length < 28) continue;
+    kept.push(compact);
+  }
+  return kept.join(' ').replace(/\s+/g, ' ').trim();
+}
+
 /** Split a lede into 2–4 spoken detail beats — never invents content. */
 export function newsDetailsFromText(text: string, title = '', max = 4): string[] {
-  const cleaned = spokenHeadline(text)
+  const cleaned = spokenHeadline(scrubNewsFeedBody(text, title))
     .replace(/\s+/g, ' ')
     .trim();
   if (!cleaned) return [];
@@ -1041,7 +1073,9 @@ export function parseRssItems(xml: string, limit = 12): Headline[] {
     const title = (cut > 0 ? raw.slice(0, cut) : raw).trim();
     const source = cut > 0 ? raw.slice(cut + 3).trim() : '';
     const descRaw = item.match(/<(?:description|content:encoded|summary)>([\s\S]*?)<\/(?:description|content:encoded|summary)>/i)?.[1];
-    const summary = descRaw ? clip(spokenHeadline(decodeXml(descRaw)), 420) : '';
+    const summary = descRaw
+      ? clip(spokenHeadline(scrubNewsFeedBody(decodeXml(descRaw), title)), 420)
+      : '';
     const details = summary ? newsDetailsFromText(summary, title) : [];
     if (title) {
       const row: Headline = { title, source };
@@ -1411,7 +1445,9 @@ function spokenHeadline(title: string): string {
 }
 
 function withNewsBody(title: string, source: string, summaryRaw?: string): Headline {
-  const summary = summaryRaw ? clip(spokenHeadline(summaryRaw), 420) : '';
+  const summary = summaryRaw
+    ? clip(spokenHeadline(scrubNewsFeedBody(summaryRaw, title)), 420)
+    : '';
   const details = summary ? newsDetailsFromText(summary, title) : [];
   const row: Headline = { title, source };
   if (summary) row.summary = summary;
@@ -1943,7 +1979,9 @@ export function newsLocalPlaceLabel(lang: Lang4, label: string): string | null {
 }
 
 function newsBodyBeats(lead: Headline): string[] {
-  const summary = lead.summary?.trim() ? clip(spokenHeadline(lead.summary), 280) : '';
+  const summary = lead.summary?.trim()
+    ? clip(spokenHeadline(scrubNewsFeedBody(lead.summary, lead.title)), 280)
+    : '';
   const details = (lead.details?.length ? lead.details : newsDetailsFromText(lead.summary ?? '', lead.title))
     .map((d) => clip(spokenHeadline(d), 200))
     .filter(Boolean)

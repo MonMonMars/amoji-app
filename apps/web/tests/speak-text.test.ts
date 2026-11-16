@@ -8,6 +8,7 @@ import {
   joinSpeechLead,
   prepareSpokenLead,
   sanitizeWebForSpeech,
+  scrubLiveFactsSpoken,
   stripLaughTokens,
   stripVoicedGlyphs,
 } from '../lib/speak-text';
@@ -109,6 +110,20 @@ describe('t773/t771 speech sanitize', () => {
     expect(stripLaughTokens('哈哈 好棒')).not.toMatch(/哈哈/);
     expect(stripLaughTokens('hey hey what is up')).not.toMatch(/hey\s*hey/i);
     expect(stripLaughTokens('Hey hey! Careful')).not.toMatch(/hey\s*hey/i);
+  });
+
+  it('strips YYYYMMDD from web speech', () => {
+    const out = sanitizeWebForSpeech('演唱會 20261116 明報');
+    expect(out).not.toMatch(/20261116/);
+    expect(out).toMatch(/演唱會/);
+  });
+
+  it('scrubLiveFactsSpoken keeps news tells speakable', () => {
+    const raw = '最近有條新聞：許志安翻唱 愛是懷疑。20261116 娛樂';
+    const out = scrubLiveFactsSpoken(raw);
+    expect(out).toMatch(/最近有條新聞/);
+    expect(out).toMatch(/許志安/);
+    expect(out).not.toMatch(/20261116/);
   });
 
   it('cleanForSpeech applies both', () => {

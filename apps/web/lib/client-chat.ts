@@ -75,7 +75,7 @@
 import { analyzeText } from '@amoji/emotion-core';
 import { BASE_SYSTEM, languageBlock, parseEmotionHints, type ChatMessage } from './llm';
 import { brainBodyExtras, markBrainDead, pickBrain, type BrainSpec } from './brain';
-import { cleanForDisplay, stripLaughTokens } from './speak-text';
+import { cleanForDisplay, scrubLiveFactsSpoken, stripLaughTokens } from './speak-text';
 import { withQuestion } from './follow-up';
 import {
   capCompanionReplyQuestions,
@@ -1160,9 +1160,14 @@ function packageReply(
     ? scrubbed
     : withQuestion(scrubbed, ctx.language);
   let reply = preferLiveReply(spoken, ctx.world, ctx.worldSpoken, ctx.language);
-  reply = scrubCompanionSpoken(reply);
+  if (factsTurn && ctx.worldSpoken?.trim()) {
+    reply = scrubLiveFactsSpoken(reply || ctx.worldSpoken);
+    if (!reply.trim()) reply = scrubLiveFactsSpoken(ctx.worldSpoken);
+  } else {
+    reply = scrubCompanionSpoken(reply);
+  }
   if (contentReplyIsTeaser(reply, ctx.lastUser, ctx.world) && ctx.worldSpoken?.trim()) {
-    reply = ctx.worldSpoken.trim();
+    reply = scrubLiveFactsSpoken(ctx.worldSpoken);
   }
   return { ...done, reply };
 }

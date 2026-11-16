@@ -96,6 +96,13 @@ const HANDLE_RE = /@[\w.\u00C0-\u024F\u3400-\u9FFF]+/g;
 const WEB_URL_RE = /(?:https?:\/\/|www\.)\S+/gi;
 const CHROME_RE = /\b(?:subscribe|sign up|read more|click here|share this|follow us|advertisement|sponsored|cookie policy|terms of (?:use|service)|all rights reserved)\b/gi;
 const SOURCE_TAIL_RE = /\s*[|\u2013\u2014\-]\s*(?:Google News|Reuters|BBC(?: News)?|NPR|CNN|The Guardian|NHK|RTHK|SCMP|Bloomberg|AP(?: News)?|Yahoo(?: News)?|Wikipedia)\s*$/i;
+/** RSS / teaser lines often carry YYYYMMDD — never read as digits. */
+const COMPACT_YMD_RE = /\b20\d{6}\b/g;
+
+/** Live weather/news tells: strip chrome only — never run chat nonsense scrub. */
+export function scrubLiveFactsSpoken(raw: string): string {
+  return cleanForSpeech(raw);
+}
 
 export function sanitizeWebForSpeech(raw: string): string {
   let s = String(raw || '')
@@ -103,6 +110,7 @@ export function sanitizeWebForSpeech(raw: string): string {
     .replace(HASHTAG_RE, ' ')
     .replace(HANDLE_RE, ' ')
     .replace(CHROME_RE, ' ')
+    .replace(COMPACT_YMD_RE, ' ')
     .replace(SOURCE_TAIL_RE, ' ');
   s = s.replace(/\s+[-|]\s+[A-Za-z][A-Za-z .]{1,40}$/g, ' ');
   return collapseSpaces(s);
