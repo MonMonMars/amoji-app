@@ -10,7 +10,7 @@ import { oneClickBootstrap } from '../lib/one-click-setup';
 import { useScrollReachedEnd } from '../lib/scroll-unlock';
 import EarlyAudioUnlock from './EarlyAudioUnlock';
 import { SetupOneScrollBody } from './setup-one-shared';
-import { APP_REVISION } from '../lib/revision';
+import LiveRevisionBadge from './LiveRevisionBadge';
 import { absorbNavReturnFromReferrer, navigateNavBack } from '../lib/nav-return';
 import { type SelectReturnFrom } from '../lib/select-return';
 
@@ -138,7 +138,7 @@ export default function QuickSetup({
         )}
       </div>
 
-      <p className="pb-6 text-center text-xs text-white/25">{APP_REVISION}</p>
+      <LiveRevisionBadge className="pb-6 text-center text-xs text-white/25" />
     </main>
   );
 }
