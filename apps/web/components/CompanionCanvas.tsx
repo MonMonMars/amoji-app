@@ -595,6 +595,9 @@ export default function CompanionCanvas({
     };
     const applyBoneBlend = (nowMs: number) => {
       if (blendT0 < 0) return;
+      // Idle A→B: mixer crossFadeTo owns the body — manual upper blend here
+      // stacked a third quaternion smear on top of near-still VRMA.
+      if (swapBlendActive) return;
       const u = (nowMs - blendT0) / (blendDur * 1000);
       if (u >= 1) {
         blendT0 = -1;
@@ -1964,7 +1967,9 @@ export default function CompanionCanvas({
         // scales, or tips ??that used to slide and lift both feet.
         const pokeAge = now - pokeAt;
         const pokeRaw = pokeAge < POKE_MS ? 1 - pokeAge / POKE_MS : 0;
-        const pokeDamp = idleCrossfadeAdditiveScale(now, swapBlendUntil);
+        const proceduralBlendEnd = blendT0 >= 0 ? blendT0 + blendDur * 1000 : 0;
+        const idleBlendEndMs = Math.max(swapBlendUntil, proceduralBlendEnd);
+        const pokeDamp = idleCrossfadeAdditiveScale(now, idleBlendEndMs);
         const boost = pokeRaw * pokeDamp;
         const laughAge = now - lastLaughAt();
         const laugh = laughAge >= 0 && laughAge < 1600 ? 1 - laughAge / 1600 : 0;
@@ -2180,7 +2185,9 @@ export default function CompanionCanvas({
         // whatever the mixer wrote this frame.
         // Idle A→B glide window — same gate for feet AND arm writers so hang /
         // soften / shoulder ROM do not yank limbs to a "strange" pose mid-fade.
-        const idleLegGlide = idleSwapBlendActive(now, swapBlendUntil);
+        const idleLegGlide =
+          idleSwapBlendActive(now, swapBlendUntil)
+          || (blendT0 >= 0 && now < blendT0 + blendDur * 1000);
 
         if (gameView) playGameBody(gameView.anim);
         // Calm upright: torso upright only — arm soften + hang on near-still

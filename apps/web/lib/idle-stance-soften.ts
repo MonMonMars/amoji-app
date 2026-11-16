@@ -168,9 +168,11 @@ export function idleStiffClipGain(clipId: string | null | undefined): number {
 
 export function applyIdleClipSoftening(getBone: GetBone, clipId: string | null | undefined): void {
   if (!clipId) return;
-  // Always kill residual forward lean (poke / old soften / stiff clips).
-  pullIdleTorsoUpright(getBone);
+  // Calm / owner-pinned stands play the damped VRMA as-is — torso pull here
+  // fought near-still amp and read as arm/torso smear on phone.
   if (!idleArmRewriteAllowed(clipId)) return;
+  // Kill residual forward lean on clips we actually rewrite (stiff / excited).
+  pullIdleTorsoUpright(getBone);
   const gain = idleStiffClipGain(clipId);
   applyRuleList(getBone, DEFAULT_IDLE_RULES, gain);
   const extra = CLIP_RULES[clipId];

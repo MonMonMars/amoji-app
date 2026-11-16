@@ -23,6 +23,17 @@ describe('idle stance soften', () => {
     expect(IDLE_TORSO_PITCH_MAX).toBeLessThanOrEqual(0.035);
   });
 
+  it('leaves calm stand bones untouched (no torso smear on damped VRMA)', () => {
+    const spine = new THREE.Bone();
+    spine.name = 'spine';
+    spine.quaternion.setFromEuler(new THREE.Euler(0.08, 0, 0, 'YXZ'));
+    const before = spine.quaternion.clone();
+    applyIdleClipSoftening((n) => (n === 'spine' ? spine : null), 'IdleQuaterniusHuman');
+    expect(spine.quaternion.dot(before)).toBeGreaterThan(0.9999);
+    applyIdleClipSoftening((n) => (n === 'spine' ? spine : null), 'IdleRpmFStanding001');
+    expect(spine.quaternion.dot(before)).toBeGreaterThan(0.9999);
+  });
+
   it('pulls torso pitch back from a forward lean (no weird lean-forward)', () => {
     const spine = new THREE.Bone();
     spine.name = 'spine';
