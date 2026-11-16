@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { APP_REVISION } from '../lib/revision';
 
 // r2026-10-04.73 ??offline support. The service worker is plain public/sw.js
 // (zero dependencies, survives Next.js static export), so these tests read
@@ -15,6 +16,10 @@ describe('offline service worker', () => {
     // date-agnostic (r96): the revision stamp rolls forward daily, so only
     // the amoji-r<date>.<n> SHAPE is pinned here, never a specific day
     expect(sw).toMatch(/amoji-r\d{4}-\d{2}-\d{2}\.\d+/);
+  });
+
+  it('offline CACHE name matches APP_REVISION (stale shell = dead JS / no voice)', () => {
+    expect(sw).toContain(`var CACHE = 'amoji-${APP_REVISION}'`);
   });
 
   it('precaches the app shell pages', () => {

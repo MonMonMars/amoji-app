@@ -50,7 +50,7 @@ export function micCommsRoutingLatchActive(): boolean {
 
 /**
  * Resolves gesture-safe vs pin-before-play for HTMLAudio TTS.
- * Chat sets pinSinkBeforePlay; card/preview upgrade when mic latched comms routing.
+ * Chat, card greet, and voice preview set pinSinkBeforePlay; also when mic latched.
  */
 export function htmlAudioStartMode(explicitPin?: boolean): 'gesture-safe' | 'pin-before-play' {
   if (explicitPin || micCommsRoutingLatch) return 'pin-before-play';
