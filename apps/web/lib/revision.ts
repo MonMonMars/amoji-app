@@ -373,7 +373,9 @@
 // (was chat-only); never gate shared shader path on characterId/seedKey.
 // r2026-11-15.159: stop ja soft mood tics (はい / ふぅ / ふう / ふん) mis-firing
 // ha/smile burst clips — lead classifiers were /^は/ and /^ふ/ catch-alls.
-export const APP_REVISION = 'r2026-11-15.159';
+// r2026-11-16.160: new-chat open cheer — lexicon 開心 on persona intro must not
+// push joy interjection (呀！) ahead of the welcome line; tics follow hints only.
+export const APP_REVISION = 'r2026-11-16.160';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
