@@ -277,16 +277,15 @@ describe('screenPointerSideSign + lateralFallAwayFromScreenSide', () => {
     expect(screenPointerSideSign(200, 200)).toBe(1);
   });
 
-  it('builds opposite-of-push fall: left push → +X face-on', () => {
+  it('builds same-side fall: left push → −X face-on', () => {
     const leftPush = lateralFallAwayFromScreenSide({ x: 1, z: 0 }, -1);
-    expect(leftPush.x).toBeCloseTo(1);
+    expect(leftPush.x).toBeCloseTo(-1);
     expect(leftPush.z).toBeCloseTo(0);
     const rightPush = lateralFallAwayFromScreenSide({ x: 1, z: 0 }, 1);
-    expect(rightPush.x).toBeCloseTo(-1);
-    // Orbit: recoil follows −cameraRight * pushSide.
+    expect(rightPush.x).toBeCloseTo(1);
     const orbitLeftPush = lateralFallAwayFromScreenSide({ x: 0, z: -1 }, -1);
     expect(orbitLeftPush.x).toBeCloseTo(0);
-    expect(orbitLeftPush.z).toBeCloseTo(-1);
+    expect(orbitLeftPush.z).toBeCloseTo(1);
   });
 
   it('keeps toward-side helper as the negated away form', () => {

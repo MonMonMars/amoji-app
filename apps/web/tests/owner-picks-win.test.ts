@@ -150,4 +150,14 @@ describe('owner picks win over Quaternius (#430 vs #432)', () => {
     expect(canvas).toContain('orderPassiveIdleClips');
     expect(canvas).toContain('IdleQuaterniusHuman');
   });
+
+  it('ChatPanel quiet body loop honors ownerCalmIdleClip', () => {
+    const panel = fs.readFileSync(
+      path.join(__dirname, '../components/ChatPanel.tsx'),
+      'utf8',
+    );
+    expect(panel).toContain('resolvePassiveBodyIdleClip');
+    expect(panel).toContain('characterId');
+    expect(panel).not.toMatch(/nextPassiveIdleClip\(\[\.\.\.PASSIVE_IDLE_LOOP_TEMPLATE\]/);
+  });
 });

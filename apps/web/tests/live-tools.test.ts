@@ -32,6 +32,7 @@ import {
   newsPackForRegion,
   preferHeadlinesForLang,
   sayNews,
+  sayTopicalNews,
   scrubNewsFeedBody,
   scrubNewsTitleForSpeech,
   toldNewsTitles,
@@ -804,6 +805,15 @@ describe('local light news and reply guard', () => {
     expect(newsLocalPlaceLabel('yue', '附近')).toBeNull();
     expect(newsLocalPlaceLabel('en', 'here')).toBeNull();
     expect(newsLocalPlaceLabel('en', 'Hong Kong')).toBe('Hong Kong');
+  });
+
+  it('frames topical AI news without 附近有條輕鬆本地新聞', () => {
+    const title = 'OpenAI ships a smaller reasoning model';
+    const line = sayTopicalNews('yue', 'artificial intelligence', title);
+    expect(line).toContain('AI');
+    expect(line).toContain(title);
+    expect(line).not.toContain('附近有條輕鬆本地新聞');
+    expect(line).not.toMatch(/^調查/u);
   });
 
   it('speaks yue local RSS without an English here prefix when place label is coarse', async () => {

@@ -851,7 +851,8 @@ const NEWS_LINE_DATE_ONLY = /^20\d{6}$/;
 const NEWS_CATEGORY_LINE = /^(娛樂|娱乐|財經|财经|體育|体育|港聞|港闻|科技|國際|国际|副刊|金曲|星級專訪|星级专访|文化|地產|地产|時事|时事)(?:\s+[\u3400-\u9fff]{2,12}新聞網)?$/;
 const NEWS_SOURCE_ONLY = /^(?:明報|明报|星島|星岛|頭條|头条|東網|东网|香港01|HK01|橙新聞|on\.cc|商業電台|商业电台|巴士的報|信報|大公報|文匯報|文汇报)[\u3400-\u9fff]{0,8}新聞網?$/;
 const HK_NEWS_VIDEO_PREFIX = /^(?:有片|快訊|圖集|影片|視頻|视频)[丨｜|·]\s*/u;
-const HK_NEWS_TRAILING_SOURCE = /\s+(?:橙新聞|on\.cc|東網|东网|星島|星岛|明報|明报|頭條|头条|香港01|HK01|巴士的報|信報|大公報|文匯報|文汇报|商業電台|商业电台|Yahoo(?:\s*News)?|MSN(?:\s*News)?)(?:\s*新聞)?\s*$/iu;
+const HK_NEWS_TRAILING_SOURCE = /\s+(?:橙新聞|on\.cc|東網|东网|星島|星岛|明報|明报|頭條|头条|香港01|HK01|巴士的報|信報|大公報|文匯報|文汇报|商業電台|商业电台|Yahoo(?:\s*News)?|MSN(?:\s*News)?|SBS(?:\s*News)?|ABC(?:\s*News)?|BBC(?:\s*News)?)(?:\s*新聞)?\s*$/iu;
+const NEWS_SECTION_CHROME = /^(?:調查|调查|专题|專題|独家|獨家|快讯|快訊|要聞|要闻)$/iu;
 
 /** Strip video tags, pipe separators, trailing publisher names — before TTS. */
 export function scrubNewsTitleForSpeech(title: string, source = ''): string {
@@ -887,7 +888,8 @@ export function scrubNewsFeedBody(text: string, title = ''): string {
     if (!bare || NEWS_LINE_DATE_ONLY.test(bare) || /^\d{4}$/.test(bare)) continue;
     if (NEWS_CATEGORY_LINE.test(bare)) continue;
     if (NEWS_SOURCE_ONLY.test(bare)) continue;
-    if (/^(?:橙新聞|on\.cc|RTHK|SCMP)$/i.test(bare)) continue;
+    if (NEWS_SECTION_CHROME.test(bare)) continue;
+    if (/^(?:橙新聞|on\.cc|RTHK|SCMP|SBS)$/i.test(bare)) continue;
     if (/^⚑\s*舉報|^舉報$|^举报$/.test(bare)) continue;
     if (/^[\d\s]+$/.test(bare)) continue;
     const compact = spokenHeadline(bare);
@@ -2039,19 +2041,38 @@ export function newsLocalPlaceLabel(lang: Lang4, label: string): string | null {
   return t;
 }
 
+function isNewsBeatChrome(text: string): boolean {
+  const t = text.trim();
+  if (!t || NEWS_SECTION_CHROME.test(t)) return true;
+  if (t.length <= 8 && /^[\u4e00-\u9fffA-Za-z]+$/u.test(t) && !/[。！？.!?]/.test(t)) return true;
+  return false;
+}
+
 function newsBodyBeats(lead: Headline): string[] {
+  const titleKey = normalizeNewsTitle(lead.title);
   const summary = lead.summary?.trim()
     ? clip(spokenHeadline(scrubNewsFeedBody(lead.summary, lead.title)), 280)
     : '';
   const details = (lead.details?.length ? lead.details : newsDetailsFromText(lead.summary ?? '', lead.title))
     .map((d) => clip(spokenHeadline(d), 200))
-    .filter(Boolean)
+    .filter((d) => d && !isNewsBeatChrome(d))
     .slice(0, 4);
   const beats: string[] = [];
-  if (summary && normalizeNewsTitle(summary) !== normalizeNewsTitle(lead.title)) beats.push(summary);
+  const summaryKey = summary ? normalizeNewsTitle(summary) : '';
+  if (
+    summary
+    && summaryKey !== titleKey
+    && !titleKey.includes(summaryKey)
+    && !summaryKey.includes(titleKey)
+    && !isNewsBeatChrome(summary)
+  ) {
+    beats.push(summary);
+  }
   for (const d of details) {
-    if (beats.some((b) => normalizeNewsTitle(b) === normalizeNewsTitle(d))) continue;
-    if (normalizeNewsTitle(d) === normalizeNewsTitle(lead.title)) continue;
+    const dKey = normalizeNewsTitle(d);
+    if (beats.some((b) => normalizeNewsTitle(b) === dKey)) continue;
+    if (dKey === titleKey || titleKey.includes(dKey) || dKey.includes(titleKey)) continue;
+    if (isNewsBeatChrome(d)) continue;
     beats.push(d);
     if (beats.length >= 4) break;
   }
@@ -2083,6 +2104,35 @@ export function sayNews(lang: Lang4, label: string, lead: Headline | string): st
   }
   const head = place ? `${place}附近有條輕鬆本地新聞：` : '附近有條輕鬆本地新聞：';
   return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
+}
+
+function topicalSpeechLabel(lang: Lang4, query: string): string {
+  const q = query.trim().toLowerCase();
+  if (/\bartificial intelligence\b|^ai$/.test(q)) {
+    if (lang === 'yue') return 'AI';
+    if (lang === 'zh') return 'AI';
+    if (lang === 'ja') return 'AI';
+    return 'AI';
+  }
+  return clip(query, 36);
+}
+
+/** Topic search (AI news, news about X) — not “local news near you”. */
+export function sayTopicalNews(lang: Lang4, query: string, lead: Headline | string): string {
+  const story = typeof lead === 'string' ? { title: lead, source: '' } : lead;
+  const t = clip(spokenHeadline(story.title, story.source), 160);
+  if (!t) return sayMiss(lang, 'news');
+  const topic = topicalSpeechLabel(lang, query);
+  const extra = newsBodyBeats(story);
+  const more = extra.length
+    ? (lang === 'en' ? ` ${extra.join(' ')}`
+      : lang === 'ja' ? ` ${extra.join(' ')}`
+      : ` ${extra.join('')}`)
+    : '';
+  if (lang === 'en') return `From the news about ${topic}: ${t}.${more}`.replace(/\s+/g, ' ').trim();
+  if (lang === 'zh') return `关于${topic}的最新新闻：${t}。${more}`.replace(/\s+/g, ' ').trim();
+  if (lang === 'ja') return `${topic}に関する最新ニュース、${t}。${more}`.replace(/\s+/g, ' ').trim();
+  return `關於${topic}嘅最新新聞：${t}。${more}`.replace(/\s+/g, ' ').trim();
 }
 
 function sayRecent(lang: Lang4, lead: Headline | string): string {
@@ -2293,7 +2343,11 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
       promptLines.push(`${where}: ${formatNewsFactLine(lead)}.`);
       // Recent/world light packs: finished "from the news" statements (no local framing).
       // Local packs with a place: warm near-me framing. Never append a follow-up ask.
-      spoken.push(activePack.recent ? sayRecent(lang, lead) : sayNews(lang, label, lead));
+      if (plan.newsQuery) {
+        spoken.push(sayTopicalNews(lang, plan.newsQuery, lead));
+      } else {
+        spoken.push(activePack.recent ? sayRecent(lang, lead) : sayNews(lang, label, lead));
+      }
     } else if (!place && !plan.placeQuery && !plan.newsQuery && !plan.recent && plan.needsDevice) {
       // Explicit local/near-me news with no location — only then ask which city.
       promptLines.push('News: need a city or country from the user.');

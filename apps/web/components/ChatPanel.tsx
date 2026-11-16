@@ -200,7 +200,7 @@ import {
   resolveMusicAsk,
   type MusicPickOption,
 } from '../lib/music-ask';
-import { nextPassiveIdleClip, PASSIVE_IDLE_LOOP_TEMPLATE } from '../lib/idle-passive-loop';
+import { PASSIVE_IDLE_LOOP_TEMPLATE, resolvePassiveBodyIdleClip } from '../lib/idle-passive-loop';
 import { resolveContentMotion } from '../lib/content-motion';
 import { clipLabel, PERFORMANCE_CLIPS, type PerformanceClip } from '../lib/performance-clips';
 import { resolvePerfMotion } from '../lib/performance-motion';
@@ -1100,7 +1100,11 @@ export default function ChatPanel({
       if (silent < 8_000) return;
       if (Date.now() - lastPassiveBodyAtRef.current < PASSIVE_IDLE_BODY_MS) return;
       lastPassiveBodyAtRef.current = Date.now();
-      const clip = nextPassiveIdleClip([...PASSIVE_IDLE_LOOP_TEMPLATE], passiveIdleStepRef.current++);
+      const clip = resolvePassiveBodyIdleClip(
+        characterId,
+        [...PASSIVE_IDLE_LOOP_TEMPLATE],
+        passiveIdleStepRef.current++,
+      );
       onAutoIdleRef.current?.(clip);
     }, 2000);
     return () => clearInterval(timer);
