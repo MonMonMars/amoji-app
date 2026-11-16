@@ -134,11 +134,21 @@ describe('TTS play path never mutes non-Yue via setSinkId', () => {
     const voice = readFileSync(join(web, 'lib/voice.ts'), 'utf8');
     expect(voice).toMatch(/const beginTts = \(\) => \{[\s\S]*?ensureCompanionPlaybackRoute\(\)/);
     expect(voice).toMatch(/playVoiceGreeting\([\s\S]*?ensureCompanionPlaybackRoute\(\)/);
-    expect(voice).toMatch(/playVoiceGreeting\([\s\S]*?primeDefaultSpeakerBeforeSynth/);
+    const greetBody = voice.slice(
+      voice.indexOf('export function playVoiceGreeting'),
+      voice.indexOf('export function previewLibraryClip'),
+    );
+    expect(greetBody).not.toMatch(/void primeDefaultSpeakerBeforeSynth\(\)/);
     expect(voice).toMatch(/previewVoiceChoice\([\s\S]*?ensureCompanionPlaybackRoute\(\)/);
-    expect(voice).toMatch(/previewVoiceChoice\([\s\S]*?primeDefaultSpeakerBeforeSynth/);
+    const previewBody = voice.slice(
+      voice.indexOf('export function previewVoiceChoice'),
+      voice.indexOf('export function previewOsVoice'),
+    );
+    expect(previewBody).not.toMatch(/void primeDefaultSpeakerBeforeSynth\(\)/);
     expect(voice).toMatch(/greetGttsOpts[\s\S]*?pinSinkBeforePlay:\s*false/);
+    expect(voice).toMatch(/greetGttsOpts[\s\S]*?gestureTap:\s*true/);
     expect(voice).toMatch(/previewGttsOpts[\s\S]*?pinSinkBeforePlay:\s*false/);
+    expect(voice).toMatch(/previewGttsOpts[\s\S]*?gestureTap:\s*true/);
     expect(voice).toMatch(/speakGtts\(text, \{[\s\S]*?pinSinkBeforePlay:\s*true/);
     // Permanent: no audible insurance on card greet / preview.
     expect(voice).not.toContain('clipFile(lang, delivery, insuranceKind)');

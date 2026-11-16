@@ -101,6 +101,8 @@ export interface EdgeVoiceOpts {
    * success). Gesture/card paths omit this — keep play-first (#424).
    */
   pinSinkBeforePlay?: boolean;
+  /** Select-board tap: play-first even when mic comms latch is on. */
+  gestureTap?: boolean;
 }
 
 // Public read-aloud client token from the edge-tts project. Not an API key.
@@ -601,7 +603,7 @@ function playMp3Blob(blob: Blob, opts: EdgeVoiceOpts, resolve: () => void, rejec
   };
   void startHtmlAudioOnDefaultSpeakers(
     audio,
-    htmlAudioStartMode(opts.pinSinkBeforePlay),
+    htmlAudioStartMode(opts.pinSinkBeforePlay, opts.gestureTap),
   ).catch((err: unknown) => {
     if (currentAudio === audio) currentAudio = null;
     URL.revokeObjectURL(url);
