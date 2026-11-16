@@ -23,6 +23,6 @@
 | Card voice `e7e20f55` | **Merged `main` `07dd76e3`** |
 | P0–P6 stabilization pack | **Merged `main`** — see `docs/PROGRAMMING_PLAN.md`, `tasks-list` artifact |
 | Phase A agent work | **Complete** — phone smoke only until owner reports failures |
-| **`main` tip** | **`193776fca`** (Pages deploy success) |
+| **`main` tip** | **`4071cf5a`** (#460 delivery: SW cache, refresh chip, revision canary) |
 
-**`main` tip:** `b556bb8f`
+**`main` tip:** `4071cf5a` · **`r2026-11-16.165`**
