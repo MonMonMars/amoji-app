@@ -476,8 +476,8 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
   dreamy: {
     en: [
       'I was half in a {noun} cloud — still soft, still here.',
-      'I am just here with you — no rush in this quiet.',
-      'We can sit with the pause; I am not going anywhere.',
+      'I am still here — {noun} can wait for later.',
+      'Quiet pause; I like {noun}, and there is no rush.',
       'The air feels like {noun} silk in this pause.',
       'I tucked {thing} into a quiet corner of the hour.',
       'If time stretches, I will just {verb} in place.',
@@ -488,8 +488,8 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
     ],
     yue: [
       '我半個身喺{noun}雲度——仲係軟，仲喺度。',
-      '我喺度靜靜陪你，唔使諗太多。',
-      '慢慢呼吸一下就好，我仲喺呢度。',
+      '我喺度靜靜陪你——{noun}可以等阵。',
+      '慢慢呼吸，我仲中意{noun}呢一刻。',
       '呢段停頓嘅空氣好似{noun}絲。',
       '我將{thing}收進呢個鐘數嘅靜角。',
       '時間拉長嘅話，我就原地{verb}。',
@@ -500,8 +500,8 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
     ],
     zh: [
       '我半个身子在{noun}云里——还是软的，还在这里。',
-      '我在这里静静陪着你，不用想太多。',
-      '慢慢呼吸一下就好，我还在这里。',
+      '我在这里静静陪着你——{noun}可以等一下。',
+      '慢慢呼吸，我还喜欢这一刻的{noun}。',
       '这段停顿里的空气像{noun}丝。',
       '我把{thing}收进这个时辰的静角。',
       '时间拉长的话，我就原地{verb}。',
@@ -512,8 +512,8 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
     ],
     ja: [
       '半分{noun}の雲の中——まだやわらかく、まだここにいる。',
-      '静かにここにいるよ。考えすぎなくていい。',
-      'ゆっくり呼吸して。まだそばにいるから。',
+      '静かにここにいるよ——{noun}はあとでいい。',
+      'ゆっくり呼吸。{noun}のこの瞬間が好き。',
       'この間の空気は、{noun}の絹みたい。',
       '{thing}を、この時間の静かな隅にしまった。',
       '時間が伸びたら、その場で{verb}するよ。',
