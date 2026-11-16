@@ -1991,6 +1991,9 @@ export function playVoiceGreeting(
   // Prefer silence until real gTTS/Edge TTS over any local hello/hihi insurance.
   // All langs: pin speakers before any tier (gate sample device, not mic sink).
   ensureCompanionPlaybackRoute();
+  // Same OS playback path as chat synth / beginTts — avoids wrong endpoint
+  // before pin-before-play gTTS on Windows (non–Yue-F silent card greet).
+  void primeDefaultSpeakerBeforeSynth();
   // force: stopSpeaking cancelled any window-level prime and cleared the latch.
   primeSynthInGesture(true);
   // Rotate a short phrase bank so re-taps do not always say the same Hello.
@@ -2350,6 +2353,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   // previews — same owner regression as playVoiceGreeting (robot+neural double).
   // All langs: same default speakers as gate (not mic communications).
   ensureCompanionPlaybackRoute();
+  void primeDefaultSpeakerBeforeSynth();
   primeSynthInGesture(true);
   // Delivery gender from the tapped button (male pin → male pace/pitch).
   const tl = tlForChoice(locale, choiceId);
