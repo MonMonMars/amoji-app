@@ -9,9 +9,11 @@ From `apps/web`:
 
 ```bash
 npm run verify:live
+npm run verify:agent-smoke   # optional JSON report (sw CACHE + revision.txt)
 ```
 
-Exit `0` means live `revision.txt` matches `APP_REVISION` in `lib/revision.ts`.
+Exit `0` means live `revision.txt` matches `APP_REVISION` in `lib/revision.ts`.  
+`verify:agent-smoke` also checks live `sw.js` `CACHE`; steps 3–4 (Refresh chip, clear site data) stay **owner-phone only**.
 
 ## Delivery layer (do not re-ship without owner report)
 
@@ -22,6 +24,7 @@ Exit `0` means live `revision.txt` matches `APP_REVISION` in `lib/revision.ts`.
 | #460 | `revision.txt` network canary |
 | #461 | Splash live vs baked revision |
 | #462 | `LiveRevisionBadge` (splash/settings/setup) + `verify:live` |
+| #467 | `agent-live-smoke.mjs` + `verify:agent-smoke` |
 
 Product stabilization (#419–#437, resource libs) is already on `main`. **Phase B rewrites are frozen** until the owner names failing `PHONE_SMOKE.md` rows (`docs/PROGRAMMING_PLAN.md`).
 
