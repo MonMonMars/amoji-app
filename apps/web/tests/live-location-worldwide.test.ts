@@ -93,6 +93,8 @@ describe('no built-in home city in the weather/news path', () => {
     expect(newsPackForRegion('UK', 'en').gl).toBe('GB');
     expect(newsPackForRegion('general', 'en').gl).toBe('US');
     expect(newsPackForRegion('general', 'yue').gl).toBe('HK');
+    expect(newsPackForRegion('HK', 'zh')).toEqual({ hl: 'zh-CN', gl: 'HK', ceid: 'HK:zh-Hans' });
+    expect(newsPackForRegion('HK', 'yue')).toEqual({ hl: 'zh-HK', gl: 'HK', ceid: 'HK:zh-Hant' });
   });
 
   it('offers regional feeds for countries beyond the original five', () => {
