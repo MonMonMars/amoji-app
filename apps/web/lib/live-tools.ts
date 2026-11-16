@@ -1079,12 +1079,51 @@ function decodeXml(s: string): string {
     .trim();
 }
 
+/** Calendar day for spoken news intros (owner locale). */
+export const NEWS_SPEECH_TIMEZONE = 'Asia/Hong_Kong';
+
 /** One tellable story — title plus optional lede/details from the feed (never invented). */
 export interface Headline {
   title: string;
   source: string;
   summary?: string;
   details?: string[];
+  /** RSS / feed publish time (epoch ms), when known. */
+  publishedAt?: number;
+}
+
+export function parseNewsPublishedAt(raw: string | undefined | null): number | undefined {
+  const s = raw?.trim();
+  if (!s) return undefined;
+  const t = Date.parse(s);
+  return Number.isFinite(t) ? t : undefined;
+}
+
+export function isNewsPublishedToday(
+  publishedAt: number | undefined,
+  nowMs = Date.now(),
+  timeZone = NEWS_SPEECH_TIMEZONE,
+): boolean {
+  if (publishedAt == null) return false;
+  const dayKey = (ms: number) => new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(ms));
+  return dayKey(publishedAt) === dayKey(nowMs);
+}
+
+function rssItemPublishedAt(itemXml: string): number | undefined {
+  const pubRaw = itemXml.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1]
+    ?? itemXml.match(/<updated>([\s\S]*?)<\/updated>/i)?.[1]
+    ?? itemXml.match(/<dc:date>([\s\S]*?)<\/dc:date>/i)?.[1];
+  return parseNewsPublishedAt(pubRaw ? decodeXml(pubRaw) : undefined);
+}
+
+function featuredFeedDayStartMs(offsetDays: number, nowMs = Date.now()): number {
+  const d = new Date(nowMs - offsetDays * 86_400_000);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 12, 0, 0);
 }
 
 export function parseRssItems(xml: string, limit = 12): Headline[] {
@@ -1104,10 +1143,12 @@ export function parseRssItems(xml: string, limit = 12): Headline[] {
       ? clip(spokenHeadline(scrubNewsFeedBody(decodeXml(descRaw), title)), 420)
       : '';
     const details = summary ? newsDetailsFromText(summary, title) : [];
+    const publishedAt = rssItemPublishedAt(item);
     if (title) {
       const row: Headline = { title, source };
       if (summary) row.summary = summary;
       if (details.length) row.details = details;
+      if (publishedAt != null) row.publishedAt = publishedAt;
       out.push(row);
     }
     if (out.length >= limit) break;
@@ -1494,7 +1535,12 @@ function spokenHeadline(title: string, source = ''): string {
   return stripLaughTokens(sanitizeWebForSpeech(scrubNewsTitleForSpeech(title, source)));
 }
 
-function withNewsBody(title: string, source: string, summaryRaw?: string): Headline {
+function withNewsBody(
+  title: string,
+  source: string,
+  summaryRaw?: string,
+  publishedAt?: number,
+): Headline {
   const summary = summaryRaw
     ? clip(spokenHeadline(scrubNewsFeedBody(summaryRaw, title)), 420)
     : '';
@@ -1502,6 +1548,7 @@ function withNewsBody(title: string, source: string, summaryRaw?: string): Headl
   const row: Headline = { title, source };
   if (summary) row.summary = summary;
   if (details.length) row.details = details;
+  if (publishedAt != null) row.publishedAt = publishedAt;
   return row;
 }
 
@@ -1550,7 +1597,8 @@ async function fetchNews(
     const source = cut > 0 ? raw.slice(cut + 3).trim() : str(item.author);
     const title = spokenHeadline(titleRaw, source);
     const summary = str(item.description) || str(item.content) || str(item.contentSnippet);
-    out.push(withNewsBody(title, source, summary || undefined));
+    const publishedAt = parseNewsPublishedAt(str(item.pubDate) || str(item.pubdate) || str(item.date));
+    out.push(withNewsBody(title, source, summary || undefined, publishedAt));
     if (out.length >= 12) break;
   }
   return out;
@@ -1644,7 +1692,11 @@ async function fetchWikipediaNews(
     for (const offset of offsets) {
       const url = `https://${host}/api/rest_v1/feed/featured/${utcStamp(offset)}`;
       const data = await getJson(fetchImpl, url, 6_000, cache);
-      pushUniqueHeadlines(newsOut, headlinesFromWiki(data), poolMax);
+      const dayMark = featuredFeedDayStartMs(offset);
+      const wikiRows = headlinesFromWiki(data).map((h) => (
+        h.publishedAt == null ? { ...h, publishedAt: dayMark } : h
+      ));
+      pushUniqueHeadlines(newsOut, wikiRows, poolMax);
       if (onThisDay.length < 8) pushUniqueHeadlines(onThisDay, headlinesFromOnThisDay(data), 8);
       if (newsOut.length >= poolMax) return newsOut;
     }
@@ -1704,7 +1756,8 @@ async function fetchRssFeedHeadlines(
     const raw = spokenHeadline(titleRaw, source);
     if (!raw) continue;
     const summary = str(item.description) || str(item.content) || str(item.contentSnippet);
-    out.push(withNewsBody(raw, source || 'RSS', summary || undefined));
+    const publishedAt = parseNewsPublishedAt(str(item.pubDate) || str(item.pubdate) || str(item.date));
+    out.push(withNewsBody(raw, source || 'RSS', summary || undefined, publishedAt));
     if (out.length >= 10) break;
   }
   return out;
@@ -2089,20 +2142,28 @@ export function sayNews(lang: Lang4, label: string, lead: Headline | string): st
       : lang === 'ja' ? ` ${extra.join(' ')}`
       : ` ${extra.join('')}`)
     : '';
+  const today = isNewsPublishedToday(story.publishedAt);
   const place = newsLocalPlaceLabel(lang, label);
   if (lang === 'en') {
     const where = place ? `Around ${place}` : 'Around here';
-    return `${where}, a fun local story — ${t}.${more}`.replace(/\s+/g, ' ').trim();
+    const frame = today ? `${where}, a fun local story from today` : `${where}, a fun local story`;
+    return `${frame} — ${t}.${more}`.replace(/\s+/g, ' ').trim();
   }
   if (lang === 'zh') {
-    const head = place ? `${place}附近有条轻松本地新闻：` : '附近有条轻松本地新闻：';
+    const head = place
+      ? (today ? `${place}附近有条今日本地新闻：` : `${place}附近有条轻松本地新闻：`)
+      : (today ? '附近有条今日本地新闻：' : '附近有条轻松本地新闻：');
     return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
   }
   if (lang === 'ja') {
-    const head = place ? `${place}の近くの軽めのニュース、` : '近くの軽めのニュース、';
+    const head = place
+      ? (today ? `${place}の近くの今日のニュース、` : `${place}の近くの軽めのニュース、`)
+      : (today ? '今日の近くのニュース、' : '近くの軽めのニュース、');
     return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
   }
-  const head = place ? `${place}附近有條輕鬆本地新聞：` : '附近有條輕鬆本地新聞：';
+  const head = place
+    ? (today ? `${place}附近有條今日本地新聞：` : `${place}附近有條輕鬆本地新聞：`)
+    : (today ? '附近有條今日本地新聞：' : '附近有條輕鬆本地新聞：');
   return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
 }
 
@@ -2123,32 +2184,54 @@ export function sayTopicalNews(lang: Lang4, query: string, lead: Headline | stri
   const t = clip(spokenHeadline(story.title, story.source), 160);
   if (!t) return sayMiss(lang, 'news');
   const topic = topicalSpeechLabel(lang, query);
+  const today = isNewsPublishedToday(story.publishedAt);
   const extra = newsBodyBeats(story);
   const more = extra.length
     ? (lang === 'en' ? ` ${extra.join(' ')}`
       : lang === 'ja' ? ` ${extra.join(' ')}`
       : ` ${extra.join('')}`)
     : '';
-  if (lang === 'en') return `From the news about ${topic}: ${t}.${more}`.replace(/\s+/g, ' ').trim();
-  if (lang === 'zh') return `关于${topic}的最新新闻：${t}。${more}`.replace(/\s+/g, ' ').trim();
-  if (lang === 'ja') return `${topic}に関する最新ニュース、${t}。${more}`.replace(/\s+/g, ' ').trim();
-  return `關於${topic}嘅最新新聞：${t}。${more}`.replace(/\s+/g, ' ').trim();
+  if (lang === 'en') {
+    const head = today ? `From today's news about ${topic}:` : `From the news about ${topic}:`;
+    return `${head} ${t}.${more}`.replace(/\s+/g, ' ').trim();
+  }
+  if (lang === 'zh') {
+    const head = today ? `关于${topic}的今日新闻：` : `关于${topic}的最新新闻：`;
+    return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
+  }
+  if (lang === 'ja') {
+    const head = today ? `今日の${topic}ニュース、` : `${topic}に関する最新ニュース、`;
+    return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
+  }
+  const head = today ? `今日關於${topic}嘅新聞：` : `關於${topic}嘅最新新聞：`;
+  return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
 }
 
-function sayRecent(lang: Lang4, lead: Headline | string): string {
+export function sayRecent(lang: Lang4, lead: Headline | string): string {
   const story = typeof lead === 'string' ? { title: lead, source: '' } : lead;
   const t = clip(spokenHeadline(story.title), 160);
   if (!t) return sayMiss(lang, 'news');
+  const today = isNewsPublishedToday(story.publishedAt);
   const extra = newsBodyBeats(story);
   const more = extra.length
     ? (lang === 'en' ? ` ${extra.join(' ')}`
       : lang === 'ja' ? ` ${extra.join(' ')}`
       : ` ${extra.join('')}`)
     : '';
-  if (lang === 'en') return `From the news: ${t}.${more}`.replace(/\s+/g, ' ').trim();
-  if (lang === 'zh') return `最近有条新闻：${t}。${more}`.replace(/\s+/g, ' ').trim();
-  if (lang === 'ja') return `最近のニュースは、${t}。${more}`.replace(/\s+/g, ' ').trim();
-  return `最近有條新聞：${t}。${more}`.replace(/\s+/g, ' ').trim();
+  if (lang === 'en') {
+    const head = today ? "From today's news:" : 'From the news:';
+    return `${head} ${t}.${more}`.replace(/\s+/g, ' ').trim();
+  }
+  if (lang === 'zh') {
+    const head = today ? '今日有条新闻：' : '最近有条新闻：';
+    return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
+  }
+  if (lang === 'ja') {
+    const head = today ? '今日のニュースは、' : '最近のニュースは、';
+    return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
+  }
+  const head = today ? '今日有條新聞：' : '最近有條新聞：';
+  return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
 }
 
 function sayWhere(lang: Lang4, label: string, coarse: boolean): string {
