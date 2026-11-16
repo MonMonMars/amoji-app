@@ -382,7 +382,8 @@
 // cls.sideSign — pairs with #443 opposite-of-push fall.
 // r2026-11-16.163: offline CACHE = APP_REVISION (stale SW hid all recent fixes);
 // card/preview gTTS+Edge pin default sink before play (not only chat/mic latch).
-export const APP_REVISION = 'r2026-11-16.163';
+// r2026-11-16.164: SW update banner — Refresh when new cache ships (no silent stale shell).
+export const APP_REVISION = 'r2026-11-16.164';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
