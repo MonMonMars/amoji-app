@@ -1,7 +1,7 @@
 # Phone smoke (live Pages)
 
 **Live:** https://monmonmars.github.io/amoji-app/  
-**Tip on main:** `4071cf5a` (#460 · `r2026-11-16.165` — `revision.txt` canary + SW refresh chip + card pin) · confirm https://monmonmars.github.io/amoji-app/revision.txt matches splash  
+**Tip on main:** `r2026-11-16.166` (#461 splash live vs baked + #458–#460 delivery) · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if shown)  
 **Purpose:** Human-only checks after #419–#437 + #458. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
 Owner: “getting worst” / “nothing fixed” — **do not mark R10–R13 Done** until this pass.
 
