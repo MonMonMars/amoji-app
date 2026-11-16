@@ -19,8 +19,10 @@
 
 | Deliverable | Status |
 |-------------|--------|
-| Resource / mistake / data docs + manifest | **Merged `main` `b556bb8f`** |
+| Resource / mistake / data docs + manifest | **Merged `main` `193776fca`** (#456) |
 | Card voice `e7e20f55` | **Merged `main` `07dd76e3`** |
-| P1 sink pin + P4 R12 + P3 poke #455 + P5 libs + P6 phone-smoke | **Merged `main`** → `/opt/cursor/artifacts/tasks-list.md` |
+| P0–P6 stabilization pack | **Merged `main`** — see `docs/PROGRAMMING_PLAN.md`, `tasks-list` artifact |
+| Phase A agent work | **Complete** — phone smoke only until owner reports failures |
+| **`main` tip** | **`193776fca`** (Pages deploy success) |
 
 **`main` tip:** `b556bb8f`
