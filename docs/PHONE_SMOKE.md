@@ -38,6 +38,7 @@ Tick on a real phone (prefer iPhone Safari). Hard refresh / clear site data once
 - [ ] **Every** lang × gender × pitch button is audible (not Yue-F-only)
 - [ ] Chat: mic default-on → off → **on again** works (Yue and other langs)
 - [ ] Chat speak: en / zh / ja / male audible on default speakers (not Yue-F-only)
+- [ ] After mic on (play-and-record), **card/preview** greet still routes to default speakers (P1 sink latch — not communications headset)
 
 ### R13 poke lean (#409 + #434) — do not ask agents to flip ± again
 
