@@ -384,7 +384,8 @@
 // card/preview gTTS+Edge pin default sink before play (not only chat/mic latch).
 // r2026-11-16.164: SW update banner — Refresh when new cache ships (no silent stale shell).
 // r2026-11-16.165: public/revision.txt network-only canary vs baked APP_REVISION.
-export const APP_REVISION = 'r2026-11-16.165';
+// r2026-11-16.166: splash shows live vs baked revision + shared fetchLiveRevision().
+export const APP_REVISION = 'r2026-11-16.166';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
