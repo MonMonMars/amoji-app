@@ -181,10 +181,17 @@ export function unifyMToonParams(m: MToonUnifyInput): MToonUnifyPatch | null {
   if (mode && mode !== 'none' && typeof width === 'number' && width > REF_OUTLINE_WIDTH_FACTOR * 1.15) {
     patch.outlineWidthFactor = REF_OUTLINE_WIDTH_FACTOR;
   }
-  // Char 4 body converts to toony 1 / shift 1 (hard cel). Gradient reference is 0.2 / −0.2.
-  if (typeof m.shadingToonyFactor === 'number' && m.shadingToonyFactor >= 0.75) {
-    patch.shadingToonyFactor = REF_SHADING_TOONY;
-    patch.shadingShiftFactor = REF_SHADING_SHIFT;
+  // Snap every body MToon gradient to the 1–3 reference (0.2 / −0.2), not only hard cel.
+  if (typeof m.shadingToonyFactor === 'number') {
+    const toony = m.shadingToonyFactor;
+    const shift = typeof m.shadingShiftFactor === 'number' ? m.shadingShiftFactor : undefined;
+    if (
+      Math.abs(toony - REF_SHADING_TOONY) > 0.05
+      || (shift !== undefined && Math.abs(shift - REF_SHADING_SHIFT) > 0.05)
+    ) {
+      patch.shadingToonyFactor = REF_SHADING_TOONY;
+      patch.shadingShiftFactor = REF_SHADING_SHIFT;
+    }
   }
   return patch.outlineWidthFactor === undefined && patch.shadingToonyFactor === undefined ? null : patch;
 }

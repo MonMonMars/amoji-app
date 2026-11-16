@@ -5,7 +5,8 @@
 **Last reviewed:** 2026-11-16 01:12 (Asia/Hong_Kong)  
 **Demo:** https://monmonmars.github.io/amoji-app/  
 **`main` tip:** `9292e81` (#432) · Pages `last-modified` 2026-11-15 16:19 UTC includes #419–#437  
-**Request log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn. Overlapping messages still count; never drop one.
+**Request log:** [`../OWNER_REQUEST_LOG.md`](../OWNER_REQUEST_LOG.md) + `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn.  
+**Resource library:** [`OWNER_RESOURCE_LIBRARY.md`](./OWNER_RESOURCE_LIBRARY.md) + `apps/web/lib/owner-resource-manifest.ts` + [`MISTAKE_LIBRARY.md`](./MISTAKE_LIBRARY.md) + [`DATA_ORGANIZATION.md`](./DATA_ORGANIZATION.md).
 
 **Standing:** Merged ≠ Done on live Pages until owner phone-smoke OK. Owner: “getting worst” / errors still the same — **do not mark R10–R13 Done.** Push + merge without waiting for approval when CI green.
 
@@ -13,10 +14,11 @@
 
 ## Standing rules (always)
 
-1. Record every owner message in `OWNER_REQUEST_LOG.md` the same turn.  
+1. Record every owner message in `OWNER_REQUEST_LOG.md` + agent store the same turn.  
 2. Refresh **Done** + **Outstanding** every turn.  
 3. Do not mark Pages Done without owner OK.  
-4. Prefer fixing old outstanding before new polish.
+4. Prefer fixing old outstanding before new polish.  
+5. Before swapping idle, poke SFX, cast, TTS, or music defaults — read `OWNER_RESOURCE_LIBRARY.md`, `MISTAKE_LIBRARY.md`, `DATA_ORGANIZATION.md`, and `owner-resource-manifest.ts` / `docs/owner-resource-manifest.json`.
 
 ---
 
@@ -93,7 +95,7 @@
 | Talk repeats / double-speak residual | #399 / #386 — **phone** |
 | Phone smoke on live demo | **Human** — checklist [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) — do **not** mark Done without owner |
 | SFX #1–23 Want/archive/delete (R1/R2) | Map documented in [`SFX_WANT_LIST.md`](./SFX_WANT_LIST.md) — no new deletes without owner map |
-| Pages rebuild | Tip `9292e81` (#432) · Pages live 16:19 UTC == tip. Agent `workflow_dispatch` is 403. |
+| Pages rebuild | After stabilization pack lands — agent push main; prior tip `9292e81` Pages 16:19 UTC. Agent `workflow_dispatch` is 403. |
 
 ### Hold
 
@@ -106,6 +108,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-16 ~08:35 | **Frozen order pack:** `07dd76e3` card + P1 voice sink pin + P4 R12 cast shader + P3 poke #455 arm + P5 resource/mistake/data libs — **phone Outstanding unchanged** |
 | 2026-11-16 ~01:12 | Continue audit: tip `9292e81` (#432) · product #426–#437 on main · Pages == tip (16:19 UTC); agent code Outstanding = 0; phone Outstanding unchanged (card · news · R10–R13 · nonsense · captions) |
 | 2026-11-15 ~23:50 | CRITICAL chat: mic off→on stuck + non-Yue chat mute — reacquire mic + chat pin-before-play (no onplay setSinkId) — **Outstanding until phone OK** |
 | 2026-11-15 ~23:00 | R10 #425 rebase onto #424: keep no-onplay setSinkId + real male Edge/synth hops / tier voices — **R10 still Outstanding phone** |

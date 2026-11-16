@@ -71,11 +71,9 @@ import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
 import { applyDominatedEyeExpressions, isEyeMaterial, stabilizeEyeMaterials } from '../lib/vrm/eyes';
 import {
-  dampenCastMatcap,
-  floorCastShadeColors,
+  applyCastShaderLook,
   patchCastTextures,
   stabilizeCastEyes,
-  unifyCastMToon,
 } from '../lib/vrm/cast-materials';
 import { addCastDaylight, applyCastToneMapping } from '../lib/vrm/cast-lighting';
 import { placeStoryRoomBehind, sanitizeStoryRoomMaterials } from '../lib/vrm/story-room';
@@ -270,8 +268,7 @@ const neutralizeBrokenTextures = (root: THREE.Object3D): void => {
       if (touched) m.needsUpdate = true;
     }
   });
-  // three-vrm MToon uses shadeColorFactor; the old shadeColor alias is a no-op.
-  floorCastShadeColors(root);
+  applyCastShaderLook(root);
 };
 
 /** stable per-character hash ??motion seed: same character, same body language */
@@ -1264,32 +1261,8 @@ export default function CompanionCanvas({
       modelPct = 100;
       reportProgress();
 
-      // r2026-10-03.28: tint every material toward the character look. The tint
-      // is near-white, so it shifts the whole palette (outfit, hair, light on
-      // skin) without destroying natural skin tones.
-      const tint = new THREE.Color(look.tint);
-      a.root.traverse((node) => {
-        const mesh = node as THREE.Mesh;
-        if (!mesh.isMesh) return;
-        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        for (const m of mats) {
-          const mat = m as THREE.MeshStandardMaterial;
-          if (isEyeMaterial(mat.name || '', mesh.name || '')) continue;
-          if (mat.color) mat.color.multiply(tint);
-        }
-      });
-      // r109/r144: floor MToon shadeColorFactor (not the missing shadeColor alias).
-      // Shared cast shader path always runs — do not gate on seedKey (preview/
-      // thumbs used to skip unify and diverge from chat lighting).
-      floorCastShadeColors(a.root);
-      unifyCastMToon(a.root, seedKey);
-      dampenCastMatcap(a.root, seedKey);
-      stabilizeEyeMaterials(a.root);
-      if (seedKey) {
-        a.armCastFixes(seedKey);
-        patchCastTextures(a.root, seedKey);
-        stabilizeCastEyes(a.root, seedKey);
-      }
+      applyCastShaderLook(a.root, seedKey);
+      if (seedKey) a.armCastFixes(seedKey);
     };
 
     const loadPlain = (index: number, url: string, token: number) => {

@@ -4,7 +4,10 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   ensureCompanionPlaybackRoute,
   getDefaultSinkId,
+  htmlAudioStartMode,
   isDefaultSinkId,
+  markMicCommsRoutingLatch,
+  micCommsRoutingLatchActive,
   pinDefaultOutput,
   pinDefaultOutputAsync,
   resetDefaultSinkCacheForTests,
@@ -163,5 +166,16 @@ describe('default audio output', () => {
     } as unknown as HTMLAudioElement;
     await startHtmlAudioOnDefaultSpeakers(audio, 'gesture-safe');
     expect(order).toEqual(['play:1', 'sink:', 'play:2', 'play:3']);
+  });
+
+  it('htmlAudioStartMode upgrades gesture paths after mic play-and-record', () => {
+    resetDefaultSinkCacheForTests();
+    expect(htmlAudioStartMode(false)).toBe('gesture-safe');
+    expect(htmlAudioStartMode(true)).toBe('pin-before-play');
+    markMicCommsRoutingLatch(true);
+    expect(micCommsRoutingLatchActive()).toBe(true);
+    expect(htmlAudioStartMode(false)).toBe('pin-before-play');
+    markMicCommsRoutingLatch(false);
+    expect(htmlAudioStartMode(false)).toBe('gesture-safe');
   });
 });

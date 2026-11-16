@@ -375,9 +375,12 @@
 // ha/smile burst clips — lead classifiers were /^は/ and /^ふ/ catch-alls.
 // r2026-11-16.160: new-chat open cheer — lexicon 開心 on persona intro must not
 // push joy interjection (呀！) ahead of the welcome line; tics follow hints only.
-// r2026-11-16.161: poke near-arm flinch from finger push (leanSide), not mesh-hit
+// r2026-11-16.161: R12 follow-up — applyCastShaderLook on all surfaces incl.
+// texture fallback; snap all MToon gradients to ref; CAST_UNITY_TINT (no per-id
+// palette multiply); preview/thumbs/bake get wardrobe patchCastTextures too.
+// r2026-11-16.162: poke near-arm flinch from finger push (leanSide), not mesh-hit
 // cls.sideSign — pairs with #443 opposite-of-push fall.
-export const APP_REVISION = 'r2026-11-16.161';
+export const APP_REVISION = 'r2026-11-16.162';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

@@ -1,6 +1,7 @@
 'use client';
 import {
   ensureCompanionPlaybackRoute,
+  htmlAudioStartMode,
   startHtmlAudioOnDefaultSpeakers,
 } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
@@ -390,7 +391,7 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
       // play-and-record while routing to a mute communications device.
       void startHtmlAudioOnDefaultSpeakers(
         audio,
-        opts.pinSinkBeforePlay ? 'pin-before-play' : 'gesture-safe',
+        htmlAudioStartMode(opts.pinSinkBeforePlay),
       ).catch((err: unknown) => {
         settle(() => {
           if (currentAudio === audio) currentAudio = null;

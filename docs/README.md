@@ -11,6 +11,12 @@ Technical notes for assets, models, robot face, chat UX, audio, and merge proces
 
 - [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md)
 
+**Owner free-resource library (consult before swapping idle/SFX/voice/music defaults):**
+
+- [`OWNER_RESOURCE_LIBRARY.md`](./OWNER_RESOURCE_LIBRARY.md) · `apps/web/lib/owner-resource-manifest.ts` · JSON [`owner-resource-manifest.json`](./owner-resource-manifest.json)
+- [`MISTAKE_LIBRARY.md`](./MISTAKE_LIBRARY.md) · [`DATA_ORGANIZATION.md`](./DATA_ORGANIZATION.md)
+- [`../OWNER_REQUEST_LOG.md`](../OWNER_REQUEST_LOG.md) — standing rules (full log in agent store)
+
 **Product / contributor notes:**
 
 | Doc | Topic |

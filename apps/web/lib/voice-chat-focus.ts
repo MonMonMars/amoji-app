@@ -6,7 +6,7 @@
  * pause any stray <audio>/<video> on this page (not marked amoji-owned).
  */
 
-import { ensureCompanionPlaybackRoute } from './audio-output';
+import { ensureCompanionPlaybackRoute, markMicCommsRoutingLatch } from './audio-output';
 
 const PAUSED_MARK = 'data-amoji-paused-foreign';
 
@@ -15,6 +15,7 @@ type AudioSessionNav = Navigator & {
 };
 
 export function enterVoiceChatAudioSession(): void {
+  markMicCommsRoutingLatch(true);
   if (typeof navigator === 'undefined') return;
   try {
     const nav = navigator as AudioSessionNav;
@@ -23,6 +24,7 @@ export function enterVoiceChatAudioSession(): void {
 }
 
 export function leaveVoiceChatAudioSession(): void {
+  markMicCommsRoutingLatch(false);
   ensureCompanionPlaybackRoute();
 }
 
