@@ -8,8 +8,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { splashDisplay } from './fonts';
-import { fetchLiveRevision, revisionStale } from '../lib/live-revision';
-import { APP_NAME, APP_REVISION, APP_TAGLINE } from '../lib/revision';
+import LiveRevisionBadge from '../components/LiveRevisionBadge';
+import { APP_NAME, APP_TAGLINE } from '../lib/revision';
 import { t, usePrefs } from '../lib/prefs';
 import { assetUrl } from '../lib/asset';
 import EarlyAudioUnlock from '../components/EarlyAudioUnlock';
@@ -27,7 +27,6 @@ export default function Splash() {
   const lang = prefs.lang;
   const [busy, setBusy] = useState(false);
   const [bootReady, setBootReady] = useState(false);
-  const [liveRevision, setLiveRevision] = useState<string | null>(null);
   const startLabel = t(lang, 'splashStart');
 
   // APP OPEN: first-run users go to rules immediately; returning users see title
@@ -44,11 +43,6 @@ export default function Splash() {
     }
     setBootReady(true);
   }, [router]);
-
-  useEffect(() => {
-    if (process.env.NODE_ENV !== 'production') return;
-    void fetchLiveRevision().then(setLiveRevision);
-  }, []);
 
   const start = async () => {
     if (busy || !bootReady) return;
@@ -145,22 +139,12 @@ export default function Splash() {
         </Link>
       </div>
 
-      <p
+      <LiveRevisionBadge
         id="amoji-splash-revision"
         className="absolute bottom-10 z-10 text-xs text-white/35"
-      >
-        {APP_REVISION} · web demo
-        {revisionStale(APP_REVISION, liveRevision) && (
-          <button
-            type="button"
-            data-testid="splash-revision-refresh"
-            onClick={() => window.location.reload()}
-            className="ml-2 text-amber-300/90 underline underline-offset-2"
-          >
-            live {liveRevision} — Refresh
-          </button>
-        )}
-      </p>
+        suffix=" · web demo"
+        refreshTestId="splash-revision-refresh"
+      />
     </main>
   );
 }

@@ -12,7 +12,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "verify:live": "node scripts/verify-pages-live.mjs"
   },
   "dependencies": {
     "@amoji/emotion-core": "workspace:*",

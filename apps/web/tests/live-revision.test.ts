@@ -20,8 +20,7 @@ describe('live revision probe', () => {
     const registrar = read('components/ServiceWorkerRegistrar.tsx');
     const lib = read('lib/live-revision.ts');
     expect(lib).toContain("cache: 'no-store'");
-    expect(splash).toContain('fetchLiveRevision');
-    expect(splash).toContain('revisionStale');
+    expect(splash).toContain('LiveRevisionBadge');
     expect(registrar).toContain('fetchLiveRevision');
   });
 });

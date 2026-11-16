@@ -385,7 +385,8 @@
 // r2026-11-16.164: SW update banner — Refresh when new cache ships (no silent stale shell).
 // r2026-11-16.165: public/revision.txt network-only canary vs baked APP_REVISION.
 // r2026-11-16.166: splash shows live vs baked revision + shared fetchLiveRevision().
-export const APP_REVISION = 'r2026-11-16.166';
+// r2026-11-16.167: LiveRevisionBadge on splash/settings/setup + verify-pages-live.mjs.
+export const APP_REVISION = 'r2026-11-16.167';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

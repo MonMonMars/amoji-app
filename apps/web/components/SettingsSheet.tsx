@@ -52,6 +52,7 @@ import { feedUtterance } from '../lib/companion';
 import { notifySpeaking } from '../lib/speech';
 import { loadProfile, saveProfile, type Gender } from '../lib/profile';
 import { saveHistory } from '../lib/companion-store';
+import LiveRevisionBadge from './LiveRevisionBadge';
 import { APP_REVISION } from '../lib/revision';
 import { downloadCompanionFile, parseCompanionFile, applyCompanionFile } from '../lib/companion-file';
 import { manualPlace, lastDevicePlace, setManualPlace, clearManualPlace, type Place } from '../lib/live-tools';
@@ -1307,7 +1308,11 @@ export default function SettingsSheet({
             </div>
           </Section>
 
-          <p className="pt-2 text-center text-[11px] text-white/25">Amoji · {APP_REVISION}</p>
+          <LiveRevisionBadge
+            className="pt-2 text-center text-[11px] text-white/25"
+            prefix="Amoji · "
+            refreshTestId="settings-revision-refresh"
+          />
         </div>
       </div>
     </div>
