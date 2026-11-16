@@ -43,7 +43,7 @@ describe('rock-paper-scissors', () => {
   });
 
   it('best-of-five ends after five drawn rounds', () => {
-    let { state } = startGame('rps', 'yue', () => 0); // bot always rock
+    const { state } = startGame('rps', 'yue', () => 0); // bot always rock
     let res = playTurn(state, '石頭', 'yue', () => 0); // both rock
     for (let i = 0; i < 4; i++) {
       res = playTurn(res.state, '石頭', 'yue', () => 0);
