@@ -147,7 +147,7 @@ import { pickIdleCompanionLine } from '../lib/idle-talk';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
 import { gateSpokenLine, safeIdleFallback, scrubCompanionSpoken, scrubHistoryResumeAsks, scrubTopicMenuAsks } from '../lib/spoken-line-sanity';
 import { isSpeakableText, scrubLiveFactsSpoken } from '../lib/speak-text';
-import { pickCharacterInteraction } from '../lib/interaction-lines';
+import { HAND_HOLD_SHY_SPEAK_AFTER, handHoldShyLine } from '../lib/interaction-lines';
 import { personalityProfile, personalityPrompt } from '../lib/personality';
 import { voiceOpening, type VoiceId } from '../lib/personality-voice';
 import { laughStyleFor, LAUGH_RE } from '../lib/laugh';
@@ -1066,15 +1066,25 @@ export default function ChatPanel({
   }, [pokeCount]);
 
   const lastHandRef = useRef(handHoldCount);
+  const handHoldDragCountRef = useRef(0);
+  const handHoldShySpokeRef = useRef(false);
   useEffect(() => {
     if (handHoldCount === lastHandRef.current) return;
     lastHandRef.current = handHoldCount;
     lastActivityRef.current = Date.now();
     lastUserRef.current = Date.now();
     reengageStageRef.current = 0;
-    const line = pickCharacterInteraction(characterId, characterGender, 'hand', lang);
-    // t769/t771: no unsolicited TTS laugh lead on hand-hold.
-    sayLocal(line, { joy: 0.55 });
+    handHoldDragCountRef.current += 1;
+    // Hand grab: poke SFX only — no template line ("哇, 輕輕隻手?") on every drag.
+    playPokeBurst(characterId, 'hand');
+    if (
+      characterGender === 'female'
+      && !handHoldShySpokeRef.current
+      && handHoldDragCountRef.current >= HAND_HOLD_SHY_SPEAK_AFTER
+    ) {
+      handHoldShySpokeRef.current = true;
+      sayLocal(handHoldShyLine(lang), { joy: 0.42 });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handHoldCount]);
 

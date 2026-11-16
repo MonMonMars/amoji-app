@@ -34,9 +34,8 @@ describe('auto personality', () => {
     expect(males.length).toBeGreaterThan(0);
     for (const c of females) {
       const tag = personalityFor(c.id, 'female');
-      expect(FEMALE_PERSONALITIES).toContain(tag);
-      expect(MALE_PERSONALITIES).not.toContain(tag);
-      expect(personalityFor(c.id, 'female')).toBe(tag);
+      expect(tag).toBe('shy');
+      expect(personalityFor(c.id, 'female')).toBe('shy');
     }
     for (const c of males) {
       const tag = personalityFor(c.id, 'male');

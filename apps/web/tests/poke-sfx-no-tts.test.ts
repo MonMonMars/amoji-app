@@ -29,6 +29,18 @@ describe('poke SFX owns voice — no TTS double', () => {
     expect(pokeBlock).not.toContain('setHistory');
   });
 
+  it('hand-hold uses poke SFX; shy line only after repeated drags', () => {
+    const panel = read('../components/ChatPanel.tsx');
+    const handBlock = panel.slice(
+      panel.indexOf('const lastHandRef = useRef(handHoldCount)'),
+      panel.indexOf('// Body idle loop while quiet'),
+    );
+    expect(handBlock).toContain("playPokeBurst(characterId, 'hand')");
+    expect(handBlock).toContain('HAND_HOLD_SHY_SPEAK_AFTER');
+    expect(handBlock).toContain('handHoldShyLine');
+    expect(handBlock).not.toContain('pickCharacterInteraction');
+  });
+
   it('playPokeBurst is clip-only and never queues a TTS tier', () => {
     const voice = read('../lib/voice.ts');
     const burst = voice.slice(

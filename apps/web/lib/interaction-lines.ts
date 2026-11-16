@@ -210,6 +210,21 @@ export function pickInteractionLine(personality: PersonalityId, zone: string, la
   return list[i]!;
 }
 
+/** After this many hand-grabs, a shy female may speak once (see ChatPanel). */
+export const HAND_HOLD_SHY_SPEAK_AFTER = 3;
+
+const HAND_HOLD_SHY: Record<Lang, string> = {
+  en: 'Why are you holding my hand…? I feel a little shy.',
+  yue: '你點解攞住我隻手㗎……我有少少怕醜。',
+  zh: '你怎么握着我的手……我有点害羞。',
+  ja: 'どうして手をつないでるの……ちょっと恥ずかしい。',
+};
+
+/** One shy hand-hold line (female); not used on every grab — SFX only until threshold. */
+export function handHoldShyLine(lang: Lang): string {
+  return HAND_HOLD_SHY[lang] ?? HAND_HOLD_SHY.en;
+}
+
 export function pickCharacterInteraction(characterId: string, gender: 'female' | 'male' | undefined, zone: string, lang: Lang): string {
   const personality = personalityFor(characterId, gender);
   const list = shortInteractionLines(personality, zone, lang);

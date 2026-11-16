@@ -2035,7 +2035,8 @@ export function playVoiceGreeting(
   const greetGttsOpts = () => ({
     lang,
     tl,
-    pinSinkBeforePlay: true,
+    // Gesture tap: play-first (#424). pin-before-play muted card greets on many devices.
+    pinSinkBeforePlay: false,
     // Male pin: slower pace + deep pitchBias (male delivery, not female mid).
     rate: delivery === 'male' ? 0.90 : 1,
     // Pinned pitch button wins; otherwise the curated per-character tier.
@@ -2051,7 +2052,7 @@ export function playVoiceGreeting(
   const greetEdgeOpts = () => ({
     lang,
     gender: delivery,
-    pinSinkBeforePlay: true,
+    pinSinkBeforePlay: false,
     character: characterId,
     // Real Edge male/female neural id for this pitch button (not character cast alone).
     voiceId: edgeVoiceIdForTier(lang, delivery, greetTier),
@@ -2369,7 +2370,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const previewGttsOpts = () => ({
     lang: locale,
     tl,
-    pinSinkBeforePlay: true,
+    pinSinkBeforePlay: false,
     rate: previewGender === 'male' ? 0.90 : 1,
     pitchBias: gttsPitchForLang(locale, 'preview', previewGender, choiceId),
     onPlaying: () => {
@@ -2386,7 +2387,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const previewEdgeOpts = () => ({
     lang: locale,
     gender: previewGender,
-    pinSinkBeforePlay: true,
+    pinSinkBeforePlay: false,
     voiceId: edgeVoiceIdForTier(locale, previewGender, previewTier),
     forcePlain: true,
     expressiveness: 1.15,

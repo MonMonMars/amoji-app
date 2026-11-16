@@ -379,7 +379,10 @@ export function resolveChatAutoIdle(input: ChatAutoIdleInput): string | null {
     return resolveFarewellWave() ?? pickBreathingDefault(seed, characterId);
   }
   if (input.openGreet) {
-    return pickChitchatDefault(seed, characterId);
+    const owner = ownerCalmIdleClip(characterId);
+    if (owner) return owner;
+    if (idleClipById('IdleInnersceneSam')) return 'IdleInnersceneSam';
+    return pickBreathingDefault(seed, characterId);
   }
 
   const bucket = resolveBucket(userText, assistantText);

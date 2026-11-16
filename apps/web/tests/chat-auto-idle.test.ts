@@ -25,10 +25,10 @@ describe('chat auto idle resolver', () => {
     expect(CHITCHAT as readonly string[]).toContain(clip);
   });
 
-  it('open greet uses chit-chat, never the wave clip', () => {
+  it('open greet uses upright Sam stand, never the wave clip', () => {
     const clip = resolveChatAutoIdle({ assistantText: '', openGreet: true });
     expect(clip).not.toBe(FAREWELL_WAVE_CLIP_ID);
-    expect(CHITCHAT as readonly string[]).toContain(clip);
+    expect(clip).toBe('IdleInnersceneSam');
   });
 
   it('farewell assistant lines pin the wave clip', () => {

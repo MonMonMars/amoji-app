@@ -89,9 +89,13 @@ function writeCache(id: string, personality: PersonalityId): void {
   } catch { /* ignore */ }
 }
 
-/** First visit hashes id+gender into that gender's pool, then caches it. */
+/** Female cast shares one shy voice; males keep hashed pool + cache. */
 export function personalityFor(characterId: string, gender?: 'female' | 'male'): PersonalityId {
   const g = gender ?? characterById(characterId).gender;
+  if (g === 'female') {
+    writeCache(characterId, 'shy');
+    return 'shy';
+  }
   const pool = poolFor(g);
   const cached = readCache()[characterId];
   if (cached && (pool as readonly string[]).includes(cached)) return cached as PersonalityId;
