@@ -29,4 +29,4 @@ Product stabilization (#419–#437, resource libs) is already on `main`. **Phase
 
 1. Confirm `verify:live` green.
 2. Ask if they see **amber Refresh** (stale bundle).
-3. Only then debug card/voice/poke/idle in code for the named row.
+3. Only then debug card/voice/poke/idle in code for the named row (`PHASE_B_MAP.md`).

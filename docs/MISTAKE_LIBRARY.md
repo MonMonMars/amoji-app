@@ -18,6 +18,7 @@
 | Picks wiped on refresh | Idle key churn | **#432 #442** v6 freeze | Outstanding |
 | Poke lean wrong | Coord mismatch | **#443** | Outstanding — R13 |
 | News repeat/short | Cache + prompt | **#444 #452** | Outstanding |
+| Fixes on main but phone unchanged | Stale SW / old JS bundle | **#458–#462** delivery + `verify:live` | Merged — owner must refresh to **r167** |
 
 ---
 
@@ -30,6 +31,7 @@
 | Idle v7+ without migration | Stay on `amoji.idle*.v6` |
 | Inventing SFX deletes | Only `SFX_WANT_LIST.md` map |
 | Done on CI only | `PHONE_SMOKE.md` + owner OK |
+| More SW bumps without owner smoke | Delivery done; Phase B per `PHASE_B_MAP.md` |
 
 ---
 
