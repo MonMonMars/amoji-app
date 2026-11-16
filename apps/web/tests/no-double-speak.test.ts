@@ -32,6 +32,21 @@ describe('no double speak on one turn', () => {
     expect(liveTools).not.toMatch(/ordered\.map.*join\('; '\)/);
   });
 
+  it('showcase news yes uses clientLiveContext + sayLocal (same as weather — no send/LLM)', () => {
+    const newsBlock = panel.slice(
+      panel.indexOf("if (kind === 'news')"),
+      panel.indexOf("if (kind === 'story')"),
+    );
+    expect(newsBlock).toContain('clientLiveContext(ask, lang)');
+    expect(newsBlock).toContain('sayLocal');
+    expect(newsBlock).not.toMatch(/void send\(ask\)/);
+    const weatherBlock = panel.slice(
+      panel.indexOf("if (kind === 'weather')"),
+      panel.indexOf("if (kind === 'news')"),
+    );
+    expect(weatherBlock).toContain('clientLiveContext(ask, lang)');
+  });
+
   it('sayLocal owns history — quota / content-stop must not append the same assistant line twice', () => {
     const sayLocal = panel.slice(
       panel.indexOf('const sayLocal ='),

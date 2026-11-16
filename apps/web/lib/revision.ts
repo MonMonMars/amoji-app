@@ -389,7 +389,8 @@
 // r2026-11-16.168: card greet + voice preview prime default speaker before gTTS/Edge.
 // r2026-11-16.169: chat + gate probe prime default speaker in duckExternalAudioForCompanion.
 // r2026-11-16.170: companionPlaybackSession + mic-off leave prime default speakers.
-export const APP_REVISION = 'r2026-11-16.170';
+// r2026-11-16.171: showcase news yes → clientLiveContext + sayLocal (no LLM double-speak).
+export const APP_REVISION = 'r2026-11-16.171';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

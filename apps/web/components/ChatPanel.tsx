@@ -1442,7 +1442,9 @@ export default function ChatPanel({
       }
       if (kind === 'news') {
         const ask = lang === 'ja' ? '最新ニュースは？' : lang === 'zh' ? '今天有什么新闻？' : lang === 'yue' ? '今日有咩新聞？' : "what's the latest news?";
-        void send(ask);
+        void clientLiveContext(ask, lang).then((live) => {
+          sayLocal(live.spoken?.trim() || SHOWCASE_START[lang].news);
+        });
         done();
         return;
       }
