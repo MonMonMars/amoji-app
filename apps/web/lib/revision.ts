@@ -380,7 +380,9 @@
 // palette multiply); preview/thumbs/bake get wardrobe patchCastTextures too.
 // r2026-11-16.162: poke near-arm flinch from finger push (leanSide), not mesh-hit
 // cls.sideSign — pairs with #443 opposite-of-push fall.
-export const APP_REVISION = 'r2026-11-16.162';
+// r2026-11-16.163: offline CACHE = APP_REVISION (stale SW hid all recent fixes);
+// card/preview gTTS+Edge pin default sink before play (not only chat/mic latch).
+export const APP_REVISION = 'r2026-11-16.163';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

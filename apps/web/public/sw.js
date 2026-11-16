@@ -13,10 +13,12 @@
  * r136: CACHE bumped (r117 ??r136) ??every client now drops the stale shell
  * and re-fetches; a stale cached shell was referencing dead JS chunks, which
  * is the classic "page renders but nothing is clickable / no voice" shape.
+ * r163: CACHE must track APP_REVISION — stale r150 shell left phones on Oct
+ * merges (no card voice, old poke/idle) despite green CI on main.
  */
 'use strict';
 
-var CACHE = 'amoji-r2026-11-15.150';
+var CACHE = 'amoji-r2026-11-16.163';
 var SHELL = [
   './',
   './chat',

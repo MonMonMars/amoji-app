@@ -2032,6 +2032,7 @@ export function playVoiceGreeting(
   const greetGttsOpts = () => ({
     lang,
     tl,
+    pinSinkBeforePlay: true,
     // Male pin: slower pace + deep pitchBias (male delivery, not female mid).
     rate: delivery === 'male' ? 0.90 : 1,
     // Pinned pitch button wins; otherwise the curated per-character tier.
@@ -2047,6 +2048,7 @@ export function playVoiceGreeting(
   const greetEdgeOpts = () => ({
     lang,
     gender: delivery,
+    pinSinkBeforePlay: true,
     character: characterId,
     // Real Edge male/female neural id for this pitch button (not character cast alone).
     voiceId: edgeVoiceIdForTier(lang, delivery, greetTier),
@@ -2363,6 +2365,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const previewGttsOpts = () => ({
     lang: locale,
     tl,
+    pinSinkBeforePlay: true,
     rate: previewGender === 'male' ? 0.90 : 1,
     pitchBias: gttsPitchForLang(locale, 'preview', previewGender, choiceId),
     onPlaying: () => {
@@ -2379,6 +2382,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const previewEdgeOpts = () => ({
     lang: locale,
     gender: previewGender,
+    pinSinkBeforePlay: true,
     voiceId: edgeVoiceIdForTier(locale, previewGender, previewTier),
     forcePlain: true,
     expressiveness: 1.15,
