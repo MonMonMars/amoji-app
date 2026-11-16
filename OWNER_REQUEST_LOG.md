@@ -19,8 +19,8 @@
 
 | Deliverable | Status |
 |-------------|--------|
-| Resource / mistake / data docs + manifest | On stabilization pack branch (this merge) |
+| Resource / mistake / data docs + manifest | **Merged `main` `b556bb8f`** |
 | Card voice `e7e20f55` | **Merged `main` `07dd76e3`** |
-| P1 sink pin + P4 R12 + P3 poke #455 + P5 libs | **Queued this run** → see `tasks-list.md` |
+| P1 sink pin + P4 R12 + P3 poke #455 + P5 libs + P6 phone-smoke | **Merged `main`** → `/opt/cursor/artifacts/tasks-list.md` |
 
-**`main` tip (pre-pack):** `07dd76e3`
+**`main` tip:** `b556bb8f`
