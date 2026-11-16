@@ -325,10 +325,7 @@ describe('poke reaction clock', () => {
     expect(pokeBlock).not.toContain('setHistory');
   });
 
-  it('ChatPanel poke plays the zone MP3 without a parallel TTS / utterance feed', () => {
-    // Regression: SFX-only poke still called feedUtterance + notifySpeaking on a
-    // placeholder line beside playPokeBurst, so the speaking indicator (and any
-    // synth/edge fallthrough) ran as a second utterance over the premade clip.
+  it('ChatPanel poke uses playPokeBurst only — no parallel chat utterance feed', () => {
     const here = path.dirname(fileURLToPath(import.meta.url));
     const panel = readFileSync(path.join(here, '../components/ChatPanel.tsx'), 'utf8');
     const pokeBlock = panel.slice(
@@ -344,15 +341,12 @@ describe('poke reaction clock', () => {
 
     const voice = readFileSync(path.join(here, '../lib/voice.ts'), 'utf8');
     const burst = voice.slice(
-      voice.indexOf('export function playPokeBurst'),
+      voice.indexOf('function pokeBurstSpokenLine'),
       voice.indexOf('export function playLaughBurst'),
     );
+    expect(burst).toMatch(/\bspeak\s*\(/);
+    expect(burst).toContain('profilePokeLine');
     expect(burst).toContain('playVoiceClip');
-    expect(burst).not.toMatch(/\bspeak\s*\(/);
-    expect(burst).not.toContain('beginTts');
-    expect(burst).not.toContain('speakGtts');
-    expect(burst).not.toContain('speakEdge');
-    expect(burst).not.toContain('synthSpeak');
 
     const clip = readFileSync(path.join(here, '../lib/play-voice-clip.ts'), 'utf8');
     expect(clip).toContain('noteSpeechStarted');

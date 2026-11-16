@@ -418,11 +418,13 @@ export default function ChatPanel({
       } else if (detail?.state === 'stopped') {
         setClipState(null);
         setNowPlaying(null);
-        pendingShowDanceRef.current = null;
-        pendingShowClipRef.current = null;
-        // Show over — drop sticky sing/dance body + beat profile so talk idle returns.
-        clearMove();
-        clearPerfMotionProfile();
+        // Swapping library beds calls haltClip before the next `playing`. Keep an
+        // armed beginShow alive so we do not clearMove between end and re-start.
+        if (!pendingShowDanceRef.current) {
+          pendingShowClipRef.current = null;
+          clearMove();
+          clearPerfMotionProfile();
+        }
       }
     };
     window.addEventListener('amoji:library-clip', onClip);
@@ -1051,10 +1053,8 @@ export default function ChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // poke reactions — SFX + VRM motion only. The zone MP3 owns the speaking
-  // indicator (playVoiceClip → noteSpeechStarted / followAudioElement). Do not
-  // feedUtterance / notifySpeaking / speak a parallel poke line — that was the
-  // synth/edge double beside the premade clip. Never land in chat history.
+  // Poke reactions — short pinned-voice TTS (same pin as chat) + VRM motion.
+  // Never feedUtterance / notifySpeaking / history (see poke-voice-motion-sync).
   const lastPokeRef = useRef(pokeCount);
   useEffect(() => {
     if (pokeCount === lastPokeRef.current) return;
@@ -1062,8 +1062,7 @@ export default function ChatPanel({
     lastActivityRef.current = Date.now();
     lastUserRef.current = Date.now();
     reengageStageRef.current = 0;
-    // SFX-only poke (Mon t691–t696): recorded clip by zone — no TTS / utterance.
-    playPokeBurst(characterId, pokeZone || 'torso');
+    playPokeBurst(characterId, lang, pokeZone || 'torso', pokeCount);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pokeCount]);
 
@@ -1078,7 +1077,7 @@ export default function ChatPanel({
     reengageStageRef.current = 0;
     handHoldDragCountRef.current += 1;
     // Hand grab: poke SFX only — no template line ("哇, 輕輕隻手?") on every drag.
-    playPokeBurst(characterId, 'hand');
+    playPokeBurst(characterId, lang, 'hand', handHoldDragCountRef.current);
     if (
       characterGender === 'female'
       && !handHoldShySpokeRef.current
