@@ -6,7 +6,11 @@
  * pause any stray <audio>/<video> on this page (not marked amoji-owned).
  */
 
-import { ensureCompanionPlaybackRoute, markMicCommsRoutingLatch } from './audio-output';
+import {
+  ensureCompanionPlaybackRoute,
+  markMicCommsRoutingLatch,
+  primeDefaultSpeakerBeforeSynth,
+} from './audio-output';
 
 const PAUSED_MARK = 'data-amoji-paused-foreign';
 
@@ -57,6 +61,7 @@ export function companionPlaybackSession(): void {
 /** Called when companion TTS starts — duck in-page media; route playback to default. */
 export function duckExternalAudioForCompanion(): void {
   companionPlaybackSession();
+  void primeDefaultSpeakerBeforeSynth();
   pauseForeignPageMedia();
 }
 
