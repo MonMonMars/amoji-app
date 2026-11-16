@@ -13,7 +13,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "verify:live": "node scripts/verify-pages-live.mjs"
+    "verify:live": "node scripts/verify-pages-live.mjs",
+    "verify:agent-smoke": "node scripts/agent-live-smoke.mjs"
   },
   "dependencies": {
     "@amoji/emotion-core": "workspace:*",
