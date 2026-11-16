@@ -145,4 +145,23 @@ describe('default audio output', () => {
     expect(order).toContain('play:2');
     expect(order.indexOf('play:1')).toBeLessThan(order.indexOf('sink:'));
   });
+
+  it('gesture-safe retries play a third time after pin if the second attempt fails', async () => {
+    const order: string[] = [];
+    let attempts = 0;
+    const audio = {
+      setSinkId(id: string) {
+        order.push(`sink:${id}`);
+        return Promise.resolve();
+      },
+      play() {
+        attempts += 1;
+        order.push(`play:${attempts}`);
+        if (attempts < 3) return Promise.reject(new Error('NotAllowedError'));
+        return Promise.resolve();
+      },
+    } as unknown as HTMLAudioElement;
+    await startHtmlAudioOnDefaultSpeakers(audio, 'gesture-safe');
+    expect(order).toEqual(['play:1', 'sink:', 'play:2', 'play:3']);
+  });
 });
