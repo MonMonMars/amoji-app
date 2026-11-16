@@ -18,12 +18,15 @@ import {
   CAST_LIGHTING_UNIT,
   CAST_MATCAP_COLOR_SCALE,
   CAST_MATCAP_DAMPEN_IDS,
+  CAST_UNITY_TINT,
   castLightingMultipliers,
   characterIdFromModelRef,
   needsCastFaceLight,
   needsCastMatcapDampen,
 } from '../lib/vrm/cast-lighting-profile';
-import { dampenCastMatcap, floorCastShadeColors } from '../lib/vrm/cast-materials';
+import { applyCastShaderLook, dampenCastMatcap, floorCastShadeColors } from '../lib/vrm/cast-materials';
+import { CHARACTERS } from '../lib/prefs';
+import { lookFor } from '../lib/persona';
 
 const SAMPLE_IDS = [
   'a01-shino',
@@ -127,7 +130,13 @@ describe('cast material lighting passes (three-vrm MToon truth)', () => {
     expect(mat2.matcapFactor.r).toBeCloseTo(CAST_MATCAP_COLOR_SCALE, 5);
   });
 
-  it('wires unifyCastMToon + dampen on chat, preview, thumbs, and bake', () => {
+  it('resolves lookFor to the unity tint for every roster id', () => {
+    for (const c of CHARACTERS) {
+      expect(lookFor(c.id).tint, c.id).toBe(CAST_UNITY_TINT);
+    }
+  });
+
+  it('wires applyCastShaderLook on chat, preview, thumbs, bake, and texture fallback', () => {
     const root = join(__dirname, '..');
     const canvas = readFileSync(join(root, 'components/CompanionCanvas.tsx'), 'utf8');
     const preview = readFileSync(join(root, 'components/ModelPreview.tsx'), 'utf8');
@@ -139,15 +148,32 @@ describe('cast material lighting passes (three-vrm MToon truth)', () => {
       ['modelThumb', thumb],
       ['thumb-bake', bake],
     ] as const) {
-      expect(src, label).toContain('unifyCastMToon');
-      expect(src, label).toContain('dampenCastMatcap');
-      expect(src, label).toContain('floorCastShadeColors');
-      // Must not gate the shared shader path on a truthy character id.
+      expect(src, label).toContain('applyCastShaderLook');
       expect(src, label).not.toMatch(/if\s*\(\s*characterId\s*\)\s*dampenCastMatcap/);
     }
-    // Chat material unify must run even when seedKey is missing.
-    expect(canvas).toMatch(/unifyCastMToon\(a\.root,\s*seedKey\)/);
-    expect(canvas).toMatch(/dampenCastMatcap\(a\.root,\s*seedKey\)/);
+    expect(canvas).toMatch(/applyCastShaderLook\(a\.root,\s*seedKey\)/);
+    expect(canvas).toContain('applyCastShaderLook(root)');
+  });
+
+  it('applyCastShaderLook bundles shade floor, MToon unify, and matcap dampen', () => {
+    const root = new THREE.Group();
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(0.1, 0.1, 0.1),
+      new THREE.MeshBasicMaterial({ name: 'Face' }),
+    );
+    const mat = mesh.material as THREE.MeshBasicMaterial & {
+      shadeColorFactor: THREE.Color;
+      matcapFactor: THREE.Color;
+      rimLightingMixFactor: number;
+    };
+    mat.shadeColorFactor = new THREE.Color(0.02, 0.015, 0.01);
+    mat.matcapFactor = new THREE.Color(1, 1, 1);
+    mat.rimLightingMixFactor = 0.9;
+    root.add(mesh);
+    applyCastShaderLook(root, 'a01-shino');
+    const lum = Math.max(mat.shadeColorFactor.r, mat.shadeColorFactor.g, mat.shadeColorFactor.b);
+    expect(lum).toBeGreaterThanOrEqual(0.2 - 1e-6);
+    expect(mat.matcapFactor.r).toBeCloseTo(CAST_MATCAP_COLOR_SCALE, 5);
   });
 
   it('floors near-black shadeColorFactor (not the missing shadeColor alias)', () => {

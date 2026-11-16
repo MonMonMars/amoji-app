@@ -15,6 +15,9 @@ export interface CastLightingMultipliers {
   exposure: number;
 }
 
+/** Single palette multiplier for every cast member in WebGL (no per-id warmth). */
+export const CAST_UNITY_TINT = '#ffffff';
+
 /** Locked unit profile — every characterId resolves here. */
 export const CAST_LIGHTING_UNIT: CastLightingMultipliers = {
   hemi: 1,
