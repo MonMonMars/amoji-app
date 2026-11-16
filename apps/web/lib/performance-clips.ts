@@ -186,14 +186,6 @@ export const PERFORMANCE_CLIPS: readonly PerformanceClip[] = [
     credit: 'cynicmusic', source: 'https://opengameart.org/content/epic-endgame-cinematic',
   },
   {
-    id: 'sing-f-cantate',
-    kind: 'song', style: 'chill', voice: 'female',
-    file: '/audio/sing-female/sing-f-cantate.mp3', durationMs: 20036,
-    volume: 'voiceVol', moods: ['sad', 'tired', 'anxious'], langs: ALL, characters: [],
-    labels: label('Cantate Domino'), license: 'CC0-1.0',
-    credit: 'Anonymous Choir', source: 'https://commons.wikimedia.org/wiki/File:Anonymous_Choir_-_Cantate_Domino.ogg',
-  },
-  {
     id: 'sing-m-happy-birthday',
     kind: 'song', style: 'cute tease', voice: 'male',
     file: '/audio/sing-male/sing-m-happy-birthday.mp3', durationMs: 14028,

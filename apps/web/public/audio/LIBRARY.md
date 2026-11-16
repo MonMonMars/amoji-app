@@ -64,7 +64,6 @@ Asking to **dance** plays `dance/` or `song-bed/` at BGM volume.
 | `sing-female/sing-f-twinkle.mp3` | Twinkle Twinkle | female | Derrick Coetzee | https://commons.wikimedia.org/wiki/File:Twinkle_Twinkle_Little_Star_-_sung_with_full_lyrics.ogg |
 | `sing-female/sing-f-joy.mp3` | Joy to the World | female | Kim Butler, Alan Davis-Drake, Diyan, Claire Goget, Karen Savage, SKVE, Kara Shallenberg, Kristin Hughes | https://commons.wikimedia.org/wiki/File:Joy-to-the-World_KB.ogg |
 | `sing-female/sing-f-choir.mp3` | Choir | female | cynicmusic | https://opengameart.org/content/epic-endgame-cinematic |
-| `sing-female/sing-f-cantate.mp3` | Cantate Domino | female | Anonymous Choir | https://commons.wikimedia.org/wiki/File:Anonymous_Choir_-_Cantate_Domino.ogg |
 | `sing-female/sing-f-citation.mp3` | Citation | female | Caroline Joy & Mike Morrison | https://commons.wikimedia.org/wiki/File:Citation_sound_effect_-_the_English_word_citation_sung_by_a_soprano_singer.wav |
 | `sing-female/sing-f-adele.mp3` | Adele | female | Agnes Kimball; Adolf Philipp (Columbia Records, 1913) | https://commons.wikimedia.org/wiki/File:%22Adele%22_from_musical_Adele,_sung_by_soprano_Agnes_Kimball.flac |
 | `sing-female/sing-f-una-voce.mp3` | Una Voce | female | Gioachino Rossini; Singing Sergeants, United States Air Force Band | https://commons.wikimedia.org/wiki/File:%22Una_Voce_Poco_Fa%22_from_Il_Barbiere_Di_Siviglia_-_Singing_Sergeants_-_United_States_Air_Force_Band.mp3 |

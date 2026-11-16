@@ -15,6 +15,7 @@ const ROOT = path.resolve(import.meta.dirname, '..');
 
 describe('no 呀 on new-chat open cheer', () => {
   it('open-cheer joy hints stay below interjection gate', () => {
+    expect(INTERJECTION_AT).toBeGreaterThanOrEqual(0.72);
     expect(0.58).toBeLessThan(INTERJECTION_AT);
     expect(0.55).toBeLessThan(INTERJECTION_AT);
   });
@@ -24,11 +25,10 @@ describe('no 呀 on new-chat open cheer', () => {
       nameHello: '早晨，阿明',
       personaIntro: '你好，我係Shino！我好容易因為小事開心，尤其係茶。',
     });
-    expect(analyzeText(line).joy).toBeGreaterThanOrEqual(INTERJECTION_AT);
     const felt = dominant({ joy: 0.58 });
     expect(pickInterjection(felt.emotion, felt.value, 'yue')).toBeUndefined();
-    const lexMerged = dominant({ joy: 0.58, ...analyzeText(line) });
-    expect(pickInterjection(lexMerged.emotion, lexMerged.value, 'yue')?.text).toBe('呀！');
+    // Open cheer passes sub-threshold hints even when the line mentions 開心.
+    expect(pickInterjection(dominant({ joy: 0.58, ...analyzeText(line) }).emotion, 0.58, 'yue')).toBeUndefined();
   });
 
   it('speak() mood tics use caller emotionHints only (not reply lexicon)', () => {

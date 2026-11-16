@@ -58,11 +58,6 @@
       "confidence": 0.154,
       "file": "sing-female/sing-f-adele.mp3"
     },
-    "sing-f-cantate": {
-      "bpm": 161.5,
-      "confidence": 0.075,
-      "file": "sing-female/sing-f-cantate.mp3"
-    },
     "sing-f-choir": {
       "bpm": 112.3,
       "confidence": 0.196,

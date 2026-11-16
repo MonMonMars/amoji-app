@@ -276,7 +276,7 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
   sunny: {
     en: [
       'I {verb} and keep {thing} ready for a bright stretch.',
-      'Today feels like a perfect {noun} day already.',
+      'Today has been gentle — a soft {noun} kind of mood.',
       'I practiced how to {verb} — sunny demo standing by.',
       '{thing} just made me grin for no fancy reason.',
       'I brought {noun} energy with me into this quiet.',
@@ -288,7 +288,7 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
     ],
     yue: [
       '我{verb}，仲留低{thing}等一陣明亮時光。',
-      '今日已經好似完美嘅{noun}日。',
+      '今日天氣好靚，心情同{noun}一樣輕鬆。',
       '我練習咗點樣{verb}——陽光示範就位。',
       '{thing}啱啱令我無端端笑咗。',
       '我帶住{noun}能量入呢段靜。',
@@ -300,7 +300,7 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
     ],
     zh: [
       '我{verb}，还留着{thing}等一段明亮时光。',
-      '今天已经像完美的{noun}日。',
+      '今天天气不错，心情跟{noun}一样轻松。',
       '我练习了怎么{verb}——阳光示范就位。',
       '{thing}刚刚让我无端端笑了。',
       '我带着{noun}能量走进这段安静。',
@@ -312,7 +312,7 @@ const IDLE: Record<VoiceId, Record<Lang, readonly string[]>> = {
     ],
     ja: [
       '私は{verb}して、{thing}を明るい時間のために用意してる。',
-      '今日はもう完璧な{noun}日って感じ。',
+      '今日は穏やかで、{noun}みたいな気分。',
       '{verb}の練習、したよ——晴れやかデモ待機中。',
       '{thing}のおかげで、理由もなくにやっとした。',
       '{noun}の元気を、この静けさに持ってきたよ。',

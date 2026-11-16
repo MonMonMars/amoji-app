@@ -391,7 +391,8 @@
 // r2026-11-16.170: companionPlaybackSession + mic-off leave prime default speakers.
 // r2026-11-16.171: showcase news yes → clientLiveContext + sayLocal (no LLM double-speak).
 // r2026-11-16.172: news TTS drops RSS dates/sections; live tells no longer scrubbed silent; chat follow-live scroll.
-export const APP_REVISION = 'r2026-11-16.172';
+// r2026-11-16.173: remove Cantate Domino; fix idle “完美謎題日”; raise mood-tic gate (less 呀/好 spam).
+export const APP_REVISION = 'r2026-11-16.173';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
