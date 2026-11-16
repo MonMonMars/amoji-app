@@ -1899,6 +1899,16 @@ function sayWeather(
   return `而家大約${t}度，${cond}。${prep}，保重呀！`;
 }
 
+const EN_PLACE_PLACEHOLDER = /^(here|there|nearby|near me|around here|my area|my city|this area|locally|home|your area)$/i;
+
+/** Place name for spoken local-news framing — never English deictics in yue/zh/ja. */
+export function newsLocalPlaceLabel(lang: Lang4, label: string): string | null {
+  const t = label.trim();
+  if (!t || DEICTIC.test(t) || EN_PLACE_PLACEHOLDER.test(t)) return null;
+  if (lang !== 'en' && /\b(?:here|there|near me|around here|your area)\b/i.test(t)) return null;
+  return t;
+}
+
 function newsBodyBeats(lead: Headline): string[] {
   const summary = lead.summary?.trim() ? clip(spokenHeadline(lead.summary), 280) : '';
   const details = (lead.details?.length ? lead.details : newsDetailsFromText(lead.summary ?? '', lead.title))
@@ -1916,7 +1926,7 @@ function newsBodyBeats(lead: Headline): string[] {
   return beats;
 }
 
-function sayNews(lang: Lang4, label: string, lead: Headline | string): string {
+export function sayNews(lang: Lang4, label: string, lead: Headline | string): string {
   const story = typeof lead === 'string' ? { title: lead, source: '' } : lead;
   const t = clip(spokenHeadline(story.title), 160);
   if (!t) return sayMiss(lang, 'news');
@@ -1926,10 +1936,21 @@ function sayNews(lang: Lang4, label: string, lead: Headline | string): string {
       : lang === 'ja' ? ` ${extra.join(' ')}`
       : ` ${extra.join('')}`)
     : '';
-  if (lang === 'en') return `Around ${label}, a fun local story — ${t}.${more}`.replace(/\s+/g, ' ').trim();
-  if (lang === 'zh') return `${label}附近有条轻松本地新闻：${t}。${more}`.replace(/\s+/g, ' ').trim();
-  if (lang === 'ja') return `${label}の近くの軽めのニュース、${t}。${more}`.replace(/\s+/g, ' ').trim();
-  return `${label}附近有條輕鬆本地新聞：${t}。${more}`.replace(/\s+/g, ' ').trim();
+  const place = newsLocalPlaceLabel(lang, label);
+  if (lang === 'en') {
+    const where = place ? `Around ${place}` : 'Around here';
+    return `${where}, a fun local story — ${t}.${more}`.replace(/\s+/g, ' ').trim();
+  }
+  if (lang === 'zh') {
+    const head = place ? `${place}附近有条轻松本地新闻：` : '附近有条轻松本地新闻：';
+    return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
+  }
+  if (lang === 'ja') {
+    const head = place ? `${place}の近くの軽めのニュース、` : '近くの軽めのニュース、';
+    return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
+  }
+  const head = place ? `${place}附近有條輕鬆本地新聞：` : '附近有條輕鬆本地新聞：';
+  return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
 }
 
 function sayRecent(lang: Lang4, lead: Headline | string): string {
@@ -2139,7 +2160,7 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
       promptLines.push(`${where}: ${formatNewsFactLine(lead)}.`);
       // Recent/world light packs: finished "from the news" statements (no local framing).
       // Local packs with a place: warm near-me framing. Never append a follow-up ask.
-      spoken.push(activePack.recent ? sayRecent(lang, lead) : sayNews(lang, label || 'here', lead));
+      spoken.push(activePack.recent ? sayRecent(lang, lead) : sayNews(lang, label, lead));
     } else if (!place && !plan.placeQuery && !plan.newsQuery && !plan.recent && plan.needsDevice) {
       // Explicit local/near-me news with no location — only then ask which city.
       promptLines.push('News: need a city or country from the user.');

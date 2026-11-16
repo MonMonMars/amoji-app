@@ -27,6 +27,8 @@ import {
   resolveDevicePlace,
   selectNewsLead,
   newsDetailsFromText,
+  newsLocalPlaceLabel,
+  sayNews,
   toldNewsTitles,
   worldBlock,
   type GeoLike,
@@ -799,6 +801,37 @@ describe('tool switch and prompt wiring', () => {
 });
 
 describe('local light news and reply guard', () => {
+  it('never mixes English "here" with Cantonese 附近 in news intros', () => {
+    const title = '社區花市週末開張';
+    expect(sayNews('yue', 'here', title)).toBe(`附近有條輕鬆本地新聞：${title}。`);
+    expect(sayNews('yue', 'here', title)).not.toMatch(/\bhere\b/i);
+    expect(sayNews('yue', 'your area', title)).not.toMatch(/your area/i);
+    expect(sayNews('zh', 'here', title)).toBe(`附近有条轻松本地新闻：${title}。`);
+    expect(sayNews('yue', '九龍', title)).toContain('九龍附近有條輕鬆本地新聞');
+    expect(newsLocalPlaceLabel('yue', '附近')).toBeNull();
+    expect(newsLocalPlaceLabel('en', 'here')).toBeNull();
+    expect(newsLocalPlaceLabel('en', 'Hong Kong')).toBe('Hong Kong');
+  });
+
+  it('speaks yue local RSS without an English here prefix when place label is coarse', async () => {
+    const rss = '<rss><channel><item><title>Weird lights over Hong Kong harbour - Daily</title></item></channel></rss>';
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('news.google.com')) return new Response(rss, { status: 200 });
+      return jsonRes({}, 404);
+    };
+    const coarsePlace: Place = { ...HK, source: 'ip' };
+    const live = await gatherLiveContext('news near me', {
+      lang: 'yue',
+      fetch: fetchImpl,
+      cache: new Map(),
+      locate: async () => coarsePlace,
+    });
+    expect(live.spoken).toMatch(/附近有條輕鬆本地新聞/);
+    expect(live.spoken).not.toMatch(/\bhere\b/i);
+    expect(live.spoken).toContain('Weird lights');
+  });
+
   it('drops grim headlines and stories from somewhere else', () => {
     const picked = pickLightHeadlines([
       { title: 'Accused robber hits the bank', source: 'Wire' },
