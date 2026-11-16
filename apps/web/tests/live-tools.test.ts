@@ -27,6 +27,10 @@ import {
   resolveDevicePlace,
   selectNewsLead,
   newsDetailsFromText,
+  newsLocalPlaceLabel,
+  newsPackForRegion,
+  preferHeadlinesForLang,
+  sayNews,
   toldNewsTitles,
   worldBlock,
   type GeoLike,
@@ -193,7 +197,8 @@ describe('planTools', () => {
       locate: async () => { located = true; return null; },
     });
     expect(planTools('tell me news').needsDevice).toBe(false);
-    expect(located).toBe(false);
+    // Edition scoping may probe location, but must not ask the user for a city.
+    expect(located).toBe(true);
     expect(live.spoken.toLowerCase()).not.toContain('which city');
     expect(live.spoken).not.toMatch(/[?？]/);
     expect(live.spoken.toLowerCase()).toMatch(/museum|cat|parade|crowd|news/i);
@@ -438,7 +443,7 @@ describe('gatherLiveContext', () => {
       cache: new Map(),
       locate: async () => { located = true; return HK; },
     });
-    expect(located).toBe(false);
+    expect(located).toBe(true);
     expect(live.prompt).toContain('Light news');
     expect(live.prompt).toContain('funny contest');
     expect(live.prompt.toLowerCase()).not.toContain('shooting');
@@ -799,6 +804,79 @@ describe('tool switch and prompt wiring', () => {
 });
 
 describe('local light news and reply guard', () => {
+  it('never mixes English "here" with Cantonese 附近 in news intros', () => {
+    const title = '社區花市週末開張';
+    expect(sayNews('yue', 'here', title)).toBe(`附近有條輕鬆本地新聞：${title}。`);
+    expect(sayNews('yue', 'here', title)).not.toMatch(/\bhere\b/i);
+    expect(sayNews('yue', 'your area', title)).not.toMatch(/your area/i);
+    expect(sayNews('zh', 'here', title)).toBe(`附近有条轻松本地新闻：${title}。`);
+    expect(sayNews('yue', '九龍', title)).toContain('九龍附近有條輕鬆本地新聞');
+    expect(newsLocalPlaceLabel('yue', '附近')).toBeNull();
+    expect(newsLocalPlaceLabel('en', 'here')).toBeNull();
+    expect(newsLocalPlaceLabel('en', 'Hong Kong')).toBe('Hong Kong');
+  });
+
+  it('speaks yue local RSS without an English here prefix when place label is coarse', async () => {
+    const rss = '<rss><channel><item><title>Weird lights over Hong Kong harbour - Daily</title></item></channel></rss>';
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('news.google.com')) return new Response(rss, { status: 200 });
+      return jsonRes({}, 404);
+    };
+    const coarsePlace: Place = { ...HK, source: 'ip' };
+    const live = await gatherLiveContext('news near me', {
+      lang: 'yue',
+      fetch: fetchImpl,
+      cache: new Map(),
+      locate: async () => coarsePlace,
+    });
+    expect(live.spoken).toMatch(/附近有條輕鬆本地新聞/);
+    expect(live.spoken).not.toMatch(/\bhere\b/i);
+    expect(live.spoken).toContain('Weird lights');
+  });
+
+  it('prefers CJK headlines over English wires when the UI language is zh', () => {
+    const items = [
+      { title: 'Scientists discover quirky deep-sea fish', source: 'Wire' },
+      { title: '科学家发现深海奇特鱼类', source: 'Sci' },
+    ];
+    expect(preferHeadlinesForLang('zh', items).map((h) => h.title)).toEqual(['科学家发现深海奇特鱼类']);
+    expect(pickDefaultHeadlines(items, { lang: 'zh' }).map((h) => h.title)).toEqual(['科学家发现深海奇特鱼类']);
+  });
+
+  it('requests Google News in zh when the user asks in Mandarin', async () => {
+    const urls: string[] = [];
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      urls.push(url);
+      if (url.includes('news.google.com')) {
+        return new Response(
+          '<rss><channel><item><title>社区花市周末开张 - Local</title></item></channel></rss>',
+          { status: 200 },
+        );
+      }
+      return jsonRes({}, 404);
+    };
+    const live = await gatherLiveContext('今天有什么新闻？', {
+      lang: 'zh',
+      fetch: fetchImpl,
+      cache: new Map(),
+      locate: async () => HK,
+    });
+    const google = urls.find((u) => u.includes('news.google.com'));
+    expect(google).toBeDefined();
+    expect(google!).toMatch(/hl=zh-CN/);
+    expect(google!).toMatch(/gl=HK/);
+    expect(live.spoken).toMatch(/最近有条新闻/);
+    expect(live.spoken).toContain('社区花市');
+    expect(live.spoken).not.toMatch(/From the news|Around here|\bhere\b/i);
+  });
+
+  it('builds Mandarin/Cantonese Google packs for Chinese editions', () => {
+    expect(newsPackForRegion('HK', 'yue')).toEqual({ hl: 'zh-HK', gl: 'HK', ceid: 'HK:zh-Hant' });
+    expect(newsPackForRegion('HK', 'zh')).toEqual({ hl: 'zh-CN', gl: 'HK', ceid: 'HK:zh-Hans' });
+  });
+
   it('drops grim headlines and stories from somewhere else', () => {
     const picked = pickLightHeadlines([
       { title: 'Accused robber hits the bank', source: 'Wire' },

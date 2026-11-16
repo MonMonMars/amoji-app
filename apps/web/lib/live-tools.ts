@@ -1061,6 +1061,22 @@ const LIGHT_RE = /funny|weird|odd|quirky|adorable|heartwarming|good news|eccentr
 /** t780: drop war/politics/tragedy on the default path unless user opts in. */
 const HEAVY_RE = /\b(?:war|warfare|battlefield|missile|airstrike|bombing|invasion|occupied|ceasefire|troops|soldier|army|navy|military|politic|politics|election|electoral|congress|senate|parliament|president|prime minister|diplomat|sanction|coup|junta|terror|terrorism|hostage|genocide|massacre|atrocity|refugee crisis|famine|tragedy|fatal crash|mass shooting)\b|戰爭|战争|導彈|导弹|空襲|空袭|入侵|停火|軍隊|军队|政治|選舉|选举|國會|国会|總統|总统|制裁|政變|政变|恐襲|恐袭|屠殺|屠杀|悲劇|悲剧|遇難|遇难/i;
 
+const CJK_IN_HEADLINE = /[\u3000-\u9fff]/;
+const EN_WIRE_FEED = /feeds\.bbci\.co\.uk|feeds\.npr\.org|rss\.dw\.com|france24\.com\/en\/|theguardian\.com|cbc\.ca|abc\.net\.au/i;
+
+function headlineDominantLatin(title: string): boolean {
+  const cjk = (title.match(CJK_IN_HEADLINE) ?? []).length;
+  const latin = (title.match(/[A-Za-z]/g) ?? []).length;
+  return latin >= 8 && cjk * 2 < latin;
+}
+
+/** Prefer headlines that match the UI language so zh/yue taps are not read in English. */
+export function preferHeadlinesForLang<T extends { title: string }>(lang: Lang4, items: T[]): T[] {
+  if (lang === 'en') return items;
+  const localized = items.filter((h) => CJK_IN_HEADLINE.test(h.title) || !headlineDominantLatin(h.title));
+  return localized.length ? localized : items;
+}
+
 /** Stories about this place, lighter ones first. Grim items and plain bad-news
  *  items (closures, obituaries) are dropped when anything warmer is available. */
 export function pickLightHeadlines(items: Array<{ title: string; source: string }>, place: { city: string; region: string } | null): Array<{ title: string; source: string }> {
@@ -1089,11 +1105,12 @@ export function isHeavyHeadline(title: string): boolean {
 
 export function pickDefaultHeadlines(
   items: Array<{ title: string; source: string }>,
-  opts?: { allowHeavy?: boolean; preferLight?: boolean },
+  opts?: { allowHeavy?: boolean; preferLight?: boolean; lang?: Lang4 },
 ): Array<{ title: string; source: string }> {
+  const pool = opts?.lang ? preferHeadlinesForLang(opts.lang, items) : items;
   const allowHeavy = Boolean(opts?.allowHeavy);
   const preferLight = opts?.preferLight !== false;
-  const ranked = items.map((h) => {
+  const ranked = pool.map((h) => {
     if (!allowHeavy && isHeavyHeadline(h.title)) return { h, score: -1 };
     if (!allowHeavy && DULL_RE.test(h.title) && !LIGHT_RE.test(h.title)) return { h, score: -1 };
     const light = LIGHT_RE.test(h.title);
@@ -1271,6 +1288,21 @@ export function regionalNewsFeedUrls(region: NewsRegion): string[] {
 }
 
 /** t780: lighter free RSS categories (science / entertainment / health) per region. */
+/** Skip English wire extras for zh/yue — Google News + localized RSS + zh Wikipedia carry the pool. */
+function regionalLightNewsFeedsForLang(region: NewsRegion, lang: Lang4): string[] {
+  const base = regionalLightNewsFeedUrls(region);
+  if (lang !== 'zh' && lang !== 'yue') return base;
+  const local = base.filter((u) => !EN_WIRE_FEED.test(u));
+  return local.length ? local : [];
+}
+
+function regionalHeavyNewsFeedsForLang(region: NewsRegion, lang: Lang4): string[] {
+  const base = regionalNewsFeedUrls(region);
+  if (lang !== 'zh' && lang !== 'yue') return base;
+  const local = base.filter((u) => !EN_WIRE_FEED.test(u));
+  return local.length ? local : [];
+}
+
 export function regionalLightNewsFeedUrls(region: NewsRegion): string[] {
   const bbcSci = 'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml';
   const bbcEnt = 'https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml';
@@ -1451,7 +1483,8 @@ function stripWikiStory(raw: string): string {
 
 function wikiNewsHosts(lang: Lang4): string[] {
   if (lang === 'ja') return ['ja.wikipedia.org', 'en.wikipedia.org'];
-  if (lang === 'zh' || lang === 'yue') return ['zh.wikipedia.org', 'en.wikipedia.org'];
+  if (lang === 'yue') return ['zh-yue.wikipedia.org', 'zh.wikipedia.org'];
+  if (lang === 'zh') return ['zh.wikipedia.org'];
   return ['en.wikipedia.org'];
 }
 
@@ -1598,8 +1631,8 @@ async function fetchRecentHeadlines(
   // t780: default = light category feeds + light Google query; heavy opt-in keeps world wires.
   // Rotate which regional feeds lead so repeat taps diversify sources (per-ask skew).
   const feedBank = allowHeavy || widen
-    ? [...regionalLightNewsFeedUrls(region), ...regionalNewsFeedUrls(region)]
-    : regionalLightNewsFeedUrls(region);
+    ? [...regionalLightNewsFeedsForLang(region, lang), ...regionalHeavyNewsFeedsForLang(region, lang)]
+    : regionalLightNewsFeedsForLang(region, lang);
   const extras = rotateFeedUrls(feedBank, now, widen ? Math.min(8, feedBank.length) : 4);
   const googleQuery = allowHeavy ? '' : defaultLightNewsQuery(lang, now);
   const top = allowHeavy;
@@ -1608,13 +1641,13 @@ async function fetchRecentHeadlines(
     fetchWikipediaNews(fetchImpl, lang, cache, { days: widen ? 10 : 5, poolMax }),
     ...extras.map((url) => fetchRssFeedHeadlines(fetchImpl, url, rssKey, cache)),
   ]);
-  const merged = mergeHeadlines([feed, ...regional, wiki], poolMax);
+  const merged = preferHeadlinesForLang(lang, mergeHeadlines([feed, ...regional, wiki], poolMax));
   if (allowHeavy) return merged;
   if (!widen) {
-    const picked = pickDefaultHeadlines(merged, { allowHeavy: false, preferLight: true });
+    const picked = pickDefaultHeadlines(merged, { allowHeavy: false, preferLight: true, lang });
     if (picked.length) return picked.slice(0, poolMax);
   }
-  const softer = pickDefaultHeadlines(merged, { allowHeavy: false, preferLight: false });
+  const softer = pickDefaultHeadlines(merged, { allowHeavy: false, preferLight: false, lang });
   if (softer.length) return softer.slice(0, poolMax);
   // Browser CORS often blanks Google/BBC RSS; keep any non-grim wiki line so
   // "news" never collapses to the empty miss when a soft story exists.
@@ -1650,7 +1683,7 @@ async function fetchAreaNews(
     const raw = await fetchNews(fetchImpl, topical, lang, rssKey, cache, false, newsRegionFromPlace(place, lang));
     const filtered = allowHeavy
       ? raw.filter((h) => !GRIM_RE.test(h.title)).slice(0, NEWS_POOL_MAX)
-      : pickDefaultHeadlines(raw, { allowHeavy: false });
+      : pickDefaultHeadlines(preferHeadlinesForLang(lang, raw), { allowHeavy: false, lang });
     const fromGoogle = filtered.length
       ? filtered
       : raw.filter((h) => !isHeavyHeadline(h.title)).slice(0, NEWS_POOL_MAX);
@@ -1689,10 +1722,10 @@ async function fetchAreaNews(
   if (place && !opts?.widen) {
     const region = newsRegionFromPlace(place, lang);
     const primary = await fetchNews(fetchImpl, lightNewsQuery(place, lang), lang, rssKey, cache, false, region);
-    let picked = pickLightHeadlines(primary, place);
+    let picked = pickLightHeadlines(preferHeadlinesForLang(lang, primary), place);
     if (!picked.length && (place.city || place.region)) {
       const broader = await fetchNews(fetchImpl, place.city || place.region, lang, rssKey, cache, false, region);
-      picked = pickLightHeadlines(broader, place);
+      picked = pickLightHeadlines(preferHeadlinesForLang(lang, broader), place);
     }
     if (picked.length) return { headlines: picked, recent: false };
   }
@@ -1899,6 +1932,16 @@ function sayWeather(
   return `而家大約${t}度，${cond}。${prep}，保重呀！`;
 }
 
+const EN_PLACE_PLACEHOLDER = /^(here|there|nearby|near me|around here|my area|my city|this area|locally|home|your area)$/i;
+
+/** Place name for spoken local-news framing — never English deictics in yue/zh/ja. */
+export function newsLocalPlaceLabel(lang: Lang4, label: string): string | null {
+  const t = label.trim();
+  if (!t || DEICTIC.test(t) || EN_PLACE_PLACEHOLDER.test(t)) return null;
+  if (lang !== 'en' && /\b(?:here|there|near me|around here|your area)\b/i.test(t)) return null;
+  return t;
+}
+
 function newsBodyBeats(lead: Headline): string[] {
   const summary = lead.summary?.trim() ? clip(spokenHeadline(lead.summary), 280) : '';
   const details = (lead.details?.length ? lead.details : newsDetailsFromText(lead.summary ?? '', lead.title))
@@ -1916,7 +1959,7 @@ function newsBodyBeats(lead: Headline): string[] {
   return beats;
 }
 
-function sayNews(lang: Lang4, label: string, lead: Headline | string): string {
+export function sayNews(lang: Lang4, label: string, lead: Headline | string): string {
   const story = typeof lead === 'string' ? { title: lead, source: '' } : lead;
   const t = clip(spokenHeadline(story.title), 160);
   if (!t) return sayMiss(lang, 'news');
@@ -1926,10 +1969,21 @@ function sayNews(lang: Lang4, label: string, lead: Headline | string): string {
       : lang === 'ja' ? ` ${extra.join(' ')}`
       : ` ${extra.join('')}`)
     : '';
-  if (lang === 'en') return `Around ${label}, a fun local story — ${t}.${more}`.replace(/\s+/g, ' ').trim();
-  if (lang === 'zh') return `${label}附近有条轻松本地新闻：${t}。${more}`.replace(/\s+/g, ' ').trim();
-  if (lang === 'ja') return `${label}の近くの軽めのニュース、${t}。${more}`.replace(/\s+/g, ' ').trim();
-  return `${label}附近有條輕鬆本地新聞：${t}。${more}`.replace(/\s+/g, ' ').trim();
+  const place = newsLocalPlaceLabel(lang, label);
+  if (lang === 'en') {
+    const where = place ? `Around ${place}` : 'Around here';
+    return `${where}, a fun local story — ${t}.${more}`.replace(/\s+/g, ' ').trim();
+  }
+  if (lang === 'zh') {
+    const head = place ? `${place}附近有条轻松本地新闻：` : '附近有条轻松本地新闻：';
+    return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
+  }
+  if (lang === 'ja') {
+    const head = place ? `${place}の近くの軽めのニュース、` : '近くの軽めのニュース、';
+    return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
+  }
+  const head = place ? `${place}附近有條輕鬆本地新聞：` : '附近有條輕鬆本地新聞：';
+  return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
 }
 
 function sayRecent(lang: Lang4, lead: Headline | string): string {
@@ -2023,7 +2077,8 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
 
   let place: Place | null = null;
   if (plan.placeQuery) place = await geocodeName(fetchImpl, plan.placeQuery, opts.lang, cache);
-  if (!place && plan.needsDevice && opts.locate) {
+  // Recent/world news still needs a country for the Google News edition (hl stays UI lang).
+  if (!place && opts.locate && (plan.needsDevice || (plan.news && plan.recent))) {
     try { place = await opts.locate(); } catch { place = null; }
   }
   // The auto open/return brief stays silent when we have no idea where the
@@ -2139,7 +2194,7 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
       promptLines.push(`${where}: ${formatNewsFactLine(lead)}.`);
       // Recent/world light packs: finished "from the news" statements (no local framing).
       // Local packs with a place: warm near-me framing. Never append a follow-up ask.
-      spoken.push(activePack.recent ? sayRecent(lang, lead) : sayNews(lang, label || 'here', lead));
+      spoken.push(activePack.recent ? sayRecent(lang, lead) : sayNews(lang, label, lead));
     } else if (!place && !plan.placeQuery && !plan.newsQuery && !plan.recent && plan.needsDevice) {
       // Explicit local/near-me news with no location — only then ask which city.
       promptLines.push('News: need a city or country from the user.');
