@@ -60,6 +60,10 @@ describe('dance-audio-gate', () => {
     expect(music).toContain("addEventListener('playing'");
     expect(music).toContain('currentTime > 0');
     expect(music).toContain('startLibraryBandFallback');
+    const playEl = music.slice(music.indexOf('function playClipElement'), music.indexOf('async function playClip'));
+    expect(playEl).toContain('startHtmlAudioOnDefaultSpeakers');
+    expect(playEl).not.toMatch(/pinDefaultOutput\(audio\)/);
+    expect(playEl).not.toMatch(/pinDefaultOutputAsync\(audio\)\.then\(\(\) => audio\.play/);
     // BufferSource emits only after src.start().
     const playClip = music.slice(music.indexOf('async function playClip'), music.indexOf('function streamDanceClip'));
     expect(playClip.indexOf('src.start()')).toBeLessThan(playClip.indexOf('emitLibraryClipPlaying(clip.id)'));

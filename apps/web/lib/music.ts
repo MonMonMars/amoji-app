@@ -13,10 +13,10 @@
 
 import {
   createDefaultAudioContext,
+  ensureCompanionPlaybackRoute,
   isSharedDefaultAudioContext,
-  pinDefaultOutput,
-  pinDefaultOutputAsync,
   primeSharedAudioContext,
+  startHtmlAudioOnDefaultSpeakers,
 } from './audio-output';
 import { DEFAULT_VOLUME, isVolumeStep, volumeLinear, type VolumeKey } from './audio-levels';
 import { isMasterMuted } from './master-mute';
@@ -421,6 +421,19 @@ let mouthTimer: ReturnType<typeof setInterval> | null = null;
 let duck = 1;
 let duckTimer: ReturnType<typeof setTimeout> | null = null;
 
+type AudioSessionNav = Navigator & { audioSession?: { type: string } };
+
+/** Mic chat may leave play-and-record — pin default sink before play (gTTS parity). */
+function libraryBedHtmlAudioMode(): 'gesture-safe' | 'pin-before-play' {
+  if (typeof navigator === 'undefined') return 'gesture-safe';
+  try {
+    const nav = navigator as AudioSessionNav;
+    if (nav.audioSession?.type === 'play-and-record') return 'pin-before-play';
+  } catch { /* ignore */ }
+  ensureCompanionPlaybackRoute();
+  return 'gesture-safe';
+}
+
 function writeClipGain(stepLinear: number): void {
   const g = clipBase * stepLinear * duck;
   if (clipGain) clipGain.gain.value = Math.max(0, g);
@@ -557,11 +570,12 @@ function armSongMouthFromElement(audio: HTMLAudioElement): void {
 function playClipElement(url: string, token: number, characterId: string): boolean {
   if (typeof Audio === 'undefined') return false;
   try {
+    primeSharedAudioContext();
+    const sinkMode = libraryBedHtmlAudioMode();
     const audio = new Audio(url);
     // Own this element so duckExternalAudioForCompanion / pauseForeignPageMedia
     // never pause the song/dance bed when companion TTS starts (Pixel: no volume dip).
     try { audio.dataset.amojiAudio = '1'; } catch { /* non-DOM Audio stubs */ }
-    pinDefaultOutput(audio);
     audio.loop = true;
     clipEl = audio;
     applyActiveClipGain();
@@ -581,7 +595,9 @@ function playClipElement(url: string, token: number, characterId: string): boole
     };
     audio.addEventListener('playing', emitOnce);
     audio.addEventListener('timeupdate', onTimeUpdate);
-    void pinDefaultOutputAsync(audio).then(() => audio.play()).then(() => {
+    // Play-first + pin on reject (#424). Awaited pin-before-play blocked play()
+    // when setSinkId raced unlock — beds stayed silent and the dance gate never opened.
+    void startHtmlAudioOnDefaultSpeakers(audio, sinkMode).then(() => {
       if (token !== loadToken) return;
       // Some engines resolve play() before `playing`; currentTime>0 still counts.
       if (!audio.paused && audio.currentTime > 0) emitOnce();
