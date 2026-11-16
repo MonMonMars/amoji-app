@@ -336,7 +336,8 @@ function planUtterance(text: string): ToolPlan {
   const newsQuery = extractNewsTopic(text);
   const life = planLifestyle(text);
   let searchQuery = extractSearch(text);
-  if ((weather || news || life.places || life.recipeQuery) && !EXPLICIT_SEARCH_RE.test(text)) searchQuery = undefined;
+  // "search weather" / 「搜索天气」 must hit Open-Meteo, not DuckDuckGo.
+  if (weather || news || life.places || life.recipeQuery) searchQuery = undefined;
   if (life.learnQuery && !searchQuery) searchQuery = life.learnQuery;
   const placeQuery = extractPlace(text) ?? life.placeQuery;
   const heavyNews = news && (

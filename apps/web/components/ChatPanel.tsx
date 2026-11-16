@@ -502,6 +502,8 @@ export default function ChatPanel({
   const scrollRef = useRef<HTMLDivElement>(null);
   const nearBottomRef = useRef(true);
   const busyRef = useRef(false);
+  /** Voice finals while she is still generating — flush into send(), not the composer. */
+  const voiceTurnQueueRef = useRef<string[]>([]);
   const lastActivityRef = useRef(Date.now());
   const lastUserRef = useRef(Date.now());
   const lastChatterAtRef = useRef(0);
@@ -1190,6 +1192,22 @@ export default function ChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang, backgroundId]);
 
+  const flushVoiceTurnQueue = () => {
+    if (busyRef.current || !voiceTurnQueueRef.current.length) return;
+    const next = voiceTurnQueueRef.current.shift()!;
+    void send(next);
+  };
+
+  const enqueueVoiceTurn = (said: string) => {
+    const t = said.trim();
+    if (!t) return;
+    if (busyRef.current) {
+      voiceTurnQueueRef.current.push(t);
+      return;
+    }
+    void send(t);
+  };
+
   const send = async (override?: string) => {
     const text = (override ?? input).trim();
     if (!text || busy) return;
@@ -1233,6 +1251,7 @@ export default function ChatPanel({
       setBusy(false);
       busyRef.current = false;
       lastActivityRef.current = Date.now();
+      flushVoiceTurnQueue();
     };
     // Crisis / self-harm guard — FIRST, before games, duets, live facts and any
     // brain. A fixed human-written reply with real helplines, in her language.
@@ -1515,9 +1534,10 @@ export default function ChatPanel({
     // library-clip `playing` (beginShow → pendingShowDanceRef). Do not
     // triggerMove on press — that was dance-too-soon on typed/chip asks.
     const requested = detectMove(text);
+    const performanceShowTurn = requested === 'sing' || requested === 'dance';
     // Sing/dance random autoplay (select already returned above).
     // Local CC0 clips + Mixkit style streams when the user names a genre.
-    if (requested === 'sing' || requested === 'dance') {
+    if (performanceShowTurn) {
       setMusicPicks(null);
       applyContentMood({ joy: requested === 'sing' ? 0.88 : 0.72 });
       const ask = resolveMusicAsk(text);
@@ -1530,6 +1550,8 @@ export default function ChatPanel({
         false,
         style,
       );
+      done();
+      return;
     }
     setThinkingPose(true);
     pushAutoIdle('', undefined, true);
@@ -1645,7 +1667,7 @@ export default function ChatPanel({
             // Skip when live facts will replace the LLM line (preferLive /
             // news·weather sheet) — otherwise she says the model lead, then
             // the facts line: two answers for one turn.
-            if (!firstSentence && requested !== 'sing' && !worldSpoken.trim()) {
+            if (!firstSentence && !performanceShowTurn && !worldSpoken.trim()) {
               const m = /^[^。！？.!?\n]+[。！？.!?]/.exec(clean);
               if (m) {
                 firstSentence = m[0];
@@ -1787,6 +1809,7 @@ export default function ChatPanel({
       setBusy(false);
       busyRef.current = false;
       lastActivityRef.current = Date.now();
+      flushVoiceTurnQueue();
     }
   };
 
@@ -1870,10 +1893,9 @@ export default function ChatPanel({
         lastActivityRef.current = Date.now();
         lastUserRef.current = Date.now();
         reengageStageRef.current = 0;
-        // never lose a spoken message: if she's still generating, queue it in
-        // the input box; otherwise answer right away
-        if (busyRef.current) setInput((v) => (v ? `${v} ${said}` : said));
-        else void send(said);
+        // Never lose a spoken message: queue into send() when she's still
+        // generating so the user line lands in history, not the composer.
+        enqueueVoiceTurn(said);
       },
       onEnd: () => {
         // Stale session (user already toggled off/on) must not dismiss the new one.

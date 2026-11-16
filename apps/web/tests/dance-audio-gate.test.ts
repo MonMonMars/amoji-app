@@ -40,6 +40,18 @@ describe('dance-audio-gate', () => {
     expect(panel).toMatch(/shouldStartDanceOnAudioPlaying[\s\S]*triggerMove\(pending\.bodyMove\)/);
   });
 
+  it('explicit sing/dance send short-circuits before LLM (no double beginShow / stopMusic)', () => {
+    const panel = fs.readFileSync(path.join(ROOT, 'components/ChatPanel.tsx'), 'utf8');
+    const block = panel.slice(
+      panel.indexOf('if (performanceShowTurn)'),
+      panel.indexOf('setThinkingPose(true)'),
+    );
+    expect(block).toContain('beginShow(');
+    expect(block).toContain('done()');
+    expect(block).toContain('return');
+    expect(block).not.toContain('setThinkingPose(true)');
+  });
+
   it('typed / chip / showcase song-dance do not triggerMove before beginShow', () => {
     const panel = fs.readFileSync(path.join(ROOT, 'components/ChatPanel.tsx'), 'utf8');
     // Showcase yes → song/dance: beginShow only (no pre-arm triggerMove).

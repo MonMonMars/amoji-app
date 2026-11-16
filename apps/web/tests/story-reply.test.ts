@@ -81,6 +81,8 @@ describe('story token budget and shaping', () => {
     expect(STORY_SPEECH_RATE_BIAS).toBeLessThan(0);
     expect(STORY_SPEECH_HINTS.love).toBeGreaterThan(0.5);
     expect(STORY_SPEECH_HINTS.contentment).toBeGreaterThan(0.5);
+    expect(STORY_SPEECH_HINTS.love).toBeLessThan(0.72);
+    expect(STORY_SPEECH_HINTS.contentment).toBeLessThan(0.72);
     expect(STORY_SPEECH_HINTS.joy).toBeUndefined();
     expect(STORY_SPEECH_HINTS.excitement).toBeUndefined();
   });

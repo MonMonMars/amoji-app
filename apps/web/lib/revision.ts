@@ -398,7 +398,8 @@
 // r2026-11-16.177: light news drops SARS/outbreak wiki on-this-day; no duplicate historical blurbs.
 // r2026-11-16.178: light news from Yahoo/MSN + HK01 (Google site); wiki lookup-only for tells.
 // r2026-11-16.179: card greet gesture-safe gTTS; hand-hold SFX+shy; female=shy; Sam stand on open.
-export const APP_REVISION = 'r2026-11-16.179';
+// r2026-11-16.180: mic voice queue; dance short-circuit; story frame; search-weather route.
+export const APP_REVISION = 'r2026-11-16.180';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

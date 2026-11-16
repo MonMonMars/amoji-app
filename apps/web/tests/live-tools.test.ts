@@ -117,6 +117,13 @@ describe('planTools', () => {
     expect(plan.searchQuery).toBeUndefined();
   });
 
+  it('routes explicit “search weather” to Open-Meteo, not web search', () => {
+    expect(planTools('search weather').weather).toBe(true);
+    expect(planTools('search weather').searchQuery).toBeUndefined();
+    expect(planTools('搜索天气').weather).toBe(true);
+    expect(planTools('搜索天气').searchQuery).toBeUndefined();
+  });
+
   it('geocodes a named place instead of asking for GPS', () => {
     const plan = planTools('weather in New York today');
     expect(plan.weather).toBe(true);
