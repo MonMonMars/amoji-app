@@ -5,7 +5,8 @@
 **Last reviewed:** 2026-11-16 01:12 (Asia/Hong_Kong)  
 **Demo:** https://monmonmars.github.io/amoji-app/  
 **`main` tip:** `9292e81` (#432) · Pages `last-modified` 2026-11-15 16:19 UTC includes #419–#437  
-**Request log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn. Overlapping messages still count; never drop one.
+**Request log:** [`../OWNER_REQUEST_LOG.md`](../OWNER_REQUEST_LOG.md) + `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn.  
+**Resource library:** [`OWNER_RESOURCE_LIBRARY.md`](./OWNER_RESOURCE_LIBRARY.md) + `apps/web/lib/owner-resource-manifest.ts` + [`MISTAKE_LIBRARY.md`](./MISTAKE_LIBRARY.md) + [`DATA_ORGANIZATION.md`](./DATA_ORGANIZATION.md).
 
 **Standing:** Merged ≠ Done on live Pages until owner phone-smoke OK. Owner: “getting worst” / errors still the same — **do not mark R10–R13 Done.** Push + merge without waiting for approval when CI green.
 
@@ -13,10 +14,11 @@
 
 ## Standing rules (always)
 
-1. Record every owner message in `OWNER_REQUEST_LOG.md` the same turn.  
+1. Record every owner message in `OWNER_REQUEST_LOG.md` + agent store the same turn.  
 2. Refresh **Done** + **Outstanding** every turn.  
 3. Do not mark Pages Done without owner OK.  
-4. Prefer fixing old outstanding before new polish.
+4. Prefer fixing old outstanding before new polish.  
+5. Before swapping idle, poke SFX, cast, TTS, or music defaults — read `OWNER_RESOURCE_LIBRARY.md`, `MISTAKE_LIBRARY.md`, `DATA_ORGANIZATION.md`, and `owner-resource-manifest.ts` / `docs/owner-resource-manifest.json`.
 
 ---
 

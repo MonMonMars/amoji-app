@@ -22,6 +22,9 @@ export const MASTER_OUTPUT_CAP = 0.85;
 /** Last sink id that successfully pinned ( '' | 'default' ). Undefined = not tried yet. */
 let cachedDefaultSink: string | undefined;
 
+/** Set while chat mic holds play-and-record — gesture TTS must pin-before-play too. */
+let micCommsRoutingLatch = false;
+
 let sharedCtx: AudioContext | null = null;
 let sharedMasterGain: GainNode | null = null;
 
@@ -33,6 +36,25 @@ export function resetSharedAudioContextForTests(): void {
 /** Vitest only — module-level sink cache is global across cases in one file. */
 export function resetDefaultSinkCacheForTests(): void {
   cachedDefaultSink = undefined;
+  micCommsRoutingLatch = false;
+}
+
+/** Mic opened play-and-record — HTMLAudio must pin default sink before play(). */
+export function markMicCommsRoutingLatch(on: boolean): void {
+  micCommsRoutingLatch = on;
+}
+
+export function micCommsRoutingLatchActive(): boolean {
+  return micCommsRoutingLatch;
+}
+
+/**
+ * Resolves gesture-safe vs pin-before-play for HTMLAudio TTS.
+ * Chat sets pinSinkBeforePlay; card/preview upgrade when mic latched comms routing.
+ */
+export function htmlAudioStartMode(explicitPin?: boolean): 'gesture-safe' | 'pin-before-play' {
+  if (explicitPin || micCommsRoutingLatch) return 'pin-before-play';
+  return 'gesture-safe';
 }
 
 /** Resolved default sink for tests and diagnostics. */

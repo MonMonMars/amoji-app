@@ -1,0 +1,2209 @@
+{
+  "version": "2026-11-16-owner-resource-v1",
+  "generatedAt": "2026-11-16T00:33:30.522Z",
+  "wantCastRelease": "free-library-want-2026-10-12",
+  "stats": {
+    "total": 125,
+    "playable": 97,
+    "curatedRail": 39
+  },
+  "cmaWant": [
+    "CMA00350",
+    "CMA00351",
+    "CMA00354",
+    "CMA00359",
+    "CMA00360",
+    "CMA00363",
+    "CMA00364",
+    "CMA00365",
+    "CMA00366",
+    "CMA00318"
+  ],
+  "cmaArchive": [
+    "CMA00320",
+    "CMA00335",
+    "CMA00353"
+  ],
+  "cmaDelete": [
+    "CMA00327",
+    "CMA00330",
+    "CMA00339",
+    "CMA00352",
+    "CMA00355",
+    "CMA00356",
+    "CMA00357",
+    "CMA00358",
+    "CMA00361",
+    "CMA00362"
+  ],
+  "wantCharacterIds": [
+    "a01-shino",
+    "a02-shibu",
+    "a03-fumiriya",
+    "a10-agahomei-normal",
+    "a14-vivi",
+    "a16-vita",
+    "a17-victoria-rubin",
+    "a23-hairsample-female",
+    "a24-hairsample-male",
+    "a61-saori-kamiya-llunne",
+    "a63-hinoame-satuki-mei-sirayuki",
+    "a64-lily-lily-animeit",
+    "a70-vtuber-aihina-sample",
+    "a71-mary-sweety",
+    "a74-mizuka",
+    "a75-sorano",
+    "a77-sasha",
+    "a79-amami-karasu",
+    "a81-cinna",
+    "a82-renel-bonnie",
+    "a83-ao-witch",
+    "a85-kara",
+    "a89-rurina",
+    "a93-edokko",
+    "a94-rita",
+    "a95-mizu",
+    "a96-pee-aruako",
+    "a97-pee-saaya",
+    "a98-ethan",
+    "a99-miyora",
+    "a103-rockredgradientjk",
+    "a104-simplebrownsailorjk",
+    "a105-serizawa-aoi",
+    "a106-auroragradhairjk",
+    "a107-dm-office-casual",
+    "a109-riona",
+    "a112-mahochan-jk",
+    "a114-sailor-cardigan-girl",
+    "a116-haru-uniform",
+    "a117-erigawa-risa",
+    "a119-kanami-uniform",
+    "a120-morikawa-yuki-summer-uniform",
+    "a121-nagano-mami-uniform",
+    "a122-shiratori-hikari-shifuku"
+  ],
+  "frozenCc0CharacterIds": [
+    "a14-vivi",
+    "a16-vita",
+    "a17-victoria-rubin"
+  ],
+  "entries": [
+    {
+      "type": "cma-poke-sfx",
+      "id": "CMA00350",
+      "pathOrUrl": "/voice-clips/cma-reaction/CMA00350_universal_*.mp3",
+      "usedBy": "voice-clips.ts RECORDED_POKE_ZONE · cma-reaction-gallery.ts",
+      "status": "wired",
+      "notes": "docs/SFX_WANT_LIST.md Want row"
+    },
+    {
+      "type": "cma-poke-sfx",
+      "id": "CMA00351",
+      "pathOrUrl": "/voice-clips/cma-reaction/CMA00351_universal_*.mp3",
+      "usedBy": "voice-clips.ts RECORDED_POKE_ZONE · cma-reaction-gallery.ts",
+      "status": "wired",
+      "notes": "docs/SFX_WANT_LIST.md Want row"
+    },
+    {
+      "type": "cma-poke-sfx",
+      "id": "CMA00354",
+      "pathOrUrl": "/voice-clips/cma-reaction/CMA00354_universal_*.mp3",
+      "usedBy": "voice-clips.ts RECORDED_POKE_ZONE · cma-reaction-gallery.ts",
+      "status": "wired",
+      "notes": "docs/SFX_WANT_LIST.md Want row"
+    },
+    {
+      "type": "cma-poke-sfx",
+      "id": "CMA00359",
+      "pathOrUrl": "/voice-clips/cma-reaction/CMA00359_universal_*.mp3",
+      "usedBy": "voice-clips.ts RECORDED_POKE_ZONE · cma-reaction-gallery.ts",
+      "status": "wired",
+      "notes": "docs/SFX_WANT_LIST.md Want row"
+    },
+    {
+      "type": "cma-poke-sfx",
+      "id": "CMA00360",
+      "pathOrUrl": "/voice-clips/cma-reaction/CMA00360_universal_*.mp3",
+      "usedBy": "voice-clips.ts RECORDED_POKE_ZONE · cma-reaction-gallery.ts",
+      "status": "wired",
+      "notes": "docs/SFX_WANT_LIST.md Want row"
+    },
+    {
+      "type": "cma-poke-sfx",
+      "id": "CMA00363",
+      "pathOrUrl": "/voice-clips/cma-reaction/CMA00363_universal_*.mp3",
+      "usedBy": "voice-clips.ts RECORDED_POKE_ZONE · cma-reaction-gallery.ts",
+      "status": "wired",
+      "notes": "docs/SFX_WANT_LIST.md Want row"
+    },
+    {
+      "type": "cma-poke-sfx",
+      "id": "CMA00364",
+      "pathOrUrl": "/voice-clips/cma-reaction/CMA00364_universal_*.mp3",
+      "usedBy": "voice-clips.ts RECORDED_POKE_ZONE · cma-reaction-gallery.ts",
+      "status": "wired",
+      "notes": "docs/SFX_WANT_LIST.md Want row"
+    },
+    {
+      "type": "cma-poke-sfx",
+      "id": "CMA00365",
+      "pathOrUrl": "/voice-clips/cma-reaction/CMA00365_universal_*.mp3",
+      "usedBy": "voice-clips.ts RECORDED_POKE_ZONE · cma-reaction-gallery.ts",
+      "status": "wired",
+      "notes": "docs/SFX_WANT_LIST.md Want row"
+    },
+    {
+      "type": "cma-poke-sfx",
+      "id": "CMA00366",
+      "pathOrUrl": "/voice-clips/cma-reaction/CMA00366_universal_*.mp3",
+      "usedBy": "voice-clips.ts RECORDED_POKE_ZONE · cma-reaction-gallery.ts",
+      "status": "wired",
+      "notes": "docs/SFX_WANT_LIST.md Want row"
+    },
+    {
+      "type": "cma-poke-sfx",
+      "id": "CMA00318",
+      "pathOrUrl": "/voice-clips/cma-reaction/CMA00318_universal_*.mp3",
+      "usedBy": "voice-clips.ts RECORDED_POKE_ZONE · cma-reaction-gallery.ts",
+      "status": "wired",
+      "notes": "docs/SFX_WANT_LIST.md Want row"
+    },
+    {
+      "type": "cma-poke-sfx",
+      "id": "CMA00320",
+      "pathOrUrl": "/voice-clips/cma-reaction/",
+      "usedBy": "cma-reaction-gallery.ts · /sfx-gallery Want",
+      "status": "archive"
+    },
+    {
+      "type": "cma-poke-sfx",
+      "id": "CMA00335",
+      "pathOrUrl": "/voice-clips/cma-reaction/",
+      "usedBy": "cma-reaction-gallery.ts · /sfx-gallery Want",
+      "status": "archive"
+    },
+    {
+      "type": "cma-poke-sfx",
+      "id": "CMA00353",
+      "pathOrUrl": "/voice-clips/cma-reaction/",
+      "usedBy": "cma-reaction-gallery.ts · /sfx-gallery Want",
+      "status": "archive"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "IdleBreathCalm",
+      "pathOrUrl": "models/anims/IdleBreathCalm.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #1 · legacy lib #1"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "StandardIdle",
+      "pathOrUrl": "models/anims/StandardIdle.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #2 · legacy lib #2"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "IdleMixamoBreathing",
+      "pathOrUrl": "models/anims/IdleMixamoBreathing.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #3 · legacy lib #40"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "IdleNeutral",
+      "pathOrUrl": "models/anims/IdleNeutral.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #4 · legacy lib #33"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "IdleRpmFStanding001",
+      "pathOrUrl": "models/anims/IdleRpmFStanding001.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #5 · legacy lib #42"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "IdleQuaterniusHuman",
+      "pathOrUrl": "models/anims/IdleQuaterniusHuman.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #6 · legacy lib #39"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "lib_C04",
+      "pathOrUrl": "models/anims/lib_C04.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #7 · legacy lib #5"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "IdleRpmFVar001",
+      "pathOrUrl": "models/anims/IdleRpmFVar001.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #8 · legacy lib #43"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "lib_C25",
+      "pathOrUrl": "models/anims/lib_C25.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #9 · legacy lib #7"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "IdleInnersceneSam",
+      "pathOrUrl": "models/anims/IdleInnersceneSam.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #10 · legacy lib #90"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "IdleRpmMStanding001",
+      "pathOrUrl": "models/anims/IdleRpmMStanding001.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #11 · legacy lib #93"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "LookAround",
+      "pathOrUrl": "models/anims/LookAround.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #12 · legacy lib #3"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "lib_C42",
+      "pathOrUrl": "models/anims/lib_C42.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #13 · legacy lib #13"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "IdleRpmFVar003",
+      "pathOrUrl": "models/anims/IdleRpmFVar003.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #14 · legacy lib #45"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "IdleRpmFVar004",
+      "pathOrUrl": "models/anims/IdleRpmFVar004.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #15 · legacy lib #46"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "IdleRpmMVar001",
+      "pathOrUrl": "models/anims/IdleRpmMVar001.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #16 · legacy lib #94"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "Thinking",
+      "pathOrUrl": "models/anims/Thinking.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #17 · legacy lib #18"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "IdleSassy",
+      "pathOrUrl": "models/anims/IdleSassy.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #18 · legacy lib #34"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "Relax",
+      "pathOrUrl": "models/anims/Relax.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #19 · legacy lib #32"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "IdleMixamoArmStretch",
+      "pathOrUrl": "models/anims/IdleMixamoArmStretch.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #20 · legacy lib #53"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "IdleRpmMVar002",
+      "pathOrUrl": "models/anims/IdleRpmMVar002.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #21 · legacy lib #95"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "IdleMixamoHappy",
+      "pathOrUrl": "models/anims/IdleMixamoHappy.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #22 · legacy lib #41"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "IdleMixamoHappy",
+      "pathOrUrl": "models/anims/IdleMixamoHappy.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #23 · legacy lib #41"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "lib_C120",
+      "pathOrUrl": "models/anims/lib_C120.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #24 · legacy lib #113"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "lib_C111",
+      "pathOrUrl": "models/anims/lib_C111.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #25 · legacy lib #101"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "lib_C112",
+      "pathOrUrl": "models/anims/lib_C112.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #26 · legacy lib #102"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "lib_C113",
+      "pathOrUrl": "models/anims/lib_C113.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #27 · legacy lib #103"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "lib_C114",
+      "pathOrUrl": "models/anims/lib_C114.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #28 · legacy lib #104"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "lib_C121",
+      "pathOrUrl": "models/anims/lib_C121.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #29 · legacy lib #114"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "lib_C122",
+      "pathOrUrl": "models/anims/lib_C122.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #30 · legacy lib #115"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "lib_C123",
+      "pathOrUrl": "models/anims/lib_C123.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #31 · legacy lib #116"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "ThumbsUp",
+      "pathOrUrl": "models/anims/ThumbsUp.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #32 · legacy lib #20"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "Cheer",
+      "pathOrUrl": "models/anims/Cheer.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #33 · legacy lib #22"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "PlayPunch",
+      "pathOrUrl": "models/anims/PlayPunch.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #34 · legacy lib #108"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "YesCheer",
+      "pathOrUrl": "models/anims/YesCheer.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #35 · legacy lib #109"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "TaDa",
+      "pathOrUrl": "models/anims/TaDa.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #36 · legacy lib #110"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "Bow",
+      "pathOrUrl": "models/anims/Bow.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #37 · legacy lib #111"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "StompAngry",
+      "pathOrUrl": "models/anims/StompAngry.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #38 · legacy lib #112"
+    },
+    {
+      "type": "idle-vrma",
+      "id": "lib_C146",
+      "pathOrUrl": "models/anims/lib_C146.vrma",
+      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
+      "status": "wired",
+      "notes": "rail #39 · legacy lib #117"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a01-shino",
+      "pathOrUrl": "models/want/a01-shino.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a02-shibu",
+      "pathOrUrl": "models/want/a02-shibu.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a03-fumiriya",
+      "pathOrUrl": "models/want/a03-fumiriya.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a10-agahomei-normal",
+      "pathOrUrl": "models/want/a10-agahomei-normal.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a14-vivi",
+      "pathOrUrl": "models/want/a14-vivi.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a16-vita",
+      "pathOrUrl": "models/want/a16-vita.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a17-victoria-rubin",
+      "pathOrUrl": "models/want/a17-victoria-rubin.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a23-hairsample-female",
+      "pathOrUrl": "models/want/a23-hairsample-female.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a24-hairsample-male",
+      "pathOrUrl": "models/want/a24-hairsample-male.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a61-saori-kamiya-llunne",
+      "pathOrUrl": "models/want/a61-saori-kamiya-llunne.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a63-hinoame-satuki-mei-sirayuki",
+      "pathOrUrl": "models/want/a63-hinoame-satuki-mei-sirayuki.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a64-lily-lily-animeit",
+      "pathOrUrl": "models/want/a64-lily-lily-animeit.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a70-vtuber-aihina-sample",
+      "pathOrUrl": "models/want/a70-vtuber-aihina-sample.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a71-mary-sweety",
+      "pathOrUrl": "models/want/a71-mary-sweety.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a74-mizuka",
+      "pathOrUrl": "models/want/a74-mizuka.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a75-sorano",
+      "pathOrUrl": "models/want/a75-sorano.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a77-sasha",
+      "pathOrUrl": "models/want/a77-sasha.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a79-amami-karasu",
+      "pathOrUrl": "models/want/a79-amami-karasu.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a81-cinna",
+      "pathOrUrl": "models/want/a81-cinna.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a82-renel-bonnie",
+      "pathOrUrl": "models/want/a82-renel-bonnie.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a83-ao-witch",
+      "pathOrUrl": "models/want/a83-ao-witch.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a85-kara",
+      "pathOrUrl": "models/want/a85-kara.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a89-rurina",
+      "pathOrUrl": "models/want/a89-rurina.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a93-edokko",
+      "pathOrUrl": "models/want/a93-edokko.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a94-rita",
+      "pathOrUrl": "models/want/a94-rita.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a95-mizu",
+      "pathOrUrl": "models/want/a95-mizu.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a96-pee-aruako",
+      "pathOrUrl": "models/want/a96-pee-aruako.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a97-pee-saaya",
+      "pathOrUrl": "models/want/a97-pee-saaya.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a98-ethan",
+      "pathOrUrl": "models/want/a98-ethan.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a99-miyora",
+      "pathOrUrl": "models/want/a99-miyora.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a103-rockredgradientjk",
+      "pathOrUrl": "models/want/a103-rockredgradientjk.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a104-simplebrownsailorjk",
+      "pathOrUrl": "models/want/a104-simplebrownsailorjk.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a105-serizawa-aoi",
+      "pathOrUrl": "models/want/a105-serizawa-aoi.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a106-auroragradhairjk",
+      "pathOrUrl": "models/want/a106-auroragradhairjk.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a107-dm-office-casual",
+      "pathOrUrl": "models/want/a107-dm-office-casual.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a109-riona",
+      "pathOrUrl": "models/want/a109-riona.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a112-mahochan-jk",
+      "pathOrUrl": "models/want/a112-mahochan-jk.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a114-sailor-cardigan-girl",
+      "pathOrUrl": "models/want/a114-sailor-cardigan-girl.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a116-haru-uniform",
+      "pathOrUrl": "models/want/a116-haru-uniform.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a117-erigawa-risa",
+      "pathOrUrl": "models/want/a117-erigawa-risa.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a119-kanami-uniform",
+      "pathOrUrl": "models/want/a119-kanami-uniform.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a120-morikawa-yuki-summer-uniform",
+      "pathOrUrl": "models/want/a120-morikawa-yuki-summer-uniform.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a121-nagano-mami-uniform",
+      "pathOrUrl": "models/want/a121-nagano-mami-uniform.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "character-vrm",
+      "id": "a122-shiratori-hikari-shifuku",
+      "pathOrUrl": "models/want/a122-shiratori-hikari-shifuku.vrm",
+      "usedBy": "characters-want.ts · prefs.ts cast",
+      "status": "wired",
+      "notes": "release free-library-want-2026-10-12"
+    },
+    {
+      "type": "voice-edge",
+      "id": "zh-HK-HiuMaanNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "yue female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "zh-HK-HiuGaaiNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "yue female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "zh-HK-WanLungNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "yue male"
+    },
+    {
+      "type": "voice-speech",
+      "id": "HiuMaan",
+      "pathOrUrl": "browser speech",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "yue female"
+    },
+    {
+      "type": "voice-speech",
+      "id": "HiuGaai",
+      "pathOrUrl": "browser speech",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "yue female"
+    },
+    {
+      "type": "voice-speech",
+      "id": "Sin-ji",
+      "pathOrUrl": "browser speech",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "yue female"
+    },
+    {
+      "type": "voice-speech",
+      "id": "粤語",
+      "pathOrUrl": "browser speech",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "yue female"
+    },
+    {
+      "type": "voice-speech",
+      "id": "WanLung",
+      "pathOrUrl": "browser speech",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "yue male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "zh-CN-XiaoxiaoNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "zh female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "zh-CN-XiaoyiNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "zh female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "zh-CN-YunjianNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "zh male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "zh-CN-YunxiNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "zh male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "zh-CN-YunyangNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "zh male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "zh-CN-YunxiaNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "zh male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "zh-TW-YunJheNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "zh male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "zh-TW-HsiaoChenNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "zh female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "zh-TW-HsiaoYuNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "zh female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "zh-CN-liaoning-XiaobeiNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "zh female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "zh-CN-shaanxi-XiaoniNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "zh female"
+    },
+    {
+      "type": "voice-speech",
+      "id": "Xiaoxiao",
+      "pathOrUrl": "browser speech",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "zh female"
+    },
+    {
+      "type": "voice-speech",
+      "id": "Huihui",
+      "pathOrUrl": "browser speech",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "zh female"
+    },
+    {
+      "type": "voice-speech",
+      "id": "Yunxi",
+      "pathOrUrl": "browser speech",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "zh male"
+    },
+    {
+      "type": "voice-speech",
+      "id": "Kangkang",
+      "pathOrUrl": "browser speech",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "zh male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "ja-JP-NanamiNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "ja female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "ja-JP-MayuNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "ja female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "ja-JP-AoiNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "ja female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "ja-JP-KeitaNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "ja male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "ja-JP-DaichiNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "ja male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "ja-JP-NaokiNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "ja male"
+    },
+    {
+      "type": "voice-speech",
+      "id": "Nanami",
+      "pathOrUrl": "browser speech",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "ja female"
+    },
+    {
+      "type": "voice-speech",
+      "id": "Kyoko",
+      "pathOrUrl": "browser speech",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "ja female"
+    },
+    {
+      "type": "voice-speech",
+      "id": "Keita",
+      "pathOrUrl": "browser speech",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "ja male"
+    },
+    {
+      "type": "voice-speech",
+      "id": "Otoya",
+      "pathOrUrl": "browser speech",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "ja male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-US-JennyNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-US-GuyNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-US-AndrewNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-US-BrianNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-US-ChristopherNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-US-EricNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-US-RogerNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-US-SteffanNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-GB-RyanNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-HK-SamNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-AU-WilliamMultilingualNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-GB-ThomasNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-IE-ConnorNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-IN-PrabhatNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-CA-LiamNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-NZ-MitchellNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-SG-WayneNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-ZA-LukeNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-PH-JamesNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-KE-ChilembaNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-NG-AbeoNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-TZ-ElimuNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-US-AriaNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-US-AvaNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-US-EmmaNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-US-MichelleNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-US-AnaNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-GB-SoniaNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-AU-NatashaNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-GB-LibbyNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-IN-NeerjaNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-IE-EmilyNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-NZ-MollyNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-HK-YanNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-CA-ClaraNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-SG-LunaNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-ZA-LeahNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-PH-RosaNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-GB-MaisieNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-KE-AsiliaNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-NG-EzinneNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-edge",
+      "id": "en-TZ-ImaniNeural",
+      "pathOrUrl": "edge-tts / gtts tl",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-speech",
+      "id": "Zira",
+      "pathOrUrl": "browser speech",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-speech",
+      "id": "Samantha",
+      "pathOrUrl": "browser speech",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-speech",
+      "id": "Aria",
+      "pathOrUrl": "browser speech",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en female"
+    },
+    {
+      "type": "voice-speech",
+      "id": "David",
+      "pathOrUrl": "browser speech",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-speech",
+      "id": "Mark",
+      "pathOrUrl": "browser speech",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "voice-speech",
+      "id": "Guy",
+      "pathOrUrl": "browser speech",
+      "usedBy": "voice-catalog.ts · voice-capability.ts · tts-chain.ts",
+      "status": "wired",
+      "notes": "en male"
+    },
+    {
+      "type": "tts-optional",
+      "id": "voxcpm2",
+      "pathOrUrl": "not in repo",
+      "usedBy": "voice-catalog.ts HELD_GPU_ENGINES",
+      "status": "optional",
+      "notes": "Hold for a later GPU host. Not called."
+    },
+    {
+      "type": "tts-optional",
+      "id": "chatterbox",
+      "pathOrUrl": "not in repo",
+      "usedBy": "voice-catalog.ts HELD_GPU_ENGINES",
+      "status": "optional",
+      "notes": "Hold for a later GPU host. Not called. (Distinct from chatterbox-turbo test sidecar.)"
+    },
+    {
+      "type": "tts-optional",
+      "id": "chatterbox-turbo",
+      "pathOrUrl": "not in repo",
+      "usedBy": "voice-catalog.ts HELD_GPU_ENGINES",
+      "status": "optional",
+      "notes": "EN-only CPU sidecar stub for /en-sfx-ab. Not in freeVoiceHops. No zh/Yue / no code-switch."
+    },
+    {
+      "type": "tts-optional",
+      "id": "cosyvoice",
+      "pathOrUrl": "not in repo",
+      "usedBy": "voice-catalog.ts HELD_GPU_ENGINES",
+      "status": "optional",
+      "notes": "Hold for a later GPU host. Not called."
+    },
+    {
+      "type": "tts-optional",
+      "id": "silencio2",
+      "pathOrUrl": "not in repo",
+      "usedBy": "voice-catalog.ts HELD_GPU_ENGINES",
+      "status": "optional",
+      "notes": "EN-only CPU sidecar stub for /en-sfx-ab. Tools smoke + gateway; not in freeVoiceHops. No zh/Yue / no code-switch."
+    },
+    {
+      "type": "tts-optional",
+      "id": "vui-nano",
+      "pathOrUrl": "not in repo",
+      "usedBy": "voice-catalog.ts HELD_GPU_ENGINES",
+      "status": "optional",
+      "notes": "EN-only CPU sidecar stub for /en-sfx-ab. Not in freeVoiceHops. No zh/Yue / no code-switch."
+    },
+    {
+      "type": "tts-optional",
+      "id": "lure-tts",
+      "pathOrUrl": "not in repo",
+      "usedBy": "voice-catalog.ts HELD_GPU_ENGINES",
+      "status": "optional",
+      "notes": "EN-only optional CPU sidecar stub for /en-sfx-ab (may SKIP). Not in freeVoiceHops."
+    },
+    {
+      "type": "tts-optional",
+      "id": "qwen3-tts",
+      "pathOrUrl": "not in repo",
+      "usedBy": "voice-catalog.ts HELD_GPU_ENGINES",
+      "status": "optional",
+      "notes": "Hold for a later GPU host. Not called."
+    },
+    {
+      "type": "tts-optional",
+      "id": "kokoro",
+      "pathOrUrl": "not in repo",
+      "usedBy": "voice-catalog.ts HELD_GPU_ENGINES",
+      "status": "optional",
+      "notes": "Catalog stub only. Weights are not bundled."
+    },
+    {
+      "type": "tts-optional",
+      "id": "melotts",
+      "pathOrUrl": "not in repo",
+      "usedBy": "voice-catalog.ts HELD_GPU_ENGINES",
+      "status": "optional",
+      "notes": "Catalog stub only. Weights are not bundled."
+    },
+    {
+      "type": "music-dance",
+      "id": "dance-silent-dance-floor",
+      "pathOrUrl": "/audio/dance/dance-silent-dance-floor.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "dance-cant-resist",
+      "pathOrUrl": "/audio/dance/dance-cant-resist.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "dance-twin-layers",
+      "pathOrUrl": "/audio/dance/dance-twin-layers.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "dance-celebrity",
+      "pathOrUrl": "/audio/dance/dance-celebrity.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "dance-happy-loop",
+      "pathOrUrl": "/audio/dance/dance-happy-loop.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-banana",
+      "pathOrUrl": "/audio/song-bed/bed-banana.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-flowerbed",
+      "pathOrUrl": "/audio/song-bed/bed-flowerbed.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-jump",
+      "pathOrUrl": "/audio/song-bed/bed-jump.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-happy-adventure",
+      "pathOrUrl": "/audio/song-bed/bed-happy-adventure.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-lullaby",
+      "pathOrUrl": "/audio/song-bed/bed-lullaby.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-calm",
+      "pathOrUrl": "/audio/song-bed/bed-calm.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-lofi",
+      "pathOrUrl": "/audio/song-bed/bed-lofi.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-shenandoah",
+      "pathOrUrl": "/audio/song-bed/bed-shenandoah.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-f-silent-night",
+      "pathOrUrl": "/audio/sing-female/sing-f-silent-night.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-f-twinkle",
+      "pathOrUrl": "/audio/sing-female/sing-f-twinkle.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-f-joy",
+      "pathOrUrl": "/audio/sing-female/sing-f-joy.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-f-choir",
+      "pathOrUrl": "/audio/sing-female/sing-f-choir.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-f-cantate",
+      "pathOrUrl": "/audio/sing-female/sing-f-cantate.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-m-happy-birthday",
+      "pathOrUrl": "/audio/sing-male/sing-m-happy-birthday.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-m-buddham",
+      "pathOrUrl": "/audio/sing-male/sing-m-buddham.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-m-mass",
+      "pathOrUrl": "/audio/sing-male/sing-m-mass.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-m-overtone-e",
+      "pathOrUrl": "/audio/sing-male/sing-m-overtone-e.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-m-overtone-c",
+      "pathOrUrl": "/audio/sing-male/sing-m-overtone-c.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "dance-boss-battle",
+      "pathOrUrl": "/audio/dance/dance-boss-battle.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "dance-minstrel",
+      "pathOrUrl": "/audio/dance/dance-minstrel.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "dance-field",
+      "pathOrUrl": "/audio/dance/dance-field.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "dance-8bit-disco",
+      "pathOrUrl": "/audio/dance/dance-8bit-disco.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-musicbox-waltz",
+      "pathOrUrl": "/audio/song-bed/bed-musicbox-waltz.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-musicbox-tune",
+      "pathOrUrl": "/audio/song-bed/bed-musicbox-tune.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-montage",
+      "pathOrUrl": "/audio/song-bed/bed-montage.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-chill-fever",
+      "pathOrUrl": "/audio/song-bed/bed-chill-fever.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-observing-star",
+      "pathOrUrl": "/audio/song-bed/bed-observing-star.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-deadship",
+      "pathOrUrl": "/audio/song-bed/bed-deadship.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-beepbox",
+      "pathOrUrl": "/audio/song-bed/bed-beepbox.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-bit-forest",
+      "pathOrUrl": "/audio/song-bed/bed-bit-forest.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-8bit-bossa",
+      "pathOrUrl": "/audio/song-bed/bed-8bit-bossa.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-breathing",
+      "pathOrUrl": "/audio/song-bed/bed-breathing.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-breves",
+      "pathOrUrl": "/audio/song-bed/bed-breves.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-synthwave-15k",
+      "pathOrUrl": "/audio/song-bed/bed-synthwave-15k.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-synthwave-15k-ii",
+      "pathOrUrl": "/audio/song-bed/bed-synthwave-15k-ii.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-lifewave-2k",
+      "pathOrUrl": "/audio/song-bed/bed-lifewave-2k.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-lifewave",
+      "pathOrUrl": "/audio/song-bed/bed-lifewave.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-synthwave-421",
+      "pathOrUrl": "/audio/song-bed/bed-synthwave-421.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-cate",
+      "pathOrUrl": "/audio/song-bed/bed-cate.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-chill-lofi",
+      "pathOrUrl": "/audio/song-bed/bed-chill-lofi.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-chill-loop",
+      "pathOrUrl": "/audio/song-bed/bed-chill-loop.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-chill-menu",
+      "pathOrUrl": "/audio/song-bed/bed-chill-menu.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-happy-vibes",
+      "pathOrUrl": "/audio/song-bed/bed-happy-vibes.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-napping",
+      "pathOrUrl": "/audio/song-bed/bed-napping.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-town",
+      "pathOrUrl": "/audio/song-bed/bed-town.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-space",
+      "pathOrUrl": "/audio/song-bed/bed-space.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-menu",
+      "pathOrUrl": "/audio/song-bed/bed-menu.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-caketown",
+      "pathOrUrl": "/audio/song-bed/bed-caketown.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-f-citation",
+      "pathOrUrl": "/audio/sing-female/sing-f-citation.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-f-adele",
+      "pathOrUrl": "/audio/sing-female/sing-f-adele.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-f-una-voce",
+      "pathOrUrl": "/audio/sing-female/sing-f-una-voce.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-f-soave",
+      "pathOrUrl": "/audio/sing-female/sing-f-soave.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-m-shenandoah",
+      "pathOrUrl": "/audio/sing-male/sing-m-shenandoah.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-m-brindisi",
+      "pathOrUrl": "/audio/sing-male/sing-m-brindisi.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-m-votre-toast",
+      "pathOrUrl": "/audio/sing-male/sing-m-votre-toast.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-m-quando",
+      "pathOrUrl": "/audio/sing-male/sing-m-quando.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-m-tuvan",
+      "pathOrUrl": "/audio/sing-male/sing-m-tuvan.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-m-overtone-a",
+      "pathOrUrl": "/audio/sing-male/sing-m-overtone-a.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-m-mass-amen",
+      "pathOrUrl": "/audio/sing-male/sing-m-mass-amen.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-f-long-set1",
+      "pathOrUrl": "/audio/sing-female/sing-f-long-set1.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-f-long-set2",
+      "pathOrUrl": "/audio/sing-female/sing-f-long-set2.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-m-long-set1",
+      "pathOrUrl": "/audio/sing-male/sing-m-long-set1.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-m-long-set2",
+      "pathOrUrl": "/audio/sing-male/sing-m-long-set2.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-f-adele-long",
+      "pathOrUrl": "/audio/sing-female/sing-f-adele-long.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-f-soave-long",
+      "pathOrUrl": "/audio/sing-female/sing-f-soave-long.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-f-una-voce-long",
+      "pathOrUrl": "/audio/sing-female/sing-f-una-voce-long.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-f-la-mamma-morta",
+      "pathOrUrl": "/audio/sing-female/sing-f-la-mamma-morta.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-f-sono-giunta",
+      "pathOrUrl": "/audio/sing-female/sing-f-sono-giunta.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-m-shenandoah-long",
+      "pathOrUrl": "/audio/sing-male/sing-m-shenandoah-long.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-m-brindisi-long",
+      "pathOrUrl": "/audio/sing-male/sing-m-brindisi-long.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-m-votre-toast-long",
+      "pathOrUrl": "/audio/sing-male/sing-m-votre-toast-long.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-m-celeste-aida",
+      "pathOrUrl": "/audio/sing-male/sing-m-celeste-aida.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-song",
+      "id": "sing-m-no-pagliaccio",
+      "pathOrUrl": "/audio/sing-male/sing-m-no-pagliaccio.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    }
+  ]
+}
