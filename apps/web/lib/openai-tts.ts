@@ -1,6 +1,7 @@
 'use client';
 import {
   ensureCompanionPlaybackRoute,
+  htmlAudioStartMode,
   startHtmlAudioOnDefaultSpeakers,
 } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
@@ -280,7 +281,7 @@ export function speakOpenAi(text: string, opts: OpenAiVoiceOpts): Promise<void> 
       };
       void startHtmlAudioOnDefaultSpeakers(
         audio,
-        opts.pinSinkBeforePlay ? 'pin-before-play' : 'gesture-safe',
+        htmlAudioStartMode(opts.pinSinkBeforePlay),
       ).catch((err: unknown) => {
         if (currentAudio === audio) { currentAudio = null; currentUrl = null; }
         URL.revokeObjectURL(url);

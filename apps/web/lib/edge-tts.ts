@@ -24,6 +24,7 @@
 import { edgeAudioPayload, edgeReadAloudUrl } from '../../../server/amoji-proxy/edge-gec.js';
 import {
   ensureCompanionPlaybackRoute,
+  htmlAudioStartMode,
   startHtmlAudioOnDefaultSpeakers,
 } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
@@ -600,7 +601,7 @@ function playMp3Blob(blob: Blob, opts: EdgeVoiceOpts, resolve: () => void, rejec
   };
   void startHtmlAudioOnDefaultSpeakers(
     audio,
-    opts.pinSinkBeforePlay ? 'pin-before-play' : 'gesture-safe',
+    htmlAudioStartMode(opts.pinSinkBeforePlay),
   ).catch((err: unknown) => {
     if (currentAudio === audio) currentAudio = null;
     URL.revokeObjectURL(url);

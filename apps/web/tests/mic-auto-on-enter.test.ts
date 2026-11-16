@@ -63,6 +63,7 @@ describe('chat mic auto-on + external audio duck', () => {
 
   it('routes companion TTS through playback while mic keeps play-and-record', () => {
     const focus = read('lib/voice-chat-focus.ts');
+    expect(focus).toContain('markMicCommsRoutingLatch');
     expect(focus).toContain("play-and-record");
     expect(focus).toContain('companionPlaybackSession');
     expect(focus).toContain('pauseForeignPageMedia');

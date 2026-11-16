@@ -104,7 +104,7 @@ describe('card greet — no audible insurance (permanent)', () => {
   it('gtts defaults to gesture-safe start; chat may opt into pin-before-play', () => {
     expect(gtts).toContain('startHtmlAudioOnDefaultSpeakers');
     expect(gtts).toContain('pinSinkBeforePlay');
-    expect(gtts).toMatch(/opts\.pinSinkBeforePlay \? 'pin-before-play' : 'gesture-safe'/);
+    expect(gtts).toContain('htmlAudioStartMode');
   });
 
   it('gtts does not pinDefaultOutput inside onplay', () => {
