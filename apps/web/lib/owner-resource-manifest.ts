@@ -14,7 +14,8 @@ import {
   CMA_REACTION_OWNER_WANT_CODES,
 } from './cma-reaction-gallery';
 import { CHARACTERS_WANT, FROZEN_CC0_IDS, WANT_CAST_RELEASE } from './characters-want';
-import { CHAT_IDLE_CURATED, type IdleCuratedRailEntry, curatedLibraryRow } from './idle-curated-rail';
+import { CHAT_IDLE_CURATED, type IdleCuratedRailEntry } from './idle-curated-rail';
+import { curatedLibraryRow } from './idle-curated-rail';
 import { IDLE_LIBRARY } from './idle-library';
 import {
   HELD_GPU_ENGINES,
@@ -106,7 +107,7 @@ export function buildOwnerResourceIndex(): OwnerResourceEntry[] {
     out.push({
       type: 'cma-poke-sfx',
       id: code,
-      pathOrUrl: '/voice-clips/cma-reaction/',
+      pathOrUrl: `/voice-clips/cma-reaction/`,
       usedBy: 'cma-reaction-gallery.ts · /sfx-gallery Want',
       status: 'archive',
     });
@@ -139,7 +140,7 @@ export function buildOwnerResourceIndex(): OwnerResourceEntry[] {
     out.push({
       type: `voice-${v.engine}`,
       id: v.id,
-      pathOrUrl: v.engine === 'edge' ? 'edge-tts / gtts tl' : 'browser speech',
+      pathOrUrl: v.engine === 'edge' ? `edge-tts / gtts tl` : `browser speech`,
       usedBy: 'voice-catalog.ts · voice-capability.ts · tts-chain.ts',
       status: 'wired',
       notes: `${v.locale} ${v.gender}`,
