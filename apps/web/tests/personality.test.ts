@@ -34,9 +34,8 @@ describe('auto personality', () => {
     expect(males.length).toBeGreaterThan(0);
     for (const c of females) {
       const tag = personalityFor(c.id, 'female');
-      expect(FEMALE_PERSONALITIES).toContain(tag);
-      expect(MALE_PERSONALITIES).not.toContain(tag);
-      expect(personalityFor(c.id, 'female')).toBe(tag);
+      expect(tag).toBe('shy');
+      expect(personalityFor(c.id, 'female')).toBe('shy');
     }
     for (const c of males) {
       const tag = personalityFor(c.id, 'male');
@@ -69,26 +68,23 @@ describe('auto personality', () => {
     const stored: Record<string, string> = {};
     for (const tag of [...female, ...male]) stored[`p-${tag}`] = tag;
     g.localStorage.setItem('amoji.personality.v1', JSON.stringify(stored));
-    // Single near-still Quaternius stand (v6) — no RPM F/M / look / stretch / wave / dance.
+    // Single upright Sam stand (v6 priority) — template lists fallbacks; canvas picks one.
     const loop = [...PASSIVE_IDLE_LOOP_TEMPLATE];
     const dropped = [
       'IdleNeutral', 'Thinking', 'IdleChinHand', 'IdleHug',
       'Impatient', 'WeightShift', 'HelloWave', 'IdleMixamoArmStretch', 'LookAround',
-      'IdleRpmMVar002', 'IdleRpmFVar003', 'IdleMixamoBreathing', 'IdleInnersceneSam',
-      'IdleRpmFStanding001', 'IdleRpmMStanding001', 'IdleBreathCalm', 'IdleSassy',
+      'IdleRpmMVar002', 'IdleRpmFVar003', 'IdleBreathCalm', 'IdleSassy',
     ];
     for (const tag of female) {
       const clips = personalityMotion(`p-${tag}`, 'female').idleClips;
-      expect(clips[0]).toBe('IdleQuaterniusHuman');
+      expect(clips[0]).toBe('IdleInnersceneSam');
       expect(clips).toEqual(loop);
-      expect(clips.every((id) => id === 'IdleQuaterniusHuman')).toBe(true);
       for (const id of dropped) expect(clips).not.toContain(id);
     }
     for (const tag of male) {
       const clips = personalityMotion(`p-${tag}`, 'male').idleClips;
-      expect(clips[0]).toBe('IdleQuaterniusHuman');
+      expect(clips[0]).toBe('IdleInnersceneSam');
       expect(clips).toEqual(loop);
-      expect(clips.every((id) => id === 'IdleQuaterniusHuman')).toBe(true);
       for (const id of dropped) expect(clips).not.toContain(id);
     }
     expect(personalityMotion('p-cool', 'male').idleClips).toEqual(loop);

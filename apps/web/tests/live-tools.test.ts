@@ -23,6 +23,7 @@ import {
   weatherAccuracyLeak,
   regionalLightNewsFeedUrls,
   regionalNewsFeedUrls,
+  portalNewsFeedUrls,
   locationPermissionSettled,
   resolveDevicePlace,
   selectNewsLead,
@@ -31,6 +32,8 @@ import {
   newsPackForRegion,
   preferHeadlinesForLang,
   sayNews,
+  scrubNewsFeedBody,
+  scrubNewsTitleForSpeech,
   toldNewsTitles,
   worldBlock,
   type GeoLike,
@@ -159,10 +162,11 @@ describe('planTools', () => {
         const url = String(input);
         if (url.includes('news.google.com')) throw new Error('cors');
         if (url.includes('rss2json.com')) return new Response('<html>blocked', { status: 403 });
-        if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
-          return jsonRes({
-            news: [{ story: '<!--x-->Scientists find a quirky deep-sea fish near the reef.' }],
-          });
+        if (url.includes('news.yahoo.com') || url.includes('rss.msn.com')) {
+          return new Response(
+            '<rss><channel><item><title>Scientists find a quirky deep-sea fish near the reef</title></item></channel></rss>',
+            { status: 200, headers: { 'Content-Type': 'application/rss+xml' } },
+          );
         }
         return jsonRes({}, 404);
       },
@@ -186,10 +190,11 @@ describe('planTools', () => {
         const url = String(input);
         if (url.includes('news.google.com')) throw new Error('cors');
         if (url.includes('rss2json.com')) return new Response('<html>blocked', { status: 403 });
-        if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
-          return jsonRes({
-            news: [{ story: 'Museum cat parade draws a cheerful crowd downtown.' }],
-          });
+        if (url.includes('news.yahoo.com') || url.includes('rss.msn.com')) {
+          return new Response(
+            '<rss><channel><item><title>Museum cat parade draws a cheerful crowd downtown</title></item></channel></rss>',
+            { status: 200, headers: { 'Content-Type': 'application/rss+xml' } },
+          );
         }
         return jsonRes({}, 404);
       },
@@ -421,20 +426,17 @@ describe('gatherLiveContext', () => {
     expect(live.spoken).not.toContain('{');
   });
 
-  it('reads Wikipedia in-the-news when Google and rss2json are blocked', async () => {
+  it('reads Yahoo portal RSS when Google and rss2json are blocked', async () => {
     let located = false;
+    const yahooRss = '<rss><channel><item><title>A cat wins a funny contest in town - Yahoo</title></item><item><title>A shooting kills several people downtown</title></item></channel></rss>';
     const fetchImpl: typeof fetch = async (input) => {
       const url = String(input);
       if (url.includes('news.google.com')) throw new Error('cors');
       if (url.includes('rss2json.com')) return new Response('<html>Just a moment', { status: 403 });
-      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
-        return jsonRes({
-          news: [
-            { story: '<!--x--><a href="./Cat">A cat</a> wins a funny contest in town.' },
-            { story: '<b>A shooting</b> kills several people downtown.' },
-          ],
-        });
+      if (url.includes('news.yahoo.com') || url.includes('rss.news.yahoo.com')) {
+        return new Response(yahooRss, { status: 200, headers: { 'Content-Type': 'application/rss+xml' } });
       }
+      if (url.includes('rss.msn.com')) return new Response('', { status: 404 });
       return jsonRes({}, 404);
     };
     const live = await gatherLiveContext('what is the latest news?', {
@@ -452,18 +454,17 @@ describe('gatherLiveContext', () => {
   });
 
   it('hands the model only one headline even when several soft stories exist', async () => {
+    const yahooRss = `<rss><channel>
+      <item><title>A bakery opens a cheerful night market stall</title></item>
+      <item><title>Scientists share a quirky AI drawing tip</title></item>
+      <item><title>A puppy parade fills the park with smiles</title></item>
+    </channel></rss>`;
     const fetchImpl: typeof fetch = async (input) => {
       const url = String(input);
       if (url.includes('news.google.com')) throw new Error('cors');
       if (url.includes('rss2json.com')) return new Response('nope', { status: 403 });
-      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
-        return jsonRes({
-          news: [
-            { story: 'A bakery opens a cheerful night market stall.' },
-            { story: 'Scientists share a quirky AI drawing tip.' },
-            { story: 'A puppy parade fills the park with smiles.' },
-          ],
-        });
+      if (url.includes('news.yahoo.com') || url.includes('rss.msn.com')) {
+        return new Response(yahooRss, { status: 200, headers: { 'Content-Type': 'application/rss+xml' } });
       }
       return jsonRes({}, 404);
     };
@@ -480,31 +481,17 @@ describe('gatherLiveContext', () => {
     expect(live.spoken).toMatch(/bakery|Scientists|puppy/i);
   });
 
-  it('tells topical AI news via Wikipedia when Google is blocked in the browser', async () => {
+  it('tells topical AI news via portal RSS when Google is blocked in the browser', async () => {
+    const yahooRss = `<rss><channel>
+      <item><title>New artificial intelligence tools help artists paint faster</title></item>
+      <item><title>A cat wins a funny contest in town</title></item>
+    </channel></rss>`;
     const fetchImpl: typeof fetch = async (input) => {
       const url = String(input);
       if (url.includes('news.google.com')) throw new Error('cors');
       if (url.includes('rss2json.com')) return new Response('<html>blocked', { status: 403 });
-      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
-        return jsonRes({
-          news: [
-            { story: '<a href="./AI">New artificial intelligence tools</a> help artists paint faster.' },
-            { story: 'A cat wins a funny contest in town.' },
-          ],
-        });
-      }
-      if (url.includes('wikipedia.org') && url.includes('api.php')) {
-        return jsonRes({
-          query: {
-            pages: {
-              '1': {
-                index: 1,
-                title: 'Artificial intelligence',
-                extract: 'Artificial intelligence is intelligence demonstrated by machines.',
-              },
-            },
-          },
-        });
+      if (url.includes('news.yahoo.com') || url.includes('rss.msn.com')) {
+        return new Response(yahooRss, { status: 200, headers: { 'Content-Type': 'application/rss+xml' } });
       }
       return jsonRes({}, 404);
     };
@@ -524,8 +511,11 @@ describe('gatherLiveContext', () => {
       const url = String(input);
       if (url.includes('news.google.com')) throw new Error('cors');
       if (url.includes('rss2json.com')) return new Response('nope', { status: 403 });
-      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
-        return jsonRes({ news: [{ story: 'A bakery opens a cheerful night market stall.' }] });
+      if (url.includes('news.yahoo.com') || url.includes('rss.msn.com')) {
+        return new Response(
+          '<rss><channel><item><title>A bakery opens a cheerful night market stall</title></item></channel></rss>',
+          { status: 200, headers: { 'Content-Type': 'application/rss+xml' } },
+        );
       }
       return jsonRes({}, 404);
     };
@@ -951,6 +941,51 @@ describe('parseRssItems', () => {
   });
 });
 
+describe('HK RSS speech chrome', () => {
+  const title = '許志安翻唱 愛是懷疑 陳奕迅驚喜捧場';
+  const body = `${title}\n20261116\n娛樂\n明報新聞網`;
+
+  it('scrubNewsTitleForSpeech drops 有片丨 prefix and trailing 橙新聞', () => {
+    const raw = '有片丨SpaceX成功 筷子 回收太空船創歷史 橙新聞';
+    expect(scrubNewsTitleForSpeech(raw)).toBe('SpaceX成功 筷子 回收太空船創歷史');
+    expect(scrubNewsTitleForSpeech('有片丨頭條標題', '橙新聞')).toBe('頭條標題');
+    expect(scrubNewsTitleForSpeech('2002: 中国广东省诊断出首起严重急性呼吸道症候群病例')).toBe(
+      '中国广东省诊断出首起严重急性呼吸道症候群病例',
+    );
+  });
+
+  it('portalNewsFeedUrls prioritizes HK01 + Yahoo/MSN for Hong Kong', () => {
+    const hk = portalNewsFeedUrls('HK', 'yue');
+    expect(hk[0]).toContain('hk01.com');
+    expect(hk.some((u) => u.includes('news.yahoo.com'))).toBe(true);
+    expect(hk.some((u) => u.includes('rss.msn.com'))).toBe(true);
+  });
+
+  it('scrubNewsFeedBody drops dates, sections, and title repeat', () => {
+    expect(scrubNewsFeedBody(body, title)).toBe('');
+    expect(scrubNewsFeedBody('Judges praised the show.\n20261116\n娛樂', title)).toMatch(/Judges praised/);
+    expect(scrubNewsFeedBody('Judges praised the show.\n20261116\n娛樂', title)).not.toMatch(/20261116|娛樂/);
+    expect(scrubNewsFeedBody('⚑ 舉報\n橙新聞', title)).toBe('');
+  });
+
+  it('parseRssItems keeps headline once in spoken pack', () => {
+    const xml = `<rss><channel><item>
+      <title>${title} - 明報</title>
+      <description>${body}</description>
+    </item></channel></rss>`;
+    const [row] = parseRssItems(xml);
+    expect(row?.title).toBe(title);
+    expect(row?.summary ?? '').not.toMatch(/20261116/);
+    const spoken = sayNews('yue', 'Central', row!);
+    expect(spoken).toMatch(/新聞/);
+    expect(spoken).toContain(title.slice(0, 8));
+    const hits = (spoken.match(new RegExp(title.slice(0, 8), 'g')) ?? []).length;
+    expect(hits).toBeLessThanOrEqual(1);
+    expect(spoken).not.toMatch(/20261116/);
+    expect(spoken).not.toMatch(/^娛樂|娛樂$/);
+  });
+});
+
 describe('t775 regional news feeds', () => {
   it('maps GPS countries to news regions', () => {
     expect(newsRegionFromPlace({ country: 'Hong Kong', region: '', city: 'Central' })).toBe('HK');
@@ -1006,6 +1041,17 @@ describe('t780 light default news topics', () => {
     expect(isHeavyHeadline('Missile strike escalates the war')).toBe(true);
     expect(isHeavyHeadline('Local cat wins funny costume parade')).toBe(false);
     expect(isHeavyHeadline('多地发生悲剧遇难')).toBe(true);
+  });
+
+  it('drops SARS / outbreak headlines from light picks', () => {
+    const items = [
+      { title: '2002: 中国广东省诊断出首起严重急性呼吸道症候群病例', source: 'Wikipedia' },
+      { title: 'Celebrity opens a heartwarming bakery', source: 'Ent' },
+    ];
+    const picked = pickDefaultHeadlines(items);
+    expect(picked.map((h) => h.title).join(' ')).toMatch(/bakery/i);
+    expect(picked.map((h) => h.title).join(' ')).not.toMatch(/呼吸道|SARS|2002/i);
+    expect(isHeavyHeadline('随后逐渐扩散至世界各地')).toBe(true);
   });
 
   it('exposes light category RSS urls', () => {
@@ -1070,14 +1116,16 @@ describe('news cache bust + headline rotation', () => {
     expect(selectNewsLead([{ title: 'cat wins contest' }], kv)).toBeUndefined();
   });
 
-  it('does not re-tell the same single Wikipedia headline on repeat taps', async () => {
+  it('does not re-tell the same single portal headline on repeat taps', async () => {
     const kv = memKv();
+    const portalRss =
+      '<rss><channel><item><title>A bakery opens a cheerful night market stall</title></item></channel></rss>';
     const fetchImpl: typeof fetch = async (input) => {
       const url = String(input);
       if (url.includes('news.google.com')) throw new Error('cors');
       if (url.includes('rss2json.com')) return new Response('nope', { status: 403 });
-      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
-        return jsonRes({ news: [{ story: 'A bakery opens a cheerful night market stall.' }] });
+      if (url.includes('news.yahoo.com') || url.includes('rss.msn.com')) {
+        return new Response(portalRss, { status: 200, headers: { 'Content-Type': 'application/rss+xml' } });
       }
       return jsonRes({}, 404);
     };
@@ -1102,18 +1150,17 @@ describe('news cache bust + headline rotation', () => {
 
   it('rotates across distinct headlines before missing', async () => {
     const kv = memKv();
+    const portalRss = `<rss><channel>
+      <item><title>A bakery opens a cheerful night market stall</title></item>
+      <item><title>Scientists share a quirky AI drawing tip</title></item>
+      <item><title>A puppy parade fills the park with smiles</title></item>
+    </channel></rss>`;
     const fetchImpl: typeof fetch = async (input) => {
       const url = String(input);
       if (url.includes('news.google.com')) throw new Error('cors');
       if (url.includes('rss2json.com')) return new Response('nope', { status: 403 });
-      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
-        return jsonRes({
-          news: [
-            { story: 'A bakery opens a cheerful night market stall.' },
-            { story: 'Scientists share a quirky AI drawing tip.' },
-            { story: 'A puppy parade fills the park with smiles.' },
-          ],
-        });
+      if (url.includes('news.yahoo.com') || url.includes('rss.msn.com')) {
+        return new Response(portalRss, { status: 200, headers: { 'Content-Type': 'application/rss+xml' } });
       }
       return jsonRes({}, 404);
     };
@@ -1140,27 +1187,23 @@ describe('news cache bust + headline rotation', () => {
 
   it('widens and picks a fresh headline after the first pool is exhausted', async () => {
     const kv = memKv();
-    let featuredHits = 0;
+    let feedFetches = 0;
     const fetchImpl: typeof fetch = async (input) => {
       const url = String(input);
       if (url.includes('news.google.com')) throw new Error('cors');
       if (url.includes('rss2json.com')) return new Response('nope', { status: 403 });
-      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
-        featuredHits += 1;
-        // First pass (and early days): only Alpha. Widen pass walks more days → Beta on day 6+.
-        const day = url.match(/\/(\d{4}\/\d{2}\/\d{2})$/)?.[1] ?? '';
-        if (day.endsWith('/09') || day.endsWith('/08') || day.endsWith('/07') || day.endsWith('/06') || day.endsWith('/05')) {
-          return jsonRes({
-            news: [{
-              story: 'Orbit gardeners grow glowing tomatoes on a night ship. Crews say the fruit tastes like summer and lights the galley.',
-            }],
-          });
+      if (url.includes('news.yahoo.com') || url.includes('rss.msn.com') || url.includes('feeds.bbci.co.uk')) {
+        feedFetches += 1;
+        if (url.includes('rss.msn.com')) {
+          return new Response(
+            `<rss><channel><item><title>Orbit gardeners grow glowing tomatoes on a night ship</title><description>Crews say the fruit tastes like summer and lights the galley.</description></item></channel></rss>`,
+            { status: 200, headers: { 'Content-Type': 'application/rss+xml' } },
+          );
         }
-        return jsonRes({
-          news: [{
-            story: 'A bakery opens a cheerful night market stall. Locals line up for warm cinnamon buns and soft jazz.',
-          }],
-        });
+        return new Response(
+          `<rss><channel><item><title>A bakery opens a cheerful night market stall</title><description>Locals line up for warm cinnamon buns and soft jazz.</description></item></channel></rss>`,
+          { status: 200, headers: { 'Content-Type': 'application/rss+xml' } },
+        );
       }
       return jsonRes({}, 404);
     };
@@ -1179,7 +1222,7 @@ describe('news cache bust + headline rotation', () => {
     expect(second.spoken.toLowerCase()).toMatch(/orbit|tomato|galley|glowing/);
     expect(second.spoken.toLowerCase()).not.toContain('bakery');
     expect(second.spoken.toLowerCase()).not.toMatch(/couldn't find/);
-    expect(featuredHits).toBeGreaterThan(5);
+    expect(feedFetches).toBeGreaterThan(3);
   });
 
   it('packs summary and key details so news tells are longer than a title', async () => {
@@ -1293,22 +1336,21 @@ describe('news cache bust + headline rotation', () => {
     expect(rssHits).toBeGreaterThanOrEqual(2);
   });
 
-  it('walks multiple Wikipedia featured days when Google is blocked', async () => {
-    const seenDays = new Set<string>();
+  it('rotates Yahoo/MSN portal feeds when Google is blocked', async () => {
+    const portalHits: string[] = [];
     const fetchImpl: typeof fetch = async (input) => {
       const url = String(input);
       if (url.includes('news.google.com')) throw new Error('cors');
       if (url.includes('rss2json.com')) return new Response('nope', { status: 403 });
-      if (url.includes('wikipedia.org') && url.includes('/feed/featured/')) {
-        const day = url.match(/\/(\d{4}\/\d{2}\/\d{2})$/)?.[1] ?? '';
-        seenDays.add(day);
-        if (day.endsWith('/15')) {
-          return jsonRes({ news: [{ story: 'Today: quirky robot wins a science fair.' }] });
-        }
-        if (day.endsWith('/14')) {
-          return jsonRes({ news: [{ story: 'Yesterday: museum cat parade draws smiles.' }] });
-        }
-        return jsonRes({ news: [] });
+      if (url.includes('news.yahoo.com') || url.includes('rss.msn.com')) {
+        portalHits.push(url);
+        const title = url.includes('msn')
+          ? 'Museum cat parade draws smiles'
+          : 'Quirky robot wins a science fair';
+        return new Response(
+          `<rss><channel><item><title>${title}</title></item></channel></rss>`,
+          { status: 200, headers: { 'Content-Type': 'application/rss+xml' } },
+        );
       }
       return jsonRes({}, 404);
     };
@@ -1321,7 +1363,7 @@ describe('news cache bust + headline rotation', () => {
       // Fixed clock so utcStamp offsets are deterministic relative to "now".
       now: Date.UTC(2026, 10, 15, 12, 0, 0),
     });
-    expect(seenDays.size).toBeGreaterThanOrEqual(3);
+    expect(portalHits.some((u) => u.includes('yahoo'))).toBe(true);
     expect(live.spoken).toMatch(/robot|museum|cat|parade|science/i);
   });
 });

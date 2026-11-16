@@ -135,7 +135,7 @@
 // so the pad painted over and hit-tested AHEAD of the hero mic and the text
 // field ("can't click the text box and the mic button"). The input row now
 // carries z-10 so it takes its clicks back.
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { feedUtterance, applyContentMood, setThinkingPose, triggerLaugh, triggerMove, holdMove, clearMove, setPerfMotionProfile, clearPerfMotionProfile } from '../lib/companion';
 import { detectMove } from '../lib/moves';
@@ -146,7 +146,8 @@ import { pickIdleLine } from '../lib/persona-chatter';
 import { pickIdleCompanionLine } from '../lib/idle-talk';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
 import { gateSpokenLine, safeIdleFallback, scrubCompanionSpoken, scrubHistoryResumeAsks, scrubTopicMenuAsks } from '../lib/spoken-line-sanity';
-import { pickCharacterInteraction } from '../lib/interaction-lines';
+import { isSpeakableText, scrubLiveFactsSpoken } from '../lib/speak-text';
+import { HAND_HOLD_SHY_SPEAK_AFTER, handHoldShyLine } from '../lib/interaction-lines';
 import { personalityProfile, personalityPrompt } from '../lib/personality';
 import { voiceOpening, type VoiceId } from '../lib/personality-voice';
 import { laughStyleFor, LAUGH_RE } from '../lib/laugh';
@@ -274,7 +275,7 @@ import {
   stepCaptionLadder,
 } from '../lib/speech-caption';
 import {
-  scrollChatHistoryToLatest,
+  scheduleChatScrollToLatest,
   shouldFollowLiveChat,
 } from '../lib/chat-scroll-follow';
 import { loadProfile, type Gender } from '../lib/profile';
@@ -636,23 +637,20 @@ export default function ChatPanel({
     micModeRef.current = false;
     leaveVoiceChatAudioSession();
   }, []);
+  const followLiveChatScroll = useCallback(() => {
+    if (!shouldFollowLiveChat(!nearBottomRef.current)) return;
+    nearBottomRef.current = true;
+    setPinnedBottom(true);
+    scheduleChatScrollToLatest(scrollRef.current);
+  }, []);
+
+  useLayoutEffect(() => {
+    followLiveChatScroll();
+  }, [history, speechCaption, captionLadder, streamDraft, speakingNow, busy, followLiveChatScroll]);
+
   useEffect(() => {
-    // Follow-live: new history lines always jump to the newest row.
-    if (shouldFollowLiveChat(!nearBottomRef.current)) {
-      nearBottomRef.current = true;
-      setPinnedBottom(true);
-      scrollChatHistoryToLatest(scrollRef.current);
-    }
     saveHistory(history);
   }, [history]);
-  useEffect(() => {
-    // Live captions must stay on-screen even after the user scrolled up.
-    if (shouldFollowLiveChat(!nearBottomRef.current)) {
-      nearBottomRef.current = true;
-      setPinnedBottom(true);
-      scrollChatHistoryToLatest(scrollRef.current);
-    }
-  }, [speechCaption, captionLadder]);
 
   // live status for the top-left plate + speaking flag for the mic orb
   useEffect(() => {
@@ -674,6 +672,9 @@ export default function ChatPanel({
     return `${persona ?? ''}\n${personalityPrompt(characterId, characterGender)}${adaptiveBlock({ sceneId: backgroundId, sceneName, characterGender, userGender, kidMode })}`;
   };
 
+  const LIVE_FACTS_LINE =
+    /^(?:最近有條新聞|最近有条新闻|From the news|附近有條|附近有条|今日.*天氣|今天.*天气|而家大約|Around here|Around \w)/;
+
   const sayLocal = (
     text: string,
     hints?: Record<string, number>,
@@ -682,14 +683,16 @@ export default function ChatPanel({
   ) => {
     // Durable spoken-line gate: reject unfinished templates / fragments /
     // banned idle interrogations / topic-menu interviews / history-resume
-    // asks before TTS + history.
-    const scrubbed = scrubCompanionSpoken(text);
-    const gated = gateSpokenLine(scrubbed, {
+    // asks before TTS + history. Live weather/news lines skip nonsense scrub.
+    const liveFacts = LIVE_FACTS_LINE.test(text.trim());
+    const scrubbed = liveFacts ? scrubLiveFactsSpoken(text) : scrubCompanionSpoken(text);
+    let gated = gateSpokenLine(scrubbed, {
       mode: opts?.idle ? 'idle' : 'local',
       lang,
       n: opts?.n ?? chatterCountRef.current,
       fallback: opts?.idle ? safeIdleFallback(lang, opts?.n ?? chatterCountRef.current) : undefined,
     });
+    if (!gated && liveFacts && isSpeakableText(scrubbed)) gated = scrubbed;
     if (!gated) return;
     feedUtterance(gated);
     notifySpeaking(lead ? `${lead.text} ${gated}` : gated);
@@ -1063,15 +1066,25 @@ export default function ChatPanel({
   }, [pokeCount]);
 
   const lastHandRef = useRef(handHoldCount);
+  const handHoldDragCountRef = useRef(0);
+  const handHoldShySpokeRef = useRef(false);
   useEffect(() => {
     if (handHoldCount === lastHandRef.current) return;
     lastHandRef.current = handHoldCount;
     lastActivityRef.current = Date.now();
     lastUserRef.current = Date.now();
     reengageStageRef.current = 0;
-    const line = pickCharacterInteraction(characterId, characterGender, 'hand', lang);
-    // t769/t771: no unsolicited TTS laugh lead on hand-hold.
-    sayLocal(line, { joy: 0.55 });
+    handHoldDragCountRef.current += 1;
+    // Hand grab: poke SFX only — no template line ("哇, 輕輕隻手?") on every drag.
+    playPokeBurst(characterId, 'hand');
+    if (
+      characterGender === 'female'
+      && !handHoldShySpokeRef.current
+      && handHoldDragCountRef.current >= HAND_HOLD_SHY_SPEAK_AFTER
+    ) {
+      handHoldShySpokeRef.current = true;
+      sayLocal(handHoldShyLine(lang), { joy: 0.42 });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handHoldCount]);
 
@@ -1555,8 +1568,9 @@ export default function ChatPanel({
     let world = '';
     let worldSpoken = '';
     let answered = false;
+    const priorUser = [...history].reverse().find((m) => m.role === 'user')?.content;
+    let livePlan = planTools(text, priorUser);
     try {
-      const priorUser = [...history].reverse().find((m) => m.role === 'user')?.content;
       const live = await clientLiveContext(text, lang, priorUser);
       world = live.prompt;
       worldSpoken = live.spoken;
@@ -1567,20 +1581,24 @@ export default function ChatPanel({
           saveContentContinuationSession(contentContinuation);
         }
       }
-      const livePlan = planTools(text, priorUser);
+      livePlan = planTools(text, priorUser);
       if (isLiveFactsOnlyTurn(livePlan, worldSpoken)) {
         stopThinkingSound();
         // Weather/news fact reads stay finished statements — no withQuestion fishing.
-        const line = stripOfftopicAbilityTack(worldSpoken, text);
-        rememberTurn(text, line);
-        onMemCountRef.current?.(memorySummaryCount());
-        feedUtterance(line);
-        if (feltHints) applyContentMood(feltHints);
-        notifySpeaking(line);
-        speak(line, characterId, lang, feltHints, undefined, felt?.intensity);
-        pushAutoIdle(line, feltHints, undefined, text);
-        commitReply(line);
-        answered = true;
+        const line = scrubLiveFactsSpoken(stripOfftopicAbilityTack(worldSpoken, text));
+        if (!line.trim()) {
+          answered = false;
+        } else {
+          rememberTurn(text, line);
+          onMemCountRef.current?.(memorySummaryCount());
+          feedUtterance(line);
+          if (feltHints) applyContentMood(feltHints);
+          notifySpeaking(line);
+          speak(line, characterId, lang, feltHints, undefined, felt?.intensity);
+          pushAutoIdle(line, feltHints, undefined, text);
+          commitReply(line);
+          answered = true;
+        }
       }
     } catch { /* live lookup is best-effort — she still answers */ }
     // r97 — the first complete sentence of a streamed reply, spoken live the
@@ -1645,7 +1663,12 @@ export default function ChatPanel({
           },
         });
         // Motion + face from chat content only — ignore LLM emotionHints.
-        const cleanedReply = scrubCompanionSpoken(stripOfftopicAbilityTack(r.reply, text));
+        const factsTurn = isLiveFactsOnlyTurn(livePlan, worldSpoken) || Boolean(worldSpoken.trim());
+        const rawStreamed = stripOfftopicAbilityTack(r.reply, text);
+        let cleanedReply = factsTurn && worldSpoken.trim()
+          ? scrubLiveFactsSpoken(rawStreamed || worldSpoken)
+          : scrubCompanionSpoken(rawStreamed);
+        if (!cleanedReply.trim() && worldSpoken.trim()) cleanedReply = scrubLiveFactsSpoken(worldSpoken);
         if (!cleanedReply.trim()) {
           setHistory((h) => {
             const tail = h[h.length - 1];
@@ -1689,7 +1712,12 @@ export default function ChatPanel({
     const commitServer = (data: { reply?: string; emotionHints?: Record<string, number> }) => {
       // Body/face from chat content — server emotionHints are not applied to motion.
       // Never speak a history-resume ask even if the production lane invents one.
-      const reply = scrubCompanionSpoken(stripOfftopicAbilityTack(data.reply || '…', text));
+      const factsTurn = isLiveFactsOnlyTurn(livePlan, worldSpoken) || Boolean(worldSpoken.trim());
+      const rawReply = stripOfftopicAbilityTack(data.reply || '…', text);
+      let reply = factsTurn && worldSpoken.trim()
+        ? scrubLiveFactsSpoken(rawReply === '…' ? worldSpoken : (rawReply || worldSpoken))
+        : scrubCompanionSpoken(rawReply);
+      if (!reply.trim() && worldSpoken.trim()) reply = scrubLiveFactsSpoken(worldSpoken);
       if (!reply.trim()) {
         setHistory((h) => {
           const tail = h[h.length - 1];
@@ -1828,11 +1856,7 @@ export default function ChatPanel({
           lastActivityRef.current = Date.now();
           lastUserRef.current = Date.now();
           reengageStageRef.current = 0;
-          if (shouldFollowLiveChat(!nearBottomRef.current)) {
-            nearBottomRef.current = true;
-            setPinnedBottom(true);
-            scrollChatHistoryToLatest(scrollRef.current);
-          }
+          followLiveChatScroll();
         }
       },
       onFinal: (said) => {

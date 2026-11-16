@@ -101,7 +101,7 @@ export function curatedRailByLegacyLibNum(libNum: number): IdleCuratedRailEntry 
  * look / stretch / hug / wave.
  */
 export function defaultCuratedRailNums(): number[] {
-  return [6];
+  return [10];
 }
 
 /**

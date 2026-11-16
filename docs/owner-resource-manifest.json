@@ -1719,14 +1719,6 @@
     },
     {
       "type": "music-song",
-      "id": "sing-f-cantate",
-      "pathOrUrl": "/audio/sing-female/sing-f-cantate.mp3",
-      "usedBy": "performance-clips.ts · music.ts",
-      "status": "wired",
-      "notes": "CC0-1.0"
-    },
-    {
-      "type": "music-song",
       "id": "sing-m-happy-birthday",
       "pathOrUrl": "/audio/sing-male/sing-m-happy-birthday.mp3",
       "usedBy": "performance-clips.ts · music.ts",

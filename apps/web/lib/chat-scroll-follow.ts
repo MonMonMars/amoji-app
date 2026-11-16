@@ -17,8 +17,21 @@ export function scrollChatHistoryToLatest(
   if (!el) return;
   const top = el.scrollHeight;
   if (typeof el.scrollTo === 'function') {
-    el.scrollTo({ top });
+    el.scrollTo({ top, behavior: 'auto' });
     return;
   }
   el.scrollTop = top;
+}
+
+/** Scroll after layout so new captions / history rows are in scrollHeight. */
+export function scheduleChatScrollToLatest(
+  el: { scrollHeight: number; scrollTop: number; scrollTo?: HTMLElement['scrollTo'] } | null | undefined,
+): void {
+  if (!el) return;
+  const run = () => scrollChatHistoryToLatest(el);
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(() => requestAnimationFrame(run));
+    return;
+  }
+  run();
 }

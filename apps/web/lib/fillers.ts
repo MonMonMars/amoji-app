@@ -12,7 +12,8 @@ import { LOADING_MOOD_STUBS, LOADING_STUBS } from './thinking-lines';
 export type LangCode = 'yue' | 'zh' | 'ja' | 'en';
 
 /** below this intensity the emotion is felt in prosody only, not a vocal tic */
-export const INTERJECTION_AT = 0.6;
+/** Owner: mild joy (0.6–0.7) must not prepend 呀/好 on every turn. */
+export const INTERJECTION_AT = 0.72;
 
 export const THINKING_FILLERS: Record<LangCode, string[]> = {
   yue: [...LOADING_STUBS.yue],
