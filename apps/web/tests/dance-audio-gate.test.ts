@@ -43,7 +43,7 @@ describe('dance-audio-gate', () => {
   it('explicit sing/dance send short-circuits before LLM (no double beginShow / stopMusic)', () => {
     const panel = fs.readFileSync(path.join(ROOT, 'components/ChatPanel.tsx'), 'utf8');
     const block = panel.slice(
-      panel.indexOf("if (requested === 'sing' || requested === 'dance')"),
+      panel.indexOf('if (performanceShowTurn)'),
       panel.indexOf('setThinkingPose(true)'),
     );
     expect(block).toContain('beginShow(');

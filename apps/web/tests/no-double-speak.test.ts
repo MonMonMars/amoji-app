@@ -10,7 +10,7 @@ const liveTools = readFileSync(join(__dirname, '../lib/live-tools.ts'), 'utf8');
 describe('no double speak on one turn', () => {
   it('skips streamed first-sentence TTS when live facts will replace the reply', () => {
     expect(panel).toContain('!worldSpoken.trim()');
-    expect(panel).toMatch(/requested !== 'sing' && !worldSpoken\.trim\(\)/);
+    expect(panel).toMatch(/!performanceShowTurn && !worldSpoken\.trim\(\)/);
   });
 
   it('cuts a diverged streamed lead instead of stacking a second full answer', () => {
