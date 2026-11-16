@@ -1,0 +1,52 @@
+/**
+ * Owner: every new chat must not prepend 呀！ from joy INTERJECTIONS on the
+ * open cheer. Root cause was analyzeText(開心) on persona intro merging into
+ * speak() mood tics above INTERJECTION_AT while open hints stay ~0.55–0.58.
+ */
+import { describe, it, expect } from 'vitest';
+import { analyzeText } from '@amoji/emotion-core';
+import { INTERJECTIONS, INTERJECTION_AT, dominant, pickInterjection } from '../lib/fillers';
+import { buildOpenCheerLine } from '../lib/open-phase';
+import { emotionClipKind } from '../lib/voice-clips';
+import fs from 'fs';
+import path from 'path';
+
+const ROOT = path.resolve(import.meta.dirname, '..');
+
+describe('no 呀 on new-chat open cheer', () => {
+  it('open-cheer joy hints stay below interjection gate', () => {
+    expect(0.58).toBeLessThan(INTERJECTION_AT);
+    expect(0.55).toBeLessThan(INTERJECTION_AT);
+  });
+
+  it('persona 開心 in open line must not imply a yue joy tic via hints alone', () => {
+    const line = buildOpenCheerLine('yue', {
+      nameHello: '早晨，阿明',
+      personaIntro: '你好，我係Shino！我好容易因為小事開心，尤其係茶。',
+    });
+    expect(analyzeText(line).joy).toBeGreaterThanOrEqual(INTERJECTION_AT);
+    const felt = dominant({ joy: 0.58 });
+    expect(pickInterjection(felt.emotion, felt.value, 'yue')).toBeUndefined();
+    const lexMerged = dominant({ joy: 0.58, ...analyzeText(line) });
+    expect(pickInterjection(lexMerged.emotion, lexMerged.value, 'yue')?.text).toBe('呀！');
+  });
+
+  it('speak() mood tics use caller emotionHints only (not reply lexicon)', () => {
+    const body = fs.readFileSync(path.join(ROOT, 'lib/voice.ts'), 'utf8');
+    expect(body).toContain('dominant(emotionHints)');
+    expect(body).toContain('pickInterjection(ticEmotion, ticValue, lang)');
+    expect(body).not.toMatch(/pickInterjection\(emotion, value, lang\)/);
+  });
+
+  it('ChatPanel open cheer passes sub-threshold joy hints', () => {
+    const panel = fs.readFileSync(path.join(ROOT, 'components/ChatPanel.tsx'), 'utf8');
+    expect(panel).toMatch(/openHints[\s\S]*joy: 0\.5[58]/);
+  });
+
+  it('呀 joy tic is TTS interjection, not a yue burst clip (#450)', () => {
+    const ya = INTERJECTIONS.joy?.yue?.text ?? '';
+    expect(ya).toContain('呀');
+    expect(emotionClipKind(ya, 'lead')).toBeNull();
+    expect(emotionClipKind('呀！', 'lead')).toBeNull();
+  });
+});

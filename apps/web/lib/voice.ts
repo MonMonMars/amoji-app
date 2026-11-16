@@ -1607,9 +1607,12 @@ function performSpeak(
   // strong feelings get an audible tic (giggle/sigh/gasp) before the words —
   // unless the caller supplies its own lead (e.g. a guaranteed poke ouch).
   // Never a thinking/um lead — that was the spoken loading filler (Pixel).
+  // Lexicon on the line itself (e.g. open persona “開心”) must not fire a mood
+  // tic — only explicit emotionHints from the caller / LLM tag (owner #no-ya).
+  const { emotion: ticEmotion, value: ticValue } = dominant(emotionHints);
   let tic = leadOverride
     ? prepareSpokenLead(leadOverride)
-    : prepareSpokenLead(pickInterjection(emotion, value, lang));
+    : prepareSpokenLead(pickInterjection(ticEmotion, ticValue, lang));
   if (tic) {
     const peek = emotionClipKind(tic.text, 'lead');
     if (
