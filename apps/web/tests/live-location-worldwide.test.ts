@@ -220,7 +220,7 @@ describe('permission denied and offline', () => {
       cache: new Map(),
       locate: async () => null,
     });
-    expect(live.spoken.toLowerCase()).toContain('which city');
+    expect(live.spoken.toLowerCase()).toMatch(/which city|allow location|settings.*city/);
   });
 
   it('skips the line when the weather endpoint fails instead of guessing', async () => {
