@@ -314,7 +314,7 @@ const CAP = {
   shift: 0.07,
 } as const;
 
-/** Extra lateral lean amp for side taps (sign comes from fallX = away-from-push). */
+/** Extra lateral lean amp for side taps (sign from fallX = toward push side). */
 const LATERAL_LEAN_AMP = 1.38;
 
 function clamp(v: number, m: number): number {
@@ -324,8 +324,8 @@ function clamp(v: number, m: number): number {
 /**
  * Punch reaction for one sample.
  * t is 0 at the hit and 1 at the end of the window.
- * fallX/fallZ: Canvas opposite-of-push lean for lateral (finger push left →
- * fall/tip right via −pushSide). Axial front/back keep tip-away impulse on Z.
+ * fallX/fallZ: Canvas same-side lean for lateral (finger push left → tip left
+ * via +pushSide along camera right). Axial front/back keep impulse on Z.
  * A head poke tips the head (plus soft torso follow in poke-zones).
  * Nothing here translates the scene root.
  */
@@ -539,10 +539,9 @@ export function ndcPointInElementLocal(
 }
 
 /**
- * Lateral fall AWAY from the push (owner physics): finger PUSH → body/head
- * recoils to the opposite screen side.
- * pushSide from screen (+1 finger right / −1 left). Face-on: pushSide −1
- * → fallX +1 → chestRoll < 0 → head tips screen-right (away from push).
+ * Lateral fall toward the push: finger on screen-left → body tips screen-left
+ * (same side as the poke, not recoil opposite).
+ * pushSide from screen (+1 finger right / −1 left).
  */
 export function lateralFallAwayFromScreenSide(
   cameraRightXZ: { x: number; z: number },
@@ -550,15 +549,11 @@ export function lateralFallAwayFromScreenSide(
 ): { x: number; z: number } {
   const len = Math.hypot(cameraRightXZ.x, cameraRightXZ.z);
   const side = pushSide >= 0 ? 1 : -1;
-  // Recoil = −push direction along camera right.
-  if (len < 1e-6) return { x: -side, z: 0 };
-  return { x: (cameraRightXZ.x / len) * -side, z: (cameraRightXZ.z / len) * -side };
+  if (len < 1e-6) return { x: side, z: 0 };
+  return { x: (cameraRightXZ.x / len) * side, z: (cameraRightXZ.z / len) * side };
 }
 
-/**
- * @deprecated Owner rule is opposite-of-push recoil — use
- * {@link lateralFallAwayFromScreenSide}. Kept as the negated form for older tests.
- */
+/** Negated {@link lateralFallAwayFromScreenSide} (legacy opposite recoil). */
 export function lateralFallTowardScreenSide(
   cameraRightXZ: { x: number; z: number },
   leanSide: number,

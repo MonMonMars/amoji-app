@@ -192,11 +192,10 @@ describe('poke recoil is the same gesture at every camera angle', () => {
     { label: 'orbit 110', x: -0.342, z: 0.94 },
   ];
 
-  /** Exactly what CompanionCanvas hands over on its lateral path (away from push). */
+  /** Exactly what CompanionCanvas hands over on its lateral path (toward push). */
   function lateralFall(camRight: { x: number; z: number }, leanSide: number) {
     const n = Math.hypot(camRight.x, camRight.z);
-    // Owner: finger PUSH → recoil opposite → cameraRight * (−leanSide).
-    return { fallX: (camRight.x / n) * -leanSide, fallZ: 0 };
+    return { fallX: (camRight.x / n) * leanSide, fallZ: 0 };
   }
 
   /**

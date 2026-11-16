@@ -32,6 +32,10 @@ import {
   newsPackForRegion,
   preferHeadlinesForLang,
   sayNews,
+  sayRecent,
+  sayTopicalNews,
+  isNewsPublishedToday,
+  parseNewsPublishedAt,
   scrubNewsFeedBody,
   scrubNewsTitleForSpeech,
   toldNewsTitles,
@@ -806,6 +810,29 @@ describe('local light news and reply guard', () => {
     expect(newsLocalPlaceLabel('en', 'Hong Kong')).toBe('Hong Kong');
   });
 
+  it('sayRecent uses 今日 when the story published today (HK calendar)', () => {
+    const now = Date.parse('2026-11-17T14:00:00+08:00');
+    const todayLead = { title: '輕鬆社區活動', source: 'HK01', publishedAt: now };
+    expect(sayRecent('yue', todayLead)).toMatch(/^今日有條新聞：/);
+    expect(sayRecent('yue', todayLead)).toContain('輕鬆社區活動');
+    const oldLead = {
+      title: '舊聞',
+      source: 'HK01',
+      publishedAt: now - 86_400_000 * 2,
+    };
+    expect(sayRecent('yue', oldLead)).toMatch(/^最近有條新聞：/);
+    expect(sayRecent('yue', { title: '無日期', source: '' })).toMatch(/^最近有條新聞：/);
+  });
+
+  it('frames topical AI news without 附近有條輕鬆本地新聞', () => {
+    const title = 'OpenAI ships a smaller reasoning model';
+    const line = sayTopicalNews('yue', 'artificial intelligence', title);
+    expect(line).toContain('AI');
+    expect(line).toContain(title);
+    expect(line).not.toContain('附近有條輕鬆本地新聞');
+    expect(line).not.toMatch(/^調查/u);
+  });
+
   it('speaks yue local RSS without an English here prefix when place label is coarse', async () => {
     const rss = '<rss><channel><item><title>Weird lights over Hong Kong harbour - Daily</title></item></channel></rss>';
     const fetchImpl: typeof fetch = async (input) => {
@@ -926,6 +953,16 @@ describe('parseRssItems', () => {
   it('skips the channel title and splits the publisher', () => {
     const xml = '<rss><channel><title>Google News</title><item><title>Harbour lights &amp; rain - Daily</title></item></channel></rss>';
     expect(parseRssItems(xml)).toEqual([{ title: 'Harbour lights & rain', source: 'Daily' }]);
+  });
+
+  it('parses pubDate into publishedAt', () => {
+    const xml = `<rss><channel><item>
+      <title>Harbour lights - Daily</title>
+      <pubDate>Tue, 17 Nov 2026 08:00:00 GMT</pubDate>
+    </item></channel></rss>`;
+    const [row] = parseRssItems(xml);
+    expect(row?.publishedAt).toBe(parseNewsPublishedAt('Tue, 17 Nov 2026 08:00:00 GMT'));
+    expect(isNewsPublishedToday(row?.publishedAt, Date.parse('Tue, 17 Nov 2026 12:00:00 GMT'))).toBe(true);
   });
 
   it('keeps description as summary and detail beats', () => {

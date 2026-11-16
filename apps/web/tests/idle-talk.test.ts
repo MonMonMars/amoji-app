@@ -17,7 +17,12 @@ import {
   voiceIdleLines,
   voiceOpening,
 } from '../lib/personality-voice';
-import { asksPresenceNag, asksUserInnerThoughts, spokenLineLooksBroken } from '../lib/spoken-line-sanity';
+import {
+  asksPresenceNag,
+  asksUserInnerThoughts,
+  spokenLineLooksBroken,
+  volunteersStoredMemory,
+} from '../lib/spoken-line-sanity';
 import { CHATTER } from '../lib/chatter';
 import { CHARACTERS, type Lang } from '../lib/prefs';
 
@@ -68,6 +73,18 @@ const FORBIDDEN_IDLE_FRAGMENTS = [
   /Vibes check/i,
   /matches your vibe/i,
   /バイブスチェック/,
+  /好似呢聲.{0,10}你好/,
+  /像这声.{0,10}你好/,
+  /like this soft hello/i,
+  /好似故事夾住書籤/,
+  /像故事夹着书签/,
+  /你啱啱講嗰啲細節我仲記住/,
+  /你頭先講嗰樣我仲記住/,
+  /近排你留意到嘅.*我會記住/,
+  /that detail you shared still sits/i,
+  /those stick with me/i,
+  /さっきの細かい話、まだ覚えてる/,
+  /そういうの、覚えておくね/,
 ];
 
 /** Pixel: never interrogate private thoughts in idle / open / reengage. */
@@ -119,6 +136,10 @@ describe('idle-talk', () => {
     for (const lang of LANGS) {
       for (const line of [...STAY_TOPIC_LINES[lang], ...SUGGEST_TOPIC_LINES[lang]]) {
         expect(line.trim()).not.toMatch(/[?？]/);
+        expect(volunteersStoredMemory(line), `${lang}: ${line}`).toBe(false);
+        for (const re of FORBIDDEN_IDLE_FRAGMENTS) {
+          expect(line, `${lang}: ${line}`).not.toMatch(re);
+        }
       }
     }
   });

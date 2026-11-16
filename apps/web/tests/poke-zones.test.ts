@@ -90,29 +90,27 @@ describe('pokeSectionBodyReaction', () => {
     expect(Math.abs(hit.spinePitch)).toBeLessThan(0.2);
   });
 
-  it('left push recoils right (opposite) with chest roll + poked-side arm', () => {
+  it('left push leans left (same side) with chest roll + poked-side arm', () => {
     const section = resolvePokeSection('side', 'left');
     const hit = pokeSectionBodyReaction({
       t: 0.12,
       section,
       hitZone: 'side',
-      // Canvas: fall = lateralFallAwayFromScreenSide(camRight, pushSide);
-      // push left (−1) → +X face-on → tip screen-right.
-      fallX: 1,
+      // push left (−1) → −X face-on → tip screen-left.
+      fallX: -1,
       fallZ: 0,
-      // Character arm emphasis: screen-left faces character-right when face-on.
       sideSign: 1,
       softChest: false,
       twist: 0,
     });
-    expect(hit.chestRoll).toBeLessThan(-0.35);
+    expect(hit.chestRoll).toBeGreaterThan(0.35);
     expect(Math.abs(hit.rArmX)).toBeGreaterThan(Math.abs(hit.lArmX));
     expect(Math.abs(hit.rArmX)).toBeGreaterThan(0.45);
   });
 
-  it('CompanionCanvas encodes opposite-of-push recoil + layout-local coords', () => {
+  it('CompanionCanvas encodes same-side poke lean + layout-local coords', () => {
     const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
-    expect(canvas).toMatch(/Push left → tip right/);
+    expect(canvas).toMatch(/tips toward the finger side/);
     expect(canvas).toMatch(/screenPointerSideSign\s*\(/);
     expect(canvas).toMatch(/lateralFallAwayFromScreenSide\s*\(/);
     expect(canvas).toMatch(/clientPointInElementLocal\s*\(/);

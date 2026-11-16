@@ -2,6 +2,7 @@
 //   single near-still Quaternius stand (v6) — not RPM F (still looked same-bad).
 // Never HelloWave / dance / look / stretch / BreathCalm / Sassy / RPM stands —
 
+import { ownerCalmIdleClip } from './chat-auto-idle';
 import { DEFAULT_IDLE_CLIP_ID } from './idle-retired';
 import { idleClipById } from './idle-clips';
 
@@ -36,7 +37,14 @@ function firstAvailable(candidates: readonly string[], available: ReadonlySet<st
 }
 
 /** Build the looping order from whatever clips actually loaded. */
-export function orderPassiveIdleClips(availableIds: readonly string[]): string[] {
+export function orderPassiveIdleClips(
+  availableIds: readonly string[],
+  characterId?: string | null,
+): string[] {
+  const owner = characterId ? ownerCalmIdleClip(characterId) : null;
+  if (owner && (availableIds.includes(owner) || idleClipById(owner))) {
+    return [owner];
+  }
   const available = new Set(availableIds);
   const relaxA = firstAvailable(PASSIVE_RELAX_CLIPS, available);
   if (relaxA) return [relaxA];
@@ -53,6 +61,20 @@ export function nextPassiveIdleClip(availableIds: readonly string[], step: numbe
   const order = orderPassiveIdleClips(availableIds);
   if (!order.length) return DEFAULT_IDLE_CLIP_ID;
   return order[((step % order.length) + order.length) % order.length]!;
+}
+
+/**
+ * Quiet chat body idle: per-character owner pin / enabled rail wins; else
+ * rotate the passive template.
+ */
+export function resolvePassiveBodyIdleClip(
+  characterId: string | undefined,
+  availableIds: readonly string[],
+  step: number,
+): string {
+  const owner = characterId ? ownerCalmIdleClip(characterId) : null;
+  if (owner) return owner;
+  return nextPassiveIdleClip(availableIds, step);
 }
 
 /** True when this clip is part of the calm passive rotation (not a performance). */

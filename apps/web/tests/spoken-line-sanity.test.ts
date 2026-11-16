@@ -21,6 +21,7 @@ import {
   spokenLineLooksBroken,
   stripQuestionSentences,
   userMessageLooksLikeQuestion,
+  volunteersStoredMemory,
 } from '../lib/spoken-line-sanity';
 import { buildOpenCheerLine } from '../lib/open-phase';
 import { LAST_THREAD_RESUME_BANNED } from '../lib/memory';
@@ -55,6 +56,12 @@ const KNOWN_BAD = [
   "It's been a minute... want to pick up where we left off?",
   '我们上次聊到「爬山」——要不要继续那个话题？',
   '前回は「登山」の話してたね——続き、話す？',
+  '我將一朵新鮮嘅花靜靜放喺度，好似呢聲輕輕嘅你好。',
+  '我把一朵新鲜的花安静地放在这里，像这声轻轻的你好。',
+  '你啱啱講嗰啲細節我仲記住——唔使急住換。',
+  '你頭先講嗰樣我仲記住——想講多啲隨時得。',
+  'That detail you shared still sits with me — no rush to change it.',
+  '近排你留意到嘅一件溫柔事——嗰啲我會記住。',
 ];
 
 describe('spokenLineLooksBroken', () => {
@@ -75,6 +82,11 @@ describe('spokenLineLooksBroken', () => {
     expect(spokenLineLooksBroken('個vibe好靚喎。')).toBe(true);
     expect(spokenLineLooksBroken('Vibes check. What are we vibing to?')).toBe(true);
     expect(spokenLineLooksBroken('搵到首歌啱你個vibe。想知歌名嗎？')).toBe(true);
+    expect(spokenLineLooksBroken('我將一朵新鮮嘅花靜靜放喺度，好似呢聲輕輕嘅你好。')).toBe(true);
+    expect(spokenLineLooksBroken('捧着一朵新鲜的花，像故事夹着书签。')).toBe(true);
+    expect(volunteersStoredMemory('你啱啱講嗰啲細節我仲記住——唔使急住換。')).toBe(true);
+    expect(volunteersStoredMemory('我聽到喇——呢樣可以慢慢留一陣。')).toBe(false);
+    expect(spokenLineLooksBroken('你頭先講嗰樣我仲記住——想講多啲隨時得。', { mode: 'idle' })).toBe(true);
   });
 
   it('rejects presence nags in idle mode', () => {

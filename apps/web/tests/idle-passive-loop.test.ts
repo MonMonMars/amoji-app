@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   isPassiveIdleClip,
   nextPassiveIdleClip,
@@ -6,9 +6,29 @@ import {
   PASSIVE_IDLE_LOOP_TEMPLATE,
   PASSIVE_LOOK_CLIPS,
   PASSIVE_STRETCH_CLIPS,
+  resolvePassiveBodyIdleClip,
 } from '../lib/idle-passive-loop';
+import { forgetIdlePickCache, resetIdlePicks, saveIdlePick } from '../lib/idle-pick';
 import { DEFAULT_IDLE_CLIP_ID } from '../lib/idle-retired';
 import { orderIdleClips } from '../lib/personality';
+
+function mockStorage() {
+  const store = new Map<string, string>();
+  (globalThis as { localStorage: Storage }).localStorage = {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => { store.set(k, v); },
+    removeItem: (k: string) => { store.delete(k); },
+    clear: () => store.clear(),
+    key: () => null,
+    get length() { return store.size; },
+  };
+  return store;
+}
+
+afterEach(() => {
+  resetIdlePicks();
+  forgetIdlePickCache();
+});
 
 describe('passive idle loop (single near-still stand v6)', () => {
   it('orders one Quaternius stand only — no RPM F/M, look, or stretch', () => {
@@ -59,6 +79,17 @@ describe('passive idle loop (single near-still stand v6)', () => {
     expect(isPassiveIdleClip('IdleRpmMStanding001')).toBe(true);
     expect(isPassiveIdleClip('IdleSassy')).toBe(false);
     expect(isPassiveIdleClip('IdleBreathCalm')).toBe(false);
+  });
+
+  it('owner per-character pin wins over Quaternius passive template', () => {
+    mockStorage();
+    saveIdlePick('a01-shino', 'IdleRpmMStanding001');
+    expect(
+      orderPassiveIdleClips([...PASSIVE_IDLE_LOOP_TEMPLATE, 'IdleRpmMStanding001'], 'a01-shino'),
+    ).toEqual(['IdleRpmMStanding001']);
+    expect(
+      resolvePassiveBodyIdleClip('a01-shino', [...PASSIVE_IDLE_LOOP_TEMPLATE], 99),
+    ).toBe('IdleRpmMStanding001');
   });
 
   it('orderIdleClips no longer dumps the whole library after calm clips', () => {

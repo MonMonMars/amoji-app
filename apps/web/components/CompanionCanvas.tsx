@@ -969,7 +969,7 @@ export default function CompanionCanvas({
         .map((s) => s.id)
         .filter((id) => clips.has(id) && !isRetiredIdleClip(resolveIdleClipId(id)));
       if (enabledLoaded.length) {
-        idleOrder = orderPassiveIdleClips(enabledLoaded);
+        idleOrder = orderPassiveIdleClips(enabledLoaded, seedKey);
       } else {
         const loadedIdleIds = [...IDLE_SOURCES, ...IDLE_PICKS]
           .map((s) => s.id)
@@ -1763,12 +1763,10 @@ export default function CompanionCanvas({
                 hipsW,
                 camRightXZ,
               );
-            // Owner poke-move physics (supersedes same-side tip):
-            //   finger PUSH → head/body recoils to the OPPOSITE screen side.
-            //   Push left → tip right; push right → tip left.
-            //   fall = cameraRight * (−leanSide). Arm flinch = character-side.
+            // Poke lean: body tips toward the finger side (push left → lean left).
+            //   fall = cameraRight * leanSide. Arm flinch uses character near-arm.
             // Lateral zones: screen fall alone. Off-center chest/head/belly/…: blend
-            // axial impulse with opposite-of-push lean (centered front/back stay axial).
+            // axial impulse with same-side lean (centered front/back stay axial).
             {
               const fall = lateralFallAwayFromScreenSide(camRightXZ, leanSide);
               const lateralOnly =
