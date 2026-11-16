@@ -690,7 +690,7 @@ export default function CompanionCanvas({
     // rebaseClipHips + amplitude damp + pinPlantedClipTracks (no floating feet).
     const libPlayable = playableIdles();
     const enabledIds = new Set(listEnabledIdleClipIds());
-    let IDLE_SOURCES: ClipSource[] = libPlayable
+    const IDLE_SOURCES: ClipSource[] = libPlayable
       .filter((e) => enabledIds.has(e.clipId))
       .map((e) => ({ id: e.clipId, urls: [`${ANIM_MIRROR}/${e.clipId}.vrma`] }));
     if (!IDLE_SOURCES.length) {

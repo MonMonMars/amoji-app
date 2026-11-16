@@ -2014,6 +2014,8 @@ export function playVoiceGreeting(
    * the MP3 tier — two different voices at once, which is the "she jumped to
    * another speaker" report.
    */
+  // Assigned after onStart is defined; cleared when any tier starts speaking.
+  // eslint-disable-next-line prefer-const -- set below once greet tiers are wired
   let edgeGrace: ReturnType<typeof setTimeout> | undefined;
   const onStart = (tier: 'edge' | 'gtts' | 'synth') => {
     spokenBy = tier;

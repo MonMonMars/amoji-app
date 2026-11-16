@@ -73,74 +73,6 @@ export default function FacePage() {
   const stoppedRef = useRef(false);
   const historyRef = useRef<ChatMessage[]>([]);
 
-  useEffect(() => {
-    const q = new URLSearchParams(window.location.search);
-    const lang = (LANGS as string[]).includes(q.get('lang') ?? '') ? (q.get('lang') as Lang) : 'yue';
-    const character = CHARACTERS.includes(q.get('character') ?? '') ? q.get('character')! : 'juno';
-    const auto = q.get('auto') === '1';
-    optsRef.current = { lang, character, auto };
-    setLang(lang);
-    setDebug(q.get('debug') === '1');
-    setSubs(q.get('subs') === '1');
-
-    const face = new AmojiFace({ canvas: canvasRef.current, holdMs: 5000 });
-    face.start();
-    faceRef.current = face;
-
-    // gaze follows pointer / touch — robots map sensor input to setLook()
-    const onMove = (e: PointerEvent) => {
-      face.setLook((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
-    };
-    window.addEventListener('pointermove', onMove);
-
-    // lipsync sampler — drives mouth from the pseudo-viseme clock
-    let raf = 0;
-    const tick = () => {
-      const s = sampleSpeech();
-      face.setVoiceLevel(s ? s.mouth : 0);
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-
-    // direct scripting handle
-    const api = {
-      say: (text: string) => sayLine(text),
-      emotion: (name: string, intensity?: number) => face.setEmotion(name, intensity ?? 1),
-      listen: () => { stoppedRef.current = false; void loopOnce(); },
-      stop: () => stopAll(),
-      face,
-    };
-    (window as unknown as { amoji: typeof api }).amoji = api;
-
-    // iframe / robot-bridge control channel
-    const onMsg = (e: MessageEvent) => {
-      const d = e.data as Record<string, unknown> | null;
-      if (!d || typeof d !== 'object') return;
-      if (d.type === 'amoji:say' && typeof d.text === 'string') api.say(d.text);
-      else if (d.type === 'amoji:emotion' && typeof d.emotion === 'string') api.emotion(d.emotion, typeof d.intensity === 'number' ? d.intensity : 1);
-      else if (d.type === 'amoji:listen') api.listen();
-      else if (d.type === 'amoji:stop') api.stop();
-    };
-    window.addEventListener('message', onMsg);
-
-    // URL-driven boot
-    const bootSay = q.get('say');
-    const bootEmotion = q.get('emotion');
-    if (bootEmotion) face.setEmotion(bootEmotion, 1);
-    if (bootSay) setTimeout(() => api.say(bootSay), 600);
-    else if (auto) setTimeout(() => { void loopOnce(); }, 900);
-
-    return () => {
-      stoppedRef.current = true;
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('message', onMsg);
-      cancelAnimationFrame(raf);
-      face.stop();
-      stopSpeaking();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const emit = (m: Mode) => {
     setMode(m);
     try { window.parent?.postMessage({ type: 'amoji:state', mode: m }, '*'); } catch { /* cross-origin safe */ }
@@ -241,6 +173,74 @@ export default function FacePage() {
       }
     }
   };
+
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const lang = (LANGS as string[]).includes(q.get('lang') ?? '') ? (q.get('lang') as Lang) : 'yue';
+    const character = CHARACTERS.includes(q.get('character') ?? '') ? q.get('character')! : 'juno';
+    const auto = q.get('auto') === '1';
+    optsRef.current = { lang, character, auto };
+    setLang(lang);
+    setDebug(q.get('debug') === '1');
+    setSubs(q.get('subs') === '1');
+
+    const face = new AmojiFace({ canvas: canvasRef.current, holdMs: 5000 });
+    face.start();
+    faceRef.current = face;
+
+    // gaze follows pointer / touch — robots map sensor input to setLook()
+    const onMove = (e: PointerEvent) => {
+      face.setLook((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
+    };
+    window.addEventListener('pointermove', onMove);
+
+    // lipsync sampler — drives mouth from the pseudo-viseme clock
+    let raf = 0;
+    const tick = () => {
+      const s = sampleSpeech();
+      face.setVoiceLevel(s ? s.mouth : 0);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+
+    // direct scripting handle
+    const api = {
+      say: (text: string) => sayLine(text),
+      emotion: (name: string, intensity?: number) => face.setEmotion(name, intensity ?? 1),
+      listen: () => { stoppedRef.current = false; void loopOnce(); },
+      stop: () => stopAll(),
+      face,
+    };
+    (window as unknown as { amoji: typeof api }).amoji = api;
+
+    // iframe / robot-bridge control channel
+    const onMsg = (e: MessageEvent) => {
+      const d = e.data as Record<string, unknown> | null;
+      if (!d || typeof d !== 'object') return;
+      if (d.type === 'amoji:say' && typeof d.text === 'string') api.say(d.text);
+      else if (d.type === 'amoji:emotion' && typeof d.emotion === 'string') api.emotion(d.emotion, typeof d.intensity === 'number' ? d.intensity : 1);
+      else if (d.type === 'amoji:listen') api.listen();
+      else if (d.type === 'amoji:stop') api.stop();
+    };
+    window.addEventListener('message', onMsg);
+
+    // URL-driven boot
+    const bootSay = q.get('say');
+    const bootEmotion = q.get('emotion');
+    if (bootEmotion) face.setEmotion(bootEmotion, 1);
+    if (bootSay) setTimeout(() => api.say(bootSay), 600);
+    else if (auto) setTimeout(() => { void loopOnce(); }, 900);
+
+    return () => {
+      stoppedRef.current = true;
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('message', onMsg);
+      cancelAnimationFrame(raf);
+      face.stop();
+      stopSpeaking();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const auto = optsRef.current.auto;
   const faceCopy = FACE_COPY[lang] ?? FACE_COPY.en;

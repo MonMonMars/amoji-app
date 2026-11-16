@@ -85,7 +85,6 @@ export function playVoiceClip(file: string, caption: string, onPlay?: () => void
     current = audio;
     applyPlaybackVolume(audio);
     let settled = false;
-    let stall: ReturnType<typeof setTimeout> | undefined;
     const finish = (err?: Error) => {
       if (stall) clearTimeout(stall);
       if (settled) return;
@@ -98,7 +97,7 @@ export function playVoiceClip(file: string, caption: string, onPlay?: () => void
     rejectCurrent = (err) => finish(err);
     // A 404 that never fires error/ended used to sit on the speech queue and
     // block Edge. If playback has not started, give up and let TTS talk.
-    stall = setTimeout(() => finish(new Error('clip failed')), 6_000);
+    const stall = setTimeout(() => finish(new Error('clip failed')), 6_000);
     audio.onended = () => finish();
     audio.onerror = () => finish(new Error('clip failed'));
     audio.onplay = () => {

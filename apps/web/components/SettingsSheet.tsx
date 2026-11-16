@@ -448,11 +448,20 @@ export default function SettingsSheet({
     }).catch(() => { setOaTesting(false); setOaTestResult(false); });
   };
 
+  const applyDevicePlace = () => {
+    clearManualPlace();
+    setPlacePinned(null);
+    setPlaceDevice(lastDevicePlace());
+    setPlaceDraft('');
+    setPlaceState('idle');
+    setRegisterRegion(null);
+  };
+
   // City override: geocode the draft, pin it, and let every later weather/news
   // lookup use it. A name we cannot resolve leaves the previous choice alone.
   const savePlace = () => {
     const query = placeDraft.trim();
-    if (!query) { useDevicePlace(); return; }
+    if (!query) { applyDevicePlace(); return; }
     setPlaceState('saving');
     void setManualPlace({ query, lang }).then((place) => {
       if (!place) { setPlaceState('missing'); return; }
@@ -462,14 +471,6 @@ export default function SettingsSheet({
       // Register location for crisis helpline precedence (after realtime geo).
       setRegisterRegion(place.countryCode || place.country || null);
     }).catch(() => setPlaceState('missing'));
-  };
-  const useDevicePlace = () => {
-    clearManualPlace();
-    setPlacePinned(null);
-    setPlaceDevice(lastDevicePlace());
-    setPlaceDraft('');
-    setPlaceState('idle');
-    setRegisterRegion(null);
   };
 
   return (
@@ -590,7 +591,7 @@ export default function SettingsSheet({
                 <button
                   type="button"
                   aria-label={t(lang, 'locationUseDevice')}
-                  onClick={useDevicePlace}
+                  onClick={applyDevicePlace}
                   className="ui-btn shrink-0 rounded-full bg-white/10 px-3 py-1.5 text-[11px] text-white/70 hover:bg-white/20"
                 >
                   {t(lang, 'locationClear')}
