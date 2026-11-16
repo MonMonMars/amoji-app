@@ -99,7 +99,8 @@ describe('voice does not switch speaker mid-line or between characters', () => {
     expect(focus).toContain('companionPlaybackSession');
     expect(focus).toContain('ensureCompanionPlaybackRoute');
     expect(focus).toMatch(/duckExternalAudioForCompanion[\s\S]*companionPlaybackSession/);
-    expect(focus).toMatch(/duckExternalAudioForCompanion[\s\S]*primeDefaultSpeakerBeforeSynth/);
+    expect(focus).toMatch(/function companionPlaybackSession[\s\S]*primeDefaultSpeakerBeforeSynth/);
+    expect(focus).toMatch(/leaveVoiceChatAudioSession[\s\S]*primeDefaultSpeakerBeforeSynth/);
   });
 
   it('all companion HTMLAudio paths force default speakers only (not mic/comms sink)', () => {

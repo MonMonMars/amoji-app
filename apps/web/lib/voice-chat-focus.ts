@@ -30,6 +30,7 @@ export function enterVoiceChatAudioSession(): void {
 export function leaveVoiceChatAudioSession(): void {
   markMicCommsRoutingLatch(false);
   ensureCompanionPlaybackRoute();
+  void primeDefaultSpeakerBeforeSynth();
 }
 
 function isAmojiMedia(el: HTMLMediaElement): boolean {
@@ -56,12 +57,12 @@ export function pauseForeignPageMedia(): void {
  */
 export function companionPlaybackSession(): void {
   ensureCompanionPlaybackRoute();
+  void primeDefaultSpeakerBeforeSynth();
 }
 
 /** Called when companion TTS starts — duck in-page media; route playback to default. */
 export function duckExternalAudioForCompanion(): void {
   companionPlaybackSession();
-  void primeDefaultSpeakerBeforeSynth();
   pauseForeignPageMedia();
 }
 
