@@ -387,7 +387,8 @@
 // r2026-11-16.166: splash shows live vs baked revision + shared fetchLiveRevision().
 // r2026-11-16.167: LiveRevisionBadge on splash/settings/setup + verify-pages-live.mjs.
 // r2026-11-16.168: card greet + voice preview prime default speaker before gTTS/Edge.
-export const APP_REVISION = 'r2026-11-16.168';
+// r2026-11-16.169: chat + gate probe prime default speaker in duckExternalAudioForCompanion.
+export const APP_REVISION = 'r2026-11-16.169';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
