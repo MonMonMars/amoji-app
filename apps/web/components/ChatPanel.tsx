@@ -1534,9 +1534,10 @@ export default function ChatPanel({
     // library-clip `playing` (beginShow → pendingShowDanceRef). Do not
     // triggerMove on press — that was dance-too-soon on typed/chip asks.
     const requested = detectMove(text);
+    const performanceShowTurn = requested === 'sing' || requested === 'dance';
     // Sing/dance random autoplay (select already returned above).
     // Local CC0 clips + Mixkit style streams when the user names a genre.
-    if (requested === 'sing' || requested === 'dance') {
+    if (performanceShowTurn) {
       setMusicPicks(null);
       applyContentMood({ joy: requested === 'sing' ? 0.88 : 0.72 });
       const ask = resolveMusicAsk(text);
@@ -1666,7 +1667,7 @@ export default function ChatPanel({
             // Skip when live facts will replace the LLM line (preferLive /
             // news·weather sheet) — otherwise she says the model lead, then
             // the facts line: two answers for one turn.
-            if (!firstSentence && requested !== 'sing' && !worldSpoken.trim()) {
+            if (!firstSentence && !performanceShowTurn && !worldSpoken.trim()) {
               const m = /^[^。！？.!?\n]+[。！？.!?]/.exec(clean);
               if (m) {
                 firstSentence = m[0];
