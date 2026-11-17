@@ -83,4 +83,9 @@ jobs:
             echo "owner-resources.html missing Pages-relative audio paths"
             exit 1
           }
+          grep -q 'data-play="../voice-clips/' apps/web/out/docs/owner-resources.html || {
+            echo "owner-resources.html missing Pages-relative voice-clips paths"
+            exit 1
+          }
+          node -e "import('./apps/web/scripts/store-bundle.mjs').then(m=>{const r=m.verifyOwnerResourcesPagesAssets('apps/web/out');if(!r.ok){console.error(r);process.exit(1)}})"
           node scripts/check-store-bundle.mjs apps/web/out

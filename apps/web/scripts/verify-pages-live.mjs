@@ -48,4 +48,18 @@ if (live !== expected) {
   process.exit(1);
 }
 await fetchOk("/docs/owner-resources.html", { expectText: "Owner resource library" });
-console.log(`[verify-pages-live] OK ${live} @ ${base} (owner-resources.html 200)`);
+const ownerHtml = await (await fetch(`${base}/docs/owner-resources.html`, { cache: "no-store" })).text();
+if (ownerHtml.includes("amoji-public-serve/")) {
+  console.error("[verify-pages-live] owner-resources.html still has amoji-public-serve/ on live Pages");
+  process.exit(1);
+}
+const sampleAudio = `${base}/audio/dance/dance-silent-dance-floor.mp3`;
+const sampleVoice = `${base}/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3`;
+for (const url of [sampleAudio, sampleVoice]) {
+  const head = await fetch(url, { method: "HEAD", cache: "no-store" });
+  if (!head.ok) {
+    console.error(`[verify-pages-live] owner-resources asset ${url} → HTTP ${head.status}`);
+    process.exit(1);
+  }
+}
+console.log(`[verify-pages-live] OK ${live} @ ${base} (owner-resources.html + sample audio 200)`);

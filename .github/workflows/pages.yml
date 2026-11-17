@@ -41,6 +41,8 @@ jobs:
           test -f apps/web/out/docs/owner-resources.html
           test ! -e apps/web/out/docs/amoji-public-serve
           grep -q 'data-play="../audio/' apps/web/out/docs/owner-resources.html
+          grep -q 'data-play="../voice-clips/' apps/web/out/docs/owner-resources.html
+          node -e "import('./apps/web/scripts/store-bundle.mjs').then(m=>{const r=m.verifyOwnerResourcesPagesAssets('apps/web/out');if(!r.ok){console.error(r);process.exit(1)}})"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: apps/web/out

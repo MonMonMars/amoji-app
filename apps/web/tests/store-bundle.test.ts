@@ -12,6 +12,7 @@ import {
   findToken,
   isTextual,
   scanTree,
+  verifyOwnerResourcesPagesAssets,
 } from '../scripts/store-bundle.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -225,7 +226,10 @@ describe.skipIf(!hasOut)('store bundle: built out/ tree', () => {
     expect(fs.existsSync(link), 'docs/amoji-public-serve must not ship in Pages artifact').toBe(false);
     const ownerHtml = fs.readFileSync(path.join(OUT_DIR, 'docs', 'owner-resources.html'), 'utf8');
     expect(ownerHtml).toContain('data-play="../audio/');
+    expect(ownerHtml).toContain('data-play="../voice-clips/');
     expect(ownerHtml).not.toContain('amoji-public-serve/');
+    const assetCheck = verifyOwnerResourcesPagesAssets(OUT_DIR);
+    expect(assetCheck.ok, JSON.stringify(assetCheck)).toBe(true);
   });
 
   it.skipIf(!isStoreOut)('store mode does not ship owner docs HTML', () => {
