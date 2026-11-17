@@ -9,6 +9,7 @@ import {
   demoPhasePrimaryPrompt,
   demoPhasePrompt,
   demoPhasePromptCount,
+  shuffledDemoPhaseButtons,
 } from '../lib/demo-phase';
 import { detectMove } from '../lib/moves';
 import { detectExercise } from '../lib/exercises';
@@ -89,6 +90,16 @@ describe('demo-phase buttons', () => {
         }
       }
     }
+  });
+
+  it('shuffles chip order deterministically from a seed', () => {
+    const a = shuffledDemoPhaseButtons(42).map((b) => b.id);
+    const b = shuffledDemoPhaseButtons(42).map((x) => x.id);
+    const c = shuffledDemoPhaseButtons(99).map((x) => x.id);
+    expect(a).toEqual(b);
+    expect(a).toHaveLength(DEMO_PHASE_BUTTONS.length);
+    expect(new Set(a).size).toBe(DEMO_PHASE_BUTTONS.length);
+    expect(c).not.toEqual(a);
   });
 
   it('rotates prompt facets on repeated taps of the same chip', () => {

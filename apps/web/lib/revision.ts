@@ -413,7 +413,8 @@
 // r2026-11-17.192: gate/settings sound test = full GATE_TEST_LINES TTS (gestureTap); no early gTTS onPlaying break.
 // r2026-11-17.195: clean-joke asks — no double ack echoing 乾淨/「你想聽笑話」 before punchline.
 // r2026-11-17.196: joke chip/prompts + reply-mode — say「笑話/joke」only (SFW stays default; no spoken「乾淨」).
-export const APP_REVISION = 'r2026-11-17.196';
+// r2026-11-17.197: demo-phase chip row — visible scrollbar + edge chevrons; reshuffle order each chat entry.
+export const APP_REVISION = 'r2026-11-17.197';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

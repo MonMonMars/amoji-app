@@ -230,6 +230,24 @@ a:focus-visible,
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55);
 }
 
+/* Demo-phase chip row — always show a thin horizontal scrollbar (overflow hint). */
+.demo-phase-rail-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.4) rgba(0, 0, 0, 0.35);
+}
+.demo-phase-rail-scroll::-webkit-scrollbar {
+  height: 7px;
+}
+.demo-phase-rail-scroll::-webkit-scrollbar-track {
+  margin: 0 0.25rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+}
+.demo-phase-rail-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.4);
+}
+
 /* ---- preview panel slow sheen sweep ---- */
 .fx-sheen { position: relative; }
 .fx-sheen::after {
