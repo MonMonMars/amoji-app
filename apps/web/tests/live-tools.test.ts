@@ -45,6 +45,7 @@ import {
   toldNewsTitles,
   worldBlock,
   type GeoLike,
+  type Headline,
   type Place,
 } from '../lib/live-tools';
 import { OpenAiLlm } from '../lib/llm';
@@ -1137,6 +1138,14 @@ describe('HK RSS speech chrome', () => {
     expect(scrubNewsTitleForSpeech('2002: 中国广东省诊断出首起严重急性呼吸道症候群病例')).toBe(
       '中国广东省诊断出首起严重急性呼吸道症候群病例',
     );
+  });
+
+  it('yue news TTS speaks G-DRAGON as one unit, not letter-by-letter', () => {
+    const lead: Headline = { title: 'G-DRAGON 亞巡香港站加場', source: '明報' };
+    const spoken = sayNews('yue', 'Central', lead);
+    expect(spoken).toMatch(/G Dragon/);
+    expect(spoken).not.toMatch(/G-DRAGON/);
+    expect(sayRecent('yue', lead)).toMatch(/G Dragon/);
   });
 
   it('portalNewsFeedUrls prioritizes HK01 + Yahoo/MSN for Hong Kong', () => {
