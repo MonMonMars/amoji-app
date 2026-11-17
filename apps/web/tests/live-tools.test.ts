@@ -9,6 +9,7 @@ import {
   isNewsFeedCacheKey,
   isLiveFactsOnlyTurn,
   isHeavyHeadline,
+  isJunkNewsHeadline,
   liveToolsEnabled,
   newsRegionFromPlace,
   NEWS_LAST_KEY,
@@ -849,6 +850,54 @@ describe('local light news and reply guard', () => {
     expect(line).toContain(title);
     expect(line).not.toContain('附近有條輕鬆本地新聞');
     expect(line).not.toMatch(/^調查/u);
+  });
+
+  it('isJunkNewsHeadline drops fund ISINs and 股價 chrome from AI search noise', () => {
+    const fund = 'Echiquier Artificial Intelligence B EUR 0P0001DYQM';
+    const tick = 'F 股價';
+    expect(isJunkNewsHeadline(fund)).toBe(true);
+    expect(isJunkNewsHeadline(tick)).toBe(true);
+    expect(isHeavyHeadline(fund)).toBe(true);
+    expect(isJunkNewsHeadline('OpenAI ships a smaller reasoning model')).toBe(false);
+    expect(
+      pickDefaultHeadlines(
+        [
+          { title: fund, source: 'Funds' },
+          { title: tick, source: '' },
+          { title: 'Researchers demo a safer classroom AI assistant', source: 'Sci' },
+        ],
+        { preferLight: true },
+      ).map((h) => h.title),
+    ).toEqual(['Researchers demo a safer classroom AI assistant']);
+  });
+
+  it('yue topical AI news skips fund lines and keeps 關於AI framing', async () => {
+    const yahooRss = `<rss><channel>
+      <item><title>Echiquier Artificial Intelligence B EUR 0P0001DYQM - Funds</title></item>
+      <item><title>F 股價</title></item>
+      <item><title>人工智能模型幫醫生更快整理病歷 - 科技</title></item>
+    </channel></rss>`;
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('news.google.com')) throw new Error('cors');
+      if (url.includes('rss2json.com')) return new Response('nope', { status: 403 });
+      if (url.includes('news.yahoo.com') || url.includes('rss.msn.com')) {
+        return new Response(yahooRss, { status: 200, headers: { 'Content-Type': 'application/rss+xml' } });
+      }
+      return jsonRes({}, 404);
+    };
+    const live = await gatherLiveContext('最新有咩 AI 新聞？', {
+      lang: 'yue',
+      fetch: fetchImpl,
+      cache: new Map(),
+    });
+    expect(planTools('最新有咩 AI 新聞？').newsQuery).toMatch(/artificial intelligence/i);
+    expect(live.spoken).toMatch(/關於AI/);
+    expect(live.spoken).toContain('人工智能模型幫醫生更快整理病歷');
+    expect(live.spoken).not.toContain('0P0001DYQM');
+    expect(live.spoken).not.toContain('Echiquier');
+    expect(live.spoken).not.toMatch(/股價/);
+    expect(live.spoken).not.toContain('附近有條輕鬆本地新聞');
   });
 
   it('speaks yue local RSS without an English here prefix when place label is coarse', async () => {
