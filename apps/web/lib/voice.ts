@@ -96,6 +96,7 @@ import { clampBrowserProsody, clampLaughDelivery, cleanForSpeech, isSpeakableTex
 import { analyzeText } from '@amoji/emotion-core';
 import { applyContentMood } from './companion';
 import { profilePokeLine } from './personality';
+import { pokeLineForSpeech } from './personality-voice';
 import {
   browserVoicesForLang,
   edgeProsodyForTier,
@@ -2327,7 +2328,8 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
 /** One short gasp for poke — uses the same pinned voice stack as speak(). */
 function pokeBurstSpokenLine(characterId: string, lang: Lang, zone: string, pokeN: number): string {
   const raw = profilePokeLine(characterId, lang, pokeN, zone);
-  const first = raw.split(/[.!?。！？\n]/)[0]?.trim() || raw;
+  const reaction = pokeLineForSpeech(raw, lang);
+  const first = reaction.split(/[.!?。！？\n]/)[0]?.trim() || reaction;
   if (first.length <= 40) return first;
   return first.slice(0, 40).trim();
 }

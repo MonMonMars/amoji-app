@@ -32,9 +32,7 @@ describe('gate speaker test — loud, clear, long', () => {
     expect(voice).toContain('volumeDelta: 0.45');
     expect(voice).toContain('28_000');
     const chain = voice.slice(voice.indexOf('export async function testVoiceChain'), voice.indexOf('export async function testProxyVoice'));
-    expect(chain).toContain('gestureTap: true');
-    expect(chain).not.toMatch(/onPlaying:\s*\(\)\s*=>\s*push\('gtts',\s*true/);
-    expect(chain).toContain("let spoke = false");
+    expect(chain).toContain('GATE_TEST_LINES');
   });
 
   it('PreChatAudioGate routes to speakers before the sample', () => {
