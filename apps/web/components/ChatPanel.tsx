@@ -204,6 +204,7 @@ import { PASSIVE_IDLE_LOOP_TEMPLATE, resolvePassiveBodyIdleClip } from '../lib/i
 import { resolveContentMotion } from '../lib/content-motion';
 import { clipLabel, PERFORMANCE_CLIPS, type PerformanceClip } from '../lib/performance-clips';
 import { resolvePerfMotion } from '../lib/performance-motion';
+import { ownerDanceClipPrefs } from '../lib/owner-dance-picks';
 import {
   SHOWCASE_START,
   SHOWCASE_YES_RE,
@@ -402,16 +403,21 @@ export default function ChatPanel({
       ?? (pendingShowClipRef.current?.id === playingId ? pendingShowClipRef.current : null)
       ?? pendingShowClipRef.current;
     if (motionClip) {
-      setPerfMotionProfile(resolvePerfMotion({
-        id: motionClip.id,
-        kind: motionClip.kind,
-        style: motionClip.style,
-      }));
+      setPerfMotionProfile(resolvePerfMotion(
+        {
+          id: motionClip.id,
+          kind: motionClip.kind,
+          style: motionClip.style,
+        },
+        pending.bodyMove === 'dance'
+          ? { ownerDanceClips: ownerDanceClipPrefs(characterId) }
+          : undefined,
+      ));
     }
     triggerMove(pending.bodyMove);
     holdMove(pending.holdMs);
     pendingShowDanceRef.current = null;
-  }, []);
+  }, [characterId]);
   useEffect(() => {
     const onClip = (e: Event) => {
       const detail = (e as CustomEvent<{ state?: string; id?: string }>).detail;

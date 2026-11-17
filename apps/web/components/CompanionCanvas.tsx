@@ -930,8 +930,9 @@ export default function CompanionCanvas({
       action.timeScale = profile
         ? timeScaleForProfile(profile, clipName)
         : personality;
-      // Dance/sing shows loop with the music bed; other MOVE_CLIP one-shots stay LoopOnce.
-      if (profile && (name === 'Dance' || name === 'Sing' || clipName.startsWith('lib_C'))) {
+      // Dance/sing shows loop with the music bed — even when perfMotionProfile
+      // is not set yet (LoopOnce + clamp looked like a frozen static pose).
+      if (name === 'Dance' || name === 'Sing' || clipName.startsWith('lib_C')) {
         action.setLoop(THREE.LoopRepeat, Infinity);
         action.clampWhenFinished = false;
       } else {

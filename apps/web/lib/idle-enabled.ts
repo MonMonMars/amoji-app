@@ -106,6 +106,22 @@ export function setIdleEnabled(railNum: number, on: boolean): number[] {
   return listEnabledNums();
 }
 
+/** Owner-enabled curated dance clips (rail #25–28) for performance body motion. */
+export function listEnabledDanceClipIds(): string[] {
+  const enabled = new Set(hydrate());
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  for (const row of CHAT_IDLE_CURATED) {
+    if (row.category !== 'dance') continue;
+    if (!enabled.has(row.railNum)) continue;
+    if (seen.has(row.clipId)) continue;
+    if (!isHonorableIdleClip(row.clipId)) continue;
+    seen.add(row.clipId);
+    ids.push(row.clipId);
+  }
+  return ids;
+}
+
 /** Playable clip ids currently enabled (for idle rotation). */
 export function listEnabledIdleClipIds(): string[] {
   const enabled = new Set(hydrate());
