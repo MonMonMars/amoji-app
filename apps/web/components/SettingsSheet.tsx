@@ -55,7 +55,9 @@ import { saveHistory } from '../lib/companion-store';
 import LiveRevisionBadge from './LiveRevisionBadge';
 import { APP_REVISION } from '../lib/revision';
 import { downloadCompanionFile, parseCompanionFile, applyCompanionFile } from '../lib/companion-file';
-import { manualPlace, lastDevicePlace, setManualPlace, clearManualPlace, type Place } from '../lib/live-tools';
+import {
+  manualPlace, lastDevicePlace, setManualPlace, clearManualPlace, geolocationDeniedThisTab, type Place,
+} from '../lib/live-tools';
 import { setRegisterRegion } from '../lib/crisis-location';
 import {
   addEntry, deleteEntry, deleteDiaryEntry, deleteImportantDate, deletePromise, ensureUserNameFromProfile, exportMemory, loadMemory,
@@ -547,6 +549,9 @@ export default function SettingsSheet({
               built-in one. Blank = device GPS / network, a typed city wins. */}
           <Section title={`📍 ${t(lang, 'settingsLocation')}`}>
             <p className="text-[11px] leading-relaxed text-white/40">{t(lang, 'locationHint')}</p>
+            {geolocationDeniedThisTab() && !placePinned && !placeDevice && (
+              <p className="text-[11px] leading-relaxed text-amber-200/85">{t(lang, 'locationDeniedHint')}</p>
+            )}
             <div className="flex gap-2">
               <input
                 id="amoji-settings-city"

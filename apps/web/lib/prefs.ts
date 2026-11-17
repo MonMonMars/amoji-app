@@ -182,7 +182,7 @@ export type StrKey =
   // mic not supported in this browser (was a yue/English ternary — zh/ja got English)
   | 'micUnsupported'
   // worldwide weather/news location (Settings → Your city)
-  | 'settingsLocation' | 'locationHint' | 'locationCityPlaceholder' | 'locationSave'
+  | 'settingsLocation' | 'locationHint' | 'locationDeniedHint' | 'locationCityPlaceholder' | 'locationSave'
   | 'locationClear' | 'locationSaved' | 'locationNotFound' | 'locationDetected'
   | 'locationNone' | 'locationUseDevice'
   // honest voice picker: only voices that really differ are offered, so a
@@ -764,6 +764,12 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: '天氣同輕鬆新聞會用呢個城市。留空就會用你部機嘅位置或者網絡估計。',
     zh: '天气和轻松新闻会用这个城市。留空则使用你的设备定位或网络估计。',
     ja: '天気と軽いニュースはこの街を使うよ。空欄なら端末の位置情報かネットワーク推定を使うよ。',
+  },
+  locationDeniedHint: {
+    en: 'You blocked location for this tab — save a city below, or allow location in the browser, then ask about weather again.',
+    yue: '你拒絕咗呢個分頁嘅定位——喺下面儲存城市，或者喺瀏覽器重新批准定位，再問天氣。',
+    zh: '你拒绝了此标签页的定位——请在下方保存城市，或在浏览器里重新允许定位，然后再问天气。',
+    ja: 'このタブで位置情報を拒否したよ——下で都市を保存するか、ブラウザで許可してからもう一度天気を聞いて。',
   },
   locationCityPlaceholder: {
     en: 'City or city, country — e.g. Lisbon',

@@ -12,6 +12,7 @@ import {
   regionalLightNewsFeedUrls,
   regionalNewsFeedUrls,
   resolveDevicePlace,
+  geolocationDeniedThisTab,
   setManualPlace,
   type GeoLike,
   type Place,
@@ -211,6 +212,17 @@ describe('permission denied and offline', () => {
       brief: true,
     });
     expect(live).toEqual({ prompt: '', spoken: '' });
+  });
+
+  it('surfaces settings guidance when GPS is denied and nothing else resolved', async () => {
+    const live = await gatherLiveContext("what's the weather?", {
+      lang: 'yue',
+      fetch: async () => jsonRes({}, 500),
+      cache: new Map(),
+      locate: async () => null,
+    });
+    expect(live.spoken).toMatch(/設定|齒輪/);
+    expect(geolocationDeniedThisTab(kv())).toBe(false);
   });
 
   it('still asks the user for a city when they asked the question themselves', async () => {
