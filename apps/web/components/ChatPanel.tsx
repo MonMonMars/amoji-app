@@ -183,7 +183,7 @@ import { cantHearReply, isCantHearComplaint } from '../lib/cant-hear';
 import { productionChat } from '../lib/backend-client';
 import { stopThinkingSound } from '../lib/thinking-sound';
 import { pickDuet } from '../lib/songs';
-import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerformance, resolveLibraryPerformance, detectMusicStyle } from '../lib/music';
+import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerformance, resolveLibraryPerformance, detectMusicStyle, activeLibraryClipId, isLibraryClipAudible } from '../lib/music';
 import { clipTitle, performanceIntroLine } from '../lib/performance-intro';
 import {
   armPerfDance,
@@ -392,6 +392,23 @@ export default function ChatPanel({
   /** Song/dance body waits for library-clip `playing` — not intro TTS / decode. */
   const pendingShowDanceRef = useRef<PendingPerfDance | null>(null);
   const pendingShowClipRef = useRef<PerformanceClip | null>(null);
+  const commitPendingPerfDance = useCallback((playingId: string) => {
+    const pending = pendingShowDanceRef.current;
+    if (!shouldStartDanceOnAudioPlaying(pending, playingId)) return;
+    const motionClip = PERFORMANCE_CLIPS.find((c) => c.id === playingId)
+      ?? (pendingShowClipRef.current?.id === playingId ? pendingShowClipRef.current : null)
+      ?? pendingShowClipRef.current;
+    if (motionClip) {
+      setPerfMotionProfile(resolvePerfMotion({
+        id: motionClip.id,
+        kind: motionClip.kind,
+        style: motionClip.style,
+      }));
+    }
+    triggerMove(pending.bodyMove);
+    holdMove(pending.holdMs);
+    pendingShowDanceRef.current = null;
+  }, []);
   useEffect(() => {
     const onClip = (e: Event) => {
       const detail = (e as CustomEvent<{ state?: string; id?: string }>).detail;
@@ -401,20 +418,7 @@ export default function ChatPanel({
         if (clip) setNowPlaying(clipLabel(clip, lang));
         setClipState('playing');
         // Start dance/sing only when the bed is actually audible.
-        const pending = pendingShowDanceRef.current;
-        if (shouldStartDanceOnAudioPlaying(pending, detail.id)) {
-          const motionClip = clip ?? pendingShowClipRef.current;
-          if (motionClip) {
-            setPerfMotionProfile(resolvePerfMotion({
-              id: motionClip.id,
-              kind: motionClip.kind,
-              style: motionClip.style,
-            }));
-          }
-          triggerMove(pending.bodyMove);
-          holdMove(pending.holdMs);
-          pendingShowDanceRef.current = null;
-        }
+        commitPendingPerfDance(detail.id);
       } else if (detail?.state === 'stopped') {
         setClipState(null);
         setNowPlaying(null);
@@ -429,7 +433,7 @@ export default function ChatPanel({
     };
     window.addEventListener('amoji:library-clip', onClip);
     return () => window.removeEventListener('amoji:library-clip', onClip);
-  }, [lang]);
+  }, [commitPendingPerfDance, lang]);
   useEffect(() => {
     const onHint = (e: Event) => setReplayHint(!!((e as CustomEvent<{ armed?: boolean }>).detail?.armed));
     window.addEventListener('amoji:voice-replay-hint', onHint);
@@ -833,6 +837,13 @@ export default function ChatPanel({
       }
       showTrack(playing, nextHold);
       afterStart?.();
+      // BufferSource / re-emit paths can dispatch `playing` before this
+      // callback returns — catch a missed listener and start body motion.
+      queueMicrotask(() => {
+        if (!isLibraryClipAudible()) return;
+        const active = activeLibraryClipId();
+        if (active) commitPendingPerfDance(active);
+      });
     });
     return clip;
   };
@@ -1209,7 +1220,7 @@ export default function ChatPanel({
 
   const send = async (override?: string) => {
     const text = (override ?? input).trim();
-    if (!text || busy) return;
+    if (!text || busyRef.current) return;
     const demoPhaseId = pendingDemoPhaseRef.current;
     pendingDemoPhaseRef.current = null;
     setInput('');

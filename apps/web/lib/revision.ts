@@ -401,7 +401,8 @@
 // r2026-11-16.180: mic voice queue; dance short-circuit; story frame; search-weather route.
 // r2026-11-16.181: poke pinned TTS voice; dance body survives bed swap; weather place ask copy.
 // r2026-11-17.182: topical news (AI etc.) — honest miss when feeds are junk-only; no recent/wiki substitute.
-export const APP_REVISION = 'r2026-11-17.182';
+// r2026-11-17.183: mic queue flush uses busyRef; dance body catch-up when bed audible event missed.
+export const APP_REVISION = 'r2026-11-17.183';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
