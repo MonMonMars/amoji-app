@@ -65,13 +65,26 @@ export function rollingCaptionFromText(text: string, maxClauses = 1): string {
   return parts.slice(-maxClauses).join(' ');
 }
 
+/** Clause body without trailing closers — matches speech-queue lead dedupe (#399). */
+function captionClauseBody(line: string): string {
+  return line.trim().replace(/[\s。.！!？?]+$/u, '');
+}
+
+function captionClausesMatch(a: string, b: string): boolean {
+  const ta = a.trim();
+  const tb = b.trim();
+  if (!ta || !tb) return false;
+  if (ta === tb) return true;
+  return captionClauseBody(ta) === captionClauseBody(tb);
+}
+
 /** Drop consecutive identical clauses (TTS lead→remainder can re-dispatch). */
 export function dedupeConsecutiveCaptions(lines: string[]): string[] {
   const out: string[] = [];
   for (const raw of lines) {
     const s = raw.trim();
     if (!s) continue;
-    if (out.length && out[out.length - 1] === s) continue;
+    if (out.length && captionClausesMatch(out[out.length - 1]!, s)) continue;
     out.push(s);
   }
   return out;
@@ -97,7 +110,7 @@ export function stepCaptionLadder(
   if (!n) return { ladder: [], current: '' };
   if (c && c !== n) {
     // Skip promoting a line that is already the settled tail (re-dispatch).
-    const promoted = (ladder.length && ladder[ladder.length - 1] === c)
+    const promoted = (ladder.length && captionClausesMatch(ladder[ladder.length - 1]!, c))
       ? ladder
       : [...ladder, c];
     return { ladder: promoted.slice(-Math.max(1, maxSettled)), current: n };
@@ -114,7 +127,7 @@ export function commitCaptionLines(ladder: string[], current: string): string[] 
   const c = current.trim();
   const base = dedupeConsecutiveCaptions(ladder);
   if (!c) return base;
-  if (base.length && base[base.length - 1] === c) return base;
+  if (base.length && captionClausesMatch(base[base.length - 1]!, c)) return base;
   return dedupeConsecutiveCaptions([...base, c]);
 }
 

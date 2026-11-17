@@ -403,7 +403,8 @@
 // r2026-11-17.182: topical news (AI etc.) — honest miss when feeds are junk-only; no recent/wiki substitute.
 // r2026-11-17.183: mic queue flush uses busyRef; dance body catch-up when bed audible event missed.
 // r2026-11-17.184: IP location prime after GPS deny; settings denied hint; news told TTL 24h + wider widen.
-export const APP_REVISION = 'r2026-11-17.184';
+// r2026-11-17.185: caption history dedupe — punct-only lead re-dispatch (。！？) not duplicated in sealed lines.
+export const APP_REVISION = 'r2026-11-17.185';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

@@ -48,7 +48,16 @@ describe('speech caption helpers', () => {
       'Hello.',
       'How are you?',
     ]);
+    expect(dedupeConsecutiveCaptions(['Hello there.', 'Hello there!', 'Next.'])).toEqual([
+      'Hello there.',
+      'Next.',
+    ]);
+    expect(dedupeConsecutiveCaptions(['你好。', '你好！', '第二句。'])).toEqual([
+      '你好。',
+      '第二句。',
+    ]);
     expect(commitCaptionLines(['Hello.', 'Hello.'], 'Hello.')).toEqual(['Hello.']);
+    expect(commitCaptionLines(['你好。'], '你好！')).toEqual(['你好。']);
     const bounce = stepCaptionLadder(['Hello.'], 'Hello.', 'How are you?');
     expect(bounce.ladder).toEqual(['Hello.']);
     expect(bounce.current).toBe('How are you?');
