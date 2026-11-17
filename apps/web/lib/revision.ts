@@ -404,7 +404,8 @@
 // r2026-11-17.183: mic queue flush uses busyRef; dance body catch-up when bed audible event missed.
 // r2026-11-17.184: IP location prime after GPS deny; settings denied hint; news told TTL 24h + wider widen.
 // r2026-11-17.185: caption history dedupe — punct-only lead re-dispatch (。！？) not duplicated in sealed lines.
-export const APP_REVISION = 'r2026-11-17.185';
+// r2026-11-17.186: calm idle torso pitch clamp after poke/chat — upright without arm-soften smear.
+export const APP_REVISION = 'r2026-11-17.186';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
