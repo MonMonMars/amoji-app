@@ -25,10 +25,11 @@ describe('voice restore — one tier speaks, never two', () => {
     expect(greet).toContain("onStart('edge')");
   });
 
-  it('the greeting still primes audio in the tap (synth speak is not used)', () => {
-    expect(greet).toContain('primeSynthInGesture(true)');
+  it('the greeting unlocks audio without synth warm-up (gTTS gestureTap only)', () => {
+    expect(greet).not.toContain('primeSynthInGesture(true)');
     expect(greet).toContain('unlockAudio(true)');
-    expect(greet).toContain('stopSpeaking()');
+    expect(greet).toContain('stopSpeakingForCardAudition()');
+    expect(greet).not.toContain('stopSpeaking()');
     expect(greet).toContain("runSynthAudition('greeting fallback')");
     expect(greet).toContain('greeting neural retry');
     expect(greet).toContain('greeting skip synth robot');

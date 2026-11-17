@@ -6,13 +6,15 @@ const web = join(__dirname, '..');
 const read = (rel: string) => readFileSync(join(web, rel), 'utf8');
 
 describe('EarlyAudioUnlock (iPhone pre-chat gesture)', () => {
-  it('primes full chat audio stack on first pointer/key/touch gesture', () => {
+  it('primes full chat audio stack on first click/key gesture (not pointerdown)', () => {
     const unlock = read('components/EarlyAudioUnlock.tsx');
     expect(unlock).toContain("import { primeAudioForChatEnter } from '../lib/voice'");
     expect(unlock).toContain('primeAudioForChatEnter()');
-    expect(unlock).toContain("'pointerdown'");
+    expect(unlock).toContain("'click'");
     expect(unlock).toContain("'keydown'");
-    expect(unlock).toContain("'touchstart'");
+    expect(unlock).not.toContain("'pointerdown'");
+    expect(unlock).not.toContain("'touchstart'");
+    expect(unlock).toContain('playVoiceGreeting');
     expect(unlock).toContain('{ once: true, passive: true }');
   });
 

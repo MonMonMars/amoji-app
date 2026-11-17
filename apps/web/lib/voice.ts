@@ -1393,6 +1393,24 @@ export function stopSpeaking(): void {
 }
 
 /**
+ * Select-board card greet / voice preview: interrupt chat-tier speech without
+ * `stopGtts()` — tearing down the HTMLAudio element in the same gesture as a new
+ * `speakGtts` left every card tap silent after EarlyAudioUnlock or a prior preview.
+ */
+export function stopSpeakingForCardAudition(): void {
+  lineQueue.interrupt();
+  cancelIdleWaiters();
+  stopThinkingSound();
+  stopVoiceClip();
+  stopOpenAi();
+  stopEdge();
+  haltSynthQueue();
+  endLipSync();
+  clearSpeechCaption();
+  sfxVoiceRelease();
+}
+
+/**
  * Loading filler — disabled (Pixel: um… voice did not match reply TTS).
  * Kept as a no-op so ChatPanel / face callers do not need a parallel cut.
  */
@@ -1984,18 +2002,15 @@ export function playVoiceGreeting(
 ): void {
   if (!selectAuditionAllowed()) return;
   unlockAudio(true);
-  stopSpeaking();
+  stopSpeakingForCardAudition();
   const auditionGen = ++cardAuditionGeneration;
   const stale = () => auditionGen !== cardAuditionGeneration;
   // DO NOT reintroduce audible insurance / gesture "robot" clips for card
   // greets — owner regression many times (robot+female double, then robot-only).
   // Prefer silence until real gTTS/Edge TTS over any local hello/hihi insurance.
-  // Playback session only — do NOT primeDefaultSpeakerBeforeSynth here: its
-  // silent <audio> play races the gesture-bound gTTS element and left every
-  // lang/gender mute except the first lucky tap (often Yue ♀).
+  // Playback session only — do NOT primeDefaultSpeakerBeforeSynth or
+  // primeSynthInGesture here: silent warm-up plays race gesture-bound gTTS.
   ensureCompanionPlaybackRoute();
-  // force: stopSpeaking cancelled any window-level prime and cleared the latch.
-  primeSynthInGesture(true);
   // Rotate a short phrase bank so re-taps do not always say the same Hello.
   const text = line?.trim() ? line.trim() : nextCardGreetPhrase(lang);
   // Companion gender is the fallback; a tapped male/female button wins so
@@ -2380,13 +2395,12 @@ export function playLaughBurst(characterId: string, lang: Lang): void {
 export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void> {
   if (!selectAuditionAllowed()) return Promise.resolve();
   unlockAudio(true);
-  stopSpeaking();
+  stopSpeakingForCardAudition();
   const auditionGen = ++cardAuditionGeneration;
   const stale = () => auditionGen !== cardAuditionGeneration;
   // DO NOT reintroduce audible insurance / gesture "robot" clips for voice
   // previews — same owner regression as playVoiceGreeting (robot+neural double).
   ensureCompanionPlaybackRoute();
-  primeSynthInGesture(true);
   // Delivery gender from the tapped button (male pin → male pace/pitch).
   const tl = tlForChoice(locale, choiceId);
   const previewGender = deliveryGenderForChoice(locale, choiceId, 'female');
