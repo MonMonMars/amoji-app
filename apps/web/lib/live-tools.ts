@@ -832,9 +832,8 @@ export function selectNewsLead<T extends { title: string }>(
   const told = new Set(readToldEntries(storage, now).map((r) => r.t));
   const pick = headlines.find((h) => {
     const key = normalizeNewsTitle(h.title);
-    const extra = 'summary' in h && typeof (h as Headline).summary === 'string'
-      ? (h as Headline).summary
-      : '';
+    const sum = (h as { summary?: string }).summary;
+    const extra = typeof sum === 'string' ? sum : '';
     return key.length > 0 && !told.has(key) && !isJunkNewsHeadline(h.title, extra ?? '');
   });
   if (!pick) return undefined;
