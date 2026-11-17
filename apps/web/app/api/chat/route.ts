@@ -39,7 +39,7 @@ export async function POST(req: Request) {
   // geolocation). Direct API callers, and a browser fetch that came back
   // empty, get the same step here from the server.
   let worldPrompt = typeof world === 'string' ? world.trim().slice(0, 1200) : '';
-  let spoken = typeof worldSpoken === 'string' ? worldSpoken.trim().slice(0, 600) : '';
+  let spoken = typeof worldSpoken === 'string' ? worldSpoken.trim().slice(0, 1200) : '';
   if (!worldPrompt) {
     const priorUser = [...safeHistory].reverse().find((m) => m.role === 'user')?.content;
     try {

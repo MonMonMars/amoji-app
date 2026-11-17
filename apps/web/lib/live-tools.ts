@@ -277,7 +277,7 @@ function cleanQuery(raw: string): string | undefined {
 }
 
 const WEATHER_RE = /\b(weather|forecast|temperature|degrees?|wind|breez(?:y|e)?|humid(?:ity)?|raining|rain|snow|umbrella|outlook)\b|天氣|天气|落雨|下雨|幾多度|多少度|氣溫|气温|預報|预报|熱唔熱|热不热|冷唔冷|冷不冷|帶遮|带伞|帶傘|風速|风力|風大|风大|濕度|湿度|未來幾日|未来几天|天気|気温|予報|雨降|傘|風|湿度/i;
-const NEWS_RE = /\b(news|headlines|what's happening|what is happening|anything going on)\b|新聞|新闻|頭條|头条|有咩事|有什么新闻|有什麼新聞|最近發生|最近发生|ニュース|見出し|讀新聞|读新闻/i;
+const NEWS_RE = /\b(news|headlines|what's happening|what is happening|anything going on)\b|新聞|新闻|頭條|头条|有咩事|有咩新聞|有咩新闻|有什么新闻|有什麼新聞|今日.*新聞|今天.*新闻|最近發生|最近发生|ニュース|見出し|讀新聞|读新闻|講新聞|讲新闻|讀下新聞|读下新闻/i;
 // Near-me / here only. Bare "local" / 「本地」 / 「地元」 match demo lines like
 // "any light local news?" and wrongly force a city ask before any headline.
 const LOCAL_NEWS_RE = /\b(?:near me|around here|in my (?:area|city))\b|附近|我呢度|我这边|この辺/i;
@@ -2162,70 +2162,107 @@ function isNewsBeatChrome(text: string): boolean {
   return false;
 }
 
-function newsBodyBeats(lead: Headline): string[] {
+/** True when the spoken line would be headline-only — caller should enrich or widen. */
+export function newsTellNeedsEnrichment(lead: Headline): boolean {
+  return newsSpokenBodyBeats(lead).length === 0;
+}
+
+/** RSS/Wikipedia body beats for TTS — headline context excluded. */
+export function newsSpokenBodyBeats(lead: Headline, lang?: Lang4): string[] {
   const titleKey = normalizeNewsTitle(lead.title);
   const summary = lead.summary?.trim()
-    ? clip(spokenHeadline(scrubNewsFeedBody(lead.summary, lead.title)), 280)
+    ? clip(spokenHeadline(scrubNewsFeedBody(lead.summary, lead.title), lead.source ?? '', lang), 520)
     : '';
   const details = (lead.details?.length ? lead.details : newsDetailsFromText(lead.summary ?? '', lead.title))
-    .map((d) => clip(spokenHeadline(d), 200))
-    .filter((d) => d && !isNewsBeatChrome(d))
-    .slice(0, 4);
+    .map((d) => clip(spokenHeadline(d, lead.source ?? '', lang), 360))
+    .filter((d) => d && !isNewsBeatChrome(d));
   const beats: string[] = [];
-  const summaryKey = summary ? normalizeNewsTitle(summary) : '';
-  if (
-    summary
-    && summaryKey !== titleKey
-    && !titleKey.includes(summaryKey)
-    && !summaryKey.includes(titleKey)
-    && !isNewsBeatChrome(summary)
-  ) {
-    beats.push(summary);
+  const pushBeat = (text: string) => {
+    const t = text.trim();
+    if (!t || isNewsBeatChrome(t)) return;
+    const key = normalizeNewsTitle(t);
+    if (beats.some((b) => normalizeNewsTitle(b) === key)) return;
+    if (key === titleKey && t.length <= lead.title.length + 14) return;
+    beats.push(t);
+  };
+  if (summary) {
+    const summaryKey = normalizeNewsTitle(summary);
+    const nearDup = Boolean(
+      titleKey
+      && summaryKey
+      && (summaryKey === titleKey
+        || (titleKey.includes(summaryKey) && summary.length <= lead.title.length + 16)
+        || (summaryKey.includes(titleKey) && summary.length <= lead.title.length + 20)),
+    );
+    if (!nearDup) {
+      pushBeat(summary);
+    } else {
+      for (const d of newsDetailsFromText(summary, lead.title)) pushBeat(d);
+    }
   }
   for (const d of details) {
     const dKey = normalizeNewsTitle(d);
-    if (beats.some((b) => normalizeNewsTitle(b) === dKey)) continue;
-    if (dKey === titleKey || titleKey.includes(dKey) || dKey.includes(titleKey)) continue;
-    if (isNewsBeatChrome(d)) continue;
-    beats.push(d);
-    if (beats.length >= 4) break;
+    if (dKey === titleKey || (titleKey && titleKey.includes(dKey) && d.length <= lead.title.length + 12)) continue;
+    pushBeat(d);
+    if (beats.length >= 5) break;
   }
-  return beats;
+  if (!beats.length && summary.length >= 32 && normalizeNewsTitle(summary) !== titleKey) {
+    pushBeat(summary);
+  }
+  return beats.slice(0, 5);
+}
+
+function newsBodyBeats(lead: Headline): string[] {
+  return newsSpokenBodyBeats(lead);
+}
+
+function joinSpeechBeats(lang: Lang4, beats: string[]): string {
+  if (!beats.length) return '';
+  if (lang === 'en' || lang === 'ja') {
+    return beats
+      .map((b) => (/[.!?]$/.test(b.trim()) ? b.trim() : `${b.trim()}.`))
+      .join(' ');
+  }
+  return beats
+    .map((b) => (/[。！？]$/.test(b.trim()) ? b.trim() : `${b.trim()}。`))
+    .join('');
+}
+
+function buildNewsSpokenLine(lang: Lang4, intro: string, lead: Headline): string {
+  const t = clip(spokenHeadline(lead.title, lead.source ?? '', lang), 180);
+  if (!t) return sayMiss(lang, 'news');
+  const body = joinSpeechBeats(lang, newsSpokenBodyBeats(lead, lang));
+  if (lang === 'en' || lang === 'ja') {
+    return `${intro} ${t}.${body ? ` ${body}` : ''}`.replace(/\s+/g, ' ').trim();
+  }
+  return `${intro}${t}。${body}`.replace(/\s+/g, ' ').trim();
 }
 
 export function sayNews(lang: Lang4, label: string, lead: Headline | string): string {
   const story = typeof lead === 'string' ? { title: lead, source: '' } : lead;
-  const t = clip(spokenHeadline(story.title, story.source ?? '', lang), 160);
-  if (!t) return sayMiss(lang, 'news');
-  const extra = newsBodyBeats(story);
-  const more = extra.length
-    ? (lang === 'en' ? ` ${extra.join(' ')}`
-      : lang === 'ja' ? ` ${extra.join(' ')}`
-      : ` ${extra.join('')}`)
-    : '';
   const today = isNewsPublishedToday(story.publishedAt);
   const place = newsLocalPlaceLabel(lang, label);
   if (lang === 'en') {
     const where = place ? `Around ${place}` : 'Around here';
     const frame = today ? `${where}, a fun local story from today` : `${where}, a fun local story`;
-    return `${frame} — ${t}.${more}`.replace(/\s+/g, ' ').trim();
+    return buildNewsSpokenLine(lang, `${frame} —`, story);
   }
   if (lang === 'zh') {
     const head = place
       ? (today ? `${place}附近有条今日本地新闻：` : `${place}附近有条轻松本地新闻：`)
       : (today ? '附近有条今日本地新闻：' : '附近有条轻松本地新闻：');
-    return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
+    return buildNewsSpokenLine(lang, head, story);
   }
   if (lang === 'ja') {
     const head = place
       ? (today ? `${place}の近くの今日のニュース、` : `${place}の近くの軽めのニュース、`)
       : (today ? '今日の近くのニュース、' : '近くの軽めのニュース、');
-    return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
+    return buildNewsSpokenLine(lang, head, story);
   }
   const head = place
     ? (today ? `${place}附近有條今日本地新聞：` : `${place}附近有條輕鬆本地新聞：`)
     : (today ? '附近有條今日本地新聞：' : '附近有條輕鬆本地新聞：');
-  return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
+  return buildNewsSpokenLine(lang, head, story);
 }
 
 function topicalSpeechLabel(lang: Lang4, query: string): string {
@@ -2242,57 +2279,41 @@ function topicalSpeechLabel(lang: Lang4, query: string): string {
 /** Topic search (AI news, news about X) — not “local news near you”. */
 export function sayTopicalNews(lang: Lang4, query: string, lead: Headline | string): string {
   const story = typeof lead === 'string' ? { title: lead, source: '' } : lead;
-  const t = clip(spokenHeadline(story.title, story.source ?? '', lang), 160);
-  if (!t) return sayMiss(lang, 'news');
   const topic = topicalSpeechLabel(lang, query);
   const today = isNewsPublishedToday(story.publishedAt);
-  const extra = newsBodyBeats(story);
-  const more = extra.length
-    ? (lang === 'en' ? ` ${extra.join(' ')}`
-      : lang === 'ja' ? ` ${extra.join(' ')}`
-      : ` ${extra.join('')}`)
-    : '';
   if (lang === 'en') {
     const head = today ? `From today's news about ${topic}:` : `From the news about ${topic}:`;
-    return `${head} ${t}.${more}`.replace(/\s+/g, ' ').trim();
+    return buildNewsSpokenLine(lang, head, story);
   }
   if (lang === 'zh') {
     const head = today ? `关于${topic}的今日新闻：` : `关于${topic}的最新新闻：`;
-    return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
+    return buildNewsSpokenLine(lang, head, story);
   }
   if (lang === 'ja') {
     const head = today ? `今日の${topic}ニュース、` : `${topic}に関する最新ニュース、`;
-    return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
+    return buildNewsSpokenLine(lang, head, story);
   }
   const head = today ? `今日關於${topic}嘅新聞：` : `關於${topic}嘅最新新聞：`;
-  return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
+  return buildNewsSpokenLine(lang, head, story);
 }
 
 export function sayRecent(lang: Lang4, lead: Headline | string): string {
   const story = typeof lead === 'string' ? { title: lead, source: '' } : lead;
-  const t = clip(spokenHeadline(story.title, story.source ?? '', lang), 160);
-  if (!t) return sayMiss(lang, 'news');
   const today = isNewsPublishedToday(story.publishedAt);
-  const extra = newsBodyBeats(story);
-  const more = extra.length
-    ? (lang === 'en' ? ` ${extra.join(' ')}`
-      : lang === 'ja' ? ` ${extra.join(' ')}`
-      : ` ${extra.join('')}`)
-    : '';
   if (lang === 'en') {
     const head = today ? "From today's news:" : 'From the news:';
-    return `${head} ${t}.${more}`.replace(/\s+/g, ' ').trim();
+    return buildNewsSpokenLine(lang, head, story);
   }
   if (lang === 'zh') {
     const head = today ? '今日有条新闻：' : '最近有条新闻：';
-    return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
+    return buildNewsSpokenLine(lang, head, story);
   }
   if (lang === 'ja') {
     const head = today ? '今日のニュースは、' : '最近のニュースは、';
-    return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
+    return buildNewsSpokenLine(lang, head, story);
   }
   const head = today ? '今日有條新聞：' : '最近有條新聞：';
-  return `${head}${t}。${more}`.replace(/\s+/g, ' ').trim();
+  return buildNewsSpokenLine(lang, head, story);
 }
 
 function sayWhere(lang: Lang4, label: string, coarse: boolean): string {
@@ -2487,7 +2508,7 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
       // Enrich thin titles with a Wikipedia lede whenever the feed had no
       // description — including plain "any news?" light asks (#421/#428 residual:
       // title-only tells felt short / same-old).
-      if (!lead.summary?.trim()) {
+      if (!lead.summary?.trim() || newsTellNeedsEnrichment(lead)) {
         const topic = lead.title.replace(/\s+[-–|]\s+.*$/, '').trim() || lead.title;
         const wiki = await searchWikipedia(fetchImpl, topic, lang, cache);
         if (wiki[0]) {

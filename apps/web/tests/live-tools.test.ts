@@ -873,6 +873,27 @@ describe('local light news and reply guard', () => {
     expect(newsLocalPlaceLabel('en', 'Hong Kong')).toBe('Hong Kong');
   });
 
+  it('sayRecent yue long-read includes summary beats beyond the headline', () => {
+    const lead = {
+      title: '社區花市週末開張',
+      source: 'HK01',
+      summary: '主辦方表示今個周末會有超過八十個攤位，售賣本地鮮花同手作。第一日會安排爵士樂隊表演，亦會有免費插花工作坊俾市民參加。',
+      details: ['預計每日有過千人次入場。入口設在維園正門。'],
+    };
+    const line = sayRecent('yue', lead);
+    expect(line).toMatch(/^最近有條新聞：/);
+    expect(line).toContain('社區花市週末開張');
+    expect(line).toMatch(/八十個攤位|插花工作坊/);
+    expect(line.length).toBeGreaterThan(80);
+  });
+
+  it('planTools treats 今日有咩新聞 as recent world news', () => {
+    const plan = planTools('今日有咩新聞？');
+    expect(plan.news).toBe(true);
+    expect(plan.recent).toBe(true);
+    expect(plan.newsQuery).toBeUndefined();
+  });
+
   it('sayRecent uses 今日 when the story published today (HK calendar)', () => {
     const now = Date.parse('2026-11-17T14:00:00+08:00');
     const todayLead = { title: '輕鬆社區活動', source: 'HK01', publishedAt: now };
