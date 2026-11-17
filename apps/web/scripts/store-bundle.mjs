@@ -215,29 +215,37 @@ function copyDevPages(from, to) {
   return copied;
 }
 
+/** Rewrite repo-local preview paths for GitHub Pages (`out/docs/` → `out/` root). */
+function pagesDocsHtml(srcPath, destPath) {
+  let text = fs.readFileSync(srcPath, "utf8");
+  text = text.replaceAll("amoji-public-serve/", "../");
+  fs.writeFileSync(destPath, text);
+}
+
 /**
- * Copy owner picker + status HTML into `out/docs/` and symlink
- * `amoji-public-serve` → `..` so the same `data-play` paths work on Pages
- * (static export already copies `public/` to `out/` root).
+ * Copy owner picker + status HTML into `out/docs/`.
+ *
+ * Repo `docs/` keeps `amoji-public-serve` → `apps/web/public` for local
+ * `python3 -m http.server`. Pages must not ship that symlink: upload-pages-artifact
+ * follows it to `out/` and balloons the artifact (and GH Pages 404s until deploy
+ * finishes). Rewriting to `../` matches the static export layout.
  */
 function copyDocsPages(docsDir, outDir) {
   const target = path.join(outDir, "docs");
   fs.mkdirSync(target, { recursive: true });
+  const staleLink = path.join(target, "amoji-public-serve");
+  try {
+    if (fs.lstatSync(staleLink).isSymbolicLink()) fs.unlinkSync(staleLink);
+  } catch {
+    /* absent */
+  }
   const copied = [];
   for (const name of DOCS_PAGES) {
     const src = path.join(docsDir, name);
     if (!fs.existsSync(src)) continue;
-    fs.copyFileSync(src, path.join(target, name));
+    pagesDocsHtml(src, path.join(target, name));
     copied.push(name);
   }
-  const link = path.join(target, "amoji-public-serve");
-  try {
-    fs.lstatSync(link);
-    fs.rmSync(link, { recursive: true, force: true });
-  } catch {
-    /* absent */
-  }
-  fs.symlinkSync("..", link);
   return copied;
 }
 
@@ -336,7 +344,7 @@ function postbuild() {
     console.log(`[store-bundle] web build: restored ${copied.length} QA page(s) into out/`);
     const docsCopied = copyDocsPages(DOCS_DIR, OUT_DIR);
     console.log(
-      `[store-bundle] web build: copied ${docsCopied.length} doc page(s) into out/docs/ (+ amoji-public-serve → ..)`
+      `[store-bundle] web build: copied ${docsCopied.length} doc page(s) into out/docs/ (amoji-public-serve/ → ../)`
     );
   }
   fs.mkdirSync(path.dirname(BUILD_MODE_FILE), { recursive: true });
