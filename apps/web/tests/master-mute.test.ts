@@ -136,7 +136,8 @@ describe('master-mute', () => {
     const sheet = await import('node:fs').then((fs) =>
       fs.readFileSync(new URL('../components/SettingsSheet.tsx', import.meta.url), 'utf8'),
     );
-    expect(sheet).toContain('useState<boolean | null>(null)');
+    expect(sheet).toContain('useSyncExternalStore');
+    expect(sheet).toContain('subscribeMasterMute');
     expect(sheet).toContain('on={masterMuted === true}');
     expect(sheet).toContain('disabled={masterMuted === null}');
     expect(sheet).toContain("disabled={voiceTesting || masterMuted === true}");

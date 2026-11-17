@@ -42,4 +42,17 @@ describe('react-compiler eslint slice (r188)', () => {
     expect(src).toContain('return active ? reached : false');
     expect(src).not.toMatch(/if \(!active\) \{\s*setReached\(false\)/);
   });
+
+  it('SettingsSheet master mute via useSyncExternalStore (no setState in effect)', () => {
+    const src = read('components/SettingsSheet.tsx');
+    expect(src).toContain('useSyncExternalStore');
+    expect(src).toContain('subscribeMasterMute');
+    expect(src).not.toMatch(/useEffect\(\(\) => \{\s*setMasterMutedState/);
+  });
+
+  it('SettingsSheet refresh-on-open via openSnap render sync (no setState in effect)', () => {
+    const src = read('components/SettingsSheet.tsx');
+    expect(src).toContain('openSnap');
+    expect(src).not.toMatch(/useEffect\(\(\) => \{\s*if \(open\)/);
+  });
 });

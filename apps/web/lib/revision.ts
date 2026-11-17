@@ -409,7 +409,8 @@
 // r2026-11-17.188: React Compiler eslint slice — mute/legal/soft-land useSyncExternalStore; scroll-unlock + portrait still reset without setState-in-effect.
 // r2026-11-17.189: RequireEntryGate uses subscribeEntryGate + useSyncExternalStore (no setStatus in effect); docs tip post-#482.
 // r2026-11-17.190: PreChatAudioGate lang/mic from useState initializers; stash mute in effect only; status docs #483 on tip.
-export const APP_REVISION = 'r2026-11-17.190';
+// r2026-11-17.191: SettingsSheet master mute useSyncExternalStore + openSnap refresh (React Compiler eslint).
+export const APP_REVISION = 'r2026-11-17.191';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
