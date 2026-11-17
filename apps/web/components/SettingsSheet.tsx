@@ -23,7 +23,7 @@
 // "Advanced" row (components/BrainAdvanced): the app is complete on the free
 // lane, and a non-technical user never meets a key field. See lib/brain.ts for
 // why the provider list is Hong Kong-specific.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   characterById, backgroundById,
@@ -159,11 +159,11 @@ export default function SettingsSheet({
   const router = useRouter();
   const [voiceOn, setVoiceOnState] = useState(voiceEnabled());
   // null until localStorage sync -- same class of flash as MuteButton.
-  const [masterMuted, setMasterMutedState] = useState<boolean | null>(null);
-  useEffect(() => {
-    setMasterMutedState(isMasterMuted());
-    return subscribeMasterMute(setMasterMutedState);
-  }, []);
+  const masterMuted = useSyncExternalStore(
+    (onStoreChange) => subscribeMasterMute(() => onStoreChange()),
+    isMasterMuted,
+    () => null as boolean | null,
+  );
   const [neuralOn, setNeuralOnState] = useState(neuralEnabled());
   const [voiceBlocked, setVoiceBlocked] = useState(false);
   // r99: per-tier self-test result — 'edge-tts ✓ · google-tts ✗ · browser ✓'
@@ -218,6 +218,28 @@ export default function SettingsSheet({
   // aria-modal="true": Tab must stay inside the sheet while it is open.
   const sheetRef = useFocusTrap<HTMLDivElement>(open);
 
+  const [openSnap, setOpenSnap] = useState(open);
+  if (open !== openSnap) {
+    setOpenSnap(open);
+    if (open) {
+      setMem(loadMemory());
+      setCopied(false);
+      setProxyDraft(getTtsProxy() ?? '');
+      setProxySaved(false);
+      setProxyTestResult(null);
+      setProxyTesting(false);
+      setOaKeyDraft(openAiKey());
+      setOaEpDraft(openAiEndpoint());
+      setOaOn(openAiEnabled());
+      setOaSaved(false);
+      setOaTestResult(null);
+      setOaTesting(false);
+      setSupportNote(null);
+      setSupportBusy(false);
+      void syncEntitlementFromApi();
+    }
+  }
+
   // Dismissible sheet: focus Close on open, restore prior focus on close,
   // Escape closes (unlike LegalGate, which must swallow Escape).
   useEffect(() => {
@@ -244,25 +266,6 @@ export default function SettingsSheet({
     window.addEventListener('amoji:voice-blocked', onBlocked);
     return () => window.removeEventListener('amoji:voice-blocked', onBlocked);
   }, []);
-  useEffect(() => {
-    if (open) {
-      setMem(loadMemory());
-      setCopied(false);
-      setProxyDraft(getTtsProxy() ?? '');
-      setProxySaved(false);
-      setProxyTestResult(null);
-      setProxyTesting(false);
-      setOaKeyDraft(openAiKey());
-      setOaEpDraft(openAiEndpoint());
-      setOaOn(openAiEnabled());
-      setOaSaved(false);
-      setOaTestResult(null);
-      setOaTesting(false);
-      setSupportNote(null);
-      setSupportBusy(false);
-      void syncEntitlementFromApi();
-    }
-  }, [open]);
   if (!open) return null;
   const lang = prefs.lang;
   // r112: the whole sheet is themed by the ACTIVE companion's accent — the
@@ -622,7 +625,7 @@ export default function SettingsSheet({
                 on={masterMuted === true}
                 disabled={masterMuted === null}
                 accent={accent}
-                onClick={() => { const next = masterMuted !== true; setMasterMutedState(next); setMasterMuted(next); }}
+                onClick={() => setMasterMuted(masterMuted !== true)}
               />
             </div>
 <div className={row}>
