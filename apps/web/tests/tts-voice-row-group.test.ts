@@ -16,4 +16,10 @@ describe("TtsVoiceRow group parity with VoicePicker", () => {
     expect(row).toContain("aria-pressed={showAll}");
     expect(row).toContain("aria-label={showAll ? t(lang, 'voiceThisLanguage') : t(lang, 'voiceShowAll')}");
   });
+
+  it("highlights the active pin per locale in show-all (not only the current lang)", () => {
+    expect(row).toContain("activeIdFor");
+    expect(row).toContain("activeIdFor(button.locale)");
+    expect(row).not.toMatch(/button\.locale === lang && button\.id === activeId/);
+  });
 });

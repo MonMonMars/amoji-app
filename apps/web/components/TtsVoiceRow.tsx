@@ -47,11 +47,9 @@ export default function TtsVoiceRow({
   useEffect(() => { setShowDev(isDevMode()); }, []);
 
   const buttons = showAll ? selectTtsButtons() : selectTtsButtons(lang);
-  const pinnedId = voicePickFor(lang);
-  // Prefer companion gender when nothing is pinned — male chars must not
-  // collapse to the first (female) button, which felt like "only Yue ♀ works".
-  const activeId = pinnedId
-    ?? activeVoiceChoice(lang, companionGender).id;
+  const activeIdFor = (locale: Lang) =>
+    voicePickFor(locale) ?? activeVoiceChoice(locale, companionGender).id;
+  const activeId = activeIdFor(lang);
   const single = !showAll && isSingleVoiceLocale(lang);
   const canAdd = voiceAddRemaining(lang) > 0;
 
@@ -109,7 +107,7 @@ export default function TtsVoiceRow({
       <div className="w-full" data-testid="tts-voice-grid">
         <div className="grid w-full grid-cols-2 gap-1 min-[420px]:grid-cols-3 sm:grid-cols-4">
           {buttons.map((button) => {
-            const selected = button.locale === lang && button.id === activeId;
+            const selected = button.id === activeIdFor(button.locale);
             const mark = devMark('V', button.n);
             const genderLabel = button.deliveryGender === 'male'
               ? t(lang, 'voiceFreeMale')
