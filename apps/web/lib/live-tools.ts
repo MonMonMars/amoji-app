@@ -832,7 +832,9 @@ export function selectNewsLead<T extends { title: string }>(
   const told = new Set(readToldEntries(storage, now).map((r) => r.t));
   const pick = headlines.find((h) => {
     const key = normalizeNewsTitle(h.title);
-    return key.length > 0 && !told.has(key);
+    const sum = (h as { summary?: string }).summary;
+    const extra = typeof sum === 'string' ? sum : '';
+    return key.length > 0 && !told.has(key) && !isJunkNewsHeadline(h.title, extra ?? '');
   });
   if (!pick) return undefined;
   const next = [
@@ -854,6 +856,34 @@ const NEWS_SOURCE_ONLY = /^(?:明報|明报|星島|星岛|頭條|头条|東網|�
 const HK_NEWS_VIDEO_PREFIX = /^(?:有片|快訊|圖集|影片|視頻|视频)[丨｜|·]\s*/u;
 const HK_NEWS_TRAILING_SOURCE = /\s+(?:橙新聞|on\.cc|東網|东网|星島|星岛|明報|明报|頭條|头条|香港01|HK01|巴士的報|信報|大公報|文匯報|文汇报|商業電台|商业电台|Yahoo(?:\s*News)?|MSN(?:\s*News)?|SBS(?:\s*News)?|ABC(?:\s*News)?|BBC(?:\s*News)?)(?:\s*新聞)?\s*$/iu;
 const NEWS_SECTION_CHROME = /^(?:調查|调查|专题|專題|独家|獨家|快讯|快訊|要聞|要闻)$/iu;
+
+/** ISIN / fund ticker tokens in Google News “AI” search results — not news stories. */
+const NEWS_FUND_ISIN_RE = /\b0P000[A-Z0-9]{4,}\b|\bLU\d{6}[A-Z0-9]{4,}\b/i;
+const NEWS_FUND_LISTING_RE =
+  /\b(?:class\s+[a-z]{1,3}|share\s+class|ucits|isin)\b.*\b(?:EUR|USD|GBP|CHF)\b|\b(?:EUR|USD|GBP)\s+0P000/i;
+const NEWS_TICKER_PRICE_RE =
+  /(?:^|\s)(?:[A-Z]{1,6}\s+)?股價(?:\s|$)|(?:^|\s)[A-Z]\s+股價\s*$|\bstock\s+price\b|\bshare\s+price\b/i;
+
+/**
+ * Finance catalog lines (mutual funds, ISINs, bare tickers) masquerading as
+ * “artificial intelligence” headlines in Google News search.
+ */
+export function isJunkNewsHeadline(title: string, extra = ''): boolean {
+  const t = String(title || '').trim();
+  if (!t) return true;
+  const blob = `${t}\n${extra}`;
+  if (NEWS_FUND_ISIN_RE.test(blob)) return true;
+  if (NEWS_FUND_LISTING_RE.test(blob)) return true;
+  if (/\bEchiquier\b/i.test(blob)) return true;
+  if (/\bArtificial Intelligence\s+[A-Z]\b/i.test(t) && /\b(?:EUR|USD|GBP|CHF)\b/.test(t)) return true;
+  if (NEWS_TICKER_PRICE_RE.test(t) && t.length < 56) return true;
+  if (/^(?:[A-Z]\s+)?股價\.?$/u.test(t)) return true;
+  if (
+    /\b(?:mutual fund|exchange[-\s]?traded|etf)\b/i.test(blob)
+    && !/\b(?:launch|ban|rule|law|study|report|investigate|regulat)\b/i.test(blob)
+  ) return true;
+  return false;
+}
 
 /** Strip video tags, pipe separators, trailing publisher names — before TTS. */
 export function scrubNewsTitleForSpeech(title: string, source = ''): string {
@@ -893,6 +923,7 @@ export function scrubNewsFeedBody(text: string, title = ''): string {
     if (/^(?:橙新聞|on\.cc|RTHK|SCMP|SBS)$/i.test(bare)) continue;
     if (/^⚑\s*舉報|^舉報$|^举报$/.test(bare)) continue;
     if (/^[\d\s]+$/.test(bare)) continue;
+    if (isJunkNewsHeadline(bare)) continue;
     const compact = spokenHeadline(bare);
     if (!compact) continue;
     const key = normalizeNewsTitle(compact);
@@ -1139,13 +1170,14 @@ export function parseRssItems(xml: string, limit = 12): Headline[] {
     const titleRaw = (cut > 0 ? raw.slice(0, cut) : raw).trim();
     const source = cut > 0 ? raw.slice(cut + 3).trim() : '';
     const title = spokenHeadline(scrubNewsTitleForSpeech(titleRaw, source));
+    if (isJunkNewsHeadline(titleRaw, source)) continue;
     const descRaw = item.match(/<(?:description|content:encoded|summary)>([\s\S]*?)<\/(?:description|content:encoded|summary)>/i)?.[1];
     const summary = descRaw
       ? clip(spokenHeadline(scrubNewsFeedBody(decodeXml(descRaw), title)), 420)
       : '';
     const details = summary ? newsDetailsFromText(summary, title) : [];
     const publishedAt = rssItemPublishedAt(item);
-    if (title) {
+    if (title && !isJunkNewsHeadline(title, summary)) {
       const row: Headline = { title, source };
       if (summary) row.summary = summary;
       if (details.length) row.details = details;
@@ -1190,6 +1222,7 @@ export function pickLightHeadlines(items: Array<{ title: string; source: string 
   const region = place?.region.trim().toLowerCase() ?? '';
   const ranked = items.map((h) => {
     if (isHeavyHeadline(h.title)) return { h, score: -1 };
+    if (isJunkNewsHeadline(h.title)) return { h, score: -1 };
     const t = h.title.toLowerCase();
     const local = city && t.includes(city) ? 5 : region.length > 3 && t.includes(region) ? 2 : 0;
     if (!local) return { h, score: -1 };
@@ -1207,6 +1240,7 @@ export function pickLightHeadlines(items: Array<{ title: string; source: string 
 /** t780: default ranking — prefer light topics; drop war/politics/tragedy/grim. */
 export function isHeavyHeadline(title: string, extra = ''): boolean {
   const blob = `${title}\n${extra}`;
+  if (isJunkNewsHeadline(title, extra)) return true;
   return HEAVY_RE.test(blob) || GRIM_RE.test(blob) || UNLIGHT_NEWS_RE.test(blob);
 }
 
@@ -1219,8 +1253,11 @@ export function pickDefaultHeadlines(
   const preferLight = opts?.preferLight !== false;
   const ranked = pool.map((h) => {
     if (!allowHeavy && isHeavyHeadline(h.title)) return { h, score: -1 };
+    if (isJunkNewsHeadline(h.title)) return { h, score: -1 };
     if (!allowHeavy && DULL_RE.test(h.title) && !LIGHT_RE.test(h.title)) return { h, score: -1 };
     const light = LIGHT_RE.test(h.title);
+    const financeNoise = /\b(?:EUR|USD|GBP)\b/.test(h.title) && NEWS_FUND_ISIN_RE.test(h.title);
+    if (financeNoise) return { h, score: -1 };
     return { h, score: light ? 3 : 1 };
   }).filter((row) => row.score > 0);
   ranked.sort((a, b) => b.score - a.score);
@@ -1597,6 +1634,7 @@ async function fetchNews(
     const titleRaw = (cut > 0 ? raw.slice(0, cut) : raw).trim();
     const source = cut > 0 ? raw.slice(cut + 3).trim() : str(item.author);
     const title = spokenHeadline(titleRaw, source);
+    if (isJunkNewsHeadline(titleRaw, source)) continue;
     const summary = str(item.description) || str(item.content) || str(item.contentSnippet);
     const publishedAt = parseNewsPublishedAt(str(item.pubDate) || str(item.pubdate) || str(item.date));
     out.push(withNewsBody(title, source, summary || undefined, publishedAt));
@@ -1754,6 +1792,7 @@ async function fetchRssFeedHeadlines(
   for (const item of items) {
     const titleRaw = str(item.title);
     const source = str(item.author) || '';
+    if (isJunkNewsHeadline(titleRaw, source)) continue;
     const raw = spokenHeadline(titleRaw, source);
     if (!raw) continue;
     const summary = str(item.description) || str(item.content) || str(item.contentSnippet);
@@ -1861,10 +1900,14 @@ async function fetchAreaNews(
       opts?.widen ? NEWS_POOL_WIDE : NEWS_POOL_MAX,
     );
     const bits = topical.toLowerCase().split(/[^a-z0-9\u3400-\u9fff]+/).filter((w) => w.length > 2);
-    const topicalPortal = portal.filter((h) => bits.some((t) => h.title.toLowerCase().includes(t)));
+    const topicalPortal = portal
+      .filter((h) => !isJunkNewsHeadline(h.title, h.summary ?? ''))
+      .filter((h) => bits.some((t) => h.title.toLowerCase().includes(t)));
     if (topicalPortal.length) {
+      const ranked = pickDefaultHeadlines(topicalPortal, { allowHeavy: false, preferLight: true, lang });
       return {
-        headlines: topicalPortal.slice(0, opts?.widen ? NEWS_POOL_WIDE : NEWS_POOL_MAX),
+        headlines: (ranked.length ? ranked : topicalPortal)
+          .slice(0, opts?.widen ? NEWS_POOL_WIDE : NEWS_POOL_MAX),
         recent: false,
       };
     }
@@ -2098,6 +2141,7 @@ export function newsLocalPlaceLabel(lang: Lang4, label: string): string | null {
 function isNewsBeatChrome(text: string): boolean {
   const t = text.trim();
   if (!t || NEWS_SECTION_CHROME.test(t)) return true;
+  if (isJunkNewsHeadline(t)) return true;
   if (t.length <= 8 && /^[\u4e00-\u9fffA-Za-z]+$/u.test(t) && !/[。！？.!?]/.test(t)) return true;
   return false;
 }
