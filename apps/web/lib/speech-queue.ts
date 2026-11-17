@@ -66,8 +66,20 @@ export class LineQueue<T> {
 }
 
 /** Drop trailing sentence closers so "." vs "!" still counts as one lead. */
-function speechLeadBody(text: string): string {
+export function speechLeadBody(text: string): string {
   return text.trim().replace(/[\s。.！!？?]+$/u, '');
+}
+
+/** True when the streamed lead continues inline (CJK has no space after the lead body). */
+function leadContinuesInline(after: string): boolean {
+  if (!after) return true;
+  if (/^[\s。.！!？?，,、]/.test(after)) return true;
+  return /^[\u3400-\u9fff]/.test(after);
+}
+
+function sliceLeadRemainder(after: string): string {
+  if (!after) return '';
+  return after.replace(/^[\s。.！!？?，,、]+/u, '').trim();
 }
 
 /**
@@ -84,8 +96,7 @@ export function speechLeadDiverged(full: string, already: string): boolean {
   if (!body) return true;
   if (t === body || t.startsWith(body)) {
     const after = t.slice(body.length);
-    // Same lead body only when the next char is end / space / another closer.
-    if (!after || /^[\s。.！!？?]/.test(after)) return false;
+    if (leadContinuesInline(after)) return false;
   }
   return true;
 }
@@ -101,9 +112,7 @@ export function speechRemainder(full: string, already: string): string {
   if (body && (t === body || t.startsWith(body))) {
     const after = t.slice(body.length);
     if (!after) return '';
-    if (/^[\s。.！!？?]/.test(after)) {
-      return after.replace(/^[\s。.！!？?]+/u, '').trim();
-    }
+    if (leadContinuesInline(after)) return sliceLeadRemainder(after);
   }
   // Final reply diverged (scrub / preferLive swapped the line). Returning the
   // full string here stacked a second answer on top of the streamed lead —

@@ -66,6 +66,19 @@ describe('demo-phase buttons', () => {
     expect(demoPhasePrompt('aiNews', 'en', 0)).not.toBe(demoPhasePrompt('aiNews', 'en', 1));
   });
 
+  it('joke chip prompts avoid「乾淨/clean joke」wording', () => {
+    const joke = DEMO_PHASE_BUTTONS.find((b) => b.id === 'joke');
+    expect(joke).toBeDefined();
+    for (const lang of ['en', 'yue', 'zh', 'ja'] as const) {
+      expect(joke!.label[lang]).toMatch(/joke|笑話|笑话|ジョーク/i);
+      for (const line of joke!.prompts[lang]) {
+        expect(line).not.toMatch(/clean joke|乾淨笑話|干净笑话|きれいなジョーク/i);
+      }
+    }
+    expect(demoPhasePrompt('joke', 'yue', 0)).toBe('講個笑話俾我聽');
+    expect(demoPhasePrompt('joke', 'en', 0)).toBe('tell me a joke');
+  });
+
   it('keeps chip labels tiny in every language', () => {
     for (const btn of DEMO_PHASE_BUTTONS) {
       for (const lang of ['en', 'yue', 'zh', 'ja'] as const) {

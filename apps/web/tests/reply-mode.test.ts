@@ -97,7 +97,8 @@ describe('resolveReplyMode detection', () => {
     expect(resolveReplyMode('go', { demoPhaseId: 'joke' }).id).toBe('joke');
   });
 
-  it('detects Cantonese clean-joke asks', () => {
+  it('detects Cantonese joke asks (incl. legacy 乾淨 wording)', () => {
+    expect(resolveReplyMode('講個笑話俾我聽').id).toBe('joke');
     expect(resolveReplyMode('講個乾淨笑話俾我聽').id).toBe('joke');
   });
 });
@@ -161,12 +162,13 @@ describe('replyModeSystemBlock prompt directives', () => {
     expect(block).toMatch(/never invent|one-liner/i);
   });
 
-  it('joke mode forbids echoing clean-joke intent', () => {
+  it('joke mode forbids echoing joke intent or saying 乾淨 aloud', () => {
     const en = replyModeSystemBlock(REPLY_MODE_CHART.joke, 'en');
-    expect(en).toMatch(/already clean|SFW/i);
+    expect(en).toMatch(/family-safe|SFW/i);
+    expect(en).toMatch(/never say "clean joke"/i);
     expect(en).toMatch(/do NOT echo/i);
     const yue = replyModeSystemBlock(REPLY_MODE_CHART.joke, 'yue');
-    expect(yue).toMatch(/預設乾淨/);
-    expect(yue).toMatch(/唔好重複/);
+    expect(yue).toMatch(/合家|SFW/);
+    expect(yue).toMatch(/口頭唔好講「乾淨」/);
   });
 });

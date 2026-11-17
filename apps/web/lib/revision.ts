@@ -413,7 +413,8 @@
 // r2026-11-17.192–193: gate sound test gestureTap + long GATE_TEST_LINES (voice.ts; revision not bumped on branch tip).
 // r2026-11-17.194: card greet audible — EarlyAudioUnlock on click; stopSpeakingForCardAudition; no synth prime on card.
 // r2026-11-17.195: clean-joke asks — no double ack echoing 乾淨/「你想聽笑話」 before punchline.
-export const APP_REVISION = 'r2026-11-17.195';
+// r2026-11-17.196: joke chip/prompts + reply-mode — say「笑話/joke」only (SFW stays default; no spoken「乾淨」).
+export const APP_REVISION = 'r2026-11-17.196';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

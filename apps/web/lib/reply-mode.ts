@@ -347,8 +347,8 @@ export function replyModeSystemBlock(mode: ReplyModeBudget, language?: string): 
   if (mode.id === 'joke') {
     lines.push(
       yue
-        ? '- 笑話：全部內容預設乾淨／SFW——唔好重複「乾淨笑話」，亦唔好覆述「你想聽笑話／好呀」；最多極短開場，跟住即刻講 setup→punchline。'
-        : '- Joke: jokes are already clean/SFW by default — do NOT echo "clean joke" or mirror their ask ("you want a joke? sure"); at most a tiny lead-in, then setup → punchline immediately.',
+        ? '- 笑話：預設合家／SFW（口頭唔好講「乾淨」或「乾淨笑話」）——唔好覆述「你想聽笑話／好呀」；最多極短開場，跟住即刻講 setup→punchline。'
+        : '- Joke: family-safe/SFW by default — never say "clean joke" aloud; do NOT echo or mirror their ask ("you want a joke? sure"); at most a tiny lead-in, then setup → punchline immediately.',
     );
   }
   let block = lines.join('\n');
