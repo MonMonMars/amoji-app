@@ -1385,6 +1385,10 @@ const POKE: Record<VoiceId, Record<Lang, readonly string[]>> = {
   },
 };
 
+/** Docs picker (`docs/owner-poke-reactions.html`) — template bank only. */
+export const POKE_LINE_TEMPLATES: typeof POKE = POKE;
+export const POKE_ZONE_SPOKEN_NAMES: typeof ZONE = ZONE;
+
 const OPENING: Record<VoiceId, Record<Lang, string>> = {
   sunny: {
     en: "Hi, I'm {name}! Little things make me happy, especially {noun}. I'll keep the mood light while you're settling in.",

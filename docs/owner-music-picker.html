@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Amoji — Owner music picker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #1a2420;
+      --muted: #5a6b62;
+      --paper: #f3eee4;
+      --panel: #fffaf2;
+      --line: #d5cdb8;
+      --accent: #0e6b5c;
+      --accent-deep: #084c42;
+      --hold: #8a3b3b;
+      --hold-bg: #f3d9d6;
+      --shadow: 0 18px 40px rgba(26, 36, 32, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Source Sans 3", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #d9efe6 0%, transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, #f0dfb8 0%, transparent 45%),
+        linear-gradient(180deg, #efe7d6 0%, var(--paper) 40%, #ebe4d5 100%);
+      min-height: 100vh;
+    }
+    .wrap { width: min(1200px, calc(100% - 2rem)); margin: 0 auto; padding: 2.5rem 0 4rem; }
+    header.hero {
+      display: grid; gap: 1rem; margin-bottom: 1.5rem; padding: 1.75rem;
+      border: 1px solid var(--line);
+      background: linear-gradient(135deg, rgba(14, 107, 92, 0.12), transparent 42%), var(--panel);
+      box-shadow: var(--shadow);
+    }
+    .eyebrow { letter-spacing: 0.14em; text-transform: uppercase; font-size: 0.75rem; font-weight: 700; color: var(--accent); }
+    h1 { margin: 0; font-family: Fraunces, Georgia, serif; font-size: clamp(1.8rem, 3.5vw, 2.6rem); color: var(--accent-deep); }
+  .lede { margin: 0; color: var(--muted); line-height: 1.55; max-width: 52rem; }
+    .instr {
+      margin: 1rem 0 1.5rem; padding: 1rem 1.2rem; border: 1px dashed var(--accent);
+      background: #fff; border-radius: 4px; font-size: 0.95rem; line-height: 1.5;
+    }
+    .instr ol { margin: 0.5rem 0 0; padding-left: 1.2rem; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 1rem 0; }
+    button, .btn {
+      font-family: inherit; font-weight: 600; cursor: pointer;
+      border: 1px solid var(--line); background: var(--panel); padding: 0.45rem 0.85rem;
+      border-radius: 4px; color: var(--accent-deep);
+    }
+    button:hover { background: #f0f7f4; }
+    .grid-stats {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.75rem; margin-bottom: 1.25rem;
+    }
+    .stat { background: var(--panel); border: 1px solid var(--line); padding: 0.85rem 1rem; box-shadow: var(--shadow); }
+    .stat .n { font-family: Fraunces, Georgia, serif; font-size: 1.75rem; font-weight: 700; }
+    .stat .l { color: var(--muted); font-size: 0.85rem; }
+    h2 {
+      font-family: Fraunces, Georgia, serif; font-size: 1.35rem; margin: 2rem 0 0.75rem;
+      color: var(--accent-deep);
+    }
+    .panel { background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { text-align: left; padding: 0.45rem 0.55rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { background: #f6f1e6; font-weight: 700; position: sticky; top: 0; z-index: 1; }
+    tr:hover td { background: rgba(14, 107, 92, 0.04); }
+    code, .ref { font-size: 0.8rem; color: var(--muted); word-break: break-all; }
+    .tag { display: inline-block; padding: 0.1rem 0.35rem; margin: 0.1rem 0.15rem 0.1rem 0;
+      border-radius: 3px; background: #e8f4ef; font-size: 0.75rem; }
+    .hold { background: var(--hold-bg); color: var(--hold); font-weight: 600; }
+    .license-ok { color: var(--accent-deep); }
+    audio { height: 28px; max-width: 220px; vertical-align: middle; }
+    .play-remote { font-size: 0.8rem; }
+    input[type="checkbox"] { transform: scale(1.15); cursor: pointer; }
+    #exportOut {
+      width: 100%; min-height: 4rem; margin-top: 0.75rem; font-family: ui-monospace, monospace;
+      font-size: 0.8rem; padding: 0.5rem; border: 1px solid var(--line);
+    }
+    .filter { padding: 0.35rem 0.5rem; border: 1px solid var(--line); min-width: 12rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="eyebrow">Pixel · music &amp; beds</div>
+      <h1>Amoji — Owner music picker</h1>
+      <p class="lede">Every dance bed, song, Mixkit stream, and procedural theme the app can pick. Play local files when served from <code>docs/</code> with <code>../apps/web/public</code> reachable.</p>
+      <p class="lede"><strong>Local preview:</strong> <code>cd docs &amp;&amp; python3 -m http.server 8765</code> then open <code>http://127.0.0.1:8765/owner-poke-reactions.html</code>. Local audio uses symlink <code>docs/amoji-public-serve</code> → <code>apps/web/public</code>.</p>
+    </header>
+    <section class="instr">
+      <strong>Pixel — keep vs remove</strong>
+      <ol>
+        <li>Every row is <strong>Keep</strong> by default (checked). Uncheck rows you want cut from the ship set.</li>
+        <li>Use <strong>Copy JSON</strong> or <strong>Copy Markdown</strong> and paste into chat / a ticket — engineers map IDs to code.</li>
+        <li>Licensed / Hold rows are labeled honestly; uncheck means “don’t wire in app”, not “delete files” unless noted.</li>
+      </ol>
+      <div class="toolbar">
+        <input class="filter" id="filterQ" type="search" placeholder="Filter table…" aria-label="Filter" />
+        <button type="button" id="copyJson">Copy JSON (remove list)</button>
+        <button type="button" id="copyMd">Copy Markdown</button>
+      </div>
+      <textarea id="exportOut" readonly placeholder="Export appears here…"></textarea>
+    </section>
+    <div class="grid-stats"><div class="stat"><div class="n">77</div><div class="l">Performance clips</div></div><div class="stat"><div class="n">18</div><div class="l">Mixkit streams</div></div><div class="stat"><div class="n">17</div><div class="l">Procedural themes</div></div><div class="stat"><div class="n">0</div><div class="l">Orphan MP3s</div></div><div class="stat"><div class="n">112</div><div class="l">Total rows</div></div></div>
+    
+    <p class="lede"><span class="hold">Hold</span> — no copyrighted commercial masters in catalog; Mixkit + CC0/PD only per <code>docs/MUSIC_STREAMING.md</code>. Stripe / licensed spike #1 remains Hold elsewhere.</p>
+    <h2>Performance library (CC0 / PD files)</h2>
+    <div class="panel"><table>
+      <thead><tr><th>Keep</th><th>Play</th><th>Title</th><th>Kind</th><th>Langs</th><th>Tags</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
+      <tbody><tr data-id="dance-silent-dance-floor" data-label="Silent Dance Floor" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep dance-silent-dance-floor" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/dance/dance-silent-dance-floor.mp3">▶</button></td>
+      <td><strong>Silent Dance Floor</strong><br/><code>dance-silent-dance-floor</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">angry</span><span class="tag">upbeat dance</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Umplix</td>
+      <td><code>/audio/dance/dance-silent-dance-floor.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="dance-cant-resist" data-label="Can't Resist the Groove" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep dance-cant-resist" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/dance/dance-cant-resist.mp3">▶</button></td>
+      <td><strong>Can't Resist the Groove</strong><br/><code>dance-cant-resist</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">angry</span><span class="tag">upbeat dance</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Umplix</td>
+      <td><code>/audio/dance/dance-cant-resist.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="dance-twin-layers" data-label="Twin Layers" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep dance-twin-layers" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/dance/dance-twin-layers.mp3">▶</button></td>
+      <td><strong>Twin Layers</strong><br/><code>dance-twin-layers</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">angry</span><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">upbeat dance</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Umplix</td>
+      <td><code>/audio/dance/dance-twin-layers.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="dance-celebrity" data-label="The Celebrity" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep dance-celebrity" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/dance/dance-celebrity.mp3">▶</button></td>
+      <td><strong>The Celebrity</strong><br/><code>dance-celebrity</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">angry</span><span class="tag">upbeat dance</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Umplix</td>
+      <td><code>/audio/dance/dance-celebrity.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="dance-happy-loop" data-label="Happy Loop" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep dance-happy-loop" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/dance/dance-happy-loop.mp3">▶</button></td>
+      <td><strong>Happy Loop</strong><br/><code>dance-happy-loop</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cute bounce</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>wipics</td>
+      <td><code>/audio/dance/dance-happy-loop.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-banana" data-label="Banana Track" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-banana" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-banana.mp3">▶</button></td>
+      <td><strong>Banana Track</strong><br/><code>bed-banana</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cute bounce</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>skrjablin</td>
+      <td><code>/audio/song-bed/bed-banana.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-flowerbed" data-label="Flowerbed" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-flowerbed" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-flowerbed.mp3">▶</button></td>
+      <td><strong>Flowerbed</strong><br/><code>bed-flowerbed</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cute bounce</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Zane Little Music</td>
+      <td><code>/audio/song-bed/bed-flowerbed.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-jump" data-label="Jump" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-jump" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-jump.mp3">▶</button></td>
+      <td><strong>Jump</strong><br/><code>bed-jump</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cheerful pop</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>ThePixel</td>
+      <td><code>/audio/song-bed/bed-jump.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-happy-adventure" data-label="Happy Adventure" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-happy-adventure" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-happy-adventure.mp3">▶</button></td>
+      <td><strong>Happy Adventure</strong><br/><code>bed-happy-adventure</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cute bounce</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>TinyWorlds</td>
+      <td><code>/audio/song-bed/bed-happy-adventure.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-lullaby" data-label="Lullaby" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-lullaby" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-lullaby.mp3">▶</button></td>
+      <td><strong>Lullaby</strong><br/><code>bed-lullaby</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Pro Sensory (Alex McCulloch)</td>
+      <td><code>/audio/song-bed/bed-lullaby.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-calm" data-label="Calm Theme" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-calm" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-calm.mp3">▶</button></td>
+      <td><strong>Calm Theme</strong><br/><code>bed-calm</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>pebonius</td>
+      <td><code>/audio/song-bed/bed-calm.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-lofi" data-label="Lofi" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-lofi" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-lofi.mp3">▶</button></td>
+      <td><strong>Lofi</strong><br/><code>bed-lofi</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>omfgdude</td>
+      <td><code>/audio/song-bed/bed-lofi.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-shenandoah" data-label="Shenandoah" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-shenandoah" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-shenandoah.mp3">▶</button></td>
+      <td><strong>Shenandoah</strong><br/><code>bed-shenandoah</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">soft ballad</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>United States Air Force Concert Band (trad.)</td>
+      <td><code>/audio/song-bed/bed-shenandoah.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-f-silent-night" data-label="Silent Night" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-f-silent-night" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-female/sing-f-silent-night.mp3">▶</button></td>
+      <td><strong>Silent Night</strong><br/><code>sing-f-silent-night</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">sad</span><span class="tag">tired</span><span class="tag">soft ballad</span><span class="tag">song</span><span class="tag">female</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Catharine Eastman (trad. Mohr / Gruber)</td>
+      <td><code>/audio/sing-female/sing-f-silent-night.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-f-twinkle" data-label="Twinkle Twinkle" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-f-twinkle" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-female/sing-f-twinkle.mp3">▶</button></td>
+      <td><strong>Twinkle Twinkle</strong><br/><code>sing-f-twinkle</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">sad</span><span class="tag">tired</span><span class="tag">cute tease</span><span class="tag">song</span><span class="tag">female</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Derrick Coetzee</td>
+      <td><code>/audio/sing-female/sing-f-twinkle.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-f-joy" data-label="Joy to the World" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-f-joy" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-female/sing-f-joy.mp3">▶</button></td>
+      <td><strong>Joy to the World</strong><br/><code>sing-f-joy</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cheerful pop</span><span class="tag">song</span><span class="tag">female</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Kim Butler, Alan Davis-Drake, Diyan, Claire Goget, Karen Savage, SKVE, Kara Shallenberg, Kristin Hughes</td>
+      <td><code>/audio/sing-female/sing-f-joy.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-f-choir" data-label="Choir" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-f-choir" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-female/sing-f-choir.mp3">▶</button></td>
+      <td><strong>Choir</strong><br/><code>sing-f-choir</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">soft ballad</span><span class="tag">song</span><span class="tag">female</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>cynicmusic</td>
+      <td><code>/audio/sing-female/sing-f-choir.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-m-happy-birthday" data-label="Happy Birthday" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-m-happy-birthday" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-male/sing-m-happy-birthday.mp3">▶</button></td>
+      <td><strong>Happy Birthday</strong><br/><code>sing-m-happy-birthday</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cute tease</span><span class="tag">song</span><span class="tag">male</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Joseph Sardin (BigSoundBank)</td>
+      <td><code>/audio/sing-male/sing-m-happy-birthday.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-m-buddham" data-label="Buddham Saranam" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-m-buddham" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-male/sing-m-buddham.mp3">▶</button></td>
+      <td><strong>Buddham Saranam</strong><br/><code>sing-m-buddham</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">song</span><span class="tag">male</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Unknown (Wikimedia Commons CC0 upload)</td>
+      <td><code>/audio/sing-male/sing-m-buddham.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-m-mass" data-label="Mass" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-m-mass" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-male/sing-m-mass.mp3">▶</button></td>
+      <td><strong>Mass</strong><br/><code>sing-m-mass</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">soft ballad</span><span class="tag">song</span><span class="tag">male</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Joseph Sardin (BigSoundBank)</td>
+      <td><code>/audio/sing-male/sing-m-mass.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-m-overtone-e" data-label="Overtone E" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-m-overtone-e" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-male/sing-m-overtone-e.mp3">▶</button></td>
+      <td><strong>Overtone E</strong><br/><code>sing-m-overtone-e</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">song</span><span class="tag">male</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Joseph Sardin (BigSoundBank)</td>
+      <td><code>/audio/sing-male/sing-m-overtone-e.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-m-overtone-c" data-label="Overtone C" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-m-overtone-c" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-male/sing-m-overtone-c.mp3">▶</button></td>
+      <td><strong>Overtone C</strong><br/><code>sing-m-overtone-c</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">song</span><span class="tag">male</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Joseph Sardin (BigSoundBank)</td>
+      <td><code>/audio/sing-male/sing-m-overtone-c.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="dance-boss-battle" data-label="Boss Battle" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep dance-boss-battle" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/dance/dance-boss-battle.mp3">▶</button></td>
+      <td><strong>Boss Battle</strong><br/><code>dance-boss-battle</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">angry</span><span class="tag">upbeat dance</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>AntumDeluge</td>
+      <td><code>/audio/dance/dance-boss-battle.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="dance-minstrel" data-label="Minstrel Dance" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep dance-minstrel" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/dance/dance-minstrel.mp3">▶</button></td>
+      <td><strong>Minstrel Dance</strong><br/><code>dance-minstrel</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">angry</span><span class="tag">upbeat dance</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Snabisch</td>
+      <td><code>/audio/dance/dance-minstrel.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="dance-field" data-label="Dance Field" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep dance-field" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/dance/dance-field.mp3">▶</button></td>
+      <td><strong>Dance Field</strong><br/><code>dance-field</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">angry</span><span class="tag">upbeat dance</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Centurion_of_war</td>
+      <td><code>/audio/dance/dance-field.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="dance-8bit-disco" data-label="8-Bit Disco" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep dance-8bit-disco" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/dance/dance-8bit-disco.mp3">▶</button></td>
+      <td><strong>8-Bit Disco</strong><br/><code>dance-8bit-disco</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">angry</span><span class="tag">upbeat dance</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>cosmac</td>
+      <td><code>/audio/dance/dance-8bit-disco.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-musicbox-waltz" data-label="Spooky Waltz" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-musicbox-waltz" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-musicbox-waltz.mp3">▶</button></td>
+      <td><strong>Spooky Waltz</strong><br/><code>bed-musicbox-waltz</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cute bounce</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Mjorlaja</td>
+      <td><code>/audio/song-bed/bed-musicbox-waltz.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-musicbox-tune" data-label="Music Box" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-musicbox-tune" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-musicbox-tune.mp3">▶</button></td>
+      <td><strong>Music Box</strong><br/><code>bed-musicbox-tune</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cute bounce</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Mjorlaja</td>
+      <td><code>/audio/song-bed/bed-musicbox-tune.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-montage" data-label="Montage" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-montage" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-montage.mp3">▶</button></td>
+      <td><strong>Montage</strong><br/><code>bed-montage</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cute bounce</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>TinyWorlds</td>
+      <td><code>/audio/song-bed/bed-montage.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-chill-fever" data-label="Chill Fever" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-chill-fever" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-chill-fever.mp3">▶</button></td>
+      <td><strong>Chill Fever</strong><br/><code>bed-chill-fever</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Tsorthan Grove</td>
+      <td><code>/audio/song-bed/bed-chill-fever.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-observing-star" data-label="Observing the Star" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-observing-star" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-observing-star.mp3">▶</button></td>
+      <td><strong>Observing the Star</strong><br/><code>bed-observing-star</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>StumpyStrust</td>
+      <td><code>/audio/song-bed/bed-observing-star.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-deadship" data-label="Deadship" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-deadship" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-deadship.mp3">▶</button></td>
+      <td><strong>Deadship</strong><br/><code>bed-deadship</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>qubodup</td>
+      <td><code>/audio/song-bed/bed-deadship.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-beepbox" data-label="Beepbox" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-beepbox" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-beepbox.mp3">▶</button></td>
+      <td><strong>Beepbox</strong><br/><code>bed-beepbox</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cute bounce</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>unknown</td>
+      <td><code>/audio/song-bed/bed-beepbox.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-bit-forest" data-label="Bit Forest" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-bit-forest" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-bit-forest.mp3">▶</button></td>
+      <td><strong>Bit Forest</strong><br/><code>bed-bit-forest</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cute bounce</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>unknown</td>
+      <td><code>/audio/song-bed/bed-bit-forest.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-8bit-bossa" data-label="8-Bit Bossa" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-8bit-bossa" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-8bit-bossa.mp3">▶</button></td>
+      <td><strong>8-Bit Bossa</strong><br/><code>bed-8bit-bossa</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cute bounce</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>looneybits</td>
+      <td><code>/audio/song-bed/bed-8bit-bossa.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-breathing" data-label="Breathing" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-breathing" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-breathing.mp3">▶</button></td>
+      <td><strong>Breathing</strong><br/><code>bed-breathing</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cute bounce</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>greatnomadicseal</td>
+      <td><code>/audio/song-bed/bed-breathing.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-breves" data-label="Breves Dies" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-breves" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-breves.mp3">▶</button></td>
+      <td><strong>Breves Dies</strong><br/><code>bed-breves</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cute bounce</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>hashcashbtcfundedart</td>
+      <td><code>/audio/song-bed/bed-breves.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-synthwave-15k" data-label="Synthwave" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-synthwave-15k" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-synthwave-15k.mp3">▶</button></td>
+      <td><strong>Synthwave</strong><br/><code>bed-synthwave-15k</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Majadroid</td>
+      <td><code>/audio/song-bed/bed-synthwave-15k.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-synthwave-15k-ii" data-label="Synthwave II" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-synthwave-15k-ii" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-synthwave-15k-ii.mp3">▶</button></td>
+      <td><strong>Synthwave II</strong><br/><code>bed-synthwave-15k-ii</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Majadroid</td>
+      <td><code>/audio/song-bed/bed-synthwave-15k-ii.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-lifewave-2k" data-label="Lifewave" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-lifewave-2k" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-lifewave-2k.mp3">▶</button></td>
+      <td><strong>Lifewave</strong><br/><code>bed-lifewave-2k</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Snabisch</td>
+      <td><code>/audio/song-bed/bed-lifewave-2k.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-lifewave" data-label="Lifewave Drift" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-lifewave" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-lifewave.mp3">▶</button></td>
+      <td><strong>Lifewave Drift</strong><br/><code>bed-lifewave</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Snabisch</td>
+      <td><code>/audio/song-bed/bed-lifewave.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-synthwave-421" data-label="Synthwave Drift" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-synthwave-421" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-synthwave-421.mp3">▶</button></td>
+      <td><strong>Synthwave Drift</strong><br/><code>bed-synthwave-421</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Snabisch</td>
+      <td><code>/audio/song-bed/bed-synthwave-421.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-cate" data-label="Cate" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-cate" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-cate.mp3">▶</button></td>
+      <td><strong>Cate</strong><br/><code>bed-cate</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cute bounce</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Saa_Matt</td>
+      <td><code>/audio/song-bed/bed-cate.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-chill-lofi" data-label="Chill Lofi" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-chill-lofi" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-chill-lofi.mp3">▶</button></td>
+      <td><strong>Chill Lofi</strong><br/><code>bed-chill-lofi</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>isaiah658</td>
+      <td><code>/audio/song-bed/bed-chill-lofi.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-chill-loop" data-label="Chill Loop" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-chill-loop" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-chill-loop.mp3">▶</button></td>
+      <td><strong>Chill Loop</strong><br/><code>bed-chill-loop</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Tsorthan Grove</td>
+      <td><code>/audio/song-bed/bed-chill-loop.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-chill-menu" data-label="Chill Menu" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-chill-menu" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-chill-menu.mp3">▶</button></td>
+      <td><strong>Chill Menu</strong><br/><code>bed-chill-menu</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>WeaponGuy</td>
+      <td><code>/audio/song-bed/bed-chill-menu.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-happy-vibes" data-label="Happy Vibes" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-happy-vibes" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-happy-vibes.mp3">▶</button></td>
+      <td><strong>Happy Vibes</strong><br/><code>bed-happy-vibes</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cute bounce</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Ruskerdax</td>
+      <td><code>/audio/song-bed/bed-happy-vibes.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-napping" data-label="Napping" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-napping" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-napping.mp3">▶</button></td>
+      <td><strong>Napping</strong><br/><code>bed-napping</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>congusbongus</td>
+      <td><code>/audio/song-bed/bed-napping.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-town" data-label="Town Theme" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-town" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-town.mp3">▶</button></td>
+      <td><strong>Town Theme</strong><br/><code>bed-town</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cute bounce</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>unknown</td>
+      <td><code>/audio/song-bed/bed-town.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-space" data-label="Space" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-space" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-space.mp3">▶</button></td>
+      <td><strong>Space</strong><br/><code>bed-space</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>unknown</td>
+      <td><code>/audio/song-bed/bed-space.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-menu" data-label="Menu Title" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-menu" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-menu.mp3">▶</button></td>
+      <td><strong>Menu Title</strong><br/><code>bed-menu</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cheerful pop</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>unknown</td>
+      <td><code>/audio/song-bed/bed-menu.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="bed-caketown" data-label="Caketown" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep bed-caketown" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/song-bed/bed-caketown.mp3">▶</button></td>
+      <td><strong>Caketown</strong><br/><code>bed-caketown</code></td>
+      <td>dance</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cute bounce</span><span class="tag">dance</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>unknown</td>
+      <td><code>/audio/song-bed/bed-caketown.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-f-citation" data-label="Citation" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-f-citation" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-female/sing-f-citation.mp3">▶</button></td>
+      <td><strong>Citation</strong><br/><code>sing-f-citation</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cute tease</span><span class="tag">song</span><span class="tag">female</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Caroline Joy &amp; Mike Morrison</td>
+      <td><code>/audio/sing-female/sing-f-citation.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-f-adele" data-label="Adele" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-f-adele" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-female/sing-f-adele.mp3">▶</button></td>
+      <td><strong>Adele</strong><br/><code>sing-f-adele</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">sad</span><span class="tag">tired</span><span class="tag">soft ballad</span><span class="tag">song</span><span class="tag">female</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Agnes Kimball; Adolf Philipp (Columbia Records, 1913)</td>
+      <td><code>/audio/sing-female/sing-f-adele.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-f-una-voce" data-label="Una Voce" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-f-una-voce" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-female/sing-f-una-voce.mp3">▶</button></td>
+      <td><strong>Una Voce</strong><br/><code>sing-f-una-voce</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">sad</span><span class="tag">tired</span><span class="tag">soft ballad</span><span class="tag">song</span><span class="tag">female</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Gioachino Rossini; Singing Sergeants, United States Air Force Band</td>
+      <td><code>/audio/sing-female/sing-f-una-voce.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-f-soave" data-label="Soave" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-f-soave" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-female/sing-f-soave.mp3">▶</button></td>
+      <td><strong>Soave</strong><br/><code>sing-f-soave</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">soft ballad</span><span class="tag">song</span><span class="tag">female</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Wolfgang Amadeus Mozart; Singing Sergeants, United States Air Force Band</td>
+      <td><code>/audio/sing-female/sing-f-soave.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-m-shenandoah" data-label="Shenandoah" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-m-shenandoah" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-male/sing-m-shenandoah.mp3">▶</button></td>
+      <td><strong>Shenandoah</strong><br/><code>sing-m-shenandoah</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">soft ballad</span><span class="tag">song</span><span class="tag">male</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>United States Air Force Band, Singing Sergeants (trad.; arr. Floyd Werle, Michael Davis)</td>
+      <td><code>/audio/sing-male/sing-m-shenandoah.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-m-brindisi" data-label="Brindisi" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-m-brindisi" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-male/sing-m-brindisi.mp3">▶</button></td>
+      <td><strong>Brindisi</strong><br/><code>sing-m-brindisi</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cheerful pop</span><span class="tag">song</span><span class="tag">male</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Giuseppe Verdi; Singing Sergeants, United States Air Force Band</td>
+      <td><code>/audio/sing-male/sing-m-brindisi.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-m-votre-toast" data-label="Votre Toast" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-m-votre-toast" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-male/sing-m-votre-toast.mp3">▶</button></td>
+      <td><strong>Votre Toast</strong><br/><code>sing-m-votre-toast</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">angry</span><span class="tag">cheerful pop</span><span class="tag">song</span><span class="tag">male</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Georges Bizet; Singing Sergeants, United States Air Force Band</td>
+      <td><code>/audio/sing-male/sing-m-votre-toast.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-m-quando" data-label="Quando" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-m-quando" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-male/sing-m-quando.mp3">▶</button></td>
+      <td><strong>Quando</strong><br/><code>sing-m-quando</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">soft ballad</span><span class="tag">song</span><span class="tag">male</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Giuseppe Verdi, Ferruccio Giannini</td>
+      <td><code>/audio/sing-male/sing-m-quando.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-m-tuvan" data-label="Tuvan" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-m-tuvan" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-male/sing-m-tuvan.mp3">▶</button></td>
+      <td><strong>Tuvan</strong><br/><code>sing-m-tuvan</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">song</span><span class="tag">male</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Cactus Ronin</td>
+      <td><code>/audio/sing-male/sing-m-tuvan.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-m-overtone-a" data-label="Overtone A" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-m-overtone-a" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-male/sing-m-overtone-a.mp3">▶</button></td>
+      <td><strong>Overtone A</strong><br/><code>sing-m-overtone-a</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">chill</span><span class="tag">song</span><span class="tag">male</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Joseph Sardin (BigSoundBank)</td>
+      <td><code>/audio/sing-male/sing-m-overtone-a.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-m-mass-amen" data-label="Mass Amen" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-m-mass-amen" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-male/sing-m-mass-amen.mp3">▶</button></td>
+      <td><strong>Mass Amen</strong><br/><code>sing-m-mass-amen</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">tired</span><span class="tag">soft ballad</span><span class="tag">song</span><span class="tag">male</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Joseph Sardin (BigSoundBank)</td>
+      <td><code>/audio/sing-male/sing-m-mass-amen.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-f-long-set1" data-label="Long Set 1" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-f-long-set1" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-female/sing-f-long-set1.mp3">▶</button></td>
+      <td><strong>Long Set 1</strong><br/><code>sing-f-long-set1</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">sad</span><span class="tag">tired</span><span class="tag">soft ballad</span><span class="tag">song</span><span class="tag">female</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Amoji long set (CC0/PD shorts concat)</td>
+      <td><code>/audio/sing-female/sing-f-long-set1.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-f-long-set2" data-label="Long Set 2" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-f-long-set2" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-female/sing-f-long-set2.mp3">▶</button></td>
+      <td><strong>Long Set 2</strong><br/><code>sing-f-long-set2</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">cheerful pop</span><span class="tag">song</span><span class="tag">female</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Amoji long set (CC0/PD shorts concat)</td>
+      <td><code>/audio/sing-female/sing-f-long-set2.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-m-long-set1" data-label="Long Set 1" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-m-long-set1" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-male/sing-m-long-set1.mp3">▶</button></td>
+      <td><strong>Long Set 1</strong><br/><code>sing-m-long-set1</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">sad</span><span class="tag">cheerful pop</span><span class="tag">song</span><span class="tag">male</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Amoji long set (CC0/PD shorts concat)</td>
+      <td><code>/audio/sing-male/sing-m-long-set1.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-m-long-set2" data-label="Long Set 2" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-m-long-set2" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-male/sing-m-long-set2.mp3">▶</button></td>
+      <td><strong>Long Set 2</strong><br/><code>sing-m-long-set2</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">sad</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">soft ballad</span><span class="tag">song</span><span class="tag">male</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Amoji long set (CC0/PD shorts concat)</td>
+      <td><code>/audio/sing-male/sing-m-long-set2.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-f-adele-long" data-label="Adele (long)" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-f-adele-long" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-female/sing-f-adele-long.mp3">▶</button></td>
+      <td><strong>Adele (long)</strong><br/><code>sing-f-adele-long</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">sad</span><span class="tag">tired</span><span class="tag">vintage musical</span><span class="tag">song</span><span class="tag">female</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Agnes Kimball; Adolf Philipp (Columbia Records, 1913)</td>
+      <td><code>/audio/sing-female/sing-f-adele-long.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-f-soave-long" data-label="Soave (long)" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-f-soave-long" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-female/sing-f-soave-long.mp3">▶</button></td>
+      <td><strong>Soave (long)</strong><br/><code>sing-f-soave-long</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">tired</span><span class="tag">anxious</span><span class="tag">opera ensemble</span><span class="tag">song</span><span class="tag">female</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Wolfgang Amadeus Mozart; Singing Sergeants, United States Air Force Band</td>
+      <td><code>/audio/sing-female/sing-f-soave-long.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-f-una-voce-long" data-label="Una Voce (long)" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-f-una-voce-long" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-female/sing-f-una-voce-long.mp3">▶</button></td>
+      <td><strong>Una Voce (long)</strong><br/><code>sing-f-una-voce-long</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">opera aria</span><span class="tag">song</span><span class="tag">female</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Gioachino Rossini; Singing Sergeants, United States Air Force Band</td>
+      <td><code>/audio/sing-female/sing-f-una-voce-long.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-f-la-mamma-morta" data-label="La mamma morta" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-f-la-mamma-morta" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-female/sing-f-la-mamma-morta.mp3">▶</button></td>
+      <td><strong>La mamma morta</strong><br/><code>sing-f-la-mamma-morta</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">anxious</span><span class="tag">tired</span><span class="tag">opera aria</span><span class="tag">song</span><span class="tag">female</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Elda Cavalieri (1906); Umberto Giordano</td>
+      <td><code>/audio/sing-female/sing-f-la-mamma-morta.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-f-sono-giunta" data-label="Sono giunta" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-f-sono-giunta" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-female/sing-f-sono-giunta.mp3">▶</button></td>
+      <td><strong>Sono giunta</strong><br/><code>sing-f-sono-giunta</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">sad</span><span class="tag">anxious</span><span class="tag">happy</span><span class="tag">opera aria</span><span class="tag">song</span><span class="tag">female</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Meta Seinemeyer (1927); Giuseppe Verdi</td>
+      <td><code>/audio/sing-female/sing-f-sono-giunta.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-m-shenandoah-long" data-label="Shenandoah (long)" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-m-shenandoah-long" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-male/sing-m-shenandoah-long.mp3">▶</button></td>
+      <td><strong>Shenandoah (long)</strong><br/><code>sing-m-shenandoah-long</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">sad</span><span class="tag">tired</span><span class="tag">folk choral</span><span class="tag">song</span><span class="tag">male</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>United States Air Force Band, Singing Sergeants (trad.)</td>
+      <td><code>/audio/sing-male/sing-m-shenandoah-long.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-m-brindisi-long" data-label="Brindisi (long)" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-m-brindisi-long" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-male/sing-m-brindisi-long.mp3">▶</button></td>
+      <td><strong>Brindisi (long)</strong><br/><code>sing-m-brindisi-long</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">opera toast</span><span class="tag">song</span><span class="tag">male</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Giuseppe Verdi; Singing Sergeants, United States Air Force Band</td>
+      <td><code>/audio/sing-male/sing-m-brindisi-long.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-m-votre-toast-long" data-label="Votre Toast (long)" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-m-votre-toast-long" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-male/sing-m-votre-toast-long.mp3">▶</button></td>
+      <td><strong>Votre Toast (long)</strong><br/><code>sing-m-votre-toast-long</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">opera aria</span><span class="tag">song</span><span class="tag">male</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Georges Bizet; Singing Sergeants, United States Air Force Band</td>
+      <td><code>/audio/sing-male/sing-m-votre-toast-long.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-m-celeste-aida" data-label="Celeste Aida" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-m-celeste-aida" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-male/sing-m-celeste-aida.mp3">▶</button></td>
+      <td><strong>Celeste Aida</strong><br/><code>sing-m-celeste-aida</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">happy</span><span class="tag">sad</span><span class="tag">opera aria</span><span class="tag">song</span><span class="tag">male</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Enrico Caruso (1902); Giuseppe Verdi</td>
+      <td><code>/audio/sing-male/sing-m-celeste-aida.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr><tr data-id="sing-m-no-pagliaccio" data-label="No Pagliaccio" data-ref="apps/web/lib/performance-clips.ts:51">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep sing-m-no-pagliaccio" /></td>
+      <td><button type="button" data-play="amoji-public-serve/audio/sing-male/sing-m-no-pagliaccio.mp3">▶</button></td>
+      <td><strong>No Pagliaccio</strong><br/><code>sing-m-no-pagliaccio</code></td>
+      <td>song</td>
+      <td>en, yue, zh, ja</td>
+      <td><span class="tag">angry</span><span class="tag">sad</span><span class="tag">anxious</span><span class="tag">opera aria</span><span class="tag">song</span><span class="tag">male</span></td>
+      <td class="license-ok">CC0-1.0</td>
+      <td>Enrico Caruso; Ruggero Leoncavallo</td>
+      <td><code>/audio/sing-male/sing-m-no-pagliaccio.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
+    </tr></tbody>
+    </table></div>
+    <h2>Mixkit stream previews (remote URL)</h2>
+    <div class="panel"><table>
+      <thead><tr><th>Keep</th><th>Play</th><th>Title</th><th>Kind</th><th>Langs</th><th>Style</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
+      <tbody><tr data-id="mix-tech-house" data-label="Tech House Vibes" data-ref="apps/web/lib/music-catalog.ts:61">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td><button type="button" class="play-remote" data-play="https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3">▶ Mixkit</button></td>
+      <td>Tech House Vibes<br/><code>mix-tech-house</code></td>
+      <td>stream</td>
+      <td>all</td>
+      <td><span class="tag">electronic</span></td>
+      <td class="license-ok">Mixkit-Free</td>
+      <td>Mixkit</td>
+      <td><code>https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3</code><br/><span class="ref">apps/web/lib/music-catalog.ts:61</span></td>
+    </tr><tr data-id="mix-hip-hop" data-label="Hip Hop 02" data-ref="apps/web/lib/music-catalog.ts:61">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td><button type="button" class="play-remote" data-play="https://assets.mixkit.co/music/preview/mixkit-hip-hop-02-738.mp3">▶ Mixkit</button></td>
+      <td>Hip Hop 02<br/><code>mix-hip-hop</code></td>
+      <td>stream</td>
+      <td>all</td>
+      <td><span class="tag">hiphop</span></td>
+      <td class="license-ok">Mixkit-Free</td>
+      <td>Mixkit</td>
+      <td><code>https://assets.mixkit.co/music/preview/mixkit-hip-hop-02-738.mp3</code><br/><span class="ref">apps/web/lib/music-catalog.ts:61</span></td>
+    </tr><tr data-id="mix-dreaming-big" data-label="Dreaming Big" data-ref="apps/web/lib/music-catalog.ts:61">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td><button type="button" class="play-remote" data-play="https://assets.mixkit.co/music/preview/mixkit-dreaming-big-31.mp3">▶ Mixkit</button></td>
+      <td>Dreaming Big<br/><code>mix-dreaming-big</code></td>
+      <td>stream</td>
+      <td>all</td>
+      <td><span class="tag">pop</span></td>
+      <td class="license-ok">Mixkit-Free</td>
+      <td>Mixkit</td>
+      <td><code>https://assets.mixkit.co/music/preview/mixkit-dreaming-big-31.mp3</code><br/><span class="ref">apps/web/lib/music-catalog.ts:61</span></td>
+    </tr><tr data-id="mix-cat-walk" data-label="Cat Walk" data-ref="apps/web/lib/music-catalog.ts:61">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td><button type="button" class="play-remote" data-play="https://assets.mixkit.co/music/preview/mixkit-cat-walk-371.mp3">▶ Mixkit</button></td>
+      <td>Cat Walk<br/><code>mix-cat-walk</code></td>
+      <td>stream</td>
+      <td>all</td>
+      <td><span class="tag">pop</span></td>
+      <td class="license-ok">Mixkit-Free</td>
+      <td>Mixkit</td>
+      <td><code>https://assets.mixkit.co/music/preview/mixkit-cat-walk-371.mp3</code><br/><span class="ref">apps/web/lib/music-catalog.ts:61</span></td>
+    </tr><tr data-id="mix-sunny" data-label="Sunny" data-ref="apps/web/lib/music-catalog.ts:61">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td><button type="button" class="play-remote" data-play="https://assets.mixkit.co/music/preview/mixkit-sunny-717.mp3">▶ Mixkit</button></td>
+      <td>Sunny<br/><code>mix-sunny</code></td>
+      <td>stream</td>
+      <td>all</td>
+      <td><span class="tag">cute</span></td>
+      <td class="license-ok">Mixkit-Free</td>
+      <td>Mixkit</td>
+      <td><code>https://assets.mixkit.co/music/preview/mixkit-sunny-717.mp3</code><br/><span class="ref">apps/web/lib/music-catalog.ts:61</span></td>
+    </tr><tr data-id="mix-deep-urban" data-label="Deep Urban" data-ref="apps/web/lib/music-catalog.ts:61">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td><button type="button" class="play-remote" data-play="https://assets.mixkit.co/music/preview/mixkit-deep-urban-623.mp3">▶ Mixkit</button></td>
+      <td>Deep Urban<br/><code>mix-deep-urban</code></td>
+      <td>stream</td>
+      <td>all</td>
+      <td><span class="tag">dance</span></td>
+      <td class="license-ok">Mixkit-Free</td>
+      <td>Mixkit</td>
+      <td><code>https://assets.mixkit.co/music/preview/mixkit-deep-urban-623.mp3</code><br/><span class="ref">apps/web/lib/music-catalog.ts:61</span></td>
+    </tr><tr data-id="mix-serene" data-label="Serene View" data-ref="apps/web/lib/music-catalog.ts:61">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td><button type="button" class="play-remote" data-play="https://assets.mixkit.co/music/preview/mixkit-serene-view-443.mp3">▶ Mixkit</button></td>
+      <td>Serene View<br/><code>mix-serene</code></td>
+      <td>stream</td>
+      <td>all</td>
+      <td><span class="tag">chill</span></td>
+      <td class="license-ok">Mixkit-Free</td>
+      <td>Mixkit</td>
+      <td><code>https://assets.mixkit.co/music/preview/mixkit-serene-view-443.mp3</code><br/><span class="ref">apps/web/lib/music-catalog.ts:61</span></td>
+    </tr><tr data-id="mix-relax-beat" data-label="Relaxing in the Forest" data-ref="apps/web/lib/music-catalog.ts:61">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td><button type="button" class="play-remote" data-play="https://assets.mixkit.co/music/preview/mixkit-relaxing-in-the-forest-338.mp3">▶ Mixkit</button></td>
+      <td>Relaxing in the Forest<br/><code>mix-relax-beat</code></td>
+      <td>stream</td>
+      <td>all</td>
+      <td><span class="tag">lofi</span></td>
+      <td class="license-ok">Mixkit-Free</td>
+      <td>Mixkit</td>
+      <td><code>https://assets.mixkit.co/music/preview/mixkit-relaxing-in-the-forest-338.mp3</code><br/><span class="ref">apps/web/lib/music-catalog.ts:61</span></td>
+    </tr><tr data-id="mix-jazzy-keys" data-label="Jazz Hot" data-ref="apps/web/lib/music-catalog.ts:61">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td><button type="button" class="play-remote" data-play="https://assets.mixkit.co/music/preview/mixkit-jazz-hot-110.mp3">▶ Mixkit</button></td>
+      <td>Jazz Hot<br/><code>mix-jazzy-keys</code></td>
+      <td>stream</td>
+      <td>all</td>
+      <td><span class="tag">jazz</span></td>
+      <td class="license-ok">Mixkit-Free</td>
+      <td>Mixkit</td>
+      <td><code>https://assets.mixkit.co/music/preview/mixkit-jazz-hot-110.mp3</code><br/><span class="ref">apps/web/lib/music-catalog.ts:61</span></td>
+    </tr><tr data-id="mix-guitar-ballad" data-label="Beautiful Dream" data-ref="apps/web/lib/music-catalog.ts:61">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td><button type="button" class="play-remote" data-play="https://assets.mixkit.co/music/preview/mixkit-beautiful-dream-493.mp3">▶ Mixkit</button></td>
+      <td>Beautiful Dream<br/><code>mix-guitar-ballad</code></td>
+      <td>stream</td>
+      <td>all</td>
+      <td><span class="tag">ballad</span></td>
+      <td class="license-ok">Mixkit-Free</td>
+      <td>Mixkit</td>
+      <td><code>https://assets.mixkit.co/music/preview/mixkit-beautiful-dream-493.mp3</code><br/><span class="ref">apps/web/lib/music-catalog.ts:61</span></td>
+    </tr><tr data-id="mix-driving" data-label="Driving Ambition" data-ref="apps/web/lib/music-catalog.ts:61">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td><button type="button" class="play-remote" data-play="https://assets.mixkit.co/music/preview/mixkit-driving-ambition-32.mp3">▶ Mixkit</button></td>
+      <td>Driving Ambition<br/><code>mix-driving</code></td>
+      <td>stream</td>
+      <td>all</td>
+      <td><span class="tag">rock</span></td>
+      <td class="license-ok">Mixkit-Free</td>
+      <td>Mixkit</td>
+      <td><code>https://assets.mixkit.co/music/preview/mixkit-driving-ambition-32.mp3</code><br/><span class="ref">apps/web/lib/music-catalog.ts:61</span></td>
+    </tr><tr data-id="mix-cantopop-bright" data-label="Island Beat" data-ref="apps/web/lib/music-catalog.ts:61">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td><button type="button" class="play-remote" data-play="https://assets.mixkit.co/music/preview/mixkit-island-beat-150.mp3">▶ Mixkit</button></td>
+      <td>Island Beat<br/><code>mix-cantopop-bright</code></td>
+      <td>stream</td>
+      <td>all</td>
+      <td><span class="tag">cantopop</span></td>
+      <td class="license-ok">Mixkit-Free</td>
+      <td>Mixkit</td>
+      <td><code>https://assets.mixkit.co/music/preview/mixkit-island-beat-150.mp3</code><br/><span class="ref">apps/web/lib/music-catalog.ts:61</span></td>
+    </tr><tr data-id="mix-hazy-after-hours" data-label="Hazy After Hours" data-ref="apps/web/lib/music-catalog.ts:61">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td><button type="button" class="play-remote" data-play="https://assets.mixkit.co/music/preview/mixkit-hazy-after-hours-132.mp3">▶ Mixkit</button></td>
+      <td>Hazy After Hours<br/><code>mix-hazy-after-hours</code></td>
+      <td>stream</td>
+      <td>all</td>
+      <td><span class="tag">chill</span></td>
+      <td class="license-ok">Mixkit-Free</td>
+      <td>Mixkit</td>
+      <td><code>https://assets.mixkit.co/music/preview/mixkit-hazy-after-hours-132.mp3</code><br/><span class="ref">apps/web/lib/music-catalog.ts:61</span></td>
+    </tr><tr data-id="mix-games-worldbeat" data-label="Games Worldbeat" data-ref="apps/web/lib/music-catalog.ts:61">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td><button type="button" class="play-remote" data-play="https://assets.mixkit.co/music/preview/mixkit-games-worldbeat-466.mp3">▶ Mixkit</button></td>
+      <td>Games Worldbeat<br/><code>mix-games-worldbeat</code></td>
+      <td>stream</td>
+      <td>all</td>
+      <td><span class="tag">dance</span></td>
+      <td class="license-ok">Mixkit-Free</td>
+      <td>Mixkit</td>
+      <td><code>https://assets.mixkit.co/music/preview/mixkit-games-worldbeat-466.mp3</code><br/><span class="ref">apps/web/lib/music-catalog.ts:61</span></td>
+    </tr><tr data-id="mix-feeling-happy" data-label="Feeling Happy" data-ref="apps/web/lib/music-catalog.ts:61">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td><button type="button" class="play-remote" data-play="https://assets.mixkit.co/music/preview/mixkit-feeling-happy-5.mp3">▶ Mixkit</button></td>
+      <td>Feeling Happy<br/><code>mix-feeling-happy</code></td>
+      <td>stream</td>
+      <td>all</td>
+      <td><span class="tag">cute</span></td>
+      <td class="license-ok">Mixkit-Free</td>
+      <td>Mixkit</td>
+      <td><code>https://assets.mixkit.co/music/preview/mixkit-feeling-happy-5.mp3</code><br/><span class="ref">apps/web/lib/music-catalog.ts:61</span></td>
+    </tr><tr data-id="mix-life-is-a-dream" data-label="Life Is a Dream" data-ref="apps/web/lib/music-catalog.ts:61">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td><button type="button" class="play-remote" data-play="https://assets.mixkit.co/music/preview/mixkit-life-is-a-dream-826.mp3">▶ Mixkit</button></td>
+      <td>Life Is a Dream<br/><code>mix-life-is-a-dream</code></td>
+      <td>stream</td>
+      <td>all</td>
+      <td><span class="tag">pop</span></td>
+      <td class="license-ok">Mixkit-Free</td>
+      <td>Mixkit</td>
+      <td><code>https://assets.mixkit.co/music/preview/mixkit-life-is-a-dream-826.mp3</code><br/><span class="ref">apps/web/lib/music-catalog.ts:61</span></td>
+    </tr><tr data-id="mix-bridge-samurai" data-label="Bridge of the Samurai" data-ref="apps/web/lib/music-catalog.ts:61">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td><button type="button" class="play-remote" data-play="https://assets.mixkit.co/music/preview/mixkit-bridge-of-the-samurai-122.mp3">▶ Mixkit</button></td>
+      <td>Bridge of the Samurai<br/><code>mix-bridge-samurai</code></td>
+      <td>stream</td>
+      <td>all</td>
+      <td><span class="tag">electronic</span></td>
+      <td class="license-ok">Mixkit-Free</td>
+      <td>Mixkit</td>
+      <td><code>https://assets.mixkit.co/music/preview/mixkit-bridge-of-the-samurai-122.mp3</code><br/><span class="ref">apps/web/lib/music-catalog.ts:61</span></td>
+    </tr><tr data-id="mix-sleepy-cat" data-label="Sleepy Cat" data-ref="apps/web/lib/music-catalog.ts:61">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td><button type="button" class="play-remote" data-play="https://assets.mixkit.co/music/preview/mixkit-sleepy-cat-135.mp3">▶ Mixkit</button></td>
+      <td>Sleepy Cat<br/><code>mix-sleepy-cat</code></td>
+      <td>stream</td>
+      <td>all</td>
+      <td><span class="tag">lofi</span></td>
+      <td class="license-ok">Mixkit-Free</td>
+      <td>Mixkit</td>
+      <td><code>https://assets.mixkit.co/music/preview/mixkit-sleepy-cat-135.mp3</code><br/><span class="ref">apps/web/lib/music-catalog.ts:61</span></td>
+    </tr></tbody>
+    </table></div>
+    <h2>Procedural WebAudio themes (no file)</h2>
+    <div class="panel"><table>
+      <thead><tr><th>Keep</th><th>Play</th><th>Theme</th><th>Kind</th><th>Langs</th><th>Tags</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
+      <tbody><tr data-id="procedural-default" data-label="warm pop" data-ref="apps/web/lib/music.ts:67">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td>—</td>
+      <td>default<br/><em>warm pop</em></td>
+      <td>procedural</td>
+      <td>all</td>
+      <td><span class="tag">96 bpm</span><span class="tag">triangle</span></td>
+      <td class="license-ok">Original (WebAudio)</td>
+      <td>—</td>
+      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>default</code></span></td>
+    </tr><tr data-id="procedural-juno" data-label="smoky swing" data-ref="apps/web/lib/music.ts:67">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td>—</td>
+      <td>juno<br/><em>smoky swing</em></td>
+      <td>procedural</td>
+      <td>all</td>
+      <td><span class="tag">88 bpm</span><span class="tag">sine</span></td>
+      <td class="license-ok">Original (WebAudio)</td>
+      <td>—</td>
+      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>juno</code></span></td>
+    </tr><tr data-id="procedural-mochi" data-label="music box" data-ref="apps/web/lib/music.ts:67">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td>—</td>
+      <td>mochi<br/><em>music box</em></td>
+      <td>procedural</td>
+      <td>all</td>
+      <td><span class="tag">78 bpm</span><span class="tag">sine</span></td>
+      <td class="license-ok">Original (WebAudio)</td>
+      <td>—</td>
+      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>mochi</code></span></td>
+    </tr><tr data-id="procedural-marin" data-label="hyper pop" data-ref="apps/web/lib/music.ts:67">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td>—</td>
+      <td>marin<br/><em>hyper pop</em></td>
+      <td>procedural</td>
+      <td>all</td>
+      <td><span class="tag">128 bpm</span><span class="tag">square</span></td>
+      <td class="license-ok">Original (WebAudio)</td>
+      <td>—</td>
+      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>marin</code></span></td>
+    </tr><tr data-id="procedural-ruby" data-label="bouncy" data-ref="apps/web/lib/music.ts:67">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td>—</td>
+      <td>ruby<br/><em>bouncy</em></td>
+      <td>procedural</td>
+      <td>all</td>
+      <td><span class="tag">118 bpm</span><span class="tag">triangle</span></td>
+      <td class="license-ok">Original (WebAudio)</td>
+      <td>—</td>
+      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>ruby</code></span></td>
+    </tr><tr data-id="procedural-alan" data-label="easy jam" data-ref="apps/web/lib/music.ts:67">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td>—</td>
+      <td>alan<br/><em>easy jam</em></td>
+      <td>procedural</td>
+      <td>all</td>
+      <td><span class="tag">100 bpm</span><span class="tag">triangle</span></td>
+      <td class="license-ok">Original (WebAudio)</td>
+      <td>—</td>
+      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>alan</code></span></td>
+    </tr><tr data-id="procedural-mika" data-label="laid-back" data-ref="apps/web/lib/music.ts:67">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td>—</td>
+      <td>mika<br/><em>laid-back</em></td>
+      <td>procedural</td>
+      <td>all</td>
+      <td><span class="tag">82 bpm</span><span class="tag">sine</span></td>
+      <td class="license-ok">Original (WebAudio)</td>
+      <td>—</td>
+      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>mika</code></span></td>
+    </tr><tr data-id="procedural-luna" data-label="dreamy" data-ref="apps/web/lib/music.ts:67">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td>—</td>
+      <td>luna<br/><em>dreamy</em></td>
+      <td>procedural</td>
+      <td>all</td>
+      <td><span class="tag">72 bpm</span><span class="tag">sine</span></td>
+      <td class="license-ok">Original (WebAudio)</td>
+      <td>—</td>
+      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>luna</code></span></td>
+    </tr><tr data-id="procedural-anchor" data-label="sea shanty" data-ref="apps/web/lib/music.ts:67">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td>—</td>
+      <td>anchor<br/><em>sea shanty</em></td>
+      <td>procedural</td>
+      <td>all</td>
+      <td><span class="tag">92 bpm</span><span class="tag">sawtooth</span></td>
+      <td class="license-ok">Original (WebAudio)</td>
+      <td>—</td>
+      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>anchor</code></span></td>
+    </tr><tr data-id="procedural-pop" data-label="bright pop" data-ref="apps/web/lib/music.ts:67">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td>—</td>
+      <td>pop<br/><em>bright pop</em></td>
+      <td>procedural</td>
+      <td>all</td>
+      <td><span class="tag">112 bpm</span><span class="tag">triangle</span></td>
+      <td class="license-ok">Original (WebAudio)</td>
+      <td>—</td>
+      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>pop</code></span></td>
+    </tr><tr data-id="procedural-jazz" data-label="smoky jazz" data-ref="apps/web/lib/music.ts:67">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td>—</td>
+      <td>jazz<br/><em>smoky jazz</em></td>
+      <td>procedural</td>
+      <td>all</td>
+      <td><span class="tag">90 bpm</span><span class="tag">sine</span></td>
+      <td class="license-ok">Original (WebAudio)</td>
+      <td>—</td>
+      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>jazz</code></span></td>
+    </tr><tr data-id="procedural-hiphop" data-label="boom bap" data-ref="apps/web/lib/music.ts:67">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td>—</td>
+      <td>hiphop<br/><em>boom bap</em></td>
+      <td>procedural</td>
+      <td>all</td>
+      <td><span class="tag">96 bpm</span><span class="tag">square</span></td>
+      <td class="license-ok">Original (WebAudio)</td>
+      <td>—</td>
+      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>hiphop</code></span></td>
+    </tr><tr data-id="procedural-lofi" data-label="lofi bed" data-ref="apps/web/lib/music.ts:67">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td>—</td>
+      <td>lofi<br/><em>lofi bed</em></td>
+      <td>procedural</td>
+      <td>all</td>
+      <td><span class="tag">76 bpm</span><span class="tag">sine</span></td>
+      <td class="license-ok">Original (WebAudio)</td>
+      <td>—</td>
+      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>lofi</code></span></td>
+    </tr><tr data-id="procedural-electronic" data-label="pulse" data-ref="apps/web/lib/music.ts:67">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td>—</td>
+      <td>electronic<br/><em>pulse</em></td>
+      <td>procedural</td>
+      <td>all</td>
+      <td><span class="tag">124 bpm</span><span class="tag">sawtooth</span></td>
+      <td class="license-ok">Original (WebAudio)</td>
+      <td>—</td>
+      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>electronic</code></span></td>
+    </tr><tr data-id="procedural-ballad" data-label="slow ballad" data-ref="apps/web/lib/music.ts:67">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td>—</td>
+      <td>ballad<br/><em>slow ballad</em></td>
+      <td>procedural</td>
+      <td>all</td>
+      <td><span class="tag">68 bpm</span><span class="tag">sine</span></td>
+      <td class="license-ok">Original (WebAudio)</td>
+      <td>—</td>
+      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>ballad</code></span></td>
+    </tr><tr data-id="procedural-rock" data-label="drive rock" data-ref="apps/web/lib/music.ts:67">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td>—</td>
+      <td>rock<br/><em>drive rock</em></td>
+      <td>procedural</td>
+      <td>all</td>
+      <td><span class="tag">118 bpm</span><span class="tag">sawtooth</span></td>
+      <td class="license-ok">Original (WebAudio)</td>
+      <td>—</td>
+      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>rock</code></span></td>
+    </tr><tr data-id="procedural-cantopop" data-label="canto glow" data-ref="apps/web/lib/music.ts:67">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td>—</td>
+      <td>cantopop<br/><em>canto glow</em></td>
+      <td>procedural</td>
+      <td>all</td>
+      <td><span class="tag">104 bpm</span><span class="tag">triangle</span></td>
+      <td class="license-ok">Original (WebAudio)</td>
+      <td>—</td>
+      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>cantopop</code></span></td>
+    </tr></tbody>
+    </table></div>
+    
+    <p class="lede" style="margin-top:2rem;font-size:0.85rem;">Generated 2026-11-17 · <a href="project-status.html">Project status</a> · SoT: <code>performance-clips.ts</code>, <code>music-catalog.ts</code>, <code>personality-voice.ts</code>, <code>poke-zones.ts</code>, <code>voice-clips.ts</code></p>
+  </div>
+  <script>
+    function rowId(cb) { return cb.closest('tr')?.dataset?.id || ''; }
+    function collectUnchecked(fmt) {
+      const rows = [...document.querySelectorAll('tbody tr[data-id]')];
+      const remove = rows.filter(tr => !tr.querySelector('input.keep')?.checked).map(tr => ({
+        id: tr.dataset.id,
+        label: tr.dataset.label || tr.dataset.id,
+        ref: tr.dataset.ref || '',
+      }));
+      if (fmt === 'json') return JSON.stringify({ remove, kept: rows.length - remove.length }, null, 2);
+      const lines = ['## Remove (unchecked rows)', ''];
+      for (const r of remove) lines.push('- ' + r.id + (r.label ? ' — ' + r.label : '') + (r.ref ? ' (' + r.ref + ')' : ''));
+      return lines.join('\n');
+    }
+    document.getElementById('copyJson')?.addEventListener('click', () => {
+      const t = collectUnchecked('json');
+      document.getElementById('exportOut').value = t;
+      navigator.clipboard?.writeText(t);
+    });
+    document.getElementById('copyMd')?.addEventListener('click', () => {
+      const t = collectUnchecked('md');
+      document.getElementById('exportOut').value = t;
+      navigator.clipboard?.writeText(t);
+    });
+    document.getElementById('filterQ')?.addEventListener('input', (e) => {
+      const q = (e.target.value || '').toLowerCase();
+      document.querySelectorAll('tbody tr[data-id]').forEach(tr => {
+        tr.style.display = !q || tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+      });
+    });
+    let currentAudio = null;
+    document.body.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-play]');
+      if (!btn) return;
+      const src = btn.getAttribute('data-play');
+      if (!src) return;
+      if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+      currentAudio = new Audio(src);
+      currentAudio.play().catch(() => alert('Playback blocked or file missing. Serve from docs/ per instructions.'));
+    });
+  </script>
+</body>
+</html>
