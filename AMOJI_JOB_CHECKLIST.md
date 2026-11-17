@@ -17,11 +17,11 @@ Locale → engine → voice lives in `apps/web/lib/voice-catalog.ts`. Non-Yue en
 
 ## In progress (open PRs)
 
-Prefer [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) for the live board. Agents: **0** code-actionable on `main` after **#482**; tip `d1e26f7a` (**r2026-11-17.188**).
+Prefer [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) for the live board. Agents: **0** code-actionable on `main` after **#483**; tip `fc9808db` (**r2026-11-17.189**).
 
 - Open product: Hold spikes **#1** / **#20** only
 - **#469** closed — weather “search weather” route already on `main`
-- **#482** merged — Compiler slice mute/legal/soft-land; r189 entry guard in flight
+- **#483** merged — entry guard Compiler slice; r190 soft-audio boot prefs next
 
 ## Open / remains
 

@@ -98,8 +98,8 @@ Tick on a real phone (prefer iPhone Safari). **Mandatory once:** hard refresh, t
 
 | Check | Result |
 | --- | --- |
-| `main` tip | `d1e26f7a` (#482) · **`r2026-11-17.188`** · hard-refresh for SW cache |
+| `main` tip | `fc9808db` (#483) · **`r2026-11-17.189`** · hard-refresh for SW cache |
 | Outstanding (owner) | Card · news · **R10–R13 not Done** · nonsense · captions · SFX Want |
-| Agent actionable code | **0** on tip; **r189** entry-gate Compiler slice (open PR) |
+| Agent actionable code | **0** on tip; **r190** soft-audio boot prefs (PR when pushed) |
 | Closed queue | #469 weather route (already on `main`) |
 | Hold spikes | #1 / #20 only (do not merge) |

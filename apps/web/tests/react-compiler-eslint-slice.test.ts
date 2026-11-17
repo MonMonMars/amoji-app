@@ -30,6 +30,13 @@ describe('react-compiler eslint slice (r188)', () => {
     expect(src).not.toMatch(/setReady\(true\)/);
   });
 
+  it('PreChatAudioGate loads lang/mic in useState init, not setLang in effect', () => {
+    const src = read('components/PreChatAudioGate.tsx');
+    expect(src).toContain('loadPrefs().lang');
+    expect(src).not.toMatch(/setLang\(loadPrefs/);
+    expect(src).not.toContain('eslint-disable-next-line react-hooks/set-state-in-effect');
+  });
+
   it('scroll-unlock inactive path does not setState inside effect', () => {
     const src = read('lib/scroll-unlock.ts');
     expect(src).toContain('return active ? reached : false');

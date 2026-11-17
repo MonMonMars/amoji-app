@@ -1,11 +1,11 @@
 # Amoji project status board
 
-**Generated:** 2026-11-17 18:25 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-17 18:35 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** open [`project-status.html`](./project-status.html) in a browser (repo file — not a Pages route).  
-**`main` tip:** `d1e26f7a` (#482 · **r2026-11-17.188** · backlog through #478–#482)
+**`main` tip:** `fc9808db` (#483 · **r2026-11-17.189** · backlog through #478–#483)
 
 ## Snapshot
 
@@ -39,12 +39,13 @@
 
 ## Done (merged to `main`)
 
-Living tip: `d1e26f7a` (**r2026-11-17.188**). Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
+Living tip: `fc9808db` (**r2026-11-17.189**). Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
 
-### Nov 17 backlog wave (#478–#482)
+### Nov 17 backlog wave (#478–#483)
 
 | PR | Item | Notes |
 | --- | --- | --- |
+| [#483](https://github.com/MonMonMars/amoji-app/pull/483) | RequireEntryGate `useSyncExternalStore` | Entry guard Compiler slice |
 | [#482](https://github.com/MonMonMars/amoji-app/pull/482) | React Compiler eslint slice + status refresh | Mute/legal/soft-land; docs tip |
 | [#481](https://github.com/MonMonMars/amoji-app/pull/481) | TtsVoiceRow **All** — per-locale pin highlight | **Phone** R10 audit |
 | [#480](https://github.com/MonMonMars/amoji-app/pull/480) | Calm idle torso upright after poke/chat | **Phone** R11 |
@@ -74,7 +75,7 @@ See prior rows in git history — tip was `9292e81` before Nov 17 wave.
 
 **Closed this turn:** [#469](https://github.com/MonMonMars/amoji-app/pull/469) weather search → Open-Meteo — already on `main` (`live-tools.ts`).
 
-**In flight:** r189 — `RequireEntryGate` `useSyncExternalStore` (branch `cursor/continue-finish-requests-r189-0340-0eac`).
+**In flight:** r190 — PreChatAudioGate boot prefs without `setLang` in effect (open PR when pushed).
 
 ---
 
@@ -82,7 +83,7 @@ See prior rows in git history — tip was `9292e81` before Nov 17 wave.
 
 ### Code (agents)
 
-**0** on tip after #482. r189 continues Compiler slice on entry guard. CI must stay green.
+**0** on tip after **#483**. Remaining Compiler eslint debt is incremental (PreChatAudioGate, ChatPanel hooks). No owner-blocker queued.
 
 Do **not:** re-flip poke lean; wipe owner idle/poke picks; mark R10–R13 Done; merge Hold spikes.
 

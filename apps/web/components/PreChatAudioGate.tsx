@@ -36,22 +36,27 @@ export default function PreChatAudioGate({
   nextHref?: string;
 }) {
   const router = useRouter();
-  const [lang, setLang] = useState<Lang>('en');
+  const [lang] = useState<Lang>(() => {
+    try {
+      return loadPrefs().lang;
+    } catch {
+      return 'en';
+    }
+  });
   const [soundTested, setSoundTested] = useState(false);
   const [soundUi, setSoundUi] = useState<SoundCheckUi>('idle');
   const [heard, setHeard] = useState<'yes' | 'no' | null>(null);
   const [playing, setPlaying] = useState(false);
-  const [mic, setMic] = useState<MicOutcome | 'pending'>('pending');
+  const [mic, setMic] = useState<MicOutcome | 'pending'>(() =>
+    listenSupported() ? 'pending' : 'unsupported',
+  );
   const [micBusy, setMicBusy] = useState(false);
   const [locationUi, setLocationUi] = useState<LocationGateUi>('idle');
   const [locationBusy, setLocationBusy] = useState(false);
   const primedExtras = useRef(false);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    try { setLang(loadPrefs().lang); } catch { /* en */ }
     stashPriorMasterMuteForChat();
-    if (!listenSupported()) setMic('unsupported');
   }, []);
 
   const allowMic = useCallback(async () => {
