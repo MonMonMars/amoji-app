@@ -895,15 +895,17 @@ describe('local light news and reply guard', () => {
   });
 
   it('sayRecent uses 今日 when the story published today (HK calendar)', () => {
-    const now = Date.parse('2026-11-17T14:00:00+08:00');
+    const now = Date.now();
     const todayLead = { title: '輕鬆社區活動', source: 'HK01', publishedAt: now };
+    expect(isNewsPublishedToday(todayLead.publishedAt, now)).toBe(true);
     expect(sayRecent('yue', todayLead)).toMatch(/^今日有條新聞：/);
     expect(sayRecent('yue', todayLead)).toContain('輕鬆社區活動');
     const oldLead = {
       title: '舊聞',
       source: 'HK01',
-      publishedAt: now - 86_400_000 * 2,
+      publishedAt: now - 86_400_000 * 3,
     };
+    expect(isNewsPublishedToday(oldLead.publishedAt, now)).toBe(false);
     expect(sayRecent('yue', oldLead)).toMatch(/^最近有條新聞：/);
     expect(sayRecent('yue', { title: '無日期', source: '' })).toMatch(/^最近有條新聞：/);
   });
