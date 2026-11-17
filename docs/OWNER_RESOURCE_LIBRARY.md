@@ -4,7 +4,8 @@
 
 **Machine-readable index:** `apps/web/lib/owner-resource-manifest.ts` (`buildOwnerResourceIndex()`, re-exports)  
 **Manifest version:** `2026-11-16-owner-resource-v1`  
-**Human mirror (artifacts):** `/opt/cursor/artifacts/owner-resource-library.md`
+**Human mirror (artifacts):** `/opt/cursor/artifacts/owner-resource-library.md`  
+**Pixel picker (HTML):** `docs/owner-resources.html` — unified music / poke / idle tabs; regenerate with `node scripts/generate-owner-picker-html.mjs`
 
 ## Standing rule (agents)
 

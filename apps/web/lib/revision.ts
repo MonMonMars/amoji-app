@@ -418,7 +418,8 @@
 // r2026-11-17.200: card greet audible — EarlyAudioUnlock on click; stopSpeakingForCardAudition; no synth prime on card.
 // r2026-11-17.201: poke/chat skip yue 我鍾意信 motif TTS loop (speech-queue + pokeLineForSpeech).
 // r2026-11-17.202: dance loop VRMA (LoopRepeat); owner dance rail picks lead perf motion.
-export const APP_REVISION = 'r2026-11-17.202';
+// r2026-11-17.203: docs/owner-resources.html unified owner picker (music + poke + idle tabs).
+export const APP_REVISION = 'r2026-11-17.203';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
