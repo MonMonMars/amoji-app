@@ -12,6 +12,7 @@ import { idlePickFor } from './idle-pick';
 import { DEFAULT_IDLE_CLIP_ID } from './idle-retired';
 import { detectMusicStyle, STYLE_CLIP_HINTS } from './music-catalog';
 import { resolvePerfMotion } from './performance-motion';
+import { ownerDanceClipPrefs } from './owner-dance-picks';
 
 const BREATHING_CLIPS = [
   DEFAULT_IDLE_CLIP_ID,
@@ -220,18 +221,24 @@ function preferredPerfIdle(
   kind: 'song' | 'dance',
   text: string,
   fallbackStyle: string,
+  characterId?: string | null,
 ): string | null {
   const style = perfStyleHint(text, fallbackStyle);
-  const profile = resolvePerfMotion({
-    id: `chat-auto-${kind}`,
-    kind,
-    style,
-  });
+  const profile = resolvePerfMotion(
+    {
+      id: `chat-auto-${kind}`,
+      kind,
+      style,
+    },
+    kind === 'dance' ? { ownerDanceClips: ownerDanceClipPrefs(characterId) } : undefined,
+  );
   return firstPlayable(profile.preferredClipIds);
 }
 
-function pickDanceClip(text: string): string {
-  const preferred = preferredPerfIdle('dance', text, 'cheerful pop');
+function pickDanceClip(text: string, characterId?: string | null): string {
+  const owner = firstPlayable(ownerDanceClipPrefs(characterId));
+  if (owner) return owner;
+  const preferred = preferredPerfIdle('dance', text, 'cheerful pop', characterId);
   if (preferred) return preferred;
   const t = text.toLowerCase();
   if (/jazz|爵士/.test(t)) return idleClipById('lib_C60') ? 'lib_C60' : 'lib_C112';
@@ -244,34 +251,34 @@ function pickDanceClip(text: string): string {
   return idleClipById('lib_C61') ? 'lib_C61' : idleClipById('lib_C03') ? 'lib_C03' : pickBreathingDefault(text);
 }
 
-function pickMusicClip(text: string): string {
+function pickMusicClip(text: string, characterId?: string | null): string {
   const t = text.toLowerCase();
   // Genre cues share the dance shortlist so talk about music still moves.
   if (/jazz|爵士|lofi|lofí|chill|ballad|抒情/.test(t)) {
-    const soft = preferredPerfIdle('dance', text, 'soft ballad');
+    const soft = preferredPerfIdle('dance', text, 'soft ballad', characterId);
     if (soft) return soft;
     return idleClipById('lib_C112') ? 'lib_C112' : pickFromPool(text, MUSIC_POSE_CLIPS);
   }
   if (/party|派對|派对|club|夜店|edm|disco/.test(t)) {
-    const up = preferredPerfIdle('dance', text, 'upbeat dance');
+    const up = preferredPerfIdle('dance', text, 'upbeat dance', characterId);
     if (up) return up;
     return idleClipById('lib_C114') ? 'lib_C114' : pickFromPool(text, MUSIC_POSE_CLIPS);
   }
   if (/hip[- ]?hop|嘻哈|upbeat|快歌/.test(t)) {
-    const hip = preferredPerfIdle('dance', text, 'upbeat dance');
+    const hip = preferredPerfIdle('dance', text, 'upbeat dance', characterId);
     if (hip) return hip;
     return idleClipById('lib_C61') ? 'lib_C61' : idleClipById('lib_C03') ? 'lib_C03' : pickFromPool(text, MUSIC_POSE_CLIPS);
   }
   if (/listen|聽歌|听歌|concert|演唱會|演唱会|音樂會|音乐会/.test(t)) {
     return idleClipById('lib_C112') ? 'lib_C112' : pickFromPool(text, MUSIC_POSE_CLIPS);
   }
-  const preferred = preferredPerfIdle('dance', text, 'chill');
+  const preferred = preferredPerfIdle('dance', text, 'chill', characterId);
   if (preferred) return preferred;
   return pickFromPool(text, MUSIC_POSE_CLIPS);
 }
 
-function pickSingClip(text: string): string {
-  const preferred = preferredPerfIdle('song', text, 'soft ballad');
+function pickSingClip(text: string, characterId?: string | null): string {
+  const preferred = preferredPerfIdle('song', text, 'soft ballad', characterId);
   if (preferred) return preferred;
   return idleClipById('IdleMixamoHappy') ? 'IdleMixamoHappy' : pickBreathingDefault(text);
 }
@@ -335,9 +342,9 @@ function clipForCategory(
   if (cat === 'breathe') return pickBreathingDefault(seed, characterId);
   if (cat === 'talk' || cat === 'look') return pickTalkCalmIdle(seed, characterId);
   if (cat === 'greet') return pickChitchatDefault(seed, characterId);
-  if (cat === 'dance') return pickDanceClip(corpus);
-  if (cat === 'music') return pickMusicClip(corpus);
-  if (cat === 'sing') return pickSingClip(corpus);
+  if (cat === 'dance') return pickDanceClip(corpus, characterId);
+  if (cat === 'music') return pickMusicClip(corpus, characterId);
+  if (cat === 'sing') return pickSingClip(corpus, characterId);
   const id = CATEGORY_CLIP[cat as BucketCategory];
   if (id && idleClipById(id)) return id;
   if (cat === 'think') return idleClipById('Thinking') ? 'Thinking' : pickBreathingDefault(seed, characterId);

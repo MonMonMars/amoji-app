@@ -210,22 +210,54 @@ export function timeScaleForBpm(bpm: number, clipBpm: number): number {
  * remotes may fill lib_C03 / lib_C61 / lib_C62 / lib_C110. timeScale uses
  * fallback clip BPM; CompanionCanvas recomputes when a preferred clip plays.
  */
-export function resolvePerfMotion(clip: {
-  id: string;
-  kind: 'song' | 'dance';
-  style: string;
-}): PerfMotionProfile {
+export interface ResolvePerfMotionOpts {
+  /** Owner-enabled / pinned dance VRMA ids — win over style tag mapping. */
+  ownerDanceClips?: readonly string[];
+}
+
+function mergeOwnerDanceClips(
+  base: readonly string[],
+  owner?: readonly string[],
+): readonly string[] {
+  if (!owner?.length) return base;
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const id of owner) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  for (const id of base) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
+}
+
+export function resolvePerfMotion(
+  clip: {
+    id: string;
+    kind: 'song' | 'dance';
+    style: string;
+  },
+  opts?: ResolvePerfMotionOpts,
+): PerfMotionProfile {
   const tag = motionTagFor(clip.style, clip.kind, clip.id);
   const { bpm, measured } = trackBpmFor(clip.style, clip.id);
   const clipBpm = clip.kind === 'dance' ? 100 : 90;
   const preferredClipBpm = clipBpmForTag(tag);
   const timeScale = timeScaleForBpm(bpm, clipBpm);
-  const preferredClipIds = PREFERRED[tag] ?? (tag.startsWith('C') ? [`lib_${tag}`] : []);
+  let preferredClipIds = PREFERRED[tag] ?? (tag.startsWith('C') ? [`lib_${tag}`] : []);
   // Fallbacks always include the classic Sing/Dance VRMAs plus a leggy lib_C*
   // so a missing preferred file never leaves the body in idle/T-pose.
-  const fallbackClipIds: readonly string[] = clip.kind === 'song'
+  let fallbackClipIds: readonly string[] = clip.kind === 'song'
     ? ['Sing', 'lib_C116', 'lib_C112', 'Dance']
     : ['Dance', 'lib_C61', 'lib_C03', 'lib_C113'];
+  if (clip.kind === 'dance' && opts?.ownerDanceClips?.length) {
+    preferredClipIds = mergeOwnerDanceClips(preferredClipIds, opts.ownerDanceClips);
+    fallbackClipIds = mergeOwnerDanceClips(fallbackClipIds, opts.ownerDanceClips);
+  }
   return {
     tag,
     label: TAG_LABEL[tag] ?? tag,

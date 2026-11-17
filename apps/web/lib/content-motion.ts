@@ -20,6 +20,7 @@ import { feltMood, moodToHints } from './memory';
 import { idleClipById } from './idle-clips';
 import { detectMusicStyle, STYLE_CLIP_HINTS } from './music-catalog';
 import { resolvePerfMotion } from './performance-motion';
+import { ownerDanceClipPrefs } from './owner-dance-picks';
 
 export interface ContentMotionInput {
   /** Latest user line (preferred for intent). */
@@ -113,14 +114,18 @@ function firstPlayable(ids: readonly string[]): string | null {
 export function preferredPerfIdleForContent(
   kind: 'song' | 'dance',
   text: string,
+  characterId?: string | null,
 ): string | null {
   const fallback = kind === 'song' ? 'soft ballad' : 'cheerful pop';
   const style = perfStyleHint(text, fallback);
-  const profile = resolvePerfMotion({
-    id: `content-${kind}`,
-    kind,
-    style,
-  });
+  const profile = resolvePerfMotion(
+    {
+      id: `content-${kind}`,
+      kind,
+      style,
+    },
+    kind === 'dance' ? { ownerDanceClips: ownerDanceClipPrefs(characterId) } : undefined,
+  );
   return firstPlayable(profile.preferredClipIds);
 }
 
@@ -174,9 +179,9 @@ export function resolveContentMotion(input: ContentMotionInput): ContentMotionPl
 
   // Dance / sing → prefer performance-motion shortlist clips for the body idle.
   if (move === 'dance') {
-    idleClip = preferredPerfIdleForContent('dance', corpus) ?? idleClip;
+    idleClip = preferredPerfIdleForContent('dance', corpus, characterId) ?? idleClip;
   } else if (move === 'sing') {
-    idleClip = preferredPerfIdleForContent('song', corpus) ?? idleClip;
+    idleClip = preferredPerfIdleForContent('song', corpus, characterId) ?? idleClip;
   }
 
   return {
