@@ -50,5 +50,7 @@ describe('idle clip family + unstrange pose blend', () => {
     expect(canvas).toContain('clearPlantLean');
     expect(canvas).toMatch(/allowArmRewrite[\s\S]*easeIdleHang/);
     expect(canvas).toMatch(/boost === 0\) \{\s*\n\s*avatar\.clearPlantLean/);
+    expect(canvas).toContain('pullIdleTorsoUpright');
+    expect(canvas).toMatch(/calmClipNow[\s\S]*pullIdleTorsoUpright/);
   });
 });

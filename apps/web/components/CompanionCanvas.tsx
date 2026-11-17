@@ -66,7 +66,11 @@ import {
   shortestQuatSlerpClamped,
 } from '../lib/vrm/quat-blend';
 import { clampBoneByName } from '../lib/vrm/bone-joint-limits';
-import { applyIdleClipSoftening, idleArmRewriteAllowed } from '../lib/idle-stance-soften';
+import {
+  applyIdleClipSoftening,
+  idleArmRewriteAllowed,
+  pullIdleTorsoUpright,
+} from '../lib/idle-stance-soften';
 import { chestPokeBounce, CHEST_BOUNCE_SEC, SOFT_CHEST_BOUNCE_SEC } from '../lib/vrm/chest-bounce';
 import { sampleSpeech } from '../lib/speech';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
@@ -2176,6 +2180,16 @@ export default function CompanionCanvas({
           // Idle soften — skip during swap glide (fights mixer A→B).
           if (!perfAction && boost === 0 && !gameView && !handDrag && !idleLegGlide) {
             applyIdleClipSoftening((name) => avatar!.getBoneNode(name), idleClipId);
+          } else if (
+            calmClipNow
+            && !perfAction
+            && boost === 0
+            && !gameView
+            && !handDrag
+            && !idleLegGlide
+          ) {
+            // Upright-only on calm VRMA — no arm hang rewrite (frankenstein).
+            pullIdleTorsoUpright((name) => avatar!.getBoneNode(name));
           }
           avatar.applyPose(poseTargets);
         } else {
