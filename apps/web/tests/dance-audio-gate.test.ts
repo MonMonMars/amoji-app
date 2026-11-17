@@ -37,7 +37,10 @@ describe('dance-audio-gate', () => {
     expect(begin).not.toMatch(/triggerMove\(bodyMove\)/);
     expect(begin).toContain('startLibraryPerformance(query)');
     // Body starts from library-clip playing handler.
-    expect(panel).toMatch(/shouldStartDanceOnAudioPlaying[\s\S]*triggerMove\(pending\.bodyMove\)/);
+    expect(panel).toContain('commitPendingPerfDance');
+    expect(panel).toMatch(/commitPendingPerfDance\(detail\.id\)/);
+    expect(panel).toContain('isLibraryClipAudible');
+    expect(panel).toContain('queueMicrotask');
   });
 
   it('explicit sing/dance send short-circuits before LLM (no double beginShow / stopMusic)', () => {
@@ -85,6 +88,10 @@ describe('dance-audio-gate', () => {
     expect(playClip.indexOf('src.start()')).toBeLessThan(playClip.indexOf('startSongMouth'));
     expect(music).toContain('armSongMouthFromElement');
     expect(music).toMatch(/clipKind === 'song'[\s\S]*armSongMouthFromElement/);
+    expect(music).toContain('export function isLibraryClipAudible');
+    expect(music).toContain('export function activeLibraryClipId');
+    expect(music).toMatch(/emitLibraryClipPlaying[\s\S]*clipAudible = true/);
+    expect(music).toMatch(/haltClip[\s\S]*clipAudible = false/);
   });
 
   it('CompanionCanvas retries sing/dance playPerf until VRMA loads', () => {

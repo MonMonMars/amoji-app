@@ -469,9 +469,22 @@ function armPerformance(ms: number): void {
   perfTimer = setTimeout(() => endPerformanceMusic(), ms);
 }
 
+/** True after `playing` was emitted for the active bed (sync path catch-up). */
+let clipAudible = false;
+
+export function activeLibraryClipId(): string | null {
+  return clipId;
+}
+
+/** Bed reports audible — use to catch missed `amoji:library-clip` dispatches. */
+export function isLibraryClipAudible(): boolean {
+  return clipAudible && Boolean(clipId);
+}
+
 /** Notify UI that a library bed is audible — dance/sing body gates on this. */
 function emitLibraryClipPlaying(id: string | null = clipId): void {
   if (typeof window === 'undefined' || !id) return;
+  clipAudible = true;
   window.dispatchEvent(new CustomEvent('amoji:library-clip', { detail: { state: 'playing', id } }));
 }
 
@@ -504,6 +517,7 @@ function haltClip(): void {
   clipCtx = null;
   clipId = null;
   clipKind = null;
+  clipAudible = false;
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('amoji:library-clip', { detail: { state: 'stopped' } }));
   }

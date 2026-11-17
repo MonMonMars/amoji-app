@@ -22,4 +22,13 @@ describe('chat mic voice final while busy', () => {
     const finallyBlock = PANEL.slice(PANEL.lastIndexOf('} finally {'), PANEL.indexOf('// ChatGPT-style hero mic'));
     expect(finallyBlock).toContain('flushVoiceTurnQueue()');
   });
+
+  it('send() gates on busyRef so flushVoiceTurnQueue is not dropped by stale React busy', () => {
+    const sendBlock = PANEL.slice(
+      PANEL.indexOf('const send = async'),
+      PANEL.indexOf('const beginVoiceMode'),
+    );
+    expect(sendBlock).toContain('busyRef.current');
+    expect(sendBlock).not.toMatch(/if \(!text \|\| busy\)/);
+  });
 });
