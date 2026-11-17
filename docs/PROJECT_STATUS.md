@@ -33,7 +33,7 @@
 | Setup / Gate | 99% |
 | Systems | 99% |
 | SEO / marketing surface | 99% |
-| Docs | 99% (#389 merged; this tip refresh r188) |
+| Docs | 99% (#389 merged; this tip refresh r202) |
 | Merge to main | 99% |
 
 ---
@@ -100,7 +100,7 @@ See prior rows in git history — tip was `9292e81` before Nov 17 wave.
 
 **0** on tip after **#493**. No queued owner blocker in the **#489–#493** batch.
 
-Do **not:** re-flip poke lean; wipe owner idle/poke picks; mark R10–R13 Done; merge Hold spikes.
+Do **not:** re-flip poke lean; wipe owner idle/poke/dance picks; mark R10–R13 Done; merge Hold spikes.
 
 ### Phone / human (not agent Done)
 
@@ -120,7 +120,7 @@ Do **not:** re-flip poke lean; wipe owner idle/poke picks; mark R10–R13 Done; 
 
 ### Human / Pixel
 
-1. Phone smoke on Pages at **r202+** after SW refresh.  
+1. Phone smoke on Pages at **r202+** after #493 dance LoopRepeat + owner dance picks.  
 2. Talking-nonsense verify — owner OK still required.  
 3. Holds unchanged (#1 / #20 unless Pixel asks).
 
@@ -134,7 +134,7 @@ Unchanged — licensed music, Stripe live, PH, Search Console, modular GLBs, spi
 
 ## Feature status (priority)
 
-Prior table through #437 remains on `main`; Nov 17 PRs above supersede phone notes for weather, news, captions, idle, voice row. **Verify:** post-merge live check = **Human**.
+Prior table through #437 remains on `main`; Nov 17 PRs above supersede phone notes for weather, news, captions, idle, voice row, dance. **Verify:** post-merge live check = **Human**.
 
 ---
 
@@ -142,6 +142,6 @@ Prior table through #437 remains on `main`; Nov 17 PRs above supersede phone not
 
 | Document | Path | Status |
 | --- | --- | --- |
-| This status board | `docs/PROJECT_STATUS.md` + `project-status.html` | Refreshed **2026-11-17** |
+| This status board | `docs/PROJECT_STATUS.md` + `project-status.html` | Refreshed **2026-11-17** post-#493 |
 | Phone smoke | `docs/PHONE_SMOKE.md` | Agent pre-check updated |
 | Job checklist | `AMOJI_JOB_CHECKLIST.md` | Refreshed tip |
