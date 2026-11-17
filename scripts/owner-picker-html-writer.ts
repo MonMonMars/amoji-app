@@ -216,15 +216,26 @@ function pickerScript(exportKey: string): string {
         tr.style.display = !q || tr.textContent.toLowerCase().includes(q) ? '' : 'none';
       });
     });
+    function resolvePlaySrc(raw) {
+      if (!raw) return '';
+      if (/^https?:/i.test(raw)) return raw;
+      if (raw.startsWith('amoji-public-serve/')) return '../' + raw.slice('amoji-public-serve/'.length);
+      if (raw.startsWith('amoji-public-serve')) {
+        const tail = raw.slice('amoji-public-serve'.length).replace(/^\\//, '');
+        return tail ? '../' + tail : '';
+      }
+      return raw;
+    }
     let currentAudio = null;
     document.body.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-play]');
       if (!btn) return;
-      const src = btn.getAttribute('data-play');
+      const src = resolvePlaySrc(btn.getAttribute('data-play'));
       if (!src) return;
       if (currentAudio) { currentAudio.pause(); currentAudio = null; }
-      currentAudio = new Audio(src);
-      currentAudio.play().catch(() => alert('Playback blocked or file missing. Serve from docs/ per instructions.'));
+      const url = /^https?:/i.test(src) ? src : new URL(src, location.href).href;
+      currentAudio = new Audio(url);
+      currentAudio.play().catch(() => alert('Playback blocked or file missing. On Pages use /amoji-app/docs/owner-resources.html; local: cd docs && python3 -m http.server 8765'));
     });
   `;
 }

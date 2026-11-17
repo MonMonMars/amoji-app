@@ -222,6 +222,41 @@ function pagesDocsHtml(srcPath, destPath) {
   fs.writeFileSync(destPath, text);
 }
 
+const DATA_PLAY_RE = /data-play="([^"]+)"/g;
+
+/**
+ * Ensure shipped owner-resources.html points at bytes in `out/` (not stale symlink paths).
+ * Returns `{ ok, missing, unrewritten }` — callers exit non-zero when `!ok`.
+ */
+export function verifyOwnerResourcesPagesAssets(outDir) {
+  const htmlPath = path.join(outDir, "docs", "owner-resources.html");
+  const missing = [];
+  let unrewritten = 0;
+  if (!fs.existsSync(htmlPath)) {
+    return { ok: false, missing: ["docs/owner-resources.html"], unrewritten: 0 };
+  }
+  const html = fs.readFileSync(htmlPath, "utf8");
+  if (html.includes("amoji-public-serve/")) unrewritten += 1;
+  let m;
+  DATA_PLAY_RE.lastIndex = 0;
+  while ((m = DATA_PLAY_RE.exec(html))) {
+    const src = m[1];
+    if (/^https?:/i.test(src)) continue;
+    if (src.includes("amoji-public-serve")) {
+      missing.push(src);
+      continue;
+    }
+    if (!src.startsWith("../")) {
+      missing.push(src);
+      continue;
+    }
+    const rel = src.slice(3);
+    const abs = path.join(outDir, rel);
+    if (!fs.existsSync(abs)) missing.push(src);
+  }
+  return { ok: missing.length === 0 && unrewritten === 0, missing, unrewritten };
+}
+
 /**
  * Copy owner picker + status HTML into `out/docs/`.
  *
@@ -345,6 +380,19 @@ function postbuild() {
     const docsCopied = copyDocsPages(DOCS_DIR, OUT_DIR);
     console.log(
       `[store-bundle] web build: copied ${docsCopied.length} doc page(s) into out/docs/ (amoji-public-serve/ → ../)`
+    );
+    const assetCheck = verifyOwnerResourcesPagesAssets(OUT_DIR);
+    if (!assetCheck.ok) {
+      console.error("[store-bundle] owner-resources Pages assets failed:");
+      if (assetCheck.unrewritten) console.error("  HTML still contains amoji-public-serve/ (run pagesDocsHtml rewrite)");
+      for (const p of assetCheck.missing.slice(0, 24)) console.error(`  missing: ${p}`);
+      if (assetCheck.missing.length > 24) {
+        console.error(`  … and ${assetCheck.missing.length - 24} more`);
+      }
+      process.exit(1);
+    }
+    console.log(
+      `[store-bundle] owner-resources.html: ${assetCheck.missing.length === 0 ? "all local data-play targets exist under out/" : "see errors"}`
     );
   }
   fs.mkdirSync(path.dirname(BUILD_MODE_FILE), { recursive: true });
