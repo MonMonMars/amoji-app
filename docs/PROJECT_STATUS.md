@@ -5,7 +5,7 @@
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** open [`project-status.html`](./project-status.html) in a browser (repo file — not a Pages route).  
-**`main` tip:** `a9b18e0c` (#485 docs · product **r2026-11-17.190** via #484 · backlog **#478–#485**)
+**`main` tip:** `bbf7d918` (#486 · **r2026-11-17.191** · backlog **#478–#486**)
 
 ## Snapshot
 
@@ -39,12 +39,13 @@
 
 ## Done (merged to `main`)
 
-Living tip: `b103911a` (**r2026-11-17.190**). Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
+Living tip: `bbf7d918` (**r2026-11-17.191**). Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
 
-### Nov 17 backlog wave (#478–#484)
+### Nov 17 backlog wave (#478–#486)
 
 | PR | Item | Notes |
 | --- | --- | --- |
+| [#486](https://github.com/MonMonMars/amoji-app/pull/486) | SettingsSheet master mute external store | Compiler slice R10 settings |
 | [#484](https://github.com/MonMonMars/amoji-app/pull/484) | PreChatAudioGate boot state init | Compiler slice soft audio gate |
 | [#483](https://github.com/MonMonMars/amoji-app/pull/483) | RequireEntryGate `useSyncExternalStore` | Entry guard Compiler slice |
 | [#482](https://github.com/MonMonMars/amoji-app/pull/482) | React Compiler eslint slice + status refresh | Mute/legal/soft-land; docs tip |
@@ -84,7 +85,7 @@ See prior rows in git history — tip was `9292e81` before Nov 17 wave.
 
 ### Code (agents)
 
-**0** on tip after **#484**. Incremental Compiler eslint in `ChatPanel` / settings only — no queued owner blocker.
+**0** on tip after **#486**. Incremental Compiler eslint in `ChatPanel` only — no queued owner blocker.
 
 Do **not:** re-flip poke lean; wipe owner idle/poke picks; mark R10–R13 Done; merge Hold spikes.
 

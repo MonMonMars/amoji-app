@@ -98,7 +98,7 @@ Tick on a real phone (prefer iPhone Safari). **Mandatory once:** hard refresh, t
 
 | Check | Result |
 | --- | --- |
-| `main` tip | `b103911a` (#484) · **`r2026-11-17.190`** · hard-refresh for SW cache |
+| `main` tip | `bbf7d918` (#486) · **`r2026-11-17.191`** · hard-refresh for SW cache |
 | Outstanding (owner) | Card · news · **R10–R13 not Done** · nonsense · captions · SFX Want |
 | Agent actionable code | **0** — queue clear; phone smoke owns R10–R13 |
 | Closed queue | #469 weather route (already on `main`) |
