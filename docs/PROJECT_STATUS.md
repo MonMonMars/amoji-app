@@ -5,7 +5,7 @@
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** open [`project-status.html`](./project-status.html) in a browser (repo file — not a Pages route).  
-**`main` tip:** `fc9808db` (#483 · **r2026-11-17.189** · backlog through #478–#483)
+**`main` tip:** `b103911a` (#484 · **r2026-11-17.190** · backlog through #478–#484)
 
 ## Snapshot
 
@@ -39,12 +39,13 @@
 
 ## Done (merged to `main`)
 
-Living tip: `fc9808db` (**r2026-11-17.189**). Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
+Living tip: `b103911a` (**r2026-11-17.190**). Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
 
-### Nov 17 backlog wave (#478–#483)
+### Nov 17 backlog wave (#478–#484)
 
 | PR | Item | Notes |
 | --- | --- | --- |
+| [#484](https://github.com/MonMonMars/amoji-app/pull/484) | PreChatAudioGate boot state init | Compiler slice soft audio gate |
 | [#483](https://github.com/MonMonMars/amoji-app/pull/483) | RequireEntryGate `useSyncExternalStore` | Entry guard Compiler slice |
 | [#482](https://github.com/MonMonMars/amoji-app/pull/482) | React Compiler eslint slice + status refresh | Mute/legal/soft-land; docs tip |
 | [#481](https://github.com/MonMonMars/amoji-app/pull/481) | TtsVoiceRow **All** — per-locale pin highlight | **Phone** R10 audit |
@@ -75,7 +76,7 @@ See prior rows in git history — tip was `9292e81` before Nov 17 wave.
 
 **Closed this turn:** [#469](https://github.com/MonMonMars/amoji-app/pull/469) weather search → Open-Meteo — already on `main` (`live-tools.ts`).
 
-**In flight:** r190 — PreChatAudioGate boot prefs without `setLang` in effect (open PR when pushed).
+**In flight:** none — agent queue clear on tip **#484**.
 
 ---
 
@@ -83,7 +84,7 @@ See prior rows in git history — tip was `9292e81` before Nov 17 wave.
 
 ### Code (agents)
 
-**0** on tip after **#483**. Remaining Compiler eslint debt is incremental (PreChatAudioGate, ChatPanel hooks). No owner-blocker queued.
+**0** on tip after **#484**. Incremental Compiler eslint in `ChatPanel` / settings only — no queued owner blocker.
 
 Do **not:** re-flip poke lean; wipe owner idle/poke picks; mark R10–R13 Done; merge Hold spikes.
 
