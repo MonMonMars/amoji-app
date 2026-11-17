@@ -3,7 +3,16 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DEV_PAGES, BANNED_TOKENS, RATING_PATTERNS, BUILD_MODE_FILE, findToken, isTextual, scanTree } from '../scripts/store-bundle.mjs';
+import {
+  DEV_PAGES,
+  DOCS_PAGES,
+  BANNED_TOKENS,
+  RATING_PATTERNS,
+  BUILD_MODE_FILE,
+  findToken,
+  isTextual,
+  scanTree,
+} from '../scripts/store-bundle.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const WEB_ROOT = path.resolve(here, '..');
@@ -205,6 +214,21 @@ describe.skipIf(!hasOut)('store bundle: built out/ tree', () => {
   it.skipIf(isStoreOut)('web mode still serves the QA pages on GitHub Pages', () => {
     for (const name of DEV_PAGES) {
       expect(fs.existsSync(path.join(OUT_DIR, name)), `${name} missing from web build`).toBe(true);
+    }
+  });
+
+  it.skipIf(isStoreOut)('web mode copies owner docs HTML into out/docs/', () => {
+    for (const name of DOCS_PAGES) {
+      expect(fs.existsSync(path.join(OUT_DIR, 'docs', name)), `docs/${name} missing from web build`).toBe(true);
+    }
+    const link = path.join(OUT_DIR, 'docs', 'amoji-public-serve');
+    expect(fs.lstatSync(link).isSymbolicLink(), 'docs/amoji-public-serve should be a symlink').toBe(true);
+    expect(fs.readlinkSync(link)).toBe('..');
+  });
+
+  it.skipIf(!isStoreOut)('store mode does not ship owner docs HTML', () => {
+    for (const name of DOCS_PAGES) {
+      expect(fs.existsSync(path.join(OUT_DIR, 'docs', name)), `docs/${name} shipped in store build`).toBe(false);
     }
   });
 });

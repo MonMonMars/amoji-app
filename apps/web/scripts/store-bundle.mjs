@@ -30,7 +30,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const WEB_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const REPO_ROOT = path.resolve(WEB_ROOT, "../..");
 const DEV_PAGES_DIR = path.join(WEB_ROOT, "dev-pages");
+const DOCS_DIR = path.join(REPO_ROOT, "docs");
 const PUBLIC_DIR = path.join(WEB_ROOT, "public");
 const OUT_DIR = path.join(WEB_ROOT, "out");
 
@@ -43,6 +45,18 @@ export const BUILD_MODE_FILE = path.join(WEB_ROOT, ".next", "amoji-build-mode.js
 
 /** Internal QA / research pages. Never part of a shipped bundle. */
 export const DEV_PAGES = ["catalog.html", "decisions.html", "gallery.html", "voice-debug.html"];
+
+/**
+ * Owner / status HTML under repo `docs/`. GitHub Pages serves `apps/web/out` only,
+ * so the web (non-store) postbuild copies these into `out/docs/`.
+ */
+export const DOCS_PAGES = [
+  "owner-resources.html",
+  "owner-music-picker.html",
+  "owner-poke-reactions.html",
+  "owner-idle-poses.html",
+  "project-status.html",
+];
 
 /**
  * Tokens that may never appear in a shipped bundle. `hentai` is the hard gate:
@@ -202,6 +216,32 @@ function copyDevPages(from, to) {
 }
 
 /**
+ * Copy owner picker + status HTML into `out/docs/` and symlink
+ * `amoji-public-serve` → `..` so the same `data-play` paths work on Pages
+ * (static export already copies `public/` to `out/` root).
+ */
+function copyDocsPages(docsDir, outDir) {
+  const target = path.join(outDir, "docs");
+  fs.mkdirSync(target, { recursive: true });
+  const copied = [];
+  for (const name of DOCS_PAGES) {
+    const src = path.join(docsDir, name);
+    if (!fs.existsSync(src)) continue;
+    fs.copyFileSync(src, path.join(target, name));
+    copied.push(name);
+  }
+  const link = path.join(target, "amoji-public-serve");
+  try {
+    fs.lstatSync(link);
+    fs.rmSync(link, { recursive: true, force: true });
+  } catch {
+    /* absent */
+  }
+  fs.symlinkSync("..", link);
+  return copied;
+}
+
+/**
  * prebuild: drop any `pnpm dev` mirror so a build never depends on, or ships,
  * whatever happened to be sitting in public/ from an interrupted dev session.
  * The web build re-adds them from dev-pages/ in postbuild; the store build must
@@ -294,6 +334,10 @@ function postbuild() {
   if (!store) {
     const copied = copyDevPages(DEV_PAGES_DIR, OUT_DIR);
     console.log(`[store-bundle] web build: restored ${copied.length} QA page(s) into out/`);
+    const docsCopied = copyDocsPages(DOCS_DIR, OUT_DIR);
+    console.log(
+      `[store-bundle] web build: copied ${docsCopied.length} doc page(s) into out/docs/ (+ amoji-public-serve → ..)`
+    );
   }
   fs.mkdirSync(path.dirname(BUILD_MODE_FILE), { recursive: true });
   fs.writeFileSync(
