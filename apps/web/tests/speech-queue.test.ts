@@ -53,4 +53,13 @@ describe('speechRemainder', () => {
     expect(speechLeadDiverged('今日好熱！記得帶水。', '今日好熱。')).toBe(false);
     expect(speechRemainder('今日好熱！記得帶水。', '今日好熱。')).toBe('記得帶水。');
   });
+
+  it('treats CJK inline continuation as one lead (yue 我鍾意信 motif — no full re-speak)', () => {
+    const lead = '我鍾意信。';
+    const full = '我鍾意信你今日點呀？';
+    expect(speechLeadDiverged(full, lead)).toBe(false);
+    expect(speechRemainder(full, lead)).toBe('你今日點呀？');
+    expect(speechLeadDiverged('完全唔同嘅答案。', lead)).toBe(true);
+    expect(speechRemainder('完全唔同嘅答案。', lead)).toBe('');
+  });
 });
