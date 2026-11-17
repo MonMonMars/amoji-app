@@ -72,7 +72,8 @@ describe('Settings VoicePicker parity with select TtsVoiceRow', () => {
     expect(picker).toContain("t(lang, 'voiceOnlyOneAvailable')");
     expect(row).toContain("t(lang, 'voiceOnlyOneAvailable')");
     expect(picker).toContain('activeVoiceChoice(locale, companionGender)');
-    expect(row).toContain('activeVoiceChoice(lang, companionGender)');
+    expect(row).toContain('activeVoiceChoice(locale, companionGender)');
+    expect(row).toContain('activeIdFor(button.locale)');
     // Note explains one Google speaker (yue/ja); pitch × gender still multiplies buttons.
     expect(isSingleVoiceLocale('ja')).toBe(true);
     expect(isSingleVoiceLocale('yue')).toBe(true);
