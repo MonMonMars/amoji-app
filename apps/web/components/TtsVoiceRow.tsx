@@ -13,7 +13,7 @@
 // and when that happens the row says so plainly. An Add button pulls optional
 // test-pool voices for the current language.
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   isSingleVoiceLocale,
   selectTtsButtons,
@@ -42,9 +42,8 @@ export default function TtsVoiceRow({
 }) {
   const [rev, setRev] = useState(0);
   const [showAll, setShowAll] = useState(false);
-  const [showDev, setShowDev] = useState(false);
+  const [showDev] = useState(() => typeof window !== 'undefined' && isDevMode());
   const [addNote, setAddNote] = useState<string | null>(null);
-  useEffect(() => { setShowDev(isDevMode()); }, []);
 
   const buttons = showAll ? selectTtsButtons() : selectTtsButtons(lang);
   const activeIdFor = (locale: Lang) =>

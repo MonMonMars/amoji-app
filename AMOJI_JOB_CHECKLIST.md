@@ -17,10 +17,11 @@ Locale → engine → voice lives in `apps/web/lib/voice-catalog.ts`. Non-Yue en
 
 ## In progress (open PRs)
 
-Prefer [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) for the live board. Agents: **0** code-actionable Outstanding items left (2026-11-11 post-mass-merge audit). `main` tip `2fec7d3`.
+Prefer [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) for the live board. Agents: **0** code-actionable on `main` after Nov 17 wave **#478–#481**; `main` tip `fe52bac7` (**r2026-11-17.187**).
 
-- Status board docs only: #353 (this refresh)
-- Mega #337 and leftover bundle #347 are **closed** (superseded by landed slices #336–#360)
+- Open product: Hold spikes **#1** / **#20** only
+- **#469** closed — weather “search weather” route already on `main`
+- r188 PR: React Compiler eslint slice (mute/gate/soft-land `useSyncExternalStore`)
 
 ## Open / remains
 
@@ -70,4 +71,4 @@ So there is no 20-line preset bank to preserve. If Mon wants a longer spoken wai
 - GitHub Pages: `.github/workflows/pages.yml` runs on every push to `main` (and `workflow_dispatch`). It static-exports `@amoji/web` with `AMOJI_BASE_PATH=/amoji-app` and deploys `apps/web/out` to the `github-pages` environment. Merging to `main` updates https://monmonmars.github.io/amoji-app/. Feature branches do not deploy.
 - Piper / Melo / Kokoro / Bark stay in `voice-catalog.ts` as non-shipping stubs. VoxCPM2, Chatterbox, CosyVoice, and Qwen3-TTS are held for a later GPU host and are not called. Google Cloud, Azure, and Polly are not wired. **Google Translate's free MP3 endpoint IS wired** (`lib/gtts.ts`, a real chain hop since 2026-11-07) — that is not Google Cloud TTS.
 - Verify: selection shows the live chat VRM on the chat backdrop; face thumbs are release portraits; scene thumbs run A (day) through L (night); a thumb tap swaps the body; chat icon opens wardrobe full-screen and close restores orbit; history wheel-scrolls; hold on a side margin pans.
-- Last checklist refresh: 2026-11-11 18:06 HKT — post-mass-merge; Done on `main` tip `2fec7d3`; open product = #353 docs only; Outstanding code = 0; Holds unchanged.
+- Last checklist refresh: 2026-11-17 18:25 HKT — tip `fe52bac7` / r187; Outstanding code on `main` = 0; phone smoke still open.

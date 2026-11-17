@@ -94,11 +94,12 @@ Tick on a real phone (prefer iPhone Safari). **Mandatory once:** hard refresh, t
 - [ ] Poke zone SFX match Want list ([`SFX_WANT_LIST.md`](./SFX_WANT_LIST.md))
 - [ ] Want / Skip in `/sfx-gallery` still works
 
-## Agent pre-checks (2026-11-16 ~09:23 HKT)
+## Agent pre-checks (2026-11-17 ~18:25 HKT)
 
 | Check | Result |
 | --- | --- |
-| `main` tip | `b8b5f6d7` (#458) · `r2026-11-16.163` · live `sw.js` CACHE verified on Pages |
+| `main` tip | `fe52bac7` (#481) · **`r2026-11-17.187`** · merge #478–#481 then hard-refresh |
 | Outstanding (owner) | Card · news · **R10–R13 not Done** · nonsense · captions · SFX Want |
-| Agent actionable code | **0** until phone feedback on #458 |
+| Agent actionable code | **0** on `main`; **r188** opens Compiler eslint slice (open PR) |
+| Closed queue | #469 weather route (already on `main`) |
 | Hold spikes | #1 / #20 only (do not merge) |

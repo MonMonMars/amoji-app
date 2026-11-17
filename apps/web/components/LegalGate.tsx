@@ -4,7 +4,7 @@
  * Blocks the app until Privacy + Terms are accepted for LEGAL_ACCEPT_VERSION.
  * Accept stays locked until the reader scrolls the warning copy to the end.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -51,19 +51,20 @@ export default function LegalGate() {
   const [prefs] = usePrefs();
   const lang = prefs.lang;
   const pathname = usePathname() || '';
-  const [ready, setReady] = useState(false);
-  const [accepted, setAccepted] = useState(true);
+  const accepted = useSyncExternalStore(
+    subscribeLegalAccept,
+    hasAcceptedCurrentLegal,
+    () => true,
+  );
+  const ready = useSyncExternalStore(
+    subscribeLegalAccept,
+    () => true,
+    () => false,
+  );
 
   const acceptRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const readToEnd = useScrollReachedEnd(scrollRef, ready && !accepted);
-
-  useEffect(() => {
-    const sync = () => setAccepted(hasAcceptedCurrentLegal());
-    sync();
-    setReady(true);
-    return subscribeLegalAccept(sync);
-  }, []);
 
   // Focus Accept when the gate opens AND unlock is ready; swallow Escape so it
   // cannot dismiss the mandatory click-to-accept dialog or leak underneath.

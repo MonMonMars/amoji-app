@@ -1,6 +1,6 @@
 'use client';
 // Master mute control -- silences all speaker output. Mic stays independent.
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import { isMasterMuted, setMasterMuted, subscribeMasterMute } from '../lib/master-mute';
 import { t, type Lang } from '../lib/prefs';
 
@@ -14,12 +14,11 @@ export default function MuteButton({
   /** Smaller hit target for dense chrome */
   compact?: boolean;
 }) {
-  // null until localStorage sync -- avoid unmuted glyph flash when mute was on.
-  const [muted, setMuted] = useState<boolean | null>(null);
-  useEffect(() => {
-    setMuted(isMasterMuted());
-    return subscribeMasterMute(setMuted);
-  }, []);
+  const muted = useSyncExternalStore(
+    (onStoreChange) => subscribeMasterMute(() => onStoreChange()),
+    isMasterMuted,
+    () => null as boolean | null,
+  );
 
   const ready = muted !== null;
   const mutedOn = muted === true;

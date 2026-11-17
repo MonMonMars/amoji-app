@@ -3,7 +3,7 @@
 // Returning null flashed a blank frame on Pages bookmarks / old SW shells.
 // The status line is localized: a yue/zh/ja user used to hit an English-only
 // "Taking you to character select..." frame here.
-import { useEffect, useState } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import EarlyAudioUnlock from './EarlyAudioUnlock';
 import { primeChatStartGesture } from '../lib/chat-start-gesture';
@@ -25,17 +25,17 @@ export default function SoftLandSelect({
   selectReturnFrom = 'mode',
 }: SoftLandSelectProps) {
   const router = useRouter();
-  // Start from the English default so the static export keeps a stable first
-  // paint, then swap to the stored language in the same tick as the redirect.
-  const [label, setLabel] = useState(() => t('en', labelKey));
-
-  useEffect(() => {
-    try {
-      setLabel(t(loadPrefs().lang, labelKey));
-    } catch {
-      /* localStorage blocked — keep the English line */
-    }
-  }, [labelKey]);
+  const label = useSyncExternalStore(
+    () => () => undefined,
+    () => {
+      try {
+        return t(loadPrefs().lang, labelKey);
+      } catch {
+        return t('en', labelKey);
+      }
+    },
+    () => t('en', labelKey),
+  );
 
   useEffect(() => {
     try {
