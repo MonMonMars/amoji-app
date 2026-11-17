@@ -4,8 +4,9 @@ Technical notes for assets, models, robot face, chat UX, audio, and merge proces
 
 **Project status board (done vs outstanding + docs audit):**
 
-- Browser board: [`project-status.html`](./project-status.html)
+- Browser board: [GitHub Pages](https://monmonmars.github.io/amoji-app/docs/project-status.html) · repo [`project-status.html`](./project-status.html)
 - Markdown twin: [`PROJECT_STATUS.md`](./PROJECT_STATUS.md)
+- Owner picker (Pages): https://monmonmars.github.io/amoji-app/docs/owner-resources.html — copied from repo `docs/` on each Pages deploy (`store-bundle.mjs` postbuild)
 
 **Owner product bible (rules + done/outstanding — update same day):**
 

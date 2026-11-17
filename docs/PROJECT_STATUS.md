@@ -4,8 +4,8 @@
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
-**Visual board:** open [`project-status.html`](./project-status.html) in a browser (repo file — not a Pages route).  
-**Pixel pickers:** [`owner-resources.html`](./owner-resources.html) (music · poke · **idle** tabs) · legacy [`owner-idle-poses.html`](./owner-idle-poses.html#idle) redirects — `cd docs && python3 -m http.server 8765` then `owner-resources.html#idle` (symlink `amoji-public-serve` → `apps/web/public` for music SFX).  
+**Visual board:** [Pages](https://monmonmars.github.io/amoji-app/docs/project-status.html) · repo [`project-status.html`](./project-status.html)  
+**Pixel pickers:** [Pages owner-resources](https://monmonmars.github.io/amoji-app/docs/owner-resources.html) (music · poke · **idle** tabs) · legacy [`owner-music-picker.html`](https://monmonmars.github.io/amoji-app/docs/owner-music-picker.html) / [`owner-poke-reactions.html`](https://monmonmars.github.io/amoji-app/docs/owner-poke-reactions.html) / [`owner-idle-poses.html`](https://monmonmars.github.io/amoji-app/docs/owner-idle-poses.html#idle) redirect stubs · local: `cd docs && python3 -m http.server 8765`  
 **`main` tip:** `9af20556` (#496 · **r2026-11-17.203** · unified `owner-resources.html` · afternoon ship **#489–#493** + **#490–#492** · **#494–#496**)
 
 ## Snapshot

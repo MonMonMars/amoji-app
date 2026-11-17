@@ -72,4 +72,8 @@ jobs:
           for f in catalog.html decisions.html gallery.html voice-debug.html; do
             [ -e "apps/web/out/$f" ] || { echo "web build lost QA page: $f"; exit 1; }
           done
+          for f in owner-resources.html owner-music-picker.html owner-poke-reactions.html owner-idle-poses.html project-status.html; do
+            [ -e "apps/web/out/docs/$f" ] || { echo "web build lost docs page: docs/$f"; exit 1; }
+          done
+          [ -L "apps/web/out/docs/amoji-public-serve" ] || { echo "web build missing docs/amoji-public-serve symlink"; exit 1; }
           node scripts/check-store-bundle.mjs apps/web/out
