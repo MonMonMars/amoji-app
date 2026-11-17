@@ -5,7 +5,7 @@
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** open [`project-status.html`](./project-status.html) in a browser (repo file — not a Pages route).  
-**`main` tip:** `b103911a` (#484 · **r2026-11-17.190** · backlog through #478–#484)
+**`main` tip:** `a9b18e0c` (#485 docs · product **r2026-11-17.190** via #484 · backlog **#478–#485**)
 
 ## Snapshot
 
