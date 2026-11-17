@@ -96,6 +96,10 @@ describe('resolveReplyMode detection', () => {
     expect(resolveReplyMode('go', { demoPhaseId: 'sing' }).id).toBe('music');
     expect(resolveReplyMode('go', { demoPhaseId: 'joke' }).id).toBe('joke');
   });
+
+  it('detects Cantonese clean-joke asks', () => {
+    expect(resolveReplyMode('講個乾淨笑話俾我聽').id).toBe('joke');
+  });
 });
 
 describe('replyModeSystemBlock prompt directives', () => {
@@ -155,5 +159,14 @@ describe('replyModeSystemBlock prompt directives', () => {
     expect(block).toMatch(/LONG/i);
     expect(block).toMatch(/lede|details/i);
     expect(block).toMatch(/never invent|one-liner/i);
+  });
+
+  it('joke mode forbids echoing clean-joke intent', () => {
+    const en = replyModeSystemBlock(REPLY_MODE_CHART.joke, 'en');
+    expect(en).toMatch(/already clean|SFW/i);
+    expect(en).toMatch(/do NOT echo/i);
+    const yue = replyModeSystemBlock(REPLY_MODE_CHART.joke, 'yue');
+    expect(yue).toMatch(/預設乾淨/);
+    expect(yue).toMatch(/唔好重複/);
   });
 });

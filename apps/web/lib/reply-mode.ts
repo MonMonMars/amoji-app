@@ -191,7 +191,7 @@ const NEWS_ASK_RE =
   /\b(news|headlines|what's happening|what is happening|AI\s+news)\b|新聞|新闻|頭條|头条|ニュース|見出し|AI新聞|AI新闻|AIニュース/i;
 
 const JOKE_ASK_RE =
-  /\b(?:tell\s+(?:me\s+)?(?:a\s+)?(?:joke|funny)|clean\s+joke|make\s+me\s+laugh)\b|講个?笑话|讲个?笑话|講笑话|讲笑话|講笑话俾我|講個笑话|ジョーク|冗談/i;
+  /\b(?:tell\s+(?:me\s+)?(?:a\s+)?(?:joke|funny)|clean\s+joke|make\s+me\s+laugh)\b|講个?笑話|讲个?笑话|講個?笑話|講笑话|讲笑话|講笑话俾我|講個笑话|乾淨笑話|干净笑话|ジョーク|冗談/i;
 
 const POEM_ASK_RE =
   /\b(?:(?:write|read|recite|tell)\s+(?:me\s+)?(?:a\s+)?(?:short\s+)?poem|haiku)\b|小詩|小诗|念诗|念詩|作詩|作诗|詩を|ポエム/i;
@@ -342,6 +342,13 @@ export function replyModeSystemBlock(mode: ReplyModeBudget, language?: string): 
       yue
         ? '- 新聞：讀標題 + 摘要／導語 + 2–4 個重點；唔好只讀一行標題，亦唔好發明事實或重讀舊聞。'
         : '- News: read the headline, then the summary/lede, then 2–4 key details. Never a one-liner title alone; never invent facts or re-read an older story.',
+    );
+  }
+  if (mode.id === 'joke') {
+    lines.push(
+      yue
+        ? '- 笑話：全部內容預設乾淨／SFW——唔好重複「乾淨笑話」，亦唔好覆述「你想聽笑話／好呀」；最多極短開場，跟住即刻講 setup→punchline。'
+        : '- Joke: jokes are already clean/SFW by default — do NOT echo "clean joke" or mirror their ask ("you want a joke? sure"); at most a tiny lead-in, then setup → punchline immediately.',
     );
   }
   let block = lines.join('\n');

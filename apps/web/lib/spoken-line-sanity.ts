@@ -196,11 +196,45 @@ export function scrubSpokenNonsense(text: string): string {
     .trim();
 }
 
+/**
+ * Redundant "you want a clean joke? sure!" ack before the punchline — jokes are
+ * already SFW by default (#clean-joke-no-double).
+ */
+const JOKE_INTENT_ACK =
+  /\b(?:you\s+)?(?:want|wanna)\s+(?:to\s+)?(?:hear\s+)?(?:a\s+)?(?:(?:clean|wholesome|silly|short|dad)\s+)?joke\b|\b(?:i\s+)?(?:can\s+)?tell\s+you\s+a\s+(?:(?:clean|wholesome|short)\s+)?joke\b|你想聽.{0,16}(?:乾淨|干净|短短|搞笑|輕鬆|溫馨|冷)?.{0,6}(?:笑話|笑话)|想聽.{0,12}(?:乾淨|干净)?.{0,6}(?:笑話|笑话)|(?:講|讲).{0,8}(?:乾淨|干净).{0,6}(?:笑話|笑话).{0,14}(?:俾你|给你|聽|听|呀|啦|喎)?/i;
+
+const SHORT_JOKE_ACK =
+  /^(?:好呀|好嘅|好喔|好哦|當然|冇問題|沒問題|Sure|Okay|Of\s+course|Alright)[。！!？?，,…\s]*$/i;
+
+export function looksLikeJokeIntentAck(sentence: string): boolean {
+  const s = (sentence ?? '').trim();
+  if (!s) return false;
+  return JOKE_INTENT_ACK.test(s);
+}
+
+/** Drop joke-request echo sentences; keep setup/punchline beats. */
+export function scrubJokeIntentAcks(text: string): string {
+  const t = (text ?? '').trim();
+  if (!t) return '';
+  const normalized = t.replace(/\.{2,}/g, '…');
+  const chunks = splitSpokenSentences(normalized);
+  if (chunks.length <= 1) {
+    return looksLikeJokeIntentAck(t) ? '' : t;
+  }
+  const kept = chunks.filter(
+    (c) => !looksLikeJokeIntentAck(c) && !SHORT_JOKE_ACK.test(c) && c.replace(/[.…\s]/g, '').length > 0,
+  );
+  const joined = kept.join(' ').trim();
+  if (joined) return joined;
+  return chunks.find((c) => !looksLikeJokeIntentAck(c) && !SHORT_JOKE_ACK.test(c))?.trim() ?? '';
+}
+
 /** History-resume + topic-menu + nonsense sentence scrub (chat reply path). */
 export function scrubCompanionSpoken(text: string): string {
   const afterResume = scrubHistoryResumeAsks(text);
   const afterTopic = scrubTopicMenuAsks(afterResume) || afterResume;
-  return scrubSpokenNonsense(afterTopic);
+  const afterJoke = scrubJokeIntentAcks(afterTopic);
+  return scrubSpokenNonsense(afterJoke);
 }
 
 /** True when the user's message is asking the companion something. */
