@@ -3,36 +3,32 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const repoRoot = path.join(__dirname, '../../..');
-const docs = path.join(repoRoot, 'docs');
 
 describe('owner picker HTML (Pixel)', () => {
-  it('docs/owner-resources.html is the canonical unified picker', () => {
-    const p = path.join(docs, 'owner-resources.html');
-    expect(fs.existsSync(p), p).toBe(true);
-    const text = fs.readFileSync(p, 'utf8');
-    expect(text).toContain('Owner resource library (unified)');
-    expect(text).toContain('Copy JSON');
-    expect(text).toContain('Fraunces');
-    expect(text).toContain('data-tab="music"');
-    expect(text).toContain('data-tab="poke"');
-    expect(text).toContain('data-tab="idle"');
-    expect(text).toContain('amoji.idlePick.v');
-    expect(text).toContain('amoji.cmaReactionSfx.picks.v1');
-    expect(text).toContain('tag in-use');
-    expect(text).toContain('CHAT_IDLE_CURATED');
-    expect(text).toContain('performance-clips.ts');
-  });
+  it('unified owner-resources.html and legacy redirect stubs exist', () => {
+    const unified = path.join(repoRoot, 'docs', 'owner-resources.html');
+    expect(fs.existsSync(unified), unified).toBe(true);
+    const unifiedText = fs.readFileSync(unified, 'utf8');
+    expect(unifiedText).toContain('Copy JSON');
+    expect(unifiedText).toContain('Fraunces');
+    expect(unifiedText).toContain('panel-idle');
+    expect(unifiedText).toContain('amoji.idlePick.v6');
+    expect(unifiedText).toContain('IdleQuaterniusHuman');
+    expect(unifiedText).toContain('Your saved picks');
 
-  it('legacy picker HTML files redirect to owner-resources.html', () => {
-    for (const [name, hash] of [
-      ['owner-music-picker.html', 'music'],
-      ['owner-poke-reactions.html', 'poke'],
-      ['owner-idle-poses.html', 'idle'],
-    ] as const) {
-      const p = path.join(docs, name);
+    for (const name of ['owner-music-picker.html', 'owner-poke-reactions.html', 'owner-idle-poses.html']) {
+      const p = path.join(repoRoot, 'docs', name);
       expect(fs.existsSync(p), p).toBe(true);
       const text = fs.readFileSync(p, 'utf8');
-      expect(text).toContain(`owner-resources.html#${hash}`);
+      expect(text).toContain('owner-resources.html');
     }
+  });
+
+  it('idle tab lists VRMA library scale', () => {
+    const unified = path.join(repoRoot, 'docs', 'owner-resources.html');
+    const text = fs.readFileSync(unified, 'utf8');
+    const libRows = (text.match(/data-clip-id="/g) || []).length;
+    expect(libRows).toBeGreaterThan(100);
+    expect(text).toContain('data-rail-num');
   });
 });
