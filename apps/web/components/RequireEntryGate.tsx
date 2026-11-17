@@ -13,26 +13,21 @@
  * same component standalone for the login → gate path), so both routes behave
  * identically.
  */
-import { useEffect, useState, type ReactNode } from 'react';
-import { hasPassedEntryGate } from '../lib/entry-gate';
+import { useSyncExternalStore, type ReactNode } from 'react';
+import { hasPassedEntryGate, subscribeEntryGate } from '../lib/entry-gate';
 import EntryGate from './EntryGate';
 
-type Status = 'checking' | 'blocked' | 'ok';
-
 export default function RequireEntryGate({ children }: { children: ReactNode }) {
-  const [status, setStatus] = useState<Status>('checking');
-
-  // Storage is read after mount only, so the server render never guesses and
-  // never disagrees with the client.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setStatus(hasPassedEntryGate() ? 'ok' : 'blocked');
-  }, []);
+  const passed = useSyncExternalStore(
+    (onStoreChange) => subscribeEntryGate(() => onStoreChange()),
+    hasPassedEntryGate,
+    () => null as boolean | null,
+  );
 
   // First paint: an opaque blocker. Returning null here would let the page
   // underneath show for a frame, which is exactly what this component exists
   // to prevent.
-  if (status === 'checking') {
+  if (passed === null) {
     return (
       <div
         data-testid="entry-gate-boot"
@@ -43,8 +38,8 @@ export default function RequireEntryGate({ children }: { children: ReactNode }) 
     );
   }
 
-  if (status === 'blocked') {
-    return <EntryGate onDone={() => setStatus('ok')} />;
+  if (!passed) {
+    return <EntryGate />;
   }
 
   return <>{children}</>;

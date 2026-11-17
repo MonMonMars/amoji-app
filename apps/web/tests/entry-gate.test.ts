@@ -331,9 +331,11 @@ describe('entry gate — wiring', () => {
   it('the guard renders an opaque blocker before it knows, then the gate', () => {
     const guard = read('components/RequireEntryGate.tsx');
     expect(guard).toContain('hasPassedEntryGate');
+    expect(guard).toContain('subscribeEntryGate');
+    expect(guard).toContain('useSyncExternalStore');
     expect(guard).toContain('entry-gate-boot');
-    expect(guard).toMatch(/if \(status === 'checking'\)/);
-    expect(guard).toMatch(/if \(status === 'blocked'\)[\s\S]*?<EntryGate/);
+    expect(guard).toMatch(/if \(passed === null\)/);
+    expect(guard).toMatch(/if \(!passed\)[\s\S]*?<EntryGate/);
     // The protected children are only rendered on the 'ok' branch.
     expect(guard).toMatch(/return <>\{children\}<\/>;/);
   });
