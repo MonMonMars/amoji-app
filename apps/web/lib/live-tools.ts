@@ -137,7 +137,8 @@ export const NEWS_TOLD_KEY = 'amoji.news.told.v1';
 /** Legacy session-scoped ring — migrate into localStorage so tab close ≠ same-old. */
 export const NEWS_TOLD_SESSION_KEY = 'amoji.news.told.session.v1';
 const NEWS_TOLD_MAX = 36;
-const NEWS_TOLD_TTL_MS = 12 * 60 * 60 * 1000;
+/** Ban re-telling the same headline for a full day — short TTL let feeds recycle too soon. */
+const NEWS_TOLD_TTL_MS = 24 * 60 * 60 * 1000;
 const NEWS_POOL_MAX = 20;
 /** Widened pool when every candidate was already told — fetch more before missing. */
 const NEWS_POOL_WIDE = 36;
@@ -1850,7 +1851,7 @@ async function fetchRecentHeadlines(
   const feedBank = allowHeavy || widen
     ? [...regionalLightNewsFeedsForLang(region, lang), ...regionalHeavyNewsFeedsForLang(region, lang)]
     : regionalLightNewsFeedsForLang(region, lang);
-  const extras = rotateFeedUrls(feedBank, now, widen ? Math.min(8, feedBank.length) : 4);
+  const extras = rotateFeedUrls(feedBank, now, widen ? Math.min(10, feedBank.length) : 4);
   const googleQuery = allowHeavy ? '' : defaultLightNewsQuery(lang, now);
   const top = allowHeavy;
   const portalUrls = rotateFeedUrls(portalNewsFeedUrls(region, lang), now, 3);
@@ -2470,6 +2471,14 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
       );
       lead = selectNewsLead(activePack.headlines, newsStorage, now);
     }
+    if (!lead && (activePack.headlines.length || newsPack.headlines.length)) {
+      invalidateNewsFeedCache(cache);
+      activePack = await fetchAreaNews(
+        fetchImpl, place, topicalNews || RECENT_MARK, lang, opts.rssKey, cache, plan.heavyNews, now,
+        { widen: true, diversifySlot: newsDiversify + 3 },
+      );
+      lead = selectNewsLead(activePack.headlines, newsStorage, now);
+    }
     if (lead && plan.newsQuery && !topicalHeadlineMatches(plan.newsQuery, lead.title)) {
       lead = undefined;
       topicalRejected = true;
@@ -2560,22 +2569,39 @@ export function locationPermissionSettled(
   return cached?.source === 'browser';
 }
 
+function hasResolvablePlace(storage?: Kv | null, now = Date.now()): boolean {
+  if (readManualPlace(storage)) return true;
+  return readCachedPlace(storage, now) != null;
+}
+
+/** True when this tab already denied browser geolocation (session flag). */
+export function geolocationDeniedThisTab(session: Kv | null = safeStorage('session')): boolean {
+  try {
+    return session?.getItem(DENY_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Call from the gate Allow/Enter gesture (preferred) or Start / ENTER STORY.
  * Requests browser GPS at most once per tab, caches the place (or marks deny).
- * Mute All untouched. If the user denies, chat still opens; weather may ask city later.
+ * Mute All untouched. If the user denies (or has no geo API), still primes IP
+ * until a place is cached or every source fails.
  */
 export function primeLocationForChatEnter(): void {
   try {
     const storage = safeStorage('local');
     const session = safeStorage('session');
-    if (locationPermissionSettled(storage, session)) return;
+    if (hasResolvablePlace(storage)) return;
     const geo = browserGeo();
-    if (!geo) return;
-    try { session?.setItem(PRIMED_KEY, '1'); } catch { /* ignore */ }
+    const denied = geolocationDeniedThisTab(session);
+    if (!denied && geo && session?.getItem(PRIMED_KEY) !== '1') {
+      try { session?.setItem(PRIMED_KEY, '1'); } catch { /* ignore */ }
+    }
     void resolveDevicePlace({
       fetch: globalThis.fetch.bind(globalThis),
-      geolocation: geo,
+      geolocation: denied ? null : geo,
       storage,
       session,
     });

@@ -27,6 +27,8 @@ import {
   regionalNewsFeedUrls,
   portalNewsFeedUrls,
   locationPermissionSettled,
+  geolocationDeniedThisTab,
+  primeLocationForChatEnter,
   resolveDevicePlace,
   selectNewsLead,
   newsDetailsFromText,
@@ -739,6 +741,46 @@ describe('resolveDevicePlace', () => {
     expect(place?.source).toBe('ip');
     expect(place?.city).toBe('Ashburn');
     expect(session.getItem('amoji.geo.denied')).toBe('1');
+  });
+});
+
+describe('geolocationDeniedThisTab', () => {
+  it('reads the session deny flag', () => {
+    expect(geolocationDeniedThisTab(kv())).toBe(false);
+    const denied = kv({ 'amoji.geo.denied': '1' });
+    expect(geolocationDeniedThisTab(denied)).toBe(true);
+  });
+});
+
+describe('primeLocationForChatEnter', () => {
+  it('still hits IP lookup after deny when no place is cached', async () => {
+    const prevFetch = globalThis.fetch;
+    const storage = kv();
+    const session = kv({ 'amoji.geo.denied': '1' });
+    let ipHits = 0;
+    globalThis.fetch = (async (input) => {
+      const url = String(input);
+      if (url.includes('get.geojs.io')) {
+        ipHits += 1;
+        return jsonRes({
+          city: 'Lisbon', region: 'Lisbon', country: 'Portugal', country_code: 'PT',
+          latitude: '38.72', longitude: '-9.14',
+        });
+      }
+      return jsonRes({}, 404);
+    }) as typeof fetch;
+    try {
+      const ls = globalThis.localStorage;
+      Object.defineProperty(globalThis, 'localStorage', { value: storage, configurable: true });
+      Object.defineProperty(globalThis, 'sessionStorage', { value: session, configurable: true });
+      primeLocationForChatEnter();
+      await new Promise((r) => setTimeout(r, 80));
+      expect(ipHits).toBeGreaterThanOrEqual(1);
+      const raw = storage.getItem('amoji.place.v1');
+      expect(raw).toBeTruthy();
+    } finally {
+      globalThis.fetch = prevFetch;
+    }
   });
 });
 
