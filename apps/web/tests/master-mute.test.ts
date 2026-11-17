@@ -149,13 +149,13 @@ describe('master-mute', () => {
       fs.readFileSync(new URL('../lib/voice.ts', import.meta.url), 'utf8'),
     );
     const chain = voice.indexOf('export async function testVoiceChain');
-    const chainSlice = voice.slice(chain, chain + 280);
+    const chainSlice = voice.slice(chain, chain + 360);
     expect(chainSlice).toContain('isMasterMuted()');
-    expect(chainSlice.indexOf('isMasterMuted()')).toBeLessThan(chainSlice.indexOf('unlockAudio()'));
+    expect(chainSlice.indexOf('isMasterMuted()')).toBeLessThan(chainSlice.indexOf('unlockAudio'));
     const tv = voice.indexOf('export function testVoice');
     const tvSlice = voice.slice(tv, tv + 420);
     expect(tvSlice).toContain('isMasterMuted()');
-    expect(tvSlice.indexOf('isMasterMuted()')).toBeLessThan(tvSlice.indexOf('unlockAudio()'));
+    expect(tvSlice.indexOf('isMasterMuted()')).toBeLessThan(tvSlice.indexOf('unlockAudio'));
     expect(tvSlice.indexOf('isMasterMuted()')).toBeLessThan(tvSlice.indexOf('stopSpeaking()'));
   });
 
