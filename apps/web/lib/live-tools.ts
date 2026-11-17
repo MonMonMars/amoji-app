@@ -868,6 +868,22 @@ const NEWS_TICKER_PRICE_RE =
  * Finance catalog lines (mutual funds, ISINs, bare tickers) masquerading as
  * “artificial intelligence” headlines in Google News search.
  */
+/** Topic search: does the headline relate to the planned newsQuery? */
+export function topicalHeadlineMatches(query: string, title: string): boolean {
+  const q = String(query || '').trim().toLowerCase();
+  const t = String(title || '').trim().toLowerCase();
+  if (!q || !t) return false;
+  if (/\bartificial intelligence\b|^ai$/.test(q)) {
+    return (
+      /\b(?:ai|a\.i\.|artificial intelligence|openai|chatgpt|人工智能|人工智慧)\b/i.test(title)
+      || /人工智能|人工智慧/.test(title)
+    );
+  }
+  const bits = q.split(/[^a-z0-9\u3400-\u9fff]+/).filter((w) => w.length > 2);
+  if (!bits.length) return true;
+  return bits.some((b) => t.includes(b));
+}
+
 export function isJunkNewsHeadline(title: string, extra = ''): boolean {
   const t = String(title || '').trim();
   if (!t) return true;
@@ -1899,10 +1915,9 @@ async function fetchAreaNews(
       now,
       opts?.widen ? NEWS_POOL_WIDE : NEWS_POOL_MAX,
     );
-    const bits = topical.toLowerCase().split(/[^a-z0-9\u3400-\u9fff]+/).filter((w) => w.length > 2);
     const topicalPortal = portal
       .filter((h) => !isJunkNewsHeadline(h.title, h.summary ?? ''))
-      .filter((h) => bits.some((t) => h.title.toLowerCase().includes(t)));
+      .filter((h) => topicalHeadlineMatches(topical, h.title));
     if (topicalPortal.length) {
       const ranked = pickDefaultHeadlines(topicalPortal, { allowHeavy: false, preferLight: true, lang });
       return {
@@ -1912,8 +1927,8 @@ async function fetchAreaNews(
       };
     }
 
-    const soft = await fetchRecentHeadlines(fetchImpl, lang, rssKey, cache, place, fetchOpts);
-    return { headlines: soft, recent: true };
+    // Explicit topic (e.g. AI news) — never substitute unrelated recent/world lines.
+    return { headlines: [], recent: false };
   }
   if (place && !opts?.widen) {
     const region = newsRegionFromPlace(place, lang);
@@ -2445,6 +2460,7 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
     let activePack = newsPack;
     // Never fall back to headlines[0] after a ban — that re-told the same stale story.
     let lead = selectNewsLead(activePack.headlines, newsStorage, now);
+    let topicalRejected = false;
     // Pool exhausted or empty → bypass TTL, widen sources, try again for an untold story.
     if (!lead) {
       invalidateNewsFeedCache(cache);
@@ -2453,6 +2469,10 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
         { widen: true, diversifySlot: newsDiversify + 1 },
       );
       lead = selectNewsLead(activePack.headlines, newsStorage, now);
+    }
+    if (lead && plan.newsQuery && !topicalHeadlineMatches(plan.newsQuery, lead.title)) {
+      lead = undefined;
+      topicalRejected = true;
     }
     if (lead) {
       // Enrich thin titles with a Wikipedia lede whenever the feed had no
@@ -2489,9 +2509,11 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
     } else {
       // Empty feeds OR every candidate already told even after widen — honest miss, no loop.
       promptLines.push(
-        activePack.headlines.length || newsPack.headlines.length
-          ? 'News: no fresh headline left (recent ones already told). Do not invent or re-read an old story.'
-          : 'News: unavailable right now.',
+        topicalRejected || (plan.newsQuery && !(activePack.headlines.length || newsPack.headlines.length))
+          ? `News: no fresh headline for topic "${plan.newsQuery ?? topicalNews}" right now. Do not invent or read Wikipedia instead.`
+          : activePack.headlines.length || newsPack.headlines.length
+            ? 'News: no fresh headline left (recent ones already told). Do not invent or re-read an old story.'
+            : 'News: unavailable right now.',
       );
       spoken.push(sayMiss(lang, 'news'));
     }
