@@ -410,8 +410,7 @@
 // r2026-11-17.189: RequireEntryGate uses subscribeEntryGate + useSyncExternalStore (no setStatus in effect); docs tip post-#482.
 // r2026-11-17.190: PreChatAudioGate lang/mic from useState initializers; stash mute in effect only; status docs #483 on tip.
 // r2026-11-17.191: SettingsSheet master mute useSyncExternalStore + openSnap refresh (React Compiler eslint).
-// r2026-11-17.192–193: gate sound test gestureTap + long GATE_TEST_LINES (voice.ts; revision not bumped on branch tip).
-// r2026-11-17.194: card greet audible — EarlyAudioUnlock on click; stopSpeakingForCardAudition; no synth prime on card.
+// r2026-11-17.192: gate/settings sound test = full GATE_TEST_LINES TTS (gestureTap); no early gTTS onPlaying break.
 // r2026-11-17.195: clean-joke asks — no double ack echoing 乾淨/「你想聽笑話」 before punchline.
 // r2026-11-17.196: joke chip/prompts + reply-mode — say「笑話/joke」only (SFW stays default; no spoken「乾淨」).
 export const APP_REVISION = 'r2026-11-17.196';

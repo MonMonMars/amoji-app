@@ -20,6 +20,7 @@ describe('SettingsSheet Change / Save·Test / gender a11y', () => {
     expect(sheet).toContain("aria-label={t(lang, 'ttsProxySave')}");
     expect(sheet).toContain("aria-label={t(lang, 'ttsProxyClear')}");
     expect(sheet).toContain("aria-label={t(lang, 'testVoiceBtn')}");
+    expect(sheet).toContain('GATE_TEST_LINES');
     expect(sheet).toContain('onClick={runOpenAiTest}');
     expect(sheet).toContain('onClick={runProxyTest}');
     expect(sheet).toContain('onClick={runVoiceTest}');

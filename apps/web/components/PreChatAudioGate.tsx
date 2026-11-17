@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { loadPrefs, t, type Lang } from '../lib/prefs';
+import { loadPrefs, savePrefs, t, type Lang } from '../lib/prefs';
 import {
   testVoiceChain,
   setVoiceEnabled,
@@ -20,6 +20,7 @@ import { primeChatStartGesture } from '../lib/chat-start-gesture';
 import { companionPlaybackSession } from '../lib/voice-chat-focus';
 import { primeLocationForChatEnter } from '../lib/live-tools';
 import EarlyAudioUnlock from './EarlyAudioUnlock';
+import { LangChips } from './selectors';
 
 export type LocationGateUi = 'idle' | 'asked' | 'ready' | 'denied' | 'unsupported';
 
@@ -36,13 +37,21 @@ export default function PreChatAudioGate({
   nextHref?: string;
 }) {
   const router = useRouter();
-  const [lang] = useState<Lang>(() => {
+  const [lang, setLang] = useState<Lang>(() => {
     try {
       return loadPrefs().lang;
     } catch {
       return 'en';
     }
   });
+  const pickLang = useCallback((l: Lang) => {
+    setLang(l);
+    try {
+      savePrefs({ ...loadPrefs(), lang: l });
+    } catch {
+      /* keep UI lang even if storage fails */
+    }
+  }, []);
   const [soundTested, setSoundTested] = useState(false);
   const [soundUi, setSoundUi] = useState<SoundCheckUi>('idle');
   const [heard, setHeard] = useState<'yes' | 'no' | null>(null);
@@ -214,6 +223,13 @@ export default function PreChatAudioGate({
         <h1 className="text-2xl font-bold">{t(lang, 'preChatGateTitle')}</h1>
         <p className="mt-2 text-sm text-white/70">{t(lang, 'preChatGateLead')}</p>
         <p className="mt-4 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3 text-sm text-amber-100">{t(lang, 'gateAudioIosHint')}</p>
+
+        <section data-testid="pre-chat-lang-chips" aria-labelledby="pre-chat-lang-heading" className="mt-4 space-y-2">
+          <h2 id="pre-chat-lang-heading" className="text-sm font-semibold text-white/90">
+            {t(lang, 'chooseLanguage')}
+          </h2>
+          <LangChips value={lang} onChange={pickLang} />
+        </section>
 
         {/* Fixed label — never swap to “Playing…” (that flipped the whole card). */}
         <button

@@ -34,7 +34,7 @@ import { useFocusTrap } from '../lib/use-focus-trap';
 import VoicePicker from './VoicePicker';
 import ModelThumb from './ModelThumb';
 import BrainAdvanced from './BrainAdvanced';
-import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, testOpenAiVoice, playVoiceGreeting, VOICE_TIER_LABEL } from '../lib/voice';
+import { speak, voiceEnabled, setVoiceEnabled, neuralEnabled, setNeuralEnabled, testVoiceChain, testProxyVoice, testOpenAiVoice, playVoiceGreeting, VOICE_TIER_LABEL, GATE_TEST_LINES } from '../lib/voice';
 import { activeVoiceChoice } from '../lib/voice-picks';
 import { listenSupported } from '../lib/listen';
 import { requestMic } from '../lib/mic-preflight';
@@ -418,7 +418,7 @@ export default function SettingsSheet({
     setVoiceBlocked(false);
     setVoiceTest(null);
     setVoiceTesting(true);
-    void testVoiceChain(prefs.character, lang).then((results) => {
+    void testVoiceChain(prefs.character, lang, GATE_TEST_LINES[lang] ?? GATE_TEST_LINES.en).then((results) => {
       setVoiceTesting(false);
       setVoiceTest(results.map((r) => `${VOICE_TIER_LABEL[r.tier]} ${r.ok ? '✓' : '✗'}`).join(' · '));
     }).catch(() => setVoiceTesting(false));

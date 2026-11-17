@@ -26,4 +26,10 @@ describe('開聲傾偈 longer gate voice sample', () => {
     expect(slice).toContain('lineOverride?: string');
     expect(slice).toContain('lineOverride?.trim()');
   });
+
+  it('GATE_TEST_LINES length per locale (multi-sentence gate sample)', () => {
+    for (const lang of ['yue', 'zh', 'en', 'ja'] as const) {
+      expect(GATE_TEST_LINES[lang].length).toBeGreaterThan(80);
+    }
+  });
 });

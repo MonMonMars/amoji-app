@@ -18,6 +18,14 @@ describe('pre-chat audio gate', () => {
     expect(read('components/QuickSetup.tsx')).toContain('/gate/audio?next=');
   });
 
+  it('shows LangChips so the long sample matches the chosen locale', () => {
+    const gate = read('components/PreChatAudioGate.tsx');
+    expect(gate).toContain('data-testid="pre-chat-lang-chips"');
+    expect(gate).toContain('LangChips');
+    expect(gate).toContain('savePrefs');
+    expect(gate).toContain('GATE_TEST_LINES');
+  });
+
   it('asks I can hear / I cannot hear after the sound test, with troubleshooting', () => {
     const gate = read('components/PreChatAudioGate.tsx');
     expect(gate).toContain('data-testid="pre-chat-test-sound"');
