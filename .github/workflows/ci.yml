@@ -75,5 +75,12 @@ jobs:
           for f in owner-resources.html owner-music-picker.html owner-poke-reactions.html owner-idle-poses.html project-status.html; do
             [ -e "apps/web/out/docs/$f" ] || { echo "web build lost docs page: docs/$f"; exit 1; }
           done
-          [ -L "apps/web/out/docs/amoji-public-serve" ] || { echo "web build missing docs/amoji-public-serve symlink"; exit 1; }
+          if [ -e "apps/web/out/docs/amoji-public-serve" ]; then
+            echo "web build must not ship docs/amoji-public-serve (artifact bloat / upload hang)"
+            exit 1
+          fi
+          grep -q 'data-play="../audio/' apps/web/out/docs/owner-resources.html || {
+            echo "owner-resources.html missing Pages-relative audio paths"
+            exit 1
+          }
           node scripts/check-store-bundle.mjs apps/web/out

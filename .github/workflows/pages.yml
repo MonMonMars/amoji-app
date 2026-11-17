@@ -36,6 +36,11 @@ jobs:
           # Optional public Edge relay (Actions variable, not a secret). Empty → direct socket.
           NEXT_PUBLIC_TTS_PROXY: ${{ vars.AMOJI_TTS_PROXY }}
           NEXT_PUBLIC_EDGE_TTS_TOKEN: ${{ vars.AMOJI_EDGE_TTS_TOKEN }}
+      - name: assert owner picker in Pages artifact
+        run: |
+          test -f apps/web/out/docs/owner-resources.html
+          test ! -e apps/web/out/docs/amoji-public-serve
+          grep -q 'data-play="../audio/' apps/web/out/docs/owner-resources.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: apps/web/out

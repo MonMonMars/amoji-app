@@ -18,6 +18,25 @@ const expected = m[1];
 const base = (process.env.AMOJI_PAGES_URL ?? "https://monmonmars.github.io/amoji-app").replace(/\/$/, "");
 const url = `${base}/revision.txt`;
 
+async function fetchOk(path, { expectText } = {}) {
+  const res = await fetch(`${base}${path}`, { cache: "no-store" });
+  if (!res.ok) {
+    console.error(`[verify-pages-live] ${base}${path} → HTTP ${res.status}`);
+    process.exit(1);
+  }
+  if (expectText) {
+    const body = await res.text();
+    if (!body.includes(expectText)) {
+      console.error(`[verify-pages-live] ${base}${path} missing expected marker: ${expectText}`);
+      process.exit(1);
+    }
+    if (body.includes("This page could not be found")) {
+      console.error(`[verify-pages-live] ${base}${path} looks like Next 404 shell, not static docs HTML`);
+      process.exit(1);
+    }
+  }
+}
+
 const res = await fetch(url, { cache: "no-store" });
 if (!res.ok) {
   console.error(`[verify-pages-live] ${url} → HTTP ${res.status}`);
@@ -28,4 +47,5 @@ if (live !== expected) {
   console.error(`[verify-pages-live] mismatch: repo ${expected} vs live ${live} (${url})`);
   process.exit(1);
 }
-console.log(`[verify-pages-live] OK ${live} @ ${base}`);
+await fetchOk("/docs/owner-resources.html", { expectText: "Owner resource library" });
+console.log(`[verify-pages-live] OK ${live} @ ${base} (owner-resources.html 200)`);

@@ -222,8 +222,10 @@ describe.skipIf(!hasOut)('store bundle: built out/ tree', () => {
       expect(fs.existsSync(path.join(OUT_DIR, 'docs', name)), `docs/${name} missing from web build`).toBe(true);
     }
     const link = path.join(OUT_DIR, 'docs', 'amoji-public-serve');
-    expect(fs.lstatSync(link).isSymbolicLink(), 'docs/amoji-public-serve should be a symlink').toBe(true);
-    expect(fs.readlinkSync(link)).toBe('..');
+    expect(fs.existsSync(link), 'docs/amoji-public-serve must not ship in Pages artifact').toBe(false);
+    const ownerHtml = fs.readFileSync(path.join(OUT_DIR, 'docs', 'owner-resources.html'), 'utf8');
+    expect(ownerHtml).toContain('data-play="../audio/');
+    expect(ownerHtml).not.toContain('amoji-public-serve/');
   });
 
   it.skipIf(!isStoreOut)('store mode does not ship owner docs HTML', () => {
