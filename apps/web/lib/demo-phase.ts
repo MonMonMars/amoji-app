@@ -761,3 +761,35 @@ export function demoPhaseLabel(id: DemoPhaseId, lang?: string): string {
   const btn = DEMO_PHASE_BUTTONS.find((b) => b.id === id);
   return btn?.label[L] ?? id;
 }
+
+/** 32-bit LCG — deterministic shuffle from a session / mount seed. */
+function demoPhaseShuffleRand(seed: number): () => number {
+  let s = seed >>> 0 || 1;
+  return () => {
+    s = (Math.imul(1664525, s) + 1013904223) >>> 0;
+    return s / 0x1_0000_0000;
+  };
+}
+
+/** Fisher–Yates copy of DEMO_PHASE_BUTTONS — same seed → same order (per chat entry). */
+export function shuffledDemoPhaseButtons(seed: number): DemoPhaseButton[] {
+  const arr = [...DEMO_PHASE_BUTTONS];
+  const rand = demoPhaseShuffleRand(seed);
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    const tmp = arr[i]!;
+    arr[i] = arr[j]!;
+    arr[j] = tmp;
+  }
+  return arr;
+}
+
+/** Fresh seed when a chat room opens — crypto when available. */
+export function newDemoPhaseOrderSeed(): number {
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const buf = new Uint32Array(2);
+    crypto.getRandomValues(buf);
+    return (buf[0]! ^ buf[1]!) >>> 0 || 1;
+  }
+  return (Date.now() ^ ((Math.random() * 0x1_0000_0000) | 0)) >>> 0 || 1;
+}

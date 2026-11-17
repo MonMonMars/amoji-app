@@ -17,6 +17,13 @@ describe('scroll chevron localized a11y', () => {
     }
   });
 
+  it('DemoPhaseRail localizes scroll chevrons', () => {
+    const src = read('components/DemoPhaseRail.tsx');
+    expect(src).toContain("aria-label={t(uiLang, 'scrollLeft')}");
+    expect(src).toContain("aria-label={t(uiLang, 'scrollRight')}");
+    expect(src).toContain('loadPrefs()');
+  });
+
   it('ships scrollLeft/scrollRight copy for en/yue/zh/ja', () => {
     const prefs = read('lib/prefs.ts');
     expect(prefs).toContain("| 'scrollLeft' | 'scrollRight'");

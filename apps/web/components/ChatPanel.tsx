@@ -135,7 +135,7 @@
 // so the pad painted over and hit-tested AHEAD of the hero mic and the text
 // field ("can't click the text box and the mic button"). The input row now
 // carries z-10 so it takes its clicks back.
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { feedUtterance, applyContentMood, setThinkingPose, triggerLaugh, triggerMove, holdMove, clearMove, setPerfMotionProfile, clearPerfMotionProfile } from '../lib/companion';
 import { detectMove } from '../lib/moves';
@@ -282,6 +282,7 @@ import { loadProfile, type Gender } from '../lib/profile';
 import type { ChatStatus } from '../lib/status';
 import EmotionOrb from './EmotionOrb';
 import DemoPhaseRail from './DemoPhaseRail';
+import { newDemoPhaseOrderSeed } from '../lib/demo-phase';
 
 interface Msg {
   role: 'user' | 'assistant';
@@ -345,6 +346,8 @@ export default function ChatPanel({
   onMemCount,
   onAutoIdle,
 }: ChatPanelProps) {
+  /** Reshuffle demo-phase chips on each chat-room entry (ChatPanel mount). */
+  const demoPhaseOrderSeed = useMemo(() => newDemoPhaseOrderSeed(), []);
   const [history, setHistory] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -2218,6 +2221,7 @@ export default function ChatPanel({
         {!loadStorySession() && (
           <DemoPhaseRail
             lang={lang}
+            orderSeed={demoPhaseOrderSeed}
             disabled={busy}
             onWarmStory={() => {
               void warmClassicFairyTaleCache();
