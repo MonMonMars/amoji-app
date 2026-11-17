@@ -1,10 +1,12 @@
 /**
- * Builds docs/owner-music-picker.html and docs/owner-poke-reactions.html
- * from live SoT modules (performance-clips, music-catalog, poke zones, CMA).
+ * Canonical: docs/owner-resources.html (music + poke + idle tabs).
+ * Legacy docs/owner-*-picker.html redirect to the unified page.
+ * Generated via scripts/generate-owner-picker-html.mjs — do not hand-edit HTML.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { IDLE_POSES } from '../packages/vrm-renderer/src/idle-poses.ts';
 import { PERFORMANCE_CLIPS } from '../apps/web/lib/performance-clips.ts';
 import { STREAM_TRACKS } from '../apps/web/lib/music-catalog.ts';
 import { MUSIC_THEMES } from '../apps/web/lib/music.ts';
@@ -20,9 +22,25 @@ import { RECORDED_POKE_ZONE } from '../apps/web/lib/voice-clips.ts';
 import {
   CMA_REACTION_GALLERY,
   CMA_REACTION_ARCHIVE_CODES,
+  CMA_REACTION_GALLERY_KEY,
+  CMA_REACTION_KEEP_CODES,
   CMA_REACTION_OWNER_WANT_CODES,
 } from '../apps/web/lib/cma-reaction-gallery.ts';
 import type { Lang } from '../apps/web/lib/prefs.ts';
+import { CHARACTERS_WANT } from '../apps/web/lib/characters-want.ts';
+import { CHAT_IDLE_CURATED, defaultCuratedRailNums } from '../apps/web/lib/idle-curated-rail.ts';
+import { idleClipFamily } from '../apps/web/lib/idle-clip-family.ts';
+import { IDLE_LIBRARY, idleByClipId, type IdleLibraryEntry } from '../apps/web/lib/idle-library.ts';
+import {
+  IDLE_ENABLED_KEY,
+  IDLE_PICK_KEY,
+  IDLE_PREFS_GENERATION,
+  KNOWN_BAD_IDLE_CLIP_IDS,
+  LEGACY_IDLE_ENABLED_KEYS,
+  LEGACY_IDLE_PICK_KEYS,
+} from '../apps/web/lib/idle-owner-migrate.ts';
+import { DEFAULT_IDLE_CLIP_ID } from '../apps/web/lib/idle-retired.ts';
+import { CHARACTER_POSES } from '../apps/web/lib/persona.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
@@ -127,12 +145,44 @@ function sharedCss(): string {
     audio { height: 28px; max-width: 220px; vertical-align: middle; }
     .play-remote { font-size: 0.8rem; }
     input[type="checkbox"] { transform: scale(1.15); cursor: pointer; }
+    tr.owner-saved td { background: rgba(14, 107, 92, 0.1); }
+    tr.owner-saved-pin td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+    tr.owner-bad td { opacity: 0.72; }
+    .saved-picks { font-size: 0.78rem; color: var(--accent-deep); max-width: 14rem; }
+    #ownerPrefBanner {
+      margin: 0.5rem 0 1rem; padding: 0.75rem 1rem; border: 1px solid var(--line);
+      background: #fff; font-size: 0.88rem; line-height: 1.45;
+    }
     #exportOut {
       width: 100%; min-height: 4rem; margin-top: 0.75rem; font-family: ui-monospace, monospace;
       font-size: 0.8rem; padding: 0.5rem; border: 1px solid var(--line);
     }
     .filter { padding: 0.35rem 0.5rem; border: 1px solid var(--line); min-width: 12rem; }
+    .tabs {
+      display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0 1.25rem;
+    }
+    .tab {
+      font-family: inherit; font-weight: 700; cursor: pointer;
+      border: 1px solid var(--line); background: var(--panel); padding: 0.5rem 1rem;
+      border-radius: 4px; color: var(--muted);
+    }
+    .tab[aria-selected="true"] {
+      background: #e8f4ef; color: var(--accent-deep); border-color: var(--accent);
+    }
+    .tab-panel[hidden] { display: none !important; }
+    tr.row-in-use td { background: rgba(14, 107, 92, 0.06); }
+    .tag.in-use { background: #d4ebe4; color: var(--accent-deep); font-weight: 700; }
+    .tag.pinned { background: #f0e6c8; color: #6b4f12; font-weight: 700; }
+    .tag.default-on { background: #e3eef8; color: #1e4a6e; }
   `;
+}
+
+function inUseTag(label = 'In use'): string {
+  return `<span class="tag in-use">${escapeHtml(label)}</span>`;
+}
+
+function defaultOnTag(): string {
+  return '<span class="tag default-on">Default ON</span>';
 }
 
 function pickerScript(exportKey: string): string {
@@ -179,7 +229,205 @@ function pickerScript(exportKey: string): string {
   `;
 }
 
-function htmlShell(title: string, eyebrow: string, lede: string, body: string, statsHtml: string): string {
+function unifiedOwnerClientScript(): string {
+  const pickKeys = [JSON.stringify(IDLE_PICK_KEY), ...LEGACY_IDLE_PICK_KEYS.map((k) => JSON.stringify(k))];
+  const enableKeys = [JSON.stringify(IDLE_ENABLED_KEY), ...LEGACY_IDLE_ENABLED_KEYS.map((k) => JSON.stringify(k))];
+  const defaultRails = JSON.stringify(defaultCuratedRailNums());
+  const cmaKey = JSON.stringify(CMA_REACTION_GALLERY_KEY);
+  return `
+    const TAB_IDS = ['music', 'poke', 'idle'];
+    function showTab(id) {
+      if (!TAB_IDS.includes(id)) id = 'music';
+      for (const t of TAB_IDS) {
+        const panel = document.getElementById('panel-' + t);
+        const btn = document.querySelector('[data-tab="' + t + '"]');
+        if (panel) panel.hidden = t !== id;
+        if (btn) btn.setAttribute('aria-selected', t === id ? 'true' : 'false');
+      }
+      location.hash = id;
+    }
+    document.querySelectorAll('[data-tab]').forEach((btn) => {
+      btn.addEventListener('click', () => showTab(btn.getAttribute('data-tab')));
+    });
+    const hash = (location.hash || '#music').slice(1);
+    showTab(hash);
+    window.addEventListener('hashchange', () => showTab((location.hash || '#music').slice(1)));
+
+    const PICK_KEYS = [${pickKeys.join(', ')}];
+    const ENABLE_KEYS = [${enableKeys.join(', ')}];
+    const DEFAULT_RAILS = ${defaultRails};
+    const CMA_GALLERY_KEY = ${cmaKey};
+    function readJsonKey(keys) {
+      for (const k of keys) {
+        try {
+          const raw = localStorage.getItem(k);
+          if (raw) return { key: k, data: JSON.parse(raw) };
+        } catch { /* corrupt */ }
+      }
+      return null;
+    }
+    function formatSavedPicks() {
+      const pick = readJsonKey(PICK_KEYS);
+      const en = readJsonKey(ENABLE_KEYS);
+      const byClip = new Map();
+      if (pick?.data && typeof pick.data === 'object') {
+        for (const [charId, clipId] of Object.entries(pick.data)) {
+          if (!clipId) continue;
+          const list = byClip.get(clipId) || [];
+          list.push(charId + ' pin');
+          byClip.set(clipId, list);
+        }
+      }
+      if (Array.isArray(en?.data)) {
+        const note = 'rail #' + en.data.join(', #') + ' (' + (en.key || '') + ')';
+        for (const tr of document.querySelectorAll('tr[data-rail-num]')) {
+          const n = Number(tr.dataset.railNum);
+          if (en.data.includes(n)) {
+            const clip = tr.dataset.clipId;
+            if (clip) {
+              const list = byClip.get(clip) || [];
+              list.push('enabled ' + note);
+              byClip.set(clip, list);
+            }
+          }
+        }
+      }
+      for (const tr of document.querySelectorAll('tr[data-clip-id]')) {
+        const clip = tr.dataset.clipId;
+        const cell = tr.querySelector('.saved-picks');
+        if (!cell || !clip) continue;
+        const hits = byClip.get(clip);
+        if (hits?.length) {
+          cell.textContent = hits.join(' · ');
+          tr.classList.add('owner-saved');
+          if (hits.some((h) => h.includes('pin'))) tr.classList.add('owner-saved-pin');
+        }
+      }
+      const banner = document.getElementById('ownerPrefBanner');
+      if (!banner) return;
+      const parts = [];
+      if (pick) parts.push('Per-character pins from <code>' + pick.key + '</code>');
+      else parts.push('No idle pin map in this browser (open after using the app on the same origin, or paste picks in chat).');
+      if (en) parts.push('Enabled rails: #' + en.data.join(', #') + ' via <code>' + en.key + '</code>');
+      banner.innerHTML = parts.join('<br/>');
+      for (const n of DEFAULT_RAILS) {
+        for (const tr of document.querySelectorAll('tr[data-rail-num="' + n + '"]')) {
+          const cell = tr.querySelector('.flags');
+          if (cell && !cell.textContent?.includes('Pinned')) {
+            cell.insertAdjacentHTML('beforeend', ' <span class="tag default-on">Default ON</span>');
+          }
+        }
+      }
+      try {
+        const raw = localStorage.getItem(CMA_GALLERY_KEY);
+        if (raw) {
+          const picks = JSON.parse(raw);
+          if (picks && typeof picks === 'object') {
+            for (const [code, verdict] of Object.entries(picks)) {
+              const tr = document.querySelector('tr[data-cma-code="' + code + '"]');
+              if (!tr) continue;
+              const cell = tr.querySelector('.saved-picks') || tr.querySelector('.flags');
+              if (!cell) continue;
+              const tag = verdict === 'want' ? 'Your pick (Want)' : verdict === 'skip' ? 'Your skip' : String(verdict);
+              cell.insertAdjacentHTML('beforeend', ' <span class="tag pinned">' + tag + '</span>');
+              tr.classList.add('owner-saved');
+              if (verdict === 'want') tr.classList.add('owner-saved-pin');
+            }
+          }
+        }
+      } catch { /* corrupt CMA picks */ }
+    }
+    formatSavedPicks();
+  `;
+}
+
+function buildRedirectHtml(targetHash: string, title: string): string {
+  const href = `owner-resources.html#${targetHash}`;
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="refresh" content="0;url=${escapeHtml(href)}" />
+  <link rel="canonical" href="${escapeHtml(href)}" />
+  <title>${escapeHtml(title)} — moved</title>
+</head>
+<body>
+  <p>Moved to <a href="${escapeHtml(href)}">owner-resources.html#${escapeHtml(targetHash)}</a></p>
+  <script>location.replace(${JSON.stringify(href)});</script>
+</body>
+</html>`;
+}
+
+function buildUnifiedResourcesPage(
+  music: PickerSection,
+  poke: PickerSection,
+  idle: PickerSection,
+): { html: string; counts: Record<string, number> } {
+  const grandTotal =
+    music.counts.total + poke.counts.sections + poke.counts.pokeLines + poke.counts.zones + poke.counts.cma + (idle.counts.total as number);
+  const stats = [
+    stat(music.counts.total, 'Music rows'),
+    stat(poke.counts.sections + poke.counts.cma, 'Poke rows (core)'),
+    stat(idle.counts.total, 'Idle rows'),
+    stat(grandTotal, 'All picker rows'),
+  ].join('');
+  const sotNote = `<p class="lede">Source of truth: <code>owner-picker-html-writer.ts</code> (this file) imports <code>performance-clips.ts</code>, <code>music-catalog.ts</code>, <code>poke-zones.ts</code>, <code>cma-reaction-gallery.ts</code>, <code>idle-library.ts</code>, <code>idle-curated-rail.ts</code>, <code>idle-owner-migrate.ts</code> (<code>${escapeHtml(IDLE_PICK_KEY)}</code> / <code>${escapeHtml(IDLE_ENABLED_KEY)}</code>), <code>${escapeHtml(CMA_REACTION_GALLERY_KEY)}</code>, <code>owner-resource-manifest.ts</code>. Default idle clip: <code>${escapeHtml(DEFAULT_IDLE_CLIP_ID)}</code>.</p>`;
+
+  const body = `
+    <nav class="tabs" aria-label="Resource categories">
+      <button type="button" class="tab" data-tab="music" aria-selected="true">Music &amp; beds</button>
+      <button type="button" class="tab" data-tab="poke">Poke reactions</button>
+      <button type="button" class="tab" data-tab="idle">Idle poses &amp; VRMA</button>
+    </nav>
+    <section id="panel-music" class="tab-panel" data-section="music">
+      <h2 id="music">Music &amp; performance audio</h2>
+      ${music.body}
+    </section>
+    <section id="panel-poke" class="tab-panel" data-section="poke" hidden>
+      <h2 id="poke">Poke motion, voice, SFX</h2>
+      <p class="lede">CMA gallery picks read from <code>${escapeHtml(CMA_REACTION_GALLERY_KEY)}</code> on this browser (Want / Skip).</p>
+      ${poke.body}
+    </section>
+    <section id="panel-idle" class="tab-panel" data-section="idle" hidden>
+      <h2 id="idle">Idle library, chat rail, pools</h2>
+      ${idle.body}
+    </section>`;
+
+  const lede =
+    'One place for Pixel to review every ship-eligible resource: music beds, poke zones + CMA SFX, idle VRMA rail + library. Rows highlighted <span class="tag in-use">In use</span> match runtime defaults / wired ship-set. <span class="tag pinned">Your pick</span> fills from the same localStorage keys as the live app on this origin.';
+
+  const html = htmlShell(
+    'Amoji — Owner resource library (unified)',
+    'Pixel · all rails',
+    lede,
+    sotNote + body,
+    stats,
+    'owner-resources.html',
+    '<code>owner-picker-html-writer.ts</code> · <code>owner-resource-manifest.ts</code> · <a href="OWNER_RESOURCE_LIBRARY.md">OWNER_RESOURCE_LIBRARY.md</a>',
+    unifiedOwnerClientScript(),
+  );
+
+  return {
+    html,
+    counts: {
+      music: music.counts.total,
+      poke: poke.counts.sections + poke.counts.pokeLines + poke.counts.zones + poke.counts.cma,
+      idle: idle.counts.total,
+      grandTotal,
+    },
+  };
+}
+
+function htmlShell(
+  title: string,
+  eyebrow: string,
+  lede: string,
+  body: string,
+  statsHtml: string,
+  previewFilename: string,
+  footerSot: string,
+  extraScript = '',
+): string {
   const gen = new Date().toISOString().slice(0, 10);
   return `<!DOCTYPE html>
 <html lang="en">
@@ -198,7 +446,7 @@ function htmlShell(title: string, eyebrow: string, lede: string, body: string, s
       <div class="eyebrow">${escapeHtml(eyebrow)}</div>
       <h1>${escapeHtml(title)}</h1>
       <p class="lede">${lede}</p>
-      <p class="lede"><strong>Local preview:</strong> <code>cd docs &amp;&amp; python3 -m http.server 8765</code> then open <code>http://127.0.0.1:8765/${title.includes('Music') ? 'owner-music-picker.html' : 'owner-poke-reactions.html'}</code>. Local audio uses symlink <code>docs/amoji-public-serve</code> → <code>apps/web/public</code>.</p>
+      <p class="lede"><strong>Local preview:</strong> <code>cd docs &amp;&amp; python3 -m http.server 8765</code> then open <code>http://127.0.0.1:8765/${escapeHtml(previewFilename)}</code>. GitHub Pages: <code>https://monmonmars.github.io/amoji-app/docs/${escapeHtml(previewFilename)}</code>${previewFilename.includes('music') ? '. Local audio uses symlink <code>docs/amoji-public-serve</code> → <code>apps/web/public</code>.' : '.'}</p>
     </header>
     <section class="instr">
       <strong>Pixel — keep vs remove</strong>
@@ -216,9 +464,9 @@ function htmlShell(title: string, eyebrow: string, lede: string, body: string, s
     </section>
     <div class="grid-stats">${statsHtml}</div>
     ${body}
-    <p class="lede" style="margin-top:2rem;font-size:0.85rem;">Generated ${gen} · <a href="project-status.html">Project status</a> · SoT: <code>performance-clips.ts</code>, <code>music-catalog.ts</code>, <code>personality-voice.ts</code>, <code>poke-zones.ts</code>, <code>voice-clips.ts</code></p>
+    <p class="lede" style="margin-top:2rem;font-size:0.85rem;">Generated ${gen} · <a href="project-status.html">Project status</a> · SoT: ${footerSot}</p>
   </div>
-  <script>${pickerScript('')}</script>
+  <script>${pickerScript('')}${extraScript}</script>
 </body>
 </html>`;
 }
@@ -227,7 +475,9 @@ function stat(n: string | number, label: string): string {
   return `<div class="stat"><div class="n">${escapeHtml(String(n))}</div><div class="l">${escapeHtml(label)}</div></div>`;
 }
 
-function buildMusicPage(): { html: string; counts: Record<string, number> } {
+type PickerSection = { body: string; stats: string; counts: Record<string, number> };
+
+function buildMusicPage(): PickerSection {
   const perfRef = lineRef('apps/web/lib/performance-clips.ts', 'export const PERFORMANCE_CLIPS');
   const streamRef = lineRef('apps/web/lib/music-catalog.ts', 'export const STREAM_TRACKS');
   const procRef = lineRef('apps/web/lib/music.ts', 'export const MUSIC_THEMES');
@@ -248,8 +498,9 @@ function buildMusicPage(): { html: string; counts: Record<string, number> } {
   for (const c of PERFORMANCE_CLIPS) {
     const local = `${PUBLIC_PREFIX}${c.file}`;
     const tags = [...c.moods, c.style, c.kind, ...(c.voice ? [c.voice] : [])];
-    perfRows += `<tr data-id="${escapeHtml(c.id)}" data-label="${escapeHtml(c.labels.en)}" data-ref="${escapeHtml(perfRef)}">
+    perfRows += `<tr class="row-in-use" data-in-use="1" data-id="${escapeHtml(c.id)}" data-label="${escapeHtml(c.labels.en)}" data-ref="${escapeHtml(perfRef)}">
       <td><input type="checkbox" class="keep" checked aria-label="Keep ${escapeHtml(c.id)}" /></td>
+      <td class="flags">${inUseTag('performance-clips')}</td>
       <td><button type="button" data-play="${escapeHtml(local)}">▶</button></td>
       <td><strong>${escapeHtml(c.labels.en)}</strong><br/><code>${escapeHtml(c.id)}</code></td>
       <td>${escapeHtml(c.kind)}</td>
@@ -263,8 +514,9 @@ function buildMusicPage(): { html: string; counts: Record<string, number> } {
 
   let streamRows = '';
   for (const t of STREAM_TRACKS) {
-    streamRows += `<tr data-id="${escapeHtml(t.id)}" data-label="${escapeHtml(t.title)}" data-ref="${escapeHtml(streamRef)}">
+    streamRows += `<tr class="row-in-use" data-in-use="1" data-id="${escapeHtml(t.id)}" data-label="${escapeHtml(t.title)}" data-ref="${escapeHtml(streamRef)}">
       <td><input type="checkbox" class="keep" checked /></td>
+      <td class="flags">${inUseTag('STREAM_TRACKS')}</td>
       <td><button type="button" class="play-remote" data-play="${escapeHtml(t.url)}">▶ Mixkit</button></td>
       <td>${escapeHtml(t.title)}<br/><code>${escapeHtml(t.id)}</code></td>
       <td>stream</td>
@@ -278,8 +530,9 @@ function buildMusicPage(): { html: string; counts: Record<string, number> } {
 
   let procRows = '';
   for (const [id, th] of Object.entries(MUSIC_THEMES)) {
-    procRows += `<tr data-id="procedural-${escapeHtml(id)}" data-label="${escapeHtml(th.mood)}" data-ref="${escapeHtml(procRef)}">
+    procRows += `<tr class="row-in-use" data-in-use="1" data-id="procedural-${escapeHtml(id)}" data-label="${escapeHtml(th.mood)}" data-ref="${escapeHtml(procRef)}">
       <td><input type="checkbox" class="keep" checked /></td>
+      <td class="flags">${inUseTag('MUSIC_THEMES')}</td>
       <td>—</td>
       <td>${escapeHtml(id)}<br/><em>${escapeHtml(th.mood)}</em></td>
       <td>procedural</td>
@@ -296,6 +549,7 @@ function buildMusicPage(): { html: string; counts: Record<string, number> } {
     const local = `${PUBLIC_PREFIX}/${rel}`;
     orphanRows += `<tr data-id="orphan-${escapeHtml(rel)}" data-label="${escapeHtml(path.basename(rel))}" data-ref="disk only">
       <td><input type="checkbox" class="keep" checked /></td>
+      <td class="flags">—</td>
       <td><button type="button" data-play="${escapeHtml(local)}">▶</button></td>
       <td><code>${escapeHtml(rel)}</code></td>
       <td>orphan file</td>
@@ -316,22 +570,22 @@ function buildMusicPage(): { html: string; counts: Record<string, number> } {
     ${holdNote}
     <h2>Performance library (CC0 / PD files)</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Play</th><th>Title</th><th>Kind</th><th>Langs</th><th>Tags</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
+      <thead><tr><th>Keep</th><th>Ship</th><th>Play</th><th>Title</th><th>Kind</th><th>Langs</th><th>Tags</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
       <tbody>${perfRows}</tbody>
     </table></div>
     <h2>Mixkit stream previews (remote URL)</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Play</th><th>Title</th><th>Kind</th><th>Langs</th><th>Style</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
+      <thead><tr><th>Keep</th><th>Ship</th><th>Play</th><th>Title</th><th>Kind</th><th>Langs</th><th>Style</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
       <tbody>${streamRows}</tbody>
     </table></div>
     <h2>Procedural WebAudio themes (no file)</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Play</th><th>Theme</th><th>Kind</th><th>Langs</th><th>Tags</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
+      <thead><tr><th>Keep</th><th>Ship</th><th>Play</th><th>Theme</th><th>Kind</th><th>Langs</th><th>Tags</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
       <tbody>${procRows}</tbody>
     </table></div>
     ${orphans.length ? `<h2>On-disk audio not wired in PERFORMANCE_CLIPS</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Play</th><th>Path</th><th>Kind</th><th>Langs</th><th>Tags</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
+      <thead><tr><th>Keep</th><th>Ship</th><th>Play</th><th>Path</th><th>Kind</th><th>Langs</th><th>Tags</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
       <tbody>${orphanRows}</tbody>
     </table></div>` : ''}`;
 
@@ -343,16 +597,9 @@ function buildMusicPage(): { html: string; counts: Record<string, number> } {
     stat(totalTracks, 'Total rows'),
   ].join('');
 
-  const html = htmlShell(
-    'Amoji — Owner music picker',
-    'Pixel · music & beds',
-    'Every dance bed, song, Mixkit stream, and procedural theme the app can pick. Play local files when served from <code>docs/</code> with <code>../apps/web/public</code> reachable.',
+  return {
     body,
     stats,
-  );
-
-  return {
-    html,
     counts: {
       performance: PERFORMANCE_CLIPS.length,
       stream: STREAM_TRACKS.length,
@@ -363,7 +610,7 @@ function buildMusicPage(): { html: string; counts: Record<string, number> } {
   };
 }
 
-function buildPokePage(): { html: string; counts: Record<string, number> } {
+function buildPokePage(): PickerSection {
   const sectionsRef = lineRef('apps/web/lib/poke-zones.ts', 'export const POKE_SECTIONS');
   const motionRef = lineRef('apps/web/lib/poke-zones.ts', 'export function pokeSectionBodyReaction');
   const sfxRef = lineRef('apps/web/lib/voice-clips.ts', 'export const RECORDED_POKE_ZONE');
@@ -375,8 +622,9 @@ function buildPokePage(): { html: string; counts: Record<string, number> } {
     const motion = s.voiceOnly
       ? 'voice only (tier 6)'
       : `pokeSectionBodyReaction → tier ${s.tier} · ${s.angle}`;
-    sectionRows += `<tr data-id="${escapeHtml(s.id)}" data-label="${escapeHtml(s.labelTc)}" data-ref="${escapeHtml(sectionsRef)}">
+    sectionRows += `<tr class="row-in-use" data-in-use="1" data-id="${escapeHtml(s.id)}" data-label="${escapeHtml(s.labelTc)}" data-ref="${escapeHtml(sectionsRef)}">
       <td><input type="checkbox" class="keep" checked /></td>
+      <td class="flags">${inUseTag('POKE_SECTIONS')}</td>
       <td><code>${escapeHtml(s.id)}</code></td>
       <td>${escapeHtml(s.labelTc)}</td>
       <td>${s.tierNumber}</td>
@@ -395,8 +643,9 @@ function buildPokePage(): { html: string; counts: Record<string, number> } {
         pokeLineCount++;
         const ref = findStringLine('apps/web/lib/personality-voice.ts', tpl.slice(0, 40));
         const id = `poke-tts-${voice}-${lang}-${idx}`;
-        lineRows += `<tr data-id="${escapeHtml(id)}" data-label="${escapeHtml(tpl.slice(0, 60))}" data-ref="${escapeHtml(ref)}">
+        lineRows += `<tr class="row-in-use" data-in-use="1" data-id="${escapeHtml(id)}" data-label="${escapeHtml(tpl.slice(0, 60))}" data-ref="${escapeHtml(ref)}">
           <td><input type="checkbox" class="keep" checked /></td>
+          <td class="flags">${inUseTag('POKE_LINE_TEMPLATES')}</td>
           <td><code>${escapeHtml(voice)}</code></td>
           <td>${escapeHtml(lang)}</td>
           <td>${idx + 1}</td>
@@ -407,7 +656,8 @@ function buildPokePage(): { html: string; counts: Record<string, number> } {
     }
   }
 
-  const wantSet = new Set(CMA_REACTION_OWNER_WANT_CODES);
+  const wantSet = new Set<string>(CMA_REACTION_OWNER_WANT_CODES);
+  const keepSet = new Set<string>(CMA_REACTION_KEEP_CODES);
   const archiveSet = new Set(CMA_REACTION_ARCHIVE_CODES);
 
   let zoneRows = '';
@@ -421,8 +671,10 @@ function buildPokePage(): { html: string; counts: Record<string, number> } {
       const local = `${PUBLIC_PREFIX}${clipPath}`;
       const code = clipPath.match(/CMA\d+/)?.[0] ?? '';
       const id = `poke-sfx-${gender}-${zone}`;
-      zoneRows += `<tr data-id="${escapeHtml(id)}" data-label="${escapeHtml(zone)}" data-ref="${escapeHtml(sfxRef)}">
+      const zoneInUse = code ? wantSet.has(code) || keepSet.has(code) : false;
+      zoneRows += `<tr class="${zoneInUse ? 'row-in-use' : ''}" data-in-use="${zoneInUse ? '1' : '0'}" data-id="${escapeHtml(id)}" data-label="${escapeHtml(zone)}" data-ref="${escapeHtml(sfxRef)}"${code ? ` data-cma-code="${escapeHtml(code)}"` : ''}>
         <td><input type="checkbox" class="keep" checked /></td>
+        <td class="flags">${zoneInUse ? inUseTag('RECORDED_POKE_ZONE') : '—'}</td>
         <td>${escapeHtml(gender)}</td>
         <td><code>${escapeHtml(zone)}</code></td>
         <td><button type="button" data-play="${escapeHtml(local)}">▶</button> <code>${escapeHtml(clipPath)}</code></td>
@@ -441,8 +693,10 @@ function buildPokePage(): { html: string; counts: Record<string, number> } {
       if (status !== 'archive') status = 'gallery only';
     }
     if (wantSet.has(clip.code as (typeof CMA_REACTION_OWNER_WANT_CODES)[number])) status = 'owner Want / wired';
-    cmaRows += `<tr data-id="${escapeHtml(clip.code)}" data-label="${escapeHtml(clip.burst)}" data-ref="${escapeHtml(cmaRef)}">
+    const cmaInUse = wantSet.has(clip.code) || keepSet.has(clip.code);
+    cmaRows += `<tr class="${cmaInUse ? 'row-in-use' : ''}" data-in-use="${cmaInUse ? '1' : '0'}" data-id="${escapeHtml(clip.code)}" data-cma-code="${escapeHtml(clip.code)}" data-label="${escapeHtml(clip.burst)}" data-ref="${escapeHtml(cmaRef)}">
       <td><input type="checkbox" class="keep" checked /></td>
+      <td class="flags saved-picks">${cmaInUse ? inUseTag('ship-set') : '—'}</td>
       <td><code>${escapeHtml(clip.code)}</code></td>
       <td><button type="button" data-play="${escapeHtml(local)}">▶</button></td>
       <td>${escapeHtml(clip.gender)} · ${escapeHtml(clip.burst)} · ${escapeHtml(clip.use)}</td>
@@ -458,22 +712,22 @@ function buildPokePage(): { html: string; counts: Record<string, number> } {
   const body = `
     <h2>Poke grid sections (6×4) — motion routing</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Section ID</th><th>Label</th><th>Tier</th><th>Angle</th><th>Motion</th><th>Code ref</th></tr></thead>
+      <thead><tr><th>Keep</th><th>Ship</th><th>Section ID</th><th>Label</th><th>Tier</th><th>Angle</th><th>Motion</th><th>Code ref</th></tr></thead>
       <tbody>${sectionRows}</tbody>
     </table></div>
     <h2>Poke TTS line bank (personality × language × 8 templates)</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Voice</th><th>Lang</th><th>#</th><th>Template</th><th>Source</th></tr></thead>
+      <thead><tr><th>Keep</th><th>Ship</th><th>Voice</th><th>Lang</th><th>#</th><th>Template</th><th>Source</th></tr></thead>
       <tbody>${lineRows}</tbody>
     </table></div>
     <h2>Recorded poke SFX zones (RECORDED_POKE_ZONE)</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Gender</th><th>Zone</th><th>Clip</th><th>CMA</th><th>Source</th></tr></thead>
+      <thead><tr><th>Keep</th><th>Ship</th><th>Gender</th><th>Zone</th><th>Clip</th><th>CMA</th><th>Source</th></tr></thead>
       <tbody>${zoneRows}</tbody>
     </table></div>
     <h2>CMA reaction ship-set (owner picks)</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Code</th><th>Play</th><th>Use</th><th>License</th><th>Status</th><th>Source</th></tr></thead>
+      <thead><tr><th>Keep</th><th>Ship / your pick</th><th>Code</th><th>Play</th><th>Use</th><th>License</th><th>Status</th><th>Source</th></tr></thead>
       <tbody>${cmaRows}</tbody>
     </table></div>`;
 
@@ -485,16 +739,9 @@ function buildPokePage(): { html: string; counts: Record<string, number> } {
     stat(CMA_REACTION_GALLERY.length, 'CMA gallery clips'),
   ].join('');
 
-  const html = htmlShell(
-    'Amoji — Owner poke reactions',
-    'Pixel · poke motion + voice',
-    'Moves (6×4 grid), spoken poke templates, zone SFX map, and CMA ship-set with file:line references into the repo.',
+  return {
     body,
     stats,
-  );
-
-  return {
-    html,
     counts: {
       sections: POKE_SECTIONS.length,
       pokeLines: pokeLineCount,
@@ -504,11 +751,198 @@ function buildPokePage(): { html: string; counts: Record<string, number> } {
   };
 }
 
+/** Auto-idle pool clip ids (mirror chat-auto-idle.ts — document for Pixel review). */
+const AUTO_IDLE_POOL_ROWS: { pool: string; clipIds: string[] }[] = [
+  { pool: 'BREATHING_CLIPS', clipIds: [DEFAULT_IDLE_CLIP_ID] },
+  { pool: 'CHITCHAT_CLIPS', clipIds: [DEFAULT_IDLE_CLIP_ID, 'Thinking'] },
+  { pool: 'NEUTRAL_CHAT_CLIPS', clipIds: [DEFAULT_IDLE_CLIP_ID, 'Thinking'] },
+  { pool: 'TALK_CALM_CLIPS', clipIds: [DEFAULT_IDLE_CLIP_ID, 'Thinking'] },
+  {
+    pool: 'MUSIC_POSE_CLIPS',
+    clipIds: ['lib_C112', 'lib_C61', 'lib_C03', 'lib_C113', 'lib_C110', 'lib_C41', 'IdleMixamoHappy'],
+  },
+  {
+    pool: 'CATEGORY_CLIP (keyword buckets)',
+    clipIds: [
+      'lib_C25', 'Thinking', 'lib_C61', 'lib_C112', 'lib_C121', 'lib_C146', 'Cheer',
+      DEFAULT_IDLE_CLIP_ID, 'Relax', 'IdleMixamoHappy',
+    ],
+  },
+];
+
+function idleLibraryRowHtml(e: IdleLibraryEntry, libRef: string): string {
+  const bad = KNOWN_BAD_IDLE_CLIP_IDS.has(e.clipId);
+  const family = idleClipFamily(e.clipId);
+  const rowClass = bad ? 'owner-bad' : '';
+  const tags = [
+    e.planted ? 'planted' : 'feet-free',
+    e.playable ? 'playable' : 'no vrma',
+    e.defaultEnabled ? 'default ON' : 'default off',
+    e.retired ? 'retired' : '',
+    bad ? 'known-bad pin' : '',
+    family,
+  ].filter(Boolean);
+  const onRail = !!CHAT_IDLE_CURATED.find((r) => r.clipId === e.clipId);
+  const wired = (e.defaultEnabled || onRail) && !bad && e.playable && !e.retired;
+  return `<tr class="${rowClass}${wired ? ' row-in-use' : ''}" data-in-use="${wired ? '1' : '0'}" data-id="lib-${escapeHtml(e.clipId)}" data-clip-id="${escapeHtml(e.clipId)}" data-label="${escapeHtml(e.name)}" data-ref="${escapeHtml(libRef)}">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ${escapeHtml(e.clipId)}" /></td>
+      <td class="flags saved-picks" title="Filled from amoji.idlePick.v${IDLE_PREFS_GENERATION} on this browser">${wired ? inUseTag(onRail ? 'curated rail' : 'default pool') : '—'}</td>
+      <td><strong>#${e.num}</strong> <code>${escapeHtml(e.clipId)}</code></td>
+      <td>${escapeHtml(e.name)}${e.cId ? `<br/><span class="tag">${escapeHtml(e.cId)}</span>` : ''}</td>
+      <td>${tags.map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</td>
+      <td><code>${escapeHtml(e.path)}</code>${e.vrmaUrl ? `<br/><code>${escapeHtml(e.vrmaUrl)}</code>` : ''}</td>
+      <td><span class="ref">${escapeHtml(libRef)}</span></td>
+    </tr>`;
+}
+
+function buildIdlePage(): PickerSection {
+  const libRef = lineRef('apps/web/lib/idle-library.ts', 'export const IDLE_LIBRARY');
+  const railRef = lineRef('apps/web/lib/idle-curated-rail.ts', 'export const CHAT_IDLE_CURATED');
+  const pickRef = lineRef('apps/web/lib/idle-owner-migrate.ts', 'export const IDLE_PICK_KEY');
+  const poseRef = lineRef('packages/vrm-renderer/src/idle-poses.ts', 'export const IDLE_POSES');
+  const autoRef = lineRef('apps/web/lib/chat-auto-idle.ts', 'export function resolveChatAutoIdle');
+
+  let libRows = '';
+  for (const e of IDLE_LIBRARY) {
+    libRows += idleLibraryRowHtml(e, libRef);
+  }
+
+  const defaultRails = new Set(defaultCuratedRailNums());
+  let railRows = '';
+  for (const e of CHAT_IDLE_CURATED) {
+    const lib = idleByClipId(e.clipId);
+    const bad = KNOWN_BAD_IDLE_CLIP_IDS.has(e.clipId);
+    const isDefault = defaultRails.has(e.railNum) || e.clipId === DEFAULT_IDLE_CLIP_ID;
+    railRows += `<tr class="row-in-use" data-in-use="1" data-id="rail-${e.railNum}-${escapeHtml(e.clipId)}" data-clip-id="${escapeHtml(e.clipId)}" data-rail-num="${e.railNum}" data-label="${escapeHtml(e.labelKey)}" data-ref="${escapeHtml(railRef)}">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td class="flags saved-picks">${inUseTag('CHAT_IDLE_CURATED')}${isDefault ? ` ${defaultOnTag()}` : ''}</td>
+      <td><strong>#${e.railNum}</strong></td>
+      <td><code>${escapeHtml(e.clipId)}</code></td>
+      <td>${escapeHtml(e.labelKey)} · ${escapeHtml(e.category)}</td>
+      <td>lib #${e.legacyLibNum}${lib ? ` · ${escapeHtml(lib.name)}` : ''}</td>
+      <td>${bad ? '<span class="tag hold">scrub on save</span>' : '<span class="tag">honorable</span>'}</td>
+      <td><span class="ref">${escapeHtml(railRef)}</span></td>
+    </tr>`;
+  }
+
+  let poolRows = '';
+  let poolClipCount = 0;
+  for (const { pool, clipIds } of AUTO_IDLE_POOL_ROWS) {
+    const uniq = [...new Set(clipIds)];
+    for (const clipId of uniq) {
+      poolClipCount++;
+      poolRows += `<tr class="row-in-use" data-in-use="1" data-id="pool-${escapeHtml(pool)}-${escapeHtml(clipId)}" data-clip-id="${escapeHtml(clipId)}" data-label="${escapeHtml(pool)}" data-ref="${escapeHtml(autoRef)}">
+        <td><input type="checkbox" class="keep" checked /></td>
+        <td class="flags saved-picks">${inUseTag('chat-auto-idle')}</td>
+        <td><code>${escapeHtml(pool)}</code></td>
+        <td><code>${escapeHtml(clipId)}</code></td>
+        <td>${escapeHtml(idleClipFamily(clipId))}</td>
+        <td><span class="ref">${escapeHtml(autoRef)}</span></td>
+      </tr>`;
+    }
+  }
+
+  let procRows = '';
+  for (const p of IDLE_POSES) {
+    procRows += `<tr data-id="proc-${escapeHtml(p.id)}" data-label="${escapeHtml(p.id)}" data-ref="${escapeHtml(poseRef)}">
+      <td><input type="checkbox" class="keep" checked /></td>
+      <td class="saved-picks">(procedural)</td>
+      <td><code>${escapeHtml(p.id)}</code></td>
+      <td>spineΔ ${p.spineDelta} · headYaw ${p.headYaw} · lean ${p.leanSideDelta}</td>
+      <td>CompanionCanvas fallback when no VRMA</td>
+      <td><span class="ref">${escapeHtml(poseRef)}</span></td>
+    </tr>`;
+  }
+
+  let charPoseRows = '';
+  const castIds = new Set(CHARACTERS_WANT.map((c) => c.id));
+  let charPoseCount = 0;
+  for (const [charId, poses] of Object.entries(CHARACTER_POSES)) {
+    if (!castIds.has(charId) && !charId.startsWith('a')) continue;
+    for (const poseId of poses) {
+      charPoseCount++;
+      charPoseRows += `<tr data-id="char-${escapeHtml(charId)}-${escapeHtml(poseId)}" data-label="${escapeHtml(charId)}" data-ref="apps/web/lib/persona.ts:CHARACTER_POSES">
+        <td><input type="checkbox" class="keep" checked /></td>
+        <td class="saved-picks">—</td>
+        <td><code>${escapeHtml(charId)}</code></td>
+        <td><code>${escapeHtml(poseId)}</code></td>
+        <td>legacy subset · live uses personalityMotion()</td>
+        <td><span class="ref">persona.ts</span></td>
+      </tr>`;
+    }
+  }
+
+  const storageNote = `
+    <div id="ownerPrefBanner">Reading <code>${escapeHtml(IDLE_PICK_KEY)}</code> and <code>${escapeHtml(IDLE_ENABLED_KEY)}</code>…</div>
+    <p class="lede">Owner idle prefs (same keys as <code>CompanionCanvas</code> / <code>idle-pick.ts</code>): <code>${escapeHtml(IDLE_PICK_KEY)}</code> (per-character VRMA pin map — <span class="ref">${escapeHtml(pickRef)}</span>), <code>${escapeHtml(IDLE_ENABLED_KEY)}</code> (curated rail #s ON for rotation). Legacy <code>amoji.idlePick.v1</code>…<code>v5</code> migrate forward — never wiped (#432). Fresh default enable rails: <code>#${defaultCuratedRailNums().join(', #')}</code> → <code>${escapeHtml(DEFAULT_IDLE_CLIP_ID)}</code>. Known-bad pins (BreathCalm, Sassy, LookAround, …) scrub on read — see <code>idle-owner-migrate.ts</code>.</p>
+    <p class="lede"><span class="tag hold">Your saved picks</span> column highlights rows when this browser’s localStorage already has your pins or enabled rails (open from the same origin as the app, e.g. GitHub Pages, after you have used Amoji on that device).</p>`;
+
+  const blendNote = `<p class="lede">Blend rule: A→B crossfades only within the same <code>idleClipFamily</code> (Quaternius / RPM / Mixamo / Innerscene / lib_C*). Mixed-family swaps use a short cut (<code>IDLE_INCOMPAT_CROSSFADE_S</code>). CompanionCanvas sets <code>singleIdleStand</code> to reduce bad A→B blends on phone.</p>`;
+
+  const body = `
+    ${storageNote}
+    ${blendNote}
+    <h2>Full idle library (VRMA / FBX map — ${IDLE_LIBRARY.length} rows)</h2>
+    <div class="panel"><table>
+      <thead><tr><th>Keep</th><th>Ship / your pick</th><th>Lib # · clipId</th><th>Name</th><th>Tags</th><th>Path</th><th>Source</th></tr></thead>
+      <tbody>${libRows}</tbody>
+    </table></div>
+    <h2>Chat curated rail (#1..${CHAT_IDLE_CURATED.length})</h2>
+    <div class="panel"><table>
+      <thead><tr><th>Keep</th><th>Ship / your pick</th><th>Rail #</th><th>clipId</th><th>labelKey</th><th>Library</th><th>Owner</th><th>Source</th></tr></thead>
+      <tbody>${railRows}</tbody>
+    </table></div>
+    <h2>Chat-auto idle pools (content-driven picks)</h2>
+    <div class="panel"><table>
+      <thead><tr><th>Keep</th><th>Ship / your pick</th><th>Pool</th><th>clipId</th><th>Family</th><th>Source</th></tr></thead>
+      <tbody>${poolRows}</tbody>
+    </table></div>
+    <h2>Procedural idle bone poses (@amoji/vrm-renderer)</h2>
+    <div class="panel"><table>
+      <thead><tr><th>Keep</th><th>Notes</th><th>poseId</th><th>Offsets</th><th>Use</th><th>Source</th></tr></thead>
+      <tbody>${procRows}</tbody>
+    </table></div>
+  ${charPoseCount ? `<h2>Character procedural pose subsets (legacy map)</h2>
+    <div class="panel"><table>
+      <thead><tr><th>Keep</th><th>Saved</th><th>Character</th><th>poseId</th><th>Notes</th><th>Source</th></tr></thead>
+      <tbody>${charPoseRows}</tbody>
+    </table></div>` : ''}`;
+
+  const playable = IDLE_LIBRARY.filter((e) => e.playable && !e.retired).length;
+  const totalRows =
+    IDLE_LIBRARY.length + CHAT_IDLE_CURATED.length + poolClipCount + IDLE_POSES.length + charPoseCount;
+
+  const stats = [
+    stat(IDLE_LIBRARY.length, 'Library rows'),
+    stat(playable, 'Playable VRMA'),
+    stat(CHAT_IDLE_CURATED.length, 'Curated rail'),
+    stat(IDLE_POSES.length, 'Bone poses'),
+    stat(totalRows, 'Total picker rows'),
+  ].join('');
+
+  return {
+    body,
+    stats,
+    counts: {
+      library: IDLE_LIBRARY.length,
+      rail: CHAT_IDLE_CURATED.length,
+      pools: poolClipCount,
+      procedural: IDLE_POSES.length,
+      charPoses: charPoseCount,
+      total: totalRows,
+    },
+  };
+}
+
 const music = buildMusicPage();
 const poke = buildPokePage();
+const idle = buildIdlePage();
+const unified = buildUnifiedResourcesPage(music, poke, idle);
 
-fs.writeFileSync(path.join(docs, 'owner-music-picker.html'), music.html);
-fs.writeFileSync(path.join(docs, 'owner-poke-reactions.html'), poke.html);
+fs.writeFileSync(path.join(docs, 'owner-resources.html'), unified.html);
+fs.writeFileSync(path.join(docs, 'owner-music-picker.html'), buildRedirectHtml('music', 'Owner music picker'));
+fs.writeFileSync(path.join(docs, 'owner-poke-reactions.html'), buildRedirectHtml('poke', 'Owner poke reactions'));
+fs.writeFileSync(path.join(docs, 'owner-idle-poses.html'), buildRedirectHtml('idle', 'Owner idle poses'));
 
-console.log('wrote docs/owner-music-picker.html', music.counts);
-console.log('wrote docs/owner-poke-reactions.html', poke.counts);
+console.log('wrote docs/owner-resources.html', unified.counts);
+console.log('wrote redirect stubs → owner-resources.html#*', { music: music.counts, poke: poke.counts, idle: idle.counts });

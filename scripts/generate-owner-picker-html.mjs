@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Regenerate docs/owner-music-picker.html and docs/owner-poke-reactions.html
+ * Regenerate docs/owner-resources.html (+ legacy redirect stubs).
  */
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -12,8 +12,10 @@ const web = path.join(root, 'apps/web');
 const writer = path.join(root, 'scripts/owner-picker-html-writer.ts');
 
 const outs = [
+  path.join(root, 'docs/owner-resources.html'),
   path.join(root, 'docs/owner-music-picker.html'),
   path.join(root, 'docs/owner-poke-reactions.html'),
+  path.join(root, 'docs/owner-idle-poses.html'),
 ];
 
 execFileSync('npx', ['--yes', 'tsx', '--tsconfig', path.join(web, 'tsconfig.json'), writer], {

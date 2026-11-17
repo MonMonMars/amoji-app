@@ -5,13 +5,30 @@ import path from 'node:path';
 const repoRoot = path.join(__dirname, '../../..');
 
 describe('owner picker HTML (Pixel)', () => {
-  it('docs/owner-music-picker.html and docs/owner-poke-reactions.html exist', () => {
-    for (const name of ['owner-music-picker.html', 'owner-poke-reactions.html']) {
+  it('unified owner-resources.html and legacy redirect stubs exist', () => {
+    const unified = path.join(repoRoot, 'docs', 'owner-resources.html');
+    expect(fs.existsSync(unified), unified).toBe(true);
+    const unifiedText = fs.readFileSync(unified, 'utf8');
+    expect(unifiedText).toContain('Copy JSON');
+    expect(unifiedText).toContain('Fraunces');
+    expect(unifiedText).toContain('panel-idle');
+    expect(unifiedText).toContain('amoji.idlePick.v6');
+    expect(unifiedText).toContain('IdleQuaterniusHuman');
+    expect(unifiedText).toContain('Your saved picks');
+
+    for (const name of ['owner-music-picker.html', 'owner-poke-reactions.html', 'owner-idle-poses.html']) {
       const p = path.join(repoRoot, 'docs', name);
       expect(fs.existsSync(p), p).toBe(true);
       const text = fs.readFileSync(p, 'utf8');
-      expect(text).toContain('Copy JSON');
-      expect(text).toContain('Fraunces');
+      expect(text).toContain('owner-resources.html');
     }
+  });
+
+  it('idle tab lists VRMA library scale', () => {
+    const unified = path.join(repoRoot, 'docs', 'owner-resources.html');
+    const text = fs.readFileSync(unified, 'utf8');
+    const libRows = (text.match(/data-clip-id="/g) || []).length;
+    expect(libRows).toBeGreaterThan(100);
+    expect(text).toContain('data-rail-num');
   });
 });
