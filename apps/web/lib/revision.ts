@@ -416,7 +416,8 @@
 // r2026-11-17.197: demo-phase chip row — visible scrollbar + edge chevrons; reshuffle order each chat entry.
 // r2026-11-17.199: news/story long read — RSS+wiki body beats on tool-only tells; yue 今日有咩新聞; worldSpoken cap 1200.
 // r2026-11-17.200: card greet audible — EarlyAudioUnlock on click; stopSpeakingForCardAudition; no synth prime on card.
-export const APP_REVISION = 'r2026-11-17.200';
+// r2026-11-17.201: poke/chat skip yue 我鍾意信 motif TTS loop (speech-queue + pokeLineForSpeech).
+export const APP_REVISION = 'r2026-11-17.201';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

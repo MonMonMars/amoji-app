@@ -1524,6 +1524,20 @@ function withLead(lang: Lang, noun: string, line: string): string {
   return `${fill(MOTIF_LEAD[lang], { noun })} ${line}`.replace(/\s+/g, ' ').trim();
 }
 
+/** Motif opener on poke/catch pools — not the reaction line for short TTS. */
+const MOTIF_LEAD_PREFIX: Record<Lang, RegExp> = {
+  en: /^I like [^.!?\n]+[.!?]\s*/u,
+  yue: /^我鍾意[^。.！？\n]{1,16}[。.！？]?\s*/u,
+  zh: /^我喜欢[^。.！？\n]{1,16}[。.！？]?\s*/u,
+  ja: /^[^\s。．.\n]{1,24}が好き[。．.]?\s*/u,
+};
+
+/** Poke SFX voice: speak the zone reaction, not the canned 「我鍾意{noun}。」 lead. */
+export function pokeLineForSpeech(line: string, lang: Lang): string {
+  const stripped = line.replace(MOTIF_LEAD_PREFIX[lang], '').trim();
+  return stripped || line.trim();
+}
+
 function renderPool(
   voice: VoiceId,
   motif: MotifId,
