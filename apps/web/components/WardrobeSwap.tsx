@@ -79,7 +79,11 @@ const COPY: Record<Lang, {
 function FrontStill({ characterId, mark }: { characterId: string; mark: string }) {
   const image = characterById(characterId).image;
   const [ok, setOk] = useState(!!image);
-  useEffect(() => { setOk(!!image); }, [image]);
+  const [imageKey, setImageKey] = useState(image);
+  if (image !== imageKey) {
+    setImageKey(image);
+    setOk(!!image);
+  }
   if (!image || !ok) {
     return (
       <span className="flex h-full w-full items-center justify-center bg-white/10 text-sm font-bold text-white/80">

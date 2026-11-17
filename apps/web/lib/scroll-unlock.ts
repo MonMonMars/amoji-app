@@ -20,10 +20,7 @@ export function useScrollReachedEnd(
   const [reached, setReached] = useState(false);
 
   useEffect(() => {
-    if (!active) {
-      setReached(false);
-      return;
-    }
+    if (!active) return;
     const el = ref.current;
     if (!el) return;
 
@@ -38,5 +35,5 @@ export function useScrollReachedEnd(
     };
   }, [ref, active]);
 
-  return reached;
+  return active ? reached : false;
 }

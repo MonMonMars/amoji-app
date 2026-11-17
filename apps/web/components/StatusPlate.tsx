@@ -65,7 +65,11 @@ export default function StatusPlate({
   onOpenSelect: () => void;
 }) {
   const [faceOk, setFaceOk] = useState(true);
-  useEffect(() => { setFaceOk(true); }, [portrait]);
+  const [portraitKey, setPortraitKey] = useState(portrait);
+  if (portrait !== portraitKey) {
+    setPortraitKey(portrait);
+    setFaceOk(true);
+  }
 
   const [mood, setMood] = useState<MoodId>('neutral');
   useEffect(() => {
