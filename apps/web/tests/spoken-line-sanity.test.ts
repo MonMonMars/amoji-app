@@ -15,8 +15,10 @@ import {
   safeIdleFallback,
   scrubCompanionSpoken,
   scrubHistoryResumeAsks,
+  scrubJokeIntentAcks,
   scrubSpokenNonsense,
   scrubTopicMenuAsks,
+  looksLikeJokeIntentAck,
   sentenceLooksLikeNonsense,
   spokenLineLooksBroken,
   stripQuestionSentences,
@@ -302,6 +304,23 @@ describe('source banks never emit known nonsense', () => {
     const client = fs.readFileSync(path.resolve(here, '../lib/client-chat.ts'), 'utf8');
     expect(chat).toContain('scrubCompanionSpoken');
     expect(client).toContain('scrubCompanionSpoken');
+  });
+
+  it('scrubs redundant clean-joke intent ack before punchline', () => {
+    expect(looksLikeJokeIntentAck('你想聽個乾淨笑話呀')).toBe(true);
+    expect(looksLikeJokeIntentAck('You want to hear a clean joke?')).toBe(true);
+    expect(looksLikeJokeIntentAck('有隻貓點解企喺鍵盤上面？')).toBe(false);
+    const scrubbed = scrubJokeIntentAcks(
+      '你想聽個乾淨笑話呀。好呀。有隻貓點解企喺鍵盤上面？因為佢想跟主人撳掣。',
+    );
+    expect(scrubbed).not.toMatch(/你想聽|好呀/);
+    expect(scrubbed).toMatch(/有隻貓/);
+    expect(scrubbed).toMatch(/撳掣/);
+    const viaCompanion = scrubCompanionSpoken(
+      '你想聽個乾淨笑話呀。好呀。有隻番茄見到沙律醬，面都紅晒。',
+    );
+    expect(viaCompanion).not.toMatch(/你想聽|好呀/);
+    expect(viaCompanion).toMatch(/番茄|沙律/);
   });
 
   it('scrubs filler / surreal / opaque nonsense sentences from mixed replies', () => {
