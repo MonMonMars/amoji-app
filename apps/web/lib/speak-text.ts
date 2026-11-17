@@ -99,12 +99,60 @@ const SOURCE_TAIL_RE = /\s*[|\u2013\u2014\-]\s*(?:Google News|Reuters|BBC(?: New
 /** RSS / teaser lines often carry YYYYMMDD — never read as digits. */
 const COMPACT_YMD_RE = /\b20\d{6}\b/g;
 
+/** Stage / brand spellings in headlines — yue TTS spells Latin plus hyphens letter-by-letter. */
+const HYPHENATED_PROPER_NOUN =
+  /\b[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+\b/gu;
+const HYPHENATED_COMPOUND_PREFIX =
+  /^(?:well|re|self|non|pre|post|mid|anti|co|ex|half|full|long|short|high|low|open|close|up|down|off|on|out|in|over|under|all|semi|multi|single|double|triple|cross|inter|intra|extra|super|sub|ultra|hyper|neo|proto|pseudo|quasi)-/i;
+
+type Lang4 = 'en' | 'yue' | 'zh' | 'ja';
+
+const HYPHENATED_SPOKEN_ALIASES: Record<string, Partial<Record<Lang4 | 'default', string>>> = {
+  'G-DRAGON': { default: 'G Dragon', yue: 'G Dragon', zh: 'G Dragon', ja: 'ジードラゴン', en: 'G Dragon' },
+  'G-Dragon': { default: 'G Dragon', yue: 'G Dragon', zh: 'G Dragon', ja: 'ジードラゴン', en: 'G Dragon' },
+};
+
+function spokenHyphenPart(part: string, index: number): string {
+  if (index === 0 && part.length === 1) return part;
+  if (/^[A-Z]{2,}$/.test(part)) return part[0] + part.slice(1).toLowerCase();
+  return part;
+}
+
+function isHyphenatedProperNoun(token: string): boolean {
+  if (!token.includes('-') || HYPHENATED_COMPOUND_PREFIX.test(token)) return false;
+  if (/^[A-Z]{2,}-\d{1,4}$/u.test(token)) return false;
+  const parts = token.split('-');
+  if (parts.length < 2) return false;
+  if (parts.every((p) => /^[a-z][a-z0-9]*$/u.test(p))) return false;
+  return parts.some((p) => /^[A-Z]{2,}$/.test(p) || /^[A-Z0-9]$/u.test(p) || /^[A-Z][a-z0-9]*$/u.test(p));
+}
+
+function spokenHyphenatedToken(token: string): string {
+  return token.split('-').map((p, i) => spokenHyphenPart(p, i)).join(' ');
+}
+
+/**
+ * Headline prep: hyphenated artist / brand names become one spoken unit
+ * (G-DRAGON → G Dragon) so Cantonese engines do not spell each letter.
+ */
+export function softenHyphenatedProperNouns(raw: string, lang?: Lang4): string {
+  return String(raw || '').replace(HYPHENATED_PROPER_NOUN, (token) => {
+    const alias = HYPHENATED_SPOKEN_ALIASES[token] ?? HYPHENATED_SPOKEN_ALIASES[token.toUpperCase()];
+    if (alias) {
+      const pick = (lang && alias[lang]) || alias.default;
+      if (pick) return pick;
+    }
+    if (!isHyphenatedProperNoun(token)) return token;
+    return spokenHyphenatedToken(token);
+  });
+}
+
 /** Live weather/news tells: strip chrome only — never run chat nonsense scrub. */
 export function scrubLiveFactsSpoken(raw: string): string {
   return cleanForSpeech(raw);
 }
 
-export function sanitizeWebForSpeech(raw: string): string {
+export function sanitizeWebForSpeech(raw: string, lang?: Lang4): string {
   let s = String(raw || '')
     .replace(WEB_URL_RE, ' ')
     .replace(HASHTAG_RE, ' ')
@@ -113,6 +161,7 @@ export function sanitizeWebForSpeech(raw: string): string {
     .replace(COMPACT_YMD_RE, ' ')
     .replace(SOURCE_TAIL_RE, ' ');
   s = s.replace(/\s+[-|]\s+[A-Za-z][A-Za-z .]{1,40}$/g, ' ');
+  s = softenHyphenatedProperNouns(s, lang);
   return collapseSpaces(s);
 }
 

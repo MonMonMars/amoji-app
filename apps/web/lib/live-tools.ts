@@ -1586,8 +1586,8 @@ function newsRssUrl(query: string, lang: Lang4, top = false, region?: NewsRegion
   return `https://news.google.com/rss/search?${q.toString()}`;
 }
 
-function spokenHeadline(title: string, source = ''): string {
-  return stripLaughTokens(sanitizeWebForSpeech(scrubNewsTitleForSpeech(title, source)));
+function spokenHeadline(title: string, source = '', lang?: Lang4): string {
+  return stripLaughTokens(sanitizeWebForSpeech(scrubNewsTitleForSpeech(title, source), lang));
 }
 
 function withNewsBody(
@@ -2195,7 +2195,7 @@ function newsBodyBeats(lead: Headline): string[] {
 
 export function sayNews(lang: Lang4, label: string, lead: Headline | string): string {
   const story = typeof lead === 'string' ? { title: lead, source: '' } : lead;
-  const t = clip(spokenHeadline(story.title), 160);
+  const t = clip(spokenHeadline(story.title, story.source ?? '', lang), 160);
   if (!t) return sayMiss(lang, 'news');
   const extra = newsBodyBeats(story);
   const more = extra.length
@@ -2242,7 +2242,7 @@ function topicalSpeechLabel(lang: Lang4, query: string): string {
 /** Topic search (AI news, news about X) — not “local news near you”. */
 export function sayTopicalNews(lang: Lang4, query: string, lead: Headline | string): string {
   const story = typeof lead === 'string' ? { title: lead, source: '' } : lead;
-  const t = clip(spokenHeadline(story.title, story.source), 160);
+  const t = clip(spokenHeadline(story.title, story.source ?? '', lang), 160);
   if (!t) return sayMiss(lang, 'news');
   const topic = topicalSpeechLabel(lang, query);
   const today = isNewsPublishedToday(story.publishedAt);
@@ -2270,7 +2270,7 @@ export function sayTopicalNews(lang: Lang4, query: string, lead: Headline | stri
 
 export function sayRecent(lang: Lang4, lead: Headline | string): string {
   const story = typeof lead === 'string' ? { title: lead, source: '' } : lead;
-  const t = clip(spokenHeadline(story.title), 160);
+  const t = clip(spokenHeadline(story.title, story.source ?? '', lang), 160);
   if (!t) return sayMiss(lang, 'news');
   const today = isNewsPublishedToday(story.publishedAt);
   const extra = newsBodyBeats(story);

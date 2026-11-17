@@ -9,6 +9,7 @@ import {
   prepareSpokenLead,
   sanitizeWebForSpeech,
   scrubLiveFactsSpoken,
+  softenHyphenatedProperNouns,
   stripLaughTokens,
   stripVoicedGlyphs,
 } from '../lib/speak-text';
@@ -132,6 +133,15 @@ describe('t773/t771 speech sanitize', () => {
     expect(out).not.toMatch(/https?:/);
     expect(out).not.toMatch(/#/);
     expect(out).not.toMatch(/@/);
+  });
+
+  it('softens hyphenated artist names for news TTS (G-DRAGON)', () => {
+    expect(softenHyphenatedProperNouns('G-DRAGON 開演唱會')).toBe('G Dragon 開演唱會');
+    expect(sanitizeWebForSpeech('G-DRAGON 巡演', 'yue')).toBe('G Dragon 巡演');
+    expect(cleanForSpeech('關於 G-DRAGON 嘅消息')).toBe('關於 G Dragon 嘅消息');
+    expect(cleanForSpeech('well-known singer')).toBe('well-known singer');
+    expect(softenHyphenatedProperNouns('J-Hope 新作', 'yue')).toBe('J Hope 新作');
+    expect(softenHyphenatedProperNouns('G-DRAGON', 'ja')).toBe('ジードラゴン');
   });
 });
 
