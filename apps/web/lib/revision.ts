@@ -410,7 +410,8 @@
 // r2026-11-17.189: RequireEntryGate uses subscribeEntryGate + useSyncExternalStore (no setStatus in effect); docs tip post-#482.
 // r2026-11-17.190: PreChatAudioGate lang/mic from useState initializers; stash mute in effect only; status docs #483 on tip.
 // r2026-11-17.191: SettingsSheet master mute useSyncExternalStore + openSnap refresh (React Compiler eslint).
-export const APP_REVISION = 'r2026-11-17.191';
+// r2026-11-17.192: gate/settings sound test = full GATE_TEST_LINES TTS (gestureTap); no early gTTS onPlaying break.
+export const APP_REVISION = 'r2026-11-17.192';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

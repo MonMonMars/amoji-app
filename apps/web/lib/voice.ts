@@ -2686,7 +2686,9 @@ export async function testVoiceChain(
   if (isMasterMuted()) {
     return [{ tier: 'edge', ok: false, detail: 'muted' }];
   }
-  unlockAudio();
+  unlockAudio(true);
+  ensureCompanionPlaybackRoute();
+  primeSynthInGesture(true);
   // Mic / play-and-record ducks speakers on many phones — force playback route.
   duckExternalAudioForCompanion();
   // Gate hear-check must be unmistakable: full element volume for this probe only.
@@ -2696,13 +2698,28 @@ export async function testVoiceChain(
     try { localStorage.setItem(MUTE_KEY, 'on'); } catch { /* ignore */ }
   }
   const results: VoiceTierResult[] = [];
-  // Gate/default: long GATE_TEST_LINES; callers may override; settings uses TEST_LINES via testVoice.
+  // Gate/default: long GATE_TEST_LINES; callers may override (settings passes the same).
   const line = (lineOverride?.trim() || GATE_TEST_LINES[lang] || GATE_TEST_LINES.en);
   const push = (tier: VoiceTier, ok: boolean, detail: string) => {
     results.push({ tier, ok, detail });
     reportVoiceStatus(tier, ok, detail);
   };
+  const companionGender = characterVoiceGender(characterId);
+  const voicePin = voicePickFor(lang)
+    ?? (isVoiceLocale(lang)
+      ? preferredVoiceChoiceForGender(lang, companionGender).id
+      : null);
+  const spokenGender: 'female' | 'male' = isVoiceLocale(lang)
+    ? deliveryGenderForChoice(lang, voicePin, companionGender)
+    : companionGender;
+  const pitchTier = pitchTierForChoice(voicePin);
+  const edgeTierVoice = edgeVoiceIdForTier(lang, spokenGender, pitchTier);
+  const gttsTl = tlForChoice(lang, voicePin);
+  const gttsRate = spokenGender === 'male' ? 0.90 : 1;
+  /** User-tap probe (gate + settings): play-first like card greet — not chat async pin. */
+  const gestureTapOpts = { pinSinkBeforePlay: false as const, gestureTap: true as const };
   try {
+    let spoke = false;
     // r112: tier 0 — OpenAI ChatGPT-style voice, tried first when
     // a key is configured. A CORS/network failure reports ✗ and the probe
     // simply continues down the free chain.
@@ -2710,10 +2727,11 @@ export async function testVoiceChain(
       try {
         await withTimeout(speakOpenAi(line, {
           lang,
-          gender: characterVoiceGender(characterId),
+          gender: spokenGender,
           character: characterId,
         }), 28_000, 'openai-tts timeout');
         push('openai', true, 'chatgpt voice played');
+        spoke = true;
       } catch (err) {
         if ((err as Error | undefined)?.message !== 'canceled') {
           stopOpenAi();
@@ -2724,19 +2742,23 @@ export async function testVoiceChain(
     const hops = freeVoiceHops(lang, {
       cantoNano: cantoNanoAvailable(),
       edge: neuralEnabled() && typeof WebSocket !== 'undefined',
+      preferMale: spokenGender === 'male',
     });
     for (const hop of hops) {
-      if (results.some((r) => r.ok)) break;
+      if (spoke) break;
       if (hop === 'edge') {
         try {
           await withTimeout(speakEdge(line, {
             lang,
-            gender: characterVoiceGender(characterId),
+            gender: spokenGender,
             character: characterId,
+            voiceId: edgeTierVoice,
             // Boost SSML volume for the hear-check (neutral chat uses smaller deltas).
             volumeDelta: 0.45,
+            ...gestureTapOpts,
           }), 28_000, 'edge-tts timeout');
           push('edge', true, 'neural voice played');
+          spoke = true;
         } catch (err) {
           if ((err as Error | undefined)?.message !== 'canceled') {
             stopEdge();
@@ -2750,14 +2772,16 @@ export async function testVoiceChain(
           await withTimeout(
             speakGtts(line, {
               lang,
-              tl: tlForChoice(lang, voicePickFor(lang)),
-              pitchBias: gttsPitchForLang(lang, characterId, characterVoiceGender(characterId)),
-              onPlaying: () => push('gtts', true, 'google-tts playing'),
+              tl: gttsTl,
+              rate: gttsRate,
+              pitchBias: gttsPitchForLang(lang, characterId, spokenGender, voicePin),
+              ...gestureTapOpts,
             }),
             32_000,
             'google-tts timeout',
           );
           push('gtts', true, 'google-tts played');
+          spoke = true;
         } catch (err) {
           if ((err as Error | undefined)?.message !== 'canceled') {
             stopGtts();
@@ -2770,6 +2794,7 @@ export async function testVoiceChain(
         try {
           await withTimeout(speakCantoNano(stripVoicedGlyphs(line)), 28_000, 'canto-tts-nano timeout');
           push('canto-nano', true, 'canto-tts-nano played');
+          spoke = true;
         } catch (err) {
           if ((err as Error | undefined)?.message !== 'canceled') {
             push('canto-nano', false, (err as Error | undefined)?.message ?? 'canto-tts-nano failed');
@@ -2779,6 +2804,7 @@ export async function testVoiceChain(
       }
       const ok = await probeSynth(line, characterId, lang);
       push('synth', ok, ok ? 'utterance started' : 'never started');
+      if (ok) spoke = true;
     }
   } finally {
     forcePlaybackVolume(null);
