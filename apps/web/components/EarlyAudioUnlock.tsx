@@ -3,11 +3,15 @@
 // AudioContext + silent media + synth + SFX BEFORE /chat (iPhone gate).
 // Does not play cheer/enter SFX. Mute All still honored by speak().
 // Imports primeAudioForChatEnter only — does not edit voice.ts (#158 lock).
+//
+// Listen on `click` only (plus keydown for keyboard). pointerdown/touchstart fire
+// before ArcFan onClick → playVoiceGreeting and steal user activation, which left
+// card gTTS silent for weeks while chat (async click paths) still worked.
 
 import { useEffect } from 'react';
 import { primeAudioForChatEnter } from '../lib/voice';
 
-const GESTURES = ['pointerdown', 'keydown', 'touchstart'] as const;
+const GESTURES = ['click', 'keydown'] as const;
 
 export default function EarlyAudioUnlock() {
   useEffect(() => {

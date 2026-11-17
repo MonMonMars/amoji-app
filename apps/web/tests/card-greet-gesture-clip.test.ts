@@ -110,6 +110,20 @@ describe('card greet — no audible insurance (permanent)', () => {
     expect(gtts).toContain('htmlAudioStartMode');
   });
 
+  it('card greet uses stopSpeakingForCardAudition (no stopGtts in the tap)', () => {
+    const greetBody = fnBody('playVoiceGreeting', 'export function previewLibraryClip');
+    const previewBody = fnBody('previewVoiceChoice', 'export function previewOsVoice');
+    expect(voice).toContain('export function stopSpeakingForCardAudition');
+    expect(greetBody).toContain('stopSpeakingForCardAudition()');
+    expect(previewBody).toContain('stopSpeakingForCardAudition()');
+    const helperStart = voice.indexOf('export function stopSpeakingForCardAudition');
+    const helperEnd = voice.indexOf('export function speakThinkingFiller', helperStart);
+    const helper = voice.slice(helperStart, helperEnd);
+    expect(helper).not.toContain('stopGtts()');
+    expect(greetBody).not.toContain('primeSynthInGesture(true)');
+    expect(previewBody).not.toContain('primeSynthInGesture(true)');
+  });
+
   it('gtts does not pinDefaultOutput inside onplay', () => {
     const playNext = gtts.slice(gtts.indexOf('const playNext = () => {'), gtts.indexOf('playNext();\n  });'));
     const create = playNext.indexOf('const audio = new Audio');

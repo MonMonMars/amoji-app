@@ -415,7 +415,8 @@
 // r2026-11-17.196: joke chip/prompts + reply-mode — say「笑話/joke」only (SFW stays default; no spoken「乾淨」).
 // r2026-11-17.197: demo-phase chip row — visible scrollbar + edge chevrons; reshuffle order each chat entry.
 // r2026-11-17.199: news/story long read — RSS+wiki body beats on tool-only tells; yue 今日有咩新聞; worldSpoken cap 1200.
-export const APP_REVISION = 'r2026-11-17.199';
+// r2026-11-17.200: card greet audible — EarlyAudioUnlock on click; stopSpeakingForCardAudition; no synth prime on card.
+export const APP_REVISION = 'r2026-11-17.200';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
