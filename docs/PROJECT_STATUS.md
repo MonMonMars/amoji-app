@@ -5,6 +5,7 @@
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** open [`project-status.html`](./project-status.html) in a browser (repo file — not a Pages route).  
+**Pixel pickers:** [`owner-music-picker.html`](./owner-music-picker.html) · [`owner-poke-reactions.html`](./owner-poke-reactions.html) — `cd docs && python3 -m http.server 8765` (symlink `amoji-public-serve` → `apps/web/public`).  
 **`main` tip:** `bbf7d918` (#486 · **r2026-11-17.191** · backlog **#478–#486**)
 
 ## Snapshot
