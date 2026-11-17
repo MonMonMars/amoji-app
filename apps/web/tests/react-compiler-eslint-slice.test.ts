@@ -16,6 +16,13 @@ describe('react-compiler eslint slice (r188)', () => {
     expect(src).not.toMatch(/useEffect\(\(\) => \{\s*setMuted/);
   });
 
+  it('RequireEntryGate gate pass via useSyncExternalStore', () => {
+    const src = read('components/RequireEntryGate.tsx');
+    expect(src).toContain('useSyncExternalStore');
+    expect(src).toContain('subscribeEntryGate');
+    expect(src).not.toMatch(/useEffect\(\(\) => \{\s*setStatus/);
+  });
+
   it('LegalGate legal accept + ready via useSyncExternalStore', () => {
     const src = read('components/LegalGate.tsx');
     expect(src).toContain('useSyncExternalStore');

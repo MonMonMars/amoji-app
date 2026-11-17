@@ -407,7 +407,8 @@
 // r2026-11-17.186: calm idle torso pitch clamp after poke/chat — upright without arm-soften smear.
 // r2026-11-17.187: select voice row “All” view — each locale highlights its own pin (en/zh/ja male, not only Yue).
 // r2026-11-17.188: React Compiler eslint slice — mute/legal/soft-land useSyncExternalStore; scroll-unlock + portrait still reset without setState-in-effect.
-export const APP_REVISION = 'r2026-11-17.188';
+// r2026-11-17.189: RequireEntryGate uses subscribeEntryGate + useSyncExternalStore (no setStatus in effect); docs tip post-#482.
+export const APP_REVISION = 'r2026-11-17.189';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

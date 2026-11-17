@@ -5,7 +5,7 @@
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** open [`project-status.html`](./project-status.html) in a browser (repo file — not a Pages route).  
-**`main` tip:** `fe52bac7` (#481 · backlog through #478–#481)
+**`main` tip:** `d1e26f7a` (#482 · **r2026-11-17.188** · backlog through #478–#482)
 
 ## Snapshot
 
@@ -39,12 +39,13 @@
 
 ## Done (merged to `main`)
 
-Living tip: `fe52bac7` (**r2026-11-17.187**). Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
+Living tip: `d1e26f7a` (**r2026-11-17.188**). Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
 
-### Nov 17 backlog wave (#478–#481)
+### Nov 17 backlog wave (#478–#482)
 
 | PR | Item | Notes |
 | --- | --- | --- |
+| [#482](https://github.com/MonMonMars/amoji-app/pull/482) | React Compiler eslint slice + status refresh | Mute/legal/soft-land; docs tip |
 | [#481](https://github.com/MonMonMars/amoji-app/pull/481) | TtsVoiceRow **All** — per-locale pin highlight | **Phone** R10 audit |
 | [#480](https://github.com/MonMonMars/amoji-app/pull/480) | Calm idle torso upright after poke/chat | **Phone** R11 |
 | [#479](https://github.com/MonMonMars/amoji-app/pull/479) | Caption history punct-only dedupe | **Phone** captions |
@@ -73,7 +74,7 @@ See prior rows in git history — tip was `9292e81` before Nov 17 wave.
 
 **Closed this turn:** [#469](https://github.com/MonMonMars/amoji-app/pull/469) weather search → Open-Meteo — already on `main` (`live-tools.ts`).
 
-**In flight:** r188 — React Compiler eslint slice (branch `cursor/finish-outstanding-0340-0eac`).
+**In flight:** r189 — `RequireEntryGate` `useSyncExternalStore` (branch `cursor/continue-finish-requests-r189-0340-0eac`).
 
 ---
 
@@ -81,7 +82,7 @@ See prior rows in git history — tip was `9292e81` before Nov 17 wave.
 
 ### Code (agents)
 
-**0** known fixes queued. Nov 17 wave (#478–#481) landed; r188 opens React Compiler slice (#components gate/mute/soft-land). CI must stay green.
+**0** on tip after #482. r189 continues Compiler slice on entry guard. CI must stay green.
 
 Do **not:** re-flip poke lean; wipe owner idle/poke picks; mark R10–R13 Done; merge Hold spikes.
 
