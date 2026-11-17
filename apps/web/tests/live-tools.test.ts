@@ -10,6 +10,7 @@ import {
   isLiveFactsOnlyTurn,
   isHeavyHeadline,
   isJunkNewsHeadline,
+  topicalHeadlineMatches,
   liveToolsEnabled,
   newsRegionFromPlace,
   NEWS_LAST_KEY,
@@ -869,6 +870,44 @@ describe('local light news and reply guard', () => {
         { preferLight: true },
       ).map((h) => h.title),
     ).toEqual(['Researchers demo a safer classroom AI assistant']);
+  });
+
+  it('topicalHeadlineMatches accepts AI synonyms in headlines', () => {
+    expect(topicalHeadlineMatches('artificial intelligence', 'OpenAI ships a smaller model')).toBe(true);
+    expect(topicalHeadlineMatches('artificial intelligence', '人工智能模型幫醫生更快整理病歷')).toBe(true);
+    expect(topicalHeadlineMatches('artificial intelligence', 'A puppy parade fills the park')).toBe(false);
+    expect(topicalHeadlineMatches('mars', 'NASA rover finds ice on Mars')).toBe(true);
+  });
+
+  it('topical AI news with junk-only feeds says miss instead of unrelated recent', async () => {
+    const junkRss = `<rss><channel>
+      <item><title>Echiquier Artificial Intelligence B EUR 0P0001DYQM</title></item>
+      <item><title>F 股價</title></item>
+    </channel></rss>`;
+    const lightRss = `<rss><channel>
+      <item><title>A puppy parade fills the park with smiles</title></item>
+    </channel></rss>`;
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('news.google.com')) throw new Error('cors');
+      if (url.includes('rss2json.com')) return new Response('nope', { status: 403 });
+      if (url.includes('news.yahoo.com') || url.includes('rss.msn.com')) {
+        return new Response(junkRss, { status: 200, headers: { 'Content-Type': 'application/rss+xml' } });
+      }
+      if (url.includes('feeds.') || url.includes('rss')) {
+        return new Response(lightRss, { status: 200, headers: { 'Content-Type': 'application/rss+xml' } });
+      }
+      return jsonRes({}, 404);
+    };
+    const live = await gatherLiveContext("what's the latest AI news?", {
+      lang: 'en',
+      fetch: fetchImpl,
+      cache: new Map(),
+    });
+    expect(live.spoken).toMatch(/couldn't find|find a headline/i);
+    expect(live.spoken).not.toMatch(/puppy parade/i);
+    expect(live.prompt).toMatch(/no fresh headline for topic/i);
+    expect(live.prompt).toMatch(/Do not invent or read Wikipedia instead/i);
   });
 
   it('yue topical AI news skips fund lines and keeps 關於AI framing', async () => {
