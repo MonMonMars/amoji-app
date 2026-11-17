@@ -105,7 +105,7 @@ import {
   synthNameList,
 } from './voice-catalog';
 import { loadingFillerKind, recordedLaughClip, recordedPokeClip } from './voice-clips';
-import { LineQueue, speechLeadBody, speechLeadDiverged, speechRemainder } from './speech-queue';
+import { LineQueue, speechLeadDiverged, speechRemainder } from './speech-queue';
 import { emotionClipPath } from './emotion-clip-picks';
 import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText, nextCardGreetPhrase, nextGreetingKind, type BurstClipKind, type ClipFolder, type VoiceClipGender } from './voice-clips';
 import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
@@ -1312,13 +1312,7 @@ export function speechPending(): boolean {
 export function speechStillQueued(text: string): boolean {
   const t = text.trim();
   if (!t) return false;
-  const body = speechLeadBody(t);
-  return lineQueue.includes((job) => {
-    const j = job.text.trim();
-    if (!j) return false;
-    if (j === t || j === body) return true;
-    return speechLeadBody(j) === body;
-  });
+  return lineQueue.includes((job) => job.text.trim() === t);
 }
 
 function drainSpeech(): void {
