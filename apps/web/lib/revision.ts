@@ -444,7 +444,8 @@
 // r2026-11-18.230: demo-phase weather+news pinned left; chip taps → live facts + sayLocal.
 // r2026-11-18.232: chat interrupt cuts TTS+motion; new-topic clears stale thread.
 // r2026-11-18.238: chat interrupt serial — leaves #522 r236 and #517 slot r237 (#523).
-export const APP_REVISION = 'r2026-11-18.238';
+// r2026-11-18.239: chat continue-history — stop/interrupt keeps transcript; new-topic regex tight (#523).
+export const APP_REVISION = 'r2026-11-18.239';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

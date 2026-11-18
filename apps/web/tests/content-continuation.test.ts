@@ -49,6 +49,14 @@ describe('content continuation — same topic until stop', () => {
     expect(wantsContentContinuationTurn('然後呢', follow.session)).toBe(true);
   });
 
+  it('continues on short same-thread follow-ups (點搵) without treating as new topic', () => {
+    const session = { topic: '顏色', startedAt: 1 };
+    const follow = resolveContentContinuationOnSend('點搵', session);
+    expect(follow.continuing).toBe(true);
+    expect(follow.session?.topic).toBe('顏色');
+    expect(wantsContentContinuationTurn('你問點搵', session)).toBe(true);
+  });
+
   it('system block names the anchor topic', () => {
     const block = contentContinuationSystemBlock('yue', { topic: '咕嚕肉', startedAt: 0 });
     expect(block).toMatch(/咕嚕肉/);

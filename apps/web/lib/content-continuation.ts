@@ -15,10 +15,14 @@ export type ContentContinuationSession = {
 };
 
 const CONTENT_STOP_RE =
-  /(?:^|[\s，,。.!！?？])(?:stop(?:\s+talking)?|enough(?:\s+already)?|that's\s+enough|no\s+more|don't\s+(?:keep|go\s+on)|quit\s+explaining|ok\s+stop|pause\s+there|change\s+topic|talk\s+about\s+something\s+else)(?:[\s，,。.!！?？]|$)|^(?:stop|enough|停|停止|够喇|夠喇|够啦|夠啦|唔使講|唔使再講|唔好再講|唔講住|别说了|不用说了|不用说了|可以了|得啦|得喇|转话题|轉話題|换话题|換話題|やめて|もういい|止めて|続きはいい)[\s，,。.!！?？]*$/i;
+  /(?:^|[\s，,。.!！?？])(?:stop(?:\s+talking)?|enough(?:\s+already)?|that's\s+enough|no\s+more|don't\s+(?:keep|go\s+on)|quit\s+explaining|ok\s+stop|pause\s+there)(?:[\s，,。.!！?？]|$)|^(?:stop|enough|停|停止|够喇|夠喇|够啦|夠啦|唔使講|唔使再講|唔好再講|唔講住|别说了|不用说了|可以了|得啦|得喇|やめて|もういい|止めて|続きはいい)[\s，,。.!！?？]*$/i;
 
 const CONTENT_NUDGE_RE =
   /^(?:然後呢|然后呢|繼續|跟住|再講|再讲|讲多啲|講多啲|继续讲|繼續講|and\s+then\??|go\s+on|keep\s+going|tell\s+me\s+more|what\s+next|next\s+step|もっと|続けて|次は)(?:[\s，,。.!！?？]|$)/i;
+
+/** Short same-thread follow-ups (e.g. after a color or how-to explanation). */
+const THREAD_FOLLOWUP_RE =
+  /^(?:點搵|点找|點找|怎麼找|怎么找|點去搵|点去搵|where\s+(?:do\s+i\s+)?find|how\s+(?:do\s+i\s+)?find)(?:[\s，,。.!！?？]|$)|^(?:你問)?點搵[\s，,。.!！?？]*$/iu;
 
 const HOWTO_EXPLAIN_RE =
   /\b(?:how\s+(?:do\s+i|to|can\s+i)|explain|teach\s+me|tell\s+me\s+(?:how|about|why)|what\s+is|why\s+(?:is|does|do)|walk\s+me\s+through|step\s+by\s+step)\b|教我|點樣|点样|怎麼|怎么|如何|講下|讲下|解釋|解释|為什麼|为什么|點解|係咩|是什麼|介紹|介绍|原理|教えて|説明して|やり方/i;

@@ -67,10 +67,11 @@ Keep **chat** `stopSpeaking` and **card** `stopSpeakingForCardAudition` separate
 ## 3. Target behavior
 
 1. **Single active utterance** — one audible line; `stopSpeaking` bumps queue epoch and stops all tiers.
-2. **Interrupt = halt all tiers** — send, mic barge-in, 停 / stop, new-topic phrase (speech already cut in `send`).
-3. **New topic** — clear `contentContinuation` session (P0); P1: abort stale `clientChat`; P2: optional history/caption policy.
-4. **Stop** — `contentStopAck` local line (unchanged).
-5. **Card isolation** — no regression vs #519 card voice chain.
+2. **Interrupt = halt tiers only** — send, mic barge-in, or 停 / stop cuts TTS; **chat history stays** unless the user said an explicit new-topic phrase.
+3. **New topic** — tight `NEW_TOPIC_RE` (新話題, 换话题, `new topic`, `start over`, …). Clears `contentContinuation` **and** stored chat history; rebuilds the prompt with only the pivot utterance. Short follow-ups (e.g. 點搵) are **not** new topic.
+4. **Stop** — `contentStopAck` local line; ends the open content thread but **keeps** transcript history for the LLM.
+5. **Continue** — default path: prior turns + `turnMessages` ref feed `clientChat`; content continuation session survives same-thread follow-ups.
+6. **Card isolation** — no regression vs #519 card voice chain.
 
 ---
 
@@ -78,11 +79,11 @@ Keep **chat** `stopSpeaking` and **card** `stopSpeakingForCardAudition` separate
 
 Module: `apps/web/lib/chat-interrupt.ts` (stop phrases reuse `userSaysStopContent` in `content-continuation.ts`).
 
-| Intent | Examples |
-|--------|-----------|
-| Stop | 停, 夠喇, stop talking, enough, やめて, 轉話題 (stop thread) |
-| New topic | 新話題, 转话题, 講第二樣, new topic, let's talk about …, change subject |
-| Continue | 然後呢, go on — `CONTENT_NUDGE_RE` |
+| Intent | Examples | Clears chat history? |
+|--------|-----------|---------------------|
+| Stop | 停, 夠喇, stop talking, enough, やめて | No |
+| New topic | 新話題, 转话题, 講第二樣, new topic, start over | **Yes** |
+| Continue | 然後呢, 點搵, go on — `CONTENT_NUDGE_RE` / `THREAD_FOLLOWUP_RE` | No |
 
 ---
 

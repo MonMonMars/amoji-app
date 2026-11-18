@@ -362,6 +362,7 @@ export default function ChatPanel({
   /** Reshuffle demo-phase chips on each chat-room entry (ChatPanel mount). */
   const demoPhaseOrderSeed = useMemo(() => newDemoPhaseOrderSeed(), []);
   const [history, setHistory] = useState<Msg[]>([]);
+  const historyRef = useRef<Msg[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
@@ -675,6 +676,7 @@ export default function ChatPanel({
   }, [history, speechCaption, captionLadder, streamDraft, speakingNow, busy, followLiveChatScroll]);
 
   useEffect(() => {
+    historyRef.current = history;
     saveHistory(history);
   }, [history]);
 
@@ -1301,21 +1303,24 @@ export default function ChatPanel({
     setCrisisCard(false);
     setCrisisPopup(null);
     let contentContinuation = loadContentContinuationSession();
-    const interrupt = resolveChatInterruptOnSend(text, !!contentContinuation);
-    if (interrupt.clearContentContinuation) {
-      clearContentContinuationSession();
-      contentContinuation = null;
-    }
-    if (interrupt.newTopic) {
-      saveHistory([]);
-      setHistory([]);
+    const interrupt = resolveChatInterruptOnSend(text);
+    if (interrupt.wipeChatHistory) {
       setStreamDraft('');
       transientRef.current = false;
       reengageStageRef.current = 0;
     }
-    setHistory((h) => (interrupt.newTopic ? [{ role: 'user', content: text }] : [...h, { role: 'user', content: text }]));
+    const userTurn: Msg = { role: 'user', content: text };
+    const turnMessages: Msg[] = interrupt.wipeChatHistory
+      ? [userTurn]
+      : [...historyRef.current, userTurn];
+    historyRef.current = turnMessages;
+    setHistory(turnMessages);
     feedUtterance(text);
     const contTurn = resolveContentContinuationOnSend(text, contentContinuation);
+    if (interrupt.newTopic) {
+      clearContentContinuationSession();
+      contentContinuation = null;
+    }
     if (contTurn.stopped) {
       clearContentContinuationSession();
       contentContinuation = null;
@@ -1329,7 +1334,7 @@ export default function ChatPanel({
     if (contTurn.session) {
       contentContinuation = contTurn.session;
       saveContentContinuationSession(contentContinuation);
-    } else if (contentContinuation) {
+    } else if (contentContinuation && !contTurn.continuing) {
       clearContentContinuationSession();
       contentContinuation = null;
     }
@@ -1693,7 +1698,7 @@ export default function ChatPanel({
       try {
         // stream the reply live into the placeholder bubble — first tokens
         // show up immediately instead of after the whole generation finishes
-        const r = await clientChat([...history, { role: 'user', content: text }], {
+        const r = await clientChat(turnMessages, {
           language: lang,
           persona: personaForBrain,
           memory,
