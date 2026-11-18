@@ -247,6 +247,7 @@ import {
   extractContentTopic,
   resolveContentContinuationOnSend,
 } from '../lib/content-continuation';
+import { resolveChatInterruptOnSend } from '../lib/chat-interrupt';
 import {
   clearContentContinuationSession,
   loadContentContinuationSession,
@@ -1302,6 +1303,11 @@ export default function ChatPanel({
     setCrisisCard(false);
     setCrisisPopup(null);
     let contentContinuation = loadContentContinuationSession();
+    const interrupt = resolveChatInterruptOnSend(text, !!contentContinuation);
+    if (interrupt.clearContentContinuation) {
+      clearContentContinuationSession();
+      contentContinuation = null;
+    }
     const contTurn = resolveContentContinuationOnSend(text, contentContinuation);
     if (contTurn.stopped) {
       clearContentContinuationSession();
