@@ -443,8 +443,8 @@
 // r2026-11-18.228: card audition haltBrowserSynth only — no same-gesture stopGtts (all lang/gender).
 // r2026-11-18.230: demo-phase weather+news pinned left; chip taps → live facts + sayLocal.
 // r2026-11-18.232: chat interrupt cuts TTS+motion; new-topic clears stale thread.
-// r2026-11-18.236: chat-interrupt branch rebase + voice overlap/new-topic plan (#523).
-export const APP_REVISION = 'r2026-11-18.236';
+// r2026-11-18.238: chat interrupt serial — leaves #522 r236 and #517 slot r237 (#523).
+export const APP_REVISION = 'r2026-11-18.238';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
