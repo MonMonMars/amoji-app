@@ -146,7 +146,8 @@ import { emotionIntensityScale, emotionProsody } from './emotion-prosody';
 import { SONG_MELODY } from './songs';
 import { endLipSync, finishLipSync, holdLipSync, noteSpeechStarted, notifySpeaking } from './speech';
 import { clearSpeechCaption, dispatchSpeechCaption, rollCaptionsForLine } from './speech-caption';
-import { duckLibraryBed } from './music';
+import { duckLibraryBed, endPerformanceMusic } from './music';
+import { clearMove, clearPerfMotionProfile, setThinkingPose } from './companion';
 import { duckExternalAudioForCompanion } from './voice-chat-focus';
 
 // ---- r2026-10-05.99: media-gate latches -------------------------------------
@@ -1391,6 +1392,15 @@ export function stopSpeaking(): void {
   clearSpeechCaption();
   // Mute / user cut must not leave the 12s foley hold stuck after unmute.
   sfxVoiceRelease();
+}
+
+/** User interrupt — cut TTS/lip-sync queue, performance bed, and sticky body motion. */
+export function stopSpeakingForInterrupt(): void {
+  stopSpeaking();
+  setThinkingPose(false);
+  endPerformanceMusic();
+  clearMove();
+  clearPerfMotionProfile();
 }
 
 /**
