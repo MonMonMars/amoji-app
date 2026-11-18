@@ -32,7 +32,8 @@ import {
 import { pokeSectionBodyReaction, resolvePokeSection, type PokeSection, type PokeSectionId } from '../lib/poke-zones';
 import { clipFreesFeet, collectPlantRest, pinPlantedClipTracks } from '../lib/vrm/plant-feet';
 import { dancePerfClipSources } from '../lib/dance-clip-sources';
-import { timeScaleForProfile } from '../lib/performance-motion';
+import { beatAlignedVrmaTime, timeScaleForProfile } from '../lib/performance-motion';
+import { isLibraryClipAudible, libraryBedPlaybackSec } from '../lib/music';
 import { playableIdles } from '../lib/idle-library';
 import { listEnabledIdleClipIds } from '../lib/idle-enabled';
 import { orderPassiveIdleClips } from '../lib/idle-passive-loop';
@@ -939,6 +940,8 @@ export default function CompanionCanvas({
         action.setLoop(THREE.LoopOnce, 1);
         action.clampWhenFinished = true;
       }
+      const loopWithBed =
+        name === 'Dance' || name === 'Sing' || clipName.startsWith('lib_C');
       action.reset();
       if (perfAction && perfAction !== action) {
         // r59: glide out of the previous performance — a hard stop() here
@@ -950,6 +953,10 @@ export default function CompanionCanvas({
         action.fadeIn(FADE.toPerf);
       }
       action.play();
+      if (loopWithBed && isLibraryClipAudible()) {
+        const bedSec = libraryBedPlaybackSec();
+        action.time = beatAlignedVrmaTime(bedSec, clip.duration, action.timeScale);
+      }
       perfAction = action;
       return true;
     };

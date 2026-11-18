@@ -7,6 +7,7 @@ import {
   trackBpmFor,
   timeScaleForProfile,
   clipBpmForTag,
+  beatAlignedVrmaTime,
 } from '../lib/performance-motion';
 import { measuredBpm } from '../lib/measured-bpm';
 import { DANCE_CLIP_SOURCES, dancePerfClipSources } from '../lib/dance-clip-sources';
@@ -89,6 +90,14 @@ describe('performance-motion (t725-729 + measured BPM)', () => {
     expect(viaFallback).toBe(timeScaleForBpm(p.bpm, p.clipBpm));
     expect(viaPreferred).toBe(timeScaleForBpm(p.bpm, p.preferredClipBpm));
     expect(clipBpmForTag('C116')).toBe(118);
+  });
+
+  it('beatAlignedVrmaTime seeks loop phase from bed seconds × timeScale', () => {
+    expect(beatAlignedVrmaTime(0, 4, 1)).toBe(0);
+    expect(beatAlignedVrmaTime(2, 4, 1)).toBe(2);
+    expect(beatAlignedVrmaTime(5, 4, 1)).toBe(1);
+    expect(beatAlignedVrmaTime(1.5, 3, 1.2)).toBeCloseTo(1.8, 5);
+    expect(beatAlignedVrmaTime(-1, 4, 1)).toBe(0);
   });
 });
 
