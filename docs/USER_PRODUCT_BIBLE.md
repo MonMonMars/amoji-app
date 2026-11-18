@@ -4,7 +4,7 @@
 
 **Last reviewed:** 2026-11-16 14:05 (Asia/Hong_Kong)  
 **Demo:** https://monmonmars.github.io/amoji-app/  
-**`main` tip:** `4463e647` · **`APP_REVISION` `r2026-11-16.167`** · `npm run verify:live` in `apps/web` = OK  
+**`main` tip:** `3cb507c6` · **`APP_REVISION` `r2026-11-18.215`** · `npm run verify:live` in `apps/web` = OK  
 **Request log:** [`../OWNER_REQUEST_LOG.md`](../OWNER_REQUEST_LOG.md) + `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn.  
 **Resource library:** [`OWNER_RESOURCE_LIBRARY.md`](./OWNER_RESOURCE_LIBRARY.md) + `apps/web/lib/owner-resource-manifest.ts` + [`MISTAKE_LIBRARY.md`](./MISTAKE_LIBRARY.md) + [`DATA_ORGANIZATION.md`](./DATA_ORGANIZATION.md).  
 **Agents:** [`AGENT_SMOKE.md`](./AGENT_SMOKE.md) · [`PROGRAMMING_PLAN.md`](./PROGRAMMING_PLAN.md)
