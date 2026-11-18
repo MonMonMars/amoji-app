@@ -6,6 +6,7 @@
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** [Pages](https://monmonmars.github.io/amoji-app/docs/project-status.html) · repo [`project-status.html`](./project-status.html)  
 **Pixel pickers:** [Pages owner-resources](https://monmonmars.github.io/amoji-app/docs/owner-resources.html) (music · poke · **idle** · **stories** · **news** · **demo** tabs) · local: `cd docs && python3 -m http.server 8765`  
+**Voice/sound inventory (accountability):** [`VOICE_SOUND_INVENTORY.md`](./VOICE_SOUND_INVENTORY.md) — where TTS/SFX/picker work lives vs open #528–#529  
 **`main` tip:** `a2111af3` (**r2026-11-18.237** · #518–#520 + #517 merged; live deploy pending)
 
 ## Snapshot
