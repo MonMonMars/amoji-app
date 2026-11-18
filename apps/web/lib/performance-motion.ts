@@ -137,6 +137,14 @@ const PREFERRED: Partial<Record<MotionTag, readonly string[]>> = {
   'generic-dance': ['Dance', 'lib_C61', 'lib_C03', 'lib_C113'],
 };
 
+/** Owner-picker HTML: lib_${tag} sidecar first (not resolvePerfMotion fallback chain). */
+export function preferredClipIdsForMotionTag(tag: MotionTag): readonly string[] {
+  if (tag === 'generic-sing') return ['Sing', 'lib_C116', 'lib_C112', 'lib_C117'];
+  if (tag === 'generic-dance') return ['Dance', 'lib_C03', 'lib_C61', 'lib_C113'];
+  if (tag.startsWith('C')) return [`lib_${tag}`, ...(PREFERRED[tag] ?? [])];
+  return PREFERRED[tag] ?? ['Dance', 'Sing'];
+}
+
 export function estimateBpm(style: string, _clipId?: string): number {
   const s = style.trim().toLowerCase();
   if (STYLE_BPM[s] != null) return STYLE_BPM[s]!;

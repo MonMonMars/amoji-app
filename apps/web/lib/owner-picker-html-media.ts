@@ -7,7 +7,7 @@ import type { IdleLibraryEntry } from './idle-library';
 import { IDLE_LIBRARY, idleByClipId } from './idle-library';
 import {
   PERF_MOTION_TAGS,
-  resolvePerfMotion,
+  preferredClipIdsForMotionTag,
   type MotionTag,
 } from './performance-motion';
 import { CHAT_IDLE_CURATED } from './idle-curated-rail';
@@ -42,17 +42,37 @@ function previewPagesSrc(relFromPublic: string): string {
 export const OWNER_PICKER_PREVIEW_CLIP_IDS: readonly string[] = [
   DEFAULT_IDLE_CLIP_ID,
   ...CHAT_IDLE_CURATED.map((r) => r.clipId),
-  'lib_C03',
-  'lib_C61',
-  'lib_C62',
-  'lib_C110',
   'Dance',
   'Sing',
+  'lib_C03',
+  'lib_C04',
+  'lib_C09',
+  'lib_C25',
+  'lib_C42',
+  'lib_C60',
+  'lib_C61',
+  'lib_C62',
   'lib_C85',
   'lib_C87',
   'lib_C90',
   'lib_C92',
   'lib_C95',
+  'lib_C110',
+  'lib_C111',
+  'lib_C112',
+  'lib_C113',
+  'lib_C114',
+  'lib_C116',
+  'lib_C117',
+  'lib_C118',
+  'lib_C119',
+  'lib_C120',
+  'lib_C121',
+  'lib_C124',
+  'lib_C125',
+  'lib_C126',
+  'lib_C127',
+  'lib_C128',
 ];
 
 function escapeHtml(s: string): string {
@@ -135,10 +155,8 @@ export function resolveIdleMotionPreview(
 }
 
 export function resolvePerfMotionPreview(publicRoot: string, tag: MotionTag): OwnerMotionPreview {
-  const kind = tag === 'generic-sing' ? 'song' : 'dance';
-  const profile = resolvePerfMotion({ id: 'owner-picker', kind, style: tag });
   const nativeId = `perf-motion-${tag}`;
-  for (const clipId of profile.preferredClipIds) {
+  for (const clipId of preferredClipIdsForMotionTag(tag)) {
     const lib = idleByClipId(clipId);
     if (lib) {
       const prev = resolveIdleMotionPreview(publicRoot, lib);
@@ -167,9 +185,10 @@ export function resolvePerfMotionPreview(publicRoot: string, tag: MotionTag): Ow
 }
 
 export function pokeSectionMotionPreview(publicRoot: string, sectionId: string): OwnerMotionPreview {
-  const pokeGif = ownerPickerSidecarPreview(publicRoot, `poke-${sectionId}`);
+  const assetId = sectionId.replace(/:/g, '_');
+  const pokeGif = ownerPickerSidecarPreview(publicRoot, assetId);
   if (pokeGif) return pokeGif;
-  const generic = ownerPickerSidecarPreview(publicRoot, 'poke-lean-demo');
+  const generic = ownerPickerSidecarPreview(publicRoot, 'poke_lean_demo');
   if (generic) return { ...generic, id: sectionId };
   return {
     id: sectionId,

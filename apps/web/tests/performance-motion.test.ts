@@ -8,6 +8,7 @@ import {
   timeScaleForProfile,
   clipBpmForTag,
   beatAlignedVrmaTime,
+  preferredClipIdsForMotionTag,
 } from '../lib/performance-motion';
 import { measuredBpm } from '../lib/measured-bpm';
 import { DANCE_CLIP_SOURCES, dancePerfClipSources } from '../lib/dance-clip-sources';
@@ -98,6 +99,12 @@ describe('performance-motion (t725-729 + measured BPM)', () => {
     expect(beatAlignedVrmaTime(5, 4, 1)).toBe(1);
     expect(beatAlignedVrmaTime(1.5, 3, 1.2)).toBeCloseTo(1.8, 5);
     expect(beatAlignedVrmaTime(-1, 4, 1)).toBe(0);
+  });
+
+  it('owner-picker tag maps to lib_${tag} first', () => {
+    expect(preferredClipIdsForMotionTag('C112')[0]).toBe('lib_C112');
+    expect(preferredClipIdsForMotionTag('C118')[0]).toBe('lib_C118');
+    expect(preferredClipIdsForMotionTag('C113')[0]).toBe('lib_C113');
   });
 });
 
