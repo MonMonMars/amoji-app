@@ -10,7 +10,6 @@ describe('chat history bubbles', () => {
         content="Hello back!"
         lang="yue"
         accent="#f0a"
-        onReport={() => {}}
       />,
     );
     expect(html).toContain('Hello back!');
