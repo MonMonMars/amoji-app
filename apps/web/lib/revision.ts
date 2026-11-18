@@ -448,7 +448,7 @@
 // r2026-11-18.237: revision renumber — serial r237 after #522 r236 (was r235 clash) (#517).
 // r2026-11-18.238: all-lang TTS on main loudspeaker under mic latch — gesture pin + male→gTTS skip (#525).
 // r2026-11-18.241: revision renumber — serial r241 (#523/#527 r238; #525 r239; card hotfix r240).
-export const APP_REVISION = 'r2026-11-18.241';
+export const APP_REVISION = 'r2026-11-18.248';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
