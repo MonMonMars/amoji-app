@@ -10,6 +10,15 @@ import * as THREE from 'three';
 const LOCOMOTION_CLIP_IDS = new Set(['Jump', 'Walk', 'Jog', 'Run']);
 
 /**
+ * Idle-rail martial forms (Rokoko tai chi / kata) — hips and legs must follow
+ * the VRMA or the body only twitches the arms then plant-feet locks the pose.
+ */
+const MARTIAL_FLOW_CLIP_IDS = new Set([
+  'lib_C120', // Rokoko martial kata
+  'lib_C121', // Rokoko tai chi (demo-phase PH + idle rail #29)
+]);
+
+/**
  * Dance / music-listen performances with authored hip+leg keys.
  * Planting would freeze the legs so the body cannot move with the beat.
  */
@@ -36,7 +45,11 @@ const DANCE_LEG_CLIP_IDS = new Set([
 /** True when the mixer should own hips/legs (locomotion or dance-with-music). */
 export function clipFreesFeet(clipId: string | null | undefined): boolean {
   if (!clipId) return false;
-  return LOCOMOTION_CLIP_IDS.has(clipId) || DANCE_LEG_CLIP_IDS.has(clipId);
+  return (
+    LOCOMOTION_CLIP_IDS.has(clipId)
+    || DANCE_LEG_CLIP_IDS.has(clipId)
+    || MARTIAL_FLOW_CLIP_IDS.has(clipId)
+  );
 }
 
 /** Dance / music clips that must keep leg motion for beat matching. */

@@ -14,6 +14,7 @@ describe('voice does not switch speaker mid-line or between characters', () => {
     // FULL original text, so the sentence restarted in a different voice.
     expect(voice).toContain('speakRemainderInChain');
     expect(voice).toContain('onProgress: (n) => { spokenChars = n; }');
+    expect(voice).toMatch(/const prefix = text\.slice\(0, Math\.min\(spokenChars, text\.length\)\)\.trim\(\)/);
     expect(voice).toMatch(/speechRemainder\(text, prefix\)/);
   });
 
