@@ -22,6 +22,8 @@ describe('clipFreesFeet', () => {
     expect(clipFreesFeet('lib_C03')).toBe(true);
     expect(clipFreesFeet('lib_C112')).toBe(true);
     expect(clipFreesFeet('lib_C125')).toBe(true);
+    expect(clipFreesFeet('lib_C121')).toBe(true);
+    expect(clipFreesFeet('lib_C120')).toBe(true);
     expect(clipDrivesDanceLegs('lib_C61')).toBe(true);
     expect(clipDrivesDanceLegs('Jump')).toBe(false);
     expect(clipFreesFeet(null)).toBe(false);

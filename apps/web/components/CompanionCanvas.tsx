@@ -948,7 +948,13 @@ export default function CompanionCanvas({
         : personality;
       // Dance/sing shows loop with the music bed — even when perfMotionProfile
       // is not set yet (LoopOnce + clamp looked like a frozen static pose).
-      if (name === 'Dance' || name === 'Sing' || clipName.startsWith('lib_C')) {
+      // Tai chi / idle-rail lib_C* martial flows loop for the full move clock.
+      const loopPerf =
+        name === 'Dance'
+        || name === 'Sing'
+        || clipName.startsWith('lib_C')
+        || name.startsWith('lib_C');
+      if (loopPerf) {
         action.setLoop(THREE.LoopRepeat, Infinity);
         action.clampWhenFinished = false;
       } else {
@@ -1235,7 +1241,10 @@ export default function CompanionCanvas({
               // r79: land the clip's neutral frame on our calibrated rest;
               // r94: idle loops pin the hips height (no floating);
               // r98: performances normalize their root-Y onto our rest too
-              rebaseClipHips(clip, IDLE_IDS.has(src.id));
+              // Martial / dance idles keep full hip+leg keys — planting at load
+              // made lib_C121 tai chi raise arms once then freeze (Mon).
+              const idlePlantLock = IDLE_IDS.has(src.id) && !clipFreesFeet(src.id);
+              rebaseClipHips(clip, idlePlantLock);
               // Idle-only: crush VRMA thrash + baked sky-look before mixer play.
               if (IDLE_IDS.has(src.id)) dampenIdleClipAmplitude(clip);
               if (!clipFreesFeet(src.id)) pinPlantedClipTracks(clip, plantRest);
