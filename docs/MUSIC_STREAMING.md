@@ -1,5 +1,7 @@
 # Music streaming / playlist
 
+**Performance flow (sing / dance / body sync):** [SING_DANCE_PIPELINE.md](./SING_DANCE_PIPELINE.md)
+
 ## Today
 
 Sing, dance, and piano use three layers:
