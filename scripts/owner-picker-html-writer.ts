@@ -29,6 +29,7 @@ import {
 import type { Lang } from '../apps/web/lib/prefs.ts';
 import { CHARACTERS_WANT } from '../apps/web/lib/characters-want.ts';
 import { PICKER_PLAY_RESOLVE_INLINE_JS } from '../apps/web/lib/owner-picker-media.mjs';
+import { OWNER_PICKER_NAV_INLINE_JS } from '../apps/web/lib/owner-picker-pages-nav.mjs';
 import { audioPlayerBlockHtml, audioPlayerCellHtml, motionPreviewCellHtml, pokeSectionMotionPreview, resolveIdleMotionPreview, resolvePerfMotionPreview } from '../apps/web/lib/owner-picker-html-media.ts';
 import { CHAT_IDLE_CURATED, defaultCuratedRailNums } from '../apps/web/lib/idle-curated-rail.ts';
 import { idleClipFamily } from '../apps/web/lib/idle-clip-family.ts';
@@ -601,22 +602,15 @@ function unifiedOwnerClientScript(): string {
   const cmaKey = JSON.stringify(CMA_REACTION_GALLERY_KEY);
   return `
     const TAB_IDS = ['music', 'stories', 'demo', 'news', 'poke', 'idle'];
+    ${OWNER_PICKER_NAV_INLINE_JS}
     function showTab(id) {
-      if (!TAB_IDS.includes(id)) id = 'music';
-      for (const t of TAB_IDS) {
-        const panel = document.getElementById('panel-' + t);
-        const btn = document.querySelector('[data-tab="' + t + '"]');
-        if (panel) panel.hidden = t !== id;
-        if (btn) btn.setAttribute('aria-selected', t === id ? 'true' : 'false');
-      }
-      location.hash = id;
+      navigateOwnerRoute(panelForHash(id), { silentHash: false });
     }
     document.querySelectorAll('[data-tab]').forEach((btn) => {
       btn.addEventListener('click', () => showTab(btn.getAttribute('data-tab')));
     });
-    const hash = (location.hash || '#music').slice(1);
-    showTab(hash);
-    window.addEventListener('hashchange', () => showTab((location.hash || '#music').slice(1)));
+    applyHashRoute();
+    window.addEventListener('hashchange', () => applyHashRoute());
 
     const PICK_KEYS = [${pickKeys.join(', ')}];
     const ENABLE_KEYS = [${enableKeys.join(', ')}];
@@ -1106,18 +1100,18 @@ function buildMusicPage(): PickerSection {
   const body = `
     ${holdNote}
     <p class="lede">Owner codes: <code>DC###</code> performance files · <code>MV039–${escapeHtml(HIGHEST_MV_OWNER_CODE)}</code> Mixkit streams (registry <code>owner-catalog-registry.ts</code>).</p>
-    <h2>Dance / sing body motion tags (performance-motion.ts)</h2>
+    <h2 id="dance-motion">Dance / sing body motion tags (performance-motion.ts)</h2>
     <p class="lede">Movement shortlist (<code>C03</code>…<code>C128</code>, generic sing/dance) — pairs with DC audio + idle VRMA. Note which tag to prefer per music style.</p>
     <div class="panel"><table>
       <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · ID</th><th>Ship</th><th>Preview</th><th>Tag</th><th>Label</th><th>Clip BPM</th><th>Use</th><th>Source</th></tr></thead>
       <tbody>${motionRows}</tbody>
     </table></div>
-    <h2>Performance library (CC0 / PD files)</h2>
+    <h2 id="performance">Performance library (CC0 / PD files)</h2>
     <div class="panel"><table>
       <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · domain</th><th>Ship</th><th>Play</th><th>Title</th><th>Kind</th><th>Langs</th><th>Tags</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
       <tbody>${perfRows}</tbody>
     </table></div>
-    <h2>Mixkit stream previews (remote URL)</h2>
+    <h2 id="mixkit-streams">Mixkit stream previews (remote URL)</h2>
     <div class="panel"><table>
       <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · MV</th><th>Ship</th><th>Play</th><th>Title</th><th>Kind</th><th>Langs</th><th>Style</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
       <tbody>${streamRows}</tbody>
