@@ -440,7 +440,8 @@
 // r2026-11-18.224: chat history — remove per-bubble ⚑ report chip (ReportDialog/lib stay).
 // r2026-11-18.226: yue hip-hop music ask short-circuit + hiphop stream bed (#514).
 // r2026-11-18.229: owner-resources Mixkit stream previews — external play src + honest CDN errors.
-export const APP_REVISION = 'r2026-11-18.229';
+// r2026-11-18.230: owner-resources picker audio scrub + motion GIF column + Mixkit CDN playback (#517).
+export const APP_REVISION = 'r2026-11-18.230';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
