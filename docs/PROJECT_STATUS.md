@@ -6,7 +6,7 @@
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** [Pages](https://monmonmars.github.io/amoji-app/docs/project-status.html) · repo [`project-status.html`](./project-status.html)  
 **Pixel pickers:** [Pages owner-resources](https://monmonmars.github.io/amoji-app/docs/owner-resources.html) (music · poke · **idle** · **stories** · **news** · **demo** tabs) · local: `cd docs && python3 -m http.server 8765`  
-**`main` tip:** `a2111af3` (**r2026-11-18.237** · #518–#520 + #517 merged; live deploy pending)
+**`main` tip:** `a2111af3` (**r2026-11-18.237** · verify **r242** · #518–#520 + #517 merged; live HTML on Pages (verify via `npm run verify:live`) · **r242** guard)
 
 ## Snapshot
 
@@ -102,7 +102,7 @@ Dance LoopRepeat, card greet, poke 我鍾意信 skip, news long read, unified ow
 
 1. **Phone smoke** — demo chips + idle + card voice + owner-resources on **r237**  
 2. **#512** — chat report chip removal  
-3. **Stale SW** — hard-refresh until `revision.txt` shows **r2026-11-18.237**  
+3. **Stale SW** — hard-refresh until `revision.txt` shows **r2026-11-18.237** · verify **r242**  
 6. **VRM pupil** — pop / size stability on surprise  
 7. **Owner picks apply** — listen/sing/dance honor picker on device  
 8. **Duet path** — align with library performance gate ([`SING_DANCE_PIPELINE.md`](./SING_DANCE_PIPELINE.md))
@@ -111,7 +111,7 @@ Do **not:** re-merge closed #497–#511 / #515 work; mark R10–R13 Done without
 
 ### Phone / human (not agent Done)
 
-1. **Stale SW** — hard-refresh until live `revision.txt` is **r2026-11-18.237** (not r220)  
+1. **Stale SW** — hard-refresh until live `revision.txt` is **r2026-11-18.237** · verify **r242** (not r220)  
 2. **Card voice all langs** — **#519** on main; owner phone verify  
 3. **Idle quality** — **#518** on main; R11 not Done until phone OK  
 4. **Mixkit HTML** — **#517** on main; Music tab play/preview on Pages  
