@@ -7,10 +7,11 @@
 **Human mirror (artifacts):** `/opt/cursor/artifacts/owner-resource-library.md`  
 **Pixel picker (HTML):** `docs/owner-resources.html` — Music · Stories · Demo-phase · News · Poke (motion / voice / VFX) · Idle tabs; regenerate with `node scripts/generate-owner-picker-html.mjs`  
 
-### Notes export (r216+)
+### Notes export (r216+ · tri-state r233+)
 
 1. Open `docs/owner-resources.html` (local: `cd docs && python3 -m http.server 8765`).
-2. Type a **Usage note** on any row (music/MV/DC, CMA/VFX, PK voice lines, idle/motion, PH, NW, ST…).
+2. Per row: **採用 use** · **保留 keep** · **刪除 唔用 delete**.
+3. Type a **Usage note** on any row (music/MV/DC, CMA/VFX, PK voice lines, idle/motion, PH, NW, ST…).
 3. **Save notes JSON** — file for agents: `{ "cd": "CD022", "note": "dance only", "keep": true, … }` plus bundled `remove` / `removeCd` from unchecked rows. Uses `showSaveFilePicker` when the browser supports it; otherwise downloads via `<a download>`.
 4. **Load / import JSON** — paste a prior export to restore notes and Keep checkboxes.
 5. Same-origin backup: localStorage key **`amoji.ownerPickerNotes.v1`** (survives refresh; not synced across devices).
