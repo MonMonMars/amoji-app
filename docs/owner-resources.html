@@ -182,7 +182,7 @@
     <p class="lede"><span class="hold">Hold</span> — no copyrighted commercial masters in catalog; Mixkit + CC0/PD only per <code>docs/MUSIC_STREAMING.md</code>. Stripe / licensed spike #1 remains Hold elsewhere.</p>
     <p class="lede">Runtime owner perf prefs: <code>amoji.ownerPerfPicks.v1</code> (<code>listenMvCodes</code>, <code>songClipIds</code>) — ship-set <code>apps/web/data/owner-perf-selection.json</code>. Checked MV stream rows → copy codes into that JSON; idle dance/sing body still uses <code>amoji.idlePick.v6</code> / <code>amoji.idleEnabled.v6</code>.</p>
     <p class="lede">Owner codes: <code>DC###</code> performance files · <code>MV039–MV118</code> Mixkit streams (registry <code>owner-catalog-registry.ts</code>).</p>
-    <h2>Dance / sing body motion tags (performance-motion.ts)</h2>
+    <h2 id="dance-motion">Dance / sing body motion tags (performance-motion.ts)</h2>
     <p class="lede">Movement shortlist (<code>C03</code>…<code>C128</code>, generic sing/dance) — pairs with DC audio + idle VRMA. Note which tag to prefer per music style.</p>
     <div class="panel"><table>
       <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · ID</th><th>Ship</th><th>Preview</th><th>Tag</th><th>Label</th><th>Clip BPM</th><th>Use</th><th>Source</th></tr></thead>
@@ -566,7 +566,7 @@
       <td><span class="ref">apps/web/lib/performance-motion.ts:87</span></td>
     </tr></tbody>
     </table></div>
-    <h2>Performance library (CC0 / PD files)</h2>
+    <h2 id="performance">Performance library (CC0 / PD files)</h2>
     <div class="panel"><table>
       <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · domain</th><th>Ship</th><th>Play</th><th>Title</th><th>Kind</th><th>Langs</th><th>Tags</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
       <tbody><tr class="row-in-use" data-in-use="1" data-id="dance-silent-dance-floor" data-perf-kind="dance" data-label="Silent Dance Floor" data-ref="apps/web/lib/performance-clips.ts:51" data-owner-code="CD001" data-domain-code="DC001" data-prefix="DC">
@@ -2342,7 +2342,7 @@
       <td><code>/audio/sing-male/sing-m-no-pagliaccio.mp3</code><br/><span class="ref">apps/web/lib/performance-clips.ts:51</span></td>
     </tr></tbody>
     </table></div>
-    <h2>Mixkit stream previews (remote URL)</h2>
+    <h2 id="mixkit-streams">Mixkit stream previews (remote URL)</h2>
     <div class="panel"><table>
       <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · MV</th><th>Ship</th><th>Play</th><th>Title</th><th>Kind</th><th>Langs</th><th>Style</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
       <tbody><tr class="row-in-use" data-in-use="1" data-id="mix-tech-house" data-label="Tech House Vibes" data-ref="apps/web/lib/music-catalog.ts:79" data-owner-code="CD078" data-domain-code="mix-tech-house" data-prefix="MV">
@@ -18311,22 +18311,68 @@
     });
   
     const TAB_IDS = ['music', 'stories', 'demo', 'news', 'poke', 'idle'];
-    function showTab(id) {
-      if (!TAB_IDS.includes(id)) id = 'music';
+    
+    const HASH_TAB_ALIASES = {"performance":"music","mixkit":"music","mv":"music","sing":"music","dance":"demo","vfx":"poke","sfx":"poke","cma":"poke","tts":"poke","vrma":"idle","rail":"idle","rails":"idle"};
+    function panelForHash(fragment) {
+      const key = String(fragment || '').toLowerCase();
+      if (!key) return { tab: 'music', anchor: 'music' };
+      if (TAB_IDS.includes(key)) return { tab: key, anchor: key };
+      if (HASH_TAB_ALIASES[key]) return { tab: HASH_TAB_ALIASES[key], anchor: key };
+      const byId = document.getElementById(key);
+      if (byId) {
+        const panel = byId.closest('.tab-panel');
+        const tab = panel?.dataset?.section;
+        if (tab && TAB_IDS.includes(tab)) return { tab, anchor: key };
+      }
+      const row = document.querySelector('tr[data-id="' + CSS.escape(key) + '"]');
+      if (row) {
+        const panel = row.closest('.tab-panel');
+        const tab = panel?.dataset?.section;
+        if (tab && TAB_IDS.includes(tab)) return { tab, anchor: key, scrollEl: row };
+      }
+      return { tab: 'music', anchor: 'music' };
+    }
+    function revealTab(tabId) {
+      if (!TAB_IDS.includes(tabId)) tabId = 'music';
       for (const t of TAB_IDS) {
         const panel = document.getElementById('panel-' + t);
         const btn = document.querySelector('[data-tab="' + t + '"]');
-        if (panel) panel.hidden = t !== id;
-        if (btn) btn.setAttribute('aria-selected', t === id ? 'true' : 'false');
+        if (panel) panel.hidden = t !== tabId;
+        if (btn) btn.setAttribute('aria-selected', t === tabId ? 'true' : 'false');
       }
-      location.hash = id;
+      return tabId;
+    }
+    function scrollOwnerAnchor(route) {
+      const el = route.scrollEl
+        || (route.anchor ? document.getElementById(route.anchor) : null)
+        || (route.anchor ? document.querySelector('tr[data-id="' + CSS.escape(route.anchor) + '"]') : null)
+        || document.getElementById(route.tab);
+      if (el && typeof el.scrollIntoView === 'function') {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+    function navigateOwnerRoute(route, opts) {
+      opts = opts || {};
+      const tab = revealTab(route.tab);
+      if (!opts.silentHash && route.anchor) {
+        const next = '#' + route.anchor;
+        if (location.hash !== next) history.replaceState(null, '', next);
+      }
+      requestAnimationFrame(() => scrollOwnerAnchor(route));
+      return tab;
+    }
+    function applyHashRoute() {
+      const fragment = (location.hash || '#music').slice(1);
+      navigateOwnerRoute(panelForHash(fragment), { silentHash: true });
+    }
+    function showTab(id) {
+      navigateOwnerRoute(panelForHash(id), { silentHash: false });
     }
     document.querySelectorAll('[data-tab]').forEach((btn) => {
       btn.addEventListener('click', () => showTab(btn.getAttribute('data-tab')));
     });
-    const hash = (location.hash || '#music').slice(1);
-    showTab(hash);
-    window.addEventListener('hashchange', () => showTab((location.hash || '#music').slice(1)));
+    applyHashRoute();
+    window.addEventListener('hashchange', () => applyHashRoute());
 
     const PICK_KEYS = ["amoji.idlePick.v6", "amoji.idlePick.v5", "amoji.idlePick.v4", "amoji.idlePick.v3", "amoji.idlePick.v2", "amoji.idlePick.v1"];
     const ENABLE_KEYS = ["amoji.idleEnabled.v6", "amoji.idleEnabled.v5", "amoji.idleEnabled.v4", "amoji.idleEnabled.v3", "amoji.idleEnabled.v2", "amoji.idleEnabled.v1"];

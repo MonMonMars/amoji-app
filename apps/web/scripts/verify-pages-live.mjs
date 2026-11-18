@@ -49,9 +49,31 @@ if (live !== expected) {
 }
 await fetchOk("/docs/owner-resources.html", { expectText: "Owner resource library" });
 const ownerHtml = await (await fetch(`${base}/docs/owner-resources.html`, { cache: "no-store" })).text();
-if (ownerHtml.includes("amoji-public-serve/")) {
-  console.error("[verify-pages-live] owner-resources.html still has amoji-public-serve/ on live Pages");
+if (
+  /(?:data-play|src)="[^"]*amoji-public-serve/.test(ownerHtml) ||
+  /href="amoji-public-serve\//.test(ownerHtml)
+) {
+  console.error(
+    "[verify-pages-live] owner-resources.html still has amoji-public-serve/ in asset attrs on live Pages",
+  );
   process.exit(1);
+}
+const sectionMarkers = [
+  "panel-music",
+  "panel-stories",
+  "panel-demo",
+  "panel-news",
+  "panel-poke",
+  "panel-idle",
+  'id="performance"',
+  "panelForHash",
+  "navigateOwnerRoute",
+];
+for (const marker of sectionMarkers) {
+  if (!ownerHtml.includes(marker)) {
+    console.error(`[verify-pages-live] owner-resources.html missing section marker: ${marker}`);
+    process.exit(1);
+  }
 }
 const sampleAudio = `${base}/audio/dance/dance-silent-dance-floor.mp3`;
 const sampleVoice = `${base}/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3`;

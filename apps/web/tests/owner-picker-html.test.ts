@@ -65,6 +65,11 @@ describe('owner picker HTML (Pixel)', () => {
     expect(unifiedText).toContain('perf-motion-C61');
     expect(unifiedText).toContain('Poke TTS line bank');
     expect(unifiedText).toContain('CMA reaction ship-set');
+    expect(unifiedText).toContain('panelForHash');
+    expect(unifiedText).toContain('navigateOwnerRoute');
+    expect(unifiedText).toContain('id="performance"');
+    expect(unifiedText).toContain('id="mixkit-streams"');
+    expect(unifiedText).toContain('id="dance-motion"');
 
     for (const name of ['owner-music-picker.html', 'owner-poke-reactions.html', 'owner-idle-poses.html']) {
       const p = path.join(repoRoot, 'docs', name);

@@ -37,6 +37,8 @@ Every row in `docs/owner-resources.html` carries **`data-owner-code="CD###"`** (
 
 **GitHub Pages tabs:** `#music` · `#stories` · `#demo` · `#news` · `#poke` · `#idle` — e.g. `https://monmonmars.github.io/amoji-app/docs/owner-resources.html#demo`
 
+**Sub-section hashes (opens the right tab + scrolls):** `#performance` · `#mixkit-streams` · `#dance-motion` · `#dance` (demo Dance chip row) · `#vfx` / `#sfx` / `#cma` → poke · `#vrma` / `#rails` → idle
+
 ## Standing rule (agents)
 
 Before swapping defaults for poke SFX, idle rail, cast, TTS speakers, or sing/dance clips:
