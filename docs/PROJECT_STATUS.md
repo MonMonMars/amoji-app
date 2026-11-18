@@ -1,6 +1,6 @@
 # Amoji project status board
 
-**Generated:** 2026-11-18 21:55 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-19 00:15 HKT (Asia/Hong_Kong) — priority PR pass  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
@@ -75,9 +75,17 @@ Dance LoopRepeat, card greet, poke 我鍾意信 skip, news long read, unified ow
 
 | PR | Title | Notes |
 | --- | --- | --- |
+| [#522](https://github.com/MonMonMars/amoji-app/pull/522) | Music playback after perf-session **r238** | CI green · merge-ready |
+| [#523](https://github.com/MonMonMars/amoji-app/pull/523) | Chat history r245 + interrupt | CI green |
+| [#529](https://github.com/MonMonMars/amoji-app/pull/529) | Card audition silent | Merge **before** #528 |
+| [#528](https://github.com/MonMonMars/amoji-app/pull/528) | All-lang main speaker | CI green |
+| [#536](https://github.com/MonMonMars/amoji-app/pull/536) | Owner-resources hash links | CI pending |
+| [#537](https://github.com/MonMonMars/amoji-app/pull/537) | Voice/sound inventory doc | Catalog accountability |
 | [#512](https://github.com/MonMonMars/amoji-app/pull/512) | Remove ⚑ 舉報 from chat bubbles **r218** | Chat UX |
 | [#20](https://github.com/MonMonMars/amoji-app/pull/20) | CosyVoice TTS spike | Draft — **Hold** |
 | [#1](https://github.com/MonMonMars/amoji-app/pull/1) | Voice bake-off UI | Old spike — **Hold** |
+
+Detail: [`AGENT_FINISH_PRIORITY_PR_2026-11-18.md`](./AGENT_FINISH_PRIORITY_PR_2026-11-18.md)
 
 ### Shipped this session (merged to `main`)
 
