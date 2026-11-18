@@ -126,6 +126,22 @@ describe('card greet — no audible insurance (permanent)', () => {
     expect(previewBody).not.toContain('primeSynthInGesture(true)');
   });
 
+  it('card greet uses unlockAudioForCardAudition (no forced silent unblock race)', () => {
+    const greetBody = fnBody('playVoiceGreeting', 'export function previewLibraryClip');
+    const previewBody = fnBody('previewVoiceChoice', 'export function previewOsVoice');
+    expect(voice).toContain('export function unlockAudioForCardAudition');
+    expect(greetBody).toContain('unlockAudioForCardAudition()');
+    expect(previewBody).toContain('unlockAudioForCardAudition()');
+    expect(greetBody).not.toMatch(/unlockAudio\(true\)[\s\S]*?stopSpeakingForCardAudition/);
+  });
+
+  it('gesture speakGtts defers HTMLAudio pause until after the gesture play()', () => {
+    expect(gtts).toContain('beginGttsGestureLine');
+    expect(gtts).toMatch(/opts\.gestureTap \? beginGttsGestureLine\(\) : \(stopGtts\(\), generation\)/);
+    expect(gtts).toMatch(/beginGttsGestureLine[\s\S]*?queueMicrotask[\s\S]*?old\.pause\(\)/);
+    expect(gtts).toMatch(/synchronous teardown left every card tap silent/);
+  });
+
   it('gtts does not pinDefaultOutput inside onplay', () => {
     const playNext = gtts.slice(gtts.indexOf('const playNext = () => {'), gtts.indexOf('playNext();\n  });'));
     const create = playNext.indexOf('const audio = new Audio');

@@ -366,6 +366,15 @@ function unlockAudio(force = false): void {
   }
 }
 
+/**
+ * Select-board card greet / voice preview: resume engines without a second
+ * silent `play()` in the same tap as gesture-bound speakGtts. unlockAudio(true)
+ * always re-ran playSilentUnblock and raced the card MP3 tier (#519).
+ */
+export function unlockAudioForCardAudition(): void {
+  unlockAudio(!mediaPrimed);
+}
+
 // ---- r102: speechSynthesis gesture prime ------------------------------------
 // iOS keeps the speechSynthesis ENGINE itself gated until a user gesture
 // performs a speak() — WebAudio unlock and media priming don't count for the
@@ -2005,7 +2014,7 @@ export function playVoiceGreeting(
   line?: string,
 ): void {
   if (!selectAuditionAllowed()) return;
-  unlockAudio(true);
+  unlockAudioForCardAudition();
   stopSpeakingForCardAudition();
   const auditionGen = ++cardAuditionGeneration;
   const stale = () => auditionGen !== cardAuditionGeneration;
@@ -2399,7 +2408,7 @@ export function playLaughBurst(characterId: string, lang: Lang): void {
  */
 export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void> {
   if (!selectAuditionAllowed()) return Promise.resolve();
-  unlockAudio(true);
+  unlockAudioForCardAudition();
   stopSpeakingForCardAudition();
   const auditionGen = ++cardAuditionGeneration;
   const stale = () => auditionGen !== cardAuditionGeneration;

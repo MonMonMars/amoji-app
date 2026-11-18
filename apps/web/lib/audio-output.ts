@@ -282,6 +282,20 @@ export async function primeDefaultSpeakerBeforeSynth(): Promise<void> {
   }
 }
 
+/** Kick default-output pin without awaiting — keeps a user gesture for play(). */
+function kickDefaultOutputPinBeforeGesturePlay(audio: HTMLAudioElement): void {
+  if (!micCommsRoutingLatchActive()) return;
+  // play() often succeeds under play-and-record while routing to earpiece /
+  // BT comms — reject-only pin never runs. Fire-and-forget pin + WebAudio
+  // resume in the same turn as the tap, before the first play() attempt.
+  pinDefaultOutput(audio);
+  try {
+    const ctx = createDefaultAudioContext();
+    if (ctx?.state === 'suspended') void ctx.resume();
+    pinDefaultOutput(ctx as unknown as SinkTarget);
+  } catch { /* ignore */ }
+}
+
 /**
  * Start an HTMLAudioElement on the default speakers.
  *
@@ -332,5 +346,6 @@ export async function startHtmlAudioOnDefaultSpeakers(
     await playOrPinRetry();
     return;
   }
+  kickDefaultOutputPinBeforeGesturePlay(audio);
   await playOrPinRetry();
 }

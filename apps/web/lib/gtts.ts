@@ -200,6 +200,30 @@ export function stopGtts(): void {
   try { reject?.(new Error('canceled')); } catch { /* ignore */ }
 }
 
+/**
+ * Card / select-board gesture taps: reject the old line and drop its generation
+ * without pausing the prior HTMLAudio element in the same turn as the new
+ * gesture `play()` — synchronous teardown left every card tap silent (#519).
+ */
+function beginGttsGestureLine(): number {
+  generation++;
+  clearSpeechCaption();
+  if (gapTimer) { clearTimeout(gapTimer); gapTimer = null; }
+  const reject = pendingReject;
+  pendingReject = null;
+  try { reject?.(new Error('canceled')); } catch { /* ignore */ }
+  const old = currentAudio;
+  currentAudio = null;
+  if (!old) return generation;
+  old.onended = null;
+  old.onerror = null;
+  queueMicrotask(() => {
+    try { old.playbackRate = 1; } catch { /* ignore */ }
+    try { old.pause(); } catch { /* ignore */ }
+  });
+  return generation;
+}
+
 export interface GttsOpts {
   lang: Lang;
   /**
@@ -271,11 +295,10 @@ export function ssmlBreakAfterClause(chunk: string, isTail = false): string {
 }
 
 export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
-  stopGtts();
+  const gen = opts.gestureTap ? beginGttsGestureLine() : (stopGtts(), generation);
   // Mic may have left the session in play-and-record — force speakers first so
   // non-Yue / male pins match the gate sample device (not communications).
   ensureCompanionPlaybackRoute();
-  const gen = generation;
   const lang = opts.tl ?? LANG_MAP[opts.lang] ?? 'en-US';
   const rate = clamp(opts.rate ?? 1, 0.88, 1.15);
   const pitchBias = clamp(opts.pitchBias ?? 1, GTTS_PITCH_BIAS_MIN, GTTS_PITCH_BIAS_MAX);
