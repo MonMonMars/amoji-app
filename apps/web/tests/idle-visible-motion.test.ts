@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { IDLE_BODY_AMPLITUDE, IDLE_PLAYBACK_TIME_SCALE } from '../lib/idle-amplitude';
 import { IDLE_CALM_TORSO_PITCH_MAX } from '../lib/idle-stance-soften';
+import { IDLE_VISIBLE_MIN_PLAYBACK } from '../lib/idle-v2-visible';
 
 const root = path.resolve(import.meta.dirname, '..');
 
@@ -16,5 +17,7 @@ describe('idle visible motion (r217)', () => {
     expect(IDLE_BODY_AMPLITUDE).toBeGreaterThan(0.25);
     expect(IDLE_PLAYBACK_TIME_SCALE).toBeGreaterThan(0.6);
     expect(IDLE_CALM_TORSO_PITCH_MAX).toBeGreaterThan(0.08);
+    expect(IDLE_VISIBLE_MIN_PLAYBACK).toBeGreaterThanOrEqual(0.55);
+    expect(canvas).toContain('orderIdleV2VisibleClips');
   });
 });

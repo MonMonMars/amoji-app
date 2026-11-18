@@ -11,6 +11,7 @@ import {
   voiceCatchphrases, voiceIdleLines, voiceOpening, voicePokeLines, voiceTone,
   type MotifId, type VoiceId,
 } from './personality-voice';
+import { isIdleV2Enabled, orderIdleV2VisibleClips } from './idle-v2-visible';
 import { orderPassiveIdleClips, PASSIVE_IDLE_LOOP_TEMPLATE } from './idle-passive-loop';
 
 export const FEMALE_PERSONALITIES = ['sunny', 'shy', 'playful', 'gentle', 'dreamy', 'spark'] as const;
@@ -112,7 +113,11 @@ export function personalityMotion(characterId: string, gender?: 'female' | 'male
 export function orderIdleClips(available: string[], characterId: string, gender?: 'female' | 'male'): string[] {
   // Prefer the shared passive loop (relax → stretch → relax → look). Do NOT
   // append the rest of the library — that used to sticky-dance through every clip.
-  const loop = orderPassiveIdleClips(available);
+  if (isIdleV2Enabled()) {
+    const v2 = orderIdleV2VisibleClips(available, characterId);
+    if (v2.length) return v2;
+  }
+  const loop = orderPassiveIdleClips(available, characterId);
   if (loop.length) return loop;
   const pref = personalityMotion(characterId, gender).idleClips;
   return pref.filter((id) => available.includes(id));

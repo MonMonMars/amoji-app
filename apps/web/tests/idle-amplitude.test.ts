@@ -8,6 +8,7 @@ import {
   dampenIdleClipAmplitude,
   idlePlaybackTimeScale,
 } from '../lib/idle-amplitude';
+import { IDLE_VISIBLE_MIN_PLAYBACK } from '../lib/idle-v2-visible';
 
 function quatTrack(name: string, keys: Array<[number, number, number, number]>): THREE.QuaternionKeyframeTrack {
   const times = keys.map((_, i) => i);
@@ -65,6 +66,7 @@ describe('idle amplitude damp', () => {
   it('scales playback and kills look-up head pitch', () => {
     expect(idlePlaybackTimeScale(1)).toBeCloseTo(IDLE_PLAYBACK_TIME_SCALE, 5);
     expect(idlePlaybackTimeScale(0.8)).toBeLessThan(0.8);
+    expect(idlePlaybackTimeScale(0.01)).toBeGreaterThanOrEqual(IDLE_VISIBLE_MIN_PLAYBACK);
     expect(Math.abs(calmIdleHeadPitch(-0.3))).toBeLessThan(0.02);
     expect(calmIdleHeadPitch(0.2)).toBeLessThan(0.02);
   });
