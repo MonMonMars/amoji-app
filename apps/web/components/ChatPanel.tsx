@@ -208,6 +208,7 @@ import {
   resolveMusicAsk,
   type MusicPickOption,
 } from '../lib/music-ask';
+import { idleClipPinsCanvas, isIdleV2Enabled } from '../lib/idle-v2-visible';
 import { PASSIVE_IDLE_LOOP_TEMPLATE, resolvePassiveBodyIdleClip } from '../lib/idle-passive-loop';
 import { resolveContentMotion } from '../lib/content-motion';
 import { clipLabel, PERFORMANCE_CLIPS, type PerformanceClip } from '../lib/performance-clips';
@@ -604,7 +605,8 @@ export default function ChatPanel({
       characterId,
     });
     if (plan.moodHints) applyContentMood(plan.moodHints);
-    onAutoIdleRef.current?.(plan.idleClip);
+    const pinClip = idleClipPinsCanvas(plan.idleClip, plan.passive) ? plan.idleClip : null;
+    onAutoIdleRef.current?.(pinClip);
   };
 
   // r70 — the user's own gender (Settings → "You are"; never-set = undefined,
@@ -1124,12 +1126,16 @@ export default function ChatPanel({
       if (silent < 8_000) return;
       if (Date.now() - lastPassiveBodyAtRef.current < PASSIVE_IDLE_BODY_MS) return;
       lastPassiveBodyAtRef.current = Date.now();
+      if (isIdleV2Enabled()) {
+        onAutoIdleRef.current?.(null);
+        return;
+      }
       const clip = resolvePassiveBodyIdleClip(
         characterId,
         [...PASSIVE_IDLE_LOOP_TEMPLATE],
         passiveIdleStepRef.current++,
       );
-      onAutoIdleRef.current?.(clip);
+      onAutoIdleRef.current?.(idleClipPinsCanvas(clip, true) ? clip : null);
     }, 2000);
     return () => clearInterval(timer);
   }, []);

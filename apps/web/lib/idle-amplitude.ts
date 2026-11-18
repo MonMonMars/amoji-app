@@ -4,6 +4,7 @@
 // v6+r217: visible calm breath — enough VRMA motion to read alive, not thrash.
 
 import * as THREE from 'three';
+import { IDLE_VISIBLE_MIN_PLAYBACK } from './idle-v2-visible';
 
 /** Keep this fraction of body quaternion motion (rest → key). Visible sway/breath. */
 export const IDLE_BODY_AMPLITUDE = 0.38;
@@ -76,7 +77,7 @@ export function dampenIdleClipAmplitude(
 /** Scale personality idle timeScale down for calm static stands. */
 export function idlePlaybackTimeScale(personalityScale: number): number {
   const p = Number.isFinite(personalityScale) ? personalityScale : 1;
-  return Math.max(0.22, Math.min(1.1, p * IDLE_PLAYBACK_TIME_SCALE));
+  return Math.max(IDLE_VISIBLE_MIN_PLAYBACK, Math.min(1.1, p * IDLE_PLAYBACK_TIME_SCALE));
 }
 
 /**
