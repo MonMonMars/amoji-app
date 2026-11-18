@@ -293,3 +293,19 @@ export function timeScaleForProfile(
   const clipBpm = usePreferred ? profile.preferredClipBpm : profile.clipBpm;
   return timeScaleForBpm(profile.bpm, clipBpm);
 }
+
+/**
+ * Looping sing/dance VRMA start time (seconds) locked to the live library bed.
+ * `timeScale` is the mixer rate already matched to track BPM (see timeScaleForBpm).
+ */
+export function beatAlignedVrmaTime(
+  bedPlaybackSec: number,
+  clipDurationSec: number,
+  timeScale: number,
+): number {
+  if (!Number.isFinite(bedPlaybackSec) || bedPlaybackSec < 0) return 0;
+  if (!Number.isFinite(clipDurationSec) || clipDurationSec <= 0) return 0;
+  const scale = Number.isFinite(timeScale) && timeScale > 0 ? timeScale : 1;
+  const raw = (bedPlaybackSec * scale) % clipDurationSec;
+  return raw < 0 ? raw + clipDurationSec : raw;
+}

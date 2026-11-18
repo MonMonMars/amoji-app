@@ -421,6 +421,36 @@ let loadToken = 0;
 let mouthTimer: ReturnType<typeof setInterval> | null = null;
 let duck = 1;
 let duckTimer: ReturnType<typeof setTimeout> | null = null;
+/** BufferSource / procedural fallback: when the bed became audible. */
+let clipBedAnchorCtxSec: number | null = null;
+let clipBedAnchorWallMs: number | null = null;
+
+function markBedPlaybackAnchor(ctxSec?: number): void {
+  if (typeof performance !== 'undefined') {
+    clipBedAnchorWallMs = performance.now();
+  }
+  clipBedAnchorCtxSec = ctxSec ?? null;
+}
+
+function clearBedPlaybackAnchor(): void {
+  clipBedAnchorCtxSec = null;
+  clipBedAnchorWallMs = null;
+}
+
+/** Seconds since the active library / fallback bed became audible (0 when idle). */
+export function libraryBedPlaybackSec(): number {
+  if (typeof window === 'undefined' || !clipAudible) return 0;
+  if (clipEl && !clipEl.paused) {
+    return Math.max(0, clipEl.currentTime);
+  }
+  if (clipSrc && clipCtx && clipCtx.state === 'running' && clipBedAnchorCtxSec !== null) {
+    return Math.max(0, clipCtx.currentTime - clipBedAnchorCtxSec);
+  }
+  if (clipBedAnchorWallMs !== null) {
+    return Math.max(0, (performance.now() - clipBedAnchorWallMs) / 1000);
+  }
+  return 0;
+}
 
 /**
  * Beds start after intro TTS — flip play-and-record back to playback, then
@@ -492,6 +522,7 @@ function emitLibraryClipPlaying(id: string | null = clipId): void {
 /** Procedural band when a file/stream bed cannot start — still emit playing. */
 function startLibraryBandFallback(characterId: string): void {
   startMusic(characterId);
+  markBedPlaybackAnchor();
   emitLibraryClipPlaying(clipId);
 }
 
@@ -519,6 +550,7 @@ function haltClip(): void {
   clipId = null;
   clipKind = null;
   clipAudible = false;
+  clearBedPlaybackAnchor();
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('amoji:library-clip', { detail: { state: 'stopped' } }));
   }
@@ -596,6 +628,7 @@ function playClipElement(url: string, token: number, characterId: string): boole
       emitted = true;
       audio.removeEventListener('playing', emitOnce);
       audio.removeEventListener('timeupdate', onTimeUpdate);
+      markBedPlaybackAnchor();
       // Mouth only when the song bed is audible — never during intro wait.
       if (clipKind === 'song') armSongMouthFromElement(audio);
       emitLibraryClipPlaying(clipId);
@@ -666,6 +699,8 @@ async function playClip(clip: PerformanceClip, token: number, characterId: strin
     }
     // BufferSource starts samples immediately — emit playing only after start().
     // Mouth follows the same gate: never flap before audible samples.
+    clipBedAnchorCtxSec = ac.currentTime;
+    markBedPlaybackAnchor(ac.currentTime);
     src.start();
     clipSrc = src;
     if (clip.kind === 'song' && clipAnalyser) startSongMouth(clipAnalyser);

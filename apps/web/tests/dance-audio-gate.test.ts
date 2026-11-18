@@ -92,12 +92,15 @@ describe('dance-audio-gate', () => {
     expect(music).toContain('export function activeLibraryClipId');
     expect(music).toMatch(/emitLibraryClipPlaying[\s\S]*clipAudible = true/);
     expect(music).toMatch(/haltClip[\s\S]*clipAudible = false/);
+    expect(music).toContain('export function libraryBedPlaybackSec');
   });
 
   it('CompanionCanvas retries sing/dance playPerf until VRMA loads', () => {
     const canvas = fs.readFileSync(path.join(ROOT, 'components/CompanionCanvas.tsx'), 'utf8');
     expect(canvas).toContain('if (playPerf(clipName)) mvHandled = mv.kind');
     expect(canvas).toContain('Hard fallbacks so song/dance still move');
+    expect(canvas).toContain('beatAlignedVrmaTime');
+    expect(canvas).toContain('libraryBedPlaybackSec');
     // Local Sing/Dance before remote 3dchat URLs.
     const singLocal = canvas.indexOf('`${ANIM_MIRROR}/Sing.vrma`');
     const singRemote = canvas.indexOf('singing.vrma');
