@@ -249,7 +249,6 @@ import { detectGame, startGame, playTurn, gameFarewellLine, type GameState } fro
 import { detectActionGame, setMiniGameChromeHidden, subscribeMiniGameOpen, type ActionGame } from '../lib/minigames';
 import MiniGameOverlay from './MiniGameOverlay';
 import ChatMessage from './ChatMessage';
-import ReportDialog from './ReportDialog';
 import CrisisHelplineDialog from './CrisisHelplineDialog';
 import { DUET_TRIGGER, QUIT_RE, MEAL_TOGETHER_TRIGGER, duetInviteLine, duetGoodbyeLine, pickMealToast } from '../lib/activities';
 import { detectExercise, startExercise, advanceExercise, exerciseFarewellLine, type ExerciseState } from '../lib/exercises';
@@ -391,8 +390,6 @@ export default function ChatPanel({
   const [crisisCard, setCrisisCard] = useState(false);
   // warning popup with location-aware 「即刻搵人傾」 numbers (alongside the card)
   const [crisisPopup, setCrisisPopup] = useState<HelplineRegion | null>(null);
-  // the AI reply the user is reporting (null = the report sheet is closed)
-  const [reportFor, setReportFor] = useState<string | null>(null);
   const [actionGame, setActionGame] = useState<ActionGame | null>(null);
   const actionGameRef = useRef(false);
   const [clipState, setClipState] = useState<'starting' | 'playing' | null>(null);
@@ -2117,7 +2114,6 @@ export default function ChatPanel({
               lang={lang}
               accent={accent}
               label={m.role === 'assistant' && i === history.length - 1 ? characterName : undefined}
-              onReport={(reply) => setReportFor(reply)}
             />
           );
         })}
@@ -2398,17 +2394,6 @@ export default function ChatPanel({
         </button>
       </div>
       </div>
-      {/* Play requirement: an in-app route to report generated content. Kept
-          outside the scroll area so opening it cannot scroll the history. */}
-      {reportFor !== null && (
-        <ReportDialog
-          reply={reportFor}
-          lang={lang}
-          accent={accent}
-          characterId={characterId}
-          onClose={() => setReportFor(null)}
-        />
-      )}
       {crisisPopup && (
         <CrisisHelplineDialog
           lang={lang}

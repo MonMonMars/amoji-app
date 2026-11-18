@@ -40,7 +40,6 @@ describe('unified speech caption in chat history', () => {
         tailStreaming
         lang="en"
         accent="#f9a8d4"
-        onReport={() => {}}
       />,
     );
     expect(html).not.toContain('Full reply stays for reporting.');
@@ -55,10 +54,10 @@ describe('unified speech caption in chat history', () => {
         content="Full reply stays for reporting."
         lang="en"
         accent="#f9a8d4"
-        onReport={() => {}}
       />,
     );
     expect(html).toContain('Full reply stays for reporting.');
+    expect(html).not.toContain('chat-report-button');
   });
 
   it('sealed caption lines replace the full-phase history replay', () => {
@@ -69,7 +68,6 @@ describe('unified speech caption in chat history', () => {
         captionLines={['Sunny and mild.', 'Bring a light jacket.']}
         lang="en"
         accent="#f9a8d4"
-        onReport={() => {}}
       />,
     );
     expect(html).toContain('data-testid="speech-caption-history"');
@@ -86,7 +84,6 @@ describe('unified speech caption in chat history', () => {
         content="hello"
         lang="en"
         accent="#38bdf8"
-        onReport={() => {}}
       />,
     );
     expect(html).toContain('text-right');
