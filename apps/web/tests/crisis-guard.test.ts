@@ -245,7 +245,9 @@ describe('crisis guard skips the model entirely', () => {
     const body = src.slice(sendAt);
     const guardAt = body.indexOf('guardCompanionTurn(text, lang');
     const liveAt = body.indexOf('clientLiveContext(text');
-    const chatAt = body.indexOf('clientChat([...history');
+    const chatSpread = body.indexOf('clientChat([...history');
+    const chatTurn = body.indexOf('clientChat(turnMessages');
+    const chatAt = chatSpread >= 0 ? chatSpread : chatTurn;
     expect(guardAt).toBeGreaterThan(-1);
     expect(liveAt).toBeGreaterThan(-1);
     expect(chatAt).toBeGreaterThan(-1);
