@@ -18,6 +18,12 @@ import {
 } from '../lib/owner-resource-manifest';
 
 describe('owner-resource-manifest', () => {
+  it('buildOwnerResourceIndex lists motion preview rows (v2)', () => {
+    const index = buildOwnerResourceIndex();
+    const previews = index.filter((e) => e.type === 'owner-picker-motion-preview');
+    expect(previews.length).toBeGreaterThan(0);
+  });
+
   it('manifest version is set', () => {
     expect(OWNER_RESOURCE_MANIFEST_VERSION).toMatch(/owner-resource-v\d+/);
   });

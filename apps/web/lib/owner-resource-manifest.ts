@@ -27,11 +27,14 @@ import { STREAM_TRACKS } from './music-catalog';
 import { HIGHEST_MV_OWNER_CODE, MV_VAULT_COUNT } from './music-mv-registry';
 import { CLASSIC_FAIRY_TALES } from './classic-fairy-tales';
 import { highestStoryOwnerCode } from './story-catalog';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { PERFORMANCE_CLIPS } from './performance-clips';
 import { RECORDED_POKE_ZONE } from './voice-clips';
+import { buildOwnerMotionPreviewRegistry } from './owner-picker-html-media';
 
 export const OWNER_RESOURCE_LIBRARY_DOC = 'docs/OWNER_RESOURCE_LIBRARY.md';
-export const OWNER_RESOURCE_MANIFEST_VERSION = '2026-11-16-owner-resource-v1' as const;
+export const OWNER_RESOURCE_MANIFEST_VERSION = '2026-11-18-owner-resource-v2' as const;
 
 export type OwnerResourceStatus =
   | 'wired'
@@ -48,6 +51,12 @@ export interface OwnerResourceEntry {
   usedBy: string;
   status: OwnerResourceStatus;
   notes?: string;
+  previewKind?: 'gif' | 'webp' | 'mp4' | 'vrma' | 'placeholder';
+  previewPath?: string;
+}
+
+function webPublicRoot(): string {
+  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
 }
 
 /** Standing rule text — also in OWNER_REQUEST_LOG + OWNER_RESOURCE_LIBRARY.md */
@@ -194,6 +203,20 @@ export function buildOwnerResourceIndex(): OwnerResourceEntry[] {
       usedBy: 'classic-fairy-tales.ts · ChatPanel Story chip',
       status: 'wired',
       notes: `${tale.title.en} · ${tale.length} · ${highestStoryOwnerCode()} cap`,
+    });
+  }
+
+  for (const preview of buildOwnerMotionPreviewRegistry(webPublicRoot())) {
+    if (preview.kind === 'placeholder') continue;
+    out.push({
+      type: 'owner-picker-motion-preview',
+      id: preview.id,
+      pathOrUrl: preview.pagesSrc ?? preview.assetRaw ?? '',
+      usedBy: 'owner-resources.html · motion preview column',
+      status: preview.kind === 'gif' ? 'wired' : 'optional',
+      notes: preview.note,
+      previewKind: preview.kind,
+      previewPath: preview.pagesSrc ?? undefined,
     });
   }
 

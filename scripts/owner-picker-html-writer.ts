@@ -28,6 +28,8 @@ import {
 } from '../apps/web/lib/cma-reaction-gallery.ts';
 import type { Lang } from '../apps/web/lib/prefs.ts';
 import { CHARACTERS_WANT } from '../apps/web/lib/characters-want.ts';
+import { PICKER_PLAY_RESOLVE_INLINE_JS } from '../apps/web/lib/owner-picker-media.mjs';
+import { audioPlayerBlockHtml, audioPlayerCellHtml, motionPreviewCellHtml, pokeSectionMotionPreview, resolveIdleMotionPreview, resolvePerfMotionPreview } from '../apps/web/lib/owner-picker-html-media.ts';
 import { CHAT_IDLE_CURATED, defaultCuratedRailNums } from '../apps/web/lib/idle-curated-rail.ts';
 import { idleClipFamily } from '../apps/web/lib/idle-clip-family.ts';
 import { IDLE_LIBRARY, idleByClipId, type IdleLibraryEntry } from '../apps/web/lib/idle-library.ts';
@@ -59,11 +61,24 @@ import {
   clipBpmForTag,
 } from '../apps/web/lib/performance-motion.ts';
 
-/** Same key as in-page script — agent-ingestible notes + keep state. */
+/** Same key as in-page script — agent-ingestible notes + tri-state decision. */
 export const OWNER_PICKER_NOTES_KEY = 'amoji.ownerPickerNotes.v1';
+export const OWNER_PICKER_NOTES_SCHEMA = 'owner-picker-notes-v2' as const;
 
 const NOTE_TD =
   '<td class="note-cell"><input type="text" class="owner-note" placeholder="Usage note…" aria-label="Owner note" /></td>';
+
+function decisionCell(): string {
+  return `<td class="decision-cell" data-decision="keep">
+    <div class="decision-group" role="group" aria-label="Owner decision · 採用 / 保留 / 刪除">
+      <button type="button" class="decision-btn" data-decision-pick="use" title="採用 · use in app"><span class="decision-primary">採用</span><span class="decision-sub">use</span></button>
+      <button type="button" class="decision-btn" data-decision-pick="keep" title="保留 · keep for later"><span class="decision-primary">保留</span><span class="decision-sub">keep</span></button>
+      <button type="button" class="decision-btn" data-decision-pick="delete" title="刪除 · 唔用 · do not ship"><span class="decision-primary">刪除</span><span class="decision-sub">唔用</span></button>
+    </div>
+  </td>`;
+}
+
+const DECISION_TD = decisionCell();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CATALOG = ownerCatalogLookupMap();
@@ -179,6 +194,17 @@ function sharedCss(): string {
     .hold { background: var(--hold-bg); color: var(--hold); font-weight: 600; }
     .license-ok { color: var(--accent-deep); }
     audio { height: 28px; max-width: 220px; vertical-align: middle; }
+    .audio-player { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; min-width: 11rem; max-width: 20rem; }
+    .audio-player .audio-play-toggle { min-width: 2.1rem; padding: 0.25rem 0.45rem; }
+    .audio-player .audio-stop { min-width: 2rem; padding: 0.25rem 0.4rem; font-size: 0.72rem; line-height: 1; }
+    .audio-player .audio-scrub { flex: 1 1 5rem; min-width: 4.5rem; accent-color: var(--accent); }
+    .audio-player .audio-time { font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .motion-preview img,
+    .motion-preview video { object-fit: cover; border: 1px solid var(--line); border-radius: 3px; background: #f6f1e6; display: block; }
+    .motion-preview--missing,
+    .motion-preview--broken { font-size: 0.75rem; max-width: 6.5rem; }
+    .motion-preview--broken::after { content: 'missing'; display: block; font-size: 0.7rem; color: var(--hold); }
+    .motion-preview--vrma a { font-size: 0.78rem; }
     .play-remote { font-size: 0.8rem; }
     input[type="checkbox"] { transform: scale(1.15); cursor: pointer; }
     tr.owner-saved td { background: rgba(14, 107, 92, 0.1); }
@@ -217,6 +243,13 @@ function sharedCss(): string {
       background: #fff;
     }
     .owner-note:focus { outline: 2px solid rgba(14, 107, 92, 0.35); border-color: var(--accent); }
+    .decision-cell { min-width: 10.5rem; vertical-align: middle; }
+    .decision-group { display: flex; flex-wrap: wrap; gap: 0.22rem; }
+    .decision-btn { font-family: inherit; font-size: 0.7rem; font-weight: 700; line-height: 1.15; padding: 0.22rem 0.42rem; border-radius: 3px; border: 1px solid var(--line); background: #fff; color: var(--accent-deep); cursor: pointer; }
+    .decision-btn .decision-sub { display: block; font-size: 0.62rem; font-weight: 500; color: var(--muted); }
+    .decision-cell[data-decision="use"] .decision-btn[data-decision-pick="use"], .decision-cell[data-decision="keep"] .decision-btn[data-decision-pick="keep"], .decision-cell[data-decision="delete"] .decision-btn[data-decision-pick="delete"] { background: var(--accent-deep); border-color: var(--accent-deep); color: #fff; }
+    tr[data-decision="delete"] td { opacity: 0.74; }
+    tr[data-decision="use"] td { box-shadow: inset 0 0 0 9999px rgba(14, 107, 92, 0.06); }
     #importNotesWrap[hidden] { display: none !important; }
     #importNotesJson { width: 100%; min-height: 5rem; margin-top: 0.5rem; font-family: ui-monospace, monospace; font-size: 0.8rem; }
   `;
@@ -232,18 +265,71 @@ function defaultOnTag(): string {
 
 function pickerScript(_exportKey: string): string {
   const notesKey = JSON.stringify(OWNER_PICKER_NOTES_KEY);
+  const notesSchema = JSON.stringify(OWNER_PICKER_NOTES_SCHEMA);
+  const perfKey = JSON.stringify('amoji.ownerPerfPicks.v1');
+  const cmaKey = JSON.stringify(CMA_REACTION_GALLERY_KEY);
+  const enableKeys = JSON.stringify([IDLE_ENABLED_KEY, ...LEGACY_IDLE_ENABLED_KEYS]);
   return `
     const NOTES_KEY = ${notesKey};
+    const NOTES_SCHEMA = ${notesSchema};
+    const PERF_PICKS_KEY = ${perfKey};
+    const CMA_GALLERY_KEY_PICKER = ${cmaKey};
+    const ENABLE_KEYS_PICKER = ${enableKeys};
+    const DECISION_DEFAULT = 'keep';
     let notesSaveTimer = null;
     function rowStorageKey(tr) {
       return tr.dataset.ownerCode || tr.dataset.id || '';
+    }
+    function normalizeDecision(row) {
+      if (row && (row.decision === 'use' || row.decision === 'keep' || row.decision === 'delete')) return row.decision;
+      if (row && typeof row.keep === 'boolean') return row.keep ? 'keep' : 'delete';
+      return DECISION_DEFAULT;
+    }
+    function readRowDecision(tr) {
+      const cell = tr.querySelector('.decision-cell');
+      const d = cell?.dataset?.decision || tr.dataset.decision;
+      if (d === 'use' || d === 'keep' || d === 'delete') return d;
+      return DECISION_DEFAULT;
+    }
+    function paintRowDecision(tr, decision) {
+      if (!tr || !decision) return;
+      const cell = tr.querySelector('.decision-cell');
+      if (cell) cell.dataset.decision = decision;
+      tr.dataset.decision = decision;
+      tr.classList.toggle('owner-bad', decision === 'delete');
+    }
+    function wireDecisionToApp(tr) {
+      try {
+        const mvCode = tr.dataset.mvCode;
+        if (mvCode) {
+          const blob = JSON.parse(localStorage.getItem(PERF_PICKS_KEY) || '{}');
+          const list = Array.isArray(blob.listenMvCodes) ? blob.listenMvCodes.slice() : [];
+          if (!list.includes(mvCode)) { blob.listenMvCodes = [...list, mvCode]; localStorage.setItem(PERF_PICKS_KEY, JSON.stringify(blob)); }
+        }
+        const perfKind = tr.dataset.perfKind; const perfId = tr.dataset.id || '';
+        if (perfKind === 'song' && perfId) {
+          const blob = JSON.parse(localStorage.getItem(PERF_PICKS_KEY) || '{}');
+          const songList = Array.isArray(blob.songClipIds) ? blob.songClipIds.slice() : [];
+          if (!songList.includes(perfId)) { blob.songClipIds = [...songList, perfId]; localStorage.setItem(PERF_PICKS_KEY, JSON.stringify(blob)); }
+        }
+        const cma = tr.dataset.cmaCode;
+        if (cma) { const picks = JSON.parse(localStorage.getItem(CMA_GALLERY_KEY_PICKER) || '{}'); picks[cma] = 'want'; localStorage.setItem(CMA_GALLERY_KEY_PICKER, JSON.stringify(picks)); }
+        const railNum = tr.dataset.railNum;
+        if (railNum) {
+          for (const k of ENABLE_KEYS_PICKER) {
+            try { const raw = localStorage.getItem(k); if (!raw) continue; const en = JSON.parse(raw); if (!Array.isArray(en)) continue;
+              const n = Number(railNum); if (!en.includes(n)) { en.push(n); en.sort((a,b)=>a-b); localStorage.setItem(k, JSON.stringify(en)); }
+              break; } catch { /* next key */ }
+          }
+        }
+      } catch { /* private / corrupt */ }
     }
     function readNotesStore() {
       try {
         const raw = localStorage.getItem(NOTES_KEY);
         if (raw) return JSON.parse(raw);
       } catch { /* corrupt */ }
-      return { version: 'owner-picker-notes-v1', rows: {} };
+      return { version: NOTES_SCHEMA, rows: {} };
     }
     function rowSnapshot(tr) {
       return {
@@ -253,17 +339,18 @@ function pickerScript(_exportKey: string): string {
         id: tr.dataset.id || '',
         label: tr.dataset.label || tr.dataset.id || '',
         ref: tr.dataset.ref || '',
-        keep: tr.querySelector('input.keep')?.checked !== false,
+        decision: readRowDecision(tr),
+        keep: readRowDecision(tr) !== 'delete',
         note: (tr.querySelector('.owner-note')?.value || '').trim(),
       };
     }
     function persistNotesStore() {
-      const store = { version: 'owner-picker-notes-v1', savedAt: new Date().toISOString(), rows: {} };
+      const store = { version: NOTES_SCHEMA, savedAt: new Date().toISOString(), rows: {} };
       document.querySelectorAll('tbody tr[data-id]').forEach((tr) => {
         const snap = rowSnapshot(tr);
         const key = rowStorageKey(tr);
         if (!key) return;
-        if (snap.note || !snap.keep) store.rows[key] = snap;
+        if (snap.note || snap.decision !== DECISION_DEFAULT) store.rows[key] = snap;
       });
       try { localStorage.setItem(NOTES_KEY, JSON.stringify(store)); } catch { /* private mode */ }
       return store;
@@ -280,8 +367,7 @@ function pickerScript(_exportKey: string): string {
       if (!tr || !row) return;
       const inp = tr.querySelector('.owner-note');
       if (inp && row.note != null) inp.value = row.note;
-      const cb = tr.querySelector('input.keep');
-      if (cb && typeof row.keep === 'boolean') cb.checked = row.keep;
+      paintRowDecision(tr, normalizeDecision(row));
     }
     function applyNotesPayload(data) {
       if (!data) return;
@@ -297,40 +383,37 @@ function pickerScript(_exportKey: string): string {
         }
       }
     }
+    function partitionByDecision(items) { const use=[], keep=[], del=[]; for (const r of items) { const d = normalizeDecision(r); if (d==='use') use.push(r); else if (d==='delete') del.push(r); else keep.push(r);} return {use, keep, delete: del}; }
+    function cdList(rows) { return rows.map((r) => r.cd).filter(Boolean); }
     function collectNotesExport() {
       const items = [...document.querySelectorAll('tbody tr[data-id]')].map(rowSnapshot);
-      const remove = items.filter((r) => !r.keep);
-      const removeCd = remove.map((r) => r.cd).filter(Boolean);
-      const byPrefix = {};
-      for (const r of remove) {
-        if (r.prefix) (byPrefix[r.prefix] = byPrefix[r.prefix] || []).push(r.domain || r.id);
-      }
-      return JSON.stringify({
-        version: 'owner-picker-notes-v1',
-        exportedAt: new Date().toISOString(),
-        items,
-        remove,
-        removeCd,
-        removeByPrefix: byPrefix,
-        kept: items.length - remove.length,
-      }, null, 2);
+      const { use, keep, delete: deleted } = partitionByDecision(items);
+      const remove = deleted; const removeCd = cdList(remove); const byPrefix = {};
+      for (const r of remove) { if (r.prefix) (byPrefix[r.prefix] = byPrefix[r.prefix] || []).push(r.domain || r.id); }
+      return JSON.stringify({ version: NOTES_SCHEMA, exportedAt: new Date().toISOString(), items, use, keep, delete: deleted, useCd: cdList(use), keepCd: cdList(keep), deleteCd: removeCd, remove, removeCd, removeByPrefix: byPrefix, kept: use.length + keep.length }, null, 2);
     }
     function scheduleNotesPersist() {
       clearTimeout(notesSaveTimer);
       notesSaveTimer = setTimeout(persistNotesStore, 350);
     }
     document.body.addEventListener('input', (e) => {
-      if (e.target.matches('.owner-note') || e.target.matches('input.keep')) scheduleNotesPersist();
+      if (e.target.matches('.owner-note')) scheduleNotesPersist();
     });
-    document.body.addEventListener('change', (e) => {
-      if (e.target.matches('input.keep')) scheduleNotesPersist();
+    document.body.addEventListener('click', (e) => {
+      const decisionBtn = e.target.closest('[data-decision-pick]');
+      if (!decisionBtn) return;
+      const tr = decisionBtn.closest('tr[data-id]'); if (!tr) return;
+      const pick = decisionBtn.getAttribute('data-decision-pick');
+      if (pick !== 'use' && pick !== 'keep' && pick !== 'delete') return;
+      paintRowDecision(tr, pick); if (pick === 'use') wireDecisionToApp(tr); scheduleNotesPersist();
     });
+    document.querySelectorAll('tbody tr[data-id]').forEach((tr) => paintRowDecision(tr, readRowDecision(tr)));
     applyNotesPayload(readNotesStore());
 
     function rowId(cb) { return cb.closest('tr')?.dataset?.id || ''; }
     function collectUnchecked(fmt) {
       const rows = [...document.querySelectorAll('tbody tr[data-id]')];
-      const remove = rows.filter(tr => !tr.querySelector('input.keep')?.checked).map(tr => ({
+      const remove = rows.filter(tr => readRowDecision(tr) === 'delete').map(tr => ({
         cd: tr.dataset.ownerCode || '',
         domain: tr.dataset.domainCode || '',
         prefix: tr.dataset.prefix || '',
@@ -353,7 +436,7 @@ function pickerScript(_exportKey: string): string {
           kept: rows.length - remove.length,
         }, null, 2);
       }
-      const lines = ['## Remove (unchecked rows)', ''];
+      const lines = ['## Remove (刪除 / delete rows)', ''];
       for (const r of remove) {
         const code = r.cd ? r.cd + ' ' : '';
         const dom = r.domain ? '(' + r.domain + ') ' : '';
@@ -377,27 +460,96 @@ function pickerScript(_exportKey: string): string {
         tr.style.display = !q || tr.textContent.toLowerCase().includes(q) ? '' : 'none';
       });
     });
-    function resolvePlaySrc(raw) {
-      if (!raw) return '';
-      if (/^https?:/i.test(raw)) return raw;
-      if (raw.startsWith('amoji-public-serve/')) return '../' + raw.slice('amoji-public-serve/'.length);
-      if (raw.startsWith('amoji-public-serve')) {
-        const tail = raw.slice('amoji-public-serve'.length).replace(/^\\//, '');
-        return tail ? '../' + tail : '';
-      }
-      return raw;
+    ${PICKER_PLAY_RESOLVE_INLINE_JS}
+    function formatMmSs(sec) {
+      if (!Number.isFinite(sec) || sec < 0) return '0:00';
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return m + ':' + String(s).padStart(2, '0');
     }
-    let currentAudio = null;
+    let activePlayer = null;
+    function pauseActivePlayer() {
+      if (!activePlayer) return;
+      activePlayer.audio.pause();
+      activePlayer.toggle.textContent = '▶';
+      activePlayer = null;
+    }
+    function wireAudioPlayer(root) {
+      const raw = root.getAttribute('data-play');
+      if (!raw) return;
+      const toggle = root.querySelector('.audio-play-toggle');
+      const stopBtn = root.querySelector('.audio-stop');
+      const scrub = root.querySelector('.audio-scrub');
+      const curEl = root.querySelector('.audio-cur');
+      const durEl = root.querySelector('.audio-dur');
+      if (!toggle || !scrub) return;
+      const audio = new Audio();
+      let seeking = false;
+      function resetRowUi() {
+        toggle.textContent = '▶';
+        scrub.value = '0';
+        if (curEl) curEl.textContent = '0:00';
+      }
+      function stopRowPlayback() {
+        audio.pause();
+        audio.currentTime = 0;
+        resetRowUi();
+        if (activePlayer && activePlayer.root === root) activePlayer = null;
+      }
+      audio.addEventListener('loadedmetadata', () => {
+        scrub.disabled = false;
+        scrub.max = String(audio.duration || 100);
+        if (durEl) durEl.textContent = formatMmSs(audio.duration);
+      });
+      audio.addEventListener('timeupdate', () => {
+        if (seeking || !audio.duration) return;
+        scrub.value = String(audio.currentTime);
+        if (curEl) curEl.textContent = formatMmSs(audio.currentTime);
+      });
+      audio.addEventListener('ended', () => {
+        resetRowUi();
+        if (activePlayer && activePlayer.root === root) activePlayer = null;
+      });
+      audio.addEventListener('error', () => alert(pickerPlayFailureMessage(resolvePlaySrc(raw), toggle)));
+      scrub.addEventListener('input', () => { seeking = true; });
+      scrub.addEventListener('change', () => {
+        const t = Number(scrub.value);
+        if (Number.isFinite(t)) audio.currentTime = t;
+        seeking = false;
+      });
+      toggle.addEventListener('click', () => {
+        unlockPickerAudioGesture();
+        const src = resolvePlaySrc(raw);
+        if (!src) return;
+        if (activePlayer && activePlayer.root !== root) pauseActivePlayer();
+        const url = /^https?:/i.test(src) ? src : new URL(src, location.href).href;
+        if (!audio.src) { audio.src = url; applyRemoteAudioHints(audio, url); }
+        if (audio.paused) {
+          audio.play().then(() => { toggle.textContent = '⏸'; activePlayer = { root, audio, toggle }; })
+            .catch((err) => alert(pickerPlayFailureMessage(src, toggle, err)));
+        } else {
+          audio.pause();
+          toggle.textContent = '▶';
+          if (activePlayer && activePlayer.root === root) activePlayer = null;
+        }
+      });
+      stopBtn?.addEventListener('click', () => stopRowPlayback());
+    }
+    document.querySelectorAll('.audio-player[data-play]').forEach(wireAudioPlayer);
     document.body.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-play]');
-      if (!btn) return;
+      const btn = e.target.closest('[data-play]:not(.audio-player)');
+      if (!btn || btn.classList.contains('audio-player')) return;
+      if (e.target.closest('.audio-player')) return;
+      unlockPickerAudioGesture();
       const src = resolvePlaySrc(btn.getAttribute('data-play'));
       if (!src) return;
-      if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+      pauseActivePlayer();
       const url = /^https?:/i.test(src) ? src : new URL(src, location.href).href;
-      currentAudio = new Audio(url);
-      currentAudio.play().catch(() => alert('Playback blocked or file missing. On Pages use /amoji-app/docs/owner-resources.html; local: cd docs && python3 -m http.server 8765'));
-  });
+      const oneShot = new Audio(url);
+      applyRemoteAudioHints(oneShot, url);
+      oneShot.onerror = () => alert(pickerPlayFailureMessage(src, btn));
+      oneShot.play().catch((err) => alert(pickerPlayFailureMessage(src, btn, err)));
+    });
     document.getElementById('saveNotesJson')?.addEventListener('click', async () => {
       const json = collectNotesExport();
       document.getElementById('exportOut').value = json;
@@ -579,7 +731,7 @@ function buildStoriesPage(): PickerSection {
     const title = tale.title.en;
     const cat = catalogMeta(code);
     rows += `<tr class="row-in-use" data-in-use="1" data-id="${escapeHtml(code)}" data-st-code="${escapeHtml(code)}" data-label="${escapeHtml(title)}" data-ref="${escapeHtml(taleRef)}"${cat.attrs}>
-      <td><input type="checkbox" class="keep" checked aria-label="Keep ${escapeHtml(code)}" /></td>${NOTE_TD}
+      ${DECISION_TD}${NOTE_TD}
       <td>${cat.codeCell}</td>
       <td class="flags">${inUseTag('classic-fairy-tales')}</td>
       <td><strong>${escapeHtml(title)}</strong><br/><code>${escapeHtml(code)}</code></td>
@@ -594,7 +746,7 @@ function buildStoriesPage(): PickerSection {
   const body = `
     <p class="lede">Spoken Story chip + long-read mode. Codes <code>ST001</code>…<code>${escapeHtml(highestStoryOwnerCode())}</code> map to <code>CLASSIC_FAIRY_TALES</code> (PD paraphrases, not Disney scripts).</p>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>CD · ST</th><th>Ship</th><th>Title · ST code</th><th>Length</th><th>Locales</th><th>Slug</th><th>License</th><th>Tradition</th><th>id · source</th></tr></thead>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · ST</th><th>Ship</th><th>Title · ST code</th><th>Length</th><th>Locales</th><th>Slug</th><th>License</th><th>Tradition</th><th>id · source</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>`;
   return {
@@ -611,7 +763,7 @@ function buildDemoPage(): PickerSection {
     const cat = catalogMeta(btn.id);
     const prompts = btn.prompts.en.length;
     rows += `<tr class="row-in-use" data-in-use="1" data-id="${escapeHtml(btn.id)}" data-label="${escapeHtml(btn.label.en)}" data-ref="${escapeHtml(demoRef)}"${cat.attrs}>
-      <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
+      ${DECISION_TD}${NOTE_TD}
       <td>${cat.codeCell}</td>
       <td class="flags">${inUseTag('DemoPhaseRail')}</td>
       <td><code>${escapeHtml(btn.id)}</code></td>
@@ -626,7 +778,7 @@ function buildDemoPage(): PickerSection {
   const body = `
     <p class="lede">Demo-phase chips use <code>PH001–PH${String(DEMO_PHASE_BUTTONS.length).padStart(3, '0')}</code>. Master keep/remove still cites <code>CD###</code> from the Code column.</p>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>CD · PH</th><th>Ship</th><th>id</th><th>Labels</th><th>Prompts</th><th>Source</th></tr></thead>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · PH</th><th>Ship</th><th>id</th><th>Labels</th><th>Prompts</th><th>Source</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>
     <h2>Owner code prefixes</h2>
@@ -647,7 +799,7 @@ function buildNewsPage(): PickerSection {
   for (const nw of OWNER_NEWS_CATALOG) {
     const cat = catalogMeta(nw.urlOrTemplate);
     rows += `<tr class="row-in-use" data-in-use="1" data-id="${escapeHtml(nw.urlOrTemplate)}" data-label="${escapeHtml(nw.label)}" data-ref="${escapeHtml(newsRef)}"${cat.attrs}>
-      <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
+      ${DECISION_TD}${NOTE_TD}
       <td>${cat.codeCell}</td>
       <td class="flags">${inUseTag('live-tools')}</td>
       <td><code>${escapeHtml(nw.ownerCode)}</code></td>
@@ -662,7 +814,7 @@ function buildNewsPage(): PickerSection {
   const body = `
     <p class="lede">News feeds/templates from <code>live-tools.ts</code> + <code>owner-news-catalog.ts</code> — public RSS only, no paid APIs.</p>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>CD · NW</th><th>Ship</th><th>NW</th><th>Kind</th><th>Region</th><th>Label</th><th>License</th><th>URL / template</th><th>Used by</th></tr></thead>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · NW</th><th>Ship</th><th>NW</th><th>Kind</th><th>Region</th><th>Label</th><th>License</th><th>URL / template</th><th>Used by</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>`;
   return {
@@ -737,7 +889,7 @@ function buildUnifiedResourcesPage(
     </section>`;
 
   const lede =
-    'One place for Pixel to review ship-eligible resources. Every row has a master <code>CD###</code> plus a domain code (<code>MV</code>/<code>ST</code>/<code>PH</code>/<code>NW</code>/<code>PK</code>/<code>ID</code>/<code>DC</code>). Cite <code>CD022</code> in chat for keep/remove. Rows highlighted <span class="tag in-use">In use</span> match runtime defaults. <span class="tag pinned">Your pick</span> fills from the same localStorage keys as the live app on this origin.';
+    'One place for Pixel to review ship-eligible resources. Every row has a master <code>CD###</code> plus a domain code (<code>MV</code>/<code>ST</code>/<code>PH</code>/<code>NW</code>/<code>PK</code>/<code>ID</code>/<code>DC</code>). Tap <strong>採用</strong> to pin MV/CMA/rail/song into this browser’s app keys; <strong>保留</strong> or <strong>刪除 唔用</strong> for export. Rows highlighted <span class="tag in-use">In use</span> match runtime defaults. <span class="tag pinned">Your pick</span> fills from the same localStorage keys as the live app on this origin.';
 
   const html = htmlShell(
     'Amoji — Owner resource library (unified)',
@@ -852,11 +1004,11 @@ function buildMusicPage(): PickerSection {
     const tags = [...c.moods, c.style, c.kind, ...(c.voice ? [c.voice] : [])];
     const cat = catalogMeta(c.id);
     const dc = performanceClipOwnerCodeForId(c.id) ?? '—';
-    perfRows += `<tr class="row-in-use" data-in-use="1" data-id="${escapeHtml(c.id)}" data-label="${escapeHtml(c.labels.en)}" data-ref="${escapeHtml(perfRef)}"${cat.attrs}>
-      <td><input type="checkbox" class="keep" checked aria-label="Keep ${escapeHtml(c.id)}" /></td>${NOTE_TD}
+    perfRows += `<tr class="row-in-use" data-in-use="1" data-id="${escapeHtml(c.id)}" data-perf-kind="${escapeHtml(c.kind)}" data-label="${escapeHtml(c.labels.en)}" data-ref="${escapeHtml(perfRef)}"${cat.attrs}>
+      ${DECISION_TD}${NOTE_TD}
       <td>${cat.codeCell}</td>
       <td class="flags">${inUseTag('performance-clips')}</td>
-      <td><button type="button" data-play="${escapeHtml(local)}">▶</button></td>
+      ${audioPlayerCellHtml(local, c.labels.en)}
       <td><strong>${escapeHtml(c.labels.en)}</strong><br/><code>${escapeHtml(c.id)}</code></td>
       <td>${escapeHtml(c.kind)}</td>
       <td>${escapeHtml(c.langs.join(', '))}</td>
@@ -875,10 +1027,10 @@ function buildMusicPage(): PickerSection {
       : `<code>${escapeHtml(t.id)}</code>`;
     const cat = catalogMeta(rowId);
     streamRows += `<tr class="row-in-use" data-in-use="1" data-id="${escapeHtml(rowId)}" data-label="${escapeHtml(t.title)}" data-ref="${escapeHtml(streamRef)}"${t.ownerCode ? ` data-mv-code="${escapeHtml(t.ownerCode)}"` : ''}${cat.attrs}>
-      <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
+      ${DECISION_TD}${NOTE_TD}
       <td>${cat.codeCell}</td>
       <td class="flags">${inUseTag('STREAM_TRACKS')}</td>
-      <td><button type="button" class="play-remote" data-play="${escapeHtml(t.url)}">▶ Mixkit</button></td>
+      <td class="audio-player-cell">${audioPlayerBlockHtml(t.url, t.title, { remote: true })}<span class="ref"> Mixkit</span></td>
       <td>${escapeHtml(t.title)}<br/>${codeLine}</td>
       <td>stream</td>
       <td>all</td>
@@ -892,7 +1044,7 @@ function buildMusicPage(): PickerSection {
   let procRows = '';
   for (const [id, th] of Object.entries(MUSIC_THEMES)) {
     procRows += `<tr class="row-in-use" data-in-use="1" data-id="procedural-${escapeHtml(id)}" data-label="${escapeHtml(th.mood)}" data-ref="${escapeHtml(procRef)}">
-      <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
+      ${DECISION_TD}${NOTE_TD}
       <td class="flags">${inUseTag('MUSIC_THEMES')}</td>
       <td>—</td>
       <td>${escapeHtml(id)}<br/><em>${escapeHtml(th.mood)}</em></td>
@@ -909,9 +1061,9 @@ function buildMusicPage(): PickerSection {
   for (const rel of orphans.sort()) {
     const local = `${PUBLIC_PREFIX}/${rel}`;
     orphanRows += `<tr data-id="orphan-${escapeHtml(rel)}" data-label="${escapeHtml(path.basename(rel))}" data-ref="disk only">
-      <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
+      ${DECISION_TD}${NOTE_TD}
       <td class="flags">—</td>
-      <td><button type="button" data-play="${escapeHtml(local)}">▶</button></td>
+      ${audioPlayerCellHtml(local, path.basename(rel))}
       <td><code>${escapeHtml(rel)}</code></td>
       <td>orphan file</td>
       <td>—</td>
@@ -929,9 +1081,10 @@ function buildMusicPage(): PickerSection {
     const cat = catalogMeta(nativeId);
     const bpm = clipBpmForTag(tag);
     motionRows += `<tr class="row-in-use" data-in-use="1" data-id="${escapeHtml(nativeId)}" data-label="${escapeHtml(PERF_MOTION_TAG_LABELS[tag])}" data-ref="${escapeHtml(motionRef)}"${cat.attrs}>
-      <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
+      ${DECISION_TD}${NOTE_TD}
       <td>${cat.codeCell}</td>
       <td class="flags">${inUseTag('performance-motion')}</td>
+      ${motionPreviewCellHtml(resolvePerfMotionPreview(publicRoot, tag))}
       <td><code>${escapeHtml(tag)}</code></td>
       <td>${escapeHtml(PERF_MOTION_TAG_LABELS[tag])}</td>
       <td>${bpm} bpm (authored)</td>
@@ -956,27 +1109,27 @@ function buildMusicPage(): PickerSection {
     <h2>Dance / sing body motion tags (performance-motion.ts)</h2>
     <p class="lede">Movement shortlist (<code>C03</code>…<code>C128</code>, generic sing/dance) — pairs with DC audio + idle VRMA. Note which tag to prefer per music style.</p>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>CD · ID</th><th>Ship</th><th>Tag</th><th>Label</th><th>Clip BPM</th><th>Use</th><th>Source</th></tr></thead>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · ID</th><th>Ship</th><th>Preview</th><th>Tag</th><th>Label</th><th>Clip BPM</th><th>Use</th><th>Source</th></tr></thead>
       <tbody>${motionRows}</tbody>
     </table></div>
     <h2>Performance library (CC0 / PD files)</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>CD · domain</th><th>Ship</th><th>Play</th><th>Title</th><th>Kind</th><th>Langs</th><th>Tags</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · domain</th><th>Ship</th><th>Play</th><th>Title</th><th>Kind</th><th>Langs</th><th>Tags</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
       <tbody>${perfRows}</tbody>
     </table></div>
     <h2>Mixkit stream previews (remote URL)</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>CD · MV</th><th>Ship</th><th>Play</th><th>Title</th><th>Kind</th><th>Langs</th><th>Style</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · MV</th><th>Ship</th><th>Play</th><th>Title</th><th>Kind</th><th>Langs</th><th>Style</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
       <tbody>${streamRows}</tbody>
     </table></div>
     <h2>Procedural WebAudio themes (no file)</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>Ship</th><th>Play</th><th>Theme</th><th>Kind</th><th>Langs</th><th>Tags</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>Ship</th><th>Play</th><th>Theme</th><th>Kind</th><th>Langs</th><th>Tags</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
       <tbody>${procRows}</tbody>
     </table></div>
     ${orphans.length ? `<h2>On-disk audio not wired in PERFORMANCE_CLIPS</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>Ship</th><th>Play</th><th>Path</th><th>Kind</th><th>Langs</th><th>Tags</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>Ship</th><th>Play</th><th>Path</th><th>Kind</th><th>Langs</th><th>Tags</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
       <tbody>${orphanRows}</tbody>
     </table></div>` : ''}`;
 
@@ -1015,9 +1168,10 @@ function buildPokePage(): PickerSection {
       : `pokeSectionBodyReaction → tier ${s.tier} · ${s.angle}`;
     const cat = catalogMeta(s.id);
     sectionRows += `<tr class="row-in-use" data-in-use="1" data-id="${escapeHtml(s.id)}" data-label="${escapeHtml(s.labelTc)}" data-ref="${escapeHtml(sectionsRef)}"${cat.attrs}>
-      <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
+      ${DECISION_TD}${NOTE_TD}
       <td>${cat.codeCell}</td>
       <td class="flags">${inUseTag('POKE_SECTIONS')}</td>
+      ${motionPreviewCellHtml(pokeSectionMotionPreview(publicRoot, s.id))}
       <td><code>${escapeHtml(s.id)}</code></td>
       <td>${escapeHtml(s.labelTc)}</td>
       <td>${s.tierNumber}</td>
@@ -1038,7 +1192,7 @@ function buildPokePage(): PickerSection {
         const id = `poke-tts-${voice}-${lang}-${idx}`;
         const cat = catalogMeta(id);
         lineRows += `<tr class="row-in-use" data-in-use="1" data-id="${escapeHtml(id)}" data-label="${escapeHtml(tpl.slice(0, 60))}" data-ref="${escapeHtml(ref)}"${cat.attrs}>
-          <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
+          ${DECISION_TD}${NOTE_TD}
           <td>${cat.codeCell}</td>
           <td class="flags">${inUseTag('POKE_LINE_TEMPLATES')}</td>
           <td><code>${escapeHtml(voice)}</code></td>
@@ -1069,12 +1223,12 @@ function buildPokePage(): PickerSection {
       const zoneInUse = code ? wantSet.has(code) || keepSet.has(code) : false;
       const cat = catalogMeta(id);
       zoneRows += `<tr class="${zoneInUse ? 'row-in-use' : ''}" data-in-use="${zoneInUse ? '1' : '0'}" data-id="${escapeHtml(id)}" data-label="${escapeHtml(zone)}" data-ref="${escapeHtml(sfxRef)}"${code ? ` data-cma-code="${escapeHtml(code)}"` : ''}${cat.attrs}>
-        <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
+        ${DECISION_TD}${NOTE_TD}
         <td>${cat.codeCell}</td>
         <td class="flags">${zoneInUse ? inUseTag('RECORDED_POKE_ZONE') : '—'}</td>
         <td>${escapeHtml(gender)}</td>
         <td><code>${escapeHtml(zone)}</code></td>
-        <td><button type="button" data-play="${escapeHtml(local)}">▶</button> <code>${escapeHtml(clipPath)}</code></td>
+        <td>${audioPlayerBlockHtml(local, zone)} <code>${escapeHtml(clipPath)}</code></td>
         <td>${code ? `<code>${escapeHtml(code)}</code>` : '—'}</td>
         <td><span class="ref">${escapeHtml(sfxRef)}</span></td>
       </tr>`;
@@ -1093,11 +1247,11 @@ function buildPokePage(): PickerSection {
     const cmaInUse = wantSet.has(clip.code) || keepSet.has(clip.code);
     const cat = catalogMeta(clip.code);
     cmaRows += `<tr class="${cmaInUse ? 'row-in-use' : ''}" data-in-use="${cmaInUse ? '1' : '0'}" data-id="${escapeHtml(clip.code)}" data-cma-code="${escapeHtml(clip.code)}" data-label="${escapeHtml(clip.burst)}" data-ref="${escapeHtml(cmaRef)}"${cat.attrs}>
-      <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
+      ${DECISION_TD}${NOTE_TD}
       <td>${cat.codeCell}</td>
       <td class="flags saved-picks">${cmaInUse ? inUseTag('ship-set') : '—'}</td>
       <td><code>${escapeHtml(clip.code)}</code></td>
-      <td><button type="button" data-play="${escapeHtml(local)}">▶</button></td>
+      ${audioPlayerCellHtml(local, clip.code)}
       <td>${escapeHtml(clip.gender)} · ${escapeHtml(clip.burst)} · ${escapeHtml(clip.use)}</td>
       <td>${escapeHtml(clip.license)}</td>
       <td>${escapeHtml(status)}</td>
@@ -1111,22 +1265,22 @@ function buildPokePage(): PickerSection {
   const body = `
     <h2>Poke grid sections (6×4) — motion routing</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>CD · PK</th><th>Ship</th><th>Section ID</th><th>Label</th><th>Tier</th><th>Angle</th><th>Motion</th><th>Code ref</th></tr></thead>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · PK</th><th>Ship</th><th>Preview</th><th>Section ID</th><th>Label</th><th>Tier</th><th>Angle</th><th>Motion</th><th>Code ref</th></tr></thead>
       <tbody>${sectionRows}</tbody>
     </table></div>
     <h2>Poke TTS line bank (personality × language × 8 templates)</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>CD · PK</th><th>Ship</th><th>Voice</th><th>Lang</th><th>#</th><th>Template</th><th>Source</th></tr></thead>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · PK</th><th>Ship</th><th>Voice</th><th>Lang</th><th>#</th><th>Template</th><th>Source</th></tr></thead>
       <tbody>${lineRows}</tbody>
     </table></div>
     <h2>Recorded poke SFX zones (RECORDED_POKE_ZONE)</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>CD · code</th><th>Ship</th><th>Gender</th><th>Zone</th><th>Clip</th><th>CMA</th><th>Source</th></tr></thead>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · code</th><th>Ship</th><th>Gender</th><th>Zone</th><th>Clip</th><th>CMA</th><th>Source</th></tr></thead>
       <tbody>${zoneRows}</tbody>
     </table></div>
     <h2>CMA reaction ship-set (owner picks)</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>CD · CMA</th><th>Ship / your pick</th><th>Code</th><th>Play</th><th>Use</th><th>License</th><th>Status</th><th>Source</th></tr></thead>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · CMA</th><th>Ship / your pick</th><th>Code</th><th>Play</th><th>Use</th><th>License</th><th>Status</th><th>Source</th></tr></thead>
       <tbody>${cmaRows}</tbody>
     </table></div>`;
 
@@ -1186,9 +1340,10 @@ function idleLibraryRowHtml(e: IdleLibraryEntry, libRef: string): string {
   const nativeId = `lib-${e.clipId}`;
   const cat = catalogMeta(nativeId);
   return `<tr class="${rowClass}${wired ? ' row-in-use' : ''}" data-in-use="${wired ? '1' : '0'}" data-id="lib-${escapeHtml(e.clipId)}" data-clip-id="${escapeHtml(e.clipId)}" data-label="${escapeHtml(e.name)}" data-ref="${escapeHtml(libRef)}"${cat.attrs}>
-      <td><input type="checkbox" class="keep" checked aria-label="Keep ${escapeHtml(e.clipId)}" /></td>${NOTE_TD}
+      ${DECISION_TD}${NOTE_TD}
       <td>${cat.codeCell}</td>
       <td class="flags saved-picks" title="Filled from amoji.idlePick.v${IDLE_PREFS_GENERATION} on this browser">${wired ? inUseTag(onRail ? 'curated rail' : 'default pool') : '—'}</td>
+      ${motionPreviewCellHtml(resolveIdleMotionPreview(publicRoot, e))}
       <td><strong>#${e.num}</strong> <code>${escapeHtml(e.clipId)}</code></td>
       <td>${escapeHtml(e.name)}${e.cId ? `<br/><span class="tag">${escapeHtml(e.cId)}</span>` : ''}</td>
       <td>${tags.map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</td>
@@ -1218,9 +1373,10 @@ function buildIdlePage(): PickerSection {
     const railNative = `rail-${e.railNum}-${e.clipId}`;
     const cat = catalogMeta(railNative);
     railRows += `<tr class="row-in-use" data-in-use="1" data-id="${escapeHtml(railNative)}" data-clip-id="${escapeHtml(e.clipId)}" data-rail-num="${e.railNum}" data-label="${escapeHtml(e.labelKey)}" data-ref="${escapeHtml(railRef)}"${cat.attrs}>
-      <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
+      ${DECISION_TD}${NOTE_TD}
       <td>${cat.codeCell}</td>
       <td class="flags saved-picks">${inUseTag('CHAT_IDLE_CURATED')}${isDefault ? ` ${defaultOnTag()}` : ''}</td>
+      ${lib ? motionPreviewCellHtml(resolveIdleMotionPreview(publicRoot, lib)) : motionPreviewCellHtml({ id: e.clipId, kind: 'placeholder', assetRaw: null, pagesSrc: null, note: 'clip not in IDLE_LIBRARY' })}
       <td><strong>#${e.railNum}</strong></td>
       <td><code>${escapeHtml(e.clipId)}</code></td>
       <td>${escapeHtml(e.labelKey)} · ${escapeHtml(e.category)}</td>
@@ -1236,9 +1392,11 @@ function buildIdlePage(): PickerSection {
     const uniq = [...new Set(clipIds)];
     for (const clipId of uniq) {
       poolClipCount++;
+      const poolLib = idleByClipId(clipId);
       poolRows += `<tr class="row-in-use" data-in-use="1" data-id="pool-${escapeHtml(pool)}-${escapeHtml(clipId)}" data-clip-id="${escapeHtml(clipId)}" data-label="${escapeHtml(pool)}" data-ref="${escapeHtml(autoRef)}">
-        <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
+        ${DECISION_TD}${NOTE_TD}
         <td class="flags saved-picks">${inUseTag('chat-auto-idle')}</td>
+        ${motionPreviewCellHtml(poolLib ? resolveIdleMotionPreview(publicRoot, poolLib) : { id: clipId, kind: 'placeholder', assetRaw: null, pagesSrc: null, note: 'No IDLE_LIBRARY row' })}
         <td><code>${escapeHtml(pool)}</code></td>
         <td><code>${escapeHtml(clipId)}</code></td>
         <td>${escapeHtml(idleClipFamily(clipId))}</td>
@@ -1250,7 +1408,7 @@ function buildIdlePage(): PickerSection {
   let procRows = '';
   for (const p of IDLE_POSES) {
     procRows += `<tr data-id="proc-${escapeHtml(p.id)}" data-label="${escapeHtml(p.id)}" data-ref="${escapeHtml(poseRef)}">
-      <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
+      ${DECISION_TD}${NOTE_TD}
       <td class="saved-picks">(procedural)</td>
       <td><code>${escapeHtml(p.id)}</code></td>
       <td>spineΔ ${p.spineDelta} · headYaw ${p.headYaw} · lean ${p.leanSideDelta}</td>
@@ -1267,7 +1425,7 @@ function buildIdlePage(): PickerSection {
     for (const poseId of poses) {
       charPoseCount++;
       charPoseRows += `<tr data-id="char-${escapeHtml(charId)}-${escapeHtml(poseId)}" data-label="${escapeHtml(charId)}" data-ref="apps/web/lib/persona.ts:CHARACTER_POSES">
-        <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
+        ${DECISION_TD}${NOTE_TD}
         <td class="saved-picks">—</td>
         <td><code>${escapeHtml(charId)}</code></td>
         <td><code>${escapeHtml(poseId)}</code></td>
@@ -1287,7 +1445,7 @@ function buildIdlePage(): PickerSection {
     const nativeId = `ref-${ref.clipId}`;
     const cat = catalogMeta(nativeId);
     refRows += `<tr data-id="${escapeHtml(nativeId)}" data-label="${escapeHtml(ref.name)}" data-ref="idle-owner-ref-catalog.ts"${cat.attrs}>
-      <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
+      ${DECISION_TD}${NOTE_TD}
       <td>${cat.codeCell}</td>
       <td class="flags"><span class="tag hold">record-only</span></td>
       <td><code>${escapeHtml(ref.ownerCode)}</code> · <code>${escapeHtml(ref.clipId)}</code></td>
@@ -1305,32 +1463,32 @@ function buildIdlePage(): PickerSection {
     ${blendNote}
     <h2>Owner idle refs (metadata — ${IDLE_OWNER_REF_CATALOG.length} rows, not yet in IDLE_LIBRARY)</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>CD · ID</th><th>Status</th><th>Code · clipId</th><th>Name</th><th>License</th><th>Notes</th><th>Source</th></tr></thead>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · ID</th><th>Status</th><th>Code · clipId</th><th>Name</th><th>License</th><th>Notes</th><th>Source</th></tr></thead>
       <tbody>${refRows}</tbody>
     </table></div>
     <h2>Full idle library (VRMA / FBX map — ${IDLE_LIBRARY.length} rows)</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>CD · ID</th><th>Ship / your pick</th><th>Lib # · clipId</th><th>Name</th><th>Tags</th><th>Path</th><th>Source</th></tr></thead>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · ID</th><th>Ship / your pick</th><th>Preview</th><th>Lib # · clipId</th><th>Name</th><th>Tags</th><th>Path</th><th>Source</th></tr></thead>
       <tbody>${libRows}</tbody>
     </table></div>
     <h2>Chat curated rail (#1..${CHAT_IDLE_CURATED.length})</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>CD · ID</th><th>Ship / your pick</th><th>Rail #</th><th>clipId</th><th>labelKey</th><th>Library</th><th>Owner</th><th>Source</th></tr></thead>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · ID</th><th>Ship / your pick</th><th>Preview</th><th>Rail #</th><th>clipId</th><th>labelKey</th><th>Library</th><th>Owner</th><th>Source</th></tr></thead>
       <tbody>${railRows}</tbody>
     </table></div>
     <h2>Chat-auto idle pools (content-driven picks)</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>Ship / your pick</th><th>Pool</th><th>clipId</th><th>Family</th><th>Source</th></tr></thead>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>Ship / your pick</th><th>Preview</th><th>Pool</th><th>clipId</th><th>Family</th><th>Source</th></tr></thead>
       <tbody>${poolRows}</tbody>
     </table></div>
     <h2>Procedural idle bone poses (@amoji/vrm-renderer)</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>Notes</th><th>poseId</th><th>Offsets</th><th>Use</th><th>Source</th></tr></thead>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>Notes</th><th>poseId</th><th>Offsets</th><th>Use</th><th>Source</th></tr></thead>
       <tbody>${procRows}</tbody>
     </table></div>
   ${charPoseCount ? `<h2>Character procedural pose subsets (legacy map)</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>Saved</th><th>Character</th><th>poseId</th><th>Notes</th><th>Source</th></tr></thead>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>Saved</th><th>Character</th><th>poseId</th><th>Notes</th><th>Source</th></tr></thead>
       <tbody>${charPoseRows}</tbody>
     </table></div>` : ''}`;
 

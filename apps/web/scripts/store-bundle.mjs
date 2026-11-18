@@ -28,6 +28,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { isExternalOwnerPickerPlaySrc } from "../lib/owner-picker-media.mjs";
 
 const WEB_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const REPO_ROOT = path.resolve(WEB_ROOT, "../..");
@@ -241,6 +242,7 @@ export function verifyOwnerResourcesPagesAssets(outDir) {
   DATA_PLAY_RE.lastIndex = 0;
   while ((m = DATA_PLAY_RE.exec(html))) {
     const src = m[1];
+    if (isExternalOwnerPickerPlaySrc(src)) continue;
     if (/^https?:/i.test(src)) continue;
     if (src.includes("amoji-public-serve")) {
       missing.push(src);
