@@ -1,6 +1,6 @@
 # Amoji project status board
 
-**Generated:** 2026-11-18 21:55 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-18 17:20 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
@@ -71,19 +71,22 @@ Dance LoopRepeat, card greet, poke 我鍾意信 skip, news long read, unified ow
 
 ---
 
-## Open PRs
+## Open PRs — Pixel merge-ready stack (r248→r254)
 
-| PR | Title | Notes |
-| --- | --- | --- |
-| [#522](https://github.com/MonMonMars/amoji-app/pull/522) | Music instant play polish **r236** | Merge candidate |
-| [#523](https://github.com/MonMonMars/amoji-app/pull/523) | Chat interrupt + history continuity **r244** | Not duplicate of no-history-resume (**#412** on main) |
-| [#528](https://github.com/MonMonMars/amoji-app/pull/528) | Voice main speaker **r241** | Merge candidate |
-| [#529](https://github.com/MonMonMars/amoji-app/pull/529) | Card voice hotfix **r242** | Merge candidate |
-| [#530](https://github.com/MonMonMars/amoji-app/pull/530) | Demo time chip **r243** | Merge after voice/card |
-| [#531](https://github.com/MonMonMars/amoji-app/pull/531) | Owner-resources live verify **r242** | Docs/CI — clashes #529 serial |
-| [#512](https://github.com/MonMonMars/amoji-app/pull/512) | Remove ⚑ 舉報 from chat bubbles **r218** | Chat UX |
-| [#20](https://github.com/MonMonMars/amoji-app/pull/20) | CosyVoice TTS spike | Draft — **Hold** |
-| [#1](https://github.com/MonMonMars/amoji-app/pull/1) | Voice bake-off UI | Old spike — **Hold** |
+Handoff detail: [`AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md`](./AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md)
+
+| Order | PR | Serial | Notes |
+| ---: | --- | --- | --- |
+| 1 | [#528](https://github.com/MonMonMars/amoji-app/pull/528) | **r248** | All-lang main speaker |
+| 2 | [#529](https://github.com/MonMonMars/amoji-app/pull/529) | **r249** | Card audition audible |
+| 3 | [#523](https://github.com/MonMonMars/amoji-app/pull/523) | **r250** | Chat interrupt + history |
+| 4 | [#522](https://github.com/MonMonMars/amoji-app/pull/522) | **r251** | Music after PerformanceSession |
+| 5 | [#540](https://github.com/MonMonMars/amoji-app/pull/540) | **r252** | CC0 beds + music allowlist |
+| 6 | [#541](https://github.com/MonMonMars/amoji-app/pull/541) | **r253** | Full owner catalog (**supersedes #536/#537/#533**) |
+| 7 | [#543](https://github.com/MonMonMars/amoji-app/pull/543) | **r254** | Idle/poke 採用 runtime (**supersedes #524**) |
+| — | [#531](https://github.com/MonMonMars/amoji-app/pull/531) | **r255** | Docs claims (optional tail) |
+| — | [#512](https://github.com/MonMonMars/amoji-app/pull/512) | r218 | Chat UX (parallel) |
+| Hold | [#20](https://github.com/MonMonMars/amoji-app/pull/20) / [#1](https://github.com/MonMonMars/amoji-app/pull/1) | — | Spikes |
 
 **No history-resume ask:** shipped on `main` via [#331](https://github.com/MonMonMars/amoji-app/pull/331) / [#366](https://github.com/MonMonMars/amoji-app/pull/366) / [#412](https://github.com/MonMonMars/amoji-app/pull/412) / [#470](https://github.com/MonMonMars/amoji-app/pull/470) — branch `cursor/no-history-resume-ask-0340` reconciled; no second product PR.
 
@@ -108,12 +111,13 @@ Dance LoopRepeat, card greet, poke 我鍾意信 skip, news long read, unified ow
 
 ### Code (agents)
 
-1. **Phone smoke** — demo chips + idle + card voice + owner-resources on **r237**  
-2. **#512** — chat report chip removal  
-3. **Stale SW** — hard-refresh until `revision.txt` shows **r2026-11-18.237**  
-6. **VRM pupil** — pop / size stability on surprise  
-7. **Owner picks apply** — listen/sing/dance honor picker on device  
-8. **Duet path** — align with library performance gate ([`SING_DANCE_PIPELINE.md`](./SING_DANCE_PIPELINE.md))
+1. **Pixel train** — merge **#528→#543** per handoff; one revision bump per merge on `main`  
+2. **Phone smoke** — after each merge until live **r254**  
+3. **#512** — chat report chip removal  
+4. **Stale SW** — hard-refresh until `revision.txt` shows post-train serial  
+5. **VRM pupil** — pop / size stability on surprise  
+6. **Owner picks apply** — **#543** on phone after merge  
+7. **Duet path** — align with library performance gate ([`SING_DANCE_PIPELINE.md`](./SING_DANCE_PIPELINE.md))
 
 Do **not:** re-merge closed #497–#511 / #515 work; mark R10–R13 Done without owner.
 
