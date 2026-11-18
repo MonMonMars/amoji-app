@@ -19,6 +19,7 @@ import { isPassiveIdleClip } from './idle-passive-loop';
 import { feltMood, moodToHints } from './memory';
 import { idleClipById } from './idle-clips';
 import { detectMusicStyle, STYLE_CLIP_HINTS } from './music-catalog';
+import { musicAskListenOnly, resolveMusicAsk } from './music-ask';
 import { resolvePerfMotion } from './performance-motion';
 import { ownerDanceClipPrefs, ownerSingClipPrefs } from './owner-perf-picks';
 
@@ -169,20 +170,23 @@ export function resolveContentMotion(input: ContentMotionInput): ContentMotionPl
     return { idleClip, moodHints, passive: true };
   }
 
-  const move = detectContentMove(user, assistant);
-  const corpus = moodCorpus || 'idle';
+  const ask = resolveMusicAsk(user);
+  const listenOnlyMusic = ask.matched && musicAskListenOnly(ask.kind);
+  const move = listenOnlyMusic
+    ? detectContentMove(user, '')
+    : detectContentMove(user, assistant);
+  const corpus = (listenOnlyMusic ? user : moodCorpus) || 'idle';
 
   let idleClip = resolveChatAutoIdle({
-    assistantText: assistant,
+    assistantText: listenOnlyMusic ? '' : assistant,
     userText: user,
     emotionHints: moodHints,
     characterId,
   });
 
-  // Dance / sing → prefer performance-motion shortlist clips for the body idle.
-  if (move === 'dance') {
+  if (!listenOnlyMusic && move === 'dance') {
     idleClip = preferredPerfIdleForContent('dance', corpus, characterId) ?? idleClip;
-  } else if (move === 'sing') {
+  } else if (!listenOnlyMusic && move === 'sing') {
     idleClip = preferredPerfIdleForContent('song', corpus, characterId) ?? idleClip;
   }
 

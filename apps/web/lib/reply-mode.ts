@@ -16,7 +16,7 @@
 //   science     → super_long · curious pride · talk_only
 //   music       → very_short talk + long clip · joy/excitement · short_talk_long_music
 
-import { resolveMusicAsk } from './music-ask';
+import { musicAskHandledByApp } from './music-ask';
 import { userAsksForRecipe } from './recipe-reply';
 import {
   DEFAULT_CHAT_MAX_TOKENS,
@@ -242,7 +242,7 @@ function modeFromWorld(world?: string): ReplyModeId | null {
  */
 export function resolveReplyMode(lastUser: string, hints?: ReplyModeHints): ReplyModeBudget {
   const t = lastUser.trim();
-  const musicHit = hints?.musicMatched || resolveMusicAsk(t).matched;
+  const musicHit = hints?.musicMatched || musicAskHandledByApp(t);
   if (musicHit) return REPLY_MODE_CHART.music;
 
   const longKind = detectLongTalkKind(t, hints);
@@ -328,6 +328,11 @@ export function replyModeSystemBlock(mode: ReplyModeBudget, language?: string): 
       yue
         ? '- 音樂／唱歌／跳舞：介紹完即停；唔好背歌詞、唔好再問想唔想聽第二首。'
         : '- Music/sing/dance: stop after the intro. Never recite lyrics; never ask if they want another song.',
+    );
+    lines.push(
+      yue
+        ? '- 硬規則：你可以播音樂（Mixkit／曲庫）——絕對唔好講「我唔聽歌」「播唔到」「冇音樂」；短句介紹就得，播放由 app 負責。'
+        : '- HARD: You CAN play music (library/stream). Never say you do not listen, cannot play, or have no music — one short intro only; playback is the app path.',
     );
   }
   if (mode.talkVsMusic === 'tool_spoken_facts') {

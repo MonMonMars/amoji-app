@@ -75,8 +75,8 @@ Dance LoopRepeat, card greet, poke 我鍾意信 skip, news long read, unified ow
 
 | PR | Title | Notes |
 | --- | --- | --- |
-| [#514](https://github.com/MonMonMars/amoji-app/pull/514) | Yue hip-hop music ask + listen BGM **r219** | **Phone** after merge |
-| [#513](https://github.com/MonMonMars/amoji-app/pull/513) | Taichi martial flow foot-free **r219** | Stability hotfix train |
+| [#514](https://github.com/MonMonMars/amoji-app/pull/514) | Yue hip-hop music ask + listen BGM **r225** | **Phone** after merge; idle **#518** **r224** |
+| [#513](https://github.com/MonMonMars/amoji-app/pull/513) | Taichi martial flow foot-free **r223** | Merged |
 | [#512](https://github.com/MonMonMars/amoji-app/pull/512) | Remove ⚑ 舉報 from chat bubbles **r218** | Chat UX |
 | [#20](https://github.com/MonMonMars/amoji-app/pull/20) | CosyVoice TTS spike | Draft — **Hold** |
 | [#1](https://github.com/MonMonMars/amoji-app/pull/1) | Voice bake-off UI | Old spike — **Hold** |

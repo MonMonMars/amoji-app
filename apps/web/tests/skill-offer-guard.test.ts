@@ -11,6 +11,7 @@ import {
   isAbilityInviteLine,
   isTopicalContentTurn,
   shouldSuppressSkillOffer,
+  stripMusicCapabilityDenial,
   stripOfftopicAbilityTack,
 } from '../lib/skill-offer-guard';
 
@@ -42,6 +43,14 @@ describe('skill-offer guard (no offtopic dance tack-ons)', () => {
     expect(cleaned.toLowerCase()).toContain('jupiter');
     expect(cleaned.toLowerCase()).not.toMatch(/danc/);
     expect(isAbilityInviteLine(pickShowcaseOffer('dance', 'en', 0))).toBe(true);
+  });
+
+  it('strips LLM music capability denials on music-ask turns', () => {
+    const user = '有冇hip hop音樂';
+    const deny = '我唔聽歌㗎，播唔到音樂。';
+    expect(stripMusicCapabilityDenial(deny, user)).toBe('');
+    const mixed = '好呀！我唔聽歌㗎。不如聽爵士？';
+    expect(stripMusicCapabilityDenial(mixed, user)).not.toMatch(/唔聽歌/);
   });
 
   it('does not strip ability lines when the user asked to dance', () => {

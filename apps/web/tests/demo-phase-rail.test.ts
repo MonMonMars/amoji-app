@@ -46,6 +46,6 @@ describe('DemoPhaseRail scroll (iPhone + drag)', () => {
     expect(panel).toContain('newDemoPhaseOrderSeed');
     expect(panel).toContain('void send(prompt)');
     expect(panel).toContain('disabled={busy}');
-    expect(panel).toMatch(/!loadStorySession\(\) && \([\s\S]*<DemoPhaseRail/);
+    expect(panel).toMatch(/!loadStorySession\(\)[\s\S]*!musicPicks\?\.length[\s\S]*<DemoPhaseRail/);
   });
 });

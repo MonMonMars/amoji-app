@@ -35,7 +35,7 @@ describe('story mode distinct from chat', () => {
     expect(panel).toMatch(/skipBrief[\s\S]*inStory/);
     expect(panel).toMatch(/const openLine = inStory[\s\S]*storyOpen[\s\S]*buildOpenCheerLine/);
     expect(panel).toContain('storyContinue');
-    expect(panel).toMatch(/!loadStorySession\(\) && \([\s\S]*<DemoPhaseRail/);
+    expect(panel).toMatch(/!loadStorySession\(\)[\s\S]*!musicPicks\?\.length[\s\S]*<DemoPhaseRail/);
     expect(panel).toContain('inStoryIdle');
   });
 
