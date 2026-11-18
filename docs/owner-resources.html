@@ -77,6 +77,7 @@
     audio { height: 28px; max-width: 220px; vertical-align: middle; }
     .audio-player { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; min-width: 11rem; max-width: 20rem; }
     .audio-player .audio-play-toggle { min-width: 2.1rem; padding: 0.25rem 0.45rem; }
+    .audio-player .audio-stop { min-width: 2rem; padding: 0.25rem 0.4rem; font-size: 0.72rem; line-height: 1; }
     .audio-player .audio-scrub { flex: 1 1 5rem; min-width: 4.5rem; accent-color: var(--accent); }
     .audio-player .audio-time { font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
     .motion-preview img,
@@ -440,7 +441,8 @@
       <td><code title="DC">CD001</code><br/><code class="ref">DC001</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/dance/dance-silent-dance-floor.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Silent Dance Floor">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Silent Dance Floor">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Silent Dance Floor" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Silent Dance Floor" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -456,7 +458,8 @@
       <td><code title="DC">CD002</code><br/><code class="ref">DC002</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/dance/dance-cant-resist.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Can't Resist the Groove">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Can't Resist the Groove">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Can't Resist the Groove" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Can't Resist the Groove" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -472,7 +475,8 @@
       <td><code title="DC">CD003</code><br/><code class="ref">DC003</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/dance/dance-twin-layers.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Twin Layers">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Twin Layers">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Twin Layers" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Twin Layers" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -488,7 +492,8 @@
       <td><code title="DC">CD004</code><br/><code class="ref">DC004</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/dance/dance-celebrity.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="The Celebrity">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play The Celebrity">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop The Celebrity" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek The Celebrity" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -504,7 +509,8 @@
       <td><code title="DC">CD005</code><br/><code class="ref">DC005</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/dance/dance-happy-loop.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Happy Loop">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Happy Loop">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Happy Loop" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Happy Loop" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -520,7 +526,8 @@
       <td><code title="DC">CD006</code><br/><code class="ref">DC006</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-banana.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Banana Track">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Banana Track">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Banana Track" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Banana Track" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -536,7 +543,8 @@
       <td><code title="DC">CD007</code><br/><code class="ref">DC007</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-flowerbed.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Flowerbed">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Flowerbed">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Flowerbed" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Flowerbed" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -552,7 +560,8 @@
       <td><code title="DC">CD008</code><br/><code class="ref">DC008</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-jump.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Jump">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Jump">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Jump" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Jump" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -568,7 +577,8 @@
       <td><code title="DC">CD009</code><br/><code class="ref">DC009</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-happy-adventure.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Happy Adventure">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Happy Adventure">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Happy Adventure" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Happy Adventure" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -584,7 +594,8 @@
       <td><code title="DC">CD010</code><br/><code class="ref">DC010</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-lullaby.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Lullaby">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Lullaby">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Lullaby" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Lullaby" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -600,7 +611,8 @@
       <td><code title="DC">CD011</code><br/><code class="ref">DC011</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-calm.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Calm Theme">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Calm Theme">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Calm Theme" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Calm Theme" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -616,7 +628,8 @@
       <td><code title="DC">CD012</code><br/><code class="ref">DC012</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-lofi.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Lofi">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Lofi">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Lofi" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Lofi" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -632,7 +645,8 @@
       <td><code title="DC">CD013</code><br/><code class="ref">DC013</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-shenandoah.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Shenandoah">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Shenandoah">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Shenandoah" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Shenandoah" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -648,7 +662,8 @@
       <td><code title="DC">CD014</code><br/><code class="ref">DC014</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-female/sing-f-silent-night.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Silent Night">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Silent Night">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Silent Night" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Silent Night" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -664,7 +679,8 @@
       <td><code title="DC">CD015</code><br/><code class="ref">DC015</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-female/sing-f-twinkle.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Twinkle Twinkle">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Twinkle Twinkle">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Twinkle Twinkle" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Twinkle Twinkle" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -680,7 +696,8 @@
       <td><code title="DC">CD016</code><br/><code class="ref">DC016</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-female/sing-f-joy.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Joy to the World">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Joy to the World">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Joy to the World" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Joy to the World" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -696,7 +713,8 @@
       <td><code title="DC">CD017</code><br/><code class="ref">DC017</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-female/sing-f-choir.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Choir">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Choir">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Choir" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Choir" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -712,7 +730,8 @@
       <td><code title="DC">CD018</code><br/><code class="ref">DC018</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-male/sing-m-happy-birthday.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Happy Birthday">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Happy Birthday">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Happy Birthday" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Happy Birthday" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -728,7 +747,8 @@
       <td><code title="DC">CD019</code><br/><code class="ref">DC019</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-male/sing-m-buddham.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Buddham Saranam">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Buddham Saranam">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Buddham Saranam" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Buddham Saranam" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -744,7 +764,8 @@
       <td><code title="DC">CD020</code><br/><code class="ref">DC020</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-male/sing-m-mass.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Mass">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Mass">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Mass" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Mass" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -760,7 +781,8 @@
       <td><code title="DC">CD021</code><br/><code class="ref">DC021</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-male/sing-m-overtone-e.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Overtone E">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Overtone E">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Overtone E" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Overtone E" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -776,7 +798,8 @@
       <td><code title="DC">CD022</code><br/><code class="ref">DC022</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-male/sing-m-overtone-c.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Overtone C">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Overtone C">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Overtone C" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Overtone C" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -792,7 +815,8 @@
       <td><code title="DC">CD023</code><br/><code class="ref">DC023</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/dance/dance-boss-battle.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Boss Battle">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Boss Battle">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Boss Battle" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Boss Battle" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -808,7 +832,8 @@
       <td><code title="DC">CD024</code><br/><code class="ref">DC024</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/dance/dance-minstrel.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Minstrel Dance">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Minstrel Dance">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Minstrel Dance" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Minstrel Dance" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -824,7 +849,8 @@
       <td><code title="DC">CD025</code><br/><code class="ref">DC025</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/dance/dance-field.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Dance Field">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Dance Field">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Dance Field" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Dance Field" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -840,7 +866,8 @@
       <td><code title="DC">CD026</code><br/><code class="ref">DC026</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/dance/dance-8bit-disco.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="8-Bit Disco">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play 8-Bit Disco">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop 8-Bit Disco" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek 8-Bit Disco" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -856,7 +883,8 @@
       <td><code title="DC">CD027</code><br/><code class="ref">DC027</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-musicbox-waltz.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Spooky Waltz">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Spooky Waltz">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Spooky Waltz" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Spooky Waltz" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -872,7 +900,8 @@
       <td><code title="DC">CD028</code><br/><code class="ref">DC028</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-musicbox-tune.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Music Box">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Music Box">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Music Box" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Music Box" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -888,7 +917,8 @@
       <td><code title="DC">CD029</code><br/><code class="ref">DC029</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-montage.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Montage">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Montage">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Montage" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Montage" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -904,7 +934,8 @@
       <td><code title="DC">CD030</code><br/><code class="ref">DC030</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-chill-fever.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Chill Fever">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Chill Fever">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Chill Fever" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Chill Fever" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -920,7 +951,8 @@
       <td><code title="DC">CD031</code><br/><code class="ref">DC031</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-observing-star.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Observing the Star">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Observing the Star">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Observing the Star" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Observing the Star" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -936,7 +968,8 @@
       <td><code title="DC">CD032</code><br/><code class="ref">DC032</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-deadship.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Deadship">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Deadship">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Deadship" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Deadship" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -952,7 +985,8 @@
       <td><code title="DC">CD033</code><br/><code class="ref">DC033</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-beepbox.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Beepbox">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Beepbox">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Beepbox" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Beepbox" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -968,7 +1002,8 @@
       <td><code title="DC">CD034</code><br/><code class="ref">DC034</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-bit-forest.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Bit Forest">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Bit Forest">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Bit Forest" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Bit Forest" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -984,7 +1019,8 @@
       <td><code title="DC">CD035</code><br/><code class="ref">DC035</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-8bit-bossa.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="8-Bit Bossa">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play 8-Bit Bossa">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop 8-Bit Bossa" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek 8-Bit Bossa" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1000,7 +1036,8 @@
       <td><code title="DC">CD036</code><br/><code class="ref">DC036</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-breathing.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Breathing">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Breathing">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Breathing" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Breathing" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1016,7 +1053,8 @@
       <td><code title="DC">CD037</code><br/><code class="ref">DC037</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-breves.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Breves Dies">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Breves Dies">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Breves Dies" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Breves Dies" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1032,7 +1070,8 @@
       <td><code title="DC">CD038</code><br/><code class="ref">DC038</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-synthwave-15k.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Synthwave">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Synthwave">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Synthwave" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Synthwave" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1048,7 +1087,8 @@
       <td><code title="DC">CD039</code><br/><code class="ref">DC039</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-synthwave-15k-ii.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Synthwave II">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Synthwave II">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Synthwave II" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Synthwave II" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1064,7 +1104,8 @@
       <td><code title="DC">CD040</code><br/><code class="ref">DC040</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-lifewave-2k.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Lifewave">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Lifewave">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Lifewave" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Lifewave" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1080,7 +1121,8 @@
       <td><code title="DC">CD041</code><br/><code class="ref">DC041</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-lifewave.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Lifewave Drift">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Lifewave Drift">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Lifewave Drift" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Lifewave Drift" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1096,7 +1138,8 @@
       <td><code title="DC">CD042</code><br/><code class="ref">DC042</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-synthwave-421.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Synthwave Drift">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Synthwave Drift">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Synthwave Drift" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Synthwave Drift" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1112,7 +1155,8 @@
       <td><code title="DC">CD043</code><br/><code class="ref">DC043</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-cate.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Cate">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Cate">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Cate" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Cate" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1128,7 +1172,8 @@
       <td><code title="DC">CD044</code><br/><code class="ref">DC044</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-chill-lofi.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Chill Lofi">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Chill Lofi">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Chill Lofi" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Chill Lofi" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1144,7 +1189,8 @@
       <td><code title="DC">CD045</code><br/><code class="ref">DC045</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-chill-loop.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Chill Loop">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Chill Loop">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Chill Loop" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Chill Loop" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1160,7 +1206,8 @@
       <td><code title="DC">CD046</code><br/><code class="ref">DC046</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-chill-menu.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Chill Menu">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Chill Menu">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Chill Menu" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Chill Menu" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1176,7 +1223,8 @@
       <td><code title="DC">CD047</code><br/><code class="ref">DC047</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-happy-vibes.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Happy Vibes">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Happy Vibes">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Happy Vibes" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Happy Vibes" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1192,7 +1240,8 @@
       <td><code title="DC">CD048</code><br/><code class="ref">DC048</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-napping.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Napping">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Napping">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Napping" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Napping" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1208,7 +1257,8 @@
       <td><code title="DC">CD049</code><br/><code class="ref">DC049</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-town.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Town Theme">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Town Theme">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Town Theme" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Town Theme" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1224,7 +1274,8 @@
       <td><code title="DC">CD050</code><br/><code class="ref">DC050</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-space.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Space">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Space">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Space" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Space" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1240,7 +1291,8 @@
       <td><code title="DC">CD051</code><br/><code class="ref">DC051</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-menu.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Menu Title">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Menu Title">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Menu Title" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Menu Title" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1256,7 +1308,8 @@
       <td><code title="DC">CD052</code><br/><code class="ref">DC052</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/song-bed/bed-caketown.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Caketown">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Caketown">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Caketown" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Caketown" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1272,7 +1325,8 @@
       <td><code title="DC">CD053</code><br/><code class="ref">DC053</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-female/sing-f-citation.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Citation">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Citation">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Citation" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Citation" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1288,7 +1342,8 @@
       <td><code title="DC">CD054</code><br/><code class="ref">DC054</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-female/sing-f-adele.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Adele">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Adele">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Adele" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Adele" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1304,7 +1359,8 @@
       <td><code title="DC">CD055</code><br/><code class="ref">DC055</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-female/sing-f-una-voce.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Una Voce">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Una Voce">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Una Voce" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Una Voce" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1320,7 +1376,8 @@
       <td><code title="DC">CD056</code><br/><code class="ref">DC056</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-female/sing-f-soave.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Soave">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Soave">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Soave" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Soave" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1336,7 +1393,8 @@
       <td><code title="DC">CD057</code><br/><code class="ref">DC057</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-male/sing-m-shenandoah.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Shenandoah">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Shenandoah">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Shenandoah" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Shenandoah" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1352,7 +1410,8 @@
       <td><code title="DC">CD058</code><br/><code class="ref">DC058</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-male/sing-m-brindisi.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Brindisi">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Brindisi">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Brindisi" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Brindisi" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1368,7 +1427,8 @@
       <td><code title="DC">CD059</code><br/><code class="ref">DC059</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-male/sing-m-votre-toast.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Votre Toast">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Votre Toast">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Votre Toast" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Votre Toast" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1384,7 +1444,8 @@
       <td><code title="DC">CD060</code><br/><code class="ref">DC060</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-male/sing-m-quando.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Quando">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Quando">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Quando" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Quando" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1400,7 +1461,8 @@
       <td><code title="DC">CD061</code><br/><code class="ref">DC061</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-male/sing-m-tuvan.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Tuvan">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Tuvan">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Tuvan" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Tuvan" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1416,7 +1478,8 @@
       <td><code title="DC">CD062</code><br/><code class="ref">DC062</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-male/sing-m-overtone-a.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Overtone A">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Overtone A">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Overtone A" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Overtone A" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1432,7 +1495,8 @@
       <td><code title="DC">CD063</code><br/><code class="ref">DC063</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-male/sing-m-mass-amen.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Mass Amen">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Mass Amen">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Mass Amen" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Mass Amen" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1448,7 +1512,8 @@
       <td><code title="DC">CD064</code><br/><code class="ref">DC064</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-female/sing-f-long-set1.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Long Set 1">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Long Set 1">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Long Set 1" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Long Set 1" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1464,7 +1529,8 @@
       <td><code title="DC">CD065</code><br/><code class="ref">DC065</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-female/sing-f-long-set2.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Long Set 2">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Long Set 2">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Long Set 2" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Long Set 2" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1480,7 +1546,8 @@
       <td><code title="DC">CD066</code><br/><code class="ref">DC066</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-male/sing-m-long-set1.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Long Set 1">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Long Set 1">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Long Set 1" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Long Set 1" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1496,7 +1563,8 @@
       <td><code title="DC">CD067</code><br/><code class="ref">DC067</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-male/sing-m-long-set2.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Long Set 2">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Long Set 2">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Long Set 2" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Long Set 2" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1512,7 +1580,8 @@
       <td><code title="DC">CD068</code><br/><code class="ref">DC068</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-female/sing-f-adele-long.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Adele (long)">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Adele (long)">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Adele (long)" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Adele (long)" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1528,7 +1597,8 @@
       <td><code title="DC">CD069</code><br/><code class="ref">DC069</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-female/sing-f-soave-long.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Soave (long)">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Soave (long)">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Soave (long)" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Soave (long)" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1544,7 +1614,8 @@
       <td><code title="DC">CD070</code><br/><code class="ref">DC070</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-female/sing-f-una-voce-long.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Una Voce (long)">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Una Voce (long)">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Una Voce (long)" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Una Voce (long)" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1560,7 +1631,8 @@
       <td><code title="DC">CD071</code><br/><code class="ref">DC071</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-female/sing-f-la-mamma-morta.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="La mamma morta">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play La mamma morta">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop La mamma morta" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek La mamma morta" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1576,7 +1648,8 @@
       <td><code title="DC">CD072</code><br/><code class="ref">DC072</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-female/sing-f-sono-giunta.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Sono giunta">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Sono giunta">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Sono giunta" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Sono giunta" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1592,7 +1665,8 @@
       <td><code title="DC">CD073</code><br/><code class="ref">DC073</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-male/sing-m-shenandoah-long.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Shenandoah (long)">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Shenandoah (long)">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Shenandoah (long)" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Shenandoah (long)" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1608,7 +1682,8 @@
       <td><code title="DC">CD074</code><br/><code class="ref">DC074</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-male/sing-m-brindisi-long.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Brindisi (long)">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Brindisi (long)">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Brindisi (long)" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Brindisi (long)" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1624,7 +1699,8 @@
       <td><code title="DC">CD075</code><br/><code class="ref">DC075</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-male/sing-m-votre-toast-long.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Votre Toast (long)">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Votre Toast (long)">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Votre Toast (long)" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Votre Toast (long)" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1640,7 +1716,8 @@
       <td><code title="DC">CD076</code><br/><code class="ref">DC076</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-male/sing-m-celeste-aida.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="Celeste Aida">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play Celeste Aida">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Celeste Aida" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Celeste Aida" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1656,7 +1733,8 @@
       <td><code title="DC">CD077</code><br/><code class="ref">DC077</code></td>
       <td class="flags"><span class="tag in-use">performance-clips</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/audio/sing-male/sing-m-no-pagliaccio.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="No Pagliaccio">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play No Pagliaccio">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop No Pagliaccio" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek No Pagliaccio" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -1677,7 +1755,8 @@
       <td><code title="MV">CD078</code><br/><code class="ref">mix-tech-house</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Tech House Vibes">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Tech House Vibes">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Tech House Vibes" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Tech House Vibes" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1693,7 +1772,8 @@
       <td><code title="MV">CD079</code><br/><code class="ref">mix-hip-hop</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-hip-hop-02-738.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Hip Hop 02">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Hip Hop 02">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Hip Hop 02" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Hip Hop 02" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1709,7 +1789,8 @@
       <td><code title="MV">CD080</code><br/><code class="ref">mix-dreaming-big</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-dreaming-big-31.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Dreaming Big">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Dreaming Big">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Dreaming Big" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Dreaming Big" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1725,7 +1806,8 @@
       <td><code title="MV">CD081</code><br/><code class="ref">mix-cat-walk</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-cat-walk-371.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Cat Walk">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Cat Walk">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Cat Walk" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Cat Walk" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1741,7 +1823,8 @@
       <td><code title="MV">CD082</code><br/><code class="ref">mix-sunny</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-sunny-717.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Sunny">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Sunny">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Sunny" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Sunny" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1757,7 +1840,8 @@
       <td><code title="MV">CD083</code><br/><code class="ref">mix-deep-urban</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-deep-urban-623.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Deep Urban">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Deep Urban">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Deep Urban" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Deep Urban" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1773,7 +1857,8 @@
       <td><code title="MV">CD084</code><br/><code class="ref">mix-serene</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-serene-view-443.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Serene View">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Serene View">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Serene View" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Serene View" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1789,7 +1874,8 @@
       <td><code title="MV">CD085</code><br/><code class="ref">mix-relax-beat</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-relaxing-in-the-forest-338.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Relaxing in the Forest">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Relaxing in the Forest">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Relaxing in the Forest" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Relaxing in the Forest" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1805,7 +1891,8 @@
       <td><code title="MV">CD086</code><br/><code class="ref">mix-jazzy-keys</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-jazz-hot-110.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Jazz Hot">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Jazz Hot">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Jazz Hot" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Jazz Hot" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1821,7 +1908,8 @@
       <td><code title="MV">CD087</code><br/><code class="ref">mix-guitar-ballad</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-beautiful-dream-493.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Beautiful Dream">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Beautiful Dream">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Beautiful Dream" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Beautiful Dream" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1837,7 +1925,8 @@
       <td><code title="MV">CD088</code><br/><code class="ref">mix-driving</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-driving-ambition-32.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Driving Ambition">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Driving Ambition">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Driving Ambition" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Driving Ambition" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1853,7 +1942,8 @@
       <td><code title="MV">CD089</code><br/><code class="ref">mix-cantopop-bright</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-island-beat-150.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Island Beat">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Island Beat">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Island Beat" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Island Beat" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1869,7 +1959,8 @@
       <td><code title="MV">CD090</code><br/><code class="ref">mix-hazy-after-hours</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-hazy-after-hours-132.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Hazy After Hours">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Hazy After Hours">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Hazy After Hours" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Hazy After Hours" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1885,7 +1976,8 @@
       <td><code title="MV">CD091</code><br/><code class="ref">mix-games-worldbeat</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-games-worldbeat-466.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Games Worldbeat">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Games Worldbeat">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Games Worldbeat" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Games Worldbeat" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1901,7 +1993,8 @@
       <td><code title="MV">CD092</code><br/><code class="ref">mix-feeling-happy</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-feeling-happy-5.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Feeling Happy">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Feeling Happy">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Feeling Happy" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Feeling Happy" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1917,7 +2010,8 @@
       <td><code title="MV">CD093</code><br/><code class="ref">mix-life-is-a-dream</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-life-is-a-dream-826.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Life Is a Dream">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Life Is a Dream">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Life Is a Dream" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Life Is a Dream" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1933,7 +2027,8 @@
       <td><code title="MV">CD094</code><br/><code class="ref">mix-bridge-samurai</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-bridge-of-the-samurai-122.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Bridge of the Samurai">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Bridge of the Samurai">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Bridge of the Samurai" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Bridge of the Samurai" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1949,7 +2044,8 @@
       <td><code title="MV">CD095</code><br/><code class="ref">mix-sleepy-cat</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-sleepy-cat-135.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Sleepy Cat">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Sleepy Cat">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Sleepy Cat" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Sleepy Cat" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1965,7 +2061,8 @@
       <td><code title="MV">CD096</code><br/><code class="ref">MV039</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-one-more-dance-288.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="One More Dance">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play One More Dance">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop One More Dance" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek One More Dance" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1981,7 +2078,8 @@
       <td><code title="MV">CD097</code><br/><code class="ref">MV040</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-rising-sun-523.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Rising Sun">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Rising Sun">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Rising Sun" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Rising Sun" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -1997,7 +2095,8 @@
       <td><code title="MV">CD098</code><br/><code class="ref">MV041</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-cyberpunk-city-140.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Cyberpunk City">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Cyberpunk City">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Cyberpunk City" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Cyberpunk City" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2013,7 +2112,8 @@
       <td><code title="MV">CD099</code><br/><code class="ref">MV042</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-pop-track-03-729.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Pop Track 03">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Pop Track 03">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Pop Track 03" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Pop Track 03" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2029,7 +2129,8 @@
       <td><code title="MV">CD100</code><br/><code class="ref">MV043</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-pop-track-06-732.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Pop Track 06">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Pop Track 06">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Pop Track 06" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Pop Track 06" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2045,7 +2146,8 @@
       <td><code title="MV">CD101</code><br/><code class="ref">MV044</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-dance-zero-740.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Dance Zero">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Dance Zero">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Dance Zero" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Dance Zero" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2061,7 +2163,8 @@
       <td><code title="MV">CD102</code><br/><code class="ref">MV045</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-digital-clouds-175.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Digital Clouds">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Digital Clouds">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Digital Clouds" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Digital Clouds" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2077,7 +2180,8 @@
       <td><code title="MV">CD103</code><br/><code class="ref">MV046</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-happy-times-158.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Happy Times">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Happy Times">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Happy Times" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Happy Times" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2093,7 +2197,8 @@
       <td><code title="MV">CD104</code><br/><code class="ref">MV047</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-summer-dream-628.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Summer Dream">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Summer Dream">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Summer Dream" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Summer Dream" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2109,7 +2214,8 @@
       <td><code title="MV">CD105</code><br/><code class="ref">MV048</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-fashion-228.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Fashion">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Fashion">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Fashion" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Fashion" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2125,7 +2231,8 @@
       <td><code title="MV">CD106</code><br/><code class="ref">MV049</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-what-about-action-474.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="What About Action?">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play What About Action?">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop What About Action?" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek What About Action?" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2141,7 +2248,8 @@
       <td><code title="MV">CD107</code><br/><code class="ref">MV050</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-aerobic-fashion-327.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Aerobic Fashion">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Aerobic Fashion">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Aerobic Fashion" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Aerobic Fashion" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2157,7 +2265,8 @@
       <td><code title="MV">CD108</code><br/><code class="ref">MV051</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-basketball-training-349.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Basketball Training">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Basketball Training">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Basketball Training" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Basketball Training" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2173,7 +2282,8 @@
       <td><code title="MV">CD109</code><br/><code class="ref">MV052</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-swings-and-slides-14.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Swings and Slides">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Swings and Slides">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Swings and Slides" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Swings and Slides" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2189,7 +2299,8 @@
       <td><code title="MV">CD110</code><br/><code class="ref">MV053</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-sun-in-your-eyes-131.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Sun in Your Eyes">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Sun in Your Eyes">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Sun in Your Eyes" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Sun in Your Eyes" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2205,7 +2316,8 @@
       <td><code title="MV">CD111</code><br/><code class="ref">MV054</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-pop-05-695.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Pop 05">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Pop 05">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Pop 05" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Pop 05" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2221,7 +2333,8 @@
       <td><code title="MV">CD112</code><br/><code class="ref">MV055</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-pop-09-702.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Pop 09">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Pop 09">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Pop 09" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Pop 09" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2237,7 +2350,8 @@
       <td><code title="MV">CD113</code><br/><code class="ref">MV056</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-techno-fest-vibes-124.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Techno Fest Vibes">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Techno Fest Vibes">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Techno Fest Vibes" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Techno Fest Vibes" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2253,7 +2367,8 @@
       <td><code title="MV">CD114</code><br/><code class="ref">MV057</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-raising-me-higher-34.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Raising Me Higher">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Raising Me Higher">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Raising Me Higher" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Raising Me Higher" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2269,7 +2384,8 @@
       <td><code title="MV">CD115</code><br/><code class="ref">MV058</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-valley-sunset-127.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Valley Sunset">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Valley Sunset">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Valley Sunset" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Valley Sunset" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2285,7 +2401,8 @@
       <td><code title="MV">CD116</code><br/><code class="ref">MV059</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-feedback-dreams-588.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Feedback Dreams">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Feedback Dreams">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Feedback Dreams" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Feedback Dreams" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2301,7 +2418,8 @@
       <td><code title="MV">CD117</code><br/><code class="ref">MV060</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-karma-1183.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Karma">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Karma">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Karma" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Karma" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2317,7 +2435,8 @@
       <td><code title="MV">CD118</code><br/><code class="ref">MV061</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-keeping-fit-82.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Keeping Fit">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Keeping Fit">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Keeping Fit" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Keeping Fit" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2333,7 +2452,8 @@
       <td><code title="MV">CD119</code><br/><code class="ref">MV062</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-bold-and-brash-62.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Bold and Brash">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Bold and Brash">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Bold and Brash" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Bold and Brash" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2349,7 +2469,8 @@
       <td><code title="MV">CD120</code><br/><code class="ref">MV063</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-fight-till-the-end-81.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Fight Till the End">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Fight Till the End">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Fight Till the End" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Fight Till the End" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2365,7 +2486,8 @@
       <td><code title="MV">CD121</code><br/><code class="ref">MV064</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-tides-turning-439.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Tides Turning">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Tides Turning">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Tides Turning" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Tides Turning" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2381,7 +2503,8 @@
       <td><code title="MV">CD122</code><br/><code class="ref">MV065</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-relax-beat-292.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Relax Beat">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Relax Beat">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Relax Beat" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Relax Beat" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2397,7 +2520,8 @@
       <td><code title="MV">CD123</code><br/><code class="ref">MV066</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-gimme-that-groove-872.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Gimme that Groove">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Gimme that Groove">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Gimme that Groove" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Gimme that Groove" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2413,7 +2537,8 @@
       <td><code title="MV">CD124</code><br/><code class="ref">MV067</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-take-this-higher-1012.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Take this Higher">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Take this Higher">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Take this Higher" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Take this Higher" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2429,7 +2554,8 @@
       <td><code title="MV">CD125</code><br/><code class="ref">MV068</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-midnight-funk-1147.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Midnight Funk">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Midnight Funk">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Midnight Funk" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Midnight Funk" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2445,7 +2571,8 @@
       <td><code title="MV">CD126</code><br/><code class="ref">MV069</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-pop-track-01-727.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Pop Track 01">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Pop Track 01">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Pop Track 01" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Pop Track 01" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2461,7 +2588,8 @@
       <td><code title="MV">CD127</code><br/><code class="ref">MV070</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-pop-track-02-728.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Pop Track 02">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Pop Track 02">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Pop Track 02" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Pop Track 02" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2477,7 +2605,8 @@
       <td><code title="MV">CD128</code><br/><code class="ref">MV071</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-pop-track-04-730.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Pop Track 04">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Pop Track 04">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Pop Track 04" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Pop Track 04" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2493,7 +2622,8 @@
       <td><code title="MV">CD129</code><br/><code class="ref">MV072</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-pop-track-07-733.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Pop Track 07">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Pop Track 07">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Pop Track 07" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Pop Track 07" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2509,7 +2639,8 @@
       <td><code title="MV">CD130</code><br/><code class="ref">MV073</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-pop-track-08-734.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Pop Track 08">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Pop Track 08">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Pop Track 08" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Pop Track 08" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2525,7 +2656,8 @@
       <td><code title="MV">CD131</code><br/><code class="ref">MV074</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-pop-track-10-703.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Pop Track 10">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Pop Track 10">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Pop Track 10" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Pop Track 10" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2541,7 +2673,8 @@
       <td><code title="MV">CD132</code><br/><code class="ref">MV075</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-pop-04-696.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Pop 04">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Pop 04">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Pop 04" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Pop 04" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2557,7 +2690,8 @@
       <td><code title="MV">CD133</code><br/><code class="ref">MV076</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-pop-07-699.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Pop 07">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Pop 07">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Pop 07" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Pop 07" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2573,7 +2707,8 @@
       <td><code title="MV">CD134</code><br/><code class="ref">MV077</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-pop-08-701.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Pop 08">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Pop 08">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Pop 08" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Pop 08" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2589,7 +2724,8 @@
       <td><code title="MV">CD135</code><br/><code class="ref">MV078</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-pop-11-704.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Pop 11">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Pop 11">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Pop 11" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Pop 11" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2605,7 +2741,8 @@
       <td><code title="MV">CD136</code><br/><code class="ref">MV079</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-synth-pop-772.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Synth Pop">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Synth Pop">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Synth Pop" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Synth Pop" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2621,7 +2758,8 @@
       <td><code title="MV">CD137</code><br/><code class="ref">MV080</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-modern-pop-897.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Modern Pop">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Modern Pop">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Modern Pop" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Modern Pop" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2637,7 +2775,8 @@
       <td><code title="MV">CD138</code><br/><code class="ref">MV081</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-city-lights-97.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="City Lights">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play City Lights">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop City Lights" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek City Lights" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2653,7 +2792,8 @@
       <td><code title="MV">CD139</code><br/><code class="ref">MV082</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-turn-this-up-a-little-louder-1048.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Turn This Up a Little Louder">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Turn This Up a Little Louder">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Turn This Up a Little Louder" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Turn This Up a Little Louder" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2669,7 +2809,8 @@
       <td><code title="MV">CD140</code><br/><code class="ref">MV083</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-party-vibes-129.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Party Vibes">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Party Vibes">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Party Vibes" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Party Vibes" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2685,7 +2826,8 @@
       <td><code title="MV">CD141</code><br/><code class="ref">MV084</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-happy-home-801.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Happy Home">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Happy Home">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Happy Home" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Happy Home" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2701,7 +2843,8 @@
       <td><code title="MV">CD142</code><br/><code class="ref">MV085</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-oh-lord-200.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Oh Lord">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Oh Lord">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Oh Lord" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Oh Lord" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2717,7 +2860,8 @@
       <td><code title="MV">CD143</code><br/><code class="ref">MV086</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-follow-me-home-350.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Follow Me Home">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Follow Me Home">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Follow Me Home" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Follow Me Home" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2733,7 +2877,8 @@
       <td><code title="MV">CD144</code><br/><code class="ref">MV087</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-at-the-playhouse-821.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="At The Playhouse">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play At The Playhouse">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop At The Playhouse" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek At The Playhouse" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2749,7 +2894,8 @@
       <td><code title="MV">CD145</code><br/><code class="ref">MV088</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-me-and-you-32.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Me And You">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Me And You">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Me And You" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Me And You" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2765,7 +2911,8 @@
       <td><code title="MV">CD146</code><br/><code class="ref">MV089</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-a-special-feeling-1087.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="A Special Feeling">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play A Special Feeling">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop A Special Feeling" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek A Special Feeling" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2781,7 +2928,8 @@
       <td><code title="MV">CD147</code><br/><code class="ref">MV090</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-i-believe-in-us-1030.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="I Believe In Us">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play I Believe In Us">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop I Believe In Us" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek I Believe In Us" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2797,7 +2945,8 @@
       <td><code title="MV">CD148</code><br/><code class="ref">MV091</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-old-letter-854.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Old Letter">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Old Letter">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Old Letter" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Old Letter" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2813,7 +2962,8 @@
       <td><code title="MV">CD149</code><br/><code class="ref">MV092</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-see-you-next-christmas-916.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="See You Next Christmas">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play See You Next Christmas">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop See You Next Christmas" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek See You Next Christmas" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2829,7 +2979,8 @@
       <td><code title="MV">CD150</code><br/><code class="ref">MV093</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-bopper-from-memphis-1131.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Bopper From Memphis">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Bopper From Memphis">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Bopper From Memphis" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Bopper From Memphis" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2845,7 +2996,8 @@
       <td><code title="MV">CD151</code><br/><code class="ref">MV094</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-traveling-along-94.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Traveling Along">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Traveling Along">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Traveling Along" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Traveling Along" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2861,7 +3013,8 @@
       <td><code title="MV">CD152</code><br/><code class="ref">MV095</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-chicken-out-1166.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Chicken Out">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Chicken Out">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Chicken Out" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Chicken Out" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2877,7 +3030,8 @@
       <td><code title="MV">CD153</code><br/><code class="ref">MV096</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-i-can-hear-your-heartbeat-1000.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="I Can Hear Your Heartbeat">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play I Can Hear Your Heartbeat">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop I Can Hear Your Heartbeat" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek I Can Hear Your Heartbeat" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2893,7 +3047,8 @@
       <td><code title="MV">CD154</code><br/><code class="ref">MV097</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-disco-aint-old-school-935.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Disco Ain't Old School">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Disco Ain't Old School">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Disco Ain't Old School" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Disco Ain't Old School" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2909,7 +3064,8 @@
       <td><code title="MV">CD155</code><br/><code class="ref">MV098</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-night-sky-hip-hop-970.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Night Sky Hip Hop">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Night Sky Hip Hop">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Night Sky Hip Hop" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Night Sky Hip Hop" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2925,7 +3081,8 @@
       <td><code title="MV">CD156</code><br/><code class="ref">MV099</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-forest-treasure-117.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Forest Treasure">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Forest Treasure">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Forest Treasure" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Forest Treasure" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2941,7 +3098,8 @@
       <td><code title="MV">CD157</code><br/><code class="ref">MV100</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-valley-sunset-314.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Valley Sunset">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Valley Sunset">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Valley Sunset" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Valley Sunset" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2957,7 +3115,8 @@
       <td><code title="MV">CD158</code><br/><code class="ref">MV101</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-deep-abstract-ambient-140.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Deep Abstract Ambient">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Deep Abstract Ambient">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Deep Abstract Ambient" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Deep Abstract Ambient" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2973,7 +3132,8 @@
       <td><code title="MV">CD159</code><br/><code class="ref">MV102</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-meditation-yoga-596.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Meditation Yoga">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Meditation Yoga">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Meditation Yoga" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Meditation Yoga" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -2989,7 +3149,8 @@
       <td><code title="MV">CD160</code><br/><code class="ref">MV103</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-soft-lounge-761.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Soft Lounge">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Soft Lounge">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Soft Lounge" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Soft Lounge" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -3005,7 +3166,8 @@
       <td><code title="MV">CD161</code><br/><code class="ref">MV104</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-romantic-love-702.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Romantic Love">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Romantic Love">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Romantic Love" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Romantic Love" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -3021,7 +3183,8 @@
       <td><code title="MV">CD162</code><br/><code class="ref">MV105</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-acoustic-guitar-loop-574.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Acoustic Guitar Loop">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Acoustic Guitar Loop">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Acoustic Guitar Loop" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Acoustic Guitar Loop" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -3037,7 +3200,8 @@
       <td><code title="MV">CD163</code><br/><code class="ref">MV106</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-summer-fun-716.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Summer Fun">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Summer Fun">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Summer Fun" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Summer Fun" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -3053,7 +3217,8 @@
       <td><code title="MV">CD164</code><br/><code class="ref">MV107</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-inspiration-119.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Inspiration">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Inspiration">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Inspiration" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Inspiration" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -3069,7 +3234,8 @@
       <td><code title="MV">CD165</code><br/><code class="ref">MV108</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-mystery-frequency-553.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Mystery Frequency">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Mystery Frequency">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Mystery Frequency" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Mystery Frequency" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -3085,7 +3251,8 @@
       <td><code title="MV">CD166</code><br/><code class="ref">MV109</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Tech House Vibes">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Tech House Vibes">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Tech House Vibes" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Tech House Vibes" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -3101,7 +3268,8 @@
       <td><code title="MV">CD167</code><br/><code class="ref">MV110</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-dreaming-big-31.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Dreaming Big">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Dreaming Big">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Dreaming Big" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Dreaming Big" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -3117,7 +3285,8 @@
       <td><code title="MV">CD168</code><br/><code class="ref">MV111</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-jazz-hot-110.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Jazz Hot">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Jazz Hot">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Jazz Hot" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Jazz Hot" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -3133,7 +3302,8 @@
       <td><code title="MV">CD169</code><br/><code class="ref">MV112</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-serene-view-443.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Serene View">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Serene View">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Serene View" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Serene View" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -3149,7 +3319,8 @@
       <td><code title="MV">CD170</code><br/><code class="ref">MV113</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-relaxing-in-the-forest-338.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Relaxing in the Forest">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Relaxing in the Forest">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Relaxing in the Forest" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Relaxing in the Forest" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -3165,7 +3336,8 @@
       <td><code title="MV">CD171</code><br/><code class="ref">MV114</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-sleepy-cat-135.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Sleepy Cat">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Sleepy Cat">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Sleepy Cat" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Sleepy Cat" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -3181,7 +3353,8 @@
       <td><code title="MV">CD172</code><br/><code class="ref">MV115</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-beautiful-dream-493.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Beautiful Dream">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Beautiful Dream">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Beautiful Dream" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Beautiful Dream" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -3197,7 +3370,8 @@
       <td><code title="MV">CD173</code><br/><code class="ref">MV116</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-deep-urban-623.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Deep Urban">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Deep Urban">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Deep Urban" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Deep Urban" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -3213,7 +3387,8 @@
       <td><code title="MV">CD174</code><br/><code class="ref">MV117</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-sunny-717.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Sunny">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Sunny">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Sunny" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Sunny" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -3229,7 +3404,8 @@
       <td><code title="MV">CD175</code><br/><code class="ref">MV118</code></td>
       <td class="flags"><span class="tag in-use">STREAM_TRACKS</span></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="https://assets.mixkit.co/music/preview/mixkit-cat-walk-371.mp3">
-    <button type="button" class="audio-play-toggle play-remote" aria-label="Cat Walk">▶</button>
+    <button type="button" class="audio-play-toggle play-remote" aria-label="Play Cat Walk">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop Cat Walk" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek Cat Walk" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div><span class="ref"> Mixkit</span></td>
@@ -8211,7 +8387,8 @@
         <td>female</td>
         <td><code>head</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="head">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play head">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop head" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek head" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3</code></td>
@@ -8224,7 +8401,8 @@
         <td>female</td>
         <td><code>chest</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00351_universal_female_ouch_oh.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="chest">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play chest">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop chest" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek chest" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00351_universal_female_ouch_oh.mp3</code></td>
@@ -8237,7 +8415,8 @@
         <td>female</td>
         <td><code>breast</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00351_universal_female_ouch_oh.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="breast">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play breast">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop breast" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek breast" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00351_universal_female_ouch_oh.mp3</code></td>
@@ -8250,7 +8429,8 @@
         <td>female</td>
         <td><code>belly</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00363_universal_female_ouch_um.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="belly">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play belly">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop belly" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek belly" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00363_universal_female_ouch_um.mp3</code></td>
@@ -8263,7 +8443,8 @@
         <td>female</td>
         <td><code>butt</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00366_universal_female_ouch_wow.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="butt">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play butt">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop butt" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek butt" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00366_universal_female_ouch_wow.mp3</code></td>
@@ -8276,7 +8457,8 @@
         <td>female</td>
         <td><code>hand</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00364_universal_female_ouch_giggle_full.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="hand">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play hand">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop hand" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek hand" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00364_universal_female_ouch_giggle_full.mp3</code></td>
@@ -8289,7 +8471,8 @@
         <td>female</td>
         <td><code>hands</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00364_universal_female_ouch_giggle_full.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="hands">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play hands">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop hands" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek hands" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00364_universal_female_ouch_giggle_full.mp3</code></td>
@@ -8302,7 +8485,8 @@
         <td>female</td>
         <td><code>arm</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="arm">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play arm">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop arm" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek arm" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3</code></td>
@@ -8315,7 +8499,8 @@
         <td>female</td>
         <td><code>armL</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="armL">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play armL">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop armL" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek armL" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3</code></td>
@@ -8328,7 +8513,8 @@
         <td>female</td>
         <td><code>armR</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="armR">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play armR">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop armR" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek armR" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3</code></td>
@@ -8341,7 +8527,8 @@
         <td>female</td>
         <td><code>legs</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00366_universal_female_ouch_wow.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="legs">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play legs">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop legs" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek legs" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00366_universal_female_ouch_wow.mp3</code></td>
@@ -8354,7 +8541,8 @@
         <td>female</td>
         <td><code>legL</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00366_universal_female_ouch_wow.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="legL">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play legL">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop legL" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek legL" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00366_universal_female_ouch_wow.mp3</code></td>
@@ -8367,7 +8555,8 @@
         <td>female</td>
         <td><code>legR</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00366_universal_female_ouch_wow.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="legR">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play legR">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop legR" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek legR" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00366_universal_female_ouch_wow.mp3</code></td>
@@ -8380,7 +8569,8 @@
         <td>female</td>
         <td><code>foot</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00350_universal_female_ouch_ha.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="foot">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play foot">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop foot" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek foot" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00350_universal_female_ouch_ha.mp3</code></td>
@@ -8393,7 +8583,8 @@
         <td>female</td>
         <td><code>torso</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00350_universal_female_ouch_ha.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="torso">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play torso">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop torso" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek torso" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00350_universal_female_ouch_ha.mp3</code></td>
@@ -8406,7 +8597,8 @@
         <td>female</td>
         <td><code>side</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00365_universal_female_ouch_ha_full.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="side">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play side">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop side" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek side" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00365_universal_female_ouch_ha_full.mp3</code></td>
@@ -8419,7 +8611,8 @@
         <td>female</td>
         <td><code>back</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00360_universal_female_gasp_woven.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="back">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play back">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop back" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek back" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00360_universal_female_gasp_woven.mp3</code></td>
@@ -8432,7 +8625,8 @@
         <td>female</td>
         <td><code>default</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00351_universal_female_ouch_oh.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="default">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play default">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop default" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek default" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00351_universal_female_ouch_oh.mp3</code></td>
@@ -8445,7 +8639,8 @@
         <td>male</td>
         <td><code>head</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="head">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play head">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop head" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek head" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3</code></td>
@@ -8458,7 +8653,8 @@
         <td>male</td>
         <td><code>chest</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="chest">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play chest">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop chest" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek chest" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3</code></td>
@@ -8471,7 +8667,8 @@
         <td>male</td>
         <td><code>breast</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="breast">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play breast">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop breast" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek breast" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3</code></td>
@@ -8484,7 +8681,8 @@
         <td>male</td>
         <td><code>belly</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="belly">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play belly">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop belly" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek belly" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3</code></td>
@@ -8497,7 +8695,8 @@
         <td>male</td>
         <td><code>butt</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="butt">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play butt">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop butt" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek butt" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3</code></td>
@@ -8510,7 +8709,8 @@
         <td>male</td>
         <td><code>hand</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="hand">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play hand">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop hand" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek hand" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3</code></td>
@@ -8523,7 +8723,8 @@
         <td>male</td>
         <td><code>hands</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="hands">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play hands">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop hands" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek hands" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3</code></td>
@@ -8536,7 +8737,8 @@
         <td>male</td>
         <td><code>arm</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="arm">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play arm">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop arm" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek arm" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3</code></td>
@@ -8549,7 +8751,8 @@
         <td>male</td>
         <td><code>armL</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="armL">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play armL">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop armL" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek armL" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3</code></td>
@@ -8562,7 +8765,8 @@
         <td>male</td>
         <td><code>armR</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="armR">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play armR">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop armR" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek armR" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3</code></td>
@@ -8575,7 +8779,8 @@
         <td>male</td>
         <td><code>legs</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="legs">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play legs">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop legs" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek legs" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3</code></td>
@@ -8588,7 +8793,8 @@
         <td>male</td>
         <td><code>legL</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="legL">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play legL">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop legL" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek legL" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3</code></td>
@@ -8601,7 +8807,8 @@
         <td>male</td>
         <td><code>legR</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="legR">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play legR">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop legR" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek legR" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3</code></td>
@@ -8614,7 +8821,8 @@
         <td>male</td>
         <td><code>foot</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="foot">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play foot">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop foot" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek foot" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3</code></td>
@@ -8627,7 +8835,8 @@
         <td>male</td>
         <td><code>torso</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="torso">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play torso">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop torso" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek torso" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3</code></td>
@@ -8640,7 +8849,8 @@
         <td>male</td>
         <td><code>side</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="side">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play side">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop side" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek side" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3</code></td>
@@ -8653,7 +8863,8 @@
         <td>male</td>
         <td><code>back</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="back">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play back">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop back" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek back" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3</code></td>
@@ -8666,7 +8877,8 @@
         <td>male</td>
         <td><code>default</code></td>
         <td><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="default">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play default">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop default" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek default" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div> <code>/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3</code></td>
@@ -8683,7 +8895,8 @@
       <td class="flags saved-picks"><span class="tag in-use">ship-set</span></td>
       <td><code>CMA00318</code></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00318_universal_male_effort.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="CMA00318">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play CMA00318">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop CMA00318" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek CMA00318" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -8697,7 +8910,8 @@
       <td class="flags saved-picks"><span class="tag in-use">ship-set</span></td>
       <td><code>CMA00320</code></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00320_universal_female_giggle.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="CMA00320">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play CMA00320">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop CMA00320" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek CMA00320" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -8711,7 +8925,8 @@
       <td class="flags saved-picks"><span class="tag in-use">ship-set</span></td>
       <td><code>CMA00335</code></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00335_universal_female_ouch_ah.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="CMA00335">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play CMA00335">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop CMA00335" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek CMA00335" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -8725,7 +8940,8 @@
       <td class="flags saved-picks"><span class="tag in-use">ship-set</span></td>
       <td><code>CMA00350</code></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00350_universal_female_ouch_ha.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="CMA00350">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play CMA00350">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop CMA00350" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek CMA00350" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -8739,7 +8955,8 @@
       <td class="flags saved-picks"><span class="tag in-use">ship-set</span></td>
       <td><code>CMA00351</code></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00351_universal_female_ouch_oh.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="CMA00351">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play CMA00351">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop CMA00351" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek CMA00351" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -8753,7 +8970,8 @@
       <td class="flags saved-picks"><span class="tag in-use">ship-set</span></td>
       <td><code>CMA00353</code></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00353_universal_female_ouch_giggle.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="CMA00353">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play CMA00353">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop CMA00353" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek CMA00353" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -8767,7 +8985,8 @@
       <td class="flags saved-picks"><span class="tag in-use">ship-set</span></td>
       <td><code>CMA00354</code></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="CMA00354">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play CMA00354">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop CMA00354" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek CMA00354" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -8781,7 +9000,8 @@
       <td class="flags saved-picks"><span class="tag in-use">ship-set</span></td>
       <td><code>CMA00359</code></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00359_universal_female_gasp_reitanna.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="CMA00359">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play CMA00359">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop CMA00359" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek CMA00359" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -8795,7 +9015,8 @@
       <td class="flags saved-picks"><span class="tag in-use">ship-set</span></td>
       <td><code>CMA00360</code></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00360_universal_female_gasp_woven.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="CMA00360">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play CMA00360">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop CMA00360" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek CMA00360" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -8809,7 +9030,8 @@
       <td class="flags saved-picks"><span class="tag in-use">ship-set</span></td>
       <td><code>CMA00363</code></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00363_universal_female_ouch_um.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="CMA00363">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play CMA00363">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop CMA00363" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek CMA00363" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -8823,7 +9045,8 @@
       <td class="flags saved-picks"><span class="tag in-use">ship-set</span></td>
       <td><code>CMA00364</code></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00364_universal_female_ouch_giggle_full.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="CMA00364">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play CMA00364">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop CMA00364" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek CMA00364" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -8837,7 +9060,8 @@
       <td class="flags saved-picks"><span class="tag in-use">ship-set</span></td>
       <td><code>CMA00365</code></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00365_universal_female_ouch_ha_full.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="CMA00365">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play CMA00365">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop CMA00365" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek CMA00365" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -8851,7 +9075,8 @@
       <td class="flags saved-picks"><span class="tag in-use">ship-set</span></td>
       <td><code>CMA00366</code></td>
       <td class="audio-player-cell"><div class="audio-player" data-play="amoji-public-serve/voice-clips/cma-reaction/CMA00366_universal_female_ouch_wow.mp3">
-    <button type="button" class="audio-play-toggle" aria-label="CMA00366">▶</button>
+    <button type="button" class="audio-play-toggle" aria-label="Play CMA00366">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop CMA00366" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek CMA00366" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div></td>
@@ -11811,16 +12036,6 @@
       } catch { /* ignore */ }
     }
     document.body.addEventListener('pointerdown', unlockPickerAudioGesture, { once: true, passive: true });
-    function resolvePlaySrc_legacy_unused(raw) {
-      if (!raw) return '';
-      if (/^https?:/i.test(raw)) return raw;
-      if (raw.startsWith('amoji-public-serve/')) return '../' + raw.slice('amoji-public-serve/'.length);
-      if (raw.startsWith('amoji-public-serve')) {
-        const tail = raw.slice('amoji-public-serve'.length).replace(/^\//, '');
-        return tail ? '../' + tail : '';
-      }
-      return raw;
-    }
     function formatMmSs(sec) {
       if (!Number.isFinite(sec) || sec < 0) return '0:00';
       const m = Math.floor(sec / 60);
@@ -11838,12 +12053,24 @@
       const raw = root.getAttribute('data-play');
       if (!raw) return;
       const toggle = root.querySelector('.audio-play-toggle');
+      const stopBtn = root.querySelector('.audio-stop');
       const scrub = root.querySelector('.audio-scrub');
       const curEl = root.querySelector('.audio-cur');
       const durEl = root.querySelector('.audio-dur');
       if (!toggle || !scrub) return;
       const audio = new Audio();
       let seeking = false;
+      function resetRowUi() {
+        toggle.textContent = '▶';
+        scrub.value = '0';
+        if (curEl) curEl.textContent = '0:00';
+      }
+      function stopRowPlayback() {
+        audio.pause();
+        audio.currentTime = 0;
+        resetRowUi();
+        if (activePlayer && activePlayer.root === root) activePlayer = null;
+      }
       audio.addEventListener('loadedmetadata', () => {
         scrub.disabled = false;
         scrub.max = String(audio.duration || 100);
@@ -11855,7 +12082,7 @@
         if (curEl) curEl.textContent = formatMmSs(audio.currentTime);
       });
       audio.addEventListener('ended', () => {
-        toggle.textContent = '▶';
+        resetRowUi();
         if (activePlayer && activePlayer.root === root) activePlayer = null;
       });
       audio.addEventListener('error', () => alert(pickerPlayFailureMessage(resolvePlaySrc(raw), toggle)));
@@ -11881,6 +12108,7 @@
           if (activePlayer && activePlayer.root === root) activePlayer = null;
         }
       });
+      stopBtn?.addEventListener('click', () => stopRowPlayback());
     }
     document.querySelectorAll('.audio-player[data-play]').forEach(wireAudioPlayer);
     document.body.addEventListener('click', (e) => {
