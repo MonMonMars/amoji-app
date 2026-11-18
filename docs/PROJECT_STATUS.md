@@ -1,24 +1,24 @@
 # Amoji project status board
 
-**Generated:** 2026-11-18 20:50 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-18 21:22 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** [Pages](https://monmonmars.github.io/amoji-app/docs/project-status.html) · repo [`project-status.html`](./project-status.html)  
 **Pixel pickers:** [Pages owner-resources](https://monmonmars.github.io/amoji-app/docs/owner-resources.html) (music · poke · **idle** · **stories** · **news** · **demo** tabs) · local: `cd docs && python3 -m http.server 8765`  
-**`main` tip:** `9a185682` (**r2026-11-18.220** · #515 instant play landed; #511 still anchor for news scrub)
+**`main` tip:** *(pending)* · **r2026-11-18.232** Pixel no-repeat checklist + CI locks
 
 ## Snapshot
 
 | Bucket | Count |
 | --- | ---: |
 | **Done** — merged to `main` | 100+ stack · through **#511** + **#515** · **r220** (incl. #497–#507 vault/perf) |
-| **Open product PRs** | **3** — #512–#514 (Hold spikes #1 / #20 separate) |
-| **Outstanding** — agents (no PR yet) | idle-v2 · card voice · mixkit HTML · picker media · VRM pupil |
-| **Outstanding** — Pixel / human | **R10–R13 not Done** · stale SW · [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
+| **Open product PRs** | demo **r230** + #518–#519–#517; #512; spikes Hold |
+| **Outstanding** — agents (no PR yet) | picker media · VRM pupil |
+| **Outstanding** — Pixel / human | **R10–R13 not Done** · stale SW · [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) · [`AGENT_SMOKE.md` Pixel checklist](./AGENT_SMOKE.md#pixel-no-repeat-checklist) |
 | **Hold** | licensed music · Stripe · PH · Search Console · spikes #1 / #20 |
 
-**Honesty:** Merged ≠ owner Done. **Do not mark R10–R13 Done** without owner OK on live **r2026-11-18.220+** after deploy and SW hard-refresh.  
+**Honesty:** Merged ≠ owner Done. **Do not mark R10–R13 Done** without owner OK on live **r2026-11-18.232+** after deploy and SW hard-refresh. Agents: run `pixel-no-repeat.test.ts` before claiming repeat fixes.
 **Pages:** hard-refresh service worker after each revision bump — stale SW still a phone blocker.
 
 ### Progress by category (% merged to `main`)

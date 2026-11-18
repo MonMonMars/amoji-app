@@ -102,6 +102,14 @@ describe('demo-phase buttons', () => {
     expect(c).not.toEqual(a);
   });
 
+  it('keeps weather then news in the left priority slots for every seed', () => {
+    for (const seed of [1, 42, 99, 0xdead_beef]) {
+      const ids = shuffledDemoPhaseButtons(seed).map((b) => b.id);
+      expect(ids[0]).toBe('weather');
+      expect(ids[1]).toBe('news');
+    }
+  });
+
   it('rotates prompt facets on repeated taps of the same chip', () => {
     const a = demoPhasePrompt('weather', 'en', 0);
     const b = demoPhasePrompt('weather', 'en', 1);
