@@ -58,6 +58,8 @@ describe('string table hygiene', () => {
     // Multi-step /gate copy was folded into one-click setup; those keys stay in
     // the table for i18n coverage (see entry-gate.test.ts) until pruned.
     const PROSE_RETAINED = new Set([
+      // Report sheet strings (chip removed from bubbles; keys kept for ReportDialog/tests).
+      'reportAria', 'reportCta',
       'loginPrompt',
       'gateStep', 'gate18Ack',
       'gateAudioTitle', 'gateAudioBody', 'gateAudioQuestion', 'gateAudioYes', 'gateAudioNo',

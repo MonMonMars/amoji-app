@@ -34,64 +34,34 @@ beforeEach(() => {
   (globalThis as { localStorage?: Storage }).localStorage = ls as unknown as Storage;
 });
 
-const render = (props: Partial<React.ComponentProps<typeof ChatMessage>> = {}) =>
+const renderBubble = (props: Partial<React.ComponentProps<typeof ChatMessage>> = {}) =>
   renderToStaticMarkup(
-    <ChatMessage
-      role="assistant"
-      content="You should not be here."
-      lang="en"
-      accent="#f9a8d4"
-      onReport={() => {}}
-      {...props}
-    />,
+    <ChatMessage role="assistant" content="You should not be here." lang="en" accent="#f9a8d4" {...props} />,
   );
 
-describe('report control — AI replies only', () => {
-  it('renders a labeled report control on an assistant message', () => {
-    const html = render();
-    expect(html).toContain('data-testid="chat-report-button"');
-    expect(html).toContain(`aria-label="${t('en', 'reportAria')}"`);
-    expect(html).toContain(t('en', 'reportCta'));
+describe('chat transcript — no per-message report chip', () => {
+  it('assistant history never shows the ⚑ report affordance', () => {
+    const html = renderBubble();
+    expect(html).toContain('You should not be here.');
+    expect(html).not.toContain('data-testid="chat-report-button"');
+    expect(html).not.toContain(t('en', 'reportCta'));
+    expect(html).not.toContain('⚑');
   });
-
-  it('renders no report control on a user message', () => {
-    const html = render({ role: 'user', content: 'hello there' });
+  it('user bubbles stay report-free', () => {
+    const html = renderBubble({ role: 'user', content: 'hello there' });
     expect(html).toContain('hello there');
     expect(html).not.toContain('chat-report-button');
-    expect(html).not.toContain(t('en', 'reportAria'));
   });
-
-  it('is a real button, so it is reachable by Tab and Enter', () => {
-    const html = render();
-    // A span/div with an onClick would be invisible to the keyboard.
-    const tag = html.slice(html.indexOf('<button'), html.indexOf('>', html.indexOf('<button')) + 1);
-    expect(tag).toContain('type="button"');
-    expect(tag).toContain('aria-label=');
+  it('finished assistant captions do not surface report UI', () => {
+    const html = renderBubble({ content: 'Sunny and mild. Bring a jacket.', captionLines: ['Sunny and mild.', 'Bring a jacket.'] });
+    expect(html).toContain('speech-caption-history');
+    expect(html).not.toContain('chat-report-button');
   });
-
-  it('does not offer to report the transient "…" wait bubble', () => {
-    // It is a placeholder painted while the model is still thinking — there
-    // is no generated sentence to report yet.
-    expect(render({ content: '…' })).not.toContain('chat-report-button');
-  });
-
-  it('labels the control in all four languages', () => {
-    for (const { id } of LANGS) {
-      const html = render({ lang: id });
-      expect(html, `${id} aria-label`).toContain(`aria-label="${t(id, 'reportAria')}"`);
-      expect(t(id, 'reportAria').trim().length).toBeGreaterThan(0);
-    }
-    // four distinct labels, not one English string rendered four times
-    expect(new Set(LANGS.map(({ id }) => t(id, 'reportAria'))).size).toBe(4);
-  });
-
-  it('ChatPanel wires the control to the sheet and mounts it outside the scroller', () => {
-    // Structural check only — ChatPanel cannot be rendered without the 3D
-    // canvas, so the wiring is pinned at the source level.
+  it('ChatPanel no longer mounts inline report entry on history rows', () => {
     const panel = read('components/ChatPanel.tsx');
-    expect(panel).toContain('setReportFor(reply)');
-    expect(panel).toContain('<ReportDialog');
-    expect(panel).toContain('onClose={() => setReportFor(null)}');
+    expect(panel).not.toContain('setReportFor');
+    expect(panel).not.toContain('<ReportDialog');
+    expect(panel).not.toContain('onReport=');
   });
 });
 
