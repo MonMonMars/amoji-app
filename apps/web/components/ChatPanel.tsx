@@ -1402,7 +1402,6 @@ export default function ChatPanel({
         // encouragement — no move-by-move cue sync (hard to keep in time).
         exerciseRef.current = null;
         triggerMove('taichi');
-        holdMove(14_000);
         sayLocal(
           lang === 'zh'
             ? '好，跟我一起打一段太极——慢慢来，呼吸跟上就好，你很棒！'
