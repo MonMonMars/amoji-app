@@ -204,7 +204,7 @@ import { PASSIVE_IDLE_LOOP_TEMPLATE, resolvePassiveBodyIdleClip } from '../lib/i
 import { resolveContentMotion } from '../lib/content-motion';
 import { clipLabel, PERFORMANCE_CLIPS, type PerformanceClip } from '../lib/performance-clips';
 import { resolvePerfMotion } from '../lib/performance-motion';
-import { ownerDanceClipPrefs } from '../lib/owner-dance-picks';
+import { ownerDanceClipPrefs, ownerSingClipPrefs } from '../lib/owner-perf-picks';
 import {
   SHOWCASE_START,
   SHOWCASE_YES_RE,
@@ -409,7 +409,9 @@ export default function ChatPanel({
         },
         pending.bodyMove === 'dance'
           ? { ownerDanceClips: ownerDanceClipPrefs(characterId) }
-          : undefined,
+          : pending.bodyMove === 'sing'
+            ? { ownerSingClips: ownerSingClipPrefs(characterId) }
+            : undefined,
       ));
     }
     triggerMove(pending.bodyMove);

@@ -165,9 +165,21 @@ Hold per bible — Edge 58-button list **removed** (`voice-catalog.ts`); use `vo
 | Catalog | `performance-clips.ts` (`PERFORMANCE_CLIPS`) |
 | Credits | `public/audio/LIBRARY.md` (CC0 / public domain) |
 | Demo prefs | `PREFERRED_DEMO_CLIPS` / `AVOID_DEMO_CLIPS` |
-| Used by | `music.ts`, `startLibraryPerformance` |
+| Owner listen/sing pins | `amoji.ownerPerfPicks.v1` · ship-set `apps/web/data/owner-perf-selection.json` |
+| Used by | `music.ts`, `owner-perf-picks.ts`, `startLibraryPerformance` |
 
 **Owner soft-weights:** Twinkle, Silent Night, lullaby beds — see `performance-clips.ts` comments.
+
+### Updating owner listen / sing picks
+
+1. **Runtime (same device):** In DevTools → Application → localStorage, set `amoji.ownerPerfPicks.v1` to JSON:
+   ```json
+   { "listenMvCodes": ["MV070", "MV085"], "songClipIds": ["sing-f-silent-night"] }
+   ```
+2. **Repo ship-set (all users until they override):** Edit `apps/web/data/owner-perf-selection.json` and bump `revision.ts`.
+3. **Pixel review page:** `docs/owner-resources.html` Music tab — note checked MV rows + song performance rows, then paste the JSON above (export script: copy checked row ids into `listenMvCodes` / `songClipIds`; full row export JSON is planned in picker `copyJson`).
+
+**Dance / sing body VRMA** still honor `amoji.idlePick.v6` + `amoji.idleEnabled.v6` dance/sing rails via `owner-dance-picks.ts` / `ownerSingClipPrefs()`.
 
 ---
 

@@ -32,6 +32,7 @@ import {
   STYLE_THEME_ID,
   type MusicStyleId,
 } from './music-catalog';
+import { pickOwnerSongClipId, pickOwnerStreamTrack } from './owner-perf-picks';
 export {
   detectMusicStyle,
   resolveStreamPlaylist,
@@ -707,7 +708,9 @@ function resolveStreamForQuery(q: LibraryPerfQuery) {
   const exact = streamTrackById(q.streamId);
   if (exact) return exact;
   const styleId = q.style as MusicStyleId | undefined;
-  return styleId ? pickStreamTrack(styleId, q.n ?? 0) : null;
+  const owner = pickOwnerStreamTrack(styleId, q.n ?? 0);
+  if (owner) return owner;
+  return styleId ? pickStreamTrack(styleId, q.n ?? 0) : pickOwnerStreamTrack(undefined, q.n ?? 0);
 }
 
 /**
@@ -715,10 +718,12 @@ function resolveStreamForQuery(q: LibraryPerfQuery) {
  * Same inputs as {@link startLibraryPerformance} so announce-then-play stays stable.
  */
 export function resolveLibraryPerformance(q: LibraryPerfQuery): PerformanceClip {
-  if (q.clipId) return pickPerformanceClip(q);
-  const stream = resolveStreamForQuery(q);
+  const ownerSong = pickOwnerSongClipId(q);
+  const withOwner = ownerSong && !q.clipId ? { ...q, clipId: ownerSong } : q;
+  if (withOwner.clipId) return pickPerformanceClip(withOwner);
+  const stream = resolveStreamForQuery(withOwner);
   if (stream && q.kind === 'dance') return streamDanceClip(stream);
-  return pickPerformanceClip(q);
+  return pickPerformanceClip(withOwner);
 }
 
 /**
@@ -729,13 +734,15 @@ export function resolveLibraryPerformance(q: LibraryPerfQuery): PerformanceClip 
 export function startLibraryPerformance(
   q: ClipQuery & { ms: number; style?: MusicStyleId | string; streamId?: string },
 ): PerformanceClip {
+  const ownerSong = pickOwnerSongClipId(q);
+  const query = ownerSong && !q.clipId ? { ...q, clipId: ownerSong } : q;
   // Exact clip picks skip the stream bed path.
-  if (!q.clipId) {
-  const styleId = q.style as MusicStyleId | undefined;
-  const stream = resolveStreamForQuery(q);
-  if (stream && q.kind === 'dance') {
+  if (!query.clipId) {
+  const styleId = query.style as MusicStyleId | undefined;
+  const stream = resolveStreamForQuery(query);
+  if (stream && query.kind === 'dance') {
     const synthetic = streamDanceClip(stream);
-    const holdMs = Math.max(q.ms, stream.durationMs + 600);
+    const holdMs = Math.max(query.ms, stream.durationMs + 600);
     if (isMasterMuted() || typeof window === 'undefined') return synthetic;
     if (clipId === synthetic.id && perfPreserve) {
       armPerformance(holdMs);
@@ -751,7 +758,7 @@ export function startLibraryPerformance(
     clipKind = 'dance';
     clipVolumeKey = 'bgmVol';
     clipBase = CLIP_BASE_GAIN.dance;
-    clipCharacter = q.characterId ?? STYLE_THEME_ID[styleId ?? 'default'] ?? 'default';
+    clipCharacter = query.characterId ?? STYLE_THEME_ID[styleId ?? 'default'] ?? 'default';
     armPerformance(holdMs);
     const token = ++loadToken;
     if (!playClipElement(stream.url, token, clipCharacter)) {
@@ -760,8 +767,8 @@ export function startLibraryPerformance(
     return synthetic;
   }
   } // end !clipId stream path
-  const clip = pickPerformanceClip(q);
-  const holdMs = Math.max(q.ms, (clip.durationMs || 0) + 600);
+  const clip = pickPerformanceClip(query);
+  const holdMs = Math.max(query.ms, (clip.durationMs || 0) + 600);
   if (isMasterMuted() || typeof window === 'undefined') return clip;
   if (clipId === clip.id && perfPreserve) {
     armPerformance(holdMs);
@@ -776,7 +783,7 @@ export function startLibraryPerformance(
   clipKind = clip.kind === 'song' ? 'song' : 'dance';
   clipVolumeKey = clip.volume;
   clipBase = CLIP_BASE_GAIN[clip.kind];
-  clipCharacter = q.characterId ?? 'default';
+  clipCharacter = query.characterId ?? 'default';
   armPerformance(holdMs);
   const token = ++loadToken;
   void playClip(clip, token, clipCharacter);

@@ -52,6 +52,7 @@ export const CLIENT_STORAGE_KEYS: ClientStorageKey[] = [
   { key: 'amoji.idlePick.v5', kind: 'local', purpose: 'Per-character idle pick (legacy v5)', wipeable: true },
   { key: 'amoji.idlePick.v6', kind: 'local', purpose: 'Per-character idle pick (migrates owner picks)', wipeable: true },
   { key: 'amoji.cmaReactionSfx.picks.v1', kind: 'local', purpose: 'CMA reaction SFX gallery picks', wipeable: true },
+  { key: 'amoji.ownerPerfPicks.v1', kind: 'local', purpose: 'Owner listen MV codes + sing audio/VRMA ship picks', wipeable: true },
   { key: 'amoji.emotionClips.v1', kind: 'local', purpose: 'Emotion clip picks', wipeable: true },
   { key: 'amoji.osVoice.v1', kind: 'local', purpose: 'OS voice picks', wipeable: true },
   { key: 'amoji.entryGate.v1', kind: 'local', purpose: 'Entry / setup gate progress', wipeable: true },
