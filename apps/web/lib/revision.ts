@@ -439,7 +439,8 @@
 // r2026-11-18.223: unfreeze tai chi lib_C121 martial flow (plant-feet + CompanionCanvas).
 // r2026-11-18.224: chat history — remove per-bubble ⚑ report chip (ReportDialog/lib stay).
 // r2026-11-18.226: yue hip-hop music ask short-circuit + hiphop stream bed (#514).
-export const APP_REVISION = 'r2026-11-18.226';
+// r2026-11-18.230: demo-phase weather+news pinned left; chip taps → live facts + sayLocal.
+export const APP_REVISION = 'r2026-11-18.230';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

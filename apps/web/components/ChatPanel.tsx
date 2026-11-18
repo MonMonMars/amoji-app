@@ -161,7 +161,12 @@ import {
   quotaExceededCopy,
 } from '../lib/daily-quota';
 import { planStatus } from '../lib/billing';
-import { clientLiveContext, isLiveFactsOnlyTurn, planTools } from '../lib/live-tools';
+import {
+  clientLiveContext,
+  isLiveFactsOnlyTurn,
+  planTools,
+  primeLocationForChatEnter,
+} from '../lib/live-tools';
 import {
   OPEN_CHEER_MS,
   OPEN_IDLE_BRIEF_MS,
@@ -2268,6 +2273,38 @@ export default function ChatPanel({
                   undefined,
                   { rateBias: STORY_SPEECH_RATE_BIAS },
                 );
+                return;
+              }
+              if (id === 'weather' || id === 'news' || id === 'aiNews') {
+                if (id === 'weather') {
+                  try {
+                    primeLocationForChatEnter();
+                  } catch {
+                    /* ignore */
+                  }
+                }
+                lastActivityRef.current = Date.now();
+                lastUserRef.current = Date.now();
+                userHasSpokenRef.current = true;
+                reengageStageRef.current = 0;
+                lastTopicalContentAtRef.current = Date.now();
+                idleAutoAfterUserRef.current = true;
+                setHistory((h) => [...h, { role: 'user', content: prompt }]);
+                feedUtterance(prompt);
+                stopSpeaking();
+                void clientLiveContext(prompt, lang).then((live) => {
+                  const raw = live.spoken?.trim() ?? '';
+                  const line = raw
+                    ? scrubLiveFactsSpoken(stripOfftopicAbilityTack(raw, prompt))
+                    : '';
+                  const fallback = id === 'weather'
+                    ? SHOWCASE_START[lang].weather
+                    : SHOWCASE_START[lang].news;
+                  const spoken = line || fallback;
+                  rememberTurn(prompt, spoken);
+                  onMemCountRef.current?.(memorySummaryCount());
+                  sayLocal(spoken);
+                });
                 return;
               }
               if (isTopicalContentTurn(prompt)) {
