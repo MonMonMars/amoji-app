@@ -1,4 +1,6 @@
 'use client';
+
+import { ownerVisibleDemoPhaseButtons } from './owner-picker-decisions';
 // Demo-phase chips above the chat composer — one-tap tutorials for what
 // the character can do when the user would rather not talk or type (esp.
 // iPhone). Labels stay short; each chip carries several prompt facets so
@@ -778,13 +780,13 @@ export const DEMO_PHASE_TAIL_SHUFFLE_ENABLED = true;
 
 function pinnedDemoPhaseButtons(): DemoPhaseButton[] {
   return DEMO_PHASE_LEFT_PRIORITY_IDS.map(
-    (id) => DEMO_PHASE_BUTTONS.find((b) => b.id === id)!,
+    (id) => ownerVisibleDemoPhaseButtons().find((b) => b.id === id)!,
   );
 }
 
 function demoPhaseTailButtons(): DemoPhaseButton[] {
   const pinned = new Set<string>(DEMO_PHASE_LEFT_PRIORITY_IDS);
-  return DEMO_PHASE_BUTTONS.filter((b) => !pinned.has(b.id));
+  return ownerVisibleDemoPhaseButtons().filter((b) => !pinned.has(b.id));
 }
 
 /** Fisher–Yates tail shuffle — weather + news stay left; same seed → same tail order. */

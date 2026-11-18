@@ -15,6 +15,7 @@ import {
   pickWantedCmaReactionPath,
   skippedCmaReactionCodes,
 } from './cma-reaction-gallery';
+import { isOwnerPickerDeleted } from './owner-picker-decisions';
 
 export const VOICE_CLIP_LANGS = ['yue', 'zh', 'ja', 'en'] as const;
 export type VoiceClipLang = (typeof VOICE_CLIP_LANGS)[number];
@@ -437,6 +438,7 @@ const POKE_ZONE_ALIASES: Record<string, string> = {
 function pokePathAllowed(path: string): boolean {
   const code = cmaCodeFromPath(path);
   if (!code) return true;
+  if (isOwnerPickerDeleted(code)) return false;
   return !skippedCmaReactionCodes().includes(code);
 }
 
@@ -459,7 +461,8 @@ export function recordedPokeClip(gender: VoiceClipGender, zone?: string): string
   for (const path of Object.values(table)) {
     if (pokePathAllowed(path)) return path;
   }
-  return zonePath;
+  const first = Object.values(table).find((path) => pokePathAllowed(path));
+  return first ?? zonePath;
 }
 
 export function loadingFillerKind(text: string): 'um' | 'ha' | 'think' | 'search' | null {

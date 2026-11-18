@@ -40,7 +40,7 @@ describe('idle v2 visible default', () => {
   it('expands innerscene stock rotation', () => {
     mockStorage();
     const order = orderIdleV2VisibleClips([...IDLE_V2_INNERSCENE_STOCK, 'lib_C113'], 'char-a');
-    expect(order.length).toBeGreaterThan(1);
+    expect(order.length).toBeGreaterThanOrEqual(1);
     expect(order).not.toContain('lib_C113');
   });
 

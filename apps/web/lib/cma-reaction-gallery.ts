@@ -1,3 +1,5 @@
+import { filterOwnerCmaCodes, isOwnerPickerDeleted } from './owner-picker-decisions';
+
 // CMA reaction SFX gallery + Want/Skip picks.
 // Owner EmotionClipRow #1–23 review (female-first order) → ship / archive / delete.
 // Wanted codes feed recordedLaughClip / recordedPokeClip. Assets under public/voice-clips/cma-reaction/.
@@ -389,7 +391,12 @@ export function listCmaReactionPicks(): PickMap {
 }
 
 export function wantedCmaReactionCodes(): string[] {
-  return Object.entries(hydrate()).filter(([, v]) => v === 'want').map(([c]) => c).sort();
+  const fromGallery = Object.entries(hydrate()).filter(([, v]) => v === 'want').map(([c]) => c);
+  const pool = new Set<string>(fromGallery);
+  for (const code of CMA_REACTION_OWNER_WANT_CODES) {
+    if (!isOwnerPickerDeleted(code)) pool.add(code);
+  }
+  return filterOwnerCmaCodes([...pool]).sort();
 }
 
 export function skippedCmaReactionCodes(): string[] {

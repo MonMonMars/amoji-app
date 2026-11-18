@@ -11,6 +11,7 @@ import {
   isHonorableIdleClip,
   readMigratingPrefJson,
 } from './idle-owner-migrate';
+import { applyOwnerIdleRailFilter, ownerIdleClipDeleted } from './owner-picker-decisions';
 import { isRetiredIdleNum } from './idle-retired';
 import {
   CHAT_IDLE_CURATED,
@@ -30,6 +31,10 @@ const KEY = IDLE_ENABLED_KEY;
 let memory: number[] | null = null;
 let loaded = false;
 
+function freshOwnerEnabledRails(): number[] {
+  return applyOwnerIdleRailFilter(defaultCuratedRailNums());
+}
+
 function scrubBannedRails(nums: number[]): number[] {
   const next = nums.filter((n) => {
     const row = curatedRailByNum(n);
@@ -37,7 +42,7 @@ function scrubBannedRails(nums: number[]): number[] {
     if (!isHonorableIdleClip(row.clipId)) return false;
     return true;
   });
-  return next.length ? next : defaultCuratedRailNums();
+  return applyOwnerIdleRailFilter(next.length ? next : defaultCuratedRailNums());
 }
 
 function hydrate(): number[] {
@@ -45,17 +50,17 @@ function hydrate(): number[] {
   loaded = true;
   try {
     if (typeof localStorage === 'undefined') {
-      memory = defaultCuratedRailNums();
+      memory = freshOwnerEnabledRails();
       return memory;
     }
     const { raw, migratedFrom, numKind } = readMigratingPrefJson(KEY, LEGACY_IDLE_ENABLED_KEYS);
     if (!raw) {
-      memory = defaultCuratedRailNums();
+      memory = freshOwnerEnabledRails();
       return memory;
     }
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) {
-      memory = defaultCuratedRailNums();
+      memory = freshOwnerEnabledRails();
       return memory;
     }
     const nums = parsed
@@ -68,7 +73,7 @@ function hydrate(): number[] {
     }
     return memory;
   } catch {
-    memory = defaultCuratedRailNums();
+    memory = freshOwnerEnabledRails();
     return memory;
   }
 }
@@ -115,7 +120,7 @@ export function listEnabledSingClipIds(): string[] {
     if (row.category !== 'sing') continue;
     if (!enabled.has(row.railNum)) continue;
     if (seen.has(row.clipId)) continue;
-    if (!isHonorableIdleClip(row.clipId)) continue;
+    if (!isHonorableIdleClip(row.clipId) || ownerIdleClipDeleted(row.clipId)) continue;
     seen.add(row.clipId);
     ids.push(row.clipId);
   }
@@ -131,7 +136,7 @@ export function listEnabledDanceClipIds(): string[] {
     if (row.category !== 'dance') continue;
     if (!enabled.has(row.railNum)) continue;
     if (seen.has(row.clipId)) continue;
-    if (!isHonorableIdleClip(row.clipId)) continue;
+    if (!isHonorableIdleClip(row.clipId) || ownerIdleClipDeleted(row.clipId)) continue;
     seen.add(row.clipId);
     ids.push(row.clipId);
   }
@@ -145,7 +150,7 @@ export function listEnabledIdleClipIds(): string[] {
   const seen = new Set<string>();
   for (const row of CHAT_IDLE_CURATED) {
     if (!enabled.has(row.railNum) || seen.has(row.clipId)) continue;
-    if (!isHonorableIdleClip(row.clipId)) continue;
+    if (!isHonorableIdleClip(row.clipId) || ownerIdleClipDeleted(row.clipId)) continue;
     const lib = idleByNum(row.legacyLibNum);
     if (!lib?.playable || lib.retired || isRetiredIdleNum(row.legacyLibNum)) continue;
     seen.add(row.clipId);
@@ -160,7 +165,7 @@ export function listEnabledIdleClipIds(): string[] {
 }
 
 export function resetIdleEnabled(): void {
-  memory = defaultCuratedRailNums();
+  memory = freshOwnerEnabledRails();
   loaded = true;
   try {
     if (typeof localStorage !== 'undefined') localStorage.removeItem(KEY);
