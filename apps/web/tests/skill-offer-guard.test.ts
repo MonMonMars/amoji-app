@@ -25,6 +25,8 @@ describe('skill-offer guard (no offtopic dance tack-ons)', () => {
     expect(isTopicalContentTurn(demoPhasePrompt('story', 'en'))).toBe(true);
     expect(isTopicalContentTurn('hi')).toBe(false);
     expect(isTopicalContentTurn(demoPhasePrompt('dance', 'en'))).toBe(false);
+    expect(isTopicalContentTurn('search the web for aurora borealis')).toBe(true);
+    expect(isTopicalContentTurn('tell me about the Mariana Trench')).toBe(true);
   });
 
   it('suppresses skill offers for a window after a topical turn', () => {
@@ -80,5 +82,6 @@ describe('skill-offer guard (no offtopic dance tack-ons)', () => {
     const src = fs.readFileSync(path.resolve(here, '../lib/skill-offer-guard.ts'), 'utf8');
     expect(src).not.toMatch(/from ['"]\.\/demo-phase['"]/);
     expect(src).not.toMatch(/from ['"]\.\/topic-suggestions['"]/);
+    expect(src).toContain('userWantsWebLookup');
   });
 });

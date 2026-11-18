@@ -2,7 +2,7 @@
 // them. Only the wait beats live here — "um……", "ha……", and the full
 // "um…… let me think / let me search" sentences.
 
-import { planTools } from './live-tools';
+import { planTools, userWantsWebLookup } from './live-tools';
 import { LOADING_MOOD_STUBS, LOADING_STUBS } from './thinking-lines';
 
 /**
@@ -84,5 +84,5 @@ export function pickWaitLine(
 
 function needsWeb(text: string): boolean {
   const plan = planTools(text);
-  return plan.weather || plan.news || plan.where || Boolean(plan.searchQuery);
+  return plan.weather || plan.news || plan.where || userWantsWebLookup(text);
 }
