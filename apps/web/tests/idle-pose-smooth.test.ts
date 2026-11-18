@@ -53,7 +53,8 @@ describe('idle pose smooth + catalog trim', () => {
     const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
     // plantFeet still deferred while mixer owns the legs
     expect(canvas).toMatch(/!feetFree && !idleLegGlide/);
-    expect(canvas).toMatch(/blendT0 >= 0 && now < blendT0 \+ blendDur \* 1000/);
+    expect(canvas).toMatch(/idleLegGlide = idleSwapBlendActive\(now, swapBlendUntil\)/);
+    expect(canvas).not.toMatch(/blendT0 >= 0 && now < blendT0 \+ blendDur \* 1000/);
   });
 
   it('lets mixer own idle A→B (no manual bone blend on swap)', () => {

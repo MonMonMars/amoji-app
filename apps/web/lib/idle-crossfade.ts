@@ -26,8 +26,8 @@ export function idleSwapBlendActive(nowMs: number, blendEndMs: number): boolean 
 }
 
 /**
- * Scale poke / procedural additives while an idle A→B bone crossfade runs,
- * so opposite-direction poke recipes do not stack on top of the clip handover.
+ * Scale poke / procedural additives while an idle A→B mixer crossfade runs
+ * (pass swapBlendUntil only — not perf/entry bone-ease windows).
  */
 export function idleCrossfadeAdditiveScale(nowMs: number, blendEndMs: number): number {
   if (!idleSwapBlendActive(nowMs, blendEndMs)) return 1;

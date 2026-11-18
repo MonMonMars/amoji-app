@@ -36,6 +36,7 @@ import { beatAlignedVrmaTime, timeScaleForProfile } from '../lib/performance-mot
 import { isLibraryClipAudible, libraryBedPlaybackSec } from '../lib/music';
 import { playableIdles } from '../lib/idle-library';
 import { listEnabledIdleClipIds } from '../lib/idle-enabled';
+import { isIdleV2Enabled, orderIdleV2VisibleClips } from '../lib/idle-v2-visible';
 import { orderPassiveIdleClips } from '../lib/idle-passive-loop';
 import {
   DEFAULT_IDLE_CLIP_ID,
@@ -604,13 +605,26 @@ export default function CompanionCanvas({
       // stacked a third quaternion smear on top of near-still VRMA.
       if (swapBlendActive) return;
       const u = (nowMs - blendT0) / (blendDur * 1000);
+      const kRaw = u >= 1 ? 1 : u * u * u * (u * (u * 6 - 15) + 10);
       if (u >= 1) {
+        const k = 1;
+        for (let i = 0; i < blendNodes.length; i++) {
+          const tgt = blendNodes[i]!.quaternion;
+          const name = blendNames[i];
+          if (name && /spine|chest|neck|head/i.test(name)) {
+            shortestEulerYXZSlerp(blendQ, blendFrom[i]!, tgt, k);
+            clampBoneByName(blendQ, name);
+          } else {
+            shortestQuatSlerpClamped(blendQ, blendFrom[i]!, tgt, k, name);
+          }
+          blendNodes[i]!.quaternion.copy(blendQ);
+        }
         blendT0 = -1;
         swapBlendActive = false;
         swapBlendUntil = 0;
         return;
       }
-      const k = u * u * u * (u * (u * 6 - 15) + 10);
+      const k = kRaw;
       for (let i = 0; i < blendNodes.length; i++) {
         const tgt = blendNodes[i]!.quaternion;
         const name = blendNames[i];
@@ -982,7 +996,9 @@ export default function CompanionCanvas({
         .map((s) => s.id)
         .filter((id) => clips.has(id) && !isRetiredIdleClip(resolveIdleClipId(id)));
       if (enabledLoaded.length) {
-        idleOrder = orderPassiveIdleClips(enabledLoaded, seedKey);
+        idleOrder = isIdleV2Enabled()
+          ? orderIdleV2VisibleClips(enabledLoaded, seedKey)
+          : orderPassiveIdleClips(enabledLoaded, seedKey);
       } else {
         const loadedIdleIds = [...IDLE_SOURCES, ...IDLE_PICKS]
           .map((s) => s.id)
@@ -1958,9 +1974,9 @@ export default function CompanionCanvas({
         // scales, or tips ??that used to slide and lift both feet.
         const pokeAge = now - pokeAt;
         const pokeRaw = pokeAge < POKE_MS ? 1 - pokeAge / POKE_MS : 0;
-        const proceduralBlendEnd = blendT0 >= 0 ? blendT0 + blendDur * 1000 : 0;
-        const idleBlendEndMs = Math.max(swapBlendUntil, proceduralBlendEnd);
-        const pokeDamp = idleCrossfadeAdditiveScale(now, idleBlendEndMs);
+        // Poke lean damp only during idle A→B mixer swap — not entry/perf
+        // bone ease (that made lean pop when a 0.7s clip crossfade ended).
+        const pokeDamp = idleCrossfadeAdditiveScale(now, swapBlendUntil);
         const boost = pokeRaw * pokeDamp;
         const laughAge = now - lastLaughAt();
         const laugh = laughAge >= 0 && laughAge < 1600 ? 1 - laughAge / 1600 : 0;
@@ -2176,9 +2192,9 @@ export default function CompanionCanvas({
         // whatever the mixer wrote this frame.
         // Idle A→B glide window — same gate for feet AND arm writers so hang /
         // soften / shoulder ROM do not yank limbs to a "strange" pose mid-fade.
-        const idleLegGlide =
-          idleSwapBlendActive(now, swapBlendUntil)
-          || (blendT0 >= 0 && now < blendT0 + blendDur * 1000);
+        // Mixer-owned idle A→B only — deferring IK on perf/entry bone ease
+        // left feet unlocked for 0.7s then plantFeet snapped the body sideways.
+        const idleLegGlide = idleSwapBlendActive(now, swapBlendUntil);
 
         if (gameView) playGameBody(gameView.anim);
         // Calm upright: torso upright only — arm soften + hang on near-still
@@ -2305,6 +2321,9 @@ export default function CompanionCanvas({
         avatar.clampAxialNoFlip();
         if (!feetFree && !idleLegGlide) avatar.unblendLegs();
         avatar.update(dt / 1000);
+        // Iris/white z-order can flip after morph or late texture decode — re-pin
+        // every frame so pupils do not vanish mid-chat (not only at reveal gate).
+        if (!revealPending) stabilizeEyeMaterials(avatar.root);
         // Chest and torso punches: bust spring after the skeleton update.
         // Soft breast (Mon t765): bounce clock outlives the tiny body recoil.
         const bounceSoft = pokeZone === 'chest' && gender === 'female';
