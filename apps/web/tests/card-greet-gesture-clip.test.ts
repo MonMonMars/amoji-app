@@ -120,6 +120,8 @@ describe('card greet — no audible insurance (permanent)', () => {
     const helperEnd = voice.indexOf('export function speakThinkingFiller', helperStart);
     const helper = voice.slice(helperStart, helperEnd);
     expect(helper).not.toContain('stopGtts()');
+    expect(helper).not.toContain('haltSynthQueue()');
+    expect(helper).toContain('haltBrowserSynth()');
     expect(greetBody).not.toContain('primeSynthInGesture(true)');
     expect(previewBody).not.toContain('primeSynthInGesture(true)');
   });
