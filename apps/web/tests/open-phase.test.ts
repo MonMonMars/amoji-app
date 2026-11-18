@@ -117,6 +117,16 @@ describe('openPhase asks + spoken summary', () => {
     expect(line).not.toMatch(/傾咩/);
     expect(line).not.toMatch(/[?？]/);
   });
+
+  it('buildOpenCheerLine drops stacked 你好 when name hello already greets', () => {
+    const line = buildOpenCheerLine('yue', {
+      nameHello: '你好，阿琪！',
+      personaIntro: '你好，我係Saori。我有少少怕醜，不過我鍾意花。',
+    });
+    expect(line).toMatch(/^你好，阿琪/);
+    expect(line).toContain('Saori');
+    expect(line).not.toMatch(/你好，我係/);
+  });
 });
 
 

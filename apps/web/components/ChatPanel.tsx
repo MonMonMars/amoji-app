@@ -890,9 +890,15 @@ export default function ChatPanel({
     // still queued or its audio started, say only the rest — never replay
     // that sentence, and never cut it. If it never started and is gone from
     // the queue, fall through and speak the whole reply.
+    const streamedLead = alreadySpoken?.text.trim() ?? '';
+    const leadMatched = !!streamedLead && !speechLeadDiverged(reply, streamedLead);
+    const leadQueued = !!streamedLead && speechStillQueued(streamedLead);
+    const leadAudible = !!alreadySpoken && voiceStartedSince(alreadySpoken.since);
+    const leadPlayedThrough = leadMatched && leadAudible && !leadQueued;
     const firstLive = !!alreadySpoken
       && mv !== 'sing'
-      && (speechStillQueued(alreadySpoken.text) || voiceStartedSince(alreadySpoken.since));
+      && leadMatched
+      && (leadQueued || leadAudible || leadPlayedThrough);
     // Streamed lead + final reply often diverge (preferLive / scrub). Never
     // stack a second full answer on top — cut the lead and speak once.
     if (firstLive && alreadySpoken && speechLeadDiverged(reply, alreadySpoken.text)) {
