@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "listenMvCodes": ["MV069", "MV079", "MV084", "MV096"],
+  "songClipIds": [
+    "sing-f-twinkle",
+    "sing-f-silent-night",
+    "sing-f-joy",
+    "sing-m-happy-birthday",
+    "bed-lullaby"
+  ],
+  "notes": "Repo ship-set when the browser has no amoji.ownerPerfPicks.v1. Regenerate from owner-resources Music tab checked MV rows + performance song rows."
+}

@@ -142,6 +142,7 @@
       <h2 id="music">Music &amp; performance audio</h2>
       
     <p class="lede"><span class="hold">Hold</span> — no copyrighted commercial masters in catalog; Mixkit + CC0/PD only per <code>docs/MUSIC_STREAMING.md</code>. Stripe / licensed spike #1 remains Hold elsewhere.</p>
+    <p class="lede">Runtime owner perf prefs: <code>amoji.ownerPerfPicks.v1</code> (<code>listenMvCodes</code>, <code>songClipIds</code>) — ship-set <code>apps/web/data/owner-perf-selection.json</code>. Checked MV stream rows → copy codes into that JSON; idle dance/sing body still uses <code>amoji.idlePick.v6</code> / <code>amoji.idleEnabled.v6</code>.</p>
     <h2>Performance library (CC0 / PD files)</h2>
     <div class="panel"><table>
       <thead><tr><th>Keep</th><th>Ship</th><th>Play</th><th>Title</th><th>Kind</th><th>Langs</th><th>Tags</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
@@ -1860,7 +1861,7 @@
     <h2>Procedural WebAudio themes (no file)</h2>
     <div class="panel"><table>
       <thead><tr><th>Keep</th><th>Ship</th><th>Play</th><th>Theme</th><th>Kind</th><th>Langs</th><th>Tags</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
-      <tbody><tr class="row-in-use" data-in-use="1" data-id="procedural-default" data-label="warm pop" data-ref="apps/web/lib/music.ts:67">
+      <tbody><tr class="row-in-use" data-in-use="1" data-id="procedural-default" data-label="warm pop" data-ref="apps/web/lib/music.ts:68">
       <td><input type="checkbox" class="keep" checked /></td>
       <td class="flags"><span class="tag in-use">MUSIC_THEMES</span></td>
       <td>—</td>
@@ -1870,8 +1871,8 @@
       <td><span class="tag">96 bpm</span><span class="tag">triangle</span></td>
       <td class="license-ok">Original (WebAudio)</td>
       <td>—</td>
-      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>default</code></span></td>
-    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-juno" data-label="smoky swing" data-ref="apps/web/lib/music.ts:67">
+      <td><span class="ref">apps/web/lib/music.ts:68 · theme <code>default</code></span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-juno" data-label="smoky swing" data-ref="apps/web/lib/music.ts:68">
       <td><input type="checkbox" class="keep" checked /></td>
       <td class="flags"><span class="tag in-use">MUSIC_THEMES</span></td>
       <td>—</td>
@@ -1881,8 +1882,8 @@
       <td><span class="tag">88 bpm</span><span class="tag">sine</span></td>
       <td class="license-ok">Original (WebAudio)</td>
       <td>—</td>
-      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>juno</code></span></td>
-    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-mochi" data-label="music box" data-ref="apps/web/lib/music.ts:67">
+      <td><span class="ref">apps/web/lib/music.ts:68 · theme <code>juno</code></span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-mochi" data-label="music box" data-ref="apps/web/lib/music.ts:68">
       <td><input type="checkbox" class="keep" checked /></td>
       <td class="flags"><span class="tag in-use">MUSIC_THEMES</span></td>
       <td>—</td>
@@ -1892,8 +1893,8 @@
       <td><span class="tag">78 bpm</span><span class="tag">sine</span></td>
       <td class="license-ok">Original (WebAudio)</td>
       <td>—</td>
-      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>mochi</code></span></td>
-    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-marin" data-label="hyper pop" data-ref="apps/web/lib/music.ts:67">
+      <td><span class="ref">apps/web/lib/music.ts:68 · theme <code>mochi</code></span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-marin" data-label="hyper pop" data-ref="apps/web/lib/music.ts:68">
       <td><input type="checkbox" class="keep" checked /></td>
       <td class="flags"><span class="tag in-use">MUSIC_THEMES</span></td>
       <td>—</td>
@@ -1903,8 +1904,8 @@
       <td><span class="tag">128 bpm</span><span class="tag">square</span></td>
       <td class="license-ok">Original (WebAudio)</td>
       <td>—</td>
-      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>marin</code></span></td>
-    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-ruby" data-label="bouncy" data-ref="apps/web/lib/music.ts:67">
+      <td><span class="ref">apps/web/lib/music.ts:68 · theme <code>marin</code></span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-ruby" data-label="bouncy" data-ref="apps/web/lib/music.ts:68">
       <td><input type="checkbox" class="keep" checked /></td>
       <td class="flags"><span class="tag in-use">MUSIC_THEMES</span></td>
       <td>—</td>
@@ -1914,8 +1915,8 @@
       <td><span class="tag">118 bpm</span><span class="tag">triangle</span></td>
       <td class="license-ok">Original (WebAudio)</td>
       <td>—</td>
-      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>ruby</code></span></td>
-    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-alan" data-label="easy jam" data-ref="apps/web/lib/music.ts:67">
+      <td><span class="ref">apps/web/lib/music.ts:68 · theme <code>ruby</code></span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-alan" data-label="easy jam" data-ref="apps/web/lib/music.ts:68">
       <td><input type="checkbox" class="keep" checked /></td>
       <td class="flags"><span class="tag in-use">MUSIC_THEMES</span></td>
       <td>—</td>
@@ -1925,8 +1926,8 @@
       <td><span class="tag">100 bpm</span><span class="tag">triangle</span></td>
       <td class="license-ok">Original (WebAudio)</td>
       <td>—</td>
-      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>alan</code></span></td>
-    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-mika" data-label="laid-back" data-ref="apps/web/lib/music.ts:67">
+      <td><span class="ref">apps/web/lib/music.ts:68 · theme <code>alan</code></span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-mika" data-label="laid-back" data-ref="apps/web/lib/music.ts:68">
       <td><input type="checkbox" class="keep" checked /></td>
       <td class="flags"><span class="tag in-use">MUSIC_THEMES</span></td>
       <td>—</td>
@@ -1936,8 +1937,8 @@
       <td><span class="tag">82 bpm</span><span class="tag">sine</span></td>
       <td class="license-ok">Original (WebAudio)</td>
       <td>—</td>
-      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>mika</code></span></td>
-    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-luna" data-label="dreamy" data-ref="apps/web/lib/music.ts:67">
+      <td><span class="ref">apps/web/lib/music.ts:68 · theme <code>mika</code></span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-luna" data-label="dreamy" data-ref="apps/web/lib/music.ts:68">
       <td><input type="checkbox" class="keep" checked /></td>
       <td class="flags"><span class="tag in-use">MUSIC_THEMES</span></td>
       <td>—</td>
@@ -1947,8 +1948,8 @@
       <td><span class="tag">72 bpm</span><span class="tag">sine</span></td>
       <td class="license-ok">Original (WebAudio)</td>
       <td>—</td>
-      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>luna</code></span></td>
-    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-anchor" data-label="sea shanty" data-ref="apps/web/lib/music.ts:67">
+      <td><span class="ref">apps/web/lib/music.ts:68 · theme <code>luna</code></span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-anchor" data-label="sea shanty" data-ref="apps/web/lib/music.ts:68">
       <td><input type="checkbox" class="keep" checked /></td>
       <td class="flags"><span class="tag in-use">MUSIC_THEMES</span></td>
       <td>—</td>
@@ -1958,8 +1959,8 @@
       <td><span class="tag">92 bpm</span><span class="tag">sawtooth</span></td>
       <td class="license-ok">Original (WebAudio)</td>
       <td>—</td>
-      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>anchor</code></span></td>
-    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-pop" data-label="bright pop" data-ref="apps/web/lib/music.ts:67">
+      <td><span class="ref">apps/web/lib/music.ts:68 · theme <code>anchor</code></span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-pop" data-label="bright pop" data-ref="apps/web/lib/music.ts:68">
       <td><input type="checkbox" class="keep" checked /></td>
       <td class="flags"><span class="tag in-use">MUSIC_THEMES</span></td>
       <td>—</td>
@@ -1969,8 +1970,8 @@
       <td><span class="tag">112 bpm</span><span class="tag">triangle</span></td>
       <td class="license-ok">Original (WebAudio)</td>
       <td>—</td>
-      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>pop</code></span></td>
-    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-jazz" data-label="smoky jazz" data-ref="apps/web/lib/music.ts:67">
+      <td><span class="ref">apps/web/lib/music.ts:68 · theme <code>pop</code></span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-jazz" data-label="smoky jazz" data-ref="apps/web/lib/music.ts:68">
       <td><input type="checkbox" class="keep" checked /></td>
       <td class="flags"><span class="tag in-use">MUSIC_THEMES</span></td>
       <td>—</td>
@@ -1980,8 +1981,8 @@
       <td><span class="tag">90 bpm</span><span class="tag">sine</span></td>
       <td class="license-ok">Original (WebAudio)</td>
       <td>—</td>
-      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>jazz</code></span></td>
-    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-hiphop" data-label="boom bap" data-ref="apps/web/lib/music.ts:67">
+      <td><span class="ref">apps/web/lib/music.ts:68 · theme <code>jazz</code></span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-hiphop" data-label="boom bap" data-ref="apps/web/lib/music.ts:68">
       <td><input type="checkbox" class="keep" checked /></td>
       <td class="flags"><span class="tag in-use">MUSIC_THEMES</span></td>
       <td>—</td>
@@ -1991,8 +1992,8 @@
       <td><span class="tag">96 bpm</span><span class="tag">square</span></td>
       <td class="license-ok">Original (WebAudio)</td>
       <td>—</td>
-      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>hiphop</code></span></td>
-    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-lofi" data-label="lofi bed" data-ref="apps/web/lib/music.ts:67">
+      <td><span class="ref">apps/web/lib/music.ts:68 · theme <code>hiphop</code></span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-lofi" data-label="lofi bed" data-ref="apps/web/lib/music.ts:68">
       <td><input type="checkbox" class="keep" checked /></td>
       <td class="flags"><span class="tag in-use">MUSIC_THEMES</span></td>
       <td>—</td>
@@ -2002,8 +2003,8 @@
       <td><span class="tag">76 bpm</span><span class="tag">sine</span></td>
       <td class="license-ok">Original (WebAudio)</td>
       <td>—</td>
-      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>lofi</code></span></td>
-    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-electronic" data-label="pulse" data-ref="apps/web/lib/music.ts:67">
+      <td><span class="ref">apps/web/lib/music.ts:68 · theme <code>lofi</code></span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-electronic" data-label="pulse" data-ref="apps/web/lib/music.ts:68">
       <td><input type="checkbox" class="keep" checked /></td>
       <td class="flags"><span class="tag in-use">MUSIC_THEMES</span></td>
       <td>—</td>
@@ -2013,8 +2014,8 @@
       <td><span class="tag">124 bpm</span><span class="tag">sawtooth</span></td>
       <td class="license-ok">Original (WebAudio)</td>
       <td>—</td>
-      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>electronic</code></span></td>
-    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-ballad" data-label="slow ballad" data-ref="apps/web/lib/music.ts:67">
+      <td><span class="ref">apps/web/lib/music.ts:68 · theme <code>electronic</code></span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-ballad" data-label="slow ballad" data-ref="apps/web/lib/music.ts:68">
       <td><input type="checkbox" class="keep" checked /></td>
       <td class="flags"><span class="tag in-use">MUSIC_THEMES</span></td>
       <td>—</td>
@@ -2024,8 +2025,8 @@
       <td><span class="tag">68 bpm</span><span class="tag">sine</span></td>
       <td class="license-ok">Original (WebAudio)</td>
       <td>—</td>
-      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>ballad</code></span></td>
-    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-rock" data-label="drive rock" data-ref="apps/web/lib/music.ts:67">
+      <td><span class="ref">apps/web/lib/music.ts:68 · theme <code>ballad</code></span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-rock" data-label="drive rock" data-ref="apps/web/lib/music.ts:68">
       <td><input type="checkbox" class="keep" checked /></td>
       <td class="flags"><span class="tag in-use">MUSIC_THEMES</span></td>
       <td>—</td>
@@ -2035,8 +2036,8 @@
       <td><span class="tag">118 bpm</span><span class="tag">sawtooth</span></td>
       <td class="license-ok">Original (WebAudio)</td>
       <td>—</td>
-      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>rock</code></span></td>
-    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-cantopop" data-label="canto glow" data-ref="apps/web/lib/music.ts:67">
+      <td><span class="ref">apps/web/lib/music.ts:68 · theme <code>rock</code></span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="procedural-cantopop" data-label="canto glow" data-ref="apps/web/lib/music.ts:68">
       <td><input type="checkbox" class="keep" checked /></td>
       <td class="flags"><span class="tag in-use">MUSIC_THEMES</span></td>
       <td>—</td>
@@ -2046,7 +2047,7 @@
       <td><span class="tag">104 bpm</span><span class="tag">triangle</span></td>
       <td class="license-ok">Original (WebAudio)</td>
       <td>—</td>
-      <td><span class="ref">apps/web/lib/music.ts:67 · theme <code>cantopop</code></span></td>
+      <td><span class="ref">apps/web/lib/music.ts:68 · theme <code>cantopop</code></span></td>
     </tr></tbody>
     </table></div>
     
@@ -7530,174 +7531,174 @@
     <h2>Chat-auto idle pools (content-driven picks)</h2>
     <div class="panel"><table>
       <thead><tr><th>Keep</th><th>Ship / your pick</th><th>Pool</th><th>clipId</th><th>Family</th><th>Source</th></tr></thead>
-      <tbody><tr class="row-in-use" data-in-use="1" data-id="pool-BREATHING_CLIPS-IdleQuaterniusHuman" data-clip-id="IdleQuaterniusHuman" data-label="BREATHING_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+      <tbody><tr class="row-in-use" data-in-use="1" data-id="pool-BREATHING_CLIPS-IdleQuaterniusHuman" data-clip-id="IdleQuaterniusHuman" data-label="BREATHING_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>BREATHING_CLIPS</code></td>
         <td><code>IdleQuaterniusHuman</code></td>
         <td>quaternius</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CHITCHAT_CLIPS-IdleQuaterniusHuman" data-clip-id="IdleQuaterniusHuman" data-label="CHITCHAT_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CHITCHAT_CLIPS-IdleQuaterniusHuman" data-clip-id="IdleQuaterniusHuman" data-label="CHITCHAT_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>CHITCHAT_CLIPS</code></td>
         <td><code>IdleQuaterniusHuman</code></td>
         <td>quaternius</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CHITCHAT_CLIPS-Thinking" data-clip-id="Thinking" data-label="CHITCHAT_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CHITCHAT_CLIPS-Thinking" data-clip-id="Thinking" data-label="CHITCHAT_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>CHITCHAT_CLIPS</code></td>
         <td><code>Thinking</code></td>
         <td>other</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-NEUTRAL_CHAT_CLIPS-IdleQuaterniusHuman" data-clip-id="IdleQuaterniusHuman" data-label="NEUTRAL_CHAT_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-NEUTRAL_CHAT_CLIPS-IdleQuaterniusHuman" data-clip-id="IdleQuaterniusHuman" data-label="NEUTRAL_CHAT_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>NEUTRAL_CHAT_CLIPS</code></td>
         <td><code>IdleQuaterniusHuman</code></td>
         <td>quaternius</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-NEUTRAL_CHAT_CLIPS-Thinking" data-clip-id="Thinking" data-label="NEUTRAL_CHAT_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-NEUTRAL_CHAT_CLIPS-Thinking" data-clip-id="Thinking" data-label="NEUTRAL_CHAT_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>NEUTRAL_CHAT_CLIPS</code></td>
         <td><code>Thinking</code></td>
         <td>other</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-TALK_CALM_CLIPS-IdleQuaterniusHuman" data-clip-id="IdleQuaterniusHuman" data-label="TALK_CALM_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-TALK_CALM_CLIPS-IdleQuaterniusHuman" data-clip-id="IdleQuaterniusHuman" data-label="TALK_CALM_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>TALK_CALM_CLIPS</code></td>
         <td><code>IdleQuaterniusHuman</code></td>
         <td>quaternius</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-TALK_CALM_CLIPS-Thinking" data-clip-id="Thinking" data-label="TALK_CALM_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-TALK_CALM_CLIPS-Thinking" data-clip-id="Thinking" data-label="TALK_CALM_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>TALK_CALM_CLIPS</code></td>
         <td><code>Thinking</code></td>
         <td>other</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-MUSIC_POSE_CLIPS-lib_C112" data-clip-id="lib_C112" data-label="MUSIC_POSE_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-MUSIC_POSE_CLIPS-lib_C112" data-clip-id="lib_C112" data-label="MUSIC_POSE_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>MUSIC_POSE_CLIPS</code></td>
         <td><code>lib_C112</code></td>
         <td>lib</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-MUSIC_POSE_CLIPS-lib_C61" data-clip-id="lib_C61" data-label="MUSIC_POSE_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-MUSIC_POSE_CLIPS-lib_C61" data-clip-id="lib_C61" data-label="MUSIC_POSE_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>MUSIC_POSE_CLIPS</code></td>
         <td><code>lib_C61</code></td>
         <td>lib</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-MUSIC_POSE_CLIPS-lib_C03" data-clip-id="lib_C03" data-label="MUSIC_POSE_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-MUSIC_POSE_CLIPS-lib_C03" data-clip-id="lib_C03" data-label="MUSIC_POSE_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>MUSIC_POSE_CLIPS</code></td>
         <td><code>lib_C03</code></td>
         <td>lib</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-MUSIC_POSE_CLIPS-lib_C113" data-clip-id="lib_C113" data-label="MUSIC_POSE_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-MUSIC_POSE_CLIPS-lib_C113" data-clip-id="lib_C113" data-label="MUSIC_POSE_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>MUSIC_POSE_CLIPS</code></td>
         <td><code>lib_C113</code></td>
         <td>lib</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-MUSIC_POSE_CLIPS-lib_C110" data-clip-id="lib_C110" data-label="MUSIC_POSE_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-MUSIC_POSE_CLIPS-lib_C110" data-clip-id="lib_C110" data-label="MUSIC_POSE_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>MUSIC_POSE_CLIPS</code></td>
         <td><code>lib_C110</code></td>
         <td>lib</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-MUSIC_POSE_CLIPS-lib_C41" data-clip-id="lib_C41" data-label="MUSIC_POSE_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-MUSIC_POSE_CLIPS-lib_C41" data-clip-id="lib_C41" data-label="MUSIC_POSE_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>MUSIC_POSE_CLIPS</code></td>
         <td><code>lib_C41</code></td>
         <td>lib</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-MUSIC_POSE_CLIPS-IdleMixamoHappy" data-clip-id="IdleMixamoHappy" data-label="MUSIC_POSE_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-MUSIC_POSE_CLIPS-IdleMixamoHappy" data-clip-id="IdleMixamoHappy" data-label="MUSIC_POSE_CLIPS" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>MUSIC_POSE_CLIPS</code></td>
         <td><code>IdleMixamoHappy</code></td>
         <td>mixamo</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-lib_C25" data-clip-id="lib_C25" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-lib_C25" data-clip-id="lib_C25" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>CATEGORY_CLIP (keyword buckets)</code></td>
         <td><code>lib_C25</code></td>
         <td>lib</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-Thinking" data-clip-id="Thinking" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-Thinking" data-clip-id="Thinking" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>CATEGORY_CLIP (keyword buckets)</code></td>
         <td><code>Thinking</code></td>
         <td>other</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-lib_C61" data-clip-id="lib_C61" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-lib_C61" data-clip-id="lib_C61" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>CATEGORY_CLIP (keyword buckets)</code></td>
         <td><code>lib_C61</code></td>
         <td>lib</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-lib_C112" data-clip-id="lib_C112" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-lib_C112" data-clip-id="lib_C112" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>CATEGORY_CLIP (keyword buckets)</code></td>
         <td><code>lib_C112</code></td>
         <td>lib</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-lib_C121" data-clip-id="lib_C121" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-lib_C121" data-clip-id="lib_C121" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>CATEGORY_CLIP (keyword buckets)</code></td>
         <td><code>lib_C121</code></td>
         <td>lib</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-lib_C146" data-clip-id="lib_C146" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-lib_C146" data-clip-id="lib_C146" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>CATEGORY_CLIP (keyword buckets)</code></td>
         <td><code>lib_C146</code></td>
         <td>lib</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-Cheer" data-clip-id="Cheer" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-Cheer" data-clip-id="Cheer" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>CATEGORY_CLIP (keyword buckets)</code></td>
         <td><code>Cheer</code></td>
         <td>other</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-IdleQuaterniusHuman" data-clip-id="IdleQuaterniusHuman" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-IdleQuaterniusHuman" data-clip-id="IdleQuaterniusHuman" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>CATEGORY_CLIP (keyword buckets)</code></td>
         <td><code>IdleQuaterniusHuman</code></td>
         <td>quaternius</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-Relax" data-clip-id="Relax" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-Relax" data-clip-id="Relax" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>CATEGORY_CLIP (keyword buckets)</code></td>
         <td><code>Relax</code></td>
         <td>other</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
-      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-IdleMixamoHappy" data-clip-id="IdleMixamoHappy" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:372">
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
+      </tr><tr class="row-in-use" data-in-use="1" data-id="pool-CATEGORY_CLIP (keyword buckets)-IdleMixamoHappy" data-clip-id="IdleMixamoHappy" data-label="CATEGORY_CLIP (keyword buckets)" data-ref="apps/web/lib/chat-auto-idle.ts:376">
         <td><input type="checkbox" class="keep" checked /></td>
         <td class="flags saved-picks"><span class="tag in-use">chat-auto-idle</span></td>
         <td><code>CATEGORY_CLIP (keyword buckets)</code></td>
         <td><code>IdleMixamoHappy</code></td>
         <td>mixamo</td>
-        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:372</span></td>
+        <td><span class="ref">apps/web/lib/chat-auto-idle.ts:376</span></td>
       </tr></tbody>
     </table></div>
     <h2>Procedural idle bone poses (@amoji/vrm-renderer)</h2>

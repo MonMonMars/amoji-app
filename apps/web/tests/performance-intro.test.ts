@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { clipTitle, performanceIntroLine } from '../lib/performance-intro';
 import { pickPerformanceClip } from '../lib/performance-clips';
-import { resolveLibraryPerformance } from '../lib/music';
+import { resolveLibraryPerformance, startLibraryPerformance } from '../lib/music';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -48,7 +48,9 @@ describe('performance intro (name before play)', () => {
 
   it('resolveLibraryPerformance matches startLibraryPerformance pick (stable announce)', () => {
     const q = { kind: 'song' as const, gender: 'female' as const, n: 3, lang: 'en' };
-    expect(resolveLibraryPerformance(q).id).toBe(pickPerformanceClip(q).id);
+    expect(resolveLibraryPerformance(q).id).toBe(
+      startLibraryPerformance({ ...q, ms: 12_000 }).id,
+    );
   });
 
   it('ChatPanel announces then starts audio on speech idle', () => {

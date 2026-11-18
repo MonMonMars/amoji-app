@@ -426,7 +426,8 @@
 // r2026-11-18.208: ST001–ST038 PD fairy-tale vault + owner-resources Stories tab.
 // r2026-11-18.209: news long body + boilerplate scrub; wiki relevance; min body target for 今日有咩新聞.
 // r2026-11-18.210: MV069–MV098 JP + US pop Mixkit vault expansion (owner-resources Music tab).
-export const APP_REVISION = 'r2026-11-18.210';
+// r2026-11-18.211: honor owner dance/listen MV + sing body/audio picks (idle rails + ownerPerfPicks).
+export const APP_REVISION = 'r2026-11-18.211';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

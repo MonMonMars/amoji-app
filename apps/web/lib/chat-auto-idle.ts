@@ -12,7 +12,7 @@ import { idlePickFor } from './idle-pick';
 import { DEFAULT_IDLE_CLIP_ID } from './idle-retired';
 import { detectMusicStyle, STYLE_CLIP_HINTS } from './music-catalog';
 import { resolvePerfMotion } from './performance-motion';
-import { ownerDanceClipPrefs } from './owner-dance-picks';
+import { ownerDanceClipPrefs, ownerSingClipPrefs } from './owner-perf-picks';
 
 const BREATHING_CLIPS = [
   DEFAULT_IDLE_CLIP_ID,
@@ -230,7 +230,9 @@ function preferredPerfIdle(
       kind,
       style,
     },
-    kind === 'dance' ? { ownerDanceClips: ownerDanceClipPrefs(characterId) } : undefined,
+    kind === 'dance'
+      ? { ownerDanceClips: ownerDanceClipPrefs(characterId) }
+      : { ownerSingClips: ownerSingClipPrefs(characterId) },
   );
   return firstPlayable(profile.preferredClipIds);
 }
@@ -252,6 +254,8 @@ function pickDanceClip(text: string, characterId?: string | null): string {
 }
 
 function pickMusicClip(text: string, characterId?: string | null): string {
+  const owner = firstPlayable(ownerDanceClipPrefs(characterId));
+  if (owner) return owner;
   const t = text.toLowerCase();
   // Genre cues share the dance shortlist so talk about music still moves.
   if (/jazz|爵士|lofi|lofí|chill|ballad|抒情/.test(t)) {
@@ -278,6 +282,8 @@ function pickMusicClip(text: string, characterId?: string | null): string {
 }
 
 function pickSingClip(text: string, characterId?: string | null): string {
+  const owner = firstPlayable(ownerSingClipPrefs(characterId));
+  if (owner) return owner;
   const preferred = preferredPerfIdle('song', text, 'soft ballad', characterId);
   if (preferred) return preferred;
   return idleClipById('IdleMixamoHappy') ? 'IdleMixamoHappy' : pickBreathingDefault(text);

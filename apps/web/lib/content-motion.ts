@@ -20,7 +20,7 @@ import { feltMood, moodToHints } from './memory';
 import { idleClipById } from './idle-clips';
 import { detectMusicStyle, STYLE_CLIP_HINTS } from './music-catalog';
 import { resolvePerfMotion } from './performance-motion';
-import { ownerDanceClipPrefs } from './owner-dance-picks';
+import { ownerDanceClipPrefs, ownerSingClipPrefs } from './owner-perf-picks';
 
 export interface ContentMotionInput {
   /** Latest user line (preferred for intent). */
@@ -124,7 +124,9 @@ export function preferredPerfIdleForContent(
       kind,
       style,
     },
-    kind === 'dance' ? { ownerDanceClips: ownerDanceClipPrefs(characterId) } : undefined,
+    kind === 'dance'
+      ? { ownerDanceClips: ownerDanceClipPrefs(characterId) }
+      : { ownerSingClips: ownerSingClipPrefs(characterId) },
   );
   return firstPlayable(profile.preferredClipIds);
 }

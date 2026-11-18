@@ -622,7 +622,8 @@ function buildMusicPage(): PickerSection {
     </tr>`;
   }
 
-  const holdNote = `<p class="lede"><span class="hold">Hold</span> — no copyrighted commercial masters in catalog; Mixkit + CC0/PD only per <code>docs/MUSIC_STREAMING.md</code>. Stripe / licensed spike #1 remains Hold elsewhere.</p>`;
+  const holdNote = `<p class="lede"><span class="hold">Hold</span> — no copyrighted commercial masters in catalog; Mixkit + CC0/PD only per <code>docs/MUSIC_STREAMING.md</code>. Stripe / licensed spike #1 remains Hold elsewhere.</p>
+    <p class="lede">Runtime owner perf prefs: <code>amoji.ownerPerfPicks.v1</code> (<code>listenMvCodes</code>, <code>songClipIds</code>) — ship-set <code>apps/web/data/owner-perf-selection.json</code>. Checked MV stream rows → copy codes into that JSON; idle dance/sing body still uses <code>amoji.idlePick.v6</code> / <code>amoji.idleEnabled.v6</code>.</p>`;
 
   const totalTracks =
     PERFORMANCE_CLIPS.length + STREAM_TRACKS.length + Object.keys(MUSIC_THEMES).length + orphans.length;

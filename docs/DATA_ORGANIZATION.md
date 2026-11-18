@@ -29,6 +29,7 @@ SoT: `CLIENT_STORAGE_KEYS` in `apps/web/lib/client-storage.ts` (also `docs/SYSTE
 | `amoji.idleEnabled.v6` | Curated rail enable set (migrates owner picks) |
 | `amoji.idlePick.v6` | Per-character idle clip override |
 | `amoji.cmaReactionSfx.picks.v1` | CMA gallery Want/Skip (seeded from Want codes) |
+| `amoji.ownerPerfPicks.v1` | Listen MV codes + sing audio clip ids (repo ship-set in `apps/web/data/owner-perf-selection.json`) |
 | `amoji.voice.v1` / `amoji.neural.v1` / `amoji.mute.v1` | Voice mute + neural preference |
 | `amoji.history.v1` | Chat transcript |
 | `amoji.memory.v2` | Long-term memory |

@@ -15,6 +15,7 @@ import {
   type PerformanceKind,
   type SingVoice,
 } from './performance-clips';
+import { ownerListenStreamPool, ownerSongClipIds } from './owner-perf-picks';
 
 export type MusicAskMode = 'random' | 'select' | 'none';
 export type MusicAskKind = 'music' | 'song' | 'dance';
@@ -154,7 +155,14 @@ export function listMusicPickOptions(opts: {
   const seed = opts.seed ?? 0;
 
   if (opts.kind === 'song') {
+    const pinned = ownerSongClipIds();
     let pool = PERFORMANCE_CLIPS.filter((c) => c.kind === 'song' && c.durationMs >= 8_000);
+    if (pinned.length) {
+      const order = pinned
+        .map((id) => pool.find((c) => c.id === id))
+        .filter((c): c is PerformanceClip => !!c);
+      if (order.length) pool = [...order, ...pool.filter((c) => !pinned.includes(c.id))];
+    }
     if (opts.gender === 'female' || opts.gender === 'male') {
       const voiced = pool.filter((c) => c.voice === opts.gender);
       if (voiced.length) pool = voiced;
@@ -174,7 +182,13 @@ export function listMusicPickOptions(opts: {
     return rotate(pool, seed).slice(0, count).map(clipOption);
   }
 
-  const pool = opts.style ? tracksForStyle(opts.style) : [...STREAM_TRACKS];
+  const ownerPool = ownerListenStreamPool(opts.style);
+  const pool =
+    ownerPool.length > 0
+      ? ownerPool
+      : opts.style
+        ? tracksForStyle(opts.style)
+        : [...STREAM_TRACKS];
   if (!opts.style) {
     const seen = new Set<string>();
     const diverse: StreamTrack[] = [];

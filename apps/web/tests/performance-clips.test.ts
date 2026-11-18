@@ -128,7 +128,9 @@ describe('premade sing and dance library', () => {
     const clip = startLibraryPerformance({ kind: 'dance', lang: 'en', gender: 'female', n: 0, ms: 1000 });
     expect(clip.kind).toBe('dance');
     expect(clip.file).toMatch(/\.mp3$/);
-    expect(PERFORMANCE_CLIPS.some((c) => c.id === clip.id && c.kind === 'dance')).toBe(true);
+    const catalogDance = PERFORMANCE_CLIPS.some((c) => c.id === clip.id && c.kind === 'dance');
+    const ownerStreamDance = clip.id.startsWith('stream:');
+    expect(catalogDance || ownerStreamDance).toBe(true);
   });
 
   it('keeps pack v2 clips on the same picker contract', () => {

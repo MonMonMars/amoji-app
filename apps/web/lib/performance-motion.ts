@@ -213,6 +213,8 @@ export function timeScaleForBpm(bpm: number, clipBpm: number): number {
 export interface ResolvePerfMotionOpts {
   /** Owner-enabled / pinned dance VRMA ids — win over style tag mapping. */
   ownerDanceClips?: readonly string[];
+  /** Owner-enabled / pinned sing VRMA ids — win over style tag mapping. */
+  ownerSingClips?: readonly string[];
 }
 
 function mergeOwnerDanceClips(
@@ -257,6 +259,10 @@ export function resolvePerfMotion(
   if (clip.kind === 'dance' && opts?.ownerDanceClips?.length) {
     preferredClipIds = mergeOwnerDanceClips(preferredClipIds, opts.ownerDanceClips);
     fallbackClipIds = mergeOwnerDanceClips(fallbackClipIds, opts.ownerDanceClips);
+  }
+  if (clip.kind === 'song' && opts?.ownerSingClips?.length) {
+    preferredClipIds = mergeOwnerDanceClips(preferredClipIds, opts.ownerSingClips);
+    fallbackClipIds = mergeOwnerDanceClips(fallbackClipIds, opts.ownerSingClips);
   }
   return {
     tag,
