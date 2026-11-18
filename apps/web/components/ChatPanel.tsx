@@ -186,11 +186,16 @@ import { pickDuet } from '../lib/songs';
 import { stopMusic, startPerformanceMusic, endPerformanceMusic, startLibraryPerformance, resolveLibraryPerformance, detectMusicStyle, activeLibraryClipId, isLibraryClipAudible } from '../lib/music';
 import { clipTitle, performanceIntroLine } from '../lib/performance-intro';
 import {
-  armPerfDance,
-  refreshPendingPerfDance,
-  shouldStartDanceOnAudioPlaying,
-  type PendingPerfDance,
-} from '../lib/dance-audio-gate';
+  activePerformanceClip,
+  beginPerformanceSession,
+  clearPerformanceBodyArm,
+  endPerformanceSession,
+  getPerformanceSession,
+  performanceClipForPlaying,
+  shouldDeferClearOnBedStop,
+  syncPerformanceBed,
+  takePendingBodyForPlaying,
+} from '../lib/performance-session';
 import { isMasterMuted } from '../lib/master-mute';
 import {
   listMusicPickOptions,
@@ -392,15 +397,11 @@ export default function ChatPanel({
   const actionGameRef = useRef(false);
   const [clipState, setClipState] = useState<'starting' | 'playing' | null>(null);
   const trackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** Song/dance body waits for library-clip `playing` — not intro TTS / decode. */
-  const pendingShowDanceRef = useRef<PendingPerfDance | null>(null);
-  const pendingShowClipRef = useRef<PerformanceClip | null>(null);
   const commitPendingPerfDance = useCallback((playingId: string) => {
-    const pending = pendingShowDanceRef.current;
-    if (!shouldStartDanceOnAudioPlaying(pending, playingId)) return;
+    const pending = takePendingBodyForPlaying(playingId);
+    if (!pending) return;
     const motionClip = PERFORMANCE_CLIPS.find((c) => c.id === playingId)
-      ?? (pendingShowClipRef.current?.id === playingId ? pendingShowClipRef.current : null)
-      ?? pendingShowClipRef.current;
+      ?? performanceClipForPlaying(playingId);
     if (motionClip) {
       setPerfMotionProfile(resolvePerfMotion(
         {
@@ -417,14 +418,13 @@ export default function ChatPanel({
     }
     triggerMove(pending.bodyMove);
     holdMove(pending.holdMs);
-    pendingShowDanceRef.current = null;
   }, [characterId]);
   useEffect(() => {
     const onClip = (e: Event) => {
       const detail = (e as CustomEvent<{ state?: string; id?: string }>).detail;
       if (detail?.state === 'playing' && detail.id) {
         const clip = PERFORMANCE_CLIPS.find((c) => c.id === detail.id)
-          ?? (pendingShowClipRef.current?.id === detail.id ? pendingShowClipRef.current : null);
+          ?? (activePerformanceClip()?.id === detail.id ? activePerformanceClip() : null);
         if (clip) setNowPlaying(clipLabel(clip, lang));
         setClipState('playing');
         // Start dance/sing only when the bed is actually audible.
@@ -434,8 +434,8 @@ export default function ChatPanel({
         setNowPlaying(null);
         // Swapping library beds calls haltClip before the next `playing`. Keep an
         // armed beginShow alive so we do not clearMove between end and re-start.
-        if (!pendingShowDanceRef.current) {
-          pendingShowClipRef.current = null;
+        if (!shouldDeferClearOnBedStop()) {
+          endPerformanceSession();
           clearMove();
           clearPerfMotionProfile();
         }
@@ -821,12 +821,8 @@ export default function ChatPanel({
     const genre = pick?.genre || styleHint;
     const intro = performanceIntroLine(kind === 'song' ? 'song' : 'music', title, lang, genre);
     const hold = Math.max(clip.durationMs + 600, ms);
-    const bodyMove = kind === 'song' ? 'sing' : 'dance';
     // Listen-only BGM: intro + bed, calm idle — no VRMA until user asks to dance.
-    pendingShowDanceRef.current = listenOnly
-      ? null
-      : armPerfDance(bodyMove, hold, clip.id);
-    pendingShowClipRef.current = clip;
+    beginPerformanceSession(kind, clip, hold, listenOnly);
     // Name on the now-playing chip immediately; audio waits for the intro.
     showTrack(clip, hold);
     sayLocal(intro, { joy: kind === 'song' ? 0.82 : 0.7 });
@@ -835,20 +831,14 @@ export default function ChatPanel({
       // Style (jazz/pop/lofi…) prefers Mixkit royalty-free streams for dance beds.
       const playing = startLibraryPerformance(query);
       const nextHold = Math.max(playing.durationMs + 600, ms);
-      pendingShowClipRef.current = playing;
-      // Keep pending armed through async decode; sync re-arm may already
-      // have consumed it via library-clip playing — then just extend hold.
-      if (!listenOnly) {
-        const refreshed = refreshPendingPerfDance(pendingShowDanceRef.current, playing.id, nextHold);
-        if (refreshed) {
-          pendingShowDanceRef.current = refreshed;
-        } else {
-          holdMove(nextHold);
-        }
+      syncPerformanceBed(playing, nextHold);
+      // Body already started on `playing` — extend hold; still armed waits for bed.
+      if (!listenOnly && !getPerformanceSession().pendingBody) {
+        holdMove(nextHold);
       }
       // Muted / no window: no playing event — do not leave a dangling arm.
       if (isMasterMuted() || typeof window === 'undefined') {
-        pendingShowDanceRef.current = null;
+        clearPerformanceBodyArm();
       }
       showTrack(playing, nextHold);
       afterStart?.();
@@ -1561,7 +1551,7 @@ export default function ChatPanel({
     }
     if (plan.plan === 'free') consumeChatTurn();
     // Sing / dance: name + arm the bed while she thinks; body waits for
-    // library-clip `playing` (beginShow → pendingShowDanceRef). Do not
+    // library-clip `playing` (beginShow → performance-session). Do not
     // triggerMove on press — that was dance-too-soon on typed/chip asks.
     const requested = detectMove(text);
     const performanceShowTurn = requested === 'sing' || requested === 'dance';

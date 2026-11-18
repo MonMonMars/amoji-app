@@ -33,6 +33,7 @@ import {
   type MusicStyleId,
 } from './music-catalog';
 import { pickOwnerSongClipId, pickOwnerStreamTrack } from './owner-perf-picks';
+import { endPerformanceSession } from './performance-session';
 export {
   detectMusicStyle,
   resolveStreamPlaylist,
@@ -393,9 +394,10 @@ export function endPerformanceMusic(): void {
     clearTimeout(perfTimer);
     perfTimer = null;
   }
+  endPerformanceSession();
   haltBand();
   haltPiano();
-  haltClip();
+  haltClip({ fadeOutSec: 0.35 });
 }
 
 // ---- premade library (songs + dance beds) -----------------------------------
@@ -527,7 +529,7 @@ function startLibraryBandFallback(characterId: string): void {
 }
 
 /** Drop the premade clip only. Does not touch the preserve flag or the band. */
-function haltClip(): void {
+function haltClip(opts?: { fadeOutSec?: number }): void {
   loadToken += 1;
   stopSongMouth();
   if (duckTimer) {
@@ -537,6 +539,7 @@ function haltClip(): void {
   duck = 1;
   const src = clipSrc;
   const el = clipEl;
+  const fadeOutSec = Math.max(0, opts?.fadeOutSec ?? 0);
   const media = clipMediaSource;
   const stale = clipCtx;
   const gain = clipGain;
@@ -558,8 +561,26 @@ function haltClip(): void {
     try { src.stop(); } catch { /* already stopped */ }
   }
   if (el) {
-    el.pause();
-    el.src = '';
+    const fadeMs = Math.round(fadeOutSec * 1000);
+    if (fadeMs > 0 && el.volume > 0.02) {
+      const startVol = el.volume;
+      const started = performance.now();
+      const tick = () => {
+        const t = (performance.now() - started) / fadeMs;
+        if (t >= 1) {
+          el.pause();
+          el.volume = startVol;
+          el.src = '';
+          return;
+        }
+        el.volume = Math.max(0, startVol * (1 - t));
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    } else {
+      el.pause();
+      el.src = '';
+    }
   }
   if (media) {
     try { media.disconnect(); } catch { /* ignore */ }

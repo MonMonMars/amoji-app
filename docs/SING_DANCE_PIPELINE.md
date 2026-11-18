@@ -29,5 +29,5 @@ Durable summary of the performance flow. Full plan (gaps, P0–P2, mermaid): see
 
 - ~~Explicit **listen** phase (BGM + calm idle, no dance until asked)~~ — **r212** `musicAskListenOnly` + `beginShow(listenOnly)`
 - ~~Beat-aligned VRMA start from audio clock~~ — **r213** `libraryBedPlaybackSec` + `beatAlignedVrmaTime` on `playPerf` at `library-clip` `playing`
-- Unified session state (replace scattered pending refs)
+- ~~Unified session state (replace scattered pending refs)~~ — **r214** `performance-session.ts` + coordinated BGM fade on `endPerformanceMusic`
 - Duet path aligned with library gate

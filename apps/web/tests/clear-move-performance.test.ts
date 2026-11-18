@@ -31,8 +31,7 @@ describe('sticky sing/dance performance clears on new talk', () => {
     expect(onClip).toContain('clearPerfMotionProfile()');
     expect(onClip).toContain('setNowPlaying(null)');
     // Armed beginShow must survive haltClip between beds (no early null + clearMove).
-    expect(onClip).toContain('pendingShowDanceRef.current');
-    expect(onClip).toMatch(/if \(!pendingShowDanceRef\.current\)/);
+    expect(onClip).toContain('shouldDeferClearOnBedStop()');
   });
 
   it('duckLibraryBed is a no-op so voice/BGM stay steady', () => {
