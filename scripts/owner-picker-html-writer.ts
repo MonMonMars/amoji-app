@@ -28,6 +28,7 @@ import {
 } from '../apps/web/lib/cma-reaction-gallery.ts';
 import type { Lang } from '../apps/web/lib/prefs.ts';
 import { CHARACTERS_WANT } from '../apps/web/lib/characters-want.ts';
+import { PICKER_PLAY_RESOLVE_INLINE_JS } from '../apps/web/lib/owner-picker-media.mjs';
 import { CHAT_IDLE_CURATED, defaultCuratedRailNums } from '../apps/web/lib/idle-curated-rail.ts';
 import { idleClipFamily } from '../apps/web/lib/idle-clip-family.ts';
 import { IDLE_LIBRARY, idleByClipId, type IdleLibraryEntry } from '../apps/web/lib/idle-library.ts';
@@ -377,16 +378,7 @@ function pickerScript(_exportKey: string): string {
         tr.style.display = !q || tr.textContent.toLowerCase().includes(q) ? '' : 'none';
       });
     });
-    function resolvePlaySrc(raw) {
-      if (!raw) return '';
-      if (/^https?:/i.test(raw)) return raw;
-      if (raw.startsWith('amoji-public-serve/')) return '../' + raw.slice('amoji-public-serve/'.length);
-      if (raw.startsWith('amoji-public-serve')) {
-        const tail = raw.slice('amoji-public-serve'.length).replace(/^\\//, '');
-        return tail ? '../' + tail : '';
-      }
-      return raw;
-    }
+    ${PICKER_PLAY_RESOLVE_INLINE_JS}
     let currentAudio = null;
     document.body.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-play]');
@@ -396,7 +388,9 @@ function pickerScript(_exportKey: string): string {
       if (currentAudio) { currentAudio.pause(); currentAudio = null; }
       const url = /^https?:/i.test(src) ? src : new URL(src, location.href).href;
       currentAudio = new Audio(url);
-      currentAudio.play().catch(() => alert('Playback blocked or file missing. On Pages use /amoji-app/docs/owner-resources.html; local: cd docs && python3 -m http.server 8765'));
+      applyRemoteAudioHints(currentAudio, url);
+      currentAudio.onerror = () => alert(pickerPlayFailureMessage(src, btn));
+      currentAudio.play().catch(() => alert(pickerPlayFailureMessage(src, btn)));
   });
     document.getElementById('saveNotesJson')?.addEventListener('click', async () => {
       const json = collectNotesExport();
