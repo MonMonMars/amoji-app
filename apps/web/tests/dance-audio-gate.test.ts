@@ -28,12 +28,12 @@ describe('dance-audio-gate', () => {
 
   it('ChatPanel arms dance for audio playing — not intro / press', () => {
     const panel = fs.readFileSync(path.join(ROOT, 'components/ChatPanel.tsx'), 'utf8');
-    expect(panel).toContain('armPerfDance');
-    expect(panel).toContain('shouldStartDanceOnAudioPlaying');
-    expect(panel).toContain('pendingShowDanceRef');
+    expect(panel).toContain('takePendingBodyForPlaying');
+    expect(panel).toContain('takePendingBodyForPlaying');
+    expect(panel).toContain('beginPerformanceSession');
     // beginShow must not triggerMove before whenSpeechIdle / playing.
     const begin = panel.slice(panel.indexOf('const beginShow ='), panel.indexOf('const speakReply'));
-    expect(begin).toContain('armPerfDance(bodyMove');
+    expect(begin).toContain('beginPerformanceSession(kind, clip, hold, listenOnly)');
     expect(begin).not.toMatch(/triggerMove\(bodyMove\)/);
     expect(begin).toContain('startLibraryPerformance(query)');
     // Body starts from library-clip playing handler.
