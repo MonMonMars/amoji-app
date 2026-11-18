@@ -6,7 +6,7 @@
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** [Pages](https://monmonmars.github.io/amoji-app/docs/project-status.html) · repo [`project-status.html`](./project-status.html)  
 **Pixel pickers:** [Pages owner-resources](https://monmonmars.github.io/amoji-app/docs/owner-resources.html) (music · poke · **idle** · **stories** · **news** · **demo** tabs) · local: `cd docs && python3 -m http.server 8765`  
-**`main` tip:** `a2111af3` (**r2026-11-18.237** · #518–#520 + #517 merged; live deploy pending)
+**`main` tip:** `91a857e3` (**r2026-11-18.237** · #518–#520 + #517 merged; live deploy pending)
 
 ## Snapshot
 
@@ -75,9 +75,17 @@ Dance LoopRepeat, card greet, poke 我鍾意信 skip, news long read, unified ow
 
 | PR | Title | Notes |
 | --- | --- | --- |
+| [#522](https://github.com/MonMonMars/amoji-app/pull/522) | Music instant play polish **r236** | Merge candidate |
+| [#523](https://github.com/MonMonMars/amoji-app/pull/523) | Chat interrupt + history continuity **r244** | Not duplicate of no-history-resume (**#412** on main) |
+| [#528](https://github.com/MonMonMars/amoji-app/pull/528) | Voice main speaker **r241** | Merge candidate |
+| [#529](https://github.com/MonMonMars/amoji-app/pull/529) | Card voice hotfix **r242** | Merge candidate |
+| [#530](https://github.com/MonMonMars/amoji-app/pull/530) | Demo time chip **r243** | Merge after voice/card |
+| [#531](https://github.com/MonMonMars/amoji-app/pull/531) | Owner-resources live verify **r242** | Docs/CI — clashes #529 serial |
 | [#512](https://github.com/MonMonMars/amoji-app/pull/512) | Remove ⚑ 舉報 from chat bubbles **r218** | Chat UX |
 | [#20](https://github.com/MonMonMars/amoji-app/pull/20) | CosyVoice TTS spike | Draft — **Hold** |
 | [#1](https://github.com/MonMonMars/amoji-app/pull/1) | Voice bake-off UI | Old spike — **Hold** |
+
+**No history-resume ask:** shipped on `main` via [#331](https://github.com/MonMonMars/amoji-app/pull/331) / [#366](https://github.com/MonMonMars/amoji-app/pull/366) / [#412](https://github.com/MonMonMars/amoji-app/pull/412) / [#470](https://github.com/MonMonMars/amoji-app/pull/470) — branch `cursor/no-history-resume-ask-0340` reconciled; no second product PR.
 
 ### Shipped this session (merged to `main`)
 
