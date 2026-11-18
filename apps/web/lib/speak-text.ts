@@ -94,7 +94,7 @@ export function stripLaughTokens(raw: string): string {
 const HASHTAG_RE = /#(?!\d+\b)[\w\u00C0-\u024F\u3400-\u9FFF]*[A-Za-z\u00C0-\u024F\u3400-\u9FFF][\w\u00C0-\u024F\u3400-\u9FFF]*/g;
 const HANDLE_RE = /@[\w.\u00C0-\u024F\u3400-\u9FFF]+/g;
 const WEB_URL_RE = /(?:https?:\/\/|www\.)\S+/gi;
-const CHROME_RE = /\b(?:subscribe|sign up|read more|click here|share this|follow us|advertisement|sponsored|cookie policy|terms of (?:use|service)|all rights reserved)\b/gi;
+const CHROME_RE = /\b(?:subscribe|sign up|read more|click here|share this|follow us|advertisement|sponsored|cookie policy|terms of (?:use|service)|all rights reserved|continue reading|related articles|skip to content|home\s*\/\s*news)\b/gi;
 const SOURCE_TAIL_RE = /\s*[|\u2013\u2014\-]\s*(?:Google News|Reuters|BBC(?: News)?|NPR|CNN|The Guardian|NHK|RTHK|SCMP|Bloomberg|AP(?: News)?|Yahoo(?: News)?|Wikipedia)\s*$/i;
 /** RSS / teaser lines often carry YYYYMMDD — never read as digits. */
 const COMPACT_YMD_RE = /\b20\d{6}\b/g;

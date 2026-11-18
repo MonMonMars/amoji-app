@@ -857,6 +857,15 @@ const NEWS_SOURCE_ONLY = /^(?:明報|明报|星島|星岛|頭條|头条|東網|�
 const HK_NEWS_VIDEO_PREFIX = /^(?:有片|快訊|圖集|影片|視頻|视频)[丨｜|·]\s*/u;
 const HK_NEWS_TRAILING_SOURCE = /\s+(?:橙新聞|on\.cc|東網|东网|星島|星岛|明報|明报|頭條|头条|香港01|HK01|巴士的報|信報|大公報|文匯報|文汇报|商業電台|商业电台|Yahoo(?:\s*News)?|MSN(?:\s*News)?|SBS(?:\s*News)?|ABC(?:\s*News)?|BBC(?:\s*News)?)(?:\s*新聞)?\s*$/iu;
 const NEWS_SECTION_CHROME = /^(?:調查|调查|专题|專題|独家|獨家|快讯|快訊|要聞|要闻)$/iu;
+/** Lines that are site chrome / teasers, not story substance — drop before TTS beats. */
+const NEWS_BODY_BOILERPLATE =
+  /^(?:recently there was news|there was news recently|in other news|read more|click here|see also|related(?:\s+articles?)?|photo:|photos:|video:|image:|slideshow:|credit:|published|updated|share on|follow us|sign up|subscribe|all rights reserved|cookie policy|skip to (?:main )?content|home\s*[>|/]|news\s*[>|/]|sport\s*[>|/]|entertainment\s*[>|/])/iu;
+const NEWS_AUTHOR_LINE =
+  /^(?:by\s+[\w .'\u00C0-\u024F-]{2,48}|author\s*[:：]|reporter\s*[:：]|記者|作者|撰文|稿\s*[:：]|文\s*[:：]|圖\s*\/|图\s*\/)/iu;
+const NEWS_TEASER_ONLY =
+  /^(?:詳情|详情|閱讀全文|阅读全文|更多新聞|更多新闻|更多內容|更多内容|按此|tap here|continue reading|full story|watch:)/iu;
+/** Minimum substance beyond the headline for a news tell (all langs). */
+export const NEWS_SPOKEN_MIN_BODY_CHARS = 56;
 
 /** ISIN / fund ticker tokens in Google News “AI” search results — not news stories. */
 const NEWS_FUND_ISIN_RE = /\b0P000[A-Z0-9]{4,}\b|\bLU\d{6}[A-Z0-9]{4,}\b/i;
@@ -883,6 +892,18 @@ export function topicalHeadlineMatches(query: string, title: string): boolean {
   const bits = q.split(/[^a-z0-9\u3400-\u9fff]+/).filter((w) => w.length > 2);
   if (!bits.length) return true;
   return bits.some((b) => t.includes(b));
+}
+
+/** True when a feed line is nav/teaser/author chrome — not a speakable detail beat. */
+export function isNewsBodyBoilerplate(line: string): boolean {
+  const t = String(line || '').trim();
+  if (!t) return true;
+  if (NEWS_SECTION_CHROME.test(t)) return true;
+  if (NEWS_BODY_BOILERPLATE.test(t)) return true;
+  if (NEWS_AUTHOR_LINE.test(t)) return true;
+  if (NEWS_TEASER_ONLY.test(t)) return true;
+  if (/^(?:Pee Aruako|List of|This (?:disambiguation|article) page)/i.test(t)) return true;
+  return false;
 }
 
 export function isJunkNewsHeadline(title: string, extra = ''): boolean {
@@ -937,6 +958,7 @@ export function scrubNewsFeedBody(text: string, title = ''): string {
     if (NEWS_CATEGORY_LINE.test(bare)) continue;
     if (NEWS_SOURCE_ONLY.test(bare)) continue;
     if (NEWS_SECTION_CHROME.test(bare)) continue;
+    if (isNewsBodyBoilerplate(bare)) continue;
     if (/^(?:橙新聞|on\.cc|RTHK|SCMP|SBS)$/i.test(bare)) continue;
     if (/^⚑\s*舉報|^舉報$|^举报$/.test(bare)) continue;
     if (/^[\d\s]+$/.test(bare)) continue;
@@ -959,10 +981,11 @@ export function newsDetailsFromText(text: string, title = '', max = 4): string[]
     .trim();
   if (!cleaned) return [];
   const titleKey = normalizeNewsTitle(title);
+  const minChunk = CJK_IN_HEADLINE.test(cleaned) ? 14 : 24;
   const chunks = cleaned
-    .split(/(?<=[.!?。！？…])\s+|\s*[;|•·]\s+|\n+/)
+    .split(/(?<=[.!?。！？…；;])\s*|\s*[;|•·]\s+|\n+/)
     .map((s) => s.replace(/^[-–—*]\s*/, '').trim())
-    .filter((s) => s.length >= 24);
+    .filter((s) => s.length >= minChunk);
   const out: string[] = [];
   for (const chunk of chunks) {
     const key = normalizeNewsTitle(chunk);
@@ -1956,27 +1979,88 @@ function wikiHost(lang: Lang4): string {
   return 'en.wikipedia.org';
 }
 
-async function searchWikipedia(fetchImpl: typeof fetch, query: string, lang: Lang4, cache: Map<string, { at: number; body: string }>): Promise<string[]> {
+function wikiTitleTokens(s: string): string[] {
+  return normalizeNewsTitle(s)
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((w) => w.length >= 2);
+}
+
+/** Reject unrelated wiki hits (disambiguation, wrong person) on thin RSS titles. */
+export function wikiExtractMatchesNewsTitle(newsTitle: string, wikiTitle: string, extract: string): boolean {
+  const n = normalizeNewsTitle(newsTitle);
+  const w = normalizeNewsTitle(wikiTitle);
+  if (!n || !w || isNewsBodyBoilerplate(wikiTitle)) return false;
+  if (w === n || n.includes(w) || w.includes(n)) return true;
+  const nt = new Set(wikiTitleTokens(n));
+  const wt = wikiTitleTokens(w);
+  const overlap = wt.filter((t) => nt.has(t)).length;
+  if (overlap >= 2) return true;
+  if (overlap >= 1 && wt.length <= 4 && nt.size <= 10) return true;
+  if (CJK_IN_HEADLINE.test(n)) {
+    const cjk = n.replace(/[^\u3400-\u9fff]/g, '');
+    const ex = normalizeNewsTitle(extract.slice(0, 160));
+    if (cjk.length >= 4) {
+      const head = cjk.slice(0, Math.min(8, cjk.length));
+      if (ex.includes(head) || w.replace(/[^\u3400-\u9fff]/g, '').includes(head.slice(0, 4))) return true;
+    }
+  }
+  return false;
+}
+
+async function searchWikipedia(
+  fetchImpl: typeof fetch,
+  query: string,
+  lang: Lang4,
+  cache: Map<string, { at: number; body: string }>,
+): Promise<{ title: string; extract: string } | null> {
   const params = new URLSearchParams({
     action: 'query',
     generator: 'search',
     gsrsearch: query,
-    gsrlimit: '1',
+    gsrlimit: '3',
     prop: 'extracts',
     exintro: '1',
     explaintext: '1',
-    exchars: '360',
+    exchars: '720',
     format: 'json',
     origin: '*',
   });
   const data = await getJson(fetchImpl, `https://${wikiHost(lang)}/w/api.php?${params.toString()}`, 6_000, cache);
   const pages = (data as { query?: { pages?: Record<string, WikiPage> } } | null)?.query?.pages;
-  if (!pages) return [];
-  return Object.values(pages)
+  if (!pages) return null;
+  const ranked = Object.values(pages)
     .filter((p) => p.extract && p.title)
-    .sort((a, b) => (a.index ?? 99) - (b.index ?? 99))
-    .slice(0, 1)
-    .map((p) => `${p.title} — ${clip(p.extract!, 280)}`);
+    .sort((a, b) => (a.index ?? 99) - (b.index ?? 99));
+  for (const p of ranked) {
+    const extract = clip(p.extract!, 520);
+    if (wikiExtractMatchesNewsTitle(query, p.title!, extract)) {
+      return { title: p.title!, extract };
+    }
+  }
+  return null;
+}
+
+async function enrichNewsLeadForSpeech(
+  fetchImpl: typeof fetch,
+  lead: Headline,
+  lang: Lang4,
+  cache: Map<string, { at: number; body: string }>,
+): Promise<Headline> {
+  if (!newsTellNeedsEnrichment(lead, lang)) return lead;
+  const topic = lead.title.replace(/\s+[-–|｜]\s+.*$/, '').trim() || lead.title;
+  const wiki = await searchWikipedia(fetchImpl, topic, lang, cache);
+  if (wiki) {
+    const enriched = withNewsBody(lead.title, lead.source || 'Wikipedia', wiki.extract, lead.publishedAt);
+    if (!newsTellNeedsEnrichment(enriched, lang)) return enriched;
+  }
+  const ddg = await searchDuckDuckGo(fetchImpl, topic, cache);
+  for (const bit of ddg) {
+    const body = scrubNewsFeedBody(bit, lead.title);
+    if (body.length < 40 || isNewsBeatChrome(body)) continue;
+    const enriched = withNewsBody(lead.title, lead.source || 'Web', body, lead.publishedAt);
+    if (!newsTellNeedsEnrichment(enriched, lang)) return enriched;
+  }
+  return wiki ? withNewsBody(lead.title, lead.source || 'Wikipedia', wiki.extract, lead.publishedAt) : lead;
 }
 
 async function searchDuckDuckGo(fetchImpl: typeof fetch, query: string, cache: Map<string, { at: number; body: string }>): Promise<string[]> {
@@ -2156,15 +2240,22 @@ export function newsLocalPlaceLabel(lang: Lang4, label: string): string | null {
 
 function isNewsBeatChrome(text: string): boolean {
   const t = text.trim();
-  if (!t || NEWS_SECTION_CHROME.test(t)) return true;
+  if (!t || isNewsBodyBoilerplate(t)) return true;
   if (isJunkNewsHeadline(t)) return true;
   if (t.length <= 8 && /^[\u4e00-\u9fffA-Za-z]+$/u.test(t) && !/[。！？.!?]/.test(t)) return true;
   return false;
 }
 
-/** True when the spoken line would be headline-only — caller should enrich or widen. */
-export function newsTellNeedsEnrichment(lead: Headline): boolean {
-  return newsSpokenBodyBeats(lead).length === 0;
+function newsBodyBeatCharLen(lang: Lang4, beats: string[]): number {
+  if (!beats.length) return 0;
+  return beats.join(lang === 'en' || lang === 'ja' ? ' ' : '').replace(/\s+/g, ' ').trim().length;
+}
+
+/** True when the spoken line would be headline-only or too thin — enrich before TTS. */
+export function newsTellNeedsEnrichment(lead: Headline, lang: Lang4 = 'yue'): boolean {
+  const beats = newsSpokenBodyBeats(lead, lang);
+  if (!beats.length) return true;
+  return newsBodyBeatCharLen(lang, beats) < NEWS_SPOKEN_MIN_BODY_CHARS;
 }
 
 /** RSS/Wikipedia body beats for TTS — headline context excluded. */
@@ -2204,12 +2295,12 @@ export function newsSpokenBodyBeats(lead: Headline, lang?: Lang4): string[] {
     const dKey = normalizeNewsTitle(d);
     if (dKey === titleKey || (titleKey && titleKey.includes(dKey) && d.length <= lead.title.length + 12)) continue;
     pushBeat(d);
-    if (beats.length >= 5) break;
+    if (beats.length >= 6) break;
   }
   if (!beats.length && summary.length >= 32 && normalizeNewsTitle(summary) !== titleKey) {
     pushBeat(summary);
   }
-  return beats.slice(0, 5);
+  return beats.slice(0, 6);
 }
 
 function newsBodyBeats(lead: Headline): string[] {
@@ -2428,7 +2519,8 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
         searchDuckDuckGo(fetchImpl, plan.searchQuery, cache),
         searchWikipedia(fetchImpl, plan.searchQuery, lang, cache),
       ]);
-      let merged = dedupeSnippets([...wiki, ...ddg]);
+      const wikiSnippets = wiki ? [`${wiki.title} — ${wiki.extract}`] : [];
+      let merged = dedupeSnippets([...wikiSnippets, ...ddg]);
       if (!merged.length) {
         const recent = await fetchNews(fetchImpl, plan.searchQuery, lang, opts.rssKey, cache);
         merged = recent.slice(0, 2).map((h) => h.source ? `${h.title} — ${h.source}` : h.title);
@@ -2508,15 +2600,7 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
       // Enrich thin titles with a Wikipedia lede whenever the feed had no
       // description — including plain "any news?" light asks (#421/#428 residual:
       // title-only tells felt short / same-old).
-      if (!lead.summary?.trim() || newsTellNeedsEnrichment(lead)) {
-        const topic = lead.title.replace(/\s+[-–|]\s+.*$/, '').trim() || lead.title;
-        const wiki = await searchWikipedia(fetchImpl, topic, lang, cache);
-        if (wiki[0]) {
-          const cut = wiki[0].indexOf(' — ');
-          const summary = cut > 0 ? wiki[0].slice(cut + 3) : wiki[0];
-          lead = withNewsBody(lead.title, lead.source, summary);
-        }
-      }
+      lead = await enrichNewsLeadForSpeech(fetchImpl, lead, lang, cache);
       // One headline per tap — pack that story's summary + key details for a longer tell.
       const regionTag = newsRegionFromPlace(place, lang);
       const where = plan.heavyNews && activePack.recent

@@ -10,6 +10,11 @@ import {
   isLiveFactsOnlyTurn,
   isHeavyHeadline,
   isJunkNewsHeadline,
+  isNewsBodyBoilerplate,
+  newsSpokenBodyBeats,
+  newsTellNeedsEnrichment,
+  wikiExtractMatchesNewsTitle,
+  NEWS_SPOKEN_MIN_BODY_CHARS,
   topicalHeadlineMatches,
   liveToolsEnabled,
   newsRegionFromPlace,
@@ -871,6 +876,50 @@ describe('local light news and reply guard', () => {
     expect(newsLocalPlaceLabel('yue', '附近')).toBeNull();
     expect(newsLocalPlaceLabel('en', 'here')).toBeNull();
     expect(newsLocalPlaceLabel('en', 'Hong Kong')).toBe('Hong Kong');
+  });
+
+  it('newsTellNeedsEnrichment requires minimum body length beyond headline', () => {
+    const rich = {
+      title: '社區花市週末開張',
+      source: 'HK01',
+      summary: '主辦方表示今個周末會有超過八十個攤位，售賣本地鮮花同手作。第一日會安排爵士樂隊表演，亦會有免費插花工作坊俾市民參加。',
+    };
+    expect(newsTellNeedsEnrichment(rich, 'yue')).toBe(false);
+    const thin = { title: '社區花市週末開張', source: 'HK01', summary: '週末見。' };
+    expect(newsTellNeedsEnrichment(thin, 'yue')).toBe(true);
+    expect(NEWS_SPOKEN_MIN_BODY_CHARS).toBeGreaterThan(40);
+  });
+
+  it('newsSpokenBodyBeats drops author/read-more chrome and keeps CJK detail', () => {
+    const lead: Headline = {
+      title: '演唱會加場',
+      source: '明報',
+      summary: 'By Jane Doe\nRead more\n主辦方宣布加開一場夜場，門票星期五公開發售。前排座位已預留予慈善機構。',
+    };
+    const beats = newsSpokenBodyBeats(lead, 'yue');
+    expect(beats.join('')).not.toMatch(/read more|By Jane/i);
+    expect(beats.join('')).toMatch(/加開一場|門票/);
+    expect(sayRecent('yue', lead).length).toBeGreaterThan(65);
+  });
+
+  it('wikiExtractMatchesNewsTitle rejects unrelated disambiguation hits', () => {
+    expect(wikiExtractMatchesNewsTitle(
+      '許志安翻唱 愛是懷疑',
+      'Pee Aruako',
+      'Pee Aruako is a disambiguation page.',
+    )).toBe(false);
+    expect(wikiExtractMatchesNewsTitle(
+      'OpenAI ships a smaller reasoning model',
+      'OpenAI',
+      'OpenAI is an American artificial intelligence company.',
+    )).toBe(true);
+  });
+
+  it('isNewsBodyBoilerplate drops English nav and teaser lines', () => {
+    expect(isNewsBodyBoilerplate('Read more')).toBe(true);
+    expect(isNewsBodyBoilerplate('Home > News > Sport')).toBe(true);
+    expect(isNewsBodyBoilerplate('閱讀全文')).toBe(true);
+    expect(isNewsBodyBoilerplate('主辦方表示加開一場夜場')).toBe(false);
   });
 
   it('sayRecent yue long-read includes summary beats beyond the headline', () => {
