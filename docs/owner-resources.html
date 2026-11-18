@@ -10158,15 +10158,36 @@
         tr.style.display = !q || tr.textContent.toLowerCase().includes(q) ? '' : 'none';
       });
     });
+    
     function resolvePlaySrc(raw) {
       if (!raw) return '';
-      if (/^https?:/i.test(raw)) return raw;
-      if (raw.startsWith('amoji-public-serve/')) return '../' + raw.slice('amoji-public-serve/'.length);
-      if (raw.startsWith('amoji-public-serve')) {
-        const tail = raw.slice('amoji-public-serve'.length).replace(/^\//, '');
+      const t = String(raw).trim();
+      if (/^https?:\/\//i.test(t)) return t;
+      if (t.startsWith('//')) return 'https:' + t;
+      if (/^(?:assets\.)?mixkit\.co\//i.test(t)) return 'https://' + t.replace(/^\/\//, '');
+      if (t.startsWith('amoji-public-serve/')) return '../' + t.slice('amoji-public-serve/'.length);
+      if (t.startsWith('amoji-public-serve')) {
+        const tail = t.slice('amoji-public-serve'.length).replace(/^\//, '');
         return tail ? '../' + tail : '';
       }
-      return raw;
+      return t;
+    }
+    function isRemotePlaySrc(resolved, el) {
+      return !!(el && el.classList && el.classList.contains('play-remote'))
+        || /^https?:\/\//i.test(resolved)
+        || /mixkit\.co\//i.test(resolved);
+    }
+    function pickerPlayFailureMessage(resolved, el) {
+      if (isRemotePlaySrc(resolved, el)) {
+        return 'Stream preview did not play (Mixkit CDN or browser policy — not a missing ../audio file). Use the Source link on mixkit.co in this row, or try the live app demo for full playback.';
+      }
+      return 'Local preview missing or blocked. On Pages use /amoji-app/docs/owner-resources.html; local: cd docs && python3 -m http.server 8765';
+    }
+    function applyRemoteAudioHints(audio, url) {
+      if (/mixkit\.co\//i.test(url)) {
+        audio.crossOrigin = 'anonymous';
+        audio.referrerPolicy = 'no-referrer';
+      }
     }
     let currentAudio = null;
     document.body.addEventListener('click', (e) => {
@@ -10177,7 +10198,9 @@
       if (currentAudio) { currentAudio.pause(); currentAudio = null; }
       const url = /^https?:/i.test(src) ? src : new URL(src, location.href).href;
       currentAudio = new Audio(url);
-      currentAudio.play().catch(() => alert('Playback blocked or file missing. On Pages use /amoji-app/docs/owner-resources.html; local: cd docs && python3 -m http.server 8765'));
+      applyRemoteAudioHints(currentAudio, url);
+      currentAudio.onerror = () => alert(pickerPlayFailureMessage(src, btn));
+      currentAudio.play().catch(() => alert(pickerPlayFailureMessage(src, btn)));
   });
     document.getElementById('saveNotesJson')?.addEventListener('click', async () => {
       const json = collectNotesExport();
