@@ -13,13 +13,13 @@ describe('mic VAD must not kill companion TTS via speaker echo', () => {
     const vadBlock = panel.slice(vadStart, panel.indexOf('}).then((vadHandle)', vadStart));
     expect(vadBlock).toMatch(/!isSpeaking\(\)\s*&&\s*!speechPending\(\)/);
     // Still allowed to cut when she is idle (leftover audio / true barge-in path).
-    expect(vadBlock).toContain('stopSpeaking()');
+    expect(vadBlock).toContain('stopSpeakingForInterrupt()');
   });
 
   it('keeps Web Speech onSpeechStart as the live barge-in while she talks', () => {
     const listenStart = panel.indexOf('listenContinuous(lang,');
     const listenBlock = panel.slice(listenStart, panel.indexOf('void startVad({', listenStart));
-    expect(listenBlock).toMatch(/onSpeechStart:\s*\(\)\s*=>\s*\{[\s\S]*?stopSpeaking\(\)/);
+    expect(listenBlock).toMatch(/onSpeechStart:\s*\(\)\s*=>\s*\{[\s\S]*?stopSpeakingForInterrupt\(\)/);
     // ASR barge-in is not gated on isSpeaking — user words must always cut her.
     expect(listenBlock).not.toMatch(/onSpeechStart:[\s\S]*!isSpeaking\(\)/);
   });

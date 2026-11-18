@@ -183,7 +183,7 @@ import {
   undecidedTopicReply,
   userUndecided,
 } from '../lib/topic-suggestions';
-import { speak, stopSpeaking, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechLeadDiverged, speechRemainder, whenSpeechIdle } from '../lib/voice';
+import { speak, stopSpeaking, stopSpeakingForInterrupt, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechLeadDiverged, speechRemainder, whenSpeechIdle } from '../lib/voice';
 import { cantHearReply, isCantHearComplaint } from '../lib/cant-hear';
 import { productionChat } from '../lib/backend-client';
 import { stopThinkingSound } from '../lib/thinking-sound';
@@ -547,6 +547,7 @@ export default function ChatPanel({
   const micModeRef = useRef(false);
   /** Bumps on each begin/end so stale VAD/onEnd cannot dismiss a newer session. */
   const micSessionGenRef = useRef(0);
+  const sendGenRef = useRef(0);
   const micStopRef = useRef<{ stop(): void; flush(): void } | null>(null);
   // r87 — Silero VAD alongside the mic: its own stop handle, the grace timer
   // between "speech ended" and "flush the words", wired per mic session.
@@ -1244,7 +1245,9 @@ export default function ChatPanel({
 
   const send = async (override?: string) => {
     const text = (override ?? input).trim();
-    if (!text || busyRef.current) return;
+    const companionTalking = isSpeaking() || speechPending();
+    if (!text || (busyRef.current && !companionTalking)) return;
+    const turnGen = ++sendGenRef.current;
     const demoPhaseId = pendingDemoPhaseRef.current;
     pendingDemoPhaseRef.current = null;
     setInput('');
@@ -1269,12 +1272,7 @@ export default function ChatPanel({
     // Any real send cancels the open-phase ability brief.
     userHasSpokenRef.current = true;
     nearBottomRef.current = true;
-    setHistory((h) => [...h, { role: 'user', content: text }]);
-    feedUtterance(text);
-    stopSpeaking();
-    endPerformanceMusic(); // r86 — a new message interrupts any live show
-    clearMove(); // stop sticky sing/dance body when a new talk/demo starts
-    clearPerfMotionProfile();
+    stopSpeakingForInterrupt();
     showTrack(null);
     // r.42 — together-modes intercept the turn BEFORE any LLM work: quitting
     // a running game/duet, advancing a running game, taking the next duet
@@ -1308,6 +1306,15 @@ export default function ChatPanel({
       clearContentContinuationSession();
       contentContinuation = null;
     }
+    if (interrupt.newTopic) {
+      saveHistory([]);
+      setHistory([]);
+      setStreamDraft('');
+      transientRef.current = false;
+      reengageStageRef.current = 0;
+    }
+    setHistory((h) => (interrupt.newTopic ? [{ role: 'user', content: text }] : [...h, { role: 'user', content: text }]));
+    feedUtterance(text);
     const contTurn = resolveContentContinuationOnSend(text, contentContinuation);
     if (contTurn.stopped) {
       clearContentContinuationSession();
@@ -1615,6 +1622,7 @@ export default function ChatPanel({
     // one exit path for every outcome: the final reply (or the failure note)
     // takes the placeholder's place instead of stacking a second bubble
     const commitReply = (content: string) => {
+      if (turnGen !== sendGenRef.current) return;
       stopMusic(); // r.48 — the show ends the moment her real reply lands
       // r86 — a live sing/duet/piano performance survives this stopMusic()
       // (the performance layer preserves it); a plain dance bed still ends
@@ -1840,6 +1848,7 @@ export default function ChatPanel({
         }
       }
     } finally {
+      if (turnGen !== sendGenRef.current) return;
       stopThinkingSound(); // reply (or failure) is here — stop the wait cue
       setThinkingPose(false);
       stopMusic(); // r.48 — belt-and-braces: no PLAIN music outlives the turn
@@ -1904,7 +1913,7 @@ export default function ChatPanel({
     setListening(true);
     setMicDismissed(false);
     // Auto-open on chat enter must not cancel the first reply still loading on gTTS.
-    if (opts?.cutCompanion !== false) stopSpeaking();
+    if (opts?.cutCompanion !== false) stopSpeakingForInterrupt();
     let bargeInArmed = true; // first real speech of a burst cuts her off
     const micHandle = listenContinuous(lang, {
       // r87 — the VAD owns endpointing now; its onPartial flushes via handle
@@ -1913,8 +1922,7 @@ export default function ChatPanel({
         if (sessionGen !== micSessionGenRef.current) return;
         if (!bargeInArmed) return;
         bargeInArmed = false;
-        stopSpeaking(); // the user is really talking — cut her voice NOW
-        endPerformanceMusic();
+        stopSpeakingForInterrupt();
         showTrack(null);
       },
       // r81 — the half-heard words paint a live italic bubble, ChatGPT-style.
@@ -1974,7 +1982,7 @@ export default function ChatPanel({
         // only). VAD still owns UI + endpointing.
         if (bargeInArmed && !isSpeaking() && !speechPending()) {
           bargeInArmed = false;
-          stopSpeaking();
+          stopSpeakingForInterrupt();
         }
         lastActivityRef.current = Date.now();
         lastUserRef.current = Date.now();
@@ -2303,7 +2311,7 @@ export default function ChatPanel({
                 idleAutoAfterUserRef.current = true;
                 setHistory((h) => [...h, { role: 'user', content: prompt }]);
                 feedUtterance(prompt);
-                stopSpeaking();
+                stopSpeakingForInterrupt();
                 void clientLiveContext(prompt, lang).then((live) => {
                   const raw = live.spoken?.trim() ?? '';
                   const line = raw

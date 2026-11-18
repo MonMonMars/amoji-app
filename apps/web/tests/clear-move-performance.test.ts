@@ -19,9 +19,8 @@ describe('sticky sing/dance performance clears on new talk', () => {
 
   it('ChatPanel clears move + performance music when a new send starts', () => {
     const panel = fs.readFileSync(path.join(ROOT, 'components/ChatPanel.tsx'), 'utf8');
-    expect(panel).toContain('clearMove()');
-    expect(panel).toContain('clearPerfMotionProfile()');
-    expect(panel).toContain('endPerformanceMusic()');
+    expect(panel).toContain('stopSpeakingForInterrupt()');
+    expect(panel).toContain('interrupt.newTopic');
   });
 
   it('ChatPanel clears sticky move when the library bed stops', () => {
