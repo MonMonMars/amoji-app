@@ -1,19 +1,19 @@
 # Amoji project status board
 
-**Generated:** 2026-11-18 21:35 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-18 21:55 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** [Pages](https://monmonmars.github.io/amoji-app/docs/project-status.html) · repo [`project-status.html`](./project-status.html)  
 **Pixel pickers:** [Pages owner-resources](https://monmonmars.github.io/amoji-app/docs/owner-resources.html) (music · poke · **idle** · **stories** · **news** · **demo** tabs) · local: `cd docs && python3 -m http.server 8765`  
-**`main` tip:** `8c7bec89` (**r2026-11-18.228** · #518 idle + #519 card voice merged; **#520** demo + **#517** owner queued)
+**`main` tip:** `a2111af3` (**r2026-11-18.237** · #518–#520 + #517 merged; live deploy pending)
 
 ## Snapshot
 
 | Bucket | Count |
 | --- | ---: |
 | **Done** — merged to `main` | 100+ stack · through **#511** + **#515** · **r220** (incl. #497–#507 vault/perf) |
-| **Open product PRs** | **#520** demo r230 · **#517** owner r231 · #512 |
+| **Open product PRs** | #512 chat UX · spikes Hold |
 | **Outstanding** — agents (no PR yet) | VRM pupil · picker polish |
 | **Outstanding** — Pixel / human | **R10–R13 not Done** · stale SW · [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
 | **Hold** | licensed music · Stripe · PH · Search Console · spikes #1 / #20 |
@@ -75,8 +75,6 @@ Dance LoopRepeat, card greet, poke 我鍾意信 skip, news long read, unified ow
 
 | PR | Title | Notes |
 | --- | --- | --- |
-| [#520](https://github.com/MonMonMars/amoji-app/pull/520) | Demo weather+news left + audible chip taps **r230** | `sayLocal` + live facts on Pages |
-| [#517](https://github.com/MonMonMars/amoji-app/pull/517) | Owner-resources Mixkit + row audio scrub **r231** | Merge after **#520** if train conflicts |
 | [#512](https://github.com/MonMonMars/amoji-app/pull/512) | Remove ⚑ 舉報 from chat bubbles **r218** | Chat UX |
 | [#20](https://github.com/MonMonMars/amoji-app/pull/20) | CosyVoice TTS spike | Draft — **Hold** |
 | [#1](https://github.com/MonMonMars/amoji-app/pull/1) | Voice bake-off UI | Old spike — **Hold** |
@@ -87,6 +85,8 @@ Dance LoopRepeat, card greet, poke 我鍾意信 skip, news long read, unified ow
 | --- | --- |
 | [#518](https://github.com/MonMonMars/amoji-app/pull/518) | Idle v2 visible default **r227** |
 | [#519](https://github.com/MonMonMars/amoji-app/pull/519) | Card voice audition all langs **r228** |
+| [#520](https://github.com/MonMonMars/amoji-app/pull/520) | Demo weather+news left + audible chip taps **r230** |
+| [#517](https://github.com/MonMonMars/amoji-app/pull/517) | Owner-resources Mixkit scrub + motion previews **r237** |
 
 ### Agent branches (in flight)
 
@@ -100,11 +100,9 @@ Dance LoopRepeat, card greet, poke 我鍾意信 skip, news long read, unified ow
 
 ### Code (agents)
 
-1. **#520 → #517** — merge when CI green; hard-refresh SW on phone  
+1. **Phone smoke** — demo chips + idle + card voice + owner-resources on **r237**  
 2. **#512** — chat report chip removal  
-3. **Demo smoke** — weather/news chips left + speak on live **r230**  
-4. **Owner-resources** — Mixkit preview audio after **#517**  
-5. **Hip-hop / idle / card** — phone pass **r228** post-merge  
+3. **Stale SW** — hard-refresh until `revision.txt` shows **r2026-11-18.237**  
 6. **VRM pupil** — pop / size stability on surprise  
 7. **Owner picks apply** — listen/sing/dance honor picker on device  
 8. **Duet path** — align with library performance gate ([`SING_DANCE_PIPELINE.md`](./SING_DANCE_PIPELINE.md))
@@ -113,10 +111,10 @@ Do **not:** re-merge closed #497–#511 / #515 work; mark R10–R13 Done without
 
 ### Phone / human (not agent Done)
 
-1. **Stale SW** — hard-refresh or clear site data after **r230** deploy (expect `revision.txt` **r2026-11-18.230** on demo tip)  
-2. **Card voice all langs** — **#519** merged (**r228**); owner phone verify  
-3. **Idle quality** — **#518** merged (**r227**); R11 not Done until phone OK  
-4. **Mixkit HTML** — **#517** pending; Music tab play/preview on Pages  
+1. **Stale SW** — hard-refresh until live `revision.txt` is **r2026-11-18.237** (not r220)  
+2. **Card voice all langs** — **#519** on main; owner phone verify  
+3. **Idle quality** — **#518** on main; R11 not Done until phone OK  
+4. **Mixkit HTML** — **#517** on main; Music tab play/preview on Pages  
 5. **Hip-hop ask** — after **#514** merge on live  
 6. **Pupil pops** — eye surprise on device  
 7. **Owner picks** — perf MV/sing/dance rails from picker  
@@ -137,6 +135,6 @@ Unchanged — licensed music, Stripe live, PH, Search Console, modular GLBs, spi
 
 | Document | Path | Status |
 | --- | --- | --- |
-| This status board | `docs/PROJECT_STATUS.md` | Refreshed **2026-11-18 21:35 HKT** post-**#518/#519** · **#520/#517** open |
+| This status board | `docs/PROJECT_STATUS.md` | Refreshed **2026-11-18 21:55 HKT** post-train **#518–#520/#517** · **r237** |
 | Sing/dance pipeline | `docs/SING_DANCE_PIPELINE.md` | PerformanceSession on **r214** |
 | Phone smoke | `docs/PHONE_SMOKE.md` | Owner verify |
