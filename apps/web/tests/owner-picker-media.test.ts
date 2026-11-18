@@ -2,15 +2,27 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { audioPlayerBlockHtml } from '../lib/owner-picker-html-media';
 import {
   isExternalOwnerPickerPlaySrc,
   normalizeExternalOwnerPickerPlaySrc,
   pagesAssetSrcFromPickerRaw,
+  PICKER_PLAY_RESOLVE_INLINE_JS,
 } from '../lib/owner-picker-media';
 import { verifyOwnerResourcesPagesAssets } from '../scripts/store-bundle.mjs';
 
 const mixkit =
   'https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3';
+
+describe('owner-picker-html-media', () => {
+  it('audio row includes play, scrub, and stop', () => {
+    const html = audioPlayerBlockHtml('amoji-public-serve/audio/x.mp3', 'test clip');
+    expect(html).toContain('audio-play-toggle');
+    expect(html).toContain('audio-stop');
+    expect(html).toContain('audio-scrub');
+    expect(html).toContain('audio-cur');
+  });
+});
 
 describe('owner-picker-media', () => {
   it('treats Mixkit URLs as external (never ../ rewrite)', () => {
@@ -32,6 +44,11 @@ describe('owner-picker-media', () => {
 
   it('normalizeExternalOwnerPickerPlaySrc leaves https untouched', () => {
     expect(normalizeExternalOwnerPickerPlaySrc(mixkit)).toBe(mixkit);
+  });
+
+  it('inline player script exposes resolvePlaySrc', () => {
+    expect(PICKER_PLAY_RESOLVE_INLINE_JS).toContain('resolvePlaySrc');
+    expect(PICKER_PLAY_RESOLVE_INLINE_JS).toContain('pickerPlayFailureMessage');
   });
 });
 

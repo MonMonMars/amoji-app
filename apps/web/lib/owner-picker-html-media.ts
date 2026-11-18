@@ -134,7 +134,8 @@ export function audioPlayerBlockHtml(
 ): string {
   const remoteCls = opts?.remote ? ' play-remote' : '';
   return `<div class="audio-player" data-play="${escapeHtml(dataPlayRaw)}">
-    <button type="button" class="audio-play-toggle${remoteCls}" aria-label="${escapeHtml(ariaLabel)}">▶</button>
+    <button type="button" class="audio-play-toggle${remoteCls}" aria-label="Play ${escapeHtml(ariaLabel)}">▶</button>
+    <button type="button" class="audio-stop" aria-label="Stop ${escapeHtml(ariaLabel)}" title="Stop">■</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek ${escapeHtml(ariaLabel)}" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div>`;
