@@ -824,6 +824,20 @@ export function clearNewsTold(storage?: Kv | null): void {
  * told, returns undefined so the caller can refresh/widen — never loop one
  * stale story.
  */
+/** Skip headlines that are near-duplicates of a recently told story (feed title drift). */
+function newsTitleRecentlyTold(key: string, told: Set<string>): boolean {
+  if (!key || told.has(key)) return true;
+  if (key.length < 6) return false;
+  for (const prev of told) {
+    if (!prev) continue;
+    if (prev === key) return true;
+    const min = Math.min(key.length, prev.length, 10);
+    if (min >= 6 && key.slice(0, min) === prev.slice(0, min)) return true;
+    if (key.length >= 12 && prev.length >= 12 && (key.includes(prev) || prev.includes(key))) return true;
+  }
+  return false;
+}
+
 export function selectNewsLead<T extends { title: string }>(
   headlines: T[],
   storage?: Kv | null,
@@ -835,7 +849,9 @@ export function selectNewsLead<T extends { title: string }>(
     const key = normalizeNewsTitle(h.title);
     const sum = (h as { summary?: string }).summary;
     const extra = typeof sum === 'string' ? sum : '';
-    return key.length > 0 && !told.has(key) && !isJunkNewsHeadline(h.title, extra ?? '');
+    return key.length > 0
+      && !newsTitleRecentlyTold(key, told)
+      && !isJunkNewsHeadline(h.title, extra ?? '');
   });
   if (!pick) return undefined;
   const next = [
@@ -852,7 +868,10 @@ export function toldNewsTitles(storage?: Kv | null, now = Date.now()): string[] 
 }
 
 const NEWS_LINE_DATE_ONLY = /^20\d{6}$/;
-const NEWS_CATEGORY_LINE = /^(娛樂|娱乐|財經|财经|體育|体育|港聞|港闻|科技|國際|国际|副刊|金曲|星級專訪|星级专访|文化|地產|地产|時事|时事)(?:\s+[\u3400-\u9fff]{2,12}新聞網)?$/;
+const NEWS_CATEGORY_LINE = /^(娛樂|娱乐|財經|财经|體育|体育|港聞|港闻|科技|國際|国际|副刊|金曲|星級專訪|星级专访|文化|地產|地产|時事|时事|科學|科学|科學與中國|科学与中国)(?:\s+[\u3400-\u9fff]{2,12}新聞網)?$/;
+/** RSS channel / vertical labels (e.g. 科學與中國) — not story body. */
+const NEWS_RSS_CHANNEL_TAG =
+  /^(?:科學與中國|科学与中国|科技與中國|科技与中国|[\u3400-\u9fff]{2,8}(?:與|与)[\u3400-\u9fff]{2,8})$/;
 const NEWS_SOURCE_ONLY = /^(?:明報|明报|星島|星岛|頭條|头条|東網|东网|香港01|HK01|橙新聞|on\.cc|商業電台|商业电台|巴士的報|信報|大公報|文匯報|文汇报)[\u3400-\u9fff]{0,8}新聞網?$/;
 const HK_NEWS_VIDEO_PREFIX = /^(?:有片|快訊|圖集|影片|視頻|视频)[丨｜|·]\s*/u;
 const HK_NEWS_TRAILING_SOURCE = /\s+(?:橙新聞|on\.cc|東網|东网|星島|星岛|明報|明报|頭條|头条|香港01|HK01|巴士的報|信報|大公報|文匯報|文汇报|商業電台|商业电台|Yahoo(?:\s*News)?|MSN(?:\s*News)?|SBS(?:\s*News)?|ABC(?:\s*News)?|BBC(?:\s*News)?)(?:\s*新聞)?\s*$/iu;
@@ -894,10 +913,19 @@ export function topicalHeadlineMatches(query: string, title: string): boolean {
   return bits.some((b) => t.includes(b));
 }
 
+export function isNewsRssChannelTag(line: string): boolean {
+  const t = String(line || '').trim();
+  if (!t) return false;
+  if (NEWS_RSS_CHANNEL_TAG.test(t)) return true;
+  if (NEWS_CATEGORY_LINE.test(t)) return true;
+  return false;
+}
+
 /** True when a feed line is nav/teaser/author chrome — not a speakable detail beat. */
 export function isNewsBodyBoilerplate(line: string): boolean {
   const t = String(line || '').trim();
   if (!t) return true;
+  if (isNewsRssChannelTag(t)) return true;
   if (NEWS_SECTION_CHROME.test(t)) return true;
   if (NEWS_BODY_BOILERPLATE.test(t)) return true;
   if (NEWS_AUTHOR_LINE.test(t)) return true;
@@ -928,6 +956,7 @@ export function scrubNewsTitleForSpeech(title: string, source = ''): string {
   let s = String(title || '').trim();
   if (!s) return '';
   s = s.replace(HK_NEWS_VIDEO_PREFIX, '');
+  s = s.replace(/^(?:科學與中國|科学与中国|科學中國|科学中国|RTHK\s*科學)[丨｜|·\s]+/u, '');
   s = s.replace(/^(?:\d{4})\s*[:：]\s*/, '');
   s = s.replace(/[丨｜]/g, ' ').replace(/\s+/g, ' ').trim();
   const src = source.trim();
@@ -955,7 +984,7 @@ export function scrubNewsFeedBody(text: string, title = ''): string {
   for (const line of lines) {
     const bare = line.trim();
     if (!bare || NEWS_LINE_DATE_ONLY.test(bare) || /^\d{4}$/.test(bare)) continue;
-    if (NEWS_CATEGORY_LINE.test(bare)) continue;
+    if (isNewsRssChannelTag(bare)) continue;
     if (NEWS_SOURCE_ONLY.test(bare)) continue;
     if (NEWS_SECTION_CHROME.test(bare)) continue;
     if (isNewsBodyBoilerplate(bare)) continue;
@@ -2241,6 +2270,7 @@ export function newsLocalPlaceLabel(lang: Lang4, label: string): string | null {
 function isNewsBeatChrome(text: string): boolean {
   const t = text.trim();
   if (!t || isNewsBodyBoilerplate(t)) return true;
+  if (isNewsRssChannelTag(t)) return true;
   if (isJunkNewsHeadline(t)) return true;
   if (t.length <= 8 && /^[\u4e00-\u9fffA-Za-z]+$/u.test(t) && !/[。！？.!?]/.test(t)) return true;
   return false;
@@ -2274,6 +2304,7 @@ export function newsSpokenBodyBeats(lead: Headline, lang?: Lang4): string[] {
     const key = normalizeNewsTitle(t);
     if (beats.some((b) => normalizeNewsTitle(b) === key)) return;
     if (key === titleKey && t.length <= lead.title.length + 14) return;
+    if (newsBeatDuplicatesTitle(t, lead.title)) return;
     beats.push(t);
   };
   if (summary) {
@@ -2319,10 +2350,27 @@ function joinSpeechBeats(lang: Lang4, beats: string[]): string {
     .join('');
 }
 
+/** True when a body beat would repeat the headline the intro already speaks. */
+export function newsBeatDuplicatesTitle(beat: string, title: string): boolean {
+  const titleKey = normalizeNewsTitle(title);
+  if (!titleKey) return false;
+  const key = normalizeNewsTitle(beat);
+  if (!key) return false;
+  if (key === titleKey) return true;
+  if (key.includes(titleKey) && beat.length <= title.length + 24) return true;
+  if (titleKey.includes(key) && key.length >= Math.min(titleKey.length, 12) && beat.length <= title.length + 16) {
+    return true;
+  }
+  return false;
+}
+
 function buildNewsSpokenLine(lang: Lang4, intro: string, lead: Headline): string {
   const t = clip(spokenHeadline(lead.title, lead.source ?? '', lang), 180);
   if (!t) return sayMiss(lang, 'news');
-  const body = joinSpeechBeats(lang, newsSpokenBodyBeats(lead, lang));
+  const body = joinSpeechBeats(
+    lang,
+    newsSpokenBodyBeats(lead, lang).filter((b) => !newsBeatDuplicatesTitle(b, lead.title)),
+  );
   if (lang === 'en' || lang === 'ja') {
     return `${intro} ${t}.${body ? ` ${body}` : ''}`.replace(/\s+/g, ' ').trim();
   }

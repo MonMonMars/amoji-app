@@ -160,12 +160,17 @@ export function scrubHistoryResumeAsks(text: string): string {
  * Keeps grounded sentences; empties a whole-line sludge reply so callers can
  * fall back or stay silent (beyond history-resume #412).
  */
+/** Shy-wrap vocal leads that must never be chat lines on their own. */
+const PERSONALITY_VOCAL_LEAD =
+  /^(?:細細聲|細聲|輕輕|轻轻|すこし|softly)[…\\.。！!～~]*\s*$/iu;
+
 const NONSENSE_SENTENCE =
   /(?:^|[\s,.!])((?:i'?m\s+)?always\s+here|everything\s+happens\s+for\s+a\s+reason|hope\s+this\s+helps|as\s+an?\s+ai\b|let\s+me\s+know\s+if\s+you\s+need\s+anything|here\s+if\s+you\s+need\s+me)\b|you'?ve\s+gone\s+quiet\b|are\s+you\s+still\s+there\b|still\s+on\s+that\s+thread\b|holding\s+the\s+same\s+topic\b|holding\s+this\s+soft\s+moment\b|same\s+page\s+as\s+you\b|soft\s+moment\b|充滿電|充满电|電壓感覺友善|voltage feels friendly|tiny burst|soul\s+thread|energy\s+field\s+hums|cosmic\s+whisper|nexus\s+of\s+(?:feelings?|vibes?)|wavelength\s+of\s+(?:your\s+)?heart|quantum\s+vibes?|vibe\s+resonance|aura\s+sync|vibes?\s+check|matches\s+your\s+vibe|\bvibing\b|(?:個|的|の)vibe\b|配你vibe|啱你個vibe|オーラ同期|量子バイブス|バイブスチェック|灵魂频率|靈魂頻率|柔軟瞬間|柔软瞬间|柔軟時刻|柔软时刻|一切都会好|我一直都在|希望帮到你|希望幫到你|你靜咗喎|好耐冇聲|你安静下来了|好一会儿没声音|仲喺你呢條話題|还在你这条话题|輕輕留住同一個主題|轻轻留着同一个主题|同你同一頁|和你同一页|同じページにいる|やわらかい(?:時間|瞬間)|軍艦.{0,6}極光|月亮.{0,4}在.{0,6}口袋|the\s+universe\s+winks\b|destiny\s+threads?\b|宇宙在对你眨眼|命運的線|that\s+detail\s+you\s+shared\s+still\s+sits|those\s+stick\s+with\s+me|你啱啱講嗰啲細節我仲記住|你頭先講嗰樣我仲記住|你刚说的那些细节我还记着|近排你留意到嘅.*我會記住|those\s+stick\s+with\s+me/i;
 
 export function sentenceLooksLikeNonsense(sentence: string): boolean {
   const s = (sentence ?? '').trim();
   if (!s) return false;
+  if (PERSONALITY_VOCAL_LEAD.test(s)) return true;
   if (asksToResumeHistory(s)) return true;
   if (volunteersStoredMemory(s)) return true;
   if (asksPresenceNag(s)) return true;
@@ -182,8 +187,10 @@ export function sentenceLooksLikeNonsense(sentence: string): boolean {
   return false;
 }
 
+const CHAT_VOCAL_LEAD_PREFIX = /^(?:細細聲|細聲|輕輕|轻轻|すこし|softly)[……\\.。！!～~\s]+/iu;
+
 export function scrubSpokenNonsense(text: string): string {
-  const t = (text ?? '').trim();
+  const t = (text ?? '').trim().replace(CHAT_VOCAL_LEAD_PREFIX, '');
   if (!t) return '';
   const normalized = t.replace(/\.{2,}/g, '…');
   const chunks = splitSpokenSentences(normalized);

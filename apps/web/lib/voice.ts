@@ -1803,7 +1803,8 @@ function performSpeak(
           // next voice — that is the "she suddenly switches speaker" effect.
           // Resume from where the audio actually got to.
           if (spokenChars > 0 && spokenChars < text.length) {
-            const rest = speechRemainder(text, text.slice(0, spokenChars));
+            const prefix = text.slice(0, Math.min(spokenChars, text.length)).trim();
+            const rest = speechRemainder(text, prefix) || text.slice(spokenChars).trim();
             if (rest) {
               reportVoiceStatus('gtts', false, `resuming ${rest.length} chars`);
               speakRemainderInChain(rest);

@@ -173,6 +173,29 @@ export function openPhaseTopicAsk(lang: string): string {
   return "I'm here. Start with whatever you like whenever you're ready.";
 }
 
+/** Drop a stacked 你好 when name hello and persona intro both greet. */
+function dedupeOpenHello(lang: string, nameHello?: string, personaIntro?: string): string | undefined {
+  const intro = personaIntro?.trim();
+  if (!intro) return intro;
+  const named = nameHello?.trim();
+  if (!named) return intro;
+  if (lang === 'yue' || lang === 'zh') {
+    if (/你好/.test(named) && /^你好[，,]/.test(intro)) return intro.replace(/^你好[，,]\s*/, '');
+    if (/^嘿[，,]/.test(intro) && /你好|嘿/.test(named)) return intro.replace(/^嘿[，,]\s*/, '');
+  }
+  if (lang === 'ja') {
+    if (/こんにちは/.test(named) && /^こんにちは[、,]/.test(intro)) {
+      return intro.replace(/^こんにちは[、,]\s*/, '');
+    }
+  }
+  if (lang === 'en') {
+    if (/\b(?:hi|hello)\b/i.test(named) && /^(?:hi|hello)\b[,!]?\s*/i.test(intro)) {
+      return intro.replace(/^(?:hi|hello)\b[,!]?\s*/i, '');
+    }
+  }
+  return intro;
+}
+
 /** Enter-chat TTS: optional name hello + statement persona intro (no interview). */
 export function buildOpenCheerLine(
   lang: string,
@@ -180,7 +203,9 @@ export function buildOpenCheerLine(
 ): string {
   const L = ['yue', 'zh', 'ja', 'en'].includes(lang) ? lang : 'en';
   void L;
-  const intro = stripQuestionSentences(opts.personaIntro.trim());
+  const intro = stripQuestionSentences(
+    dedupeOpenHello(L, opts.nameHello, opts.personaIntro) ?? opts.personaIntro.trim(),
+  );
   const named = opts.nameHello?.trim();
   // topicAsk is ignored on enter cheer — never bolt a second interview ask.
   void opts.topicAsk;

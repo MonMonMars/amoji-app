@@ -328,6 +328,8 @@ describe('source banks never emit known nonsense', () => {
     expect(sentenceLooksLikeNonsense('Your quantum vibes are aligning today.')).toBe(true);
     expect(sentenceLooksLikeNonsense('Let me know if you need anything.')).toBe(true);
     expect(sentenceLooksLikeNonsense('聽落你今日好攰喎。')).toBe(false);
+    expect(sentenceLooksLikeNonsense('細細聲……')).toBe(true);
+    expect(scrubCompanionSpoken('細細聲……我鍾意花。')).toBe('我鍾意花。');
     expect(
       scrubSpokenNonsense("I'm always here for you. Your exam sounded brutal — rest a bit tonight."),
     ).toMatch(/exam|rest/i);

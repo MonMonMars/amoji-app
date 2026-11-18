@@ -46,6 +46,13 @@ describe('speechRemainder', () => {
     expect(speechRemainder('  Hello.  ', '')).toBe('Hello.');
   });
 
+  it('returns remainder when lead body matches but closer punctuation differs', () => {
+    const lead = '我鍾意茶。';
+    const full = '我鍾意茶！可唔可以慢慢傾？';
+    expect(speechLeadDiverged(full, lead)).toBe(false);
+    expect(speechRemainder(full, lead)).toBe('可唔可以慢慢傾？');
+  });
+
   it('ignores trailing sentence punctuation when matching the streamed lead', () => {
     // Stream closed on "." while the scrubbed final uses "!" — still one lead.
     expect(speechLeadDiverged('Sunny and mild! Bring a jacket.', 'Sunny and mild.')).toBe(false);
