@@ -242,6 +242,7 @@ function songMatchesQuery(clipId: string, q: ClipQuery): boolean {
 
 /** First owner-pinned song clip matching the query, or pinned rotation by n. */
 export function pickOwnerSongClipId(q: ClipQuery): string | null {
+  if (q.kind !== 'song') return null;
   if (q.clipId) return q.clipId;
   const ids = ownerSongClipIds();
   if (!ids.length) return null;
