@@ -68,7 +68,7 @@
 // remembers the offer until you answer — YES starts the show instantly
 // (her signature song sung live, or a full dance number); (c) every few idle
 // lines she teaches you something she can do (games, lessons, duets, meals,
-// voice mode, memory). Music always fades out the moment her real reply lands.
+// voice mode, memory). Generic BGM stops the moment her real reply lands (no fade).
 // r2026-10-04.61: the history fade is POSITION-based, not age-based (Master
 // Simon: scrolled-up old lines must stay readable). Every message renders
 // fully opaque; a mask on the panel fades by on-screen HEIGHT only — the

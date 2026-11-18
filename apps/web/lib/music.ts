@@ -164,8 +164,7 @@ function playNote(freq: number, when: number, dur: number, wave: OscillatorType,
   const g = ctx.createGain();
   osc.type = wave;
   osc.frequency.value = freq;
-  g.gain.setValueAtTime(0, when);
-  g.gain.linearRampToValueAtTime(vol, when + 0.02);
+  g.gain.setValueAtTime(vol, when);
   g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
   osc.connect(g);
   g.connect(master);
@@ -179,11 +178,8 @@ function haltBand(): void {
     clearInterval(schedTimer);
     schedTimer = null;
   }
-  if (master && ctx) {
-    try {
-      master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
-      master.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.25);
-    } catch { /* already closed */ }
+  if (master) {
+    try { master.gain.value = 0; } catch { /* already closed */ }
     try { master.disconnect(); } catch { /* ignore */ }
   }
   ctx = null;
@@ -212,7 +208,7 @@ export function startMusic(characterId: string): void {
   master = gain;
   const eighth = 60 / theme.bpm / 2;
   nextStep = 0;
-  nextTime = ac.currentTime + 0.08;
+  nextTime = ac.currentTime;
   schedTimer = setInterval(() => {
     if (!ctx) return;
     while (nextTime < ctx.currentTime + 0.3) {
@@ -226,7 +222,7 @@ export function startMusic(characterId: string): void {
   }, 100);
 }
 
-/** fade the track out and release the AudioContext */
+/** stop the procedural track immediately */
 export function stopMusic(): void {
   // r86: while a performance (sing/duet/piano) owns the stage, the chat
   // pipeline's generic cleanup calls must NOT kill her music — the show
@@ -312,11 +308,8 @@ function haltPiano(): void {
     clearInterval(pianoTimer);
     pianoTimer = null;
   }
-  if (pianoMaster && pianoCtx) {
-    try {
-      pianoMaster.gain.setValueAtTime(pianoMaster.gain.value, pianoCtx.currentTime);
-      pianoMaster.gain.linearRampToValueAtTime(0, pianoCtx.currentTime + 0.25);
-    } catch { /* already closed */ }
+  if (pianoMaster) {
+    try { pianoMaster.gain.value = 0; } catch { /* already closed */ }
     try { pianoMaster.disconnect(); } catch { /* ignore */ }
   }
   pianoCtx = null;
@@ -345,7 +338,7 @@ export function startPiano(characterId: string): void {
   pianoMaster = gain;
   const eighth = 60 / theme.bpm / 2;
   let step = 0;
-  let t = ac.currentTime + 0.08;
+  let t = ac.currentTime;
   pianoTimer = setInterval(() => {
     if (!pianoCtx) return;
     while (t < pianoCtx.currentTime + 0.3) {
@@ -397,12 +390,12 @@ export function endPerformanceMusic(): void {
   endPerformanceSession();
   haltBand();
   haltPiano();
-  haltClip({ fadeOutSec: 0.35 });
+  haltClip({ fadeOutSec: 0 });
 }
 
 // ---- premade library (songs + dance beds) -----------------------------------
 // Same performance stage as the procedural band: stopMusic() will not cut a
-// show short, endPerformanceMusic() fades it, and the settings steps scale
+// show short, endPerformanceMusic() stops beds instantly, and the settings steps scale
 // the gain. Songs use dialogue volume and drive the viseme clock; dance beds
 // use BGM. Playback is async and never awaited by chat or poke.
 
@@ -588,17 +581,14 @@ function haltClip(opts?: { fadeOutSec?: number }): void {
   if (an) {
     try { an.disconnect(); } catch { /* ignore */ }
   }
-  if (gain && stale) {
-    try {
-      gain.gain.setValueAtTime(gain.gain.value, stale.currentTime);
-      gain.gain.linearRampToValueAtTime(0, stale.currentTime + 0.2);
-    } catch { /* closed */ }
+  if (gain) {
+    try { gain.gain.value = 0; } catch { /* closed */ }
     try { gain.disconnect(); } catch { /* ignore */ }
   }
   // Never close the shared default AudioContext — voice/SFX still need it.
   // Closing it after the first song made later sing/dance beds stay silent.
   if (stale && !isSharedDefaultAudioContext(stale) && stale.state !== 'closed') {
-    setTimeout(() => { void stale.close().catch(() => undefined); }, 280);
+    void stale.close().catch(() => undefined);
   }
 }
 
