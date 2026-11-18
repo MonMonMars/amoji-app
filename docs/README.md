@@ -28,6 +28,7 @@ Technical notes for assets, models, robot face, chat UX, audio, and merge proces
 | [`PRIVACY_MEMORY.md`](./PRIVACY_MEMORY.md) | Memory UX + recall rules |
 | [`CHAT_ENTRY_FLOW.md`](./CHAT_ENTRY_FLOW.md) | Enter-chat talking order |
 | [`TTS_PIPELINE.md`](./TTS_PIPELINE.md) | Voice / TTS chain |
+| [`VOICE_CHAT_LIFECYCLE.md`](./VOICE_CHAT_LIFECYCLE.md) | Interrupt, overlap, new-topic plan |
 | [`CAST_LIGHTING.md`](./CAST_LIGHTING.md) | Per-character lighting allowlist |
 | [`SETUP_ONBOARDING.md`](./SETUP_ONBOARDING.md) | Setup → gate → select → chat |
 | [`MERGE_CHECKLIST.md`](./MERGE_CHECKLIST.md) | Recommended PR merge order |
