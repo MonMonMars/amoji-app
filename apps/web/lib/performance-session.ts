@@ -9,7 +9,6 @@ import {
   refreshPendingPerfDance,
   shouldStartDanceOnAudioPlaying,
   type PendingPerfDance,
-  type PerfBodyMove,
 } from './dance-audio-gate';
 
 export type PerformancePhase = 'idle' | 'intro' | 'listen' | 'sing' | 'dance' | 'ending';
