@@ -122,20 +122,20 @@ describe('pokeSectionBodyReaction', () => {
     expect(canvas).toMatch(/pokeArmSideFromScreenPush\s*\(\s*leanSide\s*\)/);
   });
 
-  it('off-center chest poke with opposite fall tips right of a left push', () => {
+  it('off-center chest poke with same-side fall tips left of a left push', () => {
     const section = resolvePokeSection('chest', 'left');
-    // Blended canvas fall for finger-left push: mostly +X away-from-push.
+    // Blended canvas fall for finger-left push: mostly −X along camera-right.
     const hit = pokeSectionBodyReaction({
       t: 0.12,
       section,
       hitZone: 'chest',
-      fallX: 0.9,
+      fallX: -0.9,
       fallZ: -0.35,
       sideSign: 1,
       softChest: false,
       twist: 0,
     });
-    expect(hit.chestRoll).toBeLessThan(-0.2);
+    expect(hit.chestRoll).toBeGreaterThan(0.2);
     expect(Math.abs(hit.rArmX)).toBeGreaterThan(Math.abs(hit.lArmX));
   });
 });
