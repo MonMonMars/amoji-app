@@ -773,34 +773,15 @@ function demoPhaseShuffleRand(seed: number): () => number {
 
 /** Left rail anchors — Pixel: weather + news must stay discoverable (never lost in shuffle). */
 export const DEMO_PHASE_LEFT_PRIORITY_IDS: readonly DemoPhaseId[] = ['weather', 'news'] as const;
-
 export const DEMO_PHASE_TAIL_SHUFFLE_ENABLED = true;
-
-function pinnedDemoPhaseButtons(): DemoPhaseButton[] {
-  return DEMO_PHASE_LEFT_PRIORITY_IDS.map(
-    (id) => DEMO_PHASE_BUTTONS.find((b) => b.id === id)!,
-  );
-}
-
-function demoPhaseTailButtons(): DemoPhaseButton[] {
-  const pinned = new Set<string>(DEMO_PHASE_LEFT_PRIORITY_IDS);
-  return DEMO_PHASE_BUTTONS.filter((b) => !pinned.has(b.id));
-}
-
-/** Fisher–Yates tail shuffle — weather + news stay left; same seed → same tail order. */
+function pinnedDemoPhaseButtons(): DemoPhaseButton[] { return DEMO_PHASE_LEFT_PRIORITY_IDS.map((id) => DEMO_PHASE_BUTTONS.find((b) => b.id === id)!); }
+function demoPhaseTailButtons(): DemoPhaseButton[] { const pinned = new Set<string>(DEMO_PHASE_LEFT_PRIORITY_IDS); return DEMO_PHASE_BUTTONS.filter((b) => !pinned.has(b.id)); }
 export function shuffledDemoPhaseButtons(seed: number): DemoPhaseButton[] {
   const head = pinnedDemoPhaseButtons();
-  if (!DEMO_PHASE_TAIL_SHUFFLE_ENABLED) {
-    return [...head, ...demoPhaseTailButtons()];
-  }
+  if (!DEMO_PHASE_TAIL_SHUFFLE_ENABLED) return [...head, ...demoPhaseTailButtons()];
   const tail = [...demoPhaseTailButtons()];
   const rand = demoPhaseShuffleRand(seed);
-  for (let i = tail.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1));
-    const tmp = tail[i]!;
-    tail[i] = tail[j]!;
-    tail[j] = tmp;
-  }
+  for (let i = tail.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); const tmp = tail[i]!; tail[i] = tail[j]!; tail[j] = tmp; }
   return [...head, ...tail];
 }
 

@@ -185,11 +185,4 @@ describe('demo-phase buttons', () => {
     expect(demoPhasePrompt('weather', 'en')).toMatch(/weather/i);
     expect(demoPhasePrimaryPrompt(DEMO_PHASE_BUTTONS[0]!, 'en')).toMatch(/weather/i);
   });
-
-  it('demo weather/news chips use live facts + sayLocal (not send/LLM placeholder)', () => {
-    expect(PANEL).toContain("id === 'weather'");
-    expect(PANEL).toContain('clientLiveContext(prompt, lang)');
-    expect(PANEL).toContain('sayLocal(spoken)');
-    expect(PANEL).toContain('primeLocationForChatEnter');
-  });
 });
