@@ -49,6 +49,9 @@ describe('owner-picker-media', () => {
   it('inline player script exposes resolvePlaySrc', () => {
     expect(PICKER_PLAY_RESOLVE_INLINE_JS).toContain('resolvePlaySrc');
     expect(PICKER_PLAY_RESOLVE_INLINE_JS).toContain('pickerPlayFailureMessage');
+    expect(PICKER_PLAY_RESOLVE_INLINE_JS).toContain('unlockPickerAudioGesture');
+    expect(PICKER_PLAY_RESOLVE_INLINE_JS).not.toContain('crossOrigin');
+    expect(PICKER_PLAY_RESOLVE_INLINE_JS).toContain('403 on GitHub Pages');
   });
 });
 

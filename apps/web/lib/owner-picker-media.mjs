@@ -61,15 +61,32 @@ export const PICKER_PLAY_RESOLVE_INLINE_JS = `
         || /^https?:\\/\\//i.test(resolved)
         || /mixkit\\.co\\//i.test(resolved);
     }
-    function pickerPlayFailureMessage(resolved, el) {
+    function pickerPlayFailureMessage(resolved, el, playErr) {
       if (isRemotePlaySrc(resolved, el)) {
-        return 'Stream preview did not play (Mixkit CDN or browser policy — not a missing ../audio file). Use the Source link on mixkit.co in this row, or try the live app demo for full playback.';
+        const gesture = playErr && playErr.name === 'NotAllowedError'
+          ? ' Browser blocked playback until you interact with the page — tap ▶ again.'
+          : '';
+        return 'Stream preview did not play' + gesture + ' (Mixkit CDN may 403 on GitHub Pages — not a missing ../audio file). Use the Source link on mixkit.co in this row, or try the live app demo for full playback.';
       }
       return 'Local preview missing or blocked. On Pages use /amoji-app/docs/owner-resources.html; local: cd docs && python3 -m http.server 8765';
     }
     function applyRemoteAudioHints(audio, url) {
       if (/mixkit\\.co\\//i.test(url)) {
-        audio.crossOrigin = 'anonymous';
-        audio.referrerPolicy = 'no-referrer';
+        audio.preload = 'metadata';
+        audio.referrerPolicy = 'strict-origin-when-cross-origin';
       }
-    }`;
+    }
+    let pickerGestureUnlocked = false;
+    function unlockPickerAudioGesture() {
+      if (pickerGestureUnlocked) return;
+      pickerGestureUnlocked = true;
+      try {
+        const probe = new Audio();
+        probe.muted = true;
+        const pending = probe.play();
+        if (pending && pending.then) {
+          pending.then(() => { probe.pause(); probe.removeAttribute('src'); }).catch(() => {});
+        }
+      } catch { /* ignore */ }
+    }
+    document.body.addEventListener('pointerdown', unlockPickerAudioGesture, { once: true, passive: true });`;

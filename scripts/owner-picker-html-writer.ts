@@ -445,6 +445,7 @@ function pickerScript(_exportKey: string): string {
         seeking = false;
       });
       toggle.addEventListener('click', () => {
+        unlockPickerAudioGesture();
         const src = resolvePlaySrc(raw);
         if (!src) return;
         if (activePlayer && activePlayer.root !== root) pauseActivePlayer();
@@ -452,7 +453,7 @@ function pickerScript(_exportKey: string): string {
         if (!audio.src) { audio.src = url; applyRemoteAudioHints(audio, url); }
         if (audio.paused) {
           audio.play().then(() => { toggle.textContent = '⏸'; activePlayer = { root, audio, toggle }; })
-            .catch(() => alert(pickerPlayFailureMessage(src, toggle)));
+            .catch((err) => alert(pickerPlayFailureMessage(src, toggle, err)));
         } else {
           audio.pause();
           toggle.textContent = '▶';
@@ -465,6 +466,8 @@ function pickerScript(_exportKey: string): string {
     document.body.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-play]:not(.audio-player)');
       if (!btn || btn.classList.contains('audio-player')) return;
+      if (e.target.closest('.audio-player')) return;
+      unlockPickerAudioGesture();
       const src = resolvePlaySrc(btn.getAttribute('data-play'));
       if (!src) return;
       pauseActivePlayer();
@@ -472,7 +475,7 @@ function pickerScript(_exportKey: string): string {
       const oneShot = new Audio(url);
       applyRemoteAudioHints(oneShot, url);
       oneShot.onerror = () => alert(pickerPlayFailureMessage(src, btn));
-      oneShot.play().catch(() => alert(pickerPlayFailureMessage(src, btn)));
+      oneShot.play().catch((err) => alert(pickerPlayFailureMessage(src, btn, err)));
     });
     document.getElementById('saveNotesJson')?.addEventListener('click', async () => {
       const json = collectNotesExport();
