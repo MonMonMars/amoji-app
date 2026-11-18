@@ -23,6 +23,7 @@ export type MusicStyleId =
   | 'dance'
   | 'chill'
   | 'cute'
+  | 'world'
   | 'default';
 
 export interface StreamTrack {
@@ -274,6 +275,7 @@ export const STYLE_CLIP_HINTS: Record<MusicStyleId, string[]> = {
   dance: ['upbeat dance', 'cute bounce'],
   chill: ['chill', 'soft ballad'],
   cute: ['cute bounce', 'cute tease', 'cheerful pop'],
+  world: ['chill', 'soft ballad', 'lofi'],
   default: [],
 };
 
@@ -292,6 +294,7 @@ export const STYLE_THEME_ID: Record<MusicStyleId, string> = {
   dance: 'ruby',
   chill: 'luna',
   cute: 'mochi',
+  world: 'luna',
   default: 'default',
 };
 

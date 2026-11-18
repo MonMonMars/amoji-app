@@ -275,7 +275,7 @@ export function ownerCatalogLookupMap(): Map<string, OwnerCatalogRow> {
   return map;
 }
 
-export function ownerCatalogCounts(): Record<string, number> {
+export function ownerCatalogCounts(): Record<string, number | string> {
   const rows = buildOwnerCatalogIndex();
   const byPrefix: Record<string, number> = {};
   for (const r of rows) {
