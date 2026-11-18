@@ -424,7 +424,8 @@
 // r2026-11-17.206: owner-resources Pages asset verify + play URL resolver (../audio + voice-clips from out/).
 // r2026-11-17.207: MV039–MV068 J-pop Mixkit vault beds (owner-resources Music tab).
 // r2026-11-18.208: ST001–ST038 PD fairy-tale vault + owner-resources Stories tab.
-export const APP_REVISION = 'r2026-11-18.208';
+// r2026-11-18.209: news long body + boilerplate scrub; wiki relevance; min body target for 今日有咩新聞.
+export const APP_REVISION = 'r2026-11-18.209';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
