@@ -29,6 +29,8 @@ describe('owner picker HTML (Pixel)', () => {
     expect(unifiedText).toContain('audio-scrub');
     expect(unifiedText).toContain('formatMmSs');
     expect(unifiedText).toContain('motion-preview');
+    expect(unifiedText).toContain('owner-picker-previews/IdleQuaterniusHuman.gif');
+    expect(unifiedText).toContain('onerror=');
     expect(unifiedText).toContain('audio-player-cell');
     expect(unifiedText).toContain('pickerPlayFailureMessage');
     expect(unifiedText).toContain('Stream preview did not play');
