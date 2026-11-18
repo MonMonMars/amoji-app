@@ -6,9 +6,12 @@ import {
   listMusicPickOptions,
   musicAskListenOnly,
   musicAskShowKind,
+  musicAskStyleWithContext,
   musicSelectOfferLine,
   resolveMusicAsk,
 } from '../lib/music-ask';
+import { pickOwnerStreamTrack, resetOwnerPerfPicks } from '../lib/owner-perf-picks';
+import { detectMusicStyle, pickStreamTrack } from '../lib/music-catalog';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -25,6 +28,22 @@ describe('resolveMusicAsk intent routing', () => {
     expect(resolveMusicAsk('sing a song')).toMatchObject({ mode: 'random', kind: 'song', matched: true });
     expect(resolveMusicAsk('唱首歌俾我聽')).toMatchObject({ mode: 'random', kind: 'song', matched: true });
     expect(resolveMusicAsk('dance for me')).toMatchObject({ mode: 'random', kind: 'dance', matched: true });
+  });
+
+
+  it('yue hip-hop availability + play challenge (regression transcript)', () => {
+    expect(resolveMusicAsk('有冇hip hop音樂')).toEqual({
+      mode: 'random',
+      kind: 'music',
+      style: 'hiphop',
+      matched: true,
+    });
+    expect(resolveMusicAsk('你唔係可以播音樂㗎咩')).toMatchObject({
+      mode: 'random',
+      kind: 'music',
+      matched: true,
+    });
+    expect(musicAskStyleWithContext('你唔係可以播音樂㗎咩', '有冇hip hop音樂')).toBe('hiphop');
   });
 
   it('explicit select / list / what-songs → select mode', () => {
@@ -106,6 +125,14 @@ describe('listMusicPickOptions + offer line', () => {
     }
   });
 
+
+  it('hiphop stream pick ignores unrelated owner MV pins', () => {
+    resetOwnerPerfPicks();
+    expect(detectMusicStyle('有冇hip hop音樂')).toBe('hiphop');
+    expect(pickOwnerStreamTrack('hiphop', 0)).toBeNull();
+    expect(pickStreamTrack('hiphop', 0)?.title).not.toMatch(/Pop Track/i);
+  });
+
   it('filters stream options by genre when style is set', () => {
     const jazz = listMusicPickOptions({ kind: 'music', style: 'jazz', seed: 0, count: 3 });
     expect(jazz.length).toBeGreaterThanOrEqual(1);
@@ -156,6 +183,8 @@ describe('ChatPanel gates picker behind select intent', () => {
     expect(panel).toContain('musicPicks');
     expect(panel).toContain("ask.mode === 'select'");
     expect(panel).toContain("ask.mode === 'random'");
+    expect(panel).toContain('musicAskStyleWithContext');
+    expect(panel).toMatch(/!musicPicks\?\.length/);
     const demo = fs.readFileSync(path.join(ROOT, 'lib/demo-phase.ts'), 'utf8');
     expect(demo).toContain("'play some music'");
   });
