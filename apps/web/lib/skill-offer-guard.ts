@@ -9,6 +9,7 @@
 // made Next page collection fail (array export no longer callable as .find).
 
 import { userOpensContentDelivery } from './content-continuation';
+import { userWantsWebLookup } from './live-tools';
 import { musicAskHandledByApp } from './music-ask';
 import {
   detectAbilityOfferKind,
@@ -37,6 +38,7 @@ export function isTopicalContentTurn(text: string): boolean {
   const t = text.trim();
   if (!t) return false;
   if (userOpensContentDelivery(t)) return true;
+  if (userWantsWebLookup(t)) return true;
   if (LONG_CONTENT_RE.test(t)) return true;
   if (WEATHER_OR_NEWS_RE.test(t)) return true;
   const topics = detectUserAbilityTopics(t);

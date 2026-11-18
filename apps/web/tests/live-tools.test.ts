@@ -29,6 +29,7 @@ import {
   placeLabel,
   planTools,
   preferLiveReply,
+  userWantsWebLookup,
   weatherAccuracyLeak,
   regionalLightNewsFeedUrls,
   regionalNewsFeedUrls,
@@ -248,6 +249,17 @@ describe('planTools', () => {
     });
     expect(live.spoken.toLowerCase()).toMatch(/settings|location/);
     expect(live.spoken.toLowerCase()).not.toContain("couldn't check the weather");
+  });
+
+  it('plans open web lookups without blocking on polite "you"', () => {
+    expect(planTools('can you search the web for dinosaur fossils').searchQuery?.toLowerCase()).toContain('dinosaur');
+    expect(planTools('tell me about the James Webb telescope').searchQuery?.toLowerCase()).toContain('james');
+    expect(planTools('find out whether Venice still floods every year').searchQuery?.toLowerCase()).toMatch(/venice|flood/);
+    expect(planTools('look up Bitcoin price today').searchQuery?.toLowerCase()).toContain('bitcoin');
+    expect(userWantsWebLookup('search the internet for pangolin facts')).toBe(true);
+    expect(planTools('what is your name?').searchQuery).toBeUndefined();
+    expect(planTools('tell me about yourself').searchQuery).toBeUndefined();
+    expect(planTools('how are you?').searchQuery).toBeUndefined();
   });
 
   it('plans local news, topical news, and a web lookup separately', () => {
