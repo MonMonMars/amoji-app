@@ -525,11 +525,15 @@ function buildMusicPage(): PickerSection {
 
   let streamRows = '';
   for (const t of STREAM_TRACKS) {
-    streamRows += `<tr class="row-in-use" data-in-use="1" data-id="${escapeHtml(t.id)}" data-label="${escapeHtml(t.title)}" data-ref="${escapeHtml(streamRef)}">
+    const rowId = t.ownerCode ?? t.id;
+    const codeLine = t.ownerCode
+      ? `<code>${escapeHtml(t.ownerCode)}</code>`
+      : `<code>${escapeHtml(t.id)}</code>`;
+    streamRows += `<tr class="row-in-use" data-in-use="1" data-id="${escapeHtml(rowId)}" data-label="${escapeHtml(t.title)}" data-ref="${escapeHtml(streamRef)}"${t.ownerCode ? ` data-mv-code="${escapeHtml(t.ownerCode)}"` : ''}>
       <td><input type="checkbox" class="keep" checked /></td>
       <td class="flags">${inUseTag('STREAM_TRACKS')}</td>
       <td><button type="button" class="play-remote" data-play="${escapeHtml(t.url)}">▶ Mixkit</button></td>
-      <td>${escapeHtml(t.title)}<br/><code>${escapeHtml(t.id)}</code></td>
+      <td>${escapeHtml(t.title)}<br/>${codeLine}</td>
       <td>stream</td>
       <td>all</td>
       <td><span class="tag">${escapeHtml(t.style)}</span></td>

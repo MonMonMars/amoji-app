@@ -16,6 +16,8 @@ describe('owner picker HTML (Pixel)', () => {
     expect(unifiedText).toContain('IdleQuaterniusHuman');
     expect(unifiedText).toContain('Your saved picks');
     expect(unifiedText).toContain('resolvePlaySrc');
+    expect(unifiedText).toContain('data-mv-code="MV039"');
+    expect(unifiedText).toContain('data-mv-code="MV068"');
 
     for (const name of ['owner-music-picker.html', 'owner-poke-reactions.html', 'owner-idle-poses.html']) {
       const p = path.join(repoRoot, 'docs', name);

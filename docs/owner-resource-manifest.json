@@ -1,6 +1,6 @@
 {
   "version": "2026-11-16-owner-resource-v1",
-  "generatedAt": "2026-11-16T00:33:30.522Z",
+  "generatedAt": "2026-11-18T00:38:02.270Z",
   "wantCastRelease": "free-library-want-2026-10-12",
   "stats": {
     "total": 125,
@@ -2196,6 +2196,246 @@
       "usedBy": "performance-clips.ts · music.ts",
       "status": "wired",
       "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV039",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-one-more-dance-288.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "One More Dance · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV040",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-rising-sun-523.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Rising Sun · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV041",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-cyberpunk-city-140.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Cyberpunk City · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV042",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-pop-track-03-729.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Pop Track 03 · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV043",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-pop-track-06-732.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Pop Track 06 · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV044",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-dance-zero-740.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Dance Zero · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV045",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-digital-clouds-175.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Digital Clouds · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV046",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-happy-times-158.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Happy Times · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV047",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-summer-dream-628.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Summer Dream · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV048",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-fashion-228.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Fashion · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV049",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-what-about-action-474.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "What About Action? · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV050",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-aerobic-fashion-327.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Aerobic Fashion · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV051",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-basketball-training-349.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Basketball Training · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV052",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-swings-and-slides-14.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Swings and Slides · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV053",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-sun-in-your-eyes-131.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Sun in Your Eyes · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV054",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-pop-05-695.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Pop 05 · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV055",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-pop-09-702.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Pop 09 · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV056",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-techno-fest-vibes-124.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Techno Fest Vibes · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV057",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-raising-me-higher-34.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Raising Me Higher · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV058",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-valley-sunset-127.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Valley Sunset · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV059",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-feedback-dreams-588.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Feedback Dreams · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV060",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-karma-1183.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Karma · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV061",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-keeping-fit-82.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Keeping Fit · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV062",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-bold-and-brash-62.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Bold and Brash · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV063",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-fight-till-the-end-81.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Fight Till the End · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV064",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-tides-turning-439.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Tides Turning · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV065",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-relax-beat-292.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Relax Beat · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV066",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-gimme-that-groove-872.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Gimme that Groove · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV067",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-take-this-higher-1012.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Take this Higher · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "music-stream",
+      "id": "MV068",
+      "pathOrUrl": "https://assets.mixkit.co/music/preview/mixkit-midnight-funk-1147.mp3",
+      "usedBy": "music-catalog.ts · music-jpop-vault.ts",
+      "status": "wired",
+      "notes": "Midnight Funk · Mixkit-Free · through MV068 (30 J-pop beds)"
     }
   ]
 }

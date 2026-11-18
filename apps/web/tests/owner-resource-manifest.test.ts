@@ -5,6 +5,7 @@ import {
   CMA_REACTION_OWNER_WANT_CODES,
 } from '../lib/cma-reaction-gallery';
 import { assertCuratedRailValid } from '../lib/idle-curated-rail';
+import { MV_JPOP_COUNT } from '../lib/music-jpop-vault';
 import {
   OWNER_CMA_WANT,
   OWNER_RESOURCE_LIBRARY_DOC,
@@ -34,6 +35,14 @@ describe('owner-resource-manifest', () => {
     const stats = ownerIdleLibraryStats();
     expect(stats.curatedRail).toBeGreaterThanOrEqual(35);
     expect(stats.playable).toBeGreaterThan(stats.curatedRail);
+  });
+
+  it('buildOwnerResourceIndex lists every MV J-pop stream row', () => {
+    const index = buildOwnerResourceIndex();
+    const mvRows = index.filter((e) => e.type === 'music-stream' && e.id.startsWith('MV'));
+    expect(mvRows.length).toBe(MV_JPOP_COUNT);
+    expect(mvRows.some((e) => e.id === 'MV039')).toBe(true);
+    expect(mvRows.some((e) => e.id === 'MV068')).toBe(true);
   });
 
   it('buildOwnerResourceIndex includes every Want code once', () => {

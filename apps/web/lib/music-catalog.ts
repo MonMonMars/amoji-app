@@ -4,8 +4,11 @@
  // for a style we may stream a short Mixkit (free stock) or Wikimedia PD
  // preview URL via HTMLAudioElement — never scrape Spotify/YouTube/etc.
 
+import { JPOP_VAULT_STREAM_TRACKS } from './music-jpop-vault';
+
 export type MusicStyleId =
   | 'pop'
+  | 'jpop'
   | 'cantopop'
   | 'jazz'
   | 'lofi'
@@ -28,6 +31,8 @@ export interface StreamTrack {
   license: 'Mixkit-Free' | 'CC0-1.0' | 'PD';
   credit: string;
   source: string;
+  /** Pixel owner-resources id (e.g. MV039). */
+  ownerCode?: string;
 }
 
 /** Map user words → style id (first match wins). */
@@ -42,6 +47,7 @@ const STYLE_PATTERNS: { id: MusicStyleId; re: RegExp }[] = [
   { id: 'dance', re: /\bdance\b|disco|派對|クラブ|跳舞音樂|舞曲/i },
   { id: 'chill', re: /\bchill\b|\bcalm\b|\brelax(?:ing|ed)?\b|冷靜|放鬆|放松|ambient|アンビエント|輕鬆|轻松|穏やか/i },
   { id: 'cute', re: /\bcute\b|可愛|萌|きゅん|甜蜜|甜蜜歌/i },
+  { id: 'jpop', re: /\bj[-\s]?pop\b|jpop|日本ポップ|日系流行|日系歌|city\s*pop|シティポップ|アニメ曲|anime\s*(?:pop|song|bgm)|kawaii\s*pop|きゃわ|かわいいポップ/i },
   { id: 'pop', re: /\bpop\b|流行|ポップ|流行曲|流行歌|K-?pop|ポップス/i },
 ];
 
@@ -239,11 +245,13 @@ export const STREAM_TRACKS: readonly StreamTrack[] = [
     credit: 'Mixkit',
     source: 'https://mixkit.co/free-stock-music/',
   },
+  ...JPOP_VAULT_STREAM_TRACKS,
 ];
 
 /** Local performance-clip style strings that pair with a MusicStyleId. */
 export const STYLE_CLIP_HINTS: Record<MusicStyleId, string[]> = {
   pop: ['cheerful pop', 'upbeat dance', 'cute tease'],
+  jpop: ['cheerful pop', 'upbeat dance', 'cute bounce', 'cute tease'],
   cantopop: ['cheerful pop', 'cute tease', 'soft ballad'],
   jazz: ['soft ballad', 'chill'],
   lofi: ['chill', 'lofi'],
@@ -260,6 +268,7 @@ export const STYLE_CLIP_HINTS: Record<MusicStyleId, string[]> = {
 /** Procedural WebAudio theme id for a style (falls back to default). */
 export const STYLE_THEME_ID: Record<MusicStyleId, string> = {
   pop: 'marin',
+  jpop: 'marin',
   cantopop: 'juno',
   jazz: 'juno',
   lofi: 'luna',
@@ -302,5 +311,11 @@ export function pickStreamTrack(style: MusicStyleId | undefined, n = 0): StreamT
 /** Exact Mixkit/PD track when the user picked from a select offer. */
 export function streamTrackById(id: string | undefined | null): StreamTrack | null {
   if (!id) return null;
-  return STREAM_TRACKS.find((t) => t.id === id) ?? null;
+  const needle = id.trim();
+  const upper = needle.toUpperCase();
+  return (
+    STREAM_TRACKS.find(
+      (t) => t.id === needle || t.ownerCode === upper || t.ownerCode === needle,
+    ) ?? null
+  );
 }
