@@ -11,6 +11,8 @@ import {
   isHeavyHeadline,
   isJunkNewsHeadline,
   isNewsBodyBoilerplate,
+  isNewsRssChannelTag,
+  newsBeatDuplicatesTitle,
   newsSpokenBodyBeats,
   newsTellNeedsEnrichment,
   wikiExtractMatchesNewsTitle,
@@ -1232,6 +1234,28 @@ describe('HK RSS speech chrome', () => {
     expect(scrubNewsFeedBody('Judges praised the show.\n20261116\n娛樂', title)).toMatch(/Judges praised/);
     expect(scrubNewsFeedBody('Judges praised the show.\n20261116\n娛樂', title)).not.toMatch(/20261116|娛樂/);
     expect(scrubNewsFeedBody('⚑ 舉報\n橙新聞', title)).toBe('');
+    expect(isNewsRssChannelTag('科學與中國')).toBe(true);
+    const sciTitle = '中科院公布月球土壤研究新發現';
+    const sciBody = `${sciTitle}\n科學與中國\n研究團隊表示樣本含罕見晶體，有助理解月球演化。實驗室下週會公開詳細化驗數據，俾其他科研單位參考同複核。`;
+    const scrubbed = scrubNewsFeedBody(sciBody, sciTitle);
+    expect(scrubbed).not.toMatch(/科學與中國/);
+    expect(scrubbed).toMatch(/罕見晶體/);
+    expect(sayRecent('yue', { title: sciTitle, source: 'RSS', summary: sciBody }).length).toBeGreaterThan(72);
+    expect(sayRecent('yue', { title: sciTitle, source: 'RSS', summary: sciBody })).not.toMatch(/科學與中國/);
+  });
+
+  it('newsBeatDuplicatesTitle keeps headline out of body beats', () => {
+    const t = '許志安翻唱 愛是懷疑 陳奕迅驚喜捧場';
+    expect(newsBeatDuplicatesTitle(t, t)).toBe(true);
+    expect(newsBeatDuplicatesTitle('閱讀全文', t)).toBe(false);
+    const lead = {
+      title: t,
+      source: '明報',
+      summary: `${t}\n主辦方表示票務星期五開售，並加設慈善義賣環節。`,
+    };
+    const line = sayRecent('yue', lead);
+    const hits = (line.match(/許志安/g) ?? []).length;
+    expect(hits).toBeLessThanOrEqual(1);
   });
 
   it('parseRssItems keeps headline once in spoken pack', () => {

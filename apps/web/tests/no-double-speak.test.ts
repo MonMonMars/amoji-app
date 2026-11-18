@@ -22,6 +22,7 @@ describe('no double speak on one turn', () => {
     );
     expect(speakReply).toMatch(/speechLeadDiverged\(reply, alreadySpoken\.text\)/);
     expect(speakReply).toMatch(/stopSpeaking\(\)/);
+    expect(speakReply).toMatch(/leadPlayedThrough/);
   });
 
   it('news headlines speak once as live facts (no second LLM pass)', () => {
