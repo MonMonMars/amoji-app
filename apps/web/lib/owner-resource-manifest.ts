@@ -24,7 +24,7 @@ import {
   type VoiceOption,
 } from './voice-catalog';
 import { STREAM_TRACKS } from './music-catalog';
-import { HIGHEST_MV_OWNER_CODE, MV_JPOP_COUNT } from './music-jpop-vault';
+import { HIGHEST_MV_OWNER_CODE, MV_VAULT_COUNT } from './music-mv-registry';
 import { CLASSIC_FAIRY_TALES } from './classic-fairy-tales';
 import { highestStoryOwnerCode } from './story-catalog';
 import { PERFORMANCE_CLIPS } from './performance-clips';
@@ -179,9 +179,9 @@ export function buildOwnerResourceIndex(): OwnerResourceEntry[] {
       type: 'music-stream',
       id: t.ownerCode,
       pathOrUrl: t.url,
-      usedBy: 'music-catalog.ts · music-jpop-vault.ts',
+      usedBy: 'music-catalog.ts · music-mv-registry.ts',
       status: 'wired',
-      notes: `${t.title} · ${t.license} · through ${HIGHEST_MV_OWNER_CODE} (${MV_JPOP_COUNT} J-pop beds)`,
+      notes: `${t.title} · ${t.license} · MV039–${HIGHEST_MV_OWNER_CODE} vault (${MV_VAULT_COUNT} Mixkit beds)`,
     });
   }
 

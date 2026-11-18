@@ -100,9 +100,11 @@ export const JPOP_VAULT_STREAM_TRACKS: readonly JpopVaultRow[] = JPOP_SEEDS.map(
   };
 });
 
+/** @deprecated Prefer `streamTrackByOwnerCode` from `music-mv-registry.ts` (MV039–MV098). */
 export function streamTrackByOwnerCode(code: string): JpopVaultRow | null {
   const norm = code.trim().toUpperCase();
   return JPOP_VAULT_STREAM_TRACKS.find((t) => t.ownerCode === norm || t.id === norm) ?? null;
 }
 
+/** @deprecated Use `HIGHEST_MV_OWNER_CODE` from `music-mv-registry.ts` (MV098). */
 export const HIGHEST_MV_OWNER_CODE = ownerCode(MV_JPOP_LAST);

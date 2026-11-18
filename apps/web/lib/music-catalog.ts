@@ -5,9 +5,12 @@
  // preview URL via HTMLAudioElement — never scrape Spotify/YouTube/etc.
 
 import { JPOP_VAULT_STREAM_TRACKS } from './music-jpop-vault';
+import { JPOP_VAULT_V2_STREAM_TRACKS } from './music-jpop-vault-v2';
+import { USPOP_VAULT_STREAM_TRACKS } from './music-us-pop-vault';
 
 export type MusicStyleId =
   | 'pop'
+  | 'uspop'
   | 'jpop'
   | 'cantopop'
   | 'jazz'
@@ -48,6 +51,10 @@ const STYLE_PATTERNS: { id: MusicStyleId; re: RegExp }[] = [
   { id: 'chill', re: /\bchill\b|\bcalm\b|\brelax(?:ing|ed)?\b|冷靜|放鬆|放松|ambient|アンビエント|輕鬆|轻松|穏やか/i },
   { id: 'cute', re: /\bcute\b|可愛|萌|きゅん|甜蜜|甜蜜歌/i },
   { id: 'jpop', re: /\bj[-\s]?pop\b|jpop|日本ポップ|日系流行|日系歌|city\s*pop|シティポップ|アニメ曲|anime\s*(?:pop|song|bgm)|kawaii\s*pop|きゃわ|かわいいポップ/i },
+  {
+    id: 'uspop',
+    re: /\b(?:us|u\.s\.|american)\s*pop\b|\buspop\b|美國流行|美国流行|美式流行|西洋流行|洋樂流行|米国ポップ|アメリカンポップ/i,
+  },
   { id: 'pop', re: /\bpop\b|流行|ポップ|流行曲|流行歌|K-?pop|ポップス/i },
 ];
 
@@ -246,11 +253,14 @@ export const STREAM_TRACKS: readonly StreamTrack[] = [
     source: 'https://mixkit.co/free-stock-music/',
   },
   ...JPOP_VAULT_STREAM_TRACKS,
+  ...JPOP_VAULT_V2_STREAM_TRACKS,
+  ...USPOP_VAULT_STREAM_TRACKS,
 ];
 
 /** Local performance-clip style strings that pair with a MusicStyleId. */
 export const STYLE_CLIP_HINTS: Record<MusicStyleId, string[]> = {
   pop: ['cheerful pop', 'upbeat dance', 'cute tease'],
+  uspop: ['cheerful pop', 'upbeat dance', 'soft ballad'],
   jpop: ['cheerful pop', 'upbeat dance', 'cute bounce', 'cute tease'],
   cantopop: ['cheerful pop', 'cute tease', 'soft ballad'],
   jazz: ['soft ballad', 'chill'],
@@ -268,6 +278,7 @@ export const STYLE_CLIP_HINTS: Record<MusicStyleId, string[]> = {
 /** Procedural WebAudio theme id for a style (falls back to default). */
 export const STYLE_THEME_ID: Record<MusicStyleId, string> = {
   pop: 'marin',
+  uspop: 'marin',
   jpop: 'marin',
   cantopop: 'juno',
   jazz: 'juno',

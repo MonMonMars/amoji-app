@@ -18,6 +18,8 @@ describe('owner picker HTML (Pixel)', () => {
     expect(unifiedText).toContain('resolvePlaySrc');
     expect(unifiedText).toContain('data-mv-code="MV039"');
     expect(unifiedText).toContain('data-mv-code="MV068"');
+    expect(unifiedText).toContain('data-mv-code="MV069"');
+    expect(unifiedText).toContain('data-mv-code="MV098"');
     expect(unifiedText).toContain('panel-stories');
     expect(unifiedText).toContain('data-st-code="ST038"');
     expect(unifiedText).toContain('Stories &amp; fairy tales');
