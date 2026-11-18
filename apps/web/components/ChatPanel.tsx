@@ -191,6 +191,7 @@ import {
   clearPerformanceBodyArm,
   endPerformanceSession,
   getPerformanceSession,
+  isListenOnlyPerformance,
   performanceClipForPlaying,
   shouldDeferClearOnBedStop,
   syncPerformanceBed,
