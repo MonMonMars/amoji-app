@@ -5,6 +5,15 @@ import path from 'node:path';
 const repoRoot = path.join(__dirname, '../../..');
 
 describe('owner picker HTML (Pixel)', () => {
+  describe('r216 notes export', () => {
+    it('generated HTML includes per-row notes + save/import affordances', () => {
+      const unified = path.join(repoRoot, 'docs', 'owner-resources.html');
+      const text = fs.readFileSync(unified, 'utf8');
+      expect(text).toContain('applyImportNotes');
+      expect(text).toContain('collectNotesExport');
+      expect(text).toContain('Dance / sing body motion tags');
+    });
+  });
   it('unified owner-resources.html and legacy redirect stubs exist', () => {
     const unified = path.join(repoRoot, 'docs', 'owner-resources.html');
     expect(fs.existsSync(unified), unified).toBe(true);
@@ -29,6 +38,13 @@ describe('owner picker HTML (Pixel)', () => {
     expect(unifiedText).toContain('owner-catalog-registry.ts');
     expect(unifiedText).toContain('data-mv-code="MV118"');
     expect(unifiedText).toContain('Demo-phase chips');
+    expect(unifiedText).toContain('amoji.ownerPickerNotes.v1');
+    expect(unifiedText).toContain('saveNotesJson');
+    expect(unifiedText).toContain('owner-note');
+    expect(unifiedText).toContain('Save notes JSON');
+    expect(unifiedText).toContain('perf-motion-C61');
+    expect(unifiedText).toContain('Poke TTS line bank');
+    expect(unifiedText).toContain('CMA reaction ship-set');
 
     for (const name of ['owner-music-picker.html', 'owner-poke-reactions.html', 'owner-idle-poses.html']) {
       const p = path.join(repoRoot, 'docs', name);

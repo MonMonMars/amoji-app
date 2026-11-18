@@ -60,7 +60,7 @@ export const STYLE_BPM: Readonly<Record<string, number>> = {
   'folk choral': 88,
 };
 
-const TAG_LABEL: Record<MotionTag, string> = {
+export const PERF_MOTION_TAG_LABELS: Record<MotionTag, string> = {
   C112: 'GentleSway',
   C113: 'DancingMedium',
   C114: 'DancingParty',
@@ -83,6 +83,8 @@ const TAG_LABEL: Record<MotionTag, string> = {
   'generic-sing': 'Sing',
   'generic-dance': 'Dance',
 };
+
+export const PERF_MOTION_TAGS = Object.keys(PERF_MOTION_TAG_LABELS) as MotionTag[];
 
 /** Authored BPM for the preferred shortlist tag (when that VRMA is used). */
 const TAG_CLIP_BPM: Partial<Record<MotionTag, number>> = {
@@ -266,7 +268,7 @@ export function resolvePerfMotion(
   }
   return {
     tag,
-    label: TAG_LABEL[tag] ?? tag,
+    label: PERF_MOTION_TAG_LABELS[tag] ?? tag,
     bpm,
     bpmMeasured: measured,
     clipBpm,
