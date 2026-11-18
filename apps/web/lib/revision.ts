@@ -436,7 +436,8 @@
 // r2026-11-18.218: yue hip-hop music ask (有冇/餵) + listen BGM style; no wrong pop MV fallback.
 // r2026-11-18.220: song/dance/music beds — instant start/stop (no master/clip fade in or out).
 // r2026-11-18.222: VRM pupil z-order each frame; idle-only lean blend glide (no poke snap).
-export const APP_REVISION = 'r2026-11-18.222';
+// r2026-11-18.223: unfreeze tai chi lib_C121 martial flow (plant-feet + CompanionCanvas).
+export const APP_REVISION = 'r2026-11-18.223';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
