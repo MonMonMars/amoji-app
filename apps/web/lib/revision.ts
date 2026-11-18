@@ -444,7 +444,8 @@
 // r2026-11-18.230: demo-phase weather+news pinned left; chip taps → live facts + sayLocal.
 // r2026-11-18.231: owner-resources row audio scrub + Mixkit CDN preview playback (#517).
 // r2026-11-18.232: owner-resources motion column — sidecar GIF previews + poke section (#517).
-export const APP_REVISION = 'r2026-11-18.232';
+// r2026-11-18.233: owner-resources tri-state 採用/保留/刪除 + owner-picker-notes-v2 export (#517).
+export const APP_REVISION = 'r2026-11-18.233';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

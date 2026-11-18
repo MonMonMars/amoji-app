@@ -14,6 +14,17 @@ describe('owner picker HTML (Pixel)', () => {
       expect(text).toContain('Dance / sing body motion tags');
     });
   });
+  describe('r233 tri-state decisions', () => {
+    it('rows expose 採用 / 保留 / 刪除 actions and v2 export schema', () => {
+      const unified = path.join(repoRoot, 'docs', 'owner-resources.html');
+      const text = fs.readFileSync(unified, 'utf8');
+      expect(text).toContain('data-decision-pick="use"');
+      expect(text).toContain('owner-picker-notes-v2');
+      expect(text).toContain('wireDecisionToApp');
+      expect(text).not.toContain('input type=\"checkbox\" class=\"keep\"');
+    });
+  });
+
   it('unified owner-resources.html and legacy redirect stubs exist', () => {
     const unified = path.join(repoRoot, 'docs', 'owner-resources.html');
     expect(fs.existsSync(unified), unified).toBe(true);
