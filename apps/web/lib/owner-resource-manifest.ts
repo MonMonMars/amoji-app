@@ -23,6 +23,8 @@ import {
   VOICE_CATALOG,
   type VoiceOption,
 } from './voice-catalog';
+import { STREAM_TRACKS } from './music-catalog';
+import { HIGHEST_MV_OWNER_CODE, MV_JPOP_COUNT } from './music-jpop-vault';
 import { PERFORMANCE_CLIPS } from './performance-clips';
 import { RECORDED_POKE_ZONE } from './voice-clips';
 
@@ -166,6 +168,18 @@ export function buildOwnerResourceIndex(): OwnerResourceEntry[] {
       usedBy: 'performance-clips.ts · music.ts',
       status: 'wired',
       notes: clip.license,
+    });
+  }
+
+  for (const t of STREAM_TRACKS) {
+    if (!t.ownerCode) continue;
+    out.push({
+      type: 'music-stream',
+      id: t.ownerCode,
+      pathOrUrl: t.url,
+      usedBy: 'music-catalog.ts · music-jpop-vault.ts',
+      status: 'wired',
+      notes: `${t.title} · ${t.license} · through ${HIGHEST_MV_OWNER_CODE} (${MV_JPOP_COUNT} J-pop beds)`,
     });
   }
 

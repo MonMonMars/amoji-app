@@ -422,7 +422,8 @@
 // r2026-11-17.204: Pages postbuild copies docs/*.html to out/docs/ (owner-resources + legacy redirects).
 // r2026-11-17.205: Pages docs copy rewrites amoji-public-serve/ → ../ (no artifact symlink bloat).
 // r2026-11-17.206: owner-resources Pages asset verify + play URL resolver (../audio + voice-clips from out/).
-export const APP_REVISION = 'r2026-11-17.206';
+// r2026-11-17.207: MV039–MV068 J-pop Mixkit vault beds (owner-resources Music tab).
+export const APP_REVISION = 'r2026-11-17.207';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
