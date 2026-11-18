@@ -1,6 +1,6 @@
 {
-  "version": "2026-11-16-owner-resource-v1",
-  "generatedAt": "2026-11-18T08:50:52.495Z",
+  "version": "2026-11-18-owner-resource-v2",
+  "generatedAt": "2026-11-18T13:15:38.231Z",
   "wantCastRelease": "free-library-want-2026-10-12",
   "stats": {
     "total": 125,
@@ -3140,6 +3140,1266 @@
       "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
       "status": "wired",
       "notes": "The Twelve Dancing Princesses · long · ST038 cap"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleBreathCalm",
+      "pathOrUrl": "../models/anims/IdleBreathCalm.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleBreathCalm.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "StandardIdle",
+      "pathOrUrl": "../models/anims/StandardIdle.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/StandardIdle.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "LookAround",
+      "pathOrUrl": "../models/anims/LookAround.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/LookAround.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C02",
+      "pathOrUrl": "../models/anims/lib_C02.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C02.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C04",
+      "pathOrUrl": "../models/anims/lib_C04.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C04.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C11",
+      "pathOrUrl": "../models/anims/lib_C11.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C11.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C25",
+      "pathOrUrl": "../models/anims/lib_C25.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C25.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C36",
+      "pathOrUrl": "../models/anims/lib_C36.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C36.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C37",
+      "pathOrUrl": "../models/anims/lib_C37.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C37.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C38",
+      "pathOrUrl": "../models/anims/lib_C38.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C38.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C39",
+      "pathOrUrl": "../models/anims/lib_C39.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C39.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C41",
+      "pathOrUrl": "../models/anims/lib_C41.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C41.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C42",
+      "pathOrUrl": "../models/anims/lib_C42.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C42.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C44",
+      "pathOrUrl": "../models/anims/lib_C44.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C44.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "HelloWave",
+      "pathOrUrl": "../models/anims/HelloWave.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/HelloWave.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "Shrug",
+      "pathOrUrl": "../models/anims/Shrug.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/Shrug.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "Sleepy",
+      "pathOrUrl": "../models/anims/Sleepy.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/Sleepy.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "Thinking",
+      "pathOrUrl": "../models/anims/Thinking.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/Thinking.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C57",
+      "pathOrUrl": "../models/anims/lib_C57.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C57.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "ThumbsUp",
+      "pathOrUrl": "../models/anims/ThumbsUp.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/ThumbsUp.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "Clapping",
+      "pathOrUrl": "../models/anims/Clapping.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/Clapping.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "Cheer",
+      "pathOrUrl": "../models/anims/Cheer.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/Cheer.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C64",
+      "pathOrUrl": "../models/anims/lib_C64.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C64.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C65",
+      "pathOrUrl": "../models/anims/lib_C65.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C65.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C75",
+      "pathOrUrl": "../models/anims/lib_C75.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C75.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleKenneyStand",
+      "pathOrUrl": "../models/anims/IdleKenneyStand.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleKenneyStand.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "Relax",
+      "pathOrUrl": "../models/anims/Relax.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/Relax.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleNeutral",
+      "pathOrUrl": "../models/anims/IdleNeutral.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleNeutral.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleSassy",
+      "pathOrUrl": "../models/anims/IdleSassy.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleSassy.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleChinHand",
+      "pathOrUrl": "../models/anims/IdleChinHand.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleChinHand.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleHug",
+      "pathOrUrl": "../models/anims/IdleHug.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleHug.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleKaykitB",
+      "pathOrUrl": "../models/anims/IdleKaykitB.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleKaykitB.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleKaykitA",
+      "pathOrUrl": "../models/anims/IdleKaykitA.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleKaykitA.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleQuaterniusHuman",
+      "pathOrUrl": "../models/anims/IdleQuaterniusHuman.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleQuaterniusHuman.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleMixamoBreathing",
+      "pathOrUrl": "../models/anims/IdleMixamoBreathing.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleMixamoBreathing.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleMixamoHappy",
+      "pathOrUrl": "../models/anims/IdleMixamoHappy.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleMixamoHappy.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleRpmFStanding001",
+      "pathOrUrl": "../models/anims/IdleRpmFStanding001.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleRpmFStanding001.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleRpmFVar001",
+      "pathOrUrl": "../models/anims/IdleRpmFVar001.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleRpmFVar001.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleRpmFVar002",
+      "pathOrUrl": "../models/anims/IdleRpmFVar002.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleRpmFVar002.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleRpmFVar003",
+      "pathOrUrl": "../models/anims/IdleRpmFVar003.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleRpmFVar003.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleRpmFVar004",
+      "pathOrUrl": "../models/anims/IdleRpmFVar004.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleRpmFVar004.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C40",
+      "pathOrUrl": "../models/anims/lib_C40.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C40.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C43",
+      "pathOrUrl": "../models/anims/lib_C43.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C43.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleMixamoSad",
+      "pathOrUrl": "../models/anims/IdleMixamoSad.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleMixamoSad.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleMixamoStanding",
+      "pathOrUrl": "../models/anims/IdleMixamoStanding.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleMixamoStanding.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleMixamoAgreeing",
+      "pathOrUrl": "../models/anims/IdleMixamoAgreeing.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleMixamoAgreeing.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleMixamoExcited",
+      "pathOrUrl": "../models/anims/IdleMixamoExcited.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleMixamoExcited.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleMixamoArmStretch",
+      "pathOrUrl": "../models/anims/IdleMixamoArmStretch.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleMixamoArmStretch.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleThreeJsSoldier",
+      "pathOrUrl": "../models/anims/IdleThreeJsSoldier.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleThreeJsSoldier.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C05",
+      "pathOrUrl": "../models/anims/lib_C05.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C05.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C06",
+      "pathOrUrl": "../models/anims/lib_C06.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C06.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C12",
+      "pathOrUrl": "../models/anims/lib_C12.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C12.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C45",
+      "pathOrUrl": "../models/anims/lib_C45.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C45.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleUAL2Phone",
+      "pathOrUrl": "../models/anims/IdleUAL2Phone.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleUAL2Phone.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C46",
+      "pathOrUrl": "../models/anims/lib_C46.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C46.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C07",
+      "pathOrUrl": "../models/anims/lib_C07.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C07.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C08",
+      "pathOrUrl": "../models/anims/lib_C08.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C08.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C13",
+      "pathOrUrl": "../models/anims/lib_C13.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C13.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C47",
+      "pathOrUrl": "../models/anims/lib_C47.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C47.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C48",
+      "pathOrUrl": "../models/anims/lib_C48.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C48.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C49",
+      "pathOrUrl": "../models/anims/lib_C49.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C49.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C50",
+      "pathOrUrl": "../models/anims/lib_C50.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C50.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C51",
+      "pathOrUrl": "../models/anims/lib_C51.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C51.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C52",
+      "pathOrUrl": "../models/anims/lib_C52.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C52.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C71",
+      "pathOrUrl": "../models/anims/lib_C71.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C71.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C72",
+      "pathOrUrl": "../models/anims/lib_C72.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C72.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C73",
+      "pathOrUrl": "../models/anims/lib_C73.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C73.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C74",
+      "pathOrUrl": "../models/anims/lib_C74.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C74.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C66",
+      "pathOrUrl": "../models/anims/lib_C66.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C66.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C67",
+      "pathOrUrl": "../models/anims/lib_C67.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C67.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C68",
+      "pathOrUrl": "../models/anims/lib_C68.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C68.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C69",
+      "pathOrUrl": "../models/anims/lib_C69.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C69.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C70",
+      "pathOrUrl": "../models/anims/lib_C70.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C70.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C76",
+      "pathOrUrl": "../models/anims/lib_C76.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C76.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C77",
+      "pathOrUrl": "../models/anims/lib_C77.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C77.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C78",
+      "pathOrUrl": "../models/anims/lib_C78.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C78.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C79",
+      "pathOrUrl": "../models/anims/lib_C79.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C79.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C80",
+      "pathOrUrl": "../models/anims/lib_C80.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C80.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C81",
+      "pathOrUrl": "../models/anims/lib_C81.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C81.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C82",
+      "pathOrUrl": "../models/anims/lib_C82.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C82.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C83",
+      "pathOrUrl": "../models/anims/lib_C83.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C83.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C116",
+      "pathOrUrl": "../models/anims/lib_C116.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C116.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C117",
+      "pathOrUrl": "../models/anims/lib_C117.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C117.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C128",
+      "pathOrUrl": "../models/anims/lib_C128.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C128.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleInnersceneSam",
+      "pathOrUrl": "../models/anims/IdleInnersceneSam.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleInnersceneSam.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleInnersceneHarper",
+      "pathOrUrl": "../models/anims/IdleInnersceneHarper.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleInnersceneHarper.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleInnersceneMaya",
+      "pathOrUrl": "../models/anims/IdleInnersceneMaya.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleInnersceneMaya.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleRpmMStanding001",
+      "pathOrUrl": "../models/anims/IdleRpmMStanding001.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleRpmMStanding001.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleRpmMVar001",
+      "pathOrUrl": "../models/anims/IdleRpmMVar001.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleRpmMVar001.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleRpmMVar002",
+      "pathOrUrl": "../models/anims/IdleRpmMVar002.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleRpmMVar002.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleGodotTPSPlayer",
+      "pathOrUrl": "../models/anims/IdleGodotTPSPlayer.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleGodotTPSPlayer.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleRpmMStanding002",
+      "pathOrUrl": "../models/anims/IdleRpmMStanding002.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleRpmMStanding002.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C09",
+      "pathOrUrl": "../models/anims/lib_C09.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C09.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C60",
+      "pathOrUrl": "../models/anims/lib_C60.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C60.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C111",
+      "pathOrUrl": "../models/anims/lib_C111.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C111.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C112",
+      "pathOrUrl": "../models/anims/lib_C112.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C112.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C113",
+      "pathOrUrl": "../models/anims/lib_C113.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C113.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C114",
+      "pathOrUrl": "../models/anims/lib_C114.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C114.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C118",
+      "pathOrUrl": "../models/anims/lib_C118.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C118.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C119",
+      "pathOrUrl": "../models/anims/lib_C119.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C119.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C124",
+      "pathOrUrl": "../models/anims/lib_C124.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C124.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "PlayPunch",
+      "pathOrUrl": "../models/anims/PlayPunch.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/PlayPunch.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "YesCheer",
+      "pathOrUrl": "../models/anims/YesCheer.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/YesCheer.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "TaDa",
+      "pathOrUrl": "../models/anims/TaDa.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/TaDa.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "Bow",
+      "pathOrUrl": "../models/anims/Bow.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/Bow.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "StompAngry",
+      "pathOrUrl": "../models/anims/StompAngry.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/StompAngry.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C120",
+      "pathOrUrl": "../models/anims/lib_C120.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C120.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C121",
+      "pathOrUrl": "../models/anims/lib_C121.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C121.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C122",
+      "pathOrUrl": "../models/anims/lib_C122.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C122.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C123",
+      "pathOrUrl": "../models/anims/lib_C123.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C123.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C146",
+      "pathOrUrl": "../models/anims/lib_C146.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C146.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C147",
+      "pathOrUrl": "../models/anims/lib_C147.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C147.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C03",
+      "pathOrUrl": "../models/anims/lib_C03.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C03.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C61",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C62",
+      "pathOrUrl": "../models/anims/lib_C62.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C62.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C110",
+      "pathOrUrl": "../models/anims/lib_C110.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C110.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C125",
+      "pathOrUrl": "../models/anims/lib_C125.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C125.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C126",
+      "pathOrUrl": "../models/anims/lib_C126.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C126.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C127",
+      "pathOrUrl": "../models/anims/lib_C127.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C127.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-C112",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-C113",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-C114",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-C110",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-C118",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-C117",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-C128",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-C116",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-C111",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-C03",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-C60",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-C61",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-C62",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-C09",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-C119",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-C124",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-C125",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-C126",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-C127",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-generic-sing",
+      "pathOrUrl": "../models/anims/Sing.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/Sing.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "perf-motion-generic-dance",
+      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/lib_C61.vrma"
     }
   ]
 }

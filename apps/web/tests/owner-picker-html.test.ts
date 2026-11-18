@@ -25,6 +25,11 @@ describe('owner picker HTML (Pixel)', () => {
     expect(unifiedText).toContain('IdleQuaterniusHuman');
     expect(unifiedText).toContain('Your saved picks');
     expect(unifiedText).toContain('resolvePlaySrc');
+    expect(unifiedText).toContain('wireAudioPlayer');
+    expect(unifiedText).toContain('audio-scrub');
+    expect(unifiedText).toContain('formatMmSs');
+    expect(unifiedText).toContain('motion-preview');
+    expect(unifiedText).toContain('audio-player-cell');
     expect(unifiedText).toContain('pickerPlayFailureMessage');
     expect(unifiedText).toContain('Stream preview did not play');
     expect(unifiedText).toContain('data-mv-code="MV039"');
