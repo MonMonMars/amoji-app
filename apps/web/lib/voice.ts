@@ -1405,7 +1405,9 @@ export function stopSpeakingForCardAudition(): void {
   stopVoiceClip();
   stopOpenAi();
   stopEdge();
-  haltSynthQueue();
+  // Browser synth only — NOT haltSynthQueue / the HTTP MP3 tier. Tearing down
+  // HTMLAudio in the same tap gesture before speakGtts left cards silent.
+  haltBrowserSynth();
   endLipSync();
   clearSpeechCaption();
   sfxVoiceRelease();

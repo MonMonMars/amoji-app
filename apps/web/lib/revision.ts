@@ -440,7 +440,8 @@
 // r2026-11-18.224: chat history — remove per-bubble ⚑ report chip (ReportDialog/lib stay).
 // r2026-11-18.226: yue hip-hop music ask short-circuit + hiphop stream bed (#514).
 // r2026-11-18.227: Idle v2 visible default — curated-rail rotation, IDLE_VISIBLE_MIN_PLAYBACK.
-export const APP_REVISION = 'r2026-11-18.227';
+// r2026-11-18.228: card audition haltBrowserSynth only — no same-gesture stopGtts (all lang/gender).
+export const APP_REVISION = 'r2026-11-18.228';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
