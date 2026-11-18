@@ -87,5 +87,21 @@ jobs:
             echo "owner-resources.html missing Pages-relative voice-clips paths"
             exit 1
           }
+          grep -q 'data-decision-pick="use"' apps/web/out/docs/owner-resources.html || {
+            echo "owner-resources.html missing tri-state 採用/保留/刪除 (#517)"
+            exit 1
+          }
+          grep -q 'wireAudioPlayer' apps/web/out/docs/owner-resources.html || {
+            echo "owner-resources.html missing inline audio player (#517)"
+            exit 1
+          }
+          grep -q 'owner-picker-previews/' apps/web/out/docs/owner-resources.html || {
+            echo "owner-resources.html missing motion GIF previews (#517)"
+            exit 1
+          }
+          if grep -q 'input type="checkbox" class="keep"' apps/web/out/docs/owner-resources.html; then
+            echo "owner-resources.html still legacy keep checkboxes — regen via owner-picker-html-writer"
+            exit 1
+          fi
           node -e "import('./apps/web/scripts/store-bundle.mjs').then(m=>{const r=m.verifyOwnerResourcesPagesAssets('apps/web/out');if(!r.ok){console.error(r);process.exit(1)}})"
           node scripts/check-store-bundle.mjs apps/web/out

@@ -53,6 +53,22 @@ if (ownerHtml.includes("amoji-public-serve/")) {
   console.error("[verify-pages-live] owner-resources.html still has amoji-public-serve/ on live Pages");
   process.exit(1);
 }
+const ownerMarkers = [
+  'data-decision-pick="use"',
+  "wireAudioPlayer",
+  "owner-picker-previews/",
+  'class="audio-stop"',
+];
+for (const marker of ownerMarkers) {
+  if (!ownerHtml.includes(marker)) {
+    console.error(`[verify-pages-live] owner-resources.html missing #517 marker: ${marker}`);
+    process.exit(1);
+  }
+}
+if (ownerHtml.includes('input type="checkbox" class="keep"')) {
+  console.error("[verify-pages-live] owner-resources.html still uses legacy keep checkboxes (pre-#517)");
+  process.exit(1);
+}
 const sampleAudio = `${base}/audio/dance/dance-silent-dance-floor.mp3`;
 const sampleVoice = `${base}/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3`;
 for (const url of [sampleAudio, sampleVoice]) {
