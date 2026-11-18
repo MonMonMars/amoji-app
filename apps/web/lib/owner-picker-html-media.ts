@@ -7,7 +7,7 @@ import type { IdleLibraryEntry } from './idle-library';
 import { IDLE_LIBRARY, idleByClipId } from './idle-library';
 import {
   PERF_MOTION_TAGS,
-  resolvePerfMotion,
+  preferredClipIdsForMotionTag,
   type MotionTag,
 } from './performance-motion';
 import { CHAT_IDLE_CURATED } from './idle-curated-rail';
@@ -42,12 +42,27 @@ function previewPagesSrc(relFromPublic: string): string {
 export const OWNER_PICKER_PREVIEW_CLIP_IDS: readonly string[] = [
   DEFAULT_IDLE_CLIP_ID,
   ...CHAT_IDLE_CURATED.map((r) => r.clipId),
+  'Dance',
+  'Sing',
   'lib_C03',
+  'lib_C09',
+  'lib_C60',
   'lib_C61',
   'lib_C62',
   'lib_C110',
-  'Dance',
-  'Sing',
+  'lib_C111',
+  'lib_C112',
+  'lib_C113',
+  'lib_C114',
+  'lib_C116',
+  'lib_C117',
+  'lib_C118',
+  'lib_C119',
+  'lib_C124',
+  'lib_C125',
+  'lib_C126',
+  'lib_C127',
+  'lib_C128',
   'lib_C85',
   'lib_C87',
   'lib_C90',
@@ -135,10 +150,9 @@ export function resolveIdleMotionPreview(
 }
 
 export function resolvePerfMotionPreview(publicRoot: string, tag: MotionTag): OwnerMotionPreview {
-  const kind = tag === 'generic-sing' ? 'song' : 'dance';
-  const profile = resolvePerfMotion({ id: 'owner-picker', kind, style: tag });
   const nativeId = `perf-motion-${tag}`;
-  for (const clipId of profile.preferredClipIds) {
+  const preferredClipIds = preferredClipIdsForMotionTag(tag);
+  for (const clipId of preferredClipIds) {
     const lib = idleByClipId(clipId);
     if (lib) {
       const prev = resolveIdleMotionPreview(publicRoot, lib);
@@ -166,10 +180,14 @@ export function resolvePerfMotionPreview(publicRoot: string, tag: MotionTag): Ow
   };
 }
 
+function pokePreviewAssetId(sectionId: string): string {
+  return sectionId.replace(/:/g, '_');
+}
+
 export function pokeSectionMotionPreview(publicRoot: string, sectionId: string): OwnerMotionPreview {
-  const pokeGif = ownerPickerSidecarPreview(publicRoot, `poke-${sectionId}`);
+  const pokeGif = ownerPickerSidecarPreview(publicRoot, pokePreviewAssetId(sectionId));
   if (pokeGif) return pokeGif;
-  const generic = ownerPickerSidecarPreview(publicRoot, 'poke-lean-demo');
+  const generic = ownerPickerSidecarPreview(publicRoot, 'poke_lean_demo');
   if (generic) return { ...generic, id: sectionId };
   return {
     id: sectionId,
