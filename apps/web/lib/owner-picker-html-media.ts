@@ -10,10 +10,13 @@ import {
   resolvePerfMotion,
   type MotionTag,
 } from './performance-motion';
+import { CHAT_IDLE_CURATED } from './idle-curated-rail';
+import { DEFAULT_IDLE_CLIP_ID } from './idle-retired';
 
 export const OWNER_PICKER_PUBLIC_PREFIX = 'amoji-public-serve';
+export const OWNER_PICKER_PREVIEW_SUBDIR = 'animations/owner-picker-previews';
 
-export type OwnerMotionPreviewKind = 'gif' | 'vrma' | 'placeholder';
+export type OwnerMotionPreviewKind = 'gif' | 'webp' | 'mp4' | 'vrma' | 'placeholder';
 
 export interface OwnerMotionPreview {
   id: string;
@@ -32,12 +35,62 @@ export function publicFileExists(publicRoot: string, relFromPublic: string): boo
   return fs.existsSync(path.join(publicRoot, clean));
 }
 
+function previewPagesSrc(relFromPublic: string): string {
+  return `../${relFromPublic.replace(/^\//, '')}`;
+}
+
+export const OWNER_PICKER_PREVIEW_CLIP_IDS: readonly string[] = [
+  DEFAULT_IDLE_CLIP_ID,
+  ...CHAT_IDLE_CURATED.map((r) => r.clipId),
+  'lib_C03',
+  'lib_C61',
+  'lib_C62',
+  'lib_C110',
+  'Dance',
+  'Sing',
+  'lib_C85',
+  'lib_C87',
+  'lib_C90',
+  'lib_C92',
+  'lib_C95',
+];
+
 function escapeHtml(s: string): string {
-  return s
+  return String(s ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+const MOTION_IMG_ONERROR =
+  "this.hidden=true;this.closest('.motion-preview')?.classList.add('motion-preview--broken');";
+
+function previewFromPublicRel(
+  publicRoot: string,
+  id: string,
+  rel: string,
+  kind: OwnerMotionPreviewKind,
+): OwnerMotionPreview | null {
+  if (!publicFileExists(publicRoot, rel)) return null;
+  return {
+    id,
+    kind,
+    assetRaw: pickerRawFromPublicRel(rel),
+    pagesSrc: previewPagesSrc(rel),
+  };
+}
+
+export function ownerPickerSidecarPreview(
+  publicRoot: string,
+  clipId: string,
+): OwnerMotionPreview | null {
+  for (const ext of ['gif', 'webp', 'mp4'] as const) {
+    const rel = `${OWNER_PICKER_PREVIEW_SUBDIR}/${clipId}.${ext}`;
+    const hit = previewFromPublicRel(publicRoot, clipId, rel, ext);
+    if (hit) return hit;
+  }
+  return null;
 }
 
 export function resolveIdleMotionPreview(
@@ -47,24 +100,30 @@ export function resolveIdleMotionPreview(
   const id = entry.clipId;
   const pathLower = entry.path.toLowerCase();
   if (pathLower.endsWith('.gif')) {
-    const raw = pickerRawFromPublicRel(entry.path);
-    const pagesSrc = `../${entry.path.replace(/^\//, '')}`;
-    if (publicFileExists(publicRoot, entry.path)) {
-      return { id, kind: 'gif', assetRaw: raw, pagesSrc };
-    }
+    const hit = previewFromPublicRel(publicRoot, id, entry.path, 'gif');
+    if (hit) return hit;
+    const sidecar = ownerPickerSidecarPreview(publicRoot, id);
+    if (sidecar) return sidecar;
     return {
       id,
       kind: 'placeholder',
       assetRaw: null,
       pagesSrc: null,
-      note: `GIF path ${entry.path} not on disk — optional: node scripts/export-idle-gif-preview.mjs`,
+      note: `GIF path ${entry.path} not on disk — run node scripts/generate-owner-picker-move-previews.mjs`,
     };
   }
+  const sidecar = ownerPickerSidecarPreview(publicRoot, id);
+  if (sidecar) return sidecar;
+
   const vrmaRel = entry.vrmaUrl ?? (entry.path.endsWith('.vrma') ? entry.path : `models/anims/${id}.vrma`);
   if (publicFileExists(publicRoot, vrmaRel)) {
-    const raw = pickerRawFromPublicRel(vrmaRel);
-  const pagesSrc = `../${vrmaRel.replace(/^\//, '')}`;
-    return { id, kind: 'vrma', assetRaw: raw, pagesSrc };
+    return {
+      id,
+      kind: 'vrma',
+      assetRaw: pickerRawFromPublicRel(vrmaRel),
+      pagesSrc: previewPagesSrc(vrmaRel),
+      note: `VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip ${id}`,
+    };
   }
   return {
     id,
@@ -85,10 +144,17 @@ export function resolvePerfMotionPreview(publicRoot: string, tag: MotionTag): Ow
       const prev = resolveIdleMotionPreview(publicRoot, lib);
       if (prev.kind !== 'placeholder') return { ...prev, id: nativeId };
     }
+    const sidecar = ownerPickerSidecarPreview(publicRoot, clipId);
+    if (sidecar) return { ...sidecar, id: nativeId };
     const vrmaRel = `models/anims/${clipId}.vrma`;
     if (publicFileExists(publicRoot, vrmaRel)) {
-      const raw = pickerRawFromPublicRel(vrmaRel);
-      return { id: nativeId, kind: 'vrma', assetRaw: raw, pagesSrc: `../${vrmaRel}` };
+      return {
+        id: nativeId,
+        kind: 'vrma',
+        assetRaw: pickerRawFromPublicRel(vrmaRel),
+        pagesSrc: previewPagesSrc(vrmaRel),
+        note: `Dance/sing tag ${tag} — bake ${clipId} preview`,
+      };
     }
   }
   return {
@@ -96,11 +162,15 @@ export function resolvePerfMotionPreview(publicRoot: string, tag: MotionTag): Ow
     kind: 'placeholder',
     assetRaw: null,
     pagesSrc: null,
-    note: `Dance/sing body tag ${tag} — wire lib_C* VRMA`,
+    note: `Dance/sing body tag ${tag} — wire lib_C* VRMA + bake previews`,
   };
 }
 
-export function pokeSectionMotionPreview(sectionId: string): OwnerMotionPreview {
+export function pokeSectionMotionPreview(publicRoot: string, sectionId: string): OwnerMotionPreview {
+  const pokeGif = ownerPickerSidecarPreview(publicRoot, `poke-${sectionId}`);
+  if (pokeGif) return pokeGif;
+  const generic = ownerPickerSidecarPreview(publicRoot, 'poke-lean-demo');
+  if (generic) return { ...generic, id: sectionId };
   return {
     id: sectionId,
     kind: 'placeholder',
@@ -111,13 +181,20 @@ export function pokeSectionMotionPreview(sectionId: string): OwnerMotionPreview 
 }
 
 export function motionPreviewCellHtml(preview: OwnerMotionPreview): string {
-  if (preview.kind === 'gif' && preview.pagesSrc) {
-    return `<td class="motion-preview-cell"><div class="motion-preview" title="${escapeHtml(preview.id)}">
-      <img src="${escapeHtml(preview.pagesSrc)}" alt="${escapeHtml(preview.id)} preview" width="80" height="80" loading="lazy" />
+  const title = escapeHtml(preview.note ? `${preview.id}: ${preview.note}` : preview.id);
+  if ((preview.kind === 'gif' || preview.kind === 'webp') && preview.pagesSrc) {
+    return `<td class="motion-preview-cell"><div class="motion-preview" title="${title}">
+      <img src="${escapeHtml(preview.pagesSrc)}" alt="${escapeHtml(preview.id)} move preview" width="80" height="80" loading="lazy" onerror="${MOTION_IMG_ONERROR}" />
+    </div></td>`;
+  }
+  if (preview.kind === 'mp4' && preview.pagesSrc) {
+    return `<td class="motion-preview-cell"><div class="motion-preview motion-preview--mp4" title="${title}">
+      <video src="${escapeHtml(preview.pagesSrc)}" width="80" height="80" muted loop playsinline autoplay preload="metadata" aria-label="${escapeHtml(preview.id)} preview"
+        onerror="this.closest('.motion-preview')?.classList.add('motion-preview--broken');this.remove();"></video>
     </div></td>`;
   }
   if (preview.kind === 'vrma' && preview.pagesSrc) {
-    return `<td class="motion-preview-cell"><div class="motion-preview motion-preview--vrma">
+    return `<td class="motion-preview-cell"><div class="motion-preview motion-preview--vrma" title="${title}">
       <a href="${escapeHtml(preview.pagesSrc)}" class="ref" title="VRMA (download)">${escapeHtml(path.basename(preview.pagesSrc))}</a>
     </div></td>`;
   }
@@ -134,8 +211,7 @@ export function audioPlayerBlockHtml(
 ): string {
   const remoteCls = opts?.remote ? ' play-remote' : '';
   return `<div class="audio-player" data-play="${escapeHtml(dataPlayRaw)}">
-    <button type="button" class="audio-play-toggle${remoteCls}" aria-label="Play ${escapeHtml(ariaLabel)}">▶</button>
-    <button type="button" class="audio-stop" aria-label="Stop ${escapeHtml(ariaLabel)}" title="Stop">■</button>
+    <button type="button" class="audio-play-toggle${remoteCls}" aria-label="${escapeHtml(ariaLabel)}">▶</button>
     <input type="range" class="audio-scrub" min="0" max="100" value="0" step="0.1" disabled aria-label="Seek ${escapeHtml(ariaLabel)}" />
     <span class="audio-time"><span class="audio-cur">0:00</span> / <span class="audio-dur">0:00</span></span>
   </div>`;

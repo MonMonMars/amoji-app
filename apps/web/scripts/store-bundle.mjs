@@ -243,6 +243,7 @@ export function verifyOwnerResourcesPagesAssets(outDir) {
   while ((m = DATA_PLAY_RE.exec(html))) {
     const src = m[1];
     if (isExternalOwnerPickerPlaySrc(src)) continue;
+    if (/^https?:/i.test(src)) continue;
     if (src.includes("amoji-public-serve")) {
       missing.push(src);
       continue;

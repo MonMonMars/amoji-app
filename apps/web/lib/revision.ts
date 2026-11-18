@@ -442,7 +442,8 @@
 // r2026-11-18.227: Idle v2 visible default — curated-rail rotation, IDLE_VISIBLE_MIN_PLAYBACK.
 // r2026-11-18.228: card audition haltBrowserSynth only — no same-gesture stopGtts (all lang/gender).
 // r2026-11-18.231: owner-resources row audio scrub + Mixkit CDN preview playback (#517).
-export const APP_REVISION = 'r2026-11-18.231';
+// r2026-11-18.232: owner-resources motion column — sidecar GIF previews + poke section (#517).
+export const APP_REVISION = 'r2026-11-18.232';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
