@@ -41,6 +41,8 @@ import {
 } from '../apps/web/lib/idle-owner-migrate.ts';
 import { DEFAULT_IDLE_CLIP_ID } from '../apps/web/lib/idle-retired.ts';
 import { CHARACTER_POSES } from '../apps/web/lib/persona.ts';
+import { CLASSIC_FAIRY_TALES } from '../apps/web/lib/classic-fairy-tales.ts';
+import { highestStoryOwnerCode } from '../apps/web/lib/story-catalog.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
@@ -246,7 +248,7 @@ function unifiedOwnerClientScript(): string {
   const defaultRails = JSON.stringify(defaultCuratedRailNums());
   const cmaKey = JSON.stringify(CMA_REACTION_GALLERY_KEY);
   return `
-    const TAB_IDS = ['music', 'poke', 'idle'];
+    const TAB_IDS = ['music', 'stories', 'poke', 'idle'];
     function showTab(id) {
       if (!TAB_IDS.includes(id)) id = 'music';
       for (const t of TAB_IDS) {
@@ -369,15 +371,54 @@ function buildRedirectHtml(targetHash: string, title: string): string {
 </html>`;
 }
 
+function buildStoriesPage(): PickerSection {
+  const taleRef = lineRef('apps/web/lib/classic-fairy-tales.ts', 'export const CLASSIC_FAIRY_TALES');
+  let rows = '';
+  for (const tale of CLASSIC_FAIRY_TALES) {
+    const code = tale.ownerCode ?? tale.id;
+    const title = tale.title.en;
+    rows += `<tr class="row-in-use" data-in-use="1" data-id="${escapeHtml(code)}" data-st-code="${escapeHtml(code)}" data-label="${escapeHtml(title)}" data-ref="${escapeHtml(taleRef)}">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ${escapeHtml(code)}" /></td>
+      <td class="flags">${inUseTag('classic-fairy-tales')}</td>
+      <td><strong>${escapeHtml(title)}</strong><br/><code>${escapeHtml(code)}</code></td>
+      <td>${escapeHtml(tale.length)}</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">${escapeHtml(tale.slug)}</span></td>
+      <td class="license-ok">PD</td>
+      <td>${escapeHtml(tale.author)}</td>
+      <td><code>${escapeHtml(tale.id)}</code><br/><span class="ref">${escapeHtml(taleRef)}</span></td>
+    </tr>`;
+  }
+  const body = `
+    <p class="lede">Spoken Story chip + long-read mode. Codes <code>ST001</code>…<code>${escapeHtml(highestStoryOwnerCode())}</code> map to <code>CLASSIC_FAIRY_TALES</code> (PD paraphrases, not Disney scripts).</p>
+    <div class="panel"><table>
+      <thead><tr><th>Keep</th><th>Ship</th><th>Title · ST code</th><th>Length</th><th>Locales</th><th>Slug</th><th>License</th><th>Tradition</th><th>id · source</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+  return {
+    body,
+    stats: stat(CLASSIC_FAIRY_TALES.length, 'Story rows'),
+    counts: { total: CLASSIC_FAIRY_TALES.length },
+  };
+}
+
 function buildUnifiedResourcesPage(
   music: PickerSection,
   poke: PickerSection,
   idle: PickerSection,
+  stories: PickerSection,
 ): { html: string; counts: Record<string, number> } {
   const grandTotal =
-    music.counts.total + poke.counts.sections + poke.counts.pokeLines + poke.counts.zones + poke.counts.cma + (idle.counts.total as number);
+    music.counts.total +
+    poke.counts.sections +
+    poke.counts.pokeLines +
+    poke.counts.zones +
+    poke.counts.cma +
+    (idle.counts.total as number) +
+    (stories.counts.total as number);
   const stats = [
     stat(music.counts.total, 'Music rows'),
+    stat(stories.counts.total, 'Story rows'),
     stat(poke.counts.sections + poke.counts.cma, 'Poke rows (core)'),
     stat(idle.counts.total, 'Idle rows'),
     stat(grandTotal, 'All picker rows'),
@@ -387,12 +428,17 @@ function buildUnifiedResourcesPage(
   const body = `
     <nav class="tabs" aria-label="Resource categories">
       <button type="button" class="tab" data-tab="music" aria-selected="true">Music &amp; beds</button>
+      <button type="button" class="tab" data-tab="stories">Stories &amp; fairy tales</button>
       <button type="button" class="tab" data-tab="poke">Poke reactions</button>
       <button type="button" class="tab" data-tab="idle">Idle poses &amp; VRMA</button>
     </nav>
     <section id="panel-music" class="tab-panel" data-section="music">
       <h2 id="music">Music &amp; performance audio</h2>
       ${music.body}
+    </section>
+    <section id="panel-stories" class="tab-panel" data-section="stories" hidden>
+      <h2 id="stories">Stories &amp; fairy tales (ST###)</h2>
+      ${stories.body}
     </section>
     <section id="panel-poke" class="tab-panel" data-section="poke" hidden>
       <h2 id="poke">Poke motion, voice, SFX</h2>
@@ -950,9 +996,10 @@ function buildIdlePage(): PickerSection {
 }
 
 const music = buildMusicPage();
+const stories = buildStoriesPage();
 const poke = buildPokePage();
 const idle = buildIdlePage();
-const unified = buildUnifiedResourcesPage(music, poke, idle);
+const unified = buildUnifiedResourcesPage(music, poke, idle, stories);
 
 fs.writeFileSync(path.join(docs, 'owner-resources.html'), unified.html);
 fs.writeFileSync(path.join(docs, 'owner-music-picker.html'), buildRedirectHtml('music', 'Owner music picker'));

@@ -32,7 +32,7 @@ describe('ability reminders (one skill at a time)', () => {
     expect(chat).toContain('nextSkillOffer');
     expect(chat).toContain('pickShowcaseOffer');
     // Story accept speaks from the classic fairy-tale bank (not LLM stub).
-    expect(chat).toContain('pickClassicFairyTale');
+    expect(chat).toContain('pickClassicFairyTaleForIntent');
     // No multi-topic dump on the idle ability path
     expect(chat).toMatch(/One ability at a time when quiet/);
     // Topical/demo replies mute offtopic dance/sing tack-ons

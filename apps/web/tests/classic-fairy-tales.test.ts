@@ -31,8 +31,8 @@ const TIERS: TaleLengthTier[] = ['short', 'medium', 'long', 'veryLong'];
 describe('classic fairy-tale catalog', () => {
   it('ships a multi-tale public-domain library with all length tiers', () => {
     const stats = classicFairyTaleStats();
-    expect(stats.total).toBeGreaterThanOrEqual(8);
-    expect(stats.slugs.length).toBeGreaterThanOrEqual(6);
+    expect(stats.total).toBeGreaterThanOrEqual(38);
+    expect(stats.slugs.length).toBeGreaterThanOrEqual(30);
     for (const tier of TIERS) {
       expect(stats.byLength[tier]).toBeGreaterThanOrEqual(2);
     }
@@ -173,7 +173,7 @@ describe('classic fairy-tale predownload / warm', () => {
 describe('demo talking-phase Story wiring', () => {
   it('ChatPanel warms catalog and speaks from the classic bank on Story', () => {
     expect(PANEL).toContain('warmClassicFairyTaleCache');
-    expect(PANEL).toContain('pickClassicFairyTale');
+    expect(PANEL).toContain('pickClassicFairyTaleForIntent');
     expect(PANEL).toContain('formatTaleForSpeech');
     expect(PANEL).toContain("id === 'story'");
     expect(PANEL).toContain('storyTellCountRef');

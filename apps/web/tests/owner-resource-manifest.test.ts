@@ -6,6 +6,7 @@ import {
 } from '../lib/cma-reaction-gallery';
 import { assertCuratedRailValid } from '../lib/idle-curated-rail';
 import { MV_JPOP_COUNT } from '../lib/music-jpop-vault';
+import { STORY_CATALOG_COUNT } from '../lib/story-catalog';
 import {
   OWNER_CMA_WANT,
   OWNER_RESOURCE_LIBRARY_DOC,
@@ -35,6 +36,14 @@ describe('owner-resource-manifest', () => {
     const stats = ownerIdleLibraryStats();
     expect(stats.curatedRail).toBeGreaterThanOrEqual(35);
     expect(stats.playable).toBeGreaterThan(stats.curatedRail);
+  });
+
+  it('buildOwnerResourceIndex lists every ST fairy-tale row', () => {
+    const index = buildOwnerResourceIndex();
+    const stRows = index.filter((e) => e.type === 'story-fairy-tale');
+    expect(stRows.length).toBe(STORY_CATALOG_COUNT());
+    expect(stRows.some((e) => e.id === 'ST001')).toBe(true);
+    expect(stRows.some((e) => e.id === 'ST038')).toBe(true);
   });
 
   it('buildOwnerResourceIndex lists every MV J-pop stream row', () => {
