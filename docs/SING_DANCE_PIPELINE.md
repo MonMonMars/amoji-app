@@ -17,7 +17,7 @@ Durable summary of the performance flow. Full plan (gaps, P0–P2, mermaid): see
 |-------------|------------------|-------|------|
 | Sing | `song` | CC0 vocal clip | `sing` VRMA |
 | Dance | `dance` | CC0 or Mixkit BGM | `dance` VRMA |
-| Play music | `dance` + `bed` | instrumental BGM | same as dance (no separate listen-only idle yet) |
+| Play music | `dance` + `bed` | instrumental BGM | **listen-only** — calm idle, no VRMA until dance ask |
 
 ## Related docs
 
@@ -27,7 +27,7 @@ Durable summary of the performance flow. Full plan (gaps, P0–P2, mermaid): see
 
 ## Planned improvements (P0)
 
-- Explicit **listen** phase (BGM + calm idle, no dance until asked)
+- ~~Explicit **listen** phase (BGM + calm idle, no dance until asked)~~ — **r212** `musicAskListenOnly` + `beginShow(listenOnly)`
 - Beat-aligned VRMA start from audio clock
 - Unified session state (replace scattered pending refs)
 - Duet path aligned with library gate

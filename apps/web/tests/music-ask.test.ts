@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   listMusicPickOptions,
+  musicAskListenOnly,
   musicAskShowKind,
   musicSelectOfferLine,
   resolveMusicAsk,
@@ -128,6 +129,21 @@ describe('listMusicPickOptions + offer line', () => {
     expect(musicSelectOfferLine('yue', opts)).toContain('你揀');
     expect(musicAskShowKind('song')).toBe('song');
     expect(musicAskShowKind('music')).toBe('dance');
+    expect(musicAskListenOnly('music')).toBe(true);
+    expect(musicAskListenOnly('dance')).toBe(false);
+    expect(musicAskListenOnly('song')).toBe(false);
+  });
+
+  it('music pick streams are listen-only when kind is music', () => {
+    const opts = listMusicPickOptions({ kind: 'music', seed: 1, count: 3 });
+    expect(opts.length).toBeGreaterThan(0);
+    for (const o of opts) {
+      expect(o.listenOnly).toBe(true);
+    }
+    const danceOpts = listMusicPickOptions({ kind: 'dance', seed: 1, count: 3 });
+    for (const o of danceOpts) {
+      expect(o.listenOnly).toBeFalsy();
+    }
   });
 });
 
@@ -148,7 +164,8 @@ describe('ChatPanel gates picker behind select intent', () => {
     const panel = fs.readFileSync(path.join(ROOT, 'components/ChatPanel.tsx'), 'utf8');
     // 唱首歌 must beginShow + done without falling through to pickSong / LLM.
     expect(panel).toMatch(/ask\.kind === 'music' \|\| ask\.kind === 'song' \|\| ask\.kind === 'dance'/);
-    expect(panel).toContain("ask.kind === 'song' ? 'song' : 'dance'");
+    expect(panel).toContain('musicAskShowKind');
+    expect(panel).toContain('musicAskListenOnly');
     // speakReply sing must not paste bank lyrics under the clip title.
     expect(panel).toMatch(/if \(mv === 'sing'\)/);
     expect(panel).not.toContain('pickSong');
