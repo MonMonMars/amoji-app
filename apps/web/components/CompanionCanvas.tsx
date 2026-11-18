@@ -2278,7 +2278,7 @@ export default function CompanionCanvas({
         // Kill stuck poke lean after poke ends — even mid idle A→B glide
         // (full plantFeet fights the mixer; hips-only clear is safe).
         // Also zero fall dir + side sign after the reaction window so the
-        // opposite-of-push tip does not linger into the next idle blend.
+        // stuck same-side poke tip does not linger into the next idle blend.
         if (boost === 0) {
           avatar.clearPlantLean();
           if (pokeAge >= POKE_MS) {

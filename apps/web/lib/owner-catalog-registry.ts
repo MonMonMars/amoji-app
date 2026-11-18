@@ -16,6 +16,7 @@ import { performanceClipOwnerCode } from './performance-clip-owner';
 import { POKE_SECTIONS } from './poke-zones';
 import { POKE_LINE_TEMPLATES, VOICE_IDS } from './personality-voice';
 import type { Lang } from './prefs';
+import { PERF_MOTION_TAGS, PERF_MOTION_TAG_LABELS } from './performance-motion';
 import { RECORDED_POKE_ZONE } from './voice-clips';
 
 export const OWNER_CATALOG_VERSION = '2026-11-18-owner-catalog-v1' as const;
@@ -256,6 +257,19 @@ export function buildOwnerCatalogIndex(): OwnerCatalogRow[] {
       label: e.labelKey,
       sourceRef: 'idle-curated-rail.ts',
       inUse: true,
+    });
+  }
+
+  for (const tag of PERF_MOTION_TAGS) {
+    push({
+      prefix: 'ID',
+      domainCode: tag,
+      tab: 'music',
+      kind: 'perf-motion-tag',
+      nativeId: `perf-motion-${tag}`,
+      label: PERF_MOTION_TAG_LABELS[tag],
+      sourceRef: 'performance-motion.ts',
+      inUse: tag === 'C61' || tag === 'generic-dance',
     });
   }
 

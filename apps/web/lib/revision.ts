@@ -431,9 +431,10 @@
 // r2026-11-18.213: beat-aligned VRMA start from library bed playback clock (library-clip playing).
 // r2026-11-18.214: unified PerformanceSession gate (listen/sing/dance/end) + coordinated BGM fade-out.
 // r2026-11-18.215: owner-catalog CD### + MV099–118 world vault; owner-resources demo/news tabs.
-// r2026-11-18.217: yue news RSS channel scrub + headline dedupe; stream lead remainder TTS.
-// r2026-11-18.218: chat history — remove per-bubble ⚑ report chip from transcript (ReportDialog/lib stay).
-export const APP_REVISION = 'r2026-11-18.218';
+// r2026-11-18.217: visible calm VRMA idle motion (v6 amp + IDLE_CALM_TORSO_PITCH_MAX).
+// r2026-11-18.218: yue news RSS channel scrub + headline dedupe; stream lead remainder TTS.
+// r2026-11-18.219: chat history — remove per-bubble ⚑ report chip (ReportDialog/lib stay).
+export const APP_REVISION = 'r2026-11-18.219';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
