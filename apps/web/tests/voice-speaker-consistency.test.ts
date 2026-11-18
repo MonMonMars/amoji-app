@@ -83,7 +83,7 @@ describe('voice does not switch speaker mid-line or between characters', () => {
 
   it('beginTts forces companion playback route before any lang tier', () => {
     expect(voice).toContain('ensureCompanionPlaybackRoute');
-    expect(voice).toMatch(/const beginTts = \(\) => \{[\s\S]*?ensureCompanionPlaybackRoute\(\)/);
+    expect(voice).toMatch(/const beginTts = \(\) => \{[\s\S]*?companionPlaybackSession\(\)/);
   });
 
   it('a canceled tier still settles immediately rather than falling through', () => {

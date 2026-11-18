@@ -442,7 +442,8 @@
 // r2026-11-18.227: Idle v2 visible default — curated-rail rotation, IDLE_VISIBLE_MIN_PLAYBACK.
 // r2026-11-18.228: card audition haltBrowserSynth only — no same-gesture stopGtts (all lang/gender).
 // r2026-11-18.230: demo-phase weather+news pinned left; chip taps → live facts + sayLocal.
-export const APP_REVISION = 'r2026-11-18.230';
+// r2026-11-18.232: en/chat TTS loudspeaker — mic-latch pre-pin on gesture HTMLAudio; male skips earpiece synth under latch.
+export const APP_REVISION = 'r2026-11-18.232';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
