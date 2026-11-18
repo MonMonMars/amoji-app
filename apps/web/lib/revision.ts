@@ -443,7 +443,8 @@
 // r2026-11-18.228: card audition haltBrowserSynth only — no same-gesture stopGtts (all lang/gender).
 // r2026-11-18.230: demo-phase weather+news pinned left; chip taps → live facts + sayLocal.
 // r2026-11-18.232: en/chat TTS loudspeaker — mic-latch pre-pin on gesture HTMLAudio; male skips earpiece synth under latch.
-export const APP_REVISION = 'r2026-11-18.232';
+// r2026-11-18.239: en-speaker routing ship-set bump (claim r239; #525).
+export const APP_REVISION = 'r2026-11-18.239';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
