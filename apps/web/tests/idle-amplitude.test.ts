@@ -69,9 +69,12 @@ describe('idle amplitude damp', () => {
     expect(calmIdleHeadPitch(0.2)).toBeLessThan(0.02);
   });
 
-  it('v6 near-zero amp is almost still', () => {
-    expect(IDLE_BODY_AMPLITUDE).toBeLessThanOrEqual(0.05);
-    expect(IDLE_HEAD_AMPLITUDE).toBe(0);
-    expect(IDLE_PLAYBACK_TIME_SCALE).toBeLessThanOrEqual(0.4);
+  it('v6+r217 amp is visibly calm (not bind-pose still)', () => {
+    expect(IDLE_BODY_AMPLITUDE).toBeGreaterThanOrEqual(0.3);
+    expect(IDLE_BODY_AMPLITUDE).toBeLessThanOrEqual(0.5);
+    expect(IDLE_HEAD_AMPLITUDE).toBeGreaterThan(0);
+    expect(IDLE_HEAD_AMPLITUDE).toBeLessThanOrEqual(IDLE_BODY_AMPLITUDE);
+    expect(IDLE_PLAYBACK_TIME_SCALE).toBeGreaterThanOrEqual(0.65);
+    expect(IDLE_PLAYBACK_TIME_SCALE).toBeLessThanOrEqual(0.95);
   });
 });

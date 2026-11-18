@@ -70,6 +70,7 @@ import { clampBoneByName } from '../lib/vrm/bone-joint-limits';
 import {
   applyIdleClipSoftening,
   idleArmRewriteAllowed,
+  IDLE_CALM_TORSO_PITCH_MAX,
   pullIdleTorsoUpright,
 } from '../lib/idle-stance-soften';
 import { chestPokeBounce, CHEST_BOUNCE_SEC, SOFT_CHEST_BOUNCE_SEC } from '../lib/vrm/chest-bounce';
@@ -2197,7 +2198,10 @@ export default function CompanionCanvas({
             && !idleLegGlide
           ) {
             // Upright-only on calm VRMA — no arm hang rewrite (frankenstein).
-            pullIdleTorsoUpright((name) => avatar!.getBoneNode(name));
+            pullIdleTorsoUpright(
+              (name) => avatar!.getBoneNode(name),
+              IDLE_CALM_TORSO_PITCH_MAX,
+            );
           }
           avatar.applyPose(poseTargets);
         } else {

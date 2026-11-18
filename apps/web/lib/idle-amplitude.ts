@@ -1,18 +1,18 @@
 // Idle VRMA motion damp — even "good" catalog stands thrash when full
 // amplitude + A→B blend + head additives stack. Pull body tracks toward the
 // clip's first keyframe; crush head/neck motion so sky-look never returns.
-// v6: near-zero amp → almost still (near bind / first-key freeze).
+// v6+r217: visible calm breath — enough VRMA motion to read alive, not thrash.
 
 import * as THREE from 'three';
 
-/** Keep this fraction of body quaternion motion (rest → key). Near-still. */
-export const IDLE_BODY_AMPLITUDE = 0.03;
+/** Keep this fraction of body quaternion motion (rest → key). Visible sway/breath. */
+export const IDLE_BODY_AMPLITUDE = 0.38;
 
-/** Head / neck keep none — kills baked sky-look / look-around. */
-export const IDLE_HEAD_AMPLITUDE = 0;
+/** Head / neck keep a sliver — kills sky-look but allows subtle life. */
+export const IDLE_HEAD_AMPLITUDE = 0.1;
 
-/** Slow calm playback so residual motion reads as breath, not thrash. */
-export const IDLE_PLAYBACK_TIME_SCALE = 0.35;
+/** Calm playback — slow enough to read as idle, fast enough to loop visibly. */
+export const IDLE_PLAYBACK_TIME_SCALE = 0.78;
 
 const HEADISH_RE = /(head|neck|eye)/i;
 
