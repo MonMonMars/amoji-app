@@ -56,6 +56,12 @@ const DANCE_RE =
 const MUSIC_RE =
   /\b(?:play\s+(?:(?:some|a)\s+)?(?:music|song|track|tune)|put\s+on\s+(?:(?:some|a)\s+)?(?:music|song|track|tune)|play\s+(?:something|a\s+(?:song|track|tune))|listen\s+to\s+(?:(?:some|a)\s+)?(?:music|song)|(?:some\s+)?music\s+please)\b|播音樂|播音乐|放音樂|放音乐|播首歌|放首歌|播首|放首|來首|来首|播点|放点|音楽をかけ|音楽かけて|曲をかけ|聴かせて/i;
 
+const YUE_GENRE_MUSIC_ASK_RE =
+  /(?:有冇|有无|有咩|喂|餵)(?:.{0,16})?(?:音樂|音乐|歌|曲)|(?:有冇|有无).{0,12}(?:hip\s*[- ]?hop|hiphop|嘻哈|黑泡)/i;
+
+const MUSIC_PLAY_CHALLENGE_RE =
+  /你唔係可以播音樂|你不是可以播音乐|可以播音樂㗎|可以播音乐吗|你不是能放音乐|唔係話可以播歌/i;
+
 function askKind(text: string): MusicAskKind {
   if (SING_RE.test(text)) return 'song';
   if (DANCE_RE.test(text)) return 'dance';
@@ -85,7 +91,9 @@ export function resolveMusicAsk(text: string): MusicAskIntent {
   // noun is the style word rather than "music/song".
   const playVerb =
     /\b(?:play|put\s+on|listen\s+to)\b|播|放|來首|来首|かけ|聴かせ/i.test(t);
-  const genrePlay = !!(style && playVerb);
+  const yueGenreMusic = YUE_GENRE_MUSIC_ASK_RE.test(t);
+  const musicChallenge = MUSIC_PLAY_CHALLENGE_RE.test(t);
+  const genrePlay = !!(style && (playVerb || yueGenreMusic));
 
   // Explicit select/list — SELECT_RE is already music/song oriented
   // (choose a song, 選一首, playlist, what tracks…).
@@ -93,7 +101,7 @@ export function resolveMusicAsk(text: string): MusicAskIntent {
     return { mode: 'select', kind: askKind(t), style, matched: true };
   }
 
-  if (wantsSing || wantsDance || wantsMusic || genrePlay) {
+  if (wantsSing || wantsDance || wantsMusic || genrePlay || yueGenreMusic) {
     return {
       mode: 'random',
       kind: wantsSing ? 'song' : wantsDance ? 'dance' : 'music',
@@ -102,8 +110,24 @@ export function resolveMusicAsk(text: string): MusicAskIntent {
     };
   }
 
-  // Bare genre word alone is not an ask.
+  if (musicChallenge && (wantsMusic || style)) {
+    return {
+      mode: 'random',
+      kind: 'music',
+      style,
+      matched: true,
+    };
+  }
+
   return { mode: 'none', kind: 'music', style, matched: false };
+}
+
+export function musicAskStyleWithContext(text: string, priorUser?: string): MusicStyleId | undefined {
+  return detectMusicStyle(text) ?? (priorUser?.trim() ? detectMusicStyle(priorUser) : undefined);
+}
+
+export function musicAskHandledByApp(text: string): boolean {
+  return resolveMusicAsk(text).matched;
 }
 
 function styleLabel(style: string): string {

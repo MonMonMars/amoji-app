@@ -45,7 +45,10 @@ const STYLE_PATTERNS: { id: MusicStyleId; re: RegExp }[] = [
   { id: 'cantopop', re: /粵語歌|廣東歌|cantopop|canto\s*pop|港樂|香港歌/i },
   { id: 'jazz', re: /\bjazz\b|爵士|スウィング|swing/i },
   { id: 'lofi', re: /\blo[- ]?fi\b|低保真|ロー?ファイ|chillhop/i },
-  { id: 'hiphop', re: /\bhip[- ]?hop\b|嘻哈|ラップ|\brap\b/i },
+  {
+    id: 'hiphop',
+    re: /\bhip[- ]?hop\b|\bhiphop\b|嘻哈(?:音樂|音乐|歌|曲)?|黑泡|ラップ|\brap\b/i,
+  },
   { id: 'electronic', re: /\belectro(?:nic)?\b|edm|電子|テクノ|ハウス|\bhouse\b|synthwave|賽博/i },
   { id: 'ballad', re: /\bballad\b|抒情|慢歌|バラード|love\s*song/i },
   { id: 'rock', re: /\brock\b|搖滾|ロック|金屬|\bmetal\b/i },

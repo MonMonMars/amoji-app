@@ -45,6 +45,12 @@ describe('owner perf picks resolution', () => {
     expect(ownerListenMvCodes()).toContain('MV069');
   });
 
+  it('does not map a named hiphop ask to unrelated owner pop pins', () => {
+    mockStorage();
+    saveOwnerPerfPicks({ listenMvCodes: ['MV084'] });
+    expect(pickOwnerStreamTrack('hiphop', 0)).toBeNull();
+  });
+
   it('honors localStorage MV + song pins over rotation', () => {
     mockStorage();
     saveOwnerPerfPicks({

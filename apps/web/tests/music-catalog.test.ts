@@ -29,6 +29,8 @@ describe('royalty-free music catalog', () => {
     expect(detectMusicStyle('lofi beats please')).toBe('lofi');
     expect(detectMusicStyle('play something calm')).toBe('chill');
     expect(detectMusicStyle('電子音樂')).toBe('electronic');
+    expect(detectMusicStyle('有冇hip hop音樂')).toBe('hiphop');
+    expect(detectMusicStyle('喂有嘻哈歌嗎')).toBe('hiphop');
     expect(detectMusicStyle('hello')).toBeUndefined();
   });
 
@@ -48,6 +50,8 @@ describe('royalty-free music catalog', () => {
     expect(jazz).toMatch(/^https:\/\/assets\.mixkit\.co\//);
     expect(pickStreamTrack('pop', 0)?.style).toBe('pop');
     expect(pickStreamTrack('uspop', 0)?.style).toBe('uspop');
+    expect(pickStreamTrack('hiphop', 0)?.style).toBe('hiphop');
+    expect(pickStreamTrack('hiphop', 0)?.title).toMatch(/Hip Hop|hip-hop/i);
     expect(STYLE_THEME_ID.jazz).toBeTruthy();
     const jpop = resolveStreamPlaylist('jpop');
     expect(jpop).toMatch(/^https:\/\/assets\.mixkit\.co\//);

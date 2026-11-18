@@ -9,6 +9,7 @@
 // made Next page collection fail (array export no longer callable as .find).
 
 import { userOpensContentDelivery } from './content-continuation';
+import { musicAskHandledByApp } from './music-ask';
 import {
   detectAbilityOfferKind,
   detectUserAbilityTopics,
@@ -16,10 +17,8 @@ import {
   type AbilityTopic,
 } from './topic-mixture';
 
-/** How long after a topical/content turn skill offers stay muted. */
 export const SKILL_OFFER_SUPPRESS_MS = 90_000;
 
-/** Content topics that mute the idle ability rail (not dance/sing/music). */
 const TOPICAL_MUTE: ReadonlySet<AbilityTopic> = new Set([
   'weather',
   'news',
@@ -34,7 +33,6 @@ const WEATHER_OR_NEWS_RE =
 const LONG_CONTENT_RE =
   /(?:\bstory\b|tell\s+(?:me\s+)?a\s+story|bedtime\s+story|fun\s+fact|did\s+you\s+know|random\s+fact|fun\s+science|science\s+fact|how\s+(?:do\s+i|to|can\s+i)\b|something personal|little secret|whisper|tell\s+(?:me\s+)?(?:a\s+)?joke|clean joke|short poem|life tip)|講個?故|故事|童話|冷知識|有趣知識|科學趣|豆知識|自然科学|讲个故|冷知识|科学趣味|お話して|物語|豆知識|面白い科学|點樣整|怎么搞|怎麼辦|怎么办|心里话|心裡話|悄悄話|悄悄话|秘密|笑話|笑话|小詩|小诗|小貼士|小贴士/i;
 
-/** True when the user asked for topical/demo content (fun fact, weather, …). */
 export function isTopicalContentTurn(text: string): boolean {
   const t = text.trim();
   if (!t) return false;
@@ -48,7 +46,6 @@ export function isTopicalContentTurn(text: string): boolean {
   return false;
 }
 
-/** Mute skill offers for a window after a topical content turn. */
 export function shouldSuppressSkillOffer(
   lastTopicalAt: number,
   now = Date.now(),
@@ -58,20 +55,29 @@ export function shouldSuppressSkillOffer(
   return now - lastTopicalAt < windowMs;
 }
 
-/** A single sentence that is a dance / sing / music (etc.) ability invite. */
 export function isAbilityInviteLine(text: string): boolean {
   return detectAbilityOfferKind(text) != null;
 }
 
-/**
- * Drop offtopic ability / showcase tack-ons from a topical reply.
- * Thin alias kept for ChatPanel + existing tests — always strips, even when
- * the rich multi-beat exception is open (dance never bolts onto Jupiter).
- */
+const MUSIC_CAPABILITY_DENY =
+  /\b(?:never listen(?:s)? to music|don'?t listen to music|i don'?t listen to music|can'?t play music|cannot play music|no music to play|i don'?t have music)\b|我唔聽歌|我冇音樂|播唔到音樂|播不到音乐|不能播音樂|不能播音乐|冇歌可以播|没有音乐可以播/i;
+
+export function stripMusicCapabilityDenial(reply: string, userText: string): string {
+  if (!reply.trim() || !userText.trim()) return reply;
+  if (!musicAskHandledByApp(userText)) return reply;
+  if (!MUSIC_CAPABILITY_DENY.test(reply)) return reply;
+  const parts = reply
+    .split(/(?<=[。！？.!?])\s*/)
+    .map((s) => s.trim())
+    .filter((s) => s && !MUSIC_CAPABILITY_DENY.test(s));
+  if (!parts.length) return '';
+  return parts.join(' ').trim();
+}
+
 export function stripOfftopicAbilityTack(reply: string, userText: string): string {
   if (!reply.trim()) return reply;
   if (!userText.trim()) return reply;
-  // When the user asked for a performance, stripOffTopicAbilityTacks keeps it.
-  const cleaned = stripOffTopicAbilityTacks(reply, userText);
-  return cleaned || reply;
+  const sansDeny = stripMusicCapabilityDenial(reply, userText);
+  const cleaned = stripOffTopicAbilityTacks(sansDeny, userText);
+  return cleaned || sansDeny;
 }

@@ -201,6 +201,7 @@ import {
   listMusicPickOptions,
   musicAskListenOnly,
   musicAskShowKind,
+  musicAskStyleWithContext,
   musicSelectOfferLine,
   randomMusicSeed,
   resolveMusicAsk,
@@ -904,7 +905,7 @@ export default function ChatPanel({
     if (firstLive && alreadySpoken && speechLeadDiverged(reply, alreadySpoken.text)) {
       stopSpeaking();
     } else if (firstLive && alreadySpoken) {
-      if (mv === 'dance') {
+      if (mv === 'dance' && !isListenOnlyPerformance()) {
         // Dance body starts on library-clip playing (beginShow), not here.
         beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
           const rest = speechRemainder(reply, alreadySpoken.text);
@@ -926,7 +927,7 @@ export default function ChatPanel({
       beginShow('song', 9300, mood, laughCountRef.current, false, style);
       return '';
     }
-    if (mv === 'dance') {
+    if (mv === 'dance' && !isListenOnlyPerformance()) {
       beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
         speak(reply, characterId, lang, contentHints, undefined, intensity, storyRate);
       });
@@ -1401,6 +1402,7 @@ export default function ChatPanel({
         // encouragement — no move-by-move cue sync (hard to keep in time).
         exerciseRef.current = null;
         triggerMove('taichi');
+        holdMove(14_000);
         sayLocal(
           lang === 'zh'
             ? '好，跟我一起打一段太极——慢慢来，呼吸跟上就好，你很棒！'
@@ -1469,6 +1471,8 @@ export default function ChatPanel({
       if (ask.mode === 'random' && (ask.kind === 'music' || ask.kind === 'song' || ask.kind === 'dance')) {
         setMusicPicks(null);
         perfCountRef.current += 1;
+        const priorUser = [...history].reverse().find((m) => m.role === 'user')?.content;
+        const styleForBed = ask.style ?? musicAskStyleWithContext(text, priorUser);
         const showKind = musicAskShowKind(ask.kind);
         beginShow(
           showKind,
@@ -1476,7 +1480,7 @@ export default function ChatPanel({
           undefined,
           randomMusicSeed(),
           ask.kind === 'music',
-          ask.style,
+          styleForBed,
           undefined,
           undefined,
           musicAskListenOnly(ask.kind),
@@ -2231,7 +2235,7 @@ export default function ChatPanel({
           users who would rather not talk or type — especially on iPhone.
           Hidden in Story Mode so the room does not feel like chat skill chrome. */}
       <div className="relative z-10 flex w-full flex-col gap-1.5">
-        {!loadStorySession() && (
+        {!loadStorySession() && !musicPicks?.length && (
           <DemoPhaseRail
             lang={lang}
             orderSeed={demoPhaseOrderSeed}

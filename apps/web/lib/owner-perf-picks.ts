@@ -186,15 +186,6 @@ export function pickOwnerStreamTrack(
     seen.add(t.id);
     tracks.push(t);
   }
-  if (!tracks.length && style) {
-    for (const code of codes) {
-      const t = streamTrackById(code);
-      if (t && !seen.has(t.id)) {
-        seen.add(t.id);
-        tracks.push(t);
-      }
-    }
-  }
   if (!tracks.length) return null;
   const idx = Math.abs(n) % tracks.length;
   return tracks[idx] ?? null;
