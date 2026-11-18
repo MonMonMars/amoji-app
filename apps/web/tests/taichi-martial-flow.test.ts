@@ -13,6 +13,16 @@ describe('taichi demo / idle rail (lib_C121)', () => {
     expect(canvas).toMatch(/taichi:\s*'lib_C121'/);
   });
 
+
+  it('maps kung fu move to idle-rail lib_C120', () => {
+    expect(canvas).toMatch(/kungfu:\s*'lib_C120'/);
+  });
+
+  it('preloads martial flow VRMA sources', () => {
+    expect(canvas).toContain('martialPerfClipSources');
+    expect(canvas).toContain('markMartialFlowClipLoaded');
+  });
+
   it('does not plant-lock martial tai chi at VRMA load', () => {
     expect(canvas).toContain('idlePlantLock');
     expect(canvas).toMatch(/rebaseClipHips\(clip,\s*idlePlantLock\)/);

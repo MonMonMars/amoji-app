@@ -32,6 +32,8 @@ import {
 import { pokeSectionBodyReaction, resolvePokeSection, type PokeSection, type PokeSectionId } from '../lib/poke-zones';
 import { clipFreesFeet, collectPlantRest, pinPlantedClipTracks } from '../lib/vrm/plant-feet';
 import { dancePerfClipSources } from '../lib/dance-clip-sources';
+import { markMartialFlowClipLoaded } from '../lib/martial-speak-guard';
+import { martialPerfClipSources } from '../lib/martial-clip-sources';
 import { beatAlignedVrmaTime, timeScaleForProfile } from '../lib/performance-motion';
 import { isLibraryClipAudible, libraryBedPlaybackSec } from '../lib/music';
 import { playableIdles } from '../lib/idle-library';
@@ -760,6 +762,7 @@ export default function CompanionCanvas({
       // Dance shortlist lib_C* — local VRMA when converted; interim Mixamo-class remotes for C03/C61/C62/C110.
       // Rokoko C112–C128 / C09 / C60 stay local-only until FBX→VRMA (see DEFERRED_DANCE_VRMA.md).
       ...dancePerfClipSources(ANIM_MIRROR),
+      ...martialPerfClipSources(ANIM_MIRROR),
     ];
     const TOTAL_CLIPS = IDLE_SOURCES.length + IDLE_PICKS.length + PERF_SOURCES.length;
     const clips = new Map<string, THREE.AnimationClip>();
@@ -792,8 +795,7 @@ export default function CompanionCanvas({
       jump: 'Jump',
       dance: 'Dance',
       sing: 'Sing',
-      kungfu: 'Punch',
-      // Idle-rail martial tai chi (lib_C121) — general flow, not cue-synced.
+      kungfu: 'lib_C120',
       taichi: 'lib_C121',
       piano: 'Piano',
       violin: 'Violin',
@@ -1248,7 +1250,10 @@ export default function CompanionCanvas({
               // Idle-only: crush VRMA thrash + baked sky-look before mixer play.
               if (IDLE_IDS.has(src.id)) dampenIdleClipAmplitude(clip);
               if (!clipFreesFeet(src.id)) pinPlantedClipTracks(clip, plantRest);
-              if (clip.tracks.length) clips.set(src.id, clip);
+              if (clip.tracks.length) {
+                clips.set(src.id, clip);
+                markMartialFlowClipLoaded(src.id);
+              }
               // r103: record which bones this clip drives, so the avatar can
               // leave them to the mixer. Track names arrive as PropertyBinding
               // paths ??`Bone.quaternion`, `.Bone.quaternion`, or

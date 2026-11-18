@@ -94,6 +94,13 @@ import { preferLiveReply, worldBlock } from './live-tools';
 import { userAsksForRecipe } from './recipe-reply';
 import { replyLooksNonsense, STRICT_REPLY_APPENDIX } from './reply-sanity';
 import { shapeCompanionReply } from './reply-shape';
+import { detectExercise, type ExLang } from './exercises';
+import {
+  martialFlowClipArmed,
+  martialLlmSystemAppendix,
+  scrubUnsyncedMartialProse,
+  type MartialFlowKind,
+} from './martial-speak-guard';
 import { wantsLongCompanionReply } from './topic-suggestions';
 import { wantsStoryTurn } from './story-reply';
 import {
@@ -1111,6 +1118,8 @@ interface SanityContext {
   lastUser: string;
   detailed: boolean;
   contentContinuing?: boolean;
+  martialKind?: MartialFlowKind | null;
+  martialArmed?: boolean;
 }
 
 function sanityOpts(ctx: SanityContext) {
@@ -1169,6 +1178,14 @@ function packageReply(
   if (contentReplyIsTeaser(reply, ctx.lastUser, ctx.world) && ctx.worldSpoken?.trim()) {
     reply = scrubLiveFactsSpoken(ctx.worldSpoken);
   }
+  if (ctx.martialKind) {
+    reply = scrubUnsyncedMartialProse(
+      reply,
+      ctx.martialKind,
+      ctx.martialArmed ?? false,
+      (ctx.language ?? 'en') as ExLang,
+    );
+  }
   return { ...done, reply };
 }
 
@@ -1197,12 +1214,21 @@ export function resolveLongTalkKind(
   });
 }
 
+function resolveMartialFlowKind(lastUser: string, demoPhaseId?: string): MartialFlowKind | null {
+  if (demoPhaseId === 'kungfu' || demoPhaseId === 'taichi') return demoPhaseId;
+  const ex = detectExercise(lastUser);
+  if (ex === 'kungfu' || ex === 'taichi') return ex;
+  return null;
+}
+
 export async function clientChat(
   messages: ChatMessage[],
   opts?: ClientChatOptions,
 ): Promise<ClientChatResult> {
   const recent = trimHistoryForPrompt(messages);
   const lastUser = recent[recent.length - 1]?.content ?? '';
+  const martialKind = resolveMartialFlowKind(lastUser, opts?.demoPhaseId);
+  const martialArmed = martialKind ? martialFlowClipArmed(martialKind) : false;
   const longKind = resolveLongTalkKind(lastUser, opts);
   const replyMode = resolveReplyMode(lastUser, {
     persona: opts?.persona,
@@ -1232,7 +1258,10 @@ export async function clientChat(
     : '';
   // Length + emotion chart (reply-mode); embeds long-talk structure when needed.
   const modeBlock = `\n${replyModeSystemBlock(replyMode, opts?.language)}`;
-  const system = `${BASE_SYSTEM}${oneTopicAppendix}${continuationBlock}\nReply in speakable sentences only. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${modeBlock}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
+  const martialBlock = martialKind
+    ? `\n${martialLlmSystemAppendix(martialKind, martialArmed, opts?.language === 'yue')}`
+    : '';
+  const system = `${BASE_SYSTEM}${oneTopicAppendix}${continuationBlock}${martialBlock}\nReply in speakable sentences only. NEVER show chain-of-thought, plans, analysis, markdown, code, or emotion labels in the prose. No "the user wants". Never type hehe/haha/hey-hey. The only machine tag is the final [emotion:{...}] line — weight real feelings 0.7–1.0 when strong so voice can carry them.\n${languageBlock(opts?.language)}${modeBlock}${opts?.persona ? `\nPersona: ${opts.persona}` : ''}${opts?.memory ? `\n${opts.memory}` : ''}${worldBlock(opts?.world)}`;
   const maxTokens = maxTokensForReplyMode(
     replyMode,
     (recipeDetail || contentContinuing) && replyMode.id === 'casual',
@@ -1260,6 +1289,8 @@ export async function clientChat(
     lastUser,
     detailed,
     contentContinuing,
+    martialKind,
+    martialArmed,
   };
   const finalize = (raw: string) =>
     packageReply(raw, {
