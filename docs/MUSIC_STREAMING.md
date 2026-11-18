@@ -6,7 +6,7 @@ Sing, dance, and piano use three layers:
 
 1. **Original procedural WebAudio** themes (`apps/web/lib/music.ts`) — including style aliases (`pop`, `jazz`, `lofi`, `hiphop`, `electronic`, `ballad`, `rock`, `cantopop`).
 2. **Bundled CC0 clips** under `apps/web/public/audio/` (`performance-clips.ts`, `LIBRARY.md`).
-3. **Royalty-free stream previews** from Mixkit Free Stock Music (`music-catalog.ts`) when the user names a genre (e.g. “play jazz”, “粵語歌”, “lofi”, “J-pop” / `jpop`). Owner catalog ids **MV039–MV068** (30 upbeat J-pop / city-pop / anime-style beds) live in `music-jpop-vault.ts`.
+3. **Royalty-free stream previews** from Mixkit Free Stock Music (`music-catalog.ts`) when the user names a genre (e.g. “play jazz”, “粵語歌”, “lofi”, “J-pop” / `jpop`, **American pop** / `uspop`). Owner catalog ids **MV039–MV098** (60 Mixkit beds: J-pop packs in `music-jpop-vault.ts` + `music-jpop-vault-v2.ts`, US pop in `music-us-pop-vault.ts`; registry in `music-mv-registry.ts`). Reserved legacy slot **MV001–MV038**; expansion **MV069–MV083** (JP), **MV084–MV098** (US).
 
 TTS karaoke ditties live in `songs.ts` (original lyrics; no third-party audio).
 

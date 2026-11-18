@@ -5,7 +5,7 @@ import {
   CMA_REACTION_OWNER_WANT_CODES,
 } from '../lib/cma-reaction-gallery';
 import { assertCuratedRailValid } from '../lib/idle-curated-rail';
-import { MV_JPOP_COUNT } from '../lib/music-jpop-vault';
+import { MV_VAULT_COUNT } from '../lib/music-mv-registry';
 import { STORY_CATALOG_COUNT } from '../lib/story-catalog';
 import {
   OWNER_CMA_WANT,
@@ -46,12 +46,12 @@ describe('owner-resource-manifest', () => {
     expect(stRows.some((e) => e.id === 'ST038')).toBe(true);
   });
 
-  it('buildOwnerResourceIndex lists every MV J-pop stream row', () => {
+  it('buildOwnerResourceIndex lists every MV vault stream row', () => {
     const index = buildOwnerResourceIndex();
     const mvRows = index.filter((e) => e.type === 'music-stream' && e.id.startsWith('MV'));
-    expect(mvRows.length).toBe(MV_JPOP_COUNT);
+    expect(mvRows.length).toBe(MV_VAULT_COUNT);
     expect(mvRows.some((e) => e.id === 'MV039')).toBe(true);
-    expect(mvRows.some((e) => e.id === 'MV068')).toBe(true);
+    expect(mvRows.some((e) => e.id === 'MV098')).toBe(true);
   });
 
   it('buildOwnerResourceIndex includes every Want code once', () => {
