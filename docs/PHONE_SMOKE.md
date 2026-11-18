@@ -94,12 +94,45 @@ Tick on a real phone (prefer iPhone Safari). **Mandatory once:** hard refresh, t
 - [ ] Poke zone SFX match Want list ([`SFX_WANT_LIST.md`](./SFX_WANT_LIST.md))
 - [ ] Want / Skip in `/sfx-gallery` still works
 
-## Agent pre-checks (2026-11-17 ~18:40 HKT)
+## Post–r254 Pixel train (after merge **#528→#543** to `main`)
+
+Hard-refresh until live **`revision.txt`** ≥ **r2026-11-18.254** (one bump per merged PR). Use [`AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md`](./AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md) merge order.
+
+### After voice stack (#528 + #529)
+
+- [ ] Card grid **▶** speaks on **yue / zh / ja / en**; male row sounds male on **default speakers**
+- [ ] No robot+female double on first card tap
+
+### After chat + music (#523 + #522)
+
+- [ ] Interrupt mid-reply → TTS stops; **new topic** does not false-wipe unrelated memory
+- [ ] End a sing/dance/listen session → ask for generic 「播音樂」→ bed plays (mixer not dead)
+
+### After music allowlist + catalog (#540 + #541)
+
+- [ ] Owner-resources **Music** tab: **MV069+** rows preview/play (Mixkit CDN or shipped mp3)
+- [ ] Performance listen uses **allowlisted MV** only — ad-hoc Mixkit genre rows do not hijack 「播爵士」
+- [ ] Hash routes work: `#performance` · `#mixkit-streams` · `#voice-catalog` · `#idle`
+- [ ] CC0 / bed mp3 rows under `amoji-public-serve/audio/` audibly scrub in picker
+
+### After idle/poke 採用 (#543)
+
+- [ ] Export **採用** on idle rail #5 / #10 in picker → same rails enabled in chat idle rotation
+- [ ] Poke CMA **Want** rows still match `SFX_WANT_LIST.md` on device
+- [ ] `ownerCalmIdleClip` honors pin without Quaternius remap on refresh
+
+### Optional docs tail (#531)
+
+- [ ] [`OWNER_RESOURCE_LIBRARY.md`](./OWNER_RESOURCE_LIBRARY.md) claims match live Pages URLs (no 404 stub)
+
+---
+
+## Agent pre-checks (2026-11-18 ~17:42 UTC)
 
 | Check | Result |
 | --- | --- |
-| `main` tip | `bbf7d918` (#486) · **`r2026-11-17.191`** · hard-refresh for SW cache |
-| Outstanding (owner) | Card · news · **R10–R13 not Done** · nonsense · captions · SFX Want |
-| Agent actionable code | **0** — queue clear; phone smoke owns R10–R13 |
-| Closed queue | #469 weather route (already on `main`) |
+| `main` tip | **`r2026-11-18.237`** (#517–#520 on tip; deploy may lag) |
+| Pixel train CI | **#540** 🟢 after `f6cc0df2` · **#541** 🟢 · **#543** 🟢 |
+| Outstanding (owner) | Card · news · **R10–R13 not Done** until post-r254 pass above |
+| Superseded PRs | **#536 #537 #533** → #541 · **#524** → #543 (status only — do not merge dupes) |
 | Hold spikes | #1 / #20 only (do not merge) |

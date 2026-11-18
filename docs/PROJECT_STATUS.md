@@ -1,6 +1,6 @@
 # Amoji project status board
 
-**Generated:** 2026-11-18 17:20 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-19 01:42 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
@@ -99,6 +99,13 @@ Handoff detail: [`AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md`](./AGENT_FINISH_PIXE
 | [#520](https://github.com/MonMonMars/amoji-app/pull/520) | Demo weather+news left + audible chip taps **r230** |
 | [#517](https://github.com/MonMonMars/amoji-app/pull/517) | Owner-resources Mixkit scrub + motion previews **r237** |
 
+### Stale / superseded (close when convenient — no merge)
+
+| PR | Superseded by | Note |
+| --- | --- | --- |
+| [#536](https://github.com/MonMonMars/amoji-app/pull/536) · [#537](https://github.com/MonMonMars/amoji-app/pull/537) · [#533](https://github.com/MonMonMars/amoji-app/pull/533) | **#541** | Hash tabs + inventory + GIF uniqueness → full catalog |
+| [#524](https://github.com/MonMonMars/amoji-app/pull/524) | **#543** | Honor motion picks → idle/poke 採用 runtime |
+
 ### Agent branches (in flight)
 
 | Workstream | Branch hint | Notes |
@@ -147,6 +154,7 @@ Unchanged — licensed music, Stripe live, PH, Search Console, modular GLBs, spi
 
 | Document | Path | Status |
 | --- | --- | --- |
-| This status board | `docs/PROJECT_STATUS.md` | Refreshed **2026-11-18 21:55 HKT** post-train **#518–#520/#517** · **r237** |
+| Pixel handoff | `docs/AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md` | r248–r255 ladder · **#540 CI green** |
+| This status board | `docs/PROJECT_STATUS.md` | Refreshed **2026-11-19 01:42 HKT** · train **#528–#543** CI green on critical path |
 | Sing/dance pipeline | `docs/SING_DANCE_PIPELINE.md` | PerformanceSession on **r214** |
 | Phone smoke | `docs/PHONE_SMOKE.md` | Owner verify |

@@ -12,9 +12,9 @@
 | **r249** | [#529](https://github.com/MonMonMars/amoji-app/pull/529) | `cursor/card-voice-hotfix-9448` | 🟢 |
 | **r250** | [#523](https://github.com/MonMonMars/amoji-app/pull/523) | `cursor/chat-interrupt-new-topic-0340-0eac` | 🟢 |
 | **r251** | [#522](https://github.com/MonMonMars/amoji-app/pull/522) | `cursor/music-playback-regression-0340-0eac` | 🟢 |
-| **r252** | [#540](https://github.com/MonMonMars/amoji-app/pull/540) | `cursor/jpop-royalty-performance-0340-0eac` | fixed typecheck 🟡 |
-| **r253** | [#541](https://github.com/MonMonMars/amoji-app/pull/541) | `cursor/owner-resources-full-catalog-0340-0eac` | Pages beds + verify 🟡 |
-| **r254** | [#543](https://github.com/MonMonMars/amoji-app/pull/543) | `cursor/idle-poke-voice-fix-0340-0eac` | owner picks 🟡 |
+| **r252** | [#540](https://github.com/MonMonMars/amoji-app/pull/540) | `cursor/jpop-royalty-performance-0340-0eac` | 🟢 `f6cc0df2` allowlist-only streams |
+| **r253** | [#541](https://github.com/MonMonMars/amoji-app/pull/541) | `cursor/owner-resources-full-catalog-0340-0eac` | 🟢 `ebe5f2fa` beds + vault verify |
+| **r254** | [#543](https://github.com/MonMonMars/amoji-app/pull/543) | `cursor/idle-poke-voice-fix-0340-0eac` | 🟢 `692f541d` owner 採用 runtime |
 | **r255** | [#531](https://github.com/MonMonMars/amoji-app/pull/531) | `cursor/owner-resources-pages-claims-9cbf` | docs-only 🟢 |
 
 **Clashes cleared:** r238 (#522/#536/#543) → r251/r254; r240 (#540/#541) → r252/r253; r242 (#529/#531) → r249/r255.
@@ -62,11 +62,15 @@ Runtime: `owner-picker-decisions.ts` + `owner-picker-ship-set.ts`. See `docs/OWN
 
 Full checklist: `docs/PHONE_SMOKE.md`
 
-## CI greens first (open PRs #522–#543, scan 2026-11-18)
+## CI greens first (open PRs #522–#543, scan 2026-11-18 ~17:42 UTC)
 
-🟢 #529 #528 #523 #522 #543 #537 #536 #534 #533 #532 #527 …  
-🔴 fixed this pass: **#540** (duplicate export), **#541** (missing bed mp3)  
-Still red / lower priority: #538 #539 #535 #530 #526 #521 — not on Pixel critical path
+**Pixel critical path — all green:** #528 #529 #522 #523 #540 #541 #543 · #544 handoff docs.
+
+**Superseded (do not merge / close when convenient):** #536 #537 #533 → **#541**; #524 → **#543** (no rebase needed unless owner wants diff audit).
+
+**Still red / off-train:** #538 #539 (motion thumb + index docs) · #530 #535 · #524 (idle honor motion — redundant vs #543).
+
+**#540 fixes this pass:** `MusicAllowlistConfig` — legacy Mixkit rows without `ownerCode` no longer stream; vault + `music-ask` tests aligned; owner HTML/idle tests restored to `main` (belong on #541/#543).
 
 ## Suggested PR titles (if not updated via UI)
 
