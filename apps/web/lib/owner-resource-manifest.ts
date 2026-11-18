@@ -51,7 +51,7 @@ export interface OwnerResourceEntry {
   usedBy: string;
   status: OwnerResourceStatus;
   notes?: string;
-  previewKind?: 'gif' | 'vrma' | 'placeholder';
+  previewKind?: 'gif' | 'webp' | 'mp4' | 'vrma' | 'placeholder';
   previewPath?: string;
 }
 
