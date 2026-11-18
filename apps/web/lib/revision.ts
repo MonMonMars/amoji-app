@@ -430,7 +430,8 @@
 // r2026-11-18.212: listen-only BGM phase — generic music asks keep calm idle (no dance VRMA).
 // r2026-11-18.213: beat-aligned VRMA start from library bed playback clock (library-clip playing).
 // r2026-11-18.214: unified PerformanceSession gate (listen/sing/dance/end) + coordinated BGM fade-out.
-export const APP_REVISION = 'r2026-11-18.214';
+// r2026-11-18.215: owner-catalog CD### + MV099–118 world vault; owner-resources demo/news tabs.
+export const APP_REVISION = 'r2026-11-18.215';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

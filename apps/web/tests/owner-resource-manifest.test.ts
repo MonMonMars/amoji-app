@@ -5,7 +5,8 @@ import {
   CMA_REACTION_OWNER_WANT_CODES,
 } from '../lib/cma-reaction-gallery';
 import { assertCuratedRailValid } from '../lib/idle-curated-rail';
-import { MV_VAULT_COUNT } from '../lib/music-mv-registry';
+import { MV_VAULT_COUNT, HIGHEST_MV_OWNER_CODE } from '../lib/music-mv-registry';
+import { MV_WORLD_COUNT } from '../lib/music-world-vault';
 import { STORY_CATALOG_COUNT } from '../lib/story-catalog';
 import {
   OWNER_CMA_WANT,
@@ -49,9 +50,10 @@ describe('owner-resource-manifest', () => {
   it('buildOwnerResourceIndex lists every MV vault stream row', () => {
     const index = buildOwnerResourceIndex();
     const mvRows = index.filter((e) => e.type === 'music-stream' && e.id.startsWith('MV'));
-    expect(mvRows.length).toBe(MV_VAULT_COUNT);
+    expect(mvRows.length).toBe(MV_VAULT_COUNT + MV_WORLD_COUNT);
     expect(mvRows.some((e) => e.id === 'MV039')).toBe(true);
     expect(mvRows.some((e) => e.id === 'MV098')).toBe(true);
+    expect(mvRows.some((e) => e.id === HIGHEST_MV_OWNER_CODE)).toBe(true);
   });
 
   it('buildOwnerResourceIndex includes every Want code once', () => {

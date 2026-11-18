@@ -7,6 +7,7 @@
 import { JPOP_VAULT_STREAM_TRACKS } from './music-jpop-vault';
 import { JPOP_VAULT_V2_STREAM_TRACKS } from './music-jpop-vault-v2';
 import { USPOP_VAULT_STREAM_TRACKS } from './music-us-pop-vault';
+import { WORLD_VAULT_STREAM_TRACKS } from './music-world-vault';
 
 export type MusicStyleId =
   | 'pop'
@@ -255,6 +256,7 @@ export const STREAM_TRACKS: readonly StreamTrack[] = [
   ...JPOP_VAULT_STREAM_TRACKS,
   ...JPOP_VAULT_V2_STREAM_TRACKS,
   ...USPOP_VAULT_STREAM_TRACKS,
+  ...WORLD_VAULT_STREAM_TRACKS,
 ];
 
 /** Local performance-clip style strings that pair with a MusicStyleId. */
