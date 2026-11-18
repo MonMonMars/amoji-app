@@ -423,7 +423,8 @@
 // r2026-11-17.205: Pages docs copy rewrites amoji-public-serve/ → ../ (no artifact symlink bloat).
 // r2026-11-17.206: owner-resources Pages asset verify + play URL resolver (../audio + voice-clips from out/).
 // r2026-11-17.207: MV039–MV068 J-pop Mixkit vault beds (owner-resources Music tab).
-export const APP_REVISION = 'r2026-11-17.207';
+// r2026-11-18.208: ST001–ST038 PD fairy-tale vault + owner-resources Stories tab.
+export const APP_REVISION = 'r2026-11-18.208';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

@@ -6,11 +6,16 @@
 // — not a flat short summary.
 
 import type { Lang } from './prefs';
+import { CLASSIC_FAIRY_TALES_VAULT } from './classic-fairy-tales-vault';
+
+const taleOwnerCode = (n: number) => `ST${String(n).padStart(3, '0')}`;
 
 export type TaleLengthTier = 'short' | 'medium' | 'long' | 'veryLong';
 
 export type ClassicFairyTale = {
   id: string;
+  /** Pixel owner-resources code (ST###). */
+  ownerCode?: string;
   /** Stable slug for rotation / tests. */
   slug: string;
   length: TaleLengthTier;
@@ -95,8 +100,9 @@ export function classifySpokenLength(text: string): TaleLengthTier {
  * Bundled catalog — always available offline. Length tiers mix short through
  * very long; every tale ships en / yue / zh / ja with emotional spoken prose.
  */
-export const CLASSIC_FAIRY_TALES: readonly ClassicFairyTale[] = [
+const CLASSIC_FAIRY_TALES_CORE_LIST: readonly ClassicFairyTale[] = [
   {
+    ownerCode: taleOwnerCode(1),
     id: 'red-riding-hood-short',
     slug: 'little-red-riding-hood',
     length: 'short',
@@ -121,6 +127,7 @@ export const CLASSIC_FAIRY_TALES: readonly ClassicFairyTale[] = [
     },
   },
   {
+    ownerCode: taleOwnerCode(2),
     id: 'three-pigs-short',
     slug: 'three-little-pigs',
     length: 'short',
@@ -145,6 +152,7 @@ export const CLASSIC_FAIRY_TALES: readonly ClassicFairyTale[] = [
     },
   },
   {
+    ownerCode: taleOwnerCode(3),
     id: 'ugly-duckling-medium',
     slug: 'ugly-duckling',
     length: 'medium',
@@ -169,6 +177,7 @@ export const CLASSIC_FAIRY_TALES: readonly ClassicFairyTale[] = [
     },
   },
   {
+    ownerCode: taleOwnerCode(4),
     id: 'cinderella-medium',
     slug: 'cinderella',
     length: 'medium',
@@ -193,6 +202,7 @@ export const CLASSIC_FAIRY_TALES: readonly ClassicFairyTale[] = [
     },
   },
   {
+    ownerCode: taleOwnerCode(5),
     id: 'hansel-gretel-long',
     slug: 'hansel-and-gretel',
     length: 'long',
@@ -217,6 +227,7 @@ export const CLASSIC_FAIRY_TALES: readonly ClassicFairyTale[] = [
     },
   },
   {
+    ownerCode: taleOwnerCode(6),
     id: 'sleeping-beauty-long',
     slug: 'sleeping-beauty',
     length: 'long',
@@ -241,6 +252,7 @@ export const CLASSIC_FAIRY_TALES: readonly ClassicFairyTale[] = [
     },
   },
   {
+    ownerCode: taleOwnerCode(7),
     id: 'snow-white-verylong',
     slug: 'snow-white',
     length: 'veryLong',
@@ -265,6 +277,7 @@ export const CLASSIC_FAIRY_TALES: readonly ClassicFairyTale[] = [
     },
   },
   {
+    ownerCode: taleOwnerCode(8),
     id: 'little-mermaid-verylong',
     slug: 'little-mermaid',
     length: 'veryLong',
@@ -289,6 +302,20 @@ export const CLASSIC_FAIRY_TALES: readonly ClassicFairyTale[] = [
     },
   },
 ];
+
+/** Bundled core (ST001–ST008) + vault (ST009+). */
+export const CLASSIC_FAIRY_TALES: readonly ClassicFairyTale[] = [
+  ...CLASSIC_FAIRY_TALES_CORE_LIST,
+  ...CLASSIC_FAIRY_TALES_VAULT,
+];
+
+export function taleByOwnerCode(
+  code: string,
+  catalog: readonly ClassicFairyTale[] = CLASSIC_FAIRY_TALES,
+): ClassicFairyTale | null {
+  const norm = code.trim().toUpperCase();
+  return catalog.find((t) => t.ownerCode === norm) ?? null;
+}
 
 export type ClassicFairyTaleStats = {
   total: number;

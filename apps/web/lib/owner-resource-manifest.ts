@@ -25,6 +25,8 @@ import {
 } from './voice-catalog';
 import { STREAM_TRACKS } from './music-catalog';
 import { HIGHEST_MV_OWNER_CODE, MV_JPOP_COUNT } from './music-jpop-vault';
+import { CLASSIC_FAIRY_TALES } from './classic-fairy-tales';
+import { highestStoryOwnerCode } from './story-catalog';
 import { PERFORMANCE_CLIPS } from './performance-clips';
 import { RECORDED_POKE_ZONE } from './voice-clips';
 
@@ -180,6 +182,18 @@ export function buildOwnerResourceIndex(): OwnerResourceEntry[] {
       usedBy: 'music-catalog.ts · music-jpop-vault.ts',
       status: 'wired',
       notes: `${t.title} · ${t.license} · through ${HIGHEST_MV_OWNER_CODE} (${MV_JPOP_COUNT} J-pop beds)`,
+    });
+  }
+
+  for (const tale of CLASSIC_FAIRY_TALES) {
+    if (!tale.ownerCode) continue;
+    out.push({
+      type: 'story-fairy-tale',
+      id: tale.ownerCode,
+      pathOrUrl: `/stories/classic-fairy-tales.json#${tale.id}`,
+      usedBy: 'classic-fairy-tales.ts · ChatPanel Story chip',
+      status: 'wired',
+      notes: `${tale.title.en} · ${tale.length} · ${highestStoryOwnerCode()} cap`,
     });
   }
 

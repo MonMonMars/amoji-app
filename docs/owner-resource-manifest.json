@@ -1,6 +1,6 @@
 {
   "version": "2026-11-16-owner-resource-v1",
-  "generatedAt": "2026-11-18T00:38:02.270Z",
+  "generatedAt": "2026-11-18T01:50:59.079Z",
   "wantCastRelease": "free-library-want-2026-10-12",
   "stats": {
     "total": 125,
@@ -2436,6 +2436,310 @@
       "usedBy": "music-catalog.ts · music-jpop-vault.ts",
       "status": "wired",
       "notes": "Midnight Funk · Mixkit-Free · through MV068 (30 J-pop beds)"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST001",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#red-riding-hood-short",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "Little Red Riding Hood · short · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST002",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#three-pigs-short",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Three Little Pigs · short · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST003",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#ugly-duckling-medium",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Ugly Duckling · medium · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST004",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#cinderella-medium",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "Cinderella · medium · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST005",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#hansel-gretel-long",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "Hansel and Gretel · long · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST006",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#sleeping-beauty-long",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "Sleeping Beauty · long · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST007",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#snow-white-verylong",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "Snow-White · veryLong · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST008",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#little-mermaid-verylong",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Little Mermaid · veryLong · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST009",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#jack-beanstalk-short",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "Jack and the Beanstalk · short · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST010",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#rapunzel-medium",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "Rapunzel · medium · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST011",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#rumpelstiltskin-medium",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "Rumpelstiltskin · medium · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST012",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#thumbelina-medium",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "Thumbelina · medium · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST013",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#emperor-clothes-short",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Emperor's New Clothes · short · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST014",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#pea-princess-short",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Princess and the Pea · short · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST015",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#goldilocks-short",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "Goldilocks and the Three Bears · short · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST016",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#puss-boots-medium",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "Puss in Boots · medium · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST017",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#frog-prince-medium",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Frog Prince · medium · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST018",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#bremen-musicians-medium",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Bremen Town Musicians · medium · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST019",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#fisherman-wife-long",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Fisherman and His Wife · long · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST020",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#shoemaker-elves-short",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Elves and the Shoemaker · short · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST021",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#gingerbread-man-short",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Gingerbread Man · short · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST022",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#ali-baba-long",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "Ali Baba and the Forty Thieves · long · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST023",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#sinbad-long",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "Sindbad the Sailor · long · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST024",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#town-country-mouse-short",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Town Mouse and the Country Mouse · short · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST025",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#tortoise-hare-short",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Tortoise and the Hare · short · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST026",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#lion-mouse-short",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Lion and the Mouse · short · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST027",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#ant-grasshopper-short",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Ant and the Grasshopper · short · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST028",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#fox-grapes-short",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Fox and the Grapes · short · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST029",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#momotaro-long",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "Momotaro, the Peach Boy · long · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST030",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#crane-wife-long",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Crane Wife · long · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST031",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#urashima-long",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "Urashima Taro · long · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST032",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#kaguya-verylong",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "Princess Kaguya · veryLong · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST033",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#magic-brush-long",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Magic Paintbrush · long · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST034",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#cowherd-weaver-medium",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Cowherd and the Weaver Girl · medium · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST035",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#meng-jiangnu-long",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "Meng Jiangnu and the Great Wall · long · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST036",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#monkey-king-verylong",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Monkey King · veryLong · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST037",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#stonecutter-medium",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Stonecutter · medium · ST038 cap"
+    },
+    {
+      "type": "story-fairy-tale",
+      "id": "ST038",
+      "pathOrUrl": "/stories/classic-fairy-tales.json#twelve-dancing-princesses-long",
+      "usedBy": "classic-fairy-tales.ts · ChatPanel Story chip",
+      "status": "wired",
+      "notes": "The Twelve Dancing Princesses · long · ST038 cap"
     }
   ]
 }

@@ -130,10 +130,11 @@
       </div>
       <textarea id="exportOut" readonly placeholder="Export appears here…"></textarea>
     </section>
-    <div class="grid-stats"><div class="stat"><div class="n">142</div><div class="l">Music rows</div></div><div class="stat"><div class="n">37</div><div class="l">Poke rows (core)</div></div><div class="stat"><div class="n">242</div><div class="l">Idle rows</div></div><div class="stat"><div class="n">841</div><div class="l">All picker rows</div></div></div>
+    <div class="grid-stats"><div class="stat"><div class="n">142</div><div class="l">Music rows</div></div><div class="stat"><div class="n">38</div><div class="l">Story rows</div></div><div class="stat"><div class="n">37</div><div class="l">Poke rows (core)</div></div><div class="stat"><div class="n">242</div><div class="l">Idle rows</div></div><div class="stat"><div class="n">879</div><div class="l">All picker rows</div></div></div>
     <p class="lede">Source of truth: <code>owner-picker-html-writer.ts</code> (this file) imports <code>performance-clips.ts</code>, <code>music-catalog.ts</code>, <code>poke-zones.ts</code>, <code>cma-reaction-gallery.ts</code>, <code>idle-library.ts</code>, <code>idle-curated-rail.ts</code>, <code>idle-owner-migrate.ts</code> (<code>amoji.idlePick.v6</code> / <code>amoji.idleEnabled.v6</code>), <code>amoji.cmaReactionSfx.picks.v1</code>, <code>owner-resource-manifest.ts</code>. Default idle clip: <code>IdleQuaterniusHuman</code>.</p>
     <nav class="tabs" aria-label="Resource categories">
       <button type="button" class="tab" data-tab="music" aria-selected="true">Music &amp; beds</button>
+      <button type="button" class="tab" data-tab="stories">Stories &amp; fairy tales</button>
       <button type="button" class="tab" data-tab="poke">Poke reactions</button>
       <button type="button" class="tab" data-tab="idle">Idle poses &amp; VRMA</button>
     </nav>
@@ -1719,6 +1720,395 @@
     </tr></tbody>
     </table></div>
     
+    </section>
+    <section id="panel-stories" class="tab-panel" data-section="stories" hidden>
+      <h2 id="stories">Stories &amp; fairy tales (ST###)</h2>
+      
+    <p class="lede">Spoken Story chip + long-read mode. Codes <code>ST001</code>…<code>ST038</code> map to <code>CLASSIC_FAIRY_TALES</code> (PD paraphrases, not Disney scripts).</p>
+    <div class="panel"><table>
+      <thead><tr><th>Keep</th><th>Ship</th><th>Title · ST code</th><th>Length</th><th>Locales</th><th>Slug</th><th>License</th><th>Tradition</th><th>id · source</th></tr></thead>
+      <tbody><tr class="row-in-use" data-in-use="1" data-id="ST001" data-st-code="ST001" data-label="Little Red Riding Hood" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST001" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>Little Red Riding Hood</strong><br/><code>ST001</code></td>
+      <td>short</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">little-red-riding-hood</span></td>
+      <td class="license-ok">PD</td>
+      <td>Charles Perrault / Brothers Grimm</td>
+      <td><code>red-riding-hood-short</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST002" data-st-code="ST002" data-label="The Three Little Pigs" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST002" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Three Little Pigs</strong><br/><code>ST002</code></td>
+      <td>short</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">three-little-pigs</span></td>
+      <td class="license-ok">PD</td>
+      <td>English folk tale (public domain)</td>
+      <td><code>three-pigs-short</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST003" data-st-code="ST003" data-label="The Ugly Duckling" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST003" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Ugly Duckling</strong><br/><code>ST003</code></td>
+      <td>medium</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">ugly-duckling</span></td>
+      <td class="license-ok">PD</td>
+      <td>Hans Christian Andersen</td>
+      <td><code>ugly-duckling-medium</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST004" data-st-code="ST004" data-label="Cinderella" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST004" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>Cinderella</strong><br/><code>ST004</code></td>
+      <td>medium</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">cinderella</span></td>
+      <td class="license-ok">PD</td>
+      <td>Charles Perrault</td>
+      <td><code>cinderella-medium</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST005" data-st-code="ST005" data-label="Hansel and Gretel" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST005" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>Hansel and Gretel</strong><br/><code>ST005</code></td>
+      <td>long</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">hansel-and-gretel</span></td>
+      <td class="license-ok">PD</td>
+      <td>Brothers Grimm</td>
+      <td><code>hansel-gretel-long</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST006" data-st-code="ST006" data-label="Sleeping Beauty" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST006" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>Sleeping Beauty</strong><br/><code>ST006</code></td>
+      <td>long</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">sleeping-beauty</span></td>
+      <td class="license-ok">PD</td>
+      <td>Charles Perrault / Brothers Grimm</td>
+      <td><code>sleeping-beauty-long</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST007" data-st-code="ST007" data-label="Snow-White" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST007" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>Snow-White</strong><br/><code>ST007</code></td>
+      <td>veryLong</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">snow-white</span></td>
+      <td class="license-ok">PD</td>
+      <td>Brothers Grimm</td>
+      <td><code>snow-white-verylong</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST008" data-st-code="ST008" data-label="The Little Mermaid" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST008" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Little Mermaid</strong><br/><code>ST008</code></td>
+      <td>veryLong</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">little-mermaid</span></td>
+      <td class="license-ok">PD</td>
+      <td>Hans Christian Andersen</td>
+      <td><code>little-mermaid-verylong</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST009" data-st-code="ST009" data-label="Jack and the Beanstalk" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST009" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>Jack and the Beanstalk</strong><br/><code>ST009</code></td>
+      <td>short</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">jack-and-the-beanstalk</span></td>
+      <td class="license-ok">PD</td>
+      <td>English folk tale (public domain)</td>
+      <td><code>jack-beanstalk-short</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST010" data-st-code="ST010" data-label="Rapunzel" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST010" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>Rapunzel</strong><br/><code>ST010</code></td>
+      <td>medium</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">rapunzel</span></td>
+      <td class="license-ok">PD</td>
+      <td>Brothers Grimm</td>
+      <td><code>rapunzel-medium</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST011" data-st-code="ST011" data-label="Rumpelstiltskin" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST011" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>Rumpelstiltskin</strong><br/><code>ST011</code></td>
+      <td>medium</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">rumpelstiltskin</span></td>
+      <td class="license-ok">PD</td>
+      <td>Brothers Grimm</td>
+      <td><code>rumpelstiltskin-medium</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST012" data-st-code="ST012" data-label="Thumbelina" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST012" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>Thumbelina</strong><br/><code>ST012</code></td>
+      <td>medium</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">thumbelina</span></td>
+      <td class="license-ok">PD</td>
+      <td>Hans Christian Andersen</td>
+      <td><code>thumbelina-medium</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST013" data-st-code="ST013" data-label="The Emperor's New Clothes" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST013" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Emperor's New Clothes</strong><br/><code>ST013</code></td>
+      <td>short</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">emperors-new-clothes</span></td>
+      <td class="license-ok">PD</td>
+      <td>Hans Christian Andersen</td>
+      <td><code>emperor-clothes-short</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST014" data-st-code="ST014" data-label="The Princess and the Pea" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST014" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Princess and the Pea</strong><br/><code>ST014</code></td>
+      <td>short</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">princess-and-the-pea</span></td>
+      <td class="license-ok">PD</td>
+      <td>Hans Christian Andersen</td>
+      <td><code>pea-princess-short</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST015" data-st-code="ST015" data-label="Goldilocks and the Three Bears" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST015" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>Goldilocks and the Three Bears</strong><br/><code>ST015</code></td>
+      <td>short</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">goldilocks</span></td>
+      <td class="license-ok">PD</td>
+      <td>English folk tale (public domain)</td>
+      <td><code>goldilocks-short</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST016" data-st-code="ST016" data-label="Puss in Boots" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST016" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>Puss in Boots</strong><br/><code>ST016</code></td>
+      <td>medium</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">puss-in-boots</span></td>
+      <td class="license-ok">PD</td>
+      <td>Charles Perrault</td>
+      <td><code>puss-boots-medium</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST017" data-st-code="ST017" data-label="The Frog Prince" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST017" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Frog Prince</strong><br/><code>ST017</code></td>
+      <td>medium</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">frog-prince</span></td>
+      <td class="license-ok">PD</td>
+      <td>Brothers Grimm</td>
+      <td><code>frog-prince-medium</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST018" data-st-code="ST018" data-label="The Bremen Town Musicians" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST018" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Bremen Town Musicians</strong><br/><code>ST018</code></td>
+      <td>medium</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">bremen-town-musicians</span></td>
+      <td class="license-ok">PD</td>
+      <td>Brothers Grimm</td>
+      <td><code>bremen-musicians-medium</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST019" data-st-code="ST019" data-label="The Fisherman and His Wife" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST019" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Fisherman and His Wife</strong><br/><code>ST019</code></td>
+      <td>long</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">fisherman-and-his-wife</span></td>
+      <td class="license-ok">PD</td>
+      <td>Brothers Grimm</td>
+      <td><code>fisherman-wife-long</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST020" data-st-code="ST020" data-label="The Elves and the Shoemaker" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST020" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Elves and the Shoemaker</strong><br/><code>ST020</code></td>
+      <td>short</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">elves-and-the-shoemaker</span></td>
+      <td class="license-ok">PD</td>
+      <td>Brothers Grimm</td>
+      <td><code>shoemaker-elves-short</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST021" data-st-code="ST021" data-label="The Gingerbread Man" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST021" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Gingerbread Man</strong><br/><code>ST021</code></td>
+      <td>short</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">gingerbread-man</span></td>
+      <td class="license-ok">PD</td>
+      <td>English folk</td>
+      <td><code>gingerbread-man-short</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST022" data-st-code="ST022" data-label="Ali Baba and the Forty Thieves" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST022" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>Ali Baba and the Forty Thieves</strong><br/><code>ST022</code></td>
+      <td>long</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">ali-baba</span></td>
+      <td class="license-ok">PD</td>
+      <td>Arabian Nights (public domain)</td>
+      <td><code>ali-baba-long</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST023" data-st-code="ST023" data-label="Sindbad the Sailor" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST023" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>Sindbad the Sailor</strong><br/><code>ST023</code></td>
+      <td>long</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">sinbad-the-sailor</span></td>
+      <td class="license-ok">PD</td>
+      <td>Arabian Nights (public domain)</td>
+      <td><code>sinbad-long</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST024" data-st-code="ST024" data-label="The Town Mouse and the Country Mouse" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST024" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Town Mouse and the Country Mouse</strong><br/><code>ST024</code></td>
+      <td>short</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">town-mouse-country-mouse</span></td>
+      <td class="license-ok">PD</td>
+      <td>Aesop (public domain)</td>
+      <td><code>town-country-mouse-short</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST025" data-st-code="ST025" data-label="The Tortoise and the Hare" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST025" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Tortoise and the Hare</strong><br/><code>ST025</code></td>
+      <td>short</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">tortoise-and-the-hare</span></td>
+      <td class="license-ok">PD</td>
+      <td>Aesop (public domain)</td>
+      <td><code>tortoise-hare-short</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST026" data-st-code="ST026" data-label="The Lion and the Mouse" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST026" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Lion and the Mouse</strong><br/><code>ST026</code></td>
+      <td>short</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">lion-and-the-mouse</span></td>
+      <td class="license-ok">PD</td>
+      <td>Aesop (public domain)</td>
+      <td><code>lion-mouse-short</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST027" data-st-code="ST027" data-label="The Ant and the Grasshopper" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST027" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Ant and the Grasshopper</strong><br/><code>ST027</code></td>
+      <td>short</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">ant-and-grasshopper</span></td>
+      <td class="license-ok">PD</td>
+      <td>Aesop (public domain)</td>
+      <td><code>ant-grasshopper-short</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST028" data-st-code="ST028" data-label="The Fox and the Grapes" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST028" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Fox and the Grapes</strong><br/><code>ST028</code></td>
+      <td>short</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">fox-and-grapes</span></td>
+      <td class="license-ok">PD</td>
+      <td>Aesop (public domain)</td>
+      <td><code>fox-grapes-short</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST029" data-st-code="ST029" data-label="Momotaro, the Peach Boy" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST029" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>Momotaro, the Peach Boy</strong><br/><code>ST029</code></td>
+      <td>long</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">momotaro</span></td>
+      <td class="license-ok">PD</td>
+      <td>Japanese folk (public domain)</td>
+      <td><code>momotaro-long</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST030" data-st-code="ST030" data-label="The Crane Wife" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST030" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Crane Wife</strong><br/><code>ST030</code></td>
+      <td>long</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">crane-wife</span></td>
+      <td class="license-ok">PD</td>
+      <td>Japanese folk (public domain)</td>
+      <td><code>crane-wife-long</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST031" data-st-code="ST031" data-label="Urashima Taro" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST031" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>Urashima Taro</strong><br/><code>ST031</code></td>
+      <td>long</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">urashima-taro</span></td>
+      <td class="license-ok">PD</td>
+      <td>Japanese folk (public domain)</td>
+      <td><code>urashima-long</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST032" data-st-code="ST032" data-label="Princess Kaguya" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST032" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>Princess Kaguya</strong><br/><code>ST032</code></td>
+      <td>veryLong</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">kaguya-hime</span></td>
+      <td class="license-ok">PD</td>
+      <td>Japanese folk (public domain)</td>
+      <td><code>kaguya-verylong</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST033" data-st-code="ST033" data-label="The Magic Paintbrush" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST033" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Magic Paintbrush</strong><br/><code>ST033</code></td>
+      <td>long</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">magic-paintbrush</span></td>
+      <td class="license-ok">PD</td>
+      <td>Chinese folk (public domain)</td>
+      <td><code>magic-brush-long</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST034" data-st-code="ST034" data-label="The Cowherd and the Weaver Girl" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST034" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Cowherd and the Weaver Girl</strong><br/><code>ST034</code></td>
+      <td>medium</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">cowherd-weaver</span></td>
+      <td class="license-ok">PD</td>
+      <td>Chinese folk (public domain)</td>
+      <td><code>cowherd-weaver-medium</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST035" data-st-code="ST035" data-label="Meng Jiangnu and the Great Wall" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST035" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>Meng Jiangnu and the Great Wall</strong><br/><code>ST035</code></td>
+      <td>long</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">meng-jiangnu</span></td>
+      <td class="license-ok">PD</td>
+      <td>Chinese folk (public domain)</td>
+      <td><code>meng-jiangnu-long</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST036" data-st-code="ST036" data-label="The Monkey King" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST036" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Monkey King</strong><br/><code>ST036</code></td>
+      <td>veryLong</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">monkey-king</span></td>
+      <td class="license-ok">PD</td>
+      <td>Chinese classic (public domain)</td>
+      <td><code>monkey-king-verylong</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST037" data-st-code="ST037" data-label="The Stonecutter" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST037" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Stonecutter</strong><br/><code>ST037</code></td>
+      <td>medium</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">stonecutter</span></td>
+      <td class="license-ok">PD</td>
+      <td>Japanese folk (public domain)</td>
+      <td><code>stonecutter-medium</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr><tr class="row-in-use" data-in-use="1" data-id="ST038" data-st-code="ST038" data-label="The Twelve Dancing Princesses" data-ref="apps/web/lib/classic-fairy-tales.ts:307">
+      <td><input type="checkbox" class="keep" checked aria-label="Keep ST038" /></td>
+      <td class="flags"><span class="tag in-use">classic-fairy-tales</span></td>
+      <td><strong>The Twelve Dancing Princesses</strong><br/><code>ST038</code></td>
+      <td>long</td>
+      <td>en · yue · zh · ja</td>
+      <td><span class="tag">twelve-dancing-princesses</span></td>
+      <td class="license-ok">PD</td>
+      <td>Brothers Grimm</td>
+      <td><code>twelve-dancing-princesses-long</code><br/><span class="ref">apps/web/lib/classic-fairy-tales.ts:307</span></td>
+    </tr></tbody>
+    </table></div>
     </section>
     <section id="panel-poke" class="tab-panel" data-section="poke" hidden>
       <h2 id="poke">Poke motion, voice, SFX</h2>
@@ -7423,7 +7813,7 @@
       currentAudio.play().catch(() => alert('Playback blocked or file missing. On Pages use /amoji-app/docs/owner-resources.html; local: cd docs && python3 -m http.server 8765'));
     });
   
-    const TAB_IDS = ['music', 'poke', 'idle'];
+    const TAB_IDS = ['music', 'stories', 'poke', 'idle'];
     function showTab(id) {
       if (!TAB_IDS.includes(id)) id = 'music';
       for (const t of TAB_IDS) {

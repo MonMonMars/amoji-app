@@ -212,10 +212,8 @@ import {
   pickShowcaseOffer,
   type ShowcaseKind,
 } from '../lib/showcase';
-import {
-  formatTaleForSpeech,
-  pickClassicFairyTale,
-} from '../lib/classic-fairy-tales';
+import { formatTaleForSpeech } from '../lib/classic-fairy-tales';
+import { pickClassicFairyTaleForIntent } from '../lib/story-catalog';
 import {
   resolvedClassicFairyTales,
   warmClassicFairyTaleCache,
@@ -1507,7 +1505,7 @@ export default function ChatPanel({
         // Local classic fairy-tale bank — no LLM wait / empty network.
         void warmClassicFairyTaleCache();
         const n = storyTellCountRef.current++;
-        const tale = pickClassicFairyTale(lang, n, resolvedClassicFairyTales());
+        const tale = pickClassicFairyTaleForIntent(lang, n, '', resolvedClassicFairyTales());
         sayLocal(
           formatTaleForSpeech(tale, lang),
           { ...STORY_SPEECH_HINTS },
@@ -2254,7 +2252,7 @@ export default function ChatPanel({
                 setHistory((h) => [...h, { role: 'user', content: prompt }]);
                 feedUtterance(prompt);
                 const n = storyTellCountRef.current++;
-                const tale = pickClassicFairyTale(lang, n, resolvedClassicFairyTales());
+                const tale = pickClassicFairyTaleForIntent(lang, n, prompt, resolvedClassicFairyTales());
                 sayLocal(
                   formatTaleForSpeech(tale, lang),
                   { ...STORY_SPEECH_HINTS },
