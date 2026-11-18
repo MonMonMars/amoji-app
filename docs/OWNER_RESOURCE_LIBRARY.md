@@ -5,7 +5,16 @@
 **Machine-readable index:** `apps/web/lib/owner-resource-manifest.ts` (`buildOwnerResourceIndex()`, re-exports)  
 **Manifest version:** `2026-11-16-owner-resource-v1`  
 **Human mirror (artifacts):** `/opt/cursor/artifacts/owner-resource-library.md`  
-**Pixel picker (HTML):** `docs/owner-resources.html` — Music · Stories · Demo-phase · News · Poke · Idle tabs; regenerate with `node scripts/generate-owner-picker-html.mjs`  
+**Pixel picker (HTML):** `docs/owner-resources.html` — Music · Stories · Demo-phase · News · Poke (motion / voice / VFX) · Idle tabs; regenerate with `node scripts/generate-owner-picker-html.mjs`  
+
+### Notes export (r216+)
+
+1. Open `docs/owner-resources.html` (local: `cd docs && python3 -m http.server 8765`).
+2. Type a **Usage note** on any row (music/MV/DC, CMA/VFX, PK voice lines, idle/motion, PH, NW, ST…).
+3. **Save notes JSON** — file for agents: `{ "cd": "CD022", "note": "dance only", "keep": true, … }` plus bundled `remove` / `removeCd` from unchecked rows. Uses `showSaveFilePicker` when the browser supports it; otherwise downloads via `<a download>`.
+4. **Load / import JSON** — paste a prior export to restore notes and Keep checkboxes.
+5. Same-origin backup: localStorage key **`amoji.ownerPickerNotes.v1`** (survives refresh; not synced across devices).
+6. **Copy JSON / Copy Markdown** remain remove-list-only exports (unchanged).
 **Unified catalog codes (machine):** `apps/web/lib/owner-catalog-registry.ts` (`buildOwnerCatalogIndex()`, `ownerCatalogTsv()`)  
 **Pixel export TSV:** `/opt/cursor/artifacts/owner-catalog-codes-pixel.tsv` (written when the picker HTML is regenerated)
 
@@ -197,7 +206,7 @@ Hold per bible — Edge 58-button list **removed** (`voice-catalog.ts`); use `vo
    { "listenMvCodes": ["MV070", "MV085"], "songClipIds": ["sing-f-silent-night"] }
    ```
 2. **Repo ship-set (all users until they override):** Edit `apps/web/data/owner-perf-selection.json` and bump `revision.ts`.
-3. **Pixel review page:** `docs/owner-resources.html` Music tab — note checked MV rows + song performance rows, then paste the JSON above (export script: copy checked row ids into `listenMvCodes` / `songClipIds`; full row export JSON is planned in picker `copyJson`).
+3. **Pixel review page:** `docs/owner-resources.html` Music tab — per-row notes + **Save notes JSON**, or check MV/DC rows and use **Copy JSON (remove list)** for cuts only.
 
 **Dance / sing body VRMA** still honor `amoji.idlePick.v6` + `amoji.idleEnabled.v6` dance/sing rails via `owner-dance-picks.ts` / `ownerSingClipPrefs()`.
 
