@@ -181,7 +181,7 @@ export function buildOwnerResourceIndex(): OwnerResourceEntry[] {
       pathOrUrl: t.url,
       usedBy: 'music-catalog.ts · music-mv-registry.ts',
       status: 'wired',
-      notes: `${t.title} · ${t.license} · MV039–${HIGHEST_MV_OWNER_CODE} vault (${MV_VAULT_COUNT} Mixkit beds)`,
+      notes: `${t.title} · ${t.license} · MV039–${HIGHEST_MV_OWNER_CODE} owner Mixkit index`,
     });
   }
 

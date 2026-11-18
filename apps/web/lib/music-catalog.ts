@@ -7,6 +7,7 @@
 import { JPOP_VAULT_STREAM_TRACKS } from './music-jpop-vault';
 import { JPOP_VAULT_V2_STREAM_TRACKS } from './music-jpop-vault-v2';
 import { USPOP_VAULT_STREAM_TRACKS } from './music-us-pop-vault';
+import { WORLD_VAULT_STREAM_TRACKS } from './music-world-vault';
 
 export type MusicStyleId =
   | 'pop'
@@ -22,6 +23,7 @@ export type MusicStyleId =
   | 'dance'
   | 'chill'
   | 'cute'
+  | 'world'
   | 'default';
 
 export interface StreamTrack {
@@ -255,6 +257,7 @@ export const STREAM_TRACKS: readonly StreamTrack[] = [
   ...JPOP_VAULT_STREAM_TRACKS,
   ...JPOP_VAULT_V2_STREAM_TRACKS,
   ...USPOP_VAULT_STREAM_TRACKS,
+  ...WORLD_VAULT_STREAM_TRACKS,
 ];
 
 /** Local performance-clip style strings that pair with a MusicStyleId. */
@@ -272,6 +275,7 @@ export const STYLE_CLIP_HINTS: Record<MusicStyleId, string[]> = {
   dance: ['upbeat dance', 'cute bounce'],
   chill: ['chill', 'soft ballad'],
   cute: ['cute bounce', 'cute tease', 'cheerful pop'],
+  world: ['chill', 'soft ballad', 'lofi'],
   default: [],
 };
 
@@ -290,6 +294,7 @@ export const STYLE_THEME_ID: Record<MusicStyleId, string> = {
   dance: 'ruby',
   chill: 'luna',
   cute: 'mochi',
+  world: 'luna',
   default: 'default',
 };
 

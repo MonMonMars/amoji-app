@@ -1,6 +1,6 @@
 // Shared helpers for owner MV### Mixkit stream vault rows.
 export type MixkitSeed = { title: string; mixNum: number; durationMs: number; mixSlug?: string };
-export type VaultStreamStyle = 'jpop' | 'uspop';
+export type VaultStreamStyle = 'jpop' | 'uspop' | 'world';
 export interface VaultStreamRow {
   id: string; ownerCode: string; style: VaultStreamStyle; title: string; url: string;
   durationMs: number; license: 'Mixkit-Free'; credit: string; source: string;

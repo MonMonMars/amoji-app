@@ -21,8 +21,14 @@ describe('owner picker HTML (Pixel)', () => {
     expect(unifiedText).toContain('data-mv-code="MV069"');
     expect(unifiedText).toContain('data-mv-code="MV098"');
     expect(unifiedText).toContain('panel-stories');
+    expect(unifiedText).toContain('panel-demo');
+    expect(unifiedText).toContain('panel-news');
     expect(unifiedText).toContain('data-st-code="ST038"');
     expect(unifiedText).toContain('Stories &amp; fairy tales');
+    expect(unifiedText).toContain('data-owner-code="CD001"');
+    expect(unifiedText).toContain('owner-catalog-registry.ts');
+    expect(unifiedText).toContain('data-mv-code="MV118"');
+    expect(unifiedText).toContain('Demo-phase chips');
 
     for (const name of ['owner-music-picker.html', 'owner-poke-reactions.html', 'owner-idle-poses.html']) {
       const p = path.join(repoRoot, 'docs', name);

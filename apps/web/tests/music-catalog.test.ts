@@ -16,6 +16,7 @@ import {
 import { JPOP_VAULT_V2_STREAM_TRACKS, MV_JPOP_V2_COUNT, MV_JPOP_V2_FIRST, MV_JPOP_V2_LAST } from '../lib/music-jpop-vault-v2';
 import { MV_USPOP_COUNT, MV_USPOP_FIRST, MV_USPOP_LAST, USPOP_VAULT_STREAM_TRACKS } from '../lib/music-us-pop-vault';
 import { HIGHEST_MV_OWNER_CODE, MV_VAULT_COUNT, MV_VAULT_LAST } from '../lib/music-mv-registry';
+import { MV_WORLD_COUNT, MV_WORLD_FIRST, MV_WORLD_LAST, WORLD_VAULT_STREAM_TRACKS } from '../lib/music-world-vault';
 
 describe('royalty-free music catalog', () => {
   it('detects common style words across languages', () => {
@@ -66,7 +67,10 @@ describe('royalty-free music catalog', () => {
     expect(MV_USPOP_LAST).toBe(98);
     expect(MV_VAULT_COUNT).toBe(60);
     expect(MV_VAULT_LAST).toBe(98);
-    expect(HIGHEST_MV_OWNER_CODE).toBe('MV098');
+    expect(WORLD_VAULT_STREAM_TRACKS.length).toBe(MV_WORLD_COUNT);
+    expect(MV_WORLD_FIRST).toBe(99);
+    expect(MV_WORLD_LAST).toBe(118);
+    expect(HIGHEST_MV_OWNER_CODE).toBe('MV118');
 
     const codes = new Set(
       [...JPOP_VAULT_STREAM_TRACKS, ...JPOP_VAULT_V2_STREAM_TRACKS, ...USPOP_VAULT_STREAM_TRACKS].map(
@@ -76,6 +80,9 @@ describe('royalty-free music catalog', () => {
     expect(codes.size).toBe(MV_VAULT_COUNT);
     for (let n = 39; n <= 98; n++) {
       expect(codes.has(`MV${String(n).padStart(3, '0')}`)).toBe(true);
+    }
+    for (let n = MV_WORLD_FIRST; n <= MV_WORLD_LAST; n++) {
+      expect(STREAM_TRACKS.some((t) => t.ownerCode === `MV${String(n).padStart(3, '0')}`)).toBe(true);
     }
 
     for (const t of JPOP_VAULT_STREAM_TRACKS) {
@@ -97,5 +104,6 @@ describe('royalty-free music catalog', () => {
     expect(streamTrackById('MV069')?.style).toBe('jpop');
     expect(streamTrackById('MV084')?.style).toBe('uspop');
     expect(streamTrackById('mv098')?.ownerCode).toBe('MV098');
+    expect(streamTrackById('MV118')?.style).toBe('world');
   });
 });

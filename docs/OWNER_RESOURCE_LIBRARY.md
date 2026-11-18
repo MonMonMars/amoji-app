@@ -5,7 +5,27 @@
 **Machine-readable index:** `apps/web/lib/owner-resource-manifest.ts` (`buildOwnerResourceIndex()`, re-exports)  
 **Manifest version:** `2026-11-16-owner-resource-v1`  
 **Human mirror (artifacts):** `/opt/cursor/artifacts/owner-resource-library.md`  
-**Pixel picker (HTML):** `docs/owner-resources.html` — unified music / poke / idle tabs; regenerate with `node scripts/generate-owner-picker-html.mjs`
+**Pixel picker (HTML):** `docs/owner-resources.html` — Music · Stories · Demo-phase · News · Poke · Idle tabs; regenerate with `node scripts/generate-owner-picker-html.mjs`  
+**Unified catalog codes (machine):** `apps/web/lib/owner-catalog-registry.ts` (`buildOwnerCatalogIndex()`, `ownerCatalogTsv()`)  
+**Pixel export TSV:** `/opt/cursor/artifacts/owner-catalog-codes-pixel.tsv` (written when the picker HTML is regenerated)
+
+### Owner code prefixes (r215+)
+
+Every row in `docs/owner-resources.html` carries **`data-owner-code="CD###"`** (master keep/remove id) plus a **domain** code. Cite **`CD022`** (or the domain code) when asking to keep or cut rows.
+
+| Prefix | Meaning | SoT |
+|--------|---------|-----|
+| **CD** | Master picker row (sequential) | `owner-catalog-registry.ts` |
+| **MV** | Mixkit stream beds (listen / style) | `music-catalog.ts` · vault packs · `MV039`–`MV118` |
+| **ST** | PD fairy tales (Story chip) | `classic-fairy-tales.ts` |
+| **DC** | Performance library clips (dance/sing MP3) | `performance-clips.ts` · `performance-clip-owner.ts` |
+| **ID** | Idle VRMA library # or owner ref (`ID126+` metadata) | `idle-library.ts` · `idle-owner-ref-catalog.ts` |
+| **PK** | Poke grid section / TTS poke line bank | `poke-zones.ts` · `personality-voice.ts` |
+| **PH** | Demo-phase rail chip | `demo-phase.ts` `DEMO_PHASE_BUTTONS` |
+| **NW** | News RSS feed or AI-news prompt template | `owner-news-catalog.ts` ← `live-tools.ts` |
+| **CMA** | Recorded poke SFX pack (existing ids) | `cma-reaction-gallery.ts` |
+
+**GitHub Pages tabs:** `#music` · `#stories` · `#demo` · `#news` · `#poke` · `#idle` — e.g. `https://monmonmars.github.io/amoji-app/docs/owner-resources.html#demo`
 
 ## Standing rule (agents)
 
