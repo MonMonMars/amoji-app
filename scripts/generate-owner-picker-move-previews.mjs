@@ -1,5 +1,8 @@
 #!/usr/bin/env node
-/** Bake sidecar GIF loops: apps/web/public/animations/owner-picker-previews/<clipId>.gif */
+/**
+ * Sidecar motion previews: apps/web/public/animations/owner-picker-previews/<clipId>.gif
+ * Prefer the checked-in thumbnail library; default mode audits gaps only (no overwrite).
+ */
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -18,11 +21,17 @@ const DEFAULT_CLIP_IDS = [
   'lib_C95', 'Dance', 'Sing',
 ];
 
+const argv = process.argv.slice(2);
+const proceduralOk = argv.includes('--procedural-placeholder');
 const clipArgs = [];
-for (let i = 2; i < process.argv.length; i++) {
-  if (process.argv[i] === '--clip') clipArgs.push(process.argv[++i]);
+for (let i = 0; i < argv.length; i++) {
+  if (argv[i] === '--clip') clipArgs.push(argv[++i]);
 }
 const clipIds = [...new Set(clipArgs.length ? clipArgs : DEFAULT_CLIP_IDS)];
+
+function sidecarExists(clipId) {
+  return ['gif', 'webp', 'mp4'].some((ext) => fs.existsSync(path.join(outDir, `${clipId}.${ext}`)));
+}
 
 const py = `import sys,math
 from PIL import Image,ImageDraw
@@ -41,14 +50,39 @@ for n in range(frames):
 imgs[0].save(out_path,save_all=True,append_images=imgs[1:],duration=80,loop=0,optimize=True)`;
 
 fs.mkdirSync(outDir, { recursive: true });
-let wrote = 0, skipped = 0;
+const missing = [];
+let wrote = 0;
+let onDisk = 0;
+
 for (const clipId of clipIds) {
+  if (sidecarExists(clipId)) {
+    onDisk++;
+    continue;
+  }
+  missing.push(clipId);
+  if (!proceduralOk) continue;
   const dest = path.join(outDir, `${clipId}.gif`);
+  if (fs.existsSync(dest)) continue;
   const vrma = path.join(publicRoot, 'models/anims', `${clipId}.vrma`);
-  const ok = fs.existsSync(vrma) || clipId.startsWith('lib_C8') || clipId.startsWith('lib_C9');
-  if (!ok) { skipped++; continue; }
+  const ok =
+    fs.existsSync(vrma) ||
+    clipId.startsWith('lib_C') ||
+    clipId === 'Dance' ||
+    clipId === 'Sing' ||
+    clipId.startsWith('Idle');
+  if (!ok) continue;
   const r = spawnSync('python3', ['-c', py, clipId, dest], { encoding: 'utf8' });
-  if (r.status !== 0) { console.error('FAIL', clipId, r.stderr); process.exitCode = 1; continue; }
-  wrote++; console.log(`ok animations/owner-picker-previews/${clipId}.gif`);
+  if (r.status !== 0) {
+    console.error('FAIL', clipId, r.stderr);
+    process.exitCode = 1;
+    continue;
+  }
+  wrote++;
+  console.log(`ok ${clipId}.gif (procedural placeholder only)`);
 }
-console.log(`[generate-owner-picker-move-previews] wrote=${wrote} skipped=${skipped}`);
+
+console.log(`[owner-picker-previews] on-disk=${onDisk} missing=${missing.length} wrote=${wrote}`);
+if (missing.length && !proceduralOk) {
+  console.log('Missing (use thumb-bake / existing library; optional --procedural-placeholder):');
+  for (const id of missing) console.log(`  ${id}`);
+}

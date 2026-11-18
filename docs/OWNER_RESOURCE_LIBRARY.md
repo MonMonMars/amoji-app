@@ -37,6 +37,8 @@ Every row in `docs/owner-resources.html` carries **`data-owner-code="CD###"`** (
 
 **GitHub Pages tabs:** `#music` · `#stories` · `#demo` · `#news` · `#poke` · `#idle` — e.g. `https://monmonmars.github.io/amoji-app/docs/owner-resources.html#demo`
 
+**Motion preview thumbnails:** `apps/web/public/animations/owner-picker-previews/<clipId>.gif` (Pages: `../animations/owner-picker-previews/...` from `docs/owner-resources.html` via `docs/amoji-public-serve` → `apps/web/public`). Regenerate HTML: `node scripts/generate-owner-picker-html.mjs`. Audit gaps (no overwrite): `node scripts/generate-owner-picker-move-previews.mjs`.
+
 ## Standing rule (agents)
 
 Before swapping defaults for poke SFX, idle rail, cast, TTS speakers, or sing/dance clips:
