@@ -183,11 +183,13 @@ function sharedCss(): string {
     audio { height: 28px; max-width: 220px; vertical-align: middle; }
     .audio-player { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; min-width: 11rem; max-width: 20rem; }
     .audio-player .audio-play-toggle { min-width: 2.1rem; padding: 0.25rem 0.45rem; }
-    .audio-player .audio-stop { min-width: 2rem; padding: 0.25rem 0.4rem; font-size: 0.72rem; line-height: 1; }
     .audio-player .audio-scrub { flex: 1 1 5rem; min-width: 4.5rem; accent-color: var(--accent); }
     .audio-player .audio-time { font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .motion-preview img { object-fit: cover; border: 1px solid var(--line); border-radius: 3px; background: #f6f1e6; }
-    .motion-preview--missing { font-size: 0.75rem; max-width: 6.5rem; }
+    .motion-preview img,
+    .motion-preview video { object-fit: cover; border: 1px solid var(--line); border-radius: 3px; background: #f6f1e6; display: block; }
+    .motion-preview--missing,
+    .motion-preview--broken { font-size: 0.75rem; max-width: 6.5rem; }
+    .motion-preview--broken::after { content: 'missing'; display: block; font-size: 0.7rem; color: var(--hold); }
     .motion-preview--vrma a { font-size: 0.78rem; }
     .play-remote { font-size: 0.8rem; }
     input[type="checkbox"] { transform: scale(1.15); cursor: pointer; }
@@ -388,6 +390,16 @@ function pickerScript(_exportKey: string): string {
       });
     });
     ${PICKER_PLAY_RESOLVE_INLINE_JS}
+    function resolvePlaySrc_legacy_unused(raw) {
+      if (!raw) return '';
+      if (/^https?:/i.test(raw)) return raw;
+      if (raw.startsWith('amoji-public-serve/')) return '../' + raw.slice('amoji-public-serve/'.length);
+      if (raw.startsWith('amoji-public-serve')) {
+        const tail = raw.slice('amoji-public-serve'.length).replace(/^\\//, '');
+        return tail ? '../' + tail : '';
+      }
+      return raw;
+    }
     function formatMmSs(sec) {
       if (!Number.isFinite(sec) || sec < 0) return '0:00';
       const m = Math.floor(sec / 60);
@@ -405,24 +417,12 @@ function pickerScript(_exportKey: string): string {
       const raw = root.getAttribute('data-play');
       if (!raw) return;
       const toggle = root.querySelector('.audio-play-toggle');
-      const stopBtn = root.querySelector('.audio-stop');
       const scrub = root.querySelector('.audio-scrub');
       const curEl = root.querySelector('.audio-cur');
       const durEl = root.querySelector('.audio-dur');
       if (!toggle || !scrub) return;
       const audio = new Audio();
       let seeking = false;
-      function resetRowUi() {
-        toggle.textContent = '▶';
-        scrub.value = '0';
-        if (curEl) curEl.textContent = '0:00';
-      }
-      function stopRowPlayback() {
-        audio.pause();
-        audio.currentTime = 0;
-        resetRowUi();
-        if (activePlayer && activePlayer.root === root) activePlayer = null;
-      }
       audio.addEventListener('loadedmetadata', () => {
         scrub.disabled = false;
         scrub.max = String(audio.duration || 100);
@@ -434,7 +434,7 @@ function pickerScript(_exportKey: string): string {
         if (curEl) curEl.textContent = formatMmSs(audio.currentTime);
       });
       audio.addEventListener('ended', () => {
-        resetRowUi();
+        toggle.textContent = '▶';
         if (activePlayer && activePlayer.root === root) activePlayer = null;
       });
       audio.addEventListener('error', () => alert(pickerPlayFailureMessage(resolvePlaySrc(raw), toggle)));
@@ -459,7 +459,6 @@ function pickerScript(_exportKey: string): string {
           if (activePlayer && activePlayer.root === root) activePlayer = null;
         }
       });
-      stopBtn?.addEventListener('click', () => stopRowPlayback());
     }
     document.querySelectorAll('.audio-player[data-play]').forEach(wireAudioPlayer);
     document.body.addEventListener('click', (e) => {
@@ -1095,7 +1094,7 @@ function buildPokePage(): PickerSection {
       <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
       <td>${cat.codeCell}</td>
       <td class="flags">${inUseTag('POKE_SECTIONS')}</td>
-      ${motionPreviewCellHtml(pokeSectionMotionPreview(s.id))}
+      ${motionPreviewCellHtml(pokeSectionMotionPreview(publicRoot, s.id))}
       <td><code>${escapeHtml(s.id)}</code></td>
       <td>${escapeHtml(s.labelTc)}</td>
       <td>${s.tierNumber}</td>
