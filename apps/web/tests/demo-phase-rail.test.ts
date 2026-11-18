@@ -48,4 +48,16 @@ describe('DemoPhaseRail scroll (iPhone + drag)', () => {
     expect(panel).toContain('disabled={busy}');
     expect(panel).toMatch(/!loadStorySession\(\)[\s\S]*!musicPicks\?\.length[\s\S]*<DemoPhaseRail/);
   });
+
+  it('weather / news / aiNews chips fetch live facts before sayLocal (not send-only)', () => {
+    const panel = read('components/ChatPanel.tsx');
+    expect(panel).toContain("id === 'weather' || id === 'news' || id === 'aiNews'");
+    expect(panel).toMatch(
+      /if \(id === 'weather' \|\| id === 'news' \|\| id === 'aiNews'\)[\s\S]*clientLiveContext\(prompt, lang\)[\s\S]*sayLocal\(spoken\)/,
+    );
+    expect(panel).toMatch(
+      /if \(id === 'weather' \|\| id === 'news' \|\| id === 'aiNews'\)[\s\S]*return;/,
+    );
+  });
+
 });

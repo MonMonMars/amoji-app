@@ -192,4 +192,19 @@ describe('demo-phase buttons', () => {
     expect(PANEL).toContain('sayLocal(spoken)');
     expect(PANEL).toContain('primeLocationForChatEnter');
   });
+
+  it('demo chip prompts plan Open-Meteo / RSS (not web search) for weather and news', () => {
+    for (const lang of ['en', 'yue', 'zh', 'ja'] as const) {
+      const weather = demoPhasePrimaryPrompt(DEMO_PHASE_BUTTONS[0]!, lang);
+      const news = demoPhasePrimaryPrompt(DEMO_PHASE_BUTTONS[1]!, lang);
+      expect(planTools(weather).weather).toBe(true);
+      expect(planTools(weather).searchQuery).toBeUndefined();
+      expect(planTools(news).news).toBe(true);
+      expect(planTools(news).searchQuery).toBeUndefined();
+      expect(planTools(news).recent).toBe(true);
+    }
+    expect(planTools('search weather').weather).toBe(true);
+    expect(planTools('search weather').searchQuery).toBeUndefined();
+  });
+
 });
