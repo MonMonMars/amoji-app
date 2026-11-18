@@ -28,6 +28,8 @@ import {
 } from '../apps/web/lib/cma-reaction-gallery.ts';
 import type { Lang } from '../apps/web/lib/prefs.ts';
 import { CHARACTERS_WANT } from '../apps/web/lib/characters-want.ts';
+import { PICKER_PLAY_RESOLVE_INLINE_JS } from '../apps/web/lib/owner-picker-media.mjs';
+import { audioPlayerBlockHtml, audioPlayerCellHtml, motionPreviewCellHtml, pokeSectionMotionPreview, resolveIdleMotionPreview, resolvePerfMotionPreview } from '../apps/web/lib/owner-picker-html-media.ts';
 import { CHAT_IDLE_CURATED, defaultCuratedRailNums } from '../apps/web/lib/idle-curated-rail.ts';
 import { idleClipFamily } from '../apps/web/lib/idle-clip-family.ts';
 import { IDLE_LIBRARY, idleByClipId, type IdleLibraryEntry } from '../apps/web/lib/idle-library.ts';
@@ -179,6 +181,14 @@ function sharedCss(): string {
     .hold { background: var(--hold-bg); color: var(--hold); font-weight: 600; }
     .license-ok { color: var(--accent-deep); }
     audio { height: 28px; max-width: 220px; vertical-align: middle; }
+    .audio-player { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; min-width: 11rem; max-width: 20rem; }
+    .audio-player .audio-play-toggle { min-width: 2.1rem; padding: 0.25rem 0.45rem; }
+    .audio-player .audio-stop { min-width: 2rem; padding: 0.25rem 0.4rem; font-size: 0.72rem; line-height: 1; }
+    .audio-player .audio-scrub { flex: 1 1 5rem; min-width: 4.5rem; accent-color: var(--accent); }
+    .audio-player .audio-time { font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .motion-preview img { object-fit: cover; border: 1px solid var(--line); border-radius: 3px; background: #f6f1e6; }
+    .motion-preview--missing { font-size: 0.75rem; max-width: 6.5rem; }
+    .motion-preview--vrma a { font-size: 0.78rem; }
     .play-remote { font-size: 0.8rem; }
     input[type="checkbox"] { transform: scale(1.15); cursor: pointer; }
     tr.owner-saved td { background: rgba(14, 107, 92, 0.1); }
@@ -377,27 +387,96 @@ function pickerScript(_exportKey: string): string {
         tr.style.display = !q || tr.textContent.toLowerCase().includes(q) ? '' : 'none';
       });
     });
-    function resolvePlaySrc(raw) {
-      if (!raw) return '';
-      if (/^https?:/i.test(raw)) return raw;
-      if (raw.startsWith('amoji-public-serve/')) return '../' + raw.slice('amoji-public-serve/'.length);
-      if (raw.startsWith('amoji-public-serve')) {
-        const tail = raw.slice('amoji-public-serve'.length).replace(/^\\//, '');
-        return tail ? '../' + tail : '';
-      }
-      return raw;
+    ${PICKER_PLAY_RESOLVE_INLINE_JS}
+    function formatMmSs(sec) {
+      if (!Number.isFinite(sec) || sec < 0) return '0:00';
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return m + ':' + String(s).padStart(2, '0');
     }
-    let currentAudio = null;
+    let activePlayer = null;
+    function pauseActivePlayer() {
+      if (!activePlayer) return;
+      activePlayer.audio.pause();
+      activePlayer.toggle.textContent = '▶';
+      activePlayer = null;
+    }
+    function wireAudioPlayer(root) {
+      const raw = root.getAttribute('data-play');
+      if (!raw) return;
+      const toggle = root.querySelector('.audio-play-toggle');
+      const stopBtn = root.querySelector('.audio-stop');
+      const scrub = root.querySelector('.audio-scrub');
+      const curEl = root.querySelector('.audio-cur');
+      const durEl = root.querySelector('.audio-dur');
+      if (!toggle || !scrub) return;
+      const audio = new Audio();
+      let seeking = false;
+      function resetRowUi() {
+        toggle.textContent = '▶';
+        scrub.value = '0';
+        if (curEl) curEl.textContent = '0:00';
+      }
+      function stopRowPlayback() {
+        audio.pause();
+        audio.currentTime = 0;
+        resetRowUi();
+        if (activePlayer && activePlayer.root === root) activePlayer = null;
+      }
+      audio.addEventListener('loadedmetadata', () => {
+        scrub.disabled = false;
+        scrub.max = String(audio.duration || 100);
+        if (durEl) durEl.textContent = formatMmSs(audio.duration);
+      });
+      audio.addEventListener('timeupdate', () => {
+        if (seeking || !audio.duration) return;
+        scrub.value = String(audio.currentTime);
+        if (curEl) curEl.textContent = formatMmSs(audio.currentTime);
+      });
+      audio.addEventListener('ended', () => {
+        resetRowUi();
+        if (activePlayer && activePlayer.root === root) activePlayer = null;
+      });
+      audio.addEventListener('error', () => alert(pickerPlayFailureMessage(resolvePlaySrc(raw), toggle)));
+      scrub.addEventListener('input', () => { seeking = true; });
+      scrub.addEventListener('change', () => {
+        const t = Number(scrub.value);
+        if (Number.isFinite(t)) audio.currentTime = t;
+        seeking = false;
+      });
+      toggle.addEventListener('click', () => {
+        unlockPickerAudioGesture();
+        const src = resolvePlaySrc(raw);
+        if (!src) return;
+        if (activePlayer && activePlayer.root !== root) pauseActivePlayer();
+        const url = /^https?:/i.test(src) ? src : new URL(src, location.href).href;
+        if (!audio.src) { audio.src = url; applyRemoteAudioHints(audio, url); }
+        if (audio.paused) {
+          audio.play().then(() => { toggle.textContent = '⏸'; activePlayer = { root, audio, toggle }; })
+            .catch((err) => alert(pickerPlayFailureMessage(src, toggle, err)));
+        } else {
+          audio.pause();
+          toggle.textContent = '▶';
+          if (activePlayer && activePlayer.root === root) activePlayer = null;
+        }
+      });
+      stopBtn?.addEventListener('click', () => stopRowPlayback());
+    }
+    document.querySelectorAll('.audio-player[data-play]').forEach(wireAudioPlayer);
     document.body.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-play]');
-      if (!btn) return;
+      const btn = e.target.closest('[data-play]:not(.audio-player)');
+      if (!btn || btn.classList.contains('audio-player')) return;
+      if (e.target.closest('.audio-player')) return;
+      unlockPickerAudioGesture();
       const src = resolvePlaySrc(btn.getAttribute('data-play'));
       if (!src) return;
-      if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+      pauseActivePlayer();
       const url = /^https?:/i.test(src) ? src : new URL(src, location.href).href;
-      currentAudio = new Audio(url);
-      currentAudio.play().catch(() => alert('Playback blocked or file missing. On Pages use /amoji-app/docs/owner-resources.html; local: cd docs && python3 -m http.server 8765'));
-  });
+      const oneShot = new Audio(url);
+      applyRemoteAudioHints(oneShot, url);
+      oneShot.onerror = () => alert(pickerPlayFailureMessage(src, btn));
+      oneShot.play().catch((err) => alert(pickerPlayFailureMessage(src, btn, err)));
+    });
     document.getElementById('saveNotesJson')?.addEventListener('click', async () => {
       const json = collectNotesExport();
       document.getElementById('exportOut').value = json;
@@ -856,7 +935,7 @@ function buildMusicPage(): PickerSection {
       <td><input type="checkbox" class="keep" checked aria-label="Keep ${escapeHtml(c.id)}" /></td>${NOTE_TD}
       <td>${cat.codeCell}</td>
       <td class="flags">${inUseTag('performance-clips')}</td>
-      <td><button type="button" data-play="${escapeHtml(local)}">▶</button></td>
+      ${audioPlayerCellHtml(local, c.labels.en)}
       <td><strong>${escapeHtml(c.labels.en)}</strong><br/><code>${escapeHtml(c.id)}</code></td>
       <td>${escapeHtml(c.kind)}</td>
       <td>${escapeHtml(c.langs.join(', '))}</td>
@@ -878,7 +957,7 @@ function buildMusicPage(): PickerSection {
       <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
       <td>${cat.codeCell}</td>
       <td class="flags">${inUseTag('STREAM_TRACKS')}</td>
-      <td><button type="button" class="play-remote" data-play="${escapeHtml(t.url)}">▶ Mixkit</button></td>
+      <td class="audio-player-cell">${audioPlayerBlockHtml(t.url, t.title, { remote: true })}<span class="ref"> Mixkit</span></td>
       <td>${escapeHtml(t.title)}<br/>${codeLine}</td>
       <td>stream</td>
       <td>all</td>
@@ -911,7 +990,7 @@ function buildMusicPage(): PickerSection {
     orphanRows += `<tr data-id="orphan-${escapeHtml(rel)}" data-label="${escapeHtml(path.basename(rel))}" data-ref="disk only">
       <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
       <td class="flags">—</td>
-      <td><button type="button" data-play="${escapeHtml(local)}">▶</button></td>
+      ${audioPlayerCellHtml(local, path.basename(rel))}
       <td><code>${escapeHtml(rel)}</code></td>
       <td>orphan file</td>
       <td>—</td>
@@ -932,6 +1011,7 @@ function buildMusicPage(): PickerSection {
       <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
       <td>${cat.codeCell}</td>
       <td class="flags">${inUseTag('performance-motion')}</td>
+      ${motionPreviewCellHtml(resolvePerfMotionPreview(publicRoot, tag))}
       <td><code>${escapeHtml(tag)}</code></td>
       <td>${escapeHtml(PERF_MOTION_TAG_LABELS[tag])}</td>
       <td>${bpm} bpm (authored)</td>
@@ -956,7 +1036,7 @@ function buildMusicPage(): PickerSection {
     <h2>Dance / sing body motion tags (performance-motion.ts)</h2>
     <p class="lede">Movement shortlist (<code>C03</code>…<code>C128</code>, generic sing/dance) — pairs with DC audio + idle VRMA. Note which tag to prefer per music style.</p>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>CD · ID</th><th>Ship</th><th>Tag</th><th>Label</th><th>Clip BPM</th><th>Use</th><th>Source</th></tr></thead>
+      <thead><tr><th>Keep</th><th>Note</th><th>CD · ID</th><th>Ship</th><th>Preview</th><th>Tag</th><th>Label</th><th>Clip BPM</th><th>Use</th><th>Source</th></tr></thead>
       <tbody>${motionRows}</tbody>
     </table></div>
     <h2>Performance library (CC0 / PD files)</h2>
@@ -1018,6 +1098,7 @@ function buildPokePage(): PickerSection {
       <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
       <td>${cat.codeCell}</td>
       <td class="flags">${inUseTag('POKE_SECTIONS')}</td>
+      ${motionPreviewCellHtml(pokeSectionMotionPreview(s.id))}
       <td><code>${escapeHtml(s.id)}</code></td>
       <td>${escapeHtml(s.labelTc)}</td>
       <td>${s.tierNumber}</td>
@@ -1074,7 +1155,7 @@ function buildPokePage(): PickerSection {
         <td class="flags">${zoneInUse ? inUseTag('RECORDED_POKE_ZONE') : '—'}</td>
         <td>${escapeHtml(gender)}</td>
         <td><code>${escapeHtml(zone)}</code></td>
-        <td><button type="button" data-play="${escapeHtml(local)}">▶</button> <code>${escapeHtml(clipPath)}</code></td>
+        <td>${audioPlayerBlockHtml(local, zone)} <code>${escapeHtml(clipPath)}</code></td>
         <td>${code ? `<code>${escapeHtml(code)}</code>` : '—'}</td>
         <td><span class="ref">${escapeHtml(sfxRef)}</span></td>
       </tr>`;
@@ -1097,7 +1178,7 @@ function buildPokePage(): PickerSection {
       <td>${cat.codeCell}</td>
       <td class="flags saved-picks">${cmaInUse ? inUseTag('ship-set') : '—'}</td>
       <td><code>${escapeHtml(clip.code)}</code></td>
-      <td><button type="button" data-play="${escapeHtml(local)}">▶</button></td>
+      ${audioPlayerCellHtml(local, clip.code)}
       <td>${escapeHtml(clip.gender)} · ${escapeHtml(clip.burst)} · ${escapeHtml(clip.use)}</td>
       <td>${escapeHtml(clip.license)}</td>
       <td>${escapeHtml(status)}</td>
@@ -1111,7 +1192,7 @@ function buildPokePage(): PickerSection {
   const body = `
     <h2>Poke grid sections (6×4) — motion routing</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>CD · PK</th><th>Ship</th><th>Section ID</th><th>Label</th><th>Tier</th><th>Angle</th><th>Motion</th><th>Code ref</th></tr></thead>
+      <thead><tr><th>Keep</th><th>Note</th><th>CD · PK</th><th>Ship</th><th>Preview</th><th>Section ID</th><th>Label</th><th>Tier</th><th>Angle</th><th>Motion</th><th>Code ref</th></tr></thead>
       <tbody>${sectionRows}</tbody>
     </table></div>
     <h2>Poke TTS line bank (personality × language × 8 templates)</h2>
@@ -1189,6 +1270,7 @@ function idleLibraryRowHtml(e: IdleLibraryEntry, libRef: string): string {
       <td><input type="checkbox" class="keep" checked aria-label="Keep ${escapeHtml(e.clipId)}" /></td>${NOTE_TD}
       <td>${cat.codeCell}</td>
       <td class="flags saved-picks" title="Filled from amoji.idlePick.v${IDLE_PREFS_GENERATION} on this browser">${wired ? inUseTag(onRail ? 'curated rail' : 'default pool') : '—'}</td>
+      ${motionPreviewCellHtml(resolveIdleMotionPreview(publicRoot, e))}
       <td><strong>#${e.num}</strong> <code>${escapeHtml(e.clipId)}</code></td>
       <td>${escapeHtml(e.name)}${e.cId ? `<br/><span class="tag">${escapeHtml(e.cId)}</span>` : ''}</td>
       <td>${tags.map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</td>
@@ -1221,6 +1303,7 @@ function buildIdlePage(): PickerSection {
       <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
       <td>${cat.codeCell}</td>
       <td class="flags saved-picks">${inUseTag('CHAT_IDLE_CURATED')}${isDefault ? ` ${defaultOnTag()}` : ''}</td>
+      ${lib ? motionPreviewCellHtml(resolveIdleMotionPreview(publicRoot, lib)) : motionPreviewCellHtml({ id: e.clipId, kind: 'placeholder', assetRaw: null, pagesSrc: null, note: 'clip not in IDLE_LIBRARY' })}
       <td><strong>#${e.railNum}</strong></td>
       <td><code>${escapeHtml(e.clipId)}</code></td>
       <td>${escapeHtml(e.labelKey)} · ${escapeHtml(e.category)}</td>
@@ -1236,9 +1319,11 @@ function buildIdlePage(): PickerSection {
     const uniq = [...new Set(clipIds)];
     for (const clipId of uniq) {
       poolClipCount++;
+      const poolLib = idleByClipId(clipId);
       poolRows += `<tr class="row-in-use" data-in-use="1" data-id="pool-${escapeHtml(pool)}-${escapeHtml(clipId)}" data-clip-id="${escapeHtml(clipId)}" data-label="${escapeHtml(pool)}" data-ref="${escapeHtml(autoRef)}">
         <td><input type="checkbox" class="keep" checked /></td>${NOTE_TD}
         <td class="flags saved-picks">${inUseTag('chat-auto-idle')}</td>
+        ${motionPreviewCellHtml(poolLib ? resolveIdleMotionPreview(publicRoot, poolLib) : { id: clipId, kind: 'placeholder', assetRaw: null, pagesSrc: null, note: 'No IDLE_LIBRARY row' })}
         <td><code>${escapeHtml(pool)}</code></td>
         <td><code>${escapeHtml(clipId)}</code></td>
         <td>${escapeHtml(idleClipFamily(clipId))}</td>
@@ -1310,17 +1395,17 @@ function buildIdlePage(): PickerSection {
     </table></div>
     <h2>Full idle library (VRMA / FBX map — ${IDLE_LIBRARY.length} rows)</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>CD · ID</th><th>Ship / your pick</th><th>Lib # · clipId</th><th>Name</th><th>Tags</th><th>Path</th><th>Source</th></tr></thead>
+      <thead><tr><th>Keep</th><th>Note</th><th>CD · ID</th><th>Ship / your pick</th><th>Preview</th><th>Lib # · clipId</th><th>Name</th><th>Tags</th><th>Path</th><th>Source</th></tr></thead>
       <tbody>${libRows}</tbody>
     </table></div>
     <h2>Chat curated rail (#1..${CHAT_IDLE_CURATED.length})</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>CD · ID</th><th>Ship / your pick</th><th>Rail #</th><th>clipId</th><th>labelKey</th><th>Library</th><th>Owner</th><th>Source</th></tr></thead>
+      <thead><tr><th>Keep</th><th>Note</th><th>CD · ID</th><th>Ship / your pick</th><th>Preview</th><th>Rail #</th><th>clipId</th><th>labelKey</th><th>Library</th><th>Owner</th><th>Source</th></tr></thead>
       <tbody>${railRows}</tbody>
     </table></div>
     <h2>Chat-auto idle pools (content-driven picks)</h2>
     <div class="panel"><table>
-      <thead><tr><th>Keep</th><th>Note</th><th>Ship / your pick</th><th>Pool</th><th>clipId</th><th>Family</th><th>Source</th></tr></thead>
+      <thead><tr><th>Keep</th><th>Note</th><th>Ship / your pick</th><th>Preview</th><th>Pool</th><th>clipId</th><th>Family</th><th>Source</th></tr></thead>
       <tbody>${poolRows}</tbody>
     </table></div>
     <h2>Procedural idle bone poses (@amoji/vrm-renderer)</h2>
