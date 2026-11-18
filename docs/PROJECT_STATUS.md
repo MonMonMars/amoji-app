@@ -6,7 +6,7 @@
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** [Pages](https://monmonmars.github.io/amoji-app/docs/project-status.html) · repo [`project-status.html`](./project-status.html)  
 **Pixel pickers:** [Pages owner-resources](https://monmonmars.github.io/amoji-app/docs/owner-resources.html) (music · poke · **idle** · **stories** · **news** · **demo** tabs) · local: `cd docs && python3 -m http.server 8765`  
-**`main` tip:** `19c98f8d` (**r2026-11-18.226** · #514 on main; demo **r230** + #518→#519→#517 open)
+**`main` tip:** *(pending)* · **r2026-11-18.232** Pixel no-repeat checklist + CI locks
 
 ## Snapshot
 
@@ -15,10 +15,10 @@
 | **Done** — merged to `main` | 100+ stack · through **#511** + **#515** · **r220** (incl. #497–#507 vault/perf) |
 | **Open product PRs** | demo **r230** + #518–#519–#517; #512; spikes Hold |
 | **Outstanding** — agents (no PR yet) | picker media · VRM pupil |
-| **Outstanding** — Pixel / human | **R10–R13 not Done** · stale SW · [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
+| **Outstanding** — Pixel / human | **R10–R13 not Done** · stale SW · [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) · [`AGENT_SMOKE.md` Pixel checklist](./AGENT_SMOKE.md#pixel-no-repeat-checklist) |
 | **Hold** | licensed music · Stripe · PH · Search Console · spikes #1 / #20 |
 
-**Honesty:** Merged ≠ owner Done. **Do not mark R10–R13 Done** without owner OK on live **r2026-11-18.220+** after deploy and SW hard-refresh.  
+**Honesty:** Merged ≠ owner Done. **Do not mark R10–R13 Done** without owner OK on live **r2026-11-18.232+** after deploy and SW hard-refresh. Agents: run `pixel-no-repeat.test.ts` before claiming repeat fixes.
 **Pages:** hard-refresh service worker after each revision bump — stale SW still a phone blocker.
 
 ### Progress by category (% merged to `main`)

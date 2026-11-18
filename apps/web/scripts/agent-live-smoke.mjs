@@ -41,10 +41,20 @@ report.steps['2_confirm_revision'] = {
   sw_cache_matches: cacheName === cacheExpected,
 };
 
+const demoPhaseSrc = fs.readFileSync(path.join(WEB_ROOT, 'lib/demo-phase.ts'), 'utf8');
+report.steps['2b_demo_phase_anchors'] = {
+  weather_news_left:
+    demoPhaseSrc.includes('DEMO_PHASE_LEFT_PRIORITY_IDS') &&
+    demoPhaseSrc.includes("['weather', 'news']") &&
+    demoPhaseSrc.includes('demoPhaseTailButtons'),
+  note: 'Weather + News stay left; tail only shuffles (see pixel-no-repeat.test.ts).',
+};
+
 report.ok =
   report.steps['1_open_url'].ok &&
   report.steps['2_confirm_revision'].matchesExpected &&
-  report.steps['2_confirm_revision'].sw_cache_matches;
+  report.steps['2_confirm_revision'].sw_cache_matches &&
+  report.steps['2b_demo_phase_anchors'].weather_news_left;
 
 report.steps['3_refresh_chip'] = {
   agent_skipped: true,
