@@ -447,7 +447,8 @@
 // r2026-11-18.233: owner-resources tri-state 採用/保留/刪除 + owner-picker-notes-v2 export (#517).
 // r2026-11-18.237: revision renumber — serial r237 after #522 r236 (was r235 clash) (#517).
 // r2026-11-18.240: card voice hotfix — gesture gTTS defer teardown; skip silent-unblock race (#519).
-export const APP_REVISION = 'r2026-11-18.240';
+// r2026-11-18.242: revision renumber — #527 r240 + #528 r241; card hotfix (#529) takes r242.
+export const APP_REVISION = 'r2026-11-18.242';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
