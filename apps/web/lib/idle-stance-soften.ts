@@ -37,6 +37,12 @@ export const IDLE_STIFF_CLIP_GAIN = 1.04;
  */
 export const IDLE_TORSO_PITCH_MAX = 0.028;
 
+/**
+ * Looser upright cap for calm VRMA (Quaternius / Thinking) — still blocks lean-forward
+ * frankenstein but lets spine breathe past the stiff-clip tighten band.
+ */
+export const IDLE_CALM_TORSO_PITCH_MAX = 0.11;
+
 const STIFF_IDLE_CLIPS = new Set<string>([
   'IdleMixamoExcited',
   'IdleMixamoStanding',

@@ -283,7 +283,7 @@ function gainsFor(zone: TalkZone, direction: PokeDirection): Gains {
     case 'legR':
       return { spine: 0.22, chest: 0.12, head: 0.06, hip: 0.46, hipRoll: 0.38, roll: 0.2, yaw: 0.025, arm: 0.12, elbow: 0.08, armUp: 0.09, shift: 0.046, kind: 'heavy', elbowBias: -0.05, armUpBias: 0.06 };
     case 'side':
-      // Stronger lateral lean + near-arm flinch so opposite-of-push tip reads on phone.
+      // Stronger lateral lean + near-arm flinch so same-side tip reads on phone.
       return { spine: 0.42, chest: 0.38, head: 0.22, hip: 0.4, hipRoll: 0.48, roll: 0.68, yaw: 0.08, arm: 0.98, elbow: 0.55, armUp: 0.32, shift: 0.048, kind: 'body', elbowBias: 0.1, armUpBias: 0.08 };
     case 'back':
       return { spine: 0.72, chest: 0.4, head: 0.16, hip: 0.42, hipRoll: 0.08, roll: 0.1, yaw: 0.03, arm: 0.38, elbow: 0.24, armUp: 0.18, shift: 0.042, kind: 'body', elbowBias: 0.03, armUpBias: 0.09 };

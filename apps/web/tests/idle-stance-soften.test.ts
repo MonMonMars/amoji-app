@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import {
   IDLE_ELBOW_FLOOR_X,
   IDLE_STIFF_CLIP_GAIN,
+  IDLE_CALM_TORSO_PITCH_MAX,
   IDLE_TORSO_PITCH_MAX,
   applyIdleClipSoftening,
   idleArmRewriteAllowed,
@@ -21,6 +22,8 @@ describe('idle stance soften', () => {
     expect(idleArmRewriteAllowed('IdleQuaterniusHuman')).toBe(false);
     expect(idleArmRewriteAllowed('IdleRpmFStanding001')).toBe(false);
     expect(IDLE_TORSO_PITCH_MAX).toBeLessThanOrEqual(0.035);
+    expect(IDLE_CALM_TORSO_PITCH_MAX).toBeGreaterThan(IDLE_TORSO_PITCH_MAX);
+    expect(IDLE_CALM_TORSO_PITCH_MAX).toBeLessThanOrEqual(0.14);
   });
 
   it('leaves calm stand bones untouched (no torso smear on damped VRMA)', () => {

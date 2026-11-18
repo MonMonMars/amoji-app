@@ -133,7 +133,7 @@ const TIER_BAND_SCALE: Record<
   { head: number; chest: number; spine: number; hip: number; arm: number; shift: number }
 > = {
   head: { head: 1, chest: 0.34, spine: 0.18, hip: 0.08, arm: 0.16, shift: 0.03 },
-  // Stronger chest/arm band so opposite-of-push tip + flinch read on phone.
+  // Stronger chest/arm band so same-side tip + near-arm flinch read on phone.
   shoulder_chest: { head: 0.28, chest: 1.18, spine: 0.78, hip: 0.36, arm: 1.12, shift: 0.06 },
   belly: { head: 0.12, chest: 0.48, spine: 1.08, hip: 0.58, arm: 0.28, shift: 0 },
   hip: { head: 0.08, chest: 0.26, spine: 0.55, hip: 1.08, arm: 0.18, shift: 0 },
@@ -196,7 +196,7 @@ function scaleBody(body: PokeBody, scale: typeof TIER_BAND_SCALE.head): PokeBody
 }
 
 /**
- * Tier-aware punch recoil: opposite-of-push lean (finger push left → tip right)
+ * Tier-aware punch recoil: same-side lean (finger push left → tip left)
  * with tier falloff; tier 6 = no motion.
  *
  * Head tier keeps full head amplitude from the head recipe, then layers a
