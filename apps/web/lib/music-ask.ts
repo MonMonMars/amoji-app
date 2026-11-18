@@ -40,6 +40,8 @@ export interface MusicPickOption {
   /** Local performance clip id when source is clip. */
   clipId?: string;
   styleHint?: MusicStyleId | string;
+  /** BGM only — calm idle, no dance VRMA until the user asks to dance. */
+  listenOnly?: boolean;
 }
 
 const SELECT_RE =
@@ -108,7 +110,7 @@ function styleLabel(style: string): string {
   return style.replace(/[-_]/g, ' ').trim() || 'music';
 }
 
-function streamOption(track: StreamTrack): MusicPickOption {
+function streamOption(track: StreamTrack, listenOnly = false): MusicPickOption {
   return {
     id: `stream:${track.id}`,
     title: track.title,
@@ -117,6 +119,7 @@ function streamOption(track: StreamTrack): MusicPickOption {
     source: 'stream',
     streamId: track.id,
     styleHint: track.style,
+    listenOnly,
   };
 }
 
@@ -205,9 +208,9 @@ export function listMusicPickOptions(opts: {
         if (diverse.length >= count) break;
       }
     }
-    return diverse.map(streamOption);
+    return diverse.map((t) => streamOption(t, opts.kind === 'music'));
   }
-  return rotate(pool, seed).slice(0, count).map(streamOption);
+  return rotate(pool, seed).slice(0, count).map((t) => streamOption(t, opts.kind === 'music'));
 }
 
 /** Spoken menu of song names / genres — chips optional alongside. */
@@ -244,4 +247,9 @@ export function randomMusicSeed(): number {
 /** Map ask kind → beginShow performance kind. */
 export function musicAskShowKind(kind: MusicAskKind): PerformanceKind {
   return kind === 'song' ? 'song' : 'dance';
+}
+
+/** Generic music asks play BGM under calm idle — not dance VRMA. */
+export function musicAskListenOnly(kind: MusicAskKind): boolean {
+  return kind === 'music';
 }

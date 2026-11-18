@@ -1,26 +1,25 @@
 # Amoji project status board
 
-**Generated:** 2026-11-17 21:15 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-18 12:30 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** [Pages](https://monmonmars.github.io/amoji-app/docs/project-status.html) · repo [`project-status.html`](./project-status.html)  
-**Pixel pickers:** [Pages owner-resources](https://monmonmars.github.io/amoji-app/docs/owner-resources.html) (music · poke · **idle** tabs) · legacy [`owner-music-picker.html`](https://monmonmars.github.io/amoji-app/docs/owner-music-picker.html) / [`owner-poke-reactions.html`](https://monmonmars.github.io/amoji-app/docs/owner-poke-reactions.html) / [`owner-idle-poses.html`](https://monmonmars.github.io/amoji-app/docs/owner-idle-poses.html#idle) redirect stubs · local: `cd docs && python3 -m http.server 8765`  
-**`main` tip:** `9af20556` (#496 · **r2026-11-17.203** · unified `owner-resources.html` · afternoon ship **#489–#493** + **#490–#492** · **#494–#496**)
+**Pixel pickers:** [Pages owner-resources](https://monmonmars.github.io/amoji-app/docs/owner-resources.html) (music · poke · **idle** · **stories** tabs) · local: `cd docs && python3 -m http.server 8765`  
+**`main` tip (pre-#504):** `445b85f6` (**r2026-11-18.211** · #503 owner perf picks) · **in flight:** listen-only BGM **r212**
 
 ## Snapshot
 
 | Bucket | Count |
 | --- | ---: |
-| **Done** — merged to `main` | 95+ stack · Nov 17 afternoon **#489–#493** landed |
-| **Open product PRs** | Hold spikes #1 / #20 only |
-| **Outstanding** — actionable code | **0** — queue from **#489–#493** cleared |
-| **Outstanding** — Pixel / human | **R10–R13 not Done** · card · news · nonsense · captions · SFX Want · [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
-| **Hold** | licensed music · Stripe live keys · Product Hunt · Search Console · spikes #1 / #20 |
-| Docs missing | 0 |
+| **Done** — merged to `main` | 100+ stack · Nov 18 ship **#497–#503** + **r208–r211** vault/stories/news |
+| **Open product PRs** | **#504** listen-only BGM (this turn) |
+| **Outstanding** — actionable code | **P0 sing/dance** — beat-aligned VRMA · unified session state (see [`SING_DANCE_PIPELINE.md`](./SING_DANCE_PIPELINE.md)) |
+| **Outstanding** — Pixel / human | **R10–R13 not Done** · [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
+| **Hold** | licensed music · Stripe · PH · Search Console · spikes #1 / #20 |
 
-**Honesty:** Merged ≠ owner Done. **Do not mark R10–R13 Done** without owner OK on live **r2026-11-17.202+**.  
-**Pages:** product app live; refresh SW after each revision bump.
+**Honesty:** Merged ≠ owner Done. **Do not mark R10–R13 Done** without owner OK on live **r2026-11-18.212+** after deploy.  
+**Pages:** refresh SW after each revision bump.
 
 ### Progress by category (% merged to `main`)
 
@@ -29,68 +28,43 @@
 | Chat UX | 99% |
 | Audio / TTS | 99% |
 | VRM / Idle | 99% |
-| Privacy / legal | 99% |
-| Setup / Gate | 99% |
-| Systems | 99% |
-| SEO / marketing surface | 99% |
-| Docs | 99% (#389 merged; this tip refresh r202) |
+| Music / perf pipeline | 98% (listen phase **r212** in PR) |
+| Docs | 99% |
 | Merge to main | 99% |
 
 ---
 
 ## Done (merged to `main`)
 
-Living tip: `2c1eee79` (**r2026-11-17.202**). Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
+Living tip through **#503** / **r2026-11-18.211**. Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
 
-### Nov 17 afternoon ship (#489–#493, #490–#492, #494–#495)
-
-| PR | Item | Notes |
-| --- | --- | --- |
-| [#493](https://github.com/MonMonMars/amoji-app/pull/493) | Dance **LoopRepeat** + owner dance rail/pin picks | **Phone** dance motion with bed |
-| [#492](https://github.com/MonMonMars/amoji-app/pull/492) | Selection card greet audible | EarlyAudioUnlock click; **Phone** /select |
-| [#491](https://github.com/MonMonMars/amoji-app/pull/491) | TTS hyphenated names (G-DRAGON) | Vitest speak-text |
-| [#490](https://github.com/MonMonMars/amoji-app/pull/490) | Long news read · 今日有咩新聞 | **Phone** yue news length |
-| [#489](https://github.com/MonMonMars/amoji-app/pull/489) | Poke/chat skip yue **我鍾意信** TTS loop | `pokeLineForSpeech` + speech-queue |
-| [#495](https://github.com/MonMonMars/amoji-app/pull/495) | Demo-phase chip scroll + shuffle | **Phone** chip row |
-| [#494](https://github.com/MonMonMars/amoji-app/pull/494) | Owner music + poke reaction HTML pickers | docs pickers |
-
-### Nov 17 backlog wave (#478–#486)
+### Nov 18 ship (#497–#503, r208–r211)
 
 | PR | Item | Notes |
 | --- | --- | --- |
-| [#486](https://github.com/MonMonMars/amoji-app/pull/486) | SettingsSheet master mute external store | Compiler slice R10 settings |
-| [#484](https://github.com/MonMonMars/amoji-app/pull/484) | PreChatAudioGate boot state init | Compiler slice soft audio gate |
-| [#483](https://github.com/MonMonMars/amoji-app/pull/483) | RequireEntryGate `useSyncExternalStore` | Entry guard Compiler slice |
-| [#482](https://github.com/MonMonMars/amoji-app/pull/482) | React Compiler eslint slice + status refresh | Mute/legal/soft-land; docs tip |
-| [#481](https://github.com/MonMonMars/amoji-app/pull/481) | TtsVoiceRow **All** — per-locale pin highlight | **Phone** R10 audit |
-| [#480](https://github.com/MonMonMars/amoji-app/pull/480) | Calm idle torso upright after poke/chat | **Phone** R11 |
-| [#479](https://github.com/MonMonMars/amoji-app/pull/479) | Caption history punct-only dedupe | **Phone** captions |
-| [#478](https://github.com/MonMonMars/amoji-app/pull/478) | Weather GPS deny IP prime + settings hint; news told 24h TTL + widen | **Phone** weather + news |
-| [#477](https://github.com/MonMonMars/amoji-app/pull/477) | Dance audible catch-up + mic `busyRef` | **Phone** dance/mic |
-| [#476](https://github.com/MonMonMars/amoji-app/pull/476) | Topical AI news honest miss (no junk substitute) | **Phone** news |
-| [#475](https://github.com/MonMonMars/amoji-app/pull/475) | Junk headline scrub (funds/ISIN) | News integrity |
-| [#474](https://github.com/MonMonMars/amoji-app/pull/474) | ESLint hygiene batch | CI |
-| [#472](https://github.com/MonMonMars/amoji-app/pull/472) | Card greet audible all langs (gesture tap) | **Phone** card |
-| [#471](https://github.com/MonMonMars/amoji-app/pull/471) | Owner idle picks, topical news 今日, poke lean | **Phone** |
+| [#503](https://github.com/MonMonMars/amoji-app/pull/503) | Owner perf picks — listen MV + sing audio/VRMA | **Phone** honor `ownerPerfPicks` / idle rails |
+| [#502](https://github.com/MonMonMars/amoji-app/pull/502) | MV069–MV098 JP+US Mixkit vault | owner-resources Music tab |
+| [#501](https://github.com/MonMonMars/amoji-app/pull/501) | News long body + boilerplate scrub | **Phone** 今日有咩新聞 length |
+| [#500](https://github.com/MonMonMars/amoji-app/pull/500) | ST001–ST038 fairy-tale vault + Stories tab | owner-resources |
+| [#499](https://github.com/MonMonMars/amoji-app/pull/499) | MV039–MV068 J-pop Mixkit vault | owner-resources |
+| [#498](https://github.com/MonMonMars/amoji-app/pull/498) | owner-resources play URL verify | Pages `../audio` paths |
+| [#497](https://github.com/MonMonMars/amoji-app/pull/497) | Docs Pages copy + symlink trim | deploy hygiene |
 
-### Nov 15 late wave (#419–#437)
+### Nov 17 afternoon ship (#489–#496)
 
-See prior rows in git history — tip was `9292e81` before Nov 17 wave.
+See prior rows — dance LoopRepeat, card greet, poke 我鍾意信 skip, news long read, unified owner-resources.
 
 ---
 
 ## Open PRs
 
-**None product** (Hold spikes only).
-
 | PR | Title | Notes |
 | --- | --- | --- |
+| **#504** (pending) | Listen-only BGM phase **r212** | Generic music → calm idle |
 | [#20](https://github.com/MonMonMars/amoji-app/pull/20) | CosyVoice TTS spike | Draft — Hold |
 | [#1](https://github.com/MonMonMars/amoji-app/pull/1) | Voice bake-off UI | Old spike — Hold |
 
-**Closed this turn:** [#469](https://github.com/MonMonMars/amoji-app/pull/469) weather search → Open-Meteo — already on `main` (`live-tools.ts`).
-
-**In flight:** none — agent queue clear on tip **#493** (**r202**).
+**Stale product branches:** none blocking — only Hold spikes stay open.
 
 ---
 
@@ -98,31 +72,18 @@ See prior rows in git history — tip was `9292e81` before Nov 17 wave.
 
 ### Code (agents)
 
-**0** on tip after **#493**. No queued owner blocker in the **#489–#493** batch.
+1. **Sing/dance P0** — beat-aligned VRMA start from audio clock; unified perf session state ([`SING_DANCE_PIPELINE.md`](./SING_DANCE_PIPELINE.md))  
+2. **Listen phase** — **r212** in PR (BGM + calm idle) — verify on Phone after merge  
 
-Do **not:** re-flip poke lean; wipe owner idle/poke/dance picks; mark R10–R13 Done; merge Hold spikes.
+Do **not:** re-merge closed vault/news/owner-pick work; mark R10–R13 Done without owner.
 
 ### Phone / human (not agent Done)
 
-1. **News length** — #490 — yue「今日有咩新聞」multi-sentence read (**merged · Phone**)  
-2. **Card greet** — #492 — /select audible preview (**merged · Phone**)  
-3. **Poke voice** — #489 — no 我鍾意信 loop on poke (**merged · Phone**)  
-4. **Dance** — #493 — looping perf with music; owner dance picks (**merged · Phone**)  
-5. **Weather deny** — #478 — Settings amber hint + IP city after GPS deny  
-6. **Captions** — #479 — punct-only dupes  
-7. **R11 idle** — #480+#430+#432 — upright after poke; honor picks (**not Done**)  
-8. **R10 voice** — #481+#424+#429 — All-row pins; male delivery (**not Done**)  
-9. **R13 poke** — #409+#434 — same-side lean (**not Done**)  
-10. **R12 lighting** — #408 — cast shader (**not Done**)  
-11. **Nonsense** — #412+#416+#426 — owner live OK  
-12. **SFX Want** — [`SFX_WANT_LIST.md`](./SFX_WANT_LIST.md)  
-13. Full [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)
-
-### Human / Pixel
-
-1. Phone smoke on Pages at **r202+** after #493 dance LoopRepeat + owner dance picks.  
-2. Talking-nonsense verify — owner OK still required.  
-3. Holds unchanged (#1 / #20 unless Pixel asks).
+1. **Listen BGM** — after **r212** live: 「播音樂」→ hear bed, body stays calm idle; 「跳舞」still dances  
+2. **Owner-resources** — Music / Stories tabs at **r211+**  
+3. **News length** — #501 merged · **Phone** yue multi-sentence  
+4. **R11 idle / R10 voice / R13 poke / R12 lighting** — **not Done**  
+5. Full [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)
 
 ---
 
@@ -132,16 +93,10 @@ Unchanged — licensed music, Stripe live, PH, Search Console, modular GLBs, spi
 
 ---
 
-## Feature status (priority)
-
-Prior table through #437 remains on `main`; Nov 17 PRs above supersede phone notes for weather, news, captions, idle, voice row, dance. **Verify:** post-merge live check = **Human**.
-
----
-
 ## Documents audit
 
 | Document | Path | Status |
 | --- | --- | --- |
-| This status board | `docs/PROJECT_STATUS.md` + `project-status.html` | Refreshed **2026-11-17** post-#493 |
-| Phone smoke | `docs/PHONE_SMOKE.md` | Agent pre-check updated |
-| Job checklist | `AMOJI_JOB_CHECKLIST.md` | Refreshed tip |
+| This status board | `docs/PROJECT_STATUS.md` | Refreshed **2026-11-18** post-#503 + **r212** draft |
+| Sing/dance pipeline | `docs/SING_DANCE_PIPELINE.md` | Listen phase noted **r212** |
+| Phone smoke | `docs/PHONE_SMOKE.md` | Owner verify |

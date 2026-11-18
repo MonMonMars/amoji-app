@@ -194,6 +194,7 @@ import {
 import { isMasterMuted } from '../lib/master-mute';
 import {
   listMusicPickOptions,
+  musicAskListenOnly,
   musicAskShowKind,
   musicSelectOfferLine,
   randomMusicSeed,
@@ -797,6 +798,7 @@ export default function ChatPanel({
     styleHint?: string,
     afterStart?: () => void,
     pick?: { clipId?: string; streamId?: string; genre?: string },
+    listenOnly = false,
   ) => {
     const query = {
       kind,
@@ -820,8 +822,10 @@ export default function ChatPanel({
     const intro = performanceIntroLine(kind === 'song' ? 'song' : 'music', title, lang, genre);
     const hold = Math.max(clip.durationMs + 600, ms);
     const bodyMove = kind === 'song' ? 'sing' : 'dance';
-    // Arm only — stay calm through intro TTS and fetch/decode.
-    pendingShowDanceRef.current = armPerfDance(bodyMove, hold, clip.id);
+    // Listen-only BGM: intro + bed, calm idle — no VRMA until user asks to dance.
+    pendingShowDanceRef.current = listenOnly
+      ? null
+      : armPerfDance(bodyMove, hold, clip.id);
     pendingShowClipRef.current = clip;
     // Name on the now-playing chip immediately; audio waits for the intro.
     showTrack(clip, hold);
@@ -834,11 +838,13 @@ export default function ChatPanel({
       pendingShowClipRef.current = playing;
       // Keep pending armed through async decode; sync re-arm may already
       // have consumed it via library-clip playing — then just extend hold.
-      const refreshed = refreshPendingPerfDance(pendingShowDanceRef.current, playing.id, nextHold);
-      if (refreshed) {
-        pendingShowDanceRef.current = refreshed;
-      } else {
-        holdMove(nextHold);
+      if (!listenOnly) {
+        const refreshed = refreshPendingPerfDance(pendingShowDanceRef.current, playing.id, nextHold);
+        if (refreshed) {
+          pendingShowDanceRef.current = refreshed;
+        } else {
+          holdMove(nextHold);
+        }
       }
       // Muted / no window: no playing event — do not leave a dangling arm.
       if (isMasterMuted() || typeof window === 'undefined') {
@@ -849,6 +855,7 @@ export default function ChatPanel({
       // BufferSource / re-emit paths can dispatch `playing` before this
       // callback returns — catch a missed listener and start body motion.
       queueMicrotask(() => {
+        if (listenOnly) return;
         if (!isLibraryClipAudible()) return;
         const active = activeLibraryClipId();
         if (active) commitPendingPerfDance(active);
@@ -873,6 +880,7 @@ export default function ChatPanel({
         streamId: option.streamId,
         genre: option.genre,
       },
+      !!option.listenOnly,
     );
   };
 
@@ -1465,7 +1473,7 @@ export default function ChatPanel({
       if (ask.mode === 'random' && (ask.kind === 'music' || ask.kind === 'song' || ask.kind === 'dance')) {
         setMusicPicks(null);
         perfCountRef.current += 1;
-        const showKind = ask.kind === 'song' ? 'song' : 'dance';
+        const showKind = musicAskShowKind(ask.kind);
         beginShow(
           showKind,
           18_000,
@@ -1473,6 +1481,9 @@ export default function ChatPanel({
           randomMusicSeed(),
           ask.kind === 'music',
           ask.style,
+          undefined,
+          undefined,
+          musicAskListenOnly(ask.kind),
         );
         done();
         return;
@@ -1518,7 +1529,7 @@ export default function ChatPanel({
         return;
       }
       if (kind === 'music') {
-        beginShow('dance', 18_000, undefined, perfCountRef.current, true);
+        beginShow('dance', 18_000, undefined, perfCountRef.current, true, undefined, undefined, undefined, true);
         done();
         return;
       }
