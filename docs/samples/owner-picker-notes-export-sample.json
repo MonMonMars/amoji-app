@@ -1,0 +1,56 @@
+{
+  "version": "owner-picker-notes-v2",
+  "exportedAt": "2026-11-19T02:00:00.000Z",
+  "items": [
+    {
+      "cd": "CD089",
+      "domain": "MV070",
+      "prefix": "MV",
+      "id": "mv-bed-forest-pop",
+      "label": "Forest pop bed",
+      "decision": "use",
+      "keep": true,
+      "note": "Default listen row"
+    },
+    {
+      "cd": "CD120",
+      "domain": "ID-R05",
+      "prefix": "ID",
+      "id": "IdleQuaterniusHuman",
+      "label": "Quaternius human idle",
+      "decision": "use",
+      "keep": true,
+      "note": "Idle rail 5"
+    },
+    {
+      "cd": "CD045",
+      "domain": "DC012",
+      "prefix": "DC",
+      "id": "sing-f-silent-night",
+      "label": "Silent Night (female)",
+      "decision": "use",
+      "keep": true,
+      "note": ""
+    },
+    {
+      "cd": "CD200",
+      "domain": "MV099",
+      "prefix": "MV",
+      "id": "mv-cut-example",
+      "label": "Cut this bed",
+      "decision": "delete",
+      "keep": false,
+      "note": "唔用"
+    }
+  ],
+  "use": [],
+  "keep": [],
+  "delete": [],
+  "useCd": ["CD089", "CD120", "CD045"],
+  "keepCd": [],
+  "deleteCd": ["CD200"],
+  "remove": [],
+  "removeCd": ["CD200"],
+  "removeByPrefix": {},
+  "kept": 3
+}

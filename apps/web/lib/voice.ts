@@ -83,6 +83,7 @@ import { characterVoiceGender } from './voice-gender';
 import {
   createDefaultAudioContext,
   ensureCompanionPlaybackRoute,
+  micCommsRoutingLatchActive,
   pinDefaultOutputAsync,
   primeDefaultSpeakerBeforeSynth,
 } from './audio-output';
@@ -147,7 +148,7 @@ import { SONG_MELODY } from './songs';
 import { endLipSync, finishLipSync, holdLipSync, noteSpeechStarted, notifySpeaking } from './speech';
 import { clearSpeechCaption, dispatchSpeechCaption, rollCaptionsForLine } from './speech-caption';
 import { duckLibraryBed } from './music';
-import { duckExternalAudioForCompanion } from './voice-chat-focus';
+import { companionPlaybackSession, duckExternalAudioForCompanion } from './voice-chat-focus';
 
 // ---- r2026-10-05.99: media-gate latches -------------------------------------
 // ctxPrimed runs once (an AudioContext resume is global and idempotent).
@@ -1670,7 +1671,7 @@ function performSpeak(
   if (!speechAlive()) { settle(); return; }
   // All langs (not just Yue): leave mic play-and-record so HTMLAudio/synth
   // land on the same default speakers as the gate sample.
-  ensureCompanionPlaybackRoute();
+  companionPlaybackSession();
 
   // Free chain: Edge (locale + gender) → speechSynthesis. Yue adds
   // canto-tts-nano only when that runtime is bundled. OpenAI is opt-in and
@@ -1702,6 +1703,7 @@ function performSpeak(
   const runSynth = (onDone: () => void): boolean => {
     if (typeof speechSynthesis === 'undefined') return false;
     try {
+      companionPlaybackSession();
       synthSpeak(text, characterId, lang, emotion, expr, tic, amp, undefined, onDone, spokenGender, value, false, rateBias);
       reportVoiceStatus('synth', true, 'browser voice queued');
       return true;
@@ -1718,6 +1720,7 @@ function performSpeak(
   const runSynthTail = (rest: string, onDone: () => void): boolean => {
     if (typeof speechSynthesis === 'undefined') return false;
     try {
+      companionPlaybackSession();
       synthSpeak(rest, characterId, lang, emotion, expr, undefined, amp, undefined, onDone, spokenGender, value, false, rateBias);
       reportVoiceStatus('synth', true, 'browser voice queued (tail)');
       return true;
@@ -1770,6 +1773,13 @@ function performSpeak(
       if (!hop) { settle(); return; }
       const next = (): void => runAt(index + 1);
       if (hop === 'synth') {
+        // Male chain runs synth before gTTS. Under mic play-and-record, OS
+        // synth often lands on earpiece/BT while gTTS uses loudspeaker — skip
+        // to the HTTP tier so en/zh/ja match the gate sample device.
+        if (spokenGender === 'male' && micCommsRoutingLatchActive()) {
+          next();
+          return;
+        }
         if (!runSynth(settle)) next();
         return;
       }
@@ -2023,7 +2033,7 @@ export function playVoiceGreeting(
   // Prefer silence until real gTTS/Edge TTS over any local hello/hihi insurance.
   // Playback session only — do NOT primeDefaultSpeakerBeforeSynth or
   // primeSynthInGesture here: silent warm-up plays race gesture-bound gTTS.
-  ensureCompanionPlaybackRoute();
+  duckExternalAudioForCompanion();
   // Rotate a short phrase bank so re-taps do not always say the same Hello.
   const text = line?.trim() ? line.trim() : nextCardGreetPhrase(lang);
   // Companion gender is the fallback; a tapped male/female button wins so
@@ -2414,7 +2424,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const stale = () => auditionGen !== cardAuditionGeneration;
   // DO NOT reintroduce audible insurance / gesture "robot" clips for voice
   // previews — same owner regression as playVoiceGreeting (robot+neural double).
-  ensureCompanionPlaybackRoute();
+  duckExternalAudioForCompanion();
   // Delivery gender from the tapped button (male pin → male pace/pitch).
   const tl = tlForChoice(locale, choiceId);
   const previewGender = deliveryGenderForChoice(locale, choiceId, 'female');

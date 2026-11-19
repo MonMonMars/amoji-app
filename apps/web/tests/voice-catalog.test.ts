@@ -2,13 +2,19 @@ import { describe, expect, it } from 'vitest';
 import {
   HELD_GPU_ENGINES,
   SKIPPED_ENGINES,
+  VOICE_APP_LOCALES,
   VOICE_CATALOG,
+  catalogShippingHasBothGenders,
   edgeVoiceId,
+  edgeVoiceIdForTier,
+  localeCatalogGenderCounts,
   selectBrowserVoice,
   synthNameConflicts,
   voiceNameMatches,
   voicesForLocale,
+  type VoiceLocale,
 } from '../lib/voice-catalog';
+import type { GttsPitchTier } from '../lib/gtts-timbre';
 
 describe('locale voice catalog', () => {
   it('ships Edge and speechSynthesis, and keeps the other free engines', () => {
@@ -98,5 +104,48 @@ describe('locale voice catalog', () => {
       expect(engines.has(skipped.engine as never)).toBe(false);
       expect(skipped.license).toMatch(/CPML|NC/);
     }
+  });
+});
+
+describe('locale × gender catalog parity', () => {
+  const tiers: GttsPitchTier[] = ['deep', 'mid', 'bright'];
+  const genders = ['female', 'male'] as const;
+
+  it('every app locale ships ≥1 female and ≥1 male in Edge + speech catalog', () => {
+    expect(VOICE_APP_LOCALES).toEqual(['yue', 'zh', 'ja', 'en']);
+    for (const locale of VOICE_APP_LOCALES) {
+      expect(catalogShippingHasBothGenders(locale), locale).toBe(true);
+      const row = localeCatalogGenderCounts(locale);
+      expect(row.femaleShipping, `${locale} female shipping`).toBeGreaterThan(0);
+      expect(row.maleShipping, `${locale} male shipping`).toBeGreaterThan(0);
+      expect(voicesForLocale(locale).some((v) => v.shipping && v.engine === 'edge' && v.gender === 'female')).toBe(true);
+      expect(voicesForLocale(locale).some((v) => v.shipping && v.engine === 'edge' && v.gender === 'male')).toBe(true);
+      expect(voicesForLocale(locale).some((v) => v.shipping && v.engine === 'speech' && v.gender === 'female')).toBe(true);
+      expect(voicesForLocale(locale).some((v) => v.shipping && v.engine === 'speech' && v.gender === 'male')).toBe(true);
+    }
+  });
+
+  it('keeps distinct Edge tier ids for each gender × pitch (card/greet cast)', () => {
+    for (const locale of VOICE_APP_LOCALES) {
+      for (const gender of genders) {
+        const ids = tiers.map((tier) => edgeVoiceIdForTier(locale, gender, tier));
+        expect(ids.every((id) => id.length > 0), `${locale} ${gender}`).toBe(true);
+        expect(new Set(ids).size, `${locale} ${gender} tier voices`).toBeGreaterThanOrEqual(1);
+      }
+    }
+  });
+
+  it('documents default Edge neural ids per locale (male ≠ female)', () => {
+    const matrix: Record<VoiceLocale, { female: string; male: string }> = {
+      yue: { female: edgeVoiceId('yue', 'female'), male: edgeVoiceId('yue', 'male') },
+      zh: { female: edgeVoiceId('zh', 'female'), male: edgeVoiceId('zh', 'male') },
+      ja: { female: edgeVoiceId('ja', 'female'), male: edgeVoiceId('ja', 'male') },
+      en: { female: edgeVoiceId('en', 'female'), male: edgeVoiceId('en', 'male') },
+    };
+    for (const locale of VOICE_APP_LOCALES) {
+      expect(matrix[locale].female).not.toBe(matrix[locale].male);
+    }
+    expect(matrix.yue.female).toBe('zh-HK-HiuMaanNeural');
+    expect(matrix.yue.male).toBe('zh-HK-WanLungNeural');
   });
 });

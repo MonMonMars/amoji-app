@@ -446,9 +446,15 @@
 // r2026-11-18.232: owner-resources motion column — sidecar GIF previews + poke section (#517).
 // r2026-11-18.233: owner-resources tri-state 採用/保留/刪除 + owner-picker-notes-v2 export (#517).
 // r2026-11-18.237: revision renumber — serial r237 after #522 r236 (was r235 clash) (#517).
+<<<<<<< HEAD
 // r2026-11-18.240: card voice hotfix — gesture gTTS defer teardown; skip silent-unblock race (#519).
 // r2026-11-18.242: revision renumber — #527 r240 + #528 r241; card hotfix (#529) takes r242.
 export const APP_REVISION = 'r2026-11-18.249';
+=======
+// r2026-11-18.238: all-lang TTS on main loudspeaker under mic latch — gesture pin + male→gTTS skip (#528).
+// r2026-11-19.263: all-lang main speaker + male gTTS pin (#528).
+export const APP_REVISION = 'r2026-11-19.263';
+>>>>>>> origin/main
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
