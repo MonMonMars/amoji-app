@@ -2031,15 +2031,10 @@ export function playVoiceGreeting(
   // DO NOT reintroduce audible insurance / gesture "robot" clips for card
   // greets — owner regression many times (robot+female double, then robot-only).
   // Prefer silence until real gTTS/Edge TTS over any local hello/hihi insurance.
-<<<<<<< HEAD
+HEAD
   ensureCompanionPlaybackRoute();
   // #528: align OS default output with chat before gesture-bound gTTS (not synth warm-up).
   void primeDefaultSpeakerBeforeSynth();
-=======
-  // Playback session only — do NOT primeDefaultSpeakerBeforeSynth or
-  // primeSynthInGesture here: silent warm-up plays race gesture-bound gTTS.
-  duckExternalAudioForCompanion();
->>>>>>> origin/main
   // Rotate a short phrase bank so re-taps do not always say the same Hello.
   const text = line?.trim() ? line.trim() : nextCardGreetPhrase(lang);
   // Companion gender is the fallback; a tapped male/female button wins so
@@ -2430,12 +2425,9 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const stale = () => auditionGen !== cardAuditionGeneration;
   // DO NOT reintroduce audible insurance / gesture "robot" clips for voice
   // previews — same owner regression as playVoiceGreeting (robot+neural double).
-<<<<<<< HEAD
+HEAD
   ensureCompanionPlaybackRoute();
   void primeDefaultSpeakerBeforeSynth();
-=======
-  duckExternalAudioForCompanion();
->>>>>>> origin/main
   // Delivery gender from the tapped button (male pin → male pace/pitch).
   const tl = tlForChoice(locale, choiceId);
   const previewGender = deliveryGenderForChoice(locale, choiceId, 'female');
