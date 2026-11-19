@@ -1,6 +1,6 @@
 # Amoji project status board
 
-**Generated:** 2026-11-19 16:30 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-19 16:55 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/) · [`revision.txt`](https://monmonmars.github.io/amoji-app/revision.txt) **= r2026-11-18.237** (matches `main`)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
@@ -10,7 +10,7 @@
 
 ## Waiting on Pixel merge (owner)
 
-Product train **#528 → #543** + voice/idle add-ons **#547 #546 #545** are **CI green** (after #528 gesture test + #547 rebase fix). **No train merges** since last board — live stays **r237**.
+**CI:** #528 #529 #545 #546 #547 #548 **pass** · `verify:agent-smoke` **ok** (live = main **r237**) · **no train merges** · **Pixel: squash merge [#528](https://github.com/MonMonMars/amoji-app/pull/528) next**.
 
 **Pixel（粵）:** 而家 live 仲係 **r237**；**#528→#543** CI 全部綠，請跟 [`AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md`](./AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md) **逐個 squash merge**，由 **#528** 開始，每 merge 一次等 Pages `revision.txt` 更新再繼續。
 
