@@ -5,6 +5,18 @@
 **CI (2026-11-19):** **#528–#544** build green — no agent code fixes; **waiting on Pixel** serial squash merges.  
 **Supersedes:** #536 #537 #533 #538 → **#541** when it lands; #524 → **#543**
 
+## Jump (TOC)
+
+| Jump | PRs / notes |
+| --- | --- |
+| [Critical path ladder ↓](#revision-ladder-deconflicted-r248r261) | **#528→#543** (r248–r254) |
+| [Demo / docs tail ↓](#demo--docs-tail-after-hypothetical-live-r254--rebased-on-main-2026-11-18) | [#534](https://github.com/MonMonMars/amoji-app/pull/534) · [#535](https://github.com/MonMonMars/amoji-app/pull/535) · #530 #532 #538 #539 (r256–r261) |
+| Outside train (optional) | [#526](https://github.com/MonMonMars/amoji-app/pull/526) kung fu speak ↔ motion — **not** in one-click block; prep locked on coordination branch (`martial-speak-prep.test.ts`) |
+| [One-click merge script ↓](#one-click-merge-train-owner-mental-model--no-agent-gh-pr-merge) | owner `gh pr merge` only |
+| [Phone matrix ↓](#what-pixel-tests-on-phone) | post-merge smoke |
+
+**CI watch (agents):** after pushing train branches, subscribe to workflow completion or poll `gh pr checks` — do not merge; Pixel owns serial squash.
+
 ## Revision ladder (deconflicted r248–r261)
 
 ### Critical path (merge first — green after r248–r254 train prep)
