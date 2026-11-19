@@ -46,6 +46,22 @@ report.ok =
   report.steps['2_confirm_revision'].matchesExpected &&
   report.steps['2_confirm_revision'].sw_cache_matches;
 
+const liveBehindRepo = Boolean(liveRev && expected && liveRev !== expected);
+report.pixel_train = {
+  live_revision: liveRev || null,
+  repo_revision: expected,
+  live_matches_repo: liveRev === expected,
+  live_behind_repo: liveBehindRepo,
+  /** Owner squash merge order — do not agent-merge; see docs/AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md */
+  owner_gate_pr: liveBehindRepo || liveRev === 'r2026-11-18.237' ? 528 : null,
+  note:
+    liveBehindRepo
+      ? 'Pages lags APP_REVISION — Pixel merges #528→#543 until live catches repo.'
+      : liveRev === 'r2026-11-18.237'
+        ? 'Live at pre-train r237; first merge is still #528 (r248).'
+        : 'Live matches repo revision.',
+};
+
 report.steps['3_refresh_chip'] = {
   agent_skipped: true,
   note: 'Update ready · Refresh only when client SW/revision lags live revision.txt (owner device).',
