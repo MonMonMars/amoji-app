@@ -1,0 +1,23 @@
+{
+  "handoffDate": "2026-11-19",
+  "demoChat": "https://monmonmars.github.io/amoji-app/chat",
+  "ownerResources": "https://monmonmars.github.io/amoji-app/owner-resources.html",
+  "revisionUrl": "https://monmonmars.github.io/amoji-app/revision.txt",
+  "statusBoard": "https://monmonmars.github.io/amoji-app/project-status.html",
+  "mainRevisionAtHandoff": "r2026-11-19.265",
+  "liveRevisionAtHandoff": "r2026-11-19.264",
+  "mergedPrs": [549, 550, 551, 528, 529, 547],
+  "files": [
+    "README_HANDOFF.md",
+    "AGENT_FINISH_PIXEL_HANDOFF.md",
+    "PROJECT_STATUS.md",
+    "VOICE_SOUND_INVENTORY.md",
+    "RESOURCE_LIBRARY_INDEX.md",
+    "PHONE_SMOKE.md",
+    "AGENT_SMOKE.md",
+    "OWNER_PICKER_IMPORT.md",
+    "LIVE_REVISION.txt",
+    "manifest.json",
+    "samples/owner-picker-notes-export-sample.json"
+  ]
+}
