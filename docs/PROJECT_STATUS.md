@@ -1,6 +1,6 @@
 # Amoji project status board
 
-**Generated:** 2026-11-19 16:55 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-19 20:12 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/) · [`revision.txt`](https://monmonmars.github.io/amoji-app/revision.txt) **= r2026-11-18.237** (matches `main`)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
@@ -10,14 +10,14 @@
 
 ## Waiting on Pixel merge (owner)
 
-**CI:** #528 #529 #545 #546 #547 #548 **pass** · `verify:agent-smoke` **ok** (live = main **r237**) · **no train merges** · **Pixel: squash merge [#528](https://github.com/MonMonMars/amoji-app/pull/528) next**.
+**CI:** #528 #529 #545 #546 #547 #548 **pass** · split **#549 #550 #551** **pass** (2026-11-19) · `verify:agent-smoke` **ok** (live = main **r237**) · **no train merges** · **Pixel: squash merge [#528](https://github.com/MonMonMars/amoji-app/pull/528) next**.
 
 **Pixel（粵）:** 而家 live 仲係 **r237**；**#528→#543** CI 全部綠，請跟 [`AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md`](./AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md) **逐個 squash merge**，由 **#528** 開始，每 merge 一次等 Pages `revision.txt` 更新再繼續。
 
 | Resource | Link |
 | --- | --- |
 | Handoff ladder + phone tests | [`AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md`](./AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md) |
-| Coordination PR (docs only) | [#544](https://github.com/MonMonMars/amoji-app/pull/544) |
+| Coordination (split from [#544](https://github.com/MonMonMars/amoji-app/pull/544)) | [#549](https://github.com/MonMonMars/amoji-app/pull/549) docs · [#550](https://github.com/MonMonMars/amoji-app/pull/550) import · [#551](https://github.com/MonMonMars/amoji-app/pull/551) smoke locks |
 | **Next merge** | [#528](https://github.com/MonMonMars/amoji-app/pull/528) → r248 (baked **r263**) |
 | Full stack | #528 #529 **#547 #546** #523 #522 #540 #541 #543 **#545** (then optional #531 · tail #534–#538) |
 
@@ -116,7 +116,10 @@ Handoff detail: [`AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md`](./AGENT_FINISH_PIXE
 | 6 | [#538](https://github.com/MonMonMars/amoji-app/pull/538) | **r261** | Motion thumb GIFs — merge **after #541** regen |
 
 | — | [#512](https://github.com/MonMonMars/amoji-app/pull/512) | r218 | Chat report chip — **merged** |
-| — | [#544](https://github.com/MonMonMars/amoji-app/pull/544) | — | Handoff + picker import script/docs |
+| — | [#549](https://github.com/MonMonMars/amoji-app/pull/549) | — | Handoff ladder + status board (docs) |
+| — | [#550](https://github.com/MonMonMars/amoji-app/pull/550) | — | owner-picker notes v2 → selection JSON |
+| — | [#551](https://github.com/MonMonMars/amoji-app/pull/551) | — | Pixel regression locks + agent-smoke gate |
+| — | [#544](https://github.com/MonMonMars/amoji-app/pull/544) | — | Umbrella — superseded by **#549–#551** (close when splits merged) |
 | Hold | [#20](https://github.com/MonMonMars/amoji-app/pull/20) / [#1](https://github.com/MonMonMars/amoji-app/pull/1) | — | Spikes |
 
 **No history-resume ask:** shipped on `main` via [#331](https://github.com/MonMonMars/amoji-app/pull/331) / [#366](https://github.com/MonMonMars/amoji-app/pull/366) / [#412](https://github.com/MonMonMars/amoji-app/pull/412) / [#470](https://github.com/MonMonMars/amoji-app/pull/470) — branch `cursor/no-history-resume-ask-0340` reconciled; no second product PR.
@@ -186,7 +189,7 @@ Unchanged — licensed music, Stripe live, PH, Search Console, modular GLBs, spi
 | Document | Path | Status |
 | --- | --- | --- |
 | Pixel handoff | `docs/AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md` | r248–r261 ladder · one-click merge script · **#540/#541 beds verified** |
-| This status board | `docs/PROJECT_STATUS.md` | Refreshed **2026-11-19 16:30 HKT** · live **r237** · +**#547/#546/#545** on ladder |
+| This status board | `docs/PROJECT_STATUS.md` | Refreshed **2026-11-19 20:12 HKT** · live **r237** · **#549–#551** CI green · merge gate **#528** |
 | Agent smoke | `docs/AGENT_SMOKE.md` | `pixel-no-repeat.test.ts` demo rail + news/weather live-path guards |
 | Sing/dance pipeline | `docs/SING_DANCE_PIPELINE.md` | PerformanceSession on **r214** |
 | Phone smoke | `docs/PHONE_SMOKE.md` | Owner verify |
