@@ -1,7 +1,8 @@
 # Pixel merge train — agent handoff (2026-11-18 evening)
 
-**Live pre-merge:** https://monmonmars.github.io/amoji-app/ · **`revision.txt`:** **r2026-11-18.237**  
+**Live pre-merge:** https://monmonmars.github.io/amoji-app/ · **`revision.txt`:** **r2026-11-18.237** (live = `main` tip **2026-11-19**)  
 **Coordination branch:** `cursor/no-history-resume-ask-0340` · handoff PR **#544**  
+**CI (2026-11-19):** **#528–#544** build green — no agent code fixes; **waiting on Pixel** serial squash merges.  
 **Supersedes:** #536 #537 #533 #538 → **#541** when it lands; #524 → **#543**
 
 ## Revision ladder (deconflicted r248–r261)

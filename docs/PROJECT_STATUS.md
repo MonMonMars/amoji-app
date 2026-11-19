@@ -1,12 +1,25 @@
 # Amoji project status board
 
-**Generated:** 2026-11-19 02:12 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-19 08:52 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
-**Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/)  
+**Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/) · [`revision.txt`](https://monmonmars.github.io/amoji-app/revision.txt) **= r2026-11-18.237** (matches `main`)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** [Pages](https://monmonmars.github.io/amoji-app/docs/project-status.html) · repo [`project-status.html`](./project-status.html)  
 **Pixel pickers:** [Pages owner-resources](https://monmonmars.github.io/amoji-app/docs/owner-resources.html) (music · poke · **idle** · **stories** · **news** · **demo** tabs) · local: `cd docs && python3 -m http.server 8765`  
-**`main` tip:** `91a857e3` (**r2026-11-18.237** · #518–#520 + #517 merged; live deploy pending)
+**`main` tip:** `91a857e3` (**r2026-11-18.237** · #518–#520 + #517 merged)
+
+## Waiting on Pixel merge (owner)
+
+Product train **#528 → #543** is **CI green**; **not on `main` yet**. Live stays **r237** until Pixel squash-merges in order.
+
+| Resource | Link |
+| --- | --- |
+| Handoff ladder + phone tests | [`AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md`](./AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md) |
+| Coordination PR (docs only) | [#544](https://github.com/MonMonMars/amoji-app/pull/544) |
+| **Next merge** | [#528](https://github.com/MonMonMars/amoji-app/pull/528) → r248 |
+| Full stack | #528 #529 #523 #522 #540 #541 #543 (then optional #531 · tail #534–#538) |
+
+**Gap vs live (r237):** idle/poke **採用** runtime ([#543](https://github.com/MonMonMars/amoji-app/pull/543)); full owner-resources catalog + hash tabs ([#541](https://github.com/MonMonMars/amoji-app/pull/541)); CC0 J-pop beds + perf allowlist ([#540](https://github.com/MonMonMars/amoji-app/pull/540)); demo **聽音樂/聽歌/唱歌** chips ([#534](https://github.com/MonMonMars/amoji-app/pull/534)) · **睇星星** ([#535](https://github.com/MonMonMars/amoji-app/pull/535)).
 
 ## Snapshot
 
@@ -167,6 +180,6 @@ Unchanged — licensed music, Stripe live, PH, Search Console, modular GLBs, spi
 | Document | Path | Status |
 | --- | --- | --- |
 | Pixel handoff | `docs/AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md` | r248–r261 ladder · one-click merge script · **#540/#541 beds verified** |
-| This status board | `docs/PROJECT_STATUS.md` | Refreshed **2026-11-19 02:12 HKT** · critical **#528–#543** green · tail **#530–#539** fixed/rebased |
+| This status board | `docs/PROJECT_STATUS.md` | Refreshed **2026-11-19 08:52 HKT** · **waiting on Pixel** · **#528–#544** CI green |
 | Sing/dance pipeline | `docs/SING_DANCE_PIPELINE.md` | PerformanceSession on **r214** |
 | Phone smoke | `docs/PHONE_SMOKE.md` | Owner verify |
