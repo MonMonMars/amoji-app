@@ -31,7 +31,7 @@
 | **r264** | [#547](https://github.com/MonMonMars/amoji-app/pull/547) | `cursor/card-greet-speaker-prime-0340-0eac` | 🟢 · rebased on **#528** tip; was **r238** |
 | **r266** | [#546](https://github.com/MonMonMars/amoji-app/pull/546) | `cursor/voice-lang-gender-pair-0340-0eac` | 🟢 · was **r262** clash |
 | **r250** | [#523](https://github.com/MonMonMars/amoji-app/pull/523) | `cursor/chat-interrupt-new-topic-0340-0eac` | 🟢 |
-| **r251** | [#522](https://github.com/MonMonMars/amoji-app/pull/522) | `cursor/music-playback-regression-0340-0eac` | 
+| **r251** | [#522](https://github.com/MonMonMars/amoji-app/pull/522) | `cursor/music-playback-regression-0340-0eac` | 🟢 |
 | **r252** | [#540](https://github.com/MonMonMars/amoji-app/pull/540) | `cursor/jpop-royalty-performance-0340-0eac` | 🟢 · **9 CC0 beds on tip** `f6cc0df2` |
 | **r253** | [#541](https://github.com/MonMonMars/amoji-app/pull/541) | `cursor/owner-resources-full-catalog-0340-0eac` | 🟢 · same beds + manifest `ebe5f2fa` |
 | **r254** | [#543](https://github.com/MonMonMars/amoji-app/pull/543) | `cursor/idle-poke-voice-fix-0340-0eac` | 🟢 |
