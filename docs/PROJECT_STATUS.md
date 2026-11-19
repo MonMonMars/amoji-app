@@ -1,6 +1,6 @@
 # Amoji project status board
 
-**Generated:** 2026-11-19 10:20 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-19 16:30 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/) · [`revision.txt`](https://monmonmars.github.io/amoji-app/revision.txt) **= r2026-11-18.237** (matches `main`)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
@@ -10,7 +10,7 @@
 
 ## Waiting on Pixel merge (owner)
 
-Product train **#528 → #543** is **CI green**; **not on `main` yet**. Live stays **r237** until Pixel squash-merges in order.
+Product train **#528 → #543** + voice/idle add-ons **#547 #546 #545** are **CI green** (after #528 gesture test + #547 rebase fix). **No train merges** since last board — live stays **r237**.
 
 **Pixel（粵）:** 而家 live 仲係 **r237**；**#528→#543** CI 全部綠，請跟 [`AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md`](./AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md) **逐個 squash merge**，由 **#528** 開始，每 merge 一次等 Pages `revision.txt` 更新再繼續。
 
@@ -18,8 +18,8 @@ Product train **#528 → #543** is **CI green**; **not on `main` yet**. Live sta
 | --- | --- |
 | Handoff ladder + phone tests | [`AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md`](./AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md) |
 | Coordination PR (docs only) | [#544](https://github.com/MonMonMars/amoji-app/pull/544) |
-| **Next merge** | [#528](https://github.com/MonMonMars/amoji-app/pull/528) → r248 |
-| Full stack | #528 #529 #523 #522 #540 #541 #543 (then optional #531 · tail #534–#538) |
+| **Next merge** | [#528](https://github.com/MonMonMars/amoji-app/pull/528) → r248 (baked **r263**) |
+| Full stack | #528 #529 **#547 #546** #523 #522 #540 #541 #543 **#545** (then optional #531 · tail #534–#538) |
 
 **Gap vs live (r237):** idle/poke **採用** runtime ([#543](https://github.com/MonMonMars/amoji-app/pull/543)); full owner-resources catalog + hash tabs ([#541](https://github.com/MonMonMars/amoji-app/pull/541)); CC0 J-pop beds + perf allowlist ([#540](https://github.com/MonMonMars/amoji-app/pull/540)); demo **聽音樂/聽歌/唱歌** chips ([#534](https://github.com/MonMonMars/amoji-app/pull/534)) · **睇星星** ([#535](https://github.com/MonMonMars/amoji-app/pull/535)).
 
@@ -28,7 +28,7 @@ Product train **#528 → #543** is **CI green**; **not on `main` yet**. Live sta
 | Bucket | Count |
 | --- | ---: |
 | **Done** — merged to `main` | 100+ stack · through **#518–#520** + **#517** · **r237** (incl. #497–#515 vault/perf/news) |
-| **Open product PRs** | Train **#528–#543** · tail **#534–#538** · spikes Hold |
+| **Open product PRs** | Train **#528–#543** + **#547 #546 #545** · tail **#534–#538** · spikes Hold |
 | **Outstanding** — agents (no PR yet) | VRM pupil · picker polish |
 | **Outstanding** — Pixel / human | **R10–R13 not Done** · stale SW · [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
 | **Hold** | licensed music · Stripe · PH · Search Console · spikes #1 / #20 |
@@ -94,11 +94,14 @@ Handoff detail: [`AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md`](./AGENT_FINISH_PIXE
 | ---: | --- | --- | --- |
 | 1 | [#528](https://github.com/MonMonMars/amoji-app/pull/528) | **r248** | All-lang main speaker |
 | 2 | [#529](https://github.com/MonMonMars/amoji-app/pull/529) | **r249** | Card audition audible |
-| 3 | [#523](https://github.com/MonMonMars/amoji-app/pull/523) | **r250** | Chat interrupt + history |
-| 4 | [#522](https://github.com/MonMonMars/amoji-app/pull/522) | **r251** | Music after PerformanceSession |
-| 5 | [#540](https://github.com/MonMonMars/amoji-app/pull/540) | **r252** | CC0 beds + music allowlist |
-| 6 | [#541](https://github.com/MonMonMars/amoji-app/pull/541) | **r253** | Full owner catalog (**supersedes #536/#537/#533**) |
-| 7 | [#543](https://github.com/MonMonMars/amoji-app/pull/543) | **r254** | Idle/poke 採用 runtime (**supersedes #524**) |
+| 3 | [#547](https://github.com/MonMonMars/amoji-app/pull/547) | **r264** | Card greet phrases + speaker prime (on **#528**) |
+| 4 | [#546](https://github.com/MonMonMars/amoji-app/pull/546) | **r266** | Picker F+M per locale (**not** dup **#528** routing) |
+| 5 | [#523](https://github.com/MonMonMars/amoji-app/pull/523) | **r250** | Chat interrupt + history |
+| 6 | [#522](https://github.com/MonMonMars/amoji-app/pull/522) | **r251** | Music after PerformanceSession |
+| 7 | [#540](https://github.com/MonMonMars/amoji-app/pull/540) | **r252** | CC0 beds + music allowlist |
+| 8 | [#541](https://github.com/MonMonMars/amoji-app/pull/541) | **r253** | Full owner catalog (**supersedes #536/#537/#533**) |
+| 9 | [#543](https://github.com/MonMonMars/amoji-app/pull/543) | **r254** | Idle/poke 採用 runtime (**supersedes #524**) |
+| 10 | [#545](https://github.com/MonMonMars/amoji-app/pull/545) | **r265** | Idle v2 blend smear fix (after **#543**) |
 | — | [#531](https://github.com/MonMonMars/amoji-app/pull/531) | **r255** | Docs claims (optional tail) |
 
 ### Open PRs — demo / docs tail (r256→r261, after live **r254**)
@@ -183,7 +186,7 @@ Unchanged — licensed music, Stripe live, PH, Search Console, modular GLBs, spi
 | Document | Path | Status |
 | --- | --- | --- |
 | Pixel handoff | `docs/AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md` | r248–r261 ladder · one-click merge script · **#540/#541 beds verified** |
-| This status board | `docs/PROJECT_STATUS.md` | Refreshed **2026-11-19 10:20 HKT** · live **r237** · train **#528–#543** CI green |
+| This status board | `docs/PROJECT_STATUS.md` | Refreshed **2026-11-19 16:30 HKT** · live **r237** · +**#547/#546/#545** on ladder |
 | Agent smoke | `docs/AGENT_SMOKE.md` | `pixel-no-repeat.test.ts` demo rail + news/weather live-path guards |
 | Sing/dance pipeline | `docs/SING_DANCE_PIPELINE.md` | PerformanceSession on **r214** |
 | Phone smoke | `docs/PHONE_SMOKE.md` | Owner verify |
