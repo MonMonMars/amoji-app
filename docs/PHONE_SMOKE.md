@@ -1,7 +1,7 @@
 # Phone smoke (live Pages)
 
 **Live:** https://monmonmars.github.io/amoji-app/  
-**Tip on main:** `r2026-11-16.166` (#461 splash live vs baked + #458–#460 delivery) · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if shown)  
+**Tip on main:** `r2026-11-18.237` (= live until train **#528→#543** merges) · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
 **Purpose:** Human-only checks after #419–#437 + #458. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
 Owner: “getting worst” / “nothing fixed” — **do not mark R10–R13 Done** until this pass.
 
