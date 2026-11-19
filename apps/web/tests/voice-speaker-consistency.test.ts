@@ -83,7 +83,7 @@ describe('voice does not switch speaker mid-line or between characters', () => {
 
   it('beginTts forces companion playback route before any lang tier', () => {
     expect(voice).toContain('ensureCompanionPlaybackRoute');
-    expect(voice).toMatch(/const beginTts = \(\) => \{[\s\S]*?ensureCompanionPlaybackRoute\(\)/);
+    expect(voice).toMatch(/const beginTts = \(\) => \{[\s\S]*?companionPlaybackSession\(\)/);
   });
 
   it('a canceled tier still settles immediately rather than falling through', () => {
@@ -121,8 +121,7 @@ describe('voice does not switch speaker mid-line or between characters', () => {
       expect(src).not.toMatch(/audio\.onplay = \(\) => \{[\s\S]*?pinDefaultOutput\(audio\)/);
     }
     // Gesture clips stay play-first + reject-retry pin (#424).
-    expect(clips).toContain('pinDefaultOutputAsync');
-    expect(clips).toMatch(/void audio\.play\(\)/);
+    expect(clips).toContain('startHtmlAudioOnDefaultSpeakers');
     expect(clips).not.toMatch(/audio\.onplay = \(\) => \{[\s\S]*?pinDefaultOutput\(audio\)/);
     expect(gtts).toContain('ensureCompanionPlaybackRoute');
     expect(edge).toContain('ensureCompanionPlaybackRoute');

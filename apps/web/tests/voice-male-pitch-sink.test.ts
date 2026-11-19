@@ -120,9 +120,9 @@ describe('non-yue speak path + sink routing', () => {
     const audio = readFileSync(join(web, 'lib/audio-output.ts'), 'utf8');
     const edge = readFileSync(join(web, 'lib/edge-tts.ts'), 'utf8');
     expect(voice).toContain('ensureCompanionPlaybackRoute()');
-    expect(voice).toMatch(/const beginTts = \(\) => \{[\s\S]*?ensureCompanionPlaybackRoute\(\)/);
-    expect(voice).toMatch(/playVoiceGreeting\([\s\S]*?ensureCompanionPlaybackRoute\(\)/);
-    expect(voice).toMatch(/previewVoiceChoice\([\s\S]*?ensureCompanionPlaybackRoute\(\)/);
+    expect(voice).toMatch(/const beginTts = \(\) => \{[\s\S]*?companionPlaybackSession\(\)/);
+    expect(voice).toMatch(/playVoiceGreeting\([\s\S]*?duckExternalAudioForCompanion\(\)/);
+    expect(voice).toMatch(/previewVoiceChoice\([\s\S]*?duckExternalAudioForCompanion\(\)/);
     expect(gtts).toContain('ensureCompanionPlaybackRoute()');
     expect(audio).toContain('export function ensureCompanionPlaybackRoute');
     expect(audio).toContain("nav.audioSession.type = 'playback'");

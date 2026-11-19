@@ -211,6 +211,21 @@ describe('CLIP_LIBRARY numbering', () => {
   });
 });
 
+describe('CLIP_LIBRARY gender parity (lang folders)', () => {
+  it('yue zh ja en each list ≥1 female and ≥1 male preview clip on disk', () => {
+    const langFolders = ['yue', 'zh', 'ja', 'en'] as const;
+    for (const folder of langFolders) {
+      for (const gender of VOICE_CLIP_GENDERS) {
+        const files = CLIP_LIBRARY[folder][gender] as readonly string[];
+        expect(files.length, `${folder}/${gender}`).toBeGreaterThan(0);
+        const laugh = clipLibraryFile(folder, gender, 'laugh.mp3');
+        expect(laugh, `${folder}/${gender} laugh`).toBeTruthy();
+        expect(fs.existsSync(path.resolve(here, '../public', laugh!.slice(1)))).toBe(true);
+      }
+    }
+  });
+});
+
 describe('TTS button registry', () => {
   it('offers only voices that really differ: speaker × gender × pitch', () => {
     const buttons = selectTtsButtons();

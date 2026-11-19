@@ -12,6 +12,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { selectTtsButtons, isSingleVoiceLocale } from '../lib/tts-button-registry';
+import {
+  ALL_LOCALES,
+  engineIsOffered,
+  localeHasPlayableBothGenders,
+  localePlayableGenderCounts,
+} from '../lib/voice-capability';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const picker = fs.readFileSync(path.resolve(here, '../components/VoicePicker.tsx'), 'utf8');
@@ -93,5 +99,20 @@ describe('Settings VoicePicker parity with select TtsVoiceRow', () => {
     expect(picker).toContain('data-voice-id={button.id}');
     expect(row).toContain('data-voice-n={button.n}');
     expect(row).toContain('data-voice-id={button.id}');
+  });
+
+  it('each locale has ≥1 playable female and ≥1 playable male gTTS button', () => {
+    expect(ALL_LOCALES).toEqual(['yue', 'zh', 'ja', 'en']);
+    for (const locale of ALL_LOCALES) {
+      expect(localeHasPlayableBothGenders(locale), locale).toBe(true);
+      const counts = localePlayableGenderCounts(locale);
+      expect(counts.female, `${locale} female playable`).toBeGreaterThanOrEqual(1);
+      expect(counts.male, `${locale} male playable`).toBeGreaterThanOrEqual(1);
+      const buttons = selectTtsButtons(locale);
+      expect(buttons.some((b) => b.deliveryGender === 'female')).toBe(true);
+      expect(buttons.some((b) => b.deliveryGender === 'male')).toBe(true);
+      expect(buttons.every((b) => engineIsOffered(b.engine))).toBe(true);
+      expect(buttons.every((b) => b.id.startsWith('gtts:'))).toBe(true);
+    }
   });
 });

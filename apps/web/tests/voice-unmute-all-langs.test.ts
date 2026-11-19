@@ -121,8 +121,8 @@ describe('TTS play path never mutes non-Yue via setSinkId', () => {
       clip.indexOf('export function playVoiceClip'),
     );
     expect(gesture).not.toMatch(/pinDefaultOutput\(audio\)/);
-    expect(gesture).toMatch(/pinDefaultOutputAsync\(audio\)[\s\S]*audio\.play\(\)/);
-    expect(gesture).not.toMatch(/await pinDefaultOutputAsync/);
+    expect(gesture).not.toMatch(/pinDefaultOutputAsync\(audio\)/);
+    expect(gesture).toMatch(/startHtmlAudioOnDefaultSpeakers\(audio,\s*'gesture-safe'\)/);
 
     expect(audio).toContain('Never copy AudioContext.sinkId');
     expect(audio).not.toMatch(/sharedCtx[\s\S]{0,80}\.sinkId/);
@@ -132,14 +132,14 @@ describe('TTS play path never mutes non-Yue via setSinkId', () => {
 
   it('beginTts / greeting / preview force playback session for every lang', () => {
     const voice = readFileSync(join(web, 'lib/voice.ts'), 'utf8');
-    expect(voice).toMatch(/const beginTts = \(\) => \{[\s\S]*?ensureCompanionPlaybackRoute\(\)/);
-    expect(voice).toMatch(/playVoiceGreeting\([\s\S]*?ensureCompanionPlaybackRoute\(\)/);
+    expect(voice).toMatch(/const beginTts = \(\) => \{[\s\S]*?companionPlaybackSession\(\)/);
+    expect(voice).toMatch(/playVoiceGreeting\([\s\S]*?duckExternalAudioForCompanion\(\)/);
     const greetBody = voice.slice(
       voice.indexOf('export function playVoiceGreeting'),
       voice.indexOf('export function previewLibraryClip'),
     );
     expect(greetBody).not.toMatch(/void primeDefaultSpeakerBeforeSynth\(\)/);
-    expect(voice).toMatch(/previewVoiceChoice\([\s\S]*?ensureCompanionPlaybackRoute\(\)/);
+    expect(voice).toMatch(/previewVoiceChoice\([\s\S]*?duckExternalAudioForCompanion\(\)/);
     const previewBody = voice.slice(
       voice.indexOf('export function previewVoiceChoice'),
       voice.indexOf('export function previewOsVoice'),

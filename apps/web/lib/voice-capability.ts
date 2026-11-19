@@ -401,6 +401,32 @@ export function distinctSpeakerCount(locale: VoiceLocale): number {
   return new Set(shippingVoiceChoicesFor(locale).map((c) => c.tl)).size;
 }
 
+/** Shipping gTTS buttons that pass the engine audit (`works` only). */
+export function playableShippingChoicesFor(locale: VoiceLocale): readonly VoiceChoice[] {
+  return shippingVoiceChoicesFor(locale).filter((c) => engineIsOffered(c.engine));
+}
+
+export interface LocalePlayableGenderCounts {
+  locale: VoiceLocale;
+  female: number;
+  male: number;
+}
+
+/** Distinct playable picker buttons per delivery gender (all pitch tiers). */
+export function localePlayableGenderCounts(locale: VoiceLocale): LocalePlayableGenderCounts {
+  const playable = playableShippingChoicesFor(locale);
+  return {
+    locale,
+    female: playable.filter((c) => c.deliveryGender === 'female').length,
+    male: playable.filter((c) => c.deliveryGender === 'male').length,
+  };
+}
+
+export function localeHasPlayableBothGenders(locale: VoiceLocale): boolean {
+  const row = localePlayableGenderCounts(locale);
+  return row.female > 0 && row.male > 0;
+}
+
 // ---------------------------------------------------------------------------
 // OS voices: a SECOND source, when the device really has more speakers.
 // ---------------------------------------------------------------------------
