@@ -16,6 +16,20 @@
 4. **Load / import JSON** — paste a prior export to restore notes and Keep checkboxes.
 5. Same-origin backup: localStorage key **`amoji.ownerPickerNotes.v1`** (survives refresh; not synced across devices).
 6. **Copy JSON / Copy Markdown** remain remove-list-only exports (unchanged).
+
+**Ship-set import (agent · pre-#543 on `main`):**
+
+1. Export from the picker → `owner-picker-notes-v2` JSON (`version`, `items[]`, `useCd` / `deleteCd`, …).
+2. Sample file: [`docs/samples/owner-picker-notes-export-sample.json`](./samples/owner-picker-notes-export-sample.json).
+3. From repo root:
+
+```bash
+node scripts/import-owner-picker-selection.mjs docs/samples/owner-picker-notes-export-sample.json --dry-run
+node scripts/import-owner-picker-selection.mjs /path/to/your-export.json
+# → apps/web/data/owner-picker-selection.json (owner-picker-selection-v1)
+```
+
+4. After **#543** lands, runtime reads that file via `owner-picker-ship-set.ts` + `owner-picker-decisions.ts` (browser `amoji.ownerPickerNotes.v1` still overrides). Until then, importing only prepares the repo JSON for the next train merge.
 **Unified catalog codes (machine):** `apps/web/lib/owner-catalog-registry.ts` (`buildOwnerCatalogIndex()`, `ownerCatalogTsv()`)  
 **Pixel export TSV:** `/opt/cursor/artifacts/owner-catalog-codes-pixel.tsv` (written when the picker HTML is regenerated)
 

@@ -1,6 +1,6 @@
 # Amoji project status board
 
-**Generated:** 2026-11-19 08:52 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-19 10:05 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/) · [`revision.txt`](https://monmonmars.github.io/amoji-app/revision.txt) **= r2026-11-18.237** (matches `main`)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
@@ -11,6 +11,8 @@
 ## Waiting on Pixel merge (owner)
 
 Product train **#528 → #543** is **CI green**; **not on `main` yet**. Live stays **r237** until Pixel squash-merges in order.
+
+**Pixel（粵）:** 而家 live 仲係 **r237**；**#528→#543** CI 全部綠，請跟 [`AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md`](./AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md) **逐個 squash merge**，由 **#528** 開始，每 merge 一次等 Pages `revision.txt` 更新再繼續。
 
 | Resource | Link |
 | --- | --- |
@@ -26,7 +28,7 @@ Product train **#528 → #543** is **CI green**; **not on `main` yet**. Live sta
 | Bucket | Count |
 | --- | ---: |
 | **Done** — merged to `main` | 100+ stack · through **#511** + **#515** · **r220** (incl. #497–#507 vault/perf) |
-| **Open product PRs** | #512 chat UX · spikes Hold |
+| **Open product PRs** | Train **#528–#543** · tail **#534–#538** · spikes Hold |
 | **Outstanding** — agents (no PR yet) | VRM pupil · picker polish |
 | **Outstanding** — Pixel / human | **R10–R13 not Done** · stale SW · [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
 | **Hold** | licensed music · Stripe · PH · Search Console · spikes #1 / #20 |
@@ -110,7 +112,8 @@ Handoff detail: [`AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md`](./AGENT_FINISH_PIXE
 | 5 | [#539](https://github.com/MonMonMars/amoji-app/pull/539) | **r260** | `RESOURCE_LIBRARY_INDEX.md` |
 | 6 | [#538](https://github.com/MonMonMars/amoji-app/pull/538) | **r261** | Motion thumb GIFs — merge **after #541** regen |
 
-| — | [#512](https://github.com/MonMonMars/amoji-app/pull/512) | r218 | Chat UX (parallel) |
+| — | [#512](https://github.com/MonMonMars/amoji-app/pull/512) | r218 | Chat report chip — **merged** |
+| — | [#544](https://github.com/MonMonMars/amoji-app/pull/544) | — | Handoff + picker import script/docs |
 | Hold | [#20](https://github.com/MonMonMars/amoji-app/pull/20) / [#1](https://github.com/MonMonMars/amoji-app/pull/1) | — | Spikes |
 
 **No history-resume ask:** shipped on `main` via [#331](https://github.com/MonMonMars/amoji-app/pull/331) / [#366](https://github.com/MonMonMars/amoji-app/pull/366) / [#412](https://github.com/MonMonMars/amoji-app/pull/412) / [#470](https://github.com/MonMonMars/amoji-app/pull/470) — branch `cursor/no-history-resume-ask-0340` reconciled; no second product PR.
@@ -145,7 +148,7 @@ Handoff detail: [`AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md`](./AGENT_FINISH_PIXE
 
 1. **Pixel train** — merge **#528→#543** per handoff; one revision bump per merge on `main`  
 2. **Phone smoke** — after each merge until live **r254**  
-3. **#512** — chat report chip removal  
+3. **Picker ship-set** — `node scripts/import-owner-picker-selection.mjs` after notes export (see `OWNER_RESOURCE_LIBRARY.md`)  
 4. **Stale SW** — hard-refresh until `revision.txt` shows post-train serial  
 5. **VRM pupil** — pop / size stability on surprise  
 6. **Owner picks apply** — **#543** on phone after merge  

@@ -73,12 +73,13 @@ After **each** merge: splash footer = live `revision.txt`; hard-refresh / amber 
 ## Owner picker ship-set import
 
 ```bash
-# From repo root after exporting owner-resources notes JSON:
+# From repo root after exporting owner-resources notes JSON (owner-picker-notes-v2):
+node scripts/import-owner-picker-selection.mjs docs/samples/owner-picker-notes-export-sample.json --dry-run
 node scripts/import-owner-picker-selection.mjs /path/to/export.json
 # → apps/web/data/owner-picker-selection.json
 ```
 
-Runtime: `owner-picker-decisions.ts` + `owner-picker-ship-set.ts`. See `docs/OWNER_RESOURCE_LIBRARY.md` § listen/sing/motion picks.
+Runtime (after **#543**): `owner-picker-decisions.ts` + `owner-picker-ship-set.ts`. See `docs/OWNER_RESOURCE_LIBRARY.md` § notes export + ship-set import.
 
 ## Demo / smoke URLs
 
