@@ -121,8 +121,8 @@ describe('TTS play path never mutes non-Yue via setSinkId', () => {
       clip.indexOf('export function playVoiceClip'),
     );
     expect(gesture).not.toMatch(/pinDefaultOutput\(audio\)/);
-    expect(gesture).toMatch(/pinDefaultOutputAsync\(audio\)[\s\S]*audio\.play\(\)/);
-    expect(gesture).not.toMatch(/await pinDefaultOutputAsync/);
+    expect(gesture).not.toMatch(/pinDefaultOutputAsync\(audio\)/);
+    expect(gesture).toMatch(/startHtmlAudioOnDefaultSpeakers\(audio,\s*'gesture-safe'\)/);
 
     expect(audio).toContain('Never copy AudioContext.sinkId');
     expect(audio).not.toMatch(/sharedCtx[\s\S]{0,80}\.sinkId/);
