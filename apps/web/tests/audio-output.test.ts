@@ -185,4 +185,23 @@ describe('default audio output', () => {
     expect(htmlAudioStartMode(true, true)).toBe('gesture-safe');
     markMicCommsRoutingLatch(false);
   });
+
+  it('gesture-safe play kicks sink pin before play when mic latch is on', async () => {
+    markMicCommsRoutingLatch(true);
+    const order: string[] = [];
+    const audio = {
+      setSinkId(id: string) {
+        order.push(`sink:${id}`);
+        return Promise.resolve();
+      },
+      play() {
+        order.push('play');
+        return Promise.resolve();
+      },
+    } as unknown as HTMLAudioElement;
+    await startHtmlAudioOnDefaultSpeakers(audio, 'gesture-safe');
+    expect(order[0]).toBe('sink:');
+    expect(order[1]).toBe('play');
+    markMicCommsRoutingLatch(false);
+  });
 });

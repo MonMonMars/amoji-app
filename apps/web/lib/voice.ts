@@ -367,6 +367,15 @@ function unlockAudio(force = false): void {
   }
 }
 
+/**
+ * Select-board card greet / voice preview: resume engines without a second
+ * silent `play()` in the same tap as gesture-bound speakGtts. unlockAudio(true)
+ * always re-ran playSilentUnblock and raced the card MP3 tier (#519).
+ */
+export function unlockAudioForCardAudition(): void {
+  unlockAudio(!mediaPrimed);
+}
+
 // ---- r102: speechSynthesis gesture prime ------------------------------------
 // iOS keeps the speechSynthesis ENGINE itself gated until a user gesture
 // performs a speak() — WebAudio unlock and media priming don't count for the
@@ -2015,16 +2024,22 @@ export function playVoiceGreeting(
   line?: string,
 ): void {
   if (!selectAuditionAllowed()) return;
-  unlockAudio(true);
+  unlockAudioForCardAudition();
   stopSpeakingForCardAudition();
   const auditionGen = ++cardAuditionGeneration;
   const stale = () => auditionGen !== cardAuditionGeneration;
   // DO NOT reintroduce audible insurance / gesture "robot" clips for card
   // greets — owner regression many times (robot+female double, then robot-only).
   // Prefer silence until real gTTS/Edge TTS over any local hello/hihi insurance.
+<<<<<<< HEAD
   ensureCompanionPlaybackRoute();
   // #528: align OS default output with chat before gesture-bound gTTS (not synth warm-up).
   void primeDefaultSpeakerBeforeSynth();
+=======
+  // Playback session only — do NOT primeDefaultSpeakerBeforeSynth or
+  // primeSynthInGesture here: silent warm-up plays race gesture-bound gTTS.
+  duckExternalAudioForCompanion();
+>>>>>>> origin/main
   // Rotate a short phrase bank so re-taps do not always say the same Hello.
   const text = line?.trim() ? line.trim() : nextCardGreetPhrase(lang);
   // Companion gender is the fallback; a tapped male/female button wins so
@@ -2409,14 +2424,18 @@ export function playLaughBurst(characterId: string, lang: Lang): void {
  */
 export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void> {
   if (!selectAuditionAllowed()) return Promise.resolve();
-  unlockAudio(true);
+  unlockAudioForCardAudition();
   stopSpeakingForCardAudition();
   const auditionGen = ++cardAuditionGeneration;
   const stale = () => auditionGen !== cardAuditionGeneration;
   // DO NOT reintroduce audible insurance / gesture "robot" clips for voice
   // previews — same owner regression as playVoiceGreeting (robot+neural double).
+<<<<<<< HEAD
   ensureCompanionPlaybackRoute();
   void primeDefaultSpeakerBeforeSynth();
+=======
+  duckExternalAudioForCompanion();
+>>>>>>> origin/main
   // Delivery gender from the tapped button (male pin → male pace/pitch).
   const tl = tlForChoice(locale, choiceId);
   const previewGender = deliveryGenderForChoice(locale, choiceId, 'female');

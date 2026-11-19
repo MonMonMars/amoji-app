@@ -961,7 +961,7 @@ function htmlShell(
       </div>
       <div id="importNotesWrap" hidden>
         <label for="importNotesJson"><strong>Paste prior export</strong> (restores notes + Keep checkboxes)</label>
-        <textarea id="importNotesJson" placeholder='{"version":"owner-picker-notes-v1", …}'></textarea>
+        <textarea id="importNotesJson" placeholder='{"version":"owner-picker-notes-v2", …}'></textarea>
         <button type="button" id="applyImportNotes">Apply import</button>
       </div>
       <textarea id="exportOut" readonly placeholder="Export appears here…"></textarea>

@@ -7,7 +7,7 @@
 
 1. Read `docs/USER_PRODUCT_BIBLE.md` and `docs/OWNER_RESOURCE_LIBRARY.md`.
 2. Run `cd apps/web && npm run verify:live` — must match `APP_REVISION`.
-3. Read `docs/AGENT_SMOKE.md` — delivery layer **#458–#462** is complete; **do not** re-ship SW/voice churn without owner failure rows.
+3. Read `docs/AGENT_SMOKE.md` — delivery layer **#458–#462** is complete; **do not** re-ship SW/voice churn without owner failure rows. Before claiming a Pixel repeat is fixed, run the **Pixel no-repeat checklist** in `docs/AGENT_SMOKE.md` (`pixel-no-repeat.test.ts`).
 
 ## When owner says “nothing fixed” / “continue”
 

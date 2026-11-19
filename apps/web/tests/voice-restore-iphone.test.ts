@@ -27,7 +27,7 @@ describe('voice restore — one tier speaks, never two', () => {
 
   it('the greeting still primes audio in the tap (synth speak is not used)', () => {
     expect(greet).not.toContain('primeSynthInGesture(true)');
-    expect(greet).toContain('unlockAudio(true)');
+    expect(greet).toContain('unlockAudioForCardAudition()');
     expect(greet).toContain('stopSpeakingForCardAudition()');
     expect(greet).toContain('primeDefaultSpeakerBeforeSynth()');
     expect(greet).not.toContain('stopSpeaking()');

@@ -45,7 +45,11 @@ describe('en speaker routing (mic latch + gesture card)', () => {
     expect(voice).toMatch(/if \(hop === 'synth'\)[\s\S]*?micCommsRoutingLatchActive\(\)[\s\S]*?spokenGender === 'male'/);
   });
 
+<<<<<<< HEAD
   it('card greet + preview prime default speaker before gesture gTTS', () => {
+=======
+  it('card greet + preview duck companion audio like chat speak', () => {
+>>>>>>> origin/main
     const voice = read('lib/voice.ts');
     const greet = voice.slice(
       voice.indexOf('export function playVoiceGreeting'),
@@ -55,10 +59,15 @@ describe('en speaker routing (mic latch + gesture card)', () => {
       voice.indexOf('export function previewVoiceChoice'),
       voice.indexOf('const TEST_LINES'),
     );
+<<<<<<< HEAD
     expect(greet).toContain('ensureCompanionPlaybackRoute()');
     expect(greet).toContain('primeDefaultSpeakerBeforeSynth()');
     expect(preview).toContain('ensureCompanionPlaybackRoute()');
     expect(preview).toContain('primeDefaultSpeakerBeforeSynth()');
+=======
+    expect(greet).toContain('duckExternalAudioForCompanion()');
+    expect(preview).toContain('duckExternalAudioForCompanion()');
+>>>>>>> origin/main
     expect(greet).toMatch(/greetGttsOpts[\s\S]*?lang,/);
     expect(greet).toMatch(/tlForChoice\(lang, choiceId\)/);
   });
