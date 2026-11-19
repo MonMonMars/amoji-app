@@ -7,6 +7,9 @@
 
 export type VoiceLocale = 'yue' | 'zh' | 'ja' | 'en';
 export type VoiceGender = 'female' | 'male';
+
+/** Every companion speech language the app wires today. */
+export const VOICE_APP_LOCALES: readonly VoiceLocale[] = ['yue', 'zh', 'ja', 'en'];
 export type VoiceEngine = 'edge' | 'speech' | 'kokoro' | 'piper' | 'melotts' | 'bark' | 'canto-nano' | 'silencio2' | 'chatterbox-turbo' | 'vui-nano' | 'lure-tts';
 
 export interface VoiceOption {
@@ -65,7 +68,9 @@ export const VOICE_CATALOG: readonly VoiceOption[] = [
   { locale: 'ja', engine: 'speech', gender: 'male', id: 'Keita', shipping: true, license: 'browser', latency: 'low', notes: 'ja-JP male.' },
   { locale: 'ja', engine: 'speech', gender: 'male', id: 'Otoya', shipping: true, license: 'browser', latency: 'low', notes: 'Apple Otoya male.' },
   { locale: 'ja', engine: 'melotts', gender: 'female', id: 'melotts-ja', shipping: false, license: 'MIT', latency: 'mid', notes: 'Japanese MeloTTS. Not bundled.' },
+  { locale: 'ja', engine: 'melotts', gender: 'male', id: 'melotts-ja', shipping: false, license: 'MIT', latency: 'mid', notes: 'Japanese MeloTTS male row — not bundled; same engine stub as female.' },
   { locale: 'ja', engine: 'piper', gender: 'female', id: 'ja_JP-natsuya-medium', shipping: false, license: 'MIT', latency: 'low', notes: 'Piper Japanese if a voice is installed. Not bundled.' },
+  { locale: 'ja', engine: 'piper', gender: 'male', id: 'ja_JP-takumi-medium', shipping: false, license: 'MIT', latency: 'low', notes: 'Piper Japanese male ONNX if installed. Not bundled.' },
 
   { locale: 'en', engine: 'edge', gender: 'female', id: 'en-US-JennyNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Default English female.' },
   { locale: 'en', engine: 'edge', gender: 'male', id: 'en-US-GuyNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Default English male.' },
@@ -167,6 +172,31 @@ export const HELD_GPU_ENGINES: readonly { engine: string; notes: string }[] = [
 /** Locale → every retained option (shipping and later), in catalog order. */
 export function voicesForLocale(locale: VoiceLocale): readonly VoiceOption[] {
   return VOICE_CATALOG.filter((v) => v.locale === locale);
+}
+
+export interface LocaleCatalogGenderCounts {
+  locale: VoiceLocale;
+  femaleShipping: number;
+  maleShipping: number;
+  femaleEdgeDefault: string;
+  maleEdgeDefault: string;
+}
+
+/** Shipping Edge + speech rows per gender (cast + OS fallback map). */
+export function localeCatalogGenderCounts(locale: VoiceLocale): LocaleCatalogGenderCounts {
+  const shipping = VOICE_CATALOG.filter((v) => v.locale === locale && v.shipping);
+  return {
+    locale,
+    femaleShipping: shipping.filter((v) => v.gender === 'female').length,
+    maleShipping: shipping.filter((v) => v.gender === 'male').length,
+    femaleEdgeDefault: edgeVoiceId(locale, 'female'),
+    maleEdgeDefault: edgeVoiceId(locale, 'male'),
+  };
+}
+
+export function catalogShippingHasBothGenders(locale: VoiceLocale): boolean {
+  const row = localeCatalogGenderCounts(locale);
+  return row.femaleShipping > 0 && row.maleShipping > 0;
 }
 
 /**
