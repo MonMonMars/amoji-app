@@ -33,3 +33,21 @@ Product stabilization (#419–#437, resource libs) is already on `main`. **Phase
 1. Confirm `verify:live` green.
 2. Ask if they see **amber Refresh** (stale bundle).
 3. Only then debug card/voice/poke/idle in code for the named row (`PHASE_B_MAP.md`).
+
+## Pixel no-repeat checklist (agent, no phone)
+
+Run from `apps/web` after `main` or coordination-branch doc/test changes:
+
+```bash
+npm test -- --run demo-phase.test.ts demo-phase-rail.test.ts pixel-no-repeat.test.ts
+npm run verify:live
+npm run verify:agent-smoke
+```
+
+| Symptom | Guard |
+| --- | --- |
+| Weather / news chips shuffle off-screen | `pixel-no-repeat` + `demo-phase` — indices 0–1 stay `weather` / `news` for every seed |
+| Demo chip tap shows text but no read-aloud | `pixel-no-repeat` — weather/news path uses `clientLiveContext` + `sayLocal`, not `send()` |
+| Horizontal rail jitter eats taps | `demo-phase-rail` — drag threshold, deferred `setPointerCapture` |
+
+**News / weather live path (r230+ on `main`, live r237):** Vitest proves wiring only; RSS / Open-Meteo still need owner phone rows in [`PHONE_SMOKE.md`](./PHONE_SMOKE.md). Agents do **not** mark news/weather Done without owner ticks.

@@ -1,6 +1,6 @@
 # Amoji project status board
 
-**Generated:** 2026-11-19 10:05 HKT (Asia/Hong_Kong)  
+**Generated:** 2026-11-19 10:20 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
 **Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/) · [`revision.txt`](https://monmonmars.github.io/amoji-app/revision.txt) **= r2026-11-18.237** (matches `main`)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
@@ -27,7 +27,7 @@ Product train **#528 → #543** is **CI green**; **not on `main` yet**. Live sta
 
 | Bucket | Count |
 | --- | ---: |
-| **Done** — merged to `main` | 100+ stack · through **#511** + **#515** · **r220** (incl. #497–#507 vault/perf) |
+| **Done** — merged to `main` | 100+ stack · through **#518–#520** + **#517** · **r237** (incl. #497–#515 vault/perf/news) |
 | **Open product PRs** | Train **#528–#543** · tail **#534–#538** · spikes Hold |
 | **Outstanding** — agents (no PR yet) | VRM pupil · picker polish |
 | **Outstanding** — Pixel / human | **R10–R13 not Done** · stale SW · [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
@@ -183,6 +183,7 @@ Unchanged — licensed music, Stripe live, PH, Search Console, modular GLBs, spi
 | Document | Path | Status |
 | --- | --- | --- |
 | Pixel handoff | `docs/AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md` | r248–r261 ladder · one-click merge script · **#540/#541 beds verified** |
-| This status board | `docs/PROJECT_STATUS.md` | Refreshed **2026-11-19 08:52 HKT** · **waiting on Pixel** · **#528–#544** CI green |
+| This status board | `docs/PROJECT_STATUS.md` | Refreshed **2026-11-19 10:20 HKT** · live **r237** · train **#528–#543** CI green |
+| Agent smoke | `docs/AGENT_SMOKE.md` | `pixel-no-repeat.test.ts` demo rail + news/weather live-path guards |
 | Sing/dance pipeline | `docs/SING_DANCE_PIPELINE.md` | PerformanceSession on **r214** |
 | Phone smoke | `docs/PHONE_SMOKE.md` | Owner verify |
