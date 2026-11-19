@@ -121,8 +121,7 @@ describe('voice does not switch speaker mid-line or between characters', () => {
       expect(src).not.toMatch(/audio\.onplay = \(\) => \{[\s\S]*?pinDefaultOutput\(audio\)/);
     }
     // Gesture clips stay play-first + reject-retry pin (#424).
-    expect(clips).toContain('pinDefaultOutputAsync');
-    expect(clips).toMatch(/void audio\.play\(\)/);
+    expect(clips).toContain('startHtmlAudioOnDefaultSpeakers');
     expect(clips).not.toMatch(/audio\.onplay = \(\) => \{[\s\S]*?pinDefaultOutput\(audio\)/);
     expect(gtts).toContain('ensureCompanionPlaybackRoute');
     expect(edge).toContain('ensureCompanionPlaybackRoute');

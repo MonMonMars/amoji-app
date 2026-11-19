@@ -4,7 +4,7 @@
 // the user interrupts.
 
 import { assetUrl } from './asset';
-import { pinDefaultOutputAsync } from './audio-output';
+import { startHtmlAudioOnDefaultSpeakers } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 import { followAudioElement, noteSpeechStarted } from './speech';
 
@@ -65,12 +65,7 @@ export function playGestureClipSync(file: string, caption: string, onPlay?: () =
     try { followAudioElement(audio, true); } catch { /* ignore */ }
     try { onPlay?.(); } catch { /* ignore */ }
   };
-  void audio.play().catch(() => {
-    // First play rejected (often sink race / autoplay). Pin, then retry once.
-    void pinDefaultOutputAsync(audio)
-      .then(() => audio.play())
-      .catch(() => finish());
-  });
+  void startHtmlAudioOnDefaultSpeakers(audio, 'gesture-safe').catch(() => finish());
 }
 
 /** Resolves when the file finishes. Rejects on failure or stopVoiceClip(). */
@@ -106,13 +101,8 @@ export function playVoiceClip(file: string, caption: string, onPlay?: () => void
       try { followAudioElement(audio, true); } catch { /* ignore */ }
       try { onPlay?.(); } catch { /* ignore */ }
     };
-    // Prefer gesture-safe play first; sink pin only on reject-retry.
-    void audio.play().catch((err: unknown) => {
-      void pinDefaultOutputAsync(audio)
-        .then(() => audio.play())
-        .catch((e: unknown) => {
-          finish(e instanceof Error ? e : err instanceof Error ? err : new Error(String(e)));
-        });
+    void startHtmlAudioOnDefaultSpeakers(audio, 'gesture-safe').catch((err: unknown) => {
+      finish(err instanceof Error ? err : new Error(String(err)));
     });
   });
 }
