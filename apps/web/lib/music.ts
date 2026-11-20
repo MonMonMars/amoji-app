@@ -14,6 +14,7 @@
 import {
   createDefaultAudioContext,
   ensureCompanionPlaybackRoute,
+  htmlAudioStartMode,
   isSharedDefaultAudioContext,
   primeSharedAudioContext,
   startHtmlAudioOnDefaultSpeakers,
@@ -380,17 +381,22 @@ export function startPerformanceMusic(kind: 'band' | 'piano', characterId: strin
   perfTimer = setTimeout(() => endPerformanceMusic(), ms);
 }
 
-/** stop the preserved performance and release the stage */
-export function endPerformanceMusic(): void {
-  perfPreserve = false;
+/** Stop library / procedural audio without tearing down performance-session. */
+function haltPerformanceAudioOnly(opts?: { fadeOutSec?: number }): void {
   if (perfTimer) {
     clearTimeout(perfTimer);
     perfTimer = null;
   }
-  endPerformanceSession();
+  perfPreserve = false;
   haltBand();
   haltPiano();
-  haltClip({ fadeOutSec: 0 });
+  haltClip(opts);
+}
+
+/** stop the preserved performance and release the stage */
+export function endPerformanceMusic(): void {
+  haltPerformanceAudioOnly({ fadeOutSec: 0 });
+  endPerformanceSession();
 }
 
 // ---- premade library (songs + dance beds) -----------------------------------
@@ -454,6 +460,10 @@ export function libraryBedPlaybackSec(): number {
 function primeLibraryBedPlayback(): void {
   ensureCompanionPlaybackRoute();
   primeSharedAudioContext();
+  const ac = createDefaultAudioContext();
+  if (ac) {
+    try { void ac.resume(); } catch { /* gesture may still be required */ }
+  }
 }
 
 function writeClipGain(stepLinear: number): void {
@@ -650,7 +660,7 @@ function playClipElement(url: string, token: number, characterId: string): boole
     audio.addEventListener('playing', emitOnce);
     audio.addEventListener('timeupdate', onTimeUpdate);
     // Play-first + pin on reject only (#424). Never setSinkId in onplay.
-    void startHtmlAudioOnDefaultSpeakers(audio, 'gesture-safe').then(() => {
+    void startHtmlAudioOnDefaultSpeakers(audio, htmlAudioStartMode(false)).then(() => {
       if (token !== loadToken) return;
       // Some engines resolve play() before `playing`; currentTime>0 still counts.
       if (!audio.paused && audio.currentTime > 0) emitOnce();
@@ -796,7 +806,7 @@ export function startLibraryPerformance(
       emitLibraryClipPlaying(synthetic.id);
       return synthetic;
     }
-    endPerformanceMusic();
+    haltPerformanceAudioOnly({ fadeOutSec: 0 });
     primeLibraryBedPlayback();
     perfPreserve = true;
     duck = 1;
@@ -821,7 +831,7 @@ export function startLibraryPerformance(
     emitLibraryClipPlaying(clip.id);
     return clip;
   }
-  endPerformanceMusic();
+  haltPerformanceAudioOnly({ fadeOutSec: 0 });
   primeLibraryBedPlayback();
   perfPreserve = true;
   duck = 1;

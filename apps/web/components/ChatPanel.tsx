@@ -183,7 +183,7 @@ import {
   undecidedTopicReply,
   userUndecided,
 } from '../lib/topic-suggestions';
-import { speak, stopSpeaking, stopSpeakingForInterrupt, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechLeadDiverged, speechRemainder, whenSpeechIdle } from '../lib/voice';
+import { speak, stopSpeaking, stopSpeakingForInterrupt, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechLeadDiverged, speechRemainder, whenSpeechIdle, resumeVoiceEngines } from '../lib/voice';
 import { cantHearReply, isCantHearComplaint } from '../lib/cant-hear';
 import { productionChat } from '../lib/backend-client';
 import { stopThinkingSound } from '../lib/thinking-sound';
@@ -839,6 +839,8 @@ export default function ChatPanel({
     whenSpeechIdle(() => {
       // t718: music.ts arms to max(ms, clip.durationMs+600).
       // Style (jazz/pop/lofi…) prefers Mixkit royalty-free streams for dance beds.
+      // Intro TTS primed WebAudio — reinforce unlock before beds (post-intro is not a gesture).
+      try { resumeVoiceEngines(); } catch { /* ignore */ }
       const playing = startLibraryPerformance(query);
       const nextHold = Math.max(playing.durationMs + 600, ms);
       syncPerformanceBed(playing, nextHold);
