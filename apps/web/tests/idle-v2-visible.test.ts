@@ -5,7 +5,9 @@ import {
   IDLE_VISIBLE_MIN_PLAYBACK,
   IDLE_V2_INNERSCENE_STOCK,
   idleClipPinsCanvas,
+  idleV2NearStillOnly,
   isIdleV2Enabled,
+  isNearStillIdleClip,
   orderIdleV2VisibleClips,
 } from '../lib/idle-v2-visible';
 import { idlePlaybackTimeScale } from '../lib/idle-amplitude';
@@ -37,11 +39,23 @@ describe('idle v2 visible default', () => {
     expect(idlePlaybackTimeScale(0.1)).toBeGreaterThanOrEqual(IDLE_VISIBLE_MIN_PLAYBACK);
   });
 
-  it('expands innerscene stock rotation', () => {
+  it('does not fan out calm innerscene stock (Sam/Maya/Harper blend bug)', () => {
     mockStorage();
-    const order = orderIdleV2VisibleClips([...IDLE_V2_INNERSCENE_STOCK, 'lib_C113'], 'char-a');
-    expect(order.length).toBeGreaterThanOrEqual(1);
+    const order = orderIdleV2VisibleClips([...IDLE_V2_INNERSCENE_STOCK, 'lib_C113']);
+    expect(isNearStillIdleClip('IdleInnersceneSam')).toBe(true);
+    expect(order.length).toBe(1);
+    expect(isNearStillIdleClip(order[0]!)).toBe(true);
     expect(order).not.toContain('lib_C113');
+  });
+
+  it('near-still playlists collapse to single stand', () => {
+    expect(idleV2NearStillOnly(['IdleQuaterniusHuman', 'IdleRpmFStanding001'])).toBe(true);
+    expect(idleV2NearStillOnly(['IdleQuaterniusHuman', 'Thinking'])).toBe(true);
+    mockStorage();
+    const order = orderIdleV2VisibleClips(
+      ['IdleQuaterniusHuman', 'IdleRpmFStanding001', 'Thinking'],
+    );
+    expect(order.length).toBe(1);
   });
 
   it('releases passive pin when v2 enabled', () => {
