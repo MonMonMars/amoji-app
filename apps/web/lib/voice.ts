@@ -2031,7 +2031,6 @@ export function playVoiceGreeting(
   // DO NOT reintroduce audible insurance / gesture "robot" clips for card
   // greets — owner regression many times (robot+female double, then robot-only).
   // Prefer silence until real gTTS/Edge TTS over any local hello/hihi insurance.
-HEAD
   ensureCompanionPlaybackRoute();
   // #528: align OS default output with chat before gesture-bound gTTS (not synth warm-up).
   void primeDefaultSpeakerBeforeSynth();
@@ -2425,7 +2424,6 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const stale = () => auditionGen !== cardAuditionGeneration;
   // DO NOT reintroduce audible insurance / gesture "robot" clips for voice
   // previews — same owner regression as playVoiceGreeting (robot+neural double).
-HEAD
   ensureCompanionPlaybackRoute();
   void primeDefaultSpeakerBeforeSynth();
   // Delivery gender from the tapped button (male pin → male pace/pitch).

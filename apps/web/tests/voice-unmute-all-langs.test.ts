@@ -133,7 +133,6 @@ describe('TTS play path never mutes non-Yue via setSinkId', () => {
   it('beginTts / greeting / preview force playback session for every lang', () => {
     const voice = readFileSync(join(web, 'lib/voice.ts'), 'utf8');
     expect(voice).toMatch(/const beginTts = \(\) => \{[\s\S]*?companionPlaybackSession\(\)/);
-HEAD
     expect(voice).toMatch(/playVoiceGreeting\([\s\S]*?ensureCompanionPlaybackRoute\(\)/);
     expect(voice).toMatch(/playVoiceGreeting\([\s\S]*?primeDefaultSpeakerBeforeSynth/);
     expect(voice).toMatch(/previewVoiceChoice\([\s\S]*?ensureCompanionPlaybackRoute\(\)/);
