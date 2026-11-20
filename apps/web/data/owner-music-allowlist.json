@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "schema": "owner-music-allowlist-v1",
+  "importHint": "Import owner-picker-notes-v2 via docs/owner-resources.html, then mirror 採用/保留 here and 刪除 into deleted*.",
+  "listenMvCodes": ["MV069", "MV079", "MV084", "MV096"],
+  "songClipIds": [
+    "sing-f-twinkle",
+    "sing-f-silent-night",
+    "sing-f-joy",
+    "sing-m-happy-birthday",
+    "bed-lullaby"
+  ],
+  "danceClipIds": [
+    "bed-lay-low",
+    "bed-forest-pop",
+    "bed-jay-pop",
+    "bed-synthwave-city",
+    "bed-adventure-time"
+  ],
+  "deletedMvCodes": [],
+  "deletedClipIds": []
+}

@@ -30,11 +30,11 @@ import { highestStoryOwnerCode } from './story-catalog';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PERFORMANCE_CLIPS } from './performance-clips';
-import { RECORDED_POKE_ZONE } from './voice-clips';
+import { RECORDED_POKE_ZONE, listClipLibrary } from './voice-clips';
 import { buildOwnerMotionPreviewRegistry } from './owner-picker-html-media';
 
 export const OWNER_RESOURCE_LIBRARY_DOC = 'docs/OWNER_RESOURCE_LIBRARY.md';
-export const OWNER_RESOURCE_MANIFEST_VERSION = '2026-11-18-owner-resource-v2' as const;
+export const OWNER_RESOURCE_MANIFEST_VERSION = '2026-11-18-owner-resource-v3' as const;
 
 export type OwnerResourceStatus =
   | 'wired'
@@ -157,6 +157,17 @@ export function buildOwnerResourceIndex(): OwnerResourceEntry[] {
       usedBy: 'voice-catalog.ts · voice-capability.ts · tts-chain.ts',
       status: 'wired',
       notes: `${v.locale} ${v.gender}`,
+    });
+  }
+
+  for (const clip of listClipLibrary()) {
+    out.push({
+      type: 'voice-clip',
+      id: `clip-${clip.id}`,
+      pathOrUrl: clip.path,
+      usedBy: 'voice-clips.ts · play-voice-clip.ts',
+      status: 'wired',
+      notes: `${clip.folder} ${clip.gender} ${clip.file}`,
     });
   }
 

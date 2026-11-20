@@ -70,9 +70,14 @@ describe('premade sing and dance library', () => {
       expect(female.voice).toBe('female');
       expect(female.moods).toContain('sad');
     }
-    const firstDance = PERFORMANCE_CLIPS.find((c) => c.kind === 'dance')!;
     const dance = pickPerformanceClip({ kind: 'dance', lang: 'en', n: 0 });
-    expect(dance.id).toBe(firstDance.id);
+    expect([
+      'bed-lay-low',
+      'bed-forest-pop',
+      'bed-jay-pop',
+      'bed-synthwave-city',
+      'bed-adventure-time',
+    ]).toContain(dance.id);
     expect(dance.kind).toBe('dance');
   });
 
@@ -137,7 +142,7 @@ describe('premade sing and dance library', () => {
     const allowed = new Set(['happy', 'angry', 'sad', 'tired', 'anxious']);
     const ids = PERFORMANCE_CLIPS.map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(PERFORMANCE_CLIPS).toHaveLength(77);
+    expect(PERFORMANCE_CLIPS).toHaveLength(82);
     expect(ids).not.toContain('sing-f-cantate');
     for (const id of ['dance-boss-battle', 'bed-happy-vibes', 'sing-f-adele', 'sing-m-brindisi', 'sing-m-overtone-a', 'sing-m-mass-amen', 'sing-f-adele-long', 'sing-m-celeste-aida', 'sing-f-la-mamma-morta']) {
       expect(ids).toContain(id);
@@ -154,7 +159,9 @@ describe('premade sing and dance library', () => {
     expect(dance.filter((c) => c.file.includes('/song-bed/')).length).toBeGreaterThanOrEqual(34);
     expect(songs.filter((c) => c.voice === 'female')).toHaveLength(15);
     expect(songs.filter((c) => c.voice === 'male')).toHaveLength(19);
-    expect(pickPerformanceClip({ kind: 'dance', lang: 'en', n: 0 }).id).toBe('dance-silent-dance-floor');
+    expect(
+      ['bed-lay-low', 'bed-forest-pop', 'bed-jay-pop', 'bed-synthwave-city', 'bed-adventure-time'],
+    ).toContain(pickPerformanceClip({ kind: 'dance', lang: 'en', n: 0 }).id);
     expect(pickPerformanceClip({ kind: 'song', gender: 'male', mood: 'happy', n: 0 }).id).toBe('sing-m-happy-birthday');
   });
 

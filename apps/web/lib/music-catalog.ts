@@ -8,6 +8,8 @@ import { JPOP_VAULT_STREAM_TRACKS } from './music-jpop-vault';
 import { JPOP_VAULT_V2_STREAM_TRACKS } from './music-jpop-vault-v2';
 import { USPOP_VAULT_STREAM_TRACKS } from './music-us-pop-vault';
 import { WORLD_VAULT_STREAM_TRACKS } from './music-world-vault';
+import { playableStreamTrackById, playableTracksForStyle } from './performance-music-allowlist';
+import { registerPerformanceStreamTracks } from './music-stream-registry';
 
 export type MusicStyleId =
   | 'pop'
@@ -262,6 +264,7 @@ export const STREAM_TRACKS: readonly StreamTrack[] = [
   ...USPOP_VAULT_STREAM_TRACKS,
   ...WORLD_VAULT_STREAM_TRACKS,
 ];
+registerPerformanceStreamTracks(STREAM_TRACKS);
 
 /** Local performance-clip style strings that pair with a MusicStyleId. */
 export const STYLE_CLIP_HINTS: Record<MusicStyleId, string[]> = {
@@ -302,9 +305,7 @@ export const STYLE_THEME_ID: Record<MusicStyleId, string> = {
 };
 
 export function tracksForStyle(style: MusicStyleId): StreamTrack[] {
-  if (style === 'default') return [...STREAM_TRACKS];
-  const hits = STREAM_TRACKS.filter((t) => t.style === style);
-  return hits.length ? hits : STREAM_TRACKS.filter((t) => t.style === 'pop' || t.style === 'dance');
+  return playableTracksForStyle(style);
 }
 
 /** Pick a royalty-free stream URL for a style, or null if none. */
@@ -327,14 +328,8 @@ export function pickStreamTrack(style: MusicStyleId | undefined, n = 0): StreamT
   return pool[Math.abs(n) % pool.length]!;
 }
 
-/** Exact Mixkit/PD track when the user picked from a select offer. */
+export { streamTrackInCatalog } from './performance-music-allowlist';
+
 export function streamTrackById(id: string | undefined | null): StreamTrack | null {
-  if (!id) return null;
-  const needle = id.trim();
-  const upper = needle.toUpperCase();
-  return (
-    STREAM_TRACKS.find(
-      (t) => t.id === needle || t.ownerCode === upper || t.ownerCode === needle,
-    ) ?? null
-  );
+  return playableStreamTrackById(id);
 }

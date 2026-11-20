@@ -16,6 +16,7 @@ import {
   type SingVoice,
 } from './performance-clips';
 import { ownerListenStreamPool, ownerSongClipIds } from './owner-perf-picks';
+import { isPlayablePerformanceClip } from './music-allowlist-config';
 
 export type MusicAskMode = 'random' | 'select' | 'none';
 export type MusicAskKind = 'music' | 'song' | 'dance';
@@ -183,7 +184,9 @@ export function listMusicPickOptions(opts: {
 
   if (opts.kind === 'song') {
     const pinned = ownerSongClipIds();
-    let pool = PERFORMANCE_CLIPS.filter((c) => c.kind === 'song' && c.durationMs >= 8_000);
+    let pool = PERFORMANCE_CLIPS.filter(
+      (c) => c.kind === 'song' && c.durationMs >= 8_000 && isPlayablePerformanceClip(c.id, 'song'),
+    );
     if (pinned.length) {
       const order = pinned
         .map((id) => pool.find((c) => c.id === id))
@@ -215,7 +218,7 @@ export function listMusicPickOptions(opts: {
       ? ownerPool
       : opts.style
         ? tracksForStyle(opts.style)
-        : [...STREAM_TRACKS];
+        : tracksForStyle('default');
   if (!opts.style) {
     const seen = new Set<string>();
     const diverse: StreamTrack[] = [];

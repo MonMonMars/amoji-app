@@ -9,6 +9,7 @@
 // Genre soft-weights: see STYLE_CLIP_HINTS in music-catalog.ts.
 
 import { STYLE_CLIP_HINTS, type MusicStyleId } from './music-catalog';
+import { isPlayablePerformanceClip } from './music-allowlist-config';
 
 export type PerformanceKind = 'song' | 'dance';
 export type PerformanceLang = 'en' | 'yue' | 'zh' | 'ja';
@@ -667,6 +668,41 @@ export const PERFORMANCE_CLIPS: readonly PerformanceClip[] = [
     labels: label('No Pagliaccio'), license: 'CC0-1.0',
     credit: 'Enrico Caruso; Ruggero Leoncavallo', source: 'https://commons.wikimedia.org/wiki/File:No_Pagliaccio_non_son.ogg',
   },
+  {
+    id: 'bed-lay-low', kind: 'dance', style: 'cheerful pop',
+    file: '/audio/song-bed/bed-lay-low.mp3', durationMs: 84009,
+    volume: 'bgmVol', moods: ['happy', 'tired'], langs: ALL, characters: [],
+    labels: label('Lay Low'), license: 'CC0-1.0',
+    credit: 'Pro Sensory (Alex McCulloch)', source: 'https://opengameart.org/content/pop-music',
+  },
+  {
+    id: 'bed-forest-pop', kind: 'dance', style: 'cheerful pop',
+    file: '/audio/song-bed/bed-forest-pop.mp3', durationMs: 84004,
+    volume: 'bgmVol', moods: ['happy'], langs: ALL, characters: [],
+    labels: label('Forest'), license: 'CC0-1.0',
+    credit: 'Pro Sensory (Alex McCulloch)', source: 'https://opengameart.org/content/pop-music',
+  },
+  {
+    id: 'bed-jay-pop', kind: 'dance', style: 'cheerful pop',
+    file: '/audio/song-bed/bed-jay-pop.mp3', durationMs: 81632,
+    volume: 'bgmVol', moods: ['happy', 'angry'], langs: ALL, characters: [],
+    labels: label('Jay'), license: 'CC0-1.0',
+    credit: 'Pro Sensory (Alex McCulloch)', source: 'https://opengameart.org/content/pop-music',
+  },
+  {
+    id: 'bed-synthwave-city', kind: 'dance', style: 'j-pop city pop',
+    file: '/audio/song-bed/bed-synthwave-city.mp3', durationMs: 134328,
+    volume: 'bgmVol', moods: ['happy', 'angry'], langs: ALL, characters: [],
+    labels: label('Synthwave City'), license: 'CC0-1.0',
+    credit: 'Pro Sensory (Alex McCulloch)', source: 'https://opengameart.org/content/aerobics-synth-wave',
+  },
+  {
+    id: 'bed-adventure-time', kind: 'dance', style: 'kawaii pop',
+    file: '/audio/song-bed/bed-adventure-time.mp3', durationMs: 200855,
+    volume: 'bgmVol', moods: ['happy'], langs: ALL, characters: [],
+    labels: label('Adventure Time'), license: 'CC0-1.0',
+    credit: 'Pro Sensory (Alex McCulloch)', source: 'https://opengameart.org/content/adventure-time-1',
+  },
 ];
 
 const VOICE_WORD: Record<SingVoice, Record<PerformanceLang, string>> = {
@@ -723,6 +759,11 @@ export const PREFERRED_DEMO_CLIPS = new Set([
   'bed-musicbox-tune',
   'dance-happy-loop',
   'dance-minstrel',
+  'bed-lay-low',
+  'bed-forest-pop',
+  'bed-jay-pop',
+  'bed-synthwave-city',
+  'bed-adventure-time',
 ]);
 
 /** Short SFX, overtone drones, sparse chants — keep licensed, deprioritize demos. */
@@ -751,9 +792,11 @@ export const AVOID_DEMO_CLIPS = new Set([
 export function pickPerformanceClip(q: ClipQuery): PerformanceClip {
   if (q.clipId) {
     const exact = PERFORMANCE_CLIPS.find((c) => c.id === q.clipId);
-    if (exact) return exact;
+    if (exact && isPlayablePerformanceClip(exact.id, exact.kind)) return exact;
   }
-  const bank = PERFORMANCE_CLIPS.filter((c) => c.kind === q.kind);
+  const bank = PERFORMANCE_CLIPS.filter(
+    (c) => c.kind === q.kind && isPlayablePerformanceClip(c.id, c.kind),
+  );
   const moodHits = q.mood ? bank.filter((c) => c.moods.includes(q.mood!)) : [];
   let pool = moodHits.length ? moodHits : bank;
   if (q.bed) {

@@ -221,7 +221,8 @@ Hold per bible — Edge 58-button list **removed** (`voice-catalog.ts`); use `vo
    { "listenMvCodes": ["MV070", "MV085"], "songClipIds": ["sing-f-silent-night"] }
    ```
 2. **Repo ship-set (all users until they override):** Edit `apps/web/data/owner-perf-selection.json` and bump `revision.ts`.
-3. **Pixel review page:** `docs/owner-resources.html` Music tab — per-row notes + **Save notes JSON**, or check MV/DC rows and use **Copy JSON (remove list)** for cuts only.
+3. **Motion tri-state ship-set:** `apps/web/data/owner-picker-selection.json` + `node scripts/import-owner-picker-selection.mjs <export.json>`; runtime `owner-picker-decisions.ts`.
+4. **Pixel review page:** `docs/owner-resources.html` Music tab — per-row notes + **Save notes JSON**, or check MV/DC rows and use **Copy JSON (remove list)** for cuts only.
 
 **Dance / sing body VRMA** still honor `amoji.idlePick.v6` + `amoji.idleEnabled.v6` dance/sing rails via `owner-dance-picks.ts` / `ownerSingClipPrefs()`.
 

@@ -135,9 +135,13 @@ export function resolveIdleMotionPreview(
 }
 
 export function resolvePerfMotionPreview(publicRoot: string, tag: MotionTag): OwnerMotionPreview {
+  const nativeId = `perf-motion-${tag}`;
+  if (tag.startsWith('C')) {
+    const tagSidecar = ownerPickerSidecarPreview(publicRoot, `lib_${tag}`);
+    if (tagSidecar) return { ...tagSidecar, id: nativeId };
+  }
   const kind = tag === 'generic-sing' ? 'song' : 'dance';
   const profile = resolvePerfMotion({ id: 'owner-picker', kind, style: tag });
-  const nativeId = `perf-motion-${tag}`;
   for (const clipId of profile.preferredClipIds) {
     const lib = idleByClipId(clipId);
     if (lib) {

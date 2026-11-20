@@ -17,7 +17,8 @@ import { POKE_SECTIONS } from './poke-zones';
 import { POKE_LINE_TEMPLATES, VOICE_IDS } from './personality-voice';
 import type { Lang } from './prefs';
 import { PERF_MOTION_TAGS, PERF_MOTION_TAG_LABELS } from './performance-motion';
-import { RECORDED_POKE_ZONE } from './voice-clips';
+import { listClipLibrary, RECORDED_POKE_ZONE } from './voice-clips';
+import { VOICE_CATALOG } from './voice-catalog';
 
 export const OWNER_CATALOG_VERSION = '2026-11-18-owner-catalog-v1' as const;
 
@@ -32,11 +33,12 @@ export const OWNER_CATALOG_PREFIXES = {
   PH: 'Demo-phase chip (DemoPhaseRail)',
   NW: 'News RSS feed or AI-news template',
   CMA: 'Recorded poke SFX (CMA reaction pack)',
+  VC: 'TTS speaker or recorded voice clip row',
 } as const;
 
 export type OwnerCatalogPrefix = keyof typeof OWNER_CATALOG_PREFIXES;
 
-export type OwnerCatalogTab = 'music' | 'stories' | 'demo' | 'news' | 'poke' | 'idle';
+export type OwnerCatalogTab = 'music' | 'stories' | 'demo' | 'news' | 'voice' | 'poke' | 'idle';
 
 export interface OwnerCatalogRow {
   cdCode: string;
@@ -151,6 +153,38 @@ export function buildOwnerCatalogIndex(): OwnerCatalogRow[] {
       nativeId: nw.urlOrTemplate,
       label: nw.label,
       sourceRef: 'owner-news-catalog.ts',
+      inUse: true,
+    });
+  }
+
+  let vcN = 0;
+  const vcCode = () => {
+    vcN += 1;
+    return `VC${String(vcN).padStart(3, '0')}`;
+  };
+
+  for (const v of VOICE_CATALOG) {
+    push({
+      prefix: 'VC',
+      domainCode: vcCode(),
+      tab: 'voice',
+      kind: `voice-${v.engine}`,
+      nativeId: `voice-${v.engine}-${v.id}`,
+      label: v.id,
+      sourceRef: 'voice-catalog.ts',
+      inUse: v.shipping,
+    });
+  }
+
+  for (const clip of listClipLibrary()) {
+    push({
+      prefix: 'VC',
+      domainCode: vcCode(),
+      tab: 'voice',
+      kind: 'voice-clip',
+      nativeId: `voice-clip-${clip.id}`,
+      label: clip.file,
+      sourceRef: 'voice-clips.ts listClipLibrary',
       inUse: true,
     });
   }
