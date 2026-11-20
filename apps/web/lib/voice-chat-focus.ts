@@ -11,6 +11,7 @@ import {
   markMicCommsRoutingLatch,
   primeDefaultSpeakerBeforeSynth,
 } from './audio-output';
+import { isAppleTouchDevice } from './apple-touch';
 
 const PAUSED_MARK = 'data-amoji-paused-foreign';
 
@@ -19,6 +20,17 @@ type AudioSessionNav = Navigator & {
 };
 
 export function enterVoiceChatAudioSession(): void {
+  if (isAppleTouchDevice()) {
+    // play-and-record + the comms latch route iPhone TTS to the earpiece
+    // (sounds like "no voice") and force pin-before-play on later lines.
+    markMicCommsRoutingLatch(false);
+    if (typeof navigator === 'undefined') return;
+    try {
+      const nav = navigator as AudioSessionNav;
+      if (nav.audioSession) nav.audioSession.type = 'playback';
+    } catch { /* ignore */ }
+    return;
+  }
   markMicCommsRoutingLatch(true);
   if (typeof navigator === 'undefined') return;
   try {

@@ -13,6 +13,8 @@
 // Also call ensureCompanionPlaybackRoute() before every HTMLAudio TTS start so
 // non-Yue / male pins do not stay on the mic communications sink after gate.
 
+import { isAppleTouchDevice } from './apple-touch';
+
 type SinkTarget = { setSinkId?: (sinkId: string) => Promise<void>; sinkId?: string };
 type AudioSessionNav = Navigator & { audioSession?: { type: string } };
 
@@ -58,6 +60,9 @@ export function htmlAudioStartMode(
   explicitPin?: boolean,
   gestureTap?: boolean,
 ): 'gesture-safe' | 'pin-before-play' {
+  // iPhone: awaiting setSinkId before play() drops the tap window, and
+  // play-and-record routing is an earpiece/Windows problem, not an iOS one.
+  if (isAppleTouchDevice()) return 'gesture-safe';
   if (gestureTap) return 'gesture-safe';
   if (explicitPin || micCommsRoutingLatch) return 'pin-before-play';
   return 'gesture-safe';

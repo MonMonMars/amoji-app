@@ -183,7 +183,8 @@ import {
   undecidedTopicReply,
   userUndecided,
 } from '../lib/topic-suggestions';
-import { speak, stopSpeaking, stopSpeakingForInterrupt, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechLeadDiverged, speechRemainder, whenSpeechIdle, resumeVoiceEngines } from '../lib/voice';
+import { speak, stopSpeaking, stopSpeakingForInterrupt, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechLeadDiverged, speechRemainder, whenSpeechIdle, resumeVoiceEngines, primeAudioForChatEnter } from '../lib/voice';
+import { isAppleTouchDevice } from '../lib/apple-touch';
 import { cantHearReply, isCantHearComplaint } from '../lib/cant-hear';
 import { productionChat } from '../lib/backend-client';
 import { stopThinkingSound } from '../lib/thinking-sound';
@@ -2021,6 +2022,8 @@ export default function ChatPanel({
       endVoiceMode();
       return;
     }
+    // After a mid-chat refresh this tap is the iPhone audio + mic gesture.
+    try { primeAudioForChatEnter(); } catch { /* ignore */ }
     // Manual on must re-probe getUserMedia in THIS click — the gate gesture is
     // gone, and off left stopped tracks / play-and-record that block a bare start.
     void (async () => {
@@ -2059,6 +2062,9 @@ export default function ChatPanel({
       // Stale "denied" must not permanently block default-open — Start re-probes
       // mic in-gesture; only skip when the device has no speech recognition.
       if (rec?.mic === 'unsupported') return;
+      // Hard refresh clears the in-memory Start gesture. Auto-opening on a
+      // timeout is not a tap — iPhone then denies the mic and can wedge the button.
+      if (isAppleTouchDevice()) return;
     }
     micAutoArmedRef.current = true;
     // Always open immediately once listen is supported. Never stall behind

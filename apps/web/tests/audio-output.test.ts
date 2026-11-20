@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ensureCompanionPlaybackRoute,
   getDefaultSinkId,
@@ -17,6 +17,9 @@ import {
 describe('default audio output', () => {
   beforeEach(() => {
     resetDefaultSinkCacheForTests();
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('forces playback session so mic communications sink does not steal TTS', () => {
@@ -166,6 +169,18 @@ describe('default audio output', () => {
     } as unknown as HTMLAudioElement;
     await startHtmlAudioOnDefaultSpeakers(audio, 'gesture-safe');
     expect(order).toEqual(['play:1', 'sink:', 'play:2', 'play:3']);
+  });
+
+
+  it('iPhone keeps play-first even with mic latch or explicit pin', () => {
+    vi.stubGlobal('navigator', {
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+      maxTouchPoints: 5,
+    });
+    markMicCommsRoutingLatch(true);
+    expect(htmlAudioStartMode(false)).toBe('gesture-safe');
+    expect(htmlAudioStartMode(true)).toBe('gesture-safe');
+    markMicCommsRoutingLatch(false);
   });
 
   it('htmlAudioStartMode upgrades gesture paths after mic play-and-record', () => {

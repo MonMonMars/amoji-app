@@ -30,6 +30,10 @@ export async function requestMic(): Promise<MicOutcome> {
  * again after the user turned it off (stale tracks / play-and-record latch).
  */
 export async function reacquireMicForVoiceMode(): Promise<MicOutcome> {
+  // Start getUserMedia in this turn so iPhone keeps the tap gesture.
+  // Awaiting VAD destroy first (~80ms) dropped Safari's activation and
+  // the button returned denied with no prompt.
+  const probe = requestMic();
   await waitForVadRelease();
-  return requestMic();
+  return probe;
 }
