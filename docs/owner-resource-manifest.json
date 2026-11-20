@@ -1,6 +1,6 @@
 {
-  "version": "2026-11-18-owner-resource-v2",
-  "generatedAt": "2026-11-18T13:15:38.231Z",
+  "version": "2026-11-18-owner-resource-v3",
+  "generatedAt": "2026-11-18T16:18:59.153Z",
   "wantCastRelease": "free-library-want-2026-10-12",
   "stats": {
     "total": 125,
@@ -1502,6 +1502,798 @@
       "notes": "en male"
     },
     {
+      "type": "voice-clip",
+      "id": "clip-1",
+      "pathOrUrl": "/voice-clips/yue/female/laugh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "yue female laugh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-2",
+      "pathOrUrl": "/voice-clips/yue/female/smile.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "yue female smile.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-3",
+      "pathOrUrl": "/voice-clips/yue/female/giggle.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "yue female giggle.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-4",
+      "pathOrUrl": "/voice-clips/yue/female/wow.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "yue female wow.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-5",
+      "pathOrUrl": "/voice-clips/yue/female/um.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "yue female um.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-6",
+      "pathOrUrl": "/voice-clips/yue/female/oh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "yue female oh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-7",
+      "pathOrUrl": "/voice-clips/yue/female/ha.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "yue female ha.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-8",
+      "pathOrUrl": "/voice-clips/yue/male/laugh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "yue male laugh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-9",
+      "pathOrUrl": "/voice-clips/yue/male/smile.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "yue male smile.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-10",
+      "pathOrUrl": "/voice-clips/yue/male/giggle.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "yue male giggle.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-11",
+      "pathOrUrl": "/voice-clips/yue/male/wow.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "yue male wow.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-12",
+      "pathOrUrl": "/voice-clips/yue/male/um.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "yue male um.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-13",
+      "pathOrUrl": "/voice-clips/yue/male/oh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "yue male oh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-14",
+      "pathOrUrl": "/voice-clips/yue/male/ha.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "yue male ha.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-15",
+      "pathOrUrl": "/voice-clips/zh/female/laugh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "zh female laugh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-16",
+      "pathOrUrl": "/voice-clips/zh/female/smile.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "zh female smile.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-17",
+      "pathOrUrl": "/voice-clips/zh/female/giggle.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "zh female giggle.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-18",
+      "pathOrUrl": "/voice-clips/zh/female/wow.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "zh female wow.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-19",
+      "pathOrUrl": "/voice-clips/zh/female/um.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "zh female um.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-20",
+      "pathOrUrl": "/voice-clips/zh/female/oh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "zh female oh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-21",
+      "pathOrUrl": "/voice-clips/zh/female/ha.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "zh female ha.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-22",
+      "pathOrUrl": "/voice-clips/zh/female/giggle_craig.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "zh female giggle_craig.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-23",
+      "pathOrUrl": "/voice-clips/zh/male/laugh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "zh male laugh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-24",
+      "pathOrUrl": "/voice-clips/zh/male/smile.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "zh male smile.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-25",
+      "pathOrUrl": "/voice-clips/zh/male/giggle.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "zh male giggle.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-26",
+      "pathOrUrl": "/voice-clips/zh/male/wow.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "zh male wow.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-27",
+      "pathOrUrl": "/voice-clips/zh/male/um.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "zh male um.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-28",
+      "pathOrUrl": "/voice-clips/zh/male/oh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "zh male oh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-29",
+      "pathOrUrl": "/voice-clips/zh/male/ha.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "zh male ha.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-30",
+      "pathOrUrl": "/voice-clips/ja/female/laugh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja female laugh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-31",
+      "pathOrUrl": "/voice-clips/ja/female/smile.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja female smile.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-32",
+      "pathOrUrl": "/voice-clips/ja/female/giggle.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja female giggle.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-33",
+      "pathOrUrl": "/voice-clips/ja/female/wow.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja female wow.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-34",
+      "pathOrUrl": "/voice-clips/ja/female/um.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja female um.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-35",
+      "pathOrUrl": "/voice-clips/ja/female/oh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja female oh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-36",
+      "pathOrUrl": "/voice-clips/ja/female/ha.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja female ha.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-37",
+      "pathOrUrl": "/voice-clips/ja/female/giggle_anime1.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja female giggle_anime1.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-38",
+      "pathOrUrl": "/voice-clips/ja/female/ha_anime.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja female ha_anime.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-39",
+      "pathOrUrl": "/voice-clips/ja/female/laugh_anime1.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja female laugh_anime1.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-40",
+      "pathOrUrl": "/voice-clips/ja/female/laugh_anime2.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja female laugh_anime2.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-41",
+      "pathOrUrl": "/voice-clips/ja/female/laugh_tts.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja female laugh_tts.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-42",
+      "pathOrUrl": "/voice-clips/ja/female/oh_anime.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja female oh_anime.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-43",
+      "pathOrUrl": "/voice-clips/ja/female/oh_rpg.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja female oh_rpg.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-44",
+      "pathOrUrl": "/voice-clips/ja/female/sigh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja female sigh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-45",
+      "pathOrUrl": "/voice-clips/ja/female/um_tts.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja female um_tts.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-46",
+      "pathOrUrl": "/voice-clips/ja/female/wow_tts.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja female wow_tts.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-47",
+      "pathOrUrl": "/voice-clips/ja/male/laugh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja male laugh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-48",
+      "pathOrUrl": "/voice-clips/ja/male/smile.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja male smile.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-49",
+      "pathOrUrl": "/voice-clips/ja/male/giggle.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja male giggle.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-50",
+      "pathOrUrl": "/voice-clips/ja/male/wow.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja male wow.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-51",
+      "pathOrUrl": "/voice-clips/ja/male/um.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja male um.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-52",
+      "pathOrUrl": "/voice-clips/ja/male/oh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja male oh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-53",
+      "pathOrUrl": "/voice-clips/ja/male/ha.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "ja male ha.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-54",
+      "pathOrUrl": "/voice-clips/en/female/laugh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en female laugh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-55",
+      "pathOrUrl": "/voice-clips/en/female/smile.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en female smile.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-56",
+      "pathOrUrl": "/voice-clips/en/female/giggle.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en female giggle.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-57",
+      "pathOrUrl": "/voice-clips/en/female/wow.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en female wow.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-58",
+      "pathOrUrl": "/voice-clips/en/female/um.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en female um.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-59",
+      "pathOrUrl": "/voice-clips/en/female/oh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en female oh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-60",
+      "pathOrUrl": "/voice-clips/en/female/ha.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en female ha.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-61",
+      "pathOrUrl": "/voice-clips/en/female/laugh_oga.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en female laugh_oga.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-62",
+      "pathOrUrl": "/voice-clips/en/female/laugh_reitanna.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en female laugh_reitanna.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-63",
+      "pathOrUrl": "/voice-clips/en/female/wow_alt.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en female wow_alt.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-64",
+      "pathOrUrl": "/voice-clips/en/female/wow_mixkit.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en female wow_mixkit.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-65",
+      "pathOrUrl": "/voice-clips/en/male/laugh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en male laugh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-66",
+      "pathOrUrl": "/voice-clips/en/male/smile.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en male smile.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-67",
+      "pathOrUrl": "/voice-clips/en/male/giggle.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en male giggle.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-68",
+      "pathOrUrl": "/voice-clips/en/male/wow.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en male wow.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-69",
+      "pathOrUrl": "/voice-clips/en/male/um.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en male um.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-70",
+      "pathOrUrl": "/voice-clips/en/male/oh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en male oh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-71",
+      "pathOrUrl": "/voice-clips/en/male/ha.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en male ha.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-72",
+      "pathOrUrl": "/voice-clips/en/male/ha_effort.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en male ha_effort.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-73",
+      "pathOrUrl": "/voice-clips/en/male/oh_tts.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en male oh_tts.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-74",
+      "pathOrUrl": "/voice-clips/en/male/sigh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en male sigh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-75",
+      "pathOrUrl": "/voice-clips/en/male/um_tts.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en male um_tts.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-76",
+      "pathOrUrl": "/voice-clips/en/male/wow_tts.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en male wow_tts.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-77",
+      "pathOrUrl": "/voice-clips/en/male/wow_woven.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "en male wow_woven.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-78",
+      "pathOrUrl": "/voice-clips/universal/female/laugh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal female laugh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-79",
+      "pathOrUrl": "/voice-clips/universal/female/smile.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal female smile.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-80",
+      "pathOrUrl": "/voice-clips/universal/female/giggle.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal female giggle.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-81",
+      "pathOrUrl": "/voice-clips/universal/female/wow.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal female wow.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-82",
+      "pathOrUrl": "/voice-clips/universal/female/um.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal female um.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-83",
+      "pathOrUrl": "/voice-clips/universal/female/oh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal female oh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-84",
+      "pathOrUrl": "/voice-clips/universal/female/ha.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal female ha.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-85",
+      "pathOrUrl": "/voice-clips/universal/female/giggle_en.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal female giggle_en.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-86",
+      "pathOrUrl": "/voice-clips/universal/female/giggle_group.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal female giggle_group.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-87",
+      "pathOrUrl": "/voice-clips/universal/female/ha_rpg.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal female ha_rpg.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-88",
+      "pathOrUrl": "/voice-clips/universal/female/hehe.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal female hehe.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-89",
+      "pathOrUrl": "/voice-clips/universal/female/huh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal female huh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-90",
+      "pathOrUrl": "/voice-clips/universal/female/laugh_anime.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal female laugh_anime.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-91",
+      "pathOrUrl": "/voice-clips/universal/female/sigh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal female sigh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-92",
+      "pathOrUrl": "/voice-clips/universal/female/wow_mixkit.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal female wow_mixkit.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-93",
+      "pathOrUrl": "/voice-clips/universal/female/wow_reitanna.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal female wow_reitanna.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-94",
+      "pathOrUrl": "/voice-clips/universal/female/wow_woven.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal female wow_woven.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-95",
+      "pathOrUrl": "/voice-clips/universal/male/laugh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal male laugh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-96",
+      "pathOrUrl": "/voice-clips/universal/male/wow.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal male wow.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-97",
+      "pathOrUrl": "/voice-clips/universal/male/oh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal male oh.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-98",
+      "pathOrUrl": "/voice-clips/universal/male/ha.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal male ha.mp3"
+    },
+    {
+      "type": "voice-clip",
+      "id": "clip-99",
+      "pathOrUrl": "/voice-clips/universal/male/sigh.mp3",
+      "usedBy": "voice-clips.ts · play-voice-clip.ts",
+      "status": "wired",
+      "notes": "universal male sigh.mp3"
+    },
+    {
       "type": "tts-optional",
       "id": "voxcpm2",
       "pathOrUrl": "not in repo",
@@ -2193,6 +2985,46 @@
       "type": "music-song",
       "id": "sing-m-no-pagliaccio",
       "pathOrUrl": "/audio/sing-male/sing-m-no-pagliaccio.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-lay-low",
+      "pathOrUrl": "/audio/song-bed/bed-lay-low.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-forest-pop",
+      "pathOrUrl": "/audio/song-bed/bed-forest-pop.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-jay-pop",
+      "pathOrUrl": "/audio/song-bed/bed-jay-pop.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-synthwave-city",
+      "pathOrUrl": "/audio/song-bed/bed-synthwave-city.mp3",
+      "usedBy": "performance-clips.ts · music.ts",
+      "status": "wired",
+      "notes": "CC0-1.0"
+    },
+    {
+      "type": "music-dance",
+      "id": "bed-adventure-time",
+      "pathOrUrl": "/audio/song-bed/bed-adventure-time.mp3",
       "usedBy": "performance-clips.ts · music.ts",
       "status": "wired",
       "notes": "CC0-1.0"
@@ -3144,29 +3976,29 @@
     {
       "type": "owner-picker-motion-preview",
       "id": "IdleBreathCalm",
-      "pathOrUrl": "../models/anims/IdleBreathCalm.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/IdleBreathCalm.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/IdleBreathCalm.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/IdleBreathCalm.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "StandardIdle",
-      "pathOrUrl": "../models/anims/StandardIdle.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/StandardIdle.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/StandardIdle.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/StandardIdle.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "LookAround",
-      "pathOrUrl": "../models/anims/LookAround.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/LookAround.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/LookAround.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/LookAround.gif"
     },
     {
       "type": "owner-picker-motion-preview",
@@ -3174,17 +4006,18 @@
       "pathOrUrl": "../models/anims/lib_C02.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C02",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C02.vrma"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "lib_C04",
-      "pathOrUrl": "../models/anims/lib_C04.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C04.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C04.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C04.gif"
     },
     {
       "type": "owner-picker-motion-preview",
@@ -3192,17 +4025,18 @@
       "pathOrUrl": "../models/anims/lib_C11.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C11",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C11.vrma"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "lib_C25",
-      "pathOrUrl": "../models/anims/lib_C25.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C25.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C25.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C25.gif"
     },
     {
       "type": "owner-picker-motion-preview",
@@ -3210,6 +4044,7 @@
       "pathOrUrl": "../models/anims/lib_C36.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C36",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C36.vrma"
     },
@@ -3219,6 +4054,7 @@
       "pathOrUrl": "../models/anims/lib_C37.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C37",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C37.vrma"
     },
@@ -3228,6 +4064,7 @@
       "pathOrUrl": "../models/anims/lib_C38.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C38",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C38.vrma"
     },
@@ -3237,6 +4074,7 @@
       "pathOrUrl": "../models/anims/lib_C39.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C39",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C39.vrma"
     },
@@ -3246,17 +4084,18 @@
       "pathOrUrl": "../models/anims/lib_C41.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C41",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C41.vrma"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "lib_C42",
-      "pathOrUrl": "../models/anims/lib_C42.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C42.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C42.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C42.gif"
     },
     {
       "type": "owner-picker-motion-preview",
@@ -3264,6 +4103,7 @@
       "pathOrUrl": "../models/anims/lib_C44.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C44",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C44.vrma"
     },
@@ -3273,6 +4113,7 @@
       "pathOrUrl": "../models/anims/HelloWave.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip HelloWave",
       "previewKind": "vrma",
       "previewPath": "../models/anims/HelloWave.vrma"
     },
@@ -3282,6 +4123,7 @@
       "pathOrUrl": "../models/anims/Shrug.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip Shrug",
       "previewKind": "vrma",
       "previewPath": "../models/anims/Shrug.vrma"
     },
@@ -3291,17 +4133,18 @@
       "pathOrUrl": "../models/anims/Sleepy.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip Sleepy",
       "previewKind": "vrma",
       "previewPath": "../models/anims/Sleepy.vrma"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "Thinking",
-      "pathOrUrl": "../models/anims/Thinking.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/Thinking.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/Thinking.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/Thinking.gif"
     },
     {
       "type": "owner-picker-motion-preview",
@@ -3309,6 +4152,7 @@
       "pathOrUrl": "../models/anims/lib_C57.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C57",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C57.vrma"
     },
@@ -3318,6 +4162,7 @@
       "pathOrUrl": "../models/anims/ThumbsUp.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip ThumbsUp",
       "previewKind": "vrma",
       "previewPath": "../models/anims/ThumbsUp.vrma"
     },
@@ -3327,6 +4172,7 @@
       "pathOrUrl": "../models/anims/Clapping.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip Clapping",
       "previewKind": "vrma",
       "previewPath": "../models/anims/Clapping.vrma"
     },
@@ -3336,6 +4182,7 @@
       "pathOrUrl": "../models/anims/Cheer.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip Cheer",
       "previewKind": "vrma",
       "previewPath": "../models/anims/Cheer.vrma"
     },
@@ -3345,6 +4192,7 @@
       "pathOrUrl": "../models/anims/lib_C64.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C64",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C64.vrma"
     },
@@ -3354,6 +4202,7 @@
       "pathOrUrl": "../models/anims/lib_C65.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C65",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C65.vrma"
     },
@@ -3363,6 +4212,7 @@
       "pathOrUrl": "../models/anims/lib_C75.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C75",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C75.vrma"
     },
@@ -3372,35 +4222,81 @@
       "pathOrUrl": "../models/anims/IdleKenneyStand.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip IdleKenneyStand",
       "previewKind": "vrma",
       "previewPath": "../models/anims/IdleKenneyStand.vrma"
     },
     {
       "type": "owner-picker-motion-preview",
-      "id": "Relax",
-      "pathOrUrl": "../models/anims/Relax.vrma",
+      "id": "lib_C85",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C85.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/Relax.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C85.gif"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C87",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C87.gif",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C87.gif"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C90",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C90.gif",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C90.gif"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C92",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C92.gif",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C92.gif"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "lib_C95",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C95.gif",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C95.gif"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "Relax",
+      "pathOrUrl": "../animations/owner-picker-previews/Relax.gif",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/Relax.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "IdleNeutral",
-      "pathOrUrl": "../models/anims/IdleNeutral.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/IdleNeutral.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/IdleNeutral.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/IdleNeutral.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "IdleSassy",
-      "pathOrUrl": "../models/anims/IdleSassy.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/IdleSassy.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/IdleSassy.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/IdleSassy.gif"
     },
     {
       "type": "owner-picker-motion-preview",
@@ -3408,6 +4304,7 @@
       "pathOrUrl": "../models/anims/IdleChinHand.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip IdleChinHand",
       "previewKind": "vrma",
       "previewPath": "../models/anims/IdleChinHand.vrma"
     },
@@ -3417,6 +4314,7 @@
       "pathOrUrl": "../models/anims/IdleHug.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip IdleHug",
       "previewKind": "vrma",
       "previewPath": "../models/anims/IdleHug.vrma"
     },
@@ -3426,6 +4324,7 @@
       "pathOrUrl": "../models/anims/IdleKaykitB.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip IdleKaykitB",
       "previewKind": "vrma",
       "previewPath": "../models/anims/IdleKaykitB.vrma"
     },
@@ -3435,53 +4334,54 @@
       "pathOrUrl": "../models/anims/IdleKaykitA.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip IdleKaykitA",
       "previewKind": "vrma",
       "previewPath": "../models/anims/IdleKaykitA.vrma"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "IdleQuaterniusHuman",
-      "pathOrUrl": "../models/anims/IdleQuaterniusHuman.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/IdleQuaterniusHuman.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/IdleQuaterniusHuman.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/IdleQuaterniusHuman.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "IdleMixamoBreathing",
-      "pathOrUrl": "../models/anims/IdleMixamoBreathing.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/IdleMixamoBreathing.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/IdleMixamoBreathing.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/IdleMixamoBreathing.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "IdleMixamoHappy",
-      "pathOrUrl": "../models/anims/IdleMixamoHappy.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/IdleMixamoHappy.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/IdleMixamoHappy.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/IdleMixamoHappy.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "IdleRpmFStanding001",
-      "pathOrUrl": "../models/anims/IdleRpmFStanding001.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/IdleRpmFStanding001.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/IdleRpmFStanding001.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/IdleRpmFStanding001.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "IdleRpmFVar001",
-      "pathOrUrl": "../models/anims/IdleRpmFVar001.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/IdleRpmFVar001.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/IdleRpmFVar001.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/IdleRpmFVar001.gif"
     },
     {
       "type": "owner-picker-motion-preview",
@@ -3489,26 +4389,27 @@
       "pathOrUrl": "../models/anims/IdleRpmFVar002.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip IdleRpmFVar002",
       "previewKind": "vrma",
       "previewPath": "../models/anims/IdleRpmFVar002.vrma"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "IdleRpmFVar003",
-      "pathOrUrl": "../models/anims/IdleRpmFVar003.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/IdleRpmFVar003.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/IdleRpmFVar003.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/IdleRpmFVar003.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "IdleRpmFVar004",
-      "pathOrUrl": "../models/anims/IdleRpmFVar004.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/IdleRpmFVar004.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/IdleRpmFVar004.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/IdleRpmFVar004.gif"
     },
     {
       "type": "owner-picker-motion-preview",
@@ -3516,6 +4417,7 @@
       "pathOrUrl": "../models/anims/lib_C40.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C40",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C40.vrma"
     },
@@ -3525,6 +4427,7 @@
       "pathOrUrl": "../models/anims/lib_C43.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C43",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C43.vrma"
     },
@@ -3534,6 +4437,7 @@
       "pathOrUrl": "../models/anims/IdleMixamoSad.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip IdleMixamoSad",
       "previewKind": "vrma",
       "previewPath": "../models/anims/IdleMixamoSad.vrma"
     },
@@ -3543,6 +4447,7 @@
       "pathOrUrl": "../models/anims/IdleMixamoStanding.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip IdleMixamoStanding",
       "previewKind": "vrma",
       "previewPath": "../models/anims/IdleMixamoStanding.vrma"
     },
@@ -3552,6 +4457,7 @@
       "pathOrUrl": "../models/anims/IdleMixamoAgreeing.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip IdleMixamoAgreeing",
       "previewKind": "vrma",
       "previewPath": "../models/anims/IdleMixamoAgreeing.vrma"
     },
@@ -3561,17 +4467,18 @@
       "pathOrUrl": "../models/anims/IdleMixamoExcited.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip IdleMixamoExcited",
       "previewKind": "vrma",
       "previewPath": "../models/anims/IdleMixamoExcited.vrma"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "IdleMixamoArmStretch",
-      "pathOrUrl": "../models/anims/IdleMixamoArmStretch.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/IdleMixamoArmStretch.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/IdleMixamoArmStretch.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/IdleMixamoArmStretch.gif"
     },
     {
       "type": "owner-picker-motion-preview",
@@ -3579,6 +4486,7 @@
       "pathOrUrl": "../models/anims/IdleThreeJsSoldier.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip IdleThreeJsSoldier",
       "previewKind": "vrma",
       "previewPath": "../models/anims/IdleThreeJsSoldier.vrma"
     },
@@ -3588,6 +4496,7 @@
       "pathOrUrl": "../models/anims/lib_C05.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C05",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C05.vrma"
     },
@@ -3597,6 +4506,7 @@
       "pathOrUrl": "../models/anims/lib_C06.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C06",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C06.vrma"
     },
@@ -3606,6 +4516,7 @@
       "pathOrUrl": "../models/anims/lib_C12.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C12",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C12.vrma"
     },
@@ -3615,6 +4526,7 @@
       "pathOrUrl": "../models/anims/lib_C45.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C45",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C45.vrma"
     },
@@ -3624,6 +4536,7 @@
       "pathOrUrl": "../models/anims/IdleUAL2Phone.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip IdleUAL2Phone",
       "previewKind": "vrma",
       "previewPath": "../models/anims/IdleUAL2Phone.vrma"
     },
@@ -3633,6 +4546,7 @@
       "pathOrUrl": "../models/anims/lib_C46.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C46",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C46.vrma"
     },
@@ -3642,6 +4556,7 @@
       "pathOrUrl": "../models/anims/lib_C07.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C07",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C07.vrma"
     },
@@ -3651,6 +4566,7 @@
       "pathOrUrl": "../models/anims/lib_C08.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C08",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C08.vrma"
     },
@@ -3660,6 +4576,7 @@
       "pathOrUrl": "../models/anims/lib_C13.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C13",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C13.vrma"
     },
@@ -3669,6 +4586,7 @@
       "pathOrUrl": "../models/anims/lib_C47.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C47",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C47.vrma"
     },
@@ -3678,6 +4596,7 @@
       "pathOrUrl": "../models/anims/lib_C48.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C48",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C48.vrma"
     },
@@ -3687,6 +4606,7 @@
       "pathOrUrl": "../models/anims/lib_C49.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C49",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C49.vrma"
     },
@@ -3696,6 +4616,7 @@
       "pathOrUrl": "../models/anims/lib_C50.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C50",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C50.vrma"
     },
@@ -3705,6 +4626,7 @@
       "pathOrUrl": "../models/anims/lib_C51.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C51",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C51.vrma"
     },
@@ -3714,6 +4636,7 @@
       "pathOrUrl": "../models/anims/lib_C52.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C52",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C52.vrma"
     },
@@ -3723,6 +4646,7 @@
       "pathOrUrl": "../models/anims/lib_C71.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C71",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C71.vrma"
     },
@@ -3732,6 +4656,7 @@
       "pathOrUrl": "../models/anims/lib_C72.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C72",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C72.vrma"
     },
@@ -3741,6 +4666,7 @@
       "pathOrUrl": "../models/anims/lib_C73.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C73",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C73.vrma"
     },
@@ -3750,6 +4676,7 @@
       "pathOrUrl": "../models/anims/lib_C74.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C74",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C74.vrma"
     },
@@ -3759,6 +4686,7 @@
       "pathOrUrl": "../models/anims/lib_C66.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C66",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C66.vrma"
     },
@@ -3768,6 +4696,7 @@
       "pathOrUrl": "../models/anims/lib_C67.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C67",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C67.vrma"
     },
@@ -3777,6 +4706,7 @@
       "pathOrUrl": "../models/anims/lib_C68.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C68",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C68.vrma"
     },
@@ -3786,6 +4716,7 @@
       "pathOrUrl": "../models/anims/lib_C69.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C69",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C69.vrma"
     },
@@ -3795,6 +4726,7 @@
       "pathOrUrl": "../models/anims/lib_C70.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C70",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C70.vrma"
     },
@@ -3804,6 +4736,7 @@
       "pathOrUrl": "../models/anims/lib_C76.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C76",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C76.vrma"
     },
@@ -3813,6 +4746,7 @@
       "pathOrUrl": "../models/anims/lib_C77.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C77",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C77.vrma"
     },
@@ -3822,6 +4756,7 @@
       "pathOrUrl": "../models/anims/lib_C78.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C78",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C78.vrma"
     },
@@ -3831,6 +4766,7 @@
       "pathOrUrl": "../models/anims/lib_C79.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C79",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C79.vrma"
     },
@@ -3840,6 +4776,7 @@
       "pathOrUrl": "../models/anims/lib_C80.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C80",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C80.vrma"
     },
@@ -3849,6 +4786,7 @@
       "pathOrUrl": "../models/anims/lib_C81.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C81",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C81.vrma"
     },
@@ -3858,6 +4796,7 @@
       "pathOrUrl": "../models/anims/lib_C82.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C82",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C82.vrma"
     },
@@ -3867,6 +4806,7 @@
       "pathOrUrl": "../models/anims/lib_C83.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C83",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C83.vrma"
     },
@@ -3876,6 +4816,7 @@
       "pathOrUrl": "../models/anims/lib_C116.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C116",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C116.vrma"
     },
@@ -3885,6 +4826,7 @@
       "pathOrUrl": "../models/anims/lib_C117.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C117",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C117.vrma"
     },
@@ -3894,17 +4836,18 @@
       "pathOrUrl": "../models/anims/lib_C128.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C128",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C128.vrma"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "IdleInnersceneSam",
-      "pathOrUrl": "../models/anims/IdleInnersceneSam.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/IdleInnersceneSam.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/IdleInnersceneSam.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/IdleInnersceneSam.gif"
     },
     {
       "type": "owner-picker-motion-preview",
@@ -3912,6 +4855,7 @@
       "pathOrUrl": "../models/anims/IdleInnersceneHarper.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip IdleInnersceneHarper",
       "previewKind": "vrma",
       "previewPath": "../models/anims/IdleInnersceneHarper.vrma"
     },
@@ -3921,35 +4865,36 @@
       "pathOrUrl": "../models/anims/IdleInnersceneMaya.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip IdleInnersceneMaya",
       "previewKind": "vrma",
       "previewPath": "../models/anims/IdleInnersceneMaya.vrma"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "IdleRpmMStanding001",
-      "pathOrUrl": "../models/anims/IdleRpmMStanding001.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/IdleRpmMStanding001.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/IdleRpmMStanding001.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/IdleRpmMStanding001.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "IdleRpmMVar001",
-      "pathOrUrl": "../models/anims/IdleRpmMVar001.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/IdleRpmMVar001.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/IdleRpmMVar001.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/IdleRpmMVar001.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "IdleRpmMVar002",
-      "pathOrUrl": "../models/anims/IdleRpmMVar002.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/IdleRpmMVar002.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/IdleRpmMVar002.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/IdleRpmMVar002.gif"
     },
     {
       "type": "owner-picker-motion-preview",
@@ -3957,6 +4902,7 @@
       "pathOrUrl": "../models/anims/IdleGodotTPSPlayer.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip IdleGodotTPSPlayer",
       "previewKind": "vrma",
       "previewPath": "../models/anims/IdleGodotTPSPlayer.vrma"
     },
@@ -3966,6 +4912,7 @@
       "pathOrUrl": "../models/anims/IdleRpmMStanding002.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip IdleRpmMStanding002",
       "previewKind": "vrma",
       "previewPath": "../models/anims/IdleRpmMStanding002.vrma"
     },
@@ -3975,6 +4922,7 @@
       "pathOrUrl": "../models/anims/lib_C09.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C09",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C09.vrma"
     },
@@ -3984,6 +4932,7 @@
       "pathOrUrl": "../models/anims/lib_C60.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C60",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C60.vrma"
     },
@@ -3993,17 +4942,18 @@
       "pathOrUrl": "../models/anims/lib_C111.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C111",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C111.vrma"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "lib_C112",
-      "pathOrUrl": "../models/anims/lib_C112.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C112.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C112.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C112.gif"
     },
     {
       "type": "owner-picker-motion-preview",
@@ -4011,6 +4961,7 @@
       "pathOrUrl": "../models/anims/lib_C113.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C113",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C113.vrma"
     },
@@ -4020,6 +4971,7 @@
       "pathOrUrl": "../models/anims/lib_C114.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C114",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C114.vrma"
     },
@@ -4029,6 +4981,7 @@
       "pathOrUrl": "../models/anims/lib_C118.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C118",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C118.vrma"
     },
@@ -4038,6 +4991,7 @@
       "pathOrUrl": "../models/anims/lib_C119.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C119",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C119.vrma"
     },
@@ -4047,6 +5001,7 @@
       "pathOrUrl": "../models/anims/lib_C124.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C124",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C124.vrma"
     },
@@ -4056,6 +5011,7 @@
       "pathOrUrl": "../models/anims/PlayPunch.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip PlayPunch",
       "previewKind": "vrma",
       "previewPath": "../models/anims/PlayPunch.vrma"
     },
@@ -4065,6 +5021,7 @@
       "pathOrUrl": "../models/anims/YesCheer.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip YesCheer",
       "previewKind": "vrma",
       "previewPath": "../models/anims/YesCheer.vrma"
     },
@@ -4074,6 +5031,7 @@
       "pathOrUrl": "../models/anims/TaDa.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip TaDa",
       "previewKind": "vrma",
       "previewPath": "../models/anims/TaDa.vrma"
     },
@@ -4083,6 +5041,7 @@
       "pathOrUrl": "../models/anims/Bow.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip Bow",
       "previewKind": "vrma",
       "previewPath": "../models/anims/Bow.vrma"
     },
@@ -4092,26 +5051,27 @@
       "pathOrUrl": "../models/anims/StompAngry.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip StompAngry",
       "previewKind": "vrma",
       "previewPath": "../models/anims/StompAngry.vrma"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "lib_C120",
-      "pathOrUrl": "../models/anims/lib_C120.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C120.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C120.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C120.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "lib_C121",
-      "pathOrUrl": "../models/anims/lib_C121.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C121.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C121.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C121.gif"
     },
     {
       "type": "owner-picker-motion-preview",
@@ -4119,6 +5079,7 @@
       "pathOrUrl": "../models/anims/lib_C122.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C122",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C122.vrma"
     },
@@ -4128,6 +5089,7 @@
       "pathOrUrl": "../models/anims/lib_C123.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C123",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C123.vrma"
     },
@@ -4137,6 +5099,7 @@
       "pathOrUrl": "../models/anims/lib_C146.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C146",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C146.vrma"
     },
@@ -4146,53 +5109,54 @@
       "pathOrUrl": "../models/anims/lib_C147.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C147",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C147.vrma"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "lib_C03",
-      "pathOrUrl": "../models/anims/lib_C03.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C03.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C03.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C03.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "lib_C61",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C61.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C61.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "lib_C62",
-      "pathOrUrl": "../models/anims/lib_C62.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C62.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C62.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C62.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "lib_C110",
-      "pathOrUrl": "../models/anims/lib_C110.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C110.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C110.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C110.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "lib_C125",
-      "pathOrUrl": "../models/anims/lib_C125.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C125.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C125.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C125.gif"
     },
     {
       "type": "owner-picker-motion-preview",
@@ -4200,6 +5164,7 @@
       "pathOrUrl": "../models/anims/lib_C126.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C126",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C126.vrma"
     },
@@ -4209,197 +5174,198 @@
       "pathOrUrl": "../models/anims/lib_C127.vrma",
       "usedBy": "owner-resources.html · motion preview column",
       "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C127",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C127.vrma"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-C112",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C112.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C112.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-C113",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C61.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C61.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-C114",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C61.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C61.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-C110",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C110.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C110.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-C118",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C61.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C61.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-C117",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C61.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C61.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-C128",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C61.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C61.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-C116",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C61.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C61.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-C111",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C61.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C61.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-C03",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C03.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C03.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-C60",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C61.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C61.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-C61",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C61.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C61.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-C62",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C62.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C62.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-C09",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C61.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C61.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-C119",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C61.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C61.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-C124",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C61.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C61.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-C125",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C125.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C125.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-C126",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C61.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C61.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-C127",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C61.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C61.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-generic-sing",
-      "pathOrUrl": "../models/anims/Sing.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/Sing.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/Sing.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/Sing.gif"
     },
     {
       "type": "owner-picker-motion-preview",
       "id": "perf-motion-generic-dance",
-      "pathOrUrl": "../models/anims/lib_C61.vrma",
+      "pathOrUrl": "../animations/owner-picker-previews/lib_C61.gif",
       "usedBy": "owner-resources.html · motion preview column",
-      "status": "optional",
-      "previewKind": "vrma",
-      "previewPath": "../models/anims/lib_C61.vrma"
+      "status": "wired",
+      "previewKind": "gif",
+      "previewPath": "../animations/owner-picker-previews/lib_C61.gif"
     }
   ]
 }

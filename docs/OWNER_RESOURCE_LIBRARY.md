@@ -5,7 +5,7 @@
 **Machine-readable index:** `apps/web/lib/owner-resource-manifest.ts` (`buildOwnerResourceIndex()`, re-exports)  
 **Manifest version:** `2026-11-16-owner-resource-v1`  
 **Human mirror (artifacts):** `/opt/cursor/artifacts/owner-resource-library.md`  
-**Pixel picker (HTML):** `docs/owner-resources.html` — Music · Stories · Demo-phase · News · Poke (motion / voice / VFX) · Idle tabs; regenerate with `node scripts/generate-owner-picker-html.mjs`  
+**Pixel picker (HTML):** `docs/owner-resources.html` — Music · Stories · Demo · News · **Voice/TTS** · Poke · Idle; regenerate with `node scripts/generate-owner-picker-html.mjs` · accountability: [`VOICE_SOUND_INVENTORY.md`](./VOICE_SOUND_INVENTORY.md)  
 
 ### Notes export (r216+ · tri-state r233+)
 
@@ -49,7 +49,7 @@ Every row in `docs/owner-resources.html` carries **`data-owner-code="CD###"`** (
 | **NW** | News RSS feed or AI-news prompt template | `owner-news-catalog.ts` ← `live-tools.ts` |
 | **CMA** | Recorded poke SFX pack (existing ids) | `cma-reaction-gallery.ts` |
 
-**GitHub Pages tabs:** `#music` · `#stories` · `#demo` · `#news` · `#poke` · `#idle` — e.g. `https://monmonmars.github.io/amoji-app/docs/owner-resources.html#demo`
+**GitHub Pages tabs:** `#music` · `#stories` · `#demo` · `#news` · `#voice` · `#poke` · `#idle` — sub-anchors `#mixkit-streams` · `#voice-catalog` · `#poke-tts`
 
 ## Standing rule (agents)
 
