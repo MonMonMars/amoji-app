@@ -62,6 +62,22 @@ describe('idle pose smooth + catalog trim', () => {
     expect(canvas).toMatch(/if \(swapBlendActive\) return;/);
   });
 
+  it('wires human ROM clamps into idle/poke blend path (shoulder/elbow/spine)', async () => {
+    const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
+    expect(canvas).toContain("from '../lib/vrm/bone-joint-limits'");
+    expect(canvas).toContain('clampBoneByName');
+    expect(canvas).toContain('shortestQuatSlerpClamped');
+    expect(canvas).toMatch(/applyBoneBlend\(now\)/);
+    expect(canvas).toMatch(/applyBoneBlend\(now\)[\s\S]*avatar\.clampAxialNoFlip\(\)/);
+    expect(canvas).toMatch(/pokeSectionBodyReaction/);
+    expect(canvas).toContain('idleCrossfadeAdditiveScale');
+    const { AXIAL_NO_FLIP_BONES } = await import('../lib/vrm/bone-joint-limits');
+    expect(AXIAL_NO_FLIP_BONES).toContain('hips');
+    expect(AXIAL_NO_FLIP_BONES).toContain('spine');
+    expect(AXIAL_NO_FLIP_BONES).toContain('leftUpperArm');
+    expect(AXIAL_NO_FLIP_BONES).toContain('leftLowerArm');
+  });
+
   it('freezes hang/soften/shoulder writers during idle A→B glide', () => {
     const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
     expect(canvas).toMatch(/!idleLegGlide && !handDrag && !idleLegGlide|!handDrag && !idleLegGlide\) \{\s*\n\s*applyIdleClipSoftening/);

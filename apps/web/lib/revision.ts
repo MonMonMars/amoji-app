@@ -463,7 +463,8 @@
 // r2026-11-19.272: full-body 8-way poke recoil (away from finger) + gendered poke voice.
 // r2026-11-19.273: honor owner 採用/刪除 at runtime — idle v2, poke CMA, perf pools (#543).
 // r2026-11-19.274: idle v2 — no calm-stand A→B rotation; skip bone blend on same-clip refresh (#545).
-export const APP_REVISION = 'r2026-11-19.274';
+// r2026-11-19.275: verify human ROM clamps wired on idle/poke blend path (#548 / #351).
+export const APP_REVISION = 'r2026-11-19.275';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
