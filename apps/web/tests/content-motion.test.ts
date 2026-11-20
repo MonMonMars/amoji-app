@@ -41,7 +41,9 @@ describe('content-driven motion director (not LLM)', () => {
   it('weather / news / story talk uses calm look/breathe idle, not dance', () => {
     const calm = [
       'IdleQuaterniusHuman',
+      'IdleRpmFStanding001',
       'IdleRpmMStanding001',
+      'IdleInnersceneSam',
       'Thinking',
     ];
     const weather = resolveContentMotion({

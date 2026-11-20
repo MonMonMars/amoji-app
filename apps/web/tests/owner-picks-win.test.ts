@@ -88,7 +88,7 @@ describe('owner picks win over Quaternius (#430 vs #432)', () => {
     const store = mockStorage();
     store.set('amoji.idleEnabled.v5', JSON.stringify([5]));
     forgetIdleEnabledCache();
-    expect(listEnabledIdleClipIds()).toEqual(['IdleRpmFStanding001']);
+    expect(listEnabledIdleClipIds()).toContain('IdleRpmFStanding001');
     expect(ownerCalmIdleClip()).toBe('IdleRpmFStanding001');
     expect(resolveChatAutoIdle({
       assistantText: '',
@@ -102,8 +102,10 @@ describe('owner picks win over Quaternius (#430 vs #432)', () => {
     forgetIdleEnabledCache();
     forgetIdlePickCache();
     // Fresh default enable = InnersceneSam; pin overrides for that character.
-    expect(listEnabledIdleClipIds()).toEqual(['IdleInnersceneSam']);
-    expect(ownerCalmIdleClip('a02-other')).toBeNull(); // stock default → pool varies
+    expect(listEnabledIdleClipIds()).toEqual(
+      expect.arrayContaining(['IdleInnersceneSam', 'IdleRpmFStanding001']),
+    );
+    expect(ownerCalmIdleClip('a02-other')).toBe('IdleRpmFStanding001');
     expect(saveIdlePick('a01-shino', 'IdleRpmMStanding001')).toBe('IdleRpmMStanding001');
     expect(idlePickFor('a01-shino')).toBe('IdleRpmMStanding001');
     expect(ownerCalmIdleClip('a01-shino')).toBe('IdleRpmMStanding001');

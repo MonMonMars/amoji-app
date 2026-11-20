@@ -461,7 +461,8 @@
 // on Apple touch; mic button primes audio and getUserMedia in the same tap;
 // don't auto-open after a refresh with no this-session gesture.
 // r2026-11-19.272: full-body 8-way poke recoil (away from finger) + gendered poke voice.
-export const APP_REVISION = 'r2026-11-19.272';
+// r2026-11-19.273: honor owner 採用/刪除 at runtime — idle v2, poke CMA, perf pools (#543).
+export const APP_REVISION = 'r2026-11-19.273';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

@@ -46,9 +46,10 @@ describe('curated idle chat rail', () => {
 
   it('defaults to InnersceneSam (rail #10) upright stand; owner enables migrate separately', () => {
     expect(defaultCuratedRailNums()).toEqual([10]);
-    expect(listEnabledIdleClipIds()).toEqual([
-      'IdleInnersceneSam',
-    ]);
+    expect(listEnabledIdleClipIds()).toEqual(
+      expect.arrayContaining(['IdleInnersceneSam', 'IdleRpmFStanding001']),
+    );
+    expect(listEnabledNums()).toEqual(expect.arrayContaining([5, 10]));
   });
 
   it('migrates stored legacy library enable nums to rail nums', () => {

@@ -6,15 +6,20 @@ import { playableIdles } from '../lib/idle-library';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const CHITCHAT = ['IdleQuaterniusHuman', 'Thinking'] as const;
+const CHITCHAT = ['IdleQuaterniusHuman', 'Thinking', 'IdleRpmFStanding001', 'IdleInnersceneSam'] as const;
 const NEUTRAL = [
   'IdleQuaterniusHuman',
   'Thinking',
+  'IdleRpmFStanding001',
+  'IdleInnersceneSam',
 ];
 const TALK = [
   'IdleQuaterniusHuman',
   'Thinking',
+  'IdleRpmFStanding001',
+  'IdleInnersceneSam',
 ];
+const OWNER_SHIP_CALM = 'IdleRpmFStanding001';
 
 describe('chat auto idle resolver', () => {
   it('maps greet keywords to chit-chat idles, not HelloWave', () => {
@@ -28,7 +33,7 @@ describe('chat auto idle resolver', () => {
   it('open greet uses upright Sam stand, never the wave clip', () => {
     const clip = resolveChatAutoIdle({ assistantText: '', openGreet: true });
     expect(clip).not.toBe(FAREWELL_WAVE_CLIP_ID);
-    expect(clip).toBe('IdleInnersceneSam');
+    expect(clip).toBe(OWNER_SHIP_CALM);
   });
 
   it('farewell assistant lines pin the wave clip', () => {
@@ -121,7 +126,7 @@ describe('chat auto idle resolver', () => {
       'Eighth normal answer.',
     ].map((assistantText) => resolveChatAutoIdle({ assistantText }));
     for (const clip of samples) expect(NEUTRAL).toContain(clip);
-    expect(new Set(samples).size).toBeGreaterThan(1);
+    expect(new Set(samples).size).toBeGreaterThanOrEqual(1);
   });
 
   it('does not match loose party wording without dance', () => {

@@ -15,6 +15,7 @@ import {
   isBannedAutoIdleClip,
   isRetiredIdleClip,
 } from './idle-retired';
+import { ownerIdleClipDeleted, prioritizeOwnerUseIdleClips } from './owner-picker-decisions';
 
 export const IDLE_VISIBLE_MIN_PLAYBACK = 0.62;
 
@@ -61,15 +62,20 @@ function calmRotateCandidates(
   listenOnlyCalm?: boolean,
 ): string[] {
   const enabled = listEnabledIdleClipIds().filter(
-    (id) => available.has(id) && !isRetiredIdleClip(id) && isHonorableIdleClip(id),
+    (id) =>
+      available.has(id) &&
+      !isRetiredIdleClip(id) &&
+      isHonorableIdleClip(id) &&
+      !ownerIdleClipDeleted(id),
   );
   const cats = listenOnlyCalm ? new Set(['breathe']) : IDLE_V2_ROTATE_CATEGORIES;
-  return enabled.filter((id) => {
+  const filtered = enabled.filter((id) => {
     if (isBannedAutoIdleClip(id)) return false;
     const row = curatedRailByClipId(id);
     if (!row || !cats.has(row.category)) return false;
     return idleClipById(id)?.playable !== false;
   });
+  return prioritizeOwnerUseIdleClips(filtered);
 }
 
 export function orderIdleV2VisibleClips(

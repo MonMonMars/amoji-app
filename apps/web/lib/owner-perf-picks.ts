@@ -5,6 +5,13 @@ import { isHonorableIdleClip } from './idle-owner-migrate';
 import { listEnabledDanceClipIds, listEnabledSingClipIds } from './idle-enabled';
 import { idlePickFor } from './idle-pick';
 import { streamTrackById, tracksForStyle, type MusicStyleId, type StreamTrack } from './music-catalog';
+import {
+  mergeOwnerListenMvCodes,
+  mergeOwnerSongClipIds,
+  ownerIdleClipDeleted,
+  ownerMvDeleted,
+  ownerSongClipDeleted,
+} from './owner-picker-decisions';
 import { PERFORMANCE_CLIPS, type ClipQuery } from './performance-clips';
 import {
   committedOwnerPerfSelection,
@@ -33,6 +40,7 @@ function validMvCodes(codes: readonly string[]): string[] {
   for (const raw of codes) {
     const c = normMv(raw);
     if (seen.has(c)) continue;
+    if (ownerMvDeleted(c)) continue;
     if (!streamTrackById(c)) continue;
     seen.add(c);
     out.push(c);
@@ -45,7 +53,7 @@ function validSongClipIds(ids: readonly string[]): string[] {
   const seen = new Set<string>();
   for (const id of ids) {
     const clip = PERFORMANCE_CLIPS.find((c) => c.id === id && c.kind === 'song');
-    if (!clip || seen.has(id)) continue;
+    if (!clip || seen.has(id) || ownerSongClipDeleted(id)) continue;
     seen.add(id);
     out.push(id);
   }
@@ -78,12 +86,15 @@ function parseBlob(raw: string): OwnerPerfPicksBlob {
 
 function mergePrefs(local: OwnerPerfPicksBlob): OwnerPerfPicksBlob {
   const ship = shipDefaults();
-  const listen = validMvCodes(local.listenMvCodes?.length ? local.listenMvCodes : ship.listenMvCodes ?? OWNER_SHIP_LISTEN_MV_CODES);
-  const songs = validSongClipIds(
-    local.songClipIds?.length ? local.songClipIds : ship.songClipIds ?? OWNER_SHIP_SONG_CLIP_IDS,
-  );
+  const listenRaw = local.listenMvCodes?.length ? local.listenMvCodes : ship.listenMvCodes ?? OWNER_SHIP_LISTEN_MV_CODES;
+  const songRaw = local.songClipIds?.length ? local.songClipIds : ship.songClipIds ?? OWNER_SHIP_SONG_CLIP_IDS;
+  const listen = validMvCodes(mergeOwnerListenMvCodes(listenRaw));
+  const songs = validSongClipIds(mergeOwnerSongClipIds(songRaw));
   const singBody = (local.singBodyClipIds ?? []).filter(
-    (id) => isHonorableIdleClip(id) && curatedRailByClipId(id)?.category === 'sing',
+    (id) =>
+      isHonorableIdleClip(id) &&
+      curatedRailByClipId(id)?.category === 'sing' &&
+      !ownerIdleClipDeleted(id),
   );
   return {
     listenMvCodes: listen.length ? listen : validMvCodes(OWNER_SHIP_LISTEN_MV_CODES),
@@ -149,7 +160,7 @@ export function ownerSingClipPrefs(characterId?: string | null): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
   const push = (id: string) => {
-    if (!isHonorableIdleClip(id) || seen.has(id)) return;
+    if (!isHonorableIdleClip(id) || seen.has(id) || ownerIdleClipDeleted(id)) return;
     seen.add(id);
     out.push(id);
   };

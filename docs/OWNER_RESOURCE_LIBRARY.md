@@ -17,7 +17,7 @@
 5. Same-origin backup: localStorage key **`amoji.ownerPickerNotes.v1`** (survives refresh; not synced across devices).
 6. **Copy JSON / Copy Markdown** remain remove-list-only exports (unchanged).
 
-**Ship-set import (agent · pre-#543 on `main`):**
+**Ship-set import (agent · live in r273 / #543):**
 
 1. Export from the picker → `owner-picker-notes-v2` JSON (`version`, `items[]`, `useCd` / `deleteCd`, …).
 2. Sample file: [`docs/samples/owner-picker-notes-export-sample.json`](./samples/owner-picker-notes-export-sample.json).
@@ -221,7 +221,7 @@ Hold per bible — Edge 58-button list **removed** (`voice-catalog.ts`); use `vo
    { "listenMvCodes": ["MV070", "MV085"], "songClipIds": ["sing-f-silent-night"] }
    ```
 2. **Repo ship-set (all users until they override):** Edit `apps/web/data/owner-perf-selection.json` and bump `revision.ts`.
-3. **Motion tri-state ship-set:** `apps/web/data/owner-picker-selection.json` + `node scripts/import-owner-picker-selection.mjs <export.json>`; runtime `owner-picker-decisions.ts`.
+3. **Motion tri-state ship-set:** Export from owner-resources (notes v2), then repo root `node scripts/import-owner-picker-selection.mjs <export.json>` → `apps/web/data/owner-picker-selection.json`; runtime `owner-picker-decisions.ts` + `owner-picker-ship-set.ts`. Bump `revision.ts` / `sw.js` `CACHE` when shipping.
 4. **Pixel review page:** `docs/owner-resources.html` Music tab — per-row notes + **Save notes JSON**, or check MV/DC rows and use **Copy JSON (remove list)** for cuts only.
 
 **Dance / sing body VRMA** still honor `amoji.idlePick.v6` + `amoji.idleEnabled.v6` dance/sing rails via `owner-dance-picks.ts` / `ownerSingClipPrefs()`.
