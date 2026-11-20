@@ -12,6 +12,7 @@ import { idlePickFor } from './idle-pick';
 import { DEFAULT_IDLE_CLIP_ID } from './idle-retired';
 import { detectMusicStyle, STYLE_CLIP_HINTS } from './music-catalog';
 import { resolvePerfMotion } from './performance-motion';
+import { ownerIdleClipDeleted } from './owner-picker-decisions';
 import { ownerDanceClipPrefs, ownerSingClipPrefs } from './owner-perf-picks';
 
 const BREATHING_CLIPS = [
@@ -171,10 +172,10 @@ function pickFromPool(seed: string, pool: readonly string[]): string {
 export function ownerCalmIdleClip(characterId?: string | null): string | null {
   if (characterId) {
     const pin = idlePickFor(characterId);
-    if (pin && idleClipById(pin) && isHonorableIdleClip(pin)) return pin;
+    if (pin && idleClipById(pin) && isHonorableIdleClip(pin) && !ownerIdleClipDeleted(pin)) return pin;
   }
   const enabled = listEnabledIdleClipIds().filter(
-    (id) => idleClipById(id) && isHonorableIdleClip(id),
+    (id) => idleClipById(id) && isHonorableIdleClip(id) && !ownerIdleClipDeleted(id),
   );
   if (!enabled.length) return null;
   // Stock fresh default alone — do not collapse chit-chat/neutral pools.

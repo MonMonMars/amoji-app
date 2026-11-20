@@ -2,6 +2,7 @@
 
 import { isFarewellOnlyIdleClip } from './idle-farewell';
 import { idleByNum } from './idle-library';
+import { ownerIdleClipDeleted } from './owner-picker-decisions';
 
 /**
  * #N hidden from picker; no rotation; saved pins remap.
@@ -118,6 +119,9 @@ export function isOwnerHonorableBannedAuto(clipId: string | null | undefined): b
  * override migrated pins/enables (#432 strengthen).
  */
 export function resolveIdleClipId(clipId: string): string {
+  if (ownerIdleClipDeleted(clipId)) {
+    return IDLE_PIN_FALLBACK_CLIP_ID;
+  }
   if (
     isRetiredIdleClip(clipId)
     || isFarewellOnlyIdleClip(clipId)

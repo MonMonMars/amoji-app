@@ -11,6 +11,7 @@ import {
   isKnownBadIdleClip,
   readMigratingPrefJson,
 } from './idle-owner-migrate';
+import { ownerIdleClipDeleted } from './owner-picker-decisions';
 import { resolveIdleClipId, isRetiredIdleClip } from './idle-retired';
 
 export { IDLE_PICK_KEY };
@@ -30,7 +31,7 @@ function scrubPickMap(parsed: Record<string, unknown>): { next: PickMap; changed
   const next: PickMap = {};
   let changed = false;
   for (const [id, clip] of Object.entries(parsed)) {
-    if (typeof clip !== 'string' || !idleClipById(clip) || !isHonorableIdleClip(clip)) {
+    if (typeof clip !== 'string' || !idleClipById(clip) || !isHonorableIdleClip(clip) || ownerIdleClipDeleted(clip)) {
       changed = true;
       continue;
     }
