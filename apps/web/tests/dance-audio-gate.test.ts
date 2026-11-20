@@ -77,7 +77,7 @@ describe('dance-audio-gate', () => {
     expect(music).toContain('startLibraryBandFallback');
     const playEl = music.slice(music.indexOf('function playClipElement'), music.indexOf('async function playClip'));
     expect(playEl).toContain('primeLibraryBedPlayback');
-    expect(playEl).toContain("startHtmlAudioOnDefaultSpeakers(audio, 'gesture-safe')");
+    expect(playEl).toContain('startHtmlAudioOnDefaultSpeakers(audio, htmlAudioStartMode(false))');
     expect(music).toMatch(/function primeLibraryBedPlayback[\s\S]*ensureCompanionPlaybackRoute/);
     expect(playEl).not.toMatch(/pinDefaultOutput\(audio\)/);
     expect(playEl).not.toMatch(/pinDefaultOutputAsync\(audio\)\.then\(\(\) => audio\.play/);

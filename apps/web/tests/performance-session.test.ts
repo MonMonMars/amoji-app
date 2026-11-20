@@ -69,8 +69,11 @@ describe('performance-session', () => {
   it('music endPerformanceMusic coordinates session + instant clip halt', () => {
     const music = fs.readFileSync(path.join(ROOT, 'lib/music.ts'), 'utf8');
     expect(music).toContain('endPerformanceSession');
+    expect(music).toContain('haltPerformanceAudioOnly');
+    const haltOnly = music.slice(music.indexOf('function haltPerformanceAudioOnly'), music.indexOf('export function endPerformanceMusic'));
+    expect(haltOnly).toMatch(/haltClip\(opts\)/);
     const endBlock = music.slice(music.indexOf('export function endPerformanceMusic'), music.indexOf('// ---- premade library'));
-    expect(endBlock).toMatch(/haltClip\(\{ fadeOutSec: 0 \}\)/);
+    expect(endBlock).toMatch(/haltPerformanceAudioOnly\(\{ fadeOutSec: 0 \}\)/);
     expect(endBlock).not.toMatch(/fadeOutSec:\s*0\.35/);
     expect(music).not.toMatch(/master\.gain\.linearRampToValueAtTime\(0,/);
     expect(music).not.toMatch(/pianoMaster\.gain\.linearRampToValueAtTime\(0,/);
