@@ -15,12 +15,12 @@ import {
 const root = path.resolve(import.meta.dirname, '..');
 
 describe('poke-zones grid', () => {
-  it('defines 24 sections (6 tiers × 4 angles)', () => {
+  it('defines 48 sections (6 tiers × 8 angles)', () => {
     expect(POKE_TIER_ORDER.length).toBe(6);
-    expect(POKE_ANGLES.length).toBe(4);
-    expect(POKE_SECTIONS.length).toBe(24);
-    expect(POKE_SECTION_IDS.length).toBe(24);
-    expect(new Set(POKE_SECTION_IDS).size).toBe(24);
+    expect(POKE_ANGLES.length).toBe(8);
+    expect(POKE_SECTIONS.length).toBe(48);
+    expect(POKE_SECTION_IDS.length).toBe(48);
+    expect(new Set(POKE_SECTION_IDS).size).toBe(48);
   });
 
   it('uses poke:tier:angle voice keys', () => {
@@ -49,9 +49,9 @@ describe('poke-zones grid', () => {
 });
 
 describe('pokeSectionBodyReaction', () => {
-  it('tier 6 (calf + foot) has zero body motion', () => {
+  it('tier 6 (calf + foot) now recoils (hips carry the poke, feet planted)', () => {
     const section = resolvePokeSection('foot', 'front');
-    expect(section.voiceOnly).toBe(true);
+    expect(section.voiceOnly).toBe(false);
     const hit = pokeSectionBodyReaction({
       t: 0.15,
       section,
@@ -62,13 +62,8 @@ describe('pokeSectionBodyReaction', () => {
       softChest: false,
       twist: 0.05,
     });
-    const sum =
-      Math.abs(hit.headX) + Math.abs(hit.headZ)
-      + Math.abs(hit.spinePitch) + Math.abs(hit.chestPitch)
-      + Math.abs(hit.hipPitch) + Math.abs(hit.lArmX) + Math.abs(hit.rArmX);
-    expect(sum).toBe(0);
-    expect(hit.hipShiftX).toBe(0);
-    expect(hit.hipShiftZ).toBe(0);
+    expect(Math.abs(hit.hipPitch)).toBeGreaterThan(0.02);
+    expect(Math.abs(hit.hipPitch)).toBeGreaterThan(Math.abs(hit.spinePitch) * 0.6);
   });
 
   it('head tier moves head more than spine at impact (upper body follows less)', () => {
@@ -90,52 +85,52 @@ describe('pokeSectionBodyReaction', () => {
     expect(Math.abs(hit.spinePitch)).toBeLessThan(0.2);
   });
 
-  it('left push leans left (same side) with chest roll + poked-side arm', () => {
+  it('left-origin poke recoils to the right with chest roll + poked-side arm', () => {
     const section = resolvePokeSection('side', 'left');
     const hit = pokeSectionBodyReaction({
       t: 0.12,
       section,
       hitZone: 'side',
-      // push left (−1) → −X face-on → tip screen-left.
-      fallX: -1,
+      // Recoil away from a left poke: fall +X face-on → tip screen-right.
+      fallX: 1,
       fallZ: 0,
       sideSign: 1,
       softChest: false,
       twist: 0,
     });
-    expect(hit.chestRoll).toBeGreaterThan(0.35);
+    expect(hit.chestRoll).toBeLessThan(-0.35);
     expect(Math.abs(hit.rArmX)).toBeGreaterThan(Math.abs(hit.lArmX));
     expect(Math.abs(hit.rArmX)).toBeGreaterThan(0.45);
   });
 
-  it('CompanionCanvas encodes same-side poke lean + layout-local coords', () => {
+  it('CompanionCanvas encodes recoil-away poke lean + layout-local coords', () => {
     const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
-    expect(canvas).toMatch(/tips toward the finger side/);
+    expect(canvas).toMatch(/blends away from the finger/);
     expect(canvas).toMatch(/screenPointerSideSign\s*\(/);
-    expect(canvas).toMatch(/lateralFallAwayFromScreenSide\s*\(/);
+    expect(canvas).toMatch(/lateralFallRecoilFromScreenSide\s*\(/);
+    expect(canvas).toMatch(/directionFromAxes/);
     expect(canvas).toMatch(/clientPointInElementLocal\s*\(/);
     expect(canvas).toMatch(/ndcPointInElementLocal\s*\(/);
     expect(canvas).toMatch(/orientationchange/);
-    expect(canvas).toMatch(/fall\.x \* 0\.95/);
     expect(canvas).toMatch(/fingerOffCenter/);
     expect(canvas).toMatch(/Kill stuck poke lean/);
     expect(canvas).toMatch(/pokeArmSideFromScreenPush\s*\(\s*leanSide\s*\)/);
   });
 
-  it('off-center chest poke with same-side fall tips left of a left push', () => {
+  it('off-center chest poke recoils away from a left push', () => {
     const section = resolvePokeSection('chest', 'left');
-    // Blended canvas fall for finger-left push: mostly −X along camera-right.
+    // Recoil from a finger-left push: mostly +X, slightly back.
     const hit = pokeSectionBodyReaction({
       t: 0.12,
       section,
       hitZone: 'chest',
-      fallX: -0.9,
+      fallX: 0.9,
       fallZ: -0.35,
       sideSign: 1,
       softChest: false,
       twist: 0,
     });
-    expect(hit.chestRoll).toBeGreaterThan(0.2);
+    expect(hit.chestRoll).toBeLessThan(-0.2);
     expect(Math.abs(hit.rArmX)).toBeGreaterThan(Math.abs(hit.lArmX));
   });
 });

@@ -1,7 +1,7 @@
 // Poke region and punch direction from the hit on the live VRM.
 // The body recoils away from the poke (the punch continues through the
-// contact). Each major part has its own impact shape; front/back/left/right
-// change which joints take the force so it is not one clip mirrored.
+// contact). Each major part has its own impact shape; eight directions
+// (front, diagonals, sides, back) change which joints take the force.
 
 export type TalkZone =
   | 'head'
@@ -18,7 +18,11 @@ export type TalkZone =
   | 'legR'
   | 'foot';
 
-export type PokeDirection = 'front' | 'back' | 'left' | 'right';
+export const POKE_DIRECTIONS = [
+  'front', 'frontLeft', 'left', 'backLeft',
+  'back', 'backRight', 'right', 'frontRight',
+] as const;
+export type PokeDirection = (typeof POKE_DIRECTIONS)[number];
 
 /**
  * How long one poke reaction occupies the body, milliseconds.
@@ -57,6 +61,9 @@ export interface PokeClass {
   /** Horizontal recoil (away from the poke), world XZ, unit length. */
   impulse: { x: number; z: number };
   sideSign: number;
+  /** Character facing axes used to classify the punch (XZ). */
+  forward: { x: number; z: number };
+  right: { x: number; z: number };
 }
 
 function sub(a: Vec3, b: Vec3): Vec3 {
@@ -73,6 +80,37 @@ function dist(a: Vec3, b: Vec3): number {
   return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
+/** True for left, right, and the four diagonal punches. */
+export function isLateralPokeDirection(d: PokeDirection): boolean {
+  return d === 'left' || d === 'right' || d.endsWith('Left') || d.endsWith('Right');
+}
+
+/** True for back and the two back-diagonals. */
+export function isBackPokeDirection(d: PokeDirection): boolean {
+  return d === 'back' || d === 'backLeft' || d === 'backRight';
+}
+
+/** Map atan2(side, -forward) in the character frame to one of eight punches. */
+export function directionFromOctant(ang: number): PokeDirection {
+  const twoPi = Math.PI * 2;
+  let a = ang;
+  while (a <= -Math.PI) a += twoPi;
+  while (a > Math.PI) a -= twoPi;
+  const oct = Math.round(a / (Math.PI / 4));
+  switch (oct) {
+    case 0: return 'front';
+    case 1: return 'frontLeft';
+    case 2: return 'left';
+    case 3: return 'backLeft';
+    case 4:
+    case -4: return 'back';
+    case -3: return 'backRight';
+    case -2: return 'right';
+    case -1: return 'frontRight';
+    default: return 'front';
+  }
+}
+
 /** Where the punch came from, given the recoil and the character axes. */
 export function directionFromAxes(
   impulse: { x: number; z: number },
@@ -81,8 +119,7 @@ export function directionFromAxes(
 ): PokeDirection {
   const f = impulse.x * forward.x + impulse.z * forward.z;
   const s = impulse.x * right.x + impulse.z * right.z;
-  if (Math.abs(s) > Math.abs(f)) return s < 0 ? 'right' : 'left';
-  return f < 0 ? 'front' : 'back';
+  return directionFromOctant(Math.atan2(s, -f));
 }
 
 function recoilXZ(hit: Vec3, hips: Vec3, extra?: PokeHitExtra): { x: number; z: number } {
@@ -170,6 +207,8 @@ export function classifyPoke(
     direction: directionFromAxes(impulse, forward, rightN),
     impulse,
     sideSign: s >= 0 ? 1 : -1,
+    forward,
+    right: rightN,
   };
 }
 
@@ -229,8 +268,7 @@ export function pokePunch(t: number, kind: SpringKind = 'body'): number {
 
 /** Infer punch origin from the recoil vector when the caller has no hit frame. */
 export function inferPokeDirection(fallX: number, fallZ: number): PokeDirection {
-  if (Math.abs(fallX) > Math.abs(fallZ) * 0.9) return fallX > 0 ? 'left' : 'right';
-  return fallZ < 0 ? 'front' : 'back';
+  return directionFromOctant(Math.atan2(fallX, -fallZ));
 }
 
 interface Gains {
@@ -251,8 +289,8 @@ interface Gains {
 }
 
 function gainsFor(zone: TalkZone, direction: PokeDirection): Gains {
-  const side = direction === 'left' || direction === 'right';
-  const fromBack = direction === 'back';
+  const side = isLateralPokeDirection(direction);
+  const fromBack = isBackPokeDirection(direction);
   switch (zone) {
     case 'head':
       return { spine: 0, chest: 0, head: 0.95, hip: 0, hipRoll: 0, roll: 0, yaw: 0, arm: 0, elbow: 0, armUp: 0, shift: 0, kind: 'head', elbowBias: 0, armUpBias: 0 };
@@ -314,7 +352,7 @@ const CAP = {
   shift: 0.07,
 } as const;
 
-/** Extra lateral lean amp for side taps (sign from fallX = toward push side). */
+/** Extra lateral lean amp for side taps (sign from fallX = recoil away from the finger). */
 const LATERAL_LEAN_AMP = 1.38;
 
 function clamp(v: number, m: number): number {
@@ -324,9 +362,10 @@ function clamp(v: number, m: number): number {
 /**
  * Punch reaction for one sample.
  * t is 0 at the hit and 1 at the end of the window.
- * fallX/fallZ: Canvas same-side lean for lateral (finger push left → tip left
- * via +pushSide along camera right). Axial front/back keep impulse on Z.
+ * fallX/fallZ: recoil away from the finger (push left → body recedes right).
+ * Axial front/back keep impulse on Z; diagonals mix both axes.
  * A head poke tips the head (plus soft torso follow in poke-zones).
+ * A belly poke recedes the abdomen; the head counters forward for balance.
  * Nothing here translates the scene root.
  */
 /** Incomplete cover raise for a soft breast poke (Mon t765): rise, hold mid-way, ease. */
@@ -361,7 +400,7 @@ export function pokeBodyReaction(opts: {
       headZ: clamp(-opts.fallX * amp * 0.8 + opts.twist * 0.04 * punch, CAP.head),
     };
   }
-  const lateral = direction === 'left' || direction === 'right' || opts.zone === 'side' || opts.zone === 'armL' || opts.zone === 'armR' || opts.zone === 'hand';
+  const lateral = isLateralPokeDirection(direction) || opts.zone === 'side' || opts.zone === 'armL' || opts.zone === 'armR' || opts.zone === 'hand';
   let armL = g.arm;
   let armR = g.arm;
   if (opts.zone === 'armL') {
@@ -385,7 +424,7 @@ export function pokeBodyReaction(opts: {
   // orbit angle and the same tap swung her arms backwards at one angle and
   // forwards at another. Side taps take their swing from the camera-aware
   // sideSign the classifier already computed; front/back taps are untouched.
-  const fromSide = direction === 'left' || direction === 'right';
+  const fromSide = isLateralPokeDirection(direction);
   const armDir = fromSide
     ? -opts.sideSign
     : (opts.fallZ !== 0 ? opts.fallZ : (opts.fallX !== 0 ? -Math.sign(opts.fallX) : -0.35));
@@ -427,6 +466,7 @@ export function pokeBodyReaction(opts: {
     // Counter upper body so only the poked rear-hips region reads.
     spinePitch = clamp(-hipPitch * 0.92 - opts.fallZ * 0.08 * punch, CAP.spine);
   } else if (localBelly) {
+    // Abdomen recedes with the poke; hips stay almost planted.
     hipPitch = clamp(opts.fallZ * g.hip * punch, 0.06);
     spinePitch = clamp(opts.fallZ * g.spine * punch, CAP.spine);
   }
@@ -441,7 +481,10 @@ export function pokeBodyReaction(opts: {
     spineYaw: clamp(fx * g.yaw * punch, CAP.yaw),
     // Tip follows fall: −fallX → positive chestRoll tips screen-left when fallX < 0.
     chestRoll: clamp(-fx * g.roll * punch, CAP.roll),
-    headX: clamp(opts.fallZ * g.head * punch, CAP.head),
+    // Belly: head counters opposite the abdomen so the body stays balanced.
+    headX: localBelly
+      ? clamp(-opts.fallZ * 0.55 * punch, CAP.head)
+      : clamp(opts.fallZ * g.head * punch, CAP.head),
     headZ: clamp(-fx * g.head * 0.78 * punch + opts.twist * 0.04 * punch, CAP.head),
     hipPitch,
     hipRoll: clamp(-fx * g.hipRoll * punch, CAP.hipRoll),
@@ -553,12 +596,20 @@ export function lateralFallAwayFromScreenSide(
   return { x: (cameraRightXZ.x / len) * side, z: (cameraRightXZ.z / len) * side };
 }
 
-/** Negated {@link lateralFallAwayFromScreenSide} (legacy opposite recoil). */
+/** Negated {@link lateralFallAwayFromScreenSide}: recoil away from the finger. */
 export function lateralFallTowardScreenSide(
   cameraRightXZ: { x: number; z: number },
   leanSide: number,
 ): { x: number; z: number } {
   return lateralFallAwayFromScreenSide(cameraRightXZ, -leanSide);
+}
+
+/** Recoil away from the finger: push screen-left → body falls screen-right. */
+export function lateralFallRecoilFromScreenSide(
+  cameraRightXZ: { x: number; z: number },
+  pushSide: number,
+): { x: number; z: number } {
+  return lateralFallTowardScreenSide(cameraRightXZ, pushSide);
 }
 
 /**

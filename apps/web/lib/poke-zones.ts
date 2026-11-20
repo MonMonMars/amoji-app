@@ -1,9 +1,9 @@
-// Pixel poke grid: 6 body tiers × 4 facing angles → 24 voice slots + motion recipes.
-// Tier 6 (calf + foot): reaction voice only — feet stay planted, zero poke displacement.
+// Pixel poke grid: 6 body tiers × 8 facing angles → 48 voice slots + motion recipes.
+// Every tier, including calf + foot, moves and plays a gendered poke voice.
 
 import type { Lang } from './prefs';
 import type { PokeBody, PokeDirection, TalkZone } from './poke-hit';
-import { pokeBodyReaction } from './poke-hit';
+import { POKE_DIRECTIONS, pokeBodyReaction } from './poke-hit';
 
 /** Body tier, top → bottom (Pixel spec). */
 export type PokeTierId =
@@ -23,7 +23,7 @@ export const POKE_TIER_ORDER: readonly PokeTierId[] = [
   'calf_foot',
 ] as const;
 
-export const POKE_ANGLES: readonly PokeDirection[] = ['front', 'left', 'back', 'right'] as const;
+export const POKE_ANGLES: readonly PokeDirection[] = POKE_DIRECTIONS;
 
 export type PokeSectionId = `poke:${PokeTierId}:${PokeDirection}`;
 
@@ -36,7 +36,7 @@ export interface PokeSection {
   /** Traditional Chinese label for copy / Pixel voice table */
   labelTc: string;
   voiceKey: PokeSectionId;
-  /** When true, body stays still; only voice slot fires. */
+  /** Legacy flag; all tiers now move. Kept so existing callers compile. */
   voiceOnly: boolean;
 }
 
@@ -51,9 +51,13 @@ const TIER_LABEL_TC: Record<PokeTierId, string> = {
 
 const ANGLE_LABEL_TC: Record<PokeDirection, string> = {
   front: '正面',
+  frontLeft: '左前',
   left: '左側',
+  backLeft: '左後',
   back: '背面',
+  backRight: '右後',
   right: '右側',
+  frontRight: '右前',
 };
 
 const TIER_NUM: Record<PokeTierId, PokeSection['tierNumber']> = {
@@ -79,7 +83,7 @@ export const POKE_SECTIONS: readonly PokeSection[] = POKE_TIER_ORDER.flatMap((ti
       angle,
       labelTc: `${TIER_LABEL_TC[tier]}·${ANGLE_LABEL_TC[angle]}`,
       voiceKey: id,
-      voiceOnly: tier === 'calf_foot',
+      voiceOnly: false,
     } satisfies PokeSection;
   }),
 );
@@ -135,10 +139,11 @@ const TIER_BAND_SCALE: Record<
   head: { head: 1, chest: 0.34, spine: 0.18, hip: 0.08, arm: 0.16, shift: 0.03 },
   // Stronger chest/arm band so same-side tip + near-arm flinch read on phone.
   shoulder_chest: { head: 0.28, chest: 1.18, spine: 0.78, hip: 0.36, arm: 1.12, shift: 0.06 },
-  belly: { head: 0.12, chest: 0.48, spine: 1.08, hip: 0.58, arm: 0.28, shift: 0 },
+  // head: 1 keeps the belly counter (head opposite abdomen) at full amplitude.
+  belly: { head: 1, chest: 0.48, spine: 1.08, hip: 0.58, arm: 0.28, shift: 0 },
   hip: { head: 0.08, chest: 0.26, spine: 0.55, hip: 1.08, arm: 0.18, shift: 0 },
   thigh: { head: 0.05, chest: 0.12, spine: 0.26, hip: 0.78, arm: 0.1, shift: 0.036 },
-  calf_foot: { head: 0, chest: 0, spine: 0, hip: 0, arm: 0, shift: 0 },
+  calf_foot: { head: 0.06, chest: 0.1, spine: 0.22, hip: 0.62, arm: 0.1, shift: 0.02 },
 };
 
 function tierLegacyZone(tier: PokeTierId, hitZone: TalkZone): TalkZone {
@@ -196,8 +201,8 @@ function scaleBody(body: PokeBody, scale: typeof TIER_BAND_SCALE.head): PokeBody
 }
 
 /**
- * Tier-aware punch recoil: same-side lean (finger push left → tip left)
- * with tier falloff; tier 6 = no motion.
+ * Tier-aware punch recoil: the poked part recedes away from the finger
+ * (push left → body falls right) with tier falloff. All six tiers move.
  *
  * Head tier keeps full head amplitude from the head recipe, then layers a
  * soft torso follow (Pixel: head poke moves upper body less, not zero).

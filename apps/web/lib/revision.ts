@@ -460,7 +460,8 @@
 // r2026-11-19.271: iPhone chat voice + mic — no play-and-record/pin-before-play
 // on Apple touch; mic button primes audio and getUserMedia in the same tap;
 // don't auto-open after a refresh with no this-session gesture.
-export const APP_REVISION = 'r2026-11-19.271';
+// r2026-11-19.272: full-body 8-way poke recoil (away from finger) + gendered poke voice.
+export const APP_REVISION = 'r2026-11-19.272';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

@@ -1,5 +1,5 @@
 /**
- * Locks same-side poke lean: finger push screen-left → head tips screen-left.
+ * Locks recoil-away poke lean: finger push screen-left → head tips screen-right.
  * Guards against flip-flopping ±pushSide without checking bone tip direction.
  */
 import { readFileSync } from 'node:fs';
@@ -8,11 +8,11 @@ import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin } from '@pixiv/three-vrm';
-import { lateralFallAwayFromScreenSide, pokeBodyReaction } from '../lib/poke-hit';
+import { lateralFallRecoilFromScreenSide, pokeBodyReaction } from '../lib/poke-hit';
 import { createV1Avatar } from '../lib/vrm/avatar';
 
 describe('poke lean direction (VRM)', () => {
-  it('face-on left push tips the head toward screen-left (same side as push)', async () => {
+  it('face-on left push tips the head toward screen-right (away from the finger)', async () => {
     const url = fileURLToPath(new URL('../public/models/seed-san.vrm', import.meta.url));
     const buf = readFileSync(url);
     (globalThis as { self?: unknown }).self ??= globalThis;
@@ -38,8 +38,8 @@ describe('poke lean direction (VRM)', () => {
     const world = (n: THREE.Object3D) => n.getWorldPosition(new THREE.Vector3());
     const restX = world(head).x;
 
-    const fall = lateralFallAwayFromScreenSide({ x: 1, z: 0 }, -1);
-    expect(fall.x).toBeLessThan(0);
+    const fall = lateralFallRecoilFromScreenSide({ x: 1, z: 0 }, -1);
+    expect(fall.x).toBeGreaterThan(0);
 
     const hit = pokeBodyReaction({
       t: 0.12,
@@ -70,6 +70,6 @@ describe('poke lean direction (VRM)', () => {
       shiftZ: hit.hipShiftZ,
     });
     avatar.update(0);
-    expect(world(head).x).toBeLessThan(restX - 0.05);
+    expect(world(head).x).toBeGreaterThan(restX + 0.05);
   });
 });

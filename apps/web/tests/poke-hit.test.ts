@@ -231,6 +231,9 @@ describe('pokeBodyReaction', () => {
     expect(Math.abs(belly.spinePitch)).toBeGreaterThan(Math.abs(belly.hipPitch));
     expect(Math.abs(belly.hipShiftX) + Math.abs(belly.hipShiftZ)).toBe(0);
     expect(Math.abs(belly.hipPitch)).toBeLessThan(0.08);
+    // Belly recedes back (fallZ < 0 → spinePitch < 0); head counters forward.
+    expect(belly.spinePitch).toBeLessThan(0);
+    expect(belly.headX).toBeGreaterThan(0);
 
     const butt = pokeBodyReaction({
       t: 0.15, zone: 'butt', fallX: 0, fallZ: 1, sideSign: 1, softChest: false, twist: 0.05, direction: 'back',

@@ -237,9 +237,13 @@ export function pickCharacterInteraction(characterId: string, gender: 'female' |
 
 const DIR_WORD: Record<PokeDirection, Record<Lang, string>> = {
   front: { en: 'from the front', yue: '由前面', zh: '从前面', ja: '前から' },
-  back: { en: 'from behind', yue: '由後面', zh: '从后面', ja: '後ろから' },
+  frontLeft: { en: 'from the front left', yue: '由左前方', zh: '从左前方', ja: '左前から' },
   left: { en: 'from the left', yue: '由左邊', zh: '从左边', ja: '左から' },
+  backLeft: { en: 'from the back left', yue: '由左後方', zh: '从左后方', ja: '左後ろから' },
+  back: { en: 'from behind', yue: '由後面', zh: '从后面', ja: '後ろから' },
+  backRight: { en: 'from the back right', yue: '由右後方', zh: '从右后方', ja: '右後ろから' },
   right: { en: 'from the right', yue: '由右邊', zh: '从右边', ja: '右から' },
+  frontRight: { en: 'from the front right', yue: '由右前方', zh: '从右前方', ja: '右前から' },
 };
 
 export type PokePhase = 'impact' | 'recover' | 'settle';
@@ -252,7 +256,7 @@ export function pokePhase(count: number): PokePhase {
 }
 
 function asDirection(direction: string): PokeDirection {
-  if (direction === 'back' || direction === 'left' || direction === 'right') return direction;
+  if (direction in DIR_WORD) return direction as PokeDirection;
   return 'front';
 }
 
