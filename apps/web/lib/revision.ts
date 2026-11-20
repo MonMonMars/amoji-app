@@ -455,7 +455,8 @@
 // r2026-11-19.266: voice catalog parity — every locale exposes female+male for picker + card gTTS (#546; routing stays #528).
 // r2026-11-19.267: chat interrupt cuts TTS+motion; new-topic clears stale thread (#523).
 // r2026-11-19.268: music playback — keep performance-session through bed swap + BGM unlock after intro (#522).
-export const APP_REVISION = 'r2026-11-19.268';
+// r2026-11-19.269: performance-library music allowlist + CC0 pop/J-pop beds (#540).
+export const APP_REVISION = 'r2026-11-19.269';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "tracks": {
+    "bed-lay-low": {
+      "title": "Lay Low",
+      "artist": "Pro Sensory (Alex McCulloch)",
+      "genre": "international pop",
+      "moods": ["chill", "happy"],
+      "story": "Mellow CC0 pop from Pro Sensory's public-domain pack — full-length guitar bed for listen or dance.",
+      "license": "CC0-1.0",
+      "sourceUrl": "https://opengameart.org/content/pop-music"
+    },
+    "bed-forest-pop": {
+      "title": "Forest",
+      "artist": "Pro Sensory (Alex McCulloch)",
+      "genre": "international pop",
+      "moods": ["calm", "happy"],
+      "story": "Bright acoustic pop; ~84s full track, not a Mixkit preview loop.",
+      "license": "CC0-1.0",
+      "sourceUrl": "https://opengameart.org/content/pop-music"
+    },
+    "bed-jay-pop": {
+      "title": "Jay",
+      "artist": "Pro Sensory (Alex McCulloch)",
+      "genre": "international pop",
+      "moods": ["upbeat", "happy"],
+      "story": "Mid-tempo pop groove for companion sing/dance without short CDN previews.",
+      "license": "CC0-1.0",
+      "sourceUrl": "https://opengameart.org/content/pop-music"
+    },
+    "bed-synthwave-city": {
+      "title": "Aerobics Synth Wave",
+      "artist": "Pro Sensory (Alex McCulloch)",
+      "genre": "Japanese city pop / synthwave",
+      "moods": ["energetic", "happy", "dance"],
+      "story": "~134s retro synth — J-pop/city-pop energy with a full CC0 file in-app.",
+      "license": "CC0-1.0",
+      "sourceUrl": "https://opengameart.org/content/aerobics-synth-wave"
+    },
+    "bed-adventure-time": {
+      "title": "Adventure Time",
+      "artist": "Pro Sensory (Alex McCulloch)",
+      "genre": "kawaii / J-pop instrumental",
+      "moods": ["happy", "cute", "adventure"],
+      "story": "~3:21 whimsical chiptune-pop for cheerful performance beds.",
+      "license": "CC0-1.0",
+      "sourceUrl": "https://opengameart.org/content/adventure-time-1"
+    },
+    "MV069": {
+      "title": "Pop Track 01",
+      "artist": "Mixkit",
+      "genre": "J-pop",
+      "moods": ["upbeat", "dance"],
+      "story": "Owner-approved ship-set MV pin for J-pop listen rotation.",
+      "license": "Mixkit-Free",
+      "sourceUrl": "https://mixkit.co/free-stock-music/"
+    }
+  }
+}

@@ -130,13 +130,13 @@ describe('listMusicPickOptions + offer line', () => {
     resetOwnerPerfPicks();
     expect(detectMusicStyle('有冇hip hop音樂')).toBe('hiphop');
     expect(pickOwnerStreamTrack('hiphop', 0)).toBeNull();
-    expect(pickStreamTrack('hiphop', 0)?.title).not.toMatch(/Pop Track/i);
+    expect(pickStreamTrack('hiphop', 0)).toBeNull();
   });
 
   it('filters stream options by genre when style is set', () => {
-    const jazz = listMusicPickOptions({ kind: 'music', style: 'jazz', seed: 0, count: 3 });
-    expect(jazz.length).toBeGreaterThanOrEqual(1);
-    expect(jazz.every((o) => o.genre === 'jazz' || o.styleHint === 'jazz')).toBe(true);
+    const jpop = listMusicPickOptions({ kind: 'music', style: 'jpop', seed: 0, count: 3 });
+    expect(jpop.length).toBeGreaterThanOrEqual(1);
+    expect(jpop.every((o) => o.genre === 'jpop' || o.styleHint === 'jpop')).toBe(true);
   });
 
   it('song select uses local vocal clips', () => {

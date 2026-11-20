@@ -4,6 +4,7 @@ import {
   pickStreamTrack,
   resolveStreamPlaylist,
   streamTrackById,
+  streamTrackInCatalog,
   STREAM_TRACKS,
   STYLE_THEME_ID,
 } from '../lib/music-catalog';
@@ -46,12 +47,10 @@ describe('royalty-free music catalog', () => {
 
   it('resolveStreamPlaylist returns a catalog URL for a named style', () => {
     expect(resolveStreamPlaylist()).toBeNull();
-    const jazz = resolveStreamPlaylist('jazz');
-    expect(jazz).toMatch(/^https:\/\/assets\.mixkit\.co\//);
-    expect(pickStreamTrack('pop', 0)?.style).toBe('pop');
+    expect(resolveStreamPlaylist('jazz')).toBeNull();
     expect(pickStreamTrack('uspop', 0)?.style).toBe('uspop');
-    expect(pickStreamTrack('hiphop', 0)?.style).toBe('hiphop');
-    expect(pickStreamTrack('hiphop', 0)?.title).toMatch(/Hip Hop|hip-hop/i);
+    expect(pickStreamTrack('jpop', 0)?.style).toBe('jpop');
+    expect(pickStreamTrack('hiphop', 0)).toBeNull();
     expect(STYLE_THEME_ID.jazz).toBeTruthy();
     const jpop = resolveStreamPlaylist('jpop');
     expect(jpop).toMatch(/^https:\/\/assets\.mixkit\.co\//);
@@ -105,9 +104,9 @@ describe('royalty-free music catalog', () => {
     }
 
     expect(STREAM_TRACKS.length).toBeGreaterThanOrEqual(18 + MV_VAULT_COUNT);
+    expect(streamTrackInCatalog('MV069')?.style).toBe('jpop');
     expect(streamTrackById('MV069')?.style).toBe('jpop');
-    expect(streamTrackById('MV084')?.style).toBe('uspop');
-    expect(streamTrackById('mv098')?.ownerCode).toBe('MV098');
-    expect(streamTrackById('MV118')?.style).toBe('world');
+    expect(streamTrackInCatalog('mv098')?.ownerCode).toBe('MV098');
+    expect(streamTrackById('MV098')).toBeNull();
   });
 });

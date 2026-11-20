@@ -60,6 +60,11 @@ Asking to **dance** plays `dance/` or `song-bed/` at BGM volume.
 | `song-bed/bed-space.mp3` | Space | — | unknown | https://opengameart.org/content/space-background-music |
 | `song-bed/bed-menu.mp3` | Menu Title | — | unknown | https://opengameart.org/content/menu-theme |
 | `song-bed/bed-caketown.mp3` | Caketown | — | unknown | https://opengameart.org/content/caketown |
+| `song-bed/bed-lay-low.mp3` | Lay Low | — | Pro Sensory (Alex McCulloch) | https://opengameart.org/content/pop-music |
+| `song-bed/bed-forest-pop.mp3` | Forest | — | Pro Sensory (Alex McCulloch) | https://opengameart.org/content/pop-music |
+| `song-bed/bed-jay-pop.mp3` | Jay | — | Pro Sensory (Alex McCulloch) | https://opengameart.org/content/pop-music |
+| `song-bed/bed-synthwave-city.mp3` | Synthwave City | — | Pro Sensory (Alex McCulloch) | https://opengameart.org/content/aerobics-synth-wave |
+| `song-bed/bed-adventure-time.mp3` | Adventure Time | — | Pro Sensory (Alex McCulloch) | https://opengameart.org/content/adventure-time-1 |
 | `sing-female/sing-f-silent-night.mp3` | Silent Night | female | Catharine Eastman (trad. Mohr / Gruber) | https://commons.wikimedia.org/wiki/File:Silent_Night_Librivox_2009.ogg |
 | `sing-female/sing-f-twinkle.mp3` | Twinkle Twinkle | female | Derrick Coetzee | https://commons.wikimedia.org/wiki/File:Twinkle_Twinkle_Little_Star_-_sung_with_full_lyrics.ogg |
 | `sing-female/sing-f-joy.mp3` | Joy to the World | female | Kim Butler, Alan Davis-Drake, Diyan, Claire Goget, Karen Savage, SKVE, Kara Shallenberg, Kristin Hughes | https://commons.wikimedia.org/wiki/File:Joy-to-the-World_KB.ogg |
