@@ -73,6 +73,9 @@ describe('idle pose smooth + catalog trim', () => {
     // Same-clip refresh must not hard-reset time (sudden body/arm snap).
     expect(canvas).toContain('const sameClip = !!idleAction && idleClipId === safeId');
     expect(canvas).toMatch(/if \(sameClip\) \{[\s\S]*?setEffectiveWeight\(1\)/);
+    // Same-clip joint refresh must not stack procedural bone blend on the mixer.
+    expect(canvas).toMatch(/else if \(!sameClip\) beginBoneBlend\(0\.7\)/);
+    expect(canvas).toContain('idleV2NearStillOnly');
   });
 
   it('retired nums are absent from curated rail but kept in library', () => {

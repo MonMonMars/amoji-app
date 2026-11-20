@@ -13,9 +13,20 @@ import { orderPassiveIdleClips } from './idle-passive-loop';
 import {
   DEFAULT_IDLE_CLIP_ID,
   isBannedAutoIdleClip,
+  isOwnerHonorableStand,
+  isPixelCalmIdleClip,
   isRetiredIdleClip,
 } from './idle-retired';
 import { ownerIdleClipDeleted, prioritizeOwnerUseIdleClips } from './owner-picker-decisions';
+
+/** Upright near-still idles — no A→B rotation (reads as strange blend on phone). */
+export function isNearStillIdleClip(clipId: string): boolean {
+  return isPixelCalmIdleClip(clipId) || isOwnerHonorableStand(clipId);
+}
+
+export function idleV2NearStillOnly(ids: readonly string[]): boolean {
+  return ids.length > 0 && ids.every(isNearStillIdleClip);
+}
 
 export const IDLE_VISIBLE_MIN_PLAYBACK = 0.62;
 
@@ -97,12 +108,20 @@ export function orderIdleV2VisibleClips(
   }
 
   if (candidates.length === 1) {
-    const stock = stockFamilyRotation(candidates[0]!, available);
-    if (stock.length > 1) candidates = stock;
+    const anchor = candidates[0]!;
+    // Sam/Maya/Harper stock fan-out crossfades different stands into frankenstein poses.
+    if (!isNearStillIdleClip(anchor)) {
+      const stock = stockFamilyRotation(anchor, available);
+      if (stock.length > 1) candidates = stock;
+    }
   }
 
   const anchor = candidates[0]!;
-  const sameFamily = candidates.filter((id) => idleCrossfadeCompatible(anchor, id));
+  let sameFamily = candidates.filter((id) => idleCrossfadeCompatible(anchor, id));
+  if (sameFamily.length > 1 && idleV2NearStillOnly(sameFamily)) {
+    // ID-R05 / Quaternius / Sam: one stand — honor owner 採用 without A→B smear.
+    sameFamily = [anchor];
+  }
   const order = sameFamily.length > 1
     ? rotateOrderBySeed(sameFamily, characterId ?? anchor)
     : sameFamily;

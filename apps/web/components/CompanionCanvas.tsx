@@ -37,7 +37,11 @@ import { beatAlignedVrmaTime, timeScaleForProfile } from '../lib/performance-mot
 import { isLibraryClipAudible, libraryBedPlaybackSec } from '../lib/music';
 import { playableIdles } from '../lib/idle-library';
 import { listEnabledIdleClipIds } from '../lib/idle-enabled';
-import { isIdleV2Enabled, orderIdleV2VisibleClips } from '../lib/idle-v2-visible';
+import {
+  idleV2NearStillOnly,
+  isIdleV2Enabled,
+  orderIdleV2VisibleClips,
+} from '../lib/idle-v2-visible';
 import { orderPassiveIdleClips } from '../lib/idle-passive-loop';
 import {
   DEFAULT_IDLE_CLIP_ID,
@@ -848,7 +852,7 @@ export default function CompanionCanvas({
           : Math.min(IDLE_INCOMPAT_CROSSFADE_S, IDLE_SWAP_LEG_BLEND_S))
         : 0.7;
       if (swapping) beginIdleSwapBlend(blendS);
-      else beginBoneBlend(0.7);
+      else if (!sameClip) beginBoneBlend(0.7);
       const action = mixer.clipAction(clip);
       action.timeScale = idlePlaybackTimeScale(
         personalityMotion(seedKey ?? '', gender).timeScale,
@@ -1019,7 +1023,8 @@ export default function CompanionCanvas({
           );
         }
       }
-      singleIdleStand = idleOrder.length <= 1;
+      singleIdleStand = idleOrder.length <= 1
+        || (isIdleV2Enabled() && idleV2NearStillOnly(idleOrder));
       idleIdx = 0;
       mixerActive = true;
       if (avatar) avatar.clipDrivesBody = true;
