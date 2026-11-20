@@ -452,7 +452,8 @@
 // r2026-11-19.263: all-lang main speaker + male gTTS pin (#528).
 // r2026-11-19.264: card voice hotfix — gesture gTTS defer teardown; audition audible (#529).
 // r2026-11-19.265: card greet phrase bank + speaker prime on stacked #528 (#547).
-export const APP_REVISION = 'r2026-11-19.265';
+// r2026-11-19.266: voice catalog parity — every locale exposes female+male for picker + card gTTS (#546; routing stays #528).
+export const APP_REVISION = 'r2026-11-19.266';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
