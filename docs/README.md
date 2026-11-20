@@ -14,6 +14,7 @@ Technical notes for assets, models, robot face, chat UX, audio, and merge proces
 
 **Owner free-resource library (consult before swapping idle/SFX/voice/music defaults):**
 
+- [`RESOURCE_LIBRARY_INDEX.md`](./RESOURCE_LIBRARY_INDEX.md) — agent map (motion · voice · music · SFX paths)
 - [`OWNER_RESOURCE_LIBRARY.md`](./OWNER_RESOURCE_LIBRARY.md) · `apps/web/lib/owner-resource-manifest.ts` · JSON [`owner-resource-manifest.json`](./owner-resource-manifest.json)
 - [`MISTAKE_LIBRARY.md`](./MISTAKE_LIBRARY.md) · [`DATA_ORGANIZATION.md`](./DATA_ORGANIZATION.md)
 - [`../OWNER_REQUEST_LOG.md`](../OWNER_REQUEST_LOG.md) — standing rules (full log in agent store)
