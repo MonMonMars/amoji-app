@@ -457,7 +457,10 @@
 // r2026-11-19.268: music playback — keep performance-session through bed swap + BGM unlock after intro (#522).
 // r2026-11-19.269: performance-library music allowlist + CC0 pop/J-pop beds (#540).
 // r2026-11-19.270: owner-resources full catalog — voice tab, hash nav, manifest v3 (#541).
-export const APP_REVISION = 'r2026-11-19.270';
+// r2026-11-19.271: iPhone chat voice + mic — no play-and-record/pin-before-play
+// on Apple touch; mic button primes audio and getUserMedia in the same tap;
+// don't auto-open after a refresh with no this-session gesture.
+export const APP_REVISION = 'r2026-11-19.271';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

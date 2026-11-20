@@ -17,6 +17,9 @@ describe('chat mic auto-on + external audio duck', () => {
     // Stale denied must not hard-block; only unsupported skips auto-open.
     expect(chat).toContain("rec?.mic === 'unsupported'");
     expect(chat).not.toContain("rec?.mic === 'denied'");
+    // After a hard refresh, iPhone must not auto-open outside a this-session gesture.
+    expect(chat).toContain('isAppleTouchDevice');
+    expect(chat).toMatch(/if \(!preflight\)[\s\S]*isAppleTouchDevice\(\)/);
     // Must not wait for open cheer before arming the mic.
     expect(chat).not.toMatch(/micDelay[\s\S]*?OPEN_CHEER_MS/);
     expect(chat).toContain('micOpenedThisMountRef');
@@ -32,8 +35,10 @@ describe('chat mic auto-on + external audio duck', () => {
     expect(chat).toContain('micSessionGenRef');
     expect(chat).toMatch(/endVoiceMode[\s\S]*?leaveVoiceChatAudioSession\(\)/);
     expect(chat).toMatch(/const mic = \(\) => \{[\s\S]*?reacquireMicForVoiceMode\(\)/);
+    expect(chat).toMatch(/const mic = \(\) => \{[\s\S]*?primeAudioForChatEnter\(\)/);
     expect(micPre).toContain('export async function reacquireMicForVoiceMode');
     expect(micPre).toContain('getUserMedia');
+    expect(micPre).toMatch(/const probe = requestMic\(\);[\s\S]*await waitForVadRelease\(\);[\s\S]*return probe/);
     expect(listen).toMatch(/stop: \(\) => \{[\s\S]*?rec\?\.abort\(\)/);
     expect(vad).toContain('destroyActiveVad');
     expect(vad).toContain('await destroyActiveVad()');
@@ -65,6 +70,8 @@ describe('chat mic auto-on + external audio duck', () => {
     const focus = read('lib/voice-chat-focus.ts');
     expect(focus).toContain('markMicCommsRoutingLatch');
     expect(focus).toContain("play-and-record");
+    expect(focus).toContain('isAppleTouchDevice');
+    expect(focus).toContain("audioSession.type = 'playback'");
     expect(focus).toContain('companionPlaybackSession');
     expect(focus).toContain('pauseForeignPageMedia');
     expect(focus).toContain('bindVoiceChatFocusLifecycle');

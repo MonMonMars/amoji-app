@@ -91,7 +91,27 @@ export function isFreshOpenPhase(now = Date.now(), gapMs = OPEN_SESSION_GAP_MS):
 }
 
 export function markChatRoomOpened(now = Date.now()): OpenPhaseState {
-  return saveOpenPhaseState({ lastOpenedAt: now });
+  // Remounts bump lastOpenedAt. If a cheer / idle brief already ran this
+  // stretch, keep those stamps in lockstep so the next remount does not
+  // replay first-phase lines. Fresh-gap opens leave the old stamps behind
+  // so the welcome can play again.
+  const s = loadOpenPhaseState();
+  const fresh = isFreshOpenPhase(now);
+  const cheerWasDone =
+    !fresh &&
+    s.openCheerAt != null &&
+    s.lastOpenedAt != null &&
+    s.openCheerAt >= s.lastOpenedAt;
+  const briefWasDone =
+    !fresh &&
+    s.idleBriefAt != null &&
+    s.lastOpenedAt != null &&
+    s.idleBriefAt >= s.lastOpenedAt;
+  return saveOpenPhaseState({
+    lastOpenedAt: now,
+    ...(cheerWasDone ? { openCheerAt: now } : {}),
+    ...(briefWasDone ? { idleBriefAt: now } : {}),
+  });
 }
 
 export function markChatRoomClosed(now = Date.now()): OpenPhaseState {
