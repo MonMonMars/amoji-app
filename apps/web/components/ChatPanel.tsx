@@ -186,6 +186,7 @@ import {
 import { speak, stopSpeaking, stopSpeakingForInterrupt, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechLeadDiverged, speechRemainder, whenSpeechIdle, resumeVoiceEngines, primeAudioForChatEnter } from '../lib/voice';
 import { isAppleTouchDevice } from '../lib/apple-touch';
 import { cantHearReply, isCantHearComplaint } from '../lib/cant-hear';
+import { isCompanionEcho } from '../lib/companion-echo';
 import { productionChat } from '../lib/backend-client';
 import { stopThinkingSound } from '../lib/thinking-sound';
 import { pickDuet } from '../lib/songs';
@@ -364,6 +365,8 @@ export default function ChatPanel({
   const demoPhaseOrderSeed = useMemo(() => newDemoPhaseOrderSeed(), []);
   const [history, setHistory] = useState<Msg[]>([]);
   const historyRef = useRef<Msg[]>([]);
+  const lastSpokenRef = useRef('');
+  const speechCaptionRef = useRef('');
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
@@ -681,6 +684,10 @@ export default function ChatPanel({
     saveHistory(history);
   }, [history]);
 
+  useEffect(() => {
+    speechCaptionRef.current = speechCaption;
+  }, [speechCaption]);
+
   // live status for the top-left plate + speaking flag for the mic orb
   useEffect(() => {
     const id = setInterval(() => {
@@ -729,6 +736,7 @@ export default function ChatPanel({
     const voiced = remembered
       ? { ...(hints ?? {}), [remembered]: Math.max(hints?.[remembered] ?? 0, 0.45) }
       : hints;
+    lastSpokenRef.current = gated;
     speak(gated, characterId, lang, voiced, lead, 1, opts?.rateBias ?? 0);
     if (voiced) applyContentMood(voiced);
     // Never stack the same assistant line twice (callers sometimes also
@@ -1236,6 +1244,16 @@ export default function ChatPanel({
     if (busyRef.current || !voiceTurnQueueRef.current.length) return;
     const next = voiceTurnQueueRef.current.shift()!;
     void send(next);
+  };
+
+  const companionLinesForEcho = (): string[] => {
+    const lines: string[] = [];
+    if (lastSpokenRef.current) lines.push(lastSpokenRef.current);
+    if (speechCaptionRef.current) lines.push(speechCaptionRef.current);
+    for (const m of historyRef.current) {
+      if (m.role === 'assistant' && m.content) lines.push(m.content);
+    }
+    return lines.slice(-8);
   };
 
   const enqueueVoiceTurn = (said: string) => {
@@ -1929,6 +1947,10 @@ export default function ChatPanel({
       onSpeechStart: () => {
         if (sessionGen !== micSessionGenRef.current) return;
         if (!bargeInArmed) return;
+        // While she is talking, wait for interim text. Web Speech often
+        // transcribes her own speakers and used to cut the first-phase
+        // welcome, then send it as the user, so talk never got a turn.
+        if (isSpeaking() || speechPending()) return;
         bargeInArmed = false;
         stopSpeakingForInterrupt();
         showTrack(null);
@@ -1938,6 +1960,7 @@ export default function ChatPanel({
       // newest line so realtime captions stay visible.
       onInterim: (partial) => {
         if (sessionGen !== micSessionGenRef.current) return;
+        if (isCompanionEcho(partial, companionLinesForEcho())) return;
         setLiveText(partial);
         if (partial) {
           lastActivityRef.current = Date.now();
@@ -1945,10 +1968,19 @@ export default function ChatPanel({
           reengageStageRef.current = 0;
           followLiveChatScroll();
         }
+        if (bargeInArmed && (isSpeaking() || speechPending()) && partial.trim()) {
+          bargeInArmed = false;
+          stopSpeakingForInterrupt();
+          showTrack(null);
+        }
       },
       onFinal: (said) => {
         if (sessionGen !== micSessionGenRef.current) return;
         bargeInArmed = true;
+        if (isCompanionEcho(said, companionLinesForEcho())) {
+          setLiveText('');
+          return;
+        }
         setLiveText(''); // the committed message takes the bubble's place
         lastActivityRef.current = Date.now();
         lastUserRef.current = Date.now();

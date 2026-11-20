@@ -145,6 +145,21 @@ describe('open cheer / name-greet once latch', () => {
     expect(openCheerAlreadyDone(char)).toBe(true);
   });
 
+  it('keeps the cheer latch after remount calls markChatRoomOpened', () => {
+    const t0 = 71_000_000;
+    const char = 'nova';
+    markChatRoomOpened(t0);
+    markOpenCheerDone(t0 + 100, char);
+    expect(openCheerAlreadyDone(char)).toBe(true);
+    // First remount (ChatPanel cleanup + effect): bump lastOpenedAt.
+    markChatRoomOpened(t0 + 200);
+    expect(openCheerAlreadyDone(char)).toBe(true);
+    // Second remount used to lose the latch and replay first phase.
+    markChatRoomOpened(t0 + 300);
+    expect(openCheerAlreadyDone(char)).toBe(true);
+    expect(shouldPlayOpenCheer(char, t0 + 300)).toBe(false);
+  });
+
   it('fresh gap open allows cheer again', () => {
     const t0 = 80_000_000;
     const char = 'nova';
