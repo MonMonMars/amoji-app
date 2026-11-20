@@ -29,7 +29,19 @@ import {
 import type { Lang } from '../apps/web/lib/prefs.ts';
 import { CHARACTERS_WANT } from '../apps/web/lib/characters-want.ts';
 import { PICKER_PLAY_RESOLVE_INLINE_JS } from '../apps/web/lib/owner-picker-media.mjs';
+import { OWNER_PICKER_NAV_INLINE_JS } from '../apps/web/lib/owner-picker-pages-nav.mjs';
 import { audioPlayerBlockHtml, audioPlayerCellHtml, motionPreviewCellHtml, pokeSectionMotionPreview, resolveIdleMotionPreview, resolvePerfMotionPreview } from '../apps/web/lib/owner-picker-html-media.ts';
+import {
+  HELD_GPU_ENGINES,
+  SKIPPED_ENGINES,
+  VOICE_CATALOG,
+} from '../apps/web/lib/voice-catalog.ts';
+import {
+  FEMALE_TIER_OFFSET,
+  MALE_TIER_OFFSET,
+  type GttsPitchTier,
+} from '../apps/web/lib/gtts-timbre.ts';
+import { listClipLibrary } from '../apps/web/lib/voice-clips.ts';
 import { CHAT_IDLE_CURATED, defaultCuratedRailNums } from '../apps/web/lib/idle-curated-rail.ts';
 import { idleClipFamily } from '../apps/web/lib/idle-clip-family.ts';
 import { IDLE_LIBRARY, idleByClipId, type IdleLibraryEntry } from '../apps/web/lib/idle-library.ts';
@@ -99,6 +111,21 @@ const docs = path.join(root, 'docs');
 const publicRoot = path.join(root, 'apps/web/public');
 
 const LANGS: Lang[] = ['en', 'yue', 'zh', 'ja'];
+
+const LANG_CHIP_LABELS: Record<Lang, string> = {
+  en: 'EN',
+  yue: '粵 YUE',
+  zh: '普 ZH',
+  ja: '日 JA',
+};
+
+const LANG_FULL: Record<Lang, string> = {
+  en: 'English',
+  yue: 'Cantonese (yue)',
+  zh: 'Mandarin (zh)',
+  ja: 'Japanese',
+};
+
 /** Symlink `docs/amoji-public-serve` → `apps/web/public` so `python3 -m http.server` in docs/ can play MP3s. */
 const PUBLIC_PREFIX = 'amoji-public-serve';
 
@@ -252,6 +279,13 @@ function sharedCss(): string {
     tr[data-decision="use"] td { box-shadow: inset 0 0 0 9999px rgba(14, 107, 92, 0.06); }
     #importNotesWrap[hidden] { display: none !important; }
     #importNotesJson { width: 100%; min-height: 5rem; margin-top: 0.5rem; font-family: ui-monospace, monospace; font-size: 0.8rem; }
+    .lang-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.5rem 0 0.75rem; }
+    .lang-chip {
+      font-family: inherit; font-weight: 700; font-size: 0.78rem; cursor: pointer;
+      border: 1px solid var(--line); background: #fff; padding: 0.28rem 0.55rem; border-radius: 999px; color: var(--muted);
+    }
+    .lang-chip[aria-pressed="true"] { background: #e8f4ef; color: var(--accent-deep); border-color: var(--accent); }
+    tr.lang-filtered-out { display: none; }
   `;
 }
 
@@ -600,23 +634,34 @@ function unifiedOwnerClientScript(): string {
   const defaultRails = JSON.stringify(defaultCuratedRailNums());
   const cmaKey = JSON.stringify(CMA_REACTION_GALLERY_KEY);
   return `
-    const TAB_IDS = ['music', 'stories', 'demo', 'news', 'poke', 'idle'];
+    const TAB_IDS = ['music', 'stories', 'demo', 'news', 'voice', 'poke', 'idle'];
+    ${OWNER_PICKER_NAV_INLINE_JS}
     function showTab(id) {
-      if (!TAB_IDS.includes(id)) id = 'music';
-      for (const t of TAB_IDS) {
-        const panel = document.getElementById('panel-' + t);
-        const btn = document.querySelector('[data-tab="' + t + '"]');
-        if (panel) panel.hidden = t !== id;
-        if (btn) btn.setAttribute('aria-selected', t === id ? 'true' : 'false');
-      }
-      location.hash = id;
+      navigateOwnerRoute(panelForHash(id), { silentHash: false });
     }
     document.querySelectorAll('[data-tab]').forEach((btn) => {
       btn.addEventListener('click', () => showTab(btn.getAttribute('data-tab')));
     });
-    const hash = (location.hash || '#music').slice(1);
-    showTab(hash);
-    window.addEventListener('hashchange', () => showTab((location.hash || '#music').slice(1)));
+    applyHashRoute();
+    window.addEventListener('hashchange', () => applyHashRoute());
+    function wireLangChips(panelId) {
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+      const chips = panel.querySelectorAll('[data-lang-filter]');
+      const rows = panel.querySelectorAll('tbody tr[data-lang]');
+      const apply = (active) => {
+        rows.forEach((tr) => {
+          const lang = tr.getAttribute('data-lang');
+          const on = !active || active === 'all' || lang === active || lang === 'all';
+          tr.classList.toggle('lang-filtered-out', !on);
+        });
+        chips.forEach((c) => c.setAttribute('aria-pressed', c.getAttribute('data-lang-filter') === active ? 'true' : 'false'));
+      };
+      chips.forEach((chip) => chip.addEventListener('click', () => apply(chip.getAttribute('data-lang-filter'))));
+      apply('all');
+    }
+    wireLangChips('panel-voice');
+    wireLangChips('panel-poke');
 
     const PICK_KEYS = [${pickKeys.join(', ')}];
     const ENABLE_KEYS = [${enableKeys.join(', ')}];
@@ -831,6 +876,7 @@ function buildUnifiedResourcesPage(
   stories: PickerSection,
   demo: PickerSection,
   news: PickerSection,
+  voice: PickerSection,
 ): { html: string; counts: Record<string, number> } {
   const grandTotal =
     music.counts.total +
@@ -841,12 +887,14 @@ function buildUnifiedResourcesPage(
     (idle.counts.total as number) +
     (stories.counts.total as number) +
     (demo.counts.total as number) +
-    (news.counts.total as number);
+    (news.counts.total as number) +
+    (voice.counts.total as number);
   const stats = [
     stat(music.counts.total, 'Music rows'),
     stat(stories.counts.total, 'Story rows'),
     stat(demo.counts.total, 'Demo-phase chips'),
     stat(news.counts.total, 'News feeds'),
+    stat(voice.counts.total, 'Voice / TTS rows'),
     stat(poke.counts.sections + poke.counts.cma, 'Poke rows (core)'),
     stat(idle.counts.total, 'Idle rows'),
     stat(grandTotal, 'All picker rows'),
@@ -859,6 +907,7 @@ function buildUnifiedResourcesPage(
       <button type="button" class="tab" data-tab="stories">Stories &amp; fairy tales</button>
       <button type="button" class="tab" data-tab="demo">Demo-phase chips</button>
       <button type="button" class="tab" data-tab="news">News &amp; RSS</button>
+      <button type="button" class="tab" data-tab="voice">Voice &amp; TTS</button>
       <button type="button" class="tab" data-tab="poke">Poke reactions</button>
       <button type="button" class="tab" data-tab="idle">Idle poses &amp; VRMA</button>
     </nav>
@@ -877,6 +926,10 @@ function buildUnifiedResourcesPage(
     <section id="panel-news" class="tab-panel" data-section="news" hidden>
       <h2 id="news">News feeds &amp; templates (NW###)</h2>
       ${news.body}
+    </section>
+    <section id="panel-voice" class="tab-panel" data-section="voice" hidden>
+      <h2 id="voice">Voice, clips &amp; TTS tiers</h2>
+      ${voice.body}
     </section>
     <section id="panel-poke" class="tab-panel" data-section="poke" hidden>
       <h2 id="poke">Poke motion, voice lines, VFX / SFX</h2>
@@ -906,6 +959,7 @@ function buildUnifiedResourcesPage(
     html,
     counts: {
       music: music.counts.total,
+      voice: voice.counts.total,
       poke: poke.counts.sections + poke.counts.pokeLines + poke.counts.zones + poke.counts.cma,
       idle: idle.counts.total,
       grandTotal,
@@ -1106,18 +1160,18 @@ function buildMusicPage(): PickerSection {
   const body = `
     ${holdNote}
     <p class="lede">Owner codes: <code>DC###</code> performance files · <code>MV039–${escapeHtml(HIGHEST_MV_OWNER_CODE)}</code> Mixkit streams (registry <code>owner-catalog-registry.ts</code>).</p>
-    <h2>Dance / sing body motion tags (performance-motion.ts)</h2>
+    <h2 id="dance-motion">Dance / sing body motion tags (performance-motion.ts)</h2>
     <p class="lede">Movement shortlist (<code>C03</code>…<code>C128</code>, generic sing/dance) — pairs with DC audio + idle VRMA. Note which tag to prefer per music style.</p>
     <div class="panel"><table>
       <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · ID</th><th>Ship</th><th>Preview</th><th>Tag</th><th>Label</th><th>Clip BPM</th><th>Use</th><th>Source</th></tr></thead>
       <tbody>${motionRows}</tbody>
     </table></div>
-    <h2>Performance library (CC0 / PD files)</h2>
+    <h2 id="performance">Performance library (CC0 / PD files)</h2>
     <div class="panel"><table>
       <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · domain</th><th>Ship</th><th>Play</th><th>Title</th><th>Kind</th><th>Langs</th><th>Tags</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
       <tbody>${perfRows}</tbody>
     </table></div>
-    <h2>Mixkit stream previews (remote URL)</h2>
+    <h2 id="mixkit-streams">Mixkit stream previews (remote URL)</h2>
     <div class="panel"><table>
       <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · MV</th><th>Ship</th><th>Play</th><th>Title</th><th>Kind</th><th>Langs</th><th>Style</th><th>License</th><th>Credit</th><th>Source</th></tr></thead>
       <tbody>${streamRows}</tbody>
@@ -1152,6 +1206,139 @@ function buildMusicPage(): PickerSection {
       total: totalTracks,
     },
   };
+}
+
+function langChipsHtml(panelKey: string): string {
+  const chips = [
+    `<button type="button" class="lang-chip" data-lang-filter="all" aria-pressed="true">All langs</button>`,
+    ...LANGS.map(
+      (lang) =>
+        `<button type="button" class="lang-chip" data-lang-filter="${escapeHtml(lang)}" aria-pressed="false" title="${escapeHtml(LANG_FULL[lang])}">${escapeHtml(LANG_CHIP_LABELS[lang])}</button>`,
+    ),
+  ];
+  return `<div class="lang-chips" role="group" aria-label="Filter rows by language · ${escapeHtml(panelKey)}">${chips.join('')}</div>`;
+}
+
+function buildVoicePage(): PickerSection {
+  const voiceRef = lineRef('apps/web/lib/voice-catalog.ts', 'export const VOICE_CATALOG');
+  const clipsRef = lineRef('apps/web/lib/voice-clips.ts', 'export function listClipLibrary');
+  const pitchRef = lineRef('apps/web/lib/gtts-timbre.ts', 'export const FEMALE_TIER_OFFSET');
+
+  let catalogRows = '';
+  for (const v of VOICE_CATALOG) {
+    const nativeId = `voice-${v.engine}-${v.id}`;
+    const cat = catalogMeta(nativeId);
+    const ship = v.shipping ? inUseTag('shipping') : '<span class="tag hold">optional</span>';
+    catalogRows += `<tr class="${v.shipping ? 'row-in-use' : ''}" data-id="${escapeHtml(nativeId)}" data-lang="${escapeHtml(v.locale)}" data-label="${escapeHtml(v.id)}" data-ref="${escapeHtml(voiceRef)}"${v.shipping ? ' data-in-use="1"' : ''}${cat.attrs}>
+      ${DECISION_TD}${NOTE_TD}
+      <td>${cat.codeCell}</td>
+      <td class="flags">${ship}</td>
+      <td>—</td>
+      <td><code>${escapeHtml(v.engine)}</code></td>
+      <td>${escapeHtml(LANG_FULL[v.locale as Lang] ?? v.locale)}</td>
+      <td>${escapeHtml(v.gender)}</td>
+      <td><code>${escapeHtml(v.id)}</code></td>
+      <td class="license-ok">${escapeHtml(v.license)}</td>
+      <td>${escapeHtml(v.latency)}</td>
+      <td>${escapeHtml(v.notes)}</td>
+      <td><span class="ref">${escapeHtml(voiceRef)}</span></td>
+    </tr>`;
+  }
+
+  let clipRows = '';
+  for (const clip of listClipLibrary()) {
+    const nativeId = `voice-clip-${clip.id}`;
+    const cat = catalogMeta(nativeId);
+    const local = `${PUBLIC_PREFIX}${clip.path}`;
+    const folderLang = clip.folder === 'universal' ? 'all' : clip.folder;
+    const exists = fs.existsSync(path.join(publicRoot, clip.path.replace(/^\//, '')));
+    clipRows += `<tr data-id="${escapeHtml(nativeId)}" data-lang="${escapeHtml(folderLang)}" data-label="${escapeHtml(clip.file)}" data-ref="${escapeHtml(clipsRef)}"${exists ? ' data-in-use="1" class="row-in-use"' : ''}${cat.attrs}>
+      ${DECISION_TD}${NOTE_TD}
+      <td>${cat.codeCell}</td>
+      <td class="flags">${exists ? inUseTag('on disk') : '<span class="tag hold">missing file</span>'}</td>
+      ${audioPlayerCellHtml(local, clip.file)}
+      <td>#${clip.id}</td>
+      <td>${escapeHtml(clip.folder === 'universal' ? 'universal' : LANG_FULL[clip.folder as Lang] ?? clip.folder)}</td>
+      <td>${escapeHtml(clip.gender)}</td>
+      <td><code>${escapeHtml(clip.file)}</code></td>
+      <td><code>${escapeHtml(clip.path)}</code></td>
+      <td><span class="ref">${escapeHtml(clipsRef)}</span></td>
+    </tr>`;
+  }
+
+  const tierRows: string[] = [];
+  const tiers: GttsPitchTier[] = ['bright', 'mid', 'deep'];
+  for (const tier of tiers) {
+    tierRows.push(`<tr data-id="gtts-tier-female-${tier}" data-lang="all" data-label="${escapeHtml(tier)} female">
+      ${DECISION_TD}${NOTE_TD}
+      <td class="flags">${inUseTag('gtts-timbre')}</td>
+      <td>—</td>
+      <td>female · ${escapeHtml(tier)}</td>
+      <td>all</td>
+      <td><code>${FEMALE_TIER_OFFSET[tier].toFixed(2)}</code></td>
+      <td><span class="ref">${escapeHtml(pitchRef)}</span></td>
+    </tr>`);
+    tierRows.push(`<tr data-id="gtts-tier-male-${tier}" data-lang="all" data-label="${escapeHtml(tier)} male">
+      ${DECISION_TD}${NOTE_TD}
+      <td class="flags">${inUseTag('gtts-timbre')}</td>
+      <td>—</td>
+      <td>male · ${escapeHtml(tier)}</td>
+      <td>all</td>
+      <td><code>${MALE_TIER_OFFSET[tier].toFixed(2)}</code></td>
+      <td><span class="ref">${escapeHtml(pitchRef)}</span></td>
+    </tr>`);
+  }
+
+  let heldRows = '';
+  for (const h of [...HELD_GPU_ENGINES, ...SKIPPED_ENGINES]) {
+    const nativeId = `tts-optional-${h.engine}`;
+    heldRows += `<tr data-id="${escapeHtml(nativeId)}" data-lang="all" data-label="${escapeHtml(h.engine)}">
+      ${DECISION_TD}${NOTE_TD}
+      <td class="flags"><span class="tag hold">Hold</span></td>
+      <td>—</td>
+      <td><code>${escapeHtml(h.engine)}</code></td>
+      <td>—</td>
+      <td class="hold">not bundled</td>
+      <td>${escapeHtml(h.notes)}</td>
+    </tr>`;
+  }
+
+  const shippingCount = VOICE_CATALOG.filter((v) => v.shipping).length;
+  const clipCount = listClipLibrary().length;
+  const total = VOICE_CATALOG.length + clipCount + tierRows.length + HELD_GPU_ENGINES.length + SKIPPED_ENGINES.length;
+
+  const body = `
+    <p class="lede">Live chain: Edge neural → gTTS playbackRate tiers → Web Speech. Recorded bursts in <code>voice-clips/</code> skip TTS for laugh/um/hello lines. Docs: <code>docs/TTS_PIPELINE.md</code>.</p>
+    ${langChipsHtml('voice-audition')}
+    <h2 id="voice-catalog">TTS speaker catalog (voice-catalog.ts)</h2>
+    <div class="panel"><table>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD</th><th>Ship</th><th>Audition</th><th>Engine</th><th>Lang</th><th>Gender</th><th>Voice id</th><th>License</th><th>Latency</th><th>Notes</th><th>Source</th></tr></thead>
+      <tbody>${catalogRows}</tbody>
+    </table></div>
+    <h2 id="voice-clips">Recorded clips library (CLIP_LIBRARY #)</h2>
+    <div class="panel"><table>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD</th><th>Ship</th><th>Play</th><th>#</th><th>Lang</th><th>Gender</th><th>File</th><th>Path</th><th>Source</th></tr></thead>
+      <tbody>${clipRows}</tbody>
+    </table></div>
+    <h2 id="voice-pitch">gTTS pitch tiers within gender (gtts-timbre.ts)</h2>
+    <div class="panel"><table>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>Ship</th><th>Audition</th><th>Band</th><th>Langs</th><th>Offset</th><th>Source</th></tr></thead>
+      <tbody>${tierRows.join('')}</tbody>
+    </table></div>
+    ${heldRows ? `<h2>Optional / held TTS engines</h2>
+    <div class="panel"><table>
+      <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>Ship</th><th>Audition</th><th>Engine</th><th>Lang</th><th>Status</th><th>Notes</th></tr></thead>
+      <tbody>${heldRows}</tbody>
+    </table></div>` : ''}`;
+
+  const stats = [
+    stat(VOICE_CATALOG.length, 'Voice catalog rows'),
+    stat(shippingCount, 'Shipping TTS'),
+    stat(clipCount, 'Recorded clips'),
+    stat(total, 'Voice tab rows'),
+  ].join('');
+
+  return { body, stats, counts: { catalog: VOICE_CATALOG.length, clips: clipCount, tiers: tierRows.length, optional: HELD_GPU_ENGINES.length + SKIPPED_ENGINES.length, total } };
 }
 
 function buildPokePage(): PickerSection {
@@ -1191,12 +1378,12 @@ function buildPokePage(): PickerSection {
         const ref = findStringLine('apps/web/lib/personality-voice.ts', tpl.slice(0, 40));
         const id = `poke-tts-${voice}-${lang}-${idx}`;
         const cat = catalogMeta(id);
-        lineRows += `<tr class="row-in-use" data-in-use="1" data-id="${escapeHtml(id)}" data-label="${escapeHtml(tpl.slice(0, 60))}" data-ref="${escapeHtml(ref)}"${cat.attrs}>
+        lineRows += `<tr class="row-in-use" data-in-use="1" data-id="${escapeHtml(id)}" data-lang="${escapeHtml(lang)}" data-label="${escapeHtml(tpl.slice(0, 60))}" data-ref="${escapeHtml(ref)}"${cat.attrs}>
           ${DECISION_TD}${NOTE_TD}
           <td>${cat.codeCell}</td>
           <td class="flags">${inUseTag('POKE_LINE_TEMPLATES')}</td>
           <td><code>${escapeHtml(voice)}</code></td>
-          <td>${escapeHtml(lang)}</td>
+          <td>${escapeHtml(LANG_FULL[lang])}</td>
           <td>${idx + 1}</td>
           <td>${escapeHtml(tpl)}</td>
           <td><span class="ref">${escapeHtml(ref)}</span> · <span class="ref">${escapeHtml(voiceRef)}</span></td>
@@ -1268,7 +1455,8 @@ function buildPokePage(): PickerSection {
       <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · PK</th><th>Ship</th><th>Preview</th><th>Section ID</th><th>Label</th><th>Tier</th><th>Angle</th><th>Motion</th><th>Code ref</th></tr></thead>
       <tbody>${sectionRows}</tbody>
     </table></div>
-    <h2>Poke TTS line bank (personality × language × 8 templates)</h2>
+    <h2 id="poke-tts">Poke TTS line bank (personality × language × 8 templates)</h2>
+    ${langChipsHtml('poke-tts')}
     <div class="panel"><table>
       <thead><tr><th>Decision<br/><span class="ref">採用·保留·刪除</span></th><th>Note</th><th>CD · PK</th><th>Ship</th><th>Voice</th><th>Lang</th><th>#</th><th>Template</th><th>Source</th></tr></thead>
       <tbody>${lineRows}</tbody>
@@ -1527,9 +1715,10 @@ const music = buildMusicPage();
 const stories = buildStoriesPage();
 const demo = buildDemoPage();
 const news = buildNewsPage();
+const voice = buildVoicePage();
 const poke = buildPokePage();
 const idle = buildIdlePage();
-const unified = buildUnifiedResourcesPage(music, poke, idle, stories, demo, news);
+const unified = buildUnifiedResourcesPage(music, poke, idle, stories, demo, news, voice);
 
 fs.writeFileSync(path.join(docs, 'owner-resources.html'), unified.html);
 const artifactDir = '/opt/cursor/artifacts';
