@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -20,7 +20,8 @@ import {
   classifyPoke,
   screenSideSign,
   screenPointerSideSign,
-  lateralFallAwayFromScreenSide,
+  lateralFallRecoilFromScreenSide,
+  directionFromAxes,
   clientPointInElementLocal,
   ndcPointInElementLocal,
   pokeArmSideFromScreenPush,
@@ -1801,22 +1802,28 @@ export default function CompanionCanvas({
                 hipsW,
                 camRightXZ,
               );
-            // Poke lean: body tips toward the finger side (push left → lean left).
-            //   fall = cameraRight * leanSide. Arm flinch uses character near-arm.
-            // Lateral zones: screen fall alone. Off-center chest/head/belly/…: blend
-            // axial impulse with same-side lean (centered front/back stay axial).
+            // Poke recoil: the poked part blends away from the finger
+            // (push left → body recedes right). 8-way direction is taken from
+            // the final recoil vector in the character frame + camera/ray.
             {
-              const fall = lateralFallAwayFromScreenSide(camRightXZ, leanSide);
+              const recoil = lateralFallRecoilFromScreenSide(camRightXZ, leanSide);
               const lateralOnly =
                 pokeZone === 'side' || pokeZone === 'armL' || pokeZone === 'armR' || pokeZone === 'hand';
               const fingerOffCenter = hipsOnScreen && Math.abs(ptrLocal.x - hipsLocal.x) > 14;
               if (lateralOnly) {
-                pokeFallDir.set(fall.x, 0, fall.z);
-              } else if (pokeZone !== 'foot' && fingerOffCenter) {
                 pokeFallDir.set(
-                  cls.impulse.x * 0.42 + fall.x * 0.95,
+                  cls.impulse.x * 0.35 + recoil.x * 0.85,
                   0,
-                  cls.impulse.z * 0.55 + fall.z * 0.4,
+                  cls.impulse.z * 0.55 + recoil.z * 0.35,
+                );
+                const len = Math.hypot(pokeFallDir.x, pokeFallDir.z);
+                if (len > 1e-6) pokeFallDir.multiplyScalar(1 / len);
+                else pokeFallDir.set(recoil.x, 0, recoil.z);
+              } else if (fingerOffCenter) {
+                pokeFallDir.set(
+                  cls.impulse.x * 0.7 + recoil.x * 0.55,
+                  0,
+                  cls.impulse.z * 0.85 + recoil.z * 0.3,
                 );
                 const len = Math.hypot(pokeFallDir.x, pokeFallDir.z);
                 if (len > 1e-6) pokeFallDir.multiplyScalar(1 / len);
@@ -1843,15 +1850,11 @@ export default function CompanionCanvas({
             ) {
               pokeSideSign = pokeArmSideFromScreenPush(leanSide);
             }
-            if (
-              pokeZone === 'side'
-              || pokeZone === 'armL'
-              || pokeZone === 'armR'
-              || pokeZone === 'hand'
-              || (hipsOnScreen && Math.abs(ptrLocal.x - hipsLocal.x) > 14 && pokeZone !== 'foot')
-            ) {
-              pokeDirection = leanSide >= 0 ? 'right' : 'left';
-            }
+            pokeDirection = directionFromAxes(
+              { x: pokeFallDir.x, z: pokeFallDir.z },
+              cls.forward,
+              cls.right,
+            );
             pokeSection = resolvePokeSection(pokeZone, pokeDirection);
           }
           // No full-skeleton slerp here. That blend was easing toward a
