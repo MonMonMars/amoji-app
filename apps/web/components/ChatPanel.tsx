@@ -167,6 +167,7 @@ import {
   planTools,
   primeLocationForChatEnter,
 } from '../lib/live-tools';
+import { spokenWorldClock } from '../lib/world-clock';
 import {
   OPEN_CHEER_MS,
   OPEN_IDLE_BRIEF_MS,
@@ -297,7 +298,7 @@ import { loadProfile, type Gender } from '../lib/profile';
 import type { ChatStatus } from '../lib/status';
 import EmotionOrb from './EmotionOrb';
 import DemoPhaseRail from './DemoPhaseRail';
-import { newDemoPhaseOrderSeed } from '../lib/demo-phase';
+import { demoPhaseFacetIndex, newDemoPhaseOrderSeed } from '../lib/demo-phase';
 import {
   WATCHING_STARS_BED_CLIP_ID,
   WATCHING_STARS_DEMO_ID,
@@ -2386,6 +2387,23 @@ export default function ChatPanel({
                   undefined,
                   { rateBias: STORY_SPEECH_RATE_BIAS },
                 );
+                return;
+              }
+              if (id === 'time') {
+                lastActivityRef.current = Date.now();
+                lastUserRef.current = Date.now();
+                userHasSpokenRef.current = true;
+                reengageStageRef.current = 0;
+                lastTopicalContentAtRef.current = Date.now();
+                idleAutoAfterUserRef.current = true;
+                setHistory((h) => [...h, { role: 'user', content: prompt }]);
+                feedUtterance(prompt);
+                stopSpeaking();
+                const facet = demoPhaseFacetIndex('time', lang, prompt);
+                const spoken = spokenWorldClock(lang, facet);
+                rememberTurn(prompt, spoken);
+                onMemCountRef.current?.(memorySummaryCount());
+                sayLocal(spoken);
                 return;
               }
               if (id === WATCHING_STARS_DEMO_ID) {
