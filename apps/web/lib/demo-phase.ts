@@ -37,7 +37,8 @@ export type DemoPhaseId =
   | 'duet'
   | 'funScience'
   | 'tag'
-  | 'watchingStars';
+  | 'watchingStars'
+  | 'time';
 
 export type DemoPhaseButton = {
   id: DemoPhaseId;
@@ -117,6 +118,36 @@ export const DEMO_PHASE_BUTTONS: readonly DemoPhaseButton[] = [
         '明るいニュースある？',
         '世界で今なにが起きてる？',
         '軽い楽しいニュースある？',
+      ],
+    },
+  },
+  {
+    id: 'time',
+    label: { en: 'Time', yue: '時間', zh: '时间', ja: '時刻' },
+    prompts: {
+      en: [
+        'what time is it here and in other cities?',
+        'tell me the time in Hong Kong, Tokyo, London, and New York',
+        'what time is it around the world?',
+        'local time plus a few city clocks please',
+      ],
+      yue: [
+        '而家幾點？香港、東京、倫敦、紐約都話我知',
+        '講吓世界各地幾點',
+        '你度同其他大城市而家幾點？',
+        '報時——你度同香港東京倫敦紐約',
+      ],
+      zh: [
+        '现在几点？香港、东京、伦敦、纽约都告诉我',
+        '讲讲世界各地现在几点',
+        '你这里和其他大城市现在几点？',
+        '报时——你这里和香港东京伦敦纽约',
+      ],
+      ja: [
+        '今何時？香港・東京・ロンドン・ニューヨークも教えて',
+        '世界の主要都市の時刻を教えて',
+        'あなたのところと他の大都市は今何時？',
+        '時報——香港・東京・ロンドン・ニューヨーク',
       ],
     },
   },
@@ -878,6 +909,15 @@ export function demoPhasePromptCount(id: DemoPhaseId, lang?: string): number {
   return btn?.prompts[L]?.length ?? 0;
 }
 
+/** Map the tapped prompt line back to its facet index (repeat-tap rotation). */
+export function demoPhaseFacetIndex(id: DemoPhaseId, lang: string | undefined, prompt: string): number {
+  const L = asDemoLang(lang);
+  const btn = DEMO_PHASE_BUTTONS.find((b) => b.id === id);
+  const bank = btn?.prompts[L] ?? [];
+  const idx = bank.findIndex((p) => p === prompt);
+  return idx >= 0 ? idx : 0;
+}
+
 export function demoPhaseLabel(id: DemoPhaseId, lang?: string): string {
   const L = asDemoLang(lang);
   const btn = DEMO_PHASE_BUTTONS.find((b) => b.id === id);
@@ -893,8 +933,8 @@ function demoPhaseShuffleRand(seed: number): () => number {
   };
 }
 
-/** Left rail anchors — Pixel: weather + news must stay discoverable (never lost in shuffle). */
-export const DEMO_PHASE_LEFT_PRIORITY_IDS: readonly DemoPhaseId[] = ['weather', 'news'] as const;
+/** Left rail anchors — Pixel: weather, news, time stay discoverable (never lost in shuffle). */
+export const DEMO_PHASE_LEFT_PRIORITY_IDS: readonly DemoPhaseId[] = ['weather', 'news', 'time'] as const;
 
 export const DEMO_PHASE_TAIL_SHUFFLE_ENABLED = true;
 
@@ -909,7 +949,7 @@ function demoPhaseTailButtons(): DemoPhaseButton[] {
   return ownerVisibleDemoPhaseButtons().filter((b) => !pinned.has(b.id));
 }
 
-/** Fisher–Yates tail shuffle — weather + news stay left; same seed → same tail order. */
+/** Fisher–Yates tail shuffle — weather, news, and time stay left; same seed → same tail order. */
 export function shuffledDemoPhaseButtons(seed: number): DemoPhaseButton[] {
   const head = pinnedDemoPhaseButtons();
   if (!DEMO_PHASE_TAIL_SHUFFLE_ENABLED) {

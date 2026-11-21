@@ -18,16 +18,16 @@ function read(rel: string): string {
 }
 
 describe('Pixel no-repeat regressions (r237 live)', () => {
-  it('demo-phase tail shuffle is explicit — weather + news stay pinned left', () => {
+  it('demo-phase tail shuffle is explicit — weather, news, then time stay pinned left', () => {
     expect(DEMO_PHASE_TAIL_SHUFFLE_ENABLED).toBe(true);
-    expect(DEMO_PHASE_LEFT_PRIORITY_IDS).toEqual(['weather', 'news']);
+    expect(DEMO_PHASE_LEFT_PRIORITY_IDS).toEqual(['weather', 'news', 'time']);
     const src = read('lib/demo-phase.ts');
     expect(src).toContain('DEMO_PHASE_LEFT_PRIORITY_IDS');
     expect(src).toContain('demoPhaseTailButtons');
     expect(src).not.toContain('const arr = [...DEMO_PHASE_BUTTONS]');
     for (const seed of [7, 42, 8080, 0xdead_beef]) {
       const ids = shuffledDemoPhaseButtons(seed).map((b) => b.id);
-      expect(ids.slice(0, 2)).toEqual([...DEMO_PHASE_LEFT_PRIORITY_IDS]);
+      expect(ids.slice(0, DEMO_PHASE_LEFT_PRIORITY_IDS.length)).toEqual([...DEMO_PHASE_LEFT_PRIORITY_IDS]);
       expect(new Set(ids).size).toBe(DEMO_PHASE_BUTTONS.length);
     }
   });

@@ -33,6 +33,7 @@ describe('demo-phase buttons', () => {
       expect.arrayContaining([
         'weather',
         'news',
+        'time',
         'aiNews',
         'personalTalk',
         'secretTalk',
@@ -107,11 +108,12 @@ describe('demo-phase buttons', () => {
     expect(c).not.toEqual(a);
   });
 
-  it('keeps weather then news in the left priority slots for every seed', () => {
+  it('keeps weather, news, then time in the left priority slots for every seed', () => {
     for (const seed of [1, 42, 99, 0xdead_beef]) {
       const ids = shuffledDemoPhaseButtons(seed).map((b) => b.id);
       expect(ids[0]).toBe('weather');
       expect(ids[1]).toBe('news');
+      expect(ids[2]).toBe('time');
     }
   });
 
@@ -226,5 +228,28 @@ describe('demo-phase buttons', () => {
     expect(PANEL).toContain('clientLiveContext(prompt, lang)');
     expect(PANEL).toContain('sayLocal(spoken)');
     expect(PANEL).toContain('primeLocationForChatEnter');
+  });
+
+  it('demo chip prompts plan Open-Meteo / RSS (not web search) for weather and news', () => {
+    for (const lang of ['en', 'yue', 'zh', 'ja'] as const) {
+      const weather = demoPhasePrimaryPrompt(DEMO_PHASE_BUTTONS[0]!, lang);
+      const news = demoPhasePrimaryPrompt(DEMO_PHASE_BUTTONS[1]!, lang);
+      expect(planTools(weather).weather).toBe(true);
+      expect(planTools(weather).searchQuery).toBeUndefined();
+      expect(planTools(news).news).toBe(true);
+      expect(planTools(news).searchQuery).toBeUndefined();
+      expect(planTools(news).recent).toBe(true);
+    }
+    expect(planTools('search weather').weather).toBe(true);
+    expect(planTools('search weather').searchQuery).toBeUndefined();
+  });
+
+  it('time chip uses Intl world clock + sayLocal (no clientLiveContext / LLM)', () => {
+    expect(PANEL).toContain("id === 'time'");
+    expect(PANEL).toContain('spokenWorldClock(lang, facet)');
+    expect(PANEL).toMatch(
+      /if \(id === 'time'\)[\s\S]*sayLocal\(spoken\)[\s\S]*return;/,
+    );
+    expect(demoPhaseLabel('time', 'yue')).toBe('時間');
   });
 });
