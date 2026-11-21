@@ -1,0 +1,2628 @@
+{
+  "rows": [
+    {
+      "id": "TTS-001",
+      "name": "zh-HK-WanLungNeural",
+      "preferred": true,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "yue"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "zh-HK-WanLungNeural"
+    },
+    {
+      "id": "TTS-002",
+      "name": "zh-HK-HiuMaanNeural",
+      "preferred": true,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "yue"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "zh-HK-HiuMaanNeural"
+    },
+    {
+      "id": "TTS-003",
+      "name": "zh-HK-HiuGaaiNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "yue"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "zh-HK-HiuGaaiNeural"
+    },
+    {
+      "id": "TTS-004",
+      "name": "Fun-CosyVoice 3 0.5B Apache-2.0",
+      "preferred": false,
+      "gender": "M/F",
+      "engine": "Fun-CosyVoice 3 0.5B",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ],
+      "note": "HOLD lifted by Mon 2026-11-21."
+    },
+    {
+      "id": "TTS-005",
+      "name": "Ming-3.0-tts 0.5B OK",
+      "preferred": false,
+      "gender": "M/F",
+      "engine": "Ming-3.0-tts 0.5B",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ]
+    },
+    {
+      "id": "TTS-006",
+      "name": "Audio8-TTS-Realistic-Air (Edge0-AI)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Audio8-TTS-Realistic-Air",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-007",
+      "name": "hon9kon9ize Bert-VITS2 Cantonese",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Bert-VITS2 Cantonese",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ],
+      "note": "copyleft (AGPL)."
+    },
+    {
+      "id": "TTS-008",
+      "name": "alvanlii/canto-llasa-1b",
+      "preferred": false,
+      "gender": "—",
+      "engine": "canto-llasa-1b",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-009",
+      "name": "canto-tts-nano Apache-2.0",
+      "preferred": false,
+      "gender": "—",
+      "engine": "canto-tts-nano",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ]
+    },
+    {
+      "id": "TTS-010",
+      "name": "Cantonese TTS (cantonese-dev)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Cantonese-TTS-cantonese-dev",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-011",
+      "name": "CosyVoice2-Yue / ZoengJyutGaai waiting refs",
+      "preferred": false,
+      "gender": "—",
+      "engine": "CosyVoice2-Yue / ZoengJyutGaai",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ],
+      "note": "HOLD lifted by Mon 2026-11-21; still needs Pixel M/F zh-HK refs to sound right."
+    },
+    {
+      "id": "TTS-012",
+      "name": "Ekho / 余音 (hgneng)",
+      "preferred": false,
+      "gender": "M/F",
+      "engine": "Ekho",
+      "kind": "link",
+      "locales": [
+        "yue",
+        "zh"
+      ],
+      "note": "copyleft (GPL)."
+    },
+    {
+      "id": "TTS-013",
+      "name": "GLM-TTS OK",
+      "preferred": false,
+      "gender": "—",
+      "engine": "GLM-TTS",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ]
+    },
+    {
+      "id": "TTS-014",
+      "name": "JyutVoice / CanTTSo",
+      "preferred": false,
+      "gender": "—",
+      "engine": "JyutVoice",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ],
+      "note": "HOLD lifted by Mon 2026-11-21; still needs Pixel M/F zh-HK refs to sound right; amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-015",
+      "name": "Kitten-TTS 2 Hong Kong Cantonese QAT (jmtl)",
+      "preferred": false,
+      "gender": "M/F",
+      "engine": "Kitten-TTS 2 HK Cantonese QAT",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-016",
+      "name": "Llasa-1B-Yue (ASLP / WenetSpeech-Yue)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Llasa-1B-Yue",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-017",
+      "name": "M5-TTS (ASLP-lab)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "M5-TTS",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ]
+    },
+    {
+      "id": "TTS-018",
+      "name": "MOSS-TTS-Local-Transformer-v1.5 (OpenMOSS, 5B)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "MOSS-TTS-Local-Transformer-v1.5",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-019",
+      "name": "MOSS-TTS-v1.5 (OpenMOSS, ~8B)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "MOSS-TTS-v1.5",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-020",
+      "name": "jmtl HK Cantonese CC0 Qwen3-TTS LoRA",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Qwen3-TTS Yue LoRA",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ]
+    },
+    {
+      "id": "TTS-021",
+      "name": "ModelScope Sambert-HifiGAN jiajia Cantonese",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Sambert-HifiGAN jiajia Cantonese",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ]
+    },
+    {
+      "id": "TTS-022",
+      "name": "SoulX-Podcast check license",
+      "preferred": false,
+      "gender": "—",
+      "engine": "SoulX-Podcast",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-023",
+      "name": "Step-Audio-EditX Apache-2.0",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Step-Audio-EditX",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ]
+    },
+    {
+      "id": "TTS-024",
+      "name": "xiaomaiiwn VITS Cantonese (+ sherpa-onnx)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "VITS Cantonese",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-025",
+      "name": "VoxCPM2 (family / dialect notes) Apache-2.0",
+      "preferred": false,
+      "gender": "—",
+      "engine": "VoxCPM2",
+      "kind": "link",
+      "locales": [
+        "yue"
+      ]
+    },
+    {
+      "id": "TTS-026",
+      "name": "XWX_tts (westice)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "XWX_tts",
+      "kind": "link",
+      "locales": [
+        "yue",
+        "zh",
+        "en"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-027",
+      "name": "zh-CN-YunjianNeural",
+      "preferred": true,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "zh"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "zh-CN-YunjianNeural"
+    },
+    {
+      "id": "TTS-028",
+      "name": "zh-CN-XiaoxiaoNeural",
+      "preferred": true,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "zh"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "zh-CN-XiaoxiaoNeural"
+    },
+    {
+      "id": "TTS-029",
+      "name": "zh-CN-YunxiaNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "zh"
+      ],
+      "note": "child-sounding (included — legal to use); Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "zh-CN-YunxiaNeural"
+    },
+    {
+      "id": "TTS-030",
+      "name": "zh-CN-YunxiNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "zh"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "zh-CN-YunxiNeural"
+    },
+    {
+      "id": "TTS-031",
+      "name": "zh-CN-YunyangNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "zh"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "zh-CN-YunyangNeural"
+    },
+    {
+      "id": "TTS-032",
+      "name": "zh-TW-YunJheNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "zh"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "zh-TW-YunJheNeural"
+    },
+    {
+      "id": "TTS-033",
+      "name": "zh-CN-liaoning-XiaobeiNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "zh"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "zh-CN-liaoning-XiaobeiNeural"
+    },
+    {
+      "id": "TTS-034",
+      "name": "zh-CN-shaanxi-XiaoniNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "zh"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "zh-CN-shaanxi-XiaoniNeural"
+    },
+    {
+      "id": "TTS-035",
+      "name": "zh-CN-XiaoyiNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "zh"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "zh-CN-XiaoyiNeural"
+    },
+    {
+      "id": "TTS-036",
+      "name": "zh-TW-HsiaoChenNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "zh"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "zh-TW-HsiaoChenNeural"
+    },
+    {
+      "id": "TTS-037",
+      "name": "zh-TW-HsiaoYuNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "zh"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "zh-TW-HsiaoYuNeural"
+    },
+    {
+      "id": "TTS-038",
+      "name": "FireRedTTS-2 check license",
+      "preferred": false,
+      "gender": "—",
+      "engine": "FireRedTTS-2",
+      "kind": "link",
+      "locales": [
+        "zh"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-039",
+      "name": "Qwen3-TTS (0.6B / 1.7B) Apache-2.0",
+      "preferred": false,
+      "gender": "M/F",
+      "engine": "Qwen3-TTS",
+      "kind": "link",
+      "locales": [
+        "zh",
+        "ja",
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-040",
+      "name": "Breeze TTS 2 (BreezeBlue)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Breeze TTS 2",
+      "kind": "link",
+      "locales": [
+        "zh",
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-041",
+      "name": "BreezyVoice (MediaTek Research)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "BreezyVoice",
+      "kind": "link",
+      "locales": [
+        "zh"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-042",
+      "name": "Confucius4-TTS (NetEase Youdao)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Confucius4-TTS",
+      "kind": "link",
+      "locales": [
+        "zh"
+      ]
+    },
+    {
+      "id": "TTS-043",
+      "name": "EmotiVoice (NetEase Youdao)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "EmotiVoice",
+      "kind": "link",
+      "locales": [
+        "zh"
+      ]
+    },
+    {
+      "id": "TTS-044",
+      "name": "FireRedTTS-3 check license",
+      "preferred": false,
+      "gender": "—",
+      "engine": "FireRedTTS-3",
+      "kind": "link",
+      "locales": [
+        "zh"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-045",
+      "name": "Fun-CineForge (FunAudioLLM)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Fun-CineForge",
+      "kind": "link",
+      "locales": [
+        "zh",
+        "en"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-046",
+      "name": "Kokoro-82M named presets Apache-2.0",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Kokoro",
+      "kind": "link",
+      "locales": [
+        "zh",
+        "ja",
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-047",
+      "name": "Kokoro-82M Apache-2.0",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Kokoro-82M",
+      "kind": "link",
+      "locales": [
+        "zh",
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-048",
+      "name": "Kokoro-82M zf_xiaoxiao Apache-2.0",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Kokoro-82M",
+      "kind": "link",
+      "locales": [
+        "zh"
+      ]
+    },
+    {
+      "id": "TTS-049",
+      "name": "Kokoro-82M zm_yunxi Apache-2.0",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Kokoro-82M",
+      "kind": "link",
+      "locales": [
+        "zh"
+      ]
+    },
+    {
+      "id": "TTS-050",
+      "name": "LongCat-AudioDiT 1B (Meituan)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "LongCat-AudioDiT-1B",
+      "kind": "link",
+      "locales": [
+        "zh",
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-051",
+      "name": "MeloTTS OK",
+      "preferred": false,
+      "gender": "—",
+      "engine": "MeloTTS",
+      "kind": "link",
+      "locales": [
+        "zh"
+      ]
+    },
+    {
+      "id": "TTS-052",
+      "name": "MeloTTS ZH OK",
+      "preferred": false,
+      "gender": "—",
+      "engine": "MeloTTS",
+      "kind": "link",
+      "locales": [
+        "zh"
+      ]
+    },
+    {
+      "id": "TTS-053",
+      "name": "OpenVoice v1/v2 OK",
+      "preferred": false,
+      "gender": "—",
+      "engine": "OpenVoice v1/v2",
+      "kind": "link",
+      "locales": [
+        "zh",
+        "ja",
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-054",
+      "name": "Piper zh_CN-chaowen-medium (超文)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Piper",
+      "kind": "link",
+      "locales": [
+        "zh"
+      ]
+    },
+    {
+      "id": "TTS-055",
+      "name": "Piper zh_CN-huayan-medium",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Piper",
+      "kind": "link",
+      "locales": [
+        "zh"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-056",
+      "name": "Piper zh_CN-xiao_ya-medium (小雅)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Piper",
+      "kind": "link",
+      "locales": [
+        "zh"
+      ]
+    },
+    {
+      "id": "TTS-057",
+      "name": "Piper TTS OK",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Piper TTS",
+      "kind": "link",
+      "locales": [
+        "zh",
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-058",
+      "name": "ja-JP-KeitaNeural",
+      "preferred": true,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "ja"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "ja-JP-KeitaNeural"
+    },
+    {
+      "id": "TTS-059",
+      "name": "ja-JP-NanamiNeural",
+      "preferred": true,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "ja"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "ja-JP-NanamiNeural"
+    },
+    {
+      "id": "TTS-060",
+      "name": "AivisSpeech / AivisHub (engine + per-model terms)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "AivisSpeech",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-061",
+      "name": "COEIROINK (engine + per-speaker terms)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "COEIROINK",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-062",
+      "name": "Irodori-TTS-v4.1-Anime OK",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Irodori-TTS-v4.1-Anime",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ]
+    },
+    {
+      "id": "TTS-063",
+      "name": "Kokoro-82M jf_alpha Apache-2.0",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Kokoro-82M",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ]
+    },
+    {
+      "id": "TTS-064",
+      "name": "Kokoro-82M jm_kumo Apache-2.0",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Kokoro-82M",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ]
+    },
+    {
+      "id": "TTS-065",
+      "name": "MeloTTS JP OK",
+      "preferred": false,
+      "gender": "—",
+      "engine": "MeloTTS",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ]
+    },
+    {
+      "id": "TTS-066",
+      "name": "OpenJTalk / HTS Japanese check license",
+      "preferred": false,
+      "gender": "—",
+      "engine": "OpenJTalk",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-067",
+      "name": "SHAREVOX (engine + per-speaker terms)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "SHAREVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-068",
+      "name": "Style-Bert-VITS2 check license",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Style-Bert-VITS2",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "copyleft (AGPL)."
+    },
+    {
+      "id": "TTS-069",
+      "name": "tiny-voca-ja (gachimoto)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "tiny-voca-ja",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ]
+    },
+    {
+      "id": "TTS-070",
+      "name": "VOICEVOX: Akatsuki Mitama",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-071",
+      "name": "VOICEVOX: Amehare Hau",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-072",
+      "name": "VOICEVOX: Ankomon",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-073",
+      "name": "VOICEVOX: Aoyama Ryusei",
+      "preferred": false,
+      "gender": "M",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-074",
+      "name": "VOICEVOX: Buibui Kobako",
+      "preferred": false,
+      "gender": "—",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-075",
+      "name": "VOICEVOX: Chibi-shiki Jii",
+      "preferred": false,
+      "gender": "M",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-076",
+      "name": "VOICEVOX: Chubu Tsurugi",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-077",
+      "name": "VOICEVOX: Chugoku Usagi",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-078",
+      "name": "VOICEVOX: Goki",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-079",
+      "name": "VOICEVOX: Haruka Nana",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-080",
+      "name": "VOICEVOX: IL-tan",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-081",
+      "name": "VOICEVOX: Kasukabe Tsumugi",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-082",
+      "name": "VOICEVOX: Kenzaki Mesuo",
+      "preferred": false,
+      "gender": "M",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-083",
+      "name": "VOICEVOX: Kigashima Sourin",
+      "preferred": false,
+      "gender": "M",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-084",
+      "name": "VOICEVOX: Kotoyomi Nia",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-085",
+      "name": "VOICEVOX: Kurita Maron",
+      "preferred": false,
+      "gender": "—",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-086",
+      "name": "VOICEVOX: Kurono Takehiro",
+      "preferred": false,
+      "gender": "M",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-087",
+      "name": "VOICEVOX: Kurosawa Saehaku",
+      "preferred": false,
+      "gender": "—",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-088",
+      "name": "VOICEVOX: Kyushu Sora",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-089",
+      "name": "VOICEVOX: Manbetsu Hanamaru",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-090",
+      "name": "VOICEVOX: Meimei Himari",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-091",
+      "name": "VOICEVOX: Mochiko-san",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-092",
+      "name": "VOICEVOX: Namine Ritsu",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-093",
+      "name": "VOICEVOX: Nekotsuka Aru",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-094",
+      "name": "VOICEVOX: Nekotsuka Bii",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-095",
+      "name": "VOICEVOX: No.7",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-096",
+      "name": "VOICEVOX: Nurse Robo Type T",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-097",
+      "name": "VOICEVOX: Ouka Miko",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-098",
+      "name": "VOICEVOX: Rito",
+      "preferred": false,
+      "gender": "—",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-099",
+      "name": "VOICEVOX: Satoishi Yuka",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-100",
+      "name": "VOICEVOX: Sayo",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-101",
+      "name": "VOICEVOX: Sei Kishi Benizakura",
+      "preferred": false,
+      "gender": "M",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-102",
+      "name": "VOICEVOX: Shikoku Metan",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-103",
+      "name": "VOICEVOX: Shirakami Kotaro",
+      "preferred": false,
+      "gender": "M",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-104",
+      "name": "VOICEVOX: Tohoku Itako",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-105",
+      "name": "VOICEVOX: Tohoku Kiritan",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-106",
+      "name": "VOICEVOX: Tohoku Zunko",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-107",
+      "name": "VOICEVOX: Voidoll",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-108",
+      "name": "VOICEVOX: Wakamatsu Akashi",
+      "preferred": false,
+      "gender": "M",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-109",
+      "name": "VOICEVOX: WhiteCUL",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-110",
+      "name": "VOICEVOX: Yogatari Tobari",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-111",
+      "name": "VOICEVOX: Yurei-chan",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-112",
+      "name": "VOICEVOX: Zonko",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-113",
+      "name": "VOICEVOX: Zundamon",
+      "preferred": false,
+      "gender": "F",
+      "engine": "VOICEVOX",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-114",
+      "name": "VOICEVOX Nemo ToS / credit",
+      "preferred": false,
+      "gender": "—",
+      "engine": "VOICEVOX Nemo",
+      "kind": "link",
+      "locales": [
+        "ja"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-115",
+      "name": "en-US-GuyNeural",
+      "preferred": true,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-US-GuyNeural"
+    },
+    {
+      "id": "TTS-116",
+      "name": "en-US-AriaNeural",
+      "preferred": true,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-US-AriaNeural"
+    },
+    {
+      "id": "TTS-117",
+      "name": "en-US-JennyNeural",
+      "preferred": true,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-US-JennyNeural"
+    },
+    {
+      "id": "TTS-118",
+      "name": "en-AU-WilliamMultilingualNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-AU-WilliamMultilingualNeural"
+    },
+    {
+      "id": "TTS-119",
+      "name": "en-CA-LiamNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-CA-LiamNeural"
+    },
+    {
+      "id": "TTS-120",
+      "name": "en-GB-RyanNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-GB-RyanNeural"
+    },
+    {
+      "id": "TTS-121",
+      "name": "en-GB-ThomasNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-GB-ThomasNeural"
+    },
+    {
+      "id": "TTS-122",
+      "name": "en-HK-SamNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-HK-SamNeural"
+    },
+    {
+      "id": "TTS-123",
+      "name": "en-IE-ConnorNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-IE-ConnorNeural"
+    },
+    {
+      "id": "TTS-124",
+      "name": "en-IN-PrabhatNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-IN-PrabhatNeural"
+    },
+    {
+      "id": "TTS-125",
+      "name": "en-KE-ChilembaNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-KE-ChilembaNeural"
+    },
+    {
+      "id": "TTS-126",
+      "name": "en-NG-AbeoNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-NG-AbeoNeural"
+    },
+    {
+      "id": "TTS-127",
+      "name": "en-NZ-MitchellNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-NZ-MitchellNeural"
+    },
+    {
+      "id": "TTS-128",
+      "name": "en-PH-JamesNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-PH-JamesNeural"
+    },
+    {
+      "id": "TTS-129",
+      "name": "en-SG-WayneNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-SG-WayneNeural"
+    },
+    {
+      "id": "TTS-130",
+      "name": "en-TZ-ElimuNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-TZ-ElimuNeural"
+    },
+    {
+      "id": "TTS-131",
+      "name": "en-US-AndrewMultilingualNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-US-AndrewMultilingualNeural"
+    },
+    {
+      "id": "TTS-132",
+      "name": "en-US-AndrewNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-US-AndrewNeural"
+    },
+    {
+      "id": "TTS-133",
+      "name": "en-US-BrianMultilingualNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-US-BrianMultilingualNeural"
+    },
+    {
+      "id": "TTS-134",
+      "name": "en-US-BrianNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-US-BrianNeural"
+    },
+    {
+      "id": "TTS-135",
+      "name": "en-US-ChristopherNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-US-ChristopherNeural"
+    },
+    {
+      "id": "TTS-136",
+      "name": "en-US-EricNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-US-EricNeural"
+    },
+    {
+      "id": "TTS-137",
+      "name": "en-US-RogerNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-US-RogerNeural"
+    },
+    {
+      "id": "TTS-138",
+      "name": "en-US-SteffanNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-US-SteffanNeural"
+    },
+    {
+      "id": "TTS-139",
+      "name": "en-ZA-LukeNeural",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-ZA-LukeNeural"
+    },
+    {
+      "id": "TTS-140",
+      "name": "en-AU-NatashaNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-AU-NatashaNeural"
+    },
+    {
+      "id": "TTS-141",
+      "name": "en-CA-ClaraNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-CA-ClaraNeural"
+    },
+    {
+      "id": "TTS-142",
+      "name": "en-GB-LibbyNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-GB-LibbyNeural"
+    },
+    {
+      "id": "TTS-143",
+      "name": "en-GB-MaisieNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "child-sounding (included — legal to use); Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-GB-MaisieNeural"
+    },
+    {
+      "id": "TTS-144",
+      "name": "en-GB-SoniaNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-GB-SoniaNeural"
+    },
+    {
+      "id": "TTS-145",
+      "name": "en-HK-YanNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-HK-YanNeural"
+    },
+    {
+      "id": "TTS-146",
+      "name": "en-IE-EmilyNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-IE-EmilyNeural"
+    },
+    {
+      "id": "TTS-147",
+      "name": "en-IN-NeerjaExpressiveNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-IN-NeerjaExpressiveNeural"
+    },
+    {
+      "id": "TTS-148",
+      "name": "en-IN-NeerjaNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-IN-NeerjaNeural"
+    },
+    {
+      "id": "TTS-149",
+      "name": "en-KE-AsiliaNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-KE-AsiliaNeural"
+    },
+    {
+      "id": "TTS-150",
+      "name": "en-NG-EzinneNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-NG-EzinneNeural"
+    },
+    {
+      "id": "TTS-151",
+      "name": "en-NZ-MollyNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-NZ-MollyNeural"
+    },
+    {
+      "id": "TTS-152",
+      "name": "en-PH-RosaNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-PH-RosaNeural"
+    },
+    {
+      "id": "TTS-153",
+      "name": "en-SG-LunaNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-SG-LunaNeural"
+    },
+    {
+      "id": "TTS-154",
+      "name": "en-TZ-ImaniNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-TZ-ImaniNeural"
+    },
+    {
+      "id": "TTS-155",
+      "name": "en-US-AnaNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "child-sounding (included — legal to use); Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-US-AnaNeural"
+    },
+    {
+      "id": "TTS-156",
+      "name": "en-US-AvaMultilingualNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-US-AvaMultilingualNeural"
+    },
+    {
+      "id": "TTS-157",
+      "name": "en-US-AvaNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-US-AvaNeural"
+    },
+    {
+      "id": "TTS-158",
+      "name": "en-US-EmmaMultilingualNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-US-EmmaMultilingualNeural"
+    },
+    {
+      "id": "TTS-159",
+      "name": "en-US-EmmaNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-US-EmmaNeural"
+    },
+    {
+      "id": "TTS-160",
+      "name": "en-US-MichelleNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-US-MichelleNeural"
+    },
+    {
+      "id": "TTS-161",
+      "name": "en-ZA-LeahNeural",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Edge-TTS",
+      "kind": "edge",
+      "locales": [
+        "en"
+      ],
+      "note": "Edge-TTS · Microsoft ToS.",
+      "edgeVoiceId": "en-ZA-LeahNeural"
+    },
+    {
+      "id": "TTS-162",
+      "name": "Chatterbox Turbo / Multilingual V3 OK",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Chatterbox Turbo / Multilingual V3",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-163",
+      "name": "Continue-TTS (SVECTOR-CORPORATION)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Continue-TTS",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-164",
+      "name": "Sesame CSM-1B Apache-2.0",
+      "preferred": false,
+      "gender": "—",
+      "engine": "CSM",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-165",
+      "name": "CuteTTS / CuteTTS-distill (OPPOer)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "CuteTTS",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-166",
+      "name": "Dia 1.6B (nari-labs) Apache-2.0",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Dia",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-167",
+      "name": "Dia2 1B (Nari Labs)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Dia2 1B",
+      "kind": "link",
+      "locales": [
+        "en"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-168",
+      "name": "Dia2 2B (Nari Labs)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Dia2 2B",
+      "kind": "link",
+      "locales": [
+        "en"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-169",
+      "name": "Inflect Atom v3 (Owen Song)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Inflect Atom v3",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-170",
+      "name": "Inflect Micro v3 (Owen Song)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Inflect Micro v3",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-171",
+      "name": "Inflect Mini v3 (Owen Song)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Inflect Mini v3",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-172",
+      "name": "Inflect-Nano-v2 (Owen Song)",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Inflect Nano v2",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-173",
+      "name": "Kale TTS 1 (KaleComputer nano/tiny/base)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Kale TTS 1",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-174",
+      "name": "KittenTTS nano-0.1 (named voices) Apache-2.0",
+      "preferred": false,
+      "gender": "—",
+      "engine": "KittenTTS",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-175",
+      "name": "Kokoro-82M af_bella Apache-2.0",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Kokoro-82M",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-176",
+      "name": "Kokoro-82M af_heart Apache-2.0",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Kokoro-82M",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-177",
+      "name": "Kokoro-82M am_fenrir Apache-2.0",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Kokoro-82M",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-178",
+      "name": "Kokoro-82M am_michael Apache-2.0",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Kokoro-82M",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-179",
+      "name": "Kokoro-82M am_puck Apache-2.0",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Kokoro-82M",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-180",
+      "name": "Kokoro-82M bf_emma Apache-2.0",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Kokoro-82M",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-181",
+      "name": "Kokoro-82M bf_isabella Apache-2.0",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Kokoro-82M",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-182",
+      "name": "Kokoro-82M bm_fable Apache-2.0",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Kokoro-82M",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-183",
+      "name": "Kokoro-82M bm_george Apache-2.0",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Kokoro-82M",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-184",
+      "name": "Leokani-tts 7M (milliwattlabs)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Leokani-tts",
+      "kind": "link",
+      "locales": [
+        "en"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-185",
+      "name": "LFM3-Audio-2B (LiquidAI)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "LFM3-Audio-2B",
+      "kind": "link",
+      "locales": [
+        "en"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-186",
+      "name": "Linnet en-35m (VoxRT)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Linnet",
+      "kind": "link",
+      "locales": [
+        "en"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-187",
+      "name": "Lure-0.6B (link-only / not on disk)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Lure-0.6B",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-188",
+      "name": "MARS5-TTS (Camb.AI) check license",
+      "preferred": false,
+      "gender": "—",
+      "engine": "MARS5-TTS",
+      "kind": "link",
+      "locales": [
+        "en"
+      ],
+      "note": "copyleft (AGPL)."
+    },
+    {
+      "id": "TTS-189",
+      "name": "Maya 2 Native (Maya Research)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Maya 2 Native",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-190",
+      "name": "MeloTTS EN-AU OK",
+      "preferred": false,
+      "gender": "—",
+      "engine": "MeloTTS",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-191",
+      "name": "MeloTTS EN-BR OK",
+      "preferred": false,
+      "gender": "—",
+      "engine": "MeloTTS",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-192",
+      "name": "MeloTTS EN-Default OK",
+      "preferred": false,
+      "gender": "—",
+      "engine": "MeloTTS",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-193",
+      "name": "MeloTTS EN-US OK",
+      "preferred": false,
+      "gender": "—",
+      "engine": "MeloTTS",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-194",
+      "name": "MeloTTS EN_INDIA OK",
+      "preferred": false,
+      "gender": "—",
+      "engine": "MeloTTS",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-195",
+      "name": "MetaVoice-1B v0.1 Apache-2.0",
+      "preferred": false,
+      "gender": "—",
+      "engine": "MetaVoice",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-196",
+      "name": "Miso TTS 8B (Miso Labs)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Miso TTS 8B",
+      "kind": "link",
+      "locales": [
+        "en"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-197",
+      "name": "MOSS-TTS-Nano 0.1B (OpenMOSS / MOSI.AI)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "MOSS-TTS-Nano 0.1B",
+      "kind": "link",
+      "locales": [
+        "en"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-198",
+      "name": "MOSS-TTS-Realtime 1.7B (OpenMOSS / MOSI.AI)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "MOSS-TTS-Realtime 1.7B",
+      "kind": "link",
+      "locales": [
+        "en"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-199",
+      "name": "MOSS-TTSD v1.0 (OpenMOSS)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "MOSS-TTSD v1.0",
+      "kind": "link",
+      "locales": [
+        "en"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-200",
+      "name": "MOSS-VoiceGenerator (OpenMOSS)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "MOSS-VoiceGenerator",
+      "kind": "link",
+      "locales": [
+        "en"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-201",
+      "name": "nano-edge-tts (drmhse)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "nano-edge-tts",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-202",
+      "name": "NeuTTS-Air Apache-2.0",
+      "preferred": false,
+      "gender": "—",
+      "engine": "NeuTTS",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-203",
+      "name": "Parler-TTS Mini / Large v1 Apache-2.0",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Parler-TTS",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-204",
+      "name": "Piper en_GB-alba-medium OK",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Piper",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-205",
+      "name": "Piper en_GB-cori-medium OK",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Piper",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-206",
+      "name": "Piper en_US-joe-medium OK",
+      "preferred": false,
+      "gender": "M",
+      "engine": "Piper",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-207",
+      "name": "Piper en_US-kristin-medium OK",
+      "preferred": false,
+      "gender": "F",
+      "engine": "Piper",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-208",
+      "name": "PiVo-1.4M (Empero)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "PiVo-1.4M",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-209",
+      "name": "Silencio-2 (BlueRose Labs, 18M / 28M) check license",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Silencio-2",
+      "kind": "link",
+      "locales": [
+        "en"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-210",
+      "name": "Soprano-1.1-80M (ekwek)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Soprano 1.1",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-211",
+      "name": "StyleTTS2 OK",
+      "preferred": false,
+      "gender": "—",
+      "engine": "StyleTTS2",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-212",
+      "name": "Supertonic 3 (Supertone)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Supertonic 3",
+      "kind": "link",
+      "locales": [
+        "en"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-213",
+      "name": "tiny-voca (n4ze3m)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "tiny-voca",
+      "kind": "link",
+      "locales": [
+        "en"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-214",
+      "name": "tiny-voca-de-en (Fraunhofer-IEM)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "tiny-voca-de-en",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-215",
+      "name": "Tortoise TTS Apache-2.0",
+      "preferred": false,
+      "gender": "—",
+      "engine": "Tortoise TTS",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-216",
+      "name": "VibeVoice-1.5B (Microsoft)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "VibeVoice-1.5B",
+      "kind": "link",
+      "locales": [
+        "en"
+      ],
+      "note": "amber — license caveat, not NC."
+    },
+    {
+      "id": "TTS-217",
+      "name": "ZONOS2 (Zyphra)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "ZONOS2",
+      "kind": "link",
+      "locales": [
+        "en"
+      ]
+    },
+    {
+      "id": "TTS-218",
+      "name": "ZONOS3-Mini (Zyphra)",
+      "preferred": false,
+      "gender": "—",
+      "engine": "ZONOS3-Mini",
+      "kind": "link",
+      "locales": [
+        "en"
+      ],
+      "note": "amber — license caveat, not NC."
+    }
+  ]
+}
