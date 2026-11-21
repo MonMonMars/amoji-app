@@ -115,6 +115,17 @@ describe('owner picks win over Quaternius (#430 vs #432)', () => {
     })).toBe('IdleRpmMStanding001');
   });
 
+  it('ships planted Mixamo C14/C15/C16/C18 in the enabled rotation', () => {
+    mockStorage();
+    forgetIdleEnabledCache();
+    expect(listEnabledIdleClipIds()).toEqual(expect.arrayContaining([
+      'IdleMixamoIdle',
+      'IdleMixamoStanding',
+      'IdleMixamoBreathing',
+      'IdleMixamoHappy',
+    ]));
+  });
+
   it('seeds poke Want from CMA_REACTION_OWNER_WANT_CODES (= SFX_WANT_LIST)', () => {
     const store = mockStorage();
     forgetCmaReactionPickCache();

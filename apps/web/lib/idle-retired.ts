@@ -67,6 +67,8 @@ export const BANNED_AUTO_IDLE_CLIP_IDS = new Set<string>([
 export const PIXEL_CALM_IDLE_CLIP_IDS = new Set<string>([
   'IdleQuaterniusHuman',
   'IdleMixamoBreathing',
+  'IdleMixamoIdle',
+  'IdleMixamoStanding',
   'IdleInnersceneSam',
   'IdleRpmFVar001',
   'IdleRpmFVar003',

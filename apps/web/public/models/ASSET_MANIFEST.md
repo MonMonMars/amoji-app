@@ -203,8 +203,10 @@ Real VRMA animation clips (VRMC_vrm_animation), force-committed for GitHub Pages
 | anims/IdleKaykitB.vrma | idle KayKit Rig_Medium Idle_B retarget→Mixamo (#37) |
 | anims/IdleKaykitA.vrma | idle KayKit Rig_Medium Idle_A retarget→Mixamo (#38) |
 | anims/IdleQuaterniusHuman.vrma | idle Quaternius AnimatedHuman Idle (#39) |
-| anims/IdleMixamoBreathing.vrma | idle Mixamo BreathingIdle (#40) |
-| anims/IdleMixamoHappy.vrma | idle Mixamo HappyIdle (#41) |
+| anims/IdleMixamoBreathing.vrma | idle Mixamo BreathingIdle (#40, C16, planted r280) |
+| anims/IdleMixamoHappy.vrma | idle Mixamo HappyIdle (#41, C18, planted r280) |
+| anims/IdleMixamoStanding.vrma | idle Mixamo StandingIdle (#50, C15, planted r280) |
+| anims/IdleMixamoIdle.vrma | idle Mixamo Idle (#126, C14, planted r280) |
 
 Additional dormant clips ship on disk for future triggers (see repo `anims/` directory).
 
