@@ -159,6 +159,26 @@ describe('listMusicPickOptions + offer line', () => {
     expect(musicAskListenOnly('music')).toBe(true);
     expect(musicAskListenOnly('dance')).toBe(false);
     expect(musicAskListenOnly('song')).toBe(false);
+    expect(musicAskListenOnly('song', { listenOnly: true })).toBe(true);
+  });
+
+  it('listen-song asks resolve to vocal bed without sing motion', () => {
+    expect(resolveMusicAsk('listen to a song')).toMatchObject({
+      mode: 'random',
+      kind: 'song',
+      matched: true,
+      listenOnly: true,
+    });
+    expect(resolveMusicAsk('聽首歌')).toMatchObject({
+      kind: 'song',
+      listenOnly: true,
+      matched: true,
+    });
+    expect(resolveMusicAsk('唱首歌俾我聽')).toMatchObject({
+      kind: 'song',
+      matched: true,
+    });
+    expect(resolveMusicAsk('唱首歌俾我聽').listenOnly).toBeFalsy();
   });
 
   it('music pick streams are listen-only when kind is music', () => {

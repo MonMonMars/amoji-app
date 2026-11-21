@@ -20,6 +20,9 @@ export type DemoPhaseId =
   | 'tip'
   | 'story'
   | 'music'
+  | 'listenMusic'
+  | 'listenSong'
+  | 'singSong'
   | 'dance'
   | 'sing'
   | 'funFact'
@@ -353,6 +356,96 @@ export const DEMO_PHASE_BUTTONS: readonly DemoPhaseButton[] = [
         'ジャズをかけて',
         'ローファイ音楽をかけて',
         'ポップスをかけて',
+      ],
+    },
+  },
+  {
+    id: 'listenMusic',
+    label: { en: 'Listen', yue: '聽音樂', zh: '听音乐', ja: '聴く' },
+    prompts: {
+      en: [
+        'listen to some music',
+        'play some music',
+        'put on some lofi music',
+        'play some jazz',
+      ],
+      yue: [
+        '播音樂俾我聽',
+        '放啲純音樂',
+        '播啲 lo-fi 俾我聽',
+        '播啲爵士樂聽吓',
+      ],
+      zh: [
+        '放音乐给我听',
+        '放点纯音乐',
+        '放点 lo-fi 听听',
+        '放点爵士乐听听',
+      ],
+      ja: [
+        '音楽を聴かせて',
+        'インスト音楽をかけて',
+        'ローファイを聴かせて',
+        'ジャズを聴かせて',
+      ],
+    },
+  },
+  {
+    id: 'listenSong',
+    label: { en: 'Hear song', yue: '聽歌', zh: '听歌', ja: '曲聴' },
+    prompts: {
+      en: [
+        'listen to a song',
+        'play a song for me to listen',
+        'put on a pop song to hear',
+        'hear a ballad',
+      ],
+      yue: [
+        '聽首歌',
+        '播首歌俾我聽',
+        '放首流行曲聽吓',
+        '聽首慢歌',
+      ],
+      zh: [
+        '听首歌',
+        '放首歌给我听',
+        '放点流行歌听听',
+        '听首慢歌',
+      ],
+      ja: [
+        '曲を聴かせて',
+        '歌を聴かせて',
+        'ポップスを聴かせて',
+        'バラードを聴かせて',
+      ],
+    },
+  },
+  {
+    id: 'singSong',
+    label: { en: 'Sing', yue: '唱歌', zh: '唱歌', ja: '歌う' },
+    prompts: {
+      en: [
+        'sing a song for me',
+        'sing a ballad',
+        'sing something upbeat',
+        'sing a pop song',
+      ],
+      yue: [
+        '唱首歌俾我聽',
+        '唱首慢歌俾我聽',
+        '唱首輕快啲嘅歌',
+        '唱首流行曲俾我聽',
+      ],
+      zh: [
+        '唱首歌给我听',
+        '唱首慢歌给我听',
+        '唱首轻快点的歌',
+        '唱首流行歌给我听',
+      ],
+      ja: [
+        '歌を歌って',
+        'バラードを歌って',
+        '明るい曲を歌って',
+        'ポップスを歌って',
       ],
     },
   },

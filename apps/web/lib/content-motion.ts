@@ -171,7 +171,7 @@ export function resolveContentMotion(input: ContentMotionInput): ContentMotionPl
   }
 
   const ask = resolveMusicAsk(user);
-  const listenOnlyMusic = ask.matched && musicAskListenOnly(ask.kind);
+  const listenOnlyMusic = ask.matched && musicAskListenOnly(ask.kind, ask);
   const move = listenOnlyMusic
     ? detectContentMove(user, '')
     : detectContentMove(user, assistant);

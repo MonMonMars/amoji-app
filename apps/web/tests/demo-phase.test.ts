@@ -19,6 +19,7 @@ import { wantsLongCompanionReply } from '../lib/topic-suggestions';
 import { detectMusicStyle } from '../lib/music-catalog';
 import { detectWeatherFocus, planTools } from '../lib/live-tools';
 import { isTopicalContentTurn } from '../lib/skill-offer-guard';
+import { musicAskListenOnly, resolveMusicAsk } from '../lib/music-ask';
 
 const PANEL = fs.readFileSync(
   path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../components/ChatPanel.tsx'),
@@ -40,6 +41,9 @@ describe('demo-phase buttons', () => {
         'tip',
         'story',
         'music',
+        'listenMusic',
+        'listenSong',
+        'singSong',
         'dance',
         'sing',
         'kungfu',
@@ -176,6 +180,36 @@ describe('demo-phase buttons', () => {
     for (const lang of ['en', 'yue', 'zh', 'ja'] as const) {
       expect(re.test(demoPhasePrompt('music', lang))).toBe(true);
     }
+  });
+
+  it('listen / sing tutorial chips hit distinct music paths', () => {
+    for (const lang of ['en', 'yue', 'zh', 'ja'] as const) {
+      const lm = resolveMusicAsk(demoPhasePrompt('listenMusic', lang));
+      expect(lm.matched).toBe(true);
+      expect(lm.kind).toBe('music');
+      expect(musicAskListenOnly(lm.kind, lm)).toBe(true);
+
+      const ls = resolveMusicAsk(demoPhasePrompt('listenSong', lang));
+      expect(ls.matched).toBe(true);
+      expect(ls.kind).toBe('song');
+      expect(musicAskListenOnly(ls.kind, ls)).toBe(true);
+
+      const ss = resolveMusicAsk(demoPhasePrompt('singSong', lang));
+      expect(ss.matched).toBe(true);
+      expect(ss.kind).toBe('song');
+      expect(musicAskListenOnly(ss.kind, ss)).toBe(false);
+      expect(detectMove(demoPhasePrompt('singSong', lang))).toBe('sing');
+    }
+    expect(demoPhaseLabel('listenMusic', 'yue')).toBe('聽音樂');
+    expect(demoPhaseLabel('listenSong', 'yue')).toBe('聽歌');
+    expect(demoPhaseLabel('singSong', 'yue')).toBe('唱歌');
+  });
+
+  it('ChatPanel fast-paths listenMusic / listenSong / singSong without LLM placeholder', () => {
+    expect(PANEL).toContain("id === 'listenMusic'");
+    expect(PANEL).toContain("id === 'listenSong'");
+    expect(PANEL).toContain("id === 'singSong'");
+    expect(PANEL).toContain('musicAskListenOnly(ask.kind, ask)');
   });
 
   it('helpers resolve language fallbacks', () => {

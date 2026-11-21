@@ -61,6 +61,9 @@ describe('REPLY_MODE_CHART mapping table', () => {
     expect(DEMO_PHASE_TO_REPLY_MODE.sing).toBe('music');
     expect(DEMO_PHASE_TO_REPLY_MODE.dance).toBe('music');
     expect(DEMO_PHASE_TO_REPLY_MODE.music).toBe('music');
+    expect(DEMO_PHASE_TO_REPLY_MODE.listenMusic).toBe('music');
+    expect(DEMO_PHASE_TO_REPLY_MODE.listenSong).toBe('music');
+    expect(DEMO_PHASE_TO_REPLY_MODE.singSong).toBe('music');
     expect(DEMO_PHASE_TO_REPLY_MODE.weather).toBe('weather');
     expect(DEMO_PHASE_TO_REPLY_MODE.news).toBe('news');
   });

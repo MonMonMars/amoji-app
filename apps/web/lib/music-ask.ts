@@ -27,6 +27,8 @@ export interface MusicAskIntent {
   /** Named genre when the user asked for one (jazz / lofi / chill…). */
   style?: MusicStyleId;
   matched: boolean;
+  /** Vocal clip under calm idle — no sing VRMA (demo「聽歌」path). */
+  listenOnly?: boolean;
 }
 
 export interface MusicPickOption {
@@ -50,6 +52,10 @@ const SELECT_RE =
 
 const SING_RE =
   /(唱歌|唱首歌|唱一首|唱k|一齊唱|一齐唱|唱吓|唱啊|唱啦|唱個|唱个|\bsing(?:ing)?\b|\bkaraoke\b|カラオケ|歌を歌|うたって)/i;
+
+/** Song bed, calm listen — not a sing performance (checked before SING_RE). */
+const LISTEN_SONG_RE =
+  /\b(?:listen\s+to\s+(?:a\s+)?song|hear\s+(?:a\s+)?song)\b|聽歌|听歌|聽首歌|听首歌|聽首曲|听首曲|播首歌俾我聽|放首歌俾我聽|歌を聴|曲を聴/i;
 
 const DANCE_RE =
   /(跳舞|舞蹈|跳個舞|跳支舞|舞一段|\bdanc(?:e|ing)\b|ダンス|踊って|踊ろう)/i;
@@ -85,6 +91,7 @@ export function resolveMusicAsk(text: string): MusicAskIntent {
 
   const style = detectMusicStyle(t);
   const wantsSelect = SELECT_RE.test(t);
+  const wantsListenSong = LISTEN_SONG_RE.test(t) && !SING_RE.test(t);
   const wantsSing = SING_RE.test(t);
   const wantsDance = DANCE_RE.test(t);
   const wantsMusic = MUSIC_RE.test(t);
@@ -100,6 +107,10 @@ export function resolveMusicAsk(text: string): MusicAskIntent {
   // (choose a song, 選一首, playlist, what tracks…).
   if (wantsSelect) {
     return { mode: 'select', kind: askKind(t), style, matched: true };
+  }
+
+  if (wantsListenSong) {
+    return { mode: 'random', kind: 'song', style, matched: true, listenOnly: true };
   }
 
   if (wantsSing || wantsDance || wantsMusic || genrePlay || yueGenreMusic) {
@@ -276,7 +287,8 @@ export function musicAskShowKind(kind: MusicAskKind): PerformanceKind {
   return kind === 'song' ? 'song' : 'dance';
 }
 
-/** Generic music asks play BGM under calm idle — not dance VRMA. */
-export function musicAskListenOnly(kind: MusicAskKind): boolean {
+/** Generic music asks +「聽歌」song beds play under calm idle — not dance/sing VRMA. */
+export function musicAskListenOnly(kind: MusicAskKind, intent?: Pick<MusicAskIntent, 'listenOnly'>): boolean {
+  if (intent?.listenOnly) return true;
   return kind === 'music';
 }
