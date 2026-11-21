@@ -465,7 +465,8 @@
 // r2026-11-19.274: idle v2 — no calm-stand A→B rotation; skip bone blend on same-clip refresh (#545).
 // r2026-11-19.275: verify human ROM clamps wired on idle/poke blend path (#548 / #351).
 // r2026-11-19.276: demo 聽音樂 / 聽歌 / 唱歌 phase chips with fast beginShow paths (#534).
-export const APP_REVISION = 'r2026-11-19.276';
+// r2026-11-19.277: demo 睇星星 stargaze chip with Observing the Star BGM (#535).
+export const APP_REVISION = 'r2026-11-19.277';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

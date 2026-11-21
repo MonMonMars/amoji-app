@@ -56,6 +56,7 @@ describe('demo-phase buttons', () => {
         'duet',
         'funScience',
         'tag',
+        'watchingStars',
       ]),
     );
   });
