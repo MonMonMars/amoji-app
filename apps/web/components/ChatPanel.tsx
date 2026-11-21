@@ -1530,7 +1530,7 @@ export default function ChatPanel({
           styleForBed,
           undefined,
           undefined,
-          musicAskListenOnly(ask.kind),
+          musicAskListenOnly(ask.kind, ask),
         );
         done();
         return;
@@ -2316,8 +2316,44 @@ export default function ChatPanel({
               pendingDemoPhaseRef.current = id;
               // Advance library rotation so repeat music/dance/sing taps
               // keep changing beds even when a facet wraps around.
-              if (id === 'music' || id === 'dance' || id === 'sing') {
+              if (
+                id === 'music' ||
+                id === 'listenMusic' ||
+                id === 'listenSong' ||
+                id === 'singSong' ||
+                id === 'dance' ||
+                id === 'sing'
+              ) {
                 laughCountRef.current += 1;
+              }
+              if (id === 'listenMusic' || id === 'listenSong' || id === 'singSong') {
+                lastActivityRef.current = Date.now();
+                lastUserRef.current = Date.now();
+                userHasSpokenRef.current = true;
+                reengageStageRef.current = 0;
+                idleAutoAfterUserRef.current = true;
+                setHistory((h) => [...h, { role: 'user', content: prompt }]);
+                feedUtterance(prompt);
+                stopSpeaking();
+                const ask = resolveMusicAsk(prompt);
+                if (ask.mode === 'random' && (ask.kind === 'music' || ask.kind === 'song' || ask.kind === 'dance')) {
+                  setMusicPicks(null);
+                  perfCountRef.current += 1;
+                  const styleForBed = ask.style ?? musicAskStyleWithContext(prompt);
+                  const showKind = musicAskShowKind(ask.kind);
+                  beginShow(
+                    showKind,
+                    18_000,
+                    undefined,
+                    randomMusicSeed(),
+                    ask.kind === 'music',
+                    styleForBed,
+                    undefined,
+                    undefined,
+                    musicAskListenOnly(ask.kind, ask),
+                  );
+                  return;
+                }
               }
               if (id === 'story') {
                 // Classic public-domain bank — vary length; skip thin LLM stub.

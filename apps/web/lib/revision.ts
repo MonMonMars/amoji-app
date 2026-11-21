@@ -464,7 +464,8 @@
 // r2026-11-19.273: honor owner 採用/刪除 at runtime — idle v2, poke CMA, perf pools (#543).
 // r2026-11-19.274: idle v2 — no calm-stand A→B rotation; skip bone blend on same-clip refresh (#545).
 // r2026-11-19.275: verify human ROM clamps wired on idle/poke blend path (#548 / #351).
-export const APP_REVISION = 'r2026-11-19.275';
+// r2026-11-19.276: demo 聽音樂 / 聽歌 / 唱歌 phase chips with fast beginShow paths (#534).
+export const APP_REVISION = 'r2026-11-19.276';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
