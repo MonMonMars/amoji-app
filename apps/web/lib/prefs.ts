@@ -192,6 +192,8 @@ export type StrKey =
   | 'ttsLabTitle' | 'ttsLabHint' | 'ttsLabPlay' | 'ttsLabPlayed'
   | 'ttsLabStatusWorks' | 'ttsLabStatusBrowser' | 'ttsLabStatusDead'
   | 'ttsLabStatusGated' | 'ttsLabStatusDemo' | 'ttsLabStatusMissing'
+  | 'ttsPicksTitle' | 'ttsPicksHint' | 'ttsPicksKeep' | 'ttsPicksDelete'
+  | 'ttsPicksPreview' | 'ttsPicksEdge' | 'ttsPicksLinkOnly'
   | 'voiceRegionCantonese' | 'voiceRegionMandarin' | 'voiceRegionTaiwan' | 'voiceRegionJapanese'
   | 'voiceRegionUs' | 'voiceRegionUk' | 'voiceRegionAu' | 'voiceRegionIn' | 'voiceRegionNg'
   | 'voiceRegionIe' | 'voiceRegionZa' | 'voiceRegionNz' | 'voiceRegionHkEn' | 'voiceRegionCa'
@@ -549,6 +551,18 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     zh: '点一个声音试听并记住。同一说话人有低／中／高音按钮，选适合角色的音色。',
     ja: '声をタップして試聴し保存します。同じ話者に低／中／高のピッチボタンがあり、キャラに合う色を選べます。',
   },
+  ttsPicksTitle: { en: 'TTS keep / delete (TTS-001–218)', yue: 'TTS 保留／刪除（TTS-001–218）', zh: 'TTS 保留／删除（TTS-001–218）', ja: 'TTS 残す／削除（TTS-001–218）' },
+  ttsPicksHint: {
+    en: 'These TTS-### numbers are for keep or delete — not reaction SFX #N. Edge rows can try a preview (the Microsoft endpoint often refuses this app). Other rows are link-only and need their own engine; they are listed, not bundled.',
+    yue: '呢啲 TTS-### 編號係用嚟講保留定刪除，唔係反應音效 #N。Edge 可以試聽（Microsoft 端點好多時拒呢個 app）。其他係 link-only，要自己嘅引擎，而家只係列出，未打包。',
+    zh: '这些 TTS-### 编号用于保留或删除，不是反应音效 #N。Edge 可以试听（Microsoft 端点常常拒绝本应用）。其余为 link-only，需要各自引擎，目前只列出、未打包。',
+    ja: 'この TTS-### 番号は残す／削除用で、リアクション効果音の #N ではありません。Edge は試聴できます（Microsoft の端点がこのアプリを拒否することが多いです）。他はリンクのみで、エンジンは同梱していません。',
+  },
+  ttsPicksKeep: { en: 'Keep', yue: '保留', zh: '保留', ja: '残す' },
+  ttsPicksDelete: { en: 'Delete', yue: '刪除', zh: '删除', ja: '削除' },
+  ttsPicksPreview: { en: 'Preview', yue: '試聽', zh: '试听', ja: '試聴' },
+  ttsPicksEdge: { en: 'Edge · preview may fail', yue: 'Edge · 試聽可能失敗', zh: 'Edge · 试听可能失败', ja: 'Edge · 試聴が失敗する場合あり' },
+  ttsPicksLinkOnly: { en: 'link-only · needs engine', yue: 'link-only · 要引擎', zh: 'link-only · 需要引擎', ja: 'リンクのみ · エンジンが必要' },
   memoryTitle: { en: 'Memory', yue: '記憶', zh: '记忆', ja: '記憶' },
   forgetBtn: { en: 'Forget everything', yue: '全部忘記', zh: '全部忘记', ja: 'すべて忘れる' },
   tutorBtn: { en: 'How to use', yue: '使用教學', zh: '使用教学', ja: '使い方' },

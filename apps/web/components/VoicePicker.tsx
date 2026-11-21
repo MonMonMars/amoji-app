@@ -22,6 +22,7 @@ import type { VoiceLocale } from '../lib/voice-catalog';
 import OsVoiceRow from './OsVoiceRow';
 import OsVoiceDiagnostics from './OsVoiceDiagnostics';
 import TtsLabPanel from './TtsLabPanel';
+import TtsAppPicksPanel from './TtsAppPicksPanel';
 
 const LOCALES: VoiceLocale[] = ['yue', 'zh', 'ja', 'en'];
 /** Native names, so the language itself is readable in any UI language. */
@@ -187,6 +188,7 @@ export default function VoicePicker({
           </div>
         );
       })}
+      <TtsAppPicksPanel lang={lang} accent={accent} />
       <p className="text-[10px] leading-relaxed text-white/35" data-testid="voice-engines-note">
         {t(lang, 'voiceEnginesUnavailable')}
       </p>
