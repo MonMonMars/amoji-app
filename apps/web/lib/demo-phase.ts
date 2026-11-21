@@ -36,7 +36,8 @@ export type DemoPhaseId =
   | 'violin'
   | 'duet'
   | 'funScience'
-  | 'tag';
+  | 'tag'
+  | 'watchingStars';
 
 export type DemoPhaseButton = {
   id: DemoPhaseId;
@@ -800,6 +801,32 @@ export const DEMO_PHASE_BUTTONS: readonly DemoPhaseButton[] = [
         '水の面白い科学を教えて',
         '空の面白い科学を教えて',
         '動物の面白い科学を教えて',
+      ],
+    },
+  },
+  {
+    id: 'watchingStars',
+    label: { en: 'Stars', yue: '睇星星', zh: '看星星', ja: '星見' },
+    prompts: {
+      en: [
+        'watch the stars with me',
+        "let's look up at the stars together",
+        'stay with me under the night sky',
+      ],
+      yue: [
+        '一齊睇星星',
+        '陪我一齊仰望星空',
+        '同我留低數吓星星',
+      ],
+      zh: [
+        '一起看星星',
+        '陪我一齐仰望星空',
+        '陪我留下来数星星',
+      ],
+      ja: [
+        '一緒に星を見よう',
+        '夜空を一緒に見上げよう',
+        '星を数えながら一緒にいよう',
       ],
     },
   },

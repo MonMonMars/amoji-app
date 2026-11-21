@@ -298,6 +298,11 @@ import type { ChatStatus } from '../lib/status';
 import EmotionOrb from './EmotionOrb';
 import DemoPhaseRail from './DemoPhaseRail';
 import { newDemoPhaseOrderSeed } from '../lib/demo-phase';
+import {
+  WATCHING_STARS_BED_CLIP_ID,
+  WATCHING_STARS_DEMO_ID,
+  watchingStarsIntroLine,
+} from '../lib/watching-stars';
 
 interface Msg {
   role: 'user' | 'assistant';
@@ -332,6 +337,8 @@ export interface ChatPanelProps {
   onMemCount?: (n: number) => number | void;
   /** Content-driven idle clip for CompanionCanvas (replaces manual rail pins). */
   onAutoIdle?: (clipId: string | null) => void;
+  /** Night overlay while the stargazing demo chip is active — cleared on new send. */
+  onWatchingStarsActive?: (active: boolean) => void;
 }
 
 const IDLE_AFTER_MS = 40_000;
@@ -360,6 +367,7 @@ export default function ChatPanel({
   onStatus,
   onMemCount,
   onAutoIdle,
+  onWatchingStarsActive,
 }: ChatPanelProps) {
   /** Reshuffle demo-phase chips on each chat-room entry (ChatPanel mount). */
   const demoPhaseOrderSeed = useMemo(() => newDemoPhaseOrderSeed(), []);
@@ -818,6 +826,7 @@ export default function ChatPanel({
     afterStart?: () => void,
     pick?: { clipId?: string; streamId?: string; genre?: string },
     listenOnly = false,
+    introOverride?: string,
   ) => {
     const query = {
       kind,
@@ -838,7 +847,9 @@ export default function ChatPanel({
     // Only name a genre the user asked for (or a pick chip). Do not append
     // the clip's internal style tag — that made "Soave · soft ballad".
     const genre = pick?.genre || styleHint;
-    const intro = performanceIntroLine(kind === 'song' ? 'song' : 'music', title, lang, genre);
+    const intro =
+      introOverride?.trim()
+      || performanceIntroLine(kind === 'song' ? 'song' : 'music', title, lang, genre);
     const hold = Math.max(clip.durationMs + 600, ms);
     // Listen-only BGM: intro + bed, calm idle — no VRMA until user asks to dance.
     beginPerformanceSession(kind, clip, hold, listenOnly);
@@ -1297,6 +1308,7 @@ export default function ChatPanel({
     nearBottomRef.current = true;
     stopSpeakingForInterrupt();
     showTrack(null);
+    onWatchingStarsActive?.(false);
     // r.42 — together-modes intercept the turn BEFORE any LLM work: quitting
     // a running game/duet, advancing a running game, taking the next duet
     // line, starting a new game, or starting a duet. r.45 adds the trainer
@@ -2373,6 +2385,34 @@ export default function ChatPanel({
                   { ...STORY_SPEECH_HINTS },
                   undefined,
                   { rateBias: STORY_SPEECH_RATE_BIAS },
+                );
+                return;
+              }
+              if (id === WATCHING_STARS_DEMO_ID) {
+                lastActivityRef.current = Date.now();
+                lastUserRef.current = Date.now();
+                userHasSpokenRef.current = true;
+                reengageStageRef.current = 0;
+                idleAutoAfterUserRef.current = false;
+                setHistory((h) => [...h, { role: 'user', content: prompt }]);
+                feedUtterance(prompt);
+                stopSpeaking();
+                pendingOfferRef.current = null;
+                setMusicPicks(null);
+                laughCountRef.current += 1;
+                onWatchingStarsActive?.(true);
+                applyContentMood({ contentment: 0.55, joy: 0.28 });
+                beginShow(
+                  'dance',
+                  90_000,
+                  undefined,
+                  laughCountRef.current,
+                  true,
+                  'chill',
+                  undefined,
+                  { clipId: WATCHING_STARS_BED_CLIP_ID, genre: 'chill' },
+                  true,
+                  watchingStarsIntroLine(lang),
                 );
                 return;
               }

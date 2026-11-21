@@ -11,6 +11,7 @@ import MiniGamePicker, { MiniGameMenuButton } from '../../components/MiniGamePic
 import DevPanel from '../../components/DevPanel';
 import FallbackNotice from '../../components/FallbackNotice';
 import SceneBackdrop from '../../components/SceneBackdrop';
+import WatchingStarsBackdrop from '../../components/WatchingStarsBackdrop';
 import SettingsSheet from '../../components/SettingsSheet';
 import MuteButton from '../../components/MuteButton';
 import StatusPlate from '../../components/StatusPlate';
@@ -63,6 +64,7 @@ function ChatRoom() {
   const [gameChromeHidden, setGameChromeHidden] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [idleClip, setIdleClip] = useState<string | null>(null);
+  const [watchingStars, setWatchingStars] = useState(false);
   // Hold chrome/canvas until amoji.prefs.v1 sync — same gate as /select prefsReady.
   const bootReady = prefsReady;
 
@@ -143,6 +145,7 @@ function ChatRoom() {
         className={`pointer-events-none absolute inset-0 z-30 ${leaving ? 'fx-route-veil-out' : 'fx-route-veil-in'}`}
       />
       {bootReady && <SceneBackdrop background={background} />}
+      {bootReady && <WatchingStarsBackdrop active={watchingStars} />}
       {bootReady && (
         <CompanionCanvas
           accent={canvasCharacter.accent}
@@ -269,6 +272,7 @@ function ChatRoom() {
           onStatus={setStatus}
           onMemCount={setMemCount}
           onAutoIdle={(clip) => setIdleClip(clip)}
+          onWatchingStarsActive={setWatchingStars}
         />}
       </div>
       {pickerOpen && (

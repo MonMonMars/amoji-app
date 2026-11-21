@@ -228,6 +228,7 @@ export const DEMO_PHASE_TO_REPLY_MODE: Readonly<Record<string, ReplyModeId>> = {
   violin: 'music',
   duet: 'music',
   tag: 'casual',
+  watchingStars: 'music',
 };
 
 function modeFromWorld(world?: string): ReplyModeId | null {
