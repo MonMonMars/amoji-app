@@ -55,13 +55,11 @@ function applyShipSet(map: DecisionMap, ship: OwnerPickerSelectionShip): void {
     setDecision(map, `rail-${n}`, 'use');
     setDecision(map, `ID-R${String(n).padStart(2, '0')}`, 'use');
   }
+  // Clip 採用 does not turn on that clip's curated rail. Rails come from
+  // idleRailNums / ID-R* so a Mixamo 採用 (C16/C18) cannot jump ahead of
+  // ID-R05 or steal the sing-rail body clip.
   for (const clipId of ship.idleClipIds ?? []) {
     setDecision(map, clipId, 'use');
-    const row = CHAT_IDLE_CURATED.find((e) => e.clipId === clipId);
-    if (row) {
-      setDecision(map, `rail-${row.railNum}`, 'use');
-      setDecision(map, `ID-R${String(row.railNum).padStart(2, '0')}`, 'use');
-    }
   }
 }
 
@@ -94,7 +92,7 @@ function idleKeys(clipId: string): string[] {
 export const ownerIdleClipDeleted = (id: string) => idleKeys(id).some(isOwnerPickerDeleted);
 export const ownerIdleClipUse = (id: string) => idleKeys(id).some(isOwnerPickerUse);
 export const ownerIdleRailDeleted = (n: number) => ownerIdleClipDeleted(curatedRailByNum(n)?.clipId ?? `rail-${n}`);
-export const ownerIdleRailUse = (n: number) => ownerIdleClipUse(curatedRailByNum(n)?.clipId ?? `rail-${n}`);
+export const ownerIdleRailUse = (n: number) => isOwnerPickerUse(`rail-${n}`) || isOwnerPickerUse(`ID-R${String(n).padStart(2, '0')}`);
 export const ownerMvDeleted = (c: string) => isOwnerPickerDeleted(c.trim().toUpperCase());
 export const ownerMvUse = (c: string) => isOwnerPickerUse(c.trim().toUpperCase());
 export const ownerSongClipDeleted = (id: string) => {

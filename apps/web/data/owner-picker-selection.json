@@ -1,8 +1,8 @@
 {
   "version": "owner-picker-selection-v1",
-  "use": ["ID-R04", "ID-R05", "ID-R10"],
+  "use": ["ID-R04", "ID-R05", "ID-R10", "IdleMixamoIdle", "IdleMixamoStanding", "IdleMixamoBreathing", "IdleMixamoHappy"],
   "delete": [],
   "keep": [],
   "idleRailNums": [4, 5, 10],
-  "idleClipIds": ["IdleInnersceneSam", "IdleRpmFStanding001"]
+  "idleClipIds": ["IdleInnersceneSam", "IdleRpmFStanding001", "IdleMixamoIdle", "IdleMixamoStanding", "IdleMixamoBreathing", "IdleMixamoHappy"]
 }

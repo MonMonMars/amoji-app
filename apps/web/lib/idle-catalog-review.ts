@@ -117,7 +117,7 @@ const PIXEL_NOTES_1_93: Readonly<Partial<Record<number, string>>> = {
   47: 'DELETE — lean wall float/blend-bad; retired.',
   48: 'DELETE — pointing blend-bad; retired.',
   49: 'Sad idle — library.',
-  50: 'Mixamo standing FLOAT — library smoke only.',
+  50: 'Mixamo standing — planted C15 (Mon Use).',
   51: 'Agreeing FLOAT — library.',
   52: 'Excited FLOAT — soften arms when used.',
   53: 'Arm stretch — curated stretch.',
@@ -161,6 +161,7 @@ const PIXEL_NOTES_1_93: Readonly<Partial<Record<number, string>>> = {
   91: 'Innerscene Harper — library breathe alt.',
   92: 'Innerscene Maya — library breathe alt.',
   93: 'RPM M standing — curated breathe.',
+  126: 'Mixamo Idle — planted C14 (Mon Use).',
 };
 
 function verdictForLibNum(libNum: number, entry: (typeof IDLE_LIBRARY)[number]): PixelIdleVerdict {

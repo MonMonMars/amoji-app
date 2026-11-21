@@ -474,7 +474,7 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
   {
     num: 40,
     clipId: 'IdleMixamoBreathing',
-    cId: null,
+    cId: 'C16',
     name: 'IdleMixamoBreathing',
     path: 'animations/idle/mixamo/BreathingIdle.fbx',
     planted: true,
@@ -485,7 +485,7 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
   {
     num: 41,
     clipId: 'IdleMixamoHappy',
-    cId: null,
+    cId: 'C18',
     name: 'IdleMixamoHappy',
     path: 'animations/idle/mixamo/HappyIdle.fbx',
     planted: true,
@@ -589,8 +589,8 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
   {
     num: 50,
     clipId: 'IdleMixamoStanding',
-    cId: null,
-    name: 'MixamoStanding (FLOAT)',
+    cId: 'C15',
+    name: 'IdleMixamoStanding',
     path: 'animations/idle/mixamo/StandingIdle.fbx',
     planted: true,
     playable: true,
@@ -1443,8 +1443,18 @@ export const IDLE_LIBRARY: readonly IdleLibraryEntry[] = [
     vrmaUrl: VRMA('lib_C127'),
     defaultEnabled: false,
   },
-
-
+  // Planted Mixamo C14 Idle (Mon Use 2026-11-20). C15/C16/C18 are #50/#40/#41.
+  {
+    num: 126,
+    clipId: 'IdleMixamoIdle',
+    cId: 'C14',
+    name: 'IdleMixamoIdle',
+    path: 'animations/idle/mixamo/Idle.fbx',
+    planted: true,
+    playable: true,
+    vrmaUrl: VRMA('IdleMixamoIdle'),
+    defaultEnabled: false,
+  },
 ];
 
 const BY_NUM = new Map(IDLE_LIBRARY.map((e) => [e.num, e]));

@@ -468,7 +468,8 @@
 // r2026-11-19.277: demo 睇星星 stargaze chip with Observing the Star BGM (#535).
 // r2026-11-19.278: Settings TTS-001-218 keep/delete catalog.
 // r2026-11-19.279: demo 時間 chip — local + world cities via Intl, sayLocal only (#530).
-export const APP_REVISION = 'r2026-11-19.279';
+// r2026-11-19.280: plant Mixamo C14/C15/C16/C18 idle VRMAs (toe-ground, owner 採用).
+export const APP_REVISION = 'r2026-11-19.280';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

@@ -12,6 +12,7 @@ import {
   readMigratingPrefJson,
 } from './idle-owner-migrate';
 import { applyOwnerIdleRailFilter, ownerIdleClipDeleted } from './owner-picker-decisions';
+import { committedOwnerPickerSelection } from './owner-picker-ship-set';
 import { isRetiredIdleNum } from './idle-retired';
 import {
   CHAT_IDLE_CURATED,
@@ -21,6 +22,7 @@ import {
 } from './idle-curated-rail';
 import {
   idleByNum,
+  idleByClipId,
   playableIdles,
   type IdleLibraryEntry,
 } from './idle-library';
@@ -155,6 +157,14 @@ export function listEnabledIdleClipIds(): string[] {
     if (!lib?.playable || lib.retired || isRetiredIdleNum(row.legacyLibNum)) continue;
     seen.add(row.clipId);
     ids.push(row.clipId);
+  }
+  // Owner 採用 clips that are not on the curated rail (e.g. planted Mixamo C14/C15).
+  for (const id of committedOwnerPickerSelection().idleClipIds ?? []) {
+    if (seen.has(id) || ownerIdleClipDeleted(id)) continue;
+    const lib = idleByClipId(id);
+    if (!lib?.playable || lib.retired || isRetiredIdleNum(lib.num) || !isHonorableIdleClip(id)) continue;
+    seen.add(id);
+    ids.push(id);
   }
   if (!ids.length) {
     return defaultCuratedRailNums()

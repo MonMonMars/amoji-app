@@ -44,13 +44,16 @@ Defaults: **only #1 IdleBreathCalm + #2 StandardIdle** (`defaultEnabled`).
 | 37 | IdleKaykitB | IdleKaykitB | — | yes | KayKit Rig_Medium Idle_B retarget (#54) |
 | 38 | IdleKaykitA | IdleKaykitA | — | yes | KayKit Rig_Medium Idle_A retarget (#54) |
 | 39 | IdleQuaterniusHuman | IdleQuaterniusHuman | — | yes | Quaternius AnimatedHuman Idle (#54) |
-| 40 | IdleMixamoBreathing | IdleMixamoBreathing | — | yes | Mixamo BreathingIdle (#54) |
-| 41 | IdleMixamoHappy | IdleMixamoHappy | — | yes | Mixamo HappyIdle (#54) |
+| 40 | IdleMixamoBreathing | IdleMixamoBreathing | C16 | yes | Mixamo BreathingIdle, planted r280 |
+| 41 | IdleMixamoHappy | IdleMixamoHappy | C18 | yes | Mixamo HappyIdle, planted r280 |
+| 50 | IdleMixamoStanding | IdleMixamoStanding | C15 | yes | Mixamo StandingIdle, planted r280 |
+| 126 | IdleMixamoIdle | IdleMixamoIdle | C14 | yes | Mixamo Idle, planted r280 |
 
 ## Skipped / deferred
 
 - PSX / Squad (#27–31): gif-only, no FBX→VRMA.
-- Float-feet gallery rows C10, C14–C24, C26–C35: not in IDLE_LIBRARY planted list.
+- Float-feet gallery rows C10, C17, C19–C24, C26–C35: not in IDLE_LIBRARY planted list.
+- C14/C15/C16/C18 planted and wired r280 (Idle / StandingIdle / BreathingIdle / HappyIdle).
 
 | 55 | lib_C05 | C05 | KayKitWave | yes | off |
 | 56 | lib_C06 | C06 | KayKitCheer | yes | off |
@@ -123,7 +126,7 @@ Research pack claimed #61–80; PR #64 already shipped rails #61–89 @ c77df56.
 
 Unused playable VRMAs already under `models/anims/` wired to picker **#99-112** (Batch4 left VERIFY research #99-103 unwired; free nums start at #99 after main #98).
 Defaults stay **#1+#2**. No voice/LLM/stories.
-**Skipped:** float-feet C10/C14-24/C26-35; gif-only; already-wired C116/C117/C128; #13 LookAround; BreathCalm tilt; Jump/Spin/Bounce (float/locomotion); kungfu C120-C147 FBX without VRMA (no convert this PR); interim-remote dance C03/C61/C62/C110 (no local VRMA); emotion-only named VRMAs (Angry/Cry/...).
+**Skipped:** float-feet C10/C17/C19-24/C26-35 (C14/C15/C16/C18 planted r280); gif-only; already-wired C116/C117/C128; #13 LookAround; BreathCalm tilt; Jump/Spin/Bounce (float/locomotion); kungfu C120-C147 FBX without VRMA (no convert this PR); interim-remote dance C03/C61/C62/C110 (no local VRMA); emotion-only named VRMAs (Angry/Cry/...).
 
 | 113 | RokokoMartialArtsKata | lib_C120 | C120 | yes | PR5 kungfu convert (mixamo synth hips) |
 | 114 | RokokoThaiChiTake | lib_C121 | C121 | yes | Rokoko hips map |
