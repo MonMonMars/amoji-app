@@ -67,9 +67,9 @@ export function ttsAppPickGender(row: TtsAppPick): 'female' | 'male' {
 type PickMap = Partial<Record<string, TtsAppPickVerdict>>;
 
 function readMap(): PickMap {
-  if (typeof window === 'undefined') return {};
   try {
-    const raw = window.localStorage.getItem(TTS_APP_PICK_STORAGE_KEY);
+    if (typeof localStorage === 'undefined') return {};
+    const raw = localStorage.getItem(TTS_APP_PICK_STORAGE_KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw) as PickMap;
     if (!parsed || typeof parsed !== 'object') return {};
@@ -84,8 +84,12 @@ function readMap(): PickMap {
 }
 
 function writeMap(map: PickMap): void {
-  if (typeof window === 'undefined') return;
-  window.localStorage.setItem(TTS_APP_PICK_STORAGE_KEY, JSON.stringify(map));
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(TTS_APP_PICK_STORAGE_KEY, JSON.stringify(map));
+  } catch {
+    /* private mode */
+  }
 }
 
 export function ttsAppPickVerdict(id: string): TtsAppPickVerdict | null {

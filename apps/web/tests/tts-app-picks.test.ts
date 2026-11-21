@@ -9,9 +9,25 @@ import {
   ttsAppPicksForLocale,
 } from '../lib/tts-app-picks';
 
+/** Minimal localStorage so the store's persistence path is exercised in node. */
+function installStorage(): void {
+  const map = new Map<string, string>();
+  const storage = {
+    getItem: (k: string) => map.get(k) ?? null,
+    setItem: (k: string, v: string) => {
+      map.set(k, v);
+    },
+    removeItem: (k: string) => {
+      map.delete(k);
+    },
+    clear: () => map.clear(),
+  };
+  (globalThis as unknown as { localStorage: typeof storage }).localStorage = storage;
+}
+
 describe('tts app keep/delete picks', () => {
   beforeEach(() => {
-    if (typeof localStorage !== 'undefined') localStorage.clear();
+    installStorage();
   });
 
   it('lists TTS-001 through TTS-218 once each', () => {
