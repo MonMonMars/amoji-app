@@ -156,24 +156,45 @@ describe('listMusicPickOptions + offer line', () => {
     expect(musicSelectOfferLine('yue', opts)).toContain('你揀');
     expect(musicAskShowKind('song')).toBe('song');
     expect(musicAskShowKind('music')).toBe('dance');
-    expect(musicAskListenOnly('music')).toBe(true);
+    // Owner 2026-11-23: every audible bed arms motion by default.
+    expect(musicAskListenOnly('music')).toBe(false);
     expect(musicAskListenOnly('dance')).toBe(false);
     expect(musicAskListenOnly('song')).toBe(false);
+    // The calm listen-only idle survives, but only when asked for explicitly.
+    expect(musicAskListenOnly('music', { listenOnly: true })).toBe(true);
     expect(musicAskListenOnly('song', { listenOnly: true })).toBe(true);
   });
 
-  it('listen-song asks resolve to vocal bed without sing motion', () => {
+  it('explicit "just listen" keeps the no-dance option reachable', () => {
+    for (const line of [
+      'just listen to some music',
+      'play music, no dancing',
+      'just listen to a song, listen only',
+      '唔好跳，淨係聽歌',
+      '只想聽，不要跳舞',
+    ]) {
+      const ask = resolveMusicAsk(line);
+      expect(ask.matched).toBe(true);
+      expect(ask.listenOnly).toBe(true);
+      expect(musicAskListenOnly(ask.kind, ask)).toBe(true);
+    }
+    // A plain dance ask is still a dance ask.
+    expect(resolveMusicAsk('dance for me').listenOnly).toBeFalsy();
+    expect(resolveMusicAsk('跳舞').listenOnly).toBeFalsy();
+    expect(resolveMusicAsk('play some music').listenOnly).toBeFalsy();
+  });
+
+  it('listen-song asks resolve to a performed vocal bed (not calm idle)', () => {
     expect(resolveMusicAsk('listen to a song')).toMatchObject({
       mode: 'random',
       kind: 'song',
       matched: true,
-      listenOnly: true,
     });
     expect(resolveMusicAsk('聽首歌')).toMatchObject({
       kind: 'song',
-      listenOnly: true,
       matched: true,
     });
+    expect(resolveMusicAsk('聽首歌').listenOnly).toBeFalsy();
     expect(resolveMusicAsk('唱首歌俾我聽')).toMatchObject({
       kind: 'song',
       matched: true,
@@ -181,11 +202,11 @@ describe('listMusicPickOptions + offer line', () => {
     expect(resolveMusicAsk('唱首歌俾我聽').listenOnly).toBeFalsy();
   });
 
-  it('music pick streams are listen-only when kind is music', () => {
+  it('music pick streams are not listen-only anymore', () => {
     const opts = listMusicPickOptions({ kind: 'music', seed: 1, count: 3 });
     expect(opts.length).toBeGreaterThan(0);
     for (const o of opts) {
-      expect(o.listenOnly).toBe(true);
+      expect(o.listenOnly).toBeFalsy();
     }
     const danceOpts = listMusicPickOptions({ kind: 'dance', seed: 1, count: 3 });
     for (const o of danceOpts) {

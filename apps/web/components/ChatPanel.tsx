@@ -221,6 +221,7 @@ import { PASSIVE_IDLE_LOOP_TEMPLATE, resolvePassiveBodyIdleClip } from '../lib/i
 import { resolveContentMotion } from '../lib/content-motion';
 import { clipLabel, PERFORMANCE_CLIPS, type PerformanceClip } from '../lib/performance-clips';
 import { resolvePerfMotion } from '../lib/performance-motion';
+import { setKnownTempo } from '../lib/live-beat';
 import { ownerDanceClipPrefs, ownerSingClipPrefs } from '../lib/owner-perf-picks';
 import {
   SHOWCASE_START,
@@ -423,7 +424,7 @@ export default function ChatPanel({
     const motionClip = PERFORMANCE_CLIPS.find((c) => c.id === playingId)
       ?? performanceClipForPlaying(playingId);
     if (motionClip) {
-      setPerfMotionProfile(resolvePerfMotion(
+      const profile = resolvePerfMotion(
         {
           id: motionClip.id,
           kind: motionClip.kind,
@@ -434,7 +435,12 @@ export default function ChatPanel({
           : pending.bodyMove === 'sing'
             ? { ownerSingClips: ownerSingClipPrefs(characterId) }
             : undefined,
-      ));
+      );
+      setPerfMotionProfile(profile);
+      // Known/measured tempo is the floor. A same-origin bed's analyser
+      // replaces it once it locks; CORS-blocked streams keep this clock (a
+      // tempo match without onset phase lock, stated honestly in the report).
+      setKnownTempo(profile.bpm, performance.now());
     }
     triggerMove(pending.bodyMove);
     holdMove(pending.holdMs);

@@ -58,6 +58,21 @@ export const STYLE_BPM: Readonly<Record<string, number>> = {
   'opera ensemble': 80,
   'opera toast': 112,
   'folk choral': 88,
+  // MusicStyleId priors for stream beds whose audio never reaches WebAudio
+  // (CORS / hotlink rules). These are style estimates, never claimed as a
+  // measured tempo or an onset lock.
+  pop: 112,
+  jazz: 90,
+  hiphop: 96,
+  electronic: 124,
+  lofi: 76,
+  dance: 126,
+  cute: 108,
+  rock: 118,
+  ballad: 68,
+  cantopop: 104,
+  jpop: 128,
+  uspop: 112,
 };
 
 export const PERF_MOTION_TAG_LABELS: Record<MotionTag, string> = {

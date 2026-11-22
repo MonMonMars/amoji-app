@@ -22,7 +22,10 @@ import {
 import { DEFAULT_VOLUME, isVolumeStep, volumeLinear, type VolumeKey } from './audio-levels';
 import { isMasterMuted } from './master-mute';
 import { assetUrl } from './asset';
-import { clearSpeechLevel, feedSpeechLevel, type VisemeVowel } from './speech';
+import { clearSpeechLevel, feedSpeechLevel } from './speech';
+import { readVocalFrame } from './vocal-envelope';
+import { attachLiveAnalyser, detachLiveAnalyser, setKnownTempo } from './live-beat';
+import { estimateBpm } from './performance-motion';
 import {
   CLIP_BASE_GAIN, pickPerformanceClip,
   type ClipQuery, type PerformanceClip,
@@ -34,7 +37,7 @@ import {
   type MusicStyleId,
 } from './music-catalog';
 import { pickOwnerSongClipId, pickOwnerStreamTrack } from './owner-perf-picks';
-import { endPerformanceSession } from './performance-session';
+import { endPerformanceSession, performanceSessionPhase } from './performance-session';
 export {
   detectMusicStyle,
   resolveStreamPlaylist,
@@ -155,6 +158,7 @@ export function pianoStep(theme: MusicTheme, step: number): PianoNote {
 let ctx: AudioContext | null = null;
 let baseBgm = 0.12;
 let master: GainNode | null = null;
+let bandAnalyser: AnalyserNode | null = null;
 let schedTimer: ReturnType<typeof setInterval> | null = null;
 let nextStep = 0;
 let nextTime = 0;
@@ -179,6 +183,12 @@ function haltBand(): void {
     clearInterval(schedTimer);
     schedTimer = null;
   }
+  detachLiveAnalyser();
+  if (bandAnalyser) {
+    try { bandAnalyser.disconnect(); } catch { /* ignore */ }
+    bandAnalyser = null;
+  }
+  stopSongMouth();
   if (master) {
     try { master.gain.value = 0; } catch { /* already closed */ }
     try { master.disconnect(); } catch { /* ignore */ }
@@ -205,8 +215,19 @@ export function startMusic(characterId: string): void {
   const gain = ac.createGain();
   gain.gain.value = theme.volume * volumeLinear('bgmVol');
   baseBgm = theme.volume;
-  gain.connect(ac.destination);
   master = gain;
+  // Tap the scheduled band so the same onset/BPM tracker used for clips can
+  // lock the groove. The theme BPM is a correct floor here — we composed it.
+  const an = ac.createAnalyser();
+  an.fftSize = 256;
+  gain.connect(an);
+  an.connect(ac.destination);
+  bandAnalyser = an;
+  attachLiveAnalyser(an);
+  setKnownTempo(theme.bpm);
+  // Band fallback during a sing show: the lyrics are in the clip, so drive the
+  // lips from the band envelope instead of leaving the mouth shut.
+  if (performanceSessionPhase() === 'sing') startSongMouth(an);
   const eighth = 60 / theme.bpm / 2;
   nextStep = 0;
   nextTime = ac.currentTime;
@@ -405,7 +426,8 @@ export function endPerformanceMusic(): void {
 // the gain. Songs use dialogue volume and drive the viseme clock; dance beds
 // use BGM. Playback is async and never awaited by chat or poke.
 
-const SONG_VOWELS: VisemeVowel[] = ['aa', 'oh', 'ee', 'ou', 'ih'];
+/** Bed style for the known-tempo fallback when CORS blocks the analyser. */
+let clipStyle = '';
 
 let clipGain: GainNode | null = null;
 let clipCtx: AudioContext | null = null;
@@ -484,19 +506,22 @@ function stopSongMouth(): void {
   clearSpeechLevel();
 }
 
+/**
+ * Song lips follow the real audio envelope at ~55 ms, not a blind vowel
+ * carousel. `readVocalFrame` derives jaw openness from time-domain RMS and
+ * the vowel tint from the low/mid/high spectrum; the timbre decides the
+ * shape while `aa` always tracks amplitude so the mouth never sticks shut.
+ */
 function startSongMouth(an: AnalyserNode): void {
   stopSongMouth();
-  const data = new Float32Array(an.fftSize);
+  const timeData = new Float32Array(an.fftSize);
+  const freqData = new Uint8Array(Math.max(16, an.frequencyBinCount));
+  // Capture the node: the fallback band has no clipAnalyser, and a detached
+  // node simply reads zeros (mouth closes) until stopSongMouth clears this.
   mouthTimer = setInterval(() => {
-    if (!clipAnalyser || typeof clipAnalyser.getFloatTimeDomainData !== 'function') return;
-    clipAnalyser.getFloatTimeDomainData(data);
-    let sum = 0;
-    for (let i = 0; i < data.length; i++) sum += data[i]! * data[i]!;
-    const rms = Math.sqrt(sum / data.length);
-    const mouth = Math.max(0, Math.min(1, (rms - 0.015) * 8));
-    const vowel = SONG_VOWELS[Math.floor(Date.now() / 160) % SONG_VOWELS.length]!;
-    feedSpeechLevel(mouth, vowel);
-  }, 70);
+    const frame = readVocalFrame(an, timeData, freqData);
+    feedSpeechLevel(frame.mouth, frame.vowel, 130);
+  }, 55);
 }
 
 function armPerformance(ms: number): void {
@@ -535,6 +560,8 @@ function startLibraryBandFallback(characterId: string): void {
 function haltClip(opts?: { fadeOutSec?: number }): void {
   loadToken += 1;
   stopSongMouth();
+  detachLiveAnalyser();
+  clipStyle = '';
   if (duckTimer) {
     clearTimeout(duckTimer);
     duckTimer = null;
@@ -602,10 +629,29 @@ function haltClip(opts?: { fadeOutSec?: number }): void {
   }
 }
 
-/** Wire song lips only after the HTMLAudio bed is actually audible. */
-function armSongMouthFromElement(audio: HTMLAudioElement): void {
-  if (clipKind !== 'song') return;
+/** Same-origin media only: cross-origin <audio> without CORS headers goes
+ *  silent when rerouted through createMediaElementSource, so never touch it. */
+function isSameOriginUrl(url: string): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return new URL(url, window.location.href).origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Wire the audible HTMLAudio bed into the live beat clock after `playing`.
+ * Same-origin media gets a real analyser (dance onsets + song lips). A
+ * cross-origin preview keeps its plain element path and falls back to the
+ * known/measured BPM clock — an honest tempo match, not an onset lock.
+ */
+function armClipFromElement(audio: HTMLAudioElement, url: string): void {
   stopSongMouth();
+  if (!isSameOriginUrl(url)) {
+    setKnownTempo(estimateBpm(clipStyle));
+    return;
+  }
   primeSharedAudioContext();
   const ac = createDefaultAudioContext();
   if (!ac) return;
@@ -625,9 +671,12 @@ function armSongMouthFromElement(audio: HTMLAudioElement): void {
     media.connect(an);
     an.connect(gain);
     gain.connect(ac.destination);
-    startSongMouth(an);
+    attachLiveAnalyser(an);
+    setKnownTempo(estimateBpm(clipStyle));
+    if (clipKind === 'song') startSongMouth(an);
   } catch {
-    // Already wired or unsupported — mouth stays quiet rather than pre-flapping.
+    // Already wired or unsupported — keep the tempo fallback, no fake mouth.
+    setKnownTempo(estimateBpm(clipStyle));
   }
 }
 
@@ -650,8 +699,8 @@ function playClipElement(url: string, token: number, characterId: string): boole
       audio.removeEventListener('playing', emitOnce);
       audio.removeEventListener('timeupdate', onTimeUpdate);
       markBedPlaybackAnchor();
-      // Mouth only when the song bed is audible — never during intro wait.
-      if (clipKind === 'song') armSongMouthFromElement(audio);
+      // Wire lips/onsets only when the bed is audible — never during intro wait.
+      armClipFromElement(audio, url);
       emitLibraryClipPlaying(clipId);
     };
     const onTimeUpdate = () => {
@@ -709,22 +758,22 @@ async function playClip(clip: PerformanceClip, token: number, characterId: strin
     const src = ac.createBufferSource();
     src.buffer = buffer;
     src.loop = true;
-    if (clip.kind === 'song') {
-      const an = ac.createAnalyser();
-      an.fftSize = 256;
-      src.connect(an);
-      an.connect(gain);
-      clipAnalyser = an;
-    } else {
-      src.connect(gain);
-    }
+    // Both songs and dance beds feed the analyser now: songs drive lips,
+    // dance beds drive the live onset/BPM clock and beat accent.
+    const an = ac.createAnalyser();
+    an.fftSize = 256;
+    src.connect(an);
+    an.connect(gain);
+    clipAnalyser = an;
     // BufferSource starts samples immediately — emit playing only after start().
     // Mouth follows the same gate: never flap before audible samples.
     clipBedAnchorCtxSec = ac.currentTime;
     markBedPlaybackAnchor(ac.currentTime);
     src.start();
     clipSrc = src;
-    if (clip.kind === 'song' && clipAnalyser) startSongMouth(clipAnalyser);
+    attachLiveAnalyser(an);
+    setKnownTempo(estimateBpm(clip.style));
+    if (clip.kind === 'song') startSongMouth(an);
     emitLibraryClipPlaying(clip.id);
   } catch {
     if (token !== loadToken) return;
@@ -812,6 +861,7 @@ export function startLibraryPerformance(
     duck = 1;
     clipId = synthetic.id;
     clipKind = 'dance';
+    clipStyle = synthetic.style;
     clipVolumeKey = 'bgmVol';
     clipBase = CLIP_BASE_GAIN.dance;
     clipCharacter = query.characterId ?? STYLE_THEME_ID[styleId ?? 'default'] ?? 'default';
@@ -837,6 +887,7 @@ export function startLibraryPerformance(
   duck = 1;
   clipId = clip.id;
   clipKind = clip.kind === 'song' ? 'song' : 'dance';
+  clipStyle = clip.style;
   clipVolumeKey = clip.volume;
   clipBase = CLIP_BASE_GAIN[clip.kind];
   clipCharacter = query.characterId ?? 'default';

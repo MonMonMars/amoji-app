@@ -77,7 +77,7 @@ describe('performance-session', () => {
     expect(endBlock).not.toMatch(/fadeOutSec:\s*0\.35/);
     expect(music).not.toMatch(/master\.gain\.linearRampToValueAtTime\(0,/);
     expect(music).not.toMatch(/pianoMaster\.gain\.linearRampToValueAtTime\(0,/);
-    const haltClip = music.slice(music.indexOf('function haltClip'), music.indexOf('function armSongMouthFromElement'));
+    const haltClip = music.slice(music.indexOf('function haltClip'), music.indexOf('function isSameOriginUrl'));
     expect(haltClip).not.toMatch(/gain\.gain\.linearRampToValueAtTime\(0,/);
   });
 });
