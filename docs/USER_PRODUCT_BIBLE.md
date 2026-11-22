@@ -2,9 +2,10 @@
 
 **Purpose:** Living checklist of product rules from the product owner. Agents must read this before chat/voice/pose/permission work and update it when rules change.
 
-**Last reviewed:** 2026-11-16 14:05 (Asia/Hong_Kong)  
+**Last reviewed:** 2026-11-22 (Asia/Hong_Kong)  
 **Demo:** https://monmonmars.github.io/amoji-app/  
-**`main` tip:** `3cb507c6` · **`APP_REVISION` `r2026-11-18.215`** · `npm run verify:live` in `apps/web` = OK  
+**`main` tip:** `99896449` · **`APP_REVISION` `r2026-11-19.280`** · `npm run verify:live` in `apps/web` = OK  
+**Current handoff pack:** [`HANDOFF_2026-11-21/`](./HANDOFF_2026-11-21/README.md) (state + binding constraints; 2026-11-19 folder is frozen history)
 **Request log:** [`../OWNER_REQUEST_LOG.md`](../OWNER_REQUEST_LOG.md) + `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn.  
 **Resource library:** [`OWNER_RESOURCE_LIBRARY.md`](./OWNER_RESOURCE_LIBRARY.md) + `apps/web/lib/owner-resource-manifest.ts` + [`MISTAKE_LIBRARY.md`](./MISTAKE_LIBRARY.md) + [`DATA_ORGANIZATION.md`](./DATA_ORGANIZATION.md).  
 **Agents:** [`AGENT_SMOKE.md`](./AGENT_SMOKE.md) · [`PROGRAMMING_PLAN.md`](./PROGRAMMING_PLAN.md)
@@ -78,6 +79,16 @@
 | Docs tip after #399–#403 product ship | #404 |
 | Docs tip / Pages after #399–#404 | #405 |
 | No history-resume ask (code) | #331 / #366 / #412 |
+| iPhone chat TTS + mic + first-phase latch (code) | #553 / **r271** |
+| 8-way full-body poke + gendered poke voice (code) | #554 / **r272** |
+| Owner **採用** runtime for idle/poke (code) | #543 / **r273** (supersedes #524) |
+| Idle v2 no A→B smear / same-clip blend skip (code) | #545 / **r274** |
+| ROM verify tests on idle-poke blend | #548 / **r275** |
+| Demo chips 聽音樂 · 聽歌 · 唱歌 | #534 / **r276** |
+| 睇星星 stargaze + star BGM | #535 / **r277** |
+| Settings TTS-001–218 keep/delete catalog | #555 / **r278** |
+| 時間 chip — device local + world cities | #530 / **r279** |
+| Planted Mixamo C14/C15/C16/C18 idle VRMAs (code) | #556 / **r280** — **phone planted-vs-float answer open** |
 
 ---
 
@@ -88,7 +99,7 @@
 | Card greet — no sound / robot | #420+#431 on `main`; **phone** until audible one neural voice (no insurance reintroduce). **Not Done.** |
 | News same-old / repeat | #421+#428 on `main`; **phone** until rotates / fresh longer tell. **Not Done.** |
 | Voice pitch/male/sink (R10) | #406+#410+#413+#424+#425+#437+#429. **Still Outstanding until phone** — Edge may 403 without proxy. **Not Done.** |
-| Idle pose still bad (R11) | #415+#419+#422+#430+#432 on `main` (v6 Quaternius + honor picks) — **phone smoke**. **Not Done.** |
+| Idle pose still bad (R11) | #415+#419+#422+#430+#432+#543+#545+#548+**#556 / r280 planted Mixamo C14/C15/C16/C18** on `main` — **phone smoke**: planted or floating? **Not Done.** |
 | Lighting unify (R12) | #408 on `main` — **phone smoke**. **Not Done.** |
 | Poke lean direction (R13) | #409+#434 on `main` — **phone verify**; do not flip ±leanSide without device evidence. **Not Done.** |
 | Talking nonsense / silly LLM | #360+#412+#416+#426 on `main` — **owner live OK** still required |
@@ -96,12 +107,18 @@
 | Talk repeats / double-speak residual | #399 / #386 — **phone** |
 | Phone smoke on live demo | **Human** — [`PHONE_SMOKE.md`](./PHONE_SMOKE.md). Match footer to [`revision.txt`](https://monmonmars.github.io/amoji-app/revision.txt); tap amber **Refresh** if shown. **Not Done** until owner ticks. |
 | SFX #1–23 Want/archive/delete (R1/R2) | Map documented in [`SFX_WANT_LIST.md`](./SFX_WANT_LIST.md) — no new deletes without owner map |
-| Stale “nothing fixed” on phone | Delivery #458–#462 on `main` — owner must refresh once to **`.167`** before judging card/voice/poke code. |
+| Stale “nothing fixed” on phone | Delivery #458–#462 + r271–r280 on `main` — owner must refresh once to **`r2026-11-19.280`** before judging card/voice/poke/idle code. |
 
 ### Hold
 
 | Spike #1 Voice bake-off | Hold |
 | Spike #20 CosyVoice | Hold |
+| NanoBanana · PSX · BreathCalm | Hold (2026-11-21 pack) |
+| CMA00350–431 Want/Skip | Hold — repo truth `cmaWant` = 10 ids (350, 351, 354, 359, 360, 363, 364, 365, 366, 318); “–431” is an external gallery range, not repo truth |
+| Head / body swap | Hold |
+| Kokoro / Piper / Cosy bundling | Not bundled — Cosy / JyutVoice listing-only, skip NC |
+| Higgsfield generations | Hold unless Mon says go |
+| Cursor Flash / pool Flash / Cloud | No use without explicit Mon go (Path B = desktop DeepSeek Flash) |
 
 ---
 
@@ -119,6 +136,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-22 | Docs sync to **r280** / `99896449`: header, Done r271–r280, R11 row now names planted Mixamo; folded 2026-11-21 handoff pack into `docs/HANDOFF_2026-11-21/` (docs-only, no revision bump). |
 | 2026-11-16 ~14:05 | Tip `4463e647` / **r167**; delivery #458–#462 live; `verify:live` OK; **Phase B frozen** until owner smoke failures |
 | 2026-11-16 ~08:35 | **Frozen order pack:** `07dd76e3` card + P1 voice sink pin + P4 R12 cast shader + P3 poke #455 arm + P5 resource/mistake/data libs — **phone Outstanding unchanged** |
 | 2026-11-16 ~01:12 | Continue audit: tip `9292e81` (#432) · product #426–#437 on main · Pages == tip (16:19 UTC); agent code Outstanding = 0; phone Outstanding unchanged (card · news · R10–R13 · nonsense · captions) |

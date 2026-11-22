@@ -1,8 +1,10 @@
 # Pixel merge train — agent handoff (2026-11-18 evening)
 
-**Live pre-merge:** https://monmonmars.github.io/amoji-app/ · **`revision.txt`:** **r2026-11-18.237** (live = `main` tip **2026-11-19**)  
-**Coordination branch:** `cursor/no-history-resume-ask-0340` · handoff PR **#544**  
-**CI (2026-11-19 ~08:30 UTC):** **#528** + **#547** CI fixed (gesture-safe test + rebase stack). **No new train merges** to `main` — live still **r237**.  
+> **Historical — do not follow as a queue.** Every PR in this ladder has since landed; live is now **r2026-11-19.280** / `99896449`. Current state: [`PROJECT_STATUS.md`](./PROJECT_STATUS.md) · [`HANDOFF_2026-11-21/STATE.md`](./HANDOFF_2026-11-21/STATE.md).
+
+**Live at capture:** https://monmonmars.github.io/amoji-app/ · **`revision.txt`:** **r2026-11-18.237** (live = `main` tip **2026-11-19**)  
+**Coordination branch:** `cursor/no-history-resume-ask-0340` · handoff PR **#544** (later closed unmerged, split into #549–#551)  
+**CI (2026-11-19 ~08:30 UTC):** **#528** + **#547** CI fixed (gesture-safe test + rebase stack). **No new train merges** to `main` at that time — live then **r237**.  
 **Supersedes:** #536 #537 #533 #538 → **#541**; #524 → **#543** · **#546** catalog parity ≠ **#528** routing (complementary; merge **#528** first)
 
 ## Jump (TOC)

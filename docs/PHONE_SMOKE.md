@@ -1,13 +1,19 @@
 # Phone smoke (live Pages)
 
 **Live:** https://monmonmars.github.io/amoji-app/  
-**Tip on main:** `r2026-11-18.237` (= live until train **#528→#543** merges) · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
-**Purpose:** Human-only checks after #419–#437 + #458. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
+**Tip on main:** `r2026-11-19.280` (= live · `99896449`) · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
+**Purpose:** Human-only checks after #419–#437 + #458 + r271–r280. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
 Owner: “getting worst” / “nothing fixed” — **do not mark R10–R13 Done** until this pass.
 
 Tick on a real phone (prefer iPhone Safari). **Mandatory once:** hard refresh, tap **Refresh** on the “Update ready” chip if shown, or remove home-screen icon and re-add so the service worker picks up the current **`APP_REVISION`** cache (stale shells hid recent fixes). Then idle prefs **v6** (`IdleQuaterniusHuman` default — not RPM F) and voice sink land.
 
-## Priority now — card · news · R10–R13 · nonsense · captions
+## Priority now — r280 idle · card · news · R10–R13 · nonsense · captions
+
+### Idle planted vs floating (r280 — blocking question)
+
+- [ ] After a **first-screen** hard refresh on r280, do **C14 / C15 / C16 / C18** (IdleMixamoIdle · IdleMixamoStanding · IdleMixamoBreathing · IdleMixamoHappy) look **planted** (feet on floor) or **floating**?
+- [ ] Report literally: `ROW: idle-r280 DEVICE: <model>` + planted / floating, so the next stamp (`r2026-11-19.281`) can switch to the Rocketbox fallback if needed
+- [ ] 採用 rails stay `[4, 5, 10]` — clip 採用 must **not** promote curated rails (C16 must not steal calm, C18 must not steal sing)
 
 ### Card greet (select) — owner: no sound / robot double (fix after #420/#431)
 
@@ -94,9 +100,9 @@ Tick on a real phone (prefer iPhone Safari). **Mandatory once:** hard refresh, t
 - [ ] Poke zone SFX match Want list ([`SFX_WANT_LIST.md`](./SFX_WANT_LIST.md))
 - [ ] Want / Skip in `/sfx-gallery` still works
 
-## Post–r254 Pixel train (after merge **#528→#543** to `main`)
+## Post–r254 Pixel train (historical — all merged, r263–r280)
 
-Hard-refresh until live **`revision.txt`** ≥ **r2026-11-18.254** (one bump per merged PR). Use [`AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md`](./AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md) merge order.
+Hard-refresh until live **`revision.txt`** ≥ **r2026-11-19.280**. Every PR in this section is already on `main`; tick these rows as phone verification of landed code, not as a merge queue. Old ladder: [`AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md`](./AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md) (historical).
 
 ### After voice stack (#528 + #529)
 
@@ -127,12 +133,12 @@ Hard-refresh until live **`revision.txt`** ≥ **r2026-11-18.254** (one bump per
 
 ---
 
-## Agent pre-checks (2026-11-18 ~17:42 UTC)
+## Agent pre-checks (2026-11-22 HKT)
 
 | Check | Result |
 | --- | --- |
-| `main` tip | **`r2026-11-18.237`** (#517–#520 on tip; deploy may lag) |
-| Pixel train CI | **#540** 🟢 after `f6cc0df2` · **#541** 🟢 · **#543** 🟢 |
-| Outstanding (owner) | Card · news · **R10–R13 not Done** until post-r254 pass above |
-| Superseded PRs | **#536 #537 #533** → #541 · **#524** → #543 (status only — do not merge dupes) |
+| `main` tip | **`99896449`** = **r2026-11-19.280** (`verify:live` must match) |
+| Landed train | r271 #553 · r272 #554 · r273 #543 · r274 #545 · r275 #548 · r276 #534 · r277 #535 · r278 #555 · r279 #530 · r280 #556 |
+| Outstanding (owner) | r280 idle planted-vs-float · card · news · **R10–R13 not Done** |
+| Superseded PRs | **#536 #537 #533** → #541 · **#524** → #543 · **#544 closed unmerged** (do not merge) |
 | Hold spikes | #1 / #20 only (do not merge) |

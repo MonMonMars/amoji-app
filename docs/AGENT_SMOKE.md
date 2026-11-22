@@ -1,6 +1,7 @@
 # Agent smoke (no phone required)
 
 **Live:** https://monmonmars.github.io/amoji-app/  
+**Current:** `main` @ `99896449` = **r2026-11-19.280** (r271–r280 train landed)  
 **Human checklist:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) — only the owner can mark **Done**.
 
 ## After every Pages deploy
@@ -15,7 +16,7 @@ npm run verify:agent-smoke   # optional JSON report (sw CACHE + revision.txt)
 Exit `0` means live `revision.txt` matches `APP_REVISION` in `lib/revision.ts`.  
 `verify:agent-smoke` also checks live `sw.js` `CACHE`; steps 3–4 (Refresh chip, clear site data) stay **owner-phone only**.
 
-JSON includes `pixel_train`: when live is still **r237** pre-merge, `owner_gate_pr` is **528** (first squash in the r248 train — agents do not merge).
+JSON includes `pixel_train`: the script has a **legacy** `owner_gate_pr` / `owner_gate_note` branch that only fires when live is the old **r237** stamp. Live is now **r2026-11-19.280** and the old #528→#543 ladder is **fully merged** — ignore `owner_gate_pr` whenever `verify:agent-smoke` reports live == `APP_REVISION`. Agents still do **not** merge on the owner's behalf.
 
 ## Delivery layer (do not re-ship without owner report)
 
@@ -52,6 +53,6 @@ npm run verify:agent-smoke
 | Demo chip tap shows text but no read-aloud | `pixel-no-repeat` — weather/news path uses `clientLiveContext` + `sayLocal`, not `send()` |
 | Horizontal rail jitter eats taps | `demo-phase-rail` — drag threshold, deferred `setPointerCapture` |
 | Caption history replays the same clause | `speech-caption` + `no-double-speak` — `dedupeConsecutiveCaptions` / `commitCaptionLines` on seal |
-| Kung fu chip speaks without body sync | **#526** (not in r248 train) — prep: `demo-phase` kungfu → `detectExercise`; full guard: `martial-speak-guard` |
+| Kung fu chip speaks without body sync | **#526** (still not merged) — prep: `demo-phase` kungfu → `detectExercise`; full guard: `martial-speak-guard` |
 
-**News / weather live path (r230+ on `main`, live r237):** Vitest proves wiring only; RSS / Open-Meteo still need owner phone rows in [`PHONE_SMOKE.md`](./PHONE_SMOKE.md). Agents do **not** mark news/weather Done without owner ticks.
+**News / weather live path (r218+ on `main`, live r280):** Vitest proves wiring only; RSS / Open-Meteo still need owner phone rows in [`PHONE_SMOKE.md`](./PHONE_SMOKE.md). Agents do **not** mark news/weather Done without owner ticks.

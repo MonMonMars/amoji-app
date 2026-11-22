@@ -1,5 +1,11 @@
 # Pixel handoff — 2026-11-19
 
+> **FROZEN SNAPSHOT — historical, not current state.** This folder is a byte-for-byte handoff pack captured on **2026-11-19** (live `r2026-11-19.264`–`r265`, `main` tip `91a857e3` / `r2026-11-18.237` at capture time). Every PR it lists as open/conflicting has since landed in the **r271–r280** train.
+>
+> **Current state:** [`../PROJECT_STATUS.md`](../PROJECT_STATUS.md) · [`../HANDOFF_2026-11-21/STATE.md`](../HANDOFF_2026-11-21/STATE.md) · live `r2026-11-19.280` / `99896449`.
+>
+> Inner revision numbers below are **kept deliberately** as dated history; do not update them, and do not read them as today's queue.
+
 Copy this entire folder to **`D:\Download\HANDOFF_2026-11-19`** on the owner PC (VM cannot write `D:\`).
 
 ## Live URLs

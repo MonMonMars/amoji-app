@@ -8,6 +8,11 @@ Technical notes for assets, models, robot face, chat UX, audio, and merge proces
 - Markdown twin: [`PROJECT_STATUS.md`](./PROJECT_STATUS.md)
 - Owner picker (Pages): https://monmonmars.github.io/amoji-app/docs/owner-resources.html — copied from repo `docs/` on each Pages deploy (`store-bundle.mjs` postbuild)
 
+**Handoff packs (state + binding constraints — read the newest):**
+
+- [`HANDOFF_2026-11-21/`](./HANDOFF_2026-11-21/README.md) — current (`r2026-11-19.280` / `99896449`) · [`STATE.md`](./HANDOFF_2026-11-21/STATE.md) · [`PROVENANCE.md`](./HANDOFF_2026-11-21/PROVENANCE.md)
+- [`HANDOFF_2026-11-19/README_HANDOFF.md`](./HANDOFF_2026-11-19/README_HANDOFF.md) — **frozen historical snapshot**
+
 **Owner product bible (rules + done/outstanding — update same day):**
 
 - [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md)

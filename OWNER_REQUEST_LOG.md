@@ -2,7 +2,23 @@
 
 **Full log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — append every owner ask the same turn.
 
-**Last updated:** 2026-11-17 ~03:22 UTC
+**Last updated:** 2026-11-22 (Asia/Hong_Kong)
+
+## 2026-11-22 — r280 docs sync + 2026-11-21 handoff pack folded into repo
+
+**Repo state at logging:** `main` = `99896449` = **r2026-11-19.280** (clean, synced). r271–r280 landed via #553 #554 #543 #545 #548 #534 #535 #555 #530 #556.
+
+**Docs-only change** (branch `cursor/docs-r280-sync-0340-0eac`): headers in `PROJECT_STATUS.md` / `PHONE_SMOKE.md` / `AGENT_SMOKE.md` / `USER_PRODUCT_BIBLE.md` / `VOICE_SOUND_INVENTORY.md` now read r280; 2026-11-21 pack folded into `docs/HANDOFF_2026-11-21/`. **No product code, no `APP_REVISION` / `sw.js` / `revision.txt` bump.**
+
+### Binding constraints recorded from the 2026-11-21 pack
+
+- **Do NOT merge:** #536, #537, #533, #524. **#544 closed unmerged**, superseded by #549–#551.
+- **HOLDs:** NanoBanana, PSX, BreathCalm, CMA00350–431 want/skip, head/body swap. Kokoro / Piper / Cosy **not bundled** (Cosy / JyutVoice listing-only, skip NC). **No Higgsfield without Mon.**
+- **No Cursor Flash / pool Flash / Cloud** without explicit go (Path B = desktop DeepSeek Flash via OpenRouter).
+- **CMA range:** repo truth is `docs/owner-resource-manifest.json` → `cmaWant` = **10 ids** (350, 351, 354, 359, 360, 363, 364, 365, 366, 318). The “–431” upper bound in the pack is GrokBot's **external gallery range**, **not** repo truth.
+- **Blocking question for Pixel:** on the first screen after an **r280 hard refresh**, do **C14 / C15 / C16 / C18** look **planted or floating**? Fallback is Rocketbox from `D:\Blender\...\animations\idle\rocketbox\` (25 FBX — needs a real Cxx ↔ filename map first: `f_/m_idle_{breathe,neutral}_0N.max.fbx`). Next stamp would be **`r2026-11-19.281`**. **Never ship C186 / C187 / C188 / C191.**
+- **r280 owner 採用 set:** `ID-R04, ID-R05, ID-R10` + the four clip ids; `idleRailNums` stays `[4, 5, 10]` — clip 採用 must not promote curated rails.
+
 
 **2026-11-17 r182 (`cursor/continue-backlog-0340-0eac`):** Topical news (incl. HK yue AI) — junk-only / empty pools say honest miss; no unrelated recent headline or wiki-only substitute; portal picks use `topicalHeadlineMatches`. Vitest 2199 pass. **Phone smoke:** yue「最新有咩 AI 新聞？」+ junk-feed miss path.
 
