@@ -20,6 +20,20 @@
 
 **Phone smoke Outstanding:** does the button sit comfortably beside her on a Pixel/iPhone, do rows fit without horizontal scroll, and does a pinned idle survive reload? See [`docs/PHONE_SMOKE.md`](./docs/PHONE_SMOKE.md).
 
+## 2026-11-22 — Cantonese voice pool: only WanLung / HiuMaan / HiuGaai
+
+**Owner instruction (verbatim intent):** “only use those 3 voice:（WanLung 男 / HiuMaan 女 / HiuGaai 女）”.
+
+**Owner decisions recorded the same turn:**
+
+- Edge `yue` pool = exactly `zh-HK-WanLungNeural` (M), `zh-HK-HiuMaanNeural` (F, calmer), `zh-HK-HiuGaaiNeural` (F, brighter).
+- Keep `Sin-ji` / `Sin-ju` (Apple) and Android `zh-HK` as the **fallback tier** — do not strip the OS voice tier.
+- **No paid TTS APIs.** Doubao / Volcano Engine / Speechify explicitly rejected (proprietary, no third-party licence). No new vendor.
+- No Apple Enhanced/Premium download guidance.
+- Variety now comes from `basePitch` / `baseRate`, not a fourth speaker.
+
+**Branch:** `cursor/yue-three-voice-0340-0eac` from `main` `764f8bb7` · **r2026-11-19.284** · guard `apps/web/tests/yue-three-voice.test.ts`. **Not merged; do not merge on the owner's behalf.** Voice quality still needs a real-phone check (`PHONE_SMOKE.md`).
+
 ## 2026-11-22 — r280 docs sync + 2026-11-21 handoff pack folded into repo
 
 **Repo state at logging:** `main` = `99896449` = **r2026-11-19.280** (clean, synced). r271–r280 landed via #553 #554 #543 #545 #548 #534 #535 #555 #530 #556.

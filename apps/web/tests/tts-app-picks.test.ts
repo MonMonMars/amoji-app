@@ -55,9 +55,12 @@ describe('tts app keep/delete picks', () => {
 
   it('stars the preferred defaults and includes lifted HOLD plus legal child Edge voices', () => {
     const stars = TTS_APP_PICKS.filter((row) => row.preferred).map((row) => row.id);
+    // TTS-003 (HiuGaai) joined the stars with the owner's 3-voice Cantonese
+    // pool: all three zh-HK Edge voices are the playable voice set now.
     expect(stars).toEqual([
       'TTS-001',
       'TTS-002',
+      'TTS-003',
       'TTS-027',
       'TTS-028',
       'TTS-058',

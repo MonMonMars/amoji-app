@@ -26,14 +26,19 @@ export interface VoiceOption {
 }
 
 export const VOICE_CATALOG: readonly VoiceOption[] = [
-  { locale: 'yue', engine: 'edge', gender: 'female', id: 'zh-HK-HiuMaanNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Default Cantonese female.' },
-  { locale: 'yue', engine: 'edge', gender: 'female', id: 'zh-HK-HiuGaaiNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Brighter Cantonese female alternate.' },
-  { locale: 'yue', engine: 'edge', gender: 'male', id: 'zh-HK-WanLungNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Default Cantonese male.' },
+  // Cantonese Edge pool — exactly three ids, by owner decision 2026-11-22:
+  // WanLung (only male), HiuMaan (calmer female), HiuGaai (brighter female).
+  // No other zh-HK Edge voice may be added here; paid APIs were declined.
+  // The `speech` rows below are the OS fallback tier, not extra Edge voices.
+  { locale: 'yue', engine: 'edge', gender: 'female', id: 'zh-HK-HiuMaanNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Cantonese female — calmer register (owner pool).' },
+  { locale: 'yue', engine: 'edge', gender: 'female', id: 'zh-HK-HiuGaaiNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Cantonese female — brighter register (owner pool).' },
+  { locale: 'yue', engine: 'edge', gender: 'male', id: 'zh-HK-WanLungNeural', shipping: true, license: 'Microsoft neural (read-aloud, no key)', latency: 'low', notes: 'Cantonese male — the only Cantonese male (owner pool).' },
   { locale: 'yue', engine: 'speech', gender: 'female', id: 'HiuMaan', shipping: true, license: 'browser', latency: 'low', notes: 'Prefer Microsoft HiuMaan when installed.' },
   { locale: 'yue', engine: 'speech', gender: 'female', id: 'HiuGaai', shipping: true, license: 'browser', latency: 'low', notes: 'Alt Cantonese female.' },
-  { locale: 'yue', engine: 'speech', gender: 'female', id: 'Sin-ji', shipping: true, license: 'browser', latency: 'low', notes: 'Apple Cantonese female.' },
+  { locale: 'yue', engine: 'speech', gender: 'female', id: 'Sin-ji', shipping: true, license: 'browser', latency: 'low', notes: 'Apple Cantonese female — OS fallback tier.' },
   { locale: 'yue', engine: 'speech', gender: 'female', id: '粤語', shipping: true, license: 'browser', latency: 'low', notes: 'Google 粤語（香港）name match.' },
   { locale: 'yue', engine: 'speech', gender: 'male', id: 'WanLung', shipping: true, license: 'browser', latency: 'low', notes: 'Microsoft WanLung when installed.' },
+  { locale: 'yue', engine: 'speech', gender: 'male', id: 'Sin-ju', shipping: true, license: 'browser', latency: 'low', notes: 'Apple Cantonese male name — OS fallback tier (not on every iPhone).' },
   { locale: 'yue', engine: 'canto-nano', gender: 'female', id: 'canto-tts-nano', shipping: false, license: 'not bundled', latency: 'mid', notes: 'Not in repo. Yue hop after Edge zh-HK and Web Speech when a local build is added.' },
   { locale: 'yue', engine: 'canto-nano', gender: 'male', id: 'canto-tts-nano', shipping: false, license: 'not bundled', latency: 'mid', notes: 'Not in repo. Same skip as the female row.' },
 
@@ -406,12 +411,21 @@ const BROWSER_MALE = new Set([
   ...MALE_NAMES,
   'male', 'david', 'mark', 'george', 'daniel', 'alex', 'fred', 'rishi', 'aaron',
   'oliver', 'nathan', 'kangkang', 'otoya',
+  // zh-HK names. Danny is the SAPI/OneCore male voice on Windows 11 (see
+  // tests/fixtures/os-voice-fixtures.ts). Left unclassified, Danny and Tracy
+  // both ranked as unlabeled and array order could hand Danny to a female
+  // companion. Sin-ju is the Apple Cantonese male name the owner keeps as the
+  // OS fallback tier.
+  'danny', 'sinju',
 ]);
 const BROWSER_FEMALE = new Set([
   ...FEMALE_NAMES,
   'female', 'zira', 'samantha', 'hazel', 'susan', 'karen', 'victoria', 'allison',
   'fiona', 'moira', 'tessa', 'veena', 'serena', 'huihui', 'yaoyao', 'haruka',
   'sinji', 'kyoko',
+  // zh-HK female on Windows 11 (SAPI ground truth); Google's 粤語 is handled
+  // by the CJK table in browser-voices.ts and the generic `Female` token.
+  'tracy',
 ]);
 
 /** Tokens only. "America" must not count as Eric, and "Ryan" must not count as Yan. */

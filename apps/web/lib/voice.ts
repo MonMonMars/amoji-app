@@ -471,8 +471,23 @@ export interface VoiceChoice {
   baseRate: number;
 }
 
-// Names vary by platform: Apple has the strongest zh-HK set (Sin-ji = Cantonese female,
-// HiuMaan newer; Sin-ju = male). Windows/Android ship Microsoft/Google variants.
+// Names vary by platform: Apple ships Sin-ji (Cantonese female) and, on the
+// devices that list it, Sin-ju (male); Windows/Android ship Microsoft/Google
+// variants (Tracy / Danny / Google 粤語).
+//
+// ---- Cantonese (yue) voice policy — owner decision 2026-11-22 --------------
+// Pixel limited the Edge neural pool to exactly three voices:
+//   WanLung  (zh-HK-WanLungNeural)  male — the only Cantonese male
+//   HiuMaan  (zh-HK-HiuMaanNeural)  female — calmer register
+//   HiuGaai  (zh-HK-HiuGaaiNeural)  female — brighter register
+// No fourth vendor and no paid TTS API (Doubao / Volcano / Speechify declined;
+// they are proprietary and cannot be licensed here anyway). Every yue list
+// below therefore names its Edge voice FIRST, the Apple OS fallback SECOND
+// (Sin-ji / Sin-ju), and the generic `Female` / `Male` token LAST so Windows
+// Tracy / Danny and Android zh-HK still match. Personality variety now comes
+// from basePitch / baseRate, not from a different speaker. zh-TW Mei-Jia stays
+// as the no-zh-HK-device substitute and never outranks Sin-ji / Sin-ju.
+// ---------------------------------------------------------------------------
 // r2026-10-03.04: extended cast (cloud/kasumi/marin/ayane/hitomi)
 // gets her/his own matrix — no more falling back to Juno's female voices.
 // r2026-10-03.36: the registry six (robbie/mika/anchor/lydia/ruby/snowy) get
@@ -485,7 +500,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // genki idol — brightest, quickest voice in the cast
   kizuna: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ji', 'HiuGaai', 'Female'], basePitch: 1.14, baseRate: 1.08 },
+      { lang: 'zh-HK', names: ['HiuGaai', 'Sin-ji', 'Female'], basePitch: 1.12, baseRate: 1.08 },
       { lang: 'zh-TW', names: ['Mei-Jia', 'Female'], basePitch: 1.14, baseRate: 1.06 },
     ],
     zh: [
@@ -501,7 +516,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // classic idol — polished, sweet, composed
   alicia: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.1, baseRate: 1.04 },
+      { lang: 'zh-HK', names: ['HiuMaan', 'Sin-ji', 'Female'], basePitch: 1.12, baseRate: 1.04 },
       { lang: 'zh-TW', names: ['Mei-Jia', 'Female'], basePitch: 1.1, baseRate: 1.04 },
     ],
     zh: [
@@ -517,7 +532,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // fiery streamer — hot-blooded, fast chatter
   ember: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.12, baseRate: 1.06 },
+      { lang: 'zh-HK', names: ['HiuGaai', 'Sin-ji', 'Female'], basePitch: 1.1, baseRate: 1.06 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Xiaorui', 'Female'], basePitch: 1.12, baseRate: 1.05 },
@@ -532,7 +547,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // warm sweetheart — soft, gentle, close-mic
   mei: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.06, baseRate: 0.96 },
+      { lang: 'zh-HK', names: ['HiuMaan', 'Sin-ji', 'Female'], basePitch: 1.08, baseRate: 0.96 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Xiaoyi', 'Female'], basePitch: 1.05, baseRate: 0.95 },
@@ -547,7 +562,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // silent guardian (male) — low, level, unhurried
   atlas: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ju', 'Male'], basePitch: 0.9, baseRate: 0.96 },
+      { lang: 'zh-HK', names: ['WanLung', 'Sin-ju', 'Male'], basePitch: 0.9, baseRate: 0.96 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Yunxi', 'Yunjian', 'Male'], basePitch: 0.9, baseRate: 0.96 },
@@ -562,7 +577,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // laid-back fashionista — cool, level, effortless
   sky: {
     yue: [
-      { lang: 'zh-HK', names: ['HiuMaan', 'Female'], basePitch: 1.0, baseRate: 0.98 },
+      { lang: 'zh-HK', names: ['HiuMaan', 'Sin-ji', 'Female'], basePitch: 1.0, baseRate: 0.98 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Xiaohan', 'Female'], basePitch: 1.0, baseRate: 0.98 },
@@ -577,7 +592,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // sunny sportswoman — bright, crisp, energetic
   yuki: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ji', 'HiuMaan', 'Female'], basePitch: 1.1, baseRate: 1.04 },
+      { lang: 'zh-HK', names: ['HiuGaai', 'Sin-ji', 'Female'], basePitch: 1.08, baseRate: 1.04 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Xiaorui', 'Female'], basePitch: 1.1, baseRate: 1.04 },
@@ -592,7 +607,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // bookish poet — soft, slow, breathy
   hina: {
     yue: [
-      { lang: 'zh-HK', names: ['HiuMaan', 'Female'], basePitch: 1.0, baseRate: 0.88 },
+      { lang: 'zh-HK', names: ['HiuMaan', 'Sin-ji', 'Female'], basePitch: 1.0, baseRate: 0.88 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Xiaomo', 'Female'], basePitch: 1.0, baseRate: 0.88 },
@@ -607,7 +622,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // project-lead go-getter — level, clear, efficient
   mio: {
     yue: [
-      { lang: 'zh-HK', names: ['HiuMaan', 'Female'], basePitch: 0.99, baseRate: 1.0 },
+      { lang: 'zh-HK', names: ['HiuMaan', 'Sin-ji', 'Female'], basePitch: 0.99, baseRate: 1.0 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Xiaohan', 'Female'], basePitch: 0.99, baseRate: 1.0 },
@@ -621,7 +636,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   },
   juno: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ji', 'HiuMaan', 'Female'], basePitch: 1.1, baseRate: 1.02 },
+      { lang: 'zh-HK', names: ['HiuMaan', 'Sin-ji', 'Female'], basePitch: 1.12, baseRate: 1.02 },
       { lang: 'zh-TW', names: ['Mei-Jia', 'Female'], basePitch: 1.1, baseRate: 1.0 },
     ],
     zh: [
@@ -655,7 +670,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   },
   blaze: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ju', 'Male'], basePitch: 0.92, baseRate: 1.04 },
+      { lang: 'zh-HK', names: ['WanLung', 'Sin-ju', 'Male'], basePitch: 0.92, baseRate: 1.04 },
       { lang: 'zh-TW', names: ['Male'], basePitch: 0.92, baseRate: 1.04 },
     ],
     zh: [
@@ -672,7 +687,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   },
   mochi: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.18, baseRate: 0.96 },
+      { lang: 'zh-HK', names: ['HiuGaai', 'Sin-ji', 'Female'], basePitch: 1.16, baseRate: 0.96 },
       { lang: 'zh-TW', names: ['Mei-Jia', 'Female'], basePitch: 1.16, baseRate: 0.96 },
     ],
     zh: [
@@ -687,7 +702,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   },
   kai: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ju', 'Male'], basePitch: 0.9, baseRate: 0.97 },
+      { lang: 'zh-HK', names: ['WanLung', 'Sin-ju', 'Male'], basePitch: 0.9, baseRate: 0.97 },
       { lang: 'zh-TW', names: ['Male'], basePitch: 0.9, baseRate: 0.97 },
     ],
     zh: [
@@ -718,7 +733,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   },
   rin: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ji', 'HiuMaan', 'Female'], basePitch: 1.12, baseRate: 1.08 },
+      { lang: 'zh-HK', names: ['HiuGaai', 'Sin-ji', 'Female'], basePitch: 1.1, baseRate: 1.08 },
       { lang: 'zh-TW', names: ['Mei-Jia', 'Female'], basePitch: 1.12, baseRate: 1.06 },
     ],
     zh: [
@@ -733,7 +748,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   },
   ren: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ju', 'Male'], basePitch: 0.96, baseRate: 0.9 },
+      { lang: 'zh-HK', names: ['WanLung', 'Sin-ju', 'Male'], basePitch: 0.96, baseRate: 0.9 },
       { lang: 'zh-TW', names: ['Male'], basePitch: 0.96, baseRate: 0.9 },
     ],
     zh: [
@@ -751,7 +766,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // cool mercenary — finally MALE: low, level, unhurried
   cloud: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ju', 'Male'], basePitch: 0.88, baseRate: 0.95 },
+      { lang: 'zh-HK', names: ['WanLung', 'Sin-ju', 'Male'], basePitch: 0.88, baseRate: 0.95 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Yunxi', 'Yunjian', 'Male'], basePitch: 0.88, baseRate: 0.95 },
@@ -766,7 +781,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // graceful shinobi — composed, precise, quiet
   kasumi: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.02, baseRate: 0.9 },
+      { lang: 'zh-HK', names: ['HiuMaan', 'Sin-ji', 'Female'], basePitch: 1.04, baseRate: 0.9 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Xiaohan', 'Female'], basePitch: 1.0, baseRate: 0.9 },
@@ -781,7 +796,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // bubbly gyaru — highest pitch, fastest chatter
   marin: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.16, baseRate: 1.06 },
+      { lang: 'zh-HK', names: ['HiuGaai', 'Sin-ji', 'Female'], basePitch: 1.14, baseRate: 1.06 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Xiaoyi', 'Female'], basePitch: 1.15, baseRate: 1.06 },
@@ -796,7 +811,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // cool kunoichi — level, a touch low, clipped
   ayane: {
     yue: [
-      { lang: 'zh-HK', names: ['HiuMaan', 'Female'], basePitch: 0.96, baseRate: 0.98 },
+      { lang: 'zh-HK', names: ['HiuMaan', 'Sin-ji', 'Female'], basePitch: 0.96, baseRate: 0.98 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Xiaohan', 'Female'], basePitch: 0.96, baseRate: 0.98 },
@@ -811,7 +826,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // earnest and wholesome — warm, clear, dependable
   hitomi: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.08, baseRate: 0.95 },
+      { lang: 'zh-HK', names: ['HiuMaan', 'Sin-ji', 'Female'], basePitch: 1.1, baseRate: 0.95 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Xiaoxiao', 'Female'], basePitch: 1.07, baseRate: 0.95 },
@@ -827,7 +842,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // big-brother energy — warm, level, quick to laugh
   robbie: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ju', 'Male'], basePitch: 1.0, baseRate: 1.0 },
+      { lang: 'zh-HK', names: ['WanLung', 'Sin-ju', 'Male'], basePitch: 1.0, baseRate: 1.0 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Yunxi', 'Kangkang', 'Male'], basePitch: 1.0, baseRate: 1.0 },
@@ -842,7 +857,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // laid-back musician — smooth, a touch low, unhurried
   mika: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ju', 'Male'], basePitch: 0.94, baseRate: 0.9 },
+      { lang: 'zh-HK', names: ['WanLung', 'Sin-ju', 'Male'], basePitch: 0.94, baseRate: 0.9 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Yunxi', 'Male'], basePitch: 0.94, baseRate: 0.9 },
@@ -857,7 +872,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // old sea captain — the lowest, slowest voice in the cast
   anchor: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ju', 'Male'], basePitch: 0.84, baseRate: 0.88 },
+      { lang: 'zh-HK', names: ['WanLung', 'Sin-ju', 'Male'], basePitch: 0.86, baseRate: 0.88 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Yunjian', 'Male'], basePitch: 0.84, baseRate: 0.88 },
@@ -872,7 +887,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // elegant socialite — smooth, poised, cultured
   lydia: {
     yue: [
-      { lang: 'zh-HK', names: ['HiuMaan', 'Female'], basePitch: 1.0, baseRate: 0.9 },
+      { lang: 'zh-HK', names: ['HiuMaan', 'Sin-ji', 'Female'], basePitch: 1.0, baseRate: 0.9 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Xiaoxiao', 'Female'], basePitch: 1.0, baseRate: 0.9 },
@@ -887,7 +902,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // bouncy bunny — the highest, fastest giggle in the cast
   ruby: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.18, baseRate: 1.08 },
+      { lang: 'zh-HK', names: ['HiuGaai', 'Sin-ji', 'Female'], basePitch: 1.16, baseRate: 1.08 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Xiaoyi', 'Female'], basePitch: 1.17, baseRate: 1.08 },
@@ -902,7 +917,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // winter fairy — soft, breathy, gentle
   snowy: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.1, baseRate: 0.88 },
+      { lang: 'zh-HK', names: ['HiuMaan', 'Sin-ji', 'Female'], basePitch: 1.12, baseRate: 0.88 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Xiaoyi', 'Female'], basePitch: 1.09, baseRate: 0.88 },
@@ -917,7 +932,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // easygoing best mate — warm, level, quick to laugh (r2026-10-04.42)
   alan: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ju', 'Male'], basePitch: 0.97, baseRate: 0.98 },
+      { lang: 'zh-HK', names: ['WanLung', 'Sin-ju', 'Male'], basePitch: 0.97, baseRate: 0.98 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Yunxi', 'Male'], basePitch: 0.97, baseRate: 0.98 },
@@ -933,7 +948,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // aera — soft-spoken dreamer, drifting delivery
   aera: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.04, baseRate: 0.9 },
+      { lang: 'zh-HK', names: ['HiuMaan', 'Sin-ji', 'Female'], basePitch: 1.06, baseRate: 0.9 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Xiaoyi', 'Female'], basePitch: 1.03, baseRate: 0.9 },
@@ -948,7 +963,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // dhahlia — bright floral sprite, quick and sunny
   dhahlia: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ji', 'Female'], basePitch: 1.12, baseRate: 1.04 },
+      { lang: 'zh-HK', names: ['HiuGaai', 'Sin-ji', 'Female'], basePitch: 1.1, baseRate: 1.04 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Xiaorui', 'Female'], basePitch: 1.12, baseRate: 1.05 },
@@ -963,7 +978,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // onyx — quiet midnight guardian, the low male register
   onyx: {
     yue: [
-      { lang: 'zh-HK', names: ['Sin-ju', 'Male'], basePitch: 0.88, baseRate: 0.92 },
+      { lang: 'zh-HK', names: ['WanLung', 'Sin-ju', 'Male'], basePitch: 0.88, baseRate: 0.92 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Yunxi', 'Male'], basePitch: 0.88, baseRate: 0.92 },
@@ -978,7 +993,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // velara — serene star-mapper, level and unhurried
   velara: {
     yue: [
-      { lang: 'zh-HK', names: ['HiuMaan', 'Female'], basePitch: 1.0, baseRate: 0.9 },
+      { lang: 'zh-HK', names: ['HiuMaan', 'Sin-ji', 'Female'], basePitch: 1.0, baseRate: 0.9 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Xiaohan', 'Female'], basePitch: 1.0, baseRate: 0.9 },
@@ -993,7 +1008,7 @@ export const VOICE_MATRIX: Record<string, Partial<Record<Lang, VoiceChoice[]>>> 
   // kitagawa — bright gyaru cosplayer, bubbly and quick (r110)
   kitagawa: {
     yue: [
-      { lang: 'zh-HK', names: ['HiuGaai', 'Female'], basePitch: 1.18, baseRate: 1.06 },
+      { lang: 'zh-HK', names: ['HiuGaai', 'Sin-ji', 'Female'], basePitch: 1.18, baseRate: 1.06 },
     ],
     zh: [
       { lang: 'zh-CN', names: ['Xiaoyi', 'Female'], basePitch: 1.16, baseRate: 1.05 },

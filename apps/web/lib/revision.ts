@@ -469,6 +469,10 @@
 // r2026-11-19.278: Settings TTS-001-218 keep/delete catalog.
 // r2026-11-19.279: demo 時間 chip — local + world cities via Intl, sayLocal only (#530).
 // r2026-11-19.280: plant Mixamo C14/C15/C16/C18 idle VRMAs (toe-ground, owner 採用).
+// r2026-11-19.284: Cantonese Edge pool limited to WanLung / HiuMaan / HiuGaai
+// (owner 2026-11-22); every yue matrix names its Edge voice first and Sin-ji /
+// Sin-ju + generic Female/Male as the OS fallback, so male companions keep a
+// male Cantonese voice. Windows Danny/Tracy added to the OS gender table.
 // r2026-11-19.283: TTS-013 GLM-TTS yue tag removed (no Cantonese) + yue allowlist guard.
 // r2026-11-19.282: in-chat idle picker (C-coded rows, tap = pin, auto rotation to
 // unpin) + 7 Shapeweld VRMAs (C156–C160/C164/C165, picker-only, NOT on curated
@@ -477,7 +481,7 @@
 // are no longer re-added by the owner 採用 list), C14/C15 get switchable off-rail
 // toggle rows, manifest dedupes IdleMixamoHappy + emits off-rail clips with owner
 // inUse, and ID### ↔ C## ↔ clipId bridges owner-picker notes.
-export const APP_REVISION = 'r2026-11-19.283';
+export const APP_REVISION = 'r2026-11-19.284';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

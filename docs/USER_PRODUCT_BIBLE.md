@@ -100,6 +100,7 @@
 | Card greet — no sound / robot | #420+#431 on `main`; **phone** until audible one neural voice (no insurance reintroduce). **Not Done.** |
 | News same-old / repeat | #421+#428 on `main`; **phone** until rotates / fresh longer tell. **Not Done.** |
 | Voice pitch/male/sink (R10) | #406+#410+#413+#424+#425+#437+#429. **Still Outstanding until phone** — Edge may 403 without proxy. **Not Done.** |
+| Cantonese 3-voice pool (r284 branch) | `cursor/yue-three-voice-0340-0eac` / **r2026-11-19.284** — Edge `yue` limited to WanLung (M) / HiuMaan (F, calmer) / HiuGaai (F, brighter); OS fallback Sin-ji / Sin-ju + Android `zh-HK` intact; no paid TTS APIs. Guard `yue-three-voice.test.ts`. **Branch only — not merged.** **Phone** until hear. **Not Done.** |
 | Idle pose still bad (R11) | #415+#419+#422+#430+#432+#543+#545+#548+**#556 / r280 planted Mixamo C14/C15/C16/C18** on `main` — **phone smoke**: planted or floating? **Not Done.** |
 | Lighting unify (R12) | #408 on `main` — **phone smoke**. **Not Done.** |
 | Poke lean direction (R13) | #409+#434 on `main` — **phone verify**; do not flip ±leanSide without device evidence. **Not Done.** |
@@ -138,6 +139,7 @@
 | Date (HKT) | Change |
 |------------|--------|
 | 2026-11-22 r282 | Owner idle picker: small button beside the companion in `/chat` → C-coded list (owner 採用 C14/C15/C16/C18 + new Shapeweld C156–C160/C164/C165), tap = pin + live swap, Auto rotation unpins, pin persists (`amoji.idlePick.v6`). 7 Shapeweld VRMAs picker-only (curated rail stays 39); 11 universal CMA reaction SFX appended. **Stacked:** docs → idle-rail-honesty (r281) → idle-picker (r282). Phone picker smoke Outstanding. |
+| 2026-11-22 | **Cantonese 3-voice decision** (owner): Edge `yue` = WanLung / HiuMaan / HiuGaai only; Apple Sin-ji / Sin-ju + Android `zh-HK` stay as the fallback tier; paid TTS APIs declined. Code + tests + catalogue annotations on `cursor/yue-three-voice-0340-0eac` (**r284, unmerged**); voice Quality still phone Outstanding. |
 | 2026-11-22 | Docs sync to **r280** / `99896449`: header, Done r271–r280, R11 row now names planted Mixamo; folded 2026-11-21 handoff pack into `docs/HANDOFF_2026-11-21/` (docs-only, no revision bump). |
 | 2026-11-16 ~14:05 | Tip `4463e647` / **r167**; delivery #458–#462 live; `verify:live` OK; **Phase B frozen** until owner smoke failures |
 | 2026-11-16 ~08:35 | **Frozen order pack:** `07dd76e3` card + P1 voice sink pin + P4 R12 cast shader + P3 poke #455 arm + P5 resource/mistake/data libs — **phone Outstanding unchanged** |
