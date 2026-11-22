@@ -127,8 +127,8 @@ See `SFX_WANT_LIST.md` and `CMA_REACTION_OWNER_DELETE_CODES` in manifest.
 |-------|-------|
 | Curated chat rail | `CHAT_IDLE_CURATED` in `idle-curated-rail.ts` (39 buttons) |
 | Full numbered library | `IDLE_LIBRARY` in `idle-library.ts` |
-| Owner prefs | `amoji.idleEnabled.v6` · `amoji.idlePick.v6` (`idle-owner-migrate.ts`) |
-| Default fresh enable | Rail **#6** `IdleQuaterniusHuman` (`defaultCuratedRailNums`) — owner enables override (#432) |
+| Owner prefs | `amoji.idleEnabled.v6` · `amoji.idlePick.v6` (`idle-owner-migrate.ts`) · `amoji.idleOwnerOff.v1` (off-rail 採用 toggle; empty = ON) |
+| Default fresh enable | Rail **#10** `IdleInnersceneSam` (`defaultCuratedRailNums`) — owner ship-set enables rails #4/#5/#10 (#432) |
 | Retired / toxic | `idle-retired.ts` — e.g. `IdleBreathCalm`, `IdleSassy` banned from auto |
 
 ### Curated rail (wired — each row must be playable)

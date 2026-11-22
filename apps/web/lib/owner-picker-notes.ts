@@ -1,3 +1,5 @@
+import { resolveIdleOwnerCode } from './idle-owner-code';
+
 export const OWNER_PICKER_NOTES_SCHEMA = 'owner-picker-notes-v2' as const;
 
 export type OwnerDecision = 'use' | 'keep' | 'delete';
@@ -7,6 +9,8 @@ export interface OwnerPickerNoteRow {
   id?: string;
   ownerCode?: string;
   domainCode?: string;
+  prefix?: string;
+  ref?: string;
   decision?: OwnerDecision | string;
   keep?: boolean;
   note?: string;
@@ -100,4 +104,60 @@ export function parseOwnerPickerNotesJson(raw: string): OwnerPickerNotesExport |
   } catch {
     return null;
   }
+}
+
+export interface ParsedOwnerIdleDecisions {
+  useClipIds: string[];
+  deleteClipIds: string[];
+  useRailNums: number[];
+  deleteRailNums: number[];
+}
+
+/**
+ * Bridge picker idle key-space → clipIds / rail #s.
+ * ID### / lib#N / library clipId / rail-row id all resolve; bare C## is only
+ * trusted when the row ref is an idle SoT (C112 also names a perf-motion tag).
+ */
+export function parseOwnerPickerNotesForIdle(
+  exp: OwnerPickerNotesExport | null | undefined,
+): ParsedOwnerIdleDecisions | null {
+  if (!exp) return null;
+  const useClips = new Set<string>();
+  const deleteClips = new Set<string>();
+  const useRails = new Set<number>();
+  const deleteRails = new Set<number>();
+
+  for (const row of collectRows(exp)) {
+    const decision = rowDecision(row);
+    if (decision !== 'use' && decision !== 'delete') continue;
+    const ref = (row.ref ?? '').toLowerCase();
+    const idleRef = /idle-(library|curated-rail|owner-ref)/.test(ref);
+
+    for (const raw of [row.domainCode, row.id, row.ownerCode]) {
+      if (!raw) continue;
+      const key = raw.trim();
+      if (!key) continue;
+
+      const rail = key.match(/^ID-R0*(\d+)$/i) ?? key.match(/^rail-0*(\d+)(?:-|$)/i);
+      if (rail) {
+        const n = Number(rail[1]);
+        if (Number.isInteger(n) && n > 0) (decision === 'use' ? useRails : deleteRails).add(n);
+        continue;
+      }
+
+      // Bare C## is ambiguous with performance-motion tags — require idle ref.
+      if (/^C\d+$/i.test(key) && !idleRef) continue;
+
+      const resolved = resolveIdleOwnerCode(key);
+      if (!resolved) continue;
+      (decision === 'use' ? useClips : deleteClips).add(resolved.clipId);
+    }
+  }
+
+  return {
+    useClipIds: [...useClips],
+    deleteClipIds: [...deleteClips],
+    useRailNums: [...useRails].sort((a, b) => a - b),
+    deleteRailNums: [...deleteRails].sort((a, b) => a - b),
+  };
 }

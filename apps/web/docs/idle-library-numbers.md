@@ -4,10 +4,10 @@ Source: `apps/web/lib/idle-library.ts`
 Also: `apps/web/public/models/anims/IDLE_NUMBERED_MAP.md`
 Free-library: `D:\Blender\projects\mon-character\free-library\`
 
-| # | clipId | Cxx | playable | default |
+| # | clipId | Cxx | playable | defaultEnabled (legacy) |
 |---|--------|-----|----------|---------|
-| 1 | IdleBreathCalm | — | yes | ON |
-| 2 | StandardIdle | — | yes | ON |
+| 1 | IdleBreathCalm | — | yes | ON (legacy) |
+| 2 | StandardIdle | — | yes | ON (legacy) |
 | 3 | LookAround | C01 | yes | off |
 | 13 | lib_C42 | C42 | yes | off (unique LookingAround02; not #3) |
 | 4 | lib_C02 | C02 | yes | off |
@@ -30,7 +30,8 @@ Free-library: `D:\Blender\projects\mon-character\free-library\`
 | 50 | IdleMixamoStanding | C15 | yes | off (planted r280) |
 | 126 | IdleMixamoIdle | C14 | yes | off (planted r280) |
 
-Chat: `IdlePickRails` — curated rail **#1..39** (not full library #); see `docs/idle-pixel-review.md` + `idle-curated-rail.ts`. Tap rail `#` to pin; right-click/long-press toggles ON/OFF (`amoji.idleEnabled.v1`, migrates legacy library #).
+Chat: `IdlePickRails` — curated rail **#1..39** (not full library #) plus **owner 採用 off-rail rows** C14/C15 (dashed buttons under the grid, never renumbered onto the rail). Tap a rail `#` / owner `C##` to pin; right-click/long-press toggles ON/OFF (`amoji.idleEnabled.v6`, migrates legacy library #). Off-rail owner toggles persist in `amoji.idleOwnerOff.v1` (empty/absent = ON).
+**Rail state is authoritative (r281):** rail 3 OFF ⇒ C16 `IdleMixamoBreathing` is not re-added from the owner 採用 list; rails 22+23 OFF ⇒ C18 `IdleMixamoHappy` is not re-added. C14 (#126) and C15 (#50) stay enabled by default because they have no curated rail row.
 Feet: all idle loads use `rebaseClipHips` + `pinPlantedClipTracks`.
 
 | 55–56 | lib_C05/C06 | C05–C06 KayKit Wave/Cheer | yes | off |

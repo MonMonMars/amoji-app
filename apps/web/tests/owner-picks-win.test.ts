@@ -115,15 +115,18 @@ describe('owner picks win over Quaternius (#430 vs #432)', () => {
     })).toBe('IdleRpmMStanding001');
   });
 
-  it('ships planted Mixamo C14/C15/C16/C18 in the enabled rotation', () => {
+  it('ships planted Mixamo C14/C15 off-rail; C16/C18 follow their curated rails', () => {
     mockStorage();
     forgetIdleEnabledCache();
+    // C14/C15 have no rail row → default ON via the owner off-rail toggle.
     expect(listEnabledIdleClipIds()).toEqual(expect.arrayContaining([
       'IdleMixamoIdle',
       'IdleMixamoStanding',
-      'IdleMixamoBreathing',
-      'IdleMixamoHappy',
     ]));
+    // C16 (rail #3) and C18 (rails #22/#23) are owner 採用 but their rails
+    // are OFF — r281 makes rail state authoritative, so they do not rotate.
+    expect(listEnabledIdleClipIds()).not.toContain('IdleMixamoBreathing');
+    expect(listEnabledIdleClipIds()).not.toContain('IdleMixamoHappy');
   });
 
   it('seeds poke Want from CMA_REACTION_OWNER_WANT_CODES (= SFX_WANT_LIST)', () => {

@@ -8,6 +8,7 @@ import { DEMO_PHASE_BUTTONS } from './demo-phase';
 import { CHAT_IDLE_CURATED } from './idle-curated-rail';
 import { IDLE_LIBRARY } from './idle-library';
 import { IDLE_OWNER_REF_CATALOG } from './idle-owner-ref-catalog';
+import { ownerIdleClipSelected } from './idle-owner-pick';
 import { STREAM_TRACKS } from './music-catalog';
 import { HIGHEST_MV_OWNER_CODE } from './music-mv-registry';
 import { OWNER_NEWS_CATALOG } from './owner-news-catalog';
@@ -264,7 +265,7 @@ export function buildOwnerCatalogIndex(): OwnerCatalogRow[] {
       nativeId: `lib-${e.clipId}`,
       label: e.name,
       sourceRef: 'idle-library.ts',
-      inUse: e.defaultEnabled && e.playable && !e.retired,
+      inUse: ownerIdleClipSelected(e.clipId) && e.playable && !e.retired,
     });
   }
 

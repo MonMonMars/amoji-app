@@ -46,4 +46,16 @@ describe('owner-catalog-registry', () => {
     expect(tsv.split('\n')[0]).toContain('cdCode');
     expect(tsv).toContain('CD001');
   });
+
+  it('marks owner 採用 idle rows in use even when defaultEnabled is false', () => {
+    const rows = buildOwnerCatalogIndex().filter((r) => r.kind === 'idle-library');
+    for (const clipId of [
+      'IdleMixamoIdle',
+      'IdleMixamoStanding',
+      'IdleMixamoBreathing',
+      'IdleMixamoHappy',
+    ]) {
+      expect(rows.find((r) => r.nativeId === `lib-${clipId}`)?.inUse).toBe(true);
+    }
+  });
 });

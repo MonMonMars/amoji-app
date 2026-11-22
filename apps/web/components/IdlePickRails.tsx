@@ -13,6 +13,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { IDLE_CLIP_OPTIONS } from '../lib/idle-clips';
 import { isIdleEnabled, listEnabledNums, setIdleEnabled } from '../lib/idle-enabled';
+import {
+  isOwnerOffRailIdleEnabled,
+  listOwnerOffRailEnabledClipIds,
+  listOwnerOffRailIdleRows,
+  setOwnerOffRailIdleEnabled,
+  type IdleOwnerOffRailRow,
+} from '../lib/idle-owner-offrail';
 import { idlePickFor, isDefaultIdleClip, saveIdlePick } from '../lib/idle-pick';
 import { usePrefs, t } from '../lib/prefs';
 
@@ -33,16 +40,20 @@ export default function IdlePickRails({
   // null / [] until localStorage sync — avoid default-chip flash then jump to saved pick.
   const [picked, setPicked] = useState<string | null>(null);
   const [enabled, setEnabled] = useState<number[]>([]);
+  const [ownerRows, setOwnerRows] = useState<IdleOwnerOffRailRow[]>([]);
+  const [ownerOn, setOwnerOn] = useState<string[]>([]);
   const [ready, setReady] = useState(false);
 
   // Long-press bookkeeping. A ref, because a re-render mid-press must not cancel it.
-  const holdRef = useRef<{ timer: ReturnType<typeof setTimeout>; x: number; y: number } | null>(null);
+  const holdRef = useRef<{ timer: ReturnType<typeof setTimeout>; x: number; y: number; fire: () => void } | null>(null);
   /** Set once a long press fires, so the following click does not also pin the clip. */
   const suppressClickRef = useRef(false);
 
   useEffect(() => {
     setPicked(idlePickFor(characterId));
     setEnabled(listEnabledNums());
+    setOwnerRows(listOwnerOffRailIdleRows());
+    setOwnerOn(listOwnerOffRailEnabledClipIds());
     setReady(true);
   }, [characterId]);
 
@@ -67,17 +78,23 @@ export default function IdlePickRails({
     setEnabled(setIdleEnabled(railNum, !isIdleEnabled(railNum)));
   };
 
-  const startHold = (railNum: number, x: number, y: number) => {
+  const toggleOwner = (clipId: string) => {
+    if (!ready) return;
+    setOwnerOn(setOwnerOffRailIdleEnabled(clipId, !isOwnerOffRailIdleEnabled(clipId)));
+  };
+
+  const startHold = (x: number, y: number, fire: () => void) => {
     if (!ready) return;
     clearHold();
     suppressClickRef.current = false;
     holdRef.current = {
       x,
       y,
+      fire,
       timer: setTimeout(() => {
         holdRef.current = null;
         suppressClickRef.current = true;
-        toggle(railNum);
+        fire();
       }, LONG_PRESS_MS),
     };
   };
@@ -99,7 +116,7 @@ export default function IdlePickRails({
     >
       <div
         data-testid="idle-rail-left"
-        className="pointer-events-auto grid h-full min-h-0 max-h-full grid-cols-6 content-start gap-0.5 overflow-hidden sm:grid-cols-8" style={{ gridAutoRows: 'minmax(0, 1fr)' }}
+        className="pointer-events-auto grid min-h-0 flex-1 grid-cols-6 content-start gap-0.5 overflow-hidden sm:grid-cols-8" style={{ gridAutoRows: 'minmax(0, 1fr)' }}
       >
         {shown.map((item) => {
           const on = ready && picked === item.id;
@@ -149,7 +166,7 @@ export default function IdlePickRails({
               onPointerDown={(e) => {
                 // Mouse/pen only: touch gets pointerdown too, but the callout on
                 // iOS is suppressed by CSS below; pointer events cover both.
-                startHold(item.num, e.clientX, e.clientY);
+                startHold(e.clientX, e.clientY, () => toggle(item.num));
               }}
               onPointerMove={(e) => moveHold(e.clientX, e.clientY)}
               onPointerUp={clearHold}
@@ -177,6 +194,81 @@ export default function IdlePickRails({
           );
         })}
       </div>
+      {ownerRows.length > 0 && (
+        <div
+          data-testid="idle-owner-offrail"
+          className="pointer-events-auto mt-1 flex shrink-0 flex-wrap gap-0.5"
+        >
+          {ownerRows.map((item) => {
+            const on = ready && picked === item.clipId;
+            const en = ready && ownerOn.includes(item.clipId);
+            const title = [
+              'owner 採用 · off-rail',
+              `lib #${item.libNum}`,
+              item.cId ?? 'app',
+              item.name,
+              en ? 'ON' : 'OFF',
+              item.playable ? 'playable' : 'not on disk',
+              'tap=use · hold/right-click=toggle',
+              'Alt+Enter toggles',
+            ].filter(Boolean).join(' · ');
+            return (
+              <button
+                key={`owner:${item.clipId}`}
+                type="button"
+                aria-label={t(lang, 'idleRailAria', {
+                  num: item.label,
+                  name: item.name,
+                  state: t(lang, en ? 'idleEnabled' : 'idleDisabled'),
+                })}
+                aria-keyshortcuts="Alt+Enter"
+                title={title}
+                aria-pressed={ready ? on : undefined}
+                disabled={!ready || !item.playable}
+                data-idle-owner-clip={item.clipId}
+                data-idle-lib={item.libNum}
+                data-c-id={item.cId ?? ''}
+                onClick={() => {
+                  if (suppressClickRef.current) {
+                    suppressClickRef.current = false;
+                    return;
+                  }
+                  tap(item.clipId, item.playable);
+                }}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  clearHold();
+                  toggleOwner(item.clipId);
+                }}
+                onPointerDown={(e) => {
+                  startHold(e.clientX, e.clientY, () => toggleOwner(item.clipId));
+                }}
+                onPointerMove={(e) => moveHold(e.clientX, e.clientY)}
+                onPointerUp={clearHold}
+                onPointerCancel={clearHold}
+                onPointerLeave={clearHold}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.altKey || e.shiftKey)) {
+                    e.preventDefault();
+                    toggleOwner(item.clipId);
+                  }
+                }}
+                className={`relative min-h-[1.25rem] min-w-[2.1rem] rounded border border-dashed px-1 py-0.5 text-center text-[9px] font-semibold leading-none select-none [-webkit-touch-callout:none] ${
+                  !item.playable
+                    ? 'border-white/10 bg-black/20 text-white/30'
+                    : on
+                      ? 'border-white/80 bg-white/20 text-white ring-1 ring-white/50'
+                      : en
+                        ? 'border-amber-300/40 bg-black/30 text-amber-100/80'
+                        : 'border-white/10 bg-black/20 text-white/35'
+                }`}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
       {/* Keep right-rail test id for older layout assertions / smoke. */}
       <div data-testid="idle-rail-right" className="hidden" aria-hidden />
     </div>
