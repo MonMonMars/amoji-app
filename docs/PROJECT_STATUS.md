@@ -6,7 +6,8 @@
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** [Pages](https://monmonmars.github.io/amoji-app/docs/project-status.html) · repo [`project-status.html`](./project-status.html)  
 **Pixel pickers:** [Pages owner-resources](https://monmonmars.github.io/amoji-app/docs/owner-resources.html) (music · poke · **idle** · **stories** · **news** · **demo** tabs) · local: `cd docs && python3 -m http.server 8765`  
-**`main` tip:** `99896449` (**r2026-11-19.280** · #553 #554 #543 #545 #548 #534 #535 #555 #530 #556 landed)  
+**`main` tip:** `764f8bb7` (**r2026-11-19.280** · docs sync only; product code remains `99896449` + #553 #554 #543 #545 #548 #534 #535 #555 #530 #556)  
+**Stacked branches (unmerged, in order):** `cursor/idle-rail-honesty-0340-0eac` = `1bfa5745` (**r281**) → `cursor/idle-picker-c-numbers-0340-0eac` (**r282**, idle picker + Shapeweld + SFX). Merge order: docs (`main`) → idle-rail-honesty → idle-picker.
 **Handoff pack (2026-11-21):** [`HANDOFF_2026-11-21/`](./HANDOFF_2026-11-21/README.md) — state + provenance + binding constraints  
 **Frozen snapshot (2026-11-19, historical):** [`HANDOFF_2026-11-19/`](./HANDOFF_2026-11-19/README_HANDOFF.md)
 
@@ -22,10 +23,22 @@
 | --- | --- |
 | Handoff state (current) | [`HANDOFF_2026-11-21/STATE.md`](./HANDOFF_2026-11-21/STATE.md) |
 | Binding constraints | [`HANDOFF_2026-11-21/README.md`](./HANDOFF_2026-11-21/README.md) · [`PROVENANCE.md`](./HANDOFF_2026-11-21/PROVENANCE.md) |
-| **Next stamp** | **`r2026-11-19.281`** (only after Pixel reports r280 idle result) |
+| **Next stamp** | **`r2026-11-19.282`** on the stacked picker branch (unmerged). `main` stays **r280** until the stack merges. |
 | Merged train (historical) | r271 #553 · r272 #554 · r273 #543 · r274 #545 · r275 #548 · r276 #534 · r277 #535 · r278 #555 · r279 #530 · r280 #556 |
 
-**Gap vs live (r280):** none — `revision.txt`, `sw.js` `CACHE`, and `APP_REVISION` all read `r2026-11-19.280`. Product gaps that remain are **phone-verify only**, not unmerged code.
+**Gap vs live (r280):** `main` and live both read `r2026-11-19.280`. The r281/r282 work is **stacked, not merged** — no live gap is claimed for it.
+
+## r282 idle picker (stacked — phone Outstanding)
+
+Owner ask: *"add small button beside the character in the chat room … select one by one … C18, C16 etc."*
+
+| Item | State |
+| --- | --- |
+| Button beside canvas (`IdlePickerSheet.tsx`) | code on `cursor/idle-picker-c-numbers-0340-0eac` |
+| C-coded rows + tap-to-pin + Auto rotation | code; pin persists in `amoji.idlePick.v6` |
+| Shapeweld C156–C160/C164/C165 | 7 VRMAs, library #127–133, **picker-only** (curated rail stays 39) |
+| 11 universal reaction SFX | appended to `CLIP_LIBRARY.universal`; existing #1–94 unchanged |
+| Phone smoke | **Outstanding** — thumb reach, row fit, reload persistence |
 
 ## Snapshot
 

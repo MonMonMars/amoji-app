@@ -2,11 +2,13 @@
 // The chat room — full-screen 3D companion, status plate (top left),
 // settings gear (top right), boxless fading chat history + mic orb (bottom).
 import dynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ChatPanel from '../../components/ChatPanel';
 import { resolveChatAutoIdle } from '../../lib/chat-auto-idle';
 import { FAREWELL_WAVE_CLIP_ID } from '../../lib/idle-farewell';
+import { clearIdlePick, idlePickFor, saveIdlePick } from '../../lib/idle-pick';
+import IdlePickerSheet, { IdlePickerButton } from '../../components/IdlePickerSheet';
 import MiniGamePicker, { MiniGameMenuButton } from '../../components/MiniGamePicker';
 import DevPanel from '../../components/DevPanel';
 import FallbackNotice from '../../components/FallbackNotice';
@@ -64,6 +66,11 @@ function ChatRoom() {
   const [gameChromeHidden, setGameChromeHidden] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [idleClip, setIdleClip] = useState<string | null>(null);
+  // r282 — owner pinned one idle from the in-chat picker. A pin beats the
+  // content-driven rotation until she taps "Auto rotation".
+  const [pinnedIdle, setPinnedIdle] = useState<string | null>(null);
+  const [idlePickerOpen, setIdlePickerOpen] = useState(false);
+  const pinnedIdleRef = useRef<string | null>(null);
   const [watchingStars, setWatchingStars] = useState(false);
   // Hold chrome/canvas until amoji.prefs.v1 sync — same gate as /select prefsReady.
   const bootReady = prefsReady;
@@ -96,12 +103,34 @@ function ChatRoom() {
 
   const character = characterById(prefs.character);
   useEffect(() => {
-    setIdleClip(resolveChatAutoIdle({
+    // A saved pin (idle picker) survives reload and wins over the greet pick;
+    // otherwise fall back to the normal content-driven opening idle.
+    const pin = idlePickFor(character.id);
+    pinnedIdleRef.current = pin;
+    setPinnedIdle(pin);
+    setIdleClip(pin ?? resolveChatAutoIdle({
       assistantText: '',
       openGreet: true,
       characterId: character.id,
     }));
   }, [character.id]);
+
+  /** Pin one idle from the picker — live swap now, persisted for reload. */
+  const pickIdle = (clipId: string) => {
+    const saved = saveIdlePick(character.id, clipId);
+    if (!saved) return;
+    pinnedIdleRef.current = saved;
+    setPinnedIdle(saved);
+    setIdleClip(saved);
+  };
+
+  /** Clear the pin and hand the body back to normal rotation/chat motion. */
+  const resumeAutoIdle = () => {
+    clearIdlePick(character.id);
+    pinnedIdleRef.current = null;
+    setPinnedIdle(null);
+    setIdleClip(null);
+  };
 
   useEffect(() => {
     if (!leaving) return;
@@ -271,10 +300,32 @@ function ChatRoom() {
           handHoldCount={handHold}
           onStatus={setStatus}
           onMemCount={setMemCount}
-          onAutoIdle={(clip) => setIdleClip(clip)}
+          onAutoIdle={(clip) => {
+            // A pinned picker idle is authoritative; chat motion only drives
+            // the body while no pin is set.
+            if (pinnedIdleRef.current) return;
+            setIdleClip(clip);
+          }}
           onWatchingStarsActive={setWatchingStars}
         />}
       </div>
+      {/* r282 — small idle picker beside the companion, chat room only. */}
+      {bootReady && !gameChromeHidden && !inStory && !leaving && (
+        <IdlePickerButton
+          lang={prefs.lang}
+          pinned={!!pinnedIdle}
+          onClick={() => setIdlePickerOpen(true)}
+        />
+      )}
+      {idlePickerOpen && !gameChromeHidden && (
+        <IdlePickerSheet
+          lang={prefs.lang}
+          pinnedClipId={pinnedIdle}
+          onPick={pickIdle}
+          onAuto={resumeAutoIdle}
+          onClose={() => setIdlePickerOpen(false)}
+        />
+      )}
       {pickerOpen && (
         <MiniGamePicker
           lang={prefs.lang}

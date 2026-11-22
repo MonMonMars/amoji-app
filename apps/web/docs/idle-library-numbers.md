@@ -29,9 +29,17 @@ Free-library: `D:\Blender\projects\mon-character\free-library\`
 | 41 | IdleMixamoHappy | C18 | yes | off (planted r280) |
 | 50 | IdleMixamoStanding | C15 | yes | off (planted r280) |
 | 126 | IdleMixamoIdle | C14 | yes | off (planted r280) |
+| 127 | lib_C156 | C156 | yes | off (Shapeweld r282 · picker-only, NOT on curated rail) |
+| 128 | lib_C157 | C157 | yes | off (Shapeweld r282 · picker-only, NOT on curated rail) |
+| 129 | lib_C158 | C158 | yes | off (Shapeweld r282 · picker-only, NOT on curated rail) |
+| 130 | lib_C159 | C159 | yes | off (Shapeweld r282 · picker-only, NOT on curated rail) |
+| 131 | lib_C160 | C160 | yes | off (Shapeweld r282 · picker-only, NOT on curated rail) |
+| 132 | lib_C164 | C164 | yes | off (Shapeweld r282 · picker-only, NOT on curated rail; feet-planted C16/C18 alternative) |
+| 133 | lib_C165 | C165 | yes | off (Shapeweld r282 · picker-only, NOT on curated rail; feet-planted C16/C18 alternative) |
 
 Chat: `IdlePickRails` — curated rail **#1..39** (not full library #) plus **owner 採用 off-rail rows** C14/C15 (dashed buttons under the grid, never renumbered onto the rail). Tap a rail `#` / owner `C##` to pin; right-click/long-press toggles ON/OFF (`amoji.idleEnabled.v6`, migrates legacy library #). Off-rail owner toggles persist in `amoji.idleOwnerOff.v1` (empty/absent = ON).
 **Rail state is authoritative (r281):** rail 3 OFF ⇒ C16 `IdleMixamoBreathing` is not re-added from the owner 採用 list; rails 22+23 OFF ⇒ C18 `IdleMixamoHappy` is not re-added. C14 (#126) and C15 (#50) stay enabled by default because they have no curated rail row.
+**In-chat picker (r282):** `components/IdlePickerSheet.tsx` lists every owner 採用 clip by C-code plus the seven Shapeweld rows C156–C160/C164/C165. Tap = pin (live swap, persists in `amoji.idlePick.v6`), **Auto rotation** = clear pin. Shapeweld rows are picker-only — `CHAT_IDLE_CURATED` stays 39 rows.
 Feet: all idle loads use `rebaseClipHips` + `pinPlantedClipTracks`.
 
 | 55–56 | lib_C05/C06 | C05–C06 KayKit Wave/Cheer | yes | off |

@@ -1,0 +1,12 @@
+Shapeweld VRM Animation Library (selected clips)
+Source: https://shapeweld.com/tools/vrm-animations
+Downloaded 2026-11-20 from official API: /api/tools/animations/<id>/download
+Official page text: clips are free to use on any avatar in any project, commercial or not. Credit is welcome, not required.
+These are full official .vrma files (not the 4-second in-browser preview cuts).
+Keep this license note next to the files.
+Credit (optional): Shapeweld (shapeweld.com)
+
+Also staged 2026-11-20:
+- Shapeweld_Idle.vrma = official clip Male_Idle (quiet standing loop, 6s). API: https://shapeweld.com/api/tools/animations/Male_Idle/download
+- Shapeweld_HappyIdle.vrma = official clip Male_HappyIdle (already present). https://shapeweld.com/api/tools/animations/Male_HappyIdle/download
+Page: https://shapeweld.com/tools/vrm-animations

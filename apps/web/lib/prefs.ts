@@ -141,6 +141,9 @@ export type StrKey =
   | 'memoryTitle' | 'forgetBtn' | 'tutorBtn' | 'micTitle' | 'micOff' | 'sendBtn' | 'scrollLeft' | 'scrollRight'
   | 'close' | 'setupProgress' | 'next' | 'setupStepOf'
   | 'idleRailAria' | 'idleEnabled' | 'idleDisabled'
+  | 'idlePickerOpen' | 'idlePickerTitle' | 'idlePickerAuto' | 'idlePickerAutoDesc'
+  | 'idlePickerSelected' | 'idlePickerPlanted' | 'idlePickerOwner' | 'idlePickerNew'
+  | 'idlePickerFloating'
   // consolidated settings menu (r2026-10-02.7)
   | 'settingsCompanion' | 'settingsScene' | 'settingsVoice' | 'settingsData' | 'settingsHelp'
   | 'yourName' | 'yourNamePlaceholder' | 'yourGender' | 'genderMale' | 'genderFemale' | 'genderSecret'
@@ -593,6 +596,20 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   },
   idleEnabled: { en: 'enabled', yue: '已啟用', zh: '已启用', ja: 'オン' },
   idleDisabled: { en: 'disabled', yue: '已停用', zh: '已停用', ja: 'オフ' },
+  idlePickerOpen: { en: 'Idles', yue: '閒置姿勢', zh: '闲置姿势', ja: 'ポーズ' },
+  idlePickerTitle: { en: 'Idle poses', yue: '閒置姿勢', zh: '闲置姿势', ja: 'アイドルポーズ' },
+  idlePickerAuto: { en: 'Auto rotation', yue: '自動輪換', zh: '自动轮换', ja: '自動ローテーション' },
+  idlePickerAutoDesc: {
+    en: 'Return to normal rotation',
+    yue: '返去正常輪換',
+    zh: '返回正常轮换',
+    ja: '通常のローテーションに戻す',
+  },
+  idlePickerSelected: { en: 'Selected', yue: '已選', zh: '已选', ja: '選択中' },
+  idlePickerPlanted: { en: 'feet planted', yue: '貼地', zh: '贴地', ja: '接地' },
+  idlePickerFloating: { en: 'floating feet', yue: '浮腳', zh: '浮脚', ja: '足が浮く' },
+  idlePickerOwner: { en: 'Picked by you', yue: '你揀嘅', zh: '你选的', ja: 'オーナー採用' },
+  idlePickerNew: { en: 'New', yue: '新', zh: '新', ja: '新着' },
   settingsCompanion: { en: 'Companion', yue: '小伙伴', zh: '伙伴', ja: '相棒' },
   settingsScene: { en: 'Scene', yue: '場景', zh: '场景', ja: '場所' },
   settingsVoice: { en: 'Voice', yue: '聲音', zh: '声音', ja: '音声' },

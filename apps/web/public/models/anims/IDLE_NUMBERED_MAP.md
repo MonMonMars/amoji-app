@@ -48,6 +48,17 @@ Runtime default: curated rail **#10 IdleInnersceneSam** (`defaultCuratedRailNums
 | 41 | IdleMixamoHappy | IdleMixamoHappy | C18 | yes | Mixamo HappyIdle, planted r280 |
 | 50 | IdleMixamoStanding | IdleMixamoStanding | C15 | yes | Mixamo StandingIdle, planted r280 · owner 採用 off-rail toggle |
 | 126 | IdleMixamoIdle | IdleMixamoIdle | C14 | yes | Mixamo Idle, planted r280 · owner 採用 off-rail toggle |
+| 127 | ShapeweldSamba | lib_C156 | C156 | yes | Shapeweld Samba, r282 · picker-only, NOT on curated rail |
+| 128 | ShapeweldWaveDance | lib_C157 | C157 | yes | Shapeweld WaveDance, r282 · picker-only, NOT on curated rail |
+| 129 | ShapeweldUprock | lib_C158 | C158 | yes | Shapeweld Uprock, r282 · picker-only, NOT on curated rail |
+| 130 | ShapeweldBreakdance | lib_C159 | C159 | yes | Shapeweld Breakdance, r282 · picker-only, NOT on curated rail |
+| 131 | ShapeweldBashful | lib_C160 | C160 | yes | Shapeweld Bashful, planted, r282 · picker-only |
+| 132 | ShapeweldIdle | lib_C164 | C164 | yes | Shapeweld Idle, **feet planted**, r282 · C16/C18 alternative; picker-only |
+| 133 | ShapeweldHappyIdle | lib_C165 | C165 | yes | Shapeweld HappyIdle, **feet planted**, r282 · C16/C18 alternative; picker-only |
+
+## In-chat idle picker (r282)
+
+`components/IdlePickerSheet.tsx` + `lib/idle-chat-picker.ts` — small button beside the companion canvas in `/chat` opens a bottom sheet. Every row shows its C-code (`C14`, `C15`, `C16`, `C18`, `C156`…), tap = pin + immediate live swap; **Auto rotation** clears the pin. Pins persist per companion in `amoji.idlePick.v6`. C164/C165 are labelled as the feet-planted alternatives to floating Mixamo C16/C18. The seven Shapeweld rows are **picker-only** and never join `CHAT_IDLE_CURATED` (still 39 rows) — no promotion, so C16/C18 calm/sing authority is untouched.
 
 ## Chat rail vs owner 採用 (r281)
 

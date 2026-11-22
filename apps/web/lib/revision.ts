@@ -473,7 +473,10 @@
 // are no longer re-added by the owner 採用 list), C14/C15 get switchable off-rail
 // toggle rows, manifest dedupes IdleMixamoHappy + emits off-rail clips with owner
 // inUse, and ID### ↔ C## ↔ clipId bridges owner-picker notes.
-export const APP_REVISION = 'r2026-11-19.281';
+// r2026-11-19.282: in-chat idle picker (C-coded rows, tap = pin, auto rotation to
+// unpin) + 7 Shapeweld VRMAs (C156–C160/C164/C165, picker-only, NOT on curated
+// rails) + 11 universal CMA reaction SFX (haha/hmm aliases).
+export const APP_REVISION = 'r2026-11-19.282';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
