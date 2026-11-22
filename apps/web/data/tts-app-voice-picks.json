@@ -60,7 +60,8 @@
       "kind": "link",
       "locales": [
         "yue"
-      ]
+      ],
+      "note": "Cantonese verified 2026-11-22 — task=\"DIALECT\" with controls={\"dialect\":\"cantonese\"}. Vendor reports SOTA Cantonese Base CER 6.15% on WSYue-TTS-eval. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-006",
@@ -72,7 +73,7 @@
       "locales": [
         "yue"
       ],
-      "note": "amber — license caveat, not NC."
+      "note": "amber — license caveat, not NC. Cantonese listed (23 langs) but weak: 31.3% CER on MiniMax, users report Mandarin-mixed output. Use Cantonese reference audio + exact transcript or it drifts to Mandarin. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-007",
@@ -107,7 +108,8 @@
       "kind": "link",
       "locales": [
         "yue"
-      ]
+      ],
+      "note": "Cantonese by design — canto-tts-nano is a Cantonese-only model, Apache-2.0. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-010",
@@ -154,8 +156,9 @@
       "engine": "GLM-TTS",
       "kind": "link",
       "locales": [
-        "yue"
-      ]
+        "zh"
+      ],
+      "note": "No Cantonese. zai-org/GLM-TTS issue #8: 粤语 support 不太好; maintainer reply 2025-12-11 — 多方言多语种目前还在训练中. Primary languages are Chinese + mixed English. yue tag removed 2026-11-22. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-014",
@@ -202,7 +205,8 @@
       "kind": "link",
       "locales": [
         "yue"
-      ]
+      ],
+      "note": "Cantonese verified 2026-11-22 — --lang Chinese --accent yue; vendor ships dedicated Cantonese dialect evaluation. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-018",
@@ -237,7 +241,8 @@
       "kind": "link",
       "locales": [
         "yue"
-      ]
+      ],
+      "note": "Cantonese by design — jmtl HK Cantonese Qwen3-TTS LoRA, CC0. Female voice; pairs with TTS-015 (Kitten-TTS 2 HK Cantonese). Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-021",
@@ -248,7 +253,8 @@
       "kind": "link",
       "locales": [
         "yue"
-      ]
+      ],
+      "note": "Cantonese by design — ModelScope jiajia is a Cantonese (zh-HK) voice, female. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-022",
@@ -271,7 +277,8 @@
       "kind": "link",
       "locales": [
         "yue"
-      ]
+      ],
+      "note": "Cantonese verified 2026-11-22 — prefix text with the [Cantonese] tag. Vendor lists Cantonese among its four zero-shot TTS languages. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-024",
@@ -294,7 +301,8 @@
       "kind": "link",
       "locales": [
         "yue"
-      ]
+      ],
+      "note": "Cantonese verified 2026-11-22 — one of 9 supported Chinese dialects. Write authentic Cantonese text; Mandarin text will not produce Cantonese. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-026",
