@@ -37,6 +37,22 @@
 | Personality poke lines | `personality-voice.ts` | Y | Y | 384 templates in picker (`#poke` PK rows) |
 | Docs map | `docs/TTS_PIPELINE.md` | Y | Y (`docs/`) | — |
 
+### Cantonese (yue) — three Edge voices + OS fallback (r284 branch)
+
+**Owner decision, 2026-11-22 (verbatim intent):** “only use those 3 voice:（WanLung 男 / HiuMaan 女 / HiuGaai 女）”, with **Sin-ji / Sin-ju (Apple)** and Android `zh-HK` retained as the fallback tier. **No paid TTS APIs** — Doubao / Volcano Engine / Speechify were explicitly rejected (proprietary, no third-party licence).
+
+| Voice | Edge id | Gender | Role |
+| --- | --- | --- | --- |
+| WanLung | `zh-HK-WanLungNeural` | M | the only Cantonese male |
+| HiuMaan | `zh-HK-HiuMaanNeural` | F | female, calmer |
+| HiuGaai | `zh-HK-HiuGaaiNeural` | F | female, brighter |
+
+- **Why:** the shipping Edge read-aloud endpoint still 403s; gTTS + speechSynthesis carry live audio. Restricting the Edge ids keeps the picker/catalog honest, and the OS tier (Sin-ji / Sin-ju / Tracy / Danny / Android `zh-HK`) is the safety net when Edge or the Edge proxy is unavailable.
+- **Variety:** with only three Cantonese voices, per-character identity comes from `basePitch` / `baseRate` (OS matrix) and `edge-cast.ts` pitch/rate combos (Edge), not from a fourth speaker.
+- **Male path:** every male `yue` matrix names `WanLung` first, then `Sin-ju`, then the generic `Male` token (Windows Danny). The regression guard is `apps/web/tests/yue-three-voice.test.ts`.
+- **Catalogue:** `apps/web/data/tts-app-voice-picks.json` stays a 218-row keep/delete surface. TTS-001/002/003 are the three playable Edge rows (all `preferred`); the other 23 yue-tagged rows keep their evidence note and add “not wired and not planned under the current no-paid-API decision”.
+- **Status:** code + docs on `cursor/yue-three-voice-0340-0eac` (**r2026-11-19.284**) — **not merged**, no Pages deploy. Phone smoke still required; only the owner can mark voice quality Done.
+
 ### Merged voice PRs (recent, on `main`)
 
 | PR | What shipped |
@@ -187,6 +203,7 @@ Many remote branches (`origin/cursor/card-voice-*`, `voice-*`, `gtts-*`) are **h
 | Live curl (2026-11-22) | `revision.txt` **r2026-11-19.280**; `sw.js` CACHE `amoji-r2026-11-19.280`; owner-resources 200 |
 | GitHub | #528 #529 #547 #555 landed; #531 #533 #521 still open (docs/hold) |
 | Manifest | `node` count 522 entries |
+| 2026-11-22 (r284 branch) | Cantonese limited to WanLung/HiuMaan/HiuGaai; OS fallback Sin-ji/Sin-ju + generic Female/Male kept; 218-row catalogue annotations updated; new `yue-three-voice.test.ts`; `APP_REVISION` **r2026-11-19.284** (unmerged branch) |
 | — historical 2026-11-18 — | `origin/main` was r237; audio PRs #528/#529 then open |
 
 *Maintainers: bump **Generated** date when re-auditing after the next revision train.*

@@ -10,7 +10,7 @@
       "locales": [
         "yue"
       ],
-      "note": "Edge-TTS · Microsoft ToS.",
+      "note": "Edge-TTS · Microsoft ToS. Cantonese Edge tier — one of the owner's three voices (2026-11-22); WanLung is the only Cantonese male voice.",
       "edgeVoiceId": "zh-HK-WanLungNeural"
     },
     {
@@ -23,20 +23,20 @@
       "locales": [
         "yue"
       ],
-      "note": "Edge-TTS · Microsoft ToS.",
+      "note": "Edge-TTS · Microsoft ToS. Cantonese Edge tier — one of the owner's three voices (2026-11-22); the calmer female.",
       "edgeVoiceId": "zh-HK-HiuMaanNeural"
     },
     {
       "id": "TTS-003",
       "name": "zh-HK-HiuGaaiNeural",
-      "preferred": false,
+      "preferred": true,
       "gender": "F",
       "engine": "Edge-TTS",
       "kind": "edge",
       "locales": [
         "yue"
       ],
-      "note": "Edge-TTS · Microsoft ToS.",
+      "note": "Edge-TTS · Microsoft ToS. Cantonese Edge tier — one of the owner's three voices (2026-11-22); the brighter female.",
       "edgeVoiceId": "zh-HK-HiuGaaiNeural"
     },
     {
@@ -49,7 +49,7 @@
       "locales": [
         "yue"
       ],
-      "note": "HOLD lifted by Mon 2026-11-21."
+      "note": "HOLD lifted by Mon 2026-11-21. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-005",
@@ -60,7 +60,8 @@
       "kind": "link",
       "locales": [
         "yue"
-      ]
+      ],
+      "note": "Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-006",
@@ -72,7 +73,7 @@
       "locales": [
         "yue"
       ],
-      "note": "amber — license caveat, not NC."
+      "note": "amber — license caveat, not NC. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-007",
@@ -84,7 +85,7 @@
       "locales": [
         "yue"
       ],
-      "note": "copyleft (AGPL)."
+      "note": "copyleft (AGPL). Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-008",
@@ -96,7 +97,7 @@
       "locales": [
         "yue"
       ],
-      "note": "amber — license caveat, not NC."
+      "note": "amber — license caveat, not NC. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-009",
@@ -107,7 +108,8 @@
       "kind": "link",
       "locales": [
         "yue"
-      ]
+      ],
+      "note": "Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-010",
@@ -119,7 +121,7 @@
       "locales": [
         "yue"
       ],
-      "note": "amber — license caveat, not NC."
+      "note": "amber — license caveat, not NC. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-011",
@@ -131,7 +133,7 @@
       "locales": [
         "yue"
       ],
-      "note": "HOLD lifted by Mon 2026-11-21; still needs Pixel M/F zh-HK refs to sound right."
+      "note": "HOLD lifted by Mon 2026-11-21; still needs Pixel M/F zh-HK refs to sound right. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-012",
@@ -144,7 +146,7 @@
         "yue",
         "zh"
       ],
-      "note": "copyleft (GPL)."
+      "note": "copyleft (GPL). Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-013",
@@ -155,7 +157,8 @@
       "kind": "link",
       "locales": [
         "yue"
-      ]
+      ],
+      "note": "Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-014",
@@ -167,7 +170,7 @@
       "locales": [
         "yue"
       ],
-      "note": "HOLD lifted by Mon 2026-11-21; still needs Pixel M/F zh-HK refs to sound right; amber — license caveat, not NC."
+      "note": "HOLD lifted by Mon 2026-11-21; still needs Pixel M/F zh-HK refs to sound right; amber — license caveat, not NC. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-015",
@@ -179,7 +182,7 @@
       "locales": [
         "yue"
       ],
-      "note": "amber — license caveat, not NC."
+      "note": "amber — license caveat, not NC. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-016",
@@ -191,7 +194,7 @@
       "locales": [
         "yue"
       ],
-      "note": "amber — license caveat, not NC."
+      "note": "amber — license caveat, not NC. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-017",
@@ -202,7 +205,8 @@
       "kind": "link",
       "locales": [
         "yue"
-      ]
+      ],
+      "note": "Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-018",
@@ -214,7 +218,7 @@
       "locales": [
         "yue"
       ],
-      "note": "amber — license caveat, not NC."
+      "note": "amber — license caveat, not NC. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-019",
@@ -226,7 +230,7 @@
       "locales": [
         "yue"
       ],
-      "note": "amber — license caveat, not NC."
+      "note": "amber — license caveat, not NC. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-020",
@@ -237,7 +241,8 @@
       "kind": "link",
       "locales": [
         "yue"
-      ]
+      ],
+      "note": "Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-021",
@@ -248,7 +253,8 @@
       "kind": "link",
       "locales": [
         "yue"
-      ]
+      ],
+      "note": "Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-022",
@@ -260,7 +266,7 @@
       "locales": [
         "yue"
       ],
-      "note": "amber — license caveat, not NC."
+      "note": "amber — license caveat, not NC. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-023",
@@ -271,7 +277,8 @@
       "kind": "link",
       "locales": [
         "yue"
-      ]
+      ],
+      "note": "Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-024",
@@ -283,7 +290,7 @@
       "locales": [
         "yue"
       ],
-      "note": "amber — license caveat, not NC."
+      "note": "amber — license caveat, not NC. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-025",
@@ -294,7 +301,8 @@
       "kind": "link",
       "locales": [
         "yue"
-      ]
+      ],
+      "note": "Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-026",
@@ -308,7 +316,7 @@
         "zh",
         "en"
       ],
-      "note": "amber — license caveat, not NC."
+      "note": "amber — license caveat, not NC. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-027",
