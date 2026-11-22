@@ -28,6 +28,7 @@ Technical notes for assets, models, robot face, chat UX, audio, and merge proces
 | Doc | Topic |
 | --- | --- |
 | [`ASSETS.md`](./ASSETS.md) | Asset / license pipeline |
+| [`OSS_SCOUT.md`](./OSS_SCOUT.md) | Open-source candidates — WANT / WATCH / SKIP with licences (research only) |
 | [`MODELS.md`](./MODELS.md) | Model shortlist |
 | [`ROBOT-FACE.md`](./ROBOT-FACE.md) | Robot face integration |
 | [`PRIVACY_MEMORY.md`](./PRIVACY_MEMORY.md) | Memory UX + recall rules |
