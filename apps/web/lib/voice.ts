@@ -99,12 +99,12 @@ import { applyContentMood } from './companion';
 import { profilePokeLine } from './personality';
 import { pokeLineForSpeech } from './personality-voice';
 import {
-  browserVoicesForLang,
   edgeProsodyForTier,
   edgeVoiceIdForTier,
   isMaleNeuralVoice,
   selectBrowserVoice,
   synthNameList,
+  synthVoicePool,
 } from './voice-catalog';
 import { loadingFillerKind, recordedLaughClip, recordedPokeClip } from './voice-clips';
 import { LineQueue, speechLeadDiverged, speechRemainder } from './speech-queue';
@@ -127,6 +127,7 @@ import {
   tlForChoice,
 } from './voice-capability';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
+import { auditionRoute } from './voice-audition';
 import { formatVoiceChain, freeVoiceHops } from './tts-chain';
 import { stopThinkingSound } from './thinking-sound';
 import { runEarlyAudioPreload } from './early-audio-preload';
@@ -1178,8 +1179,12 @@ function pickVoice(characterId: string, lang: Lang, genderOverride?: 'female' | 
   refresh();
   const gender = genderOverride ?? characterVoiceGender(characterId);
   const color = edgeCastVoice(characterId, lang);
-  const byLang = browserVoicesForLang(cached, lang);
-  const pool = byLang.length ? byLang : cached;
+  // Same-language voices only. Borrowing the whole installed list (the old
+  // `: cached` fallback) is what made a Mandarin/Japanese line come out of a
+  // Cantonese or English speaker. Empty is honest: `bindSynthVoice` then sets
+  // `lang` and lets the platform choose, and the locale matrix below may still
+  // name a deliberate same-language substitute.
+  const pool = synthVoicePool(cached, lang);
   // Browser synth: genderOverride selects a real male OS voice; pitch/pace sit
   // clearly below female — never a female voice only slowed a little.
   const pitch = (gender === 'male' ? 0.68 : 1.16) + (color?.pitch ?? 0);
@@ -2088,10 +2093,10 @@ export function playVoiceGreeting(
     reportVoiceStatus(tier, true, `greeting ${choiceId}`);
   };
   /**
-   * After gTTS/Edge fail: ONE neural retry (gTTS → Edge). Never OS
-   * speechSynthesis ("robot") and never audible insurance clips (#431).
-   * Silent unlock stays OK; cards must not go fully mute when the first
-   * neural hop flakes.
+   * After gTTS/Edge fail: ONE neural retry (gTTS → Edge), then the device
+   * voice. Audible insurance clips stay banned (#431), and nothing starts
+   * while another tier is in flight — but a path that ends before synth is
+   * mute in every browser that sends a Referer with the MP3 load.
    */
   let neuralRetryUsed = false;
   const markGttsDone = () => { gttsPending = false; };
@@ -2139,11 +2144,52 @@ export function playVoiceGreeting(
       }, 120);
     },
   });
+  /**
+   * Final hop: the device's own speechSynthesis voice for this language.
+   *
+   * Only reached after gTTS and Edge have both failed, so it cannot talk over
+   * them (the "robot + female double" regression). It is the ONLY tier that
+   * still plays when Google answers 404 to a Referer-carrying media load,
+   * which is every desktop/Android browser (see lib/voice-audition.ts).
+   * Delivery stays with the tapped button: male pin, and deep/mid/bright map
+   * onto pace so the six Cantonese buttons do not collapse to one sound.
+   */
+  const auditionSynth = (tag: string): void => {
+    if (stale() || spokenBy) return;
+    const route = auditionRoute({
+      locale: lang,
+      gtts: false, // already failed above; this hop is the remainder
+      edge: false,
+      synth: typeof speechSynthesis !== 'undefined',
+      voices: typeof speechSynthesis !== 'undefined' ? speechSynthesis.getVoices() : [],
+    });
+    if (!route.playable) {
+      reportVoiceStatus('synth', false, `no playable engine (${tag}) ${choiceId}`);
+      return;
+    }
+    reportVoiceStatus('synth', true, `device voice (${tag}) ${choiceId} · ${route.reason}`);
+    onStart('synth');
+    synthSpeak(
+      text,
+      characterId,
+      lang,
+      'neutral',
+      1,
+      undefined,
+      1,
+      undefined,
+      () => { if (session) finishLipSync(session); },
+      delivery,
+      0.7,
+      true,
+      greetEdgeProsody.rate * 0.9,
+    );
+  };
   const runSynthAudition = (tag: string) => {
     if (stale()) return;
     if (spokenBy || gttsPending) return;
     if (neuralRetryUsed) {
-      reportVoiceStatus('synth', false, `greeting skip synth robot (${tag}) ${choiceId}`);
+      auditionSynth(tag);
       return;
     }
     neuralRetryUsed = true;
@@ -2158,6 +2204,9 @@ export function playVoiceGreeting(
       reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'greeting gtts retry failed');
       if (spokenBy === 'gtts') spokenBy = null;
       if (spokenBy) return;
+      // Breaker open = Edge is known 403; go straight to the device voice
+      // instead of burning its 3.5s socket timeout first.
+      if (edgeEndpointsDead()) { auditionSynth(`${tag} edge dead`); return; }
       // Ignore open breaker for this one card-greet salvage hop.
       try { resetEdgeHealth(); } catch { /* ignore */ }
       void speakEdge(text, greetEdgeOpts()).then(() => {
@@ -2165,7 +2214,7 @@ export function playVoiceGreeting(
       }).catch((err: unknown) => {
         if ((err as Error | undefined)?.message === 'canceled') return;
         reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'greeting edge retry failed');
-        reportVoiceStatus('synth', false, `greeting skip synth robot (${tag}) ${choiceId}`);
+        auditionSynth(tag);
       });
     });
   };
@@ -2505,12 +2554,45 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
       }, 120);
     },
   });
-  // Same as playVoiceGreeting: retry gTTS→Edge once; never OS synth robot.
+  /** Final hop: device speechSynthesis for this language (see playVoiceGreeting). */
+  const auditionSynth = (tag: string): void => {
+    if (stale() || spokenBy) return;
+    const route = auditionRoute({
+      locale,
+      gtts: false,
+      edge: false,
+      synth: typeof speechSynthesis !== 'undefined',
+      voices: typeof speechSynthesis !== 'undefined' ? speechSynthesis.getVoices() : [],
+    });
+    if (!route.playable) {
+      reportVoiceStatus('synth', false, `preview no playable engine (${tag}) ${choiceId}`);
+      return;
+    }
+    reportVoiceStatus('synth', true, `preview device voice (${tag}) ${choiceId} · ${route.reason}`);
+    spokenBy = 'synth';
+    markVoiceStarted();
+    synthSpeak(
+      text,
+      'preview',
+      locale,
+      'neutral',
+      1,
+      undefined,
+      1,
+      undefined,
+      undefined,
+      previewGender,
+      0.7,
+      true,
+      previewEdgeProsody.rate * 0.9,
+    );
+  };
+  // Same as playVoiceGreeting: retry gTTS→Edge once, then the device voice.
   const runSynthAudition = (tag: string): Promise<void> => {
     if (stale()) return Promise.resolve();
     if (spokenBy || gttsPending) return Promise.resolve();
     if (neuralRetryUsed) {
-      reportVoiceStatus('synth', false, `preview skip synth robot (${tag}) ${choiceId}`);
+      auditionSynth(tag);
       return Promise.resolve();
     }
     neuralRetryUsed = true;
@@ -2524,11 +2606,12 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
       reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'preview gtts retry failed');
       if (spokenBy === 'gtts') spokenBy = null;
       if (spokenBy) return;
+      if (edgeEndpointsDead()) { auditionSynth(`${tag} edge dead`); return; }
       try { resetEdgeHealth(); } catch { /* ignore */ }
       return speakEdge(text, previewEdgeOpts()).then(() => undefined).catch((err: unknown) => {
         if ((err as Error | undefined)?.message === 'canceled') return;
         reportVoiceStatus('edge', false, (err as Error | undefined)?.message ?? 'preview edge retry failed');
-        reportVoiceStatus('synth', false, `preview skip synth robot (${tag}) ${choiceId}`);
+        auditionSynth(tag);
       });
     });
   };

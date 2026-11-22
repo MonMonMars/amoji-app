@@ -39,8 +39,13 @@ describe('greeting tier arbitration (one voice per tap)', () => {
   it('the neural-retry fallback refuses to fire once any tier has started', () => {
     expect(body).toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?if \(spokenBy \|\| gttsPending\) return;/);
     expect(body).toContain('greeting neural retry');
-    expect(body).toContain('greeting skip synth robot');
-    expect(body).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?synthSpeak\(/);
+    // Terminal device-voice hop. It is the only tier that survives a
+    // Referer-blocked Google + a 403'd Edge, so it must exist — but it may
+    // only run after the other tiers rejected and nothing has started.
+    expect(body).toContain('const auditionSynth');
+    expect(body).toMatch(/const auditionSynth = \(tag: string\): void => \{[\s\S]*?if \(stale\(\) \|\| spokenBy\) return;/);
+    expect(body).not.toContain('skip synth robot');
+    expect(body).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]{0,80}?synthSpeak\(/);
   });
 
   it('an Edge failure does not start synth while gtts owns the line', () => {

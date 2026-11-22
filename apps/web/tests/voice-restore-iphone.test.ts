@@ -25,7 +25,7 @@ describe('voice restore — one tier speaks, never two', () => {
     expect(greet).toContain("onStart('edge')");
   });
 
-  it('the greeting still primes audio in the tap (synth speak is not used)', () => {
+  it('the greeting still primes audio in the tap, and synth is the last hop only', () => {
     expect(greet).not.toContain('primeSynthInGesture(true)');
     expect(greet).toContain('unlockAudioForCardAudition()');
     expect(greet).toContain('stopSpeakingForCardAudition()');
@@ -33,8 +33,14 @@ describe('voice restore — one tier speaks, never two', () => {
     expect(greet).not.toContain('stopSpeaking()');
     expect(greet).toContain("runSynthAudition('greeting fallback')");
     expect(greet).toContain('greeting neural retry');
-    expect(greet).toContain('greeting skip synth robot');
-    expect(greet).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?synthSpeak\(/);
+    // The device voice is the terminal hop. gTTS answers 404 to any browser
+    // media load that carries a Referer (measured for all four locales), so a
+    // path that stops before synth leaves every button mute — the owner bug.
+    expect(greet).toContain('const auditionSynth');
+    expect(greet).toMatch(/const auditionSynth = \(tag: string\): void => \{[\s\S]*?if \(stale\(\) \|\| spokenBy\) return;/);
+    // Synth must never start from the primary gTTS path — only from the
+    // neural-retry/dead-Edge fallbacks that run after the other tiers failed.
+    expect(greet).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]{0,80}?synthSpeak\(/);
   });
 
   it('the greeting tracks the winner so only one tier speaks', () => {

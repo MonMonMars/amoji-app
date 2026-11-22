@@ -70,7 +70,7 @@ export const ENGINE_VERDICTS: readonly EngineVerdict[] = [
     status: 'works',
     locales: ALL_LOCALES,
     evidence:
-      'GET translate.google.com/translate_tts with client=tw-ob answers 200 audio/mpeg. Voice is chosen by `tl` only; voice/name/speaker params return byte-identical audio.',
+      'GET translate.google.com/translate_tts with client=tw-ob answers 200 audio/mpeg. Voice is chosen by `tl` only; voice/name/speaker params return byte-identical audio. CAVEAT (measured in a browser 2026-11-23): the SAME url returns 404 text/html as soon as a `Referer` is present, identically for yue/zh-CN/zh-HK/ja/en-US, so every browser that sends one with a media load (desktop Chrome/Edge/Firefox, Android Chrome) gets MediaError 4. The audition path therefore must end in the device voice (lib/voice-audition.ts); gTTS stays the first hop for Safari and for a user-supplied proxy.',
   },
   {
     engine: 'edge',
