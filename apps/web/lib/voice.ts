@@ -2390,8 +2390,13 @@ export function playPokeBurst(characterId: string, lang: Lang, zone?: string, po
   const gender = characterVoiceGender(characterId);
   const z = zone || 'torso';
   if (voiceOutputAllowed()) {
-    const line = pokeBurstSpokenLine(characterId, lang, z, pokeN);
-    speak(line, characterId, lang, { surprise: 0.62 }, undefined, 1.05);
+    // ORDER MATTERS. LineQueue is strictly serial (speech-queue.ts begin()),
+    // so enqueue order IS play order. The zone clip used to be enqueued after
+    // speak(), which put it behind the whole spoken sentence: the body had
+    // finished recoiling long before the sound arrived, which is exactly the
+    // owner's "the poke reaction sound is always not correct". The clip is the
+    // impact, so it must land with the impact, inside POKE_REACTION_MS (1200ms,
+    // poke-hit.ts). Do NOT "tidy" this back to speak-then-clip.
     if (sfxEnabled() && !isMasterMuted()) {
       const file = recordedPokeClip(gender, z);
       lineQueue.enqueue({
@@ -2406,6 +2411,8 @@ export function playPokeBurst(characterId: string, lang: Lang, zone?: string, po
       });
       drainSpeech();
     }
+    const line = pokeBurstSpokenLine(characterId, lang, z, pokeN);
+    speak(line, characterId, lang, { surprise: 0.62 }, undefined, 1.05);
     return;
   }
   if (!sfxEnabled() || isMasterMuted()) return;

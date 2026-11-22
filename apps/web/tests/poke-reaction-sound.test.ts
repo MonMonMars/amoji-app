@@ -27,6 +27,7 @@ import {
 } from '../lib/voice-clips';
 import { CMA_REACTION_GALLERY, cmaCodeFromPath } from '../lib/cma-reaction-gallery';
 import { POKE_REACTION_MS } from '../lib/poke-hit';
+import { LineQueue } from '../lib/speech-queue';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const publicFile = (rel: string) => join(here, '../public', rel.replace(/^\//, ''));
@@ -129,25 +130,70 @@ describe('r282 owner reaction pack is present and registered', () => {
 });
 
 /**
- * KNOWN DEFECT, deliberately skipped so CI stays green while voice.ts is owned
- * by the concurrent voice-routing branch. lib/voice.ts `playPokeBurst` calls
- * `speak(...)` first and then `lineQueue.enqueue(clipFile)`; LineQueue is
- * strictly serial, so with Voice replies on the recorded reaction starts only
- * after the full spoken sentence and lands outside POKE_REACTION_MS. Flipping
- * this test on is the acceptance check for the fix (enqueue the clip first).
+ * Owner: "the poke reaction sound is always not correct". LineQueue is strictly
+ * serial, so enqueue order is play order. Until r284-fix the zone clip was
+ * enqueued AFTER speak(), which pushed the impact sound behind the entire
+ * spoken sentence - seconds past the 1200ms POKE_REACTION_MS window, so the
+ * body had already settled by the time the "ouch" arrived. The clip is the
+ * impact and must start with the motion.
  */
-describe.skip('poke SFX ordering (blocked on voice.ts ownership)', () => {
+describe('poke SFX ordering (impact first)', () => {
   it('queues the zone clip before the spoken line', () => {
     const voice = readFileSync(join(here, '../lib/voice.ts'), 'utf8');
-    const burst = voice.slice(
-      voice.indexOf('export function playPokeBurst'),
-      voice.indexOf('export function playLaughBurst'),
-    );
+    // Strip comments: the explanatory comment at the change site necessarily
+    // names both calls, and a source scan must not read prose as code.
+    const burst = voice
+      .slice(
+        voice.indexOf('export function playPokeBurst'),
+        voice.indexOf('export function playLaughBurst'),
+      )
+      .replace(/\/\/[^\n]*/g, '');
     const speakAt = burst.indexOf('speak(');
     const clipAt = burst.indexOf('lineQueue.enqueue(');
     expect(speakAt).toBeGreaterThan(-1);
     expect(clipAt).toBeGreaterThan(-1);
     expect(clipAt).toBeLessThan(speakAt);
+  });
+
+  it('explains the order at the change site so it is not "tidied" back', () => {
+    const voice = readFileSync(join(here, '../lib/voice.ts'), 'utf8');
+    const burst = voice.slice(
+      voice.indexOf('export function playPokeBurst'),
+      voice.indexOf('export function playLaughBurst'),
+    );
+    expect(burst).toMatch(/ORDER MATTERS/);
+    expect(burst).toContain('POKE_REACTION_MS');
+  });
+
+  it('still drains the queue when the clip is queued first', () => {
+    const voice = readFileSync(join(here, '../lib/voice.ts'), 'utf8');
+    const burst = voice.slice(
+      voice.indexOf('export function playPokeBurst'),
+      voice.indexOf('export function playLaughBurst'),
+    );
+    const clipAt = burst.indexOf('lineQueue.enqueue(');
+    const drainAt = burst.indexOf('drainSpeech()');
+    expect(drainAt).toBeGreaterThan(clipAt);
+  });
+
+  /**
+   * The defect and the fix, reproduced on the real serial queue: with the old
+   * order the reaction MP3 cannot start until the spoken line completes, i.e.
+   * far outside POKE_REACTION_MS.
+   */
+  it('old order pushed the impact past the 1200ms reaction window', () => {
+    const broken = new LineQueue<string>();
+    broken.enqueue('spoken-line'); // long TTS
+    broken.enqueue('poke-sfx'); // impact queued behind it
+    const first = broken.begin();
+    expect(first?.item).toBe('spoken-line'); // <- the bug: motion is long over
+    expect(POKE_REACTION_MS).toBe(1200);
+
+    const fixed = new LineQueue<string>();
+    fixed.enqueue('poke-sfx'); // impact first
+    fixed.enqueue('spoken-line');
+    const impact = fixed.begin();
+    expect(impact?.item).toBe('poke-sfx'); // <- starts with the motion
   });
 });
 
