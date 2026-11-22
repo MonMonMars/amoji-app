@@ -12,8 +12,13 @@ import {
   readMigratingPrefJson,
 } from './idle-owner-migrate';
 import { applyOwnerIdleRailFilter, ownerIdleClipDeleted } from './owner-picker-decisions';
-import { committedOwnerPickerSelection } from './owner-picker-ship-set';
 import { isRetiredIdleNum } from './idle-retired';
+import {
+  forgetOwnerOffRailIdleCache,
+  isOwnerOffRailIdleEnabled,
+  listOwnerOffRailIdleRows,
+  resetOwnerOffRailIdle,
+} from './idle-owner-offrail';
 import {
   CHAT_IDLE_CURATED,
   curatedRailByNum,
@@ -22,7 +27,6 @@ import {
 } from './idle-curated-rail';
 import {
   idleByNum,
-  idleByClipId,
   playableIdles,
   type IdleLibraryEntry,
 } from './idle-library';
@@ -158,10 +162,14 @@ export function listEnabledIdleClipIds(): string[] {
     seen.add(row.clipId);
     ids.push(row.clipId);
   }
-  // Owner 採用 clips that are not on the curated rail (e.g. planted Mixamo C14/C15).
-  for (const id of committedOwnerPickerSelection().idleClipIds ?? []) {
+  // Owner 採用 clips that are not on the curated rail (e.g. planted Mixamo
+  // C14/C15). Rail clips are never re-added here: if a curated rail is OFF,
+  // its clip stays OFF (r281 — rail state is authoritative).
+  for (const row of listOwnerOffRailIdleRows()) {
+    const id = row.clipId;
+    if (!isOwnerOffRailIdleEnabled(id)) continue;
     if (seen.has(id) || ownerIdleClipDeleted(id)) continue;
-    const lib = idleByClipId(id);
+    const lib = idleByNum(row.libNum);
     if (!lib?.playable || lib.retired || isRetiredIdleNum(lib.num) || !isHonorableIdleClip(id)) continue;
     seen.add(id);
     ids.push(id);
@@ -177,6 +185,7 @@ export function listEnabledIdleClipIds(): string[] {
 export function resetIdleEnabled(): void {
   memory = freshOwnerEnabledRails();
   loaded = true;
+  resetOwnerOffRailIdle();
   try {
     if (typeof localStorage !== 'undefined') localStorage.removeItem(KEY);
   } catch { /* ignore */ }
@@ -185,6 +194,7 @@ export function resetIdleEnabled(): void {
 export function forgetIdleEnabledCache(): void {
   memory = null;
   loaded = false;
+  forgetOwnerOffRailIdleCache();
 }
 
 export function enabledPlayableEntries(): IdleLibraryEntry[] {

@@ -55,4 +55,11 @@ describe('IdlePickRails toggle is reachable without a right-click', () => {
     const calmUses = (rails.match(/calm/g) ?? []).length;
     expect(calmUses).toBeGreaterThan(1);
   });
+
+  it('renders off-rail owner 採用 clips as their own toggle rows (r281)', () => {
+    expect(rails).toContain('data-testid="idle-owner-offrail"');
+    expect(rails).toContain('listOwnerOffRailIdleRows');
+    expect(rails).toContain('setOwnerOffRailIdleEnabled');
+    expect(rails).toContain('toggleOwner(item.clipId)');
+  });
 });

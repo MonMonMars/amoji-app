@@ -16,7 +16,8 @@ import {
 import { CHARACTERS_WANT, FROZEN_CC0_IDS, WANT_CAST_RELEASE } from './characters-want';
 import { CHAT_IDLE_CURATED, type IdleCuratedRailEntry } from './idle-curated-rail';
 import { curatedLibraryRow } from './idle-curated-rail';
-import { IDLE_LIBRARY } from './idle-library';
+import { IDLE_LIBRARY, idleByClipId } from './idle-library';
+import { ownerIdleClipSelected, ownerOffRailIdleClipIds } from './idle-owner-pick';
 import {
   HELD_GPU_ENGINES,
   SKIPPED_ENGINES,
@@ -51,6 +52,8 @@ export interface OwnerResourceEntry {
   usedBy: string;
   status: OwnerResourceStatus;
   notes?: string;
+  /** True when the owner committed this row as 採用 (idle rows). */
+  inUse?: boolean;
   previewKind?: 'gif' | 'webp' | 'mp4' | 'vrma' | 'placeholder';
   previewPath?: string;
 }
@@ -126,15 +129,40 @@ export function buildOwnerResourceIndex(): OwnerResourceEntry[] {
     });
   }
 
+  // One row per distinct idle clip — rail #22 and #23 both host IdleMixamoHappy,
+  // so grouping avoids duplicate entries while notes keep both rail numbers.
+  const idleRails = new Map<string, number[]>();
   for (const e of CHAT_IDLE_CURATED) {
-    const lib = curatedLibraryRow(e.clipId);
+    const rails = idleRails.get(e.clipId) ?? [];
+    rails.push(e.railNum);
+    idleRails.set(e.clipId, rails);
+  }
+  for (const [clipId, rails] of idleRails) {
+    const lib = curatedLibraryRow(clipId);
+    const libRow = idleByClipId(clipId);
     out.push({
       type: 'idle-vrma',
-      id: e.clipId,
-      pathOrUrl: lib?.vrmaUrl ?? `models/anims/${e.clipId}.vrma`,
+      id: clipId,
+      pathOrUrl: lib?.vrmaUrl ?? `models/anims/${clipId}.vrma`,
       usedBy: 'idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas',
       status: lib ? 'wired' : 'unused',
-      notes: `rail #${e.railNum} · legacy lib #${e.legacyLibNum}`,
+      notes: `${rails.length > 1 ? `rails #${rails.join(', #')}` : `rail #${rails[0]}`} · legacy lib #${libRow?.num ?? '?'}${ownerIdleClipSelected(clipId) ? ' · owner 採用' : ''}`,
+      inUse: ownerIdleClipSelected(clipId),
+    });
+  }
+  // Owner 採用 clips with no curated rail row (C14 #126, C15 #50). They rotate
+  // via the owner off-rail toggle in IdlePickRails — not a rail row.
+  for (const clipId of ownerOffRailIdleClipIds()) {
+    if (idleRails.has(clipId)) continue;
+    const lib = idleByClipId(clipId);
+    out.push({
+      type: 'idle-vrma',
+      id: clipId,
+      pathOrUrl: lib?.vrmaUrl ?? `models/anims/${clipId}.vrma`,
+      usedBy: 'idle-enabled.ts · IdlePickRails owner off-rail toggle',
+      status: lib?.playable ? 'wired' : 'unused',
+      notes: `off-rail owner 採用 · legacy lib #${lib?.num ?? '?'} · ${lib?.cId ?? 'app'}`,
+      inUse: ownerIdleClipSelected(clipId),
     });
   }
 

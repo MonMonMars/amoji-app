@@ -60,6 +60,7 @@ import { highestStoryOwnerCode } from '../apps/web/lib/story-catalog.ts';
 import { DEMO_PHASE_BUTTONS } from '../apps/web/lib/demo-phase.ts';
 import { OWNER_NEWS_CATALOG } from '../apps/web/lib/owner-news-catalog.ts';
 import { IDLE_OWNER_REF_CATALOG } from '../apps/web/lib/idle-owner-ref-catalog.ts';
+import { ownerIdleClipSelected } from '../apps/web/lib/idle-owner-pick.ts';
 import { performanceClipOwnerCodeForId } from '../apps/web/lib/performance-clip-owner.ts';
 import { HIGHEST_MV_OWNER_CODE } from '../apps/web/lib/music-mv-registry.ts';
 import {
@@ -1524,13 +1525,14 @@ function idleLibraryRowHtml(e: IdleLibraryEntry, libRef: string): string {
     family,
   ].filter(Boolean);
   const onRail = !!CHAT_IDLE_CURATED.find((r) => r.clipId === e.clipId);
-  const wired = (e.defaultEnabled || onRail) && !bad && e.playable && !e.retired;
+  const ownerPicked = ownerIdleClipSelected(e.clipId);
+  const wired = (ownerPicked || e.defaultEnabled || onRail) && !bad && e.playable && !e.retired;
   const nativeId = `lib-${e.clipId}`;
   const cat = catalogMeta(nativeId);
   return `<tr class="${rowClass}${wired ? ' row-in-use' : ''}" data-in-use="${wired ? '1' : '0'}" data-id="lib-${escapeHtml(e.clipId)}" data-clip-id="${escapeHtml(e.clipId)}" data-label="${escapeHtml(e.name)}" data-ref="${escapeHtml(libRef)}"${cat.attrs}>
       ${DECISION_TD}${NOTE_TD}
       <td>${cat.codeCell}</td>
-      <td class="flags saved-picks" title="Filled from amoji.idlePick.v${IDLE_PREFS_GENERATION} on this browser">${wired ? inUseTag(onRail ? 'curated rail' : 'default pool') : '—'}</td>
+      <td class="flags saved-picks" title="Filled from amoji.idlePick.v${IDLE_PREFS_GENERATION} on this browser">${wired ? inUseTag(onRail ? 'curated rail' : ownerPicked ? 'owner 採用' : 'default pool') : '—'}</td>
       ${motionPreviewCellHtml(resolveIdleMotionPreview(publicRoot, e))}
       <td><strong>#${e.num}</strong> <code>${escapeHtml(e.clipId)}</code></td>
       <td>${escapeHtml(e.name)}${e.cId ? `<br/><span class="tag">${escapeHtml(e.cId)}</span>` : ''}</td>

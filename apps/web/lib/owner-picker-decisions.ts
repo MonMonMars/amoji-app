@@ -7,6 +7,12 @@ import {
 } from './owner-picker-ship-set';
 import { performanceClipOwnerCode } from './performance-clip-owner';
 import { PERFORMANCE_CLIPS } from './performance-clips';
+import { PERF_MOTION_TAGS, type MotionTag } from './performance-motion';
+import { resolveIdleOwnerCode } from './idle-owner-code';
+import {
+  parseOwnerPickerNotesForIdle,
+  type OwnerPickerNotesExport,
+} from './owner-picker-notes';
 
 export const OWNER_PICKER_NOTES_KEY = 'amoji.ownerPickerNotes.v1' as const;
 export type OwnerPickerDecision = 'use' | 'keep' | 'delete';
@@ -22,6 +28,18 @@ function aliasKeys(key: string): string[] {
   if (rail) out.add(`rail-${Number(rail[1])}`);
   const rail2 = k.match(/^rail-(\d+)$/i);
   if (rail2) out.add(`ID-R${rail2[1]!.padStart(2, '0')}`);
+  // ID### / lib#N / clip id → one decision for every equivalent idle key.
+  // Bare C## only when it is not a performance-motion tag (C112 is both).
+  const bareC = /^C\d+$/i.test(k);
+  const idle = bareC && PERF_MOTION_TAGS.includes(k.toUpperCase() as MotionTag)
+    ? undefined
+    : resolveIdleOwnerCode(k);
+  if (idle) {
+    out.add(idle.code);
+    out.add(idle.clipId);
+    out.add(`lib#${idle.libNum}`);
+    if (idle.cId) out.add(idle.cId);
+  }
   return [...out];
 }
 
@@ -44,6 +62,21 @@ function parseNotesExport(raw: string, map: DecisionMap): void {
       } else if (row.keep === false) {
         for (const k of [row.cd, row.domain, row.id]) if (typeof k === 'string') setDecision(map, k, 'delete');
       }
+    }
+  }
+  // Idle rows need the ID### ↔ C## ↔ clipId bridge — the picker export uses
+  // ID040/ID050/ID126 while runtime decisions are keyed by clipId.
+  const idle = parseOwnerPickerNotesForIdle(data as OwnerPickerNotesExport);
+  if (idle) {
+    for (const clipId of idle.useClipIds) setDecision(map, clipId, 'use');
+    for (const clipId of idle.deleteClipIds) setDecision(map, clipId, 'delete');
+    for (const n of idle.useRailNums) {
+      setDecision(map, `rail-${n}`, 'use');
+      setDecision(map, `ID-R${String(n).padStart(2, '0')}`, 'use');
+    }
+    for (const n of idle.deleteRailNums) {
+      setDecision(map, `rail-${n}`, 'delete');
+      setDecision(map, `ID-R${String(n).padStart(2, '0')}`, 'delete');
     }
   }
 }
@@ -85,8 +118,10 @@ export const isOwnerPickerUse = (k: string) => ownerPickerDecision(k) === 'use';
 
 function idleKeys(clipId: string): string[] {
   const keys = [clipId];
-  const row = CHAT_IDLE_CURATED.find((e) => e.clipId === clipId);
-  if (row) keys.push(`rail-${row.railNum}`, `ID-R${String(row.railNum).padStart(2, '0')}`);
+  for (const row of CHAT_IDLE_CURATED) {
+    if (row.clipId !== clipId) continue;
+    keys.push(`rail-${row.railNum}`, `ID-R${String(row.railNum).padStart(2, '0')}`);
+  }
   return keys;
 }
 export const ownerIdleClipDeleted = (id: string) => idleKeys(id).some(isOwnerPickerDeleted);

@@ -1,10 +1,10 @@
 {
   "version": "2026-11-18-owner-resource-v3",
-  "generatedAt": "2026-11-18T16:18:59.153Z",
+  "generatedAt": "2026-11-22T09:42:47.682Z",
   "wantCastRelease": "free-library-want-2026-10-12",
   "stats": {
-    "total": 125,
-    "playable": 97,
+    "total": 126,
+    "playable": 98,
     "curatedRail": 39
   },
   "cmaWant": [
@@ -195,7 +195,8 @@
       "pathOrUrl": "models/anims/IdleBreathCalm.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #1 · legacy lib #1"
+      "notes": "rail #1 · legacy lib #1",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -203,7 +204,8 @@
       "pathOrUrl": "models/anims/StandardIdle.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #2 · legacy lib #2"
+      "notes": "rail #2 · legacy lib #2",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -211,7 +213,8 @@
       "pathOrUrl": "models/anims/IdleMixamoBreathing.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #3 · legacy lib #40"
+      "notes": "rail #3 · legacy lib #40 · owner 採用",
+      "inUse": true
     },
     {
       "type": "idle-vrma",
@@ -219,7 +222,8 @@
       "pathOrUrl": "models/anims/IdleNeutral.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #4 · legacy lib #33"
+      "notes": "rail #4 · legacy lib #33 · owner 採用",
+      "inUse": true
     },
     {
       "type": "idle-vrma",
@@ -227,7 +231,8 @@
       "pathOrUrl": "models/anims/IdleRpmFStanding001.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #5 · legacy lib #42"
+      "notes": "rail #5 · legacy lib #42 · owner 採用",
+      "inUse": true
     },
     {
       "type": "idle-vrma",
@@ -235,7 +240,8 @@
       "pathOrUrl": "models/anims/IdleQuaterniusHuman.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #6 · legacy lib #39"
+      "notes": "rail #6 · legacy lib #39",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -243,7 +249,8 @@
       "pathOrUrl": "models/anims/lib_C04.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #7 · legacy lib #5"
+      "notes": "rail #7 · legacy lib #5",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -251,7 +258,8 @@
       "pathOrUrl": "models/anims/IdleRpmFVar001.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #8 · legacy lib #43"
+      "notes": "rail #8 · legacy lib #43",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -259,7 +267,8 @@
       "pathOrUrl": "models/anims/lib_C25.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #9 · legacy lib #7"
+      "notes": "rail #9 · legacy lib #7",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -267,7 +276,8 @@
       "pathOrUrl": "models/anims/IdleInnersceneSam.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #10 · legacy lib #90"
+      "notes": "rail #10 · legacy lib #90 · owner 採用",
+      "inUse": true
     },
     {
       "type": "idle-vrma",
@@ -275,7 +285,8 @@
       "pathOrUrl": "models/anims/IdleRpmMStanding001.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #11 · legacy lib #93"
+      "notes": "rail #11 · legacy lib #93",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -283,7 +294,8 @@
       "pathOrUrl": "models/anims/LookAround.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #12 · legacy lib #3"
+      "notes": "rail #12 · legacy lib #3",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -291,7 +303,8 @@
       "pathOrUrl": "models/anims/lib_C42.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #13 · legacy lib #13"
+      "notes": "rail #13 · legacy lib #13",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -299,7 +312,8 @@
       "pathOrUrl": "models/anims/IdleRpmFVar003.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #14 · legacy lib #45"
+      "notes": "rail #14 · legacy lib #45",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -307,7 +321,8 @@
       "pathOrUrl": "models/anims/IdleRpmFVar004.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #15 · legacy lib #46"
+      "notes": "rail #15 · legacy lib #46",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -315,7 +330,8 @@
       "pathOrUrl": "models/anims/IdleRpmMVar001.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #16 · legacy lib #94"
+      "notes": "rail #16 · legacy lib #94",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -323,7 +339,8 @@
       "pathOrUrl": "models/anims/Thinking.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #17 · legacy lib #18"
+      "notes": "rail #17 · legacy lib #18",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -331,7 +348,8 @@
       "pathOrUrl": "models/anims/IdleSassy.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #18 · legacy lib #34"
+      "notes": "rail #18 · legacy lib #34",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -339,7 +357,8 @@
       "pathOrUrl": "models/anims/Relax.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #19 · legacy lib #32"
+      "notes": "rail #19 · legacy lib #32",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -347,7 +366,8 @@
       "pathOrUrl": "models/anims/IdleMixamoArmStretch.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #20 · legacy lib #53"
+      "notes": "rail #20 · legacy lib #53",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -355,7 +375,8 @@
       "pathOrUrl": "models/anims/IdleRpmMVar002.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #21 · legacy lib #95"
+      "notes": "rail #21 · legacy lib #95",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -363,15 +384,8 @@
       "pathOrUrl": "models/anims/IdleMixamoHappy.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #22 · legacy lib #41"
-    },
-    {
-      "type": "idle-vrma",
-      "id": "IdleMixamoHappy",
-      "pathOrUrl": "models/anims/IdleMixamoHappy.vrma",
-      "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
-      "status": "wired",
-      "notes": "rail #23 · legacy lib #41"
+      "notes": "rails #22, #23 · legacy lib #41 · owner 採用",
+      "inUse": true
     },
     {
       "type": "idle-vrma",
@@ -379,7 +393,8 @@
       "pathOrUrl": "models/anims/lib_C120.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #24 · legacy lib #113"
+      "notes": "rail #24 · legacy lib #113",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -387,7 +402,8 @@
       "pathOrUrl": "models/anims/lib_C111.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #25 · legacy lib #101"
+      "notes": "rail #25 · legacy lib #101",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -395,7 +411,8 @@
       "pathOrUrl": "models/anims/lib_C112.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #26 · legacy lib #102"
+      "notes": "rail #26 · legacy lib #102",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -403,7 +420,8 @@
       "pathOrUrl": "models/anims/lib_C113.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #27 · legacy lib #103"
+      "notes": "rail #27 · legacy lib #103",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -411,7 +429,8 @@
       "pathOrUrl": "models/anims/lib_C114.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #28 · legacy lib #104"
+      "notes": "rail #28 · legacy lib #104",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -419,7 +438,8 @@
       "pathOrUrl": "models/anims/lib_C121.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #29 · legacy lib #114"
+      "notes": "rail #29 · legacy lib #114",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -427,7 +447,8 @@
       "pathOrUrl": "models/anims/lib_C122.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #30 · legacy lib #115"
+      "notes": "rail #30 · legacy lib #115",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -435,7 +456,8 @@
       "pathOrUrl": "models/anims/lib_C123.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #31 · legacy lib #116"
+      "notes": "rail #31 · legacy lib #116",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -443,7 +465,8 @@
       "pathOrUrl": "models/anims/ThumbsUp.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #32 · legacy lib #20"
+      "notes": "rail #32 · legacy lib #20",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -451,7 +474,8 @@
       "pathOrUrl": "models/anims/Cheer.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #33 · legacy lib #22"
+      "notes": "rail #33 · legacy lib #22",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -459,7 +483,8 @@
       "pathOrUrl": "models/anims/PlayPunch.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #34 · legacy lib #108"
+      "notes": "rail #34 · legacy lib #108",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -467,7 +492,8 @@
       "pathOrUrl": "models/anims/YesCheer.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #35 · legacy lib #109"
+      "notes": "rail #35 · legacy lib #109",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -475,7 +501,8 @@
       "pathOrUrl": "models/anims/TaDa.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #36 · legacy lib #110"
+      "notes": "rail #36 · legacy lib #110",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -483,7 +510,8 @@
       "pathOrUrl": "models/anims/Bow.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #37 · legacy lib #111"
+      "notes": "rail #37 · legacy lib #111",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -491,7 +519,8 @@
       "pathOrUrl": "models/anims/StompAngry.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #38 · legacy lib #112"
+      "notes": "rail #38 · legacy lib #112",
+      "inUse": false
     },
     {
       "type": "idle-vrma",
@@ -499,7 +528,26 @@
       "pathOrUrl": "models/anims/lib_C146.vrma",
       "usedBy": "idle-curated-rail.ts · idle-enabled.ts · CompanionCanvas",
       "status": "wired",
-      "notes": "rail #39 · legacy lib #117"
+      "notes": "rail #39 · legacy lib #117",
+      "inUse": false
+    },
+    {
+      "type": "idle-vrma",
+      "id": "IdleMixamoIdle",
+      "pathOrUrl": "models/anims/IdleMixamoIdle.vrma",
+      "usedBy": "idle-enabled.ts · IdlePickRails owner off-rail toggle",
+      "status": "wired",
+      "notes": "off-rail owner 採用 · legacy lib #126 · C14",
+      "inUse": true
+    },
+    {
+      "type": "idle-vrma",
+      "id": "IdleMixamoStanding",
+      "pathOrUrl": "models/anims/IdleMixamoStanding.vrma",
+      "usedBy": "idle-enabled.ts · IdlePickRails owner off-rail toggle",
+      "status": "wired",
+      "notes": "off-rail owner 採用 · legacy lib #50 · C15",
+      "inUse": true
     },
     {
       "type": "character-vrm",
@@ -5177,6 +5225,16 @@
       "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip lib_C127",
       "previewKind": "vrma",
       "previewPath": "../models/anims/lib_C127.vrma"
+    },
+    {
+      "type": "owner-picker-motion-preview",
+      "id": "IdleMixamoIdle",
+      "pathOrUrl": "../models/anims/IdleMixamoIdle.vrma",
+      "usedBy": "owner-resources.html · motion preview column",
+      "status": "optional",
+      "notes": "VRMA on disk — bake: node scripts/generate-owner-picker-move-previews.mjs --clip IdleMixamoIdle",
+      "previewKind": "vrma",
+      "previewPath": "../models/anims/IdleMixamoIdle.vrma"
     },
     {
       "type": "owner-picker-motion-preview",

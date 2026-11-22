@@ -45,6 +45,26 @@ describe('owner-resource-manifest', () => {
     expect(stats.playable).toBeGreaterThan(stats.curatedRail);
   });
 
+  it('idle-vrma entries are deduped and include off-rail owner 採用 clips', () => {
+    const idle = buildOwnerResourceIndex().filter((e) => e.type === 'idle-vrma');
+    const ids = idle.map((e) => e.id);
+    expect(new Set(ids).size).toBe(ids.length); // no duplicate IdleMixamoHappy
+    expect(ids.filter((id) => id === 'IdleMixamoHappy')).toHaveLength(1);
+    expect(ids).toEqual(expect.arrayContaining([
+      'IdleMixamoIdle',
+      'IdleMixamoStanding',
+      'IdleMixamoBreathing',
+      'IdleMixamoHappy',
+    ]));
+    // Owner 採用 is in use even though defaultEnabled is false for all four.
+    for (const id of ['IdleMixamoIdle', 'IdleMixamoStanding', 'IdleMixamoBreathing', 'IdleMixamoHappy']) {
+      expect(idle.find((e) => e.id === id)?.inUse).toBe(true);
+    }
+    const happy = idle.find((e) => e.id === 'IdleMixamoHappy')!;
+    expect(happy.notes).toContain('#22');
+    expect(happy.notes).toContain('#23');
+  });
+
   it('buildOwnerResourceIndex lists every ST fairy-tale row', () => {
     const index = buildOwnerResourceIndex();
     const stRows = index.filter((e) => e.type === 'story-fairy-tale');

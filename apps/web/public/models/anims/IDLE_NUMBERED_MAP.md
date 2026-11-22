@@ -1,7 +1,7 @@
 # Idle numbered map (# → name → clipId → playable)
 
 Source of truth: `apps/web/lib/idle-library.ts`. Chat says "use #N".
-Defaults: **only #1 IdleBreathCalm + #2 StandardIdle** (`defaultEnabled`).
+Runtime default: curated rail **#10 IdleInnersceneSam** (`defaultCuratedRailNums()`); owner ship-set enables rails **#4/#5/#10** and owner 採用 off-rail clips **C14 IdleMixamoIdle (#126)** + **C15 IdleMixamoStanding (#50)**. `defaultEnabled` on library rows is legacy metadata, not the live rotation.
 
 | # | name | clipId | Cxx | playable | notes |
 |---|------|--------|-----|----------|-------|
@@ -46,8 +46,13 @@ Defaults: **only #1 IdleBreathCalm + #2 StandardIdle** (`defaultEnabled`).
 | 39 | IdleQuaterniusHuman | IdleQuaterniusHuman | — | yes | Quaternius AnimatedHuman Idle (#54) |
 | 40 | IdleMixamoBreathing | IdleMixamoBreathing | C16 | yes | Mixamo BreathingIdle, planted r280 |
 | 41 | IdleMixamoHappy | IdleMixamoHappy | C18 | yes | Mixamo HappyIdle, planted r280 |
-| 50 | IdleMixamoStanding | IdleMixamoStanding | C15 | yes | Mixamo StandingIdle, planted r280 |
-| 126 | IdleMixamoIdle | IdleMixamoIdle | C14 | yes | Mixamo Idle, planted r280 |
+| 50 | IdleMixamoStanding | IdleMixamoStanding | C15 | yes | Mixamo StandingIdle, planted r280 · owner 採用 off-rail toggle |
+| 126 | IdleMixamoIdle | IdleMixamoIdle | C14 | yes | Mixamo Idle, planted r280 · owner 採用 off-rail toggle |
+
+## Chat rail vs owner 採用 (r281)
+
+- C16 (#40) sits on curated rail **#3**; C18 (#41) sits on **#22 and #23**. Rail OFF is authoritative — the owner 採用 `idleClipIds` list no longer re-adds them.
+- C14 (#126) and C15 (#50) have **no curated rail row**; they appear as dashed owner toggle rows in `IdlePickRails` and default ON (`amoji.idleOwnerOff.v1` stores only the switched-off ids).
 
 ## Skipped / deferred
 
