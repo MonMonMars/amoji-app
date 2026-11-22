@@ -156,9 +156,9 @@
       "engine": "GLM-TTS",
       "kind": "link",
       "locales": [
-        "yue"
+        "zh"
       ],
-      "note": "Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
+      "note": "No Cantonese. zai-org/GLM-TTS issue #8: 粤语 support 不太好; maintainer reply 2025-12-11 — 多方言多语种目前还在训练中. Primary languages are Chinese + mixed English. yue tag removed 2026-11-22. Not wired and not planned under the current no-paid-API decision (owner 2026-11-22)."
     },
     {
       "id": "TTS-014",

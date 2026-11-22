@@ -40,12 +40,15 @@ describe('tts app keep/delete picks', () => {
   });
 
   it('matches the language counts from the keep/delete list', () => {
-    expect(TTS_APP_PICK_COUNTS.yue).toEqual({ total: 26, edge: 3, link: 23 });
-    expect(TTS_APP_PICK_COUNTS.zh).toEqual({ total: 33, edge: 11, link: 22 });
+    // yue 26 -> 25 and zh 33 -> 34: TTS-013 GLM-TTS was re-tagged off `yue`
+    // (zai-org/GLM-TTS issue #8 - Cantonese is still in training, so the row
+    // is not on the verified-Cantonese allowlist that lives on that branch).
+    expect(TTS_APP_PICK_COUNTS.yue).toEqual({ total: 25, edge: 3, link: 22 });
+    expect(TTS_APP_PICK_COUNTS.zh).toEqual({ total: 34, edge: 11, link: 23 });
     expect(TTS_APP_PICK_COUNTS.ja).toEqual({ total: 60, edge: 2, link: 58 });
     expect(TTS_APP_PICK_COUNTS.en).toEqual({ total: 113, edge: 47, link: 66 });
-    expect(ttsAppPicksForLocale('yue')).toHaveLength(26);
-    expect(ttsAppPicksForLocale('zh')).toHaveLength(33);
+    expect(ttsAppPicksForLocale('yue')).toHaveLength(25);
+    expect(ttsAppPicksForLocale('zh')).toHaveLength(34);
     expect(ttsAppPicksForLocale('ja')).toHaveLength(60);
     expect(ttsAppPicksForLocale('en')).toHaveLength(113);
   });
