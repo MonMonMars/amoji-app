@@ -1,0 +1,7 @@
+Shapeweld VRM Animation Library (selected clips)
+Source: https://shapeweld.com/tools/vrm-animations
+Downloaded 2026-11-20 from official API: /api/tools/animations/<id>/download
+Official page text: clips are free to use on any avatar in any project, commercial or not. Credit is welcome, not required.
+These are full official .vrma files (not the 4-second in-browser preview cuts).
+Keep this license note next to the files.
+Credit (optional): Shapeweld (shapeweld.com)

@@ -79,6 +79,7 @@
 | Docs tip after #399–#403 product ship | #404 |
 | Docs tip / Pages after #399–#404 | #405 |
 | No history-resume ask (code) | #331 / #366 / #412 |
+| In-chat idle picker with C-codes (code) | **r282** stacked branch `cursor/idle-picker-c-numbers-0340-0eac` — button beside canvas, C14/C15/C16/C18 + C156–C165, tap = pin, Auto rotation unpins. **Phone picker smoke Outstanding.** |
 | iPhone chat TTS + mic + first-phase latch (code) | #553 / **r271** |
 | 8-way full-body poke + gendered poke voice (code) | #554 / **r272** |
 | Owner **採用** runtime for idle/poke (code) | #543 / **r273** (supersedes #524) |
@@ -136,6 +137,7 @@
 
 | Date (HKT) | Change |
 |------------|--------|
+| 2026-11-22 r282 | Owner idle picker: small button beside the companion in `/chat` → C-coded list (owner 採用 C14/C15/C16/C18 + new Shapeweld C156–C160/C164/C165), tap = pin + live swap, Auto rotation unpins, pin persists (`amoji.idlePick.v6`). 7 Shapeweld VRMAs picker-only (curated rail stays 39); 11 universal CMA reaction SFX appended. **Stacked:** docs → idle-rail-honesty (r281) → idle-picker (r282). Phone picker smoke Outstanding. |
 | 2026-11-22 | Docs sync to **r280** / `99896449`: header, Done r271–r280, R11 row now names planted Mixamo; folded 2026-11-21 handoff pack into `docs/HANDOFF_2026-11-21/` (docs-only, no revision bump). |
 | 2026-11-16 ~14:05 | Tip `4463e647` / **r167**; delivery #458–#462 live; `verify:live` OK; **Phase B frozen** until owner smoke failures |
 | 2026-11-16 ~08:35 | **Frozen order pack:** `07dd76e3` card + P1 voice sink pin + P4 R12 cast shader + P3 poke #455 arm + P5 resource/mistake/data libs — **phone Outstanding unchanged** |

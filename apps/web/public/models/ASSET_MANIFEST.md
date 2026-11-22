@@ -207,6 +207,15 @@ Real VRMA animation clips (VRMC_vrm_animation), force-committed for GitHub Pages
 | anims/IdleMixamoHappy.vrma | idle Mixamo HappyIdle (#41, C18, planted r280, curated rails #22/#23 — rail toggle authoritative) |
 | anims/IdleMixamoStanding.vrma | idle Mixamo StandingIdle (#50, C15, planted r280, owner 採用 off-rail toggle) |
 | anims/IdleMixamoIdle.vrma | idle Mixamo Idle (#126, C14, planted r280, owner 採用 off-rail toggle) |
+| anims/lib_C156.vrma | dance Shapeweld Samba (#127, C156, r282 picker-only — NOT on curated rail) |
+| anims/lib_C157.vrma | dance Shapeweld WaveDance (#128, C157, r282 picker-only — NOT on curated rail) |
+| anims/lib_C158.vrma | dance Shapeweld Uprock (#129, C158, r282 picker-only — NOT on curated rail) |
+| anims/lib_C159.vrma | dance Shapeweld Breakdance (#130, C159, r282 picker-only — NOT on curated rail) |
+| anims/lib_C160.vrma | idle Shapeweld Bashful (#131, C160, r282 picker-only — NOT on curated rail) |
+| anims/lib_C164.vrma | idle Shapeweld Idle (#132, C164, feet-planted alternative to floating Mixamo C16/C18; picker-only — NOT on curated rail) |
+| anims/lib_C165.vrma | idle Shapeweld HappyIdle (#133, C165, feet-planted alternative to floating Mixamo C16/C18; picker-only — NOT on curated rail) |
+
+**Shapeweld licence (verbatim, 2026-11-20):** "Shapeweld official page (2026-11-20): free to use on any avatar in any project, commercial or not. Credit is welcome, not required. Not a named CC license." Sidecars copied verbatim beside the clips: `anims/LICENSE-SOURCE-Shapeweld-dance.txt`, `anims/LICENSE-SOURCE-Shapeweld-idle.txt`.
 
 Additional dormant clips ship on disk for future triggers (see repo `anims/` directory).
 

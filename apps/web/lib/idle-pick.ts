@@ -96,6 +96,16 @@ export function saveIdlePick(characterId: string, clipId: string): string | null
   return clipId;
 }
 
+/** Drop one companion's pin so chat idle rotation resumes. */
+export function clearIdlePick(characterId: string): void {
+  if (!characterId) return;
+  const cur = hydrate();
+  if (!(characterId in cur)) return;
+  const next = { ...cur };
+  delete next[characterId];
+  persist(next);
+}
+
 export function resetIdlePicks(): void {
   memory = {};
   loaded = true;

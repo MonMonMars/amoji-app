@@ -9,6 +9,14 @@ Tick on a real phone (prefer iPhone Safari). **Mandatory once:** hard refresh, t
 
 ## Priority now — r280 idle · card · news · R10–R13 · nonsense · captions
 
+### Idle picker + C164/C165 feet (r282, stacked branch — not live until merged)
+
+- [ ] On a Pixel/iPhone, is the small idle button beside her easy to reach with a thumb, and does it stay clear of the chat controls?
+- [ ] Open it: do the C-code rows (`C14`, `C15`, `C16`, `C18`, `C156`…) fit without horizontal scroll or clipped labels?
+- [ ] Tap down the list — does the avatar switch immediately each time, with the selected row clearly marked?
+- [ ] Pin one idle, reload the page: does the same idle come back? Tap **Auto rotation**: does normal rotation resume?
+- [ ] Judge **C164 / C165** feet: are they planted where Mixamo **C16 / C18** floated? Report `ROW: idle-c164-c165 DEVICE: <model>` planted / floating.
+
 ### Idle planted vs floating (r280 — blocking question)
 
 - [ ] After a **first-screen** hard refresh on r280, do **C14 / C15 / C16 / C18** (IdleMixamoIdle · IdleMixamoStanding · IdleMixamoBreathing · IdleMixamoHappy) look **planted** (feet on floor) or **floating**?

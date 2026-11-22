@@ -108,8 +108,8 @@ export const CLIP_LIBRARY = {
     male: ['laugh.mp3', 'smile.mp3', 'giggle.mp3', 'wow.mp3', 'um.mp3', 'oh.mp3', 'ha.mp3', 'ha_effort.mp3', 'oh_tts.mp3', 'sigh.mp3', 'um_tts.mp3', 'wow_tts.mp3', 'wow_woven.mp3'],
   },
   universal: {
-    female: ['laugh.mp3', 'smile.mp3', 'giggle.mp3', 'wow.mp3', 'um.mp3', 'oh.mp3', 'ha.mp3', 'giggle_en.mp3', 'giggle_group.mp3', 'ha_rpg.mp3', 'hehe.mp3', 'huh.mp3', 'laugh_anime.mp3', 'sigh.mp3', 'wow_mixkit.mp3', 'wow_reitanna.mp3', 'wow_woven.mp3'],
-    male: ['laugh.mp3', 'wow.mp3', 'oh.mp3', 'ha.mp3', 'sigh.mp3'],
+    female: ['laugh.mp3', 'smile.mp3', 'giggle.mp3', 'wow.mp3', 'um.mp3', 'oh.mp3', 'ha.mp3', 'giggle_en.mp3', 'giggle_group.mp3', 'ha_rpg.mp3', 'hehe.mp3', 'huh.mp3', 'laugh_anime.mp3', 'sigh.mp3', 'wow_mixkit.mp3', 'wow_reitanna.mp3', 'wow_woven.mp3', 'haha.mp3', 'hmm.mp3', 'ouch.mp3', 'yelp.mp3', 'hiccup.mp3'],
+    male: ['laugh.mp3', 'wow.mp3', 'oh.mp3', 'ha.mp3', 'sigh.mp3', 'um.mp3', 'haha.mp3', 'hmm.mp3', 'ouch.mp3', 'yelp.mp3', 'yawn.mp3'],
   },
 } as const;
 
@@ -156,7 +156,7 @@ export function clipLibraryId(path: string): number | null {
   return CLIP_BY_PATH.get(stripBasePath(path))?.id ?? null;
 }
 
-/** Path for CLIP_LIBRARY #N (1–99), or null. */
+/** Path for CLIP_LIBRARY #N (1–110), or null. */
 export function clipLibraryPath(id: number): string | null {
   if (!Number.isInteger(id) || id < 1) return null;
   return listClipLibrary()[id - 1]?.path ?? null;
@@ -167,9 +167,12 @@ export function clipLibraryIdFor(folder: ClipFolder, gender: VoiceClipGender, fi
   return clipLibraryId(`/voice-clips/${folder}/${gender}/${file}`);
 }
 
-/** laugh.mp3 and laugh_anime.mp3 both belong to laugh. hehe → giggle, huh → um. */
+/** laugh.mp3 and laugh_anime.mp3 both belong to laugh. hehe → giggle, huh → um.
+ * r282 aliases: haha → laugh (CMA00102/CMA00118), hmm → um (CMA00111/CMA00122). */
 export function emotionKindForFile(file: string): BurstClipKind | 'sigh' | null {
   const stem = file.replace(/\.mp3$/i, '').toLowerCase();
+  if (stem === 'haha' || stem.startsWith('haha_')) return 'laugh';
+  if (stem === 'hmm' || stem.startsWith('hmm_')) return 'um';
   if (stem === 'hehe' || stem.startsWith('hehe_')) return 'giggle';
   if (stem === 'huh' || stem.startsWith('huh_')) return 'um';
   if (stem === 'sigh' || stem.startsWith('sigh_')) return 'sigh';
@@ -222,7 +225,7 @@ export function clipFile(lang: string, gender: VoiceClipGender, kind: VoiceClipK
 /**
  * Long clean UM / hmm fillers (CMA00256–303). Preferred over short um.mp3 for
  * loading / thinking / download waits. Kept OUTSIDE CLIP_LIBRARY flatten so
- * emotion #1–99 SoT indices stay stable.
+ * emotion #1–110 SoT indices stay stable.
  */
 export const NSFW_CMA_DROP = [
   'CMA00040', 'CMA00098', 'CMA00099', 'CMA00100', 'CMA00196',

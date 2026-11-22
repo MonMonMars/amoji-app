@@ -4,6 +4,22 @@
 
 **Last updated:** 2026-11-22 (Asia/Hong_Kong)
 
+## 2026-11-22 — owner idle picker with C-codes
+
+**Owner ask (verbatim intent):** "how about add small button beside the character in the chat room, and let me press and select one by one, give each of them a number C18, C16. etc."
+
+**Repo state at logging:** docs fast-forwarded on `main` (`764f8bb7` = r280 docs). Work stacks on `cursor/idle-rail-honesty-0340-0eac` (r281) → `cursor/idle-picker-c-numbers-0340-0eac` (**r2026-11-19.282**). Merge order: docs → idle-rail-honesty → idle-picker.
+
+**Shipped in r282 (code):**
+- Small idle button beside the companion canvas (`components/IdlePickerSheet.tsx`), bottom sheet with one row per idle.
+- Rows carry the C-code prominently: owner 採用 **C14 / C15 / C16 / C18** plus new Shapeweld **C156–C160 / C164 / C165**; L-code fallback for Sam/RPM.
+- Tap = pin + immediate live swap; **Auto rotation** clears the pin; pin persists per companion in `amoji.idlePick.v6`.
+- C164/C165 labelled **feet-planted** — the alternatives to the floating Mixamo C16/C18.
+- 7 Shapeweld VRMAs copied to `public/models/anims/lib_C156…C165.vrma`, library #127–133, **not promoted onto curated rails** (`CHAT_IDLE_CURATED` stays 39).
+- 11 universal CMA reaction SFX appended (`haha`→laugh, `hmm`→um aliases); existing 1–94 clip indices unchanged (male block now #100–#110).
+
+**Phone smoke Outstanding:** does the button sit comfortably beside her on a Pixel/iPhone, do rows fit without horizontal scroll, and does a pinned idle survive reload? See [`docs/PHONE_SMOKE.md`](./docs/PHONE_SMOKE.md).
+
 ## 2026-11-22 — r280 docs sync + 2026-11-21 handoff pack folded into repo
 
 **Repo state at logging:** `main` = `99896449` = **r2026-11-19.280** (clean, synced). r271–r280 landed via #553 #554 #543 #545 #548 #534 #535 #555 #530 #556.

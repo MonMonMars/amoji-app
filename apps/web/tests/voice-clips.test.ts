@@ -189,14 +189,18 @@ describe('emotion clips', () => {
 });
 
 describe('CLIP_LIBRARY numbering', () => {
-  it('numbers 1–99 in yue→zh→ja→en→universal × F→M order', () => {
+  it('numbers 1–110 in yue→zh→ja→en→universal × F→M order', () => {
     const list = listClipLibrary();
-    expect(list).toHaveLength(99);
+    expect(list).toHaveLength(110);
     expect(list[0]).toMatchObject({ id: 1, path: '/voice-clips/yue/female/laugh.mp3' });
     expect(clipLibraryPath(5)).toBe('/voice-clips/yue/female/um.mp3');
     expect(clipLibraryPath(12)).toBe('/voice-clips/yue/male/um.mp3');
     expect(clipLibraryPath(52)).toBe('/voice-clips/ja/male/oh.mp3');
     expect(clipLibraryPath(94)).toBe('/voice-clips/universal/female/wow_woven.mp3');
+    // r282 additions: universal female #95–#99, universal male restarts at #100.
+    expect(clipLibraryPath(95)).toBe('/voice-clips/universal/female/haha.mp3');
+    expect(clipLibraryPath(100)).toBe('/voice-clips/universal/male/laugh.mp3');
+    expect(clipLibraryPath(110)).toBe('/voice-clips/universal/male/yawn.mp3');
     expect(fs.existsSync(path.resolve(here, '../public', recordedPokeClip('female').slice(1)))).toBe(true);
     expect(fs.existsSync(path.resolve(here, '../public', recordedPokeClip('male').slice(1)))).toBe(true);
     expect(clipLibraryIdFor('yue', 'female', 'um.mp3')).toBe(5);

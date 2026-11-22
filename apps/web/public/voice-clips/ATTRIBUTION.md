@@ -87,6 +87,28 @@ Credit: **anaphy** (Freesound).
 
 ---
 
+## r282 — CMA reaction library adds (universal male/female)
+
+Source: `D:\GrokBot_Files\amoji-reaction-sfx-library\clips\` + `manifest.json` (copied 2026-11-22). Appended at the tail of `CLIP_LIBRARY.universal.*`; existing 1–94 indices are unchanged.
+
+| Library file(s) | Original | Source | License |
+|---|---|---|---|
+| `universal/male/um.mp3` | CMA00396 · `male_standard_2.ogg` | OGA Dialog vocal samples | CC0 |
+| `universal/male/haha.mp3` | CMA00102 · `man-chuckle-01` | SFXMint | CC0 |
+| `universal/male/hmm.mp3` | CMA00111 · `esperar` | Freesound 170778 | CC0 |
+| `universal/male/ouch.mp3` | CMA00374 · `hurt_03.mp3` | OGA Hurt Sound Effects | CC0 |
+| `universal/male/yelp.mp3` | CMA00167 | Freesound unfa 610991 | CC0 |
+| `universal/male/yawn.mp3` | CMA00367 · `yawn-03` | SFXMint | CC0 1.0 |
+| `universal/female/haha.mp3` | CMA00118 | Freesound moxobna 46145 | CC0 |
+| `universal/female/hmm.mp3` | CMA00122 | Mixkit 2096 | Mixkit Free SFX |
+| `universal/female/ouch.mp3` | CMA00123 · `Type1/damaged1` | cicifyre RPG Voice Starter | CC0 |
+| `universal/female/yelp.mp3` | CMA00133 · `female_hurt_grunts_groans_1` | OGA Nocturnal_Vanguard | CC0 |
+| `universal/female/hiccup.mp3` | CMA00369 · `hiccup-05` | SFXMint | CC0 1.0 |
+
+`haha` resolves to the laugh burst and `hmm` to the um burst via `emotionKindForFile()` aliases.
+
+---
+
 ## Generated — edge-tts (Microsoft Edge neural voices)
 
 Label: **source: edge-tts crop**. Subject to Microsoft Edge TTS / speech service terms (same as Amoji Edge voice buttons). Prefer replace with human CC0 when available.
