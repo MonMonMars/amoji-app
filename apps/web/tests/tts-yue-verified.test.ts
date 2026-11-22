@@ -66,6 +66,16 @@ describe('yue locale tag is verified, not assumed', () => {
     expect(dropped).toEqual([]);
   });
 
+  it('documents evidence on every yue-tagged row', () => {
+    // A tag without a written reason is how the GLM-TTS mistake happened.
+    // Every Cantonese claim must carry a note saying why it is true.
+    const undocumented = ttsAppPicksForLocale('yue')
+      .filter((row) => !row.note || row.note.trim().length === 0)
+      .map((row) => row.id);
+
+    expect(undocumented).toEqual([]);
+  });
+
   it('does not tag a Mandarin-only engine as Cantonese', () => {
     // zai-org/GLM-TTS issue #8: 粤语 support 不太好; maintainer — 多方言 presently still training.
     const glm = TTS_APP_PICKS.find((row) => row.id === 'TTS-013');
@@ -74,6 +84,15 @@ describe('yue locale tag is verified, not assumed', () => {
     expect(glm?.name).toContain('GLM-TTS');
     expect(glm?.locales).not.toContain('yue');
     expect(glm?.locales).toContain('zh');
+  });
+
+  it('warns that Audio8 Cantonese quality is weak', () => {
+    // The tag is technically correct (23 supported languages) but 31.3% CER
+    // and reported Mandarin bleed make it unusable as a default Cantonese voice.
+    const audio8 = TTS_APP_PICKS.find((row) => row.id === 'TTS-006');
+
+    expect(audio8?.locales).toContain('yue');
+    expect(audio8?.note).toMatch(/weak|CER/i);
   });
 
   it('retains the three Edge Cantonese voices as the speaking floor', () => {
