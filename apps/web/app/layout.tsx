@@ -23,6 +23,14 @@ const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  // Card greet / voice-card audition / poke voice all speak through the free
+  // Google Translate MP3 tier (lib/gtts.ts). That endpoint now answers 404 to
+  // any request carrying a Referer, and the default policy sends this origin
+  // on cross-origin media requests. The media element then fails with
+  // NotSupportedError and the card is silent (Edge is dead, OS synth is
+  // deliberately refused for greets). `same-origin` keeps document.referrer
+  // for in-app back navigation while sending no Referer cross-origin.
+  referrer: "same-origin",
   title: {
     default: SITE_TITLE,
     template: "%s · Amoji",

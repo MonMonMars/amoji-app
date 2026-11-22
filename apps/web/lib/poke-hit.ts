@@ -352,7 +352,7 @@ const CAP = {
   shift: 0.07,
 } as const;
 
-/** Extra lateral lean amp for side taps (sign from fallX = recoil away from the finger). */
+/** Extra lateral lean amp for side taps (sign from fallX: same side as the finger, R13). */
 const LATERAL_LEAN_AMP = 1.38;
 
 function clamp(v: number, m: number): number {
@@ -362,7 +362,9 @@ function clamp(v: number, m: number): number {
 /**
  * Punch reaction for one sample.
  * t is 0 at the hit and 1 at the end of the window.
- * fallX/fallZ: recoil away from the finger (push left → body recedes right).
+ * fallX/fallZ: poke fall vector, world XZ. Front/back hits keep the impulse
+ * (the punch continues through the body); lateral hits lean to the same side
+ * the finger pushed (Owner R13). CompanionCanvas blends the two before calling.
  * Axial front/back keep impulse on Z; diagonals mix both axes.
  * A head poke tips the head (plus soft torso follow in poke-zones).
  * A belly poke recedes the abdomen; the head counters forward for balance.
@@ -479,7 +481,9 @@ export function pokeBodyReaction(opts: {
     spinePitch,
     chestPitch: clamp(opts.fallZ * g.chest * punch, CAP.chest),
     spineYaw: clamp(fx * g.yaw * punch, CAP.yaw),
-    // Tip follows fall: −fallX → positive chestRoll tips screen-left when fallX < 0.
+    // Tip follows the same-side fall: fallX < 0 (screen-left push) →
+    // positive chestRoll tips screen-left. Never negate this sign to fake a
+    // "recoil away" - that is the R13 regression (#443 / #554).
     chestRoll: clamp(-fx * g.roll * punch, CAP.roll),
     // Belly: head counters opposite the abdomen so the body stays balanced.
     headX: localBelly
@@ -582,11 +586,17 @@ export function ndcPointInElementLocal(
 }
 
 /**
- * Lateral fall toward the push: finger on screen-left → body tips screen-left
- * (same side as the poke, not recoil opposite).
- * pushSide from screen (+1 finger right / −1 left).
+ * Lateral fall toward the poked side (Owner R13, #409 + #434):
+ * finger on screen-left → body tips screen-left; finger on screen-right →
+ * body tips screen-right. This is a lean, not a physics recoil: the Owner
+ * asked for the same side as the finger, and #443/#554 broke it by flipping
+ * the sign to "fall away".
+ *
+ * `pushSide` is screen-relative (+1 finger right / −1 finger left), and
+ * `cameraRightXZ` is the camera world +X column flattened to XZ, so orbiting
+ * or a mirrored front camera cannot swap the side.
  */
-export function lateralFallAwayFromScreenSide(
+export function lateralFallTowardScreenSide(
   cameraRightXZ: { x: number; z: number },
   pushSide: number,
 ): { x: number; z: number } {
@@ -594,22 +604,6 @@ export function lateralFallAwayFromScreenSide(
   const side = pushSide >= 0 ? 1 : -1;
   if (len < 1e-6) return { x: side, z: 0 };
   return { x: (cameraRightXZ.x / len) * side, z: (cameraRightXZ.z / len) * side };
-}
-
-/** Negated {@link lateralFallAwayFromScreenSide}: recoil away from the finger. */
-export function lateralFallTowardScreenSide(
-  cameraRightXZ: { x: number; z: number },
-  leanSide: number,
-): { x: number; z: number } {
-  return lateralFallAwayFromScreenSide(cameraRightXZ, -leanSide);
-}
-
-/** Recoil away from the finger: push screen-left → body falls screen-right. */
-export function lateralFallRecoilFromScreenSide(
-  cameraRightXZ: { x: number; z: number },
-  pushSide: number,
-): { x: number; z: number } {
-  return lateralFallTowardScreenSide(cameraRightXZ, pushSide);
 }
 
 /**

@@ -1,6 +1,7 @@
 /**
- * Locks recoil-away poke lean: finger push screen-left → head tips screen-right.
- * Guards against flip-flopping ±pushSide without checking bone tip direction.
+ * Locks Owner R13 same-side poke lean: a finger push on screen-left tips the
+ * head screen-left. #554 encoded the opposite ("recoil away") and the owner
+ * reported the movement was still wrong; this is the VRM end-to-end guard.
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -8,11 +9,11 @@ import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin } from '@pixiv/three-vrm';
-import { lateralFallRecoilFromScreenSide, pokeBodyReaction } from '../lib/poke-hit';
+import { lateralFallTowardScreenSide, pokeBodyReaction } from '../lib/poke-hit';
 import { createV1Avatar } from '../lib/vrm/avatar';
 
 describe('poke lean direction (VRM)', () => {
-  it('face-on left push tips the head toward screen-right (away from the finger)', async () => {
+  it('face-on left push tips the head toward screen-left (same side)', async () => {
     const url = fileURLToPath(new URL('../public/models/seed-san.vrm', import.meta.url));
     const buf = readFileSync(url);
     (globalThis as { self?: unknown }).self ??= globalThis;
@@ -38,8 +39,8 @@ describe('poke lean direction (VRM)', () => {
     const world = (n: THREE.Object3D) => n.getWorldPosition(new THREE.Vector3());
     const restX = world(head).x;
 
-    const fall = lateralFallRecoilFromScreenSide({ x: 1, z: 0 }, -1);
-    expect(fall.x).toBeGreaterThan(0);
+    const fall = lateralFallTowardScreenSide({ x: 1, z: 0 }, -1);
+    expect(fall.x).toBeLessThan(0);
 
     const hit = pokeBodyReaction({
       t: 0.12,
@@ -70,6 +71,6 @@ describe('poke lean direction (VRM)', () => {
       shiftZ: hit.hipShiftZ,
     });
     avatar.update(0);
-    expect(world(head).x).toBeGreaterThan(restX + 0.05);
+    expect(world(head).x).toBeLessThan(restX - 0.05);
   });
 });

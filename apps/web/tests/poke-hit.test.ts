@@ -6,7 +6,6 @@ import {
   breastCoverEnvelope,
   screenSideSign,
   screenPointerSideSign,
-  lateralFallAwayFromScreenSide,
   lateralFallTowardScreenSide,
   clientPointInElementLocal,
   ndcPointInElementLocal,
@@ -273,29 +272,22 @@ describe('pokeArmSideFromScreenPush', () => {
   });
 });
 
-describe('screenPointerSideSign + lateralFallAwayFromScreenSide', () => {
+describe('screenPointerSideSign + lateralFallTowardScreenSide', () => {
   it('signs the finger relative to hips on screen', () => {
     expect(screenPointerSideSign(100, 200)).toBe(-1);
     expect(screenPointerSideSign(250, 200)).toBe(1);
     expect(screenPointerSideSign(200, 200)).toBe(1);
   });
 
-  it('builds same-side fall: left push → −X face-on', () => {
-    const leftPush = lateralFallAwayFromScreenSide({ x: 1, z: 0 }, -1);
+  it('builds same-side fall: left push -> -X face-on (Owner R13)', () => {
+    const leftPush = lateralFallTowardScreenSide({ x: 1, z: 0 }, -1);
     expect(leftPush.x).toBeCloseTo(-1);
     expect(leftPush.z).toBeCloseTo(0);
-    const rightPush = lateralFallAwayFromScreenSide({ x: 1, z: 0 }, 1);
+    const rightPush = lateralFallTowardScreenSide({ x: 1, z: 0 }, 1);
     expect(rightPush.x).toBeCloseTo(1);
-    const orbitLeftPush = lateralFallAwayFromScreenSide({ x: 0, z: -1 }, -1);
+    const orbitLeftPush = lateralFallTowardScreenSide({ x: 0, z: -1 }, -1);
     expect(orbitLeftPush.x).toBeCloseTo(0);
     expect(orbitLeftPush.z).toBeCloseTo(1);
-  });
-
-  it('keeps toward-side helper as the negated away form', () => {
-    const toward = lateralFallTowardScreenSide({ x: 1, z: 0 }, -1);
-    const away = lateralFallAwayFromScreenSide({ x: 1, z: 0 }, -1);
-    expect(toward.x).toBeCloseTo(-away.x);
-    expect(toward.z).toBeCloseTo(-away.z);
   });
 
   it('maps pointer + NDC into the same layout-local box after aspect change', () => {
