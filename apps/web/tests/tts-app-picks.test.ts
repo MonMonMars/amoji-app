@@ -40,9 +40,9 @@ describe('tts app keep/delete picks', () => {
   });
 
   it('matches the language counts from the keep/delete list', () => {
-    // yue 26 -> 25 and zh 33 -> 34: TTS-013 GLM-TTS was re-tagged off `yue`
-    // (zai-org/GLM-TTS issue #8 - Cantonese is still in training, so the row
-    // is not on the verified-Cantonese allowlist that lives on that branch).
+    // yue 26 -> 25 and zh 33 -> 34 at r283: TTS-013 GLM-TTS was re-tagged off
+    // `yue` (zai-org/GLM-TTS issue #8 — dialects still training). See
+    // tests/tts-yue-verified.test.ts for the allowlist that now guards this.
     expect(TTS_APP_PICK_COUNTS.yue).toEqual({ total: 25, edge: 3, link: 22 });
     expect(TTS_APP_PICK_COUNTS.zh).toEqual({ total: 34, edge: 11, link: 23 });
     expect(TTS_APP_PICK_COUNTS.ja).toEqual({ total: 60, edge: 2, link: 58 });
