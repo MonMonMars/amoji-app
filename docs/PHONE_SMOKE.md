@@ -1,11 +1,47 @@
 # Phone smoke (live Pages)
 
 **Live:** https://monmonmars.github.io/amoji-app/  
-**Tip on main:** `r2026-11-19.291` · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
-**Purpose:** Human-only checks after #419–#437 + #458 + r271–r290. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
+**Tip on main:** `r2026-11-19.294` · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
+**Purpose:** Human-only checks after #419–#437 + #458 + r271–r294. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
 Owner: “getting worst” / “nothing fixed” — **do not mark R10–R13 Done** until this pass.
 
 Tick on a real phone (prefer iPhone Safari). **Mandatory once:** hard refresh, tap **Refresh** on the “Update ready” chip if shown, or remove home-screen icon and re-add so the service worker picks up the current **`APP_REVISION`** cache (stale shells hid recent fixes). Then idle prefs **v6** (`IdleQuaterniusHuman` default — not RPM F) and voice sink land.
+
+## Priority now — the r294 combined landing (#579 + #581 + #580)
+
+Three separately-claimed branches landed together as one stamp, **`r2026-11-19.294`**. Do not tick these from CI; only a real phone decides.
+
+### 0. Chat history stays legible over the animated backdrop (#579)
+
+Owner: the words “seem stick to the background”. One continuous bottom-strong grey plate now sits behind the whole log (24% at the newest line → 12% at the top, inside the owner's 10–25% band) with a 6 px blur. It feathers to nothing toward the top, so the boxless history never turns into a card, and the plate lives on a wrapper above the scroll box's own word-fade mask.
+
+- [ ] On a **pale** backdrop (cloudsea / sunset / meadow), scroll an old line down into the bright bottom zone: are the **words crisp** against the backdrop?
+- [ ] Is the grey **one continuous plate**, not a stripe behind each bubble?
+- [ ] Does the **top** of the log still fade out — no grey rectangle edge or hard seam against the backdrop?
+- [ ] Does the Ken-Burns backdrop / scrolling still feel **smooth** (no jank from the blur)?
+- [ ] Report: `ROW: chat-scrim DEVICE: <model>` + readable / striped / hard-edge / jank
+
+### 1. One reply spoken exactly once — no question read-back (#581)
+
+Three owner voice bugs on .290: the same answer spoken twice, her reading the question back before answering, and the voice hopping speakers mid-reply. The fixes: `speak()` refuses a line that is still queued (the tap-to-replay can no longer stack a second copy), the diverged-lead branch now cuts the lead and speaks only the unheard tail (`speechTailAfterLead`), prompts answer first and `stripQuestionReadBack` scrubs any leading read-back, and the browser-synth tail is skipped while the chat mic holds play-and-record (one line, one sink).
+
+- [ ] Send **five** chat messages that each ask a question: does every reply speak the answer **exactly once** (no repeat of the same answer)?
+- [ ] Does she **answer first**, without reading your question back (“你問我…？” / “So you're asking…”)? An ordinary warm ack is fine; a verbatim echo is not.
+- [ ] During a **long** reply, does the voice stay on **one speaker** end to end (no mid-line hop to a headset / communications device)?
+- [ ] Tap the **same line twice** in quick succession (the silent-line replay tap): does it play **once**, not twice?
+- [ ] Report: `ROW: voice-once DEVICE: <model>` + repeated-twice / read-back / speaker-hop / replay-double
+
+### 2. Background sound mutes, her voice does not (#580)
+
+New **Settings → 🔊 Background sound** switch (`amoji.bgm-mute.v1`). It hard-mutes the procedural band + piano, the song-bed / stream loops and the ambient scene beds (rain, fire, wind, crickets…). Her spoken voice is a different audio system and is deliberately untouched — that is what **Mute all** is for. One-shot foley (poke, giggle, UI tick) and the volume steps stay.
+
+- [ ] Turn **Background sound** on while music is playing: does the music **stop inside the same tap** (not on the next track)?
+- [ ] With it on, send a chat message: does **her voice still speak** normally?
+- [ ] Play a **song / dance bed**, then toggle it: does the bed go silent and come back **without restarting** or re-buffering?
+- [ ] Enter a **scene with ambience** (rain / fire / crickets) and toggle it: does the ambience duck and return?
+- [ ] Turn **Mute all** on and off while Background sound is on: does the song bed stay **muted** (not resurrected by the blanket unmute)?
+- [ ] Reload the page: does the switch come back **on**?
+- [ ] Report: `ROW: bg-sound DEVICE: <model>` + music-not-muted / voice-muted-too / bed-restarts / forgotten-on-reload
 
 ## Priority now — the two r290 owner regressions
 
@@ -239,8 +275,8 @@ Hard-refresh until live **`revision.txt`** ≥ **r2026-11-19.280**. Every PR in 
 
 | Check | Result |
 | --- | --- |
-| `main` tip | **r2026-11-19.290** (`verify:live` must match) |
-| Landed train | r281 #557 · r282 #560 · r283 #558 · r284 #561 · r285 #564 #563 #565 · r286 #562 · r287 #568 #569 #570 #566 #567 · r288 #571 |
+| `main` tip | **r2026-11-19.294** (`verify:live` must match) |
+| Landed train | r281 #557 · r282 #560 · r283 #558 · r284 #561 · r285 #564 #563 #565 · r286 #562 · r287 #568 #569 #570 #566 #567 · r288 #571 · r291 #582 · r294 #579 #581 #580 |
 | Closed in r285–r288 | all-language voice buttons · card greet on tap · poke lean/sound/interrupt · singing mouth + dancing beat · dance bounce sign |
 | Outstanding (owner) | the five new rows above · r280 idle planted-vs-float · news · **R10–R13 not Done** |
 | Open PRs | **#571 merged** · **#20 CosyVoice on Hold** (do not merge) |

@@ -4,7 +4,7 @@
 
 **Last reviewed:** 2026-11-22 (Asia/Hong_Kong)  
 **Demo:** https://monmonmars.github.io/amoji-app/  
-**`main` tip:** `b50ac7d9` · **`APP_REVISION` `r2026-11-19.290`** · `npm run verify:live` in `apps/web` = OK  
+**`main` tip:** `r2026-11-19.294` · **`APP_REVISION` `r2026-11-19.294`** · `npm run verify:live` in `apps/web` = OK  
 **Current handoff pack:** [`HANDOFF_2026-11-21/`](./HANDOFF_2026-11-21/README.md) (state + binding constraints; 2026-11-19 folder is frozen history)
 **Request log:** [`../OWNER_REQUEST_LOG.md`](../OWNER_REQUEST_LOG.md) + `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn.  
 **Resource library:** [`OWNER_RESOURCE_LIBRARY.md`](./OWNER_RESOURCE_LIBRARY.md) + `apps/web/lib/owner-resource-manifest.ts` + [`MISTAKE_LIBRARY.md`](./MISTAKE_LIBRARY.md) + [`DATA_ORGANIZATION.md`](./DATA_ORGANIZATION.md).  
