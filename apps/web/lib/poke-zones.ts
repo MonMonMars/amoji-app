@@ -201,8 +201,8 @@ function scaleBody(body: PokeBody, scale: typeof TIER_BAND_SCALE.head): PokeBody
 }
 
 /**
- * Tier-aware punch recoil: the poked part recedes away from the finger
- * (push left → body falls right) with tier falloff. All six tiers move.
+ * Tier-aware poke lean: the body tips toward the poked side (Owner R13,
+ * push left → body falls screen-left) with tier falloff. All six tiers move.
  *
  * Head tier keeps full head amplitude from the head recipe, then layers a
  * soft torso follow (Pixel: head poke moves upper body less, not zero).

@@ -85,29 +85,30 @@ describe('pokeSectionBodyReaction', () => {
     expect(Math.abs(hit.spinePitch)).toBeLessThan(0.2);
   });
 
-  it('left-origin poke recoils to the right with chest roll + poked-side arm', () => {
+  it('left-origin poke leans left with chest roll + poked-side arm', () => {
     const section = resolvePokeSection('side', 'left');
     const hit = pokeSectionBodyReaction({
       t: 0.12,
       section,
       hitZone: 'side',
-      // Recoil away from a left poke: fall +X face-on → tip screen-right.
-      fallX: 1,
+      // Same-side lean for a left poke: fall -X face-on -> tip screen-left.
+      fallX: -1,
       fallZ: 0,
       sideSign: 1,
       softChest: false,
       twist: 0,
     });
-    expect(hit.chestRoll).toBeLessThan(-0.35);
+    expect(hit.chestRoll).toBeGreaterThan(0.35);
     expect(Math.abs(hit.rArmX)).toBeGreaterThan(Math.abs(hit.lArmX));
     expect(Math.abs(hit.rArmX)).toBeGreaterThan(0.45);
   });
 
-  it('CompanionCanvas encodes recoil-away poke lean + layout-local coords', () => {
+  it('CompanionCanvas encodes same-side poke lean + layout-local coords', () => {
     const canvas = fs.readFileSync(path.join(root, 'components/CompanionCanvas.tsx'), 'utf8');
-    expect(canvas).toMatch(/blends away from the finger/);
+    expect(canvas).toMatch(/tips screen-left/);
     expect(canvas).toMatch(/screenPointerSideSign\s*\(/);
-    expect(canvas).toMatch(/lateralFallRecoilFromScreenSide\s*\(/);
+    expect(canvas).toMatch(/lateralFallTowardScreenSide\s*\(/);
+    expect(canvas).not.toMatch(/lateralFallRecoilFromScreenSide/);
     expect(canvas).toMatch(/directionFromAxes/);
     expect(canvas).toMatch(/clientPointInElementLocal\s*\(/);
     expect(canvas).toMatch(/ndcPointInElementLocal\s*\(/);
@@ -117,20 +118,20 @@ describe('pokeSectionBodyReaction', () => {
     expect(canvas).toMatch(/pokeArmSideFromScreenPush\s*\(\s*leanSide\s*\)/);
   });
 
-  it('off-center chest poke recoils away from a left push', () => {
+  it('off-center chest poke leans with a left push', () => {
     const section = resolvePokeSection('chest', 'left');
-    // Recoil from a finger-left push: mostly +X, slightly back.
+    // Blended canvas fall for a finger-left push: mostly -X, slightly back.
     const hit = pokeSectionBodyReaction({
       t: 0.12,
       section,
       hitZone: 'chest',
-      fallX: 0.9,
+      fallX: -0.9,
       fallZ: -0.35,
       sideSign: 1,
       softChest: false,
       twist: 0,
     });
-    expect(hit.chestRoll).toBeLessThan(-0.2);
+    expect(hit.chestRoll).toBeGreaterThan(0.2);
     expect(Math.abs(hit.rArmX)).toBeGreaterThan(Math.abs(hit.lArmX));
   });
 });

@@ -20,7 +20,7 @@ import {
   classifyPoke,
   screenSideSign,
   screenPointerSideSign,
-  lateralFallRecoilFromScreenSide,
+  lateralFallTowardScreenSide,
   directionFromAxes,
   clientPointInElementLocal,
   ndcPointInElementLocal,
@@ -1815,28 +1815,30 @@ export default function CompanionCanvas({
                 hipsW,
                 camRightXZ,
               );
-            // Poke recoil: the poked part blends away from the finger
-            // (push left → body recedes right). 8-way direction is taken from
-            // the final recoil vector in the character frame + camera/ray.
+            // Owner R13 (#409 + #434): poke the screen-left side and the body
+            // tips screen-left; poke screen-right and it tips screen-right.
+            // Do NOT "recoil away" from the finger - #443/#554 did that and
+            // the owner rejected it. 8-way direction comes from the final
+            // fall vector in the character frame + camera/ray.
             {
-              const recoil = lateralFallRecoilFromScreenSide(camRightXZ, leanSide);
+              const lean = lateralFallTowardScreenSide(camRightXZ, leanSide);
               const lateralOnly =
                 pokeZone === 'side' || pokeZone === 'armL' || pokeZone === 'armR' || pokeZone === 'hand';
               const fingerOffCenter = hipsOnScreen && Math.abs(ptrLocal.x - hipsLocal.x) > 14;
               if (lateralOnly) {
                 pokeFallDir.set(
-                  cls.impulse.x * 0.35 + recoil.x * 0.85,
+                  cls.impulse.x * 0.35 + lean.x * 0.85,
                   0,
-                  cls.impulse.z * 0.55 + recoil.z * 0.35,
+                  cls.impulse.z * 0.55 + lean.z * 0.35,
                 );
                 const len = Math.hypot(pokeFallDir.x, pokeFallDir.z);
                 if (len > 1e-6) pokeFallDir.multiplyScalar(1 / len);
-                else pokeFallDir.set(recoil.x, 0, recoil.z);
+                else pokeFallDir.set(lean.x, 0, lean.z);
               } else if (fingerOffCenter) {
                 pokeFallDir.set(
-                  cls.impulse.x * 0.7 + recoil.x * 0.55,
+                  cls.impulse.x * 0.7 + lean.x * 0.55,
                   0,
-                  cls.impulse.z * 0.85 + recoil.z * 0.3,
+                  cls.impulse.z * 0.85 + lean.z * 0.3,
                 );
                 const len = Math.hypot(pokeFallDir.x, pokeFallDir.z);
                 if (len > 1e-6) pokeFallDir.multiplyScalar(1 / len);
