@@ -39,7 +39,7 @@ export const MOVE_DUR: Record<MoveKind, number> = {
   dance: 9000,
   sing: 9000,
   jump: 2600,
-  kungfu: 3200,
+  kungfu: 8000,
   taichi: 8000,
   violin: 6000,
   piano: 6000,
