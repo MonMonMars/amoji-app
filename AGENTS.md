@@ -24,3 +24,9 @@ cd apps/web && npm test -- --run
 ## Branches
 
 Use `cursor/<topic>-0340-0eac`. Bump `APP_REVISION` + `public/sw.js` `CACHE` + `public/revision.txt` when shipping user-facing web fixes.
+
+## Worktrees (read before creating, using, or deleting one)
+
+- **Never junction `node_modules` between checkouts of this repo.** On 2026-11-23 a `git worktree remove` followed a junctioned `apps/web/node_modules` into the primary and deleted all 29 tracked files of `packages/emotion-core` + `packages/vrm-renderer`. Mechanism and evidence: [`docs/WORKTREE_SAFETY.md`](docs/WORKTREE_SAFETY.md).
+- Each worktree gets its own install (`pnpm install --offline --frozen-lockfile` in `apps/web`; the shared store makes it cheap). If a worktree already has a junction, `cmd /c rmdir` every junction **before** `git worktree remove`, `git clean`, or any recursive delete.
+- Guard: `node scripts/check-repo-hygiene.mjs` fails when tracked `packages/` files are missing and warns about junctioned `node_modules`. It also runs in `apps/web` `predev`/`pretest` and in CI. Use `--strict` for a hard junction check.
