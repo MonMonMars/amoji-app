@@ -115,13 +115,16 @@ describe('pokeBodyReaction', () => {
     expect(Math.abs(torso.lArmX)).toBeGreaterThan(0);
   });
 
-  it('leans with the poke direction and flips when the impulse flips', () => {
-    const back = pokeBodyReaction({ t: 0.2, zone: 'torso', fallX: 0, fallZ: -1, sideSign: 1, softChest: false, twist: 0 });
-    const forward = pokeBodyReaction({ t: 0.2, zone: 'torso', fallX: 0, fallZ: 1, sideSign: 1, softChest: false, twist: 0 });
+  it('tips toward the poke on the axial axis (R13) and flips when the impulse flips', () => {
+    // Owner 2026-11-23: "just simply flip it backward to forward". fallZ is
+    // still the poke DIRECTION (front hit = −1); the lean follows it, so a
+    // front poke flexes her forward and a back poke arches her back.
+    const front = pokeBodyReaction({ t: 0.2, zone: 'torso', fallX: 0, fallZ: -1, sideSign: 1, softChest: false, twist: 0 });
+    const back = pokeBodyReaction({ t: 0.2, zone: 'torso', fallX: 0, fallZ: 1, sideSign: 1, softChest: false, twist: 0 });
+    expect(front.spinePitch).toBeGreaterThan(0);
     expect(back.spinePitch).toBeLessThan(0);
-    expect(forward.spinePitch).toBeGreaterThan(0);
+    expect(front.headX).toBeGreaterThan(0);
     expect(back.headX).toBeLessThan(0);
-    expect(forward.headX).toBeGreaterThan(0);
     const left = pokeBodyReaction({ t: 0.2, zone: 'side', fallX: -1, fallZ: 0, sideSign: -1, softChest: false, twist: 0 });
     const right = pokeBodyReaction({ t: 0.2, zone: 'side', fallX: 1, fallZ: 0, sideSign: 1, softChest: false, twist: 0 });
     expect(left.chestRoll).toBeGreaterThan(0);
@@ -130,6 +133,28 @@ describe('pokeBodyReaction', () => {
     expect(headLeft.spinePitch).toBe(0);
     expect(headLeft.headZ).not.toBe(0);
     expect(headLeft.lArmX).toBe(0);
+  });
+
+  it('pins the numeric front/back axial lean so the flip cannot silently revert', () => {
+    // Owner-reported inversion (2026-11-23) — "all the poke movement, just
+    // move to the opposite side, just simply flip it backward to forward,
+    // forward to backward". These are the exact numbers after the flip:
+    // t = 0.1 inside the punch window, centered torso hit.
+    // Positive spinePitch / headX = a forward flex (moves.ts "lean into the
+    // run"), so a FRONT poke (fallZ −1) must be positive.
+    const front = pokeBodyReaction({
+      t: 0.1, zone: 'torso', fallX: 0, fallZ: -1, sideSign: 1, softChest: false, twist: 0, direction: 'front',
+    });
+    const back = pokeBodyReaction({
+      t: 0.1, zone: 'torso', fallX: 0, fallZ: 1, sideSign: 1, softChest: false, twist: 0, direction: 'back',
+    });
+    expect(front.spinePitch).toBeCloseTo(0.6527, 3);
+    expect(front.headX).toBeCloseTo(0.1795, 3);
+    expect(front.hipPitch).toBeCloseTo(0.3916, 3);
+    expect(back.spinePitch).toBeCloseTo(-0.6500, 3);
+    expect(back.headX).toBeCloseTo(-0.1369, 3);
+    // Straight swap on the Z axis: same magnitude, opposite sign.
+    expect(front.spinePitch + back.spinePitch).toBeCloseTo(0, 2);
   });
 
   it('leans the chest toward a side impulse without moving the root', () => {
@@ -143,11 +168,12 @@ describe('pokeBodyReaction', () => {
     expect(pokePunch(0.55, 'body')).toBeLessThan(0);
     expect(Math.abs(pokePunch(1, 'body'))).toBeLessThan(0.12);
     const impact = pokeBodyReaction({ t: 0.1, zone: 'torso', fallX: 0, fallZ: -1, sideSign: 1, softChest: false, twist: 0, direction: 'front' });
-    expect(impact.spinePitch).toBeLessThan(-0.45);
+    // Front poke → forward flex (toward the finger); see AXIAL_TOWARD_POKE.
+    expect(impact.spinePitch).toBeGreaterThan(0.45);
     expect(Math.abs(impact.hipPitch)).toBeGreaterThan(0.25);
     expect(impact.hipShiftZ).not.toBe(0);
     const recover = pokeBodyReaction({ t: 0.55, zone: 'torso', fallX: 0, fallZ: -1, sideSign: 1, softChest: false, twist: 0, direction: 'front' });
-    expect(recover.spinePitch).toBeGreaterThan(0);
+    expect(recover.spinePitch).toBeLessThan(0);
     const settle = pokeBodyReaction({ t: 1, zone: 'torso', fallX: 0, fallZ: -1, sideSign: 1, softChest: false, twist: 0, direction: 'front' });
     expect(Math.abs(settle.spinePitch)).toBeLessThan(Math.abs(impact.spinePitch) * 0.25);
 
@@ -230,15 +256,16 @@ describe('pokeBodyReaction', () => {
     expect(Math.abs(belly.spinePitch)).toBeGreaterThan(Math.abs(belly.hipPitch));
     expect(Math.abs(belly.hipShiftX) + Math.abs(belly.hipShiftZ)).toBe(0);
     expect(Math.abs(belly.hipPitch)).toBeLessThan(0.08);
-    // Belly recedes back (fallZ < 0 → spinePitch < 0); head counters forward.
-    expect(belly.spinePitch).toBeLessThan(0);
-    expect(belly.headX).toBeGreaterThan(0);
+    // Belly follows the axial rule too (front poke → abdomen forward): spine
+    // pitch is positive, and the head counters the other way for balance.
+    expect(belly.spinePitch).toBeGreaterThan(0);
+    expect(belly.headX).toBeLessThan(0);
 
     const butt = pokeBodyReaction({
       t: 0.15, zone: 'butt', fallX: 0, fallZ: 1, sideSign: 1, softChest: false, twist: 0.05, direction: 'back',
     });
-    expect(butt.hipPitch).toBeGreaterThan(0);
-    expect(butt.spinePitch).toBeLessThan(0);
+    expect(butt.hipPitch).toBeLessThan(0);
+    expect(butt.spinePitch).toBeGreaterThan(0);
     expect(Math.abs(butt.hipShiftX) + Math.abs(butt.hipShiftZ)).toBe(0);
   });
 

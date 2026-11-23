@@ -524,7 +524,17 @@
 // voice previews, fillers and announcements stay a hard cut. A new user turn,
 // mute, card audition, dance/sing show or martial clip cancels the pending
 // continuation, and a second poke replaces it instead of stacking.
-export const APP_REVISION = 'r2026-11-19.289';
+// r2026-11-19.290: two owner regressions. (1) Poke front/back was inverted:
+// a front poke recoiled her backwards. The axial lean now tips TOWARD the poked
+// side (AXIAL_TOWARD_POKE in lib/poke-hit.ts), pinned by numeric tests so it
+// cannot silently flip back. (2) Chat voice was intermittent ("sometimes has
+// voice, but mostly has no voice"). A line whose tier neither started audio nor
+// rejected held the strictly serial speaker forever, so every later reply queued
+// behind a dead line; a 12s no-start watchdog now cuts and releases it (proven
+// by an audio-START counter, not a timestamp). Backgrounded <audio> also
+// resumes on tab show instead of staying paused, and the shared AudioContext is
+// resumed before companion playback.
+export const APP_REVISION = 'r2026-11-19.290';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

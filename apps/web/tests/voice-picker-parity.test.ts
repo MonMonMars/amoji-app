@@ -31,7 +31,7 @@ describe('Settings VoicePicker parity with select TtsVoiceRow', () => {
     expect(row).not.toContain('EDGE_VOICE_BUTTONS');
   });
 
-  it('both label honest female/male and pitch colour on each button', () => {
+  it('both label each button with its actual source gender and natural tier', () => {
     expect(picker).toContain('voiceFreeFemale');
     expect(picker).toContain('voiceFreeMale');
     expect(picker).toContain('pitchTierLabelKey');
@@ -39,10 +39,9 @@ describe('Settings VoicePicker parity with select TtsVoiceRow', () => {
     expect(row).toContain('deliveryGender');
     for (const locale of ['yue', 'zh', 'ja', 'en'] as const) {
       const buttons = selectTtsButtons(locale);
-      expect(buttons.some((b) => b.deliveryGender === 'female')).toBe(true);
-      expect(buttons.some((b) => b.deliveryGender === 'male')).toBe(true);
-      expect(buttons.some((b) => b.pitchTier === 'bright')).toBe(true);
-      expect(buttons.some((b) => b.pitchTier === 'deep')).toBe(true);
+      expect(buttons.length, locale).toBeGreaterThan(0);
+      expect(buttons.every((b) => b.deliveryGender === 'female'), locale).toBe(true);
+      expect(buttons.every((b) => b.pitchTier === 'mid'), locale).toBe(true);
     }
   });
 
@@ -101,16 +100,17 @@ describe('Settings VoicePicker parity with select TtsVoiceRow', () => {
     expect(row).toContain('data-voice-id={button.id}');
   });
 
-  it('each locale has ≥1 playable female and ≥1 playable male gTTS button', () => {
+  it('every locale has ≥1 playable female gTTS button and no male gTTS label', () => {
     expect(ALL_LOCALES).toEqual(['yue', 'zh', 'ja', 'en']);
     for (const locale of ALL_LOCALES) {
-      expect(localeHasPlayableBothGenders(locale), locale).toBe(true);
+      // There is no male speaker behind any shipped `tl`, so the picker must
+      // not claim both genders (that claim was the reported bug).
+      expect(localeHasPlayableBothGenders(locale), locale).toBe(false);
       const counts = localePlayableGenderCounts(locale);
       expect(counts.female, `${locale} female playable`).toBeGreaterThanOrEqual(1);
-      expect(counts.male, `${locale} male playable`).toBeGreaterThanOrEqual(1);
+      expect(counts.male, `${locale} male playable`).toBe(0);
       const buttons = selectTtsButtons(locale);
-      expect(buttons.some((b) => b.deliveryGender === 'female')).toBe(true);
-      expect(buttons.some((b) => b.deliveryGender === 'male')).toBe(true);
+      expect(buttons.every((b) => b.deliveryGender === 'female'), locale).toBe(true);
       expect(buttons.every((b) => engineIsOffered(b.engine))).toBe(true);
       expect(buttons.every((b) => b.id.startsWith('gtts:'))).toBe(true);
     }

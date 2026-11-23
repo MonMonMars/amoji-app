@@ -85,6 +85,10 @@ export function ensureCompanionPlaybackRoute(): void {
     const nav = navigator as AudioSessionNav;
     if (nav.audioSession) nav.audioSession.type = 'playback';
   } catch { /* ignore */ }
+  // A tab hide (or an Android audio-focus loss) suspends the shared context and
+  // nothing used to take it out again before the next TTS line. Resuming here
+  // is cheap, idempotent and runs on every companion playback start.
+  resumeSharedAudioOutput();
 }
 
 /**

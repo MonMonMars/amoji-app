@@ -355,6 +355,24 @@ const CAP = {
 /** Extra lateral lean amp for side taps (sign from fallX: same side as the finger, R13). */
 const LATERAL_LEAN_AMP = 1.38;
 
+/**
+ * Axial sign (owner 2026-11-23, R13 extended to the front/back axis).
+ *
+ * `fallZ` still says WHERE the punch came from: front hit → −1, back hit → +1.
+ * Direction labels, zone gains and poke voices read that unchanged. What the
+ * body does follows the owner rule instead of a physics recoil: she tips
+ * TOWARD the poke on the axial axis too, so a front poke flexes her forward
+ * (toward the finger) and a back poke arches her back. Positive spineX is a
+ * forward lean (see moves.ts "lean into the run"), which is why the ─1 lives
+ * here and not in the canvas.
+ *
+ * The owner reported this twice: "all the poke movement, just move to the
+ * opposite side, just simply flip it backward to forward". Do NOT restore the
+ * away-from-the-punch sign on Z — that is the inversion he keeps seeing, and
+ * it is the axial twin of the lateral "recoil away" mistake in #443 / #554.
+ */
+const AXIAL_TOWARD_POKE = -1;
+
 function clamp(v: number, m: number): number {
   return v < -m ? -m : v > m ? m : v;
 }
@@ -362,12 +380,14 @@ function clamp(v: number, m: number): number {
 /**
  * Punch reaction for one sample.
  * t is 0 at the hit and 1 at the end of the window.
- * fallX/fallZ: poke fall vector, world XZ. Front/back hits keep the impulse
- * (the punch continues through the body); lateral hits lean to the same side
- * the finger pushed (Owner R13). CompanionCanvas blends the two before calling.
- * Axial front/back keep impulse on Z; diagonals mix both axes.
+ * fallX/fallZ: the poke direction vector, world XZ (front hit → fallZ −1).
+ * The body tips TOWARD the poke on both axes (Owner R13, extended to Z on
+ * 2026-11-23): lateral hits lean to the finger's screen side, and axial hits
+ * flex toward the finger instead of recoiling away from it. `fallZ` still
+ * classifies the direction (front/back gains, zone reads), so the sign flip
+ * lives in AXIAL_TOWARD_POKE and never in the caller.
  * A head poke tips the head (plus soft torso follow in poke-zones).
- * A belly poke recedes the abdomen; the head counters forward for balance.
+ * A belly poke recesses the abdomen; the head counters for balance.
  * Nothing here translates the scene root.
  */
 /** Incomplete cover raise for a soft breast poke (Mon t765): rise, hold mid-way, ease. */
@@ -394,11 +414,14 @@ export function pokeBodyReaction(opts: {
   const direction = opts.direction ?? inferPokeDirection(opts.fallX, opts.fallZ);
   const g = gainsFor(opts.zone, direction);
   const punch = pokePunch(t, g.kind);
+  // Axial lean sign ONLY: `direction` above keeps reading the raw poke vector
+  // so front/back labels, gains and voices do not swap with the flip.
+  const az = opts.fallZ * AXIAL_TOWARD_POKE;
   if (opts.zone === 'head') {
     const amp = g.head * punch;
     return {
       ...STILL,
-      headX: clamp(opts.fallZ * amp, CAP.head),
+      headX: clamp(az * amp, CAP.head),
       headZ: clamp(-opts.fallX * amp * 0.8 + opts.twist * 0.04 * punch, CAP.head),
     };
   }
@@ -425,11 +448,12 @@ export function pokeBodyReaction(opts: {
   // the camera azimuth wearing a costume. Its sign therefore flipped with
   // orbit angle and the same tap swung her arms backwards at one angle and
   // forwards at another. Side taps take their swing from the camera-aware
-  // sideSign the classifier already computed; front/back taps are untouched.
+  // sideSign the classifier already computed; front/back taps follow the
+  // axial lean (az) so the arms swing with the torso.
   const fromSide = isLateralPokeDirection(direction);
   const armDir = fromSide
     ? -opts.sideSign
-    : (opts.fallZ !== 0 ? opts.fallZ : (opts.fallX !== 0 ? -Math.sign(opts.fallX) : -0.35));
+    : (az !== 0 ? az : (opts.fallX !== 0 ? -Math.sign(opts.fallX) : -0.35));
   // Butt: hips carry the punch; spine counters so the upper body stays roughly put.
   // Belly: abdomen/spine only — hips stay, no hip slide (feet planted).
   const localButt = opts.zone === 'butt';
@@ -441,13 +465,13 @@ export function pokeBodyReaction(opts: {
     const tiny = punch * 0.22; // very little hit-back
     return {
       ...STILL,
-      spinePitch: clamp(opts.fallZ * 0.14 * tiny, 0.1),
-      chestPitch: clamp(opts.fallZ * 0.1 * tiny, 0.08),
+      spinePitch: clamp(az * 0.14 * tiny, 0.1),
+      chestPitch: clamp(az * 0.1 * tiny, 0.08),
       spineYaw: clamp(opts.fallX * 0.02 * tiny, CAP.yaw),
       chestRoll: clamp(-opts.fallX * 0.08 * tiny, 0.08),
-      headX: clamp(opts.fallZ * 0.06 * tiny, 0.08),
+      headX: clamp(az * 0.06 * tiny, 0.08),
       headZ: clamp(-opts.fallX * 0.04 * tiny + opts.twist * 0.02 * tiny, 0.08),
-      hipPitch: clamp(opts.fallZ * 0.05 * tiny, 0.05),
+      hipPitch: clamp(az * 0.05 * tiny, 0.05),
       hipRoll: clamp(-opts.fallX * 0.04 * tiny, 0.05),
       hipShiftX: 0,
       hipShiftZ: 0,
@@ -461,16 +485,16 @@ export function pokeBodyReaction(opts: {
       rArmUp: clamp(-0.44 * cover, CAP.armUp),
     };
   }
-  let spinePitch = clamp(opts.fallZ * g.spine * punch, CAP.spine);
-  let hipPitch = clamp(opts.fallZ * g.hip * punch, CAP.hip);
+  let spinePitch = clamp(az * g.spine * punch, CAP.spine);
+  let hipPitch = clamp(az * g.hip * punch, CAP.hip);
   if (localButt) {
-    hipPitch = clamp(opts.fallZ * g.hip * punch, CAP.hip);
+    hipPitch = clamp(az * g.hip * punch, CAP.hip);
     // Counter upper body so only the poked rear-hips region reads.
-    spinePitch = clamp(-hipPitch * 0.92 - opts.fallZ * 0.08 * punch, CAP.spine);
+    spinePitch = clamp(-hipPitch * 0.92 - az * 0.08 * punch, CAP.spine);
   } else if (localBelly) {
     // Abdomen recedes with the poke; hips stay almost planted.
-    hipPitch = clamp(opts.fallZ * g.hip * punch, 0.06);
-    spinePitch = clamp(opts.fallZ * g.spine * punch, CAP.spine);
+    hipPitch = clamp(az * g.hip * punch, 0.06);
+    spinePitch = clamp(az * g.spine * punch, CAP.spine);
   }
   const shiftGain = (localButt || localBelly || opts.zone === 'foot' || opts.zone === 'hand') ? 0 : g.shift;
   const leanAmp = fromSide ? LATERAL_LEAN_AMP : 1;
@@ -479,7 +503,7 @@ export function pokeBodyReaction(opts: {
   return {
     ...STILL,
     spinePitch,
-    chestPitch: clamp(opts.fallZ * g.chest * punch, CAP.chest),
+    chestPitch: clamp(az * g.chest * punch, CAP.chest),
     spineYaw: clamp(fx * g.yaw * punch, CAP.yaw),
     // Tip follows the same-side fall: fallX < 0 (screen-left push) →
     // positive chestRoll tips screen-left. Never negate this sign to fake a
@@ -487,13 +511,13 @@ export function pokeBodyReaction(opts: {
     chestRoll: clamp(-fx * g.roll * punch, CAP.roll),
     // Belly: head counters opposite the abdomen so the body stays balanced.
     headX: localBelly
-      ? clamp(-opts.fallZ * 0.55 * punch, CAP.head)
-      : clamp(opts.fallZ * g.head * punch, CAP.head),
+      ? clamp(-az * 0.55 * punch, CAP.head)
+      : clamp(az * g.head * punch, CAP.head),
     headZ: clamp(-fx * g.head * 0.78 * punch + opts.twist * 0.04 * punch, CAP.head),
     hipPitch,
     hipRoll: clamp(-fx * g.hipRoll * punch, CAP.hipRoll),
     hipShiftX: clamp(fx * shiftGain * punch, CAP.shift),
-    hipShiftZ: clamp(opts.fallZ * shiftGain * punch, CAP.shift),
+    hipShiftZ: clamp(az * shiftGain * punch, CAP.shift),
     lArmX: clamp(armDir * armL * armPunch, CAP.arm),
     rArmX: clamp(armDir * armR * 0.94 * armPunch, CAP.arm),
     lElbowZ: clamp((g.elbow + g.elbowBias) * armPunch, CAP.elbow),

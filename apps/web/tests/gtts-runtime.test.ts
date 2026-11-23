@@ -74,6 +74,8 @@ beforeAll(() => {
 interface Stub {
   src: string;
   playbackRate: number;
+  /** Mirrors HTMLMediaElement; the MP3 tier must leave this alone (true). */
+  preservesPitch: boolean;
   paused: boolean;
   onended: (() => void) | null;
   onerror: (() => void) | null;
@@ -87,6 +89,7 @@ function boot() {
   class A implements Stub {
     src: string;
     playbackRate = 1;
+    preservesPitch = true;
     preload = '';
     volume = 1;
     paused = true;
@@ -229,30 +232,30 @@ describe.skipIf(!esbuildAvailable)('speakGtts real behaviour (esbuild + vm)', ()
     expect(created[0]!.src).not.toContain('tl=zh-HK');
   });
 
-  it('bounds playbackRate when pitchBias reshapes (deep male stays above clamp min)', async () => {
+  it('plays the ORIGINAL audio: rate 1, pitch preservation untouched', async () => {
+    // Owner 2026-11-23: "only use the original TTS". A legacy pitchBias (0.5)
+    // must be ignored entirely — no resample, no preservesPitch=false.
     const { api, created } = boot();
     void api.speakGtts('慢啲講。', { lang: 'yue', rate: 1, pitchBias: 0.5 }).catch(() => {});
     await new Promise((r) => setTimeout(r, 20));
-    expect(created[0]!.playbackRate).toBeGreaterThanOrEqual(0.38);
-    expect(created[0]!.playbackRate).toBeLessThanOrEqual(1.72);
+    expect(created[0]!.playbackRate).toBe(1);
+    expect(created[0]!.preservesPitch).toBe(true);
   });
 
-  it('keeps male Cantonese deeper than female (pace floor must not erase pitch)', async () => {
+  it('ignores a bright female bias too (no chipmunk path)', async () => {
     const { api, created } = boot();
-    void api.speakGtts('你好呀。', { lang: 'yue', pitchBias: 0.64 }).catch(() => {});
+    void api.speakGtts('你好呀。', { lang: 'yue', rate: 1, pitchBias: 1.72 }).catch(() => {});
     await new Promise((r) => setTimeout(r, 20));
-    // Absolute floor 0.60 — male mid stays 0.76; deep is not lifted into mid.
-    expect(created[0]!.playbackRate).toBeGreaterThanOrEqual(0.64);
-    expect(created[0]!.playbackRate).toBeLessThan(0.90);
-    expect(created[0]!.playbackRate).toBeLessThanOrEqual(1.72);
+    expect(created[0]!.playbackRate).toBe(1);
+    expect(created[0]!.preservesPitch).toBe(true);
   });
 
-  it('deep male yue stays below mid (floor must not collapse tiers)', async () => {
+  it('still honours the emotion rate, which changes tempo not timbre', async () => {
     const { api, created } = boot();
-    void api.speakGtts('你好呀。', { lang: 'yue', pitchBias: 0.42 }).catch(() => {});
+    void api.speakGtts('好開心。', { lang: 'en', rate: 1.12 }).catch(() => {});
     await new Promise((r) => setTimeout(r, 20));
-    expect(created[0]!.playbackRate).toBe(0.42);
-    expect(created[0]!.playbackRate).toBeLessThan(0.64);
+    expect(created[0]!.playbackRate).toBeCloseTo(1.12, 5);
+    expect(created[0]!.preservesPitch).toBe(true);
   });
 
   it('splits a long line into several capped requests, played in order', async () => {
