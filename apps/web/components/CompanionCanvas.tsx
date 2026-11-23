@@ -32,6 +32,7 @@ import {
 } from '../lib/poke-hit';
 import { pokeSectionBodyReaction, resolvePokeSection, type PokeSection, type PokeSectionId } from '../lib/poke-zones';
 import { clipFreesFeet, collectPlantRest, pinPlantedClipTracks } from '../lib/vrm/plant-feet';
+import { humanoidRestHipsY, sanitizeClipHipsScale } from '../lib/vrm/vrma-hips-scale';
 import { dancePerfClipSources } from '../lib/dance-clip-sources';
 import { markMartialFlowClipLoaded } from '../lib/martial-speak-guard';
 import { martialPerfClipSources } from '../lib/martial-clip-sources';
@@ -1253,6 +1254,12 @@ export default function CompanionCanvas({
           try {
             const anims = (animGltf as unknown as { userData: { vrmAnimations: VRMAnimation[] } }).userData.vrmAnimations;
             if (anims?.length && avatar) {
+              // VRMA files whose own rest hips Y is <= 0 (15 shipped clips, see
+              // lib/vrm/vrma-hips-scale.ts) make the clip factory's
+              // humanoidY / restHipsPosition.y scale negative: hips X/Z are
+              // mirrored and hips Y inverted. Pinned idles never show it, but
+              // the freed dance clips do. Treat them as already normalized.
+              sanitizeClipHipsScale(anims[0]!, humanoidRestHipsY(vrm.humanoid));
               const clip = createVRMAnimationClip(anims[0]!, vrm);
               // expression tracks stay ours ??speech/visemes own the face
               clip.tracks = clip.tracks.filter((t) => !t.name.includes('expression'));
