@@ -507,7 +507,15 @@
 // motion instead of talking over it; and scripts/check-repo-hygiene.mjs fails
 // loudly on a junctioned node_modules or a missing tracked package file, which
 // is how one pnpm install emptied the primary checkout earlier today.
-export const APP_REVISION = 'r2026-11-19.287';
+// r2026-11-19.288: dance bounce — seven of the fifteen VRMA clips that trip the
+// loader's rest-hips warning free the feet, so a negative restHipsPosition.y
+// gave the clip factory a negative scale: hips X/Z mirrored and hips Y
+// inverted, hips rising as the knees bent, both soles off the floor. Dance
+// bobbed 26.5 cm instead of 9.1 cm and lib_C62 slid about a metre sideways.
+// Those clips now load at scale 1; an A/B over all 153 clips leaves the other
+// 146 byte-identical. The eight pinned idles look the same either way, which
+// is why this does not touch the R11 floating-feet question.
+export const APP_REVISION = 'r2026-11-19.288';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
