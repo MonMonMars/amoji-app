@@ -51,6 +51,13 @@ depends only on the other two packages. That exact boundary is the fingerprint.
 | after | Primary `apps/web/node_modules` contained a single entry, `.vite` (everything else deleted through the junction). Primary root `node_modules` lost `typescript` and every top-level link except the `eslint*` group; `.pnpm` survived with 590 entries. |
 | after | `packages/emotion-core/node_modules` and `packages/vrm-renderer/node_modules` were gone, while `packages/engine/node_modules` and `packages/robot-face/node_modules` survived: consistent with the two `@amoji` link targets being emptied. |
 
+**Later repair note (2026-11-23):** the table above records what was visible when
+the remove first failed, but the damage was wider. When the primary was repaired,
+`apps/web/node_modules` was still empty and the root `.pnpm` package directories
+had also been emptied through the same junction chain. Both were reinstalled
+from the local pnpm store, and the 29 tracked files under
+`packages/emotion-core/` and `packages/vrm-renderer/` were restored.
+
 ### Reproduction (done in `%TEMP%`, never against the repo)
 
 Scratch repo: `packages/foo/src/a.ts` tracked, `apps/web/node_modules/@amoji/foo` junction to
