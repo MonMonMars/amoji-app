@@ -16,6 +16,20 @@ export class LineQueue<T> {
     return this.items.some(pred);
   }
 
+  /**
+   * The line the speaker is on right now, or null. Read-only: it never starts,
+   * stops or reorders anything. Poke resume snapshots this before it interrupts
+   * so the cut conversation line can be picked back up afterwards.
+   */
+  activeItem(): T | null {
+    return this.active;
+  }
+
+  /** Lines still waiting behind the active one, in play order. Read-only copy. */
+  queuedItems(): T[] {
+    return this.items.slice();
+  }
+
   /** Drop the queue and the active line. In-flight work must observe the new epoch. */
   interrupt(): number {
     this.epoch += 1;

@@ -185,7 +185,7 @@ import {
   undecidedTopicReply,
   userUndecided,
 } from '../lib/topic-suggestions';
-import { speak, stopSpeaking, stopSpeakingForInterrupt, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechLeadDiverged, speechRemainder, whenSpeechIdle, resumeVoiceEngines, primeAudioForChatEnter } from '../lib/voice';
+import { speak, stopSpeaking, stopSpeakingForInterrupt, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechLeadDiverged, speechRemainder, whenSpeechIdle, resumeVoiceEngines, primeAudioForChatEnter, cancelPokeResume } from '../lib/voice';
 import { isAppleTouchDevice } from '../lib/apple-touch';
 import { cantHearReply, isCantHearComplaint } from '../lib/cant-hear';
 import { isCompanionEcho } from '../lib/companion-echo';
@@ -799,6 +799,8 @@ export default function ChatPanel({
   };
 
   const beginActionGame = (kind: ActionGame) => {
+    // A game/perf session takes the stage; do not resume old talk mid-show.
+    cancelPokeResume();
     actionGameRef.current = true;
     gameRef.current = null;
     duetRef.current = null;
@@ -836,6 +838,9 @@ export default function ChatPanel({
     listenOnly = false,
     introOverride?: string,
   ) => {
+    // Dance / sing / music session: a pending poke continuation must not
+    // start talking over the show when the queue drains.
+    cancelPokeResume();
     const query = {
       kind,
       characterId,
@@ -948,13 +953,13 @@ export default function ChatPanel({
         // Dance body starts on library-clip playing (beginShow), not here.
         beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
           const rest = speechRemainder(reply, alreadySpoken.text);
-          if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity, storyRate);
+          if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity, storyRate, { resumable: true });
         });
       } else if (mv) triggerMove(mv);
       notifySpeaking(reply);
       if (mv !== 'dance') {
         const rest = speechRemainder(reply, alreadySpoken.text);
-        if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity, storyRate);
+        if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity, storyRate, { resumable: true });
       }
       return reply;
     }
@@ -968,7 +973,7 @@ export default function ChatPanel({
     }
     if (mv === 'dance' && !isListenOnlyPerformance()) {
       beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
-        speak(reply, characterId, lang, contentHints, undefined, intensity, storyRate);
+        speak(reply, characterId, lang, contentHints, undefined, intensity, storyRate, { resumable: true });
       });
       notifySpeaking(reply);
       return reply;
@@ -980,7 +985,7 @@ export default function ChatPanel({
       triggerMove('piano');
       startPerformanceMusic('piano', characterId, 6300);
       notifySpeaking(reply);
-      speak(reply, characterId, lang, contentHints, undefined, intensity, storyRate);
+      speak(reply, characterId, lang, contentHints, undefined, intensity, storyRate, { resumable: true });
       return reply;
     }
     if (mv) triggerMove(mv);
@@ -997,6 +1002,7 @@ export default function ChatPanel({
         meal ? { text: pickMealToast(lang, laughCountRef.current), pitch: 0.12, rate: 0 } : undefined,
         intensity,
         storyRate,
+        { resumable: true },
       );
       return reply;
     }
@@ -1007,7 +1013,7 @@ export default function ChatPanel({
     applyContentMood({ ...(contentHints ?? {}), joy: style.joy });
     laughCountRef.current++;
     notifySpeaking(reply);
-    speak(reply, characterId, lang, { ...(contentHints ?? {}), joy: style.joy }, undefined, intensity, storyRate);
+    speak(reply, characterId, lang, { ...(contentHints ?? {}), joy: style.joy }, undefined, intensity, storyRate, { resumable: true });
     return reply;
   };
 
@@ -1287,8 +1293,12 @@ export default function ChatPanel({
 
   const send = async (override?: string) => {
     const text = (override ?? input).trim();
+    if (!text) return;
+    // New user turn wins. Kill a pending poke continuation HERE, before the
+    // undecided / crisis quick returns can skip stopSpeakingForInterrupt().
+    cancelPokeResume();
     const companionTalking = isSpeaking() || speechPending();
-    if (!text || (busyRef.current && !companionTalking)) return;
+    if (busyRef.current && !companionTalking) return;
     const turnGen = ++sendGenRef.current;
     const demoPhaseId = pendingDemoPhaseRef.current;
     pendingDemoPhaseRef.current = null;
@@ -1473,6 +1483,8 @@ export default function ChatPanel({
         // stopped event synchronously, so end it BEFORE arming this move.
         endPerformanceMusic();
         showTrack(null);
+        // Martial clip: old conversation stays cut for the form.
+        cancelPokeResume();
         const flow = martialFlowDemoTurn(x as MartialFlowKind, lang);
         triggerMove(flow.move, undefined, flow.speakMs);
         holdMove(flow.speakMs);
@@ -1722,7 +1734,7 @@ export default function ChatPanel({
           feedUtterance(line);
           if (feltHints) applyContentMood(feltHints);
           notifySpeaking(line);
-          speak(line, characterId, lang, feltHints, undefined, felt?.intensity);
+          speak(line, characterId, lang, feltHints, undefined, felt?.intensity, 0, { resumable: true });
           pushAutoIdle(line, feltHints, undefined, text);
           commitReply(line);
           answered = true;
@@ -1784,6 +1796,7 @@ export default function ChatPanel({
                   undefined,
                   felt?.intensity,
                   storyLead ? STORY_SPEECH_RATE_BIAS : 0,
+                  { resumable: true },
                 );
               }
             }

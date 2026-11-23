@@ -40,6 +40,12 @@ Three separate fixes:
 - [ ] Poke front and back — those use a punch impulse, they are not meant to lean sideways
 - [ ] Report: `ROW: poke DEVICE: <model>` + wrong-side / late-sound / no-interrupt
 
+Poke resume (r289): the cut stays; she now picks the previous talk back up.
+
+- [ ] Poke her **mid-reply**, then wait through the reaction: does she **say a short phrase and continue the reply** in the same language? She restarts the interrupted sentence from its beginning (line-level resume), which is expected.
+- [ ] Poke her mid-reply, then **send a new message** instead of waiting: does she **stay quiet** (no stale continuation talking over your new turn)?
+- [ ] Report: `ROW: poke-resume DEVICE: <model>` + continued / silent / talked-over-new-turn
+
 ### 4. Singing and dancing follow the audio (r285, #563)
 
 Visemes now come from the real audio envelope (RMS for jaw, spectral balance for vowels), and dance timeScale comes from detected beat onsets, not a wall clock.
