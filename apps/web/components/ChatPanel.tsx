@@ -2183,6 +2183,11 @@ export default function ChatPanel({
       {/* boxless history — fully opaque messages; only the on-screen height
           fades (bottom line 100%, each line a step dimmer). Scrolling an
           old line DOWN into the bright zone makes it crisp and readable. */}
+      {/* Scrim plate (.chat-history-scrim in globals.css): ONE continuous
+          bottom-strong grey behind the whole log. It must live on this
+          wrapper — the scroll box's own mask-image (the word fade) would
+          erase the grey along with the words. */}
+      <div className="chat-history-scrim">
       <div
         ref={scrollRef}
         onScroll={(e) => {
@@ -2294,6 +2299,7 @@ export default function ChatPanel({
             </Link>
           </div>
         )}
+      </div>
       </div>
 
       {/* input row — ChatGPT-style hero mic with the living emotion orb.
