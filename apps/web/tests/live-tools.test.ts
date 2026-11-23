@@ -29,6 +29,7 @@ import {
   placeLabel,
   planTools,
   preferLiveReply,
+  userWantsWebLookup,
   weatherAccuracyLeak,
   regionalLightNewsFeedUrls,
   regionalNewsFeedUrls,
@@ -248,6 +249,65 @@ describe('planTools', () => {
     });
     expect(live.spoken.toLowerCase()).toMatch(/settings|location/);
     expect(live.spoken.toLowerCase()).not.toContain("couldn't check the weather");
+  });
+
+  it('plans open web lookups without blocking on polite "you"', () => {
+    expect(planTools('can you search the web for dinosaur fossils').searchQuery?.toLowerCase()).toContain('dinosaur');
+    expect(planTools('tell me about the James Webb telescope').searchQuery?.toLowerCase()).toContain('james');
+    expect(planTools('find out whether Venice still floods every year').searchQuery?.toLowerCase()).toMatch(/venice|flood/);
+    expect(planTools('look up Bitcoin price today').searchQuery?.toLowerCase()).toContain('bitcoin');
+    expect(userWantsWebLookup('search the internet for pangolin facts')).toBe(true);
+    expect(planTools('what is your name?').searchQuery).toBeUndefined();
+    expect(planTools('tell me about yourself').searchQuery).toBeUndefined();
+    expect(planTools('how are you?').searchQuery).toBeUndefined();
+  });
+
+  it('triggers a real lookup for general knowledge asks', () => {
+    expect(userWantsWebLookup('who is Ada Lovelace?')).toBe(true);
+    expect(userWantsWebLookup('tell me about the James Webb telescope')).toBe(true);
+    expect(userWantsWebLookup('latest on the Mars rover')).toBe(true);
+    expect(userWantsWebLookup("what's happening with the Artemis launch?")).toBe(true);
+    expect(userWantsWebLookup('幫我查下北極光幾時出現')).toBe(true);
+    // Bare "what's happening" stays a news ask (demo chip), not a web lookup.
+    expect(planTools("what's happening in the world?").news).toBe(true);
+    expect(planTools("what's happening in the world?").searchQuery).toBeUndefined();
+  });
+
+  it('keeps weather and news on their purpose-built tools', () => {
+    for (const text of [
+      "what's the weather in Tokyo?",
+      'search weather in Osaka',
+      'forecast for the next few days',
+      '今日有咩新聞？',
+      "what's the latest AI news?",
+    ]) {
+      expect(planTools(text).searchQuery, text).toBeUndefined();
+    }
+    expect(planTools("what's the weather in Tokyo?").weather).toBe(true);
+    expect(planTools("what's the weather in Tokyo?").placeQuery).toBe('Tokyo');
+    expect(planTools('search weather in Osaka').weather).toBe(true);
+    expect(planTools('今日有咩新聞？').news).toBe(true);
+  });
+
+  it('does not fire a network lookup for local or offline asks', async () => {
+    for (const text of [
+      'how are you?',
+      'thank you!',
+      "what's your name?",
+      "what's your favourite colour?",
+      'what time is it?',
+      'set a timer for 5 minutes',
+      'lets do some stretching',
+    ]) {
+      expect(userWantsWebLookup(text), text).toBe(false);
+    }
+    let calls = 0;
+    const live = await gatherLiveContext("what's your favourite colour?", {
+      fetch: (async () => { calls += 1; return jsonRes({}); }) as typeof fetch,
+      cache: new Map(),
+    });
+    expect(live).toEqual({ prompt: '', spoken: '' });
+    expect(calls).toBe(0);
   });
 
   it('plans local news, topical news, and a web lookup separately', () => {
