@@ -35,6 +35,8 @@ import { clipFreesFeet, collectPlantRest, pinPlantedClipTracks } from '../lib/vr
 import { dancePerfClipSources } from '../lib/dance-clip-sources';
 import { beatAlignedVrmaTime, timeScaleForProfile } from '../lib/performance-motion';
 import { isLibraryClipAudible, libraryBedPlaybackSec } from '../lib/music';
+import { liveBeatSnapshot } from '../lib/live-beat';
+import { visemeWeights } from '../lib/vocal-envelope';
 import { playableIdles } from '../lib/idle-library';
 import { listEnabledIdleClipIds } from '../lib/idle-enabled';
 import {
@@ -777,6 +779,10 @@ export default function CompanionCanvas({
     let idleAction: THREE.AnimationAction | null = null;
     let perfAction: THREE.AnimationAction | null = null;
     let perfClipId: string | null = null;
+    /** Authored rate before live tempo correction; restored on the next clip. */
+    let perfBaseTimeScale = 1;
+    /** Track BPM the profile was built from (0 = unknown, no live correction). */
+    let perfTrackBpm = 0;
     let idleOrder: string[] = [];
     /** One upright stand — no A→B idle crossfade rotation (Pixel blend-bad). */
     let singleIdleStand = true;
@@ -951,6 +957,8 @@ export default function CompanionCanvas({
       action.timeScale = profile
         ? timeScaleForProfile(profile, clipName)
         : personality;
+      perfBaseTimeScale = action.timeScale;
+      perfTrackBpm = profile?.bpm ?? 0;
       // Dance/sing shows loop with the music bed — even when perfMotionProfile
       // is not set yet (LoopOnce + clamp looked like a frozen static pose).
       // Tai chi / idle-rail lib_C* martial flows loop for the full move clock.
@@ -1979,6 +1987,24 @@ export default function CompanionCanvas({
       // r2026-10-03.39: a dialogue-triggered movement performance (sing / jump
       // / kungfu / taichi / piano / jog), stamped on the same clock as `now`.
       const mv = activeMove(now);
+      // Live tempo: once the analyser locks, nudge the dance/sing clip toward
+      // the measured BPM. Bounded to ±18% so a noisy estimate can never turn
+      // a walk into a sprint. Until lock, the profile's known/measured BPM runs.
+      const beatNow = mv?.kind === 'dance' || mv?.kind === 'sing'
+        ? liveBeatSnapshot(now)
+        : null;
+      if (
+        perfAction
+        && beatNow
+        && beatNow.source === 'analyser'
+        && beatNow.bpm
+        && beatNow.confidence >= 0.5
+        && perfTrackBpm > 0
+      ) {
+        const ratio = Math.max(0.85, Math.min(1.18, beatNow.bpm / perfTrackBpm));
+        perfAction.timeScale = perfBaseTimeScale * ratio;
+      }
+      const beatPulse = beatNow?.pulse ?? 0;
       // r95 (Master Simon): NO hand-composed skeleton choreography. The old
       // moveDeltas ? moveEnvelope "semantic additives" made eating / dance /
       // kungfu twist the spine past human limits (upper body spinning 360簞).
@@ -2047,7 +2073,8 @@ export default function CompanionCanvas({
         avatar.root.position.y = clamp(avatar.root.position.y, -0.35, 0.5);
         avatar.root.position.z = clamp(avatar.root.position.z, -0.8, 0.8);
         // Dance/sing with no library clip loaded yet: a small sway so the body
-        // still answers. Any running perfAction is the real motion — skip sway.
+        // still answers. A running perfAction supplies the main motion, but a
+        // root-level beat accent is ADDITIVE and never fights the bone tracks.
         if ((mv?.kind === 'dance' || mv?.kind === 'sing') && boost === 0 && laugh === 0) {
           const clipPlaying = !!(perfAction && perfAction.isRunning());
           if (!clipPlaying) {
@@ -2060,6 +2087,18 @@ export default function CompanionCanvas({
               -0.35,
               0.5,
             );
+          }
+          if (beatPulse > 0) {
+            // Knee/torso accent on the beat: a few millimetres of lift plus a
+            // tiny roll. Deliberately subtle — the VRMA owns the choreography.
+            const accent = mv.kind === 'dance' ? 0.018 : 0.009;
+            avatar.root.position.y = clamp(
+              avatar.root.position.y + beatPulse * accent,
+              -0.35,
+              0.5,
+            );
+            avatar.root.rotation.z += beatPulse * (mv.kind === 'dance' ? 0.01 : 0.005);
+            avatar.root.rotation.y += beatPulse * (mv.kind === 'dance' ? 0.005 : 0.003);
           }
         }
         if (gameView) {
@@ -2106,16 +2145,31 @@ export default function CompanionCanvas({
           });
         }
         if (sp) {
-          const mouth = sp.mouth;
-          const on = (want: string) => (sp.vowel === want ? 1 : 0.12);
-          setEm('aa', mouth * on('aa'));
-          setEm('ih', mouth * on('ih'));
-          setEm('ou', mouth * on('ou'));
-          setEm('ee', mouth * on('ee'));
-          setEm('oh', mouth * on('oh'));
+          // Jaw openness always follows amplitude (`aa`), with the vowel only
+          // tinting the shape. The old 0.12 floor on non-matching vowels made
+          // the mouth look nearly shut whenever she sang anything but "ah".
+          const w = visemeWeights(sp.mouth, sp.vowel);
+          setEm('aa', w.aa);
+          setEm('ih', w.ih);
+          setEm('ou', w.ou);
+          setEm('ee', w.ee);
+          setEm('oh', w.oh);
         } else {
           setEm('aa', 0); setEm('ih', 0); setEm('ou', 0);
           setEm('ee', 0); setEm('oh', 0);
+        }
+        // Singing breath: slow root sway scaled by the live audio envelope, so
+        // a long vocal never looks frozen even while the VRMA runs. Additive
+        // and tiny; the clip still owns the actual performance.
+        if (!gameView && mv?.kind === 'sing' && boost === 0 && laugh === 0) {
+          const level = sp?.mouth ?? 0;
+          avatar.root.rotation.z += Math.sin(now / 780) * 0.012 * (0.35 + level);
+          avatar.root.rotation.y += Math.sin(now / 1450) * 0.006 * (0.35 + level);
+          avatar.root.position.y = clamp(
+            avatar.root.position.y + Math.abs(Math.sin(now / 1250)) * 0.004 * (0.35 + level),
+            -0.35,
+            0.5,
+          );
         }
 
         const b = targets.bones;

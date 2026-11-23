@@ -86,8 +86,9 @@ describe('dance-audio-gate', () => {
     expect(playClip.indexOf('src.start()')).toBeLessThan(playClip.indexOf('emitLibraryClipPlaying(clip.id)'));
     // Song mouth starts only after audible start — never during intro wait.
     expect(playClip.indexOf('src.start()')).toBeLessThan(playClip.indexOf('startSongMouth'));
-    expect(music).toContain('armSongMouthFromElement');
-    expect(music).toMatch(/clipKind === 'song'[\s\S]*armSongMouthFromElement/);
+    expect(music).toContain('armClipFromElement');
+    expect(music).toContain('isSameOriginUrl');
+    expect(music).toMatch(/if \(clipKind === 'song'\) startSongMouth\(an\)/);
     expect(music).toContain('export function isLibraryClipAudible');
     expect(music).toContain('export function activeLibraryClipId');
     expect(music).toMatch(/emitLibraryClipPlaying[\s\S]*clipAudible = true/);
@@ -101,6 +102,10 @@ describe('dance-audio-gate', () => {
     expect(canvas).toContain('Hard fallbacks so song/dance still move');
     expect(canvas).toContain('beatAlignedVrmaTime');
     expect(canvas).toContain('libraryBedPlaybackSec');
+    // Singing lips come from the analyser envelope, never a fixed vowel floor.
+    expect(canvas).toContain('visemeWeights(sp.mouth, sp.vowel)');
+    expect(canvas).toContain('liveBeatSnapshot(now)');
+    expect(canvas).not.toContain("const on = (want: string) =>");
     // Local Sing/Dance before remote 3dchat URLs.
     const singLocal = canvas.indexOf('`${ANIM_MIRROR}/Sing.vrma`');
     const singRemote = canvas.indexOf('singing.vrma');

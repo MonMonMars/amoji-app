@@ -190,12 +190,12 @@ describe('demo-phase buttons', () => {
       const lm = resolveMusicAsk(demoPhasePrompt('listenMusic', lang));
       expect(lm.matched).toBe(true);
       expect(lm.kind).toBe('music');
-      expect(musicAskListenOnly(lm.kind, lm)).toBe(true);
+      expect(musicAskListenOnly(lm.kind, lm)).toBe(false);
 
       const ls = resolveMusicAsk(demoPhasePrompt('listenSong', lang));
       expect(ls.matched).toBe(true);
       expect(ls.kind).toBe('song');
-      expect(musicAskListenOnly(ls.kind, ls)).toBe(true);
+      expect(musicAskListenOnly(ls.kind, ls)).toBe(false);
 
       const ss = resolveMusicAsk(demoPhasePrompt('singSong', lang));
       expect(ss.matched).toBe(true);

@@ -60,6 +60,14 @@ const LISTEN_SONG_RE =
 const DANCE_RE =
   /(跳舞|舞蹈|跳個舞|跳支舞|舞一段|\bdanc(?:e|ing)\b|ダンス|踊って|踊ろう)/i;
 
+/**
+ * Explicit "I only want the audio" request. This is the ONE remaining way to
+ * keep the calm listen-only idle (no dance / no sing VRMA). Ordinary
+ * 「聽音樂」/「聽歌」 asks now perform, per the owner's 2026-11-23 report.
+ */
+const LISTEN_ONLY_RE =
+  /(?:\b(?:just|only)\s+listen\b|\blisten\s+only\b|\bno\s+dancing\b|\bdo\s*n[o']?t\s+dance\b|\bdon'?t\s+move\b|\bno\s+moves?\b|唔好跳|唔使跳|唔好郁|唔好动|淨係聽|净係听|只想聽|只想听|不要跳|不用跳|不用动|踊らないで|動かないで)/i;
+
 const MUSIC_RE =
   /\b(?:play\s+(?:(?:some|a)\s+)?(?:music|song|track|tune)|put\s+on\s+(?:(?:some|a)\s+)?(?:music|song|track|tune)|play\s+(?:something|a\s+(?:song|track|tune))|listen\s+to\s+(?:(?:some|a)\s+)?(?:music|song)|(?:some\s+)?music\s+please)\b|播音樂|播音乐|放音樂|放音乐|播首歌|放首歌|播首|放首|來首|来首|播点|放点|音楽をかけ|音楽かけて|曲をかけ|聴かせて/i;
 
@@ -109,8 +117,23 @@ export function resolveMusicAsk(text: string): MusicAskIntent {
     return { mode: 'select', kind: askKind(t), style, matched: true };
   }
 
+  // Explicit "audio only" ask keeps the calm listen-only idle reachable; it is
+  // simply no longer the DEFAULT for music asks. Decided BEFORE the motion
+  // verbs because negations ("no dancing", 唔好跳) contain the motion word.
+  if (LISTEN_ONLY_RE.test(t) && (wantsListenSong || wantsMusic || wantsDance || genrePlay || yueGenreMusic)) {
+    return {
+      mode: 'random',
+      kind: wantsListenSong ? 'song' : 'music',
+      style,
+      matched: true,
+      listenOnly: true,
+    };
+  }
+
   if (wantsListenSong) {
-    return { mode: 'random', kind: 'song', style, matched: true, listenOnly: true };
+    // Owner 2026-11-23: listening to a song still performs it - lips move with
+    // the vocal bed and the body joins the beat. No calm listen-only idle.
+    return { mode: 'random', kind: 'song', style, matched: true };
   }
 
   if (wantsSing || wantsDance || wantsMusic || genrePlay || yueGenreMusic) {
@@ -246,9 +269,9 @@ export function listMusicPickOptions(opts: {
         if (diverse.length >= count) break;
       }
     }
-    return diverse.map((t) => streamOption(t, opts.kind === 'music'));
+    return diverse.map((t) => streamOption(t));
   }
-  return rotate(pool, seed).slice(0, count).map((t) => streamOption(t, opts.kind === 'music'));
+  return rotate(pool, seed).slice(0, count).map((t) => streamOption(t));
 }
 
 /** Spoken menu of song names / genres — chips optional alongside. */
@@ -287,8 +310,17 @@ export function musicAskShowKind(kind: MusicAskKind): PerformanceKind {
   return kind === 'song' ? 'song' : 'dance';
 }
 
-/** Generic music asks +「聽歌」song beds play under calm idle — not dance/sing VRMA. */
-export function musicAskListenOnly(kind: MusicAskKind, intent?: Pick<MusicAskIntent, 'listenOnly'>): boolean {
-  if (intent?.listenOnly) return true;
-  return kind === 'music';
+/**
+ * Historically every generic music ask played under a calm listen-only idle,
+ * which is why 「聽音樂」/「聽歌」 never moved the body (owner report
+ * 2026-11-23). The default is now "perform": an audible bed dances or
+ * lip-syncs. The calm idle stays available, but only for an EXPLICIT request
+ * ("just listen", "no dancing", 唔好跳, 只想聽), which `resolveMusicAsk` marks
+ * with `listenOnly: true`. Call sites are unchanged.
+ */
+export function musicAskListenOnly(
+  _kind: MusicAskKind,
+  intent?: Pick<MusicAskIntent, 'listenOnly'>,
+): boolean {
+  return intent?.listenOnly === true;
 }
