@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Amoji — Admin</title>
+  <style>
+    :root {
+      --ink: #1a2420;
+      --muted: #5a6b62;
+      --paper: #f3eee4;
+      --panel: #fffaf2;
+      --line: #d5cdb8;
+      --accent: #0e6b5c;
+      --accent-deep: #084c42;
+      --soft: #e8f4ef;
+      --warn: #8a5a12;
+      --warn-bg: #fbf0d7;
+      --danger: #8a2f2f;
+      --danger-bg: #f8dede;
+      --info: #1e4a6e;
+      --info-bg: #e3eef8;
+      --shadow: 0 14px 32px rgba(26, 36, 32, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background:
+        radial-gradient(1100px 520px at 8% -10%, #d9efe6 0%, transparent 55%),
+        radial-gradient(900px 460px at 100% 0%, #f0dfb8 0%, transparent 45%),
+        linear-gradient(180deg, #efe7d6 0%, var(--paper) 42%, #ebe4d5 100%);
+      min-height: 100vh;
+    }
+    .wrap { width: min(1120px, calc(100% - 2rem)); margin: 0 auto; padding: 2.25rem 0 4rem; }
+    header.hero {
+      display: grid; gap: 0.75rem; margin-bottom: 1.25rem; padding: 1.5rem;
+      border: 1px solid var(--line);
+      background: linear-gradient(135deg, rgba(14, 107, 92, 0.12), transparent 42%), var(--panel);
+      box-shadow: var(--shadow);
+    }
+    .eyebrow { letter-spacing: 0.14em; text-transform: uppercase; font-size: 0.72rem; font-weight: 700; color: var(--accent); }
+    h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(1.6rem, 3vw, 2.3rem); color: var(--accent-deep); }
+    .lede { margin: 0; color: var(--muted); line-height: 1.55; max-width: 54rem; font-size: 0.95rem; }
+    h2 {
+      font-family: Georgia, "Times New Roman", serif; font-size: 1.25rem; margin: 0 0 0.65rem;
+      color: var(--accent-deep);
+    }
+    h3 { margin: 0 0 0.4rem; font-size: 0.95rem; color: var(--accent-deep); }
+    .card {
+      background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow);
+      padding: 1rem 1.1rem; margin-bottom: 1rem;
+    }
+    .grid-connect { display: grid; grid-template-columns: 1.4fr 1.4fr auto; gap: 0.65rem; align-items: end; }
+    label { display: block; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em; color: var(--muted); margin-bottom: 0.28rem; text-transform: uppercase; }
+    input[type="url"], input[type="password"], input[type="text"], input[type="number"] {
+      width: 100%; font-family: inherit; font-size: 0.92rem; padding: 0.5rem 0.6rem;
+      border: 1px solid var(--line); border-radius: 4px; background: #fff; color: var(--ink);
+    }
+    input:focus { outline: 2px solid rgba(14, 107, 92, 0.3); border-color: var(--accent); }
+    button {
+      font-family: inherit; font-weight: 700; font-size: 0.86rem; cursor: pointer;
+      border: 1px solid var(--line); background: var(--panel); padding: 0.5rem 0.9rem;
+      border-radius: 4px; color: var(--accent-deep);
+    }
+    button:hover:not(:disabled) { background: var(--soft); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.primary { background: var(--accent-deep); border-color: var(--accent-deep); color: #fff; }
+    button.primary:hover:not(:disabled) { background: var(--accent); }
+    button.danger { border-color: var(--danger); color: var(--danger); }
+    button.danger:hover:not(:disabled) { background: var(--danger-bg); }
+    button.small { font-size: 0.75rem; padding: 0.3rem 0.55rem; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.55rem; align-items: center; }
+    .muted { color: var(--muted); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .pill { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+    .pill.ok { background: var(--soft); color: var(--accent-deep); }
+    .pill.bad { background: var(--danger-bg); color: var(--danger); }
+    .pill.warn { background: var(--warn-bg); color: var(--warn); }
+    .pill.info { background: var(--info-bg); color: var(--info); }
+    .banner { border: 1px solid var(--line); padding: 0.9rem 1rem; margin-bottom: 1rem; line-height: 1.5; font-size: 0.9rem; }
+    .banner.error { background: var(--danger-bg); border-color: #d9a5a5; }
+    .banner.warn { background: var(--warn-bg); border-color: #ddc38a; }
+    .banner.info { background: var(--info-bg); border-color: #a9c6dd; }
+    .banner strong { display: block; margin-bottom: 0.2rem; }
+    .banner ul { margin: 0.4rem 0 0; padding-left: 1.15rem; }
+    .banner li { margin: 0.15rem 0; }
+    .banner li .sev { font-weight: 700; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.05em; margin-right: 0.35rem; }
+    .banner li.error .sev { color: var(--danger); }
+    .banner li.warn .sev { color: var(--warn); }
+    .banner li.info .sev { color: var(--info); }
+    .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.65rem; margin-bottom: 1rem; }
+    .stat { background: var(--panel); border: 1px solid var(--line); padding: 0.8rem 0.9rem; box-shadow: var(--shadow); }
+    .stat .n { font-family: Georgia, "Times New Roman", serif; font-size: 1.65rem; font-weight: 700; line-height: 1.15; }
+    .stat .l { color: var(--muted); font-size: 0.78rem; }
+    .stat .s { color: var(--muted); font-size: 0.72rem; margin-top: 0.2rem; }
+    .cols { display: grid; grid-template-columns: 1.1fr 1fr; gap: 1rem; }
+    @media (max-width: 820px) { .cols { grid-template-columns: 1fr; } .grid-connect { grid-template-columns: 1fr; } }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); background: #fff; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    th, td { text-align: left; padding: 0.45rem 0.55rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    th { background: #f6f1e6; font-weight: 700; position: sticky; top: 0; z-index: 1; white-space: nowrap; }
+    tr:hover td { background: rgba(14, 107, 92, 0.04); }
+    .id-cell { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.76rem; max-width: 11rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .empty { padding: 1.1rem; color: var(--muted); text-align: center; font-size: 0.88rem; }
+    .breaker-group { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.75rem; }
+    .breaker-group button.active { background: var(--accent-deep); border-color: var(--accent-deep); color: #fff; }
+    .breaker-group button.active[data-breaker="soft"] { background: var(--warn); border-color: var(--warn); }
+    .breaker-group button.active[data-breaker="hard"] { background: var(--danger); border-color: var(--danger); }
+    .field-inline { display: flex; gap: 0.5rem; align-items: end; flex-wrap: wrap; }
+    .field-inline .field { flex: 1 1 10rem; }
+    .note { font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-top: 0.6rem; }
+    .history { margin: 0.6rem 0 0; padding: 0; list-style: none; font-size: 0.78rem; color: var(--muted); }
+    .history li { padding: 0.25rem 0; border-top: 1px dashed var(--line); }
+    #detailCard { display: none; }
+    #detailCard.show { display: block; }
+    .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.55rem; }
+    .kv > div { border: 1px solid var(--line); background: #fff; padding: 0.5rem 0.6rem; }
+    .kv .k { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .kv .v { font-size: 0.86rem; word-break: break-all; }
+    .pager { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-top: 0.6rem; flex-wrap: wrap; }
+    details { margin-top: 0.75rem; font-size: 0.86rem; color: var(--muted); }
+    details pre { background: #fff; border: 1px solid var(--line); padding: 0.6rem; overflow-x: auto; font-size: 0.78rem; }
+    footer { margin-top: 1.5rem; font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
+    .toast {
+      position: fixed; right: 1rem; bottom: 1rem; max-width: 22rem;
+      background: var(--accent-deep); color: #fff; padding: 0.7rem 0.9rem; border-radius: 4px;
+      box-shadow: var(--shadow); font-size: 0.85rem; opacity: 0; transform: translateY(8px);
+      transition: opacity 160ms ease, transform 160ms ease; pointer-events: none; z-index: 20;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.error { background: var(--danger); }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="eyebrow">Pixel · owner console</div>
+      <h1>Amoji admin</h1>
+      <p class="lede">One page for accounts, search limits, and warnings. It talks directly to the Node API at the address below. The admin token stays in this tab's <code>sessionStorage</code> and is sent only in the <code>Authorization</code> header — never in the URL.</p>
+    </header>
+
+    <section class="card" aria-labelledby="connectTitle">
+      <h2 id="connectTitle">Connect</h2>
+      <div class="grid-connect">
+        <div>
+          <label for="baseUrl">Backend base URL</label>
+          <input id="baseUrl" type="url" spellcheck="false" autocomplete="off" placeholder="http://127.0.0.1:8787" />
+        </div>
+        <div>
+          <label for="token">Admin token</label>
+          <input id="token" type="password" spellcheck="false" autocomplete="off" placeholder="AMOJI_ADMIN_TOKEN" />
+        </div>
+        <div class="row">
+          <button id="connectBtn" class="primary" type="button">Connect</button>
+          <button id="disconnectBtn" type="button" hidden>Forget token</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top:0.6rem">
+        <span id="statusPill" class="pill info">not connected</span>
+        <span id="statusText" class="muted" style="font-size:0.8rem">Enter the token from the server's <code>AMOJI_ADMIN_TOKEN</code> env var.</span>
+        <button id="refreshBtn" class="small" type="button" hidden>Refresh</button>
+      </div>
+      <details>
+        <summary>Running the API locally</summary>
+        <pre>cd server/backend
+$env:AMOJI_ADMIN_TOKEN = "a-long-random-token"
+npm start
+# listens on http://127.0.0.1:8787 by default</pre>
+        <p class="note">On GitHub Pages this page is served over HTTPS. The production API must also be HTTPS, otherwise the browser blocks the request. The default <code>http://127.0.0.1:8787</code> is for local development only.</p>
+      </details>
+    </section>
+
+    <div id="problem" hidden></div>
+    <div id="warningsCard" class="card" hidden>
+      <h2>Warnings</h2>
+      <div id="warningsBody"></div>
+      <div id="warningsMeta" class="note"></div>
+    </div>
+    <div id="notConnected" class="card">
+      <p class="empty">Nothing loaded yet. Connect to the backend to see real data. This page never shows sample numbers.</p>
+    </div>
+
+    <div id="dashboard" hidden>
+      <div id="statsGrid" class="grid-stats"></div>
+
+      <div class="cols">
+        <section class="card" aria-labelledby="limitsTitle">
+          <h2 id="limitsTitle">Search breaker</h2>
+          <div class="row" style="margin-bottom:0.55rem">
+            <span id="limitsPill" class="pill info">—</span>
+            <span id="limitsUpdated" class="muted" style="font-size:0.78rem"></span>
+          </div>
+          <div class="breaker-group" role="group" aria-label="Breaker mode">
+            <button type="button" data-breaker="closed">closed</button>
+            <button type="button" data-breaker="soft">soft</button>
+            <button type="button" data-breaker="hard">hard</button>
+          </div>
+          <div class="field-inline">
+            <div class="field">
+              <label for="capInput">maxSearchesPerWindow</label>
+              <input id="capInput" type="number" min="0" max="100000" step="1" />
+            </div>
+            <button id="saveLimits" class="primary" type="button">Save</button>
+          </div>
+          <p class="note">
+            <strong>closed</strong> = normal search. <strong>soft</strong> = allow up to the cap and make the client show a long character line as a delay. <strong>hard</strong> = refuse API search. Window: <span id="windowLabel">60</span> minutes. Every change is timestamped in the server's event log.
+          </p>
+          <p class="note">The static app keeps its own on-device search budget and does not report per-search counts to the server yet, so this page cannot show live search volume. The breaker is the server-side control for the API lane.</p>
+          <h3 style="margin-top:0.9rem">Recent changes</h3>
+          <ul id="limitsHistory" class="history"></ul>
+        </section>
+
+        <section class="card" aria-labelledby="accountTitle">
+          <h2 id="accountTitle">Account snapshot</h2>
+          <div class="kv" id="planSplit"></div>
+          <p class="note">Sessions are 30 days. "Active" means the session has not expired. Revoking a user's sessions logs them out everywhere without deleting their character, wardrobe, or chat history.</p>
+        </section>
+      </div>
+
+      <section class="card" aria-labelledby="usersTitle">
+        <h2 id="usersTitle">Users</h2>
+        <div class="row" style="margin-bottom:0.6rem">
+          <input id="searchInput" type="text" placeholder="Filter by user id prefix" style="max-width:18rem" />
+          <button id="searchBtn" class="small" type="button">Search</button>
+          <span id="usersMeta" class="muted" style="font-size:0.8rem"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>User id</th>
+                <th>Created</th>
+                <th>Plan</th>
+                <th>Kid</th>
+                <th>Last session</th>
+                <th>Active</th>
+                <th>Turns</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersBody"></tbody>
+          </table>
+        </div>
+        <div class="pager">
+          <button id="prevPage" class="small" type="button">← Newer</button>
+          <span id="pageLabel" class="muted" style="font-size:0.8rem"></span>
+          <button id="nextPage" class="small" type="button">Older →</button>
+        </div>
+      </section>
+
+      <section class="card" id="detailCard" aria-labelledby="detailTitle">
+        <div class="row" style="justify-content:space-between">
+          <h2 id="detailTitle">User detail</h2>
+          <button id="closeDetail" class="small" type="button">Close</button>
+        </div>
+        <div id="detailBody"></div>
+      </section>
+    </div>
+
+    <footer>
+      Admin API: <code>/api/admin/stats</code>, <code>/api/admin/users</code>, <code>/api/admin/users/:id</code>, <code>/api/admin/users/:id/revoke-sessions</code>, <code>/api/admin/limits</code>, <code>/api/admin/warnings</code>.
+      No password hashes or session tokens are returned by any admin route.
+      In production the token must be long and random, sent over HTTPS only.
+    </footer>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var SESSION_KEY = 'amoji.admin.token';
+  var BASE_KEY = 'amoji.admin.base';
+  var DEFAULT_BASE = 'http://127.0.0.1:8787';
+
+  var state = {
+    base: DEFAULT_BASE,
+    token: '',
+    connected: false,
+    problem: null,
+    stats: null,
+    users: null,
+    limits: null,
+    history: [],
+    warnings: null,
+    detail: null,
+    limit: 25,
+    offset: 0,
+    total: 0,
+    query: '',
+    pendingBreaker: null
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  function esc(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function num(value) {
+    return typeof value === 'number' && isFinite(value) ? value : null;
+  }
+
+  function fmtDate(ms) {
+    var n = num(ms);
+    if (n === null || n <= 0) return '—';
+    return new Date(n).toLocaleString();
+  }
+
+  function fmtRel(ms) {
+    var n = num(ms);
+    if (n === null || n <= 0) return '';
+    var diff = Date.now() - n;
+    if (diff < 0) diff = 0;
+    var mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + 'm ago';
+    var hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + 'h ago';
+    var days = Math.floor(hours / 24);
+    return days + 'd ago';
+  }
+
+  function timeCell(ms) {
+    var n = num(ms);
+    if (n === null || n <= 0) return '—';
+    return '<span title="' + esc(fmtDate(n)) + '">' + esc(fmtDate(n)) + '</span><br><span class="muted" style="font-size:0.72rem">' + esc(fmtRel(n)) + '</span>';
+  }
+
+  function toast(message, isError) {
+    var el = $('toast');
+    el.textContent = message;
+    el.className = 'toast show' + (isError ? ' error' : '');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(function () { el.className = 'toast'; }, 3200);
+  }
+
+  function ApiError(status, body, message) {
+    this.name = 'ApiError';
+    this.status = status;
+    this.body = body;
+    this.message = message || ('HTTP ' + status);
+  }
+  ApiError.prototype = Object.create(Error.prototype);
+
+  async function api(path, options) {
+    var opts = options || {};
+    var controller = new AbortController();
+    var timer = setTimeout(function () { controller.abort(); }, 8000);
+    var headers = { 'content-type': 'application/json' };
+    if (state.token) headers.authorization = 'Bearer ' + state.token;
+    var res;
+    try {
+      res = await fetch(state.base.replace(/\/$/, '') + path, {
+        method: opts.method || 'GET',
+        headers: headers,
+        body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+        signal: controller.signal,
+        cache: 'no-store'
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+    var body = null;
+    try { body = await res.json(); } catch (e) { body = null; }
+    if (!res.ok) throw new ApiError(res.status, body, body && body.error ? body.error : ('HTTP ' + res.status));
+    return body;
+  }
+
+  function setStatus(kind, text) {
+    var pill = $('statusPill');
+    pill.className = 'pill ' + kind;
+    pill.textContent = kind === 'ok' ? 'connected' : (kind === 'bad' ? 'error' : kind === 'warn' ? 'limited' : 'not connected');
+    $('statusText').textContent = text || '';
+  }
+
+  function showProblem(kind, title, lines) {
+    state.problem = { kind: kind, title: title, lines: lines || [] };
+    var box = $('problem');
+    box.hidden = false;
+    box.className = 'banner ' + (kind === 'unreachable' ? 'error' : kind === 'unauthorized' ? 'warn' : 'error');
+    var html = '<strong>' + esc(title) + '</strong>';
+    if (lines.length) {
+      html += '<ul>' + lines.map(function (line) { return '<li>' + esc(line) + '</li>'; }).join('') + '</ul>';
+    }
+    box.innerHTML = html;
+  }
+
+  function clearProblem() {
+    state.problem = null;
+    var box = $('problem');
+    box.hidden = true;
+    box.innerHTML = '';
+  }
+
+  function describeError(err) {
+    if (err && err.name === 'ApiError') {
+      if (err.status === 401) {
+        showProblem('unauthorized', 'Token rejected (401)', [
+          'Check the token matches AMOJI_ADMIN_TOKEN on the server exactly.',
+          'The token is case-sensitive and never appears in the URL.'
+        ]);
+        setStatus('bad', 'Token rejected by the API.');
+        return;
+      }
+      if (err.status === 503 && err.body && err.body.code === 'admin_disabled') {
+        showProblem('disabled', 'Admin is disabled on the server (503)', [
+          'AMOJI_ADMIN_TOKEN is not set on the server.',
+          'Set it, restart the API, then connect again.'
+        ]);
+        setStatus('bad', 'Admin disabled: no AMOJI_ADMIN_TOKEN configured.');
+        return;
+      }
+      showProblem('api', 'The API returned an error (' + err.status + ')', [
+        err.body && err.body.error ? String(err.body.error) : 'No error detail was returned.'
+      ]);
+      setStatus('bad', 'API error ' + err.status + '.');
+      return;
+    }
+    var aborted = err && (err.name === 'AbortError' || /aborted/i.test(String(err.message || '')));
+    showProblem('unreachable', 'Cannot reach the backend', [
+      aborted ? 'The request timed out after 8 seconds.' : 'The browser could not connect to ' + state.base + '.',
+      'Is the Node server running? Try `cd server/backend` then `npm start`.',
+      'Is the base URL right? The default local port is 8787.',
+      'If this page is on HTTPS, the API must be HTTPS too (mixed content is blocked).',
+      'If the server sets AMOJI_CORS_ORIGIN, it must include this page origin.'
+    ]);
+    setStatus('bad', 'Cannot reach ' + state.base);
+  }
+
+  function renderWarnings() {
+    var card = $('warningsCard');
+    var body = $('warningsBody');
+    var meta = $('warningsMeta');
+    if (!state.warnings) { card.hidden = true; return; }
+    card.hidden = false;
+    var warnings = state.warnings.warnings || [];
+    if (!warnings.length) {
+      body.innerHTML = '<div class="banner info" style="margin:0"><strong>No warnings</strong>Everything the API can check looks normal right now.</div>';
+    } else {
+      var level = state.warnings.ok ? 'warn' : 'error';
+      var html = '<div class="banner ' + level + '" style="margin:0"><strong>' +
+        (state.warnings.ok ? 'Attention' : 'Something is wrong') + '</strong><ul>';
+      warnings.forEach(function (w) {
+        var sev = w.severity === 'error' ? 'error' : w.severity === 'warn' ? 'warn' : 'info';
+        html += '<li class="' + sev + '"><span class="sev">' + esc(w.severity) + '</span>' + esc(w.message) + '</li>';
+      });
+      html += '</ul></div>';
+      body.innerHTML = html;
+    }
+    meta.textContent = 'Checked ' + fmtDate(state.warnings.checkedAt) +
+      (state.limits ? ' · breaker ' + state.limits.breaker : '');
+  }
+
+  function renderStats() {
+    var s = state.stats;
+    var grid = $('statsGrid');
+    if (!s) { grid.innerHTML = ''; return; }
+    var plans = s.plans || {};
+    var tiles = [
+      { n: s.totalUsers, l: 'Total users', s: (s.newUsersToday || 0) + ' new today' },
+      { n: s.activeSessions, l: 'Active sessions', s: '30-day sessions' },
+      { n: s.chatTurns, l: 'Chat turns', s: (s.chatTurnsToday || 0) + ' today' },
+      { n: plans.plus || 0, l: 'Plus', s: (plans.free || 0) + ' free' },
+      { n: s.reports, l: 'Reports', s: (s.supportMessages || 0) + ' support messages' }
+    ];
+    grid.innerHTML = tiles.map(function (t) {
+      return '<div class="stat"><div class="n">' + esc(t.n == null ? '—' : t.n) + '</div><div class="l">' + esc(t.l) + '</div><div class="s">' + esc(t.s || '') + '</div></div>';
+    }).join('');
+
+    var split = $('planSplit');
+    split.innerHTML =
+      '<div><div class="k">Free</div><div class="v">' + esc(plans.free == null ? '—' : plans.free) + '</div></div>' +
+      '<div><div class="k">Plus</div><div class="v">' + esc(plans.plus == null ? '—' : plans.plus) + '</div></div>' +
+      '<div><div class="k">New users today</div><div class="v">' + esc(s.newUsersToday == null ? '—' : s.newUsersToday) + '</div></div>' +
+      '<div><div class="k">Reports</div><div class="v">' + esc(s.reports == null ? '—' : s.reports) + '</div></div>';
+  }
+
+  function renderLimits() {
+    var limits = state.limits;
+    if (!limits) return;
+    var pill = $('limitsPill');
+    pill.className = 'pill ' + (limits.breaker === 'closed' ? 'ok' : limits.breaker === 'soft' ? 'warn' : 'bad');
+    pill.textContent = limits.breaker;
+    $('limitsUpdated').textContent = 'updated ' + fmtDate(limits.updatedAt);
+    $('windowLabel').textContent = String(Math.round((limits.windowSeconds || 3600) / 60));
+    if (document.activeElement !== $('capInput')) $('capInput').value = String(limits.maxSearchesPerWindow);
+
+    var selected = state.pendingBreaker || limits.breaker;
+    var buttons = document.querySelectorAll('.breaker-group button');
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].classList.toggle('active', buttons[i].getAttribute('data-breaker') === selected);
+      buttons[i].setAttribute('aria-pressed', buttons[i].getAttribute('data-breaker') === selected ? 'true' : 'false');
+    }
+
+    var list = $('limitsHistory');
+    var events = state.history || [];
+    if (!events.length) {
+      list.innerHTML = '<li>No changes recorded yet.</li>';
+    } else {
+      list.innerHTML = events.map(function (e) {
+        return '<li>' + esc(fmtDate(e.createdAt)) + ' · ' + esc(e.detail) + '</li>';
+      }).join('');
+    }
+  }
+
+  function renderUsers() {
+    var body = $('usersBody');
+    var data = state.users;
+    if (!data) { body.innerHTML = ''; return; }
+    var users = data.users || [];
+    if (!users.length) {
+      body.innerHTML = '<tr><td colspan="8"><div class="empty">No users match this view.</div></td></tr>';
+    } else {
+      body.innerHTML = users.map(function (u) {
+        var id = String(u.id || '');
+        return '<tr>' +
+          '<td class="id-cell" title="' + esc(id) + '">' + esc(id) + '</td>' +
+          '<td>' + timeCell(u.createdAt) + '</td>' +
+          '<td><span class="pill ' + (u.plan === 'plus' ? 'ok' : 'info') + '">' + esc(u.plan || 'free') + '</span></td>' +
+          '<td>' + (u.kidMode ? '<span class="pill warn">kid</span>' : '<span class="muted">—</span>') + '</td>' +
+          '<td>' + timeCell(u.lastSessionAt) + '</td>' +
+          '<td>' + esc(u.activeSessions == null ? '—' : u.activeSessions) + '</td>' +
+          '<td>' + esc(u.chatTurns == null ? '—' : u.chatTurns) + '</td>' +
+          '<td><div class="row">' +
+            '<button class="small" type="button" data-inspect="' + esc(id) + '">Inspect</button>' +
+            '<button class="small danger" type="button" data-revoke="' + esc(id) + '">Revoke sessions</button>' +
+          '</div></td>' +
+        '</tr>';
+      }).join('');
+    }
+    $('usersMeta').textContent = data.total + ' user' + (data.total === 1 ? '' : 's') + (state.query ? ' matching "' + state.query + '"' : '');
+    var from = data.total === 0 ? 0 : data.offset + 1;
+    var to = Math.min(data.offset + data.limit, data.total);
+    $('pageLabel').textContent = from + '–' + to + ' of ' + data.total;
+    $('prevPage').disabled = data.offset <= 0;
+    $('nextPage').disabled = data.offset + data.limit >= data.total;
+  }
+
+  function renderDetail() {
+    var card = $('detailCard');
+    var body = $('detailBody');
+    var d = state.detail;
+    if (!d) { card.classList.remove('show'); body.innerHTML = ''; return; }
+    card.classList.add('show');
+    var u = d.user || {};
+    var st = d.state || {};
+    var ent = d.entitlement || {};
+    var counts = d.counts || {};
+    var sessions = d.sessions || [];
+    var html = '<div class="kv">' +
+      '<div><div class="k">User id</div><div class="v mono">' + esc(u.id) + '</div></div>' +
+      '<div><div class="k">Plan</div><div class="v">' + esc(u.plan || 'free') + (ent.expiresAt ? ' (expires ' + esc(fmtDate(ent.expiresAt)) + ')' : '') + '</div></div>' +
+      '<div><div class="k">Created</div><div class="v">' + esc(fmtDate(u.createdAt)) + '</div></div>' +
+      '<div><div class="k">Kid mode</div><div class="v">' + (u.kidMode ? 'on' : 'off') + '</div></div>' +
+      '<div><div class="k">Character</div><div class="v mono">' + esc(st.characterId || '—') + '</div></div>' +
+      '<div><div class="k">Background</div><div class="v mono">' + esc(st.backgroundId || '—') + '</div></div>' +
+      '<div><div class="k">Language</div><div class="v">' + esc(st.lang || '—') + '</div></div>' +
+      '<div><div class="k">Wardrobe</div><div class="v">' + (st.wardrobe ? esc(st.wardrobe.headId + ' / ' + st.wardrobe.bodyId) : '—') + '</div></div>' +
+      '<div><div class="k">Chat turns</div><div class="v">' + esc(counts.chatTurns == null ? '—' : counts.chatTurns) + '</div></div>' +
+      '<div><div class="k">Reports</div><div class="v">' + esc(counts.reports == null ? '—' : counts.reports) + '</div></div>' +
+      '<div><div class="k">Support messages</div><div class="v">' + esc(counts.supportMessages == null ? '—' : counts.supportMessages) + '</div></div>' +
+      '</div>';
+
+    html += '<h3 style="margin-top:0.9rem">Sessions</h3>';
+    if (!sessions.length) {
+      html += '<div class="empty" style="border:1px solid var(--line)">No sessions. This user is logged out everywhere.</div>';
+    } else {
+      html += '<div class="table-wrap"><table><thead><tr><th>Created</th><th>Expires</th><th>State</th></tr></thead><tbody>';
+      sessions.forEach(function (s) {
+        html += '<tr><td>' + esc(fmtDate(s.createdAt)) + '</td><td>' + esc(fmtDate(s.expiresAt)) + '</td><td>' +
+          (s.active ? '<span class="pill ok">active</span>' : '<span class="pill info">expired</span>') + '</td></tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    html += '<p class="note">Session tokens are intentionally omitted. The admin API never returns them.</p>';
+    body.innerHTML = html;
+  }
+
+  function applyPayload(data) {
+    state.stats = data.stats;
+    state.users = data.users;
+    state.limits = data.limits && data.limits.limits ? data.limits.limits : data.limits;
+    state.history = (data.limits && data.limits.history) || data.history || [];
+    state.warnings = data.warnings;
+    renderStats();
+    renderLimits();
+    renderUsers();
+    renderWarnings();
+  }
+
+  async function refreshAll(showToast) {
+    if (!state.token) { toast('Enter the admin token first.', true); return; }
+    clearProblem();
+    setStatus('info', 'Loading…');
+    $('refreshBtn').disabled = true;
+    try {
+      var q = '';
+      if (state.query) q += '&q=' + encodeURIComponent(state.query);
+      var results = await Promise.all([
+        api('/api/admin/stats'),
+        api('/api/admin/users?limit=' + state.limit + '&offset=' + state.offset + q),
+        api('/api/admin/limits'),
+        api('/api/admin/warnings')
+      ]);
+      state.connected = true;
+      $('dashboard').hidden = false;
+      $('notConnected').hidden = true;
+      $('refreshBtn').hidden = false;
+      $('disconnectBtn').hidden = false;
+      applyPayload({
+        stats: results[0],
+        users: results[1],
+        limits: results[2],
+        warnings: results[3]
+      });
+      setStatus(
+        results[3].ok ? 'ok' : 'warn',
+        'Connected to ' + state.base + ' · last checked ' + fmtDate(results[3].checkedAt)
+      );
+      if (showToast) toast('Admin data refreshed.');
+    } catch (err) {
+      state.connected = false;
+      $('dashboard').hidden = true;
+      $('notConnected').hidden = false;
+      $('refreshBtn').disabled = false;
+      describeError(err);
+    } finally {
+      $('refreshBtn').disabled = false;
+    }
+  }
+
+  async function saveLimits() {
+    var cap = Number($('capInput').value);
+    if (!isFinite(cap) || Math.floor(cap) !== cap || cap < 0 || cap > 100000) {
+      toast('maxSearchesPerWindow must be an integer from 0 to 100000.', true);
+      return;
+    }
+    var breaker = state.pendingBreaker || (state.limits && state.limits.breaker) || 'closed';
+    $('saveLimits').disabled = true;
+    try {
+      var result = await api('/api/admin/limits', {
+        method: 'PUT',
+        body: { breaker: breaker, maxSearchesPerWindow: cap }
+      });
+      state.pendingBreaker = null;
+      state.limits = result.limits;
+      state.history = result.history || state.history;
+      renderLimits();
+      toast('Search policy saved: ' + result.limits.breaker + ' / ' + result.limits.maxSearchesPerWindow + '.');
+      await refreshAll(false);
+    } catch (err) {
+      describeError(err);
+      toast(err && err.message ? err.message : 'Could not save the policy.', true);
+    } finally {
+      $('saveLimits').disabled = false;
+    }
+  }
+
+  async function inspectUser(id) {
+    try {
+      var detail = await api('/api/admin/users/' + encodeURIComponent(id));
+      state.detail = detail;
+      renderDetail();
+      $('detailCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (err) {
+      describeError(err);
+    }
+  }
+
+  async function revokeSessions(id) {
+    if (!window.confirm('Revoke every session for this user? They will be logged out everywhere. Their character, wardrobe, and chat history stay.')) return;
+    try {
+      var result = await api('/api/admin/users/' + encodeURIComponent(id) + '/revoke-sessions', { method: 'POST' });
+      toast('Revoked ' + (result.revoked || 0) + ' session' + (result.revoked === 1 ? '' : 's') + '.');
+      if (state.detail && state.detail.user && state.detail.user.id === id) state.detail = null;
+      renderDetail();
+      await refreshAll(false);
+    } catch (err) {
+      describeError(err);
+    }
+  }
+
+  function connect() {
+    var base = $('baseUrl').value.trim().replace(/\/$/, '');
+    var token = $('token').value.trim();
+    if (!/^https?:\/\//i.test(base)) { toast('Backend URL must start with http:// or https://.', true); return; }
+    if (!token) { toast('Enter the admin token.', true); return; }
+    state.base = base;
+    state.token = token;
+    state.offset = 0;
+    state.query = '';
+    $('searchInput').value = '';
+    try { localStorage.setItem(BASE_KEY, base); } catch (e) { /* private mode */ }
+    try { sessionStorage.setItem(SESSION_KEY, token); } catch (e) { /* private mode */ }
+    refreshAll(true);
+  }
+
+  function disconnect() {
+    state.token = '';
+    state.connected = false;
+    state.stats = null;
+    state.users = null;
+    state.limits = null;
+    state.warnings = null;
+    state.detail = null;
+    state.history = [];
+    try { sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* ignore */ }
+    $('token').value = '';
+    $('dashboard').hidden = true;
+    $('notConnected').hidden = false;
+    $('warningsCard').hidden = true;
+    $('refreshBtn').hidden = true;
+    $('disconnectBtn').hidden = true;
+    clearProblem();
+    setStatus('info', 'Token forgotten for this tab.');
+  }
+
+  function wire() {
+    try {
+      state.base = localStorage.getItem(BASE_KEY) || DEFAULT_BASE;
+      state.token = sessionStorage.getItem(SESSION_KEY) || '';
+    } catch (e) {
+      state.base = DEFAULT_BASE;
+      state.token = '';
+    }
+    $('baseUrl').value = state.base;
+    $('token').value = state.token;
+
+    $('connectBtn').addEventListener('click', connect);
+    $('disconnectBtn').addEventListener('click', disconnect);
+    $('refreshBtn').addEventListener('click', function () { refreshAll(true); });
+    $('saveLimits').addEventListener('click', saveLimits);
+    $('closeDetail').addEventListener('click', function () { state.detail = null; renderDetail(); });
+
+    var breakerButtons = document.querySelectorAll('.breaker-group button');
+    for (var i = 0; i < breakerButtons.length; i++) {
+      breakerButtons[i].addEventListener('click', function (event) {
+        state.pendingBreaker = event.currentTarget.getAttribute('data-breaker');
+        renderLimits();
+      });
+    }
+
+    $('usersBody').addEventListener('click', function (event) {
+      var target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      var inspect = target.getAttribute('data-inspect');
+      var revoke = target.getAttribute('data-revoke');
+      if (inspect) inspectUser(inspect);
+      if (revoke) revokeSessions(revoke);
+    });
+
+    $('prevPage').addEventListener('click', function () {
+      state.offset = Math.max(0, state.offset - state.limit);
+      refreshAll(false);
+    });
+    $('nextPage').addEventListener('click', function () {
+      state.offset += state.limit;
+      refreshAll(false);
+    });
+    $('searchBtn').addEventListener('click', function () {
+      state.query = $('searchInput').value.trim();
+      state.offset = 0;
+      refreshAll(false);
+    });
+    $('searchInput').addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') { state.query = $('searchInput').value.trim(); state.offset = 0; refreshAll(false); }
+    });
+    $('token').addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') connect();
+    });
+
+    if (state.token) refreshAll(false);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+  else wire();
+})();
+</script>
+</body>
+</html>

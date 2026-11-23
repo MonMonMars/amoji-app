@@ -17,6 +17,7 @@ import {
 import { autoReply } from './auto-reply.js';
 import { mailConfigured, sendMail } from './email.js';
 import { wipeUserProductData } from './storage-wipe.js';
+import { handleAdminRoute } from './admin.js';
 
 export interface Backend {
   handle(req: Request): Promise<Response>;
@@ -278,6 +279,13 @@ export function createBackend(opts: BackendOptions): Backend {
           opsNotified,
           mailConfigured: mailConfigured(),
         }, 200, req);
+      }
+
+      // Admin routes authenticate with AMOJI_ADMIN_TOKEN, not a user session.
+      // They must be handled before the session gate below.
+      if (url.pathname === '/api/admin' || url.pathname.startsWith('/api/admin/')) {
+        const result = await handleAdminRoute(req, url, opts.db, now());
+        return json(result.body, result.status, req);
       }
 
       const token = bearer(req);
