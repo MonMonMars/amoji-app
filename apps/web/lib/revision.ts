@@ -515,7 +515,16 @@
 // Those clips now load at scale 1; an A/B over all 153 clips leaves the other
 // 146 byte-identical. The eight pinned idles look the same either way, which
 // is why this does not touch the R11 floating-feet question.
-export const APP_REVISION = 'r2026-11-19.288';
+// r2026-11-19.289: poke resume — the cut itself is unchanged (owner decision,
+// r286), but a cut conversation reply is no longer lost. Before the poke
+// interrupt, playPokeBurst snapshots the active resumable line via a narrow
+// LineQueue accessor; after POKE_REACTION_MS and the reaction line it re-speaks
+// that line (line-level, from its start) prefixed with a short same-language
+// resume phrase. Only jobs tagged resumable arm, so reactions, card greets,
+// voice previews, fillers and announcements stay a hard cut. A new user turn,
+// mute, card audition, dance/sing show or martial clip cancels the pending
+// continuation, and a second poke replaces it instead of stacking.
+export const APP_REVISION = 'r2026-11-19.289';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

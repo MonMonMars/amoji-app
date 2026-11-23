@@ -14,12 +14,14 @@
 - Approved closing nine superseded stale PRs and reviving four (#527 → #566, #531 → #568, #539 → #569, #526 → #567); #20 CosyVoice stays on Hold.
 - **Blanket approval:** "I simply allow all your actions. No need to ask me for permission" — proceed without per-action confirmation; keep reporting what shipped.
 - Confirmed continuing after two agent attempts were stopped mid-run.
+- **Resume after a poke (new ask, same day):** "how about the poke will stop the talk, but after the reaction, the character will say something to resume the previous talk." The cut stays as decided above; the change is that the interrupted conversation reply is picked back up after the reaction instead of being lost.
 
 **Shipped (code):**
 - **r285** — voice chain now ends gTTS → Edge → device `speechSynthesis` (the last hop used to refuse, so a failed network tier meant silence); locale-restricted synth pool so Japanese text can no longer get an English voice; `referrer: same-origin` so Google `translate_tts` stops answering 404; RMS/spectral visemes and spectral-flux beat detection replace the wall clock; six VRMA files stripped of dead FBX image blocks.
 - **r286** — poke impact clip and reaction line land inside `POKE_REACTION_MS`; poke cuts speech via the existing `stopSpeaking()` path; R13 same-side lateral lean restored after #554 mirrored it and rewrote the tests to defend the mirror.
 - **r287** — live-Pages verification in CI reaching four owner-picker markers; resource library index re-measured; open web search revived for general questions; kung-fu speech gated on real motion; repo-hygiene guard.
 - **r288** — rest-hips sign normalisation so the seven freed dance clips bounce up instead of sinking (146 of 153 clips byte-identical).
+- **r289** — poke resume: before the poke cut, the active resumable conversation line is snapshotted through a narrow `LineQueue` accessor; after `POKE_REACTION_MS` and her reaction line, she re-speaks that line (line-level, from its start) prefixed with a short same-language resume phrase. Only chat replies are tagged resumable, so poking a reaction / card greet / preview / filler / announcement stays a hard cut. A new user turn, mute, card audition, dance/sing show or martial clip cancels the continuation; a second poke replaces it (one pending resume at most).
 
 **Also fixed today, not a revision:** the primary checkout's `apps/web/node_modules` and the `.pnpm` package directories had been emptied by a `git worktree remove` that followed a junctioned `node_modules`; repaired from the local pnpm store. Two orphan worktree directories with live `node_modules` junctions into the primary were unlinked and removed. Four merged worktrees pruned.
 

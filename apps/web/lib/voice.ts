@@ -108,6 +108,7 @@ import {
 } from './voice-catalog';
 import { loadingFillerKind, recordedLaughClip, recordedPokeClip } from './voice-clips';
 import { LineQueue, speechLeadDiverged, speechRemainder } from './speech-queue';
+import { PokeResumeArbiter, type PokeResumeCandidate } from './poke-resume';
 import { emotionClipPath } from './emotion-clip-picks';
 import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText, nextCardGreetPhrase, nextGreetingKind, type BurstClipKind, type ClipFolder, type VoiceClipGender } from './voice-clips';
 import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
@@ -1306,6 +1307,12 @@ interface SpeechJob {
   voiceId?: string;
   /** Loading filler: dropped the moment a real line needs the speaker. */
   filler?: boolean;
+  /**
+   * True only for a companion CONVERSATION reply (something said back to the
+   * user). A poke may cut it and pick it back up afterwards. Reactions, card
+   * greets, previews, fillers and announcements never set this.
+   */
+  resumable?: boolean;
 }
 
 const lineQueue = new LineQueue<SpeechJob>();
@@ -1333,6 +1340,72 @@ export function whenSpeechIdle(cb: () => void): void {
     return;
   }
   idleWaiters.push(cb);
+}
+
+/**
+ * One pending "pick the conversation back up" continuation after a poke.
+ * It waits out POKE_REACTION_MS and the reaction line itself, then re-speaks
+ * the interrupted reply from its start (line-level: the queue does not track
+ * a clause cursor). The reply is prefixed with a short resume phrase in the
+ * same language. See lib/poke-resume.ts for the timing rules.
+ */
+const pokeResume = new PokeResumeArbiter({
+  isBusy: () => lineQueue.pending(),
+  whenIdle: (cb) => whenSpeechIdle(cb),
+});
+
+/** Cancel a pending poke continuation: new user turn, mute, audition, show. */
+export function cancelPokeResume(): void {
+  pokeResume.cancel();
+}
+
+/**
+ * The continuation waiting for the reaction to finish, if any. Read-only test
+ * / diagnostics hook; returns a copy so callers cannot mutate the plan.
+ */
+export function pendingPokeResume(): { text: string; lang: Lang } | null {
+  const pending = pokeResume.pending();
+  return pending ? { text: pending.text, lang: pending.lang as Lang } : null;
+}
+
+/**
+ * Snapshot the resumable conversation line a poke is about to cut. Only jobs
+ * explicitly tagged `resumable` qualify (chat replies). The active job wins
+ * when it qualifies; otherwise the first resumable job still queued behind it
+ * is captured, and any resumable conversation tail after it is appended so a
+ * multi-sentence reply is not half-lost. Returns null when this is a reaction,
+ * greet, preview, filler or announcement - those must stay a hard cut.
+ */
+function capturePokeResume(): PokeResumeCandidate | null {
+  const jobs: SpeechJob[] = [];
+  const active = lineQueue.activeItem();
+  if (active) jobs.push(active);
+  jobs.push(...lineQueue.queuedItems());
+  const first = jobs.findIndex((job) => job.kind === 'speak' && job.resumable === true);
+  if (first < 0) return null;
+  const head = jobs[first]!;
+  const tail = jobs
+    .slice(first + 1)
+    .filter((job) => job.kind === 'speak' && job.resumable === true)
+    .map((job) => job.text.trim())
+    .filter(Boolean);
+  const text = [head.text.trim(), ...tail].filter(Boolean).join(' ');
+  if (!text) return null;
+  return {
+    text,
+    lang: head.lang,
+    speak: (line) => speak(
+      line,
+      head.characterId,
+      head.lang,
+      head.emotionHints,
+      // Never replay the original vocal tic: the resume phrase is the lead.
+      undefined,
+      head.intensity,
+      head.rateBias ?? 0,
+      { resumable: true },
+    ),
+  };
 }
 
 /** True while a companion line is playing or waiting behind it. */
@@ -1410,6 +1483,9 @@ if (typeof window !== 'undefined') {
 }
 
 export function stopSpeaking(): void {
+  // A user turn / mute / show takes the speaker: the pending poke
+  // continuation must never talk over it (this is the important cancel seam).
+  cancelPokeResume();
   lineQueue.interrupt();
   cancelIdleWaiters();
   stopThinkingSound();
@@ -1439,6 +1515,8 @@ export function stopSpeakingForInterrupt(): void {
  * `speakGtts` left every card tap silent after EarlyAudioUnlock or a prior preview.
  */
 export function stopSpeakingForCardAudition(): void {
+  // A card greet / voice preview is a new audition, not the old conversation.
+  cancelPokeResume();
   lineQueue.interrupt();
   cancelIdleWaiters();
   stopThinkingSound();
@@ -1533,6 +1611,12 @@ export interface VocalLead {
   rate: number;
 }
 
+/** Options for speak(). `resumable` marks a real conversation reply that a
+ *  poke may cut and then pick back up; everything else stays a hard cut. */
+export interface SpeakOptions {
+  resumable?: boolean;
+}
+
 /** Speak a reply with ChatGPT-style emotional prosody. Caller gates on voiceEnabled().
  *  `rateBias` is story/fairy-tale only (negative = slightly slower). Casual talk omits it. */
 export function speak(
@@ -1543,6 +1627,7 @@ export function speak(
   leadOverride?: VocalLead,
   intensity = 1,
   rateBias = 0,
+  opts?: SpeakOptions,
 ): void {
   // Companion lines wait their turn. stopSpeaking() is the only cut, and
   // only the user's mic or a user turn calls it.
@@ -1560,6 +1645,7 @@ export function speak(
     leadOverride,
     intensity,
     rateBias,
+    resumable: opts?.resumable === true,
   });
   drainSpeech();
 }
@@ -2345,6 +2431,9 @@ export function playSelectGreeting(characterId: string, lang: Lang, gender: 'fem
  * pitch multipliers. Callers gate on voiceEnabled().
  */
 export function sing(text: string, characterId: string, lang: Lang): void {
+  // A singing session takes the stage; a stale poke continuation must not
+  // start talking over the song when the reaction queue drains.
+  cancelPokeResume();
   const cleaned = cleanForSpeech(text);
   if (!cleaned || !voiceOutputAllowed()) return;
   lineQueue.enqueue({ kind: 'sing', text: cleaned, characterId, lang, intensity: 1 });
@@ -2470,6 +2559,15 @@ export function playPokeBurst(characterId: string, lang: Lang, zone?: string, po
     // POKE_REACTION_MS (1200ms, poke-hit.ts), alongside the body motion. Do NOT
     // soften this to "queue the reaction after the sentence", and do NOT move
     // the interrupt below the enqueue or it just drops the clip we just queued.
+    //
+    // POKE RESUME PAIR. This cut used to lose the rest of the reply forever.
+    // capturePokeResume() snapshots the resumable conversation line BEFORE the
+    // interrupt (stopSpeaking() clears the queue and any pending continuation),
+    // and the arm after the reaction line re-speaks it with a short resume
+    // phrase. Do not remove one half of this pair: no snapshot = silent loss;
+    // no arm = captured line thrown away. Reactions/greets/previews/fillers are
+    // not tagged resumable, so poking THEM stays a hard cut.
+    const resumable = capturePokeResume() ?? pokeResume.pending();
     interruptSpeechForPoke();
     if (sfxEnabled() && !isMasterMuted()) {
       const file = recordedPokeClip(gender, z);
@@ -2488,6 +2586,9 @@ export function playPokeBurst(characterId: string, lang: Lang, zone?: string, po
     // The spoken reaction goes AFTER the clip: impact first, words after.
     const line = pokeBurstSpokenLine(characterId, lang, z, pokeN);
     speak(line, characterId, lang, { surprise: 0.62 }, undefined, 1.05);
+    // Earliest resume is POKE_REACTION_MS AND the reaction line must be done;
+    // a second poke replaces this one instead of stacking a second resume.
+    if (resumable) pokeResume.arm(resumable);
     return;
   }
   if (!sfxEnabled() || isMasterMuted()) return;
