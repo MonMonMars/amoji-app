@@ -18,6 +18,14 @@ import { autoReply } from './auto-reply.js';
 import { mailConfigured, sendMail } from './email.js';
 import { wipeUserProductData } from './storage-wipe.js';
 import { handleAdminRoute } from './admin.js';
+import {
+  SEARCH_ROUTE,
+  readSearchLimits,
+  searchRateLimitRule,
+  type SearchLimits,
+} from './admin-limits.js';
+import { consumeRateLimit, previewRateLimit, type RateLimitDecision } from './rate-limit.js';
+import { rateLimitStoreFor } from './rate-limit-sqlite.js';
 
 export interface Backend {
   handle(req: Request): Promise<Response>;
@@ -85,6 +93,47 @@ async function readJson(req: Request): Promise<unknown> {
   }
   if (!text.trim()) return {};
   return JSON.parse(text) as unknown;
+}
+
+/**
+ * Wire shape shared by `POST /api/search` and `GET /api/search/quota`.
+ * Additive fields are safe for old clients; nothing here is ever a token.
+ */
+function searchQuotaBody(decision: RateLimitDecision, limits: SearchLimits): Record<string, unknown> {
+  return {
+    breaker: decision.breaker,
+    allowed: decision.allowed,
+    reason: decision.reason,
+    limit: decision.limit,
+    remaining: decision.remaining,
+    used: decision.used,
+    resetAt: decision.resetAt,
+    retryAfterMs: decision.retryAfterMs,
+    delayMs: decision.delayMs,
+    windowSeconds: limits.windowSeconds,
+    maxSearchesPerWindow: limits.maxSearchesPerWindow,
+  };
+}
+
+/**
+ * A cap of 0 means "the owner allows no API searches". `rate-limit.ts` needs
+ * `limit >= 1`, so the zero case is answered here without touching a bucket.
+ */
+function zeroCapQuota(limits: SearchLimits, nowMs: number): Record<string, unknown> {
+  const windowMs = limits.windowSeconds * 1000;
+  return {
+    breaker: limits.breaker,
+    allowed: false,
+    reason: 'bucket',
+    limit: 0,
+    remaining: 0,
+    used: 0,
+    resetAt: nowMs + windowMs,
+    retryAfterMs: windowMs,
+    delayMs: 0,
+    windowSeconds: limits.windowSeconds,
+    maxSearchesPerWindow: 0,
+  };
 }
 
 function logMail(db: DatabaseSync, kind: string, to: string, ok: boolean, detail: string, now: number): void {
@@ -286,6 +335,94 @@ export function createBackend(opts: BackendOptions): Backend {
       if (url.pathname === '/api/admin' || url.pathname.startsWith('/api/admin/')) {
         const result = await handleAdminRoute(req, url, opts.db, now());
         return json(result.body, result.status, req);
+      }
+
+      // ── Optional API-search lane ─────────────────────────────────────────
+      // The curated keyless music list NEVER reaches these routes: it costs
+      // no quota and must keep playing even when every search is refused.
+      //
+      // TODO(provider): #574's Jamendo catalog is not merged on this branch.
+      // When it lands, fetch upstream AFTER the gate below and put the results
+      // in `tracks` (the key stays server-side). Until then `tracks` is empty
+      // and `upstream: 'not_configured'`, so the client uses the curated list.
+      if (url.pathname === '/api/search/quota' && req.method !== 'GET') {
+        return json({ error: 'method not allowed' }, 405, req);
+      }
+
+      if (url.pathname === '/api/search/quota') {
+        const nowMs = now();
+        const limits = readSearchLimits(opts.db, nowMs);
+        if (limits.maxSearchesPerWindow <= 0) {
+          return json({
+            ok: true,
+            ...zeroCapQuota(limits, nowMs),
+            upstream: 'not_configured',
+          }, 200, req);
+        }
+        const decision = previewRateLimit(
+          rateLimitStoreFor(opts.db),
+          SEARCH_ROUTE,
+          ip,
+          searchRateLimitRule(opts.db, nowMs),
+          { now: nowMs },
+        );
+        return json({
+          ok: true,
+          ...searchQuotaBody(decision, limits),
+          upstream: 'not_configured',
+        }, 200, req);
+      }
+
+      if (url.pathname === '/api/search') {
+        if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405, req);
+        const body = await readJson(req) as { q?: unknown };
+        const query = typeof body.q === 'string' ? body.q.trim().slice(0, 200) : '';
+        if (!query) return json({ error: 'q required' }, 400, req);
+
+        const nowMs = now();
+        const limits = readSearchLimits(opts.db, nowMs);
+        if (limits.maxSearchesPerWindow <= 0) {
+          return json({
+            error: 'rate limited',
+            reason: 'bucket',
+            breaker: limits.breaker,
+            delayMs: 0,
+            retryAfterMs: limits.windowSeconds * 1000,
+            quota: zeroCapQuota(limits, nowMs),
+          }, 429, req);
+        }
+        const decision = consumeRateLimit(
+          rateLimitStoreFor(opts.db),
+          SEARCH_ROUTE,
+          ip,
+          searchRateLimitRule(opts.db, nowMs),
+          { now: nowMs },
+        );
+        const quota = searchQuotaBody(decision, limits);
+
+        if (!decision.allowed) {
+          // `hard` never burns a token (rate-limit.ts re-persists the refilled
+          // bucket without subtracting). `bucket`/`soft` are exhausted alike.
+          return json({
+            error: 'rate limited',
+            reason: decision.reason,
+            breaker: decision.breaker,
+            delayMs: decision.delayMs,
+            retryAfterMs: Math.max(1, decision.retryAfterMs),
+            quota,
+          }, 429, req);
+        }
+
+        return json({
+          ok: true,
+          query,
+          // No provider on this branch yet — see the TODO above.
+          tracks: [] as unknown[],
+          upstream: 'not_configured',
+          delayMs: decision.delayMs,
+          retryAfterMs: decision.retryAfterMs,
+          quota,
+        }, 200, req);
       }
 
       const token = bearer(req);

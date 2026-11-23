@@ -130,6 +130,7 @@ Privacy guarantees:
   key matching `token|password|hash|secret`.
 
 Warnings currently cover:
+- search volume reached / is approaching the cap (real counts, see below);
 - breaker is `soft` (warn) or `hard` (error);
 - `maxSearchesPerWindow` is 0;
 - email unconfigured (`RESEND_API_KEY` + `AMOJI_MAIL_FROM`);
@@ -139,25 +140,75 @@ Warnings currently cover:
 - offline/keyless LLM mode (info);
 - missing admin token (only reachable in the 503 body, by design).
 
-### Search breaker semantics and the missing `rate-limit.ts`
+### ONE breaker: `admin-limits.ts` is an adapter over `rate-limit.ts`
 
-`server/backend/src/rate-limit.ts` (search budget + circuit breaker) is being
-written on a parallel branch and **did not exist** in this branch, so it was not
-imported and not recreated. State lives in a new file,
-`server/backend/src/admin-limits.ts`, in `admin_settings` + `admin_events`
-(created with `CREATE TABLE IF NOT EXISTS`, lazily). The module carries a
-documented `TODO(rate-limit)` to replace its read/write functions with an
-adapter over `rate-limit.ts` once that lands; the HTTP shape stays stable.
+`server/backend/src/rate-limit.ts` (token bucket + `closed | soft | hard`
+breaker) was merged in from the search-budget branch and is now the **only**
+owner of breaker state. `admin-limits.ts` is a thin adapter:
 
-Meaning: `closed` = normal, `soft` = allow up to the cap (client should show a
-long character line as a delay), `hard` = refuse API search. Window: 60 minutes.
-Every change stores `updated_at` and an event row.
+- breaker reads/writes go through `readCircuitBreaker` / `setCircuitBreaker`;
+- `maxSearchesPerWindow` (an owner knob, not engine state) stays in
+  `admin_settings`;
+- the timestamped history stays in `admin_events`;
+- `rateLimitStoreFor(db)` is the durable `RateLimitStore`
+  (`rate_limit_kv`, `rate_limit_daily`, `rate_limit_window`).
 
-Honest limitation: the static client keeps its own on-device search budget and
-does not report per-search counts, and this backend has no search route, so
-there is no live "search volume" number to warn on yet. The breaker is the
-server-side policy control; volume-based alerts require the client report or
-`rate-limit.ts` counter.
+Why the adapter matters: before it, the panel wrote
+`admin_settings.search.breaker` while `consumeRateLimit` read
+`rate_limit_kv.breaker` — two sources of truth, so a PUT did not enforce. Now a
+PUT writes the same row the limiter reads, and `tests/search-route.test.ts`
+pins it (`admin PUT → readCircuitBreaker → POST /api/search 429`). A legacy
+`admin_settings.search.breaker` row is migrated into the shared store exactly
+once, then ignored.
+
+Meaning: `closed` = normal token bucket, `soft` = allowed but the client speaks
+a long line for `delayMs` first, `hard` = refuse with `429` +
+`retryAfterMs` (no token is burned). Window: 60 minutes, default cap 30 per
+client key.
+
+### `POST /api/search` and `GET /api/search/quota`
+
+The search route exists to gate the optional API lane and to keep a shared
+third-party key server-side. It is deliberately a thin proxy: on this branch
+`tracks` is `[]` and `upstream` is `"not_configured"` because #574's Jamendo
+catalog is not merged — see the `TODO(provider)` in `src/http.ts`. The curated
+keyless list never reaches this route.
+
+`POST /api/search` — body `{ "q": "lofi" }`, anonymous, CORS as configured.
+
+| Status | Body |
+| --- | --- |
+| 200 | `{ ok, query, tracks: [], upstream: "not_configured", delayMs, retryAfterMs, quota: { breaker, allowed, reason, limit, remaining, used, resetAt, retryAfterMs, delayMs, windowSeconds, maxSearchesPerWindow } }` |
+| 429 `hard` | `{ error: "rate limited", reason: "hard", breaker: "hard", delayMs: 0, retryAfterMs: >0, quota: {…} }` — no token consumed |
+| 429 `bucket`/`soft` | same shape with the exhausted reason and a positive `retryAfterMs` |
+| 400 | `{ error: "q required" }` — no token consumed |
+| 405 | `{ error: "method not allowed" }` |
+
+`GET /api/search/quota` is the read-only twin (`previewRateLimit`): it never
+consumes a token and returns `{ ok, breaker, allowed, reason, limit, remaining,
+used, resetAt, retryAfterMs, delayMs, windowSeconds, maxSearchesPerWindow,
+upstream }` with status 200.
+
+`soft` returns `delayMs` (2 500 ms). The client speaks
+`apps/web/lib/fillers.ts → pickSearchDelayLine(lang)` for that long, then
+continues; `hard` falls back to the curated list without an error. With no
+`NEXT_PUBLIC_AMOJI_API` (GitHub Pages) the client never calls these routes and
+behaves exactly as before.
+
+### Real volume warnings
+
+`POST /api/search` increments `rate_limit_daily` (today, UTC) and
+`rate_limit_window` (this refill cycle, every key). `/api/admin/warnings` now
+returns `searchUsage: { breaker, searchesToday, searchesThisWindow,
+windowStartedAt, windowSeconds, maxSearchesPerWindow, windowUtilisation }` and
+adds:
+
+- `search_volume_at_limit` (warn) when `searchesThisWindow >= maxSearchesPerWindow`;
+- `search_volume_rising` (info) from 50 % of the cap.
+
+The admin page shows the same numbers in the warnings footer. "Approaching the
+limit" is measured against the current window across all clients, because the
+cap is per client key and there is no global concurrency counter.
 
 ---
 
@@ -421,6 +472,11 @@ until the Pages workflow rebuilds**.
    The admin page does not depend on this build variable; it has its own backend
    URL input.
 
+Once that variable is set, `apps/web/lib/search-gate.ts` starts calling
+`POST /api/search` before a music search: `soft` speaks the delay line, `hard`
+falls back to the curated list. Until it is set, `searchGateConfigured()` is
+false and the gate returns before any I/O.
+
 The backend must allow the Pages origin via `AMOJI_CORS_ORIGIN`
 (`https://monmonmars.github.io`) for browser calls from the static app.
 
@@ -452,11 +508,13 @@ The backend must allow the Pages origin via `AMOJI_CORS_ORIGIN`
   or TLS certificate was created. No Render/Railway service exists.
 - No production database was provisioned or migrated.
 - No secrets were generated or stored.
-- The search breaker is stored policy only: the static client does not read it
-  yet, and this backend has no search route to refuse. Enforcement and
-  volume-based warnings are the documented `rate-limit.ts` follow-up.
-- No client-side wiring was added for the breaker, so no `APP_REVISION` /
-  `sw.js` / `revision.txt` bump. End users see no change.
+- The breaker is now enforced at `POST /api/search`, but `tracks` is empty
+  until #574's Jamendo provider is wired (marked `TODO(provider)`); the route
+  gates and counts, it does not search upstream yet.
+- The client calls the gate only when `NEXT_PUBLIC_AMOJI_API` is configured
+  (see §7). There is no API search provider on this branch, so the Pages demo
+  still plays the curated list and `APP_REVISION` / `sw.js` / `revision.txt`
+  were **not** bumped: the published build's behaviour is unchanged.
 - The admin page is not linked from the app UI; open it by URL.
 - Admin auth has no per-request audit trail (single-owner token model); only
   limit changes are recorded in `admin_events`.

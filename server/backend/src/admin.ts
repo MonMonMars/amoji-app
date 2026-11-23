@@ -22,6 +22,7 @@ import {
   isSearchCap,
   listAdminEvents,
   readSearchLimits,
+  readSearchUsage,
   writeSearchLimits,
   type BreakerMode,
   type SearchLimits,
@@ -183,8 +184,26 @@ function statsBody(db: DatabaseSync, now: number): Record<string, unknown> {
 
 function warningsBody(db: DatabaseSync, now: number): Record<string, unknown> {
   const limits = readSearchLimits(db, now);
+  // Real numbers now that `POST /api/search` counts allowed searches. Both
+  // counters come from the same store `consumeRateLimit` writes.
+  const usage = readSearchUsage(db, now);
   type Warning = { id: string; severity: 'info' | 'warn' | 'error'; message: string };
   const warnings: Warning[] = [];
+
+  if (usage.searchesThisWindow >= usage.maxSearchesPerWindow) {
+    warnings.push({
+      id: 'search_volume_at_limit',
+      severity: 'warn',
+      message: `Search volume this window is ${usage.searchesThisWindow} (cap ${usage.maxSearchesPerWindow} per client). Consider switching the breaker to soft.`,
+    });
+  } else if (usage.maxSearchesPerWindow > 0
+    && usage.searchesThisWindow / usage.maxSearchesPerWindow >= 0.5) {
+    warnings.push({
+      id: 'search_volume_rising',
+      severity: 'info',
+      message: `Search volume this window is ${usage.searchesThisWindow} of ${usage.maxSearchesPerWindow} — approaching the limit.`,
+    });
+  }
 
   if (limits.breaker === 'hard') {
     warnings.push({
@@ -264,6 +283,7 @@ function warningsBody(db: DatabaseSync, now: number): Record<string, unknown> {
     status: hasError ? 'attention' : 'ok',
     warnings,
     limits,
+    searchUsage: usage,
     checkedAt: now,
   };
 }

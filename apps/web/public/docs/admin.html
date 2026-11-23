@@ -208,7 +208,7 @@ npm start
           <p class="note">
             <strong>closed</strong> = normal search. <strong>soft</strong> = allow up to the cap and make the client show a long character line as a delay. <strong>hard</strong> = refuse API search. Window: <span id="windowLabel">60</span> minutes. Every change is timestamped in the server's event log.
           </p>
-          <p class="note">The static app keeps its own on-device search budget and does not report per-search counts to the server yet, so this page cannot show live search volume. The breaker is the server-side control for the API lane.</p>
+          <p class="note">The API counts every allowed <code>POST /api/search</code> (the curated keyless list is never counted). The warnings block shows today's total and how much of the current window the shared search lane has used, and warns when it reaches the cap. The breaker is the server-side control for the optional API lane.</p>
           <h3 style="margin-top:0.9rem">Recent changes</h3>
           <ul id="limitsHistory" class="history"></ul>
         </section>
@@ -454,8 +454,13 @@ npm start
       html += '</ul></div>';
       body.innerHTML = html;
     }
+    var usage = state.warnings.searchUsage;
     meta.textContent = 'Checked ' + fmtDate(state.warnings.checkedAt) +
-      (state.limits ? ' · breaker ' + state.limits.breaker : '');
+      (state.limits ? ' · breaker ' + state.limits.breaker : '') +
+      (usage && typeof usage.searchesToday === 'number'
+        ? ' · ' + usage.searchesToday + ' searches today · ' +
+          usage.searchesThisWindow + '/' + usage.maxSearchesPerWindow + ' this window'
+        : '');
   }
 
   function renderStats() {

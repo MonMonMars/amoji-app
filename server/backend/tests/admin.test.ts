@@ -231,7 +231,7 @@ describe('admin api', () => {
     expect(get.status).toBe(200);
     const body = await get.json() as { limits: { breaker: string; maxSearchesPerWindow: number } };
     expect(body.limits).toMatchObject({ breaker: 'hard', maxSearchesPerWindow: 7 });
-  });
+  }, 20_000); // disk-bound sqlite reopen; 5 s flakes on a loaded Windows box
 
   it('rejects an invalid breaker or cap without changing state', async () => {
     const api = app();

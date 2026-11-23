@@ -217,6 +217,7 @@ import {
   resolveMusicAsk,
   type MusicPickOption,
 } from '../lib/music-ask';
+import { beginSearch, searchGateConfigured } from '../lib/search-gate';
 import { idleClipPinsCanvas, isIdleV2Enabled } from '../lib/idle-v2-visible';
 import { PASSIVE_IDLE_LOOP_TEMPLATE, resolvePassiveBodyIdleClip } from '../lib/idle-passive-loop';
 import { resolveContentMotion } from '../lib/content-motion';
@@ -1562,6 +1563,24 @@ export default function ChatPanel({
       if (ask.mode === 'random' && (ask.kind === 'music' || ask.kind === 'song' || ask.kind === 'dance')) {
         setMusicPicks(null);
         perfCountRef.current += 1;
+        // Owner policy for the OPTIONAL API-search lane (admin breaker).
+        // GitHub Pages has no NEXT_PUBLIC_AMOJI_API, so `searchGateConfigured()`
+        // is false and this whole block is skipped: no fetch, no budget write,
+        // no timer, no delay — the published demo behaves exactly as before.
+        if (searchGateConfigured()) {
+          const gate = await beginSearch(text, {
+            lang,
+            speak: (line) => sayLocal(line, { joy: 0.5 }),
+          });
+          // `soft` already spoke the long line and waited `delayMs` inside
+          // beginSearch. `hard`/`refused` return lane 'curated': no API search
+          // is attempted and the curated keyless pick below plays — a silent
+          // fallback, never an error banner.
+          // TODO(provider): when #574 lands, `gate.tracks` feeds beginShow.
+          if (gate.lane === 'curated') {
+            // Curated list only. Nothing else to do here.
+          }
+        }
         const priorUser = [...history].reverse().find((m) => m.role === 'user')?.content;
         const styleForBed = ask.style ?? musicAskStyleWithContext(text, priorUser);
         const showKind = musicAskShowKind(ask.kind);

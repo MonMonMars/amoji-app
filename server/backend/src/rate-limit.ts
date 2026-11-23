@@ -63,6 +63,9 @@ export interface BreakerSnapshot {
  * Persistence seam. Implement these five methods on sqlite/KV/Redis later.
  * `incrementDaily` / `readDaily` are OPTIONAL: the admin dashboard uses them
  * for "searches today"; enforcing tiers work without them.
+ * `incrementWindow` / `readWindow` are OPTIONAL too: they count allowed
+ * requests per refill cycle ACROSS keys, which is what the owner's
+ * "too many people search" warning reads. Enforcement never needs them.
  */
 export interface RateLimitStore {
   getBucket(key: string): RateLimitBucket | undefined;
@@ -71,6 +74,8 @@ export interface RateLimitStore {
   putBreaker(snapshot: BreakerSnapshot): void;
   incrementDaily?(route: string, day: string): number;
   readDaily?(route: string, day: string): number;
+  incrementWindow?(route: string, windowStart: number): number;
+  readWindow?(route: string, windowStart: number): number;
 }
 
 export interface RateLimitDecision {
@@ -104,6 +109,7 @@ export class MemoryRateLimitStore implements RateLimitStore {
   private readonly buckets = new Map<string, RateLimitBucket>();
   private breaker: BreakerSnapshot | undefined;
   private readonly daily = new Map<string, number>();
+  private readonly windows = new Map<string, number>();
 
   getBucket(key: string): RateLimitBucket | undefined {
     const found = this.buckets.get(key);
@@ -131,6 +137,17 @@ export class MemoryRateLimitStore implements RateLimitStore {
 
   readDaily(route: string, day: string): number {
     return this.daily.get(`${route}|${day}`) ?? 0;
+  }
+
+  incrementWindow(route: string, windowStart: number): number {
+    const key = `${route}|${windowStart}`;
+    const next = (this.windows.get(key) ?? 0) + 1;
+    this.windows.set(key, next);
+    return next;
+  }
+
+  readWindow(route: string, windowStart: number): number {
+    return this.windows.get(`${route}|${windowStart}`) ?? 0;
   }
 
   /** Test helper: drop every bucket but keep the breaker. */
@@ -166,6 +183,12 @@ export function bucketKey(route: string, clientKey: string): string {
 
 export function dayKey(now: number): string {
   return new Date(now).toISOString().slice(0, 10);
+}
+
+/** Start of the refill cycle `now` belongs to. Used for the global window counter. */
+export function windowStartFor(now: number, windowMs: number): number {
+  if (!Number.isFinite(windowMs) || windowMs <= 0) return 0;
+  return Math.floor(now / windowMs) * windowMs;
 }
 
 export function readCircuitBreaker(store: RateLimitStore): BreakerSnapshot {
@@ -312,6 +335,7 @@ export function consumeRateLimit(
     const after = Math.max(0, tokensBefore - 1);
     store.putBucket(key, { tokens: after, updatedAt: now });
     store.incrementDaily?.(route, dayKey(now));
+    store.incrementWindow?.(route, windowStartFor(now, rule.windowMs));
     const remaining = Math.max(0, Math.floor(after));
     return {
       allowed: true,
@@ -338,6 +362,7 @@ export function consumeRateLimit(
   const after = Math.max(0, tokensBefore - 1);
   store.putBucket(key, { tokens: after, updatedAt: now });
   store.incrementDaily?.(route, dayKey(now));
+  store.incrementWindow?.(route, windowStartFor(now, rule.windowMs));
   const remaining = Math.max(0, Math.floor(after));
   return {
     allowed: true,
@@ -352,6 +377,105 @@ export function consumeRateLimit(
     delayMs: 0,
     breaker,
     bucketKey: key,
+  };
+}
+
+/**
+ * Read-only twin of `consumeRateLimit`: the same maths, zero writes.
+ * `GET /api/search/quota` uses it so a status poll never burns a token and
+ * never moves the breaker. `allowed` answers "would the next search run now?".
+ */
+export function previewRateLimit(
+  store: RateLimitStore,
+  route: string,
+  clientKey: string,
+  rule: RateLimitRule = SEARCH_RATE_LIMIT_RULE,
+  options: ConsumeOptions = {},
+): RateLimitDecision {
+  validateRule(rule);
+  const now = options.now ?? Date.now();
+  const key = bucketKey(route, clientKey);
+  const ratePerMs = rule.limit / rule.windowMs;
+  const breaker = options.breaker ?? readCircuitBreaker(store).state;
+
+  const stored = store.getBucket(key);
+  const tokensBefore = stored
+    ? positiveTokens(
+      stored.tokens + Math.max(0, now - stored.updatedAt) * ratePerMs,
+      rule.limit,
+    )
+    : rule.limit;
+
+  const remaining = Math.max(0, Math.floor(tokensBefore));
+  const used = Math.max(0, rule.limit - remaining);
+  const resetAt = tokensBefore >= rule.limit
+    ? now
+    : now + Math.max(1, Math.ceil((rule.limit - tokensBefore) / ratePerMs));
+
+  const base = {
+    limit: rule.limit,
+    remaining,
+    used,
+    resetAt,
+    breaker,
+    bucketKey: key,
+  };
+
+  if (breaker === 'hard') {
+    return {
+      ...base,
+      allowed: false,
+      reason: 'hard',
+      retryAfterMs: hardRetryAfter(tokensBefore, rule, ratePerMs),
+      delayMs: 0,
+    };
+  }
+
+  if (breaker === 'soft') {
+    const delayMs = rule.softDelayMs ?? 0;
+    const allowed = tokensBefore >= 1 && rule.limit - tokensBefore < softLimitFor(rule);
+    return {
+      ...base,
+      allowed,
+      reason: 'soft',
+      retryAfterMs: allowed ? delayMs : msUntilToken(tokensBefore, ratePerMs) || delayMs || 1,
+      delayMs,
+    };
+  }
+
+  const allowed = tokensBefore >= 1;
+  return {
+    ...base,
+    allowed,
+    reason: allowed ? 'ok' : 'bucket',
+    retryAfterMs: allowed ? 0 : msUntilToken(tokensBefore, ratePerMs),
+    delayMs: 0,
+  };
+}
+
+export interface WindowUsage {
+  /** Allowed requests since 00:00 UTC, or 0 when the store cannot count. */
+  daily: number;
+  /** Allowed requests in the current refill cycle across every key. */
+  window: number;
+  windowStartedAt: number;
+}
+
+/**
+ * Dashboard helper: how much this route served today and in the current cycle.
+ * Read-only and tolerant of stores that do not implement the counters.
+ */
+export function readonlyWindowUsage(
+  store: RateLimitStore,
+  route: string,
+  now: number,
+  windowMs: number,
+): WindowUsage {
+  const windowStartedAt = windowStartFor(now, windowMs);
+  return {
+    daily: store.readDaily?.(route, dayKey(now)) ?? 0,
+    window: store.readWindow?.(route, windowStartedAt) ?? 0,
+    windowStartedAt,
   };
 }
 
