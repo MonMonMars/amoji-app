@@ -55,12 +55,18 @@ describe('owner perf picks resolution', () => {
     mockStorage();
     saveOwnerPerfPicks({
       listenMvCodes: ['MV084', 'MV069'],
-      songClipIds: ['sing-f-twinkle'],
+      songClipIds: ['sing-m-shenandoah'],
     });
     expect(pickOwnerStreamTrack('uspop', 0)?.ownerCode).toBe('MV084');
-    expect(pickOwnerSongClipId({ kind: 'song', gender: 'female', n: 0 })).toBe('sing-f-twinkle');
-    const resolved = resolveLibraryPerformance({ kind: 'song', gender: 'female', n: 0, ms: 12_000 });
-    expect(resolved.id).toBe('sing-f-twinkle');
+    expect(pickOwnerSongClipId({ kind: 'song', gender: 'male', n: 0 })).toBe('sing-m-shenandoah');
+    const resolved = resolveLibraryPerformance({ kind: 'song', gender: 'male', n: 0, ms: 12_000 });
+    expect(resolved.id).toBe('sing-m-shenandoah');
+  });
+
+  it('drops a localStorage song pin the owner marked 刪除', () => {
+    mockStorage();
+    saveOwnerPerfPicks({ songClipIds: ['sing-f-twinkle'] });
+    expect(ownerSongClipIds()).not.toContain('sing-f-twinkle');
   });
 
   it('sing body uses enabled sing rails and dance uses dance rails', () => {
