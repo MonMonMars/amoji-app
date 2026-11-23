@@ -1,10 +1,15 @@
-#!/usr/bin/env node
 /**
  * Convert owner-resources "Save notes JSON" (owner-picker-notes-v2) into
  * apps/web/data/owner-picker-selection.json for owner-picker-ship-set (#543+).
  *
  * Usage:
  *   node scripts/import-owner-picker-selection.mjs <export.json> [--out path] [--dry-run]
+ *
+ * Deliberately no `#!` line: apps/web/tests/import-owner-picker-selection.test.ts
+ * imports this module, and vitest's module runner evaluates an externalized .mjs
+ * without stripping a shebang (Node's ESM loader does), which surfaces as
+ * "SyntaxError: Invalid or unexpected token" at collection time. Always invoke
+ * this file through `node`, as the usage lines above do.
  */
 import fs from 'node:fs';
 import path from 'node:path';

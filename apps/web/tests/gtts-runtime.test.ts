@@ -117,6 +117,14 @@ function boot() {
           ensureCompanionPlaybackRoute: () => {},
           pinDefaultOutput: () => {},
           pinDefaultOutputAsync: () => Promise.resolve(),
+          // speakGtts() asks audio-output which start mode to use (#472 / #424):
+          // chat pins the default sink before play, card/gesture paths play
+          // first. The vm stub only has to answer the question — the sink
+          // machinery is covered by audio-output.test.ts. A missing export here
+          // fails every playNext() with "is not a function", which is exactly
+          // how this stub went stale when htmlAudioStartMode() was introduced.
+          htmlAudioStartMode: (explicitPin?: boolean, gestureTap?: boolean) =>
+            !gestureTap && explicitPin ? 'pin-before-play' : 'gesture-safe',
           startHtmlAudioOnDefaultSpeakers: (audio: { play: () => Promise<void> }) => audio.play(),
         };
       }
