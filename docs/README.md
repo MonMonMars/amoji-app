@@ -10,7 +10,7 @@ Technical notes for assets, models, robot face, chat UX, audio, and merge proces
 
 **Handoff packs (state + binding constraints — read the newest):**
 
-- [`HANDOFF_2026-11-21/`](./HANDOFF_2026-11-21/README.md) — current (`r2026-11-19.280` / `99896449`) · [`STATE.md`](./HANDOFF_2026-11-21/STATE.md) · [`PROVENANCE.md`](./HANDOFF_2026-11-21/PROVENANCE.md)
+- [`HANDOFF_2026-11-21/`](./HANDOFF_2026-11-21/README.md) — historical snapshot (`r2026-11-19.280` / `99896449`) · [`STATE.md`](./HANDOFF_2026-11-21/STATE.md) · [`PROVENANCE.md`](./HANDOFF_2026-11-21/PROVENANCE.md)
 - [`HANDOFF_2026-11-19/README_HANDOFF.md`](./HANDOFF_2026-11-19/README_HANDOFF.md) — **frozen historical snapshot**
 
 **Owner product bible (rules + done/outstanding — update same day):**

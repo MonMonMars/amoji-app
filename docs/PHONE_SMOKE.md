@@ -1,7 +1,7 @@
 # Phone smoke (live Pages)
 
 **Live:** https://monmonmars.github.io/amoji-app/  
-**Tip on main:** `r2026-11-19.280` (= live · `99896449`) · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
+**Tip on main:** `r2026-11-19.284` (= live · `9cda0774`) · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
 **Purpose:** Human-only checks after #419–#437 + #458 + r271–r280. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
 Owner: “getting worst” / “nothing fixed” — **do not mark R10–R13 Done** until this pass.
 
@@ -9,7 +9,7 @@ Tick on a real phone (prefer iPhone Safari). **Mandatory once:** hard refresh, t
 
 ## Priority now — r280 idle · card · news · R10–R13 · nonsense · captions
 
-### Idle picker + C164/C165 feet (r282, stacked branch — not live until merged)
+### Idle picker + C164/C165 feet (r282, merged — live on r284)
 
 - [ ] On a Pixel/iPhone, is the small idle button beside her easy to reach with a thumb, and does it stay clear of the chat controls?
 - [ ] Open it: do the C-code rows (`C14`, `C15`, `C16`, `C18`, `C156`…) fit without horizontal scroll or clipped labels?
@@ -20,7 +20,7 @@ Tick on a real phone (prefer iPhone Safari). **Mandatory once:** hard refresh, t
 ### Idle planted vs floating (r280 — blocking question)
 
 - [ ] After a **first-screen** hard refresh on r280, do **C14 / C15 / C16 / C18** (IdleMixamoIdle · IdleMixamoStanding · IdleMixamoBreathing · IdleMixamoHappy) look **planted** (feet on floor) or **floating**?
-- [ ] Report literally: `ROW: idle-r280 DEVICE: <model>` + planted / floating, so the next stamp (`r2026-11-19.281`) can switch to the Rocketbox fallback if needed
+- [ ] Report literally: `ROW: idle-r280 DEVICE: <model>` + planted / floating, so the next unused stamp (`r2026-11-19.285`) can switch to the Rocketbox fallback if needed
 - [ ] 採用 rails stay `[4, 5, 10]` — clip 採用 must **not** promote curated rails (C16 must not steal calm, C18 must not steal sing)
 
 ### Card greet (select) — owner: no sound / robot double (fix after #420/#431)
@@ -145,7 +145,7 @@ Hard-refresh until live **`revision.txt`** ≥ **r2026-11-19.280**. Every PR in 
 
 | Check | Result |
 | --- | --- |
-| `main` tip | **`99896449`** = **r2026-11-19.280** (`verify:live` must match) |
+| `main` tip | **`9cda0774`** = **r2026-11-19.284** (`verify:live` must match) |
 | Landed train | r271 #553 · r272 #554 · r273 #543 · r274 #545 · r275 #548 · r276 #534 · r277 #535 · r278 #555 · r279 #530 · r280 #556 |
 | Outstanding (owner) | r280 idle planted-vs-float · card · news · **R10–R13 not Done** |
 | Superseded PRs | **#536 #537 #533** → #541 · **#524** → #543 · **#544 closed unmerged** (do not merge) |
