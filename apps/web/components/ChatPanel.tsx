@@ -146,7 +146,7 @@ import { pickLine } from '../lib/chatter';
 import { pickIdleLine } from '../lib/persona-chatter';
 import { pickIdleCompanionLine } from '../lib/idle-talk';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
-import { gateSpokenLine, safeIdleFallback, scrubCompanionSpoken, scrubHistoryResumeAsks, scrubTopicMenuAsks } from '../lib/spoken-line-sanity';
+import { gateSpokenLine, safeIdleFallback, scrubCompanionSpoken, scrubHistoryResumeAsks, scrubTopicMenuAsks, restatesUserMessage } from '../lib/spoken-line-sanity';
 import { isSpeakableText, scrubLiveFactsSpoken } from '../lib/speak-text';
 import { HAND_HOLD_SHY_SPEAK_AFTER, handHoldShyLine } from '../lib/interaction-lines';
 import { personalityProfile, personalityPrompt } from '../lib/personality';
@@ -185,7 +185,7 @@ import {
   undecidedTopicReply,
   userUndecided,
 } from '../lib/topic-suggestions';
-import { speak, stopSpeaking, stopSpeakingForInterrupt, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechLeadDiverged, speechRemainder, whenSpeechIdle, resumeVoiceEngines, primeAudioForChatEnter, cancelPokeResume } from '../lib/voice';
+import { speak, stopSpeaking, stopSpeakingForInterrupt, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechLeadDiverged, speechRemainder, speechTailAfterLead, whenSpeechIdle, resumeVoiceEngines, primeAudioForChatEnter, cancelPokeResume } from '../lib/voice';
 import { isAppleTouchDevice } from '../lib/apple-touch';
 import { cantHearReply, isCantHearComplaint } from '../lib/cant-hear';
 import { isCompanionEcho } from '../lib/companion-echo';
@@ -939,16 +939,24 @@ export default function ChatPanel({
     const leadMatched = !!streamedLead && !speechLeadDiverged(reply, streamedLead);
     const leadQueued = !!streamedLead && speechStillQueued(streamedLead);
     const leadAudible = !!alreadySpoken && voiceStartedSince(alreadySpoken.since);
-    const leadPlayedThrough = leadMatched && leadAudible && !leadQueued;
-    const firstLive = !!alreadySpoken
-      && mv !== 'sing'
-      && leadMatched
-      && (leadQueued || leadAudible || leadPlayedThrough);
-    // Streamed lead + final reply often diverge (preferLive / scrub). Never
-    // stack a second full answer on top — cut the lead and speak once.
-    if (firstLive && alreadySpoken && speechLeadDiverged(reply, alreadySpoken.text)) {
+    const leadLive = !!alreadySpoken && mv !== 'sing' && (leadQueued || leadAudible);
+    const firstLive = leadLive && leadMatched;
+    // The final reply no longer carries the streamed lead (preferLive / scrub /
+    // question capping reshaped it). The old code could never reach the cut
+    // below — firstLive already required leadMatched — so the whole answer was
+    // spoken again after the lead: owner 2026-11-23 "the character always
+    // repeat the answers two times". Now the lead is cut when it is still
+    // queued, and only the sentences the listener has NOT heard are spoken.
+    if (leadLive && alreadySpoken && !leadMatched) {
       stopSpeaking();
-    } else if (firstLive && alreadySpoken) {
+      const tail = speechTailAfterLead(reply, alreadySpoken.text);
+      const toSay = tail || reply;
+      if (mv) triggerMove(mv);
+      notifySpeaking(reply);
+      speak(toSay, characterId, lang, contentHints, undefined, intensity, storyRate, { resumable: true });
+      return reply;
+    }
+    if (firstLive && alreadySpoken) {
       if (mv === 'dance' && !isListenOnlyPerformance()) {
         // Dance body starts on library-clip playing (beginShow), not here.
         beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
@@ -1783,7 +1791,11 @@ export default function ChatPanel({
             // the facts line: two answers for one turn.
             if (!firstSentence && !performanceShowTurn && !worldSpoken.trim()) {
               const m = /^[^。！？.!?\n]+[。！？.!?]/.exec(clean);
-              if (m) {
+              // Owner 2026-11-23: "it will repeat my question before
+              // answering." A read-back ("你問我…？" / "So you're asking…") must
+              // never become the live lead — it would be said aloud before the
+              // final reply is even scrubbed.
+              if (m && !restatesUserMessage(m[0], text)) {
                 firstSentence = m[0];
                 sentenceStamp = Date.now();
                 notifySpeaking(firstSentence);

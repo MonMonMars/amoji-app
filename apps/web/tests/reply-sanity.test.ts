@@ -77,7 +77,8 @@ describe('smooth anti-nonsense shaping', () => {
     expect(BASE_SYSTEM).toMatch(/LISTEN FIRST/i);
     expect(BASE_SYSTEM).toMatch(/care|respect/i);
     expect(BASE_SYSTEM).toMatch(/PLAIN WORDS/i);
-    expect(BASE_SYSTEM).toMatch(/first sentence MUST/i);
+    expect(BASE_SYSTEM).toMatch(/first sentence/i);
+    expect(BASE_SYSTEM).toMatch(/no read-back/i);
     expect(BASE_SYSTEM).toMatch(/SMOOTH TURNS/i);
     expect(BASE_SYSTEM).toMatch(/you've gone quiet/i);
     expect(BASE_SYSTEM).toMatch(/holding this topic/i);

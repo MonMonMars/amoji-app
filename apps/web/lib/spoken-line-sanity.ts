@@ -244,6 +244,66 @@ export function scrubCompanionSpoken(text: string): string {
   return scrubSpokenNonsense(afterJoke);
 }
 
+// ---- owner 2026-11-23: "it will repeat my question before answering" --------
+// The base prompt used to ask her to "briefly reflect or acknowledge one
+// concrete detail from their last message, then answer". A small free model
+// satisfied that by reading the question back first ("你問我點解天空係藍色？因為…" /
+// "So you're asking why the sky is blue — …"), which sounds broken aloud and
+// delays the real answer. The prompt now forbids it (LISTEN FIRST, ANSWER
+// FIRST); this is the mechanical belt-and-braces so an older/cached persona
+// prompt — or a model that echoes anyway — can never reach TTS or the bubble.
+
+/** Read-back openers that are always the user's question, never her answer. */
+const READ_BACK_META =
+  /^(?:你(?:係|系)?問(?:我|嘅|的)|你(?:係|系)想(?:問|知)|你頭先問|你刚才问|你啱啱問|你想知(?:道)?(?:嘅|的)?係|你问的是|你問的是|so\s+you(?:'re|\s+are)?\s+(?:asking|wondering)|you(?:'re|\s+are)\s+asking|you\s+asked(?:\s+me)?|asking\s+(?:about|whether|if)|you\s+want\s+to\s+know|きいてるのは|聞いてるのは|質問は)/i;
+
+function echoKey(s: string): string {
+  return (s ?? '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+}
+
+/** Character bigrams (CJK) / word tokens (latin) still present in `line`. */
+function echoOverlap(line: string, user: string): number {
+  const l = echoKey(line);
+  const u = echoKey(user);
+  if (!l || !u) return 0;
+  const unit = /[\u3400-\u9fff]/.test(u) ? 2 : 4;
+  const grams: string[] = [];
+  for (let i = 0; i + unit <= u.length; i += unit) grams.push(u.slice(i, i + unit));
+  if (!grams.length) return 0;
+  const hit = grams.filter((g) => l.includes(g)).length;
+  return hit / grams.length;
+}
+
+/**
+ * True when `sentence` opens the reply by restating the user's own question —
+ * the read-back the owner asked her to stop doing. Empathy that references a
+ * detail ("你話好攰…") is NOT a read-back unless it is question-shaped.
+ */
+export function restatesUserMessage(sentence: string, userText?: string): boolean {
+  const s = (sentence ?? '').trim();
+  const u = (userText ?? '').trim();
+  if (!s || !u) return false;
+  const shaped = sentenceLooksLikeQuestion(s) || READ_BACK_META.test(s);
+  if (!shaped) return false;
+  if (READ_BACK_META.test(s)) return true;
+  return echoOverlap(s, u) >= 0.6;
+}
+
+/**
+ * Drop a leading read-back sentence (or a run of them) from a finished reply.
+ * Never empties the reply: an echo-only line stays for the sanity gate.
+ */
+export function stripQuestionReadBack(reply: string, userText?: string): string {
+  const t = (reply ?? '').trim();
+  if (!t) return '';
+  const chunks = splitSpokenSentences(t);
+  if (chunks.length < 2) return t;
+  let i = 0;
+  while (i < chunks.length - 1 && restatesUserMessage(chunks[i]!, userText)) i += 1;
+  if (i === 0) return t;
+  return chunks.slice(i).join(' ').trim() || t;
+}
+
 /** True when the user's message is asking the companion something. */
 export function userMessageLooksLikeQuestion(text: string): boolean {
   const t = (text ?? '').trim();

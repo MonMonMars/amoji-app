@@ -87,7 +87,7 @@ export function helpSystemBlock(language?: string): string {
   }
   return `SIMPLE PROBLEM-HELP TURN (overrides the short-reply rules above):
 - Help fix a simple everyday problem — about 4–8 spoken sentences.
-- Structure: brief empathy + restatement → 2–5 clear steps (short numbered lines OK) → one check that the next action is doable.
+- Structure: one short empathy beat (never a restatement of their question) → 2–5 clear steps (short numbered lines OK) → one check that the next action is doable.
 - Practical troubleshooting tone. Do not give medical, legal, or crisis advice (crisis has a fixed safety path). No fluff. Still end with one line: [emotion:{...}].`;
 }
 
