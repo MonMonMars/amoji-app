@@ -87,5 +87,27 @@ jobs:
             echo "owner-resources.html missing Pages-relative voice-clips paths"
             exit 1
           }
+          # Owner-picker behaviour must survive generation: presence checks only, so
+          # a content edit that adds rows cannot break the guard.
+          grep -q 'data-decision-pick="use"' apps/web/out/docs/owner-resources.html || {
+            echo "owner-resources.html missing tri-state keep/adopt/delete markers (data-decision-pick)"
+            exit 1
+          }
+          grep -q 'wireAudioPlayer' apps/web/out/docs/owner-resources.html || {
+            echo "owner-resources.html missing inline audio player wiring (wireAudioPlayer)"
+            exit 1
+          }
+          grep -q 'owner-picker-previews/' apps/web/out/docs/owner-resources.html || {
+            echo "owner-resources.html missing motion GIF previews (owner-picker-previews/)"
+            exit 1
+          }
+          grep -q 'class="audio-stop"' apps/web/out/docs/owner-resources.html || {
+            echo "owner-resources.html missing audio stop control (class=audio-stop)"
+            exit 1
+          }
+          if grep -q 'input type="checkbox" class="keep"' apps/web/out/docs/owner-resources.html; then
+            echo "owner-resources.html still has legacy keep checkboxes; regenerate via scripts/generate-owner-picker-html.mjs"
+            exit 1
+          fi
           node -e "import('./apps/web/scripts/store-bundle.mjs').then(m=>{const r=m.verifyOwnerResourcesPagesAssets('apps/web/out');if(!r.ok){console.error(r);process.exit(1)}})"
           node scripts/check-store-bundle.mjs apps/web/out

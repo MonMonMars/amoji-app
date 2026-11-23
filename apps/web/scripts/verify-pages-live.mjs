@@ -53,6 +53,25 @@ if (ownerHtml.includes("amoji-public-serve/")) {
   console.error("[verify-pages-live] owner-resources.html still has amoji-public-serve/ on live Pages");
   process.exit(1);
 }
+// Owner-picker behaviour that must survive to live Pages. Presence checks only:
+// a content edit that adds or removes rows must not fail the guard, but a
+// missing control must.
+const ownerMarkers = [
+  ['data-decision-pick="use"', "tri-state keep/adopt/delete decisions"],
+  ["wireAudioPlayer", "inline audio player wiring"],
+  ["owner-picker-previews/", "motion GIF previews"],
+  ['class="audio-stop"', "audio stop control"],
+];
+for (const [marker, label] of ownerMarkers) {
+  if (!ownerHtml.includes(marker)) {
+    console.error(`[verify-pages-live] owner-resources.html missing marker: ${marker} (${label})`);
+    process.exit(1);
+  }
+}
+if (ownerHtml.includes('input type="checkbox" class="keep"')) {
+  console.error("[verify-pages-live] owner-resources.html still has legacy keep checkboxes");
+  process.exit(1);
+}
 const sampleAudio = `${base}/audio/dance/dance-silent-dance-floor.mp3`;
 const sampleVoice = `${base}/voice-clips/cma-reaction/CMA00354_universal_female_ouch_smile.mp3`;
 for (const url of [sampleAudio, sampleVoice]) {
