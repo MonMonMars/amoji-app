@@ -2,20 +2,21 @@
 
 **Generated:** 2026-11-23 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
-**Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/) · [`revision.txt`](https://monmonmars.github.io/amoji-app/revision.txt) **= r2026-11-19.284** (matches `main`)  
+**Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/) · [`revision.txt`](https://monmonmars.github.io/amoji-app/revision.txt) **= r2026-11-19.288** (matches `main`)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** [Pages](https://monmonmars.github.io/amoji-app/docs/project-status.html) · repo [`project-status.html`](./project-status.html)  
 **Pixel pickers:** [Pages owner-resources](https://monmonmars.github.io/amoji-app/docs/owner-resources.html) (music · poke · **idle** · **stories** · **news** · **demo** tabs) · local: `cd docs && python3 -m http.server 8765`  
-**`main` tip:** `9cda0774` (**r2026-11-19.284**; r271–r284 train merged through #557 #558 #559 #560 #561)  
-**Merged r281–r284:** `dc7ab513` #557 (r281) → `e11c188b` #560 (r282) → `08e00c05` #558 (r283) → `9cda0774` #561 (r284); #559 `dcf02455` is docs-only. No unmerged product branch remains.
+**`main` tip:** `b053ccd2` (**r2026-11-19.288**)  
+**Merged r281–r288:** `dc7ab513` #557 (r281) → `e11c188b` #560 (r282) → `08e00c05` #558 (r283) → `9cda0774` #561 (r284) → `2a42e2c7` #564 #563 #565 (r285) → `01fb7804` #562 (r286) → `ff6f1273` #568 #569 #570 #566 #567 (r287) → `b053ccd2` #571 (r288). No unmerged product branch remains; #20 CosyVoice stays on Hold.
+**Owner bugs closed in r285–r288:** all-language voice buttons (#564) · card greet on tap (#564 + #562) · poke same-side lean, impact-first sound and speech interrupt (#562) · singing mouth / dancing beat from the real audio (#563) · dance bounce sign for the seven freed clips (#571). **All five still need a phone pass — see [`PHONE_SMOKE.md`](./PHONE_SMOKE.md).**
 **Handoff pack (2026-11-21, historical snapshot):** [`HANDOFF_2026-11-21/`](./HANDOFF_2026-11-21/README.md) — r280 state + provenance + binding constraints  
 **Frozen snapshot (2026-11-19, historical):** [`HANDOFF_2026-11-19/`](./HANDOFF_2026-11-19/README_HANDOFF.md)
 
 ## Waiting on Pixel (owner)
 
-**CI:** r271–r284 train **landed** on `main` (r284 squash). Run `cd apps/web && npm run verify:live` — must print **r2026-11-19.284**.
+**CI:** r281–r288 train **landed** on `main` (r288 → `b053ccd2`). Run `cd apps/web && npm run verify:live` — must print **r2026-11-19.288**.
 
-**Pixel（粵）:** r284 已經 live（r281–r284 全綠 squash 咗）。請喺 **第一屏 hard refresh**（見到 amber **Refresh** 就 tap），然後答一個問題：**C14 / C15 / C16 / C18 四隻 Mixamo idle 睇落係「貼地」定「浮腳」？** 浮腳就轉 Rocketbox fallback（下一個 stamp `r2026-11-19.285`）。詳情：[`HANDOFF_2026-11-21/README.md`](./HANDOFF_2026-11-21/README.md)。
+**Pixel（粵）:** r2026-11-19.288 已經 live。請喺 **第一屏 hard refresh**（見到 amber **Refresh** 就 tap）。今次有五組要試，全部列喺 [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) 最上面：**① 各語言聲音按鈕 ② 卡片撳一下講 hello ③ poke 方向／撞擊聲／打斷講話 ④ 唱歌嘴型同跳舞節拍 ⑤ 跳舞彈起（唔再沉）**。另外舊問題仍然等答案：**C14 / C15 / C16 / C18 四隻 Mixamo idle 係「貼地」定「浮腳」？**
 
 > **Historical:** 2026-11-18/19 嘅 merge ladder（#528 → #543，r248–r266）**已全部 landed**，唔需要再跟。舊 ladder 文件 [`AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md`](./AGENT_FINISH_PIXEL_HANDOFF_2026-11-18.md) 只作歷史參考。
 
@@ -23,10 +24,10 @@
 | --- | --- |
 | Handoff state (current) | [`HANDOFF_2026-11-21/STATE.md`](./HANDOFF_2026-11-21/STATE.md) |
 | Binding constraints | [`HANDOFF_2026-11-21/README.md`](./HANDOFF_2026-11-21/README.md) · [`PROVENANCE.md`](./HANDOFF_2026-11-21/PROVENANCE.md) |
-| **Next stamp** | **`r2026-11-19.285`** (next unused). r281–r284 are merged on `main` at `9cda0774`. |
+| **Next stamp** | **`r2026-11-19.289`** (next unused). r281–r288 are merged on `main` at `b053ccd2`. |
 | Merged train (historical) | r271 #553 · r272 #554 · r273 #543 · r274 #545 · r275 #548 · r276 #534 · r277 #535 · r278 #555 · r279 #530 · r280 #556 |
 
-**Gap vs live (r284):** `main` and live both read `r2026-11-19.284`. The r281–r284 work is **merged** — no live gap.
+**Gap vs live (r288):** `main` and live both read `r2026-11-19.288`. The r281–r288 work is **merged** — no live gap.
 
 ## r282 idle picker (merged — phone Outstanding)
 
@@ -50,7 +51,7 @@ Owner ask: *"add small button beside the character in the chat room … select o
 | **Outstanding** — Pixel / human | **R10–R13 not Done** · **r280 idle planted-vs-floating answer** · stale SW · [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) |
 | **Hold** | licensed music · Stripe · PH · Search Console · spikes #1 / #20 · NanoBanana / PSX / BreathCalm / head-body swap |
 
-**Honesty:** Merged ≠ owner Done. **Do not mark R10–R13 Done** without owner OK on live **r2026-11-19.284** after deploy and SW hard-refresh.  
+**Honesty:** Merged ≠ owner Done. **Do not mark R10–R13 Done** without owner OK on live **r2026-11-19.288** after deploy and SW hard-refresh.  
 **Pages:** hard-refresh service worker after each revision bump — stale SW still a phone blocker.
 
 ### Progress by category (% merged to `main`)
@@ -69,7 +70,7 @@ Owner ask: *"add small button beside the character in the chat room … select o
 
 ## Done (merged to `main`)
 
-Living tip through **#561** / **r2026-11-19.284**. Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
+Living tip through **#571** / **r2026-11-19.288**. Product bible: [`USER_PRODUCT_BIBLE.md`](./USER_PRODUCT_BIBLE.md).
 
 ### Nov 21 train (#553–#556 + queue, r271–r280)
 
@@ -199,10 +200,10 @@ Still **open** (do not casually merge): #539, #538, #532, #531, #542, #537, #536
 
 ### Code (agents)
 
-1. **Next stamp only after Pixel answers** — r284 is live; the C14/C15/C16/C18 planted-vs-floating question (idle work from r280) is still open. If floating → Rocketbox fallback at the next unused stamp (`r2026-11-19.285`). Do **not** bump `APP_REVISION` for docs.  
+1. **Next stamp only after Pixel answers** — r288 is live; the five phone rows in [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) plus the C14/C15/C16/C18 planted-vs-floating question (idle work from r280) are still open. If floating → Rocketbox fallback at the next unused stamp (`r2026-11-19.289`). Do **not** bump `APP_REVISION` for docs.  
 2. **Phone smoke** — [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) after each new revision goes live  
 3. **Picker ship-set** — `node scripts/import-owner-picker-selection.mjs` after notes export (see `OWNER_RESOURCE_LIBRARY.md`)  
-4. **Stale SW** — hard-refresh until `revision.txt` shows **r2026-11-19.284**  
+4. **Stale SW** — hard-refresh until `revision.txt` shows **r2026-11-19.288**  
 5. **VRM pupil** — pop / size stability on surprise  
 6. **Owner picks apply** — **#543** / **r273** already on `main`; phone verify 採用 rails  
 7. **Duet path** — align with library performance gate ([`SING_DANCE_PIPELINE.md`](./SING_DANCE_PIPELINE.md))
@@ -211,7 +212,7 @@ Do **not:** re-merge closed #497–#511 / #515 work; mark R10–R13 Done without
 
 ### Phone / human (not agent Done)
 
-1. **Stale SW** — hard-refresh until live `revision.txt` is **r2026-11-19.284**  
+1. **Stale SW** — hard-refresh until live `revision.txt` is **r2026-11-19.288**  
 2. **Card voice all langs** — **#519/#528/#547** on main (r263–r264); owner phone verify  
 3. **Idle planted vs floating (r280)** — C14/C15/C16/C18; R11 not Done until phone OK  
 4. **Mixkit HTML** — **#517/#541** on main; Music tab play/preview on Pages  

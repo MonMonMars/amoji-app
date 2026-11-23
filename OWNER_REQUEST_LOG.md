@@ -2,7 +2,28 @@
 
 **Full log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — append every owner ask the same turn.
 
-**Last updated:** 2026-11-22 (Asia/Hong_Kong)
+**Last updated:** 2026-11-23 (Asia/Hong_Kong)
+
+## 2026-11-23 — four long-standing bugs, and a blanket approval to proceed
+
+**Owner ask:** four bugs that previous agents could not fix: (1) the voice buttons exist for many languages but only Cantonese works, and some languages surface under the wrong speaker; (2) character and voice cards should speak a greeting when tapped; (3) the poke motion direction and the poke reaction sound are always wrong; (4) during a song the character should sing, and during music she should dance on the beat.
+
+**Owner decisions this day:**
+- **Poke interrupts speech.** Offered "cut the sentence so the impact is heard at once" vs "wait for the sentence to finish"; owner chose **interrupt**. She may stop mid-word — that is intended and must not be reported as a defect.
+- Approved merging the r285 train (#564 #563 #565), the r286 train (#562), and the r287 train (#568 #569 #570 #566 #567) in order.
+- Approved closing nine superseded stale PRs and reviving four (#527 → #566, #531 → #568, #539 → #569, #526 → #567); #20 CosyVoice stays on Hold.
+- **Blanket approval:** "I simply allow all your actions. No need to ask me for permission" — proceed without per-action confirmation; keep reporting what shipped.
+- Confirmed continuing after two agent attempts were stopped mid-run.
+
+**Shipped (code):**
+- **r285** — voice chain now ends gTTS → Edge → device `speechSynthesis` (the last hop used to refuse, so a failed network tier meant silence); locale-restricted synth pool so Japanese text can no longer get an English voice; `referrer: same-origin` so Google `translate_tts` stops answering 404; RMS/spectral visemes and spectral-flux beat detection replace the wall clock; six VRMA files stripped of dead FBX image blocks.
+- **r286** — poke impact clip and reaction line land inside `POKE_REACTION_MS`; poke cuts speech via the existing `stopSpeaking()` path; R13 same-side lateral lean restored after #554 mirrored it and rewrote the tests to defend the mirror.
+- **r287** — live-Pages verification in CI reaching four owner-picker markers; resource library index re-measured; open web search revived for general questions; kung-fu speech gated on real motion; repo-hygiene guard.
+- **r288** — rest-hips sign normalisation so the seven freed dance clips bounce up instead of sinking (146 of 153 clips byte-identical).
+
+**Also fixed today, not a revision:** the primary checkout's `apps/web/node_modules` and the `.pnpm` package directories had been emptied by a `git worktree remove` that followed a junctioned `node_modules`; repaired from the local pnpm store. Two orphan worktree directories with live `node_modules` junctions into the primary were unlinked and removed. Four merged worktrees pruned.
+
+**Not done — needs the owner's phone:** all five fixes are merged and live, none is device-verified. Rows are at the top of [`docs/PHONE_SMOKE.md`](./docs/PHONE_SMOKE.md). **Merged ≠ Done.**
 
 ## 2026-11-22 — owner idle picker with C-codes
 
