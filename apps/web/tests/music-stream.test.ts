@@ -8,10 +8,14 @@ import {
   type MusicTrack,
 } from '../lib/music-stream';
 import {
+  CURATED_JAMENDO_TRACKS,
+  JAMENDO_CURATED_TRACKS,
   PROVIDER_MAX_LIMIT,
   PROVIDER_SPECS,
   ccLabelFromUrl,
   clampLimit,
+  curatedJamendoForMood,
+  curatedJamendoSearch,
   incompetechSearch,
   incompetechStreamUrl,
   jamendoSearchUrl,
@@ -81,32 +85,55 @@ function fetchReturning(body: unknown, status = 200) {
 const JAMENDO_ENV = { NEXT_PUBLIC_JAMENDO_CLIENT_ID: 'test-client-id' };
 
 describe('music stream — availability is truthful', () => {
-  it('reports a provider with no key as unavailable and searches to nothing', async () => {
-    const stream = createMusicStream({ env: {}, fetch: fetchReturning(JAMENDO_PAYLOAD) });
+  it('keeps the keyless curated catalog available with no key at all', async () => {
+    const fetch = fetchReturning(JAMENDO_PAYLOAD);
+    const stream = createMusicStream({ env: {}, fetch });
     const jam = stream.providers().find((p) => p.id === 'jamendo');
     expect(jam).toBeDefined();
-    expect(jam!.available()).toBe(false);
+    // No account, no client_id: the owner's objection must not come back.
+    expect(jam!.available()).toBe(true);
     expect(jam!.audioAnalysable).toBe(true);
 
     const caps = stream.capabilities().find((c) => c.id === 'jamendo')!;
     expect(caps.keyEnv).toBe('NEXT_PUBLIC_JAMENDO_CLIENT_ID');
     expect(caps.keyPresent).toBe(false);
-    expect(caps.available).toBe(false);
+    expect(caps.available).toBe(true);
+    expect(caps.keylessCatalog).toBe(true);
 
-    const res = await stream.search('lofi', { providers: ['jamendo'] });
+    // A catalog query answers without any network call...
+    const res = await stream.search('synthwave', { providers: ['jamendo'] });
+    expect(res.tracks.length).toBeGreaterThan(0);
+    expect(res.failures).toEqual([]);
+    expect(fetch).not.toHaveBeenCalled();
+    // ...and the rows are the analysed, CORS-verified catalog ones.
+    for (const t of res.tracks) {
+      expect(t.source).toBe('curated');
+      expect(t.streamUrl).toContain('prod-1.storage.jamendo.com');
+      expect(t.analysable).toBe(true);
+    }
+  });
+
+  it('explains a curated miss instead of inventing a row when there is no key', async () => {
+    const stream = createMusicStream({ env: {}, fetch: fetchReturning(JAMENDO_PAYLOAD) });
+    const res = await stream.search('zzzznotagennre', { providers: ['jamendo'] });
     expect(res.tracks).toEqual([]);
     expect(res.failures.map((f) => `${f.provider}:${f.reason}`)).toContain('jamendo:no-key');
   });
 
-  it('a direct provider.search rejects instead of inventing rows', async () => {
+  it('a direct provider.search never fabricates: it returns the catalog or []', async () => {
     const stream = createMusicStream({ env: {}, fetch: fetchReturning(JAMENDO_PAYLOAD) });
     const jam = stream.providers().find((p) => p.id === 'jamendo')!;
-    await expect(jam.search('lofi')).rejects.toMatchObject({ reason: 'no-key' });
+    const hits = await jam.search('synthwave');
+    expect(hits.length).toBeGreaterThan(0);
+    await expect(jam.search('zzzznotagennre')).resolves.toEqual([]);
   });
 
-  it('exposes only key-present providers as available', () => {
-    const stream = createMusicStream({ env: JAMENDO_ENV });
-    expect(stream.availableProviders()).toEqual(['jamendo', 'incompetech']);
+  it('exposes every keyless provider as available, keyed ones only with a key', () => {
+    const keyless = createMusicStream({ env: {} });
+    expect(keyless.availableProviders()).toEqual(['jamendo', 'incompetech']);
+
+    const keyed = createMusicStream({ env: JAMENDO_ENV });
+    expect(keyed.availableProviders()).toEqual(['jamendo', 'incompetech']);
   });
 
   it('keeps Free Music Archive retired — never searched, always explained', async () => {
@@ -221,22 +248,29 @@ describe('music stream — client behaviour', () => {
     });
     const res = await stream.search('calm', { providers: ['jamendo', 'pixabay'] });
     expect(res.failures).toEqual([]);
-    expect(res.tracks).toHaveLength(3);
-    expect(res.tracks.map((t) => t.provider)).toEqual(['jamendo', 'jamendo', 'pixabay']);
-    const pix = res.tracks[2]!;
+    // Curated catalog hits come first, then the API rows, then Pixabay.
+    expect(res.tracks[0]!.source).toBe('curated');
+    const pix = res.tracks.find((t) => t.provider === 'pixabay')!;
+    expect(pix).toBeDefined();
     expect(pix.licence).toBe('Pixabay Content License');
     expect(pix.attribution).toContain('pixuser');
     expect(pix.analysable).toBe(true);
     expect(pix.streamUrl).toMatch(/^https:\/\/cdn\.pixabay\.com\//);
+    // Precedence: no API row may be pushed ahead of a curated one.
+    const firstApi = res.tracks.findIndex((t) => t.source === 'search' && t.provider === 'jamendo');
+    const lastCurated = res.tracks.map((t) => t.source).lastIndexOf('curated');
+    expect(firstApi === -1 || firstApi > lastCurated).toBe(true);
   });
 
-  it('surfaces a provider throw as a failure row, never as a rejection', async () => {
+  it('surfaces a provider throw as a failure row while still serving the catalog', async () => {
     const boom: FetchLike = () => {
       throw new Error('socket hang up');
     };
     const stream = createMusicStream({ env: JAMENDO_ENV, fetch: boom });
     const res = await stream.search('jazz', { providers: ['jamendo'] });
-    expect(res.tracks).toEqual([]);
+    // The curated catalog answered (smoothjazz / acidjazz rows), so the user
+    // still gets music; the API failure is reported for diagnostics only.
+    expect(res.tracks.length).toBeGreaterThan(0);
     expect(res.failures).toHaveLength(1);
     expect(res.failures[0]).toMatchObject({ provider: 'jamendo', reason: 'network' });
     expect(res.failures[0]!.detail).toContain('socket hang up');
@@ -247,7 +281,7 @@ describe('music stream — client behaviour', () => {
       env: JAMENDO_ENV,
       fetch: fetchReturning({ message: 'nope' }, 503),
     });
-    const res = await stream.search('jazz', { providers: ['jamendo'] });
+    const res = await stream.search('zzzznotagennre', { providers: ['jamendo'] });
     expect(res.tracks).toEqual([]);
     expect(res.failures[0]).toMatchObject({ provider: 'jamendo', reason: 'http', detail: 'HTTP 503' });
   });
@@ -308,11 +342,15 @@ describe('music stream — client behaviour', () => {
     expect(second.tracks).toHaveLength(2);
   });
 
-  it('an empty query is a no-op: no network, no failures', async () => {
+  it('an empty query returns a shuffled keyless batch with no network', async () => {
     const fetch = fetchReturning(JAMENDO_PAYLOAD);
-    const stream = createMusicStream({ env: JAMENDO_ENV, fetch });
-    const res = await stream.search('   ');
-    expect(res).toEqual({ query: '', tracks: [], failures: [], fromCache: false });
+    const stream = createMusicStream({ env: {}, fetch });
+    const res = await stream.search('   ', { limit: 5 });
+    expect(res.query).toBe('');
+    expect(res.failures).toEqual([]);
+    expect(res.tracks).toHaveLength(5);
+    expect(new Set(res.tracks.map((t) => t.id)).size).toBe(5);
+    for (const t of res.tracks) expect(t.source).toBe('curated');
     expect(fetch).not.toHaveBeenCalled();
   });
 
@@ -341,6 +379,8 @@ describe('music stream — provider capability gates the analyser', () => {
       provider: 'jamendo',
       title: 'x',
       artist: 'y',
+      metadataIncomplete: false,
+      source: 'search',
       durationSec: 1,
       streamUrl: 'https://prod-1.storage.jamendo.com/?trackid=1&format=mp32',
       licence: 'CC BY 4.0',
@@ -366,7 +406,119 @@ describe('music stream — provider capability gates the analyser', () => {
   });
 });
 
-describe('music stream — Incompetech fallback', () => {
+describe('music stream — curated keyless catalog is the default source', () => {
+  it('ships a verified, complete, analysable catalog', () => {
+    expect(JAMENDO_CURATED_TRACKS.length).toBeGreaterThanOrEqual(20);
+    expect(JAMENDO_CURATED_TRACKS.length).toBeLessThanOrEqual(40);
+    expect(CURATED_JAMENDO_TRACKS).toHaveLength(JAMENDO_CURATED_TRACKS.length);
+
+    const ids = new Set<string>();
+    for (const row of JAMENDO_CURATED_TRACKS) {
+      // Real metadata only: these rows were read out of the MP3 ID3 tags.
+      expect(row.title.length).toBeGreaterThan(0);
+      expect(row.artist.length).toBeGreaterThan(0);
+      expect(row.licence).toMatch(/^CC /);
+      expect(row.licenceUrl).toMatch(/^http(s)?:\/\/creativecommons\.org\/licenses\//);
+      expect(row.durationSec === null || row.durationSec > 30).toBe(true);
+      ids.add(row.id);
+    }
+    expect(ids.size).toBe(JAMENDO_CURATED_TRACKS.length);
+
+    for (const track of CURATED_JAMENDO_TRACKS) {
+      const rawId = track.id.replace(/^jamendo:/, '');
+      expect(track.streamUrl).toBe(
+        `https://prod-1.storage.jamendo.com/?trackid=${rawId}&format=mp31`,
+      );
+      expect(track.analysable).toBe(true);
+      expect(track.metadataIncomplete).toBe(false);
+      expect(track.source).toBe('curated');
+      expect(track.attribution).toContain(track.title!);
+      expect(track.attribution).toContain(track.artist!);
+      expect(track.attribution).toContain(track.licence);
+      expect(musicPlaybackPlan(track)).toMatchObject({
+        kind: 'analysable',
+        crossOrigin: 'anonymous',
+        routeThroughAnalyser: true,
+      });
+    }
+  });
+
+  it('offers both upbeat and calm buckets for the dance / wind-down paths', () => {
+    expect(curatedJamendoForMood('upbeat').length).toBeGreaterThanOrEqual(8);
+    expect(curatedJamendoForMood('calm').length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('matches locally, folds accents, and never guesses on a miss', () => {
+    expect(curatedJamendoSearch('synthwave').length).toBeGreaterThan(0);
+    expect(curatedJamendoSearch('residus').some((t) => t.artist?.includes('Résidus'))).toBe(true);
+    expect(curatedJamendoSearch('chill').length).toBeGreaterThan(0);
+    expect(curatedJamendoSearch('zzzznotagennre')).toEqual([]);
+    expect(curatedJamendoSearch('')).toEqual([]);
+    expect(curatedJamendoSearch('a', { limit: 2 }).length).toBeLessThanOrEqual(2);
+  });
+
+  it('rotates instead of always returning the first track', () => {
+    const stream = createMusicStream({ env: {} });
+    const first = stream.curatedTracks()[0]!.id;
+    const seen = new Set<string>();
+    for (let i = 0; i < JAMENDO_CURATED_TRACKS.length; i++) {
+      const track = stream.nextCurated();
+      expect(track).not.toBeNull();
+      seen.add(track!.id);
+    }
+    // A full pass covers every track exactly once; it does not start at index 0
+    // every time (that is the whole point of the rotation).
+    expect(seen.size).toBe(JAMENDO_CURATED_TRACKS.length);
+    expect([...seen][0]).not.toBe(first);
+
+    stream.resetRotation();
+    const afterReset = stream.nextCurated();
+    expect(afterReset).not.toBeNull();
+  });
+
+  it('never fabricates a title or artist when the provider omits them', () => {
+    const out = parseJamendoResponse({
+      headers: { status: 'success' },
+      results: [
+        {
+          id: '4242',
+          audio: 'https://prod-1.storage.jamendo.com/?trackid=4242&format=mp31',
+          license_ccurl: 'http://creativecommons.org/licenses/by-sa/4.0/',
+        },
+      ],
+    });
+    expect(out.tracks).toHaveLength(1);
+    const [track] = out.tracks;
+    expect(track!.title).toBeNull();
+    expect(track!.artist).toBeNull();
+    expect(track!.metadataIncomplete).toBe(true);
+    expect(track!.licence).toBe('CC BY-SA 4.0');
+    expect(track!.attribution).toContain('Untitled (title not published)');
+    expect(track!.attribution).toContain('Unknown artist');
+    // It must NOT contain a made-up "Jamendo 4242" style title.
+    expect(track!.attribution).not.toContain('Jamendo 4242');
+  });
+
+  it('reads genre from musicinfo tags when the API includes them', () => {
+    const out = parseJamendoResponse({
+      headers: { status: 'success' },
+      results: [
+        {
+          id: '77',
+          name: 'Night Drive',
+          artist_name: 'Neon',
+          duration: 180,
+          audio: 'https://prod-1.storage.jamendo.com/?trackid=77&format=mp31',
+          license_ccurl: 'http://creativecommons.org/licenses/by-nc-sa/3.0/',
+          musicinfo: { tags: { genres: ['synthwave', 'electronic'] } },
+        },
+      ],
+    });
+    expect(out.tracks[0]).toMatchObject({ genre: 'synthwave', mood: 'upbeat', source: 'search' });
+  });
+});
+
+describe('music stream — Incompetech fallback (play-only, never analysable)', () => {
   it('is the only keyless provider and is never analysable', () => {
     expect(PROVIDER_SPECS.incompetech.keyEnv).toBeNull();
     expect(PROVIDER_SPECS.incompetech.audioCors).toBe(false);

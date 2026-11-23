@@ -23,16 +23,20 @@
  */
 
 import {
+  CURATED_JAMENDO_TRACKS,
   PROVIDER_DEFAULT_LIMIT,
   PROVIDER_MAX_LIMIT,
   PROVIDER_ORDER,
   PROVIDER_SPECS,
   clampLimit,
+  curatedJamendoForMood,
+  curatedJamendoSearch,
   incompetechSearch,
   jamendoSearchUrl,
   parseJamendoResponse,
   parsePixabayResponse,
   pixabaySearchUrl,
+  type CuratedMood,
   type MusicProviderId,
   type MusicSearchOpts,
   type MusicTrack,
@@ -40,16 +44,22 @@ import {
 } from './music-stream-providers';
 
 export type {
+  CuratedMood,
   MusicProviderId,
   MusicSearchOpts,
   MusicTrack,
 } from './music-stream-providers';
 export {
+  CURATED_JAMENDO_TRACKS,
   INCOMPETECH_TRACKS,
+  JAMENDO_CURATED_TRACKS,
+  JAMENDO_STORAGE_PROBE,
   PROVIDER_MAX_LIMIT,
   PROVIDER_ORDER,
   PROVIDER_SPECS,
   clampLimit,
+  curatedJamendoForMood,
+  curatedJamendoSearch,
   incompetechAttribution,
   incompetechStreamUrl,
   jamendoSearchUrl,
@@ -96,7 +106,14 @@ export interface MusicProviderCapability {
   /** Env var the owner must set, or `null` when the provider needs no key. */
   keyEnv: string | null;
   keyPresent: boolean;
+  /**
+   * Truthful: `true` when this provider can answer *something* right now.
+   * Jamendo stays available without a key because the curated catalog is
+   * keyless — the key only unlocks text search.
+   */
   available: boolean;
+  /** `true` when a keyless curated catalog backs this provider. */
+  keylessCatalog: boolean;
   /** `true` only when this provider's audio is CORS-readable (see provider spec). */
   audioAnalysable: boolean;
   licence: string;
@@ -149,12 +166,24 @@ export interface MusicStream {
   /** Ids that would answer a search right now. */
   availableProviders(): MusicProviderId[];
   /**
+   * The keyless catalog, in catalog order. This is the list a "play music"
+   * button can use with no search box and no account.
+   */
+  curatedTracks(): readonly MusicTrack[];
+  /** One shuffled curated track (bag rotation: every track once per pass). */
+  nextCurated(): MusicTrack | null;
+  /** Reset the rotation (used by tests and by a fresh session). */
+  resetRotation(): void;
+  /**
    * Fan out to every available provider in parallel.
    *
    * Contract:
    * - never throws, ever (a failed provider becomes a `failures` row);
-   * - an empty/whitespace query is a no-op: no network, no cache, no failures;
+   * - an EMPTY query is not a no-op any more: it returns a shuffled batch of
+   *   the keyless catalog (no network). The curated catalog is the default
+   *   source, so "just play something" has to work;
    * - results are merged in preference order, de-duplicated by id and URL;
+   *   curated tracks come first, so a dead API never hides the catalog;
    * - successful results (including legitimately empty ones) are cached for
    *   `cacheTtlMs`; failures are never cached, so a transient timeout retries;
    * - attribution and `analysable` come from the provider, never from the caller.
@@ -216,6 +245,39 @@ export function createMusicStream(deps: MusicStreamDeps = {}): MusicStream {
   /** key → { at, tracks } */
   const cache = new Map<string, { at: number; tracks: MusicTrack[] }>();
 
+  // --- keyless catalog rotation (shuffle bag) ------------------------------
+  let rotationQueue: MusicTrack[] = [];
+  let rotationLastId: string | null = null;
+
+  function refillRotation(): void {
+    const next = [...CURATED_JAMENDO_TRACKS];
+    for (let i = next.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = next[i]!;
+      next[i] = next[j]!;
+      next[j] = tmp;
+    }
+    // A new pass must not open with the track that closed the previous one.
+    if (next.length > 1 && next[0]!.id === rotationLastId) {
+      const first = next.shift()!;
+      next.push(first);
+    }
+    rotationQueue = next;
+  }
+
+  function takeCurated(limit: number): MusicTrack[] {
+    if (!CURATED_JAMENDO_TRACKS.length) return [];
+    const out: MusicTrack[] = [];
+    while (out.length < limit) {
+      if (!rotationQueue.length) refillRotation();
+      const track = rotationQueue.shift();
+      if (!track) break;
+      rotationLastId = track.id;
+      out.push(track);
+    }
+    return out;
+  }
+
   function keyFor(id: MusicProviderId, q: string, limit: number): string {
     return `${id}|${q.toLowerCase()}|${limit}`;
   }
@@ -223,6 +285,9 @@ export function createMusicStream(deps: MusicStreamDeps = {}): MusicStream {
   function available(id: MusicProviderId): boolean {
     const spec = PROVIDER_SPECS[id];
     if (spec.retired) return false;
+    // jamendo is always available: the curated catalog needs no key and no
+    // account (that was the owner's whole objection to an API-only design).
+    if (id === 'jamendo') return true;
     if (!spec.keyEnv) return true;
     return readKey(env, spec.keyEnv).length > 0;
   }
@@ -323,7 +388,41 @@ export function createMusicStream(deps: MusicStreamDeps = {}): MusicStream {
       };
     }
     if (id === 'incompetech') return { tracks: incompetechSearch(q, { limit }) };
-    if (id === 'jamendo' || id === 'pixabay') return searchJsonProvider(id, q, limit);
+    if (id === 'pixabay') return searchJsonProvider('pixabay', q, limit);
+    if (id === 'jamendo') {
+      // Curated first: it is keyless, instant and always present. The API only
+      // adds to it, and a missing/refused key is NOT a user-visible failure when
+      // the catalog already answered.
+      const curated = curatedJamendoSearch(q, { limit });
+      const key = readKey(env, spec.keyEnv);
+      if (!key) {
+        return curated.length
+          ? { tracks: curated }
+          : {
+              tracks: [],
+              failure: {
+                provider: 'jamendo',
+                reason: 'no-key',
+                detail: `${spec.keyEnv ?? 'API key'} is not set and no curated track matched "${q}"`,
+              },
+            };
+      }
+      const api = await searchJsonProvider('jamendo', q, limit);
+      const merged = [...curated];
+      const seen = new Set(merged.map((t) => t.id));
+      for (const track of api.tracks) {
+        if (seen.has(track.id)) continue;
+        seen.add(track.id);
+        merged.push(track);
+      }
+      // A real API failure is still reported (diagnostics) even though the
+      // curated catalog already answered — the UI shows tracks, not an error.
+      if (api.failure) {
+        return { tracks: merged.slice(0, limit), failure: api.failure };
+      }
+      if (merged.length) return { tracks: merged.slice(0, limit) };
+      return { tracks: [] };
+    }
     return { tracks: [], failure: { provider: id, reason: 'no-api', detail: 'unknown provider' } };
   }
 
@@ -362,6 +461,7 @@ export function createMusicStream(deps: MusicStreamDeps = {}): MusicStream {
           keyEnv: spec.keyEnv,
           keyPresent,
           available: available(id),
+          keylessCatalog: id === 'jamendo',
           audioAnalysable: spec.audioCors,
           licence: spec.licence,
           docsUrl: spec.docsUrl,
@@ -372,7 +472,11 @@ export function createMusicStream(deps: MusicStreamDeps = {}): MusicStream {
     async search(q: string, opts?: MusicSearchOpts): Promise<MusicSearchResult> {
       const query = q.trim();
       const limit = clampLimit(opts?.limit);
-      if (!query) return { query, tracks: [], failures: [], fromCache: false };
+      if (!query) {
+        // The keyless catalog IS the default source, so "play something" must
+        // work with no query: hand back a shuffled batch, no network involved.
+        return { query, tracks: takeCurated(limit), failures: [], fromCache: false };
+      }
 
       const requested =
         opts?.providers && opts.providers.length
@@ -447,6 +551,13 @@ export function createMusicStream(deps: MusicStreamDeps = {}): MusicStream {
     clearCache() {
       cache.clear();
     },
+
+    curatedTracks: () => CURATED_JAMENDO_TRACKS.slice(),
+    nextCurated: () => takeCurated(1)[0] ?? null,
+    resetRotation() {
+      rotationQueue = [];
+      rotationLastId = null;
+    },
   };
 }
 
@@ -520,6 +631,16 @@ export function musicStream(): MusicStream {
 /** Convenience wrapper. Debounce at the call site (200–300 ms); this caches only. */
 export function searchMusic(q: string, opts?: MusicSearchOpts): Promise<MusicSearchResult> {
   return musicStream().search(q, opts);
+}
+
+/** The keyless curated catalog (28 verified tracks) from the shared instance. */
+export function curatedMusicTracks(): readonly MusicTrack[] {
+  return musicStream().curatedTracks();
+}
+
+/** One shuffled curated track — use this for a bare "let's dance" request. */
+export function nextCuratedMusicTrack(): MusicTrack | null {
+  return musicStream().nextCurated();
 }
 
 /** Capability rows for settings / empty-state copy. */

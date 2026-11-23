@@ -17,6 +17,26 @@
 /** Providers in preference order. `fma` is deliberately last: it is dead. */
 export type MusicProviderId = 'jamendo' | 'pixabay' | 'incompetech' | 'fma';
 
+// The keyless, hand-verified Jamendo catalog lives in its own data module so the
+// rows can be audited without reading the parser code.
+export {
+  JAMENDO_CURATED_TRACKS,
+  JAMENDO_STORAGE_HOST,
+  JAMENDO_STORAGE_PROBE,
+  jamendoStreamUrl,
+  moodForGenre,
+  curatedTracksForMood,
+  type CuratedJamendoTrack,
+  type CuratedMood,
+} from './music-stream-catalog';
+import {
+  JAMENDO_CURATED_TRACKS,
+  jamendoStreamUrl,
+  moodForGenre,
+  type CuratedJamendoTrack,
+  type CuratedMood,
+} from './music-stream-catalog';
+
 /**
  * One playable result. `analysable` is NOT a property of the track — it is a
  * property of the provider's MP3 CDN (see `ProviderSpec.audioCors`). Never set
@@ -25,8 +45,20 @@ export type MusicProviderId = 'jamendo' | 'pixabay' | 'incompetech' | 'fma';
 export interface MusicTrack {
   id: string;
   provider: MusicProviderId;
-  title: string;
-  artist: string;
+  /**
+   * `null` when the provider gave us no title. NEVER fabricate one: an invented
+   * title is both a lie in the UI and a broken CC attribution.
+   */
+  title: string | null;
+  /** `null` when the provider gave us no artist name. */
+  artist: string | null;
+  /** `true` when title or artist is null — backfill from the API when a key exists. */
+  metadataIncomplete: boolean;
+  /**
+   * `curated` = the keyless, individually verified catalog (no account needed).
+   * `search` = a live provider query.
+   */
+  source: 'curated' | 'search';
   /** Track length in whole seconds. `0` means "the provider did not publish it". */
   durationSec: number;
   streamUrl: string;
@@ -45,6 +77,10 @@ export interface MusicTrack {
    * untapped; routing it through the analyser makes it SILENT.
    */
   analysable: boolean;
+  /** ID3 genre of the file (curated) or the provider's first tag. null = unknown. */
+  genre?: string | null;
+  /** Coarse bucket derived from `genre`; deliberately null when unmapped. */
+  mood?: CuratedMood | null;
   /** Provider page for the track, when published. Useful for the attribution link. */
   shareUrl?: string;
 }
@@ -156,6 +192,95 @@ export const PROVIDER_SPECS: Record<MusicProviderId, ProviderSpec> = {
 export const PROVIDER_ORDER: readonly MusicProviderId[] = ['jamendo', 'pixabay', 'incompetech'];
 
 // ---------------------------------------------------------------------------
+// Curated, keyless Jamendo catalog — THE DEFAULT SOURCE
+// ---------------------------------------------------------------------------
+
+/**
+ * The owner's objection ("my app user will not login to that website") is why
+ * this exists. These 28 tracks stream from Jamendo's public storage host with
+ * NO client_id and NO account, so every user gets music without registering
+ * anywhere. The rows were verified one by one (see music-stream-catalog.ts);
+ * title/artist/genre/duration/licence were read out of each MP3's own ID3 tags,
+ * not guessed.
+ */
+export function jamendoCuratedTrack(row: CuratedJamendoTrack): MusicTrack {
+  const deed = row.licenceUrl;
+  const shareUrl = `https://www.jamendo.com/track/${row.id}`;
+  return {
+    id: `jamendo:${row.id}`,
+    provider: 'jamendo',
+    title: row.title,
+    artist: row.artist,
+    metadataIncomplete: !row.title || !row.artist,
+    source: 'curated',
+    durationSec: row.durationSec ?? 0,
+    streamUrl: jamendoStreamUrl(row.id),
+    licence: row.licence,
+    attribution: jamendoAttribution({
+      title: row.title,
+      artist: row.artist,
+      licence: row.licence,
+      deed,
+      shareUrl,
+    }),
+    analysable: PROVIDER_SPECS.jamendo.audioCors,
+    genre: row.genre,
+    mood: moodForGenre(row.genre),
+    shareUrl,
+  };
+}
+
+/** Every curated row as a playable track, in catalog order. */
+export const CURATED_JAMENDO_TRACKS: readonly MusicTrack[] =
+  JAMENDO_CURATED_TRACKS.map(jamendoCuratedTrack);
+
+/** Curated tracks for one mood bucket (unmapped ID3 genres are excluded). */
+export function curatedJamendoForMood(mood: CuratedMood): MusicTrack[] {
+  return CURATED_JAMENDO_TRACKS.filter((t) => t.mood === mood);
+}
+
+/** Accent-insensitive fold used by the local catalog search. */
+function fold(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * Local keyword search over the curated catalog. Pure, synchronous, no network.
+ * Every query word must appear somewhere on the track; a field match scores
+ * higher than a substring hit so "synthwave" outranks an artist that happens to
+ * contain the letters.
+ */
+export function curatedJamendoSearch(query: string, opts?: MusicSearchOpts): MusicTrack[] {
+  const q = fold(query);
+  if (!q) return [];
+  const limit = clampLimit(opts?.limit);
+  const words = q.split(/\s+/).filter(Boolean);
+  const rows = CURATED_JAMENDO_TRACKS.map((track) => {
+    const fields = [track.title, track.artist].filter((v): v is string => typeof v === 'string');
+    const genre = track.genre ?? null;
+    const mood = track.mood ?? null;
+    const hay = fold([...fields, genre, mood].filter(Boolean).join(' '));
+    if (!words.every((w) => hay.includes(w))) return { track, score: 0 };
+    let score = 0;
+    for (const w of words) {
+      if (fold(track.title ?? '').includes(w)) score += 3;
+      if (fold(track.artist ?? '').includes(w)) score += 2;
+      if (fold(genre ?? '').includes(w) || fold(mood ?? '').includes(w)) score += 1;
+    }
+    return { track, score };
+  });
+  return rows
+    .filter((r) => r.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((r) => r.track);
+}
+
+// ---------------------------------------------------------------------------
 // Jamendo
 // ---------------------------------------------------------------------------
 
@@ -213,6 +338,7 @@ interface JamendoTrackJson {
   shareurl?: unknown;
   license_ccurl?: unknown;
   audiodownload_allowed?: unknown;
+  musicinfo?: unknown;
 }
 
 interface JamendoEnvelope {
@@ -247,35 +373,58 @@ export function parseJamendoResponse(json: unknown): ParseOutcome {
     if (!isPlayableUrl(streamUrl)) continue;
     const id = str(row.id);
     if (!id) continue;
-    const title = str(row.name) || `Jamendo ${id}`;
-    const artist = str(row.artist_name) || 'Unknown artist';
+    // Never invent a title/artist: a missing name stays null and is flagged, so
+    // the follow-up can backfill it from the API once a client_id exists.
+    const title = str(row.name) || null;
+    const artist = str(row.artist_name) || null;
     const deed = str(row.license_ccurl);
     const licence = ccLabelFromUrl(deed) ?? 'Creative Commons (Jamendo)';
     const shareUrl = str(row.shareurl) || undefined;
+    const genre = firstTag(row.musicinfo);
     tracks.push({
       id: `jamendo:${id}`,
       provider: 'jamendo',
       title,
       artist,
+      metadataIncomplete: !title || !artist,
+      source: 'search',
       durationSec: seconds(row.duration),
       streamUrl,
       licence,
       attribution: jamendoAttribution({ title, artist, licence, deed, shareUrl }),
       analysable: PROVIDER_SPECS.jamendo.audioCors,
+      genre,
+      mood: moodForGenre(genre),
       ...(shareUrl ? { shareUrl } : {}),
     });
   }
   return { tracks };
 }
 
+/** First `musicinfo.tags.genres` entry, when the response included musicinfo. */
+function firstTag(musicinfo: unknown): string | null {
+  if (!musicinfo || typeof musicinfo !== 'object') return null;
+  const tags = (musicinfo as { tags?: unknown }).tags;
+  if (!tags || typeof tags !== 'object') return null;
+  const genres = (tags as { genres?: unknown }).genres;
+  if (!Array.isArray(genres)) return null;
+  for (const g of genres) {
+    const value = str(g);
+    if (value) return value;
+  }
+  return null;
+}
+
 function jamendoAttribution(opts: {
-  title: string;
-  artist: string;
+  title: string | null;
+  artist: string | null;
   licence: string;
   deed: string;
   shareUrl?: string;
 }): string {
-  const bits = [`"${opts.title}" by ${opts.artist}`, `Jamendo`, opts.licence];
+  const title = opts.title?.trim() || 'Untitled (title not published)';
+  const artist = opts.artist?.trim() || 'Unknown artist';
+  const bits = [`"${title}" by ${artist}`, `Jamendo`, opts.licence];
   if (opts.deed) bits.push(opts.deed);
   if (opts.shareUrl) bits.push(opts.shareUrl);
   return bits.join(' — ');
@@ -323,18 +472,20 @@ export function parsePixabayResponse(json: unknown): ParseOutcome {
     if (!id) continue;
     const streamUrl = str(hit.audio) || str(hit.audioURL) || str(hit.previewURL);
     if (!isPlayableUrl(streamUrl)) continue;
-    const title = str(hit.title) || str(hit.tags) || `Pixabay ${id}`;
-    const artist = str(hit.user) || 'Pixabay contributor';
+    const title = str(hit.title) || str(hit.tags) || null;
+    const artist = str(hit.user) || null;
     const shareUrl = str(hit.pageURL) || undefined;
     tracks.push({
       id: `pixabay:${id}`,
       provider: 'pixabay',
       title,
       artist,
+      metadataIncomplete: !title || !artist,
+      source: 'search',
       durationSec: seconds(hit.duration),
       streamUrl,
       licence: PROVIDER_SPECS.pixabay.licence,
-      attribution: `"${title}" by ${artist} — Pixabay Content License${shareUrl ? ` — ${shareUrl}` : ''}`,
+      attribution: `"${title ?? 'Untitled (title not published)'}" by ${artist ?? 'Unknown artist'} — Pixabay Content License${shareUrl ? ` — ${shareUrl}` : ''}`,
       analysable: PROVIDER_SPECS.pixabay.audioCors,
       ...(shareUrl ? { shareUrl } : {}),
     });
@@ -404,6 +555,8 @@ export function incompetechSearch(query: string, opts?: MusicSearchOpts): MusicT
     provider: 'incompetech' as const,
     title: t.title,
     artist: 'Kevin MacLeod',
+    metadataIncomplete: false,
+    source: 'curated' as const,
     durationSec: 0,
     streamUrl: incompetechStreamUrl(t.slug),
     licence: PROVIDER_SPECS.incompetech.licence,
