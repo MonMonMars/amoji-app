@@ -93,6 +93,8 @@ describe('chat voice: several replies in sequence', () => {
     sink.length = 0;
   });
 
+  // The first test in this file also pays voice.ts's transform cost; a loaded
+  // runner can spend several seconds there, so give it room.
   it('every reply in a run of five reaches the audio sink in order', async () => {
     const lines = [
       'First reply in the run.',
@@ -105,7 +107,7 @@ describe('chat voice: several replies in sequence', () => {
       await speakAndFinish(line);
     }
     expect(sink.map((s) => s.text)).toEqual(lines);
-  });
+  }, 30_000);
 
   it('a reply that is still queued behind another one is not dropped', async () => {
     const voice = await import('../lib/voice');

@@ -1,12 +1,12 @@
-# Amoji project status board
+﻿# Amoji project status board
 
 **Generated:** 2026-11-23 HKT (Asia/Hong_Kong)  
 **Repo:** [MonMonMars/amoji-app](https://github.com/MonMonMars/amoji-app)  
-**Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/) · [`revision.txt`](https://monmonmars.github.io/amoji-app/revision.txt) **= r2026-11-19.288** (matches `main`)  
+**Live:** [github.io/amoji-app](https://monmonmars.github.io/amoji-app/) · [`revision.txt`](https://monmonmars.github.io/amoji-app/revision.txt) **= r2026-11-19.290** (matches `main`)  
 **Phone smoke:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md)  
 **Visual board:** [Pages](https://monmonmars.github.io/amoji-app/docs/project-status.html) · repo [`project-status.html`](./project-status.html)  
 **Pixel pickers:** [Pages owner-resources](https://monmonmars.github.io/amoji-app/docs/owner-resources.html) (music · poke · **idle** · **stories** · **news** · **demo** tabs) · local: `cd docs && python3 -m http.server 8765`  
-**`main` tip:** `b053ccd2` (**r2026-11-19.288**)  
+**`main` tip:** `b50ac7d9` (**r2026-11-19.290**)  
 **Merged r281–r288:** `dc7ab513` #557 (r281) → `e11c188b` #560 (r282) → `08e00c05` #558 (r283) → `9cda0774` #561 (r284) → `2a42e2c7` #564 #563 #565 (r285) → `01fb7804` #562 (r286) → `ff6f1273` #568 #569 #570 #566 #567 (r287) → `b053ccd2` #571 (r288). No unmerged product branch remains; #20 CosyVoice stays on Hold.
 **Owner bugs closed in r285–r288:** all-language voice buttons (#564) · card greet on tap (#564 + #562) · poke same-side lean, impact-first sound and speech interrupt (#562) · singing mouth / dancing beat from the real audio (#563) · dance bounce sign for the seven freed clips (#571). **All five still need a phone pass — see [`PHONE_SMOKE.md`](./PHONE_SMOKE.md).**
 **Handoff pack (2026-11-21, historical snapshot):** [`HANDOFF_2026-11-21/`](./HANDOFF_2026-11-21/README.md) — r280 state + provenance + binding constraints  
@@ -14,7 +14,9 @@
 
 ## Waiting on Pixel (owner)
 
-**CI:** r281–r288 train **landed** on `main` (r288 → `b053ccd2`). Run `cd apps/web && npm run verify:live` — must print **r2026-11-19.288**.
+**CI:** r281–r290 train **landed** on `main` (r289 #574 · r290 #577 → `b50ac7d9`). Run `cd apps/web && npm run verify:live` — must print **r2026-11-19.290**.
+
+**Pixel（粵）:** **r2026-11-19.290** 已經 live。第一屏 hard refresh（見到 amber **Refresh** 就 tap）。今次兩組要試，全部列喺 [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) 最上面：**① poke 前/後方向（向前拮 → 向前傾；向後拮 → 向後仰）② 連續五次對話每一句都有聲、鎖屏回來有聲、poke 完即刻再send都有聲**。
 
 **Pixel（粵）:** r2026-11-19.288 已經 live。請喺 **第一屏 hard refresh**（見到 amber **Refresh** 就 tap）。今次有五組要試，全部列喺 [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) 最上面：**① 各語言聲音按鈕 ② 卡片撳一下講 hello ③ poke 方向／撞擊聲／打斷講話 ④ 唱歌嘴型同跳舞節拍 ⑤ 跳舞彈起（唔再沉）**。另外舊問題仍然等答案：**C14 / C15 / C16 / C18 四隻 Mixamo idle 係「貼地」定「浮腳」？**
 
@@ -24,10 +26,10 @@
 | --- | --- |
 | Handoff state (current) | [`HANDOFF_2026-11-21/STATE.md`](./HANDOFF_2026-11-21/STATE.md) |
 | Binding constraints | [`HANDOFF_2026-11-21/README.md`](./HANDOFF_2026-11-21/README.md) · [`PROVENANCE.md`](./HANDOFF_2026-11-21/PROVENANCE.md) |
-| **Next stamp** | **`r2026-11-19.289`** (next unused). r281–r288 are merged on `main` at `b053ccd2`. |
+| **Next stamp** | **`r2026-11-19.291`** (next unused). r281–r290 are merged on `main` at `b50ac7d9`. |
 | Merged train (historical) | r271 #553 · r272 #554 · r273 #543 · r274 #545 · r275 #548 · r276 #534 · r277 #535 · r278 #555 · r279 #530 · r280 #556 |
 
-**Gap vs live (r288):** `main` and live both read `r2026-11-19.288`. The r281–r288 work is **merged** — no live gap.
+**Gap vs live (r290):** `main` and live both read `r2026-11-19.290`. Two r290 owner regressions (poke front/back lean, intermittent chat voice) are **merged and live — not phone-verified**. No live gap.
 
 ## r282 idle picker (merged — phone Outstanding)
 
