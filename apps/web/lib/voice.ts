@@ -2372,6 +2372,30 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
   });
 }
 
+/**
+ * A poke takes the speaker.
+ *
+ * Owner decision (2026-11-23, explicit): if she is mid-sentence when poked, the
+ * sentence is CUT where it is and the impact is heard immediately. She will
+ * stop mid-word; that is intended. Do not turn this back into "wait for the
+ * sentence to finish, then play the reaction" - that is the bug this replaces.
+ *
+ * `stopSpeaking()` is the existing interrupt used by the mic / user-turn path:
+ * it drops the active and queued lines (`LineQueue.interrupt()`), stops the
+ * HTML audio, Edge, gTTS and OS synth that are actually producing sound, ends
+ * lip sync and releases the foley hold. No new queue plumbing is needed.
+ *
+ * Guard: only when something is pending. On an idle queue there is nothing to
+ * cut, and skipping the teardown keeps `speechSynthesis.cancel()` off an idle
+ * engine on every tap. Rapid pokes still resolve this way: the previous impact
+ * clip is a pending line, so it is cut and replaced - one impact at a time,
+ * never a stack of them.
+ */
+function interruptSpeechForPoke(): void {
+  if (!lineQueue.pending()) return;
+  stopSpeaking();
+}
+
 /** One short gasp for poke — uses the same pinned voice stack as speak(). */
 function pokeBurstSpokenLine(characterId: string, lang: Lang, zone: string, pokeN: number): string {
   const raw = profilePokeLine(characterId, lang, pokeN, zone);
@@ -2390,13 +2414,14 @@ export function playPokeBurst(characterId: string, lang: Lang, zone?: string, po
   const gender = characterVoiceGender(characterId);
   const z = zone || 'torso';
   if (voiceOutputAllowed()) {
-    // ORDER MATTERS. LineQueue is strictly serial (speech-queue.ts begin()),
-    // so enqueue order IS play order. The zone clip used to be enqueued after
-    // speak(), which put it behind the whole spoken sentence: the body had
-    // finished recoiling long before the sound arrived, which is exactly the
-    // owner's "the poke reaction sound is always not correct". The clip is the
-    // impact, so it must land with the impact, inside POKE_REACTION_MS (1200ms,
-    // poke-hit.ts). Do NOT "tidy" this back to speak-then-clip.
+    // POKE INTERRUPTS SPEECH. LineQueue is strictly serial (speech-queue.ts
+    // begin()), so whatever is already playing or queued would delay the impact.
+    // The owner explicitly chose CUT (2026-11-23): poked mid-sentence, she stops
+    // mid-word and the impact is heard at t=0 of the reaction - inside
+    // POKE_REACTION_MS (1200ms, poke-hit.ts), alongside the body motion. Do NOT
+    // soften this to "queue the reaction after the sentence", and do NOT move
+    // the interrupt below the enqueue or it just drops the clip we just queued.
+    interruptSpeechForPoke();
     if (sfxEnabled() && !isMasterMuted()) {
       const file = recordedPokeClip(gender, z);
       lineQueue.enqueue({
@@ -2411,6 +2436,7 @@ export function playPokeBurst(characterId: string, lang: Lang, zone?: string, po
       });
       drainSpeech();
     }
+    // The spoken reaction goes AFTER the clip: impact first, words after.
     const line = pokeBurstSpokenLine(characterId, lang, z, pokeN);
     speak(line, characterId, lang, { surprise: 0.62 }, undefined, 1.05);
     return;

@@ -8,11 +8,10 @@
  *   3. the clip not fitting the reaction window (it would still be sounding
  *      after the body settled, which reads as the wrong sound).
  *
- * NOTE on ordering: lib/voice.ts `playPokeBurst` enqueues the zone clip AFTER
- * the spoken poke line in the serial speech queue, so with Voice replies on the
- * clip starts after that sentence - outside POKE_REACTION_MS. That is a real
- * remaining defect in a file this branch is not allowed to edit; see the
- * handoff report. These tests keep the selection side honest meanwhile.
+ * NOTE on ordering: this used to be a fourth defect - `playPokeBurst` enqueued
+ * the zone clip AFTER the spoken poke line, so with Voice replies on the clip
+ * started a sentence later, outside POKE_REACTION_MS. It now interrupts the
+ * current speech and plays the clip first; the ordering cases below pin that.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -161,8 +160,11 @@ describe('poke SFX ordering (impact first)', () => {
       voice.indexOf('export function playPokeBurst'),
       voice.indexOf('export function playLaughBurst'),
     );
-    expect(burst).toMatch(/ORDER MATTERS/);
+    // The marker moved from "ORDER MATTERS" to "POKE INTERRUPTS SPEECH" when the
+    // owner chose cut-and-play; both name the owner-visible constraint.
+    expect(burst).toMatch(/POKE INTERRUPTS SPEECH/);
     expect(burst).toContain('POKE_REACTION_MS');
+    expect(burst).toMatch(/Do NOT/);
   });
 
   it('still drains the queue when the clip is queued first', () => {
@@ -194,6 +196,88 @@ describe('poke SFX ordering (impact first)', () => {
     fixed.enqueue('spoken-line');
     const impact = fixed.begin();
     expect(impact?.item).toBe('poke-sfx'); // <- starts with the motion
+  });
+});
+
+/**
+ * Owner decision (2026-11-23, explicit): a poke CUTS speech. Poked mid-sentence
+ * she stops mid-word so the impact is heard immediately. This is approved
+ * behaviour, not a bug - these tests exist so nobody "fixes" it back to
+ * queue-behind-the-sentence and so the interrupt stays scoped to pokes.
+ */
+describe('poke interrupts speech (owner decision)', () => {
+  function burstBody(): string {
+    const voice = readFileSync(join(here, '../lib/voice.ts'), 'utf8');
+    return voice.slice(
+      voice.indexOf('export function playPokeBurst'),
+      voice.indexOf('export function playLaughBurst'),
+    );
+  }
+
+  it('interrupts before enqueueing the impact clip', () => {
+    const burst = burstBody().replace(/\/\/[^\n]*/g, '');
+    const interruptAt = burst.indexOf('interruptSpeechForPoke()');
+    const clipAt = burst.indexOf('lineQueue.enqueue(');
+    expect(interruptAt).toBeGreaterThan(-1);
+    expect(clipAt).toBeGreaterThan(-1);
+    // Interrupt AFTER the enqueue would drop the clip we just queued.
+    expect(interruptAt).toBeLessThan(clipAt);
+  });
+
+  it('reuses the existing stop path and only when something is pending', () => {
+    const voice = readFileSync(join(here, '../lib/voice.ts'), 'utf8');
+    const helper = voice.slice(
+      voice.indexOf('function interruptSpeechForPoke'),
+      voice.indexOf('function pokeBurstSpokenLine'),
+    );
+    expect(helper).toContain('lineQueue.pending()');
+    expect(helper).toContain('stopSpeaking()');
+    // No hand-rolled teardown in the helper: reuse the interrupt path.
+    expect(helper).not.toContain('stopVoiceClip');
+    expect(helper).not.toContain('haltSynthQueue');
+  });
+
+  it('drops the active and queued lines, then the impact starts first', () => {
+    const q = new LineQueue<string>();
+    q.enqueue('spoken-line');
+    q.enqueue('queued-next-sentence');
+    const live = q.begin();
+    expect(live?.item).toBe('spoken-line'); // mid-sentence
+
+    // interruptSpeechForPoke() -> stopSpeaking() -> LineQueue.interrupt()
+    q.interrupt();
+    expect(q.pending()).toBe(false);
+    expect(q.includes((s) => s === 'queued-next-sentence')).toBe(false);
+
+    q.enqueue('poke-sfx');
+    expect(q.begin()?.item).toBe('poke-sfx'); // impact at t=0 of the reaction
+  });
+
+  it('does not make ordinary speech interrupting', () => {
+    const voice = readFileSync(join(here, '../lib/voice.ts'), 'utf8');
+    // Strip comments: speak()'s own doc comment names stopSpeaking() as the
+    // only legitimate cut, and prose must not be read as code.
+    const speakBody = voice
+      .slice(
+        voice.indexOf('export function speak('),
+        voice.indexOf('function performSpeak('),
+      )
+      .replace(/\/\/[^\n]*/g, '');
+    expect(speakBody).toContain('lineQueue.enqueue(');
+    expect(speakBody).not.toContain('lineQueue.interrupt');
+    expect(speakBody).not.toContain('stopSpeaking');
+    expect(speakBody).not.toContain('stopVoiceClip');
+
+    // Behaviour: a chat reply queues behind the line already speaking.
+    const q = new LineQueue<string>();
+    q.enqueue('line-one');
+    const first = q.begin();
+    expect(first?.item).toBe('line-one');
+    q.enqueue('reply-two');
+    expect(q.begin()).toBeNull(); // line-one keeps the speaker
+    expect(q.includes((s) => s === 'reply-two')).toBe(true);
+    q.finished(first!.epoch);
+    expect(q.begin()?.item).toBe('reply-two');
   });
 });
 
