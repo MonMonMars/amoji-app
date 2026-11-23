@@ -2,7 +2,17 @@
 
 **Full log:** `/cursor/stores/self/OWNER_REQUEST_LOG.md` — append every owner ask the same turn.
 
-**Last updated:** 2026-11-23 (Asia/Hong_Kong)
+**Last updated:** 2026-11-24 (Asia/Hong_Kong)
+
+## 2026-11-24 — side poke broken a second time; now pinned by numbers (r291)
+
+**Owner ask (verbatim, on live r290):** the front/back poke "is correct … the front poke will result in back blend" — **do not regress it** — but "the side poke also blended to the opposite side", and "the poke area of side is too small and always result in poke front and back even I poke on the side. please make the side area larger and make the blend opposite".
+
+**Why it keeps breaking:** the lateral lean has been flipped before (#443/#554 encoded "recoil away"; r286/#562 restored same-side). r291 removes the *source* of the ambiguity instead of negating a sign at the end: the lateral component of the fall is anchored to the finger's screen side by reflecting **only** the camera-right axis (`flipPokeFallToFingerSide` in `lib/poke-hit.ts`), while the camera-forward component is preserved bit-for-bit, so r290's axial front/back lean is untouched. The side boundary now comes from the shipped torso (`a≈0.17 m` half-width, `b≈0.13 m` half-depth): `|s| > 0.55|f|` and `|s| > 4 cm` (was `0.9|f|` and `3 cm`), i.e. the lateral band is the outer ~60% of her half-width instead of the outer ~43%; a depth-dominated camera ray on a side-zone hit is promoted to `frontLeft`/`frontRight`/`backLeft`/`backRight` rather than resolving as `front`.
+
+**Pinned by tests:** `apps/web/tests/poke-side-lean.test.ts` asserts the numeric sign of the lateral output (screen-left → `fall.x < -0.5`, `chestRoll > 0.6`, `headZ > 0`; screen-right → exact mirror), that dead-centre and ≤4 cm taps stay axial, that a realistic half-width flank hit is not `front`, and that the r290 front/back numbers are unchanged. `apps/web/tests/poke-lean-direction.test.ts` drives the real `seed-san.vrm` and checks head **and** chest move to the finger's side in both directions. A future sign flip must fail those assertions, not merely "differ from the other side".
+
+**Not done — needs the owner's phone:** `ROW: poke-side` at the top of `docs/PHONE_SMOKE.md`. **Merged ≠ Done.**
 
 ## 2026-11-23 — four long-standing bugs, and a blanket approval to proceed
 

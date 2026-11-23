@@ -1,7 +1,7 @@
 # Phone smoke (live Pages)
 
 **Live:** https://monmonmars.github.io/amoji-app/  
-**Tip on main:** `r2026-11-19.290` · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
+**Tip on main:** `r2026-11-19.291` · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
 **Purpose:** Human-only checks after #419–#437 + #458 + r271–r290. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
 Owner: “getting worst” / “nothing fixed” — **do not mark R10–R13 Done** until this pass.
 
@@ -10,6 +10,17 @@ Tick on a real phone (prefer iPhone Safari). **Mandatory once:** hard refresh, t
 ## Priority now — the two r290 owner regressions
 
 Both were reported on live **r289** on 2026-11-23 and are **not** phone-verified yet.
+
+### 0. Poke SIDE zone + same-side lean (r291)
+
+Owner on live r290, 2026-11-23: "the side poke also blended to the opposite side" and "the poke area of side is too small and always result in poke front and back even I poke on the side". The front/back fix above was **correct and stays**. r291 changes only the lateral half: the side boundary is now taken from the shipped torso width/depth (roughly the outer 60% of her half-width, up from the outer 43%), and a flank hit whose camera ray is depth-dominated is promoted to `frontLeft`/`frontRight`/`backLeft`/`backRight` instead of falling back to `front`. The lateral lean component is mirrored onto the finger's screen side; the camera-forward component is untouched, so a front poke still produces the same backward lean.
+
+- [ ] Poke her **screen-left** on the visible side of her torso (not dead centre): does her upper body **lean screen-left**, the same side as your finger?
+- [ ] Poke **screen-right** the same way: does it **mirror** (lean screen-right)?
+- [ ] Poke **dead centre** of her chest: is it still a **front** poke (axial, not a sideways twitch)?
+- [ ] Poke the **side of an arm / hand / leg / foot**, and her **butt** from behind: does the correct part react (not `front`)?
+- [ ] Poke her **mid-reply**: speech still **cuts** instantly, and after the reaction she **continues** the interrupted reply (r289/r290 must not regress)
+- [ ] Report: `ROW: poke-side DEVICE: <model>` + wrong-side / still-front-or-back / dead-centre-flipped / part-wrong
 
 ### 1. Poke front/back lean (r290)
 
