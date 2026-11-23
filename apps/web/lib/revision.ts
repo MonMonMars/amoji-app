@@ -491,7 +491,15 @@
 // are no longer re-added by the owner 採用 list), C14/C15 get switchable off-rail
 // toggle rows, manifest dedupes IdleMixamoHappy + emits off-rail clips with owner
 // inUse, and ID### ↔ C## ↔ clipId bridges owner-picker notes.
-export const APP_REVISION = 'r2026-11-19.285';
+// r2026-11-19.286: poke stops being late — the zone impact clip and the
+// reaction line now land inside POKE_REACTION_MS instead of queueing behind a
+// spoken sentence, and a poke cuts speech in progress (owner decision): the
+// existing stopSpeaking() path drops the active and queued lines, so recoil
+// and impact are felt at once. Same-side lateral lean restored (R13) after
+// #554 mirrored it and rewrote the tests to defend the mirror; card
+// greet/preview reach the network again by stripping the cross-origin
+// Referer that made Google answer 404 to translate_tts.
+export const APP_REVISION = 'r2026-11-19.286';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
