@@ -5,6 +5,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: repo hygiene (tracked package files present)
+        # Catches the 2026-11-23 failure mode in which a recursive delete followed
+        # a junctioned node_modules and removed tracked sources under packages/.
+        # Also catches an accidental committed deletion of a package file.
+        # See docs/WORKTREE_SAFETY.md.
+        run: node scripts/check-repo-hygiene.mjs
       - uses: pnpm/action-setup@v4
         with: { version: 9 }
       - uses: actions/setup-node@v4
