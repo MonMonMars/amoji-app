@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -17,7 +18,6 @@ import {
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const WEB_ROOT = path.resolve(here, '..');
-const PUBLIC_DIR = path.join(WEB_ROOT, 'public');
 const DEV_PAGES_DIR = path.join(WEB_ROOT, 'dev-pages');
 const OUT_DIR = path.join(WEB_ROOT, 'out');
 
@@ -33,10 +33,20 @@ describe('store bundle: QA pages are outside the shipped tree', () => {
   });
 
   it('never keeps a QA page in public/ in the committed tree', () => {
+    // `predev` mirrors dev-pages/ into public/ so the pages stay reachable on
+    // localhost:3000, and that mirror is gitignored on purpose (.gitignore).
+    // `store-build` clears it before Next runs, so a mirror on disk is normal
+    // dev state — what must never happen is a QA page being TRACKED in
+    // public/, because that ships in the Pages artifact. Assert the committed
+    // tree, not the working one, or every `pnpm dev` session turns this red.
+    const tracked = execFileSync('git', ['ls-files', '--', 'public'], {
+      cwd: WEB_ROOT,
+      encoding: 'utf8',
+    })
+      .split(/\r?\n/)
+      .filter(Boolean);
     for (const name of DEV_PAGES) {
-      expect(fs.existsSync(path.join(PUBLIC_DIR, name)), `${name} is inside public/ and would ship`).toBe(
-        false
-      );
+      expect(tracked, `public/${name} is tracked and would ship`).not.toContain(`public/${name}`);
     }
   });
 
