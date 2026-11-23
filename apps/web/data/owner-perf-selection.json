@@ -2,11 +2,9 @@
   "version": 1,
   "listenMvCodes": ["MV069", "MV079", "MV084", "MV096"],
   "songClipIds": [
-    "sing-f-twinkle",
-    "sing-f-silent-night",
-    "sing-f-joy",
     "sing-m-happy-birthday",
-    "bed-lullaby"
+    "sing-m-shenandoah",
+    "sing-f-soave-long"
   ],
-  "notes": "Repo ship-set when the browser has no amoji.ownerPerfPicks.v1. Regenerate from owner-resources Music tab checked MV rows + performance song rows."
+  "notes": "Repo ship-set when the browser has no amoji.ownerPerfPicks.v1. Restored from the owner's 2026-11-18 picker export (owner-picker-notes-2026-11-18.json): 採用 DC018 Happy Birthday, DC057 Shenandoah, DC069 Soave (long). The previous default (twinkle / silent-night / joy / lullaby) was not the owner's selection — he marked all four 刪除."
 }

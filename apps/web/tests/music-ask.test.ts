@@ -139,10 +139,16 @@ describe('listMusicPickOptions + offer line', () => {
     expect(jpop.every((o) => o.genre === 'jpop' || o.styleHint === 'jpop')).toBe(true);
   });
 
-  it('song select uses local vocal clips', () => {
-    const songs = listMusicPickOptions({ kind: 'song', gender: 'female', seed: 1, count: 3 });
-    expect(songs.length).toBe(3);
-    expect(songs.every((o) => o.source === 'clip' && o.kind === 'song' && o.clipId)).toBe(true);
+  it('song select uses the owner’s local vocal clips', () => {
+    const female = listMusicPickOptions({ kind: 'song', gender: 'female', seed: 1, count: 3 });
+    expect(female.map((o) => o.clipId)).toEqual(['sing-f-soave-long']);
+    expect(female.every((o) => o.source === 'clip' && o.kind === 'song' && o.clipId)).toBe(true);
+    const all = listMusicPickOptions({ kind: 'song', seed: 0, count: 5 });
+    expect(all.map((o) => o.clipId)).toEqual([
+      'sing-m-happy-birthday',
+      'sing-m-shenandoah',
+      'sing-f-soave-long',
+    ]);
   });
 
   it('musicSelectOfferLine names titles and genres', () => {
