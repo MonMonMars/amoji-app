@@ -499,7 +499,15 @@
 // #554 mirrored it and rewrote the tests to defend the mirror; card
 // greet/preview reach the network again by stripping the cross-origin
 // Referer that made Google answer 404 to translate_tts.
-export const APP_REVISION = 'r2026-11-19.286';
+// r2026-11-19.287: four held PRs revived on current main plus a guard for the
+// damage they were orphaned by. Live-Pages verification now runs in CI and
+// fails on a repo/live mismatch instead of a human noticing a stale bundle;
+// docs/RESOURCE_LIBRARY_INDEX.md indexes the owner's source material; general
+// questions reach open web search again; kung-fu demo speech waits for the
+// motion instead of talking over it; and scripts/check-repo-hygiene.mjs fails
+// loudly on a junctioned node_modules or a missing tracked package file, which
+// is how one pnpm install emptied the primary checkout earlier today.
+export const APP_REVISION = 'r2026-11-19.287';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
