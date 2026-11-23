@@ -159,9 +159,10 @@ describe('demo-phase buttons', () => {
     }
   });
 
-  it('ChatPanel wires tai chi as a one-shot library move, not cue sync', () => {
-    expect(PANEL).toContain("x === 'taichi'");
-    expect(PANEL).toContain("triggerMove('taichi')");
+  it('ChatPanel wires kung fu / tai chi as one-shot martial flow, not cue sync', () => {
+    expect(PANEL).toContain("x === 'kungfu' || x === 'taichi'");
+    expect(PANEL).toContain('martialFlowDemoTurn');
+    expect(PANEL).toContain('triggerMove(flow.move');
   });
 
   it('together chips hit duet / meal / tag intercepts', () => {

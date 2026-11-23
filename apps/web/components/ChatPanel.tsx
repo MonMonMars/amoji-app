@@ -138,6 +138,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { feedUtterance, applyContentMood, setThinkingPose, triggerLaugh, triggerMove, holdMove, clearMove, setPerfMotionProfile, clearPerfMotionProfile } from '../lib/companion';
+import { martialFlowDemoTurn, type MartialFlowKind } from '../lib/martial-speak-guard';
 import { detectMove } from '../lib/moves';
 import { loadHistory, saveHistory } from '../lib/companion-store';
 import { notifySpeaking, isSpeaking } from '../lib/speech';
@@ -1458,21 +1459,25 @@ export default function ChatPanel({
     }
     {
       const x = detectExercise(text);
-      if (x === 'taichi') {
-        // Demo / "tai chi" ask: play the library tai chi once with general
-        // encouragement — no move-by-move cue sync (hard to keep in time).
+      if (x === 'kungfu' || x === 'taichi') {
         exerciseRef.current = null;
-        triggerMove('taichi');
-        sayLocal(
-          lang === 'zh'
-            ? '好，跟我一起打一段太极——慢慢来，呼吸跟上就好，你很棒！'
-            : lang === 'ja'
-              ? 'よし、一緒に太極をひと流れ——ゆっくりでいいよ、呼吸に合わせて。上手だね！'
-              : lang === 'yue'
-                ? '好，一齊打一段太極——慢慢嚟，跟住呼吸就得，你好叻㗎！'
-                : 'Alright — let’s flow through some tai chi together. Nice and easy, breathe with me. You’re doing great!',
-          { relaxed: 0.85, joy: 0.2 },
-        );
+        // A dance/sing show may still own the stage. Its perf-motion profile
+        // would make playPerf swap the named martial VRMA for the show clip,
+        // and its bed-stop timer would clearMove mid-form. haltClip fires the
+        // stopped event synchronously, so end it BEFORE arming this move.
+        endPerformanceMusic();
+        showTrack(null);
+        const flow = martialFlowDemoTurn(x as MartialFlowKind, lang);
+        triggerMove(flow.move, undefined, flow.speakMs);
+        holdMove(flow.speakMs);
+        // Tai chi reads calm; kung fu uses the same energetic mood as the
+        // trainer routine (ROUTINES.kungfu.hints). Annotated as a plain map
+        // because a union of two literal shapes is not assignable to an index
+        // signature (TS2345: optional "surprise?: undefined").
+        const hints: Record<string, number> = x === 'taichi'
+          ? { relaxed: 0.85, joy: 0.2 }
+          : { joy: 0.65, surprise: 0.1 };
+        sayLocal(flow.line, hints);
         done();
         return;
       }
