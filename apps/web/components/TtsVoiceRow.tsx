@@ -9,9 +9,11 @@
 //
 // Now the row is driven by tts-button-registry, which is gated on the engine
 // audit: a dead or unbundled engine cannot appear here. Some languages end up
-// with a short pair — Japanese is one Google speaker × female/male delivery —
-// and when that happens the row says so plainly. An Add button pulls optional
-// test-pool voices for the current language.
+// with exactly one button — Japanese and Cantonese each have a single Google
+// speaker, and every Google speaker this app ships is female — and when that
+// happens the row says so plainly instead of inventing a pitched-down "male"
+// or three identical pitch variants. An Add button pulls optional test-pool
+// voices for the current language.
 
 import { useState } from 'react';
 import {

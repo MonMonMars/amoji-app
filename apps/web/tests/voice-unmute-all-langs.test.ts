@@ -6,11 +6,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-  GTTS_PITCH_BIAS_MAX,
-  GTTS_PITCH_BIAS_MIN,
-  gttsPlaybackRate,
-} from '../lib/gtts';
 import { gttsCharacterPitchBias } from '../lib/gtts-timbre';
 import {
   deliveryGenderForChoice,
@@ -25,31 +20,26 @@ import { resetVoicePicks, saveVoicePick } from '../lib/voice-picks';
 
 const web = join(__dirname, '..');
 const LOCALES = ['yue', 'zh', 'ja', 'en'] as const;
-const GENDERS = ['female', 'male'] as const;
 
 afterEach(() => {
   resetVoicePicks();
 });
 
-describe('every lang × gender × pitch is an audible free-tier choice', () => {
-  it('ships female + male × deep/mid/bright for every locale', () => {
+describe('every locale has an audible original-TTS choice', () => {
+  it('ships at least one female source button in every locale', () => {
     for (const locale of LOCALES) {
       const choices = voiceChoicesFor(locale);
-      for (const gender of GENDERS) {
-        for (const tier of VOICE_PITCH_TIERS) {
-          const hit = choices.find(
-            (c) => c.deliveryGender === gender && c.pitchTier === tier,
-          );
-          expect(hit, `${locale} ${gender} ${tier}`).toBeTruthy();
-          expect(hit!.tl.length).toBeGreaterThan(0);
-          if (locale === 'yue') expect(hit!.tl).toBe('yue');
-          else expect(hit!.tl).not.toBe('yue');
-        }
+      expect(choices.length, locale).toBeGreaterThan(0);
+      for (const choice of choices) {
+        expect(choice.deliveryGender, `${locale} ${choice.tl}`).toBe('female');
+        expect(choice.tl.length).toBeGreaterThan(0);
+        if (locale === 'yue') expect(choice.tl).toBe('yue');
+        else expect(choice.tl).not.toBe('yue');
       }
     }
   });
 
-  it('yue female mid is not the only non-empty tl path', () => {
+  it('yue is not the only non-empty tl path; every locale keeps its own speaker', () => {
     const yueF = preferredVoiceChoiceForGender('yue', 'female');
     const enM = preferredVoiceChoiceForGender('en', 'male');
     const zhF = preferredVoiceChoiceForGender('zh', 'female');
@@ -58,33 +48,28 @@ describe('every lang × gender × pitch is an audible free-tier choice', () => {
     expect(enM.tl).toBe('en-US');
     expect(zhF.tl).toBe('zh-CN');
     expect(jaM.tl).toBe('ja');
-    expect(deliveryGenderForChoice('en', enM.id, 'female')).toBe('male');
+    // "male" is a companion gender, not a claim about the Google source: the
+    // resolved button is the female speaker and the label says so.
+    expect(deliveryGenderForChoice('en', enM.id, 'female')).toBe('female');
     expect(deliveryGenderForChoice('zh', zhF.id, 'male')).toBe('female');
   });
 
-  it('pitchBias stays audible (never zero / NaN) for all pins', () => {
+  it('never zero / NaN / reshaped: the bias is exactly 1 for all pins', () => {
     for (const locale of LOCALES) {
-      for (const gender of GENDERS) {
-        for (const tier of VOICE_PITCH_TIERS) {
-          const choice = voiceChoicesFor(locale).find(
-            (c) => c.deliveryGender === gender && c.pitchTier === tier,
-          )!;
-          const bias = gttsCharacterPitchBias(gender, 'preview', locale, tier);
-          expect(Number.isFinite(bias)).toBe(true);
-          expect(bias).toBeGreaterThanOrEqual(GTTS_PITCH_BIAS_MIN);
-          const rate = gttsPlaybackRate(gender === 'male' ? 0.90 : 1, bias, choice.tl);
-          expect(rate).toBeGreaterThanOrEqual(GTTS_PITCH_BIAS_MIN);
-          expect(rate).toBeLessThanOrEqual(GTTS_PITCH_BIAS_MAX);
-          expect(pitchTierForChoice(choice.id)).toBe(tier);
-          expect(voiceChoiceById(choice.id)?.locale).toBe(locale);
-        }
+      for (const tier of VOICE_PITCH_TIERS) {
+        const choice = voiceChoicesFor(locale).find((c) => c.pitchTier === tier)!;
+        const bias = gttsCharacterPitchBias('female', 'preview', locale, tier);
+        expect(Number.isFinite(bias)).toBe(true);
+        expect(bias).toBe(1);
+        expect(pitchTierForChoice(choice.id)).toBe(tier);
+        expect(voiceChoiceById(choice.id)?.locale).toBe(locale);
       }
     }
   });
 
   it('save + tlForChoice keeps each locale on its own speaker (not Yue-only)', () => {
     for (const locale of LOCALES) {
-      for (const gender of GENDERS) {
+      for (const gender of ['female', 'male'] as const) {
         const choice = preferredVoiceChoiceForGender(locale, gender);
         saveVoicePick(locale, choice.id);
         expect(tlForChoice(locale, choice.id)).toBe(choice.tl);

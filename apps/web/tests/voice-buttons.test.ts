@@ -95,52 +95,40 @@ describe('engine audit', () => {
 });
 
 describe('one button per genuinely different voice', () => {
-  it('offers distinct speakers × gender × pitch, never the 58 Edge names', () => {
-    // 58 Edge short names all collapsed to one voice. The real map is one
-    // Google `tl` speaker × female/male × deep/mid/bright pitch buttons.
-    expect(selectTtsButtons()).toHaveLength(54);
-    expect(selectTtsButtons('yue')).toHaveLength(6);
-    expect(selectTtsButtons('zh')).toHaveLength(12);
-    expect(selectTtsButtons('ja')).toHaveLength(6);
-    expect(selectTtsButtons('en')).toHaveLength(30);
+  it('offers distinct speakers only — no 58 Edge names, no pitch/gender clones', () => {
+    // 58 Edge short names all collapsed to one voice; the old fix then made
+    // female/male × deep/mid/bright clones of the SAME female MP3. Now one
+    // button per real Google `tl` speaker: 1 + 2 + 1 + 5.
+    expect(selectTtsButtons()).toHaveLength(9);
+    expect(selectTtsButtons('yue')).toHaveLength(1);
+    expect(selectTtsButtons('zh')).toHaveLength(2);
+    expect(selectTtsButtons('ja')).toHaveLength(1);
+    expect(selectTtsButtons('en')).toHaveLength(5);
   });
 
-  it('keeps female + male and deep/mid/bright for every regional speaker', () => {
+  it('keeps every button on the truthful female source and the natural tier', () => {
     for (const locale of ['yue', 'zh', 'ja', 'en'] as const) {
       const buttons = selectTtsButtons(locale);
-      expect(buttons.some((b) => b.deliveryGender === 'female'), locale).toBe(true);
-      expect(buttons.some((b) => b.deliveryGender === 'male'), locale).toBe(true);
-      const byTlGender = new Map<string, Set<string>>();
-      for (const b of buttons) {
-        const key = `${b.tl}:${b.deliveryGender}`;
-        const set = byTlGender.get(key) ?? new Set();
-        set.add(b.pitchTier);
-        byTlGender.set(key, set);
-      }
-      for (const [key, tiers] of byTlGender) {
-        expect(tiers.has('deep'), `${locale}/${key}`).toBe(true);
-        expect(tiers.has('mid'), `${locale}/${key}`).toBe(true);
-        expect(tiers.has('bright'), `${locale}/${key}`).toBe(true);
-      }
+      expect(buttons.every((b) => b.deliveryGender === 'female'), locale).toBe(true);
+      expect(buttons.every((b) => b.pitchTier === 'mid'), locale).toBe(true);
     }
   });
 
-  it('marks single-speaker langs (yue/ja) vs multi-region (zh/en); pitch still multiplies buttons', () => {
-    expect(distinctVoiceCount('yue')).toBe(6);
-    expect(distinctVoiceCount('ja')).toBe(6);
+  it('marks single-speaker langs (yue/ja) vs multi-region (zh/en)', () => {
+    expect(distinctVoiceCount('yue')).toBe(1);
+    expect(distinctVoiceCount('ja')).toBe(1);
+    expect(distinctVoiceCount('zh')).toBe(2);
+    expect(distinctVoiceCount('en')).toBe(5);
     expect(isSingleVoiceLocale('yue')).toBe(true);
     expect(isSingleVoiceLocale('ja')).toBe(true);
     expect(isSingleVoiceLocale('zh')).toBe(false);
     expect(isSingleVoiceLocale('en')).toBe(false);
   });
 
-  it('never produces duplicate choice ids; same tl may pair female + male delivery', () => {
+  it('never produces duplicate choice ids', () => {
     for (const locale of ['yue', 'zh', 'ja', 'en'] as const) {
       const ids = selectTtsButtons(locale).map((b) => b.id);
       expect(new Set(ids).size, locale).toBe(ids.length);
-      const genders = selectTtsButtons(locale).map((b) => b.deliveryGender);
-      expect(genders.filter((g) => g === 'female').length, locale).toBeGreaterThanOrEqual(1);
-      expect(genders.filter((g) => g === 'male').length, locale).toBeGreaterThanOrEqual(1);
     }
   });
 
@@ -153,28 +141,26 @@ describe('one button per genuinely different voice', () => {
   });
 
   it('agrees with TIER_A_COUNTS', () => {
-    expect(TIER_A_COUNTS).toEqual({ yue: 6, zh: 12, ja: 6, en: 30 });
+    expect(TIER_A_COUNTS).toEqual({ yue: 1, zh: 2, ja: 1, en: 5 });
   });
 
-  it('labels female/male and pitch colour honestly on each button', () => {
+  it('labels each button with its actual source gender and natural tier', () => {
     for (const button of selectTtsButtons()) {
-      expect(button.deliveryGender === 'female' || button.deliveryGender === 'male').toBe(true);
-      expect(['deep', 'mid', 'bright']).toContain(button.pitchTier);
+      expect(button.deliveryGender).toBe('female');
+      expect(button.pitchTier).toBe('mid');
     }
   });
 
-  it('Add appends deep/mid/bright for the next free test-pool voice', () => {
+  it('Add appends exactly one button for the next free test-pool voice', () => {
     expect(voiceAddRemaining('en')).toBeGreaterThan(0);
     const before = selectTtsButtons('en').length;
     const added = addVoiceOption('en');
     expect(added).not.toBeNull();
     expect(added!.locale).toBe('en');
+    expect(added!.deliveryGender).toBe('female');
     expect(added!.pitchTier).toBe('mid');
-    expect(selectTtsButtons('en')).toHaveLength(before + 3);
+    expect(selectTtsButtons('en')).toHaveLength(before + 1);
     expect(selectTtsButtons('en').some((b) => b.id === added!.id)).toBe(true);
-    const stem = added!.id.replace(/:mid$/, '');
-    expect(selectTtsButtons('en').some((b) => b.id === `${stem}:deep`)).toBe(true);
-    expect(selectTtsButtons('en').some((b) => b.id === `${stem}:bright`)).toBe(true);
   });
 });
 
@@ -235,13 +221,16 @@ describe('pin storage names a real voice', () => {
     expect(activeVoiceChoice('ja').tl).toBe('ja');
   });
 
-  it('migrates legacy pins without gender or pitch suffix to mid female', () => {
+  it('migrates legacy pins without gender or pitch suffix to the female source', () => {
     saveVoicePick('en', 'gtts:en-US');
     expect(voicePickFor('en')).toBe('gtts:en-US:f:mid');
     saveVoicePick('yue', 'gtts:yue');
     expect(voicePickFor('yue')).toBe('gtts:yue:f:mid');
+    // A legacy "male" id was the same female speaker — resolve truthfully.
     saveVoicePick('en', 'gtts:en-GB:m');
-    expect(voicePickFor('en')).toBe('gtts:en-GB:m:mid');
+    expect(voicePickFor('en')).toBe('gtts:en-GB:f:mid');
+    saveVoicePick('en', 'gtts:en-GB:m:bright');
+    expect(voicePickFor('en')).toBe('gtts:en-GB:f:mid');
   });
 
   it('migrates legacy Taiwan gTTS pins to Taiwan Mandarin female mid', () => {
@@ -264,15 +253,16 @@ describe('pin storage names a real voice', () => {
     }
   });
 
-  it('unpinned delivery gender follows the companion, not the first female button', () => {
+  it('pinned delivery reports the source gender; unpinned falls back to the companion', () => {
     for (const locale of ['yue', 'zh', 'ja', 'en'] as const) {
       expect(deliveryGenderForChoice(locale, null, 'male')).toBe('male');
       expect(deliveryGenderForChoice(locale, null, 'female')).toBe('female');
-      expect(preferredVoiceChoiceForGender(locale, 'male').deliveryGender).toBe('male');
+      // There is no male gTTS source, so a male companion gets the female
+      // speaker rather than a falsely-labelled / pitch-shifted "male".
+      expect(preferredVoiceChoiceForGender(locale, 'male').deliveryGender).toBe('female');
       expect(preferredVoiceChoiceForGender(locale, 'female').deliveryGender).toBe('female');
-      expect(activeVoiceChoice(locale, 'male').deliveryGender).toBe('male');
+      expect(activeVoiceChoice(locale, 'male').deliveryGender).toBe('female');
       expect(activeVoiceChoice(locale, 'female').deliveryGender).toBe('female');
-      // Every shipping lang has a working Google tl for both genders.
       expect(tlForChoice(locale, preferredVoiceChoiceForGender(locale, 'male').id).length).toBeGreaterThan(1);
       expect(tlForChoice(locale, preferredVoiceChoiceForGender(locale, 'female').id).length).toBeGreaterThan(1);
     }

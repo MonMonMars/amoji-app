@@ -1,153 +1,63 @@
-// Per-character colour on the free HTTP MP3 tier.
+// Per-character colour on the free HTTP MP3 tier — RETIRED (owner, 2026-11-23).
 //
-// Google Translate TTS serves ONE speaker per `tl`. Edge neural casting is
-// dead (WSS upgrade 403 with the published token). speechSynthesis is muted
-// by the iPhone silent switch. So the only free, keyless, CORS-playable path
-// that still speaks Cantonese is gTTS — and every companion would sound
-// identical without a client-side reshape.
+// The owner's verdict: "all the modified sound not sound good ... please only
+// use the original TTS." So the MP3 tier now plays Google's audio exactly as
+// the endpoint returns it, at playbackRate 1 with the browser's normal pitch
+// preservation. There is NO character pitch bias, NO gender pitch band and NO
+// per-id jitter any more.
 //
-// Why NOT Web Audio formant filtering on the MP3:
-//   translate.google.com returns Cross-Origin-Resource-Policy and NO
-//   Access-Control-Allow-Origin. An <audio> element can PLAY that response
-//   (no CORS needed to hear it), but createMediaElementSource / decodeAudioData
-//   taints or silences the graph on Chrome and iOS Safari. Shipping a formant
-//   chain would make the free tier go quiet — the exact failure we are fixing.
+// Why the old mechanism is gone and must not be restored:
+//   - Google Translate TTS serves ONE speaker per `tl`, and that speaker is
+//     female for every code this app ships. The old code passed
+//     preservesPitch=false + playbackRate=0.64…1.72 to make one female MP3
+//     impersonate male/bright/deep characters. Resampling shifts formants and
+//     tempo together, so the owner heard slurred, chipmunk and "not good"
+//     speech (complaint 1) and a pitched-down woman whenever a male card was
+//     tapped (complaint 2).
+//   - A truthful male voice needs a real male SOURCE (Edge neural / OS
+//     speechSynthesis / a hosted model). Faking it from the female MP3 is the
+//     bug, not the fix.
 //
-// What we DO ship: HTMLAudioElement.playbackRate with preservesPitch=false
-// (already iOS-safe in gtts.ts). Gender sets the base; curated bright / mid /
-// deep tiers spread companions of the SAME gender so two females (or two
-// males) stay audibly different. A tiny hash micro-jitter separates ids that
-// land on the same tier. Bounds stay inside the gtts clamp so the line does
-// not turn into chipmunk / slurry audio.
+// Why NOT Web Audio here: translate.google.com returns
+// Cross-Origin-Resource-Policy with NO Access-Control-Allow-Origin, so an
+// <audio> element can play the response but createMediaElementSource /
+// decodeAudioData taints or silences it on Chrome and iOS Safari. That is
+// still true and is why no formant filter is used instead.
+//
+// `gttsCharacterPitchBias` is kept as a documented identity mapping because
+// lib/voice.ts owns a single shared resolver (`gttsPitchBias`) that every
+// speak path calls. Returning 1 makes the MP3 tier original audio; it also
+// makes the `pitchBias !== 1` branch in lib/gtts.ts unreachable, so no caller
+// can reintroduce a reshape without deleting this file's contract on purpose.
 
 import type { Lang } from './prefs';
-import { CHARACTERS_WANT } from './characters-want';
-import {
-  GTTS_PITCH_BIAS_MAX,
-  GTTS_PITCH_BIAS_MIN,
-  PITCH_BIAS_FEMALE,
-  PITCH_BIAS_MALE,
-} from './gtts';
 
-/** Audible high / mid / low colour within a gender band. */
+/**
+ * Kept for the pinned-button / Edge-prosody types that still speak of pitch
+ * tiers. Once pitch reshaping was removed there is only the natural tier, and
+ * the catalog ships only `mid`; the union stays so old ids keep a type.
+ */
 export type GttsPitchTier = 'bright' | 'mid' | 'deep';
 
 /**
- * Half-width of the residual per-id micro-jitter around a curated tier.
- * Kept small — tiers carry the real separation.
+ * The only value this module can return. Exported so tests can pin the
+ * contract instead of a magic number, and so the intent reads at the call
+ * site: original audio, no pitch processing.
  */
-export const CHAR_PITCH_SPREAD = 0.015;
+export const ORIGINAL_TTS_PITCH_BIAS = 1;
 
 /**
- * How far bright / deep sit from the gender mid.
- * #446 kept male < 1.0 < female (no pitched-female bright male) but left
- * within-gender gaps too tight — female deep→mid was only 0.18. Use the full
- * gender band the clamp still allows (jitter ±CHAR_PITCH_SPREAD must not cross
- * 1.0). Prefer distinct Edge neural ids when that hop runs; these offsets are
- * the gTTS fallback.
- */
-export const FEMALE_TIER_OFFSET: Record<GttsPitchTier, number> = {
-  // 1.30−0.28 → 1.02; 1.30+0.42 → 1.72 — all > 1.0; bright−deep ≥ 0.70
-  deep: -0.28,
-  mid: 0,
-  bright: 0.42,
-};
-
-export const MALE_TIER_OFFSET: Record<GttsPitchTier, number> = {
-  // 0.64−0.26 → 0.38 (floor); 0.64+0.34 → 0.98 — all < 1.0; bright−deep ≥ 0.60
-  deep: -0.26,
-  mid: 0,
-  bright: 0.34,
-};
-
-/**
- * Google ja-JP reads bright; keep male below the shared mid, but not so low
- * that deep hits GTTS_PITCH_BIAS_MIN and collapses into mid (0.42−0.26 → floor
- * made deep≈mid after #446). 0.62 keeps deep≪mid≪bright audible on ja.
- */
-export const GTTS_MALE_BIAS_JA = 0.62;
-
-const TIER_CYCLE: readonly GttsPitchTier[] = ['deep', 'mid', 'bright'];
-
-const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
-
-/** Stable −1…+1 fingerprint from a character id (FNV-1a + murmur finalizer). */
-export function characterPitchUnit(characterId: string): number {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < characterId.length; i++) {
-    h ^= characterId.charCodeAt(i);
-    h = Math.imul(h, 0x01000193);
-  }
-  // Short ids like a01/a02/a03 only flip one byte; avalanche so neighbours
-  // do not collapse into the same audible pitch band.
-  h ^= h >>> 16;
-  h = Math.imul(h, 0x7feb352d);
-  h ^= h >>> 15;
-  h = Math.imul(h, 0x846ca68b);
-  h ^= h >>> 16;
-  // Unsigned fraction in [0, 1], then centred on 0.
-  const u = (h >>> 0) / 0xffffffff;
-  return u * 2 - 1;
-}
-
-/** Build stable deep→mid→bright assignment within each gender (sorted ids). */
-function buildCuratedTierMap(): Map<string, GttsPitchTier> {
-  const map = new Map<string, GttsPitchTier>();
-  for (const gender of ['female', 'male'] as const) {
-    const ids = CHARACTERS_WANT
-      .filter((c) => c.gender === gender)
-      .map((c) => c.id)
-      .sort();
-    ids.forEach((id, i) => {
-      map.set(id, TIER_CYCLE[i % TIER_CYCLE.length]!);
-    });
-  }
-  return map;
-}
-
-const CURATED_TIERS = buildCuratedTierMap();
-
-/** Hash fallback when the id is not on the want roster. */
-function hashTier(characterId: string): GttsPitchTier {
-  const u = characterPitchUnit(characterId);
-  if (u < -1 / 3) return 'deep';
-  if (u < 1 / 3) return 'mid';
-  return 'bright';
-}
-
-/** Curated (or hashed) pitch colour for a companion. */
-export function gttsPitchTierFor(characterId: string): GttsPitchTier {
-  return CURATED_TIERS.get(characterId) ?? hashTier(characterId);
-}
-
-/**
- * Pitch multiplier for the free MP3 tier. Same gender → nearby but different
- * numbers; every male tier stays below 1.0 and every female tier stays above
- * 1.0 (male bright must never cross into female deep).
+ * Identity mapping — always 1. Arguments are accepted (and ignored) so the
+ * shared resolver in lib/voice.ts keeps one signature for every tier.
  *
- * `tierOverride` comes from a pinned voice button (selectable deep/mid/bright).
- * When omitted, companions keep the curated per-character tier from #374.
+ * Do NOT reintroduce gender/tier maths here without a real, separate voice
+ * source: the owner has ruled pitch-shifted impersonation out.
  */
 export function gttsCharacterPitchBias(
-  gender: 'female' | 'male',
-  characterId?: string,
-  lang?: Lang,
-  tierOverride?: GttsPitchTier | null,
+  _gender?: 'female' | 'male',
+  _characterId?: string,
+  _lang?: Lang,
+  _tierOverride?: GttsPitchTier | null,
 ): number {
-  let base = gender === 'male' ? PITCH_BIAS_MALE : PITCH_BIAS_FEMALE;
-  if (gender === 'male' && lang === 'ja') base = GTTS_MALE_BIAS_JA;
-  if (!characterId && !tierOverride) return base;
-  const tier = tierOverride ?? (characterId ? gttsPitchTierFor(characterId) : 'mid');
-  const offset = (gender === 'male' ? MALE_TIER_OFFSET : FEMALE_TIER_OFFSET)[tier];
-  const jitter = characterId ? characterPitchUnit(characterId) * CHAR_PITCH_SPREAD : 0;
-  // Keep inside the same clamp gtts.ts applies to pitchBias.
-  return clamp(base + offset + jitter, GTTS_PITCH_BIAS_MIN, GTTS_PITCH_BIAS_MAX);
-}
-
-/** True when two character ids resolve to different biases (any measurable delta). */
-export function pitchesDiffer(
-  a: { gender: 'female' | 'male'; id: string },
-  b: { gender: 'female' | 'male'; id: string },
-): boolean {
-  return gttsCharacterPitchBias(a.gender, a.id) !== gttsCharacterPitchBias(b.gender, b.id);
+  return ORIGINAL_TTS_PITCH_BIAS;
 }

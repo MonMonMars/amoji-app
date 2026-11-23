@@ -26,7 +26,7 @@ afterEach(() => {
 });
 
 describe('voice Add pool + button', () => {
-  it('ships male and female for every shipping tl on each language', () => {
+  it('ships one truthful female source per shipping tl on each language', () => {
     for (const locale of ['yue', 'zh', 'ja', 'en'] as const) {
       const byTl = new Map<string, Set<string>>();
       for (const b of selectTtsButtons(locale)) {
@@ -37,29 +37,22 @@ describe('voice Add pool + button', () => {
       expect(byTl.size, locale).toBeGreaterThan(0);
       for (const [tl, genders] of byTl) {
         expect(genders.has('female'), `${locale} ${tl}`).toBe(true);
-        expect(genders.has('male'), `${locale} ${tl}`).toBe(true);
+        // There is no male Google speaker; a "male" label would be a lie.
+        expect(genders.has('male'), `${locale} ${tl}`).toBe(false);
       }
     }
   });
 
-  it('keeps Add-pool ids off the shipping set and paired by gender', () => {
+  it('keeps Add-pool ids off the shipping set and all on the female source', () => {
     for (const c of VOICE_ADD_POOL) {
       const id = extraVoiceId(c.tl, c.deliveryGender);
       expect(SHIPPING_VOICE_IDS.has(id), id).toBe(false);
+      expect(c.deliveryGender).toBe('female');
     }
     for (const locale of ['yue', 'zh', 'ja', 'en'] as const) {
       const pool = VOICE_ADD_POOL.filter((c) => c.locale === locale);
       expect(pool.length, locale).toBeGreaterThan(0);
-      const byTl = new Map<string, Set<string>>();
-      for (const c of pool) {
-        const set = byTl.get(c.tl) ?? new Set();
-        set.add(c.deliveryGender);
-        byTl.set(c.tl, set);
-      }
-      for (const [tl, genders] of byTl) {
-        expect(genders.has('female'), `${locale}/${tl}`).toBe(true);
-        expect(genders.has('male'), `${locale}/${tl}`).toBe(true);
-      }
+      for (const c of pool) expect(c.deliveryGender, `${locale}/${c.tl}`).toBe('female');
     }
   });
 

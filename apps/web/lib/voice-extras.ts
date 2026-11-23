@@ -1,13 +1,15 @@
 // Extra free gTTS voices the user can Add from Settings / the select voice row.
 //
 // The shipping catalog (voice-capability.ts) lists audibly distinct Google `tl`
-// speakers × female/male × deep/mid/bright pitch. Same-bucket regional codes
-// (en-IE ≈ en-GB, en-NZ ≈ en-AU, …) are kept here so testers can still audition
-// them without flooding the default grid with near-duplicates.
+// speakers. Same-bucket regional codes (en-IE ≈ en-GB, en-NZ ≈ en-AU, …) are
+// kept here so testers can still audition them without flooding the default
+// grid with near-duplicates.
 //
-// Add never invents unpaid licensed voices — every candidate is a real Google
-// Translate `tl` this app already knows how to request. Tapping Add expands one
-// pool seed into three pitch buttons (deep / mid / bright).
+// Every candidate is a real Google Translate `tl` this app already knows how
+// to request, and every one of those speakers is FEMALE — so there is no
+// gender/male variant here any more. Add appends ONE button per candidate;
+// the old deep/mid/bright trio became three identical unprocessed MP3s once
+// pitch reshaping was retired.
 
 import type { StrKey } from './prefs';
 import type { VoiceLocale } from './voice-catalog';
@@ -16,8 +18,8 @@ import type { VoiceChoice } from './voice-capability';
 
 const KEY = 'amoji.voiceExtras.v1';
 
-/** Same order as shipping pitch buttons — keep local to avoid import cycles. */
-const EXTRA_PITCH_TIERS: readonly GttsPitchTier[] = ['deep', 'mid', 'bright'];
+/** Only the natural persona ships: the MP3 is played unprocessed. */
+const EXTRA_PITCH_TIERS: readonly GttsPitchTier[] = ['mid'];
 
 export interface VoiceAddCandidate {
   locale: VoiceLocale;
@@ -40,26 +42,18 @@ export function extraVoiceId(
 /**
  * Optional test voices. Distinct-speaker regions already ship in VOICE_CHOICES;
  * these are alternate region codes Google accepts (often same speaker bucket).
+ * All are female speakers; no male variant exists on this endpoint.
  */
 export const VOICE_ADD_POOL: readonly VoiceAddCandidate[] = [
   { locale: 'en', tl: 'en-IE', deliveryGender: 'female', labelKey: 'voiceRegionIe', note: 'Irish English; same bake-off bucket as en-GB.' },
-  { locale: 'en', tl: 'en-IE', deliveryGender: 'male', labelKey: 'voiceRegionIe', note: 'Irish English male delivery.' },
   { locale: 'en', tl: 'en-ZA', deliveryGender: 'female', labelKey: 'voiceRegionZa', note: 'South African English; same bake-off bucket as en-GB.' },
-  { locale: 'en', tl: 'en-ZA', deliveryGender: 'male', labelKey: 'voiceRegionZa', note: 'South African English male delivery.' },
   { locale: 'en', tl: 'en-NZ', deliveryGender: 'female', labelKey: 'voiceRegionNz', note: 'New Zealand English; same bake-off bucket as en-AU.' },
-  { locale: 'en', tl: 'en-NZ', deliveryGender: 'male', labelKey: 'voiceRegionNz', note: 'New Zealand English male delivery.' },
   { locale: 'en', tl: 'en-HK', deliveryGender: 'female', labelKey: 'voiceRegionHkEn', note: 'Hong Kong English; same bake-off bucket as en-GB.' },
-  { locale: 'en', tl: 'en-HK', deliveryGender: 'male', labelKey: 'voiceRegionHkEn', note: 'Hong Kong English male delivery.' },
   { locale: 'en', tl: 'en-CA', deliveryGender: 'female', labelKey: 'voiceRegionCa', note: 'Canadian English; same bake-off bucket as en-US.' },
-  { locale: 'en', tl: 'en-CA', deliveryGender: 'male', labelKey: 'voiceRegionCa', note: 'Canadian English male delivery.' },
   { locale: 'en', tl: 'en-SG', deliveryGender: 'female', labelKey: 'voiceRegionSg', note: 'Singapore English; same bake-off bucket as en-GB.' },
-  { locale: 'en', tl: 'en-SG', deliveryGender: 'male', labelKey: 'voiceRegionSg', note: 'Singapore English male delivery.' },
   { locale: 'zh', tl: 'zh-HK', deliveryGender: 'female', labelKey: 'voiceRegionHkZh', note: 'Hong Kong Mandarin; same bake-off bucket as zh-CN. Not Cantonese.' },
-  { locale: 'zh', tl: 'zh-HK', deliveryGender: 'male', labelKey: 'voiceRegionHkZh', note: 'Hong Kong Mandarin male delivery. Not Cantonese.' },
   { locale: 'ja', tl: 'ja-JP', deliveryGender: 'female', labelKey: 'voiceRegionJapanese', note: 'ja-JP tag; same speaker as ja.' },
-  { locale: 'ja', tl: 'ja-JP', deliveryGender: 'male', labelKey: 'voiceRegionJapanese', note: 'ja-JP tag male delivery; same speaker as ja.' },
   { locale: 'yue', tl: 'yue-HK', deliveryGender: 'female', labelKey: 'voiceRegionCantonese', note: 'yue-HK tag for Cantonese TTS testing.' },
-  { locale: 'yue', tl: 'yue-HK', deliveryGender: 'male', labelKey: 'voiceRegionCantonese', note: 'yue-HK tag male delivery.' },
 ];
 
 let memory: VoiceChoice[] = [];
@@ -183,9 +177,9 @@ export function remainingVoiceAddCount(
 }
 
 /**
- * Pin the next unused pool entry for this language into the extras list as
- * deep/mid/bright pitch buttons. Returns the mid-tier choice, or null when
- * the pool is exhausted.
+ * Pin the next unused pool entry for this language into the extras list.
+ * Returns the new choice, or null when the pool is exhausted. One button per
+ * candidate: the MP3 is unprocessed, so tier duplicates would be identical.
  */
 export function addNextVoiceExtra(
   locale: VoiceLocale,

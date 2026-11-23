@@ -18,7 +18,11 @@ import { applyPlaybackVolume } from './playback-volume';
 // switch — so this tier guarantees audible speech almost everywhere.
 // Emotion is approximated with playbackRate (excited = faster, sad = slower)
 // since the endpoint has no prosody control; the lead tic is folded into the
-// spoken text. Chunks play one <audio> at a time, chained.
+// spoken text. Pitch is NEVER reshaped: the owner's directive (2026-11-23) is
+// the ORIGINAL TTS audio, playbackRate 1 with normal pitch preservation. The
+// old preservesPitch=false / gender-bias resample made speech sound slurred
+// and made male cards play a pitched-down woman. Chunks play one <audio> at a
+// time, chained.
 // r2026-10-05.99: (a) splitChunks() drops the regex lookbehind — `(?<=…)` is
 // a hard SyntaxError on WebKit before Safari 16.4 (iOS 16.4) and killed the
 // whole voice chain there; manual char scanner now. (b) Each chunk gets a
@@ -49,40 +53,22 @@ const LANG_MAP: Record<Lang, string> = {
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
 /**
- * Pitch bias for the HTTP MP3 tier. That endpoint serves ONE voice per language,
- * so character identity has to come from pitch: a male companion reads deeper,
- * a female one slightly brighter. Bounded tightly — this is resampling, so a
- * large value makes her sound sped up rather than like a different person.
+ * Pitch processing was REMOVED (owner 2026-11-23). This tier now plays the
+ * endpoint's MP3 unchanged: `playbackRate` stays at the emotion rate (1 for
+ * normal speech) and `preservesPitch` is never touched, so the browser keeps
+ * the speaker's natural timbre.
+ *
+ * History, so it is not reintroduced: the endpoint serves ONE female speaker
+ * per `tl`. The app used to set preservesPitch=false and playbackRate 0.64
+ * (male) … 1.72 (female bright) to fake other speakers. That resample shifted
+ * formants and tempo together — the "sound badly" report — and a male card
+ * was a pitched-down woman, the "male voice is female" report. Real timbre
+ * needs a real male source; see voice-capability.ts.
+ *
+ * Web Audio formant filtering is not a substitute: the MP3 response carries
+ * Cross-Origin-Resource-Policy and no ACAO, so MediaElementSource /
+ * decodeAudioData silence it on Chrome and iOS Safari.
  */
-/** Male base — deeper than female. Was 0.76 after #413; owner still heard female. */
-export const PITCH_BIAS_MALE = 0.64;
-/** Female base — brighter. Was 1.22 after #413. */
-export const PITCH_BIAS_FEMALE = 1.30;
-/**
- * Absolute intelligibility floor for male Cantonese only.
- * Leftover after #406/#410/#413: floor sat at male mid and Math.max()
- * lifted deep male into mid — deep≈mid on yue. Keep at GTTS_PITCH_BIAS_MIN.
- */
-export const GTTS_YUE_MALE_PACE_FLOOR = 0.38;
-
-/**
- * pitchBias clamp shared by speakGtts + gtts-timbre.
- * After #425 owner still heard deep≈bright — widen the usable band so
- * selectable tiers can sit near the extremes without chipmunk/slurry audio.
- */
-export const GTTS_PITCH_BIAS_MIN = 0.38;
-export const GTTS_PITCH_BIAS_MAX = 1.72;
-
-/** Effective <audio> playbackRate after emotion rate and gender pitch bias. */
-export function gttsPlaybackRate(rate: number, pitchBias: number, tl: string): number {
-  let r = rate * pitchBias;
-  // Soften extreme male-yue drag only — floor is absolute min, not mid-band.
-  if (tl === 'yue' && pitchBias < 1) {
-    r = Math.max(r, rate * GTTS_YUE_MALE_PACE_FLOOR);
-  }
-  // Floor/ceiling track pitchBias clamp so deep male is not erased at 0.7.
-  return Math.min(GTTS_PITCH_BIAS_MAX, Math.max(GTTS_PITCH_BIAS_MIN, r));
-}
 
 /**
  * Split a line into one request per clause (the service caps near 200 chars;
@@ -245,13 +231,9 @@ export interface GttsOpts {
    */
   onProgress?: (spokenChars: number) => void;
   /**
-   * Shifts the perceived pitch by resampling: the endpoint exposes ONE voice per
-   * language, so without this every character sounds identical and male
-   * characters sound female. Setting preservesPitch=false makes playbackRate
-   * change pitch as well as speed. Bias 1 = unchanged, <1 deeper, >1 higher.
-   * Web Audio formant filtering is deliberately NOT used here: gTTS responses
-   * ship Cross-Origin-Resource-Policy with no ACAO, so MediaElementSource /
-   * decodeAudioData would silence the free tier on Chrome and iOS Safari.
+   * DEPRECATED and ignored. Kept because lib/voice.ts passes its shared
+   * resolver here on every path; that resolver now always returns 1
+   * (lib/gtts-timbre.ts). The MP3 is never resampled — see the header.
    */
   pitchBias?: number;
   /**
@@ -301,7 +283,8 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
   ensureCompanionPlaybackRoute();
   const lang = opts.tl ?? LANG_MAP[opts.lang] ?? 'en-US';
   const rate = clamp(opts.rate ?? 1, 0.88, 1.15);
-  const pitchBias = clamp(opts.pitchBias ?? 1, GTTS_PITCH_BIAS_MIN, GTTS_PITCH_BIAS_MAX);
+  // `opts.pitchBias` is intentionally NOT read: original TTS only. Emotion
+  // still nudges tempo (pitch preserved by the browser), never timbre.
   // Lead (poke laugh / ouch) is its own chunk. It is not glued on with a
   // comma, and every chunk sets playbackRate itself so the laugh cannot
   // leave the following line fast or pitched.
@@ -351,18 +334,9 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
       audio.preload = 'auto';
       currentAudio = audio;
       try { audio.playbackRate = rate; } catch { /* iOS guard */ }
-      // One endpoint voice per language means every character would sound the
-      // same. Let a per-character bias reshape the pitch: with
-      // preservesPitch=false, playbackRate shifts pitch AND tempo, which is how
-      // a deeper/male voice is approximated here. Rate stays bounded so the
-      // line never becomes unintelligibly fast or slow.
-      if (pitchBias !== 1) {
-        try {
-          const el = audio as HTMLAudioElement & { preservesPitch?: boolean };
-          el.preservesPitch = false;
-          el.playbackRate = gttsPlaybackRate(rate, pitchBias, lang);
-        } catch { /* ignore */ }
-      }
+      // Pitch is deliberately untouched: no preservesPitch=false, no resample.
+      // The browser's default (pitch preserved) keeps the endpoint's speaker
+      // natural, which is the owner's "original TTS" directive.
       // r99: a stalled Safari media request used to wedge this chain forever
       // (no error event, no ended) — tier 3 never ran. 10s per-chunk
       // watchdog bails the whole line out so the fallthrough can speak.
