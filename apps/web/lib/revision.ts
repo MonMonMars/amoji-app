@@ -555,7 +555,16 @@
 // mid-line MP3 failure handed the tail to speechSynthesis (no setSinkId) while
 // the mic held play-and-record, so it landed on the communications device; the
 // synth fallback is now skipped while the mic routing latch is active.
-export const APP_REVISION = 'r2026-11-19.292';
+// r2026-11-19.294: the combined landing of #579 + #581 + #580. One coherent
+// stamp for three separately-claimed branches (.292 voice, .293 background
+// sound, plus the .291 poke work already on main); .291/.292/.293 each belong
+// to a single PR and would collide if reused. Behaviour added on top of .292:
+// (a) Settings → Background sound — one persisted switch (`amoji.bgm-mute.v1`)
+// that hard-mutes the procedural band + piano, the song-bed/stream loops and
+// the ambient scene beds, while her spoken voice (a different audio system, in
+// lib/voice.ts) keeps playing; (b) a translucent bottom-strong scrim behind
+// the chat history so the words stay legible over the animated backdrop.
+export const APP_REVISION = 'r2026-11-19.294';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

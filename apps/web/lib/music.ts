@@ -21,6 +21,7 @@ import {
 } from './audio-output';
 import { DEFAULT_VOLUME, isVolumeStep, volumeLinear, type VolumeKey } from './audio-levels';
 import { isMasterMuted } from './master-mute';
+import { backgroundSoundOnFactor, subscribeBackgroundSound } from './background-sound';
 import { assetUrl } from './asset';
 import { clearSpeechLevel, feedSpeechLevel } from './speech';
 import { readVocalFrame } from './vocal-envelope';
@@ -213,7 +214,7 @@ export function startMusic(characterId: string): void {
   try { void ac.resume(); } catch { /* ignore */ }
   ctx = ac;
   const gain = ac.createGain();
-  gain.gain.value = theme.volume * volumeLinear('bgmVol');
+  gain.gain.value = theme.volume * volumeLinear('bgmVol') * backgroundSoundOnFactor();
   baseBgm = theme.volume;
   master = gain;
   // Tap the scheduled band so the same onset/BPM tracker used for clips can
@@ -313,8 +314,10 @@ function stepLinear(step: number | undefined, key: VolumeKey): number {
 /** Re-apply the settings BGM step to a track that is already playing. */
 export function applyBgmLevel(step?: number): void {
   const k = stepLinear(step, 'bgmVol');
-  if (master) master.gain.value = baseBgm * k;
-  if (pianoMaster) pianoMaster.gain.value = basePiano * k;
+  const on = backgroundSoundOnFactor();
+  if (master) master.gain.value = baseBgm * k * on;
+  if (pianoMaster) pianoMaster.gain.value = basePiano * k * on;
+  // writeClipGain applies `on` itself (WebAudio gain + element mute).
   if (clipVolumeKey === 'bgmVol') writeClipGain(k);
 }
 
@@ -323,6 +326,50 @@ export function applyDialogueLevel(step?: number): void {
   if (clipVolumeKey !== 'voiceVol') return;
   const k = stepLinear(step, 'voiceVol');
   writeClipGain(k);
+}
+
+/**
+ * Settings → Background sound: silence every live music source at once.
+ * Called synchronously from the toggle's CustomEvent, so a loop that is
+ * already scheduling notes ducks inside the click. Unmuting restores the same
+ * nodes at the stored BGM step — nothing restarts, nothing is re-fetched, and
+ * the character's spoken voice is untouched (it never goes through here).
+ */
+export function applyBackgroundSoundMute(): void {
+  const on = backgroundSoundOnFactor();
+  if (master) {
+    try { master.gain.value = baseBgm * volumeLinear('bgmVol') * on; } catch { /* closed */ }
+  }
+  if (pianoMaster) {
+    try { pianoMaster.gain.value = basePiano * volumeLinear('bgmVol') * on; } catch { /* closed */ }
+  }
+  if (clipGain || clipEl) {
+    try { applyActiveClipGain(); } catch { /* closed */ }
+  }
+}
+
+/**
+ * Diagnostic: live gain of each music stage, plus the song-bed / stream
+ * element state. Used by tests; never read by playback.
+ */
+export function backgroundSoundSnapshot(): {
+  band: number;
+  piano: number;
+  clip: number;
+  bedVolume: number;
+  bedMuted: boolean;
+} {
+  const read = (node: GainNode | null): number => {
+    if (!node) return 0;
+    try { return node.gain.value; } catch { return 0; }
+  };
+  let bedVolume = 0;
+  let bedMuted = false;
+  if (clipEl) {
+    try { bedVolume = clipEl.volume; } catch { /* stub */ }
+    try { bedMuted = clipEl.muted; } catch { /* stub */ }
+  }
+  return { band: read(master), piano: read(pianoMaster), clip: read(clipGain), bedVolume, bedMuted };
 }
 
 function haltPiano(): void {
@@ -355,7 +402,7 @@ export function startPiano(characterId: string): void {
   pianoCtx = ac;
   const gain = ac.createGain();
   basePiano = Math.min(0.4, theme.volume * 3.2);
-  gain.gain.value = basePiano * volumeLinear('bgmVol');
+  gain.gain.value = basePiano * volumeLinear('bgmVol') * backgroundSoundOnFactor();
   gain.connect(ac.destination);
   pianoMaster = gain;
   const eighth = 60 / theme.bpm / 2;
@@ -489,9 +536,14 @@ function primeLibraryBedPlayback(): void {
 }
 
 function writeClipGain(stepLinear: number): void {
-  const g = clipBase * stepLinear * duck;
+  const g = clipBase * stepLinear * duck * backgroundSoundOnFactor();
   if (clipGain) clipGain.gain.value = Math.max(0, g);
-  if (clipEl) clipEl.volume = Math.max(0, Math.min(1, g));
+  if (clipEl) {
+    clipEl.volume = Math.max(0, Math.min(1, g));
+    // Hard kill for the HTMLAudio path (song-bed / stream loops) — volume 0
+    // alone still sends samples on some engines.
+    try { clipEl.muted = g <= 0; } catch { /* non-DOM Audio stub */ }
+  }
 }
 
 function applyActiveClipGain(): void {
@@ -688,6 +740,9 @@ function playClipElement(url: string, token: number, characterId: string): boole
     // Own this element so duckExternalAudioForCompanion / pauseForeignPageMedia
     // never pause the song/dance bed when companion TTS starts (Pixel: no volume dip).
     try { audio.dataset.amojiAudio = '1'; } catch { /* non-DOM Audio stubs */ }
+    // Marked separately: Settings → Background sound Mute owns this element, so
+    // master-unmute / tab-return blanket restores must not un-mute it.
+    try { audio.dataset.amojiBgm = '1'; } catch { /* non-DOM Audio stubs */ }
     audio.loop = true;
     clipEl = audio;
     applyActiveClipGain();
@@ -905,4 +960,12 @@ export function startLibraryPerformance(
  */
 export function duckLibraryBed(_amount = 0.28, _ms = 4200): void {
   /* no auto duck / boost — voice and BGM keep steady levels */
+}
+
+// Settings → Background sound: already-playing band / piano / song-bed loops
+// duck on the event itself (same click), not on the next start.
+if (typeof window !== 'undefined') {
+  subscribeBackgroundSound(() => {
+    try { applyBackgroundSoundMute(); } catch { /* ignore */ }
+  });
 }

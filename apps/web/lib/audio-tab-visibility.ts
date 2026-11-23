@@ -9,6 +9,7 @@ import {
 } from './audio-output';
 import { applyPlaybackVolume } from './playback-volume';
 import { isMasterMuted } from './master-mute';
+import { isBackgroundSoundMuted } from './background-sound';
 
 export const VISIBILITY_RESUME_DEBOUNCE_MS = 280;
 
@@ -57,6 +58,8 @@ function restoreCompanionMediaLevels(): void {
   document.querySelectorAll('audio, video').forEach((el) => {
     if (!(el instanceof HTMLMediaElement)) return;
     if (el.dataset.amojiAudio !== '1' && !el.closest('[data-amoji-audio-root]')) return;
+    // Settings → Background sound owns the song-bed / stream element.
+    if (el.dataset.amojiBgm === '1' && isBackgroundSoundMuted()) return;
     try {
       el.muted = false;
       applyPlaybackVolume(el);
