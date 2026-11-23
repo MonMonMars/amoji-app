@@ -3,12 +3,13 @@
  * insurance / gesture "robot" clips. Owner regression many times
  * (robot+female double, then robot-only forever).
  *
- * After #431 removed insurance + OS synth, cards went fully silent when
- * gTTS/Edge failed. Restore path: retry Edge/gTTS once — never OS robot
- * synth as primary, never insurance double.
+ * After #431 removed insurance the cards went fully silent when gTTS/Edge
+ * failed. The device voice is now allowed as the TERMINAL hop only (it runs
+ * after both network tiers rejected, so it cannot overlap them); audible
+ * insurance clips stay banned.
  *
- * CI MUST FAIL if audible insurance or synthSpeak is reintroduced on
- * card greet / preview paths.
+ * CI MUST FAIL if audible insurance is reintroduced, or if synthSpeak can run
+ * on card greet / preview while another tier is still in flight.
  */
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -44,23 +45,28 @@ describe('card greet — no audible insurance (permanent)', () => {
     expect(body).not.toContain('startInsurance');
     expect(body).not.toContain('saveWithInsuranceThenMaybeSynth');
     expect(body).not.toContain('CARD_GREET_INSURANCE');
-    expect(body).toContain('greeting skip synth robot');
-    expect(body).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?synthSpeak\(/);
+    // Device voice is the terminal hop only — not primary, and never while
+    // the MP3 tier is still pending.
+    expect(body).toContain('const auditionSynth');
+    expect(body).toMatch(/const auditionSynth = \(tag: string\): void => \{[\s\S]*?if \(stale\(\) \|\| spokenBy\) return;/);
+    expect(body).not.toContain('skip synth robot');
     expect(body).not.toMatch(/clipFile\s*\(\s*lang\s*,/);
     expect(body).not.toContain('nextGreetingKind()');
     expect(body).not.toContain('greetingText(');
     expect(body).not.toMatch(/setTimeout\([\s\S]*?stopVoiceClip\(\)[\s\S]*?,\s*220\)/);
   });
 
-  it('playVoiceGreeting prefers gTTS/Edge; retries neural — never OS synthSpeak', () => {
+  it('playVoiceGreeting prefers gTTS/Edge; device voice only after both fail', () => {
     const body = fnBody('playVoiceGreeting', 'export function previewLibraryClip');
     expect(body).toContain('speakGtts(');
     // Helper may be declared before speakGtts; calls must still refuse while pending.
     expect(body).toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?if \(spokenBy \|\| gttsPending\) return;/);
     expect(body).toContain('greeting neural retry');
-    expect(body).toContain('greeting skip synth robot');
+    expect(body).not.toContain('skip synth robot');
     expect(body).toContain('resetEdgeHealth');
-    expect(body).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?synthSpeak\(/);
+    // Synth may only be reached from the fallbacks, never the primary path.
+    expect(body).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]{0,80}?synthSpeak\(/);
+    expect(body).toContain('auditionSynth(tag)');
     expect(body).toMatch(/if \(gttsPending\)/);
     expect(body).toMatch(/edgeGrace = setTimeout\([\s\S]*?if \(spokenBy \|\| gttsPending\) return;[\s\S]*?runSynthAudition/);
     expect(body).toMatch(/greeting gtts failed[\s\S]*runSynthAudition\('greeting fallback'\)/);
@@ -81,8 +87,9 @@ describe('card greet — no audible insurance (permanent)', () => {
     expect(body).not.toContain('saveWithInsuranceThenMaybeSynth');
     expect(body).not.toContain('CARD_GREET_INSURANCE');
     expect(body).toContain('preview neural retry');
-    expect(body).toContain('preview skip synth robot');
-    expect(body).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]*?synthSpeak\(/);
+    expect(body).not.toContain('skip synth robot');
+    expect(body).toContain('const auditionSynth');
+    expect(body).not.toMatch(/const runSynthAudition = \(tag: string\) => \{[\s\S]{0,80}?synthSpeak\(/);
     expect(body).not.toMatch(/clipFile\s*\(\s*locale\s*,/);
     expect(body).not.toContain('nextGreetingKind()');
     expect(body).not.toMatch(/setTimeout\([\s\S]*?stopVoiceClip\(\)[\s\S]*?,\s*220\)/);

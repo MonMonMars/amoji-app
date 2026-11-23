@@ -397,6 +397,24 @@ export function browserVoicesForLang<T extends { lang: string }>(voices: readonl
   });
 }
 
+/**
+ * The synth voices a companion language is allowed to use: same-language only.
+ *
+ * `pickVoice()` used to fall back to the WHOLE installed list when no voice
+ * matched the language (`byLang.length ? byLang : cached`). On a Hong Kong
+ * device that has zh-HK but no zh-CN / ja pack, a Mandarin or Japanese line
+ * was spoken by the Cantonese or an English voice — the owner's "some other
+ * language happens to be at another speaker" report. An empty pool is the
+ * honest answer: the utterance keeps `lang` set, so the platform's own engine
+ * picks the right voice (or stays silent) instead of borrowing a foreign one.
+ *
+ * Documented exception: VOICE_MATRIX may still name a same-language substitute
+ * (yue -> zh-TW Mei-Jia) because that is a deliberate, per-locale decision.
+ */
+export function synthVoicePool<T extends { lang: string }>(voices: readonly T[], locale: string): T[] {
+  return browserVoicesForLang(voices, locale);
+}
+
 /** speechSynthesis name substrings, best first, for this locale and gender. */
 export function synthNameList(locale: string, gender: VoiceGender): string[] {
   const lang = (locale === 'yue' || locale === 'zh' || locale === 'ja' || locale === 'en' ? locale : 'en') as VoiceLocale;
