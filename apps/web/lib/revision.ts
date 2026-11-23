@@ -469,6 +469,16 @@
 // r2026-11-19.278: Settings TTS-001-218 keep/delete catalog.
 // r2026-11-19.279: demo 時間 chip — local + world cities via Intl, sayLocal only (#530).
 // r2026-11-19.280: plant Mixamo C14/C15/C16/C18 idle VRMAs (toe-ground, owner 採用).
+// r2026-11-19.285: voice, beat-sync and asset cleanup train. The audition
+// chain now ends in the device voice for every locale - gTTS, then Edge,
+// then speechSynthesis is the terminal order - so a locale pack that fails
+// to load can no longer hand Japanese text an English voice, and card
+// greet/preview is never silent when the last hop refuses device synth.
+// Singing and dancing follow the audio: RMS amplitude drives the jaw and
+// vowel visemes and spectral-flux onsets steer the VRM dance timeScale and
+// root accents instead of a wall clock, while listen-only stays still. Six
+// VRMA clips drop leftover FBX image/material blocks that 404-spammed the
+// console, and the docs carry the corrected r284 merge state.
 // r2026-11-19.284: Cantonese Edge pool limited to WanLung / HiuMaan / HiuGaai
 // (owner 2026-11-22); every yue matrix names its Edge voice first and Sin-ji /
 // Sin-ju + generic Female/Male as the OS fallback, so male companions keep a
@@ -481,7 +491,7 @@
 // are no longer re-added by the owner 採用 list), C14/C15 get switchable off-rail
 // toggle rows, manifest dedupes IdleMixamoHappy + emits off-rail clips with owner
 // inUse, and ID### ↔ C## ↔ clipId bridges owner-picker notes.
-export const APP_REVISION = 'r2026-11-19.284';
+export const APP_REVISION = 'r2026-11-19.285';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
