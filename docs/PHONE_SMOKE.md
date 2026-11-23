@@ -1,11 +1,35 @@
 # Phone smoke (live Pages)
 
 **Live:** https://monmonmars.github.io/amoji-app/  
-**Tip on main:** `r2026-11-19.288` (= live · `b053ccd2`) · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
-**Purpose:** Human-only checks after #419–#437 + #458 + r271–r280. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
+**Tip on main:** `r2026-11-19.290` · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
+**Purpose:** Human-only checks after #419–#437 + #458 + r271–r290. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
 Owner: “getting worst” / “nothing fixed” — **do not mark R10–R13 Done** until this pass.
 
 Tick on a real phone (prefer iPhone Safari). **Mandatory once:** hard refresh, tap **Refresh** on the “Update ready” chip if shown, or remove home-screen icon and re-add so the service worker picks up the current **`APP_REVISION`** cache (stale shells hid recent fixes). Then idle prefs **v6** (`IdleQuaterniusHuman` default — not RPM F) and voice sink land.
+
+## Priority now — the two r290 owner regressions
+
+Both were reported on live **r289** on 2026-11-23 and are **not** phone-verified yet.
+
+### 1. Poke front/back lean (r290)
+
+The axial lean was inverted: a poke from the **front** made her recoil **backwards**, away from the finger, and the same held for a poke from behind. Lateral (screen-left/right) pokes were already correct. The lean now tips **toward the poked side** on all four directions.
+
+- [ ] Poke her from the **front** (finger toward her chest/face): does her upper body tip **toward you / toward the finger**, not away?
+- [ ] Poke her from **behind** (finger on the far side of her back): does she lean **backward, into that side**?
+- [ ] Poke **screen-left**, then **screen-right** — those must be unchanged (she still leans to that same side)
+- [ ] Does the **impact sound** still land the same instant as the recoil?
+- [ ] Report: `ROW: poke-frontback DEVICE: <model>` + toward / away, and which of the four directions is wrong
+
+### 2. Chat voice — intermittent silence (r290)
+
+Owner: “sometimes has voice, but mostly has no voice.” The speaker is a serial queue, and a reply whose TTS tier neither started audio nor failed left the queue latched **forever**, so every later reply queued behind a dead line and only a reload brought her voice back. A line with no audio-START of its own is now cut after 12 s and released to the next one; a backgrounded `<audio>` also resumes on tab show instead of staying paused.
+
+- [ ] Send **five** chat messages in a row, waiting for each reply to finish: does **every** reply speak, not just the first one or two?
+- [ ] Lock the phone (or switch apps) **mid-reply**, wait 5 s, come back: does she **resume / finish** the reply rather than staying silent?
+- [ ] Poke her, then immediately **send a new message** while her reaction/continuation is pending: does the new reply **speak**?
+- [ ] After one silent reply, send another: does voice **come back on its own** (no reload)?
+- [ ] Report: `ROW: chat-voice-serial DEVICE: <model>` + which reply went silent (1st / 2nd / after background / after poke)
 
 ## Priority now — the four long-standing bugs (r285–r288)
 
@@ -204,7 +228,7 @@ Hard-refresh until live **`revision.txt`** ≥ **r2026-11-19.280**. Every PR in 
 
 | Check | Result |
 | --- | --- |
-| `main` tip | **`b053ccd2`** = **r2026-11-19.288** (`verify:live` must match) |
+| `main` tip | **r2026-11-19.290** (`verify:live` must match) |
 | Landed train | r281 #557 · r282 #560 · r283 #558 · r284 #561 · r285 #564 #563 #565 · r286 #562 · r287 #568 #569 #570 #566 #567 · r288 #571 |
 | Closed in r285–r288 | all-language voice buttons · card greet on tap · poke lean/sound/interrupt · singing mouth + dancing beat · dance bounce sign |
 | Outstanding (owner) | the five new rows above · r280 idle planted-vs-float · news · **R10–R13 not Done** |

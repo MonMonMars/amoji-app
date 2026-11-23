@@ -161,15 +161,36 @@ let gapTimer: ReturnType<typeof setTimeout> | null = null;
  * cancelling immediately.
  */
 let pendingReject: ((err: Error) => void) | null = null;
+/** True while a tab hide owns the pause, so the show seam knows to resume. */
+let pausedByHide = false;
 
 /** Pause in-flight chunk when the tab is hidden (chain stays alive). */
 export function pauseGttsForTabHide(): void {
   if (!currentAudio) return;
+  pausedByHide = true;
   try { currentAudio.pause(); } catch { /* ignore */ }
+}
+
+/**
+ * Resume the chunk a tab hide paused. Without this the paused <audio> kept the
+ * serial speaker and the line only ended when the 10s stall watchdog fired -
+ * the phone "she went silent" report after the screen locked or the user
+ * checked another app mid-sentence. Playback already started before the pause,
+ * so resuming needs no new user gesture.
+ */
+export function resumeGttsForTabShow(): void {
+  if (!pausedByHide) return;
+  pausedByHide = false;
+  const audio = currentAudio;
+  if (!audio) return;
+  try {
+    if (audio.paused) void audio.play().catch(() => undefined);
+  } catch { /* ignore */ }
 }
 
 export function stopGtts(): void {
   generation++;
+  pausedByHide = false;
   clearSpeechCaption();
   if (gapTimer) { clearTimeout(gapTimer); gapTimer = null; }
   const reject = pendingReject;
@@ -193,6 +214,7 @@ export function stopGtts(): void {
  */
 function beginGttsGestureLine(): number {
   generation++;
+  pausedByHide = false;
   clearSpeechCaption();
   if (gapTimer) { clearTimeout(gapTimer); gapTimer = null; }
   const reject = pendingReject;

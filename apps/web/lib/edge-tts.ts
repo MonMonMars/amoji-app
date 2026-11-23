@@ -322,14 +322,33 @@ let currentAudio: HTMLAudioElement | null = null;
 // playback MUST also settle it: otherwise its 4.5s timeout fires .catch()
 // later and a stale, already-replaced line gets spoken out of nowhere.
 let pendingReject: ((err: Error) => void) | null = null;
+/** True while a tab hide owns the pause, so the show seam knows to resume. */
+let edgePausedByHide = false;
 
 /** Pause in-flight neural audio when the tab is hidden. */
 export function pauseEdgeForTabHide(): void {
   if (!currentAudio) return;
+  edgePausedByHide = true;
   try { currentAudio.pause(); } catch { /* ignore */ }
 }
 
+/**
+ * Resume the neural mp3 a tab hide paused. Same failure as the gTTS tier: the
+ * paused element held the serial speaker with no resume path, so the reply
+ * ended silent when the user came back to the tab.
+ */
+export function resumeEdgeForTabShow(): void {
+  if (!edgePausedByHide) return;
+  edgePausedByHide = false;
+  const audio = currentAudio;
+  if (!audio) return;
+  try {
+    if (audio.paused) void audio.play().catch(() => undefined);
+  } catch { /* ignore */ }
+}
+
 export function stopEdge(): void {
+  edgePausedByHide = false;
   if (currentAudio) {
     currentAudio.pause();
     currentAudio.onended = null;
