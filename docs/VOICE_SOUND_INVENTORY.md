@@ -1,10 +1,10 @@
 # Voice / sound accountability inventory
 
-**Generated:** 2026-11-18 (HKT) · **updated 2026-11-22 for r280** — current-state lines below read `r2026-11-19.280` / `99896449`; the 2026-11-18 audit-log rows are kept as dated history.  
+**Generated:** 2026-11-18 (HKT) · **updated 2026-11-23 for r284** — current-state lines below read `r2026-11-19.284` / `9cda0774`; the 2026-11-18 audit-log rows are kept as dated history.  
 **Audience:** Pixel + agents — answer “where did the TTS / SFX / picker work go?”  
 **Honesty rule:** Assets are **not deleted** from git. Silence or “missing” UI is usually **unmerged fix PR**, **stale service worker**, or **regression on `main`**, not lost files.
 
-**Live canary:** [`revision.txt`](https://monmonmars.github.io/amoji-app/revision.txt) · **`main` tip:** `99896449` · **r2026-11-19.280** (verified 2026-11-22)
+**Live canary:** [`revision.txt`](https://monmonmars.github.io/amoji-app/revision.txt) · **`main` tip:** `9cda0774` · **r2026-11-19.284** (verified 2026-11-23)
 
 ---
 
@@ -12,7 +12,7 @@
 
 | Symptom | Real cause | Fix |
 | --- | --- | --- |
-| Card grid / greet **no sound** on phone | Was a regression after merged [#519](https://github.com/MonMonMars/amoji-app/pull/519); fixes [#529](https://github.com/MonMonMars/amoji-app/pull/529) + [#528](https://github.com/MonMonMars/amoji-app/pull/528) + [#547](https://github.com/MonMonMars/amoji-app/pull/547) are **merged** (r249 / r263 / r264) | Hard-refresh to live `r2026-11-19.280`; if still silent, log a `PHONE_SMOKE.md` row |
+| Card grid / greet **no sound** on phone | Was a regression after merged [#519](https://github.com/MonMonMars/amoji-app/pull/519); fixes [#529](https://github.com/MonMonMars/amoji-app/pull/529) + [#528](https://github.com/MonMonMars/amoji-app/pull/528) + [#547](https://github.com/MonMonMars/amoji-app/pull/547) are **merged** (r249 / r263 / r264) | Hard-refresh to live `r2026-11-19.284`; if still silent, log a `PHONE_SMOKE.md` row |
 | Male voice quiet / wrong speaker | Routing fix [#528](https://github.com/MonMonMars/amoji-app/pull/528) **merged** (r263) | Hard-refresh; phone-verify R10 |
 | App still “old” behaviour | Stale SW cache (common at **r220** while live is **r280**) | Amber **Refresh** chip or clear site data · confirm `revision.txt` |
 | Picker previews all same GIF | Distinct previews [#533](https://github.com/MonMonMars/amoji-app/pull/533) — **do not merge**; superseded by #541 (merged r270) | Hard-refresh [owner-resources](https://monmonmars.github.io/amoji-app/docs/owner-resources.html) |
@@ -37,7 +37,7 @@
 | Personality poke lines | `personality-voice.ts` | Y | Y | 384 templates in picker (`#poke` PK rows) |
 | Docs map | `docs/TTS_PIPELINE.md` | Y | Y (`docs/`) | — |
 
-### Cantonese (yue) — three Edge voices + OS fallback (r284 branch)
+### Cantonese (yue) — three Edge voices + OS fallback (r284, merged)
 
 **Owner decision, 2026-11-22 (verbatim intent):** “only use those 3 voice:（WanLung 男 / HiuMaan 女 / HiuGaai 女）”, with **Sin-ji / Sin-ju (Apple)** and Android `zh-HK` retained as the fallback tier. **No paid TTS APIs** — Doubao / Volcano Engine / Speechify were explicitly rejected (proprietary, no third-party licence).
 
@@ -51,7 +51,7 @@
 - **Variety:** with only three Cantonese voices, per-character identity comes from `basePitch` / `baseRate` (OS matrix) and `edge-cast.ts` pitch/rate combos (Edge), not from a fourth speaker.
 - **Male path:** every male `yue` matrix names `WanLung` first, then `Sin-ju`, then the generic `Male` token (Windows Danny). The regression guard is `apps/web/tests/yue-three-voice.test.ts`.
 - **Catalogue:** `apps/web/data/tts-app-voice-picks.json` stays a 218-row keep/delete surface. TTS-001/002/003 are the three playable Edge rows (all `preferred`); the other 23 yue-tagged rows keep their evidence note and add “not wired and not planned under the current no-paid-API decision”.
-- **Status:** code + docs on `cursor/yue-three-voice-0340-0eac` (**r2026-11-19.284**) — **not merged**, no Pages deploy. Phone smoke still required; only the owner can mark voice quality Done.
+- **Status:** merged into `main` at `9cda0774` (**r2026-11-19.284**, #561); Pages is live on r284. Phone smoke still required; only the owner can mark voice quality Done.
 
 ### Merged voice PRs (recent, on `main`)
 
@@ -159,12 +159,12 @@ Many remote branches (`origin/cursor/card-voice-*`, `voice-*`, `gtts-*`) are **h
 
 ---
 
-## 6. `main` vs GitHub Pages (no gap at r280)
+## 6. `main` vs GitHub Pages (no gap at r284)
 
-| Check | `main` | Live Pages (2026-11-22) |
+| Check | `main` | Live Pages (2026-11-23) |
 | --- | --- | --- |
-| `APP_REVISION` / `revision.txt` | **r2026-11-19.280** | **r2026-11-19.280** ✓ |
-| `sw.js` `CACHE` | `amoji-r2026-11-19.280` | same ✓ |
+| `APP_REVISION` / `revision.txt` | **r2026-11-19.284** | **r2026-11-19.284** ✓ |
+| `sw.js` `CACHE` | `amoji-r2026-11-19.284` | same ✓ |
 | `docs/owner-resources.html` | 18 463 lines | HTTP 200 · ~1.9 MB ✓ |
 | App bundle (card voice fix #529) | **merged** (r249) | **live** |
 | App bundle (#528 speaker / #547 greet) | **merged** (r263 / r264) | **live** |
@@ -190,7 +190,7 @@ Many remote branches (`origin/cursor/card-voice-*`, `voice-*`, `gtts-*`) are **h
 3. **#547** — card greet phrases → **r264** ✓  
 4. **#555** — TTS-001–218 catalog → **r278** ✓  
 5. **#533** — **do not merge** (superseded by #541 / r270) · **#531** docs verify still open  
-6. Owner **hard-refresh** app + picker to `r2026-11-19.280` · run `npm run verify:live` from `apps/web`
+6. Owner **hard-refresh** app + picker to `r2026-11-19.284` · run `npm run verify:live` from `apps/web`
 
 ---
 
@@ -199,11 +199,12 @@ Many remote branches (`origin/cursor/card-voice-*`, `voice-*`, `gtts-*`) are **h
 | Step | Evidence |
 | --- | --- |
 | Repo file scan | `voice*.ts`, `gtts*`, `tts-*`, catalogs, 204+82 MP3 |
+| 2026-11-23 merge check | `origin/main` = `9cda0774` = **r2026-11-19.284**; r281–r284 train merged (#557 #558 #559 #560 #561) |
 | `origin/main` (2026-11-22) | `revision.ts` → **r2026-11-19.280** @ `99896449` |
 | Live curl (2026-11-22) | `revision.txt` **r2026-11-19.280**; `sw.js` CACHE `amoji-r2026-11-19.280`; owner-resources 200 |
 | GitHub | #528 #529 #547 #555 landed; #531 #533 #521 still open (docs/hold) |
 | Manifest | `node` count 522 entries |
-| 2026-11-22 (r284 branch) | Cantonese limited to WanLung/HiuMaan/HiuGaai; OS fallback Sin-ji/Sin-ju + generic Female/Male kept; 218-row catalogue annotations updated; new `yue-three-voice.test.ts`; `APP_REVISION` **r2026-11-19.284** (unmerged branch) |
+| 2026-11-22 (r284) | Cantonese limited to WanLung/HiuMaan/HiuGaai; OS fallback Sin-ji/Sin-ju + generic Female/Male kept; 218-row catalogue annotations updated; new `yue-three-voice.test.ts`; `APP_REVISION` **r2026-11-19.284** — merged to `main` at `9cda0774` (#561) |
 | — historical 2026-11-18 — | `origin/main` was r237; audio PRs #528/#529 then open |
 
 *Maintainers: bump **Generated** date when re-auditing after the next revision train.*

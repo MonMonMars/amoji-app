@@ -1,7 +1,7 @@
 # Agent smoke (no phone required)
 
 **Live:** https://monmonmars.github.io/amoji-app/  
-**Current:** `main` @ `99896449` = **r2026-11-19.280** (r271–r280 train landed)  
+**Current:** `main` @ `9cda0774` = **r2026-11-19.284** (r271–r284 train landed)  
 **Human checklist:** [`PHONE_SMOKE.md`](./PHONE_SMOKE.md) — only the owner can mark **Done**.
 
 ## After every Pages deploy
@@ -16,7 +16,7 @@ npm run verify:agent-smoke   # optional JSON report (sw CACHE + revision.txt)
 Exit `0` means live `revision.txt` matches `APP_REVISION` in `lib/revision.ts`.  
 `verify:agent-smoke` also checks live `sw.js` `CACHE`; steps 3–4 (Refresh chip, clear site data) stay **owner-phone only**.
 
-JSON includes `pixel_train`: the script has a **legacy** `owner_gate_pr` / `owner_gate_note` branch that only fires when live is the old **r237** stamp. Live is now **r2026-11-19.280** and the old #528→#543 ladder is **fully merged** — ignore `owner_gate_pr` whenever `verify:agent-smoke` reports live == `APP_REVISION`. Agents still do **not** merge on the owner's behalf.
+JSON includes `pixel_train`: the script has a **legacy** `owner_gate_pr` / `owner_gate_note` branch that only fires when live is the old **r237** stamp. Live is now **r2026-11-19.284** and the old #528→#543 ladder is **fully merged** — ignore `owner_gate_pr` whenever `verify:agent-smoke` reports live == `APP_REVISION`. Agents still do **not** merge on the owner's behalf.
 
 ## Delivery layer (do not re-ship without owner report)
 

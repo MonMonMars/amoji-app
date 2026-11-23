@@ -1,6 +1,6 @@
 # Pixel merge train — agent handoff (2026-11-18 evening)
 
-> **Historical — do not follow as a queue.** Every PR in this ladder has since landed; live is now **r2026-11-19.280** / `99896449`. Current state: [`PROJECT_STATUS.md`](./PROJECT_STATUS.md) · [`HANDOFF_2026-11-21/STATE.md`](./HANDOFF_2026-11-21/STATE.md).
+> **Historical — do not follow as a queue.** Every PR in this ladder has since landed; live is now **r2026-11-19.284** / `9cda0774`. Current state: [`PROJECT_STATUS.md`](./PROJECT_STATUS.md) · [`HANDOFF_2026-11-21/STATE.md`](./HANDOFF_2026-11-21/STATE.md).
 
 **Live at capture:** https://monmonmars.github.io/amoji-app/ · **`revision.txt`:** **r2026-11-18.237** (live = `main` tip **2026-11-19**)  
 **Coordination branch:** `cursor/no-history-resume-ask-0340` · handoff PR **#544** (later closed unmerged, split into #549–#551)  

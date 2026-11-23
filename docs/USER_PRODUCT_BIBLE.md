@@ -4,7 +4,7 @@
 
 **Last reviewed:** 2026-11-22 (Asia/Hong_Kong)  
 **Demo:** https://monmonmars.github.io/amoji-app/  
-**`main` tip:** `99896449` · **`APP_REVISION` `r2026-11-19.280`** · `npm run verify:live` in `apps/web` = OK  
+**`main` tip:** `9cda0774` · **`APP_REVISION` `r2026-11-19.284`** · `npm run verify:live` in `apps/web` = OK  
 **Current handoff pack:** [`HANDOFF_2026-11-21/`](./HANDOFF_2026-11-21/README.md) (state + binding constraints; 2026-11-19 folder is frozen history)
 **Request log:** [`../OWNER_REQUEST_LOG.md`](../OWNER_REQUEST_LOG.md) + `/cursor/stores/self/OWNER_REQUEST_LOG.md` — every owner ask, same turn.  
 **Resource library:** [`OWNER_RESOURCE_LIBRARY.md`](./OWNER_RESOURCE_LIBRARY.md) + `apps/web/lib/owner-resource-manifest.ts` + [`MISTAKE_LIBRARY.md`](./MISTAKE_LIBRARY.md) + [`DATA_ORGANIZATION.md`](./DATA_ORGANIZATION.md).  
@@ -79,7 +79,7 @@
 | Docs tip after #399–#403 product ship | #404 |
 | Docs tip / Pages after #399–#404 | #405 |
 | No history-resume ask (code) | #331 / #366 / #412 |
-| In-chat idle picker with C-codes (code) | **r282** stacked branch `cursor/idle-picker-c-numbers-0340-0eac` — button beside canvas, C14/C15/C16/C18 + C156–C165, tap = pin, Auto rotation unpins. **Phone picker smoke Outstanding.** |
+| In-chat idle picker with C-codes (code) | **r282** merged (#560) on `main` — button beside canvas, C14/C15/C16/C18 + C156–C165, tap = pin, Auto rotation unpins. **Phone picker smoke Outstanding.** |
 | iPhone chat TTS + mic + first-phase latch (code) | #553 / **r271** |
 | 8-way full-body poke + gendered poke voice (code) | #554 / **r272** |
 | Owner **採用** runtime for idle/poke (code) | #543 / **r273** (supersedes #524) |
@@ -100,7 +100,7 @@
 | Card greet — no sound / robot | #420+#431 on `main`; **phone** until audible one neural voice (no insurance reintroduce). **Not Done.** |
 | News same-old / repeat | #421+#428 on `main`; **phone** until rotates / fresh longer tell. **Not Done.** |
 | Voice pitch/male/sink (R10) | #406+#410+#413+#424+#425+#437+#429. **Still Outstanding until phone** — Edge may 403 without proxy. **Not Done.** |
-| Cantonese 3-voice pool (r284 branch) | `cursor/yue-three-voice-0340-0eac` / **r2026-11-19.284** — Edge `yue` limited to WanLung (M) / HiuMaan (F, calmer) / HiuGaai (F, brighter); OS fallback Sin-ji / Sin-ju + Android `zh-HK` intact; no paid TTS APIs. Guard `yue-three-voice.test.ts`. **Branch only — not merged.** **Phone** until hear. **Not Done.** |
+| Cantonese 3-voice pool | `cursor/yue-three-voice-0340-0eac` / **r2026-11-19.284**, merged into `main` at `9cda0774` (#561) — Edge `yue` limited to WanLung (M) / HiuMaan (F, calmer) / HiuGaai (F, brighter); OS fallback Sin-ji / Sin-ju + Android `zh-HK` intact; no paid TTS APIs. Guard `yue-three-voice.test.ts`. **Phone** until hear. **Not Done.** |
 | Idle pose still bad (R11) | #415+#419+#422+#430+#432+#543+#545+#548+**#556 / r280 planted Mixamo C14/C15/C16/C18** on `main` — **phone smoke**: planted or floating? **Not Done.** |
 | Lighting unify (R12) | #408 on `main` — **phone smoke**. **Not Done.** |
 | Poke lean direction (R13) | #409+#434 on `main` — **phone verify**; do not flip ±leanSide without device evidence. **Not Done.** |
@@ -109,7 +109,7 @@
 | Talk repeats / double-speak residual | #399 / #386 — **phone** |
 | Phone smoke on live demo | **Human** — [`PHONE_SMOKE.md`](./PHONE_SMOKE.md). Match footer to [`revision.txt`](https://monmonmars.github.io/amoji-app/revision.txt); tap amber **Refresh** if shown. **Not Done** until owner ticks. |
 | SFX #1–23 Want/archive/delete (R1/R2) | Map documented in [`SFX_WANT_LIST.md`](./SFX_WANT_LIST.md) — no new deletes without owner map |
-| Stale “nothing fixed” on phone | Delivery #458–#462 + r271–r280 on `main` — owner must refresh once to **`r2026-11-19.280`** before judging card/voice/poke/idle code. |
+| Stale “nothing fixed” on phone | Delivery #458–#462 + r271–r284 on `main` — owner must refresh once to **`r2026-11-19.284`** before judging card/voice/poke/idle code. |
 
 ### Hold
 
@@ -138,8 +138,8 @@
 
 | Date (HKT) | Change |
 |------------|--------|
-| 2026-11-22 r282 | Owner idle picker: small button beside the companion in `/chat` → C-coded list (owner 採用 C14/C15/C16/C18 + new Shapeweld C156–C160/C164/C165), tap = pin + live swap, Auto rotation unpins, pin persists (`amoji.idlePick.v6`). 7 Shapeweld VRMAs picker-only (curated rail stays 39); 11 universal CMA reaction SFX appended. **Stacked:** docs → idle-rail-honesty (r281) → idle-picker (r282). Phone picker smoke Outstanding. |
-| 2026-11-22 | **Cantonese 3-voice decision** (owner): Edge `yue` = WanLung / HiuMaan / HiuGaai only; Apple Sin-ji / Sin-ju + Android `zh-HK` stay as the fallback tier; paid TTS APIs declined. Code + tests + catalogue annotations on `cursor/yue-three-voice-0340-0eac` (**r284, unmerged**); voice Quality still phone Outstanding. |
+| 2026-11-22 r282 | Owner idle picker: small button beside the companion in `/chat` → C-coded list (owner 採用 C14/C15/C16/C18 + new Shapeweld C156–C160/C164/C165), tap = pin + live swap, Auto rotation unpins, pin persists (`amoji.idlePick.v6`). 7 Shapeweld VRMAs picker-only (curated rail stays 39); 11 universal CMA reaction SFX appended. **Merged:** r281 #557 → r282 #560 into `main` at `9cda0774`. Phone picker smoke Outstanding. |
+| 2026-11-22 | **Cantonese 3-voice decision** (owner): Edge `yue` = WanLung / HiuMaan / HiuGaai only; Apple Sin-ji / Sin-ju + Android `zh-HK` stay as the fallback tier; paid TTS APIs declined. Code + tests + catalogue annotations merged into `main` at `9cda0774` (**r284, #561**); voice Quality still phone Outstanding. |
 | 2026-11-22 | Docs sync to **r280** / `99896449`: header, Done r271–r280, R11 row now names planted Mixamo; folded 2026-11-21 handoff pack into `docs/HANDOFF_2026-11-21/` (docs-only, no revision bump). |
 | 2026-11-16 ~14:05 | Tip `4463e647` / **r167**; delivery #458–#462 live; `verify:live` OK; **Phase B frozen** until owner smoke failures |
 | 2026-11-16 ~08:35 | **Frozen order pack:** `07dd76e3` card + P1 voice sink pin + P4 R12 cast shader + P3 poke #455 arm + P5 resource/mistake/data libs — **phone Outstanding unchanged** |

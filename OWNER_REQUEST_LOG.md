@@ -8,7 +8,7 @@
 
 **Owner ask (verbatim intent):** "how about add small button beside the character in the chat room, and let me press and select one by one, give each of them a number C18, C16. etc."
 
-**Repo state at logging:** docs fast-forwarded on `main` (`764f8bb7` = r280 docs). Work stacks on `cursor/idle-rail-honesty-0340-0eac` (r281) → `cursor/idle-picker-c-numbers-0340-0eac` (**r2026-11-19.282**). Merge order: docs → idle-rail-honesty → idle-picker.
+**Repo state at logging:** docs fast-forwarded on `main` (`764f8bb7` = r280 docs). The stack has since merged into `main` at `9cda0774`: `cursor/idle-rail-honesty-0340-0eac` (#557, r281) → `cursor/idle-picker-c-numbers-0340-0eac` (#560, **r2026-11-19.282**). Merged in order docs → idle-rail-honesty → idle-picker.
 
 **Shipped in r282 (code):**
 - Small idle button beside the companion canvas (`components/IdlePickerSheet.tsx`), bottom sheet with one row per idle.
@@ -32,7 +32,7 @@
 - No Apple Enhanced/Premium download guidance.
 - Variety now comes from `basePitch` / `baseRate`, not a fourth speaker.
 
-**Branch:** `cursor/yue-three-voice-0340-0eac` from `main` `764f8bb7` · **r2026-11-19.284** · guard `apps/web/tests/yue-three-voice.test.ts`. **Not merged; do not merge on the owner's behalf.** Voice quality still needs a real-phone check (`PHONE_SMOKE.md`).
+**Branch:** `cursor/yue-three-voice-0340-0eac` from `main` `764f8bb7` · **r2026-11-19.284** · guard `apps/web/tests/yue-three-voice.test.ts`. **Merged into `main` at `9cda0774` (r284, PR #561); Pages is live on r284.** Voice quality still needs a real-phone check (`PHONE_SMOKE.md`) — not Done.
 
 ## 2026-11-22 — r280 docs sync + 2026-11-21 handoff pack folded into repo
 
