@@ -168,8 +168,12 @@ export type StrKey =
   | 'softLandSelect' | 'softLandStory' | 'softLandChat'
   // brain routing removed with the Settings Brain section (r2026-10-06.136)
   // voice self-test + diagnostics (r2026-10-04.75)
-  | 'testVoice' | 'testVoiceBtn' | 'voiceBlockedHint' | 'voiceVolume'
+  | 'testVoice' | 'testVoiceBtn' | 'voiceBlockedHint'   | 'voiceVolume'
   | 'sfxVolume' | 'bgmVolume'
+  // Settings → Background sound: mute non-speech music + ambience only.
+  // Appended here (not at the tail) because it belongs to the audio-toggle
+  // family; the label is the owner's own phrase.
+  | 'backgroundSound' | 'backgroundSoundHint'
   // ChatGPT-style emotional TTS tier (r2026-10-05.112)
   | 'openaiVoice' | 'openaiVoiceHint' | 'openaiKeyPlaceholder' | 'openaiEndpointPlaceholder' | 'openaiCostHint'
   // HTTP TTS proxy for wss-blocked networks (r2026-10-06.131)
@@ -711,6 +715,15 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   voiceVolume: { en: 'Dialogue volume', yue: '對白音量', zh: '对白音量', ja: 'セリフ音量' },
   sfxVolume: { en: 'Sound effects', yue: '音效', zh: '音效', ja: '効果音' },
   bgmVolume: { en: 'Background music', yue: '背景音樂', zh: '背景音乐', ja: 'BGM' },
+  // Owner's own words: "allow user mute the background sound". This switch
+  // kills music + ambience only; her spoken voice is untouched.
+  backgroundSound: { en: 'Background sound', yue: '背景聲', zh: '背景音', ja: 'BGM・環境音' },
+  backgroundSoundHint: {
+    en: 'Mute music and ambience. Her voice keeps playing.',
+    yue: '靜音背景音樂同環境聲。佢把聲照樣出。',
+    zh: '静音背景音乐与环境音。她的声音照常播放。',
+    ja: 'BGMと環境音をミュート。彼女の声はそのまま聞こえます。',
+  },
   testVoiceBtn: { en: '▶ Play', yue: '▶ 播一次', zh: '▶ 播放', ja: '▶ 再生' },
   voiceBlockedHint: {
     en: "No sound was heard — check the phone's silent switch and volume, then press Play again. If it's still silent, turn Voice replies off and on once.",

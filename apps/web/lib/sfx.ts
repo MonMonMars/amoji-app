@@ -22,6 +22,9 @@ import type { MoveKind } from './moves';
 import { createDefaultAudioContext } from './audio-output';
 import { DEFAULT_VOLUME, isVolumeStep, volumeLinear } from './audio-levels';
 import { isMasterMuted, subscribeMasterMute } from './master-mute';
+import {
+  backgroundSoundOnFactor, isBackgroundSoundMuted, subscribeBackgroundSound,
+} from './background-sound';
 
 // ---------------------------------------------------------------------------
 // pure data — node-testable
@@ -111,9 +114,9 @@ export function ambientPlaying(): boolean {
 
 /** Re-apply the settings SFX step without restarting the bed. */
 export function applySfxLevel(step?: number): void {
-  const g = typeof step === 'number'
+  const g = (typeof step === 'number'
     ? (isVolumeStep(step) ? step : DEFAULT_VOLUME) / 100
-    : volumeLinear('sfxVol');
+    : volumeLinear('sfxVol')) * backgroundSoundOnFactor();
   if (!current || !ac) return;
   try { current.handle.master.gain.value = g; } catch { /* closed */ }
 }
@@ -378,19 +381,29 @@ export function ambientStart(sceneId: string): void {
   ambientStop();
   const master = c.createGain();
   master.gain.setValueAtTime(0, c.currentTime);
-  master.gain.linearRampToValueAtTime(volumeLinear('sfxVol'), c.currentTime + 2.5);
+  master.gain.linearRampToValueAtTime(
+    volumeLinear('sfxVol') * backgroundSoundOnFactor(),
+    c.currentTime + 2.5,
+  );
   master.connect(c.destination);
   const timers: ReturnType<typeof setTimeout>[] = [];
   const dead = { v: false };
   /** schedule fn once after a random delay in [min,max] ms */
   const later = (minMs: number, maxMs: number, fn: () => void): void => {
-    const id = setTimeout(() => { if (!dead.v && !voiceHeld()) fn(); }, minMs + Math.random() * (maxMs - minMs));
+    const id = setTimeout(() => {
+      if (dead.v || voiceHeld() || isBackgroundSoundMuted()) return;
+      fn();
+    }, minMs + Math.random() * (maxMs - minMs));
     timers.push(id);
   };
   /** schedule fn on a repeating random cadence in [min,max] ms */
   const every = (minMs: number, maxMs: number, fn: () => void): void => {
     const loop = (): void => {
-      const id = setTimeout(() => { if (dead.v) return; if (!voiceHeld()) fn(); loop(); }, minMs + Math.random() * (maxMs - minMs));
+      const id = setTimeout(() => {
+        if (dead.v) return;
+        if (!voiceHeld() && !isBackgroundSoundMuted()) fn();
+        loop();
+      }, minMs + Math.random() * (maxMs - minMs));
       timers.push(id);
     };
     loop();
@@ -423,6 +436,33 @@ export function ambientStop(): void {
     handle.master.gain.linearRampToValueAtTime(0, c.currentTime + 1.0);
   } catch { /* context closed */ }
   setTimeout(() => handle.teardown(), 1200);
+}
+
+/**
+ * Settings → Background sound: silence the live ambient bed now, or bring it
+ * back at the stored SFX step. The bed keeps running (its scheduled ticks skip
+ * while muted), so unmute is instant and the scene never re-crossfades.
+ */
+export function applyAmbientMute(): void {
+  if (!current || !ac) return;
+  try {
+    current.handle.master.gain.value = isBackgroundSoundMuted()
+      ? 0
+      : volumeLinear('sfxVol');
+  } catch { /* closed */ }
+}
+
+/** Diagnostic: the live ambient master gain (0 when idle or muted). */
+export function ambientGainSnapshot(): number {
+  if (!current) return 0;
+  try { return current.handle.master.gain.value; } catch { return 0; }
+}
+
+// Settings → Background sound: already-playing ambience ducks on the event.
+if (typeof window !== 'undefined') {
+  subscribeBackgroundSound(() => {
+    try { applyAmbientMute(); } catch { /* ignore */ }
+  });
 }
 
 type EveryFn = (minMs: number, maxMs: number, fn: () => void) => void;

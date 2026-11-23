@@ -534,7 +534,7 @@
 // by an audio-START counter, not a timestamp). Backgrounded <audio> also
 // resumes on tab show instead of staying paused, and the shared AudioContext is
 // resumed before companion playback.
-export const APP_REVISION = 'r2026-11-19.290';
+export const APP_REVISION = 'r2026-11-19.293';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
