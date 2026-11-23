@@ -534,7 +534,15 @@
 // by an audio-START counter, not a timestamp). Backgrounded <audio> also
 // resumes on tab show instead of staying paused, and the shared AudioContext is
 // resumed before companion playback.
-export const APP_REVISION = 'r2026-11-19.290';
+// r2026-11-19.291: the lateral half of r290. The side zone was too small — a
+// camera-facing contact is depth-dominated, so `|s| > 0.9|f|` only counted the
+// outer 43% of her half-width as side and flank taps resolved as front/back.
+// The ratio now comes from the shipped torso (a≈0.17, b≈0.13): 0.55·b/a puts
+// the side boundary at ~23° / 0.40a, and a side-zone hit promotes a
+// depth-dominated ray to the matching diagonal. The lateral lean is anchored
+// to the finger's screen side by reflecting ONLY the camera-right component
+// (flipPokeFallToFingerSide), so front/back keeps the exact r290 numbers.
+export const APP_REVISION = 'r2026-11-19.291';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

@@ -159,6 +159,25 @@ function nearestPart(hit: Vec3, hips: Vec3, extra?: PokeHitExtra): TalkZone | nu
   return best?.zone ?? null;
 }
 
+/**
+ * Torso proportions measured off the shipped VRM (public/models/seed-san.vrm,
+ * bind pose, vertex bands at the hips / waist / chest):
+ *
+ *   half-width  a ≈ 0.17 m   (lateral 98th percentile: waist 0.168, hips 0.153)
+ *   half-depth  b ≈ 0.13 m   (anterior surface z +0.09…+0.10 minus the hips
+ *                             bone at z −0.034)
+ *
+ * A point on the surface ellipse is x = a·sinθ, f = b·cosθ. The old side test
+ * was |s| > 0.9|f| → tanθ > 0.9·b/a ≈ 0.69 → θ ≈ 34.5° → x ≈ 0.57a: only the
+ * outer 43% of her half-width counted as "side", so a flank a human calls the
+ * side came back as front/back. 0.55 gives tanθ ≈ 0.55·b/a ≈ 0.42 → θ ≈ 23°
+ * → x ≈ 0.40a: the outer 60% of the half-width is lateral. ±4 cm of dead
+ * centre still reads front/back (the old 3 cm guard was narrower than a
+ * fingertip, so a tiny float offset could flip centre taps sideways).
+ */
+const SIDE_AXIAL_RATIO = 0.55;
+const SIDE_LATERAL_MIN_M = 0.04;
+
 export function classifyPoke(
   hit: Vec3,
   hips: Vec3,
@@ -176,7 +195,7 @@ export function classifyPoke(
   const rel = sub(hit, hips);
   const f = rel.x * forward.x + rel.z * forward.z;
   const s = rel.x * rightN.x + rel.z * rightN.z;
-  const side = Math.abs(s) > Math.abs(f) * 0.9 && Math.abs(s) > 0.03;
+  const side = Math.abs(s) > Math.abs(f) * SIDE_AXIAL_RATIO && Math.abs(s) > SIDE_LATERAL_MIN_M;
   const back = !side && f < -0.02;
   const mid = (chest.y + head.y) * 0.5;
   let zone: TalkZone;
@@ -202,9 +221,20 @@ export function classifyPoke(
   }
 
   const impulse = recoilXZ(hit, hips, extra);
+  // A camera ray that grazes her flank is still depth-dominated (a 2.6 m
+  // camera sees the contact from the front), so its octant can read `front`
+  // on a point a human calls "the side". The contact offset already knows the
+  // lateral octant, so promote an axial read to the matching diagonal instead
+  // of letting the lateral tap resolve as a front/back poke.
+  let direction = directionFromAxes(impulse, forward, rightN);
+  if (side && !isLateralPokeDirection(direction)) {
+    direction = f < 0
+      ? (s >= 0 ? 'backLeft' : 'backRight')
+      : (s >= 0 ? 'frontLeft' : 'frontRight');
+  }
   return {
     zone,
-    direction: directionFromAxes(impulse, forward, rightN),
+    direction,
     impulse,
     sideSign: s >= 0 ? 1 : -1,
     forward,
@@ -628,6 +658,39 @@ export function lateralFallTowardScreenSide(
   const side = pushSide >= 0 ? 1 : -1;
   if (len < 1e-6) return { x: side, z: 0 };
   return { x: (cameraRightXZ.x / len) * side, z: (cameraRightXZ.z / len) * side };
+}
+
+/**
+ * Anchor the LATERAL half of a poke fall to the finger's screen side.
+ *
+ * The fall vector mixes two axes with opposite provenance: its axial part is
+ * the camera ray (a punch into the body, which AXIAL_TOWARD_POKE flips), while
+ * its lateral part is the same-side lean (toward the finger). A grazing mesh
+ * ray that is nearly depth-parallel, `-normal` / hips−hit fallbacks, or a rig
+ * whose shoulder bones are mirrored can hand the lateral component the
+ * opposite sign — and then a side poke blends away from the finger, which the
+ * owner reported (2026-11-22, second occurrence after #443/#554).
+ *
+ * Only the component along the camera's right axis is reflected. The
+ * camera-forward component — everything that classifies front/back and drives
+ * the r290 axial lean — is bit-for-bit preserved, so a front poke produces the
+ * same spinePitch / headX it did before. When the sign is already correct
+ * (the normal case) this returns the input unchanged.
+ */
+export function flipPokeFallToFingerSide(
+  fall: { x: number; z: number },
+  cameraRightXZ: { x: number; z: number },
+  leanSide: number,
+): { x: number; z: number } {
+  const len = Math.hypot(cameraRightXZ.x, cameraRightXZ.z);
+  if (len < 1e-6) return { x: fall.x, z: fall.z };
+  const rx = cameraRightXZ.x / len;
+  const rz = cameraRightXZ.z / len;
+  const lateral = fall.x * rx + fall.z * rz;
+  const want = leanSide >= 0 ? 1 : -1;
+  if (Math.abs(lateral) < 1e-6 || lateral * want > 0) return { x: fall.x, z: fall.z };
+  // Reflect across the plane perpendicular to camera-right: axial preserved.
+  return { x: fall.x - 2 * lateral * rx, z: fall.z - 2 * lateral * rz };
 }
 
 /**
