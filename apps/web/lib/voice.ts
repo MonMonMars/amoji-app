@@ -108,12 +108,12 @@ import {
   synthVoicePool,
 } from './voice-catalog';
 import { loadingFillerKind, recordedLaughClip, recordedPokeClip } from './voice-clips';
-import { LineQueue, speechLeadDiverged, speechRemainder } from './speech-queue';
+import { LineQueue, speechLeadDiverged, speechRemainder, speechTailAfterLead } from './speech-queue';
 import { PokeResumeArbiter, type PokeResumeCandidate } from './poke-resume';
 import { emotionClipPath } from './emotion-clip-picks';
 import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText, nextCardGreetPhrase, nextGreetingKind, type BurstClipKind, type ClipFolder, type VoiceClipGender } from './voice-clips';
 import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
-export { speechLeadDiverged, speechRemainder };
+export { speechLeadDiverged, speechRemainder, speechTailAfterLead };
 import { edgeCastVoice } from './edge-cast';
 import { pauseEdgeForTabHide, resumeEdgeForTabShow, speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead, resetEdgeHealth } from './edge-tts';
 import { pauseAfterClause, pauseGttsForTabHide, resumeGttsForTabShow, splitClauses, stopGtts, speakGtts } from './gtts';
@@ -1479,6 +1479,11 @@ function drainSpeech(): void {
     try { stopGtts(); } catch { /* ignore */ }
     try { stopEdge(); } catch { /* ignore */ }
     try { haltBrowserSynth(); } catch { /* ignore */ }
+    // Rescue only: the cut line is dead, so the next tap re-speaks it. speak()
+    // refuses a copy of a line that is still active/queued, so an earlier tap
+    // (armed by the 8s no-audio watchdog while the line was merely slow) can
+    // never stack a second playback — owner 2026-11-23 "repeat the answers
+    // two times".
     armGestureReplay('silent line released');
     release();
   }, SILENT_LINE_RELEASE_MS);
@@ -1685,6 +1690,18 @@ export function speak(
   // only the user's mic or a user turn calls it.
   const cleaned = stripLaughTokens(cleanForSpeech(text));
   if (!cleaned || !voiceOutputAllowed()) return;
+  // Owner 2026-11-23: "now the character always repeat the answers two times."
+  // speak() is the single choke point for every audible line, and it had no
+  // idempotence: the tap-to-replay path (armed by the 8s no-audio watchdog or
+  // by a tier's not-allowed error) re-armed while the line was STILL the
+  // active/queued job, so one tap queued a second full copy behind the first
+  // and the answer played twice. A line that is already going to be spoken is
+  // never enqueued a second time — the watchdog still cuts a dead line and
+  // releases the queue, so a genuinely silent line keeps its rescue tap.
+  if (speechStillQueued(cleaned)) {
+    reportVoiceStatus('attempt', true, 'line already queued — not repeating it');
+    return;
+  }
   // A real line outranks the wait cue: drop a pending or speaking filler so
   // the reply is never talked over, and never interrupted by one.
   yieldFillerToReply();
@@ -1911,9 +1928,15 @@ function performSpeak(
     const np = emotionProsody(emotion, value);
     /**
      * Speak the tail of a line this tier already started. Retries the MP3 tier
-     * once for just the remainder, then falls back to the browser voice for the
-     * remainder only. Restarting the whole sentence in a new voice is what made
-     * her appear to "switch speaker" halfway through.
+     * once for just the remainder; the browser voice may only take the tail
+     * when it provably lands on the SAME sink. Owner 2026-11-23: "the voice
+     * sometimes jump from speaker a then speaker b in my PC." This path only
+     * runs after the MP3 tier was already audible, and <audio> is explicitly
+     * pinned to the default sink (startHtmlAudioOnDefaultSpeakers/setSinkId)
+     * while speechSynthesis has no setSinkId at all — under the chat mic's
+     * play-and-record session it follows the Windows communications endpoint,
+     * so a mid-line fallback to synth literally moved the rest of one reply to
+     * a different speaker. One line, one sink.
      */
     const speakRemainderInChain = (rest: string): void => {
       void speakGtts(rest, {
@@ -1932,8 +1955,14 @@ function performSpeak(
         if ((e as Error | undefined)?.message === 'canceled') { settle(); return; }
         reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'google-tts resume failed');
         stopGtts();
-        // Last resort: browser voice for the remainder only.
-        if (!runSynthTail(rest, settle)) settle();
+        // Owner 2026-11-23: "the voice sometimes jump from speaker a then
+        // speaker b in my PC." This tail only runs after the MP3 tier was
+        // already audible on the PINNED default sink. The browser voice has no
+        // setSinkId: while the chat mic holds play-and-record, Windows sends
+        // speechSynthesis to the communications/headset endpoint, so the rest
+        // of the same reply would come out of a different speaker. One line,
+        // one sink — end it here instead of hopping devices.
+        if (micCommsRoutingLatchActive() || !runSynthTail(rest, settle)) settle();
       });
     };
     const runAt = (index: number): void => {

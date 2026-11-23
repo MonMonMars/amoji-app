@@ -25,8 +25,8 @@ const OPAQUE_VOCAB =
 
 /** Extra system lines for a single quality retry. */
 export const STRICT_REPLY_APPENDIX = `QUALITY RETRY: Your previous answer was unusable. Reply again NOW.
-- LISTEN FIRST: briefly acknowledge one concrete detail from their last message, then answer — 1 to 3 short spoken sentences. Show care and respect; never dismiss them.
-- First sentence must answer or clearly acknowledge their last message with one concrete detail from it.
+- LISTEN FIRST, ANSWER FIRST: answer their last message directly in the first sentence — 1 to 3 short spoken sentences. Never restate, quote or read back their question ("you asked…", "so you want to know…", 你問我…). Show care and respect; never dismiss them.
+- Do not open with an acknowledgement of the question — sentence one IS the answer.
 - If you use 2–3 sentences, keep them on the SAME idea with smooth connectors (and / so / then / 同埋 / 然後) — no topic jump, no surreal metaphor.
 - PLAIN WORDS only: no invented vocab, no opaque jargon (vibe/quantum/resonance/aura/wavelength), no decorative nonsense, no English jargon mixed into Cantonese unless they used English.
 - No chain-of-thought, no scene monologue.

@@ -124,3 +124,42 @@ export function speechRemainder(full: string, already: string): string {
   // "two LLM replies" / repeated content. Caller should stop + speak once.
   return '';
 }
+
+/** Normalized sentence key: letters+digits only, so wrappers/punctuation drift. */
+function sentenceKey(s: string): string {
+  return s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+}
+
+/**
+ * Text still to say when the streamed lead was already audible but the final
+ * reply was RESHAPED around it (question capping, scrub, preferLive) so it no
+ * longer literally starts with that sentence. Owner 2026-11-23: "now the
+ * character always repeat the answers two times." The old two-way choice —
+ * exact remainder, else speak the WHOLE reply again — replayed the opening
+ * answer whenever only the wrapper changed ("Sure! …" → "Sure, …"). This
+ * matches the leading sentence on normalized text and returns the rest; ''
+ * when the reply says nothing beyond what was already heard.
+ */
+export function speechTailAfterLead(full: string, already: string): string {
+  const t = full.trim();
+  const f = already.trim();
+  if (!t) return '';
+  if (!f) return t;
+  const direct = speechRemainder(t, f);
+  if (direct) return direct;
+  if (!speechLeadDiverged(t, f)) return ''; // the reply IS the lead — nothing left
+  // Same opening words, reshaped wrapper: "Sure!" → "Sure, here are the steps."
+  const body = speechLeadBody(f);
+  if (body && t.startsWith(body)) {
+    const after = t.slice(body.length).replace(/^[\s,，、;；:：—–。.！!？?\n]+/u, '').trim();
+    if (after) return after;
+  }
+  const chunks = t.split(/(?<=[。．.！!？?])\s*/).map((s) => s.trim()).filter(Boolean);
+  if (chunks.length < 2) return '';
+  const key = sentenceKey(f);
+  const first = sentenceKey(chunks[0]!);
+  if (!key || !first) return '';
+  const same = first === key || (first.length >= 4 && key.length >= 4 && (first.includes(key) || key.includes(first)));
+  if (!same) return '';
+  return chunks.slice(1).join(' ').trim();
+}

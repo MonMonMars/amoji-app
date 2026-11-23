@@ -14,15 +14,20 @@ describe('no double speak on one turn', () => {
   });
 
   it('cuts a diverged streamed lead instead of stacking a second full answer', () => {
+    // r292: the old diverged branch could never run — `firstLive` already
+    // required `leadMatched`, so a reshaped final reply fell through to
+    // `speak(reply)` and the answer was heard twice. The branch now keys on
+    // `!leadMatched` + a live lead, cuts it, and says only the unheard tail.
     expect(panel).toContain('speechLeadDiverged');
     expect(panel).toContain('stopSpeaking()');
     const speakReply = panel.slice(
       panel.indexOf('const speakReply ='),
       panel.indexOf('// t794/t796 + Pixel entry'),
     );
-    expect(speakReply).toMatch(/speechLeadDiverged\(reply, alreadySpoken\.text\)/);
+    expect(speakReply).toMatch(/leadLive && alreadySpoken && !leadMatched/);
     expect(speakReply).toMatch(/stopSpeaking\(\)/);
-    expect(speakReply).toMatch(/leadPlayedThrough/);
+    expect(speakReply).toMatch(/speechTailAfterLead\(reply, alreadySpoken\.text\)/);
+    expect(speakReply).not.toMatch(/firstLive && alreadySpoken && speechLeadDiverged/);
   });
 
   it('news headlines speak once as live facts (no second LLM pass)', () => {

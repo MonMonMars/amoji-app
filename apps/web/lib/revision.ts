@@ -542,7 +542,20 @@
 // depth-dominated ray to the matching diagonal. The lateral lean is anchored
 // to the finger's screen side by reflecting ONLY the camera-right component
 // (flipPokeFallToFingerSide), so front/back keeps the exact r290 numbers.
-export const APP_REVISION = 'r2026-11-19.291';
+// r2026-11-19.292: three owner regressions on .290. (1) A repeated answer: the
+// 12s silent-line release armed a tap-to-replay, and a tap while the original
+// line was still queued/playing enqueued the SAME text again — speak() now
+// refuses a line that is still queued; the diverged-lead branch in ChatPanel no
+// longer re-speaks a reshaped reply (it was unreachable and fell through to a
+// second full answer) and speaks only the unheard tail (speechTailAfterLead).
+// (2) She read the user's question back: the prompts said LISTEN FIRST /
+// "reflect or acknowledge one concrete detail", which free models rendered as
+// a verbatim echo; prompts now answer first, and stripQuestionReadBack scrubs
+// any leading read-back before it is spoken. (3) The voice hopped speakers: a
+// mid-line MP3 failure handed the tail to speechSynthesis (no setSinkId) while
+// the mic held play-and-record, so it landed on the communications device; the
+// synth fallback is now skipped while the mic routing latch is active.
+export const APP_REVISION = 'r2026-11-19.292';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
