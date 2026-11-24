@@ -17,7 +17,8 @@ import { openDb } from './db.js';
 import { createBackend } from './http.js';
 import { gatherChatWorld } from './live.js';
 
-const port = Number(process.env.AMOJI_PORT ?? 8787);
+// PaaS hosts (Render/Railway) inject PORT; Fly and local use AMOJI_PORT.
+const port = Number(process.env.AMOJI_PORT ?? process.env.PORT ?? 8787);
 const dbPath = process.env.AMOJI_DB ?? 'data/amoji.sqlite';
 if (dbPath !== ':memory:') mkdirSync(dirname(dbPath), { recursive: true });
 const backend = createBackend({

@@ -1,6 +1,16 @@
 import { INTERJECTIONS } from '../lib/fillers';
 import { describe, expect, it } from 'vitest';
-import { INTERJECTION_AT, MOOD_FILLERS, THINKING_FILLERS, dominant, pickInterjection, pickThinkingFiller } from '../lib/fillers';
+import {
+  INTERJECTION_AT,
+  MOOD_FILLERS,
+  SEARCH_DELAY_LINES,
+  THINKING_FILLERS,
+  dominant,
+  pickInterjection,
+  pickSearchDelayLine,
+  pickThinkingFiller,
+} from '../lib/fillers';
+import { spokenLineLooksBroken } from '../lib/spoken-line-sanity';
 
 describe('fillers', () => {
   it('rotates thinking fillers per call', () => {
@@ -40,6 +50,30 @@ describe('fillers', () => {
     expect(dominant({ joy: 0.8, neutral: 0.4 }).emotion).toBe('joy');
     expect(dominant({ joy: 0.3 }).emotion).toBe('neutral');
     expect(dominant(undefined).emotion).toBe('neutral');
+  });
+});
+
+describe('soft search delay lines', () => {
+  const langs = ['yue', 'zh', 'ja', 'en'] as const;
+
+  it('has one long, speakable line per language', () => {
+    for (const lang of langs) {
+      const bank = SEARCH_DELAY_LINES[lang];
+      expect(bank.length, lang).toBeGreaterThan(0);
+      for (const line of bank) {
+        // Long enough to cover the 2.5 s soft delay.
+        expect(line.length, lang).toBeGreaterThan(30);
+        expect(line).not.toMatch(/\s{2,}/);
+        expect(line).not.toMatch(/\{[a-zA-Z_]/);
+        expect(spokenLineLooksBroken(line, { mode: 'local', lang }), line).toBe(false);
+      }
+    }
+  });
+
+  it('picks in the caller language and falls back to English', () => {
+    expect(pickSearchDelayLine('yue')).toBe(SEARCH_DELAY_LINES.yue[0]);
+    expect(pickSearchDelayLine('ja')).toBe(SEARCH_DELAY_LINES.ja[0]);
+    expect(pickSearchDelayLine('fr')).toBe(SEARCH_DELAY_LINES.en[0]);
   });
 });
 
