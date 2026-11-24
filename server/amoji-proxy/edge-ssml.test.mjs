@@ -8,9 +8,52 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { describeUpstreamFailure, ensureXmlLang, sanitizeSsml, stripLeadingJunk } from './edge-ssml.js';
+import { describeUpstreamFailure, ensureXmlLang, repairVolume, sanitizeSsml, stripLeadingJunk } from './edge-ssml.js';
 
 const SPEAK_OPEN = '<speak version=\'1.0\' xmlns=\'http://www.w3.org/2001/10/synthesis\'>';
+
+test('repairVolume converts the dB volume the app emits into a percentage', () => {
+  // apps/web/lib/edge-tts.ts: `const db = (n) => `${n >= 0 ? '+' : ''}${(n * 8).toFixed(1)}dB``
+  // and every prosody clause carries `volume='${db(vol)}'`. Measured against
+  // the live endpoint: `volume='+0.0dB'` → 1007 "SSML parsing error:
+  // 0x80045003"; the same clause with `volume='+0%'` → 200 + audio.
+  assert.equal(repairVolume("<prosody volume='+0.0dB'>你好</prosody>"), "<prosody volume='+0%'>你好</prosody>");
+  assert.equal(repairVolume('<prosody volume="-0.0dB">x</prosody>'), '<prosody volume="+0%">x</prosody>');
+  // +6 dB is exactly double amplitude → +100%.
+  assert.equal(repairVolume('<prosody volume="+6dB">x</prosody>'), '<prosody volume="+100%">x</prosody>');
+  // -6 dB is half amplitude → -50%, and -100% is the SSML floor.
+  assert.equal(repairVolume("<prosody volume='-6dB'>x</prosody>"), "<prosody volume='-50%'>x</prosody>");
+  // -40 dB is 1% amplitude → -99%; -60 dB rounds past it and clamps at the SSML floor.
+  assert.equal(repairVolume("<prosody volume='-40dB'>x</prosody>"), "<prosody volume='-99%'>x</prosody>");
+  assert.equal(repairVolume("<prosody volume='-60dB'>x</prosody>"), "<prosody volume='-100%'>x</prosody>");
+});
+
+test('repairVolume leaves a percentage volume and unrelated text alone', () => {
+  const ok = "<prosody pitch='+2%' rate='+4%' volume='+0%'>你好</prosody>";
+  assert.equal(repairVolume(ok), ok, 'a percentage body is untouched');
+  const chatter = "the reading was 3dB down, volume=' not an attribute";
+  assert.equal(repairVolume(chatter), chatter);
+});
+
+test('sanitizeSsml repairs the app\'s exact styled clause end to end', () => {
+  // Verbatim shape from buildEdgeSsml for a styled zh line: clause volume in
+  // dB, a <break>, and an <mstts:express-as> wrapper.
+  const appBody =
+    `${SPEAK_OPEN.replace(/>$/, " xmlns:mstts='http://www.w3.org/2001/mstts' xml:lang='zh-HK'>")}` +
+    "<voice name='zh-HK-HiuMaanNeural'>" +
+    "<prosody pitch='+2%' rate='+4%' volume='+0.0dB'>今日好開心。</prosody>" +
+    "<break time='220ms'/>" +
+    "<mstts:express-as style='cheerful' styledegree='1.20'>" +
+    "<prosody pitch='+4%' rate='+2%' volume='+1.6dB'>我見到你就想笑。</prosody>" +
+    '</mstts:express-as></voice></speak>';
+  const out = sanitizeSsml(appBody);
+  assert.ok(!/dB/.test(out), 'no dB volume survives');
+  assert.ok(!out.includes('<break'), 'break is dropped');
+  assert.ok(!out.includes('express-as'), 'express-as is unwrapped');
+  assert.ok(out.includes("volume='+0%'") && out.includes("volume='+20%'"), 'volume became a percentage');
+  assert.ok(out.includes('今日好開心。') && out.includes('我見到你就想笑。'), 'both clauses kept their words');
+  assert.ok(out.includes("xml:lang='zh-HK'"), 'xml:lang kept');
+});
 
 test('sanitizeSsml unwraps mstts:express-as but keeps voice and prosody', () => {
   // The app's own SSML shape: <mstts:express-as> makes the endpoint drop the

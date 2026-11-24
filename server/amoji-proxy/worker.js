@@ -39,7 +39,7 @@
 // usual (gpt-4o-mini-tts ≈ US$0.015/min — a month of daily chats ≈ US$1).
 
 import { EDGE_WS_HEADERS, edgeAudioPayload, edgeReadAloudUrl } from './edge-gec.js';
-import { describeUpstreamFailure, sanitizeSsml, stripLeadingJunk } from './edge-ssml.js';
+import { describeUpstreamFailure, repairVolume, sanitizeSsml, stripLeadingJunk } from './edge-ssml.js';
 
 const OPENAI_SPEECH = '/v1/audio/speech';
 const OPENAI_UPSTREAM = 'https://api.openai.com';
@@ -136,10 +136,14 @@ async function relayNeuralTts(request, env, debug = false) {
  * removed (see edge-ssml.js) when the body contains any.
  */
 async function synthesizeWithRepair(rawSsml, env, log) {
-  // A leading BOM/whitespace kills the turn with the same 1007 close code as
-  // fatal markup, so it is never worth relaying verbatim.
-  const ssml = stripLeadingJunk(rawSsml);
-  if (ssml !== rawSsml) log?.('strip', `dropped ${rawSsml.length - ssml.length} leading byte(s)`);
+  // Two defects are never worth relaying verbatim, because the endpoint's
+  // answer is the same opaque 1007 the caller cannot act on:
+  //   • a leading BOM/whitespace, and
+  //   • prosody volume in dB, which `apps/web` attaches to EVERY clause.
+  // Normalizing both up front means an app-shaped body succeeds on attempt 1
+  // instead of costing a rejected handshake on every single line.
+  const ssml = repairVolume(stripLeadingJunk(rawSsml));
+  if (ssml !== rawSsml) log?.('normalize', `repaired ${rawSsml.length - ssml.length} byte(s) before attempt 1`);
   const repaired = sanitizeSsml(ssml);
   const attempts = repaired === ssml
     ? [{ label: 'verbatim', body: ssml }, { label: 'retry', body: ssml }]
