@@ -327,16 +327,20 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
     /** Characters fully spoken, so a fallback can resume instead of restarting. */
     let spokenChars = 0;
     /** Clears the module-level cancel hook so a later stopGtts() is a no-op. */
-    const clearPending = () => { pendingReject = null; };
-    const failLine = (err: Error) => {
+    // Only clear the hook if it is still OURS: a newer gesture line installs its
+    // own reject, and an old line settling must not null it (rapid card taps).
+    function clearPending() {
+      if (pendingReject === failLine) pendingReject = null;
+    }
+    function failLine(err: Error) {
       clearPending();
       reject(err);
-    };
-    const doneLine = () => {
+    }
+    function doneLine() {
       clearPending();
       clearSpeechCaption();
       resolve();
-    };
+    }
     pendingReject = failLine;
     const playNext = () => {
       if (gen !== generation) { failLine(new Error('canceled')); return; }
@@ -396,6 +400,15 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
         });
       };
       audio.onplay = () => {
+        // A retired line must NEVER be heard over the greeting that replaced it.
+        // The sink-pin retry can land a task or two after the cancel, so a
+        // superseded element can reach play() late (owner 2026-11-25: many
+        // "hi"/"hello" at once). Pause it the instant it speaks.
+        if (gen !== generation) {
+          if (currentAudio === audio) currentAudio = null;
+          try { audio.pause(); } catch { /* ignore */ }
+          return;
+        }
         // Do NOT pinDefaultOutput here — setSinkId mid-stream kills gTTS after
         // onplay on Chrome/Windows (non-Yue / male went silent).
         const last = i >= pieces.length;
@@ -410,9 +423,12 @@ export function speakGtts(text: string, opts: GttsOpts): Promise<void> {
       // Gesture/card: play-first + pin on reject only (#424).
       // Chat (pinSinkBeforePlay): pin default sink first — play() succeeds under
       // play-and-record while routing to a mute communications device.
+      // `gen === generation` is the single-flight guard: a retired card greet
+      // refuses the play outright instead of overlapping the newer one.
       void startHtmlAudioOnDefaultSpeakers(
         audio,
         htmlAudioStartMode(opts.pinSinkBeforePlay, opts.gestureTap),
+        () => gen === generation,
       ).catch((err: unknown) => {
         settle(() => {
           if (currentAudio === audio) currentAudio = null;

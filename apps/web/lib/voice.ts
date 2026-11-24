@@ -117,6 +117,7 @@ export { speechLeadDiverged, speechRemainder, speechTailAfterLead };
 import { edgeCastVoice } from './edge-cast';
 import { pauseEdgeForTabHide, resumeEdgeForTabShow, speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead, resetEdgeHealth } from './edge-tts';
 import { pauseAfterClause, pauseGttsForTabHide, resumeGttsForTabShow, splitClauses, stopGtts, speakGtts } from './gtts';
+import { cardGreetGate } from './card-greet';
 import { gttsCharacterPitchBias } from './gtts-timbre';
 import { voicePickFor } from './voice-picks';
 import { osVoicePinFor, saveOsVoicePin } from './os-voice-picks';
@@ -2213,6 +2214,13 @@ function performClip(job: SpeechJob): Promise<void> {
  * `choiceId` names one of the real voices (a Google `tl` region, see
  * voice-capability.ts). The greeting auditions exactly that speaker, so the
  * button the user tapped is the voice they hear.
+ *
+ * TAP ONLY + single flight (owner report 2026-11-25). Callers must reach this
+ * from a deliberate activation (click / Enter / Space), never from scroll,
+ * wheel, drag, focus or viewport visibility. Every call retires the previous
+ * greeting before the new one can start: `stopSpeakingForCardAudition()` cuts
+ * the other tiers, `cardAuditionGeneration` retires their async fallbacks, and
+ * `cardGreetGate` rejects a same-card double-tap so a stutter cannot queue two.
  */
 export function playVoiceGreeting(
   characterId: string,
@@ -2221,6 +2229,10 @@ export function playVoiceGreeting(
   line?: string,
 ): void {
   if (!selectAuditionAllowed()) return;
+  // Single-flight claim BEFORE anything is stopped: a same-card double-tap
+  // must leave the greeting already in progress untouched.
+  const key = `${characterId}|${lang}|${choiceId}`;
+  if (cardGreetGate.begin('tap', key) === null) return;
   unlockAudioForCardAudition();
   stopSpeakingForCardAudition();
   const auditionGen = ++cardAuditionGeneration;
@@ -2707,6 +2719,9 @@ export function playLaughBurst(characterId: string, lang: Lang): void {
  */
 export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void> {
   if (!selectAuditionAllowed()) return Promise.resolve();
+  // Same tap-only single flight as card greets: a preview retires the greeting
+  // (or previous preview) already speaking, and a double-tap is one audition.
+  if (cardGreetGate.begin('tap', `preview|${locale}|${choiceId}`) === null) return Promise.resolve();
   unlockAudioForCardAudition();
   stopSpeakingForCardAudition();
   const auditionGen = ++cardAuditionGeneration;
