@@ -369,10 +369,21 @@ export function edgeTtsPossible(): boolean {
 // ---- r131: optional HTTP TTS proxy -------------------------------------------
 // Some networks block the wss socket (Master Simon's iPhone network did —
 // r89). A proxy carries the same SSML over plain HTTPS POST and returns the
-// mp3, so the neural voice survives those networks. Deploy server/amoji-proxy/
-// (a free Cloudflare Worker) and point this at it; unset → direct socket.
+// mp3, so the neural voice survives those networks. The deployed free
+// Cloudflare Worker (server/amoji-proxy, wrangler name `amoji-voice`) is the
+// built-in default: real users get the verified male/female neural voices
+// without pasting a URL into Settings. Clear the field to force a direct
+// socket connection (stored `''` is an explicit opt-out, not "unset").
 const PROXY_KEY = 'amoji.ttsproxy.v1';
 let proxyOverride: string | null | undefined; // undefined = read storage, then env
+
+/**
+ * Live relay verified 2026-11-24 (returns HTTP 200 audio/mpeg for
+ * zh-HK-WanLungNeural, zh-CN-YunjianNeural, ja-JP-KeitaNeural,
+ * en-US-GuyNeural, zh-HK-HiuMaanNeural). Not a key; safe to ship in the
+ * public bundle. `?debug=1` makes a 502 return its upstream trace.
+ */
+export const DEFAULT_TTS_PROXY = 'https://amoji-voice.monmonmars.workers.dev';
 
 /** Empty or whitespace → no proxy (direct Edge socket). Strips a trailing slash. */
 export function normalizeProxyUrl(url: string | null | undefined): string | null {
@@ -382,9 +393,10 @@ export function normalizeProxyUrl(url: string | null | undefined): string | null
 }
 
 /**
- * Session override wins, including an explicit clear (null). Otherwise a
- * saved localStorage URL. Otherwise NEXT_PUBLIC_TTS_PROXY from .env.local
- * or the Pages build. A cleared value does not resurrect the env URL.
+ * Precedence: session override (including an explicit clear, null) >
+ * saved localStorage URL (an explicit `''` disables the proxy) >
+ * NEXT_PUBLIC_TTS_PROXY when non-blank > the built-in worker.
+ * A cleared value does not resurrect the env URL or the default.
  */
 export function resolveTtsProxy(
   override: string | null | undefined,
@@ -393,7 +405,7 @@ export function resolveTtsProxy(
 ): string | null {
   if (override !== undefined) return normalizeProxyUrl(override);
   if (stored !== null) return normalizeProxyUrl(stored);
-  return normalizeProxyUrl(env);
+  return normalizeProxyUrl(env) ?? DEFAULT_TTS_PROXY;
 }
 
 export function setTtsProxy(url: string | null): void {
@@ -516,8 +528,9 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
 /**
  * Speak `text` with a neural voice. Resolves when playback finishes,
  * rejects quickly if every transport is unreachable (caller falls back).
- * r131: transports are (1) the configured HTTP proxy when set, else
- * (2) the direct readaloud WebSocket.
+ * r131: transports are (1) the configured HTTP proxy (the built-in worker
+ * by default, unless the user cleared it), else (2) the direct readaloud
+ * WebSocket.
  */
 
 // ---- endpoint circuit breaker ---------------------------------------------
