@@ -313,8 +313,24 @@ function escapeXml(s: string): string {
 }
 
 const pct = (n: number) => `${n >= 0 ? '+' : ''}${Math.round(n * 100)}%`;
-const db = (n: number) => `${n >= 0 ? '+' : ''}${(n * 8).toFixed(1)}dB`;
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
+/**
+ * Prosody volume for the readaloud endpoint.
+ *
+ * This used to emit `±N.NdB` (the `n * 8` scaling is kept), but that unit is
+ * REFUSED outright: the endpoint answers `1007 … SSML parsing error:
+ * 0x80045003` and drops the whole utterance, while the same clause with a
+ * percentage synthesizes fine. Every spoken clause carried this attribute, so
+ * every line was silent — and two failures trip the EDGE_FAILURE_LIMIT=2
+ * breaker, which parks the whole Edge tier for five minutes.
+ *
+ * The conversion keeps the loudness that was asked for: amplitude ratio is
+ * 10^(dB/20), which is exactly what `volume` as a percentage expresses.
+ */
+const db = (n: number) => {
+  const percent = Math.round((10 ** ((n * 8) / 20) - 1) * 100);
+  return `${percent >= 0 ? '+' : ''}${clamp(percent, -100, 200)}%`;
+};
 
 // ---- current playback (so stopSpeaking can cut it) ----
 let currentAudio: HTMLAudioElement | null = null;
