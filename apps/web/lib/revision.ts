@@ -564,7 +564,12 @@
 // the ambient scene beds, while her spoken voice (a different audio system, in
 // lib/voice.ts) keeps playing; (b) a translucent bottom-strong scrim behind
 // the chat history so the words stay legible over the animated backdrop.
-export const APP_REVISION = 'r2026-11-19.294';
+// r2026-11-24.295: voice — the Edge TTS relay now defaults to the live
+// amoji-voice Cloudflare Worker, so the verified male/female neural voices
+// (zh-HK-WanLung, zh-CN-Yunjian, ja-JP-Keita, en-US-Guy, …) work with no
+// Settings setup. A saved or session-level empty value still forces the
+// direct socket, and env/saved URLs still outrank the default.
+export const APP_REVISION = 'r2026-11-24.295';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

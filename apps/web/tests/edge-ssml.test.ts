@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildEdgeSsml, edgeStyleFor, getTtsProxy, resolveEdgeVoice, resolveTtsProxy, setTtsProxy,
+  DEFAULT_TTS_PROXY, buildEdgeSsml, edgeStyleFor, getTtsProxy, resolveEdgeVoice, resolveTtsProxy, setTtsProxy,
 } from '../lib/edge-tts';
 import { isFemaleNeuralVoice, isMaleNeuralVoice } from '../lib/voice-catalog';
 
@@ -271,12 +271,28 @@ describe('TTS proxy URL (r131)', () => {
     expect(getTtsProxy()).toBeNull();
   });
 
-  it('uses the Pages env URL only when nothing is saved or cleared', () => {
-    expect(resolveTtsProxy(undefined, null, 'https://pages.example.workers.dev/')).toBe('https://pages.example.workers.dev');
-    expect(resolveTtsProxy(null, null, 'https://pages.example.workers.dev/')).toBeNull();
+  it('defaults to the built-in worker when nothing is saved and no env is set', () => {
+    // r2026-11-24 — real users get the verified neural relay without setup.
+    expect(resolveTtsProxy(undefined, null, undefined)).toBe(DEFAULT_TTS_PROXY);
+    expect(resolveTtsProxy(undefined, null, '')).toBe(DEFAULT_TTS_PROXY);
+    expect(resolveTtsProxy(undefined, null, '  ')).toBe(DEFAULT_TTS_PROXY);
+  });
+
+  it('an explicit empty value still forces a direct connection', () => {
+    // Session clear and a saved '' are both a deliberate opt-out, and neither
+    // may resurrect the env URL or the default worker.
+    expect(resolveTtsProxy(null, null, undefined)).toBeNull();
+    expect(resolveTtsProxy('', null, undefined)).toBeNull();
+    expect(resolveTtsProxy(undefined, '', undefined)).toBeNull();
     expect(resolveTtsProxy(undefined, '', 'https://pages.example.workers.dev/')).toBeNull();
-    expect(resolveTtsProxy('https://saved.example/', null, 'https://pages.example.workers.dev')).toBe('https://saved.example');
-    expect(resolveTtsProxy(undefined, null, '  ')).toBeNull();
+    expect(resolveTtsProxy(null, null, 'https://pages.example.workers.dev/')).toBeNull();
+  });
+
+  it('saved and env values outrank the default', () => {
+    expect(resolveTtsProxy('https://saved.example/', null, undefined)).toBe('https://saved.example');
+    expect(resolveTtsProxy(undefined, 'https://stored.example/', undefined)).toBe('https://stored.example');
+    expect(resolveTtsProxy(undefined, 'https://stored.example/', 'https://pages.example.workers.dev/')).toBe('https://stored.example');
+    expect(resolveTtsProxy(undefined, null, 'https://pages.example.workers.dev/')).toBe('https://pages.example.workers.dev');
   });
 });
 
