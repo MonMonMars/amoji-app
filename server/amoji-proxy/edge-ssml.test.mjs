@@ -8,7 +8,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { describeUpstreamFailure, ensureXmlLang, sanitizeSsml } from './edge-ssml.js';
+import { describeUpstreamFailure, ensureXmlLang, sanitizeSsml, stripLeadingJunk } from './edge-ssml.js';
 
 const SPEAK_OPEN = '<speak version=\'1.0\' xmlns=\'http://www.w3.org/2001/10/synthesis\'>';
 
@@ -77,4 +77,20 @@ test('describeUpstreamFailure names the empty turn and the frames seen', () => {
     describeUpstreamFailure({ closeCode: 1006, closeReason: '', sawTurnEnd: false }),
     'upstream closed 1006',
   );
+});
+
+test('stripLeadingJunk removes a UTF-8 BOM before <speak>', () => {
+  // Measured 2026-11-24: a body starting EF BB BF is closed 1007 with
+  // "Data at the root level is invalid. Line 1, position 1." — the .NET XML
+  // reader never sees the '<speak'. PowerShell's `Set-Content -Encoding UTF8`
+  // writes exactly this, so `curl --data-binary @file` reproduces it.
+  const body = `${SPEAK_OPEN}<voice name='zh-HK-WanLungNeural'>你好</voice></speak>`;
+  assert.equal(stripLeadingJunk(`\uFEFF${body}`), body);
+  assert.equal(stripLeadingJunk(`\uFEFF\r\n\t ${body}`), body);
+  assert.equal(stripLeadingJunk(body), body, 'a clean body is returned unchanged');
+});
+
+test('sanitizeSsml strips a BOM as part of the repair pass', () => {
+  const body = `${SPEAK_OPEN.replace(/>$/, " xml:lang='zh-HK'>")}<voice name='zh-HK-WanLungNeural'>你好</voice></speak>`;
+  assert.equal(sanitizeSsml(`\uFEFF${body}`), body);
 });

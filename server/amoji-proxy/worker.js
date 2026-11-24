@@ -39,7 +39,7 @@
 // usual (gpt-4o-mini-tts ≈ US$0.015/min — a month of daily chats ≈ US$1).
 
 import { EDGE_WS_HEADERS, edgeAudioPayload, edgeReadAloudUrl } from './edge-gec.js';
-import { describeUpstreamFailure, sanitizeSsml } from './edge-ssml.js';
+import { describeUpstreamFailure, sanitizeSsml, stripLeadingJunk } from './edge-ssml.js';
 
 const OPENAI_SPEECH = '/v1/audio/speech';
 const OPENAI_UPSTREAM = 'https://api.openai.com';
@@ -122,7 +122,9 @@ async function relayNeuralTts(request, env, debug = false) {
     // The upstream's close reason ("Unsupported voice …", "ended the turn
     // with no audio") is the only actionable signal — pass it through.
     const detail = err?.message || err?.stack || String(err);
-    return new Response(detail || 'neural tts failed', { status: 502, headers: CORS });
+    // ?debug=1 returns the whole trace inline: wrangler tail is unusable here.
+    const body = log ? `${detail}\n\n--- trace ---\n${log.lines.join('\n')}` : detail;
+    return new Response(body || 'neural tts failed', { status: 502, headers: { ...CORS, 'Content-Type': 'text/plain; charset=UTF-8' } });
   }
 }
 
@@ -133,7 +135,11 @@ async function relayNeuralTts(request, env, debug = false) {
  * empty turn is what throttling looks like), or with the known-fatal markup
  * removed (see edge-ssml.js) when the body contains any.
  */
-async function synthesizeWithRepair(ssml, env, log) {
+async function synthesizeWithRepair(rawSsml, env, log) {
+  // A leading BOM/whitespace kills the turn with the same 1007 close code as
+  // fatal markup, so it is never worth relaying verbatim.
+  const ssml = stripLeadingJunk(rawSsml);
+  if (ssml !== rawSsml) log?.('strip', `dropped ${rawSsml.length - ssml.length} leading byte(s)`);
   const repaired = sanitizeSsml(ssml);
   const attempts = repaired === ssml
     ? [{ label: 'verbatim', body: ssml }, { label: 'retry', body: ssml }]
@@ -158,10 +164,17 @@ function makeLogger(ssml) {
   const id = Math.random().toString(36).slice(2, 8);
   let seq = 0;
   const started = Date.now();
-  console.log(`[${id}] ssml ${ssml.length} chars: ${ssml.replace(/\s+/g, ' ').slice(0, 200)}`);
-  return (step, detail) => {
-    console.log(`[${id}] +${String(Date.now() - started).padStart(4)}ms #${seq++} ${step}: ${detail}`);
+  // Accumulated copy of every line. `wrangler tail` cannot be redirected to a
+  // file on Windows (it dies with no output), so the only dependable way to
+  // read diagnostics is to hand them back in the HTTP response when ?debug=1.
+  const lines = [`ssml ${ssml.length} chars: ${ssml.replace(/\s+/g, ' ').slice(0, 200)}`];
+  const log = (step, detail) => {
+    const line = `+${String(Date.now() - started).padStart(5)}ms #${seq++} ${step}: ${detail}`;
+    console.log(`[${id}] ${line}`);
+    lines.push(line);
   };
+  log.lines = lines;
+  return log;
 }
 
 const hex = (u8, n) =>
@@ -315,14 +328,32 @@ async function synthesize(ssml, env, log = null) {
     // The socket is already open (fetch upgraded it), and the `open` event has
     // therefore already fired — send immediately instead of waiting for it.
     const now = () => new Date().toISOString();
+    // Frames mirror edge-tts 7.3.1 (the reference client for this endpoint):
+    //   * the speech.config JSON payload is followed by CRLF,
+    //   * the ssml frame has no terminator at all — not CRLF, and not the \0
+    //     an earlier revision of this worker sent.
+    // metadataoptions matches edge-tts for a sentence-boundary-off request:
+    // wordBoundaryEnabled=false implies sentenceBoundaryEnabled=true.
     const config =
       `X-Timestamp:${now()}\r\nContent-Type:application/json; charset=utf-8\r\nPath:speech.config\r\n\r\n` +
-      '{"context":{"synthesis":{"audio":{"metadataoptions":{"sentenceBoundaryEnabled":"false","wordBoundaryEnabled":"false"},"outputFormat":"audio-24khz-48kbitrate-mono-mp3"}}}}';
+      '{"context":{"synthesis":{"audio":{"metadataoptions":{"sentenceBoundaryEnabled":"true","wordBoundaryEnabled":"false"},"outputFormat":"audio-24khz-48kbitrate-mono-mp3"}}}}' +
+      '\r\n';
     const msg =
       `X-RequestId:${requestId}\r\nContent-Type:application/ssml+xml\r\nX-Timestamp:${now()}\r\nPath:ssml\r\n\r\n${ssml}`;
     ws.send(config);
-    ws.send(msg);
-    log?.('sent', `config ${config.length} chars, ssml ${msg.length} chars`);
+    // One macrotask between the frames: workerd may coalesce two sends made in
+    // the same tick into a single WebSocket message, which would put the ssml
+    // header block inside the speech.config JSON body. Not observed on this
+    // fleet, but the split costs 50 ms once per utterance and removes the risk.
+    setTimeout(() => {
+      if (settled) return;
+      try {
+        ws.send(msg);
+        log?.('sent', `config ${config.length} chars, ssml ${msg.length} chars`);
+      } catch (e) {
+        log?.('sent-failed', String(e?.message ?? e));
+      }
+    }, 50);
   });
 
   return blob.arrayBuffer();
