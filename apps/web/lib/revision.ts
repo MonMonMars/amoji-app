@@ -573,7 +573,13 @@
 // of decibels. The readaloud endpoint refuses `volume='…dB'` with
 // `1007 SSML parsing error: 0x80045003` and drops the whole utterance, and
 // every spoken clause carried that unit, so every line was silent.
-export const APP_REVISION = 'r2026-11-24.296';
+// r2026-11-24.297: optional API-search lane (one breaker end to end) — the
+// runnable Node backend in server/backend/ adds the admin breaker, quota and
+// warning endpoints, and apps/web/lib/search-gate.ts is the client gate that
+// ChatPanel calls only inside `if (searchGateConfigured())`. The published
+// GitHub Pages build has no NEXT_PUBLIC_AMOJI_API, so the gate is false there
+// and no /api/ request, budget write, timer or delay is made.
+export const APP_REVISION = 'r2026-11-24.297';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
