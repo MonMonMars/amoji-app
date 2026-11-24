@@ -34,7 +34,7 @@ const SAMPLE_IDS = [
   'a03-fumiriya',
   'a14-vivi',
   'a63-hinoame-satuki-mei-sirayuki',
-  'a94-rita',
+  'a93-edokko',
 ] as const;
 
 describe('cast daylight constants', () => {

@@ -40,15 +40,18 @@ describe('selection cast', () => {
     expect(shown).toHaveLength(CHARACTERS.length - 3);
   });
 
-  it('retires a04/a05 badge numbers instead of renumbering the fan', () => {
-    // Removed from the roster for licensing, but 4 and 5 must not come back as
-    // someone else's badge — the rest of the cast keeps what it shipped with.
+  it('retires a04/a05/a94 badge numbers instead of renumbering the fan', () => {
+    // Removed from the roster (licensing / a rig with no expressions), but their
+    // numbers must not come back as someone else's badge — the rest of the cast
+    // keeps what it shipped with.
     expect(selectionBadge('a04-avatarsample-a')).toBe(4);
     expect(selectionBadge('a05-avatarsample-c')).toBe(5);
+    expect(selectionBadge('a94-rita')).toBe(27);
     expect(selectionBadge('a10-agahomei-normal')).toBe(6);
     expect(selectionBadge('a122-shiratori-hikari-shifuku')).toBe(46);
     expect(selectionCast(CHARACTERS).map((c) => c.id)).not.toContain('a04-avatarsample-a');
     expect(selectionCast(CHARACTERS).map((c) => c.id)).not.toContain('a05-avatarsample-c');
+    expect(selectionCast(CHARACTERS).map((c) => c.id)).not.toContain('a94-rita');
   });
 
   it('moves character 34 forward without renumbering it', () => {
@@ -96,7 +99,7 @@ describe('MToon unify', () => {
     expect(needsMToonUnify('a14-vivi')).toBe(true);
     expect(needsMToonUnify('a63-hinoame-satuki-mei-sirayuki')).toBe(true);
     expect(needsMToonUnify('a04-avatarsample-a')).toBe(true);
-    expect(needsMToonUnify('a94-rita')).toBe(true);
+    expect(needsMToonUnify('a98-ethan')).toBe(true);
   });
 
   it('softens a hard toon and thins a thick world outline without turning it off', () => {

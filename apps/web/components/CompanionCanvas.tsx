@@ -2132,16 +2132,21 @@ export default function CompanionCanvas({
           avatar.root.scale.set(BASE_SX, BASE_SY, BASE_SX);
         }
 
-        // speech visemes: duck the emotion shapes while the mouth talks
+        // speech visemes: previously ducked the whole emotion face to ~0.64
+        // while the mouth moved, which read as "she goes blank to talk".
+        // OWNER OVERRIDE 2026-11-25: keep 90% of the expression — the visemes
+        // still open the jaw, the face does not need to flatten to speak.
         const sp = sampleSpeech();
-        const duck = sp ? 1 - 0.4 * sp.duck : 1;
+        const duck = sp ? 1 - 0.1 * sp.duck : 1;
         const v = (x: number) => clamp(x * duck + (sp ? 0 : 0), 0, 1);
         const pokeBoost = 0.9 * boost;
         const laughBoost = 0.85 * laugh; // full smile while the giggles play
         const setEm = (name: string, val: number) => avatar!.setExpression(name, val);
         const performBoost = mv?.kind === 'sing' ? 0.55 : mv?.kind === 'dance' ? 0.4 : 0;
-        // One dominant face preset for eye atlas / size morphs — stacking
-        // happy+surprised+relaxed lerps UV cells and flickers big↔small eyes.
+        // One dominant face preset for eye atlas / size morphs. The profile
+        // comes from the mounted rig: `atlas` keeps winner-take-all for
+        // seed-san; `roster` allows a reduced secondary so brows and mouth can
+        // come from different emotions. The avatar applies the matching caps.
         if (gameView) {
           const expr = gameView.expr;
           applyDominatedEyeExpressions(setEm, {
@@ -2153,7 +2158,7 @@ export default function CompanionCanvas({
             blink: expr.blink ?? 0,
             blinkLeft: expr.blinkLeft ?? 0,
             blinkRight: 0,
-          });
+          }, avatar!.eyeProfile);
         } else {
           applyDominatedEyeExpressions(setEm, {
             happy: clamp(v(Math.max(targets.blendShape.joy, targets.blendShape.fun)) + (poke.face === 'happy' ? pokeBoost : 0) + laughBoost + performBoost, 0, 1),
@@ -2163,11 +2168,11 @@ export default function CompanionCanvas({
               ? clamp(v(targets.blendShape.surprise) + pokeBoost, 0, 1)
               : v(targets.blendShape.surprise),
             relaxed: v(targets.blendShape.relaxed) + (poke.face === 'relaxed' ? pokeBoost : 0),
-            // Clear game blink leftovers; GenericAvatar re-applies blink in update().
-            blink: 0,
-            blinkLeft: 0,
-            blinkRight: 0,
-          });
+            // No blink keys here. The avatar's blink clock owns the lids
+            // (V1Avatar.update / GenericAvatar.update). Writing 0 every frame
+            // here used to fight that timer and would zero it again if both
+            // existed; leaving the channel untouched lets the clock win.
+          }, avatar!.eyeProfile);
         }
         if (sp) {
           // Jaw openness always follows amplitude (`aa`), with the vowel only

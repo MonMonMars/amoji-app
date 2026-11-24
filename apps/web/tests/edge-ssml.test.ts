@@ -212,9 +212,9 @@ describe('per-character Edge voices', () => {
     expect(resolveEdgeVoice({ lang: 'yue', gender: 'female', character: 'a02-shibu' }).name).toBe('zh-HK-HiuMaanNeural');
     expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a24-hairsample-male' }).name)).toBe(true);
     expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a107-dm-office-casual' }).name)).toBe(true);
-    expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a94-rita' }).name)).toBe(true);
+    expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a93-edokko' }).name)).toBe(true);
     // Delivery gender wins over companion cast — female pin on a male id → female neural.
-    expect(isFemaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a94-rita' }).name)).toBe(true);
+    expect(isFemaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a93-edokko' }).name)).toBe(true);
     expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a77-sasha' }).name)).toBe(true);
     expect(isMaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'male', character: 'a98-ethan' }).name)).toBe(true);
     expect(isFemaleNeuralVoice(resolveEdgeVoice({ lang: 'en', gender: 'female', character: 'a75-sorano' }).name)).toBe(true);
@@ -233,7 +233,7 @@ describe('per-character Edge voices', () => {
         'a107-dm-office-casual',
         'a24-hairsample-male',
         'a77-sasha',
-        'a94-rita',
+        'a93-edokko',
         'a98-ethan',
       ]) {
         const voice = resolveEdgeVoice({ lang, gender: 'male', character: id });

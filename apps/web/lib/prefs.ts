@@ -1823,6 +1823,9 @@ export function retiredReplacement(id: string): string {
   const map: Record<string, string> = {
     'a04-avatarsample-a': 'a02-shibu',
     'a05-avatarsample-c': 'a24-hairsample-male',
+    // 2026-11-25: a94-rita had zero expressions/visemes. Nearest still-shipping
+    // male keeps the saved companion's gender (and the fan position, 26).
+    'a94-rita': 'a93-edokko',
   };
   const next = map[id];
   return next && CHARACTERS.some((c) => c.id === next) ? next : DEFAULT_PREFS.character;
@@ -1847,11 +1850,12 @@ export function loadPrefs(): Prefs {
       const storedCharacter = typeof p.character === 'string' ? p.character : DEFAULT_PREFS.character;
       let character = CHARACTERS.some((c) => c.id === storedCharacter) ? storedCharacter : DEFAULT_PREFS.character;
       if (isHiddenCast(character)) character = DEFAULT_PREFS.character;
-      // A pick that was removed from the roster (a04/a05, 2026-11-08 licensing
-      // purge) is not an unknown id: keep the saved companion usable by moving
-      // to the nearest still-shipping character rather than silently resetting
-      // to the default. `characterById` also falls back, but doing it here means
-      // the migrated value is what gets persisted and shown.
+      // A pick that was removed from the roster (a04/a05 licensing purge
+      // 2026-11-08, a94-rita expressionless 2026-11-25) is not an unknown id:
+      // keep the saved companion usable by moving to the nearest still-shipping
+      // character rather than silently resetting to the default.
+      // `characterById` also falls back, but doing it here means the migrated
+      // value is what gets persisted and shown.
       if (character === DEFAULT_PREFS.character && RETIRED_CAST_IDS.includes(storedCharacter)) {
         character = retiredReplacement(storedCharacter);
       }

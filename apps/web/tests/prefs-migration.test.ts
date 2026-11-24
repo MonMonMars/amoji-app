@@ -51,9 +51,10 @@ describe('loadPrefs migration', () => {
 
 describe('a pick that was removed from the roster', () => {
   // a04/a05 were pulled on 2026-11-08 (VRoidPreset originals, not
-  // redistributable for a fee). Someone who picked one before that must still
-  // get a working companion, not a blank character or a crash.
-  const RETIRED = ['a04-avatarsample-a', 'a05-avatarsample-c'];
+  // redistributable for a fee); a94-rita on 2026-11-25 (blendShapeGroups: [],
+  // i.e. no expressions and no visemes). Someone who picked one of them must
+  // still get a working companion, not a blank character or a crash.
+  const RETIRED = ['a04-avatarsample-a', 'a05-avatarsample-c', 'a94-rita'];
 
   it('only lists ids that really are gone from the roster', () => {
     expect([...RETIRED_CAST_IDS].sort()).toEqual([...RETIRED].sort());
@@ -84,10 +85,11 @@ describe('a pick that was removed from the roster', () => {
   });
 
   it('preserves the gender of the pick it replaces', () => {
-    // a04 was female, a05 was male. Landing a male pick on a female companion
-    // would also silently rewrite lastFemale.
+    // a04 was female, a05 and a94 were male. Landing a male pick on a female
+    // companion would also silently rewrite lastFemale.
     expect(characterById(retiredReplacement('a04-avatarsample-a')).gender).toBe('female');
     expect(characterById(retiredReplacement('a05-avatarsample-c')).gender).toBe('male');
+    expect(characterById(retiredReplacement('a94-rita')).gender).toBe('male');
   });
 
   it('keeps lastFemale consistent with the migrated pick', () => {
@@ -120,9 +122,12 @@ describe('a pick that was removed from the roster', () => {
   it('keeps the retired badge number so it never reads as an unknown id', () => {
     expect(castNo('a04-avatarsample-a')).toBe(4);
     expect(castNo('a05-avatarsample-c')).toBe(5);
+    expect(castNo('a94-rita')).toBe(27);
   });
 
   it('gives a minigame a playable companion instead of the removed mesh', () => {
+    // v1 mini-games are female-only, so even the male retired picks resolve to
+    // a real female companion (never the removed mesh).
     for (const id of RETIRED) {
       const companion = resolveMiniGameCompanion(id);
       expect(CHARACTERS.some((c) => c.id === companion.id), id).toBe(true);

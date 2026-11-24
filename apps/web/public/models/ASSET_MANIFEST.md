@@ -2,9 +2,9 @@
 
 Every binary in this directory (top level or under `cast/`) must have an entry. CI fails on unmanifested files.
 
-Live companion cast (**44 characters**) streams from GitHub Releases; binaries are **not** committed to git (`models/want/` stays `.gitkeep`). Pages downloads each roster `modelUrl` at build time.
+Live companion cast (**43 characters**) streams from GitHub Releases; binaries are **not** committed to git (`models/want/` stays `.gitkeep`). Pages downloads each roster `modelUrl` at build time.
 
-- **`free-library-want-2026-10-12`** ??the want-list release ([release](https://github.com/MonMonMars/amoji-app/releases/tag/free-library-want-2026-10-12)). It carries 46 assets; the app ships 44. `a04-avatarsample-a` and `a05-avatarsample-c` left the roster on 2026-11-08 — see "Removed from the roster" below.
+- **`free-library-want-2026-10-12`** ??the want-list release ([release](https://github.com/MonMonMars/amoji-app/releases/tag/free-library-want-2026-10-12)). It carries 46 assets; the app ships 43. `a04-avatarsample-a` and `a05-avatarsample-c` left the roster on 2026-11-08 (licensing); `a94-rita` left on 2026-11-25 (no expressions/visemes). See "Removed from the roster" below.
 
 ## Shipped binaries (in-repo)
 
@@ -12,7 +12,7 @@ Live companion cast (**44 characters**) streams from GitHub Releases; binaries a
 |---|---|---|---|
 | seed-san.vrm | VRM Public License 1.0 (https://vrm.dev/en/licenses/1.0/index) ??"Seed-san" model by VirtualCast, Inc.; credit notation required | Official VRM 1.0 conformance sample: https://github.com/vrm-c/vrm-specification/tree/master/samples/Seed-san | Licensed fallback avatar for open-source and GitHub Pages builds. Also the universal fallback whenever a cast file is missing or fails to load. Credit: Seed-san model by VirtualCast, Inc. |
 
-## Live cast — free-library WANT list (44 characters)
+## Live cast — free-library WANT list (43 characters)
 
 Source of truth: `apps/web/lib/want-roster.json` ??generated `apps/web/lib/characters-want.ts` (`node scripts/generate-want-cast.mjs`).
 
@@ -42,7 +42,6 @@ Source of truth: `apps/web/lib/want-roster.json` ??generated `apps/web/lib/chara
 | a85-kara | female | `??a85-kara.vrm` |
 | a89-rurina | female | `??a89-rurina.vrm` |
 | a93-edokko | male | `??a93-edokko.vrm` |
-| a94-rita | male | `??a94-rita.vrm` |
 | a95-mizu | female | `??a95-mizu.vrm` |
 | a96-pee-aruako | female | `??a96-pee-aruako.vrm` |
 | a97-pee-saaya | female | `??a97-pee-saaya.vrm` |
@@ -90,6 +89,18 @@ If one is ever damaged, the only safe move is to drop it from the roster.
 Both still exist in the release and in local `want/` trees; they are simply no
 longer roster entries, so nothing loads them. `apps/web/lib/castNo.ts` keeps their
 badge numbers (4 and 5) reserved so the rest of the fan is not renumbered.
+
+### Removed from the roster 2026-11-25
+
+| Character id | Why removed |
+|---|---|
+| a94-rita | `blendShapeGroups: []` — zero expressions and zero visemes. The rig is mute and expressionless, so no emotion or lip-sync could ever render on it. |
+
+`a94-rita` is **retired in `want-roster.json`** (`"retired": true`) rather than
+deleted: the `.vrm` and `.png` remain in the release and in local `want/` trees so
+the asset record stays in sync, but the generator emits no `CHARACTERS` entry and
+the picker never offers it. `apps/web/lib/castNo.ts` keeps badge **27** reserved;
+a saved pick migrates to `a93-edokko` (the nearest still-shipping male).
 
 **License / credits**: every model that requires attribution is credited on the `/credits` page (`apps/web/lib/credits.ts`), with the strings read from the VRM's own embedded metadata. Roster `creditNotes` summarise the rest.
 

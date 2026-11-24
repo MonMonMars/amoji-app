@@ -34,7 +34,6 @@ const BIGHEAD_IDS: readonly string[] = [
   'a85-kara',
   'a89-rurina',
   'a93-edokko',
-  'a94-rita',
   'a95-mizu',
   'a96-pee-aruako',
   'a97-pee-saaya',
