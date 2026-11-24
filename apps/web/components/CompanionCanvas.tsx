@@ -1870,9 +1870,16 @@ export default function CompanionCanvas({
             const hsL = handScreen('left');
             const hsR = handScreen('right');
             const screenArm = armZoneFromScreen(ptrLocal.x, ptrLocal.y, hsL, hsR);
+            // Never re-label a confident `side` flank tap as a single arm:
+            // armZoneFromScreen always returns the nearer hand (it is null
+            // only when both hands are off-screen), so every lateral poke was
+            // being rewritten to armL/armR. That swapped the side gains
+            // (roll 0.68) for the arm gains (roll 0.28) and turned the torso
+            // lean the owner asked for into a one-arm flinch. `side` already
+            // emphasises the near arm through pokeSideSign below.
             if (
               screenArm
-              && (pokeZone === 'armL' || pokeZone === 'armR' || pokeZone === 'side' || pokeZone === 'hand')
+              && (pokeZone === 'armL' || pokeZone === 'armR' || pokeZone === 'hand')
             ) {
               pokeZone = screenArm;
             }

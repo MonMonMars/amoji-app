@@ -17,6 +17,8 @@
 // pass externalEndpoint to disarm the internal silence timer, then flush
 // finished utterances yourself through the returned handle's flush().
 
+import { collectSpeechUpdate } from './speech-finals';
+
 const LANG_MAP: Record<string, string> = {
   yue: 'zh-HK',
   zh: 'zh-CN',
@@ -35,7 +37,7 @@ interface RecognitionLike {
   interimResults: boolean;
   maxAlternatives: number;
   continuous: boolean;
-  onresult: ((e: { results: ArrayLike<SpeechResult> }) => void) | null;
+  onresult: ((e: { results: ArrayLike<SpeechResult>; resultIndex?: number }) => void) | null;
   onerror: ((e: { error?: string }) => void) | null;
   onend: (() => void) | null;
   start: () => void;
@@ -161,14 +163,10 @@ export function listenContinuous(lang: string, opts: ContinuousListenOptions): C
       if (endpointTimer) { clearTimeout(endpointTimer); endpointTimer = undefined; }
     };
     rec.onresult = (e) => {
-      let interim = '';
-      let finalText = '';
-      for (let i = 0; i < e.results.length; i++) {
-        const r = e.results[i]!;
-        const t = r[0]?.transcript ?? '';
-        if (r.isFinal) finalText += t;
-        else interim += t;
-      }
+      // Only finals the browser reports as NEW (resultIndex) are a new
+      // utterance. Folding from 0 re-emitted every previous final on each
+      // later event — the chat then re-sent the same user message forever.
+      const { finalText, interim } = collectSpeechUpdate(e.results, e.resultIndex);
       const heard = (finalText + interim).trim();
       // any recognized text means a real voice (noise never reaches here),
       // so barge-in exactly once per burst of talking
@@ -177,7 +175,7 @@ export function listenContinuous(lang: string, opts: ContinuousListenOptions): C
       opts.onInterim?.(interim);
       if (interim.trim()) armEndpoint();
       else disarmEndpoint();
-      const said = finalText.trim();
+      const said = finalText;
       if (said) { bargeInFired = false; disarmEndpoint(); opts.onFinal(said); }
     };
     rec.onerror = (e) => {

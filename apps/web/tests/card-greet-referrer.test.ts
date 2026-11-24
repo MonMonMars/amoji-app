@@ -46,9 +46,11 @@ describe('card greet survives the Google TTS Referer block', () => {
 });
 
 describe('card tap starts the greet inside the gesture', () => {
-  it('character card onSelect calls playVoiceGreeting synchronously', () => {
+  it('character card onConfirm (tap only) calls playVoiceGreeting synchronously', () => {
     const board = read('../components/SelectionBoard.tsx');
-    const handler = callBlock(board, 'onSelect={(id) =>');
+    // Tap-only since the 2026-11-25 scroll report: onSelect (wheel/drag/arrow)
+    // must never speak, so the greet lives in onConfirm.
+    const handler = callBlock(board, 'onConfirm={(id) =>');
     const greet = handler.indexOf('playVoiceGreeting(');
     expect(greet).toBeGreaterThan(-1);
     // Nothing async may sit in front of the call, or iOS loses the gesture.

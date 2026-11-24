@@ -4,6 +4,7 @@
 // scale down, and tilt — an arcade ring, not a left-packed strip.
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 import { t, loadPrefs } from '../lib/prefs';
+import { fanDragIntent } from '../lib/arc-fan-input';
 
 export type ArcPose = {
   x: number;
@@ -135,7 +136,12 @@ export default function ArcFan<T extends { id: string }>({
   items: T[];
   selectedId: string;
   onSelect: (id: string) => void;
-  /** Tap a card. Drag, wheel, and arrows keep using onSelect to move focus. */
+  /**
+   * Deliberate activation — a tap/click, or Enter/Space on the focused card.
+   * NEVER called for wheel, drag, arrow keys or the scroll chevrons: those move
+   * focus through `onSelect` only, so nothing on the voice path can greet while
+   * the user is scrolling (owner 2026-11-25).
+   */
   onConfirm?: (id: string) => void;
   ariaLabel: string;
   /** portrait: large character heads. compact: small language cards. scene: backgrounds. */
@@ -145,7 +151,7 @@ export default function ArcFan<T extends { id: string }>({
 }) {
   const lang = loadPrefs().lang;
   const root = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ x: number; moved: boolean } | null>(null);
+  const drag = useRef<{ x: number; y: number; moved: boolean } | null>(null);
   const suppress = useRef(false);
   const indexRef = useRef(0);
   const [compact, setCompact] = useState(false);
@@ -274,15 +280,24 @@ export default function ArcFan<T extends { id: string }>({
   }, [items, onSelect]);
 
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    drag.current = { x: event.clientX, moved: false };
+    drag.current = { x: event.clientX, y: event.clientY, moved: false };
   };
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (!drag.current) return;
     const dx = event.clientX - drag.current.x;
-    if (Math.abs(dx) < 42) return;
-    drag.current = { x: event.clientX, moved: true };
+    const dy = event.clientY - drag.current.y;
+    // A vertical page scroll always drifts sideways; only a drag whose
+    // sideways travel clearly dominates may step the ring. Stepping is now
+    // selection-only (the board's onSelect does not speak), so a scroll can
+    // never greet (owner 2026-11-25).
+    const intent = fanDragIntent(dx, dy);
+    if (intent === 'none') return;
+    // Advance the origin so a long swipe steps once per threshold instead of
+    // re-firing the same step on every pointermove (that repeat used to greet
+    // many times in one gesture).
+    drag.current = { x: event.clientX, y: event.clientY, moved: true };
     suppress.current = true;
-    go(index + (dx < 0 ? 1 : -1));
+    go(indexRef.current + (intent === 'next' ? 1 : -1));
   };
   const onPointerUp = () => {
     if (drag.current?.moved) {
