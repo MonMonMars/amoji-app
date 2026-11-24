@@ -98,13 +98,15 @@ describe('side zone width (VRM geometry)', () => {
   it('classifies a half-width flank as side, not front or back', () => {
     // 85 mm = half of the 170 mm torso half-width, still on the visible front
     // surface (z ≈ +0.079 m in front of the hips bone).
+    // Direction = where the poke came FROM, in the directionFromOctant
+    // convention: this contact is on her RIGHT (s > 0), so it is front-RIGHT.
     const halfFlank = classifyAt(torsoSurface(-HALF_WIDTH / 2));
     expect(halfFlank.zone).toBe('side');
-    expect(halfFlank.direction).toBe('frontLeft');
+    expect(halfFlank.direction).toBe('frontRight');
 
     const midFlank = classifyAt(torsoSurface(-0.075));
     expect(midFlank.zone).toBe('side');
-    expect(['frontLeft', 'left', 'backLeft']).toContain(midFlank.direction);
+    expect(['frontRight', 'right', 'backRight']).toContain(midFlank.direction);
 
     // A dead-centre tap is still a chest/front poke, not a side one.
     const centre = classifyAt(torsoSurface(0));
@@ -131,17 +133,21 @@ describe('side zone width (VRM geometry)', () => {
   it('mirrors the side zone on the other flank', () => {
     const right = classifyAt(torsoSurface(HALF_WIDTH / 2));
     expect(right.zone).toBe('side');
-    expect(right.direction).toBe('frontRight');
+    // World +X is her LEFT, so this is a poke from her front-left.
+    expect(right.direction).toBe('frontLeft');
     expect(right.sideSign).toBe(-1);
   });
 
   it('promotes a depth-dominated ray octant to the contact diagonal', () => {
     // The camera ray for a flank tap is almost pure −Z (front); the lateral
     // octant has to come from the contact offset, or labels/voices read front.
+    // The contact offset carries the side of the BODY she was poked on, and
+    // the octant convention says a poke from her front-right lands on her
+    // right (s > 0). r291 had this reversed and played the other side's voice.
     const cls = classifyAt(torsoSurface(-0.15));
     expect(cls.impulse.z).toBeLessThan(-0.99);
     expect(Math.abs(cls.impulse.x)).toBeLessThan(0.1);
-    expect(cls.direction).toBe('frontLeft');
+    expect(cls.direction).toBe('frontRight');
     expect(cls.zone).toBe('side');
   });
 });
@@ -154,7 +160,8 @@ describe('lateral lean follows the finger side', () => {
     expect(fall.z).toBeLessThan(0);
 
     const section = resolvePokeSection('side', cls.direction);
-    expect(section.angle).toBe('frontLeft');
+    // Screen-left is character-RIGHT face-on → a front-right poke.
+    expect(section.angle).toBe('frontRight');
     const body = pokeSectionBodyReaction({
       t: 0.12,
       section,
@@ -182,7 +189,8 @@ describe('lateral lean follows the finger side', () => {
     expect(fall.z).toBeLessThan(0);
 
     const section = resolvePokeSection('side', cls.direction);
-    expect(section.angle).toBe('frontRight');
+    // Screen-right is character-LEFT face-on → a front-left poke.
+    expect(section.angle).toBe('frontLeft');
     const body = pokeSectionBodyReaction({
       t: 0.12,
       section,

@@ -137,7 +137,9 @@ function recoilXZ(hit: Vec3, hips: Vec3, extra?: PokeHitExtra): { x: number; z: 
   return away;
 }
 
-function nearestPart(hit: Vec3, hips: Vec3, extra?: PokeHitExtra): TalkZone | null {
+interface PartHit { zone: TalkZone; d: number }
+
+function nearestPart(hit: Vec3, hips: Vec3, extra?: PokeHitExtra): PartHit | null {
   if (!extra) return null;
   const cands: { zone: TalkZone; p: Vec3; r: number }[] = [];
   if (extra.leftHand) cands.push({ zone: 'hand', p: extra.leftHand, r: 0.16 });
@@ -150,13 +152,13 @@ function nearestPart(hit: Vec3, hips: Vec3, extra?: PokeHitExtra): TalkZone | nu
   if (extra.rightLeg && hit.y < hips.y - 0.08) cands.push({ zone: 'legR', p: extra.rightLeg, r: 0.3 });
   if (extra.belly) cands.push({ zone: 'belly', p: extra.belly, r: 0.18 });
   if (extra.butt) cands.push({ zone: 'butt', p: extra.butt, r: 0.22 });
-  let best: { zone: TalkZone; d: number } | null = null;
+  let best: PartHit | null = null;
   for (const c of cands) {
     const d = dist(hit, c.p);
     if (d > c.r) continue;
     if (!best || d < best.d) best = { zone: c.zone, d };
   }
-  return best?.zone ?? null;
+  return best;
 }
 
 /**
@@ -177,6 +179,30 @@ function nearestPart(hit: Vec3, hips: Vec3, extra?: PokeHitExtra): TalkZone | nu
  */
 const SIDE_AXIAL_RATIO = 0.55;
 const SIDE_LATERAL_MIN_M = 0.04;
+
+/**
+ * Probe disambiguation (owner: "the side poke also blended to the opposite
+ * side … the poke area of side is too small", reported 2026-11-22 and again
+ * 2026-11-24 after r291 widened the zone).
+ *
+ * Widening the zone was not the problem: a tap at the visible flank silhouette
+ * already resolved `side` under the old 0.9 ratio. The `butt` probe sits at
+ * hips − forward·0.08 with r = 0.22 m, so the same flank tap is ~0.17 m from
+ * it — inside the sphere — and the override below re-labelled the whole hit
+ * `butt`, i.e. rear hips with a 0.14 roll gain. The flank stopped leaning.
+ *
+ * Arms rest beside the hips (lower-arm bone ≈ ±0.20 m), so the r = 0.28 arm
+ * probe covered the flank too and stole it as `armL`/`armR`. Both probes may
+ * only win when the contact is really theirs:
+ *
+ *   - the torso surface is the ellipse from the note above; a contact inside
+ *     it (q ≤ 1.12, 12% slack for cloth/float) is on the body, not a limb —
+ *     an arm hangs outside the 0.17 m half-width, and a hand crossed in front
+ *     of the belly is deeper than the 0.13 m half-depth, so both are outside.
+ */
+const TORSO_HALF_WIDTH_M = 0.17;
+const TORSO_HALF_DEPTH_M = 0.13;
+const TORSO_SURFACE_Q = 1.12;
 
 export function classifyPoke(
   hit: Vec3,
@@ -207,16 +233,26 @@ export function classifyPoke(
 
   if (zone !== 'head') {
     const part = nearestPart(hit, hips, extra);
-    if (part === 'belly') {
+    // Ellipse-normalised torso radius: ≤ 1 is on/inside the torso surface.
+    // Off the torso band (thighs, calves) the ellipse says nothing, so the
+    // limb probe always owns the contact there.
+    const torsoQ = (s / TORSO_HALF_WIDTH_M) ** 2 + (f / TORSO_HALF_DEPTH_M) ** 2;
+    const inTorsoBand = hit.y > hips.y - 0.06;
+    const offTorso = !inTorsoBand || torsoQ > TORSO_SURFACE_Q;
+    if (part?.zone === 'belly') {
       if ((zone === 'torso' || zone === 'chest') && dist(hit, extra!.belly!) + 0.02 < dist(hit, chest)) zone = 'belly';
-    } else if (part === 'butt') {
-      // Rear-hips probe wins when closer than chest and not a clear arm hit.
-      if (zone === 'back' || zone === 'torso' || zone === 'side') zone = 'butt';
-    } else if (
-      part === 'armL' || part === 'armR' || part === 'legL' || part === 'legR'
-      || part === 'hand' || part === 'foot'
-    ) {
-      zone = part;
+    } else if (part?.zone === 'butt') {
+      // Rear-hips probe: REAR contact only. It used to also claim `side`
+      // (owner's side tap → hip-tier rear-hip reaction) and it sits close
+      // enough to the front hip band to claim a front `torso` tap as well.
+      // `f` is the contact's forward offset; > 0 is in front of the hips bone.
+      if (f < -0.02 && (zone === 'back' || zone === 'torso')) zone = 'butt';
+    } else if (part) {
+      // Arm / hand / leg / foot. A confident lateral flank read survives a
+      // merely-near limb probe: arms rest beside the hips, so at the full
+      // r = 0.28 the arm sphere covers the flank the owner calls "side".
+      // A contact inside the torso ellipse is body, however close the bone.
+      if (zone !== 'side' || offTorso) zone = part.zone;
     }
   }
 
@@ -226,11 +262,16 @@ export function classifyPoke(
   // on a point a human calls "the side". The contact offset already knows the
   // lateral octant, so promote an axial read to the matching diagonal instead
   // of letting the lateral tap resolve as a front/back poke.
+  //
+  // Octant convention (directionFromOctant): a poke FROM her front-left is
+  // `frontLeft`, and the contact then sits on her LEFT, i.e. s < 0 (s is the
+  // offset along the character's right axis). r291 had this reversed, so a
+  // left-flank tap played the front-RIGHT voice slot.
   let direction = directionFromAxes(impulse, forward, rightN);
   if (side && !isLateralPokeDirection(direction)) {
     direction = f < 0
-      ? (s >= 0 ? 'backLeft' : 'backRight')
-      : (s >= 0 ? 'frontLeft' : 'frontRight');
+      ? (s >= 0 ? 'backRight' : 'backLeft')
+      : (s >= 0 ? 'frontRight' : 'frontLeft');
   }
   return {
     zone,
