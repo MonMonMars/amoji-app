@@ -313,8 +313,24 @@ function escapeXml(s: string): string {
 }
 
 const pct = (n: number) => `${n >= 0 ? '+' : ''}${Math.round(n * 100)}%`;
-const db = (n: number) => `${n >= 0 ? '+' : ''}${(n * 8).toFixed(1)}dB`;
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
+/**
+ * Prosody volume for the readaloud endpoint.
+ *
+ * This used to emit `±N.NdB` (the `n * 8` scaling is kept), but that unit is
+ * REFUSED outright: the endpoint answers `1007 … SSML parsing error:
+ * 0x80045003` and drops the whole utterance, while the same clause with a
+ * percentage synthesizes fine. Every spoken clause carried this attribute, so
+ * every line was silent — and two failures trip the EDGE_FAILURE_LIMIT=2
+ * breaker, which parks the whole Edge tier for five minutes.
+ *
+ * The conversion keeps the loudness that was asked for: amplitude ratio is
+ * 10^(dB/20), which is exactly what `volume` as a percentage expresses.
+ */
+const db = (n: number) => {
+  const percent = Math.round((10 ** ((n * 8) / 20) - 1) * 100);
+  return `${percent >= 0 ? '+' : ''}${clamp(percent, -100, 200)}%`;
+};
 
 // ---- current playback (so stopSpeaking can cut it) ----
 let currentAudio: HTMLAudioElement | null = null;
@@ -322,14 +338,33 @@ let currentAudio: HTMLAudioElement | null = null;
 // playback MUST also settle it: otherwise its 4.5s timeout fires .catch()
 // later and a stale, already-replaced line gets spoken out of nowhere.
 let pendingReject: ((err: Error) => void) | null = null;
+/** True while a tab hide owns the pause, so the show seam knows to resume. */
+let edgePausedByHide = false;
 
 /** Pause in-flight neural audio when the tab is hidden. */
 export function pauseEdgeForTabHide(): void {
   if (!currentAudio) return;
+  edgePausedByHide = true;
   try { currentAudio.pause(); } catch { /* ignore */ }
 }
 
+/**
+ * Resume the neural mp3 a tab hide paused. Same failure as the gTTS tier: the
+ * paused element held the serial speaker with no resume path, so the reply
+ * ended silent when the user came back to the tab.
+ */
+export function resumeEdgeForTabShow(): void {
+  if (!edgePausedByHide) return;
+  edgePausedByHide = false;
+  const audio = currentAudio;
+  if (!audio) return;
+  try {
+    if (audio.paused) void audio.play().catch(() => undefined);
+  } catch { /* ignore */ }
+}
+
 export function stopEdge(): void {
+  edgePausedByHide = false;
   if (currentAudio) {
     currentAudio.pause();
     currentAudio.onended = null;
@@ -350,10 +385,21 @@ export function edgeTtsPossible(): boolean {
 // ---- r131: optional HTTP TTS proxy -------------------------------------------
 // Some networks block the wss socket (Master Simon's iPhone network did —
 // r89). A proxy carries the same SSML over plain HTTPS POST and returns the
-// mp3, so the neural voice survives those networks. Deploy server/amoji-proxy/
-// (a free Cloudflare Worker) and point this at it; unset → direct socket.
+// mp3, so the neural voice survives those networks. The deployed free
+// Cloudflare Worker (server/amoji-proxy, wrangler name `amoji-voice`) is the
+// built-in default: real users get the verified male/female neural voices
+// without pasting a URL into Settings. Clear the field to force a direct
+// socket connection (stored `''` is an explicit opt-out, not "unset").
 const PROXY_KEY = 'amoji.ttsproxy.v1';
 let proxyOverride: string | null | undefined; // undefined = read storage, then env
+
+/**
+ * Live relay verified 2026-11-24 (returns HTTP 200 audio/mpeg for
+ * zh-HK-WanLungNeural, zh-CN-YunjianNeural, ja-JP-KeitaNeural,
+ * en-US-GuyNeural, zh-HK-HiuMaanNeural). Not a key; safe to ship in the
+ * public bundle. `?debug=1` makes a 502 return its upstream trace.
+ */
+export const DEFAULT_TTS_PROXY = 'https://amoji-voice.monmonmars.workers.dev';
 
 /** Empty or whitespace → no proxy (direct Edge socket). Strips a trailing slash. */
 export function normalizeProxyUrl(url: string | null | undefined): string | null {
@@ -363,9 +409,10 @@ export function normalizeProxyUrl(url: string | null | undefined): string | null
 }
 
 /**
- * Session override wins, including an explicit clear (null). Otherwise a
- * saved localStorage URL. Otherwise NEXT_PUBLIC_TTS_PROXY from .env.local
- * or the Pages build. A cleared value does not resurrect the env URL.
+ * Precedence: session override (including an explicit clear, null) >
+ * saved localStorage URL (an explicit `''` disables the proxy) >
+ * NEXT_PUBLIC_TTS_PROXY when non-blank > the built-in worker.
+ * A cleared value does not resurrect the env URL or the default.
  */
 export function resolveTtsProxy(
   override: string | null | undefined,
@@ -374,7 +421,7 @@ export function resolveTtsProxy(
 ): string | null {
   if (override !== undefined) return normalizeProxyUrl(override);
   if (stored !== null) return normalizeProxyUrl(stored);
-  return normalizeProxyUrl(env);
+  return normalizeProxyUrl(env) ?? DEFAULT_TTS_PROXY;
 }
 
 export function setTtsProxy(url: string | null): void {
@@ -497,8 +544,9 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
 /**
  * Speak `text` with a neural voice. Resolves when playback finishes,
  * rejects quickly if every transport is unreachable (caller falls back).
- * r131: transports are (1) the configured HTTP proxy when set, else
- * (2) the direct readaloud WebSocket.
+ * r131: transports are (1) the configured HTTP proxy (the built-in worker
+ * by default, unless the user cleared it), else (2) the direct readaloud
+ * WebSocket.
  */
 
 // ---- endpoint circuit breaker ---------------------------------------------

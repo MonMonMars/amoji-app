@@ -8,8 +8,10 @@
 //
 // It now lists the voices that really differ, per language, and states the
 // engine verdict for everything that does not work, so the short list is
-// explained rather than mysterious. An Add button pulls optional same-bucket
-// regional codes from the test pool for auditioning.
+// explained rather than mysterious. Every hosted gTTS speaker is female, so
+// the list is all female: no pitched-down "male" button is offered. An Add
+// button pulls optional same-bucket regional codes from the test pool for
+// auditioning.
 
 import { useCallback, useState } from 'react';
 import { selectTtsButtons, type TtsButtonVoice } from '../lib/tts-button-registry';

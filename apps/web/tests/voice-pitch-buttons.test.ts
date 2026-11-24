@@ -1,23 +1,17 @@
 /**
- * Owner ask: same Google voice → several pitch variants as selectable buttons.
- * #374 only auto-assigned bright/mid/deep per character. This suite locks the
- * selectable button path (catalog + pitch resolver + UI labels).
+ * Selectable pitch buttons — retired by the owner's original-TTS directive.
+ *
+ * #446 shipped deep/mid/bright buttons over the SAME Google MP3, each one a
+ * playbackRate resample. The owner (2026-11-23): "all the modified sound not
+ * sound good ... please only use the original TTS." So there is one natural
+ * button per real speaker; legacy pitch ids still resolve to it so saved pins
+ * do not break, and nothing applies a pitch bias.
  */
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  FEMALE_TIER_OFFSET,
-  MALE_TIER_OFFSET,
-  gttsCharacterPitchBias,
-} from '../lib/gtts-timbre';
-import {
-  GTTS_PITCH_BIAS_MAX,
-  GTTS_PITCH_BIAS_MIN,
-  PITCH_BIAS_FEMALE,
-  PITCH_BIAS_MALE,
-} from '../lib/gtts';
+import { ORIGINAL_TTS_PITCH_BIAS, gttsCharacterPitchBias } from '../lib/gtts-timbre';
 import {
   pitchTierForChoice,
   preferredVoiceChoiceForGender,
@@ -29,65 +23,53 @@ import { resetVoicePicks, saveVoicePick, voicePickFor } from '../lib/voice-picks
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
-describe('selectable pitch buttons for the same voice', () => {
-  it('expands each tl×gender into deep/mid/bright choice ids', () => {
-    expect(voiceChoiceId('yue', 'female', 'deep')).toBe('gtts:yue:f:deep');
-    expect(voiceChoiceId('yue', 'female', 'mid')).toBe('gtts:yue:f:mid');
-    expect(voiceChoiceId('yue', 'female', 'bright')).toBe('gtts:yue:f:bright');
-    expect(voiceChoiceById('gtts:yue:f:bright')?.pitchTier).toBe('bright');
-    expect(pitchTierForChoice('gtts:yue:m:deep')).toBe('deep');
+describe('one natural button per speaker; legacy pitch ids resolve to it', () => {
+  it('normalises deep/mid/bright ids onto the same female mid choice', () => {
+    for (const tier of ['deep', 'mid', 'bright'] as const) {
+      const id = voiceChoiceId('yue', 'female', tier);
+      const hit = voiceChoiceById(id)!;
+      expect(hit.id).toBe('gtts:yue:f:mid');
+      expect(hit.tl).toBe('yue');
+      expect(hit.deliveryGender).toBe('female');
+      expect(hit.pitchTier).toBe('mid');
+      expect(pitchTierForChoice(id)).toBe('mid');
+    }
+    // A legacy male id was a female source; it resolves there, not to "male".
+    expect(voiceChoiceById('gtts:yue:m:deep')?.id).toBe('gtts:yue:f:mid');
   });
 
-  it('pinned pitch button changes free-tier bias without changing tl', () => {
-    const deep = voiceChoiceById('gtts:en-US:f:deep')!;
-    const bright = voiceChoiceById('gtts:en-US:f:bright')!;
-    expect(deep.tl).toBe(bright.tl);
-    expect(deep.deliveryGender).toBe(bright.deliveryGender);
-    const deepBias = gttsCharacterPitchBias('female', undefined, 'en', deep.pitchTier);
-    const brightBias = gttsCharacterPitchBias('female', undefined, 'en', bright.pitchTier);
-    expect(deepBias).toBe(
-      Math.max(GTTS_PITCH_BIAS_MIN, PITCH_BIAS_FEMALE + FEMALE_TIER_OFFSET.deep),
-    );
-    expect(brightBias).toBe(
-      Math.min(GTTS_PITCH_BIAS_MAX, PITCH_BIAS_FEMALE + FEMALE_TIER_OFFSET.bright),
-    );
-    expect(brightBias - deepBias).toBeGreaterThanOrEqual(0.68);
-    const maleDeep = gttsCharacterPitchBias('male', undefined, 'en', 'deep');
-    const maleBright = gttsCharacterPitchBias('male', undefined, 'en', 'bright');
-    // Male deep may hit the widened clamp floor when raw base+offset undershoots.
-    expect(maleDeep).toBeGreaterThanOrEqual(GTTS_PITCH_BIAS_MIN);
-    expect(maleDeep).toBe(Math.max(GTTS_PITCH_BIAS_MIN, PITCH_BIAS_MALE + MALE_TIER_OFFSET.deep));
-    expect(maleBright).toBeLessThan(1);
-    expect(deepBias).toBeGreaterThan(1);
-    expect(maleBright).toBeLessThan(deepBias);
-    expect(maleBright - maleDeep).toBeGreaterThanOrEqual(0.58);
-    expect(maleDeep).toBeLessThan(deepBias);
+  it('applies no pitch bias for any gender or tier', () => {
+    for (const tier of ['deep', 'mid', 'bright'] as const) {
+      expect(gttsCharacterPitchBias('female', undefined, 'en', tier)).toBe(1);
+      expect(gttsCharacterPitchBias('male', undefined, 'en', tier)).toBe(1);
+    }
+    expect(ORIGINAL_TTS_PITCH_BIAS).toBe(1);
   });
 
-  it('defaults unpinned gender picks to the mid pitch button', () => {
+  it('defaults both gender picks to the female mid button', () => {
     expect(preferredVoiceChoiceForGender('yue', 'female').id).toBe('gtts:yue:f:mid');
-    expect(preferredVoiceChoiceForGender('yue', 'male').id).toBe('gtts:yue:m:mid');
+    expect(preferredVoiceChoiceForGender('yue', 'male').id).toBe('gtts:yue:f:mid');
     expect(preferredVoiceChoiceForGender('en', 'female').pitchTier).toBe('mid');
   });
 
-  it('pins and restores a bright pitch button', () => {
+  it('migrates a saved bright pin to the natural button', () => {
     resetVoicePicks();
     saveVoicePick('ja', 'gtts:ja:f:bright');
-    expect(voicePickFor('ja')).toBe('gtts:ja:f:bright');
-    expect(pitchTierForChoice(voicePickFor('ja'))).toBe('bright');
+    expect(voicePickFor('ja')).toBe('gtts:ja:f:mid');
+    expect(pitchTierForChoice(voicePickFor('ja'))).toBe('mid');
     resetVoicePicks();
   });
 
-  it('select board and settings both render pitch in the button label', () => {
+  it('select board and settings still render the tier label helper', () => {
     const row = fs.readFileSync(path.resolve(here, '../components/TtsVoiceRow.tsx'), 'utf8');
     const picker = fs.readFileSync(path.resolve(here, '../components/VoicePicker.tsx'), 'utf8');
     expect(row).toContain('pitchTierLabelKey(button.pitchTier)');
     expect(picker).toContain('pitchTierLabelKey(button.pitchTier)');
     expect(row).toContain('${genderLabel} · ${pitchLabel}');
-    expect(selectTtsButtons('yue').filter((b) => b.tl === 'yue' && b.deliveryGender === 'female')).toHaveLength(3);
+    expect(selectTtsButtons('yue').filter((b) => b.tl === 'yue' && b.deliveryGender === 'female')).toHaveLength(1);
   });
 
-  it('voice.ts routes speak/preview pitch through the pinned button', () => {
+  it('voice.ts routes through the pinned button, which is now the identity', () => {
     const voice = fs.readFileSync(path.resolve(here, '../lib/voice.ts'), 'utf8');
     expect(voice).toContain('pitchTierForChoice');
     expect(voice).toContain('gttsCharacterPitchBias(delivery, characterId, lang, tier)');

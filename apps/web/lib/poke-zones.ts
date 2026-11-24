@@ -235,7 +235,7 @@ export function pokeSectionBodyReaction(opts: {
       zone: 'head',
       softChest: false,
     });
-    // Soft torso follow on the same fall vector (away from push), low band scale.
+    // Soft torso follow on the same fall vector (the body tips toward the poke).
     const follow = scaleBody(
       pokeBodyReaction({
         ...common,

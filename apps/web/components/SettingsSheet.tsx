@@ -40,6 +40,9 @@ import { listenSupported } from '../lib/listen';
 import { requestMic } from '../lib/mic-preflight';
 import { patchEntryGateMic, type MicOutcome } from '../lib/entry-gate';
 import { isMasterMuted, setMasterMuted, subscribeMasterMute } from '../lib/master-mute';
+import {
+  isBackgroundSoundMuted, setBackgroundSoundMuted, subscribeBackgroundSound,
+} from '../lib/background-sound';
 import { VOLUME_STEPS, isVolumeStep, type VolumeStep } from '../lib/audio-levels';
 import { applyBgmLevel, applyDialogueLevel } from '../lib/music';
 import { applySfxLevel } from '../lib/sfx';
@@ -162,6 +165,12 @@ export default function SettingsSheet({
   const masterMuted = useSyncExternalStore(
     (onStoreChange) => subscribeMasterMute(() => onStoreChange()),
     isMasterMuted,
+    () => null as boolean | null,
+  );
+  // null until localStorage sync — same boot-flash guard as Mute All above.
+  const backgroundMuted = useSyncExternalStore(
+    (onStoreChange) => subscribeBackgroundSound(() => onStoreChange()),
+    isBackgroundSoundMuted,
     () => null as boolean | null,
   );
   const [neuralOn, setNeuralOnState] = useState(neuralEnabled());
@@ -626,6 +635,22 @@ export default function SettingsSheet({
                 disabled={masterMuted === null}
                 accent={accent}
                 onClick={() => setMasterMuted(masterMuted !== true)}
+              />
+            </div>
+            {/* Owner ask (2026-11-24): one switch that kills the background
+                music / song-bed / ambience and leaves her spoken voice alone.
+                Indented under Mute All on purpose: it is the quieter, more
+                surgical sibling of the full silence switch. */}
+            <div className="flex items-center justify-between gap-3 py-2">
+              <span className={label}>🔇 {t(lang, 'backgroundSound')}
+                <span className="block text-[11px] text-white/40">{t(lang, 'backgroundSoundHint')}</span>
+              </span>
+              <Toggle
+                label={t(lang, 'backgroundSound')}
+                on={backgroundMuted === true}
+                disabled={backgroundMuted === null}
+                accent={accent}
+                onClick={() => setBackgroundSoundMuted(backgroundMuted !== true)}
               />
             </div>
 <div className={row}>

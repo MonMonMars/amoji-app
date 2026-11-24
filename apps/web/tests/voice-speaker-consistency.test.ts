@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
-import { PITCH_BIAS_MALE, PITCH_BIAS_FEMALE } from '../lib/gtts';
 
 const web = join(__dirname, '..');
 const gtts = readFileSync(join(web, 'lib/gtts.ts'), 'utf8');
@@ -41,16 +40,17 @@ describe('voice does not switch speaker mid-line or between characters', () => {
     expect(gtts).toContain('opts.onProgress?.(spokenChars)');
   });
 
-  it('character identity is carried by pitch, since the endpoint has one voice per language', () => {
-    // The Translate endpoint takes only `tl`, so every character shares a voice
-    // and male companions sounded female. Pitch bias is the only lever.
+  it('gTTS plays the original audio; speaker identity is the `tl` only', () => {
+    // The endpoint has one female speaker per language. Character "identity"
+    // used to be a pitch resample (preservesPitch=false), which is exactly the
+    // modified sound the owner rejected. pitchBias remains as an ignored option
+    // so the shared resolver signature in voice.ts does not change.
     expect(gtts).toContain('pitchBias?: number');
-    expect(gtts).toContain('preservesPitch = false');
-    expect(PITCH_BIAS_MALE).toBeLessThan(1); // male reads deeper
-    expect(PITCH_BIAS_FEMALE).toBeGreaterThanOrEqual(1); // female slightly brighter
+    expect(gtts).not.toMatch(/\.preservesPitch\s*=/);
+    expect(gtts).not.toMatch(/GTTS_PITCH_BIAS/);
   });
 
-  it('every gtts call site takes its pitch from ONE shared helper', () => {
+  it('every gtts call site still takes its pitch from ONE shared helper', () => {
     // t790 — the loading filler had to sound like the same person as the
     // reply. Copy-pasting the ternary per call site is how a new caller
     // silently forgets it, so voice.ts owns a single resolver and every tier
@@ -59,8 +59,7 @@ describe('voice does not switch speaker mid-line or between characters', () => {
     expect(voice).toMatch(/pitchBias: gttsPitch(?:Bias|ForLang)\(/);
     const ternaries = voice.match(/pitchBias: [a-zA-Z]+ === 'male' \?/g) ?? [];
     expect(ternaries).toEqual([]);
-    // Gender base + per-character / pinned-button tier live in gtts-timbre;
-    // voice.ts re-exports and routes pins through gttsPitchForLang.
+    // The resolver now returns the identity from gtts-timbre; no tier maths.
     expect(voice).toContain('gttsCharacterPitchBias');
     expect(voice).toMatch(/return gttsCharacterPitchBias\(gender, characterId, lang(?:, tier)?\)/);
     expect(voice).toMatch(/gttsCharacterPitchBias\(delivery, characterId, lang, tier\)/);
@@ -73,12 +72,13 @@ describe('voice does not switch speaker mid-line or between characters', () => {
     expect(voice).toMatch(/gttsPitchForLang\(lang, characterId, gender/);
   });
 
-  it('the pitch shift stays bounded so the line is not garbled', () => {
-    // preservesPitch=false changes tempo too; a big bias sounds sped up, not
-    // like a different person. Clamp tracks GTTS_PITCH_BIAS_* so deep male
-    // is not erased by a hard 0.7 floor (#406 follow-up).
-    expect(gtts).toMatch(/Math\.min\(GTTS_PITCH_BIAS_MAX, Math\.max\(GTTS_PITCH_BIAS_MIN,/);
-    expect(gtts).toMatch(/clamp\(opts\.pitchBias \?\? 1, GTTS_PITCH_BIAS_MIN, GTTS_PITCH_BIAS_MAX\)/);
+  it('no pitch-shift path exists to garble the line', () => {
+    // preservesPitch=false + a large playbackRate was the "sound badly"
+    // mechanism. gtts.ts now sets only the emotion rate and never touches
+    // pitch; the clamp that used to bound the bias is gone with it.
+    expect(gtts).not.toMatch(/GTTS_PITCH_BIAS_MIN|GTTS_PITCH_BIAS_MAX/);
+    expect(gtts).not.toMatch(/pitchBias\s*!==\s*1/);
+    expect(gtts).toMatch(/audio\.playbackRate = rate/);
   });
 
   it('beginTts forces companion playback route before any lang tier', () => {

@@ -6,6 +6,7 @@ import {
   PERFORMANCE_CLIPS, PREFERRED_DEMO_CLIPS, AVOID_DEMO_CLIPS,
   clipLabel, performanceGain, pickPerformanceClip,
 } from '../lib/performance-clips';
+import { allApprovedPlayableIds } from '../lib/music-allowlist-config';
 import { clearSpeechLevel, feedSpeechLevel, sampleSpeech } from '../lib/speech';
 import { startLibraryPerformance } from '../lib/music';
 
@@ -65,18 +66,23 @@ describe('premade sing and dance library', () => {
     for (let n = 0; n < 6; n++) {
       const male = pickPerformanceClip({ kind: 'song', gender: 'male', mood: 'happy', n });
       expect(male.voice).toBe('male');
-      expect(male.moods).toContain('happy');
-      const female = pickPerformanceClip({ kind: 'song', gender: 'female', mood: 'sad', n });
+      expect(['sing-m-happy-birthday', 'sing-m-shenandoah']).toContain(male.id);
+      const female = pickPerformanceClip({ kind: 'song', gender: 'female', mood: 'tired', n });
       expect(female.voice).toBe('female');
-      expect(female.moods).toContain('sad');
+      expect(female.id).toBe('sing-f-soave-long');
     }
     const dance = pickPerformanceClip({ kind: 'dance', lang: 'en', n: 0 });
     expect([
-      'bed-lay-low',
-      'bed-forest-pop',
-      'bed-jay-pop',
-      'bed-synthwave-city',
-      'bed-adventure-time',
+      'bed-calm',
+      'bed-lofi',
+      'bed-shenandoah',
+      'bed-observing-star',
+      'bed-breves',
+      'bed-synthwave-15k',
+      'bed-synthwave-15k-ii',
+      'bed-lifewave-2k',
+      'bed-lifewave',
+      'bed-chill-lofi',
     ]).toContain(dance.id);
     expect(dance.kind).toBe('dance');
   });
@@ -160,8 +166,8 @@ describe('premade sing and dance library', () => {
     expect(songs.filter((c) => c.voice === 'female')).toHaveLength(15);
     expect(songs.filter((c) => c.voice === 'male')).toHaveLength(19);
     expect(
-      ['bed-lay-low', 'bed-forest-pop', 'bed-jay-pop', 'bed-synthwave-city', 'bed-adventure-time'],
-    ).toContain(pickPerformanceClip({ kind: 'dance', lang: 'en', n: 0 }).id);
+      allApprovedPlayableIds(),
+    ).toEqual(expect.arrayContaining(['bed-lay-low', 'bed-forest-pop', 'bed-jay-pop', 'bed-synthwave-city', 'bed-adventure-time']));
     expect(pickPerformanceClip({ kind: 'song', gender: 'male', mood: 'happy', n: 0 }).id).toBe('sing-m-happy-birthday');
   });
 
@@ -183,9 +189,11 @@ describe('premade sing and dance library', () => {
     }
     const picks = new Set<string>();
     for (let n = 0; n < 24; n++) {
-      picks.add(pickPerformanceClip({ kind: 'song', gender: 'female', lang: 'en', n }).id);
+      picks.add(pickPerformanceClip({ kind: 'song', gender: 'male', lang: 'en', n }).id);
     }
     expect([...picks].some((id) => PREFERRED_DEMO_CLIPS.has(id))).toBe(true);
     expect([...picks].some((id) => AVOID_DEMO_CLIPS.has(id))).toBe(false);
+    // Only the owner's 採用 male songs may rotate.
+    for (const id of picks) expect(['sing-m-happy-birthday', 'sing-m-shenandoah']).toContain(id);
   });
 });

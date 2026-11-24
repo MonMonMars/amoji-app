@@ -11,6 +11,7 @@
 // click stack; voice/sfx modules also resume on the mute CustomEvent.
 
 import { applyPlaybackVolume } from './playback-volume';
+import { isBackgroundSoundMuted } from './background-sound';
 
 const MUTE_KEY = 'amoji.mute.v1';
 const EVENT = 'amoji:master-mute';
@@ -58,6 +59,9 @@ export function restoreMediaElementsAfterUnmute(): void {
   if (typeof document === 'undefined') return;
   document.querySelectorAll('audio, video').forEach((el) => {
     const media = el as HTMLMediaElement;
+    // Settings → Background sound owns its own song-bed / stream element — do
+    // not let a Mute-all unmute turn a deliberately muted bed back on.
+    if (media.dataset.amojiBgm === '1' && isBackgroundSoundMuted()) return;
     try {
       media.muted = false;
       applyPlaybackVolume(media);

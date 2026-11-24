@@ -524,7 +524,62 @@
 // voice previews, fillers and announcements stay a hard cut. A new user turn,
 // mute, card audition, dance/sing show or martial clip cancels the pending
 // continuation, and a second poke replaces it instead of stacking.
-export const APP_REVISION = 'r2026-11-19.289';
+// r2026-11-19.290: two owner regressions. (1) Poke front/back was inverted:
+// a front poke recoiled her backwards. The axial lean now tips TOWARD the poked
+// side (AXIAL_TOWARD_POKE in lib/poke-hit.ts), pinned by numeric tests so it
+// cannot silently flip back. (2) Chat voice was intermittent ("sometimes has
+// voice, but mostly has no voice"). A line whose tier neither started audio nor
+// rejected held the strictly serial speaker forever, so every later reply queued
+// behind a dead line; a 12s no-start watchdog now cuts and releases it (proven
+// by an audio-START counter, not a timestamp). Backgrounded <audio> also
+// resumes on tab show instead of staying paused, and the shared AudioContext is
+// resumed before companion playback.
+// r2026-11-19.291: the lateral half of r290. The side zone was too small — a
+// camera-facing contact is depth-dominated, so `|s| > 0.9|f|` only counted the
+// outer 43% of her half-width as side and flank taps resolved as front/back.
+// The ratio now comes from the shipped torso (a≈0.17, b≈0.13): 0.55·b/a puts
+// the side boundary at ~23° / 0.40a, and a side-zone hit promotes a
+// depth-dominated ray to the matching diagonal. The lateral lean is anchored
+// to the finger's screen side by reflecting ONLY the camera-right component
+// (flipPokeFallToFingerSide), so front/back keeps the exact r290 numbers.
+// r2026-11-19.292: three owner regressions on .290. (1) A repeated answer: the
+// 12s silent-line release armed a tap-to-replay, and a tap while the original
+// line was still queued/playing enqueued the SAME text again — speak() now
+// refuses a line that is still queued; the diverged-lead branch in ChatPanel no
+// longer re-speaks a reshaped reply (it was unreachable and fell through to a
+// second full answer) and speaks only the unheard tail (speechTailAfterLead).
+// (2) She read the user's question back: the prompts said LISTEN FIRST /
+// "reflect or acknowledge one concrete detail", which free models rendered as
+// a verbatim echo; prompts now answer first, and stripQuestionReadBack scrubs
+// any leading read-back before it is spoken. (3) The voice hopped speakers: a
+// mid-line MP3 failure handed the tail to speechSynthesis (no setSinkId) while
+// the mic held play-and-record, so it landed on the communications device; the
+// synth fallback is now skipped while the mic routing latch is active.
+// r2026-11-19.294: the combined landing of #579 + #581 + #580. One coherent
+// stamp for three separately-claimed branches (.292 voice, .293 background
+// sound, plus the .291 poke work already on main); .291/.292/.293 each belong
+// to a single PR and would collide if reused. Behaviour added on top of .292:
+// (a) Settings → Background sound — one persisted switch (`amoji.bgm-mute.v1`)
+// that hard-mutes the procedural band + piano, the song-bed/stream loops and
+// the ambient scene beds, while her spoken voice (a different audio system, in
+// lib/voice.ts) keeps playing; (b) a translucent bottom-strong scrim behind
+// the chat history so the words stay legible over the animated backdrop.
+// r2026-11-24.295: voice — the Edge TTS relay now defaults to the live
+// amoji-voice Cloudflare Worker, so the verified male/female neural voices
+// (zh-HK-WanLung, zh-CN-Yunjian, ja-JP-Keita, en-US-Guy, …) work with no
+// Settings setup. A saved or session-level empty value still forces the
+// direct socket, and env/saved URLs still outrank the default.
+// r2026-11-24.296: voice — prosody volume is emitted as a percentage instead
+// of decibels. The readaloud endpoint refuses `volume='…dB'` with
+// `1007 SSML parsing error: 0x80045003` and drops the whole utterance, and
+// every spoken clause carried that unit, so every line was silent.
+// r2026-11-24.297: optional API-search lane (one breaker end to end) — the
+// runnable Node backend in server/backend/ adds the admin breaker, quota and
+// warning endpoints, and apps/web/lib/search-gate.ts is the client gate that
+// ChatPanel calls only inside `if (searchGateConfigured())`. The published
+// GitHub Pages build has no NEXT_PUBLIC_AMOJI_API, so the gate is false there
+// and no /api/ request, budget write, timer or delay is made.
+export const APP_REVISION = 'r2026-11-24.297';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

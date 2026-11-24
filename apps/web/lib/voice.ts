@@ -83,6 +83,7 @@ import { characterVoiceGender } from './voice-gender';
 import {
   createDefaultAudioContext,
   ensureCompanionPlaybackRoute,
+  resumeSharedAudioOutput,
   micCommsRoutingLatchActive,
   pinDefaultOutputAsync,
   primeDefaultSpeakerBeforeSynth,
@@ -107,15 +108,15 @@ import {
   synthVoicePool,
 } from './voice-catalog';
 import { loadingFillerKind, recordedLaughClip, recordedPokeClip } from './voice-clips';
-import { LineQueue, speechLeadDiverged, speechRemainder } from './speech-queue';
+import { LineQueue, speechLeadDiverged, speechRemainder, speechTailAfterLead } from './speech-queue';
 import { PokeResumeArbiter, type PokeResumeCandidate } from './poke-resume';
 import { emotionClipPath } from './emotion-clip-picks';
 import { burstSkipsTts, clipFile, clipLibraryFile, emotionClipKind, greetingText, nextCardGreetPhrase, nextGreetingKind, type BurstClipKind, type ClipFolder, type VoiceClipGender } from './voice-clips';
 import { playVoiceClip, stopVoiceClip } from './play-voice-clip';
-export { speechLeadDiverged, speechRemainder };
+export { speechLeadDiverged, speechRemainder, speechTailAfterLead };
 import { edgeCastVoice } from './edge-cast';
-import { pauseEdgeForTabHide, speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead, resetEdgeHealth } from './edge-tts';
-import { pauseAfterClause, pauseGttsForTabHide, splitClauses, stopGtts, speakGtts } from './gtts';
+import { pauseEdgeForTabHide, resumeEdgeForTabShow, speakEdge, stopEdge, getTtsProxy, resolveEdgeVoice, edgeEndpointsDead, resetEdgeHealth } from './edge-tts';
+import { pauseAfterClause, pauseGttsForTabHide, resumeGttsForTabShow, splitClauses, stopGtts, speakGtts } from './gtts';
 import { gttsCharacterPitchBias } from './gtts-timbre';
 import { voicePickFor } from './voice-picks';
 import { osVoicePinFor, saveOsVoicePin } from './os-voice-picks';
@@ -265,8 +266,17 @@ if (typeof window !== 'undefined') {
 // start callbacks, and callers gate their "already spoken" skips on it: a
 // silently-failed attempt must never suppress the fallback speak.
 let voiceStartedAt = 0;
+/**
+ * Monotonic count of audio-START callbacks. A timestamp is not enough to decide
+ * whether ONE line was heard: two callbacks inside the same millisecond (or a
+ * fake/frozen clock) make `voiceStartedSince` true for a line that never
+ * sounded, which is how a silent line kept the serial speaker latched. The
+ * silent-line watchdog compares this counter instead.
+ */
+let voiceStartSeq = 0;
 function markVoiceStarted(): void {
   voiceStartedAt = Date.now();
+  voiceStartSeq += 1;
   markMediaPrimed(); // real audio starting also proves the iOS media gate open
   sfxVoiceRelease(); // r102: a tier is audibly speaking — let the foley back in
   dismissReplayHint(); // r119: she IS audible — the tap-to-replay chip retires
@@ -1420,6 +1430,20 @@ export function speechStillQueued(text: string): boolean {
   return lineQueue.includes((job) => job.text.trim() === t);
 }
 
+/**
+ * How long a line may own the serial speaker without any audio starting.
+ * gTTS stalls at 10s per chunk, Edge at 3.5s, browser synth at an 8s safety —
+ * so 12s with no start callback proves the line is silent, not slow.
+ */
+export const SILENT_LINE_RELEASE_MS = 12_000;
+
+/**
+ * Monotonic per-line token. The queue epoch only moves on interrupt/drop, so
+ * two lines that start inside the same epoch would both pass an epoch check;
+ * a released line must never free its successor.
+ */
+let lineToken = 0;
+
 function drainSpeech(): void {
   const next = lineQueue.begin();
   if (!next) {
@@ -1427,6 +1451,42 @@ function drainSpeech(): void {
     return;
   }
   const job = next.item;
+  const token = ++lineToken;
+  const startSeqAtBegin = voiceStartSeq;
+  let released = false;
+  let silentTimer: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * Owner 2026-11-23: "sometimes has voice, but mostly has no voice."
+   * Intermittent silence survived because ONE reply whose tier neither started
+   * audio nor rejected kept `playing` latched on the strictly serial queue, so
+   * every later reply queued behind a dead line and the page had to be
+   * reloaded. Only a tier's audio-START callback proves sound, so a line with
+   * no start callback of its own is declared dead, cut, and released to the
+   * next one. The counter (not the timestamp) is the proof: two callbacks in
+   * the same millisecond must never make a silent line look audible.
+   */
+  const release = (): void => {
+    if (released) return;
+    released = true;
+    if (silentTimer) { clearTimeout(silentTimer); silentTimer = null; }
+    lineQueue.finished(next.epoch);
+    if (token === lineToken && lineQueue.epochNow() === next.epoch) drainSpeech();
+  };
+  silentTimer = setTimeout(() => {
+    silentTimer = null;
+    if (released || token !== lineToken) return;
+    if (voiceStartSeq !== startSeqAtBegin) return; // audible — its own end will release
+    try { stopGtts(); } catch { /* ignore */ }
+    try { stopEdge(); } catch { /* ignore */ }
+    try { haltBrowserSynth(); } catch { /* ignore */ }
+    // Rescue only: the cut line is dead, so the next tap re-speaks it. speak()
+    // refuses a copy of a line that is still active/queued, so an earlier tap
+    // (armed by the 8s no-audio watchdog while the line was merely slow) can
+    // never stack a second playback — owner 2026-11-23 "repeat the answers
+    // two times".
+    armGestureReplay('silent line released');
+    release();
+  }, SILENT_LINE_RELEASE_MS);
   const run = job.kind === 'sing'
     ? performSing(job.text, job.characterId, job.lang)
     : job.kind === 'clip'
@@ -1442,10 +1502,7 @@ function drainSpeech(): void {
         job.filler,
         job.rateBias ?? 0,
       );
-  void run.finally(() => {
-    lineQueue.finished(next.epoch);
-    if (lineQueue.epochNow() === next.epoch) drainSpeech();
-  });
+  void run.finally(release);
 }
 
 /** t767/t777: call from Start / ENTER STORY click (user gesture) before chat mounts.
@@ -1633,6 +1690,18 @@ export function speak(
   // only the user's mic or a user turn calls it.
   const cleaned = stripLaughTokens(cleanForSpeech(text));
   if (!cleaned || !voiceOutputAllowed()) return;
+  // Owner 2026-11-23: "now the character always repeat the answers two times."
+  // speak() is the single choke point for every audible line, and it had no
+  // idempotence: the tap-to-replay path (armed by the 8s no-audio watchdog or
+  // by a tier's not-allowed error) re-armed while the line was STILL the
+  // active/queued job, so one tap queued a second full copy behind the first
+  // and the answer played twice. A line that is already going to be spoken is
+  // never enqueued a second time — the watchdog still cuts a dead line and
+  // releases the queue, so a genuinely silent line keeps its rescue tap.
+  if (speechStillQueued(cleaned)) {
+    reportVoiceStatus('attempt', true, 'line already queued — not repeating it');
+    return;
+  }
   // A real line outranks the wait cue: drop a pending or speaking filler so
   // the reply is never talked over, and never interrupted by one.
   yieldFillerToReply();
@@ -1859,9 +1928,15 @@ function performSpeak(
     const np = emotionProsody(emotion, value);
     /**
      * Speak the tail of a line this tier already started. Retries the MP3 tier
-     * once for just the remainder, then falls back to the browser voice for the
-     * remainder only. Restarting the whole sentence in a new voice is what made
-     * her appear to "switch speaker" halfway through.
+     * once for just the remainder; the browser voice may only take the tail
+     * when it provably lands on the SAME sink. Owner 2026-11-23: "the voice
+     * sometimes jump from speaker a then speaker b in my PC." This path only
+     * runs after the MP3 tier was already audible, and <audio> is explicitly
+     * pinned to the default sink (startHtmlAudioOnDefaultSpeakers/setSinkId)
+     * while speechSynthesis has no setSinkId at all — under the chat mic's
+     * play-and-record session it follows the Windows communications endpoint,
+     * so a mid-line fallback to synth literally moved the rest of one reply to
+     * a different speaker. One line, one sink.
      */
     const speakRemainderInChain = (rest: string): void => {
       void speakGtts(rest, {
@@ -1880,8 +1955,14 @@ function performSpeak(
         if ((e as Error | undefined)?.message === 'canceled') { settle(); return; }
         reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'google-tts resume failed');
         stopGtts();
-        // Last resort: browser voice for the remainder only.
-        if (!runSynthTail(rest, settle)) settle();
+        // Owner 2026-11-23: "the voice sometimes jump from speaker a then
+        // speaker b in my PC." This tail only runs after the MP3 tier was
+        // already audible on the PINNED default sink. The browser voice has no
+        // setSinkId: while the chat mic holds play-and-record, Windows sends
+        // speechSynthesis to the communications/headset endpoint, so the rest
+        // of the same reply would come out of a different speaker. One line,
+        // one sink — end it here instead of hopping devices.
+        if (micCommsRoutingLatchActive() || !runSynthTail(rest, settle)) settle();
       });
     };
     const runAt = (index: number): void => {
@@ -3449,10 +3530,23 @@ if (typeof window !== 'undefined') {
         }
       } catch { /* ignore */ }
     },
-    onHide: () => {
-      replayArmed = false;
-      dismissReplayHint();
+    // Coming back must RESTORE the audio the hide paused. Without this the
+    // paused chunk held the serial speaker and the reply finished silently -
+    // the "mostly no voice" shape after a screen lock / app switch.
+    onShow: () => {
+      resumeGttsForTabShow();
+      resumeEdgeForTabShow();
+      try {
+        if (typeof speechSynthesis !== 'undefined') speechSynthesis.resume();
+      } catch { /* ignore */ }
+      resumeSharedAudioOutput();
+      // A line cut off by the hide never started audio: keep the tap-to-replay
+      // escape hatch armed instead of leaving the user with silence.
+      if (!voiceStartedSince(lastSpeak?.at ?? Date.now())) armGestureReplay('returned from background with no audio');
     },
+    // Do NOT clear replayArmed here: it is the only recovery for a line that
+    // went silent while the tab was away, and the chip is in-page (hidden).
+    onHide: () => { /* keep replayArmed + hint armed across the hide */ },
   });
   initAudioTabVisibility();
 }

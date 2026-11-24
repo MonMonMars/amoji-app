@@ -104,8 +104,33 @@ export const INTERJECTIONS: Record<string, Partial<Record<LangCode, { text: stri
 
 };
 
+/**
+ * Soft-mode search delay lines.
+ *
+ * Owner request (2026-11-24): "delay the search if too many search at a time.
+ * Let the character say something long to delay the search." These are
+ * deliberately longer than a loading stub — the server's `soft` breaker makes
+ * the client hold for `delayMs` (2 500 ms), and this line covers that wait in
+ * her voice. Same-language, no questions, one short paragraph.
+ */
+export const SEARCH_DELAY_LINES: Record<LangCode, readonly string[]> = {
+  yue: [
+    '等我慢慢搵下先……而家搵歌嘅人多咗少少，我幫你揀首好聽嘅，慢慢等一陣就得。',
+  ],
+  zh: [
+    '我先慢慢找一下……现在找歌的人有点多，我帮你挑一首好听的，稍等一下就好。',
+  ],
+  ja: [
+    'ちょっとゆっくり探してみるね……今は曲を探している人が少し多いから、いい曲を選ぶまで少しだけ待っててね。',
+  ],
+  en: [
+    'Let me take a slow look… lots of people are asking for songs right now, so I will pick a good one and it will only take a moment.',
+  ],
+};
+
 let fillerIdx = 0;
 let moodFillerIdx = 0;
+let searchDelayIdx = 0;
 /** Round-robin so consecutive sends don't repeat the same "hmm…". */
 export function pickThinkingFiller(lang: string, mood?: string): string {
   const moodList = mood ? MOOD_FILLERS[mood]?.[(lang as LangCode)] ?? MOOD_FILLERS[mood]?.en : undefined;
@@ -116,6 +141,14 @@ export function pickThinkingFiller(lang: string, mood?: string): string {
   const list = THINKING_FILLERS[(lang as LangCode)] ?? THINKING_FILLERS.en;
   fillerIdx = (fillerIdx + 1) % list.length;
   return list[fillerIdx]!;
+}
+
+/** Long soft-tier search line, in the user's language. */
+export function pickSearchDelayLine(lang: string): string {
+  const L: LangCode = lang === 'yue' || lang === 'zh' || lang === 'ja' || lang === 'en' ? lang : 'en';
+  const bank = SEARCH_DELAY_LINES[L] ?? SEARCH_DELAY_LINES.en;
+  searchDelayIdx = (searchDelayIdx + 1) % bank.length;
+  return bank[searchDelayIdx]!;
 }
 
 /**

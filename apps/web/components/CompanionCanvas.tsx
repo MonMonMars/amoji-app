@@ -21,6 +21,7 @@ import {
   screenSideSign,
   screenPointerSideSign,
   lateralFallTowardScreenSide,
+  flipPokeFallToFingerSide,
   directionFromAxes,
   clientPointInElementLocal,
   ndcPointInElementLocal,
@@ -1857,6 +1858,14 @@ export default function CompanionCanvas({
                 const len = Math.hypot(pokeFallDir.x, pokeFallDir.z);
                 if (len > 1e-6) pokeFallDir.multiplyScalar(1 / len);
               }
+            }
+            // Owner report 2026-11-22 (second time): a side poke must never
+            // blend to the opposite side. Anchor the LATERAL component to the
+            // finger's screen side; the camera-forward (front/back) component
+            // is untouched, so the owner-confirmed r290 axial lean cannot move.
+            {
+              const fingerFall = flipPokeFallToFingerSide(pokeFallDir, camRightXZ, leanSide);
+              pokeFallDir.set(fingerFall.x, 0, fingerFall.z);
             }
             const hsL = handScreen('left');
             const hsR = handScreen('right');

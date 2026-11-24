@@ -1,0 +1,18 @@
+# Amoji proxy — one free Cloudflare Worker for both voice bridges.
+# Deploy: `cd server/amoji-proxy && wrangler deploy`
+# Then paste the printed https://amoji-voice.<you>.workers.dev/ into
+# Settings -> Voice -> Neural voice proxy (localStorage 'amoji.ttsproxy.v1'),
+# or set the Actions variable AMOJI_TTS_PROXY for the GitHub Pages build.
+#
+# Route A (neural voice) needs NO secret. The readaloud client token is public
+# and already embedded in worker.js; the optional EDGE_TTS_TOKEN var only
+# overrides it if Microsoft rotates that published value.
+name = "amoji-voice"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+
+# Publish to https://amoji-voice.<account-subdomain>.workers.dev/
+workers_dev = true
+
+# Outbound WebSocket to speech.platform.bing.com is plain Workers runtime, no
+# binding required. Do not add nodejs_compat: worker.js uses no Node builtins.

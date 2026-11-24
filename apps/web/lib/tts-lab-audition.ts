@@ -2,7 +2,7 @@
 // One-shot auditions for the TTS Lab panel — does not change chat pins
 // except when the user is already previewing a shipping hop.
 
-import { speakGtts, stopGtts, PITCH_BIAS_FEMALE } from './gtts';
+import { speakGtts, stopGtts } from './gtts';
 import { speakEdge, stopEdge } from './edge-tts';
 import { speakCantoNano } from './canto-nano';
 import { edgeSampleText } from './voice-catalog';
@@ -62,7 +62,6 @@ export async function auditionTtsLabEngine(
       await speakGtts(text, {
         lang: sampleLang,
         tl: sampleLang === 'zh' ? 'zh-CN' : sampleLang === 'en' ? 'en-US' : sampleLang,
-        pitchBias: PITCH_BIAS_FEMALE,
       });
       return { ok: true, engineId, via: 'gtts' };
     } catch (e) {

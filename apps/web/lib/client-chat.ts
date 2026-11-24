@@ -83,6 +83,7 @@ import {
   scrubCompanionSpoken,
   scrubHistoryResumeAsks,
   scrubTopicMenuAsks,
+  stripQuestionReadBack,
 } from './spoken-line-sanity';
 import {
   contentContinuationSystemBlock,
@@ -1162,8 +1163,13 @@ function packageReply(
     : ctx.contentContinuing
       ? capSpokenQuestions(cleaned, 0)
       : capCompanionReplyQuestions(cleaned, ctx.lastUser);
+  // Owner 2026-11-23: "it will repeat my question before answering." A
+  // free model read-back satisfies "acknowledge their last message" but sounds
+  // broken aloud; drop a leading restatement of THEIR question so she answers
+  // directly. Empathy that names a feeling/detail is not a read-back.
+  const direct = stripQuestionReadBack(capped, ctx.lastUser);
   // Never reintroduce topic-menu / history-resume / filler-nonsense asks.
-  const scrubbed = scrubCompanionSpoken(capped);
+  const scrubbed = scrubCompanionSpoken(direct);
   const factsTurn = Boolean(ctx.worldSpoken?.trim()) || /\b(?:Weather|Light news|Recent news)\s*:/i.test(ctx.world ?? '');
   const spoken = ctx.story || ctx.contentContinuing || factsTurn
     ? scrubbed

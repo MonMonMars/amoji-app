@@ -146,7 +146,7 @@ import { pickLine } from '../lib/chatter';
 import { pickIdleLine } from '../lib/persona-chatter';
 import { pickIdleCompanionLine } from '../lib/idle-talk';
 import { pickMoodIdleLine } from '../lib/mood-chatter';
-import { gateSpokenLine, safeIdleFallback, scrubCompanionSpoken, scrubHistoryResumeAsks, scrubTopicMenuAsks } from '../lib/spoken-line-sanity';
+import { gateSpokenLine, safeIdleFallback, scrubCompanionSpoken, scrubHistoryResumeAsks, scrubTopicMenuAsks, restatesUserMessage } from '../lib/spoken-line-sanity';
 import { isSpeakableText, scrubLiveFactsSpoken } from '../lib/speak-text';
 import { HAND_HOLD_SHY_SPEAK_AFTER, handHoldShyLine } from '../lib/interaction-lines';
 import { personalityProfile, personalityPrompt } from '../lib/personality';
@@ -185,7 +185,7 @@ import {
   undecidedTopicReply,
   userUndecided,
 } from '../lib/topic-suggestions';
-import { speak, stopSpeaking, stopSpeakingForInterrupt, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechLeadDiverged, speechRemainder, whenSpeechIdle, resumeVoiceEngines, primeAudioForChatEnter, cancelPokeResume } from '../lib/voice';
+import { speak, stopSpeaking, stopSpeakingForInterrupt, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechLeadDiverged, speechRemainder, speechTailAfterLead, whenSpeechIdle, resumeVoiceEngines, primeAudioForChatEnter, cancelPokeResume } from '../lib/voice';
 import { isAppleTouchDevice } from '../lib/apple-touch';
 import { cantHearReply, isCantHearComplaint } from '../lib/cant-hear';
 import { isCompanionEcho } from '../lib/companion-echo';
@@ -217,6 +217,7 @@ import {
   resolveMusicAsk,
   type MusicPickOption,
 } from '../lib/music-ask';
+import { beginSearch, searchGateConfigured } from '../lib/search-gate';
 import { idleClipPinsCanvas, isIdleV2Enabled } from '../lib/idle-v2-visible';
 import { PASSIVE_IDLE_LOOP_TEMPLATE, resolvePassiveBodyIdleClip } from '../lib/idle-passive-loop';
 import { resolveContentMotion } from '../lib/content-motion';
@@ -939,16 +940,24 @@ export default function ChatPanel({
     const leadMatched = !!streamedLead && !speechLeadDiverged(reply, streamedLead);
     const leadQueued = !!streamedLead && speechStillQueued(streamedLead);
     const leadAudible = !!alreadySpoken && voiceStartedSince(alreadySpoken.since);
-    const leadPlayedThrough = leadMatched && leadAudible && !leadQueued;
-    const firstLive = !!alreadySpoken
-      && mv !== 'sing'
-      && leadMatched
-      && (leadQueued || leadAudible || leadPlayedThrough);
-    // Streamed lead + final reply often diverge (preferLive / scrub). Never
-    // stack a second full answer on top — cut the lead and speak once.
-    if (firstLive && alreadySpoken && speechLeadDiverged(reply, alreadySpoken.text)) {
+    const leadLive = !!alreadySpoken && mv !== 'sing' && (leadQueued || leadAudible);
+    const firstLive = leadLive && leadMatched;
+    // The final reply no longer carries the streamed lead (preferLive / scrub /
+    // question capping reshaped it). The old code could never reach the cut
+    // below — firstLive already required leadMatched — so the whole answer was
+    // spoken again after the lead: owner 2026-11-23 "the character always
+    // repeat the answers two times". Now the lead is cut when it is still
+    // queued, and only the sentences the listener has NOT heard are spoken.
+    if (leadLive && alreadySpoken && !leadMatched) {
       stopSpeaking();
-    } else if (firstLive && alreadySpoken) {
+      const tail = speechTailAfterLead(reply, alreadySpoken.text);
+      const toSay = tail || reply;
+      if (mv) triggerMove(mv);
+      notifySpeaking(reply);
+      speak(toSay, characterId, lang, contentHints, undefined, intensity, storyRate, { resumable: true });
+      return reply;
+    }
+    if (firstLive && alreadySpoken) {
       if (mv === 'dance' && !isListenOnlyPerformance()) {
         // Dance body starts on library-clip playing (beginShow), not here.
         beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
@@ -1554,6 +1563,24 @@ export default function ChatPanel({
       if (ask.mode === 'random' && (ask.kind === 'music' || ask.kind === 'song' || ask.kind === 'dance')) {
         setMusicPicks(null);
         perfCountRef.current += 1;
+        // Owner policy for the OPTIONAL API-search lane (admin breaker).
+        // GitHub Pages has no NEXT_PUBLIC_AMOJI_API, so `searchGateConfigured()`
+        // is false and this whole block is skipped: no fetch, no budget write,
+        // no timer, no delay — the published demo behaves exactly as before.
+        if (searchGateConfigured()) {
+          const gate = await beginSearch(text, {
+            lang,
+            speak: (line) => sayLocal(line, { joy: 0.5 }),
+          });
+          // `soft` already spoke the long line and waited `delayMs` inside
+          // beginSearch. `hard`/`refused` return lane 'curated': no API search
+          // is attempted and the curated keyless pick below plays — a silent
+          // fallback, never an error banner.
+          // TODO(provider): when #574 lands, `gate.tracks` feeds beginShow.
+          if (gate.lane === 'curated') {
+            // Curated list only. Nothing else to do here.
+          }
+        }
         const priorUser = [...history].reverse().find((m) => m.role === 'user')?.content;
         const styleForBed = ask.style ?? musicAskStyleWithContext(text, priorUser);
         const showKind = musicAskShowKind(ask.kind);
@@ -1783,7 +1810,11 @@ export default function ChatPanel({
             // the facts line: two answers for one turn.
             if (!firstSentence && !performanceShowTurn && !worldSpoken.trim()) {
               const m = /^[^。！？.!?\n]+[。！？.!?]/.exec(clean);
-              if (m) {
+              // Owner 2026-11-23: "it will repeat my question before
+              // answering." A read-back ("你問我…？" / "So you're asking…") must
+              // never become the live lead — it would be said aloud before the
+              // final reply is even scrubbed.
+              if (m && !restatesUserMessage(m[0], text)) {
                 firstSentence = m[0];
                 sentenceStamp = Date.now();
                 notifySpeaking(firstSentence);
@@ -2183,6 +2214,11 @@ export default function ChatPanel({
       {/* boxless history — fully opaque messages; only the on-screen height
           fades (bottom line 100%, each line a step dimmer). Scrolling an
           old line DOWN into the bright zone makes it crisp and readable. */}
+      {/* Scrim plate (.chat-history-scrim in globals.css): ONE continuous
+          bottom-strong grey behind the whole log. It must live on this
+          wrapper — the scroll box's own mask-image (the word fade) would
+          erase the grey along with the words. */}
+      <div className="chat-history-scrim">
       <div
         ref={scrollRef}
         onScroll={(e) => {
@@ -2294,6 +2330,7 @@ export default function ChatPanel({
             </Link>
           </div>
         )}
+      </div>
       </div>
 
       {/* input row — ChatGPT-style hero mic with the living emotion orb.

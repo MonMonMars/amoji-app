@@ -15,6 +15,14 @@
 // has no voice parameter, but it DOES have genuinely different voices behind
 // different `tl` codes — different speakers, not just a different rate. Those
 // are the only real choices left, so they are the only buttons.
+//
+// GENDER TRUTH (owner 2026-11-23): every one of those speakers is FEMALE. The
+// app used to ship "male" buttons over the same female MP3 with
+// preservesPitch=false and playbackRate=0.64. That is not a male voice; it is
+// a pitched-down woman, and it is what the owner reported. There are no male
+// gTTS choices any more, and no pitch reshaping. A real male option needs a
+// real source (Edge neural — currently 403 — or an OS speechSynthesis male
+// voice), which is a separate engine, not a label on this one.
 
 import type { StrKey } from './prefs';
 import type { VoiceLocale } from './voice-catalog';
@@ -26,8 +34,13 @@ import {
   remainingVoiceAddCount,
 } from './voice-extras';
 
-/** Selectable pitch personas for one Google speaker × gender. */
-export const VOICE_PITCH_TIERS: readonly GttsPitchTier[] = ['deep', 'mid', 'bright'];
+/**
+ * Selectable pitch personas. The free tier no longer reshapes pitch (owner
+ * directive 2026-11-23: original TTS audio only), so there is exactly one
+ * persona. The type keeps `deep|bright` for legacy pins and the future Edge
+ * tier, but no shipping button claims them any more.
+ */
+export const VOICE_PITCH_TIERS: readonly GttsPitchTier[] = ['mid'];
 
 export function voiceChoiceId(
   tl: string,
@@ -185,15 +198,20 @@ export interface VoiceChoice {
    */
   tl: string;
   /**
-   * Free-tier gender timbre: gTTS has no male/female knob per `tl`, so we
-   * reshape pitch client-side (honest in the UI — same speaker, different
-   * delivery). Real OS voices in Settings stay a separate source.
+   * ACTUAL gender of the speaker behind `tl`, not a delivery style.
+   *
+   * Google Translate's `translate_tts` endpoint has one fixed speaker per
+   * language code and every code this app ships is female. So every shipping
+   * choice here is `female`. The field stays because the UI label and the
+   * gender-truth audit (tests/voice-gender-truth.test.ts) need to compare the
+   * label against the source; it must never be set to `male` unless a
+   * genuinely male source is wired up.
    */
   deliveryGender: 'female' | 'male';
   /**
-   * Selectable pitch persona for this same Google speaker. One base voice
-   * ships as three buttons (deep / mid / bright) so characters can pick
-   * distinct colour without a different `tl`.
+   * Pitch persona. Only `mid` ships now — the MP3 is played unprocessed, so
+   * deep/bright buttons would be three identical buttons with different
+   * labels. Kept for legacy pin resolution.
    */
   pitchTier: GttsPitchTier;
   /** Localized region label, e.g. "UK English". */
@@ -205,12 +223,13 @@ export interface VoiceChoice {
 interface VoiceSeed {
   locale: VoiceLocale;
   tl: string;
-  deliveryGender: 'female' | 'male';
+  /** Source gender. Every gTTS `tl` this app ships is female — see below. */
+  deliveryGender: 'female';
   labelKey: StrKey;
 }
 
 /**
- * Distinct Google `tl` speakers × female/male, measured with four sentences:
+ * Distinct Google `tl` speakers, measured with four sentences:
  *
  *   en  → {en-US, en-PH, en-CA} {en-GB, en-IE, en-ZA, en-SG, en-HK,
  *          en-KE, en-TZ} {en-AU, en-NZ} {en-IN} {en-NG}
@@ -218,32 +237,29 @@ interface VoiceSeed {
  *   ja  → {ja, ja-JP}
  *   yue → {yue} and the Mandarin buckets, which mispronounce Cantonese
  *
- * Each seed expands to deep/mid/bright pitch buttons (same `tl`, different
- * playbackRate). Extra same-bucket regional codes live in `voice-extras.ts`
- * and only appear after the user taps Add.
+ * Every one of those speakers is FEMALE. The endpoint has no voice-id
+ * parameter, so a "male" seed here was the same woman with
+ * preservesPitch=false and playbackRate=0.64 — which is exactly the
+ * "male voice is female" report the owner raised. There are no male seeds.
+ *
+ * One seed = one button. The old deep/mid/bright expansion was three labels
+ * over one unprocessed MP3 after the pitch chain was retired, so it is gone
+ * too (VOICE_PITCH_TIERS above). Extra same-bucket regional codes live in
+ * `voice-extras.ts` and only appear after the user taps Add.
  */
 const VOICE_SEEDS: readonly VoiceSeed[] = [
   { locale: 'yue', tl: 'yue', deliveryGender: 'female', labelKey: 'voiceRegionCantonese' },
-  { locale: 'yue', tl: 'yue', deliveryGender: 'male', labelKey: 'voiceRegionCantonese' },
 
   { locale: 'zh', tl: 'zh-CN', deliveryGender: 'female', labelKey: 'voiceRegionMandarin' },
-  { locale: 'zh', tl: 'zh-CN', deliveryGender: 'male', labelKey: 'voiceRegionMandarin' },
   { locale: 'zh', tl: 'zh-TW', deliveryGender: 'female', labelKey: 'voiceRegionTaiwan' },
-  { locale: 'zh', tl: 'zh-TW', deliveryGender: 'male', labelKey: 'voiceRegionTaiwan' },
 
   { locale: 'ja', tl: 'ja', deliveryGender: 'female', labelKey: 'voiceRegionJapanese' },
-  { locale: 'ja', tl: 'ja', deliveryGender: 'male', labelKey: 'voiceRegionJapanese' },
 
   { locale: 'en', tl: 'en-US', deliveryGender: 'female', labelKey: 'voiceRegionUs' },
-  { locale: 'en', tl: 'en-US', deliveryGender: 'male', labelKey: 'voiceRegionUs' },
   { locale: 'en', tl: 'en-GB', deliveryGender: 'female', labelKey: 'voiceRegionUk' },
-  { locale: 'en', tl: 'en-GB', deliveryGender: 'male', labelKey: 'voiceRegionUk' },
   { locale: 'en', tl: 'en-AU', deliveryGender: 'female', labelKey: 'voiceRegionAu' },
-  { locale: 'en', tl: 'en-AU', deliveryGender: 'male', labelKey: 'voiceRegionAu' },
   { locale: 'en', tl: 'en-IN', deliveryGender: 'female', labelKey: 'voiceRegionIn' },
-  { locale: 'en', tl: 'en-IN', deliveryGender: 'male', labelKey: 'voiceRegionIn' },
   { locale: 'en', tl: 'en-NG', deliveryGender: 'female', labelKey: 'voiceRegionNg' },
-  { locale: 'en', tl: 'en-NG', deliveryGender: 'male', labelKey: 'voiceRegionNg' },
 ];
 
 function expandSeeds(seeds: readonly VoiceSeed[]): VoiceChoice[] {
@@ -270,21 +286,33 @@ function expandSeeds(seeds: readonly VoiceSeed[]): VoiceChoice[] {
 
 export const VOICE_CHOICES: readonly VoiceChoice[] = expandSeeds(VOICE_SEEDS);
 
-/** Maps older pins (no gender and/or no pitch suffix) onto mid-tier ids. */
-function buildLegacyVoiceChoiceIds(): Record<string, string> {
-  const map: Record<string, string> = {};
-  for (const seed of VOICE_SEEDS) {
-    const mid = voiceChoiceId(seed.tl, seed.deliveryGender, 'mid');
-    const genderOnly = `gtts:${seed.tl}:${seed.deliveryGender === 'male' ? 'm' : 'f'}`;
-    map[genderOnly] = mid;
-    if (seed.deliveryGender === 'female') {
-      map[`gtts:${seed.tl}`] = mid;
-    }
-  }
-  return map;
+/**
+ * Source gender of the Google Translate speaker behind a `tl`. Measured: the
+ * endpoint has one fixed speaker per code and every shipped code is female
+ * (Cantonese `yue`, Mandarin `zh-CN`/`zh-TW`, Japanese `ja`, all English
+ * regions). There is no parameter that selects a male speaker, which is why
+ * the picker must not offer a male gTTS button.
+ */
+export function gttsSpeakerGender(_tl: string): 'female' {
+  return 'female';
 }
 
-export const LEGACY_VOICE_CHOICE_IDS: Readonly<Record<string, string>> = buildLegacyVoiceChoiceIds();
+/** Every form an older pin could take, normalised onto today's one button. */
+const LEGACY_CHOICE_ID = /^gtts:(.+?)(?::([fm])(?::(deep|mid|bright))?)?$/;
+
+/**
+ * Maps older pins onto the truthful shipping/extras id:
+ *   gtts:<tl>            → gtts:<tl>:f:mid
+ *   gtts:<tl>:<f|m>      → gtts:<tl>:f:mid   (male ids were a female source)
+ *   gtts:<tl>:<f|m>:<t>  → gtts:<tl>:f:mid   (tiers no longer reshape)
+ * Unknown non-gtts ids are returned unchanged so callers can still reject them.
+ */
+export function resolveVoiceChoiceId(id: string | null | undefined): string | undefined {
+  if (!id) return undefined;
+  const m = LEGACY_CHOICE_ID.exec(id);
+  if (!m) return id;
+  return voiceChoiceId(m[1]!, 'female', 'mid');
+}
 
 /** Fallback `tl` per language when nothing is pinned. */
 const DEFAULT_TL: Record<VoiceLocale, string> = {
@@ -314,11 +342,6 @@ export function shippingVoiceChoicesFor(locale: VoiceLocale): readonly VoiceChoi
   return VOICE_CHOICES.filter((c) => c.locale === locale);
 }
 
-export function resolveVoiceChoiceId(id: string | null | undefined): string | undefined {
-  if (!id) return undefined;
-  return LEGACY_VOICE_CHOICE_IDS[id] ?? id;
-}
-
 export function voiceChoiceById(id: string | null | undefined): VoiceChoice | undefined {
   const resolved = resolveVoiceChoiceId(id);
   if (!resolved) return undefined;
@@ -337,10 +360,12 @@ export function addVoiceOption(locale: VoiceLocale): VoiceChoice | null {
 }
 
 /**
- * Pitch gender for the free HTTP tier.
- * An explicit pinned/tapped choice wins; otherwise use the companion gender
- * fallback — never the catalog's first (female) button, which made every
- * male companion and unpinned lang sound (or fail) like Yue female only.
+ * Gender of the speaker a pinned/tapped choice will actually play.
+ *
+ * A pin always wins, and every shipping pin is female because the Google
+ * speaker is female. So this returns `female` for any real gTTS choice: we
+ * will not report "male" for a woman's voice again. `fallback` is only used
+ * when there is no usable pin (e.g. a language with no catalog entry).
  */
 export function deliveryGenderForChoice(
   locale: VoiceLocale,
@@ -352,7 +377,14 @@ export function deliveryGenderForChoice(
   return fallback === 'male' || fallback === 'female' ? fallback : 'female';
 }
 
-/** Prefer mid-tier shipping voice matching the companion gender. */
+/**
+ * Preferred shipping button for a companion gender.
+ *
+ * There is no male gTTS source, so a male companion gets the language's
+ * female default rather than a falsely-labelled male button. A real male
+ * timbre requires a real source — Edge neural (currently 403) or a device
+ * speechSynthesis male voice, which stays a separate OS-voice path.
+ */
 export function preferredVoiceChoiceForGender(
   locale: VoiceLocale,
   gender: 'female' | 'male',

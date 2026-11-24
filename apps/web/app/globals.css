@@ -403,3 +403,68 @@ html[data-amoji-dev] [data-dev]::after {
   pointer-events: none;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
 }
+
+/* ============================================================
+   Chat-history scrim (owner r280: "the words seem stick to the
+   background — add 10 to 25 percent grey ... gradient from
+   bottom to top, keep the words light").
+
+   ONE continuous plate behind the whole log — never a gradient
+   per bubble (that reads as stripes). Bottom is the anchor at
+   24% because the newest line sits there; it feathers to nothing
+   toward the top so the "boxless" history never turns into a
+   card. Alphas stay inside the owner's 10–25% band.
+
+   The blur lives on the ::before and is masked separately: the
+   scroll box already carries a mask-image (it fades the WORDS
+   out at the top), and a backdrop-filter rectangle has a hard
+   edge, so it must fade out on the same axis or it seams
+   against the Ken-Burns backdrop.
+   ============================================================ */
+.chat-history-scrim {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  border-radius: 0.9rem;
+}
+.chat-history-scrim::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background-image: linear-gradient(
+    to top,
+    rgba(24, 24, 28, 0.24) 0%,
+    rgba(24, 24, 28, 0.20) 40%,
+    rgba(24, 24, 28, 0.15) 72%,
+    rgba(24, 24, 28, 0.12) 100%
+  );
+  -webkit-backdrop-filter: blur(6px) saturate(0.95);
+  backdrop-filter: blur(6px) saturate(0.95);
+  -webkit-mask-image: linear-gradient(
+    to top,
+    #000 0%,
+    #000 70%,
+    rgba(0, 0, 0, 0.5) 90%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to top,
+    #000 0%,
+    #000 70%,
+    rgba(0, 0, 0, 0.5) 90%,
+    transparent 100%
+  );
+}
+/* Keep the log above the plate (z-index 1 on the only child). */
+.chat-history-scrim > * {
+  position: relative;
+  z-index: 1;
+}
+/* Light text stays light — the shadow is what buys contrast on the pale
+   backdrops (cloudsea / sunset / meadow), not a colour change. */
+.chat-history-scrim p {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}

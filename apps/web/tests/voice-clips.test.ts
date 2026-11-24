@@ -231,11 +231,11 @@ describe('CLIP_LIBRARY gender parity (lang folders)', () => {
 });
 
 describe('TTS button registry', () => {
-  it('offers only voices that really differ: speaker × gender × pitch', () => {
+  it('offers only voices that really differ: one button per real speaker', () => {
     const buttons = selectTtsButtons();
-    // 58 Edge names collapsed to one sound; registry is gated gTTS voices with
-    // female/male × deep/mid/bright per distinct Google `tl` speaker.
-    expect(buttons).toHaveLength(54);
+    // 58 Edge names collapsed to one sound; the pitch/male clones that
+    // followed were also one female MP3. Now: 1 yue + 2 zh + 1 ja + 5 en.
+    expect(buttons).toHaveLength(9);
     expect(buttons.every((b) => b.engine === 'gtts' && b.shipping)).toBe(true);
     expect(new Set(buttons.map(ttsButtonKey)).size).toBe(buttons.length);
     expect(new Set(buttons.map((b) => b.id)).size).toBe(buttons.length);
@@ -243,20 +243,11 @@ describe('TTS button registry', () => {
     expect(selectTtsButtons('zh')).toHaveLength(TIER_A_COUNTS.zh);
     expect(selectTtsButtons('ja')).toHaveLength(TIER_A_COUNTS.ja);
     expect(selectTtsButtons('en')).toHaveLength(TIER_A_COUNTS.en);
-    expect(selectTtsButtons('yue').map((b) => b.tl)).toEqual(Array(6).fill('yue'));
-    expect(selectTtsButtons('zh').map((b) => b.tl)).toEqual([
-      'zh-CN', 'zh-CN', 'zh-CN', 'zh-CN', 'zh-CN', 'zh-CN',
-      'zh-TW', 'zh-TW', 'zh-TW', 'zh-TW', 'zh-TW', 'zh-TW',
-    ]);
-    expect(selectTtsButtons('ja').map((b) => b.tl)).toEqual(Array(6).fill('ja'));
+    expect(selectTtsButtons('yue').map((b) => b.tl)).toEqual(['yue']);
+    expect(selectTtsButtons('zh').map((b) => b.tl)).toEqual(['zh-CN', 'zh-TW']);
+    expect(selectTtsButtons('ja').map((b) => b.tl)).toEqual(['ja']);
     const enTls = selectTtsButtons('en').map((b) => b.tl);
-    expect(enTls).toEqual([
-      ...Array(6).fill('en-US'),
-      ...Array(6).fill('en-GB'),
-      ...Array(6).fill('en-AU'),
-      ...Array(6).fill('en-IN'),
-      ...Array(6).fill('en-NG'),
-    ]);
+    expect(enTls).toEqual(['en-US', 'en-GB', 'en-AU', 'en-IN', 'en-NG']);
     expect(new Set(enTls).size).toBe(5);
   });
 

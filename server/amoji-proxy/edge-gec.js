@@ -4,7 +4,11 @@
 // sounds like the same female speaker. Token shape matches edge-tts drm.py.
 
 const TRUSTED_CLIENT_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
-export const EDGE_GEC_VERSION = '2-155.0.4283.45';
+// `2-<chromium version>`, matching edge-tts 7.3.1 constants.py
+// (CHROMIUM_FULL_VERSION = "143.0.3650.75", SEC_MS_GEC_VERSION = f"2-{…}").
+// The Chromium string has to track the edge-tts release behind the token
+// scheme; a stale one is rejected on the upgrade.
+export const EDGE_GEC_VERSION = '2-143.0.3650.75';
 const WIN_EPOCH = 11644473600n;
 const U32 = 0xffffffffn;
 const M32 = 0x100000001n;
@@ -249,6 +253,28 @@ export function secMsGec(unixSeconds = Date.now() / 1000) {
 }
 
 const WS_BASE = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
+
+/**
+ * Handshake headers Microsoft's readaloud endpoint demands.
+ *
+ * Verified live 2026-11-24 against `speech.platform.bing.com`:
+ *   - no headers                       → HTTP 403 (socket upgrade rejected)
+ *   - only `Origin`                    → 403
+ *   - only `Cookie: muid=…`            → 403
+ *   - only `User-Agent`                → 101 OPEN
+ *   - full edge-tts header set         → 101 OPEN
+ * So `User-Agent` is the gate; `Origin`/`Pragma` mirror edge-tts 7.3.1's
+ * WSS_HEADERS. `new WebSocket()` cannot send headers on Workers or Node, which
+ * is why `worker.js` upgrades through `fetch()` instead.
+ */
+export const EDGE_WS_HEADERS = Object.freeze({
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0',
+  Origin: 'chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold',
+  Pragma: 'no-cache',
+  'Cache-Control': 'no-cache',
+  'Accept-Language': 'en-US,en;q=0.9',
+});
 
 /** Read-aloud socket URL. The GEC query is what the browser is allowed to send. */
 export function edgeReadAloudUrl(connectionId, unixSeconds) {

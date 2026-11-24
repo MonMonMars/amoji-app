@@ -212,7 +212,9 @@ Hold per bible — Edge 58-button list **removed** (`voice-catalog.ts`); use `vo
 | Owner listen/sing pins | `amoji.ownerPerfPicks.v1` · ship-set `apps/web/data/owner-perf-selection.json` |
 | Used by | `music.ts`, `owner-perf-picks.ts`, `startLibraryPerformance` |
 
-**Owner soft-weights:** Twinkle, Silent Night, lullaby beds — see `performance-clips.ts` comments.
+**Restored 2026-11-23:** the owner's **2026-11-18 picker export** (`owner-picker-notes-2026-11-18.json`, 77/77 DC rows reviewed) marked 13 採用 / 64 刪除. Sung 採用 picks are `sing-m-happy-birthday`, `sing-m-shenandoah`, `sing-f-soave-long`; the four songs the app had been shipping by default (twinkle, silent-night, joy, bed-lullaby) were all 刪除 in that export. The picks now live in `owner-perf-selection.json` + `owner-music-allowlist.json` (`deletedClipIds`) + `owner-picker-selection.json` (`DC011`–`DC077` tri-state). Guard: `apps/web/tests/owner-song-picks.test.ts`.
+
+**Owner soft-weights:** Twinkle, Silent Night, lullaby beds — see `performance-clips.ts` comments. (Weighting only; the owner 刪除 those four clips in the 2026-11-18 export, so they are not in the ship-set.)
 
 ### Updating owner listen / sing picks
 

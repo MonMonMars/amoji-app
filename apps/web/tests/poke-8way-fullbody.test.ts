@@ -78,12 +78,13 @@ describe('full-body poke motion + gendered voice', () => {
     }
   });
 
-  it('head poke recedes the head along the recoil', () => {
+  it('head poke tips the head toward the finger (front = +X pitch)', () => {
     const front = pokeBodyReaction({
       t: 0.12, zone: 'head', fallX: 0, fallZ: -1, sideSign: 1,
       softChest: false, twist: 0, direction: 'front',
     });
-    expect(front.headX).toBeLessThan(-0.4);
+    // Owner 2026-11-23: a front poke moves her forward, not backward.
+    expect(front.headX).toBeGreaterThan(0.4);
     const side = pokeBodyReaction({
       t: 0.12, zone: 'head', fallX: 1, fallZ: 0, sideSign: 1,
       softChest: false, twist: 0, direction: 'left',

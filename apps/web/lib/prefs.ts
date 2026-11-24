@@ -168,8 +168,12 @@ export type StrKey =
   | 'softLandSelect' | 'softLandStory' | 'softLandChat'
   // brain routing removed with the Settings Brain section (r2026-10-06.136)
   // voice self-test + diagnostics (r2026-10-04.75)
-  | 'testVoice' | 'testVoiceBtn' | 'voiceBlockedHint' | 'voiceVolume'
+  | 'testVoice' | 'testVoiceBtn' | 'voiceBlockedHint'   | 'voiceVolume'
   | 'sfxVolume' | 'bgmVolume'
+  // Settings → Background sound: mute non-speech music + ambience only.
+  // Appended here (not at the tail) because it belongs to the audio-toggle
+  // family; the label is the owner's own phrase.
+  | 'backgroundSound' | 'backgroundSoundHint'
   // ChatGPT-style emotional TTS tier (r2026-10-05.112)
   | 'openaiVoice' | 'openaiVoiceHint' | 'openaiKeyPlaceholder' | 'openaiEndpointPlaceholder' | 'openaiCostHint'
   // HTTP TTS proxy for wss-blocked networks (r2026-10-06.131)
@@ -711,6 +715,15 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   voiceVolume: { en: 'Dialogue volume', yue: '對白音量', zh: '对白音量', ja: 'セリフ音量' },
   sfxVolume: { en: 'Sound effects', yue: '音效', zh: '音效', ja: '効果音' },
   bgmVolume: { en: 'Background music', yue: '背景音樂', zh: '背景音乐', ja: 'BGM' },
+  // Owner's own words: "allow user mute the background sound". This switch
+  // kills music + ambience only; her spoken voice is untouched.
+  backgroundSound: { en: 'Background sound', yue: '背景聲', zh: '背景音', ja: 'BGM・環境音' },
+  backgroundSoundHint: {
+    en: 'Mute music and ambience. Her voice keeps playing.',
+    yue: '靜音背景音樂同環境聲。佢把聲照樣出。',
+    zh: '静音背景音乐与环境音。她的声音照常播放。',
+    ja: 'BGMと環境音をミュート。彼女の声はそのまま聞こえます。',
+  },
   testVoiceBtn: { en: '▶ Play', yue: '▶ 播一次', zh: '▶ 播放', ja: '▶ 再生' },
   voiceBlockedHint: {
     en: "No sound was heard — check the phone's silent switch and volume, then press Play again. If it's still silent, turn Voice replies off and on once.",
@@ -757,10 +770,10 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     ja: 'https://your-worker.workers.dev/ — 空欄＝直接接続',
   },
   ttsProxyHint: {
-    en: 'Only if her voice stays silent on your network: a free Cloudflare Worker carries the voice over https when the phone network blocks the live socket. Code + deploy steps: server/amoji-proxy in the GitHub repo.',
-    yue: '只喺把聲喺你個網絡一直靜音先需要用：免費 Cloudflare Worker 用 https 傳送把聲，等電話網絡擋唔到。代碼同部署步驟喺 GitHub repo 嘅 server/amoji-proxy。',
-    zh: '仅当声音在你的网络上一直无声时才需要：免费 Cloudflare Worker 用 https 传输语音，手机网络就挡不住了。代码与部署步骤在 GitHub 仓库的 server/amoji-proxy。',
-    ja: '音声が自分の回線で鳴らない場合のみ必要：無料のCloudflare Workerが音声をhttpsで運ぶので、モバイル回線のブロックを回避できます。コードと手順はGitHubリポジトリのserver/amoji-proxyにあります。',
+    en: 'On by default: the free amoji-voice Cloudflare Worker carries the voice over https when your network blocks the live socket. Clear it to force a direct connection. Code: server/amoji-proxy in the GitHub repo.',
+    yue: '預設已經開咗：免費嘅 amoji-voice Cloudflare Worker 用 https 傳送把聲，等電話網絡擋唔到。撳「清除」就會強制直接用 socket。代碼喺 GitHub repo 嘅 server/amoji-proxy。',
+    zh: '默认已开启：免费的 amoji-voice Cloudflare Worker 用 https 传输语音，手机网络就挡不住了。点「清除」可强制直接连接。代码在 GitHub 仓库的 server/amoji-proxy。',
+    ja: '既定でオン：無料の amoji-voice Cloudflare Worker が音声を https で運ぶので、モバイル回線のブロックを回避できます。「クリア」で直接接続に戻せます。コードは GitHub リポジトリの server/amoji-proxy にあります。',
   },
   ttsProxySave: {
     en: 'Save', yue: '儲存', zh: '保存', ja: '保存',

@@ -1,149 +1,66 @@
+/**
+ * The free MP3 tier plays the ORIGINAL TTS audio.
+ *
+ * Owner report (2026-11-23): "all the modified sound not sound good ... please
+ * only use the original TTS." The old gtts-timbre.ts produced a per-character
+ * playbackRate (0.38…1.72) with preservesPitch=false, which resampled the one
+ * female Google speaker into "male"/"bright"/"deep" personas. That is gone.
+ *
+ * This file now pins the identity contract so a future agent cannot quietly
+ * restore a pitch band: every argument combination must return exactly 1.
+ */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  GTTS_PITCH_BIAS_MAX,
-  GTTS_PITCH_BIAS_MIN,
-  PITCH_BIAS_FEMALE,
-  PITCH_BIAS_MALE,
-} from '../lib/gtts';
-import {
-  CHAR_PITCH_SPREAD,
-  characterPitchUnit,
-  FEMALE_TIER_OFFSET,
-  GTTS_MALE_BIAS_JA,
+  ORIGINAL_TTS_PITCH_BIAS,
   gttsCharacterPitchBias,
-  gttsPitchTierFor,
-  MALE_TIER_OFFSET,
-  pitchesDiffer,
   type GttsPitchTier,
 } from '../lib/gtts-timbre';
 import { CHARACTERS_WANT } from '../lib/characters-want';
 
-const FEMALE_IDS = CHARACTERS_WANT.filter((c) => c.gender === 'female').map((c) => c.id);
-const MALE_IDS = CHARACTERS_WANT.filter((c) => c.gender === 'male').map((c) => c.id);
+const IDS = CHARACTERS_WANT.map((c) => c.id);
+const TIERS: GttsPitchTier[] = ['deep', 'mid', 'bright'];
 
-describe('free-chain character pitch fingerprint', () => {
-  it('keeps the whole male band below 1.0 and below every female tier', () => {
-    // #437 bright male (1.26) crossed female deep (0.75) — owner heard pitched-female.
-    expect(PITCH_BIAS_MALE).toBeLessThan(1);
-    expect(PITCH_BIAS_MALE).toBeLessThan(PITCH_BIAS_FEMALE);
-    for (const tier of ['deep', 'mid', 'bright'] as const) {
-      const male = Math.max(...MALE_IDS.map((id) => gttsCharacterPitchBias('male', id, undefined, tier)));
-      const female = Math.min(...FEMALE_IDS.map((id) => gttsCharacterPitchBias('female', id, undefined, tier)));
-      expect(male, `male ${tier}`).toBeLessThan(1);
-      expect(female, `female ${tier}`).toBeGreaterThan(1);
-      expect(male, `male ${tier} vs female ${tier}`).toBeLessThan(female);
-    }
-    const brightM = Math.max(...MALE_IDS.map((id) => gttsCharacterPitchBias('male', id, undefined, 'bright')));
-    const deepF = Math.min(...FEMALE_IDS.map((id) => gttsCharacterPitchBias('female', id, undefined, 'deep')));
-    expect(brightM).toBeLessThan(deepF);
-    expect(deepF).toBeGreaterThan(1);
+describe('original-TTS identity mapping', () => {
+  it('returns 1 with no arguments', () => {
+    expect(gttsCharacterPitchBias()).toBe(1);
+    expect(ORIGINAL_TTS_PITCH_BIAS).toBe(1);
   });
 
-  it('assigns curated bright / mid / deep tiers across the cast', () => {
-    const femaleTiers = new Set(FEMALE_IDS.map((id) => gttsPitchTierFor(id)));
-    const maleTiers = new Set(MALE_IDS.map((id) => gttsPitchTierFor(id)));
-    expect(femaleTiers).toEqual(new Set<GttsPitchTier>(['deep', 'mid', 'bright']));
-    expect(maleTiers).toEqual(new Set<GttsPitchTier>(['deep', 'mid', 'bright']));
-
-    const a = gttsCharacterPitchBias('female', 'a01-shino');
-    const b = gttsCharacterPitchBias('female', 'a02-shibu');
-    expect(a).not.toBe(b);
-    expect(pitchesDiffer({ gender: 'female', id: 'a01-shino' }, { gender: 'female', id: 'a02-shibu' })).toBe(true);
-  });
-
-  it('spreads same-gender companions farther than micro-jitter alone', () => {
-    const biases = FEMALE_IDS.map((id) => gttsCharacterPitchBias('female', id));
-    const span = Math.max(...biases) - Math.min(...biases);
-    // Tier offsets (±~0.05–0.08) must beat the old ±0.045 hash-only band.
-    expect(span).toBeGreaterThan(CHAR_PITCH_SPREAD * 2 + 0.05);
-    const clampBias = (v: number) =>
-      Math.min(GTTS_PITCH_BIAS_MAX, Math.max(GTTS_PITCH_BIAS_MIN, v));
-    for (const id of FEMALE_IDS) {
-      const tier = gttsPitchTierFor(id);
-      const expectedBase = clampBias(PITCH_BIAS_FEMALE + FEMALE_TIER_OFFSET[tier]);
-      expect(Math.abs(gttsCharacterPitchBias('female', id) - expectedBase)).toBeLessThanOrEqual(
-        CHAR_PITCH_SPREAD + 1e-9,
-      );
-    }
-    for (const id of MALE_IDS) {
-      const tier = gttsPitchTierFor(id);
-      const expectedBase = clampBias(PITCH_BIAS_MALE + MALE_TIER_OFFSET[tier]);
-      expect(Math.abs(gttsCharacterPitchBias('male', id) - expectedBase)).toBeLessThanOrEqual(
-        CHAR_PITCH_SPREAD + 1e-9,
-      );
+  it('returns 1 for every gender, character, language and pinned tier', () => {
+    for (const gender of ['female', 'male'] as const) {
+      for (const id of [...IDS, 'unknown-character']) {
+        for (const lang of ['yue', 'zh', 'ja', 'en'] as const) {
+          for (const tier of TIERS) {
+            expect(
+              gttsCharacterPitchBias(gender, id, lang, tier),
+              `${gender}/${id}/${lang}/${tier}`,
+            ).toBe(1);
+          }
+        }
+      }
     }
   });
 
-  it('is stable for a given id (select greeting and chat must match)', () => {
-    expect(characterPitchUnit('a01-shino')).toBe(characterPitchUnit('a01-shino'));
-    expect(gttsCharacterPitchBias('female', 'a01-shino')).toBe(gttsCharacterPitchBias('female', 'a01-shino'));
-    expect(gttsPitchTierFor('a01-shino')).toBe(gttsPitchTierFor('a01-shino'));
+  it('is stable (greeting and chat resolve the same number)', () => {
+    expect(gttsCharacterPitchBias('female', 'a01-shino')).toBe(
+      gttsCharacterPitchBias('female', 'a01-shino'),
+    );
   });
 
-  it('falls back to the gender base when no character id is given', () => {
-    expect(gttsCharacterPitchBias('male')).toBe(PITCH_BIAS_MALE);
-    expect(gttsCharacterPitchBias('female')).toBe(PITCH_BIAS_FEMALE);
+  it('keeps no gender/tier bands in the module', () => {
+    const src = readFileSync(join(__dirname, '../lib/gtts-timbre.ts'), 'utf8');
+    expect(src).not.toMatch(/PITCH_BIAS_MALE|PITCH_BIAS_FEMALE/);
+    expect(src).not.toMatch(/FEMALE_TIER_OFFSET|MALE_TIER_OFFSET/);
+    expect(src).not.toMatch(/characterPitchUnit|CHAR_PITCH_SPREAD/);
+    expect(src).not.toMatch(/\.preservesPitch\s*=/);
   });
 
-  it('lowers ja male base pitch so male/female delivery are audibly distinct', () => {
-    const jaMale = gttsCharacterPitchBias('male', 'a03-fumiriya', 'ja');
-    const jaFemale = gttsCharacterPitchBias('female', 'a01-shino', 'ja');
-    expect(GTTS_MALE_BIAS_JA).toBeLessThan(PITCH_BIAS_MALE);
-    expect(jaMale).toBeLessThan(jaFemale);
-    expect(jaMale).toBeGreaterThanOrEqual(GTTS_PITCH_BIAS_MIN);
-  });
-
-  it('stays inside the gtts playbackRate-safe clamp', () => {
-    for (const id of [...FEMALE_IDS, ...MALE_IDS]) {
-      const f = gttsCharacterPitchBias('female', id);
-      const m = gttsCharacterPitchBias('male', id);
-      expect(f).toBeGreaterThanOrEqual(GTTS_PITCH_BIAS_MIN);
-      expect(f).toBeLessThanOrEqual(GTTS_PITCH_BIAS_MAX);
-      expect(m).toBeGreaterThanOrEqual(GTTS_PITCH_BIAS_MIN);
-      expect(m).toBeLessThanOrEqual(GTTS_PITCH_BIAS_MAX);
-    }
-  });
-
-  it('makes selectable deep vs bright obviously different without gender cross', () => {
-    const deepF = gttsCharacterPitchBias('female', undefined, 'en', 'deep');
-    const midF = gttsCharacterPitchBias('female', undefined, 'en', 'mid');
-    const brightF = gttsCharacterPitchBias('female', undefined, 'en', 'bright');
-    const deepM = gttsCharacterPitchBias('male', undefined, 'en', 'deep');
-    const midM = gttsCharacterPitchBias('male', undefined, 'en', 'mid');
-    const brightM = gttsCharacterPitchBias('male', undefined, 'en', 'bright');
-    // Within-band gaps as wide as the clamp allows once male stays < 1 < female.
-    expect(brightF - deepF).toBeGreaterThanOrEqual(0.68);
-    expect(brightM - deepM).toBeGreaterThanOrEqual(0.58);
-    expect(midF - deepF).toBeGreaterThanOrEqual(0.25);
-    expect(brightF - midF).toBeGreaterThanOrEqual(0.40);
-    expect(midM - deepM).toBeGreaterThanOrEqual(0.24);
-    expect(brightM - midM).toBeGreaterThanOrEqual(0.30);
-    expect(deepM).toBeLessThan(1);
-    expect(brightM).toBeLessThan(1);
-    expect(deepF).toBeGreaterThan(1);
-    expect(brightF).toBeGreaterThan(1);
-    expect(brightM).toBeLessThan(deepF);
-    expect(FEMALE_TIER_OFFSET.bright - FEMALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.68);
-    expect(MALE_TIER_OFFSET.bright - MALE_TIER_OFFSET.deep).toBeGreaterThanOrEqual(0.58);
-  });
-
-  it('keeps ja male deep≪mid≪bright (deep must not floor into mid)', () => {
-    const deep = gttsCharacterPitchBias('male', undefined, 'ja', 'deep');
-    const mid = gttsCharacterPitchBias('male', undefined, 'ja', 'mid');
-    const bright = gttsCharacterPitchBias('male', undefined, 'ja', 'bright');
-    expect(GTTS_MALE_BIAS_JA).toBeGreaterThanOrEqual(0.60);
-    expect(mid - deep).toBeGreaterThanOrEqual(0.20);
-    expect(bright - mid).toBeGreaterThanOrEqual(0.30);
-    expect(bright).toBeLessThan(1);
-    expect(deep).toBeGreaterThanOrEqual(GTTS_PITCH_BIAS_MIN);
-  });
-
-  it('voice.ts re-exports the same helper so every speak path stays in sync', () => {
+  it('voice.ts keeps ONE shared resolver, which is now the identity', () => {
     const voice = readFileSync(join(__dirname, '../lib/voice.ts'), 'utf8');
     expect(voice).toContain("import { gttsCharacterPitchBias } from './gtts-timbre'");
     expect(voice).toMatch(/export function gttsPitchBias\(/);
-    expect(voice).toMatch(/gttsCharacterPitchBias\(gender, characterId, lang(?:, tier)?\)/);
+    expect(voice).toMatch(/return gttsCharacterPitchBias\(gender, characterId, lang(?:, tier)?\)/);
   });
 });
