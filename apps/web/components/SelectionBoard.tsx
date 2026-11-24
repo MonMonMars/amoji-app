@@ -103,6 +103,17 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
     }
   };
 
+  /** Narrow an ArcFan id to one of the four shipped language cards. */
+  const isLang = (id: string): id is Prefs['lang'] =>
+    id === 'en' || id === 'yue' || id === 'zh' || id === 'ja';
+
+  /** Select a language card. Returns false for a card outside the shipped set. */
+  const chooseLang = (id: string): boolean => {
+    if (!isLang(id)) return false;
+    pick({ lang: id });
+    return true;
+  };
+
   const confirm = () => {
     if (leaving) return;
     // t767/t777: one Start gesture unlocks AudioContext + asks location for weather/news.
@@ -233,13 +244,19 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                   size="portrait"
                   items={cast}
                   selectedId={prefsReady ? live.character : ''}
-                  onSelect={(id) => {
+                  // Selection only. Wheel, drag, arrow keys, Home/End and the
+                  // chevrons all land here — and none of them may speak.
+                  onSelect={(id) => pick({ character: id })}
+                  // TAP ONLY (owner 2026-11-25): the greeting belongs to a real
+                  // tap / Enter / Space on the card, never to scrolling.
+                  onConfirm={(id) => {
                     pick({ character: id });
                     const chosen = cast.find((item) => item.id === id);
                     if (!chosen) return;
                     // Short rotating greet in this character's pitch + the
-                    // language's real speaker. Non-blocking; selection already
-                    // applied above.
+                    // language's real speaker. Sync inside the tap gesture
+                    // (iOS drops a deferred play()); the voice layer keeps it
+                    // single-flight and cancels any greeting already speaking.
                     playVoiceGreeting(
                       chosen.id,
                       lang,
@@ -330,11 +347,12 @@ export default function SelectionBoard({ mode }: { mode: 'start' | 'change' }) {
                 size="compact"
                 items={LANGS}
                 selectedId={live.lang}
-                onSelect={(id) => {
-                  if (id !== 'en' && id !== 'yue' && id !== 'zh' && id !== 'ja') return;
-                  pick({ lang: id });
-                  // Greet with the speaker this language will actually use, so
-                  // tapping a language auditions the voice chat will speak in.
+                onSelect={(id) => { chooseLang(id); }}
+                onConfirm={(id) => {
+                  // Tap only: a language card auditions the speaker chat will
+                  // use. Swiping the row stays silent.
+                  if (!isLang(id)) return;
+                  chooseLang(id);
                   playVoiceGreeting(
                     character.id,
                     id,

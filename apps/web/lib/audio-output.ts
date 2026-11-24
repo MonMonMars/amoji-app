@@ -318,18 +318,32 @@ function kickDefaultOutputPinBeforeGesturePlay(audio: HTMLAudioElement): void {
 export async function startHtmlAudioOnDefaultSpeakers(
   audio: HTMLAudioElement,
   mode: 'gesture-safe' | 'pin-before-play' = 'gesture-safe',
+  /**
+   * Optional liveness probe, checked before EVERY play attempt. A card greeting
+   * that a newer tap has retired must never start talking later: the sink-pin
+   * retry runs a task or two after the gesture, which used to let several
+   * greetings begin after their cancel (owner report 2026-11-25).
+   */
+  stillWanted?: () => boolean,
 ): Promise<void> {
   ensureCompanionPlaybackRoute();
+  const retired = (): boolean => {
+    if (!stillWanted) return false;
+    try { return !stillWanted(); } catch { return true; }
+  };
   const playOrPinRetry = async (firstErr?: unknown): Promise<void> => {
+    if (retired()) throw new Error('canceled');
     try {
       await audio.play();
     } catch (err) {
       await pinDefaultOutputAsync(audio);
+      if (retired()) throw new Error('canceled');
       try {
         await audio.play();
       } catch (retryErr) {
         ensureCompanionPlaybackRoute();
         await new Promise<void>((r) => { setTimeout(r, 0); });
+        if (retired()) throw new Error('canceled');
         try {
           await audio.play();
         } catch (thirdErr) {

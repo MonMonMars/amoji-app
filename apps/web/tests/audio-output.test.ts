@@ -171,6 +171,37 @@ describe('default audio output', () => {
     expect(order).toEqual(['play:1', 'sink:', 'play:2', 'play:3']);
   });
 
+  it('a retired greeting never starts playing (stillWanted false)', async () => {
+    let played = 0;
+    const audio = {
+      setSinkId: () => Promise.resolve(),
+      play() { played += 1; return Promise.resolve(); },
+    } as unknown as HTMLAudioElement;
+    await expect(
+      startHtmlAudioOnDefaultSpeakers(audio, 'gesture-safe', () => false),
+    ).rejects.toThrow('canceled');
+    expect(played).toBe(0);
+  });
+
+  it('a greeting retired between retries does not start on the retry', async () => {
+    let played = 0;
+    let wanted = true;
+    const audio = {
+      setSinkId: () => Promise.resolve(),
+      play() {
+        played += 1;
+        // First attempt fails; the newer tap retires this line while the sink
+        // pin is in flight, so the retry must not speak (overlap bug).
+        wanted = false;
+        return Promise.reject(new Error('NotAllowedError'));
+      },
+    } as unknown as HTMLAudioElement;
+    await expect(
+      startHtmlAudioOnDefaultSpeakers(audio, 'gesture-safe', () => wanted),
+    ).rejects.toThrow('canceled');
+    expect(played).toBe(1);
+  });
+
 
   it('iPhone keeps play-first even with mic latch or explicit pin', () => {
     vi.stubGlobal('navigator', {
