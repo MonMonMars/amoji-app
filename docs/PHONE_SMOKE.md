@@ -1,7 +1,7 @@
 # Phone smoke (live Pages)
 
 **Live:** https://monmonmars.github.io/amoji-app/  
-**Tip on main:** `r2026-11-19.294` · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
+**Tip on main:** `r2026-11-24.296` · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
 **Purpose:** Human-only checks after #419–#437 + #458 + r271–r294. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
 Owner: “getting worst” / “nothing fixed” — **do not mark R10–R13 Done** until this pass.
 
@@ -42,6 +42,16 @@ New **Settings → 🔊 Background sound** switch (`amoji.bgm-mute.v1`). It hard
 - [ ] Turn **Mute all** on and off while Background sound is on: does the song bed stay **muted** (not resurrected by the blanket unmute)?
 - [ ] Reload the page: does the switch come back **on**?
 - [ ] Report: `ROW: bg-sound DEVICE: <model>` + music-not-muted / voice-muted-too / bed-restarts / forgotten-on-reload
+
+### Every line actually speaks — the dB volume fix (#585 #586)
+
+The owner-reported "sometimes has voice, but mostly has no voice" was one SSML attribute. `edge-tts.ts` rendered prosody volume as `volume='±N.NdB'`, and the readaloud endpoint **refuses** that unit (`1007 SSML parsing error: 0x80045003`), dropping the whole utterance. Every spoken clause carried it, so every line was silent; two refusals then trip the client's `EDGE_FAILURE_LIMIT = 2` breaker, which parks the Edge tier for five minutes — the "mostly no voice" pattern. Two independent fixes now ship: the app emits a percentage (`.296`), and the `amoji-voice` worker repairs dB server-side if an old client sends it. The relay is also **on by default** now, so no Settings setup is needed.
+
+- [ ] Fresh install, **no Settings changes**: send five chat messages in 粵語 — does **every** line speak, with **no silent messages** between them?
+- [ ] Set the character to a **male** voice in Settings: is it a **real male voice** (雲龍 / 雲健 / Keita / Guy), not a female voice pitched down?
+- [ ] Wait **five minutes** after a silent line, then send another message: does audio come back (the old bug parked the tier for 5 min)?
+- [ ] Does volume still **rise and fall** with emotion (angry louder, shy quieter) rather than sitting flat? This is the check that the dB→% conversion preserved the contour, not just the unit.
+- [ ] Report: `ROW: voice-male DEVICE: <model>` + silent-lines / female-pitched-down / 5min-recovery / flat-volume
 
 ## Priority now — the two r290 owner regressions
 
@@ -275,7 +285,7 @@ Hard-refresh until live **`revision.txt`** ≥ **r2026-11-19.280**. Every PR in 
 
 | Check | Result |
 | --- | --- |
-| `main` tip | **r2026-11-19.294** (`verify:live` must match) |
+| `main` tip | **r2026-11-24.296** (`verify:live` must match) |
 | Landed train | r281 #557 · r282 #560 · r283 #558 · r284 #561 · r285 #564 #563 #565 · r286 #562 · r287 #568 #569 #570 #566 #567 · r288 #571 · r291 #582 · r294 #579 #581 #580 |
 | Closed in r285–r288 | all-language voice buttons · card greet on tap · poke lean/sound/interrupt · singing mouth + dancing beat · dance bounce sign |
 | Outstanding (owner) | the five new rows above · r280 idle planted-vs-float · news · **R10–R13 not Done** |
