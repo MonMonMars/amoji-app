@@ -569,7 +569,11 @@
 // (zh-HK-WanLung, zh-CN-Yunjian, ja-JP-Keita, en-US-Guy, …) work with no
 // Settings setup. A saved or session-level empty value still forces the
 // direct socket, and env/saved URLs still outrank the default.
-export const APP_REVISION = 'r2026-11-24.295';
+// r2026-11-24.296: voice — prosody volume is emitted as a percentage instead
+// of decibels. The readaloud endpoint refuses `volume='…dB'` with
+// `1007 SSML parsing error: 0x80045003` and drops the whole utterance, and
+// every spoken clause carried that unit, so every line was silent.
+export const APP_REVISION = 'r2026-11-24.296';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

@@ -1,0 +1,3 @@
+# wrangler writes its deploy cache here, including cache/wrangler-account.json.
+# It is machine/account state, not source — never commit it.
+.wrangler/
