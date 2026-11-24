@@ -1,7 +1,7 @@
 # Phone smoke (live Pages)
 
 **Live:** https://monmonmars.github.io/amoji-app/  
-**Tip on main:** `r2026-11-24.296` · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
+**Tip on main:** `r2026-11-24.297` · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
 **Purpose:** Human-only checks after #419–#437 + #458 + r271–r294. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
 Owner: “getting worst” / “nothing fixed” — **do not mark R10–R13 Done** until this pass.
 
@@ -52,6 +52,19 @@ The owner-reported "sometimes has voice, but mostly has no voice" was one SSML a
 - [ ] Wait **five minutes** after a silent line, then send another message: does audio come back (the old bug parked the tier for 5 min)?
 - [ ] Does volume still **rise and fall** with emotion (angry louder, shy quieter) rather than sitting flat? This is the check that the dB→% conversion preserved the contour, not just the unit.
 - [ ] Report: `ROW: voice-male DEVICE: <model>` + silent-lines / female-pitched-down / 5min-recovery / flat-volume
+
+### Admin search control — inert on Pages by design (#583)
+
+The owner-requested admin control shipped as an **optional** lane. The server half (`server/backend`) owns the breaker, the per-window cap and the soft-delay; the client half (`lib/search-gate.ts`) is gated on `NEXT_PUBLIC_AMOJI_API`, which the Pages build never sets.
+
+**Proven inert, three ways** (2026-11-24, `.297`): `beginSearch` returns an `off` verdict before any budget read, `fetch` or timer when the API base is empty; `pages.yml` sets no `NEXT_PUBLIC_AMOJI_API`, and it is build-time inlined; and all 18 shipped bundles contain **zero** occurrences of `/api/search` or `/api/search/quota` — the module was dead-code-eliminated, not merely disabled. The gate also sits only in the music/song/dance branch, never on an ordinary chat reply.
+
+So: **music requests on Pages never touch a search API, never wait, and never show a search error.** If music does not play, that is the library, not this lane.
+
+- [ ] Ask 「播首歌」 / 「跳舞」 three times: does the clip start **immediately** (no ~2.5 s stall before it begins)?
+- [ ] Does any music reply show a **search error**, a spinner, or go silent where it used to play?
+- [ ] Send a normal chat message: does the reply start exactly as before (this lane must not touch chat at all)?
+- [ ] Report: `ROW: search-gate DEVICE: <model>` + stall / search-error / silent-music / chat-affected
 
 ## Priority now — the two r290 owner regressions
 
@@ -285,7 +298,7 @@ Hard-refresh until live **`revision.txt`** ≥ **r2026-11-19.280**. Every PR in 
 
 | Check | Result |
 | --- | --- |
-| `main` tip | **r2026-11-24.296** (`verify:live` must match) |
+| `main` tip | **r2026-11-24.297** (`verify:live` must match) |
 | Landed train | r281 #557 · r282 #560 · r283 #558 · r284 #561 · r285 #564 #563 #565 · r286 #562 · r287 #568 #569 #570 #566 #567 · r288 #571 · r291 #582 · r294 #579 #581 #580 |
 | Closed in r285–r288 | all-language voice buttons · card greet on tap · poke lean/sound/interrupt · singing mouth + dancing beat · dance bounce sign |
 | Outstanding (owner) | the five new rows above · r280 idle planted-vs-float · news · **R10–R13 not Done** |
