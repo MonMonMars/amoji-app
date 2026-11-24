@@ -585,7 +585,16 @@
 // an analysable CC track instead of dropping to a local clip; the owner's own
 // pins still win, attribution is shown/spoken, and the Background-sound mute
 // switch silences streams exactly like local beds. No env, no key, no fetch.
-export const APP_REVISION = 'r2026-11-24.298';
+// r2026-11-24.300: four independently-developed owner fixes land together.
+// .299 is claimed by the TTS clause-limit branch, so this integration takes .300
+// to keep the numbers from colliding.
+// (a) chat history scrim — no backdrop blur, one clear-grey plate fading 0.50→0;
+// (b) chat user bubble — one bubble per turn (`chat-turn-log.ts` dedupe against
+// the Web Speech re-delivered final, `lib/speech-finals.ts`);
+// (c) character-card greet — tap-only (`onConfirm`), single-flight gate, so
+// scroll/drag/wheel/focus can never fire or overlap a greeting;
+// (d) side poke — reclassified as butt/arm so the lateral lean never appears.
+export const APP_REVISION = 'r2026-11-24.300';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

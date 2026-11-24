@@ -141,6 +141,7 @@ import { feedUtterance, applyContentMood, setThinkingPose, triggerLaugh, trigger
 import { martialFlowDemoTurn, type MartialFlowKind } from '../lib/martial-speak-guard';
 import { detectMove } from '../lib/moves';
 import { loadHistory, saveHistory } from '../lib/companion-store';
+import { appendUserTurn, hasPendingUserTurn, newMessageId, type ChatTurn } from '../lib/chat-turn-log';
 import { notifySpeaking, isSpeaking } from '../lib/speech';
 import { pickLine } from '../lib/chatter';
 import { pickIdleLine } from '../lib/persona-chatter';
@@ -308,7 +309,7 @@ import {
   watchingStarsIntroLine,
 } from '../lib/watching-stars';
 
-interface Msg {
+interface Msg extends ChatTurn {
   role: 'user' | 'assistant';
   content: string;
   /** Sealed spoken clauses — prefer over replaying full `content` in the UI. */
@@ -659,7 +660,9 @@ export default function ChatPanel({
   }, [backgroundId]);
 
   useEffect(() => {
-    setHistory(loadHistory());
+    // Hydrate once per mount and stamp a stable id on every stored row so the
+    // React key never falls back to a shifting index (duplicate-looking rows).
+    setHistory(loadHistory().map((m, i) => ({ ...m, id: `stored-${i}` })));
   }, []);
   // settings sheet can wipe the conversation from one central place
   useEffect(() => {
@@ -1308,6 +1311,11 @@ export default function ChatPanel({
     // New user turn wins. Kill a pending poke continuation HERE, before the
     // undecided / crisis quick returns can skip stopSpeakingForInterrupt().
     cancelPokeResume();
+    // Idempotent per user turn: a repeat of the turn that is still waiting for
+    // its answer must never append a second bubble (the Web Speech recognizer
+    // can re-deliver the same final result — lib/speech-finals.ts — and a
+    // queued voice final can race a typed send). See lib/chat-turn-log.ts.
+    if (hasPendingUserTurn(historyRef.current, text)) return;
     const companionTalking = isSpeaking() || speechPending();
     if (busyRef.current && !companionTalking) return;
     const turnGen = ++sendGenRef.current;
@@ -1321,7 +1329,9 @@ export default function ChatPanel({
       lastUserRef.current = Date.now();
       userHasSpokenRef.current = true;
       reengageStageRef.current = 0;
-      setHistory((h) => [...h, { role: 'user', content: text }]);
+      const undecidedTurn = appendUserTurn(historyRef.current, text) as Msg[];
+      historyRef.current = undecidedTurn;
+      setHistory(undecidedTurn);
       feedUtterance(text);
       const line = undecidedTopicReply(lang, text.length);
       sayLocal(line, { joy: 0.5 });
@@ -1371,10 +1381,9 @@ export default function ChatPanel({
       transientRef.current = false;
       reengageStageRef.current = 0;
     }
-    const userTurn: Msg = { role: 'user', content: text };
-    const turnMessages: Msg[] = interrupt.wipeChatHistory
-      ? [userTurn]
-      : [...historyRef.current, userTurn];
+    const turnMessages = appendUserTurn(historyRef.current, text, {
+      replace: interrupt.wipeChatHistory,
+    }) as Msg[];
     historyRef.current = turnMessages;
     setHistory(turnMessages);
     feedUtterance(text);
@@ -2255,7 +2264,7 @@ export default function ChatPanel({
           // history bubble body empty so it cannot overlap the subtitle.
           return (
             <ChatMessage
-              key={i}
+              key={m.id ?? `row-${i}`}
               role={m.role}
               content={m.content}
               captionLines={m.captionLines}
@@ -2408,7 +2417,7 @@ export default function ChatPanel({
                 userHasSpokenRef.current = true;
                 reengageStageRef.current = 0;
                 idleAutoAfterUserRef.current = true;
-                setHistory((h) => [...h, { role: 'user', content: prompt }]);
+                setHistory((h) => [...h, { id: newMessageId('user'), role: 'user', content: prompt }]);
                 feedUtterance(prompt);
                 stopSpeaking();
                 const ask = resolveMusicAsk(prompt);
@@ -2440,7 +2449,7 @@ export default function ChatPanel({
                 reengageStageRef.current = 0;
                 lastTopicalContentAtRef.current = Date.now();
                 idleAutoAfterUserRef.current = true;
-                setHistory((h) => [...h, { role: 'user', content: prompt }]);
+                setHistory((h) => [...h, { id: newMessageId('user'), role: 'user', content: prompt }]);
                 feedUtterance(prompt);
                 const n = storyTellCountRef.current++;
                 const tale = pickClassicFairyTaleForIntent(lang, n, prompt, resolvedClassicFairyTales());
@@ -2459,7 +2468,7 @@ export default function ChatPanel({
                 reengageStageRef.current = 0;
                 lastTopicalContentAtRef.current = Date.now();
                 idleAutoAfterUserRef.current = true;
-                setHistory((h) => [...h, { role: 'user', content: prompt }]);
+                setHistory((h) => [...h, { id: newMessageId('user'), role: 'user', content: prompt }]);
                 feedUtterance(prompt);
                 stopSpeaking();
                 const facet = demoPhaseFacetIndex('time', lang, prompt);
@@ -2475,7 +2484,7 @@ export default function ChatPanel({
                 userHasSpokenRef.current = true;
                 reengageStageRef.current = 0;
                 idleAutoAfterUserRef.current = false;
-                setHistory((h) => [...h, { role: 'user', content: prompt }]);
+                setHistory((h) => [...h, { id: newMessageId('user'), role: 'user', content: prompt }]);
                 feedUtterance(prompt);
                 stopSpeaking();
                 pendingOfferRef.current = null;
@@ -2511,7 +2520,7 @@ export default function ChatPanel({
                 reengageStageRef.current = 0;
                 lastTopicalContentAtRef.current = Date.now();
                 idleAutoAfterUserRef.current = true;
-                setHistory((h) => [...h, { role: 'user', content: prompt }]);
+                setHistory((h) => [...h, { id: newMessageId('user'), role: 'user', content: prompt }]);
                 feedUtterance(prompt);
                 stopSpeakingForInterrupt();
                 void clientLiveContext(prompt, lang).then((live) => {
