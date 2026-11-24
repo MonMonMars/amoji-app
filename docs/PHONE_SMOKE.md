@@ -288,6 +288,23 @@ Hard-refresh until live **`revision.txt`** ≥ **r2026-11-19.280**. Every PR in 
 - [ ] Poke CMA **Want** rows still match `SFX_WANT_LIST.md` on device
 - [ ] `ownerCalmIdleClip` honors pin without Quaternius remap on refresh
 
+### Streamed music bed (#574 · r298 — **pending merge**, not on Pages yet)
+
+The curated Jamendo catalog is now wired into playback instead of shipping dark.
+It is local data, so the bed needs no key and no pre-downloaded file — but it is
+still **streamed**, which is exactly where mobile autoplay policy differs from desktop.
+
+- [ ] `ROW: music-stream DEVICE: <model>` — ask 「播音樂」 on the phone. A catalog track starts
+      and keeps playing; it does **not** silently fail or fall back to a dead mixer
+- [ ] If the browser blocks autoplay, the **first tap** on the page is enough to start the bed;
+      a second request must not require a *third* tap
+- [ ] Settings → background-sound mute (`amoji.bgm-mute.v1`) silences the streamed bed, and the
+      character's spoken lines stay audible (music off, voice on)
+- [ ] Ask for a specific style (e.g. 「播爵士」) — the curated track for that style plays, and the
+      artist credit is visible rather than blank
+- [ ] Background the tab mid-track, return after ~30s → bed resumes instead of dying silently
+- [ ] Airplane mode → request music: it fails visibly/degrades, it does not hang the chat
+
 ### Optional docs tail (#531)
 
 - [ ] [`OWNER_RESOURCE_LIBRARY.md`](./OWNER_RESOURCE_LIBRARY.md) claims match live Pages URLs (no 404 stub)
