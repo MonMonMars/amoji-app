@@ -54,16 +54,18 @@ Voice + BGM: spoken TTS keeps a **steady** gain. Library beds stay at ambient ~3
 
 ---
 
-# Streaming providers — curated keyless Jamendo FIRST (landed dark, 2026-11-24)
+# Streaming providers — curated keyless Jamendo FIRST (wired live, 2026-11-24)
 
 New modules:
 
 - `apps/web/lib/music-stream-catalog.ts` — the hand-verified, **keyless** Jamendo catalog (28 tracks) + mood buckets.
 - `apps/web/lib/music-stream-providers.ts` — provider specs and **pure** parsers (no fetch, no timers, no DOM).
 - `apps/web/lib/music-stream.ts` — the network/orchestration client, rotation, cache, and the playback-routing safety gate.
+- `apps/web/lib/music-stream-bed.ts` — the bridge: maps a curated `MusicTrack` onto the existing `PerformanceClip` bed shape (`stream:jamendo:<id>`), so the catalog plays through `lib/music.ts` instead of a second player.
 - `apps/web/tests/music-stream.test.ts` — 35 unit tests, all network mocked.
+- `apps/web/tests/music-stream-wiring.test.ts` — the live-path tests (catalog → bed → `resolveLibraryPerformance`/`startLibraryPerformance`, attribution, export safety).
 
-**Nothing imports these yet.** No user-visible behaviour changed, so no `APP_REVISION` / `public/sw.js` `CACHE` / `public/revision.txt` bump in this PR. The integration is a separate PR, deliberately sequenced after the in-flight audio PRs.
+**Wired live in `r2026-11-24.298`.** `lib/music.ts` now asks `resolveStreamBed()`: owner-pinned Mixkit tracks still win, then an exact curated/Mixkit id, then `curatedTrackForStyle()` for the genre+mood, then the procedural fallback. `lib/music-ask.ts` offers curated chips when the pinned pool has nothing for a style. No env var, no key, and no fetch on the playback path — this is why the Pages export stays inert.
 
 ## 1. The CORS verdict — the whole design hinges on this
 
@@ -298,15 +300,17 @@ analysable: false → kind: 'untapped', crossOrigin: null,
 - `analysable: false` ⇒ plain `<audio>`, **never** create a media source. Audible, but no beat lock → body must use `setKnownTempo(estimateBpm(style))`.
 - Never re-derive this rule at a call site. Use the plan.
 
-## 8. Follow-up integration (NOT done in this PR)
+## 8. Integration as shipped (`r2026-11-24.298`)
 
-Once the concurrent audio PRs have merged, in this order:
+The plan above was followed, with one deliberate substitution noted at the end.
 
-1. `apps/web/lib/music.ts` — `playClipElement()` builds `new Audio(url)`, which sets `src` in the constructor and makes `crossOrigin` too late. Switch to two-step construction (`const audio = new Audio(); audio.crossOrigin = plan.crossOrigin; audio.src = plan.url`), honouring `musicPlaybackPlan()`.
-2. `apps/web/lib/music.ts` — `armClipFromElement()` currently gates on `isSameOriginUrl(url)`. Replace that gate with `plan.routeThroughAnalyser`; keep the known-tempo path, and add the **retry-without-`crossOrigin`** branch for the stale-allowlist case above.
-3. Bare "play music / let's dance" → `nextCuratedMusicTrack()` (no search box, no account). Genre/mood asks → `curatedJamendoForMood()` or `curatedJamendoSearch()`. Explicit search asks → debounced `searchMusic()`; render `musicAttributionLine(track)` on every row and when announcing the track.
-4. `apps/web/lib/performance-clips.ts` — carry the plan/`analysable` bit on the synthetic clip that `streamDanceClip()` builds, so a streamed track and a catalogue clip take the same route.
-5. Optional settings/empty state: `musicStreamCapabilities()` to show `NEXT_PUBLIC_JAMENDO_CLIENT_ID` as an **optional** extra (the catalog works without it).
-6. Do **not** change `apps/web/lib/live-beat.ts`.
+1. **Two-step construction — done.** `apps/web/lib/music.ts:playClipElement()` takes an optional `playback` plan, builds `new Audio()`, sets `crossOrigin` **before** `src`, and treats a rejected play as untappable rather than fatal.
+2. **Analyser gate — done.** `armClipFromElement()` now gates on `playback ? playback.analysable : isSameOriginUrl(url)`. The known-tempo path is untouched, and a failed analysable play retries once without `crossOrigin` (the stale-allowlist case) before the procedural bed takes over.
+3. **Resolution — done, keyless-first.** `resolveStreamBed()` in `lib/music.ts` orders: exact Mixkit id → exact curated id → owner pins (`pickStreamTrack`, unchanged) → `curatedTrackForStyle(style, n, mood)` → procedural. Chip options in `lib/music-ask.ts` fall back to `curatedTracksForStyle()` when the pinned pool is empty for that style. Attribution (`musicAttributionLine`) goes to the now-playing chip and is spoken by `performanceIntroLine(…, artist)`.
+4. **Plan on the clip — done.** `lib/performance-clips.ts` carries `artist`, `analysable` and `attribution`; `lib/music-stream-bed.ts` builds the synthetic clip with `analysable: plan.routeThroughAnalyser` and `license: 'Jamendo-CC'`.
+5. **Optional key UI — NOT done.** `NEXT_PUBLIC_JAMENDO_CLIENT_ID` still only gates text search and has no settings surface. Deliberate: it is an env value a Pages build cannot have, so a UI for it would be dead there.
+6. **`live-beat.ts` untouched.** Confirmed.
 
-Again: nothing above is done here, so there is no user-visible change and no revision bump in this PR.
+**Deliberate substitution:** bare "play music / let's dance" routes through the same `resolveStreamBed()` chain rather than calling `nextCuratedMusicTrack()` directly. One resolver means the owner's pinned tracks keep working exactly as before and the curated catalog only fills the gap; a second entry point could have reordered pins and regressed the existing dance tests.
+
+**Export safety:** `lib/music-stream-bed.ts` imports only the pure catalog + `musicPlaybackPlan`; no `fetch`, no `searchMusic`, no env read, so `AMOJI_EXPORT=1` bundles keep zero API references (asserted in `tests/music-stream-wiring.test.ts`).

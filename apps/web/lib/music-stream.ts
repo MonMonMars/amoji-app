@@ -563,62 +563,16 @@ export function createMusicStream(deps: MusicStreamDeps = {}): MusicStream {
 
 // ---------------------------------------------------------------------------
 // Playback routing — the safety gate the integration MUST use
+//
+// Extracted to ./music-playback-plan so the playback path (lib/music.ts →
+// lib/music-stream-bed.ts) can use it without pulling this network client —
+// and its API keys and fetch — into the static-export bundle. Re-exported here
+// so existing imports of `musicPlaybackPlan` / `musicAttributionLine` from this
+// module keep working.
 // ---------------------------------------------------------------------------
 
-export type MusicPlaybackPlan =
-  | {
-      kind: 'analysable';
-      url: string;
-      /** Must be set BEFORE `src` is assigned, else the element cannot be tapped. */
-      crossOrigin: 'anonymous';
-      routeThroughAnalyser: true;
-      why: string;
-    }
-  | {
-      kind: 'untapped';
-      url: string;
-      crossOrigin: null;
-      routeThroughAnalyser: false;
-      why: string;
-    };
-
-/**
- * Decide how a track may be played.
- *
- * `analysable: true`  → set `crossOrigin='anonymous'`, then (and only then)
- *                       `createMediaElementSource` + `AnalyserNode` — dance
- *                       onsets, song lip-sync and the beat clock all work.
- * `analysable: false` → play a plain `<audio>` and DO NOT create a media source.
- *                       The track is audible, but there is no beat lock, so the
- *                       body must fall back to the known-tempo path.
- *
- * Even for `analysable: true`, the follow-up must still tolerate a load error
- * and retry without `crossOrigin` (provider CDN allowlists have been observed
- * to be inconsistent — see docs/MUSIC_STREAMING.md).
- */
-export function musicPlaybackPlan(track: MusicTrack): MusicPlaybackPlan {
-  if (track.analysable) {
-    return {
-      kind: 'analysable',
-      url: track.streamUrl,
-      crossOrigin: 'anonymous',
-      routeThroughAnalyser: true,
-      why: `${track.provider} audio is CORS-readable — safe to analyse (dance/lips)`,
-    };
-  }
-  return {
-    kind: 'untapped',
-    url: track.streamUrl,
-    crossOrigin: null,
-    routeThroughAnalyser: false,
-    why: `${track.provider} audio is not CORS-readable — play untapped, no beat lock`,
-  };
-}
-
-/** One-line credit for UI. Never drop this: these licences require attribution. */
-export function musicAttributionLine(track: MusicTrack): string {
-  return track.attribution.trim();
-}
+export { musicAttributionLine, musicPlaybackPlan } from './music-playback-plan';
+export type { MusicPlaybackPlan } from './music-playback-plan';
 
 /** Process-wide instance for call sites that do not need injection. */
 let shared: MusicStream | null = null;

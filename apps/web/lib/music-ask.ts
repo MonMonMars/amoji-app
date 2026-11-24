@@ -17,6 +17,8 @@ import {
 } from './performance-clips';
 import { ownerListenStreamPool, ownerSongClipIds } from './owner-perf-picks';
 import { isPlayablePerformanceClip } from './music-allowlist-config';
+import { curatedTracksForStyle } from './music-stream-bed';
+import type { MusicTrack } from './music-stream-providers';
 
 export type MusicAskMode = 'random' | 'select' | 'none';
 export type MusicAskKind = 'music' | 'song' | 'dance';
@@ -182,6 +184,21 @@ function streamOption(track: StreamTrack, listenOnly = false): MusicPickOption {
   };
 }
 
+/**
+ * A keyless curated Jamendo row as a chip. `streamId` is the track's own
+ * `jamendo:<id>` so `resolveStreamBed()` can find it again on tap.
+ */
+function curatedOption(track: MusicTrack): MusicPickOption {
+  return {
+    id: `stream:${track.id}`,
+    title: track.title ?? track.artist ?? 'Jamendo track',
+    genre: styleLabel(track.mood ?? 'music'),
+    kind: 'dance',
+    source: 'stream',
+    streamId: track.id,
+  };
+}
+
 function clipOption(clip: PerformanceClip): MusicPickOption {
   return {
     id: clip.id,
@@ -253,6 +270,13 @@ export function listMusicPickOptions(opts: {
       : opts.style
         ? tracksForStyle(opts.style)
         : tracksForStyle('default');
+  // The owner-pinned Mixkit pool cannot answer most genres (jazz, lofi,
+  // hiphop, chill…). Offer the keyless curated catalog instead of telling the
+  // user there is no list — it needs no key, no account and no network.
+  if (!pool.length) {
+    const curated = curatedTracksForStyle(opts.style, count).map(curatedOption);
+    if (curated.length) return curated;
+  }
   if (!opts.style) {
     const seen = new Set<string>();
     const diverse: StreamTrack[] = [];

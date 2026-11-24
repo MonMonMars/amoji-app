@@ -794,7 +794,9 @@ export default function ChatPanel({
       setClipState(null);
       return;
     }
-    setNowPlaying(clipLabel(clip, lang));
+    const name = clipLabel(clip, lang);
+    // Streamed provider beds name the artist on the chip too (CC attribution).
+    setNowPlaying(clip.artist ? `${name} · ${clip.artist}` : name);
     setClipState((s) => (s === 'playing' ? 'playing' : 'starting'));
     trackTimerRef.current = setTimeout(() => setNowPlaying(null), ms + 400);
   };
@@ -863,7 +865,7 @@ export default function ChatPanel({
     const genre = pick?.genre || styleHint;
     const intro =
       introOverride?.trim()
-      || performanceIntroLine(kind === 'song' ? 'song' : 'music', title, lang, genre);
+      || performanceIntroLine(kind === 'song' ? 'song' : 'music', title, lang, genre, clip.artist);
     const hold = Math.max(clip.durationMs + 600, ms);
     // Listen-only BGM: intro + bed, calm idle — no VRMA until user asks to dance.
     beginPerformanceSession(kind, clip, hold, listenOnly);

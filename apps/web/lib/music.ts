@@ -37,6 +37,7 @@ import {
   STYLE_THEME_ID,
   type MusicStyleId,
 } from './music-catalog';
+import { curatedMusicBed, curatedMusicTrackById, curatedTrackForStyle } from './music-stream-bed';
 import { pickOwnerSongClipId, pickOwnerStreamTrack } from './owner-perf-picks';
 import { endPerformanceSession, performanceSessionPhase } from './performance-session';
 export {
@@ -698,9 +699,16 @@ function isSameOriginUrl(url: string): boolean {
  * cross-origin preview keeps its plain element path and falls back to the
  * known/measured BPM clock — an honest tempo match, not an onset lock.
  */
-function armClipFromElement(audio: HTMLAudioElement, url: string): void {
+function armClipFromElement(
+  audio: HTMLAudioElement,
+  url: string,
+  playback?: ElementPlayback,
+): void {
   stopSongMouth();
-  if (!isSameOriginUrl(url)) {
+  // A bed that declares `analysable` uses that bit (it comes from
+  // `musicPlaybackPlan()`); bundled same-origin clips keep the URL test.
+  const analysable = playback ? playback.analysable : isSameOriginUrl(url);
+  if (!analysable) {
     setKnownTempo(estimateBpm(clipStyle));
     return;
   }
@@ -732,11 +740,37 @@ function armClipFromElement(audio: HTMLAudioElement, url: string): void {
   }
 }
 
-function playClipElement(url: string, token: number, characterId: string): boolean {
+/** Routing decision for one streamed bed (see `musicPlaybackPlan`). */
+interface ElementPlayback {
+  /** `'anonymous'` only when the bytes are CORS-readable and may be analysed. */
+  crossOrigin: 'anonymous' | null;
+  analysable: boolean;
+  /** Internal: permits exactly one untapped retry after a CORS/load failure. */
+  noUntappedRetry?: boolean;
+}
+
+/** Turn a resolved bed's `analysable` bit into the element routing. */
+function playbackForClip(clip: PerformanceClip): ElementPlayback {
+  const analysable = clip.analysable === true;
+  return { crossOrigin: analysable ? 'anonymous' : null, analysable };
+}
+
+function playClipElement(
+  url: string,
+  token: number,
+  characterId: string,
+  playback?: ElementPlayback,
+): boolean {
   if (typeof Audio === 'undefined') return false;
   try {
     primeLibraryBedPlayback();
-    const audio = new Audio(url);
+    // Two-step construction: `crossOrigin` must be assigned BEFORE `src`, or
+    // the element can never be tapped (docs/MUSIC_STREAMING.md §7).
+    const audio = new Audio();
+    if (playback?.crossOrigin) {
+      try { audio.crossOrigin = playback.crossOrigin; } catch { /* stub */ }
+    }
+    audio.src = url;
     // Own this element so duckExternalAudioForCompanion / pauseForeignPageMedia
     // never pause the song/dance bed when companion TTS starts (Pixel: no volume dip).
     try { audio.dataset.amojiAudio = '1'; } catch { /* non-DOM Audio stubs */ }
@@ -755,7 +789,7 @@ function playClipElement(url: string, token: number, characterId: string): boole
       audio.removeEventListener('timeupdate', onTimeUpdate);
       markBedPlaybackAnchor();
       // Wire lips/onsets only when the bed is audible — never during intro wait.
-      armClipFromElement(audio, url);
+      armClipFromElement(audio, url, playback);
       emitLibraryClipPlaying(clipId);
     };
     const onTimeUpdate = () => {
@@ -772,8 +806,20 @@ function playClipElement(url: string, token: number, characterId: string): boole
       if (token !== loadToken) return;
       audio.removeEventListener('playing', emitOnce);
       audio.removeEventListener('timeupdate', onTimeUpdate);
-      audio.pause();
       if (clipEl === audio) clipEl = null;
+      // A stream we believed was CORS-readable can still fail: the edge cache
+      // has served a foreign `Access-Control-Allow-Origin` before
+      // (docs/MUSIC_STREAMING.md §1). Retry untapped — audible beats silent —
+      // before falling back to the procedural band. Exactly one retry.
+      if (playback?.analysable && !playback.noUntappedRetry) {
+        const untapped = playClipElement(url, token, characterId, {
+          crossOrigin: null,
+          analysable: false,
+          noUntappedRetry: true,
+        });
+        if (untapped) return;
+      }
+      audio.pause();
       startLibraryBandFallback(characterId);
     });
     return true;
@@ -851,9 +897,12 @@ function streamDanceClip(
     langs: ['en', 'yue', 'zh', 'ja'],
     characters: [],
     labels: { en: stream.title, yue: stream.title, zh: stream.title, ja: stream.title },
-    license: 'CC0-1.0',
+    license: 'Mixkit-Free',
     credit: stream.credit,
     source: stream.source,
+    // Mixkit previews were never verified CORS-readable: play untapped with
+    // the known-tempo clock. Only the curated Jamendo catalog is analysable.
+    analysable: false,
   };
 }
 
@@ -864,13 +913,28 @@ type LibraryPerfQuery = ClipQuery & {
   streamId?: string;
 };
 
-function resolveStreamForQuery(q: LibraryPerfQuery) {
+/**
+ * Resolve the streamed bed for a dance ask, in priority order:
+ *   1. exact pick from a select chip (Mixkit catalogue, then keyless Jamendo);
+ *   2. the owner's pinned Mixkit beds — his own picks always win;
+ *   3. the keyless curated Jamendo catalog for styles the pinned pool cannot
+ *      answer (jazz, lofi, hiphop, electronic, chill, ballad…), which used to
+ *      fall back to a local CC0 clip;
+ *   4. Mixkit style rotation.
+ * Returns `null` when nothing applies; the caller then picks a CC0 clip.
+ */
+function resolveStreamBed(q: LibraryPerfQuery): PerformanceClip | null {
   const exact = streamTrackById(q.streamId);
-  if (exact) return exact;
+  if (exact) return streamDanceClip(exact);
+  const curatedExact = curatedMusicTrackById(q.streamId);
+  if (curatedExact) return curatedMusicBed(curatedExact);
   const styleId = q.style as MusicStyleId | undefined;
   const owner = pickOwnerStreamTrack(styleId, q.n ?? 0);
-  if (owner) return owner;
-  return styleId ? pickStreamTrack(styleId, q.n ?? 0) : pickOwnerStreamTrack(undefined, q.n ?? 0);
+  if (owner) return streamDanceClip(owner);
+  const curated = curatedTrackForStyle(styleId, q.n ?? 0, q.mood);
+  if (curated) return curatedMusicBed(curated);
+  const mixkit = styleId ? pickStreamTrack(styleId, q.n ?? 0) : null;
+  return mixkit ? streamDanceClip(mixkit) : null;
 }
 
 /**
@@ -881,8 +945,8 @@ export function resolveLibraryPerformance(q: LibraryPerfQuery): PerformanceClip 
   const ownerSong = pickOwnerSongClipId(q);
   const withOwner = ownerSong && !q.clipId ? { ...q, clipId: ownerSong } : q;
   if (withOwner.clipId) return pickPerformanceClip(withOwner);
-  const stream = resolveStreamForQuery(withOwner);
-  if (stream && q.kind === 'dance') return streamDanceClip(stream);
+  const stream = q.kind === 'dance' ? resolveStreamBed(withOwner) : null;
+  if (stream) return stream;
   return pickPerformanceClip(withOwner);
 }
 
@@ -899,10 +963,9 @@ export function startLibraryPerformance(
   // Exact clip picks skip the stream bed path.
   if (!query.clipId) {
   const styleId = query.style as MusicStyleId | undefined;
-  const stream = resolveStreamForQuery(query);
-  if (stream && query.kind === 'dance') {
-    const synthetic = streamDanceClip(stream);
-    const holdMs = Math.max(query.ms, stream.durationMs + 600);
+  const synthetic = query.kind === 'dance' ? resolveStreamBed(query) : null;
+  if (synthetic) {
+    const holdMs = Math.max(query.ms, synthetic.durationMs + 600);
     if (isMasterMuted() || typeof window === 'undefined') return synthetic;
     if (clipId === synthetic.id && perfPreserve) {
       armPerformance(holdMs);
@@ -922,7 +985,9 @@ export function startLibraryPerformance(
     clipCharacter = query.characterId ?? STYLE_THEME_ID[styleId ?? 'default'] ?? 'default';
     armPerformance(holdMs);
     const token = ++loadToken;
-    if (!playClipElement(stream.url, token, clipCharacter)) {
+    // Curated Jamendo beds hand their CORS verdict to the element so a
+    // readable stream can drive the beat analyser; Mixkit stays untapped.
+    if (!playClipElement(synthetic.file, token, clipCharacter, playbackForClip(synthetic))) {
       startLibraryBandFallback(clipCharacter);
     }
     return synthetic;
