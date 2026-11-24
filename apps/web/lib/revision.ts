@@ -579,7 +579,13 @@
 // ChatPanel calls only inside `if (searchGateConfigured())`. The published
 // GitHub Pages build has no NEXT_PUBLIC_AMOJI_API, so the gate is false there
 // and no /api/ request, budget write, timer or delay is made.
-export const APP_REVISION = 'r2026-11-24.297';
+// r2026-11-24.298: keyless music is live — the curated Jamendo catalog (PR #574)
+// is wired into the existing dance/music bed player. Genre asks the owner-pinned
+// Mixkit pool cannot answer (jazz, lofi, hiphop, electronic, chill…) now stream
+// an analysable CC track instead of dropping to a local clip; the owner's own
+// pins still win, attribution is shown/spoken, and the Background-sound mute
+// switch silences streams exactly like local beds. No env, no key, no fetch.
+export const APP_REVISION = 'r2026-11-24.298';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

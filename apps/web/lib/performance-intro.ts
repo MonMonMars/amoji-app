@@ -15,16 +15,23 @@ export function clipTitle(clip: PerformanceClip, lang: string): string {
 /**
  * Companion introduces the piece by name (and optional genre), then playback
  * starts after speech idle. `kind` song → "song"; dance / beds → "music".
+ * `artist` names the performer for a streamed provider bed — CC licences
+ * require the author to be credited, and the intro is the only spoken surface.
  */
 export function performanceIntroLine(
   kind: PerformanceKind | 'music',
   title: string,
   lang: string,
   genre?: string,
+  artist?: string,
 ): string {
   const name = title.trim() || (kind === 'song' ? 'a song' : 'a track');
   const g = (genre ?? '').trim();
-  const named = g && !name.toLowerCase().includes(g.toLowerCase()) ? `${name} · ${g}` : name;
+  const a = (artist ?? '').trim();
+  const parts = [name];
+  if (a && !name.toLowerCase().includes(a.toLowerCase())) parts.push(a);
+  if (g && !name.toLowerCase().includes(g.toLowerCase())) parts.push(g);
+  const named = parts.join(' · ');
   const L: IntroLang =
     lang === 'yue' || lang === 'zh' || lang === 'ja' || lang === 'en' ? lang : 'en';
   const isSong = kind === 'song';

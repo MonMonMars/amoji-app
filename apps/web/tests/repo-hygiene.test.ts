@@ -78,5 +78,7 @@ describe('repo hygiene guard', () => {
     expect(warned.output).toContain('outside this checkout');
 
     expect(check(other, ['--strict']).status).toBe(1);
-  });
+    // Windows: two temp checkouts plus four git-backed hygiene scans. Under
+    // full-suite load this exceeded the 5s default and flaked CI.
+  }, 60_000);
 });

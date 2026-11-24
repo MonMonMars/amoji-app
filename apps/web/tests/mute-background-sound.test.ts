@@ -288,6 +288,28 @@ describe('background sound mute', () => {
     expect(sfx.ambientGainSnapshot()).toBe(0);
   });
 
+  it('(a) a streamed keyless music bed obeys the same mute switch', async () => {
+    const { bg, music } = engines!;
+    // 'jazz' has no owner/Mixkit match, so this resolves to the curated
+    // Jamendo catalog — a real cross-origin streamed bed, not a local file.
+    music.startLibraryPerformance({ kind: 'dance', style: 'jazz', lang: 'en', n: 0, ms: 4000 });
+    await flush();
+    const bed = FakeAudio.instances.at(-1)!;
+    expect(bed.src).toContain('prod-1.storage.jamendo.com');
+    const live = music.backgroundSoundSnapshot();
+    expect(live.bedVolume).toBeGreaterThan(0);
+    expect(live.bedMuted).toBe(false);
+
+    bg.setBackgroundSoundMuted(true);
+    const muted = music.backgroundSoundSnapshot();
+    expect(muted.bedVolume).toBe(0);
+    expect(muted.bedMuted).toBe(true);
+
+    bg.setBackgroundSoundMuted(false);
+    expect(music.backgroundSoundSnapshot().bedVolume).toBeGreaterThan(0);
+    expect(music.backgroundSoundSnapshot().bedMuted).toBe(false);
+  });
+
   it('(b) unmute restores the running beds at the stored steps', async () => {
     const { bg, music, sfx } = engines!;
     music.startMusic('juno');

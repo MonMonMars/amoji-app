@@ -16,11 +16,18 @@ export type PerformanceLang = 'en' | 'yue' | 'zh' | 'ja';
 export type PerformanceVolume = 'voiceVol' | 'bgmVol';
 export type SingVoice = 'female' | 'male';
 
+/**
+ * Licence id. Bundled `public/audio/` clips are CC0 only (enforced by the
+ * picker test); a streamed bed carries the provider's own deed instead, and
+ * `attribution` spells it out for the CC "name the author" obligation.
+ */
+export type PerformanceLicense = 'CC0-1.0' | 'Mixkit-Free' | 'Jamendo-CC';
+
 export interface PerformanceClip {
   id: string;
   kind: PerformanceKind;
   style: string;
-  /** path under the site root (assetUrl prepends the Pages base) */
+  /** path under the site root (assetUrl prepends the Pages base) or a URL */
   file: string;
   durationMs: number;
   /** songs are dialogue; dance / beds are BGM */
@@ -32,9 +39,21 @@ export interface PerformanceClip {
   /** sung voice. Dance and beds leave this unset. */
   voice?: SingVoice;
   labels: Record<PerformanceLang, string>;
-  license: 'CC0-1.0';
+  license: PerformanceLicense;
   credit: string;
   source: string;
+  /** Artist/performer for a streamed provider bed — shown and spoken so the
+   *  CC attribution obligation is met. Bundled CC0 clips leave this unset. */
+  artist?: string;
+  /**
+   * `true` only when the media bytes are CORS-readable and may be routed
+   * through `createMediaElementSource` (dance onsets + song lips). Bundled
+   * same-origin clips leave this unset and the URL decides; Mixkit previews
+   * are explicitly `false`; the keyless Jamendo catalog is `true`.
+   */
+  analysable?: boolean;
+  /** Full licence line (title, artist, deed, source) for streamed beds. */
+  attribution?: string;
 }
 
 /** master gain before the stepped volume and any dialogue duck */
