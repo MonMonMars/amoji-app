@@ -89,8 +89,11 @@ export class EmotionEngine {
     }
 
     const idle = this.t - this.lastInputAt > this.cfg.idleAfterMs;
-    // neutral floor keeps the face alive
-    const floor = idle ? 0.4 : 0.15;
+    // Neutral contributes zero face channels; this floor only dilutes the
+    // active blend. OWNER OVERRIDE 2026-11-25: idle used a 0.4 floor (halving
+    // the expression again through `k`) which made every held mood read
+    // "pleasant but mild". Idle now dilutes exactly like speaking (0.15).
+    const floor = 0.15;
     const n = CATALOG.neutral;
     wSum += floor;
     for (const [k, v] of Object.entries(n.face)) tgtFace[k] = (tgtFace[k] ?? 0) + v * floor;
@@ -98,7 +101,8 @@ export class EmotionEngine {
 
     // 3. normalize + exponential smoothing toward targets
     const alpha = 1 - Math.exp(-dt / this.cfg.blendTimeMs);
-    const k = this.cfg.intensity * (idle ? 0.5 : 1);
+    // No idle halving: intensity is the only user-facing scale now.
+    const k = this.cfg.intensity;
     const face = {} as EmotionFrame['face'];
     for (const name of FACE_PARAM_NAMES) {
       const target = clamp01((tgtFace[name] ?? 0) / wSum) * k;

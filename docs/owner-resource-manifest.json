@@ -61,7 +61,6 @@
     "a85-kara",
     "a89-rurina",
     "a93-edokko",
-    "a94-rita",
     "a95-mizu",
     "a96-pee-aruako",
     "a97-pee-saaya",
@@ -737,14 +736,6 @@
       "type": "character-vrm",
       "id": "a93-edokko",
       "pathOrUrl": "models/want/a93-edokko.vrm",
-      "usedBy": "characters-want.ts · prefs.ts cast",
-      "status": "wired",
-      "notes": "release free-library-want-2026-10-12"
-    },
-    {
-      "type": "character-vrm",
-      "id": "a94-rita",
-      "pathOrUrl": "models/want/a94-rita.vrm",
       "usedBy": "characters-want.ts · prefs.ts cast",
       "status": "wired",
       "notes": "release free-library-want-2026-10-12"

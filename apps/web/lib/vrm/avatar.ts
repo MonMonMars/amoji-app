@@ -79,11 +79,15 @@ import { ChestBounce } from './chest-bounce';
 import {
   capEyeExpression,
   captureEyeRestScales,
+  detectEyeProfile,
   disableVrmAutoLookAt,
   pinEyeRestScales,
   pinVrmEyeGaze,
   type EyeScalePin,
 } from './eyes';
+import { BlinkClock } from './blink';
+import { buildExpressionNameMap, isBlinkExpression, resolveExpressionName } from './expression-names';
+import type { CastEyeProfile } from './cast-eye-profile';
 import { applyCastFix, captureCastFix, type CastFixState } from './cast-pose';
 import { needsFullUpright } from '../cast-adjust';
 import { shortestQuatSlerp } from './quat-blend';
@@ -198,6 +202,12 @@ export interface Avatar {
   readonly clipAnimatedBones: ReadonlySet<string>;
   /** r103: node names of every resolved finger bone (evidence for the guard) */
   readonly fingerBones: ReadonlySet<string>;
+  /**
+   * Which eye cap profile this rig needs. `atlas` = texture-atlas rigs
+   * (seed-san); `roster` = pure-morph VRoid roster. The canvas passes this to
+   * the dominance path so caps and blending agree with `setExpression`.
+   */
+  readonly eyeProfile: CastEyeProfile;
   setExpression(name: string, value: number): void;
   applyPose(pose: AvatarPose): void;
   /** r103: re-apply the calibrated relaxed-hand curl (idempotent base·delta) */
@@ -781,7 +791,18 @@ class V1Avatar implements Avatar {
   clipDrivesBody = false;
   readonly clipAnimatedBones: ReadonlySet<string>;
   readonly fingerBones: ReadonlySet<string>;
+  /** `atlas` for seed-san-style texture-transform rigs, `roster` otherwise. */
+  readonly eyeProfile: CastEyeProfile;
   private vrm: VRM;
+  /** lowercase actual expression name → authored key (`surprised`→`Surprised`) */
+  private readonly expressionNames: Map<string, string>;
+  /**
+   * The idle blink owns the lids now. `externalBlink` is set when the canvas
+   * wrote a non-zero lid weight earlier this frame (game view / scripted
+   * blink); in that case the clock yields and re-arms instead of fighting it.
+   */
+  private readonly blink = new BlinkClock();
+  private externalBlink = false;
   private relaxedHands: RelaxedHandEntry[] = [];
   private fingerShown = new Map<THREE.Object3D, THREE.Quaternion>();
   private fingerMap = new Map<string, THREE.Object3D>();
@@ -838,6 +859,15 @@ class V1Avatar implements Avatar {
     this.root.updateMatrixWorld(true);
     this.shoulderRest = captureShoulderRest((name) => this.getBoneNode(name));
     this.planter.capture(vrm.scene, (name) => this.getBoneNode(name));
+    // VRM 0.x surprise is authored as a custom group named `Surprised`
+    // (presetName unknown), so resolve through the model's real map instead of
+    // relying on lowercase preset keys. Profile: texture-transform binds ⇒
+    // atlas caps (seed-san), pure morph binds ⇒ full roster expression.
+    const em = vrm.expressionManager;
+    this.expressionNames = buildExpressionNameMap(
+      em ? em.expressions.map((e) => e.expressionName) : [],
+    );
+    this.eyeProfile = detectEyeProfile(em);
     // Stray look-at (target or lookLeft morphs) rolls the iris out of the socket.
     disableVrmAutoLookAt(vrm);
     this.eyeScalePins = captureEyeRestScales(vrm.scene);
@@ -846,7 +876,13 @@ class V1Avatar implements Avatar {
   setExpression(name: string, value: number): void {
     const em = this.vrm.expressionManager;
     if (!em) return;
-    try { em.setValue(name, capEyeExpression(name, value)); } catch { /* preset absent on this model */ }
+    const resolved = resolveExpressionName(this.expressionNames, name);
+    // Absent preset (e.g. relaxed on a rig without it) stays a no-op — never
+    // guess a sibling name.
+    if (!resolved) return;
+    // A scripted/game lid weight this frame means the blink clock must yield.
+    if (value > 0 && isBlinkExpression(resolved)) this.externalBlink = true;
+    em.setValue(resolved, capEyeExpression(resolved, value, this.eyeProfile));
   }
 
   applyPose(raw: AvatarPose): void {
@@ -1053,9 +1089,45 @@ class V1Avatar implements Avatar {
   }
 
   update(dt: number): void {
+    // Lids are ours unless the canvas scripted a blink this frame. Must run
+    // BEFORE vrm.update(), which applies expression weights to the binds.
+    this.updateBlink(dt);
     this.vrm.update(dt);
     pinVrmEyeGaze(this.vrm);
     pinEyeRestScales(this.eyeScalePins);
+  }
+
+  /**
+   * Idle blink for the V1 path (previously only GenericAvatar blinked; every
+   * VRM loads here, so the whole roster stared). Writes the resolved `Blink`
+   * channel, or both split lids when a rig only ships Blink_L/Blink_R.
+   */
+  private updateBlink(dt: number): void {
+    const em = this.vrm.expressionManager;
+    if (!em) return;
+    if (this.externalBlink) {
+      // Scripted blink won this frame — do not stack, and re-arm so the next
+      // idle blink does not land immediately after it.
+      this.externalBlink = false;
+      this.blink.reset();
+      return;
+    }
+    const weight = capEyeExpression('blink', this.blink.update(dt), this.eyeProfile);
+    const full = resolveExpressionName(this.expressionNames, 'blink');
+    if (full) {
+      em.setValue(full, weight);
+      // Clear split lids so a leftover game Blink_L/R cannot keep one eye shut
+      // while the full blink closes both.
+      for (const split of ['blinkLeft', 'blinkRight'] as const) {
+        const key = resolveExpressionName(this.expressionNames, split);
+        if (key && key !== full) em.setValue(key, 0);
+      }
+      return;
+    }
+    for (const split of ['blinkLeft', 'blinkRight'] as const) {
+      const key = resolveExpressionName(this.expressionNames, split);
+      if (key) em.setValue(key, weight);
+    }
   }
 }
 
@@ -1074,6 +1146,12 @@ class GenericAvatar implements Avatar {
   clipDrivesBody = false; // no VRMA support here — procedural pose always
   readonly clipAnimatedBones: ReadonlySet<string>;
   readonly fingerBones: ReadonlySet<string>;
+  /**
+   * The generic path never applies texture/material expression binds (it only
+   * drives morph targets), so an eye atlas cannot actually move here. That
+   * makes the expressive roster profile safe: no UV-cell flicker is possible.
+   */
+  readonly eyeProfile: CastEyeProfile = 'roster';
   /** the calibrated inner model node (facing yaw lives here, never on root) */
   private inner: THREE.Object3D;
   private bones = new Map<BoneName, THREE.Object3D>();
@@ -1084,8 +1162,7 @@ class GenericAvatar implements Avatar {
   private relaxedHands: RelaxedHandEntry[] = [];
   private fingerShown = new Map<THREE.Object3D, THREE.Quaternion>();
   private shoulderRest = new Map<string, ShoulderRest>();
-  private blinkT = 2.2 + Math.random() * 2;
-  private blinkPhase = -1;
+  private readonly blink = new BlinkClock();
 
   // scratch objects (no per-frame allocation)
   private sRw = new THREE.Quaternion();
@@ -1262,7 +1339,7 @@ class GenericAvatar implements Avatar {
   // -- runtime API -----------------------------------------------------------
 
   setExpression(name: string, value: number): void {
-    const capped = capEyeExpression(name, value);
+    const capped = capEyeExpression(name, value, this.eyeProfile);
     const v = Math.max(0, Math.min(1, capped));
     const bindName = (EXPRESSION_ALIAS[name.toLowerCase()] ?? name).toLowerCase();
     if (!bindName) return; // e.g. relaxed on a 0.x model — nothing to drive
@@ -1408,19 +1485,7 @@ class GenericAvatar implements Avatar {
   update(dt: number): void {
     // gentle periodic blink so legacy models feel alive — lids only (capped);
     // eye mesh scale is pinned after so blink morphs cannot resize the socket.
-    if (this.blinkPhase >= 0) {
-      this.blinkPhase += dt;
-      const k = this.blinkPhase / 0.16;
-      const v = k >= 1 ? 0 : 1 - Math.abs(k * 2 - 1);
-      this.setExpression('blink', v);
-      if (k >= 1) this.blinkPhase = -1;
-    } else {
-      this.blinkT -= dt;
-      if (this.blinkT <= 0) {
-        this.blinkT = 2.4 + Math.random() * 2.6;
-        this.blinkPhase = 0;
-      }
-    }
+    this.setExpression('blink', this.blink.update(dt));
     pinEyeRestScales(this.eyeScalePins);
   }
 }

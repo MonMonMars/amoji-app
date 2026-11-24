@@ -2,10 +2,11 @@
 // AUTO-GENERATED from want-roster.json — keep in sync with CHARACTERS order in prefs.ts
 // releaseTag: free-library-want-2026-10-12
 //
-// Badge numbers are STABLE and deliberately not renumbered: a04 (4) and a05 (5)
-// were removed for licensing, so those two numbers are retired. Everything after
-// them keeps the number it already shipped with. Retired ids still resolve, so a
-// saved prefs/localStorage value cannot come back as "unknown character".
+// Badge numbers are STABLE and deliberately not renumbered: a04 (4), a05 (5)
+// and a94 (27) were removed from the live roster, so their numbers are
+// retired. Everything after them keeps the number it already shipped with.
+// Retired ids still resolve, so a saved prefs/localStorage value cannot come
+// back as "unknown character".
 export const CAST_NO = {
   'a01-shino': 1,
   'a02-shibu': 2,
@@ -31,7 +32,6 @@ export const CAST_NO = {
   'a85-kara': 24,
   'a89-rurina': 25,
   'a93-edokko': 26,
-  'a94-rita': 27,
   'a95-mizu': 28,
   'a96-pee-aruako': 29,
   'a97-pee-saaya': 30,
@@ -51,12 +51,13 @@ export const CAST_NO = {
   'a120-morikawa-yuki-summer-uniform': 44,
   'a121-nagano-mami-uniform': 45,
   'a122-shiratori-hikari-shifuku': 46,
-  'a04-avatarsample-a': 4, // retired — removed for licensing
-  'a05-avatarsample-c': 5, // retired — removed for licensing
+  'a04-avatarsample-a': 4, // retired — removed from the live roster
+  'a05-avatarsample-c': 5, // retired — removed from the live roster
+  'a94-rita': 27, // retired — removed from the live roster
 } as const;
 
-/** Ids that shipped before the 2026-11-08 licensing purge. `prefs` migrates them. */
-export const RETIRED_CAST_IDS: readonly string[] = ['a04-avatarsample-a', 'a05-avatarsample-c'];
+/** Ids that shipped, then left the live roster. `prefs` migrates them. */
+export const RETIRED_CAST_IDS: readonly string[] = ['a04-avatarsample-a', 'a05-avatarsample-c', 'a94-rita'];
 
 export type CastId = keyof typeof CAST_NO;
 

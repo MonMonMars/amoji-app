@@ -18,11 +18,12 @@ const DROPPED_REALISTIC_IDS = [
 const REMOVED_LICENSING_IDS = ['a04-avatarsample-a', 'a05-avatarsample-c'];
 
 describe('cast roster', () => {
-  it('has 44 want-list characters with taglines in every language', () => {
+  it('has 43 want-list characters with taglines in every language', () => {
     // 46 minus a04-avatarsample-a and a05-avatarsample-c, removed 2026-11-08:
     // both are VRoidPreset originals whose pixiv terms forbid redistributing
-    // the sample VRM file in exchange for a fee.
-    expect(CHARACTERS.length).toBe(44);
+    // the sample VRM file in exchange for a fee. Minus a94-rita, removed
+    // 2026-11-25: the rig has blendShapeGroups: [] (no expressions, no visemes).
+    expect(CHARACTERS.length).toBe(43);
     expect(WANT_CAST_RELEASE).toBe('free-library-want-2026-10-12');
     expect(CHARACTERS.map((c) => c.id)).not.toEqual(expect.arrayContaining(DROPPED_REALISTIC_IDS));
     expect(CHARACTERS.map((c) => c.id)).not.toEqual(expect.arrayContaining(REMOVED_LICENSING_IDS));
@@ -65,7 +66,7 @@ describe('cast roster', () => {
     }
   });
 
-  it('male voice hints differ from female (A24, A77, A94, A98, A105, A107)', () => {
+  it('male voice hints differ from female (A24, A77, A93, A98, A105, A107)', () => {
     const male = CHARACTERS.filter((c) => c.gender === 'male');
     expect(male.map((c) => c.id).sort()).toEqual([
       'a03-fumiriya',
@@ -74,7 +75,6 @@ describe('cast roster', () => {
       'a24-hairsample-male',
       'a77-sasha',
       'a93-edokko',
-      'a94-rita',
       'a98-ethan',
     ].sort());
     for (const c of male) {
@@ -87,11 +87,10 @@ describe('cast roster', () => {
     }
     expect(CHARACTERS.find((c) => c.id === 'a75-sorano')?.gender).toBe('female');
     expect(CHARACTERS.find((c) => c.id === 'a77-sasha')?.gender).toBe('male');
-    expect(CHARACTERS.find((c) => c.id === 'a94-rita')?.gender).toBe('male');
     expect(CHARACTERS.find((c) => c.id === 'a107-dm-office-casual')?.gender).toBe('male');
   });
 
-  it('every character has a stable number — unique, 1..46, with 4 and 5 retired', () => {
+  it('every character has a stable number — unique, 1..46, with 4, 5 and 27 retired', () => {
     const numbers = CHARACTERS.map((c) => castNo(c.id));
     for (const n of numbers) {
       expect(n).toBeGreaterThanOrEqual(1);
@@ -106,14 +105,24 @@ describe('cast roster', () => {
     expect(castNo('a468-eric')).toBe(0);
     expect(new Set(numbers).size).toBe(CHARACTERS.length);
     // 4 and 5 belonged to the two VRoidPreset characters removed for licensing.
+    // 27 belonged to a94-rita, removed 2026-11-25 (no expressions/visemes).
     // They stay reserved so the rest of the fan is not renumbered.
     expect(numbers).not.toContain(4);
     expect(numbers).not.toContain(5);
+    expect(numbers).not.toContain(27);
     expect(castNo('a04-avatarsample-a')).toBe(4);
     expect(castNo('a05-avatarsample-c')).toBe(5);
     expect(Object.keys(CAST_NO).sort()).toEqual(
       [...CHARACTERS.map((c) => c.id), ...RETIRED_CAST_IDS].sort(),
     );
+  });
+
+  it('a94-rita is retired: not offered, not loadable, still numbered', () => {
+    expect(CHARACTERS.find((c) => c.id === 'a94-rita')).toBeUndefined();
+    expect(RETIRED_CAST_IDS).toContain('a94-rita');
+    expect(castNo('a94-rita')).toBe(27);
+    // A saved pick must not resolve to a phantom character id.
+    expect(characterById('a94-rita').id).not.toBe('a94-rita');
   });
 
   it('default is a01-shino; roster resolves by id', () => {

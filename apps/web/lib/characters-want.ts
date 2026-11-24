@@ -431,23 +431,6 @@ export const CHARACTERS_WANT = [
     persona: 'You are Edokko: a wholesome, kid-friendly companion. You speak calmly and supportively, with dry humor kept wholesome. You keep things cozy, kid-safe, and full of friendly energy.',
   },
   {
-    id: 'a94-rita',
-    name: 'Rita',
-    gender: 'male',
-    accent: '#34d399',
-    kidSafe: true,
-    image: 'https://github.com/MonMonMars/amoji-app/releases/download/free-library-want-2026-10-12/a94-rita.png',
-    model: 'want/a94-rita.vrm',
-    voiceHint: { yue: 'zh-HK-WanLungNeural', en: 'en-HK-SamNeural' },
-    tagline: {
-      en: 'Rita — warm friend, always listening',
-      yue: 'Rita——陪你傾偈嘅小伙伴~',
-      zh: 'Rita——陪你聊天的小伙伴~',
-      ja: 'Rita——一緒にお話しする相棒~',
-    },
-    persona: 'You are Rita: a wholesome, kid-friendly companion. You speak calmly and supportively, with dry humor kept wholesome. You love little daily joys and answer warmly before you ever ask anything.',
-  },
-  {
     id: 'a95-mizu',
     name: 'Mizu',
     gender: 'female',

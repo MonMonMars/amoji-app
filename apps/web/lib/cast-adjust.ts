@@ -19,14 +19,14 @@ const HIDDEN = new Set(HIDDEN_CAST_IDS);
 /**
  * Explicit males. Every other roster id stays female, including unreviewed
  * models that used to be tagged male. a05 was removed from the roster for
- * licensing (2026-11-08), so it no longer appears here.
+ * licensing (2026-11-08) and a94-rita on 2026-11-25 (no expressions/visemes),
+ * so neither appears here.
  */
 export const MALE_CAST_IDS: readonly string[] = [
   'a03-fumiriya', // 3
   'a24-hairsample-male', // 11
   'a77-sasha', // 19
   'a93-edokko', // 26 — male cast; card bighead rebaked from VRM thumbnail
-  'a94-rita', // 27
   'a98-ethan', // 31
   'a105-serizawa-aoi', // 35
   'a107-dm-office-casual', // 37
@@ -49,7 +49,6 @@ export const HEAD_TILT_IDS: readonly string[] = [
   'a85-kara', // 24
   'a89-rurina', // 25
   'a93-edokko', // 26
-  'a94-rita', // 27
   'a97-pee-saaya', // 30
   'a99-miyora', // 32
 ];

@@ -33,7 +33,12 @@ const SHIPPED_CAST_NO = {
 };
 
 /** Removed from the roster but their numbers stay reserved. */
-const RETIRED_CAST_NO = [['a04-avatarsample-a', 4], ['a05-avatarsample-c', 5]];
+const RETIRED_CAST_NO = [
+  ['a04-avatarsample-a', 4],
+  ['a05-avatarsample-c', 5],
+  // 2026-11-25: blendShapeGroups: [] — no expressions, no visemes (mute face).
+  ['a94-rita', 27],
+];
 
 function castNoOf(id) {
   const n = SHIPPED_CAST_NO[id];
@@ -113,6 +118,10 @@ lines.push('');
 lines.push('export const CHARACTERS_WANT = [');
 
 roster.characters.forEach((c, i) => {
+  // `retired: true` keeps the catalog record (asset, badge number) without
+  // emitting a CHARACTERS entry. The index `i` still counts retired rows so a
+  // removal does not reshuffle every later character's persona hook.
+  if (c.retired) return;
   const tl = taglineEn(c.name);
   lines.push('  {');
   lines.push(`    id: '${c.id}',`);
@@ -139,24 +148,25 @@ lines.push('export const WANT_CAST_IDS: string[] = CHARACTERS_WANT.map((c) => c.
 lines.push('');
 
 fs.writeFileSync(outPath, lines.join('\n'));
-console.log(`Wrote ${outPath} (${roster.characters.length} characters)`);
+console.log(`Wrote ${outPath} (${roster.characters.filter((c) => !c.retired).length} characters)`);
 
 const castNoLines = [
   "'use client';",
   '// AUTO-GENERATED from want-roster.json — keep in sync with CHARACTERS order in prefs.ts',
   `// releaseTag: ${roster.releaseTag}`,
   '//',
-  '// Badge numbers are STABLE and deliberately not renumbered: a04 (4) and a05 (5)',
-  '// were removed for licensing, so those two numbers are retired. Everything after',
-  '// them keeps the number it already shipped with. Retired ids still resolve, so a',
-  '// saved prefs/localStorage value cannot come back as "unknown character".',
+  '// Badge numbers are STABLE and deliberately not renumbered: a04 (4), a05 (5)',
+  '// and a94 (27) were removed from the live roster, so their numbers are',
+  '// retired. Everything after them keeps the number it already shipped with.',
+  '// Retired ids still resolve, so a saved prefs/localStorage value cannot come',
+  '// back as "unknown character".',
   'export const CAST_NO = {',
-  ...roster.characters.map((c) => `  '${c.id}': ${castNoOf(c.id)},`),
+  ...roster.characters.filter((c) => !c.retired).map((c) => `  '${c.id}': ${castNoOf(c.id)},`),
   // Retired ids keep their number so a stale pick is identifiable, never 0.
-  ...RETIRED_CAST_NO.map(([id, n]) => `  '${id}': ${n}, // retired — removed for licensing`),
+  ...RETIRED_CAST_NO.map(([id, n]) => `  '${id}': ${n}, // retired — removed from the live roster`),
   '} as const;',
   '',
-  '/** Ids that shipped before the 2026-11-08 licensing purge. `prefs` migrates them. */',
+  '/** Ids that shipped, then left the live roster. `prefs` migrates them. */',
   `export const RETIRED_CAST_IDS: readonly string[] = [${RETIRED_CAST_NO.map(([id]) => `'${id}'`).join(', ')}];`,
   '',
   'export type CastId = keyof typeof CAST_NO;',

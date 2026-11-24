@@ -1,13 +1,14 @@
 {
   "releaseTag": "free-library-want-2026-10-12",
   "source": "D:\\\\Blender\\\\projects\\\\mon-character\\\\free-library\\\\notes\\\\WANT-LIST-2026-10-12.txt",
-  "count": 44,
+  "count": 43,
   "defaultCharacterId": "a01-shino",
   "creditNotes": [
     "VRoid Sendagaya Shino/Shibu and Sakurada Fumiriya: CC0",
     "FROZEN — a14-vivi, a16-vita, a17-victoria-rubin are CC0 only because they are β-era exports. VRoid Studio v0.14.0 disabled CC0 export for these renamed samples (AvatarSample_E/F/G), so re-exporting any of the three would permanently lose the CC0 declaration. Do not re-export.",
     "Attribution-required models are listed on /credits; their credit strings come from the VRM's own embedded meta, not from a folder README.",
     "Removed 2026-11-08 for licensing: a04-avatarsample-a, a05-avatarsample-c (VRoidPreset originals; pixiv terms forbid redistributing the sample VRM file in exchange for a fee).",
+    "Removed 2026-11-25: a94-rita — blendShapeGroups: [] (zero expressions, zero visemes), so it was mute and expressionless. Flagged retired in this roster; the file remains in the release.",
     "Removed earlier: kitagawa / kizuna / unverified agent3 cast from the public roster."
   ],
   "characters": [
@@ -421,6 +422,8 @@
     },
     {
       "id": "a94-rita",
+      "retired": true,
+      "retiredReason": "blendShapeGroups: [] — zero expressions and zero visemes. Mute and expressionless; removed from the live roster 2026-11-25. The .vrm stays in the release and on disk so asset records stay in sync.",
       "libraryId": "A94",
       "name": "Rita",
       "gender": "male",

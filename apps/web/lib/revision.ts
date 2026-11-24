@@ -594,7 +594,17 @@
 // (c) character-card greet — tap-only (`onConfirm`), single-flight gate, so
 // scroll/drag/wheel/focus can never fire or overlap a greeting;
 // (d) side poke — reclassified as butt/arm so the lateral lean never appears.
-export const APP_REVISION = 'r2026-11-24.300';
+// r2026-11-24.301: facial expressiveness lands on top of .300. The roster eye
+// profile lifts the squint cap to 1.0 (wide 0.9, blink 0.9) so she can actually
+// squeeze her eyes and open them; a BlinkClock (`lib/vrm/blink.ts`) owns the
+// lids instead of the per-frame face writer zeroing them; VRM 0.x expression
+// names resolve case-insensitively (`lib/vrm/expression-names.ts`, e.g.
+// `blink_l` / `Blink_L` / `blinkLeft`); idle expression halving is gone from
+// `packages/emotion-core`; speech ducking drops 0.4 → 0.1 so she keeps 90% of
+// the expression while talking; a secondary emotion blends in `lib/vrm/eyes.ts`
+// on the roster profile; and character `a94-rita` retires from the live roster
+// (44 → 43) with a prefs migration to `a93-edokko`.
+export const APP_REVISION = 'r2026-11-24.301';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

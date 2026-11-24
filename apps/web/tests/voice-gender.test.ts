@@ -12,7 +12,6 @@ describe('characterVoiceGender', () => {
       'a24-hairsample-male',
       'a77-sasha',
       'a93-edokko',
-      'a94-rita',
       'a98-ethan',
     ]);
     expect(CHARACTERS.filter((c) => c.gender === 'female').length).toBe(36);

@@ -19,11 +19,9 @@ import type { VRM } from '@pixiv/three-vrm';
 import {
   CAST_EYE_ATLAS_ALIASES,
   CAST_EYE_ATLAS_EXPR,
-  CAST_EYE_ATLAS_FLOOR,
-  CAST_EYE_BLINK_CAP,
-  CAST_EYE_SQUINT_CAP,
-  CAST_EYE_WIDE_CAP,
+  eyeCaps,
   type CastEyeAtlasExpr,
+  type CastEyeProfile,
 } from './cast-eye-profile';
 
 const LOOK_EXPR = ['lookLeft', 'lookRight', 'lookUp', 'lookDown'] as const;
@@ -46,44 +44,98 @@ export type EyeScalePin = {
   z: number;
 };
 
-const EYE_EXPR_CAP: Record<string, number> = {
-  blink: CAST_EYE_BLINK_CAP,
-  blinkleft: CAST_EYE_BLINK_CAP,
-  blinkright: CAST_EYE_BLINK_CAP,
-  blink_l: CAST_EYE_BLINK_CAP,
-  blink_r: CAST_EYE_BLINK_CAP,
-  happy: CAST_EYE_SQUINT_CAP,
-  fun: CAST_EYE_SQUINT_CAP,
-  joy: CAST_EYE_SQUINT_CAP,
-  relaxed: CAST_EYE_SQUINT_CAP,
-  // Wide morphs / atlas cells — never full weight (mega-eyes / stuck open).
-  surprised: CAST_EYE_WIDE_CAP,
-  surprise: CAST_EYE_WIDE_CAP,
-  lookleft: 0,
-  lookright: 0,
-  lookup: 0,
-  lookdown: 0,
+const EYE_EXPR_CHANNEL: Record<string, 'blink' | 'squint' | 'wide' | 'zero'> = {
+  blink: 'blink',
+  blinkleft: 'blink',
+  blinkright: 'blink',
+  blink_l: 'blink',
+  blink_r: 'blink',
+  happy: 'squint',
+  fun: 'squint',
+  joy: 'squint',
+  relaxed: 'squint',
+  // Wide morphs / atlas cells — capped so pupils stay readable.
+  surprised: 'wide',
+  surprise: 'wide',
+  lookleft: 'zero',
+  lookright: 'zero',
+  lookup: 'zero',
+  lookdown: 'zero',
 };
 
 const ATLAS_SET = new Set<string>(CAST_EYE_ATLAS_EXPR.map((n) => n.toLowerCase()));
 
-/** Cap eyelid / wide morphs so blink closes lids without sealing or mega-eyes. */
-export function capEyeExpression(name: string, value: number): number {
+/**
+ * Cap eyelid / wide morphs for a profile. `atlas` keeps the conservative
+ * seed-san caps; `roster` lets pure-morph VRoid rigs reach full expression.
+ * Default is `atlas` so any caller that has not opted in stays safe.
+ */
+export function capEyeExpression(
+  name: string,
+  value: number,
+  profile: CastEyeProfile = 'atlas',
+): number {
   if (!Number.isFinite(value)) return 0;
-  const cap = EYE_EXPR_CAP[name.toLowerCase()];
+  const channel = EYE_EXPR_CHANNEL[name.toLowerCase()];
+  if (channel === undefined) return value < 0 ? 0 : value;
+  if (channel === 'zero') return 0;
+  const caps = eyeCaps(profile);
+  const cap = channel === 'blink' ? caps.blink : channel === 'squint' ? caps.squint : caps.wide;
   const v = value < 0 ? 0 : value;
-  return cap === undefined || v < cap ? v : cap;
+  return v < cap ? v : cap;
 }
+
+const EXPRESSION_BIND_TYPES = new Set(['textureTransform', 'materialColor']);
+
+type ExpressionLike = { binds?: readonly unknown[] };
+export type ExpressionManagerLike = { expressions?: readonly ExpressionLike[] } | null | undefined;
+
+/**
+ * Pick the eye profile for a mounted rig.
+ *
+ * `atlas` when ANY expression carries a textureTransform bind: that is exactly
+ * the seed-san setup (five emotion presets drive material 11's UV transform),
+ * where stacking presets lerps between atlas cells and flickers eye size.
+ * Material-colour binds are included defensively — they mark a VRM 0.x atlas
+ * rig even though they do not move UVs themselves.
+ *
+ * `roster` otherwise: the VRoid WANT roster binds pure morph targets, so the
+ * atlas rationale does not apply and full expression is safe.
+ */
+export function detectEyeProfile(manager: ExpressionManagerLike): CastEyeProfile {
+  for (const expression of manager?.expressions ?? []) {
+    for (const bind of expression.binds ?? []) {
+      const type = (bind as { bindType?: unknown } | null)?.bindType;
+      if (typeof type === 'string' && EXPRESSION_BIND_TYPES.has(type)) return 'atlas';
+    }
+  }
+  return 'roster';
+}
+
+/**
+ * Secondary emotion weight allowed alongside the primary on a roster rig.
+ * The audit found the old winner-take-all wipe flattened a surprise beat to
+ * neutral; keeping a reduced secondary lets brows/mouth come from different
+ * emotions. The atlas profile still clears every loser (UV-cell safety).
+ */
+const ROSTER_SECONDARY_WEIGHT = 0.35;
+const ROSTER_SECONDARY_MIN = 0.12;
 
 /**
  * Keep a single dominant face preset for eye-atlas / eye-size morphs.
  * Blink and visemes stay independent. Winner is chosen from raw intent
  * (before caps) so a strong surprised poke is not beaten by a capped happy
- * squint. Losers clear so UV offsets do not lerp between atlas cells
- * (big↔small flicker) and wide morphs do not stick.
+ * squint.
+ *
+ * atlas: losers clear so UV offsets do not lerp between cells (big↔small
+ * flicker) and wide morphs do not stick.
+ * roster: the winner keeps full weight, one runner-up may coexist at
+ * ROSTER_SECONDARY_WEIGHT, everything else clears. Deterministic: order is
+ * CAST_EYE_ATLAS_EXPR and ties keep the earlier name.
  */
 export function dominateEyeExpressions(
   weights: Readonly<Record<string, number>>,
+  profile: CastEyeProfile = 'atlas',
 ): Record<string, number> {
   // Lowercase + fold aliases (surprise→surprised) so PascalCase / dual keys
   // cannot leave a second atlas cell lit (#433 residual).
@@ -96,19 +148,37 @@ export function dominateEyeExpressions(
   }
 
   const out: Record<string, number> = { ...folded };
+  const caps = eyeCaps(profile);
 
   let best: string | null = null;
-  let bestRaw = CAST_EYE_ATLAS_FLOOR;
+  let bestRaw = -Infinity;
+  let second: string | null = null;
+  let secondRaw = -Infinity;
   for (const name of CAST_EYE_ATLAS_EXPR) {
     const v = out[name] ?? 0;
     if (v > bestRaw) {
-      bestRaw = v;
+      second = best;
+      secondRaw = bestRaw;
       best = name;
+      bestRaw = v;
+    } else if (v > secondRaw) {
+      second = name;
+      secondRaw = v;
     }
   }
 
-  for (const name of CAST_EYE_ATLAS_EXPR) {
-    out[name] = best && name === best ? capEyeExpression(name, bestRaw) : 0;
+  for (const name of CAST_EYE_ATLAS_EXPR) out[name] = 0;
+
+  if (best && bestRaw > caps.floor) {
+    out[best] = capEyeExpression(best, bestRaw, profile);
+    if (
+      profile === 'roster'
+      && second
+      && second !== best
+      && secondRaw >= ROSTER_SECONDARY_MIN
+    ) {
+      out[second] = Math.min(secondRaw, ROSTER_SECONDARY_WEIGHT);
+    }
   }
   // Clear alias keys so leftover `surprise` cannot fight `surprised`.
   for (const alias of Object.keys(CAST_EYE_ATLAS_ALIASES)) {
@@ -119,7 +189,7 @@ export function dominateEyeExpressions(
   for (const [k, raw] of Object.entries(out)) {
     if (ATLAS_SET.has(k.toLowerCase())) continue;
     if (k.toLowerCase() in CAST_EYE_ATLAS_ALIASES) continue;
-    out[k] = capEyeExpression(k, raw);
+    out[k] = capEyeExpression(k, raw, profile);
   }
   return out;
 }
@@ -128,8 +198,9 @@ export function dominateEyeExpressions(
 export function applyDominatedEyeExpressions(
   setEm: (name: string, value: number) => void,
   weights: Readonly<Record<string, number>>,
+  profile: CastEyeProfile = 'atlas',
 ): void {
-  const dominated = dominateEyeExpressions(weights);
+  const dominated = dominateEyeExpressions(weights, profile);
   for (const [name, value] of Object.entries(dominated)) {
     setEm(name, value);
   }
