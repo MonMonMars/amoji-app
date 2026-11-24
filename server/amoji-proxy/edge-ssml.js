@@ -19,6 +19,14 @@
 //   <prosody> nested/siblings    ACCEPTED — pitch/rate/volume all fine
 //   xmlns:mstts declaration      ACCEPTED on its own (harmless)
 //
+// One defect is invisible in the markup: a UTF-8 BOM (or any leading
+// whitespace) before `<speak>`. The endpoint's .NET reader parses the body as
+// XML and reports it as `1007: Data at the root level is invalid. Line 1,
+// position 1.` — the same close code it uses for genuinely fatal markup, so a
+// BOM looks exactly like a broken voice. `stripLeadingJunk` removes it before
+// the body is relayed, which makes the proxy safe for `curl --data-binary @f`
+// callers whose shell tooling wrote the file with a BOM.
+//
 // So a relay can repair a body without losing the chosen voice or the
 // prosody contour: unwrap express-as, drop breaks, and default xml:lang
 // from the voice name. `worker.js` retries with the repaired body only
@@ -49,13 +57,22 @@ export function ensureXmlLang(ssml) {
 }
 
 /**
+ * Strip a leading BOM and any whitespace before the XML declaration or
+ * `<speak>`. The endpoint's .NET XML reader rejects either with
+ * `1007: Data at the root level is invalid. Line 1, position 1.`
+ */
+export function stripLeadingJunk(ssml) {
+  return String(ssml).replace(/^(?:\uFEFF|\uFFFE|[\s\u0000]+)+/, '');
+}
+
+/**
  * Repair the markup this endpoint is known to reject, keeping the voice and
  * every `<prosody>` contour. Idempotent: a body that is already clean comes
  * back identical, so callers can compare `sanitizeSsml(ssml) !== ssml`.
  */
 export function sanitizeSsml(ssml) {
   return ensureXmlLang(
-    ssml.replace(EXPRESS_AS_OPEN, '').replace(EXPRESS_AS_CLOSE, '').replace(BREAK_SELF_CLOSING, '').replace(BREAK_PAIRED, ''),
+    stripLeadingJunk(ssml).replace(EXPRESS_AS_OPEN, '').replace(EXPRESS_AS_CLOSE, '').replace(BREAK_SELF_CLOSING, '').replace(BREAK_PAIRED, ''),
   );
 }
 
