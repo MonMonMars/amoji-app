@@ -604,7 +604,24 @@
 // the expression while talking; a secondary emotion blends in `lib/vrm/eyes.ts`
 // on the roster profile; and character `a94-rita` retires from the live roster
 // (44 → 43) with a prefs migration to `a93-edokko`.
-export const APP_REVISION = 'r2026-11-24.301';
+// r2026-11-24.302 (this branch ships at .302 — .299/.300/.301 were taken while
+// it was being verified): Edge SSML is capped at TWO element children inside
+// <voice>. The readaloud endpoint closes the socket with `1007: SSML is
+// invalid` on three or more, and `buildEdgeSsml` emitted one <prosody> per
+// clause plus a <break> between them — so every reply with three clauses was
+// silent, two failures tripped EDGE_FAILURE_LIMIT=2 and parked the Edge tier
+// for 5 minutes. This is the owner's long-running "mostly no voice" report:
+// the mouth keeps animating off the text clock while the audio 502s.
+// Clauses are now merged into at most two contiguous prosody spans (1 → 1,
+// 2 → 2, 3+ → first half / second half, first clause's contour opening and the
+// final clause's closing), <break> is gone in favour of punctuation pauses,
+// and a lead tic is folded into the first span. `mstts:express-as` is gated
+// OFF (EDGE_EXPRESS_AS_ENABLED = false): any styled body makes upstream end
+// the turn with zero audio frames, so the relay repaired it on every styled
+// line (Attempts: 2) and the repaired mp3 was byte-identical in length to the
+// plain body — the style never reached the audio. Live: 1–6 clause lines in
+// yue/zh/ja/en all answer 200 with X-Amoji-Attempts: 1.
+export const APP_REVISION = 'r2026-11-24.302';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
