@@ -629,7 +629,7 @@ describe('gatherLiveContext', () => {
     });
     expect(live.spoken).toContain('Funny night market');
     // Plain 「新聞」 uses the recent/world path (finished statement, no local framing / city ask).
-    expect(live.spoken).toMatch(/最近有条新闻/);
+    expect(live.spoken).toMatch(/有条新闻/);
     expect(live.spoken).not.toMatch(/[?？]/);
     expect(live.spoken).not.toContain('哪个城市');
   });
@@ -961,7 +961,13 @@ describe('local light news and reply guard', () => {
     const beats = newsSpokenBodyBeats(lead, 'yue');
     expect(beats.join('')).not.toMatch(/read more|By Jane/i);
     expect(beats.join('')).toMatch(/加開一場|門票/);
-    expect(sayRecent('yue', lead).length).toBeGreaterThan(65);
+    // Every body sentence is spoken exactly once (the old length threshold
+    // only passed because the summary and its own detail beats both spoke).
+    const line = sayRecent('yue', lead);
+    expect(line).toContain('主辦方宣布加開一場夜場');
+    expect(line).toContain('前排座位已預留予慈善機構');
+    expect(line.split('門票星期五公開發售').length - 1).toBe(1);
+    expect(line.length).toBeGreaterThan(45);
   });
 
   it('wikiExtractMatchesNewsTitle rejects unrelated disambiguation hits', () => {
@@ -992,7 +998,7 @@ describe('local light news and reply guard', () => {
       details: ['預計每日有過千人次入場。入口設在維園正門。'],
     };
     const line = sayRecent('yue', lead);
-    expect(line).toMatch(/^最近有條新聞：/);
+    expect(line).toMatch(/^有條新聞：/);
     expect(line).toContain('社區花市週末開張');
     expect(line).toMatch(/八十個攤位|插花工作坊/);
     expect(line.length).toBeGreaterThan(80);
@@ -1009,16 +1015,17 @@ describe('local light news and reply guard', () => {
     const now = Date.now();
     const todayLead = { title: '輕鬆社區活動', source: 'HK01', publishedAt: now };
     expect(isNewsPublishedToday(todayLead.publishedAt, now)).toBe(true);
-    expect(sayRecent('yue', todayLead)).toMatch(/^今日有條新聞：/);
-    expect(sayRecent('yue', todayLead)).toContain('輕鬆社區活動');
+    expect(sayRecent('yue', todayLead, now)).toMatch(/^今日有條新聞：/);
+    expect(sayRecent('yue', todayLead, now)).toContain('輕鬆社區活動');
     const oldLead = {
       title: '舊聞',
       source: 'HK01',
       publishedAt: now - 86_400_000 * 3,
     };
     expect(isNewsPublishedToday(oldLead.publishedAt, now)).toBe(false);
-    expect(sayRecent('yue', oldLead)).toMatch(/^最近有條新聞：/);
-    expect(sayRecent('yue', { title: '無日期', source: '' })).toMatch(/^最近有條新聞：/);
+    // Owner 2026-11-26: a dated older story says its real day, never 最近.
+    expect(sayRecent('yue', oldLead, now)).not.toMatch(/最近|今日/);
+    expect(sayRecent('yue', { title: '無日期', source: '' }, now)).toMatch(/^有條新聞：/);
   });
 
   it('frames topical AI news without 附近有條輕鬆本地新聞', () => {
@@ -1167,7 +1174,7 @@ describe('local light news and reply guard', () => {
     expect(google).toBeDefined();
     expect(google!).toMatch(/hl=zh-CN/);
     expect(google!).toMatch(/gl=HK/);
-    expect(live.spoken).toMatch(/最近有条新闻/);
+    expect(live.spoken).toMatch(/有条新闻/);
     expect(live.spoken).toContain('社区花市');
     expect(live.spoken).not.toMatch(/From the news|Around here|\bhere\b/i);
   });
@@ -1300,7 +1307,7 @@ describe('HK RSS speech chrome', () => {
     const scrubbed = scrubNewsFeedBody(sciBody, sciTitle);
     expect(scrubbed).not.toMatch(/科學與中國/);
     expect(scrubbed).toMatch(/罕見晶體/);
-    expect(sayRecent('yue', { title: sciTitle, source: 'RSS', summary: sciBody }).length).toBeGreaterThan(72);
+    expect(sayRecent('yue', { title: sciTitle, source: 'RSS', summary: sciBody }).length).toBeGreaterThan(60);
     expect(sayRecent('yue', { title: sciTitle, source: 'RSS', summary: sciBody })).not.toMatch(/科學與中國/);
   });
 
