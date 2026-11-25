@@ -257,11 +257,14 @@ describe('pin storage names a real voice', () => {
     for (const locale of ['yue', 'zh', 'ja', 'en'] as const) {
       expect(deliveryGenderForChoice(locale, null, 'male')).toBe('male');
       expect(deliveryGenderForChoice(locale, null, 'female')).toBe('female');
-      // There is no male gTTS source, so a male companion gets the female
+      // There is no male gTTS source, so this resolver keeps the female
       // speaker rather than a falsely-labelled / pitch-shifted "male".
       expect(preferredVoiceChoiceForGender(locale, 'male').deliveryGender).toBe('female');
       expect(preferredVoiceChoiceForGender(locale, 'female').deliveryGender).toBe('female');
-      expect(activeVoiceChoice(locale, 'male').deliveryGender).toBe('female');
+      // The picker-level default is gender-aware: a male companion is shown
+      // the male relay voice, never the female Google speaker (owner
+      // 2026-11-26: "default use male or female based on the gender").
+      expect(activeVoiceChoice(locale, 'male').deliveryGender).toBe('male');
       expect(activeVoiceChoice(locale, 'female').deliveryGender).toBe('female');
       expect(tlForChoice(locale, preferredVoiceChoiceForGender(locale, 'male').id).length).toBeGreaterThan(1);
       expect(tlForChoice(locale, preferredVoiceChoiceForGender(locale, 'female').id).length).toBeGreaterThan(1);

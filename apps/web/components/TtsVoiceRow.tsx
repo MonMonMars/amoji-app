@@ -61,7 +61,7 @@ export default function TtsVoiceRow({
   // cleared, or the Edge breaker tripped). Only honour pins whose button is
   // actually on screen, otherwise no button would look selected.
   const activeIdFor = (locale: Lang) => {
-    const pinned = voicePickFor(locale);
+    const pinned = voicePickFor(locale, companionGender);
     if (pinned && buttons.some((b) => b.id === pinned)) return pinned;
     return activeVoiceChoice(locale, companionGender).id;
   };

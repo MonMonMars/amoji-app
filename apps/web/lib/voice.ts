@@ -119,14 +119,13 @@ import { pauseEdgeForTabHide, resumeEdgeForTabShow, speakEdge, stopEdge, getTtsP
 import { pauseAfterClause, pauseGttsForTabHide, resumeGttsForTabShow, splitClauses, stopGtts, speakGtts } from './gtts';
 import { cardGreetGate } from './card-greet';
 import { gttsCharacterPitchBias } from './gtts-timbre';
-import { voicePickFor } from './voice-picks';
+import { effectiveVoiceChoiceId } from './voice-picks';
 import { osVoicePinFor, saveOsVoicePin } from './os-voice-picks';
 import { resolveOsPin, resolvePinnedVoice } from './os-voice-resolve';
 import {
   deliveryGenderForChoice,
   isVoiceLocale,
   pitchTierForChoice,
-  preferredVoiceChoiceForGender,
   tlForChoice,
   voiceChoiceById,
 } from './voice-capability';
@@ -1669,7 +1668,8 @@ function gttsPitchForLang(
   companionGender: 'female' | 'male',
   choiceId?: string | null,
 ): number {
-  const pin = choiceId ?? voicePickFor(lang);
+  // Character gender decides the default when there is no explicit pin.
+  const pin = choiceId ?? effectiveVoiceChoiceId(lang, characterId);
   const delivery = deliveryGenderForChoice(lang, pin, companionGender);
   const tier = pitchTierForChoice(pin);
   return gttsCharacterPitchBias(delivery, characterId, lang, tier);
@@ -1746,9 +1746,16 @@ export function withUtterance(opts: SpeakOptions, utterance?: SpeechUtterance): 
  * `null` is meaningful: "this utterance had no pin" must never re-read a pick
  * the user makes later.
  */
-function speechPinFor(lang: Lang, utterance?: SpeechUtterance): string | null {
-  if (!utterance) return voicePickFor(lang);
-  if (utterance.voicePin === undefined) utterance.voicePin = voicePickFor(utterance.lang);
+function speechPinFor(
+  characterId: string,
+  lang: Lang,
+  utterance?: SpeechUtterance,
+): string | null {
+  if (!utterance) return effectiveVoiceChoiceId(lang, characterId);
+  // The utterance belongs to ONE character, so its gender is fixed here.
+  if (utterance.voicePin === undefined) {
+    utterance.voicePin = effectiveVoiceChoiceId(utterance.lang, characterId);
+  }
   return utterance.voicePin;
 }
 
@@ -1796,7 +1803,7 @@ export function speak(
     // Capture the reply's voice ONCE, here. Every chunk of the utterance
     // queues with the id the first chunk captured (standalone lines resolve
     // the live pin once, at this moment, and keep it while they wait).
-    voicePin: speechPinFor(lang, opts?.utterance),
+    voicePin: speechPinFor(characterId, lang, opts?.utterance),
   });
   drainSpeech();
 }
@@ -1848,10 +1855,11 @@ function performSpeak(
   // snapshot (a standalone line from an older caller) still resolves the live
   // pin here, exactly as before.
   const companionGender = characterVoiceGender(characterId);
-  const voicePin = (pinnedChoice !== undefined ? pinnedChoice : voicePickFor(lang))
-    ?? (isVoiceLocale(lang)
-      ? preferredVoiceChoiceForGender(lang, companionGender).id
-      : null);
+  // Gender-aware: a reply inherits the voice for THIS character's gender, not
+  // whatever the other gender last pinned.
+  const voicePin = pinnedChoice !== undefined
+    ? pinnedChoice
+    : effectiveVoiceChoiceId(lang, characterId);
   // r111: remember the line for gesture-gate replay
   const attemptAt = Date.now();
     lastSpeak = {
@@ -2349,7 +2357,10 @@ export function playVoiceGreeting(
   // tier — that speaker is a woman, the exact "male button, female voice"
   // report — so the MP3 tier is not started at all for these choices.
   const choice = voiceChoiceById(choiceId);
-  const relayMale = choice?.engine === 'edge';
+  // An `edge:` id IS a relay male choice even when the relay/breaker gate makes
+  // `voiceChoiceById` return undefined; skipping the MP3 tier by id keeps a
+  // gated male choice from falling to the female Google speaker.
+  const relayMale = choice?.engine === 'edge' || choiceId.startsWith('edge:');
   const relayEdgeVoice = choice?.edgeVoiceId;
   let session = 0;
   /** Set by whichever tier actually starts, so the loser can bail out. */
@@ -2705,7 +2716,7 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
         stopEdge();
         void speakGtts(text, {
           lang,
-          tl: tlForChoice(lang, voicePickFor(lang)),
+          tl: tlForChoice(lang, effectiveVoiceChoiceId(lang, characterId)),
           pitchBias: gttsPitchForLang(lang, characterId, gender),
           onPlaying: () => {
             noteSpeechStarted(text);
@@ -2865,9 +2876,10 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const tl = tlForChoice(locale, choiceId);
   const previewGender = deliveryGenderForChoice(locale, choiceId, 'female');
   // Relay male buttons are EDGE voices; the gTTS tier must not start for them
-  // (its speaker is a woman — the exact bug this restore fixes).
+  // (its speaker is a woman — the exact bug this restore fixes). The id prefix
+  // also carries that fact while the relay gate hides the choice.
   const choice = voiceChoiceById(choiceId);
-  const relayMale = choice?.engine === 'edge';
+  const relayMale = choice?.engine === 'edge' || choiceId.startsWith('edge:');
   const relayEdgeVoice = choice?.edgeVoiceId;
   // Same rotating short greet as select-board voice cards.
   const text = nextCardGreetPhrase(locale);
@@ -3253,10 +3265,7 @@ export async function testVoiceChain(
     reportVoiceStatus(tier, ok, detail);
   };
   const companionGender = characterVoiceGender(characterId);
-  const voicePin = voicePickFor(lang)
-    ?? (isVoiceLocale(lang)
-      ? preferredVoiceChoiceForGender(lang, companionGender).id
-      : null);
+  const voicePin = effectiveVoiceChoiceId(lang, characterId);
   const spokenGender: 'female' | 'male' = isVoiceLocale(lang)
     ? deliveryGenderForChoice(lang, voicePin, companionGender)
     : companionGender;
@@ -3397,7 +3406,7 @@ export async function testProxyVoice(characterId: string, lang: Lang): Promise<b
   try {
     await withTimeout(speakGtts(line, {
       lang,
-      tl: tlForChoice(lang, voicePickFor(lang)),
+      tl: tlForChoice(lang, effectiveVoiceChoiceId(lang, characterId)),
       pitchBias: gttsPitchForLang(lang, characterId, characterVoiceGender(characterId)),
       onPlaying: () => reportVoiceStatus('gtts', true, 'google-tts playing (proxy probe)'),
     }), 20_000, 'google-tts timeout');
