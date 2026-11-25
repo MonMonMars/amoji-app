@@ -74,7 +74,7 @@ describe('dance-audio-gate', () => {
     expect(music).toContain('emitLibraryClipPlaying');
     expect(music).toContain("addEventListener('playing'");
     expect(music).toContain('currentTime > 0');
-    expect(music).toContain('startLibraryBandFallback');
+    expect(music).toContain('startRealBedFallback');
     const playEl = music.slice(music.indexOf('function playClipElement'), music.indexOf('async function playClip'));
     expect(playEl).toContain('primeLibraryBedPlayback');
     expect(playEl).toContain('startHtmlAudioOnDefaultSpeakers(audio, htmlAudioStartMode(false))');
