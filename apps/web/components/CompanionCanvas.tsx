@@ -959,6 +959,25 @@ export default function CompanionCanvas({
         }
       }
       if (!clip) return false;
+      // IDEMPOTENT: re-requesting the show already on stage must not reset()
+      // the clip. The armed retry below, a second `library-clip` playing event
+      // and a re-`triggerMove` all used to re-enter here and call
+      // `action.reset()`, snapping the 14 s sing loop back to frame 0 mid-song
+      // — which reads as stop-motion. A running loop keeps its clock.
+      const loopsOnStage =
+        name === 'Dance'
+        || name === 'Sing'
+        || clipName.startsWith('lib_C')
+        || name.startsWith('lib_C');
+      if (
+        loopsOnStage
+        && perfAction
+        && perfClipId === clipName
+        && perfAction.getClip() === clip
+        && perfAction.isRunning()
+      ) {
+        return true;
+      }
       perfClipId = clipName;
       beginBoneBlend(0.7);
       const action = mixer.clipAction(clip);
@@ -2258,7 +2277,16 @@ export default function CompanionCanvas({
             && (mv.kind === 'sing' || mv.kind === 'dance')
             && !(perfAction && perfAction.isRunning())
           ) {
-            playPerf(clipName);
+            // Resume in place. playPerf() here would reset() the loop to frame
+            // 0 — a mid-song jump that reads as stop-motion.
+            if (perfAction && perfClipId === clipName) {
+              perfAction.enabled = true;
+              perfAction.paused = false;
+              perfAction.setEffectiveWeight(1);
+              perfAction.play();
+            } else {
+              playPerf(clipName);
+            }
           }
         } else if (!mv) {
           // Rising edge of move-end: stop sticky LoopRepeat sing/dance so a
