@@ -133,6 +133,7 @@ import { createAuditionClaim } from './audition-claim';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
 import { auditionRoute } from './voice-audition';
 import { formatVoiceChain, freeVoiceHops } from './tts-chain';
+import { chatMaleEdgeVoiceId, currentDeviceVoices, maleVoiceRoute } from './male-voice-route';
 import { stopThinkingSound } from './thinking-sound';
 import { runEarlyAudioPreload } from './early-audio-preload';
 // r2026-10-05.112: tier 0 — OpenAI gpt-4o-mini-tts (ChatGPT-style emotional
@@ -2025,9 +2026,25 @@ function performSpeak(
       // Male: Edge neural / OS synth first — gTTS one-speaker pitch still sounds female.
       preferMale: spokenGender === 'male',
     });
+    // A male line must have a real male speaker. `maleVoiceRoute` reuses the
+    // same notions of availability as the picker (relay live? device male voice
+    // installed?). If nothing can speak it, end the line honestly instead of
+    // letting it fall to gTTS (one female speaker per `tl`) or to nothing.
+    const maleRoute = spokenGender === 'male'
+      ? maleVoiceRoute(lang, { edgeAvailable: edgeOn, deviceVoices: currentDeviceVoices() })
+      : null;
+    if (maleRoute?.kind === 'unavailable') {
+      reportVoiceStatus('attempt', false, `male voice unavailable — ${maleRoute.reason}`);
+      settle();
+      return;
+    }
     const pitchTier = pitchTierForChoice(voicePin);
+    // Thread the pinned male id explicitly (greeting/preview already do), so a
+    // male line can never be derived into the female tier voice.
     const edgeTierVoice = voiceId
-      ?? edgeVoiceIdForTier(lang, spokenGender, pitchTier);
+      ?? (isVoiceLocale(lang)
+        ? chatMaleEdgeVoiceId(lang, voicePin, spokenGender, pitchTier)
+        : edgeVoiceIdForTier(lang, spokenGender, pitchTier));
     const edgeTierProsody = edgeProsodyForTier(pitchTier);
     const np = emotionProsody(emotion, value);
     /**
@@ -2074,17 +2091,23 @@ function performSpeak(
       if (!hop) { settle(); return; }
       const next = (): void => runAt(index + 1);
       if (hop === 'synth') {
-        // Male chain runs synth before gTTS. Under mic play-and-record, OS
-        // synth often lands on earpiece/BT while gTTS uses loudspeaker — skip
-        // to the HTTP tier so en/zh/ja match the gate sample device.
-        if (spokenGender === 'male' && micCommsRoutingLatchActive()) {
-          next();
-          return;
-        }
+        // Male lines must reach the device voice even while the chat mic holds
+        // play-and-record. This hop used to be SKIPPED for male under the mic
+        // latch ("often lands on earpiece/BT"), which left only gTTS — one
+        // female speaker per `tl`, Referer-blocked in desktop Chrome — so a
+        // male reply fetched nothing and stayed silent. Windows routes synth
+        // through the default sink here; an audible male voice beats silence.
         if (!runSynth(settle)) next();
         return;
       }
       if (hop === 'gtts') {
+        // gTTS has exactly one speaker per language and it is female. A male
+        // choice must never be spoken by it, whatever the pin says.
+        if (spokenGender === 'male') {
+          reportVoiceStatus('gtts', false, 'skipped for a male line — gTTS is a female speaker');
+          next();
+          return;
+        }
         // Plain-HTTPS MP3 tier. Real audio via <audio>, so the iOS hardware
         // silent switch and a blocked Edge socket both stop mattering.
         let tier: Promise<void>;
@@ -2137,6 +2160,12 @@ function performSpeak(
         });
         return;
       }      if (hop === 'canto-nano') {
+        // canto-tts-nano ships one speaker (female). Never voice a male line.
+        if (spokenGender === 'male') {
+          reportVoiceStatus('canto-nano', false, 'skipped for a male line — single female speaker');
+          next();
+          return;
+        }
         void speakCantoNano(stripVoicedGlyphs(text)).then(() => {
           markVoiceStarted();
           reportVoiceStatus('canto-nano', true, 'canto-tts-nano finished');
