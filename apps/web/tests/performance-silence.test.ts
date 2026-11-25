@@ -1,14 +1,17 @@
 /**
- * Owner 2026-11-26: "please don't talk while singing or music time."
+ * Owner 2026-11-26: "please don't talk while singing or music time" and then
+ * "stop the music or song if need to talk."
  *
- * There was no speech gate at all during a performance: a poke reaction, a
- * poke resume, idle chatter or a replay tap could all be spoken over her own
- * song. The gate now sits in `speak()` — the single choke point for every
- * audible line — and keys on the bed actually being audible, so:
- *   · the intro that announces a show is spoken BEFORE the bed starts;
- *   · a real user turn ends the bed first (stopSpeakingForInterrupt →
- *     endPerformanceMusic), so conversation is never swallowed;
- *   · a poke during a show keeps its impact + body reaction but says nothing.
+ * Two rules, both enforced here:
+ *   1. she never speaks OVER an audible bed — the gate sits in `speak()`, the
+ *      single choke point for every audible line;
+ *   2. when a line must be heard (a poke reaction, a real user turn), the show
+ *      YIELDS — the bed is stopped first, so the words are never layered on
+ *      her song. Only non-essential lines (fillers, idle chatter, replay taps)
+ *      are dropped instead of interrupting the music.
+ *
+ * The intro that announces a show is spoken BEFORE the bed starts; a real user
+ * turn ends the bed via stopSpeakingForInterrupt → endPerformanceMusic.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -32,6 +35,20 @@ describe('speak() is silent while a performance bed is audible', () => {
     const gate = body.indexOf('isLibraryClipAudible()');
     expect(gate).toBeGreaterThan(-1);
     expect(body.indexOf('lineQueue.enqueue')).toBeGreaterThan(gate);
+  });
+
+  it('a line that must be heard makes room instead of being dropped', () => {
+    const body = VOICE.slice(
+      VOICE.indexOf('export function speak('),
+      VOICE.indexOf('function performSpeak('),
+    );
+    const gate = body.indexOf('if (isLibraryClipAudible())');
+    expect(gate).toBeGreaterThan(-1);
+    const branch = body.slice(gate, gate + 500);
+    // Non-essential line → silent; resumable line → end the bed, then speak.
+    expect(branch).toMatch(/if \(!opts\?\.resumable\) \{[\s\S]{0,240}return;/);
+    expect(branch).toContain('endPerformanceMusic()');
+    expect(body.indexOf('endPerformanceMusic()')).toBeLessThan(body.indexOf('lineQueue.enqueue'));
   });
 
   it('stops typing over the show for a real user turn', () => {
@@ -63,14 +80,24 @@ describe('a show announces itself before its bed starts', () => {
   });
 });
 
-describe('a poke during a show reacts but does not talk', () => {
-  it('skips the spoken line and the resume arm while the bed is audible', () => {
-    const body = VOICE.slice(VOICE.indexOf('const performing = isLibraryClipAudible();'));
-    const head = body.slice(0, 1600);
-    expect(body.length).toBeGreaterThan(0);
-    expect(head).toContain('const resumable = performing ? null');
-    expect(head).toMatch(/if \(performing\) return;/);
-    // Impact clip is still queued before that return.
-    expect(head.indexOf("text: 'poke-sfx'")).toBeLessThan(head.indexOf('if (performing) return;'));
+describe('a poke during a show stops the show, then talks', () => {
+  it('ends the bed before the impact clip and the spoken reaction', () => {
+    const start = VOICE.indexOf('if (isLibraryClipAudible()) endPerformanceMusic();');
+    expect(start).toBeGreaterThan(-1);
+    const body = VOICE.slice(start, start + 1600);
+    // The bed stops before the poke foley is queued and before the line is said.
+    expect(body.indexOf('endPerformanceMusic()')).toBeLessThan(body.indexOf("text: 'poke-sfx'"));
+    expect(body.indexOf("text: 'poke-sfx'")).toBeLessThan(body.indexOf('pokeBurstSpokenLine'));
+    // It is still spoken — the show yields, she is not muted.
+    expect(body).toContain('speak(line, characterId, lang');
+    expect(body).not.toContain('if (performing) return;');
+  });
+
+  it('captures the interrupted conversation before stopping the show', () => {
+    const capture = VOICE.indexOf('const resumable = capturePokeResume()');
+    const stop = VOICE.indexOf('if (isLibraryClipAudible()) endPerformanceMusic();');
+    const arm = VOICE.indexOf('if (resumable) pokeResume.arm(resumable);');
+    expect(stop).toBeLessThan(capture);
+    expect(capture).toBeLessThan(arm);
   });
 });
