@@ -10,6 +10,8 @@
     "postbuild": "node scripts/store-bundle.mjs postbuild",
     "build:app": "node scripts/store-build.mjs",
     "start": "next start",
+    "serve:local": "node scripts/serve-local.mjs",
+    "local": "node scripts/local.mjs",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "pretest": "node ../../scripts/check-repo-hygiene.mjs",
