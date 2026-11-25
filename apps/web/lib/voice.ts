@@ -153,7 +153,7 @@ import { emotionIntensityScale, emotionProsody } from './emotion-prosody';
 import { SONG_MELODY } from './songs';
 import { endLipSync, finishLipSync, holdLipSync, noteSpeechStarted, notifySpeaking } from './speech';
 import { clearSpeechCaption, dispatchSpeechCaption, rollCaptionsForLine } from './speech-caption';
-import { duckLibraryBed, endPerformanceMusic } from './music';
+import { duckLibraryBed, endPerformanceMusic, isLibraryClipAudible } from './music';
 import { clearMove, clearPerfMotionProfile, setThinkingPose } from './companion';
 import { companionPlaybackSession, duckExternalAudioForCompanion } from './voice-chat-focus';
 
@@ -1776,6 +1776,17 @@ export function speak(
   // only the user's mic or a user turn calls it.
   const cleaned = stripLaughTokens(cleanForSpeech(text));
   if (!cleaned || !voiceOutputAllowed()) return;
+  // Owner 2026-11-26: "please don't talk while singing or music time."
+  // While a performance bed is actually audible she must not speak over it —
+  // not the poke reaction, not a poke resume, not idle chatter, not a replay
+  // tap. Any real user turn calls stopSpeakingForInterrupt() first, which ends
+  // the bed, so conversation is never swallowed by this gate; a reply that
+  // starts a show is spoken BEFORE the bed (whenSpeechIdle holds the music).
+  if (isLibraryClipAudible()) {
+    // Deliberate silence, NOT a failure: never report a voice status here, or
+    // a mute/failure plate would appear during every song.
+    return;
+  }
   // Owner 2026-11-23: "now the character always repeat the answers two times."
   // speak() is the single choke point for every audible line, and it had no
   // idempotence: the tap-to-replay path (armed by the 8s no-audio watchdog or
@@ -2831,7 +2842,12 @@ export function playPokeBurst(characterId: string, lang: Lang, zone?: string, po
     // phrase. Do not remove one half of this pair: no snapshot = silent loss;
     // no arm = captured line thrown away. Reactions/greets/previews/fillers are
     // not tagged resumable, so poking THEM stays a hard cut.
-    const resumable = capturePokeResume() ?? pokeResume.pending();
+    // Owner 2026-11-26: "please don't talk while singing or music time."
+    // A poke during a performance still shows the reaction and plays its impact
+    // clip, but she must not speak over her own song, and there is no
+    // conversation to resume — so no line, no capture, no arm.
+    const performing = isLibraryClipAudible();
+    const resumable = performing ? null : capturePokeResume() ?? pokeResume.pending();
     interruptSpeechForPoke();
     if (sfxEnabled() && !isMasterMuted()) {
       const file = recordedPokeClip(gender, z);
@@ -2847,6 +2863,7 @@ export function playPokeBurst(characterId: string, lang: Lang, zone?: string, po
       });
       drainSpeech();
     }
+    if (performing) return;
     // The spoken reaction goes AFTER the clip: impact first, words after.
     const line = pokeBurstSpokenLine(characterId, lang, z, pokeN);
     speak(line, characterId, lang, { surprise: 0.62 }, undefined, 1.05);
