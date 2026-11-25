@@ -14,10 +14,10 @@
 // auditioning.
 
 import { useCallback, useState } from 'react';
-import { selectTtsButtons, type TtsButtonVoice } from '../lib/tts-button-registry';
+import { selectRelayVoiceButtons, selectTtsButtons, ttsButtonSpeaker, type RelayVoiceButton, type TtsButtonVoice } from '../lib/tts-button-registry';
 import { isSingleVoiceLocale } from '../lib/tts-button-registry';
 import { activeVoiceChoice, loadVoicePicks, saveVoicePick, type VoicePickMap } from '../lib/voice-picks';
-import { addVoiceOption, pitchTierLabelKey, voiceAddRemaining } from '../lib/voice-capability';
+import { addVoiceOption, edgeRelayAvailable, pitchTierLabelKey, voiceAddRemaining } from '../lib/voice-capability';
 import { previewVoiceChoice, previewOsVoice } from '../lib/voice';
 import { t, type Lang } from '../lib/prefs';
 import type { VoiceLocale } from '../lib/voice-catalog';
@@ -71,7 +71,7 @@ export default function VoicePicker({
     });
   }, []);
 
-  const onTap = (button: TtsButtonVoice) => {
+  const onTap = (button: TtsButtonVoice | RelayVoiceButton) => {
     const next = saveVoicePick(button.locale, button.id);
     setPicks(next);
     setPlaying(button.id);
@@ -98,19 +98,70 @@ export default function VoicePicker({
       .catch(() => setPlaying((id) => (id === added.id ? null : id)));
   };
 
+  // Re-read on every render: the relay URL can be changed in Settings, and the
+  // Edge breaker can trip after a failed preview. False => no male buttons.
+  const relayUp = edgeRelayAvailable();
+
   return (
     <div className="space-y-3" data-voice-rev={rev}>
       <div>
         <p className="text-sm text-white/85">{t(lang, 'voicePickerTitle')}</p>
         <p className="mt-0.5 text-[11px] leading-relaxed text-white/45">{t(lang, 'voicePickerHint')}</p>
       </div>
+      {!relayUp && (
+        <p className="text-[10px] leading-relaxed text-white/40" role="status" data-testid="voice-relay-off">
+          {t(lang, 'voiceRelayOff')}
+        </p>
+      )}
       {LOCALES.map((locale) => {
         const rows = selectTtsButtons(locale);
-        const activeId = picks[locale] ?? activeVoiceChoice(locale, companionGender).id;
+        // Edge neural male buttons. Empty — not disabled, not silent — when the
+        // relay is unavailable, so no male button can exist without audio.
+        const maleRows = selectRelayVoiceButtons(locale);
+        // A pin can point at a relay male voice that this render no longer
+        // offers (relay cleared in Settings, or the Edge breaker tripped). Fall
+        // back to the language default so SOME button stays selected instead of
+        // leaving a selection the user cannot see.
+        const pinned = picks[locale];
+        const pinnedRenderable = !!pinned
+          && (rows.some((b) => b.id === pinned) || maleRows.some((b) => b.id === pinned));
+        const activeId = pinnedRenderable
+          ? pinned
+          : activeVoiceChoice(locale, companionGender).id;
         const os = osUsable[locale];
         const osVoiceCount = os ? os.female + os.male : 0;
-        const hostedOnly = isSingleVoiceLocale(locale) && osVoiceCount === 0;
+        const hostedOnly = isSingleVoiceLocale(locale) && osVoiceCount === 0
+          && rows.length + maleRows.length === 1;
         const canAdd = voiceAddRemaining(locale) > 0;
+        const renderButton = (button: TtsButtonVoice | RelayVoiceButton) => {
+          const genderLabel = button.deliveryGender === 'male'
+            ? t(lang, 'voiceFreeMale')
+            : t(lang, 'voiceFreeFemale');
+          const pitchLabel = t(lang, pitchTierLabelKey(button.pitchTier));
+          const numLabel = `#${button.n} ${t(lang, button.labelKey)} · ${genderLabel} · ${pitchLabel}`;
+          const selected = button.id === activeId;
+          const live = playing === button.id;
+          return (
+            <button
+              key={button.id}
+              type="button"
+              aria-label={numLabel}
+              aria-pressed={selected}
+              title={ttsButtonSpeaker(button)}
+              data-voice-n={button.n}
+              data-voice-id={button.id}
+              data-voice-engine={button.engine}
+              onClick={() => onTap(button)}
+              className={`ui-btn min-h-11 rounded-xl border px-2.5 py-1.5 text-left leading-tight ${
+                selected ? 'border-white/80 text-white' : 'border-white/10 bg-white/5 text-white/80 hover:bg-white/10'
+              }`}
+              style={selected ? { backgroundColor: `${accent}33`, boxShadow: `inset 0 0 0 1px ${accent}` } : undefined}
+            >
+              <span className="block text-[12px] font-medium">{numLabel}</span>
+              {live && <span className="block text-[10px] text-white/55">…</span>}
+            </button>
+          );
+        };
         return (
           <div key={locale} role="group" aria-labelledby={`amoji-voice-locale-${locale}`} className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">
@@ -134,35 +185,18 @@ export default function VoicePicker({
               </button>
             </div>
             <div className="grid grid-cols-1 gap-1.5 min-[380px]:grid-cols-2">
-              {rows.map((button) => {
-                const genderLabel = button.deliveryGender === 'male'
-                  ? t(lang, 'voiceFreeMale')
-                  : t(lang, 'voiceFreeFemale');
-                const pitchLabel = t(lang, pitchTierLabelKey(button.pitchTier));
-                const numLabel = `#${button.n} ${t(lang, button.labelKey)} · ${genderLabel} · ${pitchLabel}`;
-                const selected = button.id === activeId;
-                const live = playing === button.id;
-                return (
-                  <button
-                    key={button.id}
-                    type="button"
-                    aria-label={numLabel}
-                    aria-pressed={selected}
-                    title={button.tl}
-                    data-voice-n={button.n}
-                    data-voice-id={button.id}
-                    onClick={() => onTap(button)}
-                    className={`ui-btn min-h-11 rounded-xl border px-2.5 py-1.5 text-left leading-tight ${
-                      selected ? 'border-white/80 text-white' : 'border-white/10 bg-white/5 text-white/80 hover:bg-white/10'
-                    }`}
-                    style={selected ? { backgroundColor: `${accent}33`, boxShadow: `inset 0 0 0 1px ${accent}` } : undefined}
-                  >
-                    <span className="block text-[12px] font-medium">{numLabel}</span>
-                    {live && <span className="block text-[10px] text-white/55">…</span>}
-                  </button>
-                );
-              })}
+              {rows.map(renderButton)}
             </div>
+            {maleRows.length > 0 && (
+              <div className="space-y-1" data-testid={`voice-relay-male-${locale}`}>
+                <h5 className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/40">
+                  {t(lang, 'voiceRelayMales')}
+                </h5>
+                <div className="grid grid-cols-1 gap-1.5 min-[380px]:grid-cols-2">
+                  {maleRows.map(renderButton)}
+                </div>
+              </div>
+            )}
             {addNote[locale] && (
               <p className="text-[10px] leading-relaxed text-white/40" role="status" data-testid={`voice-add-note-${locale}`}>
                 {addNote[locale]}

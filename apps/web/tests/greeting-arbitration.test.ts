@@ -52,7 +52,7 @@ describe('greeting tier arbitration (one voice per tap)', () => {
     // Edge 403s for everyone now, so its catch runs on nearly every greeting.
     // Guarding on spokenBy is what stops the second voice.
     expect(body).toContain('const onEdgeFail');
-    expect(body).toMatch(/if \(spokenBy === 'edge'\) spokenBy = null/);
+    expect(body).toMatch(/if \(spokenBy === 'edge'\) \{\s*spokenBy = null;\s*claim\.release\('edge'\);/);
     expect(body).toMatch(/if \(spokenBy\) return; \/\/ gtts owns the line/);
   });
 

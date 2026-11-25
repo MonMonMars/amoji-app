@@ -206,6 +206,10 @@ export type StrKey =
   | 'voiceRegionIe' | 'voiceRegionZa' | 'voiceRegionNz' | 'voiceRegionHkEn' | 'voiceRegionCa'
   | 'voiceRegionSg' | 'voiceRegionHkZh'
   | 'voiceFreeFemale' | 'voiceFreeMale'
+  // Edge neural MALE voices carried by the TTS relay (restored 2026-11-25).
+  // The name is the Edge short name so the owner can see which man is speaking.
+  | 'voiceNeuralWanLung' | 'voiceNeuralYunjian' | 'voiceNeuralKeita' | 'voiceNeuralGuy'
+  | 'voiceRelayMales' | 'voiceRelayOff'
   | 'voicePitchBright' | 'voicePitchMid' | 'voicePitchDeep'
   | 'voiceAdd' | 'voiceAddHint' | 'voiceAddNone'
   // OS-provided voices (speechSynthesis). These exist because the OS genuinely
@@ -345,6 +349,22 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   voiceRegionHkZh: { en: 'Hong Kong Mandarin', yue: '香港普通話', zh: '香港普通话', ja: '香港普通話' },
   voiceFreeFemale: { en: 'Female', yue: '女聲', zh: '女声', ja: '女性' },
   voiceFreeMale: { en: 'Male', yue: '男聲', zh: '男声', ja: '男性' },
+  voiceNeuralWanLung: { en: 'WanLung', yue: '雲龍', zh: '云龙', ja: 'ワンロン' },
+  voiceNeuralYunjian: { en: 'Yunjian', yue: '雲健', zh: '云健', ja: 'ユンジェン' },
+  voiceNeuralKeita: { en: 'Keita', yue: '圭太', zh: '圭太', ja: '圭太' },
+  voiceNeuralGuy: { en: 'Guy', yue: '蓋伊', zh: '盖伊', ja: 'ガイ' },
+  voiceRelayMales: {
+    en: 'Male neural voices · relay',
+    yue: '男聲 · 神經語音（中繼）',
+    zh: '男声 · 神经语音（中继）',
+    ja: '男性ニューラル音声 · リレー',
+  },
+  voiceRelayOff: {
+    en: 'Male neural voices need the TTS relay, and it is off on this device.',
+    yue: '男聲神經語音要經 TTS 中繼，呢部機而家關咗。',
+    zh: '男声神经语音需要 TTS 中继，本机目前关闭。',
+    ja: '男性ニューラル音声は TTS リレーが必要ですが、この端末ではオフです。',
+  },
   voicePitchDeep: { en: 'Deep', yue: '低沉', zh: '低沉', ja: '低め' },
   voicePitchMid: { en: 'Mid', yue: '中音', zh: '中音', ja: '中間' },
   voicePitchBright: { en: 'Bright', yue: '明亮', zh: '明亮', ja: '高め' },

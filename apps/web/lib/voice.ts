@@ -128,7 +128,9 @@ import {
   pitchTierForChoice,
   preferredVoiceChoiceForGender,
   tlForChoice,
+  voiceChoiceById,
 } from './voice-capability';
+import { createAuditionClaim } from './audition-claim';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
 import { auditionRoute } from './voice-audition';
 import { formatVoiceChain, freeVoiceHops } from './tts-chain';
@@ -2250,11 +2252,17 @@ export function playVoiceGreeting(
   const companionGender = characterVoiceGender(characterId);
   const delivery = deliveryGenderForChoice(lang, choiceId, companionGender);
   const tl = tlForChoice(lang, choiceId);
+  // A relay male button IS an Edge voice. It must never be spoken by the gTTS
+  // tier — that speaker is a woman, the exact "male button, female voice"
+  // report — so the MP3 tier is not started at all for these choices.
+  const choice = voiceChoiceById(choiceId);
+  const relayMale = choice?.engine === 'edge';
+  const relayEdgeVoice = choice?.edgeVoiceId;
   let session = 0;
   /** Set by whichever tier actually starts, so the loser can bail out. */
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
   /** True until the MP3 tier's promise settles (success or fail). */
-  let gttsPending = true;
+  let gttsPending = !relayMale;
   /**
    * Fires if NO tier has started shortly after the tap. Edge 403s instantly, so
    * without this the synth fallback ran on nearly every greeting and talked over
@@ -2271,6 +2279,24 @@ export function playVoiceGreeting(
     markVoiceStarted();
     reportVoiceStatus(tier, true, `greeting ${choiceId}`);
   };
+  /**
+   * Who owns the speaker in this greeting (see lib/audition-claim.ts).
+   *
+   * The MP3 and Edge tiers are started together so the tap is audible fast,
+   * but a tier that has fired `onplay` is ALREADY speaking; ignoring the loser
+   * left both elements playing — the owner's "double voice, two voice
+   * overlapping". Taking the speaker now tears the loser's element down, and a
+   * superseded greeting (newer tap) cannot claim at all.
+   */
+  const claim = createAuditionClaim({
+    stop: {
+      edge: () => stopEdge(),
+      gtts: () => stopGtts(),
+      synth: () => haltBrowserSynth(),
+    },
+    isCurrent: () => !stale(),
+    onSilenced: (tier, why) => reportVoiceStatus(tier, false, `greeting ${why} ${choiceId}`),
+  });
   /**
    * After gTTS/Edge fail: ONE neural retry (gTTS → Edge), then the device
    * voice. Audible insurance clips stay banned (#431), and nothing starts
@@ -2293,9 +2319,9 @@ export function playVoiceGreeting(
     // Greeting and chat must share this number or the voice "jumps".
     pitchBias: gttsPitchForLang(lang, characterId, companionGender, choiceId),
     onPlaying: () => {
-      if (spokenBy && spokenBy !== 'gtts') return;
-      // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
-      try { haltBrowserSynth(); } catch { /* ignore */ }
+      // Claiming also stops the Edge element, which may already be audible.
+      // Returning here without that teardown is the double-voice bug.
+      if (!claim.claim('gtts')) return;
       if (!spokenBy) onStart('gtts');
     },
   });
@@ -2305,22 +2331,19 @@ export function playVoiceGreeting(
     pinSinkBeforePlay: false,
     gestureTap: true,
     character: characterId,
-    // Real Edge male/female neural id for this pitch button (not character cast alone).
-    voiceId: edgeVoiceIdForTier(lang, delivery, greetTier),
+    // The exact seeded Edge id for a relay male button; otherwise the real
+    // Edge male/female neural id for this pitch tier (not the character cast).
+    voiceId: relayEdgeVoice ?? edgeVoiceIdForTier(lang, delivery, greetTier),
     forcePlain: true,
     expressiveness: 1.15,
     rateDelta: 0.04 + greetEdgeProsody.rate,
     pitchDelta: 0.06 + greetEdgeProsody.pitch,
     onPlaying: () => {
-      if (spokenBy === 'gtts') return; // MP3 tier already got there first
-      try { haltBrowserSynth(); } catch { /* ignore */ }
+      // Claiming tears the MP3 element down synchronously. The old code only
+      // returned early when gTTS owned the line, so the Edge mp3 kept playing
+      // over the Google speaker — the owner's overlapping voices.
+      if (!claim.claim('edge')) return;
       if (!spokenBy) onStart('edge');
-      // Defer killing gTTS — instant haltSynthQueue on Edge onplay made claim-then-die mute.
-      window.setTimeout(() => {
-        if (stale()) return;
-        if (spokenBy !== 'edge') return;
-        try { stopGtts(); } catch { /* ignore */ }
-      }, 120);
     },
   });
   /**
@@ -2346,6 +2369,7 @@ export function playVoiceGreeting(
       reportVoiceStatus('synth', false, `no playable engine (${tag}) ${choiceId}`);
       return;
     }
+    if (!claim.claim('synth')) return;
     reportVoiceStatus('synth', true, `device voice (${tag}) ${choiceId} · ${route.reason}`);
     onStart('synth');
     synthSpeak(
@@ -2367,7 +2391,9 @@ export function playVoiceGreeting(
   const runSynthAudition = (tag: string) => {
     if (stale()) return;
     if (spokenBy || gttsPending) return;
-    if (neuralRetryUsed) {
+    // A relay male button has NO gTTS fallback: the Google speaker for this
+    // language is a woman, so retrying there would reproduce the reported bug.
+    if (neuralRetryUsed || relayMale) {
       auditionSynth(tag);
       return;
     }
@@ -2381,7 +2407,12 @@ export function playVoiceGreeting(
       markGttsDone();
       if ((e as Error | undefined)?.message === 'canceled') return;
       reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'greeting gtts retry failed');
-      if (spokenBy === 'gtts') spokenBy = null;
+      if (spokenBy === 'gtts') {
+        spokenBy = null;
+        // The claim must forget a tier that died, or the device voice can
+        // never take over (claim is exclusive).
+        claim.release('gtts');
+      }
       if (spokenBy) return;
       // Breaker open = Edge is known 403; go straight to the device voice
       // instead of burning its 3.5s socket timeout first.
@@ -2400,7 +2431,8 @@ export function playVoiceGreeting(
   // Start the HTTP tier first and synchronously inside the gesture. It fetches
   // over plain HTTPS, so it does not need the gesture itself, but starting here
   // means the greeting begins immediately instead of after a dead Edge attempt.
-  void speakGtts(text, greetGttsOpts()).then(() => {
+  // A relay male button skips this tier entirely (see relayMale above).
+  if (!relayMale) void speakGtts(text, greetGttsOpts()).then(() => {
     markGttsDone();
     if (session) finishLipSync(session);
   }).catch((e: unknown) => {
@@ -2416,7 +2448,10 @@ export function playVoiceGreeting(
     }
     reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'greeting gtts failed');
     // gTTS may have claimed the line then died — clear so neural retry can save.
-    if (spokenBy === 'gtts') spokenBy = null;
+    if (spokenBy === 'gtts') {
+      spokenBy = null;
+      claim.release('gtts');
+    }
     if (spokenBy) return;
     runSynthAudition('greeting fallback');
   });
@@ -2428,7 +2463,10 @@ export function playVoiceGreeting(
    */
   const onEdgeFail = (why: string) => {
     const edgeClaimed = spokenBy === 'edge';
-    if (spokenBy === 'edge') spokenBy = null;
+    if (spokenBy === 'edge') {
+      spokenBy = null;
+      claim.release('edge');
+    }
     if (spokenBy) return; // gtts owns the line
     const finish = () => {
       if (stale()) return;
@@ -2709,13 +2747,13 @@ export function playLaughBurst(characterId: string, lang: Lang): void {
 
 
 /**
- * Audition one of the real voices (a Google `tl` region) on this language's
- * sample line, even while Voice replies is off.
+ * Audition one of the real voices: a Google `tl` speaker, or an Edge neural
+ * voice carried by the TTS relay (the restored male buttons).
  *
- * This used to be "preview an Edge neural voice". There is no such thing any
- * more: Edge refuses this app, so that call named a speaker the user could
- * never hear. Previewing the actual speaker keeps the button honest — what a
- * tap plays is what chat will sound like.
+ * A gTTS choice previews the exact speaker chat will use. An Edge choice
+ * previews the exact neural id the relay was verified to return, and never
+ * falls back to gTTS — that speaker is a woman, which is the "male button,
+ * female voice" report.
  */
 export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void> {
   if (!selectAuditionAllowed()) return Promise.resolve();
@@ -2733,12 +2771,40 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   // Delivery gender from the tapped button (male pin → male pace/pitch).
   const tl = tlForChoice(locale, choiceId);
   const previewGender = deliveryGenderForChoice(locale, choiceId, 'female');
+  // Relay male buttons are EDGE voices; the gTTS tier must not start for them
+  // (its speaker is a woman — the exact bug this restore fixes).
+  const choice = voiceChoiceById(choiceId);
+  const relayMale = choice?.engine === 'edge';
+  const relayEdgeVoice = choice?.edgeVoiceId;
   // Same rotating short greet as select-board voice cards.
   const text = nextCardGreetPhrase(locale);
   let spokenBy: 'edge' | 'gtts' | 'synth' | null = null;
-  let gttsPending = true;
+  let gttsPending = !relayMale;
   let neuralRetryUsed = false;
   const markGttsDone = () => { gttsPending = false; };
+  /**
+   * Resolved when this preview's Edge element is silenced by the winning tier
+   * (or by a newer audition). speakEdge() cannot settle once its element has
+   * been paused, so the returned preview promise would otherwise hang forever.
+   */
+  let noteEdgeSilenced!: () => void;
+  const edgeSilenced = new Promise<void>((resolve) => { noteEdgeSilenced = resolve; });
+  /**
+   * One speaker, one tier (lib/audition-claim.ts). First tier to make sound
+   * wins and the other element is stopped; a retired preview cannot claim.
+   */
+  const claim = createAuditionClaim({
+    stop: {
+      edge: () => stopEdge(),
+      gtts: () => stopGtts(),
+      synth: () => haltBrowserSynth(),
+    },
+    isCurrent: () => !stale(),
+    onSilenced: (tier, why) => {
+      reportVoiceStatus(tier, false, `preview ${why} ${choiceId}`);
+      if (tier === 'edge') noteEdgeSilenced();
+    },
+  });
   const previewTier = pitchTierForChoice(choiceId);
   const previewEdgeProsody = edgeProsodyForTier(previewTier);
   const previewGttsOpts = () => ({
@@ -2749,9 +2815,8 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
     rate: previewGender === 'male' ? 0.90 : 1,
     pitchBias: gttsPitchForLang(locale, 'preview', previewGender, choiceId),
     onPlaying: () => {
-      if (spokenBy && spokenBy !== 'gtts') return;
-      // Browser-only halt: this IS the MP3 tier, so a full halt would stop us.
-      try { haltBrowserSynth(); } catch { /* ignore */ }
+      // Claiming stops the Edge element, which may already be audible.
+      if (!claim.claim('gtts')) return;
       if (!spokenBy) {
         spokenBy = 'gtts';
         markVoiceStarted();
@@ -2764,24 +2829,20 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
     gender: previewGender,
     pinSinkBeforePlay: false,
     gestureTap: true,
-    voiceId: edgeVoiceIdForTier(locale, previewGender, previewTier),
+    voiceId: relayEdgeVoice ?? edgeVoiceIdForTier(locale, previewGender, previewTier),
     forcePlain: true,
     expressiveness: 1.15,
     rateDelta: 0.04 + previewEdgeProsody.rate,
     pitchDelta: 0.06 + previewEdgeProsody.pitch,
     onPlaying: () => {
-      if (spokenBy === 'gtts') return; // MP3 tier already got there first
-      try { haltBrowserSynth(); } catch { /* ignore */ }
+      // Claiming tears down the gTTS element synchronously. Only returning
+      // early here (the old code) left the Edge mp3 playing over it.
+      if (!claim.claim('edge')) return;
       if (!spokenBy) {
         spokenBy = 'edge';
         markVoiceStarted();
         reportVoiceStatus('edge', true, `preview ${choiceId}`);
       }
-      window.setTimeout(() => {
-        if (stale()) return;
-        if (spokenBy !== 'edge') return;
-        try { stopGtts(); } catch { /* ignore */ }
-      }, 120);
     },
   });
   /** Final hop: device speechSynthesis for this language (see playVoiceGreeting). */
@@ -2798,6 +2859,7 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
       reportVoiceStatus('synth', false, `preview no playable engine (${tag}) ${choiceId}`);
       return;
     }
+    if (!claim.claim('synth')) return;
     reportVoiceStatus('synth', true, `preview device voice (${tag}) ${choiceId} · ${route.reason}`);
     spokenBy = 'synth';
     markVoiceStarted();
@@ -2821,7 +2883,8 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const runSynthAudition = (tag: string): Promise<void> => {
     if (stale()) return Promise.resolve();
     if (spokenBy || gttsPending) return Promise.resolve();
-    if (neuralRetryUsed) {
+    // Relay male = Edge only. Google's speaker here is female, so no gTTS retry.
+    if (neuralRetryUsed || relayMale) {
       auditionSynth(tag);
       return Promise.resolve();
     }
@@ -2834,7 +2897,12 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
       markGttsDone();
       if ((e as Error | undefined)?.message === 'canceled') return;
       reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'preview gtts retry failed');
-      if (spokenBy === 'gtts') spokenBy = null;
+      if (spokenBy === 'gtts') {
+        spokenBy = null;
+        // The claim must forget a tier that died, or the device voice can
+        // never take over (claim is exclusive).
+        claim.release('gtts');
+      }
       if (spokenBy) return;
       if (edgeEndpointsDead()) { auditionSynth(`${tag} edge dead`); return; }
       try { resetEdgeHealth(); } catch { /* ignore */ }
@@ -2846,9 +2914,11 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
     });
   };
   // HTTP MP3 tier first, started inside the gesture so preview is immediate.
-  // Exactly one tier speaks: whoever starts first halts the others.
+  // Exactly one tier speaks: whoever starts first claims the speaker and the
+  // loser's element is stopped (lib/audition-claim.ts).
   // Pitch comes from the tapped button (deep/mid/bright), not a character hash.
-  const gtts = speakGtts(text, previewGttsOpts()).then(() => {
+  // A relay male button never starts this tier at all.
+  const gtts: Promise<void> = relayMale ? Promise.resolve() : speakGtts(text, previewGttsOpts()).then(() => {
     markGttsDone();
   }).catch((e: unknown) => {
     markGttsDone();
@@ -2862,14 +2932,20 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
       return;
     }
     reportVoiceStatus('gtts', false, (e as Error | undefined)?.message ?? 'preview gtts failed');
-    if (spokenBy === 'gtts') spokenBy = null;
+    if (spokenBy === 'gtts') {
+      spokenBy = null;
+      claim.release('gtts');
+    }
     if (spokenBy) return;
     return runSynthAudition('preview fallback');
   });
 
   const onPreviewEdgeFail = (why: string): Promise<void> => {
     const edgeClaimed = spokenBy === 'edge';
-    if (spokenBy === 'edge') spokenBy = null;
+    if (spokenBy === 'edge') {
+      spokenBy = null;
+      claim.release('edge');
+    }
     const salvage = (): Promise<void> => {
       if (stale() || spokenBy) return Promise.resolve();
       reportVoiceStatus('edge', false, why);
@@ -2895,14 +2971,16 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
     return salvage();
   };
 
-  // Free upside only: if Microsoft ever re-opens read-aloud, the sample can be
-  // auditioned on a neural voice. Nothing waits on it and nothing depends on it.
-  return speakEdge(text, previewEdgeOpts()).then(() => gtts).catch((err: unknown) => {
-    if ((err as Error | undefined)?.message === 'canceled') return gtts;
-    return onPreviewEdgeFail((err as Error | undefined)?.message ?? 'preview edge failed').then(
-      () => gtts,
-    );
+  // Edge is a free upside: the relay carries real neural audio when it is
+  // configured. When it loses the speaker race the element is paused by
+  // `claim`, and `edgeSilenced` settles this branch so the returned preview
+  // promise cannot hang on a paused element.
+  const edgeRun: Promise<void> = speakEdge(text, previewEdgeOpts()).then(() => undefined).catch((err: unknown) => {
+    if ((err as Error | undefined)?.message === 'canceled') return undefined;
+    return onPreviewEdgeFail((err as Error | undefined)?.message ?? 'preview edge failed')
+      .then(() => undefined);
   });
+  return Promise.all([gtts, Promise.race([edgeRun, edgeSilenced])]).then(() => undefined);
 }
 
 export function previewOsVoice(

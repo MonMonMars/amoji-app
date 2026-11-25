@@ -47,8 +47,13 @@ describe('voice restore — one tier speaks, never two', () => {
     // `spokenBy` is what stops Edge + gtts + synth all firing at once, which is
     // a regression I introduced when I first wired gtts in.
     expect(greet).toContain('spokenBy');
-    expect(greet).toMatch(/if \(spokenBy === 'gtts'\) return/);
-    expect(greet).toMatch(/if \(spokenBy && spokenBy !== 'gtts'\) return/);
+    // 2026-11-25 (owner: two voices overlapping): the winner is decided by an
+    // explicit claim, and claiming STOPS the other tier's element instead of
+    // merely returning from its callback while it keeps playing.
+    expect(greet).toContain('createAuditionClaim(');
+    expect(greet).toMatch(/if \(!claim\.claim\('gtts'\)\) return;/);
+    expect(greet).toMatch(/if \(!claim\.claim\('edge'\)\) return;/);
+    expect(greet).toMatch(/if \(!claim\.claim\('synth'\)\) return;/);
   });
 
   it('does not start synth while the MP3 tier is still in flight', () => {
@@ -65,23 +70,40 @@ describe('voice restore — one tier speaks, never two', () => {
     expect(preview).toContain('speakGtts(');
     expect(preview).toContain('speakEdge(');
     expect(preview).toContain('spokenBy');
-    expect(preview).toMatch(/if \(spokenBy === 'gtts'\) return/);
+    expect(preview).toContain('createAuditionClaim(');
+    expect(preview).toMatch(/if \(!claim\.claim\('gtts'\)\) return;/);
+    expect(preview).toMatch(/if \(!claim\.claim\('edge'\)\) return;/);
     expect(preview).not.toContain('playGestureClipSync');
     expect(preview).not.toContain('startInsurance');
     expect(preview).toContain("runSynthAudition('preview fallback')");
   });
 
-  it('the MP3 tier halts only the browser engine, never itself', () => {
-    // haltSynthQueue() now stops gtts too. Calling it from gtts' own onPlaying
-    // would cancel the line that just started. The gtts handlers are the ones
-    // guarded by `spokenBy !== 'gtts'`.
-    const idx = voice.indexOf("if (spokenBy && spokenBy !== 'gtts') return;");
-    expect(idx).toBeGreaterThan(-1);
-    const handler = voice.slice(idx, idx + 220);
-    expect(handler).toContain('haltBrowserSynth()');
-    expect(handler).not.toContain('haltSynthQueue()');
-    // Both the greeting and the preview gtts handler must use the safe halt.
-    expect((voice.match(/this IS the MP3 tier, so a full halt would stop us/g) ?? []).length).toBe(2);
+  it('the MP3 tier stops the OTHER engines, never itself', () => {
+    // haltSynthQueue() stops gtts too, so calling it from gtts' own onPlaying
+    // would cancel the line that just started. The claim owns that split: its
+    // stop map lists every tier, and it skips the claiming tier.
+    for (const body of [greet, preview]) {
+      expect(body).toMatch(
+        /stop: \{\s*edge: \(\) => stopEdge\(\),\s*gtts: \(\) => stopGtts\(\),\s*synth: \(\) => haltBrowserSynth\(\),\s*\}/,
+      );
+    }
+    // The gtts handler must not call a full halt or stop itself by hand.
+    const gttsHandler = greet.slice(
+      greet.indexOf('pitchBias: gttsPitchForLang'),
+      greet.indexOf('const greetEdgeOpts'),
+    );
+    expect(gttsHandler).toContain("claim.claim('gtts')");
+    expect(gttsHandler).not.toContain('haltSynthQueue()');
+    expect(gttsHandler).not.toContain('stopGtts()');
+    // The Edge handler must not hand-stop itself either; the claim does it.
+    const edgeHandler = greet.slice(
+      greet.indexOf('const greetEdgeOpts'),
+      greet.indexOf('const auditionSynth'),
+    );
+    expect(edgeHandler).toContain("claim.claim('edge')");
+    expect(edgeHandler).not.toContain('stopEdge()');
+    expect(greet).not.toContain('haltSynthQueue');
+    expect(preview).not.toContain('haltSynthQueue');
   });
 
   it('haltSynthQueue stops every engine, including the MP3 tier', () => {

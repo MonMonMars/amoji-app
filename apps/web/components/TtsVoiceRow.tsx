@@ -18,8 +18,11 @@
 import { useState } from 'react';
 import {
   isSingleVoiceLocale,
+  selectRelayVoiceButtons,
   selectTtsButtons,
   ttsButtonKey,
+  ttsButtonSpeaker,
+  type RelayVoiceButton,
   type TtsButtonVoice,
 } from '../lib/tts-button-registry';
 import { addVoiceOption, pitchTierLabelKey, voiceAddRemaining } from '../lib/voice-capability';
@@ -47,14 +50,26 @@ export default function TtsVoiceRow({
   const [showDev] = useState(() => typeof window !== 'undefined' && isDevMode());
   const [addNote, setAddNote] = useState<string | null>(null);
 
-  const buttons = showAll ? selectTtsButtons() : selectTtsButtons(lang);
-  const activeIdFor = (locale: Lang) =>
-    voicePickFor(locale) ?? activeVoiceChoice(locale, companionGender).id;
+  // gTTS speakers first, then the relay male buttons (Edge neural). The male
+  // array is empty when the relay is unavailable, so a closed gate adds no
+  // button at all rather than one that can only fall back to a woman's voice.
+  const buttons: Array<TtsButtonVoice | RelayVoiceButton> = [
+    ...(showAll ? selectTtsButtons() : selectTtsButtons(lang)),
+    ...(showAll ? selectRelayVoiceButtons() : selectRelayVoiceButtons(lang)),
+  ];
+  // A pin can name a relay male voice that is not rendered right now (relay
+  // cleared, or the Edge breaker tripped). Only honour pins whose button is
+  // actually on screen, otherwise no button would look selected.
+  const activeIdFor = (locale: Lang) => {
+    const pinned = voicePickFor(locale);
+    if (pinned && buttons.some((b) => b.id === pinned)) return pinned;
+    return activeVoiceChoice(locale, companionGender).id;
+  };
   const activeId = activeIdFor(lang);
-  const single = !showAll && isSingleVoiceLocale(lang);
+  const single = !showAll && isSingleVoiceLocale(lang) && buttons.length === 1;
   const canAdd = voiceAddRemaining(lang) > 0;
 
-  const onTap = (button: TtsButtonVoice) => {
+  const onTap = (button: TtsButtonVoice | RelayVoiceButton) => {
     saveVoicePick(button.locale, button.id);
     setRev((n) => n + 1);
     if (button.locale !== lang) onLang(button.locale);
@@ -121,7 +136,7 @@ export default function TtsVoiceRow({
                 type="button"
                 aria-label={numLabel}
                 aria-pressed={selected}
-                title={`${t(lang, button.labelKey)} · ${button.tl}`}
+                title={`${t(lang, button.labelKey)} · ${ttsButtonSpeaker(button)}`}
                 data-dev={showDev ? mark : undefined}
                 data-voice-n={button.n}
                 data-voice-id={button.id}
