@@ -384,9 +384,13 @@ function alignBoneDown(
   alignBoneToward(bone, child, DOWN, baseLocal, fallbackAxis);
 }
 
-/** Natural hang: a little out from the body and a little forward. Facing is +Z. */
+/** Natural hang: a little out from the body and a little forward.
+ *  Facing is +Z (poke-hit.ts header), so character-left is +X and
+ *  character-right is −X: the LEFT arm abducts toward +X and the RIGHT
+ *  toward −X. This sign was inverted, which aimed both upper arms across
+ *  the torso and buried the left hand in the body (Pixel 2026-11-26). */
 function naturalArmDir(side: 'left' | 'right', abduct: number, forward: number): THREE.Vector3 {
-  const out = side === 'left' ? -1 : 1;
+  const out = side === 'left' ? 1 : -1;
   return new THREE.Vector3(out * Math.sin(abduct), -Math.cos(abduct), Math.sin(forward)).normalize();
 }
 
@@ -600,20 +604,25 @@ const _shQP = new THREE.Quaternion();
 const _shQW = new THREE.Quaternion();
 
 /**
- * r103: floor an upper arm's OUTWARD swing in world space, body-relative
- * (outward = the shoulder line, left→right). If the arm direction's
- * component along the shoulder line sinks past SHOULDER_MIN_OUTWARD the arm
- * has crossed the body midline — rebuild the direction with the component
- * floored and apply the minimal world-space rotation that takes the bone
- * there (world→local exactly like alignBoneDown). Gated to arms at/below
- * horizontal (direction.y < SHOULDER_GATE_Y) so overhead waves and dance
- * arm-crosses above the shoulder keep full freedom.
+ * r103: floor an upper arm's OUTWARD swing in world space, body-relative.
+ * "Outward" is AWAY from the torso, which is +X for the LEFT arm and −X for
+ * the RIGHT arm. The right-shoulder-minus-left-shoulder line is only outward
+ * for the right arm; using it for both sides left the left arm unclamped and
+ * it folded into the torso (Pixel 2026-11-26: "left hand always blended").
+ * If the arm direction's component along its own outward sinks past
+ * SHOULDER_MIN_OUTWARD the arm has crossed the body midline — rebuild the
+ * direction with the component floored and apply the minimal world-space
+ * rotation that takes the bone there (world→local exactly like
+ * alignBoneDown). Gated to arms at/below horizontal (direction.y <
+ * SHOULDER_GATE_Y) so overhead waves and dance arm-crosses above the
+ * shoulder keep full freedom.
  */
-function clampUpperArmAdduction(
+export function clampUpperArmAdduction(
   upperArm: THREE.Object3D,
   lowerArm: THREE.Object3D,
   shoulderL: THREE.Object3D,
   shoulderR: THREE.Object3D,
+  side: 'left' | 'right',
 ): void {
   const a = upperArm.getWorldPosition(_shA);
   const b = lowerArm.getWorldPosition(_shB);
@@ -623,7 +632,11 @@ function clampUpperArmAdduction(
   if (d.y >= SHOULDER_GATE_Y) return; // above horizontal — full freedom
   const lp = shoulderL.getWorldPosition(_shLP);
   const rp = shoulderR.getWorldPosition(_shRP);
-  const outward = _shOut.subVectors(rp, lp);
+  // left→right is outward only for the right arm; the left arm's outward is
+  // the mirrored vector.
+  const outward = side === 'left'
+    ? _shOut.subVectors(lp, rp)
+    : _shOut.subVectors(rp, lp);
   if (outward.lengthSq() < 1e-10) return;
   outward.normalize();
   const outD = d.dot(outward);
@@ -1014,10 +1027,10 @@ class V1Avatar implements Avatar {
     if (!sl || !sr) return;
     const l = h('leftUpperArm');
     const le = h('leftLowerArm');
-    if (l && le) clampUpperArmAdduction(l, le, sl, sr);
+    if (l && le) clampUpperArmAdduction(l, le, sl, sr, 'left');
     const r = h('rightUpperArm');
     const re = h('rightLowerArm');
-    if (r && re) clampUpperArmAdduction(r, re, sl, sr);
+    if (r && re) clampUpperArmAdduction(r, re, sl, sr, 'right');
   }
 
   easeIdleHang(): void {
@@ -1418,10 +1431,10 @@ class GenericAvatar implements Avatar {
     if (!sl || !sr) return;
     const l = this.bones.get('leftUpperArm');
     const le = this.bones.get('leftLowerArm');
-    if (l && le) clampUpperArmAdduction(l, le, sl, sr);
+    if (l && le) clampUpperArmAdduction(l, le, sl, sr, 'left');
     const r = this.bones.get('rightUpperArm');
     const re = this.bones.get('rightLowerArm');
-    if (r && re) clampUpperArmAdduction(r, re, sl, sr);
+    if (r && re) clampUpperArmAdduction(r, re, sl, sr, 'right');
   }
 
   easeIdleHang(): void {
