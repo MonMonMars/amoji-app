@@ -234,7 +234,9 @@ describe('wiring: one reply opens one utterance and threads it through every chu
 
   it('the queue stores a pin and performSpeak reads the live pick only when none was captured', () => {
     const speakFn = between(voiceSrc, 'export function speak(', 'function performSpeak(');
-    expect(speakFn).toContain('voicePin: speechPinFor(lang, opts?.utterance)');
+    // The pin is captured per character gender, not per locale alone — a reply
+    // must inherit the voice of THIS character's gender.
+    expect(speakFn).toContain('voicePin: speechPinFor(characterId, lang, opts?.utterance)');
     // The resumable tag itself is untouched (poke capture contract).
     expect(speakFn).toContain('resumable: opts?.resumable === true');
 
@@ -242,9 +244,9 @@ describe('wiring: one reply opens one utterance and threads it through every chu
     expect(drain).toContain('job.voicePin,');
 
     const perf = between(voiceSrc, 'function performSpeak(', 'function performClip(');
-    expect(perf).toContain("const voicePin = (pinnedChoice !== undefined ? pinnedChoice : voicePickFor(lang))");
+    expect(perf).toContain('pinnedChoice !== undefined');
     // Exactly one live read, and only as the fallback for jobs without a pin.
-    expect((perf.match(/voicePickFor\(/g) ?? []).length).toBe(1);
+    expect((perf.match(/effectiveVoiceChoiceId\(/g) ?? []).length).toBe(1);
   });
 
   it('the poke snapshot carries the reply pin into the continuation', () => {
