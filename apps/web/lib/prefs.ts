@@ -282,7 +282,10 @@ export type StrKey =
   | 'systemsStorageStatus' | 'systemsSecurityStatus' | 'systemsLegalStatus'
   | 'exportProductData' | 'exportProductDataDone' | 'wipeProductData'
   | 'wipeProductDataConfirm' | 'wipeProductDataDone' | 'wipeServerData'
-  | 'wipeServerDataDone' | 'wipeServerDataNoSession' | 'wipeServerDataNoApi';
+  | 'wipeServerDataDone' | 'wipeServerDataNoSession' | 'wipeServerDataNoApi'
+  // Gate sound-check Stop control (2026-11-26). Appended here, away from the
+  // gate cluster other agents are touching.
+  | 'gateAudioStop';
 
 export const STRINGS: Record<StrKey, Record<Lang, string>> = {
   chooseCharacter: { en: 'Choose your companion', yue: '揀你嘅小伙伴', zh: '选择你的伙伴', ja: '相棒を選ぶ' },
@@ -1739,6 +1742,14 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: 'Amoji 嘅原始碼同問題回報都喺 GitHub：',
     zh: 'Amoji 的源代码和问题反馈都在 GitHub：',
     ja: 'Amoji のソースコードと不具合報告は GitHub にあります：',
+  },
+  // Stop the gate sound check while the sample is still playing. Genuine
+  // translations — never the English word in the CJK columns.
+  gateAudioStop: {
+    en: 'Stop',
+    yue: '停咗佢',
+    zh: '停止',
+    ja: '停止',
   },
 };
 

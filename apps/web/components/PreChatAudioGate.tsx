@@ -27,6 +27,55 @@ export type LocationGateUi = 'idle' | 'asked' | 'ready' | 'denied' | 'unsupporte
 /** Soft sound-check step after the sample finishes (or is replayed). */
 export type SoundCheckUi = 'idle' | 'asked' | 'ok' | 'help';
 
+export type GateSoundButtonProps = {
+  'data-testid': string;
+  /** True while the sound-check line is actually in flight. */
+  playing: boolean;
+  onPlay: () => void;
+  onStop: () => void;
+  testLabel: string;
+  stopLabel: string;
+  /** Height / margin only — width, colours and the dot live here. */
+  className?: string;
+};
+
+/**
+ * Test / Stop control for the sound check (owner 2026-11-26: "it keep on
+ * talking, please add a stop button to stop the test"). While the sample is
+ * playing the SAME full-width button becomes Stop — never `disabled`, so a
+ * long gate line can always be cut by touch or keyboard. The pulsing dot only
+ * exists while sound is actually in flight. The full-width base means the
+ * label swap cannot shift the card, and the label itself is the accessible
+ * name (mirrored in aria-label so it is stable for assistive tech).
+ */
+export function GateSoundButton({
+  'data-testid': testId,
+  playing,
+  onPlay,
+  onStop,
+  testLabel,
+  stopLabel,
+  className = '',
+}: GateSoundButtonProps) {
+  return (
+    <button
+      type="button"
+      data-testid={testId}
+      data-playing={playing ? '1' : '0'}
+      data-action={playing ? 'stop' : 'play'}
+      aria-label={playing ? stopLabel : testLabel}
+      onClick={playing ? onStop : onPlay}
+      className={`ui-btn flex w-full items-center justify-center gap-2 rounded-full bg-white font-semibold text-black ${className}`}
+    >
+      <span>{playing ? stopLabel : testLabel}</span>
+      <span
+        aria-hidden
+        className={`inline-block h-2 w-2 shrink-0 rounded-full bg-black/45 transition-opacity ${playing ? 'animate-pulse opacity-100' : 'opacity-0'}`}
+      />
+    </button>
+  );
+}
+
 export default function PreChatAudioGate({
   onDone,
   showBack = true,
@@ -63,6 +112,45 @@ export default function PreChatAudioGate({
   const [locationUi, setLocationUi] = useState<LocationGateUi>('idle');
   const [locationBusy, setLocationBusy] = useState(false);
   const primedExtras = useRef(false);
+  /** Mirror of `playing` for interval callbacks (state is stale inside timers). */
+  const playingRef = useRef(false);
+  /** Monotonic attempt id — a stop retires the running attempt. */
+  const attemptSeq = useRef(0);
+  /** Stopped attempts whose testVoiceChain is still unwinding. */
+  const retiredAttempts = useRef(0);
+  const stopMopTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const markPlaying = useCallback((v: boolean) => {
+    playingRef.current = v;
+    setPlaying(v);
+  }, []);
+
+  const stopMop = useCallback(() => {
+    if (stopMopTimer.current !== null) {
+      clearInterval(stopMopTimer.current);
+      stopMopTimer.current = null;
+    }
+  }, []);
+
+  /**
+   * `testVoiceChain()` treats Error('canceled') as "this tier did not speak"
+   * and falls through to the NEXT hop (voice.ts, every hop's catch). One
+   * stopSpeaking() therefore silences only the tier that was audible and the
+   * browser-synth hop can start the same line again ~immediately — the owner's
+   * "it keep on talking". Keep cutting until the retired chain settles, but
+   * never while a live attempt owns the speaker.
+   */
+  const armStopMop = useCallback(() => {
+    if (stopMopTimer.current !== null) return;
+    const until = Date.now() + 90_000;
+    stopMopTimer.current = setInterval(() => {
+      if (retiredAttempts.current <= 0 || Date.now() > until) { stopMop(); return; }
+      if (playingRef.current) return;
+      try { stopSpeaking(); } catch { /* ignore */ }
+    }, 80);
+  }, [stopMop]);
+
+  useEffect(() => () => stopMop(), [stopMop]);
 
   useEffect(() => {
     stashPriorMasterMuteForChat();
@@ -123,9 +211,10 @@ export default function PreChatAudioGate({
   const playSample = useCallback(async () => {
     // Keep button / section labels fixed while playing — no layout flip.
     // Re-click restarts the sample and clears the prior hear answer in place.
+    const attempt = ++attemptSeq.current;
     setHeard(null);
     setSoundUi('asked');
-    setPlaying(true);
+    markPlaying(true);
     try {
       preOpenExtras();
       try { stopSpeaking(); } catch { /* ignore */ }
@@ -136,11 +225,33 @@ export default function PreChatAudioGate({
     } catch {
       /* retryable — never blocks Continue */
     } finally {
-      setPlaying(false);
+      if (attempt !== attemptSeq.current) {
+        // Retired by the owner's Stop: the line was cut, so this attempt is
+        // NOT evidence that they heard her — never set soundTested here.
+        retiredAttempts.current = Math.max(0, retiredAttempts.current - 1);
+        if (retiredAttempts.current === 0) stopMop();
+        return;
+      }
+      markPlaying(false);
       setSoundTested(true);
       setSoundUi('asked');
     }
-  }, [lang, preOpenExtras]);
+  }, [lang, markPlaying, preOpenExtras, stopMop]);
+
+  /**
+   * Stop the gate sample now. Cuts every engine stopSpeaking() owns (gtts mp3,
+   * edge, openai, browser synth, clips, thinking bed), then keeps the cut alive
+   * until testVoiceChain stops falling through to the next tier. The attempt is
+   * retired first, so its finally cannot claim the speaker was heard.
+   */
+  const stopSample = useCallback(() => {
+    if (!playingRef.current) return;
+    attemptSeq.current += 1;
+    retiredAttempts.current += 1;
+    markPlaying(false);
+    try { stopSpeaking(); } catch { /* ignore */ }
+    armStopMop();
+  }, [armStopMop, markPlaying]);
 
   const speakerOk = soundTested && !isMasterMuted() && voiceEnabled();
   const micOk = mic === 'granted' || mic === 'unsupported';
@@ -231,22 +342,17 @@ export default function PreChatAudioGate({
           <LangChips value={lang} onChange={pickLang} />
         </section>
 
-        {/* Fixed label — never swap to “Playing…” (that flipped the whole card). */}
-        <button
-          type="button"
+        {/* Fixed width: label swaps to Stop while the line is in flight so the
+            owner is never locked out of cutting it (data-action=stop). */}
+        <GateSoundButton
           data-testid="pre-chat-test-sound"
-          data-playing={playing ? '1' : '0'}
-          aria-busy={playing}
-          disabled={playing}
-          onClick={() => void playSample()}
-          className="ui-btn mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-white font-semibold text-black disabled:opacity-100"
-        >
-          <span>{t(lang, 'gateAudioTest')}</span>
-          <span
-            aria-hidden
-            className={`inline-block h-2 w-2 shrink-0 rounded-full bg-black/45 transition-opacity ${playing ? 'animate-pulse opacity-100' : 'opacity-0'}`}
-          />
-        </button>
+          playing={playing}
+          onPlay={() => void playSample()}
+          onStop={stopSample}
+          testLabel={t(lang, 'gateAudioTest')}
+          stopLabel={t(lang, 'gateAudioStop')}
+          className="mt-3 h-12"
+        />
 
         <p className="mt-2 min-h-4 text-xs text-amber-100/90">
           {isMasterMuted() && soundTested ? t(lang, 'preChatUnmuteHint') : '\u00a0'}
@@ -308,20 +414,15 @@ export default function PreChatAudioGate({
                 <li>{t(lang, 'gateHelpTabMuted')}</li>
               </ul>
               <p className="text-xs text-amber-100/80">{t(lang, 'gateHelpNote')}</p>
-              <button
-                type="button"
+              <GateSoundButton
                 data-testid="pre-chat-hear-retry"
-                data-playing={playing ? '1' : '0'}
-                disabled={playing}
-                onClick={() => void playSample()}
-                className="ui-btn flex h-10 w-full items-center justify-center gap-2 rounded-full bg-white font-semibold text-black disabled:opacity-100"
-              >
-                <span>{t(lang, 'gateHelpRetry')}</span>
-                <span
-                  aria-hidden
-                  className={`inline-block h-2 w-2 shrink-0 rounded-full bg-black/45 transition-opacity ${playing ? 'animate-pulse opacity-100' : 'opacity-0'}`}
-                />
-              </button>
+                playing={playing}
+                onPlay={() => void playSample()}
+                onStop={stopSample}
+                testLabel={t(lang, 'gateHelpRetry')}
+                stopLabel={t(lang, 'gateAudioStop')}
+                className="h-10"
+              />
             </div>
           )}
         </div>
