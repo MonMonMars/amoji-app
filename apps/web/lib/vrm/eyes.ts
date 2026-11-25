@@ -350,7 +350,12 @@ export function stabilizeEyeMaterials(root: THREE.Object3D): void {
             m.alphaTest = 0;
             dirty = true;
           }
-          if (m.color && (m.color.r > 0.17 || m.color.g > 0.1 || m.color.b > 0.09)) {
+          if (
+            m.color
+            && (Math.abs(m.color.r - 0.16) > 1e-3
+              || Math.abs(m.color.g - 0.09) > 1e-3
+              || Math.abs(m.color.b - 0.08) > 1e-3)
+          ) {
             m.color.setRGB(0.16, 0.09, 0.08);
           }
         } else if (m.alphaTest > 0.55) {
