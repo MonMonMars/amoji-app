@@ -197,6 +197,8 @@ let lastSpeak: {
   intensity: number;
   /** Story / fairy-tale only — slightly slower pace. Casual talk stays 0. */
   rateBias: number;
+  /** Voice of the utterance this line belongs to (replay must not re-pick). */
+  voicePin: string | null;
   at: number;
 } | null = null;
 let replayArmed = false;
@@ -256,6 +258,7 @@ if (typeof window !== 'undefined') {
       lastSpeak.leadOverride,
       lastSpeak.intensity,
       lastSpeak.rateBias,
+      { utterance: speechUtteranceFor(lastSpeak.lang, lastSpeak.voicePin) },
     );
   }, { passive: true });
 }
@@ -1326,6 +1329,13 @@ interface SpeechJob {
    * greets, previews, fillers and announcements never set this.
    */
   resumable?: boolean;
+  /**
+   * Voice choice this line must use, captured by speak() from the reply's
+   * SpeechUtterance (null = the language default). performSpeak never re-reads
+   * the live pin for a job that carries one, so one reply cannot switch
+   * speaker between its streamed lead and its remainder.
+   */
+  voicePin?: string | null;
 }
 
 const lineQueue = new LineQueue<SpeechJob>();
@@ -1416,7 +1426,9 @@ function capturePokeResume(): PokeResumeCandidate | null {
       undefined,
       head.intensity,
       head.rateBias ?? 0,
-      { resumable: true },
+      // The continuation is the SAME reply, so it keeps the speaker the reply
+      // started with even if the user tapped a new voice before the poke.
+      withUtterance({ resumable: true }, speechUtteranceFor(head.lang, head.voicePin ?? null)),
     ),
   };
 }
@@ -1504,6 +1516,7 @@ function drainSpeech(): void {
         job.voiceId,
         job.filler,
         job.rateBias ?? 0,
+        job.voicePin,
       );
   void run.finally(release);
 }
@@ -1671,10 +1684,72 @@ export interface VocalLead {
   rate: number;
 }
 
+/**
+ * Voice identity for ONE reply — "one utterance, one speaker".
+ *
+ * Owner 2026-11-26: "it switch to different sound in one talk. first normally
+ * is the default voice, second is the new voice." A reply is queued as more
+ * than one SpeechJob: the streamed first sentence (ChatPanel `onPartial`), the
+ * remainder (`speakReply`), and a poke may cut and re-speak the captured line.
+ * Each job used to re-read `voicePickFor(lang)` when it began, so a pin change
+ * between chunks swapped the speaker in the middle of one reply (proved: the
+ * lead plays `tl=en-GB`, the tail `tl=en-US` after a mid-reply tap).
+ *
+ * The utterance captures the choice on its FIRST queued chunk; every later
+ * chunk derives engine / `tl` / Edge id / delivery gender / pitch tier from the
+ * same id. A new pick therefore applies to the NEXT reply, never to the one
+ * already talking. It is not a global: ChatPanel creates one handle per turn
+ * and passes it to every chunk, including the delayed dance tail.
+ *
+ * The fallback LADDER is unchanged: any chunk may still fall Edge → gTTS →
+ * device voice when its engine genuinely fails. That can change timbre (a dead
+ * Edge line cannot be expressed by the Google MP3 speaker), but it is a
+ * failure inside the same selected voice, never a re-read of a newer pick.
+ */
+export interface SpeechUtterance {
+  lang: Lang;
+  /** Choice id captured on the first chunk; undefined until that chunk queues. */
+  voicePin?: string | null;
+}
+
 /** Options for speak(). `resumable` marks a real conversation reply that a
  *  poke may cut and then pick back up; everything else stays a hard cut. */
 export interface SpeakOptions {
   resumable?: boolean;
+  /** One reply = one speaker; see {@link SpeechUtterance}. */
+  utterance?: SpeechUtterance;
+}
+
+/** Open the voice identity for one reply. The pin is captured on first speak. */
+export function beginSpeechUtterance(lang: Lang): SpeechUtterance {
+  return { lang };
+}
+
+/**
+ * Re-open an utterance whose pin is already known: the poke-resume continuation
+ * and the gesture-gate replay must repeat the line in the voice it started in,
+ * not in whatever the user selected while it was cut.
+ */
+export function speechUtteranceFor(lang: Lang, voicePin: string | null): SpeechUtterance {
+  return { lang, voicePin };
+}
+
+/** Attach a reply's one-voice handle to the options of one chunk. */
+export function withUtterance(opts: SpeakOptions, utterance?: SpeechUtterance): SpeakOptions {
+  return utterance ? { ...opts, utterance } : opts;
+}
+
+/**
+ * Pin to store on a queued line. A handle returns the id captured by its first
+ * chunk; a standalone line resolves the live pick ONCE, at enqueue, so even a
+ * job that waits behind another line cannot change speaker while it waits.
+ * `null` is meaningful: "this utterance had no pin" must never re-read a pick
+ * the user makes later.
+ */
+function speechPinFor(lang: Lang, utterance?: SpeechUtterance): string | null {
+  if (!utterance) return voicePickFor(lang);
+  if (utterance.voicePin === undefined) utterance.voicePin = voicePickFor(utterance.lang);
+  return utterance.voicePin;
 }
 
 /** Speak a reply with ChatGPT-style emotional prosody. Caller gates on voiceEnabled().
@@ -1718,6 +1793,10 @@ export function speak(
     intensity,
     rateBias,
     resumable: opts?.resumable === true,
+    // Capture the reply's voice ONCE, here. Every chunk of the utterance
+    // queues with the id the first chunk captured (standalone lines resolve
+    // the live pin once, at this moment, and keep it while they wait).
+    voicePin: speechPinFor(lang, opts?.utterance),
   });
   drainSpeech();
 }
@@ -1734,6 +1813,12 @@ function performSpeak(
   filler = false,
   /** Story / fairy-tale only — slightly slower pace. */
   rateBias = 0,
+  /**
+   * Voice choice this line must use, captured when its utterance queued
+   * (SpeechJob.voicePin). undefined = a standalone job with no snapshot;
+   * null = the utterance had no pin and must stay on the language default.
+   */
+  pinnedChoice?: string | null,
 ): Promise<void> {
   return new Promise((resolve) => {
   let settled = false;
@@ -1756,6 +1841,17 @@ function performSpeak(
   if (!text || !voiceOutputAllowed()) { settle(); return; }
   // Bare um / think / search stubs (and laugh stubs remapped to um) stay silent.
   if (loadingFillerKind(text)) { settle(); return; }
+  // ONE reply = ONE speaker. The voice identity is resolved exactly ONCE per
+  // line, from the job's snapshot: Edge id, gTTS `tl` + pace and delivery
+  // gender all derive from this id, so a pick made mid-reply cannot change the
+  // speaker between the streamed lead and the remainder. A job without a
+  // snapshot (a standalone line from an older caller) still resolves the live
+  // pin here, exactly as before.
+  const companionGender = characterVoiceGender(characterId);
+  const voicePin = (pinnedChoice !== undefined ? pinnedChoice : voicePickFor(lang))
+    ?? (isVoiceLocale(lang)
+      ? preferredVoiceChoiceForGender(lang, companionGender).id
+      : null);
   // r111: remember the line for gesture-gate replay
   const attemptAt = Date.now();
     lastSpeak = {
@@ -1767,6 +1863,9 @@ function performSpeak(
       intensity,
       rateBias,
       at: attemptAt,
+      // The replay is the SAME utterance that never got heard, so it repeats
+      // in the voice it was queued with — not in a later pick.
+      voicePin,
     };
   // r119: a fresh attempt retires any previous replay hint, and the watchdog
   // re-arms for THIS line — if no tier's audio starts within 8s the visible
@@ -1797,11 +1896,9 @@ function performSpeak(
   // Delivery gender is resolved again inside beginTts; peek the pin here so
   // the logged chain matches the hops that actually run for male pins.
   const chainGenderPeek = (() => {
-    const companionGender = characterVoiceGender(characterId);
     if (voiceId) return isMaleNeuralVoice(voiceId) ? 'male' : 'female';
     if (!isVoiceLocale(lang)) return companionGender;
-    const pin = voicePickFor(lang) ?? preferredVoiceChoiceForGender(lang, companionGender).id;
-    return deliveryGenderForChoice(lang, pin, companionGender);
+    return deliveryGenderForChoice(lang, voicePin, companionGender);
   })();
   const chain = formatVoiceChain(
     freeVoiceHops(lang, {
@@ -1866,12 +1963,8 @@ function performSpeak(
   // not the default. A 'canceled' rejection means a newer line took over.
   // Delivery gender follows the pinned/tapped voice button when present so a
   // male pin drives male Edge/synth OS voice + male gTTS pace — not a female
-  // base merely pitch-shifted.
-  const companionGender = characterVoiceGender(characterId);
-  const voicePin = voicePickFor(lang)
-    ?? (isVoiceLocale(lang)
-      ? preferredVoiceChoiceForGender(lang, companionGender).id
-      : null);
+  // base merely pitch-shifted. `companionGender` / `voicePin` come from the
+  // utterance snapshot above; this function never re-reads the live pick.
   const spokenGender: 'female' | 'male' = voiceId
     ? (isMaleNeuralVoice(voiceId) ? 'male' : 'female')
     : (isVoiceLocale(lang)
