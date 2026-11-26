@@ -1717,6 +1717,15 @@ export interface SpeechUtterance {
  *  poke may cut and then pick back up; everything else stays a hard cut. */
 export interface SpeakOptions {
   resumable?: boolean;
+  /**
+   * A direct user action (a poke reaction) that MUST be audible. The
+   * performance-bed gate at the top of speak() drops ordinary lines while a
+   * song/dance bed is audible, and it may only keep that rule for lines nobody
+   * asked for: a must-heard line makes room by ending the bed instead of being
+   * swallowed. Deliberately separate from `resumable` — a poke reaction is a
+   * hard cut and must never be captured as a conversation to resume.
+   */
+  mustBeHeard?: boolean;
   /** One reply = one speaker; see {@link SpeechUtterance}. */
   utterance?: SpeechUtterance;
 }
@@ -1778,15 +1787,16 @@ export function speak(
   if (!cleaned || !voiceOutputAllowed()) return;
   // Owner 2026-11-26: "please don't talk while singing or music time" then
   // "stop the music or song if need to talk." Two rules, both here:
-  //   · a line that must be heard (resumable = real conversation) MAKES ROOM by
-  //     ending the bed first, so words are never layered on her own song;
+  //   · a line that must be heard (resumable = real conversation, mustBeHeard =
+  //     a direct user action such as a poke reaction) MAKES ROOM by ending the
+  //     bed first, so words are never layered on her own song;
   //   · everything else (fillers, idle chatter, replay taps) is dropped rather
   //     than interrupting the music.
   // Any real user turn already ends the bed via stopSpeakingForInterrupt(), and
   // a reply that starts a show is spoken BEFORE the bed (whenSpeechIdle holds
   // it), so normal conversation is never swallowed by this gate.
   if (isLibraryClipAudible()) {
-    if (!opts?.resumable) {
+    if (!opts?.resumable && !opts?.mustBeHeard) {
       // Deliberate silence, NOT a failure: never report a voice status here, or
       // a mute/failure plate would appear during every song.
       return;
@@ -2815,13 +2825,26 @@ function interruptSpeechForPoke(): void {
   stopSpeaking();
 }
 
-/** One short gasp for poke — uses the same pinned voice stack as speak(). */
+/**
+ * One short gasp for poke — uses the same pinned voice stack as speak().
+ *
+ * A bank entry that is nothing but an interjection ("呵" / "ふっ" / "Heh") is
+ * classified as a LOADING filler by `loadingFillerKind()`, and performSpeak
+ * drops those on purpose (Pixel: no spoken loading "um"). For a poke that drop
+ * is a silent reaction, so step to the next entry in the same bank instead of
+ * handing TTS a line it will refuse.
+ */
 function pokeBurstSpokenLine(characterId: string, lang: Lang, zone: string, pokeN: number): string {
-  const raw = profilePokeLine(characterId, lang, pokeN, zone);
-  const reaction = pokeLineForSpeech(raw, lang);
-  const first = reaction.split(/[.!?。！？\n]/)[0]?.trim() || reaction;
-  if (first.length <= 40) return first;
-  return first.slice(0, 40).trim();
+  const firstSentence = (raw: string): string => {
+    const reaction = pokeLineForSpeech(raw, lang);
+    const first = reaction.split(/[.!?。！？\n]/)[0]?.trim() || reaction;
+    return first.length <= 40 ? first : first.slice(0, 40).trim();
+  };
+  let line = firstSentence(profilePokeLine(characterId, lang, pokeN, zone));
+  for (let step = 1; step < 6 && line && loadingFillerKind(line); step += 1) {
+    line = firstSentence(profilePokeLine(characterId, lang, pokeN + step, zone));
+  }
+  return line;
 }
 
 /**
@@ -2873,11 +2896,14 @@ export function playPokeBurst(characterId: string, lang: Lang, zone?: string, po
       drainSpeech();
     }
     // The spoken reaction goes AFTER the clip: impact first, words after.
+    // `mustBeHeard` is the invariant, not a nicety: the bed gate in speak()
+    // drops any line that is not resumable/must-be-heard while a song or dance
+    // bed is audible, and a poke is a direct user action that must always make
+    // a sound. The endPerformanceMusic() above stops the bed BEFORE the impact
+    // clip (so nothing is layered over the music); this flag keeps the reaction
+    // audible even if the bed flag is still set at speak() time.
     const line = pokeBurstSpokenLine(characterId, lang, z, pokeN);
-    speak(line, characterId, lang, { surprise: 0.62 }, undefined, 1.05);
-    // Earliest resume is POKE_REACTION_MS AND the reaction line must be done;
-    // a second poke replaces this one instead of stacking a second resume.
-    if (resumable) pokeResume.arm(resumable);
+    speak(line, characterId, lang, { surprise: 0.62 }, undefined, 1.05, 0, { mustBeHeard: true });
     // Earliest resume is POKE_REACTION_MS AND the reaction line must be done;
     // a second poke replaces this one instead of stacking a second resume.
     if (resumable) pokeResume.arm(resumable);

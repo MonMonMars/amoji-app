@@ -45,8 +45,12 @@ describe('speak() is silent while a performance bed is audible', () => {
     const gate = body.indexOf('if (isLibraryClipAudible())');
     expect(gate).toBeGreaterThan(-1);
     const branch = body.slice(gate, gate + 500);
-    // Non-essential line → silent; resumable line → end the bed, then speak.
-    expect(branch).toMatch(/if \(!opts\?\.resumable\) \{[\s\S]{0,240}return;/);
+    // Non-essential line → silent; a line that must be heard → end the bed, then
+    // speak. Two intents qualify: `resumable` (a real conversation turn) and
+    // `mustBeHeard` (a direct user action — a poke reaction, which stays a hard
+    // cut and is therefore never resumable). Regression: a poke went silent
+    // whenever this gate kept the old `!opts?.resumable`-only test.
+    expect(branch).toMatch(/if \(!opts\?\.resumable && !opts\?\.mustBeHeard\) \{[\s\S]{0,240}return;/);
     expect(branch).toContain('endPerformanceMusic()');
     expect(body.indexOf('endPerformanceMusic()')).toBeLessThan(body.indexOf('lineQueue.enqueue'));
   });
@@ -88,8 +92,10 @@ describe('a poke during a show stops the show, then talks', () => {
     // The bed stops before the poke foley is queued and before the line is said.
     expect(body.indexOf('endPerformanceMusic()')).toBeLessThan(body.indexOf("text: 'poke-sfx'"));
     expect(body.indexOf("text: 'poke-sfx'")).toBeLessThan(body.indexOf('pokeBurstSpokenLine'));
-    // It is still spoken — the show yields, she is not muted.
+    // It is still spoken — the show yields, she is not muted — and it is spoken
+    // as a must-heard line, the one intent the bed gate above may not drop.
     expect(body).toContain('speak(line, characterId, lang');
+    expect(body).toMatch(/speak\(line, characterId, lang[^;]*mustBeHeard: true/);
     expect(body).not.toContain('if (performing) return;');
   });
 

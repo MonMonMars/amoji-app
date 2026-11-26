@@ -702,7 +702,21 @@
 // buried while the right hung at idle. The clamp is now side-aware, and the
 // calibrated natural hang abducts each arm toward its own side (+X left, −X right
 // per the poke-hit.ts frame). Regression: tests/arm-outward-symmetry.test.ts.
-export const APP_REVISION = 'r2026-11-24.310';
+// r2026-11-24.311: front and back pokes mirror, and a poke is always audible.
+// (1) `gainsFor()` carried separate `fromBack` rows (chest 0.34 vs 0.68, arm
+// 0.34 vs 0.42 …) plus its own `case 'back'` spring, so a back poke was a
+// quieter, differently-shaped movement, not the front one reflected through her
+// XY plane. Direction now only picks the LATERAL recipe; front/back share one
+// recipe and differ only in the sign decided once in axialRecoilFall().
+// Regression: tests/poke-front-back-convention.test.ts (mirror invariant).
+// (2) `speak()` drops any line that is not `resumable` while a song/dance bed
+// is audible, and poke reactions are hard cuts (never resumable) — so a stale
+// bed flag silenced every poke. Poke reactions now carry `mustBeHeard`, which
+// ends the bed and speaks (owner: the show yields to a line that must be
+// heard), and pokeBurstSpokenLine() steps past bank entries that
+// `loadingFillerKind()` would drop ("Heh" / "呵" / "ふっ"). Regression:
+// tests/poke-sound-must-hear.test.ts.
+export const APP_REVISION = 'r2026-11-24.311';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
