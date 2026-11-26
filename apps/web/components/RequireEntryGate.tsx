@@ -39,7 +39,13 @@ export default function RequireEntryGate({ children }: { children: ReactNode }) 
   }
 
   if (!passed) {
-    return <EntryGate />;
+    // `onDone` tells the gate it is rendered IN PLACE inside a protected route,
+    // so after the soft audio step it must continue to the route the user is
+    // actually on (/change, /select, /chat) instead of the title screen.
+    // Without it, a chat → "更改" tap that hits an unanswered gate lands on
+    // `/` and the selection board never appears (owner: "the change character
+    // page not displaying").
+    return <EntryGate onDone={() => undefined} />;
   }
 
   return <>{children}</>;

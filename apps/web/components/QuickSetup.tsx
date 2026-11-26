@@ -3,7 +3,7 @@
  * First-run: one-tap rules Agree / START → soft audio gate.
  * View-only (/rules or /setup?view=1): same scroll, BACK only — no re-consent, no mic unlock.
  */
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { t, usePrefs } from '../lib/prefs';
 import { oneClickBootstrap } from '../lib/one-click-setup';
@@ -13,6 +13,25 @@ import { SetupOneScrollBody } from './setup-one-shared';
 import LiveRevisionBadge from './LiveRevisionBadge';
 import { absorbNavReturnFromReferrer, navigateNavBack } from '../lib/nav-return';
 import { type SelectReturnFrom } from '../lib/select-return';
+
+/**
+ * Where the gate continues after the soft audio step.
+ *
+ * `inPlace` is true when RequireEntryGate rendered this screen inside a
+ * protected route: the user must land back on /change, /select or /chat, not
+ * on the title screen (a gate that dumps them on `/` makes the change page
+ * "not display"). `pathname` MUST come from usePathname(), which already
+ * strips basePath — the raw browser pathname carries `/amoji-app` on GitHub
+ * Pages and would make the router emit /amoji-app/amoji-app/change.
+ * Standalone /setup and /gate keep the documented funnel to `/`.
+ */
+export function audioGateNextPath(
+  pathname: string | null | undefined,
+  inPlace: boolean,
+): string {
+  return inPlace ? (pathname || '/select') : '/';
+}
+
 
 export default function QuickSetup({
   onDone,
@@ -37,6 +56,7 @@ export default function QuickSetup({
 }) {
   void _selectReturnFrom;
   const router = useRouter();
+  const pathname = usePathname();
   const [prefs, , prefsReady] = usePrefs();
   const lang = prefs.lang;
   const [busy, setBusy] = useState(false);
@@ -66,14 +86,12 @@ export default function QuickSetup({
       await oneClickBootstrap({ lang });
       // Standalone /setup → title after audio. In-place EntryGate → return to
       // the protected route (select/change/chat) after the soft audio step.
-      const audioNext = onDone
-        ? (typeof window !== 'undefined' ? window.location.pathname || '/select' : '/select')
-        : '/';
+      const audioNext = audioGateNextPath(pathname, Boolean(onDone));
       router.replace(`/gate/audio?next=${encodeURIComponent(audioNext)}`);
     } finally {
       setBusy(false);
     }
-  }, [busy, lang, onDone, prefsReady, readToEnd, router, viewOnly]);
+  }, [busy, lang, onDone, pathname, prefsReady, readToEnd, router, viewOnly]);
 
   const startDisabled = !prefsReady || busy || !readToEnd;
   const showBackBtn = showBack || viewOnly;
