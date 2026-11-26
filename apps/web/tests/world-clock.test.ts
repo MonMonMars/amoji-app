@@ -2,9 +2,19 @@ import { describe, expect, it } from 'vitest';
 import {
   formatClockInZone,
   spokenClockInZone,
+  spokenLocalClock,
   spokenWorldClock,
+  spokenWorldClockTour,
+  WORLD_CLOCK_TOUR,
   worldClockFacetCount,
 } from '../lib/world-clock';
+import {
+  geolocationDeniedThisTab,
+  markTimeLocationAsked,
+  probeLocationForLocalTime,
+  timeLocationGate,
+  type GeoLike,
+} from '../lib/live-tools';
 
 const FIXED = new Date('2026-06-15T14:30:00.000Z');
 
@@ -24,6 +34,19 @@ const LONDON_1633 = new Date('2026-11-25T16:33:00.000Z');
 const HK = 'Asia/Hong_Kong';
 const LANGS = ['yue', 'zh', 'ja', 'en'] as const;
 
+function kv(initial: Record<string, string> = {}) {
+  const map = new Map(Object.entries(initial));
+  return {
+    getItem: (k: string) => map.get(k) ?? null,
+    setItem: (k: string, v: string) => { map.set(k, v); },
+  };
+}
+
+/** Every city name a time answer must never volunteer (owner 2026-11-26). */
+function tourLabels(lang: (typeof LANGS)[number]): string[] {
+  return WORLD_CLOCK_TOUR.map((city) => city.label[lang]);
+}
+
 describe('world-clock (Intl, no network)', () => {
   it('formats Hong Kong clock in yue (machine string keeps HH:MM contract)', () => {
     const clock = formatClockInZone(HK, 'yue', FIXED);
@@ -31,33 +54,29 @@ describe('world-clock (Intl, no network)', () => {
     expect(clock).not.toMatch(/invalid/i);
   });
 
-  it('never speaks a colon digital time in any language', () => {
+  it('speaks the local time only — never another city', () => {
     for (const lang of LANGS) {
       const line = spokenWorldClock(lang, 0, HK_MIDNIGHT_THURSDAY, HK);
+      expect(line).toBe(spokenLocalClock(lang, HK_MIDNIGHT_THURSDAY, HK));
+      for (const label of tourLabels(lang)) {
+        expect(line, `${label} leaked into ${lang}`).not.toContain(label);
+      }
       expect(line).not.toMatch(/\d{1,2}:\d{2}/);
     }
   });
 
-  it('names the part of day and the day boundary at HK 00:31 Thursday (yue)', () => {
+  it('names the part of day without asking the user for a city (yue)', () => {
     const line = spokenWorldClock('yue', 0, HK_MIDNIGHT_THURSDAY, HK);
-    // Local lead: part of day, not bare digits.
+    // Local lead only: part of day, not bare digits, no tour clause.
     expect(line).toContain('你而家大約午夜十二點半');
-    // Tokyo shares Thursday (HKT +1h) — same day, early hours.
-    expect(line).toContain('東京而家係凌晨一點半');
-    expect(line).not.toContain('東京已經係聽日');
-    // London and New York are still on Wednesday.
-    expect(line).toContain('倫敦仲係禮拜三下晝四點半');
-    expect(line).toContain('紐約仲係禮拜三上午十一點半');
-    // No machine clock fragments at all.
+    expect(line).not.toContain('東京');
+    expect(line).not.toContain('倫敦');
     expect(line).not.toMatch(/\d{1,2}:\d{2}/);
   });
 
-  it('says Tokyo has crossed into tomorrow when it truly has (HK 23:31 Thursday)', () => {
+  it('keeps the local day boundary in the prose (yue late Thursday)', () => {
     const line = spokenWorldClock('yue', 0, HK_LATE_THURSDAY, HK);
     expect(line).toContain('你而家大約夜晚十一點半');
-    // Tokyo is Friday 00:31 while Hong Kong is still Thursday.
-    expect(line).toContain('東京已經係聽日');
-    expect(line).toContain('十二點半');
     expect(line).not.toMatch(/\d{1,2}:\d{2}/);
   });
 
@@ -90,33 +109,102 @@ describe('world-clock (Intl, no network)', () => {
     expect(spokenWorldClock('en', 0, HK_MIDNIGHT_THURSDAY, HK)).toContain('half past midnight');
   });
 
-  it('keeps the tour labels for facet 0 when the listener is elsewhere', () => {
+  it('stays local-only for a listener outside the tour cities', () => {
     const line = spokenWorldClock('en', 0, HK_MIDNIGHT_THURSDAY, 'Asia/Singapore');
+    for (const label of tourLabels('en')) expect(line).not.toContain(label);
+    expect(line).not.toContain('Singapore');
+    expect(line).toContain('Where you are');
+    expect(line).not.toMatch(/\d{1,2}:\d{2}/);
+  });
+
+  it('does not resume the city tour on repeated facet taps', () => {
+    for (let facet = 0; facet < worldClockFacetCount(); facet += 1) {
+      const line = spokenWorldClock('en', facet, FIXED, 'Asia/Singapore');
+      for (const label of tourLabels('en')) expect(line).not.toContain(label);
+      expect(line).not.toMatch(/\d{1,2}:\d{2}/);
+    }
+  });
+
+  it('keeps the decorative tour available without changing the time answer', () => {
+    const line = spokenWorldClockTour('en', 0, HK_MIDNIGHT_THURSDAY, 'Asia/Singapore');
     expect(line).toContain('Hong Kong');
     expect(line).toContain('Tokyo');
     expect(line).toContain('London');
     expect(line).toContain('New York');
     expect(line).not.toMatch(/\d{1,2}:\d{2}/);
-  });
-
-  it('does not repeat the listener-s own city as a second "city" clause', () => {
-    const line = spokenWorldClock('yue', 0, HK_MIDNIGHT_THURSDAY, HK);
-    expect(line).not.toContain('香港');
-  });
-
-  it('rotates facets on repeat taps and keeps every facet on prose', () => {
-    const a = spokenWorldClock('en', 0, FIXED, 'Asia/Singapore');
-    const b = spokenWorldClock('en', 1, FIXED, 'Asia/Singapore');
-    expect(a).not.toBe(b);
     expect(worldClockFacetCount()).toBeGreaterThanOrEqual(4);
-    expect(spokenWorldClock('en', worldClockFacetCount(), FIXED, 'Asia/Singapore')).toBe(a);
+    expect(spokenWorldClockTour('en', worldClockFacetCount(), FIXED, 'Asia/Singapore')).toBe(
+      spokenWorldClockTour('en', 0, FIXED, 'Asia/Singapore'),
+    );
+    const tour = spokenWorldClockTour('en', 1, FIXED, 'Asia/Singapore');
+    expect(tour).toContain('Seoul');
+  });
+});
 
-    expect(spokenWorldClock('en', 1, FIXED, 'Asia/Singapore')).toContain('Seoul');
-    expect(spokenWorldClock('en', 2, FIXED, 'Asia/Singapore')).toContain('London');
-    expect(spokenWorldClock('en', 3, FIXED, 'Asia/Singapore')).toContain('Sydney');
+describe('time question location consent', () => {
+  it('asks in-app before the browser prompt on a fresh tab', () => {
+    expect(timeLocationGate({ storage: kv(), session: kv(), permission: 'prompt' })).toBe('ask');
+    expect(timeLocationGate({ storage: kv(), session: kv(), permission: 'unknown' })).toBe('ask');
+  });
 
-    for (let facet = 0; facet < worldClockFacetCount(); facet += 1) {
-      expect(spokenWorldClock('yue', facet, FIXED, 'Asia/Singapore')).not.toMatch(/\d{1,2}:\d{2}/);
-    }
+  it('goes straight to the local time when permission was already granted', () => {
+    expect(
+      timeLocationGate({ storage: kv(), session: kv(), permission: 'granted' }),
+    ).toBe('ready');
+    // A cached browser fix from the gate also counts as already granted.
+    const storage = kv({
+      'amoji.place.v1': JSON.stringify({
+        latitude: 22.32,
+        longitude: 114.17,
+        city: 'Hong Kong',
+        region: '',
+        country: 'Hong Kong',
+        source: 'browser',
+        at: Date.now(),
+      }),
+    });
+    expect(timeLocationGate({ storage, session: kv(), permission: 'prompt' })).toBe('ready');
+  });
+
+  it('remembers a skipped prompt and never re-asks in the same tab', () => {
+    const session = kv();
+    markTimeLocationAsked(session);
+    expect(timeLocationGate({ storage: kv(), session, permission: 'prompt' })).toBe('ready');
+  });
+
+  it('still answers with the device-zone local time after a denial', () => {
+    const session = kv({ 'amoji.geo.denied': '1' });
+    expect(geolocationDeniedThisTab(session)).toBe(true);
+    expect(timeLocationGate({ storage: kv(), session, permission: 'denied' })).toBe('skip');
+    const line = spokenWorldClock('en', 0, HK_MIDNIGHT_THURSDAY, HK);
+    expect(line).toContain('half past midnight');
+    for (const label of tourLabels('en')) expect(line).not.toContain(label);
+    expect(line).not.toMatch(/\d{1,2}:\d{2}/);
+  });
+
+  it('records a browser denial from the one-shot time probe', async () => {
+    const session = kv();
+    const geolocation: GeoLike = {
+      getCurrentPosition(_success, error) {
+        error?.({ code: 1 });
+      },
+    };
+    await expect(
+      probeLocationForLocalTime({ session, geolocation, timeoutMs: 200 }),
+    ).resolves.toBe('denied');
+    expect(session.getItem('amoji.geo.denied')).toBe('1');
+    expect(timeLocationGate({ storage: kv(), session, permission: 'prompt' })).toBe('skip');
+  });
+
+  it('never blocks a hanging geolocation call', async () => {
+    const session = kv();
+    const geolocation: GeoLike = { getCurrentPosition() { /* never answers */ } };
+    const started = Date.now();
+    await expect(
+      probeLocationForLocalTime({ session, geolocation, timeoutMs: 60 }),
+    ).resolves.toBe('unavailable');
+    expect(Date.now() - started).toBeLessThan(1_000);
+    // The tab remembers it asked, so a repeat tap answers immediately.
+    expect(timeLocationGate({ storage: kv(), session, permission: 'prompt' })).toBe('ready');
   });
 });
