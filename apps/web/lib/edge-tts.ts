@@ -31,9 +31,9 @@ import { applyPlaybackVolume } from './playback-volume';
 import { characterVoiceGender } from './voice-gender';
 import { edgeVoiceId, isFemaleNeuralVoice, isMaleNeuralVoice, isShippingEdgeVoice, ssmlLangForEdgeId } from './voice-catalog';
 import { edgeCastVoice } from './edge-cast';
-import { clampLeadProsody, cleanForSpeech, isSpeakableText, stripVoicedGlyphs } from './speak-text';
+import { clampLeadProsody, cleanForSpeech, isSpeakableText, stripVoicedSymbols } from './speak-text';
 import { followAudioElement } from './speech';
-import { splitClauses, ssmlBreakAfterClause } from './gtts';
+import { splitClauses } from './gtts';
 
 // r2026-10-04.89: timeout 7s → 4.5s — the Google-TTS mid tier in voice.ts now
 // catches a dead socket even faster; and stopEdge() finally rejects the
@@ -447,23 +447,95 @@ export function getTtsProxy(): string | null {
   );
 }
 
-/** Spoken clause: pause glyphs are omitted, the scheduled breath break stays. */
-function prosodyClause(part: string, pitch: number, rate: number, vol: number, breakAfter: string): string {
-  const spoken = stripVoicedGlyphs(part);
-  const body = spoken
-    ? `<prosody pitch='${pct(pitch)}' rate='${pct(rate)}' volume='${db(vol)}'>${escapeXml(spoken)}</prosody>`
+/**
+ * The readaloud endpoint accepts AT MOST TWO element children inside <voice>.
+ * Three or more closes the socket with `1007: SSML is invalid` and returns no
+ * audio — the owner's "the third sentence has no voice" report, because one
+ * <prosody> per clause plus a <break> between clauses reaches three elements
+ * on any line with three clauses. Measured 2026-11-25 against the live relay:
+ * 1 clause 200, 2 clauses 200, 3+ clauses 502 (relay trace: close code 1007).
+ *
+ * <break> is not emitted at all: the endpoint's repair path strips it (costing
+ * a second, slower attempt), and clause punctuation already renders a real
+ * pause (~1s at 。！？, ~0.5s at ，) without being spoken aloud.
+ */
+const MAX_VOICE_CHILDREN = 2;
+
+/**
+ * mstts:express-as is NOT emitted by default. Measured 2026-11-25: any body
+ * containing <mstts:express-as> makes the upstream end the turn with zero
+ * audio frames, so the relay always had to repair it (X-Amoji-Attempts: 2) and
+ * the repaired audio was the same byte length as the plain body — the style
+ * never reached the mp3. Dropping it makes attempt 1 succeed (no repair, less
+ * latency). The resolver below stays intact: flip this to re-enable styles
+ * once the endpoint honors them again.
+ */
+const EDGE_EXPRESS_AS_ENABLED = false;
+
+/** One clause's spoken text plus the contour it asks for. */
+interface ClauseVoice {
+  text: string;
+  pitch: number;
+  rate: number;
+}
+
+/**
+ * Spoken text of one clause. Symbols are gone (the endpoint would read them),
+ * clause punctuation is KEPT: it carries the pause now that <break> is not
+ * sent, and the endpoint does not speak it.
+ */
+function clauseSpeech(part: string): string {
+  return stripVoicedSymbols(part).replace(/[\r\n]+/g, ' ').replace(/[ \t]{2,}/g, ' ').trim();
+}
+
+/**
+ * `cleanForSpeech` maps a dash to the Chinese comma, which is right for the
+ * CJK voices but reads as an alien glyph in an all-Latin line. Give those
+ * lines ASCII punctuation (and the space an English sentence expects) so the
+ * pause survives without a full-width mark. Text with any CJK is left alone.
+ */
+function latinPunctuation(s: string): string {
+  if (/[\u3400-\u9fff\u3040-\u30ff]/.test(s)) return s;
+  return s
+    .replace(/，/g, ',').replace(/。/g, '.').replace(/！/g, '!')
+    .replace(/？/g, '?').replace(/；/g, ';').replace(/：/g, ':')
+    .replace(/([,;:!?])(?=[A-Za-z0-9])/g, '$1 ')
+    .replace(/\.(?=[A-Za-z])/g, '. ');
+}
+
+
+/** Join two clause texts without dropping or duplicating a character. */
+function joinSpeech(a: string, b: string): string {
+  if (!a) return b;
+  if (!b) return a;
+  // Latin words must not fuse ("you.I"); CJK is correct when glued.
+  return /[A-Za-z0-9]$/.test(a) || /^[A-Za-z0-9]/.test(b) ? `${a} ${b}` : `${a}${b}`;
+}
+
+/**
+ * Split N clauses into at most MAX_VOICE_CHILDREN contiguous [first, last]
+ * groups — structural, so no input can produce a third top-level element.
+ * 1 → one span, 2 → two spans, 3+ → first half / second half.
+ */
+function clauseGroups(count: number): Array<[number, number]> {
+  if (count <= 0) return [];
+  if (count <= MAX_VOICE_CHILDREN) return Array.from({ length: count }, (_, i) => [i, i]);
+  const cut = Math.ceil(count / 2);
+  return [[0, cut - 1], [cut, count - 1]];
+}
+
+function prosodySpan(text: string, pitch: number, rate: number, vol: number): string {
+  return text
+    ? `<prosody pitch='${pct(pitch)}' rate='${pct(rate)}' volume='${db(vol)}'>${escapeXml(text)}</prosody>`
     : '';
-  return `${body}${breakAfter}`;
 }
 
 /**
  * r131 — pure SSML builder, extracted from speakEdge so tests can assert the
- * markup. Everything the endpoint receives lives here: one <prosody> per
- * clause with the ChatGPT-style contour, punctuation swells (! lifts, …
- * sinks), comma/sentence breath pauses, an optional leading tic, singing
- * mode (one note per clause), and the mstts:express-as emotional style —
- * styledegree rides expressiveness, zh voices only (en styles reject the
- * attribute; ja voices ship no styles at all and stay prosody-only).
+ * markup. Everything the endpoint receives lives here: the ChatGPT-style
+ * contour, punctuation swells (! lifts, … sinks), an optional leading tic, and
+ * singing mode — grouped into at most two <prosody> spans (see
+ * MAX_VOICE_CHILDREN) with pauses carried by punctuation.
  */
 export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
   const voice = resolveEdgeVoice(opts);
@@ -473,67 +545,91 @@ export function buildEdgeSsml(text: string, opts: EdgeVoiceOpts): string {
   const baseRate = (opts.rateDelta ?? 0) + voice.rate;
   const basePitch = (opts.pitchDelta ?? 0) + voice.pitch;
   const baseVol = opts.volumeDelta ?? 0;
-  const spoken = cleanForSpeech(text);
+  const spoken = latinPunctuation(cleanForSpeech(text));
   const rising = /[？?]\s*$/.test(spoken);
   const parts = splitClauses(spoken).filter(isSpeakableText);
   const leadText = opts.lead ? cleanForSpeech(opts.lead.text).replace(/[!！]+$/g, '').trim() : '';
   const leadProsody = opts.lead ? clampLeadProsody(opts.lead.pitch, opts.lead.rate) : null;
 
-  // The chuckle sits OUTSIDE mstts:express-as. Excited/cheerful on a one-word
-  // "haha" is the broken poke laugh (strained style + a bang yelp). Pitch
-  // stays inside a speaking range so the next clause cannot inherit a squeak.
-  const leadSpoken = leadText && isSpeakableText(leadText) ? stripVoicedGlyphs(leadText) : '';
-  const tic = leadSpoken && leadProsody
-    ? `<prosody pitch='${pct(leadProsody.pitch)}' rate='${pct(leadProsody.rate)}' volume='${db(0)}'>${escapeXml(leadSpoken)}</prosody><break time='220ms'/>`
-    : '';
+  // The tic's own <prosody>+<break> would spend the entire two-element budget,
+  // so it is folded into the first span. Its pitch stays inside a speaking
+  // range (clampLeadProsody) so a two-syllable "haha" cannot squeak.
+  const leadSpoken = leadText && isSpeakableText(leadText) ? clauseSpeech(leadText) : '';
 
   const melody = opts.melody;
-  const body = parts
-    .map((part, i) => {
-      const isTail = i === parts.length - 1;
-      // r2026-10-03.40 — singing mode: each clause is one note of the
-      // melody; legato tempo, musical rests, no speech contour/swells
-      if (melody && melody.length > 0) {
-        const note = melody[i % melody.length]!;
-        const rate = clamp(baseRate * 0.92, -0.5, 0.5);
-        const pitch = clamp(basePitch + note, -0.5, 0.5);
-        // musical rests: same phrase/paragraph table as speech (melody keeps the gap)
-        const breakAfter = ssmlBreakAfterClause(part, isTail);
-        return prosodyClause(part, pitch, rate, baseVol, breakAfter);
-      }
-      // Intentional rateDelta/pitchDelta (deep/mid/bright buttons) MUST survive.
-      // The old ±14%/±18% clamps crushed #425 tier prosody so deep≈bright on
-      // device. Decorative sing-song wave stays small; absolute ceiling is wide
-      // enough for huge tier gaps but under the ±50% Edge distort zone.
-      // Lead tics still go through clampLeadProsody (poke squeak safety).
-      const wave = parts.length > 1
-        ? 0.07 * expr * Math.sin((i / (parts.length - 1)) * Math.PI * (rising ? 1 : 0.7))
-        : 0;
-      const tailLift = isTail && rising ? 0.04 : isTail && !rising ? -0.03 : 0;
-      const bang = /[!！]\s*$/.test(part);
-      const trail = /[…\.{3}—–]/.test(part);
-      const swellP = bang ? 0.04 : trail ? -0.04 : 0;
-      const swellR = bang ? 0.025 : trail ? -0.03 : 0;
-      const rateOrnament = clamp(wave * 0.45 + swellR + (isTail ? -0.02 : 0), -0.05, 0.05);
-      const pitchOrnament = clamp(wave + tailLift + swellP + (bang ? 0.02 * expr : 0), -0.06, 0.06);
-      const rate = clamp(baseRate + rateOrnament, -0.42, 0.42);
-      const pitch = clamp(basePitch + pitchOrnament, -0.48, 0.48);
-      // breath pauses: shared table — sentence ~480ms, paragraph ~750ms, comma ~300ms
-      const breakAfter = ssmlBreakAfterClause(part, isTail);
-      return prosodyClause(part, pitch, rate, baseVol, breakAfter);
-    })
-    .join('');
+  // Contour per clause, exactly as before — grouping only decides which
+  // contour each half wears (first clause for the opening, final for the tail).
+  const contours = parts.map((part, i) => {
+    const isTail = i === parts.length - 1;
+    // r2026-10-03.40 — singing mode: each clause is one note of the melody;
+    // legato tempo, no speech contour/swells.
+    if (melody && melody.length > 0) {
+      const note = melody[i % melody.length]!;
+      return { pitch: clamp(basePitch + note, -0.5, 0.5), rate: clamp(baseRate * 0.92, -0.5, 0.5) };
+    }
+    // Intentional rateDelta/pitchDelta (deep/mid/bright buttons) MUST survive.
+    // The old ±14%/±18% clamps crushed #425 tier prosody so deep≈bright on
+    // device. Decorative sing-song wave stays small; absolute ceiling is wide
+    // enough for huge tier gaps but under the ±50% Edge distort zone.
+    const wave = parts.length > 1
+      ? 0.07 * expr * Math.sin((i / (parts.length - 1)) * Math.PI * (rising ? 1 : 0.7))
+      : 0;
+    const tailLift = isTail && rising ? 0.04 : isTail && !rising ? -0.03 : 0;
+    const bang = /[!！]\s*$/.test(part);
+    const trail = /[…\.{3}—–]/.test(part);
+    const swellP = bang ? 0.04 : trail ? -0.04 : 0;
+    const swellR = bang ? 0.025 : trail ? -0.03 : 0;
+    const rateOrnament = clamp(wave * 0.45 + swellR + (isTail ? -0.02 : 0), -0.05, 0.05);
+    const pitchOrnament = clamp(wave + tailLift + swellP + (bang ? 0.02 * expr : 0), -0.06, 0.06);
+    return {
+      pitch: clamp(basePitch + pitchOrnament, -0.48, 0.48),
+      rate: clamp(baseRate + rateOrnament, -0.42, 0.42),
+    };
+  });
 
-  // Emotion style (or the character's resting style) wraps the sentence only.
-  // An empty body means the chuckle is the whole utterance — leave it unstyled.
-  const style = (!opts.forcePlain && body)
+  // Merge clauses into at most two spoken spans. Every clause's text goes into
+  // exactly one span, so no word is dropped or duplicated. With several clauses
+  // sharing a span the per-clause wave averages out, so each half also gets a
+  // small opposing bias: the contrast between the two halves is what is left of
+  // the sing-song contour, and it keeps expressiveness audible.
+  const groups = clauseGroups(parts.length);
+  const halfLift = melody && melody.length > 0 ? 0 : 0.035 * expr * (rising ? 1 : 0.7);
+  const spans: ClauseVoice[] = groups.map(([from, to], gi) => {
+    let groupText = '';
+    for (let i = from; i <= to; i++) groupText = joinSpeech(groupText, clauseSpeech(parts[i]!));
+    const wear = from === 0 ? contours[from]! : contours[to]!;
+    const bias = groups.length === 1 ? 0 : gi === 0 ? -halfLift : halfLift;
+    return { text: groupText, pitch: clamp(wear.pitch + bias, -0.48, 0.48), rate: wear.rate };
+  });
+
+  if (leadSpoken && leadProsody) {
+    // Punctuation after the tic is the pause the old 220ms break provided.
+    const leadSpeech = /[，,。.！!？?；;：:]\s*$/.test(leadSpoken) ? leadSpoken : `${leadSpoken}，`;
+    if (spans.length === 0) {
+      // A tic with no words to follow is the whole utterance — one element.
+      spans.push({ text: leadSpeech, pitch: leadProsody.pitch, rate: leadProsody.rate });
+    } else {
+      const first = spans[0]!;
+      spans[0] = {
+        text: joinSpeech(leadSpeech, first.text),
+        pitch: leadProsody.pitch,
+        rate: leadProsody.rate,
+      };
+    }
+  }
+
+  const body = spans.map((s) => prosodySpan(s.text, s.pitch, s.rate, baseVol)).join('');
+
+  // Emotion style (or the resting style) wraps the spans only when enabled.
+  // Disabled by default — see EDGE_EXPRESS_AS_ENABLED for the measurement.
+  const style = EDGE_EXPRESS_AS_ENABLED && !opts.forcePlain && body
     ? (edgeStyleFor(voice.name, opts.emotion ?? 'neutral') ?? voice.restStyle ?? null)
     : null;
   const voiced = style
-    ? `<voice name='${voice.name}'>${tic}<mstts:express-as style='${style}'${
+    ? `<voice name='${voice.name}'><mstts:express-as style='${style}'${
         voice.name.startsWith('zh-') ? ` styledegree='${clamp(0.9 + 0.5 * expr, 1, 2).toFixed(2)}'` : ''
       }>${body}</mstts:express-as></voice>`
-    : `<voice name='${voice.name}'>${tic}${body}</voice>`;
+    : `<voice name='${voice.name}'>${body}</voice>`;
   return (
     `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis'${
       style ? " xmlns:mstts='http://www.w3.org/2001/mstts'" : ''
@@ -608,6 +704,9 @@ export function speakEdge(text: string, opts: EdgeVoiceOpts): Promise<void> {
       // when express-as is rejected. Yue female often succeeds on the styled first try.
       stopEdge();
       const plain = buildEdgeSsml(text, { ...opts, forcePlain: true });
+      // While express-as is disabled the plain body IS this body — re-sending
+      // it would just spend a second socket and handshake on a real failure.
+      if (plain === ssml) return Promise.reject(err);
       return run(plain);
     },
   );

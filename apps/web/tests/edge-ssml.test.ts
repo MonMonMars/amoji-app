@@ -69,20 +69,26 @@ describe('edgeStyleFor — voice × emotion style resolution (r131)', () => {
 describe('buildEdgeSsml — the SSML the socket receives (r131)', () => {
   const base = { lang: 'zh', gender: 'female' as const };
 
-  it('wraps an emotional line in mstts:express-as with the mstts namespace', () => {
+  it('does not wrap an emotional line in mstts:express-as — it costs a retry', () => {
+    // Measured 2026-11-25: ANY <mstts:express-as> body makes upstream end the
+    // turn with zero audio frames; the relay repairs it and answers on attempt
+    // 2, and the repaired audio has the same byte length as the plain body —
+    // the style never reaches the mp3. So the builder stays prosody-only and
+    // attempt 1 (verbatim) succeeds. edgeStyleFor() still resolves the style
+    // for a future re-enable.
     const ssml = buildEdgeSsml('你今天好嗎？', { ...base, character: 'juno', emotion: 'joy' });
-    expect(ssml).toContain("xmlns:mstts='http://www.w3.org/2001/mstts'");
-    expect(ssml).toContain("<mstts:express-as style='cheerful'");
-    expect(ssml).toContain("styledegree='");           // zh voice → degree present
-    expect(ssml).toMatch(/styledegree='1\.\d\d'/);      // 1.0..2.0, two decimals
+    expect(ssml).not.toContain('express-as');
+    expect(ssml).not.toContain('xmlns:mstts');
     expect(ssml).toContain("voice name='zh-CN-XiaoxiaoNeural'");
+    expect(ssml).toMatch(/<prosody[^>]*volume='\+0%'/);
   });
 
-  it('English Aria gets a style but NO styledegree', () => {
+  it('English Aria resolves a style without emitting one', () => {
     const ssml = buildEdgeSsml('I missed you!', { lang: 'en', gender: 'female', character: 'sky', emotion: 'love' });
     // love prefs (tender, sweet, friendly, calm) ∩ Aria's set → friendly
-    expect(ssml).toContain("<mstts:express-as style='friendly'");
-    expect(ssml).not.toContain('styledegree'); // en voices reject the attribute
+    expect(edgeStyleFor('en-US-AriaNeural', 'love')).toBe('friendly');
+    expect(ssml).not.toContain('express-as');
+    expect(ssml).not.toContain('styledegree');
   });
 
   it('neutral lines carry no express-as and no mstts namespace', () => {
@@ -99,23 +105,25 @@ describe('buildEdgeSsml — the SSML the socket receives (r131)', () => {
 
   it('drops voiced symbols instead of escaping them into the audio', () => {
     const ssml = buildEdgeSsml("don't say A & B < C！", { ...base, character: 'juno', emotion: 'joy' });
-    expect(ssml).toContain('don&apos;t say A B C！');
+    // An all-Latin line gets ASCII punctuation (see latinPunctuation), so the
+    // full-width bang arrives as '!'.
+    expect(ssml).toContain('don&apos;t say A B C!');
     expect(ssml).not.toContain('&amp;');
     expect(ssml).not.toContain('&lt;');
     expect(ssml).not.toContain('A & B');
   });
 
-  it('omits commas and periods from spoken text but keeps the breath break', () => {
+  it('keeps clause punctuation as the pause and sends no break', () => {
     const ssml = buildEdgeSsml('Haha, you got my head. Still playing?', {
       lang: 'en', gender: 'female', character: 'sky', emotion: 'joy',
     });
     const spoken = ssml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
     // t771: TTS poke-laugh tokens stripped — laughs are SFX only
     expect(spoken).not.toMatch(/\bhaha\b/i);
-    expect(spoken).toContain('you got my head');
+    expect(spoken).toContain('you got my head.');
     expect(spoken).toContain('Still playing?');
-    expect(spoken).not.toMatch(/[,.]/);
-    expect(ssml).toContain('<break');
+    // The period is the pause now; the endpoint rejects/strips <break>.
+    expect(ssml).not.toContain('<break');
   });
 
   it('drops poke-laugh lead from SSML (t771 — laughs are SFX only)', () => {
@@ -132,27 +140,29 @@ describe('buildEdgeSsml — the SSML the socket receives (r131)', () => {
     expect(ssml).toContain('Still playing?');
   });
 
-  it('singing mode (melody) composes with a style', () => {
+  it('singing mode still fits the two-span budget', () => {
     const ssml = buildEdgeSsml('啦啦啦，啦啦啦。', { ...base, character: 'juno', emotion: 'joy', melody: [0.1, 0.2, 0.15] });
-    expect(ssml).toContain("style='cheerful'");
-    expect(ssml.match(/<prosody/g)!.length).toBe(2); // one note per clause
+    expect(ssml.match(/<prosody/g)!.length).toBe(2); // one span per clause (≤2)
+    expect(ssml).not.toContain('express-as');
   });
 
-  it('a leading tic lands before the styled body, outside the style', () => {
+  it('a leading tic is folded into the first span, before the words', () => {
     const ssml = buildEdgeSsml('真的嗎？', {
       ...base, character: 'juno', emotion: 'surprise',
       lead: { text: '哇！', pitch: 0.3, rate: 0.15 },
     });
-    const ticAt = ssml.indexOf('>哇<');
+    const ticAt = ssml.indexOf('哇');
     const bodyAt = ssml.indexOf('真的嗎？');
-    const styleAt = ssml.indexOf('<mstts:express-as');
     expect(ticAt).toBeGreaterThan(-1);
     expect(ticAt).toBeLessThan(bodyAt);
-    expect(ticAt).toBeLessThan(styleAt);
-    expect(ssml).toContain("style='excited'"); // surprise → excited, on the line only
+    // Folding keeps the whole utterance inside one prosody — no tic <break>.
+    expect(ssml.match(/<prosody/g)!.length).toBe(1);
+    expect(ssml).not.toContain('<break');
+    expect(ssml).not.toContain('express-as');
+    // clampLeadProsody: +30%/+15% → +8%/+6% (poke squeak safety).
     expect(ssml).toContain("pitch='+8%'");
+    expect(ssml).toContain("rate='+6%'");
     expect(ssml).not.toContain("pitch='+30%'");
-    expect(ssml).not.toContain("pitch='+50%'");
   });
 
   it('an English poke cheer is not spelled as punctuation; lead stays under a squeak', () => {
@@ -190,13 +200,19 @@ describe('buildEdgeSsml — the SSML the socket receives (r131)', () => {
     expect(brightPitch).toBeGreaterThanOrEqual(30);
   });
 
-  it('expressiveness scales styledegree within 1.00–2.00', () => {
-    const calm = buildEdgeSsml('你好。', { ...base, character: 'juno', emotion: 'joy', expressiveness: 0.6 });
-    const wild = buildEdgeSsml('你好。', { ...base, character: 'juno', emotion: 'joy', expressiveness: 1.8 });
-    const d = (s: string) => Number(s.match(/styledegree='([\d.]+)'/)![1]);
-    expect(d(calm)).toBeGreaterThanOrEqual(1.0);
-    expect(d(wild)).toBeLessThanOrEqual(2.0);
-    expect(d(wild)).toBeGreaterThan(d(calm));
+  it('expressiveness widens the two-span contour', () => {
+    const line = '你好呀，今天好嗎？還好嗎？';
+    const opts = { ...base, character: 'juno', forcePlain: true } as const;
+    const calm = buildEdgeSsml(line, { ...opts, expressiveness: 0.6 });
+    const wild = buildEdgeSsml(line, { ...opts, expressiveness: 1.8 });
+    const spread = (s: string) => {
+      const pitches = [...s.matchAll(/pitch='([+-]?\d+)%'/g)].map((m) => Number(m[1]));
+      return Math.max(...pitches) - Math.min(...pitches);
+    };
+    expect(spread(wild)).toBeGreaterThan(spread(calm));
+    // Still two spans, never three.
+    expect(calm.match(/<prosody/g)!.length).toBe(2);
+    expect(wild.match(/<prosody/g)!.length).toBe(2);
   });
 });
 
@@ -296,28 +312,29 @@ describe('TTS proxy URL (r131)', () => {
   });
 });
 
-describe('clause breath pauses in SSML', () => {
-  it('inserts breaks between comma- and period-separated clauses', () => {
+describe('clause pauses in SSML (punctuation, no break)', () => {
+  it('keeps clause punctuation and emits at most two prosody spans', () => {
     const ssml = buildEdgeSsml('你好呀，今天好吗？还好吗？', {
       lang: 'yue', gender: 'male', character: 'a98-ethan', forcePlain: true,
     });
-    const breaks = ssml.match(/<break time='/g) ?? [];
-    expect(breaks.length).toBeGreaterThanOrEqual(2);
+    expect(ssml).not.toContain('<break');
+    expect(ssml.match(/<prosody/g)!.length).toBe(2);
+    // The comma/period/! are the pauses now and must survive the merge.
+    expect(ssml).toContain('你好呀，今天好吗？');
+    expect(ssml).toContain('还好吗？');
   });
 
-  it('inserts a longer break across paragraph blank lines', () => {
-    const ssml = buildEdgeSsml('第一段说完。\n\n第二段再讲。', {
-      lang: 'zh', gender: 'female', character: 'juno', forcePlain: true,
-    });
-    expect(ssml).toContain("<break time='750ms'/>");
-    const en = buildEdgeSsml('First paragraph ends.\n\nSecond paragraph begins.', {
-      lang: 'en', gender: 'female', character: 'juno', forcePlain: true,
-    });
-    expect(en).toContain("<break time='750ms'/>");
-    const ja = buildEdgeSsml('会えたね。\n\n元気だった？', {
-      lang: 'ja', gender: 'female', character: 'juno', forcePlain: true,
-    });
-    expect(ja).toContain("<break time='750ms'/>");
+  it('keeps paragraph punctuation without a 750ms break', () => {
+    const cases: Array<[string, string, string]> = [
+      ['zh', '第一段说完。\n\n第二段再讲。', '第一段说完。'],
+      ['en', 'First paragraph ends.\n\nSecond paragraph begins.', 'First paragraph ends.'],
+      ['ja', '会えたね。\n\n元気だった？', '会えたね。'],
+    ];
+    for (const [lang, line, opening] of cases) {
+      const ssml = buildEdgeSsml(line, { lang, gender: 'female', character: 'juno', forcePlain: true });
+      expect(ssml, lang).not.toContain('<break');
+      expect(ssml, lang).toContain(opening);
+    }
   });
 });
 
@@ -345,11 +362,12 @@ describe('additive SSML contour (human feel on flat deltas)', () => {
 });
 
 describe('forcePlain SSML (voice hotfix)', () => {
-  it('forcePlain skips express-as even when emotion would style', () => {
+  it('forcePlain and the default body match while express-as is disabled', () => {
     const styled = buildEdgeSsml('你好呀', { lang: 'zh', gender: 'female', character: 'a01-shino', emotion: 'joy' });
-    expect(styled).toContain('mstts:express-as');
     const plain = buildEdgeSsml('你好呀', { lang: 'zh', gender: 'female', character: 'a01-shino', emotion: 'joy', forcePlain: true });
-    expect(plain).not.toContain('mstts:express-as');
-    expect(plain).toContain("voice name=");
+    expect(styled).toBe(plain);
+    expect(styled).not.toContain('mstts:express-as');
+    expect(styled).toContain('voice name=');
+    expect(styled).not.toContain('<break');
   });
 });
