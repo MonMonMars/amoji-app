@@ -186,7 +186,7 @@ import {
   undecidedTopicReply,
   userUndecided,
 } from '../lib/topic-suggestions';
-import { speak, stopSpeaking, stopSpeakingForInterrupt, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechLeadDiverged, speechRemainder, speechTailAfterLead, whenSpeechIdle, resumeVoiceEngines, primeAudioForChatEnter, cancelPokeResume } from '../lib/voice';
+import { speak, stopSpeaking, stopSpeakingForInterrupt, sing, playPokeBurst, playLaughBurst, voiceStartedSince, speechPending, speechStillQueued, speechLeadDiverged, speechRemainder, speechTailAfterLead, whenSpeechIdle, resumeVoiceEngines, primeAudioForChatEnter, cancelPokeResume, beginSpeechUtterance, withUtterance, type SpeechUtterance } from '../lib/voice';
 import { isAppleTouchDevice } from '../lib/apple-touch';
 import { cantHearReply, isCantHearComplaint } from '../lib/cant-hear';
 import { isCompanionEcho } from '../lib/companion-echo';
@@ -931,7 +931,7 @@ export default function ChatPanel({
     );
   };
 
-  const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string, alreadySpoken?: { text: string; since: number }): string => {
+  const speakReply = (userText: string, reply: string, hints?: Record<string, number>, intensity = 1, mood?: string, alreadySpoken?: { text: string; since: number }, utterance?: SpeechUtterance): string => {
     // Content director owns move + face mood — LLM emotion tags are ignored here.
     const plan = resolveContentMotion({ userText, assistantText: reply, characterId });
     const mv = plan.move;
@@ -965,7 +965,7 @@ export default function ChatPanel({
       const toSay = tail || reply;
       if (mv) triggerMove(mv);
       notifySpeaking(reply);
-      speak(toSay, characterId, lang, contentHints, undefined, intensity, storyRate, { resumable: true });
+      speak(toSay, characterId, lang, contentHints, undefined, intensity, storyRate, withUtterance({ resumable: true }, utterance));
       return reply;
     }
     if (firstLive && alreadySpoken) {
@@ -973,13 +973,13 @@ export default function ChatPanel({
         // Dance body starts on library-clip playing (beginShow), not here.
         beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
           const rest = speechRemainder(reply, alreadySpoken.text);
-          if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity, storyRate, { resumable: true });
+          if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity, storyRate, withUtterance({ resumable: true }, utterance));
         });
       } else if (mv) triggerMove(mv);
       notifySpeaking(reply);
       if (mv !== 'dance') {
         const rest = speechRemainder(reply, alreadySpoken.text);
-        if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity, storyRate, { resumable: true });
+        if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity, storyRate, withUtterance({ resumable: true }, utterance));
       }
       return reply;
     }
@@ -993,7 +993,7 @@ export default function ChatPanel({
     }
     if (mv === 'dance' && !isListenOnlyPerformance()) {
       beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
-        speak(reply, characterId, lang, contentHints, undefined, intensity, storyRate, { resumable: true });
+        speak(reply, characterId, lang, contentHints, undefined, intensity, storyRate, withUtterance({ resumable: true }, utterance));
       });
       notifySpeaking(reply);
       return reply;
@@ -1005,7 +1005,7 @@ export default function ChatPanel({
       triggerMove('piano');
       startPerformanceMusic('piano', characterId, 6300);
       notifySpeaking(reply);
-      speak(reply, characterId, lang, contentHints, undefined, intensity, storyRate, { resumable: true });
+      speak(reply, characterId, lang, contentHints, undefined, intensity, storyRate, withUtterance({ resumable: true }, utterance));
       return reply;
     }
     if (mv) triggerMove(mv);
@@ -1022,7 +1022,7 @@ export default function ChatPanel({
         meal ? { text: pickMealToast(lang, laughCountRef.current), pitch: 0.12, rate: 0 } : undefined,
         intensity,
         storyRate,
-        { resumable: true },
+        withUtterance({ resumable: true }, utterance),
       );
       return reply;
     }
@@ -1033,7 +1033,7 @@ export default function ChatPanel({
     applyContentMood({ ...(contentHints ?? {}), joy: style.joy });
     laughCountRef.current++;
     notifySpeaking(reply);
-    speak(reply, characterId, lang, { ...(contentHints ?? {}), joy: style.joy }, undefined, intensity, storyRate, { resumable: true });
+    speak(reply, characterId, lang, { ...(contentHints ?? {}), joy: style.joy }, undefined, intensity, storyRate, withUtterance({ resumable: true }, utterance));
     return reply;
   };
 
@@ -1714,6 +1714,13 @@ export default function ChatPanel({
     }
     setThinkingPose(true);
     pushAutoIdle('', undefined, true);
+    // One reply = one voice (owner 2026-11-26: "it switch to different sound in
+    // one talk. first normally is the default voice, second is the new voice").
+    // The streamed first sentence and the remainder are SEPARATE queue jobs;
+    // this handle makes both resolve the same pinned voice. The pin is captured
+    // on the first chunk, so a pick made mid-reply applies to the NEXT reply,
+    // never to the one already talking.
+    const replyUtterance = beginSpeechUtterance(lang);
     // Pixel: no spoken "um…" loading filler — it never matched reply TTS.
     // Wait is visual only (thinking pose, bubble "…", indeterminate bar).
     stopThinkingSound();
@@ -1846,7 +1853,7 @@ export default function ChatPanel({
                   undefined,
                   felt?.intensity,
                   storyLead ? STORY_SPEECH_RATE_BIAS : 0,
-                  { resumable: true },
+                  withUtterance({ resumable: true }, replyUtterance),
                 );
               }
             }
@@ -1887,6 +1894,7 @@ export default function ChatPanel({
           felt?.intensity,
           felt?.mood,
           firstSentence ? { text: firstSentence, since: sentenceStamp } : undefined,
+          replyUtterance,
         );
         pushAutoIdle(cleanedReply, undefined, undefined, text);
         commitReply(spoken);
@@ -1925,7 +1933,7 @@ export default function ChatPanel({
       rememberTurn(text, reply);
       onMemCountRef.current?.(memorySummaryCount());
       feedUtterance(reply);
-      const spoken = speakReply(text, reply, contentPlan.moodHints, felt?.intensity, felt?.mood);
+      const spoken = speakReply(text, reply, contentPlan.moodHints, felt?.intensity, felt?.mood, undefined, replyUtterance);
       pushAutoIdle(reply, undefined, undefined, text);
       commitReply(spoken);
       answered = true;

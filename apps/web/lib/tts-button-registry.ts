@@ -13,6 +13,7 @@
 
 import type { GttsPitchTier } from './gtts-timbre';
 import type { VoiceLocale } from './voice-catalog';
+import { maleChoiceUnavailableReason } from './male-voice-route';
 import {
   VOICE_CHOICES,
   allRelayMaleChoices,
@@ -99,13 +100,18 @@ export function ttsButtonById(id: string): TtsButtonVoice | undefined {
  * gTTS catalogue — every row is a Google `tl` speaker — and the audit tests
  * pin it to exactly those speakers. A male Edge voice is a different engine
  * with its own gate, so it gets its own selector instead of quietly widening
- * the gTTS contract. Empty whenever `edgeRelayAvailable()` is false, which is
- * what keeps a static export with no relay from showing a silent male button.
+ * the gTTS contract. Empty whenever the relay is not CONFIGURED, which is what
+ * keeps a static export with no relay from showing a silent male button. Each
+ * button carries `unavailableReason` when neither the relay nor an installed
+ * male device voice can speak it right now (breaker open on a PC with no
+ * male OS voice) — the row disables it instead of offering a dead option.
  */
 export interface RelayVoiceButton extends Omit<TtsButtonVoice, 'engine' | 'tl'> {
   engine: 'edge';
   /** Edge neural short name; the actual speaker selector on the relay. */
   edgeVoiceId: string;
+  /** Non-null when this button cannot produce a MALE sound right now. */
+  unavailableReason?: string | null;
 }
 
 export function selectRelayVoiceButtons(locale?: VoiceLocale): readonly RelayVoiceButton[] {
@@ -120,6 +126,7 @@ export function selectRelayVoiceButtons(locale?: VoiceLocale): readonly RelayVoi
     labelKey: choice.labelKey,
     n: choice.n,
     shipping: true as const,
+    unavailableReason: maleChoiceUnavailableReason(choice.locale),
   }));
 }
 

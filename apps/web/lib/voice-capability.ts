@@ -355,13 +355,33 @@ export function edgeChoiceId(edgeVoiceId: string): string {
  *
  * A stored empty value is an explicit opt-out (it does not resurrect the
  * default). The direct read-aloud socket 403s this app, so with no relay there
- * is no Edge audio at all — and a male button that could only fall back to a
- * female Google speaker is exactly the lie the deletion was fixing. When this
- * is false the male seeds are inert: not rendered, not resolvable.
+ * is no Edge audio at all. When this is false the male seeds are still
+ * RESOLVABLE (so a pin keeps its identity through a breaker cooldown) but the
+ * picker gates the button on `maleChoiceUnavailableReason` — a male choice must
+ * name the relay or a real device male voice, never a woman's Google speaker.
  */
 export function edgeRelayAvailable(): boolean {
   try {
     if (edgeEndpointsDead()) return false;
+    return edgeRelayConfigured();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The relay is CONFIGURED — a proxy URL exists — regardless of the endpoint
+ * breaker. Identity (which voice a choice names) must survive a 5-minute
+ * breaker cooldown: gating `voiceChoiceById` on the breaker made a male pin
+ * resolve to `undefined` mid-session, which (a) flipped the pin to the
+ * companion's gender in `deliveryGenderForChoice`, and (b)
+ * `voice-picks.sanitize` then deleted the pin from localStorage.
+ *
+ * UI availability still uses `edgeRelayAvailable()` (with the breaker); this
+ * is only for "does this id name a real voice?".
+ */
+export function edgeRelayConfigured(): boolean {
+  try {
     return getTtsProxy() !== null;
   } catch {
     return false;
@@ -370,11 +390,13 @@ export function edgeRelayAvailable(): boolean {
 
 /**
  * Male buttons, numbered after that language's gTTS speakers so `#2` in
- * Cantonese is WanLung rather than a second copy of `#1`. Empty when the relay
- * gate is closed.
+ * Cantonese is WanLung rather than a second copy of `#1`. Gate on the
+ * CONFIGURED relay (not the breaker): the button is still a real voice during
+ * a cooldown, and `maleChoiceUnavailableReason` decides whether it can speak
+ * right now.
  */
 export function allRelayMaleChoices(): readonly VoiceChoice[] {
-  if (!edgeRelayAvailable()) return [];
+  if (!edgeRelayConfigured()) return [];
   const counts: Partial<Record<VoiceLocale, number>> = {};
   for (const c of VOICE_CHOICES) {
     if (c.n > (counts[c.locale] ?? 0)) counts[c.locale] = c.n;
@@ -490,6 +512,11 @@ export function addVoiceOption(locale: VoiceLocale): VoiceChoice | null {
  * speaker is female. So this returns `female` for any real gTTS choice: we
  * will not report "male" for a woman's voice again. `fallback` is only used
  * when there is no usable pin (e.g. a language with no catalog entry).
+ *
+ * A relay male id is recognised even when the relay is NOT configured: the id
+ * names a real male voice, so it must keep its gender instead of falling to
+ * the companion's (owner report: "male button, woman's voice"). Whether it can
+ * be heard is decided at play time by `male-voice-route`, not by lying here.
  */
 export function deliveryGenderForChoice(
   locale: VoiceLocale,
@@ -498,6 +525,9 @@ export function deliveryGenderForChoice(
 ): 'female' | 'male' {
   const pinned = voiceChoiceById(choiceId);
   if (pinned && pinned.locale === locale) return pinned.deliveryGender;
+  if (choiceId && RELAY_MALE_SEEDS.some((seed) => seed.locale === locale && edgeChoiceId(seed.edgeVoiceId) === choiceId)) {
+    return 'male';
+  }
   return fallback === 'male' || fallback === 'female' ? fallback : 'female';
 }
 

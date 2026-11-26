@@ -51,8 +51,10 @@ export default function TtsVoiceRow({
   const [addNote, setAddNote] = useState<string | null>(null);
 
   // gTTS speakers first, then the relay male buttons (Edge neural). The male
-  // array is empty when the relay is unavailable, so a closed gate adds no
-  // button at all rather than one that can only fall back to a woman's voice.
+  // array is empty when no relay is configured, so a missing relay adds no
+  // button at all. When the relay is configured but cannot speak right now
+  // (breaker open, no male device voice) the button renders disabled with a
+  // reason instead of offering a dead option.
   const buttons: Array<TtsButtonVoice | RelayVoiceButton> = [
     ...(showAll ? selectTtsButtons() : selectTtsButtons(lang)),
     ...(showAll ? selectRelayVoiceButtons() : selectRelayVoiceButtons(lang)),
@@ -61,7 +63,7 @@ export default function TtsVoiceRow({
   // cleared, or the Edge breaker tripped). Only honour pins whose button is
   // actually on screen, otherwise no button would look selected.
   const activeIdFor = (locale: Lang) => {
-    const pinned = voicePickFor(locale);
+    const pinned = voicePickFor(locale, companionGender);
     if (pinned && buttons.some((b) => b.id === pinned)) return pinned;
     return activeVoiceChoice(locale, companionGender).id;
   };
@@ -125,6 +127,7 @@ export default function TtsVoiceRow({
           {buttons.map((button) => {
             const selected = button.id === activeIdFor(button.locale);
             const mark = devMark('V', button.n);
+            const relayBlocked = button.engine === 'edge' ? button.unavailableReason ?? null : null;
             const genderLabel = button.deliveryGender === 'male'
               ? t(lang, 'voiceFreeMale')
               : t(lang, 'voiceFreeFemale');
@@ -136,21 +139,31 @@ export default function TtsVoiceRow({
                 type="button"
                 aria-label={numLabel}
                 aria-pressed={selected}
-                title={`${t(lang, button.labelKey)} · ${ttsButtonSpeaker(button)}`}
+                aria-disabled={relayBlocked ? true : undefined}
+                disabled={!!relayBlocked}
+                title={relayBlocked ?? `${t(lang, button.labelKey)} · ${ttsButtonSpeaker(button)}`}
                 data-dev={showDev ? mark : undefined}
                 data-voice-n={button.n}
                 data-voice-id={button.id}
+                data-voice-unavailable={relayBlocked ?? undefined}
                 onClick={() => onTap(button)}
                 className={`fx-press ui-btn relative min-h-9 rounded-xl border px-1.5 py-1 text-left text-[10px] font-medium leading-tight ${
-                  selected ? 'border-white/80 text-white' : 'border-white/15 bg-black/35 text-white/80'
+                  relayBlocked
+                    ? 'cursor-not-allowed border-white/10 bg-black/20 text-white/35'
+                    : selected ? 'border-white/80 text-white' : 'border-white/15 bg-black/35 text-white/80'
                 }`}
-                style={selected ? { backgroundColor: `${accent}55`, boxShadow: `inset 0 0 0 1px ${accent}` } : undefined}
+                style={selected && !relayBlocked ? { backgroundColor: `${accent}55`, boxShadow: `inset 0 0 0 1px ${accent}` } : undefined}
               >
                 {showDev ? `${mark} ${numLabel}` : numLabel}
               </button>
             );
           })}
         </div>
+        {buttons.some((b) => b.engine === 'edge' && b.unavailableReason) && (
+          <p role="status" className="mt-1 px-1 text-center text-[10px] leading-relaxed text-white/45" data-testid="tts-voice-male-unavailable">
+            {t(lang, 'voiceMaleUnavailable')}
+          </p>
+        )}
         {addNote && (
           <p role="status" className="mt-1 px-1 text-center text-[10px] leading-relaxed text-white/45" data-testid="tts-voice-add-note">
             {addNote}

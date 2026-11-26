@@ -119,14 +119,13 @@ import { pauseEdgeForTabHide, resumeEdgeForTabShow, speakEdge, stopEdge, getTtsP
 import { pauseAfterClause, pauseGttsForTabHide, resumeGttsForTabShow, splitClauses, stopGtts, speakGtts } from './gtts';
 import { cardGreetGate } from './card-greet';
 import { gttsCharacterPitchBias } from './gtts-timbre';
-import { voicePickFor } from './voice-picks';
+import { effectiveVoiceChoiceId } from './voice-picks';
 import { osVoicePinFor, saveOsVoicePin } from './os-voice-picks';
 import { resolveOsPin, resolvePinnedVoice } from './os-voice-resolve';
 import {
   deliveryGenderForChoice,
   isVoiceLocale,
   pitchTierForChoice,
-  preferredVoiceChoiceForGender,
   tlForChoice,
   voiceChoiceById,
 } from './voice-capability';
@@ -134,6 +133,7 @@ import { createAuditionClaim } from './audition-claim';
 import { cantoNanoAvailable, speakCantoNano } from './canto-nano';
 import { auditionRoute } from './voice-audition';
 import { formatVoiceChain, freeVoiceHops } from './tts-chain';
+import { chatMaleEdgeVoiceId, currentDeviceVoices, maleVoiceRoute } from './male-voice-route';
 import { stopThinkingSound } from './thinking-sound';
 import { runEarlyAudioPreload } from './early-audio-preload';
 // r2026-10-05.112: tier 0 — OpenAI gpt-4o-mini-tts (ChatGPT-style emotional
@@ -197,6 +197,8 @@ let lastSpeak: {
   intensity: number;
   /** Story / fairy-tale only — slightly slower pace. Casual talk stays 0. */
   rateBias: number;
+  /** Voice of the utterance this line belongs to (replay must not re-pick). */
+  voicePin: string | null;
   at: number;
 } | null = null;
 let replayArmed = false;
@@ -256,6 +258,7 @@ if (typeof window !== 'undefined') {
       lastSpeak.leadOverride,
       lastSpeak.intensity,
       lastSpeak.rateBias,
+      { utterance: speechUtteranceFor(lastSpeak.lang, lastSpeak.voicePin) },
     );
   }, { passive: true });
 }
@@ -1326,6 +1329,13 @@ interface SpeechJob {
    * greets, previews, fillers and announcements never set this.
    */
   resumable?: boolean;
+  /**
+   * Voice choice this line must use, captured by speak() from the reply's
+   * SpeechUtterance (null = the language default). performSpeak never re-reads
+   * the live pin for a job that carries one, so one reply cannot switch
+   * speaker between its streamed lead and its remainder.
+   */
+  voicePin?: string | null;
 }
 
 const lineQueue = new LineQueue<SpeechJob>();
@@ -1416,7 +1426,9 @@ function capturePokeResume(): PokeResumeCandidate | null {
       undefined,
       head.intensity,
       head.rateBias ?? 0,
-      { resumable: true },
+      // The continuation is the SAME reply, so it keeps the speaker the reply
+      // started with even if the user tapped a new voice before the poke.
+      withUtterance({ resumable: true }, speechUtteranceFor(head.lang, head.voicePin ?? null)),
     ),
   };
 }
@@ -1504,6 +1516,7 @@ function drainSpeech(): void {
         job.voiceId,
         job.filler,
         job.rateBias ?? 0,
+        job.voicePin,
       );
   void run.finally(release);
 }
@@ -1656,7 +1669,8 @@ function gttsPitchForLang(
   companionGender: 'female' | 'male',
   choiceId?: string | null,
 ): number {
-  const pin = choiceId ?? voicePickFor(lang);
+  // Character gender decides the default when there is no explicit pin.
+  const pin = choiceId ?? effectiveVoiceChoiceId(lang, characterId);
   const delivery = deliveryGenderForChoice(lang, pin, companionGender);
   const tier = pitchTierForChoice(pin);
   return gttsCharacterPitchBias(delivery, characterId, lang, tier);
@@ -1671,10 +1685,79 @@ export interface VocalLead {
   rate: number;
 }
 
+/**
+ * Voice identity for ONE reply — "one utterance, one speaker".
+ *
+ * Owner 2026-11-26: "it switch to different sound in one talk. first normally
+ * is the default voice, second is the new voice." A reply is queued as more
+ * than one SpeechJob: the streamed first sentence (ChatPanel `onPartial`), the
+ * remainder (`speakReply`), and a poke may cut and re-speak the captured line.
+ * Each job used to re-read `voicePickFor(lang)` when it began, so a pin change
+ * between chunks swapped the speaker in the middle of one reply (proved: the
+ * lead plays `tl=en-GB`, the tail `tl=en-US` after a mid-reply tap).
+ *
+ * The utterance captures the choice on its FIRST queued chunk; every later
+ * chunk derives engine / `tl` / Edge id / delivery gender / pitch tier from the
+ * same id. A new pick therefore applies to the NEXT reply, never to the one
+ * already talking. It is not a global: ChatPanel creates one handle per turn
+ * and passes it to every chunk, including the delayed dance tail.
+ *
+ * The fallback LADDER is unchanged: any chunk may still fall Edge → gTTS →
+ * device voice when its engine genuinely fails. That can change timbre (a dead
+ * Edge line cannot be expressed by the Google MP3 speaker), but it is a
+ * failure inside the same selected voice, never a re-read of a newer pick.
+ */
+export interface SpeechUtterance {
+  lang: Lang;
+  /** Choice id captured on the first chunk; undefined until that chunk queues. */
+  voicePin?: string | null;
+}
+
 /** Options for speak(). `resumable` marks a real conversation reply that a
  *  poke may cut and then pick back up; everything else stays a hard cut. */
 export interface SpeakOptions {
   resumable?: boolean;
+  /** One reply = one speaker; see {@link SpeechUtterance}. */
+  utterance?: SpeechUtterance;
+}
+
+/** Open the voice identity for one reply. The pin is captured on first speak. */
+export function beginSpeechUtterance(lang: Lang): SpeechUtterance {
+  return { lang };
+}
+
+/**
+ * Re-open an utterance whose pin is already known: the poke-resume continuation
+ * and the gesture-gate replay must repeat the line in the voice it started in,
+ * not in whatever the user selected while it was cut.
+ */
+export function speechUtteranceFor(lang: Lang, voicePin: string | null): SpeechUtterance {
+  return { lang, voicePin };
+}
+
+/** Attach a reply's one-voice handle to the options of one chunk. */
+export function withUtterance(opts: SpeakOptions, utterance?: SpeechUtterance): SpeakOptions {
+  return utterance ? { ...opts, utterance } : opts;
+}
+
+/**
+ * Pin to store on a queued line. A handle returns the id captured by its first
+ * chunk; a standalone line resolves the live pick ONCE, at enqueue, so even a
+ * job that waits behind another line cannot change speaker while it waits.
+ * `null` is meaningful: "this utterance had no pin" must never re-read a pick
+ * the user makes later.
+ */
+function speechPinFor(
+  characterId: string,
+  lang: Lang,
+  utterance?: SpeechUtterance,
+): string | null {
+  if (!utterance) return effectiveVoiceChoiceId(lang, characterId);
+  // The utterance belongs to ONE character, so its gender is fixed here.
+  if (utterance.voicePin === undefined) {
+    utterance.voicePin = effectiveVoiceChoiceId(utterance.lang, characterId);
+  }
+  return utterance.voicePin;
 }
 
 /** Speak a reply with ChatGPT-style emotional prosody. Caller gates on voiceEnabled().
@@ -1718,6 +1801,10 @@ export function speak(
     intensity,
     rateBias,
     resumable: opts?.resumable === true,
+    // Capture the reply's voice ONCE, here. Every chunk of the utterance
+    // queues with the id the first chunk captured (standalone lines resolve
+    // the live pin once, at this moment, and keep it while they wait).
+    voicePin: speechPinFor(characterId, lang, opts?.utterance),
   });
   drainSpeech();
 }
@@ -1734,6 +1821,12 @@ function performSpeak(
   filler = false,
   /** Story / fairy-tale only — slightly slower pace. */
   rateBias = 0,
+  /**
+   * Voice choice this line must use, captured when its utterance queued
+   * (SpeechJob.voicePin). undefined = a standalone job with no snapshot;
+   * null = the utterance had no pin and must stay on the language default.
+   */
+  pinnedChoice?: string | null,
 ): Promise<void> {
   return new Promise((resolve) => {
   let settled = false;
@@ -1756,6 +1849,18 @@ function performSpeak(
   if (!text || !voiceOutputAllowed()) { settle(); return; }
   // Bare um / think / search stubs (and laugh stubs remapped to um) stay silent.
   if (loadingFillerKind(text)) { settle(); return; }
+  // ONE reply = ONE speaker. The voice identity is resolved exactly ONCE per
+  // line, from the job's snapshot: Edge id, gTTS `tl` + pace and delivery
+  // gender all derive from this id, so a pick made mid-reply cannot change the
+  // speaker between the streamed lead and the remainder. A job without a
+  // snapshot (a standalone line from an older caller) still resolves the live
+  // pin here, exactly as before.
+  const companionGender = characterVoiceGender(characterId);
+  // Gender-aware: a reply inherits the voice for THIS character's gender, not
+  // whatever the other gender last pinned.
+  const voicePin = pinnedChoice !== undefined
+    ? pinnedChoice
+    : effectiveVoiceChoiceId(lang, characterId);
   // r111: remember the line for gesture-gate replay
   const attemptAt = Date.now();
     lastSpeak = {
@@ -1767,6 +1872,9 @@ function performSpeak(
       intensity,
       rateBias,
       at: attemptAt,
+      // The replay is the SAME utterance that never got heard, so it repeats
+      // in the voice it was queued with — not in a later pick.
+      voicePin,
     };
   // r119: a fresh attempt retires any previous replay hint, and the watchdog
   // re-arms for THIS line — if no tier's audio starts within 8s the visible
@@ -1797,11 +1905,9 @@ function performSpeak(
   // Delivery gender is resolved again inside beginTts; peek the pin here so
   // the logged chain matches the hops that actually run for male pins.
   const chainGenderPeek = (() => {
-    const companionGender = characterVoiceGender(characterId);
     if (voiceId) return isMaleNeuralVoice(voiceId) ? 'male' : 'female';
     if (!isVoiceLocale(lang)) return companionGender;
-    const pin = voicePickFor(lang) ?? preferredVoiceChoiceForGender(lang, companionGender).id;
-    return deliveryGenderForChoice(lang, pin, companionGender);
+    return deliveryGenderForChoice(lang, voicePin, companionGender);
   })();
   const chain = formatVoiceChain(
     freeVoiceHops(lang, {
@@ -1866,12 +1972,8 @@ function performSpeak(
   // not the default. A 'canceled' rejection means a newer line took over.
   // Delivery gender follows the pinned/tapped voice button when present so a
   // male pin drives male Edge/synth OS voice + male gTTS pace — not a female
-  // base merely pitch-shifted.
-  const companionGender = characterVoiceGender(characterId);
-  const voicePin = voicePickFor(lang)
-    ?? (isVoiceLocale(lang)
-      ? preferredVoiceChoiceForGender(lang, companionGender).id
-      : null);
+  // base merely pitch-shifted. `companionGender` / `voicePin` come from the
+  // utterance snapshot above; this function never re-reads the live pick.
   const spokenGender: 'female' | 'male' = voiceId
     ? (isMaleNeuralVoice(voiceId) ? 'male' : 'female')
     : (isVoiceLocale(lang)
@@ -1924,9 +2026,25 @@ function performSpeak(
       // Male: Edge neural / OS synth first — gTTS one-speaker pitch still sounds female.
       preferMale: spokenGender === 'male',
     });
+    // A male line must have a real male speaker. `maleVoiceRoute` reuses the
+    // same notions of availability as the picker (relay live? device male voice
+    // installed?). If nothing can speak it, end the line honestly instead of
+    // letting it fall to gTTS (one female speaker per `tl`) or to nothing.
+    const maleRoute = spokenGender === 'male'
+      ? maleVoiceRoute(lang, { edgeAvailable: edgeOn, deviceVoices: currentDeviceVoices() })
+      : null;
+    if (maleRoute?.kind === 'unavailable') {
+      reportVoiceStatus('attempt', false, `male voice unavailable — ${maleRoute.reason}`);
+      settle();
+      return;
+    }
     const pitchTier = pitchTierForChoice(voicePin);
+    // Thread the pinned male id explicitly (greeting/preview already do), so a
+    // male line can never be derived into the female tier voice.
     const edgeTierVoice = voiceId
-      ?? edgeVoiceIdForTier(lang, spokenGender, pitchTier);
+      ?? (isVoiceLocale(lang)
+        ? chatMaleEdgeVoiceId(lang, voicePin, spokenGender, pitchTier)
+        : edgeVoiceIdForTier(lang, spokenGender, pitchTier));
     const edgeTierProsody = edgeProsodyForTier(pitchTier);
     const np = emotionProsody(emotion, value);
     /**
@@ -1973,17 +2091,23 @@ function performSpeak(
       if (!hop) { settle(); return; }
       const next = (): void => runAt(index + 1);
       if (hop === 'synth') {
-        // Male chain runs synth before gTTS. Under mic play-and-record, OS
-        // synth often lands on earpiece/BT while gTTS uses loudspeaker — skip
-        // to the HTTP tier so en/zh/ja match the gate sample device.
-        if (spokenGender === 'male' && micCommsRoutingLatchActive()) {
-          next();
-          return;
-        }
+        // Male lines must reach the device voice even while the chat mic holds
+        // play-and-record. This hop used to be SKIPPED for male under the mic
+        // latch ("often lands on earpiece/BT"), which left only gTTS — one
+        // female speaker per `tl`, Referer-blocked in desktop Chrome — so a
+        // male reply fetched nothing and stayed silent. Windows routes synth
+        // through the default sink here; an audible male voice beats silence.
         if (!runSynth(settle)) next();
         return;
       }
       if (hop === 'gtts') {
+        // gTTS has exactly one speaker per language and it is female. A male
+        // choice must never be spoken by it, whatever the pin says.
+        if (spokenGender === 'male') {
+          reportVoiceStatus('gtts', false, 'skipped for a male line — gTTS is a female speaker');
+          next();
+          return;
+        }
         // Plain-HTTPS MP3 tier. Real audio via <audio>, so the iOS hardware
         // silent switch and a blocked Edge socket both stop mattering.
         let tier: Promise<void>;
@@ -2036,6 +2160,12 @@ function performSpeak(
         });
         return;
       }      if (hop === 'canto-nano') {
+        // canto-tts-nano ships one speaker (female). Never voice a male line.
+        if (spokenGender === 'male') {
+          reportVoiceStatus('canto-nano', false, 'skipped for a male line — single female speaker');
+          next();
+          return;
+        }
         void speakCantoNano(stripVoicedGlyphs(text)).then(() => {
           markVoiceStarted();
           reportVoiceStatus('canto-nano', true, 'canto-tts-nano finished');
@@ -2256,7 +2386,10 @@ export function playVoiceGreeting(
   // tier — that speaker is a woman, the exact "male button, female voice"
   // report — so the MP3 tier is not started at all for these choices.
   const choice = voiceChoiceById(choiceId);
-  const relayMale = choice?.engine === 'edge';
+  // An `edge:` id IS a relay male choice even when the relay/breaker gate makes
+  // `voiceChoiceById` return undefined; skipping the MP3 tier by id keeps a
+  // gated male choice from falling to the female Google speaker.
+  const relayMale = choice?.engine === 'edge' || choiceId.startsWith('edge:');
   const relayEdgeVoice = choice?.edgeVoiceId;
   let session = 0;
   /** Set by whichever tier actually starts, so the loser can bail out. */
@@ -2612,7 +2745,7 @@ function performSing(text: string, characterId: string, lang: Lang): Promise<voi
         stopEdge();
         void speakGtts(text, {
           lang,
-          tl: tlForChoice(lang, voicePickFor(lang)),
+          tl: tlForChoice(lang, effectiveVoiceChoiceId(lang, characterId)),
           pitchBias: gttsPitchForLang(lang, characterId, gender),
           onPlaying: () => {
             noteSpeechStarted(text);
@@ -2772,9 +2905,10 @@ export function previewVoiceChoice(locale: Lang, choiceId: string): Promise<void
   const tl = tlForChoice(locale, choiceId);
   const previewGender = deliveryGenderForChoice(locale, choiceId, 'female');
   // Relay male buttons are EDGE voices; the gTTS tier must not start for them
-  // (its speaker is a woman — the exact bug this restore fixes).
+  // (its speaker is a woman — the exact bug this restore fixes). The id prefix
+  // also carries that fact while the relay gate hides the choice.
   const choice = voiceChoiceById(choiceId);
-  const relayMale = choice?.engine === 'edge';
+  const relayMale = choice?.engine === 'edge' || choiceId.startsWith('edge:');
   const relayEdgeVoice = choice?.edgeVoiceId;
   // Same rotating short greet as select-board voice cards.
   const text = nextCardGreetPhrase(locale);
@@ -3160,10 +3294,7 @@ export async function testVoiceChain(
     reportVoiceStatus(tier, ok, detail);
   };
   const companionGender = characterVoiceGender(characterId);
-  const voicePin = voicePickFor(lang)
-    ?? (isVoiceLocale(lang)
-      ? preferredVoiceChoiceForGender(lang, companionGender).id
-      : null);
+  const voicePin = effectiveVoiceChoiceId(lang, characterId);
   const spokenGender: 'female' | 'male' = isVoiceLocale(lang)
     ? deliveryGenderForChoice(lang, voicePin, companionGender)
     : companionGender;
@@ -3304,7 +3435,7 @@ export async function testProxyVoice(characterId: string, lang: Lang): Promise<b
   try {
     await withTimeout(speakGtts(line, {
       lang,
-      tl: tlForChoice(lang, voicePickFor(lang)),
+      tl: tlForChoice(lang, effectiveVoiceChoiceId(lang, characterId)),
       pitchBias: gttsPitchForLang(lang, characterId, characterVoiceGender(characterId)),
       onPlaying: () => reportVoiceStatus('gtts', true, 'google-tts playing (proxy probe)'),
     }), 20_000, 'google-tts timeout');

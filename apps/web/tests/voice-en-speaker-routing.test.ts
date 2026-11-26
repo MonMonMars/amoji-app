@@ -42,7 +42,15 @@ describe('en speaker routing (mic latch + gesture card)', () => {
     const voice = read('lib/voice.ts');
     expect(voice).toMatch(/const beginTts = \(\) => \{[\s\S]*?companionPlaybackSession\(\)/);
     expect(voice).toContain('micCommsRoutingLatchActive');
-    expect(voice).toMatch(/if \(hop === 'synth'\)[\s\S]*?micCommsRoutingLatchActive\(\)[\s\S]*?spokenGender === 'male'/);
+    // The male chain must NOT skip the device voice under the mic latch: that
+    // skip left gTTS (one female speaker per `tl`, Referer-blocked on desktop)
+    // as the only remaining hop, so male replies came out silent.
+    const synthHop = voice.slice(
+      voice.indexOf("if (hop === 'synth')"),
+      voice.indexOf("if (hop === 'gtts')"),
+    );
+    expect(synthHop).toContain('runSynth(settle)');
+    expect(synthHop).not.toContain("spokenGender === 'male'");
   });
 
   it('card greet + preview prime default speaker before gesture gTTS', () => {

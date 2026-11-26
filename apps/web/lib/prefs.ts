@@ -195,7 +195,7 @@ export type StrKey =
   // honest voice picker: only voices that really differ are offered, so a
   // language with one voice says so, and the engines that cannot play are
   // named once instead of being rendered as dead buttons.
-  | 'voiceOnlyOneAvailable' | 'voiceEnginesUnavailable'
+  | 'voiceOnlyOneAvailable' | 'voiceMaleUnavailable' | 'voiceEnginesUnavailable'
   | 'ttsLabTitle' | 'ttsLabHint' | 'ttsLabPlay' | 'ttsLabPlayed'
   | 'ttsLabStatusWorks' | 'ttsLabStatusBrowser' | 'ttsLabStatusDead'
   | 'ttsLabStatusGated' | 'ttsLabStatusDemo' | 'ttsLabStatusMissing'
@@ -305,6 +305,14 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: '呢種語言得一個 Google 聲線 — 可以揀男女同低/中/高音階。',
     zh: '这个语言只有一个 Google 声线 — 可选男女与低/中/高音阶。',
     ja: 'この言語の Google 話者は一人です。男女と低／中／高のピッチを選べます。',
+  },
+  // Shown when the male button renders but cannot speak right now: no relay
+  // (breaker open / not configured) and no installed male OS voice.
+  voiceMaleUnavailable: {
+    en: 'The male voice needs the neural relay or a male system voice — neither is available right now.',
+    yue: '男聲要用神經語音中繼或者系統男聲 — 而家兩樣都未得。',
+    zh: '男声需要神经语音中继或系统男声 — 目前两者都不可用。',
+    ja: '男性の声にはニューラル中継か男性システム音声が必要ですが、今はどちらも使えません。',
   },
   // One line for every engine that cannot play, so the short list is explained.
   voiceEnginesUnavailable: {

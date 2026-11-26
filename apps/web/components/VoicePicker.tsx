@@ -122,7 +122,10 @@ export default function VoicePicker({
         // offers (relay cleared in Settings, or the Edge breaker tripped). Fall
         // back to the language default so SOME button stays selected instead of
         // leaving a selection the user cannot see.
-        const pinned = picks[locale];
+        const row = picks[locale];
+        // Pins are per speaker gender now: a female pin must not select (or
+        // hide) the male character's button. No companionGender = legacy read.
+        const pinned = companionGender ? row?.[companionGender] : (row?.female ?? row?.male);
         const pinnedRenderable = !!pinned
           && (rows.some((b) => b.id === pinned) || maleRows.some((b) => b.id === pinned));
         const activeId = pinnedRenderable
