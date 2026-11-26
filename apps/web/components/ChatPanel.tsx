@@ -164,10 +164,14 @@ import {
 } from '../lib/daily-quota';
 import { planStatus } from '../lib/billing';
 import {
+  browserGeolocationPermission,
   clientLiveContext,
   isLiveFactsOnlyTurn,
+  markTimeLocationAsked,
   planTools,
   primeLocationForChatEnter,
+  probeLocationForLocalTime,
+  timeLocationGate,
 } from '../lib/live-tools';
 import { spokenWorldClock } from '../lib/world-clock';
 import {
@@ -414,6 +418,8 @@ export default function ChatPanel({
   const [nowPlaying, setNowPlaying] = useState<string | null>(null);
   /** Song/genre chips — only when user explicitly asks to choose. */
   const [musicPicks, setMusicPicks] = useState<MusicPickOption[] | null>(null);
+  /** Pending Time ask waiting for the in-app location consent card. */
+  const [timeGeoAsk, setTimeGeoAsk] = useState<{ prompt: string; facet: number } | null>(null);
   // the last turn was caught by the crisis guard — show the /rules card
   const [crisisCard, setCrisisCard] = useState(false);
   // warning popup with location-aware 「即刻搵人傾」 numbers (alongside the card)
@@ -772,6 +778,19 @@ export default function ChatPanel({
       if (tail?.role === 'assistant' && tail.content.trim() === gated.trim()) return h;
       return [...h, { role: 'assistant', content: gated }];
     });
+  };
+
+  /**
+   * Time chip answer: local clock only (owner 2026-11-26). The location
+   * consent card is decided before this runs; whether the browser fix was
+   * granted, denied or timed out, the spoken time comes from the device zone.
+   */
+  const answerTimeAsk = (ask: { prompt: string; facet: number }) => {
+    const { prompt, facet } = ask;
+    const spoken = spokenWorldClock(lang, facet);
+    rememberTurn(prompt, spoken);
+    onMemCountRef.current?.(memorySummaryCount());
+    sayLocal(spoken);
   };
 
   // speak a just-arrived reply; if the exchange was funny, giggle first and
@@ -2406,6 +2425,55 @@ export default function ChatPanel({
           ))}
         </div>
       )}
+      {/* Time-ask location consent (owner 2026-11-26). Shown before the
+          browser geolocation prompt; Skip still answers from the device zone. */}
+      {timeGeoAsk && (
+        <div
+          data-testid="time-geo-ask"
+          role="group"
+          aria-label={t(lang, 'timeGeoAskBody')}
+          className="relative z-20 w-full rounded-2xl border border-white/20 bg-black/80 p-3 text-white shadow-[0_10px_30px_-12px_rgba(0,0,0,0.9)]"
+        >
+          <p className="text-xs leading-relaxed text-white/85">{t(lang, 'timeGeoAskBody')}</p>
+          <div className="mt-2 flex gap-2">
+            <button
+              type="button"
+              data-testid="time-geo-allow"
+              className="ui-btn h-9 flex-1 rounded-full bg-white text-xs font-semibold text-black"
+              onClick={() => {
+                const pending = timeGeoAsk;
+                setTimeGeoAsk(null);
+                if (!pending) return;
+                // Browser geolocation is only ever called from this Allow tap.
+                void (async () => {
+                  try {
+                    await probeLocationForLocalTime();
+                  } catch {
+                    markTimeLocationAsked();
+                  }
+                  answerTimeAsk(pending);
+                })();
+              }}
+            >
+              {t(lang, 'timeGeoAllow')}
+            </button>
+            <button
+              type="button"
+              data-testid="time-geo-skip"
+              className="ui-btn h-9 flex-1 rounded-full border border-white/25 bg-white/10 text-xs font-semibold text-white"
+              onClick={() => {
+                const pending = timeGeoAsk;
+                setTimeGeoAsk(null);
+                // Remember the decline this tab — never ask again.
+                markTimeLocationAsked();
+                if (pending) answerTimeAsk(pending);
+              }}
+            >
+              {t(lang, 'timeGeoSkip')}
+            </button>
+          </div>
+        </div>
+      )}
       {/* Demo-phase chips: one-tap tutorials (weather / dance / sing…) for
           users who would rather not talk or type — especially on iPhone.
           Hidden in Story Mode so the room does not feel like chat skill chrome. */}
@@ -2422,6 +2490,8 @@ export default function ChatPanel({
               // Demo chips are one-topic tutorials — never carry a pending
               // showcase/tutorial offer into the same beat as the chip reply.
               pendingOfferRef.current = null;
+              // A new chip tap retires any unanswered Time location card.
+              setTimeGeoAsk(null);
               pendingDemoPhaseRef.current = id;
               // Advance library rotation so repeat music/dance/sing taps
               // keep changing beds even when a facet wraps around.
@@ -2496,10 +2566,18 @@ export default function ChatPanel({
                 feedUtterance(prompt);
                 stopSpeaking();
                 const facet = demoPhaseFacetIndex('time', lang, prompt);
-                const spoken = spokenWorldClock(lang, facet);
-                rememberTurn(prompt, spoken);
-                onMemCountRef.current?.(memorySummaryCount());
-                sayLocal(spoken);
+                const ask = { prompt, facet };
+                // Owner 2026-11-26: ask for location in-app FIRST, and only
+                // call navigator.geolocation from the Allow tap. A granted
+                // permission (or a prior answer this tab) answers at once.
+                void (async () => {
+                  const permission = await browserGeolocationPermission();
+                  if (timeLocationGate({ permission }) === 'ask') {
+                    setTimeGeoAsk(ask);
+                    return;
+                  }
+                  answerTimeAsk(ask);
+                })();
                 return;
               }
               if (id === WATCHING_STARS_DEMO_ID) {

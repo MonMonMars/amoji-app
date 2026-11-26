@@ -131,6 +131,8 @@ const MANUAL_KEY = 'amoji.place.manual.v1';
 const DENY_KEY = 'amoji.geo.denied';
 /** Session flag: we already fired one browser geo prompt (gate or Start). */
 const PRIMED_KEY = 'amoji.geo.primed';
+/** Session flag: the in-app Time location ask was answered (allow or skip). */
+const TIME_ASKED_KEY = 'amoji.geo.timeAsked';
 /** @deprecated Prefer NEWS_TOLD_KEY ring — kept so old session values still migrate. */
 export const NEWS_LAST_KEY = 'amoji.news.last.v1';
 /** Ring of recently spoken headline titles (JSON `{t,at}[]`) — anti-repeat. */
@@ -696,7 +698,11 @@ async function locateIp(fetchImpl: typeof fetch, ip: string | undefined, cache: 
   return placeFromGeo(await getJson(fetchImpl, 'https://get.geojs.io/v1/ip/geo.json', 5_000, cache));
 }
 
-function askBrowser(geo: GeoLike): Promise<{ latitude: number; longitude: number } | 'denied' | null> {
+function askBrowser(
+  geo: GeoLike,
+  timeoutMs = 7_000,
+): Promise<{ latitude: number; longitude: number } | 'denied' | null> {
+  const ceiling = Math.max(250, timeoutMs);
   return new Promise((resolve) => {
     let settled = false;
     const finish = (v: { latitude: number; longitude: number } | 'denied' | null) => {
@@ -704,7 +710,7 @@ function askBrowser(geo: GeoLike): Promise<{ latitude: number; longitude: number
       settled = true;
       resolve(v);
     };
-    const timer = setTimeout(() => finish(null), 7_000);
+    const timer = setTimeout(() => finish(null), ceiling);
     try {
       geo.getCurrentPosition(
         (pos) => {
@@ -718,7 +724,7 @@ function askBrowser(geo: GeoLike): Promise<{ latitude: number; longitude: number
           clearTimeout(timer);
           finish(err?.code === 1 ? 'denied' : null);
         },
-        { enableHighAccuracy: false, timeout: 6_000, maximumAge: 10 * 60 * 1000 },
+        { enableHighAccuracy: false, timeout: Math.max(200, ceiling - 500), maximumAge: 10 * 60 * 1000 },
       );
     } catch {
       clearTimeout(timer);
@@ -3155,6 +3161,95 @@ export function geolocationDeniedThisTab(session: Kv | null = safeStorage('sessi
   } catch {
     return false;
   }
+}
+
+export type GeolocationPermissionState = 'granted' | 'denied' | 'prompt' | 'unknown';
+
+/** Browser geolocation permission without triggering a prompt (Permissions API). */
+export async function browserGeolocationPermission(): Promise<GeolocationPermissionState> {
+  try {
+    const permissions = typeof navigator === 'undefined' ? undefined : navigator.permissions;
+    if (!permissions?.query) return 'unknown';
+    const status = await permissions.query({ name: 'geolocation' as PermissionName });
+    if (status.state === 'granted' || status.state === 'denied' || status.state === 'prompt') {
+      return status.state;
+    }
+    return 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+export type TimeLocationGate = 'ask' | 'ready' | 'skip';
+
+export interface TimeLocationGateEnv {
+  /** `localStorage` — a cached browser place means it was granted before. */
+  storage?: Kv | null;
+  /** `sessionStorage` — deny / already-asked flags live here. */
+  session?: Kv | null;
+  /** `navigator.permissions` state, when the caller could read it. */
+  permission?: GeolocationPermissionState;
+  now?: number;
+}
+
+/**
+ * How a Time question should treat location before it answers.
+ * `ask` → show the in-app consent card (browser prompt only after Allow);
+ * `ready` → the fix (or a prior Allow/skip) is settled, answer immediately;
+ * `skip` → the user/browser denied, answer from the device zone without asking.
+ */
+export function timeLocationGate(env: TimeLocationGateEnv = {}): TimeLocationGate {
+  const session = env.session === undefined ? safeStorage('session') : env.session;
+  const storage = env.storage === undefined ? safeStorage('local') : env.storage;
+  const now = env.now ?? Date.now();
+  if (geolocationDeniedThisTab(session)) return 'skip';
+  if (env.permission === 'denied') return 'skip';
+  if (env.permission === 'granted') return 'ready';
+  try {
+    if (session?.getItem(TIME_ASKED_KEY) === '1') return 'ready';
+  } catch { /* private mode */ }
+  const cached = readCachedPlace(storage, now);
+  if (cached?.source === 'browser') return 'ready';
+  return 'ask';
+}
+
+/** Remember that the in-app Time location card was answered this tab. */
+export function markTimeLocationAsked(session: Kv | null = safeStorage('session')): void {
+  try { session?.setItem(TIME_ASKED_KEY, '1'); } catch { /* private mode */ }
+}
+
+export interface TimeLocationProbeOpts {
+  /** Hard ceiling; the time answer never waits longer than this. */
+  timeoutMs?: number;
+  session?: Kv | null;
+  /** Inject a fake for tests; defaults to `navigator.geolocation`. */
+  geolocation?: GeoLike | null;
+}
+
+/**
+ * One coarse browser fix after the in-app Allow tap. Unlike `resolveDevicePlace`
+ * it never runs reverse-geocode or IP lookups: the local clock only needs the
+ * device zone, so a slow/denied prompt falls back immediately. Records the
+ * denial and the "asked" flag in the session.
+ */
+export async function probeLocationForLocalTime(
+  opts: TimeLocationProbeOpts = {},
+): Promise<'granted' | 'denied' | 'unavailable'> {
+  const session = opts.session === undefined ? safeStorage('session') : opts.session;
+  const geo = opts.geolocation === undefined ? browserGeo() : opts.geolocation;
+  markTimeLocationAsked(session);
+  if (!geo) return 'unavailable';
+  let fix: { latitude: number; longitude: number } | 'denied' | null = null;
+  try {
+    fix = await askBrowser(geo, opts.timeoutMs ?? 1_500);
+  } catch {
+    fix = null;
+  }
+  if (fix === 'denied') {
+    try { session?.setItem(DENY_KEY, '1'); } catch { /* private mode */ }
+    return 'denied';
+  }
+  return fix ? 'granted' : 'unavailable';
 }
 
 /**

@@ -267,6 +267,9 @@ export type StrKey =
   | 'gateMicGranted' | 'gateMicDenied' | 'gateMicUnsupported' | 'gateEnter'
   | 'gateLocationTitle' | 'gateLocationBody' | 'gateLocationAllow'
   | 'gateLocationReady' | 'gateLocationDenied' | 'gateLocationUnsupported'
+  // In-app consent before the Time chip calls navigator.geolocation
+  // (owner 2026-11-26: "pre ask the user to allow location detection").
+  | 'timeGeoAskBody' | 'timeGeoAllow' | 'timeGeoSkip'
   | 'preChatGateTitle' | 'preChatGateLead' | 'preChatEnterChat' | 'preChatUnmuteHint'
   | 'preChatHeardOk'
   // adult-only replacement for the old Kid Mode row in Settings
@@ -1245,6 +1248,24 @@ export const STRINGS: Record<StrKey, Record<Lang, string>> = {
     yue: '呢個瀏覽器分享唔到位置——之後打城市一樣得。',
     zh: '这个浏览器无法分享位置——之后输入城市一样可以。',
     ja: 'このブラウザは位置情報に対応していません——後で都市名を入力できます。',
+  },
+  timeGeoAskBody: {
+    en: 'To read your local time correctly, allow location detection once? You can skip — I will use your device time zone instead.',
+    yue: '想準確讀你嘅本地時間，可以允許一次位置偵測嗎？唔想都得——我會改用你部機嘅時區。',
+    zh: '想准确读取你的本地时间，可以允许一次位置检测吗？跳过也可以——我会改用你设备的时区。',
+    ja: 'ローカル時刻を正しく読むために、位置情報の検出を一度許可しますか？スキップしても、端末のタイムゾーンでお答えします。',
+  },
+  timeGeoAllow: {
+    en: 'Allow location',
+    yue: '允許位置',
+    zh: '允许位置',
+    ja: '位置情報を許可',
+  },
+  timeGeoSkip: {
+    en: 'Skip',
+    yue: '跳過',
+    zh: '跳过',
+    ja: 'スキップ',
   },
   preChatGateTitle: { en: 'Turn on voice chat', yue: '開聲傾偈', zh: '开启语音聊天', ja: 'ボイスチャットをオンに' },
   preChatGateLead: {

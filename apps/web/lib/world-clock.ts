@@ -350,18 +350,54 @@ function joinClauses(lang: Lang, clauses: readonly string[]): string {
   return clauses.join(lang === 'ja' ? '、' : '，');
 }
 
-/** How many spoken facets rotate on repeat demo-chip taps. */
+/** How many decorative tour facets rotate on repeat demo-chip taps. */
 export function worldClockFacetCount(): number {
   return 4;
 }
 
 /**
- * Spoken world clock for demo chip + showcase — the listener's own time first,
- * then cities phrased as prose (part of day + weekday/day boundary, never `HH:MM`).
+ * Spoken local time only — part of day + time rounded to 5 minutes, never a
+ * city name and never `HH:MM`. This is the answer a time question speaks
+ * (owner 2026-11-26: "only say the local time").
+ * `userTimeZone` is overridable so tests do not depend on the machine's zone.
+ */
+export function spokenLocalClock(
+  lang?: string,
+  at: Date = new Date(),
+  userTimeZone?: string,
+): string {
+  const L = asWorldClockLang(lang);
+  const userTz = userTimeZone || resolveUserTimeZone();
+  const userWall = wallPartsInZone(userTz, roundedInstantInZone(userTz, at));
+  const localTime = userWall
+    ? spokenClockFromParts(L, userWall.hour, userWall.minute)
+    : spokenClockInZone(userTz, L, at);
+  return `${localLead(L, localTime)}${L === 'en' ? '.' : '。'}`;
+}
+
+/**
+ * Spoken time answer for the Time chip / any "what time is it" turn.
+ * Local-only by design; the `facet` argument is kept for callers that rotate
+ * demo prompts, but it no longer adds cities (see `spokenWorldClockTour`).
+ */
+export function spokenWorldClock(
+  lang?: string,
+  facet = 0,
+  at: Date = new Date(),
+  userTimeZone?: string,
+): string {
+  void facet;
+  return spokenLocalClock(lang, at, userTimeZone);
+}
+
+/**
+ * Decorative world tour — the listener's own time first, then cities phrased
+ * as prose (part of day + weekday/day boundary, never `HH:MM`). Kept for
+ * showcase/demo use; the Time question itself is local-only.
  * `facet` rotates which city set is emphasized (repeat taps).
  * `userTimeZone` is overridable so tests do not depend on the machine's zone.
  */
-export function spokenWorldClock(
+export function spokenWorldClockTour(
   lang?: string,
   facet = 0,
   at: Date = new Date(),
