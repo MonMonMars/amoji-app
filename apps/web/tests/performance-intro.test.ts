@@ -35,7 +35,12 @@ describe('performance intro (name before play)', () => {
     expect(performanceIntroLine('music', title, 'en')).toMatch(/let'?s start/i);
     expect(performanceIntroLine('music', title, 'en')).not.toMatch(/Here we go/i);
     // Genre only when supplied — never invent "Title · soft ballad".
-    expect(performanceIntroLine('song', 'Soave', 'yue')).toBe('好！呢首叫「Soave」——我而家唱俾你聽。');
+    expect(performanceIntroLine('song', 'Soave', 'yue')).toBe('好，呢首叫「Soave」——我而家唱俾你聽。');
+    // Owner 2026-11-26: no reply opens on a standalone word — the opener must
+    // stay inside the first clause, not become its own "好！" bubble.
+    for (const lang of ['yue', 'zh'] as const) {
+      expect(performanceIntroLine('song', 'Soave', lang), lang).not.toMatch(/^好[！!]/);
+    }
     expect(performanceIntroLine('song', 'Soave', 'yue', 'soft ballad')).toContain('Soave · soft ballad');
   });
 

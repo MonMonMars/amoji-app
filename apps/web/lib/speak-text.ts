@@ -28,9 +28,27 @@ function stripMarkup(s: string): string {
     .replace(/\{[^{}\n]{0,180}\}/g, ' ');
 }
 
+/**
+ * Owner 2026-11-26, twice: "please don't say 呀, very strange to start with a
+ * single word like this." A reply must never open on a lone particle: 呀 is a
+ * sentence-final particle (係呀), so emitted alone it is a stray syllable. This
+ * strips only a leading segment that is exactly one such character plus
+ * punctuation, so real exclamations (哇 / 咦 / 哎呀) and the particle inside a
+ * sentence are untouched.
+ */
+const LONE_LEAD_PARTICLE_RE =
+  /^[\s「『"']*(?:[呀啊吖嗯哦喔呃唉哎嗱噯])(?=[。．.！!？?…～~，,、\s]|$)[\s。．.！!？?…～~，,、]*/u;
+
+export function stripLoneLeadParticle(raw: string): string {
+  const s = String(raw || '');
+  const stripped = s.replace(LONE_LEAD_PARTICLE_RE, '');
+  // Never strip a line down to nothing — a reply of just "呀" keeps its word.
+  return isSpeakableText(stripped) ? stripped : s;
+}
+
 /** Display text: drop tags and code, keep normal punctuation for reading. */
 export function cleanForDisplay(raw: string): string {
-  const s = stripMarkup(stripStageDirections(raw))
+  const s = stripLoneLeadParticle(stripMarkup(stripStageDirections(raw)))
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .replace(/[ \t]{2,}/g, ' ')
@@ -167,7 +185,9 @@ export function sanitizeWebForSpeech(raw: string, lang?: Lang4): string {
 
 export function cleanForSpeech(raw: string): string {
   // t773/t777: drop web chrome before TTS; t771: never speak laugh tokens.
+  // Owner: never open on a lone 呀 — see stripLoneLeadParticle.
   let s = sanitizeWebForSpeech(stripMarkup(stripStageDirections(raw)));
+  s = stripLoneLeadParticle(s);
   s = s.replace(/\b(?:hyphen|dash|em dash|en dash|full stop|period|comma|semicolon|colon|tilde|ellipsis|exclamation(?: mark| point)?|question mark)\b/gi, ' ');
   s = s.replace(/\s*[—–―−]\s*/g, '，');
   s = s.replace(/\s+-\s+/g, '，');
@@ -231,6 +251,9 @@ export function prepareSpokenLead(lead?: { text: string; pitch: number; rate: nu
   if (!lead) return undefined;
   const text = cleanForSpeech(lead.text).replace(/[!！]+$/g, '').trim();
   if (!isSpeakableText(text)) return undefined;
+  // Owner 2026-11-26 (#no-ya): a lead that is one bare particle reads as a
+  // stray syllable at the start of the reply — drop the lead entirely.
+  if ([...stripVoicedGlyphs(text)].length <= 1 && /^[呀啊吖嗯哦喔呃唉哎嗱噯]$/u.test(text)) return undefined;
   const prosody = clampLeadProsody(lead.pitch, lead.rate);
   return { text, pitch: prosody.pitch, rate: prosody.rate };
 }

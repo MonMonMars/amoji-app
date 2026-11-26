@@ -43,10 +43,14 @@ describe('no 呀 on new-chat open cheer', () => {
     expect(panel).toMatch(/openHints[\s\S]*joy: 0\.5[58]/);
   });
 
-  it('呀 joy tic is TTS interjection, not a yue burst clip (#450)', () => {
-    const ya = INTERJECTIONS.joy?.yue?.text ?? '';
-    expect(ya).toContain('呀');
-    expect(emotionClipKind(ya, 'lead')).toBeNull();
+  it('the joy tic is a TTS interjection, not a yue burst clip (#450, 2026-11-26)', () => {
+    // The old text was 呀！; the owner then rejected a lone 呀 opener, so the
+    // tic is now a real cheer. What must still hold: it is spoken by TTS and
+    // never resolved to a pre-baked yue clip.
+    const cheer = INTERJECTIONS.joy?.yue?.text ?? '';
+    expect(cheer).toBeTruthy();
+    expect(cheer).not.toBe('呀！');
+    expect(emotionClipKind(cheer, 'lead')).toBeNull();
     expect(emotionClipKind('呀！', 'lead')).toBeNull();
   });
 });

@@ -35,16 +35,19 @@ export function performanceIntroLine(
   const L: IntroLang =
     lang === 'yue' || lang === 'zh' || lang === 'ja' || lang === 'en' ? lang : 'en';
   const isSong = kind === 'song';
+  // Owner 2026-11-26: a reply must not open on a lone word. The old text began
+  // "好！呢首叫…", which the clause splitter turned into its own "好！" bubble.
+  // A comma keeps the opener inside the first sentence.
   if (L === 'yue') {
     return isSong
-      ? `好！呢首叫「${named}」——我而家唱俾你聽。`
+      ? `好，呢首叫「${named}」——我而家唱俾你聽。`
       // Pixel: say "let's start" — never 「起！」 (that means "rise").
-      : `好！呢段音樂叫「${named}」——我哋開始！`;
+      : `好，呢段音樂叫「${named}」——我哋開始！`;
   }
   if (L === 'zh') {
     return isSong
-      ? `好！这首叫「${named}」——我现在唱给你听。`
-      : `好！这段音乐叫「${named}」——我们开始！`;
+      ? `好，这首叫「${named}」——我现在唱给你听。`
+      : `好，这段音乐叫「${named}」——我们开始！`;
   }
   if (L === 'ja') {
     return isSong
