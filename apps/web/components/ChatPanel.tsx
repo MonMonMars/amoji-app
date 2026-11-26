@@ -286,7 +286,7 @@ import { startVad, waitForVadRelease } from '../lib/vad';
 import { ambientStart, ambientStop } from '../lib/sfx';
 import { t, backgroundById, type Lang, type StrKey } from '../lib/prefs';
 import { adaptiveBlock, pickSceneLine } from '../lib/adaptive';
-import { factTurnQuietActive } from '../lib/fact-turn-quiet';
+import { claimFactLineOnce, factTurnQuietActive } from '../lib/fact-turn-quiet';
 import {
   SPEECH_CAPTION_EVENT,
   captionsCoverReply,
@@ -1646,7 +1646,9 @@ export default function ChatPanel({
       if (kind === 'news') {
         const ask = lang === 'ja' ? '最新ニュースは？' : lang === 'zh' ? '今天有什么新闻？' : lang === 'yue' ? '今日有咩新聞？' : "what's the latest news?";
         void clientLiveContext(ask, lang).then((live) => {
-          sayLocal(live.spoken?.trim() || SHOWCASE_START[lang].news);
+          const line = live.spoken?.trim() || SHOWCASE_START[lang].news;
+          // One news read per fact line — a re-dispatch must not repeat it.
+          if (claimFactLineOnce(live.newsKey || line)) sayLocal(line);
         });
         done();
         return;
@@ -1768,13 +1770,31 @@ export default function ChatPanel({
     // immediately, without a location prompt.
     let world = '';
     let worldSpoken = '';
+    let worldNewsKey = '';
     let answered = false;
+    /**
+     * One story, one speak. Every lane that is about to read the live story
+     * claims it first, so a chip tap / re-render / second lane cannot say the
+     * same tell again. Returns false when this lane must stay silent.
+     */
+    const claimLiveStory = (): boolean => {
+      if (!worldNewsKey) return true;
+      if (claimFactLineOnce(worldNewsKey)) return true;
+      setHistory((h) => {
+        const tail = h[h.length - 1];
+        return tail?.role === 'assistant' && tail.content === '…' ? h.slice(0, -1) : h;
+      });
+      transientRef.current = false;
+      answered = true;
+      return false;
+    };
     const priorUser = [...history].reverse().find((m) => m.role === 'user')?.content;
     let livePlan = planTools(text, priorUser);
     try {
       const live = await clientLiveContext(text, lang, priorUser);
       world = live.prompt;
       worldSpoken = live.spoken;
+      worldNewsKey = live.newsKey ?? '';
       if (contentContinuation && (contTurn.started || contTurn.continuing)) {
         const refined = extractContentTopic(text, world);
         if (refined && refined !== 'this topic') {
@@ -1789,6 +1809,17 @@ export default function ChatPanel({
         const line = scrubLiveFactsSpoken(stripOfftopicAbilityTack(worldSpoken, text));
         if (!line.trim()) {
           answered = false;
+        } else if (livePlan.news && !claimFactLineOnce(worldNewsKey || line)) {
+          // Owner 2026-11-26 (third report): the same news read was dispatched
+          // twice for one fact turn. The first dispatch owns the line; a second
+          // one is dropped here and only clears the wait placeholder, so the
+          // story can never be spoken twice and history never shows it twice.
+          setHistory((h) => {
+            const tail = h[h.length - 1];
+            return tail?.role === 'assistant' && tail.content === '…' ? h.slice(0, -1) : h;
+          });
+          transientRef.current = false;
+          answered = true;
         } else {
           rememberTurn(text, line);
           onMemCountRef.current?.(memorySummaryCount());
@@ -1895,6 +1926,7 @@ export default function ChatPanel({
         rememberTurn(text, cleanedReply);
         onMemCountRef.current?.(memorySummaryCount());
         feedUtterance(cleanedReply);
+        if (!claimLiveStory()) return;
         const spoken = speakReply(
           text,
           cleanedReply,
@@ -1941,6 +1973,7 @@ export default function ChatPanel({
       rememberTurn(text, reply);
       onMemCountRef.current?.(memorySummaryCount());
       feedUtterance(reply);
+      if (!claimLiveStory()) return;
       const spoken = speakReply(text, reply, contentPlan.moodHints, felt?.intensity, felt?.mood, undefined, replyUtterance);
       pushAutoIdle(reply, undefined, undefined, text);
       commitReply(spoken);
@@ -2556,6 +2589,9 @@ export default function ChatPanel({
                     ? SHOWCASE_START[lang].weather
                     : SHOWCASE_START[lang].news;
                   const spoken = line || fallback;
+                  // A news chip re-dispatch must not say the same story twice.
+                  // Weather is allowed to repeat — same numbers, user asked again.
+                  if (id !== 'weather' && !claimFactLineOnce(live.newsKey || spoken)) return;
                   rememberTurn(prompt, spoken);
                   onMemCountRef.current?.(memorySummaryCount());
                   sayLocal(spoken);

@@ -2,20 +2,29 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  NEWS_SPOKEN_MIN_BODY_SENTENCES,
   clearLiveCache,
   clearNewsTold,
   gatherLiveContext,
   newsSpokenBodyBeats,
+  newsTellNeedsEnrichment,
+  normalizeNewsTitle,
   parseRssItems,
   sayRecent,
+  sayNews,
   type Headline,
   type Place,
 } from '../lib/live-tools';
 import { splitChunks } from '../lib/gtts';
 import { pickIdleCompanionLine } from '../lib/idle-talk';
 import { pickSceneLine } from '../lib/adaptive';
-import { factTurnQuietActive, resetFactTurnQuiet } from '../lib/fact-turn-quiet';
-
+import {
+  FACT_LINE_REPEAT_WINDOW_MS,
+  claimFactLineOnce,
+  factTurnQuietActive,
+  resetFactLineOnce,
+  resetFactTurnQuiet,
+} from '../lib/fact-turn-quiet';
 // Owner 2026-11-25, verbatim:
 //   "the news now still too short, need to tell the news longer, not only tell
 //    the title. and it always repeat two times. and then it say something non
@@ -50,6 +59,7 @@ function jsonRes(body: unknown, status = 200): Response {
 
 afterEach(() => {
   resetFactTurnQuiet();
+  resetFactLineOnce();
   clearNewsTold(memKv());
   clearLiveCache();
 });
@@ -225,3 +235,171 @@ describe('news tell: one speak request per turn', () => {
     expect(idleLoop).toContain('factTurnQuietActive()');
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Owner 2026-11-26, THIRD report of the same class:
+//   "the news still too short and repeated one time again"
+// PR #593 claimed to fix exactly this and did not hold. These tests lock the
+// real behaviours: several sentences of real body, and one dispatch per turn.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const WEATHER_TITLE = '天文台：周五多雲有幾陣雨 氣溫最低十六度';
+const WEATHER_SOURCE = 'RTHK News';
+const WEATHER_BODY = [
+  '天文台表示，一股東北季候風會在周五抵達廣東沿岸，本港天氣會轉為多雲。',
+  '周五氣溫會由最高的二十二度，逐步降至最低的十六度左右。',
+  '預測周五有幾陣雨，市民出門最好帶備雨具。',
+  '周末期間風勢仍然偏大，海面會有湧浪，水上活動要注意安全。',
+  '天文台呼籲長者及長期病患者注意保暖，並留意最新天氣預報。',
+];
+
+const sentenceCount = (line: string): number =>
+  line.split(/(?<=[。！？!?])/u).filter((s) => s.trim().length > 2).length;
+
+/** Escape a fragment the way an RSS `<description>` carries HTML. */
+const rssEscape = (html: string): string =>
+  html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+describe('news tell: several real body sentences (Defect 1, third report)', () => {
+  it('reads five story sentences — a concrete minimum length, not a headline', () => {
+    const lead: Headline = {
+      title: WEATHER_TITLE,
+      source: WEATHER_SOURCE,
+      summary: WEATHER_BODY.join(''),
+      details: WEATHER_BODY,
+    };
+    const line = sayRecent('yue', lead);
+    // Body only, excluding the intro + headline sentence.
+    const bodyChars = line.length - `有條新聞：${WEATHER_TITLE}。`.length;
+    expect(bodyChars).toBeGreaterThan(120);
+    expect(line.length).toBeGreaterThan(150);
+    expect(sentenceCount(line)).toBeGreaterThanOrEqual(5);
+    for (const s of WEATHER_BODY) expect(line).toContain(s);
+  });
+
+  it('treats a two-sentence / one-line body as too short and seeks enrichment', () => {
+    // This is the shape that used to pass NEWS_SPOKEN_MIN_BODY_CHARS = 56, so
+    // the enrichment branch never fired and the tell stayed short.
+    const thin: Headline = {
+      title: WEATHER_TITLE,
+      source: WEATHER_SOURCE,
+      summary: '天文台表示周五多雲有雨。氣溫會降至十六度。',
+    };
+    expect(newsTellNeedsEnrichment(thin, 'yue')).toBe(true);
+    expect(NEWS_SPOKEN_MIN_BODY_SENTENCES).toBeGreaterThanOrEqual(2);
+    const rich: Headline = {
+      title: WEATHER_TITLE,
+      source: WEATHER_SOURCE,
+      summary: WEATHER_BODY.join(''),
+      details: WEATHER_BODY,
+    };
+    expect(newsTellNeedsEnrichment(rich, 'yue')).toBe(false);
+  });
+
+  it('keeps the full multi-sentence body instead of a 4-chunk slice', () => {
+    const beats = newsSpokenBodyBeats({
+      title: WEATHER_TITLE,
+      source: WEATHER_SOURCE,
+      summary: WEATHER_BODY.join(''),
+      details: WEATHER_BODY,
+    }, 'yue');
+    expect(beats.length).toBeGreaterThanOrEqual(5);
+    expect(beats.join('')).toContain(WEATHER_BODY[4]!);
+  });
+
+  it('never speaks Google’s related-headline cluster as the story body', () => {
+    // Google News ships `<ol><li><a>headline</a> source</li>…` — a list of
+    // OTHER outlets' headlines about the same event. Flattened into prose it
+    // read as "the same news three times" plus nonsense.
+    const cluster = '<ol>'
+      + `<li><a href="https://news.google.com/rss/articles/a">${WEATHER_TITLE}</a>&nbsp;&nbsp;<font color="#6f6f6f">RTHK News</font></li>`
+      + '<li><a href="https://news.google.com/rss/articles/b">同一天氣新聞 另一間報館的標題寫法</a>&nbsp;&nbsp;<font color="#6f6f6f">明報新聞網</font></li>'
+      + '<li><a href="https://news.google.com/rss/articles/c">天氣｜周五有雨 市民記得帶傘</a>&nbsp;&nbsp;<font color="#6f6f6f">香港01</font></li>'
+      + '</ol>';
+    const rss = `<rss><channel><item><title>${WEATHER_TITLE} - ${WEATHER_SOURCE}</title>`
+      + `<description>${rssEscape(cluster)}</description></item></channel></rss>`;
+    const [row] = parseRssItems(rss);
+    expect(row?.title).toBe(WEATHER_TITLE);
+    expect(row?.summary ?? '').toBe('');
+    const line = sayRecent('yue', row!);
+    expect(line).not.toContain('另一間報館');
+    expect(line).not.toContain('市民記得帶傘');
+  });
+
+  it('keeps a real prose lede that sits beside a related-link list', () => {
+    const html = `<p>天文台表示，一股東北季候風會在周五抵達廣東沿岸，本港天氣會轉為多雲。</p>${rssEscape('<ol><li><a>別家標題</a></li></ol>')}`;
+    const rss = `<rss><channel><item><title>${WEATHER_TITLE} - ${WEATHER_SOURCE}</title>`
+      + `<description>${rssEscape(html)}</description></item></channel></rss>`;
+    const [row] = parseRssItems(rss);
+    expect(row?.summary ?? '').toContain('東北季候風');
+    expect(row?.summary ?? '').not.toContain('別家標題');
+  });
+});
+
+describe('news tell: one dispatch per fact turn (Defect 2, structural)', () => {
+  it('the same story is spoken exactly ONCE across every dispatch path', () => {
+    const lead: Headline = {
+      title: WEATHER_TITLE,
+      source: WEATHER_SOURCE,
+      summary: WEATHER_BODY.join(''),
+      details: WEATHER_BODY,
+    };
+    const line = sayRecent('yue', lead);
+    const key = normalizeNewsTitle(lead.title);
+    // This is the production guard used by ChatPanel: news branch, news chip
+    // and showcase offer all claim the story key before they speak.
+    const dispatched: string[] = [];
+    const dispatch = (claimKey: string, text: string) => {
+      if (claimFactLineOnce(claimKey)) dispatched.push(text);
+    };
+
+    dispatch(key, line);                                         // facts branch
+    dispatch(key, line);                                         // re-render / second path
+    dispatch(key, sayNews('yue', 'Hong Kong', lead));            // warm near-me framing
+    dispatch(normalizeNewsTitle(lead.title), line);              // chip path, same story
+
+    expect(dispatched).toHaveLength(1);
+    expect(dispatched[0]).toBe(line);
+    // The spoken line itself names the story once.
+    expect(line.split('周五多雲有幾陣雨').length - 1).toBe(1);
+
+    // A genuinely different story is not blocked.
+    dispatch('另一單新聞的標題', '有條新聞：另一單新聞的標題。');
+    expect(dispatched).toHaveLength(2);
+  });
+
+  it('the guard expires, so a later ask can tell the story again', () => {
+    const key = 'same story key';
+    const t0 = 1_000_000;
+    expect(claimFactLineOnce(key, t0)).toBe(true);
+    expect(claimFactLineOnce(key, t0 + 1000)).toBe(false);
+    expect(claimFactLineOnce(key, t0 + FACT_LINE_REPEAT_WINDOW_MS + 1)).toBe(true);
+  });
+
+  it('an empty line never claims, and never blocks the next tell', () => {
+    expect(claimFactLineOnce('')).toBe(false);
+    expect(claimFactLineOnce('   ')).toBe(false);
+    expect(claimFactLineOnce('有條新聞：天文台預測周五有雨。')).toBe(true);
+  });
+
+  it('ChatPanel claims before speaking on every news dispatch site', () => {
+    const panel = readFileSync(join(__dirname, '../components/ChatPanel.tsx'), 'utf8');
+    const claims = panel.match(/claimFactLineOnce\(/g) ?? [];
+    // facts-only branch, showcase chip, LLM lane (streamed + server), story key.
+    expect(claims.length).toBeGreaterThanOrEqual(3);
+    // Both LLM lanes go through the shared claim helper before speakReply.
+    const laneGuards = panel.match(/if \(!claimLiveStory\(\)\) return;/g) ?? [];
+    expect(laneGuards.length).toBeGreaterThanOrEqual(2);
+    // Keyed on the story, not just the rendered line, so a reformatted day
+    // intro cannot slip a second read through.
+    expect(panel).toContain('worldNewsKey');
+    expect(panel).toContain('live.newsKey');
+  });
+
+  it('a news tell still marks the fact window (quiet chatter survives)', () => {
+    const lead: Headline = { title: WEATHER_TITLE, source: WEATHER_SOURCE, summary: WEATHER_BODY.join('') };
+    sayRecent('yue', lead);
+    expect(factTurnQuietActive()).toBe(true);
+  });
+});
+

@@ -54,6 +54,11 @@ export interface LiveContext {
   prompt: string;
   /** one or two spoken sentences, already in `lang`, for when the LLM is down */
   spoken: string;
+  /**
+   * Normalised headline key of the story in `spoken` (news only). The dispatch
+   * layer uses it as an idempotency key so one story can never be spoken twice.
+   */
+  newsKey?: string;
 }
 
 export const EMPTY_LIVE: LiveContext = { prompt: '', spoken: '' };
@@ -946,8 +951,15 @@ const NEWS_TEASER_ONLY =
 /** WordPress/publisher footer ("這篇文章 … 最早出現於 …") — not story detail. */
 const NEWS_FOOTER_CHROME =
   /^(?:\.{2,}|…|⋯|\s)*(?:最早出現於|最早出现于|appeared first on|first appeared on|the post\b[\s\S]*appeared first on|this (?:article|post)\b[\s\S]*appeared first on|這篇文章|这篇文章|呢篇文章|本文|この記事|この投稿)[\s\S]*(?:最早出現於|最早出现于|appeared first on|first appeared on|最初に(?:掲載|公開))/iu;
-/** Minimum substance beyond the headline for a news tell (all langs). */
-export const NEWS_SPOKEN_MIN_BODY_CHARS = 56;
+/** Minimum substance beyond the headline for a news tell (all langs).
+ *  Raised from 56 on 2026-11-26: a one-sentence 60-char body passed as "enough",
+ *  so the enrichment path never fired and the owner kept hearing a headline
+ *  plus a line ("still too short"). A tell now needs several real sentences. */
+export const NEWS_SPOKEN_MIN_BODY_CHARS = 90;
+/** A real tell needs several finished sentences of story body, not one line. */
+export const NEWS_SPOKEN_MIN_BODY_SENTENCES = 3;
+/** Spoken body beats kept per tell — several sentences, still a short read. */
+export const NEWS_SPOKEN_MAX_BEATS = 8;
 
 /** ISIN / fund ticker tokens in Google News “AI” search results — not news stories. */
 const NEWS_FUND_ISIN_RE = /\b0P000[A-Z0-9]{4,}\b|\bLU\d{6}[A-Z0-9]{4,}\b/i;
@@ -1079,6 +1091,10 @@ export function stripLeadingNewsTitle(beat: string, title = ''): string {
   return t;
 }
 
+/** Spoken feed-body budget. A 520-char cut dropped real lede sentences; the
+ *  owner wants several finished sentences of the story, not the headline. */
+const NEWS_BODY_CLIP = 900;
+
 /**
  * Drop RSS chrome (compact dates, section tags, source labels, title repeat)
  * before TTS — Hong Kong feeds often pack these on separate lines.
@@ -1122,8 +1138,8 @@ export function scrubNewsFeedBody(text: string, title = ''): string {
   return kept.join(' ').replace(/\s+/g, ' ').trim();
 }
 
-/** Split a lede into 2–4 spoken detail beats — never invents content. */
-export function newsDetailsFromText(text: string, title = '', max = 4): string[] {
+/** Split a lede into 2–6 spoken detail beats — never invents content. */
+export function newsDetailsFromText(text: string, title = '', max = 6): string[] {
   const cleaned = spokenHeadline(scrubNewsFeedBody(text, title))
     .replace(/\s+/g, ' ')
     .trim();
@@ -1141,13 +1157,13 @@ export function newsDetailsFromText(text: string, title = '', max = 4): string[]
     const key = normalizeNewsTitle(chunk);
     if (!key || (titleKey && (key === titleKey || titleKey.includes(key)))) continue;
     if (out.some((o) => normalizeNewsTitle(o) === key)) continue;
-    out.push(clip(chunk, 300));
+    out.push(clip(chunk, 360));
     if (out.length >= max) break;
   }
   if (out.length >= 2) return out.slice(0, max);
   // Single long lede → keep as one detail when we have substance beyond the title.
   if (cleaned.length >= 48 && normalizeNewsTitle(cleaned) !== titleKey) {
-    return [clip(cleaned, 360)];
+    return [clip(cleaned, 520)];
   }
   return out;
 }
@@ -1305,6 +1321,12 @@ function decodeXml(s: string): string {
   let out = s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1');
   out = entities(out.replace(/&amp;/g, '&'));
   out = entities(out.replace(/&amp;/g, '&'));
+  // Google News cluster descriptions are an <ol> of OTHER outlets' related
+  // headlines for the same event — not a story lede. Flattening that list into
+  // one punctuation-free run-on spoke the same story three to five times and
+  // read as nonsense (owner 2026-11-26, third report of "still too short and
+  // repeated"). Drop the related-link list; real prose outside it is kept.
+  out = out.replace(/<(?:ol|ul)\b[\s\S]*?<\/(?:ol|ul)>/gi, ' ');
   return out
     .replace(/<[^>]+>/g, '')
     .replace(/\u00a0/g, ' ')
@@ -1505,7 +1527,7 @@ export function parseRssItems(xml: string, limit = 12): Headline[] {
     if (isJunkNewsHeadline(titleRaw, source)) continue;
     const descRaw = item.match(/<(?:description|content:encoded|summary)>([\s\S]*?)<\/(?:description|content:encoded|summary)>/i)?.[1];
     const summary = descRaw
-      ? clip(spokenHeadline(scrubNewsFeedBody(decodeXml(descRaw), title)), 520)
+      ? clip(spokenHeadline(scrubNewsFeedBody(decodeXml(descRaw), title)), NEWS_BODY_CLIP)
       : '';
     const details = summary ? newsDetailsFromText(summary, title) : [];
     const publishedAt = rssItemPublishedAt(item);
@@ -1912,7 +1934,7 @@ function withNewsBody(
   publishedAt?: number,
 ): Headline {
   const summary = summaryRaw
-    ? clip(spokenHeadline(scrubNewsFeedBody(summaryRaw, title)), 520)
+    ? clip(spokenHeadline(scrubNewsFeedBody(summaryRaw, title)), NEWS_BODY_CLIP)
     : '';
   const details = summary ? newsDetailsFromText(summary, title) : [];
   const row: Headline = { title, source };
@@ -1928,11 +1950,11 @@ function formatNewsFactLine(lead: Headline): string {
   const summary = lead.summary?.trim()
     ? stripLeadingNewsSource(stripLeadingNewsTitle(lead.summary, lead.title)).trim()
     : '';
-  if (summary) bits.push(`Summary: ${clip(spokenHeadline(summary), 520)}`);
+  if (summary) bits.push(`Summary: ${clip(spokenHeadline(summary), NEWS_BODY_CLIP)}`);
   const details = (lead.details?.length ? lead.details : newsDetailsFromText(lead.summary ?? '', lead.title))
     .map((d) => stripLeadingNewsSource(stripLeadingNewsTitle(d, lead.title)).trim())
     .filter(Boolean)
-    .slice(0, 4);
+    .slice(0, 6);
   if (details.length) {
     bits.push(`Key details: ${details.map((d, i) => `(${i + 1}) ${clip(spokenHeadline(d), 300)}`).join(' ')}`);
   }
@@ -2318,7 +2340,7 @@ async function searchWikipedia(
     prop: 'extracts',
     exintro: '1',
     explaintext: '1',
-    exchars: '720',
+    exchars: '1200',
     format: 'json',
     origin: '*',
   });
@@ -2329,7 +2351,7 @@ async function searchWikipedia(
     .filter((p) => p.extract && p.title)
     .sort((a, b) => (a.index ?? 99) - (b.index ?? 99));
   for (const p of ranked) {
-    const extract = clip(p.extract!, 520);
+    const extract = clip(p.extract!, 900);
     if (wikiExtractMatchesNewsTitle(query, p.title!, extract)) {
       return { title: p.title!, extract };
     }
@@ -2405,32 +2427,94 @@ async function enrichNewsLeadForSpeech(
   // 1) Second source for the body. Google News descriptions are title stubs, so
   //    search the story on Bing News RSS and keep the best same-story lede.
   const bingRows = await fetchRssFeedHeadlines(fetchImpl, bingNewsSearchRssUrl(topic, lang), rssKey, cache);
+  // Owner 2026-11-26 (third report): "the news still too short". Each outlet's
+  // RSS snippet is one or two sentences, and the old loop returned the FIRST
+  // row that cleared the bar — often a one-sentence stub — instead of the
+  // fullest body available. Collect every same-story snippet, then prefer the
+  // longest, and when no single outlet carries a full body, read two outlets.
+  const snippets: Array<{ body: string; score: number; len: number }> = [];
   let best: Headline | null = null;
-  let bestScore = 0;
+  let bestLen = 0;
   for (const row of bingRows) {
     const summary = row.summary?.trim();
     if (!summary || summary.length < 40 || isNewsBeatChrome(summary)) continue;
     const score = newsBodyMatchScore(topic, `${row.title} ${summary}`);
-    if (score < 0.5 || score <= bestScore) continue;
+    if (score < 0.5) continue;
     const enriched = withNewsBody(lead.title, lead.source || row.source || 'Bing News', summary, lead.publishedAt);
-    if (newsTellNeedsEnrichment(enriched, lang)) continue;
-    best = enriched;
-    bestScore = score;
+    // Accept any real body; the strict speak bar below prefers a longer one but
+    // must never throw away the best candidate we found (that is how a fix for
+    // "too short" ended up speaking the headline again).
+    if (!newsBodyIsUsable(enriched, lang)) continue;
+    const len = newsBodyBeatCharLen(lang, newsSpokenBodyBeats(enriched, lang));
+    if (len > bestLen) {
+      best = enriched;
+      bestLen = len;
+    }
+    snippets.push({ body: summary, score, len });
+  }
+  if (best && !newsTellNeedsEnrichment(best, lang)) return best;
+  const merged = mergeNewsSnippets(lead, snippets, lang);
+  if (merged) {
+    const mergedLen = newsBodyBeatCharLen(lang, newsSpokenBodyBeats(merged, lang));
+    if (!best || mergedLen >= bestLen) return merged;
   }
   if (best) return best;
+  let usable: Headline | null = null;
   const wiki = await searchWikipedia(fetchImpl, topic, lang, cache);
   if (wiki) {
     const enriched = withNewsBody(lead.title, lead.source || 'Wikipedia', wiki.extract, lead.publishedAt);
     if (!newsTellNeedsEnrichment(enriched, lang)) return enriched;
+    if (newsBodyIsUsable(enriched, lang)) usable = enriched;
   }
   const ddg = await searchDuckDuckGo(fetchImpl, topic, cache);
   for (const bit of ddg) {
     const body = scrubNewsFeedBody(bit, lead.title);
     if (body.length < 40 || isNewsBeatChrome(body)) continue;
     const enriched = withNewsBody(lead.title, lead.source || 'Web', body, lead.publishedAt);
+    if (!newsBodyIsUsable(enriched, lang)) continue;
     if (!newsTellNeedsEnrichment(enriched, lang)) return enriched;
+    usable = usable ?? enriched;
   }
-  return wiki ? withNewsBody(lead.title, lead.source || 'Wikipedia', wiki.extract, lead.publishedAt) : lead;
+  return usable ?? lead;
+}
+
+/**
+ * Join same-story snippets from different outlets into one body. Every sentence
+ * is deduped, so two outlets covering one story read as a fuller story instead
+ * of the same line twice (#593 regression: "repeated one time again").
+ */
+function mergeNewsSnippets(
+  lead: Headline,
+  snippets: Array<{ body: string; score: number; len: number }>,
+  lang: Lang4,
+): Headline | null {
+  if (snippets.length < 2) return null;
+  const ranked = [...snippets].sort((a, b) => b.len - a.len || b.score - a.score);
+  const parts: string[] = [];
+  const seen = new Set<string>();
+  for (const row of ranked.slice(0, 3)) {
+    for (const sentence of newsSentences(row.body)) {
+      if (parts.length >= NEWS_SPOKEN_MAX_BEATS) break;
+      if (/(?:\.{2,}|…)\s*$/u.test(sentence)) continue;
+      const key = normalizeNewsTitle(sentence);
+      if (!key || seen.has(key)) continue;
+      if (parts.some((p) => {
+        const pk = normalizeNewsTitle(p);
+        return Boolean(pk) && (pk.includes(key) || key.includes(pk));
+      })) continue;
+      seen.add(key);
+      parts.push(sentence);
+    }
+    if (parts.length >= NEWS_SPOKEN_MAX_BEATS) break;
+  }
+  if (parts.length < 2) return null;
+  // Two outlets joining at a sentence seam used to leave a dangling "；。" behind.
+  const body = parts.join(lang === 'en' || lang === 'ja' ? ' ' : '').replace(/[；;]\s*。/g, '。');
+  const enriched = withNewsBody(lead.title, lead.source || 'Bing News', body, lead.publishedAt);
+  if (!newsBodyIsUsable(enriched, lang)) return null;
+  // Both outlets repeating the headline is not a body — keep the single best row.
+  if (newsSpokenBodyBeats(enriched, lang).length < 2) return null;
+  return enriched;
 }
 
 async function searchDuckDuckGo(fetchImpl: typeof fetch, query: string, cache: Map<string, { at: number; body: string }>): Promise<string[]> {
@@ -2627,7 +2711,21 @@ function newsBodyBeatCharLen(lang: Lang4, beats: string[]): number {
 export function newsTellNeedsEnrichment(lead: Headline, lang: Lang4 = 'yue'): boolean {
   const beats = newsSpokenBodyBeats(lead, lang);
   if (!beats.length) return true;
+  const sentences = beats.reduce((n, b) => n + newsSentences(b).length, 0);
+  if (sentences < NEWS_SPOKEN_MIN_BODY_SENTENCES) return true;
   return newsBodyBeatCharLen(lang, beats) < NEWS_SPOKEN_MIN_BODY_CHARS;
+}
+
+/**
+ * Is this body worth keeping? Weaker than {@link newsTellNeedsEnrichment}: a
+ * second-source candidate that says something real is better than a bare
+ * headline even if it is short, so enrichment accepts it instead of discarding
+ * every candidate and falling back to the title (the old "too short" loop).
+ */
+function newsBodyIsUsable(lead: Headline, lang: Lang4): boolean {
+  const beats = newsSpokenBodyBeats(lead, lang);
+  if (!beats.length) return false;
+  return newsBodyBeatCharLen(lang, beats) >= 24 || beats.length >= 2;
 }
 
 /** Split a body into finished spoken sentences (keeps the closing mark). */
@@ -2658,11 +2756,11 @@ export function newsSpokenBodyBeats(lead: Headline, lang?: Lang4): string[] {
     const stripped = stripLeadingNewsSource(stripLeadingNewsTitle(raw, lead.title)).trim();
     if (!stripped) return;
     for (const sentence of newsSentences(stripped)) {
-      if (beats.length >= 6) return;
+      if (beats.length >= NEWS_SPOKEN_MAX_BEATS) return;
       // A source-truncated tail ("…", "...") is half a thought; dropping it is
       // better than speaking "香港區用戶目前 …" as a finished sentence.
       if (/(?:\.{2,}|…)\s*$/u.test(sentence)) continue;
-      const s = clip(spokenHeadline(sentence, source, lang), 360).trim();
+      const s = clip(spokenHeadline(sentence, source, lang), 420).trim();
       if (!s || isNewsBeatChrome(s)) continue;
       const key = normalizeNewsTitle(s);
       if (!key || key === titleKey) continue;
@@ -2683,7 +2781,7 @@ export function newsSpokenBodyBeats(lead: Headline, lang?: Lang4): string[] {
   const details = lead.details?.length ? lead.details : newsDetailsFromText(lead.summary ?? '', lead.title);
   for (const d of details) pushBeat(d);
   if (lead.summary?.trim()) pushBeat(lead.summary);
-  return beats.slice(0, 6);
+  return beats.slice(0, NEWS_SPOKEN_MAX_BEATS);
 }
 
 function newsBodyBeats(lead: Headline): string[] {
@@ -3015,6 +3113,8 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
 
   const promptLines: string[] = [];
   const spoken: string[] = [];
+  /** Headline key of the spoken news story — idempotency key for dispatch. */
+  let newsKey: string | undefined;
 
   if (place) {
     // Never feed GPS / network-accuracy wording into the model — free LLMs
@@ -3085,6 +3185,7 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
       } else {
         spoken.push(activePack.recent ? sayRecent(lang, lead, now) : sayNews(lang, label, lead, now));
       }
+      newsKey = normalizeNewsTitle(lead.title) || lead.title;
     } else if (!place && !plan.placeQuery && !plan.newsQuery && !plan.recent && plan.needsDevice) {
       // Explicit local/near-me news with no location — only then ask which city.
       promptLines.push('News: need a city or country from the user.');
@@ -3116,7 +3217,8 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
 
   const prompt = promptLines.join('\n').slice(0, plan.recipeQuery || plan.news ? 1800 : 1100);
   const spokenCap = plan.recipeQuery || plan.news ? 3 : 2;
-  return { prompt, spoken: spoken.slice(0, spokenCap).join(lang === 'en' ? ' ' : '') };
+  const line = spoken.slice(0, spokenCap).join(lang === 'en' ? ' ' : '');
+  return newsKey ? { prompt, spoken: line, newsKey } : { prompt, spoken: line };
 }
 
 function browserGeo(): GeoLike | null {
