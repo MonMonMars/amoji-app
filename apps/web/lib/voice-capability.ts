@@ -16,17 +16,18 @@
 // different `tl` codes — different speakers, not just a different rate. Those
 // are the only real choices left, so they are the only buttons.
 //
-// GENDER TRUTH (owner 2026-11-23): every one of those speakers is FEMALE. The
-// app used to ship "male" buttons over the same female MP3 with
+// GENDER TRUTH (owner 2026-11-23): every one of those Google speakers is
+// FEMALE. The app used to ship "male" buttons over the same female MP3 with
 // preservesPitch=false and playbackRate=0.64. That is not a male voice; it is
 // a pitched-down woman, and it is what the owner reported. There are no male
 // gTTS choices any more, and no pitch reshaping. A real male option needs a
-// real source (Edge neural — currently 403 — or an OS speechSynthesis male
-// voice), which is a separate engine, not a label on this one.
+// real source — which now exists: Edge neural voices through the TTS relay
+// (RELAY_MALE_SEEDS below, a different engine, never a label on this one).
 
 import type { StrKey } from './prefs';
 import type { VoiceLocale } from './voice-catalog';
 import type { GttsPitchTier } from './gtts-timbre';
+import { edgeEndpointsDead, getTtsProxy } from './edge-tts';
 import {
   addNextVoiceExtra,
   extraVoiceById,
@@ -188,15 +189,27 @@ export function hiddenEngines(): readonly EngineVerdict[] {
 // ---------------------------------------------------------------------------
 
 export interface VoiceChoice {
-  /** Stable pin/picker id (`gtts:<tl>:<f|m>:<deep|mid|bright>`). */
+  /** Stable pin/picker id (`gtts:<tl>:<f|m>:<deep|mid|bright>` or `edge:<short name>`). */
   id: string;
   locale: VoiceLocale;
-  engine: 'gtts';
   /**
-   * Google Translate `tl`. This is the ONLY handle on the voice: the endpoint
-   * has no voice-id parameter, so the region code IS the speaker.
+   * `gtts` = Google Translate MP3 (one speaker per `tl`, all female).
+   * `edge` = Microsoft Edge neural synthesis carried by the TTS relay; the
+   * speaker is named by `edgeVoiceId`, not by `tl`.
+   */
+  engine: 'gtts' | 'edge';
+  /**
+   * Google Translate `tl` — the ONLY handle on a gTTS voice: the endpoint has
+   * no voice-id parameter, so the region code IS the speaker. For an `edge`
+   * choice this is the language default, used only if a caller needs a gTTS
+   * fallback (a male button must never take that fallback).
    */
   tl: string;
+  /**
+   * Edge neural short name, e.g. `zh-HK-WanLungNeural`. Set only for
+   * `engine: 'edge'`; the relay synthesizes exactly this voice.
+   */
+  edgeVoiceId?: string;
   /**
    * ACTUAL gender of the speaker behind `tl`, not a delivery style.
    *
@@ -240,7 +253,9 @@ interface VoiceSeed {
  * Every one of those speakers is FEMALE. The endpoint has no voice-id
  * parameter, so a "male" seed here was the same woman with
  * preservesPitch=false and playbackRate=0.64 — which is exactly the
- * "male voice is female" report the owner raised. There are no male seeds.
+ * "male voice is female" report the owner raised. There are no male gTTS
+ * seeds; the relay male list below is a different ENGINE (Edge), not a gender
+ * label on these Google speakers.
  *
  * One seed = one button. The old deep/mid/bright expansion was three labels
  * over one unprocessed MP3 after the pitch chain was retired, so it is gone
@@ -286,6 +301,116 @@ function expandSeeds(seeds: readonly VoiceSeed[]): VoiceChoice[] {
 
 export const VOICE_CHOICES: readonly VoiceChoice[] = expandSeeds(VOICE_SEEDS);
 
+// ---------------------------------------------------------------------------
+// Edge neural MALE voices, carried by the TTS relay (restored 2026-11-25).
+// ---------------------------------------------------------------------------
+// Owner report 2026-11-25: "the male voice button are all gone."
+//
+// They were deleted on purpose in 5989fce0, and at the time that was right:
+// the only "male" option was a Google MP3 with preservesPitch=false and
+// playbackRate 0.64 — a pitched-down woman, not a man.
+//
+// What changed is the transport, not the label. The Cloudflare relay
+// (server/amoji-proxy, DEFAULT_TTS_PROXY in lib/edge-tts.ts) now returns real
+// neural audio, and these four ids were verified HTTP 200 audio/mpeg through
+// it. So the male option comes back as what it actually is — a DIFFERENT
+// ENGINE (Edge) — never as a relabelled Google speaker. All four are the
+// 'mid' tier: one button per real male voice, no pitch clones.
+//
+// Owner's priority is WanLung, the Cantonese male, so he is first.
+
+export interface RelayMaleSeed {
+  locale: VoiceLocale;
+  /** Real Edge neural short name, verified through the relay. */
+  edgeVoiceId: string;
+  labelKey: StrKey;
+}
+
+/** Fallback `tl` per language. Declared here because the male seeds below use it. */
+const DEFAULT_TL: Record<VoiceLocale, string> = {
+  yue: 'yue',
+  zh: 'zh-CN',
+  ja: 'ja',
+  en: 'en-US',
+};
+
+export const RELAY_MALE_SEEDS: readonly RelayMaleSeed[] = [
+  { locale: 'yue', edgeVoiceId: 'zh-HK-WanLungNeural', labelKey: 'voiceNeuralWanLung' },
+  { locale: 'zh', edgeVoiceId: 'zh-CN-YunjianNeural', labelKey: 'voiceNeuralYunjian' },
+  { locale: 'ja', edgeVoiceId: 'ja-JP-KeitaNeural', labelKey: 'voiceNeuralKeita' },
+  { locale: 'en', edgeVoiceId: 'en-US-GuyNeural', labelKey: 'voiceNeuralGuy' },
+];
+
+/** Stable picker/pin id for an Edge neural voice. */
+export function edgeChoiceId(edgeVoiceId: string): string {
+  return `edge:${edgeVoiceId}`;
+}
+
+/**
+ * True when an Edge relay can actually carry a neural voice: a proxy URL is
+ * configured (built-in worker, a saved URL, or NEXT_PUBLIC_TTS_PROXY) AND the
+ * endpoint breaker is not open. This is the SAME gate the player uses
+ * (`getTtsProxy` / `edgeEndpointsDead` in lib/edge-tts.ts) — not a second,
+ * invented notion of availability.
+ *
+ * A stored empty value is an explicit opt-out (it does not resurrect the
+ * default). The direct read-aloud socket 403s this app, so with no relay there
+ * is no Edge audio at all — and a male button that could only fall back to a
+ * female Google speaker is exactly the lie the deletion was fixing. When this
+ * is false the male seeds are inert: not rendered, not resolvable.
+ */
+export function edgeRelayAvailable(): boolean {
+  try {
+    if (edgeEndpointsDead()) return false;
+    return getTtsProxy() !== null;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Male buttons, numbered after that language's gTTS speakers so `#2` in
+ * Cantonese is WanLung rather than a second copy of `#1`. Empty when the relay
+ * gate is closed.
+ */
+export function allRelayMaleChoices(): readonly VoiceChoice[] {
+  if (!edgeRelayAvailable()) return [];
+  const counts: Partial<Record<VoiceLocale, number>> = {};
+  for (const c of VOICE_CHOICES) {
+    if (c.n > (counts[c.locale] ?? 0)) counts[c.locale] = c.n;
+  }
+  return RELAY_MALE_SEEDS.map((seed) => {
+    const n = (counts[seed.locale] ?? 0) + 1;
+    counts[seed.locale] = n;
+    return {
+      id: edgeChoiceId(seed.edgeVoiceId),
+      locale: seed.locale,
+      engine: 'edge' as const,
+      // Fallback handle only; a male button must never be spoken by gTTS.
+      tl: DEFAULT_TL[seed.locale],
+      edgeVoiceId: seed.edgeVoiceId,
+      deliveryGender: 'male' as const,
+      pitchTier: 'mid' as const,
+      labelKey: seed.labelKey,
+      n,
+    };
+  });
+}
+
+export function relayMaleChoicesFor(locale: VoiceLocale): readonly VoiceChoice[] {
+  return allRelayMaleChoices().filter((c) => c.locale === locale);
+}
+
+export function relayMaleChoiceById(id: string | null | undefined): VoiceChoice | undefined {
+  if (!id) return undefined;
+  return allRelayMaleChoices().find((c) => c.id === id);
+}
+
+/** How many relay male buttons this language currently offers (0 when gated). */
+export function relayMaleCount(locale: VoiceLocale): number {
+  return relayMaleChoicesFor(locale).length;
+}
+
 /**
  * Source gender of the Google Translate speaker behind a `tl`. Measured: the
  * endpoint has one fixed speaker per code and every shipped code is female
@@ -314,14 +439,6 @@ export function resolveVoiceChoiceId(id: string | null | undefined): string | un
   return voiceChoiceId(m[1]!, 'female', 'mid');
 }
 
-/** Fallback `tl` per language when nothing is pinned. */
-const DEFAULT_TL: Record<VoiceLocale, string> = {
-  yue: 'yue',
-  zh: 'zh-CN',
-  ja: 'ja',
-  en: 'en-US',
-};
-
 export function isVoiceLocale(v: string): v is VoiceLocale {
   return v === 'yue' || v === 'zh' || v === 'ja' || v === 'en';
 }
@@ -346,7 +463,8 @@ export function voiceChoiceById(id: string | null | undefined): VoiceChoice | un
   const resolved = resolveVoiceChoiceId(id);
   if (!resolved) return undefined;
   return VOICE_CHOICES.find((c) => c.id === resolved)
-    ?? extraVoiceById(resolved, SHIPPING_VOICE_IDS);
+    ?? extraVoiceById(resolved, SHIPPING_VOICE_IDS)
+    ?? relayMaleChoiceById(resolved);
 }
 
 /** How many Add-pool voices are still available for this language. */
@@ -356,7 +474,13 @@ export function voiceAddRemaining(locale: VoiceLocale): number {
 
 /** Append the next test voice from the Add pool. Null when exhausted. */
 export function addVoiceOption(locale: VoiceLocale): VoiceChoice | null {
-  return addNextVoiceExtra(locale, SHIPPING_VOICE_IDS, shippingVoiceChoicesFor(locale).length);
+  // Relay male buttons occupy #n slots too, so the extra must continue after
+  // them instead of duplicating a number the picker already shows.
+  return addNextVoiceExtra(
+    locale,
+    SHIPPING_VOICE_IDS,
+    shippingVoiceChoicesFor(locale).length + relayMaleCount(locale),
+  );
 }
 
 /**

@@ -71,7 +71,7 @@ describe('card greet — no audible insurance (permanent)', () => {
     expect(body).toMatch(/edgeGrace = setTimeout\([\s\S]*?if \(spokenBy \|\| gttsPending\) return;[\s\S]*?runSynthAudition/);
     expect(body).toMatch(/greeting gtts failed[\s\S]*runSynthAudition\('greeting fallback'\)/);
     // Edge claimed-then-died must clear so neural retry can restore audio.
-    expect(body).toMatch(/if \(spokenBy === 'edge'\) spokenBy = null/);
+    expect(body).toMatch(/if \(spokenBy === 'edge'\) \{\s*spokenBy = null;\s*claim\.release\('edge'\);/);
     expect(body).toContain('greeting edge claim-then-die');
     expect(body).toContain('greeting gtts canceled salvage');
     expect(body).not.toMatch(/greetEdgeOpts[\s\S]*?onPlaying[\s\S]*?haltSynthQueue\(\)/);

@@ -66,7 +66,7 @@ describe('card tap starts the greet inside the gesture', () => {
 
   it('voice card onTap speaks the tapped card locale and voice id', () => {
     const row = read('../components/TtsVoiceRow.tsx');
-    const handler = callBlock(row, 'const onTap = (button: TtsButtonVoice) =>');
+    const handler = callBlock(row, 'const onTap = (button: TtsButtonVoice | RelayVoiceButton) =>');
     expect(handler).toContain('playVoiceGreeting(characterId, button.locale, button.id)');
     expect(handler).not.toMatch(/\bawait\b/);
     expect(handler).not.toMatch(/\bsetTimeout\b/);

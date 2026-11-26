@@ -15,6 +15,7 @@ import type { GttsPitchTier } from './gtts-timbre';
 import type { VoiceLocale } from './voice-catalog';
 import {
   VOICE_CHOICES,
+  allRelayMaleChoices,
   distinctSpeakerCount,
   distinctVoiceCount,
   engineIsOffered,
@@ -91,8 +92,44 @@ export function ttsButtonById(id: string): TtsButtonVoice | undefined {
   return selectTtsButtons().find((voice) => voice.id === id);
 }
 
+/**
+ * Relay male buttons (Edge neural, gated on the TTS relay).
+ *
+ * Kept OUT of {@link selectTtsButtons} on purpose. That list is the honest
+ * gTTS catalogue — every row is a Google `tl` speaker — and the audit tests
+ * pin it to exactly those speakers. A male Edge voice is a different engine
+ * with its own gate, so it gets its own selector instead of quietly widening
+ * the gTTS contract. Empty whenever `edgeRelayAvailable()` is false, which is
+ * what keeps a static export with no relay from showing a silent male button.
+ */
+export interface RelayVoiceButton extends Omit<TtsButtonVoice, 'engine' | 'tl'> {
+  engine: 'edge';
+  /** Edge neural short name; the actual speaker selector on the relay. */
+  edgeVoiceId: string;
+}
+
+export function selectRelayVoiceButtons(locale?: VoiceLocale): readonly RelayVoiceButton[] {
+  const choices = locale ? allRelayMaleChoices().filter((c) => c.locale === locale) : allRelayMaleChoices();
+  return choices.map((choice) => ({
+    id: choice.id,
+    engine: 'edge' as const,
+    locale: choice.locale,
+    edgeVoiceId: choice.edgeVoiceId!,
+    deliveryGender: choice.deliveryGender,
+    pitchTier: choice.pitchTier,
+    labelKey: choice.labelKey,
+    n: choice.n,
+    shipping: true as const,
+  }));
+}
+
+/** Speaker label for a button: Google `tl`, or the Edge short name. */
+export function ttsButtonSpeaker(voice: TtsButtonVoice | RelayVoiceButton): string {
+  return voice.engine === 'edge' ? voice.edgeVoiceId : voice.tl;
+}
+
 /** Stable React key. Ids are already unique. */
-export function ttsButtonKey(voice: TtsButtonVoice): string {
+export function ttsButtonKey(voice: { engine: string; id: string }): string {
   return `${voice.engine}:${voice.id}`;
 }
 
