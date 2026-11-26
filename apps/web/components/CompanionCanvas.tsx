@@ -1306,6 +1306,37 @@ export default function CompanionCanvas({
 
     const mountAvatar = (a: Avatar) => {
       avatar = a;
+      // Opt-in rig readout for the owner / agents: ?bones=1 prints the
+      // upper-arm hang direction per side. Used to prove the left arm is not
+      // crossing the midline (r2026-11-24.310). Zero cost without the flag.
+      if (typeof window !== 'undefined' && new URLSearchParams(location.search).has('bones')) {
+        (window as unknown as { __amojiBones?: unknown }).__amojiBones = {
+          read: () => {
+            const out: Record<string, unknown> = {};
+            for (const side of ['left', 'right'] as const) {
+              const up = a.getBoneNode(`${side}UpperArm`);
+              const lo = a.getBoneNode(`${side}LowerArm`);
+              const ha = a.getBoneNode(`${side}Hand`);
+              if (!up || !lo) continue;
+              const p = new THREE.Vector3();
+              const q = new THREE.Vector3();
+              const h = new THREE.Vector3();
+              up.getWorldPosition(p);
+              lo.getWorldPosition(q);
+              ha?.getWorldPosition(h);
+              const d = q.clone().sub(p).normalize();
+              out[side] = {
+                x: +d.x.toFixed(3),
+                y: +d.y.toFixed(3),
+                z: +d.z.toFixed(3),
+                handX: ha ? +h.x.toFixed(3) : null,
+                handY: ha ? +h.y.toFixed(3) : null,
+              };
+            }
+            return out;
+          },
+        };
+      }
       scene.add(a.root);
       a.root.position.set(0, 0, 0);
       // r101 (Master Simon): she mounts INVISIBLE and steps on stage only
