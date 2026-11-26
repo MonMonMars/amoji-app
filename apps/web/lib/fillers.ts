@@ -33,8 +33,11 @@ export const INTERJECTIONS: Record<string, Partial<Record<LangCode, { text: stri
   // t771: joy tic is soft — never TTS hehe/haha (laugh = SFX only).
   // Never 嗯/um/うん — those map to the loading um clip (Pixel: no thinking filler).
   joy: {
-    yue: { text: '呀！', pitch: 0.08, rate: 0.06 },
-    zh: { text: '呀！', pitch: 0.08, rate: 0.06 },
+    // Owner 2026-11-26: a reply must not open on a lone 呀. It is a
+    // sentence-final particle (係呀), not an interjection, so spoken alone it
+    // reads as a stray syllable. Use a real two-syllable cheer instead.
+    yue: { text: '好嘢！', pitch: 0.08, rate: 0.06 },
+    zh: { text: '太好了！', pitch: 0.08, rate: 0.06 },
     ja: { text: 'やった！', pitch: 0.08, rate: 0.06 },
     en: { text: 'ah!', pitch: 0.08, rate: 0.06 },
   },
@@ -78,8 +81,9 @@ export const INTERJECTIONS: Record<string, Partial<Record<LangCode, { text: stri
   // Soft moods: breathy/warm tics — never typed laughs (SFX owns giggles),
   // and never 嗯/um/うん loading-filler leads (Pixel).
   love: {
-    yue: { text: '呀……', pitch: 0.05, rate: -0.08 },
-    zh: { text: '呀……', pitch: 0.05, rate: -0.08 },
+    // Never a bare 呀 here either (owner 2026-11-26) — 哎呀 is a real sigh.
+    yue: { text: '哎呀……', pitch: 0.05, rate: -0.08 },
+    zh: { text: '哎呀……', pitch: 0.05, rate: -0.08 },
     ja: { text: 'ふぅ……', pitch: 0.04, rate: -0.08 },
     en: { text: 'aw…', pitch: 0.04, rate: -0.08 },
   },
@@ -152,6 +156,26 @@ export function pickSearchDelayLine(lang: string): string {
 }
 
 /**
+ * Cantonese/Mandarin sentence-final particles. These end a sentence ("係呀",
+ * "食咗啦"); they are not interjections. Prepending one to a reply makes the
+ * character open on a stray syllable, which the owner rejected twice
+ * (2026-11-24 "#no-ya", 2026-11-26 "don't say 呀, it is very strange to start
+ * with a single word like this"). A single real exclamation (哇/咦/哼) is fine.
+ */
+export const SENTENCE_FINAL_PARTICLES: ReadonlySet<string> = new Set([
+  '呀', '吖', '㗎', '嘅', '啦', '咯', '咩', '呢', '嘛', '啩', '噃', '囉', '咯',
+]);
+
+/** True when a tic may be spoken as its own lead. Code points, not UTF-16 halves. */
+export function interjectionSpeakable(text: string): boolean {
+  const bare = text.replace(/[\s!！?？….,，。~～、]/g, '');
+  if (!bare) return false;
+  const cps = [...bare];
+  if (cps.length === 1 && SENTENCE_FINAL_PARTICLES.has(cps[0]!)) return false;
+  return true;
+}
+
+/**
  * Strong-emotion vocal tic for the spoken reply — undefined below the
  * intensity threshold, so mild feelings stay prosody-only.
  */
@@ -162,6 +186,7 @@ export function pickInterjection(
 ): { text: string; pitch: number; rate: number } | undefined {
   if (intensity < INTERJECTION_AT) return undefined;
   const hit = INTERJECTIONS[emotion]?.[(lang as LangCode)] ?? INTERJECTIONS[emotion]?.en;
+  if (!hit || !interjectionSpeakable(hit.text)) return undefined;
   return hit;
 }
 
