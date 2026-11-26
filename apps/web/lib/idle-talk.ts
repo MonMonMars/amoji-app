@@ -5,6 +5,7 @@ import type { Lang } from './prefs';
 import { MOTIFS, isIncompleteIdleLine, type MotifId, type VoiceId, voiceIdleLines } from './personality-voice';
 import { personalityProfile } from './personality';
 import { gateSpokenLine, safeIdleFallback } from './spoken-line-sanity';
+import { factTurnQuietActive } from './fact-turn-quiet';
 
 export type IdleTalkMode = 'stay' | 'suggest';
 
@@ -129,6 +130,10 @@ export function pickIdleCompanionLine(
   lang: Lang,
   n: number,
 ): string {
+  // Owner 2026-11-25: a poetic motif line ("我差啲收埋一朵新鮮嘅花…") landed
+  // right after a live news read and sounded bolted on to the story. A fact
+  // tell keeps idle chatter silent for a short window.
+  if (factTurnQuietActive()) return '';
   const profile = personalityProfile(characterId, gender);
   const mode = idleTalkMode(n);
   const frame = profile.frame;

@@ -140,10 +140,18 @@ export function splitChunks(text: string, maxLen = 120): string[] {
   const chunks: string[] = [];
   for (const p of splitClauses(text)) {
     let acc = p;
-    // a single clause longer than the cap gets hard-wrapped
+    // A single clause longer than the cap gets hard-wrapped. Two guards here:
+    // never cut a surrogate pair in half, and never leave a 1–2 unit remnant
+    // as its own audio chunk — that is how a lone "惠" was spoken after a
+    // headline (owner 2026-11-25).
     while (acc.length > maxLen) {
-      chunks.push(acc.slice(0, maxLen));
-      acc = acc.slice(maxLen);
+      if (acc.length <= maxLen + 2) break;
+      let cut = maxLen;
+      const unit = acc.charCodeAt(cut - 1);
+      if (unit >= 0xd800 && unit <= 0xdbff) cut -= 1;
+      if (cut < 1) cut = maxLen;
+      chunks.push(acc.slice(0, cut));
+      acc = acc.slice(cut);
     }
     if (acc) chunks.push(acc);
   }

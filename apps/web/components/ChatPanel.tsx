@@ -286,6 +286,7 @@ import { startVad, waitForVadRelease } from '../lib/vad';
 import { ambientStart, ambientStop } from '../lib/sfx';
 import { t, backgroundById, type Lang, type StrKey } from '../lib/prefs';
 import { adaptiveBlock, pickSceneLine } from '../lib/adaptive';
+import { factTurnQuietActive } from '../lib/fact-turn-quiet';
 import {
   SPEECH_CAPTION_EVENT,
   captionsCoverReply,
@@ -737,6 +738,11 @@ export default function ChatPanel({
     lead?: { text: string; pitch: number; rate: number },
     opts?: { idle?: boolean; n?: number; rateBias?: number },
   ) => {
+    // Owner 2026-11-25: after a live news read a poetic idle motif line
+    // ("我差啲收埋一朵新鮮嘅花…") was bolted onto the story. Any idle chatter —
+    // mood bank, scene ambient, companion motif or skill offer — stays silent
+    // for a short window after a fact tell.
+    if (opts?.idle && factTurnQuietActive()) return;
     // Durable spoken-line gate: reject unfinished templates / fragments /
     // banned idle interrogations / topic-menu interviews / history-resume
     // asks before TTS + history. Live weather/news lines skip nonsense scrub.
@@ -1210,6 +1216,8 @@ export default function ChatPanel({
       if (reengageStageRef.current >= 2) return; // closer said — she's waiting
       const silent = Date.now() - lastUserRef.current;
       if (silent < IDLE_AFTER_MS) return;
+      // A live news/weather read just finished — no chatter, motif or offer.
+      if (factTurnQuietActive()) return;
       if (Date.now() - lastChatterAtRef.current < IDLE_AFTER_MS) return;
       lastChatterAtRef.current = Date.now();
       // r.24 — idle chatter wears the last felt mood: after "I'm so tired"

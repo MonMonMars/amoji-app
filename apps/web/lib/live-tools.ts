@@ -32,6 +32,7 @@ import {
   worldHasRecipe,
 } from './recipe-reply';
 import { sanitizeWebForSpeech, stripLaughTokens } from './speak-text';
+import { markFactTurnSpoken } from './fact-turn-quiet';
 
 export interface Place {
   latitude: number;
@@ -246,10 +247,32 @@ function asLang(lang?: string): Lang4 {
   return 'yue';
 }
 
+const CLIP_BOUNDARY = /[。！？!?；;，,、：:]/u;
+
+/**
+ * Clip to `max` without splitting a code point (emoji / astral chars) and
+ * without leaving a dangling fragment. Owner 2026-11-25: a UTF-16 `slice`
+ * cut a CJK headline at a code-unit boundary and the remainder was spoken as
+ * a lone "惠" after the story. Back off to a sentence/clause mark when one is
+ * nearby; otherwise cut on a whole code point only.
+ */
 function clip(text: string, max: number): string {
   const t = text.replace(/\s+/g, ' ').trim();
   if (t.length <= max) return t;
-  return `${t.slice(0, max - 1).trim()}…`;
+  const chars = Array.from(t);
+  if (chars.length <= max) return t;
+  let out = chars.slice(0, Math.max(1, max - 1)).join('');
+  // Prefer a finished clause over a mid-word cut when the mark is not too far back.
+  for (let i = out.length - 1; i >= Math.floor(out.length * 0.55); i--) {
+    if (CLIP_BOUNDARY.test(out[i]!)) {
+      out = out.slice(0, i + 1);
+      break;
+    }
+  }
+  out = out.replace(/[\s，,、；;：:]+$/u, '').trim();
+  // A one-glyph remainder is a word fragment, not a sentence — say nothing.
+  if (Array.from(out).length < 2) return '';
+  return `${out}…`;
 }
 
 function cleanPlace(raw: string | undefined): string | undefined {
@@ -718,6 +741,7 @@ export function isNewsFeedCacheKey(url: string): boolean {
   if (u.includes('duckduckgo.com') || u.includes('api.search.brave.com')) return false;
   if (u.includes('wikipedia.org/w/api.php')) return false;
   if (u.includes('news.google.com') || u.includes('rss2json.com')) return true;
+  if (u.includes('bing.com/news')) return true;
   if (u.includes('news.yahoo.com') || u.includes('rss.news.yahoo.com')) return true;
   if (u.includes('rss.msn.com')) return true;
   if (u.includes('/feed/featured/')) return true;
@@ -919,6 +943,9 @@ const NEWS_AUTHOR_LINE =
   /^(?:by\s+[\w .'\u00C0-\u024F-]{2,48}|author\s*[:：]|reporter\s*[:：]|記者|作者|撰文|稿\s*[:：]|文\s*[:：]|圖\s*\/|图\s*\/)/iu;
 const NEWS_TEASER_ONLY =
   /^(?:詳情|详情|閱讀全文|阅读全文|更多新聞|更多新闻|更多內容|更多内容|按此|tap here|continue reading|full story|watch:)/iu;
+/** WordPress/publisher footer ("這篇文章 … 最早出現於 …") — not story detail. */
+const NEWS_FOOTER_CHROME =
+  /^(?:\.{2,}|…|⋯|\s)*(?:最早出現於|最早出现于|appeared first on|first appeared on|the post\b[\s\S]*appeared first on|this (?:article|post)\b[\s\S]*appeared first on|這篇文章|这篇文章|呢篇文章|本文|この記事|この投稿)[\s\S]*(?:最早出現於|最早出现于|appeared first on|first appeared on|最初に(?:掲載|公開))/iu;
 /** Minimum substance beyond the headline for a news tell (all langs). */
 export const NEWS_SPOKEN_MIN_BODY_CHARS = 56;
 
@@ -961,11 +988,13 @@ export function isNewsRssChannelTag(line: string): boolean {
 export function isNewsBodyBoilerplate(line: string): boolean {
   const t = String(line || '').trim();
   if (!t) return true;
+  if (NEWS_SOURCE_DOMAIN.test(t)) return true;
   if (isNewsRssChannelTag(t)) return true;
   if (NEWS_SECTION_CHROME.test(t)) return true;
   if (NEWS_BODY_BOILERPLATE.test(t)) return true;
   if (NEWS_AUTHOR_LINE.test(t)) return true;
   if (NEWS_TEASER_ONLY.test(t)) return true;
+  if (NEWS_FOOTER_CHROME.test(t)) return true;
   if (/^(?:Pee Aruako|List of|This (?:disambiguation|article) page)/i.test(t)) return true;
   return false;
 }
@@ -1006,6 +1035,50 @@ export function scrubNewsTitleForSpeech(title: string, source = ''): string {
   return s;
 }
 
+/** A bare publisher domain / brand left after RSS tags are stripped. */
+const NEWS_SOURCE_DOMAIN = /^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.(?:com|hk|net|org|co|uk|jp|tw|cn|io|news|cc)(?:\.[A-Za-z]{2})?$/i;
+
+/**
+ * A publisher label glued to the front of a lede. Google/Yahoo descriptions
+ * arrive as "<a>Title</a>&nbsp;&nbsp;unwire.hk<body>", so after the title is
+ * stripped the body begins "unwire.hk …". Spoken aloud that is junk, and its
+ * dot also fooled the sentence splitter into a "hk …" fragment.
+ */
+const NEWS_LEAD_SOURCE = /^(?:[A-Za-z0-9][A-Za-z0-9-]*(?:\.[A-Za-z0-9-]+){1,3}|(?:unwire|hk01|scmp|rthk|bbc|cnn|reuters|bloomberg|nhk|明報|星島|東方|經濟日報|橙新聞|on\.cc))\s*[|｜:：,，\-–—]*\s*/i;
+
+export function stripLeadingNewsSource(body: string): string {
+  let out = String(body || '').trim();
+  for (let i = 0; i < 2; i++) {
+    const next = out.replace(NEWS_LEAD_SOURCE, '').trim();
+    if (!next || next === out) break;
+    out = next;
+  }
+  return out;
+}
+
+/**
+ * Remove one leading repeat of the headline from a feed body and keep the
+ * rest. Google/Yahoo descriptions usually re-emit the title before the lede;
+ * the old code dropped the whole beat (losing the story) once the repeat grew
+ * past a fixed length, which is why title-only tells felt short.
+ */
+export function stripLeadingNewsTitle(beat: string, title = ''): string {
+  const t = String(beat || '').trim();
+  const titleKey = normalizeNewsTitle(title);
+  if (!t || !titleKey) return t;
+  const chars = Array.from(t);
+  const limit = Math.min(chars.length, Array.from(String(title)).length + 40);
+  for (let i = 1; i <= limit; i++) {
+    if (normalizeNewsTitle(chars.slice(0, i).join('')) !== titleKey) continue;
+    const rest = chars.slice(i).join('')
+      .replace(/^[\s…—–\-|｜:：,，、。.!！?？;；]+/u, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return rest;
+  }
+  return t;
+}
+
 /**
  * Drop RSS chrome (compact dates, section tags, source labels, title repeat)
  * before TTS — Hong Kong feeds often pack these on separate lines.
@@ -1022,18 +1095,28 @@ export function scrubNewsFeedBody(text: string, title = ''): string {
     if (!bare || NEWS_LINE_DATE_ONLY.test(bare) || /^\d{4}$/.test(bare)) continue;
     if (isNewsRssChannelTag(bare)) continue;
     if (NEWS_SOURCE_ONLY.test(bare)) continue;
+    if (NEWS_SOURCE_DOMAIN.test(bare)) continue;
     if (NEWS_SECTION_CHROME.test(bare)) continue;
     if (isNewsBodyBoilerplate(bare)) continue;
     if (/^(?:橙新聞|on\.cc|RTHK|SCMP|SBS)$/i.test(bare)) continue;
     if (/^⚑\s*舉報|^舉報$|^举报$/.test(bare)) continue;
     if (/^[\d\s]+$/.test(bare)) continue;
     if (isJunkNewsHeadline(bare)) continue;
-    const compact = spokenHeadline(bare);
+    let compact = spokenHeadline(bare);
     if (!compact) continue;
     const key = normalizeNewsTitle(compact);
     if (titleKey && key === titleKey) continue;
-    if (titleKey && key.includes(titleKey) && compact.length <= title.length + 12) continue;
+    // A title repeat with a lede behind it: keep the lede, never the repeat.
+    if (titleKey && key.includes(titleKey)) {
+      compact = stripLeadingNewsTitle(compact, title);
+      if (!compact) continue;
+      const minSubstance = CJK_IN_HEADLINE.test(compact) ? 8 : 20;
+      if (compact.length < minSubstance && !/[。！？.!?]$/.test(compact)) continue;
+      if (isJunkNewsHeadline(compact)) continue;
+    }
     if (/新聞網$|新闻网$/.test(compact) && compact.length < 28) continue;
+    compact = stripLeadingNewsSource(compact);
+    if (!compact) continue;
     kept.push(compact);
   }
   return kept.join(' ').replace(/\s+/g, ' ').trim();
@@ -1048,21 +1131,23 @@ export function newsDetailsFromText(text: string, title = '', max = 4): string[]
   const titleKey = normalizeNewsTitle(title);
   const minChunk = CJK_IN_HEADLINE.test(cleaned) ? 14 : 24;
   const chunks = cleaned
-    .split(/(?<=[.!?。！？…；;])\s*|\s*[;|•·]\s+|\n+/)
+    .split(/(?<=[。！？…；;])\s*|(?<=[.!?])\s+|\s*[;|•·]\s+|\n+/)
     .map((s) => s.replace(/^[-–—*]\s*/, '').trim())
     .filter((s) => s.length >= minChunk);
   const out: string[] = [];
-  for (const chunk of chunks) {
+  for (const rawChunk of chunks) {
+    const chunk = stripLeadingNewsSource(stripLeadingNewsTitle(rawChunk, title)).trim();
+    if (!chunk || isNewsBodyBoilerplate(chunk)) continue;
     const key = normalizeNewsTitle(chunk);
-    if (!key || (titleKey && (key === titleKey || titleKey.includes(key) || key.includes(titleKey)))) continue;
+    if (!key || (titleKey && (key === titleKey || titleKey.includes(key)))) continue;
     if (out.some((o) => normalizeNewsTitle(o) === key)) continue;
-    out.push(clip(chunk, 220));
+    out.push(clip(chunk, 300));
     if (out.length >= max) break;
   }
   if (out.length >= 2) return out.slice(0, max);
   // Single long lede → keep as one detail when we have substance beyond the title.
   if (cleaned.length >= 48 && normalizeNewsTitle(cleaned) !== titleKey) {
-    return [clip(cleaned, 280)];
+    return [clip(cleaned, 360)];
   }
   return out;
 }
@@ -1203,15 +1288,26 @@ async function fetchWeather(fetchImpl: typeof fetch, place: Place, cache: Map<st
 }
 
 function decodeXml(s: string): string {
-  return s
-    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
-    .replace(/&amp;/g, '&')
+  const cp = (n: number) => (Number.isInteger(n) && n >= 0 && n <= 0x10ffff ? String.fromCodePoint(n) : '');
+  const entities = (raw: string) => raw
+    .replace(/&nbsp;/gi, ' ')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
-    .replace(/&#(\d+);/g, (_, n: string) => String.fromCharCode(Number(n)))
+    .replace(/&hellip;/gi, '…')
+    .replace(/&mdash;/gi, '—')
+    .replace(/&ndash;/gi, '–')
+    .replace(/&#x([0-9a-f]+);/gi, (_, n: string) => cp(parseInt(n, 16)))
+    .replace(/&#(\d+);/g, (_, n: string) => cp(Number(n)));
+  // Feeds double-encode the spacer (`&amp;nbsp;`): resolve `&amp;` first, then
+  // entities, twice — otherwise "nbsp" itself reaches TTS.
+  let out = s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1');
+  out = entities(out.replace(/&amp;/g, '&'));
+  out = entities(out.replace(/&amp;/g, '&'));
+  return out
     .replace(/<[^>]+>/g, '')
+    .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -1236,19 +1332,150 @@ export function parseNewsPublishedAt(raw: string | undefined | null): number | u
   return Number.isFinite(t) ? t : undefined;
 }
 
+/** Calendar day in the owner's timezone → UTC midnight, for whole-day maths. */
+function newsDayStamp(ms: number, timeZone: string): { stamp: number; year: number; month: number; day: number } {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(ms));
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+  const year = get('year');
+  const month = get('month');
+  const day = get('day');
+  return { stamp: Date.UTC(year, month - 1, day), year, month, day };
+}
+
+/**
+ * Whole calendar days between a story and "now" in the owner's timezone
+ * (0 = today, 1 = yesterday). `null` when the feed gave no date — never guess.
+ */
+export function newsCalendarDayOffset(
+  publishedAt: number | undefined,
+  nowMs = Date.now(),
+  timeZone = NEWS_SPEECH_TIMEZONE,
+): number | null {
+  if (publishedAt == null || !Number.isFinite(publishedAt)) return null;
+  const pub = newsDayStamp(publishedAt, timeZone);
+  const now = newsDayStamp(nowMs, timeZone);
+  return Math.round((now.stamp - pub.stamp) / 86_400_000);
+}
+
 export function isNewsPublishedToday(
   publishedAt: number | undefined,
   nowMs = Date.now(),
   timeZone = NEWS_SPEECH_TIMEZONE,
 ): boolean {
-  if (publishedAt == null) return false;
-  const dayKey = (ms: number) => new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date(ms));
-  return dayKey(publishedAt) === dayKey(nowMs);
+  return newsCalendarDayOffset(publishedAt, nowMs, timeZone) === 0;
+}
+
+/** How the spoken day was derived, so English can frame it naturally. */
+export type NewsDayKind = 'today' | 'yesterday' | 'twoDaysAgo' | 'weekday' | 'date';
+
+export interface NewsDayDescriptor {
+  kind: NewsDayKind;
+  /** Story calendar date in the owner's timezone. */
+  year: number;
+  month: number;
+  day: number;
+  /** 0 = Sunday … 6 = Saturday (needed for weekday wording). */
+  weekday: number;
+}
+
+/**
+ * Owner 2026-11-26: "say the day of the news rather than say 最近 … I prefer
+ * read today news". Policy for a dated story (HK calendar):
+ *   - today / yesterday / the day before yesterday → relative word
+ *   - 3–6 days old → its weekday ("禮拜二")
+ *   - 7+ days old → the plain date ("11月19號"), never "recently"
+ *   - no `publishedAt` → `null`, and the tell uses no day word at all
+ *     (a false "今日" is worse than no date).
+ * The 7-day cutoff keeps the weekday unambiguous: older than that and "禮拜二"
+ * could mean the wrong week, so the date is stated outright.
+ */
+export function newsDayDescriptor(
+  publishedAt: number | undefined,
+  nowMs = Date.now(),
+  timeZone = NEWS_SPEECH_TIMEZONE,
+): NewsDayDescriptor | null {
+  const offset = newsCalendarDayOffset(publishedAt, nowMs, timeZone);
+  if (offset == null) return null;
+  const pub = newsDayStamp(publishedAt!, timeZone);
+  const weekday = new Date(pub.stamp).getUTCDay();
+  // Future-dated feeds (UTC vs HK skew) are treated as today, never "tomorrow".
+  const clamped = Math.max(0, offset);
+  const kind: NewsDayKind = clamped === 0
+    ? 'today'
+    : clamped === 1
+      ? 'yesterday'
+      : clamped === 2
+        ? 'twoDaysAgo'
+        : clamped <= 6
+          ? 'weekday'
+          : 'date';
+  return { kind, year: pub.year, month: pub.month, day: pub.day, weekday };
+}
+
+const EN_MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+const YUE_WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
+const ZH_WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
+const JA_WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
+const EN_WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/** The day word/label on its own ("今日", "琴日", "Tuesday", "19 November"). */
+export function newsDayLabel(lang: Lang4, day: NewsDayDescriptor | null): string {
+  if (!day) return '';
+  if (lang === 'en') {
+    if (day.kind === 'today') return 'today';
+    if (day.kind === 'yesterday') return 'yesterday';
+    if (day.kind === 'twoDaysAgo') return 'two days ago';
+    if (day.kind === 'weekday') return EN_WEEKDAYS[day.weekday] ?? '';
+    return `${day.day} ${EN_MONTHS[day.month - 1] ?? ''}`.trim();
+  }
+  if (lang === 'ja') {
+    if (day.kind === 'today') return '今日';
+    if (day.kind === 'yesterday') return '昨日';
+    if (day.kind === 'twoDaysAgo') return '一昨日';
+    if (day.kind === 'weekday') return `${JA_WEEKDAYS[day.weekday] ?? ''}曜日`;
+    return `${day.month}月${day.day}日`;
+  }
+  if (lang === 'zh') {
+    if (day.kind === 'today') return '今天';
+    if (day.kind === 'yesterday') return '昨天';
+    if (day.kind === 'twoDaysAgo') return '前天';
+    if (day.kind === 'weekday') return `星期${ZH_WEEKDAYS[day.weekday] ?? ''}`;
+    return `${day.month}月${day.day}日`;
+  }
+  if (day.kind === 'today') return '今日';
+  if (day.kind === 'yesterday') return '琴日';
+  if (day.kind === 'twoDaysAgo') return '前日';
+  if (day.kind === 'weekday') return `禮拜${YUE_WEEKDAYS[day.weekday] ?? ''}`;
+  return `${day.month}月${day.day}號`;
+}
+
+/** "From today's news:" / "今日有條新聞：" / "ニュースだよ、" (no day → no claim). */
+export function newsDayIntro(lang: Lang4, day: NewsDayDescriptor | null): string {
+  if (!day) {
+    if (lang === 'en') return 'From the news:';
+    if (lang === 'ja') return 'ニュースだよ、';
+    if (lang === 'zh') return '有条新闻：';
+    return '有條新聞：';
+  }
+  const label = newsDayLabel(lang, day);
+  if (lang === 'en') {
+    if (day.kind === 'today') return "From today's news:";
+    if (day.kind === 'yesterday') return "From yesterday's news:";
+    if (day.kind === 'twoDaysAgo') return 'From the news two days ago:';
+    if (day.kind === 'weekday') return `From ${label}'s news:`;
+    return `From the news of ${label}:`;
+  }
+  if (lang === 'ja') return `${label}のニュースは、`;
+  if (lang === 'zh') return `${label}有条新闻：`;
+  return `${label}有條新聞：`;
 }
 
 function rssItemPublishedAt(itemXml: string): number | undefined {
@@ -1278,7 +1505,7 @@ export function parseRssItems(xml: string, limit = 12): Headline[] {
     if (isJunkNewsHeadline(titleRaw, source)) continue;
     const descRaw = item.match(/<(?:description|content:encoded|summary)>([\s\S]*?)<\/(?:description|content:encoded|summary)>/i)?.[1];
     const summary = descRaw
-      ? clip(spokenHeadline(scrubNewsFeedBody(decodeXml(descRaw), title)), 420)
+      ? clip(spokenHeadline(scrubNewsFeedBody(decodeXml(descRaw), title)), 520)
       : '';
     const details = summary ? newsDetailsFromText(summary, title) : [];
     const publishedAt = rssItemPublishedAt(item);
@@ -1685,7 +1912,7 @@ function withNewsBody(
   publishedAt?: number,
 ): Headline {
   const summary = summaryRaw
-    ? clip(spokenHeadline(scrubNewsFeedBody(summaryRaw, title)), 420)
+    ? clip(spokenHeadline(scrubNewsFeedBody(summaryRaw, title)), 520)
     : '';
   const details = summary ? newsDetailsFromText(summary, title) : [];
   const row: Headline = { title, source };
@@ -1698,11 +1925,16 @@ function withNewsBody(
 function formatNewsFactLine(lead: Headline): string {
   const listed = lead.source ? `“${lead.title}” (${lead.source})` : `“${lead.title}”`;
   const bits = [listed];
-  if (lead.summary?.trim()) bits.push(`Summary: ${clip(spokenHeadline(lead.summary), 360)}`);
+  const summary = lead.summary?.trim()
+    ? stripLeadingNewsSource(stripLeadingNewsTitle(lead.summary, lead.title)).trim()
+    : '';
+  if (summary) bits.push(`Summary: ${clip(spokenHeadline(summary), 520)}`);
   const details = (lead.details?.length ? lead.details : newsDetailsFromText(lead.summary ?? '', lead.title))
+    .map((d) => stripLeadingNewsSource(stripLeadingNewsTitle(d, lead.title)).trim())
+    .filter(Boolean)
     .slice(0, 4);
   if (details.length) {
-    bits.push(`Key details: ${details.map((d, i) => `(${i + 1}) ${clip(spokenHeadline(d), 220)}`).join(' ')}`);
+    bits.push(`Key details: ${details.map((d, i) => `(${i + 1}) ${clip(spokenHeadline(d), 300)}`).join(' ')}`);
   }
   return bits.join(' ');
 }
@@ -2105,14 +2337,87 @@ async function searchWikipedia(
   return null;
 }
 
+const NEWS_MATCH_STOP = new Set([
+  'the', 'and', 'for', 'with', 'from', 'that', 'this', 'news', 'says', 'said',
+  'after', 'over', 'into', 'its', 'his', 'her', 'their', 'will', 'new', 'you',
+]);
+
+/**
+ * How sure we are that a second-source item is the SAME story as the headline.
+ *
+ * Google News supplies no body (its `<description>` is just an `<a>` around the
+ * same title plus the publisher), so a thin lead is looked up on Bing News RSS.
+ * A candidate is only used when every distinctive Latin token of the headline
+ * appears in it (so "Google AI …" never borrows an X/Grok deal), plus CJK
+ * bigram overlap for Chinese headlines. Returns 0 when it is a different story.
+ */
+export function newsBodyMatchScore(leadTitle: string, candidate: string): number {
+  const lead = normalizeNewsTitle(leadTitle);
+  const cand = normalizeNewsTitle(candidate);
+  if (!lead || !cand) return 0;
+  const candWords = new Set(cand.split(' '));
+  const latin = lead
+    .split(' ')
+    .filter((w) => /^[a-z0-9]+$/.test(w) && (w.length >= 3 || w === 'ai') && !NEWS_MATCH_STOP.has(w));
+  const leadCjk = lead.replace(/[^\u3400-\u9fff]/g, '');
+  const candCjk = cand.replace(/[^\u3400-\u9fff]/g, '');
+  let bigram = 0;
+  let total = 0;
+  for (let i = 0; i + 1 < leadCjk.length; i++) {
+    total++;
+    if (candCjk.includes(leadCjk.slice(i, i + 2))) bigram++;
+  }
+  if (leadCjk.length === 1) {
+    total = 1;
+    bigram = candCjk.includes(leadCjk) ? 1 : 0;
+  }
+  const cjkScore = total ? bigram / total : 0;
+  if (latin.length) {
+    for (const w of latin) if (!candWords.has(w)) return 0;
+    return 0.55 + 0.45 * cjkScore;
+  }
+  return cjkScore;
+}
+
+const BING_NEWS_LOCALE: Record<Lang4, { setlang: string; cc: string }> = {
+  yue: { setlang: 'zh-hk', cc: 'hk' },
+  zh: { setlang: 'zh-cn', cc: 'cn' },
+  ja: { setlang: 'ja-jp', cc: 'jp' },
+  en: { setlang: 'en-us', cc: 'us' },
+};
+
+/** Bing News RSS search — carries a real lede where Google News carries a stub. */
+function bingNewsSearchRssUrl(title: string, lang: Lang4): string {
+  const { setlang, cc } = BING_NEWS_LOCALE[lang];
+  const q = new URLSearchParams({ q: title, format: 'RSS', setlang, cc });
+  return `https://www.bing.com/news/search?${q.toString()}`;
+}
+
 async function enrichNewsLeadForSpeech(
   fetchImpl: typeof fetch,
   lead: Headline,
   lang: Lang4,
   cache: Map<string, { at: number; body: string }>,
+  rssKey?: string,
 ): Promise<Headline> {
   if (!newsTellNeedsEnrichment(lead, lang)) return lead;
   const topic = lead.title.replace(/\s+[-–|｜]\s+.*$/, '').trim() || lead.title;
+  // 1) Second source for the body. Google News descriptions are title stubs, so
+  //    search the story on Bing News RSS and keep the best same-story lede.
+  const bingRows = await fetchRssFeedHeadlines(fetchImpl, bingNewsSearchRssUrl(topic, lang), rssKey, cache);
+  let best: Headline | null = null;
+  let bestScore = 0;
+  for (const row of bingRows) {
+    const summary = row.summary?.trim();
+    if (!summary || summary.length < 40 || isNewsBeatChrome(summary)) continue;
+    const score = newsBodyMatchScore(topic, `${row.title} ${summary}`);
+    if (score < 0.5 || score <= bestScore) continue;
+    const enriched = withNewsBody(lead.title, lead.source || row.source || 'Bing News', summary, lead.publishedAt);
+    if (newsTellNeedsEnrichment(enriched, lang)) continue;
+    best = enriched;
+    bestScore = score;
+  }
+  if (best) return best;
   const wiki = await searchWikipedia(fetchImpl, topic, lang, cache);
   if (wiki) {
     const enriched = withNewsBody(lead.title, lead.source || 'Wikipedia', wiki.extract, lead.publishedAt);
@@ -2218,6 +2523,7 @@ function sayWeather(
   const t = Math.round(w.temp);
   const cond = condition(w.code, lang);
   const prep = weatherPrep(w.code, w.temp, lang);
+  markFactTurnSpoken();
   const wind = w.wind != null ? Math.round(w.wind) : null;
   const humidity = w.humidity != null ? Math.round(w.humidity) : null;
   const rain = w.rain != null ? Math.round(w.rain) : null;
@@ -2324,49 +2630,59 @@ export function newsTellNeedsEnrichment(lead: Headline, lang: Lang4 = 'yue'): bo
   return newsBodyBeatCharLen(lang, beats) < NEWS_SPOKEN_MIN_BODY_CHARS;
 }
 
-/** RSS/Wikipedia body beats for TTS — headline context excluded. */
+/** Split a body into finished spoken sentences (keeps the closing mark). */
+function newsSentences(text: string): string[] {
+  const s = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!s) return [];
+  return s
+    .split(/(?<=[。！？!?…])\s*/u)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
+
+/**
+ * RSS/Wikipedia body beats for TTS — headline context excluded.
+ *
+ * Owner 2026-11-25: "it always repeat two times." The old builder pushed the
+ * whole summary as one beat AND the sentence-level `details` derived from that
+ * same summary, so the reply said the lede twice (headline repeat included).
+ * Beats are now sentence-sized, the headline prefix is stripped (not the whole
+ * beat dropped), and a sentence already covered by a longer beat is skipped.
+ */
 export function newsSpokenBodyBeats(lead: Headline, lang?: Lang4): string[] {
   const titleKey = normalizeNewsTitle(lead.title);
-  const summary = lead.summary?.trim()
-    ? clip(spokenHeadline(scrubNewsFeedBody(lead.summary, lead.title), lead.source ?? '', lang), 520)
-    : '';
-  const details = (lead.details?.length ? lead.details : newsDetailsFromText(lead.summary ?? '', lead.title))
-    .map((d) => clip(spokenHeadline(d, lead.source ?? '', lang), 360))
-    .filter((d) => d && !isNewsBeatChrome(d));
+  const source = lead.source ?? '';
   const beats: string[] = [];
-  const pushBeat = (text: string) => {
-    const t = text.trim();
-    if (!t || isNewsBeatChrome(t)) return;
-    const key = normalizeNewsTitle(t);
-    if (beats.some((b) => normalizeNewsTitle(b) === key)) return;
-    if (key === titleKey && t.length <= lead.title.length + 14) return;
-    if (newsBeatDuplicatesTitle(t, lead.title)) return;
-    beats.push(t);
-  };
-  if (summary) {
-    const summaryKey = normalizeNewsTitle(summary);
-    const nearDup = Boolean(
-      titleKey
-      && summaryKey
-      && (summaryKey === titleKey
-        || (titleKey.includes(summaryKey) && summary.length <= lead.title.length + 16)
-        || (summaryKey.includes(titleKey) && summary.length <= lead.title.length + 20)),
-    );
-    if (!nearDup) {
-      pushBeat(summary);
-    } else {
-      for (const d of newsDetailsFromText(summary, lead.title)) pushBeat(d);
+  const seen = new Set<string>();
+  const pushBeat = (raw: string) => {
+    const stripped = stripLeadingNewsSource(stripLeadingNewsTitle(raw, lead.title)).trim();
+    if (!stripped) return;
+    for (const sentence of newsSentences(stripped)) {
+      if (beats.length >= 6) return;
+      // A source-truncated tail ("…", "...") is half a thought; dropping it is
+      // better than speaking "香港區用戶目前 …" as a finished sentence.
+      if (/(?:\.{2,}|…)\s*$/u.test(sentence)) continue;
+      const s = clip(spokenHeadline(sentence, source, lang), 360).trim();
+      if (!s || isNewsBeatChrome(s)) continue;
+      const key = normalizeNewsTitle(s);
+      if (!key || key === titleKey) continue;
+      if (newsBeatDuplicatesTitle(s, lead.title)) continue;
+      if (seen.has(key)) continue;
+      // Summary + details overlap: one beat already covers the other.
+      const covered = beats.some((b) => {
+        const bk = normalizeNewsTitle(b);
+        return Boolean(bk) && (bk.includes(key) || key.includes(bk));
+      });
+      if (covered) continue;
+      seen.add(key);
+      beats.push(s);
     }
-  }
-  for (const d of details) {
-    const dKey = normalizeNewsTitle(d);
-    if (dKey === titleKey || (titleKey && titleKey.includes(dKey) && d.length <= lead.title.length + 12)) continue;
-    pushBeat(d);
-    if (beats.length >= 6) break;
-  }
-  if (!beats.length && summary.length >= 32 && normalizeNewsTitle(summary) !== titleKey) {
-    pushBeat(summary);
-  }
+  };
+  // Detail sentences first — when the feed/`newsDetailsFromText` already split
+  // the lede, those are the story. The summary only adds anything beyond them.
+  const details = lead.details?.length ? lead.details : newsDetailsFromText(lead.summary ?? '', lead.title);
+  for (const d of details) pushBeat(d);
+  if (lead.summary?.trim()) pushBeat(lead.summary);
   return beats.slice(0, 6);
 }
 
@@ -2400,43 +2716,116 @@ export function newsBeatDuplicatesTitle(beat: string, title: string): boolean {
   return false;
 }
 
-function buildNewsSpokenLine(lang: Lang4, intro: string, lead: Headline): string {
-  const t = clip(spokenHeadline(lead.title, lead.source ?? '', lang), 180);
-  if (!t) return sayMiss(lang, 'news');
-  const body = joinSpeechBeats(
-    lang,
-    newsSpokenBodyBeats(lead, lang).filter((b) => !newsBeatDuplicatesTitle(b, lead.title)),
-  );
-  if (lang === 'en' || lang === 'ja') {
-    return `${intro} ${t}.${body ? ` ${body}` : ''}`.replace(/\s+/g, ' ').trim();
+/** Publisher label that reads as a name, not a domain ("unwire.hk" → "unwire"). */
+function sourceSpeechName(source: string): string {
+  const s = String(source || '')
+    .trim()
+    .replace(/\.(?:com|hk|net|org|co|uk|jp|tw|cn|io|news|cc)(?:\.[a-z]{2})?$/i, '')
+    .trim();
+  if (!s || /^(?:rss|web|google news|wikipedia|ap|reuters)$/i.test(s)) {
+    return /^reuters$/i.test(s) ? 'Reuters' : '';
   }
-  return `${intro}${t}。${body}`.replace(/\s+/g, ' ').trim();
+  return s;
 }
 
-export function sayNews(lang: Lang4, label: string, lead: Headline | string): string {
+function newsSourceSentence(lang: Lang4, source: string): string {
+  const src = sourceSpeechName(source);
+  if (!src) return '';
+  if (lang === 'en') return `This story is from ${src}.`;
+  if (lang === 'zh') return `这条新闻来自${src}。`;
+  if (lang === 'ja') return `${src}のニュースだよ。`;
+  return `呢單新聞由${src}報道。`;
+}
+
+/**
+ * TTS hard-wraps a clause at 120 UTF-16 units (gtts.splitChunks). A CJK run
+ * with no punctuation can end up as a 1-character last chunk — the owner's
+ * lone "惠". Keep every news clause under that cap on finished sentences so
+ * the speech chain never slices mid-character.
+ */
+const NEWS_SPEECH_RUN_MAX = 110;
+
+export function breakLongNewsSpeechRuns(text: string): string {
+  const s = String(text || '');
+  if (!CJK_IN_HEADLINE.test(s)) return s;
+  return s.replace(/[^。！？!?\n]+/gu, (run) => {
+    const chars = Array.from(run);
+    if (chars.length <= NEWS_SPEECH_RUN_MAX) return run;
+    const pieces: string[] = [];
+    let start = 0;
+    while (chars.length - start > NEWS_SPEECH_RUN_MAX) {
+      let cut = start + NEWS_SPEECH_RUN_MAX;
+      for (let j = cut; j > start + 20; j--) {
+        if (/[\s，,、；;：:]/u.test(chars[j] ?? '')) {
+          cut = j + 1;
+          break;
+        }
+      }
+      // Never leave a one/two-glyph orphan for the wrapper to slice.
+      if (chars.length - cut < 3) cut = chars.length;
+      const piece = chars.slice(start, cut).join('').replace(/[\s，,、；;：:]+$/u, '').trim();
+      if (piece) pieces.push(piece);
+      start = cut;
+    }
+    const tail = chars.slice(start).join('').replace(/[\s，,、；;：:]+$/u, '').trim();
+    if (tail) pieces.push(tail);
+    return pieces.join('。');
+  });
+}
+
+function buildNewsSpokenLine(lang: Lang4, intro: string, lead: Headline): string {
+  // A news tell is a fact turn — keep idle chatter from bolting a poetic line
+  // onto it afterwards (see fact-turn-quiet.ts).
+  markFactTurnSpoken();
+  const t = clip(spokenHeadline(lead.title, lead.source ?? '', lang), 180);
+  if (!t) return sayMiss(lang, 'news');
+  const beats = newsSpokenBodyBeats(lead, lang);
+  const body = joinSpeechBeats(lang, beats);
+  const spaceLang = lang === 'en' || lang === 'ja';
+  let line: string;
+  if (body) {
+    line = spaceLang ? `${intro} ${t}. ${body}` : `${intro}${t}。${body}`;
+  } else {
+    // No feed body. Never invent a fact — but never leave a bare one-liner
+    // either: the headline stays verbatim (a space can be part of the name,
+    // e.g. "許志安翻唱 愛是懷疑") and the attribution finishes the turn.
+    line = spaceLang ? `${intro} ${t}.` : `${intro}${t}。`;
+  }
+  if (newsBodyBeatCharLen(lang, beats) < NEWS_SPOKEN_MIN_BODY_CHARS) {
+    line += newsSourceSentence(lang, lead.source ?? '');
+  }
+  return breakLongNewsSpeechRuns(line.replace(/\s+/g, ' ').trim());
+}
+
+export function sayNews(lang: Lang4, label: string, lead: Headline | string, nowMs = Date.now()): string {
   const story = typeof lead === 'string' ? { title: lead, source: '' } : lead;
-  const today = isNewsPublishedToday(story.publishedAt);
+  const day = newsDayDescriptor(story.publishedAt, nowMs);
+  const dayLabel = newsDayLabel(lang, day);
   const place = newsLocalPlaceLabel(lang, label);
   if (lang === 'en') {
     const where = place ? `Around ${place}` : 'Around here';
-    const frame = today ? `${where}, a fun local story from today` : `${where}, a fun local story`;
+    const frame = day
+      ? `${where}, a fun local story from ${dayLabel}`
+      : `${where}, a fun local story`;
     return buildNewsSpokenLine(lang, `${frame} —`, story);
   }
   if (lang === 'zh') {
-    const head = place
-      ? (today ? `${place}附近有条今日本地新闻：` : `${place}附近有条轻松本地新闻：`)
-      : (today ? '附近有条今日本地新闻：' : '附近有条轻松本地新闻：');
+    const topic = day
+      ? (day.kind === 'today' ? '今日本地新闻' : `${dayLabel}的本地新闻`)
+      : '轻松本地新闻';
+    const head = place ? `${place}附近有条${topic}：` : `附近有条${topic}：`;
     return buildNewsSpokenLine(lang, head, story);
   }
   if (lang === 'ja') {
     const head = place
-      ? (today ? `${place}の近くの今日のニュース、` : `${place}の近くの軽めのニュース、`)
-      : (today ? '今日の近くのニュース、' : '近くの軽めのニュース、');
+      ? `${place}の近くの${day ? `${dayLabel}のニュース` : '軽めのニュース'}、`
+      : (day ? `${dayLabel}の近くのニュース、` : '近くの軽めのニュース、');
     return buildNewsSpokenLine(lang, head, story);
   }
-  const head = place
-    ? (today ? `${place}附近有條今日本地新聞：` : `${place}附近有條輕鬆本地新聞：`)
-    : (today ? '附近有條今日本地新聞：' : '附近有條輕鬆本地新聞：');
+  const topic = day
+    ? (day.kind === 'today' ? '今日本地新聞' : `${dayLabel}嘅本地新聞`)
+    : '輕鬆本地新聞';
+  const head = place ? `${place}附近有條${topic}：` : `附近有條${topic}：`;
   return buildNewsSpokenLine(lang, head, story);
 }
 
@@ -2452,46 +2841,41 @@ function topicalSpeechLabel(lang: Lang4, query: string): string {
 }
 
 /** Topic search (AI news, news about X) — not “local news near you”. */
-export function sayTopicalNews(lang: Lang4, query: string, lead: Headline | string): string {
+export function sayTopicalNews(lang: Lang4, query: string, lead: Headline | string, nowMs = Date.now()): string {
   const story = typeof lead === 'string' ? { title: lead, source: '' } : lead;
   const topic = topicalSpeechLabel(lang, query);
-  const today = isNewsPublishedToday(story.publishedAt);
+  const day = newsDayDescriptor(story.publishedAt, nowMs);
+  const label = newsDayLabel(lang, day);
   if (lang === 'en') {
-    const head = today ? `From today's news about ${topic}:` : `From the news about ${topic}:`;
+    const head = !day
+      ? `From the news about ${topic}:`
+      : day.kind === 'today'
+        ? `From today's news about ${topic}:`
+        : day.kind === 'weekday'
+          ? `From ${label}'s news about ${topic}:`
+          : `From the ${label} news about ${topic}:`;
     return buildNewsSpokenLine(lang, head, story);
   }
   if (lang === 'zh') {
-    const head = today ? `关于${topic}的今日新闻：` : `关于${topic}的最新新闻：`;
+    const head = day ? `${label}关于${topic}的新闻：` : `关于${topic}的新闻：`;
     return buildNewsSpokenLine(lang, head, story);
   }
   if (lang === 'ja') {
-    const head = today ? `今日の${topic}ニュース、` : `${topic}に関する最新ニュース、`;
+    const head = day ? `${label}の${topic}ニュース、` : `${topic}に関するニュース、`;
     return buildNewsSpokenLine(lang, head, story);
   }
-  const head = today ? `今日關於${topic}嘅新聞：` : `關於${topic}嘅最新新聞：`;
+  const head = day ? `${label}關於${topic}嘅新聞：` : `關於${topic}嘅新聞：`;
   return buildNewsSpokenLine(lang, head, story);
 }
 
-export function sayRecent(lang: Lang4, lead: Headline | string): string {
+export function sayRecent(lang: Lang4, lead: Headline | string, nowMs = Date.now()): string {
   const story = typeof lead === 'string' ? { title: lead, source: '' } : lead;
-  const today = isNewsPublishedToday(story.publishedAt);
-  if (lang === 'en') {
-    const head = today ? "From today's news:" : 'From the news:';
-    return buildNewsSpokenLine(lang, head, story);
-  }
-  if (lang === 'zh') {
-    const head = today ? '今日有条新闻：' : '最近有条新闻：';
-    return buildNewsSpokenLine(lang, head, story);
-  }
-  if (lang === 'ja') {
-    const head = today ? '今日のニュースは、' : '最近のニュースは、';
-    return buildNewsSpokenLine(lang, head, story);
-  }
-  const head = today ? '今日有條新聞：' : '最近有條新聞：';
-  return buildNewsSpokenLine(lang, head, story);
+  const day = newsDayDescriptor(story.publishedAt, nowMs);
+  return buildNewsSpokenLine(lang, newsDayIntro(lang, day), story);
 }
 
 function sayWhere(lang: Lang4, label: string, coarse: boolean): string {
+  markFactTurnSpoken();
   if (lang === 'en') return coarse
     ? `It looks like you're around ${label}. That's a rough network guess, not a precise spot.`
     : `It looks like you're in ${label}.`;
@@ -2507,6 +2891,7 @@ function sayWhere(lang: Lang4, label: string, coarse: boolean): string {
 }
 
 function saySearch(lang: Lang4, snippet: string): string {
+  markFactTurnSpoken();
   const bit = clip(spokenHeadline(snippet), 160);
   if (!bit) return sayMiss(lang, 'search');
   if (lang === 'en') return `I looked that up — ${bit}`;
@@ -2684,7 +3069,7 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
       // Enrich thin titles with a Wikipedia lede whenever the feed had no
       // description — including plain "any news?" light asks (#421/#428 residual:
       // title-only tells felt short / same-old).
-      lead = await enrichNewsLeadForSpeech(fetchImpl, lead, lang, cache);
+      lead = await enrichNewsLeadForSpeech(fetchImpl, lead, lang, cache, opts.rssKey);
       // One headline per tap — pack that story's summary + key details for a longer tell.
       const regionTag = newsRegionFromPlace(place, lang);
       const where = plan.heavyNews && activePack.recent
@@ -2696,9 +3081,9 @@ export async function gatherLiveContext(text: string, opts: GatherOpts = {}): Pr
       // Recent/world light packs: finished "from the news" statements (no local framing).
       // Local packs with a place: warm near-me framing. Never append a follow-up ask.
       if (plan.newsQuery) {
-        spoken.push(sayTopicalNews(lang, plan.newsQuery, lead));
+        spoken.push(sayTopicalNews(lang, plan.newsQuery, lead, now));
       } else {
-        spoken.push(activePack.recent ? sayRecent(lang, lead) : sayNews(lang, label, lead));
+        spoken.push(activePack.recent ? sayRecent(lang, lead, now) : sayNews(lang, label, lead, now));
       }
     } else if (!place && !plan.placeQuery && !plan.newsQuery && !plan.recent && plan.needsDevice) {
       // Explicit local/near-me news with no location — only then ask which city.

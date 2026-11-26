@@ -1,5 +1,6 @@
 import type { Lang } from './prefs';
 import type { Gender } from './profile';
+import { factTurnQuietActive } from './fact-turn-quiet';
 
 // r2026-10-04.70 — the dialogue adapts to the world around her:
 // 1. SCENE_LINES: every backdrop gets its own ambient idle voice, so the
@@ -285,6 +286,8 @@ export const SCENE_LINES: Record<string, Record<Lang, string[]>> = {
 
 /** Deterministic scene line (same pickLine rotation as the persona banks). */
 export function pickSceneLine(sceneId: string, lang: Lang, n: number): string | undefined {
+  // A live news/weather read just finished — no unrelated ambient sentence.
+  if (factTurnQuietActive()) return undefined;
   const bank = SCENE_LINES[sceneId]?.[lang] ?? SCENE_LINES[sceneId]?.en;
   if (!bank || bank.length === 0) return undefined;
   return bank[((n % bank.length) + bank.length) % bank.length];
